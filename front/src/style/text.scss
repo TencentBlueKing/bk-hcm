@@ -1,0 +1,76 @@
+
+.font-large {
+  font-size: $font-size-large;
+}
+
+.font-big {
+  font-size: $font-size-big;
+}
+.font-medium {
+  font-size: $font-size-medium;
+}
+.font-normal {
+  font-size: $font-size-normal;
+}
+
+.font-small {
+  font-size: $font-size-small;
+}
+
+.font-mini {
+  font-size: $font-size-mini;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+.line-height1 {
+  line-height: 1;
+}
+
+.text-link{
+  color: #3a84ff;
+  cursor: pointer;
+}
+
+.text-ov {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.text-left{
+  text-align: left;
+}
+.text-center{
+  text-align: center;
+}
+.text-right{
+  text-align: right;
+}
+.nowrap {
+  white-space: nowrap;
+  word-break: keep-all;
+}
+.text-gray{
+  color: #999;
+}
+.text-desc {
+  color: #979BA5;
+}
+.text-light {
+  color: #C4C6CC;
+}
+
+.text-deep {
+  color: $font-deep-color;
+}
+
+.text-warning {
+  color: $warning-color;
+}
+
+.text-danger {
+  color: $danger-color;
+}
+

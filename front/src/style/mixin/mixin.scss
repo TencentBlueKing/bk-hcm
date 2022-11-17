@@ -1,0 +1,18 @@
+@mixin ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@mixin icon-size($size: 14px, $fontSize: 14px) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $size;
+  height: $size;
+  font-size: $fontSize;
+  overflow: hidden;
+  &::before {
+    width: $fontSize;
+    height: $fontSize;
+  }
+}

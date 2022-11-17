@@ -1,0 +1,16 @@
+{
+    "preCI.localCodeCheck.prePush": "none",
+    "preCI.localCodeCheck.filter.whitePath": "",
+    "preCI.localCodeCheck.preCommit": "none",
+    "preCI.localCodeCheck.filter.skipPath": ".*/\\.codecc/.*,.*/\\.git,.*/\\.git/.*,.*/\\.svn/.*",
+    "preCI.pipeline.yamlFilePath": "build.yml",
+    "preCI.localCodeCheck.checkerSet.JS": [
+        "standard_js"
+    ],
+    "preCI.localCodeCheck.checkerSet.Golang": [
+        "standard_go"
+    ],
+    "preCI.localCodeCheck.checkerSet.TS": [
+        "ts_standard"
+    ]
+}
