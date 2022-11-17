@@ -1,0 +1,78 @@
+# defines all the network related options.
+network:
+  # bindIP is ip where server working on.
+  bindIP:
+  # port is port where server listen to http port.
+  port: 9050
+  # defines tls related options.
+  tls:
+    # server should be accessed without verifying the TLS certificate.
+    insecureSkipVerify: 
+    # server requires TLS client certificate authentication.
+    certFile:
+    # server requires TLS client certificate authentication.
+    keyFile:
+    # trusted root certificates for server.
+    caFile:
+    # the password to decrypt the certificate.
+    password:
+
+# defines database related settings.
+database:
+  # defines admin database related settings.
+  adminDatabase:
+    # is a seed list of host:port addresses of database nodes.
+    endpoints:
+      - 127.0.0.1:3306
+    database: bk_bscp_admin
+    user: root
+    password: admin
+    # DialTimeoutSec is timeout in seconds to wait for a response from the db server
+    # all the timeout default value reference:
+    # https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html.
+    dialTimeoutSec:
+    readTimeoutSec:
+    writeTimeoutSec:
+    maxIdleTimeoutMin:
+    maxOpenConn:
+    maxIdleConn:
+    # defines tls related options.
+    tls:
+      # server should be accessed without verifying the TLS certificate.
+      insecureSkipVerify:
+      # server requires TLS client certificate authentication.
+      certFile:
+      # server requires TLS client certificate authentication.
+      keyFile:
+      # trusted root certificates for server.
+      caFile:
+      # the password to decrypt the certificate.
+      password:
+  # maxSlowLogLatencyMS defines the max tolerance in millisecond to execute
+  # the database command, if the cost time of execute have >= the maxSlowLogLatencyMS
+  # then this request will be logged.
+  maxSlowLogLatencyMS: 200
+  # limiter limit the incoming request frequency to database for each sharding, and
+  # each sharding have the independent request limitation.
+  limiter:
+    qps: 500
+    burst: 500
+
+# defines log's related configuration
+log:
+  # log storage directory.
+  logDir: ./log
+  # per file max size, uint: MB.
+  maxPerFileSizeMB: 1024
+  # per line max size, uint: KB.
+  maxPerLineSizeKB: 2
+  # log file max storage number.
+  maxFileNum: 5
+  # whether the restart service log is appended to the latest log file, or whether a new log file is created.
+  logAppend: false
+  # log the log to std err only, it can not be used with AlsoToStdErr at the same time.
+  toStdErr: false
+  # log the log to file and also to std err. it can not be used with ToStdErr at the same time.
+  alsoToStdErr: false
+  # log level.
+  verbosity: 0

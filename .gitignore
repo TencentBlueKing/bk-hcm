@@ -1,0 +1,6 @@
+build
+.idea
+.workspace
+.DS_Store
+.git
+.codecc
