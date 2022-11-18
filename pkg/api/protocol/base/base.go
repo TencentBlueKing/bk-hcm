@@ -17,24 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+// Package base defines basic api call protocols.
+package base
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
-const (
-	// RidKey is request id header key.
-	RidKey = "X-Bkapi-Request-Id"
+import "hcm/pkg/rest"
 
-	// UserKey is operator name header key.
-	UserKey = "X-Bkapi-User-Name"
+// CreateResp is a standard create operation http response.
+type CreateResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *CreateResult `json:"data"`
+}
 
-	// AppCodeKey is blueking application code header key.
-	AppCodeKey = "X-Bkapi-App-Code"
+// CreateResult is a standard create operation result.
+type CreateResult struct {
+	ID uint64 `json:"id"`
+}
 
-	// LanguageKey the language key word.
-	LanguageKey = "HTTP_BLUEKING_LANGUAGE"
-
-	// BKGWJWTTokenKey is blueking api gateway jwt header key.
-	BKGWJWTTokenKey = "X-Bkapi-JWT"
-)
+// BatchDeleteReq is a standard batch delete operation http request.
+type BatchDeleteReq struct {
+	IDs []uint64 `json:"ids"`
+}

@@ -27,30 +27,37 @@ import (
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/shutdown"
+	"hcm/pkg/serviced"
+	"hcm/pkg/tools/uuid"
 )
 
-// Run start the api server
+// Run start the data service.
 func Run(opt *options.Option) error {
-	as := new(hcServer)
-	if err := as.prepare(opt); err != nil {
+	ds := new(dataService)
+	if err := ds.prepare(opt); err != nil {
 		return err
 	}
 
-	if err := as.service.ListenAndServeRest(); err != nil {
+	if err := ds.svc.ListenAndServeRest(); err != nil {
 		return err
 	}
 
-	shutdown.RegisterFirstShutdown(as.finalizer)
+	if err := ds.register(); err != nil {
+		return err
+	}
+
+	shutdown.RegisterFirstShutdown(ds.finalizer)
 	shutdown.WaitShutdown(20)
 	return nil
 }
 
-type hcServer struct {
-	service *service.Service
+type dataService struct {
+	svc *service.Service
+	sd  serviced.Service
 }
 
 // prepare do prepare jobs before run api discover.
-func (as *hcServer) prepare(opt *options.Option) error {
+func (ds *dataService) prepare(opt *options.Option) error {
 	// load settings from config file.
 	if err := cc.LoadSettings(opt.Sys); err != nil {
 		return fmt.Errorf("load settings from config files failed, err: %v", err)
@@ -64,11 +71,41 @@ func (as *hcServer) prepare(opt *options.Option) error {
 	if err != nil {
 		return fmt.Errorf("initialize service failed, err: %v", err)
 	}
-	as.service = svc
+	ds.svc = svc
+
+	// register data service.
+	svcOpt := serviced.ServiceOption{
+		Name: cc.DataServiceName,
+		IP:   cc.DataService().Network.BindIP,
+		Port: cc.DataService().Network.Port,
+		Uid:  uuid.UUID(),
+	}
+	sd, err := serviced.NewService(cc.DataService().Service, svcOpt)
+	if err != nil {
+		return fmt.Errorf("new service discovery failed, err: %v", err)
+	}
+
+	ds.sd = sd
 
 	return nil
 }
 
-func (as *hcServer) finalizer() {
+// register data-service to etcd.
+func (ds *dataService) register() error {
+	if err := ds.sd.Register(); err != nil {
+		return fmt.Errorf("register data service failed, err: %v", err)
+	}
+
+	logs.Infof("register data service to etcd success.")
+	return nil
+}
+
+func (ds *dataService) finalizer() {
+	if err := ds.sd.Deregister(); err != nil {
+		logs.Errorf("process service shutdown, but deregister failed, err: %v", err)
+		return
+	}
+
+	logs.Infof("shutting down service, deregister service success.")
 	return
 }

@@ -17,24 +17,35 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+// Package cloudserver defines cloud-server api client.
+package cloudserver
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
-const (
-	// RidKey is request id header key.
-	RidKey = "X-Bkapi-Request-Id"
+import (
+	"fmt"
 
-	// UserKey is operator name header key.
-	UserKey = "X-Bkapi-User-Name"
-
-	// AppCodeKey is blueking application code header key.
-	AppCodeKey = "X-Bkapi-App-Code"
-
-	// LanguageKey the language key word.
-	LanguageKey = "HTTP_BLUEKING_LANGUAGE"
-
-	// BKGWJWTTokenKey is blueking api gateway jwt header key.
-	BKGWJWTTokenKey = "X-Bkapi-JWT"
+	"hcm/pkg/rest"
+	"hcm/pkg/rest/client"
 )
+
+// Client is cloud-server api client.
+type Client struct {
+	client rest.ClientInterface
+}
+
+// NewClient create a new cloud-server api client.
+func NewClient(c *client.Capability, version string) *Client {
+	base := fmt.Sprintf("/api/%s/cloud", version)
+	return &Client{
+		client: rest.NewClient(c, base),
+	}
+}
+
+// Account get account client.
+func (c *Client) Account() *AccountClient {
+	return NewAccountClient(c.client)
+}
+
+// Cvm get cvm client.
+func (c *Client) Cvm() *CvmClient {
+	return NewCvmClient(c.client)
+}
