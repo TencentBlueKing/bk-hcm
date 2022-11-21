@@ -19,8 +19,8 @@ network:
 
 # defines database related settings.
 database:
-  # defines admin database related settings.
-  adminDatabase:
+  # defines resource database related settings.
+  resource:
     # is a seed list of host:port addresses of database nodes.
     endpoints:
       - 127.0.0.1:3306

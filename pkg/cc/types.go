@@ -158,7 +158,7 @@ func (lm *Limiter) trySetDefault() {
 
 // DataBase defines database related runtime
 type DataBase struct {
-	AdminDatabase AdminDatabase `yaml:"adminDatabase"`
+	Resource ResourceDB `yaml:"resource"`
 	// MaxSlowLogLatencyMS defines the max tolerance in millisecond to execute
 	// the database command, if the cost time of execute have >= the MaxSlowLogLatencyMS
 	// then this request will be logged.
@@ -170,7 +170,7 @@ type DataBase struct {
 
 // trySetDefault set the sharding default value if user not configured.
 func (s *DataBase) trySetDefault() {
-	s.AdminDatabase.trySetDefault()
+	s.Resource.trySetDefault()
 
 	if s.MaxSlowLogLatencyMS == 0 {
 		s.MaxSlowLogLatencyMS = 100
@@ -186,7 +186,7 @@ func (s *DataBase) trySetDefault() {
 // validate sharding runtime
 func (s DataBase) validate() error {
 
-	if err := s.AdminDatabase.validate(); err != nil {
+	if err := s.Resource.validate(); err != nil {
 		return err
 	}
 
@@ -203,8 +203,8 @@ func (s DataBase) validate() error {
 	return nil
 }
 
-// AdminDatabase defines database related runtime.
-type AdminDatabase struct {
+// ResourceDB defines database related runtime.
+type ResourceDB struct {
 	// Endpoints is a seed list of host:port addresses of database nodes.
 	Endpoints []string `yaml:"endpoints"`
 	Database  string   `yaml:"database"`
@@ -224,7 +224,7 @@ type AdminDatabase struct {
 }
 
 // trySetDefault set the database's default value if user not configured.
-func (ds *AdminDatabase) trySetDefault() {
+func (ds *ResourceDB) trySetDefault() {
 	if len(ds.Endpoints) == 0 {
 		ds.Endpoints = []string{"127.0.0.1:3306"}
 	}
@@ -252,7 +252,7 @@ func (ds *AdminDatabase) trySetDefault() {
 }
 
 // validate database runtime.
-func (ds AdminDatabase) validate() error {
+func (ds ResourceDB) validate() error {
 	if len(ds.Endpoints) == 0 {
 		return errors.New("database endpoints is not set")
 	}

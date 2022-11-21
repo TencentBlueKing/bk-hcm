@@ -17,20 +17,9 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
-
-// ColumnType define the db table's column data type
-type ColumnType string
+package validator
 
 const (
-	// Numeric means this column is Numeric data type.
-	Numeric ColumnType = "numeric"
-	// Boolean means this column is Boolean data type.
-	Boolean ColumnType = "bool"
-	// String means this column is String data type.
-	String ColumnType = "string"
-	// Time means this column is Time data type.
-	Time ColumnType = "time"
-	// Json means this column is Json data type.
-	Json ColumnType = "json"
+	// chineseEnglishNumberFmt chinese、english、number.
+	chineseEnglishNumberFmt string = "[\u4E00-\u9FA5A-Za-z0-9]"
 )

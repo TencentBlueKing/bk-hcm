@@ -17,20 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+package dao
 
-// ColumnType define the db table's column data type
-type ColumnType string
+import (
+	"os"
+	"testing"
 
-const (
-	// Numeric means this column is Numeric data type.
-	Numeric ColumnType = "numeric"
-	// Boolean means this column is Boolean data type.
-	Boolean ColumnType = "bool"
-	// String means this column is String data type.
-	String ColumnType = "string"
-	// Time means this column is Time data type.
-	Time ColumnType = "time"
-	// Json means this column is Json data type.
-	Json ColumnType = "json"
+	"hcm/pkg/cc"
 )
+
+func testDaoSet() (Set, error) {
+	cfg := cc.DataBase{
+		Resource: cc.ResourceDB{
+			Endpoints: []string{"localhost"},
+			Database:  "hcm",
+			User:      "root",
+			Password:  "admin",
+		},
+		MaxSlowLogLatencyMS: 200,
+		Limiter: &cc.Limiter{
+			QPS:   500,
+			Burst: 500,
+		},
+	}
+
+	return NewDaoSet(cfg)
+}
+
+func checkErr(t *testing.T, err error) {
+	if err != nil {
+		t.Error(err)
+		os.Exit(2)
+	}
+}

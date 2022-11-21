@@ -17,20 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+package table
 
-// ColumnType define the db table's column data type
-type ColumnType string
+// Tables defines all the database table
+// related resources.
+type Tables interface {
+	TableName() Name
+}
+
+// Name is database table's name type
+type Name string
 
 const (
-	// Numeric means this column is Numeric data type.
-	Numeric ColumnType = "numeric"
-	// Boolean means this column is Boolean data type.
-	Boolean ColumnType = "bool"
-	// String means this column is String data type.
-	String ColumnType = "string"
-	// Time means this column is Time data type.
-	Time ColumnType = "time"
-	// Json means this column is Json data type.
-	Json ColumnType = "json"
+	// AuditTable is audit table's name
+	AuditTable Name = "audit"
+	// AccountTable is account table's name.
+	AccountTable Name = "account"
 )

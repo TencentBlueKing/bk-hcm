@@ -59,6 +59,9 @@ const (
 
 	// RestfulSubSys defines rest server's sub system
 	RestfulSubSys = "restful"
+
+	// OrmCmdSubSys defines all the orm command related sub system.
+	OrmCmdSubSys = "orm"
 )
 
 // labels

@@ -39,6 +39,9 @@ const (
 	Unknown int32 = 2000000
 	// InvalidParameter means the request parameter  is invalid
 	InvalidParameter int32 = 2000001
-	// DecodeRequestFailed means decode the request body failed.
-	DecodeRequestFailed int32 = 2000002
+	// TooManyRequest means the incoming request have already exceeded the max limit.
+	// and the incoming request is rejected.
+	TooManyRequest int32 = 2000002
+	// RecordNotFound means resource not exist.
+	RecordNotFound int32 = 2000003
 )

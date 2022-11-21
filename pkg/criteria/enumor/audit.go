@@ -19,18 +19,50 @@
 
 package enumor
 
-// ColumnType define the db table's column data type
-type ColumnType string
+/*
+	audit.go store audit related enum values.
+*/
+
+// AuditResourceType audit resource type.
+type AuditResourceType string
 
 const (
-	// Numeric means this column is Numeric data type.
-	Numeric ColumnType = "numeric"
-	// Boolean means this column is Boolean data type.
-	Boolean ColumnType = "bool"
-	// String means this column is String data type.
-	String ColumnType = "string"
-	// Time means this column is Time data type.
-	Time ColumnType = "time"
-	// Json means this column is Json data type.
-	Json ColumnType = "json"
+	// Account 策略资源
+	Account AuditResourceType = "account"
 )
+
+// AuditResourceTypeEnums resource type map.
+var AuditResourceTypeEnums = map[AuditResourceType]bool{
+	Account: true,
+}
+
+// Exist judge enum value exist.
+func (a AuditResourceType) Exist() bool {
+	_, exist := AuditResourceTypeEnums[a]
+	return exist
+}
+
+// AuditAction audit action type.
+type AuditAction string
+
+const (
+	// Create 创建
+	Create AuditAction = "create"
+	// Update 更新
+	Update AuditAction = "update"
+	// Delete 删除
+	Delete AuditAction = "delete"
+)
+
+// AuditActionEnums op type map.
+var AuditActionEnums = map[AuditAction]bool{
+	Create: true,
+	Update: true,
+	Delete: true,
+}
+
+// Exist judge enum value exist.
+func (a AuditAction) Exist() bool {
+	_, exist := AuditActionEnums[a]
+	return exist
+}
