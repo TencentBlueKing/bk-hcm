@@ -4,7 +4,7 @@ module.exports = {
   parserOptions: {
     project: './tsconfig.eslint.json',
     tsconfigRootDir: __dirname,
-    sourceType: 'module'
+    sourceType: 'module',
   },
   rules: {
     'no-param-reassign': 0,

@@ -1,3 +1,4 @@
+const { DEV_HOST } = require('./env.dev')
 const config = {
     production: {
       NODE_ENV: JSON.stringify('production'),
@@ -20,8 +21,8 @@ const config = {
       outputDir: __dirname + '/dist',
       assetsDir: './',
       AJAX_URL_PREFIX: '',
-      DEV_HOST:'local-bkapps.woa.com',
-      AJAX_URL_PROXY: 'https://stag-dot-bkmetric.bkapps-sz.woa.com'
+      DEV_HOST: DEV_HOST,
+      AJAX_URL_PROXY: ''
     },
   };
   

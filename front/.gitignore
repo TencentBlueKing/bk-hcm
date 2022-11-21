@@ -75,3 +75,4 @@ test/unit/coverage
 *.njsproj
 *.sln
 index-dev.html
+env.dev.js
