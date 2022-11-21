@@ -39,20 +39,19 @@
     "./typings",
     "./node_modules/@types"
   ],*/
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-    "tests/**/*.ts",
-    "tests/**/*.tsx"
-  ],
+//   "include": [
+//     "src/**/*.ts",
+//     "src/**/*.tsx",
+//     "src/**/*.vue",
+//     "tests/**/*.ts",
+//     "tests/**/*.tsx"
+//   ],
   "exclude": [
     "node_modules",
     "plugins",
     "env.ts",
     "babel.config.js",
     "bk.config.js",
-    ".eslintrc.js",
     "webpack.config.js",
     "src/components/vue-grid-layout",
     "src/components/monaco",

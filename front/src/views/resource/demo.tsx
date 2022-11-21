@@ -3,6 +3,7 @@ import {
   onMounted,
   onUnmounted,
 } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 export default defineComponent({
   setup() {
@@ -12,10 +13,10 @@ export default defineComponent({
     onUnmounted(() => {
     });
 
+    const { t } = useI18n();
+
     return () => (
-        <span class="test">hello-world</span>
+        <span class="test">{t('你好世界')}</span>
     );
   },
 });
-
-
