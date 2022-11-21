@@ -4,4 +4,4 @@ build
 .DS_Store
 .git
 .codecc
-front/env.dev.js
+.vscode/
