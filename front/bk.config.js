@@ -31,16 +31,6 @@ module.exports = {
         port: 5000,
         historyApiFallback: true,
         proxy: {
-          '/api/': {
-            target: 'https://bk-metric-stag.woa.com/',
-            ws: true,
-            changeOrigin: true,
-          },
-          '/bkvision/': {
-            target: 'https://bk-metric-stag.woa.com/',
-            ws: false,
-            changeOrigin: true,
-          }
         }
       }
     }
