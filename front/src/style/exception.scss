@@ -1,0 +1,23 @@
+.exception-wrap-item {
+  .text-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3A84FF;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+  .text-subtitle {
+    color: #979BA5;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 14px;
+  }
+  .text-wrap .text-btn {
+    margin: 0 5px;
+  }
+  .text-wrap .text-btn:hover {
+    cursor: pointer;
+  }
+}
+

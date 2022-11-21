@@ -1,0 +1,29 @@
+/**
+ * @description
+ * @author andyzhou
+ * @create andyzhou
+ * @update 2022/1/20 by andyzhou
+ */
+@import './common.scss';
+@import './exception.scss';
+@import './color.scss';
+@import './flex.scss';
+@import './layout.scss';
+@import './size.scss';
+@import './text.scss';
+@import './cursos-point-event.scss';
+@import './fixedBkMagicBox';
+@import './page/setting.scss';
+
+
+.spin-icon {
+  animation: loading .8s linear infinite;
+}
+@keyframes loading {
+  from {
+      transform: rotate(0);
+  }
+  to {
+      transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,44 @@
+
+.position-static {
+  position: static;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.position-absolute {
+  position: absolute;
+}
+
+.position-fixed {
+  position: fixed;
+}
+
+.margin-auto {
+  margin: auto;
+}
+.display-block {
+  display: block!important;
+}
+
+.display-none {
+  display: none;
+}
+.overflow-auto {
+  overflow: auto;
+
+}
+.overflow-auto-hover{
+  overflow: hidden;
+  &:hover{
+    overflow: auto;
+  }
+}
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}

@@ -1,0 +1,242 @@
+@use "sass:math";
+@mixin table-border {
+  border: 1px solid $border-color-base;
+  border-collapse: collapse;
+}
+
+.bk-metric-base-info {
+  width: 800px;
+  margin: 24px;
+  table-layout: fixed;
+  @include table-border;
+
+  .bk-metric-base-info-row {
+    .bk-metric-base-info-column {
+      @include table-border;
+      padding: 10px 16px;
+      &:first-child {
+        width: 120px;
+        background-color: #FAFBFD;
+      }
+      .bk-metric-base-info-column-content {
+        display: flex;
+        flex: 1;
+        align-items: center;
+      }
+    }
+  }
+}
+
+.bk-metric-save-mapping-footer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 48px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  background-color: #FAFBFD;
+  box-shadow: 0 -1px 0 0 $border-color-base;
+}
+
+.bk-metric-permission-section {
+  &:not(:last-child) {
+    border-bottom: 1px solid $border-color-base;
+    margin-bottom: 26px;
+  }
+
+  .bk-metric-permission-section-form-item {
+      width: 666px;
+  }
+}
+
+$margin: 24px;
+$paddingTop: 20px;
+$Margin2x: $margin * 2;
+$statusTipsHeight: 36px;
+$mappingBoxTop: $statusTipsHeight + $margin - $paddingTop;
+
+
+@media (min-width: 1366px){
+  .bk-metrics-status-aside {
+    overflow: hidden;
+    width: 360px;
+    min-width: 318px;
+  }
+}
+
+@media (min-width: 1600px){
+  .bk-metrics-status-aside {
+    width: 434px;
+  }
+}
+
+@media (min-width: 1920px){
+  .bk-metrics-status-aside {
+    width: 640px;
+  }
+}
+
+.bk-metrics-status-aside {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  top: -20px;
+  right: -$margin;
+  margin-bottom: 30px;
+  > header {
+    font-size: 16px;
+    border-bottom: 1px solid $border-color-base;
+    color: $font-deep-color;
+    padding: 14px 24px;
+  }
+  .bk-metrics-unmapping-status-block {
+    display: flex;
+    align-items: center;
+    width: 280px;
+    height: 48px;
+    margin-bottom: 16px;
+    background-color: #FAFBFD;
+    box-shadow: 0 1px 1px 0 rgba(0,0,0,0.06);
+    border-radius: 2px;
+    cursor: grab;
+    &:hover {
+      background-color: #E1ECFF;
+    }
+  }
+}
+.bk-metric-mapping-tips {
+  position: absolute;
+  width: calc(100% + $Margin2x);
+  top: -$statusTipsHeight - $margin;
+  left: -$margin;
+}
+
+.bk-metrics-status-mapping-box {
+  margin: $mappingBoxTop 0 70px 0;
+  box-shadow: 0 2px 2px 0 rgba(0,0,0,0.15);
+  min-width: 718px;
+
+  .bk-metrics-status-header {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    background-color: #F0F1F5;
+    color: $font-deep-color;
+    &:first-child {
+      margin-right: 24px;
+      background-color: #E1ECFF;
+      color: #1768EF;
+    }
+  }
+
+  .bk-metrics-status-content {
+    position: relative;
+    margin-top: 16px;
+    padding-bottom: 16px;
+    background-color: #FAFBFD;
+    .bk-metrics-status-row{
+      $statusBlockHeight: 64px;
+      $statusBlockWidth: 280px;
+      $spotSize: 10px;
+      $spotHalfSize: math.div($spotSize, 2);
+      $spotTop: math.div($statusBlockHeight, 2) - $spotHalfSize;
+
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding: 0 calc((50% - $statusBlockWidth) / 2);
+
+      .bk-metrics-status-block {
+        background-color: white;
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 16px;
+        border: 1px solid $border-color-base;
+        width: $statusBlockWidth;
+        height: $statusBlockHeight;
+        border-radius: 4px;
+
+        .bk-metrics-status-desc {
+          font-size: 12px;
+          color: #979BA5;
+        }
+
+        &:after {
+          width: $spotSize;
+          height: $spotSize;
+          content: '';
+          position: absolute;
+          background-color: $border-color-base;
+          right: -$spotHalfSize;
+          top: $spotTop;
+          border-radius: $spotHalfSize;
+        }
+
+        &.personal-status {
+          cursor: grab;
+          &:after {
+            left: -$spotHalfSize;
+          }
+        }
+
+        &.active {
+          border-color: $success-color;
+          &.personal-status::after {
+            background-color: $success-color;
+          }
+        }
+
+        .mapped {
+          border: 1px solid $success-color;
+          border-radius: 50%;
+          color: $success-color;
+          position: absolute;
+          right: -8px;
+          background-color: white;
+          z-index: 2;
+        }
+        &.is-dragging {
+          border: 1px dashed $primary-color;
+          opacity: 0.5;
+        }
+        &.status-slot-dragover {
+          border: 1px solid $primary-color;
+          background-color: #E1ECFF;
+          opacity: 0.5;
+          cursor: pointer;
+        }
+        &.disable-drop {
+          cursor: not-allowed;
+        }
+      }
+      .bk-metrics-status-linker {
+        background-color: $success-color;
+        height: 1px;
+        flex: 1;
+      }
+
+    }
+    &:before{
+      content: '';
+      position: absolute;
+      width: 24px;
+      background-color: white;
+      height: 100%;
+      top: 0;
+      left: 50%;
+      margin-left: -12px;
+    }
+  }
+}
+
+
