@@ -1,0 +1,15 @@
+.cursor-not-allow{
+  cursor: not-allowed!important;
+}
+.cursor-pointer{
+  cursor: pointer;
+}
+.point-event-none{
+  pointer-events: none;
+}
+.permission-disabled{
+  &,& a {
+    color: #ccc!important;
+    cursor: not-allowed!important;
+  }
+}
