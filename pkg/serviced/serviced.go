@@ -22,6 +22,7 @@ package serviced
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"hcm/pkg/cc"
@@ -37,13 +38,23 @@ type ServiceDiscover interface {
 }
 
 // NewServiceD create a service and discovery instance.
-func NewServiceD(cli *etcd3.Client, svcOpt ServiceOption, discOpt DiscoveryOption) (ServiceDiscover, error) {
+func NewServiceD(config cc.Service, svcOpt ServiceOption, discOpt DiscoveryOption) (ServiceDiscover, error) {
 	if err := svcOpt.Validate(); err != nil {
 		return nil, err
 	}
 
 	if err := discOpt.Validate(); err != nil {
 		return nil, err
+	}
+
+	etcdOpt, err := config.Etcd.ToConfig()
+	if err != nil {
+		return nil, fmt.Errorf("get etcd config failed, err: %v", err)
+	}
+
+	cli, err := etcd3.New(etcdOpt)
+	if err != nil {
+		return nil, fmt.Errorf("new etcd client failed, err: %v", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

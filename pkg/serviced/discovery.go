@@ -37,15 +37,25 @@ type Discover interface {
 }
 
 // NewDiscovery create a service discovery instance.
-func NewDiscovery(cli *etcd3.Client, discOpt DiscoveryOption) (Discover, error) {
-	if err := discOpt.Validate(); err != nil {
+func NewDiscovery(config cc.Service, opt DiscoveryOption) (Discover, error) {
+	if err := opt.Validate(); err != nil {
 		return nil, err
+	}
+
+	etcdOpt, err := config.Etcd.ToConfig()
+	if err != nil {
+		return nil, fmt.Errorf("get etcd config failed, err: %v", err)
+	}
+
+	cli, err := etcd3.New(etcdOpt)
+	if err != nil {
+		return nil, fmt.Errorf("new etcd client failed, err: %v", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	d := &discovery{
 		cli:       cli,
-		discOpt:   discOpt,
+		discOpt:   opt,
 		ctx:       ctx,
 		cancel:    cancel,
 		addresses: make(map[cc.Name][]serviceAddress),
