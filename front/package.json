@@ -66,6 +66,7 @@
     "monaco-editor-webpack-plugin": "^7.0.1",
     "monaco-promql": "^1.7.4",
     "monaco-vue3-editor": "^1.0.1",
+    "path": "^0.12.7",
     "pinia": "^2.0.13",
     "postcss": "^8.4.16",
     "qs": "^6.10.5",
