@@ -16,6 +16,24 @@ const resourceMenus: RouteRecordRaw[] = [
         },
       },
       {
+        path: '/resource/demo3',
+        name: 'demo3-template',
+        alias: '',
+        component: () => import('@/views/resource/demo3.vue'),
+        meta: {
+          activeKey: 'demo3',
+        },
+      },
+      {
+        path: '/resource/demo4',
+        name: 'demo4-template-setup',
+        alias: '',
+        component: () => import('@/views/resource/demo4.vue'),
+        meta: {
+          activeKey: 'demo4',
+        },
+      },
+      {
         path: '/resource/snapshot',
         name: '快照',
         alias: '',
