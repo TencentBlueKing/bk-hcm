@@ -3,6 +3,7 @@ const replaceStaticUrlPlugin = require('./replace-static-url-plugin')
 const isModeProduction = process.env.NODE_ENV === 'production';
 const indexPath = isModeProduction ? './index.html' : './index-dev.html'
 const env = require('./env')();
+const apiMocker = require('./mock-server.js')
 module.exports = {
   appConfig() {
     return {
@@ -30,6 +31,14 @@ module.exports = {
         host: env.DEV_HOST,
         port: 5000,
         historyApiFallback: true,
+        before(app) {
+          apiMocker(app, {
+                watch: [
+                  '/api/v4/organization/user_info/',
+                ],
+                api: resolve(__dirname, './mock/api.ts')
+            })
+        },
         proxy: {
         }
       }
