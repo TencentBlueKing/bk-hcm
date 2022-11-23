@@ -17,51 +17,49 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package hcservice
 
 import (
 	"context"
 	"net/http"
 
-	"hcm/pkg/api/protocol/base"
-	"hcm/pkg/api/protocol/cloud-server"
+	hcservice "hcm/pkg/api/protocol/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// AccountClient is cloud account api client.
+// AccountClient is hc service account api client.
 type AccountClient struct {
 	client rest.ClientInterface
 }
 
-// NewAccountClient create a new cloud account api client.
+// NewAccountClient create a new account api client.
 func NewAccountClient(client rest.ClientInterface) *AccountClient {
 	return &AccountClient{
 		client: client,
 	}
 }
 
-// Create cloud account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-	*base.CreateResult, error) {
+// Check account.
+func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcservice.AccountCheckReq) error {
 
-	resp := new(base.CreateResp)
+	resp := new(rest.BaseResp)
 
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/create/account/account").
+		SubResourcef("/get/account/check").
 		WithHeaders(h).
 		Do().
 		Into(resp)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
+		return errf.New(resp.Code, resp.Message)
 	}
 
-	return resp.Data, nil
+	return nil
 }

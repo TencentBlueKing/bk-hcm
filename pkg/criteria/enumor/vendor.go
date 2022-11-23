@@ -17,51 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package enumor
 
-import (
-	"context"
-	"net/http"
+import "fmt"
 
-	"hcm/pkg/api/protocol/base"
-	"hcm/pkg/api/protocol/cloud-server"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+// Vendor defines the cloud type where the hybrid cloud service is supported.
+type Vendor string
+
+// Validate the vendor is valid or not
+func (v Vendor) Validate() error {
+	switch v {
+	case TCloud:
+	case AWS:
+	case GCP:
+	case Azure:
+	case HuaWei:
+	default:
+		return fmt.Errorf("unsupported cloud vendor: %s", v)
+	}
+
+	return nil
+}
+
+const (
+	// TCloud is tencent cloud
+	TCloud Vendor = "tcloud"
+	// AWS is amazon cloud
+	AWS Vendor = "aws"
+	// GCP is the Google Cloud Platform
+	GCP Vendor = "gcp"
+	// Azure is microsoft azure cloud.
+	Azure Vendor = "azure"
+	// HuaWei is hua wei cloud.
+	HuaWei Vendor = "huawei"
 )
-
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
-}
-
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
-}
-
-// Create cloud account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-	*base.CreateResult, error) {
-
-	resp := new(base.CreateResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/create/account/account").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
-}

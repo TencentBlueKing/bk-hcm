@@ -17,51 +17,43 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package tcloud
 
 import (
-	"context"
-	"net/http"
+	"hcm/pkg/adaptor/types"
 
-	"hcm/pkg/api/protocol/base"
-	"hcm/pkg/api/protocol/cloud-server"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// NewTCloud new tcloud.
+func NewTCloud() types.Factory {
+	prof := profile.NewClientProfile()
+	return &tcloud{profile: prof}
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
+// NewTCloudProxy new tencent cloud proxy.
+func NewTCloudProxy() types.TCloudProxy {
+	prof := profile.NewClientProfile()
+	return &tcloud{profile: prof}
 }
 
-// Create cloud account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-	*base.CreateResult, error) {
+var (
+	_ types.Factory     = new(tcloud)
+	_ types.TCloudProxy = new(tcloud)
+)
 
-	resp := new(base.CreateResp)
+type tcloud struct {
+	profile *profile.ClientProfile
+}
 
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/create/account/account").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
+func (t *tcloud) cvmClient(secret *types.Secret, region string) (*cvm.Client, error) {
+	credential := common.NewCredential(secret.ID, secret.Key)
+	client, err := cvm.NewClient(credential, region, t.profile)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return client, nil
 }

@@ -17,51 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package tcloud
 
 import (
-	"context"
-	"net/http"
+	"fmt"
 
-	"hcm/pkg/api/protocol/base"
-	"hcm/pkg/api/protocol/cloud-server"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+	"hcm/pkg/adaptor/types"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
-}
+var _ types.AccountInterface = new(tcloud)
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
-}
-
-// Create cloud account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-	*base.CreateResult, error) {
-
-	resp := new(base.CreateResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/create/account/account").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
+// AccountCheck check account authentication information and permissions.
+// TODO: 仅用于测试
+func (t *tcloud) AccountCheck(kt *kit.Kit, secret *types.Secret) error {
+	client, err := t.cvmClient(secret, "")
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
 
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
+	_, err = client.DescribeRegionsWithContext(kt.Ctx, cvm.NewDescribeRegionsRequest())
+	if err != nil {
+		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
+		return err
 	}
 
-	return resp.Data, nil
+	return nil
 }

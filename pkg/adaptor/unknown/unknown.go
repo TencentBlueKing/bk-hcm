@@ -17,51 +17,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package unknown
 
 import (
-	"context"
-	"net/http"
+	"fmt"
 
-	"hcm/pkg/api/protocol/base"
-	"hcm/pkg/api/protocol/cloud-server"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+var _ types.Factory = new(Unknown)
+
+// Unknown inject all the unsupported vendor operations.
+type Unknown struct {
+	Vendor enumor.Vendor
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
+// AccountCheck is unsupported
+func (u Unknown) AccountCheck(kt *kit.Kit, secret *types.Secret) error {
+	return u.unsupportedError()
 }
 
-// Create cloud account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-	*base.CreateResult, error) {
-
-	resp := new(base.CreateResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/create/account/account").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+func (u Unknown) unsupportedError() error {
+	return fmt.Errorf("operation for %s is not supported for now", u.Vendor)
 }

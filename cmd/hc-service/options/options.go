@@ -17,51 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package options
 
 import (
-	"context"
-	"net/http"
+	"hcm/pkg/cc"
+	"hcm/pkg/runtime/flags"
 
-	"hcm/pkg/api/protocol/base"
-	"hcm/pkg/api/protocol/cloud-server"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+	"github.com/spf13/pflag"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// Option defines the app's runtime flag options.
+type Option struct {
+	Sys *cc.SysOption
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
-}
+// InitOptions init hc service's options from command flags.
+func InitOptions() *Option {
+	fs := pflag.CommandLine
+	sysOpt := flags.SysFlags(fs)
+	opt := &Option{Sys: sysOpt}
 
-// Create cloud account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-	*base.CreateResult, error) {
+	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
+	// and before flags are accessed by the program.
+	pflag.Parse()
 
-	resp := new(base.CreateResp)
+	// check if the command-line flag is show current version info cmd.
+	sysOpt.CheckV()
 
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/create/account/account").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return opt
 }

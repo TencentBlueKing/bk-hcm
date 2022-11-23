@@ -17,51 +17,35 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package hcservice
 
 import (
-	"context"
-	"net/http"
+	"errors"
 
-	"hcm/pkg/api/protocol/base"
-	"hcm/pkg/api/protocol/cloud-server"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+	"hcm/pkg/criteria/enumor"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// AccountCheckReq defines account check request.
+// TODO: 结构体信息随便定义，之后自行替换即可
+type AccountCheckReq struct {
+	Vendor    enumor.Vendor `json:"vendor"`
+	SecretID  string        `json:"secret_id"`
+	SecretKey string        `json:"secret_key"`
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
-}
-
-// Create cloud account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-	*base.CreateResult, error) {
-
-	resp := new(base.CreateResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/create/account/account").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, err
+// Validate account check req.
+func (req AccountCheckReq) Validate() error {
+	if err := req.Vendor.Validate(); err != nil {
+		return err
 	}
 
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
+	if len(req.SecretID) == 0 {
+		return errors.New("secret id is required")
 	}
 
-	return resp.Data, nil
+	if len(req.SecretKey) == 0 {
+		return errors.New("secret key is required")
+	}
+
+	return nil
 }

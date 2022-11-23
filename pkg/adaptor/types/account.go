@@ -17,51 +17,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package types
 
-import (
-	"context"
-	"net/http"
+import "hcm/pkg/kit"
 
-	"hcm/pkg/api/protocol/base"
-	"hcm/pkg/api/protocol/cloud-server"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
-)
-
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// AccountInterface defines all the account related operations in the hybrid cloud
+type AccountInterface interface {
+	AccountCheck(kt *kit.Kit, secret *Secret) error
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
-}
-
-// Create cloud account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-	*base.CreateResult, error) {
-
-	resp := new(base.CreateResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/create/account/account").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+// Secret tcloud auth secret info.
+type Secret struct {
+	ID  string `json:"id"`
+	Key string `json:"key"`
 }

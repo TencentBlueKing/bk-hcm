@@ -52,9 +52,13 @@ func (a *CvmClient) BatchDelete(ctx context.Context, h http.Header, request *bas
 		Do().
 		Into(resp)
 
+	if err != nil {
+		return err
+	}
+
 	if resp.Code != errf.OK {
 		return errf.New(resp.Code, resp.Message)
 	}
 
-	return err
+	return nil
 }

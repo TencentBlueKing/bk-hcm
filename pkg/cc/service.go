@@ -51,6 +51,8 @@ const (
 	CloudServerName Name = "cloud-server"
 	// DataServiceName is data service's name
 	DataServiceName Name = "data-service"
+	// HCServiceName is hc service's name
+	HCServiceName Name = "hc-service"
 )
 
 // Setting defines all service Setting interface.
@@ -96,6 +98,41 @@ func (s DataServiceSetting) Validate() error {
 	}
 
 	if err := s.Database.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// HCServiceSetting defines hc service used setting options.
+type HCServiceSetting struct {
+	Network Network   `yaml:"network"`
+	Service Service   `yaml:"service"`
+	Log     LogOption `yaml:"log"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *HCServiceSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the HCServiceSetting default value if user not configured.
+func (s *HCServiceSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+
+	return
+}
+
+// Validate HCServiceSetting option.
+func (s HCServiceSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
 		return err
 	}
 

@@ -79,3 +79,22 @@ func DataService() DataServiceSetting {
 
 	return *s
 }
+
+// HCService return hc service Setting.
+func HCService() HCServiceSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty hc service setting")
+		return HCServiceSetting{}
+	}
+
+	s, ok := rt.settings.(*HCServiceSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get hc service setting", ServiceName())
+		return HCServiceSetting{}
+	}
+
+	return *s
+}
