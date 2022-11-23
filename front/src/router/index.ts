@@ -7,7 +7,6 @@ import {
 } from 'vue-router';
 import common from './module/common';
 import workbench from './module/workbench';
-import cost from './module/cost';
 import resource from './module/resource';
 import service from './module/service';
 import business from './module/business';
@@ -15,7 +14,6 @@ import business from './module/business';
 const routes: RouteRecordRaw[] = [
   ...common,
   ...workbench,
-  ...cost,
   ...resource,
   ...service,
   ...business,

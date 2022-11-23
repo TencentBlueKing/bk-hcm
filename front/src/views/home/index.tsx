@@ -38,13 +38,13 @@ export default defineComponent({
         case 'business':
           topMenuActiveItem = 'business';
           menus = reactive(business);
-          path = '/business/auto';
+          path = '/business/host';
           openedKeys = [`/business${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
         case 'resource':
           topMenuActiveItem = 'resource';
           menus = reactive(resource);
-          path = '/resource/vm';
+          path = '/resource/account';
           openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
         case 'service':
@@ -62,7 +62,7 @@ export default defineComponent({
         default:
           topMenuActiveItem = 'resource';
           menus = reactive(resource);
-          path = '/resource/vm';
+          path = '/resource/account';
           openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
       }

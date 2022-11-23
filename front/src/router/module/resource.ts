@@ -12,15 +12,15 @@ const resourceMenus: RouteRecordRaw[] = [
         alias: '',
         component: () => import('@/views/resource/demo2'),
         meta: {
-          activeKey: 'account',
+          activeKey: 'resourceAccount',
         },
       },
       {
-        path: '/resource/resource',
+        path: '/resource/res',
         name: '资源',
         component: () => import('@/views/resource/demo2'),
         meta: {
-          activeKey: 'resource',
+          activeKey: 'resourceRes',
         },
       },
       {
@@ -28,7 +28,7 @@ const resourceMenus: RouteRecordRaw[] = [
         name: '回收站',
         component: () => import('@/views/resource/demo2'),
         meta: {
-          activeKey: 'recyclebin',
+          activeKey: 'resourceRecyclebin',
         },
       },
     ],
