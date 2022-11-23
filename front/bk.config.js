@@ -34,7 +34,7 @@ module.exports = {
         before(app) {
           apiMocker(app, {
                 watch: [
-                  '/api/v4/organization/user_info/',
+                  '/mock/v4/organization/user_info/'
                 ],
                 api: resolve(__dirname, './mock/api.ts')
             })
