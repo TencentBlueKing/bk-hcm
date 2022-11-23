@@ -8,3 +8,4 @@ front/env.dev.js
 node_modules/
 index-dev.html
 .vscode/
+front/settings.json

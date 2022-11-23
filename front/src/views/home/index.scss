@@ -49,16 +49,26 @@
         color: #96a2b9;
     }
 }
-.header-width{
-    width: 240px;
-    .header-title{
-        color: #96A2B9;
-        cursor: pointer;
+.bk-hcm-header {
+    display: flex;
+    align-items: center;
+    color: #96A2B9;
+    width: 100%;
+    .header-width{
+        width: 240px;
+        .header-title{
+            color: #96A2B9;
+            cursor: pointer;
+        }
+        .header-title:hover {
+            color: #fff;
+        }
+        .active{
+            color: #fff;
+        }
     }
-    .header-title:hover {
-        color: #fff;
-    }
-    .active{
-        color: #fff;
+    .header-user{
+        flex: 1;
+        text-align: right;
     }
 }

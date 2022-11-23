@@ -2,7 +2,7 @@
 let locationOrigin =  typeof window === 'undefined' ? '' : window.location.origin;
 
 if (!locationOrigin || locationOrigin.indexOf('localhost') > -1) {
-  locationOrigin = `${locationOrigin}/api/v4`;
+  locationOrigin = `${locationOrigin}/mock/v4`;
 }
 
 const domain = locationOrigin;

@@ -1,6 +1,6 @@
 import { defineComponent, onMounted, ref, reactive } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
-import { Menu, Navigation } from 'bkui-vue';
+import { Menu, Navigation, Dropdown } from 'bkui-vue';
 import { headRouteConfig } from '@/router/header-config';
 import Breadcrumb from './breadcrumb';
 import work from '@/router/module/work';
@@ -10,14 +10,18 @@ import services from '@/router/module/services';
 import { classes } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
+import { useUser } from '@/store';
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
+
+const { DropdownMenu, DropdownItem } = Dropdown;
 
 export default defineComponent({
   setup() {
     const route = useRoute();
     const router = useRouter();
+    const userStore = useUser();
     // const { projects, currentProjectId, handleProjectChange } = useProjectList();
     const activeItem = ref('resources');
     let menus = reactive(resources);
@@ -32,6 +36,10 @@ export default defineComponent({
         changeMenus(activeItem.value);
         console.log('name', name);
       }
+    };
+
+    const logout = () => {
+      console.log('退出');
     };
 
     const changeMenus = (id: string) => {
@@ -91,18 +99,41 @@ export default defineComponent({
                       </div>
                     ),
                     header: () => (
-                      <header class="flex-row justify-content-between header-width">
-                        {headRouteConfig.map(({ id, route, name }) => (
-                          <div
-                            class={classes({
-                              active: activeItem.value === id,
-                            }, 'header-title')}
-                            key={id}
-                            onClick={() => handleHeaderMenuClick(id, route)}
+                      <header class="bk-hcm-header">
+                        <section class="flex-row justify-content-between header-width">
+                          {headRouteConfig.map(({ id, route, name }) => (
+                            <div
+                              class={classes({
+                                active: activeItem.value === id,
+                              }, 'header-title')}
+                              key={id}
+                              onClick={() => handleHeaderMenuClick(id, route)}
+                            >
+                              {name}
+                            </div>
+                          ))}
+                        </section>
+                        <aside class="header-user">
+                          <Dropdown
+                            trigger='click'
                           >
-                            {name}
-                          </div>
-                        ))}
+                            {{
+                              default: () => (
+                                <span class="cursor-pointer flex-row align-items-center ">
+                                {userStore.username}
+                                <i class={'icon hcm-icon bkhcm-icon-down-shape pl5'}/>
+                                </span>
+                              ),
+                              content: () => (
+                                <DropdownMenu>
+                                  <DropdownItem onClick={logout}>
+                                  退出登陆
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              ),
+                            }}
+                          </Dropdown>
+                        </aside>
                       </header>
                     ),
                     menu: () => (
