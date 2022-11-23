@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cc defines hcm service config center.
 package cc
 
 import (
