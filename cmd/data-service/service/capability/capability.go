@@ -17,33 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package errf
+package capability
 
-// NOTE: 错误码规则
-// 20号段 + 5位错误码共7位
-// 注意：
-// - 特殊错误码, 2030403（未授权）, 内部保留
+import (
+	"hcm/pkg/dal/dao"
 
-// common error code.
-const (
-	OK               int32 = 0
-	PermissionDenied int32 = 2030403
+	"github.com/emicklei/go-restful/v3"
 )
 
-// Note:
-// this scope's error code ranges at [4000000, 4089999], and works for all the scenario
-// except sidecar related scenario.
-const (
-	// Unknown is unknown error, it is always used when an
-	// error is wrapped, but the error code is not parsed.
-	Unknown int32 = 2000000
-	// InvalidParameter means the request parameter  is invalid
-	InvalidParameter int32 = 2000001
-	// TooManyRequest means the incoming request have already exceeded the max limit.
-	// and the incoming request is rejected.
-	TooManyRequest int32 = 2000002
-	// RecordNotFound means resource not exist.
-	RecordNotFound int32 = 2000003
-	// DecodeRequestFailed means decode the request body failed.
-	DecodeRequestFailed int32 = 2000004
-)
+// Capability defines the service's capability
+type Capability struct {
+	WebService *restful.WebService
+	Dao        dao.Set
+}

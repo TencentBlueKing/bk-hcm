@@ -27,24 +27,37 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/emicklei/go-restful/v3"
-
+	"hcm/cmd/data-service/service/account"
+	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/tools/ssl"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Service do all the data service's work
 type Service struct {
 	serve *http.Server
+	dao   dao.Set
 }
 
 // NewService create a service instance.
 func NewService() (*Service, error) {
-	return &Service{}, nil
+	dao, err := dao.NewDaoSet(cc.DataService().Database)
+	if err != nil {
+		return nil, err
+	}
+
+	svr := &Service{
+		dao: dao,
+	}
+
+	return svr, nil
 }
 
 // ListenAndServeRest listen and serve the restful server
@@ -107,9 +120,14 @@ func (s *Service) ListenAndServeRest() error {
 
 func (s *Service) apiSet() *restful.Container {
 
-	c := restful.NewContainer()
+	cap := &capability.Capability{
+		WebService: new(restful.WebService),
+		Dao:        s.dao,
+	}
 
-	return c
+	account.InitAccountService(cap)
+
+	return restful.NewContainer().Add(cap.WebService)
 }
 
 // Healthz check whether the service is healthy.
