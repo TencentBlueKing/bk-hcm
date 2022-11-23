@@ -8,10 +8,11 @@ import workbench from '@/router/module/workbench';
 import resource from '@/router/module/resource';
 import service from '@/router/module/service';
 import business from '@/router/module/business';
-import { classes } from '@/common/util';
+import { classes, deleteCookie } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
 import { useUser } from '@/store';
+import { useI18n } from 'vue-i18n';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -24,6 +25,7 @@ export default defineComponent({
     const NAV_WIDTH = 240;
     const NAV_TYPE = 'top-bottom';
 
+    const { t } = useI18n();
     const route = useRoute();
     const router = useRouter();
     const userStore = useUser();
@@ -87,7 +89,14 @@ export default defineComponent({
     };
 
     const logout = () => {
-      console.log('退出');
+      deleteCookie('bk_token');
+      deleteCookie('bk_ticket');
+      const cUrl = window.location.href;
+      if (window.PROJECT_CONFIG.LOGIN_FULL) {
+        window.location.href = `${window.LOGIN_FULL}?c_url=${cUrl}`;
+      } else {
+        window.location.href = `${window.PROJECT_CONFIG.BK_PLAT_HOST || ''}/console/accounts/logout/`;
+      }
     };
 
     onMounted(() => {
@@ -109,7 +118,7 @@ export default defineComponent({
                         <div class="logo">
                           <img class="logo-icon" src={logo} />
                         </div>
-                        <div class="title-text">海垒2.0</div>
+                        <div class="title-text">{t('海垒2.0')}</div>
                       </div>
                     ),
                     header: () => (
@@ -123,7 +132,7 @@ export default defineComponent({
                               key={id}
                               onClick={() => handleHeaderMenuClick(id, route)}
                             >
-                              {name}
+                              {t(name)}
                             </div>
                           ))}
                         </section>
@@ -141,7 +150,7 @@ export default defineComponent({
                               content: () => (
                                 <DropdownMenu>
                                   <DropdownItem onClick={logout}>
-                                  退出登陆
+                                  {t('退出')}
                                   </DropdownItem>
                                 </DropdownMenu>
                               ),
