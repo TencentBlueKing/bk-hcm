@@ -22,6 +22,7 @@ package api
 
 import (
 	"hcm/pkg/api/cloud-server"
+	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/discovery"
 	"hcm/pkg/api/healthz"
 	"hcm/pkg/cc"
@@ -64,6 +65,15 @@ func (cs *ClientSet) CloudServer() *cloudserver.Client {
 		Discover: cs.apiDiscovery[cc.CloudServerName],
 	}
 	return cloudserver.NewClient(c, cs.version)
+}
+
+// DataService get data-service client.
+func (cs *ClientSet) DataService() *dataservice.Client {
+	c := &client.Capability{
+		Client:   cs.client,
+		Discover: cs.apiDiscovery[cc.DataServiceName],
+	}
+	return dataservice.NewClient(c, cs.version)
 }
 
 // Healthz get service health check client.

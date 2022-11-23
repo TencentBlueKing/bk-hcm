@@ -24,7 +24,7 @@ database:
     # is a seed list of host:port addresses of database nodes.
     endpoints:
       - 127.0.0.1:3306
-    database: bk_bscp_admin
+    database: hcm
     user: root
     password: admin
     # DialTimeoutSec is timeout in seconds to wait for a response from the db server
