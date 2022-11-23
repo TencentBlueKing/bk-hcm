@@ -7,6 +7,8 @@ import router from './router';
 import App from './App';
 import i18n from './language/i18n';
 import './style/index.scss';
+// 全量引入自定义图标
+import './assets/iconfont/style.css';
 
 // 全量引入 bkui-vue
 import bkui from 'bkui-vue';

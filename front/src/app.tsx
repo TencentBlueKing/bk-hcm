@@ -1,5 +1,6 @@
 import { defineComponent, onMounted, onUnmounted } from 'vue';
 import Home from '@/views/home';
+import { useUser } from '@/store';
 export default defineComponent({
   setup() {
     // const router = useRouter();
@@ -14,6 +15,8 @@ export default defineComponent({
       const flexibleRem = Math.max(Math.min(clientWidth / designWidth, maxRate), minRate) * 100;
       docEl.style.fontSize = `${flexibleRem}px`;
     };
+    const userStore = useUser();
+    userStore.userInfo();
     onMounted(() => {
       calcRem();
       window.addEventListener('resize', calcRem, false);
