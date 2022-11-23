@@ -23,5 +23,8 @@ app.config.globalProperties.$http = http;
 app.use(i18n)
   .use(router)
   .use(createPinia())
-  .use(bkui)
-  .mount('#app');
+  .use(bkui);
+
+router.isReady().then(() => {
+  app.mount('#app');
+});

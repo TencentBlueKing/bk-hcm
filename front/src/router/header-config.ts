@@ -4,24 +4,23 @@
 
 export const headRouteConfig = [
   {
-    id: 'resources',
+    id: 'business',
+    name: '业务',
+    route: 'business',
+  },
+  {
+    id: 'resource',
     name: '资源',
-    route: 'resources',
+    route: 'resource',
   },
   {
-    id: 'services',
+    id: 'service',
     name: '服务',
-    route: 'services',
+    route: 'service',
   },
   {
-    id: 'cost',
-    name: '成本',
-    route: 'cost',
-  },
-  {
-    id: 'work',
+    id: 'workbench',
     name: '工作台',
-    route: 'work',
+    route: 'workbench',
   },
 ];
-
