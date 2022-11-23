@@ -11,6 +11,7 @@ import { classes, deleteCookie } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
 import { useUser } from '@/store';
+import { useI18n } from 'vue-i18n';
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
@@ -19,6 +20,7 @@ const { DropdownMenu, DropdownItem } = Dropdown;
 
 export default defineComponent({
   setup() {
+    const { t } = useI18n();
     const route = useRoute();
     const router = useRouter();
     const userStore = useUser();
@@ -102,7 +104,7 @@ export default defineComponent({
                         <div class="logo">
                           <img class="logo-icon" src={logo} />
                         </div>
-                        <div class="title-text">海垒2.0</div>
+                        <div class="title-text">{t('海垒2.0')}</div>
                       </div>
                     ),
                     header: () => (
@@ -116,7 +118,7 @@ export default defineComponent({
                               key={id}
                               onClick={() => handleHeaderMenuClick(id, route)}
                             >
-                              {name}
+                              {t(name)}
                             </div>
                           ))}
                         </section>
@@ -134,7 +136,7 @@ export default defineComponent({
                               content: () => (
                                 <DropdownMenu>
                                   <DropdownItem onClick={logout}>
-                                  退出登陆
+                                  {t('退出')}
                                   </DropdownItem>
                                 </DropdownMenu>
                               ),
