@@ -23,18 +23,18 @@ import (
 	"fmt"
 	"os"
 
-	"hcm/cmd/data-service/app"
-	"hcm/cmd/data-service/options"
+	"hcm/cmd/api-server/app"
+	"hcm/cmd/api-server/options"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 )
 
 func main() {
-	cc.InitService(cc.DataServiceName)
+	cc.InitService(cc.APIServerName)
 
 	opts := options.InitOptions()
 	if err := app.Run(opts); err != nil {
-		fmt.Fprintf(os.Stderr, "start data service failed, err: %v", err)
+		fmt.Fprintf(os.Stderr, "start api server failed, err: %v", err)
 		logs.CloseLogs()
 		os.Exit(1)
 	}

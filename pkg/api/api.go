@@ -53,9 +53,9 @@ func newClientSet(client client.HTTPClient, discover serviced.Discover, discover
 	return cs
 }
 
-// NewAPIServerClientSet create a new api-server used client set.
-func NewAPIServerClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
-	discoverServices := []cc.Name{cc.CloudServerName}
+// NewHCServiceClientSet create a new hc-service used client set.
+func NewHCServiceClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
+	discoverServices := []cc.Name{cc.DataServiceName}
 	return newClientSet(client, discover, discoverServices)
 }
 

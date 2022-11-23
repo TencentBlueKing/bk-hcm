@@ -21,85 +21,72 @@ package app
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 
-	"hcm/cmd/data-service/options"
-	"hcm/cmd/data-service/service"
+	"hcm/cmd/api-server/options"
+	"hcm/cmd/api-server/service"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 )
 
-// Run start the data service.
+// Run start the api server
 func Run(opt *options.Option) error {
-	ds := new(dataService)
-	if err := ds.prepare(opt); err != nil {
+	as := new(apiService)
+	if err := as.prepare(opt); err != nil {
 		return err
 	}
 
-	if err := ds.svc.ListenAndServeRest(); err != nil {
+	svc, err := service.NewService(as.dis)
+	if err != nil {
+		return fmt.Errorf("initialize service failed, err: %v", err)
+	}
+	as.svc = svc
+	if err := as.svc.ListenAndServeRest(); err != nil {
 		return err
 	}
 
-	if err := ds.register(); err != nil {
-		return err
-	}
-
-	shutdown.RegisterFirstShutdown(ds.finalizer)
+	shutdown.RegisterFirstShutdown(as.finalizer)
 	shutdown.WaitShutdown(20)
 	return nil
 }
 
-type dataService struct {
+type apiService struct {
 	svc *service.Service
-	sd  serviced.Service
+	dis serviced.Discover
 }
 
-// prepare do prepare jobs before run api discover.
-func (ds *dataService) prepare(opt *options.Option) error {
+// prepare do prepare jobs before run api server.
+func (as *apiService) prepare(opt *options.Option) error {
 	// load settings from config file.
 	if err := cc.LoadSettings(opt.Sys); err != nil {
 		return fmt.Errorf("load settings from config files failed, err: %v", err)
 	}
 
-	logs.InitLogger(cc.DataService().Log.Logs())
+	logs.InitLogger(cc.ApiServer().Log.Logs())
 
 	logs.Infof("load settings from config file success.")
 
-	svc, err := service.NewService()
-	if err != nil {
-		return fmt.Errorf("initialize service failed, err: %v", err)
-	}
-	ds.svc = svc
+	// init metrics
+	network := cc.ApiServer().Network
+	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
 
-	// register data service.
-	svcOpt := serviced.NewServiceOption(cc.DataServiceName, cc.DataService().Network)
-	sd, err := serviced.NewService(cc.DataService().Service, svcOpt)
+	// new api server discovery client.
+	discOpt := serviced.DiscoveryOption{Services: []cc.Name{cc.CloudServerName}}
+	dis, err := serviced.NewDiscovery(cc.ApiServer().Service, discOpt)
 	if err != nil {
-		return fmt.Errorf("new service discovery failed, err: %v", err)
+		return fmt.Errorf("new service discovery faield, err: %v", err)
 	}
 
-	ds.sd = sd
+	as.dis = dis
+	logs.Infof("create discovery success.")
 
 	return nil
 }
 
-// register data-service to etcd.
-func (ds *dataService) register() error {
-	if err := ds.sd.Register(); err != nil {
-		return fmt.Errorf("register data service failed, err: %v", err)
-	}
-
-	logs.Infof("register data service to etcd success.")
-	return nil
-}
-
-func (ds *dataService) finalizer() {
-	if err := ds.sd.Deregister(); err != nil {
-		logs.Errorf("process service shutdown, but deregister failed, err: %v", err)
-		return
-	}
-
-	logs.Infof("shutting down service, deregister service success.")
+func (as *apiService) finalizer() {
 	return
 }

@@ -27,60 +27,62 @@ import (
 	"strconv"
 	"time"
 
-	"hcm/cmd/hc-service/service/account"
-	"hcm/cmd/hc-service/service/capability"
-	"hcm/pkg/adaptor"
-	"hcm/pkg/api"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
-
-	"github.com/emicklei/go-restful/v3"
 )
 
-// Service do all the hc service's work
+// Service do all the api server's work
 type Service struct {
-	serve     *http.Server
-	adaptor   adaptor.Adaptor
-	clientSet *api.ClientSet
+	proxy *proxy
 }
 
 // NewService create a service instance.
 func NewService(dis serviced.Discover) (*Service, error) {
-	cli, err := client.NewClient(nil)
+	network := cc.ApiServer().Network
+
+	var tlsConfig *ssl.TLSConfig
+	if network.TLS.Enable() {
+		tlsConfig = &ssl.TLSConfig{
+			InsecureSkipVerify: network.TLS.InsecureSkipVerify,
+			CertFile:           network.TLS.CertFile,
+			KeyFile:            network.TLS.KeyFile,
+			CAFile:             network.TLS.CAFile,
+			Password:           network.TLS.Password,
+		}
+	}
+
+	cli, err := client.NewClient(tlsConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	cliSet := api.NewHCServiceClientSet(cli, dis)
-
-	ad, err := adaptor.NewAdaptor()
+	p, err := newProxy(dis, cli)
 	if err != nil {
-		return nil, fmt.Errorf("new adaptor failed, err: %v", err)
+		return nil, err
 	}
 
-	svr := &Service{
-		adaptor:   ad,
-		clientSet: cliSet,
-	}
-
-	return svr, nil
+	return &Service{
+		proxy: p,
+	}, nil
 }
 
 // ListenAndServeRest listen and serve the restful server
 func (s *Service) ListenAndServeRest() error {
 
 	root := http.NewServeMux()
-	root.HandleFunc("/", s.apiSet().ServeHTTP)
+	root.HandleFunc("/", s.proxy.apiSet().ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
 	root.HandleFunc("/debug/", http.DefaultServeMux.ServeHTTP)
+	root.HandleFunc("/metrics", metrics.Handler().ServeHTTP)
 
-	network := cc.HCService().Network
+	network := cc.ApiServer().Network
 	server := &http.Server{
 		Addr:    net.JoinHostPort(network.BindIP, strconv.FormatUint(uint64(network.Port), 10)),
 		Handler: root,
@@ -125,26 +127,23 @@ func (s *Service) ListenAndServeRest() error {
 		}
 	}()
 
-	s.serve = server
-
 	return nil
 }
 
-func (s *Service) apiSet() *restful.Container {
-
-	cap := &capability.Capability{
-		WebService: new(restful.WebService),
-		Adaptor:    s.adaptor,
-		ClientSet:  s.clientSet,
+// Healthz service health check.
+func (s *Service) Healthz(w http.ResponseWriter, r *http.Request) {
+	if shutdown.IsShuttingDown() {
+		logs.Errorf("service healthz check failed, current service is shutting down")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "current service is shutting down"))
+		return
 	}
 
-	account.InitAccountService(cap)
-
-	return restful.NewContainer().Add(cap.WebService)
-}
-
-// Healthz check whether the service is healthy.
-func (s *Service) Healthz(w http.ResponseWriter, req *http.Request) {
+	if err := serviced.Healthz(cc.ApiServer().Service); err != nil {
+		logs.Errorf("serviced healthz check failed, err: %v", err)
+		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "serviced healthz error, "+err.Error()))
+		return
+	}
 
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
 	return

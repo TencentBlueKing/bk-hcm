@@ -38,7 +38,7 @@ func InitAccountService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("CreateAccount", "POST", "/api/v1/data/create/account/account", svr.CreateAccount)
+	h.Add("CreateAccount", "POST", "/create/account/account", svr.CreateAccount)
 
 	h.Load(cap.WebService)
 }

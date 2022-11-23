@@ -47,6 +47,8 @@ func ServiceName() Name {
 type Name string
 
 const (
+	// APIServerName is api server's name
+	APIServerName Name = "api-server"
 	// CloudServerName is cloud server's name
 	CloudServerName Name = "cloud-server"
 	// DataServiceName is data service's name
@@ -60,6 +62,41 @@ type Setting interface {
 	trySetFlagBindIP(ip net.IP) error
 	trySetDefault()
 	Validate() error
+}
+
+// ApiServerSetting defines api server used setting options.
+type ApiServerSetting struct {
+	Network Network   `yaml:"network"`
+	Service Service   `yaml:"service"`
+	Log     LogOption `yaml:"log"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *ApiServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the ApiServerSetting default value if user not configured.
+func (s *ApiServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+
+	return
+}
+
+// Validate ApiServerSetting option.
+func (s ApiServerSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DataServiceSetting defines cache service used setting options.

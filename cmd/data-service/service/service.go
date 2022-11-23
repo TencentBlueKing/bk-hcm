@@ -118,8 +118,12 @@ func (s *Service) ListenAndServeRest() error {
 }
 
 func (s *Service) apiSet() *restful.Container {
+	ws := new(restful.WebService)
+	ws.Path("/api/v1/data")
+	ws.Produces(restful.MIME_JSON)
+
 	cap := &capability.Capability{
-		WebService: new(restful.WebService),
+		WebService: ws,
 		Dao:        s.dao,
 	}
 
