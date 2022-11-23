@@ -47,6 +47,8 @@ func ServiceName() Name {
 type Name string
 
 const (
+	// CloudServerName is cloud server's name
+	CloudServerName Name = "cloud-server"
 	// DataServiceName is data service's name
 	DataServiceName Name = "data-service"
 )

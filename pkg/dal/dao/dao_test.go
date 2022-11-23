@@ -17,24 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package dao
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
-const (
-	// RidKey is request id header key.
-	RidKey = "X-Bkapi-Request-Id"
+import (
+	"os"
+	"testing"
 
-	// UserKey is operator name header key.
-	UserKey = "X-Bkapi-User-Name"
-
-	// AppCodeKey is blueking application code header key.
-	AppCodeKey = "X-Bkapi-App-Code"
-
-	// LanguageKey the language key word.
-	LanguageKey = "HTTP_BLUEKING_LANGUAGE"
-
-	// BKGWJWTTokenKey is blueking api gateway jwt header key.
-	BKGWJWTTokenKey = "X-Bkapi-JWT"
+	"hcm/pkg/cc"
 )
+
+func testDaoSet() (Set, error) {
+	cfg := cc.DataBase{
+		Resource: cc.ResourceDB{
+			Endpoints: []string{"localhost"},
+			Database:  "hcm",
+			User:      "root",
+			Password:  "admin",
+		},
+		MaxSlowLogLatencyMS: 200,
+		Limiter: &cc.Limiter{
+			QPS:   500,
+			Burst: 500,
+		},
+	}
+
+	return NewDaoSet(cfg)
+}
+
+func checkErr(t *testing.T, err error) {
+	if err != nil {
+		t.Error(err)
+		os.Exit(2)
+	}
+}

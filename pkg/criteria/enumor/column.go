@@ -31,4 +31,6 @@ const (
 	String ColumnType = "string"
 	// Time means this column is Time data type.
 	Time ColumnType = "time"
+	// Json means this column is Json data type.
+	Json ColumnType = "json"
 )

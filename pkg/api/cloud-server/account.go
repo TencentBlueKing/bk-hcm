@@ -17,24 +17,47 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package cloudserver
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
-const (
-	// RidKey is request id header key.
-	RidKey = "X-Bkapi-Request-Id"
+import (
+	"context"
+	"net/http"
 
-	// UserKey is operator name header key.
-	UserKey = "X-Bkapi-User-Name"
-
-	// AppCodeKey is blueking application code header key.
-	AppCodeKey = "X-Bkapi-App-Code"
-
-	// LanguageKey the language key word.
-	LanguageKey = "HTTP_BLUEKING_LANGUAGE"
-
-	// BKGWJWTTokenKey is blueking api gateway jwt header key.
-	BKGWJWTTokenKey = "X-Bkapi-JWT"
+	"hcm/pkg/api/protocol/base"
+	"hcm/pkg/api/protocol/cloud-server"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/rest"
 )
+
+// AccountClient is cloud account api client.
+type AccountClient struct {
+	client rest.ClientInterface
+}
+
+// NewAccountClient create a new cloud account api client.
+func NewAccountClient(client rest.ClientInterface) *AccountClient {
+	return &AccountClient{
+		client: client,
+	}
+}
+
+// Create cloud account.
+func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
+	*base.CreateResult, error) {
+
+	resp := new(base.CreateResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/create/account/account").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, err
+}

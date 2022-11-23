@@ -1,0 +1,107 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+package dao
+
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	"hcm/pkg/cc"
+	"hcm/pkg/dal/dao/audit"
+	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/metrics"
+
+	_ "github.com/go-sql-driver/mysql" // import mysql drive, used to create conn.
+	"github.com/jmoiron/sqlx"
+)
+
+// Set defines all the DAO to be operated.
+type Set interface {
+	Account() Account
+}
+
+// NewDaoSet create the DAO set instance.
+func NewDaoSet(opt cc.DataBase) (Set, error) {
+	db, err := connect(opt.Resource)
+	if err != nil {
+		return nil, fmt.Errorf("init sharding failed, err: %v", err)
+	}
+
+	ormInst := orm.InitOrm(db, orm.MetricsRegisterer(metrics.Register()),
+		orm.IngressLimiter(opt.Limiter.QPS, opt.Limiter.Burst), orm.SlowRequestMS(opt.MaxSlowLogLatencyMS))
+
+	auditDao, err := audit.NewAuditDao(ormInst, db)
+	if err != nil {
+		return nil, fmt.Errorf("new audit dao failed, err: %v", err)
+	}
+
+	s := &set{
+		orm:      ormInst,
+		db:       db,
+		auditDao: auditDao,
+	}
+
+	return s, nil
+}
+
+// connect to mysql
+func connect(opt cc.ResourceDB) (*sqlx.DB, error) {
+	db, err := sqlx.Connect("mysql", uri(opt))
+	if err != nil {
+		return nil, fmt.Errorf("connect to mysql failed, err: %v", err)
+	}
+
+	db.SetMaxOpenConns(int(opt.MaxOpenConn))
+	db.SetMaxIdleConns(int(opt.MaxIdleConn))
+	db.SetConnMaxLifetime(time.Duration(opt.MaxIdleTimeoutMin) * time.Minute)
+
+	return db, nil
+}
+
+// uri generate the standard db connection string format uri.
+func uri(opt cc.ResourceDB) string {
+
+	return fmt.Sprintf(
+		"%s:%s@tcp(%s)/%s?parseTime=true&timeout=%ds&readTimeout=%ds&writeTimeout=%ds&charset=%s",
+		opt.User,
+		opt.Password,
+		strings.Join(opt.Endpoints, ","),
+		opt.Database,
+		opt.DialTimeoutSec,
+		opt.ReadTimeoutSec,
+		opt.WriteTimeoutSec,
+		"utf8mb4",
+	)
+}
+
+type set struct {
+	orm      orm.Interface
+	db       *sqlx.DB
+	auditDao audit.AuditDao
+}
+
+// Account returns the account's DAO
+func (s *set) Account() Account {
+	return &accountDao{
+		orm:      s.orm,
+		auditDao: s.auditDao,
+	}
+}

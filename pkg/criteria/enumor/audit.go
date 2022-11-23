@@ -17,24 +17,52 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package enumor
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
+/*
+	audit.go store audit related enum values.
+*/
+
+// AuditResourceType audit resource type.
+type AuditResourceType string
+
 const (
-	// RidKey is request id header key.
-	RidKey = "X-Bkapi-Request-Id"
-
-	// UserKey is operator name header key.
-	UserKey = "X-Bkapi-User-Name"
-
-	// AppCodeKey is blueking application code header key.
-	AppCodeKey = "X-Bkapi-App-Code"
-
-	// LanguageKey the language key word.
-	LanguageKey = "HTTP_BLUEKING_LANGUAGE"
-
-	// BKGWJWTTokenKey is blueking api gateway jwt header key.
-	BKGWJWTTokenKey = "X-Bkapi-JWT"
+	// Account 策略资源
+	Account AuditResourceType = "account"
 )
+
+// AuditResourceTypeEnums resource type map.
+var AuditResourceTypeEnums = map[AuditResourceType]bool{
+	Account: true,
+}
+
+// Exist judge enum value exist.
+func (a AuditResourceType) Exist() bool {
+	_, exist := AuditResourceTypeEnums[a]
+	return exist
+}
+
+// AuditAction audit action type.
+type AuditAction string
+
+const (
+	// Create 创建
+	Create AuditAction = "create"
+	// Update 更新
+	Update AuditAction = "update"
+	// Delete 删除
+	Delete AuditAction = "delete"
+)
+
+// AuditActionEnums op type map.
+var AuditActionEnums = map[AuditAction]bool{
+	Create: true,
+	Update: true,
+	Delete: true,
+}
+
+// Exist judge enum value exist.
+func (a AuditAction) Exist() bool {
+	_, exist := AuditActionEnums[a]
+	return exist
+}

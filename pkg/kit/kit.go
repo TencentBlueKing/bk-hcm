@@ -23,13 +23,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/tools/uuid"
-
-	"google.golang.org/grpc/metadata"
 )
 
 // New initial a kit with rid and context.
@@ -39,42 +36,6 @@ func New() *Kit {
 		Rid: rid,
 		Ctx: context.WithValue(context.TODO(), constant.RidKey, rid),
 	}
-}
-
-var (
-	lowRidKey  = strings.ToLower(constant.RidKey)
-	lowUserKey = strings.ToLower(constant.UserKey)
-	lowACKey   = strings.ToLower(constant.AppCodeKey)
-)
-
-// FromGrpcContext used only to obtain Kit through grpc context.
-func FromGrpcContext(ctx context.Context) *Kit {
-	kit := &Kit{
-		Ctx: ctx,
-	}
-
-	md, _ := metadata.FromIncomingContext(ctx)
-	rid := md[lowRidKey]
-	if len(rid) != 0 {
-		kit.Rid = rid[0]
-	} else {
-		kit.Rid = "hcm-" + uuid.UUID()
-	}
-
-	user := md[lowUserKey]
-	if len(user) != 0 {
-		kit.User = user[0]
-	}
-
-	appCode := md[lowACKey]
-	if len(appCode) != 0 {
-		kit.AppCode = appCode[0]
-	}
-
-	kit.Ctx = context.WithValue(kit.Ctx, constant.RidKey, rid)
-
-	// TODO: need to add supplier id and authorization field.
-	return kit
 }
 
 // Kit defines the basic metadata info within a task.

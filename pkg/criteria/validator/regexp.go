@@ -17,24 +17,9 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package validator
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
 const (
-	// RidKey is request id header key.
-	RidKey = "X-Bkapi-Request-Id"
-
-	// UserKey is operator name header key.
-	UserKey = "X-Bkapi-User-Name"
-
-	// AppCodeKey is blueking application code header key.
-	AppCodeKey = "X-Bkapi-App-Code"
-
-	// LanguageKey the language key word.
-	LanguageKey = "HTTP_BLUEKING_LANGUAGE"
-
-	// BKGWJWTTokenKey is blueking api gateway jwt header key.
-	BKGWJWTTokenKey = "X-Bkapi-JWT"
+	// chineseEnglishNumberFmt chinese、english、number.
+	chineseEnglishNumberFmt string = "[\u4E00-\u9FA5A-Za-z0-9]"
 )

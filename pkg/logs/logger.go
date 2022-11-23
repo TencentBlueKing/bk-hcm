@@ -34,7 +34,7 @@ const (
 	etcdPrefix logPrefix = "[etcd] "
 )
 
-// logger bscp logger, used to access other service logs.
+// logger hcm logger, used to access other service logs.
 type logger struct {
 	// Prefix other service print log prefix.
 	Prefix logPrefix

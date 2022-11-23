@@ -4,13 +4,16 @@ go 1.18
 
 require (
 	github.com/emicklei/go-restful/v3 v3.10.0
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/protobuf v1.5.2
+	github.com/jmoiron/sqlx v1.3.5
 	github.com/pborman/uuid v1.2.1
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/pflag v1.0.5
 	github.com/tidwall/gjson v1.14.3
 	go.etcd.io/etcd/client/v3 v3.5.5
+	golang.org/x/time v0.2.0
 	google.golang.org/grpc v1.41.0
 	gopkg.in/yaml.v3 v3.0.1
 )
