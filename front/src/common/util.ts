@@ -21,7 +21,7 @@ export function getCookies(strCookie = document.cookie): any {
  * @param item
  * @returns {boolean}
  */
-export function isObject(item) {
+export function isObject(item: any) {
   return (item && Object.prototype.toString.apply(item) === '[object Object]');
 }
 
@@ -31,8 +31,8 @@ export function isObject(item) {
  * @param objectArray 待合并列表
  * @returns {object} 合并后的对象
  */
-export function deepMerge(...objectArray) {
-  return objectArray.reduce((acc, obj) => {
+export function deepMerge(...objectArray: any) {
+  return objectArray.reduce((acc: any, obj: any) => {
     Object.keys(obj || {}).forEach((key) => {
       const pVal = acc[key];
       const oVal = obj[key];
@@ -54,7 +54,7 @@ export function deepMerge(...objectArray) {
  * @param format 格式
  * @returns 格式化后的时间
  */
-export function timeFormatter(val, format = 'YYYY-MM-DD HH:mm:ss') {
+export function timeFormatter(val: any, format = 'YYYY-MM-DD HH:mm:ss') {
   return val ? dayjs(val).format(format) : '--';
 }
 
@@ -63,4 +63,25 @@ export function classes(dynamicCls: object, constCls = ''): string {
     .map(entry => entry[0])
     .join(' ')
     .concat(constCls ? ` ${constCls}` : '');
-}
+};
+
+/**
+ * 获取Cookie
+ * @param {String} name
+ */
+export const getCookie = (name: string) => {
+  const reg = new RegExp(`(^|)${name}=([^;]*)(;|$)`);
+  const data = document.cookie.match(reg);
+  if (data) {
+    return unescape(data[2]);
+  }
+  return null;
+};
+
+/**
+ * 删除Cookie
+ * @param {String} name
+ */
+export const deleteCookie = (name: string) => {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+};
