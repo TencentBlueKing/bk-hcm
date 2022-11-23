@@ -7,7 +7,7 @@ import work from '@/router/module/work';
 import cost from '@/router/module/cost';
 import resources from '@/router/module/resources';
 import services from '@/router/module/services';
-import { classes } from '@/common/util';
+import { classes, deleteCookie } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
 import { useUser } from '@/store';
@@ -39,7 +39,14 @@ export default defineComponent({
     };
 
     const logout = () => {
-      console.log('退出');
+      deleteCookie('bk_token');
+      deleteCookie('bk_ticket');
+      const cUrl = window.location.href;
+      if (window.PROJECT_CONFIG.LOGIN_FULL) {
+        window.location.href = `${window.LOGIN_FULL}?c_url=${cUrl}`;
+      } else {
+        window.location.href = `${window.PROJECT_CONFIG.BK_PLAT_HOST || ''}/console/accounts/logout/`;
+      }
     };
 
     const changeMenus = (id: string) => {
