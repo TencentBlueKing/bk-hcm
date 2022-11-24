@@ -1,7 +1,29 @@
 {
-    "preCI.localCodeCheck.filter.whitePath": "",
-    "preCI.localCodeCheck.filter.skipPath": ".*/\\.codecc/.*,.*/\\.git,.*/\\.git/.*,.*/\\.svn/.*",
-    "preCI.localCodeCheck.preCommit": "none",
-    "preCI.localCodeCheck.prePush": "none",
-    "preCI.pipeline.yamlFilePath": "build.yml"
+  "preCI.localCodeCheck.filter.whitePath": "",
+  "preCI.localCodeCheck.filter.skipPath": ".*/\\.codecc/.*,.*/\\.git,.*/\\.git/.*,.*/\\.svn/.*",
+  "preCI.localCodeCheck.preCommit": "none",
+  "preCI.localCodeCheck.prePush": "none",
+  "preCI.pipeline.yamlFilePath": "build.yml",
+
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "html",
+    "vue"
+  ],
+  "eslint.alwaysShowStatus": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "css.validate": false,
+  "eslint.codeAction.showDocumentation": {
+    "enable": true
+  },
+  "editor.rulers": [
+    120
+  ],
+  "editor.selectionHighlight": true
 }

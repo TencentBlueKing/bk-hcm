@@ -2,7 +2,7 @@
  * 公告路由
  */
 
-import { RouteRecordRaw } from 'vue-router';
+import type { RouteRecordRaw } from 'vue-router';
 
 const common: RouteRecordRaw[] = [
   {
@@ -43,4 +43,3 @@ const common: RouteRecordRaw[] = [
 //   },
 ];
 export default common;
-

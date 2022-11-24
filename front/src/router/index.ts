@@ -6,17 +6,17 @@ import {
   RouteLocationNormalized,
 } from 'vue-router';
 import common from './module/common';
-import work from './module/work';
-import cost from './module/cost';
-import resources from './module/resources';
-import services from './module/services';
+import workbench from './module/workbench';
+import resource from './module/resource';
+import service from './module/service';
+import business from './module/business';
 
 const routes: RouteRecordRaw[] = [
   ...common,
-  ...work,
-  ...cost,
-  ...resources,
-  ...services,
+  ...workbench,
+  ...resource,
+  ...service,
+  ...business,
   {
     path: '/',
     name: 'index',
