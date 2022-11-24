@@ -101,7 +101,42 @@ func (s ApiServerSetting) Validate() error {
 	return nil
 }
 
-// DataServiceSetting defines cache service used setting options.
+// CloudServerSetting defines cloud server used setting options.
+type CloudServerSetting struct {
+	Network Network   `yaml:"network"`
+	Service Service   `yaml:"service"`
+	Log     LogOption `yaml:"log"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *CloudServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the CloudServerSetting default value if user not configured.
+func (s *CloudServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+
+	return
+}
+
+// Validate CloudServerSetting option.
+func (s CloudServerSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DataServiceSetting defines data service used setting options.
 type DataServiceSetting struct {
 	Network Network   `yaml:"network"`
 	Service Service   `yaml:"service"`

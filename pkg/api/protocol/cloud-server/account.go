@@ -20,7 +20,23 @@
 // Package cloudserver defines cloud-server api call protocols.
 package cloudserver
 
+import "hcm/pkg/criteria/validator"
+
 // CreateAccountReq defines create cloud account http request.
 type CreateAccountReq struct {
-	Name string `json:"name"`
+	Name string  `json:"name"`
+	Memo *string `json:"memo"`
+}
+
+// Validate create account request.
+func (c CreateAccountReq) Validate() error {
+	if err := validator.ValidateName(c.Name); err != nil {
+		return err
+	}
+
+	if err := validator.ValidateMemo(c.Memo, false); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -17,45 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package errf
+package options
 
 import (
-	"encoding/json"
-	"testing"
+	"hcm/pkg/cc"
+	"hcm/pkg/runtime/flags"
+
+	"github.com/spf13/pflag"
 )
 
-func TestWrap(t *testing.T) {
-	ef := &ErrorF{
-		Code:    Unknown,
-		Message: "unknown error",
-	}
-
-	if Error(ef) == nil {
-		t.Errorf("an error should occur, can not be nil")
-		return
-	}
-
-	compare := new(ErrorF)
-	if err := json.Unmarshal([]byte(ef.Error()), compare); err != nil {
-		t.Errorf("unexpected formatted error format: %s", ef.Error())
-		return
-	}
-
-	if compare.Code != Unknown || compare.Message != "unknown error" {
-		t.Errorf("invalid error format, parse error info failed")
-		return
-	}
+// Option defines the app's runtime flag options.
+type Option struct {
+	Sys *cc.SysOption
 }
 
-func TestAssignResp(t *testing.T) {
-	ef := &ErrorF{
-		Code:    Unknown,
-		Message: "unknown error",
-	}
+// InitOptions init hc server's options from command flags.
+func InitOptions() *Option {
+	fs := pflag.CommandLine
+	sysOpt := flags.SysFlags(fs)
+	opt := &Option{Sys: sysOpt}
 
-	resp := ef.Resp()
+	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
+	// and before flags are accessed by the program.
+	pflag.Parse()
 
-	if !(resp.Code == ef.Code && resp.Message == ef.Message) {
-		t.Error("errorF assign code message failed")
-	}
+	// check if the command-line flag is show current version info cmd.
+	sysOpt.CheckV()
+
+	return opt
 }

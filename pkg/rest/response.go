@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 )
 
@@ -35,9 +36,10 @@ type BaseResp struct {
 
 // Response is a http standard response
 type Response struct {
-	Code    int32       `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
+	Code        int32               `json:"code"`
+	Message     string              `json:"message"`
+	Permissions *meta.IamPermission `json:"permission,omitempty"`
+	Data        interface{}         `json:"data"`
 }
 
 // NewBaseResp new BaseResp.

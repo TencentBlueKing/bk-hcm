@@ -20,10 +20,8 @@
 package auth
 
 import (
-	"reflect"
-
-	"hcm/api/discovery"
 	"hcm/pkg/api/auth-server"
+	"hcm/pkg/api/discovery"
 	asproto "hcm/pkg/api/protocol/auth-server"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
@@ -39,9 +37,8 @@ import (
 type Authorizer interface {
 	// Authorize if user has permission to the resources, returns auth status per resource and for all.
 	Authorize(kt *kit.Kit, resources ...meta.ResourceAttribute) ([]meta.Decision, bool, error)
-	// AuthorizeWithResp authorize if user has permission to the resources, assign error to response if occurred.
-	// If user is unauthorized, assign error and need applied permissions into response, returns unauthorized error.
-	AuthorizeWithResp(kt *kit.Kit, resp interface{}, resources ...meta.ResourceAttribute) error
+	// AuthorizeWithPerm authorize if user has permission, if not, returns unauthorized error.
+	AuthorizeWithPerm(kt *kit.Kit, resources ...meta.ResourceAttribute) error
 }
 
 // NewAuthorizer create an authorizer for iam authorize related operation.
@@ -110,12 +107,10 @@ func (a authorizer) Authorize(kt *kit.Kit, resources ...meta.ResourceAttribute) 
 	return decisions, authorized, nil
 }
 
-// AuthorizeWithResp authorize if user has permission to the resources, assign error to response if occurred.
-// If user is unauthorized, assign error and need applied permissions into response, returns unauthorized error.
-func (a authorizer) AuthorizeWithResp(kt *kit.Kit, resp interface{}, resources ...meta.ResourceAttribute) error {
+// AuthorizeWithPerm authorize if user has permission, if not, returns unauthorized error.
+func (a authorizer) AuthorizeWithPerm(kt *kit.Kit, resources ...meta.ResourceAttribute) error {
 	_, authorized, err := a.Authorize(kt, resources...)
 	if err != nil {
-		a.assignAuthorizeResp(kt, resp, errf.DoAuthorizeFailed, "authorize failed", nil)
 		return errf.New(errf.DoAuthorizeFailed, "authorize failed")
 	}
 
@@ -127,50 +122,11 @@ func (a authorizer) AuthorizeWithResp(kt *kit.Kit, resp interface{}, resources .
 		permission, err := a.authClient.GetPermissionToApply(kt.Ctx, kt.Header(), req)
 		if err != nil {
 			logs.Errorf("get permission to apply failed, req: %#v, err: %v, rid: %s", req, err, kt.Rid)
-			a.assignAuthorizeResp(kt, resp, errf.DoAuthorizeFailed, "authorize failed", nil)
 			return errf.New(errf.DoAuthorizeFailed, "get permission to apply failed")
 		}
 
-		a.assignAuthorizeResp(kt, resp, errf.PermissionDenied, "no permission", permission)
-		return errf.New(errf.PermissionDenied, "no permission")
+		return errf.NewWithPerm(errf.PermissionDenied, "no permission", permission)
 	}
 
 	return nil
-}
-
-// assignAuthorizeResp used to assign the values of error code and message and need applied permissions to response
-// Node: resp must be a *struct.
-func (a authorizer) assignAuthorizeResp(kt *kit.Kit, resp interface{}, errCode int32, errMsg string,
-	permission *meta.IamPermission) {
-
-	if reflect.ValueOf(resp).Type().Kind() != reflect.Ptr {
-		logs.ErrorDepthf(2, "response is not pointer, rid: %s", kt.Rid)
-		return
-	}
-
-	if _, ok := reflect.TypeOf(resp).Elem().FieldByName("Code"); !ok {
-		logs.ErrorDepthf(2, "response have no 'Code' field, rid: %s", kt.Rid)
-		return
-	}
-
-	if _, ok := reflect.TypeOf(resp).Elem().FieldByName("Message"); !ok {
-		logs.ErrorDepthf(2, "response have no 'Message' field, rid: %s", kt.Rid)
-		return
-	}
-
-	if _, ok := reflect.TypeOf(resp).Elem().FieldByName("Permission"); !ok {
-		logs.ErrorDepthf(2, "response have no 'Permission' field, rid: %s", kt.Rid)
-		return
-	}
-
-	valueOf := reflect.ValueOf(resp).Elem()
-
-	code := valueOf.FieldByName("Code")
-	code.SetInt(int64(errCode))
-
-	msg := valueOf.FieldByName("Message")
-	msg.SetString(errMsg)
-
-	perm := valueOf.FieldByName("Permission")
-	perm.Set(reflect.ValueOf(permission))
 }

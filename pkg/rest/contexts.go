@@ -99,12 +99,7 @@ func (c *Contexts) respError(err error) {
 		c.resp.Header().Set(constant.RidKey, c.Kit.Rid)
 	}
 
-	parsed := errf.Error(err)
-	resp := &Response{
-		Code:    parsed.Code,
-		Message: parsed.Message,
-		Data:    nil,
-	}
+	resp := errf.Error(err).Resp()
 
 	encodeErr := json.NewEncoder(c.resp.ResponseWriter).Encode(resp)
 	if encodeErr != nil {
