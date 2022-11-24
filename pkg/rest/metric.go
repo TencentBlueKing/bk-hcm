@@ -29,7 +29,6 @@ import (
 var restMetric *metric
 
 func initMetric() {
-
 	m := new(metric)
 	labels := prometheus.Labels{}
 

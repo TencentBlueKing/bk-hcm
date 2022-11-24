@@ -119,8 +119,8 @@ const (
 )
 
 func rearrangeMixedRulesWithPriority(exprRules []RuleFactory, crownRules []RuleFactory, priority []string) (
-	reExprRules []RuleFactory, reCrownedRules []RuleFactory, typ hitType) {
-
+	reExprRules []RuleFactory, reCrownedRules []RuleFactory, typ hitType,
+) {
 	if len(exprRules) == 0 && len(crownRules) == 0 {
 		return exprRules, crownRules, anyType
 	}
@@ -186,8 +186,8 @@ func rearrangeMixedRulesWithPriority(exprRules []RuleFactory, crownRules []RuleF
 
 // doMixedSQLWhereExpr generated mixed SQL WHERE expression with mixed priority rules.
 func doMixedSQLWhereExpr(exprOp LogicOperator, exprRules []RuleFactory,
-	crownOp LogicOperator, crownRules []RuleFactory, priority []string) (string, error) {
-
+	crownOp LogicOperator, crownRules []RuleFactory, priority []string,
+) (string, error) {
 	exprRules, crownRules, typ := rearrangeMixedRulesWithPriority(exprRules, crownRules, priority)
 
 	exprExpr, err := genMixedSQLWhereExpr(exprOp, exprRules)
@@ -233,7 +233,6 @@ func doMixedSQLWhereExpr(exprOp LogicOperator, exprRules []RuleFactory,
 		default:
 			return "", fmt.Errorf("unsupported expr type: %s", typ)
 		}
-
 	}
 
 	// generate SQL where expression with mixed priority.
@@ -285,8 +284,8 @@ func genMixedSQLWhereExpr(op LogicOperator, rules []RuleFactory) (string, error)
 }
 
 func doSoloSQLWhereExpr(op LogicOperator, rules []RuleFactory, priority []string) (
-	where string, err error) {
-
+	where string, err error,
+) {
 	if len(rules) == 0 {
 		return "", nil
 	}

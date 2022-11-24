@@ -86,7 +86,6 @@ func (s *DataServiceSetting) trySetDefault() {
 
 // Validate DataServiceSetting option.
 func (s DataServiceSetting) Validate() error {
-
 	if err := s.Network.validate(); err != nil {
 		return err
 	}

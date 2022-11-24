@@ -35,7 +35,8 @@ func TestMergeNamedColumns(t *testing.T) {
 	namedB := mergeColumnDescriptors("nested",
 		ColumnDescriptors{
 			{Column: "name", NamedC: "name", Type: enumor.String},
-			{Column: "memo", NamedC: "memo", Type: enumor.String}},
+			{Column: "memo", NamedC: "memo", Type: enumor.String},
+		},
 	)
 
 	merged := mergeColumns(nil, namedA, namedB)
@@ -70,12 +71,13 @@ func TestMergeNamedColumns(t *testing.T) {
 	}
 
 	fmt.Println("without column: ", merged.WithoutColumn("id"))
-	if !reflect.DeepEqual(merged.WithoutColumn("id"), map[string]enumor.ColumnType{"name": enumor.String,
-		"memo": enumor.String}) {
+	if !reflect.DeepEqual(merged.WithoutColumn("id"), map[string]enumor.ColumnType{
+		"name": enumor.String,
+		"memo": enumor.String,
+	}) {
 		t.Errorf("test merged without columns failed,  not equal")
 		return
 	}
-
 }
 
 type deepEmbedded struct {
@@ -101,7 +103,6 @@ type cases struct {
 }
 
 func TestRearrangeSQLDataWithOptionFully(t *testing.T) {
-
 	c := cases{
 		// test ignored field
 		ID: 20,
@@ -199,5 +200,4 @@ func TestRecursiveGetTaggedFieldValues(t *testing.T) {
 
 	js, _ := json.MarshalIndent(kv, "", "    ")
 	fmt.Printf("kv json: %s\n", js)
-
 }

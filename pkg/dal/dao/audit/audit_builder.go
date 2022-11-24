@@ -34,7 +34,6 @@ import (
 
 // initAuditBuilder create a new audit builder instance.
 func initAuditBuilder(kit *kit.Kit, res enumor.AuditResourceType, ad *audit) AuditDecorator {
-
 	ab := &AuditBuilder{
 		toAudit: &table.Audit{
 			ResourceType: res,
@@ -207,13 +206,11 @@ func (ab *AuditBuilder) PrepareDelete(resID uint64) AuditDecorator {
 
 // Do save audit log to the db immediately.
 func (ab *AuditBuilder) Do(txn *sqlx.Tx) error {
-
 	if ab.hitErr != nil {
 		return ab.hitErr
 	}
 
 	return ab.ad.One(ab.kit, txn, ab.toAudit)
-
 }
 
 // parseChangedSpecFields parse the changed filed with pre and cur *structs' Spec field.

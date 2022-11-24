@@ -78,7 +78,6 @@ func connect(opt cc.ResourceDB) (*sqlx.DB, error) {
 
 // uri generate the standard db connection string format uri.
 func uri(opt cc.ResourceDB) string {
-
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s)/%s?parseTime=true&timeout=%ds&readTimeout=%ds&writeTimeout=%ds&charset=%s",
 		opt.User,

@@ -185,7 +185,6 @@ func (s *DataBase) trySetDefault() {
 
 // validate sharding runtime
 func (s DataBase) validate() error {
-
 	if err := s.Resource.validate(); err != nil {
 		return err
 	}
@@ -248,7 +247,6 @@ func (ds *ResourceDB) trySetDefault() {
 	if ds.MaxIdleConn == 0 {
 		ds.MaxIdleConn = 5
 	}
-
 }
 
 // validate database runtime.
@@ -313,7 +311,6 @@ func (log *LogOption) trySetDefault() {
 	if log.MaxFileNum == 0 {
 		log.MaxFileNum = 5
 	}
-
 }
 
 // Logs convert it to logs.LogConfig.
@@ -364,7 +361,6 @@ func (n *Network) trySetDefault() {
 
 // validate network options
 func (n Network) validate() error {
-
 	if len(n.BindIP) == 0 {
 		return errors.New("network bindIP is not set")
 	}

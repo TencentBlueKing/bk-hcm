@@ -59,7 +59,6 @@ type accountDao struct {
 
 // Create one account instance.
 func (ad *accountDao) Create(kt *kit.Kit, account *table.Account) (uint64, error) {
-
 	if account == nil {
 		return 0, errf.New(errf.InvalidParameter, "account is nil")
 	}
@@ -84,7 +83,6 @@ func (ad *accountDao) Create(kt *kit.Kit, account *table.Account) (uint64, error
 		}
 		return id, nil
 	})
-
 	if err != nil {
 		logs.Errorf("create account, but do auto txn failed, err: %v, rid: %s", err, kt.Rid)
 		return 0, fmt.Errorf("create account, but auto run txn failed, err: %v", err)
@@ -131,7 +129,12 @@ func (ad *accountDao) Update(kit *kit.Kit, account *table.Account) error {
 		}
 
 		if effected > 1 {
-			logs.Errorf("update one account: %d, but got updated account count: %d, rid: %v", account.ID, effected, kit.Rid)
+			logs.Errorf(
+				"update one account: %d, but got updated account count: %d, rid: %v",
+				account.ID,
+				effected,
+				kit.Rid,
+			)
 			return nil, fmt.Errorf("matched account count %d is not as excepted", effected)
 		}
 
@@ -197,7 +200,6 @@ func (ad *accountDao) List(kt *kit.Kit, opts *types.ListAccountsOption) (*types.
 
 // Delete an account instance.
 func (ad *accountDao) Delete(kt *kit.Kit, opt *types.DeleteOption) error {
-
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "option is nil")
 	}
@@ -228,7 +230,6 @@ func (ad *accountDao) Delete(kt *kit.Kit, opt *types.DeleteOption) error {
 
 		return nil, nil
 	})
-
 	if err != nil {
 		logs.Errorf("delete account: %d failed, err: %v, rid: %v", opt.ID, err, kt.Rid)
 		return fmt.Errorf("delete account, but run txn failed, err: %v", err)

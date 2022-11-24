@@ -70,7 +70,6 @@ const lagSeconds = 5 * 60
 
 // ValidateCreate validate revision when created
 func (r Revision) ValidateCreate() error {
-
 	if len(r.Creator) == 0 {
 		return errors.New("creator can not be empty")
 	}
@@ -117,7 +116,8 @@ var CreatedRevisionColumns = mergeColumns(nil, CreatedRevisionColumnDescriptor)
 // CreatedRevisionColumnDescriptor is CreatedRevision's column descriptors.
 var CreatedRevisionColumnDescriptor = ColumnDescriptors{
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
-	{Column: "created_at", NamedC: "created_at", Type: enumor.Time}}
+	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
+}
 
 // CreatedRevision is a resource's reversion information being created.
 type CreatedRevision struct {
@@ -127,7 +127,6 @@ type CreatedRevision struct {
 
 // Validate revision when created
 func (r CreatedRevision) Validate() error {
-
 	if len(r.Creator) == 0 {
 		return errors.New("creator can not be empty")
 	}

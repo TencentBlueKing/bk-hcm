@@ -46,6 +46,7 @@ func TestShutdownGracefully(t *testing.T) {
 
 	WaitShutdown(0)
 }
+
 func TestShutdownTimeout(t *testing.T) {
 	job := func(name string) {
 		notifier := AddNotifier()

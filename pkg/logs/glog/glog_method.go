@@ -54,7 +54,8 @@ var once sync.Once
 
 // InitLogs inits glog from commandline params.
 func InitLogs(toStderr, alsoToStderr, restartScrolling bool, verbose int32, stdErrThreshold,
-	vModule, traceLocation, dir string, maxSize, maxLineSize uint32, maxNum int) {
+	vModule, traceLocation, dir string, maxSize, maxLineSize uint32, maxNum int,
+) {
 	once.Do(func() {
 		logging.toStderr = toStderr
 		logging.alsoToStderr = alsoToStderr

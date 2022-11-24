@@ -36,7 +36,6 @@ func TestEqualSQLExpr(t *testing.T) {
 		t.Errorf("test eq operator got wrong expr: %s", eqExpr)
 		return
 	}
-
 }
 
 func TestNotEqualSQLExpr(t *testing.T) {
@@ -52,11 +51,9 @@ func TestNotEqualSQLExpr(t *testing.T) {
 		t.Errorf("test ne operator got wrong expr: %s", neExpr)
 		return
 	}
-
 }
 
 func TestGreaterThanSQLExpr(t *testing.T) {
-
 	// test gt
 	gt := GreaterThanOp(GreaterThan)
 	gtExpr, err := gt.SQLExpr("count", 10)
@@ -81,11 +78,9 @@ func TestGreaterThanSQLExpr(t *testing.T) {
 		t.Errorf("test gt operator with time got wrong expr: %s", gtExpr)
 		return
 	}
-
 }
 
 func TestGreaterThanEqualSQLExpr(t *testing.T) {
-
 	// test gte
 	gte := GreaterThanEqualOp(GreaterThanEqual)
 	gteExpr, err := gte.SQLExpr("count", 10)
@@ -110,11 +105,9 @@ func TestGreaterThanEqualSQLExpr(t *testing.T) {
 		t.Errorf("test gte operator with time got wrong expr: %s", gteExpr)
 		return
 	}
-
 }
 
 func TestLessThanSQLExpr(t *testing.T) {
-
 	// test lt
 	lt := LessThanOp(LessThan)
 	ltExpr, err := lt.SQLExpr("count", 10)
@@ -139,11 +132,9 @@ func TestLessThanSQLExpr(t *testing.T) {
 		t.Errorf("test lt operator with time got wrong expr: %s", ltExpr)
 		return
 	}
-
 }
 
 func TestLessThanEqualSQLExpr(t *testing.T) {
-
 	// test lte
 	lte := LessThanEqualOp(LessThanEqual)
 	lteExpr, err := lte.SQLExpr("count", 10)
@@ -168,11 +159,9 @@ func TestLessThanEqualSQLExpr(t *testing.T) {
 		t.Errorf("test lte operator with time got wrong expr: %s", lteExpr)
 		return
 	}
-
 }
 
 func TestInSQLExpr(t *testing.T) {
-
 	// test in
 	in := InOp(In)
 	sinExpr, err := in.SQLExpr("servers", []string{"api", "web"})
@@ -196,11 +185,9 @@ func TestInSQLExpr(t *testing.T) {
 		t.Errorf("test in operator got wrong expr: %s", sinExpr)
 		return
 	}
-
 }
 
 func TestNotInSQLExpr(t *testing.T) {
-
 	// test nin
 	nin := NotInOp(NotIn)
 	sinExpr, err := nin.SQLExpr("servers", []string{"api", "web"})
@@ -224,11 +211,9 @@ func TestNotInSQLExpr(t *testing.T) {
 		t.Errorf("test nin operator got wrong expr: %s", sinExpr)
 		return
 	}
-
 }
 
 func TestContainsSensitiveSQLExpr(t *testing.T) {
-
 	// test cs
 	cs := ContainsSensitiveOp(ContainsSensitive)
 	csExpr, err := cs.SQLExpr("name", "hcm-")
@@ -241,11 +226,9 @@ func TestContainsSensitiveSQLExpr(t *testing.T) {
 		t.Errorf("test cis operator got wrong expr: %s", csExpr)
 		return
 	}
-
 }
 
 func TestContainsInsensitiveSQLExpr(t *testing.T) {
-
 	// test cis
 	cis := ContainsInsensitiveOp(ContainsInsensitive)
 	cisExpr, err := cis.SQLExpr("name", "hcm-")
@@ -258,5 +241,4 @@ func TestContainsInsensitiveSQLExpr(t *testing.T) {
 		t.Errorf("test cis operator got wrong expr: %s", cisExpr)
 		return
 	}
-
 }

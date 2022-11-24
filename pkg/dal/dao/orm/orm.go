@@ -105,7 +105,6 @@ type runtimeOrm struct {
 }
 
 func (o *runtimeOrm) logSlowCmd(ctx context.Context, sql string, latency time.Duration) {
-
 	if latency < o.slowRequestMS {
 		return
 	}
@@ -154,8 +153,7 @@ type TxnFunc func(txn *sqlx.Tx, opt *TxnOption) (interface{}, error)
 
 // TxnOption defines all the options to do distributed
 // transaction in the AutoTxn processes.
-type TxnOption struct {
-}
+type TxnOption struct{}
 
 // ErrRetryTransaction defines errors that need to retry transaction, like deadlock error in upsert scenario
 var ErrRetryTransaction = errors.New("RETRY TRANSACTION ERROR")

@@ -315,7 +315,7 @@ func create(t time.Time) (f *os.File, filename string, filesize uint32, err erro
 			filesize = uint32(fInfo.Size())
 
 			// if log file not write full, need to open latest log file.
-			f, onceErr = os.OpenFile(filename, os.O_WRONLY|os.O_APPEND, 0666)
+			f, onceErr = os.OpenFile(filename, os.O_WRONLY|os.O_APPEND, 0o666)
 			if onceErr != nil {
 				return
 			}

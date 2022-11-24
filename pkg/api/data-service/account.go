@@ -43,8 +43,8 @@ func NewAccountClient(client rest.ClientInterface) *AccountClient {
 
 // Create account.
 func (a *AccountClient) Create(ctx context.Context, h http.Header, request *dataservice.CreateAccountReq) (
-	*base.CreateResult, error) {
-
+	*base.CreateResult, error,
+) {
 	resp := new(base.CreateResp)
 
 	err := a.client.Post().
