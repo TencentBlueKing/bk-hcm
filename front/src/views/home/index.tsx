@@ -1,71 +1,102 @@
-import { defineComponent, onMounted, ref, reactive } from 'vue';
+import { defineComponent, onMounted, reactive, watch } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
-import { Menu, Navigation } from 'bkui-vue';
+import type { RouteRecordRaw } from 'vue-router';
+import { Menu, Navigation, Dropdown } from 'bkui-vue';
 import { headRouteConfig } from '@/router/header-config';
 import Breadcrumb from './breadcrumb';
-import work from '@/router/module/work';
-import cost from '@/router/module/cost';
-import resources from '@/router/module/resources';
-import services from '@/router/module/services';
-import { classes } from '@/common/util';
+import workbench from '@/router/module/workbench';
+import resource from '@/router/module/resource';
+import service from '@/router/module/service';
+import business from '@/router/module/business';
+import { classes, deleteCookie } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
+import { useUser } from '@/store';
+import { useI18n } from 'vue-i18n';
+
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
 
+const { DropdownMenu, DropdownItem } = Dropdown;
+
 export default defineComponent({
   setup() {
-    const route = useRoute();
-    const router = useRouter();
-    // const { projects, currentProjectId, handleProjectChange } = useProjectList();
-    const activeItem = ref('resources');
-    let menus = reactive(resources);
-    let openedKeys = reactive(['/resource']);
-    let path = '/resource/vm';
     const NAV_WIDTH = 240;
     const NAV_TYPE = 'top-bottom';
 
-    const handleHeaderMenuClick = (id: string, name: string): void => {
-      if (route.name !== name) {
-        activeItem.value = id;
-        changeMenus(activeItem.value);
-        console.log('name', name);
+    const { t } = useI18n();
+    const route = useRoute();
+    const router = useRouter();
+    const userStore = useUser();
+
+    let topMenuActiveItem = '';
+    let menus: RouteRecordRaw[] = [];
+    let openedKeys: string[] = [];
+    let path = '';
+
+    const changeMenus = (id: string, subPath: string[] = []) => {
+      switch (id) {
+        case 'business':
+          topMenuActiveItem = 'business';
+          menus = reactive(business);
+          path = '/business/host';
+          openedKeys = [`/business${subPath[1] ? `/${subPath[0]}` : ''}`];
+          break;
+        case 'resource':
+          topMenuActiveItem = 'resource';
+          menus = reactive(resource);
+          path = '/resource/account';
+          openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
+          break;
+        case 'service':
+          topMenuActiveItem = 'service';
+          menus = reactive(service);
+          path = '/service/serviceApply';
+          openedKeys = [`/service${subPath[1] ? `/${subPath[0]}` : ''}`];
+          break;
+        case 'workbench':
+          topMenuActiveItem = 'workbench';
+          menus = reactive(workbench);
+          path = '/workbench/auto';
+          openedKeys = [`/workbench${subPath[1] ? `/${subPath[0]}` : ''}`];
+          break;
+        default:
+          topMenuActiveItem = 'resource';
+          menus = reactive(resource);
+          path = '/resource/account';
+          openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
+          break;
       }
     };
 
-    const changeMenus = (id: string) => {
-      switch (id) {
-        case 'resources': {
-          menus = reactive(resources);
-          openedKeys = reactive(['/resource']);
-          path = '/resource/vm';
-          break;
-        }
-        case 'services': {
-          menus = reactive(services);
-          path = '/service/serviceApply';
-          break;
-        }
-        case 'cost': {
-          menus = reactive(cost);
-          path = '/cost/resourceAnalyze';
-          break;
-        }
-        case 'work': {
-          menus = reactive(work);
-          path = '/workbench/projectManage';
-          break;
-        }
-        default: {
-          menus = reactive(resources);
-          path = '/resource/vm';
-          break;
-        }
+    watch(
+      () => route,
+      (val) => {
+        const pathArr = val.path.slice(1, val.path.length).split('/');
+        changeMenus(pathArr[0], [pathArr[1], pathArr[2]]);
+      },
+      { immediate: true },
+    );
+
+    const handleHeaderMenuClick = (id: string, routeName: string): void => {
+      if (route.name !== routeName) {
+        changeMenus(id);
+        router.push({
+          path,
+        });
       }
-      router.push({
-        path,
-      });
+    };
+
+    const logout = () => {
+      deleteCookie('bk_token');
+      deleteCookie('bk_ticket');
+      const cUrl = window.location.href;
+      if (window.PROJECT_CONFIG.LOGIN_FULL) {
+        window.location.href = `${window.LOGIN_FULL}?c_url=${cUrl}`;
+      } else {
+        window.location.href = `${window.PROJECT_CONFIG.BK_PLAT_HOST || ''}/console/accounts/logout/`;
+      }
     };
 
     onMounted(() => {
@@ -87,22 +118,45 @@ export default defineComponent({
                         <div class="logo">
                           <img class="logo-icon" src={logo} />
                         </div>
-                        <div class="title-text">海垒2.0</div>
+                        <div class="title-text">{t('海垒2.0')}</div>
                       </div>
                     ),
                     header: () => (
-                      <header class="flex-row justify-content-between header-width">
-                        {headRouteConfig.map(({ id, route, name }) => (
-                          <div
-                            class={classes({
-                              active: activeItem.value === id,
-                            }, 'header-title')}
-                            key={id}
-                            onClick={() => handleHeaderMenuClick(id, route)}
+                      <header class="bk-hcm-header">
+                        <section class="flex-row justify-content-between header-width">
+                          {headRouteConfig.map(({ id, route, name }) => (
+                            <div
+                              class={classes({
+                                active: topMenuActiveItem === id,
+                              }, 'header-title')}
+                              key={id}
+                              onClick={() => handleHeaderMenuClick(id, route)}
+                            >
+                              {t(name)}
+                            </div>
+                          ))}
+                        </section>
+                        <aside class="header-user">
+                          <Dropdown
+                            trigger='click'
                           >
-                            {name}
-                          </div>
-                        ))}
+                            {{
+                              default: () => (
+                                <span class="cursor-pointer flex-row align-items-center ">
+                                {userStore.username}
+                                <i class={'icon hcm-icon bkhcm-icon-down-shape pl5'}/>
+                                </span>
+                              ),
+                              content: () => (
+                                <DropdownMenu>
+                                  <DropdownItem onClick={logout}>
+                                  {t('退出')}
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              ),
+                            }}
+                          </Dropdown>
+                        </aside>
                       </header>
                     ),
                     menu: () => (
@@ -110,7 +164,7 @@ export default defineComponent({
                         {
                           menus.map(menuItem => (Array.isArray(menuItem.children) ? (
                             <Menu.Submenu
-                              key={menuItem.path}
+                              key={menuItem.path as string}
                               title={menuItem.name as string}>
                             {{
                               // icon: () => <menuItem.icon/>,
@@ -120,6 +174,7 @@ export default defineComponent({
                                       <p class="flex-row flex-1 justify-content-between align-items-center pr16">
                                         <span class="flex-1 text-ov">{child.name as string}</span>
                                       </p>
+                                      {/* {route.meta.activeKey} */}
                                     </Menu.Item>
                                   </RouterLink>
                               )),
