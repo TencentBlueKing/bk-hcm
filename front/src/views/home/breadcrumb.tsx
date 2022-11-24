@@ -25,6 +25,7 @@ export default defineComponent({
           getBreadcrumb(val);
         }
       },
+      { immediate: true },
     );
     return {
       breadList,
@@ -33,15 +34,15 @@ export default defineComponent({
 
   render() {
     return (
-        <div class="bread-layout">
-            <Breadcrumb>
-                {this.breadList?.map((routeName: any) => (
-                    <Item class="flex-row align-items-center">
-                        {routeName.name}
-                    </Item>
-                ))}
-            </Breadcrumb>
-        </div>
+      <div class="bread-layout">
+        <Breadcrumb>
+          {this.breadList?.map((routeName: any) => (
+            <Item class="flex-row align-items-center">
+              {routeName.name}
+            </Item>
+          ))}
+        </Breadcrumb>
+      </div>
     );
   },
 });
