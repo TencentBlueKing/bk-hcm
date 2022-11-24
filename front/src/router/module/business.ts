@@ -42,11 +42,11 @@ const businesseMenus: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/business/net',
+    path: '/business-net',
     name: '网络',
     children: [
       {
-        path: '/business/net/security-group',
+        path: '/business-net/security-group',
         name: '安全组',
         component: () => import('@/views/business/demo2'),
         meta: {
@@ -54,7 +54,7 @@ const businesseMenus: RouteRecordRaw[] = [
         },
       },
       {
-        path: '/business/net/vpc',
+        path: '/business-net/vpc',
         name: 'VPC',
         component: () => import('@/views/business/demo2'),
         meta: {
@@ -62,7 +62,7 @@ const businesseMenus: RouteRecordRaw[] = [
         },
       },
       {
-        path: '/business/net/subnet',
+        path: '/business-net/subnet',
         name: '子网',
         component: () => import('@/views/business/demo2'),
         meta: {
@@ -70,7 +70,7 @@ const businesseMenus: RouteRecordRaw[] = [
         },
       },
       {
-        path: '/business/net/elastic-ip',
+        path: '/business-net/elastic-ip',
         name: '弹性IP',
         component: () => import('@/views/business/demo2'),
         meta: {
@@ -78,7 +78,7 @@ const businesseMenus: RouteRecordRaw[] = [
         },
       },
       {
-        path: '/business/net/routing-table',
+        path: '/business-net/routing-table',
         name: '路由表',
         component: () => import('@/views/business/demo2'),
         meta: {
@@ -88,11 +88,11 @@ const businesseMenus: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/business/storage',
+    path: '/business-storage',
     name: '存储',
     children: [
       {
-        path: '/business/storage/object-storage',
+        path: '/business-storage/object-storage',
         name: '对象存储',
         component: () => import('@/views/business/demo2'),
         meta: {
@@ -100,7 +100,7 @@ const businesseMenus: RouteRecordRaw[] = [
         },
       },
       {
-        path: '/business/storage/file-storage',
+        path: '/business-storage/file-storage',
         name: '文件存储',
         component: () => import('@/views/business/demo2'),
         meta: {

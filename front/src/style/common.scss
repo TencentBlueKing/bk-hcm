@@ -76,3 +76,16 @@ a {
 .w280{
   width: 280px;
 }
+
+.table-layout {
+  .operate-button {
+      & > button {
+          margin-right: 12px;
+      }
+      .bk-button-text {
+          div {
+              display: flex;
+          }
+      }
+  }
+}

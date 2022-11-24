@@ -35,40 +35,41 @@ export default defineComponent({
     let openedKeys: string[] = [];
     let path = '';
 
-    const changeMenus = (id: string, subPath: string[] = []) => {
+    const changeMenus = (id: string, ...subPath: string[]) => {
+      console.log('subPath', subPath);
+      openedKeys = [`/${id}`];
       switch (id) {
         case 'business':
           topMenuActiveItem = 'business';
           menus = reactive(business);
           path = '/business/host';
-          openedKeys = [`/business${subPath[1] ? `/${subPath[0]}` : ''}`];
+          // openedKeys = [`/business${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
         case 'resource':
           topMenuActiveItem = 'resource';
           menus = reactive(resource);
           path = '/resource/account';
-          openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
+          // openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
+          // openedKeys = [`/resource${subPath[1] ? `/${subPath.join('/')}` : ''}`];
           break;
         case 'service':
           topMenuActiveItem = 'service';
           menus = reactive(service);
           path = '/service/serviceApply';
-          openedKeys = [`/service${subPath[1] ? `/${subPath[0]}` : ''}`];
+          // openedKeys = [`/service${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
         case 'workbench':
           topMenuActiveItem = 'workbench';
           menus = reactive(workbench);
           path = '/workbench/auto';
-          openedKeys = [`/workbench${subPath[1] ? `/${subPath[0]}` : ''}`];
+          // openedKeys = [`/workbench${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
         default:
           topMenuActiveItem = 'resource';
           menus = reactive(resource);
           path = '/resource/account';
-          openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
-          router.push({   // 默认跳转
-            path,
-          });
+          // openedKeys = ['/resource'];
+          // openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
       }
     };
@@ -77,7 +78,7 @@ export default defineComponent({
       () => route,
       (val) => {
         const pathArr = val.path.slice(1, val.path.length).split('/');
-        changeMenus(pathArr[0], [pathArr[1], pathArr[2]]);
+        changeMenus(pathArr.shift(), ...pathArr);
       },
       { immediate: true },
     );

@@ -187,9 +187,9 @@ function handleReject(error: any, config: any) {
     const { status, data } = error.response;
     const nextError = { message: error.message, response: error.response };
     if (status === 401) {
-      setTimeout(() => {
-        window.location.href = `${window.PROJECT_CONFIG.BK_PLAT_HOST}/login/?c_url=${window.location.href}`;
-      }, 0);
+      // setTimeout(() => {
+      //   window.location.href = `${window.PROJECT_CONFIG.BK_PLAT_HOST}/login/?c_url=${window.location.href}`;
+      // }, 0);
     } else if (status === 403) {
       bus.$emit('show-forbidden', error.response.data);
     } else if (status === 500) {
