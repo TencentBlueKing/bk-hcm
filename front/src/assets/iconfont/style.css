@@ -23,6 +23,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
   -moz-osx-font-smoothing: grayscale;
 }
 
+.bkhcm-icon-automatic-typesetting:before {
+	content: "\e102";
+}
 .bkhcm-icon-down-shape:before {
 	content: "\e101";
 }

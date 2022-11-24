@@ -9,11 +9,8 @@ export default defineComponent({
     const route = useRoute();
     const breadList = ref([]);
     const getBreadcrumb = (tempRoute: any) => {
-      const matched = tempRoute.map((ele: any) => {
-        return { path: ele.path, name: ele.name };
-      });
+      const matched = tempRoute[tempRoute.length - 1].meta.breadcrumb;
       breadList.value = matched;
-      console.log('breadList', breadList);
     };
     onMounted(() => {
     //   getBreadcrumb();
@@ -36,9 +33,9 @@ export default defineComponent({
     return (
       <div class="bread-layout">
         <Breadcrumb>
-          {this.breadList?.map((routeName: any) => (
+          {this.breadList?.map((breadName: any) => (
             <Item class="flex-row align-items-center">
-              {routeName.name}
+              {breadName}
             </Item>
           ))}
         </Breadcrumb>

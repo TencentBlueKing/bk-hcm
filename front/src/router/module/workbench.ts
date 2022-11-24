@@ -18,7 +18,7 @@ const workbenchMenus: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/workbench/audit',
+    path: '/workbench-audit',
     name: '审计',
     component: () => import('@/views/workbench/demo'),
     meta: {

@@ -10,9 +10,10 @@ const resourceMenus: RouteRecordRaw[] = [
         path: '/resource/account',
         name: '账户',
         alias: '',
-        component: () => import('@/views/resource/demo2'),
+        component: () => import('@/views/resource/accountmanage/index.vue'),
         meta: {
           activeKey: 'resourceAccount',
+          breadcrumb: ['云管', '账户'],
         },
       },
       {
@@ -21,6 +22,7 @@ const resourceMenus: RouteRecordRaw[] = [
         component: () => import('@/views/resource/demo2'),
         meta: {
           activeKey: 'resourceRes',
+          breadcrumb: ['云管', '资源'],
         },
       },
       {
@@ -29,36 +31,40 @@ const resourceMenus: RouteRecordRaw[] = [
         component: () => import('@/views/resource/demo2'),
         meta: {
           activeKey: 'resourceRecyclebin',
+          breadcrumb: ['云管', '回收站'],
         },
       },
     ],
   },
   {
-    path: '/resource/net',
+    path: '/resource-net',
     name: '网络',
     children: [
       {
-        path: '/resource/net/survey',
+        path: '/resource-net/survey',
         name: '概况',
         component: () => import('@/views/resource/demo'),
         meta: {
           activeKey: 'survey',
+          breadcrumb: ['网络', '概况'],
         },
       },
       {
-        path: '/resource/net/planning',
+        path: '/resource-net/planning',
         name: '规划',
         component: () => import('@/views/resource/demo'),
         meta: {
           activeKey: 'planning',
+          breadcrumb: ['网络', '规划'],
         },
       },
       {
-        path: '/resource/net/recycle',
+        path: '/resource-net/recycle',
         name: '回收',
         component: () => import('@/views/resource/demo'),
         meta: {
           activeKey: 'recycle',
+          breadcrumb: ['网络', '规划'],
         },
       },
     ],
