@@ -27,48 +27,27 @@ import (
 	"strconv"
 	"time"
 
-	"hcm/cmd/data-service/service/account"
-	"hcm/cmd/data-service/service/auth"
-	"hcm/cmd/data-service/service/capability"
+	"hcm/cmd/auth-server/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/shutdown"
+	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
 )
 
-// Service do all the data service's work
-type Service struct {
-	serve *http.Server
-	dao   dao.Set
-}
-
-// NewService create a service instance.
-func NewService() (*Service, error) {
-	dao, err := dao.NewDaoSet(cc.DataService().Database)
-	if err != nil {
-		return nil, err
-	}
-
-	svr := &Service{
-		dao: dao,
-	}
-
-	return svr, nil
-}
-
 // ListenAndServeRest listen and serve the restful server
 func (s *Service) ListenAndServeRest() error {
+
 	root := http.NewServeMux()
 	root.HandleFunc("/", s.apiSet().ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
 	root.HandleFunc("/debug/", http.DefaultServeMux.ServeHTTP)
 
-	network := cc.DataService().Network
+	network := cc.AuthServer().Network
 	server := &http.Server{
 		Addr:    net.JoinHostPort(network.BindIP, strconv.FormatUint(uint64(network.Port), 10)),
 		Handler: root,
@@ -120,22 +99,36 @@ func (s *Service) ListenAndServeRest() error {
 
 func (s *Service) apiSet() *restful.Container {
 	ws := new(restful.WebService)
-	ws.Path("/api/v1/data")
+	ws.Path("/api/v1/auth")
 	ws.Produces(restful.MIME_JSON)
+	ws.Filter(s.restFilter())
 
-	cap := &capability.Capability{
+	c := &capability.Capability{
 		WebService: ws,
-		Dao:        s.dao,
 	}
 
-	account.InitAccountService(cap)
-	auth.InitAuthService(cap)
+	s.initial.InitInitialService(c)
+	s.iam.InitIAMService(c)
+	s.auth.InitAuthService(c)
 
-	return restful.NewContainer().Add(cap.WebService)
+	return restful.NewContainer().Add(c.WebService)
 }
 
 // Healthz check whether the service is healthy.
 func (s *Service) Healthz(w http.ResponseWriter, req *http.Request) {
+	if shutdown.IsShuttingDown() {
+		logs.Errorf("service healthz check failed, current service is shutting down")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "current service is shutting down"))
+		return
+	}
+
+	if err := serviced.Healthz(cc.AuthServer().Service); err != nil {
+		logs.Errorf("etcd healthz check failed, err: %v", err)
+		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "etcd healthz error, "+err.Error()))
+		return
+	}
+
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
 	return
 }

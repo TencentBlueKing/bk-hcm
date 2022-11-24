@@ -17,35 +17,50 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dataservice defines data-service api client.
-package dataservice
+package iam
 
 import (
-	"fmt"
-
+	"hcm/cmd/auth-server/service/capability"
+	"hcm/pkg/api/data-service"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/sys"
 	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
 )
 
-// Client is data-service api client.
-type Client struct {
-	client rest.ClientInterface
+// IAM related operate.
+type IAM struct {
+	// data service's iamSys api
+	ds *dataservice.Client
+	// iam client.
+	iamSys *sys.Sys
+	// disableAuth defines whether iam authorization is disabled
+	disableAuth bool
 }
 
-// NewClient create a new data-service api client.
-func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
-	return &Client{
-		client: rest.NewClient(c, base),
+// NewIAM new iam.
+func NewIAM(ds *dataservice.Client, iamSys *sys.Sys, disableAuth bool) (*IAM, error) {
+	if ds == nil {
+		return nil, errf.New(errf.InvalidParameter, "data client is nil")
 	}
+
+	if iamSys == nil {
+		return nil, errf.New(errf.InvalidParameter, "iam sys is nil")
+	}
+
+	i := &IAM{
+		ds:          ds,
+		iamSys:      iamSys,
+		disableAuth: disableAuth,
+	}
+
+	return i, nil
 }
 
-// Account get account client.
-func (c *Client) Account() *AccountClient {
-	return NewAccountClient(c.client)
-}
+// InitIAMService initialize the iam get resource service
+func (i *IAM) InitIAMService(c *capability.Capability) {
+	h := rest.NewHandler()
 
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
+	h.Add("PullResource", "POST", "/iam/find/resource", i.PullResource)
+
+	h.Load(c.WebService)
 }

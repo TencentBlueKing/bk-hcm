@@ -28,7 +28,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
-	"hcm/pkg/tools/uuid"
 )
 
 // Run start the hc service.
@@ -68,12 +67,7 @@ func (ds *hcService) prepare(opt *options.Option) error {
 	logs.Infof("load settings from config file success.")
 
 	// register hc service.
-	svcOpt := serviced.ServiceOption{
-		Name: cc.HCServiceName,
-		IP:   cc.HCService().Network.BindIP,
-		Port: cc.HCService().Network.Port,
-		Uid:  uuid.UUID(),
-	}
+	svcOpt := serviced.NewServiceOption(cc.HCServiceName, cc.HCService().Network)
 	disOpt := serviced.DiscoveryOption{
 		Services: []cc.Name{cc.DataServiceName},
 	}

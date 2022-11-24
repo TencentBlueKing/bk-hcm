@@ -17,35 +17,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dataservice defines data-service api client.
-package dataservice
+package main
 
 import (
 	"fmt"
+	"os"
 
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	"hcm/cmd/auth-server/app"
+	"hcm/cmd/auth-server/options"
+	"hcm/pkg/cc"
+	"hcm/pkg/logs"
 )
 
-// Client is data-service api client.
-type Client struct {
-	client rest.ClientInterface
-}
+func main() {
+	cc.InitService(cc.AuthServerName)
 
-// NewClient create a new data-service api client.
-func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
-	return &Client{
-		client: rest.NewClient(c, base),
+	opts := options.InitOptions()
+	if err := app.Run(opts); err != nil {
+		fmt.Fprintf(os.Stderr, "start auth server failed, err: %v", err)
+		logs.CloseLogs()
+		os.Exit(1)
 	}
-}
-
-// Account get account client.
-func (c *Client) Account() *AccountClient {
-	return NewAccountClient(c.client)
-}
-
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
 }

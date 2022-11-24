@@ -17,35 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dataservice defines data-service api client.
-package dataservice
+package auth
 
 import (
 	"fmt"
 
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/client"
+	"hcm/pkg/iam/meta"
 )
 
-// Client is data-service api client.
-type Client struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new data-service api client.
-func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
-	return &Client{
-		client: rest.NewClient(c, base),
+// AdaptAuthOptions convert hcm auth resource to iam action id and resources
+func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a == nil {
+		return "", nil, errf.New(errf.InvalidParameter, fmt.Sprintf("resource attribute is not set"))
 	}
-}
 
-// Account get account client.
-func (c *Client) Account() *AccountClient {
-	return NewAccountClient(c.client)
-}
+	// skip actions do not need to relate to resources
+	if a.Basic.Action == meta.SkipAction {
+		return genSkipResource(a)
+	}
 
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
+	switch a.Basic.Type {
+	case meta.Account:
+		return genAccountResource(a)
+	case meta.Resource:
+		return genResourceResource(a)
+	default:
+		return "", nil, errf.New(errf.InvalidParameter, fmt.Sprintf("unsupported hcm auth type: %s", a.Basic.Type))
+	}
 }

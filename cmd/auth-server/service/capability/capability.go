@@ -17,35 +17,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dataservice defines data-service api client.
-package dataservice
+package capability
 
 import (
-	"fmt"
-
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	"github.com/emicklei/go-restful/v3"
 )
 
-// Client is data-service api client.
-type Client struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new data-service api client.
-func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
-	return &Client{
-		client: rest.NewClient(c, base),
-	}
-}
-
-// Account get account client.
-func (c *Client) Account() *AccountClient {
-	return NewAccountClient(c.client)
-}
-
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
+// Capability defines the service's capability
+type Capability struct {
+	WebService *restful.WebService
 }

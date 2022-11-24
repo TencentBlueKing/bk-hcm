@@ -17,35 +17,52 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dataservice defines data-service api client.
-package dataservice
+package operator
 
 import (
+	"encoding/json"
 	"fmt"
-
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
 )
 
-// Client is data-service api client.
-type Client struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new data-service api client.
-func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
-	return &Client{
-		client: rest.NewClient(c, base),
+func isNumeric(val interface{}) bool {
+	switch val.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
+		return true
 	}
+	return false
 }
 
-// Account get account client.
-func (c *Client) Account() *AccountClient {
-	return NewAccountClient(c.client)
-}
+func toFloat64(val interface{}) float64 {
+	switch val.(type) {
+	case int:
+		return float64(val.(int))
+	case int8:
+		return float64(val.(int8))
+	case int16:
+		return float64(val.(int16))
+	case int32:
+		return float64(val.(int32))
+	case int64:
+		return float64(val.(int64))
+	case uint:
+		return float64(val.(uint))
+	case uint8:
+		return float64(val.(uint8))
+	case uint16:
+		return float64(val.(uint16))
+	case uint32:
+		return float64(val.(uint32))
+	case uint64:
+		return float64(val.(uint64))
+	case json.Number:
+		val, _ := val.(json.Number).Float64()
+		return val
+	case float64:
+		return val.(float64)
+	case float32:
+		return val.(float64)
+	default:
+		panic(fmt.Sprintf("unsupported type, value: %v", val))
 
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
+	}
 }
