@@ -46,7 +46,6 @@ type Contexts struct {
 // DecodeInto decode request body to a struct, if failed, then return the
 // response with an error
 func (c *Contexts) DecodeInto(to interface{}) error {
-
 	err := json.NewDecoder(c.Request.Request.Body).Decode(to)
 	if err != nil {
 		logs.ErrorDepthf(1, "decode request body failed, err: %s, rid: %s", err.Error(), c.Kit.Rid)

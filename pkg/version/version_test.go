@@ -43,7 +43,6 @@ func TestCurrentVersion(t *testing.T) {
 		t.Errorf("invalid patch version: %d", ver[0])
 		return
 	}
-
 }
 
 func TestIncorrectVersion(t *testing.T) {
@@ -70,5 +69,4 @@ func TestIncorrectVersion(t *testing.T) {
 		t.Errorf("expect parse version failed, but not")
 		return
 	}
-
 }

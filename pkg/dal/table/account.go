@@ -108,7 +108,8 @@ var AccountSpecColumns = mergeColumns(nil, AccountSpecColumnDescriptor)
 // AccountSpecColumnDescriptor is AccountSpec's column descriptors.
 var AccountSpecColumnDescriptor = ColumnDescriptors{
 	{Column: "name", NamedC: "name", Type: enumor.String},
-	{Column: "memo", NamedC: "memo", Type: enumor.String}}
+	{Column: "memo", NamedC: "memo", Type: enumor.String},
+}
 
 // AccountSpec is a collection of account's specifics defined with user
 type AccountSpec struct {

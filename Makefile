@@ -35,3 +35,18 @@ all: pre
 clean:
 	@cd ${PRO_DIR}/cmd && make clean
 	@rm -rf ${PRO_DIR}/build
+
+init-tools:
+	# for gofumpt
+	go install mvdan.cc/gofumpt@latest
+	# for golines
+	go install github.com/segmentio/golines@latest
+	# for golangci-lint
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+fmt:
+	golines ./ -m 120 -w --base-formatter gofmt --no-reformat-tags
+	gofumpt -l -w .
+
+lint:
+	golangci-lint run

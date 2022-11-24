@@ -34,14 +34,16 @@ import (
 // doing shutdown operation immediately. so that jobs/tasks can exit gracefully.
 // Note: do not send message to this notifier, it can only be closed to
 // broadcast the shutdown message.
-var shutdownNotifier chan struct{}
-var shutdownFlag atomic.Value
-var waitOnceFlag atomic.Value
-var globalWaitGroup sync.WaitGroup
-var shutdownOnce sync.Once
-var shutdownSignal chan struct{}
-var firstOnceLock sync.Mutex
-var firstShutdown func()
+var (
+	shutdownNotifier chan struct{}
+	shutdownFlag     atomic.Value
+	waitOnceFlag     atomic.Value
+	globalWaitGroup  sync.WaitGroup
+	shutdownOnce     sync.Once
+	shutdownSignal   chan struct{}
+	firstOnceLock    sync.Mutex
+	firstShutdown    func()
+)
 
 func init() {
 	shutdownNotifier = make(chan struct{})
@@ -114,7 +116,6 @@ func (n *Notifier) Done() {
 
 // SignalShutdownGracefully send the signal to shut down the process.
 func SignalShutdownGracefully() {
-
 	if waitOnceFlag.Load().(bool) {
 		logs.Infof("already in shutdown process for now, do not need to call SignalShutdownGracefully again.")
 		return
@@ -144,7 +145,6 @@ func AddNotifier() *Notifier {
 // 2. timeoutSeconds is >0 means the process will be exited anyway after timeout.
 // finalizer is other jobs/tasks shutdown dependent function, only can final exec.
 func WaitShutdown(timeoutSeconds int, finalizer ...func()) {
-
 	select {
 	// wait for shutdown the process, then handle the finalizer process.
 	case <-shutdownNotifier:

@@ -45,7 +45,8 @@ var AuditColumnDescriptor = ColumnDescriptors{
 	{Column: "account_id", NamedC: "account_id", Type: enumor.Numeric},
 	{Column: "tenant_id", NamedC: "tenant_id", Type: enumor.Json},
 	{Column: "operator", NamedC: "operator", Type: enumor.String},
-	{Column: "created_at", NamedC: "created_at", Type: enumor.Time}}
+	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
+}
 
 // Audit is used to save resource's audit information.
 type Audit struct {
@@ -65,7 +66,6 @@ type Audit struct {
 
 // CreateValidate audit when created
 func (a Audit) CreateValidate() error {
-
 	if len(a.ResourceType) == 0 {
 		return errors.New("resource type can not be empty")
 	}
@@ -119,7 +119,6 @@ func (detail *AuditBasicDetail) Scan(raw interface{}) error {
 	case []byte:
 		if err := json.Unmarshal(v, &detail); err != nil {
 			return fmt.Errorf("decode into auditBasicDetail failed, err: %v", err)
-
 		}
 		return nil
 	case string:

@@ -66,7 +66,6 @@ type Handler struct {
 
 // Add add a http handler
 func (r *Handler) Add(alias, verb, path string, handler func(contexts *Contexts) (reply interface{}, err error)) {
-
 	switch verb {
 	case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete:
 	default:

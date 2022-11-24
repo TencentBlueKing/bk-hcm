@@ -262,7 +262,7 @@ func (r *Request) checkToleranceLatency(start *time.Time, url string, rid string
 
 // isToleranceLatencyExclusionURL judge url if need to checkToleranceLatency.
 func (r *Request) isToleranceLatencyExclusionURL(url string) bool {
-	var exclusionURL = make([]string, 0)
+	exclusionURL := make([]string, 0)
 
 	for _, eurl := range exclusionURL {
 		if strings.Contains(url, eurl) {
@@ -383,7 +383,6 @@ func (r *Request) doWithHost(client client.HTTPClient, host string, retries int,
 
 	start := time.Now()
 	resp, err := client.Do(req)
-
 	if err != nil {
 		// "Connection reset by peer" is a special err which in most scenario is a transient error.
 		// Which means that we can retry it. And so does the GET operation.

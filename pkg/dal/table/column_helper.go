@@ -225,8 +225,8 @@ func mergeColumnDescriptors(prefix string, namedC ...ColumnDescriptors) ColumnDe
 //    update it to blank value as required.
 // 4. see the test case to know the exact data returned.
 func RearrangeSQLDataWithOption(data interface{}, opts *FieldOption) (
-	expr string, toUpdate map[string]interface{}, err error) {
-
+	expr string, toUpdate map[string]interface{}, err error,
+) {
 	if data == nil {
 		return "", nil, errors.New("parse sql expr fields, but data is nil")
 	}

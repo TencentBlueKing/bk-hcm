@@ -62,7 +62,6 @@ func init() {
 
 	cis := ContainsInsensitiveOp(ContainsInsensitive)
 	opFactory[OpFactory(cis.Name())] = &cis
-
 }
 
 const (
@@ -409,7 +408,6 @@ func (io InOp) Name() OpType {
 
 // ValidateValue validate in operator's value
 func (io InOp) ValidateValue(v interface{}, opt *ExprOption) error {
-
 	switch reflect.TypeOf(v).Kind() {
 	case reflect.Array:
 	case reflect.Slice:
@@ -448,7 +446,6 @@ func (io InOp) ValidateValue(v interface{}, opt *ExprOption) error {
 // SQLExpr convert this operator's field and value to a mysql's sub
 // query expression.
 func (io InOp) SQLExpr(field string, value interface{}) (string, error) {
-
 	if len(field) == 0 {
 		return "", errors.New("field is empty")
 	}
@@ -500,7 +497,6 @@ func (nio NotInOp) Name() OpType {
 
 // ValidateValue validate not in value
 func (nio NotInOp) ValidateValue(v interface{}, opt *ExprOption) error {
-
 	switch reflect.TypeOf(v).Kind() {
 	case reflect.Array:
 	case reflect.Slice:
@@ -589,7 +585,6 @@ func (cso ContainsSensitiveOp) Name() OpType {
 
 // ValidateValue validate 'like' operator's value
 func (cso ContainsSensitiveOp) ValidateValue(v interface{}, opt *ExprOption) error {
-
 	if reflect.TypeOf(v).Kind() != reflect.String {
 		return errors.New("cs operator's value should be an string")
 	}
@@ -639,7 +634,6 @@ func (cio ContainsInsensitiveOp) Name() OpType {
 
 // ValidateValue validate 'like' operator's value
 func (cio ContainsInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) error {
-
 	if reflect.TypeOf(v).Kind() != reflect.String {
 		return errors.New("cis operator's value should be an string")
 	}
