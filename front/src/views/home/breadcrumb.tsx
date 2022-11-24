@@ -13,7 +13,6 @@ export default defineComponent({
         return { path: ele.path, name: ele.name };
       });
       breadList.value = matched;
-      console.log('breadList', breadList);
     };
     onMounted(() => {
     //   getBreadcrumb();

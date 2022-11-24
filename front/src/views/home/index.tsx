@@ -66,6 +66,9 @@ export default defineComponent({
           menus = reactive(resource);
           path = '/resource/account';
           openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
+          router.push({   // 默认跳转
+            path,
+          });
           break;
       }
     };
@@ -160,14 +163,14 @@ export default defineComponent({
                       </header>
                     ),
                     menu: () => (
-                      <Menu style={`width: ${NAV_WIDTH}px`} uniqueOpen openedKeys={openedKeys} activeKey={route.meta.activeKey as string}>
+                      <Menu class="menu-warp" style={`width: ${NAV_WIDTH}px`} uniqueOpen openedKeys={openedKeys} activeKey={route.meta.activeKey as string}>
                         {
                           menus.map(menuItem => (Array.isArray(menuItem.children) ? (
                             <Menu.Submenu
                               key={menuItem.path as string}
                               title={menuItem.name as string}>
                             {{
-                              // icon: () => <menuItem.icon/>,
+                              icon: () => <i class={'icon hcm-icon bkhcm-icon-automatic-typesetting menu-icon'}/>,
                               default: () => menuItem.children.map(child => (
                                 <RouterLink to={`${child.path}`}>
                                     <Menu.Item key={child.meta.activeKey as string}>
@@ -198,7 +201,9 @@ export default defineComponent({
                         <div class="navigation-breadcrumb">
                             <Breadcrumb></Breadcrumb>
                         </div>
-                        <RouterView></RouterView>
+                        <div class="view-warp">
+                          <RouterView></RouterView>
+                        </div>
                       </div>
                     ),
                   }}

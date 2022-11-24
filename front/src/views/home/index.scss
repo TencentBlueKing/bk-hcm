@@ -10,6 +10,9 @@
         .navigation-breadcrumb {
             height: 52px;
         }
+        .view-warp{
+            padding: 20px;
+        }
 
         .navigation-content {
             height: calc(100% - 52px);
@@ -47,6 +50,11 @@
         //overflow: hidden;
         white-space: nowrap;
         color: #96a2b9;
+    }
+}
+.menu-warp{
+    .menu-icon{
+        color: #96A2B9;
     }
 }
 .bk-hcm-header {

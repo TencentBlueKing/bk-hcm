@@ -10,7 +10,7 @@ const resourceMenus: RouteRecordRaw[] = [
         path: '/resource/account',
         name: '账户',
         alias: '',
-        component: () => import('@/views/resource/demo2'),
+        component: () => import('@/views/resource/accountmanage/index.vue'),
         meta: {
           activeKey: 'resourceAccount',
         },
