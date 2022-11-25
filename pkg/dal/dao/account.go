@@ -137,7 +137,7 @@ func (ad *accountDao) Update(kit *kit.Kit, expr *filter.Expression, updateField 
 		}
 
 		if effected == 0 {
-			logs.Errorf("update account, but record not found, filter: %v, rid: %v", expr, kit.Rid)
+			logs.ErrorJson("update account, but record not found, filter: %v, rid: %v", expr, kit.Rid)
 			return nil, errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
 		}
 
@@ -232,7 +232,7 @@ func (ad *accountDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
 		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("delete account failed, filter: %v, err: %v, rid: %v", expr, err, kt.Rid)
+		logs.ErrorJson("delete account failed, filter: %v, err: %v, rid: %v", expr, err, kt.Rid)
 		return fmt.Errorf("delete account, but run txn failed, err: %v", err)
 	}
 
