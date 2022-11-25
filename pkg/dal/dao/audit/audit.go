@@ -35,8 +35,8 @@ import (
 type AuditDao interface {
 	// Decorator is used to handle the audit process as a pipeline according CUD scenarios.
 	Decorator(kit *kit.Kit, res enumor.AuditResourceType) AuditDecorator
-	// One insert one resource's audit.
-	One(kit *kit.Kit, txn *sqlx.Tx, audit *table.Audit) error
+	// Insert resource's audit.
+	Insert(kit *kit.Kit, txn *sqlx.Tx, audits []*table.Audit) error
 }
 
 var _ AuditDao = new(audit)
@@ -77,6 +77,30 @@ func (au *audit) One(kit *kit.Kit, txn *sqlx.Tx, audit *table.Audit) error {
 	// is launched by resource's owner.
 	if _, err := au.orm.Txn(txn).Insert(kit.Ctx, sql, audit); err != nil {
 		return fmt.Errorf("insert audit failed, err: %v", err)
+	}
+
+	return nil
+}
+
+// Insert audit resource's operation.
+func (au *audit) Insert(kit *kit.Kit, txn *sqlx.Tx, audits []*table.Audit) error {
+	if audits == nil {
+		return errors.New("invalid input audits or opt")
+	}
+
+	for _, one := range audits {
+		if err := one.CreateValidate(); err != nil {
+			return fmt.Errorf("audit create validate failed, err: %v", err)
+		}
+	}
+
+	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, table.AuditTable,
+		table.AuditColumns.ColumnExpr(), table.AuditColumns.ColonNameExpr())
+
+	// do with the same transaction with the resource, this transaction
+	// is launched by resource's owner.
+	if _, err := au.orm.Txn(txn).BulkInsert(kit.Ctx, sql, audits); err != nil {
+		return fmt.Errorf("insert audits failed, err: %v", err)
 	}
 
 	return nil

@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TencentBlueKing/gopkg/conv"
 	"github.com/jmoiron/sqlx"
 	prm "github.com/prometheus/client_golang/prometheus"
 )
@@ -180,16 +181,16 @@ func (do *do) Insert(ctx context.Context, expr string, data interface{}) (uint64
 
 	start := time.Now()
 
-	result, err := do.db.ExecContext(ctx, expr, data)
+	result, err := do.db.NamedExecContext(ctx, expr, data)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "insert"}).Inc()
-		return 0, fmt.Errorf("insert failed, err: %v", err)
+		return 0, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "insert"}).Inc()
-		return 0, fmt.Errorf("insert get last insert id failed, err: %v", err)
+		return 0, err
 	}
 
 	do.ro.logSlowCmd(ctx, expr, time.Since(start))
@@ -209,13 +210,13 @@ func (do *do) Exec(ctx context.Context, expr string) (int64, error) {
 	result, err := do.db.ExecContext(ctx, expr)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "exec"}).Inc()
-		return 0, fmt.Errorf("exec failed, err: %v", err)
+		return 0, err
 	}
 
 	effected, err := result.RowsAffected()
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "exec"}).Inc()
-		return 0, fmt.Errorf("exec failed, err: %v", err)
+		return 0, err
 	}
 
 	do.ro.logSlowCmd(ctx, expr, time.Since(start))
@@ -224,30 +225,48 @@ func (do *do) Exec(ctx context.Context, expr string) (int64, error) {
 	return effected, nil
 }
 
-// BulkInsert insert multiple data at one time.
-func (do *do) BulkInsert(ctx context.Context, expr string, args interface{}) error {
+// BulkInsert insert multiple data at one time, the order in which ids is returned
+// is the same as the order in which data is inserted.
+func (do *do) BulkInsert(ctx context.Context, expr string, args interface{}) ([]uint64, error) {
 	if err := do.ro.tryAccept(); err != nil {
-		return err
+		return nil, err
 	}
 
 	start := time.Now()
 
-	q, arrayArgs, err := bindArray(sqlx.BindType(do.db.DriverName()), expr, args, do.db.Mapper)
+	stmt, err := do.db.PrepareNamed(expr)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
-		return err
+		return nil, err
+	}
+	defer stmt.Close()
+
+	argSlice, err := conv.ToSlice(args)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
+		return nil, err
 	}
 
-	_, err = do.db.ExecContext(ctx, q, arrayArgs...)
-	if err != nil {
-		do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
-		return err
+	ids := make([]uint64, 0, len(argSlice))
+	for _, arg := range argSlice {
+		result, err := stmt.Exec(arg)
+		if err != nil {
+			do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
+			return nil, err
+		}
+
+		id, err := result.LastInsertId()
+		if err != nil {
+			do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
+			return nil, err
+		}
+		ids = append(ids, uint64(id))
 	}
 
 	do.ro.logSlowCmd(ctx, expr, time.Since(start))
 	do.ro.mc.cmdLagMS.With(prm.Labels{"cmd": "bulk-insert"}).Observe(float64(time.Since(start).Milliseconds()))
 
-	return err
+	return ids, nil
 }
 
 var _ DoOrmWithTransaction = new(doTxn)
@@ -280,7 +299,7 @@ func (do *doTxn) Delete(ctx context.Context, expr string, args ...interface{}) e
 	do.ro.logSlowCmd(ctx, expr, time.Since(start))
 	do.ro.mc.cmdLagMS.With(prm.Labels{"cmd": "delete"}).Observe(float64(time.Since(start).Milliseconds()))
 
-	return err
+	return nil
 }
 
 // Insert data with transaction
@@ -310,33 +329,60 @@ func (do *doTxn) Insert(ctx context.Context, expr string, args interface{}) (uin
 	do.ro.logSlowCmd(ctx, expr, time.Since(start))
 	do.ro.mc.cmdLagMS.With(prm.Labels{"cmd": "insert"}).Observe(float64(time.Since(start).Milliseconds()))
 
-	return uint64(id), err
+	return uint64(id), nil
 }
 
-// BulkInsert insert data batch with transaction
-func (do *doTxn) BulkInsert(ctx context.Context, expr string, args interface{}) error {
+// BulkInsert insert data batch with transaction, the order in which ids is
+// returned is the same as the order in which data is inserted.
+func (do *doTxn) BulkInsert(ctx context.Context, expr string, args interface{}) ([]uint64, error) {
 	if err := do.ro.tryAccept(); err != nil {
-		return err
+		return nil, err
 	}
 
 	start := time.Now()
 
-	q, arrayArgs, err := bindArray(sqlx.BindType(do.tx.DriverName()), expr, args, do.tx.Mapper)
+	/*
+		批量插入并按顺序返回插入数据的ID
+
+		使用预编译遍历执行, 而不是直接批量执行的原因:
+		1. 使用一条INSERT语句插入多个行, LAST_INSERT_ID() 只返回插入的第一行数据时产生的值
+		2. 如果MySQL配置的auto_increment_increment != 1 会导致除了第一条插入的数据, 后续的数据id无法预期
+		3. 基于以上原因, 使用预编译循环插入, 每次拿到的LAST_INSERT_ID一定是上一次插入的id值, 能规避以上错误
+	*/
+
+	stmt, err := do.tx.PrepareNamed(expr)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
-		return err
+		return nil, err
+	}
+	defer stmt.Close()
+
+	argSlice, err := conv.ToSlice(args)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
+		return nil, err
 	}
 
-	_, err = do.tx.ExecContext(ctx, q, arrayArgs...)
-	if err != nil {
-		do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
-		return err
+	ids := make([]uint64, 0, len(argSlice))
+	for _, arg := range argSlice {
+		result, err := stmt.Exec(arg)
+		if err != nil {
+			do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
+			return nil, err
+		}
+
+		id, err := result.LastInsertId()
+		if err != nil {
+			do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
+			return nil, err
+		}
+		ids = append(ids, uint64(id))
 	}
 
 	do.ro.logSlowCmd(ctx, expr, time.Since(start))
 	do.ro.mc.cmdLagMS.With(prm.Labels{"cmd": "bulk-insert"}).Observe(float64(time.Since(start).Milliseconds()))
 
-	return err
+	return ids, nil
 }
 
 // Update with transaction

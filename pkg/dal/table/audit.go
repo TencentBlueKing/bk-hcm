@@ -61,7 +61,7 @@ type Audit struct {
 	AccountID    uint64                   `db:"account_id" json:"account_id"`
 	TenantID     string                   `db:"tenant_id" json:"tenant_id"`
 	Operator     string                   `db:"operator" json:"operator"`
-	CreatedAt    time.Time                `db:"created_at" json:"created_at"`
+	CreatedAt    *time.Time               `db:"created_at" json:"created_at,omitempty"`
 }
 
 // CreateValidate audit when created
@@ -86,7 +86,7 @@ func (a Audit) CreateValidate() error {
 		return errors.New("operator can not be empty")
 	}
 
-	if !a.CreatedAt.IsZero() {
+	if a.CreatedAt != nil && !a.CreatedAt.IsZero() {
 		return errors.New("create_at can not be set, it is generated through db")
 	}
 
@@ -100,8 +100,8 @@ func (a Audit) TableName() Name {
 
 // AuditBasicDetail defines the audit's basic details.
 type AuditBasicDetail struct {
-	Data    interface{} `json:"data"`
-	Changed interface{} `json:"changed"`
+	Data    interface{} `json:"data,omitempty"`
+	Changed interface{} `json:"changed,omitempty"`
 }
 
 // Scan is used to decode raw message which is read from db into a structured

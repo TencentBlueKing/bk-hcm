@@ -79,8 +79,8 @@ func (a Account) ValidateCreate() error {
 
 // ValidateUpdate validate account's info when update.
 func (a Account) ValidateUpdate() error {
-	if a.ID <= 0 {
-		return errors.New("id can not be empty")
+	if a.ID > 0 {
+		return errors.New("id can not be updated")
 	}
 
 	if a.Spec == nil {

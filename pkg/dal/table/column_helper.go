@@ -243,27 +243,21 @@ func RearrangeSQLDataWithOption(data interface{}, opts *FieldOption) (
 	}
 
 	for tag, value := range taggedKV {
-		// all the field's value is saved, no matter it's field need to be
-		// blanked or ignored.
-		toUpdate[tag] = value
-
 		if opts.NeedIgnored(tag) {
 			// this is a field which is need to be ignored,
 			// which means do not need to be updated.
 			continue
 		}
 
-		if tag == "updated_at" {
-			setFields = append(setFields, "updated_at = now()")
-		}
-
 		if opts.NeedBlanked(tag) {
 			if isBasicValue(value) && !reflect.ValueOf(value).IsNil() {
+				toUpdate[tag] = value
 				setFields = append(setFields, fmt.Sprintf("%s = :%s", tag, tag))
 				continue
 			}
 
 			if !isBasicValue(value) {
+				toUpdate[tag] = value
 				setFields = append(setFields, fmt.Sprintf("%s = :%s", tag, tag))
 			}
 
@@ -271,13 +265,15 @@ func RearrangeSQLDataWithOption(data interface{}, opts *FieldOption) (
 		}
 
 		if !isBlank(reflect.ValueOf(value)) {
+			toUpdate[tag] = value
 			setFields = append(setFields, fmt.Sprintf("%s = :%s", tag, tag))
 		}
 	}
 
+	setFields = append(setFields, "updated_at = now()")
 	expr = strings.Join(setFields, ", ")
 
-	return expr, toUpdate, nil
+	return "set " + expr, toUpdate, nil
 }
 
 // RecursiveGetTaggedFieldValues get all the tagged db kv
