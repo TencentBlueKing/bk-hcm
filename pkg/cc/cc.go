@@ -61,6 +61,25 @@ func (r *runtime) Ready() bool {
 	return true
 }
 
+// ApiServer return api server Setting.
+func ApiServer() ApiServerSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty api server setting")
+		return ApiServerSetting{}
+	}
+
+	s, ok := rt.settings.(*ApiServerSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get api server setting", ServiceName())
+		return ApiServerSetting{}
+	}
+
+	return *s
+}
+
 // DataService return data service Setting.
 func DataService() DataServiceSetting {
 	rt.lock.Lock()

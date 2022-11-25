@@ -21,20 +21,16 @@ package serviced
 
 import (
 	"context"
-	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
-	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
 
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/ssl"
 
 	etcd3 "go.etcd.io/etcd/client/v3"
 )
@@ -57,8 +53,6 @@ type State interface {
 	// DisableMasterSlave disable/enable this service instance's master-slave check.
 	// if disabled, treat this service as a slave instead of checking if it is master from service discovery.
 	DisableMasterSlave(disable bool)
-	// Healthz etcd health check.
-	Healthz(etcd cc.Etcd) error
 }
 
 // NewService create a service instance.
@@ -124,7 +118,11 @@ func (s *service) Register() error {
 
 	// get service key and value.
 	key := key(ServiceDiscoveryName(s.svcOpt.Name), s.svcOpt.Uid)
-	value := net.JoinHostPort(s.svcOpt.IP, strconv.Itoa(int(s.svcOpt.Port)))
+	serverPath := url.URL{
+		Scheme: s.svcOpt.Scheme,
+		Host:   net.JoinHostPort(s.svcOpt.IP, strconv.Itoa(int(s.svcOpt.Port))),
+	}
+	value := serverPath.String()
 
 	// grant lease, and put kv with lease.
 	lease := etcd3.NewLease(s.cli)
@@ -249,49 +247,6 @@ func (s *service) DisableMasterSlave(disable bool) {
 type HealthInfo struct {
 	// Health is state flag, it's string not boolean.
 	Health string `json:"health"`
-}
-
-// Healthz checks the etcd health state.
-func (s *service) Healthz(config cc.Etcd) error {
-	var tlsConf *tls.Config
-	var err error
-	scheme := "http"
-	if config.TLS.Enable() {
-		if tlsConf, err = ssl.ClientTLSConfVerify(config.TLS.InsecureSkipVerify, config.TLS.CAFile,
-			config.TLS.CertFile, config.TLS.KeyFile, config.TLS.Password); err != nil {
-			return err
-		}
-		scheme = "https"
-	}
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}
-
-	for _, endpoint := range config.Endpoints {
-		resp, err := client.Get(fmt.Sprintf("%s://%s/health", scheme, endpoint))
-		if err != nil {
-			return fmt.Errorf("get etcd health failed, err: %v", err)
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("response status: %d", resp.StatusCode)
-		}
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("read etcd healthz body failed, err: %v", err)
-		}
-
-		info := &HealthInfo{}
-		if err := json.Unmarshal(body, info); err != nil {
-			return fmt.Errorf("unmarshal etcd healthz info failed, err: %v", err)
-		}
-
-		if info.Health != "true" {
-			return fmt.Errorf("endpoint %s etcd not healthy", endpoint)
-		}
-		_ = resp.Body.Close()
-	}
-
-	return nil
 }
 
 // syncMasterState determine whether the current node is the primary node.

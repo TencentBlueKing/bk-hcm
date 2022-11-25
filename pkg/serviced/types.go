@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"hcm/pkg/cc"
+	"hcm/pkg/tools/uuid"
 )
 
 const (
@@ -40,9 +41,10 @@ const (
 
 // ServiceOption defines a service related options.
 type ServiceOption struct {
-	Name cc.Name
-	IP   string
-	Port uint
+	Name   cc.Name
+	IP     string
+	Port   uint
+	Scheme string
 	// Uid is a service's unique identity.
 	Uid string
 }
@@ -66,6 +68,24 @@ func (so ServiceOption) Validate() error {
 	}
 
 	return nil
+}
+
+// NewServiceOption generate a service option.
+func NewServiceOption(name cc.Name, network cc.Network) ServiceOption {
+	opt := ServiceOption{
+		Name: name,
+		IP:   network.BindIP,
+		Port: network.Port,
+		Uid:  uuid.UUID(),
+	}
+
+	if network.TLS.Enable() {
+		opt.Scheme = "https"
+	} else {
+		opt.Scheme = "http"
+	}
+
+	return opt
 }
 
 // DiscoveryOption defines all the service discovery

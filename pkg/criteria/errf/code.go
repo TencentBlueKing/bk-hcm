@@ -46,4 +46,6 @@ const (
 	RecordNotFound int32 = 2000003
 	// DecodeRequestFailed means decode the request body failed.
 	DecodeRequestFailed int32 = 2000004
+	// UnHealthy means service health check failed, current service is not healthy.
+	UnHealthy int32 = 2000005
 )

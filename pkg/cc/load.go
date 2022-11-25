@@ -63,6 +63,8 @@ func loadFromFile(filename string) (Setting, error) {
 
 	var s Setting
 	switch ServiceName() {
+	case APIServerName:
+		s = new(ApiServerSetting)
 	case DataServiceName:
 		s = new(DataServiceSetting)
 	case HCServiceName:
