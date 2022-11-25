@@ -20,10 +20,8 @@
 package dao
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -43,11 +41,14 @@ type Account interface {
 	// Create one account instance
 	Create(kt *kit.Kit, account *table.Account) (uint64, error)
 	// Update one account's info
-	Update(kt *kit.Kit, account *table.Account) error
+	Update(kt *kit.Kit, filter *filter.Expression, account *table.Account) error
 	// List accounts with options.
 	List(kt *kit.Kit, opts *types.ListAccountsOption) (*types.ListAccountDetails, error)
 	// Delete one account instance.
-	Delete(kt *kit.Kit, account *types.DeleteOption) error
+	Delete(kt *kit.Kit, filter *filter.Expression) error
+	// BatchCreate account instances.
+	// TODO: 这里仅展示批量创建如何使用，账号应该没有批量创建接口，之后删掉
+	BatchCreate(kt *kit.Kit, accounts []table.Account) ([]uint64, error)
 }
 
 var _ Account = new(accountDao)
@@ -98,44 +99,46 @@ func (ad *accountDao) Create(kt *kit.Kit, account *table.Account) (uint64, error
 }
 
 // Update an account instance.
-func (ad *accountDao) Update(kit *kit.Kit, account *table.Account) error {
-	if account == nil {
-		return errf.New(errf.InvalidParameter, "account is nil")
+func (ad *accountDao) Update(kit *kit.Kit, expr *filter.Expression, updateField *table.Account) error {
+	if expr == nil {
+		return errf.New(errf.InvalidParameter, "filter is nil")
 	}
 
-	if err := account.ValidateUpdate(); err != nil {
+	if updateField == nil {
+		return errf.New(errf.InvalidParameter, "update field is nil")
+	}
+
+	if err := updateField.ValidateUpdate(); err != nil {
 		return errf.New(errf.InvalidParameter, err.Error())
 	}
 
-	opts := table.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields("id")
-	expr, toUpdate, err := table.RearrangeSQLDataWithOption(account, opts)
+	sqlOpt := &filter.SQLWhereOption{
+		Priority: filter.Priority{"id"},
+	}
+	whereExpr, err := expr.SQLWhereExpr(sqlOpt)
 	if err != nil {
-		return fmt.Errorf("prepare parsed sql expr failed, err: %v", err)
+		return err
 	}
 
-	ab := ad.auditDao.Decorator(kit, enumor.Account).PrepareUpdate(account)
-	sql := fmt.Sprintf(`UPDATE %s SET %s WHERE id = %d`, account.TableName(), expr, account.ID)
+	opts := table.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields("id")
+	setExpr, toUpdate, err := table.RearrangeSQLDataWithOption(updateField, opts)
+	if err != nil {
+		return fmt.Errorf("prepare parsed sql set expr failed, err: %v", err)
+	}
+
+	ab := ad.auditDao.Decorator(kit, enumor.Account).PrepareUpdate(whereExpr, toUpdate)
+	sql := fmt.Sprintf(`UPDATE %s %s %s`, updateField.TableName(), setExpr, whereExpr)
 
 	_, err = ad.orm.AutoTxn(kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		effected, err := ad.orm.Txn(txn).Update(kit.Ctx, sql, toUpdate)
 		if err != nil {
-			logs.Errorf("update account: %d failed, err: %v, rid: %v", account.ID, err, kit.Rid)
+			logs.Errorf("update account: %d failed, err: %v, rid: %v", updateField.ID, err, kit.Rid)
 			return nil, err
 		}
 
 		if effected == 0 {
-			logs.Errorf("update one account: %d, but record not found, rid: %v", account.ID, kit.Rid)
+			logs.Errorf("update account, but record not found, filter: %v, rid: %v", expr, kit.Rid)
 			return nil, errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
-		}
-
-		if effected > 1 {
-			logs.Errorf(
-				"update one account: %d, but got updated account count: %d, rid: %v",
-				account.ID,
-				effected,
-				kit.Rid,
-			)
-			return nil, fmt.Errorf("matched account count %d is not as excepted", effected)
 		}
 
 		if err := ab.Do(txn); err != nil {
@@ -199,41 +202,81 @@ func (ad *accountDao) List(kt *kit.Kit, opts *types.ListAccountsOption) (*types.
 }
 
 // Delete an account instance.
-func (ad *accountDao) Delete(kt *kit.Kit, opt *types.DeleteOption) error {
-	if opt == nil {
-		return errf.New(errf.InvalidParameter, "option is nil")
+func (ad *accountDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
+	if expr == nil {
+		return errf.New(errf.InvalidParameter, "filter is nil")
 	}
 
-	if opt.ID == 0 {
-		return errors.New("id is nil")
+	sqlOpt := &filter.SQLWhereOption{
+		Priority: filter.Priority{"id"},
+	}
+	whereExpr, err := expr.SQLWhereExpr(sqlOpt)
+	if err != nil {
+		return err
 	}
 
-	ab := ad.auditDao.Decorator(kt, enumor.Account).PrepareDelete(opt.ID)
-
-	expr := fmt.Sprintf(`DELETE FROM %s WHERE id = ?`, table.AccountTable)
-
-	_, err := ad.orm.AutoTxn(kt, func(txn *sqlx.Tx, option *orm.TxnOption) (interface{}, error) {
+	ab := ad.auditDao.Decorator(kt, enumor.Account).PrepareDelete(whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountTable, whereExpr)
+	_, err = ad.orm.AutoTxn(kt, func(txn *sqlx.Tx, option *orm.TxnOption) (interface{}, error) {
 		// delete the account at first.
-		err := ad.orm.Txn(txn).Delete(kt.Ctx, expr, opt.ID)
+		err := ad.orm.Txn(txn).Delete(kt.Ctx, sql)
 		if err != nil {
 			return nil, err
 		}
 
 		// audit delete account details.
 		if err := ab.Do(txn); err != nil {
-			if strings.Contains(err.Error(), orm.ErrRecordNotFound.Error()) {
-				return nil, nil
-			}
-
 			return nil, fmt.Errorf("audit delete account failed, err: %v", err)
 		}
 
 		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("delete account: %d failed, err: %v, rid: %v", opt.ID, err, kt.Rid)
+		logs.Errorf("delete account failed, filter: %v, err: %v, rid: %v", expr, err, kt.Rid)
 		return fmt.Errorf("delete account, but run txn failed, err: %v", err)
 	}
 
 	return nil
+}
+
+// BatchCreate account instances.
+// TODO: 这里仅展示批量创建如何使用，账号应该没有批量创建接口，之后删掉
+func (ad *accountDao) BatchCreate(kt *kit.Kit, accounts []table.Account) ([]uint64, error) {
+
+	if accounts == nil {
+		return nil, errf.New(errf.InvalidParameter, "accounts is nil")
+	}
+
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AccountTable, table.AccountColumns.ColumnExpr(),
+		table.AccountColumns.ColonNameExpr())
+
+	result, err := ad.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		ids, err := ad.orm.Txn(txn).BulkInsert(kt.Ctx, sql, accounts)
+		if err != nil {
+			return 0, fmt.Errorf("insert accounts failed, err: %v", err)
+		}
+
+		// audit this to be create accounts details.
+		for index := range accounts {
+			accounts[index].ID = ids[index]
+		}
+
+		if err := ad.auditDao.Decorator(kt, enumor.Account).AuditBatchCreate(txn, accounts); err != nil {
+			return 0, fmt.Errorf("audit create accounts failed, err: %v", err)
+		}
+		return ids, nil
+	})
+
+	if err != nil {
+		logs.Errorf("create accounts, but do auto txn failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("create accounts, but auto run txn failed, err: %v", err)
+	}
+
+	ids, ok := result.([]uint64)
+	if !ok {
+		logs.Errorf("insert accounts return id type not is uint64, id type: %v, rid: %s",
+			reflect.TypeOf(result).String(), kt.Rid)
+	}
+
+	return ids, nil
 }
