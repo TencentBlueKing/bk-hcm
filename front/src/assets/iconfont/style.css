@@ -29,3 +29,6 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-down-shape:before {
 	content: "\e101";
 }
+.bkhcm-icon-arrows--left-line:before {
+	content: "\e103";
+}

@@ -4,7 +4,7 @@ import { createPinia } from 'pinia';
 import bus from './common/bus';
 import http from './http';
 import router from './router';
-import App from './App';
+import App from './app';
 import i18n from './language/i18n';
 import './style/index.scss';
 // 全量引入自定义图标

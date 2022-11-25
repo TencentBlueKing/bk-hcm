@@ -128,7 +128,7 @@ export default defineComponent({
     };
     // 跳转到新增资源账号
     const toAddAccount = () => {
-      router.push({ path: '/resource/account/add' });
+      router.push({ name: 'accountAdd' });
     };
 
     return {

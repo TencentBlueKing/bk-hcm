@@ -7,8 +7,9 @@ const resourceInside: RouteRecordRaw[] = [
   {
     path: '/resource/account/add',
     name: 'accountAdd',
-    component: () => import('@/views/resource/accountmanage/account-add.vue'),
+    component: () => import('@/views/resource/accountmanage/account-add'),
     meta: {
+      backRouter: -1,
       activeKey: 'resourceAccount',
       breadcrumb: ['云管', '账户', '新增账户'],
     },
