@@ -29,9 +29,9 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
 	"hcm/pkg/tools/assert"
 
-	pbstruct "github.com/golang/protobuf/ptypes/struct"
 	"github.com/tidwall/gjson"
 )
 
@@ -260,23 +260,9 @@ func (exp *Expression) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-// MarshalPB marshal Expression to pb struct.
-func (exp *Expression) MarshalPB() (*pbstruct.Struct, error) {
-	if exp == nil {
-		return nil, errf.New(errf.InvalidParameter, "expression is nil")
-	}
-
-	marshal, err := json.Marshal(exp)
-	if err != nil {
-		return nil, err
-	}
-
-	st := new(pbstruct.Struct)
-	if err = st.UnmarshalJSON(marshal); err != nil {
-		return nil, err
-	}
-
-	return st, nil
+// LogMarshal marshal Expression to string for log print.
+func (exp *Expression) LogMarshal() string {
+	return logs.ObjectEncode(exp)
 }
 
 // RuleFactory defines an expression's basic rule.

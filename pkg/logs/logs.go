@@ -50,7 +50,10 @@ var (
 
 	Warnf = glog.Warningf
 
-	Errorf      = glog.Errorf
+	Errorf = glog.Errorf
+	// ErrorJson compared with other log output methods, this method consumes
+	// performance and should not be used if it is not necessary.
+	ErrorJson   = errorJson
 	ErrorDepthf = glog.ErrorDepthf
 
 	Fatalf = glog.Fatalf

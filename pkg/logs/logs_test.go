@@ -20,6 +20,7 @@
 package logs
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -68,4 +69,58 @@ func TestLogger(t *testing.T) {
 		ErrorDepthf(1, "ErrorfDepthf xxxxxxxx")
 		time.Sleep(intervalTime)
 	}
+}
+
+// User used to log error json test.
+type User struct {
+	Name string
+	Age  int
+	Play Play
+}
+
+// LogMarshal used to log error json test.
+func (u *User) LogMarshal() string {
+	return ObjectEncode(u)
+}
+
+// Play used to log error json test.
+type Play interface {
+	Say()
+}
+
+type play struct {
+	Time     time.Time
+	Location string
+}
+
+func (p *play) Say() {
+	fmt.Printf("I play in %s when %v\n", p.Location, p.Time)
+}
+
+func TestErrorJson(t *testing.T) {
+	InitLogger(
+		LogConfig{
+			LogDir:             "./log",
+			LogLineMaxSize:     2,
+			LogMaxSize:         500,
+			LogMaxNum:          5,
+			RestartNoScrolling: false,
+			ToStdErr:           false,
+			AlsoToStdErr:       false,
+			Verbosity:          5,
+			StdErrThreshold:    "2",
+		},
+	)
+	defer CloseLogs()
+
+	user := &User{
+		Name: "Tom",
+		Age:  22,
+		Play: &play{
+			Time:     time.Now(),
+			Location: "ap-shenzhen",
+		},
+	}
+	Errorf("error log, user: %v", user)
+	ErrorJson("error json log, user: %v", user)
 }
