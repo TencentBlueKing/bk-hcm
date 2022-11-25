@@ -17,35 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dataservice defines data-service api client.
-package dataservice
+package meta
 
-import (
-	"fmt"
+// ResourceType 表示 hcm 这一侧的资源类型， 对应的有 client.TypeID 表示 iam 一侧的资源类型
+// 两者之间有映射关系，详情见 AdaptAuthOptions
+type ResourceType string
 
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+// String convert ResourceType to string.
+func (r ResourceType) String() string {
+	return string(r)
+}
+
+const (
+	// Account defines cloud account resource's hcm auth resource type
+	Account ResourceType = "account"
+	// Resource cloud resource's hcm auth resource type
+	Resource ResourceType = "resource"
 )
-
-// Client is data-service api client.
-type Client struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new data-service api client.
-func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
-	return &Client{
-		client: rest.NewClient(c, base),
-	}
-}
-
-// Account get account client.
-func (c *Client) Account() *AccountClient {
-	return NewAccountClient(c.client)
-}
-
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
-}

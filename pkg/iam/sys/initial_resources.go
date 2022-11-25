@@ -17,35 +17,40 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dataservice defines data-service api client.
-package dataservice
+package sys
 
-import (
-	"fmt"
+import "hcm/pkg/iam/client"
 
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
-)
-
-// Client is data-service api client.
-type Client struct {
-	client rest.ClientInterface
+// ResourceTypeIDMap resource type map.
+var ResourceTypeIDMap = map[client.TypeID]string{
+	Account: "账号",
 }
 
-// NewClient create a new data-service api client.
-func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
-	return &Client{
-		client: rest.NewClient(c, base),
+// GenerateStaticResourceTypes generate all the static resource types to register to IAM.
+func GenerateStaticResourceTypes() []client.ResourceType {
+	resourceTypeList := make([]client.ResourceType, 0)
+
+	// add account resources
+	resourceTypeList = append(resourceTypeList, genAccountResources()...)
+	return resourceTypeList
+}
+
+func genAccountResources() []client.ResourceType {
+	return []client.ResourceType{
+		{
+			ID:            Account,
+			Name:          ResourceTypeIDMap[Account],
+			NameEn:        "Account",
+			Description:   "账号",
+			DescriptionEn: "account",
+			Parents: []client.Parent{{
+				SystemID:   SystemIDHCM,
+				ResourceID: Account,
+			}},
+			ProviderConfig: client.ResourceConfig{
+				Path: "/api/v1/auth/iam/find/resource",
+			},
+			Version: 1,
+		},
 	}
-}
-
-// Account get account client.
-func (c *Client) Account() *AccountClient {
-	return NewAccountClient(c.client)
-}
-
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
 }

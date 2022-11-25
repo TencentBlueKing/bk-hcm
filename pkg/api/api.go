@@ -21,6 +21,7 @@
 package api
 
 import (
+	authserver "hcm/pkg/api/auth-server"
 	"hcm/pkg/api/cloud-server"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/discovery"
@@ -59,6 +60,12 @@ func NewHCServiceClientSet(client client.HTTPClient, discover serviced.Discover)
 	return newClientSet(client, discover, discoverServices)
 }
 
+// NewAuthServerClientSet create a new auth-server used client set.
+func NewAuthServerClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
+	discoverServices := []cc.Name{cc.DataServiceName}
+	return newClientSet(client, discover, discoverServices)
+}
+
 // CloudServer get cloud-server client.
 func (cs *ClientSet) CloudServer() *cloudserver.Client {
 	c := &client.Capability{
@@ -84,6 +91,15 @@ func (cs *ClientSet) HCService() *hcservice.Client {
 		Discover: cs.apiDiscovery[cc.HCServiceName],
 	}
 	return hcservice.NewClient(c, cs.version)
+}
+
+// AuthServer get auth-server client.
+func (cs *ClientSet) AuthServer() *authserver.Client {
+	c := &client.Capability{
+		Client:   cs.client,
+		Discover: cs.apiDiscovery[cc.AuthServerName],
+	}
+	return authserver.NewClient(c, cs.version)
 }
 
 // Healthz get service health check client.

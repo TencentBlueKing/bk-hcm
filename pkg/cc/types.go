@@ -430,3 +430,35 @@ func (s SysOption) CheckV() {
 		os.Exit(0)
 	}
 }
+
+// IAM defines all the iam related runtime.
+type IAM struct {
+	// Endpoints is a seed list of host:port addresses of iam nodes.
+	Endpoints []string `yaml:"endpoints"`
+	// AppCode blueking belong to hcm's appcode.
+	AppCode string `yaml:"appCode"`
+	// AppSecret blueking belong to hcm app's secret.
+	AppSecret string    `yaml:"appSecret"`
+	TLS       TLSConfig `yaml:"tls"`
+}
+
+// validate iam runtime.
+func (s IAM) validate() error {
+	if len(s.Endpoints) == 0 {
+		return errors.New("iam endpoints is not set")
+	}
+
+	if len(s.AppCode) == 0 {
+		return errors.New("iam appcode is not set")
+	}
+
+	if len(s.AppSecret) == 0 {
+		return errors.New("iam app secret is not set")
+	}
+
+	if err := s.TLS.validate(); err != nil {
+		return fmt.Errorf("iam tls validate failed, err: %v", err)
+	}
+
+	return nil
+}

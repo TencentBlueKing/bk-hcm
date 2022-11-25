@@ -117,3 +117,22 @@ func HCService() HCServiceSetting {
 
 	return *s
 }
+
+// AuthServer return auth server Setting.
+func AuthServer() AuthServerSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty auth server setting")
+		return AuthServerSetting{}
+	}
+
+	s, ok := rt.settings.(*AuthServerSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get auth server setting", ServiceName())
+		return AuthServerSetting{}
+	}
+
+	return *s
+}

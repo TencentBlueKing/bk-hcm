@@ -54,29 +54,29 @@ type Kit struct {
 }
 
 // ContextWithRid ...
-func (c *Kit) ContextWithRid() context.Context {
-	return context.WithValue(c.Ctx, constant.RidKey, c.Rid)
+func (kt *Kit) ContextWithRid() context.Context {
+	return context.WithValue(kt.Ctx, constant.RidKey, kt.Rid)
 }
 
 // CtxWithTimeoutMS create a new context with basic info and timout configuration.
-func (c *Kit) CtxWithTimeoutMS(timeoutMS int) context.CancelFunc {
-	ctx := context.WithValue(context.TODO(), constant.RidKey, c.Rid)
+func (kt *Kit) CtxWithTimeoutMS(timeoutMS int) context.CancelFunc {
+	ctx := context.WithValue(context.TODO(), constant.RidKey, kt.Rid)
 	var cancel context.CancelFunc
-	c.Ctx, cancel = context.WithTimeout(ctx, time.Duration(timeoutMS)*time.Millisecond)
+	kt.Ctx, cancel = context.WithTimeout(ctx, time.Duration(timeoutMS)*time.Millisecond)
 	return cancel
 }
 
 // Validate context kit.
-func (c *Kit) Validate() error {
-	if c.Ctx == nil {
+func (kt *Kit) Validate() error {
+	if kt.Ctx == nil {
 		return errors.New("context is required")
 	}
 
-	if len(c.User) == 0 {
+	if len(kt.User) == 0 {
 		return errors.New("user is required")
 	}
 
-	ridLen := len(c.Rid)
+	ridLen := len(kt.Rid)
 	if ridLen == 0 {
 		return errors.New("rid is required")
 	}
@@ -85,11 +85,20 @@ func (c *Kit) Validate() error {
 		return errors.New("rid length not right, length should in 16~48")
 	}
 
-	if len(c.AppCode) == 0 {
+	if len(kt.AppCode) == 0 {
 		return errors.New("app code is required")
 	}
 
 	return nil
+}
+
+// Header generate header by kit
+func (kt *Kit) Header() http.Header {
+	return http.Header{
+		constant.UserKey:    []string{kt.User},
+		constant.RidKey:     []string{kt.Rid},
+		constant.AppCodeKey: []string{kt.AppCode},
+	}
 }
 
 // FromHeader http request header to context kit and validate.

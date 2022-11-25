@@ -55,6 +55,8 @@ const (
 	DataServiceName Name = "data-service"
 	// HCServiceName is hc service's name
 	HCServiceName Name = "hc-service"
+	// AuthServerName is the auth server's service name
+	AuthServerName Name = "auth-server"
 )
 
 // Setting defines all service Setting interface.
@@ -169,6 +171,47 @@ func (s HCServiceSetting) Validate() error {
 	}
 
 	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AuthServerSetting defines auth server used setting options.
+type AuthServerSetting struct {
+	Network Network   `yaml:"network"`
+	Service Service   `yaml:"service"`
+	Log     LogOption `yaml:"log"`
+
+	IAM IAM `yaml:"iam"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *AuthServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the AuthServerSetting default value if user not configured.
+func (s *AuthServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+
+	return
+}
+
+// Validate AuthServerSetting option.
+func (s AuthServerSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	if err := s.IAM.validate(); err != nil {
 		return err
 	}
 

@@ -17,35 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dataservice defines data-service api client.
+// Package dataservice defines data-service api call protocols.
 package dataservice
 
 import (
-	"fmt"
-
+	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/iam/client"
 	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	"hcm/pkg/runtime/filter"
 )
 
-// Client is data-service api client.
-type Client struct {
-	client rest.ClientInterface
+// ListInstancesReq defines list instances for iam pull resource callback http request.
+type ListInstancesReq struct {
+	ResourceType client.TypeID      `json:"resource_type"`
+	Filter       *filter.Expression `json:"filter"`
+	Page         *types.BasePage    `json:"page"`
 }
 
-// NewClient create a new data-service api client.
-func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
-	return &Client{
-		client: rest.NewClient(c, base),
-	}
+// ListInstancesResp  defines list instances for iam pull resource callback result.
+type ListInstancesResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListInstancesResult `json:"data"`
 }
 
-// Account get account client.
-func (c *Client) Account() *AccountClient {
-	return NewAccountClient(c.client)
-}
-
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
+// ListInstancesResult defines list instances for iam pull resource callback result.
+type ListInstancesResult struct {
+	Count   uint32                   `json:"count"`
+	Details []types.InstanceResource `json:"details"`
 }
