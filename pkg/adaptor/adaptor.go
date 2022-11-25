@@ -37,11 +37,25 @@ type Adaptor interface {
 // NewAdaptor create a adaptor instance.
 func NewAdaptor() (Adaptor, error) {
 	fm := types.NewFactoryManager()
-	fm.RegisterVendor(enumor.TCloud, tcloud.NewTCloud())
-	fm.RegisterVendor(enumor.AWS, nil)
-	fm.RegisterVendor(enumor.GCP, nil)
-	fm.RegisterVendor(enumor.HuaWei, nil)
-	fm.RegisterVendor(enumor.Azure, nil)
+	if err := fm.RegisterVendor(enumor.TCloud, tcloud.NewTCloud()); err != nil {
+		return nil, err
+	}
+
+	if err := fm.RegisterVendor(enumor.AWS, nil); err != nil {
+		return nil, err
+	}
+
+	if err := fm.RegisterVendor(enumor.GCP, nil); err != nil {
+		return nil, err
+	}
+
+	if err := fm.RegisterVendor(enumor.HuaWei, nil); err != nil {
+		return nil, err
+	}
+
+	if err := fm.RegisterVendor(enumor.Azure, nil); err != nil {
+		return nil, err
+	}
 
 	opt := &types.NewProxyManagerOption{
 		TCloud: tcloud.NewTCloudProxy(),
