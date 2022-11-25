@@ -5,16 +5,13 @@
       class="example"
       :model="formModel"
       :rules="rules">
-      <bk-form-item
-        label="名称"
-        property="name"
-      >
-        <bk-input
-          class="w450"
-          v-model="formModel.name"
-          placeholder="请输入"
-          clearable
-        />
+      <bk-form-item>
+        <bk-radio-group
+          v-model="formModel.type"
+        >
+          <bk-radio label="resource">资源账号</bk-radio>
+          <bk-radio label="register">登记账号</bk-radio>
+        </bk-radio-group>
       </bk-form-item>
       <bk-form-item
         label="名称"
@@ -149,10 +146,12 @@
           clearable
         />
       </bk-form-item>
+      <bk-form-item>
+        <bk-button class="w90" theme="primary" @click="submit">
+          {{t('确认')}}
+        </bk-button>
+      </bk-form-item>
     </bk-form>
-    <bk-button class="w90 account-btn-cls" theme="primary" @click="submit">
-      {{t('确认')}}
-    </bk-button>
   </div>
 </template>
 <script lang="ts">
@@ -164,6 +163,7 @@ export default defineComponent({
     const { t } = useI18n();
     const state = reactive({
       formModel: {
+        type: 'resource',
         name: '',
         cloudName: '',
         account: '',
@@ -197,6 +197,6 @@ export default defineComponent({
 </script>
 <style lang="scss">
     .account-btn-cls{
-        margin-right: 150px;
+        margin-left: 150px;
     }
 </style>
