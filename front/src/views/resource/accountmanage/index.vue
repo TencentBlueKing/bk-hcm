@@ -83,6 +83,9 @@ import { useI18n } from 'vue-i18n';
 export default defineComponent({
   name: 'AccountManageList',
   setup() {
+    const { t } = useI18n();
+    const router = useRouter();
+
     const state = reactive({
       value: false,
       searchValue: '',
@@ -113,15 +116,12 @@ export default defineComponent({
         limit: 10,
       },
     });
+
     onMounted(async () => {
       console.log(122133333);
     });
-
     onUnmounted(() => {
     });
-
-    const { t } = useI18n();
-    const router = useRouter();
 
     const test = (data: any) => {
       console.log(11111, data);
