@@ -3,7 +3,7 @@ network:
   # bindIP is ip where server working on.
   bindIP:
   # port is port where server listen to http port.
-  port: 9050
+  port: 9051
   # defines tls related options.
   tls:
     # server should be accessed without verifying the TLS certificate.
@@ -42,47 +42,6 @@ service:
       caFile:
       # the password to decrypt the certificate.
       password:
-
-# defines database related settings.
-database:
-  # defines resource database related settings.
-  resource:
-    # is a seed list of host:port addresses of database nodes.
-    endpoints:
-      - 127.0.0.1:3306
-    database: hcm
-    user: root
-    password: admin
-    # DialTimeoutSec is timeout in seconds to wait for a response from the db server
-    # all the timeout default value reference:
-    # https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html.
-    dialTimeoutSec:
-    readTimeoutSec:
-    writeTimeoutSec:
-    maxIdleTimeoutMin:
-    maxOpenConn:
-    maxIdleConn:
-    # defines tls related options.
-    tls:
-      # server should be accessed without verifying the TLS certificate.
-      insecureSkipVerify:
-      # server requires TLS client certificate authentication.
-      certFile:
-      # server requires TLS client certificate authentication.
-      keyFile:
-      # trusted root certificates for server.
-      caFile:
-      # the password to decrypt the certificate.
-      password:
-  # maxSlowLogLatencyMS defines the max tolerance in millisecond to execute
-  # the database command, if the cost time of execute have >= the maxSlowLogLatencyMS
-  # then this request will be logged.
-  maxSlowLogLatencyMS: 200
-  # limiter limit the incoming request frequency to database for each sharding, and
-  # each sharding have the independent request limitation.
-  limiter:
-    qps: 500
-    burst: 500
 
 # defines log's related configuration
 log:

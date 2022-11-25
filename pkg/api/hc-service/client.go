@@ -17,32 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package options
+package hcservice
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/runtime/flags"
+	"fmt"
 
-	"github.com/spf13/pflag"
+	"hcm/pkg/rest"
+	"hcm/pkg/rest/client"
 )
 
-// Option defines the app's runtime flag options.
-type Option struct {
-	Sys *cc.SysOption
+// Client is hc-service api client.
+type Client struct {
+	client rest.ClientInterface
 }
 
-// InitOptions init data service's options from command flags.
-func InitOptions() *Option {
-	fs := pflag.CommandLine
-	sysOpt := flags.SysFlags(fs)
-	opt := &Option{Sys: sysOpt}
+// NewClient create a new hc-service api client.
+func NewClient(c *client.Capability, version string) *Client {
+	base := fmt.Sprintf("/api/%s/hc", version)
+	return &Client{
+		client: rest.NewClient(c, base),
+	}
+}
 
-	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
-	// and before flags are accessed by the program.
-	pflag.Parse()
-
-	// check if the command-line flag is show current version info cmd.
-	sysOpt.CheckV()
-
-	return opt
+// Account get account client.
+func (c *Client) Account() *AccountClient {
+	return NewAccountClient(c.client)
 }

@@ -65,6 +65,8 @@ func loadFromFile(filename string) (Setting, error) {
 	switch ServiceName() {
 	case DataServiceName:
 		s = new(DataServiceSetting)
+	case HCServiceName:
+		s = new(HCServiceSetting)
 	default:
 		return nil, fmt.Errorf("unknown %s service name", ServiceName())
 	}

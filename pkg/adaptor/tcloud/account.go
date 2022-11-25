@@ -17,32 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package options
+package tcloud
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/runtime/flags"
+	"fmt"
 
-	"github.com/spf13/pflag"
+	"hcm/pkg/adaptor/types"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
-// Option defines the app's runtime flag options.
-type Option struct {
-	Sys *cc.SysOption
-}
+var _ types.AccountInterface = new(tcloud)
 
-// InitOptions init data service's options from command flags.
-func InitOptions() *Option {
-	fs := pflag.CommandLine
-	sysOpt := flags.SysFlags(fs)
-	opt := &Option{Sys: sysOpt}
+// AccountCheck check account authentication information and permissions.
+// TODO: 仅用于测试
+func (t *tcloud) AccountCheck(kt *kit.Kit, secret *types.Secret) error {
+	client, err := t.cvmClient(secret, "")
+	if err != nil {
+		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
+	}
 
-	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
-	// and before flags are accessed by the program.
-	pflag.Parse()
+	_, err = client.DescribeRegionsWithContext(kt.Ctx, cvm.NewDescribeRegionsRequest())
+	if err != nil {
+		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 
-	// check if the command-line flag is show current version info cmd.
-	sysOpt.CheckV()
-
-	return opt
+	return nil
 }

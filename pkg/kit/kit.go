@@ -99,9 +99,10 @@ func FromHeader(ctx context.Context, header http.Header) (*Kit, error) {
 	}
 
 	kt := &Kit{
-		Ctx:  ctx,
-		User: header.Get(constant.UserKey),
-		Rid:  header.Get(constant.RidKey),
+		Ctx:     ctx,
+		User:    header.Get(constant.UserKey),
+		Rid:     header.Get(constant.RidKey),
+		AppCode: header.Get(constant.AppCodeKey),
 	}
 
 	if err := kt.Validate(); err != nil {

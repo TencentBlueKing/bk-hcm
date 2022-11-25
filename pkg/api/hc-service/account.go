@@ -17,32 +17,49 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package options
+package hcservice
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/runtime/flags"
+	"context"
+	"net/http"
 
-	"github.com/spf13/pflag"
+	hcservice "hcm/pkg/api/protocol/hc-service"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/rest"
 )
 
-// Option defines the app's runtime flag options.
-type Option struct {
-	Sys *cc.SysOption
+// AccountClient is hc service account api client.
+type AccountClient struct {
+	client rest.ClientInterface
 }
 
-// InitOptions init data service's options from command flags.
-func InitOptions() *Option {
-	fs := pflag.CommandLine
-	sysOpt := flags.SysFlags(fs)
-	opt := &Option{Sys: sysOpt}
+// NewAccountClient create a new account api client.
+func NewAccountClient(client rest.ClientInterface) *AccountClient {
+	return &AccountClient{
+		client: client,
+	}
+}
 
-	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
-	// and before flags are accessed by the program.
-	pflag.Parse()
+// Check account.
+func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcservice.AccountCheckReq) error {
 
-	// check if the command-line flag is show current version info cmd.
-	sysOpt.CheckV()
+	resp := new(rest.BaseResp)
 
-	return opt
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/get/account/check").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
 }

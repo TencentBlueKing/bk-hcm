@@ -32,7 +32,7 @@ import (
 // NewClient new http client.
 func NewClient(c *ssl.TLSConfig) (*http.Client, error) {
 	tlsConf := new(tls.Config)
-	if nil != c {
+	if c != nil {
 		tlsConf.InsecureSkipVerify = c.InsecureSkipVerify
 		if len(c.CAFile) != 0 && len(c.CertFile) != 0 && len(c.KeyFile) != 0 {
 			var err error

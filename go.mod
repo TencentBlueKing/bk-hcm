@@ -11,6 +11,8 @@ require (
 	github.com/pborman/uuid v1.2.1
 	github.com/prometheus/client_golang v1.11.1
 	github.com/spf13/pflag v1.0.5
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.543
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.543
 	github.com/tidwall/gjson v1.14.3
 	go.etcd.io/etcd/api/v3 v3.5.5
 	go.etcd.io/etcd/client/v3 v3.5.5

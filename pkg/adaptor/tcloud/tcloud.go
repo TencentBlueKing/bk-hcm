@@ -17,32 +17,43 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package options
+package tcloud
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/runtime/flags"
+	"hcm/pkg/adaptor/types"
 
-	"github.com/spf13/pflag"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
-// Option defines the app's runtime flag options.
-type Option struct {
-	Sys *cc.SysOption
+// NewTCloud new tcloud.
+func NewTCloud() types.Factory {
+	prof := profile.NewClientProfile()
+	return &tcloud{profile: prof}
 }
 
-// InitOptions init data service's options from command flags.
-func InitOptions() *Option {
-	fs := pflag.CommandLine
-	sysOpt := flags.SysFlags(fs)
-	opt := &Option{Sys: sysOpt}
+// NewTCloudProxy new tencent cloud proxy.
+func NewTCloudProxy() types.TCloudProxy {
+	prof := profile.NewClientProfile()
+	return &tcloud{profile: prof}
+}
 
-	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
-	// and before flags are accessed by the program.
-	pflag.Parse()
+var (
+	_ types.Factory     = new(tcloud)
+	_ types.TCloudProxy = new(tcloud)
+)
 
-	// check if the command-line flag is show current version info cmd.
-	sysOpt.CheckV()
+type tcloud struct {
+	profile *profile.ClientProfile
+}
 
-	return opt
+func (t *tcloud) cvmClient(secret *types.Secret, region string) (*cvm.Client, error) {
+	credential := common.NewCredential(secret.ID, secret.Key)
+	client, err := cvm.NewClient(credential, region, t.profile)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }

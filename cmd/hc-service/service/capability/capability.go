@@ -17,32 +17,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package options
+package capability
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/runtime/flags"
+	"hcm/pkg/adaptor"
+	"hcm/pkg/api"
 
-	"github.com/spf13/pflag"
+	"github.com/emicklei/go-restful/v3"
 )
 
-// Option defines the app's runtime flag options.
-type Option struct {
-	Sys *cc.SysOption
-}
-
-// InitOptions init data service's options from command flags.
-func InitOptions() *Option {
-	fs := pflag.CommandLine
-	sysOpt := flags.SysFlags(fs)
-	opt := &Option{Sys: sysOpt}
-
-	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
-	// and before flags are accessed by the program.
-	pflag.Parse()
-
-	// check if the command-line flag is show current version info cmd.
-	sysOpt.CheckV()
-
-	return opt
+// Capability defines the service's capability
+type Capability struct {
+	WebService *restful.WebService
+	Adaptor    adaptor.Adaptor
+	ClientSet  *api.ClientSet
 }

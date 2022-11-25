@@ -17,32 +17,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package options
+package unknown
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/runtime/flags"
+	"fmt"
 
-	"github.com/spf13/pflag"
+	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 )
 
-// Option defines the app's runtime flag options.
-type Option struct {
-	Sys *cc.SysOption
+var _ types.Factory = new(Unknown)
+
+// Unknown inject all the unsupported vendor operations.
+type Unknown struct {
+	Vendor enumor.Vendor
 }
 
-// InitOptions init data service's options from command flags.
-func InitOptions() *Option {
-	fs := pflag.CommandLine
-	sysOpt := flags.SysFlags(fs)
-	opt := &Option{Sys: sysOpt}
+// AccountCheck is unsupported
+func (u Unknown) AccountCheck(kt *kit.Kit, secret *types.Secret) error {
+	return u.unsupportedError()
+}
 
-	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
-	// and before flags are accessed by the program.
-	pflag.Parse()
-
-	// check if the command-line flag is show current version info cmd.
-	sysOpt.CheckV()
-
-	return opt
+func (u Unknown) unsupportedError() error {
+	return fmt.Errorf("operation for %s is not supported for now", u.Vendor)
 }

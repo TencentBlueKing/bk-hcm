@@ -17,32 +17,35 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package options
+package hcservice
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/runtime/flags"
+	"errors"
 
-	"github.com/spf13/pflag"
+	"hcm/pkg/criteria/enumor"
 )
 
-// Option defines the app's runtime flag options.
-type Option struct {
-	Sys *cc.SysOption
+// AccountCheckReq defines account check request.
+// TODO: 结构体信息随便定义，之后自行替换即可
+type AccountCheckReq struct {
+	Vendor    enumor.Vendor `json:"vendor"`
+	SecretID  string        `json:"secret_id"`
+	SecretKey string        `json:"secret_key"`
 }
 
-// InitOptions init data service's options from command flags.
-func InitOptions() *Option {
-	fs := pflag.CommandLine
-	sysOpt := flags.SysFlags(fs)
-	opt := &Option{Sys: sysOpt}
+// Validate account check req.
+func (req AccountCheckReq) Validate() error {
+	if err := req.Vendor.Validate(); err != nil {
+		return err
+	}
 
-	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
-	// and before flags are accessed by the program.
-	pflag.Parse()
+	if len(req.SecretID) == 0 {
+		return errors.New("secret id is required")
+	}
 
-	// check if the command-line flag is show current version info cmd.
-	sysOpt.CheckV()
+	if len(req.SecretKey) == 0 {
+		return errors.New("secret key is required")
+	}
 
-	return opt
+	return nil
 }

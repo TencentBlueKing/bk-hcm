@@ -17,32 +17,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package options
+package main
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/runtime/flags"
+	"fmt"
+	"os"
 
-	"github.com/spf13/pflag"
+	"hcm/cmd/hc-service/app"
+	"hcm/cmd/hc-service/options"
+	"hcm/pkg/cc"
+	"hcm/pkg/logs"
 )
 
-// Option defines the app's runtime flag options.
-type Option struct {
-	Sys *cc.SysOption
-}
+func main() {
+	cc.InitService(cc.HCServiceName)
 
-// InitOptions init data service's options from command flags.
-func InitOptions() *Option {
-	fs := pflag.CommandLine
-	sysOpt := flags.SysFlags(fs)
-	opt := &Option{Sys: sysOpt}
-
-	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
-	// and before flags are accessed by the program.
-	pflag.Parse()
-
-	// check if the command-line flag is show current version info cmd.
-	sysOpt.CheckV()
-
-	return opt
+	opts := options.InitOptions()
+	if err := app.Run(opts); err != nil {
+		fmt.Fprintf(os.Stderr, "start hc server failed, err: %v", err)
+		logs.CloseLogs()
+		os.Exit(1)
+	}
 }

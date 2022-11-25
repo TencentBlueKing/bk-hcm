@@ -17,32 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package options
+package enumor
 
-import (
-	"hcm/pkg/cc"
-	"hcm/pkg/runtime/flags"
+import "fmt"
 
-	"github.com/spf13/pflag"
+// Vendor defines the cloud type where the hybrid cloud service is supported.
+type Vendor string
+
+// Validate the vendor is valid or not
+func (v Vendor) Validate() error {
+	switch v {
+	case TCloud:
+	case AWS:
+	case GCP:
+	case Azure:
+	case HuaWei:
+	default:
+		return fmt.Errorf("unsupported cloud vendor: %s", v)
+	}
+
+	return nil
+}
+
+const (
+	// TCloud is tencent cloud
+	TCloud Vendor = "tcloud"
+	// AWS is amazon cloud
+	AWS Vendor = "aws"
+	// GCP is the Google Cloud Platform
+	GCP Vendor = "gcp"
+	// Azure is microsoft azure cloud.
+	Azure Vendor = "azure"
+	// HuaWei is hua wei cloud.
+	HuaWei Vendor = "huawei"
 )
-
-// Option defines the app's runtime flag options.
-type Option struct {
-	Sys *cc.SysOption
-}
-
-// InitOptions init data service's options from command flags.
-func InitOptions() *Option {
-	fs := pflag.CommandLine
-	sysOpt := flags.SysFlags(fs)
-	opt := &Option{Sys: sysOpt}
-
-	// parses the command-line flags from os.Args[1:]. must be called after all flags are defined
-	// and before flags are accessed by the program.
-	pflag.Parse()
-
-	// check if the command-line flag is show current version info cmd.
-	sysOpt.CheckV()
-
-	return opt
-}
