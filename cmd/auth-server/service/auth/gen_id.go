@@ -51,7 +51,7 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 		return sys.AccountKeyAccess, []client.Resource{res}, nil
 	case meta.Create:
 		// create account is related to hcm account resource
-		return sys.AccountCreate, []client.Resource{res}, nil
+		return sys.AccountCreate, make([]client.Resource, 0), nil
 	case meta.Update:
 		// update account is related to hcm account resource
 		return sys.AccountEdit, []client.Resource{res}, nil
@@ -80,7 +80,7 @@ func genResourceResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 		return sys.ResourceAssign, []client.Resource{res}, nil
 	case meta.Recycle:
 		// create resource is related to hcm account resource
-		return sys.ResourceRecycle, []client.Resource{res}, nil
+		return sys.ResourceRecycle, make([]client.Resource, 0), nil
 	case meta.Manage:
 		// update resource is related to hcm account resource
 		return sys.ResourceManage, []client.Resource{res}, nil

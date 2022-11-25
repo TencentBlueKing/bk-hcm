@@ -80,6 +80,25 @@ func ApiServer() ApiServerSetting {
 	return *s
 }
 
+// CloudServer return cloud server Setting.
+func CloudServer() CloudServerSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty cloud server setting")
+		return CloudServerSetting{}
+	}
+
+	s, ok := rt.settings.(*CloudServerSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get cloud server setting", ServiceName())
+		return CloudServerSetting{}
+	}
+
+	return *s
+}
+
 // DataService return data service Setting.
 func DataService() DataServiceSetting {
 	rt.lock.Lock()

@@ -23,11 +23,9 @@ package errf
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 
-	"hcm/pkg/kit"
-	"hcm/pkg/logs"
+	"hcm/pkg/iam/meta"
 )
 
 // ErrorF defines an error with error code and message.
@@ -36,6 +34,8 @@ type ErrorF struct {
 	Code int32 `json:"code"`
 	// Message is error detail
 	Message string `json:"message"`
+	// Permissions is no permission error related permission.
+	Permissions *meta.IamPermission `json:"permission,omitempty"`
 }
 
 // Error implement the golang's basic error interface
@@ -58,32 +58,23 @@ func (e *ErrorF) Format() string {
 	return fmt.Sprintf("code: %d, message: %s", e.Code, e.Message)
 }
 
-// AssignResp used only to assign the values of the Code and Message
-// fields of ErrorF to the Code and Message fields of the response.
-// Node: resp must be a *struct.
-func (e ErrorF) AssignResp(kit *kit.Kit, resp interface{}) {
-	if reflect.ValueOf(resp).Type().Kind() != reflect.Ptr {
-		logs.ErrorDepthf(1, "response is not pointer, rid: %s", kit.Rid)
-		return
+// Resp get the http response of the error.
+func (e ErrorF) Resp() *ErrorResp {
+	return &ErrorResp{
+		Code:        e.Code,
+		Message:     e.Message,
+		Permissions: e.Permissions,
 	}
+}
 
-	if _, ok := reflect.TypeOf(resp).Elem().FieldByName("Code"); !ok {
-		logs.ErrorDepthf(1, "response have not 'Code' field, rid: %s", kit.Rid)
-		return
-	}
-
-	if _, ok := reflect.TypeOf(resp).Elem().FieldByName("Message"); !ok {
-		logs.ErrorDepthf(1, "response have not 'Message' field, rid: %s", kit.Rid)
-		return
-	}
-
-	valueOf := reflect.ValueOf(resp).Elem()
-
-	code := valueOf.FieldByName("Code")
-	code.SetInt(int64(e.Code))
-
-	msg := valueOf.FieldByName("Message")
-	msg.SetString(e.Message)
+// ErrorResp defines an error related http response.
+type ErrorResp struct {
+	// Code is hcm errCode
+	Code int32 `json:"code"`
+	// Message is error detail
+	Message string `json:"message"`
+	// Permissions is no permission error related permission.
+	Permissions *meta.IamPermission `json:"permission,omitempty"`
 }
 
 // New an error with error code and message.
@@ -94,6 +85,11 @@ func New(code int32, message string) error {
 // Newf create an error with error code and formatted message.
 func Newf(code int32, format string, args ...interface{}) error {
 	return &ErrorF{Code: code, Message: fmt.Sprintf(format, args...)}
+}
+
+// NewWithPerm create an error with error code and message and need apply permission.
+func NewWithPerm(code int32, message string, permissions *meta.IamPermission) error {
+	return &ErrorF{Code: code, Message: message, Permissions: permissions}
 }
 
 // Error try to convert the error to ErrorF if possible.

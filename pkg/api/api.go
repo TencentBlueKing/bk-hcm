@@ -66,6 +66,12 @@ func NewAuthServerClientSet(client client.HTTPClient, discover serviced.Discover
 	return newClientSet(client, discover, discoverServices)
 }
 
+// NewCloudServerClientSet create a new cloud-server used client set.
+func NewCloudServerClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
+	discoverServices := []cc.Name{cc.DataServiceName, cc.HCServiceName}
+	return newClientSet(client, discover, discoverServices)
+}
+
 // CloudServer get cloud-server client.
 func (cs *ClientSet) CloudServer() *cloudserver.Client {
 	c := &client.Capability{
