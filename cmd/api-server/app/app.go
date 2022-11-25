@@ -29,6 +29,8 @@ import (
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
+	"hcm/pkg/runtime/ctl"
+	"hcm/pkg/runtime/ctl/cmd"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 )
@@ -83,6 +85,11 @@ func (as *apiService) prepare(opt *options.Option) error {
 
 	as.dis = dis
 	logs.Infof("create discovery success.")
+
+	// init hcm control tool
+	if err := ctl.LoadCtl(cmd.WithLog()); err != nil {
+		return fmt.Errorf("load control tool failed, err: %v", err)
+	}
 
 	return nil
 }
