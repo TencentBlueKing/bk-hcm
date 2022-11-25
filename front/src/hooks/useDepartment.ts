@@ -1,4 +1,4 @@
-import { useDepartmentStore } from '@/stores/departments';
+import { useDepartmentStore } from '@/store/departments';
 import { Department } from '@/typings';
 import { computed, ref, watch } from 'vue';
 
@@ -11,7 +11,7 @@ export function useDepartment() {
   const checkedDept = computed(() => getCheckedDept(organizationTree.value));
 
   if (departmentStore.departmentMap.size === 0) {
-    departmentStore.getRootDept();
+    // departmentStore.getRootDept();
   }
 
   watch(() => departmentStore.departmentMap, (deptMap) => {

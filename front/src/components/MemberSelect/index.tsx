@@ -1,4 +1,4 @@
-import { useStaffStore } from '@/stores';
+import { useStaffStore } from '@/store';
 import { Staff, StaffType } from '@/typings';
 import { Loading, TagInput } from 'bkui-vue';
 import { computed, defineComponent, onMounted, PropType } from 'vue';

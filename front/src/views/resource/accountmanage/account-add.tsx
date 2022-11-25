@@ -2,7 +2,8 @@ import { Form, Input, Select, Button } from 'bkui-vue';
 import { reactive, defineComponent } from 'vue';
 import { ProjectModel } from '@/typings';
 import { useI18n } from 'vue-i18n';
-// import MemberSelect from '@/components/MemberSelect';
+import MemberSelect from '@/components/MemberSelect';
+import OrganizationSelect from '@/components/OrganizationSelect';
 const { FormItem } = Form;
 const { Option } = Select;
 export default defineComponent({
@@ -22,6 +23,9 @@ export default defineComponent({
     const cloudType = [
       { key: '华为云', value: 'huawei' },
     ];
+
+    const members = ['poloohuang'];
+    const department = [6544];
 
 
     const submit = () => {
@@ -85,25 +89,23 @@ export default defineComponent({
         label: t('责任人'),
         required: false,
         property: 'name',
-        // content: () => (
-        //   <MemberSelect
-        //     disabled={!currentProject.value?.permissions?.project_permission_manage}
-        //     v-model={permissionModel.value[Role.ADMIN][PermissionType.USER].members}
-        //   />
-        // ),
-        component: () => <Input class="w450" placeholder={t('请输入')} v-model={projectModel.name} />,
+        content: () => (
+          <MemberSelect class="w450" v-model={members}/>
+        ),
       },
       {
         label: t('组织架构'),
         required: false,
         property: 'name',
-        component: () => <Input class="w450" placeholder={t('请输入')} v-model={projectModel.name} />,
+        content: () => (
+          <OrganizationSelect class="w450" v-model={department} />
+        ),
       },
       {
         label: t('使用业务'),
         required: false,
         property: 'name',
-        component: () => <Select class="w450" modelValue={projectModel.cloudName}>
+        component: () => <Select multiple show-select-all collapse-tags multipleMode='tag' class="w450" modelValue={projectModel.cloudName}>
           {cloudType.map(item => (
               <Option
                 key={item.key}
@@ -132,7 +134,7 @@ export default defineComponent({
       <Form model={projectModel} labelWidth={100}>
       {formItems.map(item => (
         <FormItem label={item.label} required={item.required} property={item.property}>
-          {item.component()}
+          {item.component ? item.component() : item.content()}
         </FormItem>
       ))}
     </Form>
