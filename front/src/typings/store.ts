@@ -1,7 +1,9 @@
 export interface ProjectModel {
   resourceName: string
   name: string,
-  cloudName: string
+  cloudName: string,
+  scretId: string,
+  account: number | string
 }
 
 export enum StaffType {

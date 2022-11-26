@@ -1,7 +1,7 @@
 <template>
   <div class="account-warp">
     <div class="operate-warp flex-row justify-content-between align-items-center mb20">
-      <bk-button theme="primary" @click="toAddAccount">
+      <bk-button theme="primary" @click="handleJump('accountAdd')">
         {{t('新增')}}
       </bk-button>
       <div class="input-warp flex-row justify-content-between align-items-center">
@@ -24,10 +24,12 @@
       />
       <bk-table-column
         :label="t('名称')"
-        prop="ip"
+        prop="name"
       >
         <template #default="props">
-          {{ props?.data.ip }}
+          <bk-button
+            text theme="primary"
+            @click="handleJump('accountDetail', props?.data.id)">{{ props?.data.name }}</bk-button>
         </template>
       </bk-table-column>
       <bk-table-column
@@ -59,19 +61,49 @@
       >
         <template #default="props">
           <div class="operate-button">
-            <bk-button text theme="primary" @click="test(props)">
+            <bk-button text theme="primary" @click="handleSync">
               同步
             </bk-button>
-            <bk-button text theme="primary" @click="test(props)">
+            <bk-button text theme="primary" @click="handleJump('accountAdd', props?.data.id)">
               编辑
             </bk-button>
-            <bk-button text theme="primary" @click="test(props)">
+            <bk-button text theme="primary" @click="handleDelete(props?.data.id, props?.data.name)">
               删除
             </bk-button>
           </div>
         </template>
       </bk-table-column>
     </bk-table>
+    <bk-dialog
+      :is-show="showDeleteBox"
+      :title="deleteBoxTitle"
+      :theme="'primary'"
+      :quick-close="false"
+      @closed="showDeleteBox = false"
+      @confirm="() => test('test')"
+    >
+      <div>删除之后无法恢复账户信息</div>
+    </bk-dialog>
+
+    <bk-dialog
+      :is-show="showSyncBox"
+      :title="syncTitle"
+      :theme="'primary'"
+      :quick-close="false"
+      @closed="showSyncBox = false"
+      @confirm="() => test('test')"
+    >
+      <div class="sync-dialog-warp">
+        <div class="flex-row justify-content-between align-items-center">
+          <img class="t-icon" :src="tcloudSrc" />
+          <div class="arrow-icon">
+            <i class="icon hcm-icon bkhcm-icon-arrows--right--line content"></i>
+          </div>
+          <img class="logo-icon" :src="logo" />
+        </div>
+        <div class="text-center pt20 bg-default">同步中...</div>
+      </div>
+    </bk-dialog>
   </div>
 </template>
 
@@ -79,6 +111,8 @@
 import { reactive, toRefs, defineComponent, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import logo from '@/assets/image/logo.png';
+import tcloud from '@/assets/image/tcloud.png';
 
 export default defineComponent({
   name: 'AccountManageList',
@@ -104,7 +138,7 @@ export default defineComponent({
       tableData: [
         {
           id: 1,
-          ip: '192.168.0.1-2018-05-25 15:02:241',
+          name: 'qcloud-for-lol',
           source: 'QQ',
           status: '创建中',
           create_time: '2018-05-25 15:02:241',
@@ -115,6 +149,12 @@ export default defineComponent({
         count: 1,
         limit: 10,
       },
+      showDeleteBox: false,
+      deleteBoxTitle: '',
+      syncTitle: '同步',
+      showSyncBox: false,
+      logo,
+      tcloudSrc: tcloud,
     });
 
     onMounted(async () => {
@@ -125,19 +165,82 @@ export default defineComponent({
 
     const test = (data: any) => {
       console.log(11111, data);
+      state.showDeleteBox = false;
     };
-    // 跳转到新增资源账号
-    const toAddAccount = () => {
-      router.push({ name: 'accountAdd' });
+    // 跳转页面
+    const handleJump = (routerName: string, id?: number) => {
+      const routerConfig = {
+        query: {},
+        name: routerName,
+      };
+      if (id) {
+        routerConfig.query = {
+          id,
+        };
+      }
+      router.push(routerConfig);
+    };
+
+    // 删除
+    const handleDelete = (id: number, name: string) => {
+      state.deleteBoxTitle = `确认要删除${name}?`;
+      state.showDeleteBox = true;
+    };
+
+    const handleSync = () => {
+      state.showSyncBox = true;
     };
 
     return {
       ...toRefs(state),
-      toAddAccount,
       test,
+      handleJump,
+      handleDelete,
+      handleSync,
       t,
     };
   },
 });
 </script>
+<style lang="scss">
+  .sync-dialog-warp{
+    height: 150px;
+    .t-icon{
+      height: 42px;
+      width: 110px;
+    }
+    .logo-icon{
+        height: 42px;
+        width: 42px;
+    }
+    .arrow-icon{
+      position: relative;
+      flex: 1;
+      .content{
+        position: absolute;
+        left: 100px;
+        animation: 3s move infinite linear;
+      }
+    }
+  }
+@-webkit-keyframes move {
+  from {
+		left: 0;
+	}
+
+	to {
+		left: 100%;
+	}
+}
+
+@keyframes move {
+	from {
+		left: 0;
+	}
+
+	to {
+		left: 100%;
+	}
+}
+</style>
 

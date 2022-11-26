@@ -1,5 +1,6 @@
 import { Form, Input, Select, Button } from 'bkui-vue';
 import { reactive, defineComponent } from 'vue';
+import { useRoute } from 'vue-router';
 import { ProjectModel } from '@/typings';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
@@ -10,11 +11,19 @@ export default defineComponent({
   name: 'AccountManageAdd',
   setup() {
     const { t } = useI18n();
+    const route = useRoute();
+
+    const { id } = route.query;
+    if (id) {
+      route.meta.breadcrumb = ['云管', '账户', '编辑账户']; // 未完善 需添加进状态管理区
+    }
 
     const initProjectModel: ProjectModel = {
       resourceName: '',
       name: '',
       cloudName: '',
+      scretId: '',
+      account: '',
     };
     const projectModel = reactive<ProjectModel>({
       ...initProjectModel,
@@ -27,9 +36,16 @@ export default defineComponent({
     const members = ['poloohuang'];
     const department = [6544];
 
+    const check = (): boolean => {
+      return false;
+    };
 
     const submit = () => {
       console.log(1111);
+    };
+
+    const formRules = {
+      name: [{ trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾业务与项目至少填一个', validator: check }],
     };
 
     const formItems = [
@@ -58,8 +74,8 @@ export default defineComponent({
       {
         label: t('主账号'),
         required: false,
-        property: 'name',
-        component: () => <Input class="w450" placeholder={t('请输入')} v-model={projectModel.name} />,
+        property: 'account',
+        component: () => <Input class="w450" placeholder={t('请输入')} v-model={projectModel.account} />,
       },
       {
         label: t('子账号ID'),
@@ -75,14 +91,14 @@ export default defineComponent({
       },
       {
         label: t('密钥ID'),
-        required: false,
-        property: 'name',
-        component: () => <Input class="w450" placeholder={t('请输入')} v-model={projectModel.name} />,
+        required: true,
+        property: 'scretId',
+        component: () => <Input class="w450" placeholder={t('请输入')} v-model={projectModel.scretId} />,
       },
       {
         label: 'SecretKey',
-        required: false,
-        property: 'name',
+        required: true,
+        property: 'secretKey',
         component: () => <Input class="w450" placeholder={t('请输入')} v-model={projectModel.name} />,
       },
       {
@@ -131,7 +147,7 @@ export default defineComponent({
     ];
 
     return () => (
-      <Form model={projectModel} labelWidth={100}>
+      <Form model={projectModel} labelWidth={100} rules={formRules}>
       {formItems.map(item => (
         <FormItem label={item.label} required={item.required} property={item.property}>
           {item.component ? item.component() : item.content()}
