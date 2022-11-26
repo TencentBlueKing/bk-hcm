@@ -3,6 +3,7 @@ import { Staff, StaffType } from '@/typings';
 import { defineStore } from 'pinia';
 import QueryString from 'qs';
 import { shallowRef } from 'vue';
+const { BK_HOST } = window.PROJECT_CONFIG;
 
 export const useStaffStore = defineStore({
   id: 'staffStore',
@@ -19,7 +20,7 @@ export const useStaffStore = defineStore({
         [StaffType.MAIL]: 'get_all_ad_groups',
         [StaffType.ALL]: 'get_all_rtx_and_mail_group',
       };
-      const prefix = `//api.open.woa.com/component/compapi/tof3/${typeUrlMap[type]}`;
+      const prefix = `//${BK_HOST}/component/compapi/tof3/${typeUrlMap[type]}`;
       const params = {
         query_type: type === StaffType.RTX ? 'simple_data' : undefined,
         app_code: 'workbench',
