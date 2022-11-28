@@ -3,7 +3,7 @@ network:
   # bindIP is ip where server working on.
   bindIP:
   # httpPort is port where server listen to http port.
-  port: 9053
+  port: 9603
   # defines tls related options.
   tls:
     # server should be accessed without verifying the TLS certificate.
