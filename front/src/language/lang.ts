@@ -2647,7 +2647,7 @@ const lang: ILANG = {
   '空': ['--'],
   '目标IP': ['target IP'],
   '字段均不能为空！': ['None of the fields can be empty!'],
-  '111': ['111'],
+  '密钥信息': ['key information'],
   //   '111': ['111'],
   //   '111': ['111'],
   //   '111': ['111'],

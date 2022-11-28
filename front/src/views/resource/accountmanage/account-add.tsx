@@ -51,13 +51,13 @@ export default defineComponent({
     const formItems = [
       {
         label: t('名称'),
-        required: false,
+        required: true,
         property: 'name',
         component: () => <Input class="w450" placeholder={t('请输入')} v-model={projectModel.name} />,
       },
       {
         label: t('云厂商'),
-        required: false,
+        required: true,
         property: 'name',
         component: () => <Select class="w450" modelValue={projectModel.cloudName}>
           {cloudType.map(item => (
