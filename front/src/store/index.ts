@@ -1,6 +1,7 @@
 // @ts-check
 import { acceptHMRUpdate } from 'pinia';
 
+export * from './staff';
 export * from './user';
 
 

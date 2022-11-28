@@ -74,7 +74,30 @@ a {
 }
 
 .w280{
-  width: 280px;
+  width: 280px !important;
+}
+.w90 {
+  width: 90px !important;
+}
+
+.w320{
+  width: 320px !important;
+}
+
+.w450 {
+  width: 450px !important;
+}
+
+.w800 {
+  width: 800px !important;
+}
+
+.w1000{
+  width: 1000px !important;
+}
+
+.cursor{
+  cursor: pointer
 }
 
 .table-layout {
