@@ -30,6 +30,7 @@ import (
 	"hcm/cmd/auth-server/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/handler"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/shutdown"
@@ -45,7 +46,7 @@ func (s *Service) ListenAndServeRest() error {
 	root := http.NewServeMux()
 	root.HandleFunc("/", s.apiSet().ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
-	root.HandleFunc("/debug/", http.DefaultServeMux.ServeHTTP)
+	handler.SetCommonHandler(root)
 
 	network := cc.AuthServer().Network
 	server := &http.Server{

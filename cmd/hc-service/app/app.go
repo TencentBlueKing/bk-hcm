@@ -21,11 +21,15 @@ package app
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 
 	"hcm/cmd/hc-service/options"
 	"hcm/cmd/hc-service/service"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
+	"hcm/pkg/runtime/ctl"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 )
@@ -66,6 +70,10 @@ func (ds *hcService) prepare(opt *options.Option) error {
 
 	logs.Infof("load settings from config file success.")
 
+	// init metrics
+	network := cc.HCService().Network
+	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
+
 	// register hc service.
 	svcOpt := serviced.NewServiceOption(cc.HCServiceName, cc.HCService().Network)
 	disOpt := serviced.DiscoveryOption{
@@ -83,6 +91,11 @@ func (ds *hcService) prepare(opt *options.Option) error {
 		return fmt.Errorf("initialize service failed, err: %v", err)
 	}
 	ds.svc = svc
+
+	// init hcm control tool
+	if err := ctl.LoadCtl(ctl.WithBasics(sd)...); err != nil {
+		return fmt.Errorf("load control tool failed, err: %v", err)
+	}
 
 	return nil
 }

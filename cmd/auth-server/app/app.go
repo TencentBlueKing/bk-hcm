@@ -30,6 +30,8 @@ import (
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
+	"hcm/pkg/runtime/ctl"
+	"hcm/pkg/runtime/ctl/cmd"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 )
@@ -104,6 +106,11 @@ func (as *authService) prepare(opt *options.Option) error {
 	as.disableAuth = opt.DisableAuth
 	if opt.DisableAuth {
 		logs.Infof("authorize function is disabled.")
+	}
+
+	// init hcm control tool
+	if err := ctl.LoadCtl(append(ctl.WithBasics(sd), cmd.WithAuth(as.disableWriteOpt)...)...); err != nil {
+		return fmt.Errorf("load control tool failed, err: %v", err)
 	}
 
 	return nil

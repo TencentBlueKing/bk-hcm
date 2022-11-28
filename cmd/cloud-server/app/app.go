@@ -21,11 +21,15 @@ package app
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 
 	"hcm/cmd/cloud-server/options"
 	"hcm/cmd/cloud-server/service"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
+	"hcm/pkg/runtime/ctl"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 )
@@ -66,6 +70,10 @@ func (ds *cloudServer) prepare(opt *options.Option) error {
 
 	logs.Infof("load settings from config file success.")
 
+	// init metrics
+	network := cc.CloudServer().Network
+	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
+
 	// init service discovery.
 	svcOpt := serviced.NewServiceOption(cc.CloudServerName, cc.CloudServer().Network)
 	discOpt := serviced.DiscoveryOption{
@@ -84,6 +92,11 @@ func (ds *cloudServer) prepare(opt *options.Option) error {
 		return fmt.Errorf("initialize service failed, err: %v", err)
 	}
 	ds.svc = svc
+
+	// init hcm control tool
+	if err := ctl.LoadCtl(ctl.WithBasics(sd)...); err != nil {
+		return fmt.Errorf("load control tool failed, err: %v", err)
+	}
 
 	return nil
 }

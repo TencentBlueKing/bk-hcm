@@ -29,8 +29,8 @@ import (
 
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/handler"
 	"hcm/pkg/logs"
-	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
@@ -79,8 +79,7 @@ func (s *Service) ListenAndServeRest() error {
 	root := http.NewServeMux()
 	root.HandleFunc("/", s.proxy.apiSet().ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
-	root.HandleFunc("/debug/", http.DefaultServeMux.ServeHTTP)
-	root.HandleFunc("/metrics", metrics.Handler().ServeHTTP)
+	handler.SetCommonHandler(root)
 
 	network := cc.ApiServer().Network
 	server := &http.Server{

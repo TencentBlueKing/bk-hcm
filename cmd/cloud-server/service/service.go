@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/api"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -91,7 +92,7 @@ func (s *Service) ListenAndServeRest() error {
 	root := http.NewServeMux()
 	root.HandleFunc("/", s.apiSet().ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
-	root.HandleFunc("/debug/", http.DefaultServeMux.ServeHTTP)
+	handler.SetCommonHandler(root)
 
 	network := cc.CloudServer().Network
 	server := &http.Server{
