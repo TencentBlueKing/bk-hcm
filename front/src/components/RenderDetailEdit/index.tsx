@@ -56,7 +56,7 @@ export default defineComponent({
         <span>
             {renderEdit.value ? (
                 <Input ref={inputRef} class="w320" placeholder={t('请输入')} modelValue={props.modelValue} onChange={handleChange} onBlur={handleBlur} />
-            ) : <span class="tet">{props.modelValue}</span>}
+            ) : <span>{props.modelValue}</span>}
             <i onClick={test} class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
         </span>
     );

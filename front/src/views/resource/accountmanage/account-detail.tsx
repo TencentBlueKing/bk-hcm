@@ -47,9 +47,9 @@ export default defineComponent({
 
     const handleblur = async () => {
       console.log('check222', 111122323);
-      const check = await formRef.value?.validate();
-      console.log('check', !!check);
-      isEdit.value = !!check;
+      await formRef.value?.validate();
+      console.log('过');
+      isEdit.value = false;
     };
 
     const formBaseInfo = reactive([
@@ -93,12 +93,7 @@ export default defineComponent({
             required: false,
             property: 'user',
             component: () => {
-              return (
-                  <span>
-                      <span>1223</span>
-                      <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
-                  </span>
-              );
+              return (<RenderDetailEdit v-model={projectModel.name} fromKey="name" isEdit={isEdit.value} onBlur={handleblur}/>);
             },
           },
           {
