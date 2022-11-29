@@ -24,6 +24,9 @@ export default defineComponent({
       cloudName: '',
       scretId: '',
       account: '',
+      remark: '',
+      user: [],
+      business: '',
     };
     const projectModel = reactive<ProjectModel>({
       ...initProjectModel,

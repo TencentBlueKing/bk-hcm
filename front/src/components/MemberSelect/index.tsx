@@ -1,7 +1,7 @@
 import { useStaffStore } from '@/store';
 import { Staff, StaffType } from '@/typings';
 import { Loading, TagInput } from 'bkui-vue';
-import { computed, defineComponent, onMounted, PropType } from 'vue';
+import { computed, defineComponent, onMounted, PropType, ref, watch, nextTick } from 'vue';
 
 import './member-select.scss';
 import Tpl from './Tpl';
@@ -27,8 +27,9 @@ export default defineComponent({
       default: true,
     },
   },
-  emits: ['change', 'input'],
+  emits: ['change', 'input', 'blur'],
   setup(props, ctx) {
+    const tagInputRef = ref(null);
     const staffStore = useStaffStore();
     const searchKey = ['english_name', 'chinese_name'];
     const maxData = computed(() => (!props.multiple ? {
@@ -57,24 +58,44 @@ export default defineComponent({
       ctx.emit('input', val);
       ctx.emit('change', val);
     }
+
+    function handleBlur(val: Staff[]) {
+      ctx.emit('blur', val);
+    }
+
     function handleSearch(lowerCaseValue: string, _: string | string[], list: Staff[]) {
       return list.filter((item) => {
         const english_name = item.english_name.toLowerCase();
         return english_name.includes(lowerCaseValue) || item.chinese_name.includes(lowerCaseValue);
       });
     }
+
+    watch(
+      () => staffStore.list,
+      (list) => {
+        if (list.length) {
+          nextTick(() => {
+            tagInputRef.value?.focusInputTrigger(); // 获取到数据聚焦
+          });
+        }
+      },
+      { immediate: true },
+    );
+
     return () => (
       <TagInput
         {...ctx.attrs}
         {...maxData.value}
         // disabled={props.disabled || staffStore.fetching}
         list={staffStore.list}
+        ref={tagInputRef}
         displayKey="chinese_name"
         saveKey="english_name"
         searchKey={searchKey}
         filterCallback={handleSearch}
         modelValue={props.modelValue}
         onChange={handleChange}
+        onBlur={handleBlur}
         tpl={tpl}
         tagTpl={tpl}
         clearable={props.clearable}

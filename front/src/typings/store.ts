@@ -3,7 +3,10 @@ export interface ProjectModel {
   name: string,
   cloudName: string,
   scretId: string,
-  account: number | string
+  account: number | string,
+  user: string[]
+  remark: string,
+  business: string | string[]
 }
 
 export enum StaffType {
