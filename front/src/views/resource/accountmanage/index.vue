@@ -96,8 +96,8 @@
       <div class="sync-dialog-warp">
         <div class="flex-row justify-content-between align-items-center">
           <img class="t-icon" :src="tcloudSrc" />
-          <div class="arrow-icon">
-            <i class="icon hcm-icon bkhcm-icon-arrows--right--line content"></i>
+          <div class="arrow-icon flex-row align-items-center">
+            <img class="content" :src="rightArrow" />
           </div>
           <img class="logo-icon" :src="logo" />
         </div>
@@ -112,6 +112,7 @@ import { reactive, toRefs, defineComponent, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import logo from '@/assets/image/logo.png';
+import rightArrow from '@/assets/image/right-arrow.png';
 import tcloud from '@/assets/image/tcloud.png';
 
 export default defineComponent({
@@ -154,6 +155,7 @@ export default defineComponent({
       syncTitle: '同步',
       showSyncBox: false,
       logo,
+      rightArrow,
       tcloudSrc: tcloud,
     });
 
@@ -216,16 +218,20 @@ export default defineComponent({
     .arrow-icon{
       position: relative;
       flex: 1;
+      overflow: hidden;
+      height: 13px;
+      line-height: 13px;
       .content{
+        width: 130px;
         position: absolute;
-        left: 100px;
+        left: 200px;
         animation: 3s move infinite linear;
       }
     }
   }
 @-webkit-keyframes move {
   from {
-		left: 0;
+		left: 0%;
 	}
 
 	to {
@@ -235,7 +241,7 @@ export default defineComponent({
 
 @keyframes move {
 	from {
-		left: 0;
+		left: 0%;
 	}
 
 	to {
