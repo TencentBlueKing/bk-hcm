@@ -64,7 +64,7 @@
             <bk-button text theme="primary" @click="handleSync">
               同步
             </bk-button>
-            <bk-button text theme="primary" @click="handleJump('accountAdd', props?.data.id)">
+            <bk-button text theme="primary" @click="handleJump('accountDetail', props?.data.id)">
               编辑
             </bk-button>
             <bk-button text theme="primary" @click="handleDelete(props?.data.id, props?.data.name)">

@@ -45,7 +45,6 @@
     "@types/lodash": "^4.14.182",
     "@types/qs": "^6.9.7",
     "@vue/babel-preset-jsx": "^1.4.0",
-    "@vue/composition-api": "^1.7.1",
     "@vueuse/router": "^8.9.2",
     "@wangeditor/editor": "^5.1.6",
     "@wangeditor/editor-for-vue": "^5.1.12",

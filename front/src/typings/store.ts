@@ -1,9 +1,13 @@
 export interface ProjectModel {
+  type: string
   resourceName: string
   name: string,
   cloudName: string,
   scretId: string,
-  account: number | string
+  account: number | string,
+  user: string[]
+  remark: string,
+  business: string | string[]
 }
 
 export enum StaffType {
@@ -28,4 +32,12 @@ export interface Department {
   isOpen: boolean
   loaded: boolean
   loading: boolean
+}
+
+export interface FormItems {
+  label?: string
+  required?: boolean
+  property?: string,
+  content?: Function,
+  component?: Function,
 }

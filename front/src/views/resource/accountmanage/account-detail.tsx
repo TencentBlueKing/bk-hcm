@@ -16,28 +16,30 @@ export default defineComponent({
     const formRef = ref<InstanceType<typeof Form>>(null);
 
     const initProjectModel: ProjectModel = {
+      type: '',
       resourceName: '',
-      name: '中文',
+      name: 'test',
       cloudName: '',
       scretId: '',
       account: '',
+      user: ['poloohuang'],
+      remark: '测试描述',
+      business: 'huawei',
     };
     const projectModel = reactive<ProjectModel>({
       ...initProjectModel,
     });
 
-    const isEdit = ref(true);
-    console.log('isEdit', isEdit.value);
-
-    // const cloudType = [
-    //   { key: '华为云', value: 'huawei' },
-    // ];
+    const cloudType = reactive([
+      { key: '华为云', value: 'huawei' },
+      { key: '腾讯云', value: 'tencent' },
+      { key: '亚马逊', value: 'aws' },
+    ]);
 
     // const members = ['poloohuang'];
     // const department = [6544];
 
     const check = (val: any): boolean => {
-      console.log(11111, val, /^[a-z][a-z-z0-9_-]*$/.test(val));
       return  /^[a-z][a-z-z0-9_-]*$/.test(val);
     };
 
@@ -45,11 +47,30 @@ export default defineComponent({
       name: [{ trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾业务与项目至少填一个', validator: check }],
     };
 
-    const handleblur = async () => {
-      console.log('check222', 111122323);
+    // 更新信息方法
+    const updateFormData = () => {
+
+    };
+
+    const handleEditStatus = (val: boolean, key: string) => {
+      formBaseInfo.forEach((e) => {
+        e.data = e.data.map((item) => {
+          if (item.property === key) {
+            item.isEdit = val;
+          }
+          return item;
+        });
+      });
+    };
+
+    const handleblur = async (val: boolean, key: string) => {
+      handleEditStatus(val, key);     // 未通过检验前状态为编辑态
       await formRef.value?.validate();
-      console.log('过');
-      isEdit.value = false;
+      handleEditStatus(false, key);   // 通过检验则把状态改为不可编辑态
+      if (projectModel[key] !== initProjectModel[key]) {
+        console.log('projectModel', projectModel);
+        updateFormData();    // 更新数据
+      }
     };
 
     const formBaseInfo = reactive([
@@ -59,13 +80,15 @@ export default defineComponent({
           {
             label: t('云厂商:'),
             required: false,
-            property: 'cloudType',
+            property: 'cloudName',
+            isEdit: false,
             component: () => <span>{t('腾讯云')}</span>,
           },
           {
             label: t('账号类别:'),
             required: false,
-            property: 'accountType',
+            property: 'type',
+            isEdit: false,
             component: () => <span>{t('资源账号')}</span>,
           },
           {
@@ -78,8 +101,10 @@ export default defineComponent({
             label: t('名称:'),
             required: false,
             property: 'name',
-            component: () => {
-              return (<RenderDetailEdit v-model={projectModel.name} fromKey="name" isEdit={isEdit.value} onBlur={handleblur}/>);
+            isEdit: false,
+            component() {
+              // eslint-disable-next-line max-len
+              return (<RenderDetailEdit v-model={projectModel.name} fromKey={this.property} isEdit={this.isEdit} onBlur={handleblur}/>);
             },
           },
           {
@@ -89,11 +114,18 @@ export default defineComponent({
             component: () => <span>23445</span>,
           },
           {
+            label: t('子账号:'),
+            required: false,
+            property: 'account',
+            component: () => <span>23445</span>,
+          },
+          {
             label: t('负责人:'),
             required: false,
             property: 'user',
-            component: () => {
-              return (<RenderDetailEdit v-model={projectModel.name} fromKey="name" isEdit={isEdit.value} onBlur={handleblur}/>);
+            isEdit: false,
+            component() {
+              return (<RenderDetailEdit v-model={projectModel.user} fromKey={this.property} fromType="member" isEdit={this.isEdit} onBlur={handleblur}/>);
             },
           },
           {
@@ -130,20 +162,14 @@ export default defineComponent({
             label: t('备注:'),
             required: false,
             property: 'remark',
-            component: () => {
-              return (
-                  <span>
-                      <span>1223</span>
-                      <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
-                  </span>
-              );
+            isEdit: false,
+            component() {
+              // eslint-disable-next-line max-len
+              return (<RenderDetailEdit v-model={projectModel.remark} fromKey={this.property} fromType="textarea" isEdit={this.isEdit} onBlur={handleblur}/>);
             },
           },
         ],
       },
-    ]);
-
-    const formBusinessInfo = [
       {
         name: t('业务信息'),
         data: [
@@ -163,21 +189,18 @@ export default defineComponent({
           {
             label: t('使用业务:'),
             required: false,
-            property: 'name',
-            component: () => {
-              return (
-                  <span>
-                      <span>资源运营服务(12)，蓝鲸配置平台(23)</span>
-                      <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
-                  </span>
-              );
+            property: 'business',
+            isEdit: false,
+            selectData: cloudType,
+            component() {
+              // eslint-disable-next-line max-len
+              return (<RenderDetailEdit v-model={projectModel.business} fromKey={this.property}
+                selectData={this.selectData} fromType="select" isEdit={this.isEdit} onBlur={handleblur}/>);
             },
           },
         ],
       },
-    ];
 
-    const formSecretInfo = [
       {
         name: t('密钥信息'),
         data: [
@@ -195,20 +218,28 @@ export default defineComponent({
           },
         ],
       },
-    ];
+
+    ]);
 
     // const test = () => {
     //   console.log('1111333');
     // };
 
-    console.log('formBaseInfo', formBaseInfo);
+    // console.log('formBaseInfo', formBaseInfo);
 
     return () => (
         <div class="w1000 detail-warp">
             {/* 基本信息 */}
-            {formBaseInfo.map(baseItem => (
+            {formBaseInfo.map((baseItem, index) => (
                 <div>
-                    <div class="font-bold pb10">{baseItem.name}</div>
+                    <div class="font-bold pb10">
+                      {baseItem.name}
+                      {index === 2
+                        ? <span>
+                            <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/>
+                            <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
+                          </span> : ''}
+                    </div>
                     <Form model={projectModel} labelWidth={100} rules={formRules} ref={formRef}>
                         <div class="flex-row align-items-center flex-wrap">
                             {baseItem.data.map(formItem => (
@@ -218,42 +249,6 @@ export default defineComponent({
                             ))
                         }
                         </div>
-                    </Form>
-                </div>
-            ))
-            }
-
-            {/* 业务信息 */}
-            {formBusinessInfo.map(businessItem => (
-                <div>
-                    <div class="font-bold pb10">{businessItem.name}</div>
-                    <Form model={projectModel} labelWidth={100} rules={formRules}>
-                        {businessItem.data.map(formItem => (
-                            <FormItem class="formItem-cls" label={formItem.label} required={formItem.required} property={formItem.property}>
-                                {formItem.component()}
-                            </FormItem>
-                        ))
-                    }
-                    </Form>
-                </div>
-            ))
-            }
-
-            {/* 密钥信息 */}
-            {formSecretInfo.map(secretItem => (
-                <div>
-                    <div class="font-bold pb10">
-                        {secretItem.name}
-                        <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/>
-                        <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
-                    </div>
-                    <Form model={projectModel} labelWidth={100} rules={formRules}>
-                        {secretItem.data.map(formItem => (
-                            <FormItem class="formItem-cls" label={formItem.label} required={formItem.required} property={formItem.property}>
-                                {formItem.component()}
-                            </FormItem>
-                        ))
-                    }
                     </Form>
                 </div>
             ))
