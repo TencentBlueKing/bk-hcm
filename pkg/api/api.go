@@ -21,9 +21,11 @@
 package api
 
 import (
+	authserver "hcm/pkg/api/auth-server"
 	"hcm/pkg/api/cloud-server"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/discovery"
+	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/api/healthz"
 	"hcm/pkg/cc"
 	"hcm/pkg/rest/client"
@@ -52,9 +54,21 @@ func newClientSet(client client.HTTPClient, discover serviced.Discover, discover
 	return cs
 }
 
-// NewAPIServerClientSet create a new api-server used client set.
-func NewAPIServerClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
-	discoverServices := []cc.Name{cc.CloudServerName}
+// NewHCServiceClientSet create a new hc-service used client set.
+func NewHCServiceClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
+	discoverServices := []cc.Name{cc.DataServiceName}
+	return newClientSet(client, discover, discoverServices)
+}
+
+// NewAuthServerClientSet create a new auth-server used client set.
+func NewAuthServerClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
+	discoverServices := []cc.Name{cc.DataServiceName}
+	return newClientSet(client, discover, discoverServices)
+}
+
+// NewCloudServerClientSet create a new cloud-server used client set.
+func NewCloudServerClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
+	discoverServices := []cc.Name{cc.DataServiceName, cc.HCServiceName}
 	return newClientSet(client, discover, discoverServices)
 }
 
@@ -74,6 +88,24 @@ func (cs *ClientSet) DataService() *dataservice.Client {
 		Discover: cs.apiDiscovery[cc.DataServiceName],
 	}
 	return dataservice.NewClient(c, cs.version)
+}
+
+// HCService get hc-service client.
+func (cs *ClientSet) HCService() *hcservice.Client {
+	c := &client.Capability{
+		Client:   cs.client,
+		Discover: cs.apiDiscovery[cc.HCServiceName],
+	}
+	return hcservice.NewClient(c, cs.version)
+}
+
+// AuthServer get auth-server client.
+func (cs *ClientSet) AuthServer() *authserver.Client {
+	c := &client.Capability{
+		Client:   cs.client,
+		Discover: cs.apiDiscovery[cc.AuthServerName],
+	}
+	return authserver.NewClient(c, cs.version)
 }
 
 // Healthz get service health check client.

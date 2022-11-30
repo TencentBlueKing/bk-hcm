@@ -28,10 +28,12 @@ import (
 	"time"
 
 	"hcm/cmd/data-service/service/account"
+	"hcm/cmd/data-service/service/auth"
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/handler"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/shutdown"
@@ -62,11 +64,10 @@ func NewService() (*Service, error) {
 
 // ListenAndServeRest listen and serve the restful server
 func (s *Service) ListenAndServeRest() error {
-
 	root := http.NewServeMux()
 	root.HandleFunc("/", s.apiSet().ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
-	root.HandleFunc("/debug/", http.DefaultServeMux.ServeHTTP)
+	handler.SetCommonHandler(root)
 
 	network := cc.DataService().Network
 	server := &http.Server{
@@ -119,20 +120,23 @@ func (s *Service) ListenAndServeRest() error {
 }
 
 func (s *Service) apiSet() *restful.Container {
+	ws := new(restful.WebService)
+	ws.Path("/api/v1/data")
+	ws.Produces(restful.MIME_JSON)
 
 	cap := &capability.Capability{
-		WebService: new(restful.WebService),
+		WebService: ws,
 		Dao:        s.dao,
 	}
 
 	account.InitAccountService(cap)
+	auth.InitAuthService(cap)
 
 	return restful.NewContainer().Add(cap.WebService)
 }
 
 // Healthz check whether the service is healthy.
 func (s *Service) Healthz(w http.ResponseWriter, req *http.Request) {
-
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
 	return
 }

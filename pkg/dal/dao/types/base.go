@@ -18,8 +18,3 @@
  */
 
 package types
-
-// DeleteOption define delete interface option.
-type DeleteOption struct {
-	ID uint64 `json:"id"`
-}

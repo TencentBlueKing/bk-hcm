@@ -61,6 +61,44 @@ func (r *runtime) Ready() bool {
 	return true
 }
 
+// ApiServer return api server Setting.
+func ApiServer() ApiServerSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty api server setting")
+		return ApiServerSetting{}
+	}
+
+	s, ok := rt.settings.(*ApiServerSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get api server setting", ServiceName())
+		return ApiServerSetting{}
+	}
+
+	return *s
+}
+
+// CloudServer return cloud server Setting.
+func CloudServer() CloudServerSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty cloud server setting")
+		return CloudServerSetting{}
+	}
+
+	s, ok := rt.settings.(*CloudServerSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get cloud server setting", ServiceName())
+		return CloudServerSetting{}
+	}
+
+	return *s
+}
+
 // DataService return data service Setting.
 func DataService() DataServiceSetting {
 	rt.lock.Lock()
@@ -75,6 +113,44 @@ func DataService() DataServiceSetting {
 	if !ok {
 		logs.ErrorDepthf(1, "current %s service can not get data service setting", ServiceName())
 		return DataServiceSetting{}
+	}
+
+	return *s
+}
+
+// HCService return hc service Setting.
+func HCService() HCServiceSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty hc service setting")
+		return HCServiceSetting{}
+	}
+
+	s, ok := rt.settings.(*HCServiceSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get hc service setting", ServiceName())
+		return HCServiceSetting{}
+	}
+
+	return *s
+}
+
+// AuthServer return auth server Setting.
+func AuthServer() AuthServerSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty auth server setting")
+		return AuthServerSetting{}
+	}
+
+	s, ok := rt.settings.(*AuthServerSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get auth server setting", ServiceName())
+		return AuthServerSetting{}
 	}
 
 	return *s

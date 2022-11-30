@@ -21,14 +21,17 @@ package app
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 
 	"hcm/cmd/data-service/options"
 	"hcm/cmd/data-service/service"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
+	"hcm/pkg/runtime/ctl"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
-	"hcm/pkg/tools/uuid"
 )
 
 // Run start the data service.
@@ -67,6 +70,10 @@ func (ds *dataService) prepare(opt *options.Option) error {
 
 	logs.Infof("load settings from config file success.")
 
+	// init metrics
+	network := cc.DataService().Network
+	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
+
 	svc, err := service.NewService()
 	if err != nil {
 		return fmt.Errorf("initialize service failed, err: %v", err)
@@ -74,18 +81,18 @@ func (ds *dataService) prepare(opt *options.Option) error {
 	ds.svc = svc
 
 	// register data service.
-	svcOpt := serviced.ServiceOption{
-		Name: cc.DataServiceName,
-		IP:   cc.DataService().Network.BindIP,
-		Port: cc.DataService().Network.Port,
-		Uid:  uuid.UUID(),
-	}
+	svcOpt := serviced.NewServiceOption(cc.DataServiceName, cc.DataService().Network)
 	sd, err := serviced.NewService(cc.DataService().Service, svcOpt)
 	if err != nil {
 		return fmt.Errorf("new service discovery failed, err: %v", err)
 	}
 
 	ds.sd = sd
+
+	// init hcm control tool
+	if err := ctl.LoadCtl(ctl.WithBasics(sd)...); err != nil {
+		return fmt.Errorf("load control tool failed, err: %v", err)
+	}
 
 	return nil
 }

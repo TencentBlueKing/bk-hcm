@@ -25,8 +25,10 @@ import (
 	"github.com/pborman/uuid"
 )
 
-var uuidLock sync.Mutex
-var lastUUID uuid.UUID
+var (
+	uuidLock sync.Mutex
+	lastUUID uuid.UUID
+)
 
 // UUID generates a UUID string which is version 4 or version 1.
 func UUID() string {

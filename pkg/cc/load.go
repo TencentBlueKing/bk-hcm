@@ -63,8 +63,16 @@ func loadFromFile(filename string) (Setting, error) {
 
 	var s Setting
 	switch ServiceName() {
+	case APIServerName:
+		s = new(ApiServerSetting)
+	case CloudServerName:
+		s = new(CloudServerSetting)
 	case DataServiceName:
 		s = new(DataServiceSetting)
+	case HCServiceName:
+		s = new(HCServiceSetting)
+	case AuthServerName:
+		s = new(AuthServerSetting)
 	default:
 		return nil, fmt.Errorf("unknown %s service name", ServiceName())
 	}

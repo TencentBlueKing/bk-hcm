@@ -31,7 +31,7 @@ type Option struct {
 	Sys *cc.SysOption
 }
 
-// InitOptions init hc server's options from command flags.
+// InitOptions init data service's options from command flags.
 func InitOptions() *Option {
 	fs := pflag.CommandLine
 	sysOpt := flags.SysFlags(fs)

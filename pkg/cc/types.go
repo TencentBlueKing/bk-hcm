@@ -185,7 +185,6 @@ func (s *DataBase) trySetDefault() {
 
 // validate sharding runtime
 func (s DataBase) validate() error {
-
 	if err := s.Resource.validate(); err != nil {
 		return err
 	}
@@ -248,7 +247,6 @@ func (ds *ResourceDB) trySetDefault() {
 	if ds.MaxIdleConn == 0 {
 		ds.MaxIdleConn = 5
 	}
-
 }
 
 // validate database runtime.
@@ -313,7 +311,6 @@ func (log *LogOption) trySetDefault() {
 	if log.MaxFileNum == 0 {
 		log.MaxFileNum = 5
 	}
-
 }
 
 // Logs convert it to logs.LogConfig.
@@ -364,7 +361,6 @@ func (n *Network) trySetDefault() {
 
 // validate network options
 func (n Network) validate() error {
-
 	if len(n.BindIP) == 0 {
 		return errors.New("network bindIP is not set")
 	}
@@ -433,4 +429,36 @@ func (s SysOption) CheckV() {
 		version.ShowVersion()
 		os.Exit(0)
 	}
+}
+
+// IAM defines all the iam related runtime.
+type IAM struct {
+	// Endpoints is a seed list of host:port addresses of iam nodes.
+	Endpoints []string `yaml:"endpoints"`
+	// AppCode blueking belong to hcm's appcode.
+	AppCode string `yaml:"appCode"`
+	// AppSecret blueking belong to hcm app's secret.
+	AppSecret string    `yaml:"appSecret"`
+	TLS       TLSConfig `yaml:"tls"`
+}
+
+// validate iam runtime.
+func (s IAM) validate() error {
+	if len(s.Endpoints) == 0 {
+		return errors.New("iam endpoints is not set")
+	}
+
+	if len(s.AppCode) == 0 {
+		return errors.New("iam appcode is not set")
+	}
+
+	if len(s.AppSecret) == 0 {
+		return errors.New("iam app secret is not set")
+	}
+
+	if err := s.TLS.validate(); err != nil {
+		return fmt.Errorf("iam tls validate failed, err: %v", err)
+	}
+
+	return nil
 }

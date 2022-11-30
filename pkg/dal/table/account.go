@@ -79,8 +79,8 @@ func (a Account) ValidateCreate() error {
 
 // ValidateUpdate validate account's info when update.
 func (a Account) ValidateUpdate() error {
-	if a.ID <= 0 {
-		return errors.New("id can not be empty")
+	if a.ID > 0 {
+		return errors.New("id can not be updated")
 	}
 
 	if a.Spec == nil {
@@ -108,7 +108,8 @@ var AccountSpecColumns = mergeColumns(nil, AccountSpecColumnDescriptor)
 // AccountSpecColumnDescriptor is AccountSpec's column descriptors.
 var AccountSpecColumnDescriptor = ColumnDescriptors{
 	{Column: "name", NamedC: "name", Type: enumor.String},
-	{Column: "memo", NamedC: "memo", Type: enumor.String}}
+	{Column: "memo", NamedC: "memo", Type: enumor.String},
+}
 
 // AccountSpec is a collection of account's specifics defined with user
 type AccountSpec struct {

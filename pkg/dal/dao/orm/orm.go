@@ -45,14 +45,14 @@ type DoOrm interface {
 	Delete(ctx context.Context, expr string, args ...interface{}) (int64, error)
 	Update(ctx context.Context, expr string, args interface{}) (int64, error)
 	Insert(ctx context.Context, expr string, data interface{}) (uint64, error)
-	BulkInsert(ctx context.Context, expr string, args interface{}) error
+	BulkInsert(ctx context.Context, expr string, args interface{}) ([]uint64, error)
 	Exec(ctx context.Context, expr string) (int64, error)
 }
 
 // DoOrmWithTransaction defines all the orm method with transaction.
 type DoOrmWithTransaction interface {
 	Insert(ctx context.Context, expr string, args interface{}) (uint64, error)
-	BulkInsert(ctx context.Context, expr string, args interface{}) error
+	BulkInsert(ctx context.Context, expr string, args interface{}) ([]uint64, error)
 	Delete(ctx context.Context, expr string, args ...interface{}) error
 	Update(ctx context.Context, expr string, args interface{}) (int64, error)
 }
@@ -105,7 +105,6 @@ type runtimeOrm struct {
 }
 
 func (o *runtimeOrm) logSlowCmd(ctx context.Context, sql string, latency time.Duration) {
-
 	if latency < o.slowRequestMS {
 		return
 	}
@@ -154,8 +153,7 @@ type TxnFunc func(txn *sqlx.Tx, opt *TxnOption) (interface{}, error)
 
 // TxnOption defines all the options to do distributed
 // transaction in the AutoTxn processes.
-type TxnOption struct {
-}
+type TxnOption struct{}
 
 // ErrRetryTransaction defines errors that need to retry transaction, like deadlock error in upsert scenario
 var ErrRetryTransaction = errors.New("RETRY TRANSACTION ERROR")

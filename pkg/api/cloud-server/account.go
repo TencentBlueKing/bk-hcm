@@ -43,8 +43,8 @@ func NewAccountClient(client rest.ClientInterface) *AccountClient {
 
 // Create cloud account.
 func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-	*base.CreateResult, error) {
-
+	*base.CreateResult, error,
+) {
 	resp := new(base.CreateResp)
 
 	err := a.client.Post().
@@ -55,9 +55,13 @@ func (a *AccountClient) Create(ctx context.Context, h http.Header, request *clou
 		Do().
 		Into(resp)
 
+	if err != nil {
+		return nil, err
+	}
+
 	if resp.Code != errf.OK {
 		return nil, errf.New(resp.Code, resp.Message)
 	}
 
-	return resp.Data, err
+	return resp.Data, nil
 }

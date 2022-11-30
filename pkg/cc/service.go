@@ -47,10 +47,16 @@ func ServiceName() Name {
 type Name string
 
 const (
+	// APIServerName is api server's name
+	APIServerName Name = "api-server"
 	// CloudServerName is cloud server's name
 	CloudServerName Name = "cloud-server"
 	// DataServiceName is data service's name
 	DataServiceName Name = "data-service"
+	// HCServiceName is hc service's name
+	HCServiceName Name = "hc-service"
+	// AuthServerName is the auth server's service name
+	AuthServerName Name = "auth-server"
 )
 
 // Setting defines all service Setting interface.
@@ -60,7 +66,77 @@ type Setting interface {
 	Validate() error
 }
 
-// DataServiceSetting defines cache service used setting options.
+// ApiServerSetting defines api server used setting options.
+type ApiServerSetting struct {
+	Network Network   `yaml:"network"`
+	Service Service   `yaml:"service"`
+	Log     LogOption `yaml:"log"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *ApiServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the ApiServerSetting default value if user not configured.
+func (s *ApiServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+
+	return
+}
+
+// Validate ApiServerSetting option.
+func (s ApiServerSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CloudServerSetting defines cloud server used setting options.
+type CloudServerSetting struct {
+	Network Network   `yaml:"network"`
+	Service Service   `yaml:"service"`
+	Log     LogOption `yaml:"log"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *CloudServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the CloudServerSetting default value if user not configured.
+func (s *CloudServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+
+	return
+}
+
+// Validate CloudServerSetting option.
+func (s CloudServerSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DataServiceSetting defines data service used setting options.
 type DataServiceSetting struct {
 	Network Network   `yaml:"network"`
 	Service Service   `yaml:"service"`
@@ -86,7 +162,6 @@ func (s *DataServiceSetting) trySetDefault() {
 
 // Validate DataServiceSetting option.
 func (s DataServiceSetting) Validate() error {
-
 	if err := s.Network.validate(); err != nil {
 		return err
 	}
@@ -96,6 +171,82 @@ func (s DataServiceSetting) Validate() error {
 	}
 
 	if err := s.Database.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// HCServiceSetting defines hc service used setting options.
+type HCServiceSetting struct {
+	Network Network   `yaml:"network"`
+	Service Service   `yaml:"service"`
+	Log     LogOption `yaml:"log"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *HCServiceSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the HCServiceSetting default value if user not configured.
+func (s *HCServiceSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+
+	return
+}
+
+// Validate HCServiceSetting option.
+func (s HCServiceSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AuthServerSetting defines auth server used setting options.
+type AuthServerSetting struct {
+	Network Network   `yaml:"network"`
+	Service Service   `yaml:"service"`
+	Log     LogOption `yaml:"log"`
+
+	IAM IAM `yaml:"iam"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *AuthServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the AuthServerSetting default value if user not configured.
+func (s *AuthServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+
+	return
+}
+
+// Validate AuthServerSetting option.
+func (s AuthServerSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	if err := s.IAM.validate(); err != nil {
 		return err
 	}
 

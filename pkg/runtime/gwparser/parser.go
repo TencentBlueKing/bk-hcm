@@ -78,8 +78,7 @@ type Parser interface {
 }
 
 // defaultParser used to parse requests api-service directly in the scenario.
-type defaultParser struct {
-}
+type defaultParser struct{}
 
 // Parse http request header to context kit and validate.
 func (p *defaultParser) Parse(ctx context.Context, header http.Header) (*kit.Kit, error) {

@@ -25,7 +25,6 @@ import (
 
 	"hcm/cmd/data-service/app"
 	"hcm/cmd/data-service/options"
-
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 )
@@ -35,7 +34,7 @@ func main() {
 
 	opts := options.InitOptions()
 	if err := app.Run(opts); err != nil {
-		fmt.Fprintf(os.Stderr, "start hc server failed, err: %v", err)
+		fmt.Fprintf(os.Stderr, "start data service failed, err: %v", err)
 		logs.CloseLogs()
 		os.Exit(1)
 	}

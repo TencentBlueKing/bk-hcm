@@ -45,7 +45,8 @@ var AuditColumnDescriptor = ColumnDescriptors{
 	{Column: "account_id", NamedC: "account_id", Type: enumor.Numeric},
 	{Column: "tenant_id", NamedC: "tenant_id", Type: enumor.Json},
 	{Column: "operator", NamedC: "operator", Type: enumor.String},
-	{Column: "created_at", NamedC: "created_at", Type: enumor.Time}}
+	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
+}
 
 // Audit is used to save resource's audit information.
 type Audit struct {
@@ -60,12 +61,11 @@ type Audit struct {
 	AccountID    uint64                   `db:"account_id" json:"account_id"`
 	TenantID     string                   `db:"tenant_id" json:"tenant_id"`
 	Operator     string                   `db:"operator" json:"operator"`
-	CreatedAt    time.Time                `db:"created_at" json:"created_at"`
+	CreatedAt    *time.Time               `db:"created_at" json:"created_at,omitempty"`
 }
 
 // CreateValidate audit when created
 func (a Audit) CreateValidate() error {
-
 	if len(a.ResourceType) == 0 {
 		return errors.New("resource type can not be empty")
 	}
@@ -86,7 +86,7 @@ func (a Audit) CreateValidate() error {
 		return errors.New("operator can not be empty")
 	}
 
-	if !a.CreatedAt.IsZero() {
+	if a.CreatedAt != nil && !a.CreatedAt.IsZero() {
 		return errors.New("create_at can not be set, it is generated through db")
 	}
 
@@ -100,8 +100,8 @@ func (a Audit) TableName() Name {
 
 // AuditBasicDetail defines the audit's basic details.
 type AuditBasicDetail struct {
-	Data    interface{} `json:"data"`
-	Changed interface{} `json:"changed"`
+	Data    interface{} `json:"data,omitempty"`
+	Changed interface{} `json:"changed,omitempty"`
 }
 
 // Scan is used to decode raw message which is read from db into a structured
@@ -119,7 +119,6 @@ func (detail *AuditBasicDetail) Scan(raw interface{}) error {
 	case []byte:
 		if err := json.Unmarshal(v, &detail); err != nil {
 			return fmt.Errorf("decode into auditBasicDetail failed, err: %v", err)
-
 		}
 		return nil
 	case string:

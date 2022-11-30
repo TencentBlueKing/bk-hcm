@@ -1,4 +1,4 @@
-SERVER = data-service
+SERVER = bk-hcm-dataservice
 ARGS   = -c ./etc/data_service.yaml
 
 include ../../scripts/makefile/common.mk

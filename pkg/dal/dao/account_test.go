@@ -20,7 +20,9 @@
 package dao
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
@@ -73,10 +75,22 @@ func TestUpdateAccount(t *testing.T) {
 	id, err := daoSet.Account().Create(kt, create)
 	checkErr(t, err)
 
+	time.Sleep(1 * time.Second)
+
 	kt.User = "Tom"
 	memo = ""
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "id",
+				Op:    filter.Equal.Factory(),
+				Value: id,
+			},
+		},
+	}
+
 	update := &table.Account{
-		ID: id,
 		Spec: &table.AccountSpec{
 			Name: "updated-account-test",
 			Memo: &memo,
@@ -86,7 +100,7 @@ func TestUpdateAccount(t *testing.T) {
 		},
 	}
 
-	err = daoSet.Account().Update(kt, update)
+	err = daoSet.Account().Update(kt, expr, update)
 	checkErr(t, err)
 }
 
@@ -193,10 +207,55 @@ func TestDeleteAccount(t *testing.T) {
 		return
 	}
 
+	ids := make([]uint64, 0)
 	for _, one := range list.Details {
-		err := daoSet.Account().Delete(kt, &types.DeleteOption{
-			ID: one.ID,
-		})
-		checkErr(t, err)
+		ids = append(ids, one.ID)
 	}
+
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "id",
+				Op:    filter.In.Factory(),
+				Value: ids,
+			},
+		},
+	}
+
+	err = daoSet.Account().Delete(kt, expr)
+	checkErr(t, err)
+}
+
+func TestBatchCreate(t *testing.T) {
+
+	// TODO: 这里仅展示批量创建如何使用，账号应该没有批量创建接口，之后删掉
+
+	daoSet, err := testDaoSet()
+	checkErr(t, err)
+
+	kt := kit.New()
+	kt.User = "Jim"
+
+	as := make([]table.Account, 0)
+	for i := 0; i < 5; i++ {
+		memo := "create account test"
+		account := table.Account{
+			Spec: &table.AccountSpec{
+				Name: "create-account-test",
+				Memo: &memo,
+			},
+			Revision: &table.Revision{
+				Creator: kt.User,
+				Reviser: kt.User,
+			},
+		}
+
+		as = append(as, account)
+	}
+
+	ids, err := daoSet.Account().BatchCreate(kt, as)
+	checkErr(t, err)
+
+	fmt.Println("[ ---- ids ---- ]: ", ids)
 }

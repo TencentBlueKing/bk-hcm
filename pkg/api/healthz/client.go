@@ -50,7 +50,6 @@ func (c *Client) HealthCheck() error {
 		Body(nil).
 		Do().
 		Into(resp)
-
 	if err != nil {
 		return err
 	}

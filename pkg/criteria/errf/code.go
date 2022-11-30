@@ -46,4 +46,11 @@ const (
 	RecordNotFound int32 = 2000003
 	// DecodeRequestFailed means decode the request body failed.
 	DecodeRequestFailed int32 = 2000004
+	// UnHealthy means service health check failed, current service is not healthy.
+	UnHealthy int32 = 2000005
+	// Aborted means the request is aborted because of some unexpected exceptions.
+	Aborted int32 = 2000006
+	// DoAuthorizeFailed try to do user's operate authorize, but got an error,
+	// so we do not know if the user has the permission or not.
+	DoAuthorizeFailed int32 = 2000007
 )

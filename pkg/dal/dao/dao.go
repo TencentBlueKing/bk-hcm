@@ -36,6 +36,7 @@ import (
 // Set defines all the DAO to be operated.
 type Set interface {
 	Account() Account
+	Auth() Auth
 }
 
 // NewDaoSet create the DAO set instance.
@@ -78,7 +79,6 @@ func connect(opt cc.ResourceDB) (*sqlx.DB, error) {
 
 // uri generate the standard db connection string format uri.
 func uri(opt cc.ResourceDB) string {
-
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s)/%s?parseTime=true&timeout=%ds&readTimeout=%ds&writeTimeout=%ds&charset=%s",
 		opt.User,
@@ -103,5 +103,12 @@ func (s *set) Account() Account {
 	return &accountDao{
 		orm:      s.orm,
 		auditDao: s.auditDao,
+	}
+}
+
+// Auth returns the auth instance's DAO
+func (s *set) Auth() Auth {
+	return &authDao{
+		orm: s.orm,
 	}
 }

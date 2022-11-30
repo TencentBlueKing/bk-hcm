@@ -105,7 +105,6 @@ func TestExpressionAnd(t *testing.T) {
 		t.Errorf("expression's sql where is not expected, sql: %s", sql)
 		return
 	}
-
 }
 
 func TestExpressionOr(t *testing.T) {
@@ -245,7 +244,6 @@ func TestExpressionValidateOption(t *testing.T) {
 		t.Errorf("validate boolean type failed, err: %v", err)
 		return
 	}
-
 }
 
 func TestCrownSQLWhereExpr(t *testing.T) {
@@ -356,7 +354,8 @@ func TestCrownSQLWhereExpr(t *testing.T) {
 	// test NULL crown rules
 	expr.Rules = []RuleFactory{
 		&AtomRule{Field: "name", Op: "eq", Value: "hcm"},
-		&AtomRule{Field: "age", Op: "gt", Value: 18}}
+		&AtomRule{Field: "age", Op: "gt", Value: 18},
+	}
 	opt.CrownedOption.Rules = make([]RuleFactory, 0)
 	where, err = expr.SQLWhereExpr(opt)
 	if err != nil {

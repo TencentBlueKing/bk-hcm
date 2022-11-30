@@ -39,10 +39,10 @@ var RevisionColumnDescriptor = ColumnDescriptors{
 
 // Revision is a resource's status information
 type Revision struct {
-	Creator   string    `db:"creator" json:"creator"`
-	Reviser   string    `db:"reviser" json:"reviser"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	Creator   string     `db:"creator" json:"creator"`
+	Reviser   string     `db:"reviser" json:"reviser"`
+	CreatedAt *time.Time `db:"created_at" json:"created_at,omitempty"`
+	UpdatedAt *time.Time `db:"updated_at" json:"updated_at,omitempty"`
 }
 
 // IsEmpty test whether a revision is empty or not.
@@ -70,7 +70,6 @@ const lagSeconds = 5 * 60
 
 // ValidateCreate validate revision when created
 func (r Revision) ValidateCreate() error {
-
 	if len(r.Creator) == 0 {
 		return errors.New("creator can not be empty")
 	}
@@ -79,11 +78,11 @@ func (r Revision) ValidateCreate() error {
 		return errors.New("reviser can not be empty")
 	}
 
-	if !r.CreatedAt.IsZero() {
+	if r.CreatedAt != nil && !r.CreatedAt.IsZero() {
 		return errors.New("created_at can not be set, it is generated through db")
 	}
 
-	if !r.UpdatedAt.IsZero() {
+	if r.UpdatedAt != nil && !r.UpdatedAt.IsZero() {
 		return errors.New("updated_at can not be set, it is generated through db")
 	}
 
@@ -100,11 +99,11 @@ func (r Revision) ValidateUpdate() error {
 		return errors.New("creator can not be updated")
 	}
 
-	if !r.CreatedAt.IsZero() {
+	if r.CreatedAt != nil && !r.CreatedAt.IsZero() {
 		return errors.New("created_at can not be updated")
 	}
 
-	if !r.UpdatedAt.IsZero() {
+	if r.UpdatedAt != nil && !r.UpdatedAt.IsZero() {
 		return errors.New("updated_at can not be set, it is generated through db")
 	}
 
@@ -117,22 +116,22 @@ var CreatedRevisionColumns = mergeColumns(nil, CreatedRevisionColumnDescriptor)
 // CreatedRevisionColumnDescriptor is CreatedRevision's column descriptors.
 var CreatedRevisionColumnDescriptor = ColumnDescriptors{
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
-	{Column: "created_at", NamedC: "created_at", Type: enumor.Time}}
+	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
+}
 
 // CreatedRevision is a resource's reversion information being created.
 type CreatedRevision struct {
-	Creator   string    `db:"creator" json:"creator"`
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	Creator   string     `db:"creator" json:"creator"`
+	CreatedAt *time.Time `db:"created_at" json:"created_at,omitempty"`
 }
 
 // Validate revision when created
 func (r CreatedRevision) Validate() error {
-
 	if len(r.Creator) == 0 {
 		return errors.New("creator can not be empty")
 	}
 
-	if !r.CreatedAt.IsZero() {
+	if r.CreatedAt != nil && !r.CreatedAt.IsZero() {
 		return errors.New("create_at can not be set, it is generated through db")
 	}
 

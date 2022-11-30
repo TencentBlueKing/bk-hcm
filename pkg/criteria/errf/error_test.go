@@ -22,8 +22,6 @@ package errf
 import (
 	"encoding/json"
 	"testing"
-
-	"hcm/pkg/kit"
 )
 
 func TestWrap(t *testing.T) {
@@ -50,18 +48,12 @@ func TestWrap(t *testing.T) {
 }
 
 func TestAssignResp(t *testing.T) {
-	type BaseResp struct {
-		Code    int32
-		Message string
-	}
-
 	ef := &ErrorF{
 		Code:    Unknown,
 		Message: "unknown error",
 	}
 
-	resp := new(BaseResp)
-	ef.AssignResp(kit.New(), resp)
+	resp := ef.Resp()
 
 	if !(resp.Code == ef.Code && resp.Message == ef.Message) {
 		t.Error("errorF assign code message failed")

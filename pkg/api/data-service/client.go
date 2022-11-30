@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/rest/client"
 )
 
-// Client is cloud-server api client.
+// Client is data-service api client.
 type Client struct {
 	client rest.ClientInterface
 }
@@ -43,4 +43,9 @@ func NewClient(c *client.Capability, version string) *Client {
 // Account get account client.
 func (c *Client) Account() *AccountClient {
 	return NewAccountClient(c.client)
+}
+
+// Auth get api client for authorize use.
+func (c *Client) Auth() *AuthClient {
+	return NewAuthClient(c.client)
 }

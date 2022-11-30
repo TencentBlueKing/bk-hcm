@@ -124,7 +124,6 @@ func (d *discovery) watcher(service cc.Name) {
 		logs.Infof("get %s key failed, err: %v", key, err)
 	}
 
-	d.addresses[service] = make([]serviceAddress, 0)
 	opts := make([]etcd3.OpOption, 0)
 
 	if err == nil {
