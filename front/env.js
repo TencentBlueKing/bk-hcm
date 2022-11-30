@@ -1,4 +1,7 @@
-const { DEV_HOST } = require('./env.dev')
+let DEV_HOST = ''
+if(process.env.NODE_ENV === 'development') {
+  DEV_HOST = require('./env.dev').DEV_HOST
+}
 const config = {
     production: {
       NODE_ENV: JSON.stringify('production'),
