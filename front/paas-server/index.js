@@ -14,7 +14,7 @@
  // const installServices = require('./api');
  
  const app = new Express();
- const PORT = process.env.PORT || 5005;
+ const PORT = process.env.PORT || 80;
  app.use(cookieParser());
  
  process.env.NODE_ENV = 'production'
@@ -89,4 +89,3 @@
  app.listen(PORT, () => {
    console.log(`App is running in port ${PORT}`);
  });
- 

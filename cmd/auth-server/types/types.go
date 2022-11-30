@@ -228,7 +228,7 @@ type AttrValueResource struct {
 
 // ListInstanceResult list instance result.
 type ListInstanceResult struct {
-	Count   uint32             `json:"count"`
+	Count   uint64             `json:"count"`
 	Results []InstanceResource `json:"results"`
 }
 
