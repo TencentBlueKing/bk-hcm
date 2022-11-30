@@ -1,4 +1,5 @@
 export interface ProjectModel {
+  type: string
   resourceName: string
   name: string,
   cloudName: string,
@@ -31,4 +32,12 @@ export interface Department {
   isOpen: boolean
   loaded: boolean
   loading: boolean
+}
+
+export interface FormItems {
+  label?: string
+  required?: boolean
+  property?: string,
+  content?: Function,
+  component?: Function,
 }

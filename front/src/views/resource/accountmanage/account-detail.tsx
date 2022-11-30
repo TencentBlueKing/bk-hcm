@@ -16,6 +16,7 @@ export default defineComponent({
     const formRef = ref<InstanceType<typeof Form>>(null);
 
     const initProjectModel: ProjectModel = {
+      type: '',
       resourceName: '',
       name: 'test',
       cloudName: '',
@@ -79,14 +80,14 @@ export default defineComponent({
           {
             label: t('云厂商:'),
             required: false,
-            property: 'cloudType',
+            property: 'cloudName',
             isEdit: false,
             component: () => <span>{t('腾讯云')}</span>,
           },
           {
             label: t('账号类别:'),
             required: false,
-            property: 'accountType',
+            property: 'type',
             isEdit: false,
             component: () => <span>{t('资源账号')}</span>,
           },
