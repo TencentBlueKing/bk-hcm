@@ -1,7 +1,7 @@
-import { Form } from 'bkui-vue';
+import { Form, Dialog, Input } from 'bkui-vue';
 // import { Form, Input, Select, Button } from 'bkui-vue';
-import { reactive, defineComponent, ref } from 'vue';
-import { ProjectModel } from '@/typings';
+import { reactive, defineComponent, ref, onMounted } from 'vue';
+import { ProjectModel, SecretModel } from '@/typings';
 import { useI18n } from 'vue-i18n';
 // import MemberSelect from '@/components/MemberSelect';
 // import OrganizationSelect from '@/components/OrganizationSelect';
@@ -14,20 +14,34 @@ export default defineComponent({
   setup() {
     const { t } = useI18n();
     const formRef = ref<InstanceType<typeof Form>>(null);
+    const formDiaRef = ref(null);
 
     const initProjectModel: ProjectModel = {
-      type: '',
-      resourceName: '',
-      name: 'test',
-      cloudName: '',
-      scretId: '',
-      account: '',
-      user: ['poloohuang'],
-      remark: '测试描述',
-      business: 'huawei',
+      type: 'resource',   // 账号类型
+      name: 'test', // 名称
+      cloudName: '', // 云厂商
+      account: '',    // 主账号
+      subAccountId: '',    // 子账号id
+      subAccountName: '',    // 子账号名称
+      scretId: '',    // 密钥id
+      secretKey: '',  // 密钥key
+      user: ['poloohuang'], // 责任人
+      organize: [],   // 组织架构
+      business: '',   // 使用业务
+      remark: '111111',     // 备注
     };
+
+    const initSecretModel: SecretModel = {
+      secretId: '',
+      secretKey: '',
+    };
+
     const projectModel = reactive<ProjectModel>({
       ...initProjectModel,
+    });
+
+    const secretModel = reactive<SecretModel>({
+      ...initSecretModel,
     });
 
     const cloudType = reactive([
@@ -35,6 +49,105 @@ export default defineComponent({
       { key: '腾讯云', value: 'tencent' },
       { key: '亚马逊', value: 'aws' },
     ]);
+
+    const type = ref<string>('Azure');
+    let dialogForm = reactive([]);
+
+    onMounted(() => {
+      switch (type.value) {
+        case 'haiwei':
+          console.log(1111, type.value);
+          dialogForm = [
+            {
+              label: 'Secret ID',
+              required: true,
+              property: 'secretId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
+            },
+            {
+              label: 'Secret Key',
+              required: true,
+              property: 'secretKey',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
+            },
+          ];
+          break;
+        case 'AWS':
+          dialogForm = [
+            {
+              label: t('密钥ID'),
+              required: true,
+              property: 'secretId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
+            },
+            {
+              label: 'Secret ID',
+              required: true,
+              property: 'secretId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
+            },
+            {
+              label: 'Secret Key',
+              required: true,
+              property: 'secretKey',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
+            },
+          ];
+          break;
+        case 'GCP':
+          dialogForm = [
+            {
+              label: 'Secret ID',
+              required: true,
+              property: 'secretId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
+            },
+            {
+              label: 'Secret Key',
+              required: true,
+              property: 'secretKey',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
+            },
+          ];
+          break;
+        case 'Azure':
+          dialogForm = [
+            {
+              label: t('客户端ID'),
+              required: true,
+              property: 'secretId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
+            },
+            {
+              label: t('客户端密钥'),
+              required: true,
+              property: 'secretKey',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
+            },
+          ];
+          break;
+        case 'tx':
+          dialogForm = [
+            {
+              label: 'Secret ID',
+              required: true,
+              property: 'secretId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
+            },
+            {
+              label: 'Secret Key',
+              required: true,
+              property: 'secretKey',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
+            },
+          ];
+          break;
+        default:
+          break;
+      }
+    });
+
+    const isShowModifyScretDialog = ref(false);
 
     // const members = ['poloohuang'];
     // const department = [6544];
@@ -46,10 +159,24 @@ export default defineComponent({
     const formRules = {
       name: [{ trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾业务与项目至少填一个', validator: check }],
     };
-
     // 更新信息方法
     const updateFormData = () => {
 
+    };
+
+    // 显示弹窗
+    const handleModifyScret = () => {
+      isShowModifyScretDialog.value = true;
+    };
+
+    // 弹窗确认
+    const onConfirm = () => {
+      console.log(secretModel);
+    };
+
+    // 取消
+    const onClosed = () => {
+      isShowModifyScretDialog.value = false;
     };
 
     const handleEditStatus = (val: boolean, key: string) => {
@@ -63,6 +190,7 @@ export default defineComponent({
       });
     };
 
+    // 处理失焦
     const handleblur = async (val: boolean, key: string) => {
       handleEditStatus(val, key);     // 未通过检验前状态为编辑态
       await formRef.value?.validate();
@@ -221,6 +349,21 @@ export default defineComponent({
 
     ]);
 
+    // const dialogForm = reactive([
+    //   {
+    //     label: 'Secret ID',
+    //     required: true,
+    //     property: 'secretId',
+    //     component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
+    //   },
+    //   {
+    //     label: 'Secret Key',
+    //     required: true,
+    //     property: 'secretKey',
+    //     component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
+    //   },
+    // ]);
+
     // const test = () => {
     //   console.log('1111333');
     // };
@@ -237,7 +380,7 @@ export default defineComponent({
                       {index === 2
                         ? <span>
                             <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/>
-                            <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
+                            <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'} onClick={handleModifyScret}/>
                           </span> : ''}
                     </div>
                     <Form model={projectModel} labelWidth={100} rules={formRules} ref={formRef}>
@@ -253,6 +396,23 @@ export default defineComponent({
                 </div>
             ))
             }
+
+          <Dialog
+            isShow={isShowModifyScretDialog.value}
+            width={680}
+            title={''}
+            onConfirm={onConfirm}
+            onClosed={onClosed}
+          >
+            <Form labelWidth={100} model={secretModel} ref={formDiaRef}>
+            {dialogForm.map(formItem => (
+                <FormItem label={formItem.label} required={formItem.required} property={formItem.property}>
+                    {formItem.component()}
+                </FormItem>
+            ))
+            }
+            </Form>
+          </Dialog>
         </div>
     );
   },
