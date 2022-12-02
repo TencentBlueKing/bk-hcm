@@ -66,13 +66,13 @@
         <template #default="props">
           <div class="operate-button">
             <bk-button text theme="primary" @click="handleSync">
-              同步
+              {{t('同步')}}
             </bk-button>
             <bk-button text theme="primary" @click="handleJump('accountDetail', props?.data.id)">
-              编辑
+              {{t('编辑')}}
             </bk-button>
             <bk-button text theme="primary" @click="handleDelete(props?.data.id, props?.data.name)">
-              删除
+              {{t('删除')}}
             </bk-button>
           </div>
         </template>
@@ -84,9 +84,9 @@
       :theme="'primary'"
       :quick-close="false"
       @closed="showDeleteBox = false"
-      @confirm="() => test('test')"
+      @confirm="() => handleDialogConfirm('del')"
     >
-      <div>删除之后无法恢复账户信息</div>
+      <div>{{t('删除之后无法恢复账户信息')}}</div>
     </bk-dialog>
 
     <bk-dialog
@@ -95,7 +95,7 @@
       :theme="'primary'"
       :quick-close="false"
       @closed="showSyncBox = false"
-      @confirm="() => test('test')"
+      @confirm="() => handleDialogConfirm('sync')"
     >
       <div class="sync-dialog-warp">
         <div class="flex-row justify-content-between align-items-center">
@@ -105,7 +105,7 @@
           </div>
           <img class="logo-icon" :src="logo" />
         </div>
-        <div class="text-center pt20 bg-default">同步中...</div>
+        <div class="text-center pt20 bg-default">{{t('同步中...')}}</div>
       </div>
     </bk-dialog>
   </div>
@@ -158,7 +158,7 @@ export default defineComponent({
       },
       showDeleteBox: false,
       deleteBoxTitle: '',
-      syncTitle: '同步',
+      syncTitle: t('同步'),
       showSyncBox: false,
       logo,
       rightArrow,
@@ -168,6 +168,7 @@ export default defineComponent({
 
     onMounted(async () => {
       console.log(122133333);
+      /* 获取账号列表接口 */
       getAccountList();
     });
     onUnmounted(() => {
@@ -183,7 +184,7 @@ export default defineComponent({
         state.loading = false;
       }
     };
-    const test = (data: any) => {
+    const handleDialogConfirm = (data: any) => {
       console.log(11111, data);
       state.showDeleteBox = false;
     };
@@ -213,7 +214,7 @@ export default defineComponent({
 
     return {
       ...toRefs(state),
-      test,
+      handleDialogConfirm,
       handleJump,
       handleDelete,
       handleSync,

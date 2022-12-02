@@ -891,6 +891,7 @@ const lang: ILANG = {
   '关联角色成功': ['Link role succeeded'],
   '部门正在同步中，请稍等...': ['Department is syncing, please wait...'],
   '正在同步中···': ['Syncing...'],
+  '同步中···': ['Syncing...'],
   '同步部门': ['Sync department'],
   '取消关联角色成功': ['Disassociation role succeeded'],
   '租户1': ['Tenant 1'],
