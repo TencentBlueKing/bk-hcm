@@ -38,7 +38,7 @@ const getFileMap = (mockPath) => {
 };
 
 const mockServer = (app, options = {}) => {
-  const { watch = '/api/*', api } = options;
+  const { watch = '/mock/api/*', api } = options;
   const mockPath = path.resolve(rootDir, './mock');
   const apiPath = path.resolve(rootDir, api);
   let fileMap = getFileMap(mockPath);

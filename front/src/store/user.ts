@@ -15,7 +15,7 @@ export const useUser = defineStore('user', {
 
     // 测试
     async test() {
-      const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/v4/organization/user_info/`);
+      const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/mock/api/v4/organization/user_info/`);
       return res;
     },
 

@@ -1,11 +1,14 @@
 export interface ProjectModel {
   type: string
-  resourceName: string
   name: string,
+  account: number | string,
+  subAccountId: number | string,
+  subAccountName: number | string,
   cloudName: string,
   scretId: string,
-  account: number | string,
+  secretKey: string,
   user: string[]
+  organize: string[] | number[],
   remark: string,
   business: string | string[]
 }
@@ -40,4 +43,9 @@ export interface FormItems {
   property?: string,
   content?: Function,
   component?: Function,
+}
+
+export interface SecretModel {
+  secretId: string,
+  secretKey: string
 }
