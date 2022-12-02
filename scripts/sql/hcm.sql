@@ -61,8 +61,8 @@ create table if not exists `account`
     `extension`       json                not null,
     `creator`         varchar(64)         not null,
     `reviser`         varchar(64)         not null,
-    `created_at`      timestamp           not null,
-    `updated_at`      timestamp           not null,
+    `created_at`      timestamp           not null default now(),
+    `updated_at`      timestamp           not null default now(),
     `memo`            varchar(255)        default '',
     primary key (`id`),
     unique key `idx_uk_name` (`name`)
@@ -72,6 +72,6 @@ create table if not exists `account_biz_rel` (
     `id`         bigint(1) unsigned  not null auto_increment,
     `bk_biz_id`  bigint(1) unsigned  not null,
     `account_id` bigint(1) unsigned  not null,
-    primary key (`id`)
+    primary key (`id`),
     unique key `idx_uk_bk_biz_id_account_id` (`bk_biz_id`,`account_id`)
 ) engine=innodb default charset=utf8mb4;

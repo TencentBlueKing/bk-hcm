@@ -17,18 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package cloud
 
 import (
 	"fmt"
 
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/protocol/base"
-	dataservice "hcm/pkg/api/protocol/data-service"
+	"hcm/pkg/api/protocol/data-service/cloud"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/dal/table"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
+
+	"hcm/pkg/dal/dao"
 )
 
 // InitAccountService initial the account service
@@ -38,7 +39,9 @@ func InitAccountService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("CreateAccount", "POST", "/create/account/account", svr.CreateAccount)
+	// RESTful API
+	h.Add("CreateAccount", "POST", "/cloud/accounts/", svr.CreateAccount)
+	h.Add("UpdateAccount", "PUT", "/cloud/accounts/", svr.UpdateAccount)
 
 	h.Load(cap.WebService)
 }
@@ -49,27 +52,37 @@ type account struct {
 
 // CreateAccount create account with options
 func (a *account) CreateAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataservice.CreateAccountReq)
+	req := new(cloud.CreateAccountReq)
+
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := validator.Validate.Struct(req); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	account := &table.Account{
-		Spec: req.Spec,
-		Revision: &table.Revision{
-			Creator: cts.Kit.User,
-			Reviser: cts.Kit.User,
-		},
-	}
-
-	id, err := a.dao.Account().Create(cts.Kit, account)
+	id, err := a.dao.CloudAccount().Create(cts.Kit, req.ToModel())
 	if err != nil {
-		return nil, fmt.Errorf("create account failed, err: %v", err)
+		return nil, fmt.Errorf("create cloud account failed, err: %v", err)
 	}
 
 	return &base.CreateResult{ID: id}, nil
+}
+
+// UpdateAccount create account with options
+func (a *account) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloud.UpdateAccountReq)
+
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+	}
+
+	if err := validator.Validate.Struct(req); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	err := a.dao.CloudAccount().Update(cts.Kit, &req.FilterExpr, req.ToModel())
+
+	return nil, err
 }

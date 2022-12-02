@@ -26,6 +26,7 @@ import (
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table"
+	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
@@ -34,7 +35,6 @@ import (
 
 // initAuditBuilder create a new audit builder instance.
 func initAuditBuilder(kt *kit.Kit, resourceType enumor.AuditResourceType, ad *audit) AuditDecorator {
-
 	ab := new(AuditBuilder)
 
 	if len(kt.User) == 0 {
@@ -102,7 +102,7 @@ func (ab *AuditBuilder) Audit() *table.Audit {
 func (ab *AuditBuilder) Audits(len int) []*table.Audit {
 	list := make([]*table.Audit, len)
 
-	for index, _ := range list {
+	for index := range list {
 		list[index] = &table.Audit{
 			ResourceType: ab.ResourceType,
 			Operator:     ab.Operator,
@@ -130,7 +130,7 @@ func (ab *AuditBuilder) AuditCreate(txn *sqlx.Tx, cur interface{}) error {
 	}
 
 	switch res := cur.(type) {
-	case *table.Account:
+	case *tablecloud.AccountModel:
 		one.ResourceID = res.ID
 		one.AccountID = res.ID
 
@@ -206,8 +206,8 @@ func (ab *AuditBuilder) PrepareUpdate(whereExpr string, toUpdate map[string]inte
 }
 
 func (ab *AuditBuilder) decorateAccountUpdate(whereExpr string, toUpdate map[string]interface{}) (
-	[]*table.Audit, error) {
-
+	[]*table.Audit, error,
+) {
 	accounts, err := ab.listAccount(whereExpr)
 	if err != nil {
 		return nil, err
@@ -255,8 +255,8 @@ func (ab *AuditBuilder) PrepareDelete(whereExpr string) AuditDecorator {
 }
 
 func (ab *AuditBuilder) decorateAccountDelete(whereExpr string) (
-	[]*table.Audit, error) {
-
+	[]*table.Audit, error,
+) {
 	accounts, err := ab.listAccount(whereExpr)
 	if err != nil {
 		return nil, err

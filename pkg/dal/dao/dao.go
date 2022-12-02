@@ -26,6 +26,7 @@ import (
 
 	"hcm/pkg/cc"
 	"hcm/pkg/dal/dao/audit"
+	daocloud "hcm/pkg/dal/dao/cloud"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/metrics"
 
@@ -35,7 +36,7 @@ import (
 
 // Set defines all the DAO to be operated.
 type Set interface {
-	Account() Account
+	CloudAccount() daocloud.Account
 	Auth() Auth
 }
 
@@ -98,12 +99,9 @@ type set struct {
 	auditDao audit.AuditDao
 }
 
-// Account returns the account's DAO
-func (s *set) Account() Account {
-	return &accountDao{
-		orm:      s.orm,
-		auditDao: s.auditDao,
-	}
+// CloudAccount returns the account's DAO
+func (s *set) CloudAccount() daocloud.Account {
+	return daocloud.NewAccountDao(s.orm, s.auditDao)
 }
 
 // Auth returns the auth instance's DAO
