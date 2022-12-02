@@ -40,8 +40,7 @@ export default defineComponent({
       nextTick(() => {
         // @ts-ignore
         inputRef.value?.focus();
-        console.log(selectRef.value);
-        // selectRef.value?.3();
+        selectRef.value?.handleTogglePopover();
       });
     };
 

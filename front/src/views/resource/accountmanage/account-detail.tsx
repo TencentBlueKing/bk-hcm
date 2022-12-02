@@ -27,7 +27,7 @@ export default defineComponent({
       secretKey: '',  // 密钥key
       user: ['poloohuang'], // 责任人
       organize: [],   // 组织架构
-      business: '',   // 使用业务
+      business: 'huawei',   // 使用业务
       remark: '111111',     // 备注
     };
 
