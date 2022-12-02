@@ -11,11 +11,15 @@
         <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
       </div>
     </div>
+    <bk-loading loading v-if="loading">
+      <div style="width: 100%; height: 360px" />
+    </bk-loading>
     <bk-table
       class="table-layout"
       :data="tableData"
       :pagination="pagination"
       row-hover="auto"
+      v-else
     >
       <bk-table-column
         label="ID"
@@ -112,6 +116,7 @@ import { reactive, toRefs, defineComponent, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import logo from '@/assets/image/logo.png';
+import { useAccountStore } from '@/store';
 import rightArrow from '@/assets/image/right-arrow.png';
 import tcloud from '@/assets/image/tcloud.png';
 
@@ -120,6 +125,7 @@ export default defineComponent({
   setup() {
     const { t } = useI18n();
     const router = useRouter();
+    const accountStore = useAccountStore();
 
     const state = reactive({
       value: false,
@@ -157,14 +163,26 @@ export default defineComponent({
       logo,
       rightArrow,
       tcloudSrc: tcloud,
+      loading: true,
     });
 
     onMounted(async () => {
       console.log(122133333);
+      getAccountList();
     });
     onUnmounted(() => {
     });
 
+    const getAccountList = async () => {
+      try {
+        const res = await accountStore.getAccountList(state.pagination);
+        state.tableData = res.data;
+      } catch (error) {
+        console.log(error);
+      } finally {
+        state.loading = false;
+      }
+    };
     const test = (data: any) => {
       console.log(11111, data);
       state.showDeleteBox = false;

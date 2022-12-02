@@ -15,6 +15,7 @@ export default defineComponent({
     const { t } = useI18n();
     const formRef = ref<InstanceType<typeof Form>>(null);
     const formDiaRef = ref(null);
+    const confirmText = ref<string>(t('测试连接'));
 
     const initProjectModel: ProjectModel = {
       type: 'resource',   // 账号类型
@@ -170,7 +171,9 @@ export default defineComponent({
     };
 
     // 弹窗确认
-    const onConfirm = () => {
+    const onConfirm = async () => {
+      await formDiaRef.value?.validate();
+
       console.log(secretModel);
     };
 
@@ -400,8 +403,9 @@ export default defineComponent({
           <Dialog
             isShow={isShowModifyScretDialog.value}
             width={680}
-            title={''}
+            title={t('密钥信息')}
             onConfirm={onConfirm}
+            confirmText={confirmText.value}
             onClosed={onClosed}
           >
             <Form labelWidth={100} model={secretModel} ref={formDiaRef}>

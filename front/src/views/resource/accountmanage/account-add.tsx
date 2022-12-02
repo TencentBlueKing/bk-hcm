@@ -1,9 +1,11 @@
-import { Form, Input, Select, Button, Radio } from 'bkui-vue';
+import { Form, Input, Select, Button, Radio, Message } from 'bkui-vue';
 import { reactive, defineComponent, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { ProjectModel, FormItems } from '@/typings';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import OrganizationSelect from '@/components/OrganizationSelect';
+import { useAccountStore } from '@/store';
 const { FormItem } = Form;
 const { Option } = Select;
 const { Group } = Radio;
@@ -11,6 +13,8 @@ export default defineComponent({
   name: 'AccountManageAdd',
   setup() {
     const { t } = useI18n();
+    const accountStore = useAccountStore();
+    const router = useRouter();
 
     const initProjectModel: ProjectModel = {
       type: 'resource',   // 账号类型
@@ -58,7 +62,16 @@ export default defineComponent({
     // 提交操作
     const submit = async () => {
       await formRef.value?.validate();
-      console.log(1111);
+      try {
+        await accountStore.addAccount(projectModel);
+        Message({
+          message: t('新增成功'),
+          theme: 'success',
+        });
+        router.go(-1);  // 返回列表
+      } catch (error) {
+        console.log(error);
+      }
     };
 
     // // 修改表单
@@ -338,7 +351,7 @@ export default defineComponent({
         label: t('云厂商'),
         required: true,
         property: 'cloudName',
-        component: () => <Select class="w450" modelValue={projectModel.cloudName} onChange={changeCloud}>
+        component: () => <Select class="w450" v-model={projectModel.cloudName} onChange={changeCloud}>
           {cloudType.map(item => (
               <Option
                 key={item.key}
@@ -406,7 +419,7 @@ export default defineComponent({
         label: t('使用业务'),
         required: true,
         property: 'business',
-        component: () => <Select multiple show-select-all collapse-tags multipleMode='tag' class="w450" modelValue={projectModel.business}>
+        component: () => <Select multiple show-select-all collapse-tags multipleMode='tag' class="w450" v-model={projectModel.business}>
           {businessList.map(item => (
               <Option
                 key={item.key}
@@ -422,7 +435,7 @@ export default defineComponent({
         label: t('备注'),
         required: false,
         property: 'remark',
-        component: () => <Input class="w450" placeholder={t('请输入')} v-model={projectModel.name} type="textarea" maxlength={100} showWordLimit rows={2} />,
+        component: () => <Input class="w450" placeholder={t('请输入')} v-model={projectModel.remark} type="textarea" maxlength={100} showWordLimit rows={2} />,
       },
       {
         required: false,
