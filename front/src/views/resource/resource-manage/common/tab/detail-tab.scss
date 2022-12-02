@@ -1,0 +1,16 @@
+.detail-tab-main {
+  margin-top: 20px;
+  background: #fff;
+  box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
+  .bk-tab-content {
+    border-left: 1px solid #dcdee5;
+    border-right: 1px solid #dcdee5;
+    border-bottom: 1px solid #dcdee5;
+    height: calc(50vh - 182px);
+    padding: 0;
+    flex: none;
+    .bk-tab-panel {
+      padding: 0 30px 20px;
+    }
+  }
+}

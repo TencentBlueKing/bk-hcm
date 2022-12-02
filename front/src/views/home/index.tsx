@@ -147,8 +147,8 @@ export default defineComponent({
                             {{
                               default: () => (
                                 <span class="cursor-pointer flex-row align-items-center ">
-                                {userStore.username}
-                                <i class={'icon hcm-icon bkhcm-icon-down-shape pl5'}/>
+                                  {userStore.username}
+                                  <i class={'icon hcm-icon bkhcm-icon-down-shape pl5'}/>
                                 </span>
                               ),
                               content: () => (

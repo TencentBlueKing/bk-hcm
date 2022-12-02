@@ -17,11 +17,30 @@ const resourceMenus: RouteRecordRaw[] = [
         },
       },
       {
-        path: '/resource/res',
+        path: '/resource/resource',
         name: '资源',
-        component: () => import('@/views/resource/demo2'),
+        component: () => import('@/views/resource/resource-manage/resource-entry.vue'),
+        children: [
+          {
+            path: '/resource/resource',
+            component: () => import('@/views/resource/resource-manage/resource-manage.vue'),
+            meta: {
+              activeKey: 'resourceResource',
+              breadcrumb: ['云管', '资源'],
+            },
+          },
+          {
+            path: '/resource/detail/:type',
+            name: 'resourceDetail',
+            component: () => import('@/views/resource/resource-manage/resource-detail.vue'),
+            meta: {
+              activeKey: 'resourceResource',
+              breadcrumb: ['云管', '资源', '详情'],
+            },
+          },
+        ],
         meta: {
-          activeKey: 'resourceRes',
+          activeKey: 'resourceResource',
           breadcrumb: ['云管', '资源'],
         },
       },

@@ -1,0 +1,23 @@
+.info-list-main {
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}
+
+.info-list-item {
+  float: left;
+  width: 300px;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  line-height: 30px;
+}
+
+.info-item-copy {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #5594fa;
+}
