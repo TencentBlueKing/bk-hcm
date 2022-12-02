@@ -1,9 +1,16 @@
 export interface ProjectModel {
-  resourceName: string
+  type: string
   name: string,
+  account: number | string,
+  subAccountId: number | string,
+  subAccountName: number | string,
   cloudName: string,
   scretId: string,
-  account: number | string
+  secretKey: string,
+  user: string[]
+  organize: string[] | number[],
+  remark: string,
+  business: string | string[]
 }
 
 export enum StaffType {
@@ -28,4 +35,17 @@ export interface Department {
   isOpen: boolean
   loaded: boolean
   loading: boolean
+}
+
+export interface FormItems {
+  label?: string
+  required?: boolean
+  property?: string,
+  content?: Function,
+  component?: Function,
+}
+
+export interface SecretModel {
+  secretId: string,
+  secretKey: string
 }

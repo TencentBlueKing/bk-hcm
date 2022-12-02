@@ -17,32 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package aws
 
-import "hcm/pkg/kit"
+import (
+	"fmt"
 
-// AccountInterface defines all the account related operations in the hybrid cloud
-type AccountInterface interface {
-	AccountCheck(kt *kit.Kit, secret *Secret) error
-}
+	"hcm/pkg/adaptor/types"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 
-// Secret defines the hybrid cloud's secret info.
-// TODO replace with actual account secret info
-type Secret struct {
-	// ID is the secret id to do credential
-	ID string `json:"id,omitempty"`
-	// Key is the secret key to do credential
-	Key string `json:"key,omitempty"`
+	"github.com/aws/aws-sdk-go/service/ec2"
+)
 
-	// Json carry a json formatted credential information for
-	// GCP(Google Cloud Platform) vendor only.
-	Json []byte `json:"json,omitempty"`
+var _ types.AccountInterface = new(amazon)
 
-	// TenantID is used only for azure credential
-	TenantID string `json:"tenant_id,omitempty"`
-	// SubscriptionID is used only for azure credential
-	SubscriptionID string `json:"subscription_id,omitempty"`
+// AccountCheck check account authentication information and permissions.
+// TODO: 仅用于测试
+func (am *amazon) AccountCheck(kt *kit.Kit, secret *types.Secret) error {
+	client, err := am.ec2Client(secret, "")
+	if err != nil {
+		return fmt.Errorf("init aws client failed, err: %v", err)
+	}
 
-	// ProjectID is cloud vendor project id.
-	ProjectID string `json:"project_id,omitempty"`
+	req := &ec2.DescribeRegionsInput{}
+
+	a, err := client.DescribeRegionsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	_ = a
+
+	return nil
 }

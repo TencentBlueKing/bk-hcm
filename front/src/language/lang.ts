@@ -2701,6 +2701,7 @@ const lang: ILANG = {
   'linux实例：建议您在卸载之前，确保该硬盘的所有分区处于非加载状态 (umounted)。部分linux操作系统可能不支持硬盘热拔插': ['linux example: It is recommended that you make sure that all partitions of the drive are unmounted (umounted) before unmounting it. Some linux operating systems may not support hot-plugging of hard drives'],
   '卸载云硬盘': ['Uninstall Cloud Drive'],
   'VPC：{name}': ['VPC：{name}'],
+  '密钥信息': ['key information'],
   //   '111': ['111'],
   //   '111': ['111'],
   //   '111': ['111'],

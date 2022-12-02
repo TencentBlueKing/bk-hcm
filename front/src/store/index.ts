@@ -3,6 +3,7 @@ import { acceptHMRUpdate } from 'pinia';
 
 export * from './staff';
 export * from './user';
+export * from './account';
 
 
 // @ts-ignore

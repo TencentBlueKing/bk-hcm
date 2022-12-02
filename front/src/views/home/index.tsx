@@ -55,7 +55,7 @@ export default defineComponent({
         case 'service':
           topMenuActiveItem = 'service';
           menus = reactive(service);
-          path = '/service/serviceApply';
+          path = '/service/service-apply';
           // openedKeys = [`/service${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
         case 'workbench':
@@ -186,7 +186,9 @@ export default defineComponent({
                             </Menu.Submenu>
                           ) : (
                             <RouterLink to={`${menuItem.path}`}>
-                              <Menu.Item key={menuItem.meta.activeKey as string}>
+                              <Menu.Item
+                              key={menuItem.meta.activeKey as string}>
+                                {/* {menuItem.meta.activeKey} */}
                                 {{
                                   // icon: () => <menuItem.icon/>,
                                   default: () => menuItem.name as string,

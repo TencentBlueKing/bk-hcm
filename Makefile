@@ -28,9 +28,19 @@ pre:
 	@echo -e "\e[34;1mBuilding...\n\033[0m"
 	mkdir -p ${OUTPUT_DIR}
 
-all: pre
+all: pre ui server
 	@cd ${PRO_DIR}/cmd && make
 	@echo -e "\e[34;1mBuild All Success!\n\033[0m"
+
+server: pre
+	@cd ${PRO_DIR}/cmd && make
+	@echo -e "\e[34;1mBuild Server Success!\n\033[0m"
+
+ui: pre
+	@echo -e "\e[34;1mBuilding Front...\033[0m"
+	@cd ${PRO_DIR}/front && npm i && npm run build && cp -rf paas-server ${PRO_DIR}/front/dist/
+	@mv ${PRO_DIR}/front/dist ${OUTPUT_DIR}/front
+	@echo -e "\e[34;1mBuild Front Success!\n\033[0m"
 
 clean:
 	@cd ${PRO_DIR}/cmd && make clean

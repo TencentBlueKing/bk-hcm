@@ -153,7 +153,7 @@ func (a *Auth) isWriteOperationDisabled(kt *kit.Kit, resources []meta.ResourceAt
 	}
 
 	for _, resource := range resources {
-		action := meta.Action(resource.Basic.Action)
+		action := resource.Basic.Action
 		if action == meta.Find || action == meta.SkipAction {
 			continue
 		}

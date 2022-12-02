@@ -57,8 +57,12 @@ func (a account) AccountCheck(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	secret := &types.Secret{
-		ID:  req.SecretID,
-		Key: req.SecretKey,
+		ID:             req.SecretID,
+		Key:            req.SecretKey,
+		Json:           []byte(req.Json),
+		TenantID:       req.TenantID,
+		SubscriptionID: req.SubscriptionID,
+		ProjectID:      req.ProjectID,
 	}
 	if err := a.ad.Vendor(req.Vendor).AccountCheck(cts.Kit, secret); err != nil {
 		return nil, err

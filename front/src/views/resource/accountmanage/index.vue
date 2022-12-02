@@ -11,11 +11,15 @@
         <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
       </div>
     </div>
+    <bk-loading loading v-if="loading">
+      <div style="width: 100%; height: 360px" />
+    </bk-loading>
     <bk-table
       class="table-layout"
       :data="tableData"
       :pagination="pagination"
       row-hover="auto"
+      v-else
     >
       <bk-table-column
         label="ID"
@@ -64,7 +68,7 @@
             <bk-button text theme="primary" @click="handleSync">
               同步
             </bk-button>
-            <bk-button text theme="primary" @click="handleJump('accountAdd', props?.data.id)">
+            <bk-button text theme="primary" @click="handleJump('accountDetail', props?.data.id)">
               编辑
             </bk-button>
             <bk-button text theme="primary" @click="handleDelete(props?.data.id, props?.data.name)">
@@ -96,8 +100,8 @@
       <div class="sync-dialog-warp">
         <div class="flex-row justify-content-between align-items-center">
           <img class="t-icon" :src="tcloudSrc" />
-          <div class="arrow-icon">
-            <i class="icon hcm-icon bkhcm-icon-arrows--right--line content"></i>
+          <div class="arrow-icon flex-row align-items-center">
+            <img class="content" :src="rightArrow" />
           </div>
           <img class="logo-icon" :src="logo" />
         </div>
@@ -112,6 +116,8 @@ import { reactive, toRefs, defineComponent, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import logo from '@/assets/image/logo.png';
+import { useAccountStore } from '@/store';
+import rightArrow from '@/assets/image/right-arrow.png';
 import tcloud from '@/assets/image/tcloud.png';
 
 export default defineComponent({
@@ -119,6 +125,7 @@ export default defineComponent({
   setup() {
     const { t } = useI18n();
     const router = useRouter();
+    const accountStore = useAccountStore();
 
     const state = reactive({
       value: false,
@@ -154,15 +161,28 @@ export default defineComponent({
       syncTitle: '同步',
       showSyncBox: false,
       logo,
+      rightArrow,
       tcloudSrc: tcloud,
+      loading: true,
     });
 
     onMounted(async () => {
       console.log(122133333);
+      getAccountList();
     });
     onUnmounted(() => {
     });
 
+    const getAccountList = async () => {
+      try {
+        const res = await accountStore.getAccountList(state.pagination);
+        state.tableData = res.data;
+      } catch (error) {
+        console.log(error);
+      } finally {
+        state.loading = false;
+      }
+    };
     const test = (data: any) => {
       console.log(11111, data);
       state.showDeleteBox = false;
@@ -216,16 +236,20 @@ export default defineComponent({
     .arrow-icon{
       position: relative;
       flex: 1;
+      overflow: hidden;
+      height: 13px;
+      line-height: 13px;
       .content{
+        width: 130px;
         position: absolute;
-        left: 100px;
+        left: 200px;
         animation: 3s move infinite linear;
       }
     }
   }
 @-webkit-keyframes move {
   from {
-		left: 0;
+		left: 0%;
 	}
 
 	to {
@@ -235,7 +259,7 @@ export default defineComponent({
 
 @keyframes move {
 	from {
-		left: 0;
+		left: 0%;
 	}
 
 	to {
