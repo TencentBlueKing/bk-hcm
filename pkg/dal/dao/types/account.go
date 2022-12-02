@@ -60,6 +60,6 @@ func (lao *ListAccountsOption) Validate(po *PageOption) error {
 
 // ListAccountDetails defines the response details of requested ListAccountDetails
 type ListAccountDetails struct {
-	Count   uint32           `json:"count"`
+	Count   uint64           `json:"count"`
 	Details []*table.Account `json:"details"`
 }
