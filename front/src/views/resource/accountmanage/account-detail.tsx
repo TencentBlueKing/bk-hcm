@@ -158,7 +158,9 @@ export default defineComponent({
     };
 
     const formRules = {
-      name: [{ trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾业务与项目至少填一个', validator: check }],
+      name: [
+        { trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾业务与项目至少填一个', validator: check },
+      ],
     };
     // 更新信息方法
     const updateFormData = () => {
@@ -197,7 +199,9 @@ export default defineComponent({
     const handleblur = async (val: boolean, key: string) => {
       handleEditStatus(val, key);     // 未通过检验前状态为编辑态
       await formRef.value?.validate();
-      handleEditStatus(false, key);   // 通过检验则把状态改为不可编辑态
+      if (projectModel[key].length) {
+        handleEditStatus(false, key);   // 通过检验则把状态改为不可编辑态
+      }
       if (projectModel[key] !== initProjectModel[key]) {
         console.log('projectModel', projectModel);
         updateFormData();    // 更新数据
@@ -230,12 +234,12 @@ export default defineComponent({
           },
           {
             label: t('名称:'),
-            required: false,
+            required: true,
             property: 'name',
             isEdit: false,
             component() {
               // eslint-disable-next-line max-len
-              return (<RenderDetailEdit v-model={projectModel.name} fromKey={this.property} isEdit={this.isEdit} onBlur={handleblur}/>);
+              return (<RenderDetailEdit v-model={projectModel.name} fromPlaceholder={t('请输入名称')} fromKey={this.property} isEdit={this.isEdit} onBlur={handleblur}/>);
             },
           },
           {
@@ -338,13 +342,13 @@ export default defineComponent({
           {
             label: 'Secret ID',
             required: false,
-            property: 'name',
+            property: 'secretId',
             component: () => <span>11111</span>,
           },
           {
             label: 'Secret Key',
             required: false,
-            property: 'name',
+            property: 'secretKey',
             component: () => <span>11111</span>,
           },
         ],

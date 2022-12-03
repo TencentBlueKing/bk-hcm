@@ -11,6 +11,7 @@ const api = {
   organization_user_info: `${domain}/organization/user_info/`,
   add_account: `${domain}/add/`,
   get_account: `${domain}/get/`,
+  account_sync: `${domain}/sync/`,
   // someOtherApi: `${domain}/otherApi`
 };
 

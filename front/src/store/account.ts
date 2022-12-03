@@ -28,9 +28,33 @@ export const useAccountStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    async getAccountList(data: any) {
+    async getAccountList(params: any) {
       try {
-        return await http.post('/mock/api/v4/get/', data);
+        return await http.get('/mock/api/v4/get/', params);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    /**
+     * @description: 同步
+     * @param {number} id
+     * @return {*}
+     */
+    async accountSync(id: number) {
+      try {
+        return await http.post('/mock/api/v4/sync/', id);
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    /**
+     * @description: 删除
+     * @param {number} id
+     * @return {*}
+     */
+    async accountDelete(id: number) {
+      try {
+        return await http.post('/mock/api/v4/sync/', id);
       } catch (error) {
         console.error(error);
       }
