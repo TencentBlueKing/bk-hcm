@@ -23,6 +23,7 @@ package cloud
 import (
 	"time"
 
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/runtime/filter"
 )
@@ -79,16 +80,11 @@ func (a *AccountModel) GenerateUpdateSQL(expr *filter.Expression) (string, error
 	return a.ModelManager.GenerateUpdateSQL(a, expr)
 }
 
+// GenerateUpdateFieldKV ...
 func (a *AccountModel) GenerateUpdateFieldKV() map[string]interface{} {
 	return a.ModelManager.GenerateUpdateFieldKV(a)
 }
 
-// // ColumnNamesForInsert 生成 insert sql 中的 (column1, column2, column3, ...)
-// func (a *AccountModel) ColumnNamesForInsert() string {
-// 	return a.ModelManager.ColumnNamesForInsert(a)
-// }
-//
-// // ColumnValuesForInsert 生成 insert sql 中的 (value1, value2, value3, ...)
-// func (a *AccountModel) ColumnValuesForInsert() string {
-// 	return a.ModelManager.ColumnValuesForInsert(a)
-// }
+func (a *AccountModel) GenerateListSQL(opt *types.ListOption) (string, error) {
+	return a.ModelManager.GenerateListSQL(a, opt)
+}

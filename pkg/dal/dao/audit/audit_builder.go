@@ -289,7 +289,7 @@ func (ab *AuditBuilder) Do(txn *sqlx.Tx) error {
 }
 
 func (ab *AuditBuilder) listAccount(whereExpr string) ([]*table.Account, error) {
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s`, table.AccountColumns.NamedExpr(), table.AccountTable, whereExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s`, table.AccountColumns.NamedExpr(), "account", whereExpr)
 
 	list := make([]*table.Account, 0)
 	err := ab.ad.orm.Do().Select(ab.kt.Ctx, &list, sql)

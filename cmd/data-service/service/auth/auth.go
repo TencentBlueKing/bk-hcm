@@ -26,7 +26,6 @@ import (
 	dataservice "hcm/pkg/api/protocol/data-service"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/types"
-	"hcm/pkg/dal/table"
 	"hcm/pkg/iam/sys"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -54,10 +53,10 @@ func (s *auth) ListAuthInstances(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	var tableName table.Name
+	var tableName types.Name
 	switch req.ResourceType {
 	case sys.Account:
-		tableName = table.AccountTable
+		tableName = types.AccountTable
 	default:
 		return nil, fmt.Errorf("resource type %s not support", req.ResourceType)
 	}

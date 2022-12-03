@@ -38,9 +38,11 @@ func InitAccountService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	// RESTful API
-	h.Add("CreateAccount", "POST", "/cloud/accounts/", svr.CreateAccount)
-	h.Add("UpdateAccount", "PUT", "/cloud/accounts/", svr.UpdateAccount)
+
+	// 采用类似 iac 接口的结构简化处理, 不遵循 RESTful 风格
+	h.Add("CreateAccount", "POST", "/cloud/accounts/create/", svr.CreateAccount)
+	h.Add("UpdateAccount", "POST", "/cloud/accounts/update/", svr.UpdateAccount)
+	h.Add("ListAccounts", "POST", "/cloud/accounts/list/", svr.ListAccounts)
 
 	h.Load(cap.WebService)
 }
@@ -84,4 +86,27 @@ func (a *account) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	err := a.dao.CloudAccount().Update(cts.Kit, &req.FilterExpr, req.ToModel())
 
 	return nil, err
+}
+
+// ListAccounts create account with options
+func (a *account) ListAccounts(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloud.ListAccountsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+	mData, err := a.dao.CloudAccount().List(cts.Kit, req.ToListOption())
+	if err != nil {
+		return nil, err
+	}
+
+	var details []cloud.AccountData
+	for _, m := range mData {
+		details = append(details, *cloud.NewAccountData(m))
+	}
+
+	return &cloud.ListAccountsResult{Details: details}, nil
 }

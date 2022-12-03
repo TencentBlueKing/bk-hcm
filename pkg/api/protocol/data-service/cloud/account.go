@@ -22,8 +22,10 @@ package cloud
 
 import (
 	"encoding/json"
+	"time"
 
-	"hcm/pkg/criteria/validator"
+	"hcm/pkg/api/protocol/data-service/validator"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/runtime/filter"
@@ -55,8 +57,9 @@ func (c *CreateAccountReq) ToModel() *tablecloud.AccountModel {
 }
 
 type UpdateAccountReq struct {
-	Managers   []string               `json:"managers" validate:"required,gt=0,dive,required"`
-	Extension  map[string]interface{} `json:"extension" validate:"required"`
+	Managers   []string               `json:"managers"`
+	Price      string                 `json:"price"`
+	Extension  map[string]interface{} `json:"extension"`
 	FilterExpr filter.Expression      `json:"filter_expr" validate:"required"`
 }
 
@@ -68,15 +71,58 @@ func (u *UpdateAccountReq) Validate() error {
 func (u *UpdateAccountReq) ToModel() *tablecloud.AccountModel {
 	managers, _ := json.Marshal(u.Managers)
 	ext, _ := json.Marshal(u.Extension)
+
 	return &tablecloud.AccountModel{
 		Managers:     table.JsonField(managers),
+		Price:        u.Price,
 		Extension:    table.JsonField(ext),
-		ModelManager: &table.ModelManager{UpdateFields: []string{"managers", "extension"}},
+		ModelManager: &table.ModelManager{UpdateFields: validator.ExtractValidFields(u)},
 	}
 }
 
-type AccountResp struct {
-	Name     string   `json:"name"`
-	Vendor   string   `json:"vendor"`
-	Managers []string `json:"managers"`
+type ListAccountsReq struct {
+	FilterExpr filter.Expression `json:"filter_expr" validate:"required"`
+}
+
+func (l *ListAccountsReq) Validate() error {
+	return validator.Validate.Struct(l)
+}
+
+func (l *ListAccountsReq) ToListOption() *types.ListOption {
+	return &types.ListOption{
+		FilterExpr: &l.FilterExpr,
+		Fields:     table.ListModelFields(new(AccountData)),
+	}
+}
+
+type AccountData struct {
+	ID        uint64                 `json:"id" db:"id"`
+	Name      string                 `json:"name" db:"name"`
+	Vendor    string                 `json:"vendor" db:"vendor"`
+	Managers  []string               `json:"managers" db:"managers"`
+	Extension map[string]interface{} `json:"extension" db:"extension"`
+	CreatedAt *time.Time             `json:"created_at" db:"created_at"`
+}
+
+// NewAccountData ...
+func NewAccountData(m *tablecloud.AccountModel) *AccountData {
+	managers := make([]string, 0)
+	json.Unmarshal([]byte(m.Managers), &managers)
+
+	ext := make(map[string]interface{}, 0)
+	json.Unmarshal([]byte(m.Extension), &ext)
+
+	return &AccountData{
+		ID:        m.ID,
+		Name:      m.Name,
+		Vendor:    m.Vendor,
+		Managers:  managers,
+		Extension: ext,
+		CreatedAt: m.CreatedAt,
+	}
+}
+
+// ListAccountsResult defines list instances for iam pull resource callback result.
+type ListAccountsResult struct {
+	Details []AccountData `json:"details"`
 }

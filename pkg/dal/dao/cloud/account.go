@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/kit"
@@ -41,6 +42,8 @@ type Account interface {
 	Create(kt *kit.Kit, account *tablecloud.AccountModel) (uint64, error)
 	// Update one account's info
 	Update(kt *kit.Kit, expr *filter.Expression, account *tablecloud.AccountModel) error
+	// List accounts with options.
+	List(kt *kit.Kit, opt *types.ListOption) ([]*tablecloud.AccountModel, error)
 }
 
 var _ Account = new(AccountDao)
@@ -121,4 +124,20 @@ func (ad *AccountDao) Update(kt *kit.Kit, expr *filter.Expression, account *tabl
 	}
 
 	return nil
+}
+
+func (ad *AccountDao) List(kt *kit.Kit, opt *types.ListOption) ([]*tablecloud.AccountModel, error) {
+	account := new(tablecloud.AccountModel)
+	listSQL, err := account.GenerateListSQL(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	accounts := make([]*tablecloud.AccountModel, 0)
+	err = ad.orm.Do().Select(kt.Ctx, &accounts, listSQL)
+	if err != nil {
+		return nil, err
+	}
+
+	return accounts, nil
 }

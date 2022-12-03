@@ -19,6 +19,33 @@
 
 package validator
 
-import gvalidator "github.com/go-playground/validator/v10"
+import (
+	"reflect"
+
+	gvalidator "github.com/go-playground/validator/v10"
+	"hcm/pkg/tools"
+)
 
 var Validate = gvalidator.New()
+
+// ExtractValidFields
+func ExtractValidFields(i interface{}) []string {
+	v := tools.ReflectValue(i)
+
+	t := v.Type()
+	var fields []string
+	for j := 0; j < t.NumField(); j++ {
+		if jsonTag := v.Type().Field(j).Tag.Get("json"); jsonTag != "" && jsonTag != "filter_expr" {
+			name := v.Type().Field(j).Name
+			if isValidField(v.FieldByName(name).Interface()) {
+				fields = append(fields, jsonTag)
+			}
+		}
+	}
+
+	return fields
+}
+
+func isValidField(i interface{}) bool {
+	return !reflect.ValueOf(i).IsZero()
+}

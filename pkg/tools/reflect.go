@@ -17,20 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package table
+package tools
 
-// Tables defines all the database table
-// related resources.
-type Tables interface {
-	TableName() Name
+import "reflect"
+
+// ReflectValue ...
+func ReflectValue(i interface{}) reflect.Value {
+	value := reflect.ValueOf(i)
+
+	var intf any
+	if value.Kind() == reflect.Ptr {
+		intf = value.Elem().Interface()
+	} else {
+		intf = reflect.ValueOf(&i).Elem().Interface()
+	}
+
+	return reflect.Indirect(reflect.ValueOf(intf))
 }
-
-// Name is database table's name type
-type Name string
-
-const (
-	// AuditTable is audit table's name
-	AuditTable Name = "audit"
-	// AccountTable is account table's name.
-	AccountTable Name = "account"
-)

@@ -21,10 +21,11 @@ package table
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools"
 	"hcm/pkg/tools/slice"
 )
 
@@ -37,13 +38,14 @@ type Model interface {
 	GenerateInsertSQL() string
 	GenerateUpdateSQL(expr *filter.Expression) (string, error)
 	GenerateUpdateFieldKV() map[string]interface{}
+	GenerateListSQL(opt *types.ListOption) (string, error)
 }
 
 // ModelManager 作为 XXModel 的字段, 可以用来描述"插入"或者"更新"时的一些设置
 type ModelManager struct {
 	// InsertFields 存放需要插入的 column name. 不指定表示所有字段
 	InsertFields []string
-	// UpdateFields 存放需要更新的 column name. 不指定表示所有可更新字段
+	// UpdateFields 存放需要更新的 column name. 不指定表示不更新任何有效字段, 仅更新 updated_at 字段
 	UpdateFields []string
 }
 
@@ -90,7 +92,7 @@ func (manager *ModelManager) GenerateUpdateFieldKV(m Model) map[string]interface
 	kv := make(map[string]interface{})
 	modelFields := manager.listModelFields(m)
 
-	mValue := reflectModelValue(m)
+	mValue := tools.ReflectValue(m)
 
 	// 获取 {db tag: struct field} 键值对
 	fieldNames := make(map[string]string)
@@ -114,6 +116,25 @@ func (manager *ModelManager) GenerateUpdateFieldKV(m Model) map[string]interface
 	return kv
 }
 
+func (manager *ModelManager) GenerateListSQL(m Model, opt *types.ListOption) (string, error) {
+	whereExpr, err := GenerateWhereExpr(opt.FilterExpr)
+	if err != nil {
+		return "", err
+	}
+
+	var pageExpr string
+	if opt.Page != nil {
+		pageExpr, err = opt.Page.SQLExpr(&types.PageSQLOption{Sort: types.SortOption{Sort: "id", IfNotPresent: true}})
+		if err != nil {
+			return "", err
+		}
+	}
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, strings.Join(opt.Fields, ", "),
+		m.TableName(), whereExpr, pageExpr)
+	return sql, nil
+}
+
 // listInsertFields 生成 insert sql 中的 [column1, column2, column3, ...]
 func (manager *ModelManager) listInsertFields(m Model) []string {
 	if len(manager.InsertFields) == 0 {
@@ -125,7 +146,7 @@ func (manager *ModelManager) listInsertFields(m Model) []string {
 	// TODO 性能优化
 	for _, field := range manager.InsertFields {
 		if !slice.StringInSlice(field, modelFields) {
-			panic(fmt.Sprintf("field %s not in %s db tag", field, reflectModelValue(m).Type().Name()))
+			panic(fmt.Sprintf("field %s not in %s db tag", field, tools.ReflectValue(m).Type().Name()))
 		}
 		insertFields = append(insertFields, field)
 	}
@@ -135,15 +156,7 @@ func (manager *ModelManager) listInsertFields(m Model) []string {
 
 // listModelFields 列举 Model 中带 db tag 的 fields
 func (manager *ModelManager) listModelFields(m Model) []string {
-	var fields []string
-
-	mType := reflectModelValue(m).Type()
-	for j := 0; j < mType.NumField(); j++ {
-		if dbField := mType.Field(j).Tag.Get("db"); dbField != "" {
-			fields = append(fields, dbField)
-		}
-	}
-	return fields
+	return ListModelFields(m)
 }
 
 // GenerateWhereExpr ...
@@ -155,16 +168,15 @@ func GenerateWhereExpr(expr *filter.Expression) (whereExpr string, err error) {
 	return
 }
 
-// reflectModelValue ...
-func reflectModelValue(m Model) reflect.Value {
-	value := reflect.ValueOf(m)
+// ListModelFields ...
+func ListModelFields(i interface{}) []string {
+	var fields []string
 
-	var i any
-	if value.Kind() == reflect.Ptr {
-		i = value.Elem().Interface()
-	} else {
-		i = reflect.ValueOf(&m).Elem().Interface()
+	mType := tools.ReflectValue(i).Type()
+	for j := 0; j < mType.NumField(); j++ {
+		if dbField := mType.Field(j).Tag.Get("db"); dbField != "" {
+			fields = append(fields, dbField)
+		}
 	}
-
-	return reflect.Indirect(reflect.ValueOf(i))
+	return fields
 }
