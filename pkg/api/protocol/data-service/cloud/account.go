@@ -16,12 +16,14 @@
  *
  * to the current version of the project delivered to anyone in the future.
  */
+
 // cloud 包提供各类云资源的请求与返回序列化器
 package cloud
 
 import (
 	"encoding/json"
 
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/runtime/filter"
@@ -35,27 +37,9 @@ type CreateAccountReq struct {
 	Extension    map[string]interface{} `json:"extension" validate:"required"`
 }
 
-// DepartmentID int `db:"department_id" json:"department_id"`
-// // 账号类型(资源账号|登记账号)
-// Type string `db:"type" json:"type"`
-// // 账号资源同步状态
-// SyncStatus string `db:"sync_status" json:"sync_status"`
-// // 账号余额数值
-// Price string `db:"price" json:"price"`
-// // 账号余额单位
-// PriceUnit string `db:"price_unit" json:"price_unit"`
-// // 云厂商账号差异扩展字段
-// Extension table.JsonField `db:"extension" json:"extension" unmarshal_type:"map"`
-// // 创建者
-// Creator string `db:"creator" json:"creator"`
-// // 更新者
-// Reviser string `db:"reviser" json:"reviser"`
-// // 创建时间
-// CreatedAt *time.Time `db:"created_at" json:"created_at"`
-// // 更新时间
-// UpdatedAt *time.Time `db:"updated_at" json:"updated_at"`
-// // 账号信息备注
-// Memo string `db:"memo" json:"memo"`
+func (c *CreateAccountReq) Validate() error {
+	return validator.Validate.Struct(c)
+}
 
 func (c *CreateAccountReq) ToModel() *tablecloud.AccountModel {
 	managers, _ := json.Marshal(c.Managers)
@@ -74,6 +58,10 @@ type UpdateAccountReq struct {
 	Managers   []string               `json:"managers" validate:"required,gt=0,dive,required"`
 	Extension  map[string]interface{} `json:"extension" validate:"required"`
 	FilterExpr filter.Expression      `json:"filter_expr" validate:"required"`
+}
+
+func (u *UpdateAccountReq) Validate() error {
+	return validator.Validate.Struct(u)
 }
 
 // ToModel ...

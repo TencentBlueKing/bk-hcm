@@ -16,6 +16,7 @@
  *
  * to the current version of the project delivered to anyone in the future.
  */
+
 // cloud 包描述云资源 Model
 package cloud
 
@@ -23,6 +24,7 @@ import (
 	"time"
 
 	"hcm/pkg/dal/table"
+	"hcm/pkg/runtime/filter"
 )
 
 type AccountModel struct {
@@ -70,6 +72,15 @@ func (a *AccountModel) TableName() string {
 // GenerateInsertSQL ...
 func (a *AccountModel) GenerateInsertSQL() string {
 	return a.ModelManager.GenerateInsertSQL(a)
+}
+
+// GenerateInsertSQL ...
+func (a *AccountModel) GenerateUpdateSQL(expr *filter.Expression) (string, error) {
+	return a.ModelManager.GenerateUpdateSQL(a, expr)
+}
+
+func (a *AccountModel) GenerateUpdateFieldKV() map[string]interface{} {
+	return a.ModelManager.GenerateUpdateFieldKV(a)
 }
 
 // // ColumnNamesForInsert 生成 insert sql 中的 (column1, column2, column3, ...)

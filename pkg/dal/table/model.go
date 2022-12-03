@@ -24,14 +24,19 @@ import (
 	"reflect"
 	"strings"
 
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
 )
+
+const UpdateTimeField = "updated_at"
 
 type JsonField string
 
 type Model interface {
 	TableName() string
 	GenerateInsertSQL() string
+	GenerateUpdateSQL(expr *filter.Expression) (string, error)
+	GenerateUpdateFieldKV() map[string]interface{}
 }
 
 // ModelManager 作为 XXModel 的字段, 可以用来描述"插入"或者"更新"时的一些设置
@@ -42,7 +47,7 @@ type ModelManager struct {
 	UpdateFields []string
 }
 
-// GenerateInsertSQL 生成插入 sql 语句
+// GenerateInsertSQL 生成 insert sql
 func (manager *ModelManager) GenerateInsertSQL(m Model) string {
 	insertFields := manager.listInsertFields(m)
 	// 插入操作, 排除自增的主键 id
@@ -61,26 +66,97 @@ func (manager *ModelManager) GenerateInsertSQL(m Model) string {
 	)
 }
 
+// GenerateUpdateSQL 生成 update sql
+func (manager *ModelManager) GenerateUpdateSQL(m Model, expr *filter.Expression) (string, error) {
+	whereExpr, err := GenerateWhereExpr(expr)
+	if err != nil {
+		return "", err
+	}
+
+	var setFields []string
+	for field := range manager.GenerateUpdateFieldKV(m) {
+		setFields = append(setFields, fmt.Sprintf("%s = :%s", field, field))
+	}
+
+	if slice.StringInSlice(UpdateTimeField, manager.listModelFields(m)) {
+		setFields = append(setFields, fmt.Sprintf("%s = now()", UpdateTimeField))
+	}
+
+	sql := fmt.Sprintf(`UPDATE %s %s %s`, m.TableName(), "set "+strings.Join(setFields, ", "), whereExpr)
+	return sql, nil
+}
+
+func (manager *ModelManager) GenerateUpdateFieldKV(m Model) map[string]interface{} {
+	kv := make(map[string]interface{})
+	modelFields := manager.listModelFields(m)
+
+	mValue := reflectModelValue(m)
+
+	// 获取 {db tag: struct field} 键值对
+	fieldNames := make(map[string]string)
+	mType := mValue.Type()
+	for j := 0; j < mType.NumField(); j++ {
+		if dbField := mType.Field(j).Tag.Get("db"); dbField != "" {
+			fieldNames[dbField] = mType.Field(j).Name
+		}
+	}
+
+	// 移除可能的 update_at 字段, 该字段在更新时单独set update_at = now() 处理
+	updateFields := slice.Remove(manager.UpdateFields, UpdateTimeField)
+
+	for _, field := range updateFields {
+		if !slice.StringInSlice(field, modelFields) {
+			panic(fmt.Sprintf("field %s not in %s db tag", field, mValue.Type().Name()))
+		}
+		kv[field] = mValue.FieldByName(fieldNames[field]).Interface()
+	}
+
+	return kv
+}
+
 // listInsertFields 生成 insert sql 中的 [column1, column2, column3, ...]
 func (manager *ModelManager) listInsertFields(m Model) []string {
 	if len(manager.InsertFields) == 0 {
-		return listModelFields(m)
+		return manager.listModelFields(m)
 	}
 
 	var insertFields []string
-	fields := listModelFields(m)
+	modelFields := manager.listModelFields(m)
 	// TODO 性能优化
-	for _, field := range fields {
-		if slice.StringInSlice(field, manager.InsertFields) {
-			insertFields = append(insertFields, field)
+	for _, field := range manager.InsertFields {
+		if !slice.StringInSlice(field, modelFields) {
+			panic(fmt.Sprintf("field %s not in %s db tag", field, reflectModelValue(m).Type().Name()))
 		}
+		insertFields = append(insertFields, field)
 	}
 
 	return insertFields
 }
 
 // listModelFields 列举 Model 中带 db tag 的 fields
-func listModelFields(m Model) []string {
+func (manager *ModelManager) listModelFields(m Model) []string {
+	var fields []string
+
+	mType := reflectModelValue(m).Type()
+	for j := 0; j < mType.NumField(); j++ {
+		if dbField := mType.Field(j).Tag.Get("db"); dbField != "" {
+			fields = append(fields, dbField)
+		}
+	}
+	return fields
+}
+
+// GenerateWhereExpr ...
+func GenerateWhereExpr(expr *filter.Expression) (whereExpr string, err error) {
+	sqlOpt := &filter.SQLWhereOption{
+		Priority: filter.Priority{"id"},
+	}
+	whereExpr, err = expr.SQLWhereExpr(sqlOpt)
+	return
+}
+
+// reflectModelValue ...
+func reflectModelValue(m Model) reflect.Value {
 	value := reflect.ValueOf(m)
 
 	var i any
@@ -90,13 +166,5 @@ func listModelFields(m Model) []string {
 		i = reflect.ValueOf(&m).Elem().Interface()
 	}
 
-	var fields []string
-	v := reflect.Indirect(reflect.ValueOf(i))
-	s := v.Type()
-	for j := 0; j < s.NumField(); j++ {
-		if tag := s.Field(j).Tag.Get("db"); tag != "" {
-			fields = append(fields, tag)
-		}
-	}
-	return fields
+	return reflect.Indirect(reflect.ValueOf(i))
 }

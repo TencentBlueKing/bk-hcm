@@ -16,6 +16,7 @@
  *
  * to the current version of the project delivered to anyone in the future.
  */
+
 package cloud
 
 import (
@@ -27,6 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/table"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -38,7 +40,7 @@ type Account interface {
 	// Create one account instance
 	Create(kt *kit.Kit, account *tablecloud.AccountModel) (uint64, error)
 	// Update one account's info
-	Update(kt *kit.Kit, filter *filter.Expression, account *tablecloud.AccountModel) error
+	Update(kt *kit.Kit, expr *filter.Expression, account *tablecloud.AccountModel) error
 }
 
 var _ Account = new(AccountDao)
@@ -66,7 +68,6 @@ func (ad *AccountDao) Create(kt *kit.Kit, account *tablecloud.AccountModel) (uin
 			return 0, fmt.Errorf("insert account failed, err: %v", err)
 		}
 
-		// audit this to be create account details.
 		account.ID = id
 		if err := ad.auditDao.Decorator(kt, enumor.Account).AuditCreate(txn, account); err != nil {
 			return 0, fmt.Errorf("audit create account failed, err: %v", err)
@@ -87,6 +88,37 @@ func (ad *AccountDao) Create(kt *kit.Kit, account *tablecloud.AccountModel) (uin
 	return id, nil
 }
 
-func (a *AccountDao) Update(kt *kit.Kit, filter *filter.Expression, account *tablecloud.AccountModel) error {
-	return errf.Newf(errf.InvalidParameter, "abc")
+func (ad *AccountDao) Update(kt *kit.Kit, expr *filter.Expression, account *tablecloud.AccountModel) error {
+	sql, err := account.GenerateUpdateSQL(expr)
+	if err != nil {
+		return err
+	}
+
+	whereExpr, _ := table.GenerateWhereExpr(expr)
+	toUpdate := account.GenerateUpdateFieldKV()
+
+	ab := ad.auditDao.Decorator(kt, enumor.Account).PrepareUpdate(whereExpr, toUpdate)
+
+	_, err = ad.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		effected, err := ad.orm.Txn(txn).Update(kt.Ctx, sql, toUpdate)
+		if err != nil {
+			logs.Errorf("update account: %d failed, err: %v, rid: %v", account.ID, err, kt.Rid)
+			return nil, err
+		}
+
+		if effected == 0 {
+			logs.ErrorJson("update account, but record not found, filter: %v, rid: %v", expr, kt.Rid)
+			return nil, errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
+		}
+
+		if err := ab.Do(txn); err != nil {
+			return nil, fmt.Errorf("do account update audit failed, err: %v", err)
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

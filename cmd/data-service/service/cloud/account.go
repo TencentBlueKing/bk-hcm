@@ -26,7 +26,6 @@ import (
 	"hcm/pkg/api/protocol/base"
 	"hcm/pkg/api/protocol/data-service/cloud"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 
 	"hcm/pkg/dal/dao"
@@ -58,7 +57,7 @@ func (a *account) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
 	}
 
-	if err := validator.Validate.Struct(req); err != nil {
+	if err := req.Validate(); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
@@ -78,7 +77,7 @@ func (a *account) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
 	}
 
-	if err := validator.Validate.Struct(req); err != nil {
+	if err := req.Validate(); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
