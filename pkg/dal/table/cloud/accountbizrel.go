@@ -17,7 +17,6 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// cloud 包描述云资源 Model
 package cloud
 
 import (
@@ -28,27 +27,13 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-type AccountModel struct {
+type AccountBizRelModel struct {
 	// 账号自增 ID
 	ID uint64 `db:"id"`
-	// 账号名称
-	Name string `db:"name"`
-	// 云厂商
-	Vendor string `db:"vendor"`
-	// 责任人
-	Managers table.JsonField `db:"managers" unmarshal_type:"stringslice"`
-	// 部门 ID
-	DepartmentID int `db:"department_id"`
-	// 账号类型(资源账号|登记账号)
-	Type string `db:"type"`
-	// 账号资源同步状态
-	SyncStatus string `db:"sync_status"`
-	// 账号余额数值
-	Price string `db:"price"`
-	// 账号余额单位
-	PriceUnit string `db:"price_unit"`
-	// 云厂商账号差异扩展字段
-	Extension table.JsonField `db:"extension" unmarshal_type:"map"`
+	// 蓝鲸业务 ID
+	BkBizID uint64 `db:"bk_biz_id"`
+	// 云账号主键 ID
+	AccountID uint64 `db:"account_id"`
 	// 创建者
 	Creator string `db:"creator"`
 	// 更新者
@@ -57,39 +42,34 @@ type AccountModel struct {
 	CreatedAt *time.Time `db:"created_at"`
 	// 更新时间
 	UpdatedAt *time.Time `db:"updated_at"`
-	// 账号信息备注
-	Memo string `db:"memo"`
 	// model manager
 	ModelManager *table.ModelManager
 }
 
-var _ table.Model = new(AccountModel)
-
-// TableName is the account's database table name.
-func (m *AccountModel) TableName() string {
-	return "account"
+func (m *AccountBizRelModel) TableName() string {
+	return "account_biz_rel"
 }
 
 // GenerateInsertSQL ...
-func (m *AccountModel) GenerateInsertSQL() string {
+func (m *AccountBizRelModel) GenerateInsertSQL() string {
 	return m.ModelManager.GenerateInsertSQL(m)
 }
 
 // GenerateInsertSQL ...
-func (m *AccountModel) GenerateUpdateSQL(expr *filter.Expression) (string, error) {
+func (m *AccountBizRelModel) GenerateUpdateSQL(expr *filter.Expression) (string, error) {
 	return m.ModelManager.GenerateUpdateSQL(m, expr)
 }
 
 // GenerateUpdateFieldKV ...
-func (m *AccountModel) GenerateUpdateFieldKV() map[string]interface{} {
+func (m *AccountBizRelModel) GenerateUpdateFieldKV() map[string]interface{} {
 	return m.ModelManager.GenerateUpdateFieldKV(m)
 }
 
 // GenerateListSQL ...
-func (m *AccountModel) GenerateListSQL(opt *types.ListOption) (string, error) {
+func (m *AccountBizRelModel) GenerateListSQL(opt *types.ListOption) (string, error) {
 	return m.ModelManager.GenerateListSQL(m, opt)
 }
 
-func (m *AccountModel) GenerateDeleteSQL(expr *filter.Expression) (string, error) {
+func (m *AccountBizRelModel) GenerateDeleteSQL(expr *filter.Expression) (string, error) {
 	return m.ModelManager.GenerateDeleteSQL(m, expr)
 }

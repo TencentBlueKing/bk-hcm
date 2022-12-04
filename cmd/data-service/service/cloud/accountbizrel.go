@@ -26,36 +26,35 @@ import (
 	"hcm/pkg/api/protocol/base"
 	"hcm/pkg/api/protocol/data-service/cloud"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
-
 	"hcm/pkg/dal/dao"
 	tablecloud "hcm/pkg/dal/table/cloud"
+	"hcm/pkg/rest"
 )
 
-// InitAccountService initial the account service
-func InitAccountService(cap *capability.Capability) {
-	svc := &accountSvc{
+// InitAccountBizRelService ...
+func InitAccountBizRelService(cap *capability.Capability) {
+	svc := &accountBizRelSvc{
 		dao: cap.Dao,
 	}
 
 	h := rest.NewHandler()
 
 	// 采用类似 iac 接口的结构简化处理, 不遵循 RESTful 风格
-	h.Add("CreateAccount", "POST", "/cloud/accounts/create/", svc.Create)
-	h.Add("UpdateAccounts", "POST", "/cloud/accounts/update/", svc.Update)
-	h.Add("ListAccounts", "POST", "/cloud/accounts/list/", svc.List)
-	h.Add("DeleteAccounts", "POST", "/cloud/accounts/delete/", svc.Delete)
+	h.Add("CreateAccountBizRel", "POST", "/cloud/account_biz_rels/create/", svc.Create)
+	h.Add("UpdateAccountBizRels", "POST", "/cloud/account_biz_rels/update/", svc.Update)
+	h.Add("ListAccountBizRels", "POST", "/cloud/account_biz_rels/list/", svc.List)
+	h.Add("DeleteAccountBizRels", "POST", "/cloud/account_biz_rels/delete/", svc.Delete)
 
 	h.Load(cap.WebService)
 }
 
-type accountSvc struct {
+type accountBizRelSvc struct {
 	dao dao.Set
 }
 
-// Create create account with options
-func (svc *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
-	reqData := new(cloud.CreateAccountReq)
+// Create ...
+func (svc *accountBizRelSvc) Create(cts *rest.Contexts) (interface{}, error) {
+	reqData := new(cloud.CreateAccountBizRelReq)
 
 	if err := cts.DecodeInto(reqData); err != nil {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
@@ -65,7 +64,7 @@ func (svc *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	id, err := svc.dao.CloudAccount().Create(cts.Kit, reqData.ToModel(cts.Kit.User))
+	id, err := svc.dao.CloudAccountBizRel().Create(cts.Kit, reqData.ToModel(cts.Kit.User))
 	if err != nil {
 		return nil, fmt.Errorf("create cloud account failed, err: %v", err)
 	}
@@ -73,9 +72,9 @@ func (svc *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 	return &base.CreateResult{ID: id}, nil
 }
 
-// Update create account with options
-func (svc *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
-	reqData := new(cloud.UpdateAccountsReq)
+// Update ...
+func (svc *accountBizRelSvc) Update(cts *rest.Contexts) (interface{}, error) {
+	reqData := new(cloud.UpdateAccountBizRelsReq)
 
 	if err := cts.DecodeInto(reqData); err != nil {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
@@ -84,14 +83,14 @@ func (svc *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 	if err := reqData.Validate(); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
-	err := svc.dao.CloudAccount().Update(cts.Kit, &reqData.FilterExpr, reqData.ToModel(cts.Kit.User))
+	err := svc.dao.CloudAccountBizRel().Update(cts.Kit, &reqData.FilterExpr, reqData.ToModel(cts.Kit.User))
 
 	return nil, err
 }
 
-// List create account with options
-func (svc *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
-	reqData := new(cloud.ListAccountsReq)
+// List ...
+func (svc *accountBizRelSvc) List(cts *rest.Contexts) (interface{}, error) {
+	reqData := new(cloud.ListAccountBizRelsReq)
 	if err := cts.DecodeInto(reqData); err != nil {
 		return nil, err
 	}
@@ -99,22 +98,22 @@ func (svc *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
 	if err := reqData.Validate(); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
-	mData, err := svc.dao.CloudAccount().List(cts.Kit, reqData.ToListOption())
+	mData, err := svc.dao.CloudAccountBizRel().List(cts.Kit, reqData.ToListOption())
 	if err != nil {
 		return nil, err
 	}
 
-	var details []cloud.AccountData
+	var details []cloud.AccountBizRelData
 	for _, m := range mData {
-		details = append(details, *cloud.NewAccountData(m))
+		details = append(details, *cloud.NewAccountBizRelData(m))
 	}
 
-	return &cloud.ListAccountsResult{Details: details}, nil
+	return &cloud.ListAccountBizRelsResult{Details: details}, nil
 }
 
 // Delete ...
-func (svc *accountSvc) Delete(cts *rest.Contexts) (interface{}, error) {
-	reqData := new(cloud.DeleteAccountsReq)
+func (svc *accountBizRelSvc) Delete(cts *rest.Contexts) (interface{}, error) {
+	reqData := new(cloud.DeleteAccountBizRelsReq)
 	if err := cts.DecodeInto(reqData); err != nil {
 		return nil, err
 	}
@@ -123,7 +122,7 @@ func (svc *accountSvc) Delete(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	err := svc.dao.CloudAccount().Delete(cts.Kit, &reqData.FilterExpr, new(tablecloud.AccountModel))
+	err := svc.dao.CloudAccountBizRel().Delete(cts.Kit, &reqData.FilterExpr, new(tablecloud.AccountBizRelModel))
 
 	return nil, err
 }

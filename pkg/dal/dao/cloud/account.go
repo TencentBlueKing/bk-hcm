@@ -44,6 +44,7 @@ type Account interface {
 	Update(kt *kit.Kit, expr *filter.Expression, account *tablecloud.AccountModel) error
 	// List accounts with options.
 	List(kt *kit.Kit, opt *types.ListOption) ([]*tablecloud.AccountModel, error)
+	Delete(kt *kit.Kit, expr *filter.Expression, account *tablecloud.AccountModel) error
 }
 
 var _ Account = new(AccountDao)
@@ -140,4 +141,26 @@ func (ad *AccountDao) List(kt *kit.Kit, opt *types.ListOption) ([]*tablecloud.Ac
 	}
 
 	return accounts, nil
+}
+
+func (ad *AccountDao) Delete(kt *kit.Kit, expr *filter.Expression, account *tablecloud.AccountModel) error {
+	sql, err := account.GenerateDeleteSQL(expr)
+	if err != nil {
+		return err
+	}
+	_, err = ad.orm.AutoTxn(kt, func(txn *sqlx.Tx, option *orm.TxnOption) (interface{}, error) {
+		// delete the account at first.
+		err := ad.orm.Txn(txn).Delete(kt.Ctx, sql)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		logs.ErrorJson("delete account failed, filter: %v, err: %v, rid: %v", expr, err, kt.Rid)
+		return fmt.Errorf("delete account, but run txn failed, err: %v", err)
+	}
+
+	return nil
 }

@@ -39,6 +39,7 @@ type Model interface {
 	GenerateUpdateSQL(expr *filter.Expression) (string, error)
 	GenerateUpdateFieldKV() map[string]interface{}
 	GenerateListSQL(opt *types.ListOption) (string, error)
+	GenerateDeleteSQL(expr *filter.Expression) (string, error)
 }
 
 // ModelManager 作为 XXModel 的字段, 可以用来描述"插入"或者"更新"时的一些设置
@@ -135,6 +136,15 @@ func (manager *ModelManager) GenerateListSQL(m Model, opt *types.ListOption) (st
 	return sql, nil
 }
 
+func (manager *ModelManager) GenerateDeleteSQL(m Model, expr *filter.Expression) (string, error) {
+	whereExpr, err := GenerateWhereExpr(expr)
+	if err != nil {
+		return "", err
+	}
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, m.TableName(), whereExpr)
+	return sql, nil
+}
+
 // listInsertFields 生成 insert sql 中的 [column1, column2, column3, ...]
 func (manager *ModelManager) listInsertFields(m Model) []string {
 	if len(manager.InsertFields) == 0 {
@@ -146,6 +156,7 @@ func (manager *ModelManager) listInsertFields(m Model) []string {
 	// TODO 性能优化
 	for _, field := range manager.InsertFields {
 		if !slice.StringInSlice(field, modelFields) {
+			fmt.Println(fmt.Sprintf("field %s not in %s db tag", field, tools.ReflectValue(m).Type().Name()))
 			panic(fmt.Sprintf("field %s not in %s db tag", field, tools.ReflectValue(m).Type().Name()))
 		}
 		insertFields = append(insertFields, field)

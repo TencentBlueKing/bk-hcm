@@ -31,21 +31,23 @@ var Validate = gvalidator.New()
 // ExtractValidFields
 func ExtractValidFields(i interface{}) []string {
 	v := tools.ReflectValue(i)
-
 	t := v.Type()
 	var fields []string
+
 	for j := 0; j < t.NumField(); j++ {
-		if jsonTag := v.Type().Field(j).Tag.Get("json"); jsonTag != "" && jsonTag != "filter_expr" {
+		tags := v.Type().Field(j).Tag
+		if jsonTag := tags.Get("json"); jsonTag != "" && jsonTag != "filter_expr" {
 			name := v.Type().Field(j).Name
 			if isValidField(v.FieldByName(name).Interface()) {
 				fields = append(fields, jsonTag)
 			}
 		}
 	}
-
 	return fields
 }
 
+// isValidField ...
+// int 和 string 等基础类型, 通过指针方式可以区分是否传递和做零值判断
 func isValidField(i interface{}) bool {
 	return !reflect.ValueOf(i).IsZero()
 }

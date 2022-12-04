@@ -37,6 +37,7 @@ import (
 // Set defines all the DAO to be operated.
 type Set interface {
 	CloudAccount() daocloud.Account
+	CloudAccountBizRel() daocloud.AccountBizRel
 	Auth() Auth
 }
 
@@ -102,6 +103,11 @@ type set struct {
 // CloudAccount returns the account's DAO
 func (s *set) CloudAccount() daocloud.Account {
 	return daocloud.NewAccountDao(s.orm, s.auditDao)
+}
+
+// CloudAccountBizRel ...
+func (s *set) CloudAccountBizRel() daocloud.AccountBizRel {
+	return daocloud.NewAccountBizRelDao(s.orm, s.auditDao)
 }
 
 // Auth returns the auth instance's DAO
