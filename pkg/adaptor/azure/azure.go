@@ -45,11 +45,11 @@ var (
 
 type azure struct{}
 
-func (az *azure) subscriptionClient(secret *types.Secret) (*armsubscription.SubscriptionsClient, error) {
+func (az *azure) subscriptionClient(credential *types.AzureCredential) (*armsubscription.SubscriptionsClient, error) {
 	cred, err := azidentity.NewClientSecretCredential(
-		secret.TenantID,
-		secret.ID,
-		secret.Key, nil)
+		credential.TenantID,
+		credential.ClientID,
+		credential.ClientSecret, nil)
 	if err != nil {
 		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
 	}

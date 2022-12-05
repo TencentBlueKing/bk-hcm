@@ -31,13 +31,13 @@ var _ types.AccountInterface = new(azure)
 
 // AccountCheck check account authentication information and permissions.
 // TODO: 仅用于测试
-func (az *azure) AccountCheck(kt *kit.Kit, secret *types.Secret) error {
-	client, err := az.subscriptionClient(secret)
+func (az *azure) AccountCheck(kt *kit.Kit, secret *types.Secret, detail *types.AccountCheckOption) error {
+	client, err := az.subscriptionClient(secret.Azure)
 	if err != nil {
 		return fmt.Errorf("init azure client failed, err: %v", err)
 	}
 
-	_, err = client.NewListLocationsPager(secret.SubscriptionID, nil).NextPage(kt.Ctx)
+	_, err = client.NewListLocationsPager(secret.Azure.SubscriptionID, nil).NextPage(kt.Ctx)
 	if err != nil {
 		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
 		return err

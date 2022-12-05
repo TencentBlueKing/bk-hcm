@@ -44,8 +44,8 @@ var (
 
 type gcp struct{}
 
-func (g *gcp) computeClient(kt *kit.Kit, secret *types.Secret) (*compute.Service, error) {
-	opt := option.WithCredentialsJSON(secret.Json)
+func (g *gcp) computeClient(kt *kit.Kit, credential *types.GcpCredential) (*compute.Service, error) {
+	opt := option.WithCredentialsJSON(credential.Json)
 	service, err := compute.NewService(kt.Ctx, opt)
 	if err != nil {
 		return nil, err

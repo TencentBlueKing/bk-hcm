@@ -48,7 +48,7 @@ type tcloud struct {
 	profile *profile.ClientProfile
 }
 
-func (t *tcloud) cvmClient(secret *types.Secret, region string) (*cvm.Client, error) {
+func (t *tcloud) cvmClient(secret *types.BaseSecret, region string) (*cvm.Client, error) {
 	credential := common.NewCredential(secret.ID, secret.Key)
 	client, err := cvm.NewClient(credential, region, t.profile)
 	if err != nil {

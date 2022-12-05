@@ -21,6 +21,7 @@ package huawei
 
 import (
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/errf"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/config"
@@ -45,7 +46,7 @@ var (
 
 type huawei struct{}
 
-func (h *huawei) iamClient(secret *types.Secret, region *region.Region) (*iam.IamClient, error) {
+func (h *huawei) iamClient(secret *types.BaseSecret, region *region.Region) (*iam.IamClient, error) {
 	auth := basic.NewCredentialsBuilder().
 		WithAk(secret.ID).
 		WithSk(secret.Key).
@@ -59,4 +60,20 @@ func (h *huawei) iamClient(secret *types.Secret, region *region.Region) (*iam.Ia
 			Build())
 
 	return client, nil
+}
+
+func validateSecret(s *types.Secret) error {
+	if s == nil {
+		return errf.New(errf.InvalidParameter, "secret is required")
+	}
+
+	if s.HuaWei == nil {
+		return errf.New(errf.InvalidParameter, "huawei secret is required")
+	}
+
+	if err := s.HuaWei.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }

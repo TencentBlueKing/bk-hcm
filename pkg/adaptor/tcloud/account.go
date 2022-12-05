@@ -33,8 +33,8 @@ var _ types.AccountInterface = new(tcloud)
 
 // AccountCheck check account authentication information and permissions.
 // TODO: 仅用于测试
-func (t *tcloud) AccountCheck(kt *kit.Kit, secret *types.Secret) error {
-	client, err := t.cvmClient(secret, "")
+func (t *tcloud) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.AccountCheckOption) error {
+	client, err := t.cvmClient(secret.TCloud, "")
 	if err != nil {
 		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}

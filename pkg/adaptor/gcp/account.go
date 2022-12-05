@@ -31,13 +31,13 @@ var _ types.AccountInterface = new(gcp)
 
 // AccountCheck check account authentication information and permissions.
 // TODO: 仅用于测试
-func (g *gcp) AccountCheck(kt *kit.Kit, secret *types.Secret) error {
-	client, err := g.computeClient(kt, secret)
+func (g *gcp) AccountCheck(kt *kit.Kit, secret *types.Secret, detail *types.AccountCheckOption) error {
+	client, err := g.computeClient(kt, secret.Gcp)
 	if err != nil {
 		return fmt.Errorf("init gcp client failed, err: %v", err)
 	}
 
-	_, err = client.Regions.List(secret.ProjectID).Context(kt.Ctx).Do()
+	_, err = client.Regions.List(secret.Gcp.ProjectID).Context(kt.Ctx).Do()
 	if err != nil {
 		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
 		return err
