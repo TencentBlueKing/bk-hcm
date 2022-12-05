@@ -38,42 +38,58 @@
       </bk-table-column>
       <bk-table-column
         :label="t('云厂商')"
-        prop="source"
-      />
+        prop="vendor"
+      >
+        <template #default="props">
+          {{CloudType[props.data.vendor]}}
+        </template>
+      </bk-table-column>
       <bk-table-column
         :label="t('类型')"
-        prop="create_time"
-      />
+        prop="type"
+      >
+        <template #default="props">
+          {{AccountType[props.data.type]}}
+        </template>
+      </bk-table-column>
       <bk-table-column
         :label="t('负责人')"
-        prop="create_time"
-      />
+        prop="managers"
+      >
+        <template #default="props">
+          {{props.data.managers?.join(',')}}
+        </template>
+      </bk-table-column>
       <bk-table-column
         :label="t('余额')"
-        prop="create_time"
-      />
+        prop="price"
+      >
+        <template #default="props">
+          {{props.data.price}}{{props.data.price_unit}}
+        </template>
+      </bk-table-column>
       <bk-table-column
         :label="t('创建时间')"
-        prop="create_time"
+        prop="created_at"
       />
       <bk-table-column
         label="备注"
-        prop="create_time"
+        prop="memo"
       />
       <bk-table-column
         label="操作"
       >
         <template #default="props">
           <div class="operate-button">
-            <bk-button text theme="primary" @click="handleSync(props?.data.id)">
+            <!-- <bk-button text theme="primary" @click="handleSync(props?.data.id)">
               {{t('同步')}}
-            </bk-button>
+            </bk-button> -->
             <bk-button text theme="primary" @click="handleJump('accountDetail', props?.data.id)">
               {{t('编辑')}}
             </bk-button>
-            <bk-button text theme="primary" @click="handleDelete(props?.data.id, props?.data.name)">
+            <!-- <bk-button text theme="primary" @click="handleDelete(props?.data.id, props?.data.name)">
               {{t('删除')}}
-            </bk-button>
+            </bk-button> -->
           </div>
         </template>
       </bk-table-column>
@@ -120,6 +136,7 @@ import { useAccountStore } from '@/store';
 import rightArrow from '@/assets/image/right-arrow.png';
 import tcloud from '@/assets/image/tcloud.png';
 import { Message } from 'bkui-vue';
+import { CloudType, AccountType } from '@/typings';
 
 export default defineComponent({
   name: 'AccountManageList',
@@ -146,11 +163,14 @@ export default defineComponent({
       tableData: [
         {
           id: 1,
-          name: 'qcloud-for-lol',
-          source: 'QQ',
-          status: '创建中',
-          create_time: '2018-05-25 15:02:241',
-          selected: false,
+          name: 'qcloud-account',
+          vendor: 'tcloud',  // 云厂商，枚举值有：tcloud 、aws、azure、gcp、huawei
+          type: 'resource',  // resource表示资源账号，register表示登记账号
+          managers: ['jiananzhang', 'jamesge'],  // 负责人
+          price: 500.01,  // 余额
+          price_unit: '$', // 余额单位，可能是美元、人民币等
+          created_at: '2022-12-05T10:44:55Z',
+          memo: '测试账号',  // 备注
         },
       ],
       pagination: {
@@ -167,12 +187,13 @@ export default defineComponent({
       tcloudSrc: tcloud,
       loading: true,
       dataId: null,
+      CloudType,
+      AccountType,
     });
 
     onMounted(async () => {
-      console.log(122133333);
       /* 获取账号列表接口 */
-      getAccountList();
+      init();
     });
     onUnmounted(() => {
     });
