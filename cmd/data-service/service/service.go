@@ -130,7 +130,7 @@ func (s *Service) apiSet() *restful.Container {
 	}
 
 	cloud.InitAccountService(cap)
-	// cloud.InitAccountBizRelService(cap)
+	cloud.InitAccountBizRelService(cap)
 	auth.InitAuthService(cap)
 
 	return restful.NewContainer().Add(cap.WebService)

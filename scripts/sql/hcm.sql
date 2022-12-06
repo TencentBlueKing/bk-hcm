@@ -69,9 +69,9 @@ create table if not exists `account`
 ) engine=innodb default charset=utf8mb4;
 
 create table if not exists `account_biz_rel` (
-    `id`         bigint(1) unsigned  not null auto_increment,
-    `bk_biz_id`  bigint(1) unsigned  not null,
-    `account_id` bigint(1) unsigned  not null,
+    `id`              bigint(1) unsigned  not null auto_increment,
+    `bk_biz_id`       int(11)             not null,
+    `account_id`      bigint(1) unsigned  not null,
     `creator`         varchar(64)         not null,
     `reviser`         varchar(64)         not null,
     `created_at`      timestamp           not null default now(),

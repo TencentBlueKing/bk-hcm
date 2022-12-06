@@ -20,7 +20,6 @@
 package cloud
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
@@ -38,26 +37,18 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-type Account struct {
-	ID           uint64
-	Name         string
-	Vendor       string
-	Managers     []string
-	DepartmentID int
-	Type         string
-	SyncStatus   string
-	Price        string
-	PriceUnit    string
-	Extension    interface{}
-	Creator      string
-	Reviser      string
-	CreatedAt    *time.Time
-	UpdatedAt    *time.Time
-	Memo         string
+type AccountBizRel struct {
+	ID        uint64
+	BkBizID   uint64
+	AccountID uint64
+	Creator   string
+	Reviser   string
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
 }
 
 // Create one account instance.
-func (a *Account) Create(kt *kit.Kit) (uint64, error) {
+func (a *AccountBizRel) Create(kt *kit.Kit) (uint64, error) {
 	td, err := a.toCreateTableData(kt.User)
 	if err != nil {
 		return 0, nil
@@ -90,7 +81,7 @@ func (a *Account) Create(kt *kit.Kit) (uint64, error) {
 	return id, nil
 }
 
-func (a *Account) Update(kt *kit.Kit, expr *filter.Expression, updateFields []string) error {
+func (a *AccountBizRel) Update(kt *kit.Kit, expr *filter.Expression, updateFields []string) error {
 	td, err := a.toUpdateTableData(kt.User, updateFields)
 	if err != nil {
 		return nil
@@ -106,6 +97,7 @@ func (a *Account) Update(kt *kit.Kit, expr *filter.Expression, updateFields []st
 
 	daoClient := dao.DaoClient
 
+	// TODO enumor.Account 再调整
 	ab := daoClient.AuditDao.Decorator(kt, enumor.Account).PrepareUpdate(whereExpr, toUpdate)
 
 	_, err = daoClient.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
@@ -121,7 +113,7 @@ func (a *Account) Update(kt *kit.Kit, expr *filter.Expression, updateFields []st
 		}
 
 		if err := ab.Do(txn); err != nil {
-			return nil, fmt.Errorf("do account update audit failed, err: %v", err)
+			return nil, fmt.Errorf("do %s update audit failed, err: %v", td.TableName(), err)
 		}
 		return nil, nil
 	})
@@ -132,52 +124,32 @@ func (a *Account) Update(kt *kit.Kit, expr *filter.Expression, updateFields []st
 	return nil
 }
 
-func (a *Account) List(kt *kit.Kit, opt *types.ListOption) ([]*Account, error) {
-	tp := new(tablecloud.AccountTable)
+func (a *AccountBizRel) List(kt *kit.Kit, opt *types.ListOption) ([]*AccountBizRel, error) {
+	tp := new(tablecloud.AccountBizRelTable)
 	listSQL, err := tp.GenerateListSQL(opt)
 	if err != nil {
 		return nil, err
 	}
 
-	td := make([]*tablecloud.AccountTable, 0)
+	td := make([]*tablecloud.AccountBizRelTable, 0)
 	err = dao.DaoClient.Orm.Do().Select(kt.Ctx, &td, listSQL)
 	if err != nil {
 		return nil, err
 	}
 
-	data := make([]*Account, 0)
-	var managers []string
-	var ext interface{}
+	data := make([]*AccountBizRel, 0)
 
 	for _, d := range td {
-		err = json.Unmarshal([]byte(d.Managers), &managers)
-		if err != nil {
-			return nil, err
-		}
-
-		err = json.Unmarshal([]byte(d.Extension), &ext)
-		if err != nil {
-			return nil, err
-		}
-
 		data = append(
 			data,
-			&Account{
-				ID:           d.ID,
-				Name:         d.Name,
-				Vendor:       d.Vendor,
-				Managers:     managers,
-				DepartmentID: d.DepartmentID,
-				Type:         d.Type,
-				SyncStatus:   d.SyncStatus,
-				Price:        d.Price,
-				PriceUnit:    d.PriceUnit,
-				Extension:    ext,
-				Creator:      d.Creator,
-				Reviser:      d.Reviser,
-				CreatedAt:    d.CreatedAt,
-				UpdatedAt:    d.UpdatedAt,
-				Memo:         d.Memo,
+			&AccountBizRel{
+				ID:        d.ID,
+				BkBizID:   d.BkBizID,
+				AccountID: d.AccountID,
+				Creator:   d.Creator,
+				Reviser:   d.Reviser,
+				CreatedAt: d.CreatedAt,
+				UpdatedAt: d.UpdatedAt,
 			},
 		)
 	}
@@ -185,7 +157,7 @@ func (a *Account) List(kt *kit.Kit, opt *types.ListOption) ([]*Account, error) {
 	return data, nil
 }
 
-func (a *Account) Delete(kt *kit.Kit, expr *filter.Expression) error {
+func (a *AccountBizRel) Delete(kt *kit.Kit, expr *filter.Expression) error {
 	tp := new(tablecloud.AccountTable)
 	sql, err := tp.GenerateDeleteSQL(expr)
 	if err != nil {
@@ -211,63 +183,36 @@ func (a *Account) Delete(kt *kit.Kit, expr *filter.Expression) error {
 	return nil
 }
 
-func (a *Account) toCreateTableData(creator string) (*tablecloud.AccountTable, error) {
+func (a *AccountBizRel) toCreateTableData(creator string) (*tablecloud.AccountBizRelTable, error) {
 	if err := a.validate(); err != nil {
 		return nil, err
 	}
 
-	managers, err := json.Marshal(a.Managers)
-	if err != nil {
-		return nil, err
-	}
-
-	ext, err := json.Marshal(a.Extension)
-	if err != nil {
-		return nil, err
-	}
-
-	return &tablecloud.AccountTable{
-		Name:         a.Name,
-		Vendor:       a.Vendor,
-		DepartmentID: a.DepartmentID,
-		Managers:     table.JsonField(managers),
-		Extension:    table.JsonField(ext),
+	return &tablecloud.AccountBizRelTable{
+		BkBizID:      a.BkBizID,
+		AccountID:    a.AccountID,
 		Creator:      creator,
 		Reviser:      creator,
-		SyncStatus:   "", // 账号初始状态设置
 		TableManager: &table.TableManager{},
 	}, nil
 }
 
-func (a *Account) toUpdateTableData(reviser string, updateFields []string) (*tablecloud.AccountTable, error) {
+func (a *AccountBizRel) toUpdateTableData(
+	reviser string,
+	updateFields []string,
+) (*tablecloud.AccountBizRelTable, error) {
 	if err := a.validate(); err != nil {
 		return nil, err
 	}
 
-	managers, err := json.Marshal(a.Managers)
-	if err != nil {
-		return nil, err
-	}
-
-	ext, err := json.Marshal(a.Extension)
-	if err != nil {
-		return nil, err
-	}
-
-	return &tablecloud.AccountTable{
-		Name:         a.Name,
-		Managers:     table.JsonField(managers),
-		Price:        a.Price,
-		PriceUnit:    a.PriceUnit,
-		DepartmentID: a.DepartmentID,
-		Extension:    table.JsonField(ext),
-		Memo:         a.Memo,
+	return &tablecloud.AccountBizRelTable{
+		BkBizID:      a.BkBizID,
 		Reviser:      reviser,
 		TableManager: &table.TableManager{UpdateFields: updateFields},
 	}, nil
 }
 
-func (a *Account) validate() error {
+func (a *AccountBizRel) validate() error {
 	// TODO 校验处理
 	return nil
 }
