@@ -4,7 +4,7 @@ import { ProjectModel, SecretModel, CloudType, AccountType } from '@/typings';
 import { CLOUD_TYPE } from '@/constants';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
-import { useRoute } from 'vue-router';
+// import { useRoute } from 'vue-router';
 // import MemberSelect from '@/components/MemberSelect';
 // import OrganizationSelect from '@/components/OrganizationSelect';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
@@ -17,12 +17,11 @@ export default defineComponent({
     const { t } = useI18n();
     const formRef = ref<InstanceType<typeof Form>>(null);
     const accountStore = useAccountStore();
-    const route = useRoute();
+    // const route = useRoute();
     const formDiaRef = ref(null);
-    const confirmText = ref<string>(t('测试连接'));
 
     const initProjectModel: ProjectModel = {
-      id: '',
+      id: 1,
       type: '',   // 账号类型
       name: '', // 名称
       vendor: '', // 云厂商
@@ -38,6 +37,8 @@ export default defineComponent({
       price: 0,
       extension: {},   // 特殊信息
     };
+
+    const isTestConnection = ref(false);
 
     const initSecretModel: SecretModel = {
       secretId: '',
@@ -57,11 +58,10 @@ export default defineComponent({
     let dialogForm = reactive([]);
 
     onMounted(async () => {
-      const { id } = route.query;
-      console.log('route.query', route.query);
-      const res = await accountStore.getAccountDetail(Number(id));
-      console.log('res', res);
-      projectModel = res?.data || {
+      // const { id } = route.query;
+      // console.log('route.query', route.query);
+      // const res = await accountStore.getAccountDetail({ id: Number(id) });
+      const res = { data: {
         id: 1,
         name: 'qcloud-account',
         vendor: 'aws',  // 云厂商，枚举值有：tcloud 、aws、azure、gcp、huawei
@@ -78,7 +78,8 @@ export default defineComponent({
         department_full_name: 'IEG互动娱乐事业群/技术运营部/计算资源中心',
         related_bk_biz_ids: [1, 3, 10], // 关联的业务列表，若选择All，则是-1
         extension: { account_id: 1, iam_username: 'poloohuang', secret_id: '**', secret_key: '**' },
-      };
+      } };
+      projectModel = res?.data;
       projectModel.departmentId = res?.data.department_id;
       projectModel.bizIds = res?.data.related_bk_biz_ids;
       renderDialogForm(projectModel);
@@ -187,12 +188,12 @@ export default defineComponent({
           break;
         case 'aws':
           dialogForm = [
-            {
-              label: t('密钥ID'),
-              required: true,
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            },
+            // {
+            //   label: t('密钥ID'),
+            //   required: true,
+            //   property: 'secretId',
+            //   component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
+            // },
             {
               label: 'Secret ID',
               required: true,
@@ -275,8 +276,24 @@ export default defineComponent({
       ],
     };
     // 更新信息方法
-    const updateFormData = () => {
+    const updateFormData = async (key: any) => {
+      let params: any = { department_id: '', related_bk_biz_ids: '' };
+      if (key === 'departmentId') {
+        params.department_id = projectModel[key];
+      } else if (key === 'bizIds') {
+        params.related_bk_biz_ids = projectModel[key];
+      } else {
+        params = {};
+        params[key] = projectModel[key];
+      }
+      try {
+        await accountStore.updateAccount({    // 更新密钥信息
+          id: projectModel.id,
+          ...params,
+        });
+      } catch (error) {
 
+      }
     };
 
     // 显示弹窗
@@ -287,8 +304,21 @@ export default defineComponent({
     // 弹窗确认
     const onConfirm = async () => {
       await formDiaRef.value?.validate();
-
-      console.log(secretModel);
+      const extension = {
+        secret_id: secretModel.secretId,
+        secret_key: secretModel.secretKey,
+      };
+      if (isTestConnection.value) {
+        await accountStore.updateAccount({    // 更新密钥信息
+          id: projectModel.id,
+          extension,
+        });
+      } else {
+        await accountStore.testAccountConnection({    // 测试连接密钥信息
+          id: projectModel.id,
+          extension,
+        });
+      }
     };
 
     // 取消
@@ -315,8 +345,7 @@ export default defineComponent({
         handleEditStatus(false, key);   // 通过检验则把状态改为不可编辑态
       }
       if (projectModel[key] !== initProjectModel[key]) {
-        console.log('projectModel', projectModel);
-        updateFormData();    // 更新数据
+        updateFormData(key);    // 更新数据
       }
     };
 
@@ -356,7 +385,7 @@ export default defineComponent({
           },
           {
             label: t('负责人:'),
-            required: false,
+            required: true,
             property: 'managers',
             isEdit: false,
             component() {
@@ -491,7 +520,7 @@ export default defineComponent({
             width={680}
             title={t('密钥信息')}
             onConfirm={onConfirm}
-            confirmText={confirmText.value}
+            confirmText={isTestConnection.value ? '确认' : '测试连接'}
             onClosed={onClosed}
           >
             <Form labelWidth={100} model={secretModel} ref={formDiaRef}>

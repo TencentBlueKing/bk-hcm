@@ -1,19 +1,19 @@
 export interface ProjectModel {
-  id: string,
+  id: number,
   type: string
   name: string,
-  account?: number | string,
-  subAccountId?: number | string,
-  subAccountName: number | string,
   vendor: string,
   managers: string[]
-  departmentId: string[] | number[],
+  departmentId?: string[] | number[] | number,
   memo: string,             // 备注
-  bizIds: string | string[] // 使用业务
+  account?: number | string,
+  subAccountId?: number | string,
+  subAccountName?: number | string,
+  bizIds?: string | string[] | number[] // 使用业务
   mainAccount?: number | string,        // 主账号
   subAccount?: number | string,         // 子账号
-  secretId: string,             // secretId
-  secretKey: string,            // secretKey
+  secretId?: string,             // secretId
+  secretKey?: string,            // secretKey
   accountId?: string            // 账号id
   iamUsername?: string          // IAM用户名称
   price?: number      // 价格
