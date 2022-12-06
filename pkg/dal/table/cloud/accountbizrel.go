@@ -19,57 +19,57 @@
 
 package cloud
 
-import (
-	"time"
-
-	"hcm/pkg/dal/dao/types"
-	"hcm/pkg/dal/table"
-	"hcm/pkg/runtime/filter"
-)
-
-type AccountBizRelModel struct {
-	// 账号自增 ID
-	ID uint64 `db:"id"`
-	// 蓝鲸业务 ID
-	BkBizID uint64 `db:"bk_biz_id"`
-	// 云账号主键 ID
-	AccountID uint64 `db:"account_id"`
-	// 创建者
-	Creator string `db:"creator"`
-	// 更新者
-	Reviser string `db:"reviser"`
-	// 创建时间
-	CreatedAt *time.Time `db:"created_at"`
-	// 更新时间
-	UpdatedAt *time.Time `db:"updated_at"`
-	// model manager
-	ModelManager *table.ModelManager
-}
-
-func (m *AccountBizRelModel) TableName() string {
-	return "account_biz_rel"
-}
-
-// GenerateInsertSQL ...
-func (m *AccountBizRelModel) GenerateInsertSQL() string {
-	return m.ModelManager.GenerateInsertSQL(m)
-}
-
-// GenerateInsertSQL ...
-func (m *AccountBizRelModel) GenerateUpdateSQL(expr *filter.Expression) (string, error) {
-	return m.ModelManager.GenerateUpdateSQL(m, expr)
-}
-
-// GenerateUpdateFieldKV ...
-func (m *AccountBizRelModel) GenerateUpdateFieldKV() map[string]interface{} {
-	return m.ModelManager.GenerateUpdateFieldKV(m)
-}
-
-// GenerateListSQL ...
-func (m *AccountBizRelModel) GenerateListSQL(opt *types.ListOption) (string, error) {
-	return m.ModelManager.GenerateListSQL(m, opt)
-}
-
-func (m *AccountBizRelModel) GenerateDeleteSQL(expr *filter.Expression) (string, error) {
-	return m.ModelManager.GenerateDeleteSQL(m, expr)
-}
+//import (
+//	"time"
+//
+//	"hcm/pkg/dal/dao/types"
+//	"hcm/pkg/dal/table"
+//	"hcm/pkg/runtime/filter"
+//)
+//
+//type AccountBizRelModel struct {
+//	// 账号自增 ID
+//	ID uint64 `db:"id"`
+//	// 蓝鲸业务 ID
+//	BkBizID uint64 `db:"bk_biz_id"`
+//	// 云账号主键 ID
+//	AccountID uint64 `db:"account_id"`
+//	// 创建者
+//	Creator string `db:"creator"`
+//	// 更新者
+//	Reviser string `db:"reviser"`
+//	// 创建时间
+//	CreatedAt *time.Time `db:"created_at"`
+//	// 更新时间
+//	UpdatedAt *time.Time `db:"updated_at"`
+//	// model manager
+//	ModelManager *table.ModelManager
+//}
+//
+//func (m *AccountBizRelModel) TableName() string {
+//	return "account_biz_rel"
+//}
+//
+//// GenerateInsertSQL ...
+//func (m *AccountBizRelModel) GenerateInsertSQL() string {
+//	return m.ModelManager.GenerateInsertSQL(m)
+//}
+//
+//// GenerateInsertSQL ...
+//func (m *AccountBizRelModel) GenerateUpdateSQL(expr *filter.Expression) (string, error) {
+//	return m.ModelManager.GenerateUpdateSQL(m, expr)
+//}
+//
+//// GenerateUpdateFieldKV ...
+//func (m *AccountBizRelModel) GenerateUpdateFieldKV() map[string]interface{} {
+//	return m.ModelManager.GenerateUpdateFieldKV(m)
+//}
+//
+//// GenerateListSQL ...
+//func (m *AccountBizRelModel) GenerateListSQL(opt *types.ListOption) (string, error) {
+//	return m.ModelManager.GenerateListSQL(m, opt)
+//}
+//
+//func (m *AccountBizRelModel) GenerateDeleteSQL(expr *filter.Expression) (string, error) {
+//	return m.ModelManager.GenerateDeleteSQL(m, expr)
+//}

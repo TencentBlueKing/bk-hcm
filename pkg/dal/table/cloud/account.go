@@ -28,7 +28,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-type AccountModel struct {
+type AccountTable struct {
 	// 账号自增 ID
 	ID uint64 `db:"id"`
 	// 账号名称
@@ -59,37 +59,38 @@ type AccountModel struct {
 	UpdatedAt *time.Time `db:"updated_at"`
 	// 账号信息备注
 	Memo string `db:"memo"`
-	// model manager
-	ModelManager *table.ModelManager
+	// table manager
+	TableManager *table.TableManager
 }
 
-var _ table.Model = new(AccountModel)
+var _ table.Table = new(AccountTable)
 
 // TableName is the account's database table name.
-func (m *AccountModel) TableName() string {
+func (t *AccountTable) TableName() string {
 	return "account"
 }
 
 // GenerateInsertSQL ...
-func (m *AccountModel) GenerateInsertSQL() string {
-	return m.ModelManager.GenerateInsertSQL(m)
+func (t *AccountTable) GenerateInsertSQL() string {
+	return t.TableManager.GenerateInsertSQL(t)
 }
 
 // GenerateInsertSQL ...
-func (m *AccountModel) GenerateUpdateSQL(expr *filter.Expression) (string, error) {
-	return m.ModelManager.GenerateUpdateSQL(m, expr)
+func (t *AccountTable) GenerateUpdateSQL(expr *filter.Expression) (string, error) {
+	return t.TableManager.GenerateUpdateSQL(t, expr)
 }
 
 // GenerateUpdateFieldKV ...
-func (m *AccountModel) GenerateUpdateFieldKV() map[string]interface{} {
-	return m.ModelManager.GenerateUpdateFieldKV(m)
+func (t *AccountTable) GenerateUpdateFieldKV() map[string]interface{} {
+	return t.TableManager.GenerateUpdateFieldKV(t)
 }
 
 // GenerateListSQL ...
-func (m *AccountModel) GenerateListSQL(opt *types.ListOption) (string, error) {
-	return m.ModelManager.GenerateListSQL(m, opt)
+func (t *AccountTable) GenerateListSQL(opt *types.ListOption) (string, error) {
+	return t.TableManager.GenerateListSQL(t, opt)
 }
 
-func (m *AccountModel) GenerateDeleteSQL(expr *filter.Expression) (string, error) {
-	return m.ModelManager.GenerateDeleteSQL(m, expr)
+// GenerateDeleteSQL ...
+func (t *AccountTable) GenerateDeleteSQL(expr *filter.Expression) (string, error) {
+	return t.TableManager.GenerateDeleteSQL(t, expr)
 }

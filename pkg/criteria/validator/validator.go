@@ -23,14 +23,14 @@ import (
 	"reflect"
 
 	gvalidator "github.com/go-playground/validator/v10"
-	"hcm/pkg/tools"
+	"hcm/pkg/tools/reflectx"
 )
 
 var Validate = gvalidator.New()
 
 // ExtractValidFields
 func ExtractValidFields(i interface{}) []string {
-	v := tools.ReflectValue(i)
+	v := reflectx.ReflectValue(i)
 	t := v.Type()
 	var fields []string
 

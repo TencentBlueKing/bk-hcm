@@ -26,7 +26,6 @@ import (
 
 	"hcm/pkg/cc"
 	"hcm/pkg/dal/dao/audit"
-	daocloud "hcm/pkg/dal/dao/cloud"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/metrics"
 
@@ -34,11 +33,12 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+var DaoClient *AuditOrmDao
+
 // Set defines all the DAO to be operated.
 type Set interface {
-	CloudAccount() daocloud.Account
-	CloudAccountBizRel() daocloud.AccountBizRel
 	Auth() Auth
+	AuditOrmDao() *AuditOrmDao
 }
 
 // NewDaoSet create the DAO set instance.
@@ -61,6 +61,8 @@ func NewDaoSet(opt cc.DataBase) (Set, error) {
 		db:       db,
 		auditDao: auditDao,
 	}
+
+	DaoClient = s.AuditOrmDao()
 
 	return s, nil
 }
@@ -100,19 +102,19 @@ type set struct {
 	auditDao audit.AuditDao
 }
 
-// CloudAccount returns the account's DAO
-func (s *set) CloudAccount() daocloud.Account {
-	return daocloud.NewAccountDao(s.orm, s.auditDao)
-}
-
-// CloudAccountBizRel ...
-func (s *set) CloudAccountBizRel() daocloud.AccountBizRel {
-	return daocloud.NewAccountBizRelDao(s.orm, s.auditDao)
-}
-
 // Auth returns the auth instance's DAO
 func (s *set) Auth() Auth {
 	return &authDao{
 		orm: s.orm,
 	}
+}
+
+func (s *set) AuditOrmDao() *AuditOrmDao {
+	return &AuditOrmDao{s.orm, s.auditDao}
+}
+
+// AuditOrmDao ...
+type AuditOrmDao struct {
+	Orm      orm.Interface
+	AuditDao audit.AuditDao
 }

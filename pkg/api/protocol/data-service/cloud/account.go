@@ -21,13 +21,13 @@
 package cloud
 
 import (
-	"encoding/json"
 	"time"
 
-	"hcm/pkg/api/protocol/data-service/validator"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	tablecloud "hcm/pkg/dal/table/cloud"
+	"hcm/pkg/models/cloud"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -43,23 +43,6 @@ type CreateAccountReq struct {
 
 func (c *CreateAccountReq) Validate() error {
 	return validator.Validate.Struct(c)
-}
-
-func (c *CreateAccountReq) ToModel(creator string) *tablecloud.AccountModel {
-	managers, _ := json.Marshal(c.Managers)
-	ext, _ := json.Marshal(c.Extension)
-	// TODO 反射机制让创建过程更加"动态"?
-	return &tablecloud.AccountModel{
-		Name:         c.Name,
-		Vendor:       c.Vendor,
-		DepartmentID: c.DepartmentID,
-		Managers:     table.JsonField(managers),
-		Extension:    table.JsonField(ext),
-		Creator:      creator,
-		Reviser:      creator,
-		SyncStatus:   "", // 账号初始状态设置
-		ModelManager: &table.ModelManager{},
-	}
 }
 
 // TODO 增加值有效时进行校验的逻辑
@@ -79,30 +62,6 @@ func (u *UpdateAccountsReq) Validate() error {
 	return validator.Validate.Struct(u)
 }
 
-// ToModel ...
-func (u *UpdateAccountsReq) ToModel(reviser string) *tablecloud.AccountModel {
-	managers, _ := json.Marshal(u.Managers)
-	ext, _ := json.Marshal(u.Extension)
-
-	var memo string
-	if u.Memo != nil {
-		memo = *u.Memo
-	}
-
-	// TODO 反射机制让创建过程更加"动态"?
-	return &tablecloud.AccountModel{
-		Name:         u.Name,
-		Managers:     table.JsonField(managers),
-		Price:        u.Price,
-		PriceUnit:    u.PriceUnit,
-		DepartmentID: u.DepartmentID,
-		Extension:    table.JsonField(ext),
-		Memo:         memo,
-		Reviser:      reviser,
-		ModelManager: &table.ModelManager{UpdateFields: validator.ExtractValidFields(u)},
-	}
-}
-
 type ListAccountsReq struct {
 	FilterExpr filter.Expression `json:"filter_expr" validate:"required"`
 }
@@ -114,41 +73,34 @@ func (l *ListAccountsReq) Validate() error {
 func (l *ListAccountsReq) ToListOption() *types.ListOption {
 	return &types.ListOption{
 		FilterExpr: &l.FilterExpr,
-		Fields:     table.ListModelFields(new(AccountData)),
+		Fields:     table.ListTableFields(new(tablecloud.AccountTable)),
 	}
 }
 
-type AccountData struct {
-	ID        uint64                 `json:"id" db:"id"`
-	Name      string                 `json:"name" db:"name"`
-	Vendor    string                 `json:"vendor" db:"vendor"`
-	Managers  []string               `json:"managers" db:"managers"`
-	Price     string                 `json:"price" db:"price"`
-	PriceUnit string                 `json:"price_unit" db:"price_unit"`
-	Extension map[string]interface{} `json:"extension" db:"extension"`
-	Creator   string                 `json:"creator" db:"creator"`
-	Reviser   string                 `json:"reviser" db:"reviser"`
-	CreatedAt *time.Time             `json:"created_at" db:"created_at"`
-	UpdatedAt *time.Time             `json:"updated_at" db:"updated_at"`
+type AccountResp struct {
+	ID        uint64      `json:"id"`
+	Name      string      `json:"name"`
+	Vendor    string      `json:"vendor"`
+	Managers  []string    `json:"managers"`
+	Price     string      `json:"price"`
+	PriceUnit string      `json:"price_unit"`
+	Extension interface{} `json:"extension"`
+	Creator   string      `json:"creator"`
+	Reviser   string      `json:"reviser"`
+	CreatedAt *time.Time  `json:"created_at"`
+	UpdatedAt *time.Time  `json:"updated_at"`
 }
 
-// NewAccountData ...
-func NewAccountData(m *tablecloud.AccountModel) *AccountData {
-	managers := make([]string, 0)
-	json.Unmarshal([]byte(m.Managers), &managers)
-
-	ext := make(map[string]interface{}, 0)
-	json.Unmarshal([]byte(m.Extension), &ext)
-
-	// TODO 反射机制让创建过程更加"动态"?
-	return &AccountData{
+// NewAccountResp ...
+func NewAccountResp(m *cloud.Account) *AccountResp {
+	return &AccountResp{
 		ID:        m.ID,
 		Name:      m.Name,
 		Vendor:    m.Vendor,
-		Managers:  managers,
+		Managers:  m.Managers,
 		Price:     m.Price,
 		PriceUnit: m.PriceUnit,
-		Extension: ext,
+		Extension: m.Extension,
 		Creator:   m.Creator,
 		Reviser:   m.Reviser,
 		CreatedAt: m.CreatedAt,
@@ -158,7 +110,7 @@ func NewAccountData(m *tablecloud.AccountModel) *AccountData {
 
 // ListAccountsResult defines list instances for iam pull resource callback result.
 type ListAccountsResult struct {
-	Details []AccountData `json:"details"`
+	Details []AccountResp `json:"details"`
 }
 
 type DeleteAccountsReq struct {

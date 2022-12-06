@@ -130,7 +130,7 @@ func (ab *AuditBuilder) AuditCreate(txn *sqlx.Tx, cur interface{}) error {
 	}
 
 	switch res := cur.(type) {
-	case *tablecloud.AccountModel:
+	case *tablecloud.AccountTable:
 		one.ResourceID = res.ID
 		one.AccountID = res.ID
 

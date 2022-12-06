@@ -23,13 +23,14 @@ import (
 	"fmt"
 
 	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/api/protocol/base"
-	"hcm/pkg/api/protocol/data-service/cloud"
+	protocloud "hcm/pkg/api/protocol/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 
+	"hcm/pkg/api/protocol/base"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao"
-	tablecloud "hcm/pkg/dal/table/cloud"
+	"hcm/pkg/models/cloud"
 )
 
 // InitAccountService initial the account service
@@ -49,13 +50,14 @@ func InitAccountService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
+// TODO 考虑废弃 accountSvc 模式
 type accountSvc struct {
 	dao dao.Set
 }
 
 // Create create account with options
 func (svc *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
-	reqData := new(cloud.CreateAccountReq)
+	reqData := new(protocloud.CreateAccountReq)
 
 	if err := cts.DecodeInto(reqData); err != nil {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
@@ -65,7 +67,15 @@ func (svc *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	id, err := svc.dao.CloudAccount().Create(cts.Kit, reqData.ToModel(cts.Kit.User))
+	account := &cloud.Account{
+		Name:         reqData.Name,
+		Vendor:       reqData.Vendor,
+		DepartmentID: reqData.DepartmentID,
+		Managers:     reqData.Managers,
+		Extension:    reqData.Extension,
+		SyncStatus:   "", // 账号初始状态设置
+	}
+	id, err := account.Create(cts.Kit)
 	if err != nil {
 		return nil, fmt.Errorf("create cloud account failed, err: %v", err)
 	}
@@ -75,7 +85,7 @@ func (svc *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 
 // Update create account with options
 func (svc *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
-	reqData := new(cloud.UpdateAccountsReq)
+	reqData := new(protocloud.UpdateAccountsReq)
 
 	if err := cts.DecodeInto(reqData); err != nil {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
@@ -84,14 +94,30 @@ func (svc *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 	if err := reqData.Validate(); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
-	err := svc.dao.CloudAccount().Update(cts.Kit, &reqData.FilterExpr, reqData.ToModel(cts.Kit.User))
+
+	var memo string
+	if reqData.Memo != nil {
+		memo = *reqData.Memo
+	}
+
+	account := &cloud.Account{
+		Name:         reqData.Name,
+		Managers:     reqData.Managers,
+		Price:        reqData.Price,
+		PriceUnit:    reqData.PriceUnit,
+		DepartmentID: reqData.DepartmentID,
+		Extension:    reqData.Extension,
+		Memo:         memo,
+	}
+
+	err := account.Update(cts.Kit, &reqData.FilterExpr, validator.ExtractValidFields(reqData))
 
 	return nil, err
 }
 
 // List create account with options
 func (svc *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
-	reqData := new(cloud.ListAccountsReq)
+	reqData := new(protocloud.ListAccountsReq)
 	if err := cts.DecodeInto(reqData); err != nil {
 		return nil, err
 	}
@@ -99,22 +125,24 @@ func (svc *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
 	if err := reqData.Validate(); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
-	mData, err := svc.dao.CloudAccount().List(cts.Kit, reqData.ToListOption())
+
+	account := new(cloud.Account)
+	data, err := account.List(cts.Kit, reqData.ToListOption())
 	if err != nil {
 		return nil, err
 	}
 
-	var details []cloud.AccountData
-	for _, m := range mData {
-		details = append(details, *cloud.NewAccountData(m))
+	var details []protocloud.AccountResp
+	for _, m := range data {
+		details = append(details, *protocloud.NewAccountResp(m))
 	}
 
-	return &cloud.ListAccountsResult{Details: details}, nil
+	return &protocloud.ListAccountsResult{Details: details}, nil
 }
 
 // Delete ...
 func (svc *accountSvc) Delete(cts *rest.Contexts) (interface{}, error) {
-	reqData := new(cloud.DeleteAccountsReq)
+	reqData := new(protocloud.DeleteAccountsReq)
 	if err := cts.DecodeInto(reqData); err != nil {
 		return nil, err
 	}
@@ -123,7 +151,8 @@ func (svc *accountSvc) Delete(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	err := svc.dao.CloudAccount().Delete(cts.Kit, &reqData.FilterExpr, new(tablecloud.AccountModel))
+	account := new(cloud.Account)
+	err := account.Delete(cts.Kit, &reqData.FilterExpr)
 
 	return nil, err
 }

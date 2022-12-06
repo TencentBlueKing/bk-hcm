@@ -25,7 +25,7 @@ import (
 
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools"
+	"hcm/pkg/tools/reflectx"
 	"hcm/pkg/tools/slice"
 )
 
@@ -33,7 +33,7 @@ const UpdateTimeField = "updated_at"
 
 type JsonField string
 
-type Model interface {
+type Table interface {
 	TableName() string
 	GenerateInsertSQL() string
 	GenerateUpdateSQL(expr *filter.Expression) (string, error)
@@ -42,17 +42,17 @@ type Model interface {
 	GenerateDeleteSQL(expr *filter.Expression) (string, error)
 }
 
-// ModelManager 作为 XXModel 的字段, 可以用来描述"插入"或者"更新"时的一些设置
-type ModelManager struct {
+// TableManager 作为 XXTable 的字段, 可以用来描述"插入"或者"更新"时的一些设置
+type TableManager struct {
 	// InsertFields 存放需要插入的 column name. 不指定表示所有字段
 	InsertFields []string
 	// UpdateFields 存放需要更新的 column name. 不指定表示不更新任何有效字段, 仅更新 updated_at 字段
 	UpdateFields []string
 }
 
-// GenerateInsertSQL 生成 insert sql
-func (manager *ModelManager) GenerateInsertSQL(m Model) string {
-	insertFields := manager.listInsertFields(m)
+// generateInsertSQL 生成 insert sql
+func (tm *TableManager) generateInsertSQL(t Table) string {
+	insertFields := tm.listInsertFields(t)
 	// 插入操作, 排除自增的主键 id
 	insertFields = slice.Remove(insertFields, "id")
 
@@ -63,37 +63,56 @@ func (manager *ModelManager) GenerateInsertSQL(m Model) string {
 
 	return fmt.Sprintf(
 		`INSERT INTO %s (%s) VALUES (%s)`,
-		m.TableName(),
+		t.TableName(),
+		strings.Join(insertFields, ", "),
+		strings.Join(fieldsWithColon, ", "),
+	)
+}
+
+// GenerateInsertSQL 生成 insert sql
+func (tm *TableManager) GenerateInsertSQL(t Table) string {
+	insertFields := tm.listInsertFields(t)
+	// 插入操作, 排除自增的主键 id
+	insertFields = slice.Remove(insertFields, "id")
+
+	var fieldsWithColon []string
+	for _, field := range insertFields {
+		fieldsWithColon = append(fieldsWithColon, ":"+field)
+	}
+
+	return fmt.Sprintf(
+		`INSERT INTO %s (%s) VALUES (%s)`,
+		t.TableName(),
 		strings.Join(insertFields, ", "),
 		strings.Join(fieldsWithColon, ", "),
 	)
 }
 
 // GenerateUpdateSQL 生成 update sql
-func (manager *ModelManager) GenerateUpdateSQL(m Model, expr *filter.Expression) (string, error) {
+func (tm *TableManager) GenerateUpdateSQL(t Table, expr *filter.Expression) (string, error) {
 	whereExpr, err := GenerateWhereExpr(expr)
 	if err != nil {
 		return "", err
 	}
 
 	var setFields []string
-	for field := range manager.GenerateUpdateFieldKV(m) {
+	for field := range tm.GenerateUpdateFieldKV(t) {
 		setFields = append(setFields, fmt.Sprintf("%s = :%s", field, field))
 	}
 
-	if slice.StringInSlice(UpdateTimeField, manager.listModelFields(m)) {
+	if slice.StringInSlice(UpdateTimeField, tm.listModelFields(t)) {
 		setFields = append(setFields, fmt.Sprintf("%s = now()", UpdateTimeField))
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s %s`, m.TableName(), "set "+strings.Join(setFields, ", "), whereExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s %s`, t.TableName(), "set "+strings.Join(setFields, ", "), whereExpr)
 	return sql, nil
 }
 
-func (manager *ModelManager) GenerateUpdateFieldKV(m Model) map[string]interface{} {
+func (tm *TableManager) GenerateUpdateFieldKV(t Table) map[string]interface{} {
 	kv := make(map[string]interface{})
-	modelFields := manager.listModelFields(m)
+	modelFields := tm.listModelFields(t)
 
-	mValue := tools.ReflectValue(m)
+	mValue := reflectx.ReflectValue(t)
 
 	// 获取 {db tag: struct field} 键值对
 	fieldNames := make(map[string]string)
@@ -105,7 +124,7 @@ func (manager *ModelManager) GenerateUpdateFieldKV(m Model) map[string]interface
 	}
 
 	// 移除可能的 update_at 字段, 该字段在更新时单独set update_at = now() 处理
-	updateFields := slice.Remove(manager.UpdateFields, UpdateTimeField)
+	updateFields := slice.Remove(tm.UpdateFields, UpdateTimeField)
 
 	for _, field := range updateFields {
 		if !slice.StringInSlice(field, modelFields) {
@@ -117,7 +136,7 @@ func (manager *ModelManager) GenerateUpdateFieldKV(m Model) map[string]interface
 	return kv
 }
 
-func (manager *ModelManager) GenerateListSQL(m Model, opt *types.ListOption) (string, error) {
+func (tm *TableManager) GenerateListSQL(t Table, opt *types.ListOption) (string, error) {
 	whereExpr, err := GenerateWhereExpr(opt.FilterExpr)
 	if err != nil {
 		return "", err
@@ -132,32 +151,32 @@ func (manager *ModelManager) GenerateListSQL(m Model, opt *types.ListOption) (st
 	}
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, strings.Join(opt.Fields, ", "),
-		m.TableName(), whereExpr, pageExpr)
+		t.TableName(), whereExpr, pageExpr)
 	return sql, nil
 }
 
-func (manager *ModelManager) GenerateDeleteSQL(m Model, expr *filter.Expression) (string, error) {
+func (tm *TableManager) GenerateDeleteSQL(t Table, expr *filter.Expression) (string, error) {
 	whereExpr, err := GenerateWhereExpr(expr)
 	if err != nil {
 		return "", err
 	}
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, m.TableName(), whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, t.TableName(), whereExpr)
 	return sql, nil
 }
 
 // listInsertFields 生成 insert sql 中的 [column1, column2, column3, ...]
-func (manager *ModelManager) listInsertFields(m Model) []string {
-	if len(manager.InsertFields) == 0 {
-		return manager.listModelFields(m)
+func (tm *TableManager) listInsertFields(t Table) []string {
+	if len(tm.InsertFields) == 0 {
+		return tm.listModelFields(t)
 	}
 
 	var insertFields []string
-	modelFields := manager.listModelFields(m)
+	modelFields := tm.listModelFields(t)
 	// TODO 性能优化
-	for _, field := range manager.InsertFields {
+	for _, field := range tm.InsertFields {
 		if !slice.StringInSlice(field, modelFields) {
-			fmt.Println(fmt.Sprintf("field %s not in %s db tag", field, tools.ReflectValue(m).Type().Name()))
-			panic(fmt.Sprintf("field %s not in %s db tag", field, tools.ReflectValue(m).Type().Name()))
+			fmt.Println(fmt.Sprintf("field %s not in %s db tag", field, reflectx.ReflectValue(t).Type().Name()))
+			panic(fmt.Sprintf("field %s not in %s db tag", field, reflectx.ReflectValue(t).Type().Name()))
 		}
 		insertFields = append(insertFields, field)
 	}
@@ -166,8 +185,8 @@ func (manager *ModelManager) listInsertFields(m Model) []string {
 }
 
 // listModelFields 列举 Model 中带 db tag 的 fields
-func (manager *ModelManager) listModelFields(m Model) []string {
-	return ListModelFields(m)
+func (tm *TableManager) listModelFields(t Table) []string {
+	return ListTableFields(t)
 }
 
 // GenerateWhereExpr ...
@@ -179,11 +198,11 @@ func GenerateWhereExpr(expr *filter.Expression) (whereExpr string, err error) {
 	return
 }
 
-// ListModelFields ...
-func ListModelFields(i interface{}) []string {
+// ListTableFields ...
+func ListTableFields(i interface{}) []string {
 	var fields []string
 
-	mType := tools.ReflectValue(i).Type()
+	mType := reflectx.ReflectValue(i).Type()
 	for j := 0; j < mType.NumField(); j++ {
 		if dbField := mType.Field(j).Tag.Get("db"); dbField != "" {
 			fields = append(fields, dbField)
