@@ -38,7 +38,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// 云账号
+// Account 云账号
 type Account struct {
 	ID           uint64
 	Name         string

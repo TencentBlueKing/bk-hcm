@@ -29,11 +29,12 @@ import (
 	"hcm/pkg/rest"
 )
 
+// AccountBizRelClient ...
 type AccountBizRelClient struct {
 	client rest.ClientInterface
 }
 
-// NewCloudAccountClient create a new account api client.
+// NewAccountBizRelClient ...
 func NewAccountBizRelClient(client rest.ClientInterface) *AccountBizRelClient {
 	return &AccountBizRelClient{
 		client: client,

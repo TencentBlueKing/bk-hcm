@@ -31,32 +31,39 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// CreateAccountBizRelReq ...
 type CreateAccountBizRelReq struct {
 	BkBizID   int    `json:"bk_biz_id" validate:"required"`
 	AccountID uint64 `json:"account_id" validate:"required"`
 }
 
+// Validate ...
 func (c *CreateAccountBizRelReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
+// UpdateAccountBizRelsReq ...
 type UpdateAccountBizRelsReq struct {
 	BkBizID    int               `json:"bk_biz_id" validate:"required"`
 	FilterExpr filter.Expression `json:"filter_expr" validate:"required"`
 }
 
+// Validate ...
 func (u *UpdateAccountBizRelsReq) Validate() error {
 	return validator.Validate.Struct(u)
 }
 
+// ListAccountBizRelsReq ...
 type ListAccountBizRelsReq struct {
 	FilterExpr filter.Expression `json:"filter_expr" validate:"required"`
 }
 
+// Validate ...
 func (l *ListAccountBizRelsReq) Validate() error {
 	return validator.Validate.Struct(l)
 }
 
+// ToListOption ...
 func (l *ListAccountBizRelsReq) ToListOption() *types.ListOption {
 	return &types.ListOption{
 		FilterExpr: &l.FilterExpr,
@@ -64,6 +71,7 @@ func (l *ListAccountBizRelsReq) ToListOption() *types.ListOption {
 	}
 }
 
+// AccountBizRelResp ...
 type AccountBizRelResp struct {
 	ID        uint64     `json:"id" db:"id"`
 	BkBizID   int        `json:"bk_biz_id" db:"bk_biz_id"`
@@ -73,7 +81,7 @@ type AccountBizRelResp struct {
 	UpdatedAt *time.Time `json:"updated_at" db:"updated_at"`
 }
 
-// NewAccountBizRelData ...
+// NewAccountBizRelResp ...
 func NewAccountBizRelResp(m *cloud.AccountBizRel) *AccountBizRelResp {
 	// TODO 反射机制让创建过程更加"动态"?
 	return &AccountBizRelResp{
@@ -91,10 +99,12 @@ type ListAccountBizRelsResult struct {
 	Details []AccountBizRelResp `json:"details"`
 }
 
+// DeleteAccountBizRelsReq ...
 type DeleteAccountBizRelsReq struct {
 	FilterExpr filter.Expression `json:"filter_expr" validate:"required"`
 }
 
+// Validate ...
 func (d *DeleteAccountBizRelsReq) Validate() error {
 	return validator.Validate.Struct(d)
 }

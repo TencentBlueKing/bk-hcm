@@ -41,11 +41,12 @@ func NewClient(c *client.Capability, version string) *Client {
 	}
 }
 
-// Account get account client.
+// CloudAccount ...
 func (c *Client) CloudAccount() *cloud.AccountClient {
 	return cloud.NewCloudAccountClient(c.client)
 }
 
+// CloudAccountBizRel ...
 func (c *Client) CloudAccountBizRel() *cloud.AccountBizRelClient {
 	return cloud.NewAccountBizRelClient(c.client)
 }
