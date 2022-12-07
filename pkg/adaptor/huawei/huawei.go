@@ -17,29 +17,46 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package hcservice
+package huawei
 
 import (
-	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/adaptor/types"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/config"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/region"
+	iam "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3"
 )
 
-// AccountCheckReq defines account check request.
-// TODO: 结构体信息随便定义，之后自行替换即可
-type AccountCheckReq struct {
-	Vendor         enumor.Vendor `json:"vendor"`
-	SecretID       string        `json:"secret_id"`
-	SecretKey      string        `json:"secret_key"`
-	Json           string        `json:"json"`
-	TenantID       string        `json:"tenant_id"`
-	SubscriptionID string        `json:"subscription_id"`
-	ProjectID      string        `json:"project_id"`
+// NewHuawei new huawei.
+func NewHuawei() types.Factory {
+	return new(huawei)
 }
 
-// Validate account check req.
-func (req AccountCheckReq) Validate() error {
-	if err := req.Vendor.Validate(); err != nil {
-		return err
-	}
+// NewHuaweiProxy new huawei proxy.
+func NewHuaweiProxy() types.HuaWeiProxy {
+	return new(huawei)
+}
 
-	return nil
+var (
+	_ types.Factory     = new(huawei)
+	_ types.HuaWeiProxy = new(huawei)
+)
+
+type huawei struct{}
+
+func (h *huawei) iamClient(secret *types.Secret, region *region.Region) (*iam.IamClient, error) {
+	auth := basic.NewCredentialsBuilder().
+		WithAk(secret.ID).
+		WithSk(secret.Key).
+		Build()
+
+	client := iam.NewIamClient(
+		iam.IamClientBuilder().
+			WithRegion(region).
+			WithCredential(auth).
+			WithHttpConfig(config.DefaultHttpConfig()).
+			Build())
+
+	return client, nil
 }

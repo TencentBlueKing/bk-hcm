@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/kit"
 
 	"github.com/jmoiron/sqlx"
+	"hcm/pkg/dal/dao/types"
 )
 
 // AuditDao supplies all the audit operations.
@@ -94,7 +95,7 @@ func (au *audit) Insert(kit *kit.Kit, txn *sqlx.Tx, audits []*table.Audit) error
 		}
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, table.AuditTable,
+	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, types.AuditTable,
 		table.AuditColumns.ColumnExpr(), table.AuditColumns.ColonNameExpr())
 
 	// do with the same transaction with the resource, this transaction

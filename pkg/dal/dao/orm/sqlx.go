@@ -36,8 +36,6 @@ var (
 	// Occurs only when attempting to query the database with a struct,
 	// querying with a slice won't return this error.
 	ErrRecordNotFound = sql.ErrNoRows
-	// ErrDeadLock concurrent exec deadlock, error message returned by db.
-	ErrDeadLock = "Error 1213: Deadlock found when trying to get lock"
 )
 
 var _ DoOrm = new(do)
@@ -93,14 +91,14 @@ func (do *do) Select(ctx context.Context, dest interface{}, expr string, args ..
 }
 
 // Count the number of the filtered resource.
-func (do *do) Count(ctx context.Context, expr string, args ...interface{}) (uint32, error) {
+func (do *do) Count(ctx context.Context, expr string, args ...interface{}) (uint64, error) {
 	if err := do.ro.tryAccept(); err != nil {
 		return 0, err
 	}
 
 	start := time.Now()
 
-	count := uint32(0)
+	count := uint64(0)
 	if err := do.db.GetContext(ctx, &count, expr, args...); err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
 		return 0, err

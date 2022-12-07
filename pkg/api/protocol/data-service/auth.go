@@ -42,6 +42,6 @@ type ListInstancesResp struct {
 
 // ListInstancesResult defines list instances for iam pull resource callback result.
 type ListInstancesResult struct {
-	Count   uint32                   `json:"count"`
+	Count   uint64                   `json:"count"`
 	Details []types.InstanceResource `json:"details"`
 }

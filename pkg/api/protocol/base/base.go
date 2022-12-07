@@ -37,3 +37,15 @@ type CreateResult struct {
 type BatchDeleteReq struct {
 	IDs []uint64 `json:"ids"`
 }
+
+// UpdateResp ...
+type UpdateResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          interface{} `json:"data"`
+}
+
+// DeleteResp ...
+type DeleteResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          interface{} `json:"data"`
+}

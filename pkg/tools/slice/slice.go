@@ -16,33 +16,24 @@
  *
  * to the current version of the project delivered to anyone in the future.
  */
+package slice
 
-package types
-
-import "hcm/pkg/kit"
-
-// AccountInterface defines all the account related operations in the hybrid cloud
-type AccountInterface interface {
-	AccountCheck(kt *kit.Kit, secret *Secret) error
+// Remove 移除首次匹配到的 item 元素
+func Remove[T comparable](l []T, item T) []T {
+	for i, other := range l {
+		if other == item {
+			return append(l[:i], l[i+1:]...)
+		}
+	}
+	return l
 }
 
-// Secret defines the hybrid cloud's secret info.
-// TODO replace with actual account secret info
-type Secret struct {
-	// ID is the secret id to do credential
-	ID string `json:"id,omitempty"`
-	// Key is the secret key to do credential
-	Key string `json:"key,omitempty"`
-
-	// Json carry a json formatted credential information for
-	// GCP(Google Cloud Platform) vendor only.
-	Json []byte `json:"json,omitempty"`
-
-	// TenantID is used only for azure credential
-	TenantID string `json:"tenant_id,omitempty"`
-	// SubscriptionID is used only for azure credential
-	SubscriptionID string `json:"subscription_id,omitempty"`
-
-	// ProjectID is cloud vendor project id.
-	ProjectID string `json:"project_id,omitempty"`
+// StringInSlice 判断字符串是否存在 Slice 中
+func StringInSlice(str string, list []string) bool {
+	for _, item := range list {
+		if item == str {
+			return true
+		}
+	}
+	return false
 }

@@ -17,28 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package dataservice
+package types
 
-import (
-	"errors"
+// TODO 删除该文件. 仅为解决循环依赖问题, 将原 dal/table/name.go 移到当前
 
-	"hcm/pkg/dal/table"
+// Tables defines all the database table
+// related resources.
+type Tables interface {
+	TableName() Name
+}
+
+// Name is database table's name type
+type Name string
+
+// TODO 这里的集中化表名配置可以调整
+const (
+	// AuditTable is audit table's name
+	AuditTable Name = "audit"
+	// AccountTable is account table's name.
+	AccountTable Name = "account"
 )
-
-// CreateAccountReq defines create account http request.
-type CreateAccountReq struct {
-	Spec *table.AccountSpec `json:"spec"`
-}
-
-// Validate create account request.
-func (c CreateAccountReq) Validate() error {
-	if c.Spec == nil {
-		return errors.New("create account request spec is nil")
-	}
-
-	if err := c.Spec.ValidateCreate(); err != nil {
-		return err
-	}
-
-	return nil
-}

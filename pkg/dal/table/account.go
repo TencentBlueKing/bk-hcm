@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/dal/dao/types"
 )
 
 // AccountColumns defines all the account table's columns.
@@ -48,8 +49,8 @@ type Account struct {
 }
 
 // TableName is the account's database table name.
-func (a Account) TableName() Name {
-	return AccountTable
+func (a Account) TableName() types.Name {
+	return types.AccountTable
 }
 
 // ValidateCreate validate account's info when created.

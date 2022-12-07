@@ -21,13 +21,12 @@ package types
 
 import (
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/table"
 	"hcm/pkg/runtime/filter"
 )
 
 // ListInstancesOption list instance options.
 type ListInstancesOption struct {
-	TableName table.Name         `json:"table_name"`
+	TableName Name               `json:"table_name"`
 	Filter    *filter.Expression `json:"filter"`
 	Page      *BasePage          `json:"page"`
 }
@@ -40,13 +39,6 @@ func (o *ListInstancesOption) Validate(po *PageOption) error {
 
 	if o.Filter == nil {
 		return errf.New(errf.InvalidParameter, "filter is required")
-	}
-
-	exprOpt := &filter.ExprOption{
-		RuleFields: table.AccountColumns.ColumnTypes(),
-	}
-	if err := o.Filter.Validate(exprOpt); err != nil {
-		return err
 	}
 
 	if o.Page == nil {
@@ -68,6 +60,6 @@ type InstanceResource struct {
 
 // ListInstanceDetails defines the response details of requested ListInstancesOption.
 type ListInstanceDetails struct {
-	Count   uint32             `json:"count"`
+	Count   uint64             `json:"count"`
 	Details []InstanceResource `json:"details"`
 }

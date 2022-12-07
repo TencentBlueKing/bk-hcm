@@ -24,7 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/protocol/base"
-	dataservice "hcm/pkg/api/protocol/data-service"
+	"hcm/pkg/api/protocol/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -42,7 +42,7 @@ func NewAccountClient(client rest.ClientInterface) *AccountClient {
 }
 
 // Create account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *dataservice.CreateAccountReq) (
+func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloud.CreateAccountReq) (
 	*base.CreateResult, error,
 ) {
 	resp := new(base.CreateResp)
@@ -54,7 +54,6 @@ func (a *AccountClient) Create(ctx context.Context, h http.Header, request *data
 		WithHeaders(h).
 		Do().
 		Into(resp)
-
 	if err != nil {
 		return nil, err
 	}

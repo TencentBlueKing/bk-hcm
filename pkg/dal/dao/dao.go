@@ -33,10 +33,12 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+var DaoClient *AuditOrmDao
+
 // Set defines all the DAO to be operated.
 type Set interface {
-	Account() Account
 	Auth() Auth
+	AuditOrmDao() *AuditOrmDao
 }
 
 // NewDaoSet create the DAO set instance.
@@ -59,6 +61,8 @@ func NewDaoSet(opt cc.DataBase) (Set, error) {
 		db:       db,
 		auditDao: auditDao,
 	}
+
+	DaoClient = s.AuditOrmDao()
 
 	return s, nil
 }
@@ -98,17 +102,19 @@ type set struct {
 	auditDao audit.AuditDao
 }
 
-// Account returns the account's DAO
-func (s *set) Account() Account {
-	return &accountDao{
-		orm:      s.orm,
-		auditDao: s.auditDao,
-	}
-}
-
 // Auth returns the auth instance's DAO
 func (s *set) Auth() Auth {
 	return &authDao{
 		orm: s.orm,
 	}
+}
+
+func (s *set) AuditOrmDao() *AuditOrmDao {
+	return &AuditOrmDao{s.orm, s.auditDao}
+}
+
+// AuditOrmDao ...
+type AuditOrmDao struct {
+	Orm      orm.Interface
+	AuditDao audit.AuditDao
 }
