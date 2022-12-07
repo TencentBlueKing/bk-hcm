@@ -22,6 +22,10 @@ package adaptor
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/aws"
+	"hcm/pkg/adaptor/azure"
+	"hcm/pkg/adaptor/gcp"
+	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/unknown"
@@ -41,19 +45,19 @@ func NewAdaptor() (Adaptor, error) {
 		return nil, err
 	}
 
-	if err := fm.RegisterVendor(enumor.AWS, nil); err != nil {
+	if err := fm.RegisterVendor(enumor.AWS, aws.NewAws()); err != nil {
 		return nil, err
 	}
 
-	if err := fm.RegisterVendor(enumor.GCP, nil); err != nil {
+	if err := fm.RegisterVendor(enumor.GCP, gcp.NewGcp()); err != nil {
 		return nil, err
 	}
 
-	if err := fm.RegisterVendor(enumor.HuaWei, nil); err != nil {
+	if err := fm.RegisterVendor(enumor.HuaWei, huawei.NewHuawei()); err != nil {
 		return nil, err
 	}
 
-	if err := fm.RegisterVendor(enumor.Azure, nil); err != nil {
+	if err := fm.RegisterVendor(enumor.Azure, azure.NewAzure()); err != nil {
 		return nil, err
 	}
 

@@ -60,6 +60,6 @@ type InstanceResource struct {
 
 // ListInstanceDetails defines the response details of requested ListInstancesOption.
 type ListInstanceDetails struct {
-	Count   uint32             `json:"count"`
+	Count   uint64             `json:"count"`
 	Details []InstanceResource `json:"details"`
 }
