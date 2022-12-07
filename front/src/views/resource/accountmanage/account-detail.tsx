@@ -76,11 +76,11 @@ export default defineComponent({
         memo: '测试账号',  // 备注
         department_id: 2,  // 部门ID
         department_full_name: 'IEG互动娱乐事业群/技术运营部/计算资源中心',
-        related_bk_biz_ids: [1, 3, 10], // 关联的业务列表，若选择All，则是-1
+        related_bk_biz_ids: ['tcloud'], // 关联的业务列表，若选择All，则是-1
         extension: { account_id: 1, iam_username: 'poloohuang', secret_id: '**', secret_key: '**' },
       } };
       projectModel = res?.data;
-      projectModel.departmentId = res?.data.department_id;
+      projectModel.departmentId = [res?.data.department_id];
       projectModel.bizIds = res?.data.related_bk_biz_ids;
       renderDialogForm(projectModel);
       renderBaseInfoForm(projectModel);
