@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/dal/table"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/models/cloud"
+	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -96,4 +97,10 @@ type DeleteAccountBizRelsReq struct {
 
 func (d *DeleteAccountBizRelsReq) Validate() error {
 	return validator.Validate.Struct(d)
+}
+
+// ListAccountBizRelsResp ...
+type ListAccountBizRelsResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListAccountBizRelsResult `json:"data"`
 }

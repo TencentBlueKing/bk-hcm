@@ -23,6 +23,7 @@ package dataservice
 import (
 	"fmt"
 
+	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 )
@@ -41,8 +42,12 @@ func NewClient(c *client.Capability, version string) *Client {
 }
 
 // Account get account client.
-func (c *Client) Account() *AccountClient {
-	return NewAccountClient(c.client)
+func (c *Client) CloudAccount() *cloud.AccountClient {
+	return cloud.NewCloudAccountClient(c.client)
+}
+
+func (c *Client) CloudAccountBizRel() *cloud.AccountBizRelClient {
+	return cloud.NewAccountBizRelClient(c.client)
 }
 
 // Auth get api client for authorize use.

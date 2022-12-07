@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/dal/table"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/models/cloud"
+	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -115,10 +116,17 @@ type ListAccountsResult struct {
 	Details []AccountResp `json:"details"`
 }
 
+// DeleteAccountsReq ...
 type DeleteAccountsReq struct {
 	FilterExpr filter.Expression `json:"filter_expr" validate:"required"`
 }
 
 func (d *DeleteAccountsReq) Validate() error {
 	return validator.Validate.Struct(d)
+}
+
+// ListAccountsResp ...
+type ListAccountsResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListAccountsResult `json:"data"`
 }
