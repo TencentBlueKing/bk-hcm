@@ -65,6 +65,7 @@ func (a *AccountClient) Create(ctx context.Context, h http.Header, request *prot
 	return resp.Data, nil
 }
 
+// Update ...
 func (a *AccountClient) Update(ctx context.Context, h http.Header, request *protocloud.UpdateAccountsReq) (
 	interface{}, error,
 ) {
@@ -88,6 +89,7 @@ func (a *AccountClient) Update(ctx context.Context, h http.Header, request *prot
 	return resp.Data, nil
 }
 
+// List ...
 func (a *AccountClient) List(ctx context.Context, h http.Header, request *protocloud.ListAccountsReq) (
 	*protocloud.ListAccountsResult, error,
 ) {
@@ -111,6 +113,7 @@ func (a *AccountClient) List(ctx context.Context, h http.Header, request *protoc
 	return resp.Data, nil
 }
 
+// Delete ...
 func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *protocloud.DeleteAccountsReq) (
 	interface{}, error,
 ) {

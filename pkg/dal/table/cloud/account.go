@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// package cloud 描述云资源表
+// Package cloud 描述云资源表
 package cloud
 
 import (

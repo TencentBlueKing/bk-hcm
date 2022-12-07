@@ -40,7 +40,7 @@ func NewAccountBizRelClient(client rest.ClientInterface) *AccountBizRelClient {
 	}
 }
 
-// Create account.
+// Create ...
 func (a *AccountBizRelClient) Create(ctx context.Context, h http.Header, request *protocloud.CreateAccountBizRelReq) (
 	*base.CreateResult, error,
 ) {
@@ -64,6 +64,7 @@ func (a *AccountBizRelClient) Create(ctx context.Context, h http.Header, request
 	return resp.Data, nil
 }
 
+// Update ...
 func (a *AccountBizRelClient) Update(ctx context.Context, h http.Header, request *protocloud.UpdateAccountBizRelsReq) (
 	interface{}, error,
 ) {
@@ -87,6 +88,7 @@ func (a *AccountBizRelClient) Update(ctx context.Context, h http.Header, request
 	return resp.Data, nil
 }
 
+// List ...
 func (a *AccountBizRelClient) List(ctx context.Context, h http.Header, request *protocloud.ListAccountBizRelsReq) (
 	*protocloud.ListAccountBizRelsResult, error,
 ) {
@@ -110,6 +112,7 @@ func (a *AccountBizRelClient) List(ctx context.Context, h http.Header, request *
 	return resp.Data, nil
 }
 
+// Delete ...
 func (a *AccountBizRelClient) Delete(ctx context.Context, h http.Header, request *protocloud.DeleteAccountBizRelsReq) (
 	interface{}, error,
 ) {

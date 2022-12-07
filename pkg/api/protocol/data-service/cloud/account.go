@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// cloud 包提供各类云资源的请求与返回序列化器
+// Package cloud 包提供各类云资源的请求与返回序列化器
 package cloud
 
 import (
@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// CreateAccountReq ...
 type CreateAccountReq struct {
 	Name         string                 `json:"name" validate:"required"`
 	Vendor       string                 `json:"vendor" validate:"required"`
@@ -42,10 +43,12 @@ type CreateAccountReq struct {
 	Memo         string                 `json:"memo"`
 }
 
+// Validate ...
 func (c *CreateAccountReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
+// UpdateAccountsReq ...
 // TODO 增加值有效时进行校验的逻辑
 // int 和 string 等基础类型, 可通过指针方式表示是否传递
 type UpdateAccountsReq struct {
@@ -59,18 +62,22 @@ type UpdateAccountsReq struct {
 	FilterExpr   filter.Expression      `json:"filter_expr" validate:"required"`
 }
 
+// Validate ...
 func (u *UpdateAccountsReq) Validate() error {
 	return validator.Validate.Struct(u)
 }
 
+// ListAccountsReq ...
 type ListAccountsReq struct {
 	FilterExpr filter.Expression `json:"filter_expr" validate:"required"`
 }
 
+// Validate ...
 func (l *ListAccountsReq) Validate() error {
 	return validator.Validate.Struct(l)
 }
 
+// ToListOption ...
 func (l *ListAccountsReq) ToListOption() *types.ListOption {
 	return &types.ListOption{
 		FilterExpr: &l.FilterExpr,
@@ -78,6 +85,7 @@ func (l *ListAccountsReq) ToListOption() *types.ListOption {
 	}
 }
 
+// AccountResp ...
 type AccountResp struct {
 	ID        uint64      `json:"id"`
 	Name      string      `json:"name"`
@@ -121,6 +129,7 @@ type DeleteAccountsReq struct {
 	FilterExpr filter.Expression `json:"filter_expr" validate:"required"`
 }
 
+// Validate ...
 func (d *DeleteAccountsReq) Validate() error {
 	return validator.Validate.Struct(d)
 }

@@ -91,7 +91,7 @@ func (a *Account) Create(kt *kit.Kit) (uint64, error) {
 	return id, nil
 }
 
-//  Update ...
+// Update ...
 func (a *Account) Update(kt *kit.Kit, expr *filter.Expression, updateFields []string) error {
 	td, err := a.toUpdateTableData(kt.User, updateFields)
 	if err != nil {
