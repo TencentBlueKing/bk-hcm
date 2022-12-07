@@ -47,7 +47,7 @@ const resourceMenus: RouteRecordRaw[] = [
       {
         path: '/resource/recyclebin',
         name: '回收站',
-        component: () => import('@/views/resource/demo2'),
+        component: () => import('@/views/workbench/demo2'),
         meta: {
           activeKey: 'resourceRecyclebin',
           breadcrumb: ['云管', '回收站'],
@@ -62,7 +62,7 @@ const resourceMenus: RouteRecordRaw[] = [
       {
         path: '/resource-net/survey',
         name: '概况',
-        component: () => import('@/views/resource/demo'),
+        component: () => import('@/views/workbench/demo'),
         meta: {
           activeKey: 'survey',
           breadcrumb: ['网络', '概况'],
@@ -71,7 +71,7 @@ const resourceMenus: RouteRecordRaw[] = [
       {
         path: '/resource-net/planning',
         name: '规划',
-        component: () => import('@/views/resource/demo'),
+        component: () => import('@/views/workbench/demo'),
         meta: {
           activeKey: 'planning',
           breadcrumb: ['网络', '规划'],
@@ -80,7 +80,7 @@ const resourceMenus: RouteRecordRaw[] = [
       {
         path: '/resource-net/recycle',
         name: '回收',
-        component: () => import('@/views/resource/demo'),
+        component: () => import('@/views/workbench/demo'),
         meta: {
           activeKey: 'recycle',
           breadcrumb: ['网络', '规划'],

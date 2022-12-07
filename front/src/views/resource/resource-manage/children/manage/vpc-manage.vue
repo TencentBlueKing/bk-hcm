@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type {
   PlainObject,
+  FilterType,
 } from '@/typings/resource';
 
 import {
   h,
-  ref,
+  PropType,
 } from 'vue';
 import {
   useRouter,
@@ -15,7 +16,13 @@ import {
 } from 'vue-i18n';
 import useSteps from '../../hooks/use-steps';
 import useDeleteVPC from '../../hooks/use-delete-vpc';
-import usePage from '../../hooks/use-page';
+import useQueryList from '../../hooks/use-query-list';
+
+const props = defineProps({
+  filter: {
+    type: Object as PropType<FilterType>,
+  },
+});
 
 // 状态
 const columns = [
@@ -46,61 +53,57 @@ const columns = [
     },
   },
   {
-    label: '实例 ID',
-    field: '',
+    label: '资源 ID',
+    field: 'cid',
     sort: true,
   },
   {
     label: '名称',
-    field: '',
+    field: 'name',
     sort: true,
   },
   {
     label: '云厂商',
-    field: '',
-    sort: true,
-  },
-  {
-    label: 'IP',
-    field: '',
-    sort: true,
+    field: 'vendor',
   },
   {
     label: '云区域',
-    field: '',
+    field: 'bk_cloud_id',
   },
   {
     label: '地域',
-    field: '',
-    sort: true,
+    field: 'region',
   },
   {
-    label: 'VPC',
-    field: '',
-    sort: true,
+    label: 'IPv4 CIDR',
+    field: 'ipv4_cidr',
   },
   {
-    label: '子网',
-    field: '',
-    sort: true,
+    label: 'IPv6 CIDR',
+    field: 'ipv6_cidr',
   },
   {
     label: '状态',
+    field: 'status',
+  },
+  {
+    label: '默认 VPC',
+    field: 'is_default',
+  },
+  {
+    label: '子网数',
     field: '',
   },
   {
     label: '创建时间',
-    field: '',
+    field: 'create_at',
+    sort: true,
   },
   {
     label: '操作',
     field: '',
   },
 ];
-const tableData: any[] = [{
-  id: 233,
-}];
-const isLoading = ref(false);
 
 // use hooks
 const {
@@ -122,44 +125,47 @@ const {
 } = useDeleteVPC();
 
 const {
+  datas,
   pagination,
+  isLoading,
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = usePage((page) => {
-  console.log(page);
-  isLoading.value = true;
-});
+} = useQueryList(props, 'vpc');
 </script>
 
 <template>
-  <section>
-    <bk-button
-      class="w100"
-      theme="primary"
-      @click="handleDistribution"
-    >
-      {{ t('分配') }}
-    </bk-button>
-    <bk-button
-      class="w100 ml10"
-      theme="primary"
-      @click="handleDeleteVPC"
-    >
-      {{ t('删除') }}
-    </bk-button>
-  </section>
+  <bk-loading
+    :loading="isLoading"
+  >
+    <section>
+      <bk-button
+        class="w100"
+        theme="primary"
+        @click="handleDistribution"
+      >
+        {{ t('分配') }}
+      </bk-button>
+      <bk-button
+        class="w100 ml10"
+        theme="primary"
+        @click="handleDeleteVPC"
+      >
+        {{ t('删除') }}
+      </bk-button>
+    </section>
 
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :pagination="pagination"
-    :columns="columns"
-    :data="tableData"
-    @page-limit-change="handlePageSizeChange"
-    @page-value-change="handlePageChange"
-    @column-sort="handleSort"
-  />
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      :pagination="pagination"
+      :columns="columns"
+      :data="datas"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
+      @column-sort="handleSort"
+    />
+  </bk-loading>
 
   <resource-distribution
     v-model:is-show="isShowDistribution"
@@ -175,11 +181,5 @@ const {
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
-}
-.w60 {
-  width: 60px;
-}
-.mt20 {
-  margin-top: 20px;
 }
 </style>

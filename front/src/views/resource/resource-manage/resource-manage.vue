@@ -2,6 +2,7 @@
 import {
   ref,
   watch,
+  computed,
 } from 'vue';
 
 import HostManage from './children/manage/host-manage.vue';
@@ -15,6 +16,7 @@ import ImageManage from './children/manage/image-manage.vue';
 
 import {
   RESOURCE_TYPES,
+  VENDORS,
 } from '@/common/constant';
 
 import {
@@ -42,7 +44,6 @@ const {
 const currentAccount = '';
 const accounts: any[] = [];
 const isAccurate = ref(false);
-const conditions = ref([]);
 
 // 组件map
 const componentMap = {
@@ -65,6 +66,36 @@ const tabs = RESOURCE_TYPES.map((type) => {
   };
 });
 const activeTab = ref(route.query.type || tabs[0].type);
+
+// 搜索过滤相关数据
+const filter = ref([]);
+const computedSearchList = computed(() => {
+  const datas = [
+    {
+      name: '名称',
+      id: 'name',
+      multiable: false,
+    },
+    {
+      name: '云厂商',
+      id: 'vendor',
+      children: VENDORS,
+    },
+    {
+      name: '云区域',
+      id: 'k_cloud_id',
+      multiable: false,
+    },
+    {
+      name: '地域',
+      id: 'region',
+      multiable: false,
+    },
+  ];
+  return datas.filter((data) => {
+    return !filter.value.find(val => val.id === data.id);
+  });
+});
 
 // 状态保持
 watch(
@@ -120,9 +151,13 @@ watch(
         {{ t('精确') }}
       </bk-checkbox>
       <bk-search-select
-        v-model="conditions"
-        :data="conditions"
-        class="ml10"
+        class="search-filter ml10"
+        clearable
+        :conditions="[]"
+        :show-condition="false"
+        :show-popover-tag-change="true"
+        :data="computedSearchList"
+        v-model="filter"
       />
     </section>
   </section>
@@ -139,6 +174,7 @@ watch(
     >
       <component
         :is="item.component"
+        :filter="filter"
       />
     </bk-tab-panel>
   </bk-tab>
@@ -172,5 +208,8 @@ watch(
     border-bottom: 1px solid #dcdee5;;
     padding: 20px;
   }
+}
+.search-filter {
+  width: 500px;
 }
 </style>

@@ -1,3 +1,4 @@
+// 资源类型
 export const RESOURCE_TYPES = [
   {
     name: '主机',
@@ -30,5 +31,29 @@ export const RESOURCE_TYPES = [
   {
     name: '镜像',
     type: 'image',
+  },
+];
+
+// 云厂商
+export const VENDORS = [
+  {
+    id: 'tcloud',
+    name: '腾讯云',
+  },
+  {
+    id: 'aws',
+    name: '亚马逊云',
+  },
+  {
+    id: 'azure',
+    name: '微软云',
+  },
+  {
+    id: 'gcp',
+    name: '谷歌云',
+  },
+  {
+    id: 'huawei',
+    name: '华为云',
   },
 ];

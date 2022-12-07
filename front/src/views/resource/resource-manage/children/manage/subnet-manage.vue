@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type {
   PlainObject,
+  FilterType,
 } from '@/typings/resource';
 
 import {
   h,
+  PropType,
 } from 'vue';
 
 import {
@@ -14,19 +16,13 @@ import {
   useRouter,
 } from 'vue-router';
 import useSteps from '../../hooks/use-steps';
+import useQueryList from '../../hooks/use-query-list';
 
-// use hooks
-const {
-  t,
-} = useI18n();
-
-const router = useRouter();
-
-const {
-  isShowDistribution,
-  handleDistribution,
-  ResourceDistribution,
-} = useSteps();
+const props = defineProps({
+  filter: {
+    type: Object as PropType<FilterType>,
+  },
+});
 
 // 状态
 const columns = [
@@ -57,89 +53,116 @@ const columns = [
     },
   },
   {
-    label: '实例 ID',
-    field: '',
+    label: '资源 ID',
+    field: 'cid',
     sort: true,
   },
   {
     label: '名称',
-    field: '',
+    field: 'name',
     sort: true,
   },
   {
     label: '云厂商',
-    field: '',
-    sort: true,
+    field: 'vendor',
   },
   {
-    label: 'IP',
-    field: '',
-    sort: true,
+    label: '所属 VPC',
+    field: 'vpc_cid',
   },
   {
-    label: '云区域',
-    field: '',
+    label: '可用区',
+    field: 'zone',
   },
   {
-    label: '地域',
-    field: '',
-    sort: true,
+    label: 'IPv4 CIDR',
+    field: 'ipv4_cidr',
   },
   {
-    label: 'VPC',
-    field: '',
-    sort: true,
+    label: 'IPv6 CIDR',
+    field: 'ipv6_cidr',
   },
   {
-    label: '子网',
+    label: '关联路由表',
     field: '',
-    sort: true,
   },
   {
     label: '状态',
+    field: 'status',
+  },
+  {
+    label: '默认子网',
+    field: 'is_default',
+  },
+  {
+    label: '可用 IPv4 地址',
     field: '',
   },
   {
     label: '创建时间',
-    field: '',
+    field: 'create_at',
+    sort: true,
   },
   {
     label: '操作',
     field: '',
   },
 ];
-const tableData: any[] = [{}];
 
-// 方法
-const handleSortBy = () => {
+// use hooks
+const {
+  t,
+} = useI18n();
 
-};
+const router = useRouter();
+
+const {
+  isShowDistribution,
+  handleDistribution,
+  ResourceDistribution,
+} = useSteps();
+
+const {
+  datas,
+  pagination,
+  isLoading,
+  handlePageChange,
+  handlePageSizeChange,
+  handleSort,
+} = useQueryList(props, 'subnet');
 </script>
 
 <template>
-  <section>
-    <bk-button
-      class="w100"
-      theme="primary"
-      @click="handleDistribution"
-    >
-      {{ t('分配') }}
-    </bk-button>
-    <bk-button
-      class="w100 ml10"
-      theme="primary"
-    >
-      {{ t('删除') }}
-    </bk-button>
-  </section>
+  <bk-loading
+    :loading="isLoading"
+  >
+    <section>
+      <bk-button
+        class="w100"
+        theme="primary"
+        @click="handleDistribution"
+      >
+        {{ t('分配') }}
+      </bk-button>
+      <bk-button
+        class="w100 ml10"
+        theme="primary"
+      >
+        {{ t('删除') }}
+      </bk-button>
+    </section>
 
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-    @column-sort="handleSortBy"
-  />
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      :pagination="pagination"
+      :columns="columns"
+      :data="datas"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
+      @column-sort="handleSort"
+    />
+  </bk-loading>
 
   <resource-distribution
     v-model:is-show="isShowDistribution"

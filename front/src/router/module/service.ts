@@ -4,7 +4,7 @@ const serviceMenus: RouteRecordRaw[] = [
   {
     path: '/service/service-apply',
     name: '服务申请',
-    component: () => import('@/views/resource/demo'),
+    component: () => import('@/views/workbench/demo'),
     meta: {
       activeKey: 'serviceApply',
     },
@@ -12,7 +12,7 @@ const serviceMenus: RouteRecordRaw[] = [
   {
     path: '/service/my-apply',
     name: '我的申请',
-    component: () => import('@/views/resource/demo'),
+    component: () => import('@/views/workbench/demo'),
     meta: {
       activeKey: 'myApply',
     },
@@ -20,7 +20,7 @@ const serviceMenus: RouteRecordRaw[] = [
   {
     path: '/service/my-approval',
     name: '我的审批',
-    component: () => import('@/views/resource/demo'),
+    component: () => import('@/views/workbench/demo'),
     meta: {
       activeKey: 'myApproval',
     },
