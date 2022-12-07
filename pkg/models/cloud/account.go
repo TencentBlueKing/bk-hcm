@@ -121,7 +121,7 @@ func (a *Account) Update(kt *kit.Kit, expr *filter.Expression, updateFields []st
 		}
 
 		if err := ab.Do(txn); err != nil {
-			return nil, fmt.Errorf("do account update audit failed, err: %v", err)
+			return nil, fmt.Errorf("do %s update audit failed, err: %v", td.TableName(), err)
 		}
 		return nil, nil
 	})

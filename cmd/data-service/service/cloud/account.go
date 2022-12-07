@@ -95,6 +95,7 @@ func (svc *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
+	// memo 空字符有效
 	var memo string
 	if reqData.Memo != nil {
 		memo = *reqData.Memo
@@ -133,8 +134,8 @@ func (svc *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	var details []protocloud.AccountResp
-	for _, m := range data {
-		details = append(details, *protocloud.NewAccountResp(m))
+	for _, d := range data {
+		details = append(details, *protocloud.NewAccountResp(d))
 	}
 
 	return &protocloud.ListAccountsResult{Details: details}, nil

@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
@@ -39,7 +38,7 @@ import (
 
 type AccountBizRel struct {
 	ID        uint64
-	BkBizID   uint64
+	BkBizID   int
 	AccountID uint64
 	Creator   string
 	Reviser   string
@@ -92,13 +91,9 @@ func (a *AccountBizRel) Update(kt *kit.Kit, expr *filter.Expression, updateField
 		return err
 	}
 
-	whereExpr, _ := table.GenerateWhereExpr(expr)
 	toUpdate := td.GenerateUpdateFieldKV()
 
 	daoClient := dao.DaoClient
-
-	// TODO enumor.Account 再调整
-	ab := daoClient.AuditDao.Decorator(kt, enumor.Account).PrepareUpdate(whereExpr, toUpdate)
 
 	_, err = daoClient.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		effected, err := daoClient.Orm.Txn(txn).Update(kt.Ctx, sql, toUpdate)
@@ -112,9 +107,6 @@ func (a *AccountBizRel) Update(kt *kit.Kit, expr *filter.Expression, updateField
 			return nil, errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
 		}
 
-		if err := ab.Do(txn); err != nil {
-			return nil, fmt.Errorf("do %s update audit failed, err: %v", td.TableName(), err)
-		}
 		return nil, nil
 	})
 	if err != nil {
@@ -158,7 +150,7 @@ func (a *AccountBizRel) List(kt *kit.Kit, opt *types.ListOption) ([]*AccountBizR
 }
 
 func (a *AccountBizRel) Delete(kt *kit.Kit, expr *filter.Expression) error {
-	tp := new(tablecloud.AccountTable)
+	tp := new(tablecloud.AccountBizRelTable)
 	sql, err := tp.GenerateDeleteSQL(expr)
 	if err != nil {
 		return err

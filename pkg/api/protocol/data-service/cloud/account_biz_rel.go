@@ -31,7 +31,7 @@ import (
 )
 
 type CreateAccountBizRelReq struct {
-	BkBizID   uint64 `json:"bk_biz_id" validate:"required"`
+	BkBizID   int    `json:"bk_biz_id" validate:"required"`
 	AccountID uint64 `json:"account_id" validate:"required"`
 }
 
@@ -40,21 +40,13 @@ func (c *CreateAccountBizRelReq) Validate() error {
 }
 
 type UpdateAccountBizRelsReq struct {
-	BkBizID    uint64            `json:"bk_biz_id" validate:"required"`
+	BkBizID    int               `json:"bk_biz_id" validate:"required"`
 	FilterExpr filter.Expression `json:"filter_expr" validate:"required"`
 }
 
 func (u *UpdateAccountBizRelsReq) Validate() error {
 	return validator.Validate.Struct(u)
 }
-
-//func (u *UpdateAccountBizRelsReq) ToModel(reviser string) *tablecloud.AccountBizRelModel {
-//	return &tablecloud.AccountBizRelModel{
-//		BkBizID:      u.BkBizID,
-//		Reviser:      reviser,
-//		ModelManager: &table.ModelManager{UpdateFields: validator.ExtractValidFields(u)},
-//	}
-//}
 
 type ListAccountBizRelsReq struct {
 	FilterExpr filter.Expression `json:"filter_expr" validate:"required"`
@@ -71,9 +63,9 @@ func (l *ListAccountBizRelsReq) ToListOption() *types.ListOption {
 	}
 }
 
-type AccountBizRelData struct {
+type AccountBizRelResp struct {
 	ID        uint64     `json:"id" db:"id"`
-	BkBizID   uint64     `json:"bk_biz_id" db:"bk_biz_id"`
+	BkBizID   int        `json:"bk_biz_id" db:"bk_biz_id"`
 	Creator   string     `json:"creator" db:"creator"`
 	Reviser   string     `json:"reviser" db:"reviser"`
 	CreatedAt *time.Time `json:"created_at" db:"created_at"`
@@ -81,9 +73,9 @@ type AccountBizRelData struct {
 }
 
 // NewAccountBizRelData ...
-func NewAccountBizRelData(m *cloud.AccountBizRel) *AccountBizRelData {
+func NewAccountBizRelResp(m *cloud.AccountBizRel) *AccountBizRelResp {
 	// TODO 反射机制让创建过程更加"动态"?
-	return &AccountBizRelData{
+	return &AccountBizRelResp{
 		ID:        m.ID,
 		BkBizID:   m.BkBizID,
 		Creator:   m.Creator,
@@ -95,7 +87,7 @@ func NewAccountBizRelData(m *cloud.AccountBizRel) *AccountBizRelData {
 
 // ListAccountBizRelsResult ...
 type ListAccountBizRelsResult struct {
-	Details []AccountBizRelData `json:"details"`
+	Details []AccountBizRelResp `json:"details"`
 }
 
 type DeleteAccountBizRelsReq struct {

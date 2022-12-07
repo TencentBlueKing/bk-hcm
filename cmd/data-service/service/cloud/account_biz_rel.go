@@ -100,7 +100,7 @@ func (svc *accountBizRelSvc) Update(cts *rest.Contexts) (interface{}, error) {
 
 // List ...
 func (svc *accountBizRelSvc) List(cts *rest.Contexts) (interface{}, error) {
-	reqData := new(cloud.ListAccountBizRelsReq)
+	reqData := new(protocloud.ListAccountBizRelsReq)
 	if err := cts.DecodeInto(reqData); err != nil {
 		return nil, err
 	}
@@ -108,22 +108,28 @@ func (svc *accountBizRelSvc) List(cts *rest.Contexts) (interface{}, error) {
 	if err := reqData.Validate(); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
-	mData, err := svc.dao.CloudAccountBizRel().List(cts.Kit, reqData.ToListOption())
+
+	rel := new(cloud.AccountBizRel)
+	data, err := rel.List(cts.Kit, reqData.ToListOption())
 	if err != nil {
 		return nil, err
 	}
 
-	var details []cloud.AccountBizRelData
-	for _, m := range mData {
-		details = append(details, *cloud.NewAccountBizRelData(m))
+	if err != nil {
+		return nil, err
 	}
 
-	return &cloud.ListAccountBizRelsResult{Details: details}, nil
+	var details []protocloud.AccountBizRelResp
+	for _, m := range data {
+		details = append(details, *protocloud.NewAccountBizRelResp(m))
+	}
+
+	return &protocloud.ListAccountBizRelsResult{Details: details}, nil
 }
 
 // Delete ...
 func (svc *accountBizRelSvc) Delete(cts *rest.Contexts) (interface{}, error) {
-	reqData := new(cloud.DeleteAccountBizRelsReq)
+	reqData := new(protocloud.DeleteAccountBizRelsReq)
 	if err := cts.DecodeInto(reqData); err != nil {
 		return nil, err
 	}
@@ -132,7 +138,8 @@ func (svc *accountBizRelSvc) Delete(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	err := svc.dao.CloudAccountBizRel().Delete(cts.Kit, &reqData.FilterExpr, new(tablecloud.AccountBizRelModel))
+	rel := new(cloud.AccountBizRel)
+	err := rel.Delete(cts.Kit, &reqData.FilterExpr)
 
 	return nil, err
 }

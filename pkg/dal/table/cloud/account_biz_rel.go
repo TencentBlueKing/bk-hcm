@@ -31,7 +31,7 @@ type AccountBizRelTable struct {
 	// 账号自增 ID
 	ID uint64 `db:"id"`
 	// 蓝鲸业务 ID
-	BkBizID uint64 `db:"bk_biz_id"`
+	BkBizID int `db:"bk_biz_id"`
 	// 云账号主键 ID
 	AccountID uint64 `db:"account_id"`
 	// 创建者

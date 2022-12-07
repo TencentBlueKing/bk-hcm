@@ -89,6 +89,7 @@ type AccountResp struct {
 	Reviser   string      `json:"reviser"`
 	CreatedAt *time.Time  `json:"created_at"`
 	UpdatedAt *time.Time  `json:"updated_at"`
+	Memo      string      `json:"memo"`
 }
 
 // NewAccountResp ...
@@ -105,6 +106,7 @@ func NewAccountResp(m *cloud.Account) *AccountResp {
 		Reviser:   m.Reviser,
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
+		Memo:      m.Memo,
 	}
 }
 
