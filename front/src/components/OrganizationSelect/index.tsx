@@ -1,9 +1,7 @@
 import { useDepartment } from '@/hooks';
 import { Department } from '@/typings';
-// import { classes } from '@/common/util';
 import { Checkbox, Select, Tree } from 'bkui-vue';
 import { computed, defineComponent, PropType, watch } from 'vue';
-// import Icon from '../Icon';
 
 import './organization-select.scss';
 
@@ -74,6 +72,10 @@ export default defineComponent({
     // }
 
     function handleCheck(checked: boolean, department: Department, update = true) {
+      Array.from(departmentMap.value.values()).forEach((e) => {   // 只能选中一条
+        e.checked = e.id === department.id;
+        e.indeterminate = e.id === department.id;
+      });
       const fullDept = departmentMap.value.get(department.id);
       const { has_children, loaded, parent, children } = fullDept;
       updateDepartment(department.id, {
@@ -126,7 +128,7 @@ export default defineComponent({
         customContent
         modelValue={dispalyValue.value}
         multipleMode="tag"
-        multiple
+        multiple={false}
         loading={isLoading.value}
         onChange={handleChange}
       >
@@ -137,24 +139,19 @@ export default defineComponent({
           data={organizationTree.value}
         >
           {{
-            // nodeAction: ({ __attr__, loading, has_children }: any) => (
-            //     <span class="organization-tree-action-span">
-            //       {
-            //         has_children && (
-            //           <Icon
-            //             size="14"
-            //             name={loading ? 'circle-2-1' : 'arrow-right'}
-            //             class={
-            //               classes({
-            //                 'spin-icon': loading,
-            //                 'organize-open-icon': __attr__.isOpen,
-            //               }, 'flex-row')
-            //             }
-            //           />
-            //         )
-            //       }
-            //     </span>
-            // ),
+            nodeAction: ({ __attr__, loading, has_children }: any) => (
+                <span class="organization-tree-action-span">
+                  {
+                    has_children && (
+                      // eslint-disable-next-line no-nested-ternary
+                      loading ? <i class="icon hcm-icon bkhcm-icon-loading-circle organization-tree-action-circle"></i>
+                        : (__attr__.isOpen
+                          ? <i class="icon hcm-icon bkhcm-icon-angle-up-fill"></i>
+                          : <i class="icon hcm-icon bkhcm-icon-right-shape"></i>)
+                    )
+                  }
+                </span>
+            ),
             node: (department: Department) => (
               <span class="flex-row align-items-center" onClick={e => e.stopPropagation()}>
                 <Checkbox

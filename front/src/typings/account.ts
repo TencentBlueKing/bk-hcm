@@ -4,7 +4,7 @@ export interface ProjectModel {
   name: string,
   vendor: string,
   managers: string[]
-  departmentId?: string[] | number[] | number,
+  departmentId?: string[] | number[],
   memo: string,             // 备注
   account?: number | string,
   subAccountId?: number | string,

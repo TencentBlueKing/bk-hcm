@@ -11,7 +11,7 @@ export function useDepartment() {
   const checkedDept = computed(() => getCheckedDept(organizationTree.value));
 
   if (departmentStore.departmentMap.size === 0) {
-    // departmentStore.getRootDept();
+    departmentStore.getRootDept();
   }
 
   watch(() => departmentStore.departmentMap, (deptMap) => {
@@ -123,9 +123,11 @@ export function useDepartment() {
   function getCheckedDept(list = organizationTree.value) {
     return list.reduce((acc: number[], item: Department) => {
       if (item.checked && !item.indeterminate) {
-        acc.push(item.id);
+        // acc.push(item.id);
+        acc = [item.id];
       } else if (item.indeterminate) {
-        acc.push(...getCheckedDept(item.children));
+        // acc.push(...getCheckedDept(item.children));
+        acc = getCheckedDept(item.children);
       }
       return acc;
     }, []);
