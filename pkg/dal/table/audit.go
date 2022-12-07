@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/types"
 )
 
 // AuditColumns defines all the audit table's columns.
@@ -94,8 +95,8 @@ func (a Audit) CreateValidate() error {
 }
 
 // TableName is the audit's database table name.
-func (a Audit) TableName() Name {
-	return AuditTable
+func (a Audit) TableName() types.Name {
+	return types.AuditTable
 }
 
 // AuditBasicDetail defines the audit's basic details.

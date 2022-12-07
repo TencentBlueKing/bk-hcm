@@ -16,42 +16,24 @@
  *
  * to the current version of the project delivered to anyone in the future.
  */
+package slice
 
-// Package dataservice defines data-service api client.
-package dataservice
-
-import (
-	"fmt"
-
-	"hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
-)
-
-// Client is data-service api client.
-type Client struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new data-service api client.
-func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
-	return &Client{
-		client: rest.NewClient(c, base),
+// Remove 移除首次匹配到的 item 元素
+func Remove[T comparable](l []T, item T) []T {
+	for i, other := range l {
+		if other == item {
+			return append(l[:i], l[i+1:]...)
+		}
 	}
+	return l
 }
 
-// CloudAccount ...
-func (c *Client) CloudAccount() *cloud.AccountClient {
-	return cloud.NewCloudAccountClient(c.client)
-}
-
-// CloudAccountBizRel ...
-func (c *Client) CloudAccountBizRel() *cloud.AccountBizRelClient {
-	return cloud.NewAccountBizRelClient(c.client)
-}
-
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
+// StringInSlice 判断字符串是否存在 Slice 中
+func StringInSlice(str string, list []string) bool {
+	for _, item := range list {
+		if item == str {
+			return true
+		}
+	}
+	return false
 }

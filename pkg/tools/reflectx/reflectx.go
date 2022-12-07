@@ -17,41 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dataservice defines data-service api client.
-package dataservice
+package reflectx
 
-import (
-	"fmt"
+import "reflect"
 
-	"hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
-)
+// ReflectValue ...
+func ReflectValue(i interface{}) reflect.Value {
+	value := reflect.ValueOf(i)
 
-// Client is data-service api client.
-type Client struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new data-service api client.
-func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
-	return &Client{
-		client: rest.NewClient(c, base),
+	var intf any
+	if value.Kind() == reflect.Ptr {
+		intf = value.Elem().Interface()
+	} else {
+		intf = reflect.ValueOf(&i).Elem().Interface()
 	}
-}
 
-// CloudAccount ...
-func (c *Client) CloudAccount() *cloud.AccountClient {
-	return cloud.NewCloudAccountClient(c.client)
-}
-
-// CloudAccountBizRel ...
-func (c *Client) CloudAccountBizRel() *cloud.AccountBizRelClient {
-	return cloud.NewAccountBizRelClient(c.client)
-}
-
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
+	return reflect.Indirect(reflect.ValueOf(intf))
 }

@@ -27,9 +27,9 @@ import (
 	"strconv"
 	"time"
 
-	"hcm/cmd/data-service/service/account"
 	"hcm/cmd/data-service/service/auth"
 	"hcm/cmd/data-service/service/capability"
+	"hcm/cmd/data-service/service/cloud"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
@@ -129,7 +129,8 @@ func (s *Service) apiSet() *restful.Container {
 		Dao:        s.dao,
 	}
 
-	account.InitAccountService(cap)
+	cloud.InitAccountService(cap)
+	cloud.InitAccountBizRelService(cap)
 	auth.InitAuthService(cap)
 
 	return restful.NewContainer().Add(cap.WebService)
