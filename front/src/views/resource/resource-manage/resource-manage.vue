@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   ref,
+  watch,
 } from 'vue';
 
 import HostManage from './children/manage/host-manage.vue';
@@ -10,6 +11,7 @@ import SecurityManage from './children/manage/security-manage.vue';
 import DriveManage from './children/manage/drive-manage.vue';
 import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
+import ImageManage from './children/manage/image-manage.vue';
 
 import {
   RESOURCE_TYPES,
@@ -18,23 +20,31 @@ import {
 import {
   useI18n,
 } from 'vue-i18n';
+import {
+  useRouter,
+  useRoute,
+} from 'vue-router';
 import useSteps from './hooks/use-steps';
 
 // use hooks
 const {
   t,
 } = useI18n();
+const router = useRouter();
+const route = useRoute();
 const {
   isShowDistribution,
   handleDistribution,
   ResourceDistribution,
 } = useSteps();
 
+// 状态
 const currentAccount = '';
 const accounts: any[] = [];
 const isAccurate = ref(false);
 const conditions = ref([]);
-const activeTab = ref(t('主机'));
+
+// 组件map
 const componentMap = {
   host: HostManage,
   vpc: VpcManage,
@@ -43,13 +53,30 @@ const componentMap = {
   drive: DriveManage,
   ip: IpManage,
   routing: RoutingManage,
+  image: ImageManage,
 };
+
+// 标签相关数据
 const tabs = RESOURCE_TYPES.map((type) => {
   return {
-    name: t(type.name),
+    name: type.type,
+    type: t(type.name),
     component: componentMap[type.type],
   };
 });
+const activeTab = ref(route.query.type || tabs[0].type);
+
+// 状态保持
+watch(
+  activeTab,
+  () => {
+    router.replace({
+      query: {
+        type: activeTab.value,
+      },
+    });
+  },
+);
 </script>
 
 <template>
@@ -108,7 +135,7 @@ const tabs = RESOURCE_TYPES.map((type) => {
       v-for="item in tabs"
       :key="item.name"
       :name="item.name"
-      :label="item.name"
+      :label="item.type"
     >
       <component
         :is="item.component"

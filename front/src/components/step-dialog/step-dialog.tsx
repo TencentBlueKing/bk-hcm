@@ -72,6 +72,7 @@ export default defineComponent({
   render() {
     return <>
       <bk-dialog
+        class="step-dialog"
         theme="primary"
         headerAlign="center"
         size={this.size}

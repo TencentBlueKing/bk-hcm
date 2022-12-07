@@ -5,17 +5,28 @@ import type {
 
 import {
   h,
-  ref,
 } from 'vue';
-import {
-  useRouter,
-} from 'vue-router';
+
 import {
   useI18n,
 } from 'vue-i18n';
-import useSteps from '../../hooks/use-steps';
-import useDeleteVPC from '../../hooks/use-delete-vpc';
-import usePage from '../../hooks/use-page';
+import {
+  useRouter,
+} from 'vue-router';
+import useBusiness from '../../hooks/use-business';
+
+// use hooks
+const {
+  t,
+} = useI18n();
+
+const router = useRouter();
+
+const {
+  isShowDistribution,
+  handleDistribution,
+  ResourceBusiness,
+} = useBusiness();
 
 // 状态
 const columns = [
@@ -24,7 +35,7 @@ const columns = [
   },
   {
     label: 'ID',
-    field: 'id',
+    field: '',
     sort: true,
     render({ cell }: PlainObject) {
       return h(
@@ -34,7 +45,7 @@ const columns = [
             router.push({
               name: 'resourceDetail',
               params: {
-                type: 'vpc',
+                type: 'image',
               },
             });
           },
@@ -97,39 +108,12 @@ const columns = [
     field: '',
   },
 ];
-const tableData: any[] = [{
-  id: 233,
-}];
-const isLoading = ref(false);
+const tableData: any[] = [{}];
 
-// use hooks
-const {
-  t,
-} = useI18n();
+// 方法
+const handleSortBy = () => {
 
-const router = useRouter();
-
-const {
-  isShowDistribution,
-  handleDistribution,
-  ResourceDistribution,
-} = useSteps();
-
-const {
-  isShowVPC,
-  handleDeleteVPC,
-  DeleteVPC,
-} = useDeleteVPC();
-
-const {
-  pagination,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-} = usePage((page) => {
-  console.log(page);
-  isLoading.value = true;
-});
+};
 </script>
 
 <template>
@@ -141,45 +125,24 @@ const {
     >
       {{ t('分配') }}
     </bk-button>
-    <bk-button
-      class="w100 ml10"
-      theme="primary"
-      @click="handleDeleteVPC"
-    >
-      {{ t('删除') }}
-    </bk-button>
   </section>
 
   <bk-table
     class="mt20"
     row-hover="auto"
-    :pagination="pagination"
     :columns="columns"
     :data="tableData"
-    @page-limit-change="handlePageSizeChange"
-    @page-value-change="handlePageChange"
-    @column-sort="handleSort"
+    @column-sort="handleSortBy"
   />
 
-  <resource-distribution
+  <resource-business
     v-model:is-show="isShowDistribution"
-    :hide-relate-v-p-c="true"
-    :title="t('VPC 分配')"
-  />
-
-  <delete-VPC
-    v-model:is-show="isShowVPC"
+    :title="t('镜像分配')"
   />
 </template>
 
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
-}
-.w60 {
-  width: 60px;
-}
-.mt20 {
-  margin-top: 20px;
 }
 </style>

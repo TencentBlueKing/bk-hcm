@@ -27,4 +27,8 @@ export const RESOURCE_TYPES = [
     name: '路由表',
     type: 'routing',
   },
+  {
+    name: '镜像',
+    type: 'image',
+  },
 ];

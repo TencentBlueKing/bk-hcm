@@ -6,3 +6,8 @@
   padding: 0 150px;
   margin-bottom: 20px;
 }
+
+.step-dialog .bk-modal-content {
+  padding: 5px 24px !important;
+  max-height: calc(100% - 79px) !important;
+}

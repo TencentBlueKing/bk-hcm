@@ -2665,6 +2665,7 @@ const lang: ILANG = {
   '云硬盘分配': ['Cloud Drive Distribution'],
   '弹性IP分配': ['Flexible IP Distribution'],
   '路由表分配': ['Routing Table Distribution'],
+  '镜像分配': ['Image Distribution'],
   '共转移': ['Number of Transfers:'],
   'VPC': ['VPC'],
   '您已选择 {count} 台实例，进行关机操作前，请确认': ['You have selected {count} instances, before shutting down, please make sure that.'],
