@@ -5,6 +5,10 @@ import MemberSelect from '@/components/MemberSelect';
 
 export default defineComponent({
   props: {
+    fromPlaceholder: {
+      type: String,
+      default: '请输入',
+    },
     fromType: {
       type: String,
       default: 'input',
@@ -68,17 +72,19 @@ export default defineComponent({
       console.log('type', type);
       switch (type) {
         case 'input':
-          return <Input ref={inputRef} class="w320" placeholder={t('请输入')} modelValue={props.modelValue}
+          return <Input ref={inputRef} class="w320" placeholder={props.fromPlaceholder} modelValue={props.modelValue}
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)} />;
         case 'member':
           return <MemberSelect class="w320" v-model={props.modelValue}
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}/>;
         case 'textarea':
-          return <Input ref={inputRef} class="w320" placeholder={t('请输入')} type="textarea" modelValue={props.modelValue}
+          return <Input ref={inputRef} class="w320" placeholder={props.fromPlaceholder} type="textarea" modelValue={props.modelValue}
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)} />;
         case 'select':
           return <Select ref={selectRef} class="w320" modelValue={props.modelValue}
-          filterable multiple show-select-all multiple-mode="tag" onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}>
+          filterable multiple show-select-all multiple-mode="tag"
+          placeholder={props.fromPlaceholder}
+          onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}>
             {props.selectData.map((item: any) => (
               <Option
                 key={item.key}

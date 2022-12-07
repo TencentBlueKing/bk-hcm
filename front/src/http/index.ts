@@ -192,7 +192,10 @@ function handleReject(error: any, config: any) {
       // }, 0);
     } else if (status === 403) {
       bus.$emit('show-forbidden', error.response.data);
-    } else if (status === 500) {
+    } else if (status === 404) {
+      nextError.message = '不存在';
+      Message({ theme: 'error', message: nextError.message });
+    }  else if (status === 500) {
       nextError.message = '系统出现异常';
       Message({ theme: 'error', message: nextError.message });
     } else if (data?.message) {
