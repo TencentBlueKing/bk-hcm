@@ -29,17 +29,19 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-const UpdateTimeField = "updated_at"
+const updateTimeField = "updated_at"
 
+// JsonField 对应 db 的 json field 格式字段
 type JsonField string
 
+// Table 接口
 type Table interface {
 	TableName() string
-	GenerateInsertSQL() string
-	GenerateUpdateSQL(expr *filter.Expression) (string, error)
-	GenerateUpdateFieldKV() map[string]interface{}
-	GenerateListSQL(opt *types.ListOption) (string, error)
-	GenerateDeleteSQL(expr *filter.Expression) (string, error)
+	SQLForInsert() string
+	SQLForUpdate(expr *filter.Expression) (string, error)
+	FieldKVForUpdate() map[string]interface{}
+	SQLForList(opt *types.ListOption, whereOpt *filter.SQLWhereOption) (string, error)
+	SQLForDelete(expr *filter.Expression) (string, error)
 }
 
 // TableManager 作为 XXTable 的字段, 可以用来描述"插入"或者"更新"时的一些设置
@@ -50,8 +52,8 @@ type TableManager struct {
 	UpdateFields []string
 }
 
-// generateInsertSQL 生成 insert sql
-func (tm *TableManager) generateInsertSQL(t Table) string {
+// SQLForInsert 生成 insert sql
+func (tm *TableManager) SQLForInsert(t Table) string {
 	insertFields := tm.listInsertFields(t)
 	// 插入操作, 排除自增的主键 id
 	insertFields = slice.Remove(insertFields, "id")
@@ -69,46 +71,28 @@ func (tm *TableManager) generateInsertSQL(t Table) string {
 	)
 }
 
-// GenerateInsertSQL 生成 insert sql
-func (tm *TableManager) GenerateInsertSQL(t Table) string {
-	insertFields := tm.listInsertFields(t)
-	// 插入操作, 排除自增的主键 id
-	insertFields = slice.Remove(insertFields, "id")
-
-	var fieldsWithColon []string
-	for _, field := range insertFields {
-		fieldsWithColon = append(fieldsWithColon, ":"+field)
-	}
-
-	return fmt.Sprintf(
-		`INSERT INTO %s (%s) VALUES (%s)`,
-		t.TableName(),
-		strings.Join(insertFields, ", "),
-		strings.Join(fieldsWithColon, ", "),
-	)
-}
-
-// GenerateUpdateSQL 生成 update sql
-func (tm *TableManager) GenerateUpdateSQL(t Table, expr *filter.Expression) (string, error) {
-	whereExpr, err := GenerateWhereExpr(expr)
+// SQLForUpdate 生成 update sql
+func (tm *TableManager) SQLForUpdate(t Table, expr *filter.Expression) (string, error) {
+	whereExpr, err := SQLWhereExpr(expr, nil)
 	if err != nil {
 		return "", err
 	}
 
 	var setFields []string
-	for field := range tm.GenerateUpdateFieldKV(t) {
+	for field := range tm.FieldKVForUpdate(t) {
 		setFields = append(setFields, fmt.Sprintf("%s = :%s", field, field))
 	}
 
-	if slice.StringInSlice(UpdateTimeField, tm.listModelFields(t)) {
-		setFields = append(setFields, fmt.Sprintf("%s = now()", UpdateTimeField))
+	if slice.StringInSlice(updateTimeField, tm.listModelFields(t)) {
+		setFields = append(setFields, fmt.Sprintf("%s = now()", updateTimeField))
 	}
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, t.TableName(), "set "+strings.Join(setFields, ", "), whereExpr)
 	return sql, nil
 }
 
-func (tm *TableManager) GenerateUpdateFieldKV(t Table) map[string]interface{} {
+// FieldKVForUpdate ...
+func (tm *TableManager) FieldKVForUpdate(t Table) map[string]interface{} {
 	kv := make(map[string]interface{})
 	modelFields := tm.listModelFields(t)
 
@@ -124,7 +108,7 @@ func (tm *TableManager) GenerateUpdateFieldKV(t Table) map[string]interface{} {
 	}
 
 	// 移除可能的 update_at 字段, 该字段在更新时单独set update_at = now() 处理
-	updateFields := slice.Remove(tm.UpdateFields, UpdateTimeField)
+	updateFields := slice.Remove(tm.UpdateFields, updateTimeField)
 
 	for _, field := range updateFields {
 		if !slice.StringInSlice(field, modelFields) {
@@ -136,8 +120,9 @@ func (tm *TableManager) GenerateUpdateFieldKV(t Table) map[string]interface{} {
 	return kv
 }
 
-func (tm *TableManager) GenerateListSQL(t Table, opt *types.ListOption) (string, error) {
-	whereExpr, err := GenerateWhereExpr(opt.FilterExpr)
+// SQLForList ...
+func (tm *TableManager) SQLForList(t Table, opt *types.ListOption, whereOpt *filter.SQLWhereOption) (string, error) {
+	whereExpr, err := SQLWhereExpr(opt.FilterExpr, whereOpt)
 	if err != nil {
 		return "", err
 	}
@@ -155,8 +140,9 @@ func (tm *TableManager) GenerateListSQL(t Table, opt *types.ListOption) (string,
 	return sql, nil
 }
 
-func (tm *TableManager) GenerateDeleteSQL(t Table, expr *filter.Expression) (string, error) {
-	whereExpr, err := GenerateWhereExpr(expr)
+// SQLForDelete ...
+func (tm *TableManager) SQLForDelete(t Table, expr *filter.Expression) (string, error) {
+	whereExpr, err := SQLWhereExpr(expr, nil)
 	if err != nil {
 		return "", err
 	}
@@ -189,12 +175,14 @@ func (tm *TableManager) listModelFields(t Table) []string {
 	return ListTableFields(t)
 }
 
-// GenerateWhereExpr ...
-func GenerateWhereExpr(expr *filter.Expression) (whereExpr string, err error) {
-	sqlOpt := &filter.SQLWhereOption{
-		Priority: filter.Priority{"id"},
+// SQLWhereExpr ...
+func SQLWhereExpr(expr *filter.Expression, whereOpt *filter.SQLWhereOption) (whereExpr string, err error) {
+	if whereOpt == nil {
+		whereOpt = &filter.SQLWhereOption{
+			Priority: filter.Priority{"id"},
+		}
 	}
-	whereExpr, err = expr.SQLWhereExpr(sqlOpt)
+	whereExpr, err = expr.SQLWhereExpr(whereOpt)
 	return
 }
 

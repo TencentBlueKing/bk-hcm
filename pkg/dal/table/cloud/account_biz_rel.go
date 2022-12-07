@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// AccountBizRelTable 云账户与业务关联表
 type AccountBizRelTable struct {
 	// 账号自增 ID
 	ID uint64 `db:"id"`
@@ -48,31 +49,32 @@ type AccountBizRelTable struct {
 
 var _ table.Table = new(AccountBizRelTable)
 
+// TableName ...
 func (t *AccountBizRelTable) TableName() string {
 	return "account_biz_rel"
 }
 
-// GenerateInsertSQL ...
-func (t *AccountBizRelTable) GenerateInsertSQL() string {
-	return t.TableManager.GenerateInsertSQL(t)
+// SQLForInsert ...
+func (t *AccountBizRelTable) SQLForInsert() string {
+	return t.TableManager.SQLForInsert(t)
 }
 
-// GenerateInsertSQL ...
-func (t *AccountBizRelTable) GenerateUpdateSQL(expr *filter.Expression) (string, error) {
-	return t.TableManager.GenerateUpdateSQL(t, expr)
+// SQLForUpdate ...
+func (t *AccountBizRelTable) SQLForUpdate(expr *filter.Expression) (string, error) {
+	return t.TableManager.SQLForUpdate(t, expr)
 }
 
-// GenerateUpdateFieldKV ...
-func (t *AccountBizRelTable) GenerateUpdateFieldKV() map[string]interface{} {
-	return t.TableManager.GenerateUpdateFieldKV(t)
+// FieldKVForUpdate ...
+func (t *AccountBizRelTable) FieldKVForUpdate() map[string]interface{} {
+	return t.TableManager.FieldKVForUpdate(t)
 }
 
-// GenerateListSQL ...
-func (t *AccountBizRelTable) GenerateListSQL(opt *types.ListOption) (string, error) {
-	return t.TableManager.GenerateListSQL(t, opt)
+// SQLForList ...
+func (t *AccountBizRelTable) SQLForList(opt *types.ListOption, whereOpt *filter.SQLWhereOption) (string, error) {
+	return t.TableManager.SQLForList(t, opt, whereOpt)
 }
 
-// GenerateDeleteSQL ...
-func (t *AccountBizRelTable) GenerateDeleteSQL(expr *filter.Expression) (string, error) {
-	return t.TableManager.GenerateDeleteSQL(t, expr)
+// SQLForDelete ...
+func (t *AccountBizRelTable) SQLForDelete(expr *filter.Expression) (string, error) {
+	return t.TableManager.SQLForDelete(t, expr)
 }

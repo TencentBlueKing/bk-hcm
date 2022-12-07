@@ -16,9 +16,10 @@
  *
  * to the current version of the project delivered to anyone in the future.
  */
-// TODO 删除
-// 为解决循环依赖问题, 将原 dal/table/name.go 移到当前
+
 package types
+
+// TODO 删除该文件. 仅为解决循环依赖问题, 将原 dal/table/name.go 移到当前
 
 // Tables defines all the database table
 // related resources.

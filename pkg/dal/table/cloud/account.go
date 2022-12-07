@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// cloud 包描述云资源 Model
+// package cloud 描述云资源表
 package cloud
 
 import (
@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// AccountTable 云账号表
 type AccountTable struct {
 	// 账号自增 ID
 	ID uint64 `db:"id"`
@@ -70,27 +71,27 @@ func (t *AccountTable) TableName() string {
 	return "account"
 }
 
-// GenerateInsertSQL ...
-func (t *AccountTable) GenerateInsertSQL() string {
-	return t.TableManager.GenerateInsertSQL(t)
+// SQLForInsert ...
+func (t *AccountTable) SQLForInsert() string {
+	return t.TableManager.SQLForInsert(t)
 }
 
-// GenerateInsertSQL ...
-func (t *AccountTable) GenerateUpdateSQL(expr *filter.Expression) (string, error) {
-	return t.TableManager.GenerateUpdateSQL(t, expr)
+// SQLForUpdate ...
+func (t *AccountTable) SQLForUpdate(expr *filter.Expression) (string, error) {
+	return t.TableManager.SQLForUpdate(t, expr)
 }
 
-// GenerateUpdateFieldKV ...
-func (t *AccountTable) GenerateUpdateFieldKV() map[string]interface{} {
-	return t.TableManager.GenerateUpdateFieldKV(t)
+// FieldKVForUpdate ...
+func (t *AccountTable) FieldKVForUpdate() map[string]interface{} {
+	return t.TableManager.FieldKVForUpdate(t)
 }
 
-// GenerateListSQL ...
-func (t *AccountTable) GenerateListSQL(opt *types.ListOption) (string, error) {
-	return t.TableManager.GenerateListSQL(t, opt)
+// SQLForList ...
+func (t *AccountTable) SQLForList(opt *types.ListOption, whereOpt *filter.SQLWhereOption) (string, error) {
+	return t.TableManager.SQLForList(t, opt, whereOpt)
 }
 
-// GenerateDeleteSQL ...
-func (t *AccountTable) GenerateDeleteSQL(expr *filter.Expression) (string, error) {
-	return t.TableManager.GenerateDeleteSQL(t, expr)
+// SQLForDelete ...
+func (t *AccountTable) SQLForDelete(expr *filter.Expression) (string, error) {
+	return t.TableManager.SQLForDelete(t, expr)
 }

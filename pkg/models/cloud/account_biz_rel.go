@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// AccountBizRel 云账号与业务关联关系
 type AccountBizRel struct {
 	ID        uint64
 	BkBizID   int
@@ -53,7 +54,7 @@ func (a *AccountBizRel) Create(kt *kit.Kit) (uint64, error) {
 		return 0, nil
 	}
 
-	sql := td.GenerateInsertSQL()
+	sql := td.SQLForInsert()
 
 	daoClient := dao.DaoClient
 	result, err := daoClient.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
@@ -80,18 +81,19 @@ func (a *AccountBizRel) Create(kt *kit.Kit) (uint64, error) {
 	return id, nil
 }
 
+// Update ...
 func (a *AccountBizRel) Update(kt *kit.Kit, expr *filter.Expression, updateFields []string) error {
 	td, err := a.toUpdateTableData(kt.User, updateFields)
 	if err != nil {
 		return nil
 	}
 
-	sql, err := td.GenerateUpdateSQL(expr)
+	sql, err := td.SQLForUpdate(expr)
 	if err != nil {
 		return err
 	}
 
-	toUpdate := td.GenerateUpdateFieldKV()
+	toUpdate := td.FieldKVForUpdate()
 
 	daoClient := dao.DaoClient
 
@@ -116,9 +118,12 @@ func (a *AccountBizRel) Update(kt *kit.Kit, expr *filter.Expression, updateField
 	return nil
 }
 
+// List ...
 func (a *AccountBizRel) List(kt *kit.Kit, opt *types.ListOption) ([]*AccountBizRel, error) {
 	tp := new(tablecloud.AccountBizRelTable)
-	listSQL, err := tp.GenerateListSQL(opt)
+	listSQL, err := tp.SQLForList(opt, &filter.SQLWhereOption{
+		Priority: filter.Priority{"id"},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -149,9 +154,10 @@ func (a *AccountBizRel) List(kt *kit.Kit, opt *types.ListOption) ([]*AccountBizR
 	return data, nil
 }
 
+// Delete ...
 func (a *AccountBizRel) Delete(kt *kit.Kit, expr *filter.Expression) error {
 	tp := new(tablecloud.AccountBizRelTable)
-	sql, err := tp.GenerateDeleteSQL(expr)
+	sql, err := tp.SQLForDelete(expr)
 	if err != nil {
 		return err
 	}

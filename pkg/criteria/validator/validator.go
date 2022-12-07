@@ -28,7 +28,7 @@ import (
 
 var Validate = gvalidator.New()
 
-// ExtractValidFields
+// ExtractValidFields 根据 json tag 提取有效的 struct 字段. 当前有效是根据 ! IsZero 进行判断
 func ExtractValidFields(i interface{}) []string {
 	v := reflectx.ReflectValue(i)
 	t := v.Type()

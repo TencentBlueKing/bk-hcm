@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// 云账号
 type Account struct {
 	ID           uint64
 	Name         string
@@ -63,7 +64,7 @@ func (a *Account) Create(kt *kit.Kit) (uint64, error) {
 		return 0, nil
 	}
 
-	sql := td.GenerateInsertSQL()
+	sql := td.SQLForInsert()
 
 	daoClient := dao.DaoClient
 	result, err := daoClient.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
@@ -90,19 +91,20 @@ func (a *Account) Create(kt *kit.Kit) (uint64, error) {
 	return id, nil
 }
 
+//  Update ...
 func (a *Account) Update(kt *kit.Kit, expr *filter.Expression, updateFields []string) error {
 	td, err := a.toUpdateTableData(kt.User, updateFields)
 	if err != nil {
 		return nil
 	}
 
-	sql, err := td.GenerateUpdateSQL(expr)
+	sql, err := td.SQLForUpdate(expr)
 	if err != nil {
 		return err
 	}
 
-	whereExpr, _ := table.GenerateWhereExpr(expr)
-	toUpdate := td.GenerateUpdateFieldKV()
+	whereExpr, _ := table.SQLWhereExpr(expr, nil)
+	toUpdate := td.FieldKVForUpdate()
 
 	daoClient := dao.DaoClient
 
@@ -132,9 +134,12 @@ func (a *Account) Update(kt *kit.Kit, expr *filter.Expression, updateFields []st
 	return nil
 }
 
+// List ...
 func (a *Account) List(kt *kit.Kit, opt *types.ListOption) ([]*Account, error) {
 	tp := new(tablecloud.AccountTable)
-	listSQL, err := tp.GenerateListSQL(opt)
+	listSQL, err := tp.SQLForList(opt, &filter.SQLWhereOption{
+		Priority: filter.Priority{"id"},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -185,9 +190,10 @@ func (a *Account) List(kt *kit.Kit, opt *types.ListOption) ([]*Account, error) {
 	return data, nil
 }
 
+// Delete ...
 func (a *Account) Delete(kt *kit.Kit, expr *filter.Expression) error {
 	tp := new(tablecloud.AccountTable)
-	sql, err := tp.GenerateDeleteSQL(expr)
+	sql, err := tp.SQLForDelete(expr)
 	if err != nil {
 		return err
 	}
