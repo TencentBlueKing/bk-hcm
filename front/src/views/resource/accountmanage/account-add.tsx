@@ -18,12 +18,12 @@ export default defineComponent({
     const router = useRouter();
 
     const initProjectModel: ProjectModel = {
-      id: '',
+      id: 0,
       type: 'resource',   // 账号类型
       name: '', // 名称
       vendor: '', // 云厂商
       managers: ['poloohuang'], // 责任人
-      departmentId: [6544],   // 组织架构
+      departmentId: [],   // 组织架构
       bizIds: '',   // 使用业务
       memo: '',     // 备注
       mainAccount: '',    // 主账号
@@ -47,12 +47,13 @@ export default defineComponent({
 
     const optionalRequired = ['secretId', 'secretKey'];
     const cloudType = reactive(CLOUD_TYPE);
-    const isTestConnection = ref(false);
+    const isTestConnection = ref(true);
 
-    let businessList = reactive([]);    // 业务列表
+    let businessList = reactive(CLOUD_TYPE);    // 业务列表
     const getBusinessList = async () => {
       try {
         const res = await accountStore.getBizList();
+        console.log(res);
         businessList = res?.data || CLOUD_TYPE;
       } catch (error) {
         console.log(error);
@@ -66,6 +67,7 @@ export default defineComponent({
 
     // 提交操作
     const submit = async () => {
+      noOrganize.value = !projectModel.departmentId.length;
       await formRef.value?.validate();
       try {
         const params = {
@@ -73,7 +75,7 @@ export default defineComponent({
           vendor: projectModel.vendor,
           name: projectModel.name,
           managers: projectModel.managers,
-          department_id: projectModel.departmentId,
+          department_id: projectModel.departmentId.join(','),
           related_bk_biz_ids: projectModel.bizIds,
           memo: projectModel.memo,
           extension: {},
@@ -119,7 +121,7 @@ export default defineComponent({
     };
 
     const changeCloud = (val: string) => {
-      console.log(1111, val, projectModel);
+      formRef.value?.clearValidate(); // 切换清除表单检验
       const startIndex = formList.findIndex(e => e.property === 'vendor');
       const endIndex = formList.findIndex(e => e.property === 'managers');
       let insertFormData: any = [];
@@ -366,6 +368,13 @@ export default defineComponent({
         }
       },
       { immediate: true },
+    );
+
+    watch(
+      () => projectModel.departmentId,
+      (val) => {
+        noOrganize.value = !val.length;
+      },
     );
 
 
