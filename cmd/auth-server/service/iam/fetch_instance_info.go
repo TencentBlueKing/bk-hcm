@@ -21,7 +21,7 @@ package iam
 
 import (
 	"hcm/cmd/auth-server/types"
-	"hcm/pkg/api/protocol/data-service"
+	dataservice "hcm/pkg/api/data-service"
 	daltypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/client"
 	"hcm/pkg/kit"

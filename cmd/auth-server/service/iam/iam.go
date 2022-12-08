@@ -21,7 +21,7 @@ package iam
 
 import (
 	"hcm/cmd/auth-server/service/capability"
-	"hcm/pkg/api/data-service"
+	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/sys"
 	"hcm/pkg/rest"

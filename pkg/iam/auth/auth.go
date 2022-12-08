@@ -20,10 +20,10 @@
 package auth
 
 import (
-	"hcm/pkg/api/auth-server"
-	"hcm/pkg/api/discovery"
-	asproto "hcm/pkg/api/protocol/auth-server"
+	asproto "hcm/pkg/api/auth-server"
 	"hcm/pkg/cc"
+	"hcm/pkg/client/auth-server"
+	"hcm/pkg/client/discovery"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"

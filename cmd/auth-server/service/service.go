@@ -28,9 +28,9 @@ import (
 	"hcm/cmd/auth-server/service/auth"
 	"hcm/cmd/auth-server/service/iam"
 	"hcm/cmd/auth-server/service/initial"
-	"hcm/pkg/api"
-	"hcm/pkg/api/data-service"
 	"hcm/pkg/cc"
+	apicli "hcm/pkg/client"
+	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/iam/client"
 	pkgauth "hcm/pkg/iam/sdk/auth"
 	"hcm/pkg/iam/sys"
@@ -108,7 +108,7 @@ func newClientSet(sd serviced.Discover, iamSettings cc.IAM, disableAuth bool) (*
 	if err != nil {
 		return nil, err
 	}
-	apiClientSet := api.NewAuthServerClientSet(restCli, sd)
+	apiClientSet := apicli.NewAuthServerClientSet(restCli, sd)
 
 	logs.Infof("initialize system api client set success.")
 

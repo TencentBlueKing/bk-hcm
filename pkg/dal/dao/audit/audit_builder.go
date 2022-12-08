@@ -25,7 +25,8 @@ import (
 	"reflect"
 
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/audit"
+	"hcm/pkg/dal/table/cloud"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -33,22 +34,22 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// initAuditBuilder create a new audit builder instance.
-func initAuditBuilder(kt *kit.Kit, resourceType enumor.AuditResourceType, ad *audit) AuditDecorator {
+// initAuditBuilder create a new auditDao builder instance.
+func initAuditBuilder(kt *kit.Kit, resourceType enumor.AuditResourceType, ad *auditDao) AuditDecorator {
 	ab := new(AuditBuilder)
 
 	if len(kt.User) == 0 {
-		ab.hitErr = errors.New("invalid audit operator")
+		ab.hitErr = errors.New("invalid auditDao operator")
 		return ab
 	}
 
 	if len(kt.Rid) == 0 {
-		ab.hitErr = errors.New("invalid audit request id")
+		ab.hitErr = errors.New("invalid auditDao request id")
 		return ab
 	}
 
 	if len(resourceType) == 0 {
-		ab.hitErr = errors.New("invalid audit resource type")
+		ab.hitErr = errors.New("invalid auditDao resource type")
 		return ab
 	}
 
@@ -62,7 +63,7 @@ func initAuditBuilder(kt *kit.Kit, resourceType enumor.AuditResourceType, ad *au
 	return ab
 }
 
-// AuditDecorator is audit decorator interface, use to record audit.
+// AuditDecorator is auditDao decorator interface, use to record auditDao.
 type AuditDecorator interface {
 	AuditCreate(txn *sqlx.Tx, cur interface{}) error
 	AuditBatchCreate(txn *sqlx.Tx, cur interface{}) error
@@ -73,24 +74,24 @@ type AuditDecorator interface {
 }
 
 // AuditBuilder is a wrapper decorator to handle all the resource's
-// audit operation.
+// auditDao operation.
 type AuditBuilder struct {
 	hitErr error
 
 	kt *kit.Kit
-	ad *audit
+	ad *auditDao
 
 	ResourceType enumor.AuditResourceType
 	Operator     string
 	Rid          string
 	AppCode      string
 
-	audits []*table.Audit
+	audits []*audit.Audit
 }
 
-// Audit return audit struct, that include audit builder audit basic information.
-func (ab *AuditBuilder) Audit() *table.Audit {
-	return &table.Audit{
+// Audit return auditDao struct, that include auditDao builder auditDao basic information.
+func (ab *AuditBuilder) Audit() *audit.Audit {
+	return &audit.Audit{
 		ResourceType: ab.ResourceType,
 		Operator:     ab.Operator,
 		Rid:          ab.Rid,
@@ -98,12 +99,12 @@ func (ab *AuditBuilder) Audit() *table.Audit {
 	}
 }
 
-// Audits return audit list, that include audit builder audit basic information.
-func (ab *AuditBuilder) Audits(len int) []*table.Audit {
-	list := make([]*table.Audit, len)
+// Audits return auditDao list, that include auditDao builder auditDao basic information.
+func (ab *AuditBuilder) Audits(len int) []*audit.Audit {
+	list := make([]*audit.Audit, len)
 
 	for index := range list {
-		list[index] = &table.Audit{
+		list[index] = &audit.Audit{
 			ResourceType: ab.ResourceType,
 			Operator:     ab.Operator,
 			Rid:          ab.Rid,
@@ -125,7 +126,7 @@ func (ab *AuditBuilder) AuditCreate(txn *sqlx.Tx, cur interface{}) error {
 
 	one := ab.Audit()
 	one.Action = enumor.Create
-	one.Detail = &table.AuditBasicDetail{
+	one.Detail = &audit.AuditBasicDetail{
 		Data: cur,
 	}
 
@@ -135,9 +136,9 @@ func (ab *AuditBuilder) AuditCreate(txn *sqlx.Tx, cur interface{}) error {
 		one.AccountID = res.ID
 
 	default:
-		logs.Errorf("unsupported audit create resource: %s, type: %s, rid: %v", ab.ResourceType,
+		logs.Errorf("unsupported auditDao create resource: %s, type: %s, rid: %v", ab.ResourceType,
 			reflect.TypeOf(cur), ab.Rid)
-		return fmt.Errorf("unsupported audit create resource: %s", ab.ResourceType)
+		return fmt.Errorf("unsupported auditDao create resource: %s", ab.ResourceType)
 	}
 
 	return ab.ad.One(ab.kt, txn, one)
@@ -152,24 +153,24 @@ func (ab *AuditBuilder) AuditBatchCreate(txn *sqlx.Tx, cur interface{}) error {
 		return ab.hitErr
 	}
 
-	var audits []*table.Audit
+	var audits []*audit.Audit
 	switch ress := cur.(type) {
 	// TODO: 账号不会存在批量创建操作，之后添加新的审计时，将该逻辑删除
-	case []table.Account:
+	case []cloud.AccountTable:
 		audits = ab.Audits(len(ress))
 		for index := range audits {
 			audits[index].Action = enumor.Create
 			audits[index].ResourceID = ress[index].ID
 			audits[index].AccountID = ress[index].ID
-			audits[index].Detail = &table.AuditBasicDetail{
+			audits[index].Detail = &audit.AuditBasicDetail{
 				Data: ress[index],
 			}
 		}
 
 	default:
-		logs.Errorf("unsupported audit batch create resource: %s, type: %s, rid: %v", ab.ResourceType,
+		logs.Errorf("unsupported auditDao batch create resource: %s, type: %s, rid: %v", ab.ResourceType,
 			reflect.TypeOf(cur), ab.Rid)
-		return fmt.Errorf("unsupported audit batch create resource: %s", ab.ResourceType)
+		return fmt.Errorf("unsupported auditDao batch create resource: %s", ab.ResourceType)
 	}
 
 	return ab.ad.Insert(ab.kt, txn, audits)
@@ -185,7 +186,7 @@ func (ab *AuditBuilder) PrepareUpdate(whereExpr string, toUpdate map[string]inte
 		return ab
 	}
 
-	var audits []*table.Audit
+	var audits []*audit.Audit
 	var err error
 	switch ab.ResourceType {
 	case enumor.Account:
@@ -196,8 +197,8 @@ func (ab *AuditBuilder) PrepareUpdate(whereExpr string, toUpdate map[string]inte
 		}
 
 	default:
-		logs.Errorf("unsupported audit update resource type: %s, rid: %v", ab.ResourceType, ab.Rid)
-		ab.hitErr = fmt.Errorf("unsupported audit update resource type: %s", ab.ResourceType)
+		logs.Errorf("unsupported auditDao update resource type: %s, rid: %v", ab.ResourceType, ab.Rid)
+		ab.hitErr = fmt.Errorf("unsupported auditDao update resource type: %s", ab.ResourceType)
 		return ab
 	}
 
@@ -206,7 +207,7 @@ func (ab *AuditBuilder) PrepareUpdate(whereExpr string, toUpdate map[string]inte
 }
 
 func (ab *AuditBuilder) decorateAccountUpdate(whereExpr string, toUpdate map[string]interface{}) (
-	[]*table.Audit, error,
+	[]*audit.Audit, error,
 ) {
 	accounts, err := ab.listAccount(whereExpr)
 	if err != nil {
@@ -218,7 +219,7 @@ func (ab *AuditBuilder) decorateAccountUpdate(whereExpr string, toUpdate map[str
 		audits[index].Action = enumor.Update
 		audits[index].ResourceID = one.ID
 		audits[index].AccountID = one.ID
-		audits[index].Detail = &table.AuditBasicDetail{
+		audits[index].Detail = &audit.AuditBasicDetail{
 			Data:    one,
 			Changed: toUpdate,
 		}
@@ -235,7 +236,7 @@ func (ab *AuditBuilder) PrepareDelete(whereExpr string) AuditDecorator {
 		return ab
 	}
 
-	var audits []*table.Audit
+	var audits []*audit.Audit
 	var err error
 	switch ab.ResourceType {
 	case enumor.Account:
@@ -246,7 +247,7 @@ func (ab *AuditBuilder) PrepareDelete(whereExpr string) AuditDecorator {
 		}
 
 	default:
-		ab.hitErr = fmt.Errorf("unsupported audit deleted resource: %s", ab.ResourceType)
+		ab.hitErr = fmt.Errorf("unsupported auditDao deleted resource: %s", ab.ResourceType)
 		return ab
 	}
 
@@ -255,7 +256,7 @@ func (ab *AuditBuilder) PrepareDelete(whereExpr string) AuditDecorator {
 }
 
 func (ab *AuditBuilder) decorateAccountDelete(whereExpr string) (
-	[]*table.Audit, error,
+	[]*audit.Audit, error,
 ) {
 	accounts, err := ab.listAccount(whereExpr)
 	if err != nil {
@@ -267,7 +268,7 @@ func (ab *AuditBuilder) decorateAccountDelete(whereExpr string) (
 		audits[index].Action = enumor.Delete
 		audits[index].ResourceID = one.ID
 		audits[index].AccountID = one.ID
-		audits[index].Detail = &table.AuditBasicDetail{
+		audits[index].Detail = &audit.AuditBasicDetail{
 			Data: one,
 		}
 	}
@@ -275,23 +276,23 @@ func (ab *AuditBuilder) decorateAccountDelete(whereExpr string) (
 	return audits, nil
 }
 
-// Do save audit log to the db immediately.
+// Do save auditDao log to the db immediately.
 func (ab *AuditBuilder) Do(txn *sqlx.Tx) error {
 	if ab.hitErr != nil {
 		return ab.hitErr
 	}
 
 	if ab.audits == nil || len(ab.audits) == 0 {
-		ab.hitErr = fmt.Errorf("insert audit is empty")
+		ab.hitErr = fmt.Errorf("insert auditDao is empty")
 	}
 
 	return ab.ad.Insert(ab.kt, txn, ab.audits)
 }
 
-func (ab *AuditBuilder) listAccount(whereExpr string) ([]*table.Account, error) {
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s`, table.AccountColumns.NamedExpr(), "account", whereExpr)
+func (ab *AuditBuilder) listAccount(whereExpr string) ([]*cloud.AccountTable, error) {
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s`, cloud.AccountColumns.NamedExpr(), "account", whereExpr)
 
-	list := make([]*table.Account, 0)
+	list := make([]*cloud.AccountTable, 0)
 	err := ab.ad.orm.Do().Select(ab.kt.Ctx, &list, sql)
 	if err != nil {
 		return nil, fmt.Errorf("select account failed, err: %v", err)
