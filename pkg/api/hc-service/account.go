@@ -48,7 +48,7 @@ func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcser
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/get/account/check").
+		SubResourcef("/account/check").
 		WithHeaders(h).
 		Do().
 		Into(resp)

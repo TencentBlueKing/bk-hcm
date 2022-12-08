@@ -30,8 +30,15 @@ type AccountInterface interface {
 
 // AccountCheckOption define account check option.
 type AccountCheckOption struct {
+	Tcloud *TcloudAccountInfo
 	Aws    *AwsAccountInfo
 	HuaWei *HuaWeiAccountInfo
+}
+
+// TcloudAccountInfo define tencent cloud account info that is used to validate account.
+type TcloudAccountInfo struct {
+	AccountCid     string `json:"account_cid"`
+	MainAccountCid string `json:"main_account_cid"`
 }
 
 // AwsAccountInfo define aws account info that used to check account.

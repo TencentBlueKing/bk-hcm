@@ -21,7 +21,9 @@ package tcloud
 
 import (
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/errf"
 
+	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
@@ -48,6 +50,16 @@ type tcloud struct {
 	profile *profile.ClientProfile
 }
 
+func (t *tcloud) camServiceClient(secret *types.BaseSecret, region string) (*cam.Client, error) {
+	credential := common.NewCredential(secret.ID, secret.Key)
+	client, err := cam.NewClient(credential, region, t.profile)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
 func (t *tcloud) cvmClient(secret *types.BaseSecret, region string) (*cvm.Client, error) {
 	credential := common.NewCredential(secret.ID, secret.Key)
 	client, err := cvm.NewClient(credential, region, t.profile)
@@ -56,4 +68,20 @@ func (t *tcloud) cvmClient(secret *types.BaseSecret, region string) (*cvm.Client
 	}
 
 	return client, nil
+}
+
+func validateSecret(s *types.Secret) error {
+	if s == nil {
+		return errf.New(errf.InvalidParameter, "secret is required")
+	}
+
+	if s.TCloud == nil {
+		return errf.New(errf.InvalidParameter, "tencent cloud secret is required")
+	}
+
+	if err := s.TCloud.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }
