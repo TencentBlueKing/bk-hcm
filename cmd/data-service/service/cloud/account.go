@@ -71,9 +71,11 @@ func (svc *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 		Name:         reqData.Name,
 		Vendor:       reqData.Vendor,
 		DepartmentID: reqData.DepartmentID,
+		Type:         reqData.Type,
 		Managers:     reqData.Managers,
 		Extension:    reqData.Extension,
 		SyncStatus:   "", // 账号初始状态设置
+		Memo:         reqData.Memo,
 	}
 	id, err := account.Create(cts.Kit)
 	if err != nil {
