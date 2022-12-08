@@ -25,23 +25,15 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async getAccountList(params: any) {
-      try {
-        return await http.post('/api/v1/cloud/accounts/list/', params);
-      } catch (error) {
-        console.error(error);
-      }
+      return await http.post('/api/v1/cloud/accounts/list/', params);
     },
     /**
      * @description: 获取账号详情
      * @param {any} data
      * @return {*}
      */
-    async getAccountDetail(id: string | number) {
-      try {
-        return await http.post('/api/v1/cloud/accounts/retrieve/', id);
-      } catch (error) {
-        console.error(error);
-      }
+    async getAccountDetail(data: {id: number}) {
+      return await http.post('/api/v1/cloud/accounts/retrieve/', data);
     },
     /**
      * @description: 测试云账号连接
@@ -49,11 +41,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async testAccountConnection(data: any) {
-      try {
-        return await http.post('/api/v1/cloud/accounts/connection-test/', data);
-      } catch (error) {
-        console.error(error);
-      }
+      return await http.post('/api/v1/cloud/accounts/connection-test/', data);
     },
     /**
      * @description: 更新云账号
@@ -61,11 +49,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async updateAccount(data: any) {
-      try {
-        return await http.post('/api/v1/cloud/accounts/update/', data);
-      } catch (error) {
-        console.error(error);
-      }
+      return await http.post('/api/v1/cloud/accounts/update/', data);
     },
     /**
      * @description: 获取业务列表
@@ -73,11 +57,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async getBizList() {
-      try {
-        return await http.post('/api/v1/web/bk_bizs/list/');
-      } catch (error) {
-        console.error(error);
-      }
+      return await http.post('/api/v1/web/bk_bizs/list/');
     },
     /**
      * @description: 同步
@@ -85,11 +65,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async accountSync(id: number) {
-      try {
-        return await http.post('/mock/api/v4/sync/', id);
-      } catch (error) {
-        console.error(error);
-      }
+      await http.post('/mock/api/v4/sync/', id);
     },
     /**
      * @description: 删除
@@ -97,11 +73,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async accountDelete(id: number) {
-      try {
-        return await http.post('/mock/api/v4/sync/', id);
-      } catch (error) {
-        console.error(error);
-      }
+      return await http.post('/mock/api/v4/sync/', id);
     },
   },
 });

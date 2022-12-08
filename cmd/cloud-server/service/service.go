@@ -27,7 +27,6 @@ import (
 	"strconv"
 	"time"
 
-	"hcm/cmd/cloud-server/service/account"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/api"
 	"hcm/pkg/cc"
@@ -88,7 +87,6 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 
 // ListenAndServeRest listen and serve the restful server
 func (s *Service) ListenAndServeRest() error {
-
 	root := http.NewServeMux()
 	root.HandleFunc("/", s.apiSet().ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
@@ -154,8 +152,6 @@ func (s *Service) apiSet() *restful.Container {
 		ApiClient:  s.client,
 		Authorizer: s.authorizer,
 	}
-
-	account.InitAccountService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

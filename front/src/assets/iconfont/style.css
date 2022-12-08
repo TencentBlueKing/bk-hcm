@@ -29,11 +29,20 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-down-shape:before {
 	content: "\e101";
 }
+.bkhcm-icon-right-shape:before {
+	content: "\e107";
+}
+.bkhcm-icon-loading-circle:before {
+	content: "\e109";
+}
 .bkhcm-icon-arrows--right--line:before {
 	content: "\e106";
 }
 .bkhcm-icon-arrows--left-line:before {
 	content: "\e103";
+}
+.bkhcm-icon-angle-up-fill:before {
+	content: "\e108";
 }
 .bkhcm-icon-invisible1:before {
 	content: "\e104";

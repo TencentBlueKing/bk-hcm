@@ -87,11 +87,11 @@ export default defineComponent({
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}>
             {props.selectData.map((item: any) => (
               <Option
-                key={item.key}
+                key={item.label}
                 value={item.value}
-                label={item.key}
+                label={item.label}
               >
-                {item.key}
+                {item.label}
               </Option>
             ))
           }
@@ -119,7 +119,7 @@ export default defineComponent({
             selectModelValue = props.selectData.filter((e: any) => e.value === props.modelValue);
           }
           if (selectModelValue.length) {
-            selectModelValue = selectModelValue.map((e: any) => e.key);
+            selectModelValue = selectModelValue.map((e: any) => e.label);
           }
           console.log('modelValue', selectModelValue);
           return selectModelValue.length
