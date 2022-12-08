@@ -1,0 +1,18 @@
+.detail-header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
+  padding: 20px;
+}
+
+.detail-header-arrows-left {
+  font-size: 28px;
+  line-height: 28px;
+  height: 32px;
+  vertical-align: sub;
+  display: inline-block;
+  cursor: pointer;
+  color: #5594fa;
+}
