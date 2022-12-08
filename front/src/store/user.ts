@@ -21,7 +21,7 @@ export const useUser = defineStore('user', {
 
     // 用户信息
     async userInfo() {
-      const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/v4/organization/user_info/`);
+      const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/users/retrieve/`);
       this.username = res.data.username;
       return res;
     },

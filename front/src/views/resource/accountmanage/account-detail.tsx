@@ -6,7 +6,7 @@ import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
 // import { useRoute } from 'vue-router';
 // import MemberSelect from '@/components/MemberSelect';
-// import OrganizationSelect from '@/components/OrganizationSelect';
+import OrganizationSelect from '@/components/OrganizationSelect';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
 import './account-detail.scss';
 const { FormItem } = Form;
@@ -45,7 +45,7 @@ export default defineComponent({
       secretKey: '',
     };
 
-    let projectModel = reactive<ProjectModel>({
+    const projectModel = reactive<ProjectModel>({
       ...initProjectModel,
     });
 
@@ -74,12 +74,24 @@ export default defineComponent({
         creator: 'jamesge',  // 创建者
         reviser: 'jiananzhang', // 更新者
         memo: '测试账号',  // 备注
-        department_id: 2,  // 部门ID
+        department_id: 1,  // 部门ID
         department_full_name: 'IEG互动娱乐事业群/技术运营部/计算资源中心',
         related_bk_biz_ids: ['tcloud'], // 关联的业务列表，若选择All，则是-1
         extension: { account_id: 1, iam_username: 'poloohuang', secret_id: '**', secret_key: '**' },
       } };
-      projectModel = res?.data;
+      projectModel.id = res?.data.id;
+      projectModel.name = res?.data.name;
+      projectModel.vendor = res?.data.vendor;
+      projectModel.type = res?.data.type;
+      projectModel.managers = res?.data.managers;
+      projectModel.price = res?.data.price;
+      projectModel.creator = res?.data.creator;
+      projectModel.price_unit = res?.data.price_unit;
+      projectModel.created_at = res?.data.created_at;
+      projectModel.updated_at = res?.data.updated_at;
+      projectModel.reviser = res?.data.reviser;
+      projectModel.memo = res?.data.memo;
+      projectModel.extension = res?.data.extension;
       projectModel.departmentId = [res?.data.department_id];
       projectModel.bizIds = res?.data.related_bk_biz_ids;
       renderDialogForm(projectModel);
@@ -279,9 +291,11 @@ export default defineComponent({
     const updateFormData = async (key: any) => {
       let params: any = { department_id: '', related_bk_biz_ids: '' };
       if (key === 'departmentId') {
-        params.department_id = projectModel[key];
+        params.department_id = Number(projectModel[key].join(''));
+        delete params.related_bk_biz_ids;
       } else if (key === 'bizIds') {
         params.related_bk_biz_ids = projectModel[key];
+        delete params.department_id;
       } else {
         params = {};
         params[key] = projectModel[key];
@@ -327,6 +341,7 @@ export default defineComponent({
     };
 
     const handleEditStatus = (val: boolean, key: string) => {
+      console.log(val, key);
       formBaseInfo.forEach((e) => {
         e.data = e.data.map((item) => {
           if (item.property === key) {
@@ -335,10 +350,12 @@ export default defineComponent({
           return item;
         });
       });
+      console.log(formBaseInfo);
     };
 
     // 处理失焦
     const handleblur = async (val: boolean, key: string) => {
+      console.log('111val', val);
       handleEditStatus(val, key);     // 未通过检验前状态为编辑态
       await formRef.value?.validate();
       if (projectModel[key].length) {
@@ -347,6 +364,11 @@ export default defineComponent({
       if (projectModel[key] !== initProjectModel[key]) {
         updateFormData(key);    // 更新数据
       }
+    };
+
+    // 处理组织架构选择
+    const handleOrganChange = () => {
+      updateFormData('departmentId');    // 更新数据
     };
 
     const formBaseInfo = reactive([
@@ -441,13 +463,9 @@ export default defineComponent({
             label: t('组织架构:'),
             required: false,
             property: 'departmentId',
-            component: () => {
-              return (
-                  <span>
-                      <span>IEG互动娱乐事业群/技术运营部</span>
-                      <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
-                  </span>
-              );
+            isEdit: true,
+            component() {
+              return (<OrganizationSelect v-model={projectModel.departmentId} onChange={handleOrganChange}/>);
             },
           },
           {
