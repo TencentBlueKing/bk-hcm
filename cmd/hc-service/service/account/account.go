@@ -23,7 +23,6 @@ package account
 import (
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/adaptor"
-	"hcm/pkg/adaptor/types"
 	hcservice "hcm/pkg/api/protocol/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -56,15 +55,7 @@ func (a account) AccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	secret := &types.Secret{
-		ID:             req.SecretID,
-		Key:            req.SecretKey,
-		Json:           []byte(req.Json),
-		TenantID:       req.TenantID,
-		SubscriptionID: req.SubscriptionID,
-		ProjectID:      req.ProjectID,
-	}
-	if err := a.ad.Vendor(req.Vendor).AccountCheck(cts.Kit, secret); err != nil {
+	if err := a.ad.Vendor(req.Vendor).AccountCheck(cts.Kit, req.Secret, req.AccountInfo); err != nil {
 		return nil, err
 	}
 

@@ -20,25 +20,31 @@
 package hcservice
 
 import (
+	"hcm/pkg/adaptor/types"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 )
 
 // AccountCheckReq defines account check request.
 // TODO: 结构体信息随便定义，之后自行替换即可
 type AccountCheckReq struct {
-	Vendor         enumor.Vendor `json:"vendor"`
-	SecretID       string        `json:"secret_id"`
-	SecretKey      string        `json:"secret_key"`
-	Json           string        `json:"json"`
-	TenantID       string        `json:"tenant_id"`
-	SubscriptionID string        `json:"subscription_id"`
-	ProjectID      string        `json:"project_id"`
+	Vendor      enumor.Vendor             `json:"vendor,omitempty"`
+	Secret      *types.Secret             `json:"secret,omitempty"`
+	AccountInfo *types.AccountCheckOption `json:"account_info,omitempty"`
 }
 
 // Validate account check req.
 func (req AccountCheckReq) Validate() error {
 	if err := req.Vendor.Validate(); err != nil {
 		return err
+	}
+
+	if req.Secret == nil {
+		return errf.New(errf.InvalidParameter, "secret is required")
+	}
+
+	if req.AccountInfo == nil {
+		return errf.New(errf.InvalidParameter, "account into is required")
 	}
 
 	return nil

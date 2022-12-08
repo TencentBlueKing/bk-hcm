@@ -35,7 +35,7 @@ type Unknown struct {
 }
 
 // AccountCheck is unsupported
-func (u Unknown) AccountCheck(kt *kit.Kit, secret *types.Secret) error {
+func (u Unknown) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.AccountCheckOption) error {
 	return u.unsupportedError()
 }
 

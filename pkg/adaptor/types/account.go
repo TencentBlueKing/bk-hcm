@@ -19,30 +19,32 @@
 
 package types
 
-import "hcm/pkg/kit"
+import (
+	"hcm/pkg/kit"
+)
 
 // AccountInterface defines all the account related operations in the hybrid cloud
 type AccountInterface interface {
-	AccountCheck(kt *kit.Kit, secret *Secret) error
+	AccountCheck(kt *kit.Kit, secret *Secret, opt *AccountCheckOption) error
 }
 
-// Secret defines the hybrid cloud's secret info.
-// TODO replace with actual account secret info
-type Secret struct {
-	// ID is the secret id to do credential
-	ID string `json:"id,omitempty"`
-	// Key is the secret key to do credential
-	Key string `json:"key,omitempty"`
+// AccountCheckOption define account check option.
+type AccountCheckOption struct {
+	Aws    *AwsAccountInfo
+	HuaWei *HuaWeiAccountInfo
+}
 
-	// Json carry a json formatted credential information for
-	// GCP(Google Cloud Platform) vendor only.
-	Json []byte `json:"json,omitempty"`
+// AwsAccountInfo define aws account info that used to check account.
+type AwsAccountInfo struct {
+	AccountCid  string `json:"account_cid"`
+	IamUserName string `json:"iam_user_name"`
+}
 
-	// TenantID is used only for azure credential
-	TenantID string `json:"tenant_id,omitempty"`
-	// SubscriptionID is used only for azure credential
-	SubscriptionID string `json:"subscription_id,omitempty"`
-
-	// ProjectID is cloud vendor project id.
-	ProjectID string `json:"project_id,omitempty"`
+// HuaWeiAccountInfo define huawei account info that used to check account.
+type HuaWeiAccountInfo struct {
+	MainAccountName string `json:"main_account_name,omitempty"`
+	SubAccountCID   string `json:"sub_account_cid,omitempty"`
+	SubAccountName  string `json:"sub_account_name,omitempty"`
+	IamUserCID      string `json:"iam_user_cid,omitempty"`
+	IamUserName     string `json:"iam_user_name,omitempty"`
 }
