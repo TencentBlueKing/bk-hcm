@@ -120,3 +120,21 @@ a {
       }
   }
 }
+
+.g-scroller {
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+      height: 5px;
+      border-radius: 3px;
+      background-color: #dcdee5;
+  }
+}
+
+.g-resource-tips {
+  font-weight: normal;
+  font-size: 12px;
+}

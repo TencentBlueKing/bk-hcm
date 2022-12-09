@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
@@ -31,15 +32,55 @@ import (
 
 var _ types.AccountInterface = new(huawei)
 
+func validateAccountCheckOption(opt *types.AccountCheckOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "account check option is required")
+	}
+
+	if opt.HuaWei == nil {
+		return errf.New(errf.InvalidParameter, "huawei account info is required")
+	}
+
+	if len(opt.HuaWei.MainAccountName) == 0 {
+		return errf.New(errf.InvalidParameter, "main account name is required")
+	}
+
+	if len(opt.HuaWei.SubAccountName) == 0 {
+		return errf.New(errf.InvalidParameter, "sub account name is required")
+	}
+
+	if len(opt.HuaWei.SubAccountCID) == 0 {
+		return errf.New(errf.InvalidParameter, "sub account cid is required")
+	}
+
+	if len(opt.HuaWei.IamUserCID) == 0 {
+		return errf.New(errf.InvalidParameter, "iam user cid is required")
+	}
+
+	if len(opt.HuaWei.IamUserName) == 0 {
+		return errf.New(errf.InvalidParameter, "iam user name is required")
+	}
+
+	return nil
+}
+
 // AccountCheck check account authentication information and permissions.
-// TODO: 仅用于测试
-func (h *huawei) AccountCheck(kt *kit.Kit, secret *types.Secret) error {
-	client, err := h.iamClient(secret, region.CN_NORTH_4)
+// KeystoneListAuthDomains: https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_07_0001.html
+func (h *huawei) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.AccountCheckOption) error {
+	if err := validateSecret(secret); err != nil {
+		return err
+	}
+
+	if err := validateAccountCheckOption(opt); err != nil {
+		return err
+	}
+
+	client, err := h.iamClient(secret.HuaWei, region.AP_SOUTHEAST_1)
 	if err != nil {
 		return fmt.Errorf("init huawei client failed, err: %v", err)
 	}
 
-	_, err = client.KeystoneListRegions(nil)
+	_, err = client.KeystoneListAuthDomains(nil)
 	if err != nil {
 		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
 		return err
