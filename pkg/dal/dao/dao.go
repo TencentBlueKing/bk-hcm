@@ -26,19 +26,22 @@ import (
 
 	"hcm/pkg/cc"
 	"hcm/pkg/dal/dao/audit"
+	"hcm/pkg/dal/dao/auth"
+	"hcm/pkg/dal/dao/cloud"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/kit"
 	"hcm/pkg/metrics"
 
 	_ "github.com/go-sql-driver/mysql" // import mysql drive, used to create conn.
 	"github.com/jmoiron/sqlx"
 )
 
-var DaoClient *AuditOrmDao
-
 // Set defines all the DAO to be operated.
 type Set interface {
-	Auth() Auth
-	AuditOrmDao() *AuditOrmDao
+	Auth() auth.Auth
+	Account() cloud.Account
+	AccountBizRel() cloud.AccountBizRel
+	Txn() *Txn
 }
 
 // NewDaoSet create the DAO set instance.
@@ -61,8 +64,6 @@ func NewDaoSet(opt cc.DataBase) (Set, error) {
 		db:       db,
 		auditDao: auditDao,
 	}
-
-	DaoClient = s.AuditOrmDao()
 
 	return s, nil
 }
@@ -102,19 +103,40 @@ type set struct {
 	auditDao audit.AuditDao
 }
 
-// Auth returns the auth instance's DAO
-func (s *set) Auth() Auth {
-	return &authDao{
-		orm: s.orm,
+// Account return account dao.
+func (s *set) Account() cloud.Account {
+	return &cloud.AccountDao{
+		Orm: s.orm,
 	}
 }
 
-func (s *set) AuditOrmDao() *AuditOrmDao {
-	return &AuditOrmDao{s.orm, s.auditDao}
+// Auth return auth dao.
+func (s *set) Auth() auth.Auth {
+	return &auth.AuthDao{
+		Orm: s.orm,
+	}
 }
 
-// AuditOrmDao ...
-type AuditOrmDao struct {
-	Orm      orm.Interface
-	AuditDao audit.AuditDao
+// AccountBizRel return AccountBizRel dao.
+func (s *set) AccountBizRel() cloud.AccountBizRel {
+	return &cloud.AccountBizRelDao{
+		Orm: s.orm,
+	}
+}
+
+// Txn define dao set Txn.
+type Txn struct {
+	orm orm.Interface
+}
+
+// AutoTxn auto Txn.
+func (t *Txn) AutoTxn(kt *kit.Kit, run orm.TxnFunc) (interface{}, error) {
+	return t.orm.AutoTxn(kt, run)
+}
+
+// Txn return Txn.
+func (s *set) Txn() *Txn {
+	return &Txn{
+		orm: s.orm,
+	}
 }

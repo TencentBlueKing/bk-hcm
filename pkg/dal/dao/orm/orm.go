@@ -61,7 +61,7 @@ type DoOrmWithTransaction interface {
 type Interface interface {
 	Do() DoOrm
 	Txn(tx *sqlx.Tx) DoOrmWithTransaction
-	AutoTxn(kit *kit.Kit, run TxnFunc) (interface{}, error)
+	AutoTxn(kt *kit.Kit, run TxnFunc) (interface{}, error)
 }
 
 // InitOrm return orm operations.

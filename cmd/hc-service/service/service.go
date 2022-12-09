@@ -30,13 +30,13 @@ import (
 	"hcm/cmd/hc-service/service/account"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/adaptor"
-	"hcm/pkg/api"
 	"hcm/pkg/cc"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/handler"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
@@ -48,17 +48,17 @@ import (
 type Service struct {
 	serve     *http.Server
 	adaptor   adaptor.Adaptor
-	clientSet *api.ClientSet
+	clientSet *client.ClientSet
 }
 
 // NewService create a service instance.
 func NewService(dis serviced.Discover) (*Service, error) {
-	cli, err := client.NewClient(nil)
+	cli, err := restcli.NewClient(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	cliSet := api.NewHCServiceClientSet(cli, dis)
+	cliSet := client.NewHCServiceClientSet(cli, dis)
 
 	ad, err := adaptor.NewAdaptor()
 	if err != nil {

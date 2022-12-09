@@ -21,7 +21,7 @@ package initial
 
 import (
 	"hcm/cmd/auth-server/service/capability"
-	"hcm/pkg/api/protocol/auth-server"
+	authserver "hcm/pkg/api/auth-server"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/sys"
 	"hcm/pkg/logs"

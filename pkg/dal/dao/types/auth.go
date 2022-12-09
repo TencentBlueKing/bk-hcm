@@ -21,12 +21,13 @@ package types
 
 import (
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/table"
 	"hcm/pkg/runtime/filter"
 )
 
 // ListInstancesOption list instance options.
 type ListInstancesOption struct {
-	TableName Name               `json:"table_name"`
+	TableName table.Name         `json:"table_name"`
 	Filter    *filter.Expression `json:"filter"`
 	Page      *BasePage          `json:"page"`
 }

@@ -17,51 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cloudserver defines cloud-server api call protocols.
 package cloudserver
 
-import (
-	"context"
-	"net/http"
+import "hcm/pkg/criteria/validator"
 
-	"hcm/pkg/api/protocol/base"
-	"hcm/pkg/api/protocol/cloud-server"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
-)
-
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// CreateAccountReq defines create cloud account http request.
+type CreateAccountReq struct {
+	Name string  `json:"name"`
+	Memo *string `json:"memo"`
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
-}
-
-// Create cloud account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-	*base.CreateResult, error,
-) {
-	resp := new(base.CreateResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/create/account/account").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, err
+// Validate create account request.
+func (c CreateAccountReq) Validate() error {
+	if err := validator.ValidateName(c.Name); err != nil {
+		return err
 	}
 
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
+	if err := validator.ValidateMemo(c.Memo, false); err != nil {
+		return err
 	}
 
-	return resp.Data, nil
+	return nil
 }

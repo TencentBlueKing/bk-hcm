@@ -17,46 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package dataservice defines data-service api call protocols.
 package dataservice
 
 import (
-	"context"
-	"net/http"
-
-	"hcm/pkg/api/protocol/data-service"
-	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/iam/client"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
-// AuthClient is api client for authorize use.
-type AuthClient struct {
-	client rest.ClientInterface
+// ListInstancesReq defines list instances for iam pull resource callback http request.
+type ListInstancesReq struct {
+	ResourceType client.TypeID      `json:"resource_type"`
+	Filter       *filter.Expression `json:"filter"`
+	Page         *types.BasePage    `json:"page"`
 }
 
-// NewAuthClient create a new api client for authorize use.
-func NewAuthClient(client rest.ClientInterface) *AuthClient {
-	return &AuthClient{
-		client: client,
-	}
+// ListInstancesResp  defines list instances for iam pull resource callback result.
+type ListInstancesResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListInstancesResult `json:"data"`
 }
 
-// ListInstances list instances for iam pull resource callback.
-func (a *AuthClient) ListInstances(ctx context.Context, h http.Header, request *dataservice.ListInstancesReq) (
-	*dataservice.ListInstancesResult, error) {
-
-	resp := new(dataservice.ListInstancesResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/list/auth/instances").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, err
+// ListInstancesResult defines list instances for iam pull resource callback result.
+type ListInstancesResult struct {
+	Count   uint64                   `json:"count"`
+	Details []types.InstanceResource `json:"details"`
 }

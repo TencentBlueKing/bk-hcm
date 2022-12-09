@@ -23,7 +23,7 @@ package account
 import (
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/adaptor"
-	hcservice "hcm/pkg/api/protocol/hc-service"
+	"hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )

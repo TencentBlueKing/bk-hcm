@@ -28,14 +28,14 @@ import (
 	"time"
 
 	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/api"
 	"hcm/pkg/cc"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
@@ -45,7 +45,7 @@ import (
 
 // Service do all the cloud server's work
 type Service struct {
-	client     *api.ClientSet
+	client     *client.ClientSet
 	serve      *http.Server
 	authorizer auth.Authorizer
 }
@@ -66,11 +66,11 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	}
 
 	// initiate system api client set.
-	restCli, err := client.NewClient(tlsConfig)
+	restCli, err := restcli.NewClient(tlsConfig)
 	if err != nil {
 		return nil, err
 	}
-	apiClientSet := api.NewCloudServerClientSet(restCli, sd)
+	apiClientSet := client.NewCloudServerClientSet(restCli, sd)
 
 	authorizer, err := auth.NewAuthorizer(sd, tls)
 	if err != nil {

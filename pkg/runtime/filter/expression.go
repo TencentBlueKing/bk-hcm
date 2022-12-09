@@ -39,7 +39,7 @@ const (
 	// DefaultMaxInLimit defines the default max in limit
 	DefaultMaxInLimit = uint(20)
 	// DefaultMaxNotInLimit defines the default max nin limit
-	DefaultMaxNotInLimit = uint(20)
+	DefaultMaxNotInLimit = uint(100)
 	// DefaultMaxRuleLimit defines the default max number of rules limit
 	DefaultMaxRuleLimit = uint(5)
 )
@@ -62,6 +62,48 @@ type ExprOption struct {
 	// MaxRulesLimit defines the max number of rules an expression allows.
 	// If not set, then use default value: DefaultMaxRuleLimit
 	MaxRulesLimit uint
+}
+
+// ExprOptionFunc expr option func defines.
+type ExprOptionFunc func(opt *ExprOption)
+
+// RuleFields set rule fields func.
+func RuleFields(fields map[string]enumor.ColumnType) ExprOptionFunc {
+	return func(opt *ExprOption) {
+		opt.RuleFields = fields
+	}
+}
+
+// MaxInLimit set max in limit func.
+func MaxInLimit(limit uint) ExprOptionFunc {
+	return func(opt *ExprOption) {
+		opt.MaxInLimit = limit
+	}
+}
+
+// MaxNotInLimit set max not in limit func.
+func MaxNotInLimit(limit uint) ExprOptionFunc {
+	return func(opt *ExprOption) {
+		opt.MaxNotInLimit = limit
+	}
+}
+
+// MaxRulesLimit set max rule limit func.
+func MaxRulesLimit(limit uint) ExprOptionFunc {
+	return func(opt *ExprOption) {
+		opt.MaxRulesLimit = limit
+	}
+}
+
+// NewExprOption new expr option.
+// ExprOptionFunc: RuleFields、MaxInLimit、MaxNotInLimit、MaxRulesLimit
+func NewExprOption(opts ...ExprOptionFunc) *ExprOption {
+	exprOpt := new(ExprOption)
+	for _, opt := range opts {
+		opt(exprOpt)
+	}
+
+	return exprOpt
 }
 
 // Expression is to build a query expression

@@ -21,7 +21,7 @@ package capability
 
 import (
 	"hcm/pkg/adaptor"
-	"hcm/pkg/api"
+	"hcm/pkg/client"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -30,5 +30,5 @@ import (
 type Capability struct {
 	WebService *restful.WebService
 	Adaptor    adaptor.Adaptor
-	ClientSet  *api.ClientSet
+	ClientSet  *client.ClientSet
 }

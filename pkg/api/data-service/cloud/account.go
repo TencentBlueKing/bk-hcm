@@ -17,122 +17,83 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cloud 包提供各类云资源的请求与返回序列化器
 package cloud
 
 import (
-	"context"
-	"net/http"
-
-	"hcm/pkg/api/protocol/base"
-	protocloud "hcm/pkg/api/protocol/data-service/cloud"
-	"hcm/pkg/criteria/errf"
+	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
-// AccountClient is data service account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// CreateAccountReq ...
+type CreateAccountReq struct {
+	Vendor     enumor.Vendor            `json:"vendor" validate:"required"`
+	Spec       *cloud.AccountSpec       `json:"spec" validate:"required"`
+	Extension  *cloud.AccountExtension  `json:"extension" validate:"required"`
+	Attachment *cloud.AccountAttachment `json:"attachment" validate:"required"`
 }
 
-// NewCloudAccountClient create a new account api client.
-func NewCloudAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
+// Validate ...
+func (c *CreateAccountReq) Validate() error {
+	return validator.Validate.Struct(c)
 }
 
-// Create account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *protocloud.CreateAccountReq) (
-	*base.CreateResult, error,
-) {
-	resp := new(base.CreateResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/cloud/accounts/create/").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+// UpdateAccountReq ...
+type UpdateAccountReq struct {
+	Spec      *cloud.AccountSpec      `json:"spec" validate:"required"`
+	Extension *cloud.AccountExtension `json:"extension" validate:"required"`
+	Filter    *filter.Expression      `json:"filter" validate:"required"`
 }
 
-// Update ...
-func (a *AccountClient) Update(ctx context.Context, h http.Header, request *protocloud.UpdateAccountsReq) (
-	interface{}, error,
-) {
-	resp := new(base.UpdateResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/cloud/accounts/update/").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+// Validate ...
+func (u *UpdateAccountReq) Validate() error {
+	return validator.Validate.Struct(u)
 }
 
-// List ...
-func (a *AccountClient) List(ctx context.Context, h http.Header, request *protocloud.ListAccountsReq) (
-	*protocloud.ListAccountsResult, error,
-) {
-	resp := new(protocloud.ListAccountsResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/cloud/accounts/list/").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+// ListAccountReq ...
+type ListAccountReq struct {
+	Filter *filter.Expression `json:"filter" validate:"required"`
+	Page   *types.BasePage    `json:"page" validate:"required"`
 }
 
-// Delete ...
-func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *protocloud.DeleteAccountsReq) (
-	interface{}, error,
-) {
-	resp := new(base.DeleteResp)
+// Validate ...
+func (l *ListAccountReq) Validate() error {
+	return validator.Validate.Struct(l)
+}
 
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/cloud/accounts/delete/").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
+// ListAccountResult defines list instances for iam pull resource callback result.
+type ListAccountResult struct {
+	Count   uint64           `json:"count,omitempty"`
+	Details []*cloud.Account `json:"details,omitempty"`
+}
 
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
+// DeleteAccountReq ...
+type DeleteAccountReq struct {
+	Filter *filter.Expression `json:"filter" validate:"required"`
+}
 
-	return resp.Data, nil
+// Validate ...
+func (d *DeleteAccountReq) Validate() error {
+	return validator.Validate.Struct(d)
+}
+
+// ListAccountResp ...
+type ListAccountResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListAccountResult `json:"data"`
+}
+
+// UpdateAccountBizRelReq ...
+type UpdateAccountBizRelReq struct {
+	AccountID uint64   `json:"account_id" validate:"required"`
+	BkBizIDs  []uint64 `json:"bk_biz_ids" validate:"required"`
+}
+
+// Validate ...
+func (req *UpdateAccountBizRelReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
