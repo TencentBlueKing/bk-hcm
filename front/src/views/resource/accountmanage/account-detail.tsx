@@ -59,6 +59,8 @@ export default defineComponent({
       list: BUSINESS_TYPE,
     });
 
+    const isOrganizationDetail = ref<Boolean>(true);      // 组织架构详情展示
+
     const dialogForm = reactive({ list: [] });
 
     onMounted(async () => {
@@ -312,6 +314,7 @@ export default defineComponent({
       if (key === 'departmentId') {
         params.spec.department_id = Number(projectModel[key].join(''));
         delete params.attachment;
+        isOrganizationDetail.value = true;  // 改为详情展示态
       } else if (key === 'bizIds') {
         // 若选择全部业务，则参数是-1
         params.attachment.related_bk_biz_ids = projectModel[key].length === businessList.list.length
@@ -327,7 +330,9 @@ export default defineComponent({
           ...params,
         });
       } catch (error) {
-
+        console.log(error);
+      } finally {
+        isOrganizationDetail.value = true;  // 改为详情展示态
       }
     };
 
@@ -390,6 +395,11 @@ export default defineComponent({
     // 处理组织架构选择
     const handleOrganChange = () => {
       updateFormData('departmentId');    // 更新数据
+    };
+
+    // 组织架构编辑
+    const handleEdit = () => {
+      isOrganizationDetail.value = false;
     };
 
     const formBaseInfo = reactive([
@@ -486,7 +496,13 @@ export default defineComponent({
             property: 'departmentId',
             isEdit: true,
             component() {
-              return (<OrganizationSelect v-model={projectModel.departmentId} onChange={handleOrganChange}/>);
+              return (
+                isOrganizationDetail.value ? (<div class="flex-row align-items-center">
+                  <span>{departmentFullName.value}</span>
+                  <i onClick={handleEdit} class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
+                </div>)
+                  : (<OrganizationSelect v-model={projectModel.departmentId} onChange={handleOrganChange}/>)
+              );
             },
           },
           {
