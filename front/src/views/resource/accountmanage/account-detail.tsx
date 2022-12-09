@@ -1,7 +1,7 @@
 import { Form, Dialog, Input } from 'bkui-vue';
 import { reactive, defineComponent, ref, onMounted } from 'vue';
 import { ProjectModel, SecretModel, CloudType, AccountType } from '@/typings';
-import { CLOUD_TYPE } from '@/constants';
+import { BUSINESS_TYPE } from '@/constants';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
 // import { useRoute } from 'vue-router';
@@ -32,13 +32,15 @@ export default defineComponent({
       secretKey: '',  // 密钥key
       managers: ['poloohuang'], // 责任人
       departmentId: [],   // 组织架构
-      bizIds: '',   // 使用业务
+      bizIds: [],   // 使用业务
       memo: '',     // 备注
       price: 0,
       extension: {},   // 特殊信息
     };
 
     const isTestConnection = ref(false);
+    const departmentFullName = ref('IEG互动娱乐事业群/技术运营部/计算资源中心');
+    const isShowModifyScretDialog = ref(false);
 
     const initSecretModel: SecretModel = {
       secretId: '',
@@ -53,50 +55,72 @@ export default defineComponent({
       ...initSecretModel,
     });
 
-    const cloudType = reactive(CLOUD_TYPE);
+    const businessList = reactive({ // 业务列表
+      list: BUSINESS_TYPE,
+    });
 
-    let dialogForm = reactive([]);
+    const dialogForm = reactive({ list: [] });
 
     onMounted(async () => {
+      // getBusinessList();
       // const { id } = route.query;
       // console.log('route.query', route.query);
       // const res = await accountStore.getAccountDetail({ id: Number(id) });
       const res = { data: {
         id: 1,
-        name: 'qcloud-account',
-        vendor: 'aws',  // 云厂商，枚举值有：tcloud 、aws、azure、gcp、huawei
-        type: 'resource',  // resource表示资源账号，register表示登记账号
-        managers: ['jiananzhang', 'jamesge'],  // 负责人
-        price: 500.01,  // 余额
-        price_unit: '$', // 余额单位，可能是美元、人民币等
-        created_at: '2022-12-05T10:44:55Z',
-        updated_at: '2022-12-05T12:44:55Z',
-        creator: 'jamesge',  // 创建者
-        reviser: 'jiananzhang', // 更新者
-        memo: '测试账号',  // 备注
-        department_id: 1,  // 部门ID
-        department_full_name: 'IEG互动娱乐事业群/技术运营部/计算资源中心',
-        related_bk_biz_ids: ['tcloud'], // 关联的业务列表，若选择All，则是-1
-        extension: { account_id: 1, iam_username: 'poloohuang', secret_id: '**', secret_key: '**' },
+        vendor: 'tcloud',  // 云厂商，枚举值有：tcloud 、aws、azure、gcp、huawei
+        spec: {
+          name: 'qcloud-account',
+          type: 'resource',  // resource表示资源账号，register表示登记账号
+          managers: ['jiananzhang', 'jamesge'],  // 负责人
+          price: 500.01,  // 余额
+          price_unit: '', // 余额单位，可能是美元、人民币等
+          department_id: 1,
+          memo: '测试账号',  // 备注
+        },
+        extension: { main_account: 1, sub_account: 2, secret_id: '1111' },
+        attachment: {
+          bk_biz_ids: [1, 2], // 关联的业务列表，若选择All，则是-1
+        },
+        revision: {
+          creator: 'tom',
+          reviser: 'tom',
+          create_at: '2019-07-29 11:57:20',
+          update_at: '2019-07-29 11:57:20',
+        },
       } };
       projectModel.id = res?.data.id;
-      projectModel.name = res?.data.name;
       projectModel.vendor = res?.data.vendor;
-      projectModel.type = res?.data.type;
-      projectModel.managers = res?.data.managers;
-      projectModel.price = res?.data.price;
-      projectModel.creator = res?.data.creator;
-      projectModel.price_unit = res?.data.price_unit;
-      projectModel.created_at = res?.data.created_at;
-      projectModel.updated_at = res?.data.updated_at;
-      projectModel.reviser = res?.data.reviser;
-      projectModel.memo = res?.data.memo;
+      projectModel.name = res?.data.spec.name;
+      projectModel.type = res?.data.spec.type;
+      projectModel.managers = res?.data.spec.managers;
+      projectModel.price = res?.data.spec.price;
+      projectModel.price_unit = res?.data.spec.price_unit;
+      projectModel.memo = res?.data.spec.memo;
+      projectModel.departmentId = [res?.data.spec.department_id];
+      projectModel.creator = res?.data.revision.creator;
+      projectModel.reviser = res?.data.revision.reviser;
+      projectModel.created_at = res?.data.revision.create_at;
+      projectModel.updated_at = res?.data.revision.update_at;
       projectModel.extension = res?.data.extension;
-      projectModel.departmentId = [res?.data.department_id];
-      projectModel.bizIds = res?.data.related_bk_biz_ids;
+      projectModel.bizIds = res?.data.attachment.bk_biz_ids;
+      getDepartmentInfo(res?.data.spec.department_id);
       renderDialogForm(projectModel);
       renderBaseInfoForm(projectModel);
     });
+
+    // 获取业务列表
+    // const getBusinessList = async () => {
+    //   const res = await accountStore.getBizList();
+    //   businessList.list = res.data;
+    // };
+
+    // 获取部门信息
+    const getDepartmentInfo = async (id: number) => {
+      const res = await accountStore.getDepartmentInfo(id);
+      console.log('res', res);
+      departmentFullName.value = res?.data?.full_name;
+    };
 
     // 动态表单
     const renderBaseInfoForm = (data: any) => {
@@ -135,7 +159,7 @@ export default defineComponent({
                 label: 'Secret Key',
                 required: false,
                 property: 'secretKey',
-                component: () => <span>{projectModel.extension.secret_key}</span>,
+                component: () => <span>********</span>,
               },
             ],
           });
@@ -183,7 +207,7 @@ export default defineComponent({
     const renderDialogForm = (data: any) => {
       switch (data.vendor) {
         case 'huawei':
-          dialogForm = [
+          dialogForm.list = [
             {
               label: 'Secret ID',
               required: true,
@@ -199,7 +223,7 @@ export default defineComponent({
           ];
           break;
         case 'aws':
-          dialogForm = [
+          dialogForm.list = [
             // {
             //   label: t('密钥ID'),
             //   required: true,
@@ -221,7 +245,7 @@ export default defineComponent({
           ];
           break;
         case 'gcp':
-          dialogForm = [
+          dialogForm.list = [
             {
               label: 'Secret ID',
               required: true,
@@ -237,7 +261,7 @@ export default defineComponent({
           ];
           break;
         case 'azure':
-          dialogForm = [
+          dialogForm.list = [
             {
               label: t('客户端ID'),
               required: true,
@@ -253,7 +277,7 @@ export default defineComponent({
           ];
           break;
         case 'tcloud':
-          dialogForm = [
+          dialogForm.list = [
             {
               label: 'Secret ID',
               required: true,
@@ -273,11 +297,6 @@ export default defineComponent({
       }
     };
 
-    const isShowModifyScretDialog = ref(false);
-
-    // const members = ['poloohuang'];
-    // const department = [6544];
-
     const check = (val: any): boolean => {
       return  /^[a-z][a-z-z0-9_-]*$/.test(val);
     };
@@ -289,16 +308,18 @@ export default defineComponent({
     };
     // 更新信息方法
     const updateFormData = async (key: any) => {
-      let params: any = { department_id: '', related_bk_biz_ids: '' };
+      let params: any = { spec: {}, attachment: {} };
       if (key === 'departmentId') {
-        params.department_id = Number(projectModel[key].join(''));
-        delete params.related_bk_biz_ids;
+        params.spec.department_id = Number(projectModel[key].join(''));
+        delete params.attachment;
       } else if (key === 'bizIds') {
-        params.related_bk_biz_ids = projectModel[key];
-        delete params.department_id;
+        // 若选择全部业务，则参数是-1
+        params.attachment.related_bk_biz_ids = projectModel[key].length === businessList.list.length
+          ? -1 : projectModel[key];
+        delete params.spec;
       } else {
-        params = {};
-        params[key] = projectModel[key];
+        params = { spec: {} };
+        params.spec[key] = projectModel[key];
       }
       try {
         await accountStore.updateAccount({    // 更新密钥信息
@@ -328,7 +349,7 @@ export default defineComponent({
           extension,
         });
       } else {
-        await accountStore.testAccountConnection({    // 测试连接密钥信息
+        await accountStore.updateTestAccount({    // 测试连接密钥信息
           id: projectModel.id,
           extension,
         });
@@ -473,7 +494,7 @@ export default defineComponent({
             required: false,
             property: 'bizIds',
             isEdit: false,
-            selectData: cloudType,
+            selectData: businessList.list,
             component() {
               // eslint-disable-next-line max-len
               return (<RenderDetailEdit v-model={projectModel.bizIds} fromKey={this.property}
@@ -542,7 +563,7 @@ export default defineComponent({
             onClosed={onClosed}
           >
             <Form labelWidth={100} model={secretModel} ref={formDiaRef}>
-            {dialogForm.map(formItem => (
+            {dialogForm.list.map(formItem => (
                 <FormItem label={formItem.label} required={formItem.required} property={formItem.property}>
                     {formItem.component()}
                 </FormItem>

@@ -1,19 +1,32 @@
 export const CLOUD_TYPE = [
   {
-    label: '腾讯云',
-    value: 'tcloud',
+    id: 'tcloud',
+    name: '腾讯云',
   }, {
-    label: '亚马逊',
-    value: 'aws',
+    id: 'aws',
+    name: '亚马逊',
   }, {
-    label: '微软云',
-    value: 'azure',
+    id: 'azure',
+    name: '微软云',
   }, {
-    label: '谷歌云',
-    value: 'gcp',
+    id: 'gcp',
+    name: '谷歌云',
   }, {
-    label: '华为云',
-    value: 'huawei',
+    id: 'huawei',
+    name: '华为云',
+  },
+];
+
+export const BUSINESS_TYPE = [
+  {
+    id: 1,
+    name: 'cmdb',
+  }, {
+    id: 2,
+    name: 'lesscode',
+  }, {
+    id: 3,
+    name: '开发者中心',
   },
 ];
 

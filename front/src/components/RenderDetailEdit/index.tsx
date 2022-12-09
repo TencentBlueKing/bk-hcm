@@ -95,11 +95,11 @@ export default defineComponent({
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}>
             {props.selectData.map((item: any) => (
               <Option
-                key={item.label}
-                value={item.value}
-                label={item.label}
+                key={item.id}
+                value={item.id}
+                label={item.name}
               >
-                {item.label}
+                {item.name}
               </Option>
             ))
           }
@@ -122,12 +122,12 @@ export default defineComponent({
           // eslint-disable-next-line no-case-declarations
           let selectModelValue;
           if (Array.isArray(props.modelValue)) {
-            selectModelValue = props.selectData.filter((e: any) => props.modelValue.includes(e.value));
+            selectModelValue = props.selectData.filter((e: any) => props.modelValue.includes(e.id));
           } else {
-            selectModelValue = props.selectData.filter((e: any) => e.value === props.modelValue);
+            selectModelValue = props.selectData.filter((e: any) => e.id === props.modelValue);
           }
           if (selectModelValue.length) {
-            selectModelValue = selectModelValue.map((e: any) => e.label);
+            selectModelValue = selectModelValue.map((e: any) => e.name);
           }
           return selectModelValue.length
             ? <span>{selectModelValue.join(',')}</span>
