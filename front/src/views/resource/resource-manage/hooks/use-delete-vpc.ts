@@ -10,13 +10,13 @@ import DeleteVPC from '../children/dialog/delete-vpc/delete-vpc';
 export default () => {
   const isShowVPC = ref(false);
 
-  const handleDeleteVPC = () => {
+  const handleShowDeleteVPC = () => {
     isShowVPC.value = true;
   };
 
   return {
     isShowVPC,
-    handleDeleteVPC,
+    handleShowDeleteVPC,
     DeleteVPC,
   };
 };
