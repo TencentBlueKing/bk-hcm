@@ -132,16 +132,19 @@ func (s *Service) ListenAndServeRest() error {
 }
 
 func (s *Service) apiSet() *restful.Container {
+	ws := new(restful.WebService)
+	ws.Path("/api/v1/hc")
+	ws.Produces(restful.MIME_JSON)
 
-	cap := &capability.Capability{
-		WebService: new(restful.WebService),
+	c := &capability.Capability{
+		WebService: ws,
 		Adaptor:    s.adaptor,
 		ClientSet:  s.clientSet,
 	}
 
-	account.InitAccountService(cap)
+	account.InitAccountService(c)
 
-	return restful.NewContainer().Add(cap.WebService)
+	return restful.NewContainer().Add(c.WebService)
 }
 
 // Healthz check whether the service is healthy.
