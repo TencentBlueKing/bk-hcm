@@ -2,6 +2,22 @@
 import {
   ref,
 } from 'vue';
+import {
+  useI18n,
+} from 'vue-i18n';
+
+import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
+
+// use hook
+const {
+  t,
+} = useI18n();
+
+const {
+  isShowSecurityRule,
+  handleSecurityRule,
+  SecurityRule,
+} = UseSecurityRule();
 
 const inColumns = [
   {
@@ -64,6 +80,7 @@ const types = [
   { name: 'out', label: '出站规则' },
 ];
 const activeType = ref('in');
+
 </script>
 
 <template>
@@ -80,7 +97,7 @@ const activeType = ref('in');
       </bk-radio-button>
     </bk-radio-group>
 
-    <bk-button theme="primary">
+    <bk-button theme="primary" @click="handleSecurityRule">
       新增规则
     </bk-button>
   </section>
@@ -100,6 +117,10 @@ const activeType = ref('in');
     :columns="outColumns"
     :data="outData"
   />
+
+  <security-rule
+    v-model:isShow="isShowSecurityRule"
+    :title="t('添加入站规则')" />
 </template>
 
 <style lang="scss" scoped>
