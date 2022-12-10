@@ -2,7 +2,7 @@ import { Form, Input, Select, Button, Radio, Message } from 'bkui-vue';
 import { reactive, defineComponent, ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ProjectModel, FormItems } from '@/typings';
-import { CLOUD_TYPE, ACCOUNT_TYPE } from '@/constants';
+import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE } from '@/constants';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import OrganizationSelect from '@/components/OrganizationSelect';
@@ -36,7 +36,7 @@ export default defineComponent({
     onMounted(async () => {
       console.log(122133333);
       /* 获取业务列表接口 */
-      getBusinessList();
+      // getBusinessList();
     });
     const formRef = ref<InstanceType<typeof Form>>(null);
     const noUser = ref<Boolean>(false);
@@ -47,18 +47,20 @@ export default defineComponent({
 
     const optionalRequired = ['secretId', 'secretKey'];
     const cloudType = reactive(CLOUD_TYPE);
-    const isTestConnection = ref(true);
+    const isTestConnection = ref(false);
 
-    let businessList = reactive(CLOUD_TYPE);    // 业务列表
-    const getBusinessList = async () => {
-      try {
-        const res = await accountStore.getBizList();
-        console.log(res);
-        businessList = res?.data || CLOUD_TYPE;
-      } catch (error) {
-        console.log(error);
-      }
-    };
+    const businessList = reactive({
+      list: BUSINESS_TYPE,
+    });    // 业务列表
+    // const getBusinessList = async () => {
+    //   try {
+    //     const res = await accountStore.getBizList();
+    //     console.log(res);
+    //     businessList.list = res?.data || BUSINESS_TYPE;
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // };
 
 
     const check = (val: any): boolean => {
@@ -71,13 +73,18 @@ export default defineComponent({
       await formRef.value?.validate();
       try {
         const params = {
-          type: projectModel.type,
           vendor: projectModel.vendor,
-          name: projectModel.name,
-          managers: projectModel.managers,
-          department_id: projectModel.departmentId.join(','),
-          related_bk_biz_ids: projectModel.bizIds,
-          memo: projectModel.memo,
+          spec: {
+            type: projectModel.type,
+            name: projectModel.name,
+            managers: projectModel.managers,
+            memo: projectModel.memo,
+            department_id: projectModel.departmentId.join(','),
+          },
+          attachment: {
+            bk_biz_ids: projectModel.bizIds.length === businessList.list.length
+              ? -1 : projectModel.bizIds,
+          },
           extension: {},
         };
         switch (projectModel.vendor) {
@@ -108,7 +115,7 @@ export default defineComponent({
           });
           router.go(-1);  // 返回列表
         } else {
-          await accountStore.testAccountConnection({ vendor: params.type, extension: params.extension });
+          await accountStore.testAccountConnection({ vendor: params.vendor, extension: params.extension });
           Message({
             message: t('验证成功'),
             theme: 'success',
@@ -400,11 +407,11 @@ export default defineComponent({
         component: () => <Select class="w450" placeholder={t('请选择云厂商')} v-model={projectModel.vendor} onChange={changeCloud}>
           {cloudType.map(item => (
               <Option
-                key={item.label}
-                value={item.value}
-                label={item.label}
+                key={item.id}
+                value={item.id}
+                label={item.name}
               >
-                {item.label}
+                {item.name}
               </Option>
           ))
         }</Select>,
@@ -467,13 +474,13 @@ export default defineComponent({
         property: 'bizIds',
         component: () => <Select multiple show-select-all collapse-tags multipleMode='tag'
         placeholder={t('请选择使用业务')} class="w450" v-model={projectModel.bizIds}>
-          {businessList.map(item => (
+          {businessList.list.map(item => (
               <Option
-                key={item.label}
-                value={item.value}
-                label={item.label}
+                key={item.id}
+                value={item.id}
+                label={item.name}
               >
-                {item.label}
+                {item.name}
               </Option>
           ))
         }</Select>,

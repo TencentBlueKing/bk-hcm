@@ -4,12 +4,12 @@
       <bk-button theme="primary" @click="handleJump('accountAdd')">
         {{t('新增')}}
       </bk-button>
-      <div class="flex-row input-warp justify-content-between align-items-center">
+      <!-- <div class="flex-row input-warp justify-content-between align-items-center">
         <bk-checkbox v-model="isAccurate" class="pr20">
           {{t('精确')}}
         </bk-checkbox>
         <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
-      </div>
+      </div> -->
     </div>
     <bk-loading loading v-if="loading">
       <div style="width: 100%; height: 360px" />
@@ -128,7 +128,7 @@
 </template>
 
 <script lang="ts">
-import { reactive, toRefs, defineComponent, onMounted, onUnmounted, watch } from 'vue';
+import { reactive, toRefs, defineComponent, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import logo from '@/assets/image/logo.png';
@@ -193,33 +193,43 @@ export default defineComponent({
 
     onMounted(async () => {
       /* 获取账号列表接口 */
+      getListCount();
       init();
     });
     onUnmounted(() => {
     });
 
-    watch(
-      () => state.searchValue,
-      (val) => {
-        console.log('val', val);
-        state.pagination = {
-          totalPage: 1,
-          count: 1,
-          limit: 10,
-        };
-        getAccountList();
-      },
-      {
-        deep: true,
-      },
-    );
+    // watch(
+    //   () => state.searchValue,
+    //   (val) => {
+    //     console.log('val', val);
+    //     state.pagination = {
+    //       totalPage: 1,
+    //       count: 1,
+    //       limit: 10,
+    //     };
+    //     getAccountList();
+    //   },
+    //   {
+    //     deep: true,
+    //   },
+    // );
+
+
+    // 请求获取列表的总条数
+    const getListCount = async () => {
+      const params = {
+        page: {
+          count: true,
+        },
+      };
+      const res = await accountStore.getAccountList(params);
+      state.pagination.totalPage = res?.data || 0;
+    };
 
     const init = () => {
-      state.pagination = {
-        totalPage: 1,
-        count: 1,
-        limit: 10,
-      };
+      state.pagination.count = 1;
+      state.pagination.limit = 10;
       state.isAccurate = false;
       state.searchValue = '';
       getAccountList();
@@ -228,10 +238,11 @@ export default defineComponent({
     const getAccountList = async () => {
       try {
         const params = {
-          limit: state.pagination.limit,
-          offset: state.pagination.limit * (state.pagination.count - 1),
-          isAccurate: state.isAccurate,
-          searchValue: state.searchValue,
+          page: {
+            count: false,
+            limit: state.pagination.limit,
+            start: state.pagination.limit * (state.pagination.count - 1),
+          },
         };
         const res = await accountStore.getAccountList(params);
         state.tableData = res.data;
