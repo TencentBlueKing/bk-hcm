@@ -49,33 +49,38 @@ create table if not exists `audit`
 
 create table if not exists `account`
 (
-    `id`              bigint(1) unsigned  not null auto_increment,
-    `name`            varchar(64)         not null,
-    `vendor`          varchar(16)         not null,
-    `managers`        json                not null,
-    `department_id`   int(11)             not null,
-    `type`            varchar(32)         not null,
-    `sync_status`     varchar(32)         not null,
-    `price`           varchar(16)         default '',
-    `price_unit`      varchar(8)          default '',
-    `extension`       json                not null,
-    `creator`         varchar(64)         not null,
-    `reviser`         varchar(64)         not null,
-    `created_at`      timestamp           not null default now(),
-    `updated_at`      timestamp           not null default now(),
-    `memo`            varchar(255)        default '',
+    `id`            bigint(1) unsigned not null auto_increment,
+    `vendor`        varchar(16)        not null,
+
+    `name`          varchar(64)        not null,
+    `managers`      json               not null,
+    `department_id` int(11)            not null,
+    `type`          varchar(32)        not null,
+    `site`          varchar(32)        not null,
+    `sync_status`   varchar(32)        not null,
+    `price`         varchar(16)                 default '',
+    `price_unit`    varchar(8)                  default '',
+    `memo`          varchar(255)                default '',
+
+    `extension`     json               not null,
+
+    `creator`       varchar(64)        not null,
+    `reviser`       varchar(64)        not null,
+    `created_at`    timestamp          not null default now(),
+    `updated_at`    timestamp          not null default now(),
     primary key (`id`),
     unique key `idx_uk_name` (`name`)
-) engine=innodb default charset=utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
-create table if not exists `account_biz_rel` (
-    `id`              bigint(1) unsigned  not null auto_increment,
-    `bk_biz_id`       int(11)             not null,
-    `account_id`      bigint(1) unsigned  not null,
-    `creator`         varchar(64)         not null,
-    `reviser`         varchar(64)         not null,
-    `created_at`      timestamp           not null default now(),
-    `updated_at`      timestamp           not null default now(),
+create table if not exists `account_biz_rel`
+(
+    `id`         bigint(1) unsigned not null auto_increment,
+    `bk_biz_id`  int(11)            not null,
+    `account_id` bigint(1) unsigned not null,
+    `creator`    varchar(64)        not null,
+    `created_at` timestamp          not null default now(),
     primary key (`id`),
-    unique key `idx_uk_bk_biz_id_account_id` (`bk_biz_id`,`account_id`)
-) engine=innodb default charset=utf8mb4;
+    unique key `idx_uk_bk_biz_id_account_id` (`bk_biz_id`, `account_id`)
+) engine = innodb
+  default charset = utf8mb4;

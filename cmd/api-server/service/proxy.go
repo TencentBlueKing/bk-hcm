@@ -26,8 +26,8 @@ import (
 	"strings"
 	"time"
 
-	"hcm/pkg/api/discovery"
 	"hcm/pkg/cc"
+	"hcm/pkg/client/discovery"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"

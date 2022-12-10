@@ -33,7 +33,7 @@ type Command struct {
 	Name string
 	// Usage of this command, used in helper to inform the user how to use the command.
 	Usage string
-	// Parameters List of all needed parameters of the command, children will inherit these parameters.
+	// Parameters ListAccount of all needed parameters of the command, children will inherit these parameters.
 	Parameters []Parameter
 	// FromURL defines whether to read the parameters from url or from body, parameters should <= 5 if read from url.
 	FromURL bool

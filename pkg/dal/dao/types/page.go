@@ -24,12 +24,11 @@ import (
 	"fmt"
 
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/runtime/filter"
 )
 
 const (
 	// DefaultMaxPageLimit is the default value of the max page limitation.
-	DefaultMaxPageLimit = uint(200)
+	DefaultMaxPageLimit = uint(500)
 )
 
 // DefaultPageOption is the default BasePage's option.
@@ -292,11 +291,4 @@ func (bp BasePage) SQLExpr(ps *PageSQLOption) (where string, err error) {
 	// bp.Limit is > 0, already validated upper.
 	expr = fmt.Sprintf("%s %s LIMIT %d OFFSET %d", expr, bp.Order.Order(), bp.Limit, bp.Start)
 	return expr, nil
-}
-
-// ListOption defines options to list accounts.
-type ListOption struct {
-	FilterExpr *filter.Expression
-	Page       *BasePage
-	Fields     []string
 }

@@ -30,13 +30,13 @@ import (
 	"hcm/cmd/hc-service/service/account"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/adaptor"
-	"hcm/pkg/api"
 	"hcm/pkg/cc"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/handler"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/rest/client"
+	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
@@ -48,17 +48,17 @@ import (
 type Service struct {
 	serve     *http.Server
 	adaptor   adaptor.Adaptor
-	clientSet *api.ClientSet
+	clientSet *client.ClientSet
 }
 
 // NewService create a service instance.
 func NewService(dis serviced.Discover) (*Service, error) {
-	cli, err := client.NewClient(nil)
+	cli, err := restcli.NewClient(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	cliSet := api.NewHCServiceClientSet(cli, dis)
+	cliSet := client.NewHCServiceClientSet(cli, dis)
 
 	ad, err := adaptor.NewAdaptor()
 	if err != nil {
@@ -132,16 +132,19 @@ func (s *Service) ListenAndServeRest() error {
 }
 
 func (s *Service) apiSet() *restful.Container {
+	ws := new(restful.WebService)
+	ws.Path("/api/v1/hc")
+	ws.Produces(restful.MIME_JSON)
 
-	cap := &capability.Capability{
-		WebService: new(restful.WebService),
+	c := &capability.Capability{
+		WebService: ws,
 		Adaptor:    s.adaptor,
 		ClientSet:  s.clientSet,
 	}
 
-	account.InitAccountService(cap)
+	account.InitAccountService(c)
 
-	return restful.NewContainer().Add(cap.WebService)
+	return restful.NewContainer().Add(c.WebService)
 }
 
 // Healthz check whether the service is healthy.

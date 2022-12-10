@@ -20,34 +20,7 @@
 package validator
 
 import (
-	"reflect"
-
 	gvalidator "github.com/go-playground/validator/v10"
-	"hcm/pkg/tools/reflectx"
 )
 
 var Validate = gvalidator.New()
-
-// ExtractValidFields 根据 json tag 提取有效的 struct 字段. 当前有效是根据 ! IsZero 进行判断
-func ExtractValidFields(i interface{}) []string {
-	v := reflectx.ReflectValue(i)
-	t := v.Type()
-	var fields []string
-
-	for j := 0; j < t.NumField(); j++ {
-		tags := v.Type().Field(j).Tag
-		if jsonTag := tags.Get("json"); jsonTag != "" && jsonTag != "filter_expr" {
-			name := v.Type().Field(j).Name
-			if isValidField(v.FieldByName(name).Interface()) {
-				fields = append(fields, jsonTag)
-			}
-		}
-	}
-	return fields
-}
-
-// isValidField ...
-// int 和 string 等基础类型, 通过指针方式可以区分是否传递和做零值判断
-func isValidField(i interface{}) bool {
-	return !reflect.ValueOf(i).IsZero()
-}

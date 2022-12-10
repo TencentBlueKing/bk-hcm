@@ -20,7 +20,7 @@
 package capability
 
 import (
-	"hcm/pkg/api"
+	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 
 	"github.com/emicklei/go-restful/v3"
@@ -29,6 +29,6 @@ import (
 // Capability defines the service's capability
 type Capability struct {
 	WebService *restful.WebService
-	ApiClient  *api.ClientSet
+	ApiClient  *client.ClientSet
 	Authorizer auth.Authorizer
 }

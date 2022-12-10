@@ -25,8 +25,8 @@ import (
 
 	"hcm/cmd/auth-server/options"
 	"hcm/cmd/auth-server/service/capability"
-	"hcm/pkg/api/data-service"
-	"hcm/pkg/api/protocol/auth-server"
+	authserver "hcm/pkg/api/auth-server"
+	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"

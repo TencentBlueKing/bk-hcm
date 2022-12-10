@@ -23,7 +23,7 @@ package account
 import (
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/adaptor"
-	hcservice "hcm/pkg/api/protocol/hc-service"
+	"hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -35,7 +35,7 @@ func InitAccountService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("AccountCheck", "POST", "/api/v1/hc/get/account/check", a.AccountCheck)
+	h.Add("AccountCheck", "POST", "/account/check", a.AccountCheck)
 
 	h.Load(cap.WebService)
 }

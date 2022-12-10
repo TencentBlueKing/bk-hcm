@@ -67,7 +67,7 @@ type Handler struct {
 // Add add a http handler
 func (r *Handler) Add(alias, verb, path string, handler func(contexts *Contexts) (reply interface{}, err error)) {
 	switch verb {
-	case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete:
+	case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch:
 	default:
 		panic(fmt.Sprintf("add http handler failed, inavlid http verb: %s.", verb))
 	}
@@ -99,6 +99,8 @@ func (r *Handler) Load(ws *restful.WebService) {
 			ws.Route(ws.PUT(action.Path).To(r.wrapperAction(action)))
 		case http.MethodGet:
 			ws.Route(ws.GET(action.Path).To(r.wrapperAction(action)))
+		case http.MethodPatch:
+			ws.Route(ws.PATCH(action.Path).To(r.wrapperAction(action)))
 		default:
 			panic(fmt.Sprintf("add handler to webservice, but got unsupport verb: %s .", action.Verb))
 		}
