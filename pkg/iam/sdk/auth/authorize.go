@@ -226,18 +226,22 @@ func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *client.Au
 	resourceType client.TypeID) (*client.AuthorizeList, error) {
 
 	// find user's policy with action
-	getOpt := client.GetPolicyOption{
-		System:  opts.System,
-		Subject: opts.Subject,
-		Action:  opts.Action,
-		// do not use user's policy, so that we can get all the user's policy.
-		Resources: opts.Resources,
+	getOpts := &client.GetPolicyByExtResOption{
+		AuthOptions: client.AuthOptions{
+			System:    opts.System,
+			Subject:   opts.Subject,
+			Action:    opts.Action,
+			Resources: opts.Resources,
+		},
+		ExtResources: make([]client.ExtResource, 0),
 	}
 
-	policy, err := a.client.GetUserPolicy(ctx, &getOpt)
+	policyRes, err := a.client.GetUserPolicyByExtRes(ctx, getOpts)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get user policy failed, opts: %#v, err: %v", getOpts, err)
 	}
+
+	policy := policyRes.Expression
 
 	if policy == nil || policy.Operator == "" {
 		return &client.AuthorizeList{}, nil

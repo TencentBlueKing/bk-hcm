@@ -39,7 +39,11 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 	res := client.Resource{
 		System: sys.SystemNameHCM,
 		Type:   sys.Account,
-		ID:     strconv.FormatUint(uint64(a.ResourceID), 10),
+	}
+
+	// compatible for authorize any
+	if a.ResourceID > 0 {
+		res.ID = strconv.FormatUint(a.ResourceID, 10)
 	}
 
 	switch a.Basic.Action {
@@ -68,7 +72,11 @@ func genResourceResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 	res := client.Resource{
 		System: sys.SystemNameHCM,
 		Type:   sys.Account,
-		ID:     strconv.FormatUint(uint64(a.ResourceID), 10),
+	}
+
+	// compatible for authorize any
+	if a.ResourceID > 0 {
+		res.ID = strconv.FormatUint(a.ResourceID, 10)
 	}
 
 	switch a.Basic.Action {
