@@ -98,3 +98,239 @@ create table if not exists `account_biz_rel`
     unique key `idx_uk_bk_biz_id_account_id` (`bk_biz_id`, `account_id`)
 ) engine = innodb
   default charset = utf8mb4;
+
+create table if not exists `security_group`
+(
+    `id`                      varchar(60)  not null,
+    `vendor`                  varchar(16)  not null,
+
+    `cloud_id`                varchar(255) not null,
+    `assigned`                boolean      not null,
+    `region`                  varchar(20)  not null,
+    `name`                    varchar(60)  not null,
+    `memo`                    varchar(255)          default '',
+    `account_id`              varchar(60)  not null,
+    `association_template_id` varchar(60)           default 0,
+
+    `extension`               json         not null,
+
+    `creator`                 varchar(64)  not null,
+    `reviser`                 varchar(64)  not null,
+    `created_at`              timestamp    not null default current_timestamp,
+    `updated_at`              timestamp    not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_name` (`name`)
+) engine = innodb
+  default charset = utf8mb4;
+
+# vpc_security_group_rel is only used of aws.
+create table if not exists `vpc_security_group_rel`
+(
+    `id`                bigint(1) unsigned not null auto_increment,
+    `vpc_id`            bigint(1) unsigned not null,
+    `security_group_id` bigint(1) unsigned not null,
+    `creator`           varchar(64)        not null,
+    `created_at`        timestamp          not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_vpc_id_security_group_id` (`vpc_id`, `security_group_id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+# security_group_network_interface_rel is only used of azure.
+create table if not exists `security_group_network_interface_rel`
+(
+    `id`                   bigint(1) unsigned not null auto_increment,
+    `security_group_id`    bigint(1) unsigned not null,
+    `network_interface_id` bigint(1) unsigned not null,
+    `creator`              varchar(64)        not null,
+    `created_at`           timestamp          not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_security_group_id_network_interface_id` (`security_group_id`, `network_interface_id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+# security_group_subnet_rel is only used of azure.
+create table if not exists `security_group_subnet_rel`
+(
+    `id`                bigint(1) unsigned not null auto_increment,
+    `security_group_id` varchar(60)        not null,
+    `subnet_id`         varchar(60)        not null,
+    `creator`           varchar(64)        not null,
+    `created_at`        timestamp          not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_security_group_id_subnet_id` (`security_group_id`, `subnet_id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `tcloud_security_group_rule`
+(
+    `id`                             bigint(1) unsigned not null auto_increment,
+
+    `rule_index`                     bigint(1)          not null,
+    `protocol`                       varchar(10)                 default '',
+    `port`                           varchar(255)                default '',
+    `cloud_service_id`               varchar(255)                default '',
+    `cloud_service_group_id`         varchar(255)                default '',
+    `ipv4_cidr`                      varchar(255)                default '',
+    `ipv6_cidr`                      varchar(255)                default '',
+    `cloud_target_security_group_id` varchar(255)                default '',
+    `cloud_address_id`               varchar(255)                default '',
+    `cloud_address_group_id`         varchar(255)                default '',
+    `action`                         varchar(10)        not null,
+    `memo`                           varchar(60)                 default '',
+    `type`                           varchar(20)                 default '',
+    `cloud_security_group_id`        varchar(255)       not null,
+    `security_group_id`              bigint(1)          not null,
+    `account_id`                     bigint(1)          not null,
+
+    `creator`                        varchar(64)        not null,
+    `reviser`                        varchar(64)        not null,
+    `created_at`                     timestamp          not null default current_timestamp,
+    `updated_at`                     timestamp          not null default current_timestamp on update current_timestamp,
+    primary key (`id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `aws_security_group_rule`
+(
+    `id`                             bigint(1) unsigned not null auto_increment,
+
+    `cloud_id`                       varchar(255)                default '',
+    `ipv4_cidr`                      varchar(255)                default '',
+    `ipv6_cidr`                      varchar(255)                default '',
+    `memo`                           varchar(60)                 default '',
+    `from_port`                      int(1) unsigned             default 0,
+    `to_port`                        int(1) unsigned             default 0,
+    `type`                           varchar(20)                 default '',
+    `protocol`                       varchar(10)                 default '',
+    `cloud_prefix_list_id`           varchar(255)       not null,
+    `cloud_target_security_group_id` varchar(255)                default '',
+    `cloud_security_group_id`        varchar(255)       not null,
+    `cloud_group_owner_id`           varchar(255)       not null,
+    `account_id`                     bigint(1)          not null,
+    `security_group_id`              bigint(1)          not null,
+
+    `creator`                        varchar(64)        not null,
+    `reviser`                        varchar(64)        not null,
+    `created_at`                     timestamp          not null default current_timestamp,
+    `updated_at`                     timestamp          not null default current_timestamp on update current_timestamp,
+    primary key (`id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `huawei_security_group_rule`
+(
+    `id`                            bigint(1) unsigned not null auto_increment,
+
+    `cloud_id`                      varchar(255)                default '',
+    `memo`                          varchar(255)                default '',
+    `protocol`                      varchar(10)                 default '',
+    `ethertype`                     varchar(10)                 default '',
+    `cloud_remote_group_id`         varchar(255)                default '',
+    `remote_ip_prefix`              varchar(255)                default '',
+    `cloud_remote_address_group_id` varchar(255)                default '',
+    `port`                          varchar(255)                default '',
+    `priority`                      int(1) unsigned             default 0,
+    `type`                          varchar(20)                 default '',
+    `cloud_security_group_id`       varchar(255)       not null,
+    `cloud_project_id`              varchar(255)       not null,
+    `account_id`                    bigint(1)          not null,
+    `security_group_id`             bigint(1)          not null,
+
+    `creator`                       varchar(64)        not null,
+    `reviser`                       varchar(64)        not null,
+    `created_at`                    timestamp          not null default current_timestamp,
+    `updated_at`                    timestamp          not null default current_timestamp on update current_timestamp,
+    primary key (`id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `azure_security_group_rule`
+(
+    `id`                                   bigint(1) unsigned not null auto_increment,
+
+    `cloud_id`                             varchar(255)                default '',
+    `etag`                                 varchar(255)                default '',
+    `name`                                 varchar(255)                default '',
+    `memo`                                 varchar(140)                default '',
+    `destination_address_prefix`           varchar(255)                default '',
+    `destination_address_prefixes`         json                        default null,
+    `cloud_destination_security_group_ids` json                        default null,
+    `destination_port_range`               varchar(255)                default '',
+    `destination_port_ranges`              json                        default null,
+    `protocol`                             varchar(10)                 default '',
+    `provisioning_state`                   varchar(20)        not null,
+    `source_address_prefix`                varchar(255)                default '',
+    `source_address_prefixes`              json                        default null,
+    `cloud_source_security_group_ids`      json                        default null,
+    `source_port_range`                    varchar(255)                default '',
+    `source_port_ranges`                   json                        default null,
+    `priority`                             bigint(1)                   default 0,
+    `type`                                 varchar(20)                 default '',
+    `access`                               varchar(20)                 default '',
+    `cloud_security_group_id`              varchar(255)       not null,
+    `account_id`                           bigint(1)          not null,
+    `security_group_id`                    bigint(1)          not null,
+
+    `creator`                              varchar(64)        not null,
+    `reviser`                              varchar(64)        not null,
+    `created_at`                           timestamp          not null default current_timestamp,
+    `updated_at`                           timestamp          not null default current_timestamp on update current_timestamp,
+    primary key (`id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `security_group_rule_security_group_rel`
+(
+    `id`                     bigint(1) unsigned not null auto_increment,
+    `security_group_id`      bigint(1) unsigned not null,
+    `security_group_rule_id` bigint(1) unsigned not null,
+    `creator`                varchar(64)        not null,
+    `created_at`             timestamp          not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_security_group_id_security_group_rule_id` (`security_group_id`, `security_group_rule_id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `security_group_tag`
+(
+    `id`                bigint(1) unsigned not null auto_increment,
+    `security_group_id` bigint(1)          not null,
+    `key`               varchar(255)       not null,
+    `value`             varchar(255)                default '',
+    `creator`           varchar(64)        not null,
+    `reviser`           varchar(64)        not null,
+    `created_at`        timestamp          not null default current_timestamp,
+    `updated_at`        timestamp          not null default current_timestamp on update current_timestamp,
+    primary key (`id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `gcp_firewall_rule`
+(
+    `id`                      bigint(1) unsigned not null auto_increment,
+
+    `cloud_id`                varchar(255)                default '',
+    `name`                    varchar(255)                default '',
+    `priority`                bigint(1)                   default 0,
+    `memo`                    varchar(140)                default '',
+    `cloud_vpc_id`            varchar(255)                default '',
+    `source_ranges`           json                        default null,
+    `destination_ranges`      json                        default null,
+    `source_tags`             json                        default null,
+    `target_tags`             json                        default null,
+    `source_service_accounts` json                        default null,
+    `target_service_accounts` json                        default null,
+    `denied`                  json                        default null,
+    `allowed`                 json                        default null,
+    `type`                    varchar(20)                 default '',
+    `disabled`                boolean                     default false,
+    `self_link`               varchar(255)                default '',
+
+    `creator`                 varchar(64)        not null,
+    `reviser`                 varchar(64)        not null,
+    `created_at`              timestamp          not null default current_timestamp,
+    `updated_at`              timestamp          not null default current_timestamp on update current_timestamp,
+    primary key (`id`)
+) engine = innodb
+  default charset = utf8mb4;
