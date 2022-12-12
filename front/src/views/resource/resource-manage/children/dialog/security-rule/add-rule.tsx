@@ -4,6 +4,7 @@ import {
 } from 'vue';
 import { Table, Input, Select, Button } from 'bkui-vue';
 import { POLICY_STATUS } from '@/constants';
+import Confirm from '@/components/confirm';
 import {
   useI18n,
 } from 'vue-i18n';
@@ -32,7 +33,7 @@ export default defineComponent({
     } = useI18n();
 
     // 状态
-    const tableData = ref([{ id: 1, policy: 'reject' }]);
+    const tableData = ref([{ id: 1 }, {}]);
     const columns: any[] = [
       { label: t('优先级'),
         field: 'id',
@@ -98,11 +99,15 @@ export default defineComponent({
       },
       { label: t('操作'),
         field: 'id',
-        render: () => {
+        render: ({ data, row }: any) => {
           return (
                 <div class="mt20">
-                <Button text theme="primary">{t('复制')}</Button>
-                <Button text theme="primary" class="ml20">{t('删除')}</Button>
+                <Button text theme="primary" onClick={() => {
+                  hanlerCopy(data);
+                }}>{t('复制')}</Button>
+                <Button text theme="primary" class="ml20" onClick={() => {
+                  handlerDelete(data, row);
+                }}>{t('删除')}</Button>
                 </div>
           );
         },
@@ -131,8 +136,23 @@ export default defineComponent({
       handleClose();
     };
 
+    // 新增
     const handlerAdd = () => {
       tableData.value.push({});
+    };
+
+    // 删除
+    const handlerDelete = (data: any, row: any) => {
+      console.log('data', data);
+      const index = row.__$table_row_index;
+      Confirm('确定删除', '删除之后不可恢复', () => {
+        tableData.value.splice(index, 1);
+      });
+    };
+
+    // 复制
+    const hanlerCopy = (data: any) => {
+      tableData.value.push(data);
     };
 
     return {
