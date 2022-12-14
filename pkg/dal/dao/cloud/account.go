@@ -22,7 +22,6 @@ package cloud
 import (
 	"fmt"
 
-	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/types"
@@ -38,8 +37,8 @@ import (
 
 // Account only used for account.
 type Account interface {
-	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, account *corecloud.Account) (uint64, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *corecloud.Account) error
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, account *cloud.AccountTable) (uint64, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *cloud.AccountTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccountDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
@@ -52,39 +51,29 @@ type AccountDao struct {
 }
 
 // CreateWithTx account with tx.
-func (a AccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *corecloud.Account) (uint64, error) {
-	account, err := cloud.ConvAccountTable(model)
-	if err != nil {
+func (a AccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *cloud.AccountTable) (uint64, error) {
+	if err := model.InsertValidate(); err != nil {
 		return 0, err
 	}
 
-	if err := account.InsertValidate(); err != nil {
-		return 0, err
-	}
-
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, account.TableName(), cloud.AccountColumns.ColumnExpr(),
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(), cloud.AccountColumns.ColumnExpr(),
 		cloud.AccountColumns.ColonNameExpr())
 
-	id, err := a.Orm.Txn(tx).Insert(kt.Ctx, sql, account)
+	id, err := a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
-		return 0, fmt.Errorf("insert %s failed, err: %v", account.TableName(), err)
+		return 0, fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
 	}
 
 	return id, nil
 }
 
 // Update accounts.
-func (a AccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *corecloud.Account) error {
+func (a AccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cloud.AccountTable) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
 
-	account, err := cloud.ConvAccountTable(model)
-	if err != nil {
-		return err
-	}
-
-	if err = account.UpdateValidate(); err != nil {
+	if err := model.UpdateValidate(); err != nil {
 		return err
 	}
 
@@ -94,12 +83,12 @@ func (a AccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *co
 	}
 
 	opts := utils.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields(types.DefaultIgnoredFields...)
-	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(account, opts)
+	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s %s`, account.TableName(), setExpr, whereExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = a.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		effected, err := a.Orm.Txn(txn).Update(kt.Ctx, sql, toUpdate)
@@ -159,14 +148,8 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.AccountColumns.NamedExpr(),
 		table.AccountTable, whereExpr, pageExpr)
 
-	list := make([]*cloud.AccountTable, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &list, sql); err != nil {
-		return nil, err
-	}
-
-	details, err := cloud.ConvAccountList(list)
-	if err != nil {
-		logs.Errorf("conv account list failed, err: %v, rid: %s", err, kt.Rid)
+	details := make([]*cloud.AccountTable, 0)
+	if err = a.Orm.Do().Select(kt.Ctx, &details, sql); err != nil {
 		return nil, err
 	}
 

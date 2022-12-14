@@ -20,7 +20,11 @@
 // Package core defines basic api call protocols.
 package core
 
-import "hcm/pkg/rest"
+import (
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
+)
 
 // CreateResp is a standard create operation http response.
 type CreateResp struct {
@@ -48,4 +52,14 @@ type UpdateResp struct {
 type DeleteResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          interface{} `json:"data"`
+}
+
+// VendorReq ...
+type VendorReq struct {
+	Vendor enumor.Vendor `json:"vendor" validate:"required"`
+}
+
+// Validate ...
+func (v *VendorReq) Validate() error {
+	return validator.Validate.Struct(v)
 }
