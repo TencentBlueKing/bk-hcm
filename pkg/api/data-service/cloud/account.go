@@ -188,6 +188,7 @@ func (l *ListAccountReq) Validate() error {
 	return validator.Validate.Struct(l)
 }
 
+// ListBaseAccountReq ...
 type ListBaseAccountReq struct {
 	ID     uint64             `json:"id"`
 	Vendor enumor.Vendor      `json:"vendor"`

@@ -59,6 +59,7 @@ type TCloudAccountExtension struct {
 	SecretKey     string `json:"secret_key"`
 }
 
+// TCloudAccount ...
 type TCloudAccount struct {
 	BaseAccount
 	Extension *TCloudAccountExtension `json:"extension"`
@@ -72,6 +73,7 @@ type AwsAccountExtension struct {
 	SecretKey   string `json:"secret_key"`
 }
 
+// AwsAccount ...
 type AwsAccount struct {
 	BaseAccount
 	Extension *AwsAccountExtension `json:"extension"`
@@ -86,6 +88,7 @@ type HuaWeiAccountExtension struct {
 	SecretKey       string `json:"secret_key"`
 }
 
+// HuaWeiAccount ...
 type HuaWeiAccount struct {
 	BaseAccount
 	Extension *HuaWeiAccountExtension `json:"extension"`
@@ -101,11 +104,13 @@ type GcpAccountExtension struct {
 	ServiceSecretKey   string `json:"service_secret_key"`
 }
 
+// GcpAccount ...
 type GcpAccount struct {
 	BaseAccount
 	Extension *GcpAccountExtension `json:"extension"`
 }
 
+// AzureAccountExtension ...
 type AzureAccountExtension struct {
 	TenantID         string `json:"tenant_id"`
 	SubscriptionID   string `json:"subscription_id"`
