@@ -17,40 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package table
+package base
 
-import "fmt"
-
-// Table defines all the database table
-// related resources.
-type Table interface {
-	TableName() Name
-}
-
-// Name is database table's name type
-type Name string
-
-const (
-	// AuditTable is audit table's name
-	AuditTable Name = "audit"
-	// AccountTable is account table's name.
-	AccountTable Name = "account"
-	// AccountBizRelTable is account and biz relation table's name.
-	AccountBizRelTable Name = "account_biz_rel"
-	// IDGenerator is id generator table's name.
-	IDGenerator Name = "id_generator"
+import (
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/utils"
 )
 
-// Validate whether the table name is valid or not.
-func (n Name) Validate() error {
-	switch n {
-	case AuditTable:
-	case AccountTable:
-	case AccountBizRelTable:
-	case IDGenerator:
-	default:
-		return fmt.Errorf("unknown table name: %s", n)
-	}
+// IDGeneratorColumns defines all the IDGenerator table's columns.
+var IDGeneratorColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, IDGeneratorColumnDescriptor)
 
-	return nil
+// IDGeneratorColumnDescriptor is IDGenerator's column descriptors.
+var IDGeneratorColumnDescriptor = utils.ColumnDescriptors{
+	{Column: "resource", NamedC: "resource", Type: enumor.String},
+	{Column: "max_id", NamedC: "max_id", Type: enumor.String},
+}
+
+// IDGenerator define id generator table struct.
+type IDGenerator struct {
+	Resource string `db:"resource"`
+	MaxID    string `db:"max_id"`
+}
+
+// TableName is the IDGenerator's database table name.
+func (ig IDGenerator) TableName() table.Name {
+	return table.IDGenerator
 }

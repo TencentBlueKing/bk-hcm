@@ -24,6 +24,21 @@
 create database if not exists hcm;
 use hcm;
 
+create table if not exists `id_generator`
+(
+    `resource` varchar(64) not null,
+    `max_id`   varchar(64) not null,
+
+    primary key (`resource`)
+) engine = innodb
+  default charset = utf8mb4;
+
+
+insert into id_generator(`resource`, `max_id`)
+values ('account', '0');
+insert into id_generator(`resource`, `max_id`)
+values ('account_biz_rel', '0');
+
 create table if not exists `audit`
 (
     `id`         bigint(1) unsigned not null auto_increment,
