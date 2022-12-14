@@ -20,6 +20,8 @@
 package conv_test
 
 import (
+	"encoding/json"
+
 	"hcm/pkg/tools/conv"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -38,12 +40,12 @@ var _ = Describe("Struct", func() {
 			assert.Equal(GinkgoT(), expected, data)
 		}
 	},
-		Entry("a nil pointer", nil, emptyMap, true),
+		Entry("a nil pointer", nil, nil, false),
 		Entry("not a struct", 0, emptyMap, true),
 		Entry("json marshal error", "1", emptyMap, true),
 		Entry("a struct", struct {
 			A string `json:"a"`
 			B int64  `json:"b"`
-		}{A: "a", B: 1}, map[string]interface{}{"a": "a", "b": 1}, false),
+		}{A: "a", B: 1}, map[string]interface{}{"a": "a", "b": json.Number("1")}, false),
 	)
 })

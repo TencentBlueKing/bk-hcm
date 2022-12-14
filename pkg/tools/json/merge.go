@@ -17,21 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package conv
+package json
 
-import (
-	"hcm/pkg/tools/json"
-)
-
-// StructToMap 该函数主要是将struct结构通过JSON的方式转换为Map[string]interface{}，struct与Map的字段映射是通过json tag
-func StructToMap(v interface{}) (m map[string]interface{}, err error) {
-	if v == nil {
-		return
-	}
-	b, err := json.Marshal(v)
+// UpdateMerge 该函数将source 更新到 destination上，并返回新的json数据
+// 其中source和destination都是map[string]interface{}或struct json后的字符串
+func UpdateMerge(source, destination string) (mergeData string, err error) {
+	// 先转为map[string]interface{}
+	sourceMap := map[string]interface{}{}
+	err = UnmarshalFromString(source, &sourceMap)
 	if err != nil {
 		return
 	}
-	err = json.Unmarshal(b, &m)
+
+	destinationMap := map[string]interface{}{}
+	err = UnmarshalFromString(destination, &destinationMap)
+	if err != nil {
+		return
+	}
+
+	// 遍历覆盖更新
+	for k, v := range sourceMap {
+		// Note: 这里不判断是否相等，因为interface如果涉及指针，比较起来麻烦
+		destinationMap[k] = v
+	}
+
+	// 重新转为json string
+	mergeData, err = MarshalToString(destinationMap)
 	return
 }

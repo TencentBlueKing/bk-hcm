@@ -38,7 +38,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/conv"
 	"hcm/pkg/tools/json"
 
 	"hcm/pkg/dal/dao"
@@ -230,29 +229,18 @@ func updateAccount[T protocloud.UpdateAccountExtensionReq](accountID uint64, svc
 			return nil, fmt.Errorf("list account failed, account(id=%d) don't exist", accountID)
 		}
 
-		// Note: 这里不使用reflect是因为反射到泛型类型上需要Switch Case，将会跟随后续vendor类型的增加而变更
-		dbExtensionMap := map[string]interface{}{}
-		err = json.UnmarshalFromString(string(details[0].Extension), &dbExtensionMap)
+		// 将新的Extension转为json数据
+		extensionJson, err := json.MarshalToString(req.Extension)
 		if err != nil {
-			return nil, fmt.Errorf("Unmarshal db extension failed, err: %v", err)
+			return nil, fmt.Errorf("MarshalToString req extension failed, err: %v", err)
 		}
-		reqExtension, err := conv.StructToMap(req.Extension)
+		// 合并覆盖dbExtension
+		updatedExtension, err := json.UpdateMerge(extensionJson, string(details[0].Extension))
 		if err != nil {
-			return nil, fmt.Errorf("extension to map failed, err: %v", err)
+			return nil, fmt.Errorf("json UpdateMerge extension failed, err: %v", err)
 		}
-
-		// 用请求的数据，将db里的替换掉
-		for k, v := range reqExtension {
-			// Note: 这里不判断是否相等，因为interface如果涉及指针，比较起来麻烦
-			dbExtensionMap[k] = v
-		}
-
-		// 重新转为json string 保存到DB
-		extensionJson, err := json.MarshalToString(dbExtensionMap)
-		if err != nil {
-			return nil, fmt.Errorf("MarshalToString db extension failed, err: %v", err)
-		}
-		account.Extension = tabletype.JsonField(extensionJson)
+		
+		account.Extension = tabletype.JsonField(updatedExtension)
 	}
 
 	err := svc.dao.Account().Update(cts.Kit, idCondition, account)
