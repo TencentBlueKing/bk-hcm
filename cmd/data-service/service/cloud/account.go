@@ -26,7 +26,7 @@ import (
 
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
-	protocorecloud "hcm/pkg/api/core/cloud"
+	protocore "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -38,11 +38,12 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/conv"
+	"hcm/pkg/tools/json"
 
 	"hcm/pkg/dal/dao"
 
 	"github.com/jmoiron/sqlx"
-	jsoniter "github.com/json-iterator/go"
 )
 
 // InitAccountService initial the account service
@@ -66,6 +67,7 @@ type accountSvc struct {
 	dao dao.Set
 }
 
+// CreateAccount account with options
 func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
@@ -98,7 +100,7 @@ func createAccount[T protocloud.CreateAccountExtensionReq](vendor enumor.Vendor,
 	}
 
 	accountID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		extensionJson, err := jsoniter.MarshalToString(req.Extension)
+		extensionJson, err := json.MarshalToString(req.Extension)
 		if err != nil {
 			return nil, errf.Newf(errf.InvalidParameter, err.Error())
 		}
@@ -230,11 +232,11 @@ func updateAccount[T protocloud.UpdateAccountExtensionReq](accountID uint64, svc
 
 		// Note: 这里不使用reflect是因为反射到泛型类型上需要Switch Case，将会跟随后续vendor类型的增加而变更
 		dbExtensionMap := map[string]interface{}{}
-		err = jsoniter.UnmarshalFromString(string(details[0].Extension), &dbExtensionMap)
+		err = json.UnmarshalFromString(string(details[0].Extension), &dbExtensionMap)
 		if err != nil {
 			return nil, fmt.Errorf("Unmarshal db extension failed, err: %v", err)
 		}
-		reqExtension, err := req.ExtensionToMap()
+		reqExtension, err := conv.StructToMap(req.Extension)
 		if err != nil {
 			return nil, fmt.Errorf("extension to map failed, err: %v", err)
 		}
@@ -246,7 +248,7 @@ func updateAccount[T protocloud.UpdateAccountExtensionReq](accountID uint64, svc
 		}
 
 		// 重新转为json string 保存到DB
-		extensionJson, err := jsoniter.MarshalToString(dbExtensionMap)
+		extensionJson, err := json.MarshalToString(dbExtensionMap)
 		if err != nil {
 			return nil, fmt.Errorf("MarshalToString db extension failed, err: %v", err)
 		}
@@ -291,7 +293,7 @@ func (svc *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 		details = append(details, &protocloud.ListBaseAccountReq{
 			ID:     account.ID,
 			Vendor: enumor.Vendor(account.Vendor),
-			Spec: &protocorecloud.AccountSpec{
+			Spec: &protocore.AccountSpec{
 				Name:         account.Name,
 				Managers:     account.Managers,
 				DepartmentID: account.DepartmentID,

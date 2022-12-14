@@ -21,16 +21,12 @@
 package cloud
 
 import (
-	"encoding/json"
-
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
-
-	jsoniter "github.com/json-iterator/go"
 )
 
 // -------------------------- Create --------------------------
@@ -160,19 +156,6 @@ type UpdateAccountReq[T UpdateAccountExtensionReq] struct {
 // Validate ...
 func (u *UpdateAccountReq[T]) Validate() error {
 	return validator.Validate.Struct(u)
-}
-
-// ExtensionToMap ...
-func (u *UpdateAccountReq[T]) ExtensionToMap() (m map[string]interface{}, err error) {
-	if u.Extension == nil {
-		return
-	}
-	b, err := jsoniter.Marshal(u.Extension)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(b, &m)
-	return
 }
 
 // -------------------------- List --------------------------

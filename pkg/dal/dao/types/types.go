@@ -21,7 +21,6 @@ package types
 
 import (
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/table/cloud"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -70,15 +69,3 @@ var DefaultIgnoredFields = []string{"id", "creator", "created_at"}
 
 // DefaultPageSQLOption define default page sql option.
 var DefaultPageSQLOption = &PageSQLOption{Sort: SortOption{Sort: "id", IfNotPresent: true}}
-
-// ListAccountDetails list account details.
-type ListAccountDetails struct {
-	Count   uint64                `json:"count,omitempty"`
-	Details []*cloud.AccountTable `json:"details,omitempty"`
-}
-
-// ListAccountBizRelDetails list account and biz relation details.
-type ListAccountBizRelDetails struct {
-	Count   uint64                      `json:"count,omitempty"`
-	Details []*cloud.AccountBizRelTable `json:"details,omitempty"`
-}

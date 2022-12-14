@@ -21,7 +21,6 @@ package cloud
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"hcm/pkg/api/core"
@@ -75,7 +74,7 @@ func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID 
 	err := a.client.Patch().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef(fmt.Sprintf("/vendor/aws/account/%d", accountID)).
+		SubResourcef("/vendor/aws/account/%d", accountID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

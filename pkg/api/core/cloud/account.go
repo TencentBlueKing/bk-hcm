@@ -61,8 +61,8 @@ type TCloudAccountExtension struct {
 
 // TCloudAccount ...
 type TCloudAccount struct {
-	BaseAccount
-	Extension *TCloudAccountExtension `json:"extension"`
+	BaseAccount `json:",inline"`
+	Extension   *TCloudAccountExtension `json:"extension"`
 }
 
 // AwsAccountExtension define aws account extension.
@@ -75,8 +75,8 @@ type AwsAccountExtension struct {
 
 // AwsAccount ...
 type AwsAccount struct {
-	BaseAccount
-	Extension *AwsAccountExtension `json:"extension"`
+	BaseAccount `json:",inline"`
+	Extension   *AwsAccountExtension `json:"extension"`
 }
 
 // HuaWeiAccountExtension define huawei account extension.
@@ -90,8 +90,8 @@ type HuaWeiAccountExtension struct {
 
 // HuaWeiAccount ...
 type HuaWeiAccount struct {
-	BaseAccount
-	Extension *HuaWeiAccountExtension `json:"extension"`
+	BaseAccount `json:",inline"`
+	Extension   *HuaWeiAccountExtension `json:"extension"`
 }
 
 // GcpAccountExtension define gcp account extension.
@@ -106,8 +106,8 @@ type GcpAccountExtension struct {
 
 // GcpAccount ...
 type GcpAccount struct {
-	BaseAccount
-	Extension *GcpAccountExtension `json:"extension"`
+	BaseAccount `json:",inline"`
+	Extension   *GcpAccountExtension `json:"extension"`
 }
 
 // AzureAccountExtension ...
