@@ -17,37 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package core defines basic api call protocols.
-package core
+package types
 
 import (
-	"hcm/pkg/rest"
+	"hcm/pkg/dal/table/cloud"
 )
 
-// CreateResp is a standard create operation http response.
-type CreateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *CreateResult `json:"data"`
+// ListAccountDetails list account details.
+type ListAccountDetails struct {
+	Count   uint64                `json:"count,omitempty"`
+	Details []*cloud.AccountTable `json:"details,omitempty"`
 }
 
-// CreateResult is a standard create operation result.
-type CreateResult struct {
-	ID uint64 `json:"id"`
-}
-
-// BatchDeleteReq is a standard batch delete operation http request.
-type BatchDeleteReq struct {
-	IDs []uint64 `json:"ids"`
-}
-
-// UpdateResp ...
-type UpdateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          interface{} `json:"data"`
-}
-
-// DeleteResp ...
-type DeleteResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          interface{} `json:"data"`
+// ListAccountBizRelDetails list account and biz relation details.
+type ListAccountBizRelDetails struct {
+	Count   uint64                      `json:"count,omitempty"`
+	Details []*cloud.AccountBizRelTable `json:"details,omitempty"`
 }

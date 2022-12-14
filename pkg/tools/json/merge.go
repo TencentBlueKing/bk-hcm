@@ -17,37 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package core defines basic api call protocols.
-package core
+package json
 
-import (
-	"hcm/pkg/rest"
-)
+// UpdateMerge 该函数将source 更新到 destination上，并返回新的json数据
+// 其中source和destination都是map[string]interface{}或struct json后的字符串
+func UpdateMerge(source, destination string) (mergeData string, err error) {
+	// 先转为map[string]interface{}
+	sourceMap := map[string]interface{}{}
+	err = UnmarshalFromString(source, &sourceMap)
+	if err != nil {
+		return
+	}
 
-// CreateResp is a standard create operation http response.
-type CreateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *CreateResult `json:"data"`
-}
+	destinationMap := map[string]interface{}{}
+	err = UnmarshalFromString(destination, &destinationMap)
+	if err != nil {
+		return
+	}
 
-// CreateResult is a standard create operation result.
-type CreateResult struct {
-	ID uint64 `json:"id"`
-}
+	// 遍历覆盖更新
+	for k, v := range sourceMap {
+		// Note: 这里不判断是否相等，因为interface如果涉及指针，比较起来麻烦
+		destinationMap[k] = v
+	}
 
-// BatchDeleteReq is a standard batch delete operation http request.
-type BatchDeleteReq struct {
-	IDs []uint64 `json:"ids"`
-}
-
-// UpdateResp ...
-type UpdateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          interface{} `json:"data"`
-}
-
-// DeleteResp ...
-type DeleteResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          interface{} `json:"data"`
+	// 重新转为json string
+	mergeData, err = MarshalToString(destinationMap)
+	return
 }

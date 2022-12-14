@@ -17,37 +17,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package core defines basic api call protocols.
-package core
+package conv
 
 import (
-	"hcm/pkg/rest"
+	"hcm/pkg/tools/json"
 )
 
-// CreateResp is a standard create operation http response.
-type CreateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *CreateResult `json:"data"`
-}
-
-// CreateResult is a standard create operation result.
-type CreateResult struct {
-	ID uint64 `json:"id"`
-}
-
-// BatchDeleteReq is a standard batch delete operation http request.
-type BatchDeleteReq struct {
-	IDs []uint64 `json:"ids"`
-}
-
-// UpdateResp ...
-type UpdateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          interface{} `json:"data"`
-}
-
-// DeleteResp ...
-type DeleteResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          interface{} `json:"data"`
+// StructToMap 该函数主要是将struct结构通过JSON的方式转换为Map[string]interface{}，struct与Map的字段映射是通过json tag
+func StructToMap(v interface{}) (m map[string]interface{}, err error) {
+	if v == nil {
+		return
+	}
+	b, err := json.Marshal(v)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(b, &m)
+	return
 }

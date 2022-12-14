@@ -24,12 +24,11 @@ import (
 	"hcm/pkg/criteria/enumor"
 )
 
-// Account 云账号
-type Account struct {
+// BaseAccount 云账号
+type BaseAccount struct {
 	ID         uint64             `json:"id"`
 	Vendor     enumor.Vendor      `json:"vendor"`
 	Spec       *AccountSpec       `json:"spec"`
-	Extension  *AccountExtension  `json:"extension"`
 	Attachment *AccountAttachment `json:"attachment,omitempty"`
 	Revision   *core.Revision     `json:"revision"`
 }
@@ -52,71 +51,72 @@ type AccountAttachment struct {
 	BkBizIDs []int64 `json:"bk_biz_ids"`
 }
 
-// AccountExtension define account extension.
-type AccountExtension struct {
-	TCloud *TCloudAccountExtension `json:"tcloud,omitempty"`
-	Aws    *AwsAccountExtension    `json:"aws,omitempty"`
-	HuaWei *HuaWeiAccountExtension `json:"huawei,omitempty"`
-	Gcp    *GcpAccountExtension    `json:"gcp,omitempty"`
-	Azure  *AzureAccountExtension  `json:"azure,omitempty"`
-}
-
 // TCloudAccountExtension define tcloud account extension.
 type TCloudAccountExtension struct {
-	MainAccountCid string      `json:"main_account_cid"`
-	SubAccountCid  string      `json:"sub_account_cid"`
-	Secret         *BaseSecret `json:"secret"`
+	MainAccountID string `json:"main_account_id"`
+	SubAccountID  string `json:"sub_account_id"`
+	SecretID      string `json:"secret_id"`
+	SecretKey     string `json:"secret_key"`
+}
+
+// TCloudAccount ...
+type TCloudAccount struct {
+	BaseAccount `json:",inline"`
+	Extension   *TCloudAccountExtension `json:"extension"`
 }
 
 // AwsAccountExtension define aws account extension.
 type AwsAccountExtension struct {
-	AccountCid  string      `json:"account_cid"`
-	IamUserName string      `json:"iam_user_name"`
-	Secret      *BaseSecret `json:"secret"`
+	AccountID   string `json:"account_id"`
+	IamUsername string `json:"iam_username"`
+	SecretID    string `json:"secret_id"`
+	SecretKey   string `json:"secret_key"`
+}
+
+// AwsAccount ...
+type AwsAccount struct {
+	BaseAccount `json:",inline"`
+	Extension   *AwsAccountExtension `json:"extension"`
 }
 
 // HuaWeiAccountExtension define huawei account extension.
 type HuaWeiAccountExtension struct {
-	MainAccountName string      `json:"main_account_name"`
-	SubAccountCid   string      `json:"sub_account_cid"`
-	SubAccountName  string      `json:"sub_account_name"`
-	IamUserCid      string      `json:"iam_user_cid"`
-	IamUserName     string      `json:"iam_user_name"`
-	Secret          *BaseSecret `json:"secret"`
+	MainAccountName string `json:"main_account_name"`
+	SubAccountID    string `json:"sub_account_id"`
+	SubAccountName  string `json:"sub_account_name"`
+	SecretID        string `json:"secret_id"`
+	SecretKey       string `json:"secret_key"`
+}
+
+// HuaWeiAccount ...
+type HuaWeiAccount struct {
+	BaseAccount `json:",inline"`
+	Extension   *HuaWeiAccountExtension `json:"extension"`
 }
 
 // GcpAccountExtension define gcp account extension.
 type GcpAccountExtension struct {
-	ProjectName        string         `json:"project_name"`
-	ServiceAccountCid  string         `json:"service_account_cid"`
-	ServiceAccountName string         `json:"service_account_name"`
-	Secret             *GcpCredential `json:"secret"`
+	ProjectID          string `json:"project_id"`
+	ProjectName        string `json:"project_name"`
+	ServiceAccountID   string `json:"service_account_cid"`
+	ServiceAccountName string `json:"service_account_name"`
+	ServiceSecretID    string `json:"service_secret_id"`
+	ServiceSecretKey   string `json:"service_secret_key"`
 }
 
-// GcpCredential define gcp credential.
-type GcpCredential struct {
-	ProjectCid string `json:"project_cid"`
-	Cid        string `json:"cid"`
-	Key        string `json:"json"`
+// GcpAccount ...
+type GcpAccount struct {
+	BaseAccount `json:",inline"`
+	Extension   *GcpAccountExtension `json:"extension"`
 }
 
-// AzureAccountExtension define azure credential.
+// AzureAccountExtension ...
 type AzureAccountExtension struct {
-	SubscriptionName string           `json:"subscription_name"`
-	ApplicationName  string           `json:"application_name"`
-	Secret           *AzureCredential `json:"secret"`
-}
-
-// AzureCredential define azure credential.
-type AzureCredential struct {
-	TenantCid       string `json:"tenant_cid"`
-	SubscriptionCid string `json:"subscription_cid"`
-	ClientCid       string `json:"client_cid"`
-	ClientSecret    string `json:"client_secret"`
-}
-
-// BaseSecret define base secret.
-type BaseSecret struct {
-	Cid string `json:"cid"`
-	Key string `json:"key"`
+	TenantID         string `json:"tenant_id"`
+	SubscriptionID   string `json:"subscription_id"`
+	SubscriptionName string `json:"subscription_name"`
+	ApplicationID    string `json:"application_id"`
+	ApplicationName  string `json:"application_name"`
+	ClientID         string `json:"client_id"`
+	ClientSecret     string `json:"client_secret"`
 }
