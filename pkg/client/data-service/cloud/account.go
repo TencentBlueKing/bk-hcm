@@ -21,6 +21,7 @@ package cloud
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"hcm/pkg/api/core"
@@ -41,8 +42,8 @@ func NewCloudAccountClient(client rest.ClientInterface) *AccountClient {
 	}
 }
 
-// Create account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *protocloud.CreateAccountReq) (
+// CreateTCloud account.
+func (a *AccountClient) CreateTCloud(ctx context.Context, h http.Header, request *protocloud.CreateAccountReq[protocloud.CreateTCloudAccountExtensionReq]) (
 	*core.CreateResult, error,
 ) {
 	resp := new(core.CreateResp)
@@ -50,7 +51,7 @@ func (a *AccountClient) Create(ctx context.Context, h http.Header, request *prot
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account/create").
+		SubResourcef("/vendor/tcloud/account/create").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -65,8 +66,8 @@ func (a *AccountClient) Create(ctx context.Context, h http.Header, request *prot
 	return resp.Data, nil
 }
 
-// Update ...
-func (a *AccountClient) Update(ctx context.Context, h http.Header, request *protocloud.UpdateAccountReq) (
+// UpdateAws ...
+func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID uint64, request *protocloud.UpdateAccountReq[protocloud.UpdateAwsAccountExtensionReq]) (
 	interface{}, error,
 ) {
 	resp := new(core.UpdateResp)
@@ -74,7 +75,7 @@ func (a *AccountClient) Update(ctx context.Context, h http.Header, request *prot
 	err := a.client.Patch().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account").
+		SubResourcef(fmt.Sprintf("/vendor/aws/account/%d", accountID)).
 		WithHeaders(h).
 		Do().
 		Into(resp)
