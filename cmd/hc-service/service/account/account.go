@@ -23,7 +23,9 @@ package account
 import (
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/adaptor"
-	"hcm/pkg/api/hc-service"
+	"hcm/pkg/adaptor/types"
+	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -35,7 +37,11 @@ func InitAccountService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("AccountCheck", "POST", "/account/check", a.AccountCheck)
+	h.Add("TCloudAccountCheck", "POST", "/vendors/tcloud/accounts/check", a.TCloudAccountCheck)
+	h.Add("AwsAccountCheck", "POST", "/vendors/aws/accounts/check", a.AwsAccountCheck)
+	h.Add("HuaWeiAccountCheck", "POST", "/vendors/huawei/accounts/check", a.HuaWeiAccountCheck)
+	// h.Add("GcpAccountCheck", "POST", "/vendors/gcp/accounts/check", a.GcpAccountCheck)
+	// h.Add("AzureAccountCheck", "POST", "/vendors/azure/accounts/check", a.AzureAccountCheck)
 
 	h.Load(cap.WebService)
 }
@@ -44,9 +50,9 @@ type account struct {
 	ad adaptor.Adaptor
 }
 
-// AccountCheck authentication information and permissions.
-func (a account) AccountCheck(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcservice.AccountCheckReq)
+// TCloudAccountCheck authentication information and permissions.
+func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.TCloudAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
 	}
@@ -55,9 +61,70 @@ func (a account) AccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	if err := a.ad.Vendor(req.Vendor).AccountCheck(cts.Kit, req.Secret, req.AccountInfo); err != nil {
-		return nil, err
+	err := a.ad.Vendor(enumor.TCloud).AccountCheck(
+		cts.Kit,
+		&types.Secret{
+			TCloud: &types.BaseSecret{ID: req.CloudSecretID, Key: req.CloudSecretKey},
+		},
+		&types.AccountCheckOption{
+			Tcloud: &types.TcloudAccountInfo{AccountCid: req.CloudSubAccountID, MainAccountCid: req.CloudMainAccountID},
+		},
+	)
+
+	return nil, err
+}
+
+// AwsAccountCheck authentication information and permissions.
+func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAccountCheckReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
 	}
 
-	return nil, nil
+	if err := req.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	err := a.ad.Vendor(enumor.AWS).AccountCheck(
+		cts.Kit,
+		&types.Secret{
+			Aws: &types.BaseSecret{ID: req.CloudSecretID, Key: req.CloudSecretKey},
+		},
+		&types.AccountCheckOption{
+			Aws: &types.AwsAccountInfo{AccountCid: req.CloudAccountID, IamUserName: req.CloudIamUsername},
+		},
+	)
+
+	return nil, err
+}
+
+// HuaWeiAccountCheck authentication information and permissions.
+func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.HuaWeiAccountCheckReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	err := a.ad.Vendor(enumor.HuaWei).AccountCheck(
+		cts.Kit,
+		&types.Secret{
+			HuaWei: &types.BaseSecret{ID: req.CloudSecretID, Key: req.CloudSecretKey},
+		},
+		&types.AccountCheckOption{
+			HuaWei: &types.HuaWeiAccountInfo{
+				MainAccountName: req.CloudMainAccountName,
+				SubAccountCID:   req.CloudSubAccountID,
+				SubAccountName:  req.CloudSubAccountName,
+				// TODO: 产品上华为云账号就没有录入IamUserID和IamUsername，是否必须呢？如果必须，需要产品支持
+				// IamUserCID: 	 req.IamUserID
+				// IamUserName:     req.CloudIamUsername,
+			},
+		},
+	)
+
+	return nil, err
 }

@@ -17,35 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package hcservice
+package tcloud
 
 import (
-	"hcm/pkg/adaptor/types"
-	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
+	"hcm/pkg/rest"
 )
 
-// AccountCheckReq defines account check request.
-// TODO: 结构体信息随便定义，之后自行替换即可
-type AccountCheckReq struct {
-	Vendor      enumor.Vendor             `json:"vendor,omitempty"`
-	Secret      *types.Secret             `json:"secret,omitempty"`
-	AccountInfo *types.AccountCheckOption `json:"account_info,omitempty"`
+// Client is a tcloud api client
+type Client struct {
+	Account *AccountClient
 }
 
-// Validate account check req.
-func (req AccountCheckReq) Validate() error {
-	if err := req.Vendor.Validate(); err != nil {
-		return err
+// NewClient create a new tcloud api client.
+func NewClient(client rest.ClientInterface) *Client {
+	return &Client{
+		Account: NewAccountClient(client),
 	}
-
-	if req.Secret == nil {
-		return errf.New(errf.InvalidParameter, "secret is required")
-	}
-
-	if req.AccountInfo == nil {
-		return errf.New(errf.InvalidParameter, "account into is required")
-	}
-
-	return nil
 }
