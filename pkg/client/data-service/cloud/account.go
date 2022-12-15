@@ -24,6 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
+	protocore "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -78,6 +79,23 @@ func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID 
 		WithHeaders(h).
 		Do().
 		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// GetTCloud ...
+func (a *AccountClient) GetTCloud(ctx context.Context, h http.Header, accountID uint64) (
+	*protocloud.GetAccountResp[protocore.TCloudAccountExtension], error,
+) {
+	resp := new(protocloud.GetAccountResult[protocore.TCloudAccountExtension])
+	err := a.client.Get().WithContext(ctx).SubResourcef("vendor/tcloud/account/%d", accountID).WithHeaders(h).Do().Into(resp)
 	if err != nil {
 		return nil, err
 	}

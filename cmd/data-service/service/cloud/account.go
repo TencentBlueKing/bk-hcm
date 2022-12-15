@@ -55,6 +55,7 @@ func InitAccountService(cap *capability.Capability) {
 
 	h.Add("CreateAccount", "POST", "/vendor/{vendor}/account/create", svc.CreateAccount)
 	h.Add("UpdateAccount", "PATCH", "/vendor/{vendor}/account/{account_id}", svc.UpdateAccount)
+	h.Add("GetAccount", "GET", "/vendor/{vendor}/account/{account_id}", svc.GetAccount)
 	h.Add("ListAccount", "POST", "/account/list", svc.ListAccount)
 	h.Add("DeleteAccount", "DELETE", "/account", svc.DeleteAccount)
 
@@ -180,6 +181,34 @@ func (svc *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
+// generateIDCondition 生成AccountID 查询的过滤条件，即id=xxx
+func generateIDCondition(idFieldName string, accountID uint64) *filter.Expression {
+	return &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: idFieldName, Op: filter.Equal.Factory(), Value: accountID},
+		},
+	}
+}
+
+func getAccountFromTable(accountID uint64, svc *accountSvc, cts *rest.Contexts) (*tablecloud.AccountTable, error) {
+	opt := &types.ListOption{
+		Filter: generateIDCondition("id", accountID),
+		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
+	}
+	listAccountDetails, err := svc.dao.Account().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list account failed, err: %v, rid: %s", cts.Kit.Rid)
+		return nil, fmt.Errorf("list account failed, err: %v", err)
+	}
+	details := listAccountDetails.Details
+	if len(details) != 1 {
+		return nil, fmt.Errorf("list account failed, account(id=%d) don't exist", accountID)
+	}
+
+	return details[0], nil
+}
+
 func updateAccount[T protocloud.UpdateAccountExtensionReq](accountID uint64, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.UpdateAccountReq[T])
 
@@ -189,15 +218,6 @@ func updateAccount[T protocloud.UpdateAccountExtensionReq](accountID uint64, svc
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
-	}
-
-	// TODO: 这个ID条件比较通用，可以单独函数
-	// 更新和查询的过滤条件：id=xxx
-	idCondition := &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: accountID},
-		},
 	}
 
 	account := &tablecloud.AccountTable{
@@ -213,20 +233,10 @@ func updateAccount[T protocloud.UpdateAccountExtensionReq](accountID uint64, svc
 
 	// 只有提供了Extension才进行更新
 	if req.Extension != nil {
-		// TODO: 单独查询Extension逻辑是否封装为一个函数
-		// 对于Extension，由于是Json值，需要取出来，对比是否变化了，变化了则更新
-		opt := &types.ListOption{
-			Filter: idCondition,
-			Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
-		}
-		listAccountDetails, err := svc.dao.Account().List(cts.Kit, opt)
+		// 查询账号
+		dbAccount, err := getAccountFromTable(accountID, svc, cts)
 		if err != nil {
-			logs.Errorf("list account failed, err: %v, rid: %s", cts.Kit.Rid)
-			return nil, fmt.Errorf("list account failed, err: %v", err)
-		}
-		details := listAccountDetails.Details
-		if len(details) != 1 {
-			return nil, fmt.Errorf("list account failed, account(id=%d) don't exist", accountID)
+			return nil, err
 		}
 
 		// 将新的Extension转为json数据
@@ -235,21 +245,102 @@ func updateAccount[T protocloud.UpdateAccountExtensionReq](accountID uint64, svc
 			return nil, fmt.Errorf("MarshalToString req extension failed, err: %v", err)
 		}
 		// 合并覆盖dbExtension
-		updatedExtension, err := json.UpdateMerge(extensionJson, string(details[0].Extension))
+		updatedExtension, err := json.UpdateMerge(extensionJson, string(dbAccount.Extension))
 		if err != nil {
 			return nil, fmt.Errorf("json UpdateMerge extension failed, err: %v", err)
 		}
-		
+
 		account.Extension = tabletype.JsonField(updatedExtension)
 	}
 
-	err := svc.dao.Account().Update(cts.Kit, idCondition, account)
+	err := svc.dao.Account().Update(cts.Kit, generateIDCondition("id", accountID), account)
 	if err != nil {
 		logs.Errorf("update account failed, err: %v, rid: %s", cts.Kit.Rid)
 		return nil, fmt.Errorf("update account failed, err: %v", err)
 	}
 
 	return nil, nil
+}
+
+func convertToAccountResp[T protocloud.GetAccountExtensionResp](baseAccount *protocore.BaseAccount, dbExtension tabletype.JsonField) (*protocloud.GetAccountResp[T], error) {
+	var extension *T
+	err := json.UnmarshalFromString(string(dbExtension), extension)
+	if err != nil {
+		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
+	}
+	return &protocloud.GetAccountResp[T]{
+		BaseAccount: *baseAccount,
+		Extension:   extension,
+	}, nil
+}
+
+// GetAccount accounts with detail
+func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
+	// TODO: Vendor和ID从Path 获取后并校验，可以通用化
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	accountID, err := strconv.ParseUint(cts.Request.PathParameter("account_id"), 10, 64)
+	if err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	// 查询账号信息
+	dbAccount, err := getAccountFromTable(accountID, svc, cts)
+	if err != nil {
+		return nil, err
+	}
+
+	// 查询账号关联信息，这里只有业务
+	opt := &types.ListOption{
+		Filter: generateIDCondition("account_id", accountID),
+		// TODO：支持查询全量的Page
+		Page: &types.BasePage{Start: 0, Limit: types.DefaultMaxPageLimit},
+	}
+	relResp, err := svc.dao.AccountBizRel().List(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+	bizIDs := make([]int64, 0, len(relResp.Details))
+	for _, rel := range relResp.Details {
+		bizIDs = append(bizIDs, rel.BkBizID)
+	}
+
+	// 组装响应数据 - 账号基本信息
+	baseAccount := &protocore.BaseAccount{
+		ID:     dbAccount.ID,
+		Vendor: enumor.Vendor(dbAccount.Vendor),
+		Spec: &protocore.AccountSpec{
+			Name:         dbAccount.Name,
+			Managers:     dbAccount.Managers,
+			DepartmentID: dbAccount.DepartmentID,
+			Type:         enumor.AccountType(dbAccount.Type),
+			Site:         enumor.AccountSiteType(dbAccount.Site),
+			SyncStatus:   enumor.AccountSyncStatus(dbAccount.SyncStatus),
+			Price:        dbAccount.Price,
+			PriceUnit:    dbAccount.PriceUnit,
+			Memo:         dbAccount.Memo,
+		},
+		Attachment: &protocore.AccountAttachment{
+			BkBizIDs: bizIDs,
+		},
+		Revision: &core.Revision{
+			Creator:   dbAccount.Creator,
+			Reviser:   dbAccount.Reviser,
+			CreatedAt: dbAccount.CreatedAt,
+			UpdatedAt: dbAccount.UpdatedAt,
+		},
+	}
+
+	// 转换为最终的数据结构
+	account, err := convertToAccountResp(baseAccount, dbAccount.Extension)
+	if err != nil {
+		return nil, err
+	}
+
+	return account, nil
 }
 
 // ListAccount accounts with filter

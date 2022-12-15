@@ -158,6 +158,22 @@ func (u *UpdateAccountReq[T]) Validate() error {
 	return validator.Validate.Struct(u)
 }
 
+// -------------------------- Get --------------------------
+
+type GetAccountExtensionResp interface {
+	cloud.TCloudAccountExtension | cloud.AwsAccountExtension | cloud.HuaWeiAccountExtension | cloud.GcpAccountExtension | cloud.AzureAccountExtension
+}
+
+type GetAccountResp[T GetAccountExtensionResp] struct {
+	cloud.BaseAccount `json:",inline"`
+	Extension         *T `json:"extension"`
+}
+
+type GetAccountResult[T GetAccountExtensionResp] struct {
+	rest.BaseResp `json:",inline"`
+	Data          *GetAccountResp[T] `json:"data"`
+}
+
 // -------------------------- List --------------------------
 
 // ListAccountReq ...
@@ -185,6 +201,12 @@ type ListAccountResult struct {
 	Details []*ListBaseAccountReq `json:"details,omitempty"`
 }
 
+// ListAccountResp ...
+type ListAccountResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListAccountResult `json:"data"`
+}
+
 // -------------------------- Delete --------------------------
 
 // DeleteAccountReq ...
@@ -195,12 +217,6 @@ type DeleteAccountReq struct {
 // Validate ...
 func (d *DeleteAccountReq) Validate() error {
 	return validator.Validate.Struct(d)
-}
-
-// ListAccountResp ...
-type ListAccountResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *ListAccountResult `json:"data"`
 }
 
 // UpdateAccountBizRelReq ...
