@@ -33,3 +33,8 @@ func NewGcp(credential *types.GcpCredential) (*Gcp, error) {
 type Gcp struct {
 	clientSet *clientSet
 }
+
+// CloudProjectID return cloud project id.
+func (g *Gcp) CloudProjectID() string {
+	return g.clientSet.credential.CloudProjectID
+}

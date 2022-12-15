@@ -23,17 +23,16 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 const (
-	// qualifiedNameFmt hcm resource's name format.
-	// '.' And '/' as reserved characters, users are absolutely not allowed to create
-	qualifiedNameFmt        = "(" + lowEnglish + qnameExtNameFmt + "*)?" + lowEnglish
-	qnameExtNameFmt  string = "[\u4E00-\u9FA5A-Za-z0-9-_]"
+	qnameExtSGNameFmt  string = "[a-z0-9-]"
+	qualifiedSGNameFmt        = "(" + lowEnglish + qnameExtSGNameFmt + "*)?" + lowEnglish
 )
 
-// qualifiedNameRegexp hcm resource's name regexp.
-var qualifiedNameRegexp = regexp.MustCompile("^" + qualifiedNameFmt + "$")
+// qualifiedSGNameRegexp security group's name regexp.
+var qualifiedSGNameRegexp = regexp.MustCompile("^" + qualifiedSGNameFmt + "$")
 
 // ValidateSecurityGroupName validate security group name's length and format.
 func ValidateSecurityGroupName(name string) error {
@@ -41,13 +40,40 @@ func ValidateSecurityGroupName(name string) error {
 		return errors.New("invalid name, length should >= 1")
 	}
 
-	if len(name) > 128 {
+	if len(name) > 60 {
 		return errors.New("invalid name, length should <= 60")
 	}
 
-	if !qualifiedNameRegexp.MatchString(name) {
-		return fmt.Errorf("invalid name: %s, only allows to include chinese、english、numbers、underscore (_)"+
-				"、hyphen (-), and must start and end with an chinese、english、numbers", name)
+	if strings.HasPrefix(name, "sg-") {
+		return errors.New("name can not start with 'sg-'")
+	}
+
+	if !qualifiedSGNameRegexp.MatchString(name) {
+		return fmt.Errorf("invalid name: %s, only allows to include low english、numbers、hyphen (-), and must start "+
+			"and end with an low english", name)
+	}
+
+	return nil
+}
+
+// ValidateSecurityGroupMemo validate security group memo's length and format.
+func ValidateSecurityGroupMemo(memo *string) error {
+	if memo == nil {
+		return errors.New("memo is nil")
+	}
+
+	content := *memo
+	if len(content) == 0 {
+		return nil
+	}
+
+	if len(content) > 100 {
+		return errors.New("invalid memo, length should <= 100")
+	}
+
+	if !qualifiedMemoRegexp.MatchString(content) {
+		return errors.New("invalid memo, only allows include chinese、english、numbers、underscore (_)" +
+			"、hyphen (-)、space, and must start and end with an chinese、english、numbers")
 	}
 
 	return nil

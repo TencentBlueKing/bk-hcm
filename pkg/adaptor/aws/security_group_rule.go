@@ -65,27 +65,42 @@ func (a *Aws) createEgressSGRule(kt *kit.Kit, opt *types.AwsSGRuleCreateOption) 
 
 	ips := make([]*ec2.IpPermission, 0, len(opt.EgressRuleSet))
 	for _, rule := range opt.EgressRuleSet {
-		ips = append(ips, &ec2.IpPermission{
+		ip := &ec2.IpPermission{
 			FromPort:   aws.Int64(rule.FromPort),
 			IpProtocol: rule.Protocol,
-			IpRanges: []*ec2.IpRange{
+			ToPort:     aws.Int64(rule.ToPort),
+		}
+
+		if rule.IPv4Cidr != nil && len(*rule.IPv4Cidr) != 0 {
+			ip.IpRanges = []*ec2.IpRange{
 				{
-					CidrIp: rule.IPv4Cidr,
+					Description: rule.Description,
+					CidrIp:      rule.IPv4Cidr,
 				},
-			},
-			Ipv6Ranges: []*ec2.Ipv6Range{
+			}
+		}
+
+		if rule.IPv6Cidr != nil && len(*rule.IPv6Cidr) != 0 {
+			ip.Ipv6Ranges = []*ec2.Ipv6Range{
 				{
-					CidrIpv6: rule.IPv6Cidr,
+					Description: rule.Description,
+					CidrIpv6:    rule.IPv6Cidr,
 				},
-			},
-			UserIdGroupPairs: []*ec2.UserIdGroupPair{
+			}
+		}
+
+		if rule.CloudTargetSecurityGroupID != nil && len(*rule.CloudTargetSecurityGroupID) != 0 {
+			ip.UserIdGroupPairs = []*ec2.UserIdGroupPair{
 				{
-					GroupId: rule.CloudTargetSecurityGroupID,
+					Description: rule.Description,
+					GroupId:     rule.CloudTargetSecurityGroupID,
 				},
-			},
-			ToPort: aws.Int64(rule.ToPort),
-		})
+			}
+		}
+
+		ips = append(ips, ip)
 	}
+	req.IpPermissions = ips
 
 	resp, err := client.AuthorizeSecurityGroupEgressWithContext(kt.Ctx, req)
 	if err != nil {
@@ -110,27 +125,42 @@ func (a *Aws) createIngressSGRule(kt *kit.Kit, opt *types.AwsSGRuleCreateOption)
 
 	ips := make([]*ec2.IpPermission, 0, len(opt.IngressRuleSet))
 	for _, rule := range opt.IngressRuleSet {
-		ips = append(ips, &ec2.IpPermission{
+		ip := &ec2.IpPermission{
 			FromPort:   aws.Int64(rule.FromPort),
 			IpProtocol: rule.Protocol,
-			IpRanges: []*ec2.IpRange{
+			ToPort:     aws.Int64(rule.ToPort),
+		}
+
+		if rule.IPv4Cidr != nil && len(*rule.IPv4Cidr) != 0 {
+			ip.IpRanges = []*ec2.IpRange{
 				{
-					CidrIp: rule.IPv4Cidr,
+					Description: rule.Description,
+					CidrIp:      rule.IPv4Cidr,
 				},
-			},
-			Ipv6Ranges: []*ec2.Ipv6Range{
+			}
+		}
+
+		if rule.IPv6Cidr != nil && len(*rule.IPv6Cidr) != 0 {
+			ip.Ipv6Ranges = []*ec2.Ipv6Range{
 				{
-					CidrIpv6: rule.IPv6Cidr,
+					Description: rule.Description,
+					CidrIpv6:    rule.IPv6Cidr,
 				},
-			},
-			UserIdGroupPairs: []*ec2.UserIdGroupPair{
+			}
+		}
+
+		if rule.CloudTargetSecurityGroupID != nil && len(*rule.CloudTargetSecurityGroupID) != 0 {
+			ip.UserIdGroupPairs = []*ec2.UserIdGroupPair{
 				{
-					GroupId: rule.CloudTargetSecurityGroupID,
+					Description: rule.Description,
+					GroupId:     rule.CloudTargetSecurityGroupID,
 				},
-			},
-			ToPort: aws.Int64(rule.ToPort),
-		})
+			}
+		}
+
+		ips = append(ips, ip)
 	}
+	req.IpPermissions = ips
 
 	resp, err := client.AuthorizeSecurityGroupIngressWithContext(kt.Ctx, req)
 	if err != nil {

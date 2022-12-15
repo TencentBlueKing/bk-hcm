@@ -95,3 +95,9 @@ func (opt *SGRuleListOption) Validate(eo *filter.ExprOption, po *PageOption) err
 
 	return nil
 }
+
+// ListSecurityGroupBizRelDetails list security group and biz relation details.
+type ListSecurityGroupBizRelDetails struct {
+	Count   uint64                           `json:"count,omitempty"`
+	Details []cloud.SecurityGroupBizRelTable `json:"details,omitempty"`
+}

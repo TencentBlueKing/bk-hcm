@@ -60,15 +60,15 @@ var AwsSGRuleColumnDescriptor = utils.ColumnDescriptors{
 type AwsSecurityGroupRuleTable struct {
 	ID                         string     `db:"id" validate:"lte=64"`
 	CloudID                    string     `db:"cloud_id" validate:"lte=255"`
-	IPv4Cidr                   *string    `db:"ipv4_cidr" validate:"lte=255"`
-	IPv6Cidr                   *string    `db:"ipv6_cidr" validate:"lte=255"`
-	Memo                       *string    `db:"memo" validate:"lte=60"`
+	IPv4Cidr                   *string    `db:"ipv4_cidr" validate:"omitempty,lte=255"`
+	IPv6Cidr                   *string    `db:"ipv6_cidr" validate:"omitempty,lte=255"`
+	Memo                       *string    `db:"memo" validate:"omitempty,lte=60"`
 	Type                       string     `db:"type" validate:"lte=20"`
 	FromPort                   int64      `db:"from_port"`
 	ToPort                     int64      `db:"to_port"`
-	Protocol                   *string    `db:"protocol" validate:"lte=10"`
-	CloudPrefixListID          *string    `db:"cloud_prefix_list_id" validate:"lte=255"`
-	CloudTargetSecurityGroupID *string    `db:"cloud_target_security_group_id" validate:"lte=255"`
+	Protocol                   *string    `db:"protocol" validate:"omitempty,lte=10"`
+	CloudPrefixListID          *string    `db:"cloud_prefix_list_id" validate:"omitempty,lte=255"`
+	CloudTargetSecurityGroupID *string    `db:"cloud_target_security_group_id" validate:"omitempty,lte=255"`
 	CloudSecurityGroupID       string     `db:"cloud_security_group_id" validate:"lte=255"`
 	CloudGroupOwnerID          string     `db:"cloud_group_owner_id" validate:"lte=255"`
 	SecurityGroupID            string     `db:"security_group_id" validate:"lte=64"`

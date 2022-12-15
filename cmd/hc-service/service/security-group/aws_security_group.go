@@ -34,7 +34,7 @@ import (
 
 // CreateAwsSecurityGroup create aws security group.
 func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.SecurityGroupCreateReq[proto.AwsSecurityGroupAttachment])
+	req := new(proto.AwsSecurityGroupCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -43,16 +43,16 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := g.ad.Aws(cts.Kit, req.Spec.AccountID)
+	client, err := g.ad.Aws(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.AwsSecurityGroupCreateOption{
-		Region:      req.Spec.Region,
-		Name:        req.Spec.Name,
-		Description: req.Spec.Memo,
-		CloudVpcID:  req.Attachment.VpcID,
+		Region:      req.Region,
+		Name:        req.Name,
+		Description: req.Memo,
+		CloudVpcID:  req.VpcID,
 	}
 	cloudID, err := client.CreateSecurityGroup(cts.Kit, opt)
 	if err != nil {
@@ -62,7 +62,7 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 	}
 
 	listOpt := &types.AwsSecurityGroupListOption{
-		Region:   req.Spec.Region,
+		Region:   req.Region,
 		CloudIDs: []string{cloudID},
 	}
 	result, err := client.ListSecurityGroup(cts.Kit, listOpt)
@@ -77,23 +77,25 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, fmt.Errorf("create aws security group succeeds, but query failed")
 	}
 
-	createReq := &protocloud.SecurityGroupCreateReq[corecloud.AwsSecurityGroupExtension]{
-		Spec: &corecloud.SecurityGroupSpec{
-			CloudID:   *result.SecurityGroups[0].GroupId,
-			Assigned:  false,
-			Region:    req.Spec.Region,
-			Name:      *result.SecurityGroups[0].GroupName,
-			Memo:      result.SecurityGroups[0].Description,
-			AccountID: req.Spec.AccountID,
-		},
-		Extension: &corecloud.AwsSecurityGroupExtension{
-			CloudVpcID:   result.SecurityGroups[0].VpcId,
-			CloudOwnerID: result.SecurityGroups[0].OwnerId,
+	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.AwsSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.AwsSecurityGroupExtension]{
+			{
+				CloudID:   *result.SecurityGroups[0].GroupId,
+				BkBizID:   req.BkBizID,
+				Region:    req.Region,
+				Name:      *result.SecurityGroups[0].GroupName,
+				Memo:      result.SecurityGroups[0].Description,
+				AccountID: req.AccountID,
+				Extension: &corecloud.AwsSecurityGroupExtension{
+					CloudVpcID:   result.SecurityGroups[0].VpcId,
+					CloudOwnerID: result.SecurityGroups[0].OwnerId,
+				},
+			},
 		},
 	}
-	createResp, err := g.dataCli.SecurityGroup().CreateAwsSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	createResp, err := g.dataCli.Aws.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
-		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("request dataservice to BatchCreateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -107,21 +109,21 @@ func (g *securityGroup) DeleteAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	sg, err := g.dataCli.SecurityGroup().GetAwsSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+	sg, err := g.dataCli.Aws.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		logs.Errorf("request dataservice get aws security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	client, err := g.ad.Aws(cts.Kit, sg.Spec.AccountID)
+	client, err := g.ad.Aws(cts.Kit, sg.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.SecurityGroupDeleteOption{
-		Region:  sg.Spec.Region,
-		CloudID: sg.Spec.CloudID,
+		Region:  sg.Region,
+		CloudID: sg.CloudID,
 	}
 	if err := client.DeleteSecurityGroup(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to delete aws security group failed, err: %v, opt: %v, rid: %s", err, opt,
@@ -129,11 +131,11 @@ func (g *securityGroup) DeleteAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, err
 	}
 
-	req := &protocloud.SecurityGroupDeleteReq{
+	req := &protocloud.SecurityGroupBatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-	if err := g.dataCli.SecurityGroup().Delete(cts.Kit.Ctx, cts.Kit.Header(), req); err != nil {
-		logs.Errorf("request dataservice delete aws security group failed, err: %v, id: %s, rid: %s", err, id,
+	if err := g.dataCli.Global.SecurityGroup.BatchDeleteSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), req); err != nil {
+		logs.Errorf("request dataservice BatchDeleteSecurityGroup failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}

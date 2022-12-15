@@ -39,8 +39,9 @@ import (
 
 // SecurityGroup only used for security group.
 type SecurityGroup interface {
-	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, sg *cloud.SecurityGroupTable) (string, error)
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, sgs []*cloud.SecurityGroupTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, sg *cloud.SecurityGroupTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, sg *cloud.SecurityGroupTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListSecurityGroupDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
@@ -53,28 +54,31 @@ type SecurityGroupDao struct {
 	IDGen idgenerator.IDGenInterface
 }
 
-// CreateWithTx sg with tx.
-func (s SecurityGroupDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, sg *cloud.SecurityGroupTable) (string, error) {
-	// generate account id
-	id, err := s.IDGen.One(kt, table.SecurityGroupTable)
+// BatchCreateWithTx sg with tx.
+func (s SecurityGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, sgs []*cloud.SecurityGroupTable) (
+	[]string, error) {
+
+	ids, err := s.IDGen.Batch(kt, table.SecurityGroupTable, len(sgs))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	sg.ID = id
+	for index, sg := range sgs {
+		sg.ID = ids[index]
 
-	if err := sg.InsertValidate(); err != nil {
-		return "", err
-	}
-
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, sg.TableName(), cloud.SecurityGroupColumns.ColumnExpr(),
-		cloud.SecurityGroupColumns.ColonNameExpr())
-
-	if err = s.Orm.Txn(tx).Insert(kt.Ctx, sql, sg); err != nil {
-		logs.Errorf("insert %s failed, err: %v, rid: %s", sg.TableName(), err, kt.Rid)
-		return "", fmt.Errorf("insert %s failed, err: %v", sg.TableName(), err)
+		if err := sg.InsertValidate(); err != nil {
+			return nil, err
+		}
 	}
 
-	return id, nil
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.SecurityGroupTable,
+		cloud.SecurityGroupColumns.ColumnExpr(), cloud.SecurityGroupColumns.ColonNameExpr())
+
+	if err = s.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, sgs); err != nil {
+		logs.Errorf("insert %s failed, err: %v, rid: %s", table.SecurityGroupTable, err, kt.Rid)
+		return nil, fmt.Errorf("insert %s failed, err: %v", table.SecurityGroupTable, err)
+	}
+
+	return ids, nil
 }
 
 // Update sg.
@@ -115,6 +119,34 @@ func (s SecurityGroupDao) Update(kt *kit.Kit, expr *filter.Expression, sg *cloud
 		return nil, nil
 	})
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateByIDWithTx sg.
+func (s SecurityGroupDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, sg *cloud.SecurityGroupTable) error {
+	if len(id) == 0 {
+		return errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	if err := sg.UpdateValidate(); err != nil {
+		return err
+	}
+
+	opts := utils.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields(types.DefaultIgnoredFields...)
+	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(sg, opts)
+	if err != nil {
+		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
+	}
+
+	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, sg.TableName(), setExpr)
+
+	toUpdate["id"] = id
+	_, err = s.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	if err != nil {
+		logs.ErrorJson("update security group failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
 	}
 

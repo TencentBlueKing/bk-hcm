@@ -39,7 +39,7 @@ import (
 
 // TCloudSGRule only used for tcloud security group rule.
 type TCloudSGRule interface {
-	BatchCreateOrUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []cloud.TCloudSecurityGroupRuleTable) ([]string, error)
+	BatchCreateOrUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.TCloudSecurityGroupRuleTable) ([]string, error)
 	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.TCloudSecurityGroupRuleTable) error
 	List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListTCloudSGRuleDetails, error)
 	Delete(kt *kit.Kit, expr *filter.Expression) error
@@ -54,7 +54,7 @@ type TCloudSGRuleDao struct {
 }
 
 // BatchCreateOrUpdateWithTx rule.
-func (dao *TCloudSGRuleDao) BatchCreateOrUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []cloud.
+func (dao *TCloudSGRuleDao) BatchCreateOrUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.
 	TCloudSecurityGroupRuleTable) ([]string, error) {
 
 	// generate account id
@@ -72,7 +72,7 @@ func (dao *TCloudSGRuleDao) BatchCreateOrUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, 
 		}
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s) ON DUPLICATE KEY UPDATE`, table.TCloudSecurityGroupRuleTable,
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.TCloudSecurityGroupRuleTable,
 		cloud.TCloudSGRuleColumns.ColumnExpr(), cloud.TCloudSGRuleColumns.ColonNameExpr())
 
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rules); err != nil {

@@ -37,6 +37,7 @@ import (
 	daotypes "hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	tabletype "hcm/pkg/dal/table/types"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
@@ -52,14 +53,16 @@ func InitSecurityGroupService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("CreateSecurityGroup", http.MethodPost, "/vendors/{vendor}/security_groups/create", svc.CreateSecurityGroup)
-	h.Add("UpdateSecurityGroup", http.MethodPatch, "/vendors/{vendor}/security_groups/{security_group_id}",
-		svc.UpdateSecurityGroup)
-	h.Add("GetSecurityGroup", http.MethodGet, "/vendors/{vendor}/security_groups/{security_group_id}",
+	h.Add("BatchCreateSecurityGroup", http.MethodPost, "/vendors/{vendor}/security_groups/batch/create",
+		svc.BatchCreateSecurityGroup)
+	h.Add("BatchUpdateSecurityGroup", http.MethodPatch, "/vendors/{vendor}/security_groups/batch/update",
+		svc.BatchUpdateSecurityGroup)
+	h.Add("GetSecurityGroup", http.MethodGet, "/vendors/{vendor}/security_groups/{id}",
 		svc.GetSecurityGroup)
 	h.Add("ListSecurityGroup", http.MethodPost, "/security_groups/list", svc.ListSecurityGroup)
-	h.Add("DeleteSecurityGroup", http.MethodDelete, "/security_groups/batch", svc.DeleteSecurityGroup)
-	h.Add("GetSecurityGroupVendor", http.MethodGet, "/security_groups/batch", svc.DeleteSecurityGroup)
+	h.Add("BatchDeleteSecurityGroup", http.MethodDelete, "/security_groups/batch", svc.BatchDeleteSecurityGroup)
+	h.Add("BatchUpdateSecurityGroupCommonInfo", http.MethodPatch, "/security_groups/common/info/batch/update",
+		svc.BatchUpdateSecurityGroupCommonInfo)
 
 	h.Load(cap.WebService)
 }
@@ -68,8 +71,8 @@ type securityGroupSvc struct {
 	dao dao.Set
 }
 
-// CreateSecurityGroup create security group.
-func (svc *securityGroupSvc) CreateSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+// BatchCreateSecurityGroup create security group.
+func (svc *securityGroupSvc) BatchCreateSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -77,39 +80,34 @@ func (svc *securityGroupSvc) CreateSecurityGroup(cts *rest.Contexts) (interface{
 
 	switch vendor {
 	case enumor.TCloud:
-		return createSecurityGroup[corecloud.TCloudSecurityGroupExtension](vendor, svc, cts)
+		return batchCreateSecurityGroup[corecloud.TCloudSecurityGroupExtension](vendor, svc, cts)
 	case enumor.Aws:
-		return createSecurityGroup[corecloud.AwsSecurityGroupExtension](vendor, svc, cts)
+		return batchCreateSecurityGroup[corecloud.AwsSecurityGroupExtension](vendor, svc, cts)
 	case enumor.HuaWei:
-		return createSecurityGroup[corecloud.HuaWeiSecurityGroupExtension](vendor, svc, cts)
+		return batchCreateSecurityGroup[corecloud.HuaWeiSecurityGroupExtension](vendor, svc, cts)
 	case enumor.Azure:
-		return createSecurityGroup[corecloud.AzureSecurityGroupExtension](vendor, svc, cts)
+		return batchCreateSecurityGroup[corecloud.AzureSecurityGroupExtension](vendor, svc, cts)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
 }
 
-// UpdateSecurityGroup update security group.
-func (svc *securityGroupSvc) UpdateSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+// BatchUpdateSecurityGroup update security group.
+func (svc *securityGroupSvc) BatchUpdateSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	id := cts.PathParameter("id").String()
-	if len(id) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "security group id is required")
-	}
-
 	switch vendor {
 	case enumor.TCloud:
-		return updateSecurityGroup[corecloud.TCloudSecurityGroupExtension](id, svc, cts)
+		return batchUpdateSecurityGroup[corecloud.TCloudSecurityGroupExtension](cts, svc)
 	case enumor.Aws:
-		return updateSecurityGroup[corecloud.AwsSecurityGroupExtension](id, svc, cts)
+		return batchUpdateSecurityGroup[corecloud.AwsSecurityGroupExtension](cts, svc)
 	case enumor.HuaWei:
-		return updateSecurityGroup[corecloud.HuaWeiSecurityGroupExtension](id, svc, cts)
+		return batchUpdateSecurityGroup[corecloud.HuaWeiSecurityGroupExtension](cts, svc)
 	case enumor.Azure:
-		return updateSecurityGroup[corecloud.AzureSecurityGroupExtension](id, svc, cts)
+		return batchUpdateSecurityGroup[corecloud.AzureSecurityGroupExtension](cts, svc)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
@@ -141,34 +139,30 @@ func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{},
 		return &protocloud.SecurityGroupListResult{Count: result.Count}, nil
 	}
 
-	details := make([]*corecloud.BaseSecurityGroup, 0, len(result.Details))
+	details := make([]corecloud.BaseSecurityGroup, 0, len(result.Details))
 	for _, one := range result.Details {
-		details = append(details, &corecloud.BaseSecurityGroup{
-			ID:     one.ID,
-			Vendor: enumor.Vendor(one.Vendor),
-			Spec: &corecloud.SecurityGroupSpec{
-				CloudID:   one.CloudID,
-				Assigned:  one.Assigned,
-				Region:    one.Region,
-				Name:      one.Name,
-				Memo:      one.Memo,
-				AccountID: one.AccountID,
-			},
-			Revision: &core.Revision{
-				Creator:   one.Creator,
-				Reviser:   one.Reviser,
-				CreatedAt: one.CreatedAt,
-				UpdatedAt: one.UpdatedAt,
-			},
+		details = append(details, corecloud.BaseSecurityGroup{
+			ID:        one.ID,
+			Vendor:    enumor.Vendor(one.Vendor),
+			CloudID:   one.CloudID,
+			BkBizID:   one.BkBizID,
+			Region:    one.Region,
+			Name:      one.Name,
+			Memo:      one.Memo,
+			AccountID: one.AccountID,
+			Creator:   one.Creator,
+			Reviser:   one.Reviser,
+			CreatedAt: one.CreatedAt,
+			UpdatedAt: one.UpdatedAt,
 		})
 	}
 
 	return &protocloud.SecurityGroupListResult{Details: details}, nil
 }
 
-// DeleteSecurityGroup delete security group.
-func (svc *securityGroupSvc) DeleteSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.SecurityGroupDeleteReq)
+// BatchDeleteSecurityGroup delete security group.
+func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.SecurityGroupBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -230,7 +224,7 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
 
-	sgTable, err := getSecurityGroupByID(id, svc, cts)
+	sgTable, err := getSecurityGroupByID(cts.Kit, id, svc)
 	if err != nil {
 		return nil, err
 	}
@@ -238,58 +232,53 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 	// TODO: 添加查询管理信息逻辑
 
 	base := &corecloud.BaseSecurityGroup{
-		ID:     sgTable.ID,
-		Vendor: enumor.Vendor(sgTable.Vendor),
-		Spec: &corecloud.SecurityGroupSpec{
-			CloudID:   sgTable.CloudID,
-			Assigned:  sgTable.Assigned,
-			Region:    sgTable.Region,
-			Name:      sgTable.Name,
-			Memo:      sgTable.Memo,
-			AccountID: sgTable.AccountID,
-		},
-		Revision: &core.Revision{
-			Creator:   sgTable.Creator,
-			Reviser:   sgTable.Reviser,
-			CreatedAt: sgTable.CreatedAt,
-			UpdatedAt: sgTable.UpdatedAt,
-		},
+		ID:        sgTable.ID,
+		Vendor:    enumor.Vendor(sgTable.Vendor),
+		CloudID:   sgTable.CloudID,
+		BkBizID:   sgTable.BkBizID,
+		Region:    sgTable.Region,
+		Name:      sgTable.Name,
+		Memo:      sgTable.Memo,
+		AccountID: sgTable.AccountID,
+		Creator:   sgTable.Creator,
+		Reviser:   sgTable.Reviser,
+		CreatedAt: sgTable.CreatedAt,
+		UpdatedAt: sgTable.UpdatedAt,
 	}
 
 	switch enumor.Vendor(sgTable.Vendor) {
 	case enumor.TCloud:
-		return convertToSGResult[corecloud.TCloudSecurityGroupExtension](base, nil, sgTable.Extension)
+		return convertToSGResult[corecloud.TCloudSecurityGroupExtension](base, sgTable.Extension)
 	case enumor.Aws:
-		return convertToSGResult[corecloud.AwsSecurityGroupExtension](base, nil, sgTable.Extension)
+		return convertToSGResult[corecloud.AwsSecurityGroupExtension](base, sgTable.Extension)
 	case enumor.HuaWei:
-		return convertToSGResult[corecloud.HuaWeiSecurityGroupExtension](base, nil, sgTable.Extension)
+		return convertToSGResult[corecloud.HuaWeiSecurityGroupExtension](base, sgTable.Extension)
 	case enumor.Azure:
-		return convertToSGResult[corecloud.AwsSecurityGroupExtension](base, nil, sgTable.Extension)
+		return convertToSGResult[corecloud.AzureSecurityGroupExtension](base, sgTable.Extension)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
 }
 
-func convertToSGResult[T corecloud.SecurityGroupExtension](base *corecloud.BaseSecurityGroup, atm *corecloud.
-	SecurityGroupAttachment, extJson tabletype.JsonField) (*corecloud.SecurityGroup[T], error) {
+func convertToSGResult[T corecloud.SecurityGroupExtension](base *corecloud.BaseSecurityGroup,
+	extJson tabletype.JsonField) (*corecloud.SecurityGroup[T], error) {
 
-	var extension *T
-	err := json.UnmarshalFromString(string(extJson), extension)
+	extension := new(T)
+	err := json.UnmarshalFromString(string(extJson), &extension)
 	if err != nil {
 		return nil, fmt.Errorf("UnmarshalFromString security group json extension failed, err: %v", err)
 	}
 
 	return &corecloud.SecurityGroup[T]{
 		BaseSecurityGroup: *base,
-		Attachment:        atm,
 		Extension:         extension,
 	}, nil
 }
 
-func updateSecurityGroup[T corecloud.SecurityGroupExtension](id string, svc *securityGroupSvc,
-	cts *rest.Contexts) (interface{}, error) {
+func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Contexts, svc *securityGroupSvc) (
+	interface{}, error) {
 
-	req := new(protocloud.SecurityGroupUpdateReq[T])
+	req := new(protocloud.SecurityGroupBatchUpdateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -298,43 +287,84 @@ func updateSecurityGroup[T corecloud.SecurityGroupExtension](id string, svc *sec
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	sg := new(tablecloud.SecurityGroupTable)
-	if req.Spec != nil {
-		sg.Name = req.Spec.Name
-		sg.Memo = req.Spec.Memo
-		sg.Assigned = req.Spec.Assigned
+	ids := make([]string, 0, len(req.SecurityGroups))
+	for _, one := range req.SecurityGroups {
+		ids = append(ids, one.ID)
+	}
+	extensionMap, err := listSecurityGroupExtension(cts, svc, ids)
+	if err != nil {
+		return nil, err
 	}
 
-	if req.Extension != nil {
-		sgTable, err := getSecurityGroupByID(id, svc, cts)
-		if err != nil {
-			return nil, err
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		for _, sg := range req.SecurityGroups {
+			update := &tablecloud.SecurityGroupTable{
+				BkBizID: sg.BkBizID,
+				Name:    sg.Name,
+				Memo:    sg.Memo,
+				Reviser: cts.Kit.User,
+			}
+
+			if sg.Extension != nil {
+				extension, exist := extensionMap[sg.ID]
+				if !exist {
+					continue
+				}
+
+				merge, err := json.UpdateMerge(sg.Extension, string(extension))
+				if err != nil {
+					return nil, fmt.Errorf("json UpdateMerge extension failed, err: %v", err)
+				}
+				update.Extension = tabletype.JsonField(merge)
+			}
+
+			if err := svc.dao.SecurityGroup().UpdateByIDWithTx(cts.Kit, txn, sg.ID, update); err != nil {
+				logs.Errorf("UpdateByIDWithTx failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return nil, fmt.Errorf("update security group failed, err: %v", err)
+			}
 		}
 
-		merge, err := json.UpdateMerge(req.Extension, string(sgTable.Extension))
-		if err != nil {
-			return nil, fmt.Errorf("json UpdateMerge extension failed, err: %v", err)
-		}
-
-		sg.Extension = tabletype.JsonField(merge)
-	}
-
-	if err := svc.dao.SecurityGroup().Update(cts.Kit, tools.EqualExpression("id", id), sg); err != nil {
-		logs.Errorf("update security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("update security group failed, err: %v", err)
+		return nil, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return nil, nil
 }
 
-func getSecurityGroupByID(id string, svc *securityGroupSvc, cts *rest.Contexts) (*tablecloud.SecurityGroupTable, error) {
+// listSecurityGroupExtension
+func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids []string) (
+	map[string]tabletype.JsonField, error) {
+
+	opt := &types.ListOption{
+		Filter: tools.ContainersExpression("id", ids),
+		Page: &types.BasePage{
+			Start: 1,
+			Limit: types.DefaultMaxPageLimit,
+		},
+	}
+	list, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]tabletype.JsonField, len(list.Details))
+	for _, one := range list.Details {
+		result[one.ID] = one.Extension
+	}
+
+	return result, nil
+}
+
+func getSecurityGroupByID(kt *kit.Kit, id string, svc *securityGroupSvc) (*tablecloud.SecurityGroupTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", id),
 		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
 	}
-	result, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
+	result, err := svc.dao.SecurityGroup().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list account failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("list account failed, err: %v, rid: %s", kt.Rid)
 		return nil, fmt.Errorf("list account failed, err: %v", err)
 	}
 
@@ -345,9 +375,9 @@ func getSecurityGroupByID(id string, svc *securityGroupSvc, cts *rest.Contexts) 
 	return &result.Details[0], nil
 }
 
-func createSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.Vendor, svc *securityGroupSvc,
+func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.Vendor, svc *securityGroupSvc,
 	cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.SecurityGroupCreateReq[T])
+	req := new(protocloud.SecurityGroupBatchCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -356,40 +386,66 @@ func createSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.Vendo
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	sgID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		extension, err := json.MarshalToString(req.Extension)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		sgs := make([]*tablecloud.SecurityGroupTable, 0, len(req.SecurityGroups))
+		for _, sg := range req.SecurityGroups {
+			extension, err := json.MarshalToString(sg.Extension)
+			if err != nil {
+				return nil, errf.NewFromErr(errf.InvalidParameter, err)
+			}
+
+			sgs = append(sgs, &tablecloud.SecurityGroupTable{
+				Vendor:    string(vendor),
+				CloudID:   sg.CloudID,
+				BkBizID:   sg.BkBizID,
+				Region:    sg.Region,
+				Name:      sg.Name,
+				Memo:      sg.Memo,
+				AccountID: sg.AccountID,
+				Extension: tabletype.JsonField(extension),
+				Creator:   cts.Kit.User,
+				Reviser:   cts.Kit.User,
+			})
 		}
 
-		sg := &tablecloud.SecurityGroupTable{
-			Vendor:    string(vendor),
-			CloudID:   req.Spec.CloudID,
-			Assigned:  req.Spec.Assigned,
-			Region:    req.Spec.Region,
-			Name:      req.Spec.Name,
-			Memo:      req.Spec.Memo,
-			AccountID: req.Spec.AccountID,
-			Extension: tabletype.JsonField(extension),
-			Creator:   cts.Kit.User,
-			Reviser:   cts.Kit.User,
-		}
-		sgID, err := svc.dao.SecurityGroup().CreateWithTx(cts.Kit, txn, sg)
+		ids, err := svc.dao.SecurityGroup().BatchCreateWithTx(cts.Kit, txn, sgs)
 		if err != nil {
 			return nil, fmt.Errorf("create security group failed, err: %v", err)
 		}
 
-		return sgID, nil
+		return ids, nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	id, ok := sgID.(string)
+	ids, ok := result.([]string)
 	if !ok {
-		return nil, fmt.Errorf("create security group but return id type is not string, id type: %v",
-			reflect.TypeOf(sgID).String())
+		return nil, fmt.Errorf("batch create security group but return id type is not []string, id type: %v",
+			reflect.TypeOf(result).String())
 	}
 
-	return &core.CreateResult{ID: id}, nil
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// BatchUpdateSecurityGroupCommonInfo batch update security group common info.
+func (svc *securityGroupSvc) BatchUpdateSecurityGroupCommonInfo(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.SecurityGroupCommonInfoBatchUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	updateFilter := tools.ContainersExpression("id", req.IDs)
+	updateFiled := &tablecloud.SecurityGroupTable{
+		BkBizID: req.BkBizID,
+	}
+	if err := svc.dao.SecurityGroup().Update(cts.Kit, updateFilter, updateFiled); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }

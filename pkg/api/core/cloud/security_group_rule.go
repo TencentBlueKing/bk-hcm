@@ -20,20 +20,20 @@
 package cloud
 
 import (
-	"hcm/pkg/api/core"
+	"time"
+
 	"hcm/pkg/criteria/enumor"
 )
 
-// TCloudSecurityGroupRule define tcloud security group rule.
-type TCloudSecurityGroupRule struct {
-	ID       string                       `json:"id"`
-	Spec     *TCloudSecurityGroupRuleSpec `json:"spec"`
-	Revision *core.Revision               `json:"revision"`
+// SecurityGroupRule define security group rule.
+type SecurityGroupRule interface {
+	TCloudSecurityGroupRule | AwsSecurityGroupRule | HuaWeiSecurityGroupRule | AzureSecurityGroupRule
 }
 
-// TCloudSecurityGroupRuleSpec define tcloud security group rule spec.
-type TCloudSecurityGroupRuleSpec struct {
-	PolicyIndex                int64                        `json:"policy_index"`
+// TCloudSecurityGroupRule define tcloud security group rule.
+type TCloudSecurityGroupRule struct {
+	ID                         string                       `json:"id"`
+	CloudPolicyIndex           int64                        `json:"cloud_policy_index"`
 	Version                    string                       `json:"version"`
 	Protocol                   *string                      `json:"protocol"`
 	Port                       *string                      `json:"port"`
@@ -51,17 +51,15 @@ type TCloudSecurityGroupRuleSpec struct {
 	SecurityGroupID            string                       `json:"security_group_id"`
 	Region                     string                       `json:"region"`
 	AccountID                  string                       `json:"account_id"`
+	Creator                    string                       `json:"creator"`
+	Reviser                    string                       `json:"reviser"`
+	CreatedAt                  *time.Time                   `json:"created_at"`
+	UpdatedAt                  *time.Time                   `json:"updated_at"`
 }
 
 // AwsSecurityGroupRule define aws security group rule.
 type AwsSecurityGroupRule struct {
-	ID       string                    `json:"id"`
-	Spec     *AwsSecurityGroupRuleSpec `json:"spec"`
-	Revision *core.Revision            `json:"revision"`
-}
-
-// AwsSecurityGroupRuleSpec define aws security group rule spec.
-type AwsSecurityGroupRuleSpec struct {
+	ID                         string                       `json:"id"`
 	CloudID                    string                       `json:"cloud_id"`
 	IPv4Cidr                   *string                      `json:"ipv4_cidr"`
 	IPv6Cidr                   *string                      `json:"ipv6_cidr"`
@@ -77,17 +75,15 @@ type AwsSecurityGroupRuleSpec struct {
 	AccountID                  string                       `json:"account_id"`
 	Region                     string                       `json:"region"`
 	SecurityGroupID            string                       `json:"security_group_id"`
+	Creator                    string                       `json:"creator"`
+	Reviser                    string                       `json:"reviser"`
+	CreatedAt                  *time.Time                   `json:"created_at"`
+	UpdatedAt                  *time.Time                   `json:"updated_at"`
 }
 
 // HuaWeiSecurityGroupRule define huawei security group rule.
 type HuaWeiSecurityGroupRule struct {
-	ID       string                       `json:"id"`
-	Spec     *HuaWeiSecurityGroupRuleSpec `json:"spec"`
-	Revision *core.Revision               `json:"revision"`
-}
-
-// HuaWeiSecurityGroupRuleSpec define huawei security group rule spec.
-type HuaWeiSecurityGroupRuleSpec struct {
+	ID                        string                       `json:"id"`
 	CloudID                   string                       `json:"cloud_id"`
 	Memo                      *string                      `json:"memo"`
 	Protocol                  string                       `json:"protocol"`
@@ -97,23 +93,22 @@ type HuaWeiSecurityGroupRuleSpec struct {
 	CloudRemoteAddressGroupID string                       `json:"cloud_remote_address_group_id"`
 	Port                      string                       `json:"port"`
 	Priority                  int64                        `json:"priority"`
+	Action                    string                       `json:"action"`
 	Type                      enumor.SecurityGroupRuleType `json:"type"`
 	CloudSecurityGroupID      string                       `json:"cloud_security_group_id"`
 	CloudProjectID            string                       `json:"cloud_project_id"`
 	AccountID                 string                       `json:"account_id"`
 	Region                    string                       `json:"region"`
 	SecurityGroupID           string                       `json:"security_group_id"`
+	Creator                   string                       `json:"creator"`
+	Reviser                   string                       `json:"reviser"`
+	CreatedAt                 *time.Time                   `json:"created_at"`
+	UpdatedAt                 *time.Time                   `json:"updated_at"`
 }
 
 // AzureSecurityGroupRule define azure security group rule.
 type AzureSecurityGroupRule struct {
-	ID       string                      `json:"id"`
-	Spec     *AzureSecurityGroupRuleSpec `json:"spec"`
-	Revision *core.Revision              `json:"revision"`
-}
-
-// AzureSecurityGroupRuleSpec define azure security group rule spec.
-type AzureSecurityGroupRuleSpec struct {
+	ID                               string                       `json:"id"`
 	CloudID                          string                       `json:"cloud_id"`
 	Etag                             *string                      `json:"etag"`
 	Name                             string                       `json:"name"`
@@ -137,4 +132,8 @@ type AzureSecurityGroupRuleSpec struct {
 	AccountID                        string                       `json:"account_id"`
 	Region                           string                       `json:"region"`
 	SecurityGroupID                  string                       `json:"security_group_id"`
+	Creator                          string                       `json:"creator"`
+	Reviser                          string                       `json:"reviser"`
+	CreatedAt                        *time.Time                   `json:"created_at"`
+	UpdatedAt                        *time.Time                   `json:"updated_at"`
 }

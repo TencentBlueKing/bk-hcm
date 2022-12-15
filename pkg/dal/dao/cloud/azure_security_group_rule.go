@@ -39,7 +39,7 @@ import (
 
 // AzureSGRule only used for azure security group rule.
 type AzureSGRule interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []cloud.AzureSecurityGroupRuleTable) ([]string, error)
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.AzureSecurityGroupRuleTable) ([]string, error)
 	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.AzureSecurityGroupRuleTable) error
 	List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListAzureSGRuleDetails, error)
 	Delete(kt *kit.Kit, expr *filter.Expression) error
@@ -54,7 +54,7 @@ type AzureSGRuleDao struct {
 }
 
 // BatchCreateWithTx rule.
-func (dao *AzureSGRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []cloud.AzureSecurityGroupRuleTable) (
+func (dao *AzureSGRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.AzureSecurityGroupRuleTable) (
 	[]string, error) {
 
 	// generate account id

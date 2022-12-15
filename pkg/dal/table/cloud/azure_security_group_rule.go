@@ -74,20 +74,20 @@ type AzureSecurityGroupRuleTable struct {
 	SecurityGroupID                  string            `db:"security_group_id" validate:"lte=64"`
 	Type                             string            `db:"type" validate:"lte=20"`
 	ProvisioningState                string            `db:"provisioning_state" validate:"lte=20"`
-	Etag                             *string           `db:"etag" validate:"lte=255"`
+	Etag                             *string           `db:"etag" validate:"omitempty,lte=255"`
 	Name                             string            `db:"name" validate:"lte=255"`
-	Memo                             *string           `db:"memo" validate:"lte=140"`
+	Memo                             *string           `db:"memo" validate:"omitempty,lte=140"`
 	Region                           string            `db:"region" validate:"lte=20"`
-	DestinationAddressPrefix         *string           `db:"destination_address_prefix" validate:"lte=255"`
+	DestinationAddressPrefix         *string           `db:"destination_address_prefix" validate:"omitempty,lte=255"`
 	DestinationAddressPrefixes       types.StringArray `db:"destination_address_prefixes"`
 	CloudDestinationSecurityGroupIDs types.StringArray `db:"cloud_destination_security_group_ids"`
-	DestinationPortRange             *string           `db:"destination_port_range" validate:"lte=255"`
+	DestinationPortRange             *string           `db:"destination_port_range" validate:"omitempty,lte=255"`
 	DestinationPortRanges            types.StringArray `db:"destination_port_ranges"`
 	Protocol                         string            `db:"protocol" validate:"lte=10"`
-	SourceAddressPrefix              *string           `db:"source_address_prefix" validate:"lte=255"`
+	SourceAddressPrefix              *string           `db:"source_address_prefix" validate:"omitempty,lte=255"`
 	SourceAddressPrefixes            types.StringArray `db:"source_address_prefixes"`
 	CloudSourceSecurityGroupIDs      types.StringArray `db:"cloud_source_security_group_ids"`
-	SourcePortRange                  *string           `db:"source_port_range" validate:"lte=255"`
+	SourcePortRange                  *string           `db:"source_port_range" validate:"omitempty,lte=255"`
 	SourcePortRanges                 types.StringArray `db:"source_port_ranges"`
 	Priority                         int32             `db:"priority"`
 	Access                           string            `db:"access" validate:"lte=20"`

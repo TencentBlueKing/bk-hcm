@@ -20,7 +20,12 @@
 package cloud
 
 import (
+	"errors"
+	"fmt"
+
 	corecloud "hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
@@ -31,30 +36,85 @@ import (
 
 // TCloudSGRuleCreateReq define tcloud security group create request.
 type TCloudSGRuleCreateReq struct {
-	Rules []corecloud.TCloudSecurityGroupRuleSpec `json:"rules" validate:"required"`
+	Rules []TCloudSGRuleBatchCreate `json:"rules" validate:"required"`
 }
 
 // Validate tcloud security group rule create request.
 func (req *TCloudSGRuleCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if len(req.Rules) == 0 {
+		return errors.New("security group rule is required")
+	}
+
+	if len(req.Rules) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group rule count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
+// TCloudSGRuleBatchCreate define tcloud security group rule when create.
+type TCloudSGRuleBatchCreate struct {
+	CloudPolicyIndex           int64                        `json:"cloud_policy_index"`
+	Version                    string                       `json:"version"`
+	Protocol                   *string                      `json:"protocol"`
+	Port                       *string                      `json:"port"`
+	CloudServiceID             *string                      `json:"cloud_service_id"`
+	CloudServiceGroupID        *string                      `json:"cloud_service_group_id"`
+	IPv4Cidr                   *string                      `json:"ipv4_cidr"`
+	IPv6Cidr                   *string                      `json:"ipv6_cidr"`
+	CloudTargetSecurityGroupID *string                      `json:"cloud_target_security_group_id"`
+	CloudAddressID             *string                      `json:"cloud_address_id"`
+	CloudAddressGroupID        *string                      `json:"cloud_address_group_id"`
+	Action                     string                       `json:"action"`
+	Memo                       *string                      `json:"memo"`
+	Type                       enumor.SecurityGroupRuleType `json:"type"`
+	CloudSecurityGroupID       string                       `json:"cloud_security_group_id"`
+	SecurityGroupID            string                       `json:"security_group_id"`
+	Region                     string                       `json:"region"`
+	AccountID                  string                       `json:"account_id"`
 }
 
 // -------------------------- Update --------------------------
 
 // TCloudSGRuleBatchUpdateReq define tcloud security group batch update request.
 type TCloudSGRuleBatchUpdateReq struct {
-	Rules []TCloudSGRuleBatchUpdateOption `json:"rules" validate:"required"`
+	Rules []TCloudSGRuleBatchUpdate `json:"rules" validate:"required"`
 }
 
-// TCloudSGRuleBatchUpdateOption tcloud security group batch update option.
-type TCloudSGRuleBatchUpdateOption struct {
-	ID   string                                 `json:"id" validate:"required"`
-	Spec *corecloud.TCloudSecurityGroupRuleSpec `json:"spec" validate:"required"`
+// TCloudSGRuleBatchUpdate tcloud security group batch update option.
+type TCloudSGRuleBatchUpdate struct {
+	ID                         string                       `json:"id" validate:"required"`
+	CloudPolicyIndex           int64                        `json:"cloud_policy_index"`
+	Version                    string                       `json:"version"`
+	Protocol                   *string                      `json:"protocol"`
+	Port                       *string                      `json:"port"`
+	CloudServiceID             *string                      `json:"cloud_service_id"`
+	CloudServiceGroupID        *string                      `json:"cloud_service_group_id"`
+	IPv4Cidr                   *string                      `json:"ipv4_cidr"`
+	IPv6Cidr                   *string                      `json:"ipv6_cidr"`
+	CloudTargetSecurityGroupID *string                      `json:"cloud_target_security_group_id"`
+	CloudAddressID             *string                      `json:"cloud_address_id"`
+	CloudAddressGroupID        *string                      `json:"cloud_address_group_id"`
+	Action                     string                       `json:"action"`
+	Memo                       *string                      `json:"memo"`
+	Type                       enumor.SecurityGroupRuleType `json:"type"`
+	CloudSecurityGroupID       string                       `json:"cloud_security_group_id"`
+	SecurityGroupID            string                       `json:"security_group_id"`
+	Region                     string                       `json:"region"`
+	AccountID                  string                       `json:"account_id"`
 }
 
 // Validate tcloud security group rule batch update request.
 func (req *TCloudSGRuleBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if len(req.Rules) == 0 {
+		return errors.New("security group rule is required")
+	}
+
+	if len(req.Rules) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group rule count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }
 
 // -------------------------- List --------------------------
@@ -85,12 +145,12 @@ type TCloudSGRuleListResp struct {
 
 // -------------------------- Delete --------------------------
 
-// TCloudSGRuleDeleteReq tcloud security group rule delete request.
-type TCloudSGRuleDeleteReq struct {
+// TCloudSGRuleBatchDeleteReq tcloud security group rule delete request.
+type TCloudSGRuleBatchDeleteReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 }
 
 // Validate tcloud security group rule delete request.
-func (req *TCloudSGRuleDeleteReq) Validate() error {
+func (req *TCloudSGRuleBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

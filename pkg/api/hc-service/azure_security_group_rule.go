@@ -30,9 +30,9 @@ import (
 
 // AzureSGRuleCreateReq define azure security group create request.
 type AzureSGRuleCreateReq struct {
-	AccountID      string            `json:"account_id"`
-	EgressRuleSet  []AzureSGRuleSpec `json:"egress_rule_set" validate:"required"`
-	IngressRuleSet []AzureSGRuleSpec `json:"ingress_rule_set" validate:"required"`
+	AccountID      string              `json:"account_id" validate:"required"`
+	EgressRuleSet  []AzureSGRuleCreate `json:"egress_rule_set" validate:"omitempty"`
+	IngressRuleSet []AzureSGRuleCreate `json:"ingress_rule_set" validate:"omitempty"`
 }
 
 // Validate azure security group rule create request.
@@ -52,10 +52,10 @@ func (req *AzureSGRuleCreateReq) Validate() error {
 	return nil
 }
 
-// AzureSGRuleSpec define azure sg rule spec when create.
-type AzureSGRuleSpec struct {
+// AzureSGRuleCreate define azure sg rule spec when create.
+type AzureSGRuleCreate struct {
 	Name                             string                       `json:"name"`
-	Memo                             *string                      `json:"description"`
+	Memo                             *string                      `json:"memo"`
 	DestinationAddressPrefix         *string                      `json:"destination_address_prefix"`
 	DestinationAddressPrefixes       []*string                    `json:"destination_address_prefixes"`
 	CloudDestinationSecurityGroupIDs []*string                    `json:"cloud_destination_security_group_ids"`
@@ -76,7 +76,22 @@ type AzureSGRuleSpec struct {
 
 // AzureSGRuleUpdateReq define azure security group update request.
 type AzureSGRuleUpdateReq struct {
-	Spec *AzureSGRuleSpec `json:"spec" validate:"required"`
+	Name                             string                       `json:"name"`
+	Memo                             *string                      `json:"memo"`
+	DestinationAddressPrefix         *string                      `json:"destination_address_prefix"`
+	DestinationAddressPrefixes       []*string                    `json:"destination_address_prefixes"`
+	CloudDestinationSecurityGroupIDs []*string                    `json:"cloud_destination_security_group_ids"`
+	DestinationPortRange             *string                      `json:"destination_port_range"`
+	DestinationPortRanges            []*string                    `json:"destination_port_ranges"`
+	Protocol                         string                       `json:"protocol"`
+	SourceAddressPrefix              *string                      `json:"source_address_prefix"`
+	SourceAddressPrefixes            []*string                    `json:"source_address_prefixes"`
+	CloudSourceSecurityGroupIDs      []*string                    `json:"cloud_source_security_group_ids"`
+	SourcePortRange                  *string                      `json:"source_port_range"`
+	SourcePortRanges                 []*string                    `json:"source_port_ranges"`
+	Priority                         int32                        `json:"priority"`
+	Type                             enumor.SecurityGroupRuleType `json:"type"`
+	Access                           string                       `json:"access"`
 }
 
 // Validate azure security group rule update request.

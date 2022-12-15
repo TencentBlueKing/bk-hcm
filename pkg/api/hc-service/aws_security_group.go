@@ -29,9 +29,9 @@ import (
 
 // AwsSGRuleCreateReq define aws security group create request.
 type AwsSGRuleCreateReq struct {
-	AccountID      string          `json:"account_id"`
-	EgressRuleSet  []AwsSGRuleSpec `json:"egress_rule_set" validate:"required"`
-	IngressRuleSet []AwsSGRuleSpec `json:"ingress_rule_set" validate:"required"`
+	AccountID      string            `json:"account_id" validate:"required"`
+	EgressRuleSet  []AwsSGRuleCreate `json:"egress_rule_set" validate:"omitempty"`
+	IngressRuleSet []AwsSGRuleCreate `json:"ingress_rule_set" validate:"omitempty"`
 }
 
 // Validate aws security group rule create request.
@@ -51,8 +51,8 @@ func (req *AwsSGRuleCreateReq) Validate() error {
 	return nil
 }
 
-// AwsSGRuleSpec define aws sg rule spec when create.
-type AwsSGRuleSpec struct {
+// AwsSGRuleCreate define aws sg rule spec when create.
+type AwsSGRuleCreate struct {
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
 	IPv6Cidr                   *string `json:"ipv6_cidr"`
 	Memo                       *string `json:"memo"`
@@ -66,7 +66,13 @@ type AwsSGRuleSpec struct {
 
 // AwsSGRuleUpdateReq define aws security group update request.
 type AwsSGRuleUpdateReq struct {
-	Spec *AwsSGRuleSpec `json:"spec" validate:"required"`
+	IPv4Cidr                   *string `json:"ipv4_cidr"`
+	IPv6Cidr                   *string `json:"ipv6_cidr"`
+	Memo                       *string `json:"memo"`
+	FromPort                   int64   `json:"from_port"`
+	ToPort                     int64   `json:"to_port"`
+	Protocol                   *string `json:"protocol"`
+	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
 }
 
 // Validate aws security group rule update request.

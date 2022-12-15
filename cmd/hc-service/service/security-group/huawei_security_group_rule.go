@@ -24,6 +24,7 @@ import (
 	"strconv"
 
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
@@ -51,25 +52,25 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	sg, err := g.dataCli.SecurityGroup().GetHuaWeiSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
+	sg, err := g.dataCli.HuaWei.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
 	if err != nil {
 		logs.Errorf("request dataservice get huawei security group failed, err: %v, id: %s, rid: %s", err, sgID,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	if sg.Spec.AccountID != req.AccountID {
+	if sg.AccountID != req.AccountID {
 		return nil, fmt.Errorf("'%s' security group does not belong to '%s' account", sgID, req.AccountID)
 	}
 
-	client, err := g.ad.HuaWei(cts.Kit, sg.Spec.AccountID)
+	client, err := g.ad.HuaWei(cts.Kit, sg.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.HuaWeiSGRuleCreateOption{
-		Region:               sg.Spec.Region,
-		CloudSecurityGroupID: sg.Spec.CloudID,
+		Region:               sg.Region,
+		CloudSecurityGroupID: sg.CloudID,
 	}
 	if req.EgressRule != nil {
 		priority := strconv.Itoa(int(req.EgressRule.Priority))
@@ -107,7 +108,7 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 	}
 
 	createReq := &protocloud.HuaWeiSGRuleCreateReq{
-		Rules: []corecloud.HuaWeiSecurityGroupRuleSpec{
+		Rules: []protocloud.HuaWeiSGRuleBatchCreate{
 			{
 				CloudID:                   rule.Id,
 				Memo:                      &rule.Description,
@@ -118,21 +119,31 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 				CloudRemoteAddressGroupID: rule.RemoteAddressGroupId,
 				Port:                      rule.Multiport,
 				Priority:                  int64(rule.Priority),
+				Action:                    rule.Action,
 				Type:                      opt.Rule.Type,
-				CloudSecurityGroupID:      sg.Spec.CloudID,
+				CloudSecurityGroupID:      sg.CloudID,
 				CloudProjectID:            rule.ProjectId,
 				AccountID:                 req.AccountID,
-				Region:                    sg.Spec.Region,
+				Region:                    sg.Region,
 				SecurityGroupID:           sg.ID,
 			},
 		},
 	}
-	ids, err := g.dataCli.SecurityGroup().BatchCreateHuaWeiSGRule(cts.Kit.Ctx, cts.Kit.Header(), createReq, sgID)
+	result, err := g.dataCli.HuaWei.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
+		createReq, sgID)
 	if err != nil {
 		return nil, err
 	}
 
-	return ids, nil
+	if len(result.IDs) != 1 {
+		logs.Errorf("batch create security group rule success, but return id count: %d not right, rid: %s",
+			len(result.IDs), cts.Kit.Rid)
+
+		return nil, fmt.Errorf("batch create security group rule success, but return id count: %d not right",
+			len(result.IDs))
+	}
+
+	return &core.CreateResult{ID: result.IDs[0]}, nil
 }
 
 // DeleteHuaWeiSGRule delete huawei security group rule.
@@ -152,14 +163,14 @@ func (g *securityGroup) DeleteHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
-	client, err := g.ad.HuaWei(cts.Kit, rule.Spec.AccountID)
+	client, err := g.ad.HuaWei(cts.Kit, rule.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.HuaWeiSGRuleDeleteOption{
-		Region:      rule.Spec.Region,
-		CloudRuleID: rule.Spec.CloudID,
+		Region:      rule.Region,
+		CloudRuleID: rule.CloudID,
 	}
 	if err := client.DeleteSecurityGroupRule(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to delete huawei security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
@@ -167,10 +178,11 @@ func (g *securityGroup) DeleteHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
-	deleteReq := &protocloud.HuaWeiSGRuleDeleteReq{
+	deleteReq := &protocloud.HuaWeiSGRuleBatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-	if err = g.dataCli.SecurityGroup().DeleteHuaWeiSGRule(cts.Kit.Ctx, cts.Kit.Header(), deleteReq, sgID); err != nil {
+	err = g.dataCli.HuaWei.SecurityGroup.BatchDeleteSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), deleteReq, sgID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -187,7 +199,7 @@ func (g *securityGroup) getHuaWeiSGRuleByID(cts *rest.Contexts, id string, sgID 
 			Limit: 1,
 		},
 	}
-	listResp, err := g.dataCli.SecurityGroup().ListHuaWeiSGRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
+	listResp, err := g.dataCli.HuaWei.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
 		logs.Errorf("request dataservice get huawei security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)

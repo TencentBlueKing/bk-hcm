@@ -76,7 +76,7 @@ func (a AwsPage) Validate() error {
 
 // GcpPage defines gcp page option.
 type GcpPage struct {
-	PageSize  int32  `json:"pageSize"`
+	PageSize  int64  `json:"pageSize"`
 	PageToken string `json:"pageToken"`
 }
 

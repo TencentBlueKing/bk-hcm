@@ -121,7 +121,7 @@ func (opt TCloudSGRuleUpdateOption) Validate() error {
 
 // TCloudSGRuleUpdateSpec tcloud security group rule when update.
 type TCloudSGRuleUpdateSpec struct {
-	PolicyIndex                int64   `json:"policy_index" validate:"required"`
+	CloudPolicyIndex           int64   `json:"cloud_policy_index" validate:"required"`
 	Protocol                   *string `json:"protocol"`
 	Port                       *string `json:"port"`
 	IPv4Cidr                   *string `json:"ipv4_cidr"`

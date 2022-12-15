@@ -35,9 +35,15 @@ var TCloudSGRuleColumns = utils.MergeColumns(nil, TCloudSGRuleColumnDescriptor)
 // TCloudSGRuleColumnDescriptor is TCloud Security Group Rule's column descriptors.
 var TCloudSGRuleColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
-	{Column: "rule_index", NamedC: "rule_index", Type: enumor.Numeric},
+	{Column: "cloud_policy_index", NamedC: "cloud_policy_index", Type: enumor.Numeric},
 	{Column: "version", NamedC: "version", Type: enumor.String},
+	{Column: "type", NamedC: "type", Type: enumor.String},
+	{Column: "cloud_security_group_id", NamedC: "cloud_security_group_id", Type: enumor.String},
+	{Column: "security_group_id", NamedC: "security_group_id", Type: enumor.String},
+	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
+	{Column: "action", NamedC: "action", Type: enumor.String},
 	{Column: "protocol", NamedC: "protocol", Type: enumor.String},
+	{Column: "port", NamedC: "port", Type: enumor.String},
 	{Column: "cloud_service_id", NamedC: "cloud_service_id", Type: enumor.String},
 	{Column: "cloud_service_group_id", NamedC: "cloud_service_group_id", Type: enumor.String},
 	{Column: "ipv4_cidr", NamedC: "ipv4_cidr", Type: enumor.String},
@@ -45,13 +51,8 @@ var TCloudSGRuleColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "cloud_target_security_group_id", NamedC: "cloud_target_security_group_id", Type: enumor.String},
 	{Column: "cloud_address_id", NamedC: "cloud_address_id", Type: enumor.String},
 	{Column: "cloud_address_group_id", NamedC: "cloud_address_group_id", Type: enumor.String},
-	{Column: "action", NamedC: "action", Type: enumor.String},
-	{Column: "memo", NamedC: "memo", Type: enumor.String},
-	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "region", NamedC: "region", Type: enumor.String},
-	{Column: "cloud_security_group_id", NamedC: "cloud_security_group_id", Type: enumor.String},
-	{Column: "security_group_id", NamedC: "security_group_id", Type: enumor.String},
-	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
+	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -61,24 +62,24 @@ var TCloudSGRuleColumnDescriptor = utils.ColumnDescriptors{
 // TCloudSecurityGroupRuleTable define tcloud security group rule table.
 type TCloudSecurityGroupRuleTable struct {
 	ID                         string     `db:"id" validate:"lte=64"`
-	PolicyIndex                int64      `db:"policy_index"`
+	CloudPolicyIndex           int64      `db:"cloud_policy_index"`
 	Version                    string     `db:"version"`
 	Type                       string     `db:"type" validate:"lte=20"`
 	CloudSecurityGroupID       string     `db:"cloud_security_group_id" validate:"lte=255"`
 	SecurityGroupID            string     `db:"security_group_id" validate:"lte=64"`
 	AccountID                  string     `db:"account_id" validate:"lte=64"`
 	Action                     string     `db:"action" validate:"lte=10"`
-	Protocol                   *string    `db:"protocol" validate:"lte=10"`
-	Port                       *string    `db:"port" validate:"lte=255"`
-	CloudServiceID             *string    `db:"cloud_service_id" validate:"lte=255"`
-	CloudServiceGroupID        *string    `db:"cloud_service_group_id" validate:"lte=255"`
-	IPv4Cidr                   *string    `db:"ipv4_cidr" validate:"lte=255"`
-	IPv6Cidr                   *string    `db:"ipv6_cidr" validate:"lte=255"`
-	CloudTargetSecurityGroupID *string    `db:"cloud_target_security_group_id" validate:"lte=255"`
-	CloudAddressID             *string    `db:"cloud_address_id" validate:"lte=255"`
-	CloudAddressGroupID        *string    `db:"cloud_address_group_id" validate:"lte=255"`
+	Protocol                   *string    `db:"protocol" validate:"omitempty,lte=10"`
+	Port                       *string    `db:"port" validate:"omitempty,lte=255"`
+	CloudServiceID             *string    `db:"cloud_service_id" validate:"omitempty,lte=255"`
+	CloudServiceGroupID        *string    `db:"cloud_service_group_id" validate:"omitempty,lte=255"`
+	IPv4Cidr                   *string    `db:"ipv4_cidr" validate:"omitempty,lte=255"`
+	IPv6Cidr                   *string    `db:"ipv6_cidr" validate:"omitempty,lte=255"`
+	CloudTargetSecurityGroupID *string    `db:"cloud_target_security_group_id" validate:"omitempty,lte=255"`
+	CloudAddressID             *string    `db:"cloud_address_id" validate:"omitempty,lte=255"`
+	CloudAddressGroupID        *string    `db:"cloud_address_group_id" validate:"omitempty,lte=255"`
 	Region                     string     `db:"region" validate:"lte=20"`
-	Memo                       *string    `db:"memo" validate:"lte=64"`
+	Memo                       *string    `db:"memo" validate:"omitempty,lte=64"`
 	Creator                    string     `db:"creator" validate:"lte=64"`
 	Reviser                    string     `db:"reviser" validate:"lte=64"`
 	CreatedAt                  *time.Time `db:"created_at" validate:"excluded_unless"`
@@ -105,8 +106,8 @@ func (t TCloudSecurityGroupRuleTable) InsertValidate() error {
 		return errors.New("region is required")
 	}
 
-	if t.PolicyIndex == 0 {
-		return errors.New("rule index is required")
+	if t.CloudPolicyIndex < 0 {
+		return errors.New("cloud policy index should >= 0")
 	}
 
 	if len(t.Version) == 0 {

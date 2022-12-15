@@ -182,7 +182,7 @@ func (t *TCloud) UpdateSecurityGroupRule(kt *kit.Kit, opt *types.TCloudSGRuleUpd
 
 		for _, rule := range opt.EgressRuleSet {
 			policies = append(policies, &vpc.SecurityGroupPolicy{
-				PolicyIndex:       common.Int64Ptr(rule.PolicyIndex),
+				PolicyIndex:       common.Int64Ptr(rule.CloudPolicyIndex),
 				Protocol:          rule.Protocol,
 				Port:              rule.Port,
 				CidrBlock:         rule.IPv4Cidr,
@@ -201,7 +201,7 @@ func (t *TCloud) UpdateSecurityGroupRule(kt *kit.Kit, opt *types.TCloudSGRuleUpd
 
 		for _, rule := range opt.IngressRuleSet {
 			policies = append(policies, &vpc.SecurityGroupPolicy{
-				PolicyIndex:       common.Int64Ptr(rule.PolicyIndex),
+				PolicyIndex:       common.Int64Ptr(rule.CloudPolicyIndex),
 				Protocol:          rule.Protocol,
 				Port:              rule.Port,
 				CidrBlock:         rule.IPv4Cidr,

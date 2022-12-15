@@ -136,6 +136,7 @@ func (s *Service) apiSet() *restful.Container {
 	cloud.InitHuaWeiSGRuleService(cap)
 	cloud.InitAzureSGRuleService(cap)
 	cloud.InitCloudService(cap)
+	cloud.InitGcpFirewallRuleService(cap)
 	auth.InitAuthService(cap)
 
 	return restful.NewContainer().Add(cap.WebService)

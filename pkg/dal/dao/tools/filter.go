@@ -43,6 +43,14 @@ func ContainersExpression(fieldName string, values interface{}) *filter.Expressi
 	}
 }
 
+// AllExpression 生成全亮查询filter。
+func AllExpression() *filter.Expression {
+	return &filter.Expression{
+		Op:    filter.And,
+		Rules: make([]filter.RuleFactory, 0),
+	}
+}
+
 // DefaultSqlWhereOption define sql where option.
 var DefaultSqlWhereOption = &filter.SQLWhereOption{
 	Priority: filter.Priority{"id"},

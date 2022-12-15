@@ -20,7 +20,12 @@
 package cloud
 
 import (
+	"errors"
+	"fmt"
+
 	corecloud "hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
@@ -31,12 +36,47 @@ import (
 
 // AzureSGRuleCreateReq define azure security group create request.
 type AzureSGRuleCreateReq struct {
-	Rules []corecloud.AzureSecurityGroupRuleSpec `json:"rules" validate:"required"`
+	Rules []AzureSGRuleBatchCreate `json:"rules" validate:"required"`
+}
+
+// AzureSGRuleBatchCreate define azure security group rule when create.
+type AzureSGRuleBatchCreate struct {
+	CloudID                          string                       `json:"cloud_id"`
+	Etag                             *string                      `json:"etag"`
+	Name                             string                       `json:"name"`
+	Memo                             *string                      `json:"memo"`
+	DestinationAddressPrefix         *string                      `json:"destination_address_prefix"`
+	DestinationAddressPrefixes       []*string                    `json:"destination_address_prefixes"`
+	CloudDestinationSecurityGroupIDs []*string                    `json:"cloud_destination_security_group_ids"`
+	DestinationPortRange             *string                      `json:"destination_port_range"`
+	DestinationPortRanges            []*string                    `json:"destination_port_ranges"`
+	Protocol                         string                       `json:"protocol"`
+	ProvisioningState                string                       `json:"provisioning_state"`
+	SourceAddressPrefix              *string                      `json:"source_address_prefix"`
+	SourceAddressPrefixes            []*string                    `json:"source_address_prefixes"`
+	CloudSourceSecurityGroupIDs      []*string                    `json:"cloud_source_security_group_ids"`
+	SourcePortRange                  *string                      `json:"source_port_range"`
+	SourcePortRanges                 []*string                    `json:"source_port_ranges"`
+	Priority                         int32                        `json:"priority"`
+	Type                             enumor.SecurityGroupRuleType `json:"type"`
+	Access                           string                       `json:"access"`
+	CloudSecurityGroupID             string                       `json:"cloud_security_group_id"`
+	AccountID                        string                       `json:"account_id"`
+	Region                           string                       `json:"region"`
+	SecurityGroupID                  string                       `json:"security_group_id"`
 }
 
 // Validate azure security group rule create request.
 func (req *AzureSGRuleCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if len(req.Rules) == 0 {
+		return errors.New("security group rule is required")
+	}
+
+	if len(req.Rules) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group rule count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }
 
 // -------------------------- Update --------------------------
@@ -48,13 +88,43 @@ type AzureSGRuleBatchUpdateReq struct {
 
 // AzureSGRuleUpdate azure security group batch update option.
 type AzureSGRuleUpdate struct {
-	ID   string                                `json:"id" validate:"required"`
-	Spec *corecloud.AzureSecurityGroupRuleSpec `json:"spec" validate:"required"`
+	ID                               string                       `json:"id" validate:"required"`
+	CloudID                          string                       `json:"cloud_id"`
+	Etag                             *string                      `json:"etag"`
+	Name                             string                       `json:"name"`
+	Memo                             *string                      `json:"memo"`
+	DestinationAddressPrefix         *string                      `json:"destination_address_prefix"`
+	DestinationAddressPrefixes       []*string                    `json:"destination_address_prefixes"`
+	CloudDestinationSecurityGroupIDs []*string                    `json:"cloud_destination_security_group_ids"`
+	DestinationPortRange             *string                      `json:"destination_port_range"`
+	DestinationPortRanges            []*string                    `json:"destination_port_ranges"`
+	Protocol                         string                       `json:"protocol"`
+	ProvisioningState                string                       `json:"provisioning_state"`
+	SourceAddressPrefix              *string                      `json:"source_address_prefix"`
+	SourceAddressPrefixes            []*string                    `json:"source_address_prefixes"`
+	CloudSourceSecurityGroupIDs      []*string                    `json:"cloud_source_security_group_ids"`
+	SourcePortRange                  *string                      `json:"source_port_range"`
+	SourcePortRanges                 []*string                    `json:"source_port_ranges"`
+	Priority                         int32                        `json:"priority"`
+	Type                             enumor.SecurityGroupRuleType `json:"type"`
+	Access                           string                       `json:"access"`
+	CloudSecurityGroupID             string                       `json:"cloud_security_group_id"`
+	AccountID                        string                       `json:"account_id"`
+	Region                           string                       `json:"region"`
+	SecurityGroupID                  string                       `json:"security_group_id"`
 }
 
 // Validate azure security group rule batch update request.
 func (req *AzureSGRuleBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if len(req.Rules) == 0 {
+		return errors.New("security group rule is required")
+	}
+
+	if len(req.Rules) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group rule count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }
 
 // -------------------------- List --------------------------
@@ -85,12 +155,12 @@ type AzureSGRuleListResp struct {
 
 // -------------------------- Delete --------------------------
 
-// AzureSGRuleDeleteReq azure security group rule delete request.
-type AzureSGRuleDeleteReq struct {
+// AzureSGRuleBatchDeleteReq azure security group rule delete request.
+type AzureSGRuleBatchDeleteReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 }
 
 // Validate azure security group rule delete request.
-func (req *AzureSGRuleDeleteReq) Validate() error {
+func (req *AzureSGRuleBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

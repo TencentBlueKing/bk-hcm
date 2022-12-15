@@ -27,9 +27,9 @@ import (
 
 // HuaWeiSGRuleCreateReq define huawei security group create request.
 type HuaWeiSGRuleCreateReq struct {
-	AccountID   string            `json:"account_id"`
-	EgressRule  *HuaWeiSGRuleSpec `json:"egress_rule_set" validate:"required"`
-	IngressRule *HuaWeiSGRuleSpec `json:"ingress_rule_set" validate:"required"`
+	AccountID   string              `json:"account_id" validate:"required"`
+	EgressRule  *HuaWeiSGRuleCreate `json:"egress_rule" validate:"omitempty"`
+	IngressRule *HuaWeiSGRuleCreate `json:"ingress_rule" validate:"omitempty"`
 }
 
 // Validate huawei security group rule create request.
@@ -49,8 +49,8 @@ func (req *HuaWeiSGRuleCreateReq) Validate() error {
 	return nil
 }
 
-// HuaWeiSGRuleSpec define huawei sg rule spec when create.
-type HuaWeiSGRuleSpec struct {
+// HuaWeiSGRuleCreate define huawei sg rule spec when create.
+type HuaWeiSGRuleCreate struct {
 	Memo               *string `json:"memo"`
 	Ethertype          *string `json:"ethertype"`
 	Protocol           *string `json:"protocol"`

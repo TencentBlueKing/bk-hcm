@@ -76,9 +76,9 @@ func (svc *azureSGRuleSvc) BatchCreateAzureRule(cts *rest.Contexts) (interface{}
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	rules := make([]tablecloud.AzureSecurityGroupRuleTable, 0, len(req.Rules))
+	rules := make([]*tablecloud.AzureSecurityGroupRuleTable, 0, len(req.Rules))
 	for _, rule := range req.Rules {
-		rules = append(rules, tablecloud.AzureSecurityGroupRuleTable{
+		rules = append(rules, &tablecloud.AzureSecurityGroupRuleTable{
 			Region:                           rule.Region,
 			CloudID:                          rule.CloudID,
 			CloudSecurityGroupID:             rule.CloudSecurityGroupID,
@@ -170,29 +170,29 @@ func (svc *azureSGRuleSvc) BatchUpdateAzureRule(cts *rest.Contexts) (interface{}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, one := range req.Rules {
 			rule := &tablecloud.AzureSecurityGroupRuleTable{
-				Region:                           one.Spec.Region,
-				CloudID:                          one.Spec.CloudID,
-				CloudSecurityGroupID:             one.Spec.CloudSecurityGroupID,
-				AccountID:                        one.Spec.AccountID,
-				SecurityGroupID:                  one.Spec.SecurityGroupID,
-				Type:                             string(one.Spec.Type),
-				ProvisioningState:                one.Spec.ProvisioningState,
-				Etag:                             one.Spec.Etag,
-				Name:                             one.Spec.Name,
-				Memo:                             one.Spec.Memo,
-				Protocol:                         one.Spec.Protocol,
-				DestinationAddressPrefix:         one.Spec.DestinationAddressPrefix,
-				DestinationAddressPrefixes:       convStringSlice(one.Spec.DestinationAddressPrefixes),
-				CloudDestinationSecurityGroupIDs: convStringSlice(one.Spec.CloudDestinationSecurityGroupIDs),
-				DestinationPortRange:             one.Spec.DestinationPortRange,
-				DestinationPortRanges:            convStringSlice(one.Spec.DestinationPortRanges),
-				SourceAddressPrefix:              one.Spec.SourceAddressPrefix,
-				SourceAddressPrefixes:            convStringSlice(one.Spec.SourceAddressPrefixes),
-				CloudSourceSecurityGroupIDs:      convStringSlice(one.Spec.CloudSourceSecurityGroupIDs),
-				SourcePortRange:                  one.Spec.SourcePortRange,
-				SourcePortRanges:                 convStringSlice(one.Spec.SourcePortRanges),
-				Priority:                         one.Spec.Priority,
-				Access:                           one.Spec.Access,
+				Region:                           one.Region,
+				CloudID:                          one.CloudID,
+				CloudSecurityGroupID:             one.CloudSecurityGroupID,
+				AccountID:                        one.AccountID,
+				SecurityGroupID:                  one.SecurityGroupID,
+				Type:                             string(one.Type),
+				ProvisioningState:                one.ProvisioningState,
+				Etag:                             one.Etag,
+				Name:                             one.Name,
+				Memo:                             one.Memo,
+				Protocol:                         one.Protocol,
+				DestinationAddressPrefix:         one.DestinationAddressPrefix,
+				DestinationAddressPrefixes:       convStringSlice(one.DestinationAddressPrefixes),
+				CloudDestinationSecurityGroupIDs: convStringSlice(one.CloudDestinationSecurityGroupIDs),
+				DestinationPortRange:             one.DestinationPortRange,
+				DestinationPortRanges:            convStringSlice(one.DestinationPortRanges),
+				SourceAddressPrefix:              one.SourceAddressPrefix,
+				SourceAddressPrefixes:            convStringSlice(one.SourceAddressPrefixes),
+				CloudSourceSecurityGroupIDs:      convStringSlice(one.CloudSourceSecurityGroupIDs),
+				SourcePortRange:                  one.SourcePortRange,
+				SourcePortRanges:                 convStringSlice(one.SourcePortRanges),
+				Priority:                         one.Priority,
+				Access:                           one.Access,
 				Reviser:                          cts.Kit.User,
 			}
 
@@ -261,38 +261,34 @@ func (svc *azureSGRuleSvc) ListAzureRule(cts *rest.Contexts) (interface{}, error
 	details := make([]corecloud.AzureSecurityGroupRule, 0, len(result.Details))
 	for _, one := range result.Details {
 		details = append(details, corecloud.AzureSecurityGroupRule{
-			ID: one.ID,
-			Spec: &corecloud.AzureSecurityGroupRuleSpec{
-				Region:                           one.Region,
-				CloudID:                          one.CloudID,
-				Etag:                             one.Etag,
-				Name:                             one.Name,
-				Memo:                             one.Memo,
-				DestinationAddressPrefix:         one.DestinationAddressPrefix,
-				DestinationAddressPrefixes:       convStringPtrSlice(one.DestinationAddressPrefixes),
-				CloudDestinationSecurityGroupIDs: convStringPtrSlice(one.CloudDestinationSecurityGroupIDs),
-				DestinationPortRange:             one.DestinationPortRange,
-				DestinationPortRanges:            convStringPtrSlice(one.DestinationPortRanges),
-				Protocol:                         one.Protocol,
-				ProvisioningState:                one.ProvisioningState,
-				SourceAddressPrefix:              one.SourceAddressPrefix,
-				SourceAddressPrefixes:            convStringPtrSlice(one.SourceAddressPrefixes),
-				CloudSourceSecurityGroupIDs:      convStringPtrSlice(one.CloudSourceSecurityGroupIDs),
-				SourcePortRange:                  one.SourcePortRange,
-				SourcePortRanges:                 convStringPtrSlice(one.SourcePortRanges),
-				Priority:                         one.Priority,
-				Type:                             enumor.SecurityGroupRuleType(one.Type),
-				Access:                           one.Access,
-				CloudSecurityGroupID:             one.CloudSecurityGroupID,
-				AccountID:                        one.AccountID,
-				SecurityGroupID:                  one.SecurityGroupID,
-			},
-			Revision: &core.Revision{
-				Creator:   one.Creator,
-				Reviser:   one.Reviser,
-				CreatedAt: one.CreatedAt,
-				UpdatedAt: one.UpdatedAt,
-			},
+			ID:                               one.ID,
+			Region:                           one.Region,
+			CloudID:                          one.CloudID,
+			Etag:                             one.Etag,
+			Name:                             one.Name,
+			Memo:                             one.Memo,
+			DestinationAddressPrefix:         one.DestinationAddressPrefix,
+			DestinationAddressPrefixes:       convStringPtrSlice(one.DestinationAddressPrefixes),
+			CloudDestinationSecurityGroupIDs: convStringPtrSlice(one.CloudDestinationSecurityGroupIDs),
+			DestinationPortRange:             one.DestinationPortRange,
+			DestinationPortRanges:            convStringPtrSlice(one.DestinationPortRanges),
+			Protocol:                         one.Protocol,
+			ProvisioningState:                one.ProvisioningState,
+			SourceAddressPrefix:              one.SourceAddressPrefix,
+			SourceAddressPrefixes:            convStringPtrSlice(one.SourceAddressPrefixes),
+			CloudSourceSecurityGroupIDs:      convStringPtrSlice(one.CloudSourceSecurityGroupIDs),
+			SourcePortRange:                  one.SourcePortRange,
+			SourcePortRanges:                 convStringPtrSlice(one.SourcePortRanges),
+			Priority:                         one.Priority,
+			Type:                             enumor.SecurityGroupRuleType(one.Type),
+			Access:                           one.Access,
+			CloudSecurityGroupID:             one.CloudSecurityGroupID,
+			AccountID:                        one.AccountID,
+			SecurityGroupID:                  one.SecurityGroupID,
+			Creator:                          one.Creator,
+			Reviser:                          one.Reviser,
+			CreatedAt:                        one.CreatedAt,
+			UpdatedAt:                        one.UpdatedAt,
 		})
 	}
 
@@ -306,7 +302,7 @@ func (svc *azureSGRuleSvc) DeleteAzureRule(cts *rest.Contexts) (interface{}, err
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
 
-	req := new(protocloud.AzureSGRuleDeleteReq)
+	req := new(protocloud.AzureSGRuleBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}

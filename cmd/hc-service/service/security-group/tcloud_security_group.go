@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
@@ -32,7 +33,7 @@ import (
 
 // CreateTCloudSecurityGroup create tcloud security group.
 func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.SecurityGroupCreateReq[proto.BaseSecurityGroupAttachment])
+	req := new(proto.TCloudSecurityGroupCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -41,15 +42,15 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := g.ad.TCloud(cts.Kit, req.Spec.AccountID)
+	client, err := g.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.TCloudSecurityGroupCreateOption{
-		Region:      req.Spec.Region,
-		Name:        req.Spec.Name,
-		Description: req.Spec.Memo,
+		Region:      req.Region,
+		Name:        req.Name,
+		Description: req.Memo,
 	}
 	sg, err := client.CreateSecurityGroup(cts.Kit, opt)
 	if err != nil {
@@ -58,26 +59,28 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 		return nil, err
 	}
 
-	createReq := &protocloud.SecurityGroupCreateReq[corecloud.TCloudSecurityGroupExtension]{
-		Spec: &corecloud.SecurityGroupSpec{
-			CloudID:   *sg.SecurityGroupId,
-			Assigned:  false,
-			Region:    req.Spec.Region,
-			Name:      *sg.SecurityGroupName,
-			Memo:      sg.SecurityGroupDesc,
-			AccountID: req.Spec.AccountID,
-		},
-		Extension: &corecloud.TCloudSecurityGroupExtension{
-			CloudProjectID: sg.ProjectId,
+	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.TCloudSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{
+			{
+				CloudID:   *sg.SecurityGroupId,
+				BkBizID:   req.BkBizID,
+				Region:    req.Region,
+				Name:      *sg.SecurityGroupName,
+				Memo:      sg.SecurityGroupDesc,
+				AccountID: req.AccountID,
+				Extension: &corecloud.TCloudSecurityGroupExtension{
+					CloudProjectID: sg.ProjectId,
+				},
+			},
 		},
 	}
-	result, err := g.dataCli.SecurityGroup().CreateTCloudSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	result, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
 		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return result, nil
+	return core.CreateResult{ID: result.IDs[0]}, nil
 }
 
 // DeleteTCloudSecurityGroup delete tcloud security group.
@@ -87,21 +90,21 @@ func (g *securityGroup) DeleteTCloudSecurityGroup(cts *rest.Contexts) (interface
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	sg, err := g.dataCli.SecurityGroup().GetTCloudSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+	sg, err := g.dataCli.TCloud.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		logs.Errorf("request dataservice get tcloud security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	client, err := g.ad.TCloud(cts.Kit, sg.Spec.AccountID)
+	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.SecurityGroupDeleteOption{
-		Region:  sg.Spec.Region,
-		CloudID: sg.Spec.CloudID,
+		Region:  sg.Region,
+		CloudID: sg.CloudID,
 	}
 	if err := client.DeleteSecurityGroup(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to delete tcloud security group failed, err: %v, opt: %v, rid: %s", err, opt,
@@ -109,10 +112,10 @@ func (g *securityGroup) DeleteTCloudSecurityGroup(cts *rest.Contexts) (interface
 		return nil, err
 	}
 
-	req := &protocloud.SecurityGroupDeleteReq{
+	req := &protocloud.SecurityGroupBatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-	if err := g.dataCli.SecurityGroup().Delete(cts.Kit.Ctx, cts.Kit.Header(), req); err != nil {
+	if err := g.dataCli.Global.SecurityGroup.BatchDeleteSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), req); err != nil {
 		logs.Errorf("request dataservice delete tcloud security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
@@ -137,40 +140,43 @@ func (g *securityGroup) UpdateTCloudSecurityGroup(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	sg, err := g.dataCli.SecurityGroup().GetTCloudSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+	sg, err := g.dataCli.TCloud.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		logs.Errorf("request dataservice get tcloud security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	client, err := g.ad.TCloud(cts.Kit, sg.Spec.AccountID)
+	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.TCloudSecurityGroupUpdateOption{
-		CloudID:     sg.Spec.CloudID,
-		Region:      sg.Spec.Region,
-		Name:        req.Spec.Name,
-		Description: req.Spec.Memo,
+		CloudID:     sg.CloudID,
+		Region:      sg.Region,
+		Name:        req.Name,
+		Description: req.Memo,
 	}
 	if err := client.UpdateSecurityGroup(cts.Kit, opt); err != nil {
-		logs.Errorf("request adaptor to update tcloud security group failed, err: %v, opt: %v, rid: %s", err, opt,
+		logs.Errorf("request adaptor to UpdateSecurityGroup failed, err: %v, opt: %v, rid: %s", err, opt,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	updateReq := &protocloud.SecurityGroupUpdateReq[corecloud.TCloudSecurityGroupExtension]{
-		Spec: &protocloud.SecurityGroupSpecUpdate{
-			Name: req.Spec.Name,
-			Memo: req.Spec.Memo,
+	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.TCloudSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.TCloudSecurityGroupExtension]{
+			{
+				ID:   sg.ID,
+				Name: req.Name,
+				Memo: req.Memo,
+			},
 		},
 	}
-	if err := g.dataCli.SecurityGroup().UpdateTCloudSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id,
+	if err := g.dataCli.TCloud.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
 		updateReq); err != nil {
 
-		logs.Errorf("request dataservice update tcloud security group failed, err: %v, id: %s, rid: %s", err, id,
+		logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}

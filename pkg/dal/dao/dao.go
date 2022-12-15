@@ -42,10 +42,12 @@ type Set interface {
 	Auth() auth.Auth
 	Account() cloud.Account
 	SecurityGroup() cloud.SecurityGroup
+	SecurityGroupBizRel() cloud.SecurityGroupBizRel
 	TCloudSGRule() cloud.TCloudSGRule
 	AwsSGRule() cloud.AwsSGRule
 	HuaWeiSGRule() cloud.HuaWeiSGRule
 	AzureSGRule() cloud.AzureSGRule
+	GcpFirewallRule() cloud.GcpFirewallRule
 	Cloud() cloud.Cloud
 	AccountBizRel() cloud.AccountBizRel
 	Txn() *Txn
@@ -168,9 +170,24 @@ func (s *set) SecurityGroup() cloud.SecurityGroup {
 	}
 }
 
+// SecurityGroupBizRel return security group and biz rel dao.
+func (s *set) SecurityGroupBizRel() cloud.SecurityGroupBizRel {
+	return &cloud.SecurityGroupBizRelDao{
+		Orm: s.orm,
+	}
+}
+
 // TCloudSGRule return tcloud security group rule dao.
 func (s *set) TCloudSGRule() cloud.TCloudSGRule {
 	return &cloud.TCloudSGRuleDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// GcpFirewallRule return gcp firewall rule dao.
+func (s *set) GcpFirewallRule() cloud.GcpFirewallRule {
+	return &cloud.GcpFirewallRuleDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

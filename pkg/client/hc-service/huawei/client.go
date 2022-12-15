@@ -25,12 +25,14 @@ import (
 
 // Client is a huawei api client
 type Client struct {
-	Account *AccountClient
+	Account       *AccountClient
+	SecurityGroup *SecurityGroupClient
 }
 
 // NewClient create a new huawei api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		Account: NewAccountClient(client),
+		Account:       NewAccountClient(client),
+		SecurityGroup: NewCloudSecurityGroupClient(client),
 	}
 }

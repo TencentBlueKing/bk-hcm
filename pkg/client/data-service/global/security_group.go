@@ -23,6 +23,7 @@ import (
 	"context"
 	"net/http"
 
+	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -40,9 +41,9 @@ type SecurityGroupClient struct {
 	client rest.ClientInterface
 }
 
-// List security group.
-func (cli *SecurityGroupClient) List(ctx context.Context, h http.Header, request *protocloud.SecurityGroupListReq) (
-	*protocloud.SecurityGroupListResult, error) {
+// ListSecurityGroup security group.
+func (cli *SecurityGroupClient) ListSecurityGroup(ctx context.Context, h http.Header, request *protocloud.
+SecurityGroupListReq) (*protocloud.SecurityGroupListResult, error) {
 
 	resp := new(protocloud.SecurityGroupListResp)
 
@@ -62,4 +63,52 @@ func (cli *SecurityGroupClient) List(ctx context.Context, h http.Header, request
 	}
 
 	return resp.Data, nil
+}
+
+// BatchDeleteSecurityGroup batch delete security group.
+func (cli *SecurityGroupClient) BatchDeleteSecurityGroup(ctx context.Context, h http.Header, request *protocloud.
+SecurityGroupBatchDeleteReq) error {
+
+	resp := new(core.DeleteResp)
+
+	err := cli.client.Delete().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/security_groups/batch").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// BatchUpdateSecurityGroupCommonInfo batch update security group common info.
+func (cli *SecurityGroupClient) BatchUpdateSecurityGroupCommonInfo(ctx context.Context, h http.Header,
+		request *protocloud.SecurityGroupCommonInfoBatchUpdateReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Patch().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/security_groups/common/info/batch/update").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
 }

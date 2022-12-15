@@ -20,7 +20,12 @@
 package cloud
 
 import (
+	"errors"
+	"fmt"
+
 	corecloud "hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
@@ -31,30 +36,81 @@ import (
 
 // HuaWeiSGRuleCreateReq define huawei security group create request.
 type HuaWeiSGRuleCreateReq struct {
-	Rules []corecloud.HuaWeiSecurityGroupRuleSpec `json:"rules" validate:"required"`
+	Rules []HuaWeiSGRuleBatchCreate `json:"rules" validate:"required"`
+}
+
+// HuaWeiSGRuleBatchCreate define huawei security group rule when create.
+type HuaWeiSGRuleBatchCreate struct {
+	CloudID                   string                       `json:"cloud_id"`
+	Memo                      *string                      `json:"memo"`
+	Protocol                  string                       `json:"protocol"`
+	Ethertype                 string                       `json:"ethertype"`
+	CloudRemoteGroupID        string                       `json:"cloud_remote_group_id"`
+	RemoteIPPrefix            string                       `json:"remote_ip_prefix"`
+	CloudRemoteAddressGroupID string                       `json:"cloud_remote_address_group_id"`
+	Port                      string                       `json:"port"`
+	Priority                  int64                        `json:"priority"`
+	Action                    string                       `json:"action"`
+	Type                      enumor.SecurityGroupRuleType `json:"type"`
+	CloudSecurityGroupID      string                       `json:"cloud_security_group_id"`
+	CloudProjectID            string                       `json:"cloud_project_id"`
+	AccountID                 string                       `json:"account_id"`
+	Region                    string                       `json:"region"`
+	SecurityGroupID           string                       `json:"security_group_id"`
 }
 
 // Validate huawei security group rule create request.
 func (req *HuaWeiSGRuleCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if len(req.Rules) == 0 {
+		return errors.New("security group rule is required")
+	}
+
+	if len(req.Rules) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group rule count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }
 
 // -------------------------- Update --------------------------
 
 // HuaWeiSGRuleBatchUpdateReq define huawei security group batch update request.
 type HuaWeiSGRuleBatchUpdateReq struct {
-	Rules []HuaWeiSGRuleBatchUpdateOption `json:"rules" validate:"required"`
+	Rules []HuaWeiSGRuleBatchUpdate `json:"rules" validate:"required"`
 }
 
-// HuaWeiSGRuleBatchUpdateOption huawei security group batch update option.
-type HuaWeiSGRuleBatchUpdateOption struct {
-	ID   string                                 `json:"id" validate:"required"`
-	Spec *corecloud.HuaWeiSecurityGroupRuleSpec `json:"spec" validate:"required"`
+// HuaWeiSGRuleBatchUpdate huawei security group batch update option.
+type HuaWeiSGRuleBatchUpdate struct {
+	ID                        string                       `json:"id" validate:"required"`
+	CloudID                   string                       `json:"cloud_id"`
+	Memo                      *string                      `json:"memo"`
+	Protocol                  string                       `json:"protocol"`
+	Ethertype                 string                       `json:"ethertype"`
+	CloudRemoteGroupID        string                       `json:"cloud_remote_group_id"`
+	RemoteIPPrefix            string                       `json:"remote_ip_prefix"`
+	CloudRemoteAddressGroupID string                       `json:"cloud_remote_address_group_id"`
+	Port                      string                       `json:"port"`
+	Priority                  int64                        `json:"priority"`
+	Action                    string                       `json:"action"`
+	Type                      enumor.SecurityGroupRuleType `json:"type"`
+	CloudSecurityGroupID      string                       `json:"cloud_security_group_id"`
+	CloudProjectID            string                       `json:"cloud_project_id"`
+	AccountID                 string                       `json:"account_id"`
+	Region                    string                       `json:"region"`
+	SecurityGroupID           string                       `json:"security_group_id"`
 }
 
 // Validate huawei security group rule batch update request.
 func (req *HuaWeiSGRuleBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if len(req.Rules) == 0 {
+		return errors.New("security group rule is required")
+	}
+
+	if len(req.Rules) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group rule count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }
 
 // -------------------------- List --------------------------
@@ -85,12 +141,12 @@ type HuaWeiSGRuleListResp struct {
 
 // -------------------------- Delete --------------------------
 
-// HuaWeiSGRuleDeleteReq huawei security group rule delete request.
-type HuaWeiSGRuleDeleteReq struct {
+// HuaWeiSGRuleBatchDeleteReq huawei security group rule delete request.
+type HuaWeiSGRuleBatchDeleteReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 }
 
 // Validate huawei security group rule delete request.
-func (req *HuaWeiSGRuleDeleteReq) Validate() error {
+func (req *HuaWeiSGRuleBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

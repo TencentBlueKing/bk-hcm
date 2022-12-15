@@ -20,22 +20,30 @@
 package cloud
 
 import (
+	"fmt"
+
 	"github.com/jmoiron/sqlx"
 
+	"hcm/pkg/criteria/errf"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/cloud"
+	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 )
 
 // GcpFirewallRule only used for gcp firewall rule.
 type GcpFirewallRule interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []cloud.GcpFirewallRuleTable) ([]string, error)
-	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.GcpFirewallRuleTable) error
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.GcpFirewallRuleTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, rule *cloud.GcpFirewallRuleTable) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, rule *cloud.GcpFirewallRuleTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListGcpFirewallRuleDetails, error)
-	Delete(kt *kit.Kit, expr *filter.Expression) error
+	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
 var _ GcpFirewallRule = new(GcpFirewallRuleDao)
@@ -46,30 +54,171 @@ type GcpFirewallRuleDao struct {
 	IDGen idgenerator.IDGenInterface
 }
 
-// BatchCreateWithTx batch create with tx.
-func (g GcpFirewallRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []cloud.GcpFirewallRuleTable) ([]string,
-	error) {
+// BatchCreateWithTx rule.
+func (g GcpFirewallRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.GcpFirewallRuleTable) (
+	[]string, error) {
 
-	// TODO implement me
-	panic("implement me")
+	ids, err := g.IDGen.Batch(kt, table.SecurityGroupTable, len(rules))
+	if err != nil {
+		return nil, err
+	}
+	for index, rule := range rules {
+		rule.ID = ids[index]
+
+		if err := rule.InsertValidate(); err != nil {
+			return nil, err
+		}
+	}
+
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.GcpFirewallRuleTable,
+		cloud.GcpFirewallRuleColumns.ColumnExpr(), cloud.GcpFirewallRuleColumns.ColonNameExpr())
+
+	if err = g.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rules); err != nil {
+		logs.Errorf("insert %s failed, err: %v, rid: %s", table.GcpFirewallRuleTable, err, kt.Rid)
+		return nil, fmt.Errorf("insert %s failed, err: %v", table.GcpFirewallRuleTable, err)
+	}
+
+	return ids, nil
 }
 
-// UpdateWithTx update with tx.
-func (g GcpFirewallRuleDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression,
-	rule *cloud.GcpFirewallRuleTable) error {
+// Update rule.
+func (g GcpFirewallRuleDao) Update(kt *kit.Kit, expr *filter.Expression, rule *cloud.GcpFirewallRuleTable) error {
+	if expr == nil {
+		return errf.New(errf.InvalidParameter, "filter expr is nil")
+	}
 
-	// TODO implement me
-	panic("implement me")
+	if err := rule.UpdateValidate(); err != nil {
+		return err
+	}
+
+	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return err
+	}
+
+	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
+	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(rule, opts)
+	if err != nil {
+		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
+	}
+
+	sql := fmt.Sprintf(`UPDATE %s %s %s`, rule.TableName(), setExpr, whereExpr)
+
+	_, err = g.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		effected, err := g.Orm.Txn(txn).Update(kt.Ctx, sql, toUpdate)
+		if err != nil {
+			logs.ErrorJson("update %s failed, err: %v, filter: %s, rid: %v", table.GcpFirewallRuleTable, err,
+				expr, kt.Rid)
+			return nil, err
+		}
+
+		if effected == 0 {
+			logs.ErrorJson("update %s, but record not found, filter: %v, rid: %v", table.GcpFirewallRuleTable,
+				expr, kt.Rid)
+			return nil, errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// List gcp firewall rules.
+// UpdateByIDWithTx rule.
+func (g GcpFirewallRuleDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, rule *cloud.
+	GcpFirewallRuleTable) error {
+
+	if len(id) == 0 {
+		return errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	if err := rule.UpdateValidate(); err != nil {
+		return err
+	}
+
+	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
+	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(rule, opts)
+	if err != nil {
+		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
+	}
+
+	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, rule.TableName(), setExpr)
+
+	toUpdate["id"] = id
+	_, err = g.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	if err != nil {
+		logs.ErrorJson("update %s failed, err: %v, id: %s, rid: %v", table.GcpFirewallRuleTable, err, id, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// List rule.
 func (g GcpFirewallRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListGcpFirewallRuleDetails, error) {
-	// TODO implement me
-	panic("implement me")
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list options is nil")
+	}
+
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.GcpFirewallRuleColumns.ColumnTypes())),
+		types.DefaultPageOption); err != nil {
+		return nil, err
+	}
+
+	whereExpr, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	if opt.Page.Count {
+		// this is a count request, then do count operation only.
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.GcpFirewallRuleTable, whereExpr)
+
+		count, err := g.Orm.Do().Count(kt.Ctx, sql)
+		if err != nil {
+			logs.ErrorJson("count %s failed, err: %v, filter: %s, rid: %s", table.GcpFirewallRuleTable, err,
+				opt.Filter, kt.Rid)
+			return nil, err
+		}
+
+		return &types.ListGcpFirewallRuleDetails{Count: count}, nil
+	}
+
+	pageExpr, err := opt.Page.SQLExpr(types.DefaultPageSQLOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.GcpFirewallRuleColumns.FieldsNamedExpr(opt.Fields),
+		table.GcpFirewallRuleTable, whereExpr, pageExpr)
+
+	details := make([]cloud.GcpFirewallRuleTable, 0)
+	if err = g.Orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+		return nil, err
+	}
+
+	return &types.ListGcpFirewallRuleDetails{Details: details}, nil
 }
 
-// Delete gcp firewall rules.
-func (g GcpFirewallRuleDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
-	// TODO implement me
-	panic("implement me")
+// DeleteWithTx rule.
+func (g GcpFirewallRuleDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+	if expr == nil {
+		return errf.New(errf.InvalidParameter, "filter expr is required")
+	}
+
+	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return err
+	}
+
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.GcpFirewallRuleTable, whereExpr)
+	if err = g.Orm.Txn(tx).Delete(kt.Ctx, sql); err != nil {
+		logs.ErrorJson("delete %s failed, err: %v, filter: %s, rid: %s", table.GcpFirewallRuleTable, err, expr, kt.Rid)
+		return err
+	}
+
+	return nil
 }

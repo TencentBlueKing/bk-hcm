@@ -20,8 +20,11 @@
 package cloud
 
 import (
+	"errors"
+	"fmt"
+
 	"hcm/pkg/api/core/cloud"
-	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
@@ -30,43 +33,81 @@ import (
 
 // -------------------------- Create --------------------------
 
-// SecurityGroupCreateReq security group create request.
-type SecurityGroupCreateReq[Extension cloud.SecurityGroupExtension] struct {
-	Spec      *cloud.SecurityGroupSpec `json:"spec" validate:"required"`
-	Extension *Extension               `json:"extension" validate:"required"`
+// SecurityGroupBatchCreateReq security group create request.
+type SecurityGroupBatchCreateReq[Extension cloud.SecurityGroupExtension] struct {
+	SecurityGroups []SecurityGroupBatchCreate[Extension] `json:"security_groups" validate:"required"`
+}
+
+// SecurityGroupBatchCreate define security group batch create.
+type SecurityGroupBatchCreate[Extension cloud.SecurityGroupExtension] struct {
+	CloudID   string     `json:"cloud_id" validate:"required"`
+	Region    string     `json:"region" validate:"required"`
+	Name      string     `json:"name" validate:"required"`
+	Memo      *string    `json:"memo" validate:"omitempty"`
+	AccountID string     `json:"account_id" validate:"required"`
+	BkBizID   int64      `json:"bk_biz_id" validate:"required"`
+	Extension *Extension `json:"extension" validate:"required"`
 }
 
 // Validate security group create request.
-func (req *SecurityGroupCreateReq[T]) Validate() error {
+func (req *SecurityGroupBatchCreateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
 // -------------------------- Update --------------------------
 
-// SecurityGroupUpdateReq security group update request.
-type SecurityGroupUpdateReq[Extension cloud.SecurityGroupExtension] struct {
-	Spec      *SecurityGroupSpecUpdate `json:"spec" validate:"omitempty"`
-	Extension *Extension               `json:"extension" validate:"omitempty"`
+// SecurityGroupBatchUpdateReq security group batch update request.
+type SecurityGroupBatchUpdateReq[Extension cloud.SecurityGroupExtension] struct {
+	SecurityGroups []SecurityGroupBatchUpdate[Extension] `json:"security_groups" validate:"required"`
+}
+
+// SecurityGroupBatchUpdate define security group batch update.
+type SecurityGroupBatchUpdate[Extension cloud.SecurityGroupExtension] struct {
+	ID        string     `json:"id" validate:"required"`
+	Name      string     `json:"name" validate:"omitempty"`
+	BkBizID   int64      `json:"bk_biz_id" validate:"omitempty"`
+	Memo      *string    `json:"memo" validate:"omitempty"`
+	Extension *Extension `json:"extension" validate:"omitempty"`
 }
 
 // Validate security group update request.
-func (req *SecurityGroupUpdateReq[T]) Validate() error {
+func (req *SecurityGroupBatchUpdateReq[T]) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
 
-	if req.Spec == nil && req.Extension == nil {
-		return errf.New(errf.InvalidParameter, "spec and extension require at least one for update")
+	if len(req.SecurityGroups) == 0 {
+		return errors.New("security group is required")
+	}
+
+	if len(req.SecurityGroups) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil
 }
 
-// SecurityGroupSpecUpdate define security group spec when update.
-type SecurityGroupSpecUpdate struct {
-	Name     string  `json:"name" validate:"omitempty"`
-	Assigned bool    `json:"assigned" validate:"omitempty"`
-	Memo     *string `json:"memo" validate:"omitempty"`
+// SecurityGroupCommonInfoBatchUpdateReq define security group common info batch update req.
+type SecurityGroupCommonInfoBatchUpdateReq struct {
+	IDs     []string `json:"ids" validate:"required"`
+	BkBizID int64    `json:"bk_biz_id" validate:"required"`
+}
+
+// Validate security group common info batch update req.
+func (req *SecurityGroupCommonInfoBatchUpdateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if len(req.IDs) == 0 {
+		return errors.New("ids required")
+	}
+
+	if len(req.IDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("ids count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }
 
 // -------------------------- List --------------------------
@@ -85,8 +126,8 @@ func (req *SecurityGroupListReq) Validate() error {
 
 // SecurityGroupListResult define security group list result.
 type SecurityGroupListResult struct {
-	Count   uint64                     `json:"count,omitempty"`
-	Details []*cloud.BaseSecurityGroup `json:"details,omitempty"`
+	Count   uint64                    `json:"count,omitempty"`
+	Details []cloud.BaseSecurityGroup `json:"details,omitempty"`
 }
 
 // SecurityGroupListResp define security group list resp.
@@ -97,13 +138,13 @@ type SecurityGroupListResp struct {
 
 // -------------------------- Delete --------------------------
 
-// SecurityGroupDeleteReq security group delete request.
-type SecurityGroupDeleteReq struct {
+// SecurityGroupBatchDeleteReq security group delete request.
+type SecurityGroupBatchDeleteReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 }
 
 // Validate security group delete request.
-func (req *SecurityGroupDeleteReq) Validate() error {
+func (req *SecurityGroupBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

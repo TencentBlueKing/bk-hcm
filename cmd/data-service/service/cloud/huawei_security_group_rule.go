@@ -76,9 +76,9 @@ func (svc *huaweiSGRuleSvc) BatchCreateHuaWeiRule(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	rules := make([]tablecloud.HuaWeiSecurityGroupRuleTable, 0, len(req.Rules))
+	rules := make([]*tablecloud.HuaWeiSecurityGroupRuleTable, 0, len(req.Rules))
 	for _, rule := range req.Rules {
-		rules = append(rules, tablecloud.HuaWeiSecurityGroupRuleTable{
+		rules = append(rules, &tablecloud.HuaWeiSecurityGroupRuleTable{
 			Region:                    rule.Region,
 			CloudID:                   rule.CloudID,
 			Type:                      string(rule.Type),
@@ -91,6 +91,7 @@ func (svc *huaweiSGRuleSvc) BatchCreateHuaWeiRule(cts *rest.Contexts) (interface
 			Ethertype:                 rule.Ethertype,
 			CloudRemoteGroupID:        rule.CloudRemoteGroupID,
 			RemoteIPPrefix:            rule.RemoteIPPrefix,
+			Action:                    rule.Action,
 			CloudRemoteAddressGroupID: rule.CloudRemoteAddressGroupID,
 			Port:                      rule.Port,
 			Priority:                  rule.Priority,
@@ -138,21 +139,22 @@ func (svc *huaweiSGRuleSvc) BatchUpdateHuaWeiRule(cts *rest.Contexts) (interface
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, one := range req.Rules {
 			rule := &tablecloud.HuaWeiSecurityGroupRuleTable{
-				Region:                    one.Spec.Region,
-				CloudID:                   one.Spec.CloudID,
-				Type:                      string(one.Spec.Type),
-				CloudSecurityGroupID:      one.Spec.CloudSecurityGroupID,
-				SecurityGroupID:           one.Spec.SecurityGroupID,
-				AccountID:                 one.Spec.AccountID,
-				CloudProjectID:            one.Spec.CloudProjectID,
-				Memo:                      one.Spec.Memo,
-				Protocol:                  one.Spec.Protocol,
-				Ethertype:                 one.Spec.Ethertype,
-				CloudRemoteGroupID:        one.Spec.CloudRemoteGroupID,
-				RemoteIPPrefix:            one.Spec.RemoteIPPrefix,
-				CloudRemoteAddressGroupID: one.Spec.CloudRemoteAddressGroupID,
-				Port:                      one.Spec.Port,
-				Priority:                  one.Spec.Priority,
+				Region:                    one.Region,
+				CloudID:                   one.CloudID,
+				Type:                      string(one.Type),
+				CloudSecurityGroupID:      one.CloudSecurityGroupID,
+				SecurityGroupID:           one.SecurityGroupID,
+				AccountID:                 one.AccountID,
+				CloudProjectID:            one.CloudProjectID,
+				Memo:                      one.Memo,
+				Protocol:                  one.Protocol,
+				Action:                    one.Action,
+				Ethertype:                 one.Ethertype,
+				CloudRemoteGroupID:        one.CloudRemoteGroupID,
+				RemoteIPPrefix:            one.RemoteIPPrefix,
+				CloudRemoteAddressGroupID: one.CloudRemoteAddressGroupID,
+				Port:                      one.Port,
+				Priority:                  one.Priority,
 				Reviser:                   cts.Kit.User,
 			}
 
@@ -221,30 +223,27 @@ func (svc *huaweiSGRuleSvc) ListHuaWeiRule(cts *rest.Contexts) (interface{}, err
 	details := make([]corecloud.HuaWeiSecurityGroupRule, 0, len(result.Details))
 	for _, one := range result.Details {
 		details = append(details, corecloud.HuaWeiSecurityGroupRule{
-			ID: one.ID,
-			Spec: &corecloud.HuaWeiSecurityGroupRuleSpec{
-				Region:                    one.Region,
-				CloudID:                   one.CloudID,
-				Memo:                      one.Memo,
-				Protocol:                  one.Protocol,
-				Ethertype:                 one.Ethertype,
-				CloudRemoteGroupID:        one.CloudRemoteGroupID,
-				RemoteIPPrefix:            one.RemoteIPPrefix,
-				CloudRemoteAddressGroupID: one.CloudRemoteAddressGroupID,
-				Port:                      one.Port,
-				Priority:                  one.Priority,
-				Type:                      enumor.SecurityGroupRuleType(one.Type),
-				CloudSecurityGroupID:      one.CloudSecurityGroupID,
-				CloudProjectID:            one.CloudProjectID,
-				AccountID:                 one.AccountID,
-				SecurityGroupID:           one.SecurityGroupID,
-			},
-			Revision: &core.Revision{
-				Creator:   one.Creator,
-				Reviser:   one.Reviser,
-				CreatedAt: one.CreatedAt,
-				UpdatedAt: one.UpdatedAt,
-			},
+			ID:                        one.ID,
+			Region:                    one.Region,
+			CloudID:                   one.CloudID,
+			Memo:                      one.Memo,
+			Protocol:                  one.Protocol,
+			Ethertype:                 one.Ethertype,
+			CloudRemoteGroupID:        one.CloudRemoteGroupID,
+			RemoteIPPrefix:            one.RemoteIPPrefix,
+			Action:                    one.Action,
+			CloudRemoteAddressGroupID: one.CloudRemoteAddressGroupID,
+			Port:                      one.Port,
+			Priority:                  one.Priority,
+			Type:                      enumor.SecurityGroupRuleType(one.Type),
+			CloudSecurityGroupID:      one.CloudSecurityGroupID,
+			CloudProjectID:            one.CloudProjectID,
+			AccountID:                 one.AccountID,
+			SecurityGroupID:           one.SecurityGroupID,
+			Creator:                   one.Creator,
+			Reviser:                   one.Reviser,
+			CreatedAt:                 one.CreatedAt,
+			UpdatedAt:                 one.UpdatedAt,
 		})
 	}
 
@@ -258,7 +257,7 @@ func (svc *huaweiSGRuleSvc) DeleteHuaWeiRule(cts *rest.Contexts) (interface{}, e
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
 
-	req := new(protocloud.HuaWeiSGRuleDeleteReq)
+	req := new(protocloud.HuaWeiSGRuleBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
