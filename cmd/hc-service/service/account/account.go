@@ -64,10 +64,10 @@ func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	err := a.ad.Vendor(enumor.TCloud).AccountCheck(
 		cts.Kit,
 		&types.Secret{
-			TCloud: &types.BaseSecret{ID: req.SecretID, Key: req.SecretKey},
+			TCloud: &types.BaseSecret{ID: req.CloudSecretID, Key: req.CloudSecretKey},
 		},
 		&types.AccountCheckOption{
-			Tcloud: &types.TcloudAccountInfo{AccountCid: req.SubAccountID, MainAccountCid: req.MainAccountID},
+			Tcloud: &types.TcloudAccountInfo{AccountCid: req.CloudSubAccountID, MainAccountCid: req.CloudMainAccountID},
 		},
 	)
 
@@ -88,10 +88,10 @@ func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	err := a.ad.Vendor(enumor.AWS).AccountCheck(
 		cts.Kit,
 		&types.Secret{
-			Aws: &types.BaseSecret{ID: req.SecretID, Key: req.SecretKey},
+			Aws: &types.BaseSecret{ID: req.CloudSecretID, Key: req.CloudSecretKey},
 		},
 		&types.AccountCheckOption{
-			Aws: &types.AwsAccountInfo{AccountCid: req.AccountID, IamUserName: req.IamUsername},
+			Aws: &types.AwsAccountInfo{AccountCid: req.CloudAccountID, IamUserName: req.CloudIamUsername},
 		},
 	)
 
@@ -112,16 +112,16 @@ func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	err := a.ad.Vendor(enumor.HuaWei).AccountCheck(
 		cts.Kit,
 		&types.Secret{
-			HuaWei: &types.BaseSecret{ID: req.SecretID, Key: req.SecretKey},
+			HuaWei: &types.BaseSecret{ID: req.CloudSecretID, Key: req.CloudSecretKey},
 		},
 		&types.AccountCheckOption{
 			HuaWei: &types.HuaWeiAccountInfo{
-				MainAccountName: req.MainAccountName,
-				SubAccountCID:   req.SubAccountID,
-				SubAccountName:  req.SubAccountName,
+				MainAccountName: req.CloudMainAccountName,
+				SubAccountCID:   req.CloudSubAccountID,
+				SubAccountName:  req.CloudSubAccountName,
 				// TODO: 产品上华为云账号就没有录入IamUserID和IamUsername，是否必须呢？如果必须，需要产品支持
 				// IamUserCID: 	 req.IamUserID
-				// IamUserName:     req.IamUsername,
+				// IamUserName:     req.CloudIamUsername,
 			},
 		},
 	)
