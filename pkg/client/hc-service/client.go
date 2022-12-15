@@ -43,24 +43,24 @@ type Client struct {
 
 // NewClient create a new hc-service api client.
 func NewClient(c *client.Capability, version string) *Client {
-	serviceName := "hc"
+	prefixPath := fmt.Sprintf("/api/%s/hc/vendors", version)
 	return &Client{
 		// Note: 对于Global Client，主要是用于无vendor区分即全局或跨多个云的请求
-		// Global: global.NewClient(rest.NewClient(c, fmt.Sprintf("/api/%s/%s", version, serviceName))),
+		// Global: global.NewClient(rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, "global"))),
 		TCloud: tcloud.NewClient(
-			rest.NewClient(c, fmt.Sprintf("/api/%s/%s/vendors/%s", version, serviceName, enumor.TCloud)),
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.TCloud)),
 		),
 		Aws: aws.NewClient(
-			rest.NewClient(c, fmt.Sprintf("/api/%s/%s/vendors/%s", version, serviceName, enumor.AWS)),
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.AWS)),
 		),
 		HuaWei: huawei.NewClient(
-			rest.NewClient(c, fmt.Sprintf("/api/%s/%s/vendors/%s", version, serviceName, enumor.HuaWei)),
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.HuaWei)),
 		),
 		Gcp: gcp.NewClient(
-			rest.NewClient(c, fmt.Sprintf("/api/%s/%s/vendors/%s", version, serviceName, enumor.GCP)),
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.GCP)),
 		),
 		Azure: azure.NewClient(
-			rest.NewClient(c, fmt.Sprintf("/api/%s/%s/vendors/%s", version, serviceName, enumor.Azure)),
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.Azure)),
 		),
 	}
 }
