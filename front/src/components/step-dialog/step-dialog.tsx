@@ -12,7 +12,10 @@ import './step.dialog.scss';
 type StepType = {
   status?: string;
   title: string;
+  disableNext?: boolean;
+  isConfirmLoading?: boolean;
   component: () => VNode;
+  footer?: () => VNode;
 };
 
 export default defineComponent({
@@ -100,10 +103,14 @@ export default defineComponent({
           footer: () => {
             return <>
               {
+                this.steps[this.curStep - 1].footer?.()
+              }
+              {
                 this.curStep < this.steps.length
                   ? <bk-button
                       class="mr10 dialog-button"
                       theme="primary"
+                      disabled={this.steps[this.curStep - 1].disableNext}
                       onClick={this.handleNextStep}
                     >{this.t('下一步')}</bk-button>
                   : ''
@@ -121,6 +128,7 @@ export default defineComponent({
                   ? <bk-button
                       class="mr10 dialog-button"
                       theme="primary"
+                      loading={this.steps[this.curStep - 1].isConfirmLoading}
                       onClick={this.handleConfirm}
                     >{this.t('确认')}</bk-button>
                   : ''

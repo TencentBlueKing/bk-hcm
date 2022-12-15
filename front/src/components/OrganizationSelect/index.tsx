@@ -15,7 +15,7 @@ export default defineComponent({
       default: (): number[] => [],
     },
   },
-  emits: ['input', 'update:modelValue'],
+  emits: ['input', 'change', 'update:modelValue'],
   setup(props, ctx) {
     const {
       organizationTree,
@@ -33,12 +33,6 @@ export default defineComponent({
       return isLoading.value ? [] : nameValues;
     });
 
-
-    watch(() => props.modelValue, async (val) => {
-      if (Array.isArray(val) && val.length > 0) {
-        // patchGetParentDept(val.join(','));
-      }
-    }, { immediate: true });
 
     watch(() => isLoading.value, async (loading) => {
       if (!loading) {
@@ -101,6 +95,7 @@ export default defineComponent({
     }
 
     function updateValue(val: number[]) {
+      ctx.emit('change', val);
       ctx.emit('update:modelValue', val);
     }
 

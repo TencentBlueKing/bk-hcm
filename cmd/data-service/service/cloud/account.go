@@ -262,13 +262,13 @@ func updateAccount[T protocloud.UpdateAccountExtensionReq](accountID uint64, svc
 	return nil, nil
 }
 
-func convertToAccountResp[T protocloud.GetAccountExtensionResp](baseAccount *protocore.BaseAccount, dbExtension tabletype.JsonField) (*protocloud.GetAccountResp[T], error) {
+func convertToAccountResult[T protocloud.GetAccountExtensionResp](baseAccount *protocore.BaseAccount, dbExtension tabletype.JsonField) (*protocloud.GetAccountResult[T], error) {
 	var extension *T
 	err := json.UnmarshalFromString(string(dbExtension), extension)
 	if err != nil {
 		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
 	}
-	return &protocloud.GetAccountResp[T]{
+	return &protocloud.GetAccountResult[T]{
 		BaseAccount: *baseAccount,
 		Extension:   extension,
 	}, nil
@@ -335,7 +335,7 @@ func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 转换为最终的数据结构
-	account, err := convertToAccountResp(baseAccount, dbAccount.Extension)
+	account, err := convertToAccountResult(baseAccount, dbAccount.Extension)
 	if err != nil {
 		return nil, err
 	}

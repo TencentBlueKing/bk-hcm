@@ -2,6 +2,7 @@ import { Input, Select } from 'bkui-vue';
 import { defineComponent, ref, nextTick, watch, PropType } from 'vue';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
+import OrganizationSelect from '@/components/OrganizationSelect';
 
 export default defineComponent({
   props: {
@@ -23,7 +24,7 @@ export default defineComponent({
     },
     modelValue: {
       type: String as PropType<any>,
-      default: '1',
+      default: [],
     },
     selectData: {
       type: Array as PropType<any>,
@@ -57,10 +58,15 @@ export default defineComponent({
       },
     );
 
-    const handleChange = (val: string) => {
-      ctx.emit('input', val);
+    const handleChange = (val: any) => {
       ctx.emit('change', val);
+      ctx.emit('input', val);
       ctx.emit('update:modelValue', val);
+    };
+
+    const handleOrganChange = (val: any) => {
+      renderEdit.value = false;
+      ctx.emit('change', val, 'departmentId');
     };
 
     const handleBlur = (key: string) => {
@@ -69,7 +75,6 @@ export default defineComponent({
     };
 
     const renderComponentsContent = (type: string) => {
-      console.log('type', type);
       switch (type) {
         case 'input':
           return <Input ref={inputRef} class="w320" placeholder={props.fromPlaceholder} modelValue={props.modelValue}
@@ -77,6 +82,9 @@ export default defineComponent({
         case 'member':
           return <MemberSelect class="w320" v-model={props.modelValue}
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}/>;
+        case 'department':
+          return <OrganizationSelect class="w320" v-model={props.modelValue}
+          onChange={handleOrganChange}/>;
         case 'textarea':
           return <Input ref={inputRef} class="w320" placeholder={props.fromPlaceholder} type="textarea" modelValue={props.modelValue}
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)} />;
@@ -87,11 +95,11 @@ export default defineComponent({
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}>
             {props.selectData.map((item: any) => (
               <Option
-                key={item.label}
-                value={item.value}
-                label={item.label}
+                key={item.id}
+                value={item.id}
+                label={item.name}
               >
-                {item.label}
+                {item.name}
               </Option>
             ))
           }
@@ -114,14 +122,13 @@ export default defineComponent({
           // eslint-disable-next-line no-case-declarations
           let selectModelValue;
           if (Array.isArray(props.modelValue)) {
-            selectModelValue = props.selectData.filter((e: any) => props.modelValue.includes(e.value));
+            selectModelValue = props.selectData.filter((e: any) => props.modelValue.includes(e.id));
           } else {
-            selectModelValue = props.selectData.filter((e: any) => e.value === props.modelValue);
+            selectModelValue = props.selectData.filter((e: any) => e.id === props.modelValue);
           }
           if (selectModelValue.length) {
-            selectModelValue = selectModelValue.map((e: any) => e.label);
+            selectModelValue = selectModelValue.map((e: any) => e.name);
           }
-          console.log('modelValue', selectModelValue);
           return selectModelValue.length
             ? <span>{selectModelValue.join(',')}</span>
             : '暂无';

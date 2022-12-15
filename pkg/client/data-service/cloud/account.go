@@ -94,7 +94,7 @@ func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID 
 func (a *AccountClient) GetTCloud(ctx context.Context, h http.Header, accountID uint64) (
 	*protocloud.GetAccountResp[protocore.TCloudAccountExtension], error,
 ) {
-	resp := new(protocloud.GetAccountResult[protocore.TCloudAccountExtension])
+	resp := new(protocloud.GetAccountResp[protocore.TCloudAccountExtension])
 	err := a.client.Get().WithContext(ctx).SubResourcef("vendor/tcloud/account/%d", accountID).WithHeaders(h).Do().Into(resp)
 	if err != nil {
 		return nil, err

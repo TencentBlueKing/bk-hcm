@@ -164,12 +164,12 @@ type GetAccountExtensionResp interface {
 	cloud.TCloudAccountExtension | cloud.AwsAccountExtension | cloud.HuaWeiAccountExtension | cloud.GcpAccountExtension | cloud.AzureAccountExtension
 }
 
-type GetAccountResp[T GetAccountExtensionResp] struct {
+type GetAccountResult[T GetAccountExtensionResp] struct {
 	cloud.BaseAccount `json:",inline"`
 	Extension         *T `json:"extension"`
 }
 
-type GetAccountResult[T GetAccountExtensionResp] struct {
+type GetAccountResp[T GetAccountExtensionResp] struct {
 	rest.BaseResp `json:",inline"`
 	Data          *GetAccountResp[T] `json:"data"`
 }
