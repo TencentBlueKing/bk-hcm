@@ -219,13 +219,12 @@ func (d *AccountDeleteReq) Validate() error {
 	return validator.Validate.Struct(d)
 }
 
-// UpdateAccountBizRelReq ...
-type UpdateAccountBizRelReq struct {
-	AccountID uint64   `json:"account_id" validate:"required"`
-	BkBizIDs  []uint64 `json:"bk_biz_ids" validate:"required"`
+// AccountBizRelUpdateReq ...
+type AccountBizRelUpdateReq struct {
+	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required"`
 }
 
 // Validate ...
-func (req *UpdateAccountBizRelReq) Validate() error {
+func (req *AccountBizRelUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

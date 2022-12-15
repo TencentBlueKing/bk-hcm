@@ -43,7 +43,8 @@ func NewCloudAccountClient(client rest.ClientInterface) *AccountClient {
 }
 
 // CreateTCloud account.
-func (a *AccountClient) CreateTCloud(ctx context.Context, h http.Header, request *protocloud.AccountCreateReq[protocloud.TCloudAccountExtensionCreateReq]) (
+func (a *AccountClient) CreateTCloud(ctx context.Context, h http.Header,
+	request *protocloud.AccountCreateReq[protocloud.TCloudAccountExtensionCreateReq]) (
 	*core.CreateResult, error,
 ) {
 	resp := new(core.CreateResp)
@@ -51,7 +52,7 @@ func (a *AccountClient) CreateTCloud(ctx context.Context, h http.Header, request
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/vendor/tcloud/account/create").
+		SubResourcef("/vendors/tcloud/accounts/create").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -67,7 +68,8 @@ func (a *AccountClient) CreateTCloud(ctx context.Context, h http.Header, request
 }
 
 // UpdateAws ...
-func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID uint64, request *protocloud.AccountUpdateReq[protocloud.AwsAccountExtensionUpdateReq]) (
+func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID uint64,
+	request *protocloud.AccountUpdateReq[protocloud.AwsAccountExtensionUpdateReq]) (
 	interface{}, error,
 ) {
 	resp := new(core.UpdateResp)
@@ -75,7 +77,7 @@ func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID 
 	err := a.client.Patch().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/vendor/aws/account/%d", accountID).
+		SubResourcef("/vendors/aws/accounts/%d", accountID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -95,7 +97,8 @@ func (a *AccountClient) GetTCloud(ctx context.Context, h http.Header, accountID 
 	*protocloud.AccountGetResult[protocore.TCloudAccountExtension], error,
 ) {
 	resp := new(protocloud.AccountGetResp[protocore.TCloudAccountExtension])
-	err := a.client.Get().WithContext(ctx).SubResourcef("vendor/tcloud/account/%d", accountID).WithHeaders(h).Do().Into(resp)
+	err := a.client.Get().WithContext(ctx).SubResourcef("vendors/tcloud/accounts/%d",
+		accountID).WithHeaders(h).Do().Into(resp)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +119,7 @@ func (a *AccountClient) List(ctx context.Context, h http.Header, request *protoc
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account/list").
+		SubResourcef("/accounts/list").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -140,7 +143,31 @@ func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *prot
 	err := a.client.Delete().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account/delete").
+		SubResourcef("/accounts/delete").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// UpdateAccountBizRel update account and biz rel api, only support put all biz for account_id.
+func (a *AccountClient) UpdateAccountBizRel(ctx context.Context, h http.Header, accountID uint64,
+	request *protocloud.AccountBizRelUpdateReq) (interface{}, error) {
+
+	resp := new(core.UpdateResp)
+
+	err := a.client.Put().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/account_biz_rels/accounts/%d", accountID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

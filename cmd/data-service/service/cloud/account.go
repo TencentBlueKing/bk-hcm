@@ -30,6 +30,7 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -40,8 +41,6 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/json"
-
-	"hcm/pkg/dal/dao"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -54,11 +53,12 @@ func InitAccountService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("CreateAccount", "POST", "/vendors/{vendor}/account/create", svc.CreateAccount)
-	h.Add("UpdateAccount", "PATCH", "/vendors/{vendor}/account/{account_id}", svc.UpdateAccount)
+	h.Add("CreateAccount", "POST", "/vendors/{vendor}/accounts/create", svc.CreateAccount)
+	h.Add("UpdateAccount", "PATCH", "/vendors/{vendor}/accounts/{account_id}", svc.UpdateAccount)
 	h.Add("GetAccount", "GET", "/vendors/{vendor}/accounts/{account_id}", svc.GetAccount)
 	h.Add("ListAccount", "POST", "/accounts/list", svc.ListAccount)
 	h.Add("DeleteAccount", "DELETE", "/accounts", svc.DeleteAccount)
+	h.Add("UpdateAccountBizRel", "PUT", "/account_biz_rels/accounts/{account_id}", svc.UpdateAccountBizRel)
 
 	h.Load(cap.WebService)
 }
@@ -454,4 +454,47 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+// UpdateAccountBizRel update account biz rel.
+func (svc *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, error) {
+	accountID, err := cts.PathParameter("account_id").Uint64()
+	if err != nil {
+		return nil, errf.New(errf.InvalidParameter, err.Error())
+	}
+
+	req := new(protocloud.AccountBizRelUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		ftr := tools.GenerateIDFilter("account_id", accountID)
+		if err := svc.dao.AccountBizRel().DeleteWithTx(cts.Kit, txn, ftr); err != nil {
+			return nil, fmt.Errorf("delete account_biz_rels failed, err: %v", err)
+		}
+
+		rels := make([]*tablecloud.AccountBizRelTable, len(req.BkBizIDs))
+		for index, bizID := range req.BkBizIDs {
+			rels[index] = &tablecloud.AccountBizRelTable{
+				BkBizID:   bizID,
+				AccountID: accountID,
+				Creator:   cts.Kit.User,
+			}
+		}
+		if _, err := svc.dao.AccountBizRel().BatchCreateWithTx(cts.Kit, txn, rels); err != nil {
+			return nil, fmt.Errorf("batch create account_biz_rels failed, err: %v", err)
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, err
 }
