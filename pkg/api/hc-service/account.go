@@ -64,33 +64,33 @@ func (r *HuaWeiAccountCheckReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
-// // GcpAccountCheckReq ...
-// type GcpAccountCheckReq struct {
-// 	ProjectID          string `json:"project_id" validate:"required"`
-// 	ProjectName        string `json:"project_name" validate:"required"`
-// 	ServiceAccountID   string `json:"service_account_cid" validate:"required"`
-// 	ServiceAccountName string `json:"service_account_name" validate:"required"`
-// 	ServiceSecretID    string `json:"service_secret_id" validate:"required"`
-// 	ServiceSecretKey   string `json:"service_secret_key" validate:"required"`
-// }
-//
-// // Validate ...
-// func (r *GcpAccountCheckReq) Validate() error {
-// 	return validator.Validate.Struct(r)
-// }
-//
-// // AzureAccountCheckReq ...
-// type AzureAccountCheckReq struct {
-// 	TenantID         string `json:"tenant_id" validate:"required"`
-// 	SubscriptionID   string `json:"subscription_id" validate:"required"`
-// 	SubscriptionName string `json:"subscription_name" validate:"required"`
-// 	ApplicationID    string `json:"application_id" validate:"required"`
-// 	ApplicationName  string `json:"application_name" validate:"required"`
-// 	ClientID         string `json:"client_id" validate:"required"`
-// 	ClientSecret     string `json:"client_secret" validate:"required"`
-// }
-//
-// // Validate ...
-// func (r *AzureAccountCheckReq) Validate() error {
-// 	return validator.Validate.Struct(r)
-// }
+// GcpAccountCheckReq ...
+type GcpAccountCheckReq struct {
+	ProjectID          string `json:"project_id" validate:"required"`
+	ProjectName        string `json:"project_name" validate:"required"`
+	ServiceAccountID   string `json:"service_account_cid" validate:"required"`
+	ServiceAccountName string `json:"service_account_name" validate:"required"`
+	ServiceSecretID    string `json:"service_secret_id" validate:"required"`
+	ServiceSecretKey   string `json:"service_secret_key" validate:"required"`
+}
+
+// Validate ...
+func (r *GcpAccountCheckReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// AzureAccountCheckReq ...
+type AzureAccountCheckReq struct {
+	TenantID         string `json:"tenant_id" validate:"required"`
+	SubscriptionID   string `json:"subscription_id" validate:"required"`
+	SubscriptionName string `json:"subscription_name" validate:"required"`
+	ApplicationID    string `json:"application_id" validate:"required"`
+	ApplicationName  string `json:"application_name" validate:"required"`
+	ClientID         string `json:"client_id" validate:"required"`
+	ClientSecret     string `json:"client_secret" validate:"required"`
+}
+
+// Validate ...
+func (r *AzureAccountCheckReq) Validate() error {
+	return validator.Validate.Struct(r)
+}

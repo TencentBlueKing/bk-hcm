@@ -22,24 +22,45 @@ package hcservice
 import (
 	"fmt"
 
+	"hcm/pkg/client/hc-service/aws"
+	"hcm/pkg/client/hc-service/azure"
+	"hcm/pkg/client/hc-service/gcp"
+	"hcm/pkg/client/hc-service/huawei"
+	"hcm/pkg/client/hc-service/tcloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 )
 
 // Client is hc-service api client.
 type Client struct {
-	client rest.ClientInterface
+	TCloud *tcloud.Client
+	Aws    *aws.Client
+	HuaWei *huawei.Client
+	Gcp    *gcp.Client
+	Azure  *azure.Client
 }
 
 // NewClient create a new hc-service api client.
 func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/hc", version)
+	serviceName := "hc"
 	return &Client{
-		client: rest.NewClient(c, base),
+		// Note: 对于Global Client，主要是用于无vendor区分即全局或跨多个云的请求
+		// Global: global.NewClient(rest.NewClient(c, fmt.Sprintf("/api/%s/%s", version, serviceName))),
+		TCloud: tcloud.NewClient(
+			rest.NewClient(c, fmt.Sprintf("/api/%s/%s/vendors/%s", version, serviceName, enumor.TCloud)),
+		),
+		Aws: aws.NewClient(
+			rest.NewClient(c, fmt.Sprintf("/api/%s/%s/vendors/%s", version, serviceName, enumor.AWS)),
+		),
+		HuaWei: huawei.NewClient(
+			rest.NewClient(c, fmt.Sprintf("/api/%s/%s/vendors/%s", version, serviceName, enumor.HuaWei)),
+		),
+		Gcp: gcp.NewClient(
+			rest.NewClient(c, fmt.Sprintf("/api/%s/%s/vendors/%s", version, serviceName, enumor.GCP)),
+		),
+		Azure: azure.NewClient(
+			rest.NewClient(c, fmt.Sprintf("/api/%s/%s/vendors/%s", version, serviceName, enumor.Azure)),
+		),
 	}
-}
-
-// Account get account client.
-func (c *Client) Account() *AccountClient {
-	return NewAccountClient(c.client)
 }

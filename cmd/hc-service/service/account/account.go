@@ -37,11 +37,11 @@ func InitAccountService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("TCloudAccountCheck", "POST", "/vendor/tcloud/account/check", a.TCloudAccountCheck)
-	h.Add("AwsAccountCheck", "POST", "/vendor/aws/account/check", a.AwsAccountCheck)
-	h.Add("HuaWeiAccountCheck", "POST", "/vendor/huawei/account/check", a.HuaWeiAccountCheck)
-	// h.Add("GcpAccountCheck", "POST", "/vendor/gcp/account/check", a.GcpAccountCheck)
-	// h.Add("AzureAccountCheck", "POST", "/vendor/azure/account/check", a.AzureAccountCheck)
+	h.Add("TCloudAccountCheck", "POST", "/vendors/tcloud/accounts/check", a.TCloudAccountCheck)
+	h.Add("AwsAccountCheck", "POST", "/vendors/aws/accounts/check", a.AwsAccountCheck)
+	h.Add("HuaWeiAccountCheck", "POST", "/vendors/huawei/accounts/check", a.HuaWeiAccountCheck)
+	// h.Add("GcpAccountCheck", "POST", "/vendors/gcp/accounts/check", a.GcpAccountCheck)
+	// h.Add("AzureAccountCheck", "POST", "/vendors/azure/accounts/check", a.AzureAccountCheck)
 
 	h.Load(cap.WebService)
 }
