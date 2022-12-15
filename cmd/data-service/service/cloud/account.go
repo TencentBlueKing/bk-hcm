@@ -335,7 +335,20 @@ func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 转换为最终的数据结构
-	account, err := convertToAccountResult(baseAccount, dbAccount.Extension)
+	var account interface{}
+	switch enumor.Vendor(dbAccount.Vendor) {
+	case enumor.TCloud:
+		account, err = convertToAccountResult[protocore.TCloudAccountExtension](baseAccount, dbAccount.Extension)
+	case enumor.AWS:
+		account, err = convertToAccountResult[protocore.AwsAccountExtension](baseAccount, dbAccount.Extension)
+	case enumor.HuaWei:
+		account, err = convertToAccountResult[protocore.HuaWeiAccountExtension](baseAccount, dbAccount.Extension)
+	case enumor.GCP:
+		account, err = convertToAccountResult[protocore.GcpAccountExtension](baseAccount, dbAccount.Extension)
+	case enumor.Azure:
+		account, err = convertToAccountResult[protocore.AzureAccountExtension](baseAccount, dbAccount.Extension)
+	}
+
 	if err != nil {
 		return nil, err
 	}
