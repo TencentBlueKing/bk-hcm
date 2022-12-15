@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/rest"
 )
 
+// Client is a aws api client
 type Client struct {
 	Account *AccountClient
 }
