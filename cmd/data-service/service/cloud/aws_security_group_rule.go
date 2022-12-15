@@ -41,8 +41,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitAwsSGRuleService initial the aws security group rule service
-func InitAwsSGRuleService(cap *capability.Capability) {
+// initAwsSGRuleService initial the aws security group rule service
+func initAwsSGRuleService(cap *capability.Capability) {
 	svc := &awsSGRuleSvc{
 		dao: cap.Dao,
 	}
@@ -76,9 +76,9 @@ func (svc *awsSGRuleSvc) BatchCreateAwsRule(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	rules := make([]tablecloud.AwsSecurityGroupRuleTable, 0, len(req.Rules))
+	rules := make([]*tablecloud.AwsSecurityGroupRuleTable, 0, len(req.Rules))
 	for _, rule := range req.Rules {
-		rules = append(rules, tablecloud.AwsSecurityGroupRuleTable{
+		rules = append(rules, &tablecloud.AwsSecurityGroupRuleTable{
 			Region:                     rule.Region,
 			CloudID:                    rule.CloudID,
 			IPv4Cidr:                   rule.IPv4Cidr,
@@ -138,21 +138,21 @@ func (svc *awsSGRuleSvc) BatchUpdateAwsRule(cts *rest.Contexts) (interface{}, er
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, one := range req.Rules {
 			rule := &tablecloud.AwsSecurityGroupRuleTable{
-				Region:                     one.Spec.Region,
-				CloudID:                    one.Spec.CloudID,
-				IPv4Cidr:                   one.Spec.IPv4Cidr,
-				IPv6Cidr:                   one.Spec.IPv6Cidr,
-				Memo:                       one.Spec.Memo,
-				Type:                       string(one.Spec.Type),
-				FromPort:                   one.Spec.FromPort,
-				ToPort:                     one.Spec.ToPort,
-				Protocol:                   one.Spec.Protocol,
-				CloudPrefixListID:          one.Spec.CloudPrefixListID,
-				CloudTargetSecurityGroupID: one.Spec.CloudTargetSecurityGroupID,
-				CloudSecurityGroupID:       one.Spec.CloudSecurityGroupID,
-				CloudGroupOwnerID:          one.Spec.CloudGroupOwnerID,
-				SecurityGroupID:            one.Spec.SecurityGroupID,
-				AccountID:                  one.Spec.AccountID,
+				Region:                     one.Region,
+				CloudID:                    one.CloudID,
+				IPv4Cidr:                   one.IPv4Cidr,
+				IPv6Cidr:                   one.IPv6Cidr,
+				Memo:                       one.Memo,
+				Type:                       string(one.Type),
+				FromPort:                   one.FromPort,
+				ToPort:                     one.ToPort,
+				Protocol:                   one.Protocol,
+				CloudPrefixListID:          one.CloudPrefixListID,
+				CloudTargetSecurityGroupID: one.CloudTargetSecurityGroupID,
+				CloudSecurityGroupID:       one.CloudSecurityGroupID,
+				CloudGroupOwnerID:          one.CloudGroupOwnerID,
+				SecurityGroupID:            one.SecurityGroupID,
+				AccountID:                  one.AccountID,
 				Reviser:                    cts.Kit.User,
 			}
 
@@ -221,30 +221,26 @@ func (svc *awsSGRuleSvc) ListAwsRule(cts *rest.Contexts) (interface{}, error) {
 	details := make([]corecloud.AwsSecurityGroupRule, 0, len(result.Details))
 	for _, one := range result.Details {
 		details = append(details, corecloud.AwsSecurityGroupRule{
-			ID: one.ID,
-			Spec: &corecloud.AwsSecurityGroupRuleSpec{
-				Region:                     one.Region,
-				CloudID:                    one.CloudID,
-				IPv4Cidr:                   one.IPv4Cidr,
-				IPv6Cidr:                   one.IPv6Cidr,
-				Memo:                       one.Memo,
-				FromPort:                   one.FromPort,
-				ToPort:                     one.ToPort,
-				Type:                       enumor.SecurityGroupRuleType(one.Type),
-				Protocol:                   one.Protocol,
-				CloudPrefixListID:          one.CloudPrefixListID,
-				CloudTargetSecurityGroupID: one.CloudTargetSecurityGroupID,
-				CloudSecurityGroupID:       one.CloudSecurityGroupID,
-				CloudGroupOwnerID:          one.CloudGroupOwnerID,
-				AccountID:                  one.AccountID,
-				SecurityGroupID:            one.SecurityGroupID,
-			},
-			Revision: &core.Revision{
-				Creator:   one.Creator,
-				Reviser:   one.Reviser,
-				CreatedAt: one.CreatedAt,
-				UpdatedAt: one.UpdatedAt,
-			},
+			ID:                         one.ID,
+			Region:                     one.Region,
+			CloudID:                    one.CloudID,
+			IPv4Cidr:                   one.IPv4Cidr,
+			IPv6Cidr:                   one.IPv6Cidr,
+			Memo:                       one.Memo,
+			FromPort:                   one.FromPort,
+			ToPort:                     one.ToPort,
+			Type:                       enumor.SecurityGroupRuleType(one.Type),
+			Protocol:                   one.Protocol,
+			CloudPrefixListID:          one.CloudPrefixListID,
+			CloudTargetSecurityGroupID: one.CloudTargetSecurityGroupID,
+			CloudSecurityGroupID:       one.CloudSecurityGroupID,
+			CloudGroupOwnerID:          one.CloudGroupOwnerID,
+			AccountID:                  one.AccountID,
+			SecurityGroupID:            one.SecurityGroupID,
+			Creator:                    one.Creator,
+			Reviser:                    one.Reviser,
+			CreatedAt:                  one.CreatedAt,
+			UpdatedAt:                  one.UpdatedAt,
 		})
 	}
 
@@ -258,7 +254,7 @@ func (svc *awsSGRuleSvc) DeleteAwsRule(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
 
-	req := new(protocloud.AwsSGRuleDeleteReq)
+	req := new(protocloud.AwsSGRuleBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -271,10 +267,7 @@ func (svc *awsSGRuleSvc) DeleteAwsRule(cts *rest.Contexts) (interface{}, error) 
 		SecurityGroupID: sgID,
 		Fields:          []string{"id"},
 		Filter:          req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:            types.DefaultBasePage,
 	}
 	listResp, err := svc.dao.AwsSGRule().List(cts.Kit, opt)
 	if err != nil {

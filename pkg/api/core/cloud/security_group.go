@@ -20,41 +20,35 @@
 package cloud
 
 import (
-	"hcm/pkg/api/core"
+	"time"
+
 	"hcm/pkg/criteria/enumor"
 )
 
 // BaseSecurityGroup define base security group.
 type BaseSecurityGroup struct {
-	ID       string             `json:"id"`
-	Vendor   enumor.Vendor      `json:"vendor"`
-	Spec     *SecurityGroupSpec `json:"spec"`
-	Revision *core.Revision     `json:"revision"`
+	ID        string        `json:"id"`
+	Vendor    enumor.Vendor `json:"vendor"`
+	CloudID   string        `json:"cloud_id"`
+	Region    string        `json:"region"`
+	Name      string        `json:"name"`
+	Memo      *string       `json:"memo"`
+	AccountID string        `json:"account_id"`
+	BkBizID   int64         `json:"bk_biz_id"`
+	Creator   string        `json:"creator"`
+	Reviser   string        `json:"reviser"`
+	CreatedAt *time.Time    `json:"created_at"`
+	UpdatedAt *time.Time    `json:"updated_at"`
 }
 
 // SecurityGroup define security group
 type SecurityGroup[Extension SecurityGroupExtension] struct {
-	BaseSecurityGroup `json:",inline"`
-	Attachment        *SecurityGroupAttachment `json:"attachment"`
-	Extension         *Extension               `json:"extension"`
-}
-
-// SecurityGroupSpec define security group spec.
-type SecurityGroupSpec struct {
-	CloudID   string  `json:"cloud_id"`
-	Assigned  bool    `json:"assigned"`
-	Region    string  `json:"region"`
-	Name      string  `json:"name"`
-	Memo      *string `json:"memo"`
-	AccountID string  `json:"account_id"`
-}
-
-// SecurityGroupAttachment define security group attachment.
-type SecurityGroupAttachment struct {
-	BkBizID             int64    `json:"bk_biz_id"`
-	VpcIDs              []string `json:"vpc_ids"`
-	NetworkInterfaceIDs []string `json:"network_interface_ids"`
-	SubnetIDs           []string `json:"subnet_ids"`
+	BaseSecurityGroup     `json:",inline"`
+	VpcIDs                []string   `json:"vpc_ids"`
+	NetworkInterfaceCount uint64     `json:"network_interface_count"`
+	SubnetCount           uint64     `json:"subnet_id_count"`
+	CvmCount              uint64     `json:"cvm_count"`
+	Extension             *Extension `json:"extension"`
 }
 
 // SecurityGroupExtension define security group extension.

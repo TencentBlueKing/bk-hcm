@@ -20,7 +20,12 @@
 package cloud
 
 import (
+	"errors"
+	"fmt"
+
 	corecloud "hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
@@ -31,12 +36,39 @@ import (
 
 // AwsSGRuleCreateReq define aws security group create request.
 type AwsSGRuleCreateReq struct {
-	Rules []corecloud.AwsSecurityGroupRuleSpec `json:"rules" validate:"required"`
+	Rules []AwsSGRuleBatchCreate `json:"rules" validate:"required"`
+}
+
+// AwsSGRuleBatchCreate define aws security group rule when create.
+type AwsSGRuleBatchCreate struct {
+	CloudID                    string                       `json:"cloud_id"`
+	IPv4Cidr                   *string                      `json:"ipv4_cidr"`
+	IPv6Cidr                   *string                      `json:"ipv6_cidr"`
+	Memo                       *string                      `json:"memo"`
+	FromPort                   int64                        `json:"from_port"`
+	ToPort                     int64                        `json:"to_port"`
+	Type                       enumor.SecurityGroupRuleType `json:"type"`
+	Protocol                   *string                      `json:"protocol"`
+	CloudPrefixListID          *string                      `json:"cloud_prefix_list_id"`
+	CloudTargetSecurityGroupID *string                      `json:"cloud_target_security_group_id"`
+	CloudSecurityGroupID       string                       `json:"cloud_security_group_id"`
+	CloudGroupOwnerID          string                       `json:"cloud_group_owner_id"`
+	AccountID                  string                       `json:"account_id"`
+	Region                     string                       `json:"region"`
+	SecurityGroupID            string                       `json:"security_group_id"`
 }
 
 // Validate aws security group rule create request.
 func (req *AwsSGRuleCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if len(req.Rules) == 0 {
+		return errors.New("security group rule is required")
+	}
+
+	if len(req.Rules) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group rule count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }
 
 // -------------------------- Update --------------------------
@@ -48,13 +80,35 @@ type AwsSGRuleBatchUpdateReq struct {
 
 // AwsSGRuleUpdate aws security group batch update option.
 type AwsSGRuleUpdate struct {
-	ID   string                              `json:"id" validate:"required"`
-	Spec *corecloud.AwsSecurityGroupRuleSpec `json:"spec" validate:"required"`
+	ID                         string                       `json:"id" validate:"required"`
+	CloudID                    string                       `json:"cloud_id"`
+	IPv4Cidr                   *string                      `json:"ipv4_cidr"`
+	IPv6Cidr                   *string                      `json:"ipv6_cidr"`
+	Memo                       *string                      `json:"memo"`
+	FromPort                   int64                        `json:"from_port"`
+	ToPort                     int64                        `json:"to_port"`
+	Type                       enumor.SecurityGroupRuleType `json:"type"`
+	Protocol                   *string                      `json:"protocol"`
+	CloudPrefixListID          *string                      `json:"cloud_prefix_list_id"`
+	CloudTargetSecurityGroupID *string                      `json:"cloud_target_security_group_id"`
+	CloudSecurityGroupID       string                       `json:"cloud_security_group_id"`
+	CloudGroupOwnerID          string                       `json:"cloud_group_owner_id"`
+	AccountID                  string                       `json:"account_id"`
+	Region                     string                       `json:"region"`
+	SecurityGroupID            string                       `json:"security_group_id"`
 }
 
 // Validate aws security group rule batch update request.
 func (req *AwsSGRuleBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if len(req.Rules) == 0 {
+		return errors.New("security group rule is required")
+	}
+
+	if len(req.Rules) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group rule count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }
 
 // -------------------------- List --------------------------
@@ -85,12 +139,12 @@ type AwsSGRuleListResp struct {
 
 // -------------------------- Delete --------------------------
 
-// AwsSGRuleDeleteReq aws security group rule delete request.
-type AwsSGRuleDeleteReq struct {
+// AwsSGRuleBatchDeleteReq aws security group rule delete request.
+type AwsSGRuleBatchDeleteReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 }
 
 // Validate aws security group rule delete request.
-func (req *AwsSGRuleDeleteReq) Validate() error {
+func (req *AwsSGRuleBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

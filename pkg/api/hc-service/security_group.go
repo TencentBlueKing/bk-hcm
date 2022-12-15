@@ -23,56 +23,68 @@ import "hcm/pkg/criteria/validator"
 
 // -------------------------- Create --------------------------
 
-// SecurityGroupCreateReq security group create request.
-type SecurityGroupCreateReq[Attachment SecurityGroupAttachment] struct {
-	Spec       *SecurityGroupSpecCreateReq `json:"spec" validate:"required"`
-	Attachment *Attachment                 `json:"attachment" validate:"required"`
-}
-
-// Validate security group create request.
-func (req *SecurityGroupCreateReq[T]) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// SecurityGroupSpecCreateReq define security group spec when create.
-type SecurityGroupSpecCreateReq struct {
+// TCloudSecurityGroupCreateReq tcloud security group create request.
+type TCloudSecurityGroupCreateReq struct {
 	Region    string  `json:"region" validate:"required"`
 	Name      string  `json:"name" validate:"required"`
 	Memo      *string `json:"memo" validate:"omitempty"`
 	AccountID string  `json:"account_id" validate:"required"`
+	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
 }
 
-// SecurityGroupAttachment define security group attachment.
-type SecurityGroupAttachment interface {
-	BaseSecurityGroupAttachment | AwsSecurityGroupAttachment | AzureSecurityGroupAttachment
+// Validate tcloud security group create request.
+func (req *TCloudSecurityGroupCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
-// BaseSecurityGroupAttachment define base security group attachment.
-type BaseSecurityGroupAttachment struct {
-	BkBizID uint64 `json:"bk_biz_id" validate:"omitempty"`
+// HuaWeiSecurityGroupCreateReq tcloud security group create request.
+type HuaWeiSecurityGroupCreateReq struct {
+	Region    string  `json:"region" validate:"required"`
+	Name      string  `json:"name" validate:"required"`
+	Memo      *string `json:"memo" validate:"omitempty"`
+	AccountID string  `json:"account_id" validate:"required"`
+	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
 }
 
-// AwsSecurityGroupAttachment define aws security group attachment.
-type AwsSecurityGroupAttachment struct {
-	BkBizID uint64 `json:"bk_biz_id" validate:"omitempty"`
-	VpcID   string `json:"vpc_id" validate:"omitempty"`
+// Validate tcloud security group create request.
+func (req *HuaWeiSecurityGroupCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
-// AzureSecurityGroupAttachment define azure security group attachment.
-type AzureSecurityGroupAttachment struct {
-	ResourceGroupName string `json:"resource_group_name" validate:"required"`
-	BkBizID           uint64 `json:"bk_biz_id" validate:"omitempty"`
+// AwsSecurityGroupCreateReq tcloud security group create request.
+type AwsSecurityGroupCreateReq struct {
+	Region    string  `json:"region" validate:"required"`
+	Name      string  `json:"name" validate:"required"`
+	Memo      *string `json:"memo" validate:"omitempty"`
+	AccountID string  `json:"account_id" validate:"required"`
+	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
+	VpcID     string  `json:"vpc_id" validate:"omitempty"`
+}
+
+// Validate tcloud security group create request.
+func (req *AwsSecurityGroupCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AzureSecurityGroupCreateReq tcloud security group create request.
+type AzureSecurityGroupCreateReq struct {
+	Region            string  `json:"region" validate:"required"`
+	Name              string  `json:"name" validate:"required"`
+	Memo              *string `json:"memo" validate:"omitempty"`
+	AccountID         string  `json:"account_id" validate:"required"`
+	BkBizID           int64   `json:"bk_biz_id" validate:"required"`
+	ResourceGroupName string  `json:"resource_group_name" validate:"required"`
+}
+
+// Validate tcloud security group create request.
+func (req *AzureSecurityGroupCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // -------------------------- Update --------------------------
 
 // SecurityGroupUpdateReq tcloud security group update request.
 type SecurityGroupUpdateReq struct {
-	Spec *SecurityGroupSpecUpdateReq `json:"spec" validate:"required"`
-}
-
-// SecurityGroupSpecUpdateReq define security group spec when update.
-type SecurityGroupSpecUpdateReq struct {
 	Name string  `json:"name" validate:"omitempty"`
 	Memo *string `json:"memo" validate:"omitempty"`
 }

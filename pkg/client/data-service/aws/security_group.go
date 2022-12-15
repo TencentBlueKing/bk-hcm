@@ -42,16 +42,16 @@ type SecurityGroupClient struct {
 	client rest.ClientInterface
 }
 
-// CreateSecurityGroup create security group rule.
-func (cli *SecurityGroupClient) CreateSecurityGroup(ctx context.Context, h http.Header, request *protocloud.
-	SecurityGroupCreateReq[corecloud.AwsSecurityGroupExtension]) (*core.CreateResult, error) {
+// BatchCreateSecurityGroup batch create security group rule.
+func (cli *SecurityGroupClient) BatchCreateSecurityGroup(ctx context.Context, h http.Header, request *protocloud.
+	SecurityGroupBatchCreateReq[corecloud.AwsSecurityGroupExtension]) (*core.BatchCreateResult, error) {
 
-	resp := new(core.CreateResp)
+	resp := new(core.BatchCreateResp)
 
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/security_groups/create").
+		SubResourcef("/security_groups/batch/create").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -66,16 +66,16 @@ func (cli *SecurityGroupClient) CreateSecurityGroup(ctx context.Context, h http.
 	return resp.Data, nil
 }
 
-// UpdateSecurityGroup update security group.
-func (cli *SecurityGroupClient) UpdateSecurityGroup(ctx context.Context, h http.Header, id string,
-	request *protocloud.SecurityGroupUpdateReq[corecloud.AwsSecurityGroupExtension]) error {
+// BatchUpdateSecurityGroup batch update security group.
+func (cli *SecurityGroupClient) BatchUpdateSecurityGroup(ctx context.Context, h http.Header,
+	request *protocloud.SecurityGroupBatchUpdateReq[corecloud.AwsSecurityGroupExtension]) error {
 
-	resp := new(core.UpdateResp)
+	resp := new(rest.BaseResp)
 
 	err := cli.client.Patch().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/security_groups/%s", id).
+		SubResourcef("/security_groups/batch/update").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -186,9 +186,9 @@ func (cli *SecurityGroupClient) ListSecurityGroupRule(ctx context.Context, h htt
 	return resp.Data, nil
 }
 
-// DeleteSecurityGroupRule delete security group rule.
-func (cli *SecurityGroupClient) DeleteSecurityGroupRule(ctx context.Context, h http.Header, request *protocloud.
-	AwsSGRuleDeleteReq, sgID string) error {
+// BatchDeleteSecurityGroupRule batch delete security group rule.
+func (cli *SecurityGroupClient) BatchDeleteSecurityGroupRule(ctx context.Context, h http.Header, request *protocloud.
+	AwsSGRuleBatchDeleteReq, sgID string) error {
 
 	resp := new(core.DeleteResp)
 

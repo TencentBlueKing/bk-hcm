@@ -38,7 +38,7 @@ var SecurityGroupColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "cloud_id", NamedC: "cloud_id", Type: enumor.String},
-	{Column: "assigned", NamedC: "assigned", Type: enumor.Boolean},
+	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "region", NamedC: "region", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
@@ -55,10 +55,10 @@ type SecurityGroupTable struct {
 	ID        string          `db:"id" validate:"lte=64"`
 	Vendor    string          `db:"vendor" validate:"lte=16"`
 	CloudID   string          `db:"cloud_id" validate:"lte=255"`
-	Assigned  bool            `db:"assigned"`
+	BkBizID   int64           `db:"bk_biz_id"`
 	Region    string          `db:"region" validate:"lte=20"`
 	Name      string          `db:"name" validate:"lte=60"`
-	Memo      *string         `db:"memo" validate:"lte=omitempty,255"`
+	Memo      *string         `db:"memo" validate:"omitempty,lte=255"`
 	AccountID string          `db:"account_id" validate:"lte=64"`
 	Extension types.JsonField `db:"extension"`
 	Creator   string          `db:"creator" validate:"lte=64"`
@@ -81,6 +81,10 @@ func (t SecurityGroupTable) InsertValidate() error {
 
 	if len(t.ID) == 0 {
 		return errors.New("id is required")
+	}
+
+	if t.BkBizID == 0 {
+		return errors.New("bk_biz_id is required")
 	}
 
 	if len(t.Vendor) == 0 {

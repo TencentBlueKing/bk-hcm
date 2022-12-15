@@ -33,7 +33,7 @@ import (
 // CreateSecurityGroupRule create security group rule.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
 func (az *Azure) CreateSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleCreateOption) ([]*armnetwork.SecurityRule,
-	error) {
+		error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule create option is required")
@@ -177,6 +177,7 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleUpda
 			protocol := armnetwork.SecurityRuleProtocol(opt.Rule.Protocol)
 			rule.Properties.Protocol = &protocol
 			rule.Properties.Description = opt.Rule.Description
+			rule.Name = &opt.Rule.Name
 			rule.Properties.DestinationAddressPrefix = opt.Rule.DestinationAddressPrefix
 			rule.Properties.DestinationAddressPrefixes = opt.Rule.DestinationAddressPrefixes
 			rule.Properties.DestinationPortRange = opt.Rule.DestinationPortRange
@@ -304,7 +305,7 @@ func (az *Azure) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleDele
 // ListSecurityGroupRule list security group rule.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
 func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleListOption) ([]*armnetwork.SecurityRule,
-	error) {
+		error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule list option is required")

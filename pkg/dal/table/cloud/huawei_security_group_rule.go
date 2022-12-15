@@ -44,6 +44,7 @@ var HuaWeiSGRuleColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "protocol", NamedC: "protocol", Type: enumor.String},
 	{Column: "ethertype", NamedC: "ethertype", Type: enumor.String},
+	{Column: "action", NamedC: "action", Type: enumor.String},
 	{Column: "cloud_remote_group_id", NamedC: "cloud_remote_group_id", Type: enumor.String},
 	{Column: "remote_ip_prefix", NamedC: "remote_ip_prefix", Type: enumor.String},
 	{Column: "cloud_remote_address_group_id", NamedC: "cloud_remote_address_group_id", Type: enumor.String},
@@ -65,7 +66,8 @@ type HuaWeiSecurityGroupRuleTable struct {
 	SecurityGroupID           string     `db:"security_group_id" validate:"lte=64"`
 	AccountID                 string     `db:"account_id" validate:"lte=64"`
 	CloudProjectID            string     `db:"cloud_project_id" validate:"lte=255"`
-	Memo                      *string    `db:"memo" validate:"lte=255"`
+	Memo                      *string    `db:"memo" validate:"omitempty,lte=255"`
+	Action                    string     `db:"action" validate:"lte=10"`
 	Region                    string     `db:"region" validate:"lte=20"`
 	Protocol                  string     `db:"protocol" validate:"lte=10"`
 	Ethertype                 string     `db:"ethertype" validate:"lte=10"`
@@ -98,6 +100,10 @@ func (t HuaWeiSecurityGroupRuleTable) InsertValidate() error {
 
 	if len(t.CloudID) == 0 {
 		return errors.New("cloud id is required")
+	}
+
+	if len(t.Action) == 0 {
+		return errors.New("action is required")
 	}
 
 	if len(t.Region) == 0 {

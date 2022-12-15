@@ -29,9 +29,9 @@ import (
 
 // TCloudSGRuleCreateReq define tcloud security group create request.
 type TCloudSGRuleCreateReq struct {
-	AccountID      string             `json:"account_id"`
-	EgressRuleSet  []TCloudSGRuleSpec `json:"egress_rule_set" validate:"required"`
-	IngressRuleSet []TCloudSGRuleSpec `json:"ingress_rule_set" validate:"required"`
+	AccountID      string               `json:"account_id" validate:"required"`
+	EgressRuleSet  []TCloudSGRuleCreate `json:"egress_rule_set" validate:"omitempty"`
+	IngressRuleSet []TCloudSGRuleCreate `json:"ingress_rule_set" validate:"omitempty"`
 }
 
 // Validate tcloud security group rule create request.
@@ -51,8 +51,8 @@ func (req *TCloudSGRuleCreateReq) Validate() error {
 	return nil
 }
 
-// TCloudSGRuleSpec define tcloud sg rule spec when create.
-type TCloudSGRuleSpec struct {
+// TCloudSGRuleCreate define tcloud sg rule spec when create.
+type TCloudSGRuleCreate struct {
 	Protocol                   *string `json:"protocol"`
 	Port                       *string `json:"port"`
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
@@ -66,7 +66,13 @@ type TCloudSGRuleSpec struct {
 
 // TCloudSGRuleUpdateReq define tcloud security group update request.
 type TCloudSGRuleUpdateReq struct {
-	Spec *TCloudSGRuleSpec `json:"spec" validate:"required"`
+	Protocol                   *string `json:"protocol"`
+	Port                       *string `json:"port"`
+	IPv4Cidr                   *string `json:"ipv4_cidr"`
+	IPv6Cidr                   *string `json:"ipv6_cidr"`
+	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
+	Action                     string  `json:"action"`
+	Memo                       *string `json:"memo"`
 }
 
 // Validate tcloud security group rule update request.

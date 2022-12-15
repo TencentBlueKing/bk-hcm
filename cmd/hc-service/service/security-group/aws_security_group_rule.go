@@ -50,25 +50,25 @@ func (g *securityGroup) BatchCreateAwsSGRule(cts *rest.Contexts) (interface{}, e
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	sg, err := g.dataCli.SecurityGroup().GetAwsSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
+	sg, err := g.dataCli.Aws.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
 	if err != nil {
 		logs.Errorf("request dataservice get aws security group failed, err: %v, id: %s, rid: %s", err, sgID,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	if sg.Spec.AccountID != req.AccountID {
+	if sg.AccountID != req.AccountID {
 		return nil, fmt.Errorf("'%s' security group does not belong to '%s' account", sgID, req.AccountID)
 	}
 
-	client, err := g.ad.Aws(cts.Kit, sg.Spec.AccountID)
+	client, err := g.ad.Aws(cts.Kit, sg.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.AwsSGRuleCreateOption{
-		Region:               sg.Spec.Region,
-		CloudSecurityGroupID: sg.Spec.CloudID,
+		Region:               sg.Region,
+		CloudSecurityGroupID: sg.CloudID,
 	}
 	if req.EgressRuleSet != nil {
 		opt.EgressRuleSet = make([]types.AwsSGRuleCreate, 0, len(req.EgressRuleSet))
@@ -107,9 +107,9 @@ func (g *securityGroup) BatchCreateAwsSGRule(cts *rest.Contexts) (interface{}, e
 		return nil, err
 	}
 
-	list := make([]corecloud.AwsSecurityGroupRuleSpec, 0, len(rules))
+	list := make([]protocloud.AwsSGRuleBatchCreate, 0, len(rules))
 	for _, rule := range rules {
-		spec := corecloud.AwsSecurityGroupRuleSpec{
+		one := protocloud.AwsSGRuleBatchCreate{
 			CloudID:              *rule.SecurityGroupRuleId,
 			IPv4Cidr:             rule.CidrIpv4,
 			IPv6Cidr:             rule.CidrIpv6,
@@ -121,32 +121,32 @@ func (g *securityGroup) BatchCreateAwsSGRule(cts *rest.Contexts) (interface{}, e
 			CloudSecurityGroupID: *rule.GroupId,
 			CloudGroupOwnerID:    *rule.GroupOwnerId,
 			AccountID:            req.AccountID,
-			Region:               sg.Spec.Region,
+			Region:               sg.Region,
 			SecurityGroupID:      sg.ID,
 		}
 
 		if *rule.IsEgress {
-			spec.Type = enumor.Egress
+			one.Type = enumor.Egress
 		} else {
-			spec.Type = enumor.Ingress
+			one.Type = enumor.Ingress
 		}
 
 		if rule.ReferencedGroupInfo != nil {
-			spec.CloudTargetSecurityGroupID = rule.ReferencedGroupInfo.GroupId
+			one.CloudTargetSecurityGroupID = rule.ReferencedGroupInfo.GroupId
 		}
 
-		list = append(list, spec)
+		list = append(list, one)
 	}
 
 	createReq := &protocloud.AwsSGRuleCreateReq{
 		Rules: list,
 	}
-	ids, err := g.dataCli.SecurityGroup().BatchCreateAwsSGRule(cts.Kit.Ctx, cts.Kit.Header(), createReq, sgID)
+	result, err := g.dataCli.Aws.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), createReq, sgID)
 	if err != nil {
 		return nil, err
 	}
 
-	return ids, nil
+	return result, nil
 }
 
 // UpdateAwsSGRule update aws security group rule.
@@ -175,24 +175,24 @@ func (g *securityGroup) UpdateAwsSGRule(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	client, err := g.ad.Aws(cts.Kit, rule.Spec.AccountID)
+	client, err := g.ad.Aws(cts.Kit, rule.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.AwsSGRuleUpdateOption{
-		Region:               rule.Spec.Region,
-		CloudSecurityGroupID: rule.Spec.CloudSecurityGroupID,
+		Region:               rule.Region,
+		CloudSecurityGroupID: rule.CloudSecurityGroupID,
 		RuleSet: []types.AwsSGRuleUpdate{
 			{
-				CloudID:                    rule.Spec.CloudID,
-				IPv4Cidr:                   req.Spec.IPv4Cidr,
-				IPv6Cidr:                   req.Spec.IPv6Cidr,
-				Description:                req.Spec.Memo,
-				FromPort:                   req.Spec.FromPort,
-				ToPort:                     req.Spec.ToPort,
-				Protocol:                   req.Spec.Protocol,
-				CloudTargetSecurityGroupID: req.Spec.CloudTargetSecurityGroupID,
+				CloudID:                    rule.CloudID,
+				IPv4Cidr:                   req.IPv4Cidr,
+				IPv6Cidr:                   req.IPv6Cidr,
+				Description:                req.Memo,
+				FromPort:                   req.FromPort,
+				ToPort:                     req.ToPort,
+				Protocol:                   req.Protocol,
+				CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
 			},
 		},
 	}
@@ -206,27 +206,25 @@ func (g *securityGroup) UpdateAwsSGRule(cts *rest.Contexts) (interface{}, error)
 	updateReq := &protocloud.AwsSGRuleBatchUpdateReq{
 		Rules: []protocloud.AwsSGRuleUpdate{
 			{
-				ID: id,
-				Spec: &corecloud.AwsSecurityGroupRuleSpec{
-					CloudID:                    rule.Spec.CloudID,
-					IPv4Cidr:                   req.Spec.IPv4Cidr,
-					IPv6Cidr:                   req.Spec.IPv6Cidr,
-					Memo:                       req.Spec.Memo,
-					FromPort:                   req.Spec.FromPort,
-					ToPort:                     req.Spec.ToPort,
-					Type:                       rule.Spec.Type,
-					Protocol:                   req.Spec.Protocol,
-					CloudTargetSecurityGroupID: req.Spec.CloudTargetSecurityGroupID,
-					CloudSecurityGroupID:       rule.Spec.CloudSecurityGroupID,
-					CloudGroupOwnerID:          rule.Spec.CloudGroupOwnerID,
-					AccountID:                  rule.Spec.AccountID,
-					Region:                     rule.Spec.Region,
-					SecurityGroupID:            rule.Spec.SecurityGroupID,
-				},
+				ID:                         id,
+				CloudID:                    rule.CloudID,
+				IPv4Cidr:                   req.IPv4Cidr,
+				IPv6Cidr:                   req.IPv6Cidr,
+				Memo:                       req.Memo,
+				FromPort:                   req.FromPort,
+				ToPort:                     req.ToPort,
+				Protocol:                   req.Protocol,
+				CloudTargetSecurityGroupID: req.CloudTargetSecurityGroupID,
+				Type:                       rule.Type,
+				CloudSecurityGroupID:       rule.CloudSecurityGroupID,
+				CloudGroupOwnerID:          rule.CloudGroupOwnerID,
+				AccountID:                  rule.AccountID,
+				Region:                     rule.Region,
+				SecurityGroupID:            rule.SecurityGroupID,
 			},
 		},
 	}
-	err = g.dataCli.SecurityGroup().BatchUpdateAwsSGRule(cts.Kit.Ctx, cts.Kit.Header(), updateReq, sgID)
+	err = g.dataCli.Aws.SecurityGroup.BatchUpdateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), updateReq, sgID)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +233,7 @@ func (g *securityGroup) UpdateAwsSGRule(cts *rest.Contexts) (interface{}, error)
 }
 
 func (g *securityGroup) getAwsSGRuleByID(cts *rest.Contexts, id string, sgID string) (*corecloud.
-AwsSecurityGroupRule, error) {
+	AwsSecurityGroupRule, error) {
 
 	listReq := &protocloud.AwsSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
@@ -244,7 +242,7 @@ AwsSecurityGroupRule, error) {
 			Limit: 1,
 		},
 	}
-	listResp, err := g.dataCli.SecurityGroup().ListAwsSGRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
+	listResp, err := g.dataCli.Aws.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
 		logs.Errorf("request dataservice get aws security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
@@ -275,24 +273,24 @@ func (g *securityGroup) DeleteAwsSGRule(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	client, err := g.ad.Aws(cts.Kit, rule.Spec.AccountID)
+	client, err := g.ad.Aws(cts.Kit, rule.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.AwsSGRuleDeleteOption{
-		Region:               rule.Spec.Region,
-		CloudSecurityGroupID: rule.Spec.CloudSecurityGroupID,
+		Region:               rule.Region,
+		CloudSecurityGroupID: rule.CloudSecurityGroupID,
 	}
-	switch rule.Spec.Type {
+	switch rule.Type {
 	case enumor.Egress:
-		opt.CloudEgressRuleIDs = []string{rule.Spec.CloudID}
+		opt.CloudEgressRuleIDs = []string{rule.CloudID}
 
 	case enumor.Ingress:
-		opt.CloudIngressRuleIDs = []string{rule.Spec.CloudID}
+		opt.CloudIngressRuleIDs = []string{rule.CloudID}
 
 	default:
-		return nil, fmt.Errorf("unknown security group rule type: %s", rule.Spec.Type)
+		return nil, fmt.Errorf("unknown security group rule type: %s", rule.Type)
 	}
 	if err := client.DeleteSecurityGroupRule(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to delete aws security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
@@ -300,10 +298,11 @@ func (g *securityGroup) DeleteAwsSGRule(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	deleteReq := &protocloud.AwsSGRuleDeleteReq{
+	deleteReq := &protocloud.AwsSGRuleBatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-	if err = g.dataCli.SecurityGroup().DeleteAwsSGRule(cts.Kit.Ctx, cts.Kit.Header(), deleteReq, sgID); err != nil {
+	err = g.dataCli.Aws.SecurityGroup.BatchDeleteSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), deleteReq, sgID)
+	if err != nil {
 		return nil, err
 	}
 

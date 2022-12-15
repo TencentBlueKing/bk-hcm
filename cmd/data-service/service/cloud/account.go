@@ -401,10 +401,7 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 
 	opt := &types.ListOption{
 		Filter: req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:   types.DefaultBasePage,
 	}
 	listResp, err := svc.dao.Account().List(cts.Kit, opt)
 	if err != nil {

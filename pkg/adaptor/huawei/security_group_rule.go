@@ -35,7 +35,7 @@ import (
 // CreateSecurityGroupRule create security group rule.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0016.html
 func (h *Huawei) CreateSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleCreateOption) (*model.SecurityGroupRule,
-		error) {
+	error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule create option is required")
@@ -61,6 +61,7 @@ func (h *Huawei) CreateSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleCre
 		Action:          opt.Rule.Action,
 		Priority:        opt.Rule.Priority,
 	}
+
 	switch opt.Rule.Type {
 	case enumor.Egress:
 		rule.Direction = "egress"
@@ -116,7 +117,7 @@ func (h *Huawei) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleDel
 // ListSecurityGroupRule list security group rule.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0019.html
 func (h *Huawei) ListSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleListOption) (*model.
-ListSecurityGroupRulesResponse, error) {
+	ListSecurityGroupRulesResponse, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule list option is required")

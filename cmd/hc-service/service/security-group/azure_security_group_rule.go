@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -52,25 +53,25 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	sg, err := g.dataCli.SecurityGroup().GetAzureSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
+	sg, err := g.dataCli.Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
 	if err != nil {
 		logs.Errorf("request dataservice get azure security group failed, err: %v, id: %s, rid: %s", err, sgID,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	if sg.Spec.AccountID != req.AccountID {
+	if sg.AccountID != req.AccountID {
 		return nil, fmt.Errorf("'%s' security group does not belong to '%s' account", sgID, req.AccountID)
 	}
 
-	client, err := g.ad.Azure(cts.Kit, sg.Spec.AccountID)
+	client, err := g.ad.Azure(cts.Kit, sg.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.AzureSGRuleCreateOption{
-		Region:               sg.Spec.Region,
-		CloudSecurityGroupID: sg.Spec.CloudID,
+		Region:               sg.Region,
+		CloudSecurityGroupID: sg.CloudID,
 		ResourceGroupName:    sg.Extension.ResourceGroupName,
 	}
 	if req.EgressRuleSet != nil {
@@ -128,9 +129,9 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 		return nil, err
 	}
 
-	list := make([]corecloud.AzureSecurityGroupRuleSpec, 0, len(rules))
+	list := make([]protocloud.AzureSGRuleBatchCreate, 0, len(rules))
 	for _, rule := range rules {
-		spec := corecloud.AzureSecurityGroupRuleSpec{
+		spec := protocloud.AzureSGRuleBatchCreate{
 			CloudID:                    *rule.ID,
 			Etag:                       rule.Etag,
 			Name:                       *rule.Name,
@@ -147,9 +148,9 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 			SourcePortRanges:           rule.Properties.SourcePortRanges,
 			Priority:                   *rule.Properties.Priority,
 			Access:                     string(*rule.Properties.Access),
-			CloudSecurityGroupID:       sg.Spec.CloudID,
+			CloudSecurityGroupID:       sg.CloudID,
 			AccountID:                  req.AccountID,
-			Region:                     sg.Spec.Region,
+			Region:                     sg.Region,
 			SecurityGroupID:            sg.ID,
 		}
 
@@ -184,12 +185,13 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 	createReq := &protocloud.AzureSGRuleCreateReq{
 		Rules: list,
 	}
-	ids, err := g.dataCli.SecurityGroup().BatchCreateAzureSGRule(cts.Kit.Ctx, cts.Kit.Header(), createReq, sgID)
+	result, err := g.dataCli.Azure.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
+		createReq, sgID)
 	if err != nil {
 		return nil, err
 	}
 
-	return ids, nil
+	return result, nil
 }
 
 // UpdateAzureSGRule update azure security group rule.
@@ -213,7 +215,7 @@ func (g *securityGroup) UpdateAzureSGRule(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	sg, err := g.dataCli.SecurityGroup().GetAzureSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
+	sg, err := g.dataCli.Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
 	if err != nil {
 		logs.Errorf("request dataservice get azure security group failed, err: %v, id: %s, rid: %s", err, sgID,
 			cts.Kit.Rid)
@@ -225,32 +227,32 @@ func (g *securityGroup) UpdateAzureSGRule(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	client, err := g.ad.Azure(cts.Kit, rule.Spec.AccountID)
+	client, err := g.ad.Azure(cts.Kit, rule.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.AzureSGRuleUpdateOption{
-		Region:               rule.Spec.Region,
-		CloudSecurityGroupID: rule.Spec.CloudSecurityGroupID,
+		Region:               rule.Region,
+		CloudSecurityGroupID: rule.CloudSecurityGroupID,
 		ResourceGroupName:    sg.Extension.ResourceGroupName,
 		Rule: &types.AzureSGRuleUpdate{
-			CloudID:                          rule.Spec.CloudID,
-			Name:                             req.Spec.Name,
-			Description:                      req.Spec.Memo,
-			DestinationAddressPrefix:         req.Spec.DestinationAddressPrefix,
-			DestinationAddressPrefixes:       req.Spec.DestinationAddressPrefixes,
-			CloudDestinationSecurityGroupIDs: req.Spec.CloudDestinationSecurityGroupIDs,
-			DestinationPortRange:             req.Spec.DestinationPortRange,
-			DestinationPortRanges:            req.Spec.DestinationPortRanges,
-			Protocol:                         req.Spec.Protocol,
-			SourceAddressPrefix:              req.Spec.SourceAddressPrefix,
-			SourceAddressPrefixes:            req.Spec.SourceAddressPrefixes,
-			CloudSourceSecurityGroupIDs:      req.Spec.CloudSourceSecurityGroupIDs,
-			SourcePortRange:                  req.Spec.SourcePortRange,
-			SourcePortRanges:                 req.Spec.SourcePortRanges,
-			Priority:                         req.Spec.Priority,
-			Access:                           req.Spec.Access,
+			CloudID:                          rule.CloudID,
+			Name:                             req.Name,
+			Description:                      req.Memo,
+			DestinationAddressPrefix:         req.DestinationAddressPrefix,
+			DestinationAddressPrefixes:       req.DestinationAddressPrefixes,
+			CloudDestinationSecurityGroupIDs: req.CloudDestinationSecurityGroupIDs,
+			DestinationPortRange:             req.DestinationPortRange,
+			DestinationPortRanges:            req.DestinationPortRanges,
+			Protocol:                         req.Protocol,
+			SourceAddressPrefix:              req.SourceAddressPrefix,
+			SourceAddressPrefixes:            req.SourceAddressPrefixes,
+			CloudSourceSecurityGroupIDs:      req.CloudSourceSecurityGroupIDs,
+			SourcePortRange:                  req.SourcePortRange,
+			SourcePortRanges:                 req.SourcePortRanges,
+			Priority:                         req.Priority,
+			Access:                           req.Access,
 		},
 	}
 	if err := client.UpdateSecurityGroupRule(cts.Kit, opt); err != nil {
@@ -259,35 +261,34 @@ func (g *securityGroup) UpdateAzureSGRule(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
+	index := strings.LastIndex(rule.CloudID, rule.Name)
+	cloudID := rule.CloudID[0:index] + req.Name
 	updateReq := &protocloud.AzureSGRuleBatchUpdateReq{
 		Rules: []protocloud.AzureSGRuleUpdate{
 			{
-				ID: id,
-				Spec: &corecloud.AzureSecurityGroupRuleSpec{
-					CloudID:                    rule.ID,
-					Etag:                       rule.Spec.Etag,
-					Name:                       req.Spec.Name,
-					Memo:                       req.Spec.Memo,
-					DestinationAddressPrefix:   req.Spec.DestinationAddressPrefix,
-					DestinationAddressPrefixes: req.Spec.DestinationAddressPrefixes,
-					DestinationPortRange:       req.Spec.DestinationPortRange,
-					DestinationPortRanges:      req.Spec.DestinationPortRanges,
-					Protocol:                   req.Spec.Protocol,
-					SourceAddressPrefix:        req.Spec.SourceAddressPrefix,
-					SourceAddressPrefixes:      req.Spec.SourceAddressPrefixes,
-					SourcePortRange:            req.Spec.SourcePortRange,
-					SourcePortRanges:           req.Spec.SourcePortRanges,
-					Priority:                   req.Spec.Priority,
-					Access:                     req.Spec.Access,
-					CloudSecurityGroupID:       sg.Spec.CloudID,
-					AccountID:                  sg.Spec.AccountID,
-					Region:                     sg.Spec.Region,
-					SecurityGroupID:            sg.ID,
-				},
+				ID:                         id,
+				CloudID:                    cloudID,
+				Name:                       req.Name,
+				Memo:                       req.Memo,
+				DestinationAddressPrefix:   req.DestinationAddressPrefix,
+				DestinationAddressPrefixes: req.DestinationAddressPrefixes,
+				DestinationPortRange:       req.DestinationPortRange,
+				DestinationPortRanges:      req.DestinationPortRanges,
+				Protocol:                   req.Protocol,
+				SourceAddressPrefix:        req.SourceAddressPrefix,
+				SourceAddressPrefixes:      req.SourceAddressPrefixes,
+				SourcePortRange:            req.SourcePortRange,
+				SourcePortRanges:           req.SourcePortRanges,
+				Priority:                   req.Priority,
+				Access:                     req.Access,
+				CloudSecurityGroupID:       sg.CloudID,
+				AccountID:                  sg.AccountID,
+				Region:                     sg.Region,
+				SecurityGroupID:            sg.ID,
 			},
 		},
 	}
-	err = g.dataCli.SecurityGroup().BatchUpdateAzureSGRule(cts.Kit.Ctx, cts.Kit.Header(), updateReq, sgID)
+	err = g.dataCli.Azure.SecurityGroup.BatchUpdateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), updateReq, sgID)
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +306,7 @@ func (g *securityGroup) getAzureSGRuleByID(cts *rest.Contexts, id string, sgID s
 			Limit: 1,
 		},
 	}
-	listResp, err := g.dataCli.SecurityGroup().ListAzureSGRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
+	listResp, err := g.dataCli.Azure.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
 		logs.Errorf("request dataservice get azure security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
@@ -331,7 +332,7 @@ func (g *securityGroup) DeleteAzureSGRule(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	sg, err := g.dataCli.SecurityGroup().GetAzureSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
+	sg, err := g.dataCli.Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
 	if err != nil {
 		logs.Errorf("request dataservice get azure security group failed, err: %v, id: %s, rid: %s", err, sgID,
 			cts.Kit.Rid)
@@ -343,16 +344,16 @@ func (g *securityGroup) DeleteAzureSGRule(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	client, err := g.ad.Azure(cts.Kit, rule.Spec.AccountID)
+	client, err := g.ad.Azure(cts.Kit, rule.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &types.AzureSGRuleDeleteOption{
-		Region:               rule.Spec.Region,
+		Region:               rule.Region,
 		ResourceGroupName:    sg.Extension.ResourceGroupName,
-		CloudSecurityGroupID: rule.Spec.CloudSecurityGroupID,
-		CloudRuleID:          rule.Spec.CloudID,
+		CloudSecurityGroupID: rule.CloudSecurityGroupID,
+		CloudRuleID:          rule.CloudID,
 	}
 	if err := client.DeleteSecurityGroupRule(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to delete azure security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
@@ -360,10 +361,11 @@ func (g *securityGroup) DeleteAzureSGRule(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	deleteReq := &protocloud.AzureSGRuleDeleteReq{
+	deleteReq := &protocloud.AzureSGRuleBatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-	if err = g.dataCli.SecurityGroup().DeleteAzureSGRule(cts.Kit.Ctx, cts.Kit.Header(), deleteReq, sgID); err != nil {
+	err = g.dataCli.Azure.SecurityGroup.BatchDeleteSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), deleteReq, sgID)
+	if err != nil {
 		return nil, err
 	}
 

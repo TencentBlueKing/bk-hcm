@@ -20,9 +20,13 @@
 package cloud
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
+	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
@@ -41,6 +45,8 @@ var GcpFirewallRuleTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "priority", NamedC: "priority", Type: enumor.Numeric},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "cloud_vpc_id", NamedC: "cloud_vpc_id", Type: enumor.String},
+	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
+	{Column: "vpc_id", NamedC: "vpc_id", Type: enumor.String},
 	{Column: "source_ranges", NamedC: "source_ranges", Type: enumor.Json},
 	{Column: "destination_ranges", NamedC: "destination_ranges", Type: enumor.Json},
 	{Column: "source_tags", NamedC: "source_tags", Type: enumor.Json},
@@ -49,6 +55,7 @@ var GcpFirewallRuleTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "target_service_accounts", NamedC: "target_service_accounts", Type: enumor.Json},
 	{Column: "denied", NamedC: "denied", Type: enumor.Json},
 	{Column: "allowed", NamedC: "allowed", Type: enumor.Json},
+	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "log_enable", NamedC: "log_enable", Type: enumor.Boolean},
 	{Column: "disabled", NamedC: "disabled", Type: enumor.Boolean},
@@ -61,28 +68,31 @@ var GcpFirewallRuleTableColumnDescriptor = utils.ColumnDescriptors{
 
 // GcpFirewallRuleTable define gcp firewall rule table.
 type GcpFirewallRuleTable struct {
-	ID                    string          `db:"id" validate:"lte=64"`
-	CloudID               string          `db:"cloud_id" validate:"lte=255"`
-	Name                  string          `db:"name" validate:"lte=62"`
-	Priority              int64           `db:"priority"`
-	Memo                  string          `db:"memo" validate:"lte=2048"`
-	CloudVpcID            string          `db:"cloud_vpc_id" validate:"lte=255"`
-	SourceRanges          types.JsonField `db:"source_ranges"`
-	DestinationRanges     types.JsonField `db:"destination_ranges"`
-	SourceTags            types.JsonField `db:"source_tags"`
-	TargetTags            types.JsonField `db:"target_tags"`
-	SourceServiceAccounts types.JsonField `db:"source_service_accounts"`
-	TargetServiceAccounts types.JsonField `db:"target_service_accounts"`
-	Denied                types.JsonField `db:"denied"`
-	Allowed               types.JsonField `db:"allowed"`
-	Type                  string          `db:"type" validate:"lte=20"`
-	LogEnable             bool            `db:"log_enable"`
-	Disabled              bool            `db:"disabled"`
-	SelfLink              string          `db:"self_link" validate:"lte=255"`
-	Creator               string          `db:"creator" validate:"lte=64"`
-	Reviser               string          `db:"reviser" validate:"lte=64"`
-	CreatedAt             *time.Time      `db:"created_at" validate:"excluded_unless"`
-	UpdatedAt             *time.Time      `db:"updated_at" validate:"excluded_unless"`
+	ID                    string            `db:"id" validate:"lte=64"`
+	CloudID               string            `db:"cloud_id" validate:"lte=255"`
+	AccountId             string            `db:"account_id" validate:"lte=64"`
+	Name                  string            `db:"name" validate:"lte=62"`
+	Priority              int64             `db:"priority"`
+	Memo                  string            `db:"memo" validate:"lte=2048"`
+	CloudVpcID            string            `db:"cloud_vpc_id" validate:"lte=255"`
+	VpcID                 string            `db:"vpc_id" validate:"lte=64"`
+	SourceRanges          types.StringArray `db:"source_ranges"`
+	DestinationRanges     types.StringArray `db:"destination_ranges"`
+	SourceTags            types.StringArray `db:"source_tags"`
+	TargetTags            types.StringArray `db:"target_tags"`
+	SourceServiceAccounts types.StringArray `db:"source_service_accounts"`
+	TargetServiceAccounts types.StringArray `db:"target_service_accounts"`
+	Denied                GcpProtocolSets   `db:"denied"`
+	Allowed               GcpProtocolSets   `db:"allowed"`
+	BkBizID               int64             `db:"bk_biz_id"`
+	Type                  string            `db:"type" validate:"lte=20"`
+	LogEnable             bool              `db:"log_enable"`
+	Disabled              bool              `db:"disabled"`
+	SelfLink              string            `db:"self_link" validate:"lte=255"`
+	Creator               string            `db:"creator" validate:"lte=64"`
+	Reviser               string            `db:"reviser" validate:"lte=64"`
+	CreatedAt             *time.Time        `db:"created_at" validate:"excluded_unless"`
+	UpdatedAt             *time.Time        `db:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return gcp firewall rule table name.
@@ -105,6 +115,10 @@ func (t GcpFirewallRuleTable) InsertValidate() error {
 		return errors.New("cloud id is required")
 	}
 
+	if t.BkBizID == 0 {
+		return errors.New("bk_biz_id is required")
+	}
+
 	if len(t.Name) == 0 {
 		return errors.New("name is required")
 	}
@@ -115,6 +129,10 @@ func (t GcpFirewallRuleTable) InsertValidate() error {
 
 	if len(t.CloudVpcID) == 0 {
 		return errors.New("cloud vpc id is required")
+	}
+
+	if len(t.VpcID) == 0 {
+		return errors.New("vpc id is required")
 	}
 
 	if len(t.Type) == 0 {
@@ -148,4 +166,40 @@ func (t GcpFirewallRuleTable) UpdateValidate() error {
 	}
 
 	return nil
+}
+
+// GcpProtocolSets define gcp protocol set.
+type GcpProtocolSets []corecloud.GcpProtocolSet
+
+// Scan is used to decode raw message which is read from db into GcpProtocolSets.
+func (set *GcpProtocolSets) Scan(raw interface{}) error {
+	if set == nil || raw == nil {
+		return nil
+	}
+
+	switch v := raw.(type) {
+	case []byte:
+		if err := json.Unmarshal(v, &set); err != nil {
+			return fmt.Errorf("decode into gcp protocol sets failed, err: %v", err)
+		}
+		return nil
+
+	case string:
+		if err := json.Unmarshal([]byte(v), &set); err != nil {
+			return fmt.Errorf("decode into gcp protocol sets failed, err: %v", err)
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported gcp protocol sets raw type: %T", v)
+	}
+}
+
+// Value encode the GcpProtocolSets to a json raw, so that it can be stored to db with json raw.
+func (set GcpProtocolSets) Value() (driver.Value, error) {
+	if set == nil {
+		return nil, nil
+	}
+
+	return json.Marshal(set)
 }

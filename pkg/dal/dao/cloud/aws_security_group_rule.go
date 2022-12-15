@@ -39,7 +39,7 @@ import (
 
 // AwsSGRule only used for aws security group rule.
 type AwsSGRule interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []cloud.AwsSecurityGroupRuleTable) ([]string, error)
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.AwsSecurityGroupRuleTable) ([]string, error)
 	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.AwsSecurityGroupRuleTable) error
 	List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListAwsSGRuleDetails, error)
 	Delete(kt *kit.Kit, expr *filter.Expression) error
@@ -54,7 +54,7 @@ type AwsSGRuleDao struct {
 }
 
 // BatchCreateWithTx rule.
-func (dao *AwsSGRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []cloud.AwsSecurityGroupRuleTable) (
+func (dao *AwsSGRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.AwsSecurityGroupRuleTable) (
 	[]string, error) {
 
 	// generate account id

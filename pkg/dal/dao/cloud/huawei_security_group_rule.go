@@ -39,7 +39,7 @@ import (
 
 // HuaWeiSGRule only used for huawei security group rule.
 type HuaWeiSGRule interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []cloud.HuaWeiSecurityGroupRuleTable) ([]string, error)
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.HuaWeiSecurityGroupRuleTable) ([]string, error)
 	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.HuaWeiSecurityGroupRuleTable) error
 	List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListHuaWeiSGRuleDetails, error)
 	Delete(kt *kit.Kit, expr *filter.Expression) error
@@ -54,7 +54,7 @@ type HuaWeiSGRuleDao struct {
 }
 
 // BatchCreateWithTx rule.
-func (dao *HuaWeiSGRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []cloud.HuaWeiSecurityGroupRuleTable) (
+func (dao *HuaWeiSGRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.HuaWeiSecurityGroupRuleTable) (
 	[]string, error) {
 
 	// generate account id

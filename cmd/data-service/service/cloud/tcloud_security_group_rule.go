@@ -41,8 +41,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitTCloudSGRuleService initial the tcloud security group rule service
-func InitTCloudSGRuleService(cap *capability.Capability) {
+// initTCloudSGRuleService initial the tcloud security group rule service
+func initTCloudSGRuleService(cap *capability.Capability) {
 	svc := &tcloudSGRuleSvc{
 		dao: cap.Dao,
 	}
@@ -81,11 +81,11 @@ func (svc *tcloudSGRuleSvc) BatchCreateTCloudRule(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	rules := make([]tablecloud.TCloudSecurityGroupRuleTable, 0, len(req.Rules))
+	rules := make([]*tablecloud.TCloudSecurityGroupRuleTable, 0, len(req.Rules))
 	for _, rule := range req.Rules {
-		rules = append(rules, tablecloud.TCloudSecurityGroupRuleTable{
+		rules = append(rules, &tablecloud.TCloudSecurityGroupRuleTable{
 			Region:                     rule.Region,
-			PolicyIndex:                rule.PolicyIndex,
+			CloudPolicyIndex:           rule.CloudPolicyIndex,
 			Version:                    rule.Version,
 			Type:                       string(rule.Type),
 			CloudSecurityGroupID:       rule.CloudSecurityGroupID,
@@ -147,24 +147,24 @@ func (svc *tcloudSGRuleSvc) BatchUpdateTCloudRule(cts *rest.Contexts) (interface
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, one := range req.Rules {
 			rule := &tablecloud.TCloudSecurityGroupRuleTable{
-				Region:                     one.Spec.Region,
-				PolicyIndex:                one.Spec.PolicyIndex,
-				Version:                    one.Spec.Version,
-				Type:                       string(one.Spec.Type),
-				CloudSecurityGroupID:       one.Spec.CloudSecurityGroupID,
-				SecurityGroupID:            one.Spec.SecurityGroupID,
-				AccountID:                  one.Spec.AccountID,
-				Action:                     one.Spec.Action,
-				Protocol:                   one.Spec.Protocol,
-				Port:                       one.Spec.Port,
-				CloudServiceID:             one.Spec.CloudServiceID,
-				CloudServiceGroupID:        one.Spec.CloudServiceGroupID,
-				IPv4Cidr:                   one.Spec.IPv4Cidr,
-				IPv6Cidr:                   one.Spec.IPv6Cidr,
-				CloudTargetSecurityGroupID: one.Spec.CloudTargetSecurityGroupID,
-				CloudAddressID:             one.Spec.CloudAddressID,
-				CloudAddressGroupID:        one.Spec.CloudAddressGroupID,
-				Memo:                       one.Spec.Memo,
+				Region:                     one.Region,
+				CloudPolicyIndex:           one.CloudPolicyIndex,
+				Version:                    one.Version,
+				Type:                       string(one.Type),
+				CloudSecurityGroupID:       one.CloudSecurityGroupID,
+				SecurityGroupID:            one.SecurityGroupID,
+				AccountID:                  one.AccountID,
+				Action:                     one.Action,
+				Protocol:                   one.Protocol,
+				Port:                       one.Port,
+				CloudServiceID:             one.CloudServiceID,
+				CloudServiceGroupID:        one.CloudServiceGroupID,
+				IPv4Cidr:                   one.IPv4Cidr,
+				IPv6Cidr:                   one.IPv6Cidr,
+				CloudTargetSecurityGroupID: one.CloudTargetSecurityGroupID,
+				CloudAddressID:             one.CloudAddressID,
+				CloudAddressGroupID:        one.CloudAddressGroupID,
+				Memo:                       one.Memo,
 				Reviser:                    cts.Kit.User,
 			}
 
@@ -233,33 +233,29 @@ func (svc *tcloudSGRuleSvc) ListTCloudRule(cts *rest.Contexts) (interface{}, err
 	details := make([]corecloud.TCloudSecurityGroupRule, 0, len(result.Details))
 	for _, one := range result.Details {
 		details = append(details, corecloud.TCloudSecurityGroupRule{
-			ID: one.ID,
-			Spec: &corecloud.TCloudSecurityGroupRuleSpec{
-				Region:                     one.Region,
-				PolicyIndex:                one.PolicyIndex,
-				Version:                    one.Version,
-				Protocol:                   one.Protocol,
-				Port:                       one.Protocol,
-				CloudServiceID:             one.CloudServiceID,
-				CloudServiceGroupID:        one.CloudServiceGroupID,
-				IPv4Cidr:                   one.IPv4Cidr,
-				IPv6Cidr:                   one.IPv6Cidr,
-				CloudTargetSecurityGroupID: one.CloudTargetSecurityGroupID,
-				CloudAddressID:             one.CloudAddressID,
-				CloudAddressGroupID:        one.CloudAddressGroupID,
-				Action:                     one.Action,
-				Memo:                       one.Memo,
-				Type:                       enumor.SecurityGroupRuleType(one.Type),
-				CloudSecurityGroupID:       one.CloudSecurityGroupID,
-				SecurityGroupID:            one.SecurityGroupID,
-				AccountID:                  one.AccountID,
-			},
-			Revision: &core.Revision{
-				Creator:   one.Creator,
-				Reviser:   one.Reviser,
-				CreatedAt: one.CreatedAt,
-				UpdatedAt: one.UpdatedAt,
-			},
+			ID:                         one.ID,
+			Region:                     one.Region,
+			CloudPolicyIndex:           one.CloudPolicyIndex,
+			Version:                    one.Version,
+			Protocol:                   one.Protocol,
+			Port:                       one.Protocol,
+			CloudServiceID:             one.CloudServiceID,
+			CloudServiceGroupID:        one.CloudServiceGroupID,
+			IPv4Cidr:                   one.IPv4Cidr,
+			IPv6Cidr:                   one.IPv6Cidr,
+			CloudTargetSecurityGroupID: one.CloudTargetSecurityGroupID,
+			CloudAddressID:             one.CloudAddressID,
+			CloudAddressGroupID:        one.CloudAddressGroupID,
+			Action:                     one.Action,
+			Memo:                       one.Memo,
+			Type:                       enumor.SecurityGroupRuleType(one.Type),
+			CloudSecurityGroupID:       one.CloudSecurityGroupID,
+			SecurityGroupID:            one.SecurityGroupID,
+			AccountID:                  one.AccountID,
+			Creator:                    one.Creator,
+			Reviser:                    one.Reviser,
+			CreatedAt:                  one.CreatedAt,
+			UpdatedAt:                  one.UpdatedAt,
 		})
 	}
 
@@ -273,7 +269,7 @@ func (svc *tcloudSGRuleSvc) DeleteTCloudRule(cts *rest.Contexts) (interface{}, e
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
 
-	req := new(protocloud.TCloudSGRuleDeleteReq)
+	req := new(protocloud.TCloudSGRuleBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -286,10 +282,7 @@ func (svc *tcloudSGRuleSvc) DeleteTCloudRule(cts *rest.Contexts) (interface{}, e
 		SecurityGroupID: sgID,
 		Fields:          []string{"id"},
 		Filter:          req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:            types.DefaultBasePage,
 	}
 	listResp, err := svc.dao.TCloudSGRule().List(cts.Kit, opt)
 	if err != nil {

@@ -19,34 +19,37 @@
 
 package cloud
 
-import "hcm/pkg/api/core"
+import (
+	"time"
+)
 
 // GcpFirewallRule define gcp firewall rule.
 type GcpFirewallRule struct {
-	ID       string               `json:"id"`
-	Spec     *GcpFirewallRuleSpec `json:"spec"`
-	Revision *core.Revision       `json:"revision"`
-}
-
-// GcpFirewallRuleSpec define gcp firewall rule spec.
-type GcpFirewallRuleSpec struct {
-	CloudID               string          `json:"cloud_id"`
-	Name                  string          `json:"name"`
-	Priority              int64           `json:"priority"`
-	Memo                  string          `json:"memo"`
-	CloudVpcID            string          `json:"cloud_vpc_id"`
-	SourceRanges          []string        `json:"source_ranges"`
-	DestinationRanges     []string        `json:"destination_ranges"`
-	SourceTags            []string        `json:"source_tags"`
-	TargetTags            []string        `json:"target_tags"`
-	SourceServiceAccounts []string        `json:"source_service_accounts"`
-	TargetServiceAccounts []string        `json:"target_service_accounts"`
-	Denied                *GcpProtocolSet `json:"denied"`
-	Allowed               *GcpProtocolSet `json:"allowed"`
-	Type                  string          `json:"type"`
-	LogEnable             bool            `json:"log_enable"`
-	Disabled              bool            `json:"disabled"`
-	SelfLink              string          `json:"self_link"`
+	ID                    string           `json:"id"`
+	CloudID               string           `json:"cloud_id"`
+	Name                  string           `json:"name"`
+	Priority              int64            `json:"priority"`
+	Memo                  string           `json:"memo"`
+	CloudVpcID            string           `json:"cloud_vpc_id"`
+	SourceRanges          []string         `json:"source_ranges"`
+	BkBizID               int64            `json:"bk_biz_id"`
+	VpcId                 string           `json:"vpc_id"`
+	DestinationRanges     []string         `json:"destination_ranges"`
+	SourceTags            []string         `json:"source_tags"`
+	TargetTags            []string         `json:"target_tags"`
+	SourceServiceAccounts []string         `json:"source_service_accounts"`
+	TargetServiceAccounts []string         `json:"target_service_accounts"`
+	Denied                []GcpProtocolSet `json:"denied"`
+	Allowed               []GcpProtocolSet `json:"allowed"`
+	Type                  string           `json:"type"`
+	LogEnable             bool             `json:"log_enable"`
+	Disabled              bool             `json:"disabled"`
+	AccountID             string           `json:"account_id"`
+	SelfLink              string           `json:"self_link"`
+	Creator               string           `json:"creator"`
+	Reviser               string           `json:"reviser"`
+	CreatedAt             *time.Time       `json:"created_at"`
+	UpdatedAt             *time.Time       `json:"updated_at"`
 }
 
 // GcpProtocolSet define gcp protocol set.
