@@ -29,71 +29,202 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// CreateAccountReq ...
-type CreateAccountReq struct {
-	Vendor     enumor.Vendor            `json:"vendor" validate:"required"`
-	Spec       *cloud.AccountSpec       `json:"spec" validate:"required"`
-	Extension  *cloud.AccountExtension  `json:"extension" validate:"required"`
-	Attachment *cloud.AccountAttachment `json:"attachment" validate:"required"`
+// -------------------------- Create --------------------------
+
+type AccountExtensionCreateReq interface {
+	TCloudAccountExtensionCreateReq | AwsAccountExtensionCreateReq | HuaWeiAccountExtensionCreateReq | GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq
+}
+
+// TCloudAccountExtensionCreateReq ...
+type TCloudAccountExtensionCreateReq struct {
+	CloudMainAccountID string `json:"cloud_main_account_id" validate:"required"`
+	CloudSubAccountID  string `json:"cloud_sub_account_id" validate:"required"`
+	CloudSecretID      string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey     string `json:"cloud_secret_key" validate:"required"`
+}
+
+// AwsAccountExtensionCreateReq ...
+type AwsAccountExtensionCreateReq struct {
+	CloudAccountID   string `json:"cloud_account_id" validate:"required"`
+	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
+	CloudSecretID    string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey   string `json:"cloud_secret_key" validate:"required"`
+}
+
+// HuaWeiAccountExtensionCreateReq ...
+type HuaWeiAccountExtensionCreateReq struct {
+	CloudMainAccountName string `json:"cloud_main_account_name" validate:"required"`
+	CloudSubAccountID    string `json:"cloud_sub_account_id" validate:"required"`
+	CloudSubAccountName  string `json:"cloud_sub_account_name" validate:"required"`
+	CloudSecretID        string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey       string `json:"cloud_secret_key" validate:"required"`
+}
+
+// GcpAccountExtensionCreateReq ...
+type GcpAccountExtensionCreateReq struct {
+	CloudProjectID          string `json:"cloud_project_id" validate:"required"`
+	CloudProjectName        string `json:"cloud_project_name" validate:"required"`
+	CloudServiceAccountID   string `json:"cloud_service_account_cid" validate:"required"`
+	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
+	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"required"`
+	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"required"`
+}
+
+// AzureAccountExtensionCreateReq ...
+type AzureAccountExtensionCreateReq struct {
+	CloudTenantID         string `json:"cloud_tenant_id" validate:"required"`
+	CloudSubscriptionID   string `json:"cloud_subscription_id" validate:"required"`
+	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
+	CloudApplicationID    string `json:"cloud_application_id" validate:"required"`
+	CloudApplicationName  string `json:"cloud_application_name" validate:"required"`
+	CloudClientID         string `json:"cloud_client_id" validate:"required"`
+	CloudClientSecret     string `json:"cloud_client_secret" validate:"required"`
+}
+
+// AccountSpecCreateReq ...
+type AccountSpecCreateReq struct {
+	Name         string                 `json:"name" validate:"required"`
+	Managers     []string               `json:"managers" validate:"required"`
+	DepartmentID int64                  `json:"department_id" validate:"required"`
+	Type         enumor.AccountType     `json:"type" validate:"required"`
+	Site         enumor.AccountSiteType `json:"site" validate:"required"`
+	Memo         *string                `json:"memo" validate:"required"`
+}
+
+// AccountAttachmentCreateReq ...
+type AccountAttachmentCreateReq struct {
+	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required"`
+}
+
+// AccountCreateReq ...
+type AccountCreateReq[T AccountExtensionCreateReq] struct {
+	Spec       *AccountSpecCreateReq       `json:"spec" validate:"required"`
+	Extension  *T                          `json:"extension" validate:"required"`
+	Attachment *AccountAttachmentCreateReq `json:"attachment" validate:"required"`
 }
 
 // Validate ...
-func (c *CreateAccountReq) Validate() error {
+func (c *AccountCreateReq[T]) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
-// UpdateAccountReq ...
-type UpdateAccountReq struct {
-	Spec      *cloud.AccountSpec      `json:"spec" validate:"required"`
-	Extension *cloud.AccountExtension `json:"extension" validate:"required"`
-	Filter    *filter.Expression      `json:"filter" validate:"required"`
+// -------------------------- Update --------------------------
+
+type AccountExtensionUpdateReq interface {
+	TCloudAccountExtensionUpdateReq | AwsAccountExtensionUpdateReq | HuaWeiAccountExtensionUpdateReq | GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
+}
+
+type TCloudAccountExtensionUpdateReq struct {
+	CloudSecretID  string `json:"cloud_secret_id" validate:"omitempty"`
+	CloudSecretKey string `json:"cloud_secret_key" validate:"omitempty"`
+}
+
+type AwsAccountExtensionUpdateReq struct {
+	CloudSecretID  string `json:"cloud_secret_id" validate:"omitempty"`
+	CloudSecretKey string `json:"cloud_secret_key" validate:"omitempty"`
+}
+type HuaWeiAccountExtensionUpdateReq struct {
+	CloudSecretID  string `json:"cloud_secret_id" validate:"omitempty"`
+	CloudSecretKey string `json:"cloud_secret_key" validate:"omitempty"`
+}
+type GcpAccountExtensionUpdateReq struct {
+	CloudServiceSecretID  string `json:"cloud_service_secret_id" validate:"required"`
+	CloudServiceSecretKey string `json:"cloud_service_secret_key" validate:"required"`
+}
+type AzureAccountExtensionUpdateReq struct {
+	CloudClientID     string `json:"cloud_client_id" validate:"required"`
+	CloudClientSecret string `json:"cloud_client_secret" validate:"required"`
+}
+
+// AccountSpecUpdateReq ...
+type AccountSpecUpdateReq struct {
+	Name         string   `json:"name" validate:"omitempty"`
+	Managers     []string `json:"managers" validate:"omitempty"`
+	DepartmentID int64    `json:"department_id" validate:"omitempty"`
+	SyncStatus   string   `json:"sync_status" validate:"omitempty"`
+	Price        string   `json:"price" validate:"omitempty"`
+	PriceUnit    string   `json:"price_unit" validate:"omitempty"`
+	Memo         *string  `json:"memo" validate:"omitempty"`
+}
+
+// AccountUpdateReq ...
+type AccountUpdateReq[T AccountExtensionUpdateReq] struct {
+	Spec      *AccountSpecUpdateReq `json:"spec" validate:"omitempty"`
+	Extension *T                    `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...
-func (u *UpdateAccountReq) Validate() error {
+func (u *AccountUpdateReq[T]) Validate() error {
 	return validator.Validate.Struct(u)
 }
 
-// ListAccountReq ...
-type ListAccountReq struct {
+// -------------------------- Get --------------------------
+
+type AccountExtensionGetResp interface {
+	cloud.TCloudAccountExtension | cloud.AwsAccountExtension | cloud.HuaWeiAccountExtension | cloud.GcpAccountExtension | cloud.AzureAccountExtension
+}
+
+type AccountGetResult[T AccountExtensionGetResp] struct {
+	cloud.BaseAccount `json:",inline"`
+	Extension         *T `json:"extension"`
+}
+
+type AccountGetResp[T AccountExtensionGetResp] struct {
+	rest.BaseResp `json:",inline"`
+	Data          *AccountGetResult[T] `json:"data"`
+}
+
+// -------------------------- List --------------------------
+
+// AccountListReq ...
+type AccountListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *types.BasePage    `json:"page" validate:"required"`
 }
 
 // Validate ...
-func (l *ListAccountReq) Validate() error {
+func (l *AccountListReq) Validate() error {
 	return validator.Validate.Struct(l)
 }
 
-// ListAccountResult defines list instances for iam pull resource callback result.
-type ListAccountResult struct {
-	Count   uint64           `json:"count,omitempty"`
-	Details []*cloud.Account `json:"details,omitempty"`
+// BaseAccountListReq ...
+type BaseAccountListReq struct {
+	ID     uint64             `json:"id"`
+	Vendor enumor.Vendor      `json:"vendor"`
+	Spec   *cloud.AccountSpec `json:"spec"`
 }
 
-// DeleteAccountReq ...
-type DeleteAccountReq struct {
+// AccountListResult defines list instances for iam pull resource callback result.
+type AccountListResult struct {
+	Count uint64 `json:"count,omitempty"`
+	// 对于List接口，只会返回公共数据，不会返回Extension
+	Details []*BaseAccountListReq `json:"details,omitempty"`
+}
+
+// AccountListResp ...
+type AccountListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *AccountListResult `json:"data"`
+}
+
+// -------------------------- Delete --------------------------
+
+// AccountDeleteReq ...
+type AccountDeleteReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 }
 
 // Validate ...
-func (d *DeleteAccountReq) Validate() error {
+func (d *AccountDeleteReq) Validate() error {
 	return validator.Validate.Struct(d)
 }
 
-// ListAccountResp ...
-type ListAccountResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *ListAccountResult `json:"data"`
-}
-
-// UpdateAccountBizRelReq ...
-type UpdateAccountBizRelReq struct {
-	AccountID uint64   `json:"account_id" validate:"required"`
-	BkBizIDs  []uint64 `json:"bk_biz_ids" validate:"required"`
+// AccountBizRelUpdateReq ...
+type AccountBizRelUpdateReq struct {
+	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required"`
 }
 
 // Validate ...
-func (req *UpdateAccountBizRelReq) Validate() error {
+func (req *AccountBizRelUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

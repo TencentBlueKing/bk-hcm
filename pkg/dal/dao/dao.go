@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
+	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/kit"
 	"hcm/pkg/metrics"
@@ -54,12 +55,15 @@ func NewDaoSet(opt cc.DataBase) (Set, error) {
 	ormInst := orm.InitOrm(db, orm.MetricsRegisterer(metrics.Register()),
 		orm.IngressLimiter(opt.Limiter.QPS, opt.Limiter.Burst), orm.SlowRequestMS(opt.MaxSlowLogLatencyMS))
 
+	idGen := idgenerator.New(db, idgenerator.DefaultMaxRetryCount)
+
 	auditDao, err := audit.NewAuditDao(ormInst, db)
 	if err != nil {
 		return nil, fmt.Errorf("new audit dao failed, err: %v", err)
 	}
 
 	s := &set{
+		idGen:    idGen,
 		orm:      ormInst,
 		db:       db,
 		auditDao: auditDao,
@@ -98,6 +102,7 @@ func uri(opt cc.ResourceDB) string {
 }
 
 type set struct {
+	idGen    idgenerator.IDGenInterface
 	orm      orm.Interface
 	db       *sqlx.DB
 	auditDao audit.AuditDao

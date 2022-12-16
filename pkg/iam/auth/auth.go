@@ -39,6 +39,8 @@ type Authorizer interface {
 	Authorize(kt *kit.Kit, resources ...meta.ResourceAttribute) ([]meta.Decision, bool, error)
 	// AuthorizeWithPerm authorize if user has permission, if not, returns unauthorized error.
 	AuthorizeWithPerm(kt *kit.Kit, resources ...meta.ResourceAttribute) error
+	// ListAuthorizedInstances list authorized instances info.
+	ListAuthorizedInstances(kt *kit.Kit, input *meta.ListAuthResInput) (*meta.AuthorizedInstances, error)
 }
 
 // NewAuthorizer create an authorizer for iam authorize related operation.
@@ -91,11 +93,6 @@ func (a authorizer) Authorize(kt *kit.Kit, resources ...meta.ResourceAttribute) 
 		return nil, false, err
 	}
 
-	if err != nil {
-		logs.Errorf("authorize failed, req: %#v, err: %v, rid: %s", req, err, kt.Rid)
-		return nil, false, err
-	}
-
 	authorized := true
 	for _, decision := range decisions {
 		if !decision.Authorized {
@@ -129,4 +126,29 @@ func (a authorizer) AuthorizeWithPerm(kt *kit.Kit, resources ...meta.ResourceAtt
 	}
 
 	return nil
+}
+
+// ListAuthorizedInstances list authorized instances info.
+func (a authorizer) ListAuthorizedInstances(kt *kit.Kit, input *meta.ListAuthResInput) (*meta.AuthorizedInstances,
+	error) {
+
+	if input == nil || len(input.Action) == 0 || len(input.Type) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "list authorized instances input is invalid")
+	}
+
+	userInfo := &meta.UserInfo{UserName: kt.User}
+
+	req := &asproto.ListAuthorizedInstancesReq{
+		User:   userInfo,
+		Type:   input.Type,
+		Action: input.Action,
+	}
+
+	resources, err := a.authClient.ListAuthorizedInstances(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("list authorized instances failed, req: %#v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+
+	return resources, nil
 }

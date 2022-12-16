@@ -24,6 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
+	protocore "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -41,8 +42,9 @@ func NewCloudAccountClient(client rest.ClientInterface) *AccountClient {
 	}
 }
 
-// Create account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header, request *protocloud.CreateAccountReq) (
+// CreateTCloud account.
+func (a *AccountClient) CreateTCloud(ctx context.Context, h http.Header,
+	request *protocloud.AccountCreateReq[protocloud.TCloudAccountExtensionCreateReq]) (
 	*core.CreateResult, error,
 ) {
 	resp := new(core.CreateResp)
@@ -50,7 +52,7 @@ func (a *AccountClient) Create(ctx context.Context, h http.Header, request *prot
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account/create").
+		SubResourcef("/vendors/tcloud/accounts/create").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -65,8 +67,9 @@ func (a *AccountClient) Create(ctx context.Context, h http.Header, request *prot
 	return resp.Data, nil
 }
 
-// Update ...
-func (a *AccountClient) Update(ctx context.Context, h http.Header, request *protocloud.UpdateAccountReq) (
+// UpdateAws ...
+func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID uint64,
+	request *protocloud.AccountUpdateReq[protocloud.AwsAccountExtensionUpdateReq]) (
 	interface{}, error,
 ) {
 	resp := new(core.UpdateResp)
@@ -74,10 +77,28 @@ func (a *AccountClient) Update(ctx context.Context, h http.Header, request *prot
 	err := a.client.Patch().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account").
+		SubResourcef("/vendors/aws/accounts/%d", accountID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// GetTCloud ...
+func (a *AccountClient) GetTCloud(ctx context.Context, h http.Header, accountID uint64) (
+	*protocloud.AccountGetResult[protocore.TCloudAccountExtension], error,
+) {
+	resp := new(protocloud.AccountGetResp[protocore.TCloudAccountExtension])
+	err := a.client.Get().WithContext(ctx).SubResourcef("vendors/tcloud/accounts/%d",
+		accountID).WithHeaders(h).Do().Into(resp)
 	if err != nil {
 		return nil, err
 	}
@@ -90,15 +111,15 @@ func (a *AccountClient) Update(ctx context.Context, h http.Header, request *prot
 }
 
 // List ...
-func (a *AccountClient) List(ctx context.Context, h http.Header, request *protocloud.ListAccountReq) (
-	*protocloud.ListAccountResult, error,
+func (a *AccountClient) List(ctx context.Context, h http.Header, request *protocloud.AccountListReq) (
+	*protocloud.AccountListResult, error,
 ) {
-	resp := new(protocloud.ListAccountResp)
+	resp := new(protocloud.AccountListResp)
 
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account/list").
+		SubResourcef("/accounts/list").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -114,7 +135,7 @@ func (a *AccountClient) List(ctx context.Context, h http.Header, request *protoc
 }
 
 // Delete ...
-func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *protocloud.DeleteAccountReq) (
+func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *protocloud.AccountDeleteReq) (
 	interface{}, error,
 ) {
 	resp := new(core.DeleteResp)
@@ -122,7 +143,31 @@ func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *prot
 	err := a.client.Delete().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account/delete").
+		SubResourcef("/accounts/delete").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// UpdateAccountBizRel update account and biz rel api, only support put all biz for account_id.
+func (a *AccountClient) UpdateAccountBizRel(ctx context.Context, h http.Header, accountID uint64,
+	request *protocloud.AccountBizRelUpdateReq) (interface{}, error) {
+
+	resp := new(core.UpdateResp)
+
+	err := a.client.Put().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/account_biz_rels/accounts/%d", accountID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

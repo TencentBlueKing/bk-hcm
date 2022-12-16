@@ -22,7 +22,6 @@ package cloud
 import (
 	"fmt"
 
-	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/types"
@@ -37,7 +36,7 @@ import (
 
 // AccountBizRel only used for account and biz rel.
 type AccountBizRel interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*corecloud.AccountBizRel) ([]uint64, error)
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) ([]uint64, error)
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccountBizRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
@@ -50,26 +49,23 @@ type AccountBizRelDao struct {
 }
 
 // BatchCreateWithTx AccountBizRel with tx.
-func (a AccountBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*corecloud.AccountBizRel) (
+func (a AccountBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) (
 	[]uint64, error) {
 
 	if len(rels) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "account_biz_rel is required")
 	}
 
-	relTables := make([]*cloud.AccountBizRelTable, len(rels))
-	for index, one := range rels {
-		rel := cloud.ConvAccountBizRelTable(one)
+	for _, rel := range rels {
 		if err := rel.InsertValidate(); err != nil {
 			return nil, err
 		}
-		relTables[index] = rel
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AccountBizRelTable,
 		cloud.AccountBizRelColumns.ColumnExpr(), cloud.AccountBizRelColumns.ColonNameExpr())
 
-	ids, err := a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, relTables)
+	ids, err := a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.AccountBizRelTable, err)
 	}
@@ -114,12 +110,12 @@ func (a AccountBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListA
 	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.AccountBizRelColumns.NamedExpr(),
 		table.AccountBizRelTable, whereExpr, pageExpr)
 
-	list := make([]*cloud.AccountBizRelTable, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &list, sql); err != nil {
+	details := make([]*cloud.AccountBizRelTable, 0)
+	if err = a.Orm.Do().Select(kt.Ctx, &details, sql); err != nil {
 		return nil, err
 	}
 
-	return &types.ListAccountBizRelDetails{Count: 0, Details: cloud.ConvAccountBizRelList(list)}, nil
+	return &types.ListAccountBizRelDetails{Count: 0, Details: details}, nil
 }
 
 // DeleteWithTx AccountBizRel with tx.

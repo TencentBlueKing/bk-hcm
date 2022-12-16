@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package hcservice
+package huawei
 
 import (
 	"context"
@@ -40,15 +40,15 @@ func NewAccountClient(client rest.ClientInterface) *AccountClient {
 	}
 }
 
-// Check account.
-func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcservice.AccountCheckReq) error {
+// Check account
+func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcservice.HuaWeiAccountCheckReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account/check").
+		SubResourcef("/accounts/check").
 		WithHeaders(h).
 		Do().
 		Into(resp)

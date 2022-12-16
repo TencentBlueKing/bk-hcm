@@ -68,3 +68,16 @@ type GetPermissionToApplyResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *meta.IamPermission `json:"data"`
 }
+
+// ListAuthorizedInstancesReq list authorized instances request.
+type ListAuthorizedInstancesReq struct {
+	User   *meta.UserInfo    `json:"user"`
+	Type   meta.ResourceType `json:"type"`
+	Action meta.Action       `json:"action"`
+}
+
+// ListAuthorizedInstancesResp list authorized instances response.
+type ListAuthorizedInstancesResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *meta.AuthorizedInstances `json:"data"`
+}

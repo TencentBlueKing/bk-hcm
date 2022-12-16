@@ -20,7 +20,9 @@
 // Package core defines basic api call protocols.
 package core
 
-import "hcm/pkg/rest"
+import (
+	"hcm/pkg/rest"
+)
 
 // CreateResp is a standard create operation http response.
 type CreateResp struct {

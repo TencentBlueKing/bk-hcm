@@ -19,6 +19,8 @@
 
 package table
 
+import "fmt"
+
 // Table defines all the database table
 // related resources.
 type Table interface {
@@ -35,4 +37,20 @@ const (
 	AccountTable Name = "account"
 	// AccountBizRelTable is account and biz relation table's name.
 	AccountBizRelTable Name = "account_biz_rel"
+	// IDGenerator is id generator table's name.
+	IDGenerator Name = "id_generator"
 )
+
+// Validate whether the table name is valid or not.
+func (n Name) Validate() error {
+	switch n {
+	case AuditTable:
+	case AccountTable:
+	case AccountBizRelTable:
+	case IDGenerator:
+	default:
+		return fmt.Errorf("unknown table name: %s", n)
+	}
+
+	return nil
+}

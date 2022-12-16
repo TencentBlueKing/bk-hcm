@@ -55,10 +55,48 @@ func (c *Contexts) DecodeInto(to interface{}) error {
 	return nil
 }
 
-// WithMeta set the request meta which is decoded from the request.
-func (c *Contexts) WithMeta(bizID, appID uint32) {
-	c.bizID = strconv.FormatUint(uint64(bizID), 10)
-	c.appID = strconv.FormatUint(uint64(appID), 10)
+// PathParameter get path parameter value by its name.
+func (c *Contexts) PathParameter(name string) PathParam {
+	return PathParam(c.Request.PathParameter(name))
+}
+
+// DecodePathParamInto decode path parameter value into its actual type.
+func (c *Contexts) DecodePathParamInto(name string, to interface{}) error {
+	param := c.PathParameter(name)
+	err := json.Unmarshal([]byte(param), &to)
+	if err != nil {
+		logs.ErrorDepthf(1, "decode path parameter %s failed, err: %v, rid: %s", param, err, c.Kit.Rid)
+		return errf.New(errf.InvalidParameter, err.Error())
+	}
+	return nil
+}
+
+// PathParam defines path parameter value type.
+type PathParam string
+
+// String convert path parameter to string.
+func (p PathParam) String() string {
+	return string(p)
+}
+
+// Uint64 convert path parameter to uint64.
+func (p PathParam) Uint64() (uint64, error) {
+	value, err := strconv.ParseUint(string(p), 10, 64)
+	if err != nil {
+		logs.ErrorDepthf(1, "decode path parameter %s failed, err: %v", p, err)
+		return 0, errf.New(errf.InvalidParameter, err.Error())
+	}
+	return value, nil
+}
+
+// Int64 convert path parameter to int64.
+func (p PathParam) Int64() (int64, error) {
+	value, err := strconv.ParseInt(string(p), 10, 64)
+	if err != nil {
+		logs.ErrorDepthf(1, "decode path parameter %s failed, err: %v", p, err)
+		return 0, errf.New(errf.InvalidParameter, err.Error())
+	}
+	return value, nil
 }
 
 // WithStatusCode set the response status header code

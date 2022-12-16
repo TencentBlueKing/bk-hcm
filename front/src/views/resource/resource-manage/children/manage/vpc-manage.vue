@@ -120,7 +120,7 @@ const {
 
 const {
   isShowVPC,
-  handleDeleteVPC,
+  handleShowDeleteVPC,
   DeleteVPC,
 } = useDeleteVPC();
 
@@ -149,7 +149,7 @@ const {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        @click="handleDeleteVPC"
+        @click="handleShowDeleteVPC"
       >
         {{ t('删除') }}
       </bk-button>
@@ -169,7 +169,6 @@ const {
 
   <resource-distribution
     v-model:is-show="isShowDistribution"
-    :hide-relate-v-p-c="true"
     :title="t('VPC 分配')"
   />
 

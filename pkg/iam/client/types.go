@@ -427,8 +427,8 @@ type GetPolicyByExtResResp struct {
 
 // GetPolicyByExtResResult  get a user's policy by external resource result.
 type GetPolicyByExtResResult struct {
-	Expression   *operator.Policy `json:"expression"`
-	a            Resource
+	Expression   *operator.Policy      `json:"expression"`
+	Resource     Resource              `json:"resource"`
 	ExtResources []ExtResourceInstance `json:"ext_resources"`
 }
 
@@ -528,11 +528,14 @@ type AuthBatch struct {
 	Resources []Resource `json:"resources"`
 }
 
-// Subject defines authorize resource type and instance id.
+// Subject defines authorized subject type and id, right now subject type can only be user.
 type Subject struct {
-	Type TypeID `json:"type"`
-	ID   string `json:"id"`
+	Type SubjectType `json:"type"`
+	ID   string      `json:"id"`
 }
+
+// SubjectType defines authorized subject type.
+type SubjectType string
 
 // Action defines the use's action, which must correspond to the registered action ids in iam.
 type Action struct {

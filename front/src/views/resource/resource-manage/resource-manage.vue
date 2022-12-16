@@ -173,6 +173,7 @@ watch(
       :label="item.type"
     >
       <component
+        v-if="(item.name === activeTab)"
         :is="item.component"
         :filter="filter"
       />

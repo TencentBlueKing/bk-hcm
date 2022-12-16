@@ -22,22 +22,27 @@ package cloud
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud"
+	protocore "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	daotypes "hcm/pkg/dal/dao/types"
+	tablecloud "hcm/pkg/dal/table/cloud"
+	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
-
-	"hcm/pkg/dal/dao"
 )
 
 // InitAccountService initial the account service
@@ -48,10 +53,12 @@ func InitAccountService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("CreateAccount", "POST", "/account/create", svc.CreateAccount)
-	h.Add("ListAccount", "POST", "/account/list", svc.ListAccount)
-	h.Add("UpdateAccount", "PATCH", "/account", svc.UpdateAccount)
-	h.Add("DeleteAccount", "DELETE", "/account", svc.DeleteAccount)
+	h.Add("CreateAccount", "POST", "/vendors/{vendor}/accounts/create", svc.CreateAccount)
+	h.Add("UpdateAccount", "PATCH", "/vendors/{vendor}/accounts/{account_id}", svc.UpdateAccount)
+	h.Add("GetAccount", "GET", "/vendors/{vendor}/accounts/{account_id}", svc.GetAccount)
+	h.Add("ListAccount", "POST", "/accounts/list", svc.ListAccount)
+	h.Add("DeleteAccount", "DELETE", "/accounts", svc.DeleteAccount)
+	h.Add("UpdateAccountBizRel", "PUT", "/account_biz_rels/accounts/{account_id}", svc.UpdateAccountBizRel)
 
 	h.Load(cap.WebService)
 }
@@ -63,8 +70,28 @@ type accountSvc struct {
 
 // CreateAccount account with options
 func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.CreateAccountReq)
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+	switch vendor {
+	case enumor.TCloud:
+		return createAccount[protocloud.TCloudAccountExtensionCreateReq](vendor, svc, cts)
+	case enumor.AWS:
+		return createAccount[protocloud.AwsAccountExtensionCreateReq](vendor, svc, cts)
+	case enumor.HuaWei:
+		return createAccount[protocloud.HuaWeiAccountExtensionCreateReq](vendor, svc, cts)
+	case enumor.GCP:
+		return createAccount[protocloud.GcpAccountExtensionCreateReq](vendor, svc, cts)
+	case enumor.Azure:
+		return createAccount[protocloud.AzureAccountExtensionCreateReq](vendor, svc, cts)
+	}
 
+	return nil, nil
+}
+
+func createAccount[T protocloud.AccountExtensionCreateReq](vendor enumor.Vendor, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.AccountCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
 	}
@@ -74,22 +101,23 @@ func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	accountID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		account := &cloud.Account{
-			Vendor: req.Vendor,
-			Spec: &cloud.AccountSpec{
-				Name:         req.Spec.Name,
-				Managers:     req.Spec.Managers,
-				DepartmentID: req.Spec.DepartmentID,
-				Type:         req.Spec.Type,
-				Site:         req.Spec.Site,
-				SyncStatus:   enumor.NotStart,
-				Memo:         req.Spec.Memo,
-			},
-			Extension: req.Extension,
-			Revision: &core.Revision{
-				Creator: cts.Kit.User,
-				Reviser: cts.Kit.User,
-			},
+		extensionJson, err := json.MarshalToString(req.Extension)
+		if err != nil {
+			return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		}
+
+		account := &tablecloud.AccountTable{
+			Vendor:       string(vendor),
+			Name:         req.Spec.Name,
+			Managers:     req.Spec.Managers,
+			DepartmentID: req.Spec.DepartmentID,
+			Type:         string(req.Spec.Type),
+			Site:         string(req.Spec.Site),
+			SyncStatus:   enumor.NotStart,
+			Memo:         req.Spec.Memo,
+			Extension:    tabletype.JsonField(extensionJson),
+			Creator:      cts.Kit.User,
+			Reviser:      cts.Kit.User,
 		}
 
 		accountID, err := svc.dao.Account().CreateWithTx(cts.Kit, txn, account)
@@ -97,9 +125,9 @@ func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 			return nil, fmt.Errorf("create account failed, err: %v", err)
 		}
 
-		rels := make([]*cloud.AccountBizRel, len(req.Attachment.BkBizIDs))
+		rels := make([]*tablecloud.AccountBizRelTable, len(req.Attachment.BkBizIDs))
 		for index, bizID := range req.Attachment.BkBizIDs {
-			rels[index] = &cloud.AccountBizRel{
+			rels[index] = &tablecloud.AccountBizRelTable{
 				BkBizID:   bizID,
 				AccountID: accountID,
 				Creator:   cts.Kit.User,
@@ -127,7 +155,53 @@ func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 
 // UpdateAccount account with filter.
 func (svc *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.UpdateAccountReq)
+	// TODO: Vendor和ID从Path 获取后并校验，可以通用化
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	accountID, err := strconv.ParseUint(cts.Request.PathParameter("account_id"), 10, 64)
+	if err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return updateAccount[protocloud.TCloudAccountExtensionUpdateReq](accountID, svc, cts)
+	case enumor.AWS:
+		return updateAccount[protocloud.AwsAccountExtensionUpdateReq](accountID, svc, cts)
+	case enumor.HuaWei:
+		return updateAccount[protocloud.HuaWeiAccountExtensionUpdateReq](accountID, svc, cts)
+	case enumor.GCP:
+		return updateAccount[protocloud.GcpAccountExtensionUpdateReq](accountID, svc, cts)
+	case enumor.Azure:
+		return updateAccount[protocloud.AzureAccountExtensionUpdateReq](accountID, svc, cts)
+	}
+
+	return nil, nil
+}
+
+func getAccountFromTable(accountID uint64, svc *accountSvc, cts *rest.Contexts) (*tablecloud.AccountTable, error) {
+	opt := &types.ListOption{
+		Filter: tools.GenerateIDFilter("id", accountID),
+		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
+	}
+	listAccountDetails, err := svc.dao.Account().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list account failed, err: %v, rid: %s", cts.Kit.Rid)
+		return nil, fmt.Errorf("list account failed, err: %v", err)
+	}
+	details := listAccountDetails.Details
+	if len(details) != 1 {
+		return nil, fmt.Errorf("list account failed, account(id=%d) don't exist", accountID)
+	}
+
+	return details[0], nil
+}
+
+func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID uint64, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.AccountUpdateReq[T])
 
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
@@ -137,25 +211,140 @@ func (svc *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	account := &cloud.Account{
-		Spec: req.Spec,
-		Revision: &core.Revision{
-			Reviser: cts.Kit.User,
-		},
+	account := &tablecloud.AccountTable{
+		Name:         req.Spec.Name,
+		Managers:     req.Spec.Managers,
+		DepartmentID: req.Spec.DepartmentID,
+		SyncStatus:   req.Spec.SyncStatus,
+		Price:        req.Spec.Price,
+		PriceUnit:    req.Spec.PriceUnit,
+		Memo:         req.Spec.Memo,
+		Reviser:      cts.Kit.User,
 	}
 
-	err := svc.dao.Account().Update(cts.Kit, req.Filter, account)
+	// 只有提供了Extension才进行更新
+	if req.Extension != nil {
+		// 查询账号
+		dbAccount, err := getAccountFromTable(accountID, svc, cts)
+		if err != nil {
+			return nil, err
+		}
+
+		// 合并覆盖dbExtension
+		updatedExtension, err := json.UpdateMerge(req.Extension, string(dbAccount.Extension))
+		if err != nil {
+			return nil, fmt.Errorf("json UpdateMerge extension failed, err: %v", err)
+		}
+
+		account.Extension = tabletype.JsonField(updatedExtension)
+	}
+
+	err := svc.dao.Account().Update(cts.Kit, tools.GenerateIDFilter("id", accountID), account)
 	if err != nil {
 		logs.Errorf("update account failed, err: %v, rid: %s", cts.Kit.Rid)
-		return nil, fmt.Errorf("create account failed, err: %v", err)
+		return nil, fmt.Errorf("update account failed, err: %v", err)
 	}
 
 	return nil, nil
 }
 
+func convertToAccountResult[T protocloud.AccountExtensionGetResp](baseAccount *protocore.BaseAccount, dbExtension tabletype.JsonField) (*protocloud.AccountGetResult[T], error) {
+	var extension *T
+	err := json.UnmarshalFromString(string(dbExtension), extension)
+	if err != nil {
+		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
+	}
+	return &protocloud.AccountGetResult[T]{
+		BaseAccount: *baseAccount,
+		Extension:   extension,
+	}, nil
+}
+
+// GetAccount accounts with detail
+func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
+	// TODO: Vendor和ID从Path 获取后并校验，可以通用化
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	accountID, err := strconv.ParseUint(cts.Request.PathParameter("account_id"), 10, 64)
+	if err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	// 查询账号信息
+	dbAccount, err := getAccountFromTable(accountID, svc, cts)
+	if err != nil {
+		return nil, err
+	}
+
+	// 查询账号关联信息，这里只有业务
+	opt := &types.ListOption{
+		Filter: tools.GenerateIDFilter("account_id", accountID),
+		// TODO：支持查询全量的Page
+		Page: &types.BasePage{Start: 0, Limit: types.DefaultMaxPageLimit},
+	}
+	relResp, err := svc.dao.AccountBizRel().List(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+	bizIDs := make([]int64, 0, len(relResp.Details))
+	for _, rel := range relResp.Details {
+		bizIDs = append(bizIDs, rel.BkBizID)
+	}
+
+	// 组装响应数据 - 账号基本信息
+	baseAccount := &protocore.BaseAccount{
+		ID:     dbAccount.ID,
+		Vendor: enumor.Vendor(dbAccount.Vendor),
+		Spec: &protocore.AccountSpec{
+			Name:         dbAccount.Name,
+			Managers:     dbAccount.Managers,
+			DepartmentID: dbAccount.DepartmentID,
+			Type:         enumor.AccountType(dbAccount.Type),
+			Site:         enumor.AccountSiteType(dbAccount.Site),
+			SyncStatus:   enumor.AccountSyncStatus(dbAccount.SyncStatus),
+			Price:        dbAccount.Price,
+			PriceUnit:    dbAccount.PriceUnit,
+			Memo:         dbAccount.Memo,
+		},
+		Attachment: &protocore.AccountAttachment{
+			BkBizIDs: bizIDs,
+		},
+		Revision: &core.Revision{
+			Creator:   dbAccount.Creator,
+			Reviser:   dbAccount.Reviser,
+			CreatedAt: dbAccount.CreatedAt,
+			UpdatedAt: dbAccount.UpdatedAt,
+		},
+	}
+
+	// 转换为最终的数据结构
+	var account interface{}
+	switch enumor.Vendor(dbAccount.Vendor) {
+	case enumor.TCloud:
+		account, err = convertToAccountResult[protocore.TCloudAccountExtension](baseAccount, dbAccount.Extension)
+	case enumor.AWS:
+		account, err = convertToAccountResult[protocore.AwsAccountExtension](baseAccount, dbAccount.Extension)
+	case enumor.HuaWei:
+		account, err = convertToAccountResult[protocore.HuaWeiAccountExtension](baseAccount, dbAccount.Extension)
+	case enumor.GCP:
+		account, err = convertToAccountResult[protocore.GcpAccountExtension](baseAccount, dbAccount.Extension)
+	case enumor.Azure:
+		account, err = convertToAccountResult[protocore.AzureAccountExtension](baseAccount, dbAccount.Extension)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return account, nil
+}
+
 // ListAccount accounts with filter
 func (svc *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.ListAccountReq)
+	req := new(protocloud.AccountListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -168,56 +357,41 @@ func (svc *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	accountResp, err := svc.dao.Account().List(cts.Kit, opt)
+	daoAccountResp, err := svc.dao.Account().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list account failed, err: %v, rid: %s", cts.Kit.Rid)
 		return nil, fmt.Errorf("list account failed, err: %v", err)
 	}
 	if req.Page.Count {
-		return &protocloud.ListAccountResult{Count: accountResp.Count}, nil
+		return &protocloud.AccountListResult{Count: daoAccountResp.Count}, nil
 	}
 
-	// TODO：改为批量查
-	for index, one := range accountResp.Details {
-		opt := &types.ListOption{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					&filter.AtomRule{
-						Field: "account_id",
-						Op:    filter.Equal.Factory(),
-						Value: one.ID,
-					},
-				},
+	details := make([]*protocloud.BaseAccountListReq, 0, len(daoAccountResp.Details))
+	for _, account := range daoAccountResp.Details {
+		details = append(details, &protocloud.BaseAccountListReq{
+			ID:     account.ID,
+			Vendor: enumor.Vendor(account.Vendor),
+			Spec: &protocore.AccountSpec{
+				Name:         account.Name,
+				Managers:     account.Managers,
+				DepartmentID: account.DepartmentID,
+				Type:         enumor.AccountType(account.Type),
+				Site:         enumor.AccountSiteType(account.Site),
+				SyncStatus:   enumor.AccountSyncStatus(account.SyncStatus),
+				Price:        account.Price,
+				PriceUnit:    account.PriceUnit,
+				Memo:         account.Memo,
 			},
-			// TODO：支持查询全量的Page
-			Page: &types.BasePage{
-				Start: 0,
-				Limit: types.DefaultMaxPageLimit,
-			},
-		}
+		})
 
-		relResp, err := svc.dao.AccountBizRel().List(cts.Kit, opt)
-		if err != nil {
-			return nil, err
-		}
-
-		bizIDs := make([]int64, len(relResp.Details))
-		for idx, rel := range relResp.Details {
-			bizIDs[idx] = rel.BkBizID
-		}
-
-		accountResp.Details[index].Attachment = &cloud.AccountAttachment{
-			BkBizIDs: bizIDs,
-		}
 	}
 
-	return &protocloud.ListAccountResult{Details: accountResp.Details}, nil
+	return &protocloud.AccountListResult{Details: details}, nil
 }
 
 // DeleteAccount account with filter.
 func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.DeleteAccountReq)
+	req := new(protocloud.AccountDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -258,7 +432,7 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{
 					Field: "account_id",
-					Op:    filter.Equal.Factory(),
+					Op:    filter.In.Factory(),
 					Value: delAccountIDs,
 				},
 			},
@@ -275,4 +449,47 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+// UpdateAccountBizRel update account biz rel.
+func (svc *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, error) {
+	accountID, err := cts.PathParameter("account_id").Uint64()
+	if err != nil {
+		return nil, errf.New(errf.InvalidParameter, err.Error())
+	}
+
+	req := new(protocloud.AccountBizRelUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		ftr := tools.GenerateIDFilter("account_id", accountID)
+		if err := svc.dao.AccountBizRel().DeleteWithTx(cts.Kit, txn, ftr); err != nil {
+			return nil, fmt.Errorf("delete account_biz_rels failed, err: %v", err)
+		}
+
+		rels := make([]*tablecloud.AccountBizRelTable, len(req.BkBizIDs))
+		for index, bizID := range req.BkBizIDs {
+			rels[index] = &tablecloud.AccountBizRelTable{
+				BkBizID:   bizID,
+				AccountID: accountID,
+				Creator:   cts.Kit.User,
+			}
+		}
+		if _, err := svc.dao.AccountBizRel().BatchCreateWithTx(cts.Kit, txn, rels); err != nil {
+			return nil, fmt.Errorf("batch create account_biz_rels failed, err: %v", err)
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, err
 }

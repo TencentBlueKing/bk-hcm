@@ -22,7 +22,7 @@ package meta
 // UserInfo user info for authorization use.
 type UserInfo struct {
 	// UserName the name of this user.
-	UserName string
+	UserName string `json:"user_name"`
 }
 
 // ResourceAttribute represent one iam resource
@@ -41,7 +41,7 @@ type Basic struct {
 	Action Action `json:"action"`
 
 	// ResourceID the instance id of this resource.
-	ResourceID uint32
+	ResourceID uint64
 }
 
 // Decision defines the authorization decision of a resource.
@@ -91,4 +91,18 @@ type IamResourceAttribute struct {
 // IamResourceAttributeValue defines the iam resource attribute value info.
 type IamResourceAttributeValue struct {
 	ID string `json:"id"`
+}
+
+// ListAuthResInput defines list user authorized resources input.
+type ListAuthResInput struct {
+	Type   ResourceType `json:"type"`
+	Action Action       `json:"action"`
+}
+
+// AuthorizedInstances defines the authorized resource info.
+type AuthorizedInstances struct {
+	// IDs is the authorized resource id list, only set when IsAny == false.
+	IDs []string `json:"ids"`
+	// IsAny == true means the user have all the permissions to access the resources.
+	IsAny bool `json:"isAny"`
 }

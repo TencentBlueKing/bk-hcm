@@ -12,6 +12,8 @@ import {
   Message,
 } from 'bkui-vue';
 
+import RenderDetailEdit from '@/components/RenderDetailEdit';
+
 import {
   useI18n,
 } from 'vue-i18n';
@@ -22,7 +24,7 @@ type Field = {
   name: string;
   value: string;
   link?: string;
-  copy?: string;
+  copy?: boolean;
   edit?: boolean;
 };
 
@@ -36,7 +38,9 @@ export default defineComponent({
     fields: Array as PropType<Field[]>,
   },
 
-  setup() {
+  emits: ['change'],
+
+  setup(_, { emit }) {
     const {
       t,
     } = useI18n();
@@ -67,16 +71,26 @@ export default defineComponent({
       }
     };
 
+    const handleEdit = (name: string, value: string) => {
+      emit('change', { name, value });
+    };
+
     return {
       handleCopy,
+      handleEdit,
     };
   },
 
   render() {
     // 渲染纯文本
     const renderTxt = (field: Field) => <span>{ field.value }</span>;
+
     // 渲染可编辑文本
-    const renderEditTxt = (field: Field) => <span>{ field.value }</span>;
+    const renderEditTxt = (field: Field) => <RenderDetailEdit
+      modelValue={field.value}
+      onChange={value => this.handleEdit(field.name, value)}
+    ></RenderDetailEdit>;
+
     // 渲染链接
     const renderLink = (field: Field) => <bk-link theme="primary" target="_blank" href={field.link}>{ field.value }</bk-link>;
 
@@ -97,7 +111,7 @@ export default defineComponent({
             <li class="info-list-item">
               { field.name }：{ renderField(field) }
               {
-                field.copy ? <copy class="info-item-copy ml5" onClick={() => this.handleCopy(field.copy)}></copy> : ''
+                field.copy ? <copy class="info-item-copy ml5" onClick={() => this.handleCopy(field.value)}></copy> : ''
               }
             </li>
           </>;

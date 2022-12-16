@@ -63,7 +63,7 @@ type Audit struct {
 	AccountID    uint64                   `db:"account_id" json:"account_id"`
 	TenantID     string                   `db:"tenant_id" json:"tenant_id"`
 	Operator     string                   `db:"operator" json:"operator"`
-	CreatedAt    *time.Time               `db:"created_at" json:"created_at,omitempty"`
+	CreatedAt    *time.Time               `db:"created_at" json:"created_at"`
 }
 
 // CreateValidate audit when created

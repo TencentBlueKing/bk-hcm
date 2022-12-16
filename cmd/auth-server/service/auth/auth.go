@@ -20,6 +20,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -81,6 +82,7 @@ func (a *Auth) InitAuthService(c *capability.Capability) {
 
 	h.Add("AuthorizeBatch", "POST", "/auth/authorize/batch", a.AuthorizeBatch)
 	h.Add("GetPermissionToApply", "POST", "/auth/find/permission_to_apply", a.GetPermissionToApply)
+	h.Add("ListAuthorizedInstances", "POST", "/auth/list/authorized_resource", a.ListAuthorizedInstances)
 
 	h.Load(c.WebService)
 }
@@ -216,7 +218,7 @@ func parseAttributesToBatchOptions(kt *kit.Kit, user *meta.UserInfo, resources .
 	ops := &client.AuthBatchOptions{
 		System: sys.SystemIDHCM,
 		Subject: client.Subject{
-			Type: "user",
+			Type: sys.UserSubjectType,
 			ID:   user.UserName,
 		},
 		Batch: authBatchArr,
@@ -389,4 +391,47 @@ func (a *Auth) getInstIDNameMap(kt *kit.Kit, resTypeIDsMap map[client.TypeID][]s
 
 	// TODO implement this
 	return make(map[string]string), nil
+}
+
+// ListAuthorizedInstances list authorized instances info.
+func (a *Auth) ListAuthorizedInstances(cts *rest.Contexts) (interface{}, error) {
+	req := new(authserver.ListAuthorizedInstancesReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	res := &meta.ResourceAttribute{
+		Basic: &meta.Basic{
+			Type:   req.Type,
+			Action: req.Action,
+		},
+	}
+	actionID, resources, err := AdaptAuthOptions(res)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resources) != 1 {
+		logs.Errorf("auth resources(%+v) length is invalid, req: %+v, rid: %s", resources, req, cts.Kit.Rid)
+		return nil, errors.New("auth resources length is not 1, cannot list authorized instances")
+	}
+
+	ops := &client.AuthOptions{
+		System: sys.SystemIDHCM,
+		Subject: client.Subject{
+			Type: sys.UserSubjectType,
+			ID:   req.User.UserName,
+		},
+		Action: client.Action{
+			ID: string(actionID),
+		},
+		Resources: resources,
+	}
+	authorizeList, err := a.auth.ListAuthorizedInstances(cts.Kit.Ctx, ops, resources[0].Type)
+	if err != nil {
+		logs.Errorf("list authorized instances failed, err: %v,  ops: %+v, req: %+v, rid: %s", err, ops, req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return authorizeList, nil
 }

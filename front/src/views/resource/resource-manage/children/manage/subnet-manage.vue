@@ -8,6 +8,10 @@ import {
   h,
   PropType,
 } from 'vue';
+import {
+  InfoBox,
+  Message,
+} from 'bkui-vue';
 
 import {
   useI18n,
@@ -15,6 +19,10 @@ import {
 import {
   useRouter,
 } from 'vue-router';
+import {
+  useResourceStore,
+} from '@/store/resource';
+
 import useSteps from '../../hooks/use-steps';
 import useQueryList from '../../hooks/use-query-list';
 
@@ -116,6 +124,8 @@ const {
 
 const router = useRouter();
 
+const resourceStore = useResourceStore();
+
 const {
   isShowDistribution,
   handleDistribution,
@@ -130,6 +140,23 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList(props, 'subnet');
+
+const handleDeleteSubnet = () => {
+  InfoBox({
+    title: '确认要删除？',
+    theme: 'danger',
+    onConfirm() {
+      return resourceStore
+        .delete('subnet', '123')
+        .then(() => {
+          Message({
+            theme: 'success',
+            message: '删除成功',
+          });
+        });
+    },
+  });
+};
 </script>
 
 <template>
@@ -147,6 +174,7 @@ const {
       <bk-button
         class="w100 ml10"
         theme="primary"
+        @click="handleDeleteSubnet"
       >
         {{ t('删除') }}
       </bk-button>

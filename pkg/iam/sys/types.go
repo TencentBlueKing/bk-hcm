@@ -98,3 +98,8 @@ const (
 	Edit   client.ActionType = "edit"
 	List   client.ActionType = "list"
 )
+
+const (
+	// UserSubjectType is user's iam authorized subject type.
+	UserSubjectType client.SubjectType = "user"
+)

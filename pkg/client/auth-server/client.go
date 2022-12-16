@@ -127,3 +127,24 @@ func (c *Client) GetPermissionToApply(ctx context.Context, h http.Header, reques
 
 	return resp.Data, err
 }
+
+// ListAuthorizedInstances list authorized instances.
+func (c *Client) ListAuthorizedInstances(ctx context.Context, h http.Header,
+	req *authserver.ListAuthorizedInstancesReq) (*meta.AuthorizedInstances, error) {
+
+	resp := new(authserver.ListAuthorizedInstancesResp)
+
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/auth/list/authorized_resource").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, err
+}
