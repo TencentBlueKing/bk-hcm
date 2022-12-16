@@ -24,6 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
+	protocore "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -42,7 +43,7 @@ func NewCloudAccountClient(client rest.ClientInterface) *AccountClient {
 }
 
 // CreateTCloud account.
-func (a *AccountClient) CreateTCloud(ctx context.Context, h http.Header, request *protocloud.CreateAccountReq[protocloud.CreateTCloudAccountExtensionReq]) (
+func (a *AccountClient) CreateTCloud(ctx context.Context, h http.Header, request *protocloud.AccountCreateReq[protocloud.TCloudAccountExtensionCreateReq]) (
 	*core.CreateResult, error,
 ) {
 	resp := new(core.CreateResp)
@@ -66,7 +67,7 @@ func (a *AccountClient) CreateTCloud(ctx context.Context, h http.Header, request
 }
 
 // UpdateAws ...
-func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID uint64, request *protocloud.UpdateAccountReq[protocloud.UpdateAwsAccountExtensionReq]) (
+func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID uint64, request *protocloud.AccountUpdateReq[protocloud.AwsAccountExtensionUpdateReq]) (
 	interface{}, error,
 ) {
 	resp := new(core.UpdateResp)
@@ -89,11 +90,28 @@ func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID 
 	return resp.Data, nil
 }
 
-// List ...
-func (a *AccountClient) List(ctx context.Context, h http.Header, request *protocloud.ListAccountReq) (
-	*protocloud.ListAccountResult, error,
+// GetTCloud ...
+func (a *AccountClient) GetTCloud(ctx context.Context, h http.Header, accountID uint64) (
+	*protocloud.AccountGetResult[protocore.TCloudAccountExtension], error,
 ) {
-	resp := new(protocloud.ListAccountResp)
+	resp := new(protocloud.AccountGetResp[protocore.TCloudAccountExtension])
+	err := a.client.Get().WithContext(ctx).SubResourcef("vendor/tcloud/account/%d", accountID).WithHeaders(h).Do().Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// List ...
+func (a *AccountClient) List(ctx context.Context, h http.Header, request *protocloud.AccountListReq) (
+	*protocloud.AccountListResult, error,
+) {
+	resp := new(protocloud.AccountListResp)
 
 	err := a.client.Post().
 		WithContext(ctx).
@@ -114,7 +132,7 @@ func (a *AccountClient) List(ctx context.Context, h http.Header, request *protoc
 }
 
 // Delete ...
-func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *protocloud.DeleteAccountReq) (
+func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *protocloud.AccountDeleteReq) (
 	interface{}, error,
 ) {
 	resp := new(core.DeleteResp)

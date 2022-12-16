@@ -53,10 +53,10 @@ type AccountAttachment struct {
 
 // TCloudAccountExtension define tcloud account extension.
 type TCloudAccountExtension struct {
-	MainAccountID string `json:"main_account_id"`
-	SubAccountID  string `json:"sub_account_id"`
-	SecretID      string `json:"secret_id"`
-	SecretKey     string `json:"secret_key"`
+	CloudMainAccountID string `json:"cloud_main_account_id"`
+	CloudSubAccountID  string `json:"cloud_sub_account_id"`
+	CloudSecretID      string `json:"cloud_secret_id"`
+	CloudSecretKey     string `json:"cloud_secret_key"`
 }
 
 // TCloudAccount ...
@@ -67,10 +67,10 @@ type TCloudAccount struct {
 
 // AwsAccountExtension define aws account extension.
 type AwsAccountExtension struct {
-	AccountID   string `json:"account_id"`
-	IamUsername string `json:"iam_username"`
-	SecretID    string `json:"secret_id"`
-	SecretKey   string `json:"secret_key"`
+	CloudAccountID   string `json:"cloud_account_id"`
+	CloudIamUsername string `json:"cloud_iam_username"`
+	CloudSecretID    string `json:"cloud_secret_id"`
+	CloudSecretKey   string `json:"cloud_secret_key"`
 }
 
 // AwsAccount ...
@@ -81,11 +81,11 @@ type AwsAccount struct {
 
 // HuaWeiAccountExtension define huawei account extension.
 type HuaWeiAccountExtension struct {
-	MainAccountName string `json:"main_account_name"`
-	SubAccountID    string `json:"sub_account_id"`
-	SubAccountName  string `json:"sub_account_name"`
-	SecretID        string `json:"secret_id"`
-	SecretKey       string `json:"secret_key"`
+	CloudMainAccountName string `json:"cloud_main_account_name"`
+	CloudSubAccountID    string `json:"cloud_sub_account_id"`
+	CloudSubAccountName  string `json:"cloud_sub_account_name"`
+	CloudSecretID        string `json:"cloud_secret_id"`
+	CloudSecretKey       string `json:"cloud_secret_key"`
 }
 
 // HuaWeiAccount ...
@@ -96,12 +96,12 @@ type HuaWeiAccount struct {
 
 // GcpAccountExtension define gcp account extension.
 type GcpAccountExtension struct {
-	ProjectID          string `json:"project_id"`
-	ProjectName        string `json:"project_name"`
-	ServiceAccountID   string `json:"service_account_cid"`
-	ServiceAccountName string `json:"service_account_name"`
-	ServiceSecretID    string `json:"service_secret_id"`
-	ServiceSecretKey   string `json:"service_secret_key"`
+	CloudProjectID          string `json:"cloud_project_id"`
+	CloudProjectName        string `json:"cloud_project_name"`
+	CloudServiceAccountID   string `json:"cloud_service_account_cid"`
+	CloudServiceAccountName string `json:"cloud_service_account_name"`
+	CloudServiceSecretID    string `json:"cloud_service_secret_id"`
+	CloudServiceSecretKey   string `json:"cloud_service_secret_key"`
 }
 
 // GcpAccount ...
@@ -112,11 +112,11 @@ type GcpAccount struct {
 
 // AzureAccountExtension ...
 type AzureAccountExtension struct {
-	TenantID         string `json:"tenant_id"`
-	SubscriptionID   string `json:"subscription_id"`
-	SubscriptionName string `json:"subscription_name"`
-	ApplicationID    string `json:"application_id"`
-	ApplicationName  string `json:"application_name"`
-	ClientID         string `json:"client_id"`
-	ClientSecret     string `json:"client_secret"`
+	CloudTenantID         string `json:"cloud_tenant_id"`
+	CloudSubscriptionID   string `json:"cloud_subscription_id"`
+	CloudSubscriptionName string `json:"cloud_subscription_name"`
+	CloudApplicationID    string `json:"cloud_application_id"`
+	CloudApplicationName  string `json:"cloud_application_name"`
+	CloudClientID         string `json:"cloud_client_id"`
+	CloudClientSecret     string `json:"cloud_client_secret"`
 }
