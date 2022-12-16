@@ -112,3 +112,27 @@ func (a *AccountClient) UpdateBizRel(ctx context.Context, h http.Header, account
 
 	return resp.Data, nil
 }
+
+// Delete security group.
+func (cli *SecurityGroupClient) Delete(ctx context.Context, h http.Header, request *protocloud.
+	SecurityGroupDeleteReq) error {
+
+	resp := new(core.DeleteResp)
+
+	err := cli.client.Delete().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/security_groups/batch").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}

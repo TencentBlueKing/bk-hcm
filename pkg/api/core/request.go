@@ -36,6 +36,17 @@ type CreateResult struct {
 	ID string `json:"id"`
 }
 
+// BatchCreateResp is a standard batch create operation http response.
+type BatchCreateResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *BatchCreateResult `json:"data"`
+}
+
+// BatchCreateResult is a standard batch create operation result.
+type BatchCreateResult struct {
+	IDs []string `json:"ids"`
+}
+
 // BatchDeleteReq is a standard batch delete operation http request.
 type BatchDeleteReq struct {
 	IDs []string `json:"ids"`

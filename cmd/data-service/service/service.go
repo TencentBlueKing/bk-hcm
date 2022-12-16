@@ -130,6 +130,11 @@ func (s *Service) apiSet() *restful.Container {
 	}
 
 	cloud.InitAccountService(cap)
+	cloud.InitSecurityGroupService(cap)
+	cloud.InitTCloudSGRuleService(cap)
+	cloud.InitAwsSGRuleService(cap)
+	cloud.InitHuaWeiSGRuleService(cap)
+	cloud.InitAzureSGRuleService(cap)
 	cloud.InitCloudService(cap)
 	auth.InitAuthService(cap)
 

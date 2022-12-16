@@ -43,6 +43,7 @@ func ContainersExpression(fieldName string, values interface{}) *filter.Expressi
 	}
 }
 
+// DefaultSqlWhereOption define sql where option.
 var DefaultSqlWhereOption = &filter.SQLWhereOption{
 	Priority: filter.Priority{"id"},
 }
