@@ -20,87 +20,56 @@
 package adaptor
 
 import (
-	"fmt"
-
 	"hcm/pkg/adaptor/aws"
 	"hcm/pkg/adaptor/azure"
 	"hcm/pkg/adaptor/gcp"
 	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/adaptor/tcloud"
-	"hcm/pkg/adaptor/types"
-	"hcm/pkg/adaptor/unknown"
-	"hcm/pkg/criteria/enumor"
 )
 
 // Adaptor holds all the supported operations by the adaptor.
-type Adaptor interface {
-	// Vendor returns the according vendor's factory.
-	Vendor(vendor enumor.Vendor) types.Factory
+type Adaptor struct {
+	tcloud *tcloud.TCloud
+	aws    *aws.Aws
+	gcp    *gcp.Gcp
+	azure  *azure.Azure
+	huawei *huawei.Huawei
 }
 
 // NewAdaptor create a adaptor instance.
-func NewAdaptor() (Adaptor, error) {
-	fm := types.NewFactoryManager()
-	if err := fm.RegisterVendor(enumor.TCloud, tcloud.NewTCloud()); err != nil {
-		return nil, err
-	}
-
-	if err := fm.RegisterVendor(enumor.AWS, aws.NewAws()); err != nil {
-		return nil, err
-	}
-
-	if err := fm.RegisterVendor(enumor.GCP, gcp.NewGcp()); err != nil {
-		return nil, err
-	}
-
-	if err := fm.RegisterVendor(enumor.HuaWei, huawei.NewHuawei()); err != nil {
-		return nil, err
-	}
-
-	if err := fm.RegisterVendor(enumor.Azure, azure.NewAzure()); err != nil {
-		return nil, err
-	}
-
-	opt := &types.NewProxyManagerOption{
-		TCloud: tcloud.NewTCloudProxy(),
-		Aws:    nil,
-		Gcp:    nil,
-		HuaWei: nil,
-		Azure:  nil,
-	}
-	pm, err := types.NewProxyManager(opt)
-	if err != nil {
-		return nil, fmt.Errorf("new proxy manger failed, err: %v", err)
-	}
-
-	ad := &adaptor{
-		fm: fm,
-		pm: pm,
+func NewAdaptor() (*Adaptor, error) {
+	ad := &Adaptor{
+		tcloud: tcloud.NewTCloud(),
+		aws:    aws.NewAws(),
+		huawei: huawei.NewHuawei(),
+		gcp:    gcp.NewGcp(),
+		azure:  azure.NewAzure(),
 	}
 
 	return ad, nil
 }
 
-type adaptor struct {
-	fm *types.FactoryManager
-	pm types.Proxy
+// TCloud returns tencent cloud operations.
+func (a *Adaptor) TCloud() *tcloud.TCloud {
+	return a.tcloud
 }
 
-// Vendor returns the according vendor's factory.
-func (ad *adaptor) Vendor(v enumor.Vendor) types.Factory {
-	if err := v.Validate(); err != nil {
-		return &unknown.Unknown{Vendor: v}
-	}
-
-	exist, f := ad.fm.Vendor(v)
-	if !exist {
-		return &unknown.Unknown{Vendor: v}
-	}
-
-	return f
+// Aws returns Aws operations.
+func (a *Adaptor) Aws() *aws.Aws {
+	return a.aws
 }
 
-// Proxy returns the cloud vendor proxy.
-func (ad *adaptor) Proxy() types.Proxy {
-	return ad.pm
+// Gcp returns Gcp operations.
+func (a *Adaptor) Gcp() *gcp.Gcp {
+	return a.gcp
+}
+
+// Azure returns Azure operations.
+func (a *Adaptor) Azure() *azure.Azure {
+	return a.azure
+}
+
+// HuaWei returns HuaWei operations.
+func (a *Adaptor) HuaWei() *huawei.Huawei {
+	return a.huawei
 }

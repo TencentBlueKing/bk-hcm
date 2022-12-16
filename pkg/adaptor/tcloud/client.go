@@ -20,32 +20,40 @@
 package tcloud
 
 import (
-	"hcm/pkg/adaptor/types"
-	"hcm/pkg/criteria/errf"
-
+	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
+
+	"hcm/pkg/adaptor/types"
 )
 
-// NewTCloud new tcloud.
-func NewTCloud() *TCloud {
-	prof := profile.NewClientProfile()
-	client := newClientSet(prof)
-	return &TCloud{clientSet: client}
+type clientSet struct {
+	profile *profile.ClientProfile
 }
 
-// TCloud is tencent cloud operator.
-type TCloud struct {
-	clientSet *clientSet
+func newClientSet(profile *profile.ClientProfile) *clientSet {
+	return &clientSet{
+		profile: profile,
+	}
 }
 
-func validateSecret(s *types.BaseSecret) error {
-	if s == nil {
-		return errf.New(errf.InvalidParameter, "secret is required")
+func (c *clientSet) camServiceClient(secret *types.BaseSecret, region string) (*cam.Client, error) {
+	credential := common.NewCredential(secret.CloudSecretID, secret.CloudSecretKey)
+	client, err := cam.NewClient(credential, region, c.profile)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := s.Validate(); err != nil {
-		return err
+	return client, nil
+}
+
+func (c *clientSet) cvmClient(secret *types.BaseSecret, region string) (*cvm.Client, error) {
+	credential := common.NewCredential(secret.CloudSecretKey, secret.CloudSecretID)
+	client, err := cvm.NewClient(credential, region, c.profile)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return client, nil
 }

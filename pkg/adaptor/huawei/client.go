@@ -17,29 +17,35 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package huawei
 
 import (
-	"fmt"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/config"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/region"
+	iam "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3"
 
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 )
 
-// AccountCheck check account authentication information and permissions.
-// TODO: 仅用于测试
-func (g *Gcp) AccountCheck(kt *kit.Kit, secret *types.GcpCredential) error {
-	client, err := g.clientSet.computeClient(kt, secret)
-	if err != nil {
-		return fmt.Errorf("init gcp client failed, err: %v", err)
-	}
+type clientSet struct{}
 
-	_, err = client.Regions.List(secret.CloudProjectID).Context(kt.Ctx).Do()
-	if err != nil {
-		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
+func newClientSet() *clientSet {
+	return new(clientSet)
+}
 
-	return nil
+func (c *clientSet) iamClient(secret *types.BaseSecret, region *region.Region) (*iam.IamClient, error) {
+	auth := basic.NewCredentialsBuilder().
+		WithAk(secret.CloudSecretID).
+		WithSk(secret.CloudSecretKey).
+		Build()
+
+	client := iam.NewIamClient(
+		iam.IamClientBuilder().
+			WithRegion(region).
+			WithCredential(auth).
+			WithHttpConfig(config.DefaultHttpConfig()).
+			Build())
+
+	return client, nil
 }

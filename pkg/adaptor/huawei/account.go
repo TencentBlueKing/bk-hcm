@@ -30,52 +30,22 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/region"
 )
 
-var _ types.AccountInterface = new(huawei)
-
-func validateAccountCheckOption(opt *types.AccountCheckOption) error {
-	if opt == nil {
-		return errf.New(errf.InvalidParameter, "account check option is required")
-	}
-
-	if opt.HuaWei == nil {
-		return errf.New(errf.InvalidParameter, "huawei account info is required")
-	}
-
-	if len(opt.HuaWei.MainAccountName) == 0 {
-		return errf.New(errf.InvalidParameter, "main account name is required")
-	}
-
-	if len(opt.HuaWei.SubAccountName) == 0 {
-		return errf.New(errf.InvalidParameter, "sub account name is required")
-	}
-
-	if len(opt.HuaWei.SubAccountCID) == 0 {
-		return errf.New(errf.InvalidParameter, "sub account cid is required")
-	}
-
-	if len(opt.HuaWei.IamUserCID) == 0 {
-		return errf.New(errf.InvalidParameter, "iam user cid is required")
-	}
-
-	if len(opt.HuaWei.IamUserName) == 0 {
-		return errf.New(errf.InvalidParameter, "iam user name is required")
-	}
-
-	return nil
-}
-
 // AccountCheck check account authentication information and permissions.
 // KeystoneListAuthDomains: https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_07_0001.html
-func (h *huawei) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.AccountCheckOption) error {
+func (h *Huawei) AccountCheck(kt *kit.Kit, secret *types.BaseSecret, opt *types.HuaWeiAccountInfo) error {
 	if err := validateSecret(secret); err != nil {
 		return err
 	}
 
-	if err := validateAccountCheckOption(opt); err != nil {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "account check option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
 		return err
 	}
 
-	client, err := h.iamClient(secret.HuaWei, region.AP_SOUTHEAST_1)
+	client, err := h.clientSet.iamClient(secret, region.AP_SOUTHEAST_1)
 	if err != nil {
 		return fmt.Errorf("init huawei client failed, err: %v", err)
 	}

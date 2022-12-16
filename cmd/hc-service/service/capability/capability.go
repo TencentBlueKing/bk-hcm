@@ -29,6 +29,6 @@ import (
 // Capability defines the service's capability
 type Capability struct {
 	WebService *restful.WebService
-	Adaptor    adaptor.Adaptor
+	Adaptor    *adaptor.Adaptor
 	ClientSet  *client.ClientSet
 }

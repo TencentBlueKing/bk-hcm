@@ -17,29 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package azure
 
 import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/kit"
-	"hcm/pkg/logs"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
-// AccountCheck check account authentication information and permissions.
-// TODO: 仅用于测试
-func (g *Gcp) AccountCheck(kt *kit.Kit, secret *types.GcpCredential) error {
-	client, err := g.clientSet.computeClient(kt, secret)
+type clientSet struct{}
+
+func newClientSet() *clientSet {
+	return new(clientSet)
+}
+
+func (c *clientSet) subscriptionClient(cred *types.AzureCredential) (*armsubscription.SubscriptionsClient, error) {
+	credential, err := azidentity.NewClientSecretCredential(
+		cred.CloudTenantID,
+		cred.CloudClientID,
+		cred.CloudClientSecret, nil)
 	if err != nil {
-		return fmt.Errorf("init gcp client failed, err: %v", err)
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
 	}
 
-	_, err = client.Regions.List(secret.CloudProjectID).Context(kt.Ctx).Do()
+	client, err := armsubscription.NewSubscriptionsClient(credential, nil)
 	if err != nil {
-		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return nil, fmt.Errorf("init azure vpn client failed, err: %v", err)
 	}
 
-	return nil
+	return client, nil
 }
