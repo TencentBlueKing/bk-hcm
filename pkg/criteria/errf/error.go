@@ -82,6 +82,16 @@ func New(code int32, message string) error {
 	return &ErrorF{Code: code, Message: message}
 }
 
+// NewFromErr create a new error from with error code and message.
+func NewFromErr(code int32, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	errorf := Error(err)
+	return &ErrorF{Code: code, Message: errorf.Message}
+}
+
 // Newf create an error with error code and formatted message.
 func Newf(code int32, format string, args ...interface{}) error {
 	return &ErrorF{Code: code, Message: fmt.Sprintf(format, args...)}

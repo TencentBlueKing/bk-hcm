@@ -53,11 +53,11 @@ type account struct {
 func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.TCloudAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	err := a.ad.TCloud().AccountCheck(
@@ -73,11 +73,11 @@ func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	err := a.ad.Aws().AccountCheck(
@@ -93,11 +93,11 @@ func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.HuaWeiAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	err := a.ad.HuaWei().AccountCheck(

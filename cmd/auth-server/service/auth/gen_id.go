@@ -20,7 +20,6 @@
 package auth
 
 import (
-	"fmt"
 	"strconv"
 
 	"hcm/pkg/criteria/errf"
@@ -63,7 +62,7 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 		// delete account is related to hcm account resource
 		return sys.AccountDelete, []client.Resource{res}, nil
 	default:
-		return "", nil, errf.New(errf.InvalidParameter, fmt.Sprintf("unsupported hcm action: %s", a.Basic.Action))
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
@@ -93,6 +92,6 @@ func genResourceResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 		// update resource is related to hcm account resource
 		return sys.ResourceManage, []client.Resource{res}, nil
 	default:
-		return "", nil, errf.New(errf.InvalidParameter, fmt.Sprintf("unsupported hcm action: %s", a.Basic.Action))
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }

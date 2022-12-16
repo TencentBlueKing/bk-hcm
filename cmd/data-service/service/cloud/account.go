@@ -72,7 +72,7 @@ type accountSvc struct {
 func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	switch vendor {
 	case enumor.TCloud:
@@ -93,17 +93,17 @@ func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 func createAccount[T protocloud.AccountExtensionCreateReq](vendor enumor.Vendor, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.AccountCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	accountID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		extensionJson, err := json.MarshalToString(req.Extension)
 		if err != nil {
-			return nil, errf.Newf(errf.InvalidParameter, err.Error())
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
 
 		account := &tablecloud.AccountTable{
@@ -158,12 +158,12 @@ func (svc *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	// TODO: Vendor和ID从Path 获取后并校验，可以通用化
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	accountID, err := strconv.ParseUint(cts.Request.PathParameter("account_id"), 10, 64)
 	if err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	switch vendor {
@@ -204,11 +204,11 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID uint64, svc
 	req := new(protocloud.AccountUpdateReq[T])
 
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	account := &tablecloud.AccountTable{
@@ -265,12 +265,12 @@ func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 	// TODO: Vendor和ID从Path 获取后并校验，可以通用化
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	accountID, err := strconv.ParseUint(cts.Request.PathParameter("account_id"), 10, 64)
 	if err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 查询账号信息
@@ -350,7 +350,7 @@ func (svc *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	opt := &types.ListOption{
@@ -397,7 +397,7 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	opt := &types.ListOption{
@@ -455,7 +455,7 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 func (svc *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, error) {
 	accountID, err := cts.PathParameter("account_id").Uint64()
 	if err != nil {
-		return nil, errf.New(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	req := new(protocloud.AccountBizRelUpdateReq)
@@ -464,7 +464,7 @@ func (svc *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, err
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
