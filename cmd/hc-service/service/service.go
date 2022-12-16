@@ -47,7 +47,7 @@ import (
 // Service do all the hc service's work
 type Service struct {
 	serve     *http.Server
-	adaptor   adaptor.Adaptor
+	adaptor   *adaptor.Adaptor
 	clientSet *client.ClientSet
 }
 

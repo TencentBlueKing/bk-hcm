@@ -22,56 +22,26 @@ package huawei
 import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/criteria/errf"
-
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/config"
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/region"
-	iam "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3"
 )
 
 // NewHuawei new huawei.
-func NewHuawei() types.Factory {
-	return new(huawei)
+func NewHuawei() *Huawei {
+	return &Huawei{
+		clientSet: newClientSet(),
+	}
 }
 
-// NewHuaweiProxy new huawei proxy.
-func NewHuaweiProxy() types.HuaWeiProxy {
-	return new(huawei)
+// Huawei is huawei operator.
+type Huawei struct {
+	clientSet *clientSet
 }
 
-var (
-	_ types.Factory     = new(huawei)
-	_ types.HuaWeiProxy = new(huawei)
-)
-
-type huawei struct{}
-
-func (h *huawei) iamClient(secret *types.BaseSecret, region *region.Region) (*iam.IamClient, error) {
-	auth := basic.NewCredentialsBuilder().
-		WithAk(secret.ID).
-		WithSk(secret.Key).
-		Build()
-
-	client := iam.NewIamClient(
-		iam.IamClientBuilder().
-			WithRegion(region).
-			WithCredential(auth).
-			WithHttpConfig(config.DefaultHttpConfig()).
-			Build())
-
-	return client, nil
-}
-
-func validateSecret(s *types.Secret) error {
+func validateSecret(s *types.BaseSecret) error {
 	if s == nil {
 		return errf.New(errf.InvalidParameter, "secret is required")
 	}
 
-	if s.HuaWei == nil {
-		return errf.New(errf.InvalidParameter, "huawei secret is required")
-	}
-
-	if err := s.HuaWei.Validate(); err != nil {
+	if err := s.Validate(); err != nil {
 		return err
 	}
 

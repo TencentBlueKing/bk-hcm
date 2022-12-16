@@ -17,28 +17,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package unknown
+package gcp
 
 import (
-	"fmt"
-
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
+
+	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/option"
 )
 
-var _ types.Factory = new(Unknown)
+type clientSet struct{}
 
-// Unknown inject all the unsupported vendor operations.
-type Unknown struct {
-	Vendor enumor.Vendor
+func newClientSet() *clientSet {
+	return new(clientSet)
 }
 
-// AccountCheck is unsupported
-func (u Unknown) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.AccountCheckOption) error {
-	return u.unsupportedError()
-}
+func (c *clientSet) computeClient(kt *kit.Kit, credential *types.GcpCredential) (*compute.Service, error) {
+	opt := option.WithCredentialsJSON(credential.Json)
+	service, err := compute.NewService(kt.Ctx, opt)
+	if err != nil {
+		return nil, err
+	}
 
-func (u Unknown) unsupportedError() error {
-	return fmt.Errorf("operation for %s is not supported for now", u.Vendor)
+	return service, nil
 }

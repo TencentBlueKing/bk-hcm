@@ -22,85 +22,26 @@ package aws
 import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/criteria/errf"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 // NewAws new aws.
-func NewAws() types.Factory {
-	return new(amazon)
+func NewAws() *Aws {
+	return &Aws{
+		clientSet: newClientSet(),
+	}
 }
 
-// NewAwsProxy new aws proxy.
-func NewAwsProxy() types.AwsProxy {
-	return new(amazon)
+// Aws is aws operator.
+type Aws struct {
+	clientSet *clientSet
 }
 
-var (
-	_ types.Factory  = new(amazon)
-	_ types.AwsProxy = new(amazon)
-)
-
-type amazon struct{}
-
-func (am *amazon) ec2Client(secret *types.BaseSecret, region string) (*ec2.EC2, error) {
-	cfg := &aws.Config{
-		Credentials: credentials.NewStaticCredentials(secret.ID, secret.Key, ""),
-		DisableSSL:  nil,
-		HTTPClient:  nil,
-		LogLevel:    nil,
-		Logger:      nil,
-		MaxRetries:  nil,
-		Retryer:     nil,
-		SleepDelay:  nil,
-	}
-
-	if len(region) != 0 {
-		cfg.Region = aws.String(region)
-	}
-
-	sess, err := session.NewSession(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return ec2.New(sess), nil
-}
-
-func (am *amazon) stsClient(secret *types.BaseSecret) (*sts.STS, error) {
-	cfg := &aws.Config{
-		Credentials: credentials.NewStaticCredentials(secret.ID, secret.Key, ""),
-		DisableSSL:  nil,
-		HTTPClient:  nil,
-		LogLevel:    nil,
-		Logger:      nil,
-		MaxRetries:  nil,
-		Retryer:     nil,
-		SleepDelay:  nil,
-	}
-
-	sess, err := session.NewSession(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return sts.New(sess), nil
-}
-
-func validateSecret(s *types.Secret) error {
+func validateSecret(s *types.BaseSecret) error {
 	if s == nil {
 		return errf.New(errf.InvalidParameter, "secret is required")
 	}
 
-	if s.Aws == nil {
-		return errf.New(errf.InvalidParameter, "aws secret is required")
-	}
-
-	if err := s.Aws.Validate(); err != nil {
+	if err := s.Validate(); err != nil {
 		return err
 	}
 
