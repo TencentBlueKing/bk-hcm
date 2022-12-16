@@ -2,6 +2,9 @@
 import type {
   PlainObject,
 } from '@/typings/resource';
+import {
+  Button,
+  InfoBox } from 'bkui-vue';
 
 import {
   ref,
@@ -106,6 +109,75 @@ const groupColumns = [
   {
     label: '操作',
     field: '',
+    render() {
+      return h(
+        'span',
+        {},
+        [
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              onClick(cell) {
+                console.log('111', cell);
+              },
+            },
+            [
+              '配置规则',
+            ],
+          ),
+          h(
+            Button,
+            {
+              class: 'ml10',
+              text: true,
+              theme: 'primary',
+              onClick() {
+                const haveAssResource = true;
+                const subTitle: any = ref('请注意删除安全组后无法恢复，请谨慎操作');
+                if (haveAssResource) {
+                  subTitle.value = h(
+                    Button, {
+                      text: true,
+                      theme: 'primary',
+                      onClick(cell) {
+                        console.log('111', cell);
+                      },
+                    },
+                    [
+                      '配置规则',
+                    ],
+                  );
+                }
+                InfoBox({
+                  title: '确认删除',
+                  subTitle: h(
+                    Button, {
+                      text: true,
+                      theme: 'primary',
+                      onClick(cell) {
+                        console.log('111', cell);
+                      },
+                    },
+                    [
+                      '配置规则',
+                    ],
+                  ),
+                  onConfirm() { },
+                  headerAlign: 'left',
+                  footerAlign: 'left',
+                  contentAlign: 'left',
+                });
+              },
+            },
+            [
+              '删除',
+            ],
+          ),
+        ],
+      );
+    },
   },
 ];
 const gcpColumns = [
