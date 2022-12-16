@@ -230,13 +230,8 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID uint64, svc
 			return nil, err
 		}
 
-		// 将新的Extension转为json数据
-		extensionJson, err := json.MarshalToString(req.Extension)
-		if err != nil {
-			return nil, fmt.Errorf("MarshalToString req extension failed, err: %v", err)
-		}
 		// 合并覆盖dbExtension
-		updatedExtension, err := json.UpdateMerge(extensionJson, string(dbAccount.Extension))
+		updatedExtension, err := json.UpdateMerge(req.Extension, string(dbAccount.Extension))
 		if err != nil {
 			return nil, fmt.Errorf("json UpdateMerge extension failed, err: %v", err)
 		}
