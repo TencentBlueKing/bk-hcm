@@ -136,7 +136,7 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 				logs.Errorf("restful request %s peek failed, err: %v, rid: %s", action.Alias, err, cts.Kit.Rid)
 
 				cts.WithStatusCode(http.StatusBadRequest)
-				cts.respError(errf.New(errf.InvalidParameter, err.Error()))
+				cts.respError(errf.NewFromErr(errf.InvalidParameter, err))
 				restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID, "app": cts.appID}).Inc()
 				return
 			}

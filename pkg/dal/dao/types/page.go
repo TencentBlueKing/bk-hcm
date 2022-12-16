@@ -126,7 +126,7 @@ type BasePage struct {
 func (bp BasePage) Validate(opt ...*PageOption) (err error) {
 	defer func() {
 		if err != nil {
-			err = errf.New(errf.InvalidParameter, err.Error())
+			err = errf.NewFromErr(errf.InvalidParameter, err)
 		}
 	}()
 
@@ -238,7 +238,7 @@ type SortOption struct {
 func (bp BasePage) SQLExpr(ps *PageSQLOption) (where string, err error) {
 	defer func() {
 		if err != nil {
-			err = errf.New(errf.InvalidParameter, err.Error())
+			err = errf.NewFromErr(errf.InvalidParameter, err)
 		}
 	}()
 

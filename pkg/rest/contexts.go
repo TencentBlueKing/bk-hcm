@@ -49,7 +49,7 @@ func (c *Contexts) DecodeInto(to interface{}) error {
 	err := json.NewDecoder(c.Request.Request.Body).Decode(to)
 	if err != nil {
 		logs.ErrorDepthf(1, "decode request body failed, err: %s, rid: %s", err.Error(), c.Kit.Rid)
-		return errf.New(errf.InvalidParameter, err.Error())
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	return nil
@@ -66,7 +66,7 @@ func (c *Contexts) DecodePathParamInto(name string, to interface{}) error {
 	err := json.Unmarshal([]byte(param), &to)
 	if err != nil {
 		logs.ErrorDepthf(1, "decode path parameter %s failed, err: %v, rid: %s", param, err, c.Kit.Rid)
-		return errf.New(errf.InvalidParameter, err.Error())
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	return nil
 }
@@ -84,7 +84,7 @@ func (p PathParam) Uint64() (uint64, error) {
 	value, err := strconv.ParseUint(string(p), 10, 64)
 	if err != nil {
 		logs.ErrorDepthf(1, "decode path parameter %s failed, err: %v", p, err)
-		return 0, errf.New(errf.InvalidParameter, err.Error())
+		return 0, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	return value, nil
 }
@@ -94,7 +94,7 @@ func (p PathParam) Int64() (int64, error) {
 	value, err := strconv.ParseInt(string(p), 10, 64)
 	if err != nil {
 		logs.ErrorDepthf(1, "decode path parameter %s failed, err: %v", p, err)
-		return 0, errf.New(errf.InvalidParameter, err.Error())
+		return 0, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	return value, nil
 }

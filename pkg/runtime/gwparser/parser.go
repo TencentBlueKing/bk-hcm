@@ -94,7 +94,7 @@ func (p *defaultParser) Parse(ctx context.Context, header http.Header) (*kit.Kit
 	}
 
 	if err := kt.Validate(); err != nil {
-		return nil, errf.New(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	return kt, nil
@@ -134,7 +134,7 @@ func (p *jwtParser) Parse(ctx context.Context, header http.Header) (*kit.Kit, er
 	}
 
 	if err := kt.Validate(); err != nil {
-		return nil, errf.New(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	return kt, nil
