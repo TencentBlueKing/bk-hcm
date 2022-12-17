@@ -20,10 +20,9 @@
 package huawei
 
 import (
-	"fmt"
+	"errors"
 
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
@@ -32,29 +31,24 @@ import (
 
 // AccountCheck check account authentication information and permissions.
 // KeystoneListAuthDomains: https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_07_0001.html
+// 账号概念 https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_17_0002.html
 func (h *Huawei) AccountCheck(kt *kit.Kit, secret *types.BaseSecret, opt *types.HuaWeiAccountInfo) error {
-	if err := validateSecret(secret); err != nil {
-		return err
-	}
-
-	if opt == nil {
-		return errf.New(errf.InvalidParameter, "account check option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return err
-	}
-
 	client, err := h.clientSet.iamClient(secret, region.AP_SOUTHEAST_1)
 	if err != nil {
-		return fmt.Errorf("init huawei client failed, err: %v", err)
-	}
-
-	_, err = client.KeystoneListAuthDomains(nil)
-	if err != nil {
-		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("init huawei client failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	return nil
+	domainsResp, err := client.KeystoneListAuthDomains(nil)
+	if err != nil {
+		logs.Errorf("KeystoneListAuthDomains failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	for _, domain := range *domainsResp.Domains {
+		if domain.Id == opt.CloudSubAccountID && domain.Name == opt.CloudSubAccountName {
+			return nil
+		}
+	}
+
+	return errors.New("SubAccount does not match SecretId/SecretKey")
 }

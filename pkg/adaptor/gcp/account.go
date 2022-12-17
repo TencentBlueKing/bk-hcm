@@ -20,24 +20,13 @@
 package gcp
 
 import (
-	"fmt"
-
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 )
 
 // AccountCheck check account authentication information and permissions.
-// TODO: 仅用于测试
 func (g *Gcp) AccountCheck(kt *kit.Kit, secret *types.GcpCredential) error {
-	client, err := g.clientSet.computeClient(kt, secret)
-	if err != nil {
-		return fmt.Errorf("init gcp client failed, err: %v", err)
-	}
-
-	_, err = client.Regions.List(secret.CloudProjectID).Context(kt.Ctx).Do()
-	if err != nil {
-		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
+	if _, err := g.GetProject(kt, secret); err != nil {
 		return err
 	}
 

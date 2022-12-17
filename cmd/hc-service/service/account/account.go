@@ -39,7 +39,7 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("TCloudAccountCheck", "POST", "/vendors/tcloud/accounts/check", a.TCloudAccountCheck)
 	h.Add("AwsAccountCheck", "POST", "/vendors/aws/accounts/check", a.AwsAccountCheck)
 	h.Add("HuaWeiAccountCheck", "POST", "/vendors/huawei/accounts/check", a.HuaWeiAccountCheck)
-	// h.Add("GcpAccountCheck", "POST", "/vendors/gcp/accounts/check", a.GcpAccountCheck)
+	h.Add("GcpAccountCheck", "POST", "/vendors/gcp/accounts/check", a.GcpAccountCheck)
 	// h.Add("AzureAccountCheck", "POST", "/vendors/azure/accounts/check", a.AzureAccountCheck)
 
 	h.Load(cap.WebService)
@@ -107,11 +107,26 @@ func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
 			CloudMainAccountName: req.CloudMainAccountName,
 			CloudSubAccountID:    req.CloudSubAccountID,
 			CloudSubAccountName:  req.CloudSubAccountName,
-			// TODO: 产品上华为云账号就没有录入IamUserID和IamUsername，是否必须呢？如果必须，需要产品支持
-			// IamUserCID: 	 req.IamUserID
-			// IamUserName:     req.CloudIamUsername,
+			CloudIamUserID:       req.CloudIamUserID,
+			CloudIamUserName:     req.CloudIamUserName,
 		},
 	)
+	return nil, err
+}
+
+// GcpAccountCheck ...
+func (a account) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.GcpAccountCheckReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	err := a.ad.Gcp().AccountCheck(cts.Kit,
+		&types.GcpCredential{CloudProjectID: req.CloudProjectID, Json: []byte(req.CloudServiceSecretKey)})
 
 	return nil, err
 }

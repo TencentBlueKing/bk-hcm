@@ -57,6 +57,8 @@ type HuaWeiAccountCheckReq struct {
 	CloudSubAccountName  string `json:"cloud_sub_account_name" validate:"required"`
 	CloudSecretID        string `json:"cloud_secret_id" validate:"required"`
 	CloudSecretKey       string `json:"cloud_secret_key" validate:"required"`
+	CloudIamUserID       string `json:"cloud_iam_user_id" validate:"required"`
+	CloudIamUserName     string `json:"cloud_iam_user_name" validate:"required"`
 }
 
 // Validate ...

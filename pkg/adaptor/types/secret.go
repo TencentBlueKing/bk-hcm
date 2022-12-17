@@ -48,19 +48,6 @@ type GcpCredential struct {
 	Json           []byte `json:"json,omitempty"`
 }
 
-// Validate GcpCredential.
-func (g GcpCredential) Validate() error {
-	if len(g.CloudProjectID) == 0 {
-		return errf.New(errf.InvalidParameter, "project id is required")
-	}
-
-	if len(g.Json) == 0 {
-		return errf.New(errf.InvalidParameter, "credential json is required")
-	}
-
-	return nil
-}
-
 // AzureCredential define azure credential information.
 type AzureCredential struct {
 	CloudTenantID       string `json:"cloud_tenant_id"`
