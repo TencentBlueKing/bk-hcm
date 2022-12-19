@@ -65,5 +65,5 @@ type HuaWeiAccountInfo struct {
 	CloudSubAccountID    string `json:"cloud_sub_account_id"`
 	CloudSubAccountName  string `json:"cloud_sub_account_name"`
 	CloudIamUserID       string `json:"cloud_iam_user_id"`
-	CloudIamUserName     string `json:"cloud_iam_user_name"`
+	CloudIamUsername     string `json:"cloud_iam_username"`
 }

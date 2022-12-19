@@ -58,7 +58,7 @@ type HuaWeiAccountCheckReq struct {
 	CloudSecretID        string `json:"cloud_secret_id" validate:"required"`
 	CloudSecretKey       string `json:"cloud_secret_key" validate:"required"`
 	CloudIamUserID       string `json:"cloud_iam_user_id" validate:"required"`
-	CloudIamUserName     string `json:"cloud_iam_user_name" validate:"required"`
+	CloudIamUsername     string `json:"cloud_iam_username" validate:"required"`
 }
 
 // Validate ...
@@ -68,12 +68,8 @@ func (r *HuaWeiAccountCheckReq) Validate() error {
 
 // GcpAccountCheckReq ...
 type GcpAccountCheckReq struct {
-	CloudProjectID          string `json:"cloud_project_id" validate:"required"`
-	CloudProjectName        string `json:"cloud_project_name" validate:"required"`
-	CloudServiceAccountID   string `json:"cloud_service_account_cid" validate:"required"`
-	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
-	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"required"`
-	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"required"`
+	CloudProjectID        string `json:"cloud_project_id" validate:"required"`
+	CloudServiceSecretKey string `json:"cloud_service_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -86,8 +82,6 @@ type AzureAccountCheckReq struct {
 	CloudTenantID         string `json:"cloud_tenant_id" validate:"required"`
 	CloudSubscriptionID   string `json:"cloud_subscription_id" validate:"required"`
 	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
-	CloudApplicationID    string `json:"cloud_application_id" validate:"required"`
-	CloudApplicationName  string `json:"cloud_application_name" validate:"required"`
 	CloudClientID         string `json:"cloud_client_id" validate:"required"`
 	CloudClientSecret     string `json:"cloud_client_secret" validate:"required"`
 }

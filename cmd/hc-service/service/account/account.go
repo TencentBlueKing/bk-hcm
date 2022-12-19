@@ -108,7 +108,7 @@ func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
 			CloudSubAccountID:    req.CloudSubAccountID,
 			CloudSubAccountName:  req.CloudSubAccountName,
 			CloudIamUserID:       req.CloudIamUserID,
-			CloudIamUserName:     req.CloudIamUserName,
+			CloudIamUsername:     req.CloudIamUsername,
 		},
 	)
 	return nil, err
