@@ -35,6 +35,10 @@ func newClientSet() *clientSet {
 }
 
 func (c *clientSet) iamClient(secret *types.BaseSecret, region *region.Region) (*iam.IamClient, error) {
+	if err := validateSecret(secret); err != nil {
+		return nil, err
+	}
+
 	auth := basic.NewCredentialsBuilder().
 		WithAk(secret.CloudSecretID).
 		WithSk(secret.CloudSecretKey).

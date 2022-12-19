@@ -48,44 +48,10 @@ type GcpCredential struct {
 	Json           []byte `json:"json,omitempty"`
 }
 
-// Validate GcpCredential.
-func (g GcpCredential) Validate() error {
-	if len(g.CloudProjectID) == 0 {
-		return errf.New(errf.InvalidParameter, "project id is required")
-	}
-
-	if len(g.Json) == 0 {
-		return errf.New(errf.InvalidParameter, "credential json is required")
-	}
-
-	return nil
-}
-
 // AzureCredential define azure credential information.
 type AzureCredential struct {
 	CloudTenantID       string `json:"cloud_tenant_id"`
 	CloudSubscriptionID string `json:"cloud_subscription_id"`
 	CloudClientID       string `json:"cloud_client_id"`
 	CloudClientSecret   string `json:"cloud_client_secret"`
-}
-
-// Validate AzureCredential.
-func (a AzureCredential) Validate() error {
-	if len(a.CloudTenantID) == 0 {
-		return errf.New(errf.InvalidParameter, "tenant id is required")
-	}
-
-	if len(a.CloudSubscriptionID) == 0 {
-		return errf.New(errf.InvalidParameter, "subscription id is required")
-	}
-
-	if len(a.CloudClientID) == 0 {
-		return errf.New(errf.InvalidParameter, "client id is required")
-	}
-
-	if len(a.CloudClientSecret) == 0 {
-		return errf.New(errf.InvalidParameter, "client secret is required")
-	}
-
-	return nil
 }

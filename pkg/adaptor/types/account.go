@@ -65,30 +65,5 @@ type HuaWeiAccountInfo struct {
 	CloudSubAccountID    string `json:"cloud_sub_account_id"`
 	CloudSubAccountName  string `json:"cloud_sub_account_name"`
 	CloudIamUserID       string `json:"cloud_iam_user_id"`
-	CloudIamUserName     string `json:"cloud_iam_user_name"`
-}
-
-// Validate HuaWeiAccountInfo
-func (h HuaWeiAccountInfo) Validate() error {
-	if len(h.CloudMainAccountName) == 0 {
-		return errf.New(errf.InvalidParameter, "main account name is required")
-	}
-
-	if len(h.CloudSubAccountName) == 0 {
-		return errf.New(errf.InvalidParameter, "sub account name is required")
-	}
-
-	if len(h.CloudSubAccountID) == 0 {
-		return errf.New(errf.InvalidParameter, "sub account cid is required")
-	}
-
-	if len(h.CloudIamUserID) == 0 {
-		return errf.New(errf.InvalidParameter, "iam user cid is required")
-	}
-
-	if len(h.CloudIamUserName) == 0 {
-		return errf.New(errf.InvalidParameter, "iam user name is required")
-	}
-
-	return nil
+	CloudIamUsername     string `json:"cloud_iam_username"`
 }

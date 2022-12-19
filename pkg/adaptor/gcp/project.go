@@ -22,14 +22,24 @@ package gcp
 import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+
+	"google.golang.org/api/compute/v1"
 )
 
-// AccountCheck check account authentication information and permissions.
-func (g *Gcp) AccountCheck(kt *kit.Kit, secret *types.GcpCredential) error {
-	// 通过调用获取项目信息接口来验证账号有效性(账号需要有 compute.projects.get 权限)
-	if _, err := g.getProject(kt, secret); err != nil {
-		return err
+// getProject 获取项目信息(账号需要有 compute.projects.get 权限)
+// 接口参考 https://cloud.google.com/compute/docs/reference/rest/v1/projects/get
+func (g *Gcp) getProject(kt *kit.Kit, secret *types.GcpCredential) (*compute.Project, error) {
+	client, err := g.clientSet.computeClient(kt, secret)
+	if err != nil {
+		logs.Errorf("init gcp client failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
-	return nil
+	project, err := client.Projects.Get(secret.CloudProjectID).Context(kt.Ctx).Do()
+	if err != nil {
+		logs.Errorf("get project %s failed, err: %v, rid: %s", secret.CloudProjectID, err, kt.Rid)
+		return nil, err
+	}
+	return project, nil
 }
