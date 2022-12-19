@@ -27,17 +27,16 @@ import (
 	"hcm/pkg/logs"
 )
 
-// AccountCheck check account authentication information and permissions.
-// TODO: 仅用于测试
+// AccountCheck ...
 func (az *Azure) AccountCheck(kt *kit.Kit, secret *types.AzureCredential) error {
 	client, err := az.clientSet.subscriptionClient(secret)
 	if err != nil {
 		return fmt.Errorf("init azure client failed, err: %v", err)
 	}
 
-	_, err = client.NewListLocationsPager(secret.CloudSubscriptionID, nil).NextPage(kt.Ctx)
+	_, err = client.Get(kt.Ctx, secret.CloudSubscriptionID, nil)
 	if err != nil {
-		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("gets details about subscription(%s), err: %v, rid: %s", secret.CloudSubscriptionID, err, kt.Rid)
 		return err
 	}
 
