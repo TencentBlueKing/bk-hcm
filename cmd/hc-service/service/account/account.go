@@ -40,7 +40,7 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("AwsAccountCheck", "POST", "/vendors/aws/accounts/check", a.AwsAccountCheck)
 	h.Add("HuaWeiAccountCheck", "POST", "/vendors/huawei/accounts/check", a.HuaWeiAccountCheck)
 	h.Add("GcpAccountCheck", "POST", "/vendors/gcp/accounts/check", a.GcpAccountCheck)
-	// h.Add("AzureAccountCheck", "POST", "/vendors/azure/accounts/check", a.AzureAccountCheck)
+	h.Add("AzureAccountCheck", "POST", "/vendors/azure/accounts/check", a.AzureAccountCheck)
 
 	h.Load(cap.WebService)
 }
@@ -127,6 +127,26 @@ func (a account) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 
 	err := a.ad.Gcp().AccountCheck(cts.Kit,
 		&types.GcpCredential{CloudProjectID: req.CloudProjectID, Json: []byte(req.CloudServiceSecretKey)})
+
+	return nil, err
+}
+
+// AzureAccountCheck ...
+func (a account) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AzureAccountCheckReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	err := a.ad.Azure().
+		AccountCheck(cts.Kit, &types.AzureCredential{
+			CloudTenantID: req.CloudTenantID, CloudSubscriptionID: req.CloudSubscriptionID,
+			CloudClientID: req.CloudClientID, CloudClientSecret: req.CloudClientSecret,
+		})
 
 	return nil, err
 }

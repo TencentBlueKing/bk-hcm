@@ -55,24 +55,3 @@ type AzureCredential struct {
 	CloudClientID       string `json:"cloud_client_id"`
 	CloudClientSecret   string `json:"cloud_client_secret"`
 }
-
-// Validate AzureCredential.
-func (a AzureCredential) Validate() error {
-	if len(a.CloudTenantID) == 0 {
-		return errf.New(errf.InvalidParameter, "tenant id is required")
-	}
-
-	if len(a.CloudSubscriptionID) == 0 {
-		return errf.New(errf.InvalidParameter, "subscription id is required")
-	}
-
-	if len(a.CloudClientID) == 0 {
-		return errf.New(errf.InvalidParameter, "client id is required")
-	}
-
-	if len(a.CloudClientSecret) == 0 {
-		return errf.New(errf.InvalidParameter, "client secret is required")
-	}
-
-	return nil
-}
