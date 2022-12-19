@@ -27,8 +27,9 @@ import (
 	"google.golang.org/api/compute/v1"
 )
 
-// GetProject 获取项目信息(账号需要有 compute.projects.get 权限)
-func (g *Gcp) GetProject(kt *kit.Kit, secret *types.GcpCredential) (*compute.Project, error) {
+// getProject 获取项目信息(账号需要有 compute.projects.get 权限)
+// 接口参考 https://cloud.google.com/compute/docs/reference/rest/v1/projects/get
+func (g *Gcp) getProject(kt *kit.Kit, secret *types.GcpCredential) (*compute.Project, error) {
 	client, err := g.clientSet.computeClient(kt, secret)
 	if err != nil {
 		logs.Errorf("init gcp client failed, err: %v, rid: %s", err, kt.Rid)

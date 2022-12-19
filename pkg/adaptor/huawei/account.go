@@ -44,7 +44,13 @@ func (h *Huawei) AccountCheck(kt *kit.Kit, secret *types.BaseSecret, opt *types.
 		logs.Errorf("KeystoneListAuthDomains failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
-	for _, domain := range *domainsResp.Domains {
+
+	domains := domainsResp.Domains
+	if domains == nil {
+		return errors.New("KeystoneListAuthDomains failed, err: no auth domains")
+	}
+
+	for _, domain := range *domains {
 		if domain.Id == opt.CloudSubAccountID && domain.Name == opt.CloudSubAccountName {
 			return nil
 		}

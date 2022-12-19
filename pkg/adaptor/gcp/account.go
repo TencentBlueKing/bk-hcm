@@ -27,7 +27,7 @@ import (
 // AccountCheck check account authentication information and permissions.
 func (g *Gcp) AccountCheck(kt *kit.Kit, secret *types.GcpCredential) error {
 	// 通过调用获取项目信息接口来验证账号有效性(账号需要有 compute.projects.get 权限)
-	if _, err := g.GetProject(kt, secret); err != nil {
+	if _, err := g.getProject(kt, secret); err != nil {
 		return err
 	}
 
