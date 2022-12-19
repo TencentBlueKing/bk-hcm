@@ -39,7 +39,6 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -184,7 +183,7 @@ func (svc *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 
 func getAccountFromTable(accountID uint64, svc *accountSvc, cts *rest.Contexts) (*tablecloud.AccountTable, error) {
 	opt := &types.ListOption{
-		Filter: tools.GenerateIDFilter("id", accountID),
+		Filter: tools.EqualExpression("id", accountID),
 		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
 	}
 	listAccountDetails, err := svc.dao.Account().List(cts.Kit, opt)
@@ -239,7 +238,7 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID uint64, svc
 		account.Extension = tabletype.JsonField(updatedExtension)
 	}
 
-	err := svc.dao.Account().Update(cts.Kit, tools.GenerateIDFilter("id", accountID), account)
+	err := svc.dao.Account().Update(cts.Kit, tools.EqualExpression("id", accountID), account)
 	if err != nil {
 		logs.Errorf("update account failed, err: %v, rid: %s", cts.Kit.Rid)
 		return nil, fmt.Errorf("update account failed, err: %v", err)
@@ -281,7 +280,7 @@ func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 
 	// 查询账号关联信息，这里只有业务
 	opt := &types.ListOption{
-		Filter: tools.GenerateIDFilter("account_id", accountID),
+		Filter: tools.EqualExpression("account_id", accountID),
 		// TODO：支持查询全量的Page
 		Page: &types.BasePage{Start: 0, Limit: types.DefaultMaxPageLimit},
 	}
@@ -423,21 +422,13 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.Account().DeleteWithTx(cts.Kit, txn, req.Filter); err != nil {
+		delAccountFilter := tools.ContainersExpression("id", delAccountIDs)
+		if err := svc.dao.Account().DeleteWithTx(cts.Kit, txn, delAccountFilter); err != nil {
 			return nil, err
 		}
 
-		ftr := &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "account_id",
-					Op:    filter.In.Factory(),
-					Value: delAccountIDs,
-				},
-			},
-		}
-		if err := svc.dao.AccountBizRel().DeleteWithTx(cts.Kit, txn, ftr); err != nil {
+		delAccountBizRelFilter := tools.ContainersExpression("account_id", delAccountIDs)
+		if err := svc.dao.AccountBizRel().DeleteWithTx(cts.Kit, txn, delAccountBizRelFilter); err != nil {
 			return nil, err
 		}
 
@@ -468,7 +459,7 @@ func (svc *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, err
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		ftr := tools.GenerateIDFilter("account_id", accountID)
+		ftr := tools.EqualExpression("account_id", accountID)
 		if err := svc.dao.AccountBizRel().DeleteWithTx(cts.Kit, txn, ftr); err != nil {
 			return nil, fmt.Errorf("delete account_biz_rels failed, err: %v", err)
 		}
