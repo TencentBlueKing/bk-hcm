@@ -6,7 +6,6 @@ import type {
 } from '@/typings/resource';
 import {
   Button,
-  InfoBox,
   Message } from 'bkui-vue';
 
 import {
@@ -25,6 +24,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 import useBusiness from '../../hooks/use-business';
+import useDeleteSecurity from '../../hooks/use-delete-security';
 import useQueryList from '../../hooks/use-query-list';
 import { CloudType } from '@/typings';
 
@@ -48,6 +48,12 @@ const {
   handleDistribution,
   ResourceBusiness,
 } = useBusiness();
+
+const {
+  isShowSecurity,
+  handleShowDeleteSecurity,
+  DeleteSecurity,
+} = useDeleteSecurity();
 
 
 const {
@@ -168,50 +174,7 @@ const groupColumns = [
               text: true,
               theme: 'primary',
               onClick() {
-                const haveAssResource = true;
-                const subTitle: any = ref('请注意删除安全组后无法恢复，请谨慎操作');
-                if (haveAssResource) {
-                  subTitle.value = h(
-                    'span', {},
-                    [
-                      h(
-                        'span', {},
-                        [
-                          '安全组被实例关联或者被其他安全组规则关联时不能直接删除，请删除关联关系后再进行删除',
-                        ],
-                      ),
-                      h(
-                        Button, {
-                          text: true,
-                          theme: 'primary',
-                          onClick(cell) {
-                            console.log('111', cell);
-                          },
-                        },
-                        [
-                          '查看这条配置规则',
-                        ],
-                      ),
-                    ],
-                  );
-                }
-                InfoBox({
-                  title: '确认删除',
-                  subTitle: subTitle.value,
-                  onConfirm() {
-                    return resourceStore
-                      .delete('security_groups', data.id)
-                      .then(() => {
-                        Message({
-                          theme: 'success',
-                          message: '删除成功',
-                        });
-                      });
-                  },
-                  headerAlign: 'left',
-                  footerAlign: 'left',
-                  contentAlign: 'left',
-                });
+                handleShowDeleteSecurity();
               },
             },
             [
@@ -321,7 +284,7 @@ const handleConfirm = () => {
     .then(() => {
       Message({
         theme: 'success',
-        message: '删除成功',
+        message: '分配成功',
       });
     });
 };
@@ -342,6 +305,7 @@ const handleConfirm = () => {
       <bk-button
         class="w100 ml10"
         theme="primary"
+        @click="handleShowDeleteSecurity"
       >
         {{ t('删除') }}
       </bk-button>
@@ -386,6 +350,10 @@ const handleConfirm = () => {
       @handle-confirm="handleConfirm"
       :title="t('安全组分配')"
     />
+
+    <delete-security
+      v-model:is-show="isShowSecurity"
+    ></delete-security>
   </bk-loading>
 </template>
 

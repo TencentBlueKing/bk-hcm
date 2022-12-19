@@ -85,3 +85,39 @@ export const getCookie = (name: string) => {
 export const deleteCookie = (name: string) => {
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
 };
+
+/**
+ * 对象转为 url query 字符串
+ *
+ * @param {*} param 要转的参数
+ * @param {string} key key
+ *
+ * @return {string} url query 字符串
+ */
+export function json2Query(param: any, key?: any) {
+  const mappingOperator = '=';
+  const separator = '&';
+  let paramStr = '';
+  if (
+    param instanceof String
+      || typeof param === 'string'
+      || param instanceof Number
+      || typeof param === 'number'
+      || param instanceof Boolean
+      || typeof param === 'boolean'
+  ) {
+    // @ts-ignore
+    paramStr += separator + key + mappingOperator + encodeURIComponent(param);
+  } else {
+    if (param) {
+      Object.keys(param).forEach((p) => {
+        const value = param[p];
+        const k = key === null || key === '' || key === undefined
+          ? p
+          : key + (param instanceof Array ? `[${p}]` : `.${p}`);
+        paramStr += separator + json2Query(value, k);
+      });
+    }
+  }
+  return paramStr.substr(1);
+}
