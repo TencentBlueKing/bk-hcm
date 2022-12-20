@@ -42,8 +42,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async testAccountConnection(data: any) {
-      return await http.post('/api/v1/cloud/accounts/check', data);
-      // return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/account/check`, data);
+      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/account/check`, data);
     },
     /**
      * @description: 更新时测试云账号连接
