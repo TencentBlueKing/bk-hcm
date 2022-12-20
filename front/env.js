@@ -5,10 +5,10 @@ if(process.env.NODE_ENV === 'development') {
 const config = {
     production: {
       NODE_ENV: JSON.stringify('production'),
-      publicPath:'{{ BK_STATIC_URL }}',// 静态资源路径前缀
+      publicPath:'/static/',// 静态资源路径前缀
       // publicPath:'/static/dist/',// 静态资源路径前缀
       outputDir: __dirname + '/dist',// 打包输出目录
-      assetsDir: '', // js/css/font资源归属目录
+      assetsDir: './', // js/css/font资源归属目录
       AJAX_URL_PREFIX: '',
     },
     open: {
