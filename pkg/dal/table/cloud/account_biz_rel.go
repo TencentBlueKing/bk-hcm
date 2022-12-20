@@ -35,7 +35,6 @@ var AccountBizRelColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, Acco
 var AccountBizRelColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
-	{Column: "tenant_id", NamedC: "tenant_id", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 }
@@ -43,12 +42,9 @@ var AccountBizRelColumnDescriptor = utils.ColumnDescriptors{
 // AccountBizRelTable 云账户与业务关联表
 type AccountBizRelTable struct {
 	// BkBizID 蓝鲸业务 ID
-	// TODO 这种外部的依赖ID是否需要预留为string？
 	BkBizID int64 `db:"bk_biz_id"`
 	// AccountID 云账号主键 ID
 	AccountID string `db:"account_id"`
-	// TenantID 租户ID
-	TenantID string `db:"tenant_id"`
 	// Creator 创建者
 	Creator string `db:"creator"`
 	// CreatedAt 创建时间

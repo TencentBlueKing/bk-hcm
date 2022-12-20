@@ -28,8 +28,8 @@ type Vendor string
 func (v Vendor) Validate() error {
 	switch v {
 	case TCloud:
-	case AWS:
-	case GCP:
+	case Aws:
+	case Gcp:
 	case Azure:
 	case HuaWei:
 	default:
@@ -42,10 +42,10 @@ func (v Vendor) Validate() error {
 const (
 	// TCloud is tencent cloud
 	TCloud Vendor = "tcloud"
-	// AWS is amazon cloud
-	AWS Vendor = "aws"
-	// GCP is the Google Cloud Platform
-	GCP Vendor = "gcp"
+	// Aws is amazon cloud
+	Aws Vendor = "aws"
+	// Gcp is the Google Cloud Platform
+	Gcp Vendor = "gcp"
 	// Azure is microsoft azure cloud.
 	Azure Vendor = "azure"
 	// HuaWei is hua wei cloud.

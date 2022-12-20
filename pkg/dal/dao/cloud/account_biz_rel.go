@@ -55,13 +55,6 @@ func (a AccountBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cl
 		return errf.New(errf.InvalidParameter, "account_biz_rel is required")
 	}
 
-	for index := range rels {
-		if err := rels[index].InsertValidate(); err != nil {
-			return err
-		}
-		rels[index].TenantID = kt.TenantID
-	}
-
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AccountBizRelTable,
 		cloud.AccountBizRelColumns.ColumnExpr(), cloud.AccountBizRelColumns.ColonNameExpr())
 
@@ -84,7 +77,7 @@ func (a AccountBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListA
 		return nil, err
 	}
 
-	whereExpr, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption(kt.TenantID))
+	whereExpr, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +117,7 @@ func (a AccountBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *fil
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption(kt.TenantID))
+	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}

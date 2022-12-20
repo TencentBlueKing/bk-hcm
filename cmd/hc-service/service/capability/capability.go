@@ -20,7 +20,7 @@
 package capability
 
 import (
-	"hcm/pkg/adaptor"
+	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/client"
 
 	"github.com/emicklei/go-restful/v3"
@@ -28,7 +28,7 @@ import (
 
 // Capability defines the service's capability
 type Capability struct {
-	WebService *restful.WebService
-	Adaptor    *adaptor.Adaptor
-	ClientSet  *client.ClientSet
+	WebService   *restful.WebService
+	ClientSet    *client.ClientSet
+	CloudAdaptor *cloudclient.CloudAdaptorClient
 }

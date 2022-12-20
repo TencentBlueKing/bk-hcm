@@ -61,7 +61,6 @@ func InitAccountService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
-// TODO 考虑废弃 accountSvc 模式
 type accountSvc struct {
 	dao dao.Set
 }
@@ -75,11 +74,11 @@ func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 	switch vendor {
 	case enumor.TCloud:
 		return createAccount[protocloud.TCloudAccountExtensionCreateReq](vendor, svc, cts)
-	case enumor.AWS:
+	case enumor.Aws:
 		return createAccount[protocloud.AwsAccountExtensionCreateReq](vendor, svc, cts)
 	case enumor.HuaWei:
 		return createAccount[protocloud.HuaWeiAccountExtensionCreateReq](vendor, svc, cts)
-	case enumor.GCP:
+	case enumor.Gcp:
 		return createAccount[protocloud.GcpAccountExtensionCreateReq](vendor, svc, cts)
 	case enumor.Azure:
 		return createAccount[protocloud.AzureAccountExtensionCreateReq](vendor, svc, cts)
@@ -164,11 +163,11 @@ func (svc *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	switch vendor {
 	case enumor.TCloud:
 		return updateAccount[protocloud.TCloudAccountExtensionUpdateReq](accountID, svc, cts)
-	case enumor.AWS:
+	case enumor.Aws:
 		return updateAccount[protocloud.AwsAccountExtensionUpdateReq](accountID, svc, cts)
 	case enumor.HuaWei:
 		return updateAccount[protocloud.HuaWeiAccountExtensionUpdateReq](accountID, svc, cts)
-	case enumor.GCP:
+	case enumor.Gcp:
 		return updateAccount[protocloud.GcpAccountExtensionUpdateReq](accountID, svc, cts)
 	case enumor.Azure:
 		return updateAccount[protocloud.AzureAccountExtensionUpdateReq](accountID, svc, cts)
@@ -189,7 +188,7 @@ func getAccountFromTable(accountID string, svc *accountSvc, cts *rest.Contexts) 
 	}
 	details := listAccountDetails.Details
 	if len(details) != 1 {
-		return nil, fmt.Errorf("list account failed, account(id=%d) don't exist", accountID)
+		return nil, fmt.Errorf("list account failed, account(id=%s) don't exist", accountID)
 	}
 
 	return details[0], nil
@@ -244,7 +243,7 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID string, svc
 }
 
 func convertToAccountResult[T protocloud.AccountExtensionGetResp](baseAccount *protocore.BaseAccount, dbExtension tabletype.JsonField) (*protocloud.AccountGetResult[T], error) {
-	var extension *T
+	extension := new(T)
 	err := json.UnmarshalFromString(string(dbExtension), extension)
 	if err != nil {
 		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
@@ -317,11 +316,11 @@ func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 	switch enumor.Vendor(dbAccount.Vendor) {
 	case enumor.TCloud:
 		account, err = convertToAccountResult[protocore.TCloudAccountExtension](baseAccount, dbAccount.Extension)
-	case enumor.AWS:
+	case enumor.Aws:
 		account, err = convertToAccountResult[protocore.AwsAccountExtension](baseAccount, dbAccount.Extension)
 	case enumor.HuaWei:
 		account, err = convertToAccountResult[protocore.HuaWeiAccountExtension](baseAccount, dbAccount.Extension)
-	case enumor.GCP:
+	case enumor.Gcp:
 		account, err = convertToAccountResult[protocore.GcpAccountExtension](baseAccount, dbAccount.Extension)
 	case enumor.Azure:
 		account, err = convertToAccountResult[protocore.AzureAccountExtension](baseAccount, dbAccount.Extension)

@@ -1,0 +1,156 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+package cloudadaptor
+
+import (
+	"errors"
+	"fmt"
+
+	"hcm/pkg/adaptor/types"
+	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/kit"
+)
+
+// SecretClient used to get secret by account id from data-service.
+type SecretClient struct {
+	data *dataservice.Client
+}
+
+// NewSecretClient new secret client that used to get secret info from data service.
+func NewSecretClient(dataCli *dataservice.Client) *SecretClient {
+	return &SecretClient{data: dataCli}
+}
+
+// TCloudSecret get tcloud secret and validate secret.
+func (cli *SecretClient) TCloudSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, error) {
+	account, err := cli.data.CloudAccount().GetTCloudAccount(kt.Ctx, kt.Header(), accountID)
+	if err != nil {
+		return nil, fmt.Errorf("get tcloud account failed, err: %v", err)
+	}
+
+	if account.Extension == nil {
+		return nil, errors.New("tcloud account extension is nil")
+	}
+
+	secret := &types.BaseSecret{
+		CloudSecretID:  account.Extension.CloudSecretID,
+		CloudSecretKey: account.Extension.CloudSecretKey,
+	}
+
+	if err := secret.Validate(); err != nil {
+		return nil, err
+	}
+
+	return secret, nil
+}
+
+// AwsSecret get aws secret and validate secret.
+func (cli *SecretClient) AwsSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, error) {
+	account, err := cli.data.CloudAccount().GetAwsAccount(kt.Ctx, kt.Header(), accountID)
+	if err != nil {
+		return nil, fmt.Errorf("get aws account failed, err: %v", err)
+	}
+
+	if account.Extension == nil {
+		return nil, errors.New("aws account extension is nil")
+	}
+
+	secret := &types.BaseSecret{
+		CloudSecretID:  account.Extension.CloudSecretID,
+		CloudSecretKey: account.Extension.CloudSecretKey,
+	}
+
+	if err := secret.Validate(); err != nil {
+		return nil, err
+	}
+
+	return secret, nil
+}
+
+// HuaWeiSecret get huawei secret and validate secret.
+func (cli *SecretClient) HuaWeiSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, error) {
+	account, err := cli.data.CloudAccount().GetHuaWeiAccount(kt.Ctx, kt.Header(), accountID)
+	if err != nil {
+		return nil, fmt.Errorf("get huawei account failed, err: %v", err)
+	}
+
+	if account.Extension == nil {
+		return nil, errors.New("huawei account extension is nil")
+	}
+
+	secret := &types.BaseSecret{
+		CloudSecretID:  account.Extension.CloudSecretID,
+		CloudSecretKey: account.Extension.CloudSecretKey,
+	}
+
+	if err := secret.Validate(); err != nil {
+		return nil, err
+	}
+
+	return secret, nil
+}
+
+// AzureCredential get azure credential and validate credential.
+func (cli *SecretClient) AzureCredential(kt *kit.Kit, accountID string) (*types.AzureCredential, error) {
+	account, err := cli.data.CloudAccount().GetAzureAccount(kt.Ctx, kt.Header(), accountID)
+	if err != nil {
+		return nil, fmt.Errorf("get azure account failed, err: %v", err)
+	}
+
+	if account.Extension == nil {
+		return nil, errors.New("azure account extension is nil")
+	}
+
+	cred := &types.AzureCredential{
+		CloudTenantID:       account.Extension.CloudTenantID,
+		CloudSubscriptionID: account.Extension.CloudSubscriptionID,
+		CloudClientID:       account.Extension.CloudClientID,
+		CloudClientSecret:   account.Extension.CloudClientSecret,
+	}
+
+	if err := cred.Validate(); err != nil {
+		return nil, err
+	}
+
+	return cred, nil
+}
+
+// GcpCredential get gcp credential and validate credential.
+func (cli *SecretClient) GcpCredential(kt *kit.Kit, accountID string) (*types.GcpCredential, error) {
+	account, err := cli.data.CloudAccount().GetGcpAccount(kt.Ctx, kt.Header(), accountID)
+	if err != nil {
+		return nil, fmt.Errorf("get gcp account failed, err: %v", err)
+	}
+
+	if account.Extension == nil {
+		return nil, errors.New("gcp account extension is nil")
+	}
+
+	cred := &types.GcpCredential{
+		CloudProjectID: account.Extension.CloudProjectID,
+		Json:           []byte(account.Extension.CloudServiceSecretKey),
+	}
+
+	if err := cred.Validate(); err != nil {
+		return nil, err
+	}
+
+	return cred, nil
+}

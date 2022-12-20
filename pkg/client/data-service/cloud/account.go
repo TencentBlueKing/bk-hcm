@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -92,13 +93,54 @@ func (a *AccountClient) UpdateAws(ctx context.Context, h http.Header, accountID 
 	return resp.Data, nil
 }
 
-// GetTCloud ...
-func (a *AccountClient) GetTCloud(ctx context.Context, h http.Header, accountID uint64) (
-	*protocloud.AccountGetResult[protocore.TCloudAccountExtension], error,
-) {
-	resp := new(protocloud.AccountGetResp[protocore.TCloudAccountExtension])
-	err := a.client.Get().WithContext(ctx).SubResourcef("vendors/tcloud/accounts/%d",
-		accountID).WithHeaders(h).Do().Into(resp)
+// -------------------------- Get --------------------------
+
+// GetTCloudAccount get tcloud account detail.
+func (a *AccountClient) GetTCloudAccount(ctx context.Context, h http.Header, id string) (
+	*protocloud.AccountGetResult[protocore.TCloudAccountExtension], error) {
+
+	return getAccount[protocore.TCloudAccountExtension](ctx, h, a, id, enumor.TCloud)
+}
+
+// GetAwsAccount get aws account detail.
+func (a *AccountClient) GetAwsAccount(ctx context.Context, h http.Header, id string) (
+	*protocloud.AccountGetResult[protocore.AwsAccountExtension], error) {
+
+	return getAccount[protocore.AwsAccountExtension](ctx, h, a, id, enumor.Aws)
+}
+
+// GetHuaWeiAccount get huawei account detail.
+func (a *AccountClient) GetHuaWeiAccount(ctx context.Context, h http.Header, id string) (
+	*protocloud.AccountGetResult[protocore.HuaWeiAccountExtension], error) {
+
+	return getAccount[protocore.HuaWeiAccountExtension](ctx, h, a, id, enumor.HuaWei)
+}
+
+// GetAzureAccount get azure account detail.
+func (a *AccountClient) GetAzureAccount(ctx context.Context, h http.Header, id string) (
+	*protocloud.AccountGetResult[protocore.AzureAccountExtension], error) {
+
+	return getAccount[protocore.AzureAccountExtension](ctx, h, a, id, enumor.Azure)
+}
+
+// GetGcpAccount get gcp account detail.
+func (a *AccountClient) GetGcpAccount(ctx context.Context, h http.Header, id string) (
+	*protocloud.AccountGetResult[protocore.GcpAccountExtension], error) {
+
+	return getAccount[protocore.GcpAccountExtension](ctx, h, a, id, enumor.Gcp)
+}
+
+func getAccount[T protocloud.AccountExtensionGetResp](ctx context.Context, h http.Header, cli *AccountClient,
+	id string, vendor enumor.Vendor) (*protocloud.AccountGetResult[T], error) {
+
+	resp := new(protocloud.AccountGetResp[T])
+
+	err := cli.client.Get().
+		WithContext(ctx).
+		SubResourcef("vendors/%s/accounts/%s", vendor, id).
+		WithHeaders(h).
+		Do().
+		Into(resp)
 	if err != nil {
 		return nil, err
 	}
