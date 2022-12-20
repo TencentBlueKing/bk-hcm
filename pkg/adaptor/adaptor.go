@@ -25,51 +25,38 @@ import (
 	"hcm/pkg/adaptor/gcp"
 	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/adaptor/tcloud"
+	"hcm/pkg/adaptor/types"
 )
 
 // Adaptor holds all the supported operations by the adaptor.
-type Adaptor struct {
-	tcloud *tcloud.TCloud
-	aws    *aws.Aws
-	gcp    *gcp.Gcp
-	azure  *azure.Azure
-	huawei *huawei.Huawei
-}
+type Adaptor struct{}
 
-// NewAdaptor create a adaptor instance.
-func NewAdaptor() (*Adaptor, error) {
-	ad := &Adaptor{
-		tcloud: tcloud.NewTCloud(),
-		aws:    aws.NewAws(),
-		huawei: huawei.NewHuawei(),
-		gcp:    gcp.NewGcp(),
-		azure:  azure.NewAzure(),
-	}
-
-	return ad, nil
+// New a Adaptor pointer
+func New() *Adaptor {
+	return &Adaptor{}
 }
 
 // TCloud returns tencent cloud operations.
-func (a *Adaptor) TCloud() *tcloud.TCloud {
-	return a.tcloud
+func (a *Adaptor) TCloud(s *types.BaseSecret) (*tcloud.TCloud, error) {
+	return tcloud.NewTCloud(s)
 }
 
 // Aws returns Aws operations.
-func (a *Adaptor) Aws() *aws.Aws {
-	return a.aws
+func (a *Adaptor) Aws(s *types.BaseSecret) (*aws.Aws, error) {
+	return aws.NewAws(s)
 }
 
 // Gcp returns Gcp operations.
-func (a *Adaptor) Gcp() *gcp.Gcp {
-	return a.gcp
+func (a *Adaptor) Gcp(credential *types.GcpCredential) (*gcp.Gcp, error) {
+	return gcp.NewGcp(credential)
 }
 
 // Azure returns Azure operations.
-func (a *Adaptor) Azure() *azure.Azure {
-	return a.azure
+func (a *Adaptor) Azure(credential *types.AzureCredential) (*azure.Azure, error) {
+	return azure.NewAzure(credential)
 }
 
 // HuaWei returns HuaWei operations.
-func (a *Adaptor) HuaWei() *huawei.Huawei {
-	return a.huawei
+func (a *Adaptor) HuaWei(s *types.BaseSecret) (*huawei.Huawei, error) {
+	return huawei.NewHuawei(s)
 }

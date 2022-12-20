@@ -28,26 +28,24 @@ import (
 	"hcm/pkg/adaptor/types"
 )
 
-type clientSet struct{}
-
-func newClientSet() *clientSet {
-	return new(clientSet)
+type clientSet struct {
+	credentials *basic.Credentials
 }
 
-func (c *clientSet) iamClient(secret *types.BaseSecret, region *region.Region) (*iam.IamClient, error) {
-	if err := validateSecret(secret); err != nil {
-		return nil, err
+func newClientSet(secret *types.BaseSecret) *clientSet {
+	return &clientSet{
+		credentials: basic.NewCredentialsBuilder().
+			WithAk(secret.CloudSecretID).
+			WithSk(secret.CloudSecretKey).
+			Build(),
 	}
+}
 
-	auth := basic.NewCredentialsBuilder().
-		WithAk(secret.CloudSecretID).
-		WithSk(secret.CloudSecretKey).
-		Build()
-
+func (c *clientSet) iamClient(region *region.Region) (*iam.IamClient, error) {
 	client := iam.NewIamClient(
 		iam.IamClientBuilder().
 			WithRegion(region).
-			WithCredential(auth).
+			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 

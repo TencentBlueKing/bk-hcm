@@ -19,7 +19,10 @@
 
 package types
 
-import "hcm/pkg/criteria/errf"
+import (
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
+)
 
 // BaseSecret defines the hybrid cloud's base secret info.
 type BaseSecret struct {
@@ -44,14 +47,24 @@ func (b BaseSecret) Validate() error {
 
 // GcpCredential define gcp credential information.
 type GcpCredential struct {
-	CloudProjectID string `json:"cloud_project_id"`
-	Json           []byte `json:"json,omitempty"`
+	CloudProjectID string `json:"cloud_project_id" validate:"required"`
+	Json           []byte `json:"json,omitempty" validate:"required"`
+}
+
+// Validate GcpCredential
+func (g *GcpCredential) Validate() error {
+	return validator.Validate.Struct(g)
 }
 
 // AzureCredential define azure credential information.
 type AzureCredential struct {
-	CloudTenantID       string `json:"cloud_tenant_id"`
-	CloudSubscriptionID string `json:"cloud_subscription_id"`
-	CloudClientID       string `json:"cloud_client_id"`
-	CloudClientSecret   string `json:"cloud_client_secret"`
+	CloudTenantID       string `json:"cloud_tenant_id" validate:"required"`
+	CloudSubscriptionID string `json:"cloud_subscription_id" validate:"required"`
+	CloudClientID       string `json:"cloud_client_id" validate:"required"`
+	CloudClientSecret   string `json:"cloud_client_secret" validate:"required"`
+}
+
+// Validate AzureCredential
+func (a *AzureCredential) Validate() error {
+	return validator.Validate.Struct(a)
 }

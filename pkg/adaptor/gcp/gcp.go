@@ -19,11 +19,14 @@
 
 package gcp
 
+import "hcm/pkg/adaptor/types"
+
 // NewGcp new gcp.
-func NewGcp() *Gcp {
-	return &Gcp{
-		clientSet: newClientSet(),
+func NewGcp(credential *types.GcpCredential) (*Gcp, error) {
+	if err := credential.Validate(); err != nil {
+		return nil, err
 	}
+	return &Gcp{clientSet: newClientSet(credential)}, nil
 }
 
 // Gcp is hcp operator.

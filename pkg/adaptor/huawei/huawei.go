@@ -25,10 +25,11 @@ import (
 )
 
 // NewHuawei new huawei.
-func NewHuawei() *Huawei {
-	return &Huawei{
-		clientSet: newClientSet(),
+func NewHuawei(s *types.BaseSecret) (*Huawei, error) {
+	if err := validateSecret(s); err != nil {
+		return nil, err
 	}
+	return &Huawei{clientSet: newClientSet(s)}, nil
 }
 
 // Huawei is huawei operator.

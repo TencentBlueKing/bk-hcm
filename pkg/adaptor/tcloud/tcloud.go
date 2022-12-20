@@ -27,10 +27,13 @@ import (
 )
 
 // NewTCloud new tcloud.
-func NewTCloud() *TCloud {
+func NewTCloud(s *types.BaseSecret) (*TCloud, error) {
 	prof := profile.NewClientProfile()
-	client := newClientSet(prof)
-	return &TCloud{clientSet: client}
+	if err := validateSecret(s); err != nil {
+		return nil, err
+	}
+
+	return &TCloud{clientSet: newClientSet(s, prof)}, nil
 }
 
 // TCloud is tencent cloud operator.

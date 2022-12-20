@@ -34,11 +34,7 @@ import (
 
 // AccountCheck check account authentication information(account id and iam user name) and permissions.
 // GetCallerIdentity: https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html
-func (a *Aws) AccountCheck(kt *kit.Kit, secret *types.BaseSecret, opt *types.AwsAccountInfo) error {
-	if err := validateSecret(secret); err != nil {
-		return err
-	}
-
+func (a *Aws) AccountCheck(kt *kit.Kit, opt *types.AwsAccountInfo) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "account check option is required")
 	}
@@ -47,7 +43,7 @@ func (a *Aws) AccountCheck(kt *kit.Kit, secret *types.BaseSecret, opt *types.Aws
 		return err
 	}
 
-	client, err := a.clientSet.stsClient(secret)
+	client, err := a.clientSet.stsClient()
 	if err != nil {
 		return fmt.Errorf("init aws client failed, err: %v", err)
 	}

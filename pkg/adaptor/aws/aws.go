@@ -25,10 +25,12 @@ import (
 )
 
 // NewAws new aws.
-func NewAws() *Aws {
-	return &Aws{
-		clientSet: newClientSet(),
+func NewAws(s *types.BaseSecret) (*Aws, error) {
+	if err := validateSecret(s); err != nil {
+		return nil, err
 	}
+
+	return &Aws{clientSet: newClientSet(s)}, nil
 }
 
 // Aws is aws operator.

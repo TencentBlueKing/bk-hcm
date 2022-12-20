@@ -29,15 +29,17 @@ import (
 	"hcm/pkg/adaptor/types"
 )
 
-type clientSet struct{}
-
-func newClientSet() *clientSet {
-	return new(clientSet)
+type clientSet struct {
+	credentials *credentials.Credentials
 }
 
-func (c *clientSet) ec2Client(secret *types.BaseSecret, region string) (*ec2.EC2, error) {
+func newClientSet(secret *types.BaseSecret) *clientSet {
+	return &clientSet{credentials.NewStaticCredentials(secret.CloudSecretID, secret.CloudSecretKey, "")}
+}
+
+func (c *clientSet) ec2Client(region string) (*ec2.EC2, error) {
 	cfg := &aws.Config{
-		Credentials: credentials.NewStaticCredentials(secret.CloudSecretID, secret.CloudSecretKey, ""),
+		Credentials: c.credentials,
 		DisableSSL:  nil,
 		HTTPClient:  nil,
 		LogLevel:    nil,
@@ -59,9 +61,9 @@ func (c *clientSet) ec2Client(secret *types.BaseSecret, region string) (*ec2.EC2
 	return ec2.New(sess), nil
 }
 
-func (c *clientSet) stsClient(secret *types.BaseSecret) (*sts.STS, error) {
+func (c *clientSet) stsClient() (*sts.STS, error) {
 	cfg := &aws.Config{
-		Credentials: credentials.NewStaticCredentials(secret.CloudSecretID, secret.CloudSecretKey, ""),
+		Credentials: c.credentials,
 		DisableSSL:  nil,
 		HTTPClient:  nil,
 		LogLevel:    nil,
