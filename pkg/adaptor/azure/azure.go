@@ -19,11 +19,14 @@
 
 package azure
 
+import "hcm/pkg/adaptor/types"
+
 // NewAzure new azure.
-func NewAzure() *Azure {
-	return &Azure{
-		clientSet: newClientSet(),
+func NewAzure(credential *types.AzureCredential) (*Azure, error) {
+	if err := credential.Validate(); err != nil {
+		return nil, err
 	}
+	return &Azure{clientSet: newClientSet(credential)}, nil
 }
 
 // Azure is azure operator.

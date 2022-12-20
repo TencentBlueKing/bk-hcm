@@ -32,8 +32,8 @@ import (
 // AccountCheck check account authentication information and permissions.
 // KeystoneListAuthDomains: https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_07_0001.html
 // 账号概念 https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_17_0002.html
-func (h *Huawei) AccountCheck(kt *kit.Kit, secret *types.BaseSecret, opt *types.HuaWeiAccountInfo) error {
-	client, err := h.clientSet.iamClient(secret, region.AP_SOUTHEAST_1)
+func (h *Huawei) AccountCheck(kt *kit.Kit, opt *types.HuaWeiAccountInfo) error {
+	client, err := h.clientSet.iamClient(region.AP_SOUTHEAST_1)
 	if err != nil {
 		logs.Errorf("init huawei client failed, err: %v, rid: %s", err, kt.Rid)
 		return err

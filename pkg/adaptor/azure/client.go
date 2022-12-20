@@ -28,17 +28,19 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
-type clientSet struct{}
-
-func newClientSet() *clientSet {
-	return new(clientSet)
+type clientSet struct {
+	credential *types.AzureCredential
 }
 
-func (c *clientSet) subscriptionClient(cred *types.AzureCredential) (*armsubscription.SubscriptionsClient, error) {
+func newClientSet(credential *types.AzureCredential) *clientSet {
+	return &clientSet{credential}
+}
+
+func (c *clientSet) subscriptionClient() (*armsubscription.SubscriptionsClient, error) {
 	credential, err := azidentity.NewClientSecretCredential(
-		cred.CloudTenantID,
-		cred.CloudClientID,
-		cred.CloudClientSecret, nil)
+		c.credential.CloudTenantID,
+		c.credential.CloudClientID,
+		c.credential.CloudClientSecret, nil)
 	if err != nil {
 		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
 	}

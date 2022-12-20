@@ -29,18 +29,19 @@ import (
 )
 
 type clientSet struct {
-	profile *profile.ClientProfile
+	credential *common.Credential
+	profile    *profile.ClientProfile
 }
 
-func newClientSet(profile *profile.ClientProfile) *clientSet {
+func newClientSet(s *types.BaseSecret, profile *profile.ClientProfile) *clientSet {
 	return &clientSet{
-		profile: profile,
+		credential: common.NewCredential(s.CloudSecretID, s.CloudSecretKey),
+		profile:    profile,
 	}
 }
 
-func (c *clientSet) camServiceClient(secret *types.BaseSecret, region string) (*cam.Client, error) {
-	credential := common.NewCredential(secret.CloudSecretID, secret.CloudSecretKey)
-	client, err := cam.NewClient(credential, region, c.profile)
+func (c *clientSet) camServiceClient(region string) (*cam.Client, error) {
+	client, err := cam.NewClient(c.credential, region, c.profile)
 	if err != nil {
 		return nil, err
 	}
@@ -48,9 +49,8 @@ func (c *clientSet) camServiceClient(secret *types.BaseSecret, region string) (*
 	return client, nil
 }
 
-func (c *clientSet) cvmClient(secret *types.BaseSecret, region string) (*cvm.Client, error) {
-	credential := common.NewCredential(secret.CloudSecretKey, secret.CloudSecretID)
-	client, err := cvm.NewClient(credential, region, c.profile)
+func (c *clientSet) cvmClient(region string) (*cvm.Client, error) {
+	client, err := cvm.NewClient(c.credential, region, c.profile)
 	if err != nil {
 		return nil, err
 	}

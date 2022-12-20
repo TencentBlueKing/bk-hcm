@@ -32,11 +32,7 @@ import (
 
 // AccountCheck check account authentication information and permissions.
 // reference: https://cloud.tencent.com/document/api/598/70416
-func (t *TCloud) AccountCheck(kt *kit.Kit, secret *types.BaseSecret, opt *types.TCloudAccountInfo) error {
-	if err := validateSecret(secret); err != nil {
-		return err
-	}
-
+func (t *TCloud) AccountCheck(kt *kit.Kit, opt *types.TCloudAccountInfo) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "account check option is required")
 	}
@@ -45,7 +41,7 @@ func (t *TCloud) AccountCheck(kt *kit.Kit, secret *types.BaseSecret, opt *types.
 		return err
 	}
 
-	camClient, err := t.clientSet.camServiceClient(secret, "")
+	camClient, err := t.clientSet.camServiceClient("")
 	if err != nil {
 		return fmt.Errorf("new cam client failed, err: %v", err)
 	}

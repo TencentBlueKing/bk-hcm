@@ -20,7 +20,6 @@
 package gcp
 
 import (
-	"hcm/pkg/adaptor/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
@@ -29,16 +28,17 @@ import (
 
 // getProject 获取项目信息(账号需要有 compute.projects.get 权限)
 // 接口参考 https://cloud.google.com/compute/docs/reference/rest/v1/projects/get
-func (g *Gcp) getProject(kt *kit.Kit, secret *types.GcpCredential) (*compute.Project, error) {
-	client, err := g.clientSet.computeClient(kt, secret)
+func (g *Gcp) getProject(kt *kit.Kit) (*compute.Project, error) {
+	client, err := g.clientSet.computeClient(kt)
 	if err != nil {
 		logs.Errorf("init gcp client failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	project, err := client.Projects.Get(secret.CloudProjectID).Context(kt.Ctx).Do()
+	cloudProjectID := g.clientSet.credential.CloudProjectID
+	project, err := client.Projects.Get(cloudProjectID).Context(kt.Ctx).Do()
 	if err != nil {
-		logs.Errorf("get project %s failed, err: %v, rid: %s", secret.CloudProjectID, err, kt.Rid)
+		logs.Errorf("get project %s failed, err: %v, rid: %s", cloudProjectID, err, kt.Rid)
 		return nil, err
 	}
 	return project, nil

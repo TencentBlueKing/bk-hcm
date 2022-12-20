@@ -55,14 +55,14 @@ func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := a.ad.TCloud().AccountCheck(
+	client, _ := a.ad.TCloud(&types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey})
+
+	err := client.AccountCheck(
 		cts.Kit,
-		&types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey},
 		&types.TCloudAccountInfo{CloudMainAccountID: req.CloudMainAccountID, CloudSubAccountID: req.CloudSubAccountID},
 	)
 
@@ -80,9 +80,10 @@ func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := a.ad.Aws().AccountCheck(
+	client, _ := a.ad.Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey})
+
+	err := client.AccountCheck(
 		cts.Kit,
-		&types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey},
 		&types.AwsAccountInfo{CloudAccountID: req.CloudAccountID, CloudIamUsername: req.CloudIamUsername},
 	)
 
@@ -95,22 +96,19 @@ func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := a.ad.HuaWei().AccountCheck(
-		cts.Kit,
-		&types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey},
-		&types.HuaWeiAccountInfo{
-			CloudMainAccountName: req.CloudMainAccountName,
-			CloudSubAccountID:    req.CloudSubAccountID,
-			CloudSubAccountName:  req.CloudSubAccountName,
-			CloudIamUserID:       req.CloudIamUserID,
-			CloudIamUsername:     req.CloudIamUsername,
-		},
-	)
+	client, _ := a.ad.HuaWei(&types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey})
+
+	err := client.AccountCheck(cts.Kit, &types.HuaWeiAccountInfo{
+		CloudMainAccountName: req.CloudMainAccountName,
+		CloudSubAccountID:    req.CloudSubAccountID,
+		CloudSubAccountName:  req.CloudSubAccountName,
+		CloudIamUserID:       req.CloudIamUserID,
+		CloudIamUsername:     req.CloudIamUsername,
+	})
 	return nil, err
 }
 
@@ -124,9 +122,11 @@ func (a account) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	if err := req.Validate(); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
+	client, _ := a.ad.Gcp(
+		&types.GcpCredential{CloudProjectID: req.CloudProjectID, Json: []byte(req.CloudServiceSecretKey)},
+	)
 
-	err := a.ad.Gcp().AccountCheck(cts.Kit,
-		&types.GcpCredential{CloudProjectID: req.CloudProjectID, Json: []byte(req.CloudServiceSecretKey)})
+	err := client.AccountCheck(cts.Kit)
 
 	return nil, err
 }
@@ -142,11 +142,12 @@ func (a account) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	err := a.ad.Azure().
-		AccountCheck(cts.Kit, &types.AzureCredential{
-			CloudTenantID: req.CloudTenantID, CloudSubscriptionID: req.CloudSubscriptionID,
-			CloudClientID: req.CloudClientID, CloudClientSecret: req.CloudClientSecret,
-		})
+	client, _ := a.ad.Azure(&types.AzureCredential{
+		CloudTenantID: req.CloudTenantID, CloudSubscriptionID: req.CloudSubscriptionID,
+		CloudClientID: req.CloudClientID, CloudClientSecret: req.CloudClientSecret,
+	})
+
+	err := client.AccountCheck(cts.Kit)
 
 	return nil, err
 }

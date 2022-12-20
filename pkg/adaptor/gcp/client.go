@@ -27,14 +27,16 @@ import (
 	"google.golang.org/api/option"
 )
 
-type clientSet struct{}
-
-func newClientSet() *clientSet {
-	return new(clientSet)
+type clientSet struct {
+	credential *types.GcpCredential
 }
 
-func (c *clientSet) computeClient(kt *kit.Kit, credential *types.GcpCredential) (*compute.Service, error) {
-	opt := option.WithCredentialsJSON(credential.Json)
+func newClientSet(credential *types.GcpCredential) *clientSet {
+	return &clientSet{credential}
+}
+
+func (c *clientSet) computeClient(kt *kit.Kit) (*compute.Service, error) {
+	opt := option.WithCredentialsJSON(c.credential.Json)
 	service, err := compute.NewService(kt.Ctx, opt)
 	if err != nil {
 		return nil, err

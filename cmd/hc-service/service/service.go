@@ -59,14 +59,8 @@ func NewService(dis serviced.Discover) (*Service, error) {
 	}
 
 	cliSet := client.NewHCServiceClientSet(cli, dis)
-
-	ad, err := adaptor.NewAdaptor()
-	if err != nil {
-		return nil, fmt.Errorf("new adaptor failed, err: %v", err)
-	}
-
 	svr := &Service{
-		adaptor:   ad,
+		adaptor:   new(adaptor.Adaptor),
 		clientSet: cliSet,
 	}
 
@@ -75,7 +69,6 @@ func NewService(dis serviced.Discover) (*Service, error) {
 
 // ListenAndServeRest listen and serve the restful server
 func (s *Service) ListenAndServeRest() error {
-
 	root := http.NewServeMux()
 	root.HandleFunc("/", s.apiSet().ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
@@ -149,7 +142,6 @@ func (s *Service) apiSet() *restful.Container {
 
 // Healthz check whether the service is healthy.
 func (s *Service) Healthz(w http.ResponseWriter, req *http.Request) {
-
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
 	return
 }
