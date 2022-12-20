@@ -6,7 +6,7 @@ import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE } from '@/constants';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import OrganizationSelect from '@/components/OrganizationSelect';
-import { useAccountStore } from '@/store';
+import { useAccountStore, useUserStore } from '@/store';
 const { FormItem } = Form;
 const { Option } = Select;
 const { Group } = Radio;
@@ -15,6 +15,7 @@ export default defineComponent({
   setup() {
     const { t } = useI18n();
     const accountStore = useAccountStore();
+    const useUser = useUserStore();
     const router = useRouter();
 
     const initProjectModel: ProjectModel = {
@@ -22,7 +23,7 @@ export default defineComponent({
       type: 'resource',   // 账号类型
       name: '', // 名称
       vendor: '', // 云厂商
-      managers: ['poloohuang'], // 责任人
+      managers: [useUser.username], // 责任人
       departmentId: [],   // 组织架构
       bizIds: '',   // 使用业务
       memo: '',     // 备注
@@ -36,7 +37,7 @@ export default defineComponent({
     onMounted(async () => {
       console.log(122133333);
       /* 获取业务列表接口 */
-      // getBusinessList();
+      getBusinessList();
     });
     const formRef = ref<InstanceType<typeof Form>>(null);
     const noUser = ref<Boolean>(false);
@@ -52,15 +53,15 @@ export default defineComponent({
     const businessList = reactive({
       list: BUSINESS_TYPE,
     });    // 业务列表
-    // const getBusinessList = async () => {
-    //   try {
-    //     const res = await accountStore.getBizList();
-    //     console.log(res);
-    //     businessList.list = res?.data || BUSINESS_TYPE;
-    //   } catch (error) {
-    //     console.log(error);
-    //   }
-    // };
+    const getBusinessList = async () => {
+      try {
+        const res = await accountStore.getBizList();
+        console.log(res);
+        businessList.list = res?.data || BUSINESS_TYPE;
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
 
     const check = (val: any): boolean => {

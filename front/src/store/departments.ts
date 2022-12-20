@@ -2,7 +2,7 @@ import http from '@/http';
 // import { Department } from '@/typings';
 import { defineStore } from 'pinia';
 import QueryString from 'qs';
-const { BK_PLAT_HOST } = window.PROJECT_CONFIG;
+const { BK_COMPONENT_API_URL } = window.PROJECT_CONFIG;
 
 export const useDepartmentStore = defineStore({
   id: 'departmentStore',
@@ -11,7 +11,7 @@ export const useDepartmentStore = defineStore({
   }),
   actions: {
     async fetchDepartMents(field: string, lookups: number) {
-      const prefix = `//${BK_PLAT_HOST}/api/c/compapi/v2/usermanage/fe_list_departments/`;
+      const prefix = `//${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_list_departments/`;
       const params = {
         app_code: 'magicbox',
         no_page: true,
