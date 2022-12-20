@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/cloud"
@@ -56,10 +57,11 @@ func (a AccountBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cl
 		return nil, errf.New(errf.InvalidParameter, "account_biz_rel is required")
 	}
 
-	for _, rel := range rels {
-		if err := rel.InsertValidate(); err != nil {
+	for index := range rels {
+		if err := rels[index].InsertValidate(); err != nil {
 			return nil, err
 		}
+		rels[index].TenantID = kt.TenantID
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AccountBizRelTable,
@@ -84,7 +86,7 @@ func (a AccountBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListA
 		return nil, err
 	}
 
-	whereExpr, err := opt.Filter.SQLWhereExpr(types.DefaultSqlWhereOption)
+	whereExpr, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption(kt.TenantID))
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +126,7 @@ func (a AccountBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *fil
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(types.DefaultSqlWhereOption)
+	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption(kt.TenantID))
 	if err != nil {
 		return err
 	}
