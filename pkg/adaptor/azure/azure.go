@@ -19,45 +19,17 @@
 
 package azure
 
-import (
-	"fmt"
-
-	"hcm/pkg/adaptor/types"
-
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
-)
+import "hcm/pkg/adaptor/types"
 
 // NewAzure new azure.
-func NewAzure() types.Factory {
-	return new(azure)
+func NewAzure(credential *types.AzureCredential) (*Azure, error) {
+	if err := credential.Validate(); err != nil {
+		return nil, err
+	}
+	return &Azure{clientSet: newClientSet(credential)}, nil
 }
 
-// NewAzureProxy new azure proxy.
-func NewAzureProxy() types.AzureProxy {
-	return new(azure)
-}
-
-var (
-	_ types.Factory    = new(azure)
-	_ types.AzureProxy = new(azure)
-)
-
-type azure struct{}
-
-func (az *azure) subscriptionClient(credential *types.AzureCredential) (*armsubscription.SubscriptionsClient, error) {
-	cred, err := azidentity.NewClientSecretCredential(
-		credential.TenantID,
-		credential.ClientID,
-		credential.ClientSecret, nil)
-	if err != nil {
-		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
-	}
-
-	client, err := armsubscription.NewSubscriptionsClient(cred, nil)
-	if err != nil {
-		return nil, fmt.Errorf("init azure vpn client failed, err: %v", err)
-	}
-
-	return client, nil
+// Azure is azure operator.
+type Azure struct {
+	clientSet *clientSet
 }

@@ -49,7 +49,7 @@ func (p *proxy) restFilter() restful.FilterFunction {
 		body, err := peekRequest(r)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
-			fmt.Fprintf(w, errf.Error(errf.New(errf.Unknown, err.Error())).Error())
+			fmt.Fprintf(w, errf.NewFromErr(errf.Unknown, err).Error())
 			logs.Errorf("peek request failed, err: %v, rid: %s", err, kt.Rid)
 			return
 		}

@@ -92,7 +92,7 @@ func (s *Service) restFilter() restful.FilterFunction {
 func iamRequestFilter(sysCli *sys.Sys, w http.ResponseWriter, req *http.Request) error {
 	isAuthorized, err := checkRequestAuthorization(sysCli, req)
 	if err != nil {
-		return errf.New(http.StatusInternalServerError, err.Error())
+		return errf.NewFromErr(http.StatusInternalServerError, err)
 	}
 	if !isAuthorized {
 		return errf.New(types.UnauthorizedErrorCode, "authorized failed")

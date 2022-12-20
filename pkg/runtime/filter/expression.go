@@ -200,7 +200,7 @@ func (exp Expression) Validate(opts ...*ExprOption) (hitErr error) {
 func (exp *Expression) SQLWhereExpr(opt *SQLWhereOption) (where string, err error) {
 	defer func() {
 		if err != nil {
-			err = errf.New(errf.InvalidParameter, err.Error())
+			err = errf.NewFromErr(errf.InvalidParameter, err)
 		}
 	}()
 

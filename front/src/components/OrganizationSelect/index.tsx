@@ -116,6 +116,10 @@ export default defineComponent({
       updateValue(newIds);
     }
 
+    const handleToggle = (val: Boolean) => {
+      console.log('val', val);
+    };
+
     return () => (
       <Select
         {...ctx.attrs}
@@ -126,6 +130,7 @@ export default defineComponent({
         multiple={false}
         loading={isLoading.value}
         onChange={handleChange}
+        onToggle={handleToggle}
       >
         <Tree
           node-key="id"

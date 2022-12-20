@@ -136,7 +136,7 @@ export default defineComponent({
         case 'huawei':
           insertFormData = [
             {
-              label: t('主账号'),
+              label: t('主账号名'),
               required: true,
               property: 'account',
               component: () => <Input class="w450" placeholder={t('请输入主账号')} v-model={projectModel.account} />,
@@ -284,13 +284,13 @@ export default defineComponent({
         case 'tcloud':
           insertFormData = [
             {
-              label: t('主账号'),
+              label: t('主账号ID'),
               required: true,
               property: 'mainAccount',
               component: () => <Input class="w450" placeholder={t('请输入主账号')} v-model={projectModel.mainAccount} />,
             },
             {
-              label: t('子账号'),
+              label: t('子账号ID'),
               required: projectModel.type === 'resource',
               property: 'subAccount',
               component: () => <Input class="w450" placeholder={t('请输入子账号')} v-model={projectModel.subAccount} />,
@@ -312,7 +312,7 @@ export default defineComponent({
         default:
           insertFormData = [
             {
-              label: t('主账号'),
+              label: t('主账号名'),
               required: true,
               property: 'masterAccount',
               component: () => <Input class="w450" placeholder={t('请输入主账号')} v-model={projectModel.account} />,

@@ -19,37 +19,17 @@
 
 package gcp
 
-import (
-	"hcm/pkg/adaptor/types"
-	"hcm/pkg/kit"
-
-	"google.golang.org/api/compute/v1"
-	"google.golang.org/api/option"
-)
+import "hcm/pkg/adaptor/types"
 
 // NewGcp new gcp.
-func NewGcp() types.Factory {
-	return new(gcp)
-}
-
-// NewGcpProxy new gcp proxy.
-func NewGcpProxy() types.GcpProxy {
-	return new(gcp)
-}
-
-var (
-	_ types.Factory  = new(gcp)
-	_ types.GcpProxy = new(gcp)
-)
-
-type gcp struct{}
-
-func (g *gcp) computeClient(kt *kit.Kit, credential *types.GcpCredential) (*compute.Service, error) {
-	opt := option.WithCredentialsJSON(credential.Json)
-	service, err := compute.NewService(kt.Ctx, opt)
-	if err != nil {
+func NewGcp(credential *types.GcpCredential) (*Gcp, error) {
+	if err := credential.Validate(); err != nil {
 		return nil, err
 	}
+	return &Gcp{clientSet: newClientSet(credential)}, nil
+}
 
-	return service, nil
+// Gcp is hcp operator.
+type Gcp struct {
+	clientSet *clientSet
 }

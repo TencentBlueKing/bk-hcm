@@ -17,49 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package hcservice
+package tcloud
 
 import (
-	"context"
-	"net/http"
-
-	"hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// AccountClient is hc service account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// Client is a tcloud api client
+type Client struct {
+	Account *AccountClient
 }
 
-// NewAccountClient create a new account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
+// NewClient create a new tcloud api client.
+func NewClient(client rest.ClientInterface) *Client {
+	return &Client{
+		Account: NewAccountClient(client),
 	}
-}
-
-// Check account.
-func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcservice.AccountCheckReq) error {
-
-	resp := new(rest.BaseResp)
-
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/account/check").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
 }

@@ -14,10 +14,11 @@ type Tab = {
 export default defineComponent({
   props: {
     tabs: Array as PropType<Tab[]>,
+    active: String as PropType<any>,
   },
 
   setup(props) {
-    const activeTab = ref(props.tabs[0].value);
+    const activeTab = ref(props.active || props.tabs[0].value);
 
     return {
       activeTab,

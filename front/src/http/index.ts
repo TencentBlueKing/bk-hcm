@@ -6,6 +6,7 @@
 import axios, { AxiosInstance } from 'axios';
 import cookie from 'cookie';
 import { Message } from 'bkui-vue';
+import { uuid } from 'vue-uuid';
 
 import bus from '@/common/bus';
 import CachedPromise from './cached-promise';
@@ -24,7 +25,7 @@ type HttpMethodType = 'delete' | 'get' | 'head' | 'options' | 'post' | 'put' | '
 // axios 实例
 const axiosInstance: AxiosInstance = axios.create({
   withCredentials: true,
-  headers: { 'X-REQUESTED-WITH': 'XMLHttpRequest' },
+  headers: { 'X-REQUESTED-WITH': 'XMLHttpRequest', 'X-Bkapi-Request-Id': uuid.v4() },
 });
 
 /**
@@ -187,9 +188,9 @@ function handleReject(error: any, config: any) {
     const { status, data } = error.response;
     const nextError = { message: error.message, response: error.response };
     if (status === 401) {
-      // setTimeout(() => {
-      //   window.location.href = `${window.PROJECT_CONFIG.BK_PLAT_HOST}/login/?c_url=${window.location.href}`;
-      // }, 0);
+      setTimeout(() => {
+        window.location.href = `${window.PROJECT_CONFIG.BK_PLAT_HOST}/login/?c_url=${window.location.href}`;
+      }, 0);
     } else if (status === 403) {
       bus.$emit('show-forbidden', error.response.data);
     } else if (status === 404) {

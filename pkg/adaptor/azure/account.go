@@ -22,24 +22,28 @@ package azure
 import (
 	"fmt"
 
-	"hcm/pkg/adaptor/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
-var _ types.AccountInterface = new(azure)
-
-// AccountCheck check account authentication information and permissions.
-// TODO: 仅用于测试
-func (az *azure) AccountCheck(kt *kit.Kit, secret *types.Secret, detail *types.AccountCheckOption) error {
-	client, err := az.subscriptionClient(secret.Azure)
+// AccountCheck ...
+// 接口参考 "https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/services/preview/subscription/mgmt/
+// 2018-03-01-preview/subscription#SubscriptionsClient.Get"
+func (az *Azure) AccountCheck(kt *kit.Kit) error {
+	client, err := az.clientSet.subscriptionClient()
 	if err != nil {
 		return fmt.Errorf("init azure client failed, err: %v", err)
 	}
 
-	_, err = client.NewListLocationsPager(secret.Azure.SubscriptionID, nil).NextPage(kt.Ctx)
+	cloudSubscriptionID := az.clientSet.credential.CloudSubscriptionID
+	_, err = client.Get(kt.Ctx, cloudSubscriptionID, nil)
 	if err != nil {
-		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf(
+			"gets details about subscription(%s), err: %v, rid: %s",
+			cloudSubscriptionID,
+			err,
+			kt.Rid,
+		)
 		return err
 	}
 

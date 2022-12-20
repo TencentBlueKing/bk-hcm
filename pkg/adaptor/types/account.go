@@ -19,39 +19,51 @@
 
 package types
 
-import (
-	"hcm/pkg/kit"
-)
+import "hcm/pkg/criteria/errf"
 
-// AccountInterface defines all the account related operations in the hybrid cloud
-type AccountInterface interface {
-	AccountCheck(kt *kit.Kit, secret *Secret, opt *AccountCheckOption) error
+// TCloudAccountInfo define tencent cloud account info that is used to validate account.
+type TCloudAccountInfo struct {
+	CloudMainAccountID string `json:"cloud_main_account_id"`
+	CloudSubAccountID  string `json:"cloud_sub_account_id"`
 }
 
-// AccountCheckOption define account check option.
-type AccountCheckOption struct {
-	Tcloud *TcloudAccountInfo
-	Aws    *AwsAccountInfo
-	HuaWei *HuaWeiAccountInfo
-}
+// Validate TCloudAccountInfo.
+func (t *TCloudAccountInfo) Validate() error {
+	if len(t.CloudMainAccountID) == 0 {
+		return errf.New(errf.InvalidParameter, "main account cid is required")
+	}
 
-// TcloudAccountInfo define tencent cloud account info that is used to validate account.
-type TcloudAccountInfo struct {
-	AccountCid     string `json:"account_cid"`
-	MainAccountCid string `json:"main_account_cid"`
+	if len(t.CloudSubAccountID) == 0 {
+		return errf.New(errf.InvalidParameter, "account cid is required")
+	}
+
+	return nil
 }
 
 // AwsAccountInfo define aws account info that used to check account.
 type AwsAccountInfo struct {
-	AccountCid  string `json:"account_cid"`
-	IamUserName string `json:"iam_user_name"`
+	CloudAccountID   string `json:"cloud_account_id"`
+	CloudIamUsername string `json:"cloud_iam_username"`
+}
+
+// Validate AwsAccountInfo
+func (a *AwsAccountInfo) Validate() error {
+	if len(a.CloudAccountID) == 0 {
+		return errf.New(errf.InvalidParameter, "account cid is required")
+	}
+
+	if len(a.CloudIamUsername) == 0 {
+		return errf.New(errf.InvalidParameter, "iam user name is required")
+	}
+
+	return nil
 }
 
 // HuaWeiAccountInfo define huawei account info that used to check account.
 type HuaWeiAccountInfo struct {
-	MainAccountName string `json:"main_account_name,omitempty"`
-	SubAccountCID   string `json:"sub_account_cid,omitempty"`
-	SubAccountName  string `json:"sub_account_name,omitempty"`
-	IamUserCID      string `json:"iam_user_cid,omitempty"`
-	IamUserName     string `json:"iam_user_name,omitempty"`
+	CloudMainAccountName string `json:"cloud_main_account_name"`
+	CloudSubAccountID    string `json:"cloud_sub_account_id"`
+	CloudSubAccountName  string `json:"cloud_sub_account_name"`
+	CloudIamUserID       string `json:"cloud_iam_user_id"`
+	CloudIamUsername     string `json:"cloud_iam_username"`
 }

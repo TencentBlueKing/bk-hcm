@@ -41,11 +41,11 @@ account.go:
 */
 
 // AccountColumns defines all the account table's columns.
-var AccountColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, AccountColumnDescriptor)
+var AccountColumns = utils.MergeColumns(nil, AccountColumnDescriptor)
 
 // AccountColumnDescriptor is Account's column descriptors.
 var AccountColumnDescriptor = utils.ColumnDescriptors{
-	{Column: "id", NamedC: "id", Type: enumor.Numeric},
+	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "managers", NamedC: "managers", Type: enumor.Json},
@@ -65,8 +65,8 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 
 // AccountTable 云账号表
 type AccountTable struct {
-	// ID 账号自增 ID
-	ID uint64 `db:"id"`
+	// ID 账号 ID
+	ID string `db:"id"`
 	// Name 账号名称
 	Name string `db:"name"`
 	// Vendor 云厂商
@@ -87,6 +87,8 @@ type AccountTable struct {
 	PriceUnit string `db:"price_unit"`
 	// Extension 云厂商账号差异扩展字段
 	Extension types.JsonField `db:"extension"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id"`
 	// Creator 创建者
 	Creator string `db:"creator"`
 	// Reviser 更新者
@@ -104,9 +106,9 @@ func (a AccountTable) TableName() table.Name {
 	return table.AccountTable
 }
 
-// InsertValidate account table when insert.
+// InsertValidate validate account table on insert.
 func (a AccountTable) InsertValidate() error {
-	if a.ID != 0 {
+	if len(a.ID) != 0 {
 		return errors.New("id can not set")
 	}
 
@@ -123,7 +125,7 @@ func (a AccountTable) InsertValidate() error {
 	return nil
 }
 
-// UpdateValidate account table when update.
+// UpdateValidate validate account table on update.
 func (a AccountTable) UpdateValidate() error {
 	if a.UpdatedAt != nil {
 		return errors.New("update_at can not update")

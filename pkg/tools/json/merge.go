@@ -19,29 +19,19 @@
 
 package json
 
-// UpdateMerge 该函数将source 更新到 destination上，并返回新的json数据
-// 其中source和destination都是map[string]interface{}或struct json后的字符串
-func UpdateMerge(source, destination string) (mergeData string, err error) {
-	// 先转为map[string]interface{}
-	sourceMap := map[string]interface{}{}
-	err = UnmarshalFromString(source, &sourceMap)
+import (
+	"fmt"
+
+	"github.com/tidwall/gjson"
+)
+
+// UpdateMerge 该函数将 source 覆盖更新到 destination 上，并返回新的json数据。
+// 其中source是 map[string]interface{} 或 struct，destination是 map[string]interface{} 或 struct json 后的字符串。
+func UpdateMerge(source interface{}, destination string) (string, error) {
+	sourceJson, err := iteratorJson.Marshal(source)
 	if err != nil {
-		return
+		return "", err
 	}
 
-	destinationMap := map[string]interface{}{}
-	err = UnmarshalFromString(destination, &destinationMap)
-	if err != nil {
-		return
-	}
-
-	// 遍历覆盖更新
-	for k, v := range sourceMap {
-		// Note: 这里不判断是否相等，因为interface如果涉及指针，比较起来麻烦
-		destinationMap[k] = v
-	}
-
-	// 重新转为json string
-	mergeData, err = MarshalToString(destinationMap)
-	return
+	return gjson.Get(fmt.Sprintf("[%s,%s]", destination, sourceJson), "@join").String(), nil
 }

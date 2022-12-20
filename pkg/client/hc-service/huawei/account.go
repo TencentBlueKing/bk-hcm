@@ -17,28 +17,49 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package unknown
+package huawei
 
 import (
-	"fmt"
+	"context"
+	"net/http"
 
-	"hcm/pkg/adaptor/types"
-	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/kit"
+	"hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/rest"
 )
 
-var _ types.Factory = new(Unknown)
-
-// Unknown inject all the unsupported vendor operations.
-type Unknown struct {
-	Vendor enumor.Vendor
+// AccountClient is hc service account api client.
+type AccountClient struct {
+	client rest.ClientInterface
 }
 
-// AccountCheck is unsupported
-func (u Unknown) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.AccountCheckOption) error {
-	return u.unsupportedError()
+// NewAccountClient create a new account api client.
+func NewAccountClient(client rest.ClientInterface) *AccountClient {
+	return &AccountClient{
+		client: client,
+	}
 }
 
-func (u Unknown) unsupportedError() error {
-	return fmt.Errorf("operation for %s is not supported for now", u.Vendor)
+// Check account
+func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcservice.HuaWeiAccountCheckReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/accounts/check").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
 }

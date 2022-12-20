@@ -44,15 +44,15 @@ type DoOrm interface {
 	Count(ctx context.Context, expr string, args ...interface{}) (uint64, error)
 	Delete(ctx context.Context, expr string, args ...interface{}) (int64, error)
 	Update(ctx context.Context, expr string, args interface{}) (int64, error)
-	Insert(ctx context.Context, expr string, data interface{}) (uint64, error)
-	BulkInsert(ctx context.Context, expr string, args interface{}) ([]uint64, error)
+	Insert(ctx context.Context, expr string, data interface{}) error
+	BulkInsert(ctx context.Context, expr string, args interface{}) error
 	Exec(ctx context.Context, expr string) (int64, error)
 }
 
 // DoOrmWithTransaction defines all the orm method with transaction.
 type DoOrmWithTransaction interface {
-	Insert(ctx context.Context, expr string, args interface{}) (uint64, error)
-	BulkInsert(ctx context.Context, expr string, args interface{}) ([]uint64, error)
+	Insert(ctx context.Context, expr string, args interface{}) error
+	BulkInsert(ctx context.Context, expr string, args interface{}) error
 	Delete(ctx context.Context, expr string, args ...interface{}) error
 	Update(ctx context.Context, expr string, args interface{}) (int64, error)
 }

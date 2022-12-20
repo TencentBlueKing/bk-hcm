@@ -22,7 +22,7 @@ export default defineComponent({
     },
   },
 
-  emits: ['update:isShow'],
+  emits: ['update:isShow', 'handle-confirm'],
 
   setup(_, { emit }) {
     const business = ref([]);
@@ -64,6 +64,7 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
+      emit('handle-confirm');
       handleClose();
     };
 

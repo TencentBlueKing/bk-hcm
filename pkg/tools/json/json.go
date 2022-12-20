@@ -32,32 +32,32 @@ var iteratorJson = jsoniter.Config{
 	UseNumber:              true,
 }.Froze()
 
-// MarshalToString TODO
+// MarshalToString marshal value to json string.
 func MarshalToString(v interface{}) (string, error) {
 	return iteratorJson.MarshalToString(v)
 }
 
-// Marshal TODO
+// Marshal value to json.
 func Marshal(v interface{}) ([]byte, error) {
 	return iteratorJson.Marshal(v)
 }
 
-// MarshalIndent TODO
+// MarshalIndent marshal value to json with indent.
 func MarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
 	return iteratorJson.MarshalIndent(v, prefix, indent)
 }
 
-// UnmarshalFromString TODO
+// UnmarshalFromString unmarshal value from json string.
 func UnmarshalFromString(str string, v interface{}) error {
 	return iteratorJson.UnmarshalFromString(str, v)
 }
 
-// Unmarshal TODO
+// Unmarshal value from json.
 func Unmarshal(data []byte, v interface{}) error {
 	return iteratorJson.Unmarshal(data, v)
 }
 
-// UnmarshalArray TODO
+// UnmarshalArray unmarshal array from json string array.
 func UnmarshalArray(items []string, result interface{}) error {
 	strArrJSON := "[" + strings.Join(items, ",") + "]"
 	return iteratorJson.Unmarshal([]byte(strArrJSON), result)

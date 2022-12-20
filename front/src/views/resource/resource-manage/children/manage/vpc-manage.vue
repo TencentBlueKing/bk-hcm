@@ -57,6 +57,7 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList(props, 'vpc');
+datas.value = [{ id: 333 }];
 </script>
 
 <template>

@@ -20,8 +20,6 @@
 package iam
 
 import (
-	"fmt"
-
 	"hcm/cmd/auth-server/types"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
@@ -92,6 +90,6 @@ func (i *IAM) PullResource(cts *rest.Contexts) (interface{}, error) {
 
 	default:
 		logs.Errorf("pull resource method %s not support, rid: %s", req.Method, cts.Kit.Rid)
-		return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("%s not support", req.Method))
+		return nil, errf.Newf(errf.InvalidParameter, "%s not support", req.Method)
 	}
 }
