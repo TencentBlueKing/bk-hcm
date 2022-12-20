@@ -25,10 +25,6 @@ const cvmColumns = [
     field: 'id',
   },
   {
-    label: '可用区',
-    field: 'id',
-  },
-  {
     label: 'IP 信息',
     field: 'id',
   },

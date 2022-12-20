@@ -12,42 +12,37 @@ const settingInfo = [
   {
     name: '资源ID',
     value: '100',
-    prop: 'resource_id',
+    prop: 'id',
   },
   {
     name: '资源名称',
     value: '100',
-    prop: 'resource_name',
+    prop: 'name',
+  },
+  {
+    name: '云厂商',
+    value: '100',
+    prop: 'vendor',
   },
   {
     name: '业务',
     value: '100',
-    prop: 'bk_biz_name',
+    prop: 'bk_biz_id',
   },
   {
-    name: '地域',
+    name: '地域ID',
     value: 'mirror.tencent',
     prop: 'region',
   },
   {
-    name: '所属VPC',
-    value: '11111',
-    prop: 'cloud_vpc_id',
+    name: '地域名称',
+    value: 'mirror.tencent',
+    prop: 'region',
   },
   {
     name: '关联CVM实例数',
     value: '11111',
     prop: 'cvm_ids',
-  },
-  {
-    name: '关联模版',
-    value: '11111',
-    prop: 'cloud_vpc_id',
-  },
-  {
-    name: '资源组',
-    value: '11111',
-    prop: 'cloud_vpc_id',
   },
   {
     name: '创建时间',
@@ -76,6 +71,11 @@ const {
 );
 detail.value = [
   { name: '账号', value: '我的账号' },
+  { name: '资源ID', value: 'testid' },
+  { name: '备注', value: '1111' },
+  { name: '地域ID', value: '地域ID' },
+  { name: '资源ID', value: 'testid' },
+  { name: '备注', value: '1111' },
 ];
 </script>
 
