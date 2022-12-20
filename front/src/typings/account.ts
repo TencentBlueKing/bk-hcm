@@ -33,6 +33,8 @@ export enum StaffType {
 export interface Staff {
   english_name: string
   chinese_name: string
+  username: string
+  display_name: string
 }
 
 export interface Department {

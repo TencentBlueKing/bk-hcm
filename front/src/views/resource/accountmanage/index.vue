@@ -30,10 +30,10 @@
         :label="t('名称')"
         prop="name"
       >
-        <template #default="props">
+        <template #default="{ data }">
           <bk-button
             text theme="primary"
-            @click="handleJump('accountDetail', props?.data.id)">{{ props?.data.name }}</bk-button>
+            @click="handleJump('accountDetail', data.id)">{{data?.spec?.name}}</bk-button>
         </template>
       </bk-table-column>
       <bk-table-column
@@ -48,24 +48,24 @@
         :label="t('类型')"
         prop="type"
       >
-        <template #default="props">
-          {{AccountType[props.data.type]}}
+        <template #default="{ data }">
+          {{AccountType[data?.spec?.type]}}
         </template>
       </bk-table-column>
       <bk-table-column
         :label="t('负责人')"
         prop="managers"
       >
-        <template #default="props">
-          {{props.data.managers?.join(',')}}
+        <template #default="{ data }">
+          {{data.spec?.managers?.join(',')}}
         </template>
       </bk-table-column>
       <bk-table-column
         :label="t('余额')"
         prop="price"
       >
-        <template #default="props">
-          {{props.data.price}}{{props.data.price_unit}}
+        <template #default="{ data }">
+          {{data.spec?.price}}{{data.spec?.price_unit}}
         </template>
       </bk-table-column>
       <bk-table-column
@@ -74,7 +74,7 @@
       />
       <bk-table-column
         label="备注"
-        prop="memo"
+        prop="spec.memo"
       />
       <bk-table-column
         label="操作"
@@ -160,21 +160,9 @@ export default defineComponent({
           id: 'user',
         },
       ],
-      tableData: [
-        {
-          id: 1,
-          name: 'qcloud-account',
-          vendor: 'tcloud',  // 云厂商，枚举值有：tcloud 、aws、azure、gcp、huawei
-          type: 'resource',  // resource表示资源账号，register表示登记账号
-          managers: ['jiananzhang', 'jamesge'],  // 负责人
-          price: 500.01,  // 余额
-          price_unit: '$', // 余额单位，可能是美元、人民币等
-          created_at: '2022-12-05T10:44:55Z',
-          memo: '测试账号',  // 备注
-        },
-      ],
+      tableData: [{ spec: {} }],
       pagination: {
-        totalPage: 1,
+        totalPage: 0,
         count: 1,
         limit: 10,
       },
@@ -224,7 +212,7 @@ export default defineComponent({
         },
       };
       const res = await accountStore.getAccountList(params);
-      state.pagination.totalPage = res?.data || 0;
+      state.pagination.totalPage = res?.data.count || 0;
     };
 
     const init = () => {
@@ -246,6 +234,8 @@ export default defineComponent({
         };
         const res = await accountStore.getAccountList(params);
         state.tableData = res.data.details;
+
+        console.log('state.tableData', state.tableData);
       } catch (error) {
         console.log(error);
       } finally {

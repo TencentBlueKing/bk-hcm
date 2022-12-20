@@ -33,8 +33,8 @@ export const useAccountStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    async getAccountDetail(data: {id: number}) {
-      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/retrieve`, data);
+    async getAccountDetail(id: number) {
+      return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`);
     },
     /**
      * @description: 创建时测试云账号连接
@@ -42,7 +42,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async testAccountConnection(data: any) {
-      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/account/check`, data);
+      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/check`, data);
     },
     /**
      * @description: 更新时测试云账号连接
@@ -62,7 +62,7 @@ export const useAccountStore = defineStore({
     async updateAccount(data: any) {
       const { id } = data;
       delete data.id;
-      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`, data);
+      return await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`, data);
     },
     /**
      * @description: 获取业务列表
@@ -70,7 +70,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async getBizList() {
-      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bk_biz/list`);
+      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bk_bizs/list`);
     },
     /**
      * @description: 获取部门信息
@@ -78,7 +78,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async getDepartmentInfo(departmentId: number) {
-      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/department/${departmentId}`);
+      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/departments/${departmentId}`);
     },
     /**
      * @description: 同步

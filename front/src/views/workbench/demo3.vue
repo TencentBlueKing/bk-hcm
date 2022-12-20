@@ -4,7 +4,7 @@
 
 <script lang="ts">
 import { reactive, toRefs, defineComponent, onMounted, onUnmounted } from 'vue';
-import { useUser } from '@/store/index';
+import { useUserStore } from '@/store/index';
 
 export default defineComponent({
   name: 'DemoThree',
@@ -13,7 +13,7 @@ export default defineComponent({
       aaa: 111,
     });
     onMounted(async () => {
-      const user = useUser();
+      const user = useUserStore();
       const res = await user.test();
       console.log(12213, res);
     });

@@ -1,9 +1,9 @@
 // @ts-check
-import { Staff, StaffType } from '@/typings';
 import { defineStore } from 'pinia';
 import QueryString from 'qs';
 import { shallowRef } from 'vue';
-const { BK_HOST } = window.PROJECT_CONFIG;
+const { BK_COMPONENT_API_URL } = window.PROJECT_CONFIG;
+
 
 export const useStaffStore = defineStore({
   id: 'staffStore',
@@ -12,18 +12,14 @@ export const useStaffStore = defineStore({
     list: shallowRef([]),
   }),
   actions: {
-    async fetchStaffs(type: StaffType) {
+    async fetchStaffs() {
       if (this.list.length > 0 || this.fetching) return;
       this.fetching = true;
-      const typeUrlMap = {
-        [StaffType.RTX]: 'get_all_staff_info',
-        [StaffType.MAIL]: 'get_all_ad_groups',
-        [StaffType.ALL]: 'get_all_rtx_and_mail_group',
-      };
-      const prefix = `//${BK_HOST}/component/compapi/tof3/${typeUrlMap[type]}`;
+      const prefix = `//${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fs_list_users`;
       const params = {
-        query_type: type === StaffType.RTX ? 'simple_data' : undefined,
-        app_code: 'workbench',
+        app_code: 'bk-magicbox',
+        page: 1,
+        page_size: 2000,
         callback: 'callbackStaff',
       };
       const scriptTag = document.createElement('script');
@@ -32,10 +28,10 @@ export const useStaffStore = defineStore({
 
       const headTag = document.getElementsByTagName('head')[0];
       // @ts-ignore
-      window[params.callback] = ({ data, result }: { data: Staff[], result: boolean }) => {
+      window[params.callback] = ({ data, result }: { data: any, result: boolean }) => {
         if (result) {
           this.fetching = false;
-          this.list = data;
+          this.list = data.results;
         }
         headTag.removeChild(scriptTag);
         // @ts-ignore
