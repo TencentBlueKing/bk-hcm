@@ -54,13 +54,13 @@ var AuditColumnDescriptor = utils.ColumnDescriptors{
 type Audit struct {
 	ID           uint64                   `db:"id" json:"id"`
 	ResourceType enumor.AuditResourceType `db:"res_type" json:"resource_type"`
-	ResourceID   uint64                   `db:"res_id" json:"resource_id"`
+	ResourceID   string                   `db:"res_id" json:"resource_id"`
 	Action       enumor.AuditAction       `db:"action" json:"action"`
 	Rid          string                   `db:"rid" json:"rid"`
 	AppCode      string                   `db:"app_code" json:"app_code"`
 	Detail       *AuditBasicDetail        `db:"detail" json:"detail"`
 	BizID        uint64                   `db:"bk_biz_id" json:"bk_biz_id"`
-	AccountID    uint64                   `db:"account_id" json:"account_id"`
+	AccountID    string                   `db:"account_id" json:"account_id"`
 	TenantID     string                   `db:"tenant_id" json:"tenant_id"`
 	Operator     string                   `db:"operator" json:"operator"`
 	CreatedAt    *time.Time               `db:"created_at" json:"created_at"`
@@ -72,7 +72,7 @@ func (a Audit) CreateValidate() error {
 		return errors.New("resource type can not be empty")
 	}
 
-	if a.ResourceID == 0 {
+	if len(a.ResourceID) == 0 {
 		return errors.New("resource id can not be empty")
 	}
 

@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/criteria/errf"
+	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -38,7 +39,7 @@ import (
 
 // Account only used for account.
 type Account interface {
-	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, account *cloud.AccountTable) (uint64, error)
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, account *cloud.AccountTable) (string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *cloud.AccountTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccountDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
@@ -48,22 +49,30 @@ var _ Account = new(AccountDao)
 
 // AccountDao account dao.
 type AccountDao struct {
-	Orm orm.Interface
+	Orm   orm.Interface
+	IDGen idgenerator.IDGenInterface
 }
 
 // CreateWithTx account with tx.
-func (a AccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *cloud.AccountTable) (uint64, error) {
+func (a AccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *cloud.AccountTable) (string, error) {
 	if err := model.InsertValidate(); err != nil {
-		return 0, err
+		return "", err
 	}
+
+	// generate account id
+	id, err := a.IDGen.One(kt, table.AccountTable)
+	if err != nil {
+		return "", err
+	}
+	model.ID = id
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(), cloud.AccountColumns.ColumnExpr(),
 		cloud.AccountColumns.ColonNameExpr())
 
 	model.TenantID = kt.TenantID
-	id, err := a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
+	err = a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
-		return 0, fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
+		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
 	}
 
 	return id, nil

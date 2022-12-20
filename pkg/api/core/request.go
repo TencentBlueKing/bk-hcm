@@ -32,12 +32,12 @@ type CreateResp struct {
 
 // CreateResult is a standard create operation result.
 type CreateResult struct {
-	ID uint64 `json:"id"`
+	ID string `json:"id"`
 }
 
 // BatchDeleteReq is a standard batch delete operation http request.
 type BatchDeleteReq struct {
-	IDs []uint64 `json:"ids"`
+	IDs []string `json:"ids"`
 }
 
 // UpdateResp ...

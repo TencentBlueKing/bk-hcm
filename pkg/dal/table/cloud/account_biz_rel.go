@@ -23,7 +23,6 @@ import (
 	"errors"
 	"time"
 
-	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/utils"
@@ -34,9 +33,8 @@ var AccountBizRelColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, Acco
 
 // AccountBizRelColumnDescriptor is account and biz relation table column descriptors.
 var AccountBizRelColumnDescriptor = utils.ColumnDescriptors{
-	{Column: "id", NamedC: "id", Type: enumor.Numeric},
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
-	{Column: "account_id", NamedC: "account_id", Type: enumor.Numeric},
+	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 	{Column: "tenant_id", NamedC: "tenant_id", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -44,12 +42,11 @@ var AccountBizRelColumnDescriptor = utils.ColumnDescriptors{
 
 // AccountBizRelTable 云账户与业务关联表
 type AccountBizRelTable struct {
-	// ID 账号自增 ID
-	ID uint64 `db:"id"`
 	// BkBizID 蓝鲸业务 ID
+	// TODO 这种外部的依赖ID是否需要预留为string？
 	BkBizID int64 `db:"bk_biz_id"`
 	// AccountID 云账号主键 ID
-	AccountID uint64 `db:"account_id"`
+	AccountID string `db:"account_id"`
 	// TenantID 租户ID
 	TenantID string `db:"tenant_id"`
 	// Creator 创建者
@@ -65,10 +62,6 @@ func (a AccountBizRelTable) TableName() table.Name {
 
 // InsertValidate account table when insert.
 func (a AccountBizRelTable) InsertValidate() error {
-	if a.ID != 0 {
-		return errors.New("id can not set")
-	}
-
 	if a.CreatedAt != nil {
 		return errors.New("created_at can not set")
 	}
@@ -77,7 +70,7 @@ func (a AccountBizRelTable) InsertValidate() error {
 		return errors.New("bk_biz_id is required")
 	}
 
-	if a.AccountID == 0 {
+	if len(a.AccountID) == 0 {
 		return errors.New("account id is required")
 	}
 
@@ -86,37 +79,4 @@ func (a AccountBizRelTable) InsertValidate() error {
 	}
 
 	return nil
-}
-
-// ConvAccountBizRelTable conv AccountBizRelTable from AccountBizRel model.
-func ConvAccountBizRelTable(model *cloud.AccountBizRel) *AccountBizRelTable {
-	return &AccountBizRelTable{
-		ID:        model.ID,
-		BkBizID:   model.BkBizID,
-		AccountID: model.AccountID,
-		Creator:   model.Creator,
-		CreatedAt: model.CreatedAt,
-	}
-}
-
-// ConvAccountBizRel conv AccountBizRel model from AccountBizRelTable.
-func ConvAccountBizRel(table *AccountBizRelTable) *cloud.AccountBizRel {
-	return &cloud.AccountBizRel{
-		ID:        table.ID,
-		BkBizID:   table.BkBizID,
-		AccountID: table.AccountID,
-		Creator:   table.Creator,
-		CreatedAt: table.CreatedAt,
-	}
-}
-
-// ConvAccountBizRelList conv AccountBizRel model list from AccountBizRelTable list.
-func ConvAccountBizRelList(list []*AccountBizRelTable) []*cloud.AccountBizRel {
-	rels := make([]*cloud.AccountBizRel, len(list))
-
-	for index, one := range list {
-		rels[index] = ConvAccountBizRel(one)
-	}
-
-	return rels
 }

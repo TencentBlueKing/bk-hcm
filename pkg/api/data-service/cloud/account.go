@@ -189,7 +189,7 @@ func (l *AccountListReq) Validate() error {
 
 // BaseAccountListReq ...
 type BaseAccountListReq struct {
-	ID     uint64             `json:"id"`
+	ID     string             `json:"id"`
 	Vendor enumor.Vendor      `json:"vendor"`
 	Spec   *cloud.AccountSpec `json:"spec"`
 }

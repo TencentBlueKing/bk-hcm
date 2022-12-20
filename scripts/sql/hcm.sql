@@ -1,7 +1,7 @@
 /*
 表结构说明：
 各类模型表字段信息主要分为：
-1. 主键id                        // 自增主键ID
+1. 主键id                        // id_generator 生成的ID
 2. 云供应商id                     // 云供应商ID (vendor)
 3. 模型特定字段信息Spec            // 需要用户特殊定义的字段 (Spec)
 4. 模型差异字段                   // 云资源模型差异字段 (Extension)
@@ -38,8 +38,6 @@ create table if not exists `id_generator`
 
 insert into id_generator(`resource`, `max_id`)
 values ('account', '0');
-insert into id_generator(`resource`, `max_id`)
-values ('account_biz_rel', '0');
 
 create table if not exists `audit`
 (
@@ -47,13 +45,13 @@ create table if not exists `audit`
 
     # Spec
     `res_type`   varchar(50)        not null,
-    `res_id`     bigint(1) unsigned not null,
+    `res_id`     varchar(64)        not null,
     `action`     varchar(20)        not null,
     `rid`        varchar(64)        not null,
     `app_code`   varchar(64)        default '',
     `detail`     json               default null,
     `bk_biz_id`  bigint(1) unsigned default 0,
-    `account_id` bigint(1) unsigned default 0,
+    `account_id` varchar(64)        default 0,
 
     # TenantID
     `tenant_id`  varchar(64)        default '',
@@ -68,27 +66,27 @@ create table if not exists `audit`
 
 create table if not exists `account`
 (
-    `id`            bigint(1) unsigned not null auto_increment,
-    `vendor`        varchar(16)        not null,
+    `id`            varchar(64) not null,
+    `vendor`        varchar(16) not null,
 
-    `name`          varchar(64)        not null,
-    `managers`      json               not null,
-    `department_id` int(11)            not null,
-    `type`          varchar(32)        not null,
-    `site`          varchar(32)        not null,
-    `sync_status`   varchar(32)        not null,
-    `price`         varchar(16)                 default '',
-    `price_unit`    varchar(8)                  default '',
-    `memo`          varchar(255)                default '',
+    `name`          varchar(64) not null,
+    `managers`      json        not null,
+    `department_id` int(11)     not null,
+    `type`          varchar(32) not null,
+    `site`          varchar(32) not null,
+    `sync_status`   varchar(32) not null,
+    `price`         varchar(16)          default '',
+    `price_unit`    varchar(8)           default '',
+    `memo`          varchar(255)         default '',
 
-    `extension`     json               not null,
+    `extension`     json        not null,
 
-    `tenant_id`     varchar(64)                 default '',
+    `tenant_id`     varchar(64)          default '',
 
-    `creator`       varchar(64)        not null,
-    `reviser`       varchar(64)        not null,
-    `created_at`    timestamp          not null default now(),
-    `updated_at`    timestamp          not null default now(),
+    `creator`       varchar(64) not null,
+    `reviser`       varchar(64) not null,
+    `created_at`    timestamp   not null default now(),
+    `updated_at`    timestamp   not null default now(),
     primary key (`id`),
     unique key `idx_uk_name` (`name`, `tenant_id`)
 ) engine = innodb
@@ -98,7 +96,7 @@ create table if not exists `account_biz_rel`
 (
     `id`         bigint(1) unsigned not null auto_increment,
     `bk_biz_id`  int(11)            not null,
-    `account_id` bigint(1) unsigned not null,
+    `account_id` varchar(64)        not null,
 
     `tenant_id`  varchar(64)                 default '',
 
