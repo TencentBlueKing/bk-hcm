@@ -77,7 +77,7 @@ func (au *auditDao) One(kt *kit.Kit, txn *sqlx.Tx, one *audit.Audit) error {
 
 	// do with the same transaction with the resource, this transaction
 	// is launched by resource's owner.
-	if _, err := au.orm.Txn(txn).Insert(kt.Ctx, sql, one); err != nil {
+	if err := au.orm.Txn(txn).Insert(kt.Ctx, sql, one); err != nil {
 		return fmt.Errorf("insert auditDao failed, err: %v", err)
 	}
 
@@ -102,7 +102,7 @@ func (au *auditDao) Insert(kt *kit.Kit, txn *sqlx.Tx, audits []*audit.Audit) err
 
 	// do with the same transaction with the resource, this transaction
 	// is launched by resource's owner.
-	if _, err := au.orm.Txn(txn).BulkInsert(kt.Ctx, sql, audits); err != nil {
+	if err := au.orm.Txn(txn).BulkInsert(kt.Ctx, sql, audits); err != nil {
 		return fmt.Errorf("insert audits failed, err: %v", err)
 	}
 

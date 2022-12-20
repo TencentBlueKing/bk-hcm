@@ -37,7 +37,7 @@ import (
 
 // AccountBizRel only used for account and biz rel.
 type AccountBizRel interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) ([]uint64, error)
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccountBizRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
@@ -50,16 +50,14 @@ type AccountBizRelDao struct {
 }
 
 // BatchCreateWithTx AccountBizRel with tx.
-func (a AccountBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) (
-	[]uint64, error) {
-
+func (a AccountBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) error {
 	if len(rels) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "account_biz_rel is required")
+		return errf.New(errf.InvalidParameter, "account_biz_rel is required")
 	}
 
 	for index := range rels {
 		if err := rels[index].InsertValidate(); err != nil {
-			return nil, err
+			return err
 		}
 		rels[index].TenantID = kt.TenantID
 	}
@@ -67,12 +65,12 @@ func (a AccountBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cl
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AccountBizRelTable,
 		cloud.AccountBizRelColumns.ColumnExpr(), cloud.AccountBizRelColumns.ColonNameExpr())
 
-	ids, err := a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels)
+	err := a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels)
 	if err != nil {
-		return nil, fmt.Errorf("insert %s failed, err: %v", table.AccountBizRelTable, err)
+		return fmt.Errorf("insert %s failed, err: %v", table.AccountBizRelTable, err)
 	}
 
-	return ids, nil
+	return nil
 }
 
 // List AccountBizRel list.

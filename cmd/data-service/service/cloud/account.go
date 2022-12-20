@@ -22,7 +22,6 @@ package cloud
 import (
 	"fmt"
 	"reflect"
-	"strconv"
 
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
@@ -132,7 +131,7 @@ func createAccount[T protocloud.AccountExtensionCreateReq](vendor enumor.Vendor,
 				Creator:   cts.Kit.User,
 			}
 		}
-		_, err = svc.dao.AccountBizRel().BatchCreateWithTx(cts.Kit, txn, rels)
+		err = svc.dao.AccountBizRel().BatchCreateWithTx(cts.Kit, txn, rels)
 		if err != nil {
 			return nil, fmt.Errorf("batch create account_biz_rels failed, err: %v", err)
 		}
@@ -143,7 +142,7 @@ func createAccount[T protocloud.AccountExtensionCreateReq](vendor enumor.Vendor,
 		return nil, err
 	}
 
-	id, ok := accountID.(uint64)
+	id, ok := accountID.(string)
 	if !ok {
 		return nil, fmt.Errorf("create account but return id type not uint64, id type: %v",
 			reflect.TypeOf(accountID).String())
@@ -160,10 +159,7 @@ func (svc *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	accountID, err := strconv.ParseUint(cts.Request.PathParameter("account_id"), 10, 64)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
+	accountID := cts.PathParameter("account_id").String()
 
 	switch vendor {
 	case enumor.TCloud:
@@ -181,7 +177,7 @@ func (svc *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-func getAccountFromTable(accountID uint64, svc *accountSvc, cts *rest.Contexts) (*tablecloud.AccountTable, error) {
+func getAccountFromTable(accountID string, svc *accountSvc, cts *rest.Contexts) (*tablecloud.AccountTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", accountID),
 		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
@@ -199,7 +195,7 @@ func getAccountFromTable(accountID uint64, svc *accountSvc, cts *rest.Contexts) 
 	return details[0], nil
 }
 
-func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID uint64, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
+func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID string, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.AccountUpdateReq[T])
 
 	if err := cts.DecodeInto(req); err != nil {
@@ -267,10 +263,7 @@ func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	accountID, err := strconv.ParseUint(cts.Request.PathParameter("account_id"), 10, 64)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
+	accountID := cts.PathParameter("account_id").String()
 
 	// 查询账号信息
 	dbAccount, err := getAccountFromTable(accountID, svc, cts)
@@ -416,7 +409,7 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, nil
 	}
 
-	delAccountIDs := make([]uint64, len(listResp.Details))
+	delAccountIDs := make([]string, len(listResp.Details))
 	for index, one := range listResp.Details {
 		delAccountIDs[index] = one.ID
 	}
@@ -444,10 +437,7 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 
 // UpdateAccountBizRel update account biz rel.
 func (svc *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, error) {
-	accountID, err := cts.PathParameter("account_id").Uint64()
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
+	accountID := cts.PathParameter("account_id").String()
 
 	req := new(protocloud.AccountBizRelUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -458,7 +448,7 @@ func (svc *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, err
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		ftr := tools.EqualExpression("account_id", accountID)
 		if err := svc.dao.AccountBizRel().DeleteWithTx(cts.Kit, txn, ftr); err != nil {
 			return nil, fmt.Errorf("delete account_biz_rels failed, err: %v", err)
@@ -472,7 +462,7 @@ func (svc *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, err
 				Creator:   cts.Kit.User,
 			}
 		}
-		if _, err := svc.dao.AccountBizRel().BatchCreateWithTx(cts.Kit, txn, rels); err != nil {
+		if err := svc.dao.AccountBizRel().BatchCreateWithTx(cts.Kit, txn, rels); err != nil {
 			return nil, fmt.Errorf("batch create account_biz_rels failed, err: %v", err)
 		}
 
