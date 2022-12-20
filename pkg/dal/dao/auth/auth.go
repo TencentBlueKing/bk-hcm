@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/client"
 	"hcm/pkg/kit"
@@ -56,7 +57,8 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 	}
 
 	sqlOpt := &filter.SQLWhereOption{
-		Priority: filter.Priority{"name"},
+		Priority:      filter.Priority{"name"},
+		CrownedOption: tools.TenantCrownedOption(kt.TenantID),
 	}
 	whereExpr, err := opts.Filter.SQLWhereExpr(sqlOpt)
 	if err != nil {

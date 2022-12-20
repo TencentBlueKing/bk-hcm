@@ -42,10 +42,10 @@ var AuditColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "action", NamedC: "action", Type: enumor.String},
 	{Column: "rid", NamedC: "rid", Type: enumor.String},
 	{Column: "app_code", NamedC: "app_code", Type: enumor.String},
-	{Column: "detail", NamedC: "detail", Type: enumor.String},
+	{Column: "detail", NamedC: "detail", Type: enumor.Json},
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "account_id", NamedC: "account_id", Type: enumor.Numeric},
-	{Column: "tenant_id", NamedC: "tenant_id", Type: enumor.Json},
+	{Column: "tenant_id", NamedC: "tenant_id", Type: enumor.String},
 	{Column: "operator", NamedC: "operator", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 }

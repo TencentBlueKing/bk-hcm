@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/cloud"
@@ -59,6 +60,7 @@ func (a AccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *cloud.AccountT
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(), cloud.AccountColumns.ColumnExpr(),
 		cloud.AccountColumns.ColonNameExpr())
 
+	model.TenantID = kt.TenantID
 	id, err := a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
 		return 0, fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
@@ -77,7 +79,7 @@ func (a AccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 		return err
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(types.DefaultSqlWhereOption)
+	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption(kt.TenantID))
 	if err != nil {
 		return err
 	}
@@ -122,7 +124,7 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 		return nil, err
 	}
 
-	whereExpr, err := opt.Filter.SQLWhereExpr(types.DefaultSqlWhereOption)
+	whereExpr, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption(kt.TenantID))
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +164,7 @@ func (a AccountDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Ex
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(types.DefaultSqlWhereOption)
+	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption(kt.TenantID))
 	if err != nil {
 		return err
 	}

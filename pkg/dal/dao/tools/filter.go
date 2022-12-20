@@ -42,3 +42,21 @@ func ContainersExpression(fieldName string, values interface{}) *filter.Expressi
 		},
 	}
 }
+
+// TenantCrownedOption 生成租户ID的过滤条件，每个查询语句必须添加这个条件
+func TenantCrownedOption(tenantID string) *filter.CrownedOption {
+	return &filter.CrownedOption{
+		CrownedOp: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "tenant_id", Op: filter.Equal.Factory(), Value: tenantID},
+		},
+	}
+}
+
+// DefaultSqlWhereOption generate default sql where option.
+func DefaultSqlWhereOption(tenantID string) *filter.SQLWhereOption {
+	return &filter.SQLWhereOption{
+		Priority:      filter.Priority{"id"},
+		CrownedOption: TenantCrownedOption(tenantID),
+	}
+}

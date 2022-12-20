@@ -56,6 +56,7 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "price", NamedC: "price", Type: enumor.String},
 	{Column: "price_unit", NamedC: "price_unit", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
+	{Column: "tenant_id", NamedC: "tenant_id", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -87,6 +88,8 @@ type AccountTable struct {
 	PriceUnit string `db:"price_unit"`
 	// Extension 云厂商账号差异扩展字段
 	Extension types.JsonField `db:"extension"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id"`
 	// Creator 创建者
 	Creator string `db:"creator"`
 	// Reviser 更新者
