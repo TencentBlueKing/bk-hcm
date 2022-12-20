@@ -45,6 +45,8 @@ export default defineComponent({
     const initSecretModel: SecretModel = {
       secretId: '',
       secretKey: '',
+      subAccountId: '',
+      iamUserName: '',
     };
 
     const projectModel = reactive<ProjectModel>({
@@ -135,15 +137,15 @@ export default defineComponent({
         case 'tcloud':
           insertFormData = [
             {
-              label: t('主账号:'),
+              label: t('主账号ID:'),
               required: false,
-              property: 'account',
+              property: 'main_account',
               component: () => <span>{projectModel.extension.main_account}</span>,
             },
             {
-              label: t('子账号:'),
+              label: t('子账号ID:'),
               required: false,
-              property: 'account',
+              property: 'sub_account',
               component: () => <span>{projectModel.extension.sub_account}</span>,
             },
           ];
@@ -175,7 +177,7 @@ export default defineComponent({
               component: () => <span>{projectModel.extension.account_id}</span>,
             },
             {
-              label: t('IAM用户名称:'),
+              label: t('IAM用户名:'),
               required: false,
               property: 'account',
               component: () => <span>{projectModel.extension.iam_username}</span>,
@@ -226,12 +228,12 @@ export default defineComponent({
           break;
         case 'aws':
           dialogForm.list = [
-            // {
-            //   label: t('密钥ID'),
-            //   required: true,
-            //   property: 'secretId',
-            //   component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-            // },
+            {
+              label: t('IAM用户名'),
+              required: false,
+              property: 'iam_username',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
+            },
             {
               label: 'Secret ID',
               required: true,
@@ -291,6 +293,12 @@ export default defineComponent({
               required: true,
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
+            },
+            {
+              label: t('子账号ID'),
+              required: true,
+              property: 'subAccountId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.subAccountId} />,
             },
           ];
           break;

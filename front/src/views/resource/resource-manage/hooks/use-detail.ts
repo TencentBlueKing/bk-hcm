@@ -10,6 +10,7 @@ import {
 type Field = {
   name: string;
   prop: string | number;
+  value?: string,
   link?: string;
   copy?: boolean;
   edit?: boolean;

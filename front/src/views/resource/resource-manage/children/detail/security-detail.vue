@@ -9,9 +9,22 @@ import {
   useI18n,
 } from 'vue-i18n';
 
+import {
+  ref,
+} from 'vue';
+
+
+import {
+  useRoute,
+} from 'vue-router';
+
 const {
   t,
 } = useI18n();
+
+const route = useRoute();
+
+const activeTab = ref(route.query?.activeTab);
 
 const tabs = [
   {
@@ -27,6 +40,7 @@ const tabs = [
     value: 'rule',
   },
 ];
+
 </script>
 
 <template>
@@ -36,6 +50,7 @@ const tabs = [
 
   <detail-tab
     :tabs="tabs"
+    :active="activeTab"
   >
     <template #default="type">
       <security-info v-if="type === 'detail'" />

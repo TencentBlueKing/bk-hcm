@@ -59,7 +59,9 @@ export interface FormItems {
 
 export interface SecretModel {
   secretId: string,
-  secretKey: string
+  secretKey: string,
+  subAccountId?: string,
+  iamUserName?: string
 }
 
 export enum CloudType {

@@ -245,7 +245,7 @@ export default defineComponent({
           },
         };
         const res = await accountStore.getAccountList(params);
-        state.tableData = res.data;
+        state.tableData = res.data.details;
       } catch (error) {
         console.log(error);
       } finally {
