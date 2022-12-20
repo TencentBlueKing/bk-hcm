@@ -60,7 +60,7 @@ func NewService(dis serviced.Discover) (*Service, error) {
 
 	cliSet := client.NewHCServiceClientSet(cli, dis)
 	svr := &Service{
-		adaptor:   new(adaptor.Adaptor),
+		adaptor:   adaptor.New(),
 		clientSet: cliSet,
 	}
 

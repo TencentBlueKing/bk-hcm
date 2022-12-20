@@ -34,7 +34,7 @@ type clientSet struct {
 
 func newClientSet(secret *types.BaseSecret) *clientSet {
 	return &clientSet{
-		basic.NewCredentialsBuilder().
+		credentials: basic.NewCredentialsBuilder().
 			WithAk(secret.CloudSecretID).
 			WithSk(secret.CloudSecretKey).
 			Build(),

@@ -31,6 +31,11 @@ import (
 // Adaptor holds all the supported operations by the adaptor.
 type Adaptor struct{}
 
+// New a Adaptor pointer
+func New() *Adaptor {
+	return &Adaptor{}
+}
+
 // TCloud returns tencent cloud operations.
 func (a *Adaptor) TCloud(s *types.BaseSecret) (*tcloud.TCloud, error) {
 	return tcloud.NewTCloud(s)
