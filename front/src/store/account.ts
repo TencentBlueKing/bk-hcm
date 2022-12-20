@@ -26,7 +26,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async getAccountList(params: any) {
-      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/cloud/account/list`, params);
+      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/list`, params);
     },
     /**
      * @description: 获取账号详情
@@ -42,7 +42,8 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async testAccountConnection(data: any) {
-      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/account/check`, data);
+      return await http.post('/api/v1/cloud/accounts/check', data);
+      // return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/account/check`, data);
     },
     /**
      * @description: 更新时测试云账号连接
@@ -52,7 +53,7 @@ export const useAccountStore = defineStore({
     async updateTestAccount(data: any) {
       const { id } = data;
       delete data.id;
-      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/account/${id}/check`, data);
+      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}/check`, data);
     },
     /**
      * @description: 更新云账号

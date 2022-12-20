@@ -2,6 +2,8 @@ import http from '@/http';
 import { defineStore } from 'pinia';
 import { json2Query } from '@/common/util';
 
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+
 export const useResourceStore = defineStore({
   id: 'resourceStore',
   state: () => ({}),
@@ -13,7 +15,7 @@ export const useResourceStore = defineStore({
      * @return {*}
      */
     list(data: any, type: string) {
-      return http.post(`/api/v1/cloud/${type}/list/`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/list/`, data);
     },
     detail(type: string, id: number | string) {
       return http.get(`/api/v1/cloud/${type}/${id}/`);
