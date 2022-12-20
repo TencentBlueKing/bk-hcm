@@ -31,7 +31,7 @@ export default defineComponent({
   setup(props, ctx) {
     const tagInputRef = ref(null);
     const staffStore = useStaffStore();
-    const searchKey = ['english_name', 'chinese_name'];
+    const searchKey = ['username'];
     const maxData = computed(() => (!props.multiple ? {
       maxData: 1,
     } : {}));
@@ -49,8 +49,8 @@ export default defineComponent({
     function tpl(node: Staff) {
       return (
         <Tpl
-          englishName={node.english_name}
-          chineseName={node.chinese_name}
+          englishName={node.username}
+          chineseName={node.display_name}
         />
       );
     }
@@ -65,8 +65,8 @@ export default defineComponent({
 
     function handleSearch(lowerCaseValue: string, _: string | string[], list: Staff[]) {
       return list.filter((item) => {
-        const english_name = item.english_name.toLowerCase();
-        return english_name.includes(lowerCaseValue) || item.chinese_name.includes(lowerCaseValue);
+        const username = item.username.toLowerCase();
+        return username.includes(lowerCaseValue) || item.display_name.includes(lowerCaseValue);
       });
     }
 
@@ -89,8 +89,8 @@ export default defineComponent({
         // disabled={props.disabled || staffStore.fetching}
         list={staffStore.list}
         ref={tagInputRef}
-        displayKey="chinese_name"
-        saveKey="english_name"
+        displayKey="display_name"
+        saveKey="username"
         searchKey={searchKey}
         filterCallback={handleSearch}
         modelValue={props.modelValue}

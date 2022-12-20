@@ -1,10 +1,10 @@
-import { Form, Dialog, Input } from 'bkui-vue';
+import { Form, Dialog, Input, Message } from 'bkui-vue';
 import { reactive, defineComponent, ref, onMounted } from 'vue';
 import { ProjectModel, SecretModel, CloudType, AccountType } from '@/typings';
 import { BUSINESS_TYPE } from '@/constants';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
-// import { useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 // import MemberSelect from '@/components/MemberSelect';
 import OrganizationSelect from '@/components/OrganizationSelect';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
@@ -17,7 +17,7 @@ export default defineComponent({
     const { t } = useI18n();
     const formRef = ref<InstanceType<typeof Form>>(null);
     const accountStore = useAccountStore();
-    // const route = useRoute();
+    const route = useRoute();
     const formDiaRef = ref(null);
 
     const initProjectModel: ProjectModel = {
@@ -66,33 +66,9 @@ export default defineComponent({
     const dialogForm = reactive({ list: [] });
 
     onMounted(async () => {
-      // getBusinessList();
-      // const { id } = route.query;
-      // console.log('route.query', route.query);
-      // const res = await accountStore.getAccountDetail({ id: Number(id) });
-      const res = { data: {
-        id: 1,
-        vendor: 'tcloud',  // 云厂商，枚举值有：tcloud 、aws、azure、gcp、huawei
-        spec: {
-          name: 'qcloud-account',
-          type: 'resource',  // resource表示资源账号，register表示登记账号
-          managers: ['jiananzhang', 'jamesge'],  // 负责人
-          price: 500.01,  // 余额
-          price_unit: '', // 余额单位，可能是美元、人民币等
-          department_id: 1,
-          memo: '测试账号',  // 备注
-        },
-        extension: { main_account: 1, sub_account: 2, secret_id: '1111' },
-        attachment: {
-          bk_biz_ids: [1, 2], // 关联的业务列表，若选择All，则是-1
-        },
-        revision: {
-          creator: 'tom',
-          reviser: 'tom',
-          create_at: '2019-07-29 11:57:20',
-          update_at: '2019-07-29 11:57:20',
-        },
-      } };
+      getBusinessList();
+      const { id } = route.query;
+      const res = await accountStore.getAccountDetail(Number(id));
       projectModel.id = res?.data.id;
       projectModel.vendor = res?.data.vendor;
       projectModel.name = res?.data.spec.name;
@@ -101,23 +77,23 @@ export default defineComponent({
       projectModel.price = res?.data.spec.price;
       projectModel.price_unit = res?.data.spec.price_unit;
       projectModel.memo = res?.data.spec.memo;
-      projectModel.departmentId = [res?.data.spec.department_id];
+      projectModel.departmentId = [res?.data.spec.department_id]; // 1
       projectModel.creator = res?.data.revision.creator;
       projectModel.reviser = res?.data.revision.reviser;
       projectModel.created_at = res?.data.revision.create_at;
       projectModel.updated_at = res?.data.revision.update_at;
       projectModel.extension = res?.data.extension;
-      projectModel.bizIds = res?.data.attachment.bk_biz_ids;
+      projectModel.bizIds = res?.data?.attachment?.bk_biz_ids;
       getDepartmentInfo(res?.data.spec.department_id);
       renderDialogForm(projectModel);
       renderBaseInfoForm(projectModel);
     });
 
     // 获取业务列表
-    // const getBusinessList = async () => {
-    //   const res = await accountStore.getBizList();
-    //   businessList.list = res.data;
-    // };
+    const getBusinessList = async () => {
+      const res = await accountStore.getBizList();
+      businessList.list = res.data;
+    };
 
     // 获取部门信息
     const getDepartmentInfo = async (id: number) => {
@@ -139,14 +115,14 @@ export default defineComponent({
             {
               label: t('主账号ID:'),
               required: false,
-              property: 'main_account',
-              component: () => <span>{projectModel.extension.main_account}</span>,
+              property: 'cloud_main_account',
+              component: () => <span>{projectModel.extension.cloud_main_account}</span>,
             },
             {
               label: t('子账号ID:'),
               required: false,
-              property: 'sub_account',
-              component: () => <span>{projectModel.extension.sub_account}</span>,
+              property: 'cloud_sub_account',
+              component: () => <span>{projectModel.extension.cloud_sub_account}</span>,
             },
           ];
           formBaseInfo[0].data.splice(4, 0, ...insertFormData);
@@ -156,13 +132,13 @@ export default defineComponent({
               {
                 label: 'Secret ID',
                 required: false,
-                property: 'secretId',
-                component: () => <span>{projectModel.extension.secret_id}</span>,
+                property: 'cloud_secret_id',
+                component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
               },
               {
                 label: 'Secret Key',
                 required: false,
-                property: 'secretKey',
+                property: 'cloud_secret_key',
                 component: () => <span>********</span>,
               },
             ],
@@ -173,14 +149,14 @@ export default defineComponent({
             {
               label: t('账号ID:'),
               required: false,
-              property: 'account',
-              component: () => <span>{projectModel.extension.account_id}</span>,
+              property: 'cloud_account_id',
+              component: () => <span>{projectModel.extension.cloud_account_id}</span>,
             },
             {
               label: t('IAM用户名:'),
               required: false,
-              property: 'account',
-              component: () => <span>{projectModel.extension.iam_username}</span>,
+              property: 'cloud_iam_username',
+              component: () => <span>{projectModel.extension.cloud_iam_username}</span>,
             },
           ];
           formBaseInfo[0].data.splice(4, 0, ...insertFormData);
@@ -191,13 +167,13 @@ export default defineComponent({
                 label: 'Secret ID',
                 required: false,
                 property: 'secretId',
-                component: () => <span>{projectModel.extension.secret_id}</span>,
+                component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
               },
               {
                 label: 'Secret Key',
                 required: false,
-                property: 'secretKey',
-                component: () => <span>{projectModel.extension.secret_key}</span>,
+                property: 'cloud_secret_key',
+                component: () => <span>********</span>,
               },
             ],
           });
@@ -228,12 +204,12 @@ export default defineComponent({
           break;
         case 'aws':
           dialogForm.list = [
-            {
-              label: t('IAM用户名'),
-              required: false,
-              property: 'iam_username',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
-            },
+            // {
+            //   label: t('IAM用户名'),
+            //   required: false,
+            //   property: 'iam_username',
+            //   component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
+            // },
             {
               label: 'Secret ID',
               required: true,
@@ -294,12 +270,12 @@ export default defineComponent({
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
             },
-            {
-              label: t('子账号ID'),
-              required: true,
-              property: 'subAccountId',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.subAccountId} />,
-            },
+            // {
+            //   label: t('子账号ID'),
+            //   required: true,
+            //   property: 'subAccountId',
+            //   component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.subAccountId} />,
+            // },
           ];
           break;
         default:
@@ -337,6 +313,10 @@ export default defineComponent({
           id: projectModel.id,
           ...params,
         });
+        Message({
+          message: t('更新成功'),
+          theme: 'success',
+        });
       } catch (error) {
         console.log(error);
       } finally {
@@ -352,20 +332,41 @@ export default defineComponent({
     // 弹窗确认
     const onConfirm = async () => {
       await formDiaRef.value?.validate();
-      const extension = {
-        secret_id: secretModel.secretId,
-        secret_key: secretModel.secretKey,
+      const extension: any = {
+        cloud_secret_id: secretModel.secretId,
+        cloud_secret_key: secretModel.secretKey,
       };
+      // 后期拓展
+      // switch (projectModel.vendor) {
+      //   case 'tcloud':
+      //     extension.cloud_sub_account = secretModel.subAccountId;
+      //     break;
+      //   case 'aws':
+      //     extension.cloud_iam_username = secretModel.iamUserName;
+      //     break;
+      //   default:
+      //     break;
+      // }
       if (isTestConnection.value) {
         await accountStore.updateAccount({    // 更新密钥信息
           id: projectModel.id,
           extension,
         });
+        Message({
+          message: t('更新密钥信息成功'),
+          theme: 'success',
+        });
+        onClosed();
       } else {
         await accountStore.updateTestAccount({    // 测试连接密钥信息
           id: projectModel.id,
           extension,
         });
+        Message({
+          message: t('测试链接成功'),
+          theme: 'success',
+        });
+        isTestConnection.value = true;
       }
     };
 

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import http from '@/http/index';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
-export const useUser = defineStore('user', {
+export const useUserStore = defineStore('user', {
   state: () => ({
     user: '',
     username: '',

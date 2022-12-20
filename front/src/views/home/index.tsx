@@ -11,7 +11,7 @@ import business from '@/router/module/business';
 import { classes, deleteCookie } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
-import { useUser } from '@/store';
+import { useUserStore } from '@/store';
 import { useI18n } from 'vue-i18n';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
@@ -28,7 +28,7 @@ export default defineComponent({
     const { t } = useI18n();
     const route = useRoute();
     const router = useRouter();
-    const userStore = useUser();
+    const userStore = useUserStore();
 
     let topMenuActiveItem = '';
     let menus: RouteRecordRaw[] = [];
@@ -99,7 +99,7 @@ export default defineComponent({
       if (window.PROJECT_CONFIG.LOGIN_FULL) {
         window.location.href = `${window.LOGIN_FULL}?c_url=${cUrl}`;
       } else {
-        window.location.href = `//${window.PROJECT_CONFIG.BK_PLAT_HOST || ''}/console/accounts/logout/`;
+        window.location.href = `//${window.PROJECT_CONFIG.BK_COMPONENT_API_URL || ''}/console/accounts/logout/`;
       }
     };
 
