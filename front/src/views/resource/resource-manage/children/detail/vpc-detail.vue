@@ -9,8 +9,9 @@ import VPCSubnet from '../components/vpc/vpc-subnet.vue';
 import {
   useI18n,
 } from 'vue-i18n';
-import useDeleteVPC from '../../hooks/use-delete-vpc';
+import useColumns from '../../hooks/use-columns';
 import useDetail from '../../hooks/use-detail';
+import useDelete from '../../hooks/use-delete';
 
 const VPCFields = [
   {
@@ -95,11 +96,7 @@ const {
   t,
 } = useI18n();
 
-const {
-  isShowVPC,
-  handleShowDeleteVPC,
-  DeleteVPC,
-} = useDeleteVPC();
+const columns = useColumns('vpc');
 
 const {
   loading,
@@ -107,7 +104,16 @@ const {
 } = useDetail(
   'vpc',
   '1',
-  VPCFields,
+);
+
+const {
+  handleShowDelete,
+  DeleteDialog,
+} = useDelete(
+  columns,
+  [detail],
+  'vpc',
+  t('删除 VPC'),
 );
 </script>
 
@@ -121,7 +127,7 @@ const {
         <bk-button
           class="w100 ml10"
           theme="primary"
-          @click="handleShowDeleteVPC"
+          @click="handleShowDelete"
         >
           {{ t('删除') }}
         </bk-button>
@@ -129,7 +135,8 @@ const {
     </detail-header>
 
     <detail-info
-      :fields="detail"
+      :detail="detail"
+      :fields="VPCFields"
     />
 
     <detail-tab
@@ -142,9 +149,11 @@ const {
       </template>
     </detail-tab>
 
-    <DeleteVPC
-      v-model:is-show="isShowVPC"
-    />
+    <delete-dialog>
+      {{ t('请注意该VPC包含一个或多个资源，在释放这些资源前，无法删除VPC') }}<br />
+      {{ t('子网：{count} 个', { count: 5 }) }}<br />
+      {{ t('CVM：{count} 个', { count: 5 }) }}
+    </delete-dialog>
   </bk-loading>
 </template>
 
