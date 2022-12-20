@@ -22,7 +22,7 @@ package account
 
 import (
 	"hcm/cmd/hc-service/service/capability"
-	"hcm/pkg/adaptor"
+	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
@@ -32,7 +32,7 @@ import (
 // InitAccountService initial the account service
 func InitAccountService(cap *capability.Capability) {
 	a := &account{
-		ad: cap.Adaptor,
+		ad: cap.CloudAdaptor,
 	}
 
 	h := rest.NewHandler()
@@ -46,7 +46,7 @@ func InitAccountService(cap *capability.Capability) {
 }
 
 type account struct {
-	ad *adaptor.Adaptor
+	ad *cloudadaptor.CloudAdaptorClient
 }
 
 // TCloudAccountCheck authentication information and permissions.
@@ -59,7 +59,8 @@ func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := a.ad.TCloud(&types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey})
+	client, err := a.ad.Adaptor().TCloud(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey})
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +84,8 @@ func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := a.ad.Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey})
+	client, err := a.ad.Adaptor().Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey})
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +108,8 @@ func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := a.ad.HuaWei(&types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey})
+	client, err := a.ad.Adaptor().HuaWei(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey})
 	if err != nil {
 		return nil, err
 	}
@@ -131,9 +134,8 @@ func (a account) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	client, err := a.ad.Gcp(
-		&types.GcpCredential{CloudProjectID: req.CloudProjectID, Json: []byte(req.CloudServiceSecretKey)},
-	)
+	client, err := a.ad.Adaptor().Gcp(&types.GcpCredential{CloudProjectID: req.CloudProjectID,
+		Json: []byte(req.CloudServiceSecretKey)})
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +155,7 @@ func (a account) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	client, err := a.ad.Azure(&types.AzureCredential{
+	client, err := a.ad.Adaptor().Azure(&types.AzureCredential{
 		CloudTenantID: req.CloudTenantID, CloudSubscriptionID: req.CloudSubscriptionID,
 		CloudClientID: req.CloudClientID, CloudClientSecret: req.CloudClientSecret,
 	})

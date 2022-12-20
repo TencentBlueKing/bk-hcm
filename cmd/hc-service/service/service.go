@@ -29,7 +29,7 @@ import (
 
 	"hcm/cmd/hc-service/service/account"
 	"hcm/cmd/hc-service/service/capability"
-	"hcm/pkg/adaptor"
+	"hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
@@ -46,9 +46,9 @@ import (
 
 // Service do all the hc service's work
 type Service struct {
-	serve     *http.Server
-	adaptor   *adaptor.Adaptor
-	clientSet *client.ClientSet
+	serve        *http.Server
+	clientSet    *client.ClientSet
+	cloudAdaptor *cloudadaptor.CloudAdaptorClient
 }
 
 // NewService create a service instance.
@@ -59,9 +59,12 @@ func NewService(dis serviced.Discover) (*Service, error) {
 	}
 
 	cliSet := client.NewHCServiceClientSet(cli, dis)
+
+	cloudAdaptor := cloudadaptor.NewCloudAdaptorClient(cliSet.DataService())
+
 	svr := &Service{
-		adaptor:   adaptor.New(),
-		clientSet: cliSet,
+		clientSet:    cliSet,
+		cloudAdaptor: cloudAdaptor,
 	}
 
 	return svr, nil
@@ -130,9 +133,9 @@ func (s *Service) apiSet() *restful.Container {
 	ws.Produces(restful.MIME_JSON)
 
 	c := &capability.Capability{
-		WebService: ws,
-		Adaptor:    s.adaptor,
-		ClientSet:  s.clientSet,
+		WebService:   ws,
+		ClientSet:    s.clientSet,
+		CloudAdaptor: s.cloudAdaptor,
 	}
 
 	account.InitAccountService(c)

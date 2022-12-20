@@ -51,13 +51,13 @@ func NewClient(c *client.Capability, version string) *Client {
 			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.TCloud)),
 		),
 		Aws: aws.NewClient(
-			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.AWS)),
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.Aws)),
 		),
 		HuaWei: huawei.NewClient(
 			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.HuaWei)),
 		),
 		Gcp: gcp.NewClient(
-			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.GCP)),
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.Gcp)),
 		),
 		Azure: azure.NewClient(
 			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.Azure)),

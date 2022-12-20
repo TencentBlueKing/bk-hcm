@@ -56,7 +56,6 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "price", NamedC: "price", Type: enumor.String},
 	{Column: "price_unit", NamedC: "price_unit", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
-	{Column: "tenant_id", NamedC: "tenant_id", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
