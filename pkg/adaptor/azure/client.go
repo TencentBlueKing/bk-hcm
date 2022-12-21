@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/adaptor/types"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
@@ -37,10 +38,7 @@ func newClientSet(credential *types.AzureCredential) *clientSet {
 }
 
 func (c *clientSet) subscriptionClient() (*armsubscription.SubscriptionsClient, error) {
-	credential, err := azidentity.NewClientSecretCredential(
-		c.credential.CloudTenantID,
-		c.credential.CloudClientID,
-		c.credential.CloudClientSecret, nil)
+	credential, err := c.newClientSecretCredential()
 	if err != nil {
 		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
 	}
@@ -51,4 +49,19 @@ func (c *clientSet) subscriptionClient() (*armsubscription.SubscriptionsClient, 
 	}
 
 	return client, nil
+}
+
+func (c *clientSet) diskClient() (*armcompute.DisksClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+	return armcompute.NewDisksClient(c.credential.CloudSubscriptionID, credential, nil)
+}
+
+func (c *clientSet) newClientSecretCredential() (*azidentity.ClientSecretCredential, error) {
+	return azidentity.NewClientSecretCredential(
+		c.credential.CloudTenantID,
+		c.credential.CloudClientID,
+		c.credential.CloudClientSecret, nil)
 }

@@ -21,10 +21,10 @@ package tcloud
 
 import (
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
+	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
-
 	"hcm/pkg/adaptor/types"
 )
 
@@ -51,6 +51,15 @@ func (c *clientSet) camServiceClient(region string) (*cam.Client, error) {
 
 func (c *clientSet) cvmClient(region string) (*cvm.Client, error) {
 	client, err := cvm.NewClient(c.credential, region, c.profile)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (c *clientSet) cbsClient(region string) (*cbs.Client, error) {
+	client, err := cbs.NewClient(c.credential, region, c.profile)
 	if err != nil {
 		return nil, err
 	}
