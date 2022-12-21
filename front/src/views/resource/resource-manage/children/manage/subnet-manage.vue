@@ -1,30 +1,21 @@
 <script setup lang="ts">
 import type {
-  PlainObject,
   FilterType,
 } from '@/typings/resource';
 
 import {
-  h,
   PropType,
 } from 'vue';
-import {
-  InfoBox,
-  Message,
-} from 'bkui-vue';
 
 import {
   useI18n,
 } from 'vue-i18n';
-import {
-  useRouter,
-} from 'vue-router';
-import {
-  useResourceStore,
-} from '@/store/resource';
 
 import useSteps from '../../hooks/use-steps';
+import useColumns from '../../hooks/use-columns';
+import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
+import useSelection from '../../hooks/use-selection';
 
 const props = defineProps({
   filter: {
@@ -32,105 +23,33 @@ const props = defineProps({
   },
 });
 
-// 状态
-const columns = [
-  {
-    type: 'selection',
-  },
-  {
-    label: 'ID',
-    field: '',
-    sort: true,
-    render({ cell }: PlainObject) {
-      return h(
-        'span',
-        {
-          onClick() {
-            router.push({
-              name: 'resourceDetail',
-              params: {
-                type: 'subnet',
-              },
-            });
-          },
-        },
-        [
-          cell || '--',
-        ],
-      );
-    },
-  },
-  {
-    label: '资源 ID',
-    field: 'cid',
-    sort: true,
-  },
-  {
-    label: '名称',
-    field: 'name',
-    sort: true,
-  },
-  {
-    label: '云厂商',
-    field: 'vendor',
-  },
-  {
-    label: '所属 VPC',
-    field: 'vpc_cid',
-  },
-  {
-    label: '可用区',
-    field: 'zone',
-  },
-  {
-    label: 'IPv4 CIDR',
-    field: 'ipv4_cidr',
-  },
-  {
-    label: 'IPv6 CIDR',
-    field: 'ipv6_cidr',
-  },
-  {
-    label: '关联路由表',
-    field: '',
-  },
-  {
-    label: '状态',
-    field: 'status',
-  },
-  {
-    label: '默认子网',
-    field: 'is_default',
-  },
-  {
-    label: '可用 IPv4 地址',
-    field: '',
-  },
-  {
-    label: '创建时间',
-    field: 'create_at',
-    sort: true,
-  },
-  {
-    label: '操作',
-    field: '',
-  },
-];
-
 // use hooks
 const {
   t,
 } = useI18n();
-
-const router = useRouter();
-
-const resourceStore = useResourceStore();
 
 const {
   isShowDistribution,
   handleDistribution,
   ResourceDistribution,
 } = useSteps();
+
+const columns = useColumns('subnet');
+
+const {
+  selections,
+  handleSelectionChange,
+} = useSelection();
+
+const {
+  handleShowDelete,
+  DeleteDialog,
+} = useDelete(
+  columns,
+  selections.value,
+  'subnet',
+  t('删除子网'),
+);
 
 const {
   datas,
@@ -140,23 +59,6 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList(props, 'subnet');
-
-const handleDeleteSubnet = () => {
-  InfoBox({
-    title: '确认要删除？',
-    theme: 'danger',
-    onConfirm() {
-      return resourceStore
-        .delete('subnet', '123')
-        .then(() => {
-          Message({
-            theme: 'success',
-            message: '删除成功',
-          });
-        });
-    },
-  });
-};
 </script>
 
 <template>
@@ -174,7 +76,7 @@ const handleDeleteSubnet = () => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        @click="handleDeleteSubnet"
+        @click="handleShowDelete"
       >
         {{ t('删除') }}
       </bk-button>
@@ -189,13 +91,20 @@ const handleDeleteSubnet = () => {
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
+      @selection-change="handleSelectionChange"
     />
   </bk-loading>
 
   <resource-distribution
     v-model:is-show="isShowDistribution"
+    :data="selections"
     :title="t('子网分配')"
   />
+
+  <delete-dialog>
+    {{ t('请注意该子网包含一个或多个资源，在释放这些资源前，无法删除VPC') }}<br />
+    {{ t('CVM：{count} 个', { count: 5 }) }}
+  </delete-dialog>
 </template>
 
 <style lang="scss" scoped>

@@ -9,10 +9,11 @@ import './detail-info.scss';
 
 type Field = {
   name: string;
-  value: string;
+  value?: string;
   link?: string;
   copy?: string;
   edit?: boolean;
+  prop?: string;
 };
 
 export default defineComponent({
@@ -22,13 +23,25 @@ export default defineComponent({
 
   props: {
     fields: Array as PropType<Field[]>,
+    detail: Object,
+  },
+
+  computed: {
+    renderFields() {
+      return this.fields.map((field) => {
+        return {
+          ...field,
+          value: this.detail[field.prop],
+        };
+      });
+    },
   },
 
   render() {
     return <>
       <info-list
         class="detail-info-main g-scroller"
-        fields={ this.fields }
+        fields={ this.renderFields }
       />
     </>;
   },

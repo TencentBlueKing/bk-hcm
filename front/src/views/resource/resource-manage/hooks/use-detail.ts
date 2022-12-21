@@ -7,18 +7,9 @@ import {
   useResourceStore,
 } from '@/store/resource';
 
-type Field = {
-  name: string;
-  prop: string | number;
-  value?: string,
-  link?: string;
-  copy?: boolean;
-  edit?: boolean;
-};
-
-export default (type: string, id: string, fields: Field[]) => {
+export default (type: string, id: string) => {
   const loading = ref(false);
-  const detail = ref([]);
+  const detail = ref({});
   const resourceStore = useResourceStore();
 
   // 从接口获取数据，并拼装需要的信息
@@ -27,18 +18,12 @@ export default (type: string, id: string, fields: Field[]) => {
     resourceStore
       .detail(type, id)
       .then(({ data = {} }: { data: any }) => {
-        const plainData = {
+        detail.value = {
           ...data,
           ...data.spec,
           ...data.attachment,
           ...data.revision,
         };
-        detail.value = fields.map((field) => {
-          return {
-            ...field,
-            value: plainData[field.prop],
-          };
-        });
       })
       .finally(() => {
         loading.value = false;

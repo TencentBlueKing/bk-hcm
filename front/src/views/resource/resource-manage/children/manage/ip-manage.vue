@@ -14,6 +14,7 @@ import {
   useRouter,
 } from 'vue-router';
 import useBusiness from '../../hooks/use-business';
+import useSelection from '../../hooks/use-selection';
 
 // use hooks
 const {
@@ -27,6 +28,11 @@ const {
   handleDistribution,
   ResourceBusiness,
 } = useBusiness();
+
+const {
+  selections,
+  handleSelectionChange,
+} = useSelection();
 
 // 状态
 const columns = [
@@ -108,7 +114,7 @@ const columns = [
     field: '',
   },
 ];
-const tableData: any[] = [{}];
+const tableData: any[] = [{ id: 1 }, { id: 2 }];
 
 // 方法
 const handleSortBy = () => {
@@ -139,10 +145,12 @@ const handleSortBy = () => {
     :columns="columns"
     :data="tableData"
     @column-sort="handleSortBy"
+    @selection-change="handleSelectionChange"
   />
 
   <resource-business
     v-model:is-show="isShowDistribution"
+    :data="selections"
     :title="t('弹性IP分配')"
   />
 </template>
