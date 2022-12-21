@@ -32,40 +32,18 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-var _ types.AccountInterface = new(amazon)
-
-func validateAccountCheckOption(opt *types.AccountCheckOption) error {
+// AccountCheck check account authentication information(account id and iam user name) and permissions.
+// GetCallerIdentity: https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html
+func (a *Aws) AccountCheck(kt *kit.Kit, opt *types.AwsAccountInfo) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "account check option is required")
 	}
 
-	if opt.Aws == nil {
-		return errf.New(errf.InvalidParameter, "aws account info is required")
-	}
-
-	if len(opt.Aws.AccountCid) == 0 {
-		return errf.New(errf.InvalidParameter, "account cid is required")
-	}
-
-	if len(opt.Aws.IamUserName) == 0 {
-		return errf.New(errf.InvalidParameter, "iam user name is required")
-	}
-
-	return nil
-}
-
-// AccountCheck check account authentication information(account id and iam user name) and permissions.
-// GetCallerIdentity: https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html
-func (am *amazon) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.AccountCheckOption) error {
-	if err := validateSecret(secret); err != nil {
+	if err := opt.Validate(); err != nil {
 		return err
 	}
 
-	if err := validateAccountCheckOption(opt); err != nil {
-		return err
-	}
-
-	client, err := am.stsClient(secret.Aws)
+	client, err := a.clientSet.stsClient()
 	if err != nil {
 		return fmt.Errorf("init aws client failed, err: %v", err)
 	}
@@ -82,7 +60,7 @@ func (am *amazon) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.Acc
 	}
 
 	// check account info: account id、user name
-	if *resp.Account != opt.Aws.AccountCid {
+	if *resp.Account != opt.CloudAccountID {
 		return fmt.Errorf("account id does not match the account to which the secret belongs")
 	}
 
@@ -91,7 +69,7 @@ func (am *amazon) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.Acc
 	}
 
 	split := strings.Split(*resp.Arn, "/")
-	if split[len(split)-1] != opt.Aws.IamUserName {
+	if split[len(split)-1] != opt.CloudIamUsername {
 		return fmt.Errorf("iam user name does not match the account to which the secret belongs")
 	}
 

@@ -20,71 +20,41 @@
 package huawei
 
 import (
-	"fmt"
+	"errors"
 
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/region"
 )
 
-var _ types.AccountInterface = new(huawei)
-
-func validateAccountCheckOption(opt *types.AccountCheckOption) error {
-	if opt == nil {
-		return errf.New(errf.InvalidParameter, "account check option is required")
-	}
-
-	if opt.HuaWei == nil {
-		return errf.New(errf.InvalidParameter, "huawei account info is required")
-	}
-
-	if len(opt.HuaWei.MainAccountName) == 0 {
-		return errf.New(errf.InvalidParameter, "main account name is required")
-	}
-
-	if len(opt.HuaWei.SubAccountName) == 0 {
-		return errf.New(errf.InvalidParameter, "sub account name is required")
-	}
-
-	if len(opt.HuaWei.SubAccountCID) == 0 {
-		return errf.New(errf.InvalidParameter, "sub account cid is required")
-	}
-
-	if len(opt.HuaWei.IamUserCID) == 0 {
-		return errf.New(errf.InvalidParameter, "iam user cid is required")
-	}
-
-	if len(opt.HuaWei.IamUserName) == 0 {
-		return errf.New(errf.InvalidParameter, "iam user name is required")
-	}
-
-	return nil
-}
-
 // AccountCheck check account authentication information and permissions.
 // KeystoneListAuthDomains: https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_07_0001.html
-func (h *huawei) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.AccountCheckOption) error {
-	if err := validateSecret(secret); err != nil {
-		return err
-	}
-
-	if err := validateAccountCheckOption(opt); err != nil {
-		return err
-	}
-
-	client, err := h.iamClient(secret.HuaWei, region.AP_SOUTHEAST_1)
+// 账号概念 https://support.huaweicloud.com/intl/zh-cn/api-iam/iam_17_0002.html
+func (h *Huawei) AccountCheck(kt *kit.Kit, opt *types.HuaWeiAccountInfo) error {
+	client, err := h.clientSet.iamClient(region.AP_SOUTHEAST_1)
 	if err != nil {
-		return fmt.Errorf("init huawei client failed, err: %v", err)
-	}
-
-	_, err = client.KeystoneListAuthDomains(nil)
-	if err != nil {
-		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("init huawei client failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	return nil
+	domainsResp, err := client.KeystoneListAuthDomains(nil)
+	if err != nil {
+		logs.Errorf("KeystoneListAuthDomains failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	domains := domainsResp.Domains
+	if domains == nil {
+		return errors.New("KeystoneListAuthDomains failed, err: no auth domains")
+	}
+
+	for _, domain := range *domains {
+		if domain.Id == opt.CloudSubAccountID && domain.Name == opt.CloudSubAccountName {
+			return nil
+		}
+	}
+
+	return errors.New("SubAccount does not match SecretId/SecretKey")
 }

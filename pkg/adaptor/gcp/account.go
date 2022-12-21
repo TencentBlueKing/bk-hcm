@@ -20,26 +20,13 @@
 package gcp
 
 import (
-	"fmt"
-
-	"hcm/pkg/adaptor/types"
 	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 )
 
-var _ types.AccountInterface = new(gcp)
-
 // AccountCheck check account authentication information and permissions.
-// TODO: 仅用于测试
-func (g *gcp) AccountCheck(kt *kit.Kit, secret *types.Secret, detail *types.AccountCheckOption) error {
-	client, err := g.computeClient(kt, secret.Gcp)
-	if err != nil {
-		return fmt.Errorf("init gcp client failed, err: %v", err)
-	}
-
-	_, err = client.Regions.List(secret.Gcp.ProjectID).Context(kt.Ctx).Do()
-	if err != nil {
-		logs.Errorf("describe regions failed, err: %v, rid: %s", err, kt.Rid)
+func (g *Gcp) AccountCheck(kt *kit.Kit) error {
+	// 通过调用获取项目信息接口来验证账号有效性(账号需要有 compute.projects.get 权限)
+	if _, err := g.getProject(kt); err != nil {
 		return err
 	}
 

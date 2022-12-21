@@ -1,22 +1,19 @@
 <script setup lang="ts">
 import type {
-  PlainObject,
   FilterType,
 } from '@/typings/resource';
 
 import {
-  h,
   PropType,
 } from 'vue';
-import {
-  useRouter,
-} from 'vue-router';
 import {
   useI18n,
 } from 'vue-i18n';
 import useSteps from '../../hooks/use-steps';
-import useDeleteVPC from '../../hooks/use-delete-vpc';
+import useColumns from '../../hooks/use-columns';
+import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
+import useSelection from '../../hooks/use-selection';
 
 const props = defineProps({
   filter: {
@@ -24,93 +21,10 @@ const props = defineProps({
   },
 });
 
-// 状态
-const columns = [
-  {
-    type: 'selection',
-  },
-  {
-    label: 'ID',
-    field: 'id',
-    sort: true,
-    render({ cell }: PlainObject) {
-      return h(
-        'span',
-        {
-          onClick() {
-            router.push({
-              name: 'resourceDetail',
-              params: {
-                type: 'vpc',
-              },
-            });
-          },
-        },
-        [
-          cell || '--',
-        ],
-      );
-    },
-  },
-  {
-    label: '资源 ID',
-    field: 'cid',
-    sort: true,
-  },
-  {
-    label: '名称',
-    field: 'name',
-    sort: true,
-  },
-  {
-    label: '云厂商',
-    field: 'vendor',
-  },
-  {
-    label: '云区域',
-    field: 'bk_cloud_id',
-  },
-  {
-    label: '地域',
-    field: 'region',
-  },
-  {
-    label: 'IPv4 CIDR',
-    field: 'ipv4_cidr',
-  },
-  {
-    label: 'IPv6 CIDR',
-    field: 'ipv6_cidr',
-  },
-  {
-    label: '状态',
-    field: 'status',
-  },
-  {
-    label: '默认 VPC',
-    field: 'is_default',
-  },
-  {
-    label: '子网数',
-    field: '',
-  },
-  {
-    label: '创建时间',
-    field: 'create_at',
-    sort: true,
-  },
-  {
-    label: '操作',
-    field: '',
-  },
-];
-
 // use hooks
 const {
   t,
 } = useI18n();
-
-const router = useRouter();
 
 const {
   isShowDistribution,
@@ -118,11 +32,22 @@ const {
   ResourceDistribution,
 } = useSteps();
 
+const columns = useColumns('vpc');
+
 const {
-  isShowVPC,
-  handleShowDeleteVPC,
-  DeleteVPC,
-} = useDeleteVPC();
+  selections,
+  handleSelectionChange,
+} = useSelection();
+
+const {
+  handleShowDelete,
+  DeleteDialog,
+} = useDelete(
+  columns,
+  selections.value,
+  'vpc',
+  t('删除 VPC'),
+);
 
 const {
   datas,
@@ -150,7 +75,7 @@ datas.value = [{ id: 333 }];
       <bk-button
         class="w100 ml10"
         theme="primary"
-        @click="handleShowDeleteVPC"
+        @click="handleShowDelete"
       >
         {{ t('删除') }}
       </bk-button>
@@ -165,17 +90,21 @@ datas.value = [{ id: 333 }];
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
+      @selection-change="handleSelectionChange"
     />
   </bk-loading>
 
   <resource-distribution
     v-model:is-show="isShowDistribution"
     :title="t('VPC 分配')"
+    :data="selections"
   />
 
-  <delete-VPC
-    v-model:is-show="isShowVPC"
-  />
+  <delete-dialog>
+    {{ t('请注意该VPC包含一个或多个资源，在释放这些资源前，无法删除VPC') }}<br />
+    {{ t('子网：{count} 个', { count: 5 }) }}<br />
+    {{ t('CVM：{count} 个', { count: 5 }) }}
+  </delete-dialog>
 </template>
 
 <style lang="scss" scoped>

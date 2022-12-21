@@ -23,12 +23,26 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// GenerateIDFilter 生成AccountID 查询的过滤条件，即id=xxx
-func GenerateIDFilter(idFieldName string, accountID uint64) *filter.Expression {
+// EqualExpression 生成资源字段等于查询的过滤条件，即fieldName=value
+func EqualExpression(fieldName string, value interface{}) *filter.Expression {
 	return &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: idFieldName, Op: filter.Equal.Factory(), Value: accountID},
+			filter.AtomRule{Field: fieldName, Op: filter.Equal.Factory(), Value: value},
 		},
 	}
+}
+
+// ContainersExpression 生成资源字段包含的过滤条件，即fieldName in (1,2,3)
+func ContainersExpression(fieldName string, values interface{}) *filter.Expression {
+	return &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: fieldName, Op: filter.In.Factory(), Value: values},
+		},
+	}
+}
+
+var DefaultSqlWhereOption = &filter.SQLWhereOption{
+	Priority: filter.Priority{"id"},
 }

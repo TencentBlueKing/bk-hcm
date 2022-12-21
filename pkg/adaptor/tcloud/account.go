@@ -20,6 +20,7 @@
 package tcloud
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
@@ -29,20 +30,18 @@ import (
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 )
 
-var _ types.AccountInterface = new(tcloud)
-
 // AccountCheck check account authentication information and permissions.
 // reference: https://cloud.tencent.com/document/api/598/70416
-func (t *tcloud) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.AccountCheckOption) error {
-	if err := validateSecret(secret); err != nil {
+func (t *TCloud) AccountCheck(kt *kit.Kit, opt *types.TCloudAccountInfo) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "account check option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
 		return err
 	}
 
-	if err := validateAccountCheckOption(opt); err != nil {
-		return err
-	}
-
-	camClient, err := t.camServiceClient(secret.TCloud, "")
+	camClient, err := t.clientSet.camServiceClient("")
 	if err != nil {
 		return fmt.Errorf("new cam client failed, err: %v", err)
 	}
@@ -54,40 +53,20 @@ func (t *tcloud) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.Acco
 	}
 
 	if resp.Response.Uin == nil {
-		return fmt.Errorf("user uin is empty, err: %v", err)
+		return errors.New("user uin is empty")
 	}
 
 	if resp.Response.OwnerUin == nil {
-		return fmt.Errorf("user owner uin is empty, err: %v", err)
+		return errors.New("user owner uin is empty")
 	}
 
 	// check if cloud account info matches the hcm account detail.
-	if *resp.Response.Uin != opt.Tcloud.AccountCid {
+	if *resp.Response.Uin != opt.CloudSubAccountID {
 		return fmt.Errorf("account id does not match the account to which the secret belongs")
 	}
 
-	if *resp.Response.OwnerUin != opt.Tcloud.MainAccountCid {
+	if *resp.Response.OwnerUin != opt.CloudMainAccountID {
 		return fmt.Errorf("main account id does not match the account to which the secret belongs")
-	}
-
-	return nil
-}
-
-func validateAccountCheckOption(opt *types.AccountCheckOption) error {
-	if opt == nil {
-		return errf.New(errf.InvalidParameter, "account check option is required")
-	}
-
-	if opt.Tcloud == nil {
-		return errf.New(errf.InvalidParameter, "tencent cloud account info is required")
-	}
-
-	if len(opt.Tcloud.MainAccountCid) == 0 {
-		return errf.New(errf.InvalidParameter, "main account cid is required")
-	}
-
-	if len(opt.Tcloud.AccountCid) == 0 {
-		return errf.New(errf.InvalidParameter, "account cid is required")
 	}
 
 	return nil

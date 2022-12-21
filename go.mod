@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.2.0
+	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription v1.0.0
-	github.com/TencentBlueKing/gopkg v1.0.9
 	github.com/aws/aws-sdk-go v1.44.149
 	github.com/emicklei/go-restful/v3 v3.10.0
 	github.com/go-playground/validator/v10 v10.11.1
@@ -21,7 +21,8 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.1
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.551
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.551
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs v1.0.562
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.562
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.543
 	github.com/tidwall/gjson v1.14.3
 	go.etcd.io/etcd/api/v3 v3.5.5

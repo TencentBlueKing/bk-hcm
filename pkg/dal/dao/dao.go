@@ -111,7 +111,8 @@ type set struct {
 // Account return account dao.
 func (s *set) Account() cloud.Account {
 	return &cloud.AccountDao{
-		Orm: s.orm,
+		Orm:   s.orm,
+		IDGen: s.idGen,
 	}
 }
 

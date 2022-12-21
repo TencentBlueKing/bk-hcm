@@ -51,6 +51,9 @@ type Kit struct {
 
 	// AppCode is app code.
 	AppCode string
+
+	// TenantID is tenant id.
+	TenantID string
 }
 
 // ContextWithRid ...
@@ -89,15 +92,18 @@ func (kt *Kit) Validate() error {
 		return errors.New("app code is required")
 	}
 
+	// TODO add tenant id validation
+
 	return nil
 }
 
 // Header generate header by kit
 func (kt *Kit) Header() http.Header {
 	return http.Header{
-		constant.UserKey:    []string{kt.User},
-		constant.RidKey:     []string{kt.Rid},
-		constant.AppCodeKey: []string{kt.AppCode},
+		constant.UserKey:     []string{kt.User},
+		constant.RidKey:      []string{kt.Rid},
+		constant.AppCodeKey:  []string{kt.AppCode},
+		constant.TenantIDKey: []string{kt.TenantID},
 	}
 }
 
@@ -108,10 +114,11 @@ func FromHeader(ctx context.Context, header http.Header) (*Kit, error) {
 	}
 
 	kt := &Kit{
-		Ctx:     ctx,
-		User:    header.Get(constant.UserKey),
-		Rid:     header.Get(constant.RidKey),
-		AppCode: header.Get(constant.AppCodeKey),
+		Ctx:      ctx,
+		User:     header.Get(constant.UserKey),
+		Rid:      header.Get(constant.RidKey),
+		AppCode:  header.Get(constant.AppCodeKey),
+		TenantID: header.Get(constant.TenantIDKey),
 	}
 
 	if err := kt.Validate(); err != nil {

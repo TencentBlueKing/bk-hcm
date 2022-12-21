@@ -22,10 +22,9 @@ package account
 
 import (
 	"hcm/cmd/hc-service/service/capability"
-	"hcm/pkg/adaptor"
+	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	proto "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -33,42 +32,42 @@ import (
 // InitAccountService initial the account service
 func InitAccountService(cap *capability.Capability) {
 	a := &account{
-		ad: cap.Adaptor,
+		ad: cap.CloudAdaptor,
 	}
 
 	h := rest.NewHandler()
 	h.Add("TCloudAccountCheck", "POST", "/vendors/tcloud/accounts/check", a.TCloudAccountCheck)
 	h.Add("AwsAccountCheck", "POST", "/vendors/aws/accounts/check", a.AwsAccountCheck)
 	h.Add("HuaWeiAccountCheck", "POST", "/vendors/huawei/accounts/check", a.HuaWeiAccountCheck)
-	// h.Add("GcpAccountCheck", "POST", "/vendors/gcp/accounts/check", a.GcpAccountCheck)
-	// h.Add("AzureAccountCheck", "POST", "/vendors/azure/accounts/check", a.AzureAccountCheck)
+	h.Add("GcpAccountCheck", "POST", "/vendors/gcp/accounts/check", a.GcpAccountCheck)
+	h.Add("AzureAccountCheck", "POST", "/vendors/azure/accounts/check", a.AzureAccountCheck)
 
 	h.Load(cap.WebService)
 }
 
 type account struct {
-	ad adaptor.Adaptor
+	ad *cloudadaptor.CloudAdaptorClient
 }
 
 // TCloudAccountCheck authentication information and permissions.
 func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.TCloudAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := a.ad.Vendor(enumor.TCloud).AccountCheck(
+	client, err := a.ad.Adaptor().TCloud(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey})
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.AccountCheck(
 		cts.Kit,
-		&types.Secret{
-			TCloud: &types.BaseSecret{ID: req.CloudSecretID, Key: req.CloudSecretKey},
-		},
-		&types.AccountCheckOption{
-			Tcloud: &types.TcloudAccountInfo{AccountCid: req.CloudSubAccountID, MainAccountCid: req.CloudMainAccountID},
-		},
+		&types.TCloudAccountInfo{CloudMainAccountID: req.CloudMainAccountID, CloudSubAccountID: req.CloudSubAccountID},
 	)
 
 	return nil, err
@@ -78,21 +77,22 @@ func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := a.ad.Vendor(enumor.AWS).AccountCheck(
+	client, err := a.ad.Adaptor().Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey})
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.AccountCheck(
 		cts.Kit,
-		&types.Secret{
-			Aws: &types.BaseSecret{ID: req.CloudSecretID, Key: req.CloudSecretKey},
-		},
-		&types.AccountCheckOption{
-			Aws: &types.AwsAccountInfo{AccountCid: req.CloudAccountID, IamUserName: req.CloudIamUsername},
-		},
+		&types.AwsAccountInfo{CloudAccountID: req.CloudAccountID, CloudIamUsername: req.CloudIamUsername},
 	)
 
 	return nil, err
@@ -102,29 +102,68 @@ func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.HuaWeiAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	client, err := a.ad.Adaptor().HuaWei(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+		CloudSecretKey: req.CloudSecretKey})
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.AccountCheck(cts.Kit, &types.HuaWeiAccountInfo{
+		CloudMainAccountName: req.CloudMainAccountName,
+		CloudSubAccountID:    req.CloudSubAccountID,
+		CloudSubAccountName:  req.CloudSubAccountName,
+		CloudIamUserID:       req.CloudIamUserID,
+		CloudIamUsername:     req.CloudIamUsername,
+	})
+	return nil, err
+}
+
+// GcpAccountCheck ...
+func (a account) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.GcpAccountCheckReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+	}
 	if err := req.Validate(); err != nil {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	err := a.ad.Vendor(enumor.HuaWei).AccountCheck(
-		cts.Kit,
-		&types.Secret{
-			HuaWei: &types.BaseSecret{ID: req.CloudSecretID, Key: req.CloudSecretKey},
-		},
-		&types.AccountCheckOption{
-			HuaWei: &types.HuaWeiAccountInfo{
-				MainAccountName: req.CloudMainAccountName,
-				SubAccountCID:   req.CloudSubAccountID,
-				SubAccountName:  req.CloudSubAccountName,
-				// TODO: 产品上华为云账号就没有录入IamUserID和IamUsername，是否必须呢？如果必须，需要产品支持
-				// IamUserCID: 	 req.IamUserID
-				// IamUserName:     req.CloudIamUsername,
-			},
-		},
-	)
+	client, err := a.ad.Adaptor().Gcp(&types.GcpCredential{CloudProjectID: req.CloudProjectID,
+		Json: []byte(req.CloudServiceSecretKey)})
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.AccountCheck(cts.Kit)
+
+	return nil, err
+}
+
+// AzureAccountCheck ...
+func (a account) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AzureAccountCheckReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.Newf(errf.InvalidParameter, err.Error())
+	}
+
+	client, err := a.ad.Adaptor().Azure(&types.AzureCredential{
+		CloudTenantID: req.CloudTenantID, CloudSubscriptionID: req.CloudSubscriptionID,
+		CloudClientID: req.CloudClientID, CloudClientSecret: req.CloudClientSecret,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.AccountCheck(cts.Kit)
 
 	return nil, err
 }

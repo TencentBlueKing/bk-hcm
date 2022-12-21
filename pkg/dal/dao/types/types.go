@@ -26,6 +26,7 @@ import (
 
 // ListOption defines options to list accounts.
 type ListOption struct {
+	Fields []string
 	Filter *filter.Expression
 	Page   *BasePage
 }
@@ -59,13 +60,8 @@ func (opt *ListOption) Validate(eo *filter.ExprOption, po *PageOption) error {
 	return nil
 }
 
-// DefaultSqlWhereOption is default sql where option.
-var DefaultSqlWhereOption = &filter.SQLWhereOption{
-	Priority: filter.Priority{"id"},
-}
-
 // DefaultIgnoredFields is default ignored field.
-var DefaultIgnoredFields = []string{"id", "creator", "created_at"}
+var DefaultIgnoredFields = []string{"id", "creator", "created_at", "tenant_id"}
 
 // DefaultPageSQLOption define default page sql option.
 var DefaultPageSQLOption = &PageSQLOption{Sort: SortOption{Sort: "id", IfNotPresent: true}}

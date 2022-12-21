@@ -17,28 +17,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package unknown
+package aws
 
 import (
-	"fmt"
-
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-var _ types.Factory = new(Unknown)
+// CreateDisk 创建云硬盘
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateVolume.html
+func (a *Aws) CreateDisk(kt *kit.Kit, opt *types.AwsDiskCreateOption) (*ec2.Volume, error) {
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return nil, err
+	}
 
-// Unknown inject all the unsupported vendor operations.
-type Unknown struct {
-	Vendor enumor.Vendor
-}
+	req := &ec2.CreateVolumeInput{
+		AvailabilityZone: opt.AvailabilityZone,
+		Size:             opt.DiskSize,
+	}
 
-// AccountCheck is unsupported
-func (u Unknown) AccountCheck(kt *kit.Kit, secret *types.Secret, opt *types.AccountCheckOption) error {
-	return u.unsupportedError()
-}
-
-func (u Unknown) unsupportedError() error {
-	return fmt.Errorf("operation for %s is not supported for now", u.Vendor)
+	volume, err := client.CreateVolumeWithContext(kt.Ctx, req)
+	return volume, err
 }

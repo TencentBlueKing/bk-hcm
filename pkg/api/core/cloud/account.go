@@ -26,7 +26,7 @@ import (
 
 // BaseAccount 云账号
 type BaseAccount struct {
-	ID         uint64             `json:"id"`
+	ID         string             `json:"id"`
 	Vendor     enumor.Vendor      `json:"vendor"`
 	Spec       *AccountSpec       `json:"spec"`
 	Attachment *AccountAttachment `json:"attachment,omitempty"`

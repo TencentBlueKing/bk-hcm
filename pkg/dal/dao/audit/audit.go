@@ -62,7 +62,7 @@ func (au *auditDao) Decorator(kit *kit.Kit, res enumor.AuditResourceType) AuditD
 }
 
 // One auditDao one resource's operation.
-func (au *auditDao) One(kit *kit.Kit, txn *sqlx.Tx, one *audit.Audit) error {
+func (au *auditDao) One(kt *kit.Kit, txn *sqlx.Tx, one *audit.Audit) error {
 	if one == nil {
 		return errors.New("invalid input auditDao or opt")
 	}
@@ -71,12 +71,13 @@ func (au *auditDao) One(kit *kit.Kit, txn *sqlx.Tx, one *audit.Audit) error {
 		return fmt.Errorf("auditDao create validate failed, err: %v", err)
 	}
 
+	one.TenantID = kt.TenantID
 	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, one.TableName(),
 		audit.AuditColumns.ColumnExpr(), audit.AuditColumns.ColonNameExpr())
 
 	// do with the same transaction with the resource, this transaction
 	// is launched by resource's owner.
-	if _, err := au.orm.Txn(txn).Insert(kit.Ctx, sql, one); err != nil {
+	if err := au.orm.Txn(txn).Insert(kt.Ctx, sql, one); err != nil {
 		return fmt.Errorf("insert auditDao failed, err: %v", err)
 	}
 
@@ -84,15 +85,16 @@ func (au *auditDao) One(kit *kit.Kit, txn *sqlx.Tx, one *audit.Audit) error {
 }
 
 // Insert auditDao resource's operation.
-func (au *auditDao) Insert(kit *kit.Kit, txn *sqlx.Tx, audits []*audit.Audit) error {
+func (au *auditDao) Insert(kt *kit.Kit, txn *sqlx.Tx, audits []*audit.Audit) error {
 	if audits == nil {
 		return errors.New("invalid input audits or opt")
 	}
 
-	for _, one := range audits {
-		if err := one.CreateValidate(); err != nil {
+	for idx := range audits {
+		if err := audits[idx].CreateValidate(); err != nil {
 			return fmt.Errorf("auditDao create validate failed, err: %v", err)
 		}
+		audits[idx].TenantID = kt.TenantID
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, table.AuditTable,
@@ -100,7 +102,7 @@ func (au *auditDao) Insert(kit *kit.Kit, txn *sqlx.Tx, audits []*audit.Audit) er
 
 	// do with the same transaction with the resource, this transaction
 	// is launched by resource's owner.
-	if _, err := au.orm.Txn(txn).BulkInsert(kit.Ctx, sql, audits); err != nil {
+	if err := au.orm.Txn(txn).BulkInsert(kt.Ctx, sql, audits); err != nil {
 		return fmt.Errorf("insert audits failed, err: %v", err)
 	}
 

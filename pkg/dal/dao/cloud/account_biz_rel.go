@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/cloud"
@@ -36,7 +37,7 @@ import (
 
 // AccountBizRel only used for account and biz rel.
 type AccountBizRel interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) ([]uint64, error)
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccountBizRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
@@ -49,28 +50,20 @@ type AccountBizRelDao struct {
 }
 
 // BatchCreateWithTx AccountBizRel with tx.
-func (a AccountBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) (
-	[]uint64, error) {
-
+func (a AccountBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) error {
 	if len(rels) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "account_biz_rel is required")
-	}
-
-	for _, rel := range rels {
-		if err := rel.InsertValidate(); err != nil {
-			return nil, err
-		}
+		return errf.New(errf.InvalidParameter, "account_biz_rel is required")
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AccountBizRelTable,
 		cloud.AccountBizRelColumns.ColumnExpr(), cloud.AccountBizRelColumns.ColonNameExpr())
 
-	ids, err := a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels)
+	err := a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels)
 	if err != nil {
-		return nil, fmt.Errorf("insert %s failed, err: %v", table.AccountBizRelTable, err)
+		return fmt.Errorf("insert %s failed, err: %v", table.AccountBizRelTable, err)
 	}
 
-	return ids, nil
+	return nil
 }
 
 // List AccountBizRel list.
@@ -84,7 +77,7 @@ func (a AccountBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListA
 		return nil, err
 	}
 
-	whereExpr, err := opt.Filter.SQLWhereExpr(types.DefaultSqlWhereOption)
+	whereExpr, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +100,7 @@ func (a AccountBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListA
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.AccountBizRelColumns.NamedExpr(),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.AccountBizRelColumns.FieldsNamedExpr(opt.Fields),
 		table.AccountBizRelTable, whereExpr, pageExpr)
 
 	details := make([]*cloud.AccountBizRelTable, 0)
@@ -124,7 +117,7 @@ func (a AccountBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *fil
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(types.DefaultSqlWhereOption)
+	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
