@@ -26,6 +26,7 @@ import (
 
 // ListOption defines options to list accounts.
 type ListOption struct {
+	Fields []string
 	Filter *filter.Expression
 	Page   *BasePage
 }

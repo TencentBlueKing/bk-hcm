@@ -44,6 +44,8 @@ type Columns struct {
 	// such as App.Spec.Name named columns should be:
 	// "spec.name"
 	namedExpr string
+	// fieldsNamedExpr is the field to it's namedExpr map
+	fieldsNamedExpr map[string]string
 	// ColonNameExpr is the joined 'named' columns with comma.
 	// which column may have the 'prefix' and each column is
 	// prefix with a colon.
@@ -80,6 +82,23 @@ func (col Columns) ColumnExpr() string {
 // like: "name as spec.name"
 func (col Columns) NamedExpr() string {
 	return col.namedExpr
+}
+
+// FieldsNamedExpr returns the joined 'named' columns in fields with comma
+// like: "name as spec.name"
+func (col Columns) FieldsNamedExpr(fields []string) string {
+	if len(fields) == 0 {
+		return col.namedExpr
+	}
+
+	namedExpr := make([]string, 0)
+	for _, field := range fields {
+		expr, exists := col.fieldsNamedExpr[field]
+		if exists {
+			namedExpr = append(namedExpr, expr)
+		}
+	}
+	return strings.Join(namedExpr, ",")
 }
 
 // ColonNameExpr returns the joined 'named' columns with comma and
@@ -145,6 +164,7 @@ func MergeColumns(opt *mergeColumnOption, all ...ColumnDescriptors) *Columns {
 	}
 
 	namedExpr := make([]string, 0)
+	fieldsNamedExpr := make(map[string]string, 0)
 	colonExpr := make([]string, 0)
 	columns := make([]string, 0)
 	for _, nc := range all {
@@ -163,16 +183,20 @@ func MergeColumns(opt *mergeColumnOption, all ...ColumnDescriptors) *Columns {
 				}
 			}
 
+			colNamedExpr := ""
 			if col.Column == col.NamedC {
-				namedExpr = append(namedExpr, col.Column)
+				colNamedExpr = col.Column
 			} else {
-				namedExpr = append(namedExpr, fmt.Sprintf("%s as '%s'", col.Column, col.NamedC))
+				colNamedExpr = fmt.Sprintf("%s as '%s'", col.Column, col.NamedC)
 			}
+			namedExpr = append(namedExpr, colNamedExpr)
+			fieldsNamedExpr[col.Column] = colNamedExpr
 		}
 	}
 
 	tc.columnExpr = strings.Join(columns, ", ")
 	tc.namedExpr = strings.Join(namedExpr, ", ")
+	tc.fieldsNamedExpr = fieldsNamedExpr
 	tc.colonNameExpr = strings.ReplaceAll(":"+strings.Join(colonExpr, ", :"), ":now()", "now()")
 	return tc
 }
