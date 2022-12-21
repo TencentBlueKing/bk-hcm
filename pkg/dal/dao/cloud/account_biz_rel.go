@@ -100,7 +100,7 @@ func (a AccountBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListA
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.AccountBizRelColumns.NamedExpr(),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.AccountBizRelColumns.FieldsNamedExpr(opt.Fields),
 		table.AccountBizRelTable, whereExpr, pageExpr)
 
 	details := make([]*cloud.AccountBizRelTable, 0)

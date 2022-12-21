@@ -156,7 +156,7 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.AccountColumns.NamedExpr(),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.AccountColumns.FieldsNamedExpr(opt.Fields),
 		table.AccountTable, whereExpr, pageExpr)
 
 	details := make([]*cloud.AccountTable, 0)
