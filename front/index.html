@@ -5,9 +5,22 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>海垒2.0</title>
-    <link rel="shortcut icon" href="/public/images/favicon.png" type="image/x-icon" />
+    <link rel="shortcut icon" href="/static/img/favicon.png" type="image/x-icon" />
 </head>
 <body>
     <div id="app"></div>
+    <script>
+        window.PROJECT_CONFIG = (function () {
+            const BK_HCM_AJAX_URL_PREFIX = "{{ .BK_HCM_AJAX_URL_PREFIX}}"
+            const BK_LOGIN_URL = "{{ .BK_LOGIN_URL}}"
+            const BK_COMPONENT_API_URL = "{{ .BK_COMPONENT_API_URL}}"
+
+            return {
+                BK_HCM_AJAX_URL_PREFIX: BK_HCM_AJAX_URL_PREFIX,
+                BK_LOGIN_URL: BK_LOGIN_URL,
+                BK_COMPONENT_API_URL: BK_COMPONENT_API_URL,
+            };
+        })();
+    </script>
 </body>
 </html>
