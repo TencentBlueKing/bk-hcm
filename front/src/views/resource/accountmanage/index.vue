@@ -1,5 +1,5 @@
 <template>
-  <div class="account-warp">
+  <div class="template-warp">
     <div class="flex-row operate-warp justify-content-between align-items-center mb20">
       <bk-button theme="primary" @click="handleJump('accountAdd')">
         {{t('新增')}}
@@ -11,9 +11,7 @@
         <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
       </div> -->
     </div>
-    <bk-loading loading v-if="loading">
-      <div style="width: 100%; height: 360px" />
-    </bk-loading>
+    <list-loading v-if="loading"></list-loading>
     <bk-table
       class="table-layout"
       :data="tableData"
@@ -137,9 +135,15 @@ import rightArrow from '@/assets/image/right-arrow.png';
 import tcloud from '@/assets/image/tcloud.png';
 import { Message } from 'bkui-vue';
 import { CloudType, AccountType } from '@/typings';
+import ListLoading from '@/components/loading';
+
+console.log('ListLoading', ListLoading);
 
 export default defineComponent({
   name: 'AccountManageList',
+  components: {
+    ListLoading,
+  },
   setup() {
     const { t } = useI18n();
     const router = useRouter();
