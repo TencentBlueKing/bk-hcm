@@ -30,8 +30,8 @@ export const useResourceStore = defineStore({
       return http.post('/api/v1/cloud/vpc/bind/cloud_area', data);
     },
     // 分配到业务下
-    assignBusiness(type: string) {
-      return http.post(`/api/v1/cloud/${type}/assign/bizs`);
+    assignBusiness(type: string, data: any) {
+      return http.post(`/api/v1/cloud/${type}/assign/bizs`, data);
     },
   },
 });

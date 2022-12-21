@@ -1,10 +1,12 @@
 import {
   defineComponent,
   ref,
+  watch,
 } from 'vue';
-import {
-  useI18n,
-} from 'vue-i18n';
+// import {
+//   useI18n,
+// } from 'vue-i18n';
+import { useAccountStore } from '@/store';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import './resource-business.scss';
 
@@ -24,14 +26,24 @@ export default defineComponent({
 
   emits: ['update:isShow', 'handle-confirm'],
 
-  setup(_, { emit }) {
+  setup(props, { emit }) {
     const business = ref([]);
     const businessList = ref([]);
+    const accountStore = useAccountStore();
 
     // use hooks
-    const {
-      t,
-    } = useI18n();
+    // const {
+    //   t,
+    // } = useI18n();
+
+    watch(
+      () => props.isShow,
+      (val) => {
+        if (val) {
+          getBusinessList();
+        }
+      },
+    );
 
     // 状态
     const steps = [
@@ -46,15 +58,15 @@ export default defineComponent({
               businessList.value.map((item, index) => <>
                 <bk-option
                   key={index}
-                  value={item.value}
-                  label={item.label}
+                  value={item.id}
+                  label={item.name}
                 />
               </>)
             }
           </bk-select>
-          {
+          {/* {
             `${t('共转移') + business.value.length + t('个')}`
-          }
+          } */}
         </>,
       },
     ];
@@ -64,8 +76,18 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      emit('handle-confirm');
+      emit('handle-confirm', business.value);
       handleClose();
+    };
+
+    const getBusinessList = async () => {
+      try {
+        const res = await accountStore.getBizList();
+        console.log(res);
+        businessList.value = res?.data;
+      } catch (error) {
+        console.log(error);
+      }
     };
 
     return {

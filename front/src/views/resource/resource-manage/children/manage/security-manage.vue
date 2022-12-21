@@ -66,6 +66,8 @@ const {
 } = useQueryList(props, 'security_groups');
 datas.value = [{ id: 333, vendor: 'tcloud' }];
 
+const handleSelection = () => {};
+
 const groupColumns = [
   {
     type: 'selection',
@@ -277,10 +279,13 @@ const handleSortBy = () => {
 
 };
 
-const handleConfirm = () => {
-  console.log(11111);
+const handleConfirm = (bizId: number) => {
+  const params = {
+    security_group_ids: [1],
+    bk_biz_id: bizId,
+  };
   return resourceStore
-    .assignBusiness('security_groups')
+    .assignBusiness('security_groups', params)
     .then(() => {
       Message({
         theme: 'success',
@@ -334,6 +339,7 @@ const handleConfirm = () => {
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
+      @selection-change="handleSelection"
     />
 
     <bk-table
