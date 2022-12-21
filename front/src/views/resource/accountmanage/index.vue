@@ -1,5 +1,5 @@
 <template>
-  <div class="account-warp">
+  <div class="template-warp">
     <div class="flex-row operate-warp justify-content-between align-items-center mb20">
       <bk-button theme="primary" @click="handleJump('accountAdd')">
         {{t('新增')}}
@@ -11,119 +11,119 @@
         <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
       </div> -->
     </div>
-    <bk-loading loading v-if="loading">
-      <div style="width: 100%; height: 360px" />
-    </bk-loading>
-    <bk-table
-      class="table-layout"
-      :data="tableData"
-      :pagination="pagination"
-      row-hover="auto"
-      v-else
+    <bk-loading
+      :loading="loading"
     >
-      <bk-table-column
-        label="ID"
-        prop="id"
-        sort
-      />
-      <bk-table-column
-        :label="t('名称')"
-        prop="name"
+      <bk-table
+        class="table-layout"
+        :data="tableData"
+        :pagination="pagination"
+        row-hover="auto"
       >
-        <template #default="{ data }">
-          <bk-button
-            text theme="primary"
-            @click="handleJump('accountDetail', data.id)">{{data?.spec?.name}}</bk-button>
-        </template>
-      </bk-table-column>
-      <bk-table-column
-        :label="t('云厂商')"
-        prop="vendor"
-      >
-        <template #default="props">
-          {{CloudType[props.data.vendor]}}
-        </template>
-      </bk-table-column>
-      <bk-table-column
-        :label="t('类型')"
-        prop="type"
-      >
-        <template #default="{ data }">
-          {{AccountType[data?.spec?.type]}}
-        </template>
-      </bk-table-column>
-      <bk-table-column
-        :label="t('负责人')"
-        prop="managers"
-      >
-        <template #default="{ data }">
-          {{data.spec?.managers?.join(',')}}
-        </template>
-      </bk-table-column>
-      <bk-table-column
-        :label="t('余额')"
-        prop="price"
-      >
-        <template #default="{ data }">
-          {{data.spec?.price}}{{data.spec?.price_unit}}
-        </template>
-      </bk-table-column>
-      <bk-table-column
-        :label="t('创建时间')"
-        prop="created_at"
-      />
-      <bk-table-column
-        label="备注"
-        prop="spec.memo"
-      />
-      <bk-table-column
-        label="操作"
-      >
-        <template #default="props">
-          <div class="operate-button">
-            <!-- <bk-button text theme="primary" @click="handleSync(props?.data.id)">
+        <bk-table-column
+          label="ID"
+          prop="id"
+          sort
+        />
+        <bk-table-column
+          :label="t('名称')"
+          prop="name"
+        >
+          <template #default="{ data }">
+            <bk-button
+              text theme="primary"
+              @click="handleJump('accountDetail', data.id)">{{data?.spec?.name}}</bk-button>
+          </template>
+        </bk-table-column>
+        <bk-table-column
+          :label="t('云厂商')"
+          prop="vendor"
+        >
+          <template #default="props">
+            {{CloudType[props.data.vendor]}}
+          </template>
+        </bk-table-column>
+        <bk-table-column
+          :label="t('类型')"
+          prop="type"
+        >
+          <template #default="{ data }">
+            {{AccountType[data?.spec?.type]}}
+          </template>
+        </bk-table-column>
+        <bk-table-column
+          :label="t('负责人')"
+          prop="managers"
+        >
+          <template #default="{ data }">
+            {{data.spec?.managers?.join(',')}}
+          </template>
+        </bk-table-column>
+        <bk-table-column
+          :label="t('余额')"
+          prop="price"
+        >
+          <template #default="{ data }">
+            {{data.spec?.price}}{{data.spec?.price_unit}}
+          </template>
+        </bk-table-column>
+        <bk-table-column
+          :label="t('创建时间')"
+          prop="created_at"
+        />
+        <bk-table-column
+          label="备注"
+          prop="spec.memo"
+        />
+        <bk-table-column
+          label="操作"
+        >
+          <template #default="props">
+            <div class="operate-button">
+              <!-- <bk-button text theme="primary" @click="handleSync(props?.data.id)">
               {{t('同步')}}
             </bk-button> -->
-            <bk-button text theme="primary" @click="handleJump('accountDetail', props?.data.id)">
-              {{t('编辑')}}
-            </bk-button>
+              <bk-button text theme="primary" @click="handleJump('accountDetail', props?.data.id)">
+                {{t('编辑')}}
+              </bk-button>
             <!-- <bk-button text theme="primary" @click="handleDelete(props?.data.id, props?.data.name)">
               {{t('删除')}}
             </bk-button> -->
-          </div>
-        </template>
-      </bk-table-column>
-    </bk-table>
-    <bk-dialog
-      :is-show="showDeleteBox"
-      :title="deleteBoxTitle"
-      :theme="'primary'"
-      :quick-close="false"
-      @closed="showDeleteBox = false"
-      @confirm="() => handleDialogConfirm('del')"
-    >
-      <div>{{t('删除之后无法恢复账户信息')}}</div>
-    </bk-dialog>
+            </div>
+          </template>
+        </bk-table-column>
+      </bk-table>
+      <bk-dialog
+        :is-show="showDeleteBox"
+        :title="deleteBoxTitle"
+        :theme="'primary'"
+        :quick-close="false"
+        @closed="showDeleteBox = false"
+        @confirm="() => handleDialogConfirm('del')"
+      >
+        <div>{{t('删除之后无法恢复账户信息')}}</div>
+      </bk-dialog>
 
-    <bk-dialog
-      :is-show="showSyncBox"
-      :title="syncTitle"
-      :theme="'primary'"
-      :quick-close="false"
-      @closed="showSyncBox = false"
-      @confirm="() => handleDialogConfirm('sync')"
-    >
-      <div class="sync-dialog-warp">
-        <div class="flex-row justify-content-between align-items-center">
-          <img class="t-icon" :src="tcloudSrc" />
-          <div class="flex-row arrow-icon align-items-center">
-            <img class="content" :src="rightArrow" />
+      <bk-dialog
+        :is-show="showSyncBox"
+        :title="syncTitle"
+        :theme="'primary'"
+        :quick-close="false"
+        @closed="showSyncBox = false"
+        @confirm="() => handleDialogConfirm('sync')"
+      >
+        <div class="sync-dialog-warp">
+          <div class="flex-row justify-content-between align-items-center">
+            <img class="t-icon" :src="tcloudSrc" />
+            <div class="flex-row arrow-icon align-items-center">
+              <img class="content" :src="rightArrow" />
+            </div>
+            <img class="logo-icon" :src="logo" />
           </div>
-          <img class="logo-icon" :src="logo" />
+          <div class="text-center pt20 bg-default">{{t('同步中...')}}</div>
         </div>
-        <div class="text-center pt20 bg-default">{{t('同步中...')}}</div>
-      </div>
-    </bk-dialog>
+      </bk-dialog>
+    </bk-loading>
   </div>
 </template>
 
@@ -137,6 +137,7 @@ import rightArrow from '@/assets/image/right-arrow.png';
 import tcloud from '@/assets/image/tcloud.png';
 import { Message } from 'bkui-vue';
 import { CloudType, AccountType } from '@/typings';
+
 
 export default defineComponent({
   name: 'AccountManageList',

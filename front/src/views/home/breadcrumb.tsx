@@ -11,7 +11,6 @@ export default defineComponent({
     const breadList = ref([]);
     const backRouter = ref('');
     const getBreadcrumb = (tempRoute: any) => {
-      console.log('tempRoute', tempRoute);
       const matched = tempRoute[tempRoute.length - 1].meta.breadcrumb;
       breadList.value = matched;
       backRouter.value = tempRoute[tempRoute.length - 1].meta.backRouter;

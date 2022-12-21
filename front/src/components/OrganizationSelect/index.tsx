@@ -29,6 +29,14 @@ export default defineComponent({
     } = useDepartment();
     const isLoading = computed(() => !props.modelValue.every(id => isAllLoaded(id)));
     const dispalyValue = computed(() => {
+      if (!isLoading.value) {
+        props.modelValue.forEach((id) => {
+          const dept = departmentMap.value.get(id);
+          if (!dept.checked) {
+            handleCheck(true, dept, false);
+          }
+        });
+      }
       const nameValues = props.modelValue.map(id => departmentMap.value.get(id)?.full_name ?? id);
       return isLoading.value ? [] : nameValues;
     });
@@ -95,7 +103,6 @@ export default defineComponent({
     }
 
     function updateValue(val: number[]) {
-      ctx.emit('change', val);
       ctx.emit('update:modelValue', val);
     }
 
@@ -116,8 +123,10 @@ export default defineComponent({
       updateValue(newIds);
     }
 
-    const handleToggle = (val: Boolean) => {
-      console.log('val', val);
+    const handleToggle = (isOpen: Boolean) => {
+      if (!isOpen) {
+        ctx.emit('change', dispalyValue.value);
+      }
     };
 
     return () => (

@@ -200,14 +200,14 @@ export default defineComponent({
                       </Menu>
                     ),
                     default: () => (
-                      <div>
+                      <>
                         <div class="navigation-breadcrumb">
                             <Breadcrumb></Breadcrumb>
                         </div>
                         <div class="view-warp">
                           <RouterView></RouterView>
                         </div>
-                      </div>
+                      </>
                     ),
                   }}
                 </Navigation>

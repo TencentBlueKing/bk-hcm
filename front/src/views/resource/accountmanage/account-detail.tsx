@@ -1,11 +1,10 @@
 import { Form, Dialog, Input, Message } from 'bkui-vue';
-import { reactive, defineComponent, ref, onMounted } from 'vue';
+import { reactive, defineComponent, ref, onMounted, computed } from 'vue';
 import { ProjectModel, SecretModel, CloudType, AccountType } from '@/typings';
-import { BUSINESS_TYPE } from '@/constants';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
-// import MemberSelect from '@/components/MemberSelect';
+import Loading from '@/components/loading';
 import OrganizationSelect from '@/components/OrganizationSelect';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
 import './account-detail.scss';
@@ -19,6 +18,7 @@ export default defineComponent({
     const accountStore = useAccountStore();
     const route = useRoute();
     const formDiaRef = ref(null);
+    const requestQueue = ref(['detail', 'departments', 'bizsList']);
 
     const initProjectModel: ProjectModel = {
       id: 1,
@@ -30,7 +30,7 @@ export default defineComponent({
       subAccountName: '',    // 子账号名称
       secretId: '',    // 密钥id
       secretKey: '',  // 密钥key
-      managers: ['poloohuang'], // 责任人
+      managers: [], // 责任人
       departmentId: [],   // 组织架构
       bizIds: [],   // 使用业务
       memo: '',     // 备注
@@ -58,7 +58,7 @@ export default defineComponent({
     });
 
     const businessList = reactive({ // 业务列表
-      list: BUSINESS_TYPE,
+      list: [],
     });
 
     const isOrganizationDetail = ref<Boolean>(true);      // 组织架构详情展示
@@ -66,7 +66,6 @@ export default defineComponent({
     const dialogForm = reactive({ list: [] });
 
     onMounted(async () => {
-      getBusinessList();
       const { id } = route.query;
       const res = await accountStore.getAccountDetail(Number(id));
       projectModel.id = res?.data.id;
@@ -84,27 +83,33 @@ export default defineComponent({
       projectModel.updated_at = res?.data.revision.update_at;
       projectModel.extension = res?.data.extension;
       projectModel.bizIds = res?.data?.attachment?.bk_biz_ids;
+      requestQueue.value.shift();
+      getBusinessList();
       getDepartmentInfo(res?.data.spec.department_id);
       renderDialogForm(projectModel);
       renderBaseInfoForm(projectModel);
+    });
+
+    const isLoading = computed(() => {
+      return requestQueue.value.length > 0;
     });
 
     // 获取业务列表
     const getBusinessList = async () => {
       const res = await accountStore.getBizList();
       businessList.list = res.data;
+      requestQueue.value.shift();
     };
 
     // 获取部门信息
     const getDepartmentInfo = async (id: number) => {
       const res = await accountStore.getDepartmentInfo(id);
-      console.log('res', res);
       departmentFullName.value = res?.data?.full_name;
+      requestQueue.value.shift();
     };
 
     // 动态表单
     const renderBaseInfoForm = (data: any) => {
-      console.log('data', data.vendor);
       let insertFormData: any = [];
       switch (data.vendor) {
         case 'huawei':
@@ -293,7 +298,7 @@ export default defineComponent({
       ],
     };
     // 更新信息方法
-    const updateFormData = async (key: any) => {
+    const updateFormData = async (key: any, val?: any) => {
       let params: any = { spec: {}, attachment: {} };
       if (key === 'departmentId') {
         params.spec.department_id = Number(projectModel[key].join(''));
@@ -301,7 +306,7 @@ export default defineComponent({
         isOrganizationDetail.value = true;  // 改为详情展示态
       } else if (key === 'bizIds') {
         // 若选择全部业务，则参数是-1
-        params.attachment.related_bk_biz_ids = projectModel[key].length === businessList.list.length
+        params.attachment.bk_biz_ids = projectModel[key].length === businessList.list.length
           ? -1 : projectModel[key];
         delete params.spec;
       } else {
@@ -317,6 +322,9 @@ export default defineComponent({
           message: t('更新成功'),
           theme: 'success',
         });
+        if (key === 'departmentId') {
+          departmentFullName.value = val;
+        }
       } catch (error) {
         console.log(error);
       } finally {
@@ -385,12 +393,10 @@ export default defineComponent({
           return item;
         });
       });
-      console.log(formBaseInfo);
     };
 
     // 处理失焦
     const handleblur = async (val: boolean, key: string) => {
-      console.log('111val', val);
       handleEditStatus(val, key);     // 未通过检验前状态为编辑态
       await formRef.value?.validate();
       if (projectModel[key].length) {
@@ -402,8 +408,8 @@ export default defineComponent({
     };
 
     // 处理组织架构选择
-    const handleOrganChange = () => {
-      updateFormData('departmentId');    // 更新数据
+    const handleOrganChange = (val: any) => {
+      updateFormData('departmentId', val);    // 更新数据
     };
 
     // 组织架构编辑
@@ -519,11 +525,10 @@ export default defineComponent({
             required: false,
             property: 'bizIds',
             isEdit: false,
-            selectData: businessList.list,
             component() {
               // eslint-disable-next-line max-len
               return (<RenderDetailEdit v-model={projectModel.bizIds} fromKey={this.property}
-                selectData={this.selectData} fromType="select" isEdit={this.isEdit} onBlur={handleblur}/>);
+                selectData={businessList.list} fromType="select" isEdit={this.isEdit} onBlur={handleblur}/>);
             },
           },
         ],
@@ -553,7 +558,8 @@ export default defineComponent({
     // console.log('formBaseInfo', formBaseInfo);
 
     return () => (
-        <div class="w1000 detail-warp">
+      isLoading.value ? (<Loading/>) : (
+        <div class="w1400 detail-warp">
             {/* 基本信息 */}
             {formBaseInfo.map((baseItem, index) => (
                 <div>
@@ -597,6 +603,7 @@ export default defineComponent({
             </Form>
           </Dialog>
         </div>
+      )
     );
   },
 });

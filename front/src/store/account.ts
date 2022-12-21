@@ -78,7 +78,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async getDepartmentInfo(departmentId: number) {
-      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/departments/${departmentId}`);
+      return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/departments/${departmentId}`);
     },
     /**
      * @description: 同步
