@@ -38,7 +38,7 @@ server: pre
 
 ui: pre
 	@echo -e "\e[34;1mBuilding Front...\033[0m"
-	@cd ${PRO_DIR}/front && npm i && npm run build && cp -rf paas-server ${PRO_DIR}/front/dist/
+	@cd ${PRO_DIR}/front && npm i && npm run build
 	@mv ${PRO_DIR}/front/dist ${OUTPUT_DIR}/front
 	@echo -e "\e[34;1mBuild Front Success!\n\033[0m"
 
