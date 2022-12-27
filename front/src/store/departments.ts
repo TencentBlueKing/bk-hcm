@@ -11,7 +11,7 @@ export const useDepartmentStore = defineStore({
   }),
   actions: {
     async fetchDepartMents(field: string, lookups: number) {
-      const prefix = `//${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_list_departments/`;
+      const prefix = `${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_list_departments/`;
       const params = {
         app_code: 'magicbox',
         no_page: true,

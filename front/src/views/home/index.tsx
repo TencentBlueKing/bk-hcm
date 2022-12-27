@@ -99,7 +99,7 @@ export default defineComponent({
       if (window.PROJECT_CONFIG.LOGIN_FULL) {
         window.location.href = `${window.LOGIN_FULL}?c_url=${cUrl}`;
       } else {
-        window.location.href = `//${window.PROJECT_CONFIG.BK_COMPONENT_API_URL || ''}/console/accounts/logout/`;
+        window.location.href = `${window.PROJECT_CONFIG.BK_COMPONENT_API_URL || ''}/console/accounts/logout/`;
       }
     };
 

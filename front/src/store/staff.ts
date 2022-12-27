@@ -15,7 +15,7 @@ export const useStaffStore = defineStore({
     async fetchStaffs() {
       if (this.list.length > 0 || this.fetching) return;
       this.fetching = true;
-      const prefix = `//${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fs_list_users`;
+      const prefix = `${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fs_list_users`;
       const params = {
         app_code: 'bk-magicbox',
         page: 1,
