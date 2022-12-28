@@ -109,7 +109,7 @@ func (d *discovery) syncAddresses() {
 	d.addresses = make(map[cc.Name][]serviceAddress)
 
 	for _, service := range d.discOpt.Services {
-		go d.watcher(service)
+		d.watcher(service)
 	}
 }
 
@@ -136,19 +136,21 @@ func (d *discovery) watcher(service cc.Name) {
 	opts = append(opts, etcd3.WithPrefix(), etcd3.WithPrevKV())
 	watch := d.cli.Watch(d.ctx, key, opts...)
 
-	for response := range watch {
-		for _, event := range response.Events {
-			switch event.Type {
-			case mvccpb.PUT:
-				d.setAddress(service, string(event.Kv.Key), string(event.Kv.Value))
-			case mvccpb.DELETE:
-				d.delAddress(service, string(event.Kv.Key))
-			default:
-				logs.Infof("unknown event type, %d", event.Type)
-				continue
+	go func() {
+		for response := range watch {
+			for _, event := range response.Events {
+				switch event.Type {
+				case mvccpb.PUT:
+					d.setAddress(service, string(event.Kv.Key), string(event.Kv.Value))
+				case mvccpb.DELETE:
+					d.delAddress(service, string(event.Kv.Key))
+				default:
+					logs.Infof("unknown event type, %d", event.Type)
+					continue
+				}
 			}
 		}
-	}
+	}()
 }
 
 // setAddress set etcdResolver addressed.
