@@ -39,7 +39,7 @@ export default (props: PropsType, type: string) => {
 
   // 更新数据
   const triggerApi = async () => {
-    isLoading.value = true;
+    // isLoading.value = true;
     resourceStore
       .list(
         {

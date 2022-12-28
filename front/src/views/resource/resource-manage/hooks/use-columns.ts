@@ -182,9 +182,135 @@ export default (type: string) => {
     },
   ];
 
+  const securityColumns = [
+    {
+      type: 'selection',
+      hiddenWhenDelete: true,
+    },
+    {
+      label: 'ID',
+      field: '',
+      sort: true,
+      render({ cell }: PlainObject) {
+        return h(
+          'span',
+          {
+            onClick() {
+              router.push({
+                name: 'resourceDetail',
+                params: {
+                  type: 'subnet',
+                },
+              });
+            },
+          },
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '资源 ID',
+      field: 'cid',
+      sort: true,
+    },
+    {
+      label: '名称',
+      field: 'name',
+      sort: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+    },
+    {
+      label: '业务',
+      field: 'vpc_cid',
+    },
+    {
+      label: '业务拓扑',
+      field: 'zone',
+    },
+    {
+      label: '地域',
+      field: 'ipv4_cidr',
+    },
+    {
+      label: '描述',
+      field: 'ipv6_cidr',
+    },
+    {
+      label: '关联实例',
+      field: '',
+    },
+  ];
+
+  const gcpColumns = [
+    {
+      type: 'selection',
+      hiddenWhenDelete: true,
+    },
+    {
+      label: 'ID',
+      field: '',
+      sort: true,
+      render({ cell }: PlainObject) {
+        return h(
+          'span',
+          {
+            onClick() {
+              router.push({
+                name: 'resourceDetail',
+                params: {
+                  type: 'subnet',
+                },
+              });
+            },
+          },
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '资源 ID',
+      field: 'cid',
+      sort: true,
+    },
+    {
+      label: '名称',
+      field: 'name',
+      sort: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+    },
+    {
+      label: '业务',
+      field: 'vpc_cid',
+    },
+    {
+      label: '业务拓扑',
+      field: 'zone',
+    },
+    {
+      label: 'VPC',
+      field: 'vpc',
+    },
+    {
+      label: '描述',
+      field: 'ipv6_cidr',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
+    security: securityColumns,
+    gcp: gcpColumns,
   };
 
   return columnsMap[type];

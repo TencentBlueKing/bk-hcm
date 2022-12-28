@@ -13,6 +13,7 @@ import {
   h,
   PropType,
   watch,
+  reactive,
 } from 'vue';
 
 import {
@@ -25,8 +26,9 @@ import {
   useResourceStore,
 } from '@/store/resource';
 import useBusiness from '../../hooks/use-business';
-import useDeleteSecurity from '../../hooks/use-delete-security';
 import useQueryList from '../../hooks/use-query-list';
+import useColumns from '../../hooks/use-columns';
+import useDelete from '../../hooks/use-delete';
 import { CloudType } from '@/typings';
 
 const props = defineProps({
@@ -44,19 +46,31 @@ const router = useRouter();
 
 const resourceStore = useResourceStore();
 
+const activeType = ref('group');
+
+const state = reactive<any>({
+  datas: [],
+  pagination: {
+    current: 1,
+    limit: 10,
+    count: 0,
+  },
+  isLoading: false,
+  handlePageChange: () => {},
+  handlePageSizeChange: () => {},
+  handleSort: () => {},
+  columns: useColumns('security'),
+});
+
+let securityHandleShowDelete: any;
+let SecurityDeleteDialog: any;
+
 const {
   isShowDistribution,
   handleDistribution,
   ResourceBusiness,
 } = useBusiness();
 
-const {
-  isShowSecurity,
-  handleShowDeleteSecurity,
-  DeleteSecurity,
-} = useDeleteSecurity();
-
-const tableData = ref<any>([]);
 
 const fetchList = (fetchType: string) => {
   const {
@@ -77,29 +91,51 @@ const fetchList = (fetchType: string) => {
   };
 };
 
+const showDeleteDialog = (fetchType: string, title: string) => {
+  const {
+    handleShowDelete,
+    DeleteDialog,
+  } = useDelete(
+    state.columns,
+    [],
+    fetchType,
+    t(title),
+  );
+  return {
+    handleShowDelete,
+    DeleteDialog,
+  };
+};
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-} = useQueryList(props, 'security_groups');
-datas.value = [{ id: 333, vendor: 'tcloud' }];
-
-const activeType = ref('group');
 
 // 状态保持
 watch(
   () => activeType.value,
   (v) => {
     if (v === 'group') {
-      const { datas } = fetchList('security_groups');
-      tableData.value = [{ id: 333, vendor: 'tcloud' }] || datas;
+      const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = fetchList('security_groups');
+      state.datas = [{ id: 333, vendor: 'tcloud' }] || datas;
+      state.isLoading = isLoading;
+      state.pagination = pagination;
+      state.handlePageChange = handlePageChange;
+      state.handlePageSizeChange = handlePageSizeChange;
+      state.handleSort = handleSort;
+      state.columns = useColumns('security');
+      const { handleShowDelete, DeleteDialog } = showDeleteDialog('security_groups', '删除安全组');
+      securityHandleShowDelete = handleShowDelete;
+      SecurityDeleteDialog = DeleteDialog;
     } else if (v === 'gcp') {
-      const { datas } = fetchList('vendors/gcp/firewalls/rules');
-      tableData.value = [{ id: 333, vendor: 'tcloud' }] || datas;
+      const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = fetchList('vendors/gcp/firewalls/rules');
+      state.datas = [{ id: 333, vendor: 'tcloud' }] || datas;
+      state.isLoading = isLoading;
+      state.pagination = pagination;
+      state.handlePageChange = handlePageChange;
+      state.handlePageSizeChange = handlePageSizeChange;
+      state.handleSort = handleSort;
+      state.columns = useColumns('gcp');
+      const { handleShowDelete, DeleteDialog } = showDeleteDialog('cloud/vendors/gcp/firewalls/rules', '删除防火墙规则');
+      securityHandleShowDelete = handleShowDelete;
+      SecurityDeleteDialog = DeleteDialog;
     }
   },
 );
@@ -145,7 +181,7 @@ const groupColumns = [
   },
   {
     label: '云厂商',
-    render({ data }: DoublePlainObject) {
+    render({ data }: any) {
       return h(
         'span',
         {},
@@ -180,7 +216,7 @@ const groupColumns = [
   {
     label: '操作',
     field: '',
-    render({ data }: DoublePlainObject) {
+    render() {
       return h(
         'span',
         {},
@@ -213,7 +249,7 @@ const groupColumns = [
               text: true,
               theme: 'primary',
               onClick() {
-                handleShowDeleteSecurity();
+                securityHandleShowDelete();
               },
             },
             [
@@ -264,7 +300,7 @@ const gcpColumns = [
   },
   {
     label: '云厂商',
-    render({ data }: DoublePlainObject) {
+    render({ data }: any) {
       return h(
         'span',
         {},
@@ -315,7 +351,7 @@ const gcpColumns = [
   {
     label: '操作',
     field: '',
-    render({ data }: DoublePlainObject) {
+    render() {
       return h(
         'span',
         {},
@@ -348,7 +384,7 @@ const gcpColumns = [
               text: true,
               theme: 'primary',
               onClick() {
-                handleShowDeleteSecurity();
+                securityHandleShowDelete();
               },
             },
             [
@@ -385,7 +421,7 @@ const handleConfirm = (bizId: number) => {
 
 <template>
   <bk-loading
-    :loading="isLoading"
+    :loading="state.isLoading"
   >
     <section>
       <bk-button
@@ -398,7 +434,7 @@ const handleConfirm = (bizId: number) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        @click="handleShowDeleteSecurity"
+        @click="securityHandleShowDelete"
       >
         {{ t('删除') }}
       </bk-button>
@@ -421,12 +457,12 @@ const handleConfirm = (bizId: number) => {
       v-if="activeType === 'group'"
       class="mt20"
       row-hover="auto"
-      :pagination="pagination"
+      :pagination="state.pagination"
       :columns="groupColumns"
-      :data="tableData"
-      @page-limit-change="handlePageSizeChange"
-      @page-value-change="handlePageChange"
-      @column-sort="handleSort"
+      :data="state.datas"
+      @page-limit-change="state.handlePageSizeChange"
+      @page-value-change="state.handlePageChange"
+      @column-sort="state.handleSort"
       @selection-change="handleSelection"
     />
 
@@ -434,12 +470,12 @@ const handleConfirm = (bizId: number) => {
       v-if="activeType === 'gcp'"
       class="mt20"
       row-hover="auto"
-      :pagination="pagination"
+      :pagination="state.pagination"
       :columns="gcpColumns"
-      :data="tableData"
-      @page-limit-change="handlePageSizeChange"
-      @page-value-change="handlePageChange"
-      @column-sort="handleSort"
+      :data="state.datas"
+      @page-limit-change="state.handlePageSizeChange"
+      @page-value-change="state.handlePageChange"
+      @column-sort="state.handleSort"
       @selection-change="handleSelection"
     />
 
@@ -449,9 +485,12 @@ const handleConfirm = (bizId: number) => {
       :title="t('安全组分配')"
     />
 
-    <delete-security
-      v-model:is-show="isShowSecurity"
-    ></delete-security>
+    <security-delete-dialog>
+      <h3 class="g-resource-tips">
+        {{ t('安全组被实例关联或者被其他安全组规则关联时不能直接删除，请删除关联关系后再进行删除') }}
+        <bk-button text theme="primary">{{ t('查看关联实例') }}</bk-button><br />
+      </h3>
+    </security-delete-dialog>
   </bk-loading>
 </template>
 
