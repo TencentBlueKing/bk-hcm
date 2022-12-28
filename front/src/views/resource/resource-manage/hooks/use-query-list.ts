@@ -98,6 +98,8 @@ export default (props: PropsType, type: string) => {
       deep: true,
     },
   );
+  // 切换tab重新获取数据
+  watch(() => type, triggerApi, { immediate: true });
 
   onMounted(triggerApi);
 

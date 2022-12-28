@@ -12,6 +12,7 @@ import {
   ref,
   h,
   PropType,
+  watch,
 } from 'vue';
 
 import {
@@ -55,6 +56,27 @@ const {
   DeleteSecurity,
 } = useDeleteSecurity();
 
+const tableData = ref<any>([]);
+
+const fetchList = (fetchType: string) => {
+  const {
+    datas,
+    pagination,
+    isLoading,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSort,
+  } = useQueryList(props, fetchType);
+  return {
+    datas,
+    pagination,
+    isLoading,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSort,
+  };
+};
+
 
 const {
   datas,
@@ -65,6 +87,22 @@ const {
   handleSort,
 } = useQueryList(props, 'security_groups');
 datas.value = [{ id: 333, vendor: 'tcloud' }];
+
+const activeType = ref('group');
+
+// 状态保持
+watch(
+  () => activeType.value,
+  (v) => {
+    if (v === 'group') {
+      const { datas } = fetchList('security_groups');
+      tableData.value = [{ id: 333, vendor: 'tcloud' }] || datas;
+    } else if (v === 'gcp') {
+      const { datas } = fetchList('vendors/gcp/firewalls/rules');
+      tableData.value = [{ id: 333, vendor: 'tcloud' }] || datas;
+    }
+  },
+);
 
 const handleSelection = () => {};
 
@@ -107,7 +145,6 @@ const groupColumns = [
   },
   {
     label: '云厂商',
-    sort: true,
     render({ data }: DoublePlainObject) {
       return h(
         'span',
@@ -121,7 +158,6 @@ const groupColumns = [
   {
     label: '地域',
     field: 'region',
-    sort: true,
   },
   {
     label: '描述',
@@ -130,15 +166,16 @@ const groupColumns = [
   {
     label: '关联模板',
     field: '',
-    sort: true,
   },
   {
     label: '修改时间',
     field: 'update_at',
+    sort: true,
   },
   {
     label: '创建时间',
     field: 'create_at',
+    sort: true,
   },
   {
     label: '操作',
@@ -216,8 +253,8 @@ const gcpColumns = [
     },
   },
   {
-    label: '实例 ID',
-    field: '',
+    label: '资源 ID',
+    field: 'account_id',
     sort: true,
   },
   {
@@ -227,57 +264,108 @@ const gcpColumns = [
   },
   {
     label: '云厂商',
-    field: '',
-    sort: true,
-  },
-  {
-    label: 'IP',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '云区域',
-    field: '',
-  },
-  {
-    label: '地域',
-    field: '',
-    sort: true,
+    render({ data }: DoublePlainObject) {
+      return h(
+        'span',
+        {},
+        [
+          CloudType[data.vendor],
+        ],
+      );
+    },
   },
   {
     label: 'VPC',
     field: '',
-    sort: true,
   },
   {
-    label: '子网',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '状态',
+    label: '类型',
     field: '',
   },
   {
-    label: '创建时间',
+    label: '目标',
+    field: '',
+  },
+  {
+    label: '过滤条件',
+    field: '',
+  },
+  {
+    label: '协议/端口',
     field: '',
   },
   {
     label: '操作',
     field: '',
   },
+  {
+    label: '优先级',
+    field: '',
+  },
+  {
+    label: '修改时间',
+    field: 'update_at',
+    sort: true,
+  },
+  {
+    label: '创建时间',
+    field: 'create_at',
+    sort: true,
+  },
+  {
+    label: '操作',
+    field: '',
+    render({ data }: DoublePlainObject) {
+      return h(
+        'span',
+        {},
+        [
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              onClick() {
+                router.push({
+                  name: 'resourceDetail',
+                  params: {
+                    type: 'security',
+                  },
+                  query: {
+                    activeTab: 'rule',
+                  },
+                });
+              },
+            },
+            [
+              '编辑',
+            ],
+          ),
+          h(
+            Button,
+            {
+              class: 'ml10',
+              text: true,
+              theme: 'primary',
+              onClick() {
+                handleShowDeleteSecurity();
+              },
+            },
+            [
+              '删除',
+            ],
+          ),
+        ],
+      );
+    },
+  },
 ];
-const tableData: any[] = [{}];
 const types = [
   { name: 'group', label: '安全组' },
   { name: 'gcp', label: 'GCP防火墙规则' },
 ];
-const activeType = ref('group');
 
 // 方法
-const handleSortBy = () => {
-
-};
 
 const handleConfirm = (bizId: number) => {
   const params = {
@@ -335,7 +423,7 @@ const handleConfirm = (bizId: number) => {
       row-hover="auto"
       :pagination="pagination"
       :columns="groupColumns"
-      :data="datas"
+      :data="tableData"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
@@ -346,9 +434,13 @@ const handleConfirm = (bizId: number) => {
       v-if="activeType === 'gcp'"
       class="mt20"
       row-hover="auto"
+      :pagination="pagination"
       :columns="gcpColumns"
       :data="tableData"
-      @column-sort="handleSortBy"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
+      @column-sort="handleSort"
+      @selection-change="handleSelection"
     />
 
     <resource-business
