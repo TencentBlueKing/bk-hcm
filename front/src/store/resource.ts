@@ -33,5 +33,13 @@ export const useResourceStore = defineStore({
     assignBusiness(type: string, data: any) {
       return http.post(`/api/v1/cloud/${type}/assign/bizs`, data);
     },
+    // 新增
+    add(type: string, data: any) {
+      return http.post(`/api/v1/cloud/${type}`, data);
+    },
+    // 更新
+    update(type: string, data: any, id: string | number) {
+      return http.patch(`/api/v1/cloud/${type}/${id}`, data);
+    },
   },
 });
