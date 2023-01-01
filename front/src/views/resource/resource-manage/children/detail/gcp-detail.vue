@@ -19,28 +19,28 @@ const {
 
 const gcpFields = [
   {
-    name: '资源ID',
+    name: t('资源ID'),
     value: '1234223',
     prop: 'id',
   },
   {
-    name: '资源名称',
+    name: t('资源名称'),
     value: '1234223',
     link: 'http://www.baidu.com',
     prop: 'name',
   },
   {
-    name: '账号',
+    name: t('账号'),
     value: '1234223',
     prop: 'account_id',
   },
   {
-    name: '业务',
+    name: t('业务'),
     value: '1234223',
     prop: 'account-name',
   },
   {
-    name: '云厂商',
+    name: t('云厂商'),
     value: '1234223',
     prop: 'account-name',
   },
@@ -55,47 +55,47 @@ const gcpFields = [
     prop: 'vpc_id',
   },
   {
-    name: '优先级',
+    name: t('优先级'),
     value: '1234223',
     prop: 'priority',
   },
   {
-    name: '方向',
+    name: t('方向'),
     value: '1234223',
     prop: 'type',
   },
   {
-    name: '对匹配项执行的操作',
+    name: t('对匹配项执行的操作'),
     value: '1234223',
     prop: 'account-name',
   },
   {
-    name: '目标',
+    name: t('目标'),
     value: '1234223',
     prop: 'target_tags',
   },
   {
-    name: '来源过滤条件',
+    name: t('来源过滤条件'),
     value: '1234223',
     prop: 'account-name',
   },
   {
-    name: '实施',
+    name: t('实施'),
     value: '1234223',
     prop: 'account-name',
   },
   {
-    name: '创建时间',
+    name: t('创建时间'),
     value: '1234223',
     prop: 'account-name',
   },
   {
-    name: '修改时间',
+    name: t('修改时间'),
     value: '1234223',
     prop: 'account-name',
   },
   {
-    name: '备注',
+    name: t('备注'),
     value: '1234223',
     edit: true,
     prop: 'memo',
@@ -119,7 +119,7 @@ const tabs = [
 ];
 
 const isShowGcpAdd = ref(false);
-const gcpTitle = ref<string>('新增');
+const gcpTitle = ref<string>(t('新增'));
 const isAdd = ref(false);
 
 const handleGcpAdd = (add: boolean) => {
@@ -150,7 +150,7 @@ const submit = (data: any) => {
 
 <template>
   <detail-header>
-    GCP防火墙：ID（xxx）
+    {{t('GCP防火墙')}}：ID（xxx）
     <template #right>
       <bk-button
         class="w100 ml10"

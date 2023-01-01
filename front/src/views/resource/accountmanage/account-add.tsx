@@ -194,7 +194,7 @@ export default defineComponent({
               label: 'SecretKey',
               required: projectModel.type === 'resource',
               property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入请输入主账号')} v-model={projectModel.secretKey} />,
+              component: () => <Input class="w450" placeholder={t('请输入主账号')} v-model={projectModel.secretKey} />,
             },
           ];
           break;
@@ -308,7 +308,7 @@ export default defineComponent({
               label: 'SecretKey',
               required: projectModel.type === 'resource',
               property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入secretKey')} v-model={projectModel.secretKey} />,
+              component: () => <Input class="w450" placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />,
             },
           ];
           break;
@@ -496,7 +496,7 @@ export default defineComponent({
       },
       {
         required: false,
-        component: () => <Button class="w90" theme="primary" onClick={submit}>{t(isTestConnection.value ? '确认' : '账号验证')}</Button>,
+        component: () => <Button theme="primary" onClick={submit}>{t(isTestConnection.value ? t('确认') : t('账号验证'))}</Button>,
       },
     ]);
 

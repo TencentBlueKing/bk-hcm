@@ -182,7 +182,7 @@ export default (type: string) => {
     },
   ];
 
-  const securityColumns = [
+  const groupColumns = [
     {
       type: 'selection',
       hiddenWhenDelete: true,
@@ -309,7 +309,7 @@ export default (type: string) => {
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
-    security: securityColumns,
+    group: groupColumns,
     gcp: gcpColumns,
   };
 

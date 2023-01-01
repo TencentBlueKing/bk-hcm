@@ -59,7 +59,7 @@ const state = reactive<any>({
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
   handleSort: () => {},
-  columns: useColumns('security'),
+  columns: useColumns('group'),
 });
 
 let securityHandleShowDelete: any;
@@ -73,6 +73,7 @@ const {
 
 
 const fetchList = (fetchType: string) => {
+  console.log('fetchType', fetchType);
   const {
     datas,
     pagination,
@@ -107,38 +108,40 @@ const showDeleteDialog = (fetchType: string, title: string) => {
   };
 };
 
-
 // 状态保持
 watch(
   () => activeType.value,
   (v) => {
-    if (v === 'group') {
-      const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = fetchList('security_groups');
-      state.datas = [{ id: 333, vendor: 'tcloud' }] || datas;
-      state.isLoading = isLoading;
-      state.pagination = pagination;
-      state.handlePageChange = handlePageChange;
-      state.handlePageSizeChange = handlePageSizeChange;
-      state.handleSort = handleSort;
-      state.columns = useColumns('security');
-      const { handleShowDelete, DeleteDialog } = showDeleteDialog('security_groups', '删除安全组');
-      securityHandleShowDelete = handleShowDelete;
-      SecurityDeleteDialog = DeleteDialog;
-    } else if (v === 'gcp') {
-      const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = fetchList('vendors/gcp/firewalls/rules');
-      state.datas = [{ id: 333, vendor: 'tcloud' }] || datas;
-      state.isLoading = isLoading;
-      state.pagination = pagination;
-      state.handlePageChange = handlePageChange;
-      state.handlePageSizeChange = handlePageSizeChange;
-      state.handleSort = handleSort;
-      state.columns = useColumns('gcp');
-      const { handleShowDelete, DeleteDialog } = showDeleteDialog('cloud/vendors/gcp/firewalls/rules', '删除防火墙规则');
-      securityHandleShowDelete = handleShowDelete;
-      SecurityDeleteDialog = DeleteDialog;
-    }
+    handleSwtichType(v);
   },
 );
+
+const handleSwtichType = (type: string) => {
+  const params = {
+    fetchUrl: 'security_groups',
+    columns: 'group',
+    dialogName: t('删除安全组'),
+  };
+  if (type === 'gcp') {
+    params.fetchUrl = 'vendors/gcp/firewalls/rules';
+    params.columns = 'gcp';
+    params.dialogName = t('删除防火墙规则');
+  }
+  // eslint-disable-next-line max-len
+  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = fetchList(params.fetchUrl);
+  state.datas = [{ id: 333, vendor: 'tcloud' }] || datas;
+  state.isLoading = isLoading;
+  state.pagination = pagination;
+  state.handlePageChange = handlePageChange;
+  state.handlePageSizeChange = handlePageSizeChange;
+  state.handleSort = handleSort;
+  state.columns = useColumns(params.columns);
+  const { handleShowDelete, DeleteDialog } = showDeleteDialog(params.fetchUrl, params.dialogName);
+  securityHandleShowDelete = handleShowDelete;
+  SecurityDeleteDialog = DeleteDialog;
+};
+
+handleSwtichType(activeType.value);
 
 const handleSelection = () => {};
 
@@ -170,17 +173,17 @@ const groupColumns = [
     },
   },
   {
-    label: '资源 ID',
+    label: t('资源 ID'),
     field: 'account_id',
     sort: true,
   },
   {
-    label: '名称',
+    label: t('名称'),
     field: 'name',
     sort: true,
   },
   {
-    label: '云厂商',
+    label: t('云厂商'),
     render({ data }: any) {
       return h(
         'span',
@@ -192,29 +195,29 @@ const groupColumns = [
     },
   },
   {
-    label: '地域',
+    label: t('地域'),
     field: 'region',
   },
   {
-    label: '描述',
+    label: t('描述'),
     field: 'memo',
   },
   {
-    label: '关联模板',
+    label: t('关联模板'),
     field: '',
   },
   {
-    label: '修改时间',
+    label: t('修改时间'),
     field: 'update_at',
     sort: true,
   },
   {
-    label: '创建时间',
+    label: t('创建时间'),
     field: 'create_at',
     sort: true,
   },
   {
-    label: '操作',
+    label: t('操作'),
     field: '',
     render() {
       return h(
@@ -239,7 +242,7 @@ const groupColumns = [
               },
             },
             [
-              '配置规则',
+              t('配置规则'),
             ],
           ),
           h(
@@ -253,7 +256,7 @@ const groupColumns = [
               },
             },
             [
-              '删除',
+              t('删除'),
             ],
           ),
         ],
@@ -289,17 +292,17 @@ const gcpColumns = [
     },
   },
   {
-    label: '资源 ID',
+    label: t('资源 ID'),
     field: 'account_id',
     sort: true,
   },
   {
-    label: '名称',
+    label: t('名称'),
     field: '',
     sort: true,
   },
   {
-    label: '云厂商',
+    label: t('云厂商'),
     render({ data }: any) {
       return h(
         'span',
@@ -315,41 +318,41 @@ const gcpColumns = [
     field: '',
   },
   {
-    label: '类型',
+    label: t('类型'),
     field: '',
   },
   {
-    label: '目标',
+    label: t('目标'),
     field: '',
   },
   {
-    label: '过滤条件',
+    label: t('过滤条件'),
     field: '',
   },
   {
-    label: '协议/端口',
+    label: t('协议/端口'),
     field: '',
   },
   {
-    label: '操作',
+    label: t('操作'),
     field: '',
   },
   {
-    label: '优先级',
+    label: t('优先级'),
     field: '',
   },
   {
-    label: '修改时间',
+    label: t('修改时间'),
     field: 'update_at',
     sort: true,
   },
   {
-    label: '创建时间',
+    label: t('创建时间'),
     field: 'create_at',
     sort: true,
   },
   {
-    label: '操作',
+    label: t('操作'),
     field: '',
     render() {
       return h(
@@ -365,16 +368,13 @@ const gcpColumns = [
                 router.push({
                   name: 'resourceDetail',
                   params: {
-                    type: 'security',
-                  },
-                  query: {
-                    activeTab: 'rule',
+                    type: 'gcp',
                   },
                 });
               },
             },
             [
-              '编辑',
+              t('编辑'),
             ],
           ),
           h(
@@ -388,7 +388,7 @@ const gcpColumns = [
               },
             },
             [
-              '删除',
+              t('删除'),
             ],
           ),
         ],
@@ -397,8 +397,8 @@ const gcpColumns = [
   },
 ];
 const types = [
-  { name: 'group', label: '安全组' },
-  { name: 'gcp', label: 'GCP防火墙规则' },
+  { name: 'group', label: t('安全组') },
+  { name: 'gcp', label: t('GCP防火墙规则') },
 ];
 
 // 方法
@@ -413,7 +413,7 @@ const handleConfirm = (bizId: number) => {
     .then(() => {
       Message({
         theme: 'success',
-        message: '分配成功',
+        message: t('分配成功'),
       });
     });
 };
@@ -486,9 +486,13 @@ const handleConfirm = (bizId: number) => {
     />
 
     <security-delete-dialog>
-      <h3 class="g-resource-tips">
+      <h3 class="g-resource-tips" v-if="activeType === 'group'">
         {{ t('安全组被实例关联或者被其他安全组规则关联时不能直接删除，请删除关联关系后再进行删除') }}
-        <bk-button text theme="primary">{{ t('查看关联实例') }}</bk-button><br />
+        <bk-button text theme="primary">{{ t('查看关联实例') }}</bk-button>
+      </h3>
+      <h3 class="g-resource-tips" v-else>
+        {{ t('防火墙规则被实例关联') }}<bk-button text theme="primary">{{ t('查看关联实例') }}</bk-button>
+        {{ t('请注意删除防火墙规则后无法恢复，请谨慎操作') }}
       </h3>
     </security-delete-dialog>
   </bk-loading>

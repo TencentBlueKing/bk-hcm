@@ -8,11 +8,12 @@ import {
 } from '@/store/resource';
 
 import { Message } from 'bkui-vue';
+import i18n from '@/language/i18n';
 
 // import { useI18n } from 'vue-i18n';
 
 export default (type: string, data: any, id?: number) => {
-  // const { t } = useI18n();
+  const { t } = i18n.global;
   const loading = ref(false);
   const resourceStore = useResourceStore();
 
@@ -23,7 +24,7 @@ export default (type: string, data: any, id?: number) => {
       .add(type, data)
       .then(() => {
         Message({
-          message: '添加成功',
+          message: t('添加成功'),
           theme: 'success',
         });
       })
@@ -39,7 +40,7 @@ export default (type: string, data: any, id?: number) => {
       .update(type, data, id)
       .then(() => {
         Message({
-          message: '编辑成功',
+          message: t('编辑成功'),
           theme: 'success',
         });
       })

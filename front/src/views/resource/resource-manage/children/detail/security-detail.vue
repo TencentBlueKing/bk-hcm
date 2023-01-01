@@ -32,11 +32,11 @@ const tabs = [
     value: 'detail',
   },
   {
-    name: '关联实例',
+    name: t('关联实例'),
     value: 'relate',
   },
   {
-    name: '安全组规则',
+    name: t('安全组规则'),
     value: 'rule',
   },
 ];
@@ -45,7 +45,7 @@ const tabs = [
 
 <template>
   <detail-header>
-    安全组：ID（xxx）
+    {{t('安全组')}}：ID（xxx）
   </detail-header>
 
   <detail-tab

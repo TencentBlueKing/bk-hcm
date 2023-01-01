@@ -21,23 +21,23 @@ const {
 
 const inColumns = [
   {
-    label: '来源',
+    label: t('来源'),
     field: 'id',
   },
   {
-    label: '端口协议',
+    label: t('端口协议'),
     field: 'id',
   },
   {
-    label: '端口',
+    label: t('端口'),
     field: 'id',
   },
   {
-    label: '策略',
+    label: t('策略'),
     field: 'id',
   },
   {
-    label: '操作',
+    label: t('操作'),
     field: 'id',
   },
 ];
@@ -49,23 +49,23 @@ const inData = [
 
 const outColumns = [
   {
-    label: '目标',
+    label: t('目标'),
     field: 'id',
   },
   {
-    label: '端口协议',
+    label: t('端口协议'),
     field: 'id',
   },
   {
-    label: '端口',
+    label: t('端口'),
     field: 'id',
   },
   {
-    label: '策略',
+    label: t('策略'),
     field: 'id',
   },
   {
-    label: '操作',
+    label: t('操作'),
     field: 'id',
   },
 ];
@@ -76,8 +76,8 @@ const outData = [
 ];
 // tab 信息
 const types = [
-  { name: 'in', label: '入站规则' },
-  { name: 'out', label: '出站规则' },
+  { name: 'in', label: t('入站规则') },
+  { name: 'out', label: t('出站规则') },
 ];
 const activeType = ref('in');
 
@@ -98,7 +98,7 @@ const activeType = ref('in');
     </bk-radio-group>
 
     <bk-button theme="primary" @click="handleSecurityRule">
-      新增规则
+      {{t('新增规则')}}
     </bk-button>
   </section>
 

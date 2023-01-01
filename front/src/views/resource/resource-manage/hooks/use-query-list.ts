@@ -99,9 +99,12 @@ export default (props: PropsType, type: string) => {
     },
   );
   // 切换tab重新获取数据
-  watch(() => type, triggerApi, { immediate: true });
+  watch(() => type, async (value) => {
+    console.log('value', value);
+    triggerApi();
+  });
 
-  onMounted(triggerApi);
+  triggerApi();
 
   return {
     datas,

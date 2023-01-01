@@ -118,13 +118,13 @@ export default defineComponent({
         case 'tcloud':
           insertFormData = [
             {
-              label: t('主账号ID:'),
+              label: t('主账号ID'),
               required: false,
               property: 'cloud_main_account',
               component: () => <span>{projectModel.extension.cloud_main_account}</span>,
             },
             {
-              label: t('子账号ID:'),
+              label: t('子账号ID'),
               required: false,
               property: 'cloud_sub_account',
               component: () => <span>{projectModel.extension.cloud_sub_account}</span>,
@@ -419,30 +419,30 @@ export default defineComponent({
 
     const formBaseInfo = reactive([
       {
-        name: '基本信息:',
+        name: t('基本信息'),
         data: [
           {
-            label: t('云厂商:'),
+            label: t('云厂商'),
             required: false,
             property: 'vendor',
             isEdit: false,
             component: () => <span>{CloudType[projectModel.vendor]}</span>,
           },
           {
-            label: t('账号类别:'),
+            label: t('账号类别'),
             required: false,
             property: 'type',
             isEdit: false,
             component: () => <span>{AccountType[projectModel.type]}</span>,
           },
           {
-            label: 'ID:',
+            label: 'ID',
             required: false,
             property: 'id',
             component: () => <span>{projectModel.id}</span>,
           },
           {
-            label: t('名称:'),
+            label: t('名称'),
             required: true,
             property: 'name',
             isEdit: false,
@@ -452,7 +452,7 @@ export default defineComponent({
             },
           },
           {
-            label: t('负责人:'),
+            label: t('负责人'),
             required: true,
             property: 'managers',
             isEdit: false,
@@ -461,37 +461,37 @@ export default defineComponent({
             },
           },
           {
-            label: t('余额:'),
+            label: t('余额'),
             required: false,
             property: 'price',
             component: () => <span>{projectModel.price}{projectModel.price_unit}</span>,
           },
           {
-            label: t('创建人:'),
+            label: t('创建人'),
             required: false,
             property: 'creator',
             component: () => <span>{projectModel.creator}</span>,
           },
           {
-            label: t('创建时间:'),
+            label: t('创建时间'),
             required: false,
             property: 'created_at',
             component: () => <span>{projectModel.created_at}</span>,
           },
           {
-            label: t('修改人:'),
+            label: t('修改人'),
             required: false,
             property: 'reviser',
             component: () => <span>{projectModel.reviser}</span>,
           },
           {
-            label: t('修改时间:'),
+            label: t('修改时间'),
             required: false,
             property: 'updated_at',
             component: () => <span>{projectModel.updated_at}</span>,
           },
           {
-            label: t('备注:'),
+            label: t('备注'),
             required: false,
             property: 'memo',
             isEdit: false,
@@ -506,7 +506,7 @@ export default defineComponent({
         name: t('业务信息'),
         data: [
           {
-            label: t('组织架构:'),
+            label: t('组织架构'),
             required: false,
             property: 'departmentId',
             isEdit: true,
@@ -521,7 +521,7 @@ export default defineComponent({
             },
           },
           {
-            label: t('使用业务:'),
+            label: t('使用业务'),
             required: false,
             property: 'bizIds',
             isEdit: false,
@@ -590,7 +590,8 @@ export default defineComponent({
             width={680}
             title={t('密钥信息')}
             onConfirm={onConfirm}
-            confirmText={isTestConnection.value ? '确认' : '测试连接'}
+            cancelText={t('取消')}
+            confirmText={isTestConnection.value ? t('确认') : t('测试连接')}
             onClosed={onClosed}
           >
             <Form labelWidth={100} model={secretModel} ref={formDiaRef}>
