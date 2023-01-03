@@ -17,36 +17,54 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package dataservice defines data-service api client.
 package dataservice
 
 import (
 	"fmt"
 
-	"hcm/pkg/client/data-service/cloud"
+	"hcm/pkg/client/data-service/aws"
+	"hcm/pkg/client/data-service/azure"
+	"hcm/pkg/client/data-service/gcp"
+	"hcm/pkg/client/data-service/global"
+	"hcm/pkg/client/data-service/huawei"
+	"hcm/pkg/client/data-service/tcloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 )
 
 // Client is data-service api client.
 type Client struct {
-	client rest.ClientInterface
+	Global *global.Client
+	TCloud *tcloud.Client
+	Aws    *aws.Client
+	HuaWei *huawei.Client
+	Gcp    *gcp.Client
+	Azure  *azure.Client
 }
 
 // NewClient create a new data-service api client.
 func NewClient(c *client.Capability, version string) *Client {
-	base := fmt.Sprintf("/api/%s/data", version)
+	prefixPath := fmt.Sprintf("/api/%s/data/vendors", version)
 	return &Client{
-		client: rest.NewClient(c, base),
+		// Note: 对于Global Client，主要是用于无vendor区分即全局或跨多个云的请求
+		Global: global.NewClient(
+			rest.NewClient(c, fmt.Sprintf("api/%s/data", version)),
+		),
+		TCloud: tcloud.NewClient(
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.TCloud)),
+		),
+		Aws: aws.NewClient(
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.Aws)),
+		),
+		HuaWei: huawei.NewClient(
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.HuaWei)),
+		),
+		Gcp: gcp.NewClient(
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.Gcp)),
+		),
+		Azure: azure.NewClient(
+			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.Azure)),
+		),
 	}
-}
-
-// CloudAccount ...
-func (c *Client) CloudAccount() *cloud.AccountClient {
-	return cloud.NewCloudAccountClient(c.client)
-}
-
-// Auth get api client for authorize use.
-func (c *Client) Auth() *AuthClient {
-	return NewAuthClient(c.client)
 }

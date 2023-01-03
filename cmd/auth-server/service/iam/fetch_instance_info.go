@@ -50,7 +50,7 @@ func (i *IAM) FetchInstanceInfo(kt *kit.Kit, resType client.TypeID, ft *types.Fe
 		Filter:       expr,
 		Page:         &daltypes.BasePage{Count: false},
 	}
-	resp, err := i.ds.Auth().ListInstances(kt.Ctx, kt.Header(), req)
+	resp, err := i.ds.Global.Auth.ListInstances(kt.Ctx, kt.Header(), req)
 	if err != nil {
 		return nil, err
 	}

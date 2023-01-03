@@ -17,45 +17,46 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package global
 
 import (
+	"context"
+	"net/http"
+
+	dataservice "hcm/pkg/api/data-service"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
+// AuthClient is api client for authorize use.
+type AuthClient struct {
 	client rest.ClientInterface
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
+// NewAuthClient create a new api client for authorize use.
+func NewAuthClient(client rest.ClientInterface) *AuthClient {
+	return &AuthClient{
 		client: client,
 	}
 }
 
-// // Create cloud account.
-// func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-// 	*core.CreateResult, error,
-// ) {
-// 	resp := new(core.CreateResp)
-//
-// 	err := a.client.Post().
-// 		WithContext(ctx).
-// 		Body(request).
-// 		SubResourcef("/account/create").
-// 		WithHeaders(h).
-// 		Do().
-// 		Into(resp)
-//
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	if resp.Code != errf.OK {
-// 		return nil, errf.New(resp.Code, resp.Message)
-// 	}
-//
-// 	return resp.Data, nil
-// }
+// ListInstances list instances for iam pull resource callback.
+func (a *AuthClient) ListInstances(ctx context.Context, h http.Header, request *dataservice.ListInstancesReq) (
+	*dataservice.ListInstancesResult, error) {
+
+	resp := new(dataservice.ListInstancesResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/list/auth/instances").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, err
+}

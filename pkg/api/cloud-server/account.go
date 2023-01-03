@@ -20,23 +20,88 @@
 // Package cloudserver defines cloud-server api call protocols.
 package cloudserver
 
-import "hcm/pkg/criteria/validator"
-
-// CreateAccountReq defines create cloud account http request.
-type CreateAccountReq struct {
-	Name string  `json:"name"`
-	Memo *string `json:"memo"`
-}
-
-// Validate create account request.
-func (c CreateAccountReq) Validate() error {
-	if err := validator.ValidateName(c.Name); err != nil {
-		return err
-	}
-
-	if err := validator.ValidateMemo(c.Memo, false); err != nil {
-		return err
-	}
-
-	return nil
-}
+// type AccountExtension interface {
+// 	Validate() error
+// 	ConvertToDataServiceExtension() cloud.AccountExtension
+// }
+//
+// type TCloudAccountExtension struct {
+// 	MainAccount string `json:"main_account" validate:"required"`
+// 	SubAccount  string `json:"sub_account" validate:"required"`
+// 	SecretID    string `json:"secret_id" validate:"required"`
+// 	SecretKey   string `json:"secret_key" validate:"required"`
+// }
+//
+// func (e TCloudAccountExtension) Validate() error {
+// 	return validator.Validate.Struct(e)
+// }
+//
+// func (e TCloudAccountExtension) ConvertToDataServiceExtension() cloud.AccountExtension {
+// 	return cloud.AccountExtension{
+// 		TCloud: &cloud.TCloudAccountExtension{
+// 			MainAccountCid: e.MainAccount,
+// 			SubAccountCid:  e.SubAccount,
+// 			Secret: &cloud.BaseSecret{
+// 				Cid: e.SecretID,
+// 				Key: e.SecretKey,
+// 			},
+// 		},
+// 	}
+// }
+//
+// type AwsAccountExtension struct {
+// 	AccountID   string `json:"account_id" validate:"required"`
+// 	IamUsername string `json:"iam_username" validate:"required"`
+// 	SecretID    string `json:"secret_id" validate:"required"`
+// 	SecretKey   string `json:"secret_key" validate:"required"`
+// }
+//
+// func (e AwsAccountExtension) Validate() error {
+// 	return validator.Validate.Struct(e)
+// }
+//
+// func (e AwsAccountExtension) ConvertToDataServiceExtension() cloud.AccountExtension {
+// 	return cloud.AccountExtension{
+// 		Aws: &cloud.AwsAccountExtension{},
+// 	}
+// }
+//
+// // CreateAccountReq defines create cloud account http request.
+// type CreateAccountReq struct {
+// 	Vendor enumor.Vendor `json:"vendor" validate:"required"`
+// 	// FIXME: 没法统一 Spec,Extension,Attachment里的数据做进一步校验
+// 	Spec       *cloud.AccountSpec       `json:"spec" validate:"required"`
+// 	Extension  json.RawMessage          `json:"extension" validate:"required"`
+// 	Attachment *cloud.AccountAttachment `json:"attachment" validate:"required"`
+// }
+//
+// // Validate create account request.
+// func (req CreateAccountReq) Validate() error {
+// 	return validator.Validate.Struct(req)
+// }
+//
+// func (req CreateAccountReq) UnmarshalExtension() (AccountExtension, error) {
+//
+// }
+//
+// // ListAccountReq ...
+// type ListAccountReq struct {
+// 	Filter *filter.Expression `json:"filter" validate:"omitempty"`
+// 	Page   *types.BasePage    `json:"page" validate:"required"`
+// }
+//
+// // Validate ...
+// func (l *ListAccountReq) Validate() error {
+// 	return validator.Validate.Struct(l)
+// }
+//
+// // ListAccountResult defines list instances for iam pull resource callback result.
+// type ListAccountResult struct {
+// 	Count   uint64           `json:"count,omitempty"`
+// 	Details []*cloud.Account `json:"details,omitempty"`
+// }
+//
+// type CheckAccountReq struct {
+// 	Vendor    enumor.Vendor           `json:"vendor" validate:"required"`
+// 	Extension *cloud.AccountExtension `json:"extension" validate:"required"`
+// }

@@ -40,8 +40,8 @@ type ClientSet struct {
 	// TODO add flow control option
 }
 
-// newClientSet create a new empty client set.
-func newClientSet(client client.HTTPClient, discover serviced.Discover, discoverServices []cc.Name) *ClientSet {
+// NewClientSet create a new empty client set.
+func NewClientSet(client client.HTTPClient, discover serviced.Discover, discoverServices []cc.Name) *ClientSet {
 	cs := &ClientSet{
 		version:      "v1",
 		client:       client,
@@ -57,19 +57,19 @@ func newClientSet(client client.HTTPClient, discover serviced.Discover, discover
 // NewHCServiceClientSet create a new hc-service used client set.
 func NewHCServiceClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
 	discoverServices := []cc.Name{cc.DataServiceName}
-	return newClientSet(client, discover, discoverServices)
+	return NewClientSet(client, discover, discoverServices)
 }
 
 // NewAuthServerClientSet create a new auth-server used client set.
 func NewAuthServerClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
 	discoverServices := []cc.Name{cc.DataServiceName}
-	return newClientSet(client, discover, discoverServices)
+	return NewClientSet(client, discover, discoverServices)
 }
 
 // NewCloudServerClientSet create a new cloud-server used client set.
 func NewCloudServerClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
 	discoverServices := []cc.Name{cc.DataServiceName, cc.HCServiceName}
-	return newClientSet(client, discover, discoverServices)
+	return NewClientSet(client, discover, discoverServices)
 }
 
 // CloudServer get cloud-server client.

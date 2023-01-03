@@ -73,6 +73,8 @@ func loadFromFile(filename string) (Setting, error) {
 		s = new(HCServiceSetting)
 	case AuthServerName:
 		s = new(AuthServerSetting)
+	case WebServerName:
+		s = new(WebServerSetting)
 	default:
 		return nil, fmt.Errorf("unknown %s service name", ServiceName())
 	}

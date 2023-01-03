@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"time"
 
+	"hcm/cmd/cloud-server/service/account"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -152,6 +153,8 @@ func (s *Service) apiSet() *restful.Container {
 		ApiClient:  s.client,
 		Authorizer: s.authorizer,
 	}
+
+	account.InitAccountService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
