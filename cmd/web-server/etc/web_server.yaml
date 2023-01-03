@@ -76,9 +76,9 @@ esb:
   endpoints:
     - http://paas.bk.com
   # appCode is the BlueKing app code of hcm to request esb.
-  appCode: hcm2
+  appCode:
   # appSecret is the BlueKing app secret of hcm to request esb.
-  appSecret: 9a0d5270-4944-4bc3-8280-231d9f77204b
+  appSecret:
   # user is the BlueKing user of hcm to request esb.
   user: admin
   # defines tls related options.
