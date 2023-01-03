@@ -155,3 +155,22 @@ func AuthServer() AuthServerSetting {
 
 	return *s
 }
+
+// WebServer return web server Setting.
+func WebServer() WebServerSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty web server setting")
+		return WebServerSetting{}
+	}
+
+	s, ok := rt.settings.(*WebServerSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get web server setting", ServiceName())
+		return WebServerSetting{}
+	}
+
+	return *s
+}

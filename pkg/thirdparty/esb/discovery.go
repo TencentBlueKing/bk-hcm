@@ -17,45 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package esb
 
 import (
-	"hcm/pkg/rest"
+	"errors"
+	"sync"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// esbDiscovery used to esb discovery.
+type esbDiscovery struct {
+	servers []string
+	index   int
+	sync.Mutex
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
+// GetServers get esb server host.
+func (s *esbDiscovery) GetServers() ([]string, error) {
+	s.Lock()
+	defer s.Unlock()
+	num := len(s.servers)
+	if num == 0 {
+		return []string{}, errors.New("there is no esb server can be used")
 	}
+	if s.index < num-1 {
+		s.index = s.index + 1
+		return append(s.servers[s.index-1:], s.servers[:s.index-1]...), nil
+	}
+	s.index = 0
+	return append(s.servers[num-1:], s.servers[:num-1]...), nil
 }
-
-// // Create cloud account.
-// func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-// 	*core.CreateResult, error,
-// ) {
-// 	resp := new(core.CreateResp)
-//
-// 	err := a.client.Post().
-// 		WithContext(ctx).
-// 		Body(request).
-// 		SubResourcef("/account/create").
-// 		WithHeaders(h).
-// 		Do().
-// 		Into(resp)
-//
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	if resp.Code != errf.OK {
-// 		return nil, errf.New(resp.Code, resp.Message)
-// 	}
-//
-// 	return resp.Data, nil
-// }

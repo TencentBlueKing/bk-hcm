@@ -57,6 +57,8 @@ const (
 	HCServiceName Name = "hc-service"
 	// AuthServerName is the auth server's service name
 	AuthServerName Name = "auth-server"
+	// WebServerName is the web page server's name
+	WebServerName Name = "web-server"
 )
 
 // Setting defines all service Setting interface.
@@ -247,6 +249,51 @@ func (s AuthServerSetting) Validate() error {
 	}
 
 	if err := s.IAM.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// WebServerSetting defines api server used setting options.
+type WebServerSetting struct {
+	Network Network   `yaml:"network"`
+	Service Service   `yaml:"service"`
+	Log     LogOption `yaml:"log"`
+	Web     Web       `yaml:"web"`
+	Esb     Esb       `yaml:"esb"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *WebServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the ApiServerSetting default value if user not configured.
+func (s *WebServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+
+	return
+}
+
+// Validate ApiServerSetting option.
+func (s WebServerSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Web.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Esb.validate(); err != nil {
 		return err
 	}
 

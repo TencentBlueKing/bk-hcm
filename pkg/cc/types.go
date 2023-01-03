@@ -462,3 +462,56 @@ func (s IAM) validate() error {
 
 	return nil
 }
+
+// Web 服务依赖所需特有配置， 包括登录、静态文件等配置的定义
+type Web struct {
+	StaticFileDirPath string `yaml:"static_file_dir_path"`
+
+	BkLoginUrl        string `yaml:"bk_login_url"`
+	BkComponentApiUrl string `yaml:"bk_component_api_url"`
+}
+
+func (s Web) validate() error {
+	if len(s.BkLoginUrl) == 0 {
+		return errors.New("bk_login_url is not set")
+	}
+
+	if len(s.BkComponentApiUrl) == 0 {
+		return errors.New("bk_component_api_url is not set")
+	}
+
+	return nil
+}
+
+// Esb defines the esb related runtime.
+type Esb struct {
+	// Endpoints is a seed list of host:port addresses of esb nodes.
+	Endpoints []string `yaml:"endpoints"`
+	// AppCode is the BlueKing app code of hcm to request esb.
+	AppCode string `yaml:"appCode"`
+	// AppSecret is the BlueKing app secret of hcm to request esb.
+	AppSecret string `yaml:"appSecret"`
+	// User is the BlueKing user of hcm to request esb.
+	User string    `yaml:"user"`
+	TLS  TLSConfig `yaml:"tls"`
+}
+
+// validate esb runtime.
+func (s Esb) validate() error {
+	if len(s.Endpoints) == 0 {
+		return errors.New("esb endpoints is not set")
+	}
+	if len(s.AppCode) == 0 {
+		return errors.New("esb app code is not set")
+	}
+	if len(s.AppSecret) == 0 {
+		return errors.New("esb app secret is not set")
+	}
+	if len(s.User) == 0 {
+		return errors.New("esb user is not set")
+	}
+	if err := s.TLS.validate(); err != nil {
+		return fmt.Errorf("validate esb tls failed, err: %v", err)
+	}
+	return nil
+}

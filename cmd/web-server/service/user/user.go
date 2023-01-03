@@ -17,45 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package user
 
 import (
+	"hcm/cmd/web-server/service/capability"
+	"hcm/pkg/client"
 	"hcm/pkg/rest"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
-}
-
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
+// InitUserService initial the userSvc service
+func InitUserService(c *capability.Capability) {
+	svr := &userSvc{
+		client: c.ApiClient,
 	}
+
+	h := rest.NewHandler()
+	h.Add("GetUser", "GET", "/users", svr.GetUser)
+
+	h.Load(c.WebService)
 }
 
-// // Create cloud account.
-// func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-// 	*core.CreateResult, error,
-// ) {
-// 	resp := new(core.CreateResp)
-//
-// 	err := a.client.Post().
-// 		WithContext(ctx).
-// 		Body(request).
-// 		SubResourcef("/account/create").
-// 		WithHeaders(h).
-// 		Do().
-// 		Into(resp)
-//
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	if resp.Code != errf.OK {
-// 		return nil, errf.New(resp.Code, resp.Message)
-// 	}
-//
-// 	return resp.Data, nil
-// }
+type userSvc struct {
+	client *client.ClientSet
+}
+
+// GetUser get user info
+func (u *userSvc) GetUser(cts *rest.Contexts) (interface{}, error) {
+	return map[string]string{"username": cts.Kit.User}, nil
+}

@@ -17,45 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package types
 
-import (
-	"hcm/pkg/rest"
-)
+import "hcm/pkg/cc"
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// CommParams defines esb request common parameter
+type CommParams struct {
+	AppCode   string `json:"bk_app_code"`
+	AppSecret string `json:"bk_app_secret"`
+	UserName  string `json:"bk_username"`
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
+// GetCommParams generate esb request common parameter from esb config and request user
+func GetCommParams(config *cc.Esb) *CommParams {
+	return &CommParams{
+		AppCode:   config.AppCode,
+		AppSecret: config.AppSecret,
+		UserName:  config.User,
 	}
 }
 
-// // Create cloud account.
-// func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-// 	*core.CreateResult, error,
-// ) {
-// 	resp := new(core.CreateResp)
-//
-// 	err := a.client.Post().
-// 		WithContext(ctx).
-// 		Body(request).
-// 		SubResourcef("/account/create").
-// 		WithHeaders(h).
-// 		Do().
-// 		Into(resp)
-//
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	if resp.Code != errf.OK {
-// 		return nil, errf.New(resp.Code, resp.Message)
-// 	}
-//
-// 	return resp.Data, nil
-// }
+// BaseResponse is esb http base response.
+type BaseResponse struct {
+	Result  bool   `json:"result"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Rid     string `json:"request_id"`
+}

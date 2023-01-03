@@ -17,45 +17,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package capability
 
 import (
-	"hcm/pkg/rest"
+	"hcm/pkg/client"
+	"hcm/pkg/thirdparty/esb"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// Capability defines the service's capability
+type Capability struct {
+	WebService *restful.WebService
+	ApiClient  *client.ClientSet
+	EsbClient  esb.Client
 }
-
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
-}
-
-// // Create cloud account.
-// func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-// 	*core.CreateResult, error,
-// ) {
-// 	resp := new(core.CreateResp)
-//
-// 	err := a.client.Post().
-// 		WithContext(ctx).
-// 		Body(request).
-// 		SubResourcef("/account/create").
-// 		WithHeaders(h).
-// 		Do().
-// 		Into(resp)
-//
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	if resp.Code != errf.OK {
-// 		return nil, errf.New(resp.Code, resp.Message)
-// 	}
-//
-// 	return resp.Data, nil
-// }

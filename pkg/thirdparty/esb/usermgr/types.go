@@ -17,45 +17,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package usermgr
 
 import (
-	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/esb/types"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+type RetrieveDepartmentReq struct {
+	*types.CommParams
+	ID     int64    `json:"id"`
+	Fields []string `json:"fields"`
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
+type RetrieveDepartmentRespData struct {
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	FullName string `json:"full_name"`
 }
 
-// // Create cloud account.
-// func (a *AccountClient) Create(ctx context.Context, h http.Header, request *cloudserver.CreateAccountReq) (
-// 	*core.CreateResult, error,
-// ) {
-// 	resp := new(core.CreateResp)
-//
-// 	err := a.client.Post().
-// 		WithContext(ctx).
-// 		Body(request).
-// 		SubResourcef("/account/create").
-// 		WithHeaders(h).
-// 		Do().
-// 		Into(resp)
-//
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	if resp.Code != errf.OK {
-// 		return nil, errf.New(resp.Code, resp.Message)
-// 	}
-//
-// 	return resp.Data, nil
-// }
+type RetrieveDepartmentResp struct {
+	types.BaseResponse `json:",inline"`
+	Data               *RetrieveDepartmentRespData `json:"data"`
+}

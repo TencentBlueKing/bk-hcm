@@ -112,6 +112,7 @@ func (c *Contexts) respEntity(data interface{}) {
 	}
 
 	c.resp.Header().Set(constant.RidKey, c.Kit.Rid)
+	c.resp.AddHeader(restful.HEADER_ContentType, restful.MIME_JSON)
 
 	resp := &Response{
 		Code:    errf.OK,
