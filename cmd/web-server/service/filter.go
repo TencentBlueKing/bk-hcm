@@ -33,6 +33,7 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
+// NewUserUserAuthenticateFilter ...
 func NewUserUserAuthenticateFilter(esbClient esb.Client) restful.FilterFunction {
 
 	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {

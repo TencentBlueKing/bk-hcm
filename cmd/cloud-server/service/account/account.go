@@ -52,28 +52,34 @@ type accountSvc struct {
 	authorizer auth.Authorizer
 }
 
+// Create ...
 func (a *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 	return map[string]interface{}{
 		"id": 1,
 	}, nil
 }
 
+// Check ...
 func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
+// CheckByID ...
 func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
+// PageReq ...
 type PageReq struct {
 	Page *types.BasePage `json:"page" validate:"required"`
 }
 
+// Validate ...
 func (p *PageReq) Validate() error {
 	return validator.Validate.Struct(p)
 }
 
+// List ...
 func (a *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
 
 	req := new(PageReq)
@@ -142,6 +148,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 	}, nil
 }
 
+// Update ...
 func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }

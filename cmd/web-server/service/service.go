@@ -118,8 +118,14 @@ func (s *Service) ListenAndServeRest() error {
 	container := restful.NewContainer()
 	// Add container filter to enable CORS
 	cors := restful.CrossOriginResourceSharing{
-		ExposeHeaders:  []string{"Content-Length", "Access-Control-Allow-Origin", "Access-Control-Allow-Headers", "Cache-Control", "Content-Language", "Content-Type"},
-		AllowedHeaders: []string{"Accept", "Accept-encoding", "Authorization", "Content-Type", "Dnt", "Origin", "User-Agent", "X-Csrftoken", "X-Requested-With", "X-Bkapi-Request-Id"},
+		ExposeHeaders: []string{
+			"Content-Length", "Access-Control-Allow-Origin", "Access-Control-Allow-Headers",
+			"Cache-Control", "Content-Language", "Content-Type",
+		},
+		AllowedHeaders: []string{
+			"Accept", "Accept-encoding", "Authorization", "Content-Type", "Dnt",
+			"Origin", "User-Agent", "X-Csrftoken", "X-Requested-With", "X-Bkapi-Request-Id",
+		},
 		AllowedMethods: []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
 		CookiesAllowed: true,
 		Container:      container,

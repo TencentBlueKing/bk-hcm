@@ -29,7 +29,7 @@ service:
     # username is a user's name for authentication.
     username:
     # password is a password for authentication.
-    password: 
+    password:
     # defines tls related options.
     tls:
       # server should be accessed without verifying the TLS certificate.
@@ -66,15 +66,15 @@ web:
   # Web服务静态文件目录
   static_file_dir_path: ../front
   # 蓝鲸统一登录
-  bk_login_url: http://paasee-test.woa.com/login
+  bk_login_url: http://paas.bk.com/login
   # ESB API
-  bk_component_api_url: http://paasee-test.woa.com
+  bk_component_api_url: http://paas.bk.com
 
 # defines esb related settings.
 esb:
   # endpoints is a seed list of host:port addresses of esb nodes.
   endpoints:
-    - http://paasee-test.woa.com
+    - http://paas.bk.com
   # appCode is the BlueKing app code of hcm to request esb.
   appCode: hcm2
   # appSecret is the BlueKing app secret of hcm to request esb.
