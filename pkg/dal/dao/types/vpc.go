@@ -17,22 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package types
 
 import (
-	"hcm/pkg/rest"
+	"hcm/pkg/dal/table/cloud"
 )
 
-// Client is a tcloud api client
-type Client struct {
-	Account *AccountClient
-	Vpc     *VpcClient
-}
-
-// NewClient create a new tcloud api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		Account: NewAccountClient(client),
-		Vpc:     NewVpcClient(client),
-	}
+// VpcListResult list vpc result.
+type VpcListResult struct {
+	Count   uint64           `json:"count"`
+	Details []cloud.VpcTable `json:"details"`
 }

@@ -17,22 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package enumor
 
 import (
-	"hcm/pkg/rest"
+	"fmt"
 )
 
-// Client is a tcloud api client
-type Client struct {
-	Account *AccountClient
-	Vpc     *VpcClient
+// IPAddressType is ip address type.
+type IPAddressType string
+
+// Validate IPAddressType.
+func (i IPAddressType) Validate() error {
+	switch i {
+	case Ipv4:
+	case Ipv6:
+	default:
+		return fmt.Errorf("unsupported ip address type: %s", i)
+	}
+
+	return nil
 }
 
-// NewClient create a new tcloud api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		Account: NewAccountClient(client),
-		Vpc:     NewVpcClient(client),
-	}
-}
+const (
+	// Ipv4 is ipv4 address type.
+	Ipv4 IPAddressType = "ipv4"
+	// Ipv6 is ipv6 address type.
+	Ipv6 IPAddressType = "ipv6"
+)

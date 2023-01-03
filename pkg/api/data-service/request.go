@@ -17,22 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package dataservice
 
 import (
-	"hcm/pkg/rest"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/runtime/filter"
 )
 
-// Client is a tcloud api client
-type Client struct {
-	Account *AccountClient
-	Vpc     *VpcClient
+// BatchDeleteReq is a standard batch delete operation http request for data-service.
+type BatchDeleteReq struct {
+	Filter *filter.Expression `json:"filter"`
 }
 
-// NewClient create a new tcloud api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		Account: NewAccountClient(client),
-		Vpc:     NewVpcClient(client),
+// Validate BatchDeleteReq.
+func (d *BatchDeleteReq) Validate() error {
+	if d.Filter == nil {
+		return errf.New(errf.InvalidParameter, "filter is required")
 	}
+
+	return nil
 }

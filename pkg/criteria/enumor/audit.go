@@ -29,11 +29,14 @@ type AuditResourceType string
 const (
 	// Account 策略资源
 	Account AuditResourceType = "account"
+	// Vpc 策略资源
+	Vpc AuditResourceType = "vpc"
 )
 
 // AuditResourceTypeEnums resource type map.
 var AuditResourceTypeEnums = map[AuditResourceType]bool{
 	Account: true,
+	Vpc:     true,
 }
 
 // Exist judge enum value exist.

@@ -36,7 +36,11 @@ create table if not exists `id_generator`
 
 
 insert into id_generator(`resource`, `max_id`)
-values ('account', '0');
+values ('account', '0')
+ON DUPLICATE KEY UPDATE resource=resource;
+insert into id_generator(`resource`, `max_id`)
+values ('vpc', '0')
+ON DUPLICATE KEY UPDATE resource=resource;
 
 create table if not exists `audit`
 (
@@ -96,5 +100,34 @@ create table if not exists `account_biz_rel`
     `created_at` timestamp          not null default current_timestamp,
     primary key (`id`),
     unique key `idx_uk_bk_biz_id_account_id` (`bk_biz_id`, `account_id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `vpc`
+(
+    `id`          varchar(64)  not null,
+    `vendor`      varchar(32)  not null,
+
+    # Spec
+    `account_id`  varchar(64)  not null,
+    `cloud_id`    varchar(255) not null,
+    `name`        varchar(128) not null,
+    `category`    varchar(32)  not null,
+    `memo`        varchar(255) default '',
+
+    # Extension
+    `extension`   json         not null,
+
+    # Attachment
+    `bk_cloud_id` bigint(1)    default -1,
+    `bk_biz_id`   bigint(1)    default -1,
+
+    # Revision
+    `creator`     varchar(64)  not null,
+    `reviser`     varchar(64)  not null,
+    `created_at`  timestamp    not null,
+    `updated_at`  timestamp    not null,
+
+    primary key (`id`)
 ) engine = innodb
   default charset = utf8mb4;

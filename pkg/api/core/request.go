@@ -22,7 +22,9 @@ package core
 
 import (
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // CreateResp is a standard create operation http response.
@@ -34,6 +36,17 @@ type CreateResp struct {
 // CreateResult is a standard create operation result.
 type CreateResult struct {
 	ID string `json:"id"`
+}
+
+// BatchCreateResp is a standard batch create operation http response.
+type BatchCreateResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *BatchCreateResult `json:"data"`
+}
+
+// BatchCreateResult is a standard batch create operation result.
+type BatchCreateResult struct {
+	IDs []string `json:"ids"`
 }
 
 // BatchDeleteReq is a standard batch delete operation http request.
@@ -72,4 +85,24 @@ type UpdateResp struct {
 type DeleteResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          interface{} `json:"data"`
+}
+
+// ListReq is a standard list operation http request.
+type ListReq struct {
+	Filter *filter.Expression `json:"filter"`
+	Page   *types.BasePage    `json:"page"`
+	Fields []string           `json:"fields"`
+}
+
+// Validate ListReq.
+func (l *ListReq) Validate() error {
+	if l.Filter == nil {
+		return errf.New(errf.InvalidParameter, "filter is required")
+	}
+
+	if l.Page == nil {
+		return errf.New(errf.InvalidParameter, "page is required")
+	}
+
+	return nil
 }

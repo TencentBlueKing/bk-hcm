@@ -17,22 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package enumor
 
-import (
-	"hcm/pkg/rest"
+// AttachmentType defines attachment type.
+type AttachmentType string
+
+const (
+	// Biz is biz attachment type.
+	Biz AttachmentType = "biz"
+	// CloudArea is cloud area attachment type.
+	CloudArea AttachmentType = "cloud_area"
 )
-
-// Client is a tcloud api client
-type Client struct {
-	Account *AccountClient
-	Vpc     *VpcClient
-}
-
-// NewClient create a new tcloud api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		Account: NewAccountClient(client),
-		Vpc:     NewVpcClient(client),
-	}
-}
