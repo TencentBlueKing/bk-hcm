@@ -53,6 +53,7 @@ export default defineComponent({
       }
     });
 
+
     function isAllLoaded(id: number): boolean {
       if (!id) return true;
       const dept = departmentMap.value.get(id);
@@ -107,6 +108,9 @@ export default defineComponent({
     }
 
     function handleChange(newVal: string[]) {
+      if (!newVal) {
+        return;
+      }
       const newMap = newVal.reduce<Record<string, number>>((acc, name) => {
         acc[name] = 1;
         return acc;
@@ -140,6 +144,7 @@ export default defineComponent({
         loading={isLoading.value}
         onChange={handleChange}
         onToggle={handleToggle}
+        clearable={false}
       >
         <Tree
           node-key="id"

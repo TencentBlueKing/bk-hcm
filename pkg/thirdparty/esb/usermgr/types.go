@@ -23,18 +23,23 @@ import (
 	"hcm/pkg/thirdparty/esb/types"
 )
 
+// RetrieveDepartmentReq retrieve department req
 type RetrieveDepartmentReq struct {
 	*types.CommParams
-	ID     int64    `json:"id"`
-	Fields []string `json:"fields"`
+	ID            int64    `json:"id"`
+	Fields        []string `json:"fields"`
+	WithAncestors bool     `json:"with_ancestors"`
 }
 
+// RetrieveDepartmentRespData retrieve department resp data
 type RetrieveDepartmentRespData struct {
-	ID       int64  `json:"id"`
-	Name     string `json:"name"`
-	FullName string `json:"full_name"`
+	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
+	FullName  string      `json:"full_name"`
+	Ancestors interface{} `json:"ancestors"`
 }
 
+// RetrieveDepartmentResp retrieve department resp
 type RetrieveDepartmentResp struct {
 	types.BaseResponse `json:",inline"`
 	Data               *RetrieveDepartmentRespData `json:"data"`

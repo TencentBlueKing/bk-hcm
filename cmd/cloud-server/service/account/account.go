@@ -20,9 +20,13 @@
 package account
 
 import (
+	"fmt"
+
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
@@ -47,4 +51,46 @@ func InitAccountService(c *capability.Capability) {
 type accountSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+}
+
+func (a *accountSvc) checkPermission(cts *rest.Contexts, action meta.Action, accountID string) error {
+	decisions, authorized, err := a.authorizer.Authorize(
+		cts.Kit,
+		meta.ResourceAttribute{
+			Basic: &meta.Basic{
+				Type:       meta.Account,
+				Action:     action,
+				ResourceID: accountID,
+			},
+		},
+	)
+	if err != nil || len(decisions) != 1 {
+		return errf.NewFromErr(
+			errf.PermissionDenied,
+			fmt.Errorf("check %s account permission failed, err: %v", action, err),
+		)
+	}
+
+	if !authorized {
+		return errf.NewFromErr(
+			errf.PermissionDenied,
+			fmt.Errorf("you have not permission of %s account", action),
+		)
+	}
+
+	return nil
+}
+
+func (a *accountSvc) listAuthorized(cts *rest.Contexts, action meta.Action) ([]string, bool, error) {
+	resources, err := a.authorizer.ListAuthorizedInstances(cts.Kit, &meta.ListAuthResInput{Type: meta.Account,
+		Action: action})
+	if err != nil {
+		return []string{}, false, errf.NewFromErr(
+			errf.PermissionDenied,
+			fmt.Errorf("list account of %s permission failed, err: %v", action, err),
+		)
+	}
+
+	return resources.IDs, resources.IsAny, err
+
 }

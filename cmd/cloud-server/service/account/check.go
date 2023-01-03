@@ -27,6 +27,7 @@ import (
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
@@ -40,7 +41,10 @@ func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO: 校验用户是否有创建账号的权限
+	// 校验用户有该账号的创建权限
+	if err := a.checkPermission(cts, meta.Create, ""); err != nil {
+		return nil, err
+	}
 
 	switch req.Vendor {
 	case enumor.TCloud:
@@ -191,11 +195,10 @@ func (a *accountSvc) checkForAzure(cts *rest.Contexts, req *proto.AccountCheckRe
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.AzureAccountCheckReq{
-			CloudTenantID:         extension.CloudTenantID,
-			CloudSubscriptionID:   extension.CloudSubscriptionID,
-			CloudSubscriptionName: extension.CloudSubscriptionName,
-			CloudClientID:         extension.CloudClientID,
-			CloudClientSecret:     extension.CloudClientSecret,
+			CloudTenantID:        extension.CloudTenantID,
+			CloudSubscriptionID:  extension.CloudSubscriptionID,
+			CloudApplicationID:   extension.CloudApplicationID,
+			CloudClientSecretKey: extension.CloudClientSecretKey,
 		},
 	)
 	if err != nil {
@@ -216,7 +219,10 @@ func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
 	}
 	accountID := cts.PathParameter("account_id").String()
 
-	// TODO: 校验用户有该账号的权限
+	// 校验用户有该账号的更新权限
+	if err := a.checkPermission(cts, meta.Update, accountID); err != nil {
+		return nil, err
+	}
 
 	// 查询该账号对应的Vendor
 	baseInfo, err := a.client.DataService().Global.Cloud.GetResourceBasicInfo(
@@ -245,7 +251,8 @@ func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-func (a *accountSvc) checkByIDForTCloud(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
+func (a *accountSvc) checkByIDForTCloud(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (
+	interface{}, error) {
 	// 解析Extension
 	extension := new(proto.TCloudAccountExtensionCheckByIDReq)
 	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
@@ -268,7 +275,7 @@ func (a *accountSvc) checkByIDForTCloud(cts *rest.Contexts, req *proto.AccountCh
 		cts.Kit.Header(),
 		&hcproto.TCloudAccountCheckReq{
 			CloudMainAccountID: account.Extension.CloudMainAccountID,
-			CloudSubAccountID:  account.Extension.CloudSubAccountID,
+			CloudSubAccountID:  extension.CloudSubAccountID,
 			CloudSecretID:      extension.CloudSecretID,
 			CloudSecretKey:     extension.CloudSecretKey,
 		},
@@ -280,7 +287,8 @@ func (a *accountSvc) checkByIDForTCloud(cts *rest.Contexts, req *proto.AccountCh
 	return nil, nil
 }
 
-func (a *accountSvc) checkByIDForAws(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
+func (a *accountSvc) checkByIDForAws(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (
+	interface{}, error) {
 	// 解析Extension
 	extension := new(proto.AwsAccountExtensionCheckByIDReq)
 	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
@@ -303,7 +311,7 @@ func (a *accountSvc) checkByIDForAws(cts *rest.Contexts, req *proto.AccountCheck
 		cts.Kit.Header(),
 		&hcproto.AwsAccountCheckReq{
 			CloudAccountID:   account.Extension.CloudAccountID,
-			CloudIamUsername: account.Extension.CloudIamUsername,
+			CloudIamUsername: extension.CloudIamUsername,
 			CloudSecretID:    extension.CloudSecretID,
 			CloudSecretKey:   extension.CloudSecretKey,
 		},
@@ -315,7 +323,8 @@ func (a *accountSvc) checkByIDForAws(cts *rest.Contexts, req *proto.AccountCheck
 	return nil, nil
 }
 
-func (a *accountSvc) checkByIDForHuaWei(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
+func (a *accountSvc) checkByIDForHuaWei(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (
+	interface{}, error) {
 	// 解析Extension
 	extension := new(proto.HuaWeiAccountExtensionCheckByIDReq)
 	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
@@ -340,10 +349,10 @@ func (a *accountSvc) checkByIDForHuaWei(cts *rest.Contexts, req *proto.AccountCh
 			CloudMainAccountName: account.Extension.CloudMainAccountName,
 			CloudSubAccountID:    account.Extension.CloudSubAccountID,
 			CloudSubAccountName:  account.Extension.CloudSubAccountName,
+			CloudIamUserID:       extension.CloudIamUserID,
+			CloudIamUsername:     extension.CloudIamUsername,
 			CloudSecretID:        extension.CloudSecretID,
 			CloudSecretKey:       extension.CloudSecretKey,
-			CloudIamUserID:       account.Extension.CloudIamUserID,
-			CloudIamUsername:     account.Extension.CloudIamUsername,
 		},
 	)
 	if err != nil {
@@ -353,7 +362,8 @@ func (a *accountSvc) checkByIDForHuaWei(cts *rest.Contexts, req *proto.AccountCh
 	return nil, nil
 }
 
-func (a *accountSvc) checkByIDForGcp(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
+func (a *accountSvc) checkByIDForGcp(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (
+	interface{}, error) {
 	// 解析Extension
 	extension := new(proto.GcpAccountExtensionCheckByIDReq)
 	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
@@ -386,7 +396,8 @@ func (a *accountSvc) checkByIDForGcp(cts *rest.Contexts, req *proto.AccountCheck
 	return nil, nil
 }
 
-func (a *accountSvc) checkByIDForAzure(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
+func (a *accountSvc) checkByIDForAzure(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (
+	interface{}, error) {
 	// 解析Extension
 	extension := new(proto.AzureAccountExtensionCheckByIDReq)
 	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
@@ -408,11 +419,10 @@ func (a *accountSvc) checkByIDForAzure(cts *rest.Contexts, req *proto.AccountChe
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.AzureAccountCheckReq{
-			CloudTenantID:         account.Extension.CloudTenantID,
-			CloudSubscriptionID:   account.Extension.CloudSubscriptionID,
-			CloudSubscriptionName: account.Extension.CloudSubscriptionName,
-			CloudClientID:         extension.CloudClientID,
-			CloudClientSecret:     extension.CloudClientSecret,
+			CloudTenantID:        account.Extension.CloudTenantID,
+			CloudSubscriptionID:  account.Extension.CloudSubscriptionID,
+			CloudApplicationID:   extension.CloudApplicationID,
+			CloudClientSecretKey: extension.CloudClientSecretKey,
 		},
 	)
 	if err != nil {

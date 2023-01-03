@@ -187,7 +187,7 @@ func getVpcIDByCloudID(kt *kit.Kit, dao dao.Set, vendor enumor.Vendor, cloudIDs 
 	}
 	res, err := dao.Vpc().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list vpc failed, err: %v, rid: %s", kt.Rid)
+		logs.Errorf("list vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list vpc failed, err: %v", err)
 	}
 
@@ -262,6 +262,8 @@ func batchUpdateSubnet[T protocloud.SubnetUpdateExtension](cts *rest.Contexts, s
 	for _, updateReq := range req.Subnets {
 		subnet.Name = updateReq.Name
 		subnet.Memo = updateReq.Memo
+		subnet.Ipv4Cidr = updateReq.Ipv4Cidr
+		subnet.Ipv6Cidr = updateReq.Ipv6Cidr
 
 		// update extension
 		if updateReq.Extension != nil {

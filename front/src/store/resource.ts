@@ -16,6 +16,7 @@ export const useResourceStore = defineStore({
      */
     list(data: any, type: string) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/list/`, data);
+      // return http.post(`http://9.135.119.6:9602/api/v1/cloud/${type}/list/`, data);
     },
     detail(type: string, id: number | string) {
       return http.get(`/api/v1/cloud/${type}/${id}/`);
@@ -24,7 +25,7 @@ export const useResourceStore = defineStore({
       return http.delete(`/api/v1/cloud/${type}/${id}`);
     },
     deleteBatch(type: string, data: any) {
-      return http.delete(`/api/v1/cloud/${type}/batch?${json2Query(data)}`);
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/batch?${json2Query(data)}`);
     },
     bindVPCWithCloudArea(data: any) {
       return http.post('/api/v1/cloud/vpc/bind/cloud_area', data);

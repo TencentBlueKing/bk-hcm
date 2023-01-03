@@ -23,6 +23,7 @@ import (
 	proto "hcm/pkg/api/cloud-server"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -38,18 +39,30 @@ func (a *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO: 校验用户是否有List权限，有权限的ID列表
+	// 校验用户是否有查看权限，有权限的ID列表
+	accountIDs, isAny, err := a.listAuthorized(cts, meta.Find)
+	if err != nil {
+		return nil, err
+	}
+	// 无任何账号权限
+	if len(accountIDs) == 0 && !isAny {
+		return []map[string]interface{}{}, nil
+	}
 
-	// FIXME: 由于data-service 不允许空的过滤条件，所以这里构造了一个id>0的永久有效条件，待添加权限ID列表过滤后则可以去除
-	reqFilter := req.Filter
-	if req.Filter == nil {
+	// FIXME: 由于底层filter暂时不支持嵌套，所以这里暂时忽略来着前端请求的req.Filter，后续再支持
+	var reqFilter *filter.Expression
+	if isAny {
+		reqFilter = &filter.Expression{
+			Op:    filter.Or,
+			Rules: []filter.RuleFactory{},
+		}
+	} else {
 		reqFilter = &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
-				filter.AtomRule{Field: "sync_status", Op: filter.Equal.Factory(), Value: "not_start"},
+				filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: accountIDs},
 			},
 		}
-
 	}
 
 	return a.client.DataService().Global.Account.List(

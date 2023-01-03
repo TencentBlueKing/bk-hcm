@@ -22,8 +22,10 @@ package cloudserver
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
 
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/types"
@@ -44,11 +46,28 @@ type AccountAttachmentCreateReq struct {
 	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required"`
 }
 
+// Validate ...
+func (req *AccountAttachmentCreateReq) Validate() error {
+	bizCount := len(req.BkBizIDs)
+	for _, bizID := range req.BkBizIDs {
+		// 校验是否非法业务ID
+		if !(bizID == constant.AttachedAllBiz || bizID > 0) {
+			return fmt.Errorf("invalid biz id: %d", bizID)
+		}
+		// 选择全业务时不可选择其他具体业务，即全业务时业务数量只能是1
+		if bizID == constant.AttachedAllBiz && bizCount > 1 {
+			return errors.New("can't choose specific biz when choose all biz")
+		}
+	}
+
+	return nil
+}
+
 // AccountSpecCreateReq ...
 type AccountSpecCreateReq struct {
 	Name         string                 `json:"name" validate:"required,min=3,max=32"`
-	Managers     []string               `json:"managers" validate:"required"`
-	DepartmentID int64                  `json:"department_id" validate:"required"`
+	Managers     []string               `json:"managers" validate:"required,max=5"`
+	DepartmentID int64                  `json:"department_id" validate:"required,min=1"`
 	Type         enumor.AccountType     `json:"type" validate:"required"`
 	Site         enumor.AccountSiteType `json:"site" validate:"required"`
 	Memo         *string                `json:"memo" validate:"omitempty"`
@@ -102,10 +121,10 @@ type HuaWeiAccountExtensionCreateReq struct {
 	CloudMainAccountName string `json:"cloud_main_account_name" validate:"required"`
 	CloudSubAccountID    string `json:"cloud_sub_account_id" validate:"required"`
 	CloudSubAccountName  string `json:"cloud_sub_account_name" validate:"required"`
-	CloudSecretID        string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey       string `json:"cloud_secret_key" validate:"required"`
 	CloudIamUserID       string `json:"cloud_iam_user_id" validate:"required"`
 	CloudIamUsername     string `json:"cloud_iam_username" validate:"required"`
+	CloudSecretID        string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey       string `json:"cloud_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -117,7 +136,7 @@ func (r *HuaWeiAccountExtensionCreateReq) Validate() error {
 type GcpAccountExtensionCreateReq struct {
 	CloudProjectID          string `json:"cloud_project_id" validate:"required"`
 	CloudProjectName        string `json:"cloud_project_name" validate:"required"`
-	CloudServiceAccountID   string `json:"cloud_service_account_cid" validate:"required"`
+	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"required"`
 	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
 	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"required"`
 	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"required"`
@@ -135,8 +154,8 @@ type AzureAccountExtensionCreateReq struct {
 	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
 	CloudApplicationID    string `json:"cloud_application_id" validate:"required"`
 	CloudApplicationName  string `json:"cloud_application_name" validate:"required"`
-	CloudClientID         string `json:"cloud_client_id" validate:"required"`
-	CloudClientSecret     string `json:"cloud_client_secret" validate:"required"`
+	CloudClientSecretID   string `json:"cloud_client_secret_id" validate:"required"`
+	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -167,6 +186,10 @@ func (req *AccountCreateReq) Validate() error {
 		return err
 	}
 
+	if err := req.Attachment.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -194,8 +217,9 @@ func (req *AccountCheckReq) Validate() error {
 
 // TCloudAccountExtensionCheckByIDReq ...
 type TCloudAccountExtensionCheckByIDReq struct {
-	CloudSecretID  string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey string `json:"cloud_secret_key" validate:"required"`
+	CloudSubAccountID string `json:"cloud_sub_account_id" validate:"required"`
+	CloudSecretID     string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey    string `json:"cloud_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -205,8 +229,9 @@ func (req *TCloudAccountExtensionCheckByIDReq) Validate() error {
 
 // AwsAccountExtensionCheckByIDReq ...
 type AwsAccountExtensionCheckByIDReq struct {
-	CloudSecretID  string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey string `json:"cloud_secret_key" validate:"required"`
+	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
+	CloudSecretID    string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey   string `json:"cloud_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -216,8 +241,10 @@ func (req *AwsAccountExtensionCheckByIDReq) Validate() error {
 
 // HuaWeiAccountExtensionCheckByIDReq ...
 type HuaWeiAccountExtensionCheckByIDReq struct {
-	CloudSecretID  string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey string `json:"cloud_secret_key" validate:"required"`
+	CloudIamUserID   string `json:"cloud_iam_user_id" validate:"required"`
+	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
+	CloudSecretID    string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey   string `json:"cloud_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -227,8 +254,10 @@ func (r *HuaWeiAccountExtensionCheckByIDReq) Validate() error {
 
 // GcpAccountExtensionCheckByIDReq ...
 type GcpAccountExtensionCheckByIDReq struct {
-	CloudServiceSecretID  string `json:"cloud_service_secret_id" validate:"required"`
-	CloudServiceSecretKey string `json:"cloud_service_secret_key" validate:"required"`
+	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"required"`
+	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
+	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"required"`
+	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -238,8 +267,10 @@ func (r *GcpAccountExtensionCheckByIDReq) Validate() error {
 
 // AzureAccountExtensionCheckByIDReq ...
 type AzureAccountExtensionCheckByIDReq struct {
-	CloudClientID     string `json:"cloud_client_id" validate:"required"`
-	CloudClientSecret string `json:"cloud_client_secret" validate:"required"`
+	CloudApplicationID   string `json:"cloud_application_id" validate:"required"`
+	CloudApplicationName string `json:"cloud_application_name" validate:"required"`
+	CloudClientSecretID  string `json:"cloud_client_secret_id" validate:"required"`
+	CloudClientSecretKey string `json:"cloud_client_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -275,8 +306,9 @@ func (req *AccountListReq) Validate() error {
 
 // TCloudAccountExtensionUpdateReq ...
 type TCloudAccountExtensionUpdateReq struct {
-	CloudSecretID  string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey string `json:"cloud_secret_key" validate:"required"`
+	CloudSubAccountID string `json:"cloud_sub_account_id" validate:"required"`
+	CloudSecretID     string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey    string `json:"cloud_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -286,8 +318,9 @@ func (req *TCloudAccountExtensionUpdateReq) Validate() error {
 
 // AwsAccountExtensionUpdateReq ...
 type AwsAccountExtensionUpdateReq struct {
-	CloudSecretID  string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey string `json:"cloud_secret_key" validate:"required"`
+	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
+	CloudSecretID    string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey   string `json:"cloud_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -297,8 +330,10 @@ func (req *AwsAccountExtensionUpdateReq) Validate() error {
 
 // HuaWeiAccountExtensionUpdateReq ...
 type HuaWeiAccountExtensionUpdateReq struct {
-	CloudSecretID  string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey string `json:"cloud_secret_key" validate:"required"`
+	CloudIamUserID   string `json:"cloud_iam_user_id" validate:"required"`
+	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
+	CloudSecretID    string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey   string `json:"cloud_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -308,8 +343,10 @@ func (r *HuaWeiAccountExtensionUpdateReq) Validate() error {
 
 // GcpAccountExtensionUpdateReq ...
 type GcpAccountExtensionUpdateReq struct {
-	CloudServiceSecretID  string `json:"cloud_service_secret_id" validate:"required"`
-	CloudServiceSecretKey string `json:"cloud_service_secret_key" validate:"required"`
+	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"required"`
+	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
+	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"required"`
+	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -319,8 +356,10 @@ func (r *GcpAccountExtensionUpdateReq) Validate() error {
 
 // AzureAccountExtensionUpdateReq ...
 type AzureAccountExtensionUpdateReq struct {
-	CloudClientID     string `json:"cloud_client_id" validate:"required"`
-	CloudClientSecret string `json:"cloud_client_secret" validate:"required"`
+	CloudApplicationID   string `json:"cloud_application_id" validate:"required"`
+	CloudApplicationName string `json:"cloud_application_name" validate:"required"`
+	CloudClientSecretID  string `json:"cloud_client_secret_id" validate:"required"`
+	CloudClientSecretKey string `json:"cloud_client_secret_key" validate:"required"`
 }
 
 // Validate ...
@@ -331,8 +370,8 @@ func (r *AzureAccountExtensionUpdateReq) Validate() error {
 // AccountSpecUpdateReq ...
 type AccountSpecUpdateReq struct {
 	Name         string   `json:"name" validate:"omitempty"`
-	Managers     []string `json:"managers" validate:"omitempty"`
-	DepartmentID int64    `json:"department_id" validate:"omitempty"`
+	Managers     []string `json:"managers" validate:"omitempty,max=5"`
+	DepartmentID int64    `json:"department_id" validate:"omitempty,min=1"`
 	Memo         *string  `json:"memo" validate:"omitempty"`
 }
 
@@ -347,6 +386,23 @@ func (req *AccountSpecUpdateReq) Validate() error {
 // AccountAttachmentUpdateReq ...
 type AccountAttachmentUpdateReq struct {
 	BkBizIDs []int64 `json:"bk_biz_ids" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *AccountAttachmentUpdateReq) Validate() error {
+	bizCount := len(req.BkBizIDs)
+	for _, bizID := range req.BkBizIDs {
+		// 校验是否非法业务ID
+		if !(bizID == constant.AttachedAllBiz || bizID > 0) {
+			return fmt.Errorf("invalid biz id: %d", bizID)
+		}
+		// 选择全业务时不可选择其他具体业务，即全业务时业务数量只能是1
+		if bizID == constant.AttachedAllBiz && bizCount > 1 {
+			return errors.New("can't choose specific biz when choose all biz")
+		}
+	}
+
+	return nil
 }
 
 // AccountUpdateReq ...
@@ -364,6 +420,12 @@ func (req *AccountUpdateReq) Validate() error {
 
 	if req.Spec != nil {
 		if err := req.Spec.Validate(); err != nil {
+			return err
+		}
+	}
+
+	if req.Attachment != nil {
+		if err := req.Attachment.Validate(); err != nil {
 			return err
 		}
 	}

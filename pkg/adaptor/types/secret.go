@@ -58,10 +58,10 @@ func (g *GcpCredential) Validate() error {
 
 // AzureCredential define azure credential information.
 type AzureCredential struct {
-	CloudTenantID       string `json:"cloud_tenant_id" validate:"required"`
-	CloudSubscriptionID string `json:"cloud_subscription_id" validate:"required"`
-	CloudClientID       string `json:"cloud_client_id" validate:"required"`
-	CloudClientSecret   string `json:"cloud_client_secret" validate:"required"`
+	CloudTenantID        string `json:"cloud_tenant_id" validate:"required"`
+	CloudSubscriptionID  string `json:"cloud_subscription_id" validate:"required"`
+	CloudApplicationID   string `json:"cloud_application_id" validate:"required"`
+	CloudClientSecretKey string `json:"cloud_client_secret_key" validate:"required"`
 }
 
 // Validate AzureCredential

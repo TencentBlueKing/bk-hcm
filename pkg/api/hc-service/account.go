@@ -79,11 +79,10 @@ func (r *GcpAccountCheckReq) Validate() error {
 
 // AzureAccountCheckReq ...
 type AzureAccountCheckReq struct {
-	CloudTenantID         string `json:"cloud_tenant_id" validate:"required"`
-	CloudSubscriptionID   string `json:"cloud_subscription_id" validate:"required"`
-	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
-	CloudClientID         string `json:"cloud_client_id" validate:"required"`
-	CloudClientSecret     string `json:"cloud_client_secret" validate:"required"`
+	CloudTenantID        string `json:"cloud_tenant_id" validate:"required"`
+	CloudSubscriptionID  string `json:"cloud_subscription_id" validate:"required"`
+	CloudApplicationID   string `json:"cloud_application_id" validate:"required"`
+	CloudClientSecretKey string `json:"cloud_client_secret_key" validate:"required"`
 }
 
 // Validate ...

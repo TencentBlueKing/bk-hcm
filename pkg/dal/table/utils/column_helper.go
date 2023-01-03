@@ -390,7 +390,8 @@ func isBasicKind(kind reflect.Kind) bool {
 		reflect.Uint64,
 		reflect.Float32,
 		reflect.Float64,
-		reflect.String:
+		reflect.String,
+		reflect.Slice:
 		return true
 	default:
 		return false

@@ -1,5 +1,5 @@
 import { Form, Input, Select, Button, Radio, Message } from 'bkui-vue';
-import { reactive, defineComponent, ref, watch, onMounted } from 'vue';
+import { reactive, defineComponent, ref, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ProjectModel, FormItems } from '@/typings';
 import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE, SITE_TYPE } from '@/constants';
@@ -33,25 +33,32 @@ export default defineComponent({
       secretId: '',    // 密钥id
       secretKey: '',  // 密钥key
       accountId: '',
+      accountName: '',    // 账号名称
       iamUsername: '',
+      iamUserId: '',
       site: 'china',
+      projectName: '',  // 项目名称
+      projectId: '',  // 项目ID
+      tenantId: '',  // 租户ID
+      subScriptionId: '',  // 订阅ID
+      subScriptionName: '',  // 订阅名称
+      applicationId: '',  // 应用程序ID
+      applicationName: '', // 应用程序名称
     };
 
     onMounted(async () => {
-      console.log(122133333);
       /* 获取业务列表接口 */
       getBusinessList();
     });
     const formRef = ref<InstanceType<typeof Form>>(null);
-    const noUser = ref<Boolean>(false);
-    const noOrganize = ref<Boolean>(false);
     const projectModel = reactive<ProjectModel>({
       ...initProjectModel,
     });
 
-    const optionalRequired = ['secretId', 'secretKey'];
+    const optionalRequired: string[] = ['secretId', 'secretKey'];
     const cloudType = reactive(CLOUD_TYPE);
     const isTestConnection = ref(false);
+    const submitLoading = ref(false);
 
     const businessList = reactive({
       list: BUSINESS_TYPE,
@@ -59,7 +66,6 @@ export default defineComponent({
     const getBusinessList = async () => {
       try {
         const res = await accountStore.getBizList();
-        console.log(res);
         businessList.list = res?.data || BUSINESS_TYPE;
       } catch (error: any) {
         Message({ theme: 'error', message: error?.message || '系统异常' });
@@ -73,8 +79,8 @@ export default defineComponent({
 
     // 提交操作
     const submit = async () => {
-      noOrganize.value = !projectModel.departmentId.length;
       await formRef.value?.validate();
+      submitLoading.value = true;
       try {
         const params = {
           vendor: projectModel.vendor,
@@ -88,7 +94,7 @@ export default defineComponent({
           },
           attachment: {
             bk_biz_ids: projectModel.bizIds.length === businessList.list.length
-              ? -1 : projectModel.bizIds,
+              ? [-1] : projectModel.bizIds,
           },
           extension: {},
         };
@@ -107,6 +113,38 @@ export default defineComponent({
               cloud_iam_username: projectModel.iamUsername,
               cloud_secret_id: projectModel.secretId,
               cloud_secret_key: projectModel.secretKey,
+            };
+            break;
+          case 'huawei':
+            params.extension = {
+              cloud_main_account_name: projectModel.mainAccount,
+              cloud_sub_account_id: projectModel.subAccount,
+              cloud_sub_account_name: projectModel.subAccountName,
+              cloud_secret_id: projectModel.secretId,
+              cloud_secret_key: projectModel.secretKey,
+              cloud_iam_username: projectModel.iamUsername,
+              cloud_iam_user_id: projectModel.iamUserId,
+            };
+            break;
+          case 'gcp':
+            params.extension = {
+              cloud_project_id: projectModel.projectId,
+              cloud_project_name: projectModel.projectName,
+              cloud_service_account_id: projectModel.accountId,
+              cloud_service_account_name: projectModel.accountName,
+              cloud_service_secret_id: projectModel.secretId,
+              cloud_service_secret_key: projectModel.secretKey,
+            };
+            break;
+          case 'azure':
+            params.extension = {
+              cloud_tenant_id: projectModel.tenantId,
+              cloud_subscription_id: projectModel.subScriptionId,
+              cloud_subscription_name: projectModel.subScriptionName,
+              cloud_application_id: projectModel.applicationId,
+              cloud_application_name: projectModel.applicationName,
+              cloud_client_secret_id: projectModel.secretId,
+              cloud_client_secret_key: projectModel.secretKey,
             };
             break;
           default:
@@ -129,12 +167,15 @@ export default defineComponent({
         }
       } catch (error: any) {
         console.log(error);
-        Message({ theme: 'error', message: error?.message || '系统异常' });
+      } finally {
+        submitLoading.value = false;
       }
     };
 
     const changeCloud = (val: string) => {
-      formRef.value?.clearValidate(); // 切换清除表单检验
+      nextTick(() => {
+        formRef.value?.clearValidate(); // 切换清除表单检验
+      });
       const startIndex = formList.findIndex(e => e.property === 'vendor');
       const endIndex = formList.findIndex(e => e.property === 'managers');
       let insertFormData: any = [];
@@ -142,22 +183,43 @@ export default defineComponent({
         case 'huawei':
           insertFormData = [
             {
-              label: t('主账号名'),
               required: true,
-              property: 'account',
-              component: () => <Input class="w450" placeholder={t('请输入主账号')} v-model={projectModel.account} />,
+              property: 'site',
+              component: () => <Group v-model={projectModel.site}>
+                {SITE_TYPE.map(e => (
+                  <Radio disabled={e.value === 'china'} label={e.value}>{t(e.label)}</Radio>
+                ))}
+              </Group>,
             },
             {
-              label: t('子账号ID'),
+              label: t('主账号名'),
+              required: true,
+              property: 'mainAccount',
+              component: () => <Input class="w450" placeholder={t('请输入主账号')} v-model={projectModel.mainAccount} />,
+            },
+            {
+              label: t('账号ID'),
               required: true,
               property: 'subAccount',
               component: () => <Input class="w450" placeholder={t('请输入子账号ID')} v-model={projectModel.subAccount} />,
             },
             {
-              label: t('子账号名称'),
+              label: t('账号名称'),
               required: true,
               property: 'subAccountName',
               component: () => <Input class="w450" placeholder={t('请输入子账号名称')} v-model={projectModel.subAccountName} />,
+            },
+            {
+              label: t('IAM用户ID'),
+              required: true,
+              property: 'iamUserId',
+              component: () => <Input class="w450" placeholder={t('请输入IAM用户ID')} v-model={projectModel.iamUserId} />,
+            },
+            {
+              label: t('IAM用户名称'),
+              required: true,
+              property: 'iamUsername',
+              component: () => <Input class="w450" placeholder={t('请输入IAM用户名称')} v-model={projectModel.iamUsername} />,
             },
             {
               label: t('SecretId/密钥ID'),
@@ -172,6 +234,7 @@ export default defineComponent({
               component: () => <Input class="w450" placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />,
             },
           ];
+          projectModel.site = 'international';
           break;
         case 'aws':
           insertFormData = [
@@ -206,95 +269,116 @@ export default defineComponent({
               label: 'SecretKey',
               required: projectModel.type === 'resource',
               property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入主账号')} v-model={projectModel.secretKey} />,
+              component: () => <Input class="w450" placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />,
             },
           ];
+          projectModel.site = 'china';
           break;
-        case 'GCP':
+        case 'gcp':
           insertFormData = [
+            {
+              required: true,
+              property: 'site',
+              component: () => <Group v-model={projectModel.site}>
+                {SITE_TYPE.map(e => (
+                  <Radio disabled={e.value === 'china'} label={e.value}>{t(e.label)}</Radio>
+                ))}
+              </Group>,
+            },
             {
               label: t('项目 ID'),
               required: true,
-              property: 'subAccountId',
-              component: () => <Input class="w450" placeholder={t('请输入项目 ID')} v-model={projectModel.account} />,
+              property: 'projectId',
+              component: () => <Input class="w450" placeholder={t('请输入项目 ID')} v-model={projectModel.projectId} />,
             },
             {
               label: t('项目名称'),
               required: true,
-              property: 'subAccountName',
-              component: () => <Input class="w450" placeholder={t('请输入项目名称')} v-model={projectModel.account} />,
+              property: 'projectName',
+              component: () => <Input class="w450" placeholder={t('请输入项目名称')} v-model={projectModel.projectName} />,
             },
             {
               label: t('服务账号ID'),
               required: projectModel.type === 'resource',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入服务账号ID')} v-model={projectModel.account} />,
+              property: 'accountId',
+              component: () => <Input class="w450" placeholder={t('请输入服务账号ID')} v-model={projectModel.accountId} />,
             },
             {
               label: t('服务账号名称'),
               required: projectModel.type === 'resource',
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入服务账号名称')} v-model={projectModel.account} />,
+              property: 'accountName',
+              component: () => <Input class="w450" placeholder={t('请输入服务账号名称')} v-model={projectModel.accountName} />,
             },
             {
               label: '服务账号密钥ID',
               required: projectModel.type === 'resource',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入服务账号密钥ID')} v-model={projectModel.account} />,
+              property: 'secretId',
+              component: () => <Input class="w450" placeholder={t('请输入服务账号密钥ID')} v-model={projectModel.secretId} />,
             },
             {
               label: '服务账号密钥',
               required: projectModel.type === 'resource',
               property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入服务账号密钥')} v-model={projectModel.account} />,
+              component: () => <Input class="w450" placeholder={t('请输入服务账号密钥')} v-model={projectModel.secretKey} />,
             },
           ];
+          projectModel.site = 'international';
           break;
-        case 'Azure':
+        case 'azure':
           insertFormData = [
+            {
+              required: true,
+              property: 'site',
+              component: () => <Group v-model={projectModel.site}>
+                {SITE_TYPE.map(e => (
+                  <Radio disabled={e.value === 'china'} label={e.value}>{t(e.label)}</Radio>
+                ))}
+              </Group>,
+            },
             {
               label: t('租户 ID'),
               required: true,
-              property: 'subAccountId',
-              component: () => <Input class="w450" placeholder={t('请输入租户 ID')} v-model={projectModel.account} />,
+              property: 'tenantId',
+              component: () => <Input class="w450" placeholder={t('请输入租户 ID')} v-model={projectModel.tenantId} />,
             },
             {
               label: t('订阅 ID'),
               required: true,
-              property: 'subAccountName',
-              component: () => <Input class="w450" placeholder={t('请输入订阅 ID')} v-model={projectModel.account} />,
+              property: 'subScriptionId',
+              component: () => <Input class="w450" placeholder={t('请输入订阅 ID')} v-model={projectModel.subScriptionId} />,
             },
             {
               label: t('订阅名称'),
               required: true,
-              property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入订阅名称')} v-model={projectModel.account} />,
+              property: 'subScriptionName',
+              component: () => <Input class="w450" placeholder={t('请输入订阅名称')} v-model={projectModel.subScriptionName} />,
             },
             {
               label: t('应用程序(客户端) ID'),
               required: projectModel.type === 'resource',
+              property: 'applicationId',
+              component: () => <Input class="w450" placeholder={t('请输入应用程序(客户端) ID')} v-model={projectModel.applicationId} />,
+            },
+            {
+              label: t('应用程序名称'),
+              required: projectModel.type === 'resource',
+              property: 'applicationName',
+              component: () => <Input class="w450" placeholder={t('请输入应用程序名称')} v-model={projectModel.applicationName} />,
+            },
+            {
+              label: t('客户端密钥ID'),
+              required: projectModel.type === 'resource',
               property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入应用程序(客户端) ID')} v-model={projectModel.account} />,
+              component: () => <Input class="w450" placeholder={t('请输入客户端密钥ID')} v-model={projectModel.secretId} />,
             },
             {
-              label: '应用程序名称',
+              label: t('客户端密钥'),
               required: projectModel.type === 'resource',
               property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入应用程序名称')} v-model={projectModel.account} />,
-            },
-            {
-              label: '客户端密钥ID',
-              required: projectModel.type === 'resource',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入客户端密钥ID')} v-model={projectModel.account} />,
-            },
-            {
-              label: '客户端密钥',
-              required: projectModel.type === 'resource',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入客户端密钥')} v-model={projectModel.account} />,
+              component: () => <Input class="w450" placeholder={t('请输入客户端密钥')} v-model={projectModel.secretKey} />,
             },
           ];
+          projectModel.site = 'international';
           break;
         case 'tcloud':
           insertFormData = [
@@ -402,10 +486,13 @@ export default defineComponent({
     );
 
     watch(
-      () => projectModel.departmentId,
-      (val) => {
-        noOrganize.value = !val.length;
+      () => projectModel.departmentId,    // 监听组织架构内容
+      async () => {
+        if (projectModel.departmentId.length) {
+          await formRef.value?.clearValidate();
+        }
       },
+      { deep: true },
     );
 
 
@@ -477,7 +564,6 @@ export default defineComponent({
         content: () => (
           <section>
             <MemberSelect class="w450" v-model={projectModel.managers}/>
-            {noUser.value ? <span class="form-error-tip">责任人不能为空</span> : ''}
           </section>
         ),
       },
@@ -488,7 +574,6 @@ export default defineComponent({
         content: () => (
           <section>
             <OrganizationSelect class="w450" v-model={projectModel.departmentId} />
-            {noOrganize.value ? <span class="form-error-tip">组织架构不能为空</span> : ''}
           </section>
         ),
       },
@@ -517,7 +602,7 @@ export default defineComponent({
       },
       {
         required: false,
-        component: () => <Button theme="primary" onClick={submit}>{t(isTestConnection.value ? t('确认') : t('账号验证'))}</Button>,
+        component: () => <Button theme="primary" loading={submitLoading.value} onClick={submit}>{t(isTestConnection.value ? t('确认') : t('账号验证'))}</Button>,
       },
     ]);
 

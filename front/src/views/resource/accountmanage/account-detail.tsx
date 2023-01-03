@@ -1,6 +1,6 @@
-import { Form, Dialog, Input, Message } from 'bkui-vue';
+import { Form, Dialog, Input, Message, Button } from 'bkui-vue';
 import { reactive, defineComponent, ref, onMounted, computed } from 'vue';
-import { ProjectModel, SecretModel, CloudType, AccountType } from '@/typings';
+import { ProjectModel, SecretModel, CloudType, AccountType, SiteType } from '@/typings';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
@@ -40,7 +40,9 @@ export default defineComponent({
 
     const isTestConnection = ref(false);
     const departmentFullName = ref('IEG互动娱乐事业群/技术运营部/计算资源中心');
+    const departmentData = ref([]);
     const isShowModifyScretDialog = ref(false);
+    const buttonLoading = ref<boolean>(false);
 
     const initSecretModel: SecretModel = {
       secretId: '',
@@ -80,8 +82,8 @@ export default defineComponent({
       projectModel.departmentId = [res?.data.spec.department_id]; // 1
       projectModel.creator = res?.data.revision.creator;
       projectModel.reviser = res?.data.revision.reviser;
-      projectModel.created_at = res?.data.revision.create_at;
-      projectModel.updated_at = res?.data.revision.update_at;
+      projectModel.created_at = res?.data.revision.created_at;
+      projectModel.updated_at = res?.data.revision.updated_at;
       projectModel.extension = res?.data.extension;
       projectModel.bizIds = res?.data?.attachment?.bk_biz_ids;
       requestQueue.value.shift();
@@ -106,6 +108,8 @@ export default defineComponent({
     const getDepartmentInfo = async (id: number) => {
       const res = await accountStore.getDepartmentInfo(id);
       departmentFullName.value = res?.data?.full_name;
+      departmentData.value = res?.data?.ancestors.map((e: any) => e.id);
+      console.log('departmentData.value', departmentData.value);
       requestQueue.value.shift();
     };
 
@@ -114,21 +118,65 @@ export default defineComponent({
       let insertFormData: any = [];
       switch (data.vendor) {
         case 'huawei':
-
+          insertFormData = [
+            {
+              label: t('主账号名'),
+              required: false,
+              property: 'cloud_main_account_name',
+              component: () => <span>{projectModel.extension.cloud_main_account_name || '--'}</span>,
+            },
+            {
+              label: t('账号名'),
+              required: false,
+              property: 'cloud_sub_account_name',
+              component: () => <span>{projectModel.extension.cloud_sub_account_name || '--'}</span>,
+            },
+            {
+              label: t('账号ID'),
+              required: false,
+              property: 'cloud_sub_account_id',
+              component: () => <span>{projectModel.extension.cloud_sub_account_id || '--'}</span>,
+            },
+          ];
+          formBaseInfo[0].data.splice(4, 0, ...insertFormData);
+          formBaseInfo.push({
+            name: t('密钥信息'),
+            data: [
+              {
+                label: t('IAM用户ID'),
+                required: false,
+                property: 'cloud_iam_user_id',
+                component: () => <span>{projectModel.extension.cloud_iam_user_id || '--'}</span>,
+              },
+              {
+                label: t('IAM用户名'),
+                required: false,
+                property: 'cloud_iam_username',
+                component: () => <span>{projectModel.extension.cloud_iam_username || '--'}</span>,
+              },
+              {
+                label: 'Secret ID',
+                required: false,
+                property: 'cloud_secret_id',
+                component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
+              },
+              {
+                label: 'Secret Key',
+                required: false,
+                property: 'cloud_secret_key',
+                component: () => <span>********</span>,
+              },
+            ],
+          });
+          break;
           break;
         case 'tcloud':
           insertFormData = [
             {
               label: t('主账号ID'),
               required: false,
-              property: 'cloud_main_account',
-              component: () => <span>{projectModel.extension.cloud_main_account}</span>,
-            },
-            {
-              label: t('子账号ID'),
-              required: false,
-              property: 'cloud_sub_account',
-              component: () => <span>{projectModel.extension.cloud_sub_account}</span>,
+              property: 'cloud_main_account_id',
+              component: () => <span>{projectModel.extension.cloud_main_account_id || '--'}</span>,
             },
           ];
           formBaseInfo[0].data.splice(4, 0, ...insertFormData);
@@ -147,6 +195,12 @@ export default defineComponent({
                 property: 'cloud_secret_key',
                 component: () => <span>********</span>,
               },
+              {
+                label: t('子账号ID'),
+                required: false,
+                property: 'cloud_sub_account_id',
+                component: () => <span>{projectModel.extension.cloud_sub_account_id}</span>,
+              },
             ],
           });
           break;
@@ -156,13 +210,7 @@ export default defineComponent({
               label: t('账号ID:'),
               required: false,
               property: 'cloud_account_id',
-              component: () => <span>{projectModel.extension.cloud_account_id}</span>,
-            },
-            {
-              label: t('IAM用户名:'),
-              required: false,
-              property: 'cloud_iam_username',
-              component: () => <span>{projectModel.extension.cloud_iam_username}</span>,
+              component: () => <span>{projectModel.extension.cloud_account_id || '--'}</span>,
             },
           ];
           formBaseInfo[0].data.splice(4, 0, ...insertFormData);
@@ -170,10 +218,114 @@ export default defineComponent({
             name: t('密钥信息'),
             data: [
               {
+                label: t('IAM用户名称:'),
+                required: false,
+                property: 'cloud_iam_username',
+                component: () => <span>{projectModel.extension.cloud_iam_username || '--'}</span>,
+              },
+              {
                 label: 'Secret ID',
                 required: false,
                 property: 'secretId',
                 component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
+              },
+              {
+                label: 'Secret Key',
+                required: false,
+                property: 'cloud_secret_key',
+                component: () => <span>********</span>,
+              },
+            ],
+          });
+          break;
+        case 'azure':
+          insertFormData = [
+            {
+              label: t('租户 ID'),
+              required: false,
+              property: 'cloud_tenant_id',
+              component: () => <span>{projectModel.extension.cloud_tenant_id || '--'}</span>,
+            },
+            {
+              label: t('订阅 ID'),
+              required: false,
+              property: 'cloud_subscription_id',
+              component: () => <span>{projectModel.extension.cloud_subscription_id || '--'}</span>,
+            },
+            {
+              label: t('订阅 名称'),
+              required: false,
+              property: 'cloud_subscription_name',
+              component: () => <span>{projectModel.extension.cloud_subscription_name || '--'}</span>,
+            },
+          ];
+          formBaseInfo[0].data.splice(4, 0, ...insertFormData);
+          formBaseInfo.push({
+            name: t('密钥信息'),
+            data: [
+              {
+                label: t('应用程序(客户端) ID'),
+                required: false,
+                property: 'cloud_application_id',
+                component: () => <span>{projectModel.extension.cloud_application_id || '--'}</span>,
+              },
+              {
+                label: t('应用程序名称'),
+                required: false,
+                property: 'cloud_application_name',
+                component: () => <span>{projectModel.extension.cloud_application_name || '--'}</span>,
+              },
+              {
+                label: t('客户端密钥ID'),
+                required: false,
+                property: 'cloud_client_secret_id',
+                component: () => <span>{projectModel.extension.cloud_client_secret_id || '--'}</span>,
+              },
+              {
+                label: t('客户端密钥'),
+                required: false,
+                property: 'cloud_client_secret_key',
+                component: () => <span>********</span>,
+              },
+            ],
+          });
+          break;
+        case 'gcp':
+          insertFormData = [
+            {
+              label: t('项目 ID'),
+              required: false,
+              property: 'cloud_project_id',
+              component: () => <span>{projectModel.extension.cloud_project_id || '--'}</span>,
+            },
+            {
+              label: t('项目名称'),
+              required: false,
+              property: 'cloud_project_name',
+              component: () => <span>{projectModel.extension.cloud_project_name || '--'}</span>,
+            },
+          ];
+          formBaseInfo[0].data.splice(4, 0, ...insertFormData);
+          formBaseInfo.push({
+            name: t('密钥信息'),
+            data: [
+              {
+                label: t('服务账号ID'),
+                required: false,
+                property: 'cloud_service_account_id',
+                component: () => <span>{projectModel.extension.cloud_service_account_id}</span>,
+              },
+              {
+                label: t('服务账号名称'),
+                required: false,
+                property: 'cloud_service_account_name',
+                component: () => <span>{projectModel.extension.cloud_service_account_name}</span>,
+              },
+              {
+                label: 'Secret ID',
+                required: false,
+                property: 'secretId',
+                component: () => <span>{projectModel.extension.cloud_service_secret_id}</span>,
               },
               {
                 label: 'Secret Key',
@@ -195,6 +347,18 @@ export default defineComponent({
         case 'huawei':
           dialogForm.list = [
             {
+              label: t('IAM用户ID'),
+              required: true,
+              property: 'iamUserId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserId} />,
+            },
+            {
+              label: 'IAM用户名',
+              required: true,
+              property: 'iamUserName',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
+            },
+            {
               label: 'Secret ID',
               required: true,
               property: 'secretId',
@@ -210,12 +374,12 @@ export default defineComponent({
           break;
         case 'aws':
           dialogForm.list = [
-            // {
-            //   label: t('IAM用户名'),
-            //   required: false,
-            //   property: 'iam_username',
-            //   component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
-            // },
+            {
+              label: t('IAM用户名'),
+              required: false,
+              property: 'iamUserName',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
+            },
             {
               label: 'Secret ID',
               required: true,
@@ -233,6 +397,18 @@ export default defineComponent({
         case 'gcp':
           dialogForm.list = [
             {
+              label: t('服务账号ID'),
+              required: true,
+              property: 'accountId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountId} />,
+            },
+            {
+              label: t('服务账号名称'),
+              required: true,
+              property: 'accountName',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountName} />,
+            },
+            {
               label: 'Secret ID',
               required: true,
               property: 'secretId',
@@ -248,6 +424,18 @@ export default defineComponent({
           break;
         case 'azure':
           dialogForm.list = [
+            {
+              label: t('应用程序(客户端) ID'),
+              required: true,
+              property: 'applicationId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationId} />,
+            },
+            {
+              label: t('应用程序名称'),
+              required: true,
+              property: 'applicationName',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationName} />,
+            },
             {
               label: t('客户端ID'),
               required: true,
@@ -276,12 +464,12 @@ export default defineComponent({
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
             },
-            // {
-            //   label: t('子账号ID'),
-            //   required: true,
-            //   property: 'subAccountId',
-            //   component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.subAccountId} />,
-            // },
+            {
+              label: t('子账号ID'),
+              required: true,
+              property: 'subAccountId',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.subAccountId} />,
+            },
           ];
           break;
         default:
@@ -308,7 +496,7 @@ export default defineComponent({
       } else if (key === 'bizIds') {
         // 若选择全部业务，则参数是-1
         params.attachment.bk_biz_ids = projectModel[key].length === businessList.list.length
-          ? -1 : projectModel[key];
+          ? [-1] : projectModel[key];
         delete params.spec;
       } else {
         params = { spec: {} };
@@ -335,47 +523,89 @@ export default defineComponent({
 
     // 显示弹窗
     const handleModifyScret = () => {
+      secretModel.secretId = '';
+      secretModel.secretKey = '';
+      secretModel.subAccountId = '';
+      secretModel.iamUserName = '';
+      secretModel.iamUserId = '';
+      secretModel.accountId = '';
+      secretModel.accountName = '';
+      secretModel.applicationId = '';
+      secretModel.applicationName = '';
       isShowModifyScretDialog.value = true;
     };
 
     // 弹窗确认
     const onConfirm = async () => {
+      buttonLoading.value = true;
       await formDiaRef.value?.validate();
       const extension: any = {
         cloud_secret_id: secretModel.secretId,
         cloud_secret_key: secretModel.secretKey,
       };
       // 后期拓展
-      // switch (projectModel.vendor) {
-      //   case 'tcloud':
-      //     extension.cloud_sub_account = secretModel.subAccountId;
-      //     break;
-      //   case 'aws':
-      //     extension.cloud_iam_username = secretModel.iamUserName;
-      //     break;
-      //   default:
-      //     break;
-      // }
+      switch (projectModel.vendor) {
+        case 'huawei':
+          extension.cloud_iam_username = secretModel.iamUserName;
+          extension.cloud_iam_user_id = secretModel.iamUserId;
+          break;
+        case 'tcloud':
+          extension.cloud_sub_account_id = secretModel.subAccountId;
+          break;
+        case 'aws':
+          extension.cloud_iam_username = secretModel.iamUserName;
+          break;
+        case 'azure':
+          extension.cloud_application_id = secretModel.applicationId;
+          extension.cloud_application_name = secretModel.applicationName;
+          extension.cloud_client_secret_id = secretModel.secretId;
+          extension.cloud_client_secret_key = secretModel.secretKey;
+          delete extension.cloud_secret_id;
+          delete extension.cloud_secret_key;
+          break;
+        case 'gcp':
+          extension.cloud_service_account_id = secretModel.accountId;   // 服务账号ID
+          extension.cloud_service_account_name = secretModel.accountName;   // 服务账号ID
+          extension.cloud_service_secret_id = secretModel.secretId;
+          extension.cloud_service_secret_key = secretModel.secretKey;
+          delete extension.cloud_secret_id;
+          delete extension.cloud_secret_key;
+          break;
+        default:
+          break;
+      }
       if (isTestConnection.value) {
-        await accountStore.updateAccount({    // 更新密钥信息
-          id: projectModel.id,
-          extension,
-        });
-        Message({
-          message: t('更新密钥信息成功'),
-          theme: 'success',
-        });
-        onClosed();
+        try {
+          await accountStore.updateAccount({    // 更新密钥信息
+            id: projectModel.id,
+            extension,
+          });
+          Message({
+            message: t('更新密钥信息成功'),
+            theme: 'success',
+          });
+          onClosed();
+        } catch (error) {
+          console.log(error);
+        } finally {
+          buttonLoading.value = false;
+        }
       } else {
-        await accountStore.updateTestAccount({    // 测试连接密钥信息
-          id: projectModel.id,
-          extension,
-        });
-        Message({
-          message: t('测试链接成功'),
-          theme: 'success',
-        });
-        isTestConnection.value = true;
+        try {
+          await accountStore.updateTestAccount({    // 测试连接密钥信息
+            id: projectModel.id,
+            extension,
+          });
+          Message({
+            message: t('测试连接成功'),
+            theme: 'success',
+          });
+          isTestConnection.value = true;
+        } catch (error) {
+          console.log(error);
+        } finally {
+          buttonLoading.value = false;
+        }
       }
     };
 
@@ -465,13 +695,13 @@ export default defineComponent({
             label: t('余额'),
             required: false,
             property: 'price',
-            component: () => <span>{projectModel.price}{projectModel.price_unit}</span>,
+            component: () => <span>{projectModel?.price || '--'}{projectModel.price_unit}</span>,
           },
           {
             label: t('站点类型'),
             required: false,
             property: 'price',
-            component: () => <span>{projectModel.site || '--'}</span>,
+            component: () => <span>{SiteType[projectModel.site]}</span>,
           },
           {
             label: t('创建人'),
@@ -593,12 +823,10 @@ export default defineComponent({
             }
 
           <Dialog
-            isShow={isShowModifyScretDialog.value}
+            v-model:isShow={isShowModifyScretDialog.value}
             width={680}
             title={t('密钥信息')}
-            onConfirm={onConfirm}
-            cancelText={t('取消')}
-            confirmText={isTestConnection.value ? t('确认') : t('测试连接')}
+            dialogType={'show'}
             onClosed={onClosed}
           >
             <Form labelWidth={100} model={secretModel} ref={formDiaRef}>
@@ -609,6 +837,10 @@ export default defineComponent({
             ))
             }
             </Form>
+            <div class="button-warp">
+              <Button theme="primary" loading={buttonLoading.value} onClick={onConfirm}>{isTestConnection.value ? t('确认') : t('测试连接')}</Button>
+              <Button class="ml10" onClick={onClosed}>{t('取消')}</Button>
+            </div>
           </Dialog>
         </div>
       )

@@ -48,6 +48,13 @@ func InitVpcService(cap *capability.Capability) {
 	h.Add("GcpVpcDelete", "DELETE", "/vendors/gcp/vpcs/{id}", a.GcpVpcDelete)
 	h.Add("AzureVpcDelete", "DELETE", "/vendors/azure/vpcs/{id}", a.AzureVpcDelete)
 
+	// vpc sync
+	h.Add("TCloudVpcSync", "POST", "/vendors/tcloud/vpc/sync", a.TCloudVpcSync)
+	h.Add("HuaWeiVpcSync", "POST", "/vendors/huawei/vpc/sync", a.HuaWeiVpcSync)
+	h.Add("AwsVpcSync", "POST", "/vendors/aws/vpc/sync", a.AwsVpcSync)
+	h.Add("AzureVpcSync", "POST", "/vendors/azure/vpc/sync", a.AzureVpcSync)
+	h.Add("GcpVpcSync", "POST", "/vendors/gcp/vpc/sync", a.GcpVpcSync)
+
 	h.Load(cap.WebService)
 }
 

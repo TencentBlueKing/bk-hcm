@@ -95,6 +95,6 @@ func (c *clientSet) diskClient() (*armcompute.DisksClient, error) {
 func (c *clientSet) newClientSecretCredential() (*azidentity.ClientSecretCredential, error) {
 	return azidentity.NewClientSecretCredential(
 		c.credential.CloudTenantID,
-		c.credential.CloudClientID,
-		c.credential.CloudClientSecret, nil)
+		c.credential.CloudApplicationID,
+		c.credential.CloudClientSecretKey, nil)
 }

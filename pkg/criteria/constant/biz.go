@@ -25,4 +25,6 @@ package constant
 const (
 	// UnassignedBiz 是未分配业务使用的标识
 	UnassignedBiz = -1
+	// AttachedAllBiz 代表账号关联所有业务
+	AttachedAllBiz = int64(-1)
 )

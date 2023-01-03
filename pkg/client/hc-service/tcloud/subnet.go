@@ -42,7 +42,8 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 }
 
 // Update subnet.
-func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *types.TCloudSubnetUpdateOption) error {
+func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string,
+	req *types.TCloudSubnetUpdateOption) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Patch().

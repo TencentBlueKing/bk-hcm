@@ -37,7 +37,7 @@ import (
 
 // UpdateVpc update vpc.
 // TODO right now only memo is supported to update, add other update operations later.
-func (t *TCloud) UpdateVpc(kt *kit.Kit, opt *types.TCloudVpcUpdateOption) error {
+func (t *TCloud) UpdateVpc(_ *kit.Kit, _ *types.TCloudVpcUpdateOption) error {
 	return nil
 }
 

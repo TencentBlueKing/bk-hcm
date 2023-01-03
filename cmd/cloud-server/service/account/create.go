@@ -28,6 +28,7 @@ import (
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
@@ -41,7 +42,10 @@ func (a *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO: 校验用户是否有创建账号的权限
+	// 校验用户是否有创建账号的权限
+	if err := a.checkPermission(cts, meta.Create, ""); err != nil {
+		return nil, err
+	}
 
 	switch req.Vendor {
 	case enumor.TCloud:
@@ -289,11 +293,10 @@ func (a *accountSvc) createForAzure(cts *rest.Contexts, req *proto.AccountCreate
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.AzureAccountCheckReq{
-			CloudTenantID:         extension.CloudTenantID,
-			CloudSubscriptionID:   extension.CloudSubscriptionID,
-			CloudSubscriptionName: extension.CloudSubscriptionName,
-			CloudClientID:         extension.CloudClientID,
-			CloudClientSecret:     extension.CloudClientSecret,
+			CloudTenantID:        extension.CloudTenantID,
+			CloudSubscriptionID:  extension.CloudSubscriptionID,
+			CloudApplicationID:   extension.CloudApplicationID,
+			CloudClientSecretKey: extension.CloudClientSecretKey,
 		},
 	)
 	if err != nil {
@@ -320,8 +323,8 @@ func (a *accountSvc) createForAzure(cts *rest.Contexts, req *proto.AccountCreate
 				CloudSubscriptionName: extension.CloudSubscriptionName,
 				CloudApplicationID:    extension.CloudApplicationID,
 				CloudApplicationName:  extension.CloudApplicationName,
-				CloudClientID:         extension.CloudClientID,
-				CloudClientSecret:     extension.CloudClientSecret,
+				CloudClientSecretID:   extension.CloudClientSecretID,
+				CloudClientSecretKey:  extension.CloudClientSecretKey,
 			},
 		},
 	)

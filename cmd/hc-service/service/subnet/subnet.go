@@ -48,6 +48,13 @@ func InitSubnetService(cap *capability.Capability) {
 	h.Add("GcpSubnetDelete", "DELETE", "/vendors/gcp/subnets/{id}", a.GcpSubnetDelete)
 	h.Add("AzureSubnetDelete", "DELETE", "/vendors/azure/subnets/{id}", a.AzureSubnetDelete)
 
+	// subnet sync
+	h.Add("TCloudSubnetSync", "POST", "/vendors/tcloud/subnets/sync", a.TCloudSubnetSync)
+	h.Add("HuaweiSubnetSync", "POST", "/vendors/huawei/subnets/sync", a.HuaweiSubnetSync)
+	h.Add("AwsSubnetSync", "POST", "/vendors/aws/subnets/sync", a.AwsSubnetSync)
+	h.Add("AzureSubnetSync", "POST", "/vendors/azure/subnets/sync", a.AzureSubnetSync)
+	h.Add("GcpSubnetSync", "POST", "/vendors/gcp/subnets/sync", a.GcpSubnetSync)
+
 	h.Load(cap.WebService)
 }
 

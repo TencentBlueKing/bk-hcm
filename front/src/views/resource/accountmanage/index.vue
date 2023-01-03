@@ -17,7 +17,10 @@
       <bk-table
         class="table-layout"
         :data="tableData"
+        remote-pagination
         :pagination="pagination"
+        @page-value-change="handlePageValueChange"
+        @page-limit-change="handlePageLimitChange"
         row-hover="auto"
       >
         <bk-table-column
@@ -64,12 +67,12 @@
           prop="price"
         >
           <template #default="{ data }">
-            {{data.spec?.price}}{{data.spec?.price_unit}}
+            {{data.spec?.price || '--'}}{{data.spec?.price_unit}}
           </template>
         </bk-table-column>
         <bk-table-column
           :label="t('创建时间')"
-          prop="created_at"
+          prop="revision.created_at"
         />
         <bk-table-column
           :label="t('备注')"
@@ -161,10 +164,10 @@ export default defineComponent({
           id: 'user',
         },
       ],
-      tableData: [{ spec: {} }],
+      tableData: [],
       pagination: {
-        totalPage: 0,
-        count: 1,
+        count: 0,
+        current: 1,
         limit: 10,
       },
       showDeleteBox: false,
@@ -213,11 +216,11 @@ export default defineComponent({
         },
       };
       const res = await accountStore.getAccountList(params);
-      state.pagination.totalPage = res?.data.count || 0;
+      state.pagination.count = res?.data.count || 0;
     };
 
     const init = () => {
-      state.pagination.count = 1;
+      state.pagination.current = 1;
       state.pagination.limit = 10;
       state.isAccurate = false;
       state.searchValue = '';
@@ -225,18 +228,17 @@ export default defineComponent({
     };
 
     const getAccountList = async () => {
+      state.loading = true;
       try {
         const params = {
           page: {
             count: false,
             limit: state.pagination.limit,
-            start: state.pagination.limit * (state.pagination.count - 1),
+            start: state.pagination.limit * (state.pagination.current - 1),
           },
         };
         const res = await accountStore.getAccountList(params);
         state.tableData = res.data.details;
-
-        console.log('state.tableData', state.tableData);
       } catch (error) {
         console.log(error);
       } finally {
@@ -265,7 +267,7 @@ export default defineComponent({
       }
     };
     // 跳转页面
-    const handleJump = (routerName: string, id?: number) => {
+    const handleJump = (routerName: string, id?: string) => {
       const routerConfig = {
         query: {},
         name: routerName,
@@ -285,9 +287,21 @@ export default defineComponent({
       state.showDeleteBox = true;
     };
 
+    // 同步
     const handleSync = (id: number) => {
       state.dataId = id;
       state.showSyncBox = true;
+    };
+
+    // 处理翻页
+    const handlePageLimitChange = (limit: number) => {
+      state.pagination.limit = limit;
+      getAccountList();
+    };
+
+    const handlePageValueChange = (value: number) => {
+      state.pagination.current = value;
+      getAccountList();
     };
 
     return {
@@ -297,6 +311,8 @@ export default defineComponent({
       handleJump,
       handleDelete,
       handleSync,
+      handlePageLimitChange,
+      handlePageValueChange,
       t,
     };
   },

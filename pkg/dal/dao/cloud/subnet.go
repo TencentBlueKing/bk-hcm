@@ -140,8 +140,8 @@ func (v *subnetDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 }
 
 // List subnets.
-func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (*types.SubnetListResult,
-	error) {
+func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (
+	*types.SubnetListResult, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list subnet options is nil")
