@@ -93,7 +93,7 @@ func (a *AccountClient) Update(ctx context.Context, h http.Header, accountID uin
 }
 
 // Get huawei account detail.
-func (a *AccountClient) Get(ctx context.Context, h http.Header, accountID uint64) (
+func (a *AccountClient) Get(ctx context.Context, h http.Header, accountID string) (
 	*protocloud.AccountGetResult[protocore.HuaWeiAccountExtension], error,
 ) {
 
@@ -101,7 +101,7 @@ func (a *AccountClient) Get(ctx context.Context, h http.Header, accountID uint64
 
 	err := a.client.Get().
 		WithContext(ctx).
-		SubResourcef("/accounts/%d", accountID).
+		SubResourcef("/accounts/%s", accountID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
