@@ -15,3 +15,8 @@ export type FilterType = {
     value: string | number | string[];
   }[]
 };
+
+export enum GcpTypeEnum {
+  egress = '出站',
+  ingress = '入站',
+}

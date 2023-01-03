@@ -22,10 +22,11 @@ import './info-list.scss';
 
 type Field = {
   name: string;
-  value: string;
+  value: string | any;
   link?: string;
   copy?: boolean;
   edit?: boolean;
+  type?: string;
 };
 
 export default defineComponent({
@@ -71,24 +72,42 @@ export default defineComponent({
       }
     };
 
-    const handleEdit = (name: string, value: string) => {
-      emit('change', { name, value });
+    const handleblur = async (val: string) => {
+      console.log('val', val);
+      emit('change', { val });
     };
 
     return {
       handleCopy,
-      handleEdit,
+      handleblur,
     };
   },
 
   render() {
     // 渲染纯文本
-    const renderTxt = (field: Field) => <span>{ field.value }</span>;
+    const renderTxt = (field: Field) => {
+      const type = Object.prototype.toString.call(field.value);
+      switch (type) {
+        case '[object Array]':
+          return (field.value.map((e: string, index: number) => (
+            <>
+            <span>{e}</span>{field.value.length - 1 === index ? '' : ';'}
+            </>
+          )));
+          break;
+        default:
+          return <span>{field.value}</span>;
+          break;
+      }
+    };
+
 
     // 渲染可编辑文本
     const renderEditTxt = (field: Field) => <RenderDetailEdit
       modelValue={field.value}
-      onChange={value => this.handleEdit(field.name, value)}
+      fromType={field.type}
+      needValidate={false}
+      onChange={this.handleblur}
     ></RenderDetailEdit>;
 
     // 渲染链接
