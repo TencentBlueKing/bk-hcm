@@ -28,6 +28,7 @@ type Client struct {
 	Auth    *AuthClient
 	Account *AccountClient
 	Cloud   *CloudClient
+	Vpc     *VpcClient
 }
 
 // NewClient create a new global api client.
@@ -36,5 +37,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Auth:    NewAuthClient(client),
 		Account: NewAccountClient(client),
 		Cloud:   NewCloudClient(client),
+		Vpc:     NewVpcClient(client),
 	}
 }

@@ -130,6 +130,7 @@ func (s *Service) apiSet() *restful.Container {
 	}
 
 	cloud.InitAccountService(cap)
+	cloud.InitVpcService(cap)
 	cloud.InitCloudService(cap)
 	auth.InitAuthService(cap)
 

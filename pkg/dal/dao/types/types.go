@@ -24,7 +24,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// ListOption defines options to list accounts.
+// ListOption defines options to list resources.
 type ListOption struct {
 	Fields []string
 	Filter *filter.Expression
@@ -32,7 +32,7 @@ type ListOption struct {
 }
 
 // Validate list option.
-func (opt *ListOption) Validate(eo *filter.ExprOption, po *PageOption) error {
+func (opt ListOption) Validate(eo *filter.ExprOption, po *PageOption) error {
 	if opt.Filter == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}

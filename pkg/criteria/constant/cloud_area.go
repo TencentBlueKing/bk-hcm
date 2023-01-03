@@ -17,22 +17,9 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package constant
 
-import (
-	"hcm/pkg/rest"
+const (
+	// UnbindBkCloudID defines default value for unbind vpc's cloud id.
+	UnbindBkCloudID int64 = -1
 )
-
-// Client is a tcloud api client
-type Client struct {
-	Account *AccountClient
-	Vpc     *VpcClient
-}
-
-// NewClient create a new tcloud api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		Account: NewAccountClient(client),
-		Vpc:     NewVpcClient(client),
-	}
-}
