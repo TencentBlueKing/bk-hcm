@@ -1,7 +1,7 @@
 import { defineComponent, reactive, ref, computed, watch } from 'vue';
-import { Form, Input, Select, Radio, Button, Dialog } from 'bkui-vue';
+import { Form, Input, Select, Radio, Button, Dialog, TagInput } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
-import { GCP_TYPE_STATUS, GCP_MATCH_STATUS, GCP_SOURCE_LIST, GCP_TARGET_LIST, GCP_PROTOCOL_LIST } from '@/constants';
+import { GCP_TYPE_STATUS, GCP_MATCH_STATUS, GCP_SOURCE_LIST, GCP_TARGET_LIST, GCP_PROTOCOL_LIST, GCP_EXECUTION_STATUS } from '@/constants';
 import './gcp-add.scss';
 export default defineComponent({
   name: 'GcpAdd',
@@ -28,9 +28,14 @@ export default defineComponent({
     };
     const formRef = ref<InstanceType<typeof Form>>(null);
     // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-    const gcpPorts = computed(() => (state.projectModel[state.operate]
-        && state.projectModel[state.operate]      // 端口
-          .find((e: any) => e.protocol === state.protocol)?.ports));
+    // const gcpPorts = computed(() => (state.projectModel[state.operate]
+    //   && state.projectModel[state.operate]      // 端口
+    //     .find((e: any) => e.protocol === state.protocol)?.ports));
+    // // const ports = computed(() => (state.projectModel[state.operate]
+    // //   && state.projectModel[state.operate]      // 端口
+    // //     .find((e: any) => e.protocol === state.protocol)));
+    // // console.log('ports', ports);
+    const gcpPorts = ref([443]);
     const state = reactive({
       projectModel: {
         id: 0,
@@ -38,12 +43,16 @@ export default defineComponent({
         name: 'test', // 名称
         priority: '', // 优先级
         vpc_id: '--',      // vpcid
-        target_tags: '',
-        destination_ranges: '',
-        source_tags: '',
+        target_tags: [],
+        destination_ranges: [],
+        target_service_accounts: [],
+        source_tags: [],
+        source_service_accounts: [],
+        source_ranges: [],
         bk_biz_id: '',      // 业务id
         create_at: '--',
         update_at: '--',
+        disabled: false,
         allowed: [{
           protocol: 'tcp',
           ports: [
@@ -131,7 +140,7 @@ export default defineComponent({
                 ))
                 }
                 </Select>
-                <Input class="w450 ml20" placeholder={t('请输入目标')} v-model={state.projectModel[state.target]} />
+                <TagInput class="w450 ml20" allow-create allow-auto-match placeholder={t('请输入目标')} list={[]} v-model={state.projectModel[state.target]} />
             </section>
           ),
         },
@@ -152,7 +161,7 @@ export default defineComponent({
                 ))
                 }
                 </Select>
-                <Input class="w450 ml20" placeholder={t('请输入过滤条件')} v-model={state.projectModel[state.source]} />
+                <TagInput class="w450 ml20" allow-create allow-auto-match placeholder={t('请输入过滤条件')} list={[]} v-model={state.projectModel[state.source]} />
             </section>
           ),
         },
@@ -194,26 +203,19 @@ export default defineComponent({
                 ))
                 }
                 </Select>
-                <Input class="w450 ml20" placeholder={t('请输入端口')} v-model={gcpPorts.value} />
+                <TagInput class="w450 ml20" allow-create allow-auto-match list={[]} placeholder={t('请输入端口')} v-model={gcpPorts.value} onBlur={handleBlur} />
             </section>
           ),
         },
-        // {
-        //   label: t('强制执行'),
-        //   property: 'name',
-        //   component: () => <Select class="w450" v-model={state.projectModel.name}>
-        //   {state.businessList.map(item => (
-        //       <Option
-        //           key={item.id}
-        //           value={item.id}
-        //           label={item.name}
-        //       >
-        //           {item.name}
-        //       </Option>
-        //   ))
-        //   }
-        //   </Select>,
-        // },
+        {
+          label: t('强制执行'),
+          property: 'disabled',
+          component: () => <Group v-model={state.projectModel.disabled}>
+          {GCP_EXECUTION_STATUS.map(e => (
+              <Radio label={e.value}>{t(e.label)}</Radio>
+          ))}
+          </Group>,
+        },
         {
           label: t('创建时间'),
           property: 'resource-id',
@@ -246,6 +248,36 @@ export default defineComponent({
       },
       { immediate: true },
     );
+
+    watch(() => state.target, (newValue, oldValue) => {
+      if (newValue !== oldValue) {
+        state.projectModel[oldValue] = [];
+      }
+    });
+
+    watch(() => state.source, (newValue, oldValue) => {
+      if (newValue !== oldValue) {
+        state.projectModel[oldValue] = [];
+      }
+    });
+
+    watch(() => state.protocol, (value) => {
+      console.log('value', value, state.operate, gcpPorts.value);
+      state.projectModel[state.operate].push({
+        protocol: value,
+        ports: [],
+      });
+      gcpPorts.value = state.projectModel[state.operate].find((e: any) => e.protocol === state.protocol).ports;
+    });
+
+    const handleBlur = () => {
+      state.projectModel[state.operate].forEach((e: any) => {
+        if (e.protocol === state.protocol) {
+          e.ports = gcpPorts.value;
+        }
+      });;
+      console.log(11111111, gcpPorts.value, state.projectModel[state.operate]);
+    };
 
 
     const submit = () => {

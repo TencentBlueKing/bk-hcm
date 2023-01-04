@@ -29,6 +29,16 @@ export const GCP_MATCH_STATUS = [
   },
 ];
 
+export const GCP_EXECUTION_STATUS = [
+  {
+    label: '已启用',
+    value: true,
+  }, {
+    label: '已停用',
+    value: false,
+  },
+];
+
 export const GCP_TARGET_LIST = [
   {
     id: 'destination_ranges',
@@ -45,6 +55,10 @@ export const GCP_TARGET_LIST = [
 ];
 
 export const GCP_SOURCE_LIST = [
+  {
+    id: 'source_ranges',
+    name: 'IPv6 CIDR/IPv4 CIDR',
+  },
   {
     id: 'source_tags',
     name: '来源标记',

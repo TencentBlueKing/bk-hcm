@@ -103,7 +103,12 @@ const {
   'vendors/gcp/firewalls/rules',
   '1',
 );
-detail.value = { id: 1, memo: '备注', name: 'test', log_enable: false, disabled: true, type: 'egress', priority: 100, cloud_vpc_id: 1, account_id: '1111' };
+detail.value = { id: 1, memo: '备注', name: 'test', log_enable: false, disabled: true, type: 'egress', priority: 100, cloud_vpc_id: 1, account_id: '1111', allowed: [{
+  protocol: 'tcp',
+  ports: [
+    '443',
+  ],
+}] };
 const gcpDetail = { ...detail.value };
 gcpDetail.type = GcpTypeEnum[gcpDetail.type];
 gcpDetail.log_enable = detail?.log_enable ? t('开') : t('关');
