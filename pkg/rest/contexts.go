@@ -148,3 +148,27 @@ func (c *Contexts) respError(err error) {
 
 	return
 }
+
+// respErrorWithEntity response request with error response.
+func (c *Contexts) respErrorWithEntity(data interface{}, err error) {
+	if c.respStatusCode != 0 {
+		c.resp.WriteHeader(c.respStatusCode)
+	}
+
+	c.resp.Header().Set(constant.RidKey, c.Kit.Rid)
+	c.resp.AddHeader(restful.HEADER_ContentType, restful.MIME_JSON)
+
+	parsedErr := errf.Error(err)
+	resp := &Response{
+		Code:    parsedErr.Code,
+		Message: parsedErr.Message,
+		Data:    data,
+	}
+
+	if err := json.NewEncoder(c.resp.ResponseWriter).Encode(resp); err != nil {
+		logs.ErrorDepthf(1, "do response failed, err: %s, rid: %s", err.Error(), c.Kit.Rid)
+		return
+	}
+
+	return
+}
