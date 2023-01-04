@@ -20,21 +20,46 @@
 package global
 
 import (
+	"context"
+	"net/http"
+
+	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// Client is a global api client
-type Client struct {
-	Auth    *AuthClient
-	Account *AccountClient
-	Cloud   *CloudClient
+// CloudClient is data service cloud api client.
+type CloudClient struct {
+	client rest.ClientInterface
 }
 
-// NewClient create a new global api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		Auth:    NewAuthClient(client),
-		Account: NewAccountClient(client),
-		Cloud:   NewCloudClient(client),
+// NewCloudClient create a new cloud api client.
+func NewCloudClient(client rest.ClientInterface) *CloudClient {
+	return &CloudClient{
+		client: client,
 	}
+}
+
+// GetResourceVendor get cloud resource vendor.
+func (cli *CloudClient) GetResourceVendor(ctx context.Context, h http.Header, resType enumor.CloudResourceType,
+		resID string) (enumor.Vendor, error) {
+
+	resp := new(protocloud.GetResourceVendorResp)
+
+	err := cli.client.Get().
+		WithContext(ctx).
+		SubResourcef("/cloud/resource/vendor/%s/id/%s", resType, resID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.Code != errf.OK {
+		return "", errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }
