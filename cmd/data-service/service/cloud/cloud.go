@@ -20,12 +20,15 @@
 package cloud
 
 import (
+	"fmt"
 	"net/http"
 
 	"hcm/cmd/data-service/service/capability"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -37,7 +40,8 @@ func InitCloudService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("GetResourceVendor", http.MethodGet, "/cloud/resource/vendor/{type}/id/{id}", svc.GetResourceVendor)
+	h.Add("GetResourceVendor", http.MethodGet, "/cloud/resources/vendors/{type}/id/{id}", svc.GetResourceVendor)
+	h.Add("ListResourceVendor", http.MethodPost, "/cloud/resources/vendors/list", svc.ListResourceVendor)
 
 	h.Load(cap.WebService)
 }
@@ -58,10 +62,48 @@ func (svc cloudSvc) GetResourceVendor(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.InvalidParameter, "resource id is required")
 	}
 
-	vendor, err := svc.dao.Cloud().GetResourceVendor(cts.Kit, enumor.CloudResourceType(resourceType), id)
+	list, err := svc.dao.Cloud().ListResourceVendor(cts.Kit, enumor.CloudResourceType(resourceType), []string{id})
 	if err != nil {
 		return nil, err
 	}
 
-	return vendor, nil
+	if len(list) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "%s not found resource: %s", resourceType, id)
+	}
+
+	if len(list) != 1 {
+		logs.Errorf("list resource vendor return count not right, count: %s, resource type: %s, id: %s, rid: %s",
+			len(list), resourceType, id, cts.Kit.Rid)
+		return nil, fmt.Errorf("list resource vendor return count not right")
+	}
+
+	return list[0].Vendor, nil
+}
+
+// ListResourceVendor list resource vendor.
+func (svc cloudSvc) ListResourceVendor(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.ListResourceVendorReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	list, err := svc.dao.Cloud().ListResourceVendor(cts.Kit, req.ResourceType, req.IDs)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(list) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "%s not found resource: %v", req.ResourceType, req.IDs)
+	}
+
+	result := make(map[string]enumor.Vendor, len(list))
+	for _, vendor := range list {
+		result[vendor.ID] = vendor.Vendor
+	}
+
+	return result, nil
 }

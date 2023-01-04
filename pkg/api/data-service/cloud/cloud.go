@@ -21,13 +21,33 @@ package cloud
 
 import (
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
 
 // -------------------------- Get --------------------------
 
-// GetResourceVendorResp get resource vendor resp.
+// GetResourceVendorResp define get resource vendor resp.
 type GetResourceVendorResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          enumor.Vendor `json:"data"`
+}
+
+// -------------------------- List --------------------------
+
+// ListResourceVendorReq define list resource vendor req.
+type ListResourceVendorReq struct {
+	ResourceType enumor.CloudResourceType `json:"resource_type" validate:"required"`
+	IDs          []string                 `json:"ids" validate:"required"`
+}
+
+// Validate list resource vendor req.
+func (req *ListResourceVendorReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ListResourceVendorResp list resource vendor resp.
+type ListResourceVendorResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          map[string]enumor.Vendor `json:"data"`
 }
