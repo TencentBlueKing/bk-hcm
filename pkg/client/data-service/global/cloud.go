@@ -43,13 +43,13 @@ func NewCloudClient(client rest.ClientInterface) *CloudClient {
 
 // GetResourceVendor get cloud resource vendor.
 func (cli *CloudClient) GetResourceVendor(ctx context.Context, h http.Header, resType enumor.CloudResourceType,
-		resID string) (enumor.Vendor, error) {
+	resID string) (enumor.Vendor, error) {
 
 	resp := new(protocloud.GetResourceVendorResp)
 
 	err := cli.client.Get().
 		WithContext(ctx).
-		SubResourcef("/cloud/resource/vendor/%s/id/%s", resType, resID).
+		SubResourcef("/cloud/resources/vendors/%s/id/%s", resType, resID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -59,6 +59,30 @@ func (cli *CloudClient) GetResourceVendor(ctx context.Context, h http.Header, re
 
 	if resp.Code != errf.OK {
 		return "", errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ListResourceVendor list cloud resource vendor.
+func (cli *CloudClient) ListResourceVendor(ctx context.Context, h http.Header, req protocloud.ListResourceVendorReq) (
+	map[string]enumor.Vendor, error) {
+
+	resp := new(protocloud.ListResourceVendorResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("cloud/resources/vendors/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
 	}
 
 	return resp.Data, nil

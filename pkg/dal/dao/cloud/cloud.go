@@ -25,13 +25,14 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // Cloud only used for cloud common operation.
 type Cloud interface {
-	GetResourceVendor(kt *kit.Kit, resType enumor.CloudResourceType, id string) (enumor.Vendor, error)
+	ListResourceVendor(kt *kit.Kit, resType enumor.CloudResourceType, ids []string) ([]types.CloudResourceVendor, error)
 }
 
 var _ Cloud = new(CloudDao)
@@ -41,24 +42,26 @@ type CloudDao struct {
 	Orm orm.Interface
 }
 
-// GetResourceVendor get cloud resource vendor.
-func (dao CloudDao) GetResourceVendor(kt *kit.Kit, resType enumor.CloudResourceType, id string) (enumor.Vendor, error) {
+// ListResourceVendor list cloud resource vendor.
+func (dao CloudDao) ListResourceVendor(kt *kit.Kit, resType enumor.CloudResourceType, ids []string) (
+		[]types.CloudResourceVendor, error) {
+
 	tableName, err := resType.ConvTableName()
 	if err != nil {
-		return "", errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	if len(id) == 0 {
-		return "", errf.New(errf.InvalidParameter, "id is required")
+	if len(ids) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "ids is required")
 	}
 
-	sql := fmt.Sprintf("select vendor from %s where id = %s", tableName, id)
+	sql := fmt.Sprintf("select id, vendor from %s where id in (?)", tableName)
 
-	var vendor enumor.Vendor = ""
-	if err := dao.Orm.Do().Get(kt.Ctx, &vendor, sql); err != nil {
-		logs.Errorf("get resource vendor failed, table: %s, id: %s, err: %v, rid: %s", resType, id, err, kt.Rid)
-		return "", err
+	list := make([]types.CloudResourceVendor, 0)
+	if err := dao.Orm.Do().Select(kt.Ctx, &list, sql, ids); err != nil {
+		logs.Errorf("select resource vendor failed, err: %v, table: %s, id: %v, rid: %s", err, resType, ids, kt.Rid)
+		return nil, err
 	}
 
-	return vendor, nil
+	return list, nil
 }
