@@ -17,42 +17,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package table
+package cloud
 
-import "fmt"
-
-// Table defines all the database table
-// related resources.
-type Table interface {
-	TableName() Name
-}
-
-// Name is database table's name type
-type Name string
-
-const (
-	// AuditTable is audit table's name
-	AuditTable Name = "audit"
-	// AccountTable is account table's name.
-	AccountTable Name = "account"
-	// AccountBizRelTable is account and biz relation table's name.
-	AccountBizRelTable Name = "account_biz_rel"
-	// IDGenerator is id generator table's name.
-	IDGenerator Name = "id_generator"
-	// SecurityGroupTable is security group table's name.
-	SecurityGroupTable Name = "security_group"
+import (
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/rest"
 )
 
-// Validate whether the table name is valid or not.
-func (n Name) Validate() error {
-	switch n {
-	case AuditTable:
-	case AccountTable:
-	case AccountBizRelTable:
-	case IDGenerator:
-	default:
-		return fmt.Errorf("unknown table name: %s", n)
-	}
+// -------------------------- Get --------------------------
 
-	return nil
+// GetResourceVendorResp get resource vendor resp.
+type GetResourceVendorResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          enumor.Vendor `json:"data"`
 }
