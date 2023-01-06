@@ -159,6 +159,7 @@ func (req *AccountCreateReq) Validate() error {
 
 // -------------------------- Check --------------------------
 
+// AccountCheckReq ...
 type AccountCheckReq struct {
 	Vendor enumor.Vendor `json:"vendor" validate:"required"`
 	// Extension 各云差异化比较大，延后解析成对应结果进行校验
