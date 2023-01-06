@@ -68,7 +68,7 @@ func (a *AccountClient) Create(ctx context.Context, h http.Header,
 }
 
 // Update ...
-func (a *AccountClient) Update(ctx context.Context, h http.Header, accountID uint64,
+func (a *AccountClient) Update(ctx context.Context, h http.Header, accountID string,
 	request *protocloud.AccountUpdateReq[protocloud.GcpAccountExtensionUpdateReq]) (
 	interface{}, error,
 ) {
@@ -77,7 +77,7 @@ func (a *AccountClient) Update(ctx context.Context, h http.Header, accountID uin
 	err := a.client.Patch().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/accounts/%d", accountID).
+		SubResourcef("/accounts/%s", accountID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

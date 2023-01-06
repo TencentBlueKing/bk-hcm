@@ -20,12 +20,15 @@
 package account
 
 import (
+	rawjson "encoding/json"
+
+	"hcm/pkg/tools/json"
+
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -52,214 +55,11 @@ type accountSvc struct {
 	authorizer auth.Authorizer
 }
 
-// Create ...
-func (a *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
-	return map[string]interface{}{
-		"id": 1,
-	}, nil
-}
-
-// Check ...
-func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
-	return nil, nil
-}
-
-// CheckByID ...
-func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
-	return nil, nil
-}
-
-// PageReq ...
-type PageReq struct {
-	Page *types.BasePage `json:"page" validate:"required"`
-}
-
-// Validate ...
-func (p *PageReq) Validate() error {
-	return validator.Validate.Struct(p)
-}
-
-// List ...
-func (a *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
-
-	req := new(PageReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+func (a *accountSvc) decodeExtension(cts *rest.Contexts, rawExtension rawjson.RawMessage, extension interface{}) error {
+	err := json.Unmarshal(rawExtension, &extension)
+	if err != nil {
+		logs.ErrorDepthf(1, "decode extension from request body failed, err: %s, rid: %s", err.Error(), cts.Kit.Rid)
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	if req.Page.Count {
-		return map[string]interface{}{
-			"count":   1,
-			"details": []interface{}{},
-		}, nil
-	}
-
-	details := []interface{}{
-		map[string]interface{}{
-			"id":     1,
-			"vendor": "tcloud", // 云厂商，枚举值有：tcloud 、aws、azure、gcp、huawei
-			"spec": map[string]interface{}{
-				"name":          "qcloud-account",
-				"type":          "resource",                         // resource表示资源账号，register表示登记账号
-				"managers":      []string{"jiananzhang", "jamesge"}, // 负责人
-				"department_id": 1,                                  // 组织架构，选择的部门ID
-				"price":         500.01,                             // 余额
-				"price_unit":    "",                                 // 余额单位，可能是美元、人民币等
-				"memo":          "测试账号",                             // 备注
-			},
-		},
-	}
-	return map[string]interface{}{
-		"count":   0,
-		"details": details,
-	}, nil
+	return nil
 }
-
-// Get create account with options
-func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
-	return map[string]interface{}{
-		"id":     1,
-		"vendor": "tcloud", // 云厂商，枚举值有：tcloud 、aws、azure、gcp、huawei
-		"spec": map[string]interface{}{
-			"name":          "qcloud-account",
-			"type":          "resource",                         // resource表示资源账号，register表示登记账号
-			"managers":      []string{"jiananzhang", "jamesge"}, // 负责人
-			"department_id": 1,                                  // 组织架构，选择的部门ID
-			"price":         500.01,                             // 余额
-			"price_unit":    "",                                 // 余额单位，可能是美元、人民币等
-			"memo":          "测试账号",                             // 备注
-		},
-		"extension": map[string]interface{}{
-			"cloud_main_account": "112224234",             // 主账号
-			"cloud_sub_account":  "121435343333",          // 子账号
-			"cloud_secret_id":    "AIDDy324DY23423424hdj", // SecretID
-			"cloud_secret_key":   "AKEYdsfewerwerewrwe",   // SecretKey
-		},
-		"revision": map[string]interface{}{
-			"creator":   "tom",
-			"reviser":   "tom",
-			"create_at": "2019-07-29 11:57:20",
-			"update_at": "2019-07-29 11:57:20",
-		},
-	}, nil
-}
-
-// Update ...
-func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
-	return nil, nil
-}
-
-// Create defines to create account with options
-// func (a *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
-// 	req := new(protocloudserver.CreateAccountReq)
-// 	if err := cts.DecodeInto(req); err != nil {
-// 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
-// 	}
-//
-// 	if err := req.Validate(); err != nil {
-// 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
-// 	}
-//
-// 	// 校验权限
-// 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Account, Action: meta.Create}}
-// 	err := a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	// 转换数据结构，调用DataService
-// 	createAccountReq := &protodataservice.CreateAccountReq{
-// 		Vendor:     req.Vendor,
-// 		Spec:       req.Spec,
-// 		Extension:  req.Extension,
-// 		Attachment: req.Attachment,
-// 	}
-// 	resp, err := a.client.DataService().CloudAccount().Create(cts.Kit.Ctx, cts.Kit.Header(), createAccountReq)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("create account failed, err: %v", err)
-// 	}
-//
-// 	return &core.CreateResult{ID: resp.ID}, nil
-// }
-//
-// // List accounts
-// func (a *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
-// 	req := new(protocloudserver.ListAccountReq)
-// 	if err := cts.DecodeInto(req); err != nil {
-// 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
-// 	}
-//
-// 	if err := req.Validate(); err != nil {
-// 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
-// 	}
-//
-// 	// TODO: 校验权限，这里应该只能拉取用户有权的账号列表
-//
-// 	// 转换数据结构，调用DataService
-// 	listAccountReq := &protodataservice.ListAccountReq{
-// 		Filter: req.Filter,
-// 		Page:   req.Page,
-// 	}
-// 	resp, err := a.client.DataService().CloudAccount().List(cts.Kit.Ctx, cts.Kit.Header(), listAccountReq)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("create account failed, err: %v", err)
-// 	}
-//
-// 	return &protocloudserver.ListAccountResult{
-// 		Count:   resp.Count,
-// 		Details: resp.Details,
-// 	}, nil
-// 	return nil, nil
-// }
-
-// Check 根据云账号信息校验
-// func (a *accountSvc) Check(cts *rest.Contexts) error {
-// req := new(protocloudserver.CheckAccountReq)
-// if err := cts.DecodeInto(req); err != nil {
-// 	return errf.New(errf.DecodeRequestFailed, err.Error())
-// }
-// reqExtension := req.Extension
-//
-// checkReq := &protohcservice.AccountCheckReq{Vendor: req.Vendor}
-// switch req.Vendor {
-// case enumor.TCloud:
-// 	checkReq.Secret = &types.Secret{
-// 		TCloud: &types.BaseSecret{
-// 			ID:  reqExtension.TCloud.Secret.Cid,
-// 			Key: reqExtension.TCloud.Secret.Key,
-// 		},
-// 	}
-// 	checkReq.AccountInfo = &types.AccountCheckOption{
-// 		Tcloud: &types.TcloudAccountInfo{
-// 			AccountCid:     reqExtension.TCloud.SubAccountCid,
-// 			MainAccountCid: reqExtension.TCloud.MainAccountCid,
-// 		},
-// 	}
-// case enumor.AWS:
-// 	checkReq.Secret = &types.Secret{
-// 		Aws: &types.BaseSecret{
-// 			ID:  reqExtension.Aws.Secret.Cid,
-// 			Key: reqExtension.Aws.Secret.Key,
-// 		},
-// 	}
-// 	checkReq.AccountInfo = &types.AccountCheckOption{
-// 		Aws: &types.AwsAccountInfo{
-// 			AccountCid:  reqExtension.Aws.AccountCid,
-// 			IamUserName: reqExtension.Aws.IamUserName,
-// 		},
-// 	}
-// 	// TODO: 待多云异构如何处理讨论完后补齐其他情况
-// }
-//
-// err := a.client.HCService().Account().Check(cts.Kit.Ctx, cts.Kit.Header(), checkReq)
-// if err != nil {
-// 	return fmt.Errorf("check account failed, err: %v", err)
-// }
-//
-// return nil
-// 	return nil
-// }

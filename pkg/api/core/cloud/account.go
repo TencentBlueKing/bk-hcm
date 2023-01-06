@@ -86,6 +86,8 @@ type HuaWeiAccountExtension struct {
 	CloudSubAccountName  string `json:"cloud_sub_account_name"`
 	CloudSecretID        string `json:"cloud_secret_id"`
 	CloudSecretKey       string `json:"cloud_secret_key"`
+	CloudIamUserID       string `json:"cloud_iam_user_id" `
+	CloudIamUsername     string `json:"cloud_iam_username"`
 }
 
 // HuaWeiAccount ...
