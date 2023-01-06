@@ -21,6 +21,7 @@
 package cloud
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -191,9 +192,10 @@ func (l *AccountListReq) Validate() error {
 
 // BaseAccountListResp ...
 type BaseAccountListResp struct {
-	ID     string             `json:"id"`
-	Vendor enumor.Vendor      `json:"vendor"`
-	Spec   *cloud.AccountSpec `json:"spec"`
+	ID       string             `json:"id"`
+	Vendor   enumor.Vendor      `json:"vendor"`
+	Spec     *cloud.AccountSpec `json:"spec"`
+	Revision *core.Revision     `json:"revision"`
 }
 
 // AccountListResult defines list instances for iam pull resource callback result.

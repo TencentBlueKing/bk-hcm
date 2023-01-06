@@ -373,6 +373,12 @@ func (svc *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 				PriceUnit:    account.PriceUnit,
 				Memo:         account.Memo,
 			},
+			Revision: &core.Revision{
+				Creator:   account.Creator,
+				Reviser:   account.Reviser,
+				CreatedAt: account.CreatedAt,
+				UpdatedAt: account.UpdatedAt,
+			},
 		})
 
 	}
