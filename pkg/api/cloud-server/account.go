@@ -233,6 +233,7 @@ func (r *AzureAccountExtensionCheckByIDReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
+// AccountCheckByIDReq ...
 type AccountCheckByIDReq struct {
 	// Extension 各云差异化比较大，延后解析成对应结果进行校验
 	Extension json.RawMessage `json:"extension" validate:"required"`
