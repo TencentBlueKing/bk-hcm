@@ -95,8 +95,8 @@ export default defineComponent({
         switch (projectModel.vendor) {
           case 'tcloud':
             params.extension = {
-              cloud_main_account: Number(projectModel.mainAccount),
-              cloud_sub_account: Number(projectModel.subAccount),
+              cloud_main_account_id: projectModel.mainAccount,
+              cloud_sub_account_id: projectModel.subAccount,
               cloud_secret_id: projectModel.secretId,
               cloud_secret_key: projectModel.secretKey,
             };
