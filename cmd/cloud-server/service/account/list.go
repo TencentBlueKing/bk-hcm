@@ -24,6 +24,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // List ...
@@ -39,11 +40,23 @@ func (a *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
 
 	// TODO: 校验用户是否有List权限，有权限的ID列表
 
+	// FIXME: 由于data-service 不允许空的过滤条件，所以这里构造了一个id>0的永久有效条件，待添加权限ID列表过滤后则可以去除
+	reqFilter := req.Filter
+	if req.Filter == nil {
+		reqFilter = &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "sync_status", Op: filter.Equal.Factory(), Value: "not_start"},
+			},
+		}
+
+	}
+
 	return a.client.DataService().Global.Account.List(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.AccountListReq{
-			Filter: req.Filter,
+			Filter: reqFilter,
 			Page:   req.Page,
 		},
 	)

@@ -249,7 +249,7 @@ func (req *AccountCheckByIDReq) Validate() error {
 
 // AccountListReq ...
 type AccountListReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
+	Filter *filter.Expression `json:"filter" validate:"omitempty"`
 	Page   *types.BasePage    `json:"page" validate:"required"`
 }
 

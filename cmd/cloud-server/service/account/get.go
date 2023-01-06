@@ -34,7 +34,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 	// TODO: 校验用户有该账号的权限
 
 	// 查询该账号对应的Vendor
-	vendor, err := a.client.DataService().Global.Cloud.GetResourceVendor(
+	baseInfo, err := a.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		enumor.AccountCloudResType,
@@ -44,7 +44,7 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	switch vendor {
+	switch baseInfo.Vendor {
 	case enumor.TCloud:
 		return a.client.DataService().TCloud.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 	case enumor.Aws:
@@ -56,6 +56,6 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Azure:
 		return a.client.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
 	}
 }

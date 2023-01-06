@@ -43,7 +43,7 @@ func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 	// TODO: 校验用户有该账号的更新权限
 
 	// 查询该账号对应的Vendor
-	vendor, err := a.client.DataService().Global.Cloud.GetResourceVendor(
+	baseInfo, err := a.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		enumor.AccountCloudResType,
@@ -79,7 +79,7 @@ func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
-	switch vendor {
+	switch baseInfo.Vendor {
 	case enumor.TCloud:
 		return a.updateForTCloud(cts, req, accountID, spec)
 	case enumor.Aws:
@@ -91,7 +91,7 @@ func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Azure:
 		return a.updateForAzure(cts, req, accountID, spec)
 	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
 	}
 }
 

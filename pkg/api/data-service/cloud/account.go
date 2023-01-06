@@ -198,9 +198,9 @@ type BaseAccountListResp struct {
 
 // AccountListResult defines list instances for iam pull resource callback result.
 type AccountListResult struct {
-	Count uint64 `json:"count,omitempty"`
+	Count uint64 `json:"count"`
 	// 对于List接口，只会返回公共数据，不会返回Extension
-	Details []*BaseAccountListResp `json:"details,omitempty"`
+	Details []*BaseAccountListResp `json:"details"`
 }
 
 // AccountListResp ...
