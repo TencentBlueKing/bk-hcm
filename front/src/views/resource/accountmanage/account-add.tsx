@@ -2,7 +2,7 @@ import { Form, Input, Select, Button, Radio, Message } from 'bkui-vue';
 import { reactive, defineComponent, ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ProjectModel, FormItems } from '@/typings';
-import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE } from '@/constants';
+import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE, SITE_TYPE } from '@/constants';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import OrganizationSelect from '@/components/OrganizationSelect';
@@ -34,6 +34,7 @@ export default defineComponent({
       secretKey: '',  // 密钥key
       accountId: '',
       iamUsername: '',
+      site: 'china',
     };
 
     onMounted(async () => {
@@ -83,6 +84,7 @@ export default defineComponent({
             managers: projectModel.managers,
             memo: projectModel.memo,
             department_id: Number(projectModel.departmentId.join(',')),
+            site: projectModel.site,
           },
           attachment: {
             bk_biz_ids: projectModel.bizIds.length === businessList.list.length
@@ -173,6 +175,15 @@ export default defineComponent({
           break;
         case 'aws':
           insertFormData = [
+            {
+              required: true,
+              property: 'site',
+              component: () => <Group v-model={projectModel.site}>
+                {SITE_TYPE.map(e => (
+                  <Radio label={e.value}>{t(e.label)}</Radio>
+                ))}
+              </Group>,
+            },
             {
               label: t('账号ID'),
               required: true,
@@ -287,6 +298,15 @@ export default defineComponent({
           break;
         case 'tcloud':
           insertFormData = [
+            {
+              required: true,
+              property: 'site',
+              component: () => <Group v-model={projectModel.site}>
+                {SITE_TYPE.map(e => (
+                  <Radio label={e.value}>{t(e.label)}</Radio>
+                ))}
+              </Group>,
+            },
             {
               label: t('主账号ID'),
               required: true,

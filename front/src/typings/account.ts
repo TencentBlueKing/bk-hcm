@@ -23,6 +23,7 @@ export interface ProjectModel {
   created_at?: string // 创建时间
   updated_at?: string // 修改时间
   extension?: any     // 根据每种云返回值不一定
+  site?: string     //
 }
 
 export enum StaffType {
@@ -77,5 +78,10 @@ export enum CloudType {
 export enum AccountType {
   resource = '资源账号',
   register = '登记账号',
+}
+
+export enum SiteType {
+  china = '中国站',
+  international = '国际站',
 }
 
