@@ -1,61 +1,70 @@
 <script lang="ts" setup>
-import InfoList from '../../../common/info-list/info-list';
+// import InfoList from '../../../common/info-list/info-list';
+import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 
 import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 
+import {
+  useI18n,
+} from 'vue-i18n';
+
+const {
+  t,
+} = useI18n();
+
 const settingInfo = [
   {
-    name: '账号',
+    name: t('账号'),
     value: '我的账号',
     prop: 'account',
   },
   {
-    name: '资源ID',
+    name: t('资源ID'),
     value: '100',
     prop: 'id',
   },
   {
-    name: '资源名称',
+    name: t('资源名称'),
     value: '100',
     prop: 'name',
   },
   {
-    name: '云厂商',
+    name: t('云厂商'),
     value: '100',
     prop: 'vendor',
   },
   {
-    name: '业务',
+    name: t('业务'),
     value: '100',
     prop: 'bk_biz_id',
   },
   {
-    name: '地域ID',
+    name: t('地域 ID'),
     value: 'mirror.tencent',
     prop: 'region',
   },
   {
-    name: '地域名称',
+    name: t('地域'),
     value: 'mirror.tencent',
     prop: 'region',
   },
   {
-    name: '关联CVM实例数',
+    name: t('关联CVM实例数'),
     value: '11111',
     prop: 'cvm_ids',
   },
   {
-    name: '创建时间',
+    name: t('创建时间'),
     value: '11111',
     prop: 'create_at',
   },
   {
-    name: '修改时间',
+    name: t('修改时间'),
     value: '11111',
     prop: 'update_at',
   },
   {
-    name: '备注',
+    name: t('备注'),
     value: '11111',
     prop: 'memo',
   },
@@ -67,22 +76,14 @@ const {
 } = useDetail(
   'security_group',
   '1',
-  settingInfo,
 );
-detail.value = [
-  { name: '账号', value: '我的账号' },
-  { name: '资源ID', value: 'testid' },
-  { name: '备注', value: '1111' },
-  { name: '地域ID', value: '地域ID' },
-  { name: '资源ID', value: 'testid' },
-  { name: '备注', value: '1111' },
-];
+detail.value = { id: 1, memo: '备注', name: 'test' } || detail;
 </script>
 
 <template>
   <bk-loading
     :loading="loading"
   >
-    <info-list class="mt20" :fields="detail"></info-list>
+    <detail-info class="mt20" :fields="settingInfo" :detail="detail"></detail-info>
   </bk-loading>
 </template>

@@ -9,11 +9,19 @@ import type {
 } from '@/typings/resource';
 import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
 
+import {
+  useI18n,
+} from 'vue-i18n';
+
 const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
 });
+
+const {
+  t,
+} = useI18n();
 
 const cvmColumns = [
   {
@@ -66,7 +74,7 @@ const networkColumns = [
 // tab 信息
 const types = [
   { name: 'cvm', label: 'CVM' },
-  { name: 'network', label: '网络接口' },
+  { name: 'network', label: t('网络接口') },
 ];
 const activeType = ref('cvm');
 

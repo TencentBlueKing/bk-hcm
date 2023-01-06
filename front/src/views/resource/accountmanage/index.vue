@@ -72,11 +72,11 @@
           prop="created_at"
         />
         <bk-table-column
-          label="备注"
+          :label="t('备注')"
           prop="spec.memo"
         />
         <bk-table-column
-          label="操作"
+          :label="t('操作')"
         >
           <template #default="props">
             <div class="operate-button">

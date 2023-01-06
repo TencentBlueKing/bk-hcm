@@ -30,6 +30,10 @@ export default defineComponent({
       type: Array as PropType<any>,
       default: [],
     },
+    needValidate: {
+      type: Boolean,
+      default: true,
+    },
   },
   emits: ['update:modelValue', 'change', 'input', 'blur'],
   setup(props, ctx) {
@@ -70,8 +74,12 @@ export default defineComponent({
     };
 
     const handleBlur = (key: string) => {
-      // @ts-ignore
-      ctx.emit('blur', renderEdit.value, key);
+      if (props.needValidate) {
+        // @ts-ignore
+        ctx.emit('blur', renderEdit.value, key);
+      } else {
+        renderEdit.value = false;
+      }
     };
 
     const renderComponentsContent = (type: string) => {

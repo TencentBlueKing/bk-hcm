@@ -39,7 +39,7 @@ export default (props: PropsType, type: string) => {
 
   // 更新数据
   const triggerApi = async () => {
-    isLoading.value = true;
+    // isLoading.value = true;
     resourceStore
       .list(
         {
@@ -98,8 +98,13 @@ export default (props: PropsType, type: string) => {
       deep: true,
     },
   );
+  // 切换tab重新获取数据
+  watch(() => type, async (value) => {
+    console.log('value', value);
+    triggerApi();
+  });
 
-  onMounted(triggerApi);
+  triggerApi();
 
   return {
     datas,

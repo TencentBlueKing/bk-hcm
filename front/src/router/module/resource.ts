@@ -1,24 +1,27 @@
 // import { CogShape } from 'bkui-vue/lib/icon';
 import type { RouteRecordRaw } from 'vue-router';
+import i18n from '@/language/i18n';
+
+const { t } = i18n.global;
 
 const resourceMenus: RouteRecordRaw[] = [
   {
     path: '/resource',
-    name: '云管',
+    name: t('云管'),
     children: [
       {
         path: '/resource/account',
-        name: '账户',
+        name: t('账户'),
         alias: '',
         component: () => import('@/views/resource/accountmanage/index.vue'),
         meta: {
           activeKey: 'resourceAccount',
-          breadcrumb: ['云管', '账户'],
+          breadcrumb: [t('云管'), t('账户')],
         },
       },
       {
         path: '/resource/resource',
-        name: '资源',
+        name: t('资源'),
         component: () => import('@/views/resource/resource-manage/resource-entry.vue'),
         children: [
           {
@@ -26,7 +29,7 @@ const resourceMenus: RouteRecordRaw[] = [
             component: () => import('@/views/resource/resource-manage/resource-manage.vue'),
             meta: {
               activeKey: 'resourceResource',
-              breadcrumb: ['云管', '资源'],
+              breadcrumb: [t('云管'), t('资源')],
             },
           },
           {
@@ -35,55 +38,55 @@ const resourceMenus: RouteRecordRaw[] = [
             component: () => import('@/views/resource/resource-manage/resource-detail.vue'),
             meta: {
               activeKey: 'resourceResource',
-              breadcrumb: ['云管', '资源', '详情'],
+              breadcrumb: [t('云管'), t('资源'), '详情'],
             },
           },
         ],
         meta: {
           activeKey: 'resourceResource',
-          breadcrumb: ['云管', '资源'],
+          breadcrumb: [t('云管'), t('资源')],
         },
       },
       {
         path: '/resource/recyclebin',
-        name: '回收站',
+        name: t('回收站'),
         component: () => import('@/views/workbench/demo2'),
         meta: {
           activeKey: 'resourceRecyclebin',
-          breadcrumb: ['云管', '回收站'],
+          breadcrumb: [t('云管'), t('回收站')],
         },
       },
     ],
   },
   {
     path: '/resource-net',
-    name: '网络',
+    name: t('网络'),
     children: [
       {
         path: '/resource-net/survey',
-        name: '概况',
+        name: t('概况'),
         component: () => import('@/views/workbench/demo'),
         meta: {
           activeKey: 'survey',
-          breadcrumb: ['网络', '概况'],
+          breadcrumb: [t('网络'), t('概况')],
         },
       },
       {
         path: '/resource-net/planning',
-        name: '规划',
+        name: t('规划'),
         component: () => import('@/views/workbench/demo'),
         meta: {
           activeKey: 'planning',
-          breadcrumb: ['网络', '规划'],
+          breadcrumb: [t('网络'), t('规划')],
         },
       },
       {
         path: '/resource-net/recycle',
-        name: '回收',
+        name: t('回收'),
         component: () => import('@/views/workbench/demo'),
         meta: {
           activeKey: 'recycle',
-          breadcrumb: ['网络', '规划'],
+          breadcrumb: [t('网络'), t('规划')],
         },
       },
     ],
