@@ -21,8 +21,9 @@ package types
 
 import "hcm/pkg/criteria/enumor"
 
-// CloudResourceVendor define cloud resource vendor.
-type CloudResourceVendor struct {
-	ID     string        `json:"id" db:"id"`
-	Vendor enumor.Vendor `json:"vendor" db:"vendor"`
+// CloudResourceBasicInfo define cloud resource basic info.
+type CloudResourceBasicInfo struct {
+	ID        string        `json:"id" db:"id"`
+	Vendor    enumor.Vendor `json:"vendor" db:"vendor"`
+	AccountID string        `json:"account_id" db:"account_id"`
 }

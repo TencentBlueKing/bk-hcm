@@ -60,8 +60,8 @@ export default defineComponent({
         const res = await accountStore.getBizList();
         console.log(res);
         businessList.list = res?.data || BUSINESS_TYPE;
-      } catch (error) {
-        console.log(error);
+      } catch (error: any) {
+        Message({ theme: 'error', message: error?.message || '系统异常' });
       }
     };
 
@@ -82,7 +82,7 @@ export default defineComponent({
             name: projectModel.name,
             managers: projectModel.managers,
             memo: projectModel.memo,
-            department_id: projectModel.departmentId.join(','),
+            department_id: Number(projectModel.departmentId.join(',')),
           },
           attachment: {
             bk_biz_ids: projectModel.bizIds.length === businessList.list.length
@@ -125,8 +125,9 @@ export default defineComponent({
           });
           isTestConnection.value = true;
         }
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
+        Message({ theme: 'error', message: error?.message || '系统异常' });
       }
     };
 
@@ -194,7 +195,7 @@ export default defineComponent({
               label: 'SecretKey',
               required: projectModel.type === 'resource',
               property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入请输入主账号')} v-model={projectModel.secretKey} />,
+              component: () => <Input class="w450" placeholder={t('请输入主账号')} v-model={projectModel.secretKey} />,
             },
           ];
           break;
@@ -308,7 +309,7 @@ export default defineComponent({
               label: 'SecretKey',
               required: projectModel.type === 'resource',
               property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入secretKey')} v-model={projectModel.secretKey} />,
+              component: () => <Input class="w450" placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />,
             },
           ];
           break;
@@ -496,7 +497,7 @@ export default defineComponent({
       },
       {
         required: false,
-        component: () => <Button class="w90" theme="primary" onClick={submit}>{t(isTestConnection.value ? '确认' : '账号验证')}</Button>,
+        component: () => <Button theme="primary" onClick={submit}>{t(isTestConnection.value ? t('确认') : t('账号验证'))}</Button>,
       },
     ]);
 

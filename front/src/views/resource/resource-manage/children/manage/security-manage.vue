@@ -12,6 +12,8 @@ import {
   ref,
   h,
   PropType,
+  watch,
+  reactive,
 } from 'vue';
 
 import {
@@ -24,8 +26,10 @@ import {
   useResourceStore,
 } from '@/store/resource';
 import useBusiness from '../../hooks/use-business';
-import useDeleteSecurity from '../../hooks/use-delete-security';
 import useQueryList from '../../hooks/use-query-list';
+import useColumns from '../../hooks/use-columns';
+import useDelete from '../../hooks/use-delete';
+import useSelection from '../../hooks/use-selection';
 import { CloudType } from '@/typings';
 
 const props = defineProps({
@@ -43,6 +47,25 @@ const router = useRouter();
 
 const resourceStore = useResourceStore();
 
+const activeType = ref('group');
+
+const state = reactive<any>({
+  datas: [],
+  pagination: {
+    current: 1,
+    limit: 10,
+    count: 0,
+  },
+  isLoading: false,
+  handlePageChange: () => {},
+  handlePageSizeChange: () => {},
+  handleSort: () => {},
+  columns: useColumns('group'),
+});
+
+let securityHandleShowDelete: any;
+let SecurityDeleteDialog: any;
+
 const {
   isShowDistribution,
   handleDistribution,
@@ -50,27 +73,87 @@ const {
 } = useBusiness();
 
 const {
-  isShowSecurity,
-  handleShowDeleteSecurity,
-  DeleteSecurity,
-} = useDeleteSecurity();
+  selections,
+  handleSelectionChange,
+} = useSelection();
 
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-} = useQueryList(props, 'security_groups');
-datas.value = [{ id: 333, vendor: 'tcloud' }];
+const fetchList = (fetchType: string) => {
+  console.log('fetchType', fetchType);
+  const {
+    datas,
+    pagination,
+    isLoading,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSort,
+  } = useQueryList(props, fetchType);
+  return {
+    datas,
+    pagination,
+    isLoading,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSort,
+  };
+};
 
-const handleSelection = () => {};
+const showDeleteDialog = (fetchType: string, title: string) => {
+  const {
+    handleShowDelete,
+    DeleteDialog,
+  } = useDelete(
+    state.columns,
+    selections.value,
+    fetchType,
+    t(title),
+  );
+  return {
+    handleShowDelete,
+    DeleteDialog,
+  };
+};
+
+// 状态保持
+watch(
+  () => activeType.value,
+  (v) => {
+    selections.value = [];
+    handleSwtichType(v);
+  },
+);
+
+const handleSwtichType = (type: string) => {
+  const params = {
+    fetchUrl: 'security_groups',
+    columns: 'group',
+    dialogName: t('删除安全组'),
+  };
+  if (type === 'gcp') {
+    params.fetchUrl = 'vendors/gcp/firewalls/rules';
+    params.columns = 'gcp';
+    params.dialogName = t('删除防火墙规则');
+  }
+  // eslint-disable-next-line max-len
+  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = fetchList(params.fetchUrl);
+  state.datas = [{ id: 333, vendor: 'tcloud', assigned: false }] || datas;
+  state.isLoading = isLoading;
+  state.pagination = pagination;
+  state.handlePageChange = handlePageChange;
+  state.handlePageSizeChange = handlePageSizeChange;
+  state.handleSort = handleSort;
+  state.columns = useColumns(params.columns);
+  const { handleShowDelete, DeleteDialog } = showDeleteDialog(params.fetchUrl, params.dialogName);
+  securityHandleShowDelete = handleShowDelete;
+  SecurityDeleteDialog = DeleteDialog;
+};
+
+handleSwtichType(activeType.value);
 
 const groupColumns = [
   {
     type: 'selection',
+    width: 100,
   },
   {
     label: 'ID',
@@ -96,19 +179,18 @@ const groupColumns = [
     },
   },
   {
-    label: '资源 ID',
+    label: t('资源 ID'),
     field: 'account_id',
     sort: true,
   },
   {
-    label: '名称',
+    label: t('名称'),
     field: 'name',
     sort: true,
   },
   {
-    label: '云厂商',
-    sort: true,
-    render({ data }: DoublePlainObject) {
+    label: t('云厂商'),
+    render({ data }: any) {
       return h(
         'span',
         {},
@@ -119,31 +201,31 @@ const groupColumns = [
     },
   },
   {
-    label: '地域',
+    label: t('地域'),
     field: 'region',
-    sort: true,
   },
   {
-    label: '描述',
+    label: t('描述'),
     field: 'memo',
   },
   {
-    label: '关联模板',
+    label: t('关联模板'),
     field: '',
+  },
+  {
+    label: t('修改时间'),
+    field: 'update_at',
     sort: true,
   },
   {
-    label: '修改时间',
-    field: 'update_at',
-  },
-  {
-    label: '创建时间',
+    label: t('创建时间'),
     field: 'create_at',
+    sort: true,
   },
   {
-    label: '操作',
+    label: t('操作'),
     field: '',
-    render({ data }: DoublePlainObject) {
+    render() {
       return h(
         'span',
         {},
@@ -166,7 +248,7 @@ const groupColumns = [
               },
             },
             [
-              '配置规则',
+              t('配置规则'),
             ],
           ),
           h(
@@ -176,11 +258,11 @@ const groupColumns = [
               text: true,
               theme: 'primary',
               onClick() {
-                handleShowDeleteSecurity();
+                securityHandleShowDelete();
               },
             },
             [
-              '删除',
+              t('删除'),
             ],
           ),
         ],
@@ -216,68 +298,116 @@ const gcpColumns = [
     },
   },
   {
-    label: '实例 ID',
+    label: t('资源 ID'),
+    field: 'account_id',
+    sort: true,
+  },
+  {
+    label: t('名称'),
     field: '',
     sort: true,
   },
   {
-    label: '名称',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '云厂商',
-    field: '',
-    sort: true,
-  },
-  {
-    label: 'IP',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '云区域',
-    field: '',
-  },
-  {
-    label: '地域',
-    field: '',
-    sort: true,
+    label: t('云厂商'),
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          CloudType[data.vendor],
+        ],
+      );
+    },
   },
   {
     label: 'VPC',
     field: '',
+  },
+  {
+    label: t('类型'),
+    field: '',
+  },
+  {
+    label: t('目标'),
+    field: '',
+  },
+  {
+    label: t('过滤条件'),
+    field: '',
+  },
+  {
+    label: t('协议/端口'),
+    field: '',
+  },
+  {
+    label: t('操作'),
+    field: '',
+  },
+  {
+    label: t('优先级'),
+    field: '',
+  },
+  {
+    label: t('修改时间'),
+    field: 'update_at',
     sort: true,
   },
   {
-    label: '子网',
-    field: '',
+    label: t('创建时间'),
+    field: 'create_at',
     sort: true,
   },
   {
-    label: '状态',
+    label: t('操作'),
     field: '',
-  },
-  {
-    label: '创建时间',
-    field: '',
-  },
-  {
-    label: '操作',
-    field: '',
+    render() {
+      return h(
+        'span',
+        {},
+        [
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              onClick() {
+                router.push({
+                  name: 'resourceDetail',
+                  params: {
+                    type: 'gcp',
+                  },
+                });
+              },
+            },
+            [
+              t('编辑'),
+            ],
+          ),
+          h(
+            Button,
+            {
+              class: 'ml10',
+              text: true,
+              theme: 'primary',
+              onClick() {
+                securityHandleShowDelete();
+              },
+            },
+            [
+              t('删除'),
+            ],
+          ),
+        ],
+      );
+    },
   },
 ];
-const tableData: any[] = [{}];
 const types = [
-  { name: 'group', label: '安全组' },
-  { name: 'gcp', label: 'GCP防火墙规则' },
+  { name: 'group', label: t('安全组') },
+  { name: 'gcp', label: t('GCP防火墙规则') },
 ];
-const activeType = ref('group');
 
 // 方法
-const handleSortBy = () => {
-
-};
 
 const handleConfirm = (bizId: number) => {
   const params = {
@@ -289,15 +419,19 @@ const handleConfirm = (bizId: number) => {
     .then(() => {
       Message({
         theme: 'success',
-        message: '分配成功',
+        message: t('分配成功'),
       });
     });
+};
+
+const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+  return !row.assigned;
 };
 </script>
 
 <template>
   <bk-loading
-    :loading="isLoading"
+    :loading="state.isLoading"
   >
     <section>
       <bk-button
@@ -310,7 +444,7 @@ const handleConfirm = (bizId: number) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        @click="handleShowDeleteSecurity"
+        @click="securityHandleShowDelete"
       >
         {{ t('删除') }}
       </bk-button>
@@ -333,22 +467,27 @@ const handleConfirm = (bizId: number) => {
       v-if="activeType === 'group'"
       class="mt20"
       row-hover="auto"
-      :pagination="pagination"
+      :pagination="state.pagination"
       :columns="groupColumns"
-      :data="datas"
-      @page-limit-change="handlePageSizeChange"
-      @page-value-change="handlePageChange"
-      @column-sort="handleSort"
-      @selection-change="handleSelection"
+      :data="state.datas"
+      :is-row-select-enable="isRowSelectEnable"
+      @page-limit-change="state.handlePageSizeChange"
+      @page-value-change="state.handlePageChange"
+      @column-sort="state.handleSort"
+      @selection-change="handleSelectionChange"
     />
 
     <bk-table
       v-if="activeType === 'gcp'"
       class="mt20"
       row-hover="auto"
+      :pagination="state.pagination"
       :columns="gcpColumns"
-      :data="tableData"
-      @column-sort="handleSortBy"
+      :data="state.datas"
+      @page-limit-change="state.handlePageSizeChange"
+      @page-value-change="state.handlePageChange"
+      @column-sort="state.handleSort"
+      @selection-change="handleSelectionChange"
     />
 
     <resource-business
@@ -357,9 +496,16 @@ const handleConfirm = (bizId: number) => {
       :title="t('安全组分配')"
     />
 
-    <delete-security
-      v-model:is-show="isShowSecurity"
-    ></delete-security>
+    <security-delete-dialog>
+      <h3 class="g-resource-tips" v-if="activeType === 'group'">
+        {{ t('安全组被实例关联或者被其他安全组规则关联时不能直接删除，请删除关联关系后再进行删除') }}
+        <bk-button text theme="primary">{{ t('查看关联实例') }}</bk-button>
+      </h3>
+      <h3 class="g-resource-tips" v-else>
+        {{ t('防火墙规则被实例关联') }}<bk-button text theme="primary">{{ t('查看关联实例') }}</bk-button>
+        {{ t('请注意删除防火墙规则后无法恢复，请谨慎操作') }}
+      </h3>
+    </security-delete-dialog>
   </bk-loading>
 </template>
 

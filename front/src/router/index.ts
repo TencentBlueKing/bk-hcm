@@ -11,6 +11,9 @@ import resource from './module/resource';
 import resourceInside from './module/resource-inside';
 import service from './module/service';
 import business from './module/business';
+import i18n from '@/language/i18n';
+
+const { t } = i18n.global;
 
 const routes: RouteRecordRaw[] = [
   ...common,
@@ -27,7 +30,7 @@ const routes: RouteRecordRaw[] = [
     redirect: '/resource/account',
     meta: {
       activeKey: 'resourceAccount',
-      breadcrumb: ['云管', '账户'],
+      breadcrumb: [t('云管'), t('账户')],
     },
   },
 ];

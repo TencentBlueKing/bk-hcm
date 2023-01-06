@@ -35,6 +35,8 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return table.AccountTable, nil
 	case SecurityGroupCloudResType:
 		return table.SecurityGroupTable, nil
+	case VpcCloudResType:
+		return table.VpcTable, nil
 
 	default:
 		return "", fmt.Errorf("%s does not have a corresponding table name", rt)
@@ -45,4 +47,5 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 const (
 	AccountCloudResType       = "account"
 	SecurityGroupCloudResType = "security_group"
+	VpcCloudResType           = "vpc"
 )
