@@ -67,7 +67,7 @@ export default defineComponent({
 
     onMounted(async () => {
       const { id } = route.query;
-      const res = await accountStore.getAccountDetail(Number(id));
+      const res = await accountStore.getAccountDetail(id);
       projectModel.id = res?.data.id;
       projectModel.vendor = res?.data.vendor;
       projectModel.name = res?.data.spec.name;

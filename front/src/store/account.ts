@@ -33,7 +33,7 @@ export const useAccountStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    async getAccountDetail(id: number) {
+    async getAccountDetail(id: string | string[]) {
       return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`);
     },
     /**
