@@ -3,6 +3,12 @@ import type {
   PlainObject,
 } from '@/typings/resource';
 
+import i18n from '@/language/i18n';
+import { CloudType } from '@/typings';
+import {
+  Button,
+} from 'bkui-vue';
+
 import {
   h,
 } from 'vue';
@@ -13,6 +19,7 @@ import {
 
 export default (type: string) => {
   const router = useRouter();
+  const { t } = i18n.global;
 
   const vpcColumns = [
     {
@@ -221,16 +228,16 @@ export default (type: string) => {
       sort: true,
     },
     {
-      label: '云厂商',
-      field: 'vendor',
-    },
-    {
-      label: '业务',
-      field: 'vpc_cid',
-    },
-    {
-      label: '业务拓扑',
-      field: 'zone',
+      label: t('云厂商'),
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            CloudType[data.vendor],
+          ],
+        );
+      },
     },
     {
       label: '地域',
@@ -243,6 +250,29 @@ export default (type: string) => {
     {
       label: '关联实例',
       field: '',
+      render() {
+        h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            onClick() {
+              router.push({
+                name: 'resourceDetail',
+                params: {
+                  type: 'security',
+                },
+                query: {
+                  activeTab: 'rule',
+                },
+              });
+            },
+          },
+          [
+            t('配置规则'),
+          ],
+        );
+      },
     },
   ];
 
@@ -285,8 +315,16 @@ export default (type: string) => {
       sort: true,
     },
     {
-      label: '云厂商',
-      field: 'vendor',
+      label: t('云厂商'),
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            CloudType[data.vendor],
+          ],
+        );
+      },
     },
     {
       label: '业务',

@@ -60,8 +60,8 @@ export default defineComponent({
         const res = await accountStore.getBizList();
         console.log(res);
         businessList.list = res?.data || BUSINESS_TYPE;
-      } catch (error) {
-        console.log(error);
+      } catch (error: any) {
+        Message({ theme: 'error', message: error?.message || '系统异常' });
       }
     };
 
@@ -82,7 +82,7 @@ export default defineComponent({
             name: projectModel.name,
             managers: projectModel.managers,
             memo: projectModel.memo,
-            department_id: projectModel.departmentId.join(','),
+            department_id: Number(projectModel.departmentId.join(',')),
           },
           attachment: {
             bk_biz_ids: projectModel.bizIds.length === businessList.list.length
@@ -125,8 +125,9 @@ export default defineComponent({
           });
           isTestConnection.value = true;
         }
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
+        Message({ theme: 'error', message: error?.message || '系统异常' });
       }
     };
 

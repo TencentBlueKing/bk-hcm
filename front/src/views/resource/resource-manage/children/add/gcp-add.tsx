@@ -1,4 +1,4 @@
-import { defineComponent, reactive, ref, computed, watch } from 'vue';
+import { defineComponent, reactive, ref, watch } from 'vue';
 import { Form, Input, Select, Radio, Button, Dialog, TagInput } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import { GCP_TYPE_STATUS, GCP_MATCH_STATUS, GCP_SOURCE_LIST, GCP_TARGET_LIST, GCP_PROTOCOL_LIST, GCP_EXECUTION_STATUS } from '@/constants';
@@ -239,15 +239,13 @@ export default defineComponent({
       },
     });
 
-    watch(
-      () => props.detail,
-      (detail) => {
-        console.log('detail', detail);
+    watch(() => props.isShow, (val) => {
+      if (val) {
+        console.log('detail', props.detail);
         // @ts-ignore
-        state.projectModel = { ...detail };
-      },
-      { immediate: true },
-    );
+        state.projectModel = { ...props.detail };
+      }
+    });
 
     watch(() => state.target, (newValue, oldValue) => {
       if (newValue !== oldValue) {
@@ -261,22 +259,35 @@ export default defineComponent({
       }
     });
 
-    watch(() => state.protocol, (value) => {
-      console.log('value', value, state.operate, gcpPorts.value);
-      state.projectModel[state.operate].push({
-        protocol: value,
-        ports: [],
-      });
-      gcpPorts.value = state.projectModel[state.operate].find((e: any) => e.protocol === state.protocol).ports;
+    watch(() => state.operate, (newValue, oldValue) => {
+      state.projectModel[newValue] = state.projectModel[oldValue];
+      state.projectModel[oldValue] = [];
+    });
+
+    watch(() => state.protocol, () => {
+      gcpPorts.value = state.projectModel[state.operate].find((e: any) => e.protocol === state.protocol)?.ports || [];
     });
 
     const handleBlur = () => {
-      state.projectModel[state.operate].forEach((e: any) => {
-        if (e.protocol === state.protocol) {
-          e.ports = gcpPorts.value;
+      const protocolData = state.projectModel[state.operate].map((p: any) => p.protocol);
+      if (!protocolData.includes(state.protocol)) {
+        if (gcpPorts.value.length) {
+          state.projectModel[state.operate].push({
+            protocol: state.protocol,
+            ports: gcpPorts.value,
+          });
         }
-      });;
-      console.log(11111111, gcpPorts.value, state.projectModel[state.operate]);
+      } else {
+        state.projectModel[state.operate].forEach((e: any, index: number) => {
+          if (e.protocol === state.protocol) {
+            if (gcpPorts.value.length === 0) {
+              state.projectModel[state.operate].splice(index, 1);
+            } else {
+              e.ports = gcpPorts.value;
+            }
+          }
+        });
+      }
     };
 
 

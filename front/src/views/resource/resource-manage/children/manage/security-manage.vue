@@ -29,6 +29,7 @@ import useBusiness from '../../hooks/use-business';
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
 import useDelete from '../../hooks/use-delete';
+import useSelection from '../../hooks/use-selection';
 import { CloudType } from '@/typings';
 
 const props = defineProps({
@@ -71,6 +72,11 @@ const {
   ResourceBusiness,
 } = useBusiness();
 
+const {
+  selections,
+  handleSelectionChange,
+} = useSelection();
+
 
 const fetchList = (fetchType: string) => {
   console.log('fetchType', fetchType);
@@ -98,7 +104,7 @@ const showDeleteDialog = (fetchType: string, title: string) => {
     DeleteDialog,
   } = useDelete(
     state.columns,
-    [],
+    selections.value,
     fetchType,
     t(title),
   );
@@ -112,6 +118,7 @@ const showDeleteDialog = (fetchType: string, title: string) => {
 watch(
   () => activeType.value,
   (v) => {
+    selections.value = [];
     handleSwtichType(v);
   },
 );
@@ -129,7 +136,7 @@ const handleSwtichType = (type: string) => {
   }
   // eslint-disable-next-line max-len
   const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = fetchList(params.fetchUrl);
-  state.datas = [{ id: 333, vendor: 'tcloud' }] || datas;
+  state.datas = [{ id: 333, vendor: 'tcloud', assigned: false }] || datas;
   state.isLoading = isLoading;
   state.pagination = pagination;
   state.handlePageChange = handlePageChange;
@@ -143,11 +150,10 @@ const handleSwtichType = (type: string) => {
 
 handleSwtichType(activeType.value);
 
-const handleSelection = () => {};
-
 const groupColumns = [
   {
     type: 'selection',
+    width: 100,
   },
   {
     label: 'ID',
@@ -417,6 +423,10 @@ const handleConfirm = (bizId: number) => {
       });
     });
 };
+
+const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+  return !row.assigned;
+};
 </script>
 
 <template>
@@ -460,10 +470,11 @@ const handleConfirm = (bizId: number) => {
       :pagination="state.pagination"
       :columns="groupColumns"
       :data="state.datas"
+      :is-row-select-enable="isRowSelectEnable"
       @page-limit-change="state.handlePageSizeChange"
       @page-value-change="state.handlePageChange"
       @column-sort="state.handleSort"
-      @selection-change="handleSelection"
+      @selection-change="handleSelectionChange"
     />
 
     <bk-table
@@ -476,7 +487,7 @@ const handleConfirm = (bizId: number) => {
       @page-limit-change="state.handlePageSizeChange"
       @page-value-change="state.handlePageChange"
       @column-sort="state.handleSort"
-      @selection-change="handleSelection"
+      @selection-change="handleSelectionChange"
     />
 
     <resource-business
