@@ -69,7 +69,7 @@
         </bk-table-column>
         <bk-table-column
           :label="t('创建时间')"
-          prop="created_at"
+          prop="revision.created_at"
         />
         <bk-table-column
           :label="t('备注')"
@@ -265,7 +265,7 @@ export default defineComponent({
       }
     };
     // 跳转页面
-    const handleJump = (routerName: string, id?: number) => {
+    const handleJump = (routerName: string, id?: string) => {
       const routerConfig = {
         query: {},
         name: routerName,

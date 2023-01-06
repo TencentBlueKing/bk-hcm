@@ -80,8 +80,8 @@ export default defineComponent({
       projectModel.departmentId = [res?.data.spec.department_id]; // 1
       projectModel.creator = res?.data.revision.creator;
       projectModel.reviser = res?.data.revision.reviser;
-      projectModel.created_at = res?.data.revision.create_at;
-      projectModel.updated_at = res?.data.revision.update_at;
+      projectModel.created_at = res?.data.revision.created_at;
+      projectModel.updated_at = res?.data.revision.updated_at;
       projectModel.extension = res?.data.extension;
       projectModel.bizIds = res?.data?.attachment?.bk_biz_ids;
       requestQueue.value.shift();
@@ -121,14 +121,14 @@ export default defineComponent({
             {
               label: t('主账号ID'),
               required: false,
-              property: 'cloud_main_account',
-              component: () => <span>{projectModel.extension.cloud_main_account}</span>,
+              property: 'cloud_main_account_id',
+              component: () => <span>{projectModel.extension.cloud_main_account_id}</span>,
             },
             {
               label: t('子账号ID'),
               required: false,
-              property: 'cloud_sub_account',
-              component: () => <span>{projectModel.extension.cloud_sub_account}</span>,
+              property: 'cloud_sub_account_id',
+              component: () => <span>{projectModel.extension.cloud_sub_account_id}</span>,
             },
           ];
           formBaseInfo[0].data.splice(4, 0, ...insertFormData);

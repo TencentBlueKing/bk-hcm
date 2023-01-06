@@ -52,6 +52,7 @@ export default defineComponent({
     const optionalRequired = ['secretId', 'secretKey'];
     const cloudType = reactive(CLOUD_TYPE);
     const isTestConnection = ref(false);
+    const submitLoading = ref(false);
 
     const businessList = reactive({
       list: BUSINESS_TYPE,
@@ -75,6 +76,7 @@ export default defineComponent({
     const submit = async () => {
       noOrganize.value = !projectModel.departmentId.length;
       await formRef.value?.validate();
+      submitLoading.value = true;
       try {
         const params = {
           vendor: projectModel.vendor,
@@ -129,7 +131,8 @@ export default defineComponent({
         }
       } catch (error: any) {
         console.log(error);
-        Message({ theme: 'error', message: error?.message || '系统异常' });
+      } finally {
+        submitLoading.value = false;
       }
     };
 
@@ -517,7 +520,7 @@ export default defineComponent({
       },
       {
         required: false,
-        component: () => <Button theme="primary" onClick={submit}>{t(isTestConnection.value ? t('确认') : t('账号验证'))}</Button>,
+        component: () => <Button theme="primary" loading={submitLoading.value} onClick={submit}>{t(isTestConnection.value ? t('确认') : t('账号验证'))}</Button>,
       },
     ]);
 

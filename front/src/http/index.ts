@@ -132,7 +132,12 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
     try {
       const response = await axiosRequest;
       Object.assign(config, response.config || {});
-      handleResponse({ config, response, resolve, reject });
+      // @ts-ignore
+      if (response.code === 0) {
+        handleResponse({ config, response, resolve, reject });
+      } else {
+        reject(response);
+      }
     } catch (error: any) {
       Object.assign(config, error.config);
       reject(error);
