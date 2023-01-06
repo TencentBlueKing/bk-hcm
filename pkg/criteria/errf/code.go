@@ -53,4 +53,6 @@ const (
 	// DoAuthorizeFailed try to do user's operate authorize, but got an error,
 	// so we do not know if the user has the permission or not.
 	DoAuthorizeFailed int32 = 2000007
+	// PartialFailed means batch operation is partially failed.
+	PartialFailed int32 = 2000008
 )

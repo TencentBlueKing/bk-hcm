@@ -158,7 +158,12 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 				logs.Errorf("do restful request %s failed, err: %v, rid: %s", action.Alias, err, cts.Kit.Rid)
 			}
 
-			cts.respError(err)
+			if reply != nil {
+				cts.respErrorWithEntity(reply, err)
+			} else {
+				cts.respError(err)
+			}
+
 			restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID, "app": cts.appID}).Inc()
 			return
 		}
