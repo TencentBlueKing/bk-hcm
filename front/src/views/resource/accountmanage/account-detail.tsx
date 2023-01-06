@@ -75,6 +75,7 @@ export default defineComponent({
       projectModel.managers = res?.data.spec.managers;
       projectModel.price = res?.data.spec.price;
       projectModel.price_unit = res?.data.spec.price_unit;
+      projectModel.site = res?.data.spec.site;
       projectModel.memo = res?.data.spec.memo;
       projectModel.departmentId = [res?.data.spec.department_id]; // 1
       projectModel.creator = res?.data.revision.creator;
@@ -465,6 +466,12 @@ export default defineComponent({
             required: false,
             property: 'price',
             component: () => <span>{projectModel.price}{projectModel.price_unit}</span>,
+          },
+          {
+            label: t('站点类型'),
+            required: false,
+            property: 'price',
+            component: () => <span>{projectModel.site || '--'}</span>,
           },
           {
             label: t('创建人'),

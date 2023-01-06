@@ -39,3 +39,13 @@ export const ACCOUNT_TYPE = [
     value: 'register',
   },
 ];
+
+export const SITE_TYPE = [
+  {
+    label: '中国站',
+    value: 'china',
+  }, {
+    label: '国际站',
+    value: 'international',
+  },
+];
