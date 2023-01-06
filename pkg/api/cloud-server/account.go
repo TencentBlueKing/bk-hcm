@@ -21,11 +21,20 @@ package cloudserver
 
 import (
 	"encoding/json"
+	"errors"
+	"regexp"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/runtime/filter"
+)
+
+var (
+	validAccountNameRegex   = regexp.MustCompile("^[a-z][a-z0-9-]{1,30}[a-z0-9]$")
+	accountNameInvalidError = errors.New("invalid account name: name should begin with a lowercase letter, " +
+		"contains lowercase letters(a-z), numbers(0-9) or hyphen(-), end with a lowercase letter or number, " +
+		"length should be 3 to 32 letters")
 )
 
 // -------------------------- Create --------------------------
@@ -53,6 +62,10 @@ func (req *AccountSpecCreateReq) Validate() error {
 
 	if err := req.Site.Validate(); err != nil {
 		return err
+	}
+
+	if !validAccountNameRegex.MatchString(req.Name) {
+		return accountNameInvalidError
 	}
 
 	return nil
@@ -323,6 +336,14 @@ type AccountSpecUpdateReq struct {
 	Memo         *string  `json:"memo" validate:"omitempty"`
 }
 
+// Validate ...
+func (req *AccountSpecUpdateReq) Validate() error {
+	if req.Name != "" && !validAccountNameRegex.MatchString(req.Name) {
+		return accountNameInvalidError
+	}
+	return nil
+}
+
 // AccountAttachmentUpdateReq ...
 type AccountAttachmentUpdateReq struct {
 	BkBizIDs []int64 `json:"bk_biz_ids" validate:"omitempty"`
@@ -337,5 +358,15 @@ type AccountUpdateReq struct {
 
 // Validate ...
 func (req *AccountUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if req.Spec != nil {
+		if err := req.Spec.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
