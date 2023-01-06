@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -40,8 +41,8 @@ func InitCloudService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("GetResourceVendor", http.MethodGet, "/cloud/resources/vendors/{type}/id/{id}", svc.GetResourceVendor)
-	h.Add("ListResourceVendor", http.MethodPost, "/cloud/resources/vendors/list", svc.ListResourceVendor)
+	h.Add("GetResourceBasicInfo", http.MethodGet, "/cloud/resources/bases/{type}/id/{id}", svc.GetResourceBasicInfo)
+	h.Add("ListResourceBasicInfo", http.MethodPost, "/cloud/resources/bases/list", svc.ListResourceBasicInfo)
 
 	h.Load(cap.WebService)
 }
@@ -50,8 +51,8 @@ type cloudSvc struct {
 	dao dao.Set
 }
 
-// GetResourceVendor get resource vendor.
-func (svc cloudSvc) GetResourceVendor(cts *rest.Contexts) (interface{}, error) {
+// GetResourceBasicInfo get resource basic info.
+func (svc cloudSvc) GetResourceBasicInfo(cts *rest.Contexts) (interface{}, error) {
 	resourceType := cts.PathParameter("type").String()
 	if len(resourceType) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "resource type is required")
@@ -62,7 +63,7 @@ func (svc cloudSvc) GetResourceVendor(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.InvalidParameter, "resource id is required")
 	}
 
-	list, err := svc.dao.Cloud().ListResourceVendor(cts.Kit, enumor.CloudResourceType(resourceType), []string{id})
+	list, err := svc.dao.Cloud().ListResourceBasicInfo(cts.Kit, enumor.CloudResourceType(resourceType), []string{id})
 	if err != nil {
 		return nil, err
 	}
@@ -72,17 +73,17 @@ func (svc cloudSvc) GetResourceVendor(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	if len(list) != 1 {
-		logs.Errorf("list resource vendor return count not right, count: %s, resource type: %s, id: %s, rid: %s",
+		logs.Errorf("list resource basic info return count not right, count: %s, resource type: %s, id: %s, rid: %s",
 			len(list), resourceType, id, cts.Kit.Rid)
-		return nil, fmt.Errorf("list resource vendor return count not right")
+		return nil, fmt.Errorf("list resource basic info return count not right")
 	}
 
-	return list[0].Vendor, nil
+	return list[0], nil
 }
 
-// ListResourceVendor list resource vendor.
-func (svc cloudSvc) ListResourceVendor(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.ListResourceVendorReq)
+// ListResourceBasicInfo list resource basic info.
+func (svc cloudSvc) ListResourceBasicInfo(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.ListResourceBasicInfoReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -91,7 +92,7 @@ func (svc cloudSvc) ListResourceVendor(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	list, err := svc.dao.Cloud().ListResourceVendor(cts.Kit, req.ResourceType, req.IDs)
+	list, err := svc.dao.Cloud().ListResourceBasicInfo(cts.Kit, req.ResourceType, req.IDs)
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +101,9 @@ func (svc cloudSvc) ListResourceVendor(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.Newf(errf.RecordNotFound, "%s not found resource: %v", req.ResourceType, req.IDs)
 	}
 
-	result := make(map[string]enumor.Vendor, len(list))
-	for _, vendor := range list {
-		result[vendor.ID] = vendor.Vendor
+	result := make(map[string]types.CloudResourceBasicInfo, len(list))
+	for _, info := range list {
+		result[info.ID] = info
 	}
 
 	return result, nil

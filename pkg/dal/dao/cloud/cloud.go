@@ -32,7 +32,8 @@ import (
 
 // Cloud only used for cloud common operation.
 type Cloud interface {
-	ListResourceVendor(kt *kit.Kit, resType enumor.CloudResourceType, ids []string) ([]types.CloudResourceVendor, error)
+	ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResourceType, ids []string) (
+		[]types.CloudResourceBasicInfo, error)
 }
 
 var _ Cloud = new(CloudDao)
@@ -42,9 +43,9 @@ type CloudDao struct {
 	Orm orm.Interface
 }
 
-// ListResourceVendor list cloud resource vendor.
-func (dao CloudDao) ListResourceVendor(kt *kit.Kit, resType enumor.CloudResourceType, ids []string) (
-		[]types.CloudResourceVendor, error) {
+// ListResourceBasicInfo list cloud resource basic info.
+func (dao CloudDao) ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResourceType, ids []string) (
+	[]types.CloudResourceBasicInfo, error) {
 
 	tableName, err := resType.ConvTableName()
 	if err != nil {
@@ -57,7 +58,7 @@ func (dao CloudDao) ListResourceVendor(kt *kit.Kit, resType enumor.CloudResource
 
 	sql := fmt.Sprintf("select id, vendor from %s where id in (?)", tableName)
 
-	list := make([]types.CloudResourceVendor, 0)
+	list := make([]types.CloudResourceBasicInfo, 0)
 	if err := dao.Orm.Do().Select(kt.Ctx, &list, sql, ids); err != nil {
 		logs.Errorf("select resource vendor failed, err: %v, table: %s, id: %v, rid: %s", err, resType, ids, kt.Rid)
 		return nil, err
