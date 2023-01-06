@@ -22,32 +22,33 @@ package cloud
 import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 )
 
 // -------------------------- Get --------------------------
 
-// GetResourceVendorResp define get resource vendor resp.
-type GetResourceVendorResp struct {
+// GetResourceBasicInfoResp define get resource basic info resp.
+type GetResourceBasicInfoResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          enumor.Vendor `json:"data"`
+	Data          *types.CloudResourceBasicInfo `json:"data"`
 }
 
 // -------------------------- List --------------------------
 
-// ListResourceVendorReq define list resource vendor req.
-type ListResourceVendorReq struct {
+// ListResourceBasicInfoReq define list resource basic info req.
+type ListResourceBasicInfoReq struct {
 	ResourceType enumor.CloudResourceType `json:"resource_type" validate:"required"`
 	IDs          []string                 `json:"ids" validate:"required"`
 }
 
 // Validate list resource vendor req.
-func (req *ListResourceVendorReq) Validate() error {
+func (req *ListResourceBasicInfoReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// ListResourceVendorResp list resource vendor resp.
-type ListResourceVendorResp struct {
+// ListResourceBasicInfoResp list resource basic info resp.
+type ListResourceBasicInfoResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          map[string]enumor.Vendor `json:"data"`
+	Data          map[string]types.CloudResourceBasicInfo `json:"data"`
 }

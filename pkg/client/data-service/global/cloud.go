@@ -26,6 +26,7 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 )
 
@@ -41,39 +42,39 @@ func NewCloudClient(client rest.ClientInterface) *CloudClient {
 	}
 }
 
-// GetResourceVendor get cloud resource vendor.
-func (cli *CloudClient) GetResourceVendor(ctx context.Context, h http.Header, resType enumor.CloudResourceType,
-	resID string) (enumor.Vendor, error) {
+// GetResourceBasicInfo get cloud resource basic info.
+func (cli *CloudClient) GetResourceBasicInfo(ctx context.Context, h http.Header, resType enumor.CloudResourceType,
+	resID string) (*types.CloudResourceBasicInfo, error) {
 
-	resp := new(protocloud.GetResourceVendorResp)
+	resp := new(protocloud.GetResourceBasicInfoResp)
 
 	err := cli.client.Get().
 		WithContext(ctx).
-		SubResourcef("/cloud/resources/vendors/%s/id/%s", resType, resID).
+		SubResourcef("/cloud/resources/bases/%s/id/%s", resType, resID).
 		WithHeaders(h).
 		Do().
 		Into(resp)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if resp.Code != errf.OK {
-		return "", errf.New(resp.Code, resp.Message)
+		return nil, errf.New(resp.Code, resp.Message)
 	}
 
 	return resp.Data, nil
 }
 
-// ListResourceVendor list cloud resource vendor.
-func (cli *CloudClient) ListResourceVendor(ctx context.Context, h http.Header, req protocloud.ListResourceVendorReq) (
-	map[string]enumor.Vendor, error) {
+// ListResourceBasicInfo list cloud resource basic info.
+func (cli *CloudClient) ListResourceBasicInfo(ctx context.Context, h http.Header,
+	req protocloud.ListResourceBasicInfoReq) (map[string]types.CloudResourceBasicInfo, error) {
 
-	resp := new(protocloud.ListResourceVendorResp)
+	resp := new(protocloud.ListResourceBasicInfoResp)
 
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("cloud/resources/vendors/list").
+		SubResourcef("/cloud/resources/bases/list").
 		WithHeaders(h).
 		Do().
 		Into(resp)

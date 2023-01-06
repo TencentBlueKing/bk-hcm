@@ -62,23 +62,24 @@ func (svc *vpcSvc) BatchDeleteVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	vendorReq := cloud.ListResourceVendorReq{
+	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.VpcCloudResType,
 		IDs:          req.IDs,
 	}
-	vendorMap, err := svc.client.DataService().Global.Cloud.ListResourceVendor(cts.Kit.Ctx, cts.Kit.Header(), vendorReq)
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		basicInfoReq)
 	if err != nil {
 		return nil, err
 	}
 
 	succeeded := make([]string, 0)
 	for _, id := range req.IDs {
-		vendor, exists := vendorMap[id]
+		basicInfo, exists := basicInfoMap[id]
 		if !exists {
 			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s has no corresponding vendor", id))
 		}
 
-		switch vendor {
+		switch basicInfo.Vendor {
 		case enumor.TCloud:
 			err := svc.client.HCService().TCloud.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
 			if err != nil {
