@@ -23,24 +23,6 @@ package constant
 // This scope is used to define all the constant keys which is used inside and outside
 // the HCM system.
 const (
-	// RidKey is request id header key.
-	RidKey = "X-Bkapi-Request-Id"
-
-	// UserKey is operator name header key.
-	UserKey = "X-Bkapi-User-Name"
-
-	// AppCodeKey is blueking application code header key.
-	AppCodeKey = "X-Bkapi-App-Code"
-
-	// LanguageKey the language key word.
-	LanguageKey = "HTTP_BLUEKING_LANGUAGE"
-
-	// BKGWJWTTokenKey is blueking api gateway jwt header key.
-	BKGWJWTTokenKey = "X-Bkapi-JWT"
-
-	// TenantIDKey is tenant id header key. TODO confirm it.
-	TenantIDKey = "HTTP_BLUEKING_SUPPLIER_ID"
-
 	// UnassignedBiz 是未分配业务使用的标识
 	UnassignedBiz = -1
 )
