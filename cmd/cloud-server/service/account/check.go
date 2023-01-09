@@ -22,6 +22,7 @@ package account
 import (
 	"fmt"
 
+	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
@@ -60,7 +61,7 @@ func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
 func (a *accountSvc) checkForTCloud(cts *rest.Contexts, req *proto.AccountCheckReq) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.TCloudAccountExtensionCreateReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -89,7 +90,7 @@ func (a *accountSvc) checkForTCloud(cts *rest.Contexts, req *proto.AccountCheckR
 func (a *accountSvc) checkForAws(cts *rest.Contexts, req *proto.AccountCheckReq) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.AwsAccountExtensionCreateReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -118,7 +119,7 @@ func (a *accountSvc) checkForAws(cts *rest.Contexts, req *proto.AccountCheckReq)
 func (a *accountSvc) checkForHuaWei(cts *rest.Contexts, req *proto.AccountCheckReq) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.HuaWeiAccountExtensionCreateReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -150,7 +151,7 @@ func (a *accountSvc) checkForHuaWei(cts *rest.Contexts, req *proto.AccountCheckR
 func (a *accountSvc) checkForGcp(cts *rest.Contexts, req *proto.AccountCheckReq) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.GcpAccountExtensionCreateReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -177,7 +178,7 @@ func (a *accountSvc) checkForGcp(cts *rest.Contexts, req *proto.AccountCheckReq)
 func (a *accountSvc) checkForAzure(cts *rest.Contexts, req *proto.AccountCheckReq) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.AzureAccountExtensionCreateReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -247,7 +248,7 @@ func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
 func (a *accountSvc) checkByIDForTCloud(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.TCloudAccountExtensionCheckByIDReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -282,7 +283,7 @@ func (a *accountSvc) checkByIDForTCloud(cts *rest.Contexts, req *proto.AccountCh
 func (a *accountSvc) checkByIDForAws(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.AwsAccountExtensionCheckByIDReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -317,7 +318,7 @@ func (a *accountSvc) checkByIDForAws(cts *rest.Contexts, req *proto.AccountCheck
 func (a *accountSvc) checkByIDForHuaWei(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.HuaWeiAccountExtensionCheckByIDReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -355,7 +356,7 @@ func (a *accountSvc) checkByIDForHuaWei(cts *rest.Contexts, req *proto.AccountCh
 func (a *accountSvc) checkByIDForGcp(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.GcpAccountExtensionCheckByIDReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -388,7 +389,7 @@ func (a *accountSvc) checkByIDForGcp(cts *rest.Contexts, req *proto.AccountCheck
 func (a *accountSvc) checkByIDForAzure(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.AzureAccountExtensionCheckByIDReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension

@@ -22,6 +22,7 @@ package account
 import (
 	"fmt"
 
+	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service"
@@ -61,7 +62,7 @@ func (a *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 func (a *accountSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.TCloudAccountExtensionCreateReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -113,7 +114,7 @@ func (a *accountSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountCreat
 func (a *accountSvc) createForAws(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.AwsAccountExtensionCreateReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -165,7 +166,7 @@ func (a *accountSvc) createForAws(cts *rest.Contexts, req *proto.AccountCreateRe
 func (a *accountSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.HuaWeiAccountExtensionCreateReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -223,7 +224,7 @@ func (a *accountSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountCreat
 func (a *accountSvc) createForGcp(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.GcpAccountExtensionCreateReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -275,7 +276,7 @@ func (a *accountSvc) createForGcp(cts *rest.Contexts, req *proto.AccountCreateRe
 func (a *accountSvc) createForAzure(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
 	// 解析Extension
 	extension := new(proto.AzureAccountExtensionCreateReq)
-	if err := a.decodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension

@@ -22,6 +22,7 @@ package account
 import (
 	"fmt"
 
+	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service"
@@ -103,7 +104,7 @@ func (a *accountSvc) updateForTCloud(
 	// 解析Extension
 	extension := new(proto.TCloudAccountExtensionUpdateReq)
 	if req.Extension != nil {
-		if err := a.decodeExtension(cts, *req.Extension, extension); err != nil {
+		if err := common.DecodeExtension(cts, *req.Extension, extension); err != nil {
 			return nil, err
 		}
 		// 校验Extension
@@ -168,7 +169,7 @@ func (a *accountSvc) updateForAws(
 	// 解析Extension
 	extension := new(proto.AwsAccountExtensionUpdateReq)
 	if req.Extension != nil {
-		if err := a.decodeExtension(cts, *req.Extension, extension); err != nil {
+		if err := common.DecodeExtension(cts, *req.Extension, extension); err != nil {
 			return nil, err
 		}
 		// 校验Extension
@@ -233,7 +234,7 @@ func (a *accountSvc) updateForHuaWei(
 	// 解析Extension
 	extension := new(proto.HuaWeiAccountExtensionUpdateReq)
 	if req.Extension != nil {
-		if err := a.decodeExtension(cts, *req.Extension, extension); err != nil {
+		if err := common.DecodeExtension(cts, *req.Extension, extension); err != nil {
 			return nil, err
 		}
 		// 校验Extension
@@ -301,7 +302,7 @@ func (a *accountSvc) updateForGcp(
 	// 解析Extension
 	extension := new(proto.GcpAccountExtensionUpdateReq)
 	if req.Extension != nil {
-		if err := a.decodeExtension(cts, *req.Extension, extension); err != nil {
+		if err := common.DecodeExtension(cts, *req.Extension, extension); err != nil {
 			return nil, err
 		}
 		// 校验Extension
@@ -364,7 +365,7 @@ func (a *accountSvc) updateForAzure(
 	// 解析Extension
 	extension := new(proto.AzureAccountExtensionUpdateReq)
 	if req.Extension != nil {
-		if err := a.decodeExtension(cts, *req.Extension, extension); err != nil {
+		if err := common.DecodeExtension(cts, *req.Extension, extension); err != nil {
 			return nil, err
 		}
 		// 校验Extension
