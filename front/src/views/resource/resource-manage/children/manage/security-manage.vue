@@ -208,10 +208,10 @@ const groupColumns = [
     label: t('描述'),
     field: 'memo',
   },
-  {
-    label: t('关联模板'),
-    field: '',
-  },
+  // {
+  //   label: t('关联模板'),
+  //   field: '',
+  // },
   {
     label: t('修改时间'),
     field: 'update_at',

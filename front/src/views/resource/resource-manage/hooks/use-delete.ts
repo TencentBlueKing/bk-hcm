@@ -17,6 +17,7 @@ export default (
   data: any[],
   type: string,
   title: string,
+  isBatch?: boolean,
 ) => {
   const resourceStore = useResourceStore();
 
@@ -24,7 +25,8 @@ export default (
   const isDeleting = ref(false);
 
   // 展示删除弹框
-  const handleShowDelete = () => {
+  const handleShowDelete = (value: any) => {
+    console.log(value, value);
     isShow.value = true;
   };
 
@@ -36,14 +38,25 @@ export default (
   // 删除数据
   const handleDelete = () => {
     isDeleting.value = true;
-    resourceStore
-      .delete(type, 123)
-      .then(() => {
-        isShow.value = false;
-      })
-      .finally(() => {
-        isDeleting.value = false;
-      });
+    if (isBatch) {
+      resourceStore
+        .deleteBatch(type, { ids: '[111]' })
+        .then(() => {
+          isShow.value = false;
+        })
+        .finally(() => {
+          isDeleting.value = false;
+        });
+    } else {
+      resourceStore
+        .delete(type, 123)
+        .then(() => {
+          isShow.value = false;
+        })
+        .finally(() => {
+          isDeleting.value = false;
+        });
+    }
   };
 
   return {
