@@ -40,4 +40,7 @@ const (
 
 	// TenantIDKey is tenant id header key. TODO confirm it.
 	TenantIDKey = "HTTP_BLUEKING_SUPPLIER_ID"
+
+	// UnassignedBiz 是未分配业务使用的标识
+	UnassignedBiz = -1
 )
