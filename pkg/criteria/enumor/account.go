@@ -19,8 +19,25 @@
 
 package enumor
 
+import (
+	"fmt"
+)
+
 // AccountType is account type.
 type AccountType string
+
+// Validate the AccountType is valid or not
+func (a AccountType) Validate() error {
+	switch a {
+	case ResourceAccount:
+	case RegistrationAccount:
+	default:
+		return fmt.Errorf("unsupported account type: %s", a)
+
+	}
+
+	return nil
+}
 
 const (
 	// ResourceAccount 资源账号是可以用于管理该账号资源的账号。
@@ -31,6 +48,19 @@ const (
 
 // AccountSiteType is site type.
 type AccountSiteType string
+
+// Validate the AccountSiteType is valid or not
+func (a AccountSiteType) Validate() error {
+	switch a {
+	case ChinaSite:
+	case InternationalSite:
+	default:
+		return fmt.Errorf("unsupported account site type: %s", a)
+
+	}
+
+	return nil
+}
 
 const (
 	// ChinaSite is china site.

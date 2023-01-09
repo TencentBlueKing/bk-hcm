@@ -90,7 +90,7 @@ func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *prot
 }
 
 // UpdateBizRel update account and biz rel api, only support put all biz for account_id.
-func (a *AccountClient) UpdateBizRel(ctx context.Context, h http.Header, accountID uint64,
+func (a *AccountClient) UpdateBizRel(ctx context.Context, h http.Header, accountID string,
 	request *protocloud.AccountBizRelUpdateReq) (interface{}, error) {
 
 	resp := new(core.UpdateResp)
@@ -98,7 +98,7 @@ func (a *AccountClient) UpdateBizRel(ctx context.Context, h http.Header, account
 	err := a.client.Put().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account_biz_rels/accounts/%d", accountID).
+		SubResourcef("/account_biz_rels/accounts/%s", accountID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

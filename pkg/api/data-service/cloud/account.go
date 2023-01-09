@@ -21,6 +21,7 @@
 package cloud
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -58,6 +59,8 @@ type HuaWeiAccountExtensionCreateReq struct {
 	CloudSubAccountName  string `json:"cloud_sub_account_name" validate:"required"`
 	CloudSecretID        string `json:"cloud_secret_id" validate:"required"`
 	CloudSecretKey       string `json:"cloud_secret_key" validate:"required"`
+	CloudIamUserID       string `json:"cloud_iam_user_id" validate:"required"`
+	CloudIamUsername     string `json:"cloud_iam_username" validate:"required"`
 }
 
 // GcpAccountExtensionCreateReq ...
@@ -187,18 +190,19 @@ func (l *AccountListReq) Validate() error {
 	return validator.Validate.Struct(l)
 }
 
-// BaseAccountListReq ...
-type BaseAccountListReq struct {
-	ID     string             `json:"id"`
-	Vendor enumor.Vendor      `json:"vendor"`
-	Spec   *cloud.AccountSpec `json:"spec"`
+// BaseAccountListResp ...
+type BaseAccountListResp struct {
+	ID       string             `json:"id"`
+	Vendor   enumor.Vendor      `json:"vendor"`
+	Spec     *cloud.AccountSpec `json:"spec"`
+	Revision *core.Revision     `json:"revision"`
 }
 
 // AccountListResult defines list instances for iam pull resource callback result.
 type AccountListResult struct {
-	Count uint64 `json:"count,omitempty"`
+	Count uint64 `json:"count"`
 	// 对于List接口，只会返回公共数据，不会返回Extension
-	Details []*BaseAccountListReq `json:"details,omitempty"`
+	Details []*BaseAccountListResp `json:"details"`
 }
 
 // AccountListResp ...

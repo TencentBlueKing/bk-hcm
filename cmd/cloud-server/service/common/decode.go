@@ -17,34 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package common
 
 import (
-	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
+	rawjson "encoding/json"
+
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/json"
 )
 
-// InitAccountService initial the account service
-func InitAccountService(c *capability.Capability) {
-	svc := &accountSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
+// DecodeExtension ...
+func DecodeExtension(cts *rest.Contexts, rawExtension rawjson.RawMessage, extension interface{}) error {
+	err := json.Unmarshal(rawExtension, &extension)
+	if err != nil {
+		logs.ErrorDepthf(1, "decode extension from request body failed, err: %s, rid: %s", err.Error(), cts.Kit.Rid)
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	h := rest.NewHandler()
-	h.Add("Create", "POST", "/accounts/create", svc.Create)
-	h.Add("Check", "POST", "/accounts/check", svc.Check)
-	h.Add("CheckByID", "POST", "/accounts/{account_id}/check", svc.CheckByID)
-	h.Add("List", "POST", "/accounts/list", svc.List)
-	h.Add("Get", "GET", "/accounts/{account_id}", svc.Get)
-	h.Add("Update", "PATCH", "/accounts/{account_id}", svc.Update)
-
-	h.Load(c.WebService)
-}
-
-type accountSvc struct {
-	client     *client.ClientSet
-	authorizer auth.Authorizer
+	return nil
 }
