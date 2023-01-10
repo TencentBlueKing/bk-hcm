@@ -363,19 +363,19 @@ export default defineComponent({
               component: () => <Input class="w450" placeholder={t('请输入应用程序(客户端) ID')} v-model={projectModel.applicationId} />,
             },
             {
-              label: '应用程序名称',
+              label: t('应用程序名称'),
               required: projectModel.type === 'resource',
               property: 'applicationName',
               component: () => <Input class="w450" placeholder={t('请输入应用程序名称')} v-model={projectModel.applicationName} />,
             },
             {
-              label: '客户端密钥ID',
+              label: t('客户端密钥ID'),
               required: projectModel.type === 'resource',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入客户端密钥ID')} v-model={projectModel.secretId} />,
             },
             {
-              label: '客户端密钥',
+              label: t('客户端密钥'),
               required: projectModel.type === 'resource',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入客户端密钥')} v-model={projectModel.secretKey} />,
