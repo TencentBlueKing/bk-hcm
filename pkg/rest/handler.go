@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -124,6 +125,14 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 			restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID, "app": cts.appID}).Inc()
 			return
 		}
+
+		defer func() {
+			if fatalErr := recover(); fatalErr != nil {
+				logs.Errorf("[hcm server panic], err: %v, rid: %s, debug strace: %s", fatalErr, kt.Rid,
+					debug.Stack())
+				logs.CloseLogs()
+			}
+		}()
 
 		cts.Kit = kt
 
