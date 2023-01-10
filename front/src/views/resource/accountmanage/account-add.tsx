@@ -1,5 +1,5 @@
 import { Form, Input, Select, Button, Radio, Message } from 'bkui-vue';
-import { reactive, defineComponent, ref, watch, onMounted } from 'vue';
+import { reactive, defineComponent, ref, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ProjectModel, FormItems } from '@/typings';
 import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE, SITE_TYPE } from '@/constants';
@@ -155,7 +155,7 @@ export default defineComponent({
           default:
             break;
         }
-        if (!isTestConnection.value) {
+        if (isTestConnection.value) {
           await accountStore.addAccount(params);
           Message({
             message: t('新增成功'),
@@ -178,7 +178,9 @@ export default defineComponent({
     };
 
     const changeCloud = (val: string) => {
-      formRef.value?.clearValidate(); // 切换清除表单检验
+      nextTick(() => {
+        formRef.value?.clearValidate(); // 切换清除表单检验
+      });
       const startIndex = formList.findIndex(e => e.property === 'vendor');
       const endIndex = formList.findIndex(e => e.property === 'managers');
       let insertFormData: any = [];
@@ -201,13 +203,13 @@ export default defineComponent({
               component: () => <Input class="w450" placeholder={t('请输入主账号')} v-model={projectModel.mainAccount} />,
             },
             {
-              label: t('子账号ID'),
+              label: t('账号ID'),
               required: true,
               property: 'subAccount',
               component: () => <Input class="w450" placeholder={t('请输入子账号ID')} v-model={projectModel.subAccount} />,
             },
             {
-              label: t('子账号名称'),
+              label: t('账号名称'),
               required: true,
               property: 'subAccountName',
               component: () => <Input class="w450" placeholder={t('请输入子账号名称')} v-model={projectModel.subAccountName} />,
@@ -272,7 +274,7 @@ export default defineComponent({
               label: 'SecretKey',
               required: projectModel.type === 'resource',
               property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入主账号')} v-model={projectModel.secretKey} />,
+              component: () => <Input class="w450" placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />,
             },
           ];
           projectModel.site = 'china';
