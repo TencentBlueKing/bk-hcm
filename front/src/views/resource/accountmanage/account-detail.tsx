@@ -1,4 +1,4 @@
-import { Form, Dialog, Input, Message } from 'bkui-vue';
+import { Form, Dialog, Input, Message, Button } from 'bkui-vue';
 import { reactive, defineComponent, ref, onMounted, computed } from 'vue';
 import { ProjectModel, SecretModel, CloudType, AccountType, SiteType } from '@/typings';
 import { useI18n } from 'vue-i18n';
@@ -123,13 +123,13 @@ export default defineComponent({
               component: () => <span>{projectModel.extension.cloud_main_account_name || '--'}</span>,
             },
             {
-              label: t('子账号名'),
+              label: t('账号名'),
               required: false,
               property: 'cloud_sub_account_name',
               component: () => <span>{projectModel.extension.cloud_sub_account_name || '--'}</span>,
             },
             {
-              label: t('子账号ID'),
+              label: t('账号ID'),
               required: false,
               property: 'cloud_sub_account_id',
               component: () => <span>{projectModel.extension.cloud_sub_account_id || '--'}</span>,
@@ -170,10 +170,10 @@ export default defineComponent({
         case 'tcloud':
           insertFormData = [
             {
-              label: t('子账号ID'),
+              label: t('主账号ID'),
               required: false,
-              property: 'cloud_sub_account_id',
-              component: () => <span>{projectModel.extension.cloud_sub_account_id || '--'}</span>,
+              property: 'cloud_main_account_id',
+              component: () => <span>{projectModel.extension.cloud_main_account_id || '--'}</span>,
             },
           ];
           formBaseInfo[0].data.splice(4, 0, ...insertFormData);
@@ -191,6 +191,12 @@ export default defineComponent({
                 required: false,
                 property: 'cloud_secret_key',
                 component: () => <span>********</span>,
+              },
+              {
+                label: t('子账号ID'),
+                required: false,
+                property: 'cloud_sub_account_id',
+                component: () => <span>{projectModel.extension.cloud_sub_account_id}</span>,
               },
             ],
           });
@@ -514,6 +520,15 @@ export default defineComponent({
 
     // 显示弹窗
     const handleModifyScret = () => {
+      secretModel.secretId = '';
+      secretModel.secretKey = '';
+      secretModel.subAccountId = '';
+      secretModel.iamUserName = '';
+      secretModel.iamUserId = '';
+      secretModel.accountId = '';
+      secretModel.accountName = '';
+      secretModel.applicationId = '';
+      secretModel.applicationName = '';
       isShowModifyScretDialog.value = true;
     };
 
@@ -562,12 +577,12 @@ export default defineComponent({
             message: t('更新密钥信息成功'),
             theme: 'success',
           });
+          onClosed();
         } catch (error) {
           console.log(error);
         } finally {
           buttonLoading.value = false;
         }
-        // onClosed();
       } else {
         try {
           await accountStore.updateTestAccount({    // 测试连接密钥信息
@@ -673,7 +688,7 @@ export default defineComponent({
             label: t('余额'),
             required: false,
             property: 'price',
-            component: () => <span>{projectModel.price}{projectModel.price_unit}</span>,
+            component: () => <span>{projectModel?.price || '--'}{projectModel.price_unit}</span>,
           },
           {
             label: t('站点类型'),
@@ -804,10 +819,7 @@ export default defineComponent({
             v-model:isShow={isShowModifyScretDialog.value}
             width={680}
             title={t('密钥信息')}
-            onConfirm={onConfirm}
-            isLoading={buttonLoading.value}
-            cancelText={t('取消')}
-            confirmText={isTestConnection.value ? t('确认') : t('测试连接')}
+            dialogType={'show'}
             onClosed={onClosed}
           >
             <Form labelWidth={100} model={secretModel} ref={formDiaRef}>
@@ -818,6 +830,10 @@ export default defineComponent({
             ))
             }
             </Form>
+            <div class="button-warp">
+              <Button theme="primary" loading={buttonLoading.value} onClick={onConfirm}>{isTestConnection.value ? t('确认') : t('测试连接')}</Button>
+              <Button class="ml10" onClick={onClosed}>{t('取消')}</Button>
+            </div>
           </Dialog>
         </div>
       )
