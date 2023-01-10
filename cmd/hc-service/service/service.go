@@ -30,6 +30,7 @@ import (
 	"hcm/cmd/hc-service/service/account"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/cmd/hc-service/service/cloud-adaptor"
+	"hcm/cmd/hc-service/service/vpc"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
@@ -139,6 +140,7 @@ func (s *Service) apiSet() *restful.Container {
 	}
 
 	account.InitAccountService(c)
+	vpc.InitVpcService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

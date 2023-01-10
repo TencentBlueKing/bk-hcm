@@ -17,32 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package cidr
 
-import "hcm/pkg/adaptor/types"
+import (
+	"fmt"
+	"net"
 
-// NewGcp new gcp.
-func NewGcp(credential *types.GcpCredential) (*Gcp, error) {
-	if err := credential.Validate(); err != nil {
-		return nil, err
-	}
-	return &Gcp{clientSet: newClientSet(credential)}, nil
-}
+	"hcm/pkg/criteria/enumor"
+)
 
-// Gcp is hcp operator.
-type Gcp struct {
-	clientSet *clientSet
-}
-
-// generateResourceIDsFilter generate gcp resource ids filter
-func generateResourceIDsFilter(resourceIDs []string) string {
-	filterExp := ""
-	for idx, id := range resourceIDs {
-		filterExp += "id=" + id
-		if idx != len(resourceIDs)-1 {
-			filterExp += " OR "
-		}
+// CidrAddressType get cidr ip address type.
+func CidrIPAddressType(cidr string) (enumor.IPAddressType, error) {
+	ip, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return "", err
 	}
 
-	return filterExp
+	if ip.To4().Equal(ip) {
+		return enumor.Ipv4, nil
+	}
+
+	if ip.To16().Equal(ip) {
+		return enumor.Ipv6, nil
+	}
+
+	return "", fmt.Errorf("%s ip address type is invalid", ip)
 }

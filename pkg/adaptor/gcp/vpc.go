@@ -1,0 +1,140 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+package gcp
+
+import (
+	"strconv"
+
+	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
+
+	"google.golang.org/api/compute/v1"
+)
+
+// UpdateVpc update vpc.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/patch
+func (g *Gcp) UpdateVpc(kt *kit.Kit, opt *types.GcpVpcUpdateOption) error {
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return err
+	}
+
+	req := &compute.Network{
+		Description: converter.PtrToVal(opt.Data.Memo),
+		// make sure AutoCreateSubnetworks field is included in request
+		// gcp has a bug with this api, if this is not specified, the request will fail
+		// TODO 测试一下是否不需要这个了
+		ForceSendFields: []string{"AutoCreateSubnetworks"},
+		NullFields:      nil,
+	}
+
+	cloudProjectID := g.clientSet.credential.CloudProjectID
+	_, err = client.Networks.Patch(cloudProjectID, opt.ResourceID, req).Context(kt.Ctx).RequestId(kt.Rid).Do()
+	if err != nil {
+		logs.Errorf("create vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// DeleteVpc delete vpc.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/delete
+func (g *Gcp) DeleteVpc(kt *kit.Kit, opt *core.BaseDeleteOption) error {
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return err
+	}
+
+	cloudProjectID := g.clientSet.credential.CloudProjectID
+	_, err = client.Networks.Delete(cloudProjectID, opt.ResourceID).Context(kt.Ctx).RequestId(kt.Rid).Do()
+	if err != nil {
+		logs.Errorf("delete vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// ListVpc list vpc.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/list
+func (g *Gcp) ListVpc(kt *kit.Kit, opt *core.GcpListOption) (*types.GcpVpcListResult, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	cloudProjectID := g.clientSet.credential.CloudProjectID
+
+	listCall := client.Networks.List(cloudProjectID).Context(kt.Ctx)
+
+	if len(opt.ResourceIDs) > 0 {
+		listCall.Filter(generateResourceIDsFilter(opt.ResourceIDs))
+	}
+
+	if opt.Page != nil {
+		listCall.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+	}
+
+	resp, err := listCall.Do()
+	if err != nil {
+		logs.Errorf("list vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	details := make([]types.GcpVpc, 0, len(resp.Items))
+	for _, item := range resp.Items {
+		vpc := types.GcpVpc{
+			Spec: &cloud.VpcSpec{
+				CloudID:  strconv.FormatUint(item.Id, 10),
+				Name:     item.Name,
+				Category: enumor.BizVpcCategory,
+				Memo:     &item.Description,
+			},
+			Extension: &cloud.GcpVpcExtension{
+				AutoCreateSubnetworks: item.AutoCreateSubnetworks,
+				EnableUlaInternalIpv6: item.EnableUlaInternalIpv6,
+				Mtu:                   item.Mtu,
+				RoutingMode:           converter.PtrToVal(item.RoutingConfig).RoutingMode,
+			},
+		}
+
+		details = append(details, vpc)
+	}
+
+	return &types.GcpVpcListResult{NextPageToken: resp.NextPageToken, Details: details}, nil
+}

@@ -17,32 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package aws
 
-import "hcm/pkg/adaptor/types"
+import (
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
+)
 
-// NewGcp new gcp.
-func NewGcp(credential *types.GcpCredential) (*Gcp, error) {
-	if err := credential.Validate(); err != nil {
-		return nil, err
-	}
-	return &Gcp{clientSet: newClientSet(credential)}, nil
-}
+// tagKeyForResourceName is tag key that define resource name.
+const tagKeyForResourceName = "Name"
 
-// Gcp is hcp operator.
-type Gcp struct {
-	clientSet *clientSet
-}
+// tagResourceType is ec2 tag resource type.
+// reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_TagSpecification.html
+type tagResourceType string
 
-// generateResourceIDsFilter generate gcp resource ids filter
-func generateResourceIDsFilter(resourceIDs []string) string {
-	filterExp := ""
-	for idx, id := range resourceIDs {
-		filterExp += "id=" + id
-		if idx != len(resourceIDs)-1 {
-			filterExp += " OR "
-		}
+const (
+	vpcTagResType tagResourceType = "vpc"
+)
+
+// genNameTags generate name ec2 tags.
+func genNameTags(resourceType tagResourceType, name string) []*ec2.TagSpecification {
+	if len(name) == 0 {
+		return nil
 	}
 
-	return filterExp
+	tagSpec := &ec2.TagSpecification{
+		ResourceType: aws.String(string(resourceType)),
+		Tags: []*ec2.Tag{{
+			Key:   aws.String(tagKeyForResourceName),
+			Value: aws.String(name),
+		}},
+	}
+
+	return []*ec2.TagSpecification{tagSpec}
 }

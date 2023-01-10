@@ -17,32 +17,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package hcservice
 
-import "hcm/pkg/adaptor/types"
+import "hcm/pkg/criteria/validator"
 
-// NewGcp new gcp.
-func NewGcp(credential *types.GcpCredential) (*Gcp, error) {
-	if err := credential.Validate(); err != nil {
-		return nil, err
-	}
-	return &Gcp{clientSet: newClientSet(credential)}, nil
+// VpcUpdateReq defines update vpc request.
+type VpcUpdateReq struct {
+	Spec *VpcUpdateSpec `json:"spec" validate:"omitempty"`
 }
 
-// Gcp is hcp operator.
-type Gcp struct {
-	clientSet *clientSet
+// VpcUpdateSpec defines update vpc request spec.
+type VpcUpdateSpec struct {
+	Memo *string `json:"memo" validate:"omitempty"`
 }
 
-// generateResourceIDsFilter generate gcp resource ids filter
-func generateResourceIDsFilter(resourceIDs []string) string {
-	filterExp := ""
-	for idx, id := range resourceIDs {
-		filterExp += "id=" + id
-		if idx != len(resourceIDs)-1 {
-			filterExp += " OR "
-		}
-	}
-
-	return filterExp
+// Validate VpcUpdateReq.
+func (u *VpcUpdateReq) Validate() error {
+	return validator.Validate.Struct(u)
 }

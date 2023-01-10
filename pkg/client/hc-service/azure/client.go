@@ -26,11 +26,13 @@ import (
 // Client is a azure api client
 type Client struct {
 	Account *AccountClient
+	Vpc     *VpcClient
 }
 
 // NewClient create a new azure api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
 		Account: NewAccountClient(client),
+		Vpc:     NewVpcClient(client),
 	}
 }
