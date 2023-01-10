@@ -41,6 +41,7 @@ export default defineComponent({
     const isTestConnection = ref(false);
     const departmentFullName = ref('IEG互动娱乐事业群/技术运营部/计算资源中心');
     const isShowModifyScretDialog = ref(false);
+    const buttonLoading = ref<boolean>(false);
 
     const initSecretModel: SecretModel = {
       secretId: '',
@@ -142,13 +143,13 @@ export default defineComponent({
                 label: t('IAM用户ID'),
                 required: false,
                 property: 'cloud_iam_user_id',
-                component: () => <span>{projectModel.extension.cloud_iam_user_id}</span>,
+                component: () => <span>{projectModel.extension.cloud_iam_user_id || '--'}</span>,
               },
               {
                 label: t('IAM用户名'),
                 required: false,
                 property: 'cloud_iam_username',
-                component: () => <span>{projectModel.extension.cloud_iam_username}</span>,
+                component: () => <span>{projectModel.extension.cloud_iam_username || '--'}</span>,
               },
               {
                 label: 'Secret ID',
@@ -169,16 +170,10 @@ export default defineComponent({
         case 'tcloud':
           insertFormData = [
             {
-              label: t('主账号ID'),
-              required: false,
-              property: 'cloud_main_account_id',
-              component: () => <span>{projectModel.extension.cloud_main_account_id}</span>,
-            },
-            {
               label: t('子账号ID'),
               required: false,
               property: 'cloud_sub_account_id',
-              component: () => <span>{projectModel.extension.cloud_sub_account_id}</span>,
+              component: () => <span>{projectModel.extension.cloud_sub_account_id || '--'}</span>,
             },
           ];
           formBaseInfo[0].data.splice(4, 0, ...insertFormData);
@@ -206,19 +201,19 @@ export default defineComponent({
               label: t('账号ID:'),
               required: false,
               property: 'cloud_account_id',
-              component: () => <span>{projectModel.extension.cloud_account_id}</span>,
-            },
-            {
-              label: t('IAM用户名:'),
-              required: false,
-              property: 'cloud_iam_username',
-              component: () => <span>{projectModel.extension.cloud_iam_username}</span>,
+              component: () => <span>{projectModel.extension.cloud_account_id || '--'}</span>,
             },
           ];
           formBaseInfo[0].data.splice(4, 0, ...insertFormData);
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
+              {
+                label: t('IAM用户名称:'),
+                required: false,
+                property: 'cloud_iam_username',
+                component: () => <span>{projectModel.extension.cloud_iam_username || '--'}</span>,
+              },
               {
                 label: 'Secret ID',
                 required: false,
@@ -230,12 +225,6 @@ export default defineComponent({
                 required: false,
                 property: 'cloud_secret_key',
                 component: () => <span>********</span>,
-              },
-              {
-                label: t('账号ID'),
-                required: false,
-                property: 'cloud_account_id',
-                component: () => <span>{projectModel.extension.cloud_account_id}</span>,
               },
             ],
           });
@@ -246,19 +235,19 @@ export default defineComponent({
               label: t('租户 ID'),
               required: false,
               property: 'cloud_tenant_id',
-              component: () => <span>{projectModel.extension.cloud_tenant_id}</span>,
+              component: () => <span>{projectModel.extension.cloud_tenant_id || '--'}</span>,
             },
             {
               label: t('订阅 ID'),
               required: false,
               property: 'cloud_subscription_id',
-              component: () => <span>{projectModel.extension.cloud_subscription_id}</span>,
+              component: () => <span>{projectModel.extension.cloud_subscription_id || '--'}</span>,
             },
             {
               label: t('订阅 名称'),
               required: false,
               property: 'cloud_subscription_name',
-              component: () => <span>{projectModel.extension.cloud_subscription_name}</span>,
+              component: () => <span>{projectModel.extension.cloud_subscription_name || '--'}</span>,
             },
           ];
           formBaseInfo[0].data.splice(4, 0, ...insertFormData);
@@ -266,22 +255,28 @@ export default defineComponent({
             name: t('密钥信息'),
             data: [
               {
-                label: 'Secret ID',
+                label: t('应用程序(客户端) ID'),
                 required: false,
-                property: 'secretId',
-                component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
+                property: 'cloud_application_id',
+                component: () => <span>{projectModel.extension.cloud_application_id || '--'}</span>,
               },
               {
-                label: 'Secret Key',
+                label: t('应用程序名称'),
                 required: false,
-                property: 'cloud_secret_key',
+                property: 'cloud_application_name',
+                component: () => <span>{projectModel.extension.cloud_application_name || '--'}</span>,
+              },
+              {
+                label: t('客户端密钥ID'),
+                required: false,
+                property: 'cloud_client_id',
+                component: () => <span>{projectModel.extension.cloud_client_id || '--'}</span>,
+              },
+              {
+                label: t('客户端密钥'),
+                required: false,
+                property: 'cloud_client_secret',
                 component: () => <span>********</span>,
-              },
-              {
-                label: t('账号ID'),
-                required: false,
-                property: 'cloud_account_id',
-                component: () => <span>{projectModel.extension.cloud_account_id}</span>,
               },
             ],
           });
@@ -292,13 +287,13 @@ export default defineComponent({
               label: t('项目 ID'),
               required: false,
               property: 'cloud_project_id',
-              component: () => <span>{projectModel.extension.cloud_project_id}</span>,
+              component: () => <span>{projectModel.extension.cloud_project_id || '--'}</span>,
             },
             {
               label: t('项目名称'),
               required: false,
               property: 'cloud_project_name',
-              component: () => <span>{projectModel.extension.cloud_project_name}</span>,
+              component: () => <span>{projectModel.extension.cloud_project_name || '--'}</span>,
             },
           ];
           formBaseInfo[0].data.splice(4, 0, ...insertFormData);
@@ -314,7 +309,7 @@ export default defineComponent({
               {
                 label: t('服务账号名称'),
                 required: false,
-                property: 'cloud_secret_key',
+                property: 'cloud_service_account_name',
                 component: () => <span>{projectModel.extension.cloud_service_account_name}</span>,
               },
               {
@@ -339,7 +334,6 @@ export default defineComponent({
 
     // 弹窗
     const renderDialogForm = (data: any) => {
-      data.vendor = 'gcp';
       switch (data.vendor) {
         case 'huawei':
           dialogForm.list = [
@@ -525,12 +519,12 @@ export default defineComponent({
 
     // 弹窗确认
     const onConfirm = async () => {
+      buttonLoading.value = true;
       await formDiaRef.value?.validate();
       const extension: any = {
         cloud_secret_id: secretModel.secretId,
         cloud_secret_key: secretModel.secretKey,
       };
-      projectModel.vendor = 'huawei';
       // 后期拓展
       switch (projectModel.vendor) {
         case 'huawei':
@@ -538,34 +532,58 @@ export default defineComponent({
           extension.cloud_iam_user_id = secretModel.iamUserId;
           break;
         case 'tcloud':
-          extension.cloud_sub_account = secretModel.subAccountId;
+          extension.cloud_sub_account_id = secretModel.subAccountId;
           break;
         case 'aws':
           extension.cloud_iam_username = secretModel.iamUserName;
+          break;
+        case 'azure':
+          extension.cloud_application_id = secretModel.applicationId;
+          extension.cloud_application_name = secretModel.applicationName;
+          extension.cloud_client_id = secretModel.secretId;
+          extension.cloud_client_secret = secretModel.secretKey;
+          delete extension.cloud_secret_id;
+          delete extension.cloud_secret_key;
+          break;
+        case 'gcp':
+          extension.cloud_service_account_id = secretModel.accountId;   // 服务账号ID
+          extension.cloud_service_account_name = secretModel.accountName;   // 服务账号ID
           break;
         default:
           break;
       }
       if (isTestConnection.value) {
-        await accountStore.updateAccount({    // 更新密钥信息
-          id: projectModel.id,
-          extension,
-        });
-        Message({
-          message: t('更新密钥信息成功'),
-          theme: 'success',
-        });
-        onClosed();
+        try {
+          await accountStore.updateAccount({    // 更新密钥信息
+            id: projectModel.id,
+            extension,
+          });
+          Message({
+            message: t('更新密钥信息成功'),
+            theme: 'success',
+          });
+        } catch (error) {
+          console.log(error);
+        } finally {
+          buttonLoading.value = false;
+        }
+        // onClosed();
       } else {
-        await accountStore.updateTestAccount({    // 测试连接密钥信息
-          id: projectModel.id,
-          extension,
-        });
-        Message({
-          message: t('测试链接成功'),
-          theme: 'success',
-        });
-        isTestConnection.value = true;
+        try {
+          await accountStore.updateTestAccount({    // 测试连接密钥信息
+            id: projectModel.id,
+            extension,
+          });
+          Message({
+            message: t('测试连接成功'),
+            theme: 'success',
+          });
+          isTestConnection.value = true;
+        } catch (error) {
+          console.log(error);
+        } finally {
+          buttonLoading.value = false;
+        }
       }
     };
 
@@ -783,10 +801,11 @@ export default defineComponent({
             }
 
           <Dialog
-            isShow={isShowModifyScretDialog.value}
+            v-model:isShow={isShowModifyScretDialog.value}
             width={680}
             title={t('密钥信息')}
             onConfirm={onConfirm}
+            isLoading={buttonLoading.value}
             cancelText={t('取消')}
             confirmText={isTestConnection.value ? t('确认') : t('测试连接')}
             onClosed={onClosed}
