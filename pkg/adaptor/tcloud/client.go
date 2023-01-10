@@ -20,12 +20,14 @@
 package tcloud
 
 import (
+	"hcm/pkg/adaptor/types"
+
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
-	"hcm/pkg/adaptor/types"
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 type clientSet struct {
@@ -60,6 +62,15 @@ func (c *clientSet) cvmClient(region string) (*cvm.Client, error) {
 
 func (c *clientSet) cbsClient(region string) (*cbs.Client, error) {
 	client, err := cbs.NewClient(c.credential, region, c.profile)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (c *clientSet) vpcClient(region string) (*vpc.Client, error) {
+	client, err := vpc.NewClient(c.credential, region, c.profile)
 	if err != nil {
 		return nil, err
 	}

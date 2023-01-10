@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package gcp
 
 import (
 	"context"
@@ -29,7 +29,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// VpcClient is hc service tencent cloud vpc api client.
+// VpcClient is hc service gcp vpc api client.
 type VpcClient struct {
 	client rest.ClientInterface
 }
@@ -48,7 +48,7 @@ func (v *VpcClient) Update(ctx context.Context, h http.Header, id string, req *h
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vendors/%s/vpcs/%s", enumor.TCloud, id).
+		SubResourcef("/vendors/%s/vpcs/%s", enumor.Gcp, id).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -70,7 +70,7 @@ func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error 
 	err := v.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef("/vendors/%s/vpcs/%s", enumor.TCloud, id).
+		SubResourcef("/vendors/%s/vpcs/%s", enumor.Gcp, id).
 		WithHeaders(h).
 		Do().
 		Into(resp)

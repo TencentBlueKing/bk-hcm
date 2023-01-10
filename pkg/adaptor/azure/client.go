@@ -26,6 +26,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
@@ -45,9 +46,25 @@ func (c *clientSet) subscriptionClient() (*armsubscription.SubscriptionsClient, 
 
 	client, err := armsubscription.NewSubscriptionsClient(credential, nil)
 	if err != nil {
-		return nil, fmt.Errorf("init azure vpn client failed, err: %v", err)
+		return nil, fmt.Errorf("init azure subscription client failed, err: %v", err)
 	}
 
+	return client, nil
+}
+
+func (c *clientSet) vpcClient() (*armnetwork.VirtualNetworksClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+
+	client, err := armnetwork.NewVirtualNetworksClient(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init azure vpc client failed, err: %v", err)
+	}
 	return client, nil
 }
 

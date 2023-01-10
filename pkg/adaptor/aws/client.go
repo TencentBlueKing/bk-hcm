@@ -20,13 +20,13 @@
 package aws
 
 import (
+	"hcm/pkg/adaptor/types"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/sts"
-
-	"hcm/pkg/adaptor/types"
 )
 
 type clientSet struct {

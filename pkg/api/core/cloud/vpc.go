@@ -98,7 +98,7 @@ type GcpVpcExtension struct {
 type AzureVpcExtension struct {
 	ResourceGroup string      `json:"resource_group"`
 	Region        string      `json:"region"`
-	DNSServers    []*string   `json:"dns_servers"`
+	DNSServers    []string    `json:"dns_servers"`
 	Cidr          []AzureCidr `json:"cidr"`
 }
 

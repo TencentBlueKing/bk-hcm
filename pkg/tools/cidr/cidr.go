@@ -17,22 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package huawei
+package cidr
 
 import (
-	"hcm/pkg/rest"
+	"fmt"
+	"net"
+
+	"hcm/pkg/criteria/enumor"
 )
 
-// Client is a huawei api client
-type Client struct {
-	Account *AccountClient
-	Vpc     *VpcClient
-}
-
-// NewClient create a new huawei api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		Account: NewAccountClient(client),
-		Vpc:     NewVpcClient(client),
+// CidrAddressType get cidr ip address type.
+func CidrIPAddressType(cidr string) (enumor.IPAddressType, error) {
+	ip, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return "", err
 	}
+
+	if ip.To4().Equal(ip) {
+		return enumor.Ipv4, nil
+	}
+
+	if ip.To16().Equal(ip) {
+		return enumor.Ipv6, nil
+	}
+
+	return "", fmt.Errorf("%s ip address type is invalid", ip)
 }

@@ -17,22 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package huawei
+package aws
 
 import (
-	"hcm/pkg/rest"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// Client is a huawei api client
-type Client struct {
-	Account *AccountClient
-	Vpc     *VpcClient
-}
+// tagKeyForResourceName is tag key that define resource name.
+const tagKeyForResourceName = "Name"
 
-// NewClient create a new huawei api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		Account: NewAccountClient(client),
-		Vpc:     NewVpcClient(client),
+// tagResourceType is ec2 tag resource type.
+// reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_TagSpecification.html
+type tagResourceType string
+
+const (
+	vpcTagResType tagResourceType = "vpc"
+)
+
+// genNameTags generate name ec2 tags.
+func genNameTags(resourceType tagResourceType, name string) []*ec2.TagSpecification {
+	if len(name) == 0 {
+		return nil
 	}
+
+	tagSpec := &ec2.TagSpecification{
+		ResourceType: aws.String(string(resourceType)),
+		Tags: []*ec2.Tag{{
+			Key:   aws.String(tagKeyForResourceName),
+			Value: aws.String(name),
+		}},
+	}
+
+	return []*ec2.TagSpecification{tagSpec}
 }
