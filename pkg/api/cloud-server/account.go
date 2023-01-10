@@ -117,7 +117,7 @@ func (r *HuaWeiAccountExtensionCreateReq) Validate() error {
 type GcpAccountExtensionCreateReq struct {
 	CloudProjectID          string `json:"cloud_project_id" validate:"required"`
 	CloudProjectName        string `json:"cloud_project_name" validate:"required"`
-	CloudServiceAccountID   string `json:"cloud_service_account_cid" validate:"required"`
+	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"required"`
 	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
 	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"required"`
 	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"required"`
