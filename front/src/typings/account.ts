@@ -1,29 +1,38 @@
 export interface ProjectModel {
   id: number,
-  type: string
+  type: string,
   name: string,
   vendor: string,
-  managers: string[]
+  managers: string[],
   departmentId?: string[] | number[],
   memo: string,             // 备注
   account?: number | string,
   subAccountId?: number | string,
   subAccountName?: number | string,
-  bizIds?: string | string[] | number[] // 使用业务
+  bizIds?: string | string[] | number[], // 使用业务
   mainAccount?: number | string,        // 主账号
   subAccount?: number | string,         // 子账号
   secretId?: string,             // secretId
   secretKey?: string,            // secretKey
-  accountId?: string            // 账号id
-  iamUsername?: string          // IAM用户名称
-  price?: number      // 价格
-  price_unit?: string   // 单位
-  creator?: string    // 创建者
-  reviser?: string
-  created_at?: string // 创建时间
-  updated_at?: string // 修改时间
-  extension?: any     // 根据每种云返回值不一定
-  site?: string     //
+  accountId?: string,            // 账号id
+  accountName?: string,         // 账号名称
+  iamUsername?: string,          // IAM用户名称
+  iamUserId?: string, // IAM用户Id
+  price?: number,      // 价格
+  price_unit?: string,   // 单位
+  creator?: string,    // 创建者
+  reviser?: string,
+  created_at?: string, // 创建时间
+  updated_at?: string, // 修改时间
+  extension?: any,     // 根据每种云返回值不一定
+  site?: string,     // 站点
+  projectId?: string, // 项目ID
+  projectName?: string, // 项目名称
+  tenantId?: string // 租户id
+  subScriptionId?: string   // 订阅id
+  subScriptionName?: string// 订阅名称
+  applicationId?: string // 应用程序ID
+  applicationName?: string // 应用程序名称
 }
 
 export enum StaffType {
@@ -65,6 +74,11 @@ export interface SecretModel {
   secretKey: string,
   subAccountId?: string,
   iamUserName?: string
+  iamUserId?: string
+  accountId?: string
+  accountName?: string
+  applicationId?: string
+  applicationName?: string
 }
 
 export enum CloudType {
