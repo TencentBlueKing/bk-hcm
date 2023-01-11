@@ -44,6 +44,7 @@ type Set interface {
 	Cloud() cloud.Cloud
 	AccountBizRel() cloud.AccountBizRel
 	Vpc() cloud.Vpc
+	Subnet() cloud.Subnet
 	Txn() *Txn
 }
 
@@ -128,6 +129,11 @@ func (s *set) AccountBizRel() cloud.AccountBizRel {
 // Vpc returns vpc dao.
 func (s *set) Vpc() cloud.Vpc {
 	return cloud.NewVpcDao(s.orm, s.idGen)
+}
+
+// Subnet returns subnet dao.
+func (s *set) Subnet() cloud.Subnet {
+	return cloud.NewSubnetDao(s.orm, s.idGen)
 }
 
 // Auth return auth dao.

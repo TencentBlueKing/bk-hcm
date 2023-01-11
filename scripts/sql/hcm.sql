@@ -41,6 +41,9 @@ ON DUPLICATE KEY UPDATE resource=resource;
 insert into id_generator(`resource`, `max_id`)
 values ('vpc', '0')
 ON DUPLICATE KEY UPDATE resource=resource;
+insert into id_generator(`resource`, `max_id`)
+values ('subnet', '0')
+ON DUPLICATE KEY UPDATE resource=resource;
 
 create table if not exists `audit`
 (
@@ -123,6 +126,34 @@ create table if not exists `vpc`
     `reviser`     varchar(64)  not null,
     `created_at`  timestamp    not null default current_timestamp,
     `updated_at`  timestamp    not null default current_timestamp on update current_timestamp,
+
+    primary key (`id`),
+    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `subnet`
+(
+    `id`           varchar(64)  not null,
+    `vendor`       varchar(32)  not null,
+    `account_id`   varchar(64)  not null,
+    `cloud_vpc_id` varchar(255) not null,
+    `cloud_id`     varchar(255) not null,
+    `name`         varchar(128) not null,
+    `ipv4_cidr`    varchar(32)  not null,
+    `ipv6_cidr`    varchar(64)  not null,
+    `memo`         varchar(255)          default '',
+    `vpc_id`       varchar(64)  not null,
+    `bk_biz_id`    bigint(1)             default -1,
+
+    # Extension
+    `extension`    json         not null,
+
+    # Revision
+    `creator`      varchar(64)  not null,
+    `reviser`      varchar(64)  not null,
+    `created_at`   timestamp    not null default current_timestamp,
+    `updated_at`   timestamp    not null default current_timestamp on update current_timestamp,
 
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)

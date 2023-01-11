@@ -117,20 +117,29 @@ func (g *Gcp) ListVpc(kt *kit.Kit, opt *core.GcpListOption) (*types.GcpVpcListRe
 
 	details := make([]types.GcpVpc, 0, len(resp.Items))
 	for _, item := range resp.Items {
-		vpc := types.GcpVpc{
-			CloudID: strconv.FormatUint(item.Id, 10),
-			Name:    item.Name,
-			Memo:    &item.Description,
-			Extension: &cloud.GcpVpcExtension{
-				AutoCreateSubnetworks: item.AutoCreateSubnetworks,
-				EnableUlaInternalIpv6: item.EnableUlaInternalIpv6,
-				Mtu:                   item.Mtu,
-				RoutingMode:           converter.PtrToVal(item.RoutingConfig).RoutingMode,
-			},
-		}
-
-		details = append(details, vpc)
+		details = append(details, converter.PtrToVal(convertVpc(item)))
 	}
 
 	return &types.GcpVpcListResult{NextPageToken: resp.NextPageToken, Details: details}, nil
+}
+
+func convertVpc(data *compute.Network) *types.GcpVpc {
+	if data == nil {
+		return nil
+	}
+
+	vpc := &types.GcpVpc{
+		CloudID: strconv.FormatUint(data.Id, 10),
+		Name:    data.Name,
+		Memo:    &data.Description,
+		Extension: &cloud.GcpVpcExtension{
+			SelfLink:              data.SelfLink,
+			AutoCreateSubnetworks: data.AutoCreateSubnetworks,
+			EnableUlaInternalIpv6: data.EnableUlaInternalIpv6,
+			Mtu:                   data.Mtu,
+			RoutingMode:           converter.PtrToVal(data.RoutingConfig).RoutingMode,
+		},
+	}
+
+	return vpc
 }

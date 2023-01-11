@@ -39,6 +39,8 @@ const (
 	AccountBizRelTable Name = "account_biz_rel"
 	// VpcTable is vpc table's name.
 	VpcTable Name = "vpc"
+	// SubnetTable is subnet table's name.
+	SubnetTable Name = "subnet"
 	// IDGenerator is id generator table's name.
 	IDGenerator Name = "id_generator"
 	// SecurityGroupTable is security group table's name.
@@ -52,6 +54,7 @@ func (n Name) Validate() error {
 	case AccountTable:
 	case AccountBizRelTable:
 	case VpcTable:
+	case SubnetTable:
 	case IDGenerator:
 	default:
 		return fmt.Errorf("unknown table name: %s", n)
