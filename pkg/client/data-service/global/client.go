@@ -29,6 +29,7 @@ type Client struct {
 	Account *AccountClient
 	Cloud   *CloudClient
 	Vpc     *VpcClient
+	Subnet  *SubnetClient
 }
 
 // NewClient create a new global api client.
@@ -38,5 +39,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Account: NewAccountClient(client),
 		Cloud:   NewCloudClient(client),
 		Vpc:     NewVpcClient(client),
+		Subnet:  NewSubnetClient(client),
 	}
 }

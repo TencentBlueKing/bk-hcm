@@ -17,37 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+package types
 
 import (
-	"fmt"
-
-	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/cloud"
 )
 
-// CloudResourceType defines the cloud resource type.
-type CloudResourceType string
-
-// ConvTableName conv CloudResourceType to table.Name.
-func (rt CloudResourceType) ConvTableName() (table.Name, error) {
-	switch rt {
-	case AccountCloudResType:
-		return table.AccountTable, nil
-	case SecurityGroupCloudResType:
-		return table.SecurityGroupTable, nil
-	case VpcCloudResType:
-		return table.VpcTable, nil
-	case SubnetCloudResType:
-		return table.SubnetTable, nil
-	default:
-		return "", fmt.Errorf("%s does not have a corresponding table name", rt)
-	}
+// SubnetListResult list subnet result.
+type SubnetListResult struct {
+	Count   uint64              `json:"count"`
+	Details []cloud.SubnetTable `json:"details"`
 }
-
-// CloudResourceType define all cloud resource type.
-const (
-	AccountCloudResType       = "account"
-	SecurityGroupCloudResType = "security_group"
-	VpcCloudResType           = "vpc"
-	SubnetCloudResType        = "subnet"
-)
