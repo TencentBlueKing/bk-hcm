@@ -57,7 +57,7 @@ func InitVpcService(cap *capability.Capability) {
 
 	h.Add("BatchCreateVpc", "POST", "/vendors/{vendor}/vpcs/batch/create", svc.BatchCreateVpc)
 	h.Add("BatchUpdateVpc", "PATCH", "/vendors/{vendor}/vpcs/batch", svc.BatchUpdateVpc)
-	h.Add("BatchUpdateVpcAttachment", "PATCH", "/vpcs/attachments/batch", svc.BatchUpdateVpcAttachment)
+	h.Add("BatchUpdateVpcBaseInfo", "PATCH", "/vpcs/base/batch", svc.BatchUpdateVpcBaseInfo)
 	h.Add("GetVpc", "GET", "/vendors/{vendor}/vpcs/{id}", svc.GetVpc)
 	h.Add("ListVpc", "POST", "/vpcs/list", svc.ListVpc)
 	h.Add("DeleteVpc", "DELETE", "/vpcs/batch", svc.BatchDeleteVpc)
@@ -78,22 +78,22 @@ func (svc *vpcSvc) BatchCreateVpc(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return batchCreateVpc[protocore.TCloudVpcExtension](cts, vendor, svc)
+		return batchCreateVpc[protocloud.TCloudVpcCreateExt](cts, vendor, svc)
 	case enumor.Aws:
-		return batchCreateVpc[protocore.AwsVpcExtension](cts, vendor, svc)
+		return batchCreateVpc[protocloud.AwsVpcCreateExt](cts, vendor, svc)
 	case enumor.Gcp:
-		return batchCreateVpc[protocore.GcpVpcExtension](cts, vendor, svc)
+		return batchCreateVpc[protocloud.GcpVpcCreateExt](cts, vendor, svc)
 	case enumor.HuaWei:
-		return batchCreateVpc[protocore.HuaWeiVpcExtension](cts, vendor, svc)
+		return batchCreateVpc[protocloud.HuaWeiVpcCreateExt](cts, vendor, svc)
 	case enumor.Azure:
-		return batchCreateVpc[protocore.AzureVpcExtension](cts, vendor, svc)
+		return batchCreateVpc[protocloud.AzureVpcCreateExt](cts, vendor, svc)
 	}
 
 	return nil, nil
 }
 
 // batchCreateVpc batch create vpc.
-func batchCreateVpc[T protocore.VpcExtension](cts *rest.Contexts, vendor enumor.Vendor, svc *vpcSvc) (
+func batchCreateVpc[T protocloud.VpcCreateExtension](cts *rest.Contexts, vendor enumor.Vendor, svc *vpcSvc) (
 	interface{}, error) {
 
 	req := new(protocloud.VpcBatchCreateReq[T])
@@ -115,11 +115,11 @@ func batchCreateVpc[T protocore.VpcExtension](cts *rest.Contexts, vendor enumor.
 
 			vpc := tablecloud.VpcTable{
 				Vendor:    vendor,
-				AccountID: createReq.Spec.AccountID,
-				CloudID:   createReq.Spec.CloudID,
-				Name:      createReq.Spec.Name,
-				Category:  createReq.Spec.Category,
-				Memo:      createReq.Spec.Memo,
+				AccountID: createReq.AccountID,
+				CloudID:   createReq.CloudID,
+				Name:      createReq.Name,
+				Category:  createReq.Category,
+				Memo:      createReq.Memo,
 				Extension: ext,
 				BkCloudID: constant.UnbindBkCloudID,
 				BkBizID:   constant.UnassignedBiz,
@@ -144,7 +144,8 @@ func batchCreateVpc[T protocore.VpcExtension](cts *rest.Contexts, vendor enumor.
 
 	ids, ok := vpcIDs.([]string)
 	if !ok {
-		return nil, fmt.Errorf("create vpc but return ids type %s is not string array", reflect.TypeOf(vpcIDs).String())
+		return nil, fmt.Errorf("create vpc but return ids type %s is not string array",
+			reflect.TypeOf(vpcIDs).String())
 	}
 
 	return &core.BatchCreateResult{IDs: ids}, nil
@@ -211,18 +212,18 @@ func batchUpdateVpc[T protocloud.VpcUpdateExtension](cts *rest.Contexts, svc *vp
 	}
 
 	for _, updateReq := range req.Vpcs {
-		vpc.Name = updateReq.Spec.Name
-		vpc.Category = updateReq.Spec.Category
-		vpc.Memo = updateReq.Spec.Memo
+		vpc.Name = updateReq.Name
+		vpc.Category = updateReq.Category
+		vpc.Memo = updateReq.Memo
 
 		// update extension
 		if updateReq.Extension != nil {
-			dbAccount, err := getVpcFromTable(cts.Kit, svc.dao, updateReq.ID)
+			dbVpc, err := getVpcFromTable(cts.Kit, svc.dao, updateReq.ID)
 			if err != nil {
 				return nil, err
 			}
 
-			updatedExtension, err := json.UpdateMerge(updateReq.Extension, string(dbAccount.Extension))
+			updatedExtension, err := json.UpdateMerge(updateReq.Extension, string(dbVpc.Extension))
 			if err != nil {
 				return nil, fmt.Errorf("extension update merge failed, err: %v", err)
 			}
@@ -239,14 +240,9 @@ func batchUpdateVpc[T protocloud.VpcUpdateExtension](cts *rest.Contexts, svc *vp
 	return nil, nil
 }
 
-// BatchUpdateVpcAttachment batch update vpc attachment.
-func (svc *vpcSvc) BatchUpdateVpcAttachment(cts *rest.Contexts) (interface{}, error) {
-	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if err := vendor.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	req := new(protocloud.VpcAttachmentBatchUpdateReq)
+// BatchUpdateVpcBaseInfo batch update vpc base info.
+func (svc *vpcSvc) BatchUpdateVpcBaseInfo(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.VpcBaseInfoBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -255,9 +251,9 @@ func (svc *vpcSvc) BatchUpdateVpcAttachment(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	ids := make([]string, 0, len(req.Attachments))
-	for _, vpc := range req.Attachments {
-		ids = append(ids, vpc.ID)
+	ids := make([]string, 0)
+	for _, vpc := range req.Vpcs {
+		ids = append(ids, vpc.IDs...)
 	}
 
 	// check if all vpcs exists
@@ -270,7 +266,7 @@ func (svc *vpcSvc) BatchUpdateVpcAttachment(cts *rest.Contexts) (interface{}, er
 		logs.Errorf("list vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list vpc failed, err: %v", err)
 	}
-	if listRes.Count != uint64(len(req.Attachments)) {
+	if listRes.Count != uint64(len(ids)) {
 		return nil, fmt.Errorf("list vpc failed, some vpc(ids=%+v) doesn't exist", ids)
 	}
 
@@ -279,10 +275,14 @@ func (svc *vpcSvc) BatchUpdateVpcAttachment(cts *rest.Contexts) (interface{}, er
 		Reviser: cts.Kit.User,
 	}
 
-	for _, updateReq := range req.Attachments {
-		vpc.BkCloudID = updateReq.Attachment.BkCloudID
+	for _, updateReq := range req.Vpcs {
+		vpc.Name = updateReq.Data.Name
+		vpc.Category = updateReq.Data.Category
+		vpc.Name = updateReq.Data.Memo
+		vpc.BkCloudID = updateReq.Data.BkCloudID
+		vpc.BkBizID = updateReq.Data.BkBizID
 
-		err = svc.dao.Vpc().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), vpc)
+		err = svc.dao.Vpc().Update(cts.Kit, tools.ContainersExpression("id", updateReq.IDs), vpc)
 		if err != nil {
 			logs.Errorf("update vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("update vpc failed, err: %v", err)
@@ -308,10 +308,8 @@ func (svc *vpcSvc) GetVpc(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	base := convertBaseVpc(dbVpc)
-	base.Attachment = &protocore.VpcAttachment{
-		BkCloudID: dbVpc.BkCloudID,
-		BkBizID:   dbVpc.BkBizID,
-	}
+	base.BkCloudID = dbVpc.BkCloudID
+	base.BkBizID = dbVpc.BkBizID
 
 	switch vendor {
 	case enumor.TCloud:
@@ -356,7 +354,7 @@ func getVpcFromTable(kt *kit.Kit, dao dao.Set, vpcID string) (*tablecloud.VpcTab
 
 	details := res.Details
 	if len(details) != 1 {
-		return nil, fmt.Errorf("list vpc failed, account(id=%s) doesn't exist", vpcID)
+		return nil, fmt.Errorf("list vpc failed, vpc(id=%s) doesn't exist", vpcID)
 	}
 
 	return &details[0], nil
@@ -401,15 +399,13 @@ func convertBaseVpc(dbVpc *tablecloud.VpcTable) *protocore.BaseVpc {
 	}
 
 	return &protocore.BaseVpc{
-		ID:     dbVpc.ID,
-		Vendor: dbVpc.Vendor,
-		Spec: &protocore.VpcSpec{
-			AccountID: dbVpc.AccountID,
-			CloudID:   dbVpc.CloudID,
-			Name:      converter.PtrToVal(dbVpc.Name),
-			Category:  dbVpc.Category,
-			Memo:      dbVpc.Memo,
-		},
+		ID:        dbVpc.ID,
+		Vendor:    dbVpc.Vendor,
+		AccountID: dbVpc.AccountID,
+		CloudID:   dbVpc.CloudID,
+		Name:      converter.PtrToVal(dbVpc.Name),
+		Category:  dbVpc.Category,
+		Memo:      dbVpc.Memo,
 		Revision: &core.Revision{
 			Creator:   dbVpc.Creator,
 			Reviser:   dbVpc.Reviser,

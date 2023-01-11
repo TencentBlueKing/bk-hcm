@@ -48,7 +48,7 @@ func (v vpc) AzureVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cli, err := v.ad.Azure(cts.Kit, getRes.Spec.AccountID)
+	cli, err := v.ad.Azure(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -62,8 +62,8 @@ func (v vpc) AzureVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 	updateReq := &cloud.VpcBatchUpdateReq[cloud.AzureVpcUpdateExt]{
 		Vpcs: []cloud.VpcUpdateReq[cloud.AzureVpcUpdateExt]{{
 			ID: id,
-			Spec: &cloud.VpcUpdateSpec{
-				Memo: req.Spec.Memo,
+			VpcUpdateBaseInfo: cloud.VpcUpdateBaseInfo{
+				Memo: req.Memo,
 			},
 		}},
 	}
@@ -84,13 +84,13 @@ func (v vpc) AzureVpcDelete(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cli, err := v.ad.Azure(cts.Kit, getRes.Spec.AccountID)
+	cli, err := v.ad.Azure(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	delOpt := &adcore.AzureDeleteOption{
-		BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.Spec.CloudID},
+		BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
 		ResourceGroupName: getRes.Extension.ResourceGroup,
 	}
 	err = cli.DeleteVpc(cts.Kit, delOpt)

@@ -48,14 +48,14 @@ func (v vpc) GcpVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cli, err := v.ad.Gcp(cts.Kit, getRes.Spec.AccountID)
+	cli, err := v.ad.Gcp(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	updateOpt := &types.GcpVpcUpdateOption{
-		ResourceID: getRes.Spec.CloudID,
-		Data:       &types.BaseVpcUpdateData{Memo: req.Spec.Memo},
+		ResourceID: getRes.CloudID,
+		Data:       &types.BaseVpcUpdateData{Memo: req.Memo},
 	}
 	err = cli.UpdateVpc(cts.Kit, updateOpt)
 	if err != nil {
@@ -65,8 +65,8 @@ func (v vpc) GcpVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 	updateReq := &cloud.VpcBatchUpdateReq[cloud.GcpVpcUpdateExt]{
 		Vpcs: []cloud.VpcUpdateReq[cloud.GcpVpcUpdateExt]{{
 			ID: id,
-			Spec: &cloud.VpcUpdateSpec{
-				Memo: req.Spec.Memo,
+			VpcUpdateBaseInfo: cloud.VpcUpdateBaseInfo{
+				Memo: req.Memo,
 			},
 		}},
 	}
@@ -87,13 +87,13 @@ func (v vpc) GcpVpcDelete(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cli, err := v.ad.Gcp(cts.Kit, getRes.Spec.AccountID)
+	cli, err := v.ad.Gcp(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	delOpt := &adcore.BaseDeleteOption{
-		ResourceID: getRes.Spec.CloudID,
+		ResourceID: getRes.CloudID,
 	}
 	err = cli.DeleteVpc(cts.Kit, delOpt)
 	if err != nil {

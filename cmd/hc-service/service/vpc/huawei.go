@@ -48,7 +48,7 @@ func (v vpc) HuaWeiVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cli, err := v.ad.HuaWei(cts.Kit, getRes.Spec.AccountID)
+	cli, err := v.ad.HuaWei(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (v vpc) HuaWeiVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 	updateOpt := &types.HuaweiVpcUpdateOption{
 		VpcUpdateOption: types.VpcUpdateOption{
 			ResourceID: id,
-			Data:       &types.BaseVpcUpdateData{Memo: req.Spec.Memo},
+			Data:       &types.BaseVpcUpdateData{Memo: req.Memo},
 		},
 		Region: getRes.Extension.Region,
 	}
@@ -68,8 +68,8 @@ func (v vpc) HuaWeiVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 	updateReq := &cloud.VpcBatchUpdateReq[cloud.HuaWeiVpcUpdateExt]{
 		Vpcs: []cloud.VpcUpdateReq[cloud.HuaWeiVpcUpdateExt]{{
 			ID: id,
-			Spec: &cloud.VpcUpdateSpec{
-				Memo: req.Spec.Memo,
+			VpcUpdateBaseInfo: cloud.VpcUpdateBaseInfo{
+				Memo: req.Memo,
 			},
 		}},
 	}
@@ -90,13 +90,13 @@ func (v vpc) HuaWeiVpcDelete(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cli, err := v.ad.HuaWei(cts.Kit, getRes.Spec.AccountID)
+	cli, err := v.ad.HuaWei(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	delOpt := &adcore.BaseRegionalDeleteOption{
-		BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.Spec.CloudID},
+		BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
 		Region:           getRes.Extension.Region,
 	}
 	err = cli.DeleteVpc(cts.Kit, delOpt)

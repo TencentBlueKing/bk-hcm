@@ -45,14 +45,14 @@ func NewVpcClient(client rest.ClientInterface) *VpcClient {
 
 // BatchCreate batch create tencent cloud vpc.
 func (v *VpcClient) BatchCreate(ctx context.Context, h http.Header,
-	req *protocloud.VpcBatchCreateReq[corecloud.TCloudVpcExtension]) (*core.BatchCreateResult, error) {
+	req *protocloud.VpcBatchCreateReq[protocloud.TCloudVpcCreateExt]) (*core.BatchCreateResult, error) {
 
 	resp := new(core.BatchCreateResp)
 
 	err := v.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vendors/%s/vpcs/batch/create", enumor.TCloud).
+		SubResourcef("/vpcs/batch/create", enumor.TCloud).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -75,7 +75,7 @@ func (v *VpcClient) Get(ctx context.Context, h http.Header, id string) (*coreclo
 
 	err := v.client.Get().
 		WithContext(ctx).
-		SubResourcef("/vendors/%s/vpcs/%s", enumor.TCloud, id).
+		SubResourcef("/vpcs/%s", enumor.TCloud, id).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -99,7 +99,7 @@ func (v *VpcClient) BatchUpdate(ctx context.Context, h http.Header,
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vendors/%s/vpcs/batch", enumor.TCloud).
+		SubResourcef("/vpcs/batch", enumor.TCloud).
 		WithHeaders(h).
 		Do().
 		Into(resp)

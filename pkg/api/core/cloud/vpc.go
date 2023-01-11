@@ -32,20 +32,16 @@ type Vpc[T VpcExtension] struct {
 
 // BaseVpc defines base vpc info.
 type BaseVpc struct {
-	ID         string         `json:"id"`
-	Vendor     enumor.Vendor  `json:"vendor"`
-	Spec       *VpcSpec       `json:"spec"`
-	Attachment *VpcAttachment `json:"attachment,omitempty"`
-	Revision   *core.Revision `json:"revision"`
-}
-
-// VpcSpec defines vpc spec.
-type VpcSpec struct {
+	ID        string             `json:"id"`
+	Vendor    enumor.Vendor      `json:"vendor"`
 	AccountID string             `json:"account_id"`
 	CloudID   string             `json:"cloud_id"`
 	Name      string             `json:"name"`
 	Category  enumor.VpcCategory `json:"category"`
 	Memo      *string            `json:"memo,omitempty"`
+	BkCloudID int64              `json:"bk_cloud_id"`
+	BkBizID   int64              `json:"bk_biz_id"`
+	Revision  *core.Revision     `json:"revision"`
 }
 
 // VpcExtension defines vpc extensional info.
@@ -123,12 +119,6 @@ type HuaWeiVpcExtension struct {
 type HuaWeiCidr struct {
 	Type enumor.IPAddressType `json:"type"`
 	Cidr string               `json:"cidr"`
-}
-
-// VpcAttachment vpc attachment.
-type VpcAttachment struct {
-	BkCloudID int64 `json:"bk_cloud_id"`
-	BkBizID   int64 `json:"bk_biz_id"`
 }
 
 // TCloudVpc defines tencent cloud vpc.

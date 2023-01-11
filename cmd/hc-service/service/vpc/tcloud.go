@@ -48,7 +48,7 @@ func (v vpc) TCloudVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cli, err := v.ad.TCloud(cts.Kit, getRes.Spec.AccountID)
+	cli, err := v.ad.TCloud(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -62,8 +62,8 @@ func (v vpc) TCloudVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 	updateReq := &cloud.VpcBatchUpdateReq[cloud.TCloudVpcUpdateExt]{
 		Vpcs: []cloud.VpcUpdateReq[cloud.TCloudVpcUpdateExt]{{
 			ID: id,
-			Spec: &cloud.VpcUpdateSpec{
-				Memo: req.Spec.Memo,
+			VpcUpdateBaseInfo: cloud.VpcUpdateBaseInfo{
+				Memo: req.Memo,
 			},
 		}},
 	}
@@ -84,13 +84,13 @@ func (v vpc) TCloudVpcDelete(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cli, err := v.ad.TCloud(cts.Kit, getRes.Spec.AccountID)
+	cli, err := v.ad.TCloud(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	delOpt := &adcore.BaseRegionalDeleteOption{
-		BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.Spec.CloudID},
+		BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
 		Region:           getRes.Extension.Region,
 	}
 	err = cli.DeleteVpc(cts.Kit, delOpt)

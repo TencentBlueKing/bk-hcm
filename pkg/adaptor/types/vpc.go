@@ -164,8 +164,10 @@ type HuaweiVpcListResult struct {
 
 // Vpc defines vpc struct.
 type Vpc[T cloud.VpcExtension] struct {
-	Spec      *cloud.VpcSpec `json:"spec"`
-	Extension *T             `json:"extension"`
+	CloudID   string  `json:"cloud_id"`
+	Name      string  `json:"name"`
+	Memo      *string `json:"memo,omitempty"`
+	Extension *T      `json:"extension"`
 }
 
 // TCloudVpc defines tencent cloud vpc.

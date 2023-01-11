@@ -64,16 +64,16 @@ func (v *VpcClient) List(ctx context.Context, h http.Header, req *core.ListReq) 
 	return resp.Data, nil
 }
 
-// BatchUpdateAttachment batch update vpc attachment.
-func (v *VpcClient) BatchUpdateAttachment(ctx context.Context, h http.Header,
-	req *protocloud.VpcAttachmentBatchUpdateReq) error {
+// BatchUpdateBaseInfo batch update vpc base info.
+func (v *VpcClient) BatchUpdateBaseInfo(ctx context.Context, h http.Header,
+	req *protocloud.VpcBaseInfoBatchUpdateReq) error {
 
 	resp := new(rest.BaseResp)
 
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vpcs/attachments/batch").
+		SubResourcef("/vpcs/base/batch").
 		WithHeaders(h).
 		Do().
 		Into(resp)

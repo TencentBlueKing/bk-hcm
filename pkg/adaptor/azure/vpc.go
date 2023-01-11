@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/cidr"
@@ -108,11 +107,8 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 	}
 
 	v := &types.AzureVpc{
-		Spec: &cloud.VpcSpec{
-			CloudID:  converter.PtrToVal(data.ID),
-			Name:     converter.PtrToVal(data.Name),
-			Category: enumor.BizVpcCategory,
-		},
+		CloudID: converter.PtrToVal(data.ID),
+		Name:    converter.PtrToVal(data.Name),
 		Extension: &cloud.AzureVpcExtension{
 			ResourceGroup: resourceGroup,
 			Region:        converter.PtrToVal(data.Location),

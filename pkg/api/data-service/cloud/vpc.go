@@ -29,23 +29,68 @@ import (
 // -------------------------- Create --------------------------
 
 // VpcBatchCreateReq defines batch create vpc request.
-type VpcBatchCreateReq[T cloud.VpcExtension] struct {
+type VpcBatchCreateReq[T VpcCreateExtension] struct {
 	Vpcs []VpcCreateReq[T] `json:"vpcs" validate:"required"`
 }
 
 // VpcCreateReq defines create vpc request.
-type VpcCreateReq[T cloud.VpcExtension] struct {
-	Spec      *VpcCreateSpec `json:"spec" validate:"required"`
-	Extension *T             `json:"extension" validate:"required"`
-}
-
-// VpcCreateSpec defines create vpc request spec.
-type VpcCreateSpec struct {
+type VpcCreateReq[T VpcCreateExtension] struct {
 	AccountID string             `json:"account_id" validate:"required"`
 	CloudID   string             `json:"cloud_id" validate:"required"`
-	Name      *string            `json:"name" validate:"omitempty"`
+	Name      *string            `json:"name,omitempty" validate:"omitempty"`
 	Category  enumor.VpcCategory `json:"category" validate:"required"`
 	Memo      *string            `json:"memo,omitempty" validate:"omitempty"`
+	Extension *T                 `json:"extension" validate:"required"`
+}
+
+// VpcCreateExtension defines create vpc extensional info.
+type VpcCreateExtension interface {
+	TCloudVpcCreateExt | AwsVpcCreateExt | GcpVpcCreateExt | AzureVpcCreateExt | HuaWeiVpcCreateExt
+}
+
+// TCloudVpcCreateExt defines create tencent cloud vpc extensional info.
+type TCloudVpcCreateExt struct {
+	Region          string       `json:"region" validate:"required"`
+	Cidr            []TCloudCidr `json:"cidr" validate:"required"`
+	IsDefault       bool         `json:"is_default" validate:"required"`
+	EnableMulticast bool         `json:"enable_multicast" validate:"required"`
+	DnsServerSet    []string     `json:"dns_server_set" validate:"omitempty"`
+	DomainName      string       `json:"domain_name,omitempty" validate:"omitempty"`
+}
+
+// AwsVpcCreateExt defines create aws vpc extensional info.
+type AwsVpcCreateExt struct {
+	Region             string    `json:"region" validate:"required"`
+	Cidr               []AwsCidr `json:"cidr" validate:"required"`
+	State              string    `json:"state" validate:"required"`
+	InstanceTenancy    string    `json:"instance_tenancy" validate:"omitempty"`
+	IsDefault          bool      `json:"is_default" validate:"required"`
+	EnableDnsHostnames bool      `json:"enable_dns_hostnames" validate:"required"`
+	EnableDnsSupport   bool      `json:"enable_dns_support" validate:"required"`
+}
+
+// GcpVpcCreateExt defines gcp vpc extensional info.
+type GcpVpcCreateExt struct {
+	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks" validate:"required"`
+	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6" validate:"required"`
+	Mtu                   int64  `json:"mtu" validate:"required"`
+	RoutingMode           string `json:"routing_mode" validate:"omitempty"`
+}
+
+// AzureVpcCreateExt defines azure vpc extensional info.
+type AzureVpcCreateExt struct {
+	ResourceGroup string      `json:"resource_group" validate:"required"`
+	Region        string      `json:"region" validate:"required"`
+	DNSServers    []string    `json:"dns_servers" validate:"omitempty"`
+	Cidr          []AzureCidr `json:"cidr" validate:"required"`
+}
+
+// HuaWeiVpcCreateExt defines huawei vpc extensional info.
+type HuaWeiVpcCreateExt struct {
+	Region              string       `json:"region" validate:"required"`
+	Cidr                []HuaWeiCidr `json:"cidr" validate:"required"`
+	Status              string       `json:"status" validate:"required"`
+	EnterpriseProjectId string       `json:"enterprise_project_id" validate:"omitempty"`
 }
 
 // Validate VpcBatchCreateReq.
@@ -67,16 +112,18 @@ func (u *VpcBatchUpdateReq[T]) Validate() error {
 
 // VpcUpdateReq defines update vpc request.
 type VpcUpdateReq[T VpcUpdateExtension] struct {
-	ID        string         `json:"id" validate:"required"`
-	Spec      *VpcUpdateSpec `json:"spec" validate:"required_without=extension"`
-	Extension *T             `json:"extension" validate:"required_without=spec"`
+	ID                string `json:"id" validate:"required"`
+	VpcUpdateBaseInfo `json:",inline" validate:"omitempty"`
+	Extension         *T `json:"extension" validate:"omitempty"`
 }
 
-// VpcUpdateSpec defines update vpc request spec.
-type VpcUpdateSpec struct {
-	Name     *string            `json:"name" validate:"omitempty"`
-	Category enumor.VpcCategory `json:"category" validate:"omitempty"`
-	Memo     *string            `json:"memo" validate:"omitempty"`
+// VpcUpdateBaseInfo defines update vpc request base info.
+type VpcUpdateBaseInfo struct {
+	Name      *string            `json:"name,omitempty" validate:"omitempty"`
+	Category  enumor.VpcCategory `json:"category,omitempty" validate:"omitempty"`
+	Memo      *string            `json:"memo,omitempty" validate:"omitempty"`
+	BkCloudID int64              `json:"bk_cloud_id,omitempty" validate:"omitempty"`
+	BkBizID   int64              `json:"bk_biz_id,omitempty" validate:"omitempty"`
 }
 
 // VpcUpdateExtension defines vpc update request extensional info.
@@ -86,102 +133,57 @@ type VpcUpdateExtension interface {
 
 // TCloudVpcUpdateExt defines tencent cloud vpc extensional info.
 type TCloudVpcUpdateExt struct {
-	Region          string       `json:"region"`
-	Cidr            []TCloudCidr `json:"cidr"`
-	IsDefault       bool         `json:"is_default"`
-	EnableMulticast bool         `json:"enable_multicast"`
-	DnsServerSet    []string     `json:"dns_server_set"`
-	DomainName      *string      `json:"domain_name,omitempty"`
-}
-
-// TCloudCidr tencent cloud cidr
-type TCloudCidr struct {
-	Type     enumor.IPAddressType      `json:"type"`
-	Cidr     string                    `json:"cidr"`
-	Category enumor.TCloudCidrCategory `json:"category"`
+	Cidr            []TCloudCidr `json:"cidr,omitempty" validate:"omitempty"`
+	IsDefault       *bool        `json:"is_default,omitempty" validate:"omitempty"`
+	EnableMulticast *bool        `json:"enable_multicast,omitempty" validate:"omitempty"`
+	DnsServerSet    []string     `json:"dns_server_set,omitempty" validate:"omitempty"`
+	DomainName      *string      `json:"domain_name,omitempty" validate:"omitempty"`
 }
 
 // AwsVpcUpdateExt defines aws vpc extensional info.
 type AwsVpcUpdateExt struct {
-	Region             string    `json:"region"`
-	Cidr               []AwsCidr `json:"cidr"`
-	State              string    `json:"state"`
-	InstanceTenancy    string    `json:"instance_tenancy"`
-	IsDefault          bool      `json:"is_default"`
-	EnableDnsHostnames bool      `json:"enable_dns_hostnames"`
-	EnableDnsSupport   bool      `json:"enable_dns_support"`
-}
-
-// AwsCidr aws cidr
-type AwsCidr struct {
-	Type        enumor.IPAddressType `json:"type"`
-	Cidr        string               `json:"cidr"`
-	AddressPool string               `json:"address_pool"`
-	State       string               `json:"state"`
+	Cidr               []AwsCidr `json:"cidr,omitempty" validate:"omitempty"`
+	State              string    `json:"state,omitempty" validate:"omitempty"`
+	InstanceTenancy    *string   `json:"instance_tenancy,omitempty" validate:"omitempty"`
+	IsDefault          *bool     `json:"is_default,omitempty" validate:"omitempty"`
+	EnableDnsHostnames *bool     `json:"enable_dns_hostnames,omitempty" validate:"omitempty"`
+	EnableDnsSupport   *bool     `json:"enable_dns_support,omitempty" validate:"omitempty"`
 }
 
 // GcpVpcUpdateExt defines gcp vpc extensional info.
 type GcpVpcUpdateExt struct {
-	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks"`
-	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6"`
-	Mtu                   int64  `json:"mtu"`
-	RoutingMode           string `json:"routing_mode"`
+	EnableUlaInternalIpv6 *bool  `json:"enable_ula_internal_ipv6,omitempty" validate:"omitempty"`
+	Mtu                   int64  `json:"mtu,omitempty" validate:"omitempty"`
+	RoutingMode           string `json:"routing_mode,omitempty" validate:"omitempty"`
 }
 
 // AzureVpcUpdateExt defines azure vpc extensional info.
 type AzureVpcUpdateExt struct {
-	ResourceGroup string      `json:"resource_group"`
-	Region        string      `json:"region"`
-	DNSServers    []*string   `json:"dns_servers"`
-	Cidr          []AzureCidr `json:"cidr"`
-}
-
-// AzureCidr azure cidr
-type AzureCidr struct {
-	Type enumor.IPAddressType `json:"type"`
-	Cidr string               `json:"cidr"`
+	DNSServers []string    `json:"dns_servers,omitempty" validate:"omitempty"`
+	Cidr       []AzureCidr `json:"cidr,omitempty" validate:"omitempty"`
 }
 
 // HuaWeiVpcUpdateExt defines huawei vpc extensional info.
 type HuaWeiVpcUpdateExt struct {
-	Region              string       `json:"region"`
-	Cidr                []HuaWeiCidr `json:"cidr"`
-	Status              string       `json:"status"`
-	EnterpriseProjectId string       `json:"enterprise_project_id"`
+	Cidr                []HuaWeiCidr `json:"cidr,omitempty" validate:"omitempty"`
+	Status              string       `json:"status,omitempty" validate:"omitempty"`
+	EnterpriseProjectId *string      `json:"enterprise_project_id,omitempty" validate:"omitempty"`
 }
 
-// HuaWeiCidr huawei cidr
-type HuaWeiCidr struct {
-	Type enumor.IPAddressType `json:"type"`
-	Cidr string               `json:"cidr"`
+// VpcBaseInfoBatchUpdateReq defines batch update vpc base info request.
+type VpcBaseInfoBatchUpdateReq struct {
+	Vpcs []VpcBaseInfoUpdateReq `json:"vpcs" validate:"required"`
 }
 
-// VpcAttachment vpc attachment.
-type VpcAttachment struct {
-	BkCloudID int64 `json:"bk_cloud_id"`
-	BkBizID   int64 `json:"bk_biz_id"`
-}
-
-// VpcAttachmentBatchUpdateReq defines batch update vpc attachment request.
-type VpcAttachmentBatchUpdateReq struct {
-	Attachments []VpcAttachmentUpdateReq `json:"attachments" validate:"required"`
-}
-
-// Validate VpcAttachmentBatchUpdateReq.
-func (u *VpcAttachmentBatchUpdateReq) Validate() error {
+// Validate VpcBaseInfoBatchUpdateReq.
+func (u *VpcBaseInfoBatchUpdateReq) Validate() error {
 	return validator.Validate.Struct(u)
 }
 
-// VpcAttachmentUpdateReq defines update vpc attachment request.
-type VpcAttachmentUpdateReq struct {
-	ID         string               `json:"id" validate:"required"`
-	Attachment *VpcUpdateAttachment `json:"attachment" validate:"required"`
-}
-
-// VpcUpdateAttachment defines update vpc attachment.
-type VpcUpdateAttachment struct {
-	BkCloudID int64 `json:"bk_cloud_id" validate:"required"`
-	BkBizID   int64 `json:"bk_biz_id" validate:"required"`
+// VpcBaseInfoUpdateReq defines update vpc base info request.
+type VpcBaseInfoUpdateReq struct {
+	IDs  []string           `json:"id" validate:"required"`
+	Data *VpcUpdateBaseInfo `json:"data" validate:"required"`
 }
 
 // -------------------------- Get --------------------------
@@ -204,4 +206,33 @@ type VpcListResp struct {
 type VpcListResult struct {
 	Count   uint64          `json:"count"`
 	Details []cloud.BaseVpc `json:"details"`
+}
+
+// -------------------------- Cidr --------------------------
+
+// TCloudCidr tencent cloud cidr
+type TCloudCidr struct {
+	Type     enumor.IPAddressType      `json:"type" validate:"required"`
+	Cidr     string                    `json:"cidr" validate:"required"`
+	Category enumor.TCloudCidrCategory `json:"category" validate:"required"`
+}
+
+// AwsCidr aws cidr
+type AwsCidr struct {
+	Type        enumor.IPAddressType `json:"type" validate:"required"`
+	Cidr        string               `json:"cidr" validate:"required"`
+	AddressPool string               `json:"address_pool" validate:"required"`
+	State       string               `json:"state" validate:"required"`
+}
+
+// AzureCidr azure cidr
+type AzureCidr struct {
+	Type enumor.IPAddressType `json:"type" validate:"required"`
+	Cidr string               `json:"cidr" validate:"required"`
+}
+
+// HuaWeiCidr huawei cidr
+type HuaWeiCidr struct {
+	Type enumor.IPAddressType `json:"type" validate:"required"`
+	Cidr string               `json:"cidr" validate:"required"`
 }

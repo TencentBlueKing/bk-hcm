@@ -138,11 +138,8 @@ func convertVpc(data *model.Vpc, region string) *types.HuaWeiVpc {
 	}
 
 	v := &types.HuaWeiVpc{
-		Spec: &cloud.VpcSpec{
-			CloudID:  data.Id,
-			Name:     data.Name,
-			Category: enumor.BizVpcCategory,
-		},
+		CloudID: data.Id,
+		Name:    data.Name,
 		Extension: &cloud.HuaWeiVpcExtension{
 			Region:              region,
 			Cidr:                nil,

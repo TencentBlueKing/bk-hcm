@@ -45,14 +45,14 @@ func NewVpcClient(client rest.ClientInterface) *VpcClient {
 
 // BatchCreate batch create huawei vpc.
 func (v *VpcClient) BatchCreate(ctx context.Context, h http.Header,
-	req *protocloud.VpcBatchCreateReq[corecloud.HuaWeiVpcExtension]) (*core.BatchCreateResult, error) {
+	req *protocloud.VpcBatchCreateReq[protocloud.HuaWeiVpcCreateExt]) (*core.BatchCreateResult, error) {
 
 	resp := new(core.BatchCreateResp)
 
 	err := v.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vendors/%s/vpcs/batch/create", enumor.HuaWei).
+		SubResourcef("/vpcs/batch/create", enumor.HuaWei).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -75,7 +75,7 @@ func (v *VpcClient) Get(ctx context.Context, h http.Header, id string) (*coreclo
 
 	err := v.client.Get().
 		WithContext(ctx).
-		SubResourcef("/vendors/%s/vpcs/%s", enumor.HuaWei, id).
+		SubResourcef("/vpcs/%s", enumor.HuaWei, id).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -99,7 +99,7 @@ func (v *VpcClient) BatchUpdate(ctx context.Context, h http.Header,
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vendors/%s/vpcs/batch", enumor.HuaWei).
+		SubResourcef("/vpcs/batch", enumor.HuaWei).
 		WithHeaders(h).
 		Do().
 		Into(resp)

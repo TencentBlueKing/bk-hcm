@@ -23,11 +23,6 @@ import "hcm/pkg/criteria/validator"
 
 // VpcUpdateReq defines update vpc request.
 type VpcUpdateReq struct {
-	Spec *VpcUpdateSpec `json:"spec" validate:"omitempty"`
-}
-
-// VpcUpdateSpec defines update vpc request spec.
-type VpcUpdateSpec struct {
 	Memo *string `json:"memo" validate:"omitempty"`
 }
 

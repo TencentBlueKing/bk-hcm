@@ -108,11 +108,8 @@ func convertVpc(data *vpc.Vpc, region string) *types.TCloudVpc {
 	}
 
 	v := &types.TCloudVpc{
-		Spec: &cloud.VpcSpec{
-			CloudID:  converter.PtrToVal(data.VpcId),
-			Name:     converter.PtrToVal(data.VpcName),
-			Category: enumor.BizVpcCategory,
-		},
+		CloudID: converter.PtrToVal(data.VpcId),
+		Name:    converter.PtrToVal(data.VpcName),
 		Extension: &cloud.TCloudVpcExtension{
 			Region:          region,
 			Cidr:            nil,

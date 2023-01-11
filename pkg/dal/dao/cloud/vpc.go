@@ -109,8 +109,7 @@ func (v *vpcDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cloud
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddBlankedFields("name", "is_default", "assigned", "memo").
-		AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddBlankedFields("name", "memo").AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)

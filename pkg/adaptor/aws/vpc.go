@@ -131,10 +131,6 @@ func convertVpc(data *ec2.Vpc, enableDnsHostnames, enableDnsSupport bool, region
 	}
 
 	v := &types.AwsVpc{
-		Spec: &cloud.VpcSpec{
-			CloudID:  converter.PtrToVal(data.VpcId),
-			Category: enumor.BizVpcCategory,
-		},
 		Extension: &cloud.AwsVpcExtension{
 			Region:             region,
 			State:              converter.PtrToVal(data.State),
@@ -147,7 +143,7 @@ func convertVpc(data *ec2.Vpc, enableDnsHostnames, enableDnsSupport bool, region
 
 	for _, tag := range data.Tags {
 		if converter.PtrToVal(tag.Key) == tagKeyForResourceName {
-			v.Spec.Name = converter.PtrToVal(tag.Value)
+			v.Name = converter.PtrToVal(tag.Value)
 			break
 		}
 	}

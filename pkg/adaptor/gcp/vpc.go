@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -119,12 +118,9 @@ func (g *Gcp) ListVpc(kt *kit.Kit, opt *core.GcpListOption) (*types.GcpVpcListRe
 	details := make([]types.GcpVpc, 0, len(resp.Items))
 	for _, item := range resp.Items {
 		vpc := types.GcpVpc{
-			Spec: &cloud.VpcSpec{
-				CloudID:  strconv.FormatUint(item.Id, 10),
-				Name:     item.Name,
-				Category: enumor.BizVpcCategory,
-				Memo:     &item.Description,
-			},
+			CloudID: strconv.FormatUint(item.Id, 10),
+			Name:    item.Name,
+			Memo:    &item.Description,
 			Extension: &cloud.GcpVpcExtension{
 				AutoCreateSubnetworks: item.AutoCreateSubnetworks,
 				EnableUlaInternalIpv6: item.EnableUlaInternalIpv6,
