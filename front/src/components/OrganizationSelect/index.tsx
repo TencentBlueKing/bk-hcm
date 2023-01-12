@@ -53,6 +53,7 @@ export default defineComponent({
       }
     });
 
+
     function isAllLoaded(id: number): boolean {
       if (!id) return true;
       const dept = departmentMap.value.get(id);
