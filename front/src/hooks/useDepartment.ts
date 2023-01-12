@@ -45,7 +45,7 @@ export function useDepartment() {
       if (Array.isArray(parent?.children)) {
         parent.children.push(dept);
         parent.loaded = true;
-        parent.isOpen = true;
+        parent.isOpen = false;
       }
     });
     return newDepartmentMap;
