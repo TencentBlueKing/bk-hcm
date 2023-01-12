@@ -289,11 +289,10 @@ func (a *accountSvc) createForAzure(cts *rest.Contexts, req *proto.AccountCreate
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.AzureAccountCheckReq{
-			CloudTenantID:         extension.CloudTenantID,
-			CloudSubscriptionID:   extension.CloudSubscriptionID,
-			CloudSubscriptionName: extension.CloudSubscriptionName,
-			CloudClientID:         extension.CloudClientID,
-			CloudClientSecret:     extension.CloudClientSecret,
+			CloudTenantID:        extension.CloudTenantID,
+			CloudSubscriptionID:  extension.CloudSubscriptionID,
+			CloudApplicationID:   extension.CloudApplicationID,
+			CloudClientSecretKey: extension.CloudClientSecretKey,
 		},
 	)
 	if err != nil {
@@ -320,8 +319,8 @@ func (a *accountSvc) createForAzure(cts *rest.Contexts, req *proto.AccountCreate
 				CloudSubscriptionName: extension.CloudSubscriptionName,
 				CloudApplicationID:    extension.CloudApplicationID,
 				CloudApplicationName:  extension.CloudApplicationName,
-				CloudClientID:         extension.CloudClientID,
-				CloudClientSecret:     extension.CloudClientSecret,
+				CloudClientSecretID:   extension.CloudClientSecretID,
+				CloudClientSecretKey:  extension.CloudClientSecretKey,
 			},
 		},
 	)

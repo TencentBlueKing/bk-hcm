@@ -119,10 +119,10 @@ func (cli *SecretClient) AzureCredential(kt *kit.Kit, accountID string) (*types.
 	}
 
 	cred := &types.AzureCredential{
-		CloudTenantID:       account.Extension.CloudTenantID,
-		CloudSubscriptionID: account.Extension.CloudSubscriptionID,
-		CloudClientID:       account.Extension.CloudClientID,
-		CloudClientSecret:   account.Extension.CloudClientSecret,
+		CloudTenantID:        account.Extension.CloudTenantID,
+		CloudSubscriptionID:  account.Extension.CloudSubscriptionID,
+		CloudApplicationID:   account.Extension.CloudApplicationID,
+		CloudClientSecretKey: account.Extension.CloudClientSecretKey,
 	}
 
 	if err := cred.Validate(); err != nil {

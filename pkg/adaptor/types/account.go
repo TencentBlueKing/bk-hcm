@@ -30,11 +30,11 @@ type TCloudAccountInfo struct {
 // Validate TCloudAccountInfo.
 func (t *TCloudAccountInfo) Validate() error {
 	if len(t.CloudMainAccountID) == 0 {
-		return errf.New(errf.InvalidParameter, "main account cid is required")
+		return errf.New(errf.InvalidParameter, "main account id is required")
 	}
 
 	if len(t.CloudSubAccountID) == 0 {
-		return errf.New(errf.InvalidParameter, "account cid is required")
+		return errf.New(errf.InvalidParameter, "account id is required")
 	}
 
 	return nil
@@ -49,7 +49,7 @@ type AwsAccountInfo struct {
 // Validate AwsAccountInfo
 func (a *AwsAccountInfo) Validate() error {
 	if len(a.CloudAccountID) == 0 {
-		return errf.New(errf.InvalidParameter, "account cid is required")
+		return errf.New(errf.InvalidParameter, "account id is required")
 	}
 
 	if len(a.CloudIamUsername) == 0 {
