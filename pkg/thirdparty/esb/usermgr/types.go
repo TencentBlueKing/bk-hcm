@@ -25,14 +25,16 @@ import (
 
 type RetrieveDepartmentReq struct {
 	*types.CommParams
-	ID     int64    `json:"id"`
-	Fields []string `json:"fields"`
+	ID            int64    `json:"id"`
+	Fields        []string `json:"fields"`
+	WithAncestors bool     `json:"with_ancestors"`
 }
 
 type RetrieveDepartmentRespData struct {
-	ID       int64  `json:"id"`
-	Name     string `json:"name"`
-	FullName string `json:"full_name"`
+	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
+	FullName  string      `json:"full_name"`
+	Ancestors interface{} `json:"ancestors"`
 }
 
 type RetrieveDepartmentResp struct {

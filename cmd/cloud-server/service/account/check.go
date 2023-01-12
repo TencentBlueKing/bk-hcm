@@ -191,11 +191,10 @@ func (a *accountSvc) checkForAzure(cts *rest.Contexts, req *proto.AccountCheckRe
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.AzureAccountCheckReq{
-			CloudTenantID:         extension.CloudTenantID,
-			CloudSubscriptionID:   extension.CloudSubscriptionID,
-			CloudSubscriptionName: extension.CloudSubscriptionName,
-			CloudClientID:         extension.CloudClientID,
-			CloudClientSecret:     extension.CloudClientSecret,
+			CloudTenantID:        extension.CloudTenantID,
+			CloudSubscriptionID:  extension.CloudSubscriptionID,
+			CloudApplicationID:   extension.CloudApplicationID,
+			CloudClientSecretKey: extension.CloudClientSecretKey,
 		},
 	)
 	if err != nil {
@@ -268,7 +267,7 @@ func (a *accountSvc) checkByIDForTCloud(cts *rest.Contexts, req *proto.AccountCh
 		cts.Kit.Header(),
 		&hcproto.TCloudAccountCheckReq{
 			CloudMainAccountID: account.Extension.CloudMainAccountID,
-			CloudSubAccountID:  account.Extension.CloudSubAccountID,
+			CloudSubAccountID:  extension.CloudSubAccountID,
 			CloudSecretID:      extension.CloudSecretID,
 			CloudSecretKey:     extension.CloudSecretKey,
 		},
@@ -303,7 +302,7 @@ func (a *accountSvc) checkByIDForAws(cts *rest.Contexts, req *proto.AccountCheck
 		cts.Kit.Header(),
 		&hcproto.AwsAccountCheckReq{
 			CloudAccountID:   account.Extension.CloudAccountID,
-			CloudIamUsername: account.Extension.CloudIamUsername,
+			CloudIamUsername: extension.CloudIamUsername,
 			CloudSecretID:    extension.CloudSecretID,
 			CloudSecretKey:   extension.CloudSecretKey,
 		},
@@ -340,10 +339,10 @@ func (a *accountSvc) checkByIDForHuaWei(cts *rest.Contexts, req *proto.AccountCh
 			CloudMainAccountName: account.Extension.CloudMainAccountName,
 			CloudSubAccountID:    account.Extension.CloudSubAccountID,
 			CloudSubAccountName:  account.Extension.CloudSubAccountName,
+			CloudIamUserID:       extension.CloudIamUserID,
+			CloudIamUsername:     extension.CloudIamUsername,
 			CloudSecretID:        extension.CloudSecretID,
 			CloudSecretKey:       extension.CloudSecretKey,
-			CloudIamUserID:       account.Extension.CloudIamUserID,
-			CloudIamUsername:     account.Extension.CloudIamUsername,
 		},
 	)
 	if err != nil {
@@ -408,11 +407,10 @@ func (a *accountSvc) checkByIDForAzure(cts *rest.Contexts, req *proto.AccountChe
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.AzureAccountCheckReq{
-			CloudTenantID:         account.Extension.CloudTenantID,
-			CloudSubscriptionID:   account.Extension.CloudSubscriptionID,
-			CloudSubscriptionName: account.Extension.CloudSubscriptionName,
-			CloudClientID:         extension.CloudClientID,
-			CloudClientSecret:     extension.CloudClientSecret,
+			CloudTenantID:        account.Extension.CloudTenantID,
+			CloudSubscriptionID:  account.Extension.CloudSubscriptionID,
+			CloudApplicationID:   extension.CloudApplicationID,
+			CloudClientSecretKey: extension.CloudClientSecretKey,
 		},
 	)
 	if err != nil {

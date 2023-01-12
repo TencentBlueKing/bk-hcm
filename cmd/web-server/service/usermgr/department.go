@@ -51,8 +51,9 @@ func (u *usermgrSvc) GetDepartment(cts *rest.Contexts) (interface{}, error) {
 		return nil, fmt.Errorf("department id invalid, err: %v", err)
 	}
 	params := &usermgr.RetrieveDepartmentReq{
-		ID:     departmentID,
-		Fields: []string{},
+		ID:            departmentID,
+		Fields:        []string{},
+		WithAncestors: true,
 	}
 	data, err := u.esbClient.Usermgr().RetrieveDepartment(cts.Kit.Ctx, params)
 	if err != nil {

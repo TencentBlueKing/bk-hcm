@@ -157,7 +157,7 @@ func (a account) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
 
 	client, err := a.ad.Adaptor().Azure(&types.AzureCredential{
 		CloudTenantID: req.CloudTenantID, CloudSubscriptionID: req.CloudSubscriptionID,
-		CloudClientID: req.CloudClientID, CloudClientSecret: req.CloudClientSecret,
+		CloudApplicationID: req.CloudApplicationID, CloudClientSecretKey: req.CloudClientSecretKey,
 	})
 	if err != nil {
 		return nil, err
