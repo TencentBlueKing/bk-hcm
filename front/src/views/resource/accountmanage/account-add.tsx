@@ -47,13 +47,10 @@ export default defineComponent({
     };
 
     onMounted(async () => {
-      console.log(122133333);
       /* 获取业务列表接口 */
       getBusinessList();
     });
     const formRef = ref<InstanceType<typeof Form>>(null);
-    const noUser = ref<Boolean>(false);
-    const noOrganize = ref<Boolean>(false);
     const projectModel = reactive<ProjectModel>({
       ...initProjectModel,
     });
@@ -69,7 +66,6 @@ export default defineComponent({
     const getBusinessList = async () => {
       try {
         const res = await accountStore.getBizList();
-        console.log(res);
         businessList.list = res?.data || BUSINESS_TYPE;
       } catch (error: any) {
         Message({ theme: 'error', message: error?.message || '系统异常' });
@@ -83,7 +79,6 @@ export default defineComponent({
 
     // 提交操作
     const submit = async () => {
-      noOrganize.value = !projectModel.departmentId.length;
       await formRef.value?.validate();
       submitLoading.value = true;
       try {
@@ -99,7 +94,7 @@ export default defineComponent({
           },
           attachment: {
             bk_biz_ids: projectModel.bizIds.length === businessList.list.length
-              ? -1 : projectModel.bizIds,
+              ? [-1] : projectModel.bizIds,
           },
           extension: {},
         };
@@ -491,10 +486,13 @@ export default defineComponent({
     );
 
     watch(
-      () => projectModel.departmentId,
-      (val) => {
-        noOrganize.value = !val.length;
+      () => projectModel.departmentId,    // 监听组织架构内容
+      async () => {
+        if (projectModel.departmentId.length) {
+          await formRef.value?.clearValidate();
+        }
       },
+      { deep: true },
     );
 
 
@@ -566,7 +564,6 @@ export default defineComponent({
         content: () => (
           <section>
             <MemberSelect class="w450" v-model={projectModel.managers}/>
-            {noUser.value ? <span class="form-error-tip">责任人不能为空</span> : ''}
           </section>
         ),
       },
@@ -577,7 +574,6 @@ export default defineComponent({
         content: () => (
           <section>
             <OrganizationSelect class="w450" v-model={projectModel.departmentId} />
-            {noOrganize.value ? <span class="form-error-tip">组织架构不能为空</span> : ''}
           </section>
         ),
       },
