@@ -221,8 +221,8 @@ type TCloudCidr struct {
 type AwsCidr struct {
 	Type        enumor.IPAddressType `json:"type" validate:"required"`
 	Cidr        string               `json:"cidr" validate:"required"`
-	AddressPool string               `json:"address_pool" validate:"required"`
-	State       string               `json:"state" validate:"required"`
+	AddressPool string               `json:"address_pool" validate:"omitempty"`
+	State       string               `json:"state" validate:"omitempty"`
 }
 
 // AzureCidr azure cidr

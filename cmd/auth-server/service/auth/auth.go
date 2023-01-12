@@ -395,6 +395,10 @@ func (a *Auth) getInstIDNameMap(kt *kit.Kit, resTypeIDsMap map[client.TypeID][]s
 
 // ListAuthorizedInstances list authorized instances info.
 func (a *Auth) ListAuthorizedInstances(cts *rest.Contexts) (interface{}, error) {
+	if a.disableAuth {
+		return client.AuthorizeList{IsAny: true}, nil
+	}
+
 	req := new(authserver.ListAuthorizedInstancesReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
