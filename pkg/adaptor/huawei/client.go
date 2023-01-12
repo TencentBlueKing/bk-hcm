@@ -29,6 +29,7 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/region"
 	evs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2"
 	iam "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3"
+	vpcv2 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2"
 	vpc "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3"
 	vpcregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/region"
 )
@@ -77,6 +78,23 @@ func (c *clientSet) vpcClient(regionID string) (cli *vpc.VpcClient, err error) {
 
 	client := vpc.NewVpcClient(
 		vpc.VpcClientBuilder().
+			WithRegion(vpcregion.ValueOf(regionID)).
+			WithCredential(c.credentials).
+			WithHttpConfig(config.DefaultHttpConfig()).
+			Build())
+
+	return client, nil
+}
+
+func (c *clientSet) vpcClientV2(regionID string) (cli *vpcv2.VpcClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+
+	client := vpcv2.NewVpcClient(
+		vpcv2.VpcClientBuilder().
 			WithRegion(vpcregion.ValueOf(regionID)).
 			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).

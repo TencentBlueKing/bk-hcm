@@ -32,9 +32,9 @@ import (
 	"google.golang.org/api/compute/v1"
 )
 
-// UpdateVpc update vpc.
-// reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/patch
-func (g *Gcp) UpdateVpc(kt *kit.Kit, opt *types.GcpVpcUpdateOption) error {
+// UpdateSubnet update subnet.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/patch
+func (g *Gcp) UpdateSubnet(kt *kit.Kit, opt *types.GcpSubnetUpdateOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (g *Gcp) UpdateVpc(kt *kit.Kit, opt *types.GcpVpcUpdateOption) error {
 		return err
 	}
 
-	req := &compute.Network{
+	req := &compute.Subnetwork{
 		Description: converter.PtrToVal(opt.Data.Memo),
 		// make sure AutoCreateSubnetworks field is included in request
 		// gcp has a bug with this api, if this is not specified, the request will fail
@@ -54,18 +54,19 @@ func (g *Gcp) UpdateVpc(kt *kit.Kit, opt *types.GcpVpcUpdateOption) error {
 	}
 
 	cloudProjectID := g.clientSet.credential.CloudProjectID
-	_, err = client.Networks.Patch(cloudProjectID, opt.ResourceID, req).Context(kt.Ctx).RequestId(kt.Rid).Do()
+	_, err = client.Subnetworks.Patch(cloudProjectID, opt.Region, opt.ResourceID, req).Context(kt.Ctx).
+		RequestId(kt.Rid).Do()
 	if err != nil {
-		logs.Errorf("create vpc failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("create subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// DeleteVpc delete vpc.
-// reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/delete
-func (g *Gcp) DeleteVpc(kt *kit.Kit, opt *core.BaseDeleteOption) error {
+// DeleteSubnet delete subnet.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/delete
+func (g *Gcp) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -76,18 +77,19 @@ func (g *Gcp) DeleteVpc(kt *kit.Kit, opt *core.BaseDeleteOption) error {
 	}
 
 	cloudProjectID := g.clientSet.credential.CloudProjectID
-	_, err = client.Networks.Delete(cloudProjectID, opt.ResourceID).Context(kt.Ctx).RequestId(kt.Rid).Do()
+	_, err = client.Subnetworks.Delete(cloudProjectID, opt.Region, opt.ResourceID).Context(kt.Ctx).
+		RequestId(kt.Rid).Do()
 	if err != nil {
-		logs.Errorf("delete vpc failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("delete subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// ListVpc list vpc.
-// reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/list
-func (g *Gcp) ListVpc(kt *kit.Kit, opt *core.GcpListOption) (*types.GcpVpcListResult, error) {
+// ListSubnet list subnet.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/list
+func (g *Gcp) ListSubnet(kt *kit.Kit, opt *types.GcpSubnetListOption) (*types.GcpSubnetListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -99,7 +101,7 @@ func (g *Gcp) ListVpc(kt *kit.Kit, opt *core.GcpListOption) (*types.GcpVpcListRe
 
 	cloudProjectID := g.clientSet.credential.CloudProjectID
 
-	listCall := client.Networks.List(cloudProjectID).Context(kt.Ctx)
+	listCall := client.Subnetworks.List(cloudProjectID, opt.Region).Context(kt.Ctx)
 
 	if len(opt.ResourceIDs) > 0 {
 		listCall.Filter(generateResourceIDsFilter(opt.ResourceIDs))
@@ -111,34 +113,45 @@ func (g *Gcp) ListVpc(kt *kit.Kit, opt *core.GcpListOption) (*types.GcpVpcListRe
 
 	resp, err := listCall.Do()
 	if err != nil {
-		logs.Errorf("list vpc failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("list subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	details := make([]types.GcpVpc, 0, len(resp.Items))
+	details := make([]types.GcpSubnet, 0, len(resp.Items))
 	for _, item := range resp.Items {
-		details = append(details, converter.PtrToVal(convertVpc(item)))
+		details = append(details, converter.PtrToVal(convertSubnet(item)))
 	}
 
-	return &types.GcpVpcListResult{NextPageToken: resp.NextPageToken, Details: details}, nil
+	return &types.GcpSubnetListResult{NextPageToken: resp.NextPageToken, Details: details}, nil
 }
 
-func convertVpc(data *compute.Network) *types.GcpVpc {
+func convertSubnet(data *compute.Subnetwork) *types.GcpSubnet {
 	if data == nil {
 		return nil
 	}
 
-	vpc := &types.GcpVpc{
-		CloudID: strconv.FormatUint(data.Id, 10),
-		Name:    data.Name,
-		Memo:    &data.Description,
-		Extension: &cloud.GcpVpcExtension{
-			AutoCreateSubnetworks: data.AutoCreateSubnetworks,
-			EnableUlaInternalIpv6: data.EnableUlaInternalIpv6,
-			Mtu:                   data.Mtu,
-			RoutingMode:           converter.PtrToVal(data.RoutingConfig).RoutingMode,
+	subnet := &types.GcpSubnet{
+		CloudVpcID: data.Network,
+		CloudID:    strconv.FormatUint(data.Id, 10),
+		Name:       data.Name,
+		Memo:       &data.Description,
+		Extension: &cloud.GcpSubnetExtension{
+			Region:                data.Region,
+			StackType:             data.StackType,
+			Ipv6AccessType:        data.Ipv6AccessType,
+			GatewayAddress:        data.GatewayAddress,
+			PrivateIpGoogleAccess: data.PrivateIpGoogleAccess,
+			EnableFlowLogs:        data.EnableFlowLogs,
 		},
 	}
 
-	return vpc
+	if len(data.IpCidrRange) != 0 {
+		subnet.Ipv4Cidr = []string{data.IpCidrRange}
+	}
+
+	if len(data.Ipv6CidrRange) != 0 {
+		subnet.Ipv6Cidr = []string{data.Ipv6CidrRange}
+	}
+
+	return subnet
 }

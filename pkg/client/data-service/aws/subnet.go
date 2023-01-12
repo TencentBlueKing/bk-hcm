@@ -26,7 +26,6 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -52,7 +51,7 @@ func (v *SubnetClient) BatchCreate(ctx context.Context, h http.Header,
 	err := v.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/subnets/batch/create", enumor.Aws).
+		SubResourcef("/subnets/batch/create").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -75,7 +74,7 @@ func (v *SubnetClient) Get(ctx context.Context, h http.Header, id string) (*core
 
 	err := v.client.Get().
 		WithContext(ctx).
-		SubResourcef("/subnets/%s", enumor.Aws, id).
+		SubResourcef("/subnets/%s", id).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -99,7 +98,7 @@ func (v *SubnetClient) BatchUpdate(ctx context.Context, h http.Header,
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/subnets/batch", enumor.Aws).
+		SubResourcef("/subnets/batch").
 		WithHeaders(h).
 		Do().
 		Into(resp)

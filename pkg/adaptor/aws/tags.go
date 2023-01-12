@@ -22,6 +22,8 @@ package aws
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+
+	"hcm/pkg/tools/converter"
 )
 
 // tagKeyForResourceName is tag key that define resource name.
@@ -32,7 +34,8 @@ const tagKeyForResourceName = "Name"
 type tagResourceType string
 
 const (
-	vpcTagResType tagResourceType = "vpc"
+	vpcTagResType    tagResourceType = "vpc"
+	subnetTagResType tagResourceType = "subnet"
 )
 
 // genNameTags generate name ec2 tags.
@@ -50,4 +53,19 @@ func genNameTags(resourceType tagResourceType, name string) []*ec2.TagSpecificat
 	}
 
 	return []*ec2.TagSpecification{tagSpec}
+}
+
+// parseTags parse ec2 tags to name and other tags.
+func parseTags(tags []*ec2.Tag) (string, []*ec2.Tag) {
+	for i, tag := range tags {
+		if tag == nil {
+			continue
+		}
+
+		if tag.Key != nil && *tag.Key == tagKeyForResourceName {
+			return converter.PtrToVal(tag.Value), append(tags[:i], tags[i+1:]...)
+		}
+	}
+
+	return "", tags
 }

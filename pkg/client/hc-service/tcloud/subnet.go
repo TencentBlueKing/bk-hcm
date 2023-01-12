@@ -17,20 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package huawei
+package tcloud
 
 import (
 	"context"
 	"net/http"
 
-	"hcm/pkg/api/core"
-	corecloud "hcm/pkg/api/core/cloud"
-	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// SubnetClient is data service subnet api client.
+// SubnetClient is hc service tencent cloud subnet api client.
 type SubnetClient struct {
 	client rest.ClientInterface
 }
@@ -42,63 +41,36 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 	}
 }
 
-// BatchCreate batch create huawei subnet.
-func (v *SubnetClient) BatchCreate(ctx context.Context, h http.Header,
-	req *protocloud.SubnetBatchCreateReq[corecloud.HuaWeiSubnetExtension]) (*core.BatchCreateResult, error) {
-
-	resp := new(core.BatchCreateResp)
-
-	err := v.client.Post().
-		WithContext(ctx).
-		Body(req).
-		SubResourcef("/subnets/batch/create").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
-}
-
-// Get huawei subnet.
-func (v *SubnetClient) Get(ctx context.Context, h http.Header, id string) (*corecloud.Subnet[corecloud.HuaWeiSubnetExtension],
-	error) {
-
-	resp := new(protocloud.SubnetGetResp[corecloud.HuaWeiSubnetExtension])
-
-	err := v.client.Get().
-		WithContext(ctx).
-		SubResourcef("/subnets/%s", id).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
-}
-
-// BatchUpdate huawei subnet.
-func (v *SubnetClient) BatchUpdate(ctx context.Context, h http.Header,
-	req *protocloud.SubnetBatchUpdateReq[protocloud.HuaWeiSubnetUpdateExt]) error {
-
+// Update subnet.
+func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *types.TCloudSubnetUpdateOption) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/subnets/batch").
+		SubResourcef("/vendors/%s/subnets/%s", enumor.TCloud, id).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// Delete subnet.
+func (v *SubnetClient) Delete(ctx context.Context, h http.Header, id string) error {
+	resp := new(rest.BaseResp)
+
+	err := v.client.Delete().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef("/vendors/%s/subnets/%s", enumor.TCloud, id).
 		WithHeaders(h).
 		Do().
 		Into(resp)

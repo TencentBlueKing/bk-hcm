@@ -34,14 +34,14 @@ type SubnetBatchCreateReq[T cloud.SubnetExtension] struct {
 
 // SubnetCreateReq defines create subnet request.
 type SubnetCreateReq[T cloud.SubnetExtension] struct {
-	AccountID  string  `json:"account_id" validate:"required"`
-	CloudVpcID string  `json:"cloud_vpc_id" validate:"required"`
-	CloudID    string  `json:"cloud_id" validate:"required"`
-	Name       *string `json:"name,omitempty" validate:"required"`
-	Ipv4Cidr   string  `json:"ipv4_cidr" validate:"required"`
-	Ipv6Cidr   *string `json:"ipv6_cidr,omitempty" validate:"omitempty"`
-	Memo       *string `json:"memo,omitempty" validate:"omitempty"`
-	Extension  *T      `json:"extension" validate:"required"`
+	AccountID  string   `json:"account_id" validate:"required"`
+	CloudVpcID string   `json:"cloud_vpc_id" validate:"required"`
+	CloudID    string   `json:"cloud_id" validate:"required"`
+	Name       *string  `json:"name,omitempty" validate:"required"`
+	Ipv4Cidr   []string `json:"ipv4_cidr,omitempty" validate:"required"`
+	Ipv6Cidr   []string `json:"ipv6_cidr,omitempty" validate:"omitempty"`
+	Memo       *string  `json:"memo,omitempty" validate:"omitempty"`
+	Extension  *T       `json:"extension" validate:"required"`
 }
 
 // Validate SubnetBatchCreateReq.
@@ -121,11 +121,11 @@ type SubnetUpdateReq[T SubnetUpdateExtension] struct {
 
 // SubnetUpdateBaseInfo defines update subnet request base info.
 type SubnetUpdateBaseInfo struct {
-	Name     *string `json:"name" validate:"omitempty"`
-	Ipv4Cidr string  `json:"ipv4_cidr" validate:"omitempty"`
-	Ipv6Cidr *string `json:"ipv6_cidr,omitempty" validate:"omitempty"`
-	Memo     *string `json:"memo,omitempty" validate:"omitempty"`
-	BkBizID  int64   `json:"bk_biz_id" validate:"omitempty"`
+	Name     *string  `json:"name,omitempty" validate:"omitempty"`
+	Ipv4Cidr []string `json:"ipv4_cidr,omitempty" validate:"omitempty"`
+	Ipv6Cidr []string `json:"ipv6_cidr,omitempty" validate:"omitempty"`
+	Memo     *string  `json:"memo,omitempty" validate:"omitempty"`
+	BkBizID  int64    `json:"bk_biz_id,omitempty" validate:"omitempty"`
 }
 
 // SubnetUpdateExtension defines subnet update request extensional info.

@@ -17,24 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package huawei
+package hcservice
 
-import (
-	"hcm/pkg/rest"
-)
+import "hcm/pkg/criteria/validator"
 
-// Client is a huawei api client
-type Client struct {
-	Account *AccountClient
-	Vpc     *VpcClient
-	Subnet  *SubnetClient
+// SubnetUpdateReq defines update subnet request.
+type SubnetUpdateReq struct {
+	Memo *string `json:"memo" validate:"omitempty"`
 }
 
-// NewClient create a new huawei api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		Account: NewAccountClient(client),
-		Vpc:     NewVpcClient(client),
-		Subnet:  NewSubnetClient(client),
-	}
+// Validate SubnetUpdateReq.
+func (u *SubnetUpdateReq) Validate() error {
+	return validator.Validate.Struct(u)
 }

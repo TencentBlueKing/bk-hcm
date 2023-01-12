@@ -40,8 +40,8 @@ type BaseSubnet struct {
 	CloudVpcID string         `json:"cloud_vpc_id"`
 	CloudID    string         `json:"cloud_id"`
 	Name       string         `json:"name"`
-	Ipv4Cidr   string         `json:"ipv4_cidr"`
-	Ipv6Cidr   *string        `json:"ipv6_cidr,omitempty"`
+	Ipv4Cidr   []string       `json:"ipv4_cidr,omitempty"`
+	Ipv6Cidr   []string       `json:"ipv6_cidr,omitempty"`
 	Memo       *string        `json:"memo,omitempty"`
 	VpcID      string         `json:"vpc_id"`
 	BkBizID    int64          `json:"bk_biz_id"`

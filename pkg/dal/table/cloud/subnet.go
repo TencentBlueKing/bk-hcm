@@ -28,7 +28,6 @@ import (
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
-	"hcm/pkg/tools/cidr"
 )
 
 // SubnetColumns defines all the subnet table's columns.
@@ -69,9 +68,9 @@ type SubnetTable struct {
 	// Name subnet名称
 	Name *string `db:"name" validate:"max=128"`
 	// Ipv4Cidr ipv4 cidr
-	Ipv4Cidr string `db:"ipv4_cidr" validate:"max=32"`
+	Ipv4Cidr types.StringArray `db:"ipv4_cidr" validate:"-"`
 	// Ipv6Cidr ipv6 cidr
-	Ipv6Cidr *string `db:"ipv6_cidr" validate:"max=64"`
+	Ipv6Cidr types.StringArray `db:"ipv6_cidr" validate:"-"`
 	// Memo 备注
 	Memo *string `db:"memo" validate:"omitempty,max=255"`
 	// Extension 云厂商差异扩展字段
@@ -117,28 +116,12 @@ func (v SubnetTable) InsertValidate() error {
 		return errors.New("name can not be nil")
 	}
 
-	if len(v.Ipv4Cidr) == 0 {
-		return errors.New("ipv4 cidr can not be empty")
+	if v.Ipv4Cidr == nil {
+		v.Ipv4Cidr = make([]string, 0)
 	}
 
-	addrType, err := cidr.CidrIPAddressType(v.Ipv4Cidr)
-	if err != nil {
-		return err
-	}
-
-	if addrType != enumor.Ipv4 {
-		return errors.New("ipv4 cidr address type is invalid")
-	}
-
-	if v.Ipv6Cidr != nil {
-		v6AddrType, err := cidr.CidrIPAddressType(v.Ipv4Cidr)
-		if err != nil {
-			return err
-		}
-
-		if v6AddrType != enumor.Ipv6 {
-			return errors.New("ipv6 cidr address type is invalid")
-		}
+	if len(v.Ipv6Cidr) == 0 {
+		v.Ipv6Cidr = make([]string, 0)
 	}
 
 	return validator.Validate.Struct(v)
