@@ -493,7 +493,7 @@ export default defineComponent({
       } else if (key === 'bizIds') {
         // 若选择全部业务，则参数是-1
         params.attachment.bk_biz_ids = projectModel[key].length === businessList.list.length
-          ? -1 : projectModel[key];
+          ? [-1] : projectModel[key];
         delete params.spec;
       } else {
         params = { spec: {} };

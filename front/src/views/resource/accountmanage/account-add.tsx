@@ -94,7 +94,7 @@ export default defineComponent({
           },
           attachment: {
             bk_biz_ids: projectModel.bizIds.length === businessList.list.length
-              ? -1 : projectModel.bizIds,
+              ? [-1] : projectModel.bizIds,
           },
           extension: {},
         };
