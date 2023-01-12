@@ -48,27 +48,37 @@ func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 	case enumor.TCloud:
 		account, err := a.client.DataService().TCloud.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 		// 敏感信息不显示，置空
-		account.Extension.CloudSecretKey = ""
+		if account != nil {
+			account.Extension.CloudSecretKey = ""
+		}
 		return account, err
 	case enumor.Aws:
 		account, err := a.client.DataService().Aws.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 		// 敏感信息不显示，置空
-		account.Extension.CloudSecretKey = ""
+		if account != nil {
+			account.Extension.CloudSecretKey = ""
+		}
 		return account, err
 	case enumor.HuaWei:
 		account, err := a.client.DataService().HuaWei.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 		// 敏感信息不显示，置空
-		account.Extension.CloudSecretKey = ""
+		if account != nil {
+			account.Extension.CloudSecretKey = ""
+		}
 		return account, err
 	case enumor.Gcp:
 		account, err := a.client.DataService().Gcp.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 		// 敏感信息不显示，置空
-		account.Extension.CloudServiceSecretKey = ""
+		if account != nil {
+			account.Extension.CloudServiceSecretKey = ""
+		}
 		return account, err
 	case enumor.Azure:
 		account, err := a.client.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 		// 敏感信息不显示，置空
-		account.Extension.CloudClientSecretKey = ""
+		if account != nil {
+			account.Extension.CloudClientSecretKey = ""
+		}
 		return account, err
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
