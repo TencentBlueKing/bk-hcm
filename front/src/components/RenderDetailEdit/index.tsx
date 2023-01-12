@@ -137,9 +137,10 @@ export default defineComponent({
           if (selectModelValue.length) {
             selectModelValue = selectModelValue.map((e: any) => e.name);
           }
+          // eslint-disable-next-line no-nested-ternary
           return selectModelValue.length
             ? <span>{selectModelValue.join(',')}</span>
-            : '暂无';
+            : props.modelValue.join(',') === '-1' ? '全部' : '暂无';
         default:
           return <span>{props.modelValue}</span>;
       }

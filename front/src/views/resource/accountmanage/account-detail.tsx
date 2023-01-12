@@ -753,8 +753,7 @@ export default defineComponent({
                   <span>{departmentFullName.value}</span>
                   <i onClick={handleEdit} class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
                 </div>)
-                  : (<OrganizationSelect v-model={projectModel.departmentId}
-                    departData={departmentData.value} onChange={handleOrganChange}/>)
+                  : (<OrganizationSelect v-model={projectModel.departmentId} onChange={handleOrganChange}/>)
               );
             },
           },

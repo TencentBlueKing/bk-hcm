@@ -15,8 +15,8 @@ export const useDepartmentStore = defineStore({
       const params = {
         app_code: 'magicbox',
         no_page: true,
-        lookup_field: field,
-        exact_lookups: lookups,
+        lookup_field: 'parent',
+        // exact_lookups: lookups,
         callback: 'callbackDepart',
       };
       const scriptTag = document.createElement('script');
@@ -38,11 +38,7 @@ export const useDepartmentStore = defineStore({
                 parent: lookups,
               });
             });
-            let parent = this.departmentMap.get(lookups);
-            console.log('parent', parent);
-            if (!parent) {
-              parent = {};
-            }
+            const parent = this.departmentMap.get(lookups);
             Object.assign(parent, {
               loaded: true,
               loading: false,
