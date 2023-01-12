@@ -26,6 +26,7 @@ import (
 // Client is a tcloud api client
 type Client struct {
 	Account *AccountClient
+	Subnet  *SubnetClient
 	Vpc     *VpcClient
 }
 
@@ -33,6 +34,7 @@ type Client struct {
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
 		Account: NewAccountClient(client),
+		Subnet:  NewSubnetClient(client),
 		Vpc:     NewVpcClient(client),
 	}
 }

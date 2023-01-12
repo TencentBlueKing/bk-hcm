@@ -141,12 +141,8 @@ func convertVpc(data *ec2.Vpc, enableDnsHostnames, enableDnsSupport bool, region
 		},
 	}
 
-	for _, tag := range data.Tags {
-		if converter.PtrToVal(tag.Key) == tagKeyForResourceName {
-			v.Name = converter.PtrToVal(tag.Value)
-			break
-		}
-	}
+	name, _ := parseTags(data.Tags)
+	v.Name = name
 
 	for _, asst := range data.CidrBlockAssociationSet {
 		cidr := cloud.AwsCidr{

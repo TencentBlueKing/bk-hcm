@@ -26,7 +26,6 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -52,7 +51,7 @@ func (v *VpcClient) BatchCreate(ctx context.Context, h http.Header,
 	err := v.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vpcs/batch/create", enumor.Aws).
+		SubResourcef("/vpcs/batch/create").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -75,7 +74,7 @@ func (v *VpcClient) Get(ctx context.Context, h http.Header, id string) (*coreclo
 
 	err := v.client.Get().
 		WithContext(ctx).
-		SubResourcef("/vpcs/%s", enumor.Aws, id).
+		SubResourcef("/vpcs/%s", id).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -99,7 +98,7 @@ func (v *VpcClient) BatchUpdate(ctx context.Context, h http.Header,
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vpcs/batch", enumor.Aws).
+		SubResourcef("/vpcs/batch").
 		WithHeaders(h).
 		Do().
 		Into(resp)
