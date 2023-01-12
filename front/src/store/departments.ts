@@ -38,7 +38,11 @@ export const useDepartmentStore = defineStore({
                 parent: lookups,
               });
             });
-            const parent = this.departmentMap.get(lookups);
+            let parent = this.departmentMap.get(lookups);
+            console.log('parent', parent);
+            if (!parent) {
+              parent = {};
+            }
             Object.assign(parent, {
               loaded: true,
               loading: false,

@@ -14,6 +14,10 @@ export default defineComponent({
       type: Array as PropType<number[]>,
       default: (): number[] => [],
     },
+    departData: {
+      type: Array as PropType<any>,
+      default: [],
+    },
   },
   emits: ['input', 'change', 'update:modelValue'],
   setup(props, ctx) {
@@ -52,6 +56,17 @@ export default defineComponent({
         });
       }
     });
+
+    watch(() => props.departData, async (data) => {
+      console.log('data', data);
+      if (data.length) {
+        data.forEach((id: number) => {
+          console.log('id', id);
+          // expandDepartment(id);
+        });
+        expandDepartment(data);
+      }
+    }, { immediate: true, deep: true });
 
     function isAllLoaded(id: number): boolean {
       if (!id) return true;

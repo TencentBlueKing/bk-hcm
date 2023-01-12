@@ -143,8 +143,8 @@ export default defineComponent({
               cloud_subscription_name: projectModel.subScriptionName,
               cloud_application_id: projectModel.applicationId,
               cloud_application_name: projectModel.applicationName,
-              cloud_client_id: projectModel.secretId,
-              cloud_client_secret: projectModel.secretKey,
+              cloud_client_secret_id: projectModel.secretId,
+              cloud_client_secret_key: projectModel.secretKey,
             };
             break;
           default:
