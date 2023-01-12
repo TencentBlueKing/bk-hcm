@@ -40,6 +40,7 @@ export default defineComponent({
 
     const isTestConnection = ref(false);
     const departmentFullName = ref('IEG互动娱乐事业群/技术运营部/计算资源中心');
+    const departmentData = ref([]);
     const isShowModifyScretDialog = ref(false);
     const buttonLoading = ref<boolean>(false);
 
@@ -107,6 +108,8 @@ export default defineComponent({
     const getDepartmentInfo = async (id: number) => {
       const res = await accountStore.getDepartmentInfo(id);
       departmentFullName.value = res?.data?.full_name;
+      departmentData.value = res?.data?.ancestors.map((e: any) => e.id);
+      console.log('departmentData.value', departmentData.value);
       requestQueue.value.shift();
     };
 
@@ -275,13 +278,13 @@ export default defineComponent({
               {
                 label: t('客户端密钥ID'),
                 required: false,
-                property: 'cloud_client_id',
-                component: () => <span>{projectModel.extension.cloud_client_id || '--'}</span>,
+                property: 'cloud_client_secret_id',
+                component: () => <span>{projectModel.extension.cloud_client_secret_id || '--'}</span>,
               },
               {
                 label: t('客户端密钥'),
                 required: false,
-                property: 'cloud_client_secret',
+                property: 'cloud_client_secret_key',
                 component: () => <span>********</span>,
               },
             ],
@@ -322,7 +325,7 @@ export default defineComponent({
                 label: 'Secret ID',
                 required: false,
                 property: 'secretId',
-                component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
+                component: () => <span>{projectModel.extension.cloud_service_secret_id}</span>,
               },
               {
                 label: 'Secret Key',
@@ -555,14 +558,18 @@ export default defineComponent({
         case 'azure':
           extension.cloud_application_id = secretModel.applicationId;
           extension.cloud_application_name = secretModel.applicationName;
-          extension.cloud_client_id = secretModel.secretId;
-          extension.cloud_client_secret = secretModel.secretKey;
+          extension.cloud_client_secret_id = secretModel.secretId;
+          extension.cloud_client_secret_key = secretModel.secretKey;
           delete extension.cloud_secret_id;
           delete extension.cloud_secret_key;
           break;
         case 'gcp':
           extension.cloud_service_account_id = secretModel.accountId;   // 服务账号ID
           extension.cloud_service_account_name = secretModel.accountName;   // 服务账号ID
+          extension.cloud_service_secret_id = secretModel.secretId;
+          extension.cloud_service_secret_key = secretModel.secretKey;
+          delete extension.cloud_secret_id;
+          delete extension.cloud_secret_key;
           break;
         default:
           break;
