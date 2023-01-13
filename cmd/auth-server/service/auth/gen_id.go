@@ -20,8 +20,6 @@
 package auth
 
 import (
-	"strconv"
-
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
@@ -38,11 +36,7 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 	res := client.Resource{
 		System: sys.SystemNameHCM,
 		Type:   sys.Account,
-	}
-
-	// compatible for authorize any
-	if a.ResourceID > 0 {
-		res.ID = strconv.FormatUint(a.ResourceID, 10)
+		ID:     a.ResourceID,
 	}
 
 	switch a.Basic.Action {
@@ -71,11 +65,7 @@ func genResourceResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 	res := client.Resource{
 		System: sys.SystemNameHCM,
 		Type:   sys.Account,
-	}
-
-	// compatible for authorize any
-	if a.ResourceID > 0 {
-		res.ID = strconv.FormatUint(a.ResourceID, 10)
+		ID:     a.ResourceID,
 	}
 
 	switch a.Basic.Action {

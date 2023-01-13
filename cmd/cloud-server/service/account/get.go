@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
@@ -31,7 +32,10 @@ import (
 func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 
-	// TODO: 校验用户有该账号的权限
+	// 校验用户有该账号的查看权限
+	if err := a.checkPermission(cts, meta.Find, accountID); err != nil {
+		return nil, err
+	}
 
 	// 查询该账号对应的Vendor
 	baseInfo, err := a.client.DataService().Global.Cloud.GetResourceBasicInfo(
