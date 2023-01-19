@@ -271,6 +271,7 @@ func (v subnet) BatchCompareGcpSubnetList(cts *rest.Contexts, req *hcservice.Res
 	return nil, nil
 }
 
+// filterGcpSubnetList filter gcp subnet
 func (v subnet) filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.GcpSubnetListResult,
 	resourceDBMap map[string]cloudcore.BaseSubnet,
 	createResources *[]cloud.SubnetCreateReq[cloudcore.GcpSubnetExtension],
