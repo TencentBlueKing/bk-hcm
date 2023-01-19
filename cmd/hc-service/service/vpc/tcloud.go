@@ -305,7 +305,7 @@ func (v vpc) BatchCompareTcloudVpcList(cts *rest.Contexts, req *hcservice.Resour
 		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), &dataservice.BatchDeleteReq{
 			Filter: tools.ContainersExpression("id", deleteIDs),
 		}); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err:%v",
+			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, deleteIDs:%v, err:%v",
 				enumor.TCloud, req.AccountID, req.Region, deleteIDs, err)
 			return nil, err
 		}
