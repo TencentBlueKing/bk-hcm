@@ -48,6 +48,7 @@ func (h *Huawei) UpdateSubnet(kt *kit.Kit, opt *types.HuaweiSubnetUpdateOption) 
 		VpcId:    opt.VpcID,
 		Body: &model.UpdateSubnetRequestBody{
 			Subnet: &model.UpdateSubnetOption{
+				Name:        opt.Name,
 				Description: opt.Data.Memo,
 			},
 		},

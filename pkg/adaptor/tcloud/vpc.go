@@ -120,7 +120,7 @@ func convertVpc(data *vpc.Vpc, region string) *types.TCloudVpc {
 		},
 	}
 
-	if data.CidrBlock != nil {
+	if data.CidrBlock != nil && len(*data.CidrBlock) != 0 {
 		v.Extension.Cidr = append(v.Extension.Cidr, cloud.TCloudCidr{
 			Type:     enumor.Ipv4,
 			Cidr:     *data.CidrBlock,
@@ -128,7 +128,7 @@ func convertVpc(data *vpc.Vpc, region string) *types.TCloudVpc {
 		})
 	}
 
-	if data.Ipv6CidrBlock != nil {
+	if data.Ipv6CidrBlock != nil && len(*data.Ipv6CidrBlock) != 0 {
 		v.Extension.Cidr = append(v.Extension.Cidr, cloud.TCloudCidr{
 			Type:     enumor.Ipv6,
 			Cidr:     *data.Ipv6CidrBlock,

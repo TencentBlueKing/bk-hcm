@@ -32,7 +32,7 @@ import (
 )
 
 // GcpSubnetUpdate update gcp subnet.
-func (v subnet) GcpSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
+func (s subnet) GcpSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
 	req := new(hcservice.SubnetUpdateReq)
@@ -43,12 +43,12 @@ func (v subnet) GcpSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	getRes, err := v.cs.DataService().Gcp.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	getRes, err := s.cs.DataService().Gcp.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		return nil, err
 	}
 
-	cli, err := v.ad.Gcp(cts.Kit, getRes.AccountID)
+	cli, err := s.ad.Gcp(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (v subnet) GcpSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 			},
 		}},
 	}
-	err = v.cs.DataService().Gcp.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq)
+	err = s.cs.DataService().Gcp.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq)
 	if err != nil {
 		return nil, err
 	}
@@ -82,15 +82,15 @@ func (v subnet) GcpSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 }
 
 // GcpSubnetDelete delete gcp subnet.
-func (v subnet) GcpSubnetDelete(cts *rest.Contexts) (interface{}, error) {
+func (s subnet) GcpSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
-	getRes, err := v.cs.DataService().Gcp.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	getRes, err := s.cs.DataService().Gcp.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		return nil, err
 	}
 
-	cli, err := v.ad.Gcp(cts.Kit, getRes.AccountID)
+	cli, err := s.ad.Gcp(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (v subnet) GcpSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	deleteReq := &dataservice.BatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-	err = v.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
 	if err != nil {
 		return nil, err
 	}

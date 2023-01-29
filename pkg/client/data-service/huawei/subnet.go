@@ -44,7 +44,7 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 
 // BatchCreate batch create huawei subnet.
 func (v *SubnetClient) BatchCreate(ctx context.Context, h http.Header,
-	req *protocloud.SubnetBatchCreateReq[corecloud.HuaWeiSubnetExtension]) (*core.BatchCreateResult, error) {
+	req *protocloud.SubnetBatchCreateReq[protocloud.HuaWeiSubnetCreateExt]) (*core.BatchCreateResult, error) {
 
 	resp := new(core.BatchCreateResp)
 

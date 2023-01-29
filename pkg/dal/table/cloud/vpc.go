@@ -44,6 +44,7 @@ var VpcColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "bk_cloud_id", NamedC: "bk_cloud_id", Type: enumor.Numeric},
+	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -61,7 +62,7 @@ type VpcTable struct {
 	// CloudID 云上ID
 	CloudID string `db:"cloud_id" validate:"max=255"`
 	// Name vpc名称
-	Name *string `db:"name" validate:"max=128"`
+	Name *string `db:"name" validate:"omitempty,max=128"`
 	// Category 类别
 	Category enumor.VpcCategory `db:"category" validate:"max=32"`
 	// Memo 备注

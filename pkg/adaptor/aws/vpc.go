@@ -24,6 +24,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -64,7 +65,6 @@ func (a *Aws) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
 
 // ListVpc list vpc.
 // reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_DescribeVpcs.html
-// attribute reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_DescribeVpcAttribute.html
 func (a *Aws) ListVpc(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsVpcListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
@@ -75,7 +75,6 @@ func (a *Aws) ListVpc(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsVpcListRe
 		return nil, err
 	}
 
-	// get vpc info
 	req := new(ec2.DescribeVpcsInput)
 
 	if len(opt.ResourceIDs) != 0 {
@@ -90,13 +89,37 @@ func (a *Aws) ListVpc(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsVpcListRe
 		return nil, err
 	}
 
-	// get vpc attributes
+	details := make([]types.AwsVpc, 0, len(resp.Vpcs))
+	for _, vpc := range resp.Vpcs {
+		details = append(details, converter.PtrToVal(convertVpc(vpc, opt.Region)))
+	}
+
+	return &types.AwsVpcListResult{NextToken: resp.NextToken, Details: details}, nil
+}
+
+// GetVpcAttribute get vpc enableDnsHostnames and enableDnsSupport attribute.
+// reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_DescribeVpcAttribute.html
+func (a *Aws) GetVpcAttribute(kt *kit.Kit, vpcID, region string) (bool, bool, error) {
+	if len(vpcID) == 0 {
+		return false, false, errf.New(errf.InvalidParameter, "vpc id can not be empty")
+	}
+
+	if len(region) == 0 {
+		return false, false, errf.New(errf.InvalidParameter, "region can not be empty")
+	}
+
+	client, err := a.clientSet.ec2Client(region)
+	if err != nil {
+		return false, false, err
+	}
+
 	hostNameAttrReq := &ec2.DescribeVpcAttributeInput{
-		Attribute: converter.ValToPtr("enableDnsHostnames"),
+		Attribute: converter.ValToPtr(ec2.VpcAttributeNameEnableDnsHostnames),
+		VpcId:     converter.ValToPtr(vpcID),
 	}
 	hostNameAttr, err := client.DescribeVpcAttributeWithContext(kt.Ctx, hostNameAttrReq)
 	if err != nil {
-		return nil, err
+		return false, false, err
 	}
 
 	enableDnsHostnames := false
@@ -105,39 +128,33 @@ func (a *Aws) ListVpc(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsVpcListRe
 	}
 
 	supportAttrReq := &ec2.DescribeVpcAttributeInput{
-		Attribute: converter.ValToPtr("enableDnsSupport"),
+		Attribute: converter.ValToPtr(ec2.VpcAttributeNameEnableDnsSupport),
+		VpcId:     converter.ValToPtr(vpcID),
 	}
 	supportAttr, err := client.DescribeVpcAttributeWithContext(kt.Ctx, supportAttrReq)
 	if err != nil {
-		return nil, err
+		return false, false, err
 	}
 	enableDnsSupport := false
 	if supportAttr != nil && supportAttr.EnableDnsSupport != nil && supportAttr.EnableDnsSupport.Value != nil {
 		enableDnsSupport = *supportAttr.EnableDnsSupport.Value
 	}
 
-	// rearrange vpc data
-	details := make([]types.AwsVpc, 0, len(resp.Vpcs))
-	for _, vpc := range resp.Vpcs {
-		details = append(details, converter.PtrToVal(convertVpc(vpc, enableDnsHostnames, enableDnsSupport, opt.Region)))
-	}
-
-	return &types.AwsVpcListResult{NextToken: resp.NextToken, Details: details}, nil
+	return enableDnsHostnames, enableDnsSupport, nil
 }
 
-func convertVpc(data *ec2.Vpc, enableDnsHostnames, enableDnsSupport bool, region string) *types.AwsVpc {
+func convertVpc(data *ec2.Vpc, region string) *types.AwsVpc {
 	if data == nil {
 		return nil
 	}
 
 	v := &types.AwsVpc{
+		CloudID: converter.PtrToVal(data.VpcId),
 		Extension: &cloud.AwsVpcExtension{
-			Region:             region,
-			State:              converter.PtrToVal(data.State),
-			InstanceTenancy:    converter.PtrToVal(data.InstanceTenancy),
-			IsDefault:          converter.PtrToVal(data.IsDefault),
-			EnableDnsHostnames: enableDnsHostnames,
-			EnableDnsSupport:   enableDnsSupport,
+			Region:          region,
+			State:           converter.PtrToVal(data.State),
+			InstanceTenancy: converter.PtrToVal(data.InstanceTenancy),
+			IsDefault:       converter.PtrToVal(data.IsDefault),
 		},
 	}
 

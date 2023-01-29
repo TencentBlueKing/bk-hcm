@@ -41,8 +41,8 @@ var SubnetColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "cloud_vpc_id", NamedC: "cloud_vpc_id", Type: enumor.String},
 	{Column: "cloud_id", NamedC: "cloud_id", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},
-	{Column: "ipv4_cidr", NamedC: "ipv4_cidr", Type: enumor.String},
-	{Column: "ipv6_cidr", NamedC: "ipv6_cidr", Type: enumor.String},
+	{Column: "ipv4_cidr", NamedC: "ipv4_cidr", Type: enumor.Json},
+	{Column: "ipv6_cidr", NamedC: "ipv6_cidr", Type: enumor.Json},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "vpc_id", NamedC: "vpc_id", Type: enumor.String},
@@ -66,7 +66,7 @@ type SubnetTable struct {
 	// CloudID 云上ID
 	CloudID string `db:"cloud_id" validate:"max=255"`
 	// Name subnet名称
-	Name *string `db:"name" validate:"max=128"`
+	Name *string `db:"name" validate:"omitempty,max=128"`
 	// Ipv4Cidr ipv4 cidr
 	Ipv4Cidr types.StringArray `db:"ipv4_cidr" validate:"-"`
 	// Ipv6Cidr ipv6 cidr
@@ -90,69 +90,61 @@ type SubnetTable struct {
 }
 
 // TableName return subnet table name.
-func (v SubnetTable) TableName() table.Name {
+func (s SubnetTable) TableName() table.Name {
 	return table.SubnetTable
 }
 
 // InsertValidate validate subnet table on insert.
-func (v SubnetTable) InsertValidate() error {
-	if err := v.Vendor.Validate(); err != nil {
+func (s SubnetTable) InsertValidate() error {
+	if err := s.Vendor.Validate(); err != nil {
 		return err
 	}
 
-	if len(v.AccountID) == 0 {
+	if len(s.AccountID) == 0 {
 		return errors.New("account id can not be empty")
 	}
 
-	if len(v.CloudVpcID) == 0 {
+	if len(s.CloudVpcID) == 0 {
 		return errors.New("cloud vpc id can not be empty")
 	}
 
-	if len(v.CloudID) == 0 {
+	if len(s.CloudID) == 0 {
 		return errors.New("cloud id can not be empty")
 	}
 
-	if v.Name == nil {
+	if s.Name == nil {
 		return errors.New("name can not be nil")
 	}
 
-	if v.Ipv4Cidr == nil {
-		v.Ipv4Cidr = make([]string, 0)
-	}
-
-	if len(v.Ipv6Cidr) == 0 {
-		v.Ipv6Cidr = make([]string, 0)
-	}
-
-	return validator.Validate.Struct(v)
+	return validator.Validate.Struct(s)
 }
 
 // UpdateValidate validate subnet table on update.
-func (v SubnetTable) UpdateValidate() error {
-	if err := validator.Validate.Struct(v); err != nil {
+func (s SubnetTable) UpdateValidate() error {
+	if err := validator.Validate.Struct(s); err != nil {
 		return err
 	}
 
-	if v.Name == nil && len(v.Ipv4Cidr) == 0 && v.Ipv6Cidr == nil && len(v.Extension) == 0 && len(v.VpcID) == 0 &&
-		v.BkBizID == 0 && v.Memo == nil {
+	if s.Name == nil && len(s.Ipv4Cidr) == 0 && s.Ipv6Cidr == nil && len(s.Extension) == 0 && len(s.VpcID) == 0 &&
+		s.BkBizID == 0 && s.Memo == nil {
 		return errors.New("at least one of the update fields must be set")
 	}
 
-	if len(v.AccountID) != 0 {
+	if len(s.AccountID) != 0 {
 		return errors.New("account id can not update")
 	}
 
-	if len(v.CloudID) != 0 {
+	if len(s.CloudID) != 0 {
 		return errors.New("cloud id can not update")
 	}
 
-	if len(v.Creator) != 0 {
+	if len(s.Creator) != 0 {
 		return errors.New("creator can not update")
 	}
 
-	if len(v.Reviser) == 0 {
+	if len(s.Reviser) == 0 {
 		return errors.New("reviser can not be empty")
 	}
 
-	return validator.Validate.Struct(v)
+	return validator.Validate.Struct(s)
 }

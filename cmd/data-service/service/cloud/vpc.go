@@ -218,6 +218,7 @@ func batchUpdateVpc[T protocloud.VpcUpdateExtension](cts *rest.Contexts, svc *vp
 
 		// update extension
 		if updateReq.Extension != nil {
+			// TODO get vpcs before for expression
 			dbVpc, err := getVpcFromTable(cts.Kit, svc.dao, updateReq.ID)
 			if err != nil {
 				return nil, err
@@ -278,7 +279,7 @@ func (svc *vpcSvc) BatchUpdateVpcBaseInfo(cts *rest.Contexts) (interface{}, erro
 	for _, updateReq := range req.Vpcs {
 		vpc.Name = updateReq.Data.Name
 		vpc.Category = updateReq.Data.Category
-		vpc.Name = updateReq.Data.Memo
+		vpc.Memo = updateReq.Data.Memo
 		vpc.BkCloudID = updateReq.Data.BkCloudID
 		vpc.BkBizID = updateReq.Data.BkBizID
 
@@ -406,6 +407,8 @@ func convertBaseVpc(dbVpc *tablecloud.VpcTable) *protocore.BaseVpc {
 		Name:      converter.PtrToVal(dbVpc.Name),
 		Category:  dbVpc.Category,
 		Memo:      dbVpc.Memo,
+		BkCloudID: dbVpc.BkCloudID,
+		BkBizID:   dbVpc.BkBizID,
 		Revision: &core.Revision{
 			Creator:   dbVpc.Creator,
 			Reviser:   dbVpc.Reviser,

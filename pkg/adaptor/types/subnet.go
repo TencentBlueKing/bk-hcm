@@ -97,6 +97,7 @@ func (s AzureSubnetUpdateOption) Validate() error {
 type HuaweiSubnetUpdateOption struct {
 	SubnetUpdateOption `json:",inline"`
 	Region             string `json:"region"`
+	Name               string `json:"name"`
 	VpcID              string `json:"vpc_id"`
 }
 
@@ -117,6 +118,25 @@ func (s HuaweiSubnetUpdateOption) Validate() error {
 }
 
 // ------------------------- Delete -------------------------
+
+// AzureSubnetDeleteOption defines azure delete subnet options.
+type AzureSubnetDeleteOption struct {
+	core.AzureDeleteOption `json:",inline"`
+	VpcID                  string `json:"vpc_id"`
+}
+
+// Validate AzureSubnetDeleteOption.
+func (a AzureSubnetDeleteOption) Validate() error {
+	if err := a.AzureDeleteOption.Validate(); err != nil {
+		return err
+	}
+
+	if len(a.VpcID) == 0 {
+		return errf.New(errf.InvalidParameter, "vpc id must be set")
+	}
+
+	return nil
+}
 
 // HuaweiSubnetDeleteOption defines huawei delete subnet options.
 type HuaweiSubnetDeleteOption struct {
@@ -178,7 +198,20 @@ type GcpSubnetListResult struct {
 // AzureSubnetListOption defines azure list subnet options.
 type AzureSubnetListOption struct {
 	core.AzureListOption `json:",inline"`
-	VpcName              string `json:"vpc_name"`
+	VpcID                string `json:"vpc_id"`
+}
+
+// Validate AzureSubnetListOption.
+func (a AzureSubnetListOption) Validate() error {
+	if err := a.AzureListOption.Validate(); err != nil {
+		return err
+	}
+
+	if len(a.VpcID) == 0 {
+		return errf.New(errf.InvalidParameter, "vpc id must be set")
+	}
+
+	return nil
 }
 
 // AzureSubnetListResult defines azure list subnet result.

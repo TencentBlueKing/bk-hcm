@@ -32,7 +32,7 @@ import (
 )
 
 // AzureSubnetUpdate update azure subnet.
-func (v subnet) AzureSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
+func (s subnet) AzureSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
 	req := new(hcservice.SubnetUpdateReq)
@@ -43,12 +43,12 @@ func (v subnet) AzureSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	getRes, err := v.cs.DataService().Azure.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	getRes, err := s.cs.DataService().Azure.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		return nil, err
 	}
 
-	cli, err := v.ad.Azure(cts.Kit, getRes.AccountID)
+	cli, err := s.ad.Azure(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (v subnet) AzureSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 			},
 		}},
 	}
-	err = v.cs.DataService().Azure.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq)
+	err = s.cs.DataService().Azure.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq)
 	if err != nil {
 		return nil, err
 	}
@@ -76,22 +76,25 @@ func (v subnet) AzureSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 }
 
 // AzureSubnetDelete delete azure subnet.
-func (v subnet) AzureSubnetDelete(cts *rest.Contexts) (interface{}, error) {
+func (s subnet) AzureSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
-	getRes, err := v.cs.DataService().Azure.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	getRes, err := s.cs.DataService().Azure.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		return nil, err
 	}
 
-	cli, err := v.ad.Azure(cts.Kit, getRes.AccountID)
+	cli, err := s.ad.Azure(cts.Kit, getRes.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	delOpt := &adcore.AzureDeleteOption{
-		BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
-		ResourceGroupName: getRes.Extension.ResourceGroup,
+	delOpt := &types.AzureSubnetDeleteOption{
+		AzureDeleteOption: adcore.AzureDeleteOption{
+			BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.Name},
+			ResourceGroupName: getRes.Extension.ResourceGroup,
+		},
+		VpcID: getRes.CloudVpcID,
 	}
 	err = cli.DeleteSubnet(cts.Kit, delOpt)
 	if err != nil {
@@ -101,7 +104,7 @@ func (v subnet) AzureSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	deleteReq := &dataservice.BatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-	err = v.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
 	if err != nil {
 		return nil, err
 	}
