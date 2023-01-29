@@ -67,8 +67,16 @@ func (v *subnetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.S
 		return nil, errf.New(errf.InvalidParameter, "models to create cannot be empty")
 	}
 
-	for _, model := range models {
-		if err := model.InsertValidate(); err != nil {
+	for idx := range models {
+		if models[idx].Ipv4Cidr == nil {
+			models[idx].Ipv4Cidr = make([]string, 0)
+		}
+
+		if models[idx].Ipv6Cidr == nil {
+			models[idx].Ipv6Cidr = make([]string, 0)
+		}
+
+		if err := models[idx].InsertValidate(); err != nil {
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
 	}

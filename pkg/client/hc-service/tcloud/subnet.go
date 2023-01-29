@@ -24,7 +24,6 @@ import (
 	"net/http"
 
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -48,7 +47,7 @@ func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vendors/%s/subnets/%s", enumor.TCloud, id).
+		SubResourcef("/subnets/%s", id).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -70,7 +69,7 @@ func (v *SubnetClient) Delete(ctx context.Context, h http.Header, id string) err
 	err := v.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef("/vendors/%s/subnets/%s", enumor.TCloud, id).
+		SubResourcef("/subnets/%s", id).
 		WithHeaders(h).
 		Do().
 		Into(resp)

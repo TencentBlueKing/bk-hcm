@@ -44,7 +44,7 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 
 // BatchCreate batch create aws subnet.
 func (v *SubnetClient) BatchCreate(ctx context.Context, h http.Header,
-	req *protocloud.SubnetBatchCreateReq[corecloud.AwsSubnetExtension]) (*core.BatchCreateResult, error) {
+	req *protocloud.SubnetBatchCreateReq[protocloud.AwsSubnetCreateExt]) (*core.BatchCreateResult, error) {
 
 	resp := new(core.BatchCreateResp)
 

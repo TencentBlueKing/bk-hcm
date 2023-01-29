@@ -81,22 +81,22 @@ func (svc *subnetSvc) BatchCreateSubnet(cts *rest.Contexts) (interface{}, error)
 
 	switch vendor {
 	case enumor.TCloud:
-		return batchCreateSubnet[protocore.TCloudSubnetExtension](cts, vendor, svc)
+		return batchCreateSubnet[protocloud.TCloudSubnetCreateExt](cts, vendor, svc)
 	case enumor.Aws:
-		return batchCreateSubnet[protocore.AwsSubnetExtension](cts, vendor, svc)
+		return batchCreateSubnet[protocloud.AwsSubnetCreateExt](cts, vendor, svc)
 	case enumor.Gcp:
-		return batchCreateSubnet[protocore.GcpSubnetExtension](cts, vendor, svc)
+		return batchCreateSubnet[protocloud.GcpSubnetCreateExt](cts, vendor, svc)
 	case enumor.HuaWei:
-		return batchCreateSubnet[protocore.HuaWeiSubnetExtension](cts, vendor, svc)
+		return batchCreateSubnet[protocloud.HuaWeiSubnetCreateExt](cts, vendor, svc)
 	case enumor.Azure:
-		return batchCreateSubnet[protocore.AzureSubnetExtension](cts, vendor, svc)
+		return batchCreateSubnet[protocloud.AzureSubnetCreateExt](cts, vendor, svc)
 	}
 
 	return nil, nil
 }
 
 // batchCreateSubnet batch create subnet.
-func batchCreateSubnet[T protocore.SubnetExtension](cts *rest.Contexts, vendor enumor.Vendor, svc *subnetSvc) (
+func batchCreateSubnet[T protocloud.SubnetCreateExtension](cts *rest.Contexts, vendor enumor.Vendor, svc *subnetSvc) (
 	interface{}, error) {
 
 	req := new(protocloud.SubnetBatchCreateReq[T])
@@ -180,24 +180,36 @@ func getVpcIDByCloudID(kt *kit.Kit, dao dao.Set, vendor enumor.Vendor, cloudIDs 
 	}
 
 	switch vendor {
+	// gcp vpc cloud id is self link for related resources.
 	case enumor.Gcp:
-		// gcp vpc cloud id is self link for related
-		opt.Filter = &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				// TODO replace this when JSON is supported
-				filter.AtomRule{Field: "extension ->> '$.self_link'", Op: filter.In.Factory(), Value: cloudIDs},
-				filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
-			},
+		var err error
+
+		// TODO replace this when JSON is supported
+		vpcs, err := dao.Vpc().ListByGcpSelfLink(kt, cloudIDs)
+		if err != nil {
+			logs.Errorf("list vpc failed, err: %v, rid: %s", kt.Rid)
+			return nil, fmt.Errorf("list vpc failed, err: %v", err)
 		}
-	default:
-		opt.Filter = &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudIDs},
-				filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
-			},
+
+		idMap := make(map[string]string, len(vpcs))
+		for _, detail := range vpcs {
+			extension := new(protocore.GcpVpcExtension)
+			err = json.UnmarshalFromString(string(detail.Extension), extension)
+			if err != nil {
+				return nil, fmt.Errorf("unmarshal db extension failed, err: %v", err)
+			}
+			idMap[extension.SelfLink] = detail.ID
 		}
+
+		return idMap, nil
+	}
+
+	opt.Filter = &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudIDs},
+			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+		},
 	}
 
 	res, err := dao.Vpc().List(kt, opt)
@@ -208,7 +220,7 @@ func getVpcIDByCloudID(kt *kit.Kit, dao dao.Set, vendor enumor.Vendor, cloudIDs 
 
 	idMap := make(map[string]string, len(res.Details))
 	for _, detail := range res.Details {
-		idMap[detail.CloudID] = idMap[detail.ID]
+		idMap[detail.CloudID] = detail.ID
 	}
 
 	return idMap, nil

@@ -23,8 +23,7 @@ import (
 	"context"
 	"net/http"
 
-	"hcm/pkg/adaptor/types"
-	"hcm/pkg/criteria/enumor"
+	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -42,13 +41,13 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 }
 
 // Update subnet.
-func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *types.HuaweiSubnetUpdateOption) error {
+func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *hcservice.SubnetUpdateReq) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vendors/%s/subnets/%s", enumor.HuaWei, id).
+		SubResourcef("/subnets/%s", id).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -70,7 +69,7 @@ func (v *SubnetClient) Delete(ctx context.Context, h http.Header, id string) err
 	err := v.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef("/vendors/%s/subnets/%s", enumor.HuaWei, id).
+		SubResourcef("/subnets/%s", id).
 		WithHeaders(h).
 		Do().
 		Into(resp)

@@ -218,6 +218,7 @@ func batchUpdateVpc[T protocloud.VpcUpdateExtension](cts *rest.Contexts, svc *vp
 
 		// update extension
 		if updateReq.Extension != nil {
+			// TODO get vpcs before for expression
 			dbVpc, err := getVpcFromTable(cts.Kit, svc.dao, updateReq.ID)
 			if err != nil {
 				return nil, err

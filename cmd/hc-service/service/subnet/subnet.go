@@ -29,24 +29,24 @@ import (
 
 // InitSubnetService initial the subnet service
 func InitSubnetService(cap *capability.Capability) {
-	a := &subnet{
+	s := &subnet{
 		ad: cap.CloudAdaptor,
 		cs: cap.ClientSet,
 	}
 
 	h := rest.NewHandler()
 
-	h.Add("TCloudSubnetUpdate", "PATCH", "/vendors/tcloud/subnets/{id}", a.TCloudSubnetUpdate)
-	h.Add("AwsSubnetUpdate", "PATCH", "/vendors/aws/subnets/{id}", a.AwsSubnetUpdate)
-	h.Add("HuaWeiSubnetUpdate", "PATCH", "/vendors/huawei/subnets/{id}", a.HuaWeiSubnetUpdate)
-	h.Add("GcpSubnetUpdate", "PATCH", "/vendors/gcp/subnets/{id}", a.GcpSubnetUpdate)
-	h.Add("AzureSubnetUpdate", "PATCH", "/vendors/azure/subnets/{id}", a.AzureSubnetUpdate)
+	h.Add("TCloudSubnetUpdate", "PATCH", "/vendors/tcloud/subnets/{id}", s.TCloudSubnetUpdate)
+	h.Add("AwsSubnetUpdate", "PATCH", "/vendors/aws/subnets/{id}", s.AwsSubnetUpdate)
+	h.Add("HuaWeiSubnetUpdate", "PATCH", "/vendors/huawei/subnets/{id}", s.HuaWeiSubnetUpdate)
+	h.Add("GcpSubnetUpdate", "PATCH", "/vendors/gcp/subnets/{id}", s.GcpSubnetUpdate)
+	h.Add("AzureSubnetUpdate", "PATCH", "/vendors/azure/subnets/{id}", s.AzureSubnetUpdate)
 
-	h.Add("TCloudSubnetDelete", "DELETE", "/vendors/tcloud/subnets/{id}", a.TCloudSubnetDelete)
-	h.Add("AwsSubnetDelete", "DELETE", "/vendors/aws/subnets/{id}", a.AwsSubnetDelete)
-	h.Add("HuaWeiSubnetDelete", "DELETE", "/vendors/huawei/subnets/{id}", a.HuaWeiSubnetDelete)
-	h.Add("GcpSubnetDelete", "DELETE", "/vendors/gcp/subnets/{id}", a.GcpSubnetDelete)
-	h.Add("AzureSubnetDelete", "DELETE", "/vendors/azure/subnets/{id}", a.AzureSubnetDelete)
+	h.Add("TCloudSubnetDelete", "DELETE", "/vendors/tcloud/subnets/{id}", s.TCloudSubnetDelete)
+	h.Add("AwsSubnetDelete", "DELETE", "/vendors/aws/subnets/{id}", s.AwsSubnetDelete)
+	h.Add("HuaWeiSubnetDelete", "DELETE", "/vendors/huawei/subnets/{id}", s.HuaWeiSubnetDelete)
+	h.Add("GcpSubnetDelete", "DELETE", "/vendors/gcp/subnets/{id}", s.GcpSubnetDelete)
+	h.Add("AzureSubnetDelete", "DELETE", "/vendors/azure/subnets/{id}", s.AzureSubnetDelete)
 
 	h.Load(cap.WebService)
 }

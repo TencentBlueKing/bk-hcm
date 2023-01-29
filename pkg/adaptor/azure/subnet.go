@@ -95,22 +95,24 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*type
 		}
 
 		for _, subnet := range page.Value {
-			details = append(details, converter.PtrToVal(convertSubnet(subnet, opt.ResourceGroupName, opt.VpcName)))
+			details = append(details, converter.PtrToVal(convertSubnet(subnet,
+				a.clientSet.credential.CloudSubscriptionID, opt.ResourceGroupName, opt.VpcName)))
 		}
 	}
 
 	return &types.AzureSubnetListResult{Details: details}, nil
 }
 
-func convertSubnet(data *armnetwork.Subnet, resourceGroup, vpc string) *types.AzureSubnet {
+func convertSubnet(data *armnetwork.Subnet, subscription, resourceGroup, vpc string) *types.AzureSubnet {
 	if data == nil {
 		return nil
 	}
 
 	s := &types.AzureSubnet{
-		CloudVpcID: vpc,
-		CloudID:    converter.PtrToVal(data.ID),
-		Name:       converter.PtrToVal(data.Name),
+		CloudVpcID: fmt.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/virtualNetworks/%s",
+			subscription, resourceGroup, vpc),
+		CloudID: converter.PtrToVal(data.ID),
+		Name:    converter.PtrToVal(data.Name),
 		Extension: &cloud.AzureSubnetExtension{
 			ResourceGroup: resourceGroup,
 		},
@@ -121,7 +123,7 @@ func convertSubnet(data *armnetwork.Subnet, resourceGroup, vpc string) *types.Az
 	}
 
 	for _, prefix := range append(data.Properties.AddressPrefixes, data.Properties.AddressPrefix) {
-		if prefix != nil {
+		if prefix != nil && *prefix != "" {
 			addressType, err := cidr.CidrIPAddressType(*prefix)
 			if err != nil {
 				return nil
