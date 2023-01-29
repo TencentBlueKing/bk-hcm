@@ -32,16 +32,16 @@ type Vpc[T VpcExtension] struct {
 
 // BaseVpc defines base vpc info.
 type BaseVpc struct {
-	ID        string             `json:"id"`
-	Vendor    enumor.Vendor      `json:"vendor"`
-	AccountID string             `json:"account_id"`
-	CloudID   string             `json:"cloud_id"`
-	Name      string             `json:"name"`
-	Category  enumor.VpcCategory `json:"category"`
-	Memo      *string            `json:"memo,omitempty"`
-	BkCloudID int64              `json:"bk_cloud_id"`
-	BkBizID   int64              `json:"bk_biz_id"`
-	Revision  *core.Revision     `json:"revision"`
+	ID             string             `json:"id"`
+	Vendor         enumor.Vendor      `json:"vendor"`
+	AccountID      string             `json:"account_id"`
+	CloudID        string             `json:"cloud_id"`
+	Name           string             `json:"name"`
+	Category       enumor.VpcCategory `json:"category"`
+	Memo           *string            `json:"memo,omitempty"`
+	BkCloudID      int64              `json:"bk_cloud_id"`
+	BkBizID        int64              `json:"bk_biz_id"`
+	*core.Revision `json:",inline"`
 }
 
 // VpcExtension defines vpc extensional info.

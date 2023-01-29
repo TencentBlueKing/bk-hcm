@@ -34,32 +34,8 @@ import (
 
 // UpdateVpc update vpc.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/patch
+// TODO right now only memo is supported to update, but gcp description can not be updated.
 func (g *Gcp) UpdateVpc(kt *kit.Kit, opt *types.GcpVpcUpdateOption) error {
-	if err := opt.Validate(); err != nil {
-		return err
-	}
-
-	client, err := g.clientSet.computeClient(kt)
-	if err != nil {
-		return err
-	}
-
-	req := &compute.Network{
-		Description: converter.PtrToVal(opt.Data.Memo),
-		// make sure AutoCreateSubnetworks field is included in request
-		// gcp has a bug with this api, if this is not specified, the request will fail
-		// TODO 测试一下是否不需要这个了
-		ForceSendFields: []string{"AutoCreateSubnetworks"},
-		NullFields:      nil,
-	}
-
-	cloudProjectID := g.clientSet.credential.CloudProjectID
-	_, err = client.Networks.Patch(cloudProjectID, opt.ResourceID, req).Context(kt.Ctx).RequestId(kt.Rid).Do()
-	if err != nil {
-		logs.Errorf("create vpc failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
 	return nil
 }
 

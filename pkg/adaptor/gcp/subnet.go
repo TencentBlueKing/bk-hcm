@@ -34,34 +34,8 @@ import (
 
 // UpdateSubnet update subnet.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/patch
+// TODO right now only memo is supported to update, but gcp description can not be updated.
 func (g *Gcp) UpdateSubnet(kt *kit.Kit, opt *types.GcpSubnetUpdateOption) error {
-	if err := opt.Validate(); err != nil {
-		return err
-	}
-
-	client, err := g.clientSet.computeClient(kt)
-	if err != nil {
-		return err
-	}
-
-	req := &compute.Subnetwork{
-		Description: converter.PtrToVal(opt.Data.Memo),
-		// make sure AutoCreateSubnetworks field is included in request
-		// gcp has a bug with this api, if this is not specified, the request will fail
-		// TODO 测试一下是否不需要这个了
-		ForceSendFields: []string{"AutoCreateSubnetworks"},
-		NullFields:      nil,
-	}
-
-	cloudProjectID := g.clientSet.credential.CloudProjectID
-	region := parseSelfLinkToName(opt.Region)
-	_, err = client.Subnetworks.Patch(cloudProjectID, region, opt.ResourceID, req).Context(kt.Ctx).
-		RequestId(kt.Rid).Do()
-	if err != nil {
-		logs.Errorf("create subnet failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
 	return nil
 }
 

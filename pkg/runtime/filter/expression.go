@@ -37,7 +37,7 @@ import (
 
 const (
 	// DefaultMaxInLimit defines the default max in limit
-	DefaultMaxInLimit = uint(20)
+	DefaultMaxInLimit = uint(100)
 	// DefaultMaxNotInLimit defines the default max nin limit
 	DefaultMaxNotInLimit = uint(100)
 	// DefaultMaxRuleLimit defines the default max number of rules limit

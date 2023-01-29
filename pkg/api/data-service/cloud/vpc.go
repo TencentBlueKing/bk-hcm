@@ -30,7 +30,7 @@ import (
 
 // VpcBatchCreateReq defines batch create vpc request.
 type VpcBatchCreateReq[T VpcCreateExtension] struct {
-	Vpcs []VpcCreateReq[T] `json:"vpcs" validate:"required"`
+	Vpcs []VpcCreateReq[T] `json:"vpcs" validate:"required,max=100"`
 }
 
 // VpcCreateReq defines create vpc request.
@@ -71,6 +71,7 @@ type AwsVpcCreateExt struct {
 
 // GcpVpcCreateExt defines gcp vpc extensional info.
 type GcpVpcCreateExt struct {
+	SelfLink              string `json:"self_link" validate:"required"`
 	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks" validate:"required"`
 	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6" validate:"required"`
 	Mtu                   int64  `json:"mtu" validate:"required"`
@@ -102,7 +103,7 @@ func (c *VpcBatchCreateReq[T]) Validate() error {
 
 // VpcBatchUpdateReq defines batch update vpc request.
 type VpcBatchUpdateReq[T VpcUpdateExtension] struct {
-	Vpcs []VpcUpdateReq[T] `json:"vpcs" validate:"required"`
+	Vpcs []VpcUpdateReq[T] `json:"vpcs" validate:"required,max=100"`
 }
 
 // Validate VpcBatchUpdateReq.
@@ -221,8 +222,8 @@ type TCloudCidr struct {
 type AwsCidr struct {
 	Type        enumor.IPAddressType `json:"type" validate:"required"`
 	Cidr        string               `json:"cidr" validate:"required"`
-	AddressPool string               `json:"address_pool" validate:"required"`
-	State       string               `json:"state" validate:"required"`
+	AddressPool string               `json:"address_pool" validate:"omitempty"`
+	State       string               `json:"state" validate:"omitempty"`
 }
 
 // AzureCidr azure cidr

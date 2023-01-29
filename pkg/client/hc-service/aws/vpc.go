@@ -24,7 +24,6 @@ import (
 	"net/http"
 
 	hcservice "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -48,7 +47,7 @@ func (v *VpcClient) Update(ctx context.Context, h http.Header, id string, req *h
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vendors/%s/vpcs/%s", enumor.Aws, id).
+		SubResourcef("/vpcs/%s", id).
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -70,7 +69,7 @@ func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error 
 	err := v.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef("/vendors/%s/vpcs/%s", enumor.Aws, id).
+		SubResourcef("/vpcs/%s", id).
 		WithHeaders(h).
 		Do().
 		Into(resp)

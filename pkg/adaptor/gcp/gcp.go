@@ -56,9 +56,5 @@ func generateResourceIDsFilter(resourceIDs []string) string {
 // for example, 'us-west1' region's self link is: https://www.googleapis.com/compute/v1/projects/xxx/regions/us-west1.
 func parseSelfLinkToName(link string) string {
 	idx := strings.LastIndex(link, "/")
-	if idx == -1 {
-		return link
-	}
-
-	return link[idx:]
+	return link[idx+1:]
 }

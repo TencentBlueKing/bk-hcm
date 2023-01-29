@@ -128,9 +128,16 @@ func Error(err error) *ErrorF {
 		}
 	}
 
-	// this is a standard error format, then decode it directly.
+	// this is a json error, try decoding it to standard error directly.
 	ef = new(ErrorF)
 	if err := json.Unmarshal([]byte(s), ef); err != nil {
+		return &ErrorF{
+			Code:    Unknown,
+			Message: s,
+		}
+	}
+
+	if ef.Code == 0 {
 		return &ErrorF{
 			Code:    Unknown,
 			Message: s,
