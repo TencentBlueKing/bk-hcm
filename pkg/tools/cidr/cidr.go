@@ -26,7 +26,11 @@ import (
 	"hcm/pkg/criteria/enumor"
 )
 
+<<<<<<< HEAD
 // CidrIPAddressType get cidr ip address type.
+=======
+// CidrAddressType get cidr ip address type.
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 func CidrIPAddressType(cidr string) (enumor.IPAddressType, error) {
 	ip, _, err := net.ParseCIDR(cidr)
 	if err != nil {

@@ -117,11 +117,19 @@ func convertSubnet(data *vpc.Subnet, region string) *types.TCloudSubnet {
 		},
 	}
 
+<<<<<<< HEAD
 	if data.CidrBlock != nil {
 		s.Ipv4Cidr = append(s.Ipv4Cidr, *data.CidrBlock)
 	}
 
 	if data.Ipv6CidrBlock != nil {
+=======
+	if data.CidrBlock != nil && *data.CidrBlock != "" {
+		s.Ipv4Cidr = append(s.Ipv4Cidr, *data.CidrBlock)
+	}
+
+	if data.Ipv6CidrBlock != nil && *data.Ipv6CidrBlock != "" {
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		s.Ipv6Cidr = append(s.Ipv6Cidr, *data.Ipv6CidrBlock)
 	}
 

@@ -34,6 +34,7 @@ type Subnet[T SubnetExtension] struct {
 
 // BaseSubnet defines base subnet info.
 type BaseSubnet struct {
+<<<<<<< HEAD
 	ID         string         `json:"id"`
 	Vendor     enumor.Vendor  `json:"vendor"`
 	AccountID  string         `json:"account_id"`
@@ -46,6 +47,20 @@ type BaseSubnet struct {
 	VpcID      string         `json:"vpc_id"`
 	BkBizID    int64          `json:"bk_biz_id"`
 	Revision   *core.Revision `json:"revision"`
+=======
+	ID             string        `json:"id"`
+	Vendor         enumor.Vendor `json:"vendor"`
+	AccountID      string        `json:"account_id"`
+	CloudVpcID     string        `json:"cloud_vpc_id"`
+	CloudID        string        `json:"cloud_id"`
+	Name           string        `json:"name"`
+	Ipv4Cidr       []string      `json:"ipv4_cidr,omitempty"`
+	Ipv6Cidr       []string      `json:"ipv6_cidr,omitempty"`
+	Memo           *string       `json:"memo,omitempty"`
+	VpcID          string        `json:"vpc_id"`
+	BkBizID        int64         `json:"bk_biz_id"`
+	*core.Revision `json:",inline"`
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 }
 
 // SubnetExtension defines subnet extensional info.
@@ -74,6 +89,10 @@ type AwsSubnetExtension struct {
 
 // GcpSubnetExtension defines gcp subnet extensional info.
 type GcpSubnetExtension struct {
+<<<<<<< HEAD
+=======
+	SelfLink              string `json:"self_link"`
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	Region                string `json:"region"`
 	StackType             string `json:"stack_type"`
 	Ipv6AccessType        string `json:"ipv6_access_type"`

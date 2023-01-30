@@ -24,7 +24,10 @@ import (
 	"net/http"
 
 	hcservice "hcm/pkg/api/hc-service"
+<<<<<<< HEAD
 	"hcm/pkg/criteria/enumor"
+=======
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -43,6 +46,7 @@ func NewVpcClient(client rest.ClientInterface) *VpcClient {
 
 // Update vpc.
 func (v *VpcClient) Update(ctx context.Context, h http.Header, id string, req *hcservice.VpcUpdateReq) error {
+<<<<<<< HEAD
 	resp := new(rest.BaseResp)
 
 	err := v.client.Patch().
@@ -65,12 +69,36 @@ func (v *VpcClient) Update(ctx context.Context, h http.Header, id string, req *h
 
 // Delete vpc.
 func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error {
+=======
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
+	resp := new(rest.BaseResp)
+
+	err := v.client.Patch().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/vpcs/%s", id).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// Delete vpc.
+func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef("/vendors/%s/vpcs/%s", enumor.TCloud, id).
+		SubResourcef("/vpcs/%s", id).
 		WithHeaders(h).
 		Do().
 		Into(resp)

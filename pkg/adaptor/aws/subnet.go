@@ -117,12 +117,20 @@ func convertSubnet(data *ec2.Subnet, region string) *types.AwsSubnet {
 	name, _ := parseTags(data.Tags)
 	s.Name = name
 
+<<<<<<< HEAD
 	if data.CidrBlock != nil {
+=======
+	if data.CidrBlock != nil && *data.CidrBlock != "" {
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		s.Ipv4Cidr = []string{*data.CidrBlock}
 	}
 
 	for _, association := range data.Ipv6CidrBlockAssociationSet {
+<<<<<<< HEAD
 		if association != nil && association.Ipv6CidrBlock != nil {
+=======
+		if association != nil && association.Ipv6CidrBlock != nil && *association.Ipv6CidrBlock != "" {
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 			s.Ipv6Cidr = append(s.Ipv6Cidr, *association.Ipv6CidrBlock)
 		}
 	}

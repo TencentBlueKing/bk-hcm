@@ -21,6 +21,7 @@
 package subnet
 
 import (
+<<<<<<< HEAD
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
@@ -40,6 +41,20 @@ import (
 
 // AwsSubnetUpdate update aws subnet.
 func (v subnet) AwsSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
+=======
+	"hcm/pkg/adaptor/types"
+	adcore "hcm/pkg/adaptor/types/core"
+	dataservice "hcm/pkg/api/data-service"
+	"hcm/pkg/api/data-service/cloud"
+	hcservice "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/rest"
+)
+
+// AwsSubnetUpdate update aws subnet.
+func (s subnet) AwsSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	id := cts.PathParameter("id").String()
 
 	req := new(hcservice.SubnetUpdateReq)
@@ -50,12 +65,20 @@ func (v subnet) AwsSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+<<<<<<< HEAD
 	getRes, err := v.cs.DataService().Aws.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+=======
+	getRes, err := s.cs.DataService().Aws.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	cli, err := v.ad.Aws(cts.Kit, getRes.AccountID)
+=======
+	cli, err := s.ad.Aws(cts.Kit, getRes.AccountID)
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +97,11 @@ func (v subnet) AwsSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 			},
 		}},
 	}
+<<<<<<< HEAD
 	err = v.cs.DataService().Aws.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq)
+=======
+	err = s.cs.DataService().Aws.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq)
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
@@ -83,15 +110,26 @@ func (v subnet) AwsSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 }
 
 // AwsSubnetDelete delete aws subnet.
+<<<<<<< HEAD
 func (v subnet) AwsSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
 	getRes, err := v.cs.DataService().Aws.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+=======
+func (s subnet) AwsSubnetDelete(cts *rest.Contexts) (interface{}, error) {
+	id := cts.PathParameter("id").String()
+
+	getRes, err := s.cs.DataService().Aws.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	cli, err := v.ad.Aws(cts.Kit, getRes.AccountID)
+=======
+	cli, err := s.ad.Aws(cts.Kit, getRes.AccountID)
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
@@ -108,13 +146,18 @@ func (v subnet) AwsSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	deleteReq := &dataservice.BatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
+<<<<<<< HEAD
 	err = v.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+=======
+	err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
 
 	return nil, nil
 }
+<<<<<<< HEAD
 
 // AwsSubnetSync sync aws cloud subnet.
 func (v subnet) AwsSubnetSync(cts *rest.Contexts) (interface{}, error) {
@@ -323,3 +366,5 @@ func (v subnet) filterAwsSubnetList(req *hcservice.ResourceSyncReq, list *types.
 	}
 	return nil
 }
+=======
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41

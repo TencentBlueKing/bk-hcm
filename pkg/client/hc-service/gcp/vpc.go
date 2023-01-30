@@ -24,7 +24,10 @@ import (
 	"net/http"
 
 	hcservice "hcm/pkg/api/hc-service"
+<<<<<<< HEAD
 	"hcm/pkg/criteria/enumor"
+=======
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -48,7 +51,11 @@ func (v *VpcClient) Update(ctx context.Context, h http.Header, id string, req *h
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
+<<<<<<< HEAD
 		SubResourcef("/vendors/%s/vpcs/%s", enumor.Gcp, id).
+=======
+		SubResourcef("/vpcs/%s", id).
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -70,7 +77,11 @@ func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error 
 	err := v.client.Delete().
 		WithContext(ctx).
 		Body(nil).
+<<<<<<< HEAD
 		SubResourcef("/vendors/%s/vpcs/%s", enumor.Gcp, id).
+=======
+		SubResourcef("/vpcs/%s", id).
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		WithHeaders(h).
 		Do().
 		Into(resp)

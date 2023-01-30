@@ -21,6 +21,10 @@ package cloud
 
 import (
 	"fmt"
+<<<<<<< HEAD
+=======
+	"strings"
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 
 	"hcm/pkg/criteria/errf"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
@@ -42,6 +46,10 @@ type Vpc interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.VpcTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *cloud.VpcTable) error
 	List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (*types.VpcListResult, error)
+<<<<<<< HEAD
+=======
+	ListByGcpSelfLink(kt *kit.Kit, links []string) ([]cloud.VpcTable, error)
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
@@ -193,6 +201,31 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 	return &types.VpcListResult{Details: details}, nil
 }
 
+<<<<<<< HEAD
+=======
+// ListByGcpSelfLink list gcp vpcs by self links.
+// TODO remove this when JSON is supported
+func (v *vpcDao) ListByGcpSelfLink(kt *kit.Kit, links []string) ([]cloud.VpcTable, error) {
+	if len(links) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "self links are empty")
+	}
+
+	if len(links) > int(types.DefaultMaxPageLimit) {
+		return nil, errf.New(errf.InvalidParameter, "self links exceeds maximum limit")
+	}
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE vendor = "gcp" AND extension ->> '$.self_link' IN ('%s')`,
+		cloud.VpcColumns.NamedExpr(), table.VpcTable, strings.Join(links, "','"))
+
+	details := make([]cloud.VpcTable, 0)
+	if err := v.orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+		return nil, err
+	}
+
+	return details, nil
+}
+
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 // BatchDeleteWithTx batch delete vpc with transaction.
 func (v *vpcDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 	if filterExpr == nil {

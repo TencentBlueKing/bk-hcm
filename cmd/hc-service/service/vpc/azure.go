@@ -21,6 +21,7 @@
 package vpc
 
 import (
+<<<<<<< HEAD
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
@@ -36,6 +37,16 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
+=======
+	"hcm/pkg/adaptor/types"
+	adcore "hcm/pkg/adaptor/types/core"
+	dataservice "hcm/pkg/api/data-service"
+	"hcm/pkg/api/data-service/cloud"
+	hcservice "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/rest"
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 )
 
 // AzureVpcUpdate update azure vpc.
@@ -115,6 +126,7 @@ func (v vpc) AzureVpcDelete(cts *rest.Contexts) (interface{}, error) {
 
 	return nil, nil
 }
+<<<<<<< HEAD
 
 // AzureVpcSync sync azure cloud vpc.
 func (v vpc) AzureVpcSync(cts *rest.Contexts) (interface{}, error) {
@@ -301,3 +313,5 @@ func (v vpc) filterAzureVpcList(req *hcservice.ResourceSyncReq, list *types.Azur
 	}
 	return nil
 }
+=======
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41

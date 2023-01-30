@@ -29,13 +29,18 @@ import (
 
 // InitVpcService initial the vpc service
 func InitVpcService(cap *capability.Capability) {
+<<<<<<< HEAD
 	a := &vpc{
+=======
+	v := &vpc{
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		ad: cap.CloudAdaptor,
 		cs: cap.ClientSet,
 	}
 
 	h := rest.NewHandler()
 
+<<<<<<< HEAD
 	h.Add("TCloudVpcUpdate", "PATCH", "/vendors/tcloud/vpcs/{id}", a.TCloudVpcUpdate)
 	h.Add("AwsVpcUpdate", "PATCH", "/vendors/aws/vpcs/{id}", a.AwsVpcUpdate)
 	h.Add("HuaWeiVpcUpdate", "PATCH", "/vendors/huawei/vpcs/{id}", a.HuaWeiVpcUpdate)
@@ -54,6 +59,19 @@ func InitVpcService(cap *capability.Capability) {
 	h.Add("AwsVpcSync", "POST", "/vendors/aws/vpc/sync", a.AwsVpcSync)
 	h.Add("AzureVpcSync", "POST", "/vendors/azure/vpc/sync", a.AzureVpcSync)
 	h.Add("GcpVpcSync", "POST", "/vendors/gcp/vpc/sync", a.GcpVpcSync)
+=======
+	h.Add("TCloudVpcUpdate", "PATCH", "/vendors/tcloud/vpcs/{id}", v.TCloudVpcUpdate)
+	h.Add("AwsVpcUpdate", "PATCH", "/vendors/aws/vpcs/{id}", v.AwsVpcUpdate)
+	h.Add("HuaWeiVpcUpdate", "PATCH", "/vendors/huawei/vpcs/{id}", v.HuaWeiVpcUpdate)
+	h.Add("GcpVpcUpdate", "PATCH", "/vendors/gcp/vpcs/{id}", v.GcpVpcUpdate)
+	h.Add("AzureVpcUpdate", "PATCH", "/vendors/azure/vpcs/{id}", v.AzureVpcUpdate)
+
+	h.Add("TCloudVpcDelete", "DELETE", "/vendors/tcloud/vpcs/{id}", v.TCloudVpcDelete)
+	h.Add("AwsVpcDelete", "DELETE", "/vendors/aws/vpcs/{id}", v.AwsVpcDelete)
+	h.Add("HuaWeiVpcDelete", "DELETE", "/vendors/huawei/vpcs/{id}", v.HuaWeiVpcDelete)
+	h.Add("GcpVpcDelete", "DELETE", "/vendors/gcp/vpcs/{id}", v.GcpVpcDelete)
+	h.Add("AzureVpcDelete", "DELETE", "/vendors/azure/vpcs/{id}", v.AzureVpcDelete)
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 
 	h.Load(cap.WebService)
 }

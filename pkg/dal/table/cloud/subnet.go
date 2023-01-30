@@ -90,11 +90,16 @@ type SubnetTable struct {
 }
 
 // TableName return subnet table name.
+<<<<<<< HEAD
 func (v SubnetTable) TableName() table.Name {
+=======
+func (s SubnetTable) TableName() table.Name {
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	return table.SubnetTable
 }
 
 // InsertValidate validate subnet table on insert.
+<<<<<<< HEAD
 func (v SubnetTable) InsertValidate() error {
 	if err := v.Vendor.Validate(); err != nil {
 		return err
@@ -155,4 +160,58 @@ func (v SubnetTable) UpdateValidate() error {
 	}
 
 	return validator.Validate.Struct(v)
+=======
+func (s SubnetTable) InsertValidate() error {
+	if err := s.Vendor.Validate(); err != nil {
+		return err
+	}
+
+	if len(s.AccountID) == 0 {
+		return errors.New("account id can not be empty")
+	}
+
+	if len(s.CloudVpcID) == 0 {
+		return errors.New("cloud vpc id can not be empty")
+	}
+
+	if len(s.CloudID) == 0 {
+		return errors.New("cloud id can not be empty")
+	}
+
+	if s.Name == nil {
+		return errors.New("name can not be nil")
+	}
+
+	return validator.Validate.Struct(s)
+}
+
+// UpdateValidate validate subnet table on update.
+func (s SubnetTable) UpdateValidate() error {
+	if err := validator.Validate.Struct(s); err != nil {
+		return err
+	}
+
+	if s.Name == nil && len(s.Ipv4Cidr) == 0 && s.Ipv6Cidr == nil && len(s.Extension) == 0 && len(s.VpcID) == 0 &&
+		s.BkBizID == 0 && s.Memo == nil {
+		return errors.New("at least one of the update fields must be set")
+	}
+
+	if len(s.AccountID) != 0 {
+		return errors.New("account id can not update")
+	}
+
+	if len(s.CloudID) != 0 {
+		return errors.New("cloud id can not update")
+	}
+
+	if len(s.Creator) != 0 {
+		return errors.New("creator can not update")
+	}
+
+	if len(s.Reviser) == 0 {
+		return errors.New("reviser can not be empty")
+	}
+
+	return validator.Validate.Struct(s)
+>>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 }
