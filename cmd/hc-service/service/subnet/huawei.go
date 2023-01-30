@@ -238,7 +238,7 @@ func (s subnet) BatchCompareHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.
 
 	// add resource data
 	if len(createResources) > 0 {
-		err = s.batchCreateHuaWei(cts, createResources)
+		err = s.batchCreateHuaWeiSubnet(cts, createResources)
 		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err:%v",
 				enumor.HuaWei, req.AccountID, req.Region, err)
@@ -326,7 +326,7 @@ func (s subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *typ
 	return nil
 }
 
-func (s subnet) batchCreateHuaWei(cts *rest.Contexts,
+func (s subnet) batchCreateHuaWeiSubnet(cts *rest.Contexts,
 	createResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]) error {
 	querySize := int(filter.DefaultMaxInLimit)
 	times := len(createResources) / querySize

@@ -232,7 +232,7 @@ func (s subnet) BatchCompareAwsSubnetList(cts *rest.Contexts, req *hcservice.Res
 
 	// add resource data
 	if len(createResources) > 0 {
-		err = s.batchCreateAws(cts, createResources)
+		err = s.batchCreateAwsSubnet(cts, createResources)
 		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err:%v",
 				enumor.Aws, req.AccountID, req.Region, err)
@@ -323,7 +323,7 @@ func (s subnet) filterAwsSubnetList(req *hcservice.ResourceSyncReq, list *types.
 	return nil
 }
 
-func (s subnet) batchCreateAws(cts *rest.Contexts,
+func (s subnet) batchCreateAwsSubnet(cts *rest.Contexts,
 	createResources []cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt]) error {
 	querySize := int(filter.DefaultMaxInLimit)
 	times := len(createResources) / querySize

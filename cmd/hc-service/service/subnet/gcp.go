@@ -243,7 +243,7 @@ func (s subnet) BatchCompareGcpSubnetList(cts *rest.Contexts, req *hcservice.Res
 
 	// add resource data
 	if len(createResources) > 0 {
-		err = s.batchCreateGcp(cts, createResources)
+		err = s.batchCreateGcpSubnet(cts, createResources)
 		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err:%v",
 				enumor.Gcp, req.AccountID, req.Region, err)
@@ -332,7 +332,7 @@ func (s subnet) filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.
 	return nil
 }
 
-func (s subnet) batchCreateGcp(cts *rest.Contexts,
+func (s subnet) batchCreateGcpSubnet(cts *rest.Contexts,
 	createResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt]) error {
 	querySize := int(filter.DefaultMaxInLimit)
 	times := len(createResources) / querySize

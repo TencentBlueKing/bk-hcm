@@ -285,7 +285,7 @@ func (s subnet) BatchCompareTcloudSubnetList(cts *rest.Contexts, req *hcservice.
 
 	// add resource data
 	if len(createResources) > 0 {
-		err = s.batchCreateTcloud(cts, createResources)
+		err = s.batchCreateTcloudSubnet(cts, createResources)
 		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err:%v",
 				enumor.TCloud, req.AccountID, req.Region, err)
@@ -362,7 +362,7 @@ func (s subnet) filterTcloudSubnetList(req *hcservice.ResourceSyncReq, list *typ
 	return nil
 }
 
-func (s subnet) batchCreateTcloud(cts *rest.Contexts,
+func (s subnet) batchCreateTcloudSubnet(cts *rest.Contexts,
 	createResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt]) error {
 	querySize := int(filter.DefaultMaxInLimit)
 	times := len(createResources) / querySize
