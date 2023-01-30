@@ -133,10 +133,7 @@ func convertVpc(data *compute.Network) *types.GcpVpc {
 		Name:    data.Name,
 		Memo:    &data.Description,
 		Extension: &cloud.GcpVpcExtension{
-<<<<<<< HEAD
-=======
 			SelfLink:              data.SelfLink,
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 			AutoCreateSubnetworks: data.AutoCreateSubnetworks,
 			EnableUlaInternalIpv6: data.EnableUlaInternalIpv6,
 			Mtu:                   data.Mtu,

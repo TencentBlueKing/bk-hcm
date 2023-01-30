@@ -32,13 +32,8 @@ import (
 	"hcm/cmd/hc-service/service/account"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/cmd/hc-service/service/cloud-adaptor"
-<<<<<<< HEAD
 	"hcm/cmd/hc-service/service/subnet"
 	"hcm/cmd/hc-service/service/vpc"
-=======
-	"hcm/cmd/hc-service/service/vpc"
-	"hcm/cmd/hc-service/service/subnet"
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"

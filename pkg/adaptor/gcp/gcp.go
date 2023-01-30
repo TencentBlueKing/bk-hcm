@@ -50,8 +50,6 @@ func generateResourceIDsFilter(resourceIDs []string) string {
 
 	return filterExp
 }
-<<<<<<< HEAD
-=======
 
 // parseSelfLinkToName parse resource self link to name, because self link is used for relation but name is used in api.
 // self link format: https://www.googleapis.com/.../{name}.
@@ -64,4 +62,3 @@ func parseSelfLinkToName(link string) string {
 
 	return link[idx:]
 }
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41

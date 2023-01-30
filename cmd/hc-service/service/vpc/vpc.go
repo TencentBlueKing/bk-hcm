@@ -29,37 +29,13 @@ import (
 
 // InitVpcService initial the vpc service
 func InitVpcService(cap *capability.Capability) {
-<<<<<<< HEAD
-	a := &vpc{
-=======
 	v := &vpc{
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		ad: cap.CloudAdaptor,
 		cs: cap.ClientSet,
 	}
 
 	h := rest.NewHandler()
 
-<<<<<<< HEAD
-	h.Add("TCloudVpcUpdate", "PATCH", "/vendors/tcloud/vpcs/{id}", a.TCloudVpcUpdate)
-	h.Add("AwsVpcUpdate", "PATCH", "/vendors/aws/vpcs/{id}", a.AwsVpcUpdate)
-	h.Add("HuaWeiVpcUpdate", "PATCH", "/vendors/huawei/vpcs/{id}", a.HuaWeiVpcUpdate)
-	h.Add("GcpVpcUpdate", "PATCH", "/vendors/gcp/vpcs/{id}", a.GcpVpcUpdate)
-	h.Add("AzureVpcUpdate", "PATCH", "/vendors/azure/vpcs/{id}", a.AzureVpcUpdate)
-
-	h.Add("TCloudVpcDelete", "DELETE", "/vendors/tcloud/vpcs/{id}", a.TCloudVpcDelete)
-	h.Add("AwsVpcDelete", "DELETE", "/vendors/aws/vpcs/{id}", a.AwsVpcDelete)
-	h.Add("HuaWeiVpcDelete", "DELETE", "/vendors/huawei/vpcs/{id}", a.HuaWeiVpcDelete)
-	h.Add("GcpVpcDelete", "DELETE", "/vendors/gcp/vpcs/{id}", a.GcpVpcDelete)
-	h.Add("AzureVpcDelete", "DELETE", "/vendors/azure/vpcs/{id}", a.AzureVpcDelete)
-
-	// vpc sync
-	h.Add("TCloudVpcSync", "POST", "/vendors/tcloud/vpc/sync", a.TCloudVpcSync)
-	h.Add("HuaWeiVpcSync", "POST", "/vendors/huawei/vpc/sync", a.HuaWeiVpcSync)
-	h.Add("AwsVpcSync", "POST", "/vendors/aws/vpc/sync", a.AwsVpcSync)
-	h.Add("AzureVpcSync", "POST", "/vendors/azure/vpc/sync", a.AzureVpcSync)
-	h.Add("GcpVpcSync", "POST", "/vendors/gcp/vpc/sync", a.GcpVpcSync)
-=======
 	h.Add("TCloudVpcUpdate", "PATCH", "/vendors/tcloud/vpcs/{id}", v.TCloudVpcUpdate)
 	h.Add("AwsVpcUpdate", "PATCH", "/vendors/aws/vpcs/{id}", v.AwsVpcUpdate)
 	h.Add("HuaWeiVpcUpdate", "PATCH", "/vendors/huawei/vpcs/{id}", v.HuaWeiVpcUpdate)
@@ -71,7 +47,13 @@ func InitVpcService(cap *capability.Capability) {
 	h.Add("HuaWeiVpcDelete", "DELETE", "/vendors/huawei/vpcs/{id}", v.HuaWeiVpcDelete)
 	h.Add("GcpVpcDelete", "DELETE", "/vendors/gcp/vpcs/{id}", v.GcpVpcDelete)
 	h.Add("AzureVpcDelete", "DELETE", "/vendors/azure/vpcs/{id}", v.AzureVpcDelete)
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
+
+	// vpc sync
+	h.Add("TCloudVpcSync", "POST", "/vendors/tcloud/vpc/sync", v.TCloudVpcSync)
+	h.Add("HuaWeiVpcSync", "POST", "/vendors/huawei/vpc/sync", v.HuaWeiVpcSync)
+	h.Add("AwsVpcSync", "POST", "/vendors/aws/vpc/sync", v.AwsVpcSync)
+	h.Add("AzureVpcSync", "POST", "/vendors/azure/vpc/sync", v.AzureVpcSync)
+	h.Add("GcpVpcSync", "POST", "/vendors/gcp/vpc/sync", v.GcpVpcSync)
 
 	h.Load(cap.WebService)
 }

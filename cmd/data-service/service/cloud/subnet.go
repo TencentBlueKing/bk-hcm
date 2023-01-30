@@ -81,17 +81,6 @@ func (svc *subnetSvc) BatchCreateSubnet(cts *rest.Contexts) (interface{}, error)
 
 	switch vendor {
 	case enumor.TCloud:
-<<<<<<< HEAD
-		return batchCreateSubnet[protocore.TCloudSubnetExtension](cts, vendor, svc)
-	case enumor.Aws:
-		return batchCreateSubnet[protocore.AwsSubnetExtension](cts, vendor, svc)
-	case enumor.Gcp:
-		return batchCreateSubnet[protocore.GcpSubnetExtension](cts, vendor, svc)
-	case enumor.HuaWei:
-		return batchCreateSubnet[protocore.HuaWeiSubnetExtension](cts, vendor, svc)
-	case enumor.Azure:
-		return batchCreateSubnet[protocore.AzureSubnetExtension](cts, vendor, svc)
-=======
 		return batchCreateSubnet[protocloud.TCloudSubnetCreateExt](cts, vendor, svc)
 	case enumor.Aws:
 		return batchCreateSubnet[protocloud.AwsSubnetCreateExt](cts, vendor, svc)
@@ -101,18 +90,13 @@ func (svc *subnetSvc) BatchCreateSubnet(cts *rest.Contexts) (interface{}, error)
 		return batchCreateSubnet[protocloud.HuaWeiSubnetCreateExt](cts, vendor, svc)
 	case enumor.Azure:
 		return batchCreateSubnet[protocloud.AzureSubnetCreateExt](cts, vendor, svc)
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	}
 
 	return nil, nil
 }
 
 // batchCreateSubnet batch create subnet.
-<<<<<<< HEAD
-func batchCreateSubnet[T protocore.SubnetExtension](cts *rest.Contexts, vendor enumor.Vendor, svc *subnetSvc) (
-=======
 func batchCreateSubnet[T protocloud.SubnetCreateExtension](cts *rest.Contexts, vendor enumor.Vendor, svc *subnetSvc) (
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	interface{}, error) {
 
 	req := new(protocloud.SubnetBatchCreateReq[T])
@@ -189,23 +173,6 @@ func batchCreateSubnet[T protocloud.SubnetCreateExtension](cts *rest.Contexts, v
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-<<<<<<< HEAD
-// getVpcIDByCloudID get vpc cloud id to id map from cloud ids
-func getVpcIDByCloudID(kt *kit.Kit, dao dao.Set, vendor enumor.Vendor, cloudIDs []string) (map[string]string, error) {
-	opt := &types.ListOption{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudIDs},
-				filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
-			},
-		},
-		Page: &daotypes.BasePage{Count: false, Start: 0, Limit: uint(len(cloudIDs))},
-	}
-	res, err := dao.Vpc().List(kt, opt)
-	if err != nil {
-		logs.Errorf("list vpc failed, err: %v, rid: %s", err, kt.Rid)
-=======
 // getVpcIDByCloudID get vpc cloud id to id map from cloud ids, used for related resources.
 func getVpcIDByCloudID(kt *kit.Kit, dao dao.Set, vendor enumor.Vendor, cloudIDs []string) (map[string]string, error) {
 	opt := &types.ListOption{
@@ -248,17 +215,12 @@ func getVpcIDByCloudID(kt *kit.Kit, dao dao.Set, vendor enumor.Vendor, cloudIDs 
 	res, err := dao.Vpc().List(kt, opt)
 	if err != nil {
 		logs.Errorf("list vpc failed, err: %v, rid: %s", kt.Rid)
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		return nil, fmt.Errorf("list vpc failed, err: %v", err)
 	}
 
 	idMap := make(map[string]string, len(res.Details))
 	for _, detail := range res.Details {
-<<<<<<< HEAD
-		idMap[detail.CloudID] = idMap[detail.ID]
-=======
 		idMap[detail.CloudID] = detail.ID
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	}
 
 	return idMap, nil
@@ -327,11 +289,6 @@ func batchUpdateSubnet[T protocloud.SubnetUpdateExtension](cts *rest.Contexts, s
 	for _, updateReq := range req.Subnets {
 		subnet.Name = updateReq.Name
 		subnet.Memo = updateReq.Memo
-<<<<<<< HEAD
-		subnet.Ipv4Cidr = updateReq.Ipv4Cidr
-		subnet.Ipv6Cidr = updateReq.Ipv6Cidr
-=======
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 
 		// update extension
 		if updateReq.Extension != nil {

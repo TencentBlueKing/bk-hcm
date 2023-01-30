@@ -37,11 +37,7 @@ import (
 
 // UpdateVpc update vpc.
 // TODO right now only memo is supported to update, add other update operations later.
-<<<<<<< HEAD
 func (t *TCloud) UpdateVpc(_ *kit.Kit, _ *types.TCloudVpcUpdateOption) error {
-=======
-func (t *TCloud) UpdateVpc(kt *kit.Kit, opt *types.TCloudVpcUpdateOption) error {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	return nil
 }
 
@@ -124,11 +120,7 @@ func convertVpc(data *vpc.Vpc, region string) *types.TCloudVpc {
 		},
 	}
 
-<<<<<<< HEAD
-	if data.CidrBlock != nil {
-=======
 	if data.CidrBlock != nil && len(*data.CidrBlock) != 0 {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		v.Extension.Cidr = append(v.Extension.Cidr, cloud.TCloudCidr{
 			Type:     enumor.Ipv4,
 			Cidr:     *data.CidrBlock,
@@ -136,11 +128,7 @@ func convertVpc(data *vpc.Vpc, region string) *types.TCloudVpc {
 		})
 	}
 
-<<<<<<< HEAD
-	if data.Ipv6CidrBlock != nil {
-=======
 	if data.Ipv6CidrBlock != nil && len(*data.Ipv6CidrBlock) != 0 {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		v.Extension.Cidr = append(v.Extension.Cidr, cloud.TCloudCidr{
 			Type:     enumor.Ipv6,
 			Cidr:     *data.Ipv6CidrBlock,

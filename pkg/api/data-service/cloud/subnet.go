@@ -28,20 +28,12 @@ import (
 // -------------------------- Create --------------------------
 
 // SubnetBatchCreateReq defines batch create subnet request.
-<<<<<<< HEAD
-type SubnetBatchCreateReq[T cloud.SubnetExtension] struct {
-=======
 type SubnetBatchCreateReq[T SubnetCreateExtension] struct {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	Subnets []SubnetCreateReq[T] `json:"subnets" validate:"required"`
 }
 
 // SubnetCreateReq defines create subnet request.
-<<<<<<< HEAD
-type SubnetCreateReq[T cloud.SubnetExtension] struct {
-=======
 type SubnetCreateReq[T SubnetCreateExtension] struct {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	AccountID  string   `json:"account_id" validate:"required"`
 	CloudVpcID string   `json:"cloud_vpc_id" validate:"required"`
 	CloudID    string   `json:"cloud_id" validate:"required"`
@@ -83,10 +75,7 @@ type AwsSubnetCreateExt struct {
 
 // GcpSubnetCreateExt defines create gcp subnet extensional info.
 type GcpSubnetCreateExt struct {
-<<<<<<< HEAD
-=======
 	SelfLink              string `json:"self_link" validate:"required"`
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	Region                string `json:"region" validate:"required"`
 	StackType             string `json:"stack_type" validate:"required"`
 	Ipv6AccessType        string `json:"ipv6_access_type" validate:"required"`

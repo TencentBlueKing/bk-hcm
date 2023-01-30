@@ -44,11 +44,7 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 
 // BatchCreate batch create gcp subnet.
 func (v *SubnetClient) BatchCreate(ctx context.Context, h http.Header,
-<<<<<<< HEAD
-	req *protocloud.SubnetBatchCreateReq[corecloud.GcpSubnetExtension]) (*core.BatchCreateResult, error) {
-=======
 	req *protocloud.SubnetBatchCreateReq[protocloud.GcpSubnetCreateExt]) (*core.BatchCreateResult, error) {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 
 	resp := new(core.BatchCreateResp)
 

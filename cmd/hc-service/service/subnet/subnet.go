@@ -29,37 +29,13 @@ import (
 
 // InitSubnetService initial the subnet service
 func InitSubnetService(cap *capability.Capability) {
-<<<<<<< HEAD
-	a := &subnet{
-=======
 	s := &subnet{
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		ad: cap.CloudAdaptor,
 		cs: cap.ClientSet,
 	}
 
 	h := rest.NewHandler()
 
-<<<<<<< HEAD
-	h.Add("TCloudSubnetUpdate", "PATCH", "/vendors/tcloud/subnets/{id}", a.TCloudSubnetUpdate)
-	h.Add("AwsSubnetUpdate", "PATCH", "/vendors/aws/subnets/{id}", a.AwsSubnetUpdate)
-	h.Add("HuaWeiSubnetUpdate", "PATCH", "/vendors/huawei/subnets/{id}", a.HuaWeiSubnetUpdate)
-	h.Add("GcpSubnetUpdate", "PATCH", "/vendors/gcp/subnets/{id}", a.GcpSubnetUpdate)
-	h.Add("AzureSubnetUpdate", "PATCH", "/vendors/azure/subnets/{id}", a.AzureSubnetUpdate)
-
-	h.Add("TCloudSubnetDelete", "DELETE", "/vendors/tcloud/subnets/{id}", a.TCloudSubnetDelete)
-	h.Add("AwsSubnetDelete", "DELETE", "/vendors/aws/subnets/{id}", a.AwsSubnetDelete)
-	h.Add("HuaWeiSubnetDelete", "DELETE", "/vendors/huawei/subnets/{id}", a.HuaWeiSubnetDelete)
-	h.Add("GcpSubnetDelete", "DELETE", "/vendors/gcp/subnets/{id}", a.GcpSubnetDelete)
-	h.Add("AzureSubnetDelete", "DELETE", "/vendors/azure/subnets/{id}", a.AzureSubnetDelete)
-
-	// subnet sync
-	h.Add("TCloudSubnetSync", "POST", "/vendors/tcloud/subnets/sync", a.TCloudSubnetSync)
-	h.Add("HuaweiSubnetSync", "POST", "/vendors/huawei/subnets/sync", a.HuaweiSubnetSync)
-	h.Add("AwsSubnetSync", "POST", "/vendors/aws/subnets/sync", a.AwsSubnetSync)
-	h.Add("AzureSubnetSync", "POST", "/vendors/azure/subnets/sync", a.AzureSubnetSync)
-	h.Add("GcpSubnetSync", "POST", "/vendors/gcp/subnets/sync", a.GcpSubnetSync)
-=======
 	h.Add("TCloudSubnetUpdate", "PATCH", "/vendors/tcloud/subnets/{id}", s.TCloudSubnetUpdate)
 	h.Add("AwsSubnetUpdate", "PATCH", "/vendors/aws/subnets/{id}", s.AwsSubnetUpdate)
 	h.Add("HuaWeiSubnetUpdate", "PATCH", "/vendors/huawei/subnets/{id}", s.HuaWeiSubnetUpdate)
@@ -71,7 +47,13 @@ func InitSubnetService(cap *capability.Capability) {
 	h.Add("HuaWeiSubnetDelete", "DELETE", "/vendors/huawei/subnets/{id}", s.HuaWeiSubnetDelete)
 	h.Add("GcpSubnetDelete", "DELETE", "/vendors/gcp/subnets/{id}", s.GcpSubnetDelete)
 	h.Add("AzureSubnetDelete", "DELETE", "/vendors/azure/subnets/{id}", s.AzureSubnetDelete)
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
+
+	// subnet sync
+	h.Add("TCloudSubnetSync", "POST", "/vendors/tcloud/subnets/sync", s.TCloudSubnetSync)
+	h.Add("HuaweiSubnetSync", "POST", "/vendors/huawei/subnets/sync", s.HuaweiSubnetSync)
+	h.Add("AwsSubnetSync", "POST", "/vendors/aws/subnets/sync", s.AwsSubnetSync)
+	h.Add("AzureSubnetSync", "POST", "/vendors/azure/subnets/sync", s.AzureSubnetSync)
+	h.Add("GcpSubnetSync", "POST", "/vendors/gcp/subnets/sync", s.GcpSubnetSync)
 
 	h.Load(cap.WebService)
 }

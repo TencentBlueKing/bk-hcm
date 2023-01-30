@@ -21,7 +21,6 @@
 package vpc
 
 import (
-<<<<<<< HEAD
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
@@ -37,16 +36,6 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
-=======
-	"hcm/pkg/adaptor/types"
-	adcore "hcm/pkg/adaptor/types/core"
-	dataservice "hcm/pkg/api/data-service"
-	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/rest"
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 )
 
 // HuaWeiVpcUpdate update huawei vpc.
@@ -132,7 +121,6 @@ func (v vpc) HuaWeiVpcDelete(cts *rest.Contexts) (interface{}, error) {
 
 	return nil, nil
 }
-<<<<<<< HEAD
 
 // HuaWeiVpcSync sync huawei vpc
 func (v vpc) HuaWeiVpcSync(cts *rest.Contexts) (interface{}, error) {
@@ -339,5 +327,3 @@ func (v vpc) filterHuaWeiVpcList(req *hcservice.ResourceSyncReq, list *types.Hua
 	}
 	return nil
 }
-=======
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41

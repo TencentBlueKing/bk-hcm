@@ -54,12 +54,8 @@ func (g *Gcp) UpdateSubnet(kt *kit.Kit, opt *types.GcpSubnetUpdateOption) error 
 	}
 
 	cloudProjectID := g.clientSet.credential.CloudProjectID
-<<<<<<< HEAD
-	_, err = client.Subnetworks.Patch(cloudProjectID, opt.Region, opt.ResourceID, req).Context(kt.Ctx).
-=======
 	region := parseSelfLinkToName(opt.Region)
 	_, err = client.Subnetworks.Patch(cloudProjectID, region, opt.ResourceID, req).Context(kt.Ctx).
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		RequestId(kt.Rid).Do()
 	if err != nil {
 		logs.Errorf("create subnet failed, err: %v, rid: %s", err, kt.Rid)
@@ -82,12 +78,8 @@ func (g *Gcp) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) erro
 	}
 
 	cloudProjectID := g.clientSet.credential.CloudProjectID
-<<<<<<< HEAD
-	_, err = client.Subnetworks.Delete(cloudProjectID, opt.Region, opt.ResourceID).Context(kt.Ctx).
-=======
 	region := parseSelfLinkToName(opt.Region)
 	_, err = client.Subnetworks.Delete(cloudProjectID, region, opt.ResourceID).Context(kt.Ctx).
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		RequestId(kt.Rid).Do()
 	if err != nil {
 		logs.Errorf("delete subnet failed, err: %v, rid: %s", err, kt.Rid)
@@ -146,10 +138,7 @@ func convertSubnet(data *compute.Subnetwork) *types.GcpSubnet {
 		Name:       data.Name,
 		Memo:       &data.Description,
 		Extension: &cloud.GcpSubnetExtension{
-<<<<<<< HEAD
-=======
 			SelfLink:              data.SelfLink,
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 			Region:                data.Region,
 			StackType:             data.StackType,
 			Ipv6AccessType:        data.Ipv6AccessType,

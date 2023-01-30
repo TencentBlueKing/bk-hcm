@@ -21,7 +21,6 @@
 package subnet
 
 import (
-<<<<<<< HEAD
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
@@ -40,21 +39,7 @@ import (
 )
 
 // HuaWeiSubnetUpdate update huawei subnet.
-func (v subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
-=======
-	"hcm/pkg/adaptor/types"
-	adcore "hcm/pkg/adaptor/types/core"
-	dataservice "hcm/pkg/api/data-service"
-	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/rest"
-)
-
-// HuaWeiSubnetUpdate update huawei subnet.
 func (s subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	id := cts.PathParameter("id").String()
 
 	req := new(hcservice.SubnetUpdateReq)
@@ -65,20 +50,12 @@ func (s subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-<<<<<<< HEAD
-	getRes, err := v.cs.DataService().HuaWei.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
-=======
 	getRes, err := s.cs.DataService().HuaWei.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
 
-<<<<<<< HEAD
-	cli, err := v.ad.HuaWei(cts.Kit, getRes.AccountID)
-=======
 	cli, err := s.ad.HuaWei(cts.Kit, getRes.AccountID)
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
@@ -104,11 +81,7 @@ func (s subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 			},
 		}},
 	}
-<<<<<<< HEAD
-	err = v.cs.DataService().HuaWei.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq)
-=======
 	err = s.cs.DataService().HuaWei.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq)
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
@@ -117,26 +90,15 @@ func (s subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 }
 
 // HuaWeiSubnetDelete delete huawei subnet.
-<<<<<<< HEAD
-func (v subnet) HuaWeiSubnetDelete(cts *rest.Contexts) (interface{}, error) {
-	id := cts.PathParameter("id").String()
-
-	getRes, err := v.cs.DataService().HuaWei.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
-=======
 func (s subnet) HuaWeiSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
 	getRes, err := s.cs.DataService().HuaWei.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
 
-<<<<<<< HEAD
-	cli, err := v.ad.HuaWei(cts.Kit, getRes.AccountID)
-=======
 	cli, err := s.ad.HuaWei(cts.Kit, getRes.AccountID)
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
@@ -156,21 +118,17 @@ func (s subnet) HuaWeiSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	deleteReq := &dataservice.BatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-<<<<<<< HEAD
-	err = v.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-=======
+
 	err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if err != nil {
 		return nil, err
 	}
 
 	return nil, nil
 }
-<<<<<<< HEAD
 
 // HuaweiSubnetSync sync huawei cloud subnet.
-func (v subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
+func (s subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	req := new(hcservice.ResourceSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -190,7 +148,7 @@ func (v subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	)
 
 	// batch get subnet list from cloudapi.
-	list, err := v.BatchGetHuaWeiSubnetList(cts, req)
+	list, err := s.BatchGetHuaWeiSubnetList(cts, req)
 	if err != nil || list == nil {
 		logs.Errorf("[%s-subnet] request cloudapi response failed. accountID:%s, region:%s, err:%v",
 			vendorName, req.AccountID, req.Region, err)
@@ -198,7 +156,7 @@ func (v subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// batch get subnet map from db.
-	resourceDBMap, err := v.BatchGetSubnetMapFromDB(cts, req, vendorName)
+	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, vendorName)
 	if err != nil {
 		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID:%s, region:%s, err:%v",
 			vendorName, req.AccountID, req.Region, err)
@@ -206,7 +164,7 @@ func (v subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// batch compare vendor subnet list.
-	_, err = v.BatchCompareHuaWeiSubnetList(cts, req, list, resourceDBMap)
+	_, err = s.BatchCompareHuaWeiSubnetList(cts, req, list, resourceDBMap)
 	if err != nil {
 		logs.Errorf("[%s-subnet] compare api and subnetdblist failed. accountID:%s, region:%s, err:%v",
 			vendorName, req.AccountID, req.Region, err)
@@ -217,14 +175,14 @@ func (v subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 }
 
 // BatchGetHuaWeiSubnetList batch get subnet list from cloudapi.
-func (v subnet) BatchGetHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (
+func (s subnet) BatchGetHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (
 	*types.HuaweiSubnetListResult, error) {
 	var (
 		count int32 = adcore.HuaweiQueryLimit
 		list        = &types.HuaweiSubnetListResult{}
 	)
 
-	cli, err := v.ad.HuaWei(cts.Kit, req.AccountID)
+	cli, err := s.ad.HuaWei(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -251,23 +209,23 @@ func (v subnet) BatchGetHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.Reso
 }
 
 // BatchCompareHuaWeiSubnetList batch compare vendor subnet list.
-func (v subnet) BatchCompareHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
+func (s subnet) BatchCompareHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
 	list *types.HuaweiSubnetListResult, resourceDBMap map[string]cloudcore.BaseSubnet) (interface{}, error) {
 	var (
-		createResources []cloud.SubnetCreateReq[cloudcore.HuaWeiSubnetExtension]
+		createResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]
 		updateResources []cloud.SubnetUpdateReq[cloud.HuaWeiSubnetUpdateExt]
 		existIDMap      = map[string]bool{}
 		deleteIDs       []string
 	)
 
-	err := v.filterHuaWeiSubnetList(req, list, resourceDBMap, &createResources, &updateResources, existIDMap)
+	err := s.filterHuaWeiSubnetList(req, list, resourceDBMap, &createResources, &updateResources, existIDMap)
 	if err != nil {
 		return nil, err
 	}
 
 	// update resource data
 	if len(updateResources) > 0 {
-		if err = v.cs.DataService().HuaWei.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(),
+		if err = s.cs.DataService().HuaWei.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(),
 			&cloud.SubnetBatchUpdateReq[cloud.HuaWeiSubnetUpdateExt]{
 				Subnets: updateResources,
 			}); err != nil {
@@ -279,8 +237,8 @@ func (v subnet) BatchCompareHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.
 
 	// add resource data
 	if len(createResources) > 0 {
-		if _, err = v.cs.DataService().HuaWei.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.SubnetBatchCreateReq[cloudcore.HuaWeiSubnetExtension]{
+		if _, err = s.cs.DataService().HuaWei.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
+			&cloud.SubnetBatchCreateReq[cloud.HuaWeiSubnetCreateExt]{
 				Subnets: createResources,
 			}); err != nil {
 			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err:%v",
@@ -296,7 +254,7 @@ func (v subnet) BatchCompareHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.
 		}
 	}
 	if len(deleteIDs) > 0 {
-		if err = v.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(),
+		if err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(),
 			&dataservice.BatchDeleteReq{
 				Filter: tools.ContainersExpression("id", deleteIDs),
 			}); err != nil {
@@ -308,9 +266,9 @@ func (v subnet) BatchCompareHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.
 	return nil, nil
 }
 
-func (v subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *types.HuaweiSubnetListResult,
+func (s subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *types.HuaweiSubnetListResult,
 	resourceDBMap map[string]cloudcore.BaseSubnet,
-	createResources *[]cloud.SubnetCreateReq[cloudcore.HuaWeiSubnetExtension],
+	createResources *[]cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt],
 	updateResources *[]cloud.SubnetUpdateReq[cloud.HuaWeiSubnetUpdateExt], existIDMap map[string]bool) error {
 	if list == nil || len(list.Details) == 0 {
 		return fmt.Errorf("cloudapi subnetlist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
@@ -342,14 +300,14 @@ func (v subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *typ
 			existIDMap[resourceInfo.ID] = true
 		} else {
 			// need add subnet data
-			tmpRes := cloud.SubnetCreateReq[cloudcore.HuaWeiSubnetExtension]{
+			tmpRes := cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]{
 				AccountID:  req.AccountID,
 				CloudVpcID: item.CloudVpcID,
 				CloudID:    item.CloudID,
 				Name:       converter.ValToPtr(item.Name),
 				Ipv4Cidr:   item.Ipv4Cidr,
 				Memo:       item.Memo,
-				Extension: &cloudcore.HuaWeiSubnetExtension{
+				Extension: &cloud.HuaWeiSubnetCreateExt{
 					Region:       item.Extension.Region,
 					Status:       item.Extension.Status,
 					DhcpEnable:   item.Extension.DhcpEnable,
@@ -368,5 +326,3 @@ func (v subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *typ
 	}
 	return nil
 }
-=======
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41

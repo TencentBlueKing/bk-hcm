@@ -30,7 +30,6 @@ type VpcUpdateReq struct {
 func (u *VpcUpdateReq) Validate() error {
 	return validator.Validate.Struct(u)
 }
-<<<<<<< HEAD
 
 // -------------------------- Sync --------------------------
 
@@ -51,5 +50,3 @@ type ResourceSyncResult struct {
 func (r *ResourceSyncReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
-=======
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41

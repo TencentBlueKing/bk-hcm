@@ -24,10 +24,6 @@ import (
 	"net/http"
 
 	"hcm/pkg/adaptor/types"
-<<<<<<< HEAD
-	"hcm/pkg/criteria/enumor"
-=======
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -51,11 +47,7 @@ func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-<<<<<<< HEAD
-		SubResourcef("/vendors/%s/subnets/%s", enumor.Aws, id).
-=======
 		SubResourcef("/subnets/%s", id).
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -77,11 +69,7 @@ func (v *SubnetClient) Delete(ctx context.Context, h http.Header, id string) err
 	err := v.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-<<<<<<< HEAD
-		SubResourcef("/vendors/%s/subnets/%s", enumor.Aws, id).
-=======
 		SubResourcef("/subnets/%s", id).
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		WithHeaders(h).
 		Do().
 		Into(resp)

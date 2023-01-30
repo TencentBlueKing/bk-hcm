@@ -67,10 +67,6 @@ func (v *subnetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.S
 		return nil, errf.New(errf.InvalidParameter, "models to create cannot be empty")
 	}
 
-<<<<<<< HEAD
-	for _, model := range models {
-		if err := model.InsertValidate(); err != nil {
-=======
 	for idx := range models {
 		if models[idx].Ipv4Cidr == nil {
 			models[idx].Ipv4Cidr = make([]string, 0)
@@ -81,7 +77,6 @@ func (v *subnetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.S
 		}
 
 		if err := models[idx].InsertValidate(); err != nil {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
 	}
@@ -153,13 +148,8 @@ func (v *subnetDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 }
 
 // List subnets.
-<<<<<<< HEAD
 func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (
 	*types.SubnetListResult, error) {
-=======
-func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (*types.SubnetListResult,
-	error) {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list subnet options is nil")

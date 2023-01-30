@@ -24,10 +24,6 @@ import (
 	"net/http"
 
 	"hcm/pkg/adaptor/types"
-<<<<<<< HEAD
-	"hcm/pkg/criteria/enumor"
-=======
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -45,22 +41,14 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 }
 
 // Update subnet.
-<<<<<<< HEAD
 func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string,
 	req *types.TCloudSubnetUpdateOption) error {
-=======
-func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *types.TCloudSubnetUpdateOption) error {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	resp := new(rest.BaseResp)
 
 	err := v.client.Patch().
 		WithContext(ctx).
 		Body(req).
-<<<<<<< HEAD
-		SubResourcef("/vendors/%s/subnets/%s", enumor.TCloud, id).
-=======
 		SubResourcef("/subnets/%s", id).
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -82,11 +70,7 @@ func (v *SubnetClient) Delete(ctx context.Context, h http.Header, id string) err
 	err := v.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-<<<<<<< HEAD
-		SubResourcef("/vendors/%s/subnets/%s", enumor.TCloud, id).
-=======
 		SubResourcef("/subnets/%s", id).
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		WithHeaders(h).
 		Do().
 		Into(resp)

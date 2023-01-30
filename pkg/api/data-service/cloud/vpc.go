@@ -30,11 +30,7 @@ import (
 
 // VpcBatchCreateReq defines batch create vpc request.
 type VpcBatchCreateReq[T VpcCreateExtension] struct {
-<<<<<<< HEAD
-	Vpcs []VpcCreateReq[T] `json:"vpcs" validate:"required"`
-=======
 	Vpcs []VpcCreateReq[T] `json:"vpcs" validate:"required,max=100"`
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 }
 
 // VpcCreateReq defines create vpc request.
@@ -75,10 +71,7 @@ type AwsVpcCreateExt struct {
 
 // GcpVpcCreateExt defines gcp vpc extensional info.
 type GcpVpcCreateExt struct {
-<<<<<<< HEAD
-=======
 	SelfLink              string `json:"self_link" validate:"required"`
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks" validate:"required"`
 	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6" validate:"required"`
 	Mtu                   int64  `json:"mtu" validate:"required"`
@@ -110,11 +103,7 @@ func (c *VpcBatchCreateReq[T]) Validate() error {
 
 // VpcBatchUpdateReq defines batch update vpc request.
 type VpcBatchUpdateReq[T VpcUpdateExtension] struct {
-<<<<<<< HEAD
-	Vpcs []VpcUpdateReq[T] `json:"vpcs" validate:"required"`
-=======
 	Vpcs []VpcUpdateReq[T] `json:"vpcs" validate:"required,max=100"`
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 }
 
 // Validate VpcBatchUpdateReq.

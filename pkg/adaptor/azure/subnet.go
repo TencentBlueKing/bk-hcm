@@ -37,7 +37,7 @@ import (
 
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
-func (a *Azure) UpdateSubnet(kt *kit.Kit, opt *types.AzureSubnetUpdateOption) error {
+func (a *Azure) UpdateSubnet(_ *kit.Kit, _ *types.AzureSubnetUpdateOption) error {
 	return nil
 }
 
@@ -95,38 +95,24 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*type
 		}
 
 		for _, subnet := range page.Value {
-<<<<<<< HEAD
-			details = append(details, converter.PtrToVal(convertSubnet(subnet, opt.ResourceGroupName, opt.VpcName)))
-=======
 			details = append(details, converter.PtrToVal(convertSubnet(subnet,
 				a.clientSet.credential.CloudSubscriptionID, opt.ResourceGroupName, opt.VpcName)))
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		}
 	}
 
 	return &types.AzureSubnetListResult{Details: details}, nil
 }
 
-<<<<<<< HEAD
-func convertSubnet(data *armnetwork.Subnet, resourceGroup, vpc string) *types.AzureSubnet {
-=======
 func convertSubnet(data *armnetwork.Subnet, subscription, resourceGroup, vpc string) *types.AzureSubnet {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	if data == nil {
 		return nil
 	}
 
 	s := &types.AzureSubnet{
-<<<<<<< HEAD
-		CloudVpcID: vpc,
-		CloudID:    converter.PtrToVal(data.ID),
-		Name:       converter.PtrToVal(data.Name),
-=======
 		CloudVpcID: fmt.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/virtualNetworks/%s",
 			subscription, resourceGroup, vpc),
 		CloudID: converter.PtrToVal(data.ID),
 		Name:    converter.PtrToVal(data.Name),
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 		Extension: &cloud.AzureSubnetExtension{
 			ResourceGroup: resourceGroup,
 		},
@@ -137,11 +123,7 @@ func convertSubnet(data *armnetwork.Subnet, subscription, resourceGroup, vpc str
 	}
 
 	for _, prefix := range append(data.Properties.AddressPrefixes, data.Properties.AddressPrefix) {
-<<<<<<< HEAD
-		if prefix != nil {
-=======
 		if prefix != nil && *prefix != "" {
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 			addressType, err := cidr.CidrIPAddressType(*prefix)
 			if err != nil {
 				return nil

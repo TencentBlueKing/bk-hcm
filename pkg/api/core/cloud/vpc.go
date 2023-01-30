@@ -32,18 +32,6 @@ type Vpc[T VpcExtension] struct {
 
 // BaseVpc defines base vpc info.
 type BaseVpc struct {
-<<<<<<< HEAD
-	ID        string             `json:"id"`
-	Vendor    enumor.Vendor      `json:"vendor"`
-	AccountID string             `json:"account_id"`
-	CloudID   string             `json:"cloud_id"`
-	Name      string             `json:"name"`
-	Category  enumor.VpcCategory `json:"category"`
-	Memo      *string            `json:"memo,omitempty"`
-	BkCloudID int64              `json:"bk_cloud_id"`
-	BkBizID   int64              `json:"bk_biz_id"`
-	Revision  *core.Revision     `json:"revision"`
-=======
 	ID             string             `json:"id"`
 	Vendor         enumor.Vendor      `json:"vendor"`
 	AccountID      string             `json:"account_id"`
@@ -54,7 +42,6 @@ type BaseVpc struct {
 	BkCloudID      int64              `json:"bk_cloud_id"`
 	BkBizID        int64              `json:"bk_biz_id"`
 	*core.Revision `json:",inline"`
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 }
 
 // VpcExtension defines vpc extensional info.
@@ -100,10 +87,7 @@ type AwsCidr struct {
 
 // GcpVpcExtension defines gcp vpc extensional info.
 type GcpVpcExtension struct {
-<<<<<<< HEAD
-=======
 	SelfLink              string `json:"self_link"`
->>>>>>> 304144ec282c951c6c2127f39ca83cb7f1c70b41
 	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks"`
 	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6"`
 	Mtu                   int64  `json:"mtu"`
