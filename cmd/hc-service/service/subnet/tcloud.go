@@ -285,10 +285,8 @@ func (s subnet) BatchCompareTcloudSubnetList(cts *rest.Contexts, req *hcservice.
 
 	// add resource data
 	if len(createResources) > 0 {
-		if _, err = s.cs.DataService().TCloud.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.SubnetBatchCreateReq[cloud.TCloudSubnetCreateExt]{
-				Subnets: createResources,
-			}); err != nil {
+		err = s.batchCreateTcloud(cts, createResources)
+		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err:%v",
 				enumor.TCloud, req.AccountID, req.Region, err)
 			return nil, err
@@ -314,7 +312,7 @@ func (s subnet) BatchCompareTcloudSubnetList(cts *rest.Contexts, req *hcservice.
 	return nil, nil
 }
 
-func (v subnet) filterTcloudSubnetList(req *hcservice.ResourceSyncReq, list *types.TCloudSubnetListResult,
+func (s subnet) filterTcloudSubnetList(req *hcservice.ResourceSyncReq, list *types.TCloudSubnetListResult,
 	resourceDBMap map[string]cloudcore.BaseSubnet,
 	createResources *[]cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt],
 	updateResources *[]cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt], existIDMap map[string]bool) error {
@@ -359,6 +357,31 @@ func (v subnet) filterTcloudSubnetList(req *hcservice.ResourceSyncReq, list *typ
 				},
 			}
 			*createResources = append(*createResources, tmpRes)
+		}
+	}
+	return nil
+}
+
+func (s subnet) batchCreateTcloud(cts *rest.Contexts,
+	createResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt]) error {
+	querySize := int(filter.DefaultMaxInLimit)
+	times := len(createResources) / querySize
+	if len(createResources)%querySize != 0 {
+		times++
+	}
+	for i := 0; i < times; i++ {
+		var newResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt]
+		if i == times-1 {
+			newResources = append(newResources, createResources[i*querySize:]...)
+		} else {
+			newResources = append(newResources, createResources[i*querySize:(i+1)*querySize]...)
+		}
+
+		if _, err := s.cs.DataService().TCloud.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
+			&cloud.SubnetBatchCreateReq[cloud.TCloudSubnetCreateExt]{
+				Subnets: newResources,
+			}); err != nil {
+			return err
 		}
 	}
 	return nil

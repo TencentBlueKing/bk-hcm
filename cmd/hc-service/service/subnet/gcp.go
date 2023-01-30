@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
 )
@@ -242,10 +243,8 @@ func (s subnet) BatchCompareGcpSubnetList(cts *rest.Contexts, req *hcservice.Res
 
 	// add resource data
 	if len(createResources) > 0 {
-		if _, err = s.cs.DataService().Gcp.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.SubnetBatchCreateReq[cloud.GcpSubnetCreateExt]{
-				Subnets: createResources,
-			}); err != nil {
+		err = s.batchCreateGcp(cts, createResources)
+		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err:%v",
 				enumor.Gcp, req.AccountID, req.Region, err)
 			return nil, err
@@ -328,6 +327,31 @@ func (s subnet) filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.
 				tmpRes.Ipv6Cidr = []string{""}
 			}
 			*createResources = append(*createResources, tmpRes)
+		}
+	}
+	return nil
+}
+
+func (s subnet) batchCreateGcp(cts *rest.Contexts,
+	createResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt]) error {
+	querySize := int(filter.DefaultMaxInLimit)
+	times := len(createResources) / querySize
+	if len(createResources)%querySize != 0 {
+		times++
+	}
+	for i := 0; i < times; i++ {
+		var newResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt]
+		if i == times-1 {
+			newResources = append(newResources, createResources[i*querySize:]...)
+		} else {
+			newResources = append(newResources, createResources[i*querySize:(i+1)*querySize]...)
+		}
+
+		if _, err := s.cs.DataService().Gcp.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
+			&cloud.SubnetBatchCreateReq[cloud.GcpSubnetCreateExt]{
+				Subnets: newResources,
+			}); err != nil {
+			return err
 		}
 	}
 	return nil

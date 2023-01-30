@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
 )
@@ -237,10 +238,8 @@ func (s subnet) BatchCompareHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.
 
 	// add resource data
 	if len(createResources) > 0 {
-		if _, err = s.cs.DataService().HuaWei.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.SubnetBatchCreateReq[cloud.HuaWeiSubnetCreateExt]{
-				Subnets: createResources,
-			}); err != nil {
+		err = s.batchCreateHuaWei(cts, createResources)
+		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err:%v",
 				enumor.HuaWei, req.AccountID, req.Region, err)
 			return nil, err
@@ -322,6 +321,31 @@ func (s subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *typ
 				tmpRes.Ipv6Cidr = []string{""}
 			}
 			*createResources = append(*createResources, tmpRes)
+		}
+	}
+	return nil
+}
+
+func (s subnet) batchCreateHuaWei(cts *rest.Contexts,
+	createResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]) error {
+	querySize := int(filter.DefaultMaxInLimit)
+	times := len(createResources) / querySize
+	if len(createResources)%querySize != 0 {
+		times++
+	}
+	for i := 0; i < times; i++ {
+		var newResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]
+		if i == times-1 {
+			newResources = append(newResources, createResources[i*querySize:]...)
+		} else {
+			newResources = append(newResources, createResources[i*querySize:(i+1)*querySize]...)
+		}
+
+		if _, err := s.cs.DataService().HuaWei.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
+			&cloud.SubnetBatchCreateReq[cloud.HuaWeiSubnetCreateExt]{
+				Subnets: newResources,
+			}); err != nil {
+			return err
 		}
 	}
 	return nil
