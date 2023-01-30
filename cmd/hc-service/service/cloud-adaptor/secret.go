@@ -40,7 +40,7 @@ func NewSecretClient(dataCli *dataservice.Client) *SecretClient {
 
 // TCloudSecret get tcloud secret and validate secret.
 func (cli *SecretClient) TCloudSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, error) {
-	account, err := cli.data.CloudAccount().GetTCloudAccount(kt.Ctx, kt.Header(), accountID)
+	account, err := cli.data.TCloud.Account.Get(kt.Ctx, kt.Header(), accountID)
 	if err != nil {
 		return nil, fmt.Errorf("get tcloud account failed, err: %v", err)
 	}
@@ -63,7 +63,7 @@ func (cli *SecretClient) TCloudSecret(kt *kit.Kit, accountID string) (*types.Bas
 
 // AwsSecret get aws secret and validate secret.
 func (cli *SecretClient) AwsSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, error) {
-	account, err := cli.data.CloudAccount().GetAwsAccount(kt.Ctx, kt.Header(), accountID)
+	account, err := cli.data.Aws.Account.Get(kt.Ctx, kt.Header(), accountID)
 	if err != nil {
 		return nil, fmt.Errorf("get aws account failed, err: %v", err)
 	}
@@ -86,7 +86,7 @@ func (cli *SecretClient) AwsSecret(kt *kit.Kit, accountID string) (*types.BaseSe
 
 // HuaWeiSecret get huawei secret and validate secret.
 func (cli *SecretClient) HuaWeiSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, error) {
-	account, err := cli.data.CloudAccount().GetHuaWeiAccount(kt.Ctx, kt.Header(), accountID)
+	account, err := cli.data.HuaWei.Account.Get(kt.Ctx, kt.Header(), accountID)
 	if err != nil {
 		return nil, fmt.Errorf("get huawei account failed, err: %v", err)
 	}
@@ -109,7 +109,7 @@ func (cli *SecretClient) HuaWeiSecret(kt *kit.Kit, accountID string) (*types.Bas
 
 // AzureCredential get azure credential and validate credential.
 func (cli *SecretClient) AzureCredential(kt *kit.Kit, accountID string) (*types.AzureCredential, error) {
-	account, err := cli.data.CloudAccount().GetAzureAccount(kt.Ctx, kt.Header(), accountID)
+	account, err := cli.data.Azure.Account.Get(kt.Ctx, kt.Header(), accountID)
 	if err != nil {
 		return nil, fmt.Errorf("get azure account failed, err: %v", err)
 	}
@@ -119,10 +119,10 @@ func (cli *SecretClient) AzureCredential(kt *kit.Kit, accountID string) (*types.
 	}
 
 	cred := &types.AzureCredential{
-		CloudTenantID:       account.Extension.CloudTenantID,
-		CloudSubscriptionID: account.Extension.CloudSubscriptionID,
-		CloudClientID:       account.Extension.CloudClientID,
-		CloudClientSecret:   account.Extension.CloudClientSecret,
+		CloudTenantID:        account.Extension.CloudTenantID,
+		CloudSubscriptionID:  account.Extension.CloudSubscriptionID,
+		CloudApplicationID:   account.Extension.CloudApplicationID,
+		CloudClientSecretKey: account.Extension.CloudClientSecretKey,
 	}
 
 	if err := cred.Validate(); err != nil {
@@ -134,7 +134,7 @@ func (cli *SecretClient) AzureCredential(kt *kit.Kit, accountID string) (*types.
 
 // GcpCredential get gcp credential and validate credential.
 func (cli *SecretClient) GcpCredential(kt *kit.Kit, accountID string) (*types.GcpCredential, error) {
-	account, err := cli.data.CloudAccount().GetGcpAccount(kt.Ctx, kt.Header(), accountID)
+	account, err := cli.data.Gcp.Account.Get(kt.Ctx, kt.Header(), accountID)
 	if err != nil {
 		return nil, fmt.Errorf("get gcp account failed, err: %v", err)
 	}

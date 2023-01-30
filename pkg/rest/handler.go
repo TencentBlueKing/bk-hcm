@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -125,6 +126,14 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 			return
 		}
 
+		defer func() {
+			if fatalErr := recover(); fatalErr != nil {
+				logs.Errorf("[hcm server panic], err: %v, rid: %s, debug strace: %s", fatalErr, kt.Rid,
+					debug.Stack())
+				logs.CloseLogs()
+			}
+		}()
+
 		cts.Kit = kt
 
 		// print request log when log level is 4 or request is write request
@@ -158,7 +167,12 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 				logs.Errorf("do restful request %s failed, err: %v, rid: %s", action.Alias, err, cts.Kit.Rid)
 			}
 
-			cts.respError(err)
+			if reply != nil {
+				cts.respErrorWithEntity(reply, err)
+			} else {
+				cts.respError(err)
+			}
+
 			restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID, "app": cts.appID}).Inc()
 			return
 		}

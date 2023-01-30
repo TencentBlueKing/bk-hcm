@@ -21,6 +21,7 @@
 package core
 
 import (
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
@@ -38,6 +39,27 @@ type CreateResult struct {
 // BatchDeleteReq is a standard batch delete operation http request.
 type BatchDeleteReq struct {
 	IDs []string `json:"ids"`
+}
+
+// Validate BatchDeleteReq.
+func (d *BatchDeleteReq) Validate() error {
+	if len(d.IDs) == 0 {
+		return errf.New(errf.InvalidParameter, "ids are required")
+	}
+
+	return nil
+}
+
+// BatchDeleteResp is a standard batch delete operation http response.
+type BatchDeleteResp struct {
+	Succeeded []string    `json:"succeeded,omitempty"`
+	Failed    *FailedInfo `json:"failed,omitempty"`
+}
+
+// FailedInfo is a standard operation failed info.
+type FailedInfo struct {
+	ID    string `json:"id"`
+	Error string `json:"error"`
 }
 
 // UpdateResp ...

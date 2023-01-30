@@ -41,6 +41,7 @@ import (
 type Set interface {
 	Auth() auth.Auth
 	Account() cloud.Account
+	Cloud() cloud.Cloud
 	AccountBizRel() cloud.AccountBizRel
 	Txn() *Txn
 }
@@ -119,6 +120,13 @@ func (s *set) Account() cloud.Account {
 // Auth return auth dao.
 func (s *set) Auth() auth.Auth {
 	return &auth.AuthDao{
+		Orm: s.orm,
+	}
+}
+
+// Cloud return cloud dao.
+func (s *set) Cloud() cloud.Cloud {
+	return &cloud.CloudDao{
 		Orm: s.orm,
 	}
 }

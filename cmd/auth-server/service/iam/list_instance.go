@@ -42,7 +42,7 @@ func (i *IAM) ListInstances(kt *kit.Kit, resType client.TypeID, option *types.Li
 		Filter:       filter,
 		Page:         &daltypes.BasePage{Count: true},
 	}
-	countResp, err := i.ds.Auth().ListInstances(kt.Ctx, kt.Header(), countReq)
+	countResp, err := i.ds.Global.Auth.ListInstances(kt.Ctx, kt.Header(), countReq)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (i *IAM) ListInstances(kt *kit.Kit, resType client.TypeID, option *types.Li
 			Limit: page.Limit,
 		},
 	}
-	resp, err := i.ds.Auth().ListInstances(kt.Ctx, kt.Header(), req)
+	resp, err := i.ds.Global.Auth.ListInstances(kt.Ctx, kt.Header(), req)
 	if err != nil {
 		return nil, err
 	}

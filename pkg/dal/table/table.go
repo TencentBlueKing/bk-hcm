@@ -39,6 +39,10 @@ const (
 	AccountBizRelTable Name = "account_biz_rel"
 	// IDGenerator is id generator table's name.
 	IDGenerator Name = "id_generator"
+	// SecurityGroupTable is security group table's name.
+	SecurityGroupTable Name = "security_group"
+	// VpcTable is vpc table's name.
+	VpcTable Name = "vpc"
 )
 
 // Validate whether the table name is valid or not.

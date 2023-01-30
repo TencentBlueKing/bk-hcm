@@ -27,7 +27,9 @@ import (
 	"strconv"
 	"time"
 
+	"hcm/cmd/cloud-server/service/account"
 	"hcm/cmd/cloud-server/service/capability"
+	"hcm/cmd/cloud-server/service/vpc"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
@@ -152,6 +154,9 @@ func (s *Service) apiSet() *restful.Container {
 		ApiClient:  s.client,
 		Authorizer: s.authorizer,
 	}
+
+	account.InitAccountService(c)
+	vpc.InitVpcService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

@@ -21,6 +21,7 @@
 package cloud
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -58,13 +59,15 @@ type HuaWeiAccountExtensionCreateReq struct {
 	CloudSubAccountName  string `json:"cloud_sub_account_name" validate:"required"`
 	CloudSecretID        string `json:"cloud_secret_id" validate:"required"`
 	CloudSecretKey       string `json:"cloud_secret_key" validate:"required"`
+	CloudIamUserID       string `json:"cloud_iam_user_id" validate:"required"`
+	CloudIamUsername     string `json:"cloud_iam_username" validate:"required"`
 }
 
 // GcpAccountExtensionCreateReq ...
 type GcpAccountExtensionCreateReq struct {
 	CloudProjectID          string `json:"cloud_project_id" validate:"required"`
 	CloudProjectName        string `json:"cloud_project_name" validate:"required"`
-	CloudServiceAccountID   string `json:"cloud_service_account_cid" validate:"required"`
+	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"required"`
 	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
 	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"required"`
 	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"required"`
@@ -77,8 +80,8 @@ type AzureAccountExtensionCreateReq struct {
 	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
 	CloudApplicationID    string `json:"cloud_application_id" validate:"required"`
 	CloudApplicationName  string `json:"cloud_application_name" validate:"required"`
-	CloudClientID         string `json:"cloud_client_id" validate:"required"`
-	CloudClientSecret     string `json:"cloud_client_secret" validate:"required"`
+	CloudClientSecretID   string `json:"cloud_client_secret_id" validate:"required"`
+	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"required"`
 }
 
 // AccountSpecCreateReq ...
@@ -110,30 +113,49 @@ func (c *AccountCreateReq[T]) Validate() error {
 
 // -------------------------- Update --------------------------
 
+// AccountExtensionUpdateReq Note: DataService的更新是与业务无关的，所以必须支持调用方根据场景需求来更新部分字段
 type AccountExtensionUpdateReq interface {
 	TCloudAccountExtensionUpdateReq | AwsAccountExtensionUpdateReq | HuaWeiAccountExtensionUpdateReq | GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
 }
 
 type TCloudAccountExtensionUpdateReq struct {
-	CloudSecretID  string `json:"cloud_secret_id" validate:"omitempty"`
-	CloudSecretKey string `json:"cloud_secret_key" validate:"omitempty"`
+	CloudMainAccountID string `json:"cloud_main_account_id,omitempty" validate:"omitempty"`
+	CloudSubAccountID  string `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
+	CloudSecretID      string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
+	CloudSecretKey     string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
 }
 
 type AwsAccountExtensionUpdateReq struct {
-	CloudSecretID  string `json:"cloud_secret_id" validate:"omitempty"`
-	CloudSecretKey string `json:"cloud_secret_key" validate:"omitempty"`
+	CloudAccountID   string `json:"cloud_account_id,omitempty" validate:"omitempty"`
+	CloudIamUsername string `json:"cloud_iam_username,omitempty" validate:"omitempty"`
+	CloudSecretID    string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
+	CloudSecretKey   string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
 }
 type HuaWeiAccountExtensionUpdateReq struct {
-	CloudSecretID  string `json:"cloud_secret_id" validate:"omitempty"`
-	CloudSecretKey string `json:"cloud_secret_key" validate:"omitempty"`
+	CloudMainAccountName string `json:"cloud_main_account_name,omitempty" validate:"omitempty"`
+	CloudSubAccountID    string `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
+	CloudSubAccountName  string `json:"cloud_sub_account_name,omitempty" validate:"omitempty"`
+	CloudSecretID        string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
+	CloudSecretKey       string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
+	CloudIamUserID       string `json:"cloud_iam_user_id,omitempty" validate:"omitempty"`
+	CloudIamUsername     string `json:"cloud_iam_username,omitempty" validate:"omitempty"`
 }
 type GcpAccountExtensionUpdateReq struct {
-	CloudServiceSecretID  string `json:"cloud_service_secret_id" validate:"required"`
-	CloudServiceSecretKey string `json:"cloud_service_secret_key" validate:"required"`
+	CloudProjectID          string `json:"cloud_project_id,omitempty" validate:"omitempty"`
+	CloudProjectName        string `json:"cloud_project_name,omitempty" validate:"omitempty"`
+	CloudServiceAccountID   string `json:"cloud_service_account_id,omitempty" validate:"omitempty"`
+	CloudServiceAccountName string `json:"cloud_service_account_name,omitempty" validate:"omitempty"`
+	CloudServiceSecretID    string `json:"cloud_service_secret_id,omitempty" validate:"omitempty"`
+	CloudServiceSecretKey   string `json:"cloud_service_secret_key,omitempty" validate:"omitempty"`
 }
 type AzureAccountExtensionUpdateReq struct {
-	CloudClientID     string `json:"cloud_client_id" validate:"required"`
-	CloudClientSecret string `json:"cloud_client_secret" validate:"required"`
+	CloudTenantID         string `json:"cloud_tenant_id,omitempty" validate:"omitempty"`
+	CloudSubscriptionID   string `json:"cloud_subscription_id,omitempty" validate:"omitempty"`
+	CloudSubscriptionName string `json:"cloud_subscription_name,omitempty" validate:"omitempty"`
+	CloudApplicationID    string `json:"cloud_application_id,omitempty" validate:"omitempty"`
+	CloudApplicationName  string `json:"cloud_application_name,omitempty" validate:"omitempty"`
+	CloudClientSecretID   string `json:"cloud_client_secret_id,omitempty" validate:"omitempty"`
+	CloudClientSecretKey  string `json:"cloud_client_secret_key,omitempty" validate:"omitempty"`
 }
 
 // AccountSpecUpdateReq ...
@@ -187,18 +209,19 @@ func (l *AccountListReq) Validate() error {
 	return validator.Validate.Struct(l)
 }
 
-// BaseAccountListReq ...
-type BaseAccountListReq struct {
-	ID     string             `json:"id"`
-	Vendor enumor.Vendor      `json:"vendor"`
-	Spec   *cloud.AccountSpec `json:"spec"`
+// BaseAccountListResp ...
+type BaseAccountListResp struct {
+	ID       string             `json:"id"`
+	Vendor   enumor.Vendor      `json:"vendor"`
+	Spec     *cloud.AccountSpec `json:"spec"`
+	Revision *core.Revision     `json:"revision"`
 }
 
 // AccountListResult defines list instances for iam pull resource callback result.
 type AccountListResult struct {
-	Count uint64 `json:"count,omitempty"`
+	Count uint64 `json:"count"`
 	// 对于List接口，只会返回公共数据，不会返回Extension
-	Details []*BaseAccountListReq `json:"details,omitempty"`
+	Details []*BaseAccountListResp `json:"details"`
 }
 
 // AccountListResp ...

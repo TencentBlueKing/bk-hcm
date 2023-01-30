@@ -357,9 +357,9 @@ func (svc *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 		return &protocloud.AccountListResult{Count: daoAccountResp.Count}, nil
 	}
 
-	details := make([]*protocloud.BaseAccountListReq, 0, len(daoAccountResp.Details))
+	details := make([]*protocloud.BaseAccountListResp, 0, len(daoAccountResp.Details))
 	for _, account := range daoAccountResp.Details {
-		details = append(details, &protocloud.BaseAccountListReq{
+		details = append(details, &protocloud.BaseAccountListResp{
 			ID:     account.ID,
 			Vendor: enumor.Vendor(account.Vendor),
 			Spec: &protocore.AccountSpec{
@@ -372,6 +372,12 @@ func (svc *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 				Price:        account.Price,
 				PriceUnit:    account.PriceUnit,
 				Memo:         account.Memo,
+			},
+			Revision: &core.Revision{
+				Creator:   account.Creator,
+				Reviser:   account.Reviser,
+				CreatedAt: account.CreatedAt,
+				UpdatedAt: account.UpdatedAt,
 			},
 		})
 

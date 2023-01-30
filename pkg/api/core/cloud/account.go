@@ -86,6 +86,8 @@ type HuaWeiAccountExtension struct {
 	CloudSubAccountName  string `json:"cloud_sub_account_name"`
 	CloudSecretID        string `json:"cloud_secret_id"`
 	CloudSecretKey       string `json:"cloud_secret_key"`
+	CloudIamUserID       string `json:"cloud_iam_user_id" `
+	CloudIamUsername     string `json:"cloud_iam_username"`
 }
 
 // HuaWeiAccount ...
@@ -98,7 +100,7 @@ type HuaWeiAccount struct {
 type GcpAccountExtension struct {
 	CloudProjectID          string `json:"cloud_project_id"`
 	CloudProjectName        string `json:"cloud_project_name"`
-	CloudServiceAccountID   string `json:"cloud_service_account_cid"`
+	CloudServiceAccountID   string `json:"cloud_service_account_id"`
 	CloudServiceAccountName string `json:"cloud_service_account_name"`
 	CloudServiceSecretID    string `json:"cloud_service_secret_id"`
 	CloudServiceSecretKey   string `json:"cloud_service_secret_key"`
@@ -117,6 +119,6 @@ type AzureAccountExtension struct {
 	CloudSubscriptionName string `json:"cloud_subscription_name"`
 	CloudApplicationID    string `json:"cloud_application_id"`
 	CloudApplicationName  string `json:"cloud_application_name"`
-	CloudClientID         string `json:"cloud_client_id"`
-	CloudClientSecret     string `json:"cloud_client_secret"`
+	CloudClientSecretID   string `json:"cloud_client_secret_id"`
+	CloudClientSecretKey  string `json:"cloud_client_secret_key"`
 }

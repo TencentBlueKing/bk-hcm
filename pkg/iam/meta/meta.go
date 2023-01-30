@@ -41,7 +41,7 @@ type Basic struct {
 	Action Action `json:"action"`
 
 	// ResourceID the instance id of this resource.
-	ResourceID uint64
+	ResourceID string
 }
 
 // Decision defines the authorization decision of a resource.
