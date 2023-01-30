@@ -142,3 +142,160 @@ func (g *securityGroup) DeleteAwsSecurityGroup(cts *rest.Contexts) (interface{},
 
 	return nil, nil
 }
+
+// SyncAwsSecurityGroup delete aws security group.
+func (g *securityGroup) SyncAwsSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+
+	req, err := g.decodeSecurityGroupSyncReq(cts)
+	if err != nil {
+		return nil, err
+	}
+
+	yunMap, err := g.getDatasFromAwsForSecurityGroupSync(cts, req)
+	if err != nil {
+		return nil, err
+	}
+
+	dsMap, err := g.getDatasFromDSForSecurityGroupSync(cts, req)
+	if err != nil {
+		return nil, err
+	}
+
+	err = g.diffAwsSecurityGroupSync(cts, yunMap, dsMap, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// getDatasFromAwsForSecurityGroupSync get datas from cloud
+func (g *securityGroup) getDatasFromAwsForSecurityGroupSync(cts *rest.Contexts,
+	req *proto.SecurityGroupSyncReq) (map[string]*proto.SecurityGroupSyncAwsDiff, error) {
+
+	client, err := g.ad.Aws(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	listOpt := &types.AwsSecurityGroupListOption{
+		Region: req.Region,
+	}
+	result, err := client.ListSecurityGroup(cts.Kit, listOpt)
+	if err != nil {
+		logs.Errorf("request adaptor to list aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	yunMap := make(map[string]*proto.SecurityGroupSyncAwsDiff)
+	for _, one := range result.SecurityGroups {
+		sg := new(proto.SecurityGroupSyncAwsDiff)
+		sg.IsMarked = false
+		sg.SecurityGroup = one
+		yunMap[*one.GroupId] = sg
+	}
+
+	return yunMap, nil
+}
+
+// diffAwsSecurityGroupSync diff cloud data-service
+func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncAwsDiff,
+	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
+
+	addCloudIDs := getAddCloudIDs(yunMap, dsMap)
+	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
+
+	if len(deleteCloudIDs) > 0 {
+		err := g.diffSecurityGroupSyncDelete(cts, deleteCloudIDs)
+		if err != nil {
+			return err
+		}
+		err = g.diffAwsSGRuleSyncDelete(cts, deleteCloudIDs, dsMap)
+		if err != nil {
+			return err
+		}
+	}
+	if len(updateCloudIDs) > 0 {
+		err := g.diffAwsSecurityGroupSyncUpdate(cts, yunMap, dsMap, updateCloudIDs)
+		if err != nil {
+			return err
+		}
+		err = g.diffAwsSGRuleSyncUpdate(cts, updateCloudIDs, req, dsMap)
+		if err != nil {
+			return err
+		}
+	}
+	if len(addCloudIDs) > 0 {
+		ids, err := g.diffAwsSecurityGroupSyncAdd(cts, yunMap, req, addCloudIDs)
+		if err != nil {
+			return err
+		}
+		err = g.diffAwsSGRuleSyncAdd(cts, ids, req)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// diffSecurityGroupSyncAdd for add
+func (g *securityGroup) diffAwsSecurityGroupSyncAdd(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncAwsDiff,
+	req *proto.SecurityGroupSyncReq, addCloudIDs []string) ([]string, error) {
+
+	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.AwsSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.AwsSecurityGroupExtension]{},
+	}
+
+	for _, id := range addCloudIDs {
+		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.AwsSecurityGroupExtension]{
+			CloudID:   *yunMap[id].SecurityGroup.GroupId,
+			BkBizID:   -1,
+			Region:    req.Region,
+			Name:      *yunMap[id].SecurityGroup.GroupName,
+			Memo:      yunMap[id].SecurityGroup.Description,
+			AccountID: req.AccountID,
+			Extension: &corecloud.AwsSecurityGroupExtension{
+				CloudVpcID:   yunMap[id].SecurityGroup.VpcId,
+				CloudOwnerID: yunMap[id].SecurityGroup.OwnerId,
+			},
+		}
+		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
+	}
+	results, err := g.dataCli.Aws.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	if err != nil {
+		logs.Errorf("request dataservice to BatchCreateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return results.IDs, nil
+}
+
+// diffSecurityGroupSyncUpdate for update
+func (g *securityGroup) diffAwsSecurityGroupSyncUpdate(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncAwsDiff,
+	dsMap map[string]*proto.SecurityGroupSyncDS, updateCloudIDs []string) error {
+
+	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.AwsSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.AwsSecurityGroupExtension]{},
+	}
+
+	for _, id := range updateCloudIDs {
+		if *yunMap[id].SecurityGroup.GroupName == dsMap[id].HcSecurityGroup.Name &&
+			yunMap[id].SecurityGroup.Description == dsMap[id].HcSecurityGroup.Memo {
+			continue
+		}
+		securityGroup := protocloud.SecurityGroupBatchUpdate[corecloud.AwsSecurityGroupExtension]{
+			ID:   dsMap[id].HcSecurityGroup.ID,
+			Name: *yunMap[id].SecurityGroup.GroupName,
+			Memo: yunMap[id].SecurityGroup.Description,
+		}
+		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
+	}
+	if err := g.dataCli.Aws.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
+		updateReq); err != nil {
+		logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err
+	}
+
+	return nil
+}

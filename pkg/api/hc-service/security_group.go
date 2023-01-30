@@ -19,7 +19,15 @@
 
 package hcservice
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/validator"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
+	tcloud "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
+)
 
 // -------------------------- Create --------------------------
 
@@ -92,4 +100,42 @@ type SecurityGroupUpdateReq struct {
 // Validate tcloud security group update request.
 func (req *SecurityGroupUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Sync --------------------------
+
+type SecurityGroupSyncReq struct {
+	AccountID         string `json:"account_id" validate:"required"`
+	Region            string `json:"region" validate:"omitempty"`
+	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
+}
+
+// Validate security group sync request.
+func (req *SecurityGroupSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+type SecurityGroupSyncDS struct {
+	IsMarked        bool
+	HcSecurityGroup cloud.BaseSecurityGroup
+}
+
+type SecurityGroupSyncHuaWeiDiff struct {
+	IsMarked      bool
+	SecurityGroup model.SecurityGroup
+}
+
+type SecurityGroupSyncTCloudDiff struct {
+	IsMarked      bool
+	SecurityGroup *tcloud.SecurityGroup
+}
+
+type SecurityGroupSyncAwsDiff struct {
+	IsMarked      bool
+	SecurityGroup *ec2.SecurityGroup
+}
+
+type SecurityGroupSyncAzureDiff struct {
+	IsMarked      bool
+	SecurityGroup *armnetwork.SecurityGroup
 }

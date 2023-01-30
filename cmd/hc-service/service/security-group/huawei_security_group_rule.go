@@ -28,6 +28,7 @@ import (
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
+	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -211,4 +212,185 @@ func (g *securityGroup) getHuaWeiSGRuleByID(cts *rest.Contexts, id string, sgID 
 	}
 
 	return &listResp.Details[0], nil
+}
+
+// diffHuaWeiSGRuleSyncAdd add huawei security group rule.
+func (g *securityGroup) diffHuaWeiSGRuleSyncAdd(cts *rest.Contexts, ids []string,
+	req *proto.SecurityGroupSyncReq) error {
+
+	client, err := g.ad.HuaWei(cts.Kit, req.AccountID)
+	if err != nil {
+		return err
+	}
+
+	for _, id := range ids {
+		sg, err := g.dataCli.HuaWei.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			logs.Errorf("request dataservice get huawei security group failed, err: %v, id: %s, rid: %s", err, id,
+				cts.Kit.Rid)
+			return err
+		}
+		// TODO 分页逻辑
+		opt := &types.HuaWeiSGRuleListOption{
+			Region:               req.Region,
+			CloudSecurityGroupID: sg.CloudID,
+		}
+		rules, err := client.ListSecurityGroupRule(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list huawei security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+
+		createReq := &protocloud.HuaWeiSGRuleCreateReq{
+			Rules: []protocloud.HuaWeiSGRuleBatchCreate{},
+		}
+		for _, sgRule := range *rules.SecurityGroupRules {
+			rule := protocloud.HuaWeiSGRuleBatchCreate{
+				CloudID:                   sgRule.Id,
+				Memo:                      &sgRule.Description,
+				Protocol:                  sgRule.Protocol,
+				Ethertype:                 sgRule.Ethertype,
+				CloudRemoteGroupID:        sgRule.RemoteGroupId,
+				RemoteIPPrefix:            sgRule.RemoteIpPrefix,
+				CloudRemoteAddressGroupID: sgRule.RemoteAddressGroupId,
+				Port:                      sgRule.Multiport,
+				Priority:                  int64(sgRule.Priority),
+				Action:                    sgRule.Action,
+				Type:                      enumor.SecurityGroupRuleType(sgRule.Direction),
+				CloudSecurityGroupID:      sg.CloudID,
+				CloudProjectID:            sgRule.ProjectId,
+				AccountID:                 req.AccountID,
+				Region:                    req.Region,
+				SecurityGroupID:           id,
+			}
+			createReq.Rules = append(createReq.Rules, rule)
+		}
+		if len(createReq.Rules) <= 0 {
+			continue
+		}
+		_, err = g.dataCli.HuaWei.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), createReq, id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// diffHuaWeiSGRuleSyncUpdate update huawei security group rule.
+func (g *securityGroup) diffHuaWeiSGRuleSyncUpdate(cts *rest.Contexts, updateCloudIDs []string,
+	req *proto.SecurityGroupSyncReq, dsMap map[string]*proto.SecurityGroupSyncDS) error {
+
+	client, err := g.ad.HuaWei(cts.Kit, req.AccountID)
+	if err != nil {
+		return err
+	}
+
+	for _, id := range updateCloudIDs {
+		sgID := dsMap[id].HcSecurityGroup.ID
+		// TODO 分页逻辑
+		opt := &types.HuaWeiSGRuleListOption{
+			Region:               req.Region,
+			CloudSecurityGroupID: id,
+		}
+		rules, err := client.ListSecurityGroupRule(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list huawei security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+
+		createReq := &protocloud.HuaWeiSGRuleBatchUpdateReq{
+			Rules: []protocloud.HuaWeiSGRuleBatchUpdate{},
+		}
+		for _, sgRule := range *rules.SecurityGroupRules {
+			one, _ := g.getHuaWeiSGRuleByCid(cts, sgRule.Id, sgID)
+			if one == nil {
+				continue
+			}
+			if *one.Memo == sgRule.Description &&
+				one.Protocol == sgRule.Protocol &&
+				one.Ethertype == sgRule.Ethertype &&
+				one.CloudRemoteGroupID == sgRule.RemoteGroupId &&
+				one.RemoteIPPrefix == sgRule.RemoteIpPrefix &&
+				one.CloudRemoteAddressGroupID == sgRule.RemoteAddressGroupId &&
+				one.Port == sgRule.Multiport &&
+				one.Priority == int64(sgRule.Priority) &&
+				one.Action == sgRule.Action &&
+				one.Type == enumor.SecurityGroupRuleType(sgRule.Direction) &&
+				one.CloudProjectID == sgRule.ProjectId {
+				continue
+			}
+			rule := protocloud.HuaWeiSGRuleBatchUpdate{
+				ID:                        one.ID,
+				CloudID:                   sgRule.Id,
+				Memo:                      &sgRule.Description,
+				Protocol:                  sgRule.Protocol,
+				Ethertype:                 sgRule.Ethertype,
+				CloudRemoteGroupID:        sgRule.RemoteGroupId,
+				RemoteIPPrefix:            sgRule.RemoteIpPrefix,
+				CloudRemoteAddressGroupID: sgRule.RemoteAddressGroupId,
+				Port:                      sgRule.Multiport,
+				Priority:                  int64(sgRule.Priority),
+				Action:                    sgRule.Action,
+				Type:                      enumor.SecurityGroupRuleType(sgRule.Direction),
+				CloudSecurityGroupID:      id,
+				CloudProjectID:            sgRule.ProjectId,
+				AccountID:                 req.AccountID,
+				Region:                    req.Region,
+				SecurityGroupID:           sgID,
+			}
+			createReq.Rules = append(createReq.Rules, rule)
+		}
+		if len(createReq.Rules) <= 0 {
+			continue
+		}
+		err = g.dataCli.HuaWei.SecurityGroup.BatchUpdateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), createReq, sgID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// getHuaWeiSGRuleByCid
+func (g *securityGroup) getHuaWeiSGRuleByCid(cts *rest.Contexts, cID string, sgID string) (*corecloud.HuaWeiSecurityGroupRule, error) {
+
+	listReq := &protocloud.HuaWeiSGRuleListReq{
+		Filter: tools.EqualExpression("cloud_id", cID),
+		Page: &daotypes.BasePage{
+			Start: 0,
+			Limit: 1,
+		},
+	}
+	listResp, err := g.dataCli.HuaWei.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
+	if err != nil {
+		logs.Errorf("request dataservice get huawei security group failed, err: %v, id: %s, rid: %s", err, cID,
+			cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(listResp.Details) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "security group rule: %s not found", cID)
+	}
+
+	return &listResp.Details[0], nil
+}
+
+// diffHuaWeiSGRuleSyncDelete delete huawei security group rule.
+func (g *securityGroup) diffHuaWeiSGRuleSyncDelete(cts *rest.Contexts, deleteCloudIDs []string,
+	dsMap map[string]*proto.SecurityGroupSyncDS) error {
+
+	for _, id := range deleteCloudIDs {
+		deleteReq := &protocloud.HuaWeiSGRuleBatchDeleteReq{
+			Filter: tools.EqualExpression("cloud_security_group_id", id),
+		}
+		err := g.dataCli.HuaWei.SecurityGroup.BatchDeleteSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), deleteReq, dsMap[id].HcSecurityGroup.ID)
+		if err != nil {
+			logs.Errorf("dataservice delete huawei security group rules failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+	}
+
+	return nil
 }

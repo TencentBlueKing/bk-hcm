@@ -27,14 +27,13 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
 
 // CreateSecurityGroup create security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
 func (az *Azure) CreateSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupOption) (*armnetwork.SecurityGroup,
-		error) {
+	error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group create option is required")
@@ -136,8 +135,7 @@ func (az *Azure) DeleteSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupO
 
 // ListSecurityGroup list security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
-func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupListOption) (
-		*runtime.Pager[armnetwork.SecurityGroupsClientListResponse], error) {
+func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupListOption) ([]*armnetwork.SecurityGroup, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group list option is required")
@@ -152,11 +150,21 @@ func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupLis
 		return nil, fmt.Errorf("new security group client failed, err: %v", err)
 	}
 
-	return client.NewListPager(opt.ResourceGroupName, nil), nil
+	securityGroups := []*armnetwork.SecurityGroup{}
+	pager := client.NewListPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to advance page: %v", err)
+		}
+		securityGroups = append(securityGroups, nextResult.Value...)
+	}
+
+	return securityGroups, nil
 }
 
 func (az *Azure) getSecurityGroupByCloudID(kt *kit.Kit, resGroupName, cloudID string) (*armnetwork.SecurityGroup,
-		error) {
+	error) {
 
 	client, err := az.clientSet.securityGroupClient()
 	if err != nil {

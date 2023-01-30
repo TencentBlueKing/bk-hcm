@@ -142,19 +142,19 @@ func (h *Huawei) UpdateSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroup
 // ListSecurityGroup list security group.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0011.html
 func (h *Huawei) ListSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroupListOption) (*[]model.SecurityGroup,
-	error) {
+	*model.PageInfo, error) {
 
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "security group update option is required")
+		return nil, nil, errf.New(errf.InvalidParameter, "security group update option is required")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	client, err := h.clientSet.vpcClient(region.ValueOf(opt.Region))
 	if err != nil {
-		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
+		return nil, nil, fmt.Errorf("new vpc client failed, err: %v", err)
 	}
 
 	req := new(model.ListSecurityGroupsRequest)
@@ -170,8 +170,8 @@ func (h *Huawei) ListSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroupLi
 	resp, err := client.ListSecurityGroups(req)
 	if err != nil {
 		logs.Errorf("update huawei security group failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+		return nil, nil, err
 	}
 
-	return resp.SecurityGroups, nil
+	return resp.SecurityGroups, resp.PageInfo, err
 }

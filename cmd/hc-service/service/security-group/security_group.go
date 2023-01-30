@@ -34,6 +34,7 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
+	h.Add("SyncTCloudSecurityGroup", "POST", "/vendors/tcloud/security_groups/sync", sg.SyncTCloudSecurityGroup)
 	h.Add("CreateTCloudSecurityGroup", "POST", "/vendors/tcloud/security_groups/create", sg.CreateTCloudSecurityGroup)
 	h.Add("DeleteTCloudSecurityGroup", "DELETE", "/vendors/tcloud/security_groups/{id}", sg.DeleteTCloudSecurityGroup)
 	h.Add("UpdateTCloudSecurityGroup", "PATCH", "/vendors/tcloud/security_groups/{id}", sg.UpdateTCloudSecurityGroup)
@@ -44,6 +45,7 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	h.Add("DeleteTCloudSGRule", "DELETE", "/vendors/tcloud/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteTCloudSGRule)
 
+	h.Add("SyncAwsSecurityGroup", "POST", "/vendors/aws/security_groups/sync", sg.SyncAwsSecurityGroup)
 	h.Add("UpdateAwsSecurityGroup", "PATCH", "/vendors/aws/security_groups/{id}", sg.CreateAwsSecurityGroup)
 	h.Add("UpdateAwsSecurityGroup", "PATCH", "/vendors/aws/security_groups/{id}", sg.DeleteAwsSecurityGroup)
 	h.Add("BatchCreateAwsSGRule", "POST", "/vendors/aws/security_groups/{security_group_id}/rules/batch/create",
@@ -53,6 +55,7 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	h.Add("DeleteAwsSGRule", "DELETE", "/vendors/aws/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteAwsSGRule)
 
+	h.Add("SyncHuaWeiSecurityGroup", "POST", "/vendors/huawei/security_groups/sync", sg.SyncHuaWeiSecurityGroup)
 	h.Add("CreateHuaWeiSecurityGroup", "POST", "/vendors/huawei/security_groups/create", sg.CreateHuaWeiSecurityGroup)
 	h.Add("DeleteHuaWeiSecurityGroup", "DELETE", "/vendors/huawei/security_groups/{id}", sg.DeleteHuaWeiSecurityGroup)
 	h.Add("UpdateHuaWeiSecurityGroup", "PATCH", "/vendors/huawei/security_groups/{id}", sg.UpdateHuaWeiSecurityGroup)
@@ -61,6 +64,7 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	h.Add("DeleteAwsSGRule", "DELETE", "/vendors/huawei/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteHuaWeiSGRule)
 
+	h.Add("SyncAzureSecurityGroup", "POST", "/vendors/azure/security_groups/sync", sg.SyncAzureSecurityGroup)
 	h.Add("CreateAzureSecurityGroup", "POST", "/vendors/azure/security_groups/create", sg.CreateAzureSecurityGroup)
 	h.Add("DeleteAzureSecurityGroup", "DELETE", "/vendors/azure/security_groups/{id}", sg.DeleteAzureSecurityGroup)
 	h.Add("UpdateAzureSecurityGroup", "PATCH", "/vendors/azure/security_groups/{id}", sg.UpdateAzureSecurityGroup)

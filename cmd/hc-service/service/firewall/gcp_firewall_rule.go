@@ -46,6 +46,7 @@ func InitFirewallService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
+	h.Add("SyncGcpFirewallRule", http.MethodPost, "/vendors/gcp/firewalls/rules/sync", sg.SyncGcpFirewallRule)
 	h.Add("CreateGcpFirewallRule", http.MethodPost, "/vendors/gcp/firewalls/rules/create", sg.CreateGcpFirewallRule)
 	h.Add("DeleteGcpFirewallRule", http.MethodDelete, "/vendors/gcp/firewalls/rules/{id}", sg.DeleteGcpFirewallRule)
 	h.Add("UpdateGcpFirewallRule", http.MethodPut, "/vendors/gcp/firewalls/rules/{id}", sg.UpdateGcpFirewallRule)
@@ -268,4 +269,46 @@ func (f *firewall) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, error
 	}
 
 	return result, nil
+}
+
+// SyncGcpFirewallRule sync gcp to hcm v1.0
+func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	// 清空cgp firewall rule
+	listReq := &protocloud.GcpFirewallRuleListReq{
+		Filter: tools.EqualExpression("account_id", "0000002d"),
+		Page: &daotypes.BasePage{
+			Start: uint32(0),
+			Limit: daotypes.DefaultMaxPageLimit,
+		},
+	}
+	ids := []string{}
+	for {
+		var results *protocloud.GcpFirewallRuleListResult
+		var err error
+		if results, err = f.dataCli.Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), listReq); err != nil {
+			logs.Errorf("request dataservice list gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		for _, result := range results.Details {
+			ids = append(ids, result.ID)
+		}
+		listReq.Page.Start += uint32(len(results.Details))
+		if len(results.Details) == 0 || uint(len(results.Details)) < daotypes.DefaultMaxPageLimit {
+			break
+		}
+	}
+	if len(ids) > 0 {
+		req := &protocloud.GcpFirewallRuleBatchDeleteReq{
+			Filter: tools.ContainersExpression("id", ids),
+		}
+		if err := f.dataCli.Gcp.Firewall.BatchDeleteFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), req); err != nil {
+			logs.Errorf("request dataservice delete gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+
+	// 重新生成gcp firewall rule
+	f.CreateGcpFirewallRule(cts)
+
+	return nil, nil
 }

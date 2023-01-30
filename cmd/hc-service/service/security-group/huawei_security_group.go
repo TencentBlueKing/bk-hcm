@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	"hcm/pkg/adaptor/types"
+	typcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -29,6 +30,8 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
 
 // CreateHuaWeiSecurityGroup create huawei security group.
@@ -183,4 +186,174 @@ func (g *securityGroup) UpdateHuaWeiSecurityGroup(cts *rest.Contexts) (interface
 	}
 
 	return nil, nil
+}
+
+// SyncHuaWeiSecurityGroup sync security group from huawei to hcm.
+func (g *securityGroup) SyncHuaWeiSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+
+	req, err := g.decodeSecurityGroupSyncReq(cts)
+	if err != nil {
+		return nil, err
+	}
+
+	yunMap, err := g.getDatasFromHuaWeiForSecurityGroupSync(cts, req)
+	if err != nil {
+		return nil, err
+	}
+
+	dsMap, err := g.getDatasFromDSForSecurityGroupSync(cts, req)
+	if err != nil {
+		return nil, err
+	}
+
+	err = g.diffHWSecurityGroupSync(cts, yunMap, dsMap, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// getDatasFromHuaWeiForSecurityGroupSync get datas from cloud
+func (g *securityGroup) getDatasFromHuaWeiForSecurityGroupSync(cts *rest.Contexts,
+	req *proto.SecurityGroupSyncReq) (map[string]*proto.SecurityGroupSyncHuaWeiDiff, error) {
+
+	client, err := g.ad.HuaWei(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	datasYun := []model.SecurityGroup{}
+	limit := int32(typcore.HuaweiQueryLimit)
+	var marker *string = nil
+	for {
+		opt := &types.HuaWeiSecurityGroupListOption{
+			Region: req.Region,
+			Page:   &typcore.HuaweiPage{Limit: &limit, Marker: marker},
+		}
+		datas, pageInfo, err := client.ListSecurityGroup(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list huawei security group failed, err: %v, opt: %v, rid: %s", err, opt,
+				cts.Kit.Rid)
+			return nil, err
+		}
+		datasYun = append(datasYun, *datas...)
+		marker = pageInfo.NextMarker
+		if len(*datas) == 0 || pageInfo.NextMarker == nil {
+			break
+		}
+	}
+
+	yunMap := make(map[string]*proto.SecurityGroupSyncHuaWeiDiff)
+	for _, data := range datasYun {
+		sg := new(proto.SecurityGroupSyncHuaWeiDiff)
+		sg.IsMarked = false
+		sg.SecurityGroup = data
+		yunMap[data.Id] = sg
+	}
+
+	return yunMap, nil
+}
+
+// diffHWSecurityGroupSync diff cloud data-service
+func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncHuaWeiDiff,
+	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
+
+	addCloudIDs := getAddCloudIDs(yunMap, dsMap)
+	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
+
+	if len(deleteCloudIDs) > 0 {
+		err := g.diffSecurityGroupSyncDelete(cts, deleteCloudIDs)
+		if err != nil {
+			return err
+		}
+		err = g.diffHuaWeiSGRuleSyncDelete(cts, deleteCloudIDs, dsMap)
+		if err != nil {
+			return err
+		}
+	}
+	if len(updateCloudIDs) > 0 {
+		err := g.diffHWSecurityGroupSyncUpdate(cts, yunMap, dsMap, updateCloudIDs)
+		if err != nil {
+			return err
+		}
+		err = g.diffHuaWeiSGRuleSyncUpdate(cts, updateCloudIDs, req, dsMap)
+		if err != nil {
+			return err
+		}
+	}
+	if len(addCloudIDs) > 0 {
+		ids, err := g.diffHWSecurityGroupSyncAdd(cts, yunMap, req, addCloudIDs)
+		if err != nil {
+			return err
+		}
+		err = g.diffHuaWeiSGRuleSyncAdd(cts, ids, req)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// diffSecurityGroupSyncAdd for add
+func (g *securityGroup) diffHWSecurityGroupSyncAdd(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncHuaWeiDiff,
+	req *proto.SecurityGroupSyncReq, addCloudIDs []string) ([]string, error) {
+
+	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.HuaWeiSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.HuaWeiSecurityGroupExtension]{},
+	}
+
+	for _, id := range addCloudIDs {
+		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.HuaWeiSecurityGroupExtension]{
+			CloudID:   yunMap[id].SecurityGroup.Id,
+			BkBizID:   -1,
+			Region:    req.Region,
+			Name:      yunMap[id].SecurityGroup.Name,
+			Memo:      &yunMap[id].SecurityGroup.Description,
+			AccountID: req.AccountID,
+			Extension: &corecloud.HuaWeiSecurityGroupExtension{
+				CloudProjectID:           yunMap[id].SecurityGroup.ProjectId,
+				CloudEnterpriseProjectID: yunMap[id].SecurityGroup.EnterpriseProjectId,
+			},
+		}
+		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
+	}
+
+	ids, err := g.dataCli.HuaWei.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	if err != nil {
+		logs.Errorf("request dataservice to BatchCreateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return ids.IDs, nil
+}
+
+// diffSecurityGroupSyncUpdate for update
+func (g *securityGroup) diffHWSecurityGroupSyncUpdate(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncHuaWeiDiff,
+	dsMap map[string]*proto.SecurityGroupSyncDS, updateCloudIDs []string) error {
+
+	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.HuaWeiSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.HuaWeiSecurityGroupExtension]{},
+	}
+
+	for _, id := range updateCloudIDs {
+		if yunMap[id].SecurityGroup.Name == dsMap[id].HcSecurityGroup.Name &&
+			yunMap[id].SecurityGroup.Description == *dsMap[id].HcSecurityGroup.Memo {
+			continue
+		}
+		securityGroup := protocloud.SecurityGroupBatchUpdate[corecloud.HuaWeiSecurityGroupExtension]{
+			ID:   dsMap[id].HcSecurityGroup.ID,
+			Name: yunMap[id].SecurityGroup.Name,
+			Memo: &yunMap[id].SecurityGroup.Description,
+		}
+		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
+	}
+	if err := g.dataCli.HuaWei.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
+		updateReq); err != nil {
+		logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err
+	}
+
+	return nil
 }

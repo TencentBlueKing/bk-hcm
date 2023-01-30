@@ -28,7 +28,7 @@ import (
 // InitDiskService initial the disk service
 func InitDiskService(cap *capability.Capability) {
 	d := &disk{
-		ad: cap.Adaptor,
+		//ad: cap.Adaptor,
 	}
 
 	h := rest.NewHandler()

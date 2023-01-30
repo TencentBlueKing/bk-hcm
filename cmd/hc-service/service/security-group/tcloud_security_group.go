@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	"hcm/pkg/adaptor/types"
+	typcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -29,6 +30,8 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // CreateTCloudSecurityGroup create tcloud security group.
@@ -182,4 +185,173 @@ func (g *securityGroup) UpdateTCloudSecurityGroup(cts *rest.Contexts) (interface
 	}
 
 	return nil, nil
+}
+
+// SyncTCloudSecurityGroup sync tcloud security group to hcm.
+func (g *securityGroup) SyncTCloudSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+
+	req, err := g.decodeSecurityGroupSyncReq(cts)
+	if err != nil {
+		return nil, err
+	}
+
+	yunMap, err := g.getDatasFromTCloudForSecurityGroupSync(cts, req)
+	if err != nil {
+		return nil, err
+	}
+
+	dsMap, err := g.getDatasFromDSForSecurityGroupSync(cts, req)
+	if err != nil {
+		return nil, err
+	}
+
+	err = g.diffTCloudSecurityGroupSync(cts, yunMap, dsMap, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// getDatasFromTCloudForSecurityGroupSync get datas from cloud
+func (g *securityGroup) getDatasFromTCloudForSecurityGroupSync(cts *rest.Contexts,
+	req *proto.SecurityGroupSyncReq) (map[string]*proto.SecurityGroupSyncTCloudDiff, error) {
+
+	client, err := g.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	offset := 0
+	datasYun := []*vpc.SecurityGroup{}
+	for {
+		opt := &types.TCloudSecurityGroupListOption{
+			Region: req.Region,
+			Page:   &typcore.TCloudPage{Offset: uint64(offset), Limit: uint64(typcore.TCloudQueryLimit)},
+		}
+		datas, err := client.ListSecurityGroup(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list tcloud security group failed, err: %v, opt: %v, rid: %s", err, opt,
+				cts.Kit.Rid)
+			return nil, err
+		}
+		offset += len(datas)
+		datasYun = append(datasYun, datas...)
+		if len(datas) == 0 || uint(len(datas)) < typcore.TCloudQueryLimit {
+			break
+		}
+	}
+
+	yunMap := make(map[string]*proto.SecurityGroupSyncTCloudDiff)
+	for _, data := range datasYun {
+		sg := new(proto.SecurityGroupSyncTCloudDiff)
+		sg.IsMarked = false
+		sg.SecurityGroup = data
+		yunMap[*data.SecurityGroupId] = sg
+	}
+
+	return yunMap, nil
+}
+
+// diffSecurityGroupSync diff cloud data-service
+func (g *securityGroup) diffTCloudSecurityGroupSync(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncTCloudDiff,
+	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
+
+	addCloudIDs := getAddCloudIDs(yunMap, dsMap)
+	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
+
+	if len(deleteCloudIDs) > 0 {
+		err := g.diffSecurityGroupSyncDelete(cts, deleteCloudIDs)
+		if err != nil {
+			return err
+		}
+		err = g.diffTCloudSGRuleSyncDelete(cts, deleteCloudIDs, dsMap)
+		if err != nil {
+			return err
+		}
+	}
+	if len(updateCloudIDs) > 0 {
+		err := g.diffTCloudSecurityGroupSyncUpdate(cts, yunMap, dsMap, updateCloudIDs)
+		if err != nil {
+			return err
+		}
+		err = g.diffTCloudSGRuleSyncUpdate(cts, updateCloudIDs, req, dsMap)
+		if err != nil {
+			return err
+		}
+	}
+	if len(addCloudIDs) > 0 {
+		ids, err := g.diffTCloudSecurityGroupSyncAdd(cts, yunMap, req, addCloudIDs)
+		if err != nil {
+			return err
+		}
+		err = g.diffTCloudSGRuleSyncAdd(cts, ids, req)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// diffSecurityGroupSyncAdd for add
+func (g *securityGroup) diffTCloudSecurityGroupSyncAdd(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncTCloudDiff,
+	req *proto.SecurityGroupSyncReq, addCloudIDs []string) ([]string, error) {
+
+	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.TCloudSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{},
+	}
+
+	for _, id := range addCloudIDs {
+		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{
+			CloudID:   *yunMap[id].SecurityGroup.SecurityGroupId,
+			BkBizID:   int64(-1),
+			Region:    req.Region,
+			Name:      *yunMap[id].SecurityGroup.SecurityGroupName,
+			Memo:      yunMap[id].SecurityGroup.SecurityGroupDesc,
+			AccountID: req.AccountID,
+			Extension: &corecloud.TCloudSecurityGroupExtension{
+				CloudProjectID: yunMap[id].SecurityGroup.ProjectId,
+			},
+		}
+		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
+	}
+
+	results, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	if err != nil {
+		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return results.IDs, nil
+}
+
+// diffSecurityGroupSyncUpdate for update
+func (g *securityGroup) diffTCloudSecurityGroupSyncUpdate(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncTCloudDiff,
+	dsMap map[string]*proto.SecurityGroupSyncDS, updateCloudIDs []string) error {
+
+	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.TCloudSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.TCloudSecurityGroupExtension]{},
+	}
+
+	for _, id := range updateCloudIDs {
+		if *yunMap[id].SecurityGroup.SecurityGroupName == dsMap[id].HcSecurityGroup.Name &&
+			yunMap[id].SecurityGroup.SecurityGroupDesc == dsMap[id].HcSecurityGroup.Memo {
+			continue
+		}
+		securityGroup := protocloud.SecurityGroupBatchUpdate[corecloud.TCloudSecurityGroupExtension]{
+			ID:   dsMap[id].HcSecurityGroup.ID,
+			Name: *yunMap[id].SecurityGroup.SecurityGroupName,
+			Memo: yunMap[id].SecurityGroup.SecurityGroupDesc,
+		}
+		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
+	}
+
+	if err := g.dataCli.TCloud.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
+		updateReq); err != nil {
+		logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err
+	}
+
+	return nil
 }

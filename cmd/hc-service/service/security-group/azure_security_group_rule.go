@@ -27,6 +27,7 @@ import (
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
+	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -370,4 +371,243 @@ func (g *securityGroup) DeleteAzureSGRule(cts *rest.Contexts) (interface{}, erro
 	}
 
 	return nil, nil
+}
+
+// diffAzureSGRuleSyncAdd add azure security group rule.
+func (g *securityGroup) diffAzureSGRuleSyncAdd(cts *rest.Contexts, ids []string,
+	req *proto.SecurityGroupSyncReq) error {
+
+	client, err := g.ad.Azure(cts.Kit, req.AccountID)
+	if err != nil {
+		return err
+	}
+
+	for _, id := range ids {
+		sg, err := g.dataCli.Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			logs.Errorf("request dataservice get azure security group failed, err: %v, id: %s, rid: %s", err, id,
+				cts.Kit.Rid)
+			return err
+		}
+
+		opt := &types.AzureSGRuleListOption{
+			Region:               req.Region,
+			ResourceGroupName:    req.ResourceGroupName,
+			CloudSecurityGroupID: sg.CloudID,
+		}
+		rules, err := client.ListSecurityGroupRule(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list azure security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+		list := make([]protocloud.AzureSGRuleBatchCreate, 0, len(rules))
+		for _, rule := range rules {
+			spec := protocloud.AzureSGRuleBatchCreate{
+				CloudID:                    *rule.ID,
+				Etag:                       rule.Etag,
+				Name:                       *rule.Name,
+				Memo:                       rule.Properties.Description,
+				DestinationAddressPrefix:   rule.Properties.DestinationAddressPrefix,
+				DestinationAddressPrefixes: rule.Properties.DestinationAddressPrefixes,
+				DestinationPortRange:       rule.Properties.DestinationPortRange,
+				DestinationPortRanges:      rule.Properties.DestinationPortRanges,
+				Protocol:                   string(*rule.Properties.Protocol),
+				ProvisioningState:          string(*rule.Properties.ProvisioningState),
+				SourceAddressPrefix:        rule.Properties.SourceAddressPrefix,
+				SourceAddressPrefixes:      rule.Properties.SourceAddressPrefixes,
+				SourcePortRange:            rule.Properties.SourcePortRange,
+				SourcePortRanges:           rule.Properties.SourcePortRanges,
+				Priority:                   *rule.Properties.Priority,
+				Access:                     string(*rule.Properties.Access),
+				CloudSecurityGroupID:       sg.CloudID,
+				AccountID:                  req.AccountID,
+				Region:                     sg.Region,
+				SecurityGroupID:            id,
+			}
+			switch *rule.Properties.Direction {
+			case armnetwork.SecurityRuleDirectionInbound:
+				spec.Type = enumor.Ingress
+			case armnetwork.SecurityRuleDirectionOutbound:
+				spec.Type = enumor.Egress
+			default:
+				return fmt.Errorf("unknown security group rule direction: %s", *rule.Properties.Direction)
+			}
+			if len(rule.Properties.DestinationApplicationSecurityGroups) != 0 {
+				ids := make([]*string, 0, len(rule.Properties.DestinationApplicationSecurityGroups))
+				for _, one := range rule.Properties.DestinationApplicationSecurityGroups {
+					ids = append(ids, one.ID)
+				}
+				spec.CloudDestinationSecurityGroupIDs = ids
+			}
+			if len(rule.Properties.SourceApplicationSecurityGroups) != 0 {
+				ids := make([]*string, 0, len(rule.Properties.SourceApplicationSecurityGroups))
+				for _, one := range rule.Properties.SourceApplicationSecurityGroups {
+					ids = append(ids, one.ID)
+				}
+				spec.CloudSourceSecurityGroupIDs = ids
+			}
+			list = append(list, spec)
+		}
+
+		createReq := &protocloud.AzureSGRuleCreateReq{
+			Rules: list,
+		}
+		if len(createReq.Rules) <= 0 {
+			continue
+		}
+		_, err = g.dataCli.Azure.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
+			createReq, id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// diffAzureSGRuleSyncUpdate update huawei security group rule.
+func (g *securityGroup) diffAzureSGRuleSyncUpdate(cts *rest.Contexts, updateCloudIDs []string,
+	req *proto.SecurityGroupSyncReq, dsMap map[string]*proto.SecurityGroupSyncDS) error {
+
+	client, err := g.ad.Azure(cts.Kit, req.AccountID)
+	if err != nil {
+		return err
+	}
+
+	for _, id := range updateCloudIDs {
+		sgID := dsMap[id].HcSecurityGroup.ID
+		opt := &types.AzureSGRuleListOption{
+			Region:               req.Region,
+			ResourceGroupName:    req.ResourceGroupName,
+			CloudSecurityGroupID: id,
+		}
+		rules, err := client.ListSecurityGroupRule(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list azure security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+
+		list := make([]protocloud.AzureSGRuleUpdate, 0, len(rules))
+		for _, rule := range rules {
+			one, _ := g.getAzureSGRuleByCid(cts, *rule.ID, sgID)
+			if one == nil {
+				continue
+			}
+			if one.CloudID == *rule.ID &&
+				one.Etag == rule.Etag &&
+				one.Name == *rule.Name &&
+				one.Memo == rule.Properties.Description &&
+				one.DestinationAddressPrefix == rule.Properties.DestinationAddressPrefix &&
+				one.DestinationPortRange == rule.Properties.DestinationPortRange &&
+				one.Protocol == string(*rule.Properties.Protocol) &&
+				one.ProvisioningState == string(*rule.Properties.ProvisioningState) &&
+				one.SourceAddressPrefix == rule.Properties.SourceAddressPrefix &&
+				one.SourcePortRange == rule.Properties.SourcePortRange &&
+				one.Priority == *rule.Properties.Priority &&
+				one.Access == string(*rule.Properties.Access) {
+				continue
+			}
+			spec := protocloud.AzureSGRuleUpdate{
+				ID:                         one.ID,
+				CloudID:                    *rule.ID,
+				Etag:                       rule.Etag,
+				Name:                       *rule.Name,
+				Memo:                       rule.Properties.Description,
+				DestinationAddressPrefix:   rule.Properties.DestinationAddressPrefix,
+				DestinationAddressPrefixes: rule.Properties.DestinationAddressPrefixes,
+				DestinationPortRange:       rule.Properties.DestinationPortRange,
+				DestinationPortRanges:      rule.Properties.DestinationPortRanges,
+				Protocol:                   string(*rule.Properties.Protocol),
+				ProvisioningState:          string(*rule.Properties.ProvisioningState),
+				SourceAddressPrefix:        rule.Properties.SourceAddressPrefix,
+				SourceAddressPrefixes:      rule.Properties.SourceAddressPrefixes,
+				SourcePortRange:            rule.Properties.SourcePortRange,
+				SourcePortRanges:           rule.Properties.SourcePortRanges,
+				Priority:                   *rule.Properties.Priority,
+				Access:                     string(*rule.Properties.Access),
+				CloudSecurityGroupID:       id,
+				AccountID:                  req.AccountID,
+				Region:                     req.Region,
+				SecurityGroupID:            sgID,
+			}
+			switch *rule.Properties.Direction {
+			case armnetwork.SecurityRuleDirectionInbound:
+				spec.Type = enumor.Ingress
+			case armnetwork.SecurityRuleDirectionOutbound:
+				spec.Type = enumor.Egress
+			default:
+				return fmt.Errorf("unknown security group rule direction: %s", *rule.Properties.Direction)
+			}
+			if len(rule.Properties.DestinationApplicationSecurityGroups) != 0 {
+				ids := make([]*string, 0, len(rule.Properties.DestinationApplicationSecurityGroups))
+				for _, one := range rule.Properties.DestinationApplicationSecurityGroups {
+					ids = append(ids, one.ID)
+				}
+				spec.CloudDestinationSecurityGroupIDs = ids
+			}
+			if len(rule.Properties.SourceApplicationSecurityGroups) != 0 {
+				ids := make([]*string, 0, len(rule.Properties.SourceApplicationSecurityGroups))
+				for _, one := range rule.Properties.SourceApplicationSecurityGroups {
+					ids = append(ids, one.ID)
+				}
+				spec.CloudSourceSecurityGroupIDs = ids
+			}
+			list = append(list, spec)
+		}
+
+		createReq := &protocloud.AzureSGRuleBatchUpdateReq{
+			Rules: list,
+		}
+		if len(createReq.Rules) <= 0 {
+			continue
+		}
+		err = g.dataCli.Azure.SecurityGroup.BatchUpdateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
+			createReq, sgID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *securityGroup) getAzureSGRuleByCid(cts *rest.Contexts, cID string, sgID string) (*corecloud.
+	AzureSecurityGroupRule, error) {
+
+	listReq := &protocloud.AzureSGRuleListReq{
+		Filter: tools.EqualExpression("cloud_id", cID),
+		Page: &daotypes.BasePage{
+			Start: 0,
+			Limit: 1,
+		},
+	}
+	listResp, err := g.dataCli.Azure.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
+	if err != nil {
+		logs.Errorf("request dataservice get azure security group failed, err: %v, id: %s, rid: %s", err, cID,
+			cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(listResp.Details) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "security group rule: %s not found", cID)
+	}
+
+	return &listResp.Details[0], nil
+}
+
+// diffAzureSGRuleSyncDelete delete azure security group rule.
+func (g *securityGroup) diffAzureSGRuleSyncDelete(cts *rest.Contexts, deleteCloudIDs []string,
+	dsMap map[string]*proto.SecurityGroupSyncDS) error {
+
+	for _, id := range deleteCloudIDs {
+		deleteReq := &protocloud.AzureSGRuleBatchDeleteReq{
+			Filter: tools.EqualExpression("cloud_security_group_id", id),
+		}
+		err := g.dataCli.Azure.SecurityGroup.BatchDeleteSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), deleteReq, dsMap[id].HcSecurityGroup.ID)
+		if err != nil {
+			logs.Errorf("dataservice delete azure security group rules failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+	}
+
+	return nil
 }
