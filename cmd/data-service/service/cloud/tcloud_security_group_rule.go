@@ -41,8 +41,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitTCloudSGRuleService initial the tcloud security group rule service
-func InitTCloudSGRuleService(cap *capability.Capability) {
+// initTCloudSGRuleService initial the tcloud security group rule service
+func initTCloudSGRuleService(cap *capability.Capability) {
 	svc := &tcloudSGRuleSvc{
 		dao: cap.Dao,
 	}
@@ -282,10 +282,7 @@ func (svc *tcloudSGRuleSvc) DeleteTCloudRule(cts *rest.Contexts) (interface{}, e
 		SecurityGroupID: sgID,
 		Fields:          []string{"id"},
 		Filter:          req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:            types.DefaultBasePage,
 	}
 	listResp, err := svc.dao.TCloudSGRule().List(cts.Kit, opt)
 	if err != nil {

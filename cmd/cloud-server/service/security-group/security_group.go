@@ -29,6 +29,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -52,13 +53,13 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("ListSecurityGroup", http.MethodPost, "/security_groups/list", svc.ListSecurityGroup)
 	h.Add("AssignSecurityGroupToBiz", http.MethodPost, "/security_groups/assign/bizs", svc.AssignSecurityGroupToBiz)
 
-	h.Add("BatchCreateSecurityGroupRule", http.MethodPost,
+	h.Add("CreateSecurityGroupRule", http.MethodPost,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/create", svc.CreateSecurityGroupRule)
 	h.Add("ListSecurityGroupRule", http.MethodPost,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/list", svc.ListSecurityGroupRule)
 	h.Add("UpdateSecurityGroupRule", http.MethodPut,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.UpdateSecurityGroupRule)
-	h.Add("BatchDeleteSecurityGroupRule", http.MethodDelete,
+	h.Add("DeleteSecurityGroupRule", http.MethodDelete,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteSecurityGroupRule)
 
 	h.Load(c.WebService)
@@ -257,14 +258,11 @@ func (svc securityGroupSvc) AssignSecurityGroupToBiz(cts *rest.Contexts) (interf
 				&filter.AtomRule{
 					Field: "bk_biz_id",
 					Op:    filter.NotEqual.Factory(),
-					Value: -1,
+					Value: constant.UnassignedBiz,
 				},
 			},
 		},
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page: types.DefaultBasePage,
 	}
 	result, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(cts.Kit.Ctx,
 		cts.Kit.Header(), listReq)

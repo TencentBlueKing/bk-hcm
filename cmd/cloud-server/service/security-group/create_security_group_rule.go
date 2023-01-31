@@ -186,7 +186,7 @@ func (svc securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *t
 	}
 
 	if len(req.EgressRuleSet) != 0 {
-		successIDs := make([]string, 0)
+		successIDs := make([]string, 0, len(req.EgressRuleSet))
 		for _, one := range req.EgressRuleSet {
 			createReq := &hcproto.HuaWeiSGRuleCreateReq{
 				AccountID: sgBaseInfo.AccountID,

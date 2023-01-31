@@ -41,8 +41,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitAzureSGRuleService initial the azure security group rule service
-func InitAzureSGRuleService(cap *capability.Capability) {
+// initAzureSGRuleService initial the azure security group rule service
+func initAzureSGRuleService(cap *capability.Capability) {
 	svc := &azureSGRuleSvc{
 		dao: cap.Dao,
 	}
@@ -315,10 +315,7 @@ func (svc *azureSGRuleSvc) DeleteAzureRule(cts *rest.Contexts) (interface{}, err
 		SecurityGroupID: sgID,
 		Fields:          []string{"id"},
 		Filter:          req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:            types.DefaultBasePage,
 	}
 	listResp, err := svc.dao.AzureSGRule().List(cts.Kit, opt)
 	if err != nil {

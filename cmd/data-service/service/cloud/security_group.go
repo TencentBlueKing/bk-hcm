@@ -47,6 +47,15 @@ import (
 
 // InitSecurityGroupService initial the security group service
 func InitSecurityGroupService(cap *capability.Capability) {
+	initSecurityGroupService(cap)
+	initTCloudSGRuleService(cap)
+	initHuaWeiSGRuleService(cap)
+	initAzureSGRuleService(cap)
+	initAwsSGRuleService(cap)
+}
+
+// initSecurityGroupService initial the security group service
+func initSecurityGroupService(cap *capability.Capability) {
 	svc := &securityGroupSvc{
 		dao: cap.Dao,
 	}
@@ -174,10 +183,7 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 	opt := &types.ListOption{
 		Fields: []string{"id"},
 		Filter: req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:   types.DefaultBasePage,
 	}
 	listResp, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
 	if err != nil {

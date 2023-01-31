@@ -41,8 +41,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitAwsSGRuleService initial the aws security group rule service
-func InitAwsSGRuleService(cap *capability.Capability) {
+// initAwsSGRuleService initial the aws security group rule service
+func initAwsSGRuleService(cap *capability.Capability) {
 	svc := &awsSGRuleSvc{
 		dao: cap.Dao,
 	}
@@ -267,10 +267,7 @@ func (svc *awsSGRuleSvc) DeleteAwsRule(cts *rest.Contexts) (interface{}, error) 
 		SecurityGroupID: sgID,
 		Fields:          []string{"id"},
 		Filter:          req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:            types.DefaultBasePage,
 	}
 	listResp, err := svc.dao.AwsSGRule().List(cts.Kit, opt)
 	if err != nil {

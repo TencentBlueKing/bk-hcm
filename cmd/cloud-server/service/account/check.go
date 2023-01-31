@@ -27,6 +27,7 @@ import (
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
@@ -40,7 +41,10 @@ func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO: 校验用户是否有创建账号的权限
+	// 校验用户有该账号的创建权限
+	if err := a.checkPermission(cts, meta.Create, ""); err != nil {
+		return nil, err
+	}
 
 	switch req.Vendor {
 	case enumor.TCloud:
@@ -215,7 +219,10 @@ func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
 	}
 	accountID := cts.PathParameter("account_id").String()
 
-	// TODO: 校验用户有该账号的权限
+	// 校验用户有该账号的更新权限
+	if err := a.checkPermission(cts, meta.Update, accountID); err != nil {
+		return nil, err
+	}
 
 	// 查询该账号对应的Vendor
 	baseInfo, err := a.client.DataService().Global.Cloud.GetResourceBasicInfo(

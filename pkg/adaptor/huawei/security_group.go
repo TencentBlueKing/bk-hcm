@@ -23,13 +23,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/region"
-
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/region"
 )
 
 // CreateSecurityGroup create security group.

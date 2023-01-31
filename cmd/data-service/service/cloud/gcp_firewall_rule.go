@@ -249,10 +249,7 @@ func (svc gcpFirewallRuleSvc) BatchDeleteGcpFirewallRule(cts *rest.Contexts) (in
 	opt := &types.ListOption{
 		Fields: []string{"id"},
 		Filter: req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:   types.DefaultBasePage,
 	}
 	listResp, err := svc.dao.GcpFirewallRule().List(cts.Kit, opt)
 	if err != nil {

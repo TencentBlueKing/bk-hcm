@@ -41,8 +41,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitHuaWeiSGRuleService initial the huawei security group rule service
-func InitHuaWeiSGRuleService(cap *capability.Capability) {
+// initHuaWeiSGRuleService initial the huawei security group rule service
+func initHuaWeiSGRuleService(cap *capability.Capability) {
 	svc := &huaweiSGRuleSvc{
 		dao: cap.Dao,
 	}
@@ -270,10 +270,7 @@ func (svc *huaweiSGRuleSvc) DeleteHuaWeiRule(cts *rest.Contexts) (interface{}, e
 		SecurityGroupID: sgID,
 		Fields:          []string{"id"},
 		Filter:          req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:            types.DefaultBasePage,
 	}
 	listResp, err := svc.dao.HuaWeiSGRule().List(cts.Kit, opt)
 	if err != nil {

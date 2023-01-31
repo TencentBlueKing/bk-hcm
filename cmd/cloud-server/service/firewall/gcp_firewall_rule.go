@@ -28,6 +28,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
@@ -157,14 +158,11 @@ func (svc *firewallSvc) AssignGcpFirewallRuleToBiz(cts *rest.Contexts) (interfac
 				&filter.AtomRule{
 					Field: "bk_biz_id",
 					Op:    filter.NotEqual.Factory(),
-					Value: -1,
+					Value: constant.UnassignedBiz,
 				},
 			},
 		},
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page: types.DefaultBasePage,
 	}
 	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx,
 		cts.Kit.Header(), listReq)
@@ -178,7 +176,7 @@ func (svc *firewallSvc) AssignGcpFirewallRuleToBiz(cts *rest.Contexts) (interfac
 		for index, one := range result.Details {
 			ids[index] = one.ID
 		}
-		return nil, fmt.Errorf("gcp firewall rule%v already assigned", ids)
+		return nil, fmt.Errorf("gcp firewall rule(ids=%v) already assigned", ids)
 	}
 
 	rule := make([]dataproto.GcpFirewallRuleBatchUpdate, 0, len(req.FirewallRuleIDs))
