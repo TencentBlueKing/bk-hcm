@@ -100,10 +100,10 @@ func (g *securityGroup) diffSecurityGroupSyncDelete(cts *rest.Contexts, deleteCl
 }
 
 // getAddCloudIDs
-func getAddCloudIDs[T any](yunMap map[string]T, dsMap map[string]*proto.SecurityGroupSyncDS) []string {
+func getAddCloudIDs[T any](cloudMap map[string]T, dsMap map[string]*proto.SecurityGroupSyncDS) []string {
 
 	addCloudIDs := []string{}
-	for id := range yunMap {
+	for id := range cloudMap {
 		if _, ok := dsMap[id]; !ok {
 			addCloudIDs = append(addCloudIDs, id)
 		} else {

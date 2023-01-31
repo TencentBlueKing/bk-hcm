@@ -196,7 +196,7 @@ func (g *securityGroup) SyncHuaWeiSecurityGroup(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
-	yunMap, err := g.getDatasFromHuaWeiForSecurityGroupSync(cts, req)
+	cloudMap, err := g.getDatasFromHuaWeiForSecurityGroupSync(cts, req)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (g *securityGroup) SyncHuaWeiSecurityGroup(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
-	err = g.diffHWSecurityGroupSync(cts, yunMap, dsMap, req)
+	err = g.diffHWSecurityGroupSync(cts, cloudMap, dsMap, req)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func (g *securityGroup) getDatasFromHuaWeiForSecurityGroupSync(cts *rest.Context
 		return nil, err
 	}
 
-	datasYun := []model.SecurityGroup{}
+	datascloud := []model.SecurityGroup{}
 	limit := int32(typcore.HuaweiQueryLimit)
 	var marker *string = nil
 	for {
@@ -237,29 +237,29 @@ func (g *securityGroup) getDatasFromHuaWeiForSecurityGroupSync(cts *rest.Context
 				cts.Kit.Rid)
 			return nil, err
 		}
-		datasYun = append(datasYun, *datas...)
+		datascloud = append(datascloud, *datas...)
 		marker = pageInfo.NextMarker
 		if len(*datas) == 0 || pageInfo.NextMarker == nil {
 			break
 		}
 	}
 
-	yunMap := make(map[string]*proto.SecurityGroupSyncHuaWeiDiff)
-	for _, data := range datasYun {
+	cloudMap := make(map[string]*proto.SecurityGroupSyncHuaWeiDiff)
+	for _, data := range datascloud {
 		sg := new(proto.SecurityGroupSyncHuaWeiDiff)
 		sg.IsMarked = false
 		sg.SecurityGroup = data
-		yunMap[data.Id] = sg
+		cloudMap[data.Id] = sg
 	}
 
-	return yunMap, nil
+	return cloudMap, nil
 }
 
 // diffHWSecurityGroupSync diff cloud data-service
-func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncHuaWeiDiff,
+func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncHuaWeiDiff,
 	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
 
-	addCloudIDs := getAddCloudIDs(yunMap, dsMap)
+	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
 	if len(deleteCloudIDs) > 0 {
@@ -273,7 +273,7 @@ func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, yunMap map[s
 		}
 	}
 	if len(updateCloudIDs) > 0 {
-		err := g.diffHWSecurityGroupSyncUpdate(cts, yunMap, dsMap, updateCloudIDs)
+		err := g.diffHWSecurityGroupSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
 		if err != nil {
 			return err
 		}
@@ -283,7 +283,7 @@ func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, yunMap map[s
 		}
 	}
 	if len(addCloudIDs) > 0 {
-		ids, err := g.diffHWSecurityGroupSyncAdd(cts, yunMap, req, addCloudIDs)
+		ids, err := g.diffHWSecurityGroupSyncAdd(cts, cloudMap, req, addCloudIDs)
 		if err != nil {
 			return err
 		}
@@ -297,7 +297,7 @@ func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, yunMap map[s
 }
 
 // diffSecurityGroupSyncAdd for add
-func (g *securityGroup) diffHWSecurityGroupSyncAdd(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncHuaWeiDiff,
+func (g *securityGroup) diffHWSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncHuaWeiDiff,
 	req *proto.SecurityGroupSyncReq, addCloudIDs []string) ([]string, error) {
 
 	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.HuaWeiSecurityGroupExtension]{
@@ -306,15 +306,15 @@ func (g *securityGroup) diffHWSecurityGroupSyncAdd(cts *rest.Contexts, yunMap ma
 
 	for _, id := range addCloudIDs {
 		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.HuaWeiSecurityGroupExtension]{
-			CloudID:   yunMap[id].SecurityGroup.Id,
+			CloudID:   cloudMap[id].SecurityGroup.Id,
 			BkBizID:   -1,
 			Region:    req.Region,
-			Name:      yunMap[id].SecurityGroup.Name,
-			Memo:      &yunMap[id].SecurityGroup.Description,
+			Name:      cloudMap[id].SecurityGroup.Name,
+			Memo:      &cloudMap[id].SecurityGroup.Description,
 			AccountID: req.AccountID,
 			Extension: &corecloud.HuaWeiSecurityGroupExtension{
-				CloudProjectID:           yunMap[id].SecurityGroup.ProjectId,
-				CloudEnterpriseProjectID: yunMap[id].SecurityGroup.EnterpriseProjectId,
+				CloudProjectID:           cloudMap[id].SecurityGroup.ProjectId,
+				CloudEnterpriseProjectID: cloudMap[id].SecurityGroup.EnterpriseProjectId,
 			},
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
@@ -330,7 +330,7 @@ func (g *securityGroup) diffHWSecurityGroupSyncAdd(cts *rest.Contexts, yunMap ma
 }
 
 // diffSecurityGroupSyncUpdate for update
-func (g *securityGroup) diffHWSecurityGroupSyncUpdate(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncHuaWeiDiff,
+func (g *securityGroup) diffHWSecurityGroupSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncHuaWeiDiff,
 	dsMap map[string]*proto.SecurityGroupSyncDS, updateCloudIDs []string) error {
 
 	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.HuaWeiSecurityGroupExtension]{
@@ -338,14 +338,14 @@ func (g *securityGroup) diffHWSecurityGroupSyncUpdate(cts *rest.Contexts, yunMap
 	}
 
 	for _, id := range updateCloudIDs {
-		if yunMap[id].SecurityGroup.Name == dsMap[id].HcSecurityGroup.Name &&
-			yunMap[id].SecurityGroup.Description == *dsMap[id].HcSecurityGroup.Memo {
+		if cloudMap[id].SecurityGroup.Name == dsMap[id].HcSecurityGroup.Name &&
+			cloudMap[id].SecurityGroup.Description == *dsMap[id].HcSecurityGroup.Memo {
 			continue
 		}
 		securityGroup := protocloud.SecurityGroupBatchUpdate[corecloud.HuaWeiSecurityGroupExtension]{
 			ID:   dsMap[id].HcSecurityGroup.ID,
-			Name: yunMap[id].SecurityGroup.Name,
-			Memo: &yunMap[id].SecurityGroup.Description,
+			Name: cloudMap[id].SecurityGroup.Name,
+			Memo: &cloudMap[id].SecurityGroup.Description,
 		}
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
 	}

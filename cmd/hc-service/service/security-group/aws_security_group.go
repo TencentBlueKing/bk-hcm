@@ -151,7 +151,7 @@ func (g *securityGroup) SyncAwsSecurityGroup(cts *rest.Contexts) (interface{}, e
 		return nil, err
 	}
 
-	yunMap, err := g.getDatasFromAwsForSecurityGroupSync(cts, req)
+	cloudMap, err := g.getDatasFromAwsForSecurityGroupSync(cts, req)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (g *securityGroup) SyncAwsSecurityGroup(cts *rest.Contexts) (interface{}, e
 		return nil, err
 	}
 
-	err = g.diffAwsSecurityGroupSync(cts, yunMap, dsMap, req)
+	err = g.diffAwsSecurityGroupSync(cts, cloudMap, dsMap, req)
 	if err != nil {
 		return nil, err
 	}
@@ -187,22 +187,22 @@ func (g *securityGroup) getDatasFromAwsForSecurityGroupSync(cts *rest.Contexts,
 		return nil, err
 	}
 
-	yunMap := make(map[string]*proto.SecurityGroupSyncAwsDiff)
+	cloudMap := make(map[string]*proto.SecurityGroupSyncAwsDiff)
 	for _, one := range result.SecurityGroups {
 		sg := new(proto.SecurityGroupSyncAwsDiff)
 		sg.IsMarked = false
 		sg.SecurityGroup = one
-		yunMap[*one.GroupId] = sg
+		cloudMap[*one.GroupId] = sg
 	}
 
-	return yunMap, nil
+	return cloudMap, nil
 }
 
 // diffAwsSecurityGroupSync diff cloud data-service
-func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncAwsDiff,
+func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncAwsDiff,
 	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
 
-	addCloudIDs := getAddCloudIDs(yunMap, dsMap)
+	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
 	if len(deleteCloudIDs) > 0 {
@@ -216,7 +216,7 @@ func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, yunMap map[
 		}
 	}
 	if len(updateCloudIDs) > 0 {
-		err := g.diffAwsSecurityGroupSyncUpdate(cts, yunMap, dsMap, updateCloudIDs)
+		err := g.diffAwsSecurityGroupSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
 		if err != nil {
 			return err
 		}
@@ -226,7 +226,7 @@ func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, yunMap map[
 		}
 	}
 	if len(addCloudIDs) > 0 {
-		ids, err := g.diffAwsSecurityGroupSyncAdd(cts, yunMap, req, addCloudIDs)
+		ids, err := g.diffAwsSecurityGroupSyncAdd(cts, cloudMap, req, addCloudIDs)
 		if err != nil {
 			return err
 		}
@@ -240,7 +240,7 @@ func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, yunMap map[
 }
 
 // diffSecurityGroupSyncAdd for add
-func (g *securityGroup) diffAwsSecurityGroupSyncAdd(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncAwsDiff,
+func (g *securityGroup) diffAwsSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncAwsDiff,
 	req *proto.SecurityGroupSyncReq, addCloudIDs []string) ([]string, error) {
 
 	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.AwsSecurityGroupExtension]{
@@ -249,15 +249,15 @@ func (g *securityGroup) diffAwsSecurityGroupSyncAdd(cts *rest.Contexts, yunMap m
 
 	for _, id := range addCloudIDs {
 		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.AwsSecurityGroupExtension]{
-			CloudID:   *yunMap[id].SecurityGroup.GroupId,
+			CloudID:   *cloudMap[id].SecurityGroup.GroupId,
 			BkBizID:   -1,
 			Region:    req.Region,
-			Name:      *yunMap[id].SecurityGroup.GroupName,
-			Memo:      yunMap[id].SecurityGroup.Description,
+			Name:      *cloudMap[id].SecurityGroup.GroupName,
+			Memo:      cloudMap[id].SecurityGroup.Description,
 			AccountID: req.AccountID,
 			Extension: &corecloud.AwsSecurityGroupExtension{
-				CloudVpcID:   yunMap[id].SecurityGroup.VpcId,
-				CloudOwnerID: yunMap[id].SecurityGroup.OwnerId,
+				CloudVpcID:   cloudMap[id].SecurityGroup.VpcId,
+				CloudOwnerID: cloudMap[id].SecurityGroup.OwnerId,
 			},
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
@@ -272,7 +272,7 @@ func (g *securityGroup) diffAwsSecurityGroupSyncAdd(cts *rest.Contexts, yunMap m
 }
 
 // diffSecurityGroupSyncUpdate for update
-func (g *securityGroup) diffAwsSecurityGroupSyncUpdate(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncAwsDiff,
+func (g *securityGroup) diffAwsSecurityGroupSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncAwsDiff,
 	dsMap map[string]*proto.SecurityGroupSyncDS, updateCloudIDs []string) error {
 
 	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.AwsSecurityGroupExtension]{
@@ -280,14 +280,14 @@ func (g *securityGroup) diffAwsSecurityGroupSyncUpdate(cts *rest.Contexts, yunMa
 	}
 
 	for _, id := range updateCloudIDs {
-		if *yunMap[id].SecurityGroup.GroupName == dsMap[id].HcSecurityGroup.Name &&
-			yunMap[id].SecurityGroup.Description == dsMap[id].HcSecurityGroup.Memo {
+		if *cloudMap[id].SecurityGroup.GroupName == dsMap[id].HcSecurityGroup.Name &&
+			cloudMap[id].SecurityGroup.Description == dsMap[id].HcSecurityGroup.Memo {
 			continue
 		}
 		securityGroup := protocloud.SecurityGroupBatchUpdate[corecloud.AwsSecurityGroupExtension]{
 			ID:   dsMap[id].HcSecurityGroup.ID,
-			Name: *yunMap[id].SecurityGroup.GroupName,
-			Memo: yunMap[id].SecurityGroup.Description,
+			Name: *cloudMap[id].SecurityGroup.GroupName,
+			Memo: cloudMap[id].SecurityGroup.Description,
 		}
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
 	}

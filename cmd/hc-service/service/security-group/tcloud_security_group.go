@@ -195,7 +195,7 @@ func (g *securityGroup) SyncTCloudSecurityGroup(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
-	yunMap, err := g.getDatasFromTCloudForSecurityGroupSync(cts, req)
+	cloudMap, err := g.getDatasFromTCloudForSecurityGroupSync(cts, req)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func (g *securityGroup) SyncTCloudSecurityGroup(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
-	err = g.diffTCloudSecurityGroupSync(cts, yunMap, dsMap, req)
+	err = g.diffTCloudSecurityGroupSync(cts, cloudMap, dsMap, req)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func (g *securityGroup) getDatasFromTCloudForSecurityGroupSync(cts *rest.Context
 	}
 
 	offset := 0
-	datasYun := []*vpc.SecurityGroup{}
+	datasCloud := []*vpc.SecurityGroup{}
 	for {
 		opt := &types.TCloudSecurityGroupListOption{
 			Region: req.Region,
@@ -236,28 +236,28 @@ func (g *securityGroup) getDatasFromTCloudForSecurityGroupSync(cts *rest.Context
 			return nil, err
 		}
 		offset += len(datas)
-		datasYun = append(datasYun, datas...)
+		datasCloud = append(datasCloud, datas...)
 		if len(datas) == 0 || uint(len(datas)) < typcore.TCloudQueryLimit {
 			break
 		}
 	}
 
-	yunMap := make(map[string]*proto.SecurityGroupSyncTCloudDiff)
-	for _, data := range datasYun {
+	cloudMap := make(map[string]*proto.SecurityGroupSyncTCloudDiff)
+	for _, data := range datasCloud {
 		sg := new(proto.SecurityGroupSyncTCloudDiff)
 		sg.IsMarked = false
 		sg.SecurityGroup = data
-		yunMap[*data.SecurityGroupId] = sg
+		cloudMap[*data.SecurityGroupId] = sg
 	}
 
-	return yunMap, nil
+	return cloudMap, nil
 }
 
 // diffSecurityGroupSync diff cloud data-service
-func (g *securityGroup) diffTCloudSecurityGroupSync(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncTCloudDiff,
+func (g *securityGroup) diffTCloudSecurityGroupSync(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncTCloudDiff,
 	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
 
-	addCloudIDs := getAddCloudIDs(yunMap, dsMap)
+	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
 	if len(deleteCloudIDs) > 0 {
@@ -271,7 +271,7 @@ func (g *securityGroup) diffTCloudSecurityGroupSync(cts *rest.Contexts, yunMap m
 		}
 	}
 	if len(updateCloudIDs) > 0 {
-		err := g.diffTCloudSecurityGroupSyncUpdate(cts, yunMap, dsMap, updateCloudIDs)
+		err := g.diffTCloudSecurityGroupSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
 		if err != nil {
 			return err
 		}
@@ -281,7 +281,7 @@ func (g *securityGroup) diffTCloudSecurityGroupSync(cts *rest.Contexts, yunMap m
 		}
 	}
 	if len(addCloudIDs) > 0 {
-		ids, err := g.diffTCloudSecurityGroupSyncAdd(cts, yunMap, req, addCloudIDs)
+		ids, err := g.diffTCloudSecurityGroupSyncAdd(cts, cloudMap, req, addCloudIDs)
 		if err != nil {
 			return err
 		}
@@ -295,7 +295,7 @@ func (g *securityGroup) diffTCloudSecurityGroupSync(cts *rest.Contexts, yunMap m
 }
 
 // diffSecurityGroupSyncAdd for add
-func (g *securityGroup) diffTCloudSecurityGroupSyncAdd(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncTCloudDiff,
+func (g *securityGroup) diffTCloudSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncTCloudDiff,
 	req *proto.SecurityGroupSyncReq, addCloudIDs []string) ([]string, error) {
 
 	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.TCloudSecurityGroupExtension]{
@@ -304,14 +304,14 @@ func (g *securityGroup) diffTCloudSecurityGroupSyncAdd(cts *rest.Contexts, yunMa
 
 	for _, id := range addCloudIDs {
 		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{
-			CloudID:   *yunMap[id].SecurityGroup.SecurityGroupId,
+			CloudID:   *cloudMap[id].SecurityGroup.SecurityGroupId,
 			BkBizID:   int64(-1),
 			Region:    req.Region,
-			Name:      *yunMap[id].SecurityGroup.SecurityGroupName,
-			Memo:      yunMap[id].SecurityGroup.SecurityGroupDesc,
+			Name:      *cloudMap[id].SecurityGroup.SecurityGroupName,
+			Memo:      cloudMap[id].SecurityGroup.SecurityGroupDesc,
 			AccountID: req.AccountID,
 			Extension: &corecloud.TCloudSecurityGroupExtension{
-				CloudProjectID: yunMap[id].SecurityGroup.ProjectId,
+				CloudProjectID: cloudMap[id].SecurityGroup.ProjectId,
 			},
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
@@ -327,7 +327,7 @@ func (g *securityGroup) diffTCloudSecurityGroupSyncAdd(cts *rest.Contexts, yunMa
 }
 
 // diffSecurityGroupSyncUpdate for update
-func (g *securityGroup) diffTCloudSecurityGroupSyncUpdate(cts *rest.Contexts, yunMap map[string]*proto.SecurityGroupSyncTCloudDiff,
+func (g *securityGroup) diffTCloudSecurityGroupSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncTCloudDiff,
 	dsMap map[string]*proto.SecurityGroupSyncDS, updateCloudIDs []string) error {
 
 	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.TCloudSecurityGroupExtension]{
@@ -335,14 +335,14 @@ func (g *securityGroup) diffTCloudSecurityGroupSyncUpdate(cts *rest.Contexts, yu
 	}
 
 	for _, id := range updateCloudIDs {
-		if *yunMap[id].SecurityGroup.SecurityGroupName == dsMap[id].HcSecurityGroup.Name &&
-			yunMap[id].SecurityGroup.SecurityGroupDesc == dsMap[id].HcSecurityGroup.Memo {
+		if *cloudMap[id].SecurityGroup.SecurityGroupName == dsMap[id].HcSecurityGroup.Name &&
+			cloudMap[id].SecurityGroup.SecurityGroupDesc == dsMap[id].HcSecurityGroup.Memo {
 			continue
 		}
 		securityGroup := protocloud.SecurityGroupBatchUpdate[corecloud.TCloudSecurityGroupExtension]{
 			ID:   dsMap[id].HcSecurityGroup.ID,
-			Name: *yunMap[id].SecurityGroup.SecurityGroupName,
-			Memo: yunMap[id].SecurityGroup.SecurityGroupDesc,
+			Name: *cloudMap[id].SecurityGroup.SecurityGroupName,
+			Memo: cloudMap[id].SecurityGroup.SecurityGroupDesc,
 		}
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
 	}

@@ -675,13 +675,13 @@ func (g *securityGroup) diffTCloudSGRuleSyncUpdate(cts *rest.Contexts, updateClo
 			Region:               req.Region,
 			CloudSecurityGroupID: id,
 		}
-		yunRules, err := client.ListSecurityGroupRule(cts.Kit, listOpt)
+		cloudRules, err := client.ListSecurityGroupRule(cts.Kit, listOpt)
 		if err != nil {
 			logs.Errorf("request adaptor to list tcloud security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		rules := []protocloud.TCloudSGRuleBatchUpdate{}
-		for _, rule := range yunRules.Egress {
+		for _, rule := range cloudRules.Egress {
 			rID, err := g.getTCloudSGRuleBy(cts, sgID, *rule.PolicyIndex, id, enumor.Egress)
 			if err != nil {
 				continue
@@ -702,7 +702,7 @@ func (g *securityGroup) diffTCloudSGRuleSyncUpdate(cts *rest.Contexts, updateClo
 				Memo:     rule.PolicyDescription,
 			})
 		}
-		for _, rule := range yunRules.Ingress {
+		for _, rule := range cloudRules.Ingress {
 			rID, err := g.getTCloudSGRuleBy(cts, sgID, *rule.PolicyIndex, id, enumor.Ingress)
 			if err != nil {
 				continue
