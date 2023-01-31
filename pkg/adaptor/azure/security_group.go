@@ -135,7 +135,8 @@ func (az *Azure) DeleteSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupO
 
 // ListSecurityGroup list security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
-func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupListOption) ([]*armnetwork.SecurityGroup, error) {
+func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupListOption) (
+	[]*armnetwork.SecurityGroup, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group list option is required")
