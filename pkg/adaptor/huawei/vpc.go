@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
+	v2 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
 
@@ -40,16 +41,15 @@ func (h *Huawei) UpdateVpc(kt *kit.Kit, opt *types.HuaweiVpcUpdateOption) error 
 		return err
 	}
 
-	vpcClient, err := h.clientSet.vpcClient(opt.Region)
+	vpcClient, err := h.clientSet.vpcClientV2(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new vpc client failed, err: %v", err)
 	}
 
-	req := &model.UpdateVpcRequest{
+	req := &v2.UpdateVpcRequest{
 		VpcId: opt.ResourceID,
-		Body: &model.UpdateVpcRequestBody{
-			DryRun: nil,
-			Vpc: &model.UpdateVpcOption{
+		Body: &v2.UpdateVpcRequestBody{
+			Vpc: &v2.UpdateVpcOption{
 				Description: opt.Data.Memo,
 			},
 		},
@@ -57,7 +57,7 @@ func (h *Huawei) UpdateVpc(kt *kit.Kit, opt *types.HuaweiVpcUpdateOption) error 
 
 	_, err = vpcClient.UpdateVpc(req)
 	if err != nil {
-		logs.Errorf("create huawei vpc failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("update huawei vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
@@ -71,12 +71,12 @@ func (h *Huawei) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) erro
 		return err
 	}
 
-	vpcClient, err := h.clientSet.vpcClient(opt.Region)
+	vpcClient, err := h.clientSet.vpcClientV2(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new vpc client failed, err: %v", err)
 	}
 
-	req := &model.DeleteVpcRequest{
+	req := &v2.DeleteVpcRequest{
 		VpcId: opt.ResourceID,
 	}
 

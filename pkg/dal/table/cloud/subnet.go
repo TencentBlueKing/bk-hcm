@@ -41,8 +41,8 @@ var SubnetColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "cloud_vpc_id", NamedC: "cloud_vpc_id", Type: enumor.String},
 	{Column: "cloud_id", NamedC: "cloud_id", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},
-	{Column: "ipv4_cidr", NamedC: "ipv4_cidr", Type: enumor.String},
-	{Column: "ipv6_cidr", NamedC: "ipv6_cidr", Type: enumor.String},
+	{Column: "ipv4_cidr", NamedC: "ipv4_cidr", Type: enumor.Json},
+	{Column: "ipv6_cidr", NamedC: "ipv6_cidr", Type: enumor.Json},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "vpc_id", NamedC: "vpc_id", Type: enumor.String},
@@ -66,7 +66,7 @@ type SubnetTable struct {
 	// CloudID 云上ID
 	CloudID string `db:"cloud_id" validate:"max=255"`
 	// Name subnet名称
-	Name *string `db:"name" validate:"max=128"`
+	Name *string `db:"name" validate:"omitempty,max=128"`
 	// Ipv4Cidr ipv4 cidr
 	Ipv4Cidr types.StringArray `db:"ipv4_cidr" validate:"-"`
 	// Ipv6Cidr ipv6 cidr

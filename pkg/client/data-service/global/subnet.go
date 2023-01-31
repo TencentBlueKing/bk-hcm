@@ -45,6 +45,7 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 // List subnets.
 func (v *SubnetClient) List(ctx context.Context, h http.Header, req *core.ListReq) (*protocloud.SubnetListResult,
 	error) {
+
 	resp := new(protocloud.SubnetListResp)
 
 	err := v.client.Post().

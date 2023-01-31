@@ -62,7 +62,7 @@ func (v vpc) HuaWeiVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 
 	updateOpt := &types.HuaweiVpcUpdateOption{
 		VpcUpdateOption: types.VpcUpdateOption{
-			ResourceID: id,
+			ResourceID: getRes.CloudID,
 			Data:       &types.BaseVpcUpdateData{Memo: req.Memo},
 		},
 		Region: getRes.Extension.Region,

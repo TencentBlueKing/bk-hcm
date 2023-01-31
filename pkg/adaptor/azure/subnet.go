@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -43,17 +42,18 @@ func (a *Azure) UpdateSubnet(_ *kit.Kit, _ *types.AzureSubnetUpdateOption) error
 
 // DeleteSubnet delete subnet.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/delete?tabs=HTTP
-func (a *Azure) DeleteSubnet(kt *kit.Kit, opt *core.AzureDeleteOption) error {
+func (a *Azure) DeleteSubnet(kt *kit.Kit, opt *types.AzureSubnetDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
 
-	subnetClient, err := a.clientSet.vpcClient()
+	subnetClient, err := a.clientSet.subnetClient()
 	if err != nil {
 		return fmt.Errorf("new subnet client failed, err: %v", err)
 	}
 
-	poller, err := subnetClient.BeginDelete(kt.Ctx, opt.ResourceGroupName, opt.ResourceID, nil)
+	vpcName := parseIDToName(opt.VpcID)
+	poller, err := subnetClient.BeginDelete(kt.Ctx, opt.ResourceGroupName, vpcName, opt.ResourceID, nil)
 	if err != nil {
 		logs.Errorf("delete azure subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -81,7 +81,8 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*type
 
 	req := new(armnetwork.SubnetsClientListOptions)
 
-	pager := subnetClient.NewListPager(opt.ResourceGroupName, opt.VpcName, req)
+	vpcName := parseIDToName(opt.VpcID)
+	pager := subnetClient.NewListPager(opt.ResourceGroupName, vpcName, req)
 	if err != nil {
 		logs.Errorf("list azure subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list azure subnet failed, err: %v", err)
@@ -96,7 +97,7 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*type
 
 		for _, subnet := range page.Value {
 			details = append(details, converter.PtrToVal(convertSubnet(subnet,
-				a.clientSet.credential.CloudSubscriptionID, opt.ResourceGroupName, opt.VpcName)))
+				a.clientSet.credential.CloudSubscriptionID, opt.ResourceGroupName, vpcName)))
 		}
 	}
 

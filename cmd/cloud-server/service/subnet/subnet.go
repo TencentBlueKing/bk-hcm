@@ -307,7 +307,7 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 	}
 
 	// update subnet biz relations
-	createReq := &cloud.SubnetBaseInfoBatchUpdateReq{
+	updateReq := &cloud.SubnetBaseInfoBatchUpdateReq{
 		Subnets: []cloud.SubnetBaseInfoUpdateReq{{
 			IDs: req.SubnetIDs,
 			Data: &cloud.SubnetUpdateBaseInfo{
@@ -316,7 +316,7 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 		}},
 	}
 
-	err = svc.client.DataService().Global.Subnet.BatchUpdateBaseInfo(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	err = svc.client.DataService().Global.Subnet.BatchUpdateBaseInfo(cts.Kit.Ctx, cts.Kit.Header(), updateReq)
 	if err != nil {
 		return nil, err
 	}

@@ -97,9 +97,12 @@ func (s subnet) AzureSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	delOpt := &adcore.AzureDeleteOption{
-		BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
-		ResourceGroupName: getRes.Extension.ResourceGroup,
+	delOpt := &types.AzureSubnetDeleteOption{
+		AzureDeleteOption: adcore.AzureDeleteOption{
+			BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.Name},
+			ResourceGroupName: getRes.Extension.ResourceGroup,
+		},
+		VpcID: getRes.CloudVpcID,
 	}
 	err = cli.DeleteSubnet(cts.Kit, delOpt)
 	if err != nil {

@@ -41,13 +41,12 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 }
 
 // Update subnet.
-func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string,
-	req *types.TCloudSubnetUpdateOption) error {
+func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, op *types.TCloudSubnetUpdateOption) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Patch().
 		WithContext(ctx).
-		Body(req).
+		Body(op).
 		SubResourcef("/subnets/%s", id).
 		WithHeaders(h).
 		Do().

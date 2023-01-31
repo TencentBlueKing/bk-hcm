@@ -58,7 +58,7 @@ func InitSubnetService(cap *capability.Capability) {
 
 	h.Add("BatchCreateSubnet", "POST", "/vendors/{vendor}/subnets/batch/create", svc.BatchCreateSubnet)
 	h.Add("BatchUpdateSubnet", "PATCH", "/vendors/{vendor}/subnets/batch", svc.BatchUpdateSubnet)
-	h.Add("BatchUpdateSubnetAttachment", "PATCH", "/subnets/attachments/batch", svc.BatchUpdateSubnetAttachment)
+	h.Add("BatchUpdateSubnetBaseInfo", "PATCH", "/subnets/base/batch", svc.BatchUpdateSubnetBaseInfo)
 	h.Add("GetSubnet", "GET", "/vendors/{vendor}/subnets/{id}", svc.GetSubnet)
 	h.Add("ListSubnet", "POST", "/subnets/list", svc.ListSubnet)
 	h.Add("DeleteSubnet", "DELETE", "/subnets/batch", svc.BatchDeleteSubnet)
@@ -314,13 +314,8 @@ func batchUpdateSubnet[T protocloud.SubnetUpdateExtension](cts *rest.Contexts, s
 	return nil, nil
 }
 
-// BatchUpdateSubnetAttachment batch update subnet attachment.
-func (svc *subnetSvc) BatchUpdateSubnetAttachment(cts *rest.Contexts) (interface{}, error) {
-	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if err := vendor.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
+// BatchUpdateSubnetBaseInfo batch update subnet basic info.
+func (svc *subnetSvc) BatchUpdateSubnetBaseInfo(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.SubnetBaseInfoBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -487,6 +482,8 @@ func convertBaseSubnet(dbSubnet *tablecloud.SubnetTable) *protocore.BaseSubnet {
 		Ipv4Cidr:   dbSubnet.Ipv4Cidr,
 		Ipv6Cidr:   dbSubnet.Ipv6Cidr,
 		Memo:       dbSubnet.Memo,
+		VpcID:      dbSubnet.VpcID,
+		BkBizID:    dbSubnet.BkBizID,
 		Revision: &core.Revision{
 			Creator:   dbSubnet.Creator,
 			Reviser:   dbSubnet.Reviser,

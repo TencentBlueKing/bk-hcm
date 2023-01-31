@@ -97,7 +97,7 @@ func (v vpc) AzureVpcDelete(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	delOpt := &adcore.AzureDeleteOption{
-		BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
+		BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.Name},
 		ResourceGroupName: getRes.Extension.ResourceGroup,
 	}
 	err = cli.DeleteVpc(cts.Kit, delOpt)

@@ -63,9 +63,10 @@ func (s subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 
 	updateOpt := &types.HuaweiSubnetUpdateOption{
 		SubnetUpdateOption: types.SubnetUpdateOption{
-			ResourceID: id,
+			ResourceID: getRes.CloudID,
 			Data:       &types.BaseSubnetUpdateData{Memo: req.Memo},
 		},
+		Name:   getRes.Name,
 		Region: getRes.Extension.Region,
 		VpcID:  getRes.CloudVpcID,
 	}
@@ -119,7 +120,6 @@ func (s subnet) HuaWeiSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	deleteReq := &dataservice.BatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-
 	err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
 	if err != nil {
 		return nil, err
