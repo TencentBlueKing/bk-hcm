@@ -82,6 +82,8 @@ func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 		return createAccount[protocloud.GcpAccountExtensionCreateReq](vendor, svc, cts)
 	case enumor.Azure:
 		return createAccount[protocloud.AzureAccountExtensionCreateReq](vendor, svc, cts)
+	default:
+		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
 
 	return nil, nil
@@ -235,7 +237,7 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID string, svc
 
 	err := svc.dao.Account().Update(cts.Kit, tools.EqualExpression("id", accountID), account)
 	if err != nil {
-		logs.Errorf("update account failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("update account failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("update account failed, err: %v", err)
 	}
 
@@ -399,10 +401,7 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 
 	opt := &types.ListOption{
 		Filter: req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:   types.DefaultBasePage,
 	}
 	listResp, err := svc.dao.Account().List(cts.Kit, opt)
 	if err != nil {

@@ -31,6 +31,13 @@ const (
 	DefaultMaxPageLimit = uint(500)
 )
 
+// DefaultBasePage define default base page.
+var DefaultBasePage = &BasePage{
+	Count: false,
+	Start: 0,
+	Limit: DefaultMaxPageLimit,
+}
+
 // DefaultPageOption is the default BasePage's option.
 var DefaultPageOption = &PageOption{
 	EnableUnlimitedLimit: false,
@@ -230,10 +237,11 @@ type SortOption struct {
 
 // SQLExpr return the expression of the query clause based one the page options.
 // Note:
-// 1. do not call this, when it's a count request.
-// 2. if sort is not set, use the default resource's identity 'id' as the sort key.
-// 3. if Sort is set by the system(PageSQLOption.Sort), then use its Sort value
-//    according to the various options.
+//  1. do not call this, when it's a count request.
+//  2. if sort is not set, use the default resource's identity 'id' as the sort key.
+//  3. if Sort is set by the system(PageSQLOption.Sort), then use its Sort value
+//     according to the various options.
+//
 // see the test case to get more returned example and learn the supported scenarios.
 func (bp BasePage) SQLExpr(ps *PageSQLOption) (where string, err error) {
 	defer func() {

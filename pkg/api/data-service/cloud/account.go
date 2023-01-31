@@ -32,8 +32,10 @@ import (
 
 // -------------------------- Create --------------------------
 
+// AccountExtensionCreateReq account extension create req.
 type AccountExtensionCreateReq interface {
-	TCloudAccountExtensionCreateReq | AwsAccountExtensionCreateReq | HuaWeiAccountExtensionCreateReq | GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq
+	TCloudAccountExtensionCreateReq | AwsAccountExtensionCreateReq | HuaWeiAccountExtensionCreateReq |
+		GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq
 }
 
 // TCloudAccountExtensionCreateReq ...
