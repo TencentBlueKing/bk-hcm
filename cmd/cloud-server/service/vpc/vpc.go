@@ -29,11 +29,14 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // InitVpcService initialize the vpc service.
@@ -307,6 +310,29 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// check if all vpcs are not assigned
+	assignedReq := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.VpcIDs},
+				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: constant.UnassignedBiz},
+			},
+		},
+		Page: &core.BasePage{
+			Count: true,
+		},
+	}
+	result, err := svc.client.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), assignedReq)
+	if err != nil {
+		logs.Errorf("count assigned vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if result.Count != 0 {
+		return nil, fmt.Errorf("%d vpcs are already assigned", result.Count)
+	}
+
 	// update vpc biz relations
 	createReq := &cloud.VpcBaseInfoBatchUpdateReq{
 		Vpcs: []cloud.VpcBaseInfoUpdateReq{{
@@ -353,13 +379,38 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 	}
 
 	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
+	vpcIDs := make([]string, 0, len(basicInfoMap))
 	for _, info := range basicInfoMap {
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Resource, Action: meta.Assign,
 			ResourceID: info.AccountID}})
+		vpcIDs = append(vpcIDs, info.ID)
 	}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
 	if err != nil {
 		return nil, err
+	}
+
+	// check if all vpcs are not assigned
+	assignedReq := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: vpcIDs},
+				&filter.AtomRule{Field: "bk_cloud_id", Op: filter.NotEqual.Factory(), Value: constant.UnbindBkCloudID},
+			},
+		},
+		Page: &core.BasePage{
+			Count: true,
+		},
+	}
+	result, err := svc.client.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), assignedReq)
+	if err != nil {
+		logs.Errorf("count assigned vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if result.Count != 0 {
+		return nil, fmt.Errorf("%d vpcs are already assigned", result.Count)
 	}
 
 	// update vpc cloud area relations

@@ -29,11 +29,14 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // InitSubnetService initialize the subnet service.
@@ -304,6 +307,29 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
 	if err != nil {
 		return nil, err
+	}
+
+	// check if all subnets are not assigned
+	assignedReq := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.SubnetIDs},
+				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: constant.UnassignedBiz},
+			},
+		},
+		Page: &core.BasePage{
+			Count: true,
+		},
+	}
+	result, err := svc.client.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), assignedReq)
+	if err != nil {
+		logs.Errorf("count assigned subnet failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if result.Count != 0 {
+		return nil, fmt.Errorf("%d subnets are already assigned", result.Count)
 	}
 
 	// update subnet biz relations

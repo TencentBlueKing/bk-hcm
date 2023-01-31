@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	daotypes "hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
@@ -82,6 +81,8 @@ func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 		return createAccount[protocloud.GcpAccountExtensionCreateReq](vendor, svc, cts)
 	case enumor.Azure:
 		return createAccount[protocloud.AzureAccountExtensionCreateReq](vendor, svc, cts)
+	default:
+		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
 
 	return nil, nil
@@ -179,7 +180,7 @@ func (svc *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 func getAccountFromTable(accountID string, svc *accountSvc, cts *rest.Contexts) (*tablecloud.AccountTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", accountID),
-		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
 	}
 	listAccountDetails, err := svc.dao.Account().List(cts.Kit, opt)
 	if err != nil {
@@ -235,7 +236,7 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID string, svc
 
 	err := svc.dao.Account().Update(cts.Kit, tools.EqualExpression("id", accountID), account)
 	if err != nil {
-		logs.Errorf("update account failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("update account failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("update account failed, err: %v", err)
 	}
 
@@ -274,7 +275,7 @@ func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("account_id", accountID),
 		// TODO：支持查询全量的Page
-		Page: &types.BasePage{Start: 0, Limit: types.DefaultMaxPageLimit},
+		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
 	relResp, err := svc.dao.AccountBizRel().List(cts.Kit, opt)
 	if err != nil {
@@ -399,10 +400,7 @@ func (svc *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 
 	opt := &types.ListOption{
 		Filter: req.Filter,
-		Page: &types.BasePage{
-			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
-		},
+		Page:   core.DefaultBasePage,
 	}
 	listResp, err := svc.dao.Account().List(cts.Kit, opt)
 	if err != nil {

@@ -22,7 +22,6 @@ package core
 
 import (
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -90,7 +89,7 @@ type DeleteResp struct {
 // ListReq is a standard list operation http request.
 type ListReq struct {
 	Filter *filter.Expression `json:"filter"`
-	Page   *types.BasePage    `json:"page"`
+	Page   *BasePage          `json:"page"`
 	Fields []string           `json:"fields"`
 }
 

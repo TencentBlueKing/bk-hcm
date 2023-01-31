@@ -20,6 +20,7 @@
 package types
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/runtime/filter"
 )
@@ -28,11 +29,11 @@ import (
 type ListOption struct {
 	Fields []string
 	Filter *filter.Expression
-	Page   *BasePage
+	Page   *core.BasePage
 }
 
 // Validate list option.
-func (opt ListOption) Validate(eo *filter.ExprOption, po *PageOption) error {
+func (opt ListOption) Validate(eo *filter.ExprOption, po *core.PageOption) error {
 	if opt.Filter == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}

@@ -35,7 +35,6 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	daotypes "hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
@@ -176,7 +175,7 @@ func batchCreateSubnet[T protocloud.SubnetCreateExtension](cts *rest.Contexts, v
 // getVpcIDByCloudID get vpc cloud id to id map from cloud ids, used for related resources.
 func getVpcIDByCloudID(kt *kit.Kit, dao dao.Set, vendor enumor.Vendor, cloudIDs []string) (map[string]string, error) {
 	opt := &types.ListOption{
-		Page: &daotypes.BasePage{Count: false, Start: 0, Limit: uint(len(cloudIDs))},
+		Page: &core.BasePage{Count: false, Start: 0, Limit: uint(len(cloudIDs))},
 	}
 
 	switch vendor {
@@ -270,7 +269,7 @@ func batchUpdateSubnet[T protocloud.SubnetUpdateExtension](cts *rest.Contexts, s
 	// check if all subnets exists
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   &daotypes.BasePage{Count: true},
+		Page:   &core.BasePage{Count: true},
 	}
 	listRes, err := svc.dao.Subnet().List(cts.Kit, opt)
 	if err != nil {
@@ -333,7 +332,7 @@ func (svc *subnetSvc) BatchUpdateSubnetBaseInfo(cts *rest.Contexts) (interface{}
 	// check if all subnets exists
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   &daotypes.BasePage{Count: true},
+		Page:   &core.BasePage{Count: true},
 	}
 	listRes, err := svc.dao.Subnet().List(cts.Kit, opt)
 	if err != nil {
@@ -418,7 +417,7 @@ func convertToSubnetResult[T protocore.SubnetExtension](baseSubnet *protocore.Ba
 func getSubnetFromTable(kt *kit.Kit, dao dao.Set, subnetID string) (*tablecloud.SubnetTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", subnetID),
-		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
 	}
 	res, err := dao.Subnet().List(kt, opt)
 	if err != nil {
@@ -506,9 +505,9 @@ func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error)
 
 	opt := &types.ListOption{
 		Filter: req.Filter,
-		Page: &types.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
+			Limit: core.DefaultMaxPageLimit,
 		},
 	}
 	listResp, err := svc.dao.Subnet().List(cts.Kit, opt)

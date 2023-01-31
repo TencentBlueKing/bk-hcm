@@ -17,21 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package conv
+package cloud
 
-import (
-	"hcm/pkg/tools/json"
-)
+import "hcm/pkg/api/core"
 
-// StructToMap 该函数主要是将struct结构通过JSON的方式转换为Map[string]interface{}，struct与Map的字段映射是通过json tag
-func StructToMap(v interface{}) (m map[string]interface{}, err error) {
-	if v == nil {
-		return
-	}
-	b, err := json.Marshal(v)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(b, &m)
-	return
+// SecurityGroupNetworkInterfaceRel define security group network interface rel.
+type SecurityGroupNetworkInterfaceRel struct {
+	ID                 uint64                `json:"id"`
+	NetworkInterfaceID string                `json:"network_interface_id"`
+	SecurityGroupID    string                `json:"security_group_id"`
+	Revision           *core.CreatedRevision `json:"revision"`
 }

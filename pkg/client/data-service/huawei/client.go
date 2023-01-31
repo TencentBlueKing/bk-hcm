@@ -25,16 +25,18 @@ import (
 
 // Client is a huawei api client
 type Client struct {
-	Account *AccountClient
-	Vpc     *VpcClient
-	Subnet  *SubnetClient
+	Account       *AccountClient
+	SecurityGroup *SecurityGroupClient
+	Vpc           *VpcClient
+	Subnet        *SubnetClient
 }
 
 // NewClient create a new huawei api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		Account: NewAccountClient(client),
-		Vpc:     NewVpcClient(client),
-		Subnet:  NewSubnetClient(client),
+		Account:       NewAccountClient(client),
+		SecurityGroup: NewCloudSecurityGroupClient(client),
+		Vpc:           NewVpcClient(client),
+		Subnet:        NewSubnetClient(client),
 	}
 }

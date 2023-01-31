@@ -22,6 +22,7 @@ package cloud
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -156,7 +157,7 @@ func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.SubnetColumns.ColumnTypes())),
-		types.DefaultPageOption); err != nil {
+		core.DefaultPageOption); err != nil {
 		return nil, err
 	}
 
@@ -186,7 +187,7 @@ func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 		return &types.SubnetListResult{Count: count}, nil
 	}
 
-	pageExpr, err := opt.Page.SQLExpr(types.DefaultPageSQLOption)
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
 	if err != nil {
 		return nil, err
 	}

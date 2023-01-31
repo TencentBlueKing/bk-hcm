@@ -17,35 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package conv_test
+package cloud
 
-import (
-	"encoding/json"
+import "hcm/pkg/api/core"
 
-	"hcm/pkg/tools/conv"
-
-	. "github.com/onsi/ginkgo/v2"
-	"github.com/stretchr/testify/assert"
-)
-
-var _ = Describe("Struct", func() {
-	emptyMap := map[string]interface{}{}
-	DescribeTable("StructToMap cases", func(value interface{}, expected map[string]interface{}, willError bool) {
-		data, err := conv.StructToMap(value)
-
-		if willError {
-			assert.Error(GinkgoT(), err)
-		} else {
-			assert.NoError(GinkgoT(), err)
-			assert.Equal(GinkgoT(), expected, data)
-		}
-	},
-		Entry("a nil pointer", nil, nil, false),
-		Entry("not a struct", 0, emptyMap, true),
-		Entry("json marshal error", "1", emptyMap, true),
-		Entry("a struct", struct {
-			A string `json:"a"`
-			B int64  `json:"b"`
-		}{A: "a", B: 1}, map[string]interface{}{"a": "a", "b": json.Number("1")}, false),
-	)
-})
+// SecurityGroupSubnetRel define security group subnet rel.
+type SecurityGroupSubnetRel struct {
+	ID              uint64                `json:"id"`
+	SubnetID        string                `json:"subnet_id"`
+	SecurityGroupID string                `json:"security_group_id"`
+	Revision        *core.CreatedRevision `json:"revision"`
+}
