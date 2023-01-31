@@ -190,7 +190,6 @@ func (g *securityGroup) getDatasFromAwsForSecurityGroupSync(cts *rest.Contexts,
 	cloudMap := make(map[string]*proto.SecurityGroupSyncAwsDiff)
 	for _, one := range result.SecurityGroups {
 		sg := new(proto.SecurityGroupSyncAwsDiff)
-		sg.IsMarked = false
 		sg.SecurityGroup = one
 		cloudMap[*one.GroupId] = sg
 	}

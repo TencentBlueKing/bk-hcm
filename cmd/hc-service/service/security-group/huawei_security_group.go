@@ -223,7 +223,7 @@ func (g *securityGroup) getDatasFromHuaWeiForSecurityGroupSync(cts *rest.Context
 		return nil, err
 	}
 
-	datascloud := []model.SecurityGroup{}
+	datasCloud := []model.SecurityGroup{}
 	limit := int32(typcore.HuaweiQueryLimit)
 	var marker *string = nil
 	for {
@@ -237,7 +237,7 @@ func (g *securityGroup) getDatasFromHuaWeiForSecurityGroupSync(cts *rest.Context
 				cts.Kit.Rid)
 			return nil, err
 		}
-		datascloud = append(datascloud, *datas...)
+		datasCloud = append(datasCloud, *datas...)
 		marker = pageInfo.NextMarker
 		if len(*datas) == 0 || pageInfo.NextMarker == nil {
 			break
@@ -245,9 +245,8 @@ func (g *securityGroup) getDatasFromHuaWeiForSecurityGroupSync(cts *rest.Context
 	}
 
 	cloudMap := make(map[string]*proto.SecurityGroupSyncHuaWeiDiff)
-	for _, data := range datascloud {
+	for _, data := range datasCloud {
 		sg := new(proto.SecurityGroupSyncHuaWeiDiff)
-		sg.IsMarked = false
 		sg.SecurityGroup = data
 		cloudMap[data.Id] = sg
 	}

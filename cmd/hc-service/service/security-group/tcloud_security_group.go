@@ -245,7 +245,6 @@ func (g *securityGroup) getDatasFromTCloudForSecurityGroupSync(cts *rest.Context
 	cloudMap := make(map[string]*proto.SecurityGroupSyncTCloudDiff)
 	for _, data := range datasCloud {
 		sg := new(proto.SecurityGroupSyncTCloudDiff)
-		sg.IsMarked = false
 		sg.SecurityGroup = data
 		cloudMap[*data.SecurityGroupId] = sg
 	}

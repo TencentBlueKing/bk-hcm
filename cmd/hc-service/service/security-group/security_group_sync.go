@@ -77,7 +77,7 @@ func (g *securityGroup) getDatasFromDSForSecurityGroupSync(cts *rest.Contexts,
 	dsMap := make(map[string]*proto.SecurityGroupSyncDS)
 	for _, result := range resultsHcm {
 		sg := new(proto.SecurityGroupSyncDS)
-		sg.IsMarked = false
+		sg.IsUpdated = false
 		sg.HcSecurityGroup = result
 		dsMap[result.CloudID] = sg
 	}
@@ -107,7 +107,7 @@ func getAddCloudIDs[T any](cloudMap map[string]T, dsMap map[string]*proto.Securi
 		if _, ok := dsMap[id]; !ok {
 			addCloudIDs = append(addCloudIDs, id)
 		} else {
-			dsMap[id].IsMarked = true
+			dsMap[id].IsUpdated = true
 		}
 	}
 
@@ -120,7 +120,7 @@ func getDeleteAndUpdateCloudIDs(dsMap map[string]*proto.SecurityGroupSyncDS) ([]
 	deleteCloudIDs := []string{}
 	updateCloudIDs := []string{}
 	for id, one := range dsMap {
-		if !one.IsMarked {
+		if !one.IsUpdated {
 			deleteCloudIDs = append(deleteCloudIDs, id)
 		} else {
 			updateCloudIDs = append(updateCloudIDs, id)

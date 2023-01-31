@@ -116,26 +116,22 @@ func (req *SecurityGroupSyncReq) Validate() error {
 }
 
 type SecurityGroupSyncDS struct {
-	IsMarked        bool
+	IsUpdated       bool
 	HcSecurityGroup cloud.BaseSecurityGroup
 }
 
 type SecurityGroupSyncHuaWeiDiff struct {
-	IsMarked      bool
 	SecurityGroup model.SecurityGroup
 }
 
 type SecurityGroupSyncTCloudDiff struct {
-	IsMarked      bool
 	SecurityGroup *tcloud.SecurityGroup
 }
 
 type SecurityGroupSyncAwsDiff struct {
-	IsMarked      bool
 	SecurityGroup *ec2.SecurityGroup
 }
 
 type SecurityGroupSyncAzureDiff struct {
-	IsMarked      bool
 	SecurityGroup *armnetwork.SecurityGroup
 }

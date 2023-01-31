@@ -236,7 +236,6 @@ func (g *securityGroup) getDatasFromAzureForSecurityGroupSync(cts *rest.Contexts
 	cloudMap := make(map[string]*proto.SecurityGroupSyncAzureDiff)
 	for _, one := range result {
 		sg := new(proto.SecurityGroupSyncAzureDiff)
-		sg.IsMarked = false
 		sg.SecurityGroup = one
 		cloudMap[*one.ID] = sg
 	}
