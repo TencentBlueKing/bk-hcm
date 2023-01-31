@@ -38,7 +38,6 @@ export default defineComponent({
       extension: {},   // 特殊信息
     };
 
-    const isTestConnection = ref(false);
     const departmentFullName = ref('IEG互动娱乐事业群/技术运营部/计算资源中心');
     const departmentData = ref([]);
     const isShowModifyScretDialog = ref(false);
@@ -72,23 +71,23 @@ export default defineComponent({
       const res = await accountStore.getAccountDetail(id);
       projectModel.id = res?.data.id;
       projectModel.vendor = res?.data.vendor;
-      projectModel.name = res?.data.spec.name;
-      projectModel.type = res?.data.spec.type;
-      projectModel.managers = res?.data.spec.managers;
-      projectModel.price = res?.data.spec.price;
-      projectModel.price_unit = res?.data.spec.price_unit;
-      projectModel.site = res?.data.spec.site;
-      projectModel.memo = res?.data.spec.memo;
-      projectModel.departmentId = [res?.data.spec.department_id]; // 1
-      projectModel.creator = res?.data.revision.creator;
-      projectModel.reviser = res?.data.revision.reviser;
-      projectModel.created_at = res?.data.revision.created_at;
-      projectModel.updated_at = res?.data.revision.updated_at;
+      projectModel.name = res?.data.name;
+      projectModel.type = res?.data.type;
+      projectModel.managers = res?.data.managers;
+      projectModel.price = res?.data.price;
+      projectModel.price_unit = res?.data.price_unit;
+      projectModel.site = res?.data.site;
+      projectModel.memo = res?.data.memo;
+      projectModel.departmentId = [res?.data.department_id]; // 1
+      projectModel.creator = res?.data.creator;
+      projectModel.reviser = res?.data.reviser;
+      projectModel.created_at = res?.data.created_at;
+      projectModel.updated_at = res?.data.updated_at;
       projectModel.extension = res?.data.extension;
-      projectModel.bizIds = res?.data?.attachment?.bk_biz_ids;
+      projectModel.bizIds = res?.data?.bk_biz_ids;
       requestQueue.value.shift();
       getBusinessList();
-      getDepartmentInfo(res?.data.spec.department_id);
+      getDepartmentInfo(res?.data.department_id);
       renderDialogForm(projectModel);
       renderBaseInfoForm(projectModel);
     });
@@ -488,19 +487,17 @@ export default defineComponent({
     };
     // 更新信息方法
     const updateFormData = async (key: any, val?: any) => {
-      let params: any = { spec: {}, attachment: {} };
+      let params: any = {};
       if (key === 'departmentId') {
-        params.spec.department_id = Number(projectModel[key].join(''));
-        delete params.attachment;
+        params.department_id = Number(projectModel[key].join(''));
         isOrganizationDetail.value = true;  // 改为详情展示态
       } else if (key === 'bizIds') {
         // 若选择全部业务，则参数是-1
-        params.attachment.bk_biz_ids = projectModel[key].length === businessList.list.length
+        params.bk_biz_ids = projectModel[key].length === businessList.list.length
           ? [-1] : projectModel[key];
-        delete params.spec;
       } else {
-        params = { spec: {} };
-        params.spec[key] = projectModel[key];
+        params = {};
+        params[key] = projectModel[key];
       }
       try {
         await accountStore.updateAccount({    // 更新密钥信息
@@ -537,8 +534,8 @@ export default defineComponent({
 
     // 弹窗确认
     const onConfirm = async () => {
-      buttonLoading.value = true;
       await formDiaRef.value?.validate();
+      buttonLoading.value = true;
       const extension: any = {
         cloud_secret_id: secretModel.secretId,
         cloud_secret_key: secretModel.secretKey,
@@ -574,38 +571,24 @@ export default defineComponent({
         default:
           break;
       }
-      if (isTestConnection.value) {
-        try {
-          await accountStore.updateAccount({    // 更新密钥信息
-            id: projectModel.id,
-            extension,
-          });
-          Message({
-            message: t('更新密钥信息成功'),
-            theme: 'success',
-          });
-          onClosed();
-        } catch (error) {
-          console.log(error);
-        } finally {
-          buttonLoading.value = false;
-        }
-      } else {
-        try {
-          await accountStore.updateTestAccount({    // 测试连接密钥信息
-            id: projectModel.id,
-            extension,
-          });
-          Message({
-            message: t('测试连接成功'),
-            theme: 'success',
-          });
-          isTestConnection.value = true;
-        } catch (error) {
-          console.log(error);
-        } finally {
-          buttonLoading.value = false;
-        }
+      try {
+        await accountStore.updateTestAccount({    // 测试连接密钥信息
+          id: projectModel.id,
+          extension,
+        });
+        await accountStore.updateAccount({    // 更新密钥信息
+          id: projectModel.id,
+          extension,
+        });
+        Message({
+          message: t('更新密钥信息成功'),
+          theme: 'success',
+        });
+        onClosed();
+      } catch (error) {
+        console.log(error);
+      } finally {
+        buttonLoading.value = false;
       }
     };
 
@@ -838,7 +821,7 @@ export default defineComponent({
             }
             </Form>
             <div class="button-warp">
-              <Button theme="primary" loading={buttonLoading.value} onClick={onConfirm}>{isTestConnection.value ? t('确认') : t('测试连接')}</Button>
+              <Button theme="primary" loading={buttonLoading.value} onClick={onConfirm}>{t('确认')}</Button>
               <Button class="ml10" onClick={onClosed}>{t('取消')}</Button>
             </div>
           </Dialog>

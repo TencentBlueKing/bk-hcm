@@ -4,12 +4,12 @@
       <bk-button theme="primary" @click="handleJump('accountAdd')">
         {{t('新增')}}
       </bk-button>
-      <!-- <div class="flex-row input-warp justify-content-between align-items-center">
+      <div class="flex-row input-warp justify-content-between align-items-center">
         <bk-checkbox v-model="isAccurate" class="pr20">
           {{t('精确')}}
         </bk-checkbox>
         <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
-      </div> -->
+      </div>
     </div>
     <bk-loading
       :loading="loading"
