@@ -470,7 +470,7 @@ func (g *securityGroup) getAwsSGRuleByCid(cts *rest.Contexts, cID string, sgID s
 
 	listReq := &protocloud.AwsSGRuleListReq{
 		Filter: tools.EqualExpression("cloud_id", cID),
-		Page: &daotypes.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
 			Limit: 1,
 		},

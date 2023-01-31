@@ -493,20 +493,6 @@ func (g *securityGroup) diffAzureSGRuleSyncUpdate(cts *rest.Contexts, updateClou
 			if one == nil {
 				continue
 			}
-			if one.CloudID == *rule.ID &&
-				one.Etag == rule.Etag &&
-				one.Name == *rule.Name &&
-				one.Memo == rule.Properties.Description &&
-				one.DestinationAddressPrefix == rule.Properties.DestinationAddressPrefix &&
-				one.DestinationPortRange == rule.Properties.DestinationPortRange &&
-				one.Protocol == string(*rule.Properties.Protocol) &&
-				one.ProvisioningState == string(*rule.Properties.ProvisioningState) &&
-				one.SourceAddressPrefix == rule.Properties.SourceAddressPrefix &&
-				one.SourcePortRange == rule.Properties.SourcePortRange &&
-				one.Priority == *rule.Properties.Priority &&
-				one.Access == string(*rule.Properties.Access) {
-				continue
-			}
 			spec := protocloud.AzureSGRuleUpdate{
 				ID:                         one.ID,
 				CloudID:                    *rule.ID,
@@ -575,7 +561,7 @@ func (g *securityGroup) getAzureSGRuleByCid(cts *rest.Contexts, cID string, sgID
 
 	listReq := &protocloud.AzureSGRuleListReq{
 		Filter: tools.EqualExpression("cloud_id", cID),
-		Page: &daotypes.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
 			Limit: 1,
 		},

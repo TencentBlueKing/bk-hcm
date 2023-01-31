@@ -357,7 +357,7 @@ func (g *securityGroup) getHuaWeiSGRuleByCid(cts *rest.Contexts, cID string, sgI
 
 	listReq := &protocloud.HuaWeiSGRuleListReq{
 		Filter: tools.EqualExpression("cloud_id", cID),
-		Page: &daotypes.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
 			Limit: 1,
 		},

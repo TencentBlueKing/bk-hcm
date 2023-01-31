@@ -754,7 +754,7 @@ func (g *securityGroup) getTCloudSGRuleBy(cts *rest.Contexts, sgID string, cpId 
 				filter.AtomRule{Field: "type", Op: filter.Equal.Factory(), Value: typ},
 			},
 		},
-		Page: &daotypes.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
 			Limit: 1,
 		},

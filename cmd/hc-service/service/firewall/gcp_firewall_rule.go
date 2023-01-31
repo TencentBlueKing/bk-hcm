@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	daotypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -276,7 +277,7 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 	// 清空cgp firewall rule
 	listReq := &protocloud.GcpFirewallRuleListReq{
 		Filter: tools.EqualExpression("account_id", "0000002d"),
-		Page: &daotypes.BasePage{
+		Page: &core.BasePage{
 			Start: uint32(0),
 			Limit: daotypes.DefaultMaxPageLimit,
 		},

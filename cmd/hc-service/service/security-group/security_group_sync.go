@@ -20,6 +20,7 @@
 package securitygroup
 
 import (
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -55,7 +56,7 @@ func (g *securityGroup) getDatasFromDSForSecurityGroupSync(cts *rest.Contexts,
 	for {
 		dataReq := &dataproto.SecurityGroupListReq{
 			Filter: tools.EqualExpression("account_id", req.AccountID),
-			Page: &daltypes.BasePage{
+			Page: &core.BasePage{
 				Start: uint32(start),
 				Limit: daltypes.DefaultMaxPageLimit,
 			},
