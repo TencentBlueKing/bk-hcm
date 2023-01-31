@@ -274,9 +274,16 @@ func (f *firewall) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, error
 
 // SyncGcpFirewallRule sync gcp to hcm v1.0
 func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	// 清空cgp firewall rule
+	req := new(proto.SecurityGroupSyncReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	listReq := &protocloud.GcpFirewallRuleListReq{
-		Filter: tools.EqualExpression("account_id", "0000002d"),
+		Filter: tools.EqualExpression("account_id", req.AccountID),
 		Page: &core.BasePage{
 			Start: uint32(0),
 			Limit: daotypes.DefaultMaxPageLimit,
@@ -308,7 +315,6 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 		}
 	}
 
-	// 重新生成gcp firewall rule
 	f.CreateGcpFirewallRule(cts)
 
 	return nil, nil
