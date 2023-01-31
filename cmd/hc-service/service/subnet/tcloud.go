@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	daotypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -210,7 +209,7 @@ func (s subnet) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resou
 	cloudVpcID string) (map[string]cloudcore.BaseSubnet, error) {
 	var (
 		page        uint32
-		count       = daotypes.DefaultMaxPageLimit
+		count       = core.DefaultMaxPageLimit
 		resourceMap = map[string]cloudcore.BaseSubnet{}
 		rulesCommon = []filter.RuleFactory{
 			&filter.AtomRule{
@@ -241,7 +240,7 @@ func (s subnet) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resou
 		}
 		dbQueryReq := &core.ListReq{
 			Filter: expr,
-			Page:   &daotypes.BasePage{Count: false, Start: offset, Limit: count},
+			Page:   &core.BasePage{Count: false, Start: offset, Limit: count},
 		}
 		dbList, err := s.cs.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 		if err != nil {

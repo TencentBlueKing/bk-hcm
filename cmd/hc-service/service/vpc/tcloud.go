@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	daotypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -210,7 +209,7 @@ func (v vpc) BatchGetVpcMapFromDB(cts *rest.Contexts, req *hcservice.ResourceSyn
 	map[string]cloudcore.BaseVpc, error) {
 	var (
 		page        uint32
-		count       = daotypes.DefaultMaxPageLimit
+		count       = core.DefaultMaxPageLimit
 		resourceMap = map[string]cloudcore.BaseVpc{}
 	)
 
@@ -233,7 +232,7 @@ func (v vpc) BatchGetVpcMapFromDB(cts *rest.Contexts, req *hcservice.ResourceSyn
 		}
 		dbQueryReq := &core.ListReq{
 			Filter: expr,
-			Page:   &daotypes.BasePage{Count: false, Start: offset, Limit: count},
+			Page:   &core.BasePage{Count: false, Start: offset, Limit: count},
 		}
 		dbList, err := v.cs.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 		if err != nil {

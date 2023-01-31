@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	daotypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -223,7 +222,7 @@ func (s subnet) GetVpcMapFromDBForAzure(cts *rest.Contexts, req *hcservice.Resou
 	}
 	dbQueryReq := &core.ListReq{
 		Filter: expr,
-		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
 	}
 	dbInfo, err := s.cs.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 	if err != nil {
