@@ -146,7 +146,7 @@ func (s subnet) AwsSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// batch get subnet map from db.
-	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, vendorName)
+	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, vendorName, "")
 	if err != nil {
 		logs.Errorf("[%s-subnet] batch get vpcdblist failed. accountID:%s, region:%s, err:%v",
 			vendorName, req.AccountID, req.Region, err)

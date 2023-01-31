@@ -156,7 +156,7 @@ func (s subnet) GcpSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// batch get subnet map from db.
-	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, vendorName)
+	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, vendorName, "")
 	if err != nil {
 		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID:%s, region:%s, err:%v",
 			vendorName, req.AccountID, req.Region, err)

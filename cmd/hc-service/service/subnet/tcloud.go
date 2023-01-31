@@ -148,7 +148,7 @@ func (s subnet) TCloudSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// batch get subnet map from db.
-	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, vendorName)
+	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, vendorName, "")
 	if err != nil {
 		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID:%s, region:%s, err:%v",
 			vendorName, req.AccountID, req.Region, err)
@@ -206,30 +206,38 @@ func (s subnet) BatchGetTCloudSubnetList(cts *rest.Contexts, req *hcservice.Reso
 }
 
 // BatchGetSubnetMapFromDB batch get subnet map from db.
-func (s subnet) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.ResourceSyncReq, vendor enumor.Vendor) (
-	map[string]cloudcore.BaseSubnet, error) {
+func (s subnet) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.ResourceSyncReq, vendor enumor.Vendor,
+	cloudVpcID string) (map[string]cloudcore.BaseSubnet, error) {
 	var (
 		page        uint32
 		count       = daotypes.DefaultMaxPageLimit
 		resourceMap = map[string]cloudcore.BaseSubnet{}
+		rulesCommon = []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "vendor",
+				Op:    filter.Equal.Factory(),
+				Value: vendor,
+			},
+			&filter.AtomRule{
+				Field: "account_id",
+				Op:    filter.Equal.Factory(),
+				Value: req.AccountID,
+			},
+		}
 	)
+	if cloudVpcID != "" {
+		rulesCommon = append(rulesCommon, &filter.AtomRule{
+			Field: "cloud_vpc_id",
+			Op:    filter.Equal.Factory(),
+			Value: cloudVpcID,
+		})
+	}
 
 	for {
 		offset := page * uint32(count)
 		expr := &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "vendor",
-					Op:    filter.Equal.Factory(),
-					Value: vendor,
-				},
-				&filter.AtomRule{
-					Field: "account_id",
-					Op:    filter.Equal.Factory(),
-					Value: req.AccountID,
-				},
-			},
+			Op:    filter.And,
+			Rules: rulesCommon,
 		}
 		dbQueryReq := &core.ListReq{
 			Filter: expr,

@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core"
 	cloudcore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
@@ -32,6 +33,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	daotypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -151,8 +153,14 @@ func (s subnet) AzureSubnetSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// get vpc map from db for azure
+	vpcInfo, err := s.GetVpcMapFromDBForAzure(cts, req, vendorName)
+	if err != nil || vpcInfo.CloudID == "" {
+		return nil, err
+	}
+
 	// batch get subnet map from db.
-	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, vendorName)
+	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, vendorName, vpcInfo.CloudID)
 	if err != nil {
 		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID:%s, region:%s, err:%v",
 			vendorName, req.AccountID, req.Region, err)
@@ -166,7 +174,6 @@ func (s subnet) AzureSubnetSync(cts *rest.Contexts) (interface{}, error) {
 			vendorName, req.AccountID, req.Region, err)
 		return nil, err
 	}
-
 	return rsp, nil
 }
 
@@ -179,7 +186,7 @@ func (s subnet) BatchGetAzureSubnetList(cts *rest.Contexts, req *hcservice.Resou
 	}
 
 	opt := &types.AzureSubnetListOption{
-		VpcName: req.VpcName,
+		VpcID: req.VpcName,
 	}
 	opt.ResourceGroupName = req.ResourceGroupName
 	list, err := cli.ListSubnet(cts.Kit, opt)
@@ -189,6 +196,45 @@ func (s subnet) BatchGetAzureSubnetList(cts *rest.Contexts, req *hcservice.Resou
 		return nil, err
 	}
 	return list, nil
+}
+
+// GetVpcMapFromDBForAzure get vpc map from db for azure.
+func (s subnet) GetVpcMapFromDBForAzure(cts *rest.Contexts, req *hcservice.ResourceSyncReq, vendor enumor.Vendor) (
+	cloudcore.BaseVpc, error) {
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "vendor",
+				Op:    filter.Equal.Factory(),
+				Value: vendor,
+			},
+			&filter.AtomRule{
+				Field: "account_id",
+				Op:    filter.Equal.Factory(),
+				Value: req.AccountID,
+			},
+			&filter.AtomRule{
+				Field: "name",
+				Op:    filter.Equal.Factory(),
+				Value: req.VpcName,
+			},
+		},
+	}
+	dbQueryReq := &core.ListReq{
+		Filter: expr,
+		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
+	}
+	dbInfo, err := s.cs.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
+	if err != nil {
+		logs.Errorf("[%s-vpc]batch get vpclist db error. accountID:%s, region:%s, err:%v",
+			vendor, req.AccountID, req.Region, err)
+		return cloudcore.BaseVpc{}, err
+	}
+	if len(dbInfo.Details) == 0 {
+		return cloudcore.BaseVpc{}, nil
+	}
+	return dbInfo.Details[0], nil
 }
 
 // BatchCompareAzureSubnetList batch compare vendor subnet list.
