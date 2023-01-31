@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strings"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -149,7 +150,7 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.VpcColumns.ColumnTypes())),
-		types.DefaultPageOption); err != nil {
+		core.DefaultPageOption); err != nil {
 		return nil, err
 	}
 
@@ -179,7 +180,7 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 		return &types.VpcListResult{Count: count}, nil
 	}
 
-	pageExpr, err := opt.Page.SQLExpr(types.DefaultPageSQLOption)
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +203,7 @@ func (v *vpcDao) ListByGcpSelfLink(kt *kit.Kit, links []string) ([]cloud.VpcTabl
 		return nil, errf.New(errf.InvalidParameter, "self links are empty")
 	}
 
-	if len(links) > int(types.DefaultMaxPageLimit) {
+	if len(links) > int(core.DefaultMaxPageLimit) {
 		return nil, errf.New(errf.InvalidParameter, "self links exceeds maximum limit")
 	}
 

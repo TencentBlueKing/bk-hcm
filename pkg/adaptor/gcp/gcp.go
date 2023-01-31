@@ -38,6 +38,11 @@ type Gcp struct {
 	clientSet *clientSet
 }
 
+// CloudProjectID return cloud project id.
+func (g *Gcp) CloudProjectID() string {
+	return g.clientSet.credential.CloudProjectID
+}
+
 // generateResourceIDsFilter generate gcp resource ids filter
 func generateResourceIDsFilter(resourceIDs []string) string {
 	filterExp := ""

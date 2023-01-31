@@ -26,7 +26,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
@@ -97,4 +97,18 @@ func (c *clientSet) newClientSecretCredential() (*azidentity.ClientSecretCredent
 		c.credential.CloudTenantID,
 		c.credential.CloudApplicationID,
 		c.credential.CloudClientSecretKey, nil)
+}
+
+func (c *clientSet) securityGroupClient() (*armnetwork.SecurityGroupsClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+
+	client, err := armnetwork.NewSecurityGroupsClient(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init azure security group client failed, err: %v", err)
+	}
+
+	return client, nil
 }

@@ -35,7 +35,6 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	daotypes "hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
@@ -195,7 +194,7 @@ func batchUpdateVpc[T protocloud.VpcUpdateExtension](cts *rest.Contexts, svc *vp
 	// check if all vpcs exists
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   &daotypes.BasePage{Count: true},
+		Page:   &core.BasePage{Count: true},
 	}
 	listRes, err := svc.dao.Vpc().List(cts.Kit, opt)
 	if err != nil {
@@ -260,7 +259,7 @@ func (svc *vpcSvc) BatchUpdateVpcBaseInfo(cts *rest.Contexts) (interface{}, erro
 	// check if all vpcs exists
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   &daotypes.BasePage{Count: true},
+		Page:   &core.BasePage{Count: true},
 	}
 	listRes, err := svc.dao.Vpc().List(cts.Kit, opt)
 	if err != nil {
@@ -345,7 +344,7 @@ func convertToVpcResult[T protocore.VpcExtension](baseVpc *protocore.BaseVpc, db
 func getVpcFromTable(kt *kit.Kit, dao dao.Set, vpcID string) (*tablecloud.VpcTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", vpcID),
-		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
 	}
 	res, err := dao.Vpc().List(kt, opt)
 	if err != nil {
@@ -431,9 +430,9 @@ func (svc *vpcSvc) BatchDeleteVpc(cts *rest.Contexts) (interface{}, error) {
 
 	opt := &types.ListOption{
 		Filter: req.Filter,
-		Page: &types.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
-			Limit: types.DefaultMaxPageLimit,
+			Limit: core.DefaultMaxPageLimit,
 		},
 	}
 	listResp, err := svc.dao.Vpc().List(cts.Kit, opt)

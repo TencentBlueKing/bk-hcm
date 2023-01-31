@@ -56,7 +56,7 @@ func (dao CloudDao) ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResou
 		return nil, errf.New(errf.InvalidParameter, "ids is required")
 	}
 
-	sql := fmt.Sprintf("select id, vendor from %s where id in (?)", tableName)
+	sql := fmt.Sprintf("select id, vendor, account_id from %s where id in (?)", tableName)
 
 	list := make([]types.CloudResourceBasicInfo, 0)
 	if err := dao.Orm.Do().Select(kt.Ctx, &list, sql, ids); err != nil {

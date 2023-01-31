@@ -22,4 +22,5 @@ package validator
 const (
 	// chineseEnglishNumberFmt chinese、english、number.
 	chineseEnglishNumberFmt string = "[\u4E00-\u9FA5A-Za-z0-9]"
+	lowEnglish              string = "[a-z]"
 )

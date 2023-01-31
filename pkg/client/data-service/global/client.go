@@ -25,20 +25,22 @@ import (
 
 // Client is a global api client
 type Client struct {
-	Auth    *AuthClient
-	Account *AccountClient
-	Cloud   *CloudClient
-	Vpc     *VpcClient
-	Subnet  *SubnetClient
+	Auth          *AuthClient
+	Account       *AccountClient
+	Cloud         *CloudClient
+	SecurityGroup *SecurityGroupClient
+	Vpc           *VpcClient
+	Subnet        *SubnetClient
 }
 
 // NewClient create a new global api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		Auth:    NewAuthClient(client),
-		Account: NewAccountClient(client),
-		Cloud:   NewCloudClient(client),
-		Vpc:     NewVpcClient(client),
-		Subnet:  NewSubnetClient(client),
+		Auth:          NewAuthClient(client),
+		Account:       NewAccountClient(client),
+		Cloud:         NewCloudClient(client),
+		SecurityGroup: NewCloudSecurityGroupClient(client),
+		Vpc:           NewVpcClient(client),
+		Subnet:        NewSubnetClient(client),
 	}
 }

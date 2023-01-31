@@ -32,7 +32,6 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
@@ -320,7 +319,7 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: constant.UnassignedBiz},
 			},
 		},
-		Page: &types.BasePage{
+		Page: &core.BasePage{
 			Count: true,
 		},
 	}
@@ -400,7 +399,7 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 				&filter.AtomRule{Field: "bk_cloud_id", Op: filter.NotEqual.Factory(), Value: constant.UnbindBkCloudID},
 			},
 		},
-		Page: &types.BasePage{
+		Page: &core.BasePage{
 			Count: true,
 		},
 	}
