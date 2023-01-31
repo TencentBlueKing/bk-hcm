@@ -28,7 +28,6 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -37,7 +36,7 @@ import (
 // SecurityGroupListReq security group list req.
 type SecurityGroupListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *types.BasePage    `json:"page" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate security group list request.

@@ -23,11 +23,11 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -123,7 +123,7 @@ func (req *TCloudSGRuleBatchUpdateReq) Validate() error {
 type TCloudSGRuleListReq struct {
 	Field  []string           `json:"field" validate:"omitempty"`
 	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *types.BasePage    `json:"page" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate tcloud security group rule list request.

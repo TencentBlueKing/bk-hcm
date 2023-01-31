@@ -22,6 +22,7 @@ package auth
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/types"
@@ -50,7 +51,7 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 	}
 
 	// enable unlimited query, because this is iam pull resource callback.
-	po := &types.PageOption{MaxLimit: client.BkIAMMaxPageSize}
+	po := &core.PageOption{MaxLimit: client.BkIAMMaxPageSize}
 	if err := opts.Validate(po); err != nil {
 		return nil, err
 	}
@@ -76,7 +77,8 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 	}
 
 	// select instance data by whereExpr
-	pageExpr, err := opts.Page.SQLExpr(&types.PageSQLOption{Sort: types.SortOption{Sort: "id", IfNotPresent: true}})
+	pageExpr, err := types.PageSQLExpr(opts.Page, &types.PageSQLOption{Sort: types.SortOption{Sort: "id",
+		IfNotPresent: true}})
 	if err != nil {
 		return nil, err
 	}

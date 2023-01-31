@@ -32,7 +32,6 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -262,7 +261,7 @@ func (svc securityGroupSvc) AssignSecurityGroupToBiz(cts *rest.Contexts) (interf
 				},
 			},
 		},
-		Page: types.DefaultBasePage,
+		Page: core.DefaultBasePage,
 	}
 	result, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(cts.Kit.Ctx,
 		cts.Kit.Header(), listReq)

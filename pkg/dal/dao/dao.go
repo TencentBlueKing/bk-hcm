@@ -50,6 +50,8 @@ type Set interface {
 	GcpFirewallRule() cloud.GcpFirewallRule
 	Cloud() cloud.Cloud
 	AccountBizRel() cloud.AccountBizRel
+	Vpc() cloud.Vpc
+	Subnet() cloud.Subnet
 	Txn() *Txn
 }
 
@@ -124,6 +126,23 @@ func (s *set) Account() cloud.Account {
 	}
 }
 
+// AccountBizRel returns account biz relation dao.
+func (s *set) AccountBizRel() cloud.AccountBizRel {
+	return &cloud.AccountBizRelDao{
+		Orm: s.orm,
+	}
+}
+
+// Vpc returns vpc dao.
+func (s *set) Vpc() cloud.Vpc {
+	return cloud.NewVpcDao(s.orm, s.idGen)
+}
+
+// Subnet returns subnet dao.
+func (s *set) Subnet() cloud.Subnet {
+	return cloud.NewSubnetDao(s.orm, s.idGen)
+}
+
 // Auth return auth dao.
 func (s *set) Auth() auth.Auth {
 	return &auth.AuthDao{
@@ -134,13 +153,6 @@ func (s *set) Auth() auth.Auth {
 // Cloud return cloud dao.
 func (s *set) Cloud() cloud.Cloud {
 	return &cloud.CloudDao{
-		Orm: s.orm,
-	}
-}
-
-// AccountBizRel return AccountBizRel dao.
-func (s *set) AccountBizRel() cloud.AccountBizRel {
-	return &cloud.AccountBizRelDao{
 		Orm: s.orm,
 	}
 }

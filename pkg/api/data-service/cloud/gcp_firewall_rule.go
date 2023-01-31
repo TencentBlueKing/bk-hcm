@@ -20,9 +20,9 @@
 package cloud
 
 import (
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -106,7 +106,7 @@ type GcpFirewallRuleBatchUpdate struct {
 type GcpFirewallRuleListReq struct {
 	Field  []string           `json:"field" validate:"omitempty"`
 	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *types.BasePage    `json:"page" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate gcp firewall rule list request.

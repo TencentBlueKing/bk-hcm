@@ -34,7 +34,6 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	daotypes "hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
@@ -183,7 +182,7 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 	opt := &types.ListOption{
 		Fields: []string{"id"},
 		Filter: req.Filter,
-		Page:   types.DefaultBasePage,
+		Page:   core.DefaultBasePage,
 	}
 	listResp, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
 	if err != nil {
@@ -267,7 +266,7 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 }
 
 func convertToSGResult[T corecloud.SecurityGroupExtension](base *corecloud.BaseSecurityGroup,
-		extJson tabletype.JsonField) (*corecloud.SecurityGroup[T], error) {
+	extJson tabletype.JsonField) (*corecloud.SecurityGroup[T], error) {
 
 	extension := new(T)
 	err := json.UnmarshalFromString(string(extJson), &extension)
@@ -282,7 +281,7 @@ func convertToSGResult[T corecloud.SecurityGroupExtension](base *corecloud.BaseS
 }
 
 func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Contexts, svc *securityGroupSvc) (
-		interface{}, error) {
+	interface{}, error) {
 
 	req := new(protocloud.SecurityGroupBatchUpdateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
@@ -341,13 +340,13 @@ func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Cont
 
 // listSecurityGroupExtension
 func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids []string) (
-		map[string]tabletype.JsonField, error) {
+	map[string]tabletype.JsonField, error) {
 
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page: &types.BasePage{
+		Page: &core.BasePage{
 			Start: 1,
-			Limit: types.DefaultMaxPageLimit,
+			Limit: core.DefaultMaxPageLimit,
 		},
 	}
 	list, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
@@ -366,7 +365,7 @@ func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids [
 func getSecurityGroupByID(kt *kit.Kit, id string, svc *securityGroupSvc) (*tablecloud.SecurityGroupTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", id),
-		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
 	}
 	result, err := svc.dao.SecurityGroup().List(kt, opt)
 	if err != nil {
@@ -382,7 +381,7 @@ func getSecurityGroupByID(kt *kit.Kit, id string, svc *securityGroupSvc) (*table
 }
 
 func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.Vendor, svc *securityGroupSvc,
-		cts *rest.Contexts) (interface{}, error) {
+	cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.SecurityGroupBatchCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

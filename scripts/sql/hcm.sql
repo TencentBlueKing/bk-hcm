@@ -42,7 +42,10 @@ values ('account', '0'),
        ('aws_security_group_rule', '0'),
        ('azure_security_group_rule', '0'),
        ('huawei_security_group_rule', '0'),
-       ('gcp_firewall_rule', '0');
+       ('gcp_firewall_rule', '0'),
+       ('vpc', '0'),
+       ('subnet', '0')
+ON DUPLICATE KEY UPDATE resource=resource;
 
 create table if not exists `audit`
 (
@@ -353,5 +356,59 @@ create table if not exists `gcp_firewall_rule`
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`),
     unique key `idx_uk_name` (`name`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `vpc`
+(
+    `id`          varchar(64)  not null,
+    `vendor`      varchar(32)  not null,
+    `account_id`  varchar(64)  not null,
+    `cloud_id`    varchar(255) not null,
+    `name`        varchar(128) not null,
+    `category`    varchar(32)  not null,
+    `memo`        varchar(255)          default '',
+    `bk_cloud_id` bigint(1)             default -1,
+    `bk_biz_id`   bigint(1)             default -1,
+
+    # Extension
+    `extension`   json         not null,
+
+    # Revision
+    `creator`     varchar(64)  not null,
+    `reviser`     varchar(64)  not null,
+    `created_at`  timestamp    not null default current_timestamp,
+    `updated_at`  timestamp    not null default current_timestamp on update current_timestamp,
+
+    primary key (`id`),
+    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `subnet`
+(
+    `id`           varchar(64)  not null,
+    `vendor`       varchar(32)  not null,
+    `account_id`   varchar(64)  not null,
+    `cloud_vpc_id` varchar(255) not null,
+    `cloud_id`     varchar(255) not null,
+    `name`         varchar(128) not null,
+    `ipv4_cidr`    json         not null,
+    `ipv6_cidr`    json         not null,
+    `memo`         varchar(255)          default '',
+    `vpc_id`       varchar(64)  not null,
+    `bk_biz_id`    bigint(1)             default -1,
+
+    # Extension
+    `extension`    json         not null,
+
+    # Revision
+    `creator`      varchar(64)  not null,
+    `reviser`      varchar(64)  not null,
+    `created_at`   timestamp    not null default current_timestamp,
+    `updated_at`   timestamp    not null default current_timestamp on update current_timestamp,
+
+    primary key (`id`),
+    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
   default charset = utf8mb4;

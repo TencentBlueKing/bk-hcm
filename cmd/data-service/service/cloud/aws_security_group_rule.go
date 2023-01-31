@@ -267,7 +267,7 @@ func (svc *awsSGRuleSvc) DeleteAwsRule(cts *rest.Contexts) (interface{}, error) 
 		SecurityGroupID: sgID,
 		Fields:          []string{"id"},
 		Filter:          req.Filter,
-		Page:            types.DefaultBasePage,
+		Page:            core.DefaultBasePage,
 	}
 	listResp, err := svc.dao.AwsSGRule().List(cts.Kit, opt)
 	if err != nil {

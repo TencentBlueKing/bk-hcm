@@ -34,7 +34,7 @@ import (
 // CreateSecurityGroup create security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
 func (az *Azure) CreateSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupOption) (*armnetwork.SecurityGroup,
-		error) {
+	error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group create option is required")
@@ -137,7 +137,7 @@ func (az *Azure) DeleteSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupO
 // ListSecurityGroup list security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
 func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupListOption) (
-		*runtime.Pager[armnetwork.SecurityGroupsClientListResponse], error) {
+	*runtime.Pager[armnetwork.SecurityGroupsClientListResponse], error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group list option is required")
@@ -156,7 +156,7 @@ func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupLis
 }
 
 func (az *Azure) getSecurityGroupByCloudID(kt *kit.Kit, resGroupName, cloudID string) (*armnetwork.SecurityGroup,
-		error) {
+	error) {
 
 	client, err := az.clientSet.securityGroupClient()
 	if err != nil {

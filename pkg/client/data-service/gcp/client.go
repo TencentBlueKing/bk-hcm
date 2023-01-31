@@ -27,6 +27,8 @@ import (
 type Client struct {
 	Account  *AccountClient
 	Firewall *FirewallClient
+	Vpc      *VpcClient
+	Subnet   *SubnetClient
 }
 
 // NewClient create a new gcp api client.
@@ -34,5 +36,7 @@ func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
 		Account:  NewAccountClient(client),
 		Firewall: NewFirewallClient(client),
+		Vpc:      NewVpcClient(client),
+		Subnet:   NewSubnetClient(client),
 	}
 }

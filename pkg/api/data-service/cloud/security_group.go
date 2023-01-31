@@ -23,10 +23,10 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -116,7 +116,7 @@ func (req *SecurityGroupCommonInfoBatchUpdateReq) Validate() error {
 type SecurityGroupListReq struct {
 	Field  []string           `json:"field" validate:"omitempty"`
 	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *types.BasePage    `json:"page" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate security group list request.

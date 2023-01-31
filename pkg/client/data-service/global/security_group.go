@@ -43,7 +43,7 @@ type SecurityGroupClient struct {
 
 // ListSecurityGroup security group.
 func (cli *SecurityGroupClient) ListSecurityGroup(ctx context.Context, h http.Header, request *protocloud.
-SecurityGroupListReq) (*protocloud.SecurityGroupListResult, error) {
+	SecurityGroupListReq) (*protocloud.SecurityGroupListResult, error) {
 
 	resp := new(protocloud.SecurityGroupListResp)
 
@@ -67,7 +67,7 @@ SecurityGroupListReq) (*protocloud.SecurityGroupListResult, error) {
 
 // BatchDeleteSecurityGroup batch delete security group.
 func (cli *SecurityGroupClient) BatchDeleteSecurityGroup(ctx context.Context, h http.Header, request *protocloud.
-SecurityGroupBatchDeleteReq) error {
+	SecurityGroupBatchDeleteReq) error {
 
 	resp := new(core.DeleteResp)
 
@@ -91,7 +91,7 @@ SecurityGroupBatchDeleteReq) error {
 
 // BatchUpdateSecurityGroupCommonInfo batch update security group common info.
 func (cli *SecurityGroupClient) BatchUpdateSecurityGroupCommonInfo(ctx context.Context, h http.Header,
-		request *protocloud.SecurityGroupCommonInfoBatchUpdateReq) error {
+	request *protocloud.SecurityGroupCommonInfoBatchUpdateReq) error {
 
 	resp := new(rest.BaseResp)
 

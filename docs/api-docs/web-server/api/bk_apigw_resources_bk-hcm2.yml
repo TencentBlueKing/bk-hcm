@@ -26,11 +26,11 @@ paths:
           path: /api/v1/cloud/security_groups/assign/bizs
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/security_groups/batch:
     delete:
@@ -51,11 +51,11 @@ paths:
           path: /api/v1/cloud/security_groups/batch
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/security_groups/cvms/relations/list:
     post:
@@ -77,11 +77,11 @@ paths:
           path: /api/v1/cloud/security_groups/cvms/relations/list
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/security_groups/list:
     post:
@@ -102,11 +102,11 @@ paths:
           path: /api/v1/cloud/security_groups/list
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/security_groups/network_interfaces/relations/list:
     post:
@@ -128,11 +128,11 @@ paths:
           path: /api/v1/cloud/security_groups/network_interfaces/relations/list
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/security_groups/subnets/relations/list:
     post:
@@ -154,11 +154,11 @@ paths:
           path: /api/v1/cloud/security_groups/subnets/relations/list
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/security_groups/{id}:
     delete:
@@ -179,11 +179,11 @@ paths:
           path: /api/v1/cloud/security_groups/{id}
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
     get:
       operationId: get_security_group
@@ -203,11 +203,11 @@ paths:
           path: /api/v1/cloud/security_groups/{id}
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
     patch:
       operationId: update_security_group
@@ -227,11 +227,11 @@ paths:
           path: /api/v1/cloud/security_groups/{id}
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/vendors/{vendor}/security_groups/{security_group_id}/rules/create:
     post:
@@ -252,11 +252,11 @@ paths:
           path: /api/v1/cloud/vendors/{vendor}/security_groups/{security_group_id}/rules/create
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/vendors/{vendor}/security_groups/{security_group_id}/rules/list:
     post:
@@ -277,11 +277,11 @@ paths:
           path: /api/v1/cloud/vendors/{vendor}/security_groups/{security_group_id}/rules/list
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}:
     delete:
@@ -302,11 +302,11 @@ paths:
           path: /api/v1/cloud/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
     put:
       operationId: update_security_group_rule
@@ -326,11 +326,11 @@ paths:
           path: /api/v1/cloud/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/vendors/gcp/firewalls/rules/assign/bizs:
     post:
@@ -351,11 +351,11 @@ paths:
           path: /api/v1/cloud/vendors/gcp/firewalls/rules/assign/bizs
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/vendors/gcp/firewalls/rules/create:
     post:
@@ -376,11 +376,11 @@ paths:
           path: /api/v1/cloud/vendors/gcp/firewalls/rules/create
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/vendors/gcp/firewalls/rules/list:
     post:
@@ -401,11 +401,11 @@ paths:
           path: /api/v1/cloud/vendors/gcp/firewalls/rules/list
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
   /api/v1/cloud/vendors/gcp/firewalls/rules/{id}:
     delete:
@@ -426,11 +426,11 @@ paths:
           path: /api/v1/cloud/vendors/gcp/firewalls/rules/{id}
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
     get:
       operationId: get_gcp_firewall_rule
@@ -450,11 +450,11 @@ paths:
           path: /api/v1/cloud/vendors/gcp/firewalls/rules/{id}
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:
     patch:
       operationId: update_gcp_firewall_rule
@@ -474,9 +474,9 @@ paths:
           path: /api/v1/cloud/vendors/gcp/firewalls/rules/{id}
           matchSubpath: false
           timeout: 0
-          upstreams: {}
-          transformHeaders: {}
+          upstreams: { }
+          transformHeaders: { }
         authConfig:
           userVerifiedRequired: true
-        disabledStages: []
+        disabledStages: [ ]
         descriptionEn:

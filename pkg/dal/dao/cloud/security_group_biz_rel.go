@@ -24,6 +24,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -51,7 +52,7 @@ type SecurityGroupBizRelDao struct {
 
 // BatchCreateWithTx SecurityGroupBizRel with tx.
 func (a SecurityGroupBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
-		rels []cloud.SecurityGroupBizRelTable) error {
+	rels []cloud.SecurityGroupBizRelTable) error {
 
 	if len(rels) == 0 {
 		return errf.New(errf.InvalidParameter, "SecurityGroupBizRelTables is required")
@@ -70,14 +71,14 @@ func (a SecurityGroupBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 
 // List SecurityGroupBizRel list.
 func (a SecurityGroupBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListSecurityGroupBizRelDetails,
-		error) {
-	
+	error) {
+
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.SecurityGroupBizRelColumns.ColumnTypes())),
-		types.DefaultPageOption); err != nil {
+		core.DefaultPageOption); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +99,7 @@ func (a SecurityGroupBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types
 		return &types.ListSecurityGroupBizRelDetails{Count: count}, nil
 	}
 
-	pageExpr, err := opt.Page.SQLExpr(types.DefaultPageSQLOption)
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
 	if err != nil {
 		return nil, err
 	}

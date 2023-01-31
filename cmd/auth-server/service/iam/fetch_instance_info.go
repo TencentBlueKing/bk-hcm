@@ -21,8 +21,8 @@ package iam
 
 import (
 	"hcm/cmd/auth-server/types"
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
-	daltypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/client"
 	"hcm/pkg/kit"
 	"hcm/pkg/runtime/filter"
@@ -48,7 +48,7 @@ func (i *IAM) FetchInstanceInfo(kt *kit.Kit, resType client.TypeID, ft *types.Fe
 	req := &dataservice.ListInstancesReq{
 		ResourceType: resType,
 		Filter:       expr,
-		Page:         &daltypes.BasePage{Count: false},
+		Page:         &core.BasePage{Count: false},
 	}
 	resp, err := i.ds.Global.Auth.ListInstances(kt.Ctx, kt.Header(), req)
 	if err != nil {

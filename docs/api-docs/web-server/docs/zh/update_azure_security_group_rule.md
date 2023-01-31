@@ -6,25 +6,25 @@
 
 ### 输入参数
 
-| 参数名称                                 | 参数类型     | 必选 | 描述                                                         |
-|--------------------------------------|----------| ---- | ------------------------------------------------------------ |
-| id                                   | string   | 是   | 安全组规则ID                 |
-| security_group_id                    | string   | 是   | 安全组规则所属安全组ID                                       |
-| name                                 | string   | 是   | 资源组中唯一的资源名称。此名称可用于访问资源。               |
-| memo                                 | string   | 是   | 备注。                                                       |
-| destination_address_prefix           | string   | 是   | 目的地址前缀。CIDR或目标IP范围。星号‘*’也可用于匹配所有源IP。也可以使用‘VirtualNetwork’、‘AzureLoadBalancer’和‘Internet’等默认标签。 |
-| destination_address_prefixes         | string   | 是   | 目的地址带有前缀。CIDR或目标IP范围。                         |
-| cloud_destination_security_group_ids | string   | 是   | 目标安全组云ID列表。                                         |
-| destination_port_range               | string   | 是   | 目标端口或范围。介于0和65535之间的整数或范围。星号‘*’也可用于匹配所有端口。 |
-| destination_port_ranges              | string   | 是   | 目的端口范围。                                               |
-| protocol                             | string   | 是   | 网络协议。（枚举值：*、Ah、Esp、Icmp、Tcp、Udp）             |
-| source_address_prefix                | string   | 是   | CIDR或来源IP范围。星号‘*’也可用于匹配所有源IP。也可以使用‘VirtualNetwork’、‘AzureLoadBalancer’和‘Internet’等默认标签。如果这是入口规则，则指定网络流量源自何处。 |
-| source_address_prefixes              | string   | 是   | CIDR或来源IP范围。                                           |
-| cloud_source_security_group_ids      | string   | 是   | 源安全组云ID列表。                                           |
-| source_port_range                    | string   | 是   | 源端口或范围。介于0和65535之间的整数或范围。星号‘*’也可用于匹配所有端口。 |
-| source_port_ranges                   | string   | 是   | 源端口范围。                                                 |
-| priority                             | uint32   | 是   | 规则的优先级。该值可以介于100和4096之间。对于集合中的每个规则，优先级编号必须是唯一的。优先级数字越小，规则的优先级越高。 |
-| access                               | string   | 是   | 允许或拒绝网络流量。（枚举值：Allow、Deny）                  |
+| 参数名称                                 | 参数类型   | 必选  | 描述                                                                                                           |
+|--------------------------------------|--------|-----|--------------------------------------------------------------------------------------------------------------|
+| id                                   | string | 是   | 安全组规则ID                                                                                                      |
+| security_group_id                    | string | 是   | 安全组规则所属安全组ID                                                                                                 |
+| name                                 | string | 是   | 资源组中唯一的资源名称。此名称可用于访问资源。                                                                                      |
+| memo                                 | string | 是   | 备注。                                                                                                          |
+| destination_address_prefix           | string | 是   | 目的地址前缀。CIDR或目标IP范围。星号‘*’也可用于匹配所有源IP。也可以使用‘VirtualNetwork’、‘AzureLoadBalancer’和‘Internet’等默认标签。               |
+| destination_address_prefixes         | string | 是   | 目的地址带有前缀。CIDR或目标IP范围。                                                                                        |
+| cloud_destination_security_group_ids | string | 是   | 目标安全组云ID列表。                                                                                                  |
+| destination_port_range               | string | 是   | 目标端口或范围。介于0和65535之间的整数或范围。星号‘*’也可用于匹配所有端口。                                                                   |
+| destination_port_ranges              | string | 是   | 目的端口范围。                                                                                                      |
+| protocol                             | string | 是   | 网络协议。（枚举值：*、Ah、Esp、Icmp、Tcp、Udp）                                                                             |
+| source_address_prefix                | string | 是   | CIDR或来源IP范围。星号‘*’也可用于匹配所有源IP。也可以使用‘VirtualNetwork’、‘AzureLoadBalancer’和‘Internet’等默认标签。如果这是入口规则，则指定网络流量源自何处。 |
+| source_address_prefixes              | string | 是   | CIDR或来源IP范围。                                                                                                 |
+| cloud_source_security_group_ids      | string | 是   | 源安全组云ID列表。                                                                                                   |
+| source_port_range                    | string | 是   | 源端口或范围。介于0和65535之间的整数或范围。星号‘*’也可用于匹配所有端口。                                                                    |
+| source_port_ranges                   | string | 是   | 源端口范围。                                                                                                       |
+| priority                             | uint32 | 是   | 规则的优先级。该值可以介于100和4096之间。对于集合中的每个规则，优先级编号必须是唯一的。优先级数字越小，规则的优先级越高。                                             |
+| access                               | string | 是   | 允许或拒绝网络流量。（枚举值：Allow、Deny）                                                                                   |
 
 ### 调用示例
 

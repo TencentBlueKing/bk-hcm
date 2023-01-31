@@ -29,7 +29,6 @@ import (
 	"hcm/pkg/logs"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/region"
 )
 
 // CreateSecurityGroupRule create security group rule.
@@ -45,7 +44,7 @@ func (h *Huawei) CreateSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleCre
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := h.clientSet.vpcClient(region.ValueOf(opt.Region))
+	client, err := h.clientSet.vpcClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -97,7 +96,7 @@ func (h *Huawei) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleDel
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := h.clientSet.vpcClient(region.ValueOf(opt.Region))
+	client, err := h.clientSet.vpcClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new vpc client failed, err: %v", err)
 	}
@@ -127,7 +126,7 @@ func (h *Huawei) ListSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleListO
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := h.clientSet.vpcClient(region.ValueOf(opt.Region))
+	client, err := h.clientSet.vpcClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
 	}

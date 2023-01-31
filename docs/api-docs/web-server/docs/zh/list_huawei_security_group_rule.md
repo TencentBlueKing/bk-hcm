@@ -6,18 +6,18 @@
 
 ### 输入参数
 
-| 参数名称              | 参数类型     | 必选   | 描述             |
-|-------------------| ------------ | ------ | ---------------- |
-| security_group_id | string       | 是     | 安全组ID     |
-| page              | object       | 是     | 分页设置    |
+| 参数名称              | 参数类型   | 必选  | 描述    |
+|-------------------|--------|-----|-------|
+| security_group_id | string | 是   | 安全组ID |
+| page              | object | 是   | 分页设置  |
 
 #### page
 
-| 参数名称 | 参数类型 | 必选 | 描述                                                         |
-| -------- | -------- | ---- | ------------------------------------------------------------ |
-| count    | bool     | 是   | 是否返回总记录条数。 如果为true，查询结果返回总记录条数 count，但查询结果详情数据 details 为空数组，此时 start 和 limit 参数将无效，且必需设置为0。如果为false，则根据 start 和 limit 参数，返回查询结果详情数据，但总记录条数 count 为0 |
-| start    | uint32   | 否   | 记录开始位置，start 起始值为0                                |
-| limit    | uint32   | 否   | 每页限制条数，最大500，不能为0                               |
+| 参数名称  | 参数类型   | 必选  | 描述                                                                                                                                                  |
+|-------|--------|-----|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| count | bool   | 是   | 是否返回总记录条数。 如果为true，查询结果返回总记录条数 count，但查询结果详情数据 details 为空数组，此时 start 和 limit 参数将无效，且必需设置为0。如果为false，则根据 start 和 limit 参数，返回查询结果详情数据，但总记录条数 count 为0 |
+| start | uint32 | 否   | 记录开始位置，start 起始值为0                                                                                                                                  |
+| limit | uint32 | 否   | 每页限制条数，最大500，不能为0                                                                                                                                   |
 
 ### 调用示例
 
@@ -99,40 +99,40 @@
 
 ### 响应参数说明
 
-| 参数名称 | 参数类型 | 描述     |
-| -------- | -------- | -------- |
-| code     | int32    | 状态码   |
-| message  | string   | 请求信息 |
-| data     | object   | 响应数据 |
+| 参数名称    | 参数类型   | 描述   |
+|---------|--------|------|
+| code    | int32  | 状态码  |
+| message | string | 请求信息 |
+| data    | object | 响应数据 |
 
 #### data
 
-| 参数名称       | 参数类型       | 描述                         |
-|------------|------------| ---------------------------- |
-| count      | uint64     | 当前规则能匹配到的总记录条数 |
-| details    | array      | 查询返回的数据               |
+| 参数名称    | 参数类型   | 描述             |
+|---------|--------|----------------|
+| count   | uint64 | 当前规则能匹配到的总记录条数 |
+| details | array  | 查询返回的数据        |
 
 #### data.details[n]
 
-| 参数名称                    | 参数类型           | 描述                           |
-|-------------------------|----------------| ------------------------------ |
-| id                      | string   |            安全组规则ID      |
-| cloud_id                | string   |安全组规则云ID。 |
-| protocol                | string   | 协议类型取值范围：icmp、tcp、udp、icmpv6或IP协议号约束：为空表示支持所有协议协议为icmpv6时，网络类型应该为IPv6协议为icmp时，网络类型应该为IPv4。|
-| ethertype               | string   |IP地址协议类型取值范围：IPv4，IPv6约束：不填默认值为IPv4|
-| cloud_remote_group_id   | string   | 远端安全组ID，表示该安全组内的流量允许或拒绝取值范围：与remote_ip_prefix，remote_address_group_id功能互斥。 |
-| remote_ip_prefix        | string   | 远端IP地址，当type是egress时，为虚拟机访问端的地址。当type是ingress时，为访问虚拟机的地址取值范围：IP地址，或者cidr格式约束：与remote_group_id、remote_address_group_id互斥。 |
-| remote_address_group_id | string   | 远端地址组ID取值范围：租户下存在的地址组ID约束：与remote_ip_prefix，remote_group_id功能互斥。 |
-| port                    | string   | 端口取值范围取值范围：支持单端口(80)，连续端口(1-30)以及不连续端口(22,3389,80)。 |
-| priority                | uint32   | 功能说明：优先级取值范围：1~100，1代表最高优先级。|
-| memo                    | string   | 备注。|
-| action                  | string   | 安全组规则生效策略。取值范围：allow表示允许，deny表示拒绝。    |
-| type                    | string   | 规则类型。（枚举值：egress、ingress）|
-| cloud_security_group_id | string   | 规则所属安全组云ID。 |
-| cloud_project_id        | string   | 安全组规则所属项目云ID。 |
-| account_id              | string   | 账号ID |
-| security_group_id       | string   | 规则所属安全组ID |
-| creator                 | string   | 创建者            |
-| reviser                 | string   | 最后一次修改的修改者 |
-| create_at               | string   | 创建时间           |
-| update_at               | string   | 最后一次修改时间    |
+| 参数名称                    | 参数类型   | 描述                                                                                                                       |
+|-------------------------|--------|--------------------------------------------------------------------------------------------------------------------------|
+| id                      | string | 安全组规则ID                                                                                                                  |
+| cloud_id                | string | 安全组规则云ID。                                                                                                                |
+| protocol                | string | 协议类型取值范围：icmp、tcp、udp、icmpv6或IP协议号约束：为空表示支持所有协议协议为icmpv6时，网络类型应该为IPv6协议为icmp时，网络类型应该为IPv4。                               |
+| ethertype               | string | IP地址协议类型取值范围：IPv4，IPv6约束：不填默认值为IPv4                                                                                      |
+| cloud_remote_group_id   | string | 远端安全组ID，表示该安全组内的流量允许或拒绝取值范围：与remote_ip_prefix，remote_address_group_id功能互斥。                                               |
+| remote_ip_prefix        | string | 远端IP地址，当type是egress时，为虚拟机访问端的地址。当type是ingress时，为访问虚拟机的地址取值范围：IP地址，或者cidr格式约束：与remote_group_id、remote_address_group_id互斥。 |
+| remote_address_group_id | string | 远端地址组ID取值范围：租户下存在的地址组ID约束：与remote_ip_prefix，remote_group_id功能互斥。                                                         |
+| port                    | string | 端口取值范围取值范围：支持单端口(80)，连续端口(1-30)以及不连续端口(22,3389,80)。                                                                      |
+| priority                | uint32 | 功能说明：优先级取值范围：1~100，1代表最高优先级。                                                                                             |
+| memo                    | string | 备注。                                                                                                                      |
+| action                  | string | 安全组规则生效策略。取值范围：allow表示允许，deny表示拒绝。                                                                                       |
+| type                    | string | 规则类型。（枚举值：egress、ingress）                                                                                                |
+| cloud_security_group_id | string | 规则所属安全组云ID。                                                                                                              |
+| cloud_project_id        | string | 安全组规则所属项目云ID。                                                                                                            |
+| account_id              | string | 账号ID                                                                                                                     |
+| security_group_id       | string | 规则所属安全组ID                                                                                                                |
+| creator                 | string | 创建者                                                                                                                      |
+| reviser                 | string | 最后一次修改的修改者                                                                                                               |
+| create_at               | string | 创建时间                                                                                                                     |
+| update_at               | string | 最后一次修改时间                                                                                                                 |
