@@ -315,7 +315,7 @@ func (svc *azureSGRuleSvc) DeleteAzureRule(cts *rest.Contexts) (interface{}, err
 		SecurityGroupID: sgID,
 		Fields:          []string{"id"},
 		Filter:          req.Filter,
-		Page:            types.DefaultBasePage,
+		Page:            core.DefaultBasePage,
 	}
 	listResp, err := svc.dao.AzureSGRule().List(cts.Kit, opt)
 	if err != nil {

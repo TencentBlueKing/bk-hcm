@@ -6,23 +6,23 @@
 
 ### 输入参数
 
-| 参数名称          | 参数类型                           | 必选 | 描述                                                         |
-| ----------------- | ---------------------------------- | ---- | ------------------------------------------------------------ |
-| security_group_id | string                     | 是   | 安全组规则所属安全组ID                                       |
+| 参数名称              | 参数类型                       | 必选  | 描述                                             |
+|-------------------|----------------------------|-----|------------------------------------------------|
+| security_group_id | string                     | 是   | 安全组规则所属安全组ID                                   |
 | egress_rule_set   | security_group_rule array  | 否   | 出站规则集。EgressRuleSet和IngressRuleSet，单次请求仅可使用一个。 |
 | ingress_rule_set  | security_group_rule  array | 否   | 入站规则集。EgressRuleSet和IngressRuleSet，单次请求仅可使用一个。 |
 
 #### security_group_rule
 
-| 参数名称                           | 参数类型 | 描述 | 描述                                                         |
-|--------------------------------| -------- | ---- | ------------------------------------------------------------ |
-| protocol                       | string   | 是   | 协议, 取值: TCP,UDP,ICMP,ICMPv6,ALL                          |
-| port                           | string   | 是   | 端口(all, 离散port, range)。 说明：如果Protocol设置为ALL，则Port也需要设置为all。 |
-| ipv4_cidr                      | string   | 否   | IPv4网段或IP(互斥)。                                         |
-| ipv6_cidr                      | string   | 否   | IPv4网段或IPv6(互斥)。                                       |
-| cloud_target_security_group_id | string   | 否   | 下一跳安全组实例云ID，例如：sg-ohuuioma。                    |
-| action                         | string   | 是   | ACCEPT 或 DROP。                                             |
-| memo                           | string   | 否   | 备注。                                                       |
+| 参数名称                           | 参数类型   | 描述  | 描述                                                          |
+|--------------------------------|--------|-----|-------------------------------------------------------------|
+| protocol                       | string | 是   | 协议, 取值: TCP,UDP,ICMP,ICMPv6,ALL                             |
+| port                           | string | 是   | 端口(all, 离散port, range)。 说明：如果Protocol设置为ALL，则Port也需要设置为all。 |
+| ipv4_cidr                      | string | 否   | IPv4网段或IP(互斥)。                                              |
+| ipv6_cidr                      | string | 否   | IPv4网段或IPv6(互斥)。                                            |
+| cloud_target_security_group_id | string | 否   | 下一跳安全组实例云ID，例如：sg-ohuuioma。                                 |
+| action                         | string | 是   | ACCEPT 或 DROP。                                              |
+| memo                           | string | 否   | 备注。                                                         |
 
 ### 调用示例
 
@@ -58,11 +58,11 @@
 
 ### 响应参数说明
 
-| 参数名称    | 参数类型     | 描述   |
-|---------|----------|------|
-| code    | int32    | 状态码  |
-| message | string   | 请求信息 |
-| data    | object   | 响应数据 |
+| 参数名称    | 参数类型   | 描述   |
+|---------|--------|------|
+| code    | int32  | 状态码  |
+| message | string | 请求信息 |
+| data    | object | 响应数据 |
 
 #### data
 

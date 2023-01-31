@@ -23,10 +23,10 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -35,7 +35,7 @@ import (
 // GcpFirewallRuleListReq define gcp firewall rule list req.
 type GcpFirewallRuleListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *types.BasePage    `json:"page" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate gcp firewall rule list req.

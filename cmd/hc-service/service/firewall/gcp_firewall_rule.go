@@ -26,6 +26,7 @@ import (
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
@@ -33,7 +34,6 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	daotypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -180,7 +180,7 @@ func (f *firewall) getGcpFirewallRuleByID(cts *rest.Contexts, id string) (*corec
 
 	listReq := &protocloud.GcpFirewallRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page: &daotypes.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
 			Limit: 1,
 		},

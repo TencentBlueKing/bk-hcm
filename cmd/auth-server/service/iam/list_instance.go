@@ -23,8 +23,8 @@ import (
 	"context"
 
 	"hcm/cmd/auth-server/types"
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
-	daltypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/client"
 	"hcm/pkg/kit"
 )
@@ -40,7 +40,7 @@ func (i *IAM) ListInstances(kt *kit.Kit, resType client.TypeID, option *types.Li
 	countReq := &dataservice.ListInstancesReq{
 		ResourceType: resType,
 		Filter:       filter,
-		Page:         &daltypes.BasePage{Count: true},
+		Page:         &core.BasePage{Count: true},
 	}
 	countResp, err := i.ds.Global.Auth.ListInstances(kt.Ctx, kt.Header(), countReq)
 	if err != nil {
@@ -50,7 +50,7 @@ func (i *IAM) ListInstances(kt *kit.Kit, resType client.TypeID, option *types.Li
 	req := &dataservice.ListInstancesReq{
 		ResourceType: resType,
 		Filter:       filter,
-		Page: &daltypes.BasePage{
+		Page: &core.BasePage{
 			Count: false,
 			Start: uint32(page.Offset),
 			Limit: page.Limit,

@@ -6,23 +6,23 @@
 
 ### 输入参数
 
-| 参数名称          | 参数类型                           | 必选 | 描述                                                         |
-| ----------------- | ---------------------------------- | ---- | ------------------------------------------------------------ |
-| security_group_id | string                     | 是   | 安全组规则所属安全组ID                                       |
+| 参数名称              | 参数类型                       | 必选  | 描述                                             |
+|-------------------|----------------------------|-----|------------------------------------------------|
+| security_group_id | string                     | 是   | 安全组规则所属安全组ID                                   |
 | egress_rule_set   | security_group_rule array  | 否   | 出站规则集。EgressRuleSet和IngressRuleSet，单次请求仅可使用一个。 |
 | ingress_rule_set  | security_group_rule  array | 否   | 入站规则集。EgressRuleSet和IngressRuleSet，单次请求仅可使用一个。 |
 
 #### security_group_rule
 
-| 参数名称                           | 参数类型 | 描述 | 描述                                                         |
-|--------------------------------| -------- | ---- | ------------------------------------------------------------ |
-| protocol                       | string   | 是   | 协议, 取值: `tcp`, `udp`, `icmp`, `icmpv6`,用数字 `-1` 代表所有协议 。 |
-| from_port                      | uint32   | 是   | 起始端口，与 to_port 配合使用。<br />port: 8080 (from_port: 8080, to_port: 8080) <br />port_range: 8080-9000(from_port: 8080, to_port:9000) |
-| to_port                        | uint32   | 是   | 结束端口，与from_port配合使用。                              |
-| ipv4_cidr                      | string   | 否   | IPv4网段。                                                   |
-| ipv6_cidr                      | string   | 否   | IPv4网段。                                                   |
-| cloud_target_security_group_id | string   | 否   | 下一跳安全组实例云ID，例如：sg-ohuuioma。                    |
-| memo                           | string   | 否   | 备注。                                                       |
+| 参数名称                           | 参数类型   | 描述  | 描述                                                                                                                               |
+|--------------------------------|--------|-----|----------------------------------------------------------------------------------------------------------------------------------|
+| protocol                       | string | 是   | 协议, 取值: `tcp`, `udp`, `icmp`, `icmpv6`,用数字 `-1` 代表所有协议 。                                                                         |
+| from_port                      | uint32 | 是   | 起始端口，与 to_port 配合使用。<br />port: 8080 (from_port: 8080, to_port: 8080) <br />port_range: 8080-9000(from_port: 8080, to_port:9000) |
+| to_port                        | uint32 | 是   | 结束端口，与from_port配合使用。                                                                                                             |
+| ipv4_cidr                      | string | 否   | IPv4网段。                                                                                                                          |
+| ipv6_cidr                      | string | 否   | IPv4网段。                                                                                                                          |
+| cloud_target_security_group_id | string | 否   | 下一跳安全组实例云ID，例如：sg-ohuuioma。                                                                                                      |
+| memo                           | string | 否   | 备注。                                                                                                                              |
 
 ### 调用示例
 
@@ -58,11 +58,11 @@
 
 ### 响应参数说明
 
-| 参数名称    | 参数类型     | 描述   |
-|---------|----------|------|
-| code    | int32    | 状态码  |
-| message | string   | 请求信息 |
-| data    | object   | 响应数据 |
+| 参数名称    | 参数类型   | 描述   |
+|---------|--------|------|
+| code    | int32  | 状态码  |
+| message | string | 请求信息 |
+| data    | object | 响应数据 |
 
 #### data
 

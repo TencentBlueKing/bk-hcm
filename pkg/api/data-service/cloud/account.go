@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -203,7 +202,7 @@ type AccountGetResp[T AccountExtensionGetResp] struct {
 // AccountListReq ...
 type AccountListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *types.BasePage    `json:"page" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate ...

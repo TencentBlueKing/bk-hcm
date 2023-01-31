@@ -270,7 +270,7 @@ func (svc *huaweiSGRuleSvc) DeleteHuaWeiRule(cts *rest.Contexts) (interface{}, e
 		SecurityGroupID: sgID,
 		Fields:          []string{"id"},
 		Filter:          req.Filter,
-		Page:            types.DefaultBasePage,
+		Page:            core.DefaultBasePage,
 	}
 	listResp, err := svc.dao.HuaWeiSGRule().List(cts.Kit, opt)
 	if err != nil {

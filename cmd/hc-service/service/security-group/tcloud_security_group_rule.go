@@ -32,7 +32,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	daotypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -171,9 +170,9 @@ func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud
 
 	listReq := &protocloud.TCloudSGRuleListReq{
 		Filter: tools.EqualExpression("security_group_id", opt.SecurityGroupID),
-		Page: &daotypes.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
-			Limit: daotypes.DefaultMaxPageLimit,
+			Limit: core.DefaultMaxPageLimit,
 		},
 	}
 	start := uint32(0)
@@ -188,11 +187,11 @@ func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud
 
 		dbRules = append(dbRules, listResp.Details...)
 
-		if len(listResp.Details) < int(daotypes.DefaultMaxPageLimit) {
+		if len(listResp.Details) < int(core.DefaultMaxPageLimit) {
 			break
 		}
 
-		start += uint32(daotypes.DefaultMaxPageLimit)
+		start += uint32(core.DefaultMaxPageLimit)
 	}
 
 	updateRules := make(map[string]*corecloud.TCloudSecurityGroupRule)
@@ -490,7 +489,7 @@ func (g *securityGroup) getTCloudSGRuleByID(cts *rest.Contexts, id string, sgID 
 
 	listReq := &protocloud.TCloudSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page: &daotypes.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
 			Limit: 1,
 		},

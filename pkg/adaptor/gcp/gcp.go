@@ -19,7 +19,11 @@
 
 package gcp
 
-import "hcm/pkg/adaptor/types"
+import (
+	"strings"
+
+	"hcm/pkg/adaptor/types"
+)
 
 // NewGcp new gcp.
 func NewGcp(credential *types.GcpCredential) (*Gcp, error) {
@@ -37,4 +41,25 @@ type Gcp struct {
 // CloudProjectID return cloud project id.
 func (g *Gcp) CloudProjectID() string {
 	return g.clientSet.credential.CloudProjectID
+}
+
+// generateResourceIDsFilter generate gcp resource ids filter
+func generateResourceIDsFilter(resourceIDs []string) string {
+	filterExp := ""
+	for idx, id := range resourceIDs {
+		filterExp += "id=" + id
+		if idx != len(resourceIDs)-1 {
+			filterExp += " OR "
+		}
+	}
+
+	return filterExp
+}
+
+// parseSelfLinkToName parse resource self link to name, because self link is used for relation but name is used in api.
+// self link format: https://www.googleapis.com/.../{name}.
+// for example, 'us-west1' region's self link is: https://www.googleapis.com/compute/v1/projects/xxx/regions/us-west1.
+func parseSelfLinkToName(link string) string {
+	idx := strings.LastIndex(link, "/")
+	return link[idx+1:]
 }

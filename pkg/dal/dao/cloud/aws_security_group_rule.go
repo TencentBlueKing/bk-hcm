@@ -22,6 +22,7 @@ package cloud
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -129,7 +130,7 @@ func (dao *AwsSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.AwsSGRuleColumns.ColumnTypes())),
-		types.DefaultPageOption); err != nil {
+		core.DefaultPageOption); err != nil {
 		return nil, err
 	}
 
@@ -165,7 +166,7 @@ func (dao *AwsSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.
 		return &types.ListAwsSGRuleDetails{Count: count}, nil
 	}
 
-	pageExpr, err := opt.Page.SQLExpr(types.DefaultPageSQLOption)
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
 	if err != nil {
 		return nil, err
 	}

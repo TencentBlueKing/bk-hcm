@@ -32,7 +32,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	daotypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -195,7 +194,7 @@ func (g *securityGroup) getHuaWeiSGRuleByID(cts *rest.Contexts, id string, sgID 
 
 	listReq := &protocloud.HuaWeiSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page: &daotypes.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
 			Limit: 1,
 		},

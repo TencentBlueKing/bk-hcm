@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
@@ -30,7 +31,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	daotypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -238,7 +238,7 @@ func (g *securityGroup) getAwsSGRuleByID(cts *rest.Contexts, id string, sgID str
 
 	listReq := &protocloud.AwsSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page: &daotypes.BasePage{
+		Page: &core.BasePage{
 			Start: 0,
 			Limit: 1,
 		},

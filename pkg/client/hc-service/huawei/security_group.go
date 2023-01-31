@@ -43,7 +43,7 @@ type SecurityGroupClient struct {
 
 // UpdateSecurityGroup update security group rule.
 func (cli *SecurityGroupClient) UpdateSecurityGroup(ctx context.Context, h http.Header, id string,
-		request *proto.SecurityGroupUpdateReq) error {
+	request *proto.SecurityGroupUpdateReq) error {
 
 	resp := new(core.UpdateResp)
 
@@ -89,7 +89,7 @@ func (cli *SecurityGroupClient) DeleteSecurityGroup(ctx context.Context, h http.
 
 // CreateSecurityGroupRule create security group rule.
 func (cli *SecurityGroupClient) CreateSecurityGroupRule(ctx context.Context, h http.Header, sgID string,
-		request *proto.HuaWeiSGRuleCreateReq) (*core.CreateResult, error) {
+	request *proto.HuaWeiSGRuleCreateReq) (*core.CreateResult, error) {
 
 	resp := new(core.CreateResp)
 

@@ -6,9 +6,9 @@
 
 ### 输入参数
 
-| 参数名称       | 参数类型    | 描述                                           |
-|------------|---------| ---------------------------|
-| id         | string  | 安全组ID |
+| 参数名称 | 参数类型   | 描述    |
+|------|--------|-------|
+| id   | string | 安全组ID |
 
 ### 调用示例
 
@@ -51,46 +51,46 @@
 
 ### 响应参数说明
 
-| 参数名称         | 参数类型   | 描述                           |
-|--------------| ---------- | ------------------------------ |
-| code         |      int32      |            状态码                   |
-| message      |      string      |             请求信息                  |
-| data         |      object      |            响应数据                  |
+| 参数名称    | 参数类型   | 描述   |
+|---------|--------|------|
+| code    | int32  | 状态码  |
+| message | string | 请求信息 |
+| data    | object | 响应数据 |
 
 #### data
 
-| 参数名称                    | 参数类型           | 描述                        |
-|-------------------------|----------------|---------------------------|
-| id                      | string         | 安全组ID                     |
-| vendor                  | string         | 云厂商                       |
-| cloud_id                | string         | 安全组云ID                    |
-| bk_biz_id               | int64          | 业务ID                      |
-| region                  | string         | 地域                        |
-| name                    | string         | 安全组名称                     |
-| memo                    | string         | 备注                        |
-| account_id              | string         | 账号ID                      |
-| bk_biz_id               | int64          | 业务ID, -1代表未分配业务。                     |
+| 参数名称                    | 参数类型           | 描述                            |
+|-------------------------|----------------|-------------------------------|
+| id                      | string         | 安全组ID                         |
+| vendor                  | string         | 云厂商                           |
+| cloud_id                | string         | 安全组云ID                        |
+| bk_biz_id               | int64          | 业务ID                          |
+| region                  | string         | 地域                            |
+| name                    | string         | 安全组名称                         |
+| memo                    | string         | 备注                            |
+| account_id              | string         | 账号ID                          |
+| bk_biz_id               | int64          | 业务ID, -1代表未分配业务。              |
 | cvm_count               | uint64         | 关联虚拟机数量。（tcloud、aws、huawei专属） |
-| network_interface_count | uint64         | 关联网络接口数量。（azure专属）        |
-| subnet_count            | uint64         | 关联子网数量。（azure专属）          |
-| extension               | object[vendor] | 混合云差异字段                   |
-| creator                 | string         | 创建者                       |
-| reviser                 | string         | 最后一次修改的修改者                |
-| create_at               | string         | 创建时间                      |
-| update_at               | string         | 最后一次修改时间                  |
+| network_interface_count | uint64         | 关联网络接口数量。（azure专属）            |
+| subnet_count            | uint64         | 关联子网数量。（azure专属）              |
+| extension               | object[vendor] | 混合云差异字段                       |
+| creator                 | string         | 创建者                           |
+| reviser                 | string         | 最后一次修改的修改者                    |
+| create_at               | string         | 创建时间                          |
+| update_at               | string         | 最后一次修改时间                      |
 
 #### extension[tcloud]
 
-| 参数名称             | 参数类型   | 描述                           |
-|------------------| ---------- | ------------------------------ |
-| cloud_project_id | string   | 项目id，默认0。                                   |
+| 参数名称             | 参数类型   | 描述        |
+|------------------|--------|-----------|
+| cloud_project_id | string | 项目id，默认0。 |
 
 #### extension[aws]
 
-| 参数名称           | 参数类型   | 描述                           |
-|----------------| ---------- | ------------------------------ |
-| cloud_vpc_id   | string   | vpc云主键ID。                                 |
-| cloud_owner_id | string   | 拥有该安全组的Amazon账号ID。                                 |
+| 参数名称           | 参数类型   | 描述                 |
+|----------------|--------|--------------------|
+| cloud_vpc_id   | string | vpc云主键ID。          |
+| cloud_owner_id | string | 拥有该安全组的Amazon账号ID。 |
 
 #### extension[azure]
 
@@ -105,7 +105,7 @@
 
 #### extension[huawei]
 
-| 参数名称                        | 参数类型   | 描述                           |
-|-----------------------------| ---------- | ------------------------------ |
-| cloud_project_id            | string   | 安全组所属的项目ID。                                  |
-| cloud_enterprise_project_id | string   | 安全组所属的企业项目ID。取值范围：最大长度36字节，带“-”连字符的UUID格式，或者是字符串“0”。“0”表示默认企业项目。  |
+| 参数名称                        | 参数类型   | 描述                                                               |
+|-----------------------------|--------|------------------------------------------------------------------|
+| cloud_project_id            | string | 安全组所属的项目ID。                                                      |
+| cloud_enterprise_project_id | string | 安全组所属的企业项目ID。取值范围：最大长度36字节，带“-”连字符的UUID格式，或者是字符串“0”。“0”表示默认企业项目。 |

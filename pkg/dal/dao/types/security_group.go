@@ -20,6 +20,7 @@
 package types
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/table/cloud"
 	"hcm/pkg/runtime/filter"
@@ -60,11 +61,11 @@ type SGRuleListOption struct {
 	SecurityGroupID string
 	Fields          []string
 	Filter          *filter.Expression
-	Page            *BasePage
+	Page            *core.BasePage
 }
 
 // Validate list option.
-func (opt *SGRuleListOption) Validate(eo *filter.ExprOption, po *PageOption) error {
+func (opt *SGRuleListOption) Validate(eo *filter.ExprOption, po *core.PageOption) error {
 	if len(opt.SecurityGroupID) == 0 {
 		return errf.New(errf.InvalidParameter, "security group is required")
 	}

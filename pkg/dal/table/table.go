@@ -31,14 +31,14 @@ type Table interface {
 type Name string
 
 const (
+	// IDGenerator is id generator table's name.
+	IDGenerator Name = "id_generator"
 	// AuditTable is audit table's name
 	AuditTable Name = "audit"
 	// AccountTable is account table's name.
 	AccountTable Name = "account"
 	// AccountBizRelTable is account and biz relation table's name.
 	AccountBizRelTable Name = "account_biz_rel"
-	// IDGenerator is id generator table's name.
-	IDGenerator Name = "id_generator"
 	// SecurityGroupTable is security group table's name.
 	SecurityGroupTable Name = "security_group"
 	// VpcSecurityGroupRelTable is vpc and security group table's name.
@@ -65,6 +65,8 @@ const (
 	GcpFirewallRuleTable = "gcp_firewall_rule"
 	// VpcTable is vpc table's name.
 	VpcTable Name = "vpc"
+	// SubnetTable is subnet table's name.
+	SubnetTable Name = "subnet"
 )
 
 // Validate whether the table name is valid or not.
@@ -73,6 +75,8 @@ func (n Name) Validate() error {
 	case AuditTable:
 	case AccountTable:
 	case AccountBizRelTable:
+	case VpcTable:
+	case SubnetTable:
 	case IDGenerator:
 	case SecurityGroupTable:
 	case VpcSecurityGroupRelTable:

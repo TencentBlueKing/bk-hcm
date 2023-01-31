@@ -28,6 +28,16 @@ import (
 // JsonField 对应 db 的 json field 格式字段
 type JsonField string
 
+// NewJsonField create a json field from data.
+func NewJsonField(data any) (JsonField, error) {
+	js, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	return JsonField(js), nil
+}
+
 // StringArray 对应 db 的json字符串数组格式字段
 type StringArray []string
 

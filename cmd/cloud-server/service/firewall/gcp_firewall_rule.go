@@ -25,12 +25,12 @@ import (
 
 	"hcm/cmd/cloud-server/service/capability"
 	proto "hcm/pkg/api/cloud-server"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -162,7 +162,7 @@ func (svc *firewallSvc) AssignGcpFirewallRuleToBiz(cts *rest.Contexts) (interfac
 				},
 			},
 		},
-		Page: types.DefaultBasePage,
+		Page: core.DefaultBasePage,
 	}
 	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx,
 		cts.Kit.Header(), listReq)

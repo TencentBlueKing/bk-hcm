@@ -21,11 +21,11 @@ package securitygroup
 
 import (
 	proto "hcm/pkg/api/cloud-server"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 )
 
@@ -54,7 +54,7 @@ func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface
 	case enumor.TCloud:
 		listReq := &dataproto.TCloudSGRuleListReq{
 			Filter: tools.AllExpression(),
-			Page: &types.BasePage{
+			Page: &core.BasePage{
 				Count: req.Page.Count,
 				Start: req.Page.Start,
 				Limit: req.Page.Limit,
@@ -66,7 +66,7 @@ func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface
 	case enumor.Aws:
 		listReq := &dataproto.AwsSGRuleListReq{
 			Filter: tools.AllExpression(),
-			Page: &types.BasePage{
+			Page: &core.BasePage{
 				Count: req.Page.Count,
 				Start: req.Page.Start,
 				Limit: req.Page.Limit,
@@ -78,7 +78,7 @@ func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface
 	case enumor.HuaWei:
 		listReq := &dataproto.HuaWeiSGRuleListReq{
 			Filter: tools.AllExpression(),
-			Page: &types.BasePage{
+			Page: &core.BasePage{
 				Count: req.Page.Count,
 				Start: req.Page.Start,
 				Limit: req.Page.Limit,
@@ -90,7 +90,7 @@ func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface
 	case enumor.Azure:
 		listReq := &dataproto.AzureSGRuleListReq{
 			Filter: tools.AllExpression(),
-			Page: &types.BasePage{
+			Page: &core.BasePage{
 				Count: req.Page.Count,
 				Start: req.Page.Start,
 				Limit: req.Page.Limit,

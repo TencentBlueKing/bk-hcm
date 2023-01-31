@@ -34,7 +34,6 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	daotypes "hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
@@ -183,7 +182,7 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 	opt := &types.ListOption{
 		Fields: []string{"id"},
 		Filter: req.Filter,
-		Page:   types.DefaultBasePage,
+		Page:   core.DefaultBasePage,
 	}
 	listResp, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
 	if err != nil {
@@ -345,9 +344,9 @@ func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids [
 
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page: &types.BasePage{
+		Page: &core.BasePage{
 			Start: 1,
-			Limit: types.DefaultMaxPageLimit,
+			Limit: core.DefaultMaxPageLimit,
 		},
 	}
 	list, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
@@ -366,7 +365,7 @@ func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids [
 func getSecurityGroupByID(kt *kit.Kit, id string, svc *securityGroupSvc) (*tablecloud.SecurityGroupTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", id),
-		Page:   &daotypes.BasePage{Count: false, Start: 0, Limit: 1},
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
 	}
 	result, err := svc.dao.SecurityGroup().List(kt, opt)
 	if err != nil {

@@ -21,6 +21,7 @@
 package dataservice
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/client"
 	"hcm/pkg/rest"
@@ -31,7 +32,7 @@ import (
 type ListInstancesReq struct {
 	ResourceType client.TypeID      `json:"resource_type"`
 	Filter       *filter.Expression `json:"filter"`
-	Page         *types.BasePage    `json:"page"`
+	Page         *core.BasePage     `json:"page"`
 }
 
 // ListInstancesResp  defines list instances for iam pull resource callback result.

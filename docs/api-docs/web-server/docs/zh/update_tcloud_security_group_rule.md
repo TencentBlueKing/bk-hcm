@@ -6,17 +6,17 @@
 
 ### 输入参数
 
-| 参数名称                           | 参数类型      | 必选 | 描述                                                         |
-|--------------------------------|-----------| ---- | ------------------------------------------------------------ |
-| id                             | string    | 是   | 安全组规则ID                 |
-| security_group_id              | string    | 是   | 安全组规则所属安全组ID                                       |
-| protocol                       | string    | 是   | 协议, 取值: TCP,UDP,ICMP,ICMPv6,ALL                          |
-| port                           | string    | 是   | 端口(all, 离散port, range)。 说明：如果Protocol设置为ALL，则Port也需要设置为all。 |
-| ipv4_cidr                      | string    | 是   | IPv4网段或IP(互斥)。                                         |
-| ipv6_cidr                      | string    | 是   | IPv4网段或IPv6(互斥)。                                       |
-| cloud_target_security_group_id | string    | 是   | 下一跳安全组实例云ID，例如：sg-ohuuioma。                    |
-| action                         | string    | 是   | ACCEPT 或 DROP。                                             |
-| memo                           | string    | 是   | 备注。                                                       |
+| 参数名称                           | 参数类型   | 必选  | 描述                                                          |
+|--------------------------------|--------|-----|-------------------------------------------------------------|
+| id                             | string | 是   | 安全组规则ID                                                     |
+| security_group_id              | string | 是   | 安全组规则所属安全组ID                                                |
+| protocol                       | string | 是   | 协议, 取值: TCP,UDP,ICMP,ICMPv6,ALL                             |
+| port                           | string | 是   | 端口(all, 离散port, range)。 说明：如果Protocol设置为ALL，则Port也需要设置为all。 |
+| ipv4_cidr                      | string | 是   | IPv4网段或IP(互斥)。                                              |
+| ipv6_cidr                      | string | 是   | IPv4网段或IPv6(互斥)。                                            |
+| cloud_target_security_group_id | string | 是   | 下一跳安全组实例云ID，例如：sg-ohuuioma。                                 |
+| action                         | string | 是   | ACCEPT 或 DROP。                                              |
+| memo                           | string | 是   | 备注。                                                         |
 
 ### 调用示例
 

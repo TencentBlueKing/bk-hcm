@@ -20,14 +20,18 @@
 package huawei
 
 import (
+	"fmt"
+
+	"hcm/pkg/adaptor/types"
+
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/config"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/region"
 	evs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2"
 	iam "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3"
+	vpcv2 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2"
 	vpc "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3"
-
-	"hcm/pkg/adaptor/types"
+	vpcregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/region"
 )
 
 type clientSet struct {
@@ -65,10 +69,33 @@ func (c *clientSet) evsClient(region *region.Region) (*evs.EvsClient, error) {
 	return client, nil
 }
 
-func (c *clientSet) vpcClient(region *region.Region) (*vpc.VpcClient, error) {
+func (c *clientSet) vpcClient(regionID string) (cli *vpc.VpcClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+
 	client := vpc.NewVpcClient(
 		vpc.VpcClientBuilder().
-			WithRegion(region).
+			WithRegion(vpcregion.ValueOf(regionID)).
+			WithCredential(c.credentials).
+			WithHttpConfig(config.DefaultHttpConfig()).
+			Build())
+
+	return client, nil
+}
+
+func (c *clientSet) vpcClientV2(regionID string) (cli *vpcv2.VpcClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+
+	client := vpcv2.NewVpcClient(
+		vpcv2.VpcClientBuilder().
+			WithRegion(vpcregion.ValueOf(regionID)).
 			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())

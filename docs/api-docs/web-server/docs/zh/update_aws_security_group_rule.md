@@ -6,17 +6,17 @@
 
 ### 输入参数
 
-| 参数名称                           | 参数类型      | 必选 | 描述                                                         |
-|--------------------------------|-----------|------| ------------------------------------------------------------ |
-| id                             | string    | 是 | 安全组规则ID                 |
-| security_group_id              | string    | 是 | 安全组规则所属安全组ID                                       |
-| protocol                       | string    | 是 | 协议, 取值: `tcp`, `udp`, `icmp`, `icmpv6`,用数字 `-1` 代表所有协议 。 |
-| from_port                      | uint32    | 是 | 起始端口，与 to_port 配合使用。<br />port: 8080 (from_port: 8080, to_port: 8080) <br />port_range: 8080-9000(from_port: 8080, to_port:9000) |
-| to_port                        | uint32    | 是 | 结束端口，与from_port配合使用。                              |
-| ipv4_cidr                      | string    | 是 | IPv4网段。                                                   |
-| ipv6_cidr                      | string    | 是 | IPv4网段。                                                   |
-| cloud_target_security_group_id | string    | 是 | 下一跳安全组实例云ID，例如：sg-ohuuioma。                    |
-| memo                           | string    | 是 | 备注。                                                       |
+| 参数名称                           | 参数类型   | 必选  | 描述                                                                                                                               |
+|--------------------------------|--------|-----|----------------------------------------------------------------------------------------------------------------------------------|
+| id                             | string | 是   | 安全组规则ID                                                                                                                          |
+| security_group_id              | string | 是   | 安全组规则所属安全组ID                                                                                                                     |
+| protocol                       | string | 是   | 协议, 取值: `tcp`, `udp`, `icmp`, `icmpv6`,用数字 `-1` 代表所有协议 。                                                                         |
+| from_port                      | uint32 | 是   | 起始端口，与 to_port 配合使用。<br />port: 8080 (from_port: 8080, to_port: 8080) <br />port_range: 8080-9000(from_port: 8080, to_port:9000) |
+| to_port                        | uint32 | 是   | 结束端口，与from_port配合使用。                                                                                                             |
+| ipv4_cidr                      | string | 是   | IPv4网段。                                                                                                                          |
+| ipv6_cidr                      | string | 是   | IPv4网段。                                                                                                                          |
+| cloud_target_security_group_id | string | 是   | 下一跳安全组实例云ID，例如：sg-ohuuioma。                                                                                                      |
+| memo                           | string | 是   | 备注。                                                                                                                              |
 
 ### 调用示例
 
