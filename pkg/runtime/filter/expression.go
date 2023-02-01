@@ -113,16 +113,12 @@ type Expression struct {
 }
 
 // Validate the expression is valid or not.
-func (exp Expression) Validate(opts ...*ExprOption) (hitErr error) {
+func (exp Expression) Validate(opt *ExprOption) (hitErr error) {
 	defer func() {
 		if hitErr != nil {
 			hitErr = errf.New(errf.InvalidParameter, hitErr.Error())
 		}
 	}()
-
-	if len(opts) > 1 {
-		return errors.New("expression's validate option only support at most one")
-	}
 
 	if err := exp.Op.Validate(); err != nil {
 		return err
@@ -133,9 +129,9 @@ func (exp Expression) Validate(opts ...*ExprOption) (hitErr error) {
 	}
 
 	maxRules := DefaultMaxRuleLimit
-	if len(opts) != 0 {
-		if opts[0].MaxRulesLimit > 0 {
-			maxRules = opts[0].MaxRulesLimit
+	if opt != nil {
+		if opt.MaxRulesLimit > 0 {
+			maxRules = opt.MaxRulesLimit
 		}
 	}
 
@@ -144,17 +140,21 @@ func (exp Expression) Validate(opts ...*ExprOption) (hitErr error) {
 	}
 
 	fieldsReminder := make(map[string]bool)
+	exprCountReminder := 0
 	for _, r := range exp.Rules {
-		fieldsReminder[r.RuleField()] = true
+		switch r.WithType() {
+		case AtomType:
+			fieldsReminder[r.RuleField()] = true
+		case ExpressionType:
+			exprCountReminder++
+		default:
+			return fmt.Errorf("unknown rule type: %s", r.WithType())
+		}
 	}
 
-	if len(fieldsReminder) == 0 {
-		return errors.New("invalid expression, no field is found to query")
-	}
-
-	if len(opts) != 0 {
+	if opt != nil {
 		reminder := make(map[string]bool)
-		for col := range opts[0].RuleFields {
+		for col := range opt.RuleFields {
 			reminder[col] = true
 		}
 
@@ -167,8 +167,8 @@ func (exp Expression) Validate(opts ...*ExprOption) (hitErr error) {
 	}
 
 	var valOpt *ExprOption
-	if len(opts) != 0 {
-		valOpt = opts[0]
+	if opt != nil {
+		valOpt = opt
 	}
 
 	for _, one := range exp.Rules {
@@ -180,53 +180,88 @@ func (exp Expression) Validate(opts ...*ExprOption) (hitErr error) {
 	return nil
 }
 
+// WithType return this expression rule's tye.
+func (exp Expression) WithType() RuleType {
+	return ExpressionType
+}
+
+// RuleField implementing RuleFactory requires，it do not work.
+func (exp Expression) RuleField() string {
+	return ""
+}
+
+// SQLExprAndValue convert this expression rule to a mysql's sub query expression, and field's value.
+// Implement RuleFactory, which is used to generate SQL expressions, and
+// is not used externally.
+func (exp *Expression) SQLExprAndValue(opt *SQLWhereOption) (string, map[string]interface{}, error) {
+	if exp == nil {
+		return "", nil, errors.New("expression is nil")
+	}
+
+	if opt == nil {
+		return "", nil, errors.New("SQLWhereOption is nil")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return "", nil, err
+	}
+
+	expr, value, err := doSoloSQLWhereExpr(opt, exp.Op, exp.Rules, opt.Priority)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return fmt.Sprintf("(%s)", expr), value, nil
+}
+
 // SQLWhereExpr convert this expression and crowned rules to the mysql's WHERE
 // expression automatically.
 // the generated SQL Where expression depends on various options:
-// 1. the Expression itself.
-// 2. the crowned rules.
-// 3. the priority fields which is corresponding to the db's indexes order.
-//    the position of Expression's expression and crowned rules' expression is
-//    determined by the first 'field' occurred in the SQLWhereOption.Priority.
-//    For example, if the first hit field in the SQLWhereOption.Priority is found
-//    in the Expression's rule then the Expression's expression is ahead of the
-//    crowned rule's expression in the final generated SQL WHERE expression.
+//  1. the Expression itself.
+//  2. the crowned rules.
+//  3. the priority fields which is corresponding to the db's indexes order.
+//     the position of Expression's expression and crowned rules' expression is
+//     determined by the first 'field' occurred in the SQLWhereOption.Priority.
+//     For example, if the first hit field in the SQLWhereOption.Priority is found
+//     in the Expression's rule then the Expression's expression is ahead of the
+//     crowned rule's expression in the final generated SQL WHERE expression.
 //
 // Note:
-// 1. if the expression is NULL, then return an empty string "" as the expression
-//    directly without "WHERE" keyword.
-// 2. if the expression is not NULL, then return the expression prefixed with "WHERE"
-//    keyword.
-func (exp *Expression) SQLWhereExpr(opt *SQLWhereOption) (where string, err error) {
+//  1. if the expression is NULL, then return an empty string "" as the expression
+//     directly without "WHERE" keyword.
+//  2. if the expression is not NULL, then return the expression prefixed with "WHERE"
+//     keyword.
+func (exp *Expression) SQLWhereExpr(opt *SQLWhereOption) (where string, value map[string]interface{}, err error) {
 	defer func() {
 		if err != nil {
 			err = errf.NewFromErr(errf.InvalidParameter, err)
 		}
 	}()
 
-	if exp == nil {
-		return "", errors.New("expression is nil")
-	}
-
-	// validate this expression
-	if err := exp.Validate(); err != nil {
-		return "", err
-	}
-
 	if opt == nil {
-		return "", errors.New("SQLWhereOption is nil")
+		return "", nil, errors.New("SQLWhereOption is nil")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	if opt.CrownedOption == nil || (opt.CrownedOption != nil && len(opt.CrownedOption.Rules) == 0) {
+		if len(exp.Rules) == 0 {
+			return "", nil, nil
+		}
+
 		// no crowned option is configured, then generate SQL where expression directly.
-		return doSoloSQLWhereExpr(exp.Op, exp.Rules, opt.Priority)
+		expr, value, err := doSoloSQLWhereExpr(opt, exp.Op, exp.Rules, opt.Priority)
+		if err != nil {
+			return "", nil, err
+		}
+
+		return "WHERE " + expr, value, nil
 	}
 
 	// generate SQL where expression depends on mixed logic operator.
+	var expr string
 	switch exp.Op {
 	case And:
 		switch opt.CrownedOption.CrownedOp {
@@ -234,35 +269,40 @@ func (exp *Expression) SQLWhereExpr(opt *SQLWhereOption) (where string, err erro
 			// both expression rules and crowned rules need to do logic 'AND', so put them
 			// together and generate SQL expression directly.
 			mergedRules := append(exp.Rules, opt.CrownedOption.Rules...)
-			return doSoloSQLWhereExpr(And, mergedRules, opt.Priority)
+			expr, value, err = doSoloSQLWhereExpr(opt, And, mergedRules, opt.Priority)
 
 		case Or:
-			return doMixedSQLWhereExpr(exp.Op, exp.Rules, opt.CrownedOption.CrownedOp, opt.CrownedOption.Rules,
-				opt.Priority)
+			expr, value, err = doMixedSQLWhereExpr(opt, exp.Op, exp.Rules, opt.CrownedOption.CrownedOp,
+				opt.CrownedOption.Rules, opt.Priority)
 
 		default:
-			return "", fmt.Errorf("unsupported crown operator: %s", opt.CrownedOption.CrownedOp)
+			return "", nil, fmt.Errorf("unsupported crown operator: %s", opt.CrownedOption.CrownedOp)
 		}
 
 	case Or:
 		switch opt.CrownedOption.CrownedOp {
 		case And:
-			return doMixedSQLWhereExpr(exp.Op, exp.Rules, opt.CrownedOption.CrownedOp, opt.CrownedOption.Rules,
-				opt.Priority)
+			expr, value, err = doMixedSQLWhereExpr(opt, exp.Op, exp.Rules, opt.CrownedOption.CrownedOp,
+				opt.CrownedOption.Rules, opt.Priority)
 
 		case Or:
 			// although both expression's op and crowned op is OR, but rules in the crowned rules is still
 			// use AND operator.
-			return doMixedSQLWhereExpr(exp.Op, exp.Rules, opt.CrownedOption.CrownedOp, opt.CrownedOption.Rules,
-				opt.Priority)
+			expr, value, err = doMixedSQLWhereExpr(opt, exp.Op, exp.Rules, opt.CrownedOption.CrownedOp,
+				opt.CrownedOption.Rules, opt.Priority)
 
 		default:
-			return "", fmt.Errorf("unsupported crown operator: %s", opt.CrownedOption.CrownedOp)
+			return "", nil, fmt.Errorf("unsupported crown operator: %s", opt.CrownedOption.CrownedOp)
 		}
 
 	default:
-		return "", fmt.Errorf("unsupported expression operator: %s", exp.Op)
+		return "", nil, fmt.Errorf("unsupported expression operator: %s", exp.Op)
 	}
+	if err != nil {
+		return "", nil, err
+	}
+
+	return "WHERE " + expr, value, nil
 }
 
 // UnmarshalJSON unmarshal a json raw to this expression
@@ -316,12 +356,13 @@ type RuleFactory interface {
 	Validate(opt *ExprOption) error
 	// RuleField get this rule's filed
 	RuleField() string
-	// SQLExpr convert this rule to a mysql's sub
-	// query expression
-	SQLExpr() (string, error)
+	// SQLExprAndValue convert this rule to a mysql's sub query expression, and field's value
+	SQLExprAndValue(opt *SQLWhereOption) (string, map[string]interface{}, error)
 }
 
 var _ RuleFactory = new(AtomRule)
+
+var _ RuleFactory = new(Expression)
 
 // AtomRule is the basic query rule.
 type AtomRule struct {
@@ -437,10 +478,14 @@ func (ar AtomRule) RuleField() string {
 	return ar.Field
 }
 
-// SQLExpr convert this atom rule to a mysql's sub
-// query expression.
-func (ar AtomRule) SQLExpr() (string, error) {
-	return ar.Op.Operator().SQLExpr(ar.Field, ar.Value)
+// SQLExprAndValue convert this atom rule to a mysql's sub query expression, and field's value.
+func (ar AtomRule) SQLExprAndValue(opt *SQLWhereOption) (string, map[string]interface{}, error) {
+	expr, value, err := ar.Op.Operator().SQLExprAndValue(ar.Field, ar.Value)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return expr, value, nil
 }
 
 type broker struct {

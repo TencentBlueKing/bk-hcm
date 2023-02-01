@@ -76,7 +76,7 @@ type PageOption struct {
 	// DisableSort defines the sort field is not allowed to be defined by the user.
 	// then system defined sort field is used.
 	// Note: this option does not work when use the page to generate SQL expression,
-	// which means call the method of BasePage's SQLExpr().
+	// which means call the method of BasePage's SQLExprAndValue().
 	DisabledSort bool `json:"disabled_sort"`
 }
 

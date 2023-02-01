@@ -96,7 +96,7 @@ func (dao *AwsSGRuleDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Exp
 		return err
 	}
 
-	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (dao *AwsSGRuleDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Exp
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, rule.TableName(), setExpr, whereExpr)
 
-	effected, err := dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	effected, err := dao.Orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 	if err != nil {
 		logs.ErrorJson("update aws security group rule failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 		return err
@@ -147,7 +147,7 @@ func (dao *AwsSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.
 			},
 		},
 	}
-	whereExpr, err := opt.Filter.SQLWhereExpr(whereOpt)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(whereOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (dao *AwsSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AwsSecurityGroupRuleTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql)
+		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count aws security group rule failed, err: %v, filter: %s, rid: %s", err,
 				opt.Filter, kt.Rid)
@@ -175,7 +175,7 @@ func (dao *AwsSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.
 		table.AwsSecurityGroupRuleTable, whereExpr, pageExpr)
 
 	details := make([]cloud.AwsSecurityGroupRuleTable, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -188,7 +188,7 @@ func (dao *AwsSGRuleDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func (dao *AwsSGRuleDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AwsSecurityGroupRuleTable, whereExpr)
 
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err = dao.Orm.Txn(txn).Delete(kt.Ctx, sql); err != nil {
+		if _, err = dao.Orm.Txn(txn).Delete(kt.Ctx, sql, whereValue); err != nil {
 			logs.ErrorJson("delete aws security group rule failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 			return nil, err
 		}

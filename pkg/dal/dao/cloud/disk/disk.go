@@ -22,6 +22,7 @@ package disk
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
@@ -36,7 +37,6 @@ import (
 	"hcm/pkg/runtime/filter"
 
 	"github.com/jmoiron/sqlx"
-	"hcm/pkg/api/core"
 )
 
 // DiskDao ...
@@ -84,7 +84,7 @@ func (diskDao *DiskDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updat
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func (diskDao *DiskDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updat
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, diskDao.Name(), setExpr, whereExpr)
 
 	_, err = diskDao.Orm().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := diskDao.Orm().Txn(txn).Update(kt.Ctx, sql, toUpdate)
+		effected, err := diskDao.Orm().Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update disk failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -150,7 +150,7 @@ func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.ListDis
 	}
 
 	whereOpt := tools.DefaultSqlWhereOption
-	whereExpr, err := opt.Filter.SQLWhereExpr(whereOpt)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(whereOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.ListDis
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, diskDao.Name(), whereExpr)
-		count, err := diskDao.Orm().Do().Count(kt.Ctx, sql)
+		count, err := diskDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count disk failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -174,7 +174,7 @@ func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.ListDis
 		whereExpr, pageExpr)
 
 	details := make([]*disk.DiskModel, 0)
-	if err = diskDao.Orm().Do().Select(kt.Ctx, &details, sql); err != nil {
+	if err = diskDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -189,13 +189,13 @@ func (diskDao *DiskDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filte
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, diskDao.Name(), whereExpr)
-	if err = diskDao.Orm().Txn(tx).Delete(kt.Ctx, sql); err != nil {
+	if _, err = diskDao.Orm().Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete disk failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -214,13 +214,13 @@ func (diskDao *DiskDao) Count(kt *kit.Kit, opt *types.CountOption) (*cloud.Count
 		return nil, err
 	}
 	whereOpt := tools.DefaultSqlWhereOption
-	whereExpr, err := opt.Filter.SQLWhereExpr(whereOpt)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(whereOpt)
 	if err != nil {
 		return nil, err
 	}
 
 	sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, diskDao.Name(), whereExpr)
-	count, err := diskDao.Orm().Do().Count(kt.Ctx, sql)
+	count, err := diskDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
 	if err != nil {
 		return nil, err
 	}

@@ -44,15 +44,32 @@ type do struct {
 }
 
 // Get one data and decode into dest *struct{}.
-func (do *do) Get(ctx context.Context, dest interface{}, expr string, args ...interface{}) error {
+func (do *do) Get(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error {
 	if err := do.ro.tryAccept(); err != nil {
 		return err
 	}
 
 	start := time.Now()
 
-	err := do.db.GetContext(ctx, dest, expr, args...)
+	query, args, err := sqlx.Named(expr, arg)
 	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "get"}).Inc()
+		return err
+	}
+
+	query, args, err = sqlx.In(query, args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "get"}).Inc()
+		return err
+	}
+
+	rows, err := do.db.Query(do.db.Rebind(query), args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "get"}).Inc()
+		return err
+	}
+
+	if err = sqlx.StructScan(rows, dest); err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "get"}).Inc()
 		return err
 	}
@@ -64,20 +81,32 @@ func (do *do) Get(ctx context.Context, dest interface{}, expr string, args ...in
 }
 
 // Select a collection of data, and decode into dest *[]struct{}.
-func (do *do) Select(ctx context.Context, dest interface{}, expr string, args ...interface{}) error {
+func (do *do) Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error {
 	if err := do.ro.tryAccept(); err != nil {
 		return err
 	}
 
 	start := time.Now()
 
-	expr, args, err := sqlx.In(expr, args...)
+	query, args, err := sqlx.Named(expr, arg)
 	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "select"}).Inc()
 		return err
 	}
 
-	err = do.db.SelectContext(ctx, dest, expr, args...)
+	query, args, err = sqlx.In(query, args...)
 	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "select"}).Inc()
+		return err
+	}
+
+	rows, err := do.db.Query(do.db.Rebind(query), args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "select"}).Inc()
+		return err
+	}
+
+	if err = sqlx.StructScan(rows, dest); err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "select"}).Inc()
 		return err
 	}
@@ -89,17 +118,37 @@ func (do *do) Select(ctx context.Context, dest interface{}, expr string, args ..
 }
 
 // Count the number of the filtered resource.
-func (do *do) Count(ctx context.Context, expr string, args ...interface{}) (uint64, error) {
+func (do *do) Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error) {
 	if err := do.ro.tryAccept(); err != nil {
 		return 0, err
 	}
 
 	start := time.Now()
 
-	count := uint64(0)
-	if err := do.db.GetContext(ctx, &count, expr, args...); err != nil {
+	query, args, err := sqlx.Named(expr, arg)
+	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
 		return 0, err
+	}
+
+	query, args, err = sqlx.In(query, args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
+		return 0, err
+	}
+
+	rows, err := do.db.Query(do.db.Rebind(query), args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
+		return 0, err
+	}
+
+	count := uint64(0)
+	for rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
+			return 0, err
+		}
 	}
 
 	do.ro.logSlowCmd(ctx, expr, time.Since(start))
@@ -109,19 +158,26 @@ func (do *do) Count(ctx context.Context, expr string, args ...interface{}) (uint
 }
 
 // Delete a collection of data.
-func (do *do) Delete(ctx context.Context, expr string, args ...interface{}) (int64, error) {
+func (do *do) Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
 	if err := do.ro.tryAccept(); err != nil {
 		return 0, err
 	}
 
 	start := time.Now()
 
-	expr, args, err := sqlx.In(expr, args...)
+	query, args, err := sqlx.Named(expr, arg)
 	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
 		return 0, err
 	}
 
-	result, err := do.db.ExecContext(ctx, expr, args...)
+	query, args, err = sqlx.In(query, args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
+		return 0, err
+	}
+
+	result, err := do.db.Exec(do.db.Rebind(query), args...)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
 		return 0, err
@@ -140,7 +196,7 @@ func (do *do) Delete(ctx context.Context, expr string, args ...interface{}) (int
 }
 
 // Update a collection of data
-func (do *do) Update(ctx context.Context, expr string, args interface{}) (int64, error) {
+func (do *do) Update(ctx context.Context, expr string, args map[string]interface{}) (int64, error) {
 	if args == nil {
 		return 0, errors.New("update args is required")
 	}
@@ -244,29 +300,41 @@ type doTxn struct {
 }
 
 // Delete a collection of data with transaction.
-func (do *doTxn) Delete(ctx context.Context, expr string, args ...interface{}) error {
+func (do *doTxn) Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
 	if err := do.ro.tryAccept(); err != nil {
-		return err
+		return 0, err
 	}
 
 	start := time.Now()
 
-	expr, args, err := sqlx.In(expr, args...)
+	query, args, err := sqlx.Named(expr, arg)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
-		return err
+		return 0, err
 	}
 
-	_, err = do.tx.ExecContext(ctx, expr, args...)
+	query, args, err = sqlx.In(query, args...)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
-		return err
+		return 0, err
+	}
+
+	result, err := do.tx.Exec(do.tx.Rebind(query), args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
+		return 0, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
+		return 0, err
 	}
 
 	do.ro.logSlowCmd(ctx, expr, time.Since(start))
 	do.ro.mc.cmdLagMS.With(prm.Labels{"cmd": "delete"}).Observe(float64(time.Since(start).Milliseconds()))
 
-	return nil
+	return rowsAffected, nil
 }
 
 // Insert data with transaction
@@ -315,7 +383,7 @@ func (do *doTxn) BulkInsert(ctx context.Context, expr string, args interface{}) 
 }
 
 // Update with transaction
-func (do *doTxn) Update(ctx context.Context, expr string, args interface{}) (int64, error) {
+func (do *doTxn) Update(ctx context.Context, expr string, args map[string]interface{}) (int64, error) {
 	if args == nil {
 		return 0, errors.New("update args is required")
 	}

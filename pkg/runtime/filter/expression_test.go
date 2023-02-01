@@ -20,7 +20,6 @@
 package filter
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -53,7 +52,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	if !(expr.Op == And && len(expr.Rules) == 2 && (expr.Rules[0].(*AtomRule).Field == "deploy_type" &&
-		expr.Rules[0].(*AtomRule).Op == "eq" && expr.Rules[0].(*AtomRule).Value == "common") &&
+		expr.Rules[0].(*AtomRule).Op == Equal.Factory() && expr.Rules[0].(*AtomRule).Value == "common") &&
 		(expr.Rules[1].(*AtomRule).Field == "creator" && expr.Rules[1].(*AtomRule).Op == "eq" &&
 			expr.Rules[1].(*AtomRule).Value == "tom")) {
 		t.Errorf("expression is not expected, op: %s, rules[0]: %v, rules[1]: %v", expr.Op,
@@ -68,40 +67,41 @@ func TestExpressionAnd(t *testing.T) {
 		Rules: []RuleFactory{
 			&AtomRule{
 				Field: "name",
-				Op:    "eq",
+				Op:    Equal.Factory(),
 				Value: "hcm",
 			},
 			&AtomRule{
 				Field: "age",
-				Op:    "gt",
+				Op:    GreaterThan.Factory(),
 				Value: 18,
 			},
 			&AtomRule{
 				Field: "age",
-				Op:    "lt",
+				Op:    LessThan.Factory(),
 				Value: 30,
 			},
 			&AtomRule{
 				Field: "servers",
-				Op:    "in",
+				Op:    In.Factory(),
 				Value: []string{"api", "web"},
 			},
 		},
 	}
 
-	if err := expr.Validate(); err != nil {
+	if err := expr.Validate(nil); err != nil {
 		t.Errorf("validate expression failed, err: %v", err)
 		return
 	}
 
 	opt := &SQLWhereOption{Priority: []string{"servers", "age", "name"}}
-	sql, err := expr.SQLWhereExpr(opt)
+	sql, value, err := expr.SQLWhereExpr(opt)
 	if err != nil {
 		t.Errorf("generate expression's sql where expression failed, err: %v", err)
 		return
 	}
 
-	if sql != `WHERE servers IN ('api', 'web') AND age > 18 AND age < 30 AND name = 'hcm'` {
+	fmt.Printf("where And expr: %s, value: %v\n", sql, value)
+	if sql != `WHERE servers IN (:servers) AND age > :age AND age < :age AND name = :name` {
 		t.Errorf("expression's sql where is not expected, sql: %s", sql)
 		return
 	}
@@ -113,53 +113,44 @@ func TestExpressionOr(t *testing.T) {
 		Rules: []RuleFactory{
 			&AtomRule{
 				Field: "name",
-				Op:    "eq",
+				Op:    Equal.Factory(),
 				Value: "hcm",
 			},
 			&AtomRule{
 				Field: "age",
-				Op:    "gt",
+				Op:    GreaterThan.Factory(),
 				Value: 18,
 			},
 			&AtomRule{
 				Field: "age",
-				Op:    "lt",
+				Op:    LessThan.Factory(),
 				Value: 30,
 			},
 			&AtomRule{
 				Field: "servers",
-				Op:    "in",
+				Op:    In.Factory(),
 				Value: []string{"api", "web"},
 			},
 		},
 	}
 
-	js, err := json.MarshalIndent(expr, "", "    ")
-	if err != nil {
-		t.Errorf("test expression failed, err: %v", err)
-		return
-	}
-
-	fmt.Println(string(js))
-
-	if err := expr.Validate(); err != nil {
+	if err := expr.Validate(nil); err != nil {
 		t.Errorf("validate expression failed, err: %v", err)
 		return
 	}
 
 	opt := &SQLWhereOption{Priority: []string{"servers", "age", "name"}}
-	sql, err := expr.SQLWhereExpr(opt)
+	sql, value, err := expr.SQLWhereExpr(opt)
 	if err != nil {
 		t.Errorf("generate expression's sql where expression failed, err: %v", err)
 		return
 	}
 
-	if sql != `WHERE servers IN ('api', 'web') OR age > 18 OR age < 30 OR name = 'hcm'` {
+	fmt.Printf("where OR expr: %s, value: %v\n", sql, value)
+	if sql != `WHERE servers IN (:servers) OR age > :age OR age < :age OR name = :name` {
 		t.Errorf("expression's sql where is not expected, sql: %s", sql)
 		return
 	}
-
-	fmt.Println(sql)
 }
 
 func TestExpressionValidateOption(t *testing.T) {
@@ -168,32 +159,32 @@ func TestExpressionValidateOption(t *testing.T) {
 		Rules: []RuleFactory{
 			&AtomRule{
 				Field: "name",
-				Op:    "eq",
+				Op:    Equal.Factory(),
 				Value: "hcm",
 			},
 			&AtomRule{
 				Field: "age",
-				Op:    "gt",
+				Op:    GreaterThan.Factory(),
 				Value: 18,
 			},
 			&AtomRule{
 				Field: "age",
-				Op:    "lt",
+				Op:    LessThan.Factory(),
 				Value: 30,
 			},
 			&AtomRule{
 				Field: "servers",
-				Op:    "in",
+				Op:    In.Factory(),
 				Value: []string{"api", "web"},
 			},
 			&AtomRule{
 				Field: "asDefault",
-				Op:    "eq",
+				Op:    Equal.Factory(),
 				Value: true,
 			},
 			&AtomRule{
 				Field: "created_at",
-				Op:    "gt",
+				Op:    GreaterThan.Factory(),
 				Value: "2006-01-02 15:04:05",
 			},
 		},
@@ -252,12 +243,12 @@ func TestCrownSQLWhereExpr(t *testing.T) {
 		Rules: []RuleFactory{
 			&AtomRule{
 				Field: "name",
-				Op:    "eq",
+				Op:    Equal.Factory(),
 				Value: "hcm",
 			},
 			&AtomRule{
 				Field: "age",
-				Op:    "gt",
+				Op:    GreaterThan.Factory(),
 				Value: 18,
 			},
 		},
@@ -270,68 +261,68 @@ func TestCrownSQLWhereExpr(t *testing.T) {
 			Rules: []RuleFactory{
 				&AtomRule{
 					Field: "biz_id",
-					Op:    "eq",
+					Op:    Equal.Factory(),
 					Value: 20,
 				},
 				&AtomRule{
 					Field: "created_at",
-					Op:    "gt",
+					Op:    GreaterThan.Factory(),
 					Value: "2021-01-01 08:09:10",
 				},
 			},
 		},
 	}
 
-	where, err := expr.SQLWhereExpr(opt)
+	where, value, err := expr.SQLWhereExpr(opt)
 	if err != nil {
 		t.Errorf("generate SQL Where expression failed, err: %v", err)
 		return
 	}
 
-	fmt.Println("where AND-AND expr: ", where)
-	if where != `WHERE biz_id = 20 AND age > 18 AND name = 'hcm' AND created_at > '2021-01-01 08:09:10'` {
+	fmt.Printf("where AND-AND expr: %s, value: %v\n", where, value)
+	if where != `WHERE biz_id = :biz_id AND age > :age AND name = :name AND created_at > :created_at` {
 		t.Errorf("generate SQL AND-AND Where expression failed, err: %v", err)
 		return
 	}
 
 	expr.Op = And
 	opt.CrownedOption.CrownedOp = Or
-	where, err = expr.SQLWhereExpr(opt)
+	where, value, err = expr.SQLWhereExpr(opt)
 	if err != nil {
 		t.Errorf("generate SQL Where AND-OR expression failed, err: %v", err)
 		return
 	}
 
-	fmt.Println("where AND-OR expr: ", where)
-	if where != `WHERE (biz_id = 20 AND created_at > '2021-01-01 08:09:10') OR (age > 18 AND name = 'hcm')` {
+	fmt.Printf("where AND-OR expr: %s, value: %v\n", where, value)
+	if where != `WHERE (biz_id = :biz_id AND created_at > :created_at) OR (age > :age AND name = :name)` {
 		t.Errorf("generate SQL AND-OR Where expression failed, where: %v", where)
 		return
 	}
 
 	expr.Op = Or
 	opt.CrownedOption.CrownedOp = Or
-	where, err = expr.SQLWhereExpr(opt)
+	where, value, err = expr.SQLWhereExpr(opt)
 	if err != nil {
 		t.Errorf("generate SQL Where OR-OR expression failed, err: %v", err)
 		return
 	}
 
-	fmt.Println("where OR-OR expr: ", where)
-	if where != `WHERE (biz_id = 20 AND created_at > '2021-01-01 08:09:10') OR age > 18 OR name = 'hcm'` {
+	fmt.Printf("where OR-OR expr: %s, value: %v\n", where, value)
+	if where != `WHERE (biz_id = :biz_id AND created_at > :created_at) OR age > :age OR name = :name` {
 		t.Errorf("generate SQL OR-OR Where expression failed, where: %v", where)
 		return
 	}
 
 	opt.Priority = []string{"age", "biz_id"}
-	where, err = expr.SQLWhereExpr(opt)
+	where, value, err = expr.SQLWhereExpr(opt)
 	if err != nil {
 		t.Errorf("generate SQL Where OR-OR expression failed, err: %v", err)
 		return
 	}
 
 	// reverse the priority
-	fmt.Println("where OR-OR-PRIORITY expr: ", where)
-	if where != `WHERE age > 18 OR name = 'hcm' OR (biz_id = 20 AND created_at > '2021-01-01 08:09:10')` {
+	fmt.Printf("where OR-OR-PRIORITY expr: %s, value: %v\n", where, value)
+	if where != `WHERE age > :age OR name = :name OR (biz_id = :biz_id AND created_at > :created_at)` {
 		t.Errorf("generate SQL OR-OR-PRIORITY Where expression failed, where: %v", where)
 		return
 	}
@@ -339,32 +330,32 @@ func TestCrownSQLWhereExpr(t *testing.T) {
 	expr.Op = Or
 	opt.CrownedOption.CrownedOp = And
 	opt.Priority = []string{"biz_id", "age"}
-	where, err = expr.SQLWhereExpr(opt)
+	where, value, err = expr.SQLWhereExpr(opt)
 	if err != nil {
 		t.Errorf("generate SQL Where OR-AND expression failed, err: %v", err)
 		return
 	}
 
-	fmt.Println("where OR-AND expr: ", where)
-	if where != `WHERE (biz_id = 20 AND created_at > '2021-01-01 08:09:10') AND (age > 18 OR name = 'hcm')` {
+	fmt.Printf("where OR-AND expr: %s, value: %v\n", where, value)
+	if where != `WHERE (biz_id = :biz_id AND created_at > :created_at) AND (age > :age OR name = :name)` {
 		t.Errorf("generate SQL OR-AND Where expression failed, where: %v", where)
 		return
 	}
 
 	// test NULL crown rules
 	expr.Rules = []RuleFactory{
-		&AtomRule{Field: "name", Op: "eq", Value: "hcm"},
-		&AtomRule{Field: "age", Op: "gt", Value: 18},
+		&AtomRule{Field: "name", Op: Equal.Factory(), Value: "hcm"},
+		&AtomRule{Field: "age", Op: GreaterThan.Factory(), Value: 18},
 	}
 	opt.CrownedOption.Rules = make([]RuleFactory, 0)
-	where, err = expr.SQLWhereExpr(opt)
+	where, value, err = expr.SQLWhereExpr(opt)
 	if err != nil {
 		t.Errorf("generate SQL Where NULL crown expr expression failed, err: %v", err)
 		return
 	}
 
-	fmt.Println("where crown NULL expr: ", where)
-	if where != `WHERE age > 18 OR name = 'hcm'` {
+	fmt.Printf("where crown NULL expr: %s, value: %v\n", where, value)
+	if where != `WHERE age > :age OR name = :name` {
 		t.Errorf("generate SQL Where NULL crown expr expression failed, where: %s", where)
 		return
 	}
@@ -373,17 +364,17 @@ func TestCrownSQLWhereExpr(t *testing.T) {
 	expr.Rules = make([]RuleFactory, 0)
 	opt.CrownedOption.Rules = []RuleFactory{&AtomRule{
 		Field: "age",
-		Op:    "eq",
+		Op:    Equal.Factory(),
 		Value: 8,
 	}}
-	where, err = expr.SQLWhereExpr(opt)
+	where, value, err = expr.SQLWhereExpr(opt)
 	if err != nil {
 		t.Errorf("generate SQL Where NULL crown expr expression failed, err: %v", err)
 		return
 	}
 
-	fmt.Println("where crown NULL expr: ", where)
-	if where != `WHERE age = 8` {
+	fmt.Printf("where crown NULL expr: %s, value: %v\n", where, value)
+	if where != `WHERE age = :age` {
 		t.Errorf("generate SQL Where NULL crown expr expression failed, where: %s", where)
 		return
 	}
@@ -391,15 +382,100 @@ func TestCrownSQLWhereExpr(t *testing.T) {
 	// test both Expression and crown rules is empty
 	expr.Rules = make([]RuleFactory, 0)
 	opt.CrownedOption.Rules = make([]RuleFactory, 0)
-	where, err = expr.SQLWhereExpr(opt)
+	where, value, err = expr.SQLWhereExpr(opt)
 	if err != nil {
 		t.Errorf("generate SQL Where both rule is NULL failed, err: %v", err)
 		return
 	}
 
-	fmt.Println("where both NULL expr: ", where)
+	fmt.Printf("where both NULL expr: %s, value: %v\n", where, value)
 	if where != "" {
 		t.Errorf("generate SQL Where both rule is NULL failed, where: %s", where)
+		return
+	}
+}
+
+func TestNestedSqlWhereExpr(t *testing.T) {
+	expr := &Expression{
+		Op: And,
+		Rules: []RuleFactory{
+			&AtomRule{
+				Field: "name",
+				Op:    Equal.Factory(),
+				Value: "jim",
+			},
+			&AtomRule{
+				Field: "age",
+				Op:    GreaterThan.Factory(),
+				Value: 18,
+			},
+			&Expression{
+				Op: Or,
+				Rules: []RuleFactory{
+					&AtomRule{
+						Field: "child_name",
+						Op:    Equal.Factory(),
+						Value: "jon",
+					},
+					&AtomRule{
+						Field: "child_age",
+						Op:    LessThan.Factory(),
+						Value: 10,
+					},
+				},
+			},
+		},
+	}
+
+	err := expr.Validate(nil)
+	if err != nil {
+		t.Errorf("validate SQL Where expression failed, err: %v", err)
+		return
+	}
+
+	opt := &SQLWhereOption{
+		Priority: []string{"biz_id", "age"},
+		CrownedOption: &CrownedOption{
+			CrownedOp: And,
+			Rules: []RuleFactory{
+				&AtomRule{
+					Field: "biz_id",
+					Op:    Equal.Factory(),
+					Value: 20,
+				},
+				&AtomRule{
+					Field: "created_at",
+					Op:    GreaterThan.Factory(),
+					Value: "2021-01-01 08:09:10",
+				},
+			},
+		},
+	}
+
+	where, value, err := expr.SQLWhereExpr(opt)
+	if err != nil {
+		t.Errorf("generate SQL Where expression failed, err: %v", err)
+		return
+	}
+
+	fmt.Printf("where Nested AND-AND expr: %s, value: %v\n", where, value)
+	if where != "WHERE biz_id = :biz_id AND age > :age AND name = :name AND (child_name = :child_name OR "+
+		"child_age < :child_age) AND created_at > :created_at" {
+		t.Errorf("generate SQL Nested Where expression failed, sql: %v", where)
+		return
+	}
+
+	opt.CrownedOption.CrownedOp = Or
+	where, value, err = expr.SQLWhereExpr(opt)
+	if err != nil {
+		t.Errorf("generate SQL Where expression failed, err: %v", err)
+		return
+	}
+
+	fmt.Printf("where Nested AND-OR expr: %s, value: %v\n", where, value)
+	if where != "WHERE (biz_id = :biz_id AND created_at > :created_at) OR (age > :age AND name = :name AND "+
+		"(child_name = :child_name OR child_age < :child_age))" {
+		t.Errorf("generate SQL Nested Where expression failed, sql: %v", where)
 		return
 	}
 }

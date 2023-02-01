@@ -351,7 +351,7 @@ func (svc *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 	daoAccountResp, err := svc.dao.Account().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list account failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("list account failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list account failed, err: %v", err)
 	}
 	if req.Page.Count {

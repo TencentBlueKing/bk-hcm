@@ -89,7 +89,7 @@ func (a AccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 		return err
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (a AccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = a.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := a.Orm.Txn(txn).Update(kt.Ctx, sql, toUpdate)
+		effected, err := a.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update account failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -134,7 +134,7 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 		return nil, err
 	}
 
-	whereExpr, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountTable, whereExpr)
 
-		count, err := a.Orm.Do().Count(kt.Ctx, sql)
+		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count accounts failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -161,7 +161,7 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 		table.AccountTable, whereExpr, pageExpr)
 
 	details := make([]*cloud.AccountTable, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -174,13 +174,13 @@ func (a AccountDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Ex
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountTable, whereExpr)
-	if err = a.Orm.Txn(tx).Delete(kt.Ctx, sql); err != nil {
+	if _, err = a.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete account failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

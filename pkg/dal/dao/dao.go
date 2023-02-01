@@ -81,7 +81,6 @@ type Set interface {
 	Auth() auth.Auth
 	Account() cloud.Account
 	SecurityGroup() cloud.SecurityGroup
-	SecurityGroupBizRel() cloud.SecurityGroupBizRel
 	TCloudSGRule() cloud.TCloudSGRule
 	AwsSGRule() cloud.AwsSGRule
 	HuaWeiSGRule() cloud.HuaWeiSGRule
@@ -239,13 +238,6 @@ func (s *set) SecurityGroup() cloud.SecurityGroup {
 	return &cloud.SecurityGroupDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
-	}
-}
-
-// SecurityGroupBizRel return security group and biz rel dao.
-func (s *set) SecurityGroupBizRel() cloud.SecurityGroupBizRel {
-	return &cloud.SecurityGroupBizRelDao{
-		Orm: s.orm,
 	}
 }
 

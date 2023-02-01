@@ -128,8 +128,7 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 
 		defer func() {
 			if fatalErr := recover(); fatalErr != nil {
-				logs.Errorf("[hcm server panic], err: %v, rid: %s, debug strace: %s", fatalErr, kt.Rid,
-					debug.Stack())
+				logs.Errorf("[hcm server panic], err: %v, rid: %s, debug strace: %s", fatalErr, kt.Rid, debug.Stack())
 				logs.CloseLogs()
 			}
 		}()

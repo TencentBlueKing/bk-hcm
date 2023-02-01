@@ -39,22 +39,24 @@ import (
 
 // DoOrm defines all the orm method.
 type DoOrm interface {
-	Get(ctx context.Context, dest interface{}, expr string, args ...interface{}) error
-	Select(ctx context.Context, dest interface{}, expr string, args ...interface{}) error
-	Count(ctx context.Context, expr string, args ...interface{}) (uint64, error)
-	Delete(ctx context.Context, expr string, args ...interface{}) (int64, error)
-	Update(ctx context.Context, expr string, args interface{}) (int64, error)
+	Get(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error
+	Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error
+	Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error)
+	Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error)
+	Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error)
+	Exec(ctx context.Context, expr string) (int64, error)
+
 	Insert(ctx context.Context, expr string, data interface{}) error
 	BulkInsert(ctx context.Context, expr string, args interface{}) error
-	Exec(ctx context.Context, expr string) (int64, error)
 }
 
 // DoOrmWithTransaction defines all the orm method with transaction.
 type DoOrmWithTransaction interface {
+	Delete(ctx context.Context, expr string, args map[string]interface{}) (int64, error)
+	Update(ctx context.Context, expr string, args map[string]interface{}) (int64, error)
+
 	Insert(ctx context.Context, expr string, args interface{}) error
 	BulkInsert(ctx context.Context, expr string, args interface{}) error
-	Delete(ctx context.Context, expr string, args ...interface{}) error
-	Update(ctx context.Context, expr string, args interface{}) (int64, error)
 }
 
 // Interface defines all the orm related operations.

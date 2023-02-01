@@ -59,7 +59,7 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 	sqlOpt := &filter.SQLWhereOption{
 		Priority: filter.Priority{"name"},
 	}
-	whereExpr, err := opts.Filter.SQLWhereExpr(sqlOpt)
+	whereExpr, whereValue, err := opts.Filter.SQLWhereExpr(sqlOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 	if opts.Page.Count {
 		// count instance data by whereExpr
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, opts.TableName, whereExpr)
-		count, err := r.Orm.Do().Count(kt.Ctx, sql)
+		count, err := r.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +85,7 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 
 	sql = fmt.Sprintf(`SELECT id, name FROM %s %s %s`, opts.TableName, whereExpr, pageExpr)
 	list := make([]types.InstanceResource, 0)
-	err = r.Orm.Do().Select(kt.Ctx, &list, sql)
+	err = r.Orm.Do().Select(kt.Ctx, &list, sql, whereValue)
 	if err != nil {
 		return nil, err
 	}
