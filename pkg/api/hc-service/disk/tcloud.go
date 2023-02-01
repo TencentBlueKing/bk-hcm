@@ -17,32 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package disk
 
-import (
-	"hcm/pkg/rest"
-)
+import "hcm/pkg/criteria/validator"
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
+// TCloudDiskCreateReq ...
+type TCloudDiskCreateReq struct {
+	Base      *DiskBaseCreateReq            `json:"base" validate:"required"`
+	Extension *TCloudDiskExtensionCreateReq `json:"extension" validate:"required"`
 }
 
-type restClient struct {
-	client rest.ClientInterface
+// Validate ...
+func (req *TCloudDiskCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-	}
+// TCloudDiskExtensionCreateReq ...
+type TCloudDiskExtensionCreateReq struct {
+	DiskChargeType    string                   `json:"disk_charge_type" validate:"required"`
+	DiskChargePrepaid *TCloudDiskChargePrepaid `json:"disk_charge_prepaid"`
+}
+
+// TCloudDiskChargePrepaid ...
+type TCloudDiskChargePrepaid struct {
+	Period    *uint64 `json:"period"`
+	RenewFlag *string `json:"renew_flag"`
 }

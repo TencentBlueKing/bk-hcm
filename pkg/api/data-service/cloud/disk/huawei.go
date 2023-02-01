@@ -17,32 +17,27 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package disk
 
-import (
-	"hcm/pkg/rest"
-)
-
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
+// HuaWeiDiskExtensionCreateReq ...
+type HuaWeiDiskExtensionCreateReq struct {
+	DiskChargeType    string                   `json:"disk_charge_type" validate:"required"`
+	DiskChargePrepaid *HuaWeiDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
 }
 
-type restClient struct {
-	client rest.ClientInterface
+// HuaWeiDiskExtensionResult ...
+type HuaWeiDiskExtensionResult struct {
+	DiskChargeType    string                   `json:"disk_charge_type"`
+	DiskChargePrepaid *HuaWeiDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
 }
 
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-	}
+// HuaWeiDiskChargePrepaid ...
+type HuaWeiDiskChargePrepaid struct {
+	PeriodNum   *int32  `json:"period_num"`
+	PeriodType  *string `json:"period_type"`
+	IsAutoRenew *string `json:"is_auto_renew"`
 }
+
+// HuaWeiDiskExtensionUpdateReq ...
+// 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
+type HuaWeiDiskExtensionUpdateReq struct{}

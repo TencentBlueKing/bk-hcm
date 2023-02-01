@@ -17,32 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package disk
 
-import (
-	"hcm/pkg/rest"
-)
+import "hcm/pkg/criteria/validator"
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
+// GcpDiskCreateReq ...
+type GcpDiskCreateReq struct {
+	Base *DiskBaseCreateReq `json:"base" validate:"required"`
 }
 
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-	}
+// Validate ...
+func (req *GcpDiskCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }

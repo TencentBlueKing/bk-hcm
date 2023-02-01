@@ -8,7 +8,6 @@
 5. 外键id                        // 和当前模型有关联关系的模型主键id (Attachment)
 6. 关联资源冗余字段                // 和当前模型有关联的子资源等其他资源字段信息 （OtherSpec）
 7. 创建信息（CreatedRevision）、创建及修正信息（Revision）
-
 注:
     1. 字段需要按照上述分类进行排序和分类。
     2. 字段说明统一参照 pkg/dal/table 目录下的数据结构定义说明。
@@ -21,20 +20,15 @@
     6. 云资源关联关系统一通过关联关系表存储，避免后期对接云的资源关联关系和其他云不一致，导致db数据迁移，但仅限云资源的关联关系，
     其他场景根据实际情况去设置。且关联关系表中仅存储hcm云资源唯一ID即可。关联关系表名为 aTable_bTable_rel，e.g: cvm_vpc_rel。
 */
-
 create database if not exists hcm;
 use hcm;
-
 create table if not exists `id_generator`
 (
     `resource` varchar(64) not null,
     `max_id`   varchar(64) not null,
-
     primary key (`resource`)
-) engine = innodb
-  default charset = utf8mb4;
-
-
+    ) engine = innodb
+    default charset = utf8mb4;
 insert into id_generator(`resource`, `max_id`)
 values ('account', '0'),
        ('security_group', '0'),
@@ -45,12 +39,11 @@ values ('account', '0'),
        ('gcp_firewall_rule', '0'),
        ('vpc', '0'),
        ('subnet', '0')
-ON DUPLICATE KEY UPDATE resource=resource;
-
+       ('disk', '0')
+    ON DUPLICATE KEY UPDATE resource=resource;
 create table if not exists `audit`
 (
     `id`         bigint(1) unsigned not null auto_increment,
-
     # Spec
     `res_type`   varchar(50)        not null,
     `res_id`     varchar(64)        not null,
@@ -60,20 +53,16 @@ create table if not exists `audit`
     `detail`     json                        default null,
     `bk_biz_id`  bigint(1) unsigned          default 0,
     `account_id` varchar(64)                 default 0,
-
     # Revision
     `operator`   varchar(64)        not null,
     `created_at` timestamp          not null default current_timestamp,
-
     primary key (`id`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 create table if not exists `account`
 (
     `id`            varchar(64) not null,
     `vendor`        varchar(16) not null,
-
     `name`          varchar(64) not null,
     `managers`      json        not null,
     `department_id` int(11)     not null,
@@ -83,31 +72,26 @@ create table if not exists `account`
     `price`         varchar(16)          default '',
     `price_unit`    varchar(8)           default '',
     `memo`          varchar(255)         default '',
-
     `extension`     json        not null,
-
     `creator`       varchar(64) not null,
     `reviser`       varchar(64) not null,
     `created_at`    timestamp   not null default current_timestamp,
     `updated_at`    timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_name` (`name`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 create table if not exists `account_biz_rel`
 (
     `id`         bigint(1) unsigned not null auto_increment,
     `bk_biz_id`  bigint(1)          not null,
     `account_id` varchar(64)        not null,
-
     `creator`    varchar(64)        not null,
     `created_at` timestamp          not null default current_timestamp,
     primary key (`id`),
     unique key `idx_uk_bk_biz_id_account_id` (`bk_biz_id`, `account_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 create table if not exists `security_group`
 (
     `id`                      varchar(64)  not null,
@@ -126,9 +110,8 @@ create table if not exists `security_group`
     `updated_at`              timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 # vpc_security_group_rel is only used of aws.
 create table if not exists `vpc_security_group_rel`
 (
@@ -141,20 +124,17 @@ create table if not exists `vpc_security_group_rel`
     unique key `idx_uk_vpc_id_security_group_id` (`vpc_id`, `security_group_id`)
 ) engine = innodb
   default charset = utf8mb4;
-
 create table if not exists `security_group_biz_rel`
 (
     `id`                bigint(1) unsigned not null auto_increment,
     `bk_biz_id`         bigint(1)          not null,
     `security_group_id` varchar(64)        not null,
-
     `creator`           varchar(64)        not null,
     `created_at`        timestamp          not null default current_timestamp,
     primary key (`id`),
     unique key `idx_uk_bk_biz_id_security_group_id` (`bk_biz_id`, `security_group_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 # security_group_network_interface_rel is only used of azure.
 create table if not exists `security_group_network_interface_rel`
 (
@@ -167,7 +147,6 @@ create table if not exists `security_group_network_interface_rel`
     unique key `idx_uk_security_group_id_network_interface_id` (`security_group_id`, `network_interface_id`)
 ) engine = innodb
   default charset = utf8mb4;
-
 # security_group_subnet_rel is only used of azure.
 create table if not exists `security_group_subnet_rel`
 (
@@ -180,11 +159,9 @@ create table if not exists `security_group_subnet_rel`
     unique key `idx_uk_security_group_id_subnet_id` (`security_group_id`, `subnet_id`)
 ) engine = innodb
   default charset = utf8mb4;
-
 create table if not exists `tcloud_security_group_rule`
 (
     `id`                             varchar(64)  not null,
-
     `cloud_policy_index`             bigint(1)    not null,
     `type`                           varchar(20)  not null,
     `cloud_security_group_id`        varchar(255) not null,
@@ -203,20 +180,17 @@ create table if not exists `tcloud_security_group_rule`
     `cloud_address_id`               varchar(255)          default null,
     `cloud_address_group_id`         varchar(255)          default null,
     `memo`                           varchar(60)           default null,
-
     `creator`                        varchar(64)  not null,
     `reviser`                        varchar(64)  not null,
     `created_at`                     timestamp    not null default current_timestamp,
     `updated_at`                     timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_security_group_id_cloud_policy_index_type` (`cloud_security_group_id`, `cloud_policy_index`, `type`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 create table if not exists `aws_security_group_rule`
 (
     `id`                             varchar(64)  not null,
-
     `cloud_id`                       varchar(255) not null,
     `cloud_security_group_id`        varchar(255) not null,
     `cloud_group_owner_id`           varchar(255) not null,
@@ -232,20 +206,17 @@ create table if not exists `aws_security_group_rule`
     `protocol`                       varchar(10)           default null,
     `cloud_prefix_list_id`           varchar(255)          default null,
     `cloud_target_security_group_id` varchar(255)          default null,
-
     `creator`                        varchar(64)  not null,
     `reviser`                        varchar(64)  not null,
     `created_at`                     timestamp    not null default current_timestamp,
     `updated_at`                     timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 create table if not exists `huawei_security_group_rule`
 (
     `id`                            varchar(64)  not null,
-
     `cloud_id`                      varchar(255) not null,
     `type`                          varchar(20)  not null,
     `cloud_security_group_id`       varchar(255) not null,
@@ -262,20 +233,17 @@ create table if not exists `huawei_security_group_rule`
     `cloud_remote_address_group_id` varchar(255)          default '',
     `port`                          varchar(255)          default '',
     `priority`                      int(1) unsigned       default 0,
-
     `creator`                       varchar(64)  not null,
     `reviser`                       varchar(64)  not null,
     `created_at`                    timestamp    not null default current_timestamp,
     `updated_at`                    timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 create table if not exists `azure_security_group_rule`
 (
     `id`                                   varchar(64)  not null,
-
     `cloud_id`                             varchar(255) not null,
     `cloud_security_group_id`              varchar(255) not null,
     `account_id`                           varchar(64)  not null,
@@ -299,7 +267,6 @@ create table if not exists `azure_security_group_rule`
     `source_port_ranges`                   json                  default null,
     `priority`                             bigint(1)             default 0,
     `access`                               varchar(20)           default '',
-
     `creator`                              varchar(64)  not null,
     `reviser`                              varchar(64)  not null,
     `created_at`                           timestamp    not null default current_timestamp,
@@ -307,9 +274,8 @@ create table if not exists `azure_security_group_rule`
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`),
     unique key `idx_uk_name` (`name`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 create table if not exists `security_group_tag`
 (
     `id`                varchar(64)  not null,
@@ -321,13 +287,11 @@ create table if not exists `security_group_tag`
     `created_at`        timestamp    not null default current_timestamp,
     `updated_at`        timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 create table if not exists `gcp_firewall_rule`
 (
     `id`                      varchar(64)  not null,
-
     `cloud_id`                varchar(255) not null,
     `name`                    varchar(62)           default '',
     `priority`                bigint(1)             default 0,
@@ -348,7 +312,6 @@ create table if not exists `gcp_firewall_rule`
     `disabled`                boolean               default false,
     `self_link`               varchar(255)          default '',
     `bk_biz_id`               bigint(1)    not null,
-
     `creator`                 varchar(64)  not null,
     `reviser`                 varchar(64)  not null,
     `created_at`              timestamp    not null default current_timestamp,
@@ -356,9 +319,8 @@ create table if not exists `gcp_firewall_rule`
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`),
     unique key `idx_uk_name` (`name`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 create table if not exists `vpc`
 (
     `id`          varchar(64)  not null,
@@ -370,21 +332,17 @@ create table if not exists `vpc`
     `memo`        varchar(255)          default '',
     `bk_cloud_id` bigint(1)             default -1,
     `bk_biz_id`   bigint(1)             default -1,
-
     # Extension
     `extension`   json         not null,
-
     # Revision
     `creator`     varchar(64)  not null,
     `reviser`     varchar(64)  not null,
     `created_at`  timestamp    not null default current_timestamp,
     `updated_at`  timestamp    not null default current_timestamp on update current_timestamp,
-
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
-) engine = innodb
-  default charset = utf8mb4;
-
+    ) engine = innodb
+    default charset = utf8mb4;
 create table if not exists `subnet`
 (
     `id`           varchar(64)  not null,
@@ -398,17 +356,37 @@ create table if not exists `subnet`
     `memo`         varchar(255)          default '',
     `vpc_id`       varchar(64)  not null,
     `bk_biz_id`    bigint(1)             default -1,
-
     # Extension
     `extension`    json         not null,
-
     # Revision
     `creator`      varchar(64)  not null,
     `reviser`      varchar(64)  not null,
     `created_at`   timestamp    not null default current_timestamp,
     `updated_at`   timestamp    not null default current_timestamp on update current_timestamp,
-
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
-) engine = innodb
-  default charset = utf8mb4;
+    ) engine = innodb
+    default charset = utf8mb4;
+
+create table if not exists `disk`
+(
+    `id`            varchar(64) not null,
+    `vendor`        varchar(16) not null,
+    `name`          varchar(128) not null,
+    `account_id`    varchar(64) not null,
+    `cloud_id`      varchar(128) not null,
+    `bk_biz_id`     bigint(1) not null default -1,
+    `region`        varchar(128) not null,
+    `zone`          varchar(128) not null,
+    `disk_size`     bigint(1) unsigned not null,
+    `disk_type`     varchar(128) not null,
+    `disk_status`   varchar(128) not null,
+    `memo`          varchar(255) default '',
+    `extension`     json        not null,
+    `creator`       varchar(64) not null,
+    `reviser`       varchar(64) not null,
+    `created_at`    timestamp   not null default current_timestamp,
+    `updated_at`    timestamp   not null default current_timestamp on update current_timestamp,
+    primary key (`id`)
+    ) engine = innodb
+    default charset = utf8mb4;

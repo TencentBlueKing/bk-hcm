@@ -25,6 +25,7 @@ import (
 
 // Client is a global api client
 type Client struct {
+	*restClient
 	Auth          *AuthClient
 	Account       *AccountClient
 	Cloud         *CloudClient
@@ -33,9 +34,14 @@ type Client struct {
 	Subnet        *SubnetClient
 }
 
+type restClient struct {
+	client rest.ClientInterface
+}
+
 // NewClient create a new global api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
+		restClient:    &restClient{client: client},
 		Auth:          NewAuthClient(client),
 		Account:       NewAccountClient(client),
 		Cloud:         NewCloudClient(client),

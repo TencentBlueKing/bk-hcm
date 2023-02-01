@@ -17,32 +17,22 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package disk
 
-import (
-	"hcm/pkg/rest"
-)
+import "hcm/pkg/criteria/validator"
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
+// AzureDiskCreateReq ...
+type AzureDiskCreateReq struct {
+	Base      *DiskBaseCreateReq           `json:"base" validate:"required"`
+	Extension *AzureDiskExtensionCreateReq `json:"extension" validate:"required"`
 }
 
-type restClient struct {
-	client rest.ClientInterface
+// Validate ...
+func (req *AzureDiskCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-	}
+// AzureDiskExtensionCreateReq ...
+type AzureDiskExtensionCreateReq struct {
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
 }

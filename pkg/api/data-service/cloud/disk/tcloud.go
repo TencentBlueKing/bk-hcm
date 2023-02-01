@@ -17,32 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package disk
 
-import (
-	"hcm/pkg/rest"
-)
-
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
+// TCloudDiskExtensionCreateReq ...
+type TCloudDiskExtensionCreateReq struct {
+	DiskChargeType    string                   `json:"disk_charge_type" validate:"required"`
+	DiskChargePrepaid *TCloudDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
 }
 
-type restClient struct {
-	client rest.ClientInterface
+// TCloudDiskExtensionResult ...
+type TCloudDiskExtensionResult struct {
+	DiskChargeType    string                   `json:"disk_charge_type"`
+	DiskChargePrepaid *TCloudDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
 }
 
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-	}
+// TCloudDiskChargePrepaid ...
+type TCloudDiskChargePrepaid struct {
+	Period    *uint64 `json:"period"`
+	RenewFlag *string `json:"renew_flag"`
 }
+
+// TCloudDiskExtensionUpdateReq ...
+// 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
+type TCloudDiskExtensionUpdateReq struct{}

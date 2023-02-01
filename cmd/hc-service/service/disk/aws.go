@@ -17,32 +17,40 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package disk
 
 import (
+	"hcm/pkg/adaptor/types/disk"
+	proto "hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
-}
-
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
+// AwsCreateDisk ...
+func AwsCreateDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsDiskCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := da.adaptor.Aws(cts.Kit, req.Base.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	diskSize := int64(req.Base.DiskSize)
+	opt := &disk.AwsDiskCreateOption{
+		Region:   req.Base.Region,
+		Zone:     &req.Base.Zone,
+		DiskType: &req.Base.DiskType,
+		DiskSize: &diskSize,
+	}
+	client.CreateDisk(cts.Kit, opt)
+
+	// TODO save to data-service
+
+	return nil, nil
 }

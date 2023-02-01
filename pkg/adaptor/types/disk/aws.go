@@ -17,32 +17,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package disk
 
-import (
-	"hcm/pkg/rest"
-)
+import "github.com/aws/aws-sdk-go/service/ec2"
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
+// AwsDiskCreateOption AWS 创建云盘参数
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateVolume.html
+type AwsDiskCreateOption struct {
+	Region   string
+	Zone     *string
+	DiskType *string
+	DiskSize *int64
 }
 
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-	}
+// ToCreateVolumeInput 转换成接口需要的 CreateVolumeInput 结构
+func (opt *AwsDiskCreateOption) ToCreateVolumeInput() (*ec2.CreateVolumeInput, error) {
+	return &ec2.CreateVolumeInput{
+		AvailabilityZone: opt.Zone,
+		Size:             opt.DiskSize,
+		VolumeType:       opt.DiskType,
+	}, nil
 }

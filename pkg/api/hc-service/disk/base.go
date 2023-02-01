@@ -17,32 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package disk
 
-import (
-	"hcm/pkg/rest"
-)
-
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
-}
-
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-	}
+// DiskBaseCreateReq 云盘基础请求数据
+type DiskBaseCreateReq struct {
+	AccountID string  `json:"account_id" validate:"required"`
+	Name      string  `json:"name" validate:"required"`
+	Region    string  `json:"region" validate:"required"`
+	Zone      string  `json:"zone" validate:"required"`
+	DiskSize  uint64  `json:"disk_size" validate:"required"`
+	DiskType  string  `json:"disk_type" validate:"required"`
+	DiskCount uint32  `json:"disk_count" validate:"required"`
+	Memo      *string `json:"memo"`
 }

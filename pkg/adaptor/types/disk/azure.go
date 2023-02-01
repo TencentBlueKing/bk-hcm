@@ -17,38 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package disk
 
-// TCloudDiskCreateOption ...
-type TCloudDiskCreateOption struct {
-	Name     string
-	Region   string
-	DiskSize *uint64
-}
-
-// AwsDiskCreateOption ...
-type AwsDiskCreateOption struct {
-	Region           string
-	AvailabilityZone *string
-	DiskSize         *int64
-}
-
-// HuaWeiDiskCreateOption ...
-type HuaWeiDiskCreateOption struct {
-	Region           string
-	AvailabilityZone string
-}
+import "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 
 // AzureDiskCreateOption ...
 type AzureDiskCreateOption struct {
 	Name              string
 	ResourceGroupName string
+	Region            *string
+	Zone              *string
+	DiskType          string
+	DiskSize          *int32
 }
 
-// GcpDiskCreateOption ...
-type GcpDiskCreateOption struct {
-	Name     string
-	Region   string
-	Zone     string
-	DiskType string
+// ToCreateDiskRequest 转换成接口需要的 *armcompute.Disk 结构
+func (opt *AzureDiskCreateOption) ToCreateDiskRequest() (*armcompute.Disk, error) {
+	skuName := armcompute.DiskStorageAccountTypes(opt.DiskType)
+	sku := &armcompute.DiskSKU{Name: &skuName}
+	prop := &armcompute.DiskProperties{DiskSizeGB: opt.DiskSize}
+
+	return &armcompute.Disk{
+		Zones:      []*string{opt.Zone},
+		Location:   opt.Region,
+		SKU:        sku,
+		Properties: prop,
+	}, nil
 }

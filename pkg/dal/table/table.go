@@ -27,6 +27,8 @@ type Table interface {
 	TableName() Name
 }
 
+var validTableNames = make(map[Name]bool)
+
 // Name is database table's name type
 type Name string
 
@@ -71,6 +73,11 @@ const (
 
 // Validate whether the table name is valid or not.
 func (n Name) Validate() error {
+	valid := validTableNames[n]
+	if valid {
+		return nil
+	}
+
 	switch n {
 	case AuditTable:
 	case AccountTable:
@@ -94,4 +101,9 @@ func (n Name) Validate() error {
 	}
 
 	return nil
+}
+
+// Register 注册表名
+func (n Name) Register() {
+	validTableNames[n] = true
 }

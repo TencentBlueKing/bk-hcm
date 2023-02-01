@@ -30,6 +30,7 @@ import (
 	"hcm/cmd/data-service/service/auth"
 	"hcm/cmd/data-service/service/capability"
 	"hcm/cmd/data-service/service/cloud"
+	"hcm/cmd/data-service/service/cloud/disk"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
@@ -136,6 +137,7 @@ func (s *Service) apiSet() *restful.Container {
 	cloud.InitSubnetService(cap)
 	cloud.InitCloudService(cap)
 	auth.InitAuthService(cap)
+	disk.InitDiskService(cap)
 
 	return restful.NewContainer().Add(cap.WebService)
 }

@@ -20,7 +20,7 @@
 package aws
 
 import (
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/kit"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -28,17 +28,20 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateVolume.html
-func (a *Aws) CreateDisk(kt *kit.Kit, opt *types.AwsDiskCreateOption) (*ec2.Volume, error) {
+func (a *Aws) CreateDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*ec2.Volume, error) {
+	return a.createDisk(kt, opt)
+}
+
+func (a *Aws) createDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*ec2.Volume, error) {
 	client, err := a.clientSet.ec2Client(opt.Region)
 	if err != nil {
 		return nil, err
 	}
 
-	req := &ec2.CreateVolumeInput{
-		AvailabilityZone: opt.AvailabilityZone,
-		Size:             opt.DiskSize,
+	req, err := opt.ToCreateVolumeInput()
+	if err != nil {
+		return nil, err
 	}
 
-	volume, err := client.CreateVolumeWithContext(kt.Ctx, req)
-	return volume, err
+	return client.CreateVolumeWithContext(kt.Ctx, req)
 }

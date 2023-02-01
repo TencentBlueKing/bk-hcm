@@ -17,32 +17,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package core
 
-import (
-	"hcm/pkg/rest"
-)
+import "hcm/pkg/rest"
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
+// BatchCreateResp ...
+type BatchCreateResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *BatchCreateResult `json:"data"`
 }
 
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-	}
+// BatchCreateResult ...
+type BatchCreateResult struct {
+	IDs []string `json:"ids"`
 }

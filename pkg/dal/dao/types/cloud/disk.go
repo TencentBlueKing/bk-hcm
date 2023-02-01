@@ -17,32 +17,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package cloud
 
-import (
-	"hcm/pkg/rest"
-)
+import "hcm/pkg/dal/table/cloud/disk"
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
+// ListDisk list disks
+type ListDisk struct {
+	Count   *uint64
+	Details []*disk.DiskModel
 }
 
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-	}
+// CountDisk count disks
+type CountDisk struct {
+	Count uint64
 }

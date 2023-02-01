@@ -17,22 +17,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package hcservice
+package disk
 
-// TCloudDiskCreateReq ...
-type TCloudDiskCreateReq struct{}
-
-// DiskCreateReq ...
-type DiskCreateReq[T DiskExtensionCreateReq] struct {
-	Spec      *DiskSpecCreateReq `json:"spec" validate:"required"`
-	Extension *T                 `json:"extension" validate:"required"`
+// AzureDiskExtensionCreateReq ...
+type AzureDiskExtensionCreateReq struct {
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
 }
 
-// DiskSpecCreateReq ...
-type DiskSpecCreateReq struct {
-	Name     string  `json:"name"`
-	DiskSize *uint64 `json:"disk_size"`
+// AzureDiskExtensionResult ...
+type AzureDiskExtensionResult struct {
+	ResourceGroupName string `json:"resource_group_name"`
 }
 
-// DiskExtensionCreateReq ...
-type DiskExtensionCreateReq interface{}
+// AzureDiskExtensionUpdateReq ...
+// 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
+type AzureDiskExtensionUpdateReq struct{}

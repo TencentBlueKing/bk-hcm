@@ -17,32 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package disk
 
 import (
-	"hcm/pkg/rest"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/runtime/filter"
 )
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
+// DiskListReq ...
+type DiskListReq struct {
+	Filter *filter.Expression `json:"filter" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
-type restClient struct {
-	client rest.ClientInterface
+// Validate ...
+func (req *DiskListReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-	}
+// DiskAssignReq ...
+type DiskAssignReq struct {
+	IDs     []string `json:"ids" validate:"required"`
+	BkBizID uint64   `json:"bk_biz_id" validate:"required"`
+}
+
+// Validate ...
+func (req *DiskAssignReq) Validate() error {
+	return validator.Validate.Struct(req)
 }

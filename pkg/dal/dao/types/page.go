@@ -65,25 +65,20 @@ func PageSQLExpr(bp *core.BasePage, ps *PageSQLOption) (where string, err error)
 			err = errf.NewFromErr(errf.InvalidParameter, err)
 		}
 	}()
-
 	if bp == nil {
 		return "", errors.New("page is nil")
 	}
-
 	if ps == nil {
 		return "", errors.New("page sql option is nil")
 	}
-
 	if bp.Count {
 		// this is a count query clause.
 		return "", errors.New("page.count is enabled, do not support generate SQL expression")
 	}
-
 	if bp.Start == 0 && bp.Limit == 0 {
 		// it means do not need to sort.
 		return "", nil
 	}
-
 	var sort string
 	if ps.Sort.ForceOverlap {
 		// force overlapped user defined sort field.
@@ -97,25 +92,20 @@ func PageSQLExpr(bp *core.BasePage, ps *PageSQLOption) (where string, err error)
 			sort = bp.Sort
 		}
 	}
-
 	if len(sort) == 0 {
 		// if sort is not set, use the default resource's
 		// identity id as the default sort column.
 		sort = "id"
 	}
-
 	expr := fmt.Sprintf("ORDER BY %s", sort)
-
 	if bp.Start == 0 && bp.Limit == 0 {
 		// this is a special scenario, which means query all the resources at once.
 		return fmt.Sprintf("%s %s", expr, bp.Order.Order()), nil
 	}
-
 	// if Start >=1, then Limit can not be 0.
 	if bp.Limit == 0 {
 		return "", errors.New("page.limit value should >= 1")
 	}
-
 	// bp.Limit is > 0, already validated upper.
 	expr = fmt.Sprintf("%s %s LIMIT %d OFFSET %d", expr, bp.Order.Order(), bp.Limit, bp.Start)
 	return expr, nil

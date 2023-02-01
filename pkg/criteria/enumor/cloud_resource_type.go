@@ -30,6 +30,11 @@ type CloudResourceType string
 
 // ConvTableName conv CloudResourceType to table.Name.
 func (rt CloudResourceType) ConvTableName() (table.Name, error) {
+	name := table.Name(rt)
+	if err := name.Validate(); err == nil {
+		return name, nil
+	}
+
 	switch rt {
 	case AccountCloudResType:
 		return table.AccountTable, nil
