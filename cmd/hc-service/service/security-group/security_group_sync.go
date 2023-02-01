@@ -27,7 +27,6 @@ import (
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	daltypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -62,7 +61,7 @@ func (g *securityGroup) getDatasFromDSForSecurityGroupSync(cts *rest.Contexts,
 			Filter: tools.EqualExpression("account_id", req.AccountID),
 			Page: &core.BasePage{
 				Start: uint32(start),
-				Limit: daltypes.DefaultMaxPageLimit,
+				Limit: core.DefaultMaxPageLimit,
 			},
 		}
 		results, err := g.dataCli.Global.SecurityGroup.ListSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),

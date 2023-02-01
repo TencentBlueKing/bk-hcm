@@ -34,7 +34,6 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	daotypes "hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -286,7 +285,7 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 		Filter: tools.EqualExpression("account_id", req.AccountID),
 		Page: &core.BasePage{
 			Start: uint32(0),
-			Limit: daotypes.DefaultMaxPageLimit,
+			Limit: core.DefaultMaxPageLimit,
 		},
 	}
 	ids := make([]string, 0)
@@ -300,7 +299,7 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 			ids = append(ids, result.ID)
 		}
 		listReq.Page.Start += uint32(len(results.Details))
-		if len(results.Details) == 0 || uint(len(results.Details)) < daotypes.DefaultMaxPageLimit {
+		if len(results.Details) == 0 || uint(len(results.Details)) < core.DefaultMaxPageLimit {
 			break
 		}
 	}
