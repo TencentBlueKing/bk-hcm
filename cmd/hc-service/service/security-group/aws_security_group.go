@@ -197,7 +197,7 @@ func (g *securityGroup) getDatasFromAwsForSecurityGroupSync(cts *rest.Contexts,
 	return cloudMap, nil
 }
 
-// diffAwsSecurityGroupSync diff cloud data-service
+// diffAwsSecurityGroupSync make aws and data-service diff, process resources according to diff
 func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncAwsDiff,
 	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
 
@@ -205,32 +205,43 @@ func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, cloudMap ma
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
 	if len(deleteCloudIDs) > 0 {
+		logs.Infof("do sync aws SecurityGroup delete operate")
 		err := g.diffSecurityGroupSyncDelete(cts, deleteCloudIDs)
 		if err != nil {
+			logs.Errorf("sync delete aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffAwsSGRuleSyncDelete(cts, deleteCloudIDs, dsMap)
 		if err != nil {
+			logs.Errorf("sync delete aws security group rules failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
+
 	if len(updateCloudIDs) > 0 {
+		logs.Infof("do sync aws SecurityGroup update operate")
 		err := g.diffAwsSecurityGroupSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
 		if err != nil {
+			logs.Errorf("sync update aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffAwsSGRuleSyncUpdate(cts, updateCloudIDs, req, dsMap)
 		if err != nil {
+			logs.Errorf("sync update aws security group rules failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
+
 	if len(addCloudIDs) > 0 {
+		logs.Infof("do sync aws SecurityGroup add operate")
 		ids, err := g.diffAwsSecurityGroupSyncAdd(cts, cloudMap, req, addCloudIDs)
 		if err != nil {
+			logs.Errorf("sync add aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffAwsSGRuleSyncAdd(cts, ids, req)
 		if err != nil {
+			logs.Errorf("sync add aws security group rules failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
@@ -249,7 +260,7 @@ func (g *securityGroup) diffAwsSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap
 	for _, id := range addCloudIDs {
 		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.AwsSecurityGroupExtension]{
 			CloudID:   *cloudMap[id].SecurityGroup.GroupId,
-			BkBizID:   -1,
+			BkBizID:   DefaultBkBizID,
 			Region:    req.Region,
 			Name:      *cloudMap[id].SecurityGroup.GroupName,
 			Memo:      cloudMap[id].SecurityGroup.Description,
@@ -261,6 +272,11 @@ func (g *securityGroup) diffAwsSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
 	}
+
+	if len(createReq.SecurityGroups) <= 0 {
+		return nil, nil
+	}
+
 	results, err := g.dataCli.Aws.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
 		logs.Errorf("request dataservice to BatchCreateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -290,6 +306,11 @@ func (g *securityGroup) diffAwsSecurityGroupSyncUpdate(cts *rest.Contexts, cloud
 		}
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
 	}
+
+	if len(updateReq.SecurityGroups) <= 0 {
+		return nil
+	}
+
 	if err := g.dataCli.Aws.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
 		updateReq); err != nil {
 		logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)

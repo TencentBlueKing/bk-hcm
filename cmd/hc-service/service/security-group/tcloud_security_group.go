@@ -252,7 +252,7 @@ func (g *securityGroup) getDatasFromTCloudForSecurityGroupSync(cts *rest.Context
 	return cloudMap, nil
 }
 
-// diffSecurityGroupSync diff cloud data-service
+// diffTCloudSecurityGroupSync make tcloud and data-service diff, process resources according to diff
 func (g *securityGroup) diffTCloudSecurityGroupSync(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncTCloudDiff,
 	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
 
@@ -260,32 +260,43 @@ func (g *securityGroup) diffTCloudSecurityGroupSync(cts *rest.Contexts, cloudMap
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
 	if len(deleteCloudIDs) > 0 {
+		logs.Infof("do sync tcloud SecurityGroup delete operate")
 		err := g.diffSecurityGroupSyncDelete(cts, deleteCloudIDs)
 		if err != nil {
+			logs.Errorf("sync delete tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffTCloudSGRuleSyncDelete(cts, deleteCloudIDs, dsMap)
 		if err != nil {
+			logs.Errorf("sync delete tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
+
 	if len(updateCloudIDs) > 0 {
+		logs.Infof("do sync tcloud SecurityGroup update operate")
 		err := g.diffTCloudSecurityGroupSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
 		if err != nil {
+			logs.Errorf("sync update tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffTCloudSGRuleSyncUpdate(cts, updateCloudIDs, req, dsMap)
 		if err != nil {
+			logs.Errorf("sync update tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
+
 	if len(addCloudIDs) > 0 {
+		logs.Infof("do sync tcloud SecurityGroup add operate")
 		ids, err := g.diffTCloudSecurityGroupSyncAdd(cts, cloudMap, req, addCloudIDs)
 		if err != nil {
+			logs.Errorf("sync add tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffTCloudSGRuleSyncAdd(cts, ids, req)
 		if err != nil {
+			logs.Errorf("sync add tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
@@ -304,7 +315,7 @@ func (g *securityGroup) diffTCloudSecurityGroupSyncAdd(cts *rest.Contexts, cloud
 	for _, id := range addCloudIDs {
 		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{
 			CloudID:   *cloudMap[id].SecurityGroup.SecurityGroupId,
-			BkBizID:   int64(-1),
+			BkBizID:   DefaultBkBizID,
 			Region:    req.Region,
 			Name:      *cloudMap[id].SecurityGroup.SecurityGroupName,
 			Memo:      cloudMap[id].SecurityGroup.SecurityGroupDesc,
@@ -314,6 +325,10 @@ func (g *securityGroup) diffTCloudSecurityGroupSyncAdd(cts *rest.Contexts, cloud
 			},
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
+	}
+
+	if len(createReq.SecurityGroups) <= 0 {
+		return nil, nil
 	}
 
 	results, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
@@ -344,6 +359,10 @@ func (g *securityGroup) diffTCloudSecurityGroupSyncUpdate(cts *rest.Contexts, cl
 			Memo: cloudMap[id].SecurityGroup.SecurityGroupDesc,
 		}
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
+	}
+
+	if len(updateReq.SecurityGroups) <= 0 {
+		return nil
 	}
 
 	if err := g.dataCli.TCloud.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),

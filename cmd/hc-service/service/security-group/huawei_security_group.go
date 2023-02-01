@@ -254,7 +254,7 @@ func (g *securityGroup) getDatasFromHuaWeiForSecurityGroupSync(cts *rest.Context
 	return cloudMap, nil
 }
 
-// diffHWSecurityGroupSync diff cloud data-service
+// diffHWSecurityGroupSync make huawei and data-service diff, process resources according to diff
 func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncHuaWeiDiff,
 	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
 
@@ -262,32 +262,43 @@ func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, cloudMap map
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
 	if len(deleteCloudIDs) > 0 {
+		logs.Infof("do sync huawei SecurityGroup delete operate")
 		err := g.diffSecurityGroupSyncDelete(cts, deleteCloudIDs)
 		if err != nil {
+			logs.Errorf("sync delete huawei security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffHuaWeiSGRuleSyncDelete(cts, deleteCloudIDs, dsMap)
 		if err != nil {
+			logs.Errorf("sync delete huawei security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
+
 	if len(updateCloudIDs) > 0 {
+		logs.Infof("do sync huawei SecurityGroup update operate")
 		err := g.diffHWSecurityGroupSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
 		if err != nil {
+			logs.Errorf("sync update huawei security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffHuaWeiSGRuleSyncUpdate(cts, updateCloudIDs, req, dsMap)
 		if err != nil {
+			logs.Errorf("sync update huawei security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
+
 	if len(addCloudIDs) > 0 {
+		logs.Infof("do sync huawei SecurityGroup add operate")
 		ids, err := g.diffHWSecurityGroupSyncAdd(cts, cloudMap, req, addCloudIDs)
 		if err != nil {
+			logs.Errorf("sync add huawei security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffHuaWeiSGRuleSyncAdd(cts, ids, req)
 		if err != nil {
+			logs.Errorf("sync add huawei security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
@@ -306,7 +317,7 @@ func (g *securityGroup) diffHWSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap 
 	for _, id := range addCloudIDs {
 		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.HuaWeiSecurityGroupExtension]{
 			CloudID:   cloudMap[id].SecurityGroup.Id,
-			BkBizID:   -1,
+			BkBizID:   DefaultBkBizID,
 			Region:    req.Region,
 			Name:      cloudMap[id].SecurityGroup.Name,
 			Memo:      &cloudMap[id].SecurityGroup.Description,
@@ -317,6 +328,10 @@ func (g *securityGroup) diffHWSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap 
 			},
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
+	}
+
+	if len(createReq.SecurityGroups) <= 0 {
+		return nil, nil
 	}
 
 	ids, err := g.dataCli.HuaWei.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
@@ -348,6 +363,11 @@ func (g *securityGroup) diffHWSecurityGroupSyncUpdate(cts *rest.Contexts, cloudM
 		}
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
 	}
+
+	if len(updateReq.SecurityGroups) <= 0 {
+		return nil
+	}
+
 	if err := g.dataCli.HuaWei.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
 		updateReq); err != nil {
 		logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)

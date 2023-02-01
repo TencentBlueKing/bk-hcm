@@ -32,6 +32,10 @@ import (
 	"hcm/pkg/rest"
 )
 
+const (
+	DefaultBkBizID int64 = -1
+)
+
 // decodeSecurityGroupSyncReq get par from body
 func (g *securityGroup) decodeSecurityGroupSyncReq(cts *rest.Contexts) (*proto.SecurityGroupSyncReq, error) {
 

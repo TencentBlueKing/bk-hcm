@@ -243,7 +243,7 @@ func (g *securityGroup) getDatasFromAzureForSecurityGroupSync(cts *rest.Contexts
 	return cloudMap, nil
 }
 
-// diffAzureSecurityGroupSync diff cloud data-service
+// diffAzureSecurityGroupSync make azure and data-service diff, process resources according to diff
 func (g *securityGroup) diffAzureSecurityGroupSync(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncAzureDiff,
 	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
 
@@ -251,32 +251,43 @@ func (g *securityGroup) diffAzureSecurityGroupSync(cts *rest.Contexts, cloudMap 
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
 	if len(deleteCloudIDs) > 0 {
+		logs.Infof("do sync azure SecurityGroup delete operate")
 		err := g.diffSecurityGroupSyncDelete(cts, deleteCloudIDs)
 		if err != nil {
+			logs.Errorf("sync delete azure security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffAzureSGRuleSyncDelete(cts, deleteCloudIDs, dsMap)
 		if err != nil {
+			logs.Errorf("sync delete azure security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
+
 	if len(updateCloudIDs) > 0 {
+		logs.Infof("do sync azure SecurityGroup update operate")
 		err := g.diffAzureSecurityGroupSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
 		if err != nil {
+			logs.Errorf("sync update azure security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffAzureSGRuleSyncUpdate(cts, updateCloudIDs, req, dsMap)
 		if err != nil {
+			logs.Errorf("sync update azure security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
+
 	if len(addCloudIDs) > 0 {
+		logs.Infof("do sync azure SecurityGroup add operate")
 		ids, err := g.diffAzureSecurityGroupSyncAdd(cts, cloudMap, req, addCloudIDs)
 		if err != nil {
+			logs.Errorf("sync add azure security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 		err = g.diffAzureSGRuleSyncAdd(cts, ids, req)
 		if err != nil {
+			logs.Errorf("sync add azure security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
@@ -295,7 +306,7 @@ func (g *securityGroup) diffAzureSecurityGroupSyncAdd(cts *rest.Contexts, cloudM
 	for _, id := range addCloudIDs {
 		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.AzureSecurityGroupExtension]{
 			CloudID:   *cloudMap[id].SecurityGroup.ID,
-			BkBizID:   -1,
+			BkBizID:   DefaultBkBizID,
 			Region:    *cloudMap[id].SecurityGroup.Location,
 			Name:      *cloudMap[id].SecurityGroup.Name,
 			Memo:      nil,
@@ -309,6 +320,11 @@ func (g *securityGroup) diffAzureSecurityGroupSyncAdd(cts *rest.Contexts, cloudM
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
 	}
+
+	if len(createReq.SecurityGroups) <= 0 {
+		return nil, nil
+	}
+
 	results, err := g.dataCli.Azure.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
 		logs.Errorf("request dataservice to BatchCreateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -336,6 +352,11 @@ func (g *securityGroup) diffAzureSecurityGroupSyncUpdate(cts *rest.Contexts, clo
 		}
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
 	}
+
+	if len(updateReq.SecurityGroups) <= 0 {
+		return nil
+	}
+
 	if err := g.dataCli.Azure.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
 		updateReq); err != nil {
 		logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
