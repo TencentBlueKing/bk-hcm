@@ -154,7 +154,7 @@ func (s *Service) apiSet() *restful.Container {
 }
 
 // Healthz check whether the service is healthy.
-func (s *Service) Healthz(w http.ResponseWriter, req *http.Request) {
+func (s *Service) Healthz(w http.ResponseWriter, _ *http.Request) {
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
 	return
 }
@@ -165,12 +165,20 @@ func (s *Service) Healthz(w http.ResponseWriter, req *http.Request) {
 // It can be set that non-nil error will be returned if the "key" handler fails while other handlers always
 // return nil error.
 func GoAndWait(handlers ...func() error) error {
+	if len(handlers) == 0 {
+		return nil
+	}
+
 	var (
 		wg   sync.WaitGroup
 		once sync.Once
 		err  error
 	)
 	for _, f := range handlers {
+		if f == nil {
+			continue
+		}
+
 		wg.Add(1)
 		go func(handler func() error) {
 			defer func() {

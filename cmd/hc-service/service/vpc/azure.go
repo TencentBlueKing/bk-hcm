@@ -128,41 +128,36 @@ func (v vpc) AzureVpcSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	if len(req.ResourceGroupName) == 0 {
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("resource_group_name is required"))
+		return nil, errf.New(errf.InvalidParameter, "resource_group_name is required")
 	}
-
-	var (
-		vendorName = enumor.Azure
-		rsp        = hcservice.ResourceSyncResult{
-			TaskID: uuid.UUID(),
-		}
-	)
 
 	// batch get vpc list from cloudapi.
 	list, err := v.BatchGetAzureVpcList(cts, req)
-	if err != nil || list == nil {
-		logs.Errorf("[%s-vpc] request cloudapi response failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+	if err != nil {
+		logs.Errorf("[%s-vpc] request cloudapi response failed. accountID:%s, region:%s, err: %v",
+			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
 	// batch get vpc map from db.
-	resourceDBMap, err := v.BatchGetVpcMapFromDB(cts, req, vendorName)
+	resourceDBMap, err := v.BatchGetVpcMapFromDB(cts, req, enumor.Azure)
 	if err != nil {
-		logs.Errorf("[%s-vpc] batch get vpcdblist failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+		logs.Errorf("[%s-vpc] batch get vpcdblist failed. accountID:%s, region:%s, err: %v",
+			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
-	// batch compare vendor vpc list.
-	_, err = v.BatchCompareAzureVpcList(cts, req, list, resourceDBMap)
+	// batch sync vendor vpc list.
+	err = v.BatchSyncAzureVpcList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-vpc] compare api and dblist failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+		logs.Errorf("[%s-vpc] compare api and dblist failed. accountID:%s, region:%s, err: %v",
+			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
-	return rsp, nil
+	return hcservice.ResourceSyncResult{
+		TaskID: uuid.UUID(),
+	}, nil
 }
 
 // BatchGetAzureVpcList batch get vpc list from cloudapi.
@@ -177,78 +172,76 @@ func (v vpc) BatchGetAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyn
 		ResourceGroupName: req.ResourceGroupName,
 	}
 	list, err := cli.ListVpc(cts.Kit, opt)
-	if err != nil || list == nil {
-		logs.Errorf("[%s-vpc]batch get cloud api failed. accountID:%s, region:%s, err:%v",
+	if err != nil {
+		logs.Errorf("[%s-vpc]batch get cloud api failed. accountID:%s, region:%s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
 	return list, nil
 }
 
-// BatchCompareAzureVpcList batch compare vendor vpc list.
-func (v vpc) BatchCompareAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
-	list *types.AzureVpcListResult, resourceDBMap map[string]cloudcore.BaseVpc) (interface{}, error) {
-	var (
-		createResources []cloud.VpcCreateReq[cloud.AzureVpcCreateExt]
-		updateResources []cloud.VpcUpdateReq[cloud.AzureVpcUpdateExt]
-		existIDMap      = map[string]bool{}
-		deleteIDs       []string
-	)
-
-	err := v.filterAzureVpcList(cts, req, list, resourceDBMap, &createResources, &updateResources, existIDMap)
+// BatchSyncAzureVpcList batch sync vendor vpc list.
+func (v vpc) BatchSyncAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
+	list *types.AzureVpcListResult, resourceDBMap map[string]cloudcore.BaseVpc) error {
+	createResources, updateResources, existIDMap, err := v.filterAzureVpcList(cts, req, list, resourceDBMap)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// update resource data
 	if len(updateResources) > 0 {
-		if err = v.cs.DataService().Azure.Vpc.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.VpcBatchUpdateReq[cloud.AzureVpcUpdateExt]{
-				Vpcs: updateResources,
-			}); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db update failed. accountID:%s, region:%s, err:%v",
+		updateReq := &cloud.VpcBatchUpdateReq[cloud.AzureVpcUpdateExt]{
+			Vpcs: updateResources,
+		}
+		if err = v.cs.DataService().Azure.Vpc.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
+			logs.Errorf("[%s-vpc]batch compare db update failed. accountID:%s, region:%s, err: %v",
 				enumor.Azure, req.AccountID, req.Region, err)
-			return nil, err
+			return err
 		}
 	}
 
 	// add resource data
 	if len(createResources) > 0 {
-		if _, err = v.cs.DataService().Azure.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.VpcBatchCreateReq[cloud.AzureVpcCreateExt]{
-				Vpcs: createResources,
-			}); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db create failed. accountID:%s, region:%s, err:%v",
+		createReq := &cloud.VpcBatchCreateReq[cloud.AzureVpcCreateExt]{
+			Vpcs: createResources,
+		}
+		if _, err = v.cs.DataService().Azure.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+			logs.Errorf("[%s-vpc]batch compare db create failed. accountID:%s, region:%s, err: %v",
 				enumor.Azure, req.AccountID, req.Region, err)
-			return nil, err
+			return err
 		}
 	}
 
 	// delete resource data
+	deleteIDs := make([]string, 0)
 	for _, resItem := range resourceDBMap {
 		if _, ok := existIDMap[resItem.ID]; !ok {
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
 	if len(deleteIDs) > 0 {
-		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), &dataservice.BatchDeleteReq{
+		deleteReq := &dataservice.BatchDeleteReq{
 			Filter: tools.ContainersExpression("id", deleteIDs),
-		}); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err:%v",
+		}
+		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
 				enumor.Azure, req.AccountID, req.Region, deleteIDs, err)
-			return nil, err
+			return err
 		}
 	}
-	return nil, nil
+	return nil
 }
 
+// filterAzureVpcList filter azure vpc list
 func (v vpc) filterAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq, list *types.AzureVpcListResult,
-	resourceDBMap map[string]cloudcore.BaseVpc, createResources *[]cloud.VpcCreateReq[cloud.AzureVpcCreateExt],
-	updateResources *[]cloud.VpcUpdateReq[cloud.AzureVpcUpdateExt], existIDMap map[string]bool) error {
+	resourceDBMap map[string]cloudcore.BaseVpc) (createResources []cloud.VpcCreateReq[cloud.AzureVpcCreateExt],
+	updateResources []cloud.VpcUpdateReq[cloud.AzureVpcUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {
-		return fmt.Errorf("cloudapi vpclist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
+		return nil, nil, nil,
+			fmt.Errorf("cloudapi vpclist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
 	}
 
+	existIDMap = make(map[string]bool, 0)
 	for _, item := range list.Details {
 		// need compare and update vpc data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
@@ -271,14 +264,14 @@ func (v vpc) filterAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 				}
 				tmpRes.Extension.Cidr = tmpCidrs
 			}
-			*updateResources = append(*updateResources, tmpRes)
+			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 
 			// sync azure cloud subnet.
 			req.VpcName = item.Name
-			_, err := v.AzureSubnetSync(cts, req, item.CloudID)
+			_, err = v.AzureSubnetSync(cts, req, item.CloudID)
 			if err != nil {
-				return err
+				return nil, nil, nil, err
 			}
 		} else {
 			// need add vpc data
@@ -305,38 +298,31 @@ func (v vpc) filterAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 				}
 				tmpRes.Extension.Cidr = tmpCidrs
 			}
-			*createResources = append(*createResources, tmpRes)
+			createResources = append(createResources, tmpRes)
 
 			// sync azure cloud subnet.
 			req.VpcName = item.Name
-			_, err := v.AzureSubnetSync(cts, req, item.CloudID)
+			_, err = v.AzureSubnetSync(cts, req, item.CloudID)
 			if err != nil {
-				return err
+				return nil, nil, nil, err
 			}
 		}
 	}
-	return nil
+	return createResources, updateResources, existIDMap, nil
 }
 
 // AzureSubnetSync sync azure cloud subnet.
 func (v vpc) AzureSubnetSync(cts *rest.Contexts, req *hcservice.ResourceSyncReq, cloudVpcID string) (
 	interface{}, error) {
 	if len(req.VpcName) == 0 {
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("vpc_name is required"))
+		return nil, errf.New(errf.InvalidParameter, "vpc_name is required")
 	}
-
-	var (
-		vendorName = enumor.Azure
-		rsp        = hcservice.ResourceSyncResult{
-			TaskID: uuid.UUID(),
-		}
-	)
 
 	// batch get subnet list from cloudapi.
 	list, err := v.BatchGetAzureSubnetList(cts, req)
 	if err != nil {
-		logs.Errorf("[%s-vpc-subnet]request cloudapi response failed. accountID:%s, cloudVpcID:%s, err:%v",
-			vendorName, req.AccountID, cloudVpcID, err)
+		logs.Errorf("[%s-vpc-subnet]request cloudapi response failed. accountID:%s, cloudVpcID:%s, err: %v",
+			enumor.Azure, req.AccountID, cloudVpcID, err)
 		return nil, err
 	}
 	if len(list.Details) == 0 {
@@ -344,22 +330,24 @@ func (v vpc) AzureSubnetSync(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
 	}
 
 	// batch get subnet map from db.
-	resourceDBMap, err := v.BatchGetSubnetMapFromDB(cts, req, vendorName, cloudVpcID)
+	resourceDBMap, err := v.BatchGetSubnetMapFromDB(cts, req, enumor.Azure, cloudVpcID)
 	if err != nil {
-		logs.Errorf("[%s-vpc-subnet]batch get subnetdblist failed. accountID:%s, cloudVpcID:%s, err:%v",
-			vendorName, req.AccountID, cloudVpcID, err)
+		logs.Errorf("[%s-vpc-subnet]batch get subnetdblist failed. accountID:%s, cloudVpcID:%s, err: %v",
+			enumor.Azure, req.AccountID, cloudVpcID, err)
 		return nil, err
 	}
 
-	// batch compare vendor subnet list.
-	_, err = v.BatchCompareAzureSubnetList(cts, req, list, resourceDBMap)
+	// batch sync vendor subnet list.
+	err = v.BatchSyncAzureSubnetList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-vpc-subnet]compare api and dblist failed. accountID:%s, cloudVpcID:%s, err:%v",
-			vendorName, req.AccountID, cloudVpcID, err)
+		logs.Errorf("[%s-vpc-subnet]compare api and dblist failed. accountID:%s, cloudVpcID:%s, err: %v",
+			enumor.Azure, req.AccountID, cloudVpcID, err)
 		return nil, err
 	}
 
-	return rsp, nil
+	return hcservice.ResourceSyncResult{
+		TaskID: uuid.UUID(),
+	}, nil
 }
 
 // BatchGetAzureSubnetList batch get subnet list from cloudapi.
@@ -375,8 +363,8 @@ func (v vpc) BatchGetAzureSubnetList(cts *rest.Contexts, req *hcservice.Resource
 	}
 	opt.ResourceGroupName = req.ResourceGroupName
 	list, err := cli.ListSubnet(cts.Kit, opt)
-	if err != nil || list == nil {
-		logs.Errorf("[%s-vpc-subnet]batch get cloud api failed. accountID:%s, region:%s, err:%v",
+	if err != nil {
+		logs.Errorf("[%s-vpc-subnet]batch get cloud api failed. accountID:%s, region:%s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -389,7 +377,7 @@ func (v vpc) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resource
 	var (
 		page        uint32
 		count       = core.DefaultMaxPageLimit
-		resourceMap = map[string]cloudcore.BaseSubnet{}
+		resourceMap = make(map[string]cloudcore.BaseSubnet, 0)
 	)
 
 	for {
@@ -421,7 +409,7 @@ func (v vpc) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resource
 		dbList, err := v.cs.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 		if err != nil {
 			logs.Errorf("[%s-vpc-subnet]batch list db error. accountID:%s, region:%s, offset:%d, limit:%d, "+
-				"cloudVpcID:%s, err:%v", vendor, req.AccountID, req.Region, offset, count, cloudVpcID, err)
+				"cloudVpcID:%s, err: %v", vendor, req.AccountID, req.Region, offset, count, cloudVpcID, err)
 			return nil, err
 		}
 		if len(dbList.Details) == 0 {
@@ -439,30 +427,23 @@ func (v vpc) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resource
 	return resourceMap, nil
 }
 
-// BatchCompareAzureSubnetList batch compare vendor subnet list.
-func (v vpc) BatchCompareAzureSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
-	list *types.AzureSubnetListResult, resourceDBMap map[string]cloudcore.BaseSubnet) (interface{}, error) {
-	var (
-		createResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt]
-		updateResources []cloud.SubnetUpdateReq[cloud.AzureSubnetUpdateExt]
-		existIDMap      = map[string]bool{}
-		deleteIDs       []string
-	)
-
-	err := v.filterAzureSubnetList(req, list, resourceDBMap, &createResources, &updateResources, existIDMap)
+// BatchSyncAzureSubnetList batch sync vendor subnet list.
+func (v vpc) BatchSyncAzureSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
+	list *types.AzureSubnetListResult, resourceDBMap map[string]cloudcore.BaseSubnet) error {
+	createResources, updateResources, existIDMap, err := v.filterAzureSubnetList(req, list, resourceDBMap)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// update resource data
 	if len(updateResources) > 0 {
-		if err = v.cs.DataService().Azure.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.SubnetBatchUpdateReq[cloud.AzureSubnetUpdateExt]{
-				Subnets: updateResources,
-			}); err != nil {
-			logs.Errorf("[%s-vpc-subnet]batch compare db update failed. accountID:%s, region:%s, err:%v",
+		updateReq := &cloud.SubnetBatchUpdateReq[cloud.AzureSubnetUpdateExt]{
+			Subnets: updateResources,
+		}
+		if err = v.cs.DataService().Azure.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
+			logs.Errorf("[%s-vpc-subnet]batch compare db update failed. accountID:%s, region:%s, err: %v",
 				enumor.Azure, req.AccountID, req.Region, err)
-			return nil, err
+			return err
 		}
 	}
 
@@ -470,39 +451,41 @@ func (v vpc) BatchCompareAzureSubnetList(cts *rest.Contexts, req *hcservice.Reso
 	if len(createResources) > 0 {
 		err = v.batchCreateAzureSubnet(cts, createResources)
 		if err != nil {
-			logs.Errorf("[%s-vpc-subnet]batch compare db create failed. accountID:%s, region:%s, err:%v",
+			logs.Errorf("[%s-vpc-subnet]batch compare db create failed. accountID:%s, region:%s, err: %v",
 				enumor.Azure, req.AccountID, req.Region, err)
-			return nil, err
+			return err
 		}
 	}
 
 	// delete resource data
+	deleteIDs := make([]string, 0)
 	for _, resItem := range resourceDBMap {
 		if _, ok := existIDMap[resItem.ID]; !ok {
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
 	if len(deleteIDs) > 0 {
-		if err = v.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(),
-			&dataservice.BatchDeleteReq{
-				Filter: tools.ContainersExpression("id", deleteIDs),
-			}); err != nil {
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("id", deleteIDs),
+		}
+		if err = v.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
 			logs.Errorf("[%s-vpc-subnet]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, "+
-				"err:%v", enumor.Azure, req.AccountID, req.Region, deleteIDs, err)
-			return nil, err
+				"err: %v", enumor.Azure, req.AccountID, req.Region, deleteIDs, err)
+			return err
 		}
 	}
-	return nil, nil
+	return nil
 }
 
 func (v vpc) filterAzureSubnetList(req *hcservice.ResourceSyncReq, list *types.AzureSubnetListResult,
-	resourceDBMap map[string]cloudcore.BaseSubnet,
-	createResources *[]cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt],
-	updateResources *[]cloud.SubnetUpdateReq[cloud.AzureSubnetUpdateExt], existIDMap map[string]bool) error {
+	resourceDBMap map[string]cloudcore.BaseSubnet) (createResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt],
+	updateResources []cloud.SubnetUpdateReq[cloud.AzureSubnetUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {
-		return fmt.Errorf("cloudapi vpcsubnetlist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
+		return nil, nil, nil,
+			fmt.Errorf("cloudapi vpcsubnetlist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
 	}
 
+	existIDMap = make(map[string]bool, 0)
 	for _, item := range list.Details {
 		// need compare and update subnet data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
@@ -522,7 +505,7 @@ func (v vpc) filterAzureSubnetList(req *hcservice.ResourceSyncReq, list *types.A
 			}
 			tmpRes.Memo = item.Memo
 
-			*updateResources = append(*updateResources, tmpRes)
+			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 		} else {
 			// need add subnet data
@@ -545,10 +528,10 @@ func (v vpc) filterAzureSubnetList(req *hcservice.ResourceSyncReq, list *types.A
 				tmpRes.Ipv6Cidr = []string{""}
 			}
 
-			*createResources = append(*createResources, tmpRes)
+			createResources = append(createResources, tmpRes)
 		}
 	}
-	return nil
+	return createResources, updateResources, existIDMap, nil
 }
 
 func (v vpc) batchCreateAzureSubnet(cts *rest.Contexts,
@@ -566,10 +549,10 @@ func (v vpc) batchCreateAzureSubnet(cts *rest.Contexts,
 			newResources = append(newResources, createResources[i*querySize:(i+1)*querySize]...)
 		}
 
-		if _, err := v.cs.DataService().Azure.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.SubnetBatchCreateReq[cloud.AzureSubnetCreateExt]{
-				Subnets: newResources,
-			}); err != nil {
+		createReq := &cloud.SubnetBatchCreateReq[cloud.AzureSubnetCreateExt]{
+			Subnets: newResources,
+		}
+		if _, err := v.cs.DataService().Azure.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
 			return err
 		}
 	}

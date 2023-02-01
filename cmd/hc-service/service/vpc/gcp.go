@@ -128,38 +128,33 @@ func (v vpc) GcpVpcSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	var (
-		vendorName = enumor.Gcp
-		rsp        = hcservice.ResourceSyncResult{
-			TaskID: uuid.UUID(),
-		}
-	)
-
 	// batch get vpc list from cloudapi.
 	list, err := v.BatchGetGcpVpcList(cts, req)
-	if err != nil || list == nil {
-		logs.Errorf("[%s-vpc] request cloudapi response failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+	if err != nil {
+		logs.Errorf("[%s-vpc] request cloudapi response failed. accountID:%s, region:%s, err: %v",
+			enumor.Gcp, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
 	// batch get vpc map from db.
-	resourceDBMap, err := v.BatchGetVpcMapFromDB(cts, req, vendorName)
+	resourceDBMap, err := v.BatchGetVpcMapFromDB(cts, req, enumor.Gcp)
 	if err != nil {
-		logs.Errorf("[%s-vpc] batch get vpcdblist failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+		logs.Errorf("[%s-vpc] batch get vpcdblist failed. accountID:%s, region:%s, err: %v",
+			enumor.Gcp, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
-	// batch compare vendor vpc list.
-	_, err = v.BatchCompareGcpVpcList(cts, req, list, resourceDBMap)
+	// batch sync vendor vpc list.
+	err = v.BatchSyncGcpVpcList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-vpc] compare api and dblist failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+		logs.Errorf("[%s-vpc] compare api and dblist failed. accountID:%s, region:%s, err: %v",
+			enumor.Gcp, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
-	return rsp, nil
+	return hcservice.ResourceSyncResult{
+		TaskID: uuid.UUID(),
+	}, nil
 }
 
 // BatchGetGcpVpcList batch get vpc list from cloudapi.
@@ -167,7 +162,7 @@ func (v vpc) BatchGetGcpVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 	var (
 		nextToken string
 		count     int64 = adcore.GcpQueryLimit
-		list            = &types.GcpVpcListResult{}
+		list            = new(types.GcpVpcListResult)
 	)
 
 	cli, err := v.ad.Gcp(cts.Kit, req.AccountID)
@@ -176,7 +171,7 @@ func (v vpc) BatchGetGcpVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 	}
 
 	for {
-		opt := &adcore.GcpListOption{}
+		opt := new(adcore.GcpListOption)
 		opt.Page = &adcore.GcpPage{
 			PageSize: count,
 		}
@@ -184,14 +179,18 @@ func (v vpc) BatchGetGcpVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 			opt.Page.PageToken = nextToken
 		}
 		tmpList, tmpErr := cli.ListVpc(cts.Kit, opt)
-		if tmpErr != nil || tmpList == nil {
-			logs.Errorf("[%s-vpc]batch get cloud api failed. accountID:%s, region:%s, nextToken:%s, err:%v",
+		if tmpErr != nil {
+			logs.Errorf("[%s-vpc]batch get cloud api failed. accountID:%s, region:%s, nextToken:%s, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, nextToken, tmpErr)
 			return nil, tmpErr
 		}
 
+		if len(tmpList.Details) == 0 {
+			break
+		}
+
 		list.Details = append(list.Details, tmpList.Details...)
-		if len(tmpList.Details) == 0 || len(tmpList.NextPageToken) == 0 {
+		if len(tmpList.NextPageToken) == 0 {
 			break
 		}
 		nextToken = tmpList.NextPageToken
@@ -199,70 +198,68 @@ func (v vpc) BatchGetGcpVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 	return list, nil
 }
 
-// BatchCompareGcpVpcList batch compare vendor vpc list.
-func (v vpc) BatchCompareGcpVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq, list *types.GcpVpcListResult,
-	resourceDBMap map[string]cloudcore.BaseVpc) (interface{}, error) {
-	var (
-		createResources []cloud.VpcCreateReq[cloud.GcpVpcCreateExt]
-		updateResources []cloud.VpcUpdateReq[cloud.GcpVpcUpdateExt]
-		existIDMap      = map[string]bool{}
-		deleteIDs       []string
-	)
-
-	err := v.filterGcpVpcList(req, list, resourceDBMap, &createResources, &updateResources, existIDMap)
+// BatchSyncGcpVpcList batch sync vendor vpc list.
+func (v vpc) BatchSyncGcpVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq, list *types.GcpVpcListResult,
+	resourceDBMap map[string]cloudcore.BaseVpc) error {
+	createResources, updateResources, existIDMap, err := v.filterGcpVpcList(req, list, resourceDBMap)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// update resource data
 	if len(updateResources) > 0 {
-		if err = v.cs.DataService().Gcp.Vpc.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.VpcBatchUpdateReq[cloud.GcpVpcUpdateExt]{
-				Vpcs: updateResources,
-			}); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db update failed. accountID:%s, region:%s, err:%v",
+		updateReq := &cloud.VpcBatchUpdateReq[cloud.GcpVpcUpdateExt]{
+			Vpcs: updateResources,
+		}
+		if err = v.cs.DataService().Gcp.Vpc.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
+			logs.Errorf("[%s-vpc]batch compare db update failed. accountID:%s, region:%s, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, err)
-			return nil, err
+			return err
 		}
 	}
 
 	// add resource data
 	if len(createResources) > 0 {
-		if _, err = v.cs.DataService().Gcp.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.VpcBatchCreateReq[cloud.GcpVpcCreateExt]{
-				Vpcs: createResources,
-			}); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db create failed. accountID:%s, region:%s, err:%v",
+		createReq := &cloud.VpcBatchCreateReq[cloud.GcpVpcCreateExt]{
+			Vpcs: createResources,
+		}
+		if _, err = v.cs.DataService().Gcp.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+			logs.Errorf("[%s-vpc]batch compare db create failed. accountID:%s, region:%s, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, err)
-			return nil, err
+			return err
 		}
 	}
 
 	// delete resource data
+	deleteIDs := make([]string, 0)
 	for _, resItem := range resourceDBMap {
 		if _, ok := existIDMap[resItem.ID]; !ok {
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
 	if len(deleteIDs) > 0 {
-		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), &dataservice.BatchDeleteReq{
+		deleteReq := &dataservice.BatchDeleteReq{
 			Filter: tools.ContainersExpression("id", deleteIDs),
-		}); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err:%v",
+		}
+		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, deleteIDs, err)
-			return nil, err
+			return err
 		}
 	}
-	return nil, nil
+	return nil
 }
 
+// filterGcpVpcList filter gcp vpc list
 func (v vpc) filterGcpVpcList(req *hcservice.ResourceSyncReq, list *types.GcpVpcListResult,
-	resourceDBMap map[string]cloudcore.BaseVpc, createResources *[]cloud.VpcCreateReq[cloud.GcpVpcCreateExt],
-	updateResources *[]cloud.VpcUpdateReq[cloud.GcpVpcUpdateExt], existIDMap map[string]bool) error {
+	resourceDBMap map[string]cloudcore.BaseVpc) (createResources []cloud.VpcCreateReq[cloud.GcpVpcCreateExt],
+	updateResources []cloud.VpcUpdateReq[cloud.GcpVpcUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {
-		return fmt.Errorf("cloudapi vpclist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
+		return nil, nil, nil,
+			fmt.Errorf("cloudapi vpclist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
 	}
 
+	existIDMap = make(map[string]bool, 0)
 	for _, item := range list.Details {
 		// need compare and update vpc data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
@@ -277,7 +274,7 @@ func (v vpc) filterGcpVpcList(req *hcservice.ResourceSyncReq, list *types.GcpVpc
 			tmpRes.Name = converter.ValToPtr(item.Name)
 			tmpRes.Memo = item.Memo
 
-			*updateResources = append(*updateResources, tmpRes)
+			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 		} else {
 			// need add vpc data
@@ -294,8 +291,8 @@ func (v vpc) filterGcpVpcList(req *hcservice.ResourceSyncReq, list *types.GcpVpc
 					RoutingMode:           item.Extension.RoutingMode,
 				},
 			}
-			*createResources = append(*createResources, tmpRes)
+			createResources = append(createResources, tmpRes)
 		}
 	}
-	return nil
+	return createResources, updateResources, existIDMap, nil
 }

@@ -126,41 +126,36 @@ func (v vpc) AwsVpcSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	if len(req.Region) == 0 {
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("region is required"))
+		return nil, errf.New(errf.InvalidParameter, "region is required")
 	}
-
-	var (
-		vendorName = enumor.Aws
-		rsp        = hcservice.ResourceSyncResult{
-			TaskID: uuid.UUID(),
-		}
-	)
 
 	// batch get vpc list from cloudapi.
 	list, err := v.BatchGetAwsVpcList(cts, req)
-	if err != nil || list == nil {
-		logs.Errorf("[%s-vpc] request cloudapi response failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+	if err != nil {
+		logs.Errorf("[%s-vpc] request cloudapi response failed. accountID:%s, region:%s, err: %v",
+			enumor.Aws, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
 	// batch get vpc map from db.
-	resourceDBMap, err := v.BatchGetVpcMapFromDB(cts, req, vendorName)
+	resourceDBMap, err := v.BatchGetVpcMapFromDB(cts, req, enumor.Aws)
 	if err != nil {
-		logs.Errorf("[%s-vpc] batch get vpcdblist failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+		logs.Errorf("[%s-vpc] batch get vpcdblist failed. accountID:%s, region:%s, err: %v",
+			enumor.Aws, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
-	// batch compare vendor vpc list.
-	_, err = v.BatchCompareAwsVpcList(cts, req, list, resourceDBMap)
+	// batch sync vendor vpc list.
+	err = v.BatchSyncAwsVpcList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-vpc] compare api and dblist failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+		logs.Errorf("[%s-vpc] compare api and dblist failed. accountID:%s, region:%s, err: %v",
+			enumor.Aws, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
-	return rsp, nil
+	return hcservice.ResourceSyncResult{
+		TaskID: uuid.UUID(),
+	}, nil
 }
 
 // BatchGetAwsVpcList batch get vpc list from cloudapi.
@@ -168,7 +163,7 @@ func (v vpc) BatchGetAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 	var (
 		nextToken string
 		count     int64 = adcore.AwsQueryLimit
-		list            = &types.AwsVpcListResult{}
+		list            = new(types.AwsVpcListResult)
 	)
 
 	cli, err := v.ad.Aws(cts.Kit, req.AccountID)
@@ -177,7 +172,7 @@ func (v vpc) BatchGetAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 	}
 
 	for {
-		opt := &adcore.AwsListOption{}
+		opt := new(adcore.AwsListOption)
 		opt.Region = req.Region
 		opt.Page = &adcore.AwsPage{
 			MaxResults: converter.ValToPtr(count),
@@ -186,8 +181,8 @@ func (v vpc) BatchGetAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 			opt.Page.NextToken = converter.ValToPtr(nextToken)
 		}
 		tmpList, tmpErr := cli.ListVpc(cts.Kit, opt)
-		if tmpErr != nil || tmpList == nil {
-			logs.Errorf("[%s]batch get cloud api failed. accountID:%s, region:%s, nextToken:%s, err:%v",
+		if tmpErr != nil {
+			logs.Errorf("[%s]batch get cloud api failed. accountID:%s, region:%s, nextToken:%s, err: %v",
 				enumor.Aws, req.AccountID, req.Region, nextToken, tmpErr)
 			return nil, tmpErr
 		}
@@ -201,8 +196,12 @@ func (v vpc) BatchGetAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 			}
 		}
 
+		if len(tmpList.Details) == 0 {
+			break
+		}
+
 		list.Details = append(list.Details, tmpList.Details...)
-		if len(tmpList.Details) == 0 || tmpList.NextToken == nil {
+		if tmpList.NextToken == nil {
 			break
 		}
 		nextToken = *tmpList.NextToken
@@ -210,70 +209,68 @@ func (v vpc) BatchGetAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 	return list, nil
 }
 
-// BatchCompareAwsVpcList batch compare vendor vpc list.
-func (v vpc) BatchCompareAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq, list *types.AwsVpcListResult,
-	resourceDBMap map[string]cloudcore.BaseVpc) (interface{}, error) {
-	var (
-		createResources []cloud.VpcCreateReq[cloud.AwsVpcCreateExt]
-		updateResources []cloud.VpcUpdateReq[cloud.AwsVpcUpdateExt]
-		existIDMap      = map[string]bool{}
-		deleteIDs       []string
-	)
-
-	err := v.filterAwsVpcList(req, list, resourceDBMap, &createResources, &updateResources, existIDMap)
+// BatchSyncAwsVpcList batch sync vendor vpc list.
+func (v vpc) BatchSyncAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq, list *types.AwsVpcListResult,
+	resourceDBMap map[string]cloudcore.BaseVpc) error {
+	createResources, updateResources, existIDMap, err := v.filterAwsVpcList(req, list, resourceDBMap)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// update resource data
 	if len(updateResources) > 0 {
-		if err = v.cs.DataService().Aws.Vpc.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.VpcBatchUpdateReq[cloud.AwsVpcUpdateExt]{
-				Vpcs: updateResources,
-			}); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db update failed. accountID:%s, region:%s, err:%v",
+		updateReq := &cloud.VpcBatchUpdateReq[cloud.AwsVpcUpdateExt]{
+			Vpcs: updateResources,
+		}
+		if err = v.cs.DataService().Aws.Vpc.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
+			logs.Errorf("[%s-vpc]batch compare db update failed. accountID:%s, region:%s, err: %v",
 				enumor.Aws, req.AccountID, req.Region, err)
-			return nil, err
+			return err
 		}
 	}
 
 	// add resource data
 	if len(createResources) > 0 {
-		if _, err = v.cs.DataService().Aws.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.VpcBatchCreateReq[cloud.AwsVpcCreateExt]{
-				Vpcs: createResources,
-			}); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db create failed. accountID:%s, region:%s, err:%v",
+		createReq := &cloud.VpcBatchCreateReq[cloud.AwsVpcCreateExt]{
+			Vpcs: createResources,
+		}
+		if _, err = v.cs.DataService().Aws.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+			logs.Errorf("[%s-vpc]batch compare db create failed. accountID:%s, region:%s, err: %v",
 				enumor.Aws, req.AccountID, req.Region, err)
-			return nil, err
+			return err
 		}
 	}
 
 	// delete resource data
+	deleteIDs := make([]string, 0)
 	for _, resItem := range resourceDBMap {
 		if _, ok := existIDMap[resItem.ID]; !ok {
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
 	if len(deleteIDs) > 0 {
-		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), &dataservice.BatchDeleteReq{
+		deleteReq := &dataservice.BatchDeleteReq{
 			Filter: tools.ContainersExpression("id", deleteIDs),
-		}); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err:%v",
+		}
+		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
 				enumor.Aws, req.AccountID, req.Region, deleteIDs, err)
-			return nil, err
+			return err
 		}
 	}
-	return nil, nil
+	return nil
 }
 
+// filterAwsVpcList filter aws vpc list
 func (v vpc) filterAwsVpcList(req *hcservice.ResourceSyncReq, list *types.AwsVpcListResult,
-	resourceDBMap map[string]cloudcore.BaseVpc, createResources *[]cloud.VpcCreateReq[cloud.AwsVpcCreateExt],
-	updateResources *[]cloud.VpcUpdateReq[cloud.AwsVpcUpdateExt], existIDMap map[string]bool) error {
+	resourceDBMap map[string]cloudcore.BaseVpc) (createResources []cloud.VpcCreateReq[cloud.AwsVpcCreateExt],
+	updateResources []cloud.VpcUpdateReq[cloud.AwsVpcUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {
-		return fmt.Errorf("cloudapi vpclist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
+		return nil, nil, nil,
+			fmt.Errorf("cloudapi vpclist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
 	}
 
+	existIDMap = make(map[string]bool, 0)
 	for _, item := range list.Details {
 		// need compare and update vpc data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
@@ -302,7 +299,7 @@ func (v vpc) filterAwsVpcList(req *hcservice.ResourceSyncReq, list *types.AwsVpc
 				}
 				tmpRes.Extension.Cidr = tmpCidrs
 			}
-			*updateResources = append(*updateResources, tmpRes)
+			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 		} else {
 			// need add vpc data
@@ -334,8 +331,8 @@ func (v vpc) filterAwsVpcList(req *hcservice.ResourceSyncReq, list *types.AwsVpc
 				}
 				tmpRes.Extension.Cidr = tmpCidrs
 			}
-			*createResources = append(*createResources, tmpRes)
+			createResources = append(createResources, tmpRes)
 		}
 	}
-	return nil
+	return createResources, updateResources, existIDMap, nil
 }

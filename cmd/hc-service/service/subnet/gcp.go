@@ -137,41 +137,36 @@ func (s subnet) GcpSubnetSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	if len(req.Region) == 0 {
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("region is required"))
+		return nil, errf.New(errf.InvalidParameter, "region is required")
 	}
-
-	var (
-		vendorName = enumor.Gcp
-		rsp        = hcservice.ResourceSyncResult{
-			TaskID: uuid.UUID(),
-		}
-	)
 
 	// batch get subnet list from cloudapi.
 	list, err := s.BatchGetGcpSubnetList(cts, req)
-	if err != nil || list == nil {
-		logs.Errorf("[%s-subnet] request cloudapi response failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+	if err != nil {
+		logs.Errorf("[%s-subnet] request cloudapi response failed. accountID:%s, region:%s, err: %v",
+			enumor.Gcp, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
 	// batch get subnet map from db.
-	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, vendorName, "")
+	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, enumor.Gcp, "")
 	if err != nil {
-		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID:%s, region:%s, err: %v",
+			enumor.Gcp, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
-	// batch compare vendor subnet list.
-	_, err = s.BatchCompareGcpSubnetList(cts, req, list, resourceDBMap)
+	// batch sync vendor subnet list.
+	err = s.BatchSyncGcpSubnetList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-subnet] compare api and dblist failed. accountID:%s, region:%s, err:%v",
-			vendorName, req.AccountID, req.Region, err)
+		logs.Errorf("[%s-subnet] compare api and dblist failed. accountID:%s, region:%s, err: %v",
+			enumor.Gcp, req.AccountID, req.Region, err)
 		return nil, err
 	}
 
-	return rsp, nil
+	return hcservice.ResourceSyncResult{
+		TaskID: uuid.UUID(),
+	}, nil
 }
 
 // BatchGetGcpSubnetList batch get subnet list from cloudapi.
@@ -180,7 +175,7 @@ func (s subnet) BatchGetGcpSubnetList(cts *rest.Contexts, req *hcservice.Resourc
 	var (
 		nextToken string
 		count     int64 = adcore.GcpQueryLimit
-		list            = &types.GcpSubnetListResult{}
+		list            = new(types.GcpSubnetListResult)
 	)
 
 	cli, err := s.ad.Gcp(cts.Kit, req.AccountID)
@@ -199,14 +194,18 @@ func (s subnet) BatchGetGcpSubnetList(cts *rest.Contexts, req *hcservice.Resourc
 			opt.Page.PageToken = nextToken
 		}
 		tmpList, tmpErr := cli.ListSubnet(cts.Kit, opt)
-		if tmpErr != nil || tmpList == nil {
-			logs.Errorf("[%s-subnet]batch get cloud api failed. accountID:%s, region:%s, nextToken:%s, err:%v",
+		if tmpErr != nil {
+			logs.Errorf("[%s-subnet]batch get cloud api failed. accountID:%s, region:%s, nextToken:%s, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, nextToken, tmpErr)
 			return nil, tmpErr
 		}
 
+		if len(tmpList.Details) == 0 {
+			break
+		}
+
 		list.Details = append(list.Details, tmpList.Details...)
-		if len(tmpList.Details) == 0 || len(tmpList.NextPageToken) == 0 {
+		if len(tmpList.NextPageToken) == 0 {
 			break
 		}
 		nextToken = tmpList.NextPageToken
@@ -214,30 +213,23 @@ func (s subnet) BatchGetGcpSubnetList(cts *rest.Contexts, req *hcservice.Resourc
 	return list, nil
 }
 
-// BatchCompareGcpSubnetList batch compare vendor subnet list.
-func (s subnet) BatchCompareGcpSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
-	list *types.GcpSubnetListResult, resourceDBMap map[string]cloudcore.BaseSubnet) (interface{}, error) {
-	var (
-		createResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt]
-		updateResources []cloud.SubnetUpdateReq[cloud.GcpSubnetUpdateExt]
-		existIDMap      = map[string]bool{}
-		deleteIDs       []string
-	)
-
-	err := s.filterGcpSubnetList(req, list, resourceDBMap, &createResources, &updateResources, existIDMap)
+// BatchSyncGcpSubnetList batch sync vendor subnet list.
+func (s subnet) BatchSyncGcpSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
+	list *types.GcpSubnetListResult, resourceDBMap map[string]cloudcore.BaseSubnet) error {
+	createResources, updateResources, existIDMap, err := s.filterGcpSubnetList(req, list, resourceDBMap)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// update resource data
 	if len(updateResources) > 0 {
-		if err = s.cs.DataService().Gcp.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.SubnetBatchUpdateReq[cloud.GcpSubnetUpdateExt]{
-				Subnets: updateResources,
-			}); err != nil {
-			logs.Errorf("[%s-subnet]batch compare db update failed. accountID:%s, region:%s, err:%v",
+		updateReq := &cloud.SubnetBatchUpdateReq[cloud.GcpSubnetUpdateExt]{
+			Subnets: updateResources,
+		}
+		if err = s.cs.DataService().Gcp.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
+			logs.Errorf("[%s-subnet]batch compare db update failed. accountID:%s, region:%s, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, err)
-			return nil, err
+			return err
 		}
 	}
 
@@ -245,40 +237,42 @@ func (s subnet) BatchCompareGcpSubnetList(cts *rest.Contexts, req *hcservice.Res
 	if len(createResources) > 0 {
 		err = s.batchCreateGcpSubnet(cts, createResources)
 		if err != nil {
-			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err:%v",
+			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, err)
-			return nil, err
+			return err
 		}
 	}
 
 	// delete resource data
+	deleteIDs := make([]string, 0)
 	for _, resItem := range resourceDBMap {
 		if _, ok := existIDMap[resItem.ID]; !ok {
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
 	if len(deleteIDs) > 0 {
-		if err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(),
-			&dataservice.BatchDeleteReq{
-				Filter: tools.ContainersExpression("id", deleteIDs),
-			}); err != nil {
-			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err:%v",
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("id", deleteIDs),
+		}
+		if err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, deleteIDs, err)
-			return nil, err
+			return err
 		}
 	}
-	return nil, nil
+	return nil
 }
 
-// filterGcpSubnetList filter gcp subnet
+// filterGcpSubnetList filter gcp subnet list
 func (s subnet) filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.GcpSubnetListResult,
-	resourceDBMap map[string]cloudcore.BaseSubnet,
-	createResources *[]cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt],
-	updateResources *[]cloud.SubnetUpdateReq[cloud.GcpSubnetUpdateExt], existIDMap map[string]bool) error {
+	resourceDBMap map[string]cloudcore.BaseSubnet) (createResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt],
+	updateResources []cloud.SubnetUpdateReq[cloud.GcpSubnetUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {
-		return fmt.Errorf("cloudapi subnetlist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
+		return nil, nil, nil,
+			fmt.Errorf("cloudapi subnetlist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
 	}
 
+	existIDMap = make(map[string]bool, 0)
 	for _, item := range list.Details {
 		// need compare and update subnet data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
@@ -301,7 +295,7 @@ func (s subnet) filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.
 			}
 			tmpRes.Memo = item.Memo
 
-			*updateResources = append(*updateResources, tmpRes)
+			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 		} else {
 			// need add subnet data
@@ -326,10 +320,10 @@ func (s subnet) filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.
 			} else {
 				tmpRes.Ipv6Cidr = []string{""}
 			}
-			*createResources = append(*createResources, tmpRes)
+			createResources = append(createResources, tmpRes)
 		}
 	}
-	return nil
+	return createResources, updateResources, existIDMap, nil
 }
 
 func (s subnet) batchCreateGcpSubnet(cts *rest.Contexts,
@@ -347,10 +341,10 @@ func (s subnet) batchCreateGcpSubnet(cts *rest.Contexts,
 			newResources = append(newResources, createResources[i*querySize:(i+1)*querySize]...)
 		}
 
-		if _, err := s.cs.DataService().Gcp.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(),
-			&cloud.SubnetBatchCreateReq[cloud.GcpSubnetCreateExt]{
-				Subnets: newResources,
-			}); err != nil {
+		createReq := &cloud.SubnetBatchCreateReq[cloud.GcpSubnetCreateExt]{
+			Subnets: newResources,
+		}
+		if _, err := s.cs.DataService().Gcp.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
 			return err
 		}
 	}
