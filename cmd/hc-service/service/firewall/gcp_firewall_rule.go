@@ -272,7 +272,7 @@ func (f *firewall) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, error
 	return result, nil
 }
 
-// SyncGcpFirewallRule sync gcp to hcm v1.0
+// SyncGcpFirewallRule sync gcp to hcm
 func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.SecurityGroupSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -289,11 +289,10 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 			Limit: daotypes.DefaultMaxPageLimit,
 		},
 	}
-	ids := []string{}
+	ids := make([]string, 0)
 	for {
-		var results *protocloud.GcpFirewallRuleListResult
-		var err error
-		if results, err = f.dataCli.Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), listReq); err != nil {
+		results, err := f.dataCli.Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+		if err != nil {
 			logs.Errorf("request dataservice list gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
@@ -305,6 +304,7 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 			break
 		}
 	}
+
 	if len(ids) > 0 {
 		req := &protocloud.GcpFirewallRuleBatchDeleteReq{
 			Filter: tools.ContainersExpression("id", ids),
@@ -315,7 +315,11 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 		}
 	}
 
-	f.CreateGcpFirewallRule(cts)
+	_, err := f.CreateGcpFirewallRule(cts)
+	if err != nil {
+		logs.Errorf("create gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
