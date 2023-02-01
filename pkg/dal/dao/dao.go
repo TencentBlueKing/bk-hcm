@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
+	"hcm/pkg/dal/dao/cloud/region"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/kit"
@@ -90,7 +91,9 @@ type Set interface {
 	AccountBizRel() cloud.AccountBizRel
 	Vpc() cloud.Vpc
 	Subnet() cloud.Subnet
-
+	TcloudRegion() region.TcloudRegion
+	AwsRegion() region.AwsRegion
+	GcpRegion() region.GcpRegion
 	Txn() *Txn
 }
 
@@ -279,4 +282,19 @@ func (s *set) AzureSGRule() cloud.AzureSGRule {
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}
+}
+
+// TcloudRegion returns tcloud region dao.
+func (s *set) TcloudRegion() region.TcloudRegion {
+	return region.NewTcloudRegionDao(s.orm, s.idGen)
+}
+
+// AwsRegion returns aws region dao.
+func (s *set) AwsRegion() region.AwsRegion {
+	return region.NewAwsRegionDao(s.orm, s.idGen)
+}
+
+// GcpRegion returns gcp region dao.
+func (s *set) GcpRegion() region.GcpRegion {
+	return region.NewGcpRegionDao(s.orm, s.idGen)
 }

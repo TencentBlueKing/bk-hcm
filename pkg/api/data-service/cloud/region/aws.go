@@ -1,0 +1,149 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+package region
+
+import (
+	"errors"
+	"fmt"
+	"hcm/pkg/criteria/enumor"
+
+	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
+)
+
+// -------------------------- Create --------------------------
+
+// AwsRegionCreateReq define aws region create request.
+type AwsRegionCreateReq struct {
+	Regions []AwsRegionBatchCreate `json:"rules" validate:"required"`
+}
+
+// Validate aws region create request.
+func (req *AwsRegionCreateReq) Validate() error {
+	if len(req.Regions) == 0 {
+		return errors.New("regions is required")
+	}
+
+	if len(req.Regions) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
+// AwsRegionBatchCreate define aws region rule when create.
+type AwsRegionBatchCreate struct {
+	Vendor      enumor.Vendor `json:"vendor"`
+	RegionID    string        `json:"region_id"`
+	RegionName  string        `json:"region_name"`
+	IsAvailable int64         `json:"is_available"`
+	Creator     string        `json:"creator"`
+}
+
+// -------------------------- Update --------------------------
+
+// AwsRegionBatchUpdateReq define aws region batch update request.
+type AwsRegionBatchUpdateReq struct {
+	Regions []AwsRegionBatchUpdate `json:"rules" validate:"required"`
+}
+
+// AwsRegionBatchUpdate aws region batch update option.
+type AwsRegionBatchUpdate struct {
+	ID          string        `json:"id"`
+	Vendor      enumor.Vendor `json:"vendor"`
+	RegionID    string        `json:"region_id"`
+	RegionName  string        `json:"region_name"`
+	IsAvailable int64         `json:"is_available"`
+	Creator     string        `json:"creator"`
+	Reviser     string        `json:"reviser"`
+}
+
+// Validate aws region batch update request.
+func (req *AwsRegionBatchUpdateReq) Validate() error {
+	if len(req.Regions) == 0 {
+		return errors.New("regions is required")
+	}
+
+	if len(req.Regions) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
+// -------------------------- Get --------------------------
+
+// AwsRegionBaseInfoBatchUpdateReq defines batch update region base info request.
+type AwsRegionBaseInfoBatchUpdateReq struct {
+	Regions []AwsRegionBaseInfoUpdateReq `json:"regions" validate:"required"`
+}
+
+// Validate AwsRegionBaseInfoBatchUpdateReq.
+func (u *AwsRegionBaseInfoBatchUpdateReq) Validate() error {
+	return validator.Validate.Struct(u)
+}
+
+// AwsRegionBaseInfoUpdateReq defines update region base info request.
+type AwsRegionBaseInfoUpdateReq struct {
+	IDs  []string              `json:"id" validate:"required"`
+	Data *AwsRegionBatchUpdate `json:"data" validate:"required"`
+}
+
+// -------------------------- List --------------------------
+
+// AwsRegionListReq aws region list req.
+type AwsRegionListReq struct {
+	Field  []string           `json:"field" validate:"omitempty"`
+	Filter *filter.Expression `json:"filter" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
+}
+
+// Validate aws region list request.
+func (req *AwsRegionListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsRegionListResult define aws region list result.
+type AwsRegionListResult struct {
+	Count   uint64            `json:"count,omitempty"`
+	Details []cloud.AwsRegion `json:"details,omitempty"`
+}
+
+// AwsRegionListResp define aws region list resp.
+type AwsRegionListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *AwsRegionListResult `json:"data"`
+}
+
+// -------------------------- Delete --------------------------
+
+// AwsRegionBatchDeleteReq aws region delete request.
+type AwsRegionBatchDeleteReq struct {
+	Filter *filter.Expression `json:"filter" validate:"required"`
+}
+
+// Validate aws region delete request.
+func (req *AwsRegionBatchDeleteReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

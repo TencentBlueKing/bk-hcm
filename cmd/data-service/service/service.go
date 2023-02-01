@@ -31,6 +31,7 @@ import (
 	"hcm/cmd/data-service/service/capability"
 	"hcm/cmd/data-service/service/cloud"
 	"hcm/cmd/data-service/service/cloud/disk"
+	"hcm/cmd/data-service/service/cloud/region"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
@@ -51,13 +52,13 @@ type Service struct {
 
 // NewService create a service instance.
 func NewService() (*Service, error) {
-	dao, err := dao.NewDaoSet(cc.DataService().Database)
+	dsDao, err := dao.NewDaoSet(cc.DataService().Database)
 	if err != nil {
 		return nil, err
 	}
 
 	svr := &Service{
-		dao: dao,
+		dao: dsDao,
 	}
 
 	return svr, nil
@@ -125,25 +126,28 @@ func (s *Service) apiSet() *restful.Container {
 	ws.Path("/api/v1/data")
 	ws.Produces(restful.MIME_JSON)
 
-	cap := &capability.Capability{
+	capObj := &capability.Capability{
 		WebService: ws,
 		Dao:        s.dao,
 	}
 
-	cloud.InitAccountService(cap)
-	cloud.InitSecurityGroupService(cap)
-	cloud.InitGcpFirewallRuleService(cap)
-	cloud.InitVpcService(cap)
-	cloud.InitSubnetService(cap)
-	cloud.InitCloudService(cap)
-	auth.InitAuthService(cap)
-	disk.InitDiskService(cap)
+	cloud.InitAccountService(capObj)
+	cloud.InitSecurityGroupService(capObj)
+	cloud.InitGcpFirewallRuleService(capObj)
+	cloud.InitVpcService(capObj)
+	cloud.InitSubnetService(capObj)
+	cloud.InitCloudService(capObj)
+	auth.InitAuthService(capObj)
+	disk.InitDiskService(capObj)
+	region.InitTcloudRegionService(capObj)
+	region.InitAwsRegionService(capObj)
+	region.InitGcpRegionService(capObj)
 
-	return restful.NewContainer().Add(cap.WebService)
+	return restful.NewContainer().Add(capObj.WebService)
 }
 
 // Healthz check whether the service is healthy.
-func (s *Service) Healthz(w http.ResponseWriter, req *http.Request) {
+func (s *Service) Healthz(w http.ResponseWriter, _ *http.Request) {
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
 	return
 }

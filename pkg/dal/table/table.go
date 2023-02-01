@@ -49,8 +49,6 @@ const (
 	SecurityGroupTagTable Name = "security_group_tag"
 	// SecurityGroupSubnetTable is security group subnet table's name.
 	SecurityGroupSubnetTable Name = "security_group_subnet"
-	// SecurityGroupBizRelTable is security group and biz rel table's name.
-	SecurityGroupBizRelTable Name = "security_group_biz_rel"
 	// SGSecurityGroupRuleTable is security group and rule rel table's name.
 	SGSecurityGroupRuleTable = "security_group_security_group_rule"
 	// TCloudSecurityGroupRuleTable is tcloud security group rule table's name.
@@ -69,6 +67,12 @@ const (
 	VpcTable Name = "vpc"
 	// SubnetTable is subnet table's name.
 	SubnetTable Name = "subnet"
+	// TCloudRegionTable is tcloud region table's name.
+	TCloudRegionTable Name = "tcloud_region"
+	// AwsRegionTable is aws region table's name.
+	AwsRegionTable Name = "aws_region"
+	// GcpRegionTable is gcp region table's name.
+	GcpRegionTable Name = "gcp_region"
 )
 
 // Validate whether the table name is valid or not.
@@ -96,6 +100,9 @@ func (n Name) Validate() error {
 	case AzureSecurityGroupRuleTable:
 	case SGNetworkInterfaceRelTable:
 	case GcpFirewallRuleTable:
+	case TCloudRegionTable:
+	case AwsRegionTable:
+	case GcpRegionTable:
 	default:
 		return fmt.Errorf("unknown table name: %s", n)
 	}
