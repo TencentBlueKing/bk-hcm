@@ -624,7 +624,7 @@ func (g *securityGroup) diffTCloudSGRuleSyncAdd(cts *rest.Contexts, ids []string
 	return nil
 }
 
-// genTCloudSGRuleSpecByType
+// genTCloudSGRuleSpecByType gen TCloudSecurityGroupRule struct
 func genTCloudSGRuleSpecByType(policy *vpc.SecurityGroupPolicy, version string, typ enumor.SecurityGroupRuleType,
 	opt *syncSecurityGroupRuleOption) *corecloud.TCloudSecurityGroupRule {
 
@@ -680,51 +680,10 @@ func (g *securityGroup) diffTCloudSGRuleSyncUpdate(cts *rest.Contexts, updateClo
 			logs.Errorf("request adaptor to list tcloud security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
-		rules := []protocloud.TCloudSGRuleBatchUpdate{}
-		for _, rule := range cloudRules.Egress {
-			rID, err := g.getTCloudSGRuleBy(cts, sgID, *rule.PolicyIndex, id, enumor.Egress)
-			if err != nil {
-				continue
-			}
-			if *rID.Protocol == *rule.Protocol &&
-				*rID.Port == *rule.Port &&
-				*rID.IPv4Cidr == *rule.CidrBlock &&
-				*rID.IPv6Cidr == *rule.Ipv6CidrBlock &&
-				*rID.Memo == *rule.PolicyDescription {
-				continue
-			}
-			rules = append(rules, protocloud.TCloudSGRuleBatchUpdate{
-				ID:       rID.ID,
-				Protocol: rule.Protocol,
-				Port:     rule.Port,
-				IPv4Cidr: rule.CidrBlock,
-				IPv6Cidr: rule.Ipv6CidrBlock,
-				Memo:     rule.PolicyDescription,
-			})
-		}
-		for _, rule := range cloudRules.Ingress {
-			rID, err := g.getTCloudSGRuleBy(cts, sgID, *rule.PolicyIndex, id, enumor.Ingress)
-			if err != nil {
-				continue
-			}
-			if *rID.Protocol == *rule.Protocol &&
-				*rID.Port == *rule.Port &&
-				*rID.IPv4Cidr == *rule.CidrBlock &&
-				*rID.IPv6Cidr == *rule.Ipv6CidrBlock &&
-				*rID.Memo == *rule.PolicyDescription {
-				continue
-			}
-			rules = append(rules, protocloud.TCloudSGRuleBatchUpdate{
-				ID:       rID.ID,
-				Protocol: rule.Protocol,
-				Port:     rule.Port,
-				IPv4Cidr: rule.CidrBlock,
-				IPv6Cidr: rule.Ipv6CidrBlock,
-				Memo:     rule.PolicyDescription,
-			})
-		}
+
+		list := g.genTCloudRulesList(cloudRules, cts, sgID, id)
 		req := &protocloud.TCloudSGRuleBatchUpdateReq{
-			Rules: rules,
+			Rules: list,
 		}
 		if len(req.Rules) <= 0 {
 			continue
@@ -738,6 +697,57 @@ func (g *securityGroup) diffTCloudSGRuleSyncUpdate(cts *rest.Contexts, updateClo
 	}
 
 	return nil
+}
+
+// genTCloudRulesList gen protocloud.TCloudSGRuleBatchUpdate list
+func (g *securityGroup) genTCloudRulesList(cloudRules *vpc.SecurityGroupPolicySet, cts *rest.Contexts,
+	sgID string, id string) []protocloud.TCloudSGRuleBatchUpdate {
+	list := make([]protocloud.TCloudSGRuleBatchUpdate, 0)
+	for _, rule := range cloudRules.Egress {
+		rID, err := g.getTCloudSGRuleBy(cts, sgID, *rule.PolicyIndex, id, enumor.Egress)
+		if err != nil {
+			// 忽略云上存在但是db不存在情况
+			continue
+		}
+		if *rID.Protocol == *rule.Protocol &&
+			*rID.Port == *rule.Port &&
+			*rID.IPv4Cidr == *rule.CidrBlock &&
+			*rID.IPv6Cidr == *rule.Ipv6CidrBlock &&
+			*rID.Memo == *rule.PolicyDescription {
+			continue
+		}
+		list = append(list, protocloud.TCloudSGRuleBatchUpdate{
+			ID:       rID.ID,
+			Protocol: rule.Protocol,
+			Port:     rule.Port,
+			IPv4Cidr: rule.CidrBlock,
+			IPv6Cidr: rule.Ipv6CidrBlock,
+			Memo:     rule.PolicyDescription,
+		})
+	}
+	for _, rule := range cloudRules.Ingress {
+		rID, err := g.getTCloudSGRuleBy(cts, sgID, *rule.PolicyIndex, id, enumor.Ingress)
+		if err != nil {
+			continue
+		}
+		if *rID.Protocol == *rule.Protocol &&
+			*rID.Port == *rule.Port &&
+			*rID.IPv4Cidr == *rule.CidrBlock &&
+			*rID.IPv6Cidr == *rule.Ipv6CidrBlock &&
+			*rID.Memo == *rule.PolicyDescription {
+			continue
+		}
+		list = append(list, protocloud.TCloudSGRuleBatchUpdate{
+			ID:       rID.ID,
+			Protocol: rule.Protocol,
+			Port:     rule.Port,
+			IPv4Cidr: rule.CidrBlock,
+			IPv6Cidr: rule.Ipv6CidrBlock,
+			Memo:     rule.PolicyDescription,
+		})
+	}
+
+	return list
 }
 
 // getTCloudSGRuleBy

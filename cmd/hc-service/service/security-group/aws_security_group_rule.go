@@ -33,6 +33,8 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // BatchCreateAwsSGRule batch create aws security group rule.
@@ -336,40 +338,15 @@ func (g *securityGroup) diffAwsSGRuleSyncAdd(cts *rest.Contexts, ids []string,
 			return err
 		}
 
-		list := make([]protocloud.AwsSGRuleBatchCreate, 0, len(rules))
-		for _, rule := range rules {
-			one := protocloud.AwsSGRuleBatchCreate{
-				CloudID:              *rule.SecurityGroupRuleId,
-				IPv4Cidr:             rule.CidrIpv4,
-				IPv6Cidr:             rule.CidrIpv6,
-				Memo:                 rule.Description,
-				FromPort:             *rule.FromPort,
-				ToPort:               *rule.ToPort,
-				Protocol:             rule.IpProtocol,
-				CloudPrefixListID:    rule.PrefixListId,
-				CloudSecurityGroupID: *rule.GroupId,
-				CloudGroupOwnerID:    *rule.GroupOwnerId,
-				AccountID:            req.AccountID,
-				Region:               sg.Region,
-				SecurityGroupID:      id,
-			}
-			if *rule.IsEgress {
-				one.Type = enumor.Egress
-			} else {
-				one.Type = enumor.Ingress
-			}
-			if rule.ReferencedGroupInfo != nil {
-				one.CloudTargetSecurityGroupID = rule.ReferencedGroupInfo.GroupId
-			}
-			list = append(list, one)
-		}
-
+		list := genAwsRulesList(rules, req, id)
 		createReq := &protocloud.AwsSGRuleCreateReq{
 			Rules: list,
 		}
+
 		if len(createReq.Rules) <= 0 {
 			continue
 		}
+
 		_, err = g.dataCli.Aws.SecurityGroup.BatchCreateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), createReq, id)
 		if err != nil {
 			return err
@@ -377,6 +354,39 @@ func (g *securityGroup) diffAwsSGRuleSyncAdd(cts *rest.Contexts, ids []string,
 	}
 
 	return nil
+}
+
+// genAwsRules gen aws rule list
+func genAwsRulesList(rules []*ec2.SecurityGroupRule, req *proto.SecurityGroupSyncReq,
+	id string) []protocloud.AwsSGRuleBatchCreate {
+	list := make([]protocloud.AwsSGRuleBatchCreate, 0, len(rules))
+	for _, rule := range rules {
+		one := protocloud.AwsSGRuleBatchCreate{
+			CloudID:              *rule.SecurityGroupRuleId,
+			IPv4Cidr:             rule.CidrIpv4,
+			IPv6Cidr:             rule.CidrIpv6,
+			Memo:                 rule.Description,
+			FromPort:             *rule.FromPort,
+			ToPort:               *rule.ToPort,
+			Protocol:             rule.IpProtocol,
+			CloudPrefixListID:    rule.PrefixListId,
+			CloudSecurityGroupID: *rule.GroupId,
+			CloudGroupOwnerID:    *rule.GroupOwnerId,
+			AccountID:            req.AccountID,
+			Region:               req.Region,
+			SecurityGroupID:      id,
+		}
+		if *rule.IsEgress {
+			one.Type = enumor.Egress
+		} else {
+			one.Type = enumor.Ingress
+		}
+		if rule.ReferencedGroupInfo != nil {
+			one.CloudTargetSecurityGroupID = rule.ReferencedGroupInfo.GroupId
+		}
+		list = append(list, one)
+	}
+	return list
 }
 
 // diffAwsSGRuleSyncUpdate update aws security group rule.
@@ -402,54 +412,7 @@ func (g *securityGroup) diffAwsSGRuleSyncUpdate(cts *rest.Contexts, updateCloudI
 			return err
 		}
 
-		list := make([]protocloud.AwsSGRuleUpdate, 0, len(rules))
-		for _, rule := range rules {
-			cOne, _ := g.getAwsSGRuleByCid(cts, *rule.SecurityGroupRuleId, sgID)
-			if cOne == nil {
-				continue
-			}
-			if cOne.CloudID == *rule.SecurityGroupRuleId &&
-				cOne.IPv4Cidr == rule.CidrIpv4 &&
-				cOne.IPv6Cidr == rule.CidrIpv6 &&
-				cOne.Memo == rule.Description &&
-				cOne.FromPort == *rule.FromPort &&
-				cOne.ToPort == *rule.ToPort &&
-				cOne.Protocol == rule.IpProtocol &&
-				cOne.CloudPrefixListID == rule.PrefixListId &&
-				cOne.CloudSecurityGroupID == *rule.GroupId &&
-				cOne.CloudGroupOwnerID == *rule.GroupOwnerId {
-				continue
-			}
-			one := protocloud.AwsSGRuleUpdate{
-				ID:                   cOne.ID,
-				CloudID:              *rule.SecurityGroupRuleId,
-				IPv4Cidr:             rule.CidrIpv4,
-				IPv6Cidr:             rule.CidrIpv6,
-				Memo:                 rule.Description,
-				FromPort:             *rule.FromPort,
-				ToPort:               *rule.ToPort,
-				Protocol:             rule.IpProtocol,
-				CloudPrefixListID:    rule.PrefixListId,
-				CloudSecurityGroupID: *rule.GroupId,
-				CloudGroupOwnerID:    *rule.GroupOwnerId,
-				AccountID:            req.AccountID,
-				Region:               req.Region,
-				SecurityGroupID:      sgID,
-			}
-
-			if *rule.IsEgress {
-				one.Type = enumor.Egress
-			} else {
-				one.Type = enumor.Ingress
-			}
-
-			if rule.ReferencedGroupInfo != nil {
-				one.CloudTargetSecurityGroupID = rule.ReferencedGroupInfo.GroupId
-			}
-
-			list = append(list, one)
-		}
-
+		list := g.genAwsUpdateRulesList(rules, req, sgID, cts)
 		createReq := &protocloud.AwsSGRuleBatchUpdateReq{
 			Rules: list,
 		}
@@ -461,7 +424,65 @@ func (g *securityGroup) diffAwsSGRuleSyncUpdate(cts *rest.Contexts, updateCloudI
 			return err
 		}
 	}
+
 	return nil
+}
+
+// genAwsUpdateRulesList gen AwsSGRuleUpdate list
+func (g *securityGroup) genAwsUpdateRulesList(rules []*ec2.SecurityGroupRule, req *proto.SecurityGroupSyncReq,
+	sgID string, cts *rest.Contexts) []protocloud.AwsSGRuleUpdate {
+
+	list := make([]protocloud.AwsSGRuleUpdate, 0, len(rules))
+
+	for _, rule := range rules {
+		cOne, _ := g.getAwsSGRuleByCid(cts, *rule.SecurityGroupRuleId, sgID)
+		if cOne == nil {
+			// 忽略云上存在但是db不存在情况
+			continue
+		}
+		if cOne.CloudID == *rule.SecurityGroupRuleId &&
+			cOne.IPv4Cidr == rule.CidrIpv4 &&
+			cOne.IPv6Cidr == rule.CidrIpv6 &&
+			cOne.Memo == rule.Description &&
+			cOne.FromPort == *rule.FromPort &&
+			cOne.ToPort == *rule.ToPort &&
+			cOne.Protocol == rule.IpProtocol &&
+			cOne.CloudPrefixListID == rule.PrefixListId &&
+			cOne.CloudSecurityGroupID == *rule.GroupId &&
+			cOne.CloudGroupOwnerID == *rule.GroupOwnerId {
+			continue
+		}
+		one := protocloud.AwsSGRuleUpdate{
+			ID:                   cOne.ID,
+			CloudID:              *rule.SecurityGroupRuleId,
+			IPv4Cidr:             rule.CidrIpv4,
+			IPv6Cidr:             rule.CidrIpv6,
+			Memo:                 rule.Description,
+			FromPort:             *rule.FromPort,
+			ToPort:               *rule.ToPort,
+			Protocol:             rule.IpProtocol,
+			CloudPrefixListID:    rule.PrefixListId,
+			CloudSecurityGroupID: *rule.GroupId,
+			CloudGroupOwnerID:    *rule.GroupOwnerId,
+			AccountID:            req.AccountID,
+			Region:               req.Region,
+			SecurityGroupID:      sgID,
+		}
+
+		if *rule.IsEgress {
+			one.Type = enumor.Egress
+		} else {
+			one.Type = enumor.Ingress
+		}
+
+		if rule.ReferencedGroupInfo != nil {
+			one.CloudTargetSecurityGroupID = rule.ReferencedGroupInfo.GroupId
+		}
+
+		list = append(list, one)
+	}
+
+	return list
 }
 
 // getAwsSGRuleByCid

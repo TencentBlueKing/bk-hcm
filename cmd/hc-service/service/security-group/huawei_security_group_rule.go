@@ -34,6 +34,8 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
 
 // CreateHuaWeiSGRule create huawei security group rule.
@@ -240,30 +242,11 @@ func (g *securityGroup) diffHuaWeiSGRuleSyncAdd(cts *rest.Contexts, ids []string
 			return err
 		}
 
+		list := genHuaWeiRuleList(rules, req, sg.CloudID, id)
 		createReq := &protocloud.HuaWeiSGRuleCreateReq{
-			Rules: []protocloud.HuaWeiSGRuleBatchCreate{},
+			Rules: list,
 		}
-		for _, sgRule := range *rules.SecurityGroupRules {
-			rule := protocloud.HuaWeiSGRuleBatchCreate{
-				CloudID:                   sgRule.Id,
-				Memo:                      &sgRule.Description,
-				Protocol:                  sgRule.Protocol,
-				Ethertype:                 sgRule.Ethertype,
-				CloudRemoteGroupID:        sgRule.RemoteGroupId,
-				RemoteIPPrefix:            sgRule.RemoteIpPrefix,
-				CloudRemoteAddressGroupID: sgRule.RemoteAddressGroupId,
-				Port:                      sgRule.Multiport,
-				Priority:                  int64(sgRule.Priority),
-				Action:                    sgRule.Action,
-				Type:                      enumor.SecurityGroupRuleType(sgRule.Direction),
-				CloudSecurityGroupID:      sg.CloudID,
-				CloudProjectID:            sgRule.ProjectId,
-				AccountID:                 req.AccountID,
-				Region:                    req.Region,
-				SecurityGroupID:           id,
-			}
-			createReq.Rules = append(createReq.Rules, rule)
-		}
+
 		if len(createReq.Rules) <= 0 {
 			continue
 		}
@@ -274,6 +257,34 @@ func (g *securityGroup) diffHuaWeiSGRuleSyncAdd(cts *rest.Contexts, ids []string
 	}
 
 	return nil
+}
+
+// genHuaWeiCreateReq gen protocloud.HuaWeiSGRuleBatchCreate list
+func genHuaWeiRuleList(rules *model.ListSecurityGroupRulesResponse, req *proto.SecurityGroupSyncReq,
+	sgCloudID string, id string) []protocloud.HuaWeiSGRuleBatchCreate {
+	list := make([]protocloud.HuaWeiSGRuleBatchCreate, 0, len(*rules.SecurityGroupRules))
+	for _, sgRule := range *rules.SecurityGroupRules {
+		rule := protocloud.HuaWeiSGRuleBatchCreate{
+			CloudID:                   sgRule.Id,
+			Memo:                      &sgRule.Description,
+			Protocol:                  sgRule.Protocol,
+			Ethertype:                 sgRule.Ethertype,
+			CloudRemoteGroupID:        sgRule.RemoteGroupId,
+			RemoteIPPrefix:            sgRule.RemoteIpPrefix,
+			CloudRemoteAddressGroupID: sgRule.RemoteAddressGroupId,
+			Port:                      sgRule.Multiport,
+			Priority:                  int64(sgRule.Priority),
+			Action:                    sgRule.Action,
+			Type:                      enumor.SecurityGroupRuleType(sgRule.Direction),
+			CloudSecurityGroupID:      sgCloudID,
+			CloudProjectID:            sgRule.ProjectId,
+			AccountID:                 req.AccountID,
+			Region:                    req.Region,
+			SecurityGroupID:           id,
+		}
+		list = append(list, rule)
+	}
+	return list
 }
 
 // diffHuaWeiSGRuleSyncUpdate update huawei security group rule.
@@ -298,48 +309,11 @@ func (g *securityGroup) diffHuaWeiSGRuleSyncUpdate(cts *rest.Contexts, updateClo
 			return err
 		}
 
+		list := g.genHuaWeiUpdateRulesList(rules, cts, sgID, id, req)
 		createReq := &protocloud.HuaWeiSGRuleBatchUpdateReq{
-			Rules: []protocloud.HuaWeiSGRuleBatchUpdate{},
+			Rules: list,
 		}
-		for _, sgRule := range *rules.SecurityGroupRules {
-			one, _ := g.getHuaWeiSGRuleByCid(cts, sgRule.Id, sgID)
-			if one == nil {
-				continue
-			}
-			if *one.Memo == sgRule.Description &&
-				one.Protocol == sgRule.Protocol &&
-				one.Ethertype == sgRule.Ethertype &&
-				one.CloudRemoteGroupID == sgRule.RemoteGroupId &&
-				one.RemoteIPPrefix == sgRule.RemoteIpPrefix &&
-				one.CloudRemoteAddressGroupID == sgRule.RemoteAddressGroupId &&
-				one.Port == sgRule.Multiport &&
-				one.Priority == int64(sgRule.Priority) &&
-				one.Action == sgRule.Action &&
-				one.Type == enumor.SecurityGroupRuleType(sgRule.Direction) &&
-				one.CloudProjectID == sgRule.ProjectId {
-				continue
-			}
-			rule := protocloud.HuaWeiSGRuleBatchUpdate{
-				ID:                        one.ID,
-				CloudID:                   sgRule.Id,
-				Memo:                      &sgRule.Description,
-				Protocol:                  sgRule.Protocol,
-				Ethertype:                 sgRule.Ethertype,
-				CloudRemoteGroupID:        sgRule.RemoteGroupId,
-				RemoteIPPrefix:            sgRule.RemoteIpPrefix,
-				CloudRemoteAddressGroupID: sgRule.RemoteAddressGroupId,
-				Port:                      sgRule.Multiport,
-				Priority:                  int64(sgRule.Priority),
-				Action:                    sgRule.Action,
-				Type:                      enumor.SecurityGroupRuleType(sgRule.Direction),
-				CloudSecurityGroupID:      id,
-				CloudProjectID:            sgRule.ProjectId,
-				AccountID:                 req.AccountID,
-				Region:                    req.Region,
-				SecurityGroupID:           sgID,
-			}
-			createReq.Rules = append(createReq.Rules, rule)
-		}
+
 		if len(createReq.Rules) <= 0 {
 			continue
 		}
@@ -352,7 +326,57 @@ func (g *securityGroup) diffHuaWeiSGRuleSyncUpdate(cts *rest.Contexts, updateClo
 	return nil
 }
 
-// getHuaWeiSGRuleByCid
+// genHuaWeiUpdateRulesList gen HuaWeiSGRuleBatchUpdate list
+func (g *securityGroup) genHuaWeiUpdateRulesList(rules *model.ListSecurityGroupRulesResponse, cts *rest.Contexts,
+	sgID string, id string, req *proto.SecurityGroupSyncReq) []protocloud.HuaWeiSGRuleBatchUpdate {
+
+	list := make([]protocloud.HuaWeiSGRuleBatchUpdate, 0)
+
+	for _, sgRule := range *rules.SecurityGroupRules {
+		one, _ := g.getHuaWeiSGRuleByCid(cts, sgRule.Id, sgID)
+		if one == nil {
+			// 忽略云上存在但是db不存在情况
+			continue
+		}
+		if *one.Memo == sgRule.Description &&
+			one.Protocol == sgRule.Protocol &&
+			one.Ethertype == sgRule.Ethertype &&
+			one.CloudRemoteGroupID == sgRule.RemoteGroupId &&
+			one.RemoteIPPrefix == sgRule.RemoteIpPrefix &&
+			one.CloudRemoteAddressGroupID == sgRule.RemoteAddressGroupId &&
+			one.Port == sgRule.Multiport &&
+			one.Priority == int64(sgRule.Priority) &&
+			one.Action == sgRule.Action &&
+			one.Type == enumor.SecurityGroupRuleType(sgRule.Direction) &&
+			one.CloudProjectID == sgRule.ProjectId {
+			continue
+		}
+		rule := protocloud.HuaWeiSGRuleBatchUpdate{
+			ID:                        one.ID,
+			CloudID:                   sgRule.Id,
+			Memo:                      &sgRule.Description,
+			Protocol:                  sgRule.Protocol,
+			Ethertype:                 sgRule.Ethertype,
+			CloudRemoteGroupID:        sgRule.RemoteGroupId,
+			RemoteIPPrefix:            sgRule.RemoteIpPrefix,
+			CloudRemoteAddressGroupID: sgRule.RemoteAddressGroupId,
+			Port:                      sgRule.Multiport,
+			Priority:                  int64(sgRule.Priority),
+			Action:                    sgRule.Action,
+			Type:                      enumor.SecurityGroupRuleType(sgRule.Direction),
+			CloudSecurityGroupID:      id,
+			CloudProjectID:            sgRule.ProjectId,
+			AccountID:                 req.AccountID,
+			Region:                    req.Region,
+			SecurityGroupID:           sgID,
+		}
+		list = append(list, rule)
+	}
+
+	return list
+}
+
+// getHuaWeiSGRuleByCid get HuaWeiSecurityGroupRule
 func (g *securityGroup) getHuaWeiSGRuleByCid(cts *rest.Contexts, cID string, sgID string) (*corecloud.HuaWeiSecurityGroupRule, error) {
 
 	listReq := &protocloud.HuaWeiSGRuleListReq{

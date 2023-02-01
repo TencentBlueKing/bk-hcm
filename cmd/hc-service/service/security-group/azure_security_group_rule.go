@@ -400,55 +400,8 @@ func (g *securityGroup) diffAzureSGRuleSyncAdd(cts *rest.Contexts, ids []string,
 			logs.Errorf("request adaptor to list azure security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
-		list := make([]protocloud.AzureSGRuleBatchCreate, 0, len(rules))
-		for _, rule := range rules {
-			spec := protocloud.AzureSGRuleBatchCreate{
-				CloudID:                    *rule.ID,
-				Etag:                       rule.Etag,
-				Name:                       *rule.Name,
-				Memo:                       rule.Properties.Description,
-				DestinationAddressPrefix:   rule.Properties.DestinationAddressPrefix,
-				DestinationAddressPrefixes: rule.Properties.DestinationAddressPrefixes,
-				DestinationPortRange:       rule.Properties.DestinationPortRange,
-				DestinationPortRanges:      rule.Properties.DestinationPortRanges,
-				Protocol:                   string(*rule.Properties.Protocol),
-				ProvisioningState:          string(*rule.Properties.ProvisioningState),
-				SourceAddressPrefix:        rule.Properties.SourceAddressPrefix,
-				SourceAddressPrefixes:      rule.Properties.SourceAddressPrefixes,
-				SourcePortRange:            rule.Properties.SourcePortRange,
-				SourcePortRanges:           rule.Properties.SourcePortRanges,
-				Priority:                   *rule.Properties.Priority,
-				Access:                     string(*rule.Properties.Access),
-				CloudSecurityGroupID:       sg.CloudID,
-				AccountID:                  req.AccountID,
-				Region:                     sg.Region,
-				SecurityGroupID:            id,
-			}
-			switch *rule.Properties.Direction {
-			case armnetwork.SecurityRuleDirectionInbound:
-				spec.Type = enumor.Ingress
-			case armnetwork.SecurityRuleDirectionOutbound:
-				spec.Type = enumor.Egress
-			default:
-				return fmt.Errorf("unknown security group rule direction: %s", *rule.Properties.Direction)
-			}
-			if len(rule.Properties.DestinationApplicationSecurityGroups) != 0 {
-				ids := make([]*string, 0, len(rule.Properties.DestinationApplicationSecurityGroups))
-				for _, one := range rule.Properties.DestinationApplicationSecurityGroups {
-					ids = append(ids, one.ID)
-				}
-				spec.CloudDestinationSecurityGroupIDs = ids
-			}
-			if len(rule.Properties.SourceApplicationSecurityGroups) != 0 {
-				ids := make([]*string, 0, len(rule.Properties.SourceApplicationSecurityGroups))
-				for _, one := range rule.Properties.SourceApplicationSecurityGroups {
-					ids = append(ids, one.ID)
-				}
-				spec.CloudSourceSecurityGroupIDs = ids
-			}
-			list = append(list, spec)
-		}
 
+		list := genAzureRulesList(rules, sg.CloudID, id, req)
 		createReq := &protocloud.AzureSGRuleCreateReq{
 			Rules: list,
 		}
@@ -463,6 +416,62 @@ func (g *securityGroup) diffAzureSGRuleSyncAdd(cts *rest.Contexts, ids []string,
 	}
 
 	return nil
+}
+
+// genAzureRulesList gen AzureSGRuleBatchCreate list
+func genAzureRulesList(rules []*armnetwork.SecurityRule, sgCloudID string,
+	id string, req *proto.SecurityGroupSyncReq) []protocloud.AzureSGRuleBatchCreate {
+
+	list := make([]protocloud.AzureSGRuleBatchCreate, 0, len(rules))
+
+	for _, rule := range rules {
+		spec := protocloud.AzureSGRuleBatchCreate{
+			CloudID:                    *rule.ID,
+			Etag:                       rule.Etag,
+			Name:                       *rule.Name,
+			Memo:                       rule.Properties.Description,
+			DestinationAddressPrefix:   rule.Properties.DestinationAddressPrefix,
+			DestinationAddressPrefixes: rule.Properties.DestinationAddressPrefixes,
+			DestinationPortRange:       rule.Properties.DestinationPortRange,
+			DestinationPortRanges:      rule.Properties.DestinationPortRanges,
+			Protocol:                   string(*rule.Properties.Protocol),
+			ProvisioningState:          string(*rule.Properties.ProvisioningState),
+			SourceAddressPrefix:        rule.Properties.SourceAddressPrefix,
+			SourceAddressPrefixes:      rule.Properties.SourceAddressPrefixes,
+			SourcePortRange:            rule.Properties.SourcePortRange,
+			SourcePortRanges:           rule.Properties.SourcePortRanges,
+			Priority:                   *rule.Properties.Priority,
+			Access:                     string(*rule.Properties.Access),
+			CloudSecurityGroupID:       sgCloudID,
+			AccountID:                  req.AccountID,
+			Region:                     req.Region,
+			SecurityGroupID:            id,
+		}
+		switch *rule.Properties.Direction {
+		case armnetwork.SecurityRuleDirectionInbound:
+			spec.Type = enumor.Ingress
+		case armnetwork.SecurityRuleDirectionOutbound:
+			spec.Type = enumor.Egress
+		default:
+		}
+		if len(rule.Properties.DestinationApplicationSecurityGroups) != 0 {
+			ids := make([]*string, 0, len(rule.Properties.DestinationApplicationSecurityGroups))
+			for _, one := range rule.Properties.DestinationApplicationSecurityGroups {
+				ids = append(ids, one.ID)
+			}
+			spec.CloudDestinationSecurityGroupIDs = ids
+		}
+		if len(rule.Properties.SourceApplicationSecurityGroups) != 0 {
+			ids := make([]*string, 0, len(rule.Properties.SourceApplicationSecurityGroups))
+			for _, one := range rule.Properties.SourceApplicationSecurityGroups {
+				ids = append(ids, one.ID)
+			}
+			spec.CloudSourceSecurityGroupIDs = ids
+		}
+		list = append(list, spec)
+	}
+
+	return list
 }
 
 // diffAzureSGRuleSyncUpdate update huawei security group rule.
@@ -487,63 +496,11 @@ func (g *securityGroup) diffAzureSGRuleSyncUpdate(cts *rest.Contexts, updateClou
 			return err
 		}
 
-		list := make([]protocloud.AzureSGRuleUpdate, 0, len(rules))
-		for _, rule := range rules {
-			one, _ := g.getAzureSGRuleByCid(cts, *rule.ID, sgID)
-			if one == nil {
-				continue
-			}
-			spec := protocloud.AzureSGRuleUpdate{
-				ID:                         one.ID,
-				CloudID:                    *rule.ID,
-				Etag:                       rule.Etag,
-				Name:                       *rule.Name,
-				Memo:                       rule.Properties.Description,
-				DestinationAddressPrefix:   rule.Properties.DestinationAddressPrefix,
-				DestinationAddressPrefixes: rule.Properties.DestinationAddressPrefixes,
-				DestinationPortRange:       rule.Properties.DestinationPortRange,
-				DestinationPortRanges:      rule.Properties.DestinationPortRanges,
-				Protocol:                   string(*rule.Properties.Protocol),
-				ProvisioningState:          string(*rule.Properties.ProvisioningState),
-				SourceAddressPrefix:        rule.Properties.SourceAddressPrefix,
-				SourceAddressPrefixes:      rule.Properties.SourceAddressPrefixes,
-				SourcePortRange:            rule.Properties.SourcePortRange,
-				SourcePortRanges:           rule.Properties.SourcePortRanges,
-				Priority:                   *rule.Properties.Priority,
-				Access:                     string(*rule.Properties.Access),
-				CloudSecurityGroupID:       id,
-				AccountID:                  req.AccountID,
-				Region:                     req.Region,
-				SecurityGroupID:            sgID,
-			}
-			switch *rule.Properties.Direction {
-			case armnetwork.SecurityRuleDirectionInbound:
-				spec.Type = enumor.Ingress
-			case armnetwork.SecurityRuleDirectionOutbound:
-				spec.Type = enumor.Egress
-			default:
-				return fmt.Errorf("unknown security group rule direction: %s", *rule.Properties.Direction)
-			}
-			if len(rule.Properties.DestinationApplicationSecurityGroups) != 0 {
-				ids := make([]*string, 0, len(rule.Properties.DestinationApplicationSecurityGroups))
-				for _, one := range rule.Properties.DestinationApplicationSecurityGroups {
-					ids = append(ids, one.ID)
-				}
-				spec.CloudDestinationSecurityGroupIDs = ids
-			}
-			if len(rule.Properties.SourceApplicationSecurityGroups) != 0 {
-				ids := make([]*string, 0, len(rule.Properties.SourceApplicationSecurityGroups))
-				for _, one := range rule.Properties.SourceApplicationSecurityGroups {
-					ids = append(ids, one.ID)
-				}
-				spec.CloudSourceSecurityGroupIDs = ids
-			}
-			list = append(list, spec)
-		}
-
+		list := g.genAzureUpdateRulesList(rules, sgID, cts, id, req)
 		createReq := &protocloud.AzureSGRuleBatchUpdateReq{
 			Rules: list,
 		}
+
 		if len(createReq.Rules) <= 0 {
 			continue
 		}
@@ -553,9 +510,73 @@ func (g *securityGroup) diffAzureSGRuleSyncUpdate(cts *rest.Contexts, updateClou
 			return err
 		}
 	}
+
 	return nil
 }
 
+// genHuaWeiUpdateRulesList gen AzureSGRuleUpdate list
+func (g *securityGroup) genAzureUpdateRulesList(rules []*armnetwork.SecurityRule, sgID string,
+	cts *rest.Contexts, id string, req *proto.SecurityGroupSyncReq) []protocloud.AzureSGRuleUpdate {
+
+	list := make([]protocloud.AzureSGRuleUpdate, 0, len(rules))
+
+	for _, rule := range rules {
+		one, _ := g.getAzureSGRuleByCid(cts, *rule.ID, sgID)
+		if one == nil {
+			// 忽略云上存在但是db不存在情况
+			continue
+		}
+		spec := protocloud.AzureSGRuleUpdate{
+			ID:                         one.ID,
+			CloudID:                    *rule.ID,
+			Etag:                       rule.Etag,
+			Name:                       *rule.Name,
+			Memo:                       rule.Properties.Description,
+			DestinationAddressPrefix:   rule.Properties.DestinationAddressPrefix,
+			DestinationAddressPrefixes: rule.Properties.DestinationAddressPrefixes,
+			DestinationPortRange:       rule.Properties.DestinationPortRange,
+			DestinationPortRanges:      rule.Properties.DestinationPortRanges,
+			Protocol:                   string(*rule.Properties.Protocol),
+			ProvisioningState:          string(*rule.Properties.ProvisioningState),
+			SourceAddressPrefix:        rule.Properties.SourceAddressPrefix,
+			SourceAddressPrefixes:      rule.Properties.SourceAddressPrefixes,
+			SourcePortRange:            rule.Properties.SourcePortRange,
+			SourcePortRanges:           rule.Properties.SourcePortRanges,
+			Priority:                   *rule.Properties.Priority,
+			Access:                     string(*rule.Properties.Access),
+			CloudSecurityGroupID:       id,
+			AccountID:                  req.AccountID,
+			Region:                     req.Region,
+			SecurityGroupID:            sgID,
+		}
+		switch *rule.Properties.Direction {
+		case armnetwork.SecurityRuleDirectionInbound:
+			spec.Type = enumor.Ingress
+		case armnetwork.SecurityRuleDirectionOutbound:
+			spec.Type = enumor.Egress
+		default:
+		}
+		if len(rule.Properties.DestinationApplicationSecurityGroups) != 0 {
+			ids := make([]*string, 0, len(rule.Properties.DestinationApplicationSecurityGroups))
+			for _, one := range rule.Properties.DestinationApplicationSecurityGroups {
+				ids = append(ids, one.ID)
+			}
+			spec.CloudDestinationSecurityGroupIDs = ids
+		}
+		if len(rule.Properties.SourceApplicationSecurityGroups) != 0 {
+			ids := make([]*string, 0, len(rule.Properties.SourceApplicationSecurityGroups))
+			for _, one := range rule.Properties.SourceApplicationSecurityGroups {
+				ids = append(ids, one.ID)
+			}
+			spec.CloudSourceSecurityGroupIDs = ids
+		}
+		list = append(list, spec)
+	}
+
+	return list
+}
+
+// getAzureSGRuleByCid
 func (g *securityGroup) getAzureSGRuleByCid(cts *rest.Contexts, cID string, sgID string) (*corecloud.
 	AzureSecurityGroupRule, error) {
 
