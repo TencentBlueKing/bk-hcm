@@ -56,7 +56,7 @@ func (g *securityGroup) getDatasFromDSForSecurityGroupSync(cts *rest.Contexts,
 	req *proto.SecurityGroupSyncReq) (map[string]*proto.SecurityGroupSyncDS, error) {
 
 	start := 0
-	resultsHcm := []corecloud.BaseSecurityGroup{}
+	resultsHcm := make([]corecloud.BaseSecurityGroup, 0)
 	for {
 		dataReq := &dataproto.SecurityGroupListReq{
 			Filter: tools.EqualExpression("account_id", req.AccountID),
@@ -67,13 +67,16 @@ func (g *securityGroup) getDatasFromDSForSecurityGroupSync(cts *rest.Contexts,
 		}
 		results, err := g.dataCli.Global.SecurityGroup.ListSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
 			dataReq)
+		if len(results.Details) == 0 {
+			break
+		}
 		if err != nil {
 			logs.Errorf("from data-service list security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 		resultsHcm = append(resultsHcm, results.Details...)
 		start += len(results.Details)
-		if len(results.Details) == 0 || uint(len(results.Details)) < daltypes.DefaultMaxPageLimit {
+		if uint(len(results.Details)) < dataReq.Page.Limit {
 			break
 		}
 	}
