@@ -41,8 +41,17 @@ import (
 type Set interface {
 	Auth() auth.Auth
 	Account() cloud.Account
+	SecurityGroup() cloud.SecurityGroup
+	SecurityGroupBizRel() cloud.SecurityGroupBizRel
+	TCloudSGRule() cloud.TCloudSGRule
+	AwsSGRule() cloud.AwsSGRule
+	HuaWeiSGRule() cloud.HuaWeiSGRule
+	AzureSGRule() cloud.AzureSGRule
+	GcpFirewallRule() cloud.GcpFirewallRule
 	Cloud() cloud.Cloud
 	AccountBizRel() cloud.AccountBizRel
+	Vpc() cloud.Vpc
+	Subnet() cloud.Subnet
 	Txn() *Txn
 }
 
@@ -117,6 +126,23 @@ func (s *set) Account() cloud.Account {
 	}
 }
 
+// AccountBizRel returns account biz relation dao.
+func (s *set) AccountBizRel() cloud.AccountBizRel {
+	return &cloud.AccountBizRelDao{
+		Orm: s.orm,
+	}
+}
+
+// Vpc returns vpc dao.
+func (s *set) Vpc() cloud.Vpc {
+	return cloud.NewVpcDao(s.orm, s.idGen)
+}
+
+// Subnet returns subnet dao.
+func (s *set) Subnet() cloud.Subnet {
+	return cloud.NewSubnetDao(s.orm, s.idGen)
+}
+
 // Auth return auth dao.
 func (s *set) Auth() auth.Auth {
 	return &auth.AuthDao{
@@ -127,13 +153,6 @@ func (s *set) Auth() auth.Auth {
 // Cloud return cloud dao.
 func (s *set) Cloud() cloud.Cloud {
 	return &cloud.CloudDao{
-		Orm: s.orm,
-	}
-}
-
-// AccountBizRel return AccountBizRel dao.
-func (s *set) AccountBizRel() cloud.AccountBizRel {
-	return &cloud.AccountBizRelDao{
 		Orm: s.orm,
 	}
 }
@@ -152,5 +171,60 @@ func (t *Txn) AutoTxn(kt *kit.Kit, run orm.TxnFunc) (interface{}, error) {
 func (s *set) Txn() *Txn {
 	return &Txn{
 		orm: s.orm,
+	}
+}
+
+// SecurityGroup return security group dao.
+func (s *set) SecurityGroup() cloud.SecurityGroup {
+	return &cloud.SecurityGroupDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// SecurityGroupBizRel return security group and biz rel dao.
+func (s *set) SecurityGroupBizRel() cloud.SecurityGroupBizRel {
+	return &cloud.SecurityGroupBizRelDao{
+		Orm: s.orm,
+	}
+}
+
+// TCloudSGRule return tcloud security group rule dao.
+func (s *set) TCloudSGRule() cloud.TCloudSGRule {
+	return &cloud.TCloudSGRuleDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// GcpFirewallRule return gcp firewall rule dao.
+func (s *set) GcpFirewallRule() cloud.GcpFirewallRule {
+	return &cloud.GcpFirewallRuleDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AwsSGRule return aws security group rule dao.
+func (s *set) AwsSGRule() cloud.AwsSGRule {
+	return &cloud.AwsSGRuleDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// HuaWeiSGRule return huawei security group rule dao.
+func (s *set) HuaWeiSGRule() cloud.HuaWeiSGRule {
+	return &cloud.HuaWeiSGRuleDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AzureSGRule return azure security group rule dao.
+func (s *set) AzureSGRule() cloud.AzureSGRule {
+	return &cloud.AzureSGRuleDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
 	}
 }

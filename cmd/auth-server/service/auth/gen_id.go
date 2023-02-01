@@ -36,7 +36,11 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 	res := client.Resource{
 		System: sys.SystemNameHCM,
 		Type:   sys.Account,
-		ID:     a.ResourceID,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
 	}
 
 	switch a.Basic.Action {
@@ -65,7 +69,11 @@ func genResourceResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 	res := client.Resource{
 		System: sys.SystemNameHCM,
 		Type:   sys.Account,
-		ID:     a.ResourceID,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
 	}
 
 	switch a.Basic.Action {

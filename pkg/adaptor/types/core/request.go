@@ -56,6 +56,25 @@ func (b BaseRegionalDeleteOption) Validate() error {
 	return nil
 }
 
+// AzureDeleteOption defines basic options to delete an azure cloud resource.
+type AzureDeleteOption struct {
+	BaseDeleteOption  `json:",inline"`
+	ResourceGroupName string `json:"resource_group_name"`
+}
+
+// Validate AzureDeleteOption.
+func (a AzureDeleteOption) Validate() error {
+	if err := a.BaseDeleteOption.Validate(); err != nil {
+		return err
+	}
+
+	if len(a.ResourceGroupName) == 0 {
+		return errf.New(errf.InvalidParameter, "resource group name is required")
+	}
+
+	return nil
+}
+
 // TCloudListOption defines basic tencent cloud list options.
 type TCloudListOption struct {
 	Region      string      `json:"region"`
@@ -172,12 +191,17 @@ func (a AzureListOption) Validate() error {
 
 // HuaweiListOption defines basic huawei list options.
 type HuaweiListOption struct {
+	Region      string      `json:"region"`
 	ResourceIDs []string    `json:"resource_ids,omitempty"`
 	Page        *HuaweiPage `json:"page,omitempty"`
 }
 
 // Validate huawei list option.
 func (a HuaweiListOption) Validate() error {
+	if len(a.Region) == 0 {
+		return errf.New(errf.InvalidParameter, "region is required")
+	}
+
 	if len(a.ResourceIDs) != 0 {
 		if a.Page != nil {
 			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")

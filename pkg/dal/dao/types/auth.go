@@ -20,6 +20,7 @@
 package types
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/runtime/filter"
@@ -29,11 +30,11 @@ import (
 type ListInstancesOption struct {
 	TableName table.Name         `json:"table_name"`
 	Filter    *filter.Expression `json:"filter"`
-	Page      *BasePage          `json:"page"`
+	Page      *core.BasePage     `json:"page"`
 }
 
 // Validate list instance options.
-func (o *ListInstancesOption) Validate(po *PageOption) error {
+func (o *ListInstancesOption) Validate(po *core.PageOption) error {
 	if len(o.TableName) == 0 {
 		return errf.New(errf.InvalidParameter, "table name is required")
 	}

@@ -23,7 +23,7 @@ import (
 	"context"
 	"net/http"
 
-	"hcm/pkg/criteria/enumor"
+	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -40,6 +40,28 @@ func NewVpcClient(client rest.ClientInterface) *VpcClient {
 	}
 }
 
+// Update vpc.
+func (v *VpcClient) Update(ctx context.Context, h http.Header, id string, req *hcservice.VpcUpdateReq) error {
+	resp := new(rest.BaseResp)
+
+	err := v.client.Patch().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/vpcs/%s", id).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
 // Delete vpc.
 func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error {
 	resp := new(rest.BaseResp)
@@ -47,7 +69,7 @@ func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error 
 	err := v.client.Delete().
 		WithContext(ctx).
 		Body(nil).
-		SubResourcef("/vendors/%s/vpcs/%s", enumor.TCloud, id).
+		SubResourcef("/vpcs/%s", id).
 		WithHeaders(h).
 		Do().
 		Into(resp)

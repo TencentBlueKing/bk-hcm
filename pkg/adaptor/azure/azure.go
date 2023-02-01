@@ -19,7 +19,11 @@
 
 package azure
 
-import "hcm/pkg/adaptor/types"
+import (
+	"strings"
+
+	"hcm/pkg/adaptor/types"
+)
 
 // NewAzure new azure.
 func NewAzure(credential *types.AzureCredential) (*Azure, error) {
@@ -32,4 +36,12 @@ func NewAzure(credential *types.AzureCredential) (*Azure, error) {
 // Azure is azure operator.
 type Azure struct {
 	clientSet *clientSet
+}
+
+// parseIDToName parse resource id to name, because id is used for identifier but name is used in api.
+// id format: /subscriptions/{subscription}/resourceGroups/{resourceGroup}/providers/{provider}/.../{name}.
+// for example, 'test' vpc id is: /subscriptions/ss/resourceGroups/rr/providers/Microsoft.Network/virtualNetworks/test.
+func parseIDToName(id string) string {
+	idx := strings.LastIndex(id, "/")
+	return id[idx+1:]
 }

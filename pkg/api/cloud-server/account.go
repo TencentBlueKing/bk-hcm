@@ -25,10 +25,10 @@ import (
 	"fmt"
 	"regexp"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -294,7 +294,7 @@ func (req *AccountCheckByIDReq) Validate() error {
 // AccountListReq ...
 type AccountListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"omitempty"`
-	Page   *types.BasePage    `json:"page" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate ...

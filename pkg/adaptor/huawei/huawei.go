@@ -48,3 +48,12 @@ func validateSecret(s *types.BaseSecret) error {
 
 	return nil
 }
+
+// sliceToPtr convert slice to pointer.
+func sliceToPtr[T any](slice []T) *[]T {
+	ptrArr := make([]T, len(slice))
+	for idx, val := range slice {
+		ptrArr[idx] = val
+	}
+	return &ptrArr
+}
