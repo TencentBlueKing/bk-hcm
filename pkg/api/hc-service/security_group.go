@@ -104,6 +104,7 @@ func (req *SecurityGroupUpdateReq) Validate() error {
 
 // -------------------------- Sync --------------------------
 
+// SecurityGroupSyncReq security group sync request.
 type SecurityGroupSyncReq struct {
 	AccountID         string `json:"account_id" validate:"required"`
 	Region            string `json:"region" validate:"omitempty"`
@@ -115,23 +116,28 @@ func (req *SecurityGroupSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// SecurityGroupSyncDS data-service diff for sync
 type SecurityGroupSyncDS struct {
 	IsUpdated       bool
 	HcSecurityGroup cloud.BaseSecurityGroup
 }
 
+// SecurityGroupSyncHuaWeiDiff huawei cloud diff for sync
 type SecurityGroupSyncHuaWeiDiff struct {
 	SecurityGroup model.SecurityGroup
 }
 
+// SecurityGroupSyncTCloudDiff tcloud diff for sync
 type SecurityGroupSyncTCloudDiff struct {
 	SecurityGroup *tcloud.SecurityGroup
 }
 
+// SecurityGroupSyncAwsDiff aws diff for sync
 type SecurityGroupSyncAwsDiff struct {
 	SecurityGroup *ec2.SecurityGroup
 }
 
+// SecurityGroupSyncAzureDiff azure diff for sync
 type SecurityGroupSyncAzureDiff struct {
 	SecurityGroup *armnetwork.SecurityGroup
 }
