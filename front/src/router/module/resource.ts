@@ -33,7 +33,7 @@ const resourceMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: '/resource/detail/:type',
+            path: '/resource/detail/:type/:id',
             name: 'resourceDetail',
             component: () => import('@/views/resource/resource-manage/resource-detail.vue'),
             meta: {

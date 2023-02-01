@@ -56,7 +56,7 @@ const state = reactive<any>({
     limit: 10,
     count: 0,
   },
-  isLoading: false,
+  isLoading: true,
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
   handleSort: () => {},
@@ -78,7 +78,7 @@ const {
 } = useSelection();
 
 
-const fetchList = (fetchType: string) => {
+const fetchList = async (fetchType: string) => {
   console.log('fetchType', fetchType);
   const {
     datas,
@@ -87,7 +87,8 @@ const fetchList = (fetchType: string) => {
     handlePageChange,
     handlePageSizeChange,
     handleSort,
-  } = useQueryList(props, fetchType);
+  } = await useQueryList(props, fetchType);
+  console.log(datas.value);
   return {
     datas,
     pagination,
@@ -107,6 +108,7 @@ const showDeleteDialog = (fetchType: string, title: string) => {
     selections.value,
     fetchType,
     t(title),
+    true,
   );
   return {
     handleShowDelete,
@@ -123,7 +125,7 @@ watch(
   },
 );
 
-const handleSwtichType = (type: string) => {
+const handleSwtichType = async (type: string) => {
   const params = {
     fetchUrl: 'security_groups',
     columns: 'group',
@@ -135,8 +137,8 @@ const handleSwtichType = (type: string) => {
     params.dialogName = t('删除防火墙规则');
   }
   // eslint-disable-next-line max-len
-  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = fetchList(params.fetchUrl);
-  state.datas = [{ id: 333, vendor: 'tcloud', assigned: false }] || datas;
+  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = await fetchList(params.fetchUrl);
+  state.datas = datas;
   state.isLoading = isLoading;
   state.pagination = pagination;
   state.handlePageChange = handlePageChange;
@@ -159,15 +161,18 @@ const groupColumns = [
     label: 'ID',
     field: 'id',
     sort: true,
-    render({ data }: DoublePlainObject) {
+    render({ data }: any) {
       return h(
-        'span',
+        Button,
         {
+          text: true,
+          theme: 'primary',
           onClick() {
             router.push({
               name: 'resourceDetail',
               params: {
                 type: 'security',
+                id: data.id,
               },
             });
           },
@@ -214,18 +219,18 @@ const groupColumns = [
   // },
   {
     label: t('修改时间'),
-    field: 'update_at',
+    field: 'updated_at',
     sort: true,
   },
   {
     label: t('创建时间'),
-    field: 'create_at',
+    field: 'created_at',
     sort: true,
   },
   {
     label: t('操作'),
     field: '',
-    render() {
+    render({ data }: any) {
       return h(
         'span',
         {},
@@ -258,7 +263,7 @@ const groupColumns = [
               text: true,
               theme: 'primary',
               onClick() {
-                securityHandleShowDelete();
+                securityHandleShowDelete([data.id]);
               },
             },
             [
@@ -410,8 +415,9 @@ const types = [
 // 方法
 
 const handleConfirm = (bizId: number) => {
+  const securityGroupIds = selections.value.map(e => e.id);
   const params = {
-    security_group_ids: [1],
+    security_group_ids: securityGroupIds,
     bk_biz_id: bizId,
   };
   return resourceStore
@@ -444,7 +450,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        @click="securityHandleShowDelete"
+        @click="securityHandleShowDelete(selections.map(e => e.id))"
       >
         {{ t('删除') }}
       </bk-button>
@@ -467,6 +473,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
       v-if="activeType === 'group'"
       class="mt20"
       row-hover="auto"
+      remote-pagination
       :pagination="state.pagination"
       :columns="groupColumns"
       :data="state.datas"
@@ -481,6 +488,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
       v-if="activeType === 'gcp'"
       class="mt20"
       row-hover="auto"
+      remote-pagination
       :pagination="state.pagination"
       :columns="gcpColumns"
       :data="state.datas"

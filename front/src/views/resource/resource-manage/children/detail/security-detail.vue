@@ -25,6 +25,8 @@ const {
 const route = useRoute();
 
 const activeTab = ref(route.query?.activeTab);
+console.log('route.params', route.params);
+const securityId = ref(route.params?.id);
 
 const tabs = [
   {
@@ -45,7 +47,7 @@ const tabs = [
 
 <template>
   <detail-header>
-    {{t('安全组')}}：ID（xxx）
+    {{t('安全组')}}：ID（{{`${securityId}`}}）
   </detail-header>
 
   <detail-tab
@@ -53,7 +55,7 @@ const tabs = [
     :active="activeTab"
   >
     <template #default="type">
-      <security-info v-if="type === 'detail'" />
+      <security-info :id="securityId" v-if="type === 'detail'" />
       <security-relate v-if="type === 'relate'" />
       <security-rule v-if="type === 'rule'" />
     </template>

@@ -6,6 +6,7 @@ import {
 import {
   useResourceStore,
 } from '@/store/resource';
+import { CloudType } from '@/typings';
 
 export default (type: string, id: string) => {
   const loading = ref(false);
@@ -18,6 +19,8 @@ export default (type: string, id: string) => {
     resourceStore
       .detail(type, id)
       .then(({ data = {} }: { data: any }) => {
+        data.vendorName = CloudType[data.vendor];
+        data.bk_biz_id = data.bk_biz_id === -1 ? '全部' : data.bk_biz_id;
         detail.value = {
           ...data,
           ...data.spec,

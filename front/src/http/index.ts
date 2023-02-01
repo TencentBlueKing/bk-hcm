@@ -70,8 +70,8 @@ const http: HttpApi = {
   cancel: (requestId: string) => Promise.all([http.cancelRequest(requestId), http.cancelCache(requestId)]),
 };
 
-const methodsWithoutData: HttpMethodType[] = ['delete', 'get', 'head', 'options'];
-const methodsWithData: HttpMethodType[] = ['post', 'put', 'patch'];
+const methodsWithoutData: HttpMethodType[] = ['get', 'head', 'options'];
+const methodsWithData: HttpMethodType[] = ['post', 'put', 'patch', 'delete'];
 const allMethods = [...methodsWithoutData, ...methodsWithData];
 
 // 在自定义对象 http 上添加各请求方法
@@ -92,6 +92,7 @@ allMethods.forEach((method) => {
   */
 function getRequest(method: HttpMethodType) {
   if (methodsWithData.includes(method)) {
+    console.log('method', method);
     return (url: string, data: object, config: object) => getPromise(method, url, data, config);
   }
   return (url: string, config: object) => getPromise(method, url, null, config);
@@ -108,6 +109,7 @@ function getRequest(method: HttpMethodType) {
   * @return {Promise} 本次http请求的Promise
   */
 async function getPromise(method: HttpMethodType, url: string, data: object | null, userConfig = {}) {
+  console.log('data', data);
   const config = initConfig(method, url, userConfig);
   let promise;
   if (config.cancelPrevious) {
@@ -125,6 +127,7 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
 
   // eslint-disable-next-line no-async-promise-executor, @typescript-eslint/no-misused-promises
   promise = new Promise(async (resolve, reject) => {
+    console.log('axiosRequest', methodsWithData.includes(method));
     const axiosRequest = methodsWithData.includes(method)
     // @ts-ignore
       ? axiosInstance[method](url, data, config) : axiosInstance[method](url, config);
