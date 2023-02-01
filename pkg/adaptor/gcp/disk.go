@@ -20,9 +20,7 @@
 package gcp
 
 import (
-	"fmt"
-
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/kit"
 
 	"google.golang.org/api/compute/v1"
@@ -30,19 +28,22 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/insert
-func (g *Gcp) CreateDisk(kt *kit.Kit, opt *types.GcpDiskCreateOption) (*compute.Operation, error) {
+func (g *Gcp) CreateDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.Operation, error) {
+	return g.createDisk(kt, opt)
+}
+
+func (g *Gcp) createDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.Operation, error) {
 	client, err := g.clientSet.computeClient(kt)
 	if err != nil {
 		return nil, err
 	}
 
 	cloudProjectID := g.clientSet.credential.CloudProjectID
-	req := &compute.Disk{
-		Region: opt.Region,
-		Name:   opt.Name,
-		Type: fmt.Sprintf("projects/%s/zones/%s/diskTypes/%s", cloudProjectID, opt.Zone,
-			opt.DiskType),
+	req, err := opt.ToCreateDiskRequest(cloudProjectID)
+	if err != nil {
+		return nil, err
 	}
+
 	var call *compute.DisksInsertCall
 	call = client.Disks.Insert(cloudProjectID, opt.Zone, req).Context(kt.Ctx)
 	return call.Do()

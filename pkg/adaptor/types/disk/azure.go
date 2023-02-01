@@ -17,22 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package hcservice
+package disk
 
-// TCloudDiskCreateReq ...
-type TCloudDiskCreateReq struct{}
+import "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 
-// DiskCreateReq ...
-type DiskCreateReq[T DiskExtensionCreateReq] struct {
-	Spec      *DiskSpecCreateReq `json:"spec" validate:"required"`
-	Extension *T                 `json:"extension" validate:"required"`
+// AzureDiskCreateOption ...
+type AzureDiskCreateOption struct {
+	Name              string
+	ResourceGroupName string
+	Region            *string
+	Zone              *string
+	DiskType          string
+	DiskSize          *int32
 }
 
-// DiskSpecCreateReq ...
-type DiskSpecCreateReq struct {
-	Name     string  `json:"name"`
-	DiskSize *uint64 `json:"disk_size"`
-}
+// ToCreateDiskRequest 转换成接口需要的 *armcompute.Disk 结构
+func (opt *AzureDiskCreateOption) ToCreateDiskRequest() (*armcompute.Disk, error) {
+	skuName := armcompute.DiskStorageAccountTypes(opt.DiskType)
+	sku := &armcompute.DiskSKU{Name: &skuName}
+	prop := &armcompute.DiskProperties{DiskSizeGB: opt.DiskSize}
 
-// DiskExtensionCreateReq ...
-type DiskExtensionCreateReq interface{}
+	return &armcompute.Disk{
+		Zones:      []*string{opt.Zone},
+		Location:   opt.Region,
+		SKU:        sku,
+		Properties: prop,
+	}, nil
+}

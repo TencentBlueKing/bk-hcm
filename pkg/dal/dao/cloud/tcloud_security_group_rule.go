@@ -96,7 +96,7 @@ func (dao *TCloudSGRuleDao) Update(kt *kit.Kit, expr *filter.Expression, rule *c
 		return err
 	}
 
-	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func (dao *TCloudSGRuleDao) Update(kt *kit.Kit, expr *filter.Expression, rule *c
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, rule.TableName(), setExpr, whereExpr)
 
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := dao.Orm.Txn(txn).Update(kt.Ctx, sql, toUpdate)
+		effected, err := dao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update tcloud security group rule failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 			return nil, err
@@ -142,7 +142,7 @@ func (dao *TCloudSGRuleDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.
 		return err
 	}
 
-	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (dao *TCloudSGRuleDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, rule.TableName(), setExpr, whereExpr)
 
-	effected, err := dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	effected, err := dao.Orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 	if err != nil {
 		logs.ErrorJson("update tcloud security group rule failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 		return err
@@ -195,7 +195,7 @@ func (dao *TCloudSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*typ
 			},
 		},
 	}
-	whereExpr, err := opt.Filter.SQLWhereExpr(whereOpt)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(whereOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func (dao *TCloudSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*typ
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.TCloudSecurityGroupRuleTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql)
+		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count tcloud security group rule failed, err: %v, filter: %s, rid: %s", err,
 				opt.Filter, kt.Rid)
@@ -223,7 +223,7 @@ func (dao *TCloudSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*typ
 		table.TCloudSecurityGroupRuleTable, whereExpr, pageExpr)
 
 	details := make([]cloud.TCloudSecurityGroupRuleTable, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -236,7 +236,7 @@ func (dao *TCloudSGRuleDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -244,7 +244,7 @@ func (dao *TCloudSGRuleDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.TCloudSecurityGroupRuleTable, whereExpr)
 
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err = dao.Orm.Txn(txn).Delete(kt.Ctx, sql); err != nil {
+		if _, err = dao.Orm.Txn(txn).Delete(kt.Ctx, sql, whereValue); err != nil {
 			logs.ErrorJson("delete tcloud security group rule failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 			return nil, err
 		}

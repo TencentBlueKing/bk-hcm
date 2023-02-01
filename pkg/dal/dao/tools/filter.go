@@ -33,6 +33,18 @@ func EqualExpression(fieldName string, value interface{}) *filter.Expression {
 	}
 }
 
+// EqualWithOpExpression 生成查询条件
+func EqualWithOpExpression(op filter.LogicOperator, fields map[string]interface{}) *filter.Expression {
+	rules := make([]filter.RuleFactory, 0)
+	for name, value := range fields {
+		rules = append(rules, filter.AtomRule{Field: name, Op: filter.Equal.Factory(), Value: value})
+	}
+	return &filter.Expression{
+		Op:    op,
+		Rules: rules,
+	}
+}
+
 // ContainersExpression 生成资源字段包含的过滤条件，即fieldName in (1,2,3)
 func ContainersExpression(fieldName string, values interface{}) *filter.Expression {
 	return &filter.Expression{

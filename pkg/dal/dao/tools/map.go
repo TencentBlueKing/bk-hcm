@@ -17,38 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package tools
 
-// TCloudDiskCreateOption ...
-type TCloudDiskCreateOption struct {
-	Name     string
-	Region   string
-	DiskSize *uint64
-}
+// MapMerge merge map, return new map.
+func MapMerge(m1 map[string]interface{}, m2 map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{}, len(m1))
 
-// AwsDiskCreateOption ...
-type AwsDiskCreateOption struct {
-	Region           string
-	AvailabilityZone *string
-	DiskSize         *int64
-}
+	for key, value := range m1 {
+		result[key] = value
+	}
 
-// HuaWeiDiskCreateOption ...
-type HuaWeiDiskCreateOption struct {
-	Region           string
-	AvailabilityZone string
-}
+	for key, value := range m2 {
+		result[key] = value
+	}
 
-// AzureDiskCreateOption ...
-type AzureDiskCreateOption struct {
-	Name              string
-	ResourceGroupName string
-}
-
-// GcpDiskCreateOption ...
-type GcpDiskCreateOption struct {
-	Name     string
-	Region   string
-	Zone     string
-	DiskType string
+	return result
 }

@@ -20,7 +20,7 @@
 package azure
 
 import (
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/kit"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
@@ -28,13 +28,22 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) CreateDisk(kt *kit.Kit, opt *types.AzureDiskCreateOption) (*armcompute.Disk, error) {
+func (a *Azure) CreateDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) (*armcompute.Disk, error) {
+	return a.createDisk(kt, opt)
+}
+
+func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) (*armcompute.Disk, error) {
 	client, err := a.clientSet.diskClient()
 	if err != nil {
 		return nil, err
 	}
 
-	pollerResp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.Name, armcompute.Disk{}, nil)
+	diskReq, err := opt.ToCreateDiskRequest()
+	if err != nil {
+		return nil, err
+	}
+
+	pollerResp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.Name, *diskReq, nil)
 	if err != nil {
 		return nil, err
 	}

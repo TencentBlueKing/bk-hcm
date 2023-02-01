@@ -20,7 +20,7 @@
 package tcloud
 
 import (
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/kit"
 
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
@@ -28,16 +28,20 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://cloud.tencent.com/document/api/362/16312
-func (t *TCloud) CreateDisk(kt *kit.Kit, opt *types.TCloudDiskCreateOption) (*cbs.CreateDisksResponse, error) {
+func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs.CreateDisksResponse, error) {
+	return t.createDisk(kt, opt)
+}
+
+func (t *TCloud) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs.CreateDisksResponse, error) {
 	client, err := t.clientSet.cbsClient(opt.Region)
 	if err != nil {
 		return nil, err
 	}
 
-	req := cbs.NewCreateDisksRequest()
-	req.DiskSize = opt.DiskSize
+	req, err := opt.ToCreateDisksRequest()
+	if err != nil {
+		return nil, err
+	}
 
-	resp, err := client.CreateDisksWithContext(kt.Ctx, req)
-
-	return resp, err
+	return client.CreateDisksWithContext(kt.Ctx, req)
 }

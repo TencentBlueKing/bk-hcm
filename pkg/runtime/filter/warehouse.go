@@ -185,109 +185,120 @@ func rearrangeMixedRulesWithPriority(exprRules []RuleFactory, crownRules []RuleF
 }
 
 // doMixedSQLWhereExpr generated mixed SQL WHERE expression with mixed priority rules.
-func doMixedSQLWhereExpr(exprOp LogicOperator, exprRules []RuleFactory,
+func doMixedSQLWhereExpr(opt *SQLWhereOption, exprOp LogicOperator, exprRules []RuleFactory,
 	crownOp LogicOperator, crownRules []RuleFactory, priority []string,
-) (string, error) {
+) (string, map[string]interface{}, error) {
 	exprRules, crownRules, typ := rearrangeMixedRulesWithPriority(exprRules, crownRules, priority)
 
-	exprExpr, err := genMixedSQLWhereExpr(exprOp, exprRules)
+	exprExpr, exprValue, err := genMixedSQLWhereExpr(opt, exprOp, exprRules)
 	if err != nil {
-		return "", fmt.Errorf("gen mixed expr failed, %v", err)
+		return "", nil, fmt.Errorf("gen mixed expr failed, %v", err)
 	}
 
 	// crowned rules is always operate with 'AND' logic operator.
-	crownExpr, err := genMixedSQLWhereExpr(And, crownRules)
+	crownExpr, crownValue, err := genMixedSQLWhereExpr(opt, And, crownRules)
 	if err != nil {
-		return "", fmt.Errorf("gen mixed crown expr failed, %v", err)
+		return "", nil, fmt.Errorf("gen mixed crown expr failed, %v", err)
 	}
 
 	switch {
 	case len(exprExpr) == 0 && len(crownExpr) == 0:
 		// both is empty, return "" without prefixed 'WHERE'
-		return "", nil
+		return "", nil, nil
 
 	case len(exprExpr) == 0 && len(crownExpr) != 0:
 		// only have crowned rules, then return its expr and prefixed with 'WHERE'
-		return fmt.Sprintf("WHERE %s", crownExpr), nil
+		return crownExpr, crownValue, nil
 
 	case len(exprExpr) != 0 && len(crownExpr) == 0:
 		// only have Expression rules, then return its expr and prefixed with 'WHERE'
-		return fmt.Sprintf("WHERE %s", exprExpr), nil
+		return exprExpr, exprValue, nil
 
 	default:
 		// generate SQL Where expression as follows:01
+	}
+
+	allValue := make(map[string]interface{}, len(exprValue))
+	for key, val := range exprValue {
+		allValue[key] = val
+	}
+
+	for key, val := range crownValue {
+		allValue[key] = val
 	}
 
 	if exprOp == Or && crownOp == Or {
 		// generate SQL where expression with mixed priority.
 		switch typ {
 		case exprType:
-			// return fmt.Sprintf("WHERE %s %s (%s)", exprExpr, strings.ToUpper(string(crownOp)), crownExpr), nil
-			return fmt.Sprintf("WHERE %s %s (%s)", exprExpr, strings.ToUpper(string(crownOp)), crownExpr), nil
+			return fmt.Sprintf("%s %s (%s)", exprExpr, strings.ToUpper(string(crownOp)), crownExpr), allValue, nil
 		case crownType:
-			// return fmt.Sprintf("WHERE (%s) %s %s", crownExpr, strings.ToUpper(string(crownOp)), exprExpr), nil
-			return fmt.Sprintf("WHERE (%s) %s %s", crownExpr, strings.ToUpper(string(crownOp)), exprExpr), nil
+			return fmt.Sprintf("(%s) %s %s", crownExpr, strings.ToUpper(string(crownOp)), exprExpr), allValue, nil
 		case anyType:
 			// no expr rules and crown rules  at the same time.
-			return "", nil
+			return "", nil, nil
 		default:
-			return "", fmt.Errorf("unsupported expr type: %s", typ)
+			return "", nil, fmt.Errorf("unsupported expr type: %s", typ)
 		}
 	}
 
 	// generate SQL where expression with mixed priority.
 	switch typ {
 	case exprType:
-		// return fmt.Sprintf("WHERE %s %s (%s)", exprExpr, strings.ToUpper(string(crownOp)), crownExpr), nil
-		return fmt.Sprintf("WHERE (%s) %s (%s)", exprExpr, strings.ToUpper(string(crownOp)), crownExpr), nil
+		return fmt.Sprintf("(%s) %s (%s)", exprExpr, strings.ToUpper(string(crownOp)), crownExpr), allValue, nil
 	case crownType:
-		// return fmt.Sprintf("WHERE (%s) %s %s", crownExpr, strings.ToUpper(string(crownOp)), exprExpr), nil
-		return fmt.Sprintf("WHERE (%s) %s (%s)", crownExpr, strings.ToUpper(string(crownOp)), exprExpr), nil
+		return fmt.Sprintf("(%s) %s (%s)", crownExpr, strings.ToUpper(string(crownOp)), exprExpr), allValue, nil
 	case anyType:
 		// no expr rules and crown rules  at the same time.
-		return "", nil
+		return "", nil, nil
 	default:
-		return "", fmt.Errorf("unsupported expr type: %s", typ)
+		return "", nil, fmt.Errorf("unsupported expr type: %s", typ)
 	}
 }
 
-func genMixedSQLWhereExpr(op LogicOperator, rules []RuleFactory) (string, error) {
+func genMixedSQLWhereExpr(opt *SQLWhereOption, op LogicOperator, rules []RuleFactory) (string, map[string]interface{},
+	error) {
+
 	if len(rules) == 0 {
-		return "", nil
+		return "", nil, nil
 	}
 
 	// generate all the sub-expressions which is described by each rule.
 	subExpr := make([]string, 0)
+	valueMap := make(map[string]interface{})
 	for _, one := range rules {
-		expr, err := one.SQLExpr()
+		expr, value, err := one.SQLExprAndValue(opt)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 
 		subExpr = append(subExpr, expr)
+		for key, val := range value {
+			valueMap[key] = val
+		}
 	}
 
 	if len(subExpr) == 0 {
-		return "", errors.New("invalid expression with 0 rules to query")
+		return "", nil, errors.New("invalid expression with 0 rules to query")
 	}
 
 	switch op {
 	case And:
-		return strings.Join(subExpr, " AND "), nil
+		return strings.Join(subExpr, " AND "), valueMap, nil
 
 	case Or:
-		return strings.Join(subExpr, " OR "), nil
+		return strings.Join(subExpr, " OR "), valueMap, nil
 
 	default:
-		return "", fmt.Errorf("unsupported expression's logic operator: %s", op)
+		return "", nil, fmt.Errorf("unsupported expression's logic operator: %s", op)
 	}
 }
 
-func doSoloSQLWhereExpr(op LogicOperator, rules []RuleFactory, priority []string) (
-	where string, err error,
-) {
+func doSoloSQLWhereExpr(opt *SQLWhereOption, op LogicOperator, rules []RuleFactory, priority []string) (
+	string, map[string]interface{}, error) {
+
 	if len(rules) == 0 {
-		return "", nil
+		return "", nil, nil
 	}
 
 	// rearrange the rules with priority so that the query expression can
@@ -296,28 +307,32 @@ func doSoloSQLWhereExpr(op LogicOperator, rules []RuleFactory, priority []string
 
 	// generate all the sub-expressions which is described by each rule.
 	subExpr := make([]string, 0)
+	valueMap := make(map[string]interface{})
 	for _, one := range rearrangedRules {
-		expr, err := one.SQLExpr()
+		expr, value, err := one.SQLExprAndValue(opt)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 
 		subExpr = append(subExpr, expr)
+		for key, val := range value {
+			valueMap[key] = val
+		}
 	}
 
 	if len(subExpr) == 0 {
-		return "", errors.New("invalid expression with 0 rules to query")
+		return "", nil, errors.New("invalid expression with 0 rules to query")
 	}
 
 	switch op {
 	case And:
-		return "WHERE " + strings.Join(subExpr, " AND "), nil
+		return strings.Join(subExpr, " AND "), valueMap, nil
 
 	case Or:
-		return "WHERE " + strings.Join(subExpr, " OR "), nil
+		return strings.Join(subExpr, " OR "), valueMap, nil
 
 	default:
-		return "", fmt.Errorf("unsupported expression's logic operator: %s", op)
+		return "", nil, fmt.Errorf("unsupported expression's logic operator: %s", op)
 	}
 }
 
@@ -370,6 +385,8 @@ const (
 	EmptyType RuleType = "Empty"
 	// AtomType means it's a AtomRule
 	AtomType RuleType = "AtomRule"
+	// ExpressionType means that it may be a query expression or a sub query expression.
+	ExpressionType RuleType = "Expression"
 	// UnknownType means it's an unknown type.
 	UnknownType RuleType = "Unknown"
 )

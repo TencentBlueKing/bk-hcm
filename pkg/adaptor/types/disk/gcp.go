@@ -17,37 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package disk
 
 import (
-	"hcm/cmd/hc-service/service/capability"
-	"hcm/pkg/adaptor"
-	"hcm/pkg/rest"
+	"fmt"
+
+	"google.golang.org/api/compute/v1"
 )
 
-// InitDiskService initial the disk service
-func InitDiskService(cap *capability.Capability) {
-	d := &disk{
-		//ad: cap.Adaptor,
-	}
-
-	h := rest.NewHandler()
-
-	h.Add("CreateDisks", "POST", "/vendors/{vendor}/disks/create", d.CreateDisks)
-
-	h.Load(cap.WebService)
+// GcpDiskCreateOption ...
+type GcpDiskCreateOption struct {
+	Name     string
+	Region   string
+	Zone     string
+	DiskType string
+	DiskSize int64
 }
 
-type disk struct {
-	ad *adaptor.Adaptor
-}
-
-//type createFunc func()
-//
-//var CreateMethods map[enumor.Vendor]createFunc
-
-// CreateDisks 创建云硬盘
-func (d *disk) CreateDisks(cts *rest.Contexts) (interface{}, error) {
-	// vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
-	return nil, nil
+// ToCreateDiskRequest 转换成接口需要的 *compute.Disk 结构
+func (opt *GcpDiskCreateOption) ToCreateDiskRequest(cloudProjectID string) (*compute.Disk, error) {
+	return &compute.Disk{
+		Region: opt.Region,
+		Name:   opt.Name,
+		Type: fmt.Sprintf("projects/%s/zones/%s/diskTypes/%s", cloudProjectID, opt.Zone,
+			opt.DiskType),
+		SizeGb: opt.DiskSize,
+	}, nil
 }

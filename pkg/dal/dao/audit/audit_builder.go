@@ -290,13 +290,13 @@ func (ab *AuditBuilder) Do(txn *sqlx.Tx) error {
 }
 
 func (ab *AuditBuilder) listAccount(whereExpr string) ([]*cloud.AccountTable, error) {
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s`, cloud.AccountColumns.NamedExpr(), "account", whereExpr)
+	// sql := fmt.Sprintf(`SELECT %s FROM %s %s`, cloud.AccountColumns.NamedExpr(), "account", whereExpr)
+	//
+	// list := make([]*cloud.AccountTable, 0)
+	// err := ab.ad.orm.Do().Select(ab.kt.Ctx, &list, sql)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("select account failed, err: %v", err)
+	// }
 
-	list := make([]*cloud.AccountTable, 0)
-	err := ab.ad.orm.Do().Select(ab.kt.Ctx, &list, sql)
-	if err != nil {
-		return nil, fmt.Errorf("select account failed, err: %v", err)
-	}
-
-	return list, nil
+	return nil, nil
 }

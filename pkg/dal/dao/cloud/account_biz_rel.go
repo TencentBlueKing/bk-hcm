@@ -78,7 +78,7 @@ func (a AccountBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListA
 		return nil, err
 	}
 
-	whereExpr, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (a AccountBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListA
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBizRelTable, whereExpr)
 
-		count, err := a.Orm.Do().Count(kt.Ctx, sql)
+		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count account_biz_rel failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -105,7 +105,7 @@ func (a AccountBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListA
 		table.AccountBizRelTable, whereExpr, pageExpr)
 
 	details := make([]*cloud.AccountBizRelTable, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -118,13 +118,13 @@ func (a AccountBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *fil
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBizRelTable, whereExpr)
-	if err := a.Orm.Txn(tx).Delete(kt.Ctx, sql); err != nil {
+	if _, err := a.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete account_biz_rel failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

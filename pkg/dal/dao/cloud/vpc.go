@@ -107,7 +107,7 @@ func (v *vpcDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cloud
 		return err
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (v *vpcDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cloud
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = v.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := v.orm.Txn(txn).Update(kt.Ctx, sql, toUpdate)
+		effected, err := v.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update vpc failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -162,7 +162,7 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 		}
 		whereOpt = whereOpts[0]
 	}
-	whereExpr, err := opt.Filter.SQLWhereExpr(whereOpt)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(whereOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 		// this is a count request, do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.VpcTable, whereExpr)
 
-		count, err := v.orm.Do().Count(kt.Ctx, sql)
+		count, err := v.orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count vpcs failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -189,7 +189,7 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 		whereExpr, pageExpr)
 
 	details := make([]cloud.VpcTable, 0)
-	if err = v.orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+	if err = v.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -207,11 +207,15 @@ func (v *vpcDao) ListByGcpSelfLink(kt *kit.Kit, links []string) ([]cloud.VpcTabl
 		return nil, errf.New(errf.InvalidParameter, "self links exceeds maximum limit")
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE vendor = "gcp" AND extension ->> '$.self_link' IN ('%s')`,
-		cloud.VpcColumns.NamedExpr(), table.VpcTable, strings.Join(links, "','"))
+	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE vendor = "gcp" AND extension ->> '$.self_link' IN (:self_link)`,
+		cloud.VpcColumns.NamedExpr(), table.VpcTable)
 
 	details := make([]cloud.VpcTable, 0)
-	if err := v.orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+
+	param := map[string]interface{}{
+		"self_link": strings.Join(links, "','"),
+	}
+	if err := v.orm.Do().Select(kt.Ctx, &details, sql, param); err != nil {
 		return nil, err
 	}
 
@@ -224,13 +228,13 @@ func (v *vpcDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.VpcTable, whereExpr)
-	if err = v.orm.Txn(tx).Delete(kt.Ctx, sql); err != nil {
+	if _, err = v.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete vpc failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

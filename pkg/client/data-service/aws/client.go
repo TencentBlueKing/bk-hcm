@@ -25,15 +25,21 @@ import (
 
 // Client is a aws api client
 type Client struct {
+	*restClient
 	Account       *AccountClient
 	SecurityGroup *SecurityGroupClient
 	Vpc           *VpcClient
 	Subnet        *SubnetClient
 }
 
+type restClient struct {
+	client rest.ClientInterface
+}
+
 // NewClient create a new aws api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
+		restClient:    &restClient{client: client},
 		Account:       NewAccountClient(client),
 		SecurityGroup: NewCloudSecurityGroupClient(client),
 		Vpc:           NewVpcClient(client),

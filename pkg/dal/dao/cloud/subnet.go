@@ -113,7 +113,7 @@ func (v *subnetDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 		return err
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (v *subnetDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = v.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := v.orm.Txn(txn).Update(kt.Ctx, sql, toUpdate)
+		effected, err := v.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update subnet failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -169,7 +169,7 @@ func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 		}
 		whereOpt = whereOpts[0]
 	}
-	whereExpr, err := opt.Filter.SQLWhereExpr(whereOpt)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(whereOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +178,7 @@ func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 		// this is a count request, do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.SubnetTable, whereExpr)
 
-		count, err := v.orm.Do().Count(kt.Ctx, sql)
+		count, err := v.orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count subnets failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -196,7 +196,7 @@ func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 		whereExpr, pageExpr)
 
 	details := make([]cloud.SubnetTable, 0)
-	if err = v.orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+	if err = v.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -209,13 +209,13 @@ func (v *subnetDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filt
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.SubnetTable, whereExpr)
-	if err = v.orm.Txn(tx).Delete(kt.Ctx, sql); err != nil {
+	if _, err = v.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete subnet failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

@@ -20,7 +20,7 @@
 package huawei
 
 import (
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/disk"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/region"
@@ -28,15 +28,20 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://support.huaweicloud.com/api-evs/evs_04_2003.html
-func (h *Huawei) CreateDisk(opt *types.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {
+func (h *Huawei) CreateDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {
+	return h.createDisk(opt)
+}
+
+func (h *Huawei) createDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {
 	client, err := h.clientSet.evsClient(region.ValueOf(opt.Region))
 	if err != nil {
 		return nil, err
 	}
 
-	req := &model.CreateVolumeRequest{}
-	req.Body = &model.CreateVolumeRequestBody{}
-	req.Body.Volume = &model.CreateVolumeOption{AvailabilityZone: opt.AvailabilityZone}
+	req, err := opt.ToCreateVolumeRequest()
+	if err != nil {
+		return nil, err
+	}
 
 	return client.CreateVolume(req)
 }

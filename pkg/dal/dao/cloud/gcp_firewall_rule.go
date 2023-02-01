@@ -92,7 +92,7 @@ func (g GcpFirewallRuleDao) Update(kt *kit.Kit, expr *filter.Expression, rule *c
 		return err
 	}
 
-	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (g GcpFirewallRuleDao) Update(kt *kit.Kit, expr *filter.Expression, rule *c
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, rule.TableName(), setExpr, whereExpr)
 
 	_, err = g.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := g.Orm.Txn(txn).Update(kt.Ctx, sql, toUpdate)
+		effected, err := g.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update %s failed, err: %v, filter: %s, rid: %v", table.GcpFirewallRuleTable, err,
 				expr, kt.Rid)
@@ -169,7 +169,7 @@ func (g GcpFirewallRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*types.Lis
 		return nil, err
 	}
 
-	whereExpr, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +178,7 @@ func (g GcpFirewallRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*types.Lis
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.GcpFirewallRuleTable, whereExpr)
 
-		count, err := g.Orm.Do().Count(kt.Ctx, sql)
+		count, err := g.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count %s failed, err: %v, filter: %s, rid: %s", table.GcpFirewallRuleTable, err,
 				opt.Filter, kt.Rid)
@@ -197,7 +197,7 @@ func (g GcpFirewallRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*types.Lis
 		table.GcpFirewallRuleTable, whereExpr, pageExpr)
 
 	details := make([]cloud.GcpFirewallRuleTable, 0)
-	if err = g.Orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+	if err = g.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -210,13 +210,13 @@ func (g GcpFirewallRuleDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.GcpFirewallRuleTable, whereExpr)
-	if err = g.Orm.Txn(tx).Delete(kt.Ctx, sql); err != nil {
+	if _, err = g.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete %s failed, err: %v, filter: %s, rid: %s", table.GcpFirewallRuleTable, err, expr, kt.Rid)
 		return err
 	}

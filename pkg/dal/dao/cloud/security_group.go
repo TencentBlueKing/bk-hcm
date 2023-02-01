@@ -92,7 +92,7 @@ func (s SecurityGroupDao) Update(kt *kit.Kit, expr *filter.Expression, sg *cloud
 		return err
 	}
 
-	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (s SecurityGroupDao) Update(kt *kit.Kit, expr *filter.Expression, sg *cloud
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, sg.TableName(), setExpr, whereExpr)
 
 	_, err = s.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := s.Orm.Txn(txn).Update(kt.Ctx, sql, toUpdate)
+		effected, err := s.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update security group failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 			return nil, err
@@ -165,7 +165,7 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 		return nil, err
 	}
 
-	whereExpr, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.SecurityGroupTable, whereExpr)
 
-		count, err := s.Orm.Do().Count(kt.Ctx, sql)
+		count, err := s.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count security group failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -192,7 +192,7 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 		table.SecurityGroupTable, whereExpr, pageExpr)
 
 	details := make([]cloud.SecurityGroupTable, 0)
-	if err = s.Orm.Do().Select(kt.Ctx, &details, sql); err != nil {
+	if err = s.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -205,13 +205,13 @@ func (s SecurityGroupDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Ex
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
 
-	whereExpr, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
 	if err != nil {
 		return err
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.SecurityGroupTable, whereExpr)
-	if err = s.Orm.Txn(tx).Delete(kt.Ctx, sql); err != nil {
+	if _, err = s.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete security group failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}

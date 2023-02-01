@@ -35,14 +35,52 @@ import (
 
 	_ "github.com/go-sql-driver/mysql" // import mysql drive, used to create conn.
 	"github.com/jmoiron/sqlx"
+	"hcm/pkg/dal/table"
 )
+
+// ObjectDao 对象 Dao 接口
+type ObjectDao interface {
+	Name() table.Name
+	SetOrm(o orm.Interface)
+	SetIDGen(g idgenerator.IDGenInterface)
+	Orm() orm.Interface
+	IDGen() idgenerator.IDGenInterface
+}
+
+// ObjectDaoManager ...
+type ObjectDaoManager struct {
+	idGen idgenerator.IDGenInterface
+	orm   orm.Interface
+}
+
+// SetOrm ...
+func (m *ObjectDaoManager) SetOrm(o orm.Interface) {
+	m.orm = o
+}
+
+// SetIDGen ...
+func (m *ObjectDaoManager) SetIDGen(g idgenerator.IDGenInterface) {
+	m.idGen = g
+}
+
+// Orm ...
+func (m *ObjectDaoManager) Orm() orm.Interface {
+	return m.orm
+}
+
+// IDGen ...
+func (m *ObjectDaoManager) IDGen() idgenerator.IDGenInterface {
+	return m.idGen
+}
 
 // Set defines all the DAO to be operated.
 type Set interface {
+	RegisterObjectDao(dao ObjectDao)
+	GetObjectDao(name table.Name) ObjectDao
+
 	Auth() auth.Auth
 	Account() cloud.Account
 	SecurityGroup() cloud.SecurityGroup
-	SecurityGroupBizRel() cloud.SecurityGroupBizRel
 	TCloudSGRule() cloud.TCloudSGRule
 	AwsSGRule() cloud.AwsSGRule
 	HuaWeiSGRule() cloud.HuaWeiSGRule
@@ -52,6 +90,7 @@ type Set interface {
 	AccountBizRel() cloud.AccountBizRel
 	Vpc() cloud.Vpc
 	Subnet() cloud.Subnet
+
 	Txn() *Txn
 }
 
@@ -73,10 +112,11 @@ func NewDaoSet(opt cc.DataBase) (Set, error) {
 	}
 
 	s := &set{
-		idGen:    idGen,
-		orm:      ormInst,
-		db:       db,
-		auditDao: auditDao,
+		idGen:      idGen,
+		orm:        ormInst,
+		db:         db,
+		auditDao:   auditDao,
+		objectDaos: make(map[table.Name]ObjectDao),
 	}
 
 	return s, nil
@@ -116,6 +156,8 @@ type set struct {
 	orm      orm.Interface
 	db       *sqlx.DB
 	auditDao audit.AuditDao
+
+	objectDaos map[table.Name]ObjectDao
 }
 
 // Account return account dao.
@@ -157,6 +199,23 @@ func (s *set) Cloud() cloud.Cloud {
 	}
 }
 
+// RegisterObjectDao 注册 ObjectDao
+func (s *set) RegisterObjectDao(dao ObjectDao) {
+	dao.SetOrm(s.orm)
+	dao.SetIDGen(s.idGen)
+
+	tableName := dao.Name()
+	s.objectDaos[tableName] = dao
+
+	// 注册自己的表名
+	tableName.Register()
+}
+
+// GetObjectDao 根据名称获取对应的 ObjectDao
+func (s *set) GetObjectDao(name table.Name) ObjectDao {
+	return s.objectDaos[name]
+}
+
 // Txn define dao set Txn.
 type Txn struct {
 	orm orm.Interface
@@ -179,13 +238,6 @@ func (s *set) SecurityGroup() cloud.SecurityGroup {
 	return &cloud.SecurityGroupDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
-	}
-}
-
-// SecurityGroupBizRel return security group and biz rel dao.
-func (s *set) SecurityGroupBizRel() cloud.SecurityGroupBizRel {
-	return &cloud.SecurityGroupBizRelDao{
-		Orm: s.orm,
 	}
 }
 
