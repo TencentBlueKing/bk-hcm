@@ -43,7 +43,7 @@ type SecurityGroupClient struct {
 
 // UpdateSecurityGroup update security group rule.
 func (cli *SecurityGroupClient) UpdateSecurityGroup(ctx context.Context, h http.Header, id string,
-	request *proto.SecurityGroupUpdateReq) error {
+	request *proto.AzureSecurityGroupUpdateReq) error {
 
 	resp := new(core.UpdateResp)
 

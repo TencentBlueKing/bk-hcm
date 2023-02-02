@@ -128,3 +128,18 @@ func genAuditResource(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+// genSecurityGroupResource generate security group related iam resource.
+func genSecurityGroupResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genResourceResource(a)
+}
+
+// genSecurityGroupRuleResource generate security group rule related iam resource.
+func genSecurityGroupRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genResourceResource(a)
+}
+
+// genGcpFirewallRuleResource generate gcp firewall rule related iam resource.
+func genGcpFirewallRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genResourceResource(a)
+}

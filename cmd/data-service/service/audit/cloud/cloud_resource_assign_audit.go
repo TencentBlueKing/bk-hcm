@@ -80,7 +80,9 @@ func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 	var err error
 	switch resType {
 	case enumor.SecurityGroupAuditResType:
-		audits, err = ad.securityGroupAssignAuditBuild(kt, assigns)
+		audits, err = ad.securityGroup.SecurityGroupAssignAuditBuild(kt, assigns)
+	case enumor.GcpFirewallRuleAuditResType:
+		audits, err = ad.firewall.FirewallRuleAssignAuditBuild(kt, assigns)
 	case enumor.VpcCloudAuditResType:
 		audits, err = ad.vpcAssignAuditBuild(kt, assigns)
 	case enumor.SubnetAuditResType:

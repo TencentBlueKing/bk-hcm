@@ -135,7 +135,7 @@ func (g *securityGroup) UpdateAzureSecurityGroup(cts *rest.Contexts) (interface{
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	req := new(proto.SecurityGroupUpdateReq)
+	req := new(proto.AzureSecurityGroupUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -144,37 +144,10 @@ func (g *securityGroup) UpdateAzureSecurityGroup(cts *rest.Contexts) (interface{
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 云上仅支持更新Name。
-	if len(req.Name) != 0 {
-		sg, err := g.dataCli.Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
-		if err != nil {
-			logs.Errorf("request dataservice get azure security group failed, err: %v, id: %s, rid: %s", err, id,
-				cts.Kit.Rid)
-			return nil, err
-		}
-
-		client, err := g.ad.Azure(cts.Kit, sg.AccountID)
-		if err != nil {
-			return nil, err
-		}
-
-		opt := &types.AzureSecurityGroupOption{
-			Region:            sg.Region,
-			Name:              req.Name,
-			ResourceGroupName: sg.Extension.ResourceGroupName,
-		}
-		if err := client.UpdateSecurityGroup(cts.Kit, opt); err != nil {
-			logs.Errorf("request adaptor to UpdateSecurityGroup failed, err: %v, opt: %v, rid: %s", err, opt,
-				cts.Kit.Rid)
-			return nil, err
-		}
-	}
-
 	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.AzureSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.AzureSecurityGroupExtension]{
 			{
 				ID:   id,
-				Name: req.Name,
 				Memo: req.Memo,
 			},
 		},

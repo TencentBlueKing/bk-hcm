@@ -17,18 +17,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package securitygroup
 
 import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/audit"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -38,28 +41,29 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// AzureSGRule only used for azure security group rule.
-type AzureSGRule interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.AzureSecurityGroupRuleTable) ([]string, error)
-	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.AzureSecurityGroupRuleTable) error
-	List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListAzureSGRuleDetails, error)
+// AwsSGRule only used for aws security group rule.
+type AwsSGRule interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.AwsSecurityGroupRuleTable) ([]string, error)
+	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.AwsSecurityGroupRuleTable) error
+	List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListAwsSGRuleDetails, error)
 	Delete(kt *kit.Kit, expr *filter.Expression) error
 }
 
-var _ AzureSGRule = new(AzureSGRuleDao)
+var _ AwsSGRule = new(AwsSGRuleDao)
 
-// AzureSGRuleDao azure security group rule dao.
-type AzureSGRuleDao struct {
+// AwsSGRuleDao aws security group rule dao.
+type AwsSGRuleDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
+	Audit audit.Interface
 }
 
 // BatchCreateWithTx rule.
-func (dao *AzureSGRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.AzureSecurityGroupRuleTable) (
+func (dao *AwsSGRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.AwsSecurityGroupRuleTable) (
 	[]string, error) {
 
 	// generate account id
-	ids, err := dao.IDGen.Batch(kt, table.AzureSecurityGroupRuleTable, len(rules))
+	ids, err := dao.IDGen.Batch(kt, table.AwsSecurityGroupRuleTable, len(rules))
 	if err != nil {
 		return nil, err
 	}
@@ -73,20 +77,78 @@ func (dao *AzureSGRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*
 		}
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AzureSecurityGroupRuleTable,
-		cloud.AzureSGRuleColumns.ColumnExpr(), cloud.AzureSGRuleColumns.ColonNameExpr())
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AwsSecurityGroupRuleTable,
+		cloud.AwsSGRuleColumns.ColumnExpr(), cloud.AwsSGRuleColumns.ColonNameExpr())
 
 	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rules); err != nil {
-		logs.Errorf("insert %s failed, err: %v, rid: %s", table.AzureSecurityGroupRuleTable, err, kt.Rid)
-		return nil, fmt.Errorf("insert %s failed, err: %v", table.AzureSecurityGroupRuleTable, err)
+		logs.Errorf("insert %s failed, err: %v, rid: %s", table.AwsSecurityGroupRuleTable, err, kt.Rid)
+		return nil, fmt.Errorf("insert %s failed, err: %v", table.AwsSecurityGroupRuleTable, err)
+	}
+
+	if err = dao.batchCreateAudit(kt, tx, rules); err != nil {
+		return nil, err
 	}
 
 	return ids, nil
 }
 
+func (dao *AwsSGRuleDao) batchCreateAudit(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.AwsSecurityGroupRuleTable) error {
+	sgIDMap := make(map[string]bool, 0)
+	for _, rule := range rules {
+		sgIDMap[rule.SecurityGroupID] = true
+	}
+
+	sgIDs := make([]string, 0, len(sgIDMap))
+	for id, _ := range sgIDMap {
+		sgIDs = append(sgIDs, id)
+	}
+
+	idSgMap, err := listSecurityGroup(kt, dao.Orm, sgIDs)
+	if err != nil {
+		return err
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(rules))
+	for _, rule := range rules {
+		sg, exist := idSgMap[rule.SecurityGroupID]
+		if !exist {
+			return errf.Newf(errf.RecordNotFound, "security group: %s not found", rule.SecurityGroupID)
+		}
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      sg.ID,
+			CloudResID: sg.CloudID,
+			ResName:    sg.Name,
+			ResType:    enumor.SecurityGroupAuditResType,
+			Action:     enumor.Update,
+			BkBizID:    sg.BkBizID,
+			Vendor:     sg.Vendor,
+			AccountID:  sg.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: &tableaudit.ChildResAuditData{
+					ChildResType: enumor.SecurityGroupRuleAuditResType,
+					Action:       enumor.Create,
+					ChildRes:     rule,
+				},
+			},
+		})
+	}
+
+	if err = dao.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
 // UpdateWithTx rule.
-func (dao *AzureSGRuleDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.
-	AzureSecurityGroupRuleTable) error {
+func (dao *AwsSGRuleDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.
+	AwsSecurityGroupRuleTable) error {
 
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
@@ -111,12 +173,12 @@ func (dao *AzureSGRuleDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.E
 
 	effected, err := dao.Orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 	if err != nil {
-		logs.ErrorJson("update azure security group rule failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
+		logs.ErrorJson("update aws security group rule failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 		return err
 	}
 
 	if effected == 0 {
-		logs.ErrorJson("update azure security group rule, but record not found, filter: %v, rid: %v", expr, kt.Rid)
+		logs.ErrorJson("update aws security group rule, but record not found, filter: %v, rid: %v", expr, kt.Rid)
 		return errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
 	}
 
@@ -124,12 +186,12 @@ func (dao *AzureSGRuleDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.E
 }
 
 // List rules.
-func (dao *AzureSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListAzureSGRuleDetails, error) {
+func (dao *AwsSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListAwsSGRuleDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.AzureSGRuleColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.AwsSGRuleColumns.ColumnTypes())),
 		core.DefaultPageOption); err != nil {
 		return nil, err
 	}
@@ -154,16 +216,16 @@ func (dao *AzureSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*type
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AzureSecurityGroupRuleTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AwsSecurityGroupRuleTable, whereExpr)
 
 		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.ErrorJson("count azure security group rule failed, err: %v, filter: %s, rid: %s", err,
+			logs.ErrorJson("count aws security group rule failed, err: %v, filter: %s, rid: %s", err,
 				opt.Filter, kt.Rid)
 			return nil, err
 		}
 
-		return &types.ListAzureSGRuleDetails{Count: count}, nil
+		return &types.ListAwsSGRuleDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -171,19 +233,19 @@ func (dao *AzureSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*type
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.AzureSGRuleColumns.FieldsNamedExpr(opt.Fields),
-		table.AzureSecurityGroupRuleTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.AwsSGRuleColumns.FieldsNamedExpr(opt.Fields),
+		table.AwsSecurityGroupRuleTable, whereExpr, pageExpr)
 
-	details := make([]cloud.AzureSecurityGroupRuleTable, 0)
+	details := make([]cloud.AwsSecurityGroupRuleTable, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
-	return &types.ListAzureSGRuleDetails{Details: details}, nil
+	return &types.ListAwsSGRuleDetails{Details: details}, nil
 }
 
 // Delete rule.
-func (dao *AzureSGRuleDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
+func (dao *AwsSGRuleDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -193,11 +255,11 @@ func (dao *AzureSGRuleDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AzureSecurityGroupRuleTable, whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AwsSecurityGroupRuleTable, whereExpr)
 
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if _, err = dao.Orm.Txn(txn).Delete(kt.Ctx, sql, whereValue); err != nil {
-			logs.ErrorJson("delete azure security group rule failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
+			logs.ErrorJson("delete aws security group rule failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 			return nil, err
 		}
 

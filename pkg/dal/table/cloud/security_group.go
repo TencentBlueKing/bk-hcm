@@ -53,7 +53,7 @@ var SecurityGroupColumnDescriptor = utils.ColumnDescriptors{
 // SecurityGroupTable define security group table.
 type SecurityGroupTable struct {
 	ID        string          `db:"id" json:"id" validate:"lte=64"`
-	Vendor    string          `db:"vendor" json:"vendor" validate:"lte=16"`
+	Vendor    enumor.Vendor   `db:"vendor" json:"vendor" validate:"lte=16"`
 	CloudID   string          `db:"cloud_id" json:"cloud_id" validate:"lte=255"`
 	BkBizID   int64           `db:"bk_biz_id" json:"bk_biz_id"`
 	Region    string          `db:"region" json:"region" validate:"lte=20"`

@@ -32,8 +32,13 @@ import (
 type Interface interface {
 	// ResDeleteAudit 资源删除审计
 	ResDeleteAudit(kt *kit.Kit, resType enumor.AuditResourceType, ids []string) error
+	// ChildResDeleteAudit 子资源删除审计
+	ChildResDeleteAudit(kt *kit.Kit, resType enumor.AuditResourceType, parentID string, ids []string) error
 	// ResUpdateAudit 资源更新审计
 	ResUpdateAudit(kt *kit.Kit, resType enumor.AuditResourceType, id string, updateFields map[string]interface{}) error
+	// ChildResUpdateAudit 子资源更新审计
+	ChildResUpdateAudit(kt *kit.Kit, resType enumor.AuditResourceType, parentID, id string,
+		updateFields map[string]interface{}) error
 	// ResBizAssignAudit 资源分配到业务审计
 	ResBizAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, resIDs []string, bizID int64) error
 	// ResCloudAreaAssignAudit 资源分配到云区域审计
@@ -126,11 +131,54 @@ func (a audit) ResDeleteAudit(kt *kit.Kit, resType enumor.AuditResourceType, ids
 	return nil
 }
 
+// ChildResDeleteAudit child resource delete audit.
+func (a audit) ChildResDeleteAudit(kt *kit.Kit, resType enumor.AuditResourceType, parentID string, ids []string) error {
+	req := &protoaudit.CloudResourceDeleteAuditReq{
+		ParentID: parentID,
+		Deletes:  make([]protoaudit.CloudResourceDeleteInfo, 0, len(ids)),
+	}
+
+	for _, id := range ids {
+		req.Deletes = append(req.Deletes, protoaudit.CloudResourceDeleteInfo{
+			ResType: resType,
+			ResID:   id,
+		})
+	}
+	if err := a.dataCli.Global.Audit.CloudResourceDeleteAudit(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("request dataservice CloudResourceDeleteAudit failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
 // ResUpdateAudit resource update audit.
 func (a audit) ResUpdateAudit(kt *kit.Kit, resType enumor.AuditResourceType, id string,
 	updateFields map[string]interface{}) error {
 
 	req := &protoaudit.CloudResourceUpdateAuditReq{
+		Updates: []protoaudit.CloudResourceUpdateInfo{
+			{
+				ResType:      resType,
+				ResID:        id,
+				UpdateFields: updateFields,
+			},
+		},
+	}
+	if err := a.dataCli.Global.Audit.CloudResourceUpdateAudit(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("request dataservice CloudResourceUpdateAudit failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// ChildResUpdateAudit child resource update audit.
+func (a audit) ChildResUpdateAudit(kt *kit.Kit, resType enumor.AuditResourceType, parentID, id string,
+	updateFields map[string]interface{}) error {
+
+	req := &protoaudit.CloudResourceUpdateAuditReq{
+		ParentID: parentID,
 		Updates: []protoaudit.CloudResourceUpdateInfo{
 			{
 				ResType:      resType,

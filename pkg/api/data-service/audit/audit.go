@@ -33,7 +33,8 @@ import (
 
 // CloudResourceUpdateAuditReq define cloud create audit request when cloud resource update.
 type CloudResourceUpdateAuditReq struct {
-	Updates []CloudResourceUpdateInfo `json:"updates" validate:"required"`
+	ParentID string                    `json:"parent_id" validate:"omitempty"`
+	Updates  []CloudResourceUpdateInfo `json:"updates" validate:"required"`
 }
 
 // Validate cloud create audit request when cloud resource update.
@@ -60,7 +61,8 @@ type CloudResourceUpdateInfo struct {
 
 // CloudResourceDeleteAuditReq define cloud create audit request when cloud resource delete.
 type CloudResourceDeleteAuditReq struct {
-	Deletes []CloudResourceDeleteInfo `json:"deletes" validate:"required"`
+	ParentID string                    `json:"parent_id" validate:"omitempty"`
+	Deletes  []CloudResourceDeleteInfo `json:"deletes" validate:"required"`
 }
 
 // Validate cloud create audit request when cloud resource update.
@@ -94,7 +96,8 @@ type CloudResourceAssignInfo struct {
 
 // CloudResourceAssignAuditReq cloud resource assign audit request.
 type CloudResourceAssignAuditReq struct {
-	Assigns []CloudResourceAssignInfo `json:"assigns" validate:"required"`
+	ParentID string                    `json:"parent_id" validate:"omitempty"`
+	Assigns  []CloudResourceAssignInfo `json:"assigns" validate:"required"`
 }
 
 // Validate cloud create audit request when cloud resource assign.

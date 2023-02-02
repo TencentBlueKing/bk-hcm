@@ -63,7 +63,7 @@ type AuditTable struct {
 	ResType    enumor.AuditResourceType `db:"res_type" json:"res_type" validate:"lte=50"`
 	Action     enumor.AuditAction       `db:"action" json:"action" validate:"lte=20"`
 	BkBizID    int64                    `db:"bk_biz_id" json:"bk_biz_id"`
-	Vendor     string                   `db:"vendor" json:"vendor" validate:"lte=16"`
+	Vendor     enumor.Vendor            `db:"vendor" json:"vendor" validate:"lte=16"`
 	AccountID  string                   `db:"account_id" json:"account_id" validate:"lte=64"`
 	Operator   string                   `db:"operator" json:"operator" validate:"lte=64"`
 	Source     enumor.RequestSourceType `db:"source" json:"source" validate:"lte=20"`

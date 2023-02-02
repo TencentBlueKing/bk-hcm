@@ -400,7 +400,7 @@ func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.
 			}
 
 			sgs = append(sgs, &tablecloud.SecurityGroupTable{
-				Vendor:    string(vendor),
+				Vendor:    vendor,
 				CloudID:   sg.CloudID,
 				BkBizID:   sg.BkBizID,
 				Region:    sg.Region,

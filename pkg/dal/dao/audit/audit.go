@@ -32,12 +32,15 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	
+	"github.com/jmoiron/sqlx"
 )
 
 // Interface define audit interface.
 type Interface interface {
 	Create(kt *kit.Kit, one *audit.AuditTable) error
 	BatchCreate(kt *kit.Kit, audits []*audit.AuditTable) error
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, audits []*audit.AuditTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListAuditDetails, error)
 }
 
@@ -72,6 +75,25 @@ func (d Dao) BatchCreate(kt *kit.Kit, audits []*audit.AuditTable) error {
 		audit.AuditColumns.ColumnExpr(), audit.AuditColumns.ColonNameExpr())
 
 	if err := d.Orm.Do().BulkInsert(kt.Ctx, sql, audits); err != nil {
+		logs.Errorf("insert %s failed, err: %v, rid: %s", table.AuditTable, err, kt.Rid)
+		return fmt.Errorf("insert %s failed, err: %v", table.AuditTable, err)
+	}
+
+	return nil
+}
+
+// BatchCreateWithTx batch create audit with tx.
+func (d Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, audits []*audit.AuditTable) error {
+	for _, one := range audits {
+		if err := one.CreateValidate(); err != nil {
+			return err
+		}
+	}
+
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AuditTable,
+		audit.AuditColumns.ColumnExpr(), audit.AuditColumns.ColonNameExpr())
+
+	if err := d.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, audits); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.AuditTable, err, kt.Rid)
 		return fmt.Errorf("insert %s failed, err: %v", table.AuditTable, err)
 	}

@@ -38,7 +38,7 @@ type Audit struct {
 	AssociatedResType    string                   `json:"associated_res_type"`
 	Action               enumor.AuditAction       `json:"action"`
 	BkBizID              int64                    `json:"bk_biz_id"`
-	Vendor               string                   `json:"vendor"`
+	Vendor               enumor.Vendor            `json:"vendor"`
 	AccountID            string                   `json:"account_id"`
 	Operator             string                   `json:"operator"`
 	Source               enumor.RequestSourceType `json:"source"`

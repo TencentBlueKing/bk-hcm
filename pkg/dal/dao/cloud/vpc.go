@@ -109,7 +109,7 @@ func (v *vpcDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.VpcT
 			ResType:    enumor.VpcCloudAuditResType,
 			Action:     enumor.Create,
 			BkBizID:    one.BkBizID,
-			Vendor:     string(one.Vendor),
+			Vendor:     one.Vendor,
 			AccountID:  one.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),

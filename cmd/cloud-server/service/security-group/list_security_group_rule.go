@@ -25,8 +25,9 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 // ListSecurityGroupRule list security group rule.
@@ -50,10 +51,23 @@ func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// list authorized instances
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		enumor.SecurityGroupCloudResType, sgID)
+	if err != nil {
+		return nil, err
+	}
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroupRule, Action: meta.Find,
+		ResourceID: basicInfo.AccountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
 	switch vendor {
 	case enumor.TCloud:
 		listReq := &dataproto.TCloudSGRuleListReq{
-			Filter: tools.AllExpression(),
+			Filter: req.Filter,
 			Page: &core.BasePage{
 				Count: req.Page.Count,
 				Start: req.Page.Start,
@@ -65,7 +79,7 @@ func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface
 
 	case enumor.Aws:
 		listReq := &dataproto.AwsSGRuleListReq{
-			Filter: tools.AllExpression(),
+			Filter: req.Filter,
 			Page: &core.BasePage{
 				Count: req.Page.Count,
 				Start: req.Page.Start,
@@ -77,7 +91,7 @@ func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface
 
 	case enumor.HuaWei:
 		listReq := &dataproto.HuaWeiSGRuleListReq{
-			Filter: tools.AllExpression(),
+			Filter: req.Filter,
 			Page: &core.BasePage{
 				Count: req.Page.Count,
 				Start: req.Page.Start,
@@ -89,7 +103,7 @@ func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface
 
 	case enumor.Azure:
 		listReq := &dataproto.AzureSGRuleListReq{
-			Filter: tools.AllExpression(),
+			Filter: req.Filter,
 			Page: &core.BasePage{
 				Count: req.Page.Count,
 				Start: req.Page.Start,
@@ -102,4 +116,119 @@ func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 	}
+}
+
+// GetAzureDefaultSGRule get azure default security group rule.
+func (svc securityGroupSvc) GetAzureDefaultSGRule(cts *rest.Contexts) (interface{}, error) {
+	ruleType := enumor.SecurityGroupRuleType(cts.PathParameter("type").String())
+
+	rules, exist := azureDefaultSGRuleMap[ruleType]
+	if !exist {
+		return nil, errf.Newf(errf.InvalidParameter, "rule type: %s not support", ruleType)
+	}
+
+	return rules, nil
+}
+
+// AzureDefaultSGRule define azure default security group rule.
+type AzureDefaultSGRule struct {
+	Name                             string                       `json:"name"`
+	Memo                             *string                      `json:"memo"`
+	DestinationAddressPrefix         *string                      `json:"destination_address_prefix"`
+	DestinationAddressPrefixes       []*string                    `json:"destination_address_prefixes"`
+	CloudDestinationSecurityGroupIDs []*string                    `json:"cloud_destination_security_group_ids"`
+	DestinationPortRange             *string                      `json:"destination_port_range"`
+	DestinationPortRanges            []*string                    `json:"destination_port_ranges"`
+	Protocol                         string                       `json:"protocol"`
+	ProvisioningState                string                       `json:"provisioning_state"`
+	SourceAddressPrefix              *string                      `json:"source_address_prefix"`
+	SourceAddressPrefixes            []*string                    `json:"source_address_prefixes"`
+	CloudSourceSecurityGroupIDs      []*string                    `json:"cloud_source_security_group_ids"`
+	SourcePortRange                  *string                      `json:"source_port_range"`
+	SourcePortRanges                 []*string                    `json:"source_port_ranges"`
+	Priority                         int32                        `json:"priority"`
+	Type                             enumor.SecurityGroupRuleType `json:"type"`
+	Access                           string                       `json:"access"`
+}
+
+// TODO: 之后考虑是否通过同步的方式将这几条默认安全组规则同步进来，而不是写死。
+// reference:
+// https://learn.microsoft.com/zh-cn/azure/virtual-network/network-security-groups-overview#default-security-rules
+var azureDefaultSGRuleMap = map[enumor.SecurityGroupRuleType][]AzureDefaultSGRule{
+	enumor.Egress: {
+		{
+			Name:                     "AllowVnetOutBound",
+			Memo:                     converter.ValToPtr("Allow outbound traffic from all VMs to all VMs in VNET"),
+			Protocol:                 "*",
+			SourcePortRange:          converter.ValToPtr("*"),
+			DestinationPortRange:     converter.ValToPtr("*"),
+			SourceAddressPrefix:      converter.ValToPtr("VirtualNetwork"),
+			DestinationAddressPrefix: converter.ValToPtr("VirtualNetwork"),
+			Access:                   "Allow",
+			Priority:                 65000,
+			Type:                     enumor.Egress,
+		},
+		{
+			Name:                     "AllowInternetOutBound",
+			Memo:                     converter.ValToPtr("Allow outbound traffic from all VMs to Internet"),
+			Protocol:                 "*",
+			SourcePortRange:          converter.ValToPtr("*"),
+			DestinationPortRange:     converter.ValToPtr("*"),
+			SourceAddressPrefix:      converter.ValToPtr("*"),
+			DestinationAddressPrefix: converter.ValToPtr("Internet"),
+			Access:                   "Allow",
+			Priority:                 65001,
+			Type:                     enumor.Egress,
+		},
+		{
+			Name:                     "DenyAllOutBound",
+			Memo:                     converter.ValToPtr("Deny all outbound traffic"),
+			Protocol:                 "*",
+			SourcePortRange:          converter.ValToPtr("*"),
+			DestinationPortRange:     converter.ValToPtr("*"),
+			SourceAddressPrefix:      converter.ValToPtr("*"),
+			DestinationAddressPrefix: converter.ValToPtr("*"),
+			Access:                   "Deny",
+			Priority:                 65500,
+			Type:                     enumor.Egress,
+		},
+	},
+	enumor.Ingress: {
+		{
+			Name:                     "AllowVnetInBound",
+			Memo:                     converter.ValToPtr("Allow inbound traffic from all VMs in VNET"),
+			Protocol:                 "*",
+			SourcePortRange:          converter.ValToPtr("*"),
+			DestinationPortRange:     converter.ValToPtr("*"),
+			SourceAddressPrefix:      converter.ValToPtr("VirtualNetwork"),
+			DestinationAddressPrefix: converter.ValToPtr("VirtualNetwork"),
+			Access:                   "Allow",
+			Priority:                 65000,
+			Type:                     enumor.Ingress,
+		},
+		{
+			Name:                     "AllowAzureLoadBalancerInBound",
+			Memo:                     converter.ValToPtr("Allow inbound traffic from azure load balancer"),
+			Protocol:                 "*",
+			SourcePortRange:          converter.ValToPtr("*"),
+			DestinationPortRange:     converter.ValToPtr("*"),
+			SourceAddressPrefix:      converter.ValToPtr("AzureLoadBalancer"),
+			DestinationAddressPrefix: converter.ValToPtr("*"),
+			Access:                   "Allow",
+			Priority:                 65001,
+			Type:                     enumor.Ingress,
+		},
+		{
+			Name:                     "DenyAllInBound",
+			Memo:                     converter.ValToPtr("Deny all inbound traffic"),
+			Protocol:                 "*",
+			SourcePortRange:          converter.ValToPtr("*"),
+			DestinationPortRange:     converter.ValToPtr("*"),
+			SourceAddressPrefix:      converter.ValToPtr("*"),
+			DestinationAddressPrefix: converter.ValToPtr("*"),
+			Access:                   "Deny",
+			Priority:                 65500,
+			Type:                     enumor.Ingress,
+		},
+	},
 }

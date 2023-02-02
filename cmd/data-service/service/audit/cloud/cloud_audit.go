@@ -20,17 +20,23 @@
 package cloud
 
 import (
+	"hcm/cmd/data-service/service/audit/cloud/firewall"
+	securitygroup "hcm/cmd/data-service/service/audit/cloud/security-group"
 	"hcm/pkg/dal/dao"
 )
 
 // NewCloudAudit new audit svc.
 func NewCloudAudit(dao dao.Set) *Audit {
 	return &Audit{
-		dao: dao,
+		dao:           dao,
+		securityGroup: securitygroup.NewSecurityGroup(dao),
+		firewall:      firewall.NewFirewall(dao),
 	}
 }
 
 // Audit define cloud audit.
 type Audit struct {
-	dao dao.Set
+	dao           dao.Set
+	securityGroup *securitygroup.SecurityGroup
+	firewall      *firewall.Firewall
 }

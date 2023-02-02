@@ -89,3 +89,15 @@ func (req *AssignGcpFirewallRuleToBizReq) Validate() error {
 
 	return nil
 }
+
+// -------------------------- Delete --------------------------
+
+// GcpFirewallRuleBatchDeleteReq gcp firewall rule batch delete request.
+type GcpFirewallRuleBatchDeleteReq struct {
+	IDs []string `json:"ids" validate:"required"`
+}
+
+// Validate gcp firewall rule batch delete request.
+func (req *GcpFirewallRuleBatchDeleteReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

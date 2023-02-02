@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
 	"hcm/pkg/dal/dao/cloud/region"
+	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/table"
@@ -82,11 +83,11 @@ type Set interface {
 	Audit() audit.Interface
 	Auth() auth.Auth
 	Account() cloud.Account
-	SecurityGroup() cloud.SecurityGroup
-	TCloudSGRule() cloud.TCloudSGRule
-	AwsSGRule() cloud.AwsSGRule
-	HuaWeiSGRule() cloud.HuaWeiSGRule
-	AzureSGRule() cloud.AzureSGRule
+	SecurityGroup() securitygroup.SecurityGroup
+	TCloudSGRule() securitygroup.TCloudSGRule
+	AwsSGRule() securitygroup.AwsSGRule
+	HuaWeiSGRule() securitygroup.HuaWeiSGRule
+	AzureSGRule() securitygroup.AzureSGRule
 	GcpFirewallRule() cloud.GcpFirewallRule
 	Cloud() cloud.Cloud
 	AccountBizRel() cloud.AccountBizRel
@@ -233,8 +234,8 @@ func (s *set) Txn() *Txn {
 }
 
 // SecurityGroup return security group dao.
-func (s *set) SecurityGroup() cloud.SecurityGroup {
-	return &cloud.SecurityGroupDao{
+func (s *set) SecurityGroup() securitygroup.SecurityGroup {
+	return &securitygroup.SecurityGroupDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
@@ -242,10 +243,11 @@ func (s *set) SecurityGroup() cloud.SecurityGroup {
 }
 
 // TCloudSGRule return tcloud security group rule dao.
-func (s *set) TCloudSGRule() cloud.TCloudSGRule {
-	return &cloud.TCloudSGRuleDao{
+func (s *set) TCloudSGRule() securitygroup.TCloudSGRule {
+	return &securitygroup.TCloudSGRuleDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
 
@@ -254,30 +256,34 @@ func (s *set) GcpFirewallRule() cloud.GcpFirewallRule {
 	return &cloud.GcpFirewallRuleDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
 
 // AwsSGRule return aws security group rule dao.
-func (s *set) AwsSGRule() cloud.AwsSGRule {
-	return &cloud.AwsSGRuleDao{
+func (s *set) AwsSGRule() securitygroup.AwsSGRule {
+	return &securitygroup.AwsSGRuleDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
 
 // HuaWeiSGRule return huawei security group rule dao.
-func (s *set) HuaWeiSGRule() cloud.HuaWeiSGRule {
-	return &cloud.HuaWeiSGRuleDao{
+func (s *set) HuaWeiSGRule() securitygroup.HuaWeiSGRule {
+	return &securitygroup.HuaWeiSGRuleDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
 
 // AzureSGRule return azure security group rule dao.
-func (s *set) AzureSGRule() cloud.AzureSGRule {
-	return &cloud.AzureSGRuleDao{
+func (s *set) AzureSGRule() securitygroup.AzureSGRule {
+	return &securitygroup.AzureSGRuleDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
 

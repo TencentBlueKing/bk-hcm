@@ -70,7 +70,7 @@ var GcpFirewallRuleTableColumnDescriptor = utils.ColumnDescriptors{
 type GcpFirewallRuleTable struct {
 	ID                    string            `db:"id" validate:"lte=64" json:"id"`
 	CloudID               string            `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
-	AccountId             string            `db:"account_id" validate:"lte=64" json:"account_id"`
+	AccountID             string            `db:"account_id" validate:"lte=64" json:"account_id"`
 	Name                  string            `db:"name" validate:"lte=62" json:"name"`
 	Priority              int64             `db:"priority" json:"priority"`
 	Memo                  string            `db:"memo" validate:"lte=2048" json:"memo"`

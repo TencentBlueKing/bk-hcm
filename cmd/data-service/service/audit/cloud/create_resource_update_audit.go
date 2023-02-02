@@ -55,7 +55,7 @@ func (ad Audit) CloudResourceUpdateAudit(cts *rest.Contexts) (interface{}, error
 	// 根据分类后的更新信息，对所需要记录的审计信息进行查询
 	auditAll := make([]*tableaudit.AuditTable, 0, len(req.Updates))
 	for resType, updates := range updateMap {
-		audits, err := ad.buildUpdateAuditInfo(cts.Kit, resType, updates)
+		audits, err := ad.buildUpdateAuditInfo(cts.Kit, resType, req.ParentID, updates)
 		if err != nil {
 			logs.Errorf("query update audit info failed, err: %v, rid: %ad", err, cts.Kit.Rid)
 			return nil, err
@@ -73,14 +73,18 @@ func (ad Audit) CloudResourceUpdateAudit(cts *rest.Contexts) (interface{}, error
 	return nil, nil
 }
 
-func (ad Audit) buildUpdateAuditInfo(kt *kit.Kit, resType enumor.AuditResourceType,
+func (ad Audit) buildUpdateAuditInfo(kt *kit.Kit, resType enumor.AuditResourceType, parentID string,
 	updates []protoaudit.CloudResourceUpdateInfo) ([]*tableaudit.AuditTable, error) {
 
 	var audits []*tableaudit.AuditTable
 	var err error
 	switch resType {
 	case enumor.SecurityGroupAuditResType:
-		audits, err = ad.securityGroupUpdateAuditBuild(kt, updates)
+		audits, err = ad.securityGroup.SecurityGroupUpdateAuditBuild(kt, updates)
+	case enumor.SecurityGroupRuleAuditResType:
+		audits, err = ad.securityGroup.SecurityGroupRuleUpdateAuditBuild(kt, parentID, updates)
+	case enumor.GcpFirewallRuleAuditResType:
+		audits, err = ad.firewall.FirewallRuleUpdateAuditBuild(kt, updates)
 	case enumor.VpcCloudAuditResType:
 		audits, err = ad.vpcUpdateAuditBuild(kt, updates)
 	case enumor.SubnetAuditResType:

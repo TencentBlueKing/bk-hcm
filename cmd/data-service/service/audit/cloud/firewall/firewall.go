@@ -17,56 +17,68 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package firewall
 
 import (
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/converter"
 )
 
-func (ad Audit) subnetUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
+// NewFirewall new firewall.
+func NewFirewall(dao dao.Set) *Firewall {
+	return &Firewall{
+		dao: dao,
+	}
+}
+
+// Firewall define firewall audit.
+type Firewall struct {
+	dao dao.Set
+}
+
+// FirewallRuleUpdateAuditBuild firewall rule update audit build.
+func (f *Firewall) FirewallRuleUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(updates))
 	for _, one := range updates {
 		ids = append(ids, one.ResID)
 	}
-	idSubnetMap, err := ad.listSubnet(kt, ids)
+	idMap, err := f.listFirewallRule(kt, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(updates))
 	for _, one := range updates {
-		subnet, exist := idSubnetMap[one.ResID]
+		rule, exist := idMap[one.ResID]
 		if !exist {
 			continue
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ResID,
-			CloudResID: subnet.CloudID,
-			ResName:    converter.PtrToVal(subnet.Name),
-			ResType:    enumor.SubnetAuditResType,
+			CloudResID: rule.CloudID,
+			ResName:    rule.Name,
+			ResType:    enumor.GcpFirewallRuleAuditResType,
 			Action:     enumor.Update,
-			BkBizID:    subnet.BkBizID,
-			Vendor:     subnet.Vendor,
-			AccountID:  subnet.AccountID,
+			BkBizID:    rule.BkBizID,
+			Vendor:     enumor.Gcp,
+			AccountID:  rule.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
-				Data:    subnet,
+				Data:    rule,
 				Changed: one.UpdateFields,
 			},
 		})
@@ -75,40 +87,41 @@ func (ad Audit) subnetUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudRe
 	return audits, nil
 }
 
-func (ad Audit) subnetDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
+// FirewallRuleDeleteAuditBuild firewall rule delete audit build.
+func (f *Firewall) FirewallRuleDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(deletes))
 	for _, one := range deletes {
 		ids = append(ids, one.ResID)
 	}
-	idSubnetMap, err := ad.listSubnet(kt, ids)
+	idMap, err := f.listFirewallRule(kt, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(deletes))
 	for _, one := range deletes {
-		subnet, exist := idSubnetMap[one.ResID]
+		rule, exist := idMap[one.ResID]
 		if !exist {
 			continue
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ResID,
-			CloudResID: subnet.CloudID,
-			ResName:    converter.PtrToVal(subnet.Name),
-			ResType:    enumor.SubnetAuditResType,
+			CloudResID: rule.CloudID,
+			ResName:    rule.Name,
+			ResType:    enumor.GcpFirewallRuleAuditResType,
 			Action:     enumor.Delete,
-			BkBizID:    subnet.BkBizID,
-			Vendor:     subnet.Vendor,
-			AccountID:  subnet.AccountID,
+			BkBizID:    rule.BkBizID,
+			Vendor:     enumor.Gcp,
+			AccountID:  rule.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
-				Data: subnet,
+				Data: rule,
 			},
 		})
 	}
@@ -116,45 +129,42 @@ func (ad Audit) subnetDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudRe
 	return audits, nil
 }
 
-func (ad Audit) subnetAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
+// FirewallRuleAssignAuditBuild firewall rule assign audit build.
+func (f *Firewall) FirewallRuleAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(assigns))
 	for _, one := range assigns {
 		ids = append(ids, one.ResID)
 	}
-	idSubnetMap, err := ad.listSubnet(kt, ids)
+	idMap, err := f.listFirewallRule(kt, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(assigns))
 	for _, one := range assigns {
-		subnet, exist := idSubnetMap[one.ResID]
+		rule, exist := idMap[one.ResID]
 		if !exist {
 			continue
 		}
 
-		if one.AssignedResType != enumor.BizAuditAssignedResType {
-			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
-		}
-
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ResID,
-			CloudResID: subnet.CloudID,
-			ResName:    converter.PtrToVal(subnet.Name),
-			ResType:    enumor.SubnetAuditResType,
+			CloudResID: rule.CloudID,
+			ResName:    rule.Name,
+			ResType:    enumor.GcpFirewallRuleAuditResType,
 			Action:     enumor.Assign,
-			BkBizID:    subnet.BkBizID,
-			Vendor:     subnet.Vendor,
-			AccountID:  subnet.AccountID,
+			BkBizID:    rule.BkBizID,
+			Vendor:     enumor.Gcp,
+			AccountID:  rule.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
 				Changed: map[string]interface{}{
-					"bk_biz_id": one.AssignedResID,
+					"bk_biz_id": one.ResID,
 				},
 			},
 		})
@@ -163,18 +173,18 @@ func (ad Audit) subnetAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudRe
 	return audits, nil
 }
 
-func (ad Audit) listSubnet(kt *kit.Kit, ids []string) (map[string]tablecloud.SubnetTable, error) {
+func (f *Firewall) listFirewallRule(kt *kit.Kit, ids []string) (map[string]tablecloud.GcpFirewallRuleTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.DefaultBasePage,
 	}
-	list, err := ad.dao.Subnet().List(kt, opt)
+	list, err := f.dao.GcpFirewallRule().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list security group failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
+		logs.Errorf("list gcp firewall rule failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
 		return nil, err
 	}
 
-	result := make(map[string]tablecloud.SubnetTable, len(list.Details))
+	result := make(map[string]tablecloud.GcpFirewallRuleTable, len(list.Details))
 	for _, one := range list.Details {
 		result[one.ID] = one
 	}

@@ -17,13 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package securitygroup
 
 import (
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
@@ -32,21 +31,22 @@ import (
 	"hcm/pkg/logs"
 )
 
-func (ad Audit) securityGroupUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
-	[]*tableaudit.AuditTable, error) {
+func (s *SecurityGroup) tcloudSGRuleUpdateAuditBuild(kt *kit.Kit, sg tablecloud.SecurityGroupTable,
+	updates []protoaudit.CloudResourceUpdateInfo) ([]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(updates))
 	for _, one := range updates {
 		ids = append(ids, one.ResID)
 	}
-	idSgMap, err := ad.listSecurityGroup(kt, ids)
+
+	idSgRuleMap, err := s.listTCloudSGRule(kt, sg.ID, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(updates))
 	for _, one := range updates {
-		sg, exist := idSgMap[one.ResID]
+		rule, exist := idSgRuleMap[one.ResID]
 		if !exist {
 			continue
 		}
@@ -65,7 +65,11 @@ func (ad Audit) securityGroupUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
-				Data:    sg,
+				Data: &tableaudit.ChildResAuditData{
+					ChildResType: enumor.SecurityGroupRuleAuditResType,
+					Action:       enumor.Update,
+					ChildRes:     rule,
+				},
 				Changed: one.UpdateFields,
 			},
 		})
@@ -74,21 +78,22 @@ func (ad Audit) securityGroupUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.
 	return audits, nil
 }
 
-func (ad Audit) securityGroupDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
-	[]*tableaudit.AuditTable, error) {
+func (s *SecurityGroup) tcloudSGRuleDeleteAuditBuild(kt *kit.Kit, sg tablecloud.SecurityGroupTable,
+	deletes []protoaudit.CloudResourceDeleteInfo) ([]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(deletes))
 	for _, one := range deletes {
 		ids = append(ids, one.ResID)
 	}
-	idSgMap, err := ad.listSecurityGroup(kt, ids)
+
+	idSgRuleMap, err := s.listTCloudSGRule(kt, sg.ID, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(deletes))
 	for _, one := range deletes {
-		sg, exist := idSgMap[one.ResID]
+		rule, exist := idSgRuleMap[one.ResID]
 		if !exist {
 			continue
 		}
@@ -98,7 +103,7 @@ func (ad Audit) securityGroupDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.
 			CloudResID: sg.CloudID,
 			ResName:    sg.Name,
 			ResType:    enumor.SecurityGroupAuditResType,
-			Action:     enumor.Delete,
+			Action:     enumor.Update,
 			BkBizID:    sg.BkBizID,
 			Vendor:     sg.Vendor,
 			AccountID:  sg.AccountID,
@@ -107,53 +112,10 @@ func (ad Audit) securityGroupDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
-				Data: sg,
-			},
-		})
-	}
-
-	return audits, nil
-}
-
-func (ad Audit) securityGroupAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
-	[]*tableaudit.AuditTable, error) {
-
-	ids := make([]string, 0, len(assigns))
-	for _, one := range assigns {
-		ids = append(ids, one.ResID)
-	}
-	idSgMap, err := ad.listSecurityGroup(kt, ids)
-	if err != nil {
-		return nil, err
-	}
-
-	audits := make([]*tableaudit.AuditTable, 0, len(assigns))
-	for _, one := range assigns {
-		sg, exist := idSgMap[one.ResID]
-		if !exist {
-			continue
-		}
-
-		if one.AssignedResType != enumor.BizAuditAssignedResType {
-			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
-		}
-
-		audits = append(audits, &tableaudit.AuditTable{
-			ResID:      one.ResID,
-			CloudResID: sg.CloudID,
-			ResName:    sg.Name,
-			ResType:    enumor.SecurityGroupAuditResType,
-			Action:     enumor.Assign,
-			BkBizID:    sg.BkBizID,
-			Vendor:     sg.Vendor,
-			AccountID:  sg.AccountID,
-			Operator:   kt.User,
-			Source:     kt.GetRequestSource(),
-			Rid:        kt.Rid,
-			AppCode:    kt.AppCode,
-			Detail: &tableaudit.BasicDetail{
-				Changed: map[string]interface{}{
-					"bk_biz_id": one.AssignedResID,
+				Data: &tableaudit.ChildResAuditData{
+					ChildResType: enumor.SecurityGroupRuleAuditResType,
+					Action:       enumor.Delete,
+					ChildRes:     rule,
 				},
 			},
 		})
@@ -162,18 +124,21 @@ func (ad Audit) securityGroupAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.
 	return audits, nil
 }
 
-func (ad Audit) listSecurityGroup(kt *kit.Kit, ids []string) (map[string]tablecloud.SecurityGroupTable, error) {
-	opt := &types.ListOption{
-		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.DefaultBasePage,
+func (s *SecurityGroup) listTCloudSGRule(kt *kit.Kit, sgID string, ids []string) (
+	map[string]tablecloud.TCloudSecurityGroupRuleTable, error) {
+
+	opt := &types.SGRuleListOption{
+		SecurityGroupID: sgID,
+		Filter:          tools.ContainersExpression("id", ids),
+		Page:            core.DefaultBasePage,
 	}
-	list, err := ad.dao.SecurityGroup().List(kt, opt)
+	list, err := s.dao.TCloudSGRule().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list security group failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
+		logs.Errorf("list tcloud security group rule failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 
-	result := make(map[string]tablecloud.SecurityGroupTable, len(list.Details))
+	result := make(map[string]tablecloud.TCloudSecurityGroupRuleTable, len(list.Details))
 	for _, one := range list.Details {
 		result[one.ID] = one
 	}

@@ -17,56 +17,69 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package securitygroup
 
 import (
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/converter"
 )
 
-func (ad Audit) subnetUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
+// NewSecurityGroup new firewall.
+func NewSecurityGroup(dao dao.Set) *SecurityGroup {
+	return &SecurityGroup{
+		dao: dao,
+	}
+}
+
+// SecurityGroup define firewall audit.
+type SecurityGroup struct {
+	dao dao.Set
+}
+
+// SecurityGroupUpdateAuditBuild security group update audit.
+func (s *SecurityGroup) SecurityGroupUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(updates))
 	for _, one := range updates {
 		ids = append(ids, one.ResID)
 	}
-	idSubnetMap, err := ad.listSubnet(kt, ids)
+	idSgMap, err := s.listSecurityGroup(kt, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(updates))
 	for _, one := range updates {
-		subnet, exist := idSubnetMap[one.ResID]
+		sg, exist := idSgMap[one.ResID]
 		if !exist {
 			continue
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ResID,
-			CloudResID: subnet.CloudID,
-			ResName:    converter.PtrToVal(subnet.Name),
-			ResType:    enumor.SubnetAuditResType,
+			CloudResID: sg.CloudID,
+			ResName:    sg.Name,
+			ResType:    enumor.SecurityGroupAuditResType,
 			Action:     enumor.Update,
-			BkBizID:    subnet.BkBizID,
-			Vendor:     subnet.Vendor,
-			AccountID:  subnet.AccountID,
+			BkBizID:    sg.BkBizID,
+			Vendor:     sg.Vendor,
+			AccountID:  sg.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
-				Data:    subnet,
+				Data:    sg,
 				Changed: one.UpdateFields,
 			},
 		})
@@ -75,40 +88,41 @@ func (ad Audit) subnetUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudRe
 	return audits, nil
 }
 
-func (ad Audit) subnetDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
+// SecurityGroupDeleteAuditBuild security group delete audit.
+func (s *SecurityGroup) SecurityGroupDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(deletes))
 	for _, one := range deletes {
 		ids = append(ids, one.ResID)
 	}
-	idSubnetMap, err := ad.listSubnet(kt, ids)
+	idSgMap, err := s.listSecurityGroup(kt, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(deletes))
 	for _, one := range deletes {
-		subnet, exist := idSubnetMap[one.ResID]
+		sg, exist := idSgMap[one.ResID]
 		if !exist {
 			continue
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ResID,
-			CloudResID: subnet.CloudID,
-			ResName:    converter.PtrToVal(subnet.Name),
-			ResType:    enumor.SubnetAuditResType,
+			CloudResID: sg.CloudID,
+			ResName:    sg.Name,
+			ResType:    enumor.SecurityGroupAuditResType,
 			Action:     enumor.Delete,
-			BkBizID:    subnet.BkBizID,
-			Vendor:     subnet.Vendor,
-			AccountID:  subnet.AccountID,
+			BkBizID:    sg.BkBizID,
+			Vendor:     sg.Vendor,
+			AccountID:  sg.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
-				Data: subnet,
+				Data: sg,
 			},
 		})
 	}
@@ -116,21 +130,22 @@ func (ad Audit) subnetDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudRe
 	return audits, nil
 }
 
-func (ad Audit) subnetAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
+// SecurityGroupAssignAuditBuild security group assign audit.
+func (s *SecurityGroup) SecurityGroupAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(assigns))
 	for _, one := range assigns {
 		ids = append(ids, one.ResID)
 	}
-	idSubnetMap, err := ad.listSubnet(kt, ids)
+	idSgMap, err := s.listSecurityGroup(kt, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(assigns))
 	for _, one := range assigns {
-		subnet, exist := idSubnetMap[one.ResID]
+		sg, exist := idSgMap[one.ResID]
 		if !exist {
 			continue
 		}
@@ -141,13 +156,13 @@ func (ad Audit) subnetAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudRe
 
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ResID,
-			CloudResID: subnet.CloudID,
-			ResName:    converter.PtrToVal(subnet.Name),
-			ResType:    enumor.SubnetAuditResType,
+			CloudResID: sg.CloudID,
+			ResName:    sg.Name,
+			ResType:    enumor.SecurityGroupAuditResType,
 			Action:     enumor.Assign,
-			BkBizID:    subnet.BkBizID,
-			Vendor:     subnet.Vendor,
-			AccountID:  subnet.AccountID,
+			BkBizID:    sg.BkBizID,
+			Vendor:     sg.Vendor,
+			AccountID:  sg.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
@@ -163,18 +178,18 @@ func (ad Audit) subnetAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudRe
 	return audits, nil
 }
 
-func (ad Audit) listSubnet(kt *kit.Kit, ids []string) (map[string]tablecloud.SubnetTable, error) {
+func (s *SecurityGroup) listSecurityGroup(kt *kit.Kit, ids []string) (map[string]tablecloud.SecurityGroupTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.DefaultBasePage,
 	}
-	list, err := ad.dao.Subnet().List(kt, opt)
+	list, err := s.dao.SecurityGroup().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list security group failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
+		logs.Errorf("list security group failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 
-	result := make(map[string]tablecloud.SubnetTable, len(list.Details))
+	result := make(map[string]tablecloud.SecurityGroupTable, len(list.Details))
 	for _, one := range list.Details {
 		result[one.ID] = one
 	}

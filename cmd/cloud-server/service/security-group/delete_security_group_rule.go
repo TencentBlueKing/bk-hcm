@@ -22,6 +22,8 @@ package securitygroup
 import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -40,6 +42,27 @@ func (svc securityGroupSvc) DeleteSecurityGroupRule(cts *rest.Contexts) (interfa
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		enumor.SecurityGroupCloudResType, sgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroupRule, Action: meta.Delete,
+		ResourceID: basicInfo.AccountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	// create delete audit.
+	err = svc.audit.ChildResDeleteAudit(cts.Kit, enumor.SecurityGroupRuleAuditResType, sgID, []string{id})
+	if err != nil {
+		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	switch vendor {

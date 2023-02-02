@@ -91,7 +91,7 @@ func (req *AzureSecurityGroupCreateReq) Validate() error {
 
 // -------------------------- Update --------------------------
 
-// SecurityGroupUpdateReq tcloud security group update request.
+// SecurityGroupUpdateReq security group update request.
 type SecurityGroupUpdateReq struct {
 	Name string  `json:"name" validate:"omitempty"`
 	Memo *string `json:"memo" validate:"omitempty"`
@@ -99,6 +99,16 @@ type SecurityGroupUpdateReq struct {
 
 // Validate tcloud security group update request.
 func (req *SecurityGroupUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AzureSecurityGroupUpdateReq azure security group update request.
+type AzureSecurityGroupUpdateReq struct {
+	Memo *string `json:"memo" validate:"omitempty"`
+}
+
+// Validate azure security group update request.
+func (req *AzureSecurityGroupUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

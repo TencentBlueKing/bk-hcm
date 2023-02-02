@@ -79,7 +79,7 @@ func (svc gcpFirewallRuleSvc) BatchCreateGcpFirewallRule(cts *rest.Contexts) (in
 		for _, rule := range req.FirewallRules {
 			createRules = append(createRules, &tablecloud.GcpFirewallRuleTable{
 				CloudID:               rule.CloudID,
-				AccountId:             rule.AccountID,
+				AccountID:             rule.AccountID,
 				Name:                  rule.Name,
 				Priority:              rule.Priority,
 				Memo:                  rule.Memo,
@@ -137,7 +137,7 @@ func (svc gcpFirewallRuleSvc) BatchUpdateGcpFirewallRule(cts *rest.Contexts) (in
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, rule := range req.FirewallRules {
 			update := &tablecloud.GcpFirewallRuleTable{
-				AccountId:             rule.AccountID,
+				AccountID:             rule.AccountID,
 				CloudID:               rule.CloudID,
 				Name:                  rule.Name,
 				Priority:              rule.Priority,
@@ -212,7 +212,7 @@ func (svc gcpFirewallRuleSvc) ListGcpFirewallRule(cts *rest.Contexts) (interface
 			CloudVpcID:            one.CloudVpcID,
 			SourceRanges:          one.SourceRanges,
 			BkBizID:               one.BkBizID,
-			AccountID:             one.AccountId,
+			AccountID:             one.AccountID,
 			VpcId:                 one.VpcID,
 			DestinationRanges:     one.DestinationRanges,
 			SourceTags:            one.SourceTags,
