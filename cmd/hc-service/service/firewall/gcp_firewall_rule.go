@@ -277,6 +277,7 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -289,6 +290,7 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 		},
 	}
 	ids := make([]string, 0)
+
 	for {
 		results, err := f.dataCli.Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 		if err != nil {
@@ -299,7 +301,7 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 			ids = append(ids, result.ID)
 		}
 		listReq.Page.Start += uint32(len(results.Details))
-		if len(results.Details) == 0 || uint(len(results.Details)) < core.DefaultMaxPageLimit {
+		if uint(len(results.Details)) < core.DefaultMaxPageLimit {
 			break
 		}
 	}
@@ -314,11 +316,82 @@ func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) 
 		}
 	}
 
-	_, err := f.CreateGcpFirewallRule(cts)
+	_, err := f.SyncCreateGcpFirewallRule(cts, req.AccountID)
 	if err != nil {
 		logs.Errorf("create gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+// SyncCreateGcpFirewallRule create GcpFirewallRule for sync
+func (f *firewall) SyncCreateGcpFirewallRule(cts *rest.Contexts, accountID string) (interface{}, error) {
+	client, err := f.ad.Gcp(cts.Kit, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.ListFirewallRule(cts.Kit, &types.GcpFirewallRuleListOption{})
+	if err != nil {
+		return nil, err
+	}
+
+	ruleCreates := make([]protocloud.GcpFirewallRuleBatchCreate, 0, len(resp.Items))
+	for _, item := range resp.Items {
+		rule := protocloud.GcpFirewallRuleBatchCreate{
+			CloudID:               strconv.FormatUint(item.Id, 10),
+			AccountID:             accountID,
+			Name:                  item.Name,
+			Priority:              item.Priority,
+			Memo:                  item.Description,
+			CloudVpcID:            item.Network,
+			VpcId:                 "todo",
+			SourceRanges:          item.SourceRanges,
+			BkBizID:               constant.UnassignedBiz,
+			DestinationRanges:     item.DestinationRanges,
+			SourceTags:            item.SourceTags,
+			TargetTags:            item.TargetTags,
+			SourceServiceAccounts: item.SourceServiceAccounts,
+			TargetServiceAccounts: item.TargetServiceAccounts,
+			Type:                  item.Direction,
+			LogEnable:             item.LogConfig.Enable,
+			Disabled:              item.Disabled,
+			SelfLink:              item.SelfLink,
+		}
+
+		if len(item.Denied) != 0 {
+			sets := make([]corecloud.GcpProtocolSet, 0, len(item.Denied))
+			for _, one := range item.Denied {
+				sets = append(sets, corecloud.GcpProtocolSet{
+					Protocol: one.IPProtocol,
+					Port:     one.Ports,
+				})
+			}
+			rule.Denied = sets
+		}
+
+		if len(item.Allowed) != 0 {
+			sets := make([]corecloud.GcpProtocolSet, 0, len(item.Allowed))
+			for _, one := range item.Allowed {
+				sets = append(sets, corecloud.GcpProtocolSet{
+					Protocol: one.IPProtocol,
+					Port:     one.Ports,
+				})
+			}
+			rule.Allowed = sets
+		}
+
+		ruleCreates = append(ruleCreates, rule)
+	}
+
+	req := &protocloud.GcpFirewallRuleBatchCreateReq{
+		FirewallRules: ruleCreates,
+	}
+	result, err := f.dataCli.Gcp.Firewall.BatchCreateFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

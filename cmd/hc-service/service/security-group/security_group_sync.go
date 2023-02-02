@@ -31,10 +31,6 @@ import (
 	"hcm/pkg/rest"
 )
 
-const (
-	DefaultBkBizID int64 = -1
-)
-
 // decodeSecurityGroupSyncReq get par from body
 func (g *securityGroup) decodeSecurityGroupSyncReq(cts *rest.Contexts) (*proto.SecurityGroupSyncReq, error) {
 
@@ -64,15 +60,19 @@ func (g *securityGroup) getDatasFromDSForSecurityGroupSync(cts *rest.Contexts,
 				Limit: core.DefaultMaxPageLimit,
 			},
 		}
+
 		results, err := g.dataCli.Global.SecurityGroup.ListSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
 			dataReq)
-		if len(results.Details) == 0 {
-			break
-		}
+
 		if err != nil {
 			logs.Errorf("from data-service list security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
+
+		if len(results.Details) == 0 {
+			break
+		}
+
 		resultsHcm = append(resultsHcm, results.Details...)
 		start += len(results.Details)
 		if uint(len(results.Details)) < dataReq.Page.Limit {

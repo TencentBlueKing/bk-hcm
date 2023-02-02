@@ -26,6 +26,7 @@ import (
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
@@ -315,7 +316,7 @@ func (g *securityGroup) diffTCloudSecurityGroupSyncAdd(cts *rest.Contexts, cloud
 	for _, id := range addCloudIDs {
 		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{
 			CloudID:   *cloudMap[id].SecurityGroup.SecurityGroupId,
-			BkBizID:   DefaultBkBizID,
+			BkBizID:   constant.UnassignedBiz,
 			Region:    req.Region,
 			Name:      *cloudMap[id].SecurityGroup.SecurityGroupName,
 			Memo:      cloudMap[id].SecurityGroup.SecurityGroupDesc,
