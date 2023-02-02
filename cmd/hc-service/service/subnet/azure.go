@@ -143,7 +143,7 @@ func (s subnet) AzureSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get subnet list from cloudapi.
 	list, err := s.BatchGetAzureSubnetList(cts, req)
 	if err != nil {
-		logs.Errorf("[%s-subnet] request cloudapi response failed. accountID:%s, region:%s, err: %v",
+		logs.Errorf("[%s-subnet] request cloudapi response failed. accountID: %s, region: %s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (s subnet) AzureSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get subnet map from db.
 	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, enumor.Azure, vpcInfo.CloudID)
 	if err != nil {
-		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID:%s, region:%s, err: %v",
+		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (s subnet) AzureSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	// batch sync vendor subnet list.
 	err = s.BatchSyncAzureSubnetList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-subnet] compare api and dblist failed. accountID:%s, region:%s, err: %v",
+		logs.Errorf("[%s-subnet] compare api and dblist failed. accountID: %s, region: %s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -198,7 +198,7 @@ func (s subnet) BatchGetAzureSubnetList(cts *rest.Contexts, req *hcservice.Resou
 
 	list, err := cli.ListSubnet(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("[%s-subnet]batch get cloud api failed. accountID:%s, region:%s, err: %v",
+		logs.Errorf("[%s-subnet]batch get cloud api failed. accountID: %s, region: %s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (s subnet) GetVpcInfoFromDBForAzure(cts *rest.Contexts, req *hcservice.Reso
 
 	dbInfo, err := s.cs.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 	if err != nil {
-		logs.Errorf("[%s-vpc]batch get vpclist db error. accountID:%s, region:%s, err: %v",
+		logs.Errorf("[%s-vpc]batch get vpclist db error. accountID: %s, region: %s, err: %v",
 			vendor, req.AccountID, req.Region, err)
 		return cloudcore.BaseVpc{}, false, err
 	}
@@ -262,7 +262,7 @@ func (s subnet) BatchSyncAzureSubnetList(cts *rest.Contexts, req *hcservice.Reso
 			Subnets: updateResources,
 		}
 		if err = s.cs.DataService().Azure.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-			logs.Errorf("[%s-subnet]batch compare db update failed. accountID:%s, region:%s, err: %v",
+			logs.Errorf("[%s-subnet]batch compare db update failed. accountID: %s, region: %s, err: %v",
 				enumor.Azure, req.AccountID, req.Region, err)
 			return err
 		}
@@ -272,7 +272,7 @@ func (s subnet) BatchSyncAzureSubnetList(cts *rest.Contexts, req *hcservice.Reso
 	if len(createResources) > 0 {
 		err = s.batchCreateAzureSubnet(cts, createResources)
 		if err != nil {
-			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err: %v",
+			logs.Errorf("[%s-subnet]batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.Azure, req.AccountID, req.Region, err)
 			return err
 		}
@@ -289,8 +289,8 @@ func (s subnet) BatchSyncAzureSubnetList(cts *rest.Contexts, req *hcservice.Reso
 	if len(deleteIDs) > 0 {
 		err = s.BatchDeleteSubnetByIDs(cts, deleteIDs)
 		if err != nil {
-			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
-				enumor.Azure, req.AccountID, req.Region, deleteIDs, err)
+			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, "+
+				"err: %v", enumor.Azure, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}
 	}
@@ -304,7 +304,7 @@ func (s subnet) filterAzureSubnetList(req *hcservice.ResourceSyncReq, list *type
 	updateResources []cloud.SubnetUpdateReq[cloud.AzureSubnetUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {
 		return nil, nil, nil,
-			fmt.Errorf("cloudapi subnetlist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
+			fmt.Errorf("cloudapi subnetlist is empty, accountID: %s, region: %s", req.AccountID, req.Region)
 	}
 
 	existIDMap = make(map[string]bool, 0)

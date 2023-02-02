@@ -136,7 +136,7 @@ func (s subnet) TCloudSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get subnet list from cloudapi.
 	list, err := s.BatchGetTCloudSubnetList(cts, req)
 	if err != nil {
-		logs.Errorf("[%s-subnet] request cloudapi response failed. accountID:%s, region:%s, err: %v",
+		logs.Errorf("[%s-subnet] request cloudapi response failed. accountID: %s, region: %s, err: %v",
 			enumor.TCloud, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (s subnet) TCloudSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get subnet map from db.
 	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, enumor.TCloud, "")
 	if err != nil {
-		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID:%s, region:%s, err: %v",
+		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.TCloud, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (s subnet) TCloudSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	// batch sync vendor subnet list.
 	err = s.BatchSyncTcloudSubnetList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-subnet] compare api and subnetdblist failed. accountID:%s, region:%s, err: %v",
+		logs.Errorf("[%s-subnet] compare api and subnetdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.TCloud, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -185,8 +185,8 @@ func (s subnet) BatchGetTCloudSubnetList(cts *rest.Contexts, req *hcservice.Reso
 
 		tmpList, tmpErr := cli.ListSubnet(cts.Kit, opt)
 		if tmpErr != nil {
-			logs.Errorf("[%s-subnet]batch get cloudapi failed. accountID:%s, region:%s, offset:%d, count:%d, "+
-				"err: %v", enumor.TCloud, req.AccountID, req.Region, offset, count, tmpErr)
+			logs.Errorf("[%s-subnet]batch get cloudapi failed. accountID: %s, region: %s, offset: %d, "+
+				"count: %d, err: %v", enumor.TCloud, req.AccountID, req.Region, offset, count, tmpErr)
 			return nil, tmpErr
 		}
 
@@ -241,8 +241,8 @@ func (s subnet) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resou
 		}
 		dbList, err := s.cs.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 		if err != nil {
-			logs.Errorf("[%s-subnet]batch list db error. accountID:%s, region:%s, offset:%d, limit:%d, err: %v",
-				vendor, req.AccountID, req.Region, offset, count, err)
+			logs.Errorf("[%s-subnet]batch list db error. accountID: %s, region: %s, offset: %d, limit: %d, "+
+				"err: %v", vendor, req.AccountID, req.Region, offset, count, err)
 			return nil, err
 		}
 
@@ -277,7 +277,7 @@ func (s subnet) BatchSyncTcloudSubnetList(cts *rest.Contexts, req *hcservice.Res
 			Subnets: updateResources,
 		}
 		if err = s.cs.DataService().TCloud.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-			logs.Errorf("[%s-subnet]batch compare db update failed. accountID:%s, region:%s, err: %v",
+			logs.Errorf("[%s-subnet]batch compare db update failed. accountID: %s, region: %s, err: %v",
 				enumor.TCloud, req.AccountID, req.Region, err)
 			return err
 		}
@@ -287,7 +287,7 @@ func (s subnet) BatchSyncTcloudSubnetList(cts *rest.Contexts, req *hcservice.Res
 	if len(createResources) > 0 {
 		err = s.batchCreateTcloudSubnet(cts, createResources)
 		if err != nil {
-			logs.Errorf("[%s-subnet]batch compare db create failed. accountID:%s, region:%s, err: %v",
+			logs.Errorf("[%s-subnet]batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.TCloud, req.AccountID, req.Region, err)
 			return err
 		}
@@ -304,8 +304,8 @@ func (s subnet) BatchSyncTcloudSubnetList(cts *rest.Contexts, req *hcservice.Res
 	if len(deleteIDs) > 0 {
 		err = s.BatchDeleteSubnetByIDs(cts, deleteIDs)
 		if err != nil {
-			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
-				enumor.TCloud, req.AccountID, req.Region, deleteIDs, err)
+			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, "+
+				"err: %v", enumor.TCloud, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}
 	}
@@ -320,7 +320,7 @@ func (s subnet) filterTcloudSubnetList(req *hcservice.ResourceSyncReq, list *typ
 	updateResources []cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {
 		return nil, nil, nil,
-			fmt.Errorf("cloudapi subnetlist is empty, accountID:%s, region:%s", req.AccountID, req.Region)
+			fmt.Errorf("cloudapi subnetlist is empty, accountID: %s, region: %s", req.AccountID, req.Region)
 	}
 
 	existIDMap = make(map[string]bool, 0)
