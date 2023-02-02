@@ -133,9 +133,11 @@ func (s subnet) GcpSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
 	if len(req.Region) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "region is required")
 	}
@@ -164,7 +166,7 @@ func (s subnet) GcpSubnetSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return hcservice.ResourceSyncResult{
+	return &hcservice.ResourceSyncResult{
 		TaskID: uuid.UUID(),
 	}, nil
 }
@@ -172,27 +174,25 @@ func (s subnet) GcpSubnetSync(cts *rest.Contexts) (interface{}, error) {
 // BatchGetGcpSubnetList batch get subnet list from cloudapi.
 func (s subnet) BatchGetGcpSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (
 	*types.GcpSubnetListResult, error) {
-	var (
-		nextToken string
-		count     int64 = adcore.GcpQueryLimit
-		list            = new(types.GcpSubnetListResult)
-	)
-
 	cli, err := s.ad.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
+	nextToken := ""
+	list := new(types.GcpSubnetListResult)
 	for {
 		opt := &types.GcpSubnetListOption{
 			Region: req.Region,
 		}
 		opt.Page = &adcore.GcpPage{
-			PageSize: count,
+			PageSize: int64(adcore.GcpQueryLimit),
 		}
+
 		if nextToken != "" {
 			opt.Page.PageToken = nextToken
 		}
+
 		tmpList, tmpErr := cli.ListSubnet(cts.Kit, opt)
 		if tmpErr != nil {
 			logs.Errorf("[%s-subnet]batch get cloud api failed. accountID:%s, region:%s, nextToken:%s, err: %v",
@@ -208,8 +208,10 @@ func (s subnet) BatchGetGcpSubnetList(cts *rest.Contexts, req *hcservice.Resourc
 		if len(tmpList.NextPageToken) == 0 {
 			break
 		}
+
 		nextToken = tmpList.NextPageToken
 	}
+
 	return list, nil
 }
 
@@ -250,11 +252,10 @@ func (s subnet) BatchSyncGcpSubnetList(cts *rest.Contexts, req *hcservice.Resour
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
+
 	if len(deleteIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
-		}
-		if err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		err = s.BatchDeleteSubnetByIDs(cts, deleteIDs)
+		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, deleteIDs, err)
 			return err
@@ -288,13 +289,14 @@ func (s subnet) filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.
 			}
 			tmpRes.Name = converter.ValToPtr(item.Name)
 			tmpRes.Ipv4Cidr = item.Ipv4Cidr
+
 			if len(item.Ipv6Cidr) > 0 {
 				tmpRes.Ipv6Cidr = item.Ipv6Cidr
 			} else {
 				tmpRes.Ipv6Cidr = []string{""}
 			}
-			tmpRes.Memo = item.Memo
 
+			tmpRes.Memo = item.Memo
 			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 		} else {
@@ -315,14 +317,17 @@ func (s subnet) filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.
 					EnableFlowLogs:        item.Extension.EnableFlowLogs,
 				},
 			}
+
 			if len(item.Ipv6Cidr) > 0 {
 				tmpRes.Ipv6Cidr = item.Ipv6Cidr
 			} else {
 				tmpRes.Ipv6Cidr = []string{""}
 			}
+
 			createResources = append(createResources, tmpRes)
 		}
 	}
+
 	return createResources, updateResources, existIDMap, nil
 }
 
@@ -333,6 +338,7 @@ func (s subnet) batchCreateGcpSubnet(cts *rest.Contexts,
 	if len(createResources)%querySize != 0 {
 		times++
 	}
+
 	for i := 0; i < times; i++ {
 		var newResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt]
 		if i == times-1 {
@@ -348,5 +354,6 @@ func (s subnet) batchCreateGcpSubnet(cts *rest.Contexts,
 			return err
 		}
 	}
+
 	return nil
 }

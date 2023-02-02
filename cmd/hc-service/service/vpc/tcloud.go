@@ -124,9 +124,11 @@ func (v vpc) TCloudVpcSync(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
 	if len(req.Region) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "region is required")
 	}
@@ -155,7 +157,7 @@ func (v vpc) TCloudVpcSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return hcservice.ResourceSyncResult{
+	return &hcservice.ResourceSyncResult{
 		TaskID: uuid.UUID(),
 	}, nil
 }
@@ -163,18 +165,15 @@ func (v vpc) TCloudVpcSync(cts *rest.Contexts) (interface{}, error) {
 // BatchGetTCloudVpcList batch get vpc list from cloudapi.
 func (v vpc) BatchGetTCloudVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (
 	*types.TCloudVpcListResult, error) {
-	var (
-		page  uint64
-		count uint64 = adcore.TCloudQueryLimit
-		list         = new(types.TCloudVpcListResult)
-	)
-
 	cli, err := v.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
+	page := uint64(0)
+	list := new(types.TCloudVpcListResult)
 	for {
+		count := uint64(adcore.TCloudQueryLimit)
 		offset := page * count
 		opt := &adcore.TCloudListOption{
 			Region: req.Region,
@@ -191,24 +190,24 @@ func (v vpc) BatchGetTCloudVpcList(cts *rest.Contexts, req *hcservice.ResourceSy
 		}
 
 		list.Details = append(list.Details, tmpList.Details...)
+
 		if len(tmpList.Details) < int(count) {
 			break
 		}
+
 		page++
 	}
+
 	return list, nil
 }
 
 // BatchGetVpcMapFromDB batch get vpc map from db.
 func (v vpc) BatchGetVpcMapFromDB(cts *rest.Contexts, req *hcservice.ResourceSyncReq, vendor enumor.Vendor) (
 	map[string]cloudcore.BaseVpc, error) {
-	var (
-		page        uint32
-		count       = core.DefaultMaxPageLimit
-		resourceMap = make(map[string]cloudcore.BaseVpc, 0)
-	)
-
+	page := uint32(0)
+	resourceMap := make(map[string]cloudcore.BaseVpc, 0)
 	for {
+		count := core.DefaultMaxPageLimit
 		offset := page * uint32(count)
 		expr := &filter.Expression{
 			Op: filter.And,
@@ -243,11 +242,13 @@ func (v vpc) BatchGetVpcMapFromDB(cts *rest.Contexts, req *hcservice.ResourceSyn
 		for _, item := range dbList.Details {
 			resourceMap[item.CloudID] = item
 		}
+
 		if len(dbList.Details) < int(count) {
 			break
 		}
 		page++
 	}
+
 	return resourceMap, nil
 }
 
@@ -290,16 +291,16 @@ func (v vpc) BatchSyncTcloudVpcList(cts *rest.Contexts, req *hcservice.ResourceS
 			deleteIDs = append(deleteIDs, resourceItem.ID)
 		}
 	}
+
 	if len(deleteIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
-		}
-		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		err = v.BatchDeleteVpcByIDs(cts, deleteIDs)
+		if err != nil {
 			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, deleteIDs:%v, err: %v",
 				enumor.TCloud, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -339,6 +340,7 @@ func (v vpc) filterTcloudVpcList(req *hcservice.ResourceSyncReq, list *types.TCl
 				}
 				tmpRes.Extension.Cidr = tmpCidrs
 			}
+
 			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 		} else {
@@ -369,8 +371,37 @@ func (v vpc) filterTcloudVpcList(req *hcservice.ResourceSyncReq, list *types.TCl
 				}
 				tmpRes.Extension.Cidr = tmpCidrs
 			}
+
 			createResources = append(createResources, tmpRes)
 		}
 	}
+
 	return createResources, updateResources, existIDMap, nil
+}
+
+// BatchDeleteVpcByIDs batch delete vpc ids
+func (v vpc) BatchDeleteVpcByIDs(cts *rest.Contexts, deleteIDs []string) error {
+	querySize := int(filter.DefaultMaxInLimit)
+	times := len(deleteIDs) / querySize
+	if len(deleteIDs)%querySize != 0 {
+		times++
+	}
+
+	for i := 0; i < times; i++ {
+		var newDeleteIDs []string
+		if i == times-1 {
+			newDeleteIDs = append(newDeleteIDs, deleteIDs[i*querySize:]...)
+		} else {
+			newDeleteIDs = append(newDeleteIDs, deleteIDs[i*querySize:(i+1)*querySize]...)
+		}
+
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("id", deleteIDs),
+		}
+		if err := v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -123,9 +123,11 @@ func (s subnet) AwsSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
 	if len(req.Region) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "region is required")
 	}
@@ -154,7 +156,7 @@ func (s subnet) AwsSubnetSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return hcservice.ResourceSyncResult{
+	return &hcservice.ResourceSyncResult{
 		TaskID: uuid.UUID(),
 	}, nil
 }
@@ -162,26 +164,25 @@ func (s subnet) AwsSubnetSync(cts *rest.Contexts) (interface{}, error) {
 // BatchGetAwsSubnetList batch get subnet list from cloudapi.
 func (s subnet) BatchGetAwsSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (
 	*types.AwsSubnetListResult, error) {
-	var (
-		nextToken string
-		count     int64 = adcore.AwsQueryLimit
-		list            = new(types.AwsSubnetListResult)
-	)
-
 	cli, err := s.ad.Aws(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
+	nextToken := ""
+	list := new(types.AwsSubnetListResult)
 	for {
 		opt := new(adcore.AwsListOption)
 		opt.Region = req.Region
+		count := int64(adcore.AwsQueryLimit)
 		opt.Page = &adcore.AwsPage{
 			MaxResults: converter.ValToPtr(count),
 		}
+
 		if nextToken != "" {
 			opt.Page.NextToken = converter.ValToPtr(nextToken)
 		}
+
 		tmpList, tmpErr := cli.ListSubnet(cts.Kit, opt)
 		if tmpErr != nil {
 			logs.Errorf("[%s-subnet]batch get cloud api failed. accountID:%s, region:%s, nextToken:%s, err: %v",
@@ -200,6 +201,7 @@ func (s subnet) BatchGetAwsSubnetList(cts *rest.Contexts, req *hcservice.Resourc
 
 		nextToken = *tmpList.NextToken
 	}
+
 	return list, nil
 }
 
@@ -240,16 +242,16 @@ func (s subnet) BatchSyncAwsSubnetList(cts *rest.Contexts, req *hcservice.Resour
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
+
 	if len(deleteIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
-		}
-		if err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		err = s.BatchDeleteSubnetByIDs(cts, deleteIDs)
+		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
 				enumor.Aws, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -280,13 +282,14 @@ func (s subnet) filterAwsSubnetList(req *hcservice.ResourceSyncReq, list *types.
 			}
 			tmpRes.Name = converter.ValToPtr(item.Name)
 			tmpRes.Ipv4Cidr = item.Ipv4Cidr
+
 			if len(item.Ipv6Cidr) > 0 {
 				tmpRes.Ipv6Cidr = item.Ipv6Cidr
 			} else {
 				tmpRes.Ipv6Cidr = []string{""}
 			}
-			tmpRes.Memo = item.Memo
 
+			tmpRes.Memo = item.Memo
 			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 		} else {
@@ -308,14 +311,17 @@ func (s subnet) filterAwsSubnetList(req *hcservice.ResourceSyncReq, list *types.
 					HostnameType:                item.Extension.HostnameType,
 				},
 			}
+
 			if len(item.Ipv6Cidr) > 0 {
 				tmpRes.Ipv6Cidr = item.Ipv6Cidr
 			} else {
 				tmpRes.Ipv6Cidr = []string{""}
 			}
+
 			createResources = append(createResources, tmpRes)
 		}
 	}
+
 	return createResources, updateResources, existIDMap, nil
 }
 
@@ -328,6 +334,7 @@ func (s subnet) batchCreateAwsSubnet(cts *rest.Contexts,
 	}
 	for i := 0; i < times; i++ {
 		var newResources []cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt]
+
 		if i == times-1 {
 			newResources = append(newResources, createResources[i*querySize:]...)
 		} else {
@@ -337,9 +344,11 @@ func (s subnet) batchCreateAwsSubnet(cts *rest.Contexts,
 		createReq := &cloud.SubnetBatchCreateReq[cloud.AwsSubnetCreateExt]{
 			Subnets: newResources,
 		}
+
 		if _, err := s.cs.DataService().Aws.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

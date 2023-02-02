@@ -24,9 +24,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"runtime"
 	"strconv"
-	"sync"
 	"time"
 
 	"hcm/cmd/hc-service/service/account"
@@ -157,48 +155,4 @@ func (s *Service) apiSet() *restful.Container {
 func (s *Service) Healthz(w http.ResponseWriter, _ *http.Request) {
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
 	return
-}
-
-// GoAndWait provides safe concurrent handling. Per input handler, it starts a goroutine.
-// Then it waits until all handlers are done and will recover if any handler panics.
-// The returned error is the first non-nil error returned by one of the handlers.
-// It can be set that non-nil error will be returned if the "key" handler fails while other handlers always
-// return nil error.
-func GoAndWait(handlers ...func() error) error {
-	if len(handlers) == 0 {
-		return nil
-	}
-
-	var (
-		wg   sync.WaitGroup
-		once sync.Once
-		err  error
-	)
-	for _, f := range handlers {
-		if f == nil {
-			continue
-		}
-
-		wg.Add(1)
-		go func(handler func() error) {
-			defer func() {
-				if e := recover(); e != nil {
-					buf := make([]byte, 1024)
-					buf = buf[:runtime.Stack(buf, false)]
-					logs.Errorf("[PANIC]%v\n%s\n", e, buf)
-					once.Do(func() {
-						err = errf.New(errf.Aborted, "panic found in call handlers")
-					})
-				}
-				wg.Done()
-			}()
-			if e := handler(); e != nil {
-				once.Do(func() {
-					err = e
-				})
-			}
-		}(f)
-	}
-	wg.Wait()
-	return err
 }

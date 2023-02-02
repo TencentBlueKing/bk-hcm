@@ -122,9 +122,11 @@ func (v vpc) AwsVpcSync(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
 	if len(req.Region) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "region is required")
 	}
@@ -153,33 +155,31 @@ func (v vpc) AwsVpcSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return hcservice.ResourceSyncResult{
+	return &hcservice.ResourceSyncResult{
 		TaskID: uuid.UUID(),
 	}, nil
 }
 
 // BatchGetAwsVpcList batch get vpc list from cloudapi.
 func (v vpc) BatchGetAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (*types.AwsVpcListResult, error) {
-	var (
-		nextToken string
-		count     int64 = adcore.AwsQueryLimit
-		list            = new(types.AwsVpcListResult)
-	)
-
 	cli, err := v.ad.Aws(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
+	nextToken := ""
+	list := new(types.AwsVpcListResult)
 	for {
 		opt := new(adcore.AwsListOption)
 		opt.Region = req.Region
 		opt.Page = &adcore.AwsPage{
-			MaxResults: converter.ValToPtr(count),
+			MaxResults: converter.ValToPtr(int64(adcore.AwsQueryLimit)),
 		}
+
 		if nextToken != "" {
 			opt.Page.NextToken = converter.ValToPtr(nextToken)
 		}
+
 		tmpList, tmpErr := cli.ListVpc(cts.Kit, opt)
 		if tmpErr != nil {
 			logs.Errorf("[%s]batch get cloud api failed. accountID:%s, region:%s, nextToken:%s, err: %v",
@@ -206,6 +206,7 @@ func (v vpc) BatchGetAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 		}
 		nextToken = *tmpList.NextToken
 	}
+
 	return list, nil
 }
 
@@ -248,16 +249,16 @@ func (v vpc) BatchSyncAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSync
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
+
 	if len(deleteIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
-		}
-		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		err = v.BatchDeleteVpcByIDs(cts, deleteIDs)
+		if err != nil {
 			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
 				enumor.Aws, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -299,6 +300,7 @@ func (v vpc) filterAwsVpcList(req *hcservice.ResourceSyncReq, list *types.AwsVpc
 				}
 				tmpRes.Extension.Cidr = tmpCidrs
 			}
+
 			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 		} else {
@@ -331,8 +333,10 @@ func (v vpc) filterAwsVpcList(req *hcservice.ResourceSyncReq, list *types.AwsVpc
 				}
 				tmpRes.Extension.Cidr = tmpCidrs
 			}
+
 			createResources = append(createResources, tmpRes)
 		}
 	}
+
 	return createResources, updateResources, existIDMap, nil
 }

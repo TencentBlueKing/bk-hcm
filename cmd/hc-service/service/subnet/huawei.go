@@ -133,9 +133,11 @@ func (s subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
 	if len(req.Region) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "region is required")
 	}
@@ -164,7 +166,7 @@ func (s subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return hcservice.ResourceSyncResult{
+	return &hcservice.ResourceSyncResult{
 		TaskID: uuid.UUID(),
 	}, nil
 }
@@ -172,22 +174,20 @@ func (s subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 // BatchGetHuaWeiSubnetList batch get subnet list from cloudapi.
 func (s subnet) BatchGetHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (
 	*types.HuaweiSubnetListResult, error) {
-	var (
-		count int32 = adcore.HuaweiQueryLimit
-		list        = new(types.HuaweiSubnetListResult)
-	)
-
 	cli, err := s.ad.HuaWei(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
+	list := new(types.HuaweiSubnetListResult)
 	for {
 		opt := new(types.HuaweiSubnetListOption)
 		opt.Region = req.Region
+		count := int32(adcore.HuaweiQueryLimit)
 		opt.Page = &adcore.HuaweiPage{
 			Limit: converter.ValToPtr(count),
 		}
+
 		tmpList, tmpErr := cli.ListSubnet(cts.Kit, opt)
 		if tmpErr != nil {
 			logs.Errorf("[%s-subnet]batch get cloud api failed. accountID:%s, region:%s, err: %v",
@@ -200,6 +200,7 @@ func (s subnet) BatchGetHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.Reso
 			break
 		}
 	}
+
 	return list, nil
 }
 
@@ -240,16 +241,16 @@ func (s subnet) BatchSyncHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.Res
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
+
 	if len(deleteIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
-		}
-		if err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		err = s.BatchDeleteSubnetByIDs(cts, deleteIDs)
+		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
 				enumor.HuaWei, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -279,13 +280,14 @@ func (s subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *typ
 			}
 			tmpRes.Name = converter.ValToPtr(item.Name)
 			tmpRes.Ipv4Cidr = item.Ipv4Cidr
+
 			if len(item.Ipv6Cidr) > 0 {
 				tmpRes.Ipv6Cidr = item.Ipv6Cidr
 			} else {
 				tmpRes.Ipv6Cidr = []string{""}
 			}
-			tmpRes.Memo = item.Memo
 
+			tmpRes.Memo = item.Memo
 			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 		} else {
@@ -306,14 +308,17 @@ func (s subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *typ
 					NtpAddresses: item.Extension.NtpAddresses,
 				},
 			}
+
 			if len(item.Ipv6Cidr) > 0 {
 				tmpRes.Ipv6Cidr = item.Ipv6Cidr
 			} else {
 				tmpRes.Ipv6Cidr = []string{""}
 			}
+
 			createResources = append(createResources, tmpRes)
 		}
 	}
+
 	return createResources, updateResources, existIDMap, nil
 }
 
@@ -324,6 +329,7 @@ func (s subnet) batchCreateHuaWeiSubnet(cts *rest.Contexts,
 	if len(createResources)%querySize != 0 {
 		times++
 	}
+
 	for i := 0; i < times; i++ {
 		var newResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]
 		if i == times-1 {
@@ -339,5 +345,6 @@ func (s subnet) batchCreateHuaWeiSubnet(cts *rest.Contexts,
 			return err
 		}
 	}
+
 	return nil
 }

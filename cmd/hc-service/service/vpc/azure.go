@@ -124,9 +124,11 @@ func (v vpc) AzureVpcSync(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
 	if len(req.ResourceGroupName) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "resource_group_name is required")
 	}
@@ -155,7 +157,7 @@ func (v vpc) AzureVpcSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return hcservice.ResourceSyncResult{
+	return &hcservice.ResourceSyncResult{
 		TaskID: uuid.UUID(),
 	}, nil
 }
@@ -177,6 +179,7 @@ func (v vpc) BatchGetAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyn
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
+
 	return list, nil
 }
 
@@ -219,6 +222,7 @@ func (v vpc) BatchSyncAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSy
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
+
 	if len(deleteIDs) > 0 {
 		deleteReq := &dataservice.BatchDeleteReq{
 			Filter: tools.ContainersExpression("id", deleteIDs),
@@ -229,6 +233,7 @@ func (v vpc) BatchSyncAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSy
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -264,12 +269,13 @@ func (v vpc) filterAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 				}
 				tmpRes.Extension.Cidr = tmpCidrs
 			}
+
 			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 
 			// sync azure cloud subnet.
 			req.VpcName = item.Name
-			_, err = v.AzureSubnetSync(cts, req, item.CloudID)
+			err = v.AzureSubnetSync(cts, req, item.CloudID)
 			if err != nil {
 				return nil, nil, nil, err
 			}
@@ -298,24 +304,25 @@ func (v vpc) filterAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 				}
 				tmpRes.Extension.Cidr = tmpCidrs
 			}
+
 			createResources = append(createResources, tmpRes)
 
 			// sync azure cloud subnet.
 			req.VpcName = item.Name
-			_, err = v.AzureSubnetSync(cts, req, item.CloudID)
+			err = v.AzureSubnetSync(cts, req, item.CloudID)
 			if err != nil {
 				return nil, nil, nil, err
 			}
 		}
 	}
+
 	return createResources, updateResources, existIDMap, nil
 }
 
 // AzureSubnetSync sync azure cloud subnet.
-func (v vpc) AzureSubnetSync(cts *rest.Contexts, req *hcservice.ResourceSyncReq, cloudVpcID string) (
-	interface{}, error) {
+func (v vpc) AzureSubnetSync(cts *rest.Contexts, req *hcservice.ResourceSyncReq, cloudVpcID string) error {
 	if len(req.VpcName) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vpc_name is required")
+		return errf.New(errf.InvalidParameter, "vpc_name is required")
 	}
 
 	// batch get subnet list from cloudapi.
@@ -323,10 +330,11 @@ func (v vpc) AzureSubnetSync(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
 	if err != nil {
 		logs.Errorf("[%s-vpc-subnet]request cloudapi response failed. accountID:%s, cloudVpcID:%s, err: %v",
 			enumor.Azure, req.AccountID, cloudVpcID, err)
-		return nil, err
+		return err
 	}
+
 	if len(list.Details) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	// batch get subnet map from db.
@@ -334,7 +342,7 @@ func (v vpc) AzureSubnetSync(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
 	if err != nil {
 		logs.Errorf("[%s-vpc-subnet]batch get subnetdblist failed. accountID:%s, cloudVpcID:%s, err: %v",
 			enumor.Azure, req.AccountID, cloudVpcID, err)
-		return nil, err
+		return err
 	}
 
 	// batch sync vendor subnet list.
@@ -342,12 +350,10 @@ func (v vpc) AzureSubnetSync(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
 	if err != nil {
 		logs.Errorf("[%s-vpc-subnet]compare api and dblist failed. accountID:%s, cloudVpcID:%s, err: %v",
 			enumor.Azure, req.AccountID, cloudVpcID, err)
-		return nil, err
+		return err
 	}
 
-	return hcservice.ResourceSyncResult{
-		TaskID: uuid.UUID(),
-	}, nil
+	return nil
 }
 
 // BatchGetAzureSubnetList batch get subnet list from cloudapi.
@@ -362,25 +368,24 @@ func (v vpc) BatchGetAzureSubnetList(cts *rest.Contexts, req *hcservice.Resource
 		VpcID: req.VpcName,
 	}
 	opt.ResourceGroupName = req.ResourceGroupName
+
 	list, err := cli.ListSubnet(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("[%s-vpc-subnet]batch get cloud api failed. accountID:%s, region:%s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
+
 	return list, nil
 }
 
 // BatchGetSubnetMapFromDB batch get subnet map from db.
 func (v vpc) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.ResourceSyncReq, vendor enumor.Vendor,
 	cloudVpcID string) (map[string]cloudcore.BaseSubnet, error) {
-	var (
-		page        uint32
-		count       = core.DefaultMaxPageLimit
-		resourceMap = make(map[string]cloudcore.BaseSubnet, 0)
-	)
-
+	page := uint32(0)
+	resourceMap := make(map[string]cloudcore.BaseSubnet, 0)
 	for {
+		count := core.DefaultMaxPageLimit
 		offset := page * uint32(count)
 		expr := &filter.Expression{
 			Op: filter.And,
@@ -406,12 +411,14 @@ func (v vpc) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resource
 			Filter: expr,
 			Page:   &core.BasePage{Count: false, Start: offset, Limit: count},
 		}
+
 		dbList, err := v.cs.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 		if err != nil {
 			logs.Errorf("[%s-vpc-subnet]batch list db error. accountID:%s, region:%s, offset:%d, limit:%d, "+
 				"cloudVpcID:%s, err: %v", vendor, req.AccountID, req.Region, offset, count, cloudVpcID, err)
 			return nil, err
 		}
+
 		if len(dbList.Details) == 0 {
 			return resourceMap, nil
 		}
@@ -419,6 +426,7 @@ func (v vpc) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resource
 		for _, item := range dbList.Details {
 			resourceMap[item.CloudID] = item
 		}
+
 		if len(dbList.Details) < int(count) {
 			break
 		}
@@ -464,11 +472,10 @@ func (v vpc) BatchSyncAzureSubnetList(cts *rest.Contexts, req *hcservice.Resourc
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
+
 	if len(deleteIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
-		}
-		if err = v.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		err = v.BatchDeleteVpcByIDs(cts, deleteIDs)
+		if err != nil {
 			logs.Errorf("[%s-vpc-subnet]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, "+
 				"err: %v", enumor.Azure, req.AccountID, req.Region, deleteIDs, err)
 			return err
@@ -498,13 +505,14 @@ func (v vpc) filterAzureSubnetList(req *hcservice.ResourceSyncReq, list *types.A
 			}
 			tmpRes.Name = converter.ValToPtr(item.Name)
 			tmpRes.Ipv4Cidr = item.Ipv4Cidr
+
 			if len(item.Ipv6Cidr) > 0 {
 				tmpRes.Ipv6Cidr = item.Ipv6Cidr
 			} else {
 				tmpRes.Ipv6Cidr = []string{""}
 			}
-			tmpRes.Memo = item.Memo
 
+			tmpRes.Memo = item.Memo
 			updateResources = append(updateResources, tmpRes)
 			existIDMap[resourceInfo.ID] = true
 		} else {
@@ -522,6 +530,7 @@ func (v vpc) filterAzureSubnetList(req *hcservice.ResourceSyncReq, list *types.A
 					NetworkSecurityGroup: item.Extension.NetworkSecurityGroup,
 				},
 			}
+
 			if len(item.Ipv6Cidr) > 0 {
 				tmpRes.Ipv6Cidr = item.Ipv6Cidr
 			} else {
@@ -541,6 +550,7 @@ func (v vpc) batchCreateAzureSubnet(cts *rest.Contexts,
 	if len(createResources)%querySize != 0 {
 		times++
 	}
+
 	for i := 0; i < times; i++ {
 		var newResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt]
 		if i == times-1 {
@@ -556,5 +566,6 @@ func (v vpc) batchCreateAzureSubnet(cts *rest.Contexts,
 			return err
 		}
 	}
+
 	return nil
 }

@@ -124,6 +124,7 @@ func (v vpc) GcpVpcSync(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -152,32 +153,30 @@ func (v vpc) GcpVpcSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return hcservice.ResourceSyncResult{
+	return &hcservice.ResourceSyncResult{
 		TaskID: uuid.UUID(),
 	}, nil
 }
 
 // BatchGetGcpVpcList batch get vpc list from cloudapi.
 func (v vpc) BatchGetGcpVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (*types.GcpVpcListResult, error) {
-	var (
-		nextToken string
-		count     int64 = adcore.GcpQueryLimit
-		list            = new(types.GcpVpcListResult)
-	)
-
 	cli, err := v.ad.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
+	nextToken := ""
+	list := new(types.GcpVpcListResult)
 	for {
 		opt := new(adcore.GcpListOption)
 		opt.Page = &adcore.GcpPage{
-			PageSize: count,
+			PageSize: int64(adcore.GcpQueryLimit),
 		}
+
 		if nextToken != "" {
 			opt.Page.PageToken = nextToken
 		}
+
 		tmpList, tmpErr := cli.ListVpc(cts.Kit, opt)
 		if tmpErr != nil {
 			logs.Errorf("[%s-vpc]batch get cloud api failed. accountID:%s, region:%s, nextToken:%s, err: %v",
@@ -193,8 +192,10 @@ func (v vpc) BatchGetGcpVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 		if len(tmpList.NextPageToken) == 0 {
 			break
 		}
+
 		nextToken = tmpList.NextPageToken
 	}
+
 	return list, nil
 }
 
@@ -237,16 +238,16 @@ func (v vpc) BatchSyncGcpVpcList(cts *rest.Contexts, req *hcservice.ResourceSync
 			deleteIDs = append(deleteIDs, resItem.ID)
 		}
 	}
+
 	if len(deleteIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
-		}
-		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		err = v.BatchDeleteVpcByIDs(cts, deleteIDs)
+		if err != nil {
 			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -294,5 +295,6 @@ func (v vpc) filterGcpVpcList(req *hcservice.ResourceSyncReq, list *types.GcpVpc
 			createResources = append(createResources, tmpRes)
 		}
 	}
+
 	return createResources, updateResources, existIDMap, nil
 }

@@ -124,9 +124,11 @@ func (s subnet) TCloudSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
 	if len(req.Region) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "region is required")
 	}
@@ -155,7 +157,7 @@ func (s subnet) TCloudSubnetSync(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return hcservice.ResourceSyncResult{
+	return &hcservice.ResourceSyncResult{
 		TaskID: uuid.UUID(),
 	}, nil
 }
@@ -163,18 +165,15 @@ func (s subnet) TCloudSubnetSync(cts *rest.Contexts) (interface{}, error) {
 // BatchGetTCloudSubnetList batch get subnet list from cloudapi.
 func (s subnet) BatchGetTCloudSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (
 	*types.TCloudSubnetListResult, error) {
-	var (
-		page  uint64
-		count uint64 = adcore.TCloudQueryLimit
-		list         = new(types.TCloudSubnetListResult)
-	)
-
 	cli, err := s.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
+	page := uint64(0)
+	list := new(types.TCloudSubnetListResult)
 	for {
+		count := uint64(adcore.TCloudQueryLimit)
 		offset := page * count
 		opt := &adcore.TCloudListOption{
 			Region: req.Region,
@@ -183,6 +182,7 @@ func (s subnet) BatchGetTCloudSubnetList(cts *rest.Contexts, req *hcservice.Reso
 				Limit:  count,
 			},
 		}
+
 		tmpList, tmpErr := cli.ListSubnet(cts.Kit, opt)
 		if tmpErr != nil {
 			logs.Errorf("[%s-subnet]batch get cloudapi failed. accountID:%s, region:%s, offset:%d, count:%d, "+
@@ -191,34 +191,33 @@ func (s subnet) BatchGetTCloudSubnetList(cts *rest.Contexts, req *hcservice.Reso
 		}
 
 		list.Details = append(list.Details, tmpList.Details...)
+
 		if len(tmpList.Details) < int(count) {
 			break
 		}
+
 		page++
 	}
+
 	return list, nil
 }
 
 // BatchGetSubnetMapFromDB batch get subnet map from db.
 func (s subnet) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.ResourceSyncReq, vendor enumor.Vendor,
 	cloudVpcID string) (map[string]cloudcore.BaseSubnet, error) {
-	var (
-		page        uint32
-		count       = core.DefaultMaxPageLimit
-		resourceMap = make(map[string]cloudcore.BaseSubnet, 0)
-		rulesCommon = []filter.RuleFactory{
-			&filter.AtomRule{
-				Field: "vendor",
-				Op:    filter.Equal.Factory(),
-				Value: vendor,
-			},
-			&filter.AtomRule{
-				Field: "account_id",
-				Op:    filter.Equal.Factory(),
-				Value: req.AccountID,
-			},
-		}
-	)
+	rulesCommon := []filter.RuleFactory{
+		&filter.AtomRule{
+			Field: "vendor",
+			Op:    filter.Equal.Factory(),
+			Value: vendor,
+		},
+		&filter.AtomRule{
+			Field: "account_id",
+			Op:    filter.Equal.Factory(),
+			Value: req.AccountID,
+		},
+	}
+
 	if cloudVpcID != "" {
 		rulesCommon = append(rulesCommon, &filter.AtomRule{
 			Field: "cloud_vpc_id",
@@ -227,6 +226,9 @@ func (s subnet) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resou
 		})
 	}
 
+	page := uint32(0)
+	count := core.DefaultMaxPageLimit
+	resourceMap := make(map[string]cloudcore.BaseSubnet, 0)
 	for {
 		offset := page * uint32(count)
 		expr := &filter.Expression{
@@ -251,11 +253,13 @@ func (s subnet) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resou
 		for _, item := range dbList.Details {
 			resourceMap[item.CloudID] = item
 		}
+
 		if len(dbList.Details) < int(count) {
 			break
 		}
 		page++
 	}
+
 	return resourceMap, nil
 }
 
@@ -296,16 +300,16 @@ func (s subnet) BatchSyncTcloudSubnetList(cts *rest.Contexts, req *hcservice.Res
 			deleteIDs = append(deleteIDs, resourceItem.ID)
 		}
 	}
+
 	if len(deleteIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
-		}
-		if err = s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		err = s.BatchDeleteSubnetByIDs(cts, deleteIDs)
+		if err != nil {
 			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID:%s, region:%s, delIDs:%v, err: %v",
 				enumor.TCloud, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -359,6 +363,7 @@ func (s subnet) filterTcloudSubnetList(req *hcservice.ResourceSyncReq, list *typ
 			createResources = append(createResources, tmpRes)
 		}
 	}
+
 	return createResources, updateResources, existIDMap, nil
 }
 
@@ -369,6 +374,7 @@ func (s subnet) batchCreateTcloudSubnet(cts *rest.Contexts,
 	if len(createResources)%querySize != 0 {
 		times++
 	}
+
 	for i := 0; i < times; i++ {
 		var newResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt]
 		if i == times-1 {
@@ -380,9 +386,38 @@ func (s subnet) batchCreateTcloudSubnet(cts *rest.Contexts,
 		createReq := &cloud.SubnetBatchCreateReq[cloud.TCloudSubnetCreateExt]{
 			Subnets: newResources,
 		}
+
 		if _, err := s.cs.DataService().TCloud.Subnet.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
 			return err
 		}
 	}
+
+	return nil
+}
+
+// BatchDeleteSubnetByIDs batch delete subnet ids
+func (s subnet) BatchDeleteSubnetByIDs(cts *rest.Contexts, deleteIDs []string) error {
+	querySize := int(filter.DefaultMaxInLimit)
+	times := len(deleteIDs) / querySize
+	if len(deleteIDs)%querySize != 0 {
+		times++
+	}
+
+	for i := 0; i < times; i++ {
+		var newDeleteIDs []string
+		if i == times-1 {
+			newDeleteIDs = append(newDeleteIDs, deleteIDs[i*querySize:]...)
+		} else {
+			newDeleteIDs = append(newDeleteIDs, deleteIDs[i*querySize:(i+1)*querySize]...)
+		}
+
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("id", deleteIDs),
+		}
+		if err := s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
