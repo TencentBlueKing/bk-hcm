@@ -59,27 +59,27 @@ var HuaWeiSGRuleColumnDescriptor = utils.ColumnDescriptors{
 
 // HuaWeiSecurityGroupRuleTable define huawei security group rule table.
 type HuaWeiSecurityGroupRuleTable struct {
-	ID                        string     `db:"id" validate:"lte=64"`
-	CloudID                   string     `db:"cloud_id" validate:"lte=255"`
-	Type                      string     `db:"type" validate:"lte=20"`
-	CloudSecurityGroupID      string     `db:"cloud_security_group_id" validate:"lte=255"`
-	SecurityGroupID           string     `db:"security_group_id" validate:"lte=64"`
-	AccountID                 string     `db:"account_id" validate:"lte=64"`
-	CloudProjectID            string     `db:"cloud_project_id" validate:"lte=255"`
-	Memo                      *string    `db:"memo" validate:"omitempty,lte=255"`
-	Action                    string     `db:"action" validate:"lte=10"`
-	Region                    string     `db:"region" validate:"lte=20"`
-	Protocol                  string     `db:"protocol" validate:"lte=10"`
-	Ethertype                 string     `db:"ethertype" validate:"lte=10"`
-	CloudRemoteGroupID        string     `db:"cloud_remote_group_id" validate:"lte=255"`
-	RemoteIPPrefix            string     `db:"remote_ip_prefix" validate:"lte=255"`
-	CloudRemoteAddressGroupID string     `db:"cloud_remote_address_group_id" validate:"lte=255"`
-	Port                      string     `db:"port" validate:"lte=255"`
-	Priority                  int64      `db:"priority"`
-	Creator                   string     `db:"creator" validate:"lte=64"`
-	Reviser                   string     `db:"reviser" validate:"lte=64"`
-	CreatedAt                 *time.Time `db:"created_at" validate:"excluded_unless"`
-	UpdatedAt                 *time.Time `db:"updated_at" validate:"excluded_unless"`
+	ID                        string     `db:"id" validate:"lte=64" json:"id"`
+	CloudID                   string     `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
+	Type                      string     `db:"type" validate:"lte=20" json:"type"`
+	CloudSecurityGroupID      string     `db:"cloud_security_group_id" validate:"lte=255" json:"cloud_security_group_id"`
+	SecurityGroupID           string     `db:"security_group_id" validate:"lte=64" json:"security_group_id"`
+	AccountID                 string     `db:"account_id" validate:"lte=64" json:"account_id"`
+	CloudProjectID            string     `db:"cloud_project_id" validate:"lte=255" json:"cloud_project_id"`
+	Memo                      *string    `db:"memo" validate:"omitempty,lte=255" json:"memo"`
+	Action                    string     `db:"action" validate:"lte=10" json:"action"`
+	Region                    string     `db:"region" validate:"lte=20" json:"region"`
+	Protocol                  string     `db:"protocol" validate:"lte=10" json:"protocol"`
+	Ethertype                 string     `db:"ethertype" validate:"lte=10" json:"ethertype"`
+	CloudRemoteGroupID        string     `db:"cloud_remote_group_id" validate:"lte=255" json:"cloud_remote_group_id"`
+	RemoteIPPrefix            string     `db:"remote_ip_prefix" validate:"lte=255" json:"remote_ip_prefix"`
+	CloudRemoteAddressGroupID string     `db:"cloud_remote_address_group_id" validate:"lte=255" json:"cloud_remote_address_group_id"`
+	Port                      string     `db:"port" validate:"lte=255" json:"port"`
+	Priority                  int64      `db:"priority" json:"priority"`
+	Creator                   string     `db:"creator" validate:"lte=64" json:"creator"`
+	Reviser                   string     `db:"reviser" validate:"lte=64" json:"reviser"`
+	CreatedAt                 *time.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt                 *time.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return huawei security group rule table name.

@@ -17,20 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package cloud
 
 import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/dal/dao"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
+// NewCloudAudit new audit svc.
+func NewCloudAudit(dao dao.Set) *Audit {
+	return &Audit{
+		dao: dao,
+	}
+}
+
+// Audit define cloud audit.
+type Audit struct {
+	dao dao.Set
 }

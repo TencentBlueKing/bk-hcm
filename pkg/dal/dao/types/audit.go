@@ -17,20 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package types
 
-import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
+import "hcm/pkg/dal/table/audit"
 
-	"github.com/emicklei/go-restful/v3"
-)
-
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
+// ListAuditDetails list audit details.
+type ListAuditDetails struct {
+	Count   uint64             `json:"count"`
+	Details []audit.AuditTable `json:"details"`
 }

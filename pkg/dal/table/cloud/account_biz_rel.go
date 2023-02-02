@@ -42,13 +42,13 @@ var AccountBizRelColumnDescriptor = utils.ColumnDescriptors{
 // AccountBizRelTable 云账户与业务关联表
 type AccountBizRelTable struct {
 	// BkBizID 蓝鲸业务 ID
-	BkBizID int64 `db:"bk_biz_id"`
+	BkBizID int64 `db:"bk_biz_id" json:"bk_biz_id"`
 	// AccountID 云账号主键 ID
-	AccountID string `db:"account_id"`
+	AccountID string `db:"account_id" json:"account_id"`
 	// Creator 创建者
-	Creator string `db:"creator"`
+	Creator string `db:"creator" json:"creator"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at"`
+	CreatedAt *time.Time `db:"created_at" json:"created_at"`
 }
 
 // TableName return account table name.

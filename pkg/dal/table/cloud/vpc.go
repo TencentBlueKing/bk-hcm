@@ -54,33 +54,33 @@ var VpcColumnDescriptor = utils.ColumnDescriptors{
 // VpcTable vpc表
 type VpcTable struct {
 	// ID vpc ID
-	ID string `db:"id" validate:"len=0"`
+	ID string `db:"id" validate:"len=0" json:"id"`
 	// Vendor 云厂商
-	Vendor enumor.Vendor `db:"vendor" validate:"-"`
+	Vendor enumor.Vendor `db:"vendor" validate:"-" json:"vendor"`
 	// AccountID 账号ID
-	AccountID string `db:"account_id" validate:"max=64"`
+	AccountID string `db:"account_id" validate:"max=64" json:"account_id"`
 	// CloudID 云上ID
-	CloudID string `db:"cloud_id" validate:"max=255"`
+	CloudID string `db:"cloud_id" validate:"max=255" json:"cloud_id"`
 	// Name vpc名称
-	Name *string `db:"name" validate:"omitempty,max=128"`
+	Name *string `db:"name" validate:"omitempty,max=128" json:"name"`
 	// Category 类别
-	Category enumor.VpcCategory `db:"category" validate:"max=32"`
+	Category enumor.VpcCategory `db:"category" validate:"max=32" json:"category"`
 	// Memo 备注
-	Memo *string `db:"memo" validate:"omitempty,max=255"`
+	Memo *string `db:"memo" validate:"omitempty,max=255" json:"memo"`
 	// Extension 云厂商差异扩展字段
-	Extension types.JsonField `db:"extension" validate:"-"`
+	Extension types.JsonField `db:"extension" validate:"-" json:"extension"`
 	// BkCloudID 云区域ID
-	BkCloudID int64 `db:"bk_cloud_id" validate:"min=-1"`
+	BkCloudID int64 `db:"bk_cloud_id" validate:"min=-1" json:"bk_cloud_id"`
 	// BkBizID 业务ID
-	BkBizID int64 `db:"bk_biz_id" validate:"min=-1"`
+	BkBizID int64 `db:"bk_biz_id" validate:"min=-1" json:"bk_biz_id"`
 	// Creator 创建者
-	Creator string `db:"creator" validate:"max=64"`
+	Creator string `db:"creator" validate:"max=64" json:"creator"`
 	// Reviser 更新者
-	Reviser string `db:"reviser" validate:"max=64"`
+	Reviser string `db:"reviser" validate:"max=64" json:"reviser"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at" validate:"isdefault"`
+	CreatedAt *time.Time `db:"created_at" validate:"isdefault" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at" validate:"isdefault"`
+	UpdatedAt *time.Time `db:"updated_at" validate:"isdefault" json:"updated_at"`
 }
 
 // TableName return vpc table name.

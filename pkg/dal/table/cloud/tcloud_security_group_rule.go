@@ -61,29 +61,29 @@ var TCloudSGRuleColumnDescriptor = utils.ColumnDescriptors{
 
 // TCloudSecurityGroupRuleTable define tcloud security group rule table.
 type TCloudSecurityGroupRuleTable struct {
-	ID                         string     `db:"id" validate:"lte=64"`
-	CloudPolicyIndex           int64      `db:"cloud_policy_index"`
-	Version                    string     `db:"version"`
-	Type                       string     `db:"type" validate:"lte=20"`
-	CloudSecurityGroupID       string     `db:"cloud_security_group_id" validate:"lte=255"`
-	SecurityGroupID            string     `db:"security_group_id" validate:"lte=64"`
-	AccountID                  string     `db:"account_id" validate:"lte=64"`
-	Action                     string     `db:"action" validate:"lte=10"`
-	Protocol                   *string    `db:"protocol" validate:"omitempty,lte=10"`
-	Port                       *string    `db:"port" validate:"omitempty,lte=255"`
-	CloudServiceID             *string    `db:"cloud_service_id" validate:"omitempty,lte=255"`
-	CloudServiceGroupID        *string    `db:"cloud_service_group_id" validate:"omitempty,lte=255"`
-	IPv4Cidr                   *string    `db:"ipv4_cidr" validate:"omitempty,lte=255"`
-	IPv6Cidr                   *string    `db:"ipv6_cidr" validate:"omitempty,lte=255"`
-	CloudTargetSecurityGroupID *string    `db:"cloud_target_security_group_id" validate:"omitempty,lte=255"`
-	CloudAddressID             *string    `db:"cloud_address_id" validate:"omitempty,lte=255"`
-	CloudAddressGroupID        *string    `db:"cloud_address_group_id" validate:"omitempty,lte=255"`
-	Region                     string     `db:"region" validate:"lte=20"`
-	Memo                       *string    `db:"memo" validate:"omitempty,lte=64"`
-	Creator                    string     `db:"creator" validate:"lte=64"`
-	Reviser                    string     `db:"reviser" validate:"lte=64"`
-	CreatedAt                  *time.Time `db:"created_at" validate:"excluded_unless"`
-	UpdatedAt                  *time.Time `db:"updated_at" validate:"excluded_unless"`
+	ID                         string     `db:"id" validate:"lte=64" json:"id"`
+	CloudPolicyIndex           int64      `db:"cloud_policy_index" json:"cloud_policy_index"`
+	Version                    string     `db:"version" json:"version"`
+	Type                       string     `db:"type" validate:"lte=20" json:"type"`
+	CloudSecurityGroupID       string     `db:"cloud_security_group_id" validate:"lte=255" json:"cloud_security_group_id"`
+	SecurityGroupID            string     `db:"security_group_id" validate:"lte=64" json:"security_group_id"`
+	AccountID                  string     `db:"account_id" validate:"lte=64" json:"account_id"`
+	Action                     string     `db:"action" validate:"lte=10" json:"action"`
+	Protocol                   *string    `db:"protocol" validate:"omitempty,lte=10" json:"protocol"`
+	Port                       *string    `db:"port" validate:"omitempty,lte=255" json:"port"`
+	CloudServiceID             *string    `db:"cloud_service_id" validate:"omitempty,lte=255" json:"cloud_service_id"`
+	CloudServiceGroupID        *string    `db:"cloud_service_group_id" validate:"omitempty,lte=255" json:"cloud_service_group_id"`
+	IPv4Cidr                   *string    `db:"ipv4_cidr" validate:"omitempty,lte=255" json:"i_pv_4_cidr"`
+	IPv6Cidr                   *string    `db:"ipv6_cidr" validate:"omitempty,lte=255" json:"i_pv_6_cidr"`
+	CloudTargetSecurityGroupID *string    `db:"cloud_target_security_group_id" validate:"omitempty,lte=255" json:"cloud_target_security_group_id"`
+	CloudAddressID             *string    `db:"cloud_address_id" validate:"omitempty,lte=255" json:"cloud_address_id"`
+	CloudAddressGroupID        *string    `db:"cloud_address_group_id" validate:"omitempty,lte=255" json:"cloud_address_group_id"`
+	Region                     string     `db:"region" validate:"lte=20" json:"region"`
+	Memo                       *string    `db:"memo" validate:"omitempty,lte=64" json:"memo"`
+	Creator                    string     `db:"creator" validate:"lte=64" json:"creator"`
+	Reviser                    string     `db:"reviser" validate:"lte=64" json:"reviser"`
+	CreatedAt                  *time.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt                  *time.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return aws security group rule table name.

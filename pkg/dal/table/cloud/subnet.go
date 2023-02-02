@@ -56,37 +56,37 @@ var SubnetColumnDescriptor = utils.ColumnDescriptors{
 // SubnetTable subnet表
 type SubnetTable struct {
 	// ID subnet ID
-	ID string `db:"id" validate:"len=0"`
+	ID string `db:"id" validate:"len=0" json:"id"`
 	// Vendor 云厂商
-	Vendor enumor.Vendor `db:"vendor" validate:"-"`
+	Vendor enumor.Vendor `db:"vendor" validate:"-" json:"vendor"`
 	// AccountID 账号ID
-	AccountID string `db:"account_id" validate:"max=64"`
+	AccountID string `db:"account_id" validate:"max=64" json:"account_id"`
 	// CloudVpcID 云上vpc的ID
-	CloudVpcID string `db:"cloud_vpc_id" validate:"max=255"`
+	CloudVpcID string `db:"cloud_vpc_id" validate:"max=255" json:"cloud_vpc_id"`
 	// CloudID 云上ID
-	CloudID string `db:"cloud_id" validate:"max=255"`
+	CloudID string `db:"cloud_id" validate:"max=255" json:"cloud_id"`
 	// Name subnet名称
-	Name *string `db:"name" validate:"omitempty,max=128"`
+	Name *string `db:"name" validate:"omitempty,max=128" json:"name"`
 	// Ipv4Cidr ipv4 cidr
-	Ipv4Cidr types.StringArray `db:"ipv4_cidr" validate:"-"`
+	Ipv4Cidr types.StringArray `db:"ipv4_cidr" validate:"-" json:"ipv_4_cidr"`
 	// Ipv6Cidr ipv6 cidr
-	Ipv6Cidr types.StringArray `db:"ipv6_cidr" validate:"-"`
+	Ipv6Cidr types.StringArray `db:"ipv6_cidr" validate:"-" json:"ipv_6_cidr"`
 	// Memo 备注
-	Memo *string `db:"memo" validate:"omitempty,max=255"`
+	Memo *string `db:"memo" validate:"omitempty,max=255" json:"memo"`
 	// Extension 云厂商差异扩展字段
-	Extension types.JsonField `db:"extension" validate:"-"`
+	Extension types.JsonField `db:"extension" validate:"-" json:"extension"`
 	// VpcID vpc的ID
-	VpcID string `db:"vpc_id" validate:"max=64"`
+	VpcID string `db:"vpc_id" validate:"max=64" json:"vpc_id"`
 	// BkBizID 业务ID
-	BkBizID int64 `db:"bk_biz_id" validate:"min=-1"`
+	BkBizID int64 `db:"bk_biz_id" validate:"min=-1" json:"bk_biz_id"`
 	// Creator 创建者
-	Creator string `db:"creator" validate:"max=64"`
+	Creator string `db:"creator" validate:"max=64" json:"creator"`
 	// Reviser 更新者
-	Reviser string `db:"reviser" validate:"max=64"`
+	Reviser string `db:"reviser" validate:"max=64" json:"reviser"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at" validate:"isdefault"`
+	CreatedAt *time.Time `db:"created_at" validate:"isdefault" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at" validate:"isdefault"`
+	UpdatedAt *time.Time `db:"updated_at" validate:"isdefault" json:"updated_at"`
 }
 
 // TableName return subnet table name.

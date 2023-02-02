@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/utils"
 )
@@ -34,81 +35,80 @@ import (
 // AuditColumns defines all the audit table's columns.
 var AuditColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, AuditColumnDescriptor)
 
-// AuditColumnDescriptor is Audit's column descriptors.
+// AuditColumnDescriptor is AuditTable's column descriptors.
 var AuditColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.Numeric},
+	{Column: "res_id", NamedC: "res_id", Type: enumor.String},
+	{Column: "cloud_res_id", NamedC: "cloud_res_id", Type: enumor.String},
+	{Column: "res_name", NamedC: "res_name", Type: enumor.String},
 	{Column: "res_type", NamedC: "res_type", Type: enumor.String},
-	{Column: "res_id", NamedC: "res_id", Type: enumor.Numeric},
 	{Column: "action", NamedC: "action", Type: enumor.String},
+	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
+	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
+	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
+	{Column: "operator", NamedC: "operator", Type: enumor.String},
+	{Column: "source", NamedC: "source", Type: enumor.String},
 	{Column: "rid", NamedC: "rid", Type: enumor.String},
 	{Column: "app_code", NamedC: "app_code", Type: enumor.String},
 	{Column: "detail", NamedC: "detail", Type: enumor.Json},
-	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
-	{Column: "account_id", NamedC: "account_id", Type: enumor.Numeric},
-	{Column: "tenant_id", NamedC: "tenant_id", Type: enumor.String},
-	{Column: "operator", NamedC: "operator", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 }
 
-// Audit is used to save resource's audit information.
-type Audit struct {
-	ID           uint64                   `db:"id" json:"id"`
-	ResourceType enumor.AuditResourceType `db:"res_type" json:"resource_type"`
-	ResourceID   string                   `db:"res_id" json:"resource_id"`
-	Action       enumor.AuditAction       `db:"action" json:"action"`
-	Rid          string                   `db:"rid" json:"rid"`
-	AppCode      string                   `db:"app_code" json:"app_code"`
-	Detail       *AuditBasicDetail        `db:"detail" json:"detail"`
-	BizID        uint64                   `db:"bk_biz_id" json:"bk_biz_id"`
-	AccountID    string                   `db:"account_id" json:"account_id"`
-	TenantID     string                   `db:"tenant_id" json:"tenant_id"`
-	Operator     string                   `db:"operator" json:"operator"`
-	CreatedAt    *time.Time               `db:"created_at" json:"created_at"`
+// AuditTable is used to save resource's audit information.
+type AuditTable struct {
+	ID         uint64                   `db:"id" json:"id"`
+	ResID      string                   `db:"res_id" json:"res_id" validate:"lte=64"`
+	CloudResID string                   `db:"cloud_res_id" json:"cloud_res_id" validate:"lte=255"`
+	ResName    string                   `db:"res_name" json:"res_name" validate:"lte=255"`
+	ResType    enumor.AuditResourceType `db:"res_type" json:"res_type" validate:"lte=50"`
+	Action     enumor.AuditAction       `db:"action" json:"action" validate:"lte=20"`
+	BkBizID    int64                    `db:"bk_biz_id" json:"bk_biz_id"`
+	Vendor     string                   `db:"vendor" json:"vendor" validate:"lte=16"`
+	AccountID  string                   `db:"account_id" json:"account_id" validate:"lte=64"`
+	Operator   string                   `db:"operator" json:"operator" validate:"lte=64"`
+	Source     enumor.RequestSourceType `db:"source" json:"source" validate:"lte=20"`
+	Rid        string                   `db:"rid" json:"rid" validate:"lte=64"`
+	AppCode    string                   `db:"app_code" json:"app_code" validate:"lte=64"`
+	Detail     *BasicDetail             `db:"detail" json:"detail" validate:"-"`
+	CreatedAt  *time.Time               `db:"created_at" json:"created_at"`
 }
 
 // CreateValidate audit when created
-func (a Audit) CreateValidate() error {
-	if len(a.ResourceType) == 0 {
-		return errors.New("resource type can not be empty")
+func (a AuditTable) CreateValidate() error {
+	// length validate.
+	if err := validator.Validate.Struct(a); err != nil {
+		return err
 	}
 
-	if len(a.ResourceID) == 0 {
-		return errors.New("resource id can not be empty")
+	if !a.ResType.Exist() {
+		return fmt.Errorf("resource type: %s not support", a.ResType)
 	}
 
-	if len(a.Action) == 0 {
-		return errors.New("action can not be empty")
+	if !a.Action.Exist() {
+		return fmt.Errorf("action: %s not support", a.Action)
 	}
 
-	if len(a.Rid) == 0 {
-		return errors.New("request id can not be empty")
-	}
-
-	if len(a.Operator) == 0 {
-		return errors.New("operator can not be empty")
-	}
-
-	if a.CreatedAt != nil && !a.CreatedAt.IsZero() {
-		return errors.New("created_at can not be set, it is generated through db")
+	if !a.Source.Exist() {
+		return fmt.Errorf("source: %s not support", a.Source)
 	}
 
 	return nil
 }
 
 // TableName is the audit's database table name.
-func (a Audit) TableName() table.Name {
+func (a AuditTable) TableName() table.Name {
 	return table.AuditTable
 }
 
-// AuditBasicDetail defines the audit's basic details.
-type AuditBasicDetail struct {
+// BasicDetail defines the audit's basic details.
+type BasicDetail struct {
 	Data    interface{} `json:"data,omitempty"`
 	Changed interface{} `json:"changed,omitempty"`
 }
 
 // Scan is used to decode raw message which is read from db into a structured
 // ScopeSelector instance.
-func (detail *AuditBasicDetail) Scan(raw interface{}) error {
+func (detail *BasicDetail) Scan(raw interface{}) error {
 	if detail == nil {
 		return errors.New("auditBasicDetail is not initialized")
 	}
@@ -134,7 +134,7 @@ func (detail *AuditBasicDetail) Scan(raw interface{}) error {
 }
 
 // Value encode the scope selector to a json raw, so that it can be stored to db with json raw.
-func (detail *AuditBasicDetail) Value() (driver.Value, error) {
+func (detail *BasicDetail) Value() (driver.Value, error) {
 	if detail == nil {
 		return nil, errors.New("auditBasicDetail is not initialized, can not be encoded")
 	}

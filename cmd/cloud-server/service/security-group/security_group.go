@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
@@ -36,6 +37,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // InitSecurityGroupService initial the security group service
@@ -43,6 +45,7 @@ func InitSecurityGroupService(c *capability.Capability) {
 	svc := &securityGroupSvc{
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
 
 	h := rest.NewHandler()
@@ -67,6 +70,7 @@ func InitSecurityGroupService(c *capability.Capability) {
 type securityGroupSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+	audit      audit.Interface
 }
 
 // GetSecurityGroup get security group.
@@ -124,6 +128,17 @@ func (svc securityGroupSvc) UpdateSecurityGroup(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
+	// create update audit.
+	updateFields, err := converter.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = svc.audit.ResUpdateAudit(cts.Kit, enumor.SecurityGroupAuditResType, id, updateFields); err != nil {
+		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	updateReq := &hcproto.SecurityGroupUpdateReq{
 		Name: req.Name,
 		Memo: req.Memo,
@@ -161,6 +176,12 @@ func (svc securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (interf
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// create delete audit.
+	if err := svc.audit.ResDeleteAudit(cts.Kit, enumor.SecurityGroupAuditResType, req.IDs); err != nil {
+		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	successIDs := make([]string, 0)
@@ -276,6 +297,13 @@ func (svc securityGroupSvc) AssignSecurityGroupToBiz(cts *rest.Contexts) (interf
 			ids[index] = one.ID
 		}
 		return nil, fmt.Errorf("security group%v already assigned", ids)
+	}
+
+	// create assign audit.
+	err = svc.audit.ResAssignAudit(cts.Kit, enumor.SecurityGroupAuditResType, req.SecurityGroupIDs, req.BkBizID)
+	if err != nil {
+		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	update := &dataproto.SecurityGroupCommonInfoBatchUpdateReq{
