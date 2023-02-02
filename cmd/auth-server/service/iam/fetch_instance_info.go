@@ -48,7 +48,7 @@ func (i *IAM) FetchInstanceInfo(kt *kit.Kit, resType client.TypeID, ft *types.Fe
 	req := &dataservice.ListInstancesReq{
 		ResourceType: resType,
 		Filter:       expr,
-		Page:         &core.BasePage{Count: false},
+		Page:         &core.BasePage{Count: false, Limit: uint(len(ft.IDs))},
 	}
 	resp, err := i.ds.Global.Auth.ListInstances(kt.Ctx, kt.Header(), req)
 	if err != nil {

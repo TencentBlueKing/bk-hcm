@@ -27,8 +27,11 @@ import (
 	"hcm/cmd/auth-server/options"
 	"hcm/cmd/auth-server/service/capability"
 	authserver "hcm/pkg/api/auth-server"
+	"hcm/pkg/api/core"
+	dsproto "hcm/pkg/api/data-service"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sdk/auth"
@@ -271,7 +274,7 @@ func (a *Auth) getPermissionToApply(kt *kit.Kit, resources []meta.ResourceAttrib
 
 			for idx, resources := range iamResourceType.Instances {
 				for idx2, resource := range resources {
-					iamResourceType.Instances[idx][idx2].Name = instIDNameMap[resource.ID]
+					iamResourceType.Instances[idx][idx2].Name = instIDNameMap[client.TypeID(resource.Type)][resource.ID]
 				}
 			}
 
@@ -382,15 +385,34 @@ func (a *Auth) parseIamPathToAncestors(iamPath []string) ([]meta.IamResourceInst
 	return resources, nil
 }
 
-// TODO how to get ancestor names? right now it means cc biz name,  which is not in hcm
-// note that app id is generated in the form of {biz_id}-{app_id}
-// and right now dataservice.ListInstancesReq requires biz id to be set, how to confirm this?
-// and return should be grouped by type to avoid duplicates
 // getInstIDNameMap get resource id to name map by resource ids, groups by resource type
-func (a *Auth) getInstIDNameMap(kt *kit.Kit, resTypeIDsMap map[client.TypeID][]string) (map[string]string, error) {
+func (a *Auth) getInstIDNameMap(kt *kit.Kit, resTypeIDsMap map[client.TypeID][]string) (
+	map[client.TypeID]map[string]string, error) {
 
-	// TODO implement this
-	return make(map[string]string), nil
+	instMap := make(map[client.TypeID]map[string]string)
+
+	for resType, ids := range resTypeIDsMap {
+		req := &dsproto.ListInstancesReq{
+			ResourceType: resType,
+			Filter:       tools.ContainersExpression("id", ids),
+			Page:         &core.BasePage{Count: false, Limit: uint(len(ids))},
+		}
+
+		resp, err := a.ds.Global.Auth.ListInstances(kt.Ctx, kt.Header(), req)
+		if err != nil {
+			logs.Errorf("list auth instances failed, err: %v, type: %s, ids: %+v, rid: %s", err, resType, ids, kt.Rid)
+			return nil, err
+		}
+
+		instMap[resType] = make(map[string]string)
+
+		for _, inst := range resp.Details {
+			instMap[resType][inst.ID] = inst.DisplayName
+		}
+
+	}
+
+	return instMap, nil
 }
 
 // ListAuthorizedInstances list authorized instances info.

@@ -34,7 +34,7 @@ func genSkipResource(_ *meta.ResourceAttribute) (client.ActionID, []client.Resou
 // genAccountResource generate account related iam resource.
 func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	res := client.Resource{
-		System: sys.SystemNameHCM,
+		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
 
@@ -51,7 +51,6 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 		// access account secret keys is related to hcm account resource
 		return sys.AccountKeyAccess, []client.Resource{res}, nil
 	case meta.Create:
-		// create account is related to hcm account resource
 		return sys.AccountCreate, make([]client.Resource, 0), nil
 	case meta.Update:
 		// update account is related to hcm account resource
@@ -67,7 +66,7 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 // genResourceResource generate resource related iam resource.
 func genResourceResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	res := client.Resource{
-		System: sys.SystemNameHCM,
+		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
 
@@ -83,12 +82,48 @@ func genResourceResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 	case meta.Assign:
 		// access resource secret keys is related to hcm account resource
 		return sys.ResourceAssign, []client.Resource{res}, nil
-	case meta.Recycle:
-		// create resource is related to hcm account resource
-		return sys.ResourceRecycle, make([]client.Resource, 0), nil
-	case meta.Manage:
+	case meta.Manage, meta.Update, meta.Delete, meta.Create:
 		// update resource is related to hcm account resource
 		return sys.ResourceManage, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+// genVpcResource generate vpc related iam resource.
+func genVpcResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genResourceResource(a)
+}
+
+// genSubnetResource generate subnet related iam resource.
+func genSubnetResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genResourceResource(a)
+}
+
+// genDiskResource generate disk related iam resource.
+func genDiskResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genResourceResource(a)
+}
+
+// genRecycleBinResource generate recycle bin related iam resource.
+func genRecycleBinResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.ResourceFind, make([]client.Resource, 0), nil
+	case meta.Recycle:
+		return sys.RecycleBinManage, make([]client.Resource, 0), nil
+	case meta.Recover:
+		return sys.RecycleBinManage, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+// genAuditResource generate audit log related iam resource.
+func genAuditResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.AuditFind, make([]client.Resource, 0), nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}

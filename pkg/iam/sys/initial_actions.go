@@ -42,6 +42,8 @@ func GenerateStaticActions() []client.ResourceAction {
 
 	resourceActionList = append(resourceActionList, genAccountActions()...)
 	resourceActionList = append(resourceActionList, genResourceActions()...)
+	resourceActionList = append(resourceActionList, genRecycleBinActions()...)
+	resourceActionList = append(resourceActionList, genAuditActions()...)
 
 	return resourceActionList
 }
@@ -115,11 +117,35 @@ func genResourceActions() []client.ResourceAction {
 		RelatedResourceTypes: accountResource,
 		RelatedActions:       nil,
 		Version:              1,
+	}}
+}
+
+func genRecycleBinActions() []client.ResourceAction {
+	return []client.ResourceAction{{
+		ID:                   RecycleBinFind,
+		Name:                 ActionIDNameMap[RecycleBinFind],
+		NameEn:               "Find Resource In Recycle Bin",
+		Type:                 View,
+		RelatedResourceTypes: accountResource,
+		RelatedActions:       nil,
+		Version:              1,
 	}, {
-		ID:                   ResourceRecycle,
-		Name:                 ActionIDNameMap[ResourceRecycle],
-		NameEn:               "Recycle Resource From Business",
+		ID:                   RecycleBinManage,
+		Name:                 ActionIDNameMap[RecycleBinManage],
+		NameEn:               "Manage Resource In Recycle Bin",
 		Type:                 Edit,
+		RelatedResourceTypes: accountResource,
+		RelatedActions:       nil,
+		Version:              1,
+	}}
+}
+
+func genAuditActions() []client.ResourceAction {
+	return []client.ResourceAction{{
+		ID:                   AuditFind,
+		Name:                 ActionIDNameMap[AuditFind],
+		NameEn:               "Find Audit Log",
+		Type:                 View,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
