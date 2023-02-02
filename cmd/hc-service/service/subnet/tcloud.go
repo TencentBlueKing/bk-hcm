@@ -412,7 +412,7 @@ func (s subnet) BatchDeleteSubnetByIDs(cts *rest.Contexts, deleteIDs []string) e
 		}
 
 		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
+			Filter: tools.ContainersExpression("id", newDeleteIDs),
 		}
 		if err := s.cs.DataService().Global.Subnet.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
 			return err

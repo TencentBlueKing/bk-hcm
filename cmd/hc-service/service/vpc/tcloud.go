@@ -396,7 +396,7 @@ func (v vpc) BatchDeleteVpcByIDs(cts *rest.Contexts, deleteIDs []string) error {
 		}
 
 		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
+			Filter: tools.ContainersExpression("id", newDeleteIDs),
 		}
 		if err := v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
 			return err
