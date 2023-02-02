@@ -55,7 +55,7 @@ func (g *securityGroup) BatchCreateAwsSGRule(cts *rest.Contexts) (interface{}, e
 
 	sg, err := g.dataCli.Aws.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get aws security group failed, err: %v, id: %s, rid: %s", err, sgID,
+		logs.Errorf("request dataservice get aws security group failed, id: %s, err: %v, rid: %s", sgID, err,
 			cts.Kit.Rid)
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func (g *securityGroup) UpdateAwsSGRule(cts *rest.Contexts) (interface{}, error)
 	}
 
 	if err := client.UpdateSecurityGroupRule(cts.Kit, opt); err != nil {
-		logs.Errorf("request adaptor to update aws security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
+		logs.Errorf("request adaptor to update aws security group rule failed, opt: %v, err: %v, rid: %s", opt, err,
 			cts.Kit.Rid)
 		return nil, err
 	}
@@ -240,14 +240,11 @@ func (g *securityGroup) getAwsSGRuleByID(cts *rest.Contexts, id string, sgID str
 
 	listReq := &protocloud.AwsSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: 1,
-		},
+		Page:   core.DefaultBasePage,
 	}
 	listResp, err := g.dataCli.Aws.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get aws security group failed, err: %v, id: %s, rid: %s", err, id,
+		logs.Errorf("request dataservice get aws security group failed, id: %s, err: %v, rid: %s", id, err,
 			cts.Kit.Rid)
 		return nil, err
 	}
@@ -296,7 +293,7 @@ func (g *securityGroup) DeleteAwsSGRule(cts *rest.Contexts) (interface{}, error)
 		return nil, fmt.Errorf("unknown security group rule type: %s", rule.Type)
 	}
 	if err := client.DeleteSecurityGroupRule(cts.Kit, opt); err != nil {
-		logs.Errorf("request adaptor to delete aws security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
+		logs.Errorf("request adaptor to delete aws security group rule failed, opt: %v, err: %v, rid: %s", opt, err,
 			cts.Kit.Rid)
 		return nil, err
 	}
@@ -324,7 +321,7 @@ func (g *securityGroup) diffAwsSGRuleSyncAdd(cts *rest.Contexts, ids []string,
 	for _, id := range ids {
 		sg, err := g.dataCli.Aws.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
 		if err != nil {
-			logs.Errorf("request dataservice get aws security group failed, err: %v, id: %s, rid: %s", err, id, cts.Kit.Rid)
+			logs.Errorf("request dataservice get aws security group failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
 			return err
 		}
 
@@ -435,9 +432,9 @@ func (g *securityGroup) genAwsUpdateRulesList(rules []*ec2.SecurityGroupRule, re
 	list := make([]protocloud.AwsSGRuleUpdate, 0, len(rules))
 
 	for _, rule := range rules {
-		cOne, _ := g.getAwsSGRuleByCid(cts, *rule.SecurityGroupRuleId, sgID)
-		if cOne == nil {
-			// 忽略云上存在但是db不存在情况
+		cOne, err := g.getAwsSGRuleByCid(cts, *rule.SecurityGroupRuleId, sgID)
+		if err != nil || cOne == nil {
+			logs.Errorf("aws gen update RulesList getAwsSGRuleByCid failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			continue
 		}
 		if cOne.CloudID == *rule.SecurityGroupRuleId &&
@@ -491,14 +488,11 @@ func (g *securityGroup) getAwsSGRuleByCid(cts *rest.Contexts, cID string, sgID s
 
 	listReq := &protocloud.AwsSGRuleListReq{
 		Filter: tools.EqualExpression("cloud_id", cID),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: 1,
-		},
+		Page:   core.DefaultBasePage,
 	}
 	listResp, err := g.dataCli.Aws.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get aws security group failed, err: %v, id: %s, rid: %s", err, cID,
+		logs.Errorf("request dataservice get aws security group failed, id: %s, err: %v, rid: %s", cID, err,
 			cts.Kit.Rid)
 		return nil, err
 	}

@@ -234,7 +234,7 @@ func (g *securityGroup) getDatasFromHuaWeiForSecurityGroupSync(cts *rest.Context
 		}
 		datas, pageInfo, err := client.ListSecurityGroup(cts.Kit, opt)
 		if err != nil {
-			logs.Errorf("request adaptor to list huawei security group failed, err: %v, opt: %v, rid: %s", err, opt,
+			logs.Errorf("request adaptor to list huawei security group failed, opt: %v, err: %v, rid: %s", opt, err,
 				cts.Kit.Rid)
 			return nil, err
 		}
@@ -263,7 +263,7 @@ func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, cloudMap map
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
 	if len(deleteCloudIDs) > 0 {
-		logs.Infof("do sync huawei SecurityGroup delete operate")
+		logs.Infof("do sync huawei SecurityGroup delete operate, rid: %s", cts.Kit.Rid)
 		err := g.diffSecurityGroupSyncDelete(cts, deleteCloudIDs)
 		if err != nil {
 			logs.Errorf("sync delete huawei security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -277,7 +277,7 @@ func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, cloudMap map
 	}
 
 	if len(updateCloudIDs) > 0 {
-		logs.Infof("do sync huawei SecurityGroup update operate")
+		logs.Infof("do sync huawei SecurityGroup update operate, rid: %s", cts.Kit.Rid)
 		err := g.diffHWSecurityGroupSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
 		if err != nil {
 			logs.Errorf("sync update huawei security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -291,7 +291,7 @@ func (g *securityGroup) diffHWSecurityGroupSync(cts *rest.Contexts, cloudMap map
 	}
 
 	if len(addCloudIDs) > 0 {
-		logs.Infof("do sync huawei SecurityGroup add operate")
+		logs.Infof("do sync huawei SecurityGroup add operate, rid: %s", cts.Kit.Rid)
 		ids, err := g.diffHWSecurityGroupSyncAdd(cts, cloudMap, req, addCloudIDs)
 		if err != nil {
 			logs.Errorf("sync add huawei security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -332,7 +332,7 @@ func (g *securityGroup) diffHWSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap 
 	}
 
 	if len(createReq.SecurityGroups) <= 0 {
-		return nil, nil
+		return make([]string, 0), nil
 	}
 
 	ids, err := g.dataCli.HuaWei.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)

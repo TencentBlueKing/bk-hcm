@@ -170,10 +170,7 @@ func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud
 
 	listReq := &protocloud.TCloudSGRuleListReq{
 		Filter: tools.EqualExpression("security_group_id", opt.SecurityGroupID),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: core.DefaultMaxPageLimit,
-		},
+		Page:   core.DefaultBasePage,
 	}
 	start := uint32(0)
 	dbRules := make([]corecloud.TCloudSecurityGroupRule, 0)
@@ -489,10 +486,7 @@ func (g *securityGroup) getTCloudSGRuleByID(cts *rest.Contexts, id string, sgID 
 
 	listReq := &protocloud.TCloudSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: 1,
-		},
+		Page:   core.DefaultBasePage,
 	}
 	listResp, err := g.dataCli.TCloud.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
@@ -706,9 +700,10 @@ func (g *securityGroup) genTCloudRulesList(cloudRules *vpc.SecurityGroupPolicySe
 	for _, rule := range cloudRules.Egress {
 		rID, err := g.getTCloudSGRuleBy(cts, sgID, *rule.PolicyIndex, id, enumor.Egress)
 		if err != nil {
-			// 忽略云上存在但是db不存在情况
+			logs.Errorf("tcloud gen RulesList getTCloudSGRuleBy failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			continue
 		}
+
 		if *rID.Protocol == *rule.Protocol &&
 			*rID.Port == *rule.Port &&
 			*rID.IPv4Cidr == *rule.CidrBlock &&
@@ -716,6 +711,7 @@ func (g *securityGroup) genTCloudRulesList(cloudRules *vpc.SecurityGroupPolicySe
 			*rID.Memo == *rule.PolicyDescription {
 			continue
 		}
+
 		list = append(list, protocloud.TCloudSGRuleBatchUpdate{
 			ID:       rID.ID,
 			Protocol: rule.Protocol,
@@ -725,11 +721,13 @@ func (g *securityGroup) genTCloudRulesList(cloudRules *vpc.SecurityGroupPolicySe
 			Memo:     rule.PolicyDescription,
 		})
 	}
+
 	for _, rule := range cloudRules.Ingress {
 		rID, err := g.getTCloudSGRuleBy(cts, sgID, *rule.PolicyIndex, id, enumor.Ingress)
 		if err != nil {
 			continue
 		}
+
 		if *rID.Protocol == *rule.Protocol &&
 			*rID.Port == *rule.Port &&
 			*rID.IPv4Cidr == *rule.CidrBlock &&
@@ -737,6 +735,7 @@ func (g *securityGroup) genTCloudRulesList(cloudRules *vpc.SecurityGroupPolicySe
 			*rID.Memo == *rule.PolicyDescription {
 			continue
 		}
+
 		list = append(list, protocloud.TCloudSGRuleBatchUpdate{
 			ID:       rID.ID,
 			Protocol: rule.Protocol,
@@ -764,14 +763,12 @@ func (g *securityGroup) getTCloudSGRuleBy(cts *rest.Contexts, sgID string, cpId 
 				filter.AtomRule{Field: "type", Op: filter.Equal.Factory(), Value: typ},
 			},
 		},
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: 1,
-		},
+		Page: core.DefaultBasePage,
 	}
+
 	listResp, err := g.dataCli.TCloud.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get tcloud security group failed, err: %v, id: %s, rid: %s", err, cpId,
+		logs.Errorf("request dataservice get tcloud security group failed, id: %s, err: %v, rid: %s", cpId, err,
 			cts.Kit.Rid)
 		return nil, err
 	}

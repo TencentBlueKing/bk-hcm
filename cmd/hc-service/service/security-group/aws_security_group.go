@@ -206,7 +206,7 @@ func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, cloudMap ma
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
 	if len(deleteCloudIDs) > 0 {
-		logs.Infof("do sync aws SecurityGroup delete operate")
+		logs.Infof("do sync aws SecurityGroup delete operate rid: %s", cts.Kit.Rid)
 		err := g.diffSecurityGroupSyncDelete(cts, deleteCloudIDs)
 		if err != nil {
 			logs.Errorf("sync delete aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -220,7 +220,7 @@ func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, cloudMap ma
 	}
 
 	if len(updateCloudIDs) > 0 {
-		logs.Infof("do sync aws SecurityGroup update operate")
+		logs.Infof("do sync aws SecurityGroup update operate rid: %s", cts.Kit.Rid)
 		err := g.diffAwsSecurityGroupSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
 		if err != nil {
 			logs.Errorf("sync update aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -234,7 +234,7 @@ func (g *securityGroup) diffAwsSecurityGroupSync(cts *rest.Contexts, cloudMap ma
 	}
 
 	if len(addCloudIDs) > 0 {
-		logs.Infof("do sync aws SecurityGroup add operate")
+		logs.Infof("do sync aws SecurityGroup add operate rid: %s", cts.Kit.Rid)
 		ids, err := g.diffAwsSecurityGroupSyncAdd(cts, cloudMap, req, addCloudIDs)
 		if err != nil {
 			logs.Errorf("sync add aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -275,7 +275,7 @@ func (g *securityGroup) diffAwsSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap
 	}
 
 	if len(createReq.SecurityGroups) <= 0 {
-		return nil, nil
+		return make([]string, 0), nil
 	}
 
 	results, err := g.dataCli.Aws.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)

@@ -196,10 +196,7 @@ func (g *securityGroup) getHuaWeiSGRuleByID(cts *rest.Contexts, id string, sgID 
 
 	listReq := &protocloud.HuaWeiSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: 1,
-		},
+		Page:   core.DefaultBasePage,
 	}
 	listResp, err := g.dataCli.HuaWei.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
@@ -227,7 +224,7 @@ func (g *securityGroup) diffHuaWeiSGRuleSyncAdd(cts *rest.Contexts, ids []string
 	for _, id := range ids {
 		sg, err := g.dataCli.HuaWei.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
 		if err != nil {
-			logs.Errorf("request dataservice get huawei security group failed, err: %v, id: %s, rid: %s", err, id,
+			logs.Errorf("request dataservice get huawei security group failed, id: %s, err: %v, rid: %s", id, err,
 				cts.Kit.Rid)
 			return err
 		}
@@ -333,9 +330,9 @@ func (g *securityGroup) genHuaWeiUpdateRulesList(rules *model.ListSecurityGroupR
 	list := make([]protocloud.HuaWeiSGRuleBatchUpdate, 0)
 
 	for _, sgRule := range *rules.SecurityGroupRules {
-		one, _ := g.getHuaWeiSGRuleByCid(cts, sgRule.Id, sgID)
-		if one == nil {
-			// 忽略云上存在但是db不存在情况
+		one, err := g.getHuaWeiSGRuleByCid(cts, sgRule.Id, sgID)
+		if err != nil || one == nil {
+			logs.Errorf("huawei gen update RulesList getHuaWeiSGRuleByCid failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			continue
 		}
 		if *one.Memo == sgRule.Description &&
@@ -381,14 +378,11 @@ func (g *securityGroup) getHuaWeiSGRuleByCid(cts *rest.Contexts, cID string, sgI
 
 	listReq := &protocloud.HuaWeiSGRuleListReq{
 		Filter: tools.EqualExpression("cloud_id", cID),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: 1,
-		},
+		Page:   core.DefaultBasePage,
 	}
 	listResp, err := g.dataCli.HuaWei.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get huawei security group failed, err: %v, id: %s, rid: %s", err, cID,
+		logs.Errorf("request dataservice get huawei security group failed, id: %s, err: %v, rid: %s", cID, err,
 			cts.Kit.Rid)
 		return nil, err
 	}

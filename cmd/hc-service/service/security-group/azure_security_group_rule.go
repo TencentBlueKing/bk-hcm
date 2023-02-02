@@ -302,14 +302,11 @@ func (g *securityGroup) getAzureSGRuleByID(cts *rest.Contexts, id string, sgID s
 
 	listReq := &protocloud.AzureSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: 1,
-		},
+		Page:   core.DefaultBasePage,
 	}
 	listResp, err := g.dataCli.Azure.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get azure security group failed, err: %v, id: %s, rid: %s", err, id,
+		logs.Errorf("request dataservice get azure security group failed, id: %s, err: %v, rid: %s", id, err,
 			cts.Kit.Rid)
 		return nil, err
 	}
@@ -385,7 +382,7 @@ func (g *securityGroup) diffAzureSGRuleSyncAdd(cts *rest.Contexts, ids []string,
 	for _, id := range ids {
 		sg, err := g.dataCli.Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
 		if err != nil {
-			logs.Errorf("request dataservice get azure security group failed, err: %v, id: %s, rid: %s", err, id,
+			logs.Errorf("request dataservice get azure security group failed, id: %s, err: %v, rid: %s", id, err,
 				cts.Kit.Rid)
 			return err
 		}
@@ -521,9 +518,9 @@ func (g *securityGroup) genAzureUpdateRulesList(rules []*armnetwork.SecurityRule
 	list := make([]protocloud.AzureSGRuleUpdate, 0, len(rules))
 
 	for _, rule := range rules {
-		one, _ := g.getAzureSGRuleByCid(cts, *rule.ID, sgID)
-		if one == nil {
-			// 忽略云上存在但是db不存在情况
+		one, err := g.getAzureSGRuleByCid(cts, *rule.ID, sgID)
+		if err != nil || one == nil {
+			logs.Errorf("azure gen update RulesList getAzureSGRuleByCid failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			continue
 		}
 		spec := protocloud.AzureSGRuleUpdate{
@@ -582,14 +579,11 @@ func (g *securityGroup) getAzureSGRuleByCid(cts *rest.Contexts, cID string, sgID
 
 	listReq := &protocloud.AzureSGRuleListReq{
 		Filter: tools.EqualExpression("cloud_id", cID),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: 1,
-		},
+		Page:   core.DefaultBasePage,
 	}
 	listResp, err := g.dataCli.Azure.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get azure security group failed, err: %v, id: %s, rid: %s", err, cID,
+		logs.Errorf("request dataservice get azure security group failed, id: %s, err: %v, rid: %s", cID, err,
 			cts.Kit.Rid)
 		return nil, err
 	}
