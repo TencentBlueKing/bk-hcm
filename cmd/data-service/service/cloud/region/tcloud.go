@@ -23,11 +23,11 @@ import (
 	"fmt"
 	"reflect"
 
-	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
@@ -42,32 +42,9 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitTcloudRegionService initialize the region service.
-func InitTcloudRegionService(cap *capability.Capability) {
-	svc := &tcloudRegionSvc{
-		dao: cap.Dao,
-	}
-
-	h := rest.NewHandler()
-
-	h.Add("BatchCreateRegion", "POST", "/vendors/tcloud/regions/batch/create", svc.BatchCreateRegion)
-	h.Add("BatchUpdateRegion", "PATCH", "/vendors/tcloud/regions/batch", svc.BatchUpdateRegion)
-	h.Add("BatchUpdateRegionBaseInfo", "PATCH", "/vendors/tcloud/regions/base/batch",
-		svc.BatchUpdateRegionBaseInfo)
-	h.Add("GetRegion", "GET", "/vendors/tcloud/regions/{id}", svc.GetRegion)
-	h.Add("ListRegion", "POST", "/vendors/tcloud/regions/list", svc.ListRegion)
-	h.Add("DeleteRegion", "DELETE", "/vendors/tcloud/regions/batch", svc.BatchDeleteRegion)
-
-	h.Load(cap.WebService)
-}
-
-type tcloudRegionSvc struct {
-	dao dao.Set
-}
-
-// BatchCreateRegion batch create region.
-func (svc *tcloudRegionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoregion.TCloudRegionCreateReq)
+// BatchCreateTcloudRegion batch create region.
+func (svc *regionSvc) BatchCreateTcloudRegion(cts *rest.Contexts) (interface{}, error) {
+	req := new(protoregion.RegionCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -83,7 +60,7 @@ func (svc *tcloudRegionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, 
 				Vendor:      createReq.Vendor,
 				RegionID:    createReq.RegionID,
 				RegionName:  createReq.RegionName,
-				IsAvailable: createReq.IsAvailable,
+				IsAvailable: constant.AvailableYes,
 				Creator:     cts.Kit.User,
 				Reviser:     cts.Kit.User,
 			}
@@ -111,8 +88,8 @@ func (svc *tcloudRegionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, 
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-// BatchUpdateRegion batch update region.
-func (svc *tcloudRegionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchUpdateTcloudRegion batch update region.
+func (svc *regionSvc) BatchUpdateTcloudRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(protoregion.TCloudRegionBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -132,13 +109,13 @@ func (svc *tcloudRegionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, 
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   &core.BasePage{Count: true},
 	}
-	listRes, err := svc.dao.Vpc().List(cts.Kit, opt)
+	listRes, err := svc.dao.TcloudRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("list tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list region failed, err: %v", err)
 	}
 	if listRes.Count != uint64(len(req.Regions)) {
-		return nil, fmt.Errorf("list region failed, some region(ids=%+v) doesn't exist", ids)
+		return nil, fmt.Errorf("list tcloud region failed, some region(ids=%+v) doesn't exist", ids)
 	}
 
 	// update region
@@ -154,67 +131,15 @@ func (svc *tcloudRegionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, 
 
 		err = svc.dao.TcloudRegion().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), tmpRegion)
 		if err != nil {
-			logs.Errorf("update region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update region failed, err: %v", err)
+			logs.Errorf("update tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("update tcloud region failed, err: %v", err)
 		}
 	}
 	return nil, nil
 }
 
-// BatchUpdateRegionBaseInfo batch update region base info.
-func (svc *tcloudRegionSvc) BatchUpdateRegionBaseInfo(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoregion.TCloudRegionBaseInfoBatchUpdateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	ids := make([]string, 0)
-	for _, region := range req.Regions {
-		ids = append(ids, region.IDs...)
-	}
-
-	// check if all regions exists
-	opt := &types.ListOption{
-		Filter: tools.ContainersExpression("id", ids),
-		Page:   &core.BasePage{Count: true},
-	}
-	listRes, err := svc.dao.TcloudRegion().List(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
-	}
-	if listRes.Count != uint64(len(ids)) {
-		return nil, fmt.Errorf("list region failed, some region(ids=%+v) doesn't exist", ids)
-	}
-
-	// update region
-	tmpRegion := &tableregion.TcloudRegionTable{
-		Reviser: cts.Kit.User,
-	}
-
-	for _, updateReq := range req.Regions {
-		tmpRegion.Vendor = updateReq.Data.Vendor
-		tmpRegion.RegionID = updateReq.Data.RegionID
-		tmpRegion.RegionName = updateReq.Data.RegionName
-		tmpRegion.IsAvailable = updateReq.Data.IsAvailable
-
-		err = svc.dao.TcloudRegion().Update(cts.Kit, tools.ContainersExpression("id", updateReq.IDs),
-			tmpRegion)
-		if err != nil {
-			logs.Errorf("update region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update region failed, err: %v", err)
-		}
-	}
-
-	return nil, nil
-}
-
-// GetRegion get region details.
-func (svc *tcloudRegionSvc) GetRegion(cts *rest.Contexts) (interface{}, error) {
+// GetTcloudRegion get region details.
+func (svc *regionSvc) GetTcloudRegion(cts *rest.Contexts) (interface{}, error) {
 	regionID := cts.PathParameter("id").String()
 
 	dbRegion, err := getTcloudRegionFromTable(cts.Kit, svc.dao, regionID)
@@ -233,20 +158,20 @@ func getTcloudRegionFromTable(kt *kit.Kit, dao dao.Set, regionID string) (*table
 	}
 	res, err := dao.TcloudRegion().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", kt.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
+		logs.Errorf("list tcloud region failed, err: %v, rid: %s", kt.Rid)
+		return nil, fmt.Errorf("list tcloud region failed, err: %v", err)
 	}
 
 	details := res.Details
 	if len(details) != 1 {
-		return nil, fmt.Errorf("list region failed, region(id=%s) doesn't exist", regionID)
+		return nil, fmt.Errorf("list tcloud region failed, region(id=%s) doesn't exist", regionID)
 	}
 
 	return &details[0], nil
 }
 
-// ListRegion list regions.
-func (svc *tcloudRegionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
+// ListTcloudRegion list regions.
+func (svc *regionSvc) ListTcloudRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -263,8 +188,8 @@ func (svc *tcloudRegionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) 
 	}
 	daoRegionResp, err := svc.dao.TcloudRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
+		logs.Errorf("list tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list tcloud region failed, err: %v", err)
 	}
 	if req.Page.Count {
 		return &protoregion.TCloudRegionListResult{Count: daoRegionResp.Count}, nil
@@ -296,8 +221,8 @@ func convertTcloudBaseRegion(dbRegion *tableregion.TcloudRegionTable) *protocore
 	}
 }
 
-// BatchDeleteRegion batch delete regions.
-func (svc *tcloudRegionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchDeleteTcloudRegion batch delete regions.
+func (svc *regionSvc) BatchDeleteTcloudRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -316,8 +241,8 @@ func (svc *tcloudRegionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, 
 	}
 	listResp, err := svc.dao.TcloudRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
+		logs.Errorf("list tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list tcloud region failed, err: %v", err)
 	}
 
 	if len(listResp.Details) == 0 {
@@ -331,14 +256,14 @@ func (svc *tcloudRegionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, 
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		delRegionFilter := tools.ContainersExpression("id", delRegionIDs)
-		if err := svc.dao.TcloudRegion().BatchDeleteWithTx(cts.Kit, txn, delRegionFilter); err != nil {
+		if err = svc.dao.TcloudRegion().BatchDeleteWithTx(cts.Kit, txn, delRegionFilter); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
 
 	if err != nil {
-		logs.Errorf("delete region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("delete tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

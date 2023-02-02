@@ -22,13 +22,13 @@ package region
 import (
 	"errors"
 	"fmt"
-	"hcm/pkg/rest"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -36,7 +36,14 @@ import (
 
 // TCloudRegionCreateReq define tcloud region create request.
 type TCloudRegionCreateReq struct {
-	Regions []TCloudRegionBatchCreate `json:"rules" validate:"required"`
+	Regions []TCloudRegionBatchCreate `json:"regions" validate:"required"`
+}
+
+// TCloudRegionBatchCreate define tcloud region rule when create.
+type TCloudRegionBatchCreate struct {
+	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID   string        `json:"region_id" validate:"required"`
+	RegionName string        `json:"region_name" validate:"required"`
 }
 
 // Validate tcloud region create request.
@@ -52,20 +59,11 @@ func (req *TCloudRegionCreateReq) Validate() error {
 	return nil
 }
 
-// TCloudRegionBatchCreate define tcloud region rule when create.
-type TCloudRegionBatchCreate struct {
-	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id" validate:"required"`
-	RegionName  string        `json:"region_name" validate:"required"`
-	IsAvailable int64         `json:"is_available"`
-	Creator     string        `json:"creator"`
-}
-
 // -------------------------- Update --------------------------
 
 // TCloudRegionBatchUpdateReq define tcloud region batch update request.
 type TCloudRegionBatchUpdateReq struct {
-	Regions []TCloudRegionBatchUpdate `json:"rules" validate:"required"`
+	Regions []TCloudRegionBatchUpdate `json:"regions" validate:"required"`
 }
 
 // TCloudRegionBatchUpdate tcloud region batch update option.
@@ -90,24 +88,6 @@ func (req *TCloudRegionBatchUpdateReq) Validate() error {
 	}
 
 	return nil
-}
-
-// -------------------------- Get --------------------------
-
-// TCloudRegionBaseInfoBatchUpdateReq defines batch update region base info request.
-type TCloudRegionBaseInfoBatchUpdateReq struct {
-	Regions []TcloudRegionBaseInfoUpdateReq `json:"regions" validate:"required"`
-}
-
-// TcloudRegionBaseInfoUpdateReq defines update region base info request.
-type TcloudRegionBaseInfoUpdateReq struct {
-	IDs  []string                 `json:"id" validate:"required"`
-	Data *TCloudRegionBatchUpdate `json:"data" validate:"required"`
-}
-
-// Validate VpcBaseInfoBatchUpdateReq.
-func (u *TCloudRegionBaseInfoBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(u)
 }
 
 // -------------------------- List --------------------------

@@ -36,7 +36,14 @@ import (
 
 // AwsRegionCreateReq define aws region create request.
 type AwsRegionCreateReq struct {
-	Regions []AwsRegionBatchCreate `json:"rules" validate:"required"`
+	Regions []AwsRegionBatchCreate `json:"regions" validate:"required"`
+}
+
+// AwsRegionBatchCreate define aws region rule when create.
+type AwsRegionBatchCreate struct {
+	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID   string        `json:"region_id" validate:"required"`
+	RegionName string        `json:"region_name" validate:"required"`
 }
 
 // Validate aws region create request.
@@ -52,20 +59,11 @@ func (req *AwsRegionCreateReq) Validate() error {
 	return nil
 }
 
-// AwsRegionBatchCreate define aws region rule when create.
-type AwsRegionBatchCreate struct {
-	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id" validate:"required"`
-	RegionName  string        `json:"region_name" validate:"required"`
-	IsAvailable int64         `json:"is_available"`
-	Creator     string        `json:"creator"`
-}
-
 // -------------------------- Update --------------------------
 
 // AwsRegionBatchUpdateReq define aws region batch update request.
 type AwsRegionBatchUpdateReq struct {
-	Regions []AwsRegionBatchUpdate `json:"rules" validate:"required"`
+	Regions []AwsRegionBatchUpdate `json:"regions" validate:"required"`
 }
 
 // AwsRegionBatchUpdate aws region batch update option.
@@ -91,8 +89,6 @@ func (req *AwsRegionBatchUpdateReq) Validate() error {
 
 	return nil
 }
-
-// -------------------------- Get --------------------------
 
 // AwsRegionBaseInfoBatchUpdateReq defines batch update region base info request.
 type AwsRegionBaseInfoBatchUpdateReq struct {

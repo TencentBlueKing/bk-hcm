@@ -23,11 +23,11 @@ import (
 	"fmt"
 	"reflect"
 
-	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
@@ -42,31 +42,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitGcpRegionService initialize the region service.
-func InitGcpRegionService(cap *capability.Capability) {
-	svc := &gcpRegionSvc{
-		dao: cap.Dao,
-	}
-
-	h := rest.NewHandler()
-
-	h.Add("BatchCreateRegion", "POST", "/vendors/gcp/regions/batch/create", svc.BatchCreateRegion)
-	h.Add("BatchUpdateRegion", "PATCH", "/vendors/gcp/regions/batch", svc.BatchUpdateRegion)
-	h.Add("BatchUpdateRegionBaseInfo", "PATCH", "/vendors/gcp/regions/base/batch",
-		svc.BatchUpdateRegionBaseInfo)
-	h.Add("GetRegion", "GET", "/vendors/gcp/regions/{id}", svc.GetRegion)
-	h.Add("ListRegion", "POST", "/vendors/gcp/regions/list", svc.ListRegion)
-	h.Add("DeleteRegion", "DELETE", "/vendors/gcp/regions/batch", svc.BatchDeleteRegion)
-
-	h.Load(cap.WebService)
-}
-
-type gcpRegionSvc struct {
-	dao dao.Set
-}
-
-// BatchCreateRegion batch create region.
-func (svc *gcpRegionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchCreateGcpRegion batch create region.
+func (svc *regionSvc) BatchCreateGcpRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(protoregion.GcpRegionCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -83,7 +60,7 @@ func (svc *gcpRegionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, err
 				Vendor:      createReq.Vendor,
 				RegionID:    createReq.RegionID,
 				RegionName:  createReq.RegionName,
-				IsAvailable: createReq.IsAvailable,
+				IsAvailable: constant.AvailableYes,
 				Creator:     cts.Kit.User,
 				Reviser:     cts.Kit.User,
 			}
@@ -111,8 +88,8 @@ func (svc *gcpRegionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, err
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-// BatchUpdateRegion batch update region.
-func (svc *gcpRegionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchUpdateGcpRegion batch update region.
+func (svc *regionSvc) BatchUpdateGcpRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(protoregion.GcpRegionBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -134,11 +111,11 @@ func (svc *gcpRegionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, err
 	}
 	listRes, err := svc.dao.GcpRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
+		logs.Errorf("list gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list gcp region failed, err: %v", err)
 	}
 	if listRes.Count != uint64(len(req.Regions)) {
-		return nil, fmt.Errorf("list region failed, some region(ids=%+v) doesn't exist", ids)
+		return nil, fmt.Errorf("list gcp region failed, some region(ids=%+v) doesn't exist", ids)
 	}
 
 	// update region
@@ -154,66 +131,15 @@ func (svc *gcpRegionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, err
 
 		err = svc.dao.GcpRegion().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), tmpRegion)
 		if err != nil {
-			logs.Errorf("update region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update region failed, err: %v", err)
+			logs.Errorf("update gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("update gcp region failed, err: %v", err)
 		}
 	}
 	return nil, nil
 }
 
-// BatchUpdateRegionBaseInfo batch update region base info.
-func (svc *gcpRegionSvc) BatchUpdateRegionBaseInfo(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoregion.GcpRegionBaseInfoBatchUpdateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	ids := make([]string, 0)
-	for _, region := range req.Regions {
-		ids = append(ids, region.IDs...)
-	}
-
-	// check if all regions exists
-	opt := &types.ListOption{
-		Filter: tools.ContainersExpression("id", ids),
-		Page:   &core.BasePage{Count: true},
-	}
-	listRes, err := svc.dao.GcpRegion().List(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
-	}
-	if listRes.Count != uint64(len(ids)) {
-		return nil, fmt.Errorf("list region failed, some region(ids=%+v) doesn't exist", ids)
-	}
-
-	// update region
-	tmpRegion := &tableregion.GcpRegionTable{
-		Reviser: cts.Kit.User,
-	}
-
-	for _, updateReq := range req.Regions {
-		tmpRegion.Vendor = updateReq.Data.Vendor
-		tmpRegion.RegionID = updateReq.Data.RegionID
-		tmpRegion.RegionName = updateReq.Data.RegionName
-		tmpRegion.IsAvailable = updateReq.Data.IsAvailable
-
-		err = svc.dao.GcpRegion().Update(cts.Kit, tools.ContainersExpression("id", updateReq.IDs), tmpRegion)
-		if err != nil {
-			logs.Errorf("update region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update region failed, err: %v", err)
-		}
-	}
-
-	return nil, nil
-}
-
-// GetRegion get region details.
-func (svc *gcpRegionSvc) GetRegion(cts *rest.Contexts) (interface{}, error) {
+// GetGcpRegion get region details.
+func (svc *regionSvc) GetGcpRegion(cts *rest.Contexts) (interface{}, error) {
 	regionID := cts.PathParameter("id").String()
 
 	dbRegion, err := getGcpRegionFromTable(cts.Kit, svc.dao, regionID)
@@ -232,20 +158,20 @@ func getGcpRegionFromTable(kt *kit.Kit, dao dao.Set, regionID string) (*tablereg
 	}
 	res, err := dao.GcpRegion().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", kt.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
+		logs.Errorf("list gcp region failed, err: %v, rid: %s", kt.Rid)
+		return nil, fmt.Errorf("list gcp region failed, err: %v", err)
 	}
 
 	details := res.Details
 	if len(details) != 1 {
-		return nil, fmt.Errorf("list region failed, region(id=%s) doesn't exist", regionID)
+		return nil, fmt.Errorf("list gcp region failed, region(id=%s) doesn't exist", regionID)
 	}
 
 	return &details[0], nil
 }
 
-// ListRegion list regions.
-func (svc *gcpRegionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
+// ListGcpRegion list regions.
+func (svc *regionSvc) ListGcpRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -262,8 +188,8 @@ func (svc *gcpRegionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
 	}
 	daoRegionResp, err := svc.dao.GcpRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
+		logs.Errorf("list gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list gcp region failed, err: %v", err)
 	}
 	if req.Page.Count {
 		return &protoregion.GcpRegionListResult{Count: daoRegionResp.Count}, nil
@@ -295,8 +221,8 @@ func convertGcpBaseRegion(dbRegion *tableregion.GcpRegionTable) *protocore.GcpRe
 	}
 }
 
-// BatchDeleteRegion batch delete regions.
-func (svc *gcpRegionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchDeleteGcpRegion batch delete regions.
+func (svc *regionSvc) BatchDeleteGcpRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -315,8 +241,8 @@ func (svc *gcpRegionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, err
 	}
 	listResp, err := svc.dao.GcpRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
+		logs.Errorf("list gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list gcp region failed, err: %v", err)
 	}
 
 	if len(listResp.Details) == 0 {
@@ -337,7 +263,7 @@ func (svc *gcpRegionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, err
 	})
 
 	if err != nil {
-		logs.Errorf("delete region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("delete gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

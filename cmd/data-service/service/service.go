@@ -139,9 +139,7 @@ func (s *Service) apiSet() *restful.Container {
 	cloud.InitCloudService(capObj)
 	auth.InitAuthService(capObj)
 	disk.InitDiskService(capObj)
-	region.InitTcloudRegionService(capObj)
-	region.InitAwsRegionService(capObj)
-	region.InitGcpRegionService(capObj)
+	region.InitRegionService(capObj)
 
 	return restful.NewContainer().Add(capObj.WebService)
 }

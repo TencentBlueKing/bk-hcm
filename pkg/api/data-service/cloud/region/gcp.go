@@ -36,7 +36,14 @@ import (
 
 // GcpRegionCreateReq define gcp region create request.
 type GcpRegionCreateReq struct {
-	Regions []GcpRegionBatchCreate `json:"rules" validate:"required"`
+	Regions []GcpRegionBatchCreate `json:"regions" validate:"required"`
+}
+
+// GcpRegionBatchCreate define gcp region rule when create.
+type GcpRegionBatchCreate struct {
+	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID   string        `json:"region_id" validate:"required"`
+	RegionName string        `json:"region_name" validate:"required"`
 }
 
 // Validate gcp region create request.
@@ -52,20 +59,11 @@ func (req *GcpRegionCreateReq) Validate() error {
 	return nil
 }
 
-// GcpRegionBatchCreate define gcp region rule when create.
-type GcpRegionBatchCreate struct {
-	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id" validate:"required"`
-	RegionName  string        `json:"region_name" validate:"required"`
-	IsAvailable int64         `json:"is_available"`
-	Creator     string        `json:"creator"`
-}
-
 // -------------------------- Update --------------------------
 
 // GcpRegionBatchUpdateReq define gcp region batch update request.
 type GcpRegionBatchUpdateReq struct {
-	Regions []GcpRegionBatchUpdate `json:"rules" validate:"required"`
+	Regions []GcpRegionBatchUpdate `json:"regions" validate:"required"`
 }
 
 // GcpRegionBatchUpdate gcp region batch update option.
@@ -75,8 +73,6 @@ type GcpRegionBatchUpdate struct {
 	RegionID    string        `json:"region_id" validate:"required"`
 	RegionName  string        `json:"region_name" validate:"required"`
 	IsAvailable int64         `json:"is_available"`
-	Creator     string        `json:"creator"`
-	Reviser     string        `json:"reviser"`
 }
 
 // Validate gcp region batch update request.
@@ -91,8 +87,6 @@ func (req *GcpRegionBatchUpdateReq) Validate() error {
 
 	return nil
 }
-
-// -------------------------- Get --------------------------
 
 // GcpRegionBaseInfoBatchUpdateReq defines batch update region base info request.
 type GcpRegionBaseInfoBatchUpdateReq struct {

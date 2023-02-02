@@ -23,11 +23,11 @@ import (
 	"fmt"
 	"reflect"
 
-	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
@@ -42,31 +42,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitAwsRegionService initialize the region service.
-func InitAwsRegionService(cap *capability.Capability) {
-	svc := &awsRegionSvc{
-		dao: cap.Dao,
-	}
-
-	h := rest.NewHandler()
-
-	h.Add("BatchCreateRegion", "POST", "/vendors/aws/regions/batch/create", svc.BatchCreateRegion)
-	h.Add("BatchUpdateRegion", "PATCH", "/vendors/aws/regions/batch", svc.BatchUpdateRegion)
-	h.Add("BatchUpdateRegionBaseInfo", "PATCH", "/vendors/aws/regions/base/batch",
-		svc.BatchUpdateRegionBaseInfo)
-	h.Add("GetRegion", "GET", "/vendors/aws/regions/{id}", svc.GetRegion)
-	h.Add("ListRegion", "POST", "/vendors/aws/regions/list", svc.ListRegion)
-	h.Add("DeleteRegion", "DELETE", "/vendors/aws/regions/batch", svc.BatchDeleteRegion)
-
-	h.Load(cap.WebService)
-}
-
-type awsRegionSvc struct {
-	dao dao.Set
-}
-
-// BatchCreateRegion batch create region.
-func (svc *awsRegionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchCreateAwsRegion batch create region.
+func (svc *regionSvc) BatchCreateAwsRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(protoregion.TCloudRegionCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -83,7 +60,7 @@ func (svc *awsRegionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, err
 				Vendor:      createReq.Vendor,
 				RegionID:    createReq.RegionID,
 				RegionName:  createReq.RegionName,
-				IsAvailable: createReq.IsAvailable,
+				IsAvailable: constant.AvailableYes,
 				Creator:     cts.Kit.User,
 				Reviser:     cts.Kit.User,
 			}
@@ -111,8 +88,8 @@ func (svc *awsRegionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, err
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-// BatchUpdateRegion batch update region.
-func (svc *awsRegionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchUpdateAwsRegion batch update region.
+func (svc *regionSvc) BatchUpdateAwsRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(protoregion.AwsRegionBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -134,11 +111,11 @@ func (svc *awsRegionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, err
 	}
 	listRes, err := svc.dao.AwsRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("list aws region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list region failed, err: %v", err)
 	}
 	if listRes.Count != uint64(len(req.Regions)) {
-		return nil, fmt.Errorf("list region failed, some region(ids=%+v) doesn't exist", ids)
+		return nil, fmt.Errorf("list aws region failed, some region(ids=%+v) doesn't exist", ids)
 	}
 
 	// update region
@@ -154,66 +131,15 @@ func (svc *awsRegionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, err
 
 		err = svc.dao.AwsRegion().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), tmpRegion)
 		if err != nil {
-			logs.Errorf("update region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update region failed, err: %v", err)
+			logs.Errorf("update aws region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("update aws region failed, err: %v", err)
 		}
 	}
 	return nil, nil
 }
 
-// BatchUpdateRegionBaseInfo batch update region base info.
-func (svc *awsRegionSvc) BatchUpdateRegionBaseInfo(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoregion.AwsRegionBaseInfoBatchUpdateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	ids := make([]string, 0)
-	for _, region := range req.Regions {
-		ids = append(ids, region.IDs...)
-	}
-
-	// check if all regions exists
-	opt := &types.ListOption{
-		Filter: tools.ContainersExpression("id", ids),
-		Page:   &core.BasePage{Count: true},
-	}
-	listRes, err := svc.dao.TcloudRegion().List(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
-	}
-	if listRes.Count != uint64(len(ids)) {
-		return nil, fmt.Errorf("list region failed, some region(ids=%+v) doesn't exist", ids)
-	}
-
-	// update region
-	tmpRegion := &tableregion.AwsRegionTable{
-		Reviser: cts.Kit.User,
-	}
-
-	for _, updateReq := range req.Regions {
-		tmpRegion.Vendor = updateReq.Data.Vendor
-		tmpRegion.RegionID = updateReq.Data.RegionID
-		tmpRegion.RegionName = updateReq.Data.RegionName
-		tmpRegion.IsAvailable = updateReq.Data.IsAvailable
-
-		err = svc.dao.AwsRegion().Update(cts.Kit, tools.ContainersExpression("id", updateReq.IDs), tmpRegion)
-		if err != nil {
-			logs.Errorf("update region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update region failed, err: %v", err)
-		}
-	}
-
-	return nil, nil
-}
-
-// GetRegion get region details.
-func (svc *awsRegionSvc) GetRegion(cts *rest.Contexts) (interface{}, error) {
+// GetAwsRegion get region details.
+func (svc *regionSvc) GetAwsRegion(cts *rest.Contexts) (interface{}, error) {
 	regionID := cts.PathParameter("id").String()
 
 	dbRegion, err := getAwsRegionFromTable(cts.Kit, svc.dao, regionID)
@@ -232,20 +158,20 @@ func getAwsRegionFromTable(kt *kit.Kit, dao dao.Set, regionID string) (*tablereg
 	}
 	res, err := dao.AwsRegion().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", kt.Rid)
+		logs.Errorf("list aws region failed, err: %v, rid: %s", kt.Rid)
 		return nil, fmt.Errorf("list region failed, err: %v", err)
 	}
 
 	details := res.Details
 	if len(details) != 1 {
-		return nil, fmt.Errorf("list region failed, region(id=%s) doesn't exist", regionID)
+		return nil, fmt.Errorf("list aws region failed, region(id=%s) doesn't exist", regionID)
 	}
 
 	return &details[0], nil
 }
 
-// ListRegion list regions.
-func (svc *awsRegionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
+// ListAwsRegion list regions.
+func (svc *regionSvc) ListAwsRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -262,8 +188,8 @@ func (svc *awsRegionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
 	}
 	daoRegionResp, err := svc.dao.AwsRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
+		logs.Errorf("list aws region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list aws region failed, err: %v", err)
 	}
 	if req.Page.Count {
 		return &protoregion.AwsRegionListResult{Count: daoRegionResp.Count}, nil
@@ -295,8 +221,8 @@ func convertAwsBaseRegion(dbRegion *tableregion.AwsRegionTable) *protocore.AwsRe
 	}
 }
 
-// BatchDeleteRegion batch delete regions.
-func (svc *awsRegionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, error) {
+// BatchDeleteAwsRegion batch delete regions.
+func (svc *regionSvc) BatchDeleteAwsRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -315,8 +241,8 @@ func (svc *awsRegionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, err
 	}
 	listResp, err := svc.dao.AwsRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
+		logs.Errorf("list aws region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list aws region failed, err: %v", err)
 	}
 
 	if len(listResp.Details) == 0 {
@@ -337,7 +263,7 @@ func (svc *awsRegionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, err
 	})
 
 	if err != nil {
-		logs.Errorf("delete region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("delete aws region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

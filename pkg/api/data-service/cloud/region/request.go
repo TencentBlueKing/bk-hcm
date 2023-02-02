@@ -36,16 +36,14 @@ import (
 
 // RegionCreateReq define region create request.
 type RegionCreateReq struct {
-	Regions []RegionBatchCreate `json:"rules" validate:"required"`
+	Regions []RegionBatchCreate `json:"regions" validate:"required"`
 }
 
 // RegionBatchCreate define region rule when create.
 type RegionBatchCreate struct {
-	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id" validate:"required"`
-	RegionName  string        `json:"region_name" validate:"required"`
-	IsAvailable int64         `json:"is_available"`
-	Creator     string        `json:"creator"`
+	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID   string        `json:"region_id" validate:"required"`
+	RegionName string        `json:"region_name" validate:"required"`
 }
 
 // Validate region create request.
@@ -65,7 +63,7 @@ func (req *RegionCreateReq) Validate() error {
 
 // RegionBatchUpdateReq define region batch update request.
 type RegionBatchUpdateReq struct {
-	Regions []RegionBatchUpdate `json:"rules" validate:"required"`
+	Regions []RegionBatchUpdate `json:"regions" validate:"required"`
 }
 
 // RegionBatchUpdate region batch update option.
@@ -90,24 +88,6 @@ func (req *RegionBatchUpdateReq) Validate() error {
 	}
 
 	return nil
-}
-
-// -------------------------- Get --------------------------
-
-// RegionBaseInfoBatchUpdateReq defines batch update region base info request.
-type RegionBaseInfoBatchUpdateReq struct {
-	Regions []RegionBaseInfoUpdateReq `json:"regions" validate:"required"`
-}
-
-// RegionBaseInfoUpdateReq defines update region base info request.
-type RegionBaseInfoUpdateReq struct {
-	IDs  []string           `json:"id" validate:"required"`
-	Data *RegionBatchUpdate `json:"data" validate:"required"`
-}
-
-// Validate VpcBaseInfoBatchUpdateReq.
-func (u *RegionBaseInfoBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(u)
 }
 
 // -------------------------- List --------------------------
