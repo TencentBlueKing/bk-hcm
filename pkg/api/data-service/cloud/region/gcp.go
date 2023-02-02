@@ -22,11 +22,11 @@ package region
 import (
 	"errors"
 	"fmt"
-	"hcm/pkg/criteria/enumor"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -54,9 +54,9 @@ func (req *GcpRegionCreateReq) Validate() error {
 
 // GcpRegionBatchCreate define gcp region rule when create.
 type GcpRegionBatchCreate struct {
-	Vendor      enumor.Vendor `json:"vendor"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
+	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID    string        `json:"region_id" validate:"required"`
+	RegionName  string        `json:"region_name" validate:"required"`
 	IsAvailable int64         `json:"is_available"`
 	Creator     string        `json:"creator"`
 }
@@ -70,10 +70,10 @@ type GcpRegionBatchUpdateReq struct {
 
 // GcpRegionBatchUpdate gcp region batch update option.
 type GcpRegionBatchUpdate struct {
-	ID          string        `json:"id"`
-	Vendor      enumor.Vendor `json:"vendor"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
+	ID          string        `json:"id" validate:"required"`
+	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID    string        `json:"region_id" validate:"required"`
+	RegionName  string        `json:"region_name" validate:"required"`
 	IsAvailable int64         `json:"is_available"`
 	Creator     string        `json:"creator"`
 	Reviser     string        `json:"reviser"`

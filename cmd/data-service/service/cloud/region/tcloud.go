@@ -50,12 +50,13 @@ func InitTcloudRegionService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("BatchCreateRegion", "POST", "/vendors/{vendor}/regions/batch/create", svc.BatchCreateRegion)
-	h.Add("BatchUpdateRegion", "PATCH", "/vendors/{vendor}/regions/batch", svc.BatchDeleteRegion)
-	h.Add("BatchUpdateRegionBaseInfo", "PATCH", "/regions/base/batch", svc.BatchUpdateRegionBaseInfo)
-	h.Add("GetRegion", "GET", "/vendors/{vendor}/regions/{id}", svc.GetRegion)
-	h.Add("ListRegion", "POST", "/regions/list", svc.ListVpc)
-	h.Add("DeleteRegion", "DELETE", "/regions/batch", svc.BatchDeleteRegion)
+	h.Add("BatchCreateRegion", "POST", "/vendors/tcloud/regions/batch/create", svc.BatchCreateRegion)
+	h.Add("BatchUpdateRegion", "PATCH", "/vendors/tcloud/regions/batch", svc.BatchUpdateRegion)
+	h.Add("BatchUpdateRegionBaseInfo", "PATCH", "/vendors/tcloud/regions/base/batch",
+		svc.BatchUpdateRegionBaseInfo)
+	h.Add("GetRegion", "GET", "/vendors/tcloud/regions/{id}", svc.GetRegion)
+	h.Add("ListRegion", "POST", "/vendors/tcloud/regions/list", svc.ListRegion)
+	h.Add("DeleteRegion", "DELETE", "/vendors/tcloud/regions/batch", svc.BatchDeleteRegion)
 
 	h.Load(cap.WebService)
 }
@@ -244,8 +245,8 @@ func getTcloudRegionFromTable(kt *kit.Kit, dao dao.Set, regionID string) (*table
 	return &details[0], nil
 }
 
-// ListVpc list regions.
-func (svc *tcloudRegionSvc) ListVpc(cts *rest.Contexts) (interface{}, error) {
+// ListRegion list regions.
+func (svc *tcloudRegionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

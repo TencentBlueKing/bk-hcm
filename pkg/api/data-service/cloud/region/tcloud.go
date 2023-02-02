@@ -22,13 +22,13 @@ package region
 import (
 	"errors"
 	"fmt"
-	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/rest"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -54,9 +54,9 @@ func (req *TCloudRegionCreateReq) Validate() error {
 
 // TCloudRegionBatchCreate define tcloud region rule when create.
 type TCloudRegionBatchCreate struct {
-	Vendor      enumor.Vendor `json:"vendor"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
+	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID    string        `json:"region_id" validate:"required"`
+	RegionName  string        `json:"region_name" validate:"required"`
 	IsAvailable int64         `json:"is_available"`
 	Creator     string        `json:"creator"`
 }
@@ -70,10 +70,10 @@ type TCloudRegionBatchUpdateReq struct {
 
 // TCloudRegionBatchUpdate tcloud region batch update option.
 type TCloudRegionBatchUpdate struct {
-	ID          string        `json:"id"`
-	Vendor      enumor.Vendor `json:"vendor"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
+	ID          string        `json:"id" validate:"required"`
+	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID    string        `json:"region_id" validate:"required"`
+	RegionName  string        `json:"region_name" validate:"required"`
 	IsAvailable int64         `json:"is_available"`
 	Creator     string        `json:"creator"`
 	Reviser     string        `json:"reviser"`
@@ -99,15 +99,15 @@ type TCloudRegionBaseInfoBatchUpdateReq struct {
 	Regions []TcloudRegionBaseInfoUpdateReq `json:"regions" validate:"required"`
 }
 
-// Validate VpcBaseInfoBatchUpdateReq.
-func (u *TCloudRegionBaseInfoBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(u)
-}
-
 // TcloudRegionBaseInfoUpdateReq defines update region base info request.
 type TcloudRegionBaseInfoUpdateReq struct {
 	IDs  []string                 `json:"id" validate:"required"`
 	Data *TCloudRegionBatchUpdate `json:"data" validate:"required"`
+}
+
+// Validate VpcBaseInfoBatchUpdateReq.
+func (u *TCloudRegionBaseInfoBatchUpdateReq) Validate() error {
+	return validator.Validate.Struct(u)
 }
 
 // -------------------------- List --------------------------
@@ -124,16 +124,16 @@ func (req *TCloudRegionListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// TCloudRegionListResult define tcloud region list result.
-type TCloudRegionListResult struct {
-	Count   uint64               `json:"count,omitempty"`
-	Details []cloud.TCloudRegion `json:"details,omitempty"`
-}
-
 // TCloudRegionListResp define tcloud region list resp.
 type TCloudRegionListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *TCloudRegionListResult `json:"data"`
+}
+
+// TCloudRegionListResult define tcloud region list result.
+type TCloudRegionListResult struct {
+	Count   uint64               `json:"count,omitempty"`
+	Details []cloud.TCloudRegion `json:"details,omitempty"`
 }
 
 // -------------------------- Delete --------------------------

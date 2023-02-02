@@ -50,12 +50,13 @@ func InitGcpRegionService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("BatchCreateRegion", "POST", "/vendors/{vendor}/regions/batch/create", svc.BatchCreateRegion)
-	h.Add("BatchUpdateRegion", "PATCH", "/vendors/{vendor}/regions/batch", svc.BatchDeleteRegion)
-	h.Add("BatchUpdateRegionBaseInfo", "PATCH", "/regions/base/batch", svc.BatchUpdateRegionBaseInfo)
-	h.Add("GetRegion", "GET", "/vendors/{vendor}/regions/{id}", svc.GetRegion)
-	h.Add("ListRegion", "POST", "/regions/list", svc.ListVpc)
-	h.Add("DeleteRegion", "DELETE", "/regions/batch", svc.BatchDeleteRegion)
+	h.Add("BatchCreateRegion", "POST", "/vendors/gcp/regions/batch/create", svc.BatchCreateRegion)
+	h.Add("BatchUpdateRegion", "PATCH", "/vendors/gcp/regions/batch", svc.BatchUpdateRegion)
+	h.Add("BatchUpdateRegionBaseInfo", "PATCH", "/vendors/gcp/regions/base/batch",
+		svc.BatchUpdateRegionBaseInfo)
+	h.Add("GetRegion", "GET", "/vendors/gcp/regions/{id}", svc.GetRegion)
+	h.Add("ListRegion", "POST", "/vendors/gcp/regions/list", svc.ListRegion)
+	h.Add("DeleteRegion", "DELETE", "/vendors/gcp/regions/batch", svc.BatchDeleteRegion)
 
 	h.Load(cap.WebService)
 }
@@ -243,8 +244,8 @@ func getGcpRegionFromTable(kt *kit.Kit, dao dao.Set, regionID string) (*tablereg
 	return &details[0], nil
 }
 
-// ListVpc list regions.
-func (svc *gcpRegionSvc) ListVpc(cts *rest.Contexts) (interface{}, error) {
+// ListRegion list regions.
+func (svc *gcpRegionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
