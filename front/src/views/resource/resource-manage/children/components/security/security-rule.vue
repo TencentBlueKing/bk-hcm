@@ -79,14 +79,13 @@ watch(
   () => activeType.value,
   (v) => {
     state.isLoading = true;
-    handleSwtichType(v);
+    // eslint-disable-next-line vue/no-mutating-props
+    props.filter.rules[0].value = v;
   },
 );
 
 // 获取列表数据
 const fetchList = async (fetchType: string) => {
-  console.log(1111);
-  // eslint-disable-next-line vue/no-mutating-props
   const {
     datas,
     pagination,
@@ -106,15 +105,12 @@ const fetchList = async (fetchType: string) => {
 };
 
 // 切换tab
-const handleSwtichType = async (v: any) => {
-  // eslint-disable-next-line vue/no-mutating-props
-  props.filter.rules[0].value = v;
+const handleSwtichType = async () => {
   const params = {
     fetchUrl: `vendors/${props.vendor}/security_groups/${props.id}/rules`,
   };
   // eslint-disable-next-line max-len
   const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = await fetchList(params.fetchUrl);
-  console.log('datas', datas);
   state.datas = datas;
   state.isLoading = isLoading;
   state.pagination = pagination;
@@ -133,7 +129,7 @@ const handleDeleteConfirm = () => {
         theme: 'success',
         message: t('删除成功'),
       });
-      handleSwtichType(activeType.value);
+      handleSwtichType();
     })
     .finally(() => {
       deleteLoading.value = false;
@@ -141,7 +137,7 @@ const handleDeleteConfirm = () => {
 };
 
 // 初始化
-handleSwtichType(activeType.value);
+handleSwtichType();
 
 
 const inColumns = [
