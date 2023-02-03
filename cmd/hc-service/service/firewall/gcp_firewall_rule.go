@@ -340,12 +340,13 @@ func (f *firewall) SyncCreateGcpFirewallRule(cts *rest.Contexts, accountID strin
 	ruleCreates := make([]protocloud.GcpFirewallRuleBatchCreate, 0, len(resp.Items))
 	for _, item := range resp.Items {
 		rule := protocloud.GcpFirewallRuleBatchCreate{
-			CloudID:               strconv.FormatUint(item.Id, 10),
-			AccountID:             accountID,
-			Name:                  item.Name,
-			Priority:              item.Priority,
-			Memo:                  item.Description,
-			CloudVpcID:            item.Network,
+			CloudID:    strconv.FormatUint(item.Id, 10),
+			AccountID:  accountID,
+			Name:       item.Name,
+			Priority:   item.Priority,
+			Memo:       item.Description,
+			CloudVpcID: item.Network,
+			// TODO: 待处理和vpc关联字段
 			VpcId:                 "todo",
 			SourceRanges:          item.SourceRanges,
 			BkBizID:               constant.UnassignedBiz,
