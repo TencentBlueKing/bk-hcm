@@ -27,6 +27,7 @@ const filter = ref({ op: 'and', rules: [] });
 console.log('filter', filter);
 const activeTab = ref(route.query?.activeTab);
 const securityId = ref(route.query?.id);
+const vendor = ref(route.query?.vendor);
 
 const tabs = [
   {
@@ -57,7 +58,7 @@ const tabs = [
     <template #default="type">
       <security-info :id="securityId" v-if="type === 'detail'" />
       <security-relate v-if="type === 'relate'" />
-      <security-rule :filter="filter" v-if="type === 'rule'" />
+      <security-rule :filter="filter" :id="securityId" :vendor="vendor" v-if="type === 'rule'" />
     </template>
   </detail-tab>
 </template>

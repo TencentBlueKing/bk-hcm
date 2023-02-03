@@ -20,3 +20,8 @@ export enum GcpTypeEnum {
   EGRESS = '出站',
   INGRESS = '入站',
 }
+
+export enum SecurityRuleEnum {
+  ACCEPT = '接受',
+  DROP = '拒绝',
+}

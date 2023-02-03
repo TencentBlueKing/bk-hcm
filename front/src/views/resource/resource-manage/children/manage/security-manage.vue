@@ -251,6 +251,7 @@ const groupColumns = [
                   query: {
                     activeTab: 'rule',
                     id: data.id,
+                    vendor: data.vendor,
                   },
                 });
               },
