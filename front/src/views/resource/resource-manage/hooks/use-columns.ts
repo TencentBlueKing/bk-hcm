@@ -5,9 +5,6 @@ import type {
 
 import i18n from '@/language/i18n';
 import { CloudType } from '@/typings';
-import {
-  Button,
-} from 'bkui-vue';
 
 import {
   h,
@@ -196,7 +193,7 @@ export default (type: string) => {
     },
     {
       label: 'ID',
-      field: '',
+      field: 'id',
       sort: true,
       render({ cell }: PlainObject) {
         return h(
@@ -219,7 +216,7 @@ export default (type: string) => {
     },
     {
       label: '资源 ID',
-      field: 'cid',
+      field: 'account_id',
       sort: true,
     },
     {
@@ -241,39 +238,39 @@ export default (type: string) => {
     },
     {
       label: '地域',
-      field: 'ipv4_cidr',
+      field: 'region',
     },
     {
       label: '描述',
-      field: 'ipv6_cidr',
+      field: 'memo',
     },
-    {
-      label: '关联实例',
-      field: '',
-      render() {
-        h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'security',
-                },
-                query: {
-                  activeTab: 'rule',
-                },
-              });
-            },
-          },
-          [
-            t('配置规则'),
-          ],
-        );
-      },
-    },
+    // {
+    //   label: '关联实例',
+    //   field: '',
+    //   render() {
+    //     h(
+    //       Button,
+    //       {
+    //         text: true,
+    //         theme: 'primary',
+    //         onClick() {
+    //           router.push({
+    //             name: 'resourceDetail',
+    //             params: {
+    //               type: 'security',
+    //             },
+    //             query: {
+    //               activeTab: 'rule',
+    //             },
+    //           });
+    //         },
+    //       },
+    //       [
+    //         t('配置规则'),
+    //       ],
+    //     );
+    //   },
+    // },
   ];
 
   const gcpColumns = [
@@ -283,7 +280,7 @@ export default (type: string) => {
     },
     {
       label: 'ID',
-      field: '',
+      field: 'id',
       sort: true,
       render({ cell }: PlainObject) {
         return h(
@@ -306,7 +303,7 @@ export default (type: string) => {
     },
     {
       label: '资源 ID',
-      field: 'cid',
+      field: 'account_id',
       sort: true,
     },
     {
@@ -314,33 +311,29 @@ export default (type: string) => {
       field: 'name',
       sort: true,
     },
-    {
-      label: t('云厂商'),
-      render({ data }: any) {
-        return h(
-          'span',
-          {},
-          [
-            CloudType[data.vendor],
-          ],
-        );
-      },
-    },
-    {
-      label: '业务',
-      field: 'vpc_cid',
-    },
-    {
-      label: '业务拓扑',
-      field: 'zone',
-    },
+    // {
+    //   label: '业务',
+    //   render({ cell }: any) {
+    //     return h(
+    //       'span',
+    //       {},
+    //       [
+    //         cell,
+    //       ],
+    //     );
+    //   },
+    // },
+    // {
+    //   label: '业务拓扑',
+    //   field: 'zone',
+    // },
     {
       label: 'VPC',
-      field: 'vpc',
+      field: 'vpc_id',
     },
     {
       label: '描述',
-      field: 'ipv6_cidr',
+      field: 'memo',
     },
   ];
 

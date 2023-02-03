@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type {
-  PlainObject,
+  // PlainObject,
   DoublePlainObject,
   FilterType,
 } from '@/typings/resource';
+import { GcpTypeEnum, CloudType } from '@/typings';
 import {
   Button,
   Message } from 'bkui-vue';
@@ -30,7 +31,6 @@ import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
 import useDelete from '../../hooks/use-delete';
 import useSelection from '../../hooks/use-selection';
-import { CloudType } from '@/typings';
 
 const props = defineProps({
   filter: {
@@ -56,7 +56,7 @@ const state = reactive<any>({
     limit: 10,
     count: 0,
   },
-  isLoading: false,
+  isLoading: true,
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
   handleSort: () => {},
@@ -78,8 +78,8 @@ const {
 } = useSelection();
 
 
-const fetchList = (fetchType: string) => {
-  console.log('fetchType', fetchType);
+const fetchList = async (fetchType: string) => {
+  console.log('fetchType', fetchType, props);
   const {
     datas,
     pagination,
@@ -87,7 +87,7 @@ const fetchList = (fetchType: string) => {
     handlePageChange,
     handlePageSizeChange,
     handleSort,
-  } = useQueryList(props, fetchType);
+  } = await useQueryList(props, fetchType);
   return {
     datas,
     pagination,
@@ -107,6 +107,7 @@ const showDeleteDialog = (fetchType: string, title: string) => {
     selections.value,
     fetchType,
     t(title),
+    true,
   );
   return {
     handleShowDelete,
@@ -119,11 +120,12 @@ watch(
   () => activeType.value,
   (v) => {
     selections.value = [];
+    state.isLoading = true;
     handleSwtichType(v);
   },
 );
 
-const handleSwtichType = (type: string) => {
+const handleSwtichType = async (type: string) => {
   const params = {
     fetchUrl: 'security_groups',
     columns: 'group',
@@ -135,8 +137,8 @@ const handleSwtichType = (type: string) => {
     params.dialogName = t('删除防火墙规则');
   }
   // eslint-disable-next-line max-len
-  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = fetchList(params.fetchUrl);
-  state.datas = [{ id: 333, vendor: 'tcloud', assigned: false }] || datas;
+  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = await fetchList(params.fetchUrl);
+  state.datas = datas;
   state.isLoading = isLoading;
   state.pagination = pagination;
   state.handlePageChange = handlePageChange;
@@ -159,15 +161,20 @@ const groupColumns = [
     label: 'ID',
     field: 'id',
     sort: true,
-    render({ data }: DoublePlainObject) {
+    render({ data }: any) {
       return h(
-        'span',
+        Button,
         {
+          text: true,
+          theme: 'primary',
           onClick() {
             router.push({
               name: 'resourceDetail',
               params: {
                 type: 'security',
+              },
+              query: {
+                id: data.id,
               },
             });
           },
@@ -214,18 +221,18 @@ const groupColumns = [
   // },
   {
     label: t('修改时间'),
-    field: 'update_at',
+    field: 'updated_at',
     sort: true,
   },
   {
     label: t('创建时间'),
-    field: 'create_at',
+    field: 'created_at',
     sort: true,
   },
   {
     label: t('操作'),
     field: '',
-    render() {
+    render({ data }: any) {
       return h(
         'span',
         {},
@@ -243,6 +250,8 @@ const groupColumns = [
                   },
                   query: {
                     activeTab: 'rule',
+                    id: data.id,
+                    vendor: data.vendor,
                   },
                 });
               },
@@ -258,7 +267,7 @@ const groupColumns = [
               text: true,
               theme: 'primary',
               onClick() {
-                securityHandleShowDelete();
+                securityHandleShowDelete([data.id]);
               },
             },
             [
@@ -276,23 +285,28 @@ const gcpColumns = [
   },
   {
     label: 'ID',
-    field: '',
+    field: 'id',
     sort: true,
-    render({ cell }: PlainObject) {
+    render({ data }: any) {
       return h(
-        'span',
+        Button,
         {
+          text: true,
+          theme: 'primary',
           onClick() {
             router.push({
               name: 'resourceDetail',
               params: {
                 type: 'gcp',
               },
+              query: {
+                id: data.id,
+              },
             });
           },
         },
         [
-          cell || '--',
+          data.id || '--',
         ],
       );
     },
@@ -304,63 +318,87 @@ const gcpColumns = [
   },
   {
     label: t('名称'),
-    field: '',
+    field: 'name',
     sort: true,
   },
   {
     label: t('云厂商'),
-    render({ data }: any) {
+    render() {
       return h(
         'span',
         {},
         [
-          CloudType[data.vendor],
+          t('谷歌云'),
         ],
       );
     },
   },
   {
     label: 'VPC',
-    field: '',
+    field: 'vpc_id',
   },
   {
     label: t('类型'),
-    field: '',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          GcpTypeEnum[data.type],
+        ],
+      );
+    },
   },
   {
     label: t('目标'),
-    field: '',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          data.target_tags || data.target_service_accounts || '--',
+        ],
+      );
+    },
   },
-  {
-    label: t('过滤条件'),
-    field: '',
-  },
+  // {
+  //   label: t('过滤条件'),
+  //   field: '',
+  // },
   {
     label: t('协议/端口'),
-    field: '',
-  },
-  {
-    label: t('操作'),
-    field: '',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        (data?.allowed || data?.denied) ? (data?.allowed || data?.denied).map((e: any) => {
+          return h(
+            'div',
+            {},
+            `${e.protocol}:${e.port}`,
+          );
+        }) : '--',
+      );
+    },
   },
   {
     label: t('优先级'),
-    field: '',
+    field: 'priority',
   },
   {
     label: t('修改时间'),
-    field: 'update_at',
+    field: 'updated_at',
     sort: true,
   },
   {
     label: t('创建时间'),
-    field: 'create_at',
+    field: 'created_at',
     sort: true,
   },
   {
     label: t('操作'),
     field: '',
-    render() {
+    render({ data }: any) {
       return h(
         'span',
         {},
@@ -376,6 +414,9 @@ const gcpColumns = [
                   params: {
                     type: 'gcp',
                   },
+                  query: {
+                    id: data.id,
+                  },
                 });
               },
             },
@@ -390,7 +431,7 @@ const gcpColumns = [
               text: true,
               theme: 'primary',
               onClick() {
-                securityHandleShowDelete();
+                securityHandleShowDelete([data.id]);
               },
             },
             [
@@ -410,12 +451,13 @@ const types = [
 // 方法
 
 const handleConfirm = (bizId: number) => {
+  const securityGroupIds = selections.value.map(e => e.id);
   const params = {
-    security_group_ids: [1],
+    security_group_ids: securityGroupIds,
     bk_biz_id: bizId,
   };
   return resourceStore
-    .assignBusiness('security_groups', params)
+    .assignBusiness(activeType.value === 'group' ? 'security_groups' : 'vendors/gcp/firewalls/rules', params)
     .then(() => {
       Message({
         theme: 'success',
@@ -444,7 +486,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        @click="securityHandleShowDelete"
+        @click="securityHandleShowDelete(selections.map(e => e.id))"
       >
         {{ t('删除') }}
       </bk-button>
@@ -453,6 +495,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
     <bk-radio-group
       class="mt20"
       v-model="activeType"
+      :disabled="state.isLoading"
     >
       <bk-radio-button
         v-for="item in types"
@@ -467,6 +510,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
       v-if="activeType === 'group'"
       class="mt20"
       row-hover="auto"
+      remote-pagination
       :pagination="state.pagination"
       :columns="groupColumns"
       :data="state.datas"
@@ -481,6 +525,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
       v-if="activeType === 'gcp'"
       class="mt20"
       row-hover="auto"
+      remote-pagination
       :pagination="state.pagination"
       :columns="gcpColumns"
       :data="state.datas"
@@ -493,7 +538,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
     <resource-business
       v-model:is-show="isShowDistribution"
       @handle-confirm="handleConfirm"
-      :title="t('安全组分配')"
+      :title="t(activeType === 'group' ? '安全组分配' : 'GCP防火墙分配')"
     />
 
     <security-delete-dialog>

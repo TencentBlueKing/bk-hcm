@@ -1,3 +1,13 @@
+export const COMMON_STATUS = [
+  {
+    label: '关',
+    value: false,
+  }, {
+    label: '开',
+    value: true,
+  },
+];
+
 export const POLICY_STATUS = [
   {
     id: 'reject',
@@ -12,10 +22,10 @@ export const POLICY_STATUS = [
 export const GCP_TYPE_STATUS = [
   {
     label: '出站',
-    value: 'egress',
+    value: 'EGRESS',
   }, {
     label: '入站',
-    value: 'ingress',
+    value: 'INGRESS',
   },
 ];
 

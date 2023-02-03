@@ -7,6 +7,9 @@ import {
 } from 'vue';
 
 import DeleteResource from '../children/dialog/delete-resource/delete-resource';
+import i18n from '@/language/i18n';
+import {
+  Message } from 'bkui-vue';
 
 import {
   useResourceStore,
@@ -21,12 +24,15 @@ export default (
 ) => {
   const resourceStore = useResourceStore();
 
+  const { t } = i18n.global;
+
   const isShow = ref(false);
   const isDeleting = ref(false);
+  const deleteId = ref(0);
 
   // 展示删除弹框
   const handleShowDelete = (value: any) => {
-    console.log(value, value);
+    deleteId.value = value;
     isShow.value = true;
   };
 
@@ -38,20 +44,29 @@ export default (
   // 删除数据
   const handleDelete = () => {
     isDeleting.value = true;
+    console.log('isBatch', isBatch);
     if (isBatch) {
       resourceStore
-        .deleteBatch(type, { ids: '[111]' })
+        .deleteBatch(type, { ids: deleteId.value })
         .then(() => {
           isShow.value = false;
+          Message({
+            theme: 'success',
+            message: t('删除成功'),
+          });
         })
         .finally(() => {
           isDeleting.value = false;
         });
     } else {
       resourceStore
-        .delete(type, 123)
+        .delete(type, deleteId.value)
         .then(() => {
           isShow.value = false;
+          Message({
+            theme: 'success',
+            message: t('删除成功'),
+          });
         })
         .finally(() => {
           isDeleting.value = false;

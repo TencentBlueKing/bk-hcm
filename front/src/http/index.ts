@@ -70,8 +70,8 @@ const http: HttpApi = {
   cancel: (requestId: string) => Promise.all([http.cancelRequest(requestId), http.cancelCache(requestId)]),
 };
 
-const methodsWithoutData: HttpMethodType[] = ['delete', 'get', 'head', 'options'];
-const methodsWithData: HttpMethodType[] = ['post', 'put', 'patch'];
+const methodsWithoutData: HttpMethodType[] = ['get', 'head', 'options'];
+const methodsWithData: HttpMethodType[] = ['post', 'put', 'patch', 'delete'];
 const allMethods = [...methodsWithoutData, ...methodsWithData];
 
 // 在自定义对象 http 上添加各请求方法

@@ -68,7 +68,7 @@ const tabs = RESOURCE_TYPES.map((type) => {
 const activeTab = ref(route.query.type || tabs[0].type);
 
 // 搜索过滤相关数据
-const filter = ref([]);
+const filter = ref({ op: 'and', rules: [] });
 const computedSearchList = computed(() => {
   const datas = [
     {
@@ -93,7 +93,7 @@ const computedSearchList = computed(() => {
     },
   ];
   return datas.filter((data) => {
-    return !filter.value.find(val => val.id === data.id);
+    return !filter.value.rules.find(val => val.field === data.id);
   });
 });
 

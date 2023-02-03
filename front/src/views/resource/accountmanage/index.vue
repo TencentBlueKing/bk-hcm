@@ -4,12 +4,12 @@
       <bk-button theme="primary" @click="handleJump('accountAdd')">
         {{t('新增')}}
       </bk-button>
-      <!-- <div class="flex-row input-warp justify-content-between align-items-center">
+      <div class="flex-row input-warp justify-content-between align-items-center">
         <bk-checkbox v-model="isAccurate" class="pr20">
           {{t('精确')}}
         </bk-checkbox>
         <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
-      </div> -->
+      </div>
     </div>
     <bk-loading
       :loading="loading"
@@ -35,7 +35,7 @@
           <template #default="{ data }">
             <bk-button
               text theme="primary"
-              @click="handleJump('accountDetail', data.id)">{{data?.spec?.name}}</bk-button>
+              @click="handleJump('accountDetail', data.id)">{{data?.name}}</bk-button>
           </template>
         </bk-table-column>
         <bk-table-column
@@ -51,7 +51,7 @@
           prop="type"
         >
           <template #default="{ data }">
-            {{AccountType[data?.spec?.type]}}
+            {{AccountType[data?.type]}}
           </template>
         </bk-table-column>
         <bk-table-column
@@ -59,7 +59,7 @@
           prop="managers"
         >
           <template #default="{ data }">
-            {{data.spec?.managers?.join(',')}}
+            {{data.managers?.join(',')}}
           </template>
         </bk-table-column>
         <bk-table-column
@@ -67,16 +67,16 @@
           prop="price"
         >
           <template #default="{ data }">
-            {{data.spec?.price || '--'}}{{data.spec?.price_unit}}
+            {{data?.price || '--'}}{{data?.price_unit}}
           </template>
         </bk-table-column>
         <bk-table-column
           :label="t('创建时间')"
-          prop="revision.created_at"
+          prop="created_at"
         />
         <bk-table-column
           :label="t('备注')"
-          prop="spec.memo"
+          prop="memo"
         />
         <bk-table-column
           :label="t('操作')"
