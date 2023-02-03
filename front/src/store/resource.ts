@@ -1,6 +1,6 @@
 import http from '@/http';
 import { defineStore } from 'pinia';
-import { json2Query } from '@/common/util';
+// import { json2Query } from '@/common/util';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -37,11 +37,11 @@ export const useResourceStore = defineStore({
     },
     // 新增
     add(type: string, data: any) {
-      return http.post(`/api/v1/cloud/${type}`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}`, data);
     },
     // 更新
     update(type: string, data: any, id: string | number) {
-      return http.patch(`/api/v1/cloud/${type}/${id}`, data);
+      return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/${id}`, data);
     },
   },
 });

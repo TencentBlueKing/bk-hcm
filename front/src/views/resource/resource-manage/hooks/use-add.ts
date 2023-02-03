@@ -18,35 +18,45 @@ export default (type: string, data: any, id?: number) => {
   const resourceStore = useResourceStore();
 
   // 新增
-  const addData = () => {
+  const addData = async () => {
     loading.value = true;
-    resourceStore
-      .add(type, data)
-      .then(() => {
-        Message({
-          message: t('添加成功'),
-          theme: 'success',
-        });
-      })
-      .finally(() => {
-        loading.value = false;
+    try {
+      await resourceStore.add(type, data);
+      Message({
+        message: t('添加成功'),
+        theme: 'success',
       });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      loading.value = false;
+    }
   };
 
   // 更新
-  const updateData = () => {
+  const updateData = async () => {
     loading.value = true;
-    resourceStore
-      .update(type, data, id)
-      .then(() => {
-        Message({
-          message: t('编辑成功'),
-          theme: 'success',
-        });
-      })
-      .finally(() => {
-        loading.value = false;
+    try {
+      await resourceStore.update(type, data, id);
+      Message({
+        message: t('编辑成功'),
+        theme: 'success',
       });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      loading.value = false;
+    }
+
+
+    // resourceStore
+    //   .update(type, data, id)
+    //   .then(() => {
+
+    //   })
+    //   .finally(() => {
+    //     loading.value = false;
+    //   });
   };
 
   // onMounted(addData);

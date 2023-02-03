@@ -1,12 +1,23 @@
 <script lang="ts" setup>
 import {
   ref,
+  watch,
+  reactive,
+  PropType,
 } from 'vue';
 import {
   useI18n,
 } from 'vue-i18n';
 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
+import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+
+const props = defineProps({
+  filter: {
+    type: Object as PropType<any>,
+  },
+});
 
 // use hook
 const {
@@ -18,6 +29,76 @@ const {
   handleSecurityRule,
   SecurityRule,
 } = UseSecurityRule();
+
+const activeType = ref('in');
+
+const state = reactive<any>({
+  datas: [],
+  pagination: {
+    current: 1,
+    limit: 10,
+    count: 0,
+  },
+  isLoading: true,
+  handlePageChange: () => {},
+  handlePageSizeChange: () => {},
+  handleSort: () => {},
+  columns: useColumns('group'),
+});
+
+watch(
+  () => activeType.value,
+  (v) => {
+    state.isLoading = true;
+    handleSwtichType(v);
+  },
+);
+
+const fetchList = async (fetchType: string) => {
+  console.log('fetchType', fetchType, props);
+  const {
+    datas,
+    pagination,
+    isLoading,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSort,
+  } = await useQueryList(props, fetchType);
+  return {
+    datas,
+    pagination,
+    isLoading,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSort,
+  };
+};
+
+const handleSwtichType = async (type: string) => {
+  const params = {
+    fetchUrl: 'security_groups',
+    columns: 'group',
+    dialogName: t('删除安全组'),
+  };
+  if (type === 'gcp') {
+    params.fetchUrl = 'vendors/gcp/firewalls/rules';
+    params.columns = 'gcp';
+    params.dialogName = t('删除防火墙规则');
+  }
+  // eslint-disable-next-line max-len
+  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = await fetchList(params.fetchUrl);
+  state.datas = datas;
+  state.isLoading = isLoading;
+  state.pagination = pagination;
+  state.handlePageChange = handlePageChange;
+  state.handlePageSizeChange = handlePageSizeChange;
+  state.handleSort = handleSort;
+  state.columns = useColumns(params.columns);
+  // const { handleShowDelete, DeleteDialog } = showDeleteDialog(params.fetchUrl, params.dialogName);
+  // securityHandleShowDelete = handleShowDelete;
+  // SecurityDeleteDialog = DeleteDialog;
+};
+
 
 const inColumns = [
   {
@@ -79,7 +160,6 @@ const types = [
   { name: 'in', label: t('入站规则') },
   { name: 'out', label: t('出站规则') },
 ];
-const activeType = ref('in');
 
 </script>
 

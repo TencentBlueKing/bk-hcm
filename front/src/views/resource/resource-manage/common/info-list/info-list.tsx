@@ -90,13 +90,13 @@ export default defineComponent({
       switch (type) {
         case '[object Array]':
           return (field.value.map((e: string, index: number) => (
-            <>
-            <span>{e}</span>{field.value.length - 1 === index ? '' : ';'}
-            </>
+            <span class="item-value">
+              <span>{e}</span>{field.value.length - 1 === index ? '' : ';'}
+            </span>
           )));
           break;
         default:
-          return <span>{field.value}</span>;
+          return <span class="item-value">{field.value}</span>;
           break;
       }
     };

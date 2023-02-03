@@ -17,6 +17,6 @@ export type FilterType = {
 };
 
 export enum GcpTypeEnum {
-  egress = '出站',
-  ingress = '入站',
+  EGRESS = '出站',
+  INGRESS = '入站',
 }

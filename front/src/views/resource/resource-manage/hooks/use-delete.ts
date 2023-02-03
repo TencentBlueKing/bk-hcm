@@ -54,7 +54,6 @@ export default (
             theme: 'success',
             message: t('删除成功'),
           });
-          // emit('success');
         })
         .finally(() => {
           isDeleting.value = false;
@@ -64,6 +63,10 @@ export default (
         .delete(type, deleteId.value)
         .then(() => {
           isShow.value = false;
+          Message({
+            theme: 'success',
+            message: t('删除成功'),
+          });
         })
         .finally(() => {
           isDeleting.value = false;

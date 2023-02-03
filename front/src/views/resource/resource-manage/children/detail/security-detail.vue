@@ -23,20 +23,20 @@ const {
 } = useI18n();
 
 const route = useRoute();
-
+const filter = ref({ op: 'and', rules: [] });
+console.log('filter', filter);
 const activeTab = ref(route.query?.activeTab);
-console.log('route.params', route.params);
-const securityId = ref(route.params?.id);
+const securityId = ref(route.query?.id);
 
 const tabs = [
   {
     name: t('基本信息'),
     value: 'detail',
   },
-  {
-    name: t('关联实例'),
-    value: 'relate',
-  },
+  // {
+  //   name: t('关联实例'),
+  //   value: 'relate',
+  // },
   {
     name: t('安全组规则'),
     value: 'rule',
@@ -57,7 +57,7 @@ const tabs = [
     <template #default="type">
       <security-info :id="securityId" v-if="type === 'detail'" />
       <security-relate v-if="type === 'relate'" />
-      <security-rule v-if="type === 'rule'" />
+      <security-rule :filter="filter" v-if="type === 'rule'" />
     </template>
   </detail-tab>
 </template>
