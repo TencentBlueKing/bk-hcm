@@ -75,6 +75,30 @@ const (
 	GcpRegionTable Name = "gcp_region"
 )
 
+// TableMap table map config
+var TableMap = map[Name]bool{
+	AuditTable:                   true,
+	AccountTable:                 true,
+	AccountBizRelTable:           true,
+	VpcTable:                     true,
+	SubnetTable:                  true,
+	IDGenerator:                  true,
+	SecurityGroupTable:           true,
+	VpcSecurityGroupRelTable:     true,
+	SecurityGroupTagTable:        true,
+	SecurityGroupSubnetTable:     true,
+	SGSecurityGroupRuleTable:     true,
+	TCloudSecurityGroupRuleTable: true,
+	AwsSecurityGroupRuleTable:    true,
+	HuaWeiSecurityGroupRuleTable: true,
+	AzureSecurityGroupRuleTable:  true,
+	SGNetworkInterfaceRelTable:   true,
+	GcpFirewallRuleTable:         true,
+	TCloudRegionTable:            true,
+	AwsRegionTable:               true,
+	GcpRegionTable:               true,
+}
+
 // Validate whether the table name is valid or not.
 func (n Name) Validate() error {
 	valid := validTableNames[n]
@@ -82,32 +106,11 @@ func (n Name) Validate() error {
 		return nil
 	}
 
-	switch n {
-	case AuditTable:
-	case AccountTable:
-	case AccountBizRelTable:
-	case VpcTable:
-	case SubnetTable:
-	case IDGenerator:
-	case SecurityGroupTable:
-	case VpcSecurityGroupRelTable:
-	case SecurityGroupTagTable:
-	case SecurityGroupSubnetTable:
-	case SGSecurityGroupRuleTable:
-	case TCloudSecurityGroupRuleTable:
-	case AwsSecurityGroupRuleTable:
-	case HuaWeiSecurityGroupRuleTable:
-	case AzureSecurityGroupRuleTable:
-	case SGNetworkInterfaceRelTable:
-	case GcpFirewallRuleTable:
-	case TCloudRegionTable:
-	case AwsRegionTable:
-	case GcpRegionTable:
-	default:
-		return fmt.Errorf("unknown table name: %s", n)
+	if _, ok := TableMap[n]; ok {
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("unknown table name: %s", n)
 }
 
 // Register 注册表名
