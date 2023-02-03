@@ -21,6 +21,7 @@ package region
 
 import (
 	"fmt"
+	"hcm/pkg/criteria/enumor"
 	"reflect"
 
 	"hcm/pkg/api/core"
@@ -89,14 +90,14 @@ func (svc *regionSvc) BatchCreateGcpRegion(cts *rest.Contexts) (interface{}, err
 }
 
 // BatchUpdateGcpRegion batch update region.
-func (svc *regionSvc) BatchUpdateGcpRegion(cts *rest.Contexts) (interface{}, error) {
+func (svc *regionSvc) BatchUpdateGcpRegion(cts *rest.Contexts) error {
 	req := new(protoregion.GcpRegionBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		return errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	ids := make([]string, 0, len(req.Regions))
@@ -109,13 +110,15 @@ func (svc *regionSvc) BatchUpdateGcpRegion(cts *rest.Contexts) (interface{}, err
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   &core.BasePage{Count: true},
 	}
+
 	listRes, err := svc.dao.GcpRegion().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list gcp region failed, err: %v", err)
+		return fmt.Errorf("list gcp region failed, err: %v", err)
 	}
+
 	if listRes.Count != uint64(len(req.Regions)) {
-		return nil, fmt.Errorf("list gcp region failed, some region(ids=%+v) doesn't exist", ids)
+		return fmt.Errorf("list gcp region failed, some region(ids=%+v) doesn't exist", ids)
 	}
 
 	// update region
@@ -132,10 +135,29 @@ func (svc *regionSvc) BatchUpdateGcpRegion(cts *rest.Contexts) (interface{}, err
 		err = svc.dao.GcpRegion().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), tmpRegion)
 		if err != nil {
 			logs.Errorf("update gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update gcp region failed, err: %v", err)
+			return fmt.Errorf("update gcp region failed, err: %v", err)
 		}
 	}
-	return nil, nil
+
+	return nil
+}
+
+// BatchForbiddenGcpRegionState batch forbidden regions state.
+func (svc *regionSvc) BatchForbiddenGcpRegionState(cts *rest.Contexts) error {
+	// update region state
+	updateRegion := &tableregion.GcpRegionTable{
+		IsAvailable: constant.AvailableNo,
+		Reviser:     cts.Kit.User,
+	}
+
+	err := svc.dao.GcpRegion().BatchUpdateState(cts.Kit,
+		tools.EqualExpression("vendor", enumor.Gcp), updateRegion)
+	if err != nil {
+		logs.Errorf("update gcp region state failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return fmt.Errorf("update gcp region state failed, err: %v", err)
+	}
+
+	return nil
 }
 
 // GetGcpRegion get region details.
@@ -222,14 +244,14 @@ func convertGcpBaseRegion(dbRegion *tableregion.GcpRegionTable) *protocore.GcpRe
 }
 
 // BatchDeleteGcpRegion batch delete regions.
-func (svc *regionSvc) BatchDeleteGcpRegion(cts *rest.Contexts) (interface{}, error) {
+func (svc *regionSvc) BatchDeleteGcpRegion(cts *rest.Contexts) error {
 	req := new(dataservice.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	opt := &types.ListOption{
@@ -239,14 +261,15 @@ func (svc *regionSvc) BatchDeleteGcpRegion(cts *rest.Contexts) (interface{}, err
 			Limit: core.DefaultMaxPageLimit,
 		},
 	}
+
 	listResp, err := svc.dao.GcpRegion().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list gcp region failed, err: %v", err)
+		return fmt.Errorf("list gcp region failed, err: %v", err)
 	}
 
 	if len(listResp.Details) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	delRegionIDs := make([]string, len(listResp.Details))
@@ -264,8 +287,8 @@ func (svc *regionSvc) BatchDeleteGcpRegion(cts *rest.Contexts) (interface{}, err
 
 	if err != nil {
 		logs.Errorf("delete gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+		return err
 	}
 
-	return nil, nil
+	return nil
 }

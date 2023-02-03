@@ -43,6 +43,7 @@ import (
 type TcloudRegion interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []region.TcloudRegionTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *region.TcloudRegionTable) error
+	BatchUpdateState(kt *kit.Kit, expr *filter.Expression, model *region.TcloudRegionTable) error
 	List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (*typesRegion.TcloudRegionListResult,
 		error)
 	BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
@@ -136,6 +137,50 @@ func (v *tcloudRegionDao) Update(kt *kit.Kit, filterExpr *filter.Expression, mod
 
 		return nil, nil
 	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// BatchUpdateState batch update region state.
+func (v *tcloudRegionDao) BatchUpdateState(kt *kit.Kit, filterExpr *filter.Expression,
+	model *region.TcloudRegionTable) error {
+	if filterExpr == nil {
+		return errf.New(errf.InvalidParameter, "filter expr is required")
+	}
+
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return err
+	}
+
+	opts := utils.NewFieldOptions().AddBlankedFields("name", "memo").
+		AddIgnoredFields(types.DefaultIgnoredFields...)
+	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
+	if err != nil {
+		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
+	}
+
+	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
+
+	_, err = v.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		effected, err := v.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		if err != nil {
+			logs.ErrorJson("update region state failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
+			return nil, err
+		}
+
+		if effected == 0 {
+			logs.ErrorJson("update region state, but record not found, filter: %v, rid: %s", filterExpr, kt.Rid)
+			return nil, errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
+		}
+
+		return nil, nil
+	})
+
 	if err != nil {
 		return err
 	}

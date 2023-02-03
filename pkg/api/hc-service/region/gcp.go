@@ -32,28 +32,17 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// -------------------------- Create --------------------------
+// -------------------------- Sync --------------------------
 
-// GcpRegionCreateReq define gcp region create request.
-type GcpRegionCreateReq struct {
-	Regions []GcpRegionBatchCreate `json:"regions" validate:"required"`
-}
-
-// GcpRegionBatchCreate define gcp region rule when create.
-type GcpRegionBatchCreate struct {
-	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID   string        `json:"region_id" validate:"required"`
-	RegionName string        `json:"region_name" validate:"required"`
+// GcpRegionSyncReq define aws region sync request.
+type GcpRegionSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
 }
 
 // Validate gcp region create request.
-func (req *GcpRegionCreateReq) Validate() error {
-	if len(req.Regions) == 0 {
-		return errors.New("regions is required")
-	}
-
-	if len(req.Regions) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
+func (req *GcpRegionSyncReq) Validate() error {
+	if len(req.AccountID) == 0 {
+		return errors.New("account_id is required")
 	}
 
 	return nil
@@ -70,8 +59,8 @@ type GcpRegionBatchUpdateReq struct {
 type GcpRegionBatchUpdate struct {
 	ID          string        `json:"id" validate:"required"`
 	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
+	RegionID    string        `json:"region_id" validate:"required"`
+	RegionName  string        `json:"region_name" validate:"required"`
 	IsAvailable int64         `json:"is_available"`
 }
 

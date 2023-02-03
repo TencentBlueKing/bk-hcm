@@ -36,6 +36,8 @@ func InitRegionService(cap *capability.Capability) {
 	h := rest.NewHandler()
 	h.Add("BatchCreateRegion", "POST", "/vendors/{vendor}/regions/batch/create", svc.BatchCreateRegion)
 	h.Add("BatchUpdateRegion", "PATCH", "/vendors/{vendor}/regions/batch", svc.BatchUpdateRegion)
+	h.Add("BatchForbiddenRegionState", "PATCH", "/vendors/{vendor}/regions/batch/state",
+		svc.BatchForbiddenRegionState)
 	h.Add("GetRegion", "GET", "/vendors/{vendor}/regions/{id}", svc.GetRegion)
 	h.Add("ListRegion", "POST", "/vendors/{vendor}/regions/list", svc.ListRegion)
 	h.Add("BatchDeleteRegion", "DELETE", "/vendors/{vendor}/regions/batch", svc.BatchDeleteRegion)
@@ -73,16 +75,37 @@ func (svc *regionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	var err error
 	switch vendor {
 	case enumor.TCloud:
-		return svc.BatchUpdateTcloudRegion(cts)
+		err = svc.BatchUpdateTcloudRegion(cts)
 	case enumor.Aws:
-		return svc.BatchUpdateAwsRegion(cts)
+		err = svc.BatchUpdateAwsRegion(cts)
 	case enumor.Gcp:
-		return svc.BatchUpdateGcpRegion(cts)
+		err = svc.BatchUpdateGcpRegion(cts)
 	}
 
-	return nil, nil
+	return nil, err
+}
+
+// BatchForbiddenRegionState batch forbidden region state.
+func (svc *regionSvc) BatchForbiddenRegionState(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	var err error
+	switch vendor {
+	case enumor.TCloud:
+		err = svc.BatchForbiddenTcloudRegion(cts)
+	case enumor.Aws:
+		err = svc.BatchForbiddenAwsRegionState(cts)
+	case enumor.Gcp:
+		err = svc.BatchForbiddenGcpRegionState(cts)
+	}
+
+	return nil, err
 }
 
 // GetRegion get region.
@@ -130,14 +153,15 @@ func (svc *regionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	var err error
 	switch vendor {
 	case enumor.TCloud:
-		return svc.BatchDeleteTcloudRegion(cts)
+		err = svc.BatchDeleteTcloudRegion(cts)
 	case enumor.Aws:
-		return svc.BatchDeleteAwsRegion(cts)
+		err = svc.BatchDeleteAwsRegion(cts)
 	case enumor.Gcp:
-		return svc.BatchDeleteGcpRegion(cts)
+		err = svc.BatchDeleteGcpRegion(cts)
 	}
 
-	return nil, nil
+	return nil, err
 }

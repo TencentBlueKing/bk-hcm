@@ -20,8 +20,9 @@
 package cloud
 
 import (
-	"hcm/pkg/criteria/enumor"
 	"time"
+
+	"hcm/pkg/criteria/enumor"
 )
 
 // Region define region.
@@ -49,6 +50,7 @@ type AwsRegion struct {
 	RegionID    string        `json:"region_id"`
 	RegionName  string        `json:"region_name"`
 	IsAvailable int64         `json:"is_available"`
+	Endpoint    string        `json:"endpoint"`
 	Creator     string        `json:"creator"`
 	Reviser     string        `json:"reviser"`
 	CreatedAt   *time.Time    `json:"created_at"`

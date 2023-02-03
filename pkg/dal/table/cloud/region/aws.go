@@ -39,6 +39,7 @@ var AwsRegionColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "region_id", NamedC: "region_id", Type: enumor.String},
 	{Column: "region_name", NamedC: "region_name", Type: enumor.String},
 	{Column: "is_available", NamedC: "is_available", Type: enumor.Numeric},
+	{Column: "endpoint", NamedC: "endpoint", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -52,11 +53,13 @@ type AwsRegionTable struct {
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" validate:"-"`
 	// RegionID 地区ID
-	RegionID string `db:"region_id" validate:"max=16"`
+	RegionID string `db:"region_id" validate:"max=32"`
 	// RegionName 地区名称
 	RegionName string `db:"region_name" validate:"max=64"`
-	// IsAvailable 状态是否可用(0:否1:是)
+	// IsAvailable 状态是否可用(1:是2:否)
 	IsAvailable int64 `db:"is_available" validate:"min=-1"`
+	// Endpoint Aws的Endpoint
+	Endpoint string `db:"endpoint" validate:"max=64"`
 	// Creator 创建者
 	Creator string `db:"creator" validate:"max=64"`
 	// Reviser 更新者

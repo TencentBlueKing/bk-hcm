@@ -32,28 +32,17 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// -------------------------- Create --------------------------
+// -------------------------- Sync --------------------------
 
-// TCloudRegionCreateReq define tcloud region create request.
-type TCloudRegionCreateReq struct {
-	Regions []TCloudRegionBatchCreate `json:"regions" validate:"required"`
+// TCloudRegionSyncReq define tcloud region sync request.
+type TCloudRegionSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
 }
 
-// TCloudRegionBatchCreate define tcloud region rule when create.
-type TCloudRegionBatchCreate struct {
-	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID   string        `json:"region_id" validate:"required"`
-	RegionName string        `json:"region_name" validate:"required"`
-}
-
-// Validate tcloud region create request.
-func (req *TCloudRegionCreateReq) Validate() error {
-	if len(req.Regions) == 0 {
-		return errors.New("regions is required")
-	}
-
-	if len(req.Regions) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
+// Validate tcloud region sync request.
+func (req *TCloudRegionSyncReq) Validate() error {
+	if len(req.AccountID) == 0 {
+		return errors.New("account_id is required")
 	}
 
 	return nil
@@ -70,8 +59,8 @@ type TCloudRegionBatchUpdateReq struct {
 type TCloudRegionBatchUpdate struct {
 	ID          string        `json:"id" validate:"required"`
 	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
+	RegionID    string        `json:"region_id" validate:"required"`
+	RegionName  string        `json:"region_name" validate:"required"`
 	IsAvailable int64         `json:"is_available"`
 	Creator     string        `json:"creator"`
 	Reviser     string        `json:"reviser"`

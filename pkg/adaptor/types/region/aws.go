@@ -17,34 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package region
 
-import (
-	"hcm/pkg/rest"
-)
+// -------------------------- List --------------------------
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
-	Region   *RegionClient
+// AwsRegionListResult defines aws list region result.
+type AwsRegionListResult struct {
+	Count   *uint64     `json:"count,omitempty"`
+	Details []AwsRegion `json:"details"`
 }
 
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-		Region:     NewRegionClient(client),
-	}
+// AwsRegion defines region struct.
+type AwsRegion struct {
+	RegionID    string `json:"region_id"`
+	RegionName  string `json:"region_name"`
+	RegionState string `json:"region_state,omitempty"`
+	Endpoint    string `json:"endpoint,omitempty"`
 }

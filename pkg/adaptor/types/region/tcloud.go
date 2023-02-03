@@ -17,34 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package region
 
-import (
-	"hcm/pkg/rest"
-)
+// -------------------------- List --------------------------
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
-	Region   *RegionClient
+// TCloudRegionListResult defines tcloud list region result.
+type TCloudRegionListResult struct {
+	Count   *uint64        `json:"count,omitempty"`
+	Details []TCloudRegion `json:"details"`
 }
 
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-		Region:     NewRegionClient(client),
-	}
+// TCloudRegion defines region struct.
+type TCloudRegion struct {
+	RegionID    string `json:"region_id"`
+	RegionName  string `json:"region_name"`
+	RegionState string `json:"region_state,omitempty"`
 }

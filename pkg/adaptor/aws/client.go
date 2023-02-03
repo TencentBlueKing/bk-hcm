@@ -49,9 +49,9 @@ func (c *clientSet) ec2Client(region string) (*ec2.EC2, error) {
 		SleepDelay:  nil,
 	}
 
-	if len(region) != 0 {
-		cfg.Region = aws.String(region)
-	}
+	//if len(region) != 0 {
+	cfg.Region = aws.String(region)
+	//}
 
 	sess, err := session.NewSession(cfg)
 	if err != nil {

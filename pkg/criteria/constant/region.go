@@ -22,4 +22,17 @@ package constant
 const (
 	// AvailableYes defines default value for region's available state.
 	AvailableYes = 1
+	// AvailableNo defines available value for region's available state.
+	AvailableNo = 2
+	// AwsDefaultRegion defines default value for aws's region.
+	AwsDefaultRegion = "ap-northeast-1"
+	// TCloudAvailbleState defines default value for tcloud region state
+	TCloudAvailbleState = "AVAILABLE"
+	// AwsAvailbleState If the Region is enabled by default, the output includes the following
+	AwsAvailbleState = "opt-in-not-required"
+	// AwsAvailbleStateAllow If the Region is not enabled, the output includes the following
+	// https://docs.aws.amazon.com/general/latest/gr/rande-manage.html
+	AwsAvailbleStateAllow = "opted-in"
+	// GcpAvailbleState defines default value for gcp region state
+	GcpAvailbleState = "UP"
 )

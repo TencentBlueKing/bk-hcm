@@ -22,13 +22,13 @@ package region
 import (
 	"errors"
 	"fmt"
-	"hcm/pkg/rest"
 	"time"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -36,7 +36,8 @@ import (
 
 // RegionCreateReq define region create request.
 type RegionCreateReq struct {
-	Regions []RegionBatchCreate `json:"regions" validate:"required"`
+	Regions   []RegionBatchCreate `json:"regions" validate:"required"`
+	AccountID string              `json:"account_id" validate:"omitempty"`
 }
 
 // RegionBatchCreate define region rule when create.
@@ -44,6 +45,7 @@ type RegionBatchCreate struct {
 	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
 	RegionID   string        `json:"region_id" validate:"required"`
 	RegionName string        `json:"region_name" validate:"required"`
+	Endpoint   string        `json:"endpoint"`
 }
 
 // Validate region create request.
@@ -73,6 +75,7 @@ type RegionBatchUpdate struct {
 	RegionID    string        `json:"region_id"`
 	RegionName  string        `json:"region_name"`
 	IsAvailable int64         `json:"is_available"`
+	Endpoint    string        `json:"endpoint"`
 	Creator     string        `json:"creator"`
 	Reviser     string        `json:"reviser"`
 }
@@ -116,27 +119,24 @@ type RegionListResult struct {
 	Details []RegionDetail `json:"details,omitempty"`
 }
 
-// RegionDetail 查询云盘列表时的单条云盘数据
+// -------------------------- Get --------------------------
+
+// RegionGetResp defines get region response.
+type RegionGetResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *RegionDetail `json:"data"`
+}
+
+// RegionDetail define region detail.
 type RegionDetail struct {
 	ID          string        `json:"id"`
 	Vendor      enumor.Vendor `json:"vendor"`
 	RegionID    string        `json:"region_id"`
 	RegionName  string        `json:"region_name"`
 	IsAvailable int64         `json:"is_available"`
+	Endpoint    string        `json:"endpoint"`
 	Creator     string        `json:"creator,omitempty"`
 	Reviser     string        `json:"reviser,omitempty"`
 	CreatedAt   *time.Time    `json:"created_at,omitempty"`
 	UpdatedAt   *time.Time    `json:"updated_at,omitempty"`
-}
-
-// -------------------------- Delete --------------------------
-
-// RegionBatchDeleteReq region delete request.
-type RegionBatchDeleteReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-}
-
-// Validate region delete request.
-func (req *RegionBatchDeleteReq) Validate() error {
-	return validator.Validate.Struct(req)
 }

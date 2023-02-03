@@ -22,9 +22,9 @@ package region
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -34,20 +34,20 @@ import (
 
 // -------------------------- Create --------------------------
 
-// GcpRegionCreateReq define gcp region create request.
-type GcpRegionCreateReq struct {
-	Regions []GcpRegionBatchCreate `json:"regions" validate:"required"`
+// RegionCreateReq define region create request.
+type RegionCreateReq struct {
+	Regions []RegionBatchCreate `json:"regions" validate:"required"`
 }
 
-// GcpRegionBatchCreate define gcp region rule when create.
-type GcpRegionBatchCreate struct {
+// RegionBatchCreate define region rule when create.
+type RegionBatchCreate struct {
 	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
 	RegionID   string        `json:"region_id" validate:"required"`
 	RegionName string        `json:"region_name" validate:"required"`
 }
 
-// Validate gcp region create request.
-func (req *GcpRegionCreateReq) Validate() error {
+// Validate region create request.
+func (req *RegionCreateReq) Validate() error {
 	if len(req.Regions) == 0 {
 		return errors.New("regions is required")
 	}
@@ -61,22 +61,24 @@ func (req *GcpRegionCreateReq) Validate() error {
 
 // -------------------------- Update --------------------------
 
-// GcpRegionBatchUpdateReq define gcp region batch update request.
-type GcpRegionBatchUpdateReq struct {
-	Regions []GcpRegionBatchUpdate `json:"regions" validate:"required"`
+// RegionBatchUpdateReq define region batch update request.
+type RegionBatchUpdateReq struct {
+	Regions []RegionBatchUpdate `json:"regions" validate:"required"`
 }
 
-// GcpRegionBatchUpdate gcp region batch update option.
-type GcpRegionBatchUpdate struct {
-	ID          string        `json:"id" validate:"required"`
-	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
+// RegionBatchUpdate region batch update option.
+type RegionBatchUpdate struct {
+	ID          string        `json:"id"`
+	Vendor      enumor.Vendor `json:"vendor"`
 	RegionID    string        `json:"region_id"`
 	RegionName  string        `json:"region_name"`
 	IsAvailable int64         `json:"is_available"`
+	Creator     string        `json:"creator"`
+	Reviser     string        `json:"reviser"`
 }
 
-// Validate gcp region batch update request.
-func (req *GcpRegionBatchUpdateReq) Validate() error {
+// Validate region batch update request.
+func (req *RegionBatchUpdateReq) Validate() error {
 	if len(req.Regions) == 0 {
 		return errors.New("regions is required")
 	}
@@ -88,44 +90,49 @@ func (req *GcpRegionBatchUpdateReq) Validate() error {
 	return nil
 }
 
-// GcpRegionBaseInfoBatchUpdateReq defines batch update region base info request.
-type GcpRegionBaseInfoBatchUpdateReq struct {
-	Regions []GcpRegionBaseInfoUpdateReq `json:"regions" validate:"required"`
-}
-
-// Validate GcpRegionBaseInfoBatchUpdateReq.
-func (u *GcpRegionBaseInfoBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(u)
-}
-
-// GcpRegionBaseInfoUpdateReq defines update region base info request.
-type GcpRegionBaseInfoUpdateReq struct {
-	IDs  []string              `json:"id" validate:"required"`
-	Data *GcpRegionBatchUpdate `json:"data" validate:"required"`
-}
-
 // -------------------------- List --------------------------
 
-// GcpRegionListReq gcp region list req.
-type GcpRegionListReq struct {
+// RegionListReq region list req.
+type RegionListReq struct {
 	Field  []string           `json:"field" validate:"omitempty"`
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
-// Validate gcp region list request.
-func (req *GcpRegionListReq) Validate() error {
+// Validate region list request.
+func (req *RegionListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// GcpRegionListResult define gcp region list result.
-type GcpRegionListResult struct {
-	Count   uint64            `json:"count,omitempty"`
-	Details []cloud.GcpRegion `json:"details,omitempty"`
+// RegionListResp define region list resp.
+type RegionListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *RegionListResult `json:"data"`
 }
 
-// GcpRegionListResp define gcp region list resp.
-type GcpRegionListResp struct {
+// RegionListResult define region list result.
+type RegionListResult struct {
+	Count   uint64         `json:"count,omitempty"`
+	Details []RegionDetail `json:"details,omitempty"`
+}
+
+// -------------------------- Get --------------------------
+
+// RegionGetResp defines get region response.
+type RegionGetResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          *GcpRegionListResult `json:"data"`
+	Data          *RegionDetail `json:"data"`
+}
+
+// RegionDetail define region detail.
+type RegionDetail struct {
+	ID          string        `json:"id"`
+	Vendor      enumor.Vendor `json:"vendor"`
+	RegionID    string        `json:"region_id"`
+	RegionName  string        `json:"region_name"`
+	IsAvailable int64         `json:"is_available"`
+	Creator     string        `json:"creator,omitempty"`
+	Reviser     string        `json:"reviser,omitempty"`
+	CreatedAt   *time.Time    `json:"created_at,omitempty"`
+	UpdatedAt   *time.Time    `json:"updated_at,omitempty"`
 }

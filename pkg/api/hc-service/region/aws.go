@@ -32,29 +32,17 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// -------------------------- Create --------------------------
+// -------------------------- Sync --------------------------
 
-// AwsRegionCreateReq define aws region create request.
-type AwsRegionCreateReq struct {
-	Regions []AwsRegionBatchCreate `json:"regions" validate:"required"`
+// AwsRegionSyncReq define aws region sync request.
+type AwsRegionSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
 }
 
-// AwsRegionBatchCreate define aws region rule when create.
-type AwsRegionBatchCreate struct {
-	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID   string        `json:"region_id" validate:"required"`
-	RegionName string        `json:"region_name" validate:"required"`
-	Endpoint   string        `json:"endpoint"`
-}
-
-// Validate aws region create request.
-func (req *AwsRegionCreateReq) Validate() error {
-	if len(req.Regions) == 0 {
-		return errors.New("regions is required")
-	}
-
-	if len(req.Regions) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
+// Validate aws region sync request.
+func (req *AwsRegionSyncReq) Validate() error {
+	if len(req.AccountID) == 0 {
+		return errors.New("account_id is required")
 	}
 
 	return nil
@@ -71,10 +59,9 @@ type AwsRegionBatchUpdateReq struct {
 type AwsRegionBatchUpdate struct {
 	ID          string        `json:"id" validate:"required"`
 	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
+	RegionID    string        `json:"region_id" validate:"required"`
+	RegionName  string        `json:"region_name" validate:"required"`
 	IsAvailable int64         `json:"is_available"`
-	Endpoint    string        `json:"endpoint"`
 	Creator     string        `json:"creator"`
 	Reviser     string        `json:"reviser"`
 }

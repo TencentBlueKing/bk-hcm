@@ -21,6 +21,7 @@ package region
 
 import (
 	"fmt"
+	"hcm/pkg/criteria/enumor"
 	"reflect"
 
 	"hcm/pkg/api/core"
@@ -89,14 +90,14 @@ func (svc *regionSvc) BatchCreateTcloudRegion(cts *rest.Contexts) (interface{}, 
 }
 
 // BatchUpdateTcloudRegion batch update region.
-func (svc *regionSvc) BatchUpdateTcloudRegion(cts *rest.Contexts) (interface{}, error) {
+func (svc *regionSvc) BatchUpdateTcloudRegion(cts *rest.Contexts) error {
 	req := new(protoregion.TCloudRegionBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		return errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	ids := make([]string, 0, len(req.Regions))
@@ -109,13 +110,15 @@ func (svc *regionSvc) BatchUpdateTcloudRegion(cts *rest.Contexts) (interface{}, 
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   &core.BasePage{Count: true},
 	}
+
 	listRes, err := svc.dao.TcloudRegion().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list region failed, err: %v", err)
+		return fmt.Errorf("list region failed, err: %v", err)
 	}
+
 	if listRes.Count != uint64(len(req.Regions)) {
-		return nil, fmt.Errorf("list tcloud region failed, some region(ids=%+v) doesn't exist", ids)
+		return fmt.Errorf("list tcloud region failed, some region(ids=%+v) doesn't exist", ids)
 	}
 
 	// update region
@@ -132,10 +135,29 @@ func (svc *regionSvc) BatchUpdateTcloudRegion(cts *rest.Contexts) (interface{}, 
 		err = svc.dao.TcloudRegion().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), tmpRegion)
 		if err != nil {
 			logs.Errorf("update tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update tcloud region failed, err: %v", err)
+			return fmt.Errorf("update tcloud region failed, err: %v", err)
 		}
 	}
-	return nil, nil
+
+	return nil
+}
+
+// BatchForbiddenTcloudRegion batch forbidden regions state.
+func (svc *regionSvc) BatchForbiddenTcloudRegion(cts *rest.Contexts) error {
+	// update region state
+	updateRegion := &tableregion.TcloudRegionTable{
+		IsAvailable: constant.AvailableNo,
+		Reviser:     cts.Kit.User,
+	}
+
+	err := svc.dao.TcloudRegion().BatchUpdateState(cts.Kit,
+		tools.EqualExpression("vendor", enumor.TCloud), updateRegion)
+	if err != nil {
+		logs.Errorf("update tcloud region state failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return fmt.Errorf("update tcloud region state failed, err: %v", err)
+	}
+
+	return nil
 }
 
 // GetTcloudRegion get region details.
@@ -222,14 +244,14 @@ func convertTcloudBaseRegion(dbRegion *tableregion.TcloudRegionTable) *protocore
 }
 
 // BatchDeleteTcloudRegion batch delete regions.
-func (svc *regionSvc) BatchDeleteTcloudRegion(cts *rest.Contexts) (interface{}, error) {
+func (svc *regionSvc) BatchDeleteTcloudRegion(cts *rest.Contexts) error {
 	req := new(dataservice.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	opt := &types.ListOption{
@@ -242,11 +264,11 @@ func (svc *regionSvc) BatchDeleteTcloudRegion(cts *rest.Contexts) (interface{}, 
 	listResp, err := svc.dao.TcloudRegion().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list tcloud region failed, err: %v", err)
+		return fmt.Errorf("list tcloud region failed, err: %v", err)
 	}
 
 	if len(listResp.Details) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	delRegionIDs := make([]string, len(listResp.Details))
@@ -264,8 +286,8 @@ func (svc *regionSvc) BatchDeleteTcloudRegion(cts *rest.Contexts) (interface{}, 
 
 	if err != nil {
 		logs.Errorf("delete tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
