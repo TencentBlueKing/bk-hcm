@@ -3,7 +3,7 @@ import {
   ref,
 } from 'vue';
 import { Table, Input, Select, Button } from 'bkui-vue';
-import { POLICY_STATUS } from '@/constants';
+import { POLICY_STATUS, GCP_PROTOCOL_LIST } from '@/constants';
 import Confirm from '@/components/confirm';
 import {
   useI18n,
@@ -25,7 +25,7 @@ export default defineComponent({
     },
   },
 
-  emits: ['update:isShow'],
+  emits: ['update:isShow', 'submit'],
 
   setup(props, { emit }) {
     const {
@@ -33,17 +33,17 @@ export default defineComponent({
     } = useI18n();
 
     // 状态
-    const tableData = ref([{ id: 1 }, {}]);
+    const tableData = ref<any>([{ priority: 100 }]);
     const columns: any[] = [
       { label: t('优先级'),
-        field: 'id',
-        render: ({ data }: any) => <Input class="mt25" v-model={ data.id }></Input>,
+        field: 'priority',
+        render: ({ data }: any) => <Input class="mt25" v-model={ data.priority }></Input>,
       },
       { label: t('策略'),
-        field: 'policy',
+        field: 'action',
         render: ({ data }: any) => {
           return (
-            <Select class="mt25" v-model={data.policy}>
+            <Select class="mt25" v-model={data.action}>
                 {POLICY_STATUS.map(ele => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
                 ))}
@@ -56,46 +56,34 @@ export default defineComponent({
         render: ({ data }: any) => {
           return (
                 <>
-                <Select v-model={data.policy}>
-                    {POLICY_STATUS.map(ele => (
+                <Select v-model={data.protocol}>
+                    {GCP_PROTOCOL_LIST.map(ele => (
                     <Option value={ele.id} label={ele.name} key={ele.id} />
                     ))}
                 </Select>
-                <Input v-model={ data.id }></Input>
+                <Input v-model={ data.port }></Input>
                 </>
           );
         },
       },
-      { label: t('类型'),
-        field: 'type',
-        render: ({ data }: any) => {
-          return (
-              <Select class="mt25" v-model={data.policy}>
-                  {POLICY_STATUS.map(ele => (
-                  <Option value={ele.id} label={ele.name} key={ele.id} />
-                  ))}
-            </Select>
-          );
-        },
-      },
-      { label: t('源地址'),
-        field: 'id',
-        render: ({ data }: any) => {
-          return (
-                  <>
-                  <Select v-model={data.policy}>
-                      {POLICY_STATUS.map(ele => (
-                      <Option value={ele.id} label={ele.name} key={ele.id} />
-                      ))}
-                  </Select>
-                  <Input v-model={ data.id }></Input>
-                  </>
-          );
-        },
-      },
+      // { label: t('源地址'),
+      //   field: 'id',
+      //   render: ({ data }: any) => {
+      //     return (
+      //             <>
+      //             <Select v-model={data.policy}>
+      //                 {POLICY_STATUS.map(ele => (
+      //                 <Option value={ele.id} label={ele.name} key={ele.id} />
+      //                 ))}
+      //             </Select>
+      //             <Input v-model={ data.id }></Input>
+      //             </>
+      //     );
+      //   },
+      // },
       { label: t('描述'),
-        field: 'id',
-        render: ({ data }: any) => <Input class="mt25" v-model={ data.id }></Input>,
+        field: 'memo',
+        render: ({ data }: any) => <Input class="mt25" v-model={ data.memo }></Input>,
       },
       { label: t('操作'),
         field: 'id',
@@ -133,7 +121,7 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      handleClose();
+      emit('submit', tableData.value);
     };
 
     // 新增

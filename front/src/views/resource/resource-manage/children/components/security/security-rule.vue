@@ -136,6 +136,26 @@ const handleDeleteConfirm = () => {
     });
 };
 
+// 提交规则
+const handleSubmitRule = async (data: any) => {
+  console.log('data', data, activeType.value);
+  isShowSecurityRule.value = true;
+  const params = {
+    [`${activeType.value}_rule_set`]: data,
+  };
+  try {
+    await resourceStore.add(`vendors/${props.vendor}/security_groups/${props.id}/rules/create`, params);
+    Message({
+      message: t('添加成功'),
+      theme: 'success',
+    });
+  } catch (error) {
+    console.log(error);
+  } finally {
+    // loading.value = false;
+  }
+};
+
 // 初始化
 handleSwtichType();
 
@@ -394,6 +414,7 @@ const types = [
 
   <security-rule
     v-model:isShow="isShowSecurityRule"
+    @submit="handleSubmitRule"
     :title="t('添加入站规则')" />
 
 

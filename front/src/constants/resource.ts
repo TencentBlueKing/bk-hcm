@@ -10,11 +10,11 @@ export const COMMON_STATUS = [
 
 export const POLICY_STATUS = [
   {
-    id: 'reject',
+    id: 'deny',
     name: '拒绝',
   },
   {
-    id: 'agree',
+    id: 'allow',
     name: '同意',
   },
 ];
