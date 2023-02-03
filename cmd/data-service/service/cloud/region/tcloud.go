@@ -21,7 +21,6 @@ package region
 
 import (
 	"fmt"
-	"hcm/pkg/criteria/enumor"
 	"reflect"
 
 	"hcm/pkg/api/core"
@@ -29,6 +28,7 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
