@@ -45,13 +45,14 @@ func (r region) AwsRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 
 	cli, err := r.ad.Aws(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("RegionSyncAws:ad.Aws:Err, accountID: %s, err: %v, rid: %s", req.AccountID, err, cts.Kit.Rid)
+		logs.Errorf("get aws region sync client failed, accountID: %s, err: %v, rid: %s",
+			req.AccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	cloudResp, err := cli.ListRegion(cts.Kit)
 	if err != nil {
-		logs.Errorf("RegionSyncAws:cli.ListRegion:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("get aws region list failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -80,7 +81,7 @@ func (r region) AwsRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 	}
 	err = r.cs.DataService().Aws.Region.BatchForbiddenRegionState(cts.Kit.Ctx, cts.Kit.Header(), updateStateReq)
 	if err != nil {
-		logs.Errorf("RegionSyncAws:BatchForbiddenRegionState:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch forbidden aws region state failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -90,7 +91,7 @@ func (r region) AwsRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 	}
 	resp, err := r.cs.DataService().Aws.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
-		logs.Errorf("RegionSyncAws:BatchCreate:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch create aws region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -100,7 +101,7 @@ func (r region) AwsRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 	}
 	err = r.cs.DataService().Aws.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
 	if err != nil {
-		logs.Errorf("RegionSyncAws:BatchDelete:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch delete aws region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

@@ -31,12 +31,12 @@ import (
 	"hcm/pkg/dal/dao/cloud/region"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/table"
 	"hcm/pkg/kit"
 	"hcm/pkg/metrics"
 
 	_ "github.com/go-sql-driver/mysql" // import mysql drive, used to create conn.
 	"github.com/jmoiron/sqlx"
-	"hcm/pkg/dal/table"
 )
 
 // ObjectDao 对象 Dao 接口
@@ -91,7 +91,7 @@ type Set interface {
 	AccountBizRel() cloud.AccountBizRel
 	Vpc() cloud.Vpc
 	Subnet() cloud.Subnet
-	TcloudRegion() region.TcloudRegion
+	TCloudRegion() region.TCloudRegion
 	AwsRegion() region.AwsRegion
 	GcpRegion() region.GcpRegion
 	Txn() *Txn
@@ -284,9 +284,9 @@ func (s *set) AzureSGRule() cloud.AzureSGRule {
 	}
 }
 
-// TcloudRegion returns tcloud region dao.
-func (s *set) TcloudRegion() region.TcloudRegion {
-	return region.NewTcloudRegionDao(s.orm, s.idGen)
+// TCloudRegion returns tcloud region dao.
+func (s *set) TCloudRegion() region.TCloudRegion {
+	return region.NewTCloudRegionDao(s.orm, s.idGen)
 }
 
 // AwsRegion returns aws region dao.

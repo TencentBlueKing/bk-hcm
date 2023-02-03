@@ -45,14 +45,14 @@ func (r region) TCloudRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (inte
 
 	cli, err := r.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("RegionSyncTcloud:ad.TCloud:Err, accountID: %s, err: %v, rid: %s",
+		logs.Errorf("get tcloud region sync client failed, accountID: %s, err: %v, rid: %s",
 			req.AccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	cloudResp, err := cli.ListRegion(cts.Kit)
 	if err != nil {
-		logs.Errorf("RegionSyncTcloud:cli.ListRegion:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("get tcloud region list failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -80,7 +80,7 @@ func (r region) TCloudRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (inte
 	}
 	err = r.cs.DataService().TCloud.Region.BatchForbiddenRegionState(cts.Kit.Ctx, cts.Kit.Header(), updateStateReq)
 	if err != nil {
-		logs.Errorf("RegionSyncTcloud:BatchForbiddenRegionState:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch forbidden tcloud region state failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -90,7 +90,7 @@ func (r region) TCloudRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (inte
 	}
 	resp, err := r.cs.DataService().TCloud.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
-		logs.Errorf("RegionSyncTcloud:BatchCreate:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch create tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -100,7 +100,7 @@ func (r region) TCloudRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (inte
 	}
 	err = r.cs.DataService().TCloud.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
 	if err != nil {
-		logs.Errorf("RegionSyncTcloud:BatchDelete:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch delete tcloud region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

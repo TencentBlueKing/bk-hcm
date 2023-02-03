@@ -22,42 +22,15 @@ package region
 import (
 	"errors"
 	"fmt"
+	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/rest"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
-
-// -------------------------- Create --------------------------
-
-// TCloudRegionCreateReq define tcloud region create request.
-type TCloudRegionCreateReq struct {
-	Regions []TCloudRegionBatchCreate `json:"regions" validate:"required"`
-}
-
-// TCloudRegionBatchCreate define tcloud region rule when create.
-type TCloudRegionBatchCreate struct {
-	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID   string        `json:"region_id" validate:"required"`
-	RegionName string        `json:"region_name" validate:"required"`
-}
-
-// Validate tcloud region create request.
-func (req *TCloudRegionCreateReq) Validate() error {
-	if len(req.Regions) == 0 {
-		return errors.New("regions is required")
-	}
-
-	if len(req.Regions) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
-	}
-
-	return nil
-}
 
 // -------------------------- Update --------------------------
 

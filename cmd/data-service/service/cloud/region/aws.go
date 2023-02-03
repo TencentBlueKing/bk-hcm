@@ -148,11 +148,12 @@ func (svc *regionSvc) BatchUpdateAwsRegion(cts *rest.Contexts) error {
 func (svc *regionSvc) BatchForbiddenAwsRegionState(cts *rest.Contexts) error {
 	// update region state
 	updateRegion := &tableregion.AwsRegionTable{
+		Vendor:      enumor.Aws,
 		IsAvailable: constant.AvailableNo,
 		Reviser:     cts.Kit.User,
 	}
 
-	err := svc.dao.AwsRegion().BatchUpdateState(cts.Kit,
+	err := svc.dao.AwsRegion().Update(cts.Kit,
 		tools.EqualExpression("vendor", enumor.Aws), updateRegion)
 	if err != nil {
 		logs.Errorf("update aws region state failed, err: %v, rid: %s", err, cts.Kit.Rid)

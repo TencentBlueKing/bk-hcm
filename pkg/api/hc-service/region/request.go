@@ -73,8 +73,6 @@ type RegionBatchUpdate struct {
 	RegionID    string        `json:"region_id"`
 	RegionName  string        `json:"region_name"`
 	IsAvailable int64         `json:"is_available"`
-	Creator     string        `json:"creator"`
-	Reviser     string        `json:"reviser"`
 }
 
 // Validate region batch update request.

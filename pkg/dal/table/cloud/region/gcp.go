@@ -62,9 +62,9 @@ type GcpRegionTable struct {
 	// Reviser 更新者
 	Reviser string `db:"reviser" validate:"max=64"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at" validate:"isdefault"`
+	CreatedAt *time.Time `db:"created_at" validate:"excluded_unless"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at" validate:"isdefault"`
+	UpdatedAt *time.Time `db:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return region table name.
@@ -101,10 +101,6 @@ func (v GcpRegionTable) UpdateValidate() error {
 
 	if len(v.Vendor) == 0 {
 		return errors.New("vendor can not be empty")
-	}
-
-	if len(v.RegionID) == 0 {
-		return errors.New("region id can not be empty")
 	}
 
 	if len(v.Creator) != 0 {

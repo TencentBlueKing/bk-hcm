@@ -146,11 +146,12 @@ func (svc *regionSvc) BatchUpdateGcpRegion(cts *rest.Contexts) error {
 func (svc *regionSvc) BatchForbiddenGcpRegionState(cts *rest.Contexts) error {
 	// update region state
 	updateRegion := &tableregion.GcpRegionTable{
+		Vendor:      enumor.Gcp,
 		IsAvailable: constant.AvailableNo,
 		Reviser:     cts.Kit.User,
 	}
 
-	err := svc.dao.GcpRegion().BatchUpdateState(cts.Kit,
+	err := svc.dao.GcpRegion().Update(cts.Kit,
 		tools.EqualExpression("vendor", enumor.Gcp), updateRegion)
 	if err != nil {
 		logs.Errorf("update gcp region state failed, err: %v, rid: %s", err, cts.Kit.Rid)

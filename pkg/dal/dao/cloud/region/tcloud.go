@@ -39,17 +39,16 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// TcloudRegion defines region dao operations.
-type TcloudRegion interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []region.TcloudRegionTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *region.TcloudRegionTable) error
-	BatchUpdateState(kt *kit.Kit, expr *filter.Expression, model *region.TcloudRegionTable) error
-	List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (*typesRegion.TcloudRegionListResult,
+// TCloudRegion defines region dao operations.
+type TCloudRegion interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []region.TCloudRegionTable) ([]string, error)
+	Update(kt *kit.Kit, expr *filter.Expression, model *region.TCloudRegionTable) error
+	List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (*typesRegion.TCloudRegionListResult,
 		error)
 	BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 
-var _ TcloudRegion = new(tcloudRegionDao)
+var _ TCloudRegion = new(tcloudRegionDao)
 
 // tcloudRegionDao region dao.
 type tcloudRegionDao struct {
@@ -57,8 +56,8 @@ type tcloudRegionDao struct {
 	idGen idgenerator.IDGenInterface
 }
 
-// NewTcloudRegionDao create a region dao.
-func NewTcloudRegionDao(orm orm.Interface, idGen idgenerator.IDGenInterface) TcloudRegion {
+// NewTCloudRegionDao create a region dao.
+func NewTCloudRegionDao(orm orm.Interface, idGen idgenerator.IDGenInterface) TCloudRegion {
 	return &tcloudRegionDao{
 		orm:   orm,
 		idGen: idGen,
@@ -66,8 +65,9 @@ func NewTcloudRegionDao(orm orm.Interface, idGen idgenerator.IDGenInterface) Tcl
 }
 
 // BatchCreateWithTx create region with transaction.
-func (v *tcloudRegionDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []region.TcloudRegionTable) (
+func (v *tcloudRegionDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []region.TCloudRegionTable) (
 	[]string, error) {
+
 	if len(models) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "models to create cannot be empty")
 	}
@@ -89,7 +89,7 @@ func (v *tcloudRegionDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []r
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
-		region.TcloudRegionColumns.ColumnExpr(), region.TcloudRegionColumns.ColonNameExpr())
+		region.TCloudRegionColumns.ColumnExpr(), region.TCloudRegionColumns.ColonNameExpr())
 
 	err = v.orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
@@ -100,7 +100,7 @@ func (v *tcloudRegionDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []r
 }
 
 // Update update region.
-func (v *tcloudRegionDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *region.TcloudRegionTable) error {
+func (v *tcloudRegionDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *region.TCloudRegionTable) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -145,58 +145,15 @@ func (v *tcloudRegionDao) Update(kt *kit.Kit, filterExpr *filter.Expression, mod
 	return nil
 }
 
-// BatchUpdateState batch update region state.
-func (v *tcloudRegionDao) BatchUpdateState(kt *kit.Kit, filterExpr *filter.Expression,
-	model *region.TcloudRegionTable) error {
-	if filterExpr == nil {
-		return errf.New(errf.InvalidParameter, "filter expr is required")
-	}
-
-	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
-	if err != nil {
-		return err
-	}
-
-	opts := utils.NewFieldOptions().AddBlankedFields("name", "memo").
-		AddIgnoredFields(types.DefaultIgnoredFields...)
-	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
-	if err != nil {
-		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
-	}
-
-	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
-
-	_, err = v.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := v.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
-		if err != nil {
-			logs.ErrorJson("update region state failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
-			return nil, err
-		}
-
-		if effected == 0 {
-			logs.ErrorJson("update region state, but record not found, filter: %v, rid: %s", filterExpr, kt.Rid)
-			return nil, errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
-		}
-
-		return nil, nil
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // List get region list.
 func (v *tcloudRegionDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (
-	*typesRegion.TcloudRegionListResult, error) {
+	*typesRegion.TCloudRegionListResult, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list region options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(region.TcloudRegionColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(region.TCloudRegionColumns.ColumnTypes())),
 		core.DefaultPageOption); err != nil {
 		return nil, err
 	}
@@ -225,7 +182,7 @@ func (v *tcloudRegionDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...
 			return nil, err
 		}
 
-		return &typesRegion.TcloudRegionListResult{Count: count}, nil
+		return &typesRegion.TCloudRegionListResult{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -233,15 +190,15 @@ func (v *tcloudRegionDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, region.TcloudRegionColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, region.TCloudRegionColumns.FieldsNamedExpr(opt.Fields),
 		tableName, whereExpr, pageExpr)
 
-	details := make([]region.TcloudRegionTable, 0)
+	details := make([]region.TCloudRegionTable, 0)
 	if err = v.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
-	return &typesRegion.TcloudRegionListResult{Details: details}, nil
+	return &typesRegion.TCloudRegionListResult{Details: details}, nil
 }
 
 // BatchDeleteWithTx batch delete region with transaction.

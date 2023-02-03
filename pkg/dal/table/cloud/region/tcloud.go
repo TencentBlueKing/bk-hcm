@@ -29,11 +29,11 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// TcloudRegionColumns defines all the Tcloud region table's columns.
-var TcloudRegionColumns = utils.MergeColumns(nil, TcloudRegionColumnDescriptor)
+// TCloudRegionColumns defines all the TCloud region table's columns.
+var TCloudRegionColumns = utils.MergeColumns(nil, TCloudRegionColumnDescriptor)
 
-// TcloudRegionColumnDescriptor is TcloudRegion's column descriptors.
-var TcloudRegionColumnDescriptor = utils.ColumnDescriptors{
+// TCloudRegionColumnDescriptor is TCloudRegion's column descriptors.
+var TCloudRegionColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "region_id", NamedC: "region_id", Type: enumor.String},
@@ -45,8 +45,8 @@ var TcloudRegionColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// TcloudRegionTable tcloud_region表
-type TcloudRegionTable struct {
+// TCloudRegionTable tcloud_region表
+type TCloudRegionTable struct {
 	// ID 自增ID
 	ID string `db:"id" validate:"len=0"`
 	// Vendor 云厂商
@@ -62,18 +62,18 @@ type TcloudRegionTable struct {
 	// Reviser 更新者
 	Reviser string `db:"reviser" validate:"max=64"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at" validate:"isdefault"`
+	CreatedAt *time.Time `db:"created_at" validate:"excluded_unless"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at" validate:"isdefault"`
+	UpdatedAt *time.Time `db:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return region table name.
-func (v TcloudRegionTable) TableName() table.Name {
+func (v TCloudRegionTable) TableName() table.Name {
 	return table.TCloudRegionTable
 }
 
 // InsertValidate validate region table on insert.
-func (v TcloudRegionTable) InsertValidate() error {
+func (v TCloudRegionTable) InsertValidate() error {
 	if err := v.Vendor.Validate(); err != nil {
 		return err
 	}
@@ -94,17 +94,13 @@ func (v TcloudRegionTable) InsertValidate() error {
 }
 
 // UpdateValidate validate region table on update.
-func (v TcloudRegionTable) UpdateValidate() error {
+func (v TCloudRegionTable) UpdateValidate() error {
 	if err := validator.Validate.Struct(v); err != nil {
 		return err
 	}
 
 	if len(v.Vendor) == 0 {
 		return errors.New("vendor can not be empty")
-	}
-
-	if len(v.RegionID) == 0 {
-		return errors.New("region id can not be empty")
 	}
 
 	if len(v.Creator) != 0 {

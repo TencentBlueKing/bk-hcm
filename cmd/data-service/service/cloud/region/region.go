@@ -58,7 +58,7 @@ func (svc *regionSvc) BatchCreateRegion(cts *rest.Contexts) (interface{}, error)
 
 	switch vendor {
 	case enumor.TCloud:
-		return svc.BatchCreateTcloudRegion(cts)
+		return svc.BatchCreateTCloudRegion(cts)
 	case enumor.Aws:
 		return svc.BatchCreateAwsRegion(cts)
 	case enumor.Gcp:
@@ -78,7 +78,7 @@ func (svc *regionSvc) BatchUpdateRegion(cts *rest.Contexts) (interface{}, error)
 	var err error
 	switch vendor {
 	case enumor.TCloud:
-		err = svc.BatchUpdateTcloudRegion(cts)
+		err = svc.BatchUpdateTCloudRegion(cts)
 	case enumor.Aws:
 		err = svc.BatchUpdateAwsRegion(cts)
 	case enumor.Gcp:
@@ -98,7 +98,7 @@ func (svc *regionSvc) BatchForbiddenRegionState(cts *rest.Contexts) (interface{}
 	var err error
 	switch vendor {
 	case enumor.TCloud:
-		err = svc.BatchForbiddenTcloudRegion(cts)
+		err = svc.BatchForbiddenTCloudRegion(cts)
 	case enumor.Aws:
 		err = svc.BatchForbiddenAwsRegionState(cts)
 	case enumor.Gcp:
@@ -117,7 +117,7 @@ func (svc *regionSvc) GetRegion(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return svc.GetTcloudRegion(cts)
+		return svc.GetTCloudRegion(cts)
 	case enumor.Aws:
 		return svc.GetAwsRegion(cts)
 	case enumor.Gcp:
@@ -136,7 +136,7 @@ func (svc *regionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return svc.ListTcloudRegion(cts)
+		return svc.ListTCloudRegion(cts)
 	case enumor.Aws:
 		return svc.ListAwsRegion(cts)
 	case enumor.Gcp:
@@ -156,7 +156,7 @@ func (svc *regionSvc) BatchDeleteRegion(cts *rest.Contexts) (interface{}, error)
 	var err error
 	switch vendor {
 	case enumor.TCloud:
-		err = svc.BatchDeleteTcloudRegion(cts)
+		err = svc.BatchDeleteTCloudRegion(cts)
 	case enumor.Aws:
 		err = svc.BatchDeleteAwsRegion(cts)
 	case enumor.Gcp:

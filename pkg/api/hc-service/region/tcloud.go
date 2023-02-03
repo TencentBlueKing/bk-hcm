@@ -62,8 +62,6 @@ type TCloudRegionBatchUpdate struct {
 	RegionID    string        `json:"region_id" validate:"required"`
 	RegionName  string        `json:"region_name" validate:"required"`
 	IsAvailable int64         `json:"is_available"`
-	Creator     string        `json:"creator"`
-	Reviser     string        `json:"reviser"`
 }
 
 // Validate tcloud region batch update request.

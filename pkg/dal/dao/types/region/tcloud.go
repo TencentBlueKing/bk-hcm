@@ -23,8 +23,8 @@ import (
 	"hcm/pkg/dal/table/cloud/region"
 )
 
-// TcloudRegionListResult tcloud region list result.
-type TcloudRegionListResult struct {
+// TCloudRegionListResult tcloud region list result.
+type TCloudRegionListResult struct {
 	Count   uint64                     `json:"count"`
-	Details []region.TcloudRegionTable `json:"details"`
+	Details []region.TCloudRegionTable `json:"details"`
 }

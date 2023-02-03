@@ -45,15 +45,14 @@ func (r region) GcpRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 
 	cli, err := r.ad.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("RegionSyncGcp:ad.Gcp:Err, accountID: %s, err: %v, rid: %s", req.AccountID, err, cts.Kit.Rid)
+		logs.Errorf("get gcp region sync client failed, accountID: %s, err: %v, rid: %s",
+			req.AccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	cloudResp, err := cli.ListRegion(cts.Kit)
-	logs.Errorf("RegionSyncGcp:cli.ListRegion:Init, err: %v, rid: %s, "+
-		"cloudRespDetail: %+v", err, cts.Kit.Rid, cloudResp.Details)
 	if err != nil {
-		logs.Errorf("RegionSyncGcp:cli.ListRegion:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("get gcp region list failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -81,7 +80,7 @@ func (r region) GcpRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 	}
 	err = r.cs.DataService().Gcp.Region.BatchForbiddenRegionState(cts.Kit.Ctx, cts.Kit.Header(), updateStateReq)
 	if err != nil {
-		logs.Errorf("RegionSyncGcp:BatchForbiddenRegionState:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch forbidden gcp region state failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -91,7 +90,7 @@ func (r region) GcpRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 	}
 	resp, err := r.cs.DataService().Gcp.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
-		logs.Errorf("RegionSyncGcp:BatchCreate:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch create gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -101,7 +100,7 @@ func (r region) GcpRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 	}
 	err = r.cs.DataService().Gcp.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
 	if err != nil {
-		logs.Errorf("RegionSyncGcp:BatchDelete:Err, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch delete gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

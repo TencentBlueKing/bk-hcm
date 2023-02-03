@@ -400,51 +400,51 @@ create table if not exists `disk`
 -- ----------------------------
 -- Table structure for tcloud_region
 -- ----------------------------
-CREATE TABLE `tcloud_region` (
-    `id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '主键',
-    `vendor` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '云厂商标识',
-    `region_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '地区ID',
-    `region_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '地区名称',
-    `is_available` tinyint unsigned NOT NULL DEFAULT '1' COMMENT '状态是否可用(1:是2:否)',
-    `creator` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '创建人',
-    `reviser` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '修改人',
+CREATE TABLE IF NOT EXISTS `tcloud_region` (
+    `id` varchar(64) NOT NULL  COMMENT '主键',
+    `vendor` varchar(32) NOT NULL  COMMENT '云厂商标识',
+    `region_id` varchar(32) NOT NULL COMMENT '地区ID',
+    `region_name` varchar(64) NOT NULL COMMENT '地区名称',
+    `is_available` tinyint unsigned DEFAULT '1' COMMENT '状态是否可用(1:是2:否)',
+    `creator` varchar(64) NOT NULL COMMENT '创建人',
+    `reviser` varchar(64) DEFAULT '' COMMENT '修改人',
     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
  PRIMARY KEY (`id`),
- KEY `idx_uk_vendor` (`vendor`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='云厂商支持的地区列表';
+ KEY `idx_uk_vendor` (`vendor`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='云厂商支持的地区列表';
 
 -- ----------------------------
 -- Table structure for aws_region
 -- ----------------------------
-CREATE TABLE `aws_region` (
-    `id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '主键',
-    `vendor` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '云厂商标识',
-    `region_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '地区ID',
-    `region_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '地区名称',
-    `is_available` tinyint unsigned NOT NULL DEFAULT '1' COMMENT '状态是否可用(1:是2:否)',
-    `endpoint` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT 'EndPoint',
-    `creator` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '创建人',
-    `reviser` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '修改人',
+CREATE TABLE IF NOT EXISTS `aws_region` (
+    `id` varchar(64) NOT NULL COMMENT '主键',
+    `vendor` varchar(32) NOT NULL COMMENT '云厂商标识',
+    `region_id` varchar(32) NOT NULL COMMENT '地区ID',
+    `region_name` varchar(64) NOT NULL COMMENT '地区名称',
+    `is_available` tinyint unsigned DEFAULT '1' COMMENT '状态是否可用(1:是2:否)',
+    `endpoint` varchar(64) DEFAULT '' COMMENT 'EndPoint',
+    `creator` varchar(64) NOT NULL COMMENT '创建人',
+    `reviser` varchar(64) DEFAULT '' COMMENT '修改人',
     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  KEY `idx_uk_vendor` (`vendor`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='云厂商支持的地区列表';
+  KEY `idx_uk_vendor` (`vendor`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='云厂商支持的地区列表';
 
 -- ----------------------------
 -- Table structure for gcp_region
 -- ----------------------------
-CREATE TABLE `gcp_region` (
-    `id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '主键',
-    `vendor` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '云厂商标识',
-    `region_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '地区ID',
-    `region_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '地区名称',
-    `is_available` tinyint unsigned NOT NULL DEFAULT '1' COMMENT '状态是否可用(1:是2:否)',
-    `creator` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '创建人',
-    `reviser` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '修改人',
+CREATE TABLE IF NOT EXISTS `gcp_region` (
+    `id` varchar(64) NOT NULL COMMENT '主键',
+    `vendor` varchar(32) NOT NULL COMMENT '云厂商标识',
+    `region_id` varchar(32) NOT NULL COMMENT '地区ID',
+    `region_name` varchar(64) NOT NULL COMMENT '地区名称',
+    `is_available` tinyint unsigned DEFAULT '1' COMMENT '状态是否可用(1:是2:否)',
+    `creator` varchar(64) NOT NULL COMMENT '创建人',
+    `reviser` varchar(64) DEFAULT '' COMMENT '修改人',
     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  KEY `idx_uk_vendor` (`vendor`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='云厂商支持的地区列表';
+  KEY `idx_uk_vendor` (`vendor`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='云厂商支持的地区列表';
