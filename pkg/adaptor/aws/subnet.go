@@ -33,7 +33,7 @@ import (
 
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
-func (a *Aws) UpdateSubnet(kt *kit.Kit, opt *types.AwsSubnetUpdateOption) error {
+func (a *Aws) UpdateSubnet(_ *kit.Kit, _ *types.AwsSubnetUpdateOption) error {
 	return nil
 }
 

@@ -161,6 +161,13 @@ func convertVpc(data *ec2.Vpc, region string) *types.AwsVpc {
 	name, _ := parseTags(data.Tags)
 	v.Name = name
 
+	if data.CidrBlock != nil {
+		v.Extension.Cidr = append(v.Extension.Cidr, cloud.AwsCidr{
+			Type: enumor.Ipv4,
+			Cidr: *data.CidrBlock,
+		})
+	}
+
 	for _, asst := range data.CidrBlockAssociationSet {
 		cidr := cloud.AwsCidr{
 			Type: enumor.Ipv4,

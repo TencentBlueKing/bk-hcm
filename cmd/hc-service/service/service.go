@@ -152,7 +152,7 @@ func (s *Service) apiSet() *restful.Container {
 }
 
 // Healthz check whether the service is healthy.
-func (s *Service) Healthz(w http.ResponseWriter, req *http.Request) {
+func (s *Service) Healthz(w http.ResponseWriter, _ *http.Request) {
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
 	return
 }

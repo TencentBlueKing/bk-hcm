@@ -82,7 +82,8 @@ func (a *accountSvc) checkPermission(cts *rest.Contexts, action meta.Action, acc
 }
 
 func (a *accountSvc) listAuthorized(cts *rest.Contexts, action meta.Action) ([]string, bool, error) {
-	resources, err := a.authorizer.ListAuthorizedInstances(cts.Kit, &meta.ListAuthResInput{Type: meta.Account, Action: action})
+	resources, err := a.authorizer.ListAuthorizedInstances(cts.Kit, &meta.ListAuthResInput{Type: meta.Account,
+		Action: action})
 	if err != nil {
 		return []string{}, false, errf.NewFromErr(
 			errf.PermissionDenied,
