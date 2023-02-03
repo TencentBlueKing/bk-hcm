@@ -78,7 +78,7 @@ export default defineComponent({
       projectModel.price_unit = res?.data.price_unit;
       projectModel.site = res?.data.site;
       projectModel.memo = res?.data.memo;
-      projectModel.departmentId = [res?.data.department_id]; // 1
+      projectModel.departmentId = res?.data.department_ids; // 1
       projectModel.creator = res?.data.creator;
       projectModel.reviser = res?.data.reviser;
       projectModel.created_at = res?.data.created_at;
@@ -87,7 +87,7 @@ export default defineComponent({
       projectModel.bizIds = res?.data?.bk_biz_ids;
       requestQueue.value.shift();
       getBusinessList();
-      getDepartmentInfo(res?.data.department_id);
+      getDepartmentInfo(res?.data.department_ids);
       renderDialogForm(projectModel);
       renderBaseInfoForm(projectModel);
     });
@@ -489,7 +489,7 @@ export default defineComponent({
     const updateFormData = async (key: any, val?: any) => {
       let params: any = {};
       if (key === 'departmentId') {
-        params.department_id = Number(projectModel[key].join(''));
+        params.department_ids = projectModel[key];
         isOrganizationDetail.value = true;  // 改为详情展示态
       } else if (key === 'bizIds') {
         // 若选择全部业务，则参数是-1

@@ -87,7 +87,7 @@ export default defineComponent({
           name: projectModel.name,
           managers: projectModel.managers,
           memo: projectModel.memo,
-          department_id: Number(projectModel.departmentId.join(',')),
+          department_ids: projectModel.departmentId,
           site: projectModel.site,
           bk_biz_ids: projectModel.bizIds.length === businessList.list.length
             ? [-1] : projectModel.bizIds,
