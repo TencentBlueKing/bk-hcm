@@ -23,7 +23,7 @@ const {
 } = useI18n();
 
 const route = useRoute();
-const filter = ref({ op: 'and', rules: [] });
+const filter = ref({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'ingress' }] });
 console.log('filter', filter);
 const activeTab = ref(route.query?.activeTab);
 const securityId = ref(route.query?.id);

@@ -39,6 +39,7 @@ export default async (props: PropsType, type: string) => {
 
   // 更新数据
   const triggerApi = async () => {
+    console.log(222);
     isLoading.value = true;
     const listCount = await resourceStore
       .list(
@@ -97,13 +98,13 @@ export default async (props: PropsType, type: string) => {
   };
 
   // 过滤发生变化的时候，获取数据
-  watch(
-    () => props.filter,
-    triggerApi,
-    {
-      deep: true,
-    },
-  );
+  // watch(
+  //   () => props.filter,
+  //   triggerApi,
+  //   {
+  //     deep: true,
+  //   },
+  // );
   // 切换tab重新获取数据
   watch(() => type, async (value) => {
     console.log('value', value);
