@@ -3,7 +3,7 @@ import {
   ref,
 } from 'vue';
 import { Table, Input, Select, Button } from 'bkui-vue';
-import { POLICY_STATUS, GCP_PROTOCOL_LIST } from '@/constants';
+import { ACTION_STATUS, GCP_PROTOCOL_LIST } from '@/constants';
 import Confirm from '@/components/confirm';
 import {
   useI18n,
@@ -44,7 +44,7 @@ export default defineComponent({
         render: ({ data }: any) => {
           return (
             <Select class="mt25" v-model={data.action}>
-                {POLICY_STATUS.map(ele => (
+                {ACTION_STATUS.map(ele => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
                 ))}
           </Select>
