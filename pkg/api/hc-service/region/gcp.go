@@ -21,15 +21,6 @@ package region
 
 import (
 	"errors"
-	"fmt"
-
-	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/validator"
-	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // -------------------------- Sync --------------------------
@@ -46,75 +37,4 @@ func (req *GcpRegionSyncReq) Validate() error {
 	}
 
 	return nil
-}
-
-// -------------------------- Update --------------------------
-
-// GcpRegionBatchUpdateReq define gcp region batch update request.
-type GcpRegionBatchUpdateReq struct {
-	Regions []GcpRegionBatchUpdate `json:"regions" validate:"required"`
-}
-
-// GcpRegionBatchUpdate gcp region batch update option.
-type GcpRegionBatchUpdate struct {
-	ID          string        `json:"id" validate:"required"`
-	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id" validate:"required"`
-	RegionName  string        `json:"region_name" validate:"required"`
-	IsAvailable int64         `json:"is_available"`
-}
-
-// Validate gcp region batch update request.
-func (req *GcpRegionBatchUpdateReq) Validate() error {
-	if len(req.Regions) == 0 {
-		return errors.New("regions is required")
-	}
-
-	if len(req.Regions) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
-	}
-
-	return nil
-}
-
-// GcpRegionBaseInfoBatchUpdateReq defines batch update region base info request.
-type GcpRegionBaseInfoBatchUpdateReq struct {
-	Regions []GcpRegionBaseInfoUpdateReq `json:"regions" validate:"required"`
-}
-
-// Validate GcpRegionBaseInfoBatchUpdateReq.
-func (u *GcpRegionBaseInfoBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(u)
-}
-
-// GcpRegionBaseInfoUpdateReq defines update region base info request.
-type GcpRegionBaseInfoUpdateReq struct {
-	IDs  []string              `json:"id" validate:"required"`
-	Data *GcpRegionBatchUpdate `json:"data" validate:"required"`
-}
-
-// -------------------------- List --------------------------
-
-// GcpRegionListReq gcp region list req.
-type GcpRegionListReq struct {
-	Field  []string           `json:"field" validate:"omitempty"`
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
-}
-
-// Validate gcp region list request.
-func (req *GcpRegionListReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// GcpRegionListResult define gcp region list result.
-type GcpRegionListResult struct {
-	Count   uint64            `json:"count,omitempty"`
-	Details []cloud.GcpRegion `json:"details,omitempty"`
-}
-
-// GcpRegionListResp define gcp region list resp.
-type GcpRegionListResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *GcpRegionListResult `json:"data"`
 }

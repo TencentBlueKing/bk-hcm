@@ -76,27 +76,27 @@ const (
 )
 
 // TableMap table map config
-var TableMap = map[Name]bool{
-	AuditTable:                   true,
-	AccountTable:                 true,
-	AccountBizRelTable:           true,
-	VpcTable:                     true,
-	SubnetTable:                  true,
-	IDGenerator:                  true,
-	SecurityGroupTable:           true,
-	VpcSecurityGroupRelTable:     true,
-	SecurityGroupTagTable:        true,
-	SecurityGroupSubnetTable:     true,
-	SGSecurityGroupRuleTable:     true,
-	TCloudSecurityGroupRuleTable: true,
-	AwsSecurityGroupRuleTable:    true,
-	HuaWeiSecurityGroupRuleTable: true,
-	AzureSecurityGroupRuleTable:  true,
-	SGNetworkInterfaceRelTable:   true,
-	GcpFirewallRuleTable:         true,
-	TCloudRegionTable:            true,
-	AwsRegionTable:               true,
-	GcpRegionTable:               true,
+var TableMap = map[Name]struct{}{
+	AuditTable:                   {},
+	AccountTable:                 {},
+	AccountBizRelTable:           {},
+	VpcTable:                     {},
+	SubnetTable:                  {},
+	IDGenerator:                  {},
+	SecurityGroupTable:           {},
+	VpcSecurityGroupRelTable:     {},
+	SecurityGroupTagTable:        {},
+	SecurityGroupSubnetTable:     {},
+	SGSecurityGroupRuleTable:     {},
+	TCloudSecurityGroupRuleTable: {},
+	AwsSecurityGroupRuleTable:    {},
+	HuaWeiSecurityGroupRuleTable: {},
+	AzureSecurityGroupRuleTable:  {},
+	SGNetworkInterfaceRelTable:   {},
+	GcpFirewallRuleTable:         {},
+	TCloudRegionTable:            {},
+	AwsRegionTable:               {},
+	GcpRegionTable:               {},
 }
 
 // Validate whether the table name is valid or not.

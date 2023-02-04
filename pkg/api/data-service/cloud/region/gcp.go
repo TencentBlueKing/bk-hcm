@@ -44,6 +44,8 @@ type GcpRegionBatchCreate struct {
 	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
 	RegionID   string        `json:"region_id" validate:"required"`
 	RegionName string        `json:"region_name" validate:"required"`
+	Status     string        `json:"status"`
+	SelfLink   string        `json:"self_link"`
 }
 
 // Validate gcp region create request.
@@ -68,11 +70,12 @@ type GcpRegionBatchUpdateReq struct {
 
 // GcpRegionBatchUpdate gcp region batch update option.
 type GcpRegionBatchUpdate struct {
-	ID          string        `json:"id" validate:"required"`
-	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
-	IsAvailable int64         `json:"is_available"`
+	ID         string        `json:"id" validate:"required"`
+	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID   string        `json:"region_id"`
+	RegionName string        `json:"region_name"`
+	Status     string        `json:"status"`
+	SelfLink   string        `json:"self_link"`
 }
 
 // Validate gcp region batch update request.

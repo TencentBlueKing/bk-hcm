@@ -23,8 +23,9 @@ package region
 
 // GcpRegionListResult defines gcp list region result.
 type GcpRegionListResult struct {
-	Count   *uint64     `json:"count,omitempty"`
-	Details []GcpRegion `json:"details"`
+	NextPageToken string      `json:"next_page_token,omitempty"`
+	Count         *uint64     `json:"count,omitempty"`
+	Details       []GcpRegion `json:"details"`
 }
 
 // GcpRegion defines region struct.
@@ -32,4 +33,5 @@ type GcpRegion struct {
 	RegionID    string `json:"region_id"`
 	RegionName  string `json:"region_name"`
 	RegionState string `json:"region_state,omitempty"`
+	SelfLink    string `json:"self_link,omitempty"`
 }

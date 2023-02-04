@@ -114,8 +114,7 @@ func (v *gcpRegionDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model 
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddBlankedFields("name", "memo").
-		AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)

@@ -20,6 +20,7 @@
 package tcloud
 
 import (
+	"encoding/json"
 	"fmt"
 
 	typesRegion "hcm/pkg/adaptor/types/region"
@@ -37,6 +38,8 @@ func (t *TCloud) ListRegion(kt *kit.Kit) (*typesRegion.TCloudRegionListResult, e
 	}
 
 	resp, err := cvmClient.DescribeRegionsWithContext(kt.Ctx, nil)
+	rspJSON, _ := json.Marshal(resp)
+	logs.Errorf("list tcloud region init, err: %v, rid: %s, rspJSON:%s", err, kt.Rid, rspJSON)
 	if err != nil {
 		logs.Errorf("list tcloud region failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list tcloud region failed, err: %v", err)

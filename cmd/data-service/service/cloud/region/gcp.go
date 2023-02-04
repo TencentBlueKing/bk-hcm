@@ -58,12 +58,13 @@ func (svc *regionSvc) BatchCreateGcpRegion(cts *rest.Contexts) (interface{}, err
 		regions := make([]tableregion.GcpRegionTable, 0, len(req.Regions))
 		for _, createReq := range req.Regions {
 			tmpRegion := tableregion.GcpRegionTable{
-				Vendor:      createReq.Vendor,
-				RegionID:    createReq.RegionID,
-				RegionName:  createReq.RegionName,
-				IsAvailable: constant.AvailableYes,
-				Creator:     cts.Kit.User,
-				Reviser:     cts.Kit.User,
+				Vendor:     createReq.Vendor,
+				RegionID:   createReq.RegionID,
+				RegionName: createReq.RegionName,
+				Status:     createReq.Status,
+				SelfLink:   createReq.SelfLink,
+				Creator:    cts.Kit.User,
+				Reviser:    cts.Kit.User,
 			}
 			regions = append(regions, tmpRegion)
 		}
@@ -130,7 +131,7 @@ func (svc *regionSvc) BatchUpdateGcpRegion(cts *rest.Contexts) error {
 		tmpRegion.Vendor = updateReq.Vendor
 		tmpRegion.RegionID = updateReq.RegionID
 		tmpRegion.RegionName = updateReq.RegionName
-		tmpRegion.IsAvailable = updateReq.IsAvailable
+		tmpRegion.Status = updateReq.Status
 
 		err = svc.dao.GcpRegion().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), tmpRegion)
 		if err != nil {
@@ -146,9 +147,8 @@ func (svc *regionSvc) BatchUpdateGcpRegion(cts *rest.Contexts) error {
 func (svc *regionSvc) BatchForbiddenGcpRegionState(cts *rest.Contexts) error {
 	// update region state
 	updateRegion := &tableregion.GcpRegionTable{
-		Vendor:      enumor.Gcp,
-		IsAvailable: constant.AvailableNo,
-		Reviser:     cts.Kit.User,
+		Status:  constant.GcpStateDisable,
+		Reviser: cts.Kit.User,
 	}
 
 	err := svc.dao.GcpRegion().Update(cts.Kit,
@@ -232,15 +232,15 @@ func convertGcpBaseRegion(dbRegion *tableregion.GcpRegionTable) *protocore.GcpRe
 	}
 
 	return &protocore.GcpRegion{
-		ID:          dbRegion.ID,
-		Vendor:      dbRegion.Vendor,
-		RegionID:    dbRegion.RegionID,
-		RegionName:  dbRegion.RegionName,
-		IsAvailable: dbRegion.IsAvailable,
-		Creator:     dbRegion.Creator,
-		Reviser:     dbRegion.Reviser,
-		CreatedAt:   dbRegion.CreatedAt,
-		UpdatedAt:   dbRegion.UpdatedAt,
+		ID:         dbRegion.ID,
+		Vendor:     dbRegion.Vendor,
+		RegionID:   dbRegion.RegionID,
+		RegionName: dbRegion.RegionName,
+		Status:     dbRegion.Status,
+		Creator:    dbRegion.Creator,
+		Reviser:    dbRegion.Reviser,
+		CreatedAt:  dbRegion.CreatedAt,
+		UpdatedAt:  dbRegion.UpdatedAt,
 	}
 }
 

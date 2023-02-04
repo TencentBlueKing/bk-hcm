@@ -20,21 +20,34 @@
 package gcp
 
 import (
+	"hcm/pkg/adaptor/types/core"
 	typesRegion "hcm/pkg/adaptor/types/region"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/json"
 )
 
 // ListRegion list region.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/regions/list
-func (g *Gcp) ListRegion(kt *kit.Kit) (*typesRegion.GcpRegionListResult, error) {
+func (g *Gcp) ListRegion(kt *kit.Kit, opt *core.GcpListOption) (*typesRegion.GcpRegionListResult, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
 	client, err := g.clientSet.computeClient(kt)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := client.Regions.List(g.clientSet.credential.CloudProjectID).Context(kt.Ctx).Do()
+	listCall := client.Regions.List(g.clientSet.credential.CloudProjectID).Context(kt.Ctx)
+	if opt.Page != nil {
+		listCall.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+	}
+
+	resp, err := listCall.Do()
+	rspJSON, _ := json.Marshal(resp)
+	logs.Errorf("list gcp region init, err: %v, rid: %s, rspJSON:%s", err, kt.Rid, rspJSON)
 	if err != nil {
 		logs.Errorf("list gcp region failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -46,10 +59,14 @@ func (g *Gcp) ListRegion(kt *kit.Kit) (*typesRegion.GcpRegionListResult, error) 
 			RegionID:    data.Description,
 			RegionName:  data.Name,
 			RegionState: data.Status, // UP、DOWN
+			SelfLink:    data.SelfLink,
 		}
 		details = append(details, tmpData)
 	}
 
-	return &typesRegion.GcpRegionListResult{Count: converter.ValToPtr(uint64(len(resp.Items))),
-		Details: details}, nil
+	return &typesRegion.GcpRegionListResult{
+		NextPageToken: resp.NextPageToken,
+		Count:         converter.ValToPtr(uint64(len(resp.Items))),
+		Details:       details,
+	}, nil
 }

@@ -39,7 +39,7 @@ func InitRegionService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("BatchRegionSync", "POST", "/vendors/{vendor}/regions/batch/sync", v.BatchRegionSync)
+	h.Add("BatchSyncRegion", "POST", "/vendors/{vendor}/regions/batch/sync", v.BatchSyncRegion)
 
 	h.Load(cap.WebService)
 }
@@ -49,8 +49,8 @@ type region struct {
 	cs *client.ClientSet
 }
 
-// BatchRegionSync batch sync region.
-func (r *region) BatchRegionSync(cts *rest.Contexts) (interface{}, error) {
+// BatchSyncRegion batch sync region.
+func (r *region) BatchSyncRegion(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -58,11 +58,11 @@ func (r *region) BatchRegionSync(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return r.TCloudRegionSync(cts, vendor)
+		return r.TCloudSyncRegion(cts, vendor)
 	case enumor.Aws:
-		return r.AwsRegionSync(cts, vendor)
+		return r.AwsSyncRegion(cts, vendor)
 	case enumor.Gcp:
-		return r.GcpRegionSync(cts, vendor)
+		return r.GcpSyncRegion(cts, vendor)
 	default:
 		return nil, fmt.Errorf("%s does not support the creation of cloud region", vendor)
 	}

@@ -21,15 +21,6 @@ package region
 
 import (
 	"errors"
-	"fmt"
-
-	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/validator"
-	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // -------------------------- Sync --------------------------
@@ -46,75 +37,4 @@ func (req *AwsRegionSyncReq) Validate() error {
 	}
 
 	return nil
-}
-
-// -------------------------- Update --------------------------
-
-// AwsRegionBatchUpdateReq define aws region batch update request.
-type AwsRegionBatchUpdateReq struct {
-	Regions []AwsRegionBatchUpdate `json:"regions" validate:"required"`
-}
-
-// AwsRegionBatchUpdate aws region batch update option.
-type AwsRegionBatchUpdate struct {
-	ID          string        `json:"id" validate:"required"`
-	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id" validate:"required"`
-	RegionName  string        `json:"region_name" validate:"required"`
-	IsAvailable int64         `json:"is_available"`
-}
-
-// Validate aws region batch update request.
-func (req *AwsRegionBatchUpdateReq) Validate() error {
-	if len(req.Regions) == 0 {
-		return errors.New("regions is required")
-	}
-
-	if len(req.Regions) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
-	}
-
-	return nil
-}
-
-// AwsRegionBaseInfoBatchUpdateReq defines batch update region base info request.
-type AwsRegionBaseInfoBatchUpdateReq struct {
-	Regions []AwsRegionBaseInfoUpdateReq `json:"regions" validate:"required"`
-}
-
-// Validate AwsRegionBaseInfoBatchUpdateReq.
-func (u *AwsRegionBaseInfoBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(u)
-}
-
-// AwsRegionBaseInfoUpdateReq defines update region base info request.
-type AwsRegionBaseInfoUpdateReq struct {
-	IDs  []string              `json:"id" validate:"required"`
-	Data *AwsRegionBatchUpdate `json:"data" validate:"required"`
-}
-
-// -------------------------- List --------------------------
-
-// AwsRegionListReq aws region list req.
-type AwsRegionListReq struct {
-	Field  []string           `json:"field" validate:"omitempty"`
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
-}
-
-// Validate aws region list request.
-func (req *AwsRegionListReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// AwsRegionListResult define aws region list result.
-type AwsRegionListResult struct {
-	Count   uint64            `json:"count,omitempty"`
-	Details []cloud.AwsRegion `json:"details,omitempty"`
-}
-
-// AwsRegionListResp define aws region list resp.
-type AwsRegionListResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *AwsRegionListResult `json:"data"`
 }

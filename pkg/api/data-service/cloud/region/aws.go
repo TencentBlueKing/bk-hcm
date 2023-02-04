@@ -44,6 +44,7 @@ type AwsRegionBatchCreate struct {
 	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
 	RegionID   string        `json:"region_id" validate:"required"`
 	RegionName string        `json:"region_name" validate:"required"`
+	Status     string        `json:"status"`
 	Endpoint   string        `json:"endpoint"`
 }
 
@@ -69,14 +70,12 @@ type AwsRegionBatchUpdateReq struct {
 
 // AwsRegionBatchUpdate aws region batch update option.
 type AwsRegionBatchUpdate struct {
-	ID          string        `json:"id" validate:"required"`
-	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
-	IsAvailable int64         `json:"is_available"`
-	Endpoint    string        `json:"endpoint"`
-	Creator     string        `json:"creator"`
-	Reviser     string        `json:"reviser"`
+	ID         string        `json:"id" validate:"required"`
+	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID   string        `json:"region_id"`
+	RegionName string        `json:"region_name"`
+	Status     string        `json:"status"`
+	Endpoint   string        `json:"endpoint"`
 }
 
 // Validate aws region batch update request.

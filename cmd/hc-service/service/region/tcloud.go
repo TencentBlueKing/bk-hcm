@@ -32,8 +32,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// TCloudRegionSync sync tcloud region.
-func (r region) TCloudRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interface{}, error) {
+// TCloudSyncRegion tcloud sync region.
+func (r region) TCloudSyncRegion(cts *rest.Contexts, vendor enumor.Vendor) (interface{}, error) {
 	req := new(protoHcRegion.TCloudRegionSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -56,17 +56,13 @@ func (r region) TCloudRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (inte
 		return nil, err
 	}
 
-	tmpRegions := make([]protoDsRegion.RegionBatchCreate, 0)
+	tmpRegions := make([]protoDsRegion.TCloudRegionBatchCreate, 0)
 	for _, item := range cloudResp.Details {
-		// 不可用的地区，不录入
-		if item.RegionState != constant.TCloudAvailbleState {
-			continue
-		}
-
-		tmpRegions = append(tmpRegions, protoDsRegion.RegionBatchCreate{
+		tmpRegions = append(tmpRegions, protoDsRegion.TCloudRegionBatchCreate{
 			Vendor:     vendor,
 			RegionID:   item.RegionID,
 			RegionName: item.RegionName,
+			Status:     item.RegionState,
 		})
 	}
 
@@ -75,8 +71,8 @@ func (r region) TCloudRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (inte
 	}
 
 	// batch forbidden tcloud region state.
-	updateStateReq := &protoDsRegion.RegionBatchUpdateReq{
-		Regions: []protoDsRegion.RegionBatchUpdate{{IsAvailable: constant.AvailableNo}},
+	updateStateReq := &protoDsRegion.TCloudRegionBatchUpdateReq{
+		Regions: []protoDsRegion.TCloudRegionBatchUpdate{{Status: constant.TCloudStateDisable}},
 	}
 	err = r.cs.DataService().TCloud.Region.BatchForbiddenRegionState(cts.Kit.Ctx, cts.Kit.Header(), updateStateReq)
 	if err != nil {
@@ -85,7 +81,7 @@ func (r region) TCloudRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (inte
 	}
 
 	// batch create tcloud region.
-	createReq := &protoDsRegion.RegionCreateReq{
+	createReq := &protoDsRegion.TCloudRegionCreateReq{
 		Regions: tmpRegions,
 	}
 	resp, err := r.cs.DataService().TCloud.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
@@ -96,7 +92,7 @@ func (r region) TCloudRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (inte
 
 	// batch delete tcloud region.
 	deleteReq := &dataservice.BatchDeleteReq{
-		Filter: tools.EqualExpression("is_available", constant.AvailableNo),
+		Filter: tools.EqualExpression("status", constant.TCloudStateDisable),
 	}
 	err = r.cs.DataService().TCloud.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
 	if err != nil {

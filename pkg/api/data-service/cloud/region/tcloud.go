@@ -22,15 +22,44 @@ package region
 import (
 	"errors"
 	"fmt"
-	"hcm/pkg/api/core/cloud"
-	"hcm/pkg/rest"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
+
+// -------------------------- Create --------------------------
+
+// TCloudRegionCreateReq define region create request.
+type TCloudRegionCreateReq struct {
+	Regions   []TCloudRegionBatchCreate `json:"regions" validate:"required"`
+	AccountID string                    `json:"account_id" validate:"omitempty"`
+}
+
+// RegionBatchCreate define region rule when create.
+type TCloudRegionBatchCreate struct {
+	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID   string        `json:"region_id" validate:"required"`
+	RegionName string        `json:"region_name" validate:"required"`
+	Status     string        `json:"status"`
+}
+
+// Validate region create request.
+func (req *TCloudRegionCreateReq) Validate() error {
+	if len(req.Regions) == 0 {
+		return errors.New("regions is required")
+	}
+
+	if len(req.Regions) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
+}
 
 // -------------------------- Update --------------------------
 
@@ -41,13 +70,11 @@ type TCloudRegionBatchUpdateReq struct {
 
 // TCloudRegionBatchUpdate tcloud region batch update option.
 type TCloudRegionBatchUpdate struct {
-	ID          string        `json:"id" validate:"required"`
-	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
-	IsAvailable int64         `json:"is_available"`
-	Creator     string        `json:"creator"`
-	Reviser     string        `json:"reviser"`
+	ID         string        `json:"id" validate:"required"`
+	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
+	RegionID   string        `json:"region_id"`
+	RegionName string        `json:"region_name"`
+	Status     string        `json:"status"`
 }
 
 // Validate tcloud region batch update request.

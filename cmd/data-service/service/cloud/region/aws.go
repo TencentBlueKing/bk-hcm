@@ -58,13 +58,13 @@ func (svc *regionSvc) BatchCreateAwsRegion(cts *rest.Contexts) (interface{}, err
 		regions := make([]tableregion.AwsRegionTable, 0, len(req.Regions))
 		for _, createReq := range req.Regions {
 			tmpRegion := tableregion.AwsRegionTable{
-				Vendor:      createReq.Vendor,
-				RegionID:    createReq.RegionID,
-				RegionName:  createReq.RegionName,
-				IsAvailable: constant.AvailableYes,
-				Endpoint:    createReq.Endpoint,
-				Creator:     cts.Kit.User,
-				Reviser:     cts.Kit.User,
+				Vendor:     createReq.Vendor,
+				RegionID:   createReq.RegionID,
+				RegionName: createReq.RegionName,
+				Status:     createReq.Status,
+				Endpoint:   createReq.Endpoint,
+				Creator:    cts.Kit.User,
+				Reviser:    cts.Kit.User,
 			}
 			regions = append(regions, tmpRegion)
 		}
@@ -131,7 +131,7 @@ func (svc *regionSvc) BatchUpdateAwsRegion(cts *rest.Contexts) error {
 		tmpRegion.Vendor = updateReq.Vendor
 		tmpRegion.RegionID = updateReq.RegionID
 		tmpRegion.RegionName = updateReq.RegionName
-		tmpRegion.IsAvailable = updateReq.IsAvailable
+		tmpRegion.Status = updateReq.Status
 		tmpRegion.Endpoint = updateReq.Endpoint
 
 		err = svc.dao.AwsRegion().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), tmpRegion)
@@ -148,9 +148,8 @@ func (svc *regionSvc) BatchUpdateAwsRegion(cts *rest.Contexts) error {
 func (svc *regionSvc) BatchForbiddenAwsRegionState(cts *rest.Contexts) error {
 	// update region state
 	updateRegion := &tableregion.AwsRegionTable{
-		Vendor:      enumor.Aws,
-		IsAvailable: constant.AvailableNo,
-		Reviser:     cts.Kit.User,
+		Status:  constant.AwsStateDisable,
+		Reviser: cts.Kit.User,
 	}
 
 	err := svc.dao.AwsRegion().Update(cts.Kit,
@@ -234,16 +233,16 @@ func convertAwsBaseRegion(dbRegion *tableregion.AwsRegionTable) *protocore.AwsRe
 	}
 
 	return &protocore.AwsRegion{
-		ID:          dbRegion.ID,
-		Vendor:      dbRegion.Vendor,
-		RegionID:    dbRegion.RegionID,
-		RegionName:  dbRegion.RegionName,
-		IsAvailable: dbRegion.IsAvailable,
-		Endpoint:    dbRegion.Endpoint,
-		Creator:     dbRegion.Creator,
-		Reviser:     dbRegion.Reviser,
-		CreatedAt:   dbRegion.CreatedAt,
-		UpdatedAt:   dbRegion.UpdatedAt,
+		ID:         dbRegion.ID,
+		Vendor:     dbRegion.Vendor,
+		RegionID:   dbRegion.RegionID,
+		RegionName: dbRegion.RegionName,
+		Status:     dbRegion.Status,
+		Endpoint:   dbRegion.Endpoint,
+		Creator:    dbRegion.Creator,
+		Reviser:    dbRegion.Reviser,
+		CreatedAt:  dbRegion.CreatedAt,
+		UpdatedAt:  dbRegion.UpdatedAt,
 	}
 }
 

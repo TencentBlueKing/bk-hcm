@@ -401,16 +401,17 @@ create table if not exists `disk`
 -- Table structure for tcloud_region
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `tcloud_region` (
-    `id` varchar(64) NOT NULL  COMMENT '主键',
-    `vendor` varchar(32) NOT NULL  COMMENT '云厂商标识',
+    `id` varchar(64) NOT NULL COMMENT '主键',
+    `vendor` varchar(32) NOT NULL COMMENT '云厂商标识',
     `region_id` varchar(32) NOT NULL COMMENT '地区ID',
     `region_name` varchar(64) NOT NULL COMMENT '地区名称',
-    `is_available` tinyint unsigned DEFAULT '1' COMMENT '状态是否可用(1:是2:否)',
-    `creator` varchar(64) NOT NULL COMMENT '创建人',
+    `status` varchar(32) DEFAULT '' COMMENT '地区状态(AVAILABLE:可用)',
+    `creator` varchar(64) DEFAULT '' COMMENT '创建人',
     `reviser` varchar(64) DEFAULT '' COMMENT '修改人',
     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
  PRIMARY KEY (`id`),
+ UNIQUE KEY `idx_uk_region_id_status` (`region_id`,`status`),
  KEY `idx_uk_vendor` (`vendor`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='云厂商支持的地区列表';
 
@@ -422,13 +423,14 @@ CREATE TABLE IF NOT EXISTS `aws_region` (
     `vendor` varchar(32) NOT NULL COMMENT '云厂商标识',
     `region_id` varchar(32) NOT NULL COMMENT '地区ID',
     `region_name` varchar(64) NOT NULL COMMENT '地区名称',
-    `is_available` tinyint unsigned DEFAULT '1' COMMENT '状态是否可用(1:是2:否)',
+    `status` varchar(32) DEFAULT '' COMMENT '地区状态(opt-in-not-required、opted-in、not-opted-in)',
     `endpoint` varchar(64) DEFAULT '' COMMENT 'EndPoint',
-    `creator` varchar(64) NOT NULL COMMENT '创建人',
+    `creator` varchar(64) DEFAULT '' COMMENT '创建人',
     `reviser` varchar(64) DEFAULT '' COMMENT '修改人',
     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_uk_region_id_status` (`region_id`,`status`),
   KEY `idx_uk_vendor` (`vendor`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='云厂商支持的地区列表';
 
@@ -440,11 +442,13 @@ CREATE TABLE IF NOT EXISTS `gcp_region` (
     `vendor` varchar(32) NOT NULL COMMENT '云厂商标识',
     `region_id` varchar(32) NOT NULL COMMENT '地区ID',
     `region_name` varchar(64) NOT NULL COMMENT '地区名称',
-    `is_available` tinyint unsigned DEFAULT '1' COMMENT '状态是否可用(1:是2:否)',
-    `creator` varchar(64) NOT NULL COMMENT '创建人',
+    `status` varchar(32) DEFAULT '' COMMENT '地区状态(UP:可用DOWN:不可用)',
+    `self_link` varchar(255) DEFAULT '' COMMENT 'gcp的selfLink',
+    `creator` varchar(64) DEFAULT '' COMMENT '创建人',
     `reviser` varchar(64) DEFAULT '' COMMENT '修改人',
     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_uk_region_id_status` (`region_id`,`status`),
   KEY `idx_uk_vendor` (`vendor`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='云厂商支持的地区列表';

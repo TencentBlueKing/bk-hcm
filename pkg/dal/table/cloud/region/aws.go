@@ -38,7 +38,7 @@ var AwsRegionColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "region_id", NamedC: "region_id", Type: enumor.String},
 	{Column: "region_name", NamedC: "region_name", Type: enumor.String},
-	{Column: "is_available", NamedC: "is_available", Type: enumor.Numeric},
+	{Column: "status", NamedC: "status", Type: enumor.String},
 	{Column: "endpoint", NamedC: "endpoint", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
@@ -56,8 +56,8 @@ type AwsRegionTable struct {
 	RegionID string `db:"region_id" validate:"max=32"`
 	// RegionName 地区名称
 	RegionName string `db:"region_name" validate:"max=64"`
-	// IsAvailable 状态是否可用(1:是2:否)
-	IsAvailable int64 `db:"is_available" validate:"min=-1"`
+	// Status 地区状态(opt-in-not-required、opted-in、not-opted-in)
+	Status string `db:"status" validate:"max=32"`
 	// Endpoint Aws的Endpoint
 	Endpoint string `db:"endpoint" validate:"max=64"`
 	// Creator 创建者
@@ -89,6 +89,10 @@ func (v AwsRegionTable) InsertValidate() error {
 		return errors.New("region id can not be empty")
 	}
 
+	if len(v.RegionName) == 0 {
+		return errors.New("region name can not be empty")
+	}
+
 	if len(v.Creator) == 0 {
 		return errors.New("creator can not be empty")
 	}
@@ -100,10 +104,6 @@ func (v AwsRegionTable) InsertValidate() error {
 func (v AwsRegionTable) UpdateValidate() error {
 	if err := validator.Validate.Struct(v); err != nil {
 		return err
-	}
-
-	if len(v.Vendor) == 0 {
-		return errors.New("vendor can not be empty")
 	}
 
 	if len(v.Creator) != 0 {

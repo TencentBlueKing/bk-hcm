@@ -38,7 +38,6 @@ func InitRegionService(cap *capability.Capability) {
 	h.Add("BatchUpdateRegion", "PATCH", "/vendors/{vendor}/regions/batch", svc.BatchUpdateRegion)
 	h.Add("BatchForbiddenRegionState", "PATCH", "/vendors/{vendor}/regions/batch/state",
 		svc.BatchForbiddenRegionState)
-	h.Add("GetRegion", "GET", "/vendors/{vendor}/regions/{id}", svc.GetRegion)
 	h.Add("ListRegion", "POST", "/vendors/{vendor}/regions/list", svc.ListRegion)
 	h.Add("BatchDeleteRegion", "DELETE", "/vendors/{vendor}/regions/batch", svc.BatchDeleteRegion)
 
@@ -106,25 +105,6 @@ func (svc *regionSvc) BatchForbiddenRegionState(cts *rest.Contexts) (interface{}
 	}
 
 	return nil, err
-}
-
-// GetRegion get region.
-func (svc *regionSvc) GetRegion(cts *rest.Contexts) (interface{}, error) {
-	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if err := vendor.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	switch vendor {
-	case enumor.TCloud:
-		return svc.GetTCloudRegion(cts)
-	case enumor.Aws:
-		return svc.GetAwsRegion(cts)
-	case enumor.Gcp:
-		return svc.GetGcpRegion(cts)
-	}
-
-	return nil, nil
 }
 
 // ListRegion list region.

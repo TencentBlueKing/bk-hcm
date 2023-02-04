@@ -21,6 +21,7 @@ package aws
 
 import (
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/tools/json"
 
 	typesRegion "hcm/pkg/adaptor/types/region"
 	"hcm/pkg/kit"
@@ -47,6 +48,8 @@ func (a *Aws) ListRegion(kt *kit.Kit) (*typesRegion.AwsRegionListResult, error) 
 	}
 
 	resp, err := client.DescribeRegionsWithContext(kt.Ctx, req)
+	rspJSON, _ := json.Marshal(resp)
+	logs.Errorf("list aws region init, err: %v, rid: %s, rspJSON:%s", err, kt.Rid, rspJSON)
 	if err != nil {
 		logs.Errorf("list aws region failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err

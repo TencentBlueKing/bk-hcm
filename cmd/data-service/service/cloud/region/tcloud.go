@@ -45,7 +45,7 @@ import (
 
 // BatchCreateTCloudRegion batch create region.
 func (svc *regionSvc) BatchCreateTCloudRegion(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoregion.RegionCreateReq)
+	req := new(protoregion.TCloudRegionCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -58,12 +58,12 @@ func (svc *regionSvc) BatchCreateTCloudRegion(cts *rest.Contexts) (interface{}, 
 		regions := make([]tableregion.TCloudRegionTable, 0, len(req.Regions))
 		for _, createReq := range req.Regions {
 			tmpRegion := tableregion.TCloudRegionTable{
-				Vendor:      createReq.Vendor,
-				RegionID:    createReq.RegionID,
-				RegionName:  createReq.RegionName,
-				IsAvailable: constant.AvailableYes,
-				Creator:     cts.Kit.User,
-				Reviser:     cts.Kit.User,
+				Vendor:     createReq.Vendor,
+				RegionID:   createReq.RegionID,
+				RegionName: createReq.RegionName,
+				Status:     createReq.Status,
+				Creator:    cts.Kit.User,
+				Reviser:    cts.Kit.User,
 			}
 			regions = append(regions, tmpRegion)
 		}
@@ -130,7 +130,7 @@ func (svc *regionSvc) BatchUpdateTCloudRegion(cts *rest.Contexts) error {
 		tmpRegion.Vendor = updateReq.Vendor
 		tmpRegion.RegionID = updateReq.RegionID
 		tmpRegion.RegionName = updateReq.RegionName
-		tmpRegion.IsAvailable = updateReq.IsAvailable
+		tmpRegion.Status = updateReq.Status
 
 		err = svc.dao.TCloudRegion().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), tmpRegion)
 		if err != nil {
@@ -146,9 +146,8 @@ func (svc *regionSvc) BatchUpdateTCloudRegion(cts *rest.Contexts) error {
 func (svc *regionSvc) BatchForbiddenTCloudRegion(cts *rest.Contexts) error {
 	// update region state
 	updateRegion := &tableregion.TCloudRegionTable{
-		Vendor:      enumor.TCloud,
-		IsAvailable: constant.AvailableNo,
-		Reviser:     cts.Kit.User,
+		Status:  constant.TCloudStateDisable,
+		Reviser: cts.Kit.User,
 	}
 
 	err := svc.dao.TCloudRegion().Update(cts.Kit,
@@ -232,15 +231,15 @@ func convertTCloudBaseRegion(dbRegion *tableregion.TCloudRegionTable) *protocore
 	}
 
 	return &protocore.TCloudRegion{
-		ID:          dbRegion.ID,
-		Vendor:      dbRegion.Vendor,
-		RegionID:    dbRegion.RegionID,
-		RegionName:  dbRegion.RegionName,
-		IsAvailable: dbRegion.IsAvailable,
-		Creator:     dbRegion.Creator,
-		Reviser:     dbRegion.Reviser,
-		CreatedAt:   dbRegion.CreatedAt,
-		UpdatedAt:   dbRegion.UpdatedAt,
+		ID:         dbRegion.ID,
+		Vendor:     dbRegion.Vendor,
+		RegionID:   dbRegion.RegionID,
+		RegionName: dbRegion.RegionName,
+		Status:     dbRegion.Status,
+		Creator:    dbRegion.Creator,
+		Reviser:    dbRegion.Reviser,
+		CreatedAt:  dbRegion.CreatedAt,
+		UpdatedAt:  dbRegion.UpdatedAt,
 	}
 }
 

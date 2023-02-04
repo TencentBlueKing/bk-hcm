@@ -32,40 +32,40 @@ type Region interface {
 
 // TCloudRegion define tcloud region.
 type TCloudRegion struct {
-	ID          string        `json:"id"`
-	Vendor      enumor.Vendor `json:"vendor"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
-	IsAvailable int64         `json:"is_available"`
-	Creator     string        `json:"creator"`
-	Reviser     string        `json:"reviser"`
-	CreatedAt   *time.Time    `json:"created_at"`
-	UpdatedAt   *time.Time    `json:"updated_at"`
+	ID         string        `json:"id"`
+	Vendor     enumor.Vendor `json:"vendor"`
+	RegionID   string        `json:"region_id"`
+	RegionName string        `json:"region_name"`
+	Status     string        `json:"status"`
+	Creator    string        `json:"creator"`
+	Reviser    string        `json:"reviser"`
+	CreatedAt  *time.Time    `json:"created_at"`
+	UpdatedAt  *time.Time    `json:"updated_at"`
 }
 
 // AwsRegion define aws region.
 type AwsRegion struct {
-	ID          string        `json:"id"`
-	Vendor      enumor.Vendor `json:"vendor"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
-	IsAvailable int64         `json:"is_available"`
-	Endpoint    string        `json:"endpoint"`
-	Creator     string        `json:"creator"`
-	Reviser     string        `json:"reviser"`
-	CreatedAt   *time.Time    `json:"created_at"`
-	UpdatedAt   *time.Time    `json:"updated_at"`
+	ID         string        `json:"id"`
+	Vendor     enumor.Vendor `json:"vendor"`
+	RegionID   string        `json:"region_id"`
+	RegionName string        `json:"region_name"`
+	Status     string        `json:"status"`
+	Endpoint   string        `json:"endpoint"`
+	Creator    string        `json:"creator"`
+	Reviser    string        `json:"reviser"`
+	CreatedAt  *time.Time    `json:"created_at"`
+	UpdatedAt  *time.Time    `json:"updated_at"`
 }
 
 // GcpRegion define gcp region.
 type GcpRegion struct {
-	ID          string        `json:"id"`
-	Vendor      enumor.Vendor `json:"vendor"`
-	RegionID    string        `json:"region_id"`
-	RegionName  string        `json:"region_name"`
-	IsAvailable int64         `json:"is_available"`
-	Creator     string        `json:"creator"`
-	Reviser     string        `json:"reviser"`
-	CreatedAt   *time.Time    `json:"created_at"`
-	UpdatedAt   *time.Time    `json:"updated_at"`
+	ID         string        `json:"id"`
+	Vendor     enumor.Vendor `json:"vendor"`
+	RegionID   string        `json:"region_id"`
+	RegionName string        `json:"region_name"`
+	Status     string        `json:"status"`
+	Creator    string        `json:"creator"`
+	Reviser    string        `json:"reviser"`
+	CreatedAt  *time.Time    `json:"created_at"`
+	UpdatedAt  *time.Time    `json:"updated_at"`
 }

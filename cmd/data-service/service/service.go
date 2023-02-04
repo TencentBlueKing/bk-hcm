@@ -52,13 +52,13 @@ type Service struct {
 
 // NewService create a service instance.
 func NewService() (*Service, error) {
-	dsDao, err := dao.NewDaoSet(cc.DataService().Database)
+	db, err := dao.NewDaoSet(cc.DataService().Database)
 	if err != nil {
 		return nil, err
 	}
 
 	svr := &Service{
-		dao: dsDao,
+		dao: db,
 	}
 
 	return svr, nil
@@ -126,22 +126,22 @@ func (s *Service) apiSet() *restful.Container {
 	ws.Path("/api/v1/data")
 	ws.Produces(restful.MIME_JSON)
 
-	capObj := &capability.Capability{
+	capability := &capability.Capability{
 		WebService: ws,
 		Dao:        s.dao,
 	}
 
-	cloud.InitAccountService(capObj)
-	cloud.InitSecurityGroupService(capObj)
-	cloud.InitGcpFirewallRuleService(capObj)
-	cloud.InitVpcService(capObj)
-	cloud.InitSubnetService(capObj)
-	cloud.InitCloudService(capObj)
-	auth.InitAuthService(capObj)
-	disk.InitDiskService(capObj)
-	region.InitRegionService(capObj)
+	cloud.InitAccountService(capability)
+	cloud.InitSecurityGroupService(capability)
+	cloud.InitGcpFirewallRuleService(capability)
+	cloud.InitVpcService(capability)
+	cloud.InitSubnetService(capability)
+	cloud.InitCloudService(capability)
+	auth.InitAuthService(capability)
+	disk.InitDiskService(capability)
+	region.InitRegionService(capability)
 
-	return restful.NewContainer().Add(capObj.WebService)
+	return restful.NewContainer().Add(capability.WebService)
 }
 
 // Healthz check whether the service is healthy.

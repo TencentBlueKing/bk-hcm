@@ -32,8 +32,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// AwsRegionSync sync aws region.
-func (r region) AwsRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interface{}, error) {
+// AwsSyncRegion aws sync region.
+func (r region) AwsSyncRegion(cts *rest.Contexts, vendor enumor.Vendor) (interface{}, error) {
 	req := new(protoHcRegion.AwsRegionSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -56,17 +56,13 @@ func (r region) AwsRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 		return nil, err
 	}
 
-	tmpRegions := make([]protoDsRegion.RegionBatchCreate, 0)
+	tmpRegions := make([]protoDsRegion.AwsRegionBatchCreate, 0)
 	for _, item := range cloudResp.Details {
-		// 不可用的地区，不录入
-		if item.RegionState != constant.AwsAvailbleState && item.RegionState != constant.AwsAvailbleStateAllow {
-			continue
-		}
-
-		tmpRegions = append(tmpRegions, protoDsRegion.RegionBatchCreate{
+		tmpRegions = append(tmpRegions, protoDsRegion.AwsRegionBatchCreate{
 			Vendor:     vendor,
 			RegionID:   item.RegionID,
 			RegionName: item.RegionName,
+			Status:     item.RegionState,
 			Endpoint:   item.Endpoint,
 		})
 	}
@@ -76,8 +72,8 @@ func (r region) AwsRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 	}
 
 	// batch forbidden aws region state.
-	updateStateReq := &protoDsRegion.RegionBatchUpdateReq{
-		Regions: []protoDsRegion.RegionBatchUpdate{{IsAvailable: constant.AvailableNo}},
+	updateStateReq := &protoDsRegion.AwsRegionBatchUpdateReq{
+		Regions: []protoDsRegion.AwsRegionBatchUpdate{{Status: constant.AwsStateDisable}},
 	}
 	err = r.cs.DataService().Aws.Region.BatchForbiddenRegionState(cts.Kit.Ctx, cts.Kit.Header(), updateStateReq)
 	if err != nil {
@@ -86,7 +82,7 @@ func (r region) AwsRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 	}
 
 	// batch create aws region.
-	createReq := &protoDsRegion.RegionCreateReq{
+	createReq := &protoDsRegion.AwsRegionCreateReq{
 		Regions: tmpRegions,
 	}
 	resp, err := r.cs.DataService().Aws.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
@@ -97,7 +93,7 @@ func (r region) AwsRegionSync(cts *rest.Contexts, vendor enumor.Vendor) (interfa
 
 	// batch delete aws region.
 	deleteReq := &dataservice.BatchDeleteReq{
-		Filter: tools.EqualExpression("is_available", constant.AvailableNo),
+		Filter: tools.EqualExpression("status", constant.AwsStateDisable),
 	}
 	err = r.cs.DataService().Aws.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
 	if err != nil {

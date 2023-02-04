@@ -44,7 +44,7 @@ func NewRegionClient(client rest.ClientInterface) *RegionClient {
 
 // BatchCreate batch create aws region.
 func (v *RegionClient) BatchCreate(ctx context.Context, h http.Header,
-	req *protoregion.RegionCreateReq) (*core.BatchCreateResult, error) {
+	req *protoregion.AwsRegionCreateReq) (*core.BatchCreateResult, error) {
 
 	resp := new(core.BatchCreateResp)
 
@@ -67,7 +67,7 @@ func (v *RegionClient) BatchCreate(ctx context.Context, h http.Header,
 }
 
 // BatchUpdate batch update aws region.
-func (v *RegionClient) BatchUpdate(ctx context.Context, h http.Header, req *protoregion.RegionBatchUpdateReq) error {
+func (v *RegionClient) BatchUpdate(ctx context.Context, h http.Header, req *protoregion.AwsRegionBatchUpdateReq) error {
 
 	resp := new(rest.BaseResp)
 
@@ -91,7 +91,7 @@ func (v *RegionClient) BatchUpdate(ctx context.Context, h http.Header, req *prot
 
 // BatchForbiddenRegionState batch forbidden aws region state.
 func (v *RegionClient) BatchForbiddenRegionState(ctx context.Context, h http.Header,
-	req *protoregion.RegionBatchUpdateReq) error {
+	req *protoregion.AwsRegionBatchUpdateReq) error {
 
 	resp := new(rest.BaseResp)
 
@@ -136,33 +136,11 @@ func (v *RegionClient) BatchDelete(ctx context.Context, h http.Header, req *data
 	return nil
 }
 
-// Get get aws region.
-func (v *RegionClient) Get(ctx context.Context, h http.Header, id string) (*protoregion.RegionDetail, error) {
-
-	resp := new(protoregion.RegionGetResp)
-
-	err := v.client.Get().
-		WithContext(ctx).
-		SubResourcef("/regions/{id}", id).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
-}
-
 // ListRegion get aws region list.
-func (v *RegionClient) ListRegion(ctx context.Context, h http.Header, req *protoregion.RegionListReq) (
-	*protoregion.RegionListResult, error) {
+func (v *RegionClient) ListRegion(ctx context.Context, h http.Header, req *protoregion.AwsRegionListReq) (
+	*protoregion.AwsRegionListResult, error) {
 
-	resp := new(protoregion.RegionListResp)
+	resp := new(protoregion.AwsRegionListResp)
 
 	err := v.client.Post().
 		WithContext(ctx).
