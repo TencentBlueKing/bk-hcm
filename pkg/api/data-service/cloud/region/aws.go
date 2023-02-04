@@ -91,22 +91,6 @@ func (req *AwsRegionBatchUpdateReq) Validate() error {
 	return nil
 }
 
-// AwsRegionBaseInfoBatchUpdateReq defines batch update region base info request.
-type AwsRegionBaseInfoBatchUpdateReq struct {
-	Regions []AwsRegionBaseInfoUpdateReq `json:"regions" validate:"required"`
-}
-
-// Validate AwsRegionBaseInfoBatchUpdateReq.
-func (u *AwsRegionBaseInfoBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(u)
-}
-
-// AwsRegionBaseInfoUpdateReq defines update region base info request.
-type AwsRegionBaseInfoUpdateReq struct {
-	IDs  []string              `json:"id" validate:"required"`
-	Data *AwsRegionBatchUpdate `json:"data" validate:"required"`
-}
-
 // -------------------------- List --------------------------
 
 // AwsRegionListReq aws region list req.

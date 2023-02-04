@@ -40,7 +40,7 @@ type TCloudRegionCreateReq struct {
 	AccountID string                    `json:"account_id" validate:"omitempty"`
 }
 
-// RegionBatchCreate define region rule when create.
+// TCloudRegionBatchCreate define region rule when create.
 type TCloudRegionBatchCreate struct {
 	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
 	RegionID   string        `json:"region_id" validate:"required"`

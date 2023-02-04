@@ -91,22 +91,6 @@ func (req *GcpRegionBatchUpdateReq) Validate() error {
 	return nil
 }
 
-// GcpRegionBaseInfoBatchUpdateReq defines batch update region base info request.
-type GcpRegionBaseInfoBatchUpdateReq struct {
-	Regions []GcpRegionBaseInfoUpdateReq `json:"regions" validate:"required"`
-}
-
-// Validate GcpRegionBaseInfoBatchUpdateReq.
-func (u *GcpRegionBaseInfoBatchUpdateReq) Validate() error {
-	return validator.Validate.Struct(u)
-}
-
-// GcpRegionBaseInfoUpdateReq defines update region base info request.
-type GcpRegionBaseInfoUpdateReq struct {
-	IDs  []string              `json:"id" validate:"required"`
-	Data *GcpRegionBatchUpdate `json:"data" validate:"required"`
-}
-
 // -------------------------- List --------------------------
 
 // GcpRegionListReq gcp region list req.
