@@ -59,7 +59,7 @@ const resourceStore = useResourceStore();
 const activeType = ref('ingress');
 const deleteDialogShow = ref(false);
 const deleteId = ref(0);
-const deleteLoading = ref(false);
+const securityRuleLoading = ref(false);
 
 const state = reactive<any>({
   datas: [],
@@ -121,7 +121,7 @@ const handleSwtichType = async () => {
 
 // 确定删除
 const handleDeleteConfirm = () => {
-  deleteLoading.value = true;
+  securityRuleLoading.value = true;
   resourceStore
     .delete(`vendors/${props.vendor}/security_groups/${props.id}/rules`, deleteId.value)
     .then(() => {
@@ -132,43 +132,43 @@ const handleDeleteConfirm = () => {
       handleSwtichType();
     })
     .finally(() => {
-      deleteLoading.value = false;
+      securityRuleLoading.value = false;
     });
 };
 
 // 提交规则
 const handleSubmitRule = async (data: any) => {
-  console.log('data', data, activeType.value);
-  isShowSecurityRule.value = true;
+  console.log('data', data.id, activeType.value);
+  securityRuleLoading.value = true;
   const params = {
     [`${activeType.value}_rule_set`]: data,
-    // egress_rule_set: [
-    //   {
-    //     protocol: 'TCP',
-    //     port: '8080',
-    //     ipv4_cidr: '0.0.0.0/0',
-    //     action: 'ACCEPT',
-    //     memo: 'create egress rule',
-    //   },
-    // ],
   };
   try {
-    await resourceStore.add(`vendors/${props.vendor}/security_groups/${props.id}/rules/create`, params);
+    if (data.id) {
+      await resourceStore.update(`vendors/${props.vendor}/security_groups/${props.id}/rules`, data, data.id);
+    } else {
+      await resourceStore.add(`vendors/${props.vendor}/security_groups/${props.id}/rules/create`, params);
+    }
     Message({
-      message: t('添加成功'),
+      message: t(data.id ? '更新成功' : '添加成功'),
       theme: 'success',
     });
+    handleSwtichType();
   } catch (error) {
     console.log(error);
   } finally {
     isShowSecurityRule.value = false;
-    // loading.value = false;
+    securityRuleLoading.value = false;
   }
+};
+
+const handleSecurityRuleDialog = (data: any) => {
+  resourceStore.setSecurityRuleDetail(data);
+  handleSecurityRule();
 };
 
 // 初始化
 handleSwtichType();
-
 
 const inColumns = [
   {
@@ -231,15 +231,7 @@ const inColumns = [
               text: true,
               theme: 'primary',
               onClick() {
-                router.push({
-                  name: 'resourceDetail',
-                  params: {
-                    type: 'gcp',
-                  },
-                  query: {
-                    id: data.id,
-                  },
-                });
+                handleSecurityRuleDialog(data);
               },
             },
             [
@@ -389,7 +381,7 @@ const types = [
         </bk-radio-button>
       </bk-radio-group>
 
-      <bk-button theme="primary" @click="handleSecurityRule">
+      <bk-button theme="primary" @click="handleSecurityRuleDialog({})">
         {{t('新增规则')}}
       </bk-button>
     </section>
@@ -424,8 +416,11 @@ const types = [
 
   <security-rule
     v-model:isShow="isShowSecurityRule"
+    :loading="securityRuleLoading"
+    :title="t('添加入站规则')"
+    :vendor="vendor"
     @submit="handleSubmitRule"
-    :title="t('添加入站规则')" />
+  />
 
 
   <bk-dialog
@@ -433,7 +428,7 @@ const types = [
     :title="'确定删除要该条规则?'"
     :theme="'primary'"
     @closed="() => deleteDialogShow = false"
-    :is-loading="deleteLoading"
+    :is-loading="securityRuleLoading"
     @confirm="handleDeleteConfirm()"
   >
     <span>删除后不可恢复</span>
