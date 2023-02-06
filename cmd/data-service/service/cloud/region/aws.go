@@ -30,12 +30,10 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableregion "hcm/pkg/dal/table/cloud/region"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
@@ -166,23 +164,13 @@ func (svc *regionSvc) BatchForbiddenAwsRegionState(cts *rest.Contexts) error {
 func (svc *regionSvc) GetAwsRegion(cts *rest.Contexts) (interface{}, error) {
 	regionID := cts.PathParameter("id").String()
 
-	dbRegion, err := getAwsRegionFromTable(cts.Kit, svc.dao, regionID)
-	if err != nil {
-		return nil, err
-	}
-
-	base := convertAwsBaseRegion(dbRegion)
-	return base, nil
-}
-
-func getAwsRegionFromTable(kt *kit.Kit, dao dao.Set, regionID string) (*tableregion.AwsRegionTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", regionID),
 		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
 	}
-	res, err := dao.AwsRegion().List(kt, opt)
+	res, err := svc.dao.AwsRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list aws region failed, err: %v, rid: %s", kt.Rid)
+		logs.Errorf("list aws region failed, err: %v, rid: %s", cts.Kit.Rid)
 		return nil, fmt.Errorf("list region failed, err: %v", err)
 	}
 
@@ -190,8 +178,10 @@ func getAwsRegionFromTable(kt *kit.Kit, dao dao.Set, regionID string) (*tablereg
 	if len(details) != 1 {
 		return nil, fmt.Errorf("list aws region failed, region(id=%s) doesn't exist", regionID)
 	}
+	dbRegion := &details[0]
 
-	return &details[0], nil
+	base := convertAwsBaseRegion(dbRegion)
+	return base, nil
 }
 
 // ListAwsRegion list regions.
