@@ -57,7 +57,6 @@ export default defineComponent({
 
     const optionalRequired: string[] = ['secretId', 'secretKey'];
     const cloudType = reactive(CLOUD_TYPE);
-    const isTestConnection = ref(false);
     const submitLoading = ref(false);
 
     const businessList = reactive({
@@ -84,18 +83,14 @@ export default defineComponent({
       try {
         const params = {
           vendor: projectModel.vendor,
-          spec: {
-            type: projectModel.type,
-            name: projectModel.name,
-            managers: projectModel.managers,
-            memo: projectModel.memo,
-            department_id: Number(projectModel.departmentId.join(',')),
-            site: projectModel.site,
-          },
-          attachment: {
-            bk_biz_ids: projectModel.bizIds.length === businessList.list.length
-              ? [-1] : projectModel.bizIds,
-          },
+          type: projectModel.type,
+          name: projectModel.name,
+          managers: projectModel.managers,
+          memo: projectModel.memo,
+          department_ids: projectModel.departmentId,
+          site: projectModel.site,
+          bk_biz_ids: projectModel.bizIds.length === businessList.list.length
+            ? [-1] : projectModel.bizIds,
           extension: {},
         };
         switch (projectModel.vendor) {
@@ -150,21 +145,16 @@ export default defineComponent({
           default:
             break;
         }
-        if (isTestConnection.value) {
-          await accountStore.addAccount(params);
-          Message({
-            message: t('新增成功'),
-            theme: 'success',
-          });
-          router.go(-1);  // 返回列表
-        } else {
-          await accountStore.testAccountConnection({ vendor: params.vendor, extension: params.extension });
-          Message({
-            message: t('验证成功'),
-            theme: 'success',
-          });
-          isTestConnection.value = true;
-        }
+        await accountStore.testAccountConnection({ vendor: params.vendor, extension: params.extension });
+        await accountStore.addAccount(params);
+        Message({
+          message: t('新增成功'),
+          theme: 'success',
+        });
+        // router.go(-1);
+        router.push({
+          path: '/resource/account', // 返回列表
+        });
       } catch (error: any) {
         console.log(error);
       } finally {
@@ -581,7 +571,7 @@ export default defineComponent({
         label: t('使用业务'),
         required: true,
         property: 'bizIds',
-        component: () => <Select multiple show-select-all collapse-tags multipleMode='tag'
+        component: () => <Select multiple show-select-all filterable collapse-tags multipleMode='tag'
         placeholder={t('请选择使用业务')} class="w450" v-model={projectModel.bizIds}>
           {businessList.list.map(item => (
               <Option
@@ -602,7 +592,7 @@ export default defineComponent({
       },
       {
         required: false,
-        component: () => <Button theme="primary" loading={submitLoading.value} onClick={submit}>{t(isTestConnection.value ? t('确认') : t('账号验证'))}</Button>,
+        component: () => <Button theme="primary" loading={submitLoading.value} onClick={submit}>{t('确认')}</Button>,
       },
     ]);
 

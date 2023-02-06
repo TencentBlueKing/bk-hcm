@@ -35,7 +35,7 @@ import (
 
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
-func (t *TCloud) UpdateSubnet(kt *kit.Kit, opt *types.TCloudSubnetUpdateOption) error {
+func (t *TCloud) UpdateSubnet(_ *kit.Kit, _ *types.TCloudSubnetUpdateOption) error {
 	return nil
 }
 

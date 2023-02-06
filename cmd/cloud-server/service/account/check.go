@@ -251,7 +251,8 @@ func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-func (a *accountSvc) checkByIDForTCloud(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
+func (a *accountSvc) checkByIDForTCloud(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (
+	interface{}, error) {
 	// 解析Extension
 	extension := new(proto.TCloudAccountExtensionCheckByIDReq)
 	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
@@ -286,7 +287,8 @@ func (a *accountSvc) checkByIDForTCloud(cts *rest.Contexts, req *proto.AccountCh
 	return nil, nil
 }
 
-func (a *accountSvc) checkByIDForAws(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
+func (a *accountSvc) checkByIDForAws(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (
+	interface{}, error) {
 	// 解析Extension
 	extension := new(proto.AwsAccountExtensionCheckByIDReq)
 	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
@@ -321,7 +323,8 @@ func (a *accountSvc) checkByIDForAws(cts *rest.Contexts, req *proto.AccountCheck
 	return nil, nil
 }
 
-func (a *accountSvc) checkByIDForHuaWei(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
+func (a *accountSvc) checkByIDForHuaWei(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (
+	interface{}, error) {
 	// 解析Extension
 	extension := new(proto.HuaWeiAccountExtensionCheckByIDReq)
 	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
@@ -359,7 +362,8 @@ func (a *accountSvc) checkByIDForHuaWei(cts *rest.Contexts, req *proto.AccountCh
 	return nil, nil
 }
 
-func (a *accountSvc) checkByIDForGcp(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
+func (a *accountSvc) checkByIDForGcp(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (
+	interface{}, error) {
 	// 解析Extension
 	extension := new(proto.GcpAccountExtensionCheckByIDReq)
 	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
@@ -392,7 +396,8 @@ func (a *accountSvc) checkByIDForGcp(cts *rest.Contexts, req *proto.AccountCheck
 	return nil, nil
 }
 
-func (a *accountSvc) checkByIDForAzure(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (interface{}, error) {
+func (a *accountSvc) checkByIDForAzure(cts *rest.Contexts, req *proto.AccountCheckByIDReq, accountID string) (
+	interface{}, error) {
 	// 解析Extension
 	extension := new(proto.AzureAccountExtensionCheckByIDReq)
 	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {

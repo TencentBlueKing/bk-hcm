@@ -19,7 +19,15 @@
 
 package hcservice
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/validator"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
+	tcloud "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
+)
 
 // -------------------------- Create --------------------------
 
@@ -92,4 +100,44 @@ type SecurityGroupUpdateReq struct {
 // Validate tcloud security group update request.
 func (req *SecurityGroupUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Sync --------------------------
+
+// SecurityGroupSyncReq security group sync request.
+type SecurityGroupSyncReq struct {
+	AccountID         string `json:"account_id" validate:"required"`
+	Region            string `json:"region" validate:"omitempty"`
+	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
+}
+
+// Validate security group sync request.
+func (req *SecurityGroupSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// SecurityGroupSyncDS data-service diff for sync
+type SecurityGroupSyncDS struct {
+	IsUpdated       bool
+	HcSecurityGroup cloud.BaseSecurityGroup
+}
+
+// SecurityGroupSyncHuaWeiDiff huawei cloud diff for sync
+type SecurityGroupSyncHuaWeiDiff struct {
+	SecurityGroup model.SecurityGroup
+}
+
+// SecurityGroupSyncTCloudDiff tcloud diff for sync
+type SecurityGroupSyncTCloudDiff struct {
+	SecurityGroup *tcloud.SecurityGroup
+}
+
+// SecurityGroupSyncAwsDiff aws diff for sync
+type SecurityGroupSyncAwsDiff struct {
+	SecurityGroup *ec2.SecurityGroup
+}
+
+// SecurityGroupSyncAzureDiff azure diff for sync
+type SecurityGroupSyncAzureDiff struct {
+	SecurityGroup *armnetwork.SecurityGroup
 }

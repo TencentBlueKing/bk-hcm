@@ -56,7 +56,7 @@ func (o *ListInstancesOption) Validate(po *core.PageOption) error {
 
 // InstanceResource define instances resource for iam pull resource callback.
 type InstanceResource struct {
-	ID          uint32 `db:"id" json:"id"`
+	ID          string `db:"id" json:"id"`
 	DisplayName string `db:"name" json:"display_name"`
 }
 

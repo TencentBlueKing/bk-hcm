@@ -65,8 +65,14 @@ const (
 	ResourceAssign client.ActionID = "resource_assign"
 	// ResourceManage resource manage action id to register iam.
 	ResourceManage client.ActionID = "resource_manage"
-	// ResourceRecycle resource recycle action id to register iam.
-	ResourceRecycle client.ActionID = "resource_recycle"
+
+	// RecycleBinFind recycle bin find action id to register iam.
+	RecycleBinFind client.ActionID = "recycle_bin_find"
+	// RecycleBinManage recycle bin manage action id to register iam.
+	RecycleBinManage client.ActionID = "recycle_bin_manage"
+
+	// AuditFind audit find action id to register iam.
+	AuditFind client.ActionID = "audit_find"
 
 	// Skip is an action that no need to auth
 	Skip client.ActionID = "skip"
@@ -82,7 +88,9 @@ var ActionIDNameMap = map[client.ActionID]string{
 	ResourceFind:     "资源查看",
 	ResourceAssign:   "资源分配",
 	ResourceManage:   "资源管理",
-	ResourceRecycle:  "资源回收",
+	RecycleBinFind:   "回收站查看",
+	RecycleBinManage: "回收站管理",
+	AuditFind:        "审计查看",
 }
 
 const (

@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/tools/uuid"
 )
 
+// Client esb usermgr client
 type Client interface {
 	RetrieveDepartment(ctx context.Context, req *RetrieveDepartmentReq) (*RetrieveDepartmentRespData, error)
 }
@@ -49,7 +50,8 @@ type usermgr struct {
 	client rest.ClientInterface
 }
 
-func (u *usermgr) RetrieveDepartment(ctx context.Context, req *RetrieveDepartmentReq) (*RetrieveDepartmentRespData, error) {
+func (u *usermgr) RetrieveDepartment(ctx context.Context, req *RetrieveDepartmentReq) (
+	*RetrieveDepartmentRespData, error) {
 	resp := new(RetrieveDepartmentResp)
 	req.CommParams = types.GetCommParams(u.config)
 	h := http.Header{}
@@ -64,7 +66,8 @@ func (u *usermgr) RetrieveDepartment(ctx context.Context, req *RetrieveDepartmen
 		return nil, err
 	}
 	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("retrieve_department api call failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
+		return nil, fmt.Errorf("retrieve_department api call failed, code: %d, msg: %s, rid: %s",
+			resp.Code, resp.Message, resp.Rid)
 	}
 
 	return resp.Data, nil

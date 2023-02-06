@@ -213,7 +213,7 @@ func getVpcIDByCloudID(kt *kit.Kit, dao dao.Set, vendor enumor.Vendor, cloudIDs 
 
 	res, err := dao.Vpc().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list vpc failed, err: %v, rid: %s", kt.Rid)
+		logs.Errorf("list vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list vpc failed, err: %v", err)
 	}
 

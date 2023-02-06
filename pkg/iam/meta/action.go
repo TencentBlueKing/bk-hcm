@@ -43,6 +43,8 @@ const (
 	Assign Action = "assign"
 	// Recycle cloud resource from biz operation's hcm auth action type
 	Recycle Action = "recycle"
+	// Recover cloud resource from recycle bin operation's hcm auth action type
+	Recover Action = "recover"
 	// Manage cloud resource operation's hcm auth action type
 	Manage Action = "manage"
 	// SkipAction means the operation do not need to do authentication, skip auth

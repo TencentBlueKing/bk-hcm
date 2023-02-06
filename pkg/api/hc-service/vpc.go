@@ -30,3 +30,23 @@ type VpcUpdateReq struct {
 func (u *VpcUpdateReq) Validate() error {
 	return validator.Validate.Struct(u)
 }
+
+// -------------------------- Sync --------------------------
+
+// ResourceSyncReq defines sync resource request.
+type ResourceSyncReq struct {
+	AccountID         string `json:"account_id" validate:"required"`
+	Region            string `json:"region" validate:"omitempty"`
+	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
+	VpcName           string `json:"vpc_name" validate:"omitempty"`
+}
+
+// ResourceSyncResult defines sync vpc result.
+type ResourceSyncResult struct {
+	TaskID string `json:"task_id"`
+}
+
+// Validate validate sync vpc request.
+func (r *ResourceSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}

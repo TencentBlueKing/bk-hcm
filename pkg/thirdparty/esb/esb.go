@@ -31,6 +31,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Client esb client
 type Client interface {
 	Cmdb() cmdb.Client
 	Login() login.Client

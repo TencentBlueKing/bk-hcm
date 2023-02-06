@@ -8,7 +8,7 @@ import {
 } from '@/store/resource';
 import {
   ref,
-  onMounted,
+  // onMounted,
   watch,
 } from 'vue';
 
@@ -22,7 +22,7 @@ type PropsType = {
   filter?: FilterType
 };
 
-export default (props: PropsType, type: string) => {
+export default async (props: PropsType, type: string) => {
   // 接口
   const resourceStore = useResourceStore();
 
@@ -39,12 +39,23 @@ export default (props: PropsType, type: string) => {
 
   // 更新数据
   const triggerApi = async () => {
-    // isLoading.value = true;
-    resourceStore
+    isLoading.value = true;
+    const listCount = await resourceStore
       .list(
         {
           page: {
             count: true,
+          },
+          filter: props.filter,
+        },
+        type,
+      );
+    pagination.value.count = listCount.data.count;
+    const listData = await resourceStore
+      .list(
+        {
+          page: {
+            count: false,
             start: (pagination.value.current - 1) * pagination.value.limit,
             limit: pagination.value.limit,
             sort: sort.value,
@@ -53,21 +64,16 @@ export default (props: PropsType, type: string) => {
           filter: props.filter,
         },
         type,
-      )
-      .then(({ data }: { data: any }) => {
-        datas.value = (data.detail || []).map((item: any) => {
-          return {
-            ...item,
-            ...item.spec,
-            ...item.attachment,
-            ...item.revision,
-          };
-        });
-        pagination.value.count = data.count;
-      })
-      .finally(() => {
-        isLoading.value = false;
-      });
+      );
+    datas.value = (listData.data.details || []).map((item: any) => {
+      return {
+        ...item,
+        ...item.spec,
+        ...item.attachment,
+        ...item.revision,
+      };
+    });
+    isLoading.value = false;
   };
 
   // 页码变化发生的事件
@@ -104,8 +110,7 @@ export default (props: PropsType, type: string) => {
     triggerApi();
   });
 
-  triggerApi();
-
+  await triggerApi();
   return {
     datas,
     pagination,

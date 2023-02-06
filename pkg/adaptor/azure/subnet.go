@@ -36,7 +36,7 @@ import (
 
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
-func (a *Azure) UpdateSubnet(kt *kit.Kit, opt *types.AzureSubnetUpdateOption) error {
+func (a *Azure) UpdateSubnet(_ *kit.Kit, _ *types.AzureSubnetUpdateOption) error {
 	return nil
 }
 

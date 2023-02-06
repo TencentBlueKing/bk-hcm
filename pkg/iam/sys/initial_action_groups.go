@@ -55,7 +55,21 @@ func genBusinessManagementActionGroups() []client.ActionGroup {
 						{ID: ResourceFind},
 						{ID: ResourceAssign},
 						{ID: ResourceManage},
-						{ID: ResourceRecycle},
+					},
+				},
+				{
+					Name:   "回收站",
+					NameEn: "Recycle Bin",
+					Actions: []client.ActionWithID{
+						{ID: RecycleBinFind},
+						{ID: RecycleBinManage},
+					},
+				},
+				{
+					Name:   "工作台",
+					NameEn: "Workspace",
+					Actions: []client.ActionWithID{
+						{ID: AuditFind},
 					},
 				},
 			},

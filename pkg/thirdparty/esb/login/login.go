@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/tools/uuid"
 )
 
+// Client esb login client
 type Client interface {
 	IsLogin(ctx context.Context, bkToken string) (string, error)
 }

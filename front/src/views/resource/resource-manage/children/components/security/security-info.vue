@@ -8,6 +8,16 @@ import {
   useI18n,
 } from 'vue-i18n';
 
+import {
+  PropType,
+} from 'vue';
+
+const props = defineProps({
+  id: {
+    type: String as PropType<any>,
+  },
+});
+
 const {
   t,
 } = useI18n();
@@ -16,7 +26,7 @@ const settingInfo = [
   {
     name: t('账号'),
     value: '我的账号',
-    prop: 'account',
+    prop: 'account_id',
   },
   {
     name: t('资源ID'),
@@ -31,7 +41,7 @@ const settingInfo = [
   {
     name: t('云厂商'),
     value: '100',
-    prop: 'vendor',
+    prop: 'vendorName',
   },
   {
     name: t('业务'),
@@ -51,17 +61,17 @@ const settingInfo = [
   {
     name: t('关联CVM实例数'),
     value: '11111',
-    prop: 'cvm_ids',
+    prop: 'cvm_count',
   },
   {
     name: t('创建时间'),
     value: '11111',
-    prop: 'create_at',
+    prop: 'created_at',
   },
   {
     name: t('修改时间'),
     value: '11111',
-    prop: 'update_at',
+    prop: 'updated_at',
   },
   {
     name: t('备注'),
@@ -74,10 +84,10 @@ const {
   loading,
   detail,
 } = useDetail(
-  'security_group',
-  '1',
+  'security_groups',
+  props.id,
 );
-detail.value = { id: 1, memo: '备注', name: 'test' } || detail;
+console.log('detail', detail.value, loading);
 </script>
 
 <template>

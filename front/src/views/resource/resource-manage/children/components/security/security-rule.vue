@@ -1,17 +1,47 @@
 <script lang="ts" setup>
 import {
   ref,
+  watch,
+  h,
+  reactive,
+  PropType,
 } from 'vue';
 import {
   useI18n,
 } from 'vue-i18n';
 
+import {
+  Button,
+} from 'bkui-vue';
+
+import { SecurityRuleEnum } from '@/typings';
+
+import {
+  useRouter,
+} from 'vue-router';
+
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
+import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+
+const props = defineProps({
+  filter: {
+    type: Object as PropType<any>,
+  },
+  id: {
+    type: String as PropType<any>,
+  },
+  vendor: {
+    type: String as PropType<any>,
+  },
+});
 
 // use hook
 const {
   t,
 } = useI18n();
+
+const router = useRouter();
 
 const {
   isShowSecurityRule,
@@ -19,31 +49,168 @@ const {
   SecurityRule,
 } = UseSecurityRule();
 
+const activeType = ref('in');
+
+const state = reactive<any>({
+  datas: [],
+  pagination: {
+    current: 1,
+    limit: 10,
+    count: 0,
+  },
+  isLoading: true,
+  handlePageChange: () => {},
+  handlePageSizeChange: () => {},
+  handleSort: () => {},
+  columns: useColumns('group'),
+});
+
+watch(
+  () => activeType.value,
+  (v) => {
+    state.isLoading = true;
+    handleSwtichType(v);
+  },
+);
+
+const fetchList = async (fetchType: string) => {
+  const {
+    datas,
+    pagination,
+    isLoading,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSort,
+  } = await useQueryList(props, fetchType);
+  return {
+    datas,
+    pagination,
+    isLoading,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSort,
+  };
+};
+
+const handleSwtichType = async (type: string) => {
+  console.log('props', props.vendor);
+  const params = {
+    fetchUrl: `vendors/${props.vendor}/security_groups/${props.id}/rules`,
+    columns: 'group',
+    // dialogName: t('删除安全组'),
+  };
+  if (type === 'out') {
+    params.fetchUrl = 'vendors/gcp/firewalls/rules';
+    params.columns = 'gcp';
+    // params.dialogName = t('删除防火墙规则');
+  }
+  // eslint-disable-next-line max-len
+  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = await fetchList(params.fetchUrl);
+  state.datas = datas;
+  state.isLoading = isLoading;
+  state.pagination = pagination;
+  state.handlePageChange = handlePageChange;
+  state.handlePageSizeChange = handlePageSizeChange;
+  state.handleSort = handleSort;
+  state.columns = useColumns(params.columns);
+  // const { handleShowDelete, DeleteDialog } = showDeleteDialog(params.fetchUrl, params.dialogName);
+  // securityHandleShowDelete = handleShowDelete;
+  // SecurityDeleteDialog = DeleteDialog;
+};
+
+
 const inColumns = [
   {
     label: t('来源'),
-    field: 'id',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          data.cloud_address_group_id || data.cloud_address_id
+          || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
+          || data.ipv4_cidr || data.ipv6_cidr,
+        ],
+      );
+    },
   },
   {
-    label: t('端口协议'),
-    field: 'id',
-  },
-  {
-    label: t('端口'),
-    field: 'id',
+    label: t('协议端口'),
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          `${data.protocol}:${data.port}`,
+        ],
+      );
+    },
   },
   {
     label: t('策略'),
-    field: 'id',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          SecurityRuleEnum[data.action],
+        ],
+      );
+    },
+  },
+  {
+    label: t('备注'),
+    field: 'memo',
+  },
+  {
+    label: t('修改时间'),
+    field: 'updated_at',
   },
   {
     label: t('操作'),
-    field: 'id',
-  },
-];
-const inData = [
-  {
-    id: 233,
+    field: '',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              onClick() {
+                router.push({
+                  name: 'resourceDetail',
+                  params: {
+                    type: 'gcp',
+                  },
+                  query: {
+                    id: data.id,
+                  },
+                });
+              },
+            },
+            [
+              t('编辑'),
+            ],
+          ),
+          h(
+            Button,
+            {
+              class: 'ml10',
+              text: true,
+              theme: 'primary',
+              onClick() {
+              },
+            },
+            [
+              t('删除'),
+            ],
+          ),
+        ],
+      );
+    },
   },
 ];
 
@@ -79,7 +246,6 @@ const types = [
   { name: 'in', label: t('入站规则') },
   { name: 'out', label: t('出站规则') },
 ];
-const activeType = ref('in');
 
 </script>
 
@@ -106,8 +272,13 @@ const activeType = ref('in');
     v-if="activeType === 'in'"
     class="mt20"
     row-hover="auto"
+    remote-pagination
     :columns="inColumns"
-    :data="inData"
+    :data="state.datas"
+    :pagination="state.pagination"
+    @page-limit-change="state.handlePageSizeChange"
+    @page-value-change="state.handlePageChange"
+    @column-sort="state.handleSort"
   />
 
   <bk-table

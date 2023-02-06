@@ -81,7 +81,7 @@ func (svc *subnetSvc) UpdateSubnet(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Resource, Action: meta.Update,
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Update,
 		ResourceID: basicInfo.AccountID}}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	if err != nil {
@@ -129,7 +129,7 @@ func (svc *subnetSvc) GetSubnet(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Resource, Action: meta.Find,
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Find,
 		ResourceID: basicInfo.AccountID}}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	if err != nil {
@@ -185,19 +185,16 @@ func (svc *subnetSvc) ListSubnet(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// list authorized instances
-	authOpt := &meta.ListAuthResInput{Type: meta.Resource, Action: meta.Find}
-	authInst, err := svc.authorizer.ListAuthorizedInstances(cts.Kit, authOpt)
+	authOpt := &meta.ListAuthResInput{Type: meta.Subnet, Action: meta.Find}
+	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
 	if err != nil {
 		return nil, err
 	}
 
-	if !authInst.IsAny {
-		if len(authInst.IDs) == 0 {
-			return &cloudserver.SubnetListResult{Count: 0, Details: make([]corecloud.BaseSubnet, 0)}, nil
-		}
-		// TODO add account id filter
-		//req.Filter.
+	if noPermFlag {
+		return &cloudserver.SubnetListResult{Count: 0, Details: make([]corecloud.BaseSubnet, 0)}, nil
 	}
+	req.Filter = expr
 
 	// list subnets
 	res, err := svc.client.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), req)
@@ -232,7 +229,7 @@ func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error)
 	// authorize
 	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
 	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Resource, Action: meta.Delete,
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Delete,
 			ResourceID: info.AccountID}})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
@@ -301,7 +298,7 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 
 	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
 	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Resource, Action: meta.Assign,
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Assign,
 			ResourceID: info.AccountID}})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)

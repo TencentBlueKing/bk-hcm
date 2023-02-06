@@ -21,7 +21,9 @@
     其他场景根据实际情况去设置。且关联关系表中仅存储hcm云资源唯一ID即可。关联关系表名为 aTable_bTable_rel，e.g: cvm_vpc_rel。
 */
 create database if not exists hcm;
+
 use hcm;
+
 create table if not exists `id_generator`
 (
     `resource` varchar(64) not null,
@@ -29,6 +31,7 @@ create table if not exists `id_generator`
     primary key (`resource`)
     ) engine = innodb
     default charset = utf8mb4;
+
 insert into id_generator(`resource`, `max_id`)
 values ('account', '0'),
        ('security_group', '0'),
@@ -63,6 +66,7 @@ create table if not exists `audit`
     primary key (`id`)
     ) engine = innodb
     default charset = utf8mb4;
+
 create table if not exists `account`
 (
     `id`            varchar(64) not null,
@@ -85,6 +89,7 @@ create table if not exists `account`
     unique key `idx_uk_name` (`name`)
     ) engine = innodb
     default charset = utf8mb4;
+
 create table if not exists `account_biz_rel`
 (
     `id`         bigint(1) unsigned not null auto_increment,
@@ -96,6 +101,7 @@ create table if not exists `account_biz_rel`
     unique key `idx_uk_bk_biz_id_account_id` (`bk_biz_id`, `account_id`)
     ) engine = innodb
     default charset = utf8mb4;
+
 create table if not exists `security_group`
 (
     `id`                      varchar(64)  not null,
@@ -116,6 +122,7 @@ create table if not exists `security_group`
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
     ) engine = innodb
     default charset = utf8mb4;
+
 # vpc_security_group_rel is only used of aws.
 create table if not exists `vpc_security_group_rel`
 (
@@ -128,6 +135,7 @@ create table if not exists `vpc_security_group_rel`
     unique key `idx_uk_vpc_id_security_group_id` (`vpc_id`, `security_group_id`)
 ) engine = innodb
   default charset = utf8mb4;
+
 create table if not exists `security_group_biz_rel`
 (
     `id`                bigint(1) unsigned not null auto_increment,
@@ -139,6 +147,7 @@ create table if not exists `security_group_biz_rel`
     unique key `idx_uk_bk_biz_id_security_group_id` (`bk_biz_id`, `security_group_id`)
     ) engine = innodb
     default charset = utf8mb4;
+
 # security_group_network_interface_rel is only used of azure.
 create table if not exists `security_group_network_interface_rel`
 (
@@ -151,6 +160,7 @@ create table if not exists `security_group_network_interface_rel`
     unique key `idx_uk_security_group_id_network_interface_id` (`security_group_id`, `network_interface_id`)
 ) engine = innodb
   default charset = utf8mb4;
+
 # security_group_subnet_rel is only used of azure.
 create table if not exists `security_group_subnet_rel`
 (
@@ -163,6 +173,7 @@ create table if not exists `security_group_subnet_rel`
     unique key `idx_uk_security_group_id_subnet_id` (`security_group_id`, `subnet_id`)
 ) engine = innodb
   default charset = utf8mb4;
+
 create table if not exists `tcloud_security_group_rule`
 (
     `id`                             varchar(64)  not null,
@@ -192,6 +203,7 @@ create table if not exists `tcloud_security_group_rule`
     unique key `idx_uk_cloud_security_group_id_cloud_policy_index_type` (`cloud_security_group_id`, `cloud_policy_index`, `type`)
     ) engine = innodb
     default charset = utf8mb4;
+
 create table if not exists `aws_security_group_rule`
 (
     `id`                             varchar(64)  not null,
@@ -218,6 +230,7 @@ create table if not exists `aws_security_group_rule`
     unique key `idx_uk_cloud_id` (`cloud_id`)
     ) engine = innodb
     default charset = utf8mb4;
+
 create table if not exists `huawei_security_group_rule`
 (
     `id`                            varchar(64)  not null,
@@ -245,6 +258,7 @@ create table if not exists `huawei_security_group_rule`
     unique key `idx_uk_cloud_id` (`cloud_id`)
     ) engine = innodb
     default charset = utf8mb4;
+
 create table if not exists `azure_security_group_rule`
 (
     `id`                                   varchar(64)  not null,
@@ -280,6 +294,7 @@ create table if not exists `azure_security_group_rule`
     unique key `idx_uk_name` (`name`)
     ) engine = innodb
     default charset = utf8mb4;
+
 create table if not exists `security_group_tag`
 (
     `id`                varchar(64)  not null,
@@ -293,6 +308,7 @@ create table if not exists `security_group_tag`
     primary key (`id`)
     ) engine = innodb
     default charset = utf8mb4;
+
 create table if not exists `gcp_firewall_rule`
 (
     `id`                      varchar(64)  not null,
@@ -325,6 +341,7 @@ create table if not exists `gcp_firewall_rule`
     unique key `idx_uk_name` (`name`)
     ) engine = innodb
     default charset = utf8mb4;
+
 create table if not exists `vpc`
 (
     `id`          varchar(64)  not null,
@@ -347,6 +364,7 @@ create table if not exists `vpc`
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
     ) engine = innodb
     default charset = utf8mb4;
+
 create table if not exists `subnet`
 (
     `id`           varchar(64)  not null,
