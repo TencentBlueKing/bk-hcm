@@ -85,26 +85,16 @@ type AzureAccountExtensionCreateReq struct {
 	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"required"`
 }
 
-// AccountSpecCreateReq ...
-type AccountSpecCreateReq struct {
-	Name         string                 `json:"name" validate:"required"`
-	Managers     []string               `json:"managers" validate:"required"`
-	DepartmentID int64                  `json:"department_id" validate:"required"`
-	Type         enumor.AccountType     `json:"type" validate:"required"`
-	Site         enumor.AccountSiteType `json:"site" validate:"required"`
-	Memo         *string                `json:"memo" validate:"required"`
-}
-
-// AccountAttachmentCreateReq ...
-type AccountAttachmentCreateReq struct {
-	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required"`
-}
-
 // AccountCreateReq ...
 type AccountCreateReq[T AccountExtensionCreateReq] struct {
-	Spec       *AccountSpecCreateReq       `json:"spec" validate:"required"`
-	Extension  *T                          `json:"extension" validate:"required"`
-	Attachment *AccountAttachmentCreateReq `json:"attachment" validate:"required"`
+	Name          string                 `json:"name" validate:"required"`
+	Managers      []string               `json:"managers" validate:"required"`
+	DepartmentIDs []int64                `json:"department_ids" validate:"required"`
+	Type          enumor.AccountType     `json:"type" validate:"required"`
+	Site          enumor.AccountSiteType `json:"site" validate:"required"`
+	Memo          *string                `json:"memo" validate:"required"`
+	Extension     *T                     `json:"extension" validate:"required"`
+	BkBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
 }
 
 // Validate ...
@@ -159,21 +149,16 @@ type AzureAccountExtensionUpdateReq struct {
 	CloudClientSecretKey  string `json:"cloud_client_secret_key,omitempty" validate:"omitempty"`
 }
 
-// AccountSpecUpdateReq ...
-type AccountSpecUpdateReq struct {
-	Name         string   `json:"name" validate:"omitempty"`
-	Managers     []string `json:"managers" validate:"omitempty"`
-	DepartmentID int64    `json:"department_id" validate:"omitempty"`
-	SyncStatus   string   `json:"sync_status" validate:"omitempty"`
-	Price        string   `json:"price" validate:"omitempty"`
-	PriceUnit    string   `json:"price_unit" validate:"omitempty"`
-	Memo         *string  `json:"memo" validate:"omitempty"`
-}
-
 // AccountUpdateReq ...
 type AccountUpdateReq[T AccountExtensionUpdateReq] struct {
-	Spec      *AccountSpecUpdateReq `json:"spec" validate:"omitempty"`
-	Extension *T                    `json:"extension" validate:"omitempty"`
+	Name          string   `json:"name" validate:"omitempty"`
+	Managers      []string `json:"managers" validate:"omitempty"`
+	DepartmentIDs []int64  `json:"department_ids" validate:"omitempty"`
+	SyncStatus    string   `json:"sync_status" validate:"omitempty"`
+	Price         string   `json:"price" validate:"omitempty"`
+	PriceUnit     string   `json:"price_unit" validate:"omitempty"`
+	Memo          *string  `json:"memo" validate:"omitempty"`
+	Extension     *T       `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...
@@ -212,10 +197,18 @@ func (l *AccountListReq) Validate() error {
 
 // BaseAccountListResp ...
 type BaseAccountListResp struct {
-	ID       string             `json:"id"`
-	Vendor   enumor.Vendor      `json:"vendor"`
-	Spec     *cloud.AccountSpec `json:"spec"`
-	Revision *core.Revision     `json:"revision"`
+	ID            string                   `json:"id"`
+	Vendor        enumor.Vendor            `json:"vendor"`
+	Name          string                   `json:"name"`
+	Managers      []string                 `json:"managers"`
+	DepartmentIDs []int64                  `json:"department_ids"`
+	Type          enumor.AccountType       `json:"type"`
+	Site          enumor.AccountSiteType   `json:"site"`
+	SyncStatus    enumor.AccountSyncStatus `json:"sync_status"`
+	Price         string                   `json:"price"`
+	PriceUnit     string                   `json:"price_unit"`
+	Memo          *string                  `json:"memo"`
+	core.Revision `json:",inline"`
 }
 
 // AccountListResult defines list instances for iam pull resource callback result.
