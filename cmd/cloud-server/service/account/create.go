@@ -89,7 +89,7 @@ func (a *accountSvc) isDuplicateMainAccount(
 					},
 					filter.AtomRule{
 						Field: fmt.Sprintf("extension.%s", mainAccountIDFieldName),
-						Op:    filter.Equal.Factory(),
+						Op:    filter.JSONEqual.Factory(),
 						Value: mainAccountIDFieldValue,
 					},
 				},
