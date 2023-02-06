@@ -120,3 +120,14 @@ export const GCP_PROTOCOL_LIST = [
     name: 'SCTP',
   },
 ];
+
+export const IP_TYPE_LIST = [
+  {
+    id: 'ipv4_cidr',
+    name: 'IPv4',
+  },
+  {
+    id: 'ipv6_cidr',
+    name: 'IPv6',
+  },
+];
