@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/json"
 )
 
 // ListRegion list region.
@@ -46,8 +45,6 @@ func (g *Gcp) ListRegion(kt *kit.Kit, opt *core.GcpListOption) (*typesRegion.Gcp
 	}
 
 	resp, err := listCall.Do()
-	rspJSON, _ := json.Marshal(resp)
-	logs.Errorf("list gcp region init, err: %v, rid: %s, rspJSON:%s", err, kt.Rid, rspJSON)
 	if err != nil {
 		logs.Errorf("list gcp region failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
