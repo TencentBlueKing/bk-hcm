@@ -90,14 +90,14 @@ func (v AzureVpcUpdateOption) Validate() error {
 	return nil
 }
 
-// HuaweiVpcUpdateOption defines huawei update vpc options.
-type HuaweiVpcUpdateOption struct {
+// HuaWeiVpcUpdateOption defines huawei update vpc options.
+type HuaWeiVpcUpdateOption struct {
 	VpcUpdateOption `json:",inline"`
 	Region          string `json:"region"`
 }
 
-// Validate HuaweiVpcUpdateOption.
-func (v HuaweiVpcUpdateOption) Validate() error {
+// Validate HuaWeiVpcUpdateOption.
+func (v HuaWeiVpcUpdateOption) Validate() error {
 	if len(v.Region) == 0 {
 		return errf.New(errf.InvalidParameter, "resource id is required")
 	}
@@ -141,23 +141,23 @@ type AzureVpcListResult struct {
 	Details []AzureVpc `json:"details"`
 }
 
-// HuaweiVpcListOption defines huawei list vpc options.
-type HuaweiVpcListOption struct {
-	core.HuaweiListOption `json:",inline"`
+// HuaWeiVpcListOption defines huawei list vpc options.
+type HuaWeiVpcListOption struct {
+	core.HuaWeiListOption `json:",inline"`
 	Names                 []string `json:"names,omitempty"`
 }
 
 // Validate huawei list option.
-func (v HuaweiVpcListOption) Validate() error {
-	if err := v.HuaweiListOption.Validate(); err != nil {
+func (v HuaWeiVpcListOption) Validate() error {
+	if err := v.HuaWeiListOption.Validate(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// HuaweiVpcListResult defines huawei list vpc result.
-type HuaweiVpcListResult struct {
+// HuaWeiVpcListResult defines huawei list vpc result.
+type HuaWeiVpcListResult struct {
 	NextMarker *string     `json:"next_marker,omitempty"`
 	Details    []HuaWeiVpc `json:"details"`
 }

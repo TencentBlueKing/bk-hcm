@@ -89,7 +89,7 @@ func (a Audit) CreateValidate() error {
 	}
 
 	if a.CreatedAt != nil && !a.CreatedAt.IsZero() {
-		return errors.New("create_at can not be set, it is generated through db")
+		return errors.New("created_at can not be set, it is generated through db")
 	}
 
 	return nil

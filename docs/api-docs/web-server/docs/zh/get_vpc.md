@@ -33,8 +33,8 @@
     "bk_cloud_id": -1,
     "creator": "tom",
     "reviser": "tom",
-    "create_at": "2019-07-29 11:57:20",
-    "update_at": "2019-07-29 11:57:20",
+    "created_at": "2019-07-29 11:57:20",
+    "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "region": "ap-guangzhou",
       "cidr": [
@@ -79,8 +79,8 @@
     "bk_cloud_id": -1,
     "creator": "tom",
     "reviser": "tom",
-    "create_at": "2019-07-29 11:57:20",
-    "update_at": "2019-07-29 11:57:20",
+    "created_at": "2019-07-29 11:57:20",
+    "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "region": "us-east-1",
       "cidr": [
@@ -125,8 +125,8 @@
     "bk_cloud_id": -1,
     "creator": "tom",
     "reviser": "tom",
-    "create_at": "2019-07-29 11:57:20",
-    "update_at": "2019-07-29 11:57:20",
+    "created_at": "2019-07-29 11:57:20",
+    "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "self_link": "https://www.googleapis.com/compute/v1/projects/xxx/global/networks/test",
       "auto_create_subnetworks": false,
@@ -156,8 +156,8 @@
     "bk_cloud_id": -1,
     "creator": "tom",
     "reviser": "tom",
-    "create_at": "2019-07-29 11:57:20",
-    "update_at": "2019-07-29 11:57:20",
+    "created_at": "2019-07-29 11:57:20",
+    "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "resource_group": "test",
       "region": "northeurope",
@@ -193,8 +193,8 @@
     "bk_cloud_id": -1,
     "creator": "tom",
     "reviser": "tom",
-    "create_at": "2019-07-29 11:57:20",
-    "update_at": "2019-07-29 11:57:20",
+    "created_at": "2019-07-29 11:57:20",
+    "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "region": "ap-southeast-1",
       "cidr": [
@@ -233,7 +233,7 @@
 | bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
 | creator     | string | 创建者                                  |
 | reviser     | string | 更新者                                  |
-| create_at   | string | 创建时间，标准格式：2006-01-02 15:04:05        |
+| created_at  | string | 创建时间，标准格式：2006-01-02 15:04:05        |
 | updated_at  | string | 更新时间，标准格式：2006-01-02 15:04:05        |
 | extension   | object | 云厂商私有结构                              |
 

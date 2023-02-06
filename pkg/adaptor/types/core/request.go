@@ -189,15 +189,15 @@ func (a AzureListOption) Validate() error {
 	return nil
 }
 
-// HuaweiListOption defines basic huawei list options.
-type HuaweiListOption struct {
+// HuaWeiListOption defines basic huawei list options.
+type HuaWeiListOption struct {
 	Region      string      `json:"region"`
 	ResourceIDs []string    `json:"resource_ids,omitempty"`
-	Page        *HuaweiPage `json:"page,omitempty"`
+	Page        *HuaWeiPage `json:"page,omitempty"`
 }
 
 // Validate huawei list option.
-func (a HuaweiListOption) Validate() error {
+func (a HuaWeiListOption) Validate() error {
 	if len(a.Region) == 0 {
 		return errf.New(errf.InvalidParameter, "region is required")
 	}
@@ -207,7 +207,7 @@ func (a HuaweiListOption) Validate() error {
 			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
 		}
 
-		if len(a.ResourceIDs) > HuaweiQueryLimit {
+		if len(a.ResourceIDs) > HuaWeiQueryLimit {
 			return errf.New(errf.InvalidParameter, "huawei resource ids length should <= 2000")
 		}
 

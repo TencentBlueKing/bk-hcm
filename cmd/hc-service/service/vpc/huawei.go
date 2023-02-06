@@ -60,7 +60,7 @@ func (v vpc) HuaWeiVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	updateOpt := &types.HuaweiVpcUpdateOption{
+	updateOpt := &types.HuaWeiVpcUpdateOption{
 		VpcUpdateOption: types.VpcUpdateOption{
 			ResourceID: getRes.CloudID,
 			Data:       &types.BaseVpcUpdateData{Memo: req.Memo},
@@ -168,19 +168,19 @@ func (v vpc) HuaWeiVpcSync(cts *rest.Contexts) (interface{}, error) {
 
 // BatchGetHuaWeiVpcList batch get vpc list from cloudapi.
 func (v vpc) BatchGetHuaWeiVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (
-	*types.HuaweiVpcListResult, error) {
+	*types.HuaWeiVpcListResult, error) {
 	cli, err := v.ad.HuaWei(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	nextMarker := ""
-	list := new(types.HuaweiVpcListResult)
+	list := new(types.HuaWeiVpcListResult)
 	for {
-		opt := new(types.HuaweiVpcListOption)
+		opt := new(types.HuaWeiVpcListOption)
 		opt.Region = req.Region
-		opt.Page = &adcore.HuaweiPage{
-			Limit: converter.ValToPtr(int32(adcore.HuaweiQueryLimit)),
+		opt.Page = &adcore.HuaWeiPage{
+			Limit: converter.ValToPtr(int32(adcore.HuaWeiQueryLimit)),
 		}
 		if nextMarker != "" {
 			opt.Page.Marker = converter.ValToPtr(nextMarker)
@@ -209,7 +209,7 @@ func (v vpc) BatchGetHuaWeiVpcList(cts *rest.Contexts, req *hcservice.ResourceSy
 
 // BatchSyncHuaWeiVpcList batch sync vendor vpc list.
 func (v vpc) BatchSyncHuaWeiVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
-	list *types.HuaweiVpcListResult, resourceDBMap map[string]cloudcore.BaseVpc) error {
+	list *types.HuaWeiVpcListResult, resourceDBMap map[string]cloudcore.BaseVpc) error {
 	createResources, updateResources, existIDMap, err := v.filterHuaWeiVpcList(req, list, resourceDBMap)
 	if err != nil {
 		return err
@@ -260,7 +260,7 @@ func (v vpc) BatchSyncHuaWeiVpcList(cts *rest.Contexts, req *hcservice.ResourceS
 }
 
 // filterHuaWeiVpcList filter huawei vpc list
-func (v vpc) filterHuaWeiVpcList(req *hcservice.ResourceSyncReq, list *types.HuaweiVpcListResult,
+func (v vpc) filterHuaWeiVpcList(req *hcservice.ResourceSyncReq, list *types.HuaWeiVpcListResult,
 	resourceDBMap map[string]cloudcore.BaseVpc) (createResources []cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt],
 	updateResources []cloud.VpcUpdateReq[cloud.HuaWeiVpcUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {

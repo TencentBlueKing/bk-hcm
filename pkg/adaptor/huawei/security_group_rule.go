@@ -33,7 +33,7 @@ import (
 
 // CreateSecurityGroupRule create security group rule.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0016.html
-func (h *Huawei) CreateSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleCreateOption) (*model.SecurityGroupRule,
+func (h *HuaWei) CreateSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleCreateOption) (*model.SecurityGroupRule,
 	error) {
 
 	if opt == nil {
@@ -86,7 +86,7 @@ func (h *Huawei) CreateSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleCre
 
 // DeleteSecurityGroupRule delete security group rule.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0019.html
-func (h *Huawei) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleDeleteOption) error {
+func (h *HuaWei) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleDeleteOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule delete option is required")
@@ -115,7 +115,7 @@ func (h *Huawei) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleDel
 
 // ListSecurityGroupRule list security group rule.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0019.html
-func (h *Huawei) ListSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleListOption) (*model.
+func (h *HuaWei) ListSecurityGroupRule(kt *kit.Kit, opt *types.HuaWeiSGRuleListOption) (*model.
 	ListSecurityGroupRulesResponse, error) {
 
 	if opt == nil {

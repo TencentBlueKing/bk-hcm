@@ -90,7 +90,7 @@ const settingFields = [
   },
   {
     name: '创建时间',
-    prop: 'create_at',
+    prop: 'created_at',
   },
   {
     name: '备注',

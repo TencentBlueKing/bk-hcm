@@ -104,7 +104,7 @@
 | bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
 | creator     | string | 创建者                                  |
 | reviser     | string | 更新者                                  |
-| create_at   | string | 创建时间，标准格式：2006-01-02 15:04:05        |
+| created_at  | string | 创建时间，标准格式：2006-01-02 15:04:05        |
 | updated_at  | string | 更新时间，标准格式：2006-01-02 15:04:05        |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
@@ -189,8 +189,8 @@
         "bk_cloud_id": -1,
         "creator": "tom",
         "reviser": "tom",
-        "create_at": "2019-07-29 11:57:20",
-        "update_at": "2019-07-29 11:57:20"
+        "created_at": "2019-07-29 11:57:20",
+        "updated_at": "2019-07-29 11:57:20"
       }
     ]
   }
@@ -239,5 +239,5 @@
 | bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
 | creator     | string | 创建者                                  |
 | reviser     | string | 更新者                                  |
-| create_at   | string | 创建时间，标准格式：2006-01-02 15:04:05        |
+| created_at  | string | 创建时间，标准格式：2006-01-02 15:04:05        |
 | updated_at  | string | 更新时间，标准格式：2006-01-02 15:04:05        |

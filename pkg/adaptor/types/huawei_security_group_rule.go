@@ -71,7 +71,7 @@ func (opt HuaWeiSGRuleDeleteOption) Validate() error {
 type HuaWeiSGRuleListOption struct {
 	Region               string           `json:"region" validate:"required"`
 	CloudSecurityGroupID string           `json:"cloud_security_group_id" validate:"required"`
-	Page                 *core.HuaweiPage `json:"page" validate:"omitempty"`
+	Page                 *core.HuaWeiPage `json:"page" validate:"omitempty"`
 }
 
 // Validate huawei security group rule list option.

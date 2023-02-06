@@ -33,7 +33,7 @@ import (
 
 // UpdateSubnet update subnet.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0004.html
-func (h *Huawei) UpdateSubnet(kt *kit.Kit, opt *types.HuaweiSubnetUpdateOption) error {
+func (h *HuaWei) UpdateSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetUpdateOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (h *Huawei) UpdateSubnet(kt *kit.Kit, opt *types.HuaweiSubnetUpdateOption) 
 
 // DeleteSubnet delete subnet.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0005.html
-func (h *Huawei) DeleteSubnet(kt *kit.Kit, opt *types.HuaweiSubnetDeleteOption) error {
+func (h *HuaWei) DeleteSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (h *Huawei) DeleteSubnet(kt *kit.Kit, opt *types.HuaweiSubnetDeleteOption) 
 
 // ListSubnet list subnet.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0003.html
-func (h *Huawei) ListSubnet(kt *kit.Kit, opt *types.HuaweiSubnetListOption) (*types.HuaweiSubnetListResult, error) {
+func (h *HuaWei) ListSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetListOption) (*types.HuaWeiSubnetListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (h *Huawei) ListSubnet(kt *kit.Kit, opt *types.HuaweiSubnetListOption) (*ty
 		details = append(details, converter.PtrToVal(convertSubnet(&data, opt.Region)))
 	}
 
-	return &types.HuaweiSubnetListResult{Details: details}, nil
+	return &types.HuaWeiSubnetListResult{Details: details}, nil
 }
 
 func convertSubnet(data *model.Subnet, region string) *types.HuaWeiSubnet {

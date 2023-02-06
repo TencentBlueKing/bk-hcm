@@ -36,7 +36,7 @@ import (
 
 // UpdateVpc update vpc.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_api01_0004.html
-func (h *Huawei) UpdateVpc(kt *kit.Kit, opt *types.HuaweiVpcUpdateOption) error {
+func (h *HuaWei) UpdateVpc(kt *kit.Kit, opt *types.HuaWeiVpcUpdateOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (h *Huawei) UpdateVpc(kt *kit.Kit, opt *types.HuaweiVpcUpdateOption) error 
 
 // DeleteVpc delete vpc.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_api01_0005.html
-func (h *Huawei) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
+func (h *HuaWei) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
 	if err := opt.Validate(); err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (h *Huawei) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) erro
 
 // ListVpc list vpc.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_apiv3_0003.html
-func (h *Huawei) ListVpc(kt *kit.Kit, opt *types.HuaweiVpcListOption) (*types.HuaweiVpcListResult, error) {
+func (h *HuaWei) ListVpc(kt *kit.Kit, opt *types.HuaWeiVpcListOption) (*types.HuaWeiVpcListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (h *Huawei) ListVpc(kt *kit.Kit, opt *types.HuaweiVpcListOption) (*types.Hu
 		details = append(details, converter.PtrToVal(convertVpc(&data, opt.Region)))
 	}
 
-	return &types.HuaweiVpcListResult{NextMarker: converter.PtrToVal(resp.PageInfo).NextMarker, Details: details}, nil
+	return &types.HuaWeiVpcListResult{NextMarker: converter.PtrToVal(resp.PageInfo).NextMarker, Details: details}, nil
 }
 
 func convertVpc(data *model.Vpc, region string) *types.HuaWeiVpc {

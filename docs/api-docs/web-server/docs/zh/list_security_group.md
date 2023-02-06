@@ -102,8 +102,8 @@
 | account_id | string | 账号ID            |
 | creator    | string | 创建者             |
 | reviser    | string | 最后一次修改的修改者      |
-| create_at  | string | 创建时间            |
-| update_at  | string | 最后一次修改时间        |
+| created_at | string | 创建时间            |
+| updated_at | string | 最后一次修改时间        |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -186,8 +186,8 @@
         "bk_biz_id": -1,
         "creator": "tom",
         "reviser": "tom",
-        "create_at": "2019-07-29 11:57:20",
-        "update_at": "2019-07-29 11:57:20"
+        "created_at": "2019-07-29 11:57:20",
+        "updated_at": "2019-07-29 11:57:20"
       }
     ]
   }
@@ -235,5 +235,5 @@
 | account_id | string | 账号ID            |
 | creator    | string | 创建者             |
 | reviser    | string | 最后一次修改的修改者      |
-| create_at  | string | 创建时间            |
-| update_at  | string | 最后一次修改时间        |
+| created_at | string | 创建时间            |
+| updated_at | string | 最后一次修改时间        |
