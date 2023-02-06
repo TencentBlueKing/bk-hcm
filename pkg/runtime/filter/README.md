@@ -84,7 +84,7 @@ expr := &Expression{
       },
       &AtomRule{
          Field: "extension.vpc.id",
-         Op:    Equal.Factory(),
+         Op:    JSONEqual.Factory(),
          Value: 3,
       },
    },
