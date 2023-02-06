@@ -46,14 +46,14 @@ var SecurityGroupTagColumnDescriptor = utils.ColumnDescriptors{
 
 // SecurityGroupTagTable define security group tag table.
 type SecurityGroupTagTable struct {
-	ID              string     `db:"id" validate:"lte=64"`
-	SecurityGroupID string     `db:"security_group_id" validate:"lte=64"`
-	Key             string     `db:"key" validate:"lte=255"`
-	Value           string     `db:"value" validate:"lte=255"`
-	Creator         string     `db:"creator" validate:"lte=64"`
-	Reviser         string     `db:"reviser" validate:"lte=64"`
-	CreatedAt       *time.Time `db:"created_at" validate:"excluded_unless"`
-	UpdatedAt       *time.Time `db:"updated_at" validate:"excluded_unless"`
+	ID              string     `db:"id" validate:"lte=64" json:"id"`
+	SecurityGroupID string     `db:"security_group_id" validate:"lte=64" json:"security_group_id"`
+	Key             string     `db:"key" validate:"lte=255" json:"key"`
+	Value           string     `db:"value" validate:"lte=255" json:"value"`
+	Creator         string     `db:"creator" validate:"lte=64" json:"creator"`
+	Reviser         string     `db:"reviser" validate:"lte=64" json:"reviser"`
+	CreatedAt       *time.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt       *time.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return security group tag table name.

@@ -17,20 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package cloudserver
 
 import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/runtime/filter"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
+// -------------------------- List --------------------------
+
+// AuditListReq define audit list req.
+type AuditListReq struct {
+	Filter *filter.Expression `json:"filter" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
+}
+
+// Validate audit list req.
+func (req *AuditListReq) Validate() error {
+	return validator.Validate.Struct(req)
 }

@@ -19,6 +19,8 @@
 
 package converter
 
+import "hcm/pkg/tools/json"
+
 // ValToPtr convert one value to pointer.
 func ValToPtr[T any](val T) *T {
 	return &val
@@ -51,4 +53,19 @@ func PtrToSlice[T any](slice []*T) []T {
 		}
 	}
 	return ptrArr
+}
+
+// StructToMap convert struct to map.
+func StructToMap(source interface{}) (map[string]interface{}, error) {
+	marshal, err := json.Marshal(source)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]interface{})
+	if err = json.Unmarshal(marshal, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"time"
 
+	"hcm/cmd/data-service/service/audit"
 	"hcm/cmd/data-service/service/auth"
 	"hcm/cmd/data-service/service/capability"
 	"hcm/cmd/data-service/service/cloud"
@@ -138,6 +139,7 @@ func (s *Service) apiSet() *restful.Container {
 	cloud.InitCloudService(cap)
 	auth.InitAuthService(cap)
 	disk.InitDiskService(cap)
+	audit.InitAuditService(cap)
 
 	return restful.NewContainer().Add(cap.WebService)
 }

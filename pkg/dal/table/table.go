@@ -69,6 +69,8 @@ const (
 	VpcTable Name = "vpc"
 	// SubnetTable is subnet table's name.
 	SubnetTable Name = "subnet"
+	// DiskTable is disk table's name.
+	DiskTable Name = "disk"
 )
 
 // Validate whether the table name is valid or not.

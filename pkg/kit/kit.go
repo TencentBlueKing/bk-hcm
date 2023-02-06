@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/tools/uuid"
 )
 
@@ -54,6 +55,21 @@ type Kit struct {
 
 	// TenantID is tenant id.
 	TenantID string
+
+	// RequestSource 请求来源，字段为空是默认为 ApiCall 类型。
+	// Note: hcm请求分为 ApiCall 和 BackgroundSync 请求。所以，RequestSource是内部使用字段，
+	// 因为来自前端和第三方系统调用的请求均为 ApiCall，所以没必要将该字段暴漏出去，仅同步请求需要设
+	// 置该字段为 BackgroundSync。
+	RequestSource enumor.RequestSourceType
+}
+
+// GetRequestSource RequestSource为空，返回 ApiCall 类型。
+func (kt *Kit) GetRequestSource() enumor.RequestSourceType {
+	if len(kt.RequestSource) == 0 {
+		return enumor.ApiCall
+	}
+
+	return kt.RequestSource
 }
 
 // ContextWithRid ...
@@ -100,10 +116,11 @@ func (kt *Kit) Validate() error {
 // Header generate header by kit
 func (kt *Kit) Header() http.Header {
 	return http.Header{
-		constant.UserKey:     []string{kt.User},
-		constant.RidKey:      []string{kt.Rid},
-		constant.AppCodeKey:  []string{kt.AppCode},
-		constant.TenantIDKey: []string{kt.TenantID},
+		constant.UserKey:          []string{kt.User},
+		constant.RidKey:           []string{kt.Rid},
+		constant.AppCodeKey:       []string{kt.AppCode},
+		constant.TenantIDKey:      []string{kt.TenantID},
+		constant.RequestSourceKey: []string{string(kt.RequestSource)},
 	}
 }
 
@@ -114,11 +131,12 @@ func FromHeader(ctx context.Context, header http.Header) (*Kit, error) {
 	}
 
 	kt := &Kit{
-		Ctx:      ctx,
-		User:     header.Get(constant.UserKey),
-		Rid:      header.Get(constant.RidKey),
-		AppCode:  header.Get(constant.AppCodeKey),
-		TenantID: header.Get(constant.TenantIDKey),
+		Ctx:           ctx,
+		User:          header.Get(constant.UserKey),
+		Rid:           header.Get(constant.RidKey),
+		AppCode:       header.Get(constant.AppCodeKey),
+		TenantID:      header.Get(constant.TenantIDKey),
+		RequestSource: enumor.RequestSourceType(header.Get(constant.RequestSourceKey)),
 	}
 
 	if err := kt.Validate(); err != nil {

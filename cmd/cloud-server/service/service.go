@@ -27,7 +27,9 @@ import (
 	"strconv"
 	"time"
 
+	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
+	"hcm/cmd/cloud-server/service/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/disk"
 	"hcm/cmd/cloud-server/service/firewall"
@@ -54,6 +56,7 @@ type Service struct {
 	client     *client.ClientSet
 	serve      *http.Server
 	authorizer auth.Authorizer
+	audit      logicaudit.Interface
 }
 
 // NewService create a service instance.
@@ -86,6 +89,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	svr := &Service{
 		client:     apiClientSet,
 		authorizer: authorizer,
+		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
 	}
 
 	return svr, nil
@@ -157,6 +161,7 @@ func (s *Service) apiSet() *restful.Container {
 		WebService: ws,
 		ApiClient:  s.client,
 		Authorizer: s.authorizer,
+		Audit:      s.audit,
 	}
 
 	account.InitAccountService(c)
@@ -165,6 +170,7 @@ func (s *Service) apiSet() *restful.Container {
 	vpc.InitVpcService(c)
 	disk.InitDiskService(c)
 	subnet.InitSubnetService(c)
+	audit.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

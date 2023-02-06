@@ -23,12 +23,15 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/audit"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -53,6 +56,7 @@ var _ SecurityGroup = new(SecurityGroupDao)
 type SecurityGroupDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
+	Audit audit.Interface
 }
 
 // BatchCreateWithTx sg with tx.
@@ -77,6 +81,32 @@ func (s SecurityGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, sgs []*clo
 	if err = s.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, sgs); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.SecurityGroupTable, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.SecurityGroupTable, err)
+	}
+
+	// create audit.
+	audits := make([]*tableaudit.AuditTable, 0, len(sgs))
+	for _, one := range sgs {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ID,
+			CloudResID: one.CloudID,
+			ResName:    one.Name,
+			ResType:    enumor.SecurityGroupAuditResType,
+			Action:     enumor.Create,
+			BkBizID:    one.BkBizID,
+			Vendor:     one.Vendor,
+			AccountID:  one.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: one,
+			},
+		})
+	}
+	if err = s.Audit.BatchCreate(kt, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	return ids, nil

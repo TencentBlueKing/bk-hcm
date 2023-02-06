@@ -68,31 +68,31 @@ var GcpFirewallRuleTableColumnDescriptor = utils.ColumnDescriptors{
 
 // GcpFirewallRuleTable define gcp firewall rule table.
 type GcpFirewallRuleTable struct {
-	ID                    string            `db:"id" validate:"lte=64"`
-	CloudID               string            `db:"cloud_id" validate:"lte=255"`
-	AccountId             string            `db:"account_id" validate:"lte=64"`
-	Name                  string            `db:"name" validate:"lte=62"`
-	Priority              int64             `db:"priority"`
-	Memo                  string            `db:"memo" validate:"lte=2048"`
-	CloudVpcID            string            `db:"cloud_vpc_id" validate:"lte=255"`
-	VpcID                 string            `db:"vpc_id" validate:"lte=64"`
-	SourceRanges          types.StringArray `db:"source_ranges"`
-	DestinationRanges     types.StringArray `db:"destination_ranges"`
-	SourceTags            types.StringArray `db:"source_tags"`
-	TargetTags            types.StringArray `db:"target_tags"`
-	SourceServiceAccounts types.StringArray `db:"source_service_accounts"`
-	TargetServiceAccounts types.StringArray `db:"target_service_accounts"`
-	Denied                GcpProtocolSets   `db:"denied"`
-	Allowed               GcpProtocolSets   `db:"allowed"`
-	BkBizID               int64             `db:"bk_biz_id"`
-	Type                  string            `db:"type" validate:"lte=20"`
-	LogEnable             bool              `db:"log_enable"`
-	Disabled              bool              `db:"disabled"`
-	SelfLink              string            `db:"self_link" validate:"lte=255"`
-	Creator               string            `db:"creator" validate:"lte=64"`
-	Reviser               string            `db:"reviser" validate:"lte=64"`
-	CreatedAt             *time.Time        `db:"created_at" validate:"excluded_unless"`
-	UpdatedAt             *time.Time        `db:"updated_at" validate:"excluded_unless"`
+	ID                    string            `db:"id" validate:"lte=64" json:"id"`
+	CloudID               string            `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
+	AccountId             string            `db:"account_id" validate:"lte=64" json:"account_id"`
+	Name                  string            `db:"name" validate:"lte=62" json:"name"`
+	Priority              int64             `db:"priority" json:"priority"`
+	Memo                  string            `db:"memo" validate:"lte=2048" json:"memo"`
+	CloudVpcID            string            `db:"cloud_vpc_id" validate:"lte=255" json:"cloud_vpc_id"`
+	VpcID                 string            `db:"vpc_id" validate:"lte=64" json:"vpc_id"`
+	SourceRanges          types.StringArray `db:"source_ranges" json:"source_ranges"`
+	DestinationRanges     types.StringArray `db:"destination_ranges" json:"destination_ranges"`
+	SourceTags            types.StringArray `db:"source_tags" json:"source_tags"`
+	TargetTags            types.StringArray `db:"target_tags" json:"target_tags"`
+	SourceServiceAccounts types.StringArray `db:"source_service_accounts" json:"source_service_accounts"`
+	TargetServiceAccounts types.StringArray `db:"target_service_accounts" json:"target_service_accounts"`
+	Denied                GcpProtocolSets   `db:"denied" json:"denied"`
+	Allowed               GcpProtocolSets   `db:"allowed" json:"allowed"`
+	BkBizID               int64             `db:"bk_biz_id" json:"bk_biz_id"`
+	Type                  string            `db:"type" validate:"lte=20" json:"type"`
+	LogEnable             bool              `db:"log_enable" json:"log_enable"`
+	Disabled              bool              `db:"disabled" json:"disabled"`
+	SelfLink              string            `db:"self_link" validate:"lte=255" json:"self_link"`
+	Creator               string            `db:"creator" validate:"lte=64" json:"creator"`
+	Reviser               string            `db:"reviser" validate:"lte=64" json:"reviser"`
+	CreatedAt             *time.Time        `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt             *time.Time        `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return gcp firewall rule table name.

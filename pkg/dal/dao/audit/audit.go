@@ -20,91 +20,105 @@
 package audit
 
 import (
-	"errors"
 	"fmt"
 
-	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/audit"
 	"hcm/pkg/kit"
-
-	"github.com/jmoiron/sqlx"
+	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 )
 
-// AuditDao supplies all the auditDao operations.
-type AuditDao interface {
-	// Decorator is used to handle the auditDao process as a pipeline according CUD scenarios.
-	Decorator(kit *kit.Kit, res enumor.AuditResourceType) AuditDecorator
-	// Insert resource's auditDao.
-	Insert(kit *kit.Kit, txn *sqlx.Tx, audits []*audit.Audit) error
+// Interface define audit interface.
+type Interface interface {
+	Create(kt *kit.Kit, one *audit.AuditTable) error
+	BatchCreate(kt *kit.Kit, audits []*audit.AuditTable) error
+	List(kt *kit.Kit, opt *types.ListOption) (*types.ListAuditDetails, error)
 }
 
-var _ AuditDao = new(auditDao)
+var _ Interface = new(Dao)
 
-// NewAuditDao create the auditDao DAO
-func NewAuditDao(orm orm.Interface, db *sqlx.DB) (AuditDao, error) {
-	return &auditDao{
-		orm: orm,
-		db:  db,
-	}, nil
-}
-
-type auditDao struct {
-	orm orm.Interface
-	// db is the auditDao's instance
-	db *sqlx.DB
-}
-
-// Decorator return auditDao decorator for to record auditDao.
-func (au *auditDao) Decorator(kit *kit.Kit, res enumor.AuditResourceType) AuditDecorator {
-	return initAuditBuilder(kit, res, au)
-}
-
-// One auditDao one resource's operation.
-func (au *auditDao) One(kt *kit.Kit, txn *sqlx.Tx, one *audit.Audit) error {
-	if one == nil {
-		return errors.New("invalid input auditDao or opt")
+// NewAudit new audit.
+func NewAudit(orm orm.Interface) Interface {
+	return &Dao{
+		Orm: orm,
 	}
-
-	if err := one.CreateValidate(); err != nil {
-		return fmt.Errorf("auditDao create validate failed, err: %v", err)
-	}
-
-	one.TenantID = kt.TenantID
-	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, one.TableName(),
-		audit.AuditColumns.ColumnExpr(), audit.AuditColumns.ColonNameExpr())
-
-	// do with the same transaction with the resource, this transaction
-	// is launched by resource's owner.
-	if err := au.orm.Txn(txn).Insert(kt.Ctx, sql, one); err != nil {
-		return fmt.Errorf("insert auditDao failed, err: %v", err)
-	}
-
-	return nil
 }
 
-// Insert auditDao resource's operation.
-func (au *auditDao) Insert(kt *kit.Kit, txn *sqlx.Tx, audits []*audit.Audit) error {
-	if audits == nil {
-		return errors.New("invalid input audits or opt")
-	}
+// Dao audit dao.
+type Dao struct {
+	Orm orm.Interface
+}
 
-	for idx := range audits {
-		if err := audits[idx].CreateValidate(); err != nil {
-			return fmt.Errorf("auditDao create validate failed, err: %v", err)
+// Create audit.
+func (d Dao) Create(kt *kit.Kit, one *audit.AuditTable) error {
+	return d.BatchCreate(kt, []*audit.AuditTable{one})
+}
+
+// BatchCreate batch create audit.
+func (d Dao) BatchCreate(kt *kit.Kit, audits []*audit.AuditTable) error {
+	for _, one := range audits {
+		if err := one.CreateValidate(); err != nil {
+			return err
 		}
-		audits[idx].TenantID = kt.TenantID
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, table.AuditTable,
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AuditTable,
 		audit.AuditColumns.ColumnExpr(), audit.AuditColumns.ColonNameExpr())
 
-	// do with the same transaction with the resource, this transaction
-	// is launched by resource's owner.
-	if err := au.orm.Txn(txn).BulkInsert(kt.Ctx, sql, audits); err != nil {
-		return fmt.Errorf("insert audits failed, err: %v", err)
+	if err := d.Orm.Do().BulkInsert(kt.Ctx, sql, audits); err != nil {
+		logs.Errorf("insert %s failed, err: %v, rid: %s", table.AuditTable, err, kt.Rid)
+		return fmt.Errorf("insert %s failed, err: %v", table.AuditTable, err)
 	}
 
 	return nil
+}
+
+// List audit.
+func (d Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAuditDetails, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list options is nil")
+	}
+
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(audit.AuditColumns.ColumnTypes())),
+		core.DefaultPageOption); err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	if opt.Page.Count {
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AuditTable, whereExpr)
+
+		count, err := d.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.ErrorJson("count audit failed, err: %v, filter: %d, rid: %d", err, opt.Filter, kt.Rid)
+			return nil, err
+		}
+
+		return &types.ListAuditDetails{Count: count}, nil
+	}
+
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, audit.AuditColumns.FieldsNamedExpr(opt.Fields),
+		table.AuditTable, whereExpr, pageExpr)
+
+	details := make([]audit.AuditTable, 0)
+	if err = d.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		return nil, err
+	}
+
+	return &types.ListAuditDetails{Details: details}, nil
 }

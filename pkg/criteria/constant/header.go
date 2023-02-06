@@ -40,4 +40,7 @@ const (
 
 	// TenantIDKey is tenant id header key. TODO confirm it.
 	TenantIDKey = "HTTP_BLUEKING_SUPPLIER_ID"
+
+	// RequestSourceKey is blueking hcm request source header key.
+	RequestSourceKey = "X-Bkhcm-Request-Source"
 )

@@ -42,11 +42,11 @@ var SecurityGroupSubnetRelColumnDescriptor = utils.ColumnDescriptors{
 
 // SecurityGroupSubnetRelTable define security group subnet rel table.
 type SecurityGroupSubnetRelTable struct {
-	ID              uint64     `db:"id" validate:"required"`
-	SubnetID        string     `db:"subnet_id" validate:"required,lte=64"`
-	SecurityGroupID string     `db:"security_group_id" validate:"required,lte=64"`
-	Creator         string     `db:"creator" validate:"required,lte=64"`
-	CreatedAt       *time.Time `db:"created_at" validate:"excluded_unless"`
+	ID              uint64     `db:"id" validate:"required" json:"id"`
+	SubnetID        string     `db:"subnet_id" validate:"required,lte=64" json:"subnet_id"`
+	SecurityGroupID string     `db:"security_group_id" validate:"required,lte=64" json:"security_group_id"`
+	Creator         string     `db:"creator" validate:"required,lte=64" json:"creator"`
+	CreatedAt       *time.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
 }
 
 // TableName return subnet and security group rel table name.
