@@ -96,11 +96,11 @@ export default defineComponent({
         },
       },
       { label: t('类型'),
-        field: 'type',
+        field: 'ethertype',
         render: ({ data }: any) => {
           return (
                 <>
-                <Select v-model={data.type}>
+                <Select v-model={data.ethertype}>
                     {IP_TYPE_LIST.map(ele => (
                     <Option value={ele.id} label={ele.name} key={ele.id} />
                     ))}
