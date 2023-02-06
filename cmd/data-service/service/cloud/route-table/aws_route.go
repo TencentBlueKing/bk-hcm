@@ -51,6 +51,7 @@ func initAwsRouteService(svc *routeTableSvc, cap *capability.Capability) {
 	h.Add("BatchCreateAwsRoute", "POST", "/batch/create", svc.BatchCreateAwsRoute)
 	h.Add("BatchUpdateAwsRoute", "PATCH", "/batch", svc.BatchUpdateAwsRoute)
 	h.Add("ListAwsRoute", "POST", "/list", svc.ListAwsRoute)
+	h.Add("ListAllAwsRoute", "POST", "/list/all", svc.ListAllAwsRoute)
 	h.Add("BatchDeleteAwsRoute", "DELETE", "/batch", svc.BatchDeleteAwsRoute)
 
 	h.Load(cap.WebService)
@@ -167,8 +168,12 @@ func (svc *routeTableSvc) BatchUpdateAwsRoute(cts *rest.Contexts) (interface{}, 
 	}
 
 	ids := make([]string, 0, len(req.AwsRoutes))
+	idsExists := make(map[string]struct{}, 0)
 	for _, route := range req.AwsRoutes {
 		ids = append(ids, route.ID)
+		if _, ok := idsExists[route.ID]; !ok {
+			idsExists[route.ID] = struct{}{}
+		}
 	}
 
 	// check if all routes exists in route table
@@ -187,7 +192,7 @@ func (svc *routeTableSvc) BatchUpdateAwsRoute(cts *rest.Contexts) (interface{}, 
 		logs.Errorf("list aws route failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list aws route failed, err: %v", err)
 	}
-	if listRes.Count != uint64(len(req.AwsRoutes)) {
+	if listRes.Count != uint64(len(idsExists)) {
 		return nil, fmt.Errorf("list aws route failed, some route(ids=%+v) doesn't exist", ids)
 	}
 
@@ -246,6 +251,76 @@ func (svc *routeTableSvc) ListAwsRoute(cts *rest.Contexts) (interface{}, error) 
 		},
 		Page:   req.Page,
 		Fields: req.Fields,
+	}
+
+	daoAwsRouteResp, err := svc.dao.Route().Aws().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list aws route failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list aws route failed, err: %v", err)
+	}
+	if req.Page.Count {
+		return &protocloud.AwsRouteListResult{Count: daoAwsRouteResp.Count}, nil
+	}
+
+	details := make([]protocore.AwsRoute, 0, len(daoAwsRouteResp.Details))
+	for _, route := range daoAwsRouteResp.Details {
+		details = append(details, protocore.AwsRoute{
+			ID:                               route.ID,
+			RouteTableID:                     route.RouteTableID,
+			CloudRouteTableID:                route.CloudRouteTableID,
+			DestinationCidrBlock:             route.DestinationCidrBlock,
+			DestinationIpv6CidrBlock:         route.DestinationIpv6CidrBlock,
+			CloudDestinationPrefixListID:     route.CloudDestinationPrefixListID,
+			CloudCarrierGatewayID:            route.CloudCarrierGatewayID,
+			CoreNetworkArn:                   route.CoreNetworkArn,
+			CloudEgressOnlyInternetGatewayID: route.CloudEgressOnlyInternetGatewayID,
+			CloudGatewayID:                   route.CloudGatewayID,
+			CloudInstanceID:                  route.CloudInstanceID,
+			CloudInstanceOwnerID:             route.CloudInstanceOwnerID,
+			CloudLocalGatewayID:              route.CloudLocalGatewayID,
+			CloudNatGatewayID:                route.CloudNatGatewayID,
+			CloudNetworkInterfaceID:          route.CloudNetworkInterfaceID,
+			CloudTransitGatewayID:            route.CloudTransitGatewayID,
+			CloudVpcPeeringConnectionID:      route.CloudVpcPeeringConnectionID,
+			State:                            route.State,
+			Propagated:                       converter.PtrToVal(route.Propagated),
+			Revision: &core.Revision{
+				Creator:   route.Creator,
+				Reviser:   route.Reviser,
+				CreatedAt: route.CreatedAt,
+				UpdatedAt: route.UpdatedAt,
+			},
+		})
+	}
+
+	return &protocloud.AwsRouteListResult{Details: details}, nil
+}
+
+// ListAllAwsRoute list routes.
+func (svc *routeTableSvc) ListAllAwsRoute(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.AwsRouteListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+		Fields: req.Fields,
+	}
+
+	if len(req.RouteTableID) != 0 {
+		opt.Filter = &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "route_table_id", Op: filter.Equal.Factory(), Value: req.RouteTableID},
+				req.Filter,
+			},
+		}
 	}
 
 	daoAwsRouteResp, err := svc.dao.Route().Aws().List(cts.Kit, opt)

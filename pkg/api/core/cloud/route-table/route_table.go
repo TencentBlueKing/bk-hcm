@@ -74,7 +74,8 @@ type AwsRouteTableAsst struct {
 
 // AzureRouteTableExtension defines azure route table extensional info.
 type AzureRouteTableExtension struct {
-	ResourceGroup       string `json:"resource_group"`
+	//ResourceGroup       string `json:"resource_group"`
+	ResourceGroupName   string `json:"resource_group_name"`
 	CloudSubscriptionID string `json:"cloud_subscription_id"`
 }
 

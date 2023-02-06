@@ -34,7 +34,7 @@ import (
 
 // UpdateRouteTable update route table.
 // TODO right now only memo is supported to update, add other update operations later.
-func (a *Azure) UpdateRouteTable(kt *kit.Kit, opt *routetable.AzureRouteTableUpdateOption) error {
+func (a *Azure) UpdateRouteTable(_ *kit.Kit, _ *routetable.AzureRouteTableUpdateOption) error {
 	return nil
 }
 
@@ -178,7 +178,7 @@ func convertRouteTable(data *armnetwork.RouteTable, resourceGroup, subscription 
 		Name:    converter.PtrToVal(data.Name),
 		Region:  converter.PtrToVal(data.Location),
 		Extension: &routetable.AzureRouteTableExtension{
-			ResourceGroup:       resourceGroup,
+			ResourceGroupName:   resourceGroup,
 			CloudSubscriptionID: subscription,
 			Routes:              nil,
 			CloudSubnetIDs:      nil,

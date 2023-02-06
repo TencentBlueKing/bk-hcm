@@ -50,6 +50,7 @@ func initAzureRouteService(svc *routeTableSvc, cap *capability.Capability) {
 	h.Add("BatchCreateAzureRoute", "POST", "/batch/create", svc.BatchCreateAzureRoute)
 	h.Add("BatchUpdateAzureRoute", "PATCH", "/batch", svc.BatchUpdateAzureRoute)
 	h.Add("ListAzureRoute", "POST", "/list", svc.ListAzureRoute)
+	h.Add("ListAzureRoute", "POST", "/list/all", svc.ListAllAzureRoute)
 	h.Add("BatchDeleteAzureRoute", "DELETE", "/batch", svc.BatchDeleteAzureRoute)
 
 	h.Load(cap.WebService)
@@ -226,6 +227,66 @@ func (svc *routeTableSvc) ListAzureRoute(cts *rest.Contexts) (interface{}, error
 		},
 		Page:   req.Page,
 		Fields: req.Fields,
+	}
+
+	daoAzureRouteResp, err := svc.dao.Route().Azure().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list azure route failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list azure route failed, err: %v", err)
+	}
+	if req.Page.Count {
+		return &protocloud.AzureRouteListResult{Count: daoAzureRouteResp.Count}, nil
+	}
+
+	details := make([]protocore.AzureRoute, 0, len(daoAzureRouteResp.Details))
+	for _, route := range daoAzureRouteResp.Details {
+		details = append(details, protocore.AzureRoute{
+			ID:                route.ID,
+			CloudID:           route.CloudID,
+			RouteTableID:      route.RouteTableID,
+			CloudRouteTableID: route.CloudRouteTableID,
+			Name:              route.Name,
+			AddressPrefix:     route.AddressPrefix,
+			NextHopType:       route.NextHopType,
+			NextHopIPAddress:  route.NextHopIPAddress,
+			ProvisioningState: route.ProvisioningState,
+			Revision: &core.Revision{
+				Creator:   route.Creator,
+				Reviser:   route.Reviser,
+				CreatedAt: route.CreatedAt,
+				UpdatedAt: route.UpdatedAt,
+			},
+		})
+	}
+
+	return &protocloud.AzureRouteListResult{Details: details}, nil
+}
+
+// ListAllAzureRoute list routes.
+func (svc *routeTableSvc) ListAllAzureRoute(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.AzureRouteListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+		Fields: req.Fields,
+	}
+
+	if len(req.RouteTableID) != 0 {
+		opt.Filter = &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "route_table_id", Op: filter.Equal.Factory(), Value: req.RouteTableID},
+				req.Filter,
+			},
+		}
 	}
 
 	daoAzureRouteResp, err := svc.dao.Route().Azure().List(cts.Kit, opt)

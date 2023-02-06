@@ -107,7 +107,7 @@ func (r *routeTableDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []rou
 			ResID:      one.ID,
 			CloudResID: one.CloudID,
 			ResName:    converter.PtrToVal(one.Name),
-			ResType:    enumor.SecurityGroupAuditResType,
+			ResType:    enumor.RouteTableAuditResType,
 			Action:     enumor.Create,
 			BkBizID:    one.BkBizID,
 			Vendor:     one.Vendor,

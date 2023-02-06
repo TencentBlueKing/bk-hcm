@@ -49,6 +49,10 @@ func (g *Gcp) ListRoute(kt *kit.Kit, opt *core.GcpListOption) (*routetable.GcpRo
 		listCall.Filter(generateResourceIDsFilter(opt.CloudIDs))
 	}
 
+	if len(opt.SelfLinks) > 0 {
+		listCall.Filter(generateResourceFilter("selfLink", opt.SelfLinks))
+	}
+
 	if opt.Page != nil {
 		listCall.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
 	}

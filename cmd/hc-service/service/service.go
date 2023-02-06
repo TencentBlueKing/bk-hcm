@@ -44,6 +44,7 @@ import (
 	synceip "hcm/cmd/hc-service/service/sync/eip"
 	syncfirewall "hcm/cmd/hc-service/service/sync/firewall"
 	syncnetworkinterface "hcm/cmd/hc-service/service/sync/network-interface"
+	syncroutetable "hcm/cmd/hc-service/service/sync/route-table"
 	syncsecuritygroup "hcm/cmd/hc-service/service/sync/security-group"
 	syncsubnet "hcm/cmd/hc-service/service/sync/subnet"
 	syncvpc "hcm/cmd/hc-service/service/sync/vpc"
@@ -180,6 +181,7 @@ func (s *Service) apiSet() *restful.Container {
 	syncvpc.InitSyncVpcService(c)
 	syncsubnet.InitSyncSubnetService(c)
 	syncnetworkinterface.InitSyncNetworkInterfaceService(c)
+	syncroutetable.InitRouteTableService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

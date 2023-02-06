@@ -66,10 +66,14 @@ func InitRouteTableService(cap *capability.Capability) {
 func initRouteTableService(svc *routeTableSvc, cap *capability.Capability) {
 	h := rest.NewHandler()
 
-	h.Add("BatchCreateRouteTable", "POST", "/vendors/{vendor}/route_tables/batch/create", svc.BatchCreateRouteTable)
-	h.Add("BatchUpdateRouteTableBaseInfo", "PATCH", "/route_tables/base/batch", svc.BatchUpdateRouteTableBaseInfo)
+	h.Add("BatchCreateRouteTable", "POST", "/vendors/{vendor}/route_tables/batch/create",
+		svc.BatchCreateRouteTable)
+	h.Add("BatchUpdateRouteTableBaseInfo", "PATCH", "/route_tables/base/batch",
+		svc.BatchUpdateRouteTableBaseInfo)
 	h.Add("GetRouteTable", "GET", "/vendors/{vendor}/route_tables/{id}", svc.GetRouteTable)
 	h.Add("ListRouteTable", "POST", "/route_tables/list", svc.ListRouteTable)
+	h.Add("ListRouteTableWithExtension", "POST", "/vendors/{vendor}/route_tables/list",
+		svc.ListRouteTableWithExtension)
 	h.Add("BatchDeleteRouteTable", "DELETE", "/route_tables/batch", svc.BatchDeleteRouteTable)
 	h.Add("CountRouteTableSubnets", "POST", "/route_tables/subnets/count", svc.CountRouteTableSubnets)
 
@@ -265,8 +269,8 @@ func (svc *routeTableSvc) GetRouteTable(cts *rest.Contexts) (interface{}, error)
 	return nil, nil
 }
 
-func convertToRouteTableResult[T protocore.RouteTableExtension](baseRouteTable *protocore.BaseRouteTable, dbExtension tabletype.JsonField) (
-	*protocore.RouteTable[T], error) {
+func convertToRouteTableResult[T protocore.RouteTableExtension](baseRouteTable *protocore.BaseRouteTable,
+	dbExtension tabletype.JsonField) (*protocore.RouteTable[T], error) {
 
 	extension := new(T)
 	err := json.UnmarshalFromString(string(dbExtension), extension)
@@ -478,4 +482,47 @@ func (svc *routeTableSvc) CountRouteTableSubnets(cts *rest.Contexts) (interface{
 	}
 
 	return counts, nil
+}
+
+// ListRouteTableWithExtension list route table extension
+func (svc *routeTableSvc) ListRouteTableWithExtension(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+		Fields: req.Fields,
+	}
+	data, err := svc.dao.RouteTable().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list route table extension failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list route table extension failed, err: %v", err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return toProtoRouteTableExt[protocore.TCloudRouteTableExtension](data)
+	case enumor.Azure:
+		return toProtoRouteTableExt[protocore.AzureRouteTableExtension](data)
+	case enumor.HuaWei:
+		return toProtoRouteTableExt[protocore.HuaWeiRouteTableExtension](data)
+	case enumor.Aws:
+		return toProtoRouteTableExt[protocore.AwsRouteTableExtension](data)
+	case enumor.Gcp:
+		return data, nil
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+	}
 }

@@ -25,7 +25,7 @@ import (
 	routetable "hcm/pkg/adaptor/types/route-table"
 	dataservice "hcm/pkg/api/data-service"
 	dataproto "hcm/pkg/api/data-service/cloud/route-table"
-	hcservice "hcm/pkg/api/hc-service/route-table"
+	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
@@ -35,7 +35,7 @@ import (
 func (r routeTable) AzureRouteTableUpdate(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
-	req := new(hcservice.RouteTableUpdateReq)
+	req := new(hcroutetable.RouteTableUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -91,7 +91,7 @@ func (r routeTable) AzureRouteTableDelete(cts *rest.Contexts) (interface{}, erro
 
 	delOpt := &adcore.AzureDeleteOption{
 		BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.Name},
-		ResourceGroupName: getRes.Extension.ResourceGroup,
+		ResourceGroupName: getRes.Extension.ResourceGroupName,
 	}
 	err = cli.DeleteRouteTable(cts.Kit, delOpt)
 	if err != nil {

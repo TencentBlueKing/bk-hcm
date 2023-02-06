@@ -20,7 +20,9 @@
 package routetable
 
 import (
+	"hcm/pkg/api/core"
 	routetable "hcm/pkg/api/core/cloud/route-table"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
@@ -75,6 +77,24 @@ type AzureRouteUpdateInfo struct {
 }
 
 // -------------------------- List --------------------------
+
+// AzureRouteListReq defines list azure route request.
+type AzureRouteListReq struct {
+	*core.ListReq `json:",inline"`
+	RouteTableID  string `json:"route_table_id"`
+}
+
+func (r AzureRouteListReq) Validate() error {
+	if r.ListReq == nil {
+		return errf.New(errf.InvalidParameter, "list request is required")
+	}
+
+	if err := r.ListReq.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // AzureRouteListResp defines list azure route response.
 type AzureRouteListResp struct {

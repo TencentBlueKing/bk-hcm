@@ -25,7 +25,7 @@ import (
 	routetable "hcm/pkg/adaptor/types/route-table"
 	dataservice "hcm/pkg/api/data-service"
 	dataproto "hcm/pkg/api/data-service/cloud/route-table"
-	hcproto "hcm/pkg/api/hc-service/route-table"
+	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
@@ -35,7 +35,7 @@ import (
 func (r routeTable) TCloudRouteTableUpdate(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
-	req := new(hcproto.RouteTableUpdateReq)
+	req := new(hcroutetable.RouteTableUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

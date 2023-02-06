@@ -20,7 +20,9 @@
 package routetable
 
 import (
+	"hcm/pkg/api/core"
 	routetable "hcm/pkg/api/core/cloud/route-table"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
@@ -94,6 +96,24 @@ type AwsRouteUpdateInfo struct {
 }
 
 // -------------------------- List --------------------------
+
+// AwsRouteListReq defines list aws route request.
+type AwsRouteListReq struct {
+	*core.ListReq `json:",inline"`
+	RouteTableID  string `json:"route_table_id"`
+}
+
+func (r AwsRouteListReq) Validate() error {
+	if r.ListReq == nil {
+		return errf.New(errf.InvalidParameter, "list request is required")
+	}
+
+	if err := r.ListReq.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // AwsRouteListResp defines list aws route response.
 type AwsRouteListResp struct {

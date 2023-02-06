@@ -17,8 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package subnet defines vpc service.
-package subnet
+// Package routetable defines route table service.
+package routetable
 
 import (
 	"hcm/cmd/hc-service/service/capability"
@@ -28,9 +28,9 @@ import (
 	"hcm/pkg/rest"
 )
 
-// InitSyncSubnetService initial the subnet service
-func InitSyncSubnetService(cap *capability.Capability) {
-	v := &syncSubnetSvc{
+// InitRouteTableService initial the route table service
+func InitRouteTableService(cap *capability.Capability) {
+	v := &routeTable{
 		ad:      cap.CloudAdaptor,
 		cs:      cap.ClientSet,
 		dataCli: cap.ClientSet.DataService(),
@@ -38,17 +38,16 @@ func InitSyncSubnetService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	// subnet sync
-	h.Add("TCloudSubnetSync", "POST", "/vendors/tcloud/subnets/sync", v.SyncTCloudSubnet)
-	h.Add("HuaWeiSubnetSync", "POST", "/vendors/huawei/subnets/sync", v.SyncHuaWeiSubnet)
-	h.Add("AwsSubnetSync", "POST", "/vendors/aws/subnets/sync", v.SyncAwsSubnet)
-	h.Add("AzureSubnetSync", "POST", "/vendors/azure/subnets/sync", v.SyncAzureSubnet)
-	h.Add("GcpSubnetSync", "POST", "/vendors/gcp/subnets/sync", v.SyncGcpSubnet)
+	h.Add("TCloudRouteTableSync", "POST", "/vendors/tcloud/route_tables/sync", v.SyncTCloudRouteTable)
+	h.Add("HuaWeiRouteTableSync", "POST", "/vendors/huawei/route_tables/sync", v.SyncHuaWeiRouteTable)
+	h.Add("AwsRouteTableSync", "POST", "/vendors/aws/route_tables/sync", v.SyncAwsRouteTable)
+	h.Add("AzureRouteTableSync", "POST", "/vendors/azure/route_tables/sync", v.SyncAzureRouteTable)
+	h.Add("GcpRouteTableSync", "POST", "/vendors/gcp/route_tables/sync", v.SyncGcpRouteTable)
 
 	h.Load(cap.WebService)
 }
 
-type syncSubnetSvc struct {
+type routeTable struct {
 	ad      *cloudadaptor.CloudAdaptorClient
 	cs      *client.ClientSet
 	dataCli *dataservice.Client

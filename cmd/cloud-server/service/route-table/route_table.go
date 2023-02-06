@@ -26,6 +26,7 @@ import (
 	corecloud "hcm/pkg/api/core/cloud/route-table"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
+	hcproto "hcm/pkg/api/hc-service/route-table"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -57,6 +58,59 @@ func InitRouteTableService(c *capability.Capability) {
 type routeTableSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+}
+
+// UpdateRouteTable update route table.
+func (svc *routeTableSvc) UpdateRouteTable(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloudserver.RouteTableUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		enumor.RouteTableCloudResType, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RouteTable, Action: meta.Update,
+		ResourceID: basicInfo.AccountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	// update route table
+	switch basicInfo.Vendor {
+	case enumor.TCloud:
+		err = svc.client.HCService().TCloud.RouteTable.Update(cts.Kit.Ctx, cts.Kit.Header(), id, nil)
+	case enumor.Aws:
+		err = svc.client.HCService().Aws.RouteTable.Update(cts.Kit.Ctx, cts.Kit.Header(), id, nil)
+	case enumor.Gcp:
+		updateReq := &hcproto.RouteTableUpdateReq{
+			Memo: req.Memo,
+		}
+		err = svc.client.HCService().Gcp.RouteTable.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
+	case enumor.Azure:
+		err = svc.client.HCService().Azure.RouteTable.Update(cts.Kit.Ctx, cts.Kit.Header(), id, nil)
+	case enumor.HuaWei:
+		updateReq := &hcproto.RouteTableUpdateReq{
+			Memo: req.Memo,
+		}
+		err = svc.client.HCService().HuaWei.RouteTable.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 // GetRouteTable get route table details.

@@ -30,3 +30,71 @@ type RouteTableUpdateReq struct {
 func (u *RouteTableUpdateReq) Validate() error {
 	return validator.Validate.Struct(u)
 }
+
+// -------------------------- Sync --------------------------
+
+// TCloudRouteTableSyncReq defines sync route table request.
+type TCloudRouteTableSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids,omitempty"`
+}
+
+// Validate validate sync route table request.
+func (r *TCloudRouteTableSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// HuaWeiRouteTableSyncReq defines sync route table request.
+type HuaWeiRouteTableSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids,omitempty"`
+}
+
+// Validate validate sync route table request.
+func (r *HuaWeiRouteTableSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// AzureRouteTableSyncReq defines sync route table request.
+type AzureRouteTableSyncReq struct {
+	AccountID         string   `json:"account_id" validate:"required"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
+	Region            string   `json:"region" validate:"omitempty"`
+	CloudIDs          []string `json:"cloud_ids,omitempty"`
+}
+
+// Validate validate sync route table request.
+func (r *AzureRouteTableSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// AwsRouteTableSyncReq defines sync route table request.
+type AwsRouteTableSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids,omitempty"`
+}
+
+// Validate validate sync route table request.
+func (r *AwsRouteTableSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// GcpRouteTableSyncReq defines sync route table request.
+type GcpRouteTableSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids,omitempty"`
+	SelfLinks []string `json:"self_links" validate:"omitempty"`
+}
+
+// Validate validate sync route table request.
+func (r *GcpRouteTableSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// RouteTableSyncResult defines sync route table result.
+type RouteTableSyncResult struct {
+	TaskID string `json:"task_id"`
+}

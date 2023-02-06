@@ -90,8 +90,8 @@ func (r *gcpRouteDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []route
 		models[idx].ID = ids[idx]
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(), routetable.GcpRouteColumns.ColumnExpr(),
-		routetable.GcpRouteColumns.ColonNameExpr())
+	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES(%s)`, models[0].TableName(),
+		routetable.GcpRouteColumns.ColumnExpr(), routetable.GcpRouteColumns.ColonNameExpr())
 
 	err = r.orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
@@ -112,7 +112,7 @@ func (r *gcpRouteDao) batchCreateAudit(kt *kit.Kit, tx *sqlx.Tx, routes []routet
 	}
 
 	rtIDs := make([]string, 0, len(rtIDMap))
-	for id, _ := range rtIDMap {
+	for id := range rtIDMap {
 		rtIDs = append(rtIDs, id)
 	}
 
@@ -125,7 +125,7 @@ func (r *gcpRouteDao) batchCreateAudit(kt *kit.Kit, tx *sqlx.Tx, routes []routet
 	for _, route := range routes {
 		rt, exist := idRtMap[route.RouteTableID]
 		if !exist {
-			return errf.Newf(errf.RecordNotFound, "security group: %s not found", route.RouteTableID)
+			return errf.Newf(errf.RecordNotFound, "route table: %s not found", route.RouteTableID)
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{

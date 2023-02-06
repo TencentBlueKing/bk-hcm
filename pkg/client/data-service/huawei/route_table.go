@@ -138,6 +138,30 @@ func (r *RouteTableClient) ListRoute(ctx context.Context, h http.Header, routeTa
 	return resp.Data, nil
 }
 
+// ListAllRoute list huawei route.
+func (r *RouteTableClient) ListAllRoute(ctx context.Context, h http.Header, req *routetable.HuaWeiRouteListReq) (
+	*routetable.HuaWeiRouteListResult, error) {
+
+	resp := new(routetable.HuaWeiRouteListResp)
+
+	err := r.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/route_tables/route_id/routes/list/all").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // BatchUpdateRoute batch update huawei route.
 func (r *RouteTableClient) BatchUpdateRoute(ctx context.Context, h http.Header, routeTableID string,
 	req *routetable.HuaWeiRouteBatchUpdateReq) error {
@@ -184,4 +208,28 @@ func (r *RouteTableClient) BatchDeleteRoute(ctx context.Context, h http.Header, 
 	}
 
 	return nil
+}
+
+// ListRouteTableWithExt list route tables extension.
+func (r *RouteTableClient) ListRouteTableWithExt(ctx context.Context, h http.Header, req *core.ListReq) (
+	[]*corert.RouteTable[corert.HuaWeiRouteTableExtension], error) {
+
+	resp := new(routetable.RouteTableListExtResp[corert.HuaWeiRouteTableExtension])
+
+	err := r.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/route_tables/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }

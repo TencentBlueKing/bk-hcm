@@ -20,7 +20,9 @@
 package routetable
 
 import (
+	"hcm/pkg/api/core"
 	routetable "hcm/pkg/api/core/cloud/route-table"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
@@ -82,6 +84,24 @@ type TCloudRouteUpdateInfo struct {
 }
 
 // -------------------------- List --------------------------
+
+// TCloudRouteListReq defines list tcloud route request.
+type TCloudRouteListReq struct {
+	*core.ListReq `json:",inline"`
+	RouteTableID  string `json:"route_table_id"`
+}
+
+func (r TCloudRouteListReq) Validate() error {
+	if r.ListReq == nil {
+		return errf.New(errf.InvalidParameter, "list request is required")
+	}
+
+	if err := r.ListReq.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // TCloudRouteListResp defines list tcloud route response.
 type TCloudRouteListResp struct {

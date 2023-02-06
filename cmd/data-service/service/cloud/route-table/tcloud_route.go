@@ -51,6 +51,7 @@ func initTCloudRouteService(svc *routeTableSvc, cap *capability.Capability) {
 	h.Add("BatchCreateTCloudRoute", "POST", "/batch/create", svc.BatchCreateTCloudRoute)
 	h.Add("BatchUpdateTCloudRoute", "PATCH", "/batch", svc.BatchUpdateTCloudRoute)
 	h.Add("ListTCloudRoute", "POST", "/list", svc.ListTCloudRoute)
+	h.Add("ListAllTCloudRoute", "POST", "/list/all", svc.ListAllTCloudRoute)
 	h.Add("BatchDeleteTCloudRoute", "DELETE", "/batch", svc.BatchDeleteTCloudRoute)
 
 	h.Load(cap.WebService)
@@ -234,6 +235,69 @@ func (svc *routeTableSvc) ListTCloudRoute(cts *rest.Contexts) (interface{}, erro
 		},
 		Page:   req.Page,
 		Fields: req.Fields,
+	}
+
+	daoTCloudRouteResp, err := svc.dao.Route().TCloud().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list tcloud route failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list tcloud route failed, err: %v", err)
+	}
+	if req.Page.Count {
+		return &protocloud.TCloudRouteListResult{Count: daoTCloudRouteResp.Count}, nil
+	}
+
+	details := make([]protocore.TCloudRoute, 0, len(daoTCloudRouteResp.Details))
+	for _, route := range daoTCloudRouteResp.Details {
+		details = append(details, protocore.TCloudRoute{
+			ID:                       route.ID,
+			RouteTableID:             route.RouteTableID,
+			CloudID:                  route.CloudID,
+			CloudRouteTableID:        route.CloudRouteTableID,
+			DestinationCidrBlock:     route.DestinationCidrBlock,
+			DestinationIpv6CidrBlock: route.DestinationIpv6CidrBlock,
+			GatewayType:              route.GatewayType,
+			CloudGatewayID:           route.CloudGatewayID,
+			Enabled:                  converter.PtrToVal(route.Enabled),
+			RouteType:                route.RouteType,
+			PublishedToVbc:           converter.PtrToVal(route.PublishedToVbc),
+			Memo:                     route.Memo,
+			Revision: &core.Revision{
+				Creator:   route.Creator,
+				Reviser:   route.Reviser,
+				CreatedAt: route.CreatedAt,
+				UpdatedAt: route.UpdatedAt,
+			},
+		})
+	}
+
+	return &protocloud.TCloudRouteListResult{Details: details}, nil
+}
+
+// ListAllTCloudRoute list routes.
+func (svc *routeTableSvc) ListAllTCloudRoute(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.TCloudRouteListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+		Fields: req.Fields,
+	}
+
+	if len(req.RouteTableID) != 0 {
+		opt.Filter = &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "route_table_id", Op: filter.Equal.Factory(), Value: req.RouteTableID},
+				req.Filter,
+			},
+		}
 	}
 
 	daoTCloudRouteResp, err := svc.dao.Route().TCloud().List(cts.Kit, opt)

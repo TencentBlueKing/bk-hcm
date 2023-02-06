@@ -61,7 +61,7 @@ type AwsRouteTableCreateExt struct {
 // AzureRouteTableCreateExt defines azure route table extensional info.
 type AzureRouteTableCreateExt struct {
 	CloudSubscriptionID string `json:"cloud_subscription_id"`
-	ResourceGroup       string `json:"resource_group"`
+	ResourceGroupName   string `json:"resource_group_name"`
 }
 
 // HuaWeiRouteTableCreateExt defines huawei route table extensional info.
@@ -132,4 +132,12 @@ type RouteTableSubnetsCountResp struct {
 type RouteTableSubnetsCountResult struct {
 	Count uint64 `json:"count"`
 	ID    string `json:"id"`
+}
+
+// -------------------------- ListExtension --------------------------
+
+// RouteTableListExtResp defines list route table extension response.
+type RouteTableListExtResp[T routetable.RouteTableExtension] struct {
+	rest.BaseResp `json:",inline"`
+	Data          []*routetable.RouteTable[T] `json:"data"`
 }

@@ -90,6 +90,30 @@ func (r *RouteTableClient) ListRoute(ctx context.Context, h http.Header, req *ro
 	return resp.Data, nil
 }
 
+// ListAllRoute list gcp route.
+func (r *RouteTableClient) ListAllRoute(ctx context.Context, h http.Header, req *routetable.GcpRouteListReq) (
+	*routetable.GcpRouteListResult, error) {
+
+	resp := new(routetable.GcpRouteListResp)
+
+	err := r.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/route_tables/route_id/routes/list/all").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // BatchDeleteRoute batch delete gcp route.
 func (r *RouteTableClient) BatchDeleteRoute(ctx context.Context, h http.Header, req *dataservice.BatchDeleteReq) error {
 	resp := new(rest.BaseResp)

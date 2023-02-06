@@ -50,6 +50,7 @@ func initHuaWeiRouteService(svc *routeTableSvc, cap *capability.Capability) {
 	h.Add("BatchCreateHuaWeiRoute", "POST", "/batch/create", svc.BatchCreateHuaWeiRoute)
 	h.Add("BatchUpdateHuaWeiRoute", "PATCH", "/batch", svc.BatchUpdateHuaWeiRoute)
 	h.Add("ListHuaWeiRoute", "POST", "/list", svc.ListHuaWeiRoute)
+	h.Add("ListAllHuaWeiRoute", "POST", "/list/all", svc.ListAllHuaWeiRoute)
 	h.Add("BatchDeleteHuaWeiRoute", "DELETE", "/batch", svc.BatchDeleteHuaWeiRoute)
 
 	h.Load(cap.WebService)
@@ -224,6 +225,64 @@ func (svc *routeTableSvc) ListHuaWeiRoute(cts *rest.Contexts) (interface{}, erro
 		},
 		Page:   req.Page,
 		Fields: req.Fields,
+	}
+
+	daoHuaWeiRouteResp, err := svc.dao.Route().HuaWei().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list huawei route failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list huawei route failed, err: %v", err)
+	}
+	if req.Page.Count {
+		return &protocloud.HuaWeiRouteListResult{Count: daoHuaWeiRouteResp.Count}, nil
+	}
+
+	details := make([]protocore.HuaWeiRoute, 0, len(daoHuaWeiRouteResp.Details))
+	for _, route := range daoHuaWeiRouteResp.Details {
+		details = append(details, protocore.HuaWeiRoute{
+			ID:                route.ID,
+			RouteTableID:      route.RouteTableID,
+			CloudRouteTableID: route.CloudRouteTableID,
+			Type:              route.Type,
+			Destination:       route.Destination,
+			NextHop:           route.NextHop,
+			Memo:              route.Memo,
+			Revision: &core.Revision{
+				Creator:   route.Creator,
+				Reviser:   route.Reviser,
+				CreatedAt: route.CreatedAt,
+				UpdatedAt: route.UpdatedAt,
+			},
+		})
+	}
+
+	return &protocloud.HuaWeiRouteListResult{Details: details}, nil
+}
+
+// ListAllHuaWeiRoute list routes.
+func (svc *routeTableSvc) ListAllHuaWeiRoute(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.HuaWeiRouteListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+		Fields: req.Fields,
+	}
+
+	if len(req.RouteTableID) != 0 {
+		opt.Filter = &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "route_table_id", Op: filter.Equal.Factory(), Value: req.RouteTableID},
+				req.Filter,
+			},
+		}
 	}
 
 	daoHuaWeiRouteResp, err := svc.dao.Route().HuaWei().List(cts.Kit, opt)

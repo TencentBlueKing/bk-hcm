@@ -222,7 +222,6 @@ func (svc *routeTableSvc) genGcpRouteTable(kt *kit.Kit, txn *sqlx.Tx, networkLis
 		table.ID = ids[i]
 		tableMap[table.CloudVpcID] = table
 	}
-
 	return tableMap, nil
 }
 
@@ -371,7 +370,7 @@ func (svc *routeTableSvc) BatchDeleteGcpRoute(cts *rest.Contexts) (interface{}, 
 	}
 	listResp, err := svc.dao.Route().Gcp().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list gcp route failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch delete list gcp route failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list gcp route failed, err: %v", err)
 	}
 
