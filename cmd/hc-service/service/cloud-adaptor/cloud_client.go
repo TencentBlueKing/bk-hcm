@@ -70,7 +70,7 @@ func (cli *CloudAdaptorClient) Aws(kt *kit.Kit, accountID string) (*aws.Aws, err
 }
 
 // HuaWei return huawei client.
-func (cli *CloudAdaptorClient) HuaWei(kt *kit.Kit, accountID string) (*huawei.Huawei, error) {
+func (cli *CloudAdaptorClient) HuaWei(kt *kit.Kit, accountID string) (*huawei.HuaWei, error) {
 	secret, err := cli.secretCli.HuaWeiSecret(kt, accountID)
 	if err != nil {
 		return nil, err

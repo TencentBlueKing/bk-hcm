@@ -154,7 +154,7 @@ func (opt HuaWeiSecurityGroupUpdateOption) Validate() error {
 type HuaWeiSecurityGroupListOption struct {
 	Region   string           `json:"region" validate:"required"`
 	CloudIDs []string         `json:"cloud_ids" validate:"omitempty"`
-	Page     *core.HuaweiPage `json:"page" validate:"omitempty"`
+	Page     *core.HuaWeiPage `json:"page" validate:"omitempty"`
 }
 
 // Validate huawei security group list option.

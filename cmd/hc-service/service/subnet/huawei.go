@@ -22,6 +22,7 @@ package subnet
 
 import (
 	"fmt"
+
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	cloudcore "hcm/pkg/api/core/cloud"
@@ -60,7 +61,7 @@ func (s subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	updateOpt := &types.HuaweiSubnetUpdateOption{
+	updateOpt := &types.HuaWeiSubnetUpdateOption{
 		SubnetUpdateOption: types.SubnetUpdateOption{
 			ResourceID: getRes.CloudID,
 			Data:       &types.BaseSubnetUpdateData{Memo: req.Memo},
@@ -104,7 +105,7 @@ func (s subnet) HuaWeiSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	delOpt := &types.HuaweiSubnetDeleteOption{
+	delOpt := &types.HuaWeiSubnetDeleteOption{
 		BaseRegionalDeleteOption: adcore.BaseRegionalDeleteOption{
 			BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
 			Region:           getRes.Extension.Region,
@@ -127,8 +128,8 @@ func (s subnet) HuaWeiSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// HuaweiSubnetSync sync huawei cloud subnet.
-func (s subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
+// HuaWeiSubnetSync sync huawei cloud subnet.
+func (s subnet) HuaWeiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	req := new(hcservice.ResourceSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -173,18 +174,18 @@ func (s subnet) HuaweiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 
 // BatchGetHuaWeiSubnetList batch get subnet list from cloudapi.
 func (s subnet) BatchGetHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq) (
-	*types.HuaweiSubnetListResult, error) {
+	*types.HuaWeiSubnetListResult, error) {
 	cli, err := s.ad.HuaWei(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	list := new(types.HuaweiSubnetListResult)
+	list := new(types.HuaWeiSubnetListResult)
 	for {
-		opt := new(types.HuaweiSubnetListOption)
+		opt := new(types.HuaWeiSubnetListOption)
 		opt.Region = req.Region
-		count := int32(adcore.HuaweiQueryLimit)
-		opt.Page = &adcore.HuaweiPage{
+		count := int32(adcore.HuaWeiQueryLimit)
+		opt.Page = &adcore.HuaWeiPage{
 			Limit: converter.ValToPtr(count),
 		}
 
@@ -206,7 +207,7 @@ func (s subnet) BatchGetHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.Reso
 
 // BatchSyncHuaWeiSubnetList batch sync vendor subnet list.
 func (s subnet) BatchSyncHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
-	list *types.HuaweiSubnetListResult, resourceDBMap map[string]cloudcore.BaseSubnet) error {
+	list *types.HuaWeiSubnetListResult, resourceDBMap map[string]cloudcore.BaseSubnet) error {
 	createResources, updateResources, existIDMap, err := s.filterHuaWeiSubnetList(req, list, resourceDBMap)
 	if err != nil {
 		return err
@@ -255,7 +256,7 @@ func (s subnet) BatchSyncHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.Res
 }
 
 // filterHuaWeiSubnetList filter huawei subnet list
-func (s subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *types.HuaweiSubnetListResult,
+func (s subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *types.HuaWeiSubnetListResult,
 	resourceDBMap map[string]cloudcore.BaseSubnet) (
 	createResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt],
 	updateResources []cloud.SubnetUpdateReq[cloud.HuaWeiSubnetUpdateExt], existIDMap map[string]bool, err error) {

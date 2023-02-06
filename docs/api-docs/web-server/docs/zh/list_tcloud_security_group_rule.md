@@ -80,8 +80,8 @@
         "security_group_id": "1",
         "creator": "tom",
         "reviser": "tom",
-        "create_at": "2019-07-29 11:57:20",
-        "update_at": "2019-07-29 11:57:20"
+        "created_at": "2019-07-29 11:57:20",
+        "updated_at": "2019-07-29 11:57:20"
       }
     ]
   }
@@ -139,5 +139,5 @@
 | security_group_id              | string | 规则所属安全组ID                                                   |
 | creator                        | string | 创建者                                                         |
 | reviser                        | string | 最后一次修改的修改者                                                  |
-| create_at                      | string | 创建时间                                                        |
-| update_at                      | string | 最后一次修改时间                                                    |
+| created_at                     | string | 创建时间                                                        |
+| updated_at                     | string | 最后一次修改时间                                                    |

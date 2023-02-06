@@ -102,7 +102,7 @@
 | account_id | string  | 账号ID                             |
 | creator    | string  | 创建者                              |
 | reviser    | string  | 更新者                              |
-| create_at  | string  | 创建时间                             |
+| created_at | string  | 创建时间                             |
 | updated_at | string  | 更新时间                             |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。

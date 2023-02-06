@@ -39,8 +39,8 @@
     "bk_biz_id": 123,
     "creator": "tom",
     "reviser": "tom",
-    "create_at": "2019-07-29 11:57:20",
-    "update_at": "2019-07-29 11:57:20",
+    "created_at": "2019-07-29 11:57:20",
+    "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "is_default": false,
       "region": "ap-guangzhou",
@@ -75,8 +75,8 @@
     "bk_biz_id": 123,
     "creator": "tom",
     "reviser": "tom",
-    "create_at": "2019-07-29 11:57:20",
-    "update_at": "2019-07-29 11:57:20",
+    "created_at": "2019-07-29 11:57:20",
+    "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "state": "available",
       "region": "us-east-1",
@@ -114,8 +114,8 @@
     "bk_biz_id": 123,
     "creator": "tom",
     "reviser": "tom",
-    "create_at": "2019-07-29 11:57:20",
-    "update_at": "2019-07-29 11:57:20",
+    "created_at": "2019-07-29 11:57:20",
+    "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "self_link": "https://www.googleapis.com/compute/v1/projects/xxx/regions/us-west1/subnetworks/test",
       "region": "https://www.googleapis.com/compute/v1/projects/xxx/regions/us-west1",
@@ -153,8 +153,8 @@
     "bk_biz_id": 123,
     "creator": "tom",
     "reviser": "tom",
-    "create_at": "2019-07-29 11:57:20",
-    "update_at": "2019-07-29 11:57:20",
+    "created_at": "2019-07-29 11:57:20",
+    "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "resource_group": "test",
       "nat_gateway": "xxx",
@@ -188,8 +188,8 @@
     "bk_biz_id": 123,
     "creator": "tom",
     "reviser": "tom",
-    "create_at": "2019-07-29 11:57:20",
-    "update_at": "2019-07-29 11:57:20",
+    "created_at": "2019-07-29 11:57:20",
+    "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "region": "ap-southeast-1",
       "status": "ACTIVE",
@@ -231,7 +231,7 @@
 | bk_biz_id    | int64        | 业务ID，-1表示没有分配到业务              |
 | creator      | string       | 创建者                           |
 | reviser      | string       | 更新者                           |
-| create_at    | string       | 创建时间，标准格式：2006-01-02 15:04:05 |
+| created_at   | string       | 创建时间，标准格式：2006-01-02 15:04:05 |
 | updated_at   | string       | 更新时间，标准格式：2006-01-02 15:04:05 |
 | extension    | object       | 云厂商私有结构                       |
 

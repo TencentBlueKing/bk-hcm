@@ -68,13 +68,13 @@ func TestGreaterThanSQLExpr(t *testing.T) {
 	}
 
 	// test time scenario
-	gtExpr, _, err = gt.SQLExprAndValue("create_at", "2022-01-02 15:04:05")
+	gtExpr, _, err = gt.SQLExprAndValue("created_at", "2022-01-02 15:04:05")
 	if err != nil {
 		t.Errorf("test gt operator with time failed, err: %v", err)
 		return
 	}
 
-	if gtExpr != `create_at > :create_at` {
+	if gtExpr != `created_at > :created_at` {
 		t.Errorf("test gt operator with time got wrong expr: %s", gtExpr)
 		return
 	}
@@ -95,13 +95,13 @@ func TestGreaterThanEqualSQLExpr(t *testing.T) {
 	}
 
 	// test with time scenario
-	gteExpr, _, err = gte.SQLExprAndValue("create_at", "2022-01-02 15:04:05")
+	gteExpr, _, err = gte.SQLExprAndValue("created_at", "2022-01-02 15:04:05")
 	if err != nil {
 		t.Errorf("test gte operator with time failed, err: %v", err)
 		return
 	}
 
-	if gteExpr != `create_at >= :create_at` {
+	if gteExpr != `created_at >= :created_at` {
 		t.Errorf("test gte operator with time got wrong expr: %s", gteExpr)
 		return
 	}
@@ -122,13 +122,13 @@ func TestLessThanSQLExpr(t *testing.T) {
 	}
 
 	// test time scenario
-	ltExpr, _, err = lt.SQLExprAndValue("create_at", "2022-01-02 15:04:05")
+	ltExpr, _, err = lt.SQLExprAndValue("created_at", "2022-01-02 15:04:05")
 	if err != nil {
 		t.Errorf("test lt operator with time failed, err: %v", err)
 		return
 	}
 
-	if ltExpr != `create_at < :create_at` {
+	if ltExpr != `created_at < :created_at` {
 		t.Errorf("test lt operator with time got wrong expr: %s", ltExpr)
 		return
 	}
@@ -149,13 +149,13 @@ func TestLessThanEqualSQLExpr(t *testing.T) {
 	}
 
 	// test time scenario
-	lteExpr, _, err = lte.SQLExprAndValue("create_at", "2022-01-02 15:04:05")
+	lteExpr, _, err = lte.SQLExprAndValue("created_at", "2022-01-02 15:04:05")
 	if err != nil {
 		t.Errorf("test lte operator with time failed, err: %v", err)
 		return
 	}
 
-	if lteExpr != `create_at <= :create_at` {
+	if lteExpr != `created_at <= :created_at` {
 		t.Errorf("test lte operator with time got wrong expr: %s", lteExpr)
 		return
 	}

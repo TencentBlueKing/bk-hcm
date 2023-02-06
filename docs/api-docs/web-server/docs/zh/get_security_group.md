@@ -76,8 +76,8 @@
 | extension               | object[vendor] | 混合云差异字段                       |
 | creator                 | string         | 创建者                           |
 | reviser                 | string         | 最后一次修改的修改者                    |
-| create_at               | string         | 创建时间                          |
-| update_at               | string         | 最后一次修改时间                      |
+| created_at              | string         | 创建时间                          |
+| updated_at              | string         | 最后一次修改时间                      |
 
 #### extension[tcloud]
 

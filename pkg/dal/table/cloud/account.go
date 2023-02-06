@@ -117,7 +117,7 @@ func (a AccountTable) InsertValidate() error {
 	}
 
 	if a.UpdatedAt != nil {
-		return errors.New("update_at can not set")
+		return errors.New("updated_at can not set")
 	}
 
 	// TODO: 添加账号其他信息正则和长度校验。
@@ -128,7 +128,7 @@ func (a AccountTable) InsertValidate() error {
 // UpdateValidate validate account table on update.
 func (a AccountTable) UpdateValidate() error {
 	if a.UpdatedAt != nil {
-		return errors.New("update_at can not update")
+		return errors.New("updated_at can not update")
 	}
 
 	if len(a.Creator) != 0 {
