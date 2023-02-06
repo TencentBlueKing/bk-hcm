@@ -140,6 +140,7 @@ import rightArrow from '@/assets/image/right-arrow.png';
 import tcloud from '@/assets/image/tcloud.png';
 import { Message } from 'bkui-vue';
 import { CloudType, AccountType } from '@/typings';
+import { VENDORS } from '@/common/constant';
 
 
 export default defineComponent({
@@ -159,6 +160,7 @@ export default defineComponent({
         }, {
           name: '云厂商',
           id: 'vendor',
+          children: VENDORS,
         }, {
           name: '负责人',
           id: 'managers',
