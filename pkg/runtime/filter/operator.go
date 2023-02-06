@@ -518,8 +518,8 @@ func (cso ContainsSensitiveOp) SQLExprAndValue(field string, value interface{}) 
 		return "", nil, errors.New("cs operator's value can not be a empty string")
 	}
 
-	return fmt.Sprintf(`%s LIKE BINARY '%%%s%s%%'`, field, SqlPlaceholder, field),
-		map[string]interface{}{field: value}, nil
+	return fmt.Sprintf(`%s LIKE BINARY %s%s`, field, SqlPlaceholder, field),
+		map[string]interface{}{field: "%" + s + "%"}, nil
 }
 
 // ContainsInsensitiveOp is contains insensitive operator
@@ -553,7 +553,25 @@ func (cio ContainsInsensitiveOp) ValidateValue(v interface{}, opt *ExprOption) e
 func (cio ContainsInsensitiveOp) SQLExprAndValue(field string, value interface{}) (string,
 	map[string]interface{}, error) {
 
-	return fmt.Sprintf(`%s LIKE '%%%s%s%%'`, field, SqlPlaceholder, field), map[string]interface{}{field: value}, nil
+	if len(field) == 0 {
+		return "", nil, errors.New("field is empty")
+	}
+
+	if reflect.TypeOf(value).Kind() != reflect.String {
+		return "", nil, errors.New("cis operator's value should be an string")
+	}
+
+	s, ok := value.(string)
+	if !ok {
+		return "", nil, errors.New("cis operator's value should be an string")
+	}
+
+	if len(s) == 0 {
+		return "", nil, errors.New("cis operator's value can not be a empty string")
+	}
+
+	return fmt.Sprintf(`%s LIKE %s%s`, field, SqlPlaceholder, field),
+		map[string]interface{}{field: "%" + s + "%"}, nil
 }
 
 // JSONEqualOp is json field equal operator
