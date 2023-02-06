@@ -29,8 +29,8 @@ create table if not exists `id_generator`
     `resource` varchar(64) not null,
     `max_id`   varchar(64) not null,
     primary key (`resource`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 insert into id_generator(`resource`, `max_id`)
 values ('account', '0'),
@@ -64,8 +64,8 @@ create table if not exists `audit`
     `operator`   varchar(64)        not null,
     `created_at` timestamp          not null default current_timestamp,
     primary key (`id`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `account`
 (
@@ -87,8 +87,8 @@ create table if not exists `account`
     `updated_at`    timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_name` (`name`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `account_biz_rel`
 (
@@ -99,8 +99,8 @@ create table if not exists `account_biz_rel`
     `created_at` timestamp          not null default current_timestamp,
     primary key (`id`),
     unique key `idx_uk_bk_biz_id_account_id` (`bk_biz_id`, `account_id`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `security_group`
 (
@@ -120,8 +120,8 @@ create table if not exists `security_group`
     `updated_at`              timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 # vpc_security_group_rel is only used of aws.
 create table if not exists `vpc_security_group_rel`
@@ -145,8 +145,8 @@ create table if not exists `security_group_biz_rel`
     `created_at`        timestamp          not null default current_timestamp,
     primary key (`id`),
     unique key `idx_uk_bk_biz_id_security_group_id` (`bk_biz_id`, `security_group_id`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 # security_group_network_interface_rel is only used of azure.
 create table if not exists `security_group_network_interface_rel`
@@ -201,8 +201,8 @@ create table if not exists `tcloud_security_group_rule`
     `updated_at`                     timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_security_group_id_cloud_policy_index_type` (`cloud_security_group_id`, `cloud_policy_index`, `type`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `aws_security_group_rule`
 (
@@ -228,8 +228,8 @@ create table if not exists `aws_security_group_rule`
     `updated_at`                     timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `huawei_security_group_rule`
 (
@@ -256,8 +256,8 @@ create table if not exists `huawei_security_group_rule`
     `updated_at`                    timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `azure_security_group_rule`
 (
@@ -292,8 +292,8 @@ create table if not exists `azure_security_group_rule`
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`),
     unique key `idx_uk_name` (`name`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `security_group_tag`
 (
@@ -306,8 +306,8 @@ create table if not exists `security_group_tag`
     `created_at`        timestamp    not null default current_timestamp,
     `updated_at`        timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `gcp_firewall_rule`
 (
@@ -339,8 +339,8 @@ create table if not exists `gcp_firewall_rule`
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`),
     unique key `idx_uk_name` (`name`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `vpc`
 (
@@ -362,8 +362,8 @@ create table if not exists `vpc`
     `updated_at`  timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `subnet`
 (
@@ -387,86 +387,90 @@ create table if not exists `subnet`
     `updated_at`   timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
-    ) engine = innodb
-    default charset = utf8mb4;
+) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `disk`
 (
-    `id`            varchar(64) not null,
-    `vendor`        varchar(16) not null,
-    `name`          varchar(128) not null,
-    `account_id`    varchar(64) not null,
-    `cloud_id`      varchar(128) not null,
-    `bk_biz_id`     bigint(1) not null default -1,
-    `region`        varchar(128) not null,
-    `zone`          varchar(128) not null,
-    `disk_size`     bigint(1) unsigned not null,
-    `disk_type`     varchar(128) not null,
-    `disk_status`   varchar(128) not null,
-    `memo`          varchar(255) default '',
-    `extension`     json        not null,
-    `creator`       varchar(64) not null,
-    `reviser`       varchar(64) not null,
-    `created_at`    timestamp   not null default current_timestamp,
-    `updated_at`    timestamp   not null default current_timestamp on update current_timestamp,
+    `id`          varchar(64)        not null,
+    `vendor`      varchar(16)        not null,
+    `name`        varchar(128)       not null,
+    `account_id`  varchar(64)        not null,
+    `cloud_id`    varchar(128)       not null,
+    `bk_biz_id`   bigint(1)          not null default -1,
+    `region`      varchar(128)       not null,
+    `zone`        varchar(128)       not null,
+    `disk_size`   bigint(1) unsigned not null,
+    `disk_type`   varchar(128)       not null,
+    `disk_status` varchar(128)       not null,
+    `memo`        varchar(255)                default '',
+    `extension`   json               not null,
+    `creator`     varchar(64)        not null,
+    `reviser`     varchar(64)        not null,
+    `created_at`  timestamp          not null default current_timestamp,
+    `updated_at`  timestamp          not null default current_timestamp on update current_timestamp,
     primary key (`id`)
-    ) engine = innodb
-    default charset = utf8mb4;
 ) engine = innodb
   default charset = utf8mb4;
 
 -- ----------------------------
 -- Table structure for tcloud_region
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `tcloud_region` (
-    `id` varchar(64) NOT NULL COMMENT '主键',
-    `vendor` varchar(32) NOT NULL COMMENT '云厂商标识',
-    `region_id` varchar(32) NOT NULL COMMENT '地区ID',
+CREATE TABLE IF NOT EXISTS `tcloud_region`
+(
+    `id`          varchar(64) NOT NULL COMMENT '主键',
+    `vendor`      varchar(32) NOT NULL COMMENT '云厂商标识',
+    `region_id`   varchar(32) NOT NULL COMMENT '地区ID',
     `region_name` varchar(64) NOT NULL COMMENT '地区名称',
-    `status` varchar(32) DEFAULT '' COMMENT '地区状态(AVAILABLE:可用)',
-    `creator` varchar(64) DEFAULT '' COMMENT '创建人',
-    `reviser` varchar(64) DEFAULT '' COMMENT '修改人',
-    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
- PRIMARY KEY (`id`),
- UNIQUE KEY `idx_uk_region_id_status` (`region_id`,`status`),
- KEY `idx_uk_vendor` (`vendor`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='云厂商支持的地区列表';
+    `status`      varchar(32)          DEFAULT '' COMMENT '地区状态(AVAILABLE:可用)',
+    `creator`     varchar(64)          DEFAULT '' COMMENT '创建人',
+    `reviser`     varchar(64)          DEFAULT '' COMMENT '修改人',
+    `created_at`  timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`  timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_uk_region_id_status` (`region_id`, `status`),
+    KEY `idx_uk_vendor` (`vendor`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='云厂商支持的地区列表';
 
 -- ----------------------------
 -- Table structure for aws_region
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `aws_region` (
-    `id` varchar(64) NOT NULL COMMENT '主键',
-    `vendor` varchar(32) NOT NULL COMMENT '云厂商标识',
-    `region_id` varchar(32) NOT NULL COMMENT '地区ID',
+CREATE TABLE IF NOT EXISTS `aws_region`
+(
+    `id`          varchar(64) NOT NULL COMMENT '主键',
+    `vendor`      varchar(32) NOT NULL COMMENT '云厂商标识',
+    `region_id`   varchar(32) NOT NULL COMMENT '地区ID',
     `region_name` varchar(64) NOT NULL COMMENT '地区名称',
-    `status` varchar(32) DEFAULT '' COMMENT '地区状态(opt-in-not-required、opted-in、not-opted-in)',
-    `endpoint` varchar(64) DEFAULT '' COMMENT 'EndPoint',
-    `creator` varchar(64) DEFAULT '' COMMENT '创建人',
-    `reviser` varchar(64) DEFAULT '' COMMENT '修改人',
-    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_uk_region_id_status` (`region_id`,`status`),
-  KEY `idx_uk_vendor` (`vendor`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='云厂商支持的地区列表';
+    `status`      varchar(32)          DEFAULT '' COMMENT '地区状态(opt-in-not-required、opted-in、not-opted-in)',
+    `endpoint`    varchar(64)          DEFAULT '' COMMENT 'EndPoint',
+    `creator`     varchar(64)          DEFAULT '' COMMENT '创建人',
+    `reviser`     varchar(64)          DEFAULT '' COMMENT '修改人',
+    `created_at`  timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`  timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_uk_region_id_status` (`region_id`, `status`),
+    KEY `idx_uk_vendor` (`vendor`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='云厂商支持的地区列表';
 
 -- ----------------------------
 -- Table structure for gcp_region
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `gcp_region` (
-    `id` varchar(64) NOT NULL COMMENT '主键',
-    `vendor` varchar(32) NOT NULL COMMENT '云厂商标识',
-    `region_id` varchar(32) NOT NULL COMMENT '地区ID',
+CREATE TABLE IF NOT EXISTS `gcp_region`
+(
+    `id`          varchar(64) NOT NULL COMMENT '主键',
+    `vendor`      varchar(32) NOT NULL COMMENT '云厂商标识',
+    `region_id`   varchar(32) NOT NULL COMMENT '地区ID',
     `region_name` varchar(64) NOT NULL COMMENT '地区名称',
-    `status` varchar(32) DEFAULT '' COMMENT '地区状态(UP:可用DOWN:不可用)',
-    `self_link` varchar(255) DEFAULT '' COMMENT 'gcp的selfLink',
-    `creator` varchar(64) DEFAULT '' COMMENT '创建人',
-    `reviser` varchar(64) DEFAULT '' COMMENT '修改人',
-    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_uk_region_id_status` (`region_id`,`status`),
-  KEY `idx_uk_vendor` (`vendor`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='云厂商支持的地区列表';
+    `status`      varchar(32)          DEFAULT '' COMMENT '地区状态(UP:可用DOWN:不可用)',
+    `self_link`   varchar(255)         DEFAULT '' COMMENT 'gcp的selfLink',
+    `creator`     varchar(64)          DEFAULT '' COMMENT '创建人',
+    `reviser`     varchar(64)          DEFAULT '' COMMENT '修改人',
+    `created_at`  timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`  timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_uk_region_id_status` (`region_id`, `status`),
+    KEY `idx_uk_vendor` (`vendor`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='云厂商支持的地区列表';
