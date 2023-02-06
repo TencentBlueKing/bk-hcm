@@ -34,6 +34,7 @@ import (
 // Client is an esb client to request cmdb.
 type Client interface {
 	SearchBusiness(ctx context.Context, params *SearchBizParams) (*SearchBizResp, error)
+	SearchCloudArea(ctx context.Context, params *SearchCloudAreaParams) (*SearchCloudAreaResult, error)
 }
 
 // NewClient initialize a new cmdb client
@@ -72,4 +73,32 @@ func (c *cmdb) SearchBusiness(ctx context.Context, params *SearchBizParams) (*Se
 		return nil, fmt.Errorf("search business failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
 	}
 	return resp, nil
+}
+
+// SearchCloudArea search cmdb cloud area
+func (c *cmdb) SearchCloudArea(ctx context.Context, params *SearchCloudAreaParams) (*SearchCloudAreaResult, error) {
+	resp := new(SearchCloudAreaResp)
+
+	req := &esbSearchCloudAreaParams{
+		CommParams:            types.GetCommParams(c.config),
+		SearchCloudAreaParams: params,
+	}
+
+	h := http.Header{}
+	h.Set(constant.RidKey, uuid.UUID())
+
+	err := c.client.Post().
+		SubResourcef("/cc/search_cloud_area/").
+		WithContext(ctx).
+		WithHeaders(h).
+		Body(req).
+		Do().Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("find cloud area failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
+	}
+	return resp.Data, nil
 }

@@ -123,3 +123,34 @@ type Biz struct {
 	BizID   int64  `json:"bk_biz_id"`
 	BizName string `json:"bk_biz_name"`
 }
+
+// SearchCloudAreaParams is esb search cmdb cloud area parameter.
+type esbSearchCloudAreaParams struct {
+	*types.CommParams
+	*SearchCloudAreaParams
+}
+
+// SearchCloudAreaParams is cmdb search cloud area parameter.
+type SearchCloudAreaParams struct {
+	Fields    []string               `json:"fields"`
+	Page      BasePage               `json:"page"`
+	Condition map[string]interface{} `json:"condition,omitempty"`
+}
+
+// SearchCloudAreaResp is cmdb search cloud area response.
+type SearchCloudAreaResp struct {
+	types.BaseResponse `json:",inline"`
+	Data               *SearchCloudAreaResult `json:"data"`
+}
+
+// SearchCloudAreaResult is cmdb search cloud area result.
+type SearchCloudAreaResult struct {
+	Count int64       `json:"count"`
+	Info  []CloudArea `json:"info"`
+}
+
+// CloudArea is cmdb cloud area info.
+type CloudArea struct {
+	BkCloudID   int64  `json:"bk_cloud_id"`
+	BkCloudName string `json:"bk_cloud_name"`
+}

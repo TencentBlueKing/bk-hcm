@@ -23,6 +23,8 @@ import (
 	"fmt"
 
 	"hcm/cmd/web-server/service/capability"
+	webserver "hcm/pkg/api/web-server"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/thirdparty/esb/cmdb"
@@ -36,6 +38,7 @@ func InitCmdbService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 	h.Add("ListBiz", "POST", "/bk_bizs/list", svr.ListBiz)
+	h.Add("ListCloudArea", "POST", "/cloud_areas/list", svr.ListCloudArea)
 
 	h.Load(c.WebService)
 }
@@ -64,4 +67,45 @@ func (c *cmdbSvc) ListBiz(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return data, nil
+}
+
+// ListCloudArea list all cloud area basic info from cmdb.
+func (c *cmdbSvc) ListCloudArea(cts *rest.Contexts) (interface{}, error) {
+	req := new(webserver.ListCloudAreaOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	params := &cmdb.SearchCloudAreaParams{
+		Fields: []string{"bk_cloud_id", "bk_cloud_name"},
+		Page: cmdb.BasePage{
+			Limit: req.Page.Limit,
+			Start: req.Page.Start,
+			Sort:  "bk_cloud_id",
+		},
+		Condition: map[string]interface{}{"bk_cloud_id": map[string]interface{}{"$ne": 0}},
+	}
+
+	if req.Name != "" {
+		params.Condition["bk_cloud_name"] = map[string]interface{}{"$regex": req.Name}
+	}
+
+	res, err := c.esbClient.Cmdb().SearchCloudArea(cts.Kit.Ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("call cmdb search cloud area api failed, err: %v", err)
+	}
+
+	result := &webserver.ListCloudAreaResult{
+		Count: res.Count,
+		Info:  make([]webserver.CloudArea, 0, len(res.Info)),
+	}
+
+	for _, cloudArea := range res.Info {
+		result.Info = append(result.Info, webserver.CloudArea{
+			ID:   cloudArea.BkCloudID,
+			Name: cloudArea.BkCloudName,
+		})
+	}
+
+	return result, nil
 }
