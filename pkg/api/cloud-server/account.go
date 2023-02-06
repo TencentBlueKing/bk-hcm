@@ -41,55 +41,6 @@ var (
 
 // -------------------------- Create --------------------------
 
-// AccountAttachmentCreateReq account attachment.
-type AccountAttachmentCreateReq struct {
-	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required"`
-}
-
-// Validate ...
-func (req *AccountAttachmentCreateReq) Validate() error {
-	bizCount := len(req.BkBizIDs)
-	for _, bizID := range req.BkBizIDs {
-		// 校验是否非法业务ID
-		if !(bizID == constant.AttachedAllBiz || bizID > 0) {
-			return fmt.Errorf("invalid biz id: %d", bizID)
-		}
-		// 选择全业务时不可选择其他具体业务，即全业务时业务数量只能是1
-		if bizID == constant.AttachedAllBiz && bizCount > 1 {
-			return errors.New("can't choose specific biz when choose all biz")
-		}
-	}
-
-	return nil
-}
-
-// AccountSpecCreateReq ...
-type AccountSpecCreateReq struct {
-	Name         string                 `json:"name" validate:"required,min=3,max=32"`
-	Managers     []string               `json:"managers" validate:"required,max=5"`
-	DepartmentID int64                  `json:"department_id" validate:"required,min=1"`
-	Type         enumor.AccountType     `json:"type" validate:"required"`
-	Site         enumor.AccountSiteType `json:"site" validate:"required"`
-	Memo         *string                `json:"memo" validate:"omitempty"`
-}
-
-// Validate ...
-func (req *AccountSpecCreateReq) Validate() error {
-	if err := req.Type.Validate(); err != nil {
-		return err
-	}
-
-	if err := req.Site.Validate(); err != nil {
-		return err
-	}
-
-	if !validAccountNameRegex.MatchString(req.Name) {
-		return accountNameInvalidError
-	}
-
-	return nil
-}
-
 // TCloudAccountExtensionCreateReq ...
 type TCloudAccountExtensionCreateReq struct {
 	CloudMainAccountID string `json:"cloud_main_account_id" validate:"required"`
@@ -165,11 +116,16 @@ func (r *AzureAccountExtensionCreateReq) Validate() error {
 
 // AccountCreateReq ...
 type AccountCreateReq struct {
-	Vendor enumor.Vendor         `json:"vendor" validate:"required"`
-	Spec   *AccountSpecCreateReq `json:"spec" validate:"required"`
+	Vendor        enumor.Vendor          `json:"vendor" validate:"required"`
+	Name          string                 `json:"name" validate:"required,min=3,max=32"`
+	Managers      []string               `json:"managers" validate:"required,max=5"`
+	DepartmentIDs []int64                `json:"department_ids" validate:"required,min=1,max=1"`
+	Type          enumor.AccountType     `json:"type" validate:"required"`
+	Site          enumor.AccountSiteType `json:"site" validate:"required"`
+	Memo          *string                `json:"memo" validate:"omitempty"`
+	BkBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
 	// Extension 各云差异化比较大，延后解析成对应结果进行校验
-	Extension  json.RawMessage             `json:"extension" validate:"required"`
-	Attachment *AccountAttachmentCreateReq `json:"attachment" validate:"required"`
+	Extension json.RawMessage `json:"extension" validate:"required"`
 }
 
 // Validate create account request.
@@ -182,12 +138,28 @@ func (req *AccountCreateReq) Validate() error {
 		return err
 	}
 
-	if err := req.Spec.Validate(); err != nil {
+	if err := req.Type.Validate(); err != nil {
 		return err
 	}
 
-	if err := req.Attachment.Validate(); err != nil {
+	if err := req.Site.Validate(); err != nil {
 		return err
+	}
+
+	if !validAccountNameRegex.MatchString(req.Name) {
+		return accountNameInvalidError
+	}
+
+	bizCount := len(req.BkBizIDs)
+	for _, bizID := range req.BkBizIDs {
+		// 校验是否非法业务ID
+		if !(bizID == constant.AttachedAllBiz || bizID > 0) {
+			return fmt.Errorf("invalid biz id: %d", bizID)
+		}
+		// 选择全业务时不可选择其他具体业务，即全业务时业务数量只能是1
+		if bizID == constant.AttachedAllBiz && bizCount > 1 {
+			return errors.New("can't choose specific biz when choose all biz")
+		}
 	}
 
 	return nil
@@ -367,29 +339,26 @@ func (r *AzureAccountExtensionUpdateReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
-// AccountSpecUpdateReq ...
-type AccountSpecUpdateReq struct {
-	Name         string   `json:"name" validate:"omitempty"`
-	Managers     []string `json:"managers" validate:"omitempty,max=5"`
-	DepartmentID int64    `json:"department_id" validate:"omitempty,min=1"`
-	Memo         *string  `json:"memo" validate:"omitempty"`
+// AccountUpdateReq ...
+type AccountUpdateReq struct {
+	Name          string           `json:"name" validate:"omitempty"`
+	Managers      []string         `json:"managers" validate:"omitempty,max=5"`
+	DepartmentIDs []int64          `json:"department_ids" validate:"omitempty,max=1"`
+	Memo          *string          `json:"memo" validate:"omitempty"`
+	BkBizIDs      []int64          `json:"bk_biz_ids" validate:"omitempty"`
+	Extension     *json.RawMessage `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...
-func (req *AccountSpecUpdateReq) Validate() error {
+func (req *AccountUpdateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
 	if req.Name != "" && !validAccountNameRegex.MatchString(req.Name) {
 		return accountNameInvalidError
 	}
-	return nil
-}
 
-// AccountAttachmentUpdateReq ...
-type AccountAttachmentUpdateReq struct {
-	BkBizIDs []int64 `json:"bk_biz_ids" validate:"omitempty"`
-}
-
-// Validate ...
-func (req *AccountAttachmentUpdateReq) Validate() error {
 	bizCount := len(req.BkBizIDs)
 	for _, bizID := range req.BkBizIDs {
 		// 校验是否非法业务ID
@@ -399,34 +368,6 @@ func (req *AccountAttachmentUpdateReq) Validate() error {
 		// 选择全业务时不可选择其他具体业务，即全业务时业务数量只能是1
 		if bizID == constant.AttachedAllBiz && bizCount > 1 {
 			return errors.New("can't choose specific biz when choose all biz")
-		}
-	}
-
-	return nil
-}
-
-// AccountUpdateReq ...
-type AccountUpdateReq struct {
-	Spec       *AccountSpecUpdateReq       `json:"spec" validate:"omitempty"`
-	Extension  *json.RawMessage            `json:"extension" validate:"omitempty"`
-	Attachment *AccountAttachmentUpdateReq `json:"attachment" validate:"omitempty"`
-}
-
-// Validate ...
-func (req *AccountUpdateReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	if req.Spec != nil {
-		if err := req.Spec.Validate(); err != nil {
-			return err
-		}
-	}
-
-	if req.Attachment != nil {
-		if err := req.Attachment.Validate(); err != nil {
-			return err
 		}
 	}
 

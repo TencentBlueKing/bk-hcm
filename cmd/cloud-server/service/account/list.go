@@ -49,19 +49,20 @@ func (a *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
 		return []map[string]interface{}{}, nil
 	}
 
-	// FIXME: 由于底层filter暂时不支持嵌套，所以这里暂时忽略来着前端请求的req.Filter，后续再支持
+	// 构造权限过滤条件
 	var reqFilter *filter.Expression
 	if isAny {
-		reqFilter = &filter.Expression{
-			Op:    filter.Or,
-			Rules: []filter.RuleFactory{},
-		}
+		reqFilter = req.Filter
 	} else {
 		reqFilter = &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
 				filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: accountIDs},
 			},
+		}
+		// 加上请求里过滤条件
+		if req.Filter != nil && !req.Filter.IsEmpty() {
+			reqFilter.Rules = append(reqFilter.Rules, req.Filter)
 		}
 	}
 

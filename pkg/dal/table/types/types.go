@@ -73,3 +73,39 @@ func (str StringArray) Value() (driver.Value, error) {
 
 	return json.Marshal(str)
 }
+
+// Int64Array 对应 db 的json数字数组格式字段
+type Int64Array []int64
+
+// Scan is used to decode raw message which is read from db into Int64Array.
+func (i *Int64Array) Scan(raw interface{}) error {
+	if i == nil || raw == nil {
+		return nil
+	}
+
+	switch v := raw.(type) {
+	case []byte:
+		if err := json.Unmarshal(v, &i); err != nil {
+			return fmt.Errorf("decode into int64 array failed, err: %v", err)
+		}
+		return nil
+
+	case string:
+		if err := json.Unmarshal([]byte(v), &i); err != nil {
+			return fmt.Errorf("decode into int64 array failed, err: %v", err)
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported int64 array raw type: %T", v)
+	}
+}
+
+// Value encode the Int64Array to a json raw, so that it can be stored to db with json raw.
+func (i Int64Array) Value() (driver.Value, error) {
+	if i == nil {
+		return nil, nil
+	}
+
+	return json.Marshal(i)
+}
