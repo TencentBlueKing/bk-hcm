@@ -787,7 +787,7 @@ export default defineComponent({
                       {baseItem.name}
                       {index === 2
                         ? <span>
-                            <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/>
+                            {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
                             <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'} onClick={handleModifyScret}/>
                           </span> : ''}
                     </div>
