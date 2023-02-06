@@ -39,6 +39,7 @@ export default defineComponent({
                 class="g-scroller"
                 name={tab.value}
                 label={tab.name}
+                key={tab.name}
               >
                 {
                   this.$slots.default(this.activeTab)

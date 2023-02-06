@@ -4,7 +4,7 @@ export const COMMON_STATUS = [
     value: false,
   }, {
     label: '开',
-    value: true,
+    value: 'INGRESS',
   },
 ];
 
@@ -16,6 +16,17 @@ export const POLICY_STATUS = [
   {
     id: 'agree',
     name: '同意',
+  },
+];
+
+export const ACTION_STATUS = [
+  {
+    id: 'ACCEPT',
+    name: '接受',
+  },
+  {
+    id: 'DROP',
+    name: '拒绝',
   },
 ];
 

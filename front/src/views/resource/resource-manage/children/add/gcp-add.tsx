@@ -38,7 +38,7 @@ export default defineComponent({
     // //   && state.projectModel[state.operate]      // 端口
     // //     .find((e: any) => e.protocol === state.protocol)));
     // // console.log('ports', ports);
-    const gcpPorts = ref([443]);
+    const gcpPorts = ref([]);
     const state = reactive({
       projectModel: {
         id: 0,

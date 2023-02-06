@@ -39,6 +39,7 @@ export default async (props: PropsType, type: string) => {
 
   // 更新数据
   const triggerApi = async () => {
+    console.log(222);
     isLoading.value = true;
     const listCount = await resourceStore
       .list(

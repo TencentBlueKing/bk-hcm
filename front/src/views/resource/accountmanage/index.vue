@@ -131,7 +131,7 @@
 </template>
 
 <script lang="ts">
-import { reactive, toRefs, defineComponent, onMounted, onUnmounted } from 'vue';
+import { reactive, watch, toRefs, defineComponent, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import logo from '@/assets/image/logo.png';
@@ -151,17 +151,17 @@ export default defineComponent({
 
     const state = reactive({
       isAccurate: false,    // 是否精确
-      searchValue: '',
+      searchValue: [],
       searchData: [
         {
           name: '名称',
           id: 'name',
         }, {
           name: '云厂商',
-          id: 'type',
+          id: 'vendor',
         }, {
           name: '负责人',
-          id: 'user',
+          id: 'managers',
         },
       ],
       tableData: [],
@@ -181,36 +181,21 @@ export default defineComponent({
       dataId: null,
       CloudType,
       AccountType,
+      filter: { op: 'and', rules: [] },
     });
 
     onMounted(async () => {
       /* 获取账号列表接口 */
-      getListCount();
-      init();
+      // getListCount(); // 数量
+      // init(); // 列表
     });
     onUnmounted(() => {
     });
 
-    // watch(
-    //   () => state.searchValue,
-    //   (val) => {
-    //     console.log('val', val);
-    //     state.pagination = {
-    //       totalPage: 1,
-    //       count: 1,
-    //       limit: 10,
-    //     };
-    //     getAccountList();
-    //   },
-    //   {
-    //     deep: true,
-    //   },
-    // );
-
-
     // 请求获取列表的总条数
     const getListCount = async () => {
       const params = {
+        filter: state.filter,
         page: {
           count: true,
         },
@@ -219,18 +204,11 @@ export default defineComponent({
       state.pagination.count = res?.data.count || 0;
     };
 
-    const init = () => {
-      state.pagination.current = 1;
-      state.pagination.limit = 10;
-      state.isAccurate = false;
-      state.searchValue = '';
-      getAccountList();
-    };
-
     const getAccountList = async () => {
       state.loading = true;
       try {
         const params = {
+          filter: state.filter,
           page: {
             count: false,
             limit: state.pagination.limit,
@@ -244,6 +222,56 @@ export default defineComponent({
       } finally {
         state.loading = false;
       }
+    };
+
+    // 搜索数据
+    watch(
+      () => state.searchValue,
+      (val) => {
+        state.filter.rules = val.reduce((p, v) => {
+          if (v.type === 'condition') {
+            state.filter.op = v.id || 'and';
+          } else {
+            p.push({
+              field: v.id,
+              op: state.isAccurate ? 'eq' : 'cs',
+              value: v.values[0].id,
+            });
+          }
+          return p;
+        }, []);
+        state.pagination = {
+          count: 0,
+          current: 1,
+          limit: 10,
+        };
+        /* 获取账号列表接口 */
+        getListCount(); // 数量
+        getAccountList(); // 列表
+      },
+      {
+        deep: true,
+        immediate: true,
+      },
+    );
+
+    // 是否精确
+    watch(
+      () => state.isAccurate,
+      (val) => {
+        state.filter.rules.forEach((e: any) => {
+          e.op = val ? 'eq' : 'cs';
+        });
+      },
+    );
+
+
+    const init = () => {
+      state.pagination.current = 1;
+      state.pagination.limit = 10;
+      state.isAccurate = false;
+      state.searchValue = [];
+      getAccountList();
     };
     // 弹窗确认
     const handleDialogConfirm = async (diaType: string) => {
