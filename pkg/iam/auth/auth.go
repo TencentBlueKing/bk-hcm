@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest/client"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
 )
@@ -41,6 +42,9 @@ type Authorizer interface {
 	AuthorizeWithPerm(kt *kit.Kit, resources ...meta.ResourceAttribute) error
 	// ListAuthorizedInstances list authorized instances info.
 	ListAuthorizedInstances(kt *kit.Kit, input *meta.ListAuthResInput) (*meta.AuthorizedInstances, error)
+	// ListAuthInstWithFilter returns resource filter with authorized instances info & if user has no permission flag.
+	ListAuthInstWithFilter(kt *kit.Kit, input *meta.ListAuthResInput, expr *filter.Expression, resIDField string) (
+		*filter.Expression, bool, error)
 }
 
 // NewAuthorizer create an authorizer for iam authorize related operation.
@@ -151,4 +155,36 @@ func (a authorizer) ListAuthorizedInstances(kt *kit.Kit, input *meta.ListAuthRes
 	}
 
 	return resources, nil
+}
+
+// ListAuthInstWithFilter returns resource filter with authorized instances info & if user has no permission flag.
+func (a authorizer) ListAuthInstWithFilter(kt *kit.Kit, input *meta.ListAuthResInput, expr *filter.Expression,
+	resIDField string) (*filter.Expression, bool, error) {
+
+	authInst, err := a.ListAuthorizedInstances(kt, input)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if authInst.IsAny {
+		return expr, false, err
+	}
+
+	if len(authInst.IDs) == 0 {
+		return nil, true, nil
+	}
+
+	authRule := filter.AtomRule{Field: resIDField, Op: filter.In.Factory(), Value: authInst.IDs}
+
+	if expr == nil {
+		return &filter.Expression{
+			Op:    filter.And,
+			Rules: []filter.RuleFactory{authRule},
+		}, false, nil
+	}
+
+	return &filter.Expression{
+		Op:    filter.And,
+		Rules: []filter.RuleFactory{authRule, expr},
+	}, false, nil
 }

@@ -22,7 +22,6 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"hcm/pkg/criteria/errf"
@@ -241,36 +240,26 @@ type InstanceResource struct {
 // InstanceID is iam resource id.
 type InstanceID struct {
 	// InstanceID is hcm resource instance id.
-	InstanceID uint32
+	InstanceID string
 }
 
 // UnmarshalJSON unmarshal json raw data to instance id.
 func (i *InstanceID) UnmarshalJSON(raw []byte) error {
 	id := strings.Trim(strings.TrimSpace(string(raw)), `\"`)
-
 	if len(id) == 0 {
 		return errf.New(errf.InvalidParameter, "instance id is empty")
 	}
 
-	instanceID, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		return err
-	}
-
-	if instanceID == 0 {
-		return errf.New(errf.InvalidParameter, "biz_id should > 0")
-	}
-	i.InstanceID = uint32(instanceID)
+	i.InstanceID = id
 
 	return nil
 }
 
 // MarshalJSON marshal instance id to json string.
 func (i InstanceID) MarshalJSON() ([]byte, error) {
-	if i.InstanceID == 0 {
+	if len(i.InstanceID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "instance id is required")
 	}
 
-	id := strconv.FormatUint(uint64(i.InstanceID), 10)
-	return json.Marshal(id)
+	return json.Marshal(i.InstanceID)
 }

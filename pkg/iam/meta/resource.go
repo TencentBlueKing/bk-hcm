@@ -31,6 +31,14 @@ func (r ResourceType) String() string {
 const (
 	// Account defines cloud account resource's hcm auth resource type
 	Account ResourceType = "account"
-	// Resource cloud resource's hcm auth resource type
-	Resource ResourceType = "resource"
+	// Vpc defines vpc hcm auth resource type
+	Vpc ResourceType = "vpc"
+	// Subnet defines subnet hcm auth resource type
+	Subnet ResourceType = "subnet"
+	// Disk defines disk hcm auth resource type
+	Disk ResourceType = "disk"
+	// RecycleBin defines recycle bin's hcm auth resource type
+	RecycleBin ResourceType = "recycle_bin"
+	// Audit defines audit log's hcm auth resource type
+	Audit ResourceType = "audit"
 )
