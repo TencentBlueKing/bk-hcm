@@ -142,6 +142,15 @@ const handleSubmitRule = async (data: any) => {
   isShowSecurityRule.value = true;
   const params = {
     [`${activeType.value}_rule_set`]: data,
+    // egress_rule_set: [
+    //   {
+    //     protocol: 'TCP',
+    //     port: '8080',
+    //     ipv4_cidr: '0.0.0.0/0',
+    //     action: 'ACCEPT',
+    //     memo: 'create egress rule',
+    //   },
+    // ],
   };
   try {
     await resourceStore.add(`vendors/${props.vendor}/security_groups/${props.id}/rules/create`, params);
@@ -152,6 +161,7 @@ const handleSubmitRule = async (data: any) => {
   } catch (error) {
     console.log(error);
   } finally {
+    isShowSecurityRule.value = false;
     // loading.value = false;
   }
 };
