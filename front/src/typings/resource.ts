@@ -25,3 +25,8 @@ export enum SecurityRuleEnum {
   ACCEPT = '接受',
   DROP = '拒绝',
 }
+
+export enum HuaweiSecurityRuleEnum {
+  allow = '允许',
+  deny = '拒绝',
+}

@@ -36,6 +36,12 @@ export default defineComponent({
     loading: {
       type: Boolean,
     },
+    dialogWidth: {
+      type: String,
+      default() {
+        return '1000';
+      },
+    },
   },
 
   emits: ['confirm', 'cancel'],
@@ -79,6 +85,7 @@ export default defineComponent({
     return <>
       <bk-dialog
         class="step-dialog"
+        width={this.dialogWidth}
         theme="primary"
         headerAlign="center"
         size={this.size}

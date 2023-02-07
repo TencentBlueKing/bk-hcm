@@ -19,11 +19,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 
-import { SecurityRuleEnum } from '@/typings';
-
-import {
-  useRouter,
-} from 'vue-router';
+import { SecurityRuleEnum, HuaweiSecurityRuleEnum } from '@/typings';
 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
 import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
@@ -45,8 +41,6 @@ const props = defineProps({
 const {
   t,
 } = useI18n();
-
-const router = useRouter();
 
 const {
   isShowSecurityRule,
@@ -180,7 +174,7 @@ const inColumns = [
         [
           data.cloud_address_group_id || data.cloud_address_id
           || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
-          || data.ipv4_cidr || data.ipv6_cidr,
+          || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix,
         ],
       );
     },
@@ -204,7 +198,7 @@ const inColumns = [
         'span',
         {},
         [
-          SecurityRuleEnum[data.action],
+          props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : SecurityRuleEnum[data.action],
         ],
       );
     },
@@ -269,7 +263,7 @@ const outColumns = [
         [
           data.cloud_address_group_id || data.cloud_address_id
           || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
-          || data.ipv4_cidr || data.ipv6_cidr,
+          || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix,
         ],
       );
     },
@@ -293,7 +287,7 @@ const outColumns = [
         'span',
         {},
         [
-          SecurityRuleEnum[data.action],
+          props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : SecurityRuleEnum[data.action],
         ],
       );
     },
@@ -320,15 +314,7 @@ const outColumns = [
               text: true,
               theme: 'primary',
               onClick() {
-                router.push({
-                  name: 'resourceDetail',
-                  params: {
-                    type: 'gcp',
-                  },
-                  query: {
-                    id: data.id,
-                  },
-                });
+                handleSecurityRuleDialog(data);
               },
             },
             [
@@ -417,7 +403,8 @@ const types = [
   <security-rule
     v-model:isShow="isShowSecurityRule"
     :loading="securityRuleLoading"
-    :title="t('添加入站规则')"
+    dialog-width="1200"
+    :title="t(activeType === 'egress' ? '添加出站规则' : '添加入站规则')"
     :vendor="vendor"
     @submit="handleSubmitRule"
   />
