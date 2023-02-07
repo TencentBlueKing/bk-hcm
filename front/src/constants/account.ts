@@ -38,6 +38,10 @@ export const ACCOUNT_TYPE = [
     label: '登记账号',
     value: 'register',
   },
+  {
+    label: '安全审计账号',
+    value: 'security_audit',
+  },
 ];
 
 export const SITE_TYPE = [

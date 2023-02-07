@@ -145,7 +145,10 @@ export default defineComponent({
           default:
             break;
         }
-        await accountStore.testAccountConnection({ vendor: params.vendor, extension: params.extension });
+        await accountStore.testAccountConnection({
+          vendor: params.vendor,
+          type: projectModel.type,
+          extension: params.extension });
         await accountStore.addAccount(params);
         Message({
           message: t('新增成功'),
@@ -251,13 +254,13 @@ export default defineComponent({
             },
             {
               label: t('SecretId/密钥ID'),
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />,
             },
             {
               label: 'SecretKey',
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />,
             },
@@ -289,25 +292,25 @@ export default defineComponent({
             },
             {
               label: t('服务账号ID'),
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'accountId',
               component: () => <Input class="w450" placeholder={t('请输入服务账号ID')} v-model={projectModel.accountId} />,
             },
             {
               label: t('服务账号名称'),
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'accountName',
               component: () => <Input class="w450" placeholder={t('请输入服务账号名称')} v-model={projectModel.accountName} />,
             },
             {
               label: '服务账号密钥ID',
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入服务账号密钥ID')} v-model={projectModel.secretId} />,
             },
             {
               label: '服务账号密钥',
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入服务账号密钥')} v-model={projectModel.secretKey} />,
             },
@@ -345,25 +348,25 @@ export default defineComponent({
             },
             {
               label: t('应用程序(客户端) ID'),
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'applicationId',
               component: () => <Input class="w450" placeholder={t('请输入应用程序(客户端) ID')} v-model={projectModel.applicationId} />,
             },
             {
               label: t('应用程序名称'),
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'applicationName',
               component: () => <Input class="w450" placeholder={t('请输入应用程序名称')} v-model={projectModel.applicationName} />,
             },
             {
               label: t('客户端密钥ID'),
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入客户端密钥ID')} v-model={projectModel.secretId} />,
             },
             {
               label: t('客户端密钥'),
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入客户端密钥')} v-model={projectModel.secretKey} />,
             },
@@ -389,19 +392,19 @@ export default defineComponent({
             },
             {
               label: t('子账号ID'),
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'subAccount',
               component: () => <Input class="w450" placeholder={t('请输入子账号')} v-model={projectModel.subAccount} />,
             },
             {
               label: 'SecretId',
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入SecretId')} v-model={projectModel.secretId} />,
             },
             {
               label: 'SecretKey',
-              required: projectModel.type === 'resource',
+              required: projectModel.type !== 'register',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />,
             },
