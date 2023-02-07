@@ -28,11 +28,11 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://support.huaweicloud.com/api-evs/evs_04_2003.html
-func (h *Huawei) CreateDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {
+func (h *HuaWei) CreateDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {
 	return h.createDisk(opt)
 }
 
-func (h *Huawei) createDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {
+func (h *HuaWei) createDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {
 	client, err := h.clientSet.evsClient(region.ValueOf(opt.Region))
 	if err != nil {
 		return nil, err

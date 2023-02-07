@@ -90,7 +90,7 @@ export default (type: string) => {
     },
     {
       label: '创建时间',
-      field: 'create_at',
+      field: 'created_at',
       sort: true,
     },
     {
@@ -176,7 +176,7 @@ export default (type: string) => {
     },
     {
       label: '创建时间',
-      field: 'create_at',
+      field: 'created_at',
       sort: true,
     },
     {

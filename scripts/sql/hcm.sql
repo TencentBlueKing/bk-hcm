@@ -50,41 +50,43 @@ ON DUPLICATE KEY UPDATE resource=resource;
 
 create table if not exists `audit`
 (
-    `id`         bigint(1) unsigned not null auto_increment,
-    # Spec
-    `res_type`   varchar(50)        not null,
-    `res_id`     varchar(64)        not null,
-    `action`     varchar(20)        not null,
-    `rid`        varchar(64)        not null,
-    `app_code`   varchar(64)                 default '',
-    `detail`     json                        default null,
-    `bk_biz_id`  bigint(1) unsigned          default 0,
-    `account_id` varchar(64)                 default 0,
-    # Revision
-    `operator`   varchar(64)        not null,
-    `created_at` timestamp          not null default current_timestamp,
+    `id`                      bigint(1) unsigned not null auto_increment,
+    `res_id`                  varchar(64)                 default '',
+    `cloud_res_id`            varchar(255)                default '',
+    `res_name`                varchar(255)                default '',
+    `res_type`                varchar(50)        not null,
+    `action`                  varchar(20)        not null,
+    `bk_biz_id`               bigint(1)          not null default -1,
+    `vendor`                  varchar(16)       default '',
+    `account_id`              varchar(64)                 default '',
+    `operator`                varchar(64)        not null,
+    `source`                  varchar(20)        not null,
+    `rid`                     varchar(64)        not null,
+    `app_code`                varchar(64)                 default '',
+    `detail`                  json                        default null,
+    `created_at`              timestamp          not null default current_timestamp,
     primary key (`id`)
 ) engine = innodb
   default charset = utf8mb4;
 
 create table if not exists `account`
 (
-    `id`            varchar(64) not null,
-    `vendor`        varchar(16) not null,
-    `name`          varchar(64) not null,
-    `managers`      json        not null,
-    `department_id` int(11)     not null,
-    `type`          varchar(32) not null,
-    `site`          varchar(32) not null,
-    `sync_status`   varchar(32) not null,
-    `price`         varchar(16)          default '',
-    `price_unit`    varchar(8)           default '',
-    `memo`          varchar(255)         default '',
-    `extension`     json        not null,
-    `creator`       varchar(64) not null,
-    `reviser`       varchar(64) not null,
-    `created_at`    timestamp   not null default current_timestamp,
-    `updated_at`    timestamp   not null default current_timestamp on update current_timestamp,
+    `id`             varchar(64) not null,
+    `vendor`         varchar(16) not null,
+    `name`           varchar(64) not null,
+    `managers`       json        not null,
+    `department_ids` json     not null,
+    `type`           varchar(32) not null,
+    `site`           varchar(32) not null,
+    `sync_status`    varchar(32) not null,
+    `price`          varchar(16)          default '',
+    `price_unit`     varchar(8)           default '',
+    `memo`           varchar(255)         default '',
+    `extension`      json        not null,
+    `creator`        varchar(64) not null,
+    `reviser`        varchar(64) not null,
+    `created_at`     timestamp   not null default current_timestamp,
+    `updated_at`     timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_name` (`name`)
 ) engine = innodb
@@ -107,7 +109,7 @@ create table if not exists `security_group`
     `id`                      varchar(64)  not null,
     `vendor`                  varchar(16)  not null,
     `cloud_id`                varchar(255) not null,
-    `bk_biz_id`               bigint(1)    not null,
+    `bk_biz_id`               bigint(1)    not null default -1,
     `region`                  varchar(20)  not null,
     `name`                    varchar(60)  not null,
     `account_id`              varchar(64)  not null,
@@ -331,7 +333,7 @@ create table if not exists `gcp_firewall_rule`
     `log_enable`              boolean               default false,
     `disabled`                boolean               default false,
     `self_link`               varchar(255)          default '',
-    `bk_biz_id`               bigint(1)    not null,
+    `bk_biz_id`               bigint(1)    not null default -1,
     `creator`                 varchar(64)  not null,
     `reviser`                 varchar(64)  not null,
     `created_at`              timestamp    not null default current_timestamp,
@@ -352,7 +354,7 @@ create table if not exists `vpc`
     `category`    varchar(32)  not null,
     `memo`        varchar(255)          default '',
     `bk_cloud_id` bigint(1)             default -1,
-    `bk_biz_id`   bigint(1)             default -1,
+    `bk_biz_id`   bigint(1)    not null default -1,
     # Extension
     `extension`   json         not null,
     # Revision
@@ -377,7 +379,7 @@ create table if not exists `subnet`
     `ipv6_cidr`    json         not null,
     `memo`         varchar(255)          default '',
     `vpc_id`       varchar(64)  not null,
-    `bk_biz_id`    bigint(1)             default -1,
+    `bk_biz_id`    bigint(1)    not null default -1,
     # Extension
     `extension`    json         not null,
     # Revision

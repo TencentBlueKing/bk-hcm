@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"time"
 
+	"hcm/cmd/data-service/service/audit"
 	"hcm/cmd/data-service/service/auth"
 	"hcm/cmd/data-service/service/capability"
 	"hcm/cmd/data-service/service/cloud"
@@ -126,22 +127,23 @@ func (s *Service) apiSet() *restful.Container {
 	ws.Path("/api/v1/data")
 	ws.Produces(restful.MIME_JSON)
 
-	capability := &capability.Capability{
+	cap := &capability.Capability{
 		WebService: ws,
 		Dao:        s.dao,
 	}
 
-	cloud.InitAccountService(capability)
-	cloud.InitSecurityGroupService(capability)
-	cloud.InitGcpFirewallRuleService(capability)
-	cloud.InitVpcService(capability)
-	cloud.InitSubnetService(capability)
-	cloud.InitCloudService(capability)
-	auth.InitAuthService(capability)
-	disk.InitDiskService(capability)
-	region.InitRegionService(capability)
+	cloud.InitAccountService(cap)
+	cloud.InitSecurityGroupService(cap)
+	cloud.InitGcpFirewallRuleService(cap)
+	cloud.InitVpcService(cap)
+	cloud.InitSubnetService(cap)
+	cloud.InitCloudService(cap)
+	auth.InitAuthService(cap)
+	disk.InitDiskService(cap)
+	region.InitRegionService(cap)
+	audit.InitAuditService(cap)
 
-	return restful.NewContainer().Add(capability.WebService)
+	return restful.NewContainer().Add(cap.WebService)
 }
 
 // Healthz check whether the service is healthy.

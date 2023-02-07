@@ -67,6 +67,8 @@ const (
 	VpcTable Name = "vpc"
 	// SubnetTable is subnet table's name.
 	SubnetTable Name = "subnet"
+	// DiskTable is disk table's name.
+	DiskTable Name = "disk"
 	// TCloudRegionTable is tcloud region table's name.
 	TCloudRegionTable Name = "tcloud_region"
 	// AwsRegionTable is aws region table's name.
@@ -97,6 +99,7 @@ var TableMap = map[Name]struct{}{
 	TCloudRegionTable:            {},
 	AwsRegionTable:               {},
 	GcpRegionTable:               {},
+	DiskTable:                    {},
 }
 
 // Validate whether the table name is valid or not.

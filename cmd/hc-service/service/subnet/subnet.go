@@ -50,7 +50,7 @@ func InitSubnetService(cap *capability.Capability) {
 
 	// subnet sync
 	h.Add("TCloudSubnetSync", "POST", "/vendors/tcloud/subnets/sync", s.TCloudSubnetSync)
-	h.Add("HuaweiSubnetSync", "POST", "/vendors/huawei/subnets/sync", s.HuaweiSubnetSync)
+	h.Add("HuaWeiSubnetSync", "POST", "/vendors/huawei/subnets/sync", s.HuaWeiSubnetSync)
 	h.Add("AwsSubnetSync", "POST", "/vendors/aws/subnets/sync", s.AwsSubnetSync)
 	h.Add("AzureSubnetSync", "POST", "/vendors/azure/subnets/sync", s.AzureSubnetSync)
 	h.Add("GcpSubnetSync", "POST", "/vendors/gcp/subnets/sync", s.GcpSubnetSync)

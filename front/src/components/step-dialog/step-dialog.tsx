@@ -33,6 +33,15 @@ export default defineComponent({
       type: String,
       default: 'large',
     },
+    loading: {
+      type: Boolean,
+    },
+    dialogWidth: {
+      type: String,
+      default() {
+        return '1000';
+      },
+    },
   },
 
   emits: ['confirm', 'cancel'],
@@ -76,6 +85,7 @@ export default defineComponent({
     return <>
       <bk-dialog
         class="step-dialog"
+        width={this.dialogWidth}
         theme="primary"
         headerAlign="center"
         size={this.size}
@@ -128,7 +138,7 @@ export default defineComponent({
                   ? <bk-button
                       class="mr10 dialog-button"
                       theme="primary"
-                      loading={this.steps[this.curStep - 1].isConfirmLoading}
+                      loading={this.steps[this.curStep - 1].isConfirmLoading || this.loading}
                       onClick={this.handleConfirm}
                     >{this.t('确认')}</bk-button>
                   : ''

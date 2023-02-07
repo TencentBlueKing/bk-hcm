@@ -180,6 +180,11 @@ func (exp Expression) Validate(opt *ExprOption) (hitErr error) {
 	return nil
 }
 
+// IsEmpty when rules is empty or filter is null
+func (exp Expression) IsEmpty() bool {
+	return len(exp.Rules) == 0
+}
+
 // WithType return this expression rule's tye.
 func (exp Expression) WithType() RuleType {
 	return ExpressionType

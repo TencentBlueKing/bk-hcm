@@ -28,3 +28,25 @@ const (
 	// Ingress is SecurityGroup ingress rule.
 	Ingress SecurityGroupRuleType = "ingress"
 )
+
+// RequestSourceType is request source type.
+type RequestSourceType string
+
+const (
+	// ApiCall 来自前端和OpenApi调用的请求。
+	ApiCall RequestSourceType = "api_call"
+	// BackgroundSync 同步云上数据而发出的请求。
+	BackgroundSync RequestSourceType = "background_sync"
+)
+
+// RequestSourceEnums request type map.
+var RequestSourceEnums = map[RequestSourceType]bool{
+	ApiCall:        true,
+	BackgroundSync: true,
+}
+
+// Exist judge enum value exist.
+func (rs RequestSourceType) Exist() bool {
+	_, exist := RequestSourceEnums[rs]
+	return exist
+}

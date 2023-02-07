@@ -26,29 +26,19 @@ import (
 
 // BaseAccount 云账号
 type BaseAccount struct {
-	ID         string             `json:"id"`
-	Vendor     enumor.Vendor      `json:"vendor"`
-	Spec       *AccountSpec       `json:"spec"`
-	Attachment *AccountAttachment `json:"attachment,omitempty"`
-	Revision   *core.Revision     `json:"revision"`
-}
-
-// AccountSpec define account spec.
-type AccountSpec struct {
-	Name         string                   `json:"name"`
-	Managers     []string                 `json:"managers"`
-	DepartmentID int64                    `json:"department_id"`
-	Type         enumor.AccountType       `json:"type"`
-	Site         enumor.AccountSiteType   `json:"site"`
-	SyncStatus   enumor.AccountSyncStatus `json:"sync_status"`
-	Price        string                   `json:"price"`
-	PriceUnit    string                   `json:"price_unit"`
-	Memo         *string                  `json:"memo"`
-}
-
-// AccountAttachment account attachment.
-type AccountAttachment struct {
-	BkBizIDs []int64 `json:"bk_biz_ids"`
+	ID            string                   `json:"id"`
+	Vendor        enumor.Vendor            `json:"vendor"`
+	Name          string                   `json:"name"`
+	Managers      []string                 `json:"managers"`
+	DepartmentIDs []int64                  `json:"department_ids"`
+	Type          enumor.AccountType       `json:"type"`
+	Site          enumor.AccountSiteType   `json:"site"`
+	SyncStatus    enumor.AccountSyncStatus `json:"sync_status"`
+	Price         string                   `json:"price"`
+	PriceUnit     string                   `json:"price_unit"`
+	Memo          *string                  `json:"memo"`
+	BkBizIDs      []int64                  `json:"bk_biz_ids"`
+	core.Revision `json:",inline"`
 }
 
 // TCloudAccountExtension define tcloud account extension.
@@ -59,24 +49,12 @@ type TCloudAccountExtension struct {
 	CloudSecretKey     string `json:"cloud_secret_key"`
 }
 
-// TCloudAccount ...
-type TCloudAccount struct {
-	BaseAccount `json:",inline"`
-	Extension   *TCloudAccountExtension `json:"extension"`
-}
-
 // AwsAccountExtension define aws account extension.
 type AwsAccountExtension struct {
 	CloudAccountID   string `json:"cloud_account_id"`
 	CloudIamUsername string `json:"cloud_iam_username"`
 	CloudSecretID    string `json:"cloud_secret_id"`
 	CloudSecretKey   string `json:"cloud_secret_key"`
-}
-
-// AwsAccount ...
-type AwsAccount struct {
-	BaseAccount `json:",inline"`
-	Extension   *AwsAccountExtension `json:"extension"`
 }
 
 // HuaWeiAccountExtension define huawei account extension.
@@ -90,12 +68,6 @@ type HuaWeiAccountExtension struct {
 	CloudIamUsername     string `json:"cloud_iam_username"`
 }
 
-// HuaWeiAccount ...
-type HuaWeiAccount struct {
-	BaseAccount `json:",inline"`
-	Extension   *HuaWeiAccountExtension `json:"extension"`
-}
-
 // GcpAccountExtension define gcp account extension.
 type GcpAccountExtension struct {
 	CloudProjectID          string `json:"cloud_project_id"`
@@ -104,12 +76,6 @@ type GcpAccountExtension struct {
 	CloudServiceAccountName string `json:"cloud_service_account_name"`
 	CloudServiceSecretID    string `json:"cloud_service_secret_id"`
 	CloudServiceSecretKey   string `json:"cloud_service_secret_key"`
-}
-
-// GcpAccount ...
-type GcpAccount struct {
-	BaseAccount `json:",inline"`
-	Extension   *GcpAccountExtension `json:"extension"`
 }
 
 // AzureAccountExtension ...

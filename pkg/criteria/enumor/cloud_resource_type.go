@@ -51,8 +51,8 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 
 // CloudResourceType define all cloud resource type.
 const (
-	AccountCloudResType       = "account"
-	SecurityGroupCloudResType = "security_group"
-	VpcCloudResType           = "vpc"
-	SubnetCloudResType        = "subnet"
+	AccountCloudResType       CloudResourceType = "account"
+	SecurityGroupCloudResType CloudResourceType = "security_group"
+	VpcCloudResType           CloudResourceType = "vpc"
+	SubnetCloudResType        CloudResourceType = "subnet"
 )

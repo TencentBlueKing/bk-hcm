@@ -93,16 +93,16 @@ func (s AzureSubnetUpdateOption) Validate() error {
 	return nil
 }
 
-// HuaweiSubnetUpdateOption defines huawei update subnet options.
-type HuaweiSubnetUpdateOption struct {
+// HuaWeiSubnetUpdateOption defines huawei update subnet options.
+type HuaWeiSubnetUpdateOption struct {
 	SubnetUpdateOption `json:",inline"`
 	Region             string `json:"region"`
 	Name               string `json:"name"`
 	VpcID              string `json:"vpc_id"`
 }
 
-// Validate HuaweiSubnetUpdateOption.
-func (s HuaweiSubnetUpdateOption) Validate() error {
+// Validate HuaWeiSubnetUpdateOption.
+func (s HuaWeiSubnetUpdateOption) Validate() error {
 	if err := s.Data.Validate(); err != nil {
 		return err
 	}
@@ -138,14 +138,14 @@ func (a AzureSubnetDeleteOption) Validate() error {
 	return nil
 }
 
-// HuaweiSubnetDeleteOption defines huawei delete subnet options.
-type HuaweiSubnetDeleteOption struct {
+// HuaWeiSubnetDeleteOption defines huawei delete subnet options.
+type HuaWeiSubnetDeleteOption struct {
 	core.BaseRegionalDeleteOption `json:",inline"`
 	VpcID                         string `json:"vpc_id"`
 }
 
-// Validate HuaweiSubnetDeleteOption.
-func (s HuaweiSubnetDeleteOption) Validate() error {
+// Validate HuaWeiSubnetDeleteOption.
+func (s HuaWeiSubnetDeleteOption) Validate() error {
 	if err := s.BaseRegionalDeleteOption.Validate(); err != nil {
 		return err
 	}
@@ -219,15 +219,15 @@ type AzureSubnetListResult struct {
 	Details []AzureSubnet `json:"details"`
 }
 
-// HuaweiSubnetListOption defines huawei list subnet options.
-type HuaweiSubnetListOption struct {
+// HuaWeiSubnetListOption defines huawei list subnet options.
+type HuaWeiSubnetListOption struct {
 	Region string           `json:"region"`
-	Page   *core.HuaweiPage `json:"page,omitempty"`
+	Page   *core.HuaWeiPage `json:"page,omitempty"`
 	VpcID  string           `json:"vpc_id,omitempty"`
 }
 
 // Validate huawei list option.
-func (s HuaweiSubnetListOption) Validate() error {
+func (s HuaWeiSubnetListOption) Validate() error {
 	if len(s.Region) == 0 {
 		return errf.New(errf.InvalidParameter, "region is required")
 	}
@@ -241,8 +241,8 @@ func (s HuaweiSubnetListOption) Validate() error {
 	return nil
 }
 
-// HuaweiSubnetListResult defines huawei list subnet result.
-type HuaweiSubnetListResult struct {
+// HuaWeiSubnetListResult defines huawei list subnet result.
+type HuaWeiSubnetListResult struct {
 	Details []HuaWeiSubnet `json:"details"`
 }
 

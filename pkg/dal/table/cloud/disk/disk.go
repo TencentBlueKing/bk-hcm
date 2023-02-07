@@ -62,39 +62,39 @@ type DiskTable struct {
 // DiskModel ...
 type DiskModel struct {
 	// Disk ID
-	ID string `db:"id"`
+	ID string `db:"id" json:"id"`
 	// Vendor 云厂商
-	Vendor string `db:"vendor"`
+	Vendor string `db:"vendor" json:"vendor"`
 	// AccountID 账号ID
-	AccountID string `db:"account_id"`
+	AccountID string `db:"account_id" json:"account_id"`
 	// 云上对应的资源 ID
-	CloudID string `db:"cloud_id"`
+	CloudID string `db:"cloud_id" json:"cloud_id"`
 	// 分配到的业务 ID. 如果是 UnassignedBiz, 表示未分配
-	BkBizID int64 `db:"bk_biz_id"`
+	BkBizID int64 `db:"bk_biz_id" json:"bk_biz_id"`
 	// 云盘名
-	Name string `db:"name"`
+	Name string `db:"name" json:"name"`
 	// Region 地域
-	Region string `db:"region"`
+	Region string `db:"region" json:"region"`
 	// 可用区
-	Zone string `db:"zone"`
+	Zone string `db:"zone" json:"zone"`
 	// 云盘大小
-	DiskSize uint64 `db:"disk_size"`
+	DiskSize uint64 `db:"disk_size" json:"disk_size"`
 	// 云盘类型
-	DiskType string `db:"disk_type"`
+	DiskType string `db:"disk_type" json:"disk_type"`
 	// 云盘状态
-	DiskStatus string `db:"disk_status"`
+	DiskStatus string `db:"disk_status" json:"disk_status"`
 	// Memo 备注
-	Memo *string `db:"memo"`
+	Memo *string `db:"memo" json:"memo"`
 	// Extension 云厂商差异扩展字段
-	Extension types.JsonField `db:"extension"`
+	Extension types.JsonField `db:"extension" json:"extension"`
 	// Creator 创建者
-	Creator string `db:"creator"`
+	Creator string `db:"creator" json:"creator"`
 	// Reviser 更新者
-	Reviser string `db:"reviser"`
+	Reviser string `db:"reviser" json:"reviser"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at"`
+	CreatedAt *time.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at"`
+	UpdatedAt *time.Time `db:"updated_at" json:"updated_at"`
 }
 
 // TableName return disk table name.

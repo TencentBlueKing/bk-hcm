@@ -33,7 +33,7 @@ import (
 
 // CreateSecurityGroup create security group.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0010.html
-func (h *Huawei) CreateSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroupCreateOption) (
+func (h *HuaWei) CreateSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroupCreateOption) (
 	*model.SecurityGroupInfo, error) {
 
 	if opt == nil {
@@ -72,7 +72,7 @@ func (h *Huawei) CreateSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroup
 
 // DeleteSecurityGroup delete security group.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0014.html
-func (h *Huawei) DeleteSecurityGroup(kt *kit.Kit, opt *types.SecurityGroupDeleteOption) error {
+func (h *HuaWei) DeleteSecurityGroup(kt *kit.Kit, opt *types.SecurityGroupDeleteOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group delete option is required")
@@ -101,7 +101,7 @@ func (h *Huawei) DeleteSecurityGroup(kt *kit.Kit, opt *types.SecurityGroupDelete
 
 // UpdateSecurityGroup update security group.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0013.html
-func (h *Huawei) UpdateSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroupUpdateOption) error {
+func (h *HuaWei) UpdateSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroupUpdateOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group update option is required")
@@ -140,7 +140,7 @@ func (h *Huawei) UpdateSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroup
 
 // ListSecurityGroup list security group.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0011.html
-func (h *Huawei) ListSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroupListOption) (*[]model.SecurityGroup,
+func (h *HuaWei) ListSecurityGroup(kt *kit.Kit, opt *types.HuaWeiSecurityGroupListOption) (*[]model.SecurityGroup,
 	*model.PageInfo, error) {
 
 	if opt == nil {

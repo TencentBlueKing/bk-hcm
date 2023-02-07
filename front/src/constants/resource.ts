@@ -4,7 +4,7 @@ export const COMMON_STATUS = [
     value: false,
   }, {
     label: '开',
-    value: true,
+    value: 'INGRESS',
   },
 ];
 
@@ -16,6 +16,28 @@ export const POLICY_STATUS = [
   {
     id: 'agree',
     name: '同意',
+  },
+];
+
+export const ACTION_STATUS = [
+  {
+    id: 'ACCEPT',
+    name: '接受',
+  },
+  {
+    id: 'DROP',
+    name: '拒绝',
+  },
+];
+
+export const HUAWEI_ACTION_STATUS = [
+  {
+    id: 'allow',
+    name: '允许',
+  },
+  {
+    id: 'deny',
+    name: '拒绝',
   },
 ];
 
@@ -107,5 +129,50 @@ export const GCP_PROTOCOL_LIST = [
   {
     id: 'sctp',
     name: 'SCTP',
+  },
+];
+
+export const AZURE_PROTOCOL_LIST = [
+  {
+    id: 'Ah',
+    name: 'Ah',
+  },
+  {
+    id: 'Esp',
+    name: 'Esp',
+  },
+  {
+    id: 'Icmp',
+    name: 'Icmp',
+  },
+  {
+    id: 'Tcp',
+    name: 'Tcp',
+  },
+  {
+    id: 'Udp',
+    name: 'Udp',
+  },
+];
+
+export const IP_TYPE_LIST = [
+  {
+    id: 'ipv4_cidr',
+    name: 'IPv4',
+  },
+  {
+    id: 'ipv6_cidr',
+    name: 'IPv6',
+  },
+];
+
+export const HUAWEI_TYPE_LIST = [
+  {
+    id: 'ipv4',
+    name: 'IPv4',
+  },
+  {
+    id: 'ipv6',
+    name: 'IPv6',
   },
 ];

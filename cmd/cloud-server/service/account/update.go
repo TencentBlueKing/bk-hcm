@@ -59,13 +59,13 @@ func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 更新账号与业务关系
-	if req.Attachment != nil && len(req.Attachment.BkBizIDs) > 0 {
+	if len(req.BkBizIDs) > 0 {
 		_, err = a.client.DataService().Global.Account.UpdateBizRel(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			accountID,
 			&dataproto.AccountBizRelUpdateReq{
-				BkBizIDs: req.Attachment.BkBizIDs,
+				BkBizIDs: req.BkBizIDs,
 			},
 		)
 		if err != nil {
@@ -73,35 +73,24 @@ func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
-	// 基本信息
-	var spec *dataproto.AccountSpecUpdateReq = nil
-	if req.Spec != nil {
-		spec = &dataproto.AccountSpecUpdateReq{
-			Name:         req.Spec.Name,
-			Managers:     req.Spec.Managers,
-			DepartmentID: req.Spec.DepartmentID,
-			Memo:         req.Spec.Memo,
-		}
-	}
-
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return a.updateForTCloud(cts, req, accountID, spec)
+		return a.updateForTCloud(cts, req, accountID)
 	case enumor.Aws:
-		return a.updateForAws(cts, req, accountID, spec)
+		return a.updateForAws(cts, req, accountID)
 	case enumor.HuaWei:
-		return a.updateForHuaWei(cts, req, accountID, spec)
+		return a.updateForHuaWei(cts, req, accountID)
 	case enumor.Gcp:
-		return a.updateForGcp(cts, req, accountID, spec)
+		return a.updateForGcp(cts, req, accountID)
 	case enumor.Azure:
-		return a.updateForAzure(cts, req, accountID, spec)
+		return a.updateForAzure(cts, req, accountID)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
 	}
 }
 
 func (a *accountSvc) updateForTCloud(
-	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string, spec *dataproto.AccountSpecUpdateReq,
+	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string,
 ) (
 	interface{}, error,
 ) {
@@ -147,19 +136,20 @@ func (a *accountSvc) updateForTCloud(
 	}
 
 	// 更新
-	if spec != nil || shouldUpdatedExtension != nil {
-		_, err := a.client.DataService().TCloud.Account.Update(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			accountID,
-			&dataproto.AccountUpdateReq[dataproto.TCloudAccountExtensionUpdateReq]{
-				Spec:      spec,
-				Extension: shouldUpdatedExtension,
-			},
-		)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	_, err := a.client.DataService().TCloud.Account.Update(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		accountID,
+		&dataproto.AccountUpdateReq[dataproto.TCloudAccountExtensionUpdateReq]{
+			Name:          req.Name,
+			Managers:      req.Managers,
+			DepartmentIDs: req.DepartmentIDs,
+			Memo:          req.Memo,
+			Extension:     shouldUpdatedExtension,
+		},
+	)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	return nil, nil
@@ -167,7 +157,7 @@ func (a *accountSvc) updateForTCloud(
 }
 
 func (a *accountSvc) updateForAws(
-	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string, spec *dataproto.AccountSpecUpdateReq,
+	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string,
 ) (
 	interface{}, error,
 ) {
@@ -213,19 +203,20 @@ func (a *accountSvc) updateForAws(
 	}
 
 	// 更新
-	if spec != nil || shouldUpdatedExtension != nil {
-		_, err := a.client.DataService().Aws.Account.Update(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			accountID,
-			&dataproto.AccountUpdateReq[dataproto.AwsAccountExtensionUpdateReq]{
-				Spec:      spec,
-				Extension: shouldUpdatedExtension,
-			},
-		)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	_, err := a.client.DataService().Aws.Account.Update(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		accountID,
+		&dataproto.AccountUpdateReq[dataproto.AwsAccountExtensionUpdateReq]{
+			Name:          req.Name,
+			Managers:      req.Managers,
+			DepartmentIDs: req.DepartmentIDs,
+			Memo:          req.Memo,
+			Extension:     shouldUpdatedExtension,
+		},
+	)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	return nil, nil
@@ -233,7 +224,7 @@ func (a *accountSvc) updateForAws(
 }
 
 func (a *accountSvc) updateForHuaWei(
-	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string, spec *dataproto.AccountSpecUpdateReq,
+	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string,
 ) (
 	interface{}, error,
 ) {
@@ -283,19 +274,20 @@ func (a *accountSvc) updateForHuaWei(
 	}
 
 	// 更新
-	if spec != nil || shouldUpdatedExtension != nil {
-		_, err := a.client.DataService().HuaWei.Account.Update(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			accountID,
-			&dataproto.AccountUpdateReq[dataproto.HuaWeiAccountExtensionUpdateReq]{
-				Spec:      spec,
-				Extension: shouldUpdatedExtension,
-			},
-		)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	_, err := a.client.DataService().HuaWei.Account.Update(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		accountID,
+		&dataproto.AccountUpdateReq[dataproto.HuaWeiAccountExtensionUpdateReq]{
+			Name:          req.Name,
+			Managers:      req.Managers,
+			DepartmentIDs: req.DepartmentIDs,
+			Memo:          req.Memo,
+			Extension:     shouldUpdatedExtension,
+		},
+	)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	return nil, nil
@@ -303,7 +295,7 @@ func (a *accountSvc) updateForHuaWei(
 }
 
 func (a *accountSvc) updateForGcp(
-	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string, spec *dataproto.AccountSpecUpdateReq,
+	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string,
 ) (
 	interface{}, error,
 ) {
@@ -348,19 +340,20 @@ func (a *accountSvc) updateForGcp(
 	}
 
 	// 更新
-	if spec != nil || shouldUpdatedExtension != nil {
-		_, err := a.client.DataService().Gcp.Account.Update(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			accountID,
-			&dataproto.AccountUpdateReq[dataproto.GcpAccountExtensionUpdateReq]{
-				Spec:      spec,
-				Extension: shouldUpdatedExtension,
-			},
-		)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	_, err := a.client.DataService().Gcp.Account.Update(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		accountID,
+		&dataproto.AccountUpdateReq[dataproto.GcpAccountExtensionUpdateReq]{
+			Name:          req.Name,
+			Managers:      req.Managers,
+			DepartmentIDs: req.DepartmentIDs,
+			Memo:          req.Memo,
+			Extension:     shouldUpdatedExtension,
+		},
+	)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	return nil, nil
@@ -368,7 +361,7 @@ func (a *accountSvc) updateForGcp(
 }
 
 func (a *accountSvc) updateForAzure(
-	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string, spec *dataproto.AccountSpecUpdateReq,
+	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string,
 ) (
 	interface{}, error,
 ) {
@@ -415,19 +408,20 @@ func (a *accountSvc) updateForAzure(
 	}
 
 	// 更新
-	if spec != nil || shouldUpdatedExtension != nil {
-		_, err := a.client.DataService().Azure.Account.Update(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			accountID,
-			&dataproto.AccountUpdateReq[dataproto.AzureAccountExtensionUpdateReq]{
-				Spec:      spec,
-				Extension: shouldUpdatedExtension,
-			},
-		)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	_, err := a.client.DataService().Azure.Account.Update(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		accountID,
+		&dataproto.AccountUpdateReq[dataproto.AzureAccountExtensionUpdateReq]{
+			Name:          req.Name,
+			Managers:      req.Managers,
+			DepartmentIDs: req.DepartmentIDs,
+			Memo:          req.Memo,
+			Extension:     shouldUpdatedExtension,
+		},
+	)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	return nil, nil

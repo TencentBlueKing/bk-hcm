@@ -31,6 +31,7 @@ func (a AccountType) Validate() error {
 	switch a {
 	case ResourceAccount:
 	case RegistrationAccount:
+	case SecurityAuditAccount:
 	default:
 		return fmt.Errorf("unsupported account type: %s", a)
 
@@ -44,6 +45,8 @@ const (
 	ResourceAccount AccountType = "resource"
 	// RegistrationAccount 登记账号仅用于账号管理，不用与管理该账号下的资源。
 	RegistrationAccount AccountType = "registration"
+	// SecurityAuditAccount 安全审计账号，仅用于安全所需审计，不管理账号下的资源
+	SecurityAuditAccount AccountType = "security_audit"
 )
 
 // AccountSiteType is site type.

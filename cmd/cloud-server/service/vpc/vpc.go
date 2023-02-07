@@ -22,6 +22,7 @@ package vpc
 import (
 	"fmt"
 
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
@@ -34,9 +35,11 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // InitVpcService initialize the vpc service.
@@ -44,6 +47,7 @@ func InitVpcService(c *capability.Capability) {
 	svc := &vpcSvc{
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
 
 	h := rest.NewHandler()
@@ -61,6 +65,7 @@ func InitVpcService(c *capability.Capability) {
 type vpcSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+	audit      audit.Interface
 }
 
 // UpdateVpc update vpc.
@@ -89,23 +94,31 @@ func (svc *vpcSvc) UpdateVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// create update audit.
+	updateFields, err := converter.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = svc.audit.ResUpdateAudit(cts.Kit, enumor.VpcCloudAuditResType, id, updateFields); err != nil {
+		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	// update vpc
+	updateReq := &hcservice.VpcUpdateReq{
+		Memo: req.Memo,
+	}
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		err = svc.client.HCService().TCloud.Vpc.Update(cts.Kit.Ctx, cts.Kit.Header(), id, nil)
+		err = svc.client.HCService().TCloud.Vpc.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	case enumor.Aws:
-		err = svc.client.HCService().Aws.Vpc.Update(cts.Kit.Ctx, cts.Kit.Header(), id, nil)
+		err = svc.client.HCService().Aws.Vpc.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	case enumor.Gcp:
-		updateReq := &hcservice.VpcUpdateReq{
-			Memo: req.Memo,
-		}
 		err = svc.client.HCService().Gcp.Vpc.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	case enumor.Azure:
-		err = svc.client.HCService().Azure.Vpc.Update(cts.Kit.Ctx, cts.Kit.Header(), id, nil)
+		err = svc.client.HCService().Azure.Vpc.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	case enumor.HuaWei:
-		updateReq := &hcservice.VpcUpdateReq{
-			Memo: req.Memo,
-		}
 		err = svc.client.HCService().HuaWei.Vpc.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	}
 
@@ -238,6 +251,12 @@ func (svc *vpcSvc) BatchDeleteVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// create delete audit.
+	if err := svc.audit.ResDeleteAudit(cts.Kit, enumor.VpcCloudAuditResType, req.IDs); err != nil {
+		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	// delete vpcs
 	succeeded := make([]string, 0)
 	for _, id := range req.IDs {
@@ -287,22 +306,7 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// authorize
-	basicInfoReq := cloud.ListResourceBasicInfoReq{
-		ResourceType: enumor.VpcCloudResType,
-		IDs:          req.VpcIDs,
-	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
-	if err != nil {
-		return nil, err
-	}
-
-	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
-	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Assign,
-			ResourceID: info.AccountID}})
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	err := svc.authorizeVpcAssignOp(cts.Kit, req.VpcIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -328,6 +332,13 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 
 	if result.Count != 0 {
 		return nil, fmt.Errorf("%d vpcs are already assigned", result.Count)
+	}
+
+	// create assign audit.
+	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.VpcCloudAuditResType, req.VpcIDs, req.BkBizID)
+	if err != nil {
+		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	// update vpc biz relations
@@ -359,30 +370,13 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// authorize
 	ids := make([]string, 0, len(req))
 	for _, rel := range req {
 		ids = append(ids, rel.VpcID)
 	}
 
-	// authorize
-	basicInfoReq := cloud.ListResourceBasicInfoReq{
-		ResourceType: enumor.VpcCloudResType,
-		IDs:          ids,
-	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
-	if err != nil {
-		return nil, err
-	}
-
-	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
-	vpcIDs := make([]string, 0, len(basicInfoMap))
-	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Assign,
-			ResourceID: info.AccountID}})
-		vpcIDs = append(vpcIDs, info.ID)
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	err := svc.authorizeVpcAssignOp(cts.Kit, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -392,7 +386,7 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: vpcIDs},
+				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: ids},
 				&filter.AtomRule{Field: "bk_cloud_id", Op: filter.NotEqual.Factory(), Value: constant.UnbindBkCloudID},
 			},
 		},
@@ -408,6 +402,20 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 
 	if result.Count != 0 {
 		return nil, fmt.Errorf("%d vpcs are already assigned", result.Count)
+	}
+
+	// create assign audit.
+	auditOpt := make([]audit.ResCloudAreaAssignOption, 0, len(req))
+	for _, info := range req {
+		auditOpt = append(auditOpt, audit.ResCloudAreaAssignOption{
+			ResID:   info.VpcID,
+			CloudID: info.BkCloudID,
+		})
+	}
+	err = svc.audit.ResCloudAreaAssignAudit(cts.Kit, enumor.VpcCloudAuditResType, auditOpt)
+	if err != nil {
+		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	// update vpc cloud area relations
@@ -429,4 +437,27 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 	}
 
 	return nil, nil
+}
+
+func (svc *vpcSvc) authorizeVpcAssignOp(kt *kit.Kit, ids []string) error {
+	basicInfoReq := cloud.ListResourceBasicInfoReq{
+		ResourceType: enumor.VpcCloudResType,
+		IDs:          ids,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(kt.Ctx, kt.Header(), basicInfoReq)
+	if err != nil {
+		return err
+	}
+
+	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
+	for _, info := range basicInfoMap {
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Assign,
+			ResourceID: info.AccountID}})
+	}
+	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

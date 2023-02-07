@@ -84,8 +84,6 @@ func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
-
-	return nil, nil
 }
 
 func createAccount[T protocloud.AccountExtensionCreateReq](vendor enumor.Vendor, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
@@ -105,17 +103,17 @@ func createAccount[T protocloud.AccountExtensionCreateReq](vendor enumor.Vendor,
 		}
 
 		account := &tablecloud.AccountTable{
-			Vendor:       string(vendor),
-			Name:         req.Spec.Name,
-			Managers:     req.Spec.Managers,
-			DepartmentID: req.Spec.DepartmentID,
-			Type:         string(req.Spec.Type),
-			Site:         string(req.Spec.Site),
-			SyncStatus:   enumor.NotStart,
-			Memo:         req.Spec.Memo,
-			Extension:    tabletype.JsonField(extensionJson),
-			Creator:      cts.Kit.User,
-			Reviser:      cts.Kit.User,
+			Vendor:        string(vendor),
+			Name:          req.Name,
+			Managers:      req.Managers,
+			DepartmentIDs: req.DepartmentIDs,
+			Type:          string(req.Type),
+			Site:          string(req.Site),
+			SyncStatus:    enumor.NotStart,
+			Memo:          req.Memo,
+			Extension:     tabletype.JsonField(extensionJson),
+			Creator:       cts.Kit.User,
+			Reviser:       cts.Kit.User,
 		}
 
 		accountID, err := svc.dao.Account().CreateWithTx(cts.Kit, txn, account)
@@ -123,8 +121,8 @@ func createAccount[T protocloud.AccountExtensionCreateReq](vendor enumor.Vendor,
 			return nil, fmt.Errorf("create account failed, err: %v", err)
 		}
 
-		rels := make([]*tablecloud.AccountBizRelTable, len(req.Attachment.BkBizIDs))
-		for index, bizID := range req.Attachment.BkBizIDs {
+		rels := make([]*tablecloud.AccountBizRelTable, len(req.BkBizIDs))
+		for index, bizID := range req.BkBizIDs {
 			rels[index] = &tablecloud.AccountBizRelTable{
 				BkBizID:   bizID,
 				AccountID: accountID,
@@ -207,14 +205,14 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID string, svc
 	}
 
 	account := &tablecloud.AccountTable{
-		Name:         req.Spec.Name,
-		Managers:     req.Spec.Managers,
-		DepartmentID: req.Spec.DepartmentID,
-		SyncStatus:   req.Spec.SyncStatus,
-		Price:        req.Spec.Price,
-		PriceUnit:    req.Spec.PriceUnit,
-		Memo:         req.Spec.Memo,
-		Reviser:      cts.Kit.User,
+		Name:          req.Name,
+		Managers:      req.Managers,
+		DepartmentIDs: req.DepartmentIDs,
+		SyncStatus:    req.SyncStatus,
+		Price:         req.Price,
+		PriceUnit:     req.PriceUnit,
+		Memo:          req.Memo,
+		Reviser:       cts.Kit.User,
 	}
 
 	// 只有提供了Extension才进行更新
@@ -288,23 +286,19 @@ func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 
 	// 组装响应数据 - 账号基本信息
 	baseAccount := &protocore.BaseAccount{
-		ID:     dbAccount.ID,
-		Vendor: enumor.Vendor(dbAccount.Vendor),
-		Spec: &protocore.AccountSpec{
-			Name:         dbAccount.Name,
-			Managers:     dbAccount.Managers,
-			DepartmentID: dbAccount.DepartmentID,
-			Type:         enumor.AccountType(dbAccount.Type),
-			Site:         enumor.AccountSiteType(dbAccount.Site),
-			SyncStatus:   enumor.AccountSyncStatus(dbAccount.SyncStatus),
-			Price:        dbAccount.Price,
-			PriceUnit:    dbAccount.PriceUnit,
-			Memo:         dbAccount.Memo,
-		},
-		Attachment: &protocore.AccountAttachment{
-			BkBizIDs: bizIDs,
-		},
-		Revision: &core.Revision{
+		ID:            dbAccount.ID,
+		Vendor:        enumor.Vendor(dbAccount.Vendor),
+		Name:          dbAccount.Name,
+		Managers:      dbAccount.Managers,
+		DepartmentIDs: dbAccount.DepartmentIDs,
+		Type:          enumor.AccountType(dbAccount.Type),
+		Site:          enumor.AccountSiteType(dbAccount.Site),
+		SyncStatus:    enumor.AccountSyncStatus(dbAccount.SyncStatus),
+		Price:         dbAccount.Price,
+		PriceUnit:     dbAccount.PriceUnit,
+		Memo:          dbAccount.Memo,
+		BkBizIDs:      bizIDs,
+		Revision: core.Revision{
 			Creator:   dbAccount.Creator,
 			Reviser:   dbAccount.Reviser,
 			CreatedAt: dbAccount.CreatedAt,
@@ -361,20 +355,18 @@ func (svc *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 	details := make([]*protocloud.BaseAccountListResp, 0, len(daoAccountResp.Details))
 	for _, account := range daoAccountResp.Details {
 		details = append(details, &protocloud.BaseAccountListResp{
-			ID:     account.ID,
-			Vendor: enumor.Vendor(account.Vendor),
-			Spec: &protocore.AccountSpec{
-				Name:         account.Name,
-				Managers:     account.Managers,
-				DepartmentID: account.DepartmentID,
-				Type:         enumor.AccountType(account.Type),
-				Site:         enumor.AccountSiteType(account.Site),
-				SyncStatus:   enumor.AccountSyncStatus(account.SyncStatus),
-				Price:        account.Price,
-				PriceUnit:    account.PriceUnit,
-				Memo:         account.Memo,
-			},
-			Revision: &core.Revision{
+			ID:            account.ID,
+			Vendor:        enumor.Vendor(account.Vendor),
+			Name:          account.Name,
+			Managers:      account.Managers,
+			DepartmentIDs: account.DepartmentIDs,
+			Type:          enumor.AccountType(account.Type),
+			Site:          enumor.AccountSiteType(account.Site),
+			SyncStatus:    enumor.AccountSyncStatus(account.SyncStatus),
+			Price:         account.Price,
+			PriceUnit:     account.PriceUnit,
+			Memo:          account.Memo,
+			Revision: core.Revision{
 				Creator:   account.Creator,
 				Reviser:   account.Reviser,
 				CreatedAt: account.CreatedAt,

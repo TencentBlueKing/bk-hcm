@@ -20,6 +20,7 @@
 package capability
 
 import (
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 
@@ -31,4 +32,5 @@ type Capability struct {
 	WebService *restful.WebService
 	ApiClient  *client.ClientSet
 	Authorizer auth.Authorizer
+	Audit      audit.Interface
 }

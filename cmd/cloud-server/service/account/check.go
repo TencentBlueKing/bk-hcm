@@ -69,23 +69,25 @@ func (a *accountSvc) checkForTCloud(cts *rest.Contexts, req *proto.AccountCheckR
 		return nil, err
 	}
 	// 校验Extension
-	if err := extension.Validate(); err != nil {
+	if err := extension.Validate(req.Type); err != nil {
 		return nil, err
 	}
 
 	// 检查联通性，账号是否正确
-	err := a.client.HCService().TCloud.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.TCloudAccountCheckReq{
-			CloudMainAccountID: extension.CloudMainAccountID,
-			CloudSubAccountID:  extension.CloudSubAccountID,
-			CloudSecretID:      extension.CloudSecretID,
-			CloudSecretKey:     extension.CloudSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
+		err := a.client.HCService().TCloud.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.TCloudAccountCheckReq{
+				CloudMainAccountID: extension.CloudMainAccountID,
+				CloudSubAccountID:  extension.CloudSubAccountID,
+				CloudSecretID:      extension.CloudSecretID,
+				CloudSecretKey:     extension.CloudSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
 	}
 
 	return nil, nil
@@ -98,23 +100,25 @@ func (a *accountSvc) checkForAws(cts *rest.Contexts, req *proto.AccountCheckReq)
 		return nil, err
 	}
 	// 校验Extension
-	if err := extension.Validate(); err != nil {
+	if err := extension.Validate(req.Type); err != nil {
 		return nil, err
 	}
 
 	// 检查联通性，账号是否正确
-	err := a.client.HCService().Aws.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.AwsAccountCheckReq{
-			CloudAccountID:   extension.CloudAccountID,
-			CloudIamUsername: extension.CloudIamUsername,
-			CloudSecretID:    extension.CloudSecretID,
-			CloudSecretKey:   extension.CloudSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
+		err := a.client.HCService().Aws.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.AwsAccountCheckReq{
+				CloudAccountID:   extension.CloudAccountID,
+				CloudIamUsername: extension.CloudIamUsername,
+				CloudSecretID:    extension.CloudSecretID,
+				CloudSecretKey:   extension.CloudSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
 	}
 
 	return nil, nil
@@ -127,26 +131,28 @@ func (a *accountSvc) checkForHuaWei(cts *rest.Contexts, req *proto.AccountCheckR
 		return nil, err
 	}
 	// 校验Extension
-	if err := extension.Validate(); err != nil {
+	if err := extension.Validate(req.Type); err != nil {
 		return nil, err
 	}
 
 	// 检查联通性，账号是否正确
-	err := a.client.HCService().HuaWei.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.HuaWeiAccountCheckReq{
-			CloudMainAccountName: extension.CloudMainAccountName,
-			CloudSubAccountID:    extension.CloudSubAccountID,
-			CloudSubAccountName:  extension.CloudSubAccountName,
-			CloudSecretID:        extension.CloudSecretID,
-			CloudSecretKey:       extension.CloudSecretKey,
-			CloudIamUserID:       extension.CloudIamUserID,
-			CloudIamUsername:     extension.CloudIamUsername,
-		},
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
+		err := a.client.HCService().HuaWei.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.HuaWeiAccountCheckReq{
+				CloudMainAccountName: extension.CloudMainAccountName,
+				CloudSubAccountID:    extension.CloudSubAccountID,
+				CloudSubAccountName:  extension.CloudSubAccountName,
+				CloudSecretID:        extension.CloudSecretID,
+				CloudSecretKey:       extension.CloudSecretKey,
+				CloudIamUserID:       extension.CloudIamUserID,
+				CloudIamUsername:     extension.CloudIamUsername,
+			},
+		)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
 	}
 
 	return nil, nil
@@ -159,21 +165,23 @@ func (a *accountSvc) checkForGcp(cts *rest.Contexts, req *proto.AccountCheckReq)
 		return nil, err
 	}
 	// 校验Extension
-	if err := extension.Validate(); err != nil {
+	if err := extension.Validate(req.Type); err != nil {
 		return nil, err
 	}
 
 	// 检查联通性，账号是否正确
-	err := a.client.HCService().Gcp.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.GcpAccountCheckReq{
-			CloudProjectID:        extension.CloudProjectID,
-			CloudServiceSecretKey: extension.CloudServiceSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
+		err := a.client.HCService().Gcp.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.GcpAccountCheckReq{
+				CloudProjectID:        extension.CloudProjectID,
+				CloudServiceSecretKey: extension.CloudServiceSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
 	}
 
 	return nil, nil
@@ -186,23 +194,25 @@ func (a *accountSvc) checkForAzure(cts *rest.Contexts, req *proto.AccountCheckRe
 		return nil, err
 	}
 	// 校验Extension
-	if err := extension.Validate(); err != nil {
+	if err := extension.Validate(req.Type); err != nil {
 		return nil, err
 	}
 
 	// 检查联通性，账号是否正确
-	err := a.client.HCService().Azure.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.AzureAccountCheckReq{
-			CloudTenantID:        extension.CloudTenantID,
-			CloudSubscriptionID:  extension.CloudSubscriptionID,
-			CloudApplicationID:   extension.CloudApplicationID,
-			CloudClientSecretKey: extension.CloudClientSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
+		err := a.client.HCService().Azure.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.AzureAccountCheckReq{
+				CloudTenantID:        extension.CloudTenantID,
+				CloudSubscriptionID:  extension.CloudSubscriptionID,
+				CloudApplicationID:   extension.CloudApplicationID,
+				CloudClientSecretKey: extension.CloudClientSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
 	}
 
 	return nil, nil

@@ -37,17 +37,197 @@ var (
 	accountNameInvalidError = errors.New("invalid account name: name should begin with a lowercase letter, " +
 		"contains lowercase letters(a-z), numbers(0-9) or hyphen(-), end with a lowercase letter or number, " +
 		"length should be 3 to 32 letters")
+	secretEmptyError = errors.New("SecretID/SecretKey can not be empty")
 )
 
 // -------------------------- Create --------------------------
 
-// AccountAttachmentCreateReq account attachment.
-type AccountAttachmentCreateReq struct {
-	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required"`
+// TCloudAccountExtensionCreateReq ...
+type TCloudAccountExtensionCreateReq struct {
+	CloudMainAccountID string `json:"cloud_main_account_id" validate:"required"`
+	CloudSubAccountID  string `json:"cloud_sub_account_id" validate:"required"`
+	CloudSecretID      string `json:"cloud_secret_id" validate:"omitempty"`
+	CloudSecretKey     string `json:"cloud_secret_key" validate:"omitempty"`
 }
 
 // Validate ...
-func (req *AccountAttachmentCreateReq) Validate() error {
+func (req *TCloudAccountExtensionCreateReq) Validate(accountType enumor.AccountType) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 登记账号密钥可为空，其他类型则必填
+	if accountType != enumor.RegistrationAccount && !req.HasFullSecret() {
+		return secretEmptyError
+	}
+
+	return nil
+}
+
+// HasFullSecret 对于不同账号类型，可能未提供密钥信息，该函数判断是否有完整的密钥信息，用于后续密钥校验的前置判断
+func (req *TCloudAccountExtensionCreateReq) HasFullSecret() bool {
+	return req.CloudSecretID != "" && req.CloudSecretKey != ""
+}
+
+// AwsAccountExtensionCreateReq ...
+type AwsAccountExtensionCreateReq struct {
+	CloudAccountID   string `json:"cloud_account_id" validate:"required"`
+	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
+	CloudSecretID    string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey   string `json:"cloud_secret_key" validate:"required"`
+}
+
+// Validate ...
+func (req *AwsAccountExtensionCreateReq) Validate(accountType enumor.AccountType) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 登记账号密钥可为空，其他类型则必填
+	if accountType != enumor.RegistrationAccount && !req.HasFullSecret() {
+		return secretEmptyError
+	}
+
+	return nil
+}
+
+// HasFullSecret 对于不同账号类型，可能未提供密钥信息，该函数判断是否有完整的密钥信息，用于后续密钥校验的前置判断
+func (req *AwsAccountExtensionCreateReq) HasFullSecret() bool {
+	return req.CloudSecretID != "" && req.CloudSecretKey != ""
+}
+
+// HuaWeiAccountExtensionCreateReq ...
+type HuaWeiAccountExtensionCreateReq struct {
+	CloudMainAccountName string `json:"cloud_main_account_name" validate:"required"`
+	CloudSubAccountID    string `json:"cloud_sub_account_id" validate:"required"`
+	CloudSubAccountName  string `json:"cloud_sub_account_name" validate:"required"`
+	CloudIamUserID       string `json:"cloud_iam_user_id" validate:"required"`
+	CloudIamUsername     string `json:"cloud_iam_username" validate:"required"`
+	CloudSecretID        string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey       string `json:"cloud_secret_key" validate:"required"`
+}
+
+// Validate ...
+func (req *HuaWeiAccountExtensionCreateReq) Validate(accountType enumor.AccountType) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 登记账号密钥可为空，其他类型则必填
+	if accountType != enumor.RegistrationAccount && !req.HasFullSecret() {
+		return secretEmptyError
+	}
+
+	return nil
+}
+
+// HasFullSecret 对于不同账号类型，可能未提供密钥信息，该函数判断是否有完整的密钥信息，用于后续密钥校验的前置判断
+func (req *HuaWeiAccountExtensionCreateReq) HasFullSecret() bool {
+	return req.CloudSecretID != "" && req.CloudSecretKey != ""
+}
+
+// GcpAccountExtensionCreateReq ...
+type GcpAccountExtensionCreateReq struct {
+	CloudProjectID          string `json:"cloud_project_id" validate:"required"`
+	CloudProjectName        string `json:"cloud_project_name" validate:"required"`
+	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"required"`
+	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
+	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"required"`
+	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"required"`
+}
+
+// Validate ...
+func (req *GcpAccountExtensionCreateReq) Validate(accountType enumor.AccountType) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 登记账号密钥可为空，其他类型则必填
+	if accountType != enumor.RegistrationAccount && !req.HasFullSecret() {
+		return secretEmptyError
+	}
+
+	return nil
+}
+
+// HasFullSecret 对于不同账号类型，可能未提供密钥信息，该函数判断是否有完整的密钥信息，用于后续密钥校验的前置判断
+func (req *GcpAccountExtensionCreateReq) HasFullSecret() bool {
+	return req.CloudServiceSecretID != "" && req.CloudServiceSecretKey != ""
+}
+
+// AzureAccountExtensionCreateReq ...
+type AzureAccountExtensionCreateReq struct {
+	CloudTenantID         string `json:"cloud_tenant_id" validate:"required"`
+	CloudSubscriptionID   string `json:"cloud_subscription_id" validate:"required"`
+	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
+	CloudApplicationID    string `json:"cloud_application_id" validate:"required"`
+	CloudApplicationName  string `json:"cloud_application_name" validate:"required"`
+	CloudClientSecretID   string `json:"cloud_client_secret_id" validate:"required"`
+	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"required"`
+}
+
+// Validate ...
+func (req *AzureAccountExtensionCreateReq) Validate(accountType enumor.AccountType) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 登记账号密钥可为空，其他类型则必填
+	if accountType != enumor.RegistrationAccount && !req.HasFullSecret() {
+		return secretEmptyError
+	}
+
+	return nil
+}
+
+// HasFullSecret 对于不同账号类型，可能未提供密钥信息，该函数判断是否有完整的密钥信息，用于后续密钥校验的前置判断
+func (req *AzureAccountExtensionCreateReq) HasFullSecret() bool {
+	return req.CloudClientSecretID != "" && req.CloudClientSecretKey != ""
+}
+
+// AccountCreateReq ...
+type AccountCreateReq struct {
+	Vendor        enumor.Vendor          `json:"vendor" validate:"required"`
+	Name          string                 `json:"name" validate:"required,min=3,max=32"`
+	Managers      []string               `json:"managers" validate:"required,max=5"`
+	DepartmentIDs []int64                `json:"department_ids" validate:"required,min=1,max=1"`
+	Type          enumor.AccountType     `json:"type" validate:"required"`
+	Site          enumor.AccountSiteType `json:"site" validate:"required"`
+	Memo          *string                `json:"memo" validate:"omitempty"`
+	BkBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
+	// Extension 各云差异化比较大，延后解析成对应结果进行校验
+	Extension json.RawMessage `json:"extension" validate:"required"`
+}
+
+// Validate create account request.
+func (req *AccountCreateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if err := req.Vendor.Validate(); err != nil {
+		return err
+	}
+
+	if err := req.Type.Validate(); err != nil {
+		return err
+	}
+
+	if err := req.Site.Validate(); err != nil {
+		return err
+	}
+
+	// 部分云只有国际站
+	if (req.Vendor == enumor.Gcp || req.Vendor == enumor.Azure || req.Vendor == enumor.HuaWei) && req.Site != enumor.InternationalSite {
+		return fmt.Errorf("%s support only international site", req.Vendor)
+	}
+
+	// 名称有限制特定规则
+	if !validAccountNameRegex.MatchString(req.Name) {
+		return accountNameInvalidError
+	}
+
+	// 全业务判断
 	bizCount := len(req.BkBizIDs)
 	for _, bizID := range req.BkBizIDs {
 		// 校验是否非法业务ID
@@ -63,141 +243,12 @@ func (req *AccountAttachmentCreateReq) Validate() error {
 	return nil
 }
 
-// AccountSpecCreateReq ...
-type AccountSpecCreateReq struct {
-	Name         string                 `json:"name" validate:"required,min=3,max=32"`
-	Managers     []string               `json:"managers" validate:"required,max=5"`
-	DepartmentID int64                  `json:"department_id" validate:"required,min=1"`
-	Type         enumor.AccountType     `json:"type" validate:"required"`
-	Site         enumor.AccountSiteType `json:"site" validate:"required"`
-	Memo         *string                `json:"memo" validate:"omitempty"`
-}
-
-// Validate ...
-func (req *AccountSpecCreateReq) Validate() error {
-	if err := req.Type.Validate(); err != nil {
-		return err
-	}
-
-	if err := req.Site.Validate(); err != nil {
-		return err
-	}
-
-	if !validAccountNameRegex.MatchString(req.Name) {
-		return accountNameInvalidError
-	}
-
-	return nil
-}
-
-// TCloudAccountExtensionCreateReq ...
-type TCloudAccountExtensionCreateReq struct {
-	CloudMainAccountID string `json:"cloud_main_account_id" validate:"required"`
-	CloudSubAccountID  string `json:"cloud_sub_account_id" validate:"required"`
-	CloudSecretID      string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey     string `json:"cloud_secret_key" validate:"required"`
-}
-
-// Validate ...
-func (req *TCloudAccountExtensionCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// AwsAccountExtensionCreateReq ...
-type AwsAccountExtensionCreateReq struct {
-	CloudAccountID   string `json:"cloud_account_id" validate:"required"`
-	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
-	CloudSecretID    string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey   string `json:"cloud_secret_key" validate:"required"`
-}
-
-// Validate ...
-func (req *AwsAccountExtensionCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// HuaWeiAccountExtensionCreateReq ...
-type HuaWeiAccountExtensionCreateReq struct {
-	CloudMainAccountName string `json:"cloud_main_account_name" validate:"required"`
-	CloudSubAccountID    string `json:"cloud_sub_account_id" validate:"required"`
-	CloudSubAccountName  string `json:"cloud_sub_account_name" validate:"required"`
-	CloudIamUserID       string `json:"cloud_iam_user_id" validate:"required"`
-	CloudIamUsername     string `json:"cloud_iam_username" validate:"required"`
-	CloudSecretID        string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey       string `json:"cloud_secret_key" validate:"required"`
-}
-
-// Validate ...
-func (r *HuaWeiAccountExtensionCreateReq) Validate() error {
-	return validator.Validate.Struct(r)
-}
-
-// GcpAccountExtensionCreateReq ...
-type GcpAccountExtensionCreateReq struct {
-	CloudProjectID          string `json:"cloud_project_id" validate:"required"`
-	CloudProjectName        string `json:"cloud_project_name" validate:"required"`
-	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"required"`
-	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
-	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"required"`
-	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"required"`
-}
-
-// Validate ...
-func (r *GcpAccountExtensionCreateReq) Validate() error {
-	return validator.Validate.Struct(r)
-}
-
-// AzureAccountExtensionCreateReq ...
-type AzureAccountExtensionCreateReq struct {
-	CloudTenantID         string `json:"cloud_tenant_id" validate:"required"`
-	CloudSubscriptionID   string `json:"cloud_subscription_id" validate:"required"`
-	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
-	CloudApplicationID    string `json:"cloud_application_id" validate:"required"`
-	CloudApplicationName  string `json:"cloud_application_name" validate:"required"`
-	CloudClientSecretID   string `json:"cloud_client_secret_id" validate:"required"`
-	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"required"`
-}
-
-// Validate ...
-func (r *AzureAccountExtensionCreateReq) Validate() error {
-	return validator.Validate.Struct(r)
-}
-
-// AccountCreateReq ...
-type AccountCreateReq struct {
-	Vendor enumor.Vendor         `json:"vendor" validate:"required"`
-	Spec   *AccountSpecCreateReq `json:"spec" validate:"required"`
-	// Extension 各云差异化比较大，延后解析成对应结果进行校验
-	Extension  json.RawMessage             `json:"extension" validate:"required"`
-	Attachment *AccountAttachmentCreateReq `json:"attachment" validate:"required"`
-}
-
-// Validate create account request.
-func (req *AccountCreateReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	if err := req.Vendor.Validate(); err != nil {
-		return err
-	}
-
-	if err := req.Spec.Validate(); err != nil {
-		return err
-	}
-
-	if err := req.Attachment.Validate(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // -------------------------- Check --------------------------
 
 // AccountCheckReq ...
 type AccountCheckReq struct {
-	Vendor enumor.Vendor `json:"vendor" validate:"required"`
+	Vendor enumor.Vendor      `json:"vendor" validate:"required"`
+	Type   enumor.AccountType `json:"type" validate:"required"`
 	// Extension 各云差异化比较大，延后解析成对应结果进行校验
 	Extension json.RawMessage `json:"extension" validate:"required"`
 }
@@ -209,6 +260,10 @@ func (req *AccountCheckReq) Validate() error {
 	}
 
 	if err := req.Vendor.Validate(); err != nil {
+		return err
+	}
+
+	if err := req.Type.Validate(); err != nil {
 		return err
 	}
 
@@ -367,29 +422,26 @@ func (r *AzureAccountExtensionUpdateReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
-// AccountSpecUpdateReq ...
-type AccountSpecUpdateReq struct {
-	Name         string   `json:"name" validate:"omitempty"`
-	Managers     []string `json:"managers" validate:"omitempty,max=5"`
-	DepartmentID int64    `json:"department_id" validate:"omitempty,min=1"`
-	Memo         *string  `json:"memo" validate:"omitempty"`
+// AccountUpdateReq ...
+type AccountUpdateReq struct {
+	Name          string           `json:"name" validate:"omitempty"`
+	Managers      []string         `json:"managers" validate:"omitempty,max=5"`
+	DepartmentIDs []int64          `json:"department_ids" validate:"omitempty,max=1"`
+	Memo          *string          `json:"memo" validate:"omitempty"`
+	BkBizIDs      []int64          `json:"bk_biz_ids" validate:"omitempty"`
+	Extension     *json.RawMessage `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...
-func (req *AccountSpecUpdateReq) Validate() error {
+func (req *AccountUpdateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
 	if req.Name != "" && !validAccountNameRegex.MatchString(req.Name) {
 		return accountNameInvalidError
 	}
-	return nil
-}
 
-// AccountAttachmentUpdateReq ...
-type AccountAttachmentUpdateReq struct {
-	BkBizIDs []int64 `json:"bk_biz_ids" validate:"omitempty"`
-}
-
-// Validate ...
-func (req *AccountAttachmentUpdateReq) Validate() error {
 	bizCount := len(req.BkBizIDs)
 	for _, bizID := range req.BkBizIDs {
 		// 校验是否非法业务ID
@@ -399,34 +451,6 @@ func (req *AccountAttachmentUpdateReq) Validate() error {
 		// 选择全业务时不可选择其他具体业务，即全业务时业务数量只能是1
 		if bizID == constant.AttachedAllBiz && bizCount > 1 {
 			return errors.New("can't choose specific biz when choose all biz")
-		}
-	}
-
-	return nil
-}
-
-// AccountUpdateReq ...
-type AccountUpdateReq struct {
-	Spec       *AccountSpecUpdateReq       `json:"spec" validate:"omitempty"`
-	Extension  *json.RawMessage            `json:"extension" validate:"omitempty"`
-	Attachment *AccountAttachmentUpdateReq `json:"attachment" validate:"omitempty"`
-}
-
-// Validate ...
-func (req *AccountUpdateReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	if req.Spec != nil {
-		if err := req.Spec.Validate(); err != nil {
-			return err
-		}
-	}
-
-	if req.Attachment != nil {
-		if err := req.Attachment.Validate(); err != nil {
-			return err
 		}
 	}
 

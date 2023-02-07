@@ -6,8 +6,13 @@ const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export const useResourceStore = defineStore({
   id: 'resourceStore',
-  state: () => ({}),
+  state: () => ({
+    securityRuleDetail: {},
+  }),
   actions: {
+    setSecurityRuleDetail(data: any) {
+      this.securityRuleDetail = data;
+    },
     /**
      * @description: 获取资源列表
      * @param {any} data

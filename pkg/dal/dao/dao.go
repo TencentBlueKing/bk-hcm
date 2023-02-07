@@ -79,6 +79,7 @@ type Set interface {
 	RegisterObjectDao(dao ObjectDao)
 	GetObjectDao(name table.Name) ObjectDao
 
+	Audit() audit.Interface
 	Auth() auth.Auth
 	Account() cloud.Account
 	SecurityGroup() cloud.SecurityGroup
@@ -109,16 +110,11 @@ func NewDaoSet(opt cc.DataBase) (Set, error) {
 
 	idGen := idgenerator.New(db, idgenerator.DefaultMaxRetryCount)
 
-	auditDao, err := audit.NewAuditDao(ormInst, db)
-	if err != nil {
-		return nil, fmt.Errorf("new audit dao failed, err: %v", err)
-	}
-
 	s := &set{
 		idGen:      idGen,
 		orm:        ormInst,
 		db:         db,
-		auditDao:   auditDao,
+		audit:      audit.NewAudit(ormInst),
 		objectDaos: make(map[table.Name]ObjectDao),
 	}
 
@@ -155,10 +151,10 @@ func uri(opt cc.ResourceDB) string {
 }
 
 type set struct {
-	idGen    idgenerator.IDGenInterface
-	orm      orm.Interface
-	db       *sqlx.DB
-	auditDao audit.AuditDao
+	idGen idgenerator.IDGenInterface
+	orm   orm.Interface
+	db    *sqlx.DB
+	audit audit.Interface
 
 	objectDaos map[table.Name]ObjectDao
 }
@@ -180,12 +176,12 @@ func (s *set) AccountBizRel() cloud.AccountBizRel {
 
 // Vpc returns vpc dao.
 func (s *set) Vpc() cloud.Vpc {
-	return cloud.NewVpcDao(s.orm, s.idGen)
+	return cloud.NewVpcDao(s.orm, s.idGen, s.audit)
 }
 
 // Subnet returns subnet dao.
 func (s *set) Subnet() cloud.Subnet {
-	return cloud.NewSubnetDao(s.orm, s.idGen)
+	return cloud.NewSubnetDao(s.orm, s.idGen, s.audit)
 }
 
 // Auth return auth dao.
@@ -241,6 +237,7 @@ func (s *set) SecurityGroup() cloud.SecurityGroup {
 	return &cloud.SecurityGroupDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
 
@@ -297,4 +294,9 @@ func (s *set) AwsRegion() region.AwsRegion {
 // GcpRegion returns gcp region dao.
 func (s *set) GcpRegion() region.GcpRegion {
 	return region.NewGcpRegionDao(s.orm, s.idGen)
+}
+
+// Audit return audit dao.
+func (s *set) Audit() audit.Interface {
+	return s.audit
 }

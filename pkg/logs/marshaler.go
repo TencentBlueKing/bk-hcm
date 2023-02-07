@@ -63,5 +63,5 @@ func errorJson(format string, args ...interface{}) {
 		params[index] = arg
 	}
 
-	glog.ErrorDepthf(1, format, params)
+	glog.ErrorDepthf(1, format, params...)
 }

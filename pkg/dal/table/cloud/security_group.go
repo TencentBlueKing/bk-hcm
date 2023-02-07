@@ -52,19 +52,19 @@ var SecurityGroupColumnDescriptor = utils.ColumnDescriptors{
 
 // SecurityGroupTable define security group table.
 type SecurityGroupTable struct {
-	ID        string          `db:"id" validate:"lte=64"`
-	Vendor    string          `db:"vendor" validate:"lte=16"`
-	CloudID   string          `db:"cloud_id" validate:"lte=255"`
-	BkBizID   int64           `db:"bk_biz_id"`
-	Region    string          `db:"region" validate:"lte=20"`
-	Name      string          `db:"name" validate:"lte=60"`
-	Memo      *string         `db:"memo" validate:"omitempty,lte=255"`
-	AccountID string          `db:"account_id" validate:"lte=64"`
-	Extension types.JsonField `db:"extension"`
-	Creator   string          `db:"creator" validate:"lte=64"`
-	Reviser   string          `db:"reviser" validate:"lte=64"`
-	CreatedAt *time.Time      `db:"created_at" validate:"excluded_unless"`
-	UpdatedAt *time.Time      `db:"updated_at" validate:"excluded_unless"`
+	ID        string          `db:"id" json:"id" validate:"lte=64"`
+	Vendor    string          `db:"vendor" json:"vendor" validate:"lte=16"`
+	CloudID   string          `db:"cloud_id" json:"cloud_id" validate:"lte=255"`
+	BkBizID   int64           `db:"bk_biz_id" json:"bk_biz_id"`
+	Region    string          `db:"region" json:"region" validate:"lte=20"`
+	Name      string          `db:"name" json:"name" validate:"lte=60"`
+	Memo      *string         `db:"memo" json:"memo" validate:"omitempty,lte=255"`
+	AccountID string          `db:"account_id" json:"account_id" validate:"lte=64"`
+	Extension types.JsonField `db:"extension" json:"extension"`
+	Creator   string          `db:"creator" json:"creator" validate:"lte=64"`
+	Reviser   string          `db:"reviser" json:"reviser" validate:"lte=64"`
+	CreatedAt *time.Time      `db:"created_at" json:"created_at" validate:"excluded_unless"`
+	UpdatedAt *time.Time      `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return security group table name.

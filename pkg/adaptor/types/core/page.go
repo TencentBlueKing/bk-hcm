@@ -32,8 +32,8 @@ const (
 	AwsMinimumQueryLimit = 5
 	// GcpQueryLimit is gcp maximum query limit
 	GcpQueryLimit = 500
-	// HuaweiQueryLimit is huawei maximum query limit
-	HuaweiQueryLimit = 2000
+	// HuaWeiQueryLimit is huawei maximum query limit
+	HuaWeiQueryLimit = 2000
 )
 
 // TCloudPage defines tencent cloud page option.
@@ -93,19 +93,19 @@ func (g GcpPage) Validate() error {
 	return nil
 }
 
-// HuaweiPage define huawei page option.
-type HuaweiPage struct {
+// HuaWeiPage define huawei page option.
+type HuaWeiPage struct {
 	Limit  *int32  `json:"limit,omitempty"`
 	Marker *string `json:"marker,omitempty"`
 }
 
 // Validate huawei page extension.
-func (h HuaweiPage) Validate() error {
+func (h HuaWeiPage) Validate() error {
 	if h.Limit == nil {
 		return nil
 	}
 
-	if *h.Limit > HuaweiQueryLimit {
+	if *h.Limit > HuaWeiQueryLimit {
 		return errf.New(errf.InvalidParameter, "huawei.pageSize should <= 2000")
 	}
 

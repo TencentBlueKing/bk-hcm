@@ -27,19 +27,30 @@ package enumor
 type AuditResourceType string
 
 const (
-	// Account 策略资源
-	Account AuditResourceType = "account"
-	// Vpc 策略资源
-	Vpc AuditResourceType = "vpc"
-	// Subnet 策略资源
-	Subnet AuditResourceType = "subnet"
+	AccountAuditResType           AuditResourceType = "account"
+	SecurityGroupAuditResType     AuditResourceType = "security_group"
+	SecurityGroupRuleAuditResType AuditResourceType = "security_group_rule"
+	VpcCloudAuditResType          AuditResourceType = "vpc"
+	SubnetAuditResType            AuditResourceType = "subnet"
+	DiskAuditResType              AuditResourceType = "disk"
+	CvmAuditResType               AuditResourceType = "cvm"
+	RouteTableAuditResType        AuditResourceType = "route_table"
+	EipAuditResType               AuditResourceType = "eip"
+	GcpFirewallRuleAuditResType   AuditResourceType = "gcp_firewall_rule"
 )
 
 // AuditResourceTypeEnums resource type map.
-var AuditResourceTypeEnums = map[AuditResourceType]bool{
-	Account: true,
-	Vpc:     true,
-	Subnet:  true,
+var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
+	AccountAuditResType:           {},
+	SecurityGroupAuditResType:     {},
+	SecurityGroupRuleAuditResType: {},
+	VpcCloudAuditResType:          {},
+	SubnetAuditResType:            {},
+	DiskAuditResType:              {},
+	CvmAuditResType:               {},
+	RouteTableAuditResType:        {},
+	EipAuditResType:               {},
+	GcpFirewallRuleAuditResType:   {},
 }
 
 // Exist judge enum value exist.
@@ -58,17 +69,49 @@ const (
 	Update AuditAction = "update"
 	// Delete 删除
 	Delete AuditAction = "delete"
+	// Assign 分配
+	Assign AuditAction = "assign"
+	// Recycle 回收
+	Recycle AuditAction = "recycle"
+	// Reboot 重启
+	Reboot AuditAction = "reboot"
+	// Reload 重装
+	Reload AuditAction = "reload"
 )
 
 // AuditActionEnums op type map.
-var AuditActionEnums = map[AuditAction]bool{
-	Create: true,
-	Update: true,
-	Delete: true,
+var AuditActionEnums = map[AuditAction]struct{}{
+	Create:  {},
+	Update:  {},
+	Delete:  {},
+	Assign:  {},
+	Recycle: {},
+	Reboot:  {},
+	Reload:  {},
 }
 
 // Exist judge enum value exist.
 func (a AuditAction) Exist() bool {
 	_, exist := AuditActionEnums[a]
+	return exist
+}
+
+// AuditAssignedResType audit assigned resource type.
+type AuditAssignedResType string
+
+const (
+	BizAuditAssignedResType       AuditAssignedResType = "biz"
+	CloudAreaAuditAssignedResType AuditAssignedResType = "cloud_area"
+)
+
+// AuditAssignedResTypeEnums audit assigned resource type map.
+var AuditAssignedResTypeEnums = map[AuditAssignedResType]struct{}{
+	BizAuditAssignedResType:       {},
+	CloudAreaAuditAssignedResType: {},
+}
+
+// Exist judge enum value exist.
+func (a AuditAssignedResType) Exist() bool {
+	_, exist := AuditAssignedResTypeEnums[a]
 	return exist
 }

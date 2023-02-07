@@ -57,6 +57,6 @@ func (a *Adaptor) Azure(credential *types.AzureCredential) (*azure.Azure, error)
 }
 
 // HuaWei returns HuaWei operations.
-func (a *Adaptor) HuaWei(s *types.BaseSecret) (*huawei.Huawei, error) {
-	return huawei.NewHuawei(s)
+func (a *Adaptor) HuaWei(s *types.BaseSecret) (*huawei.HuaWei, error) {
+	return huawei.NewHuaWei(s)
 }

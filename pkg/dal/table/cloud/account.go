@@ -49,7 +49,7 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "managers", NamedC: "managers", Type: enumor.Json},
-	{Column: "department_id", NamedC: "department_id", Type: enumor.Numeric},
+	{Column: "department_ids", NamedC: "department_ids", Type: enumor.Json},
 	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "site", NamedC: "site", Type: enumor.String},
 	{Column: "sync_status", NamedC: "sync_status", Type: enumor.String},
@@ -66,39 +66,39 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 // AccountTable 云账号表
 type AccountTable struct {
 	// ID 账号 ID
-	ID string `db:"id"`
+	ID string `db:"id" json:"id"`
 	// Name 账号名称
-	Name string `db:"name"`
+	Name string `db:"name" json:"name"`
 	// Vendor 云厂商
-	Vendor string `db:"vendor"`
+	Vendor string `db:"vendor" json:"vendor"`
 	// Managers 责任人
-	Managers types.StringArray `db:"managers"`
-	// DepartmentID 部门 ID
-	DepartmentID int64 `db:"department_id"`
+	Managers types.StringArray `db:"managers" json:"managers"`
+	// DepartmentIDs 部门 ID列表
+	DepartmentIDs types.Int64Array `db:"department_ids" json:"department_ids"`
 	// Type 账号类型(资源账号|登记账号)
-	Type string `db:"type"`
+	Type string `db:"type" json:"type"`
 	// Site 站点(中国站｜国际站)
 	Site string `db:"site"`
 	// SyncStatus 账号资源同步状态
-	SyncStatus string `db:"sync_status"`
+	SyncStatus string `db:"sync_status" json:"sync_status"`
 	// Price 账号余额数值
-	Price string `db:"price"`
+	Price string `db:"price" json:"price"`
 	// PriceUnit 账号余额单位
-	PriceUnit string `db:"price_unit"`
+	PriceUnit string `db:"price_unit" json:"price_unit"`
 	// Extension 云厂商账号差异扩展字段
-	Extension types.JsonField `db:"extension"`
+	Extension types.JsonField `db:"extension" json:"extension"`
 	// TenantID 租户ID
-	TenantID string `db:"tenant_id"`
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 	// Creator 创建者
-	Creator string `db:"creator"`
+	Creator string `db:"creator" json:"creator"`
 	// Reviser 更新者
-	Reviser string `db:"reviser"`
+	Reviser string `db:"reviser" json:"reviser"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at"`
+	CreatedAt *time.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at"`
+	UpdatedAt *time.Time `db:"updated_at" json:"updated_at"`
 	// Memo 账号信息备注
-	Memo *string `db:"memo"`
+	Memo *string `db:"memo" json:"memo"`
 }
 
 // TableName return account table name.
@@ -117,7 +117,7 @@ func (a AccountTable) InsertValidate() error {
 	}
 
 	if a.UpdatedAt != nil {
-		return errors.New("update_at can not set")
+		return errors.New("updated_at can not set")
 	}
 
 	// TODO: 添加账号其他信息正则和长度校验。
@@ -128,7 +128,7 @@ func (a AccountTable) InsertValidate() error {
 // UpdateValidate validate account table on update.
 func (a AccountTable) UpdateValidate() error {
 	if a.UpdatedAt != nil {
-		return errors.New("update_at can not update")
+		return errors.New("updated_at can not update")
 	}
 
 	if len(a.Creator) != 0 {

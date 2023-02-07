@@ -63,7 +63,7 @@ func (do *do) Get(ctx context.Context, dest interface{}, expr string, arg map[st
 		return err
 	}
 
-	rows, err := do.db.Query(do.db.Rebind(query), args...)
+	rows, err := do.db.QueryContext(ctx, do.db.Rebind(query), args...)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "get"}).Inc()
 		return err
@@ -100,7 +100,7 @@ func (do *do) Select(ctx context.Context, dest interface{}, expr string, arg map
 		return err
 	}
 
-	rows, err := do.db.Query(do.db.Rebind(query), args...)
+	rows, err := do.db.QueryContext(ctx, do.db.Rebind(query), args...)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "select"}).Inc()
 		return err
@@ -137,7 +137,7 @@ func (do *do) Count(ctx context.Context, expr string, arg map[string]interface{}
 		return 0, err
 	}
 
-	rows, err := do.db.Query(do.db.Rebind(query), args...)
+	rows, err := do.db.QueryContext(ctx, do.db.Rebind(query), args...)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
 		return 0, err
@@ -177,7 +177,7 @@ func (do *do) Delete(ctx context.Context, expr string, arg map[string]interface{
 		return 0, err
 	}
 
-	result, err := do.db.Exec(do.db.Rebind(query), args...)
+	result, err := do.db.ExecContext(ctx, do.db.Rebind(query), args...)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
 		return 0, err
@@ -196,8 +196,8 @@ func (do *do) Delete(ctx context.Context, expr string, arg map[string]interface{
 }
 
 // Update a collection of data
-func (do *do) Update(ctx context.Context, expr string, args map[string]interface{}) (int64, error) {
-	if args == nil {
+func (do *do) Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
+	if arg == nil {
 		return 0, errors.New("update args is required")
 	}
 
@@ -207,7 +207,19 @@ func (do *do) Update(ctx context.Context, expr string, args map[string]interface
 
 	start := time.Now()
 
-	result, err := do.db.NamedExecContext(ctx, expr, args)
+	query, args, err := sqlx.Named(expr, arg)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "update"}).Inc()
+		return 0, err
+	}
+
+	query, args, err = sqlx.In(query, args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "update"}).Inc()
+		return 0, err
+	}
+
+	result, err := do.db.ExecContext(ctx, do.db.Rebind(query), args...)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "update"}).Inc()
 		return 0, err
@@ -319,7 +331,7 @@ func (do *doTxn) Delete(ctx context.Context, expr string, arg map[string]interfa
 		return 0, err
 	}
 
-	result, err := do.tx.Exec(do.tx.Rebind(query), args...)
+	result, err := do.tx.ExecContext(ctx, do.tx.Rebind(query), args...)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
 		return 0, err
@@ -383,8 +395,8 @@ func (do *doTxn) BulkInsert(ctx context.Context, expr string, args interface{}) 
 }
 
 // Update with transaction
-func (do *doTxn) Update(ctx context.Context, expr string, args map[string]interface{}) (int64, error) {
-	if args == nil {
+func (do *doTxn) Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
+	if arg == nil {
 		return 0, errors.New("update args is required")
 	}
 
@@ -394,7 +406,19 @@ func (do *doTxn) Update(ctx context.Context, expr string, args map[string]interf
 
 	start := time.Now()
 
-	result, err := do.tx.NamedExecContext(ctx, expr, args)
+	query, args, err := sqlx.Named(expr, arg)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "update"}).Inc()
+		return 0, err
+	}
+
+	query, args, err = sqlx.In(query, args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "update"}).Inc()
+		return 0, err
+	}
+
+	result, err := do.tx.ExecContext(ctx, do.tx.Rebind(query), args...)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "update"}).Inc()
 		return 0, err

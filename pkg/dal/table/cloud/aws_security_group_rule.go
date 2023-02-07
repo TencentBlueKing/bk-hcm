@@ -58,26 +58,26 @@ var AwsSGRuleColumnDescriptor = utils.ColumnDescriptors{
 
 // AwsSecurityGroupRuleTable define aws security group rule table.
 type AwsSecurityGroupRuleTable struct {
-	ID                         string     `db:"id" validate:"lte=64"`
-	CloudID                    string     `db:"cloud_id" validate:"lte=255"`
-	IPv4Cidr                   *string    `db:"ipv4_cidr" validate:"omitempty,lte=255"`
-	IPv6Cidr                   *string    `db:"ipv6_cidr" validate:"omitempty,lte=255"`
-	Memo                       *string    `db:"memo" validate:"omitempty,lte=60"`
-	Type                       string     `db:"type" validate:"lte=20"`
-	FromPort                   int64      `db:"from_port"`
-	ToPort                     int64      `db:"to_port"`
-	Protocol                   *string    `db:"protocol" validate:"omitempty,lte=10"`
-	CloudPrefixListID          *string    `db:"cloud_prefix_list_id" validate:"omitempty,lte=255"`
-	CloudTargetSecurityGroupID *string    `db:"cloud_target_security_group_id" validate:"omitempty,lte=255"`
-	CloudSecurityGroupID       string     `db:"cloud_security_group_id" validate:"lte=255"`
-	CloudGroupOwnerID          string     `db:"cloud_group_owner_id" validate:"lte=255"`
-	SecurityGroupID            string     `db:"security_group_id" validate:"lte=64"`
-	AccountID                  string     `db:"account_id" validate:"lte=64"`
-	Region                     string     `db:"region" validate:"lte=20"`
-	Creator                    string     `db:"creator" validate:"lte=64"`
-	Reviser                    string     `db:"reviser" validate:"lte=64"`
-	CreatedAt                  *time.Time `db:"created_at" validate:"excluded_unless"`
-	UpdatedAt                  *time.Time `db:"updated_at" validate:"excluded_unless"`
+	ID                         string     `db:"id" json:"id" validate:"lte=64"`
+	CloudID                    string     `db:"cloud_id" json:"cloud_id" validate:"lte=255"`
+	IPv4Cidr                   *string    `db:"ipv4_cidr" json:"ipv4_cidr" validate:"omitempty,lte=255"`
+	IPv6Cidr                   *string    `db:"ipv6_cidr" json:"ipv6_cidr" validate:"omitempty,lte=255"`
+	Memo                       *string    `db:"memo" json:"memo" validate:"omitempty,lte=60"`
+	Type                       string     `db:"type" json:"type" validate:"lte=20"`
+	FromPort                   int64      `db:"from_port" json:"from_port"`
+	ToPort                     int64      `db:"to_port" json:"to_port"`
+	Protocol                   *string    `db:"protocol" json:"protocol" validate:"omitempty,lte=10"`
+	CloudPrefixListID          *string    `db:"cloud_prefix_list_id" json:"cloud_prefix_list_id" validate:"omitempty,lte=255"`
+	CloudTargetSecurityGroupID *string    `db:"cloud_target_security_group_id" json:"cloud_target_security_group_id" validate:"omitempty,lte=255"`
+	CloudSecurityGroupID       string     `db:"cloud_security_group_id" json:"cloud_security_group_id" validate:"lte=255"`
+	CloudGroupOwnerID          string     `db:"cloud_group_owner_id" json:"cloud_group_owner_id" validate:"lte=255"`
+	SecurityGroupID            string     `db:"security_group_id" json:"security_group_id" validate:"lte=64"`
+	AccountID                  string     `db:"account_id" json:"account_id" validate:"lte=64"`
+	Region                     string     `db:"region" json:"region" validate:"lte=20"`
+	Creator                    string     `db:"creator" json:"creator" validate:"lte=64"`
+	Reviser                    string     `db:"reviser" json:"reviser" validate:"lte=64"`
+	CreatedAt                  *time.Time `db:"created_at" json:"created_at" validate:"excluded_unless"`
+	UpdatedAt                  *time.Time `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return aws security group rule table name.

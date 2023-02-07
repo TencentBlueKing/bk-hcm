@@ -225,12 +225,12 @@ func (g *securityGroup) getDatasFromHuaWeiForSecurityGroupSync(cts *rest.Context
 	}
 
 	datasCloud := []model.SecurityGroup{}
-	limit := int32(typcore.HuaweiQueryLimit)
+	limit := int32(typcore.HuaWeiQueryLimit)
 	var marker *string = nil
 	for {
 		opt := &types.HuaWeiSecurityGroupListOption{
 			Region: req.Region,
-			Page:   &typcore.HuaweiPage{Limit: &limit, Marker: marker},
+			Page:   &typcore.HuaWeiPage{Limit: &limit, Marker: marker},
 		}
 		datas, pageInfo, err := client.ListSecurityGroup(cts.Kit, opt)
 		if err != nil {

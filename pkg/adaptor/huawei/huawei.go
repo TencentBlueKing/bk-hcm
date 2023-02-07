@@ -24,16 +24,16 @@ import (
 	"hcm/pkg/criteria/errf"
 )
 
-// NewHuawei new huawei.
-func NewHuawei(s *types.BaseSecret) (*Huawei, error) {
+// NewHuaWei new huawei.
+func NewHuaWei(s *types.BaseSecret) (*HuaWei, error) {
 	if err := validateSecret(s); err != nil {
 		return nil, err
 	}
-	return &Huawei{clientSet: newClientSet(s)}, nil
+	return &HuaWei{clientSet: newClientSet(s)}, nil
 }
 
-// Huawei is huawei operator.
-type Huawei struct {
+// HuaWei is huawei operator.
+type HuaWei struct {
 	clientSet *clientSet
 }
 
