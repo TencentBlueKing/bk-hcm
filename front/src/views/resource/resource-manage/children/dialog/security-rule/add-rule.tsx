@@ -2,10 +2,9 @@ import {
   defineComponent,
   ref,
   watch,
-  nextTick,
 } from 'vue';
-import { Table, Input, Select, Button } from 'bkui-vue';
-import { ACTION_STATUS, GCP_PROTOCOL_LIST, IP_TYPE_LIST, HUAWEI_ACTION_STATUS, HUAWEI_TYPE_LIST } from '@/constants';
+import { Table, Input, Select, Button  } from 'bkui-vue'; // TagInput
+import { ACTION_STATUS, GCP_PROTOCOL_LIST, IP_TYPE_LIST, HUAWEI_ACTION_STATUS, HUAWEI_TYPE_LIST, AZURE_PROTOCOL_LIST } from '@/constants';
 import Confirm from '@/components/confirm';
 import {
   useI18n,
@@ -35,6 +34,9 @@ export default defineComponent({
     loading: {
       type: Boolean,
     },
+    dialogWidth: {
+      type: String,
+    },
   },
 
   emits: ['update:isShow', 'submit'],
@@ -48,7 +50,7 @@ export default defineComponent({
 
     // const cloudTargetSecurityGroup = ;
 
-    const SecurityGroupTarget = ref([
+    const securityGroupSource = ref([   // 华为源
       {
         id: 'remote_ip_prefix',
         name: t('IP地址'),
@@ -59,21 +61,75 @@ export default defineComponent({
       },
     ]);
 
+    const azureSecurityGroupSource = ref([    // 微软云源
+      {
+        id: 'source_address_prefix',
+        name: t('IP地址'),
+      },
+      {
+        id: 'source_address_prefixs',
+        name: t('IP地址组'),
+      },
+      {
+        id: 'cloud_source_security_group_ids',
+        name: t('安全组'),
+      },
+    ]);
+
+    const azureSecurityGroupTarget = ref([    // 微软云目标
+      {
+        id: 'destination_address_prefix',
+        name: t('IP地址'),
+      },
+      {
+        id: 'destination_address_prefixes',
+        name: t('IP地址组'),
+      },
+      {
+        id: 'cloud_destination_security_group_ids',
+        name: t('安全组'),
+      },
+    ]);
+
     const securityRuleId = ref('');
 
-    const renderSourceAddressSlot = (data: any) => {
-      if (data.ipv4_cidr) {
-        return <Input v-model={ data.ipv4_cidr }></Input>;
-      } if (data.ipv6_cidr) {
-        return <Input v-model={ data.ipv6_cidr }></Input>;
-      } if (data.cloud_target_security_group_id) {
-        return <Input v-model={ data.cloud_target_security_group_id }></Input>;
-      } if (data.remote_ip_prefix) {
-        return <Input v-model={ data.remote_ip_prefix }></Input>;
-      } if (data.cloud_remote_group_id) {
-        return <Input v-model={ data.cloud_remote_group_id }></Input>;
+    const renderSourceAddressSlot = (data: any, key: string) => {
+      // console.log('key', key);
+      // if (data.ipv4_cidr) {
+      //   return <Input v-model={ data.ipv4_cidr }></Input>;
+      // } if (data.ipv6_cidr) {
+      //   return <Input v-model={ data.ipv6_cidr }></Input>;
+      // } if (data.cloud_target_security_group_id) {
+      //   return <Input v-model={ data.cloud_target_security_group_id }></Input>;
+      // } if (data.remote_ip_prefix) {
+      //   return <Input v-model={ data.remote_ip_prefix }></Input>;
+      // } if (data.cloud_remote_group_id) {
+      //   return <Input v-model={ data.cloud_remote_group_id }></Input>;
+      // } if (data.source_address_prefix) {
+      //   return <Input v-model={ data.source_address_prefix }></Input>;
+      // } if (data.source_address_prefixs) {
+      //   return <TagInput v-model={ data.source_address_prefixs }></TagInput>;
+      // } if (data.cloud_source_security_group_ids) {
+      //   return <Input v-model={ data.cloud_source_security_group_ids }></Input>;
+      // } if (data.destination_address_prefix) {
+      //   return <Input v-model={ data.destination_address_prefix }></Input>;
+      // } if (data.destination_address_prefixes) {
+      //   return <TagInput v-model={ data.destination_address_prefixes }></TagInput>;
+      // } if (data.cloud_destination_security_group_ids) {
+      //   return <Input v-model={ data.cloud_destination_security_group_ids }></Input>;
+      // }
+      // return <Input v-model={ data.ipv4_cidr }></Input>;
+      if (data[key]) {
+        return <Input v-model={ data[key] }></Input>;
       }
       return <Input v-model={ data.ipv4_cidr }></Input>;
+    };
+
+    const renderTargetAddressSlot = (data: any, key: string) => {
+      if (data[key]) {
+        return <Input v-model={ data[key] }></Input>;
+      }
+      return <Input v-model={ data.destination_address_prefix }></Input>;
     };
     const columnsData = [
       { label: t('优先级'),
@@ -127,12 +183,12 @@ export default defineComponent({
           return (
                   <>
                   <Select v-model={data.sourceAddress}>
-                      {SecurityGroupTarget.value.map(ele => (
+                      {securityGroupSource.value.map(ele => (
                       <Option value={ele.id} label={ele.name} key={ele.id} />
                       ))}
                   </Select>
                   {
-                   renderSourceAddressSlot(data)
+                   renderSourceAddressSlot(data, data.sourceAddress)
                   }
                   </>
           );
@@ -180,35 +236,56 @@ export default defineComponent({
           );
         },
       },
-      { label: t('协议端口'),
-        field: 'port',
-        render: ({ data }: any) => {
-          return (
-                <>
-                <Select v-model={data.protocol}>
-                    {GCP_PROTOCOL_LIST.map(ele => (
-                    <Option value={ele.id} label={ele.name} key={ele.id} />
-                    ))}
-                </Select>
-                <Input v-model={ data.port }></Input>
-                </>
-          );
-        },
-      },
-      { label: t('源地址'),
-        field: 'id',
+      { label: t('源'),
+        field: 'source',
         render: ({ data }: any) => {
           return (
                   <>
                   <Select v-model={data.sourceAddress}>
-                      {SecurityGroupTarget.value.map(ele => (
+                      {azureSecurityGroupSource.value.map(ele => (
                       <Option value={ele.id} label={ele.name} key={ele.id} />
                       ))}
                   </Select>
                   {
-                   renderSourceAddressSlot(data)
+                   renderSourceAddressSlot(data, data.sourceAddress)
                   }
                   </>
+          );
+        },
+      },
+      { label: t('源端口范围'),
+        field: 'source_port_range',
+        render: ({ data }: any) => <Input class="mt25" v-model={ data.source_port_range }></Input>,
+      },
+      { label: t('目标'),
+        field: 'target',
+        render: ({ data }: any) => {
+          return (
+                  <>
+                  <Select v-model={data.targetAddress}>
+                      {azureSecurityGroupTarget.value.map(ele => (
+                      <Option value={ele.id} label={ele.name} key={ele.id} />
+                      ))}
+                  </Select>
+                  {
+                   renderTargetAddressSlot(data, data.targetAddress)
+                  }
+                  </>
+          );
+        },
+      },
+      { label: t('目标协议端口'),
+        field: 'destination_port_range',
+        render: ({ data }: any) => {
+          return (
+                <>
+                <Select v-model={data.protocol}>
+                    {AZURE_PROTOCOL_LIST.map(ele => (
+                    <Option value={ele.id} label={ele.name} key={ele.id} />
+                    ))}
+                </Select>
+                <Input v-model={ data.destination_port_range }></Input>
+                </>
           );
         },
       },
@@ -274,25 +351,21 @@ export default defineComponent({
         }
         columns.value = columnsData;  // 初始化表表格列
         if (props.vendor === 'tcloud' || props.vendor === 'aws') {    // 腾讯云、aws不需要优先级和类型
-          nextTick(() => {
-            columns.value = columns.value.filter((e: any) => {
-              return e.field !== 'priority' && e.field !== 'ethertype';
-            });
-            SecurityGroupTarget.value = [...IP_TYPE_LIST, ...[{ // 腾讯云、aws源地址特殊处理
-              id: 'cloud_target_security_group_id',
-              name: t('安全组'),
-            }]];
+          columns.value = columns.value.filter((e: any) => {
+            return e.field !== 'priority' && e.field !== 'ethertype';
           });
+          securityGroupSource.value = [...IP_TYPE_LIST, ...[{ // 腾讯云、aws源地址特殊处理
+            id: 'cloud_target_security_group_id',
+            name: t('安全组'),
+          }]];
         } else if (props.vendor === 'azure') {
-          nextTick(() => {
-            columns.value = azureColumnsData;
-          });
+          columns.value = azureColumnsData;
         }
 
         // @ts-ignore
         securityRuleId.value = resourceStore.securityRuleDetail?.id;
         if (securityRuleId.value) { // 如果是编辑 则需要将详细数据展示成列表数据
-          const sourceAddressData = SecurityGroupTarget.value
+          const sourceAddressData = securityGroupSource.value
             .filter((e: any) => resourceStore.securityRuleDetail[e.id]);
           tableData.value = [{ ...resourceStore.securityRuleDetail, ...{ sourceAddress: sourceAddressData[0].id } }];
           columns.value = columns.value.filter((e: any) => {    // 编辑不能进行复制和删除操作
@@ -311,12 +384,14 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
+      console.log('tableData.value', tableData.value);
       tableData.value.forEach((e: any) => {
         e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id;
         if (e.sourceAddress !== 'ipv4_cidr') {
           delete e.ipv4_cidr;
         }
         delete e.sourceAddress;
+        delete e.targetAddress;
       });
       const params = {
         id: tableData.value[0].id,
@@ -368,6 +443,7 @@ export default defineComponent({
   render() {
     return <>
         <step-dialog
+        dialogWidth={this.dialogWidth}
           title={this.title}
           loading={this.loading}
           isShow={this.isShow}

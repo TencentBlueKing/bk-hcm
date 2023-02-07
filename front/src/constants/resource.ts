@@ -132,6 +132,29 @@ export const GCP_PROTOCOL_LIST = [
   },
 ];
 
+export const AZURE_PROTOCOL_LIST = [
+  {
+    id: 'Ah',
+    name: 'Ah',
+  },
+  {
+    id: 'Esp',
+    name: 'Esp',
+  },
+  {
+    id: 'Icmp',
+    name: 'Icmp',
+  },
+  {
+    id: 'Tcp',
+    name: 'Tcp',
+  },
+  {
+    id: 'Udp',
+    name: 'Udp',
+  },
+];
+
 export const IP_TYPE_LIST = [
   {
     id: 'ipv4_cidr',

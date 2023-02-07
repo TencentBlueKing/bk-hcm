@@ -21,10 +21,6 @@ import {
 
 import { SecurityRuleEnum, HuaweiSecurityRuleEnum } from '@/typings';
 
-import {
-  useRouter,
-} from 'vue-router';
-
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
 import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -45,8 +41,6 @@ const props = defineProps({
 const {
   t,
 } = useI18n();
-
-const router = useRouter();
 
 const {
   isShowSecurityRule,
@@ -225,7 +219,20 @@ const inColumns = [
         'span',
         {},
         [
-          props.vendor === 'huawei' ? h(
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              onClick() {
+                handleSecurityRuleDialog(data);
+              },
+            },
+            [
+              t('编辑'),
+            ],
+          ),
+          h(
             Button,
             {
               class: 'ml10',
@@ -239,35 +246,7 @@ const inColumns = [
             [
               t('删除'),
             ],
-          )
-            : (h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                onClick() {
-                  handleSecurityRuleDialog(data);
-                },
-              },
-              [
-                t('编辑'),
-              ],
-            ),
-            h(
-              Button,
-              {
-                class: 'ml10',
-                text: true,
-                theme: 'primary',
-                onClick() {
-                  deleteDialogShow.value = true;
-                  deleteId.value = data.id;
-                },
-              },
-              [
-                t('删除'),
-              ],
-            )),
+          ),
         ],
       );
     },
@@ -329,7 +308,20 @@ const outColumns = [
         'span',
         {},
         [
-          props.vendor === 'huawei' ? h(
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              onClick() {
+                handleSecurityRuleDialog(data);
+              },
+            },
+            [
+              t('编辑'),
+            ],
+          ),
+          h(
             Button,
             {
               class: 'ml10',
@@ -343,43 +335,7 @@ const outColumns = [
             [
               t('删除'),
             ],
-          )
-            :          (h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                onClick() {
-                  router.push({
-                    name: 'resourceDetail',
-                    params: {
-                      type: 'gcp',
-                    },
-                    query: {
-                      id: data.id,
-                    },
-                  });
-                },
-              },
-              [
-                t('编辑'),
-              ],
-            ),
-            h(
-              Button,
-              {
-                class: 'ml10',
-                text: true,
-                theme: 'primary',
-                onClick() {
-                  deleteDialogShow.value = true;
-                  deleteId.value = data.id;
-                },
-              },
-              [
-                t('删除'),
-              ],
-            )),
+          ),
         ],
       );
     },
@@ -447,6 +403,7 @@ const types = [
   <security-rule
     v-model:isShow="isShowSecurityRule"
     :loading="securityRuleLoading"
+    dialog-width="1200"
     :title="t(activeType === 'egress' ? '添加出站规则' : '添加入站规则')"
     :vendor="vendor"
     @submit="handleSubmitRule"

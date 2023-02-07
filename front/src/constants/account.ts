@@ -36,7 +36,7 @@ export const ACCOUNT_TYPE = [
     value: 'resource',
   }, {
     label: '登记账号',
-    value: 'register',
+    value: 'registration',
   },
   {
     label: '安全审计账号',
