@@ -21,8 +21,12 @@
 package region
 
 import (
+	"fmt"
+
 	adcore "hcm/pkg/adaptor/types/core"
 	typesRegion "hcm/pkg/adaptor/types/region"
+	"hcm/pkg/api/core"
+	cloudcore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	protoDsRegion "hcm/pkg/api/data-service/cloud/region"
 	protoHcRegion "hcm/pkg/api/hc-service/region"
@@ -32,74 +36,48 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // GcpSyncRegion gcp sync region.
-func (r region) GcpSyncRegion(cts *rest.Contexts, vendor enumor.Vendor) (interface{}, error) {
-	cloudResp, err := r.BatchGetGcpRegionList(cts)
-	if err != nil {
-		logs.Errorf("get gcp region list failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	tmpRegions := make([]protoDsRegion.GcpRegionBatchCreate, 0)
-	for _, item := range cloudResp.Details {
-		tmpRegions = append(tmpRegions, protoDsRegion.GcpRegionBatchCreate{
-			Vendor:     vendor,
-			RegionID:   item.RegionID,
-			RegionName: item.RegionName,
-			Status:     item.RegionState,
-			SelfLink:   item.SelfLink,
-		})
-	}
-
-	if len(tmpRegions) == 0 {
-		return nil, errf.New(errf.RecordNotFound, "cloudapi has not available region")
-	}
-
-	// batch forbidden gcp region state.
-	updateStateReq := &protoDsRegion.GcpRegionBatchUpdateReq{
-		Regions: []protoDsRegion.GcpRegionBatchUpdate{{Status: constant.GcpStateDisable}},
-	}
-	err = r.cs.DataService().Gcp.Region.BatchForbiddenRegionState(cts.Kit.Ctx, cts.Kit.Header(), updateStateReq)
-	if err != nil {
-		logs.Errorf("batch forbidden gcp region state failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// batch create gcp region.
-	createReq := &protoDsRegion.GcpRegionCreateReq{
-		Regions: tmpRegions,
-	}
-	resp, err := r.cs.DataService().Gcp.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
-	if err != nil {
-		logs.Errorf("batch create gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// batch delete gcp region.
-	deleteReq := &dataservice.BatchDeleteReq{
-		Filter: tools.EqualExpression("status", constant.GcpStateDisable),
-	}
-	err = r.cs.DataService().Gcp.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	if err != nil {
-		logs.Errorf("batch delete gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-// BatchGetGcpRegionList batch get region list from cloudapi.
-func (r region) BatchGetGcpRegionList(cts *rest.Contexts) (*typesRegion.GcpRegionListResult, error) {
+func (r region) GcpSyncRegion(cts *rest.Contexts, vendor enumor.Vendor) error {
 	req := new(protoHcRegion.GcpRegionSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		return errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
+	// batch get region list from cloudapi.
+	list, err := r.BatchGetGcpRegionList(cts, req)
+	if err != nil {
+		logs.Errorf("[%s-region] request cloudapi response failed. accountID: %s, err: %v",
+			enumor.Gcp, req.AccountID, err)
+		return err
+	}
+
+	resourceDBMap, err := r.BatchGetGcpRegionMapFromDB(cts, req, vendor)
+	if err != nil {
+		logs.Errorf("[%s-region] batch get vpcdblist failed. accountID: %s, err: %v",
+			enumor.Gcp, req.AccountID, err)
+		return err
+	}
+
+	err = r.BatchSyncGcpRegionList(cts, req, list, resourceDBMap)
+	if err != nil {
+		logs.Errorf("[%s-region] compare api and dblist failed. accountID: %s, err: %v",
+			enumor.Gcp, req.AccountID, err)
+		return err
+	}
+
+	return nil
+}
+
+// BatchGetGcpRegionList batch get region list from cloudapi.
+func (r region) BatchGetGcpRegionList(cts *rest.Contexts, req *protoHcRegion.GcpRegionSyncReq) (
+	*typesRegion.GcpRegionListResult, error) {
 
 	cli, err := r.ad.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
@@ -122,7 +100,7 @@ func (r region) BatchGetGcpRegionList(cts *rest.Contexts) (*typesRegion.GcpRegio
 
 		tmpList, tmpErr := cli.ListRegion(cts.Kit, opt)
 		if tmpErr != nil {
-			logs.Errorf("[%s-region]batch get cloud api failed. accountID: %s, nextToken: %s, err: %v",
+			logs.Errorf("[%s-region] batch get cloud api failed. accountID: %s, nextToken: %s, err: %v",
 				enumor.Gcp, req.AccountID, nextToken, tmpErr)
 			return nil, tmpErr
 		}
@@ -140,4 +118,158 @@ func (r region) BatchGetGcpRegionList(cts *rest.Contexts) (*typesRegion.GcpRegio
 	}
 
 	return list, nil
+}
+
+// BatchGetGcpRegionMapFromDB batch get region map from db.
+func (r region) BatchGetGcpRegionMapFromDB(cts *rest.Contexts, req *protoHcRegion.GcpRegionSyncReq,
+	vendor enumor.Vendor) (map[string]cloudcore.GcpRegion, error) {
+
+	page := uint32(0)
+	resourceMap := make(map[string]cloudcore.GcpRegion, 0)
+	for {
+		count := core.DefaultMaxPageLimit
+		offset := page * uint32(count)
+		expr := &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: vendor,
+				},
+				&filter.AtomRule{
+					Field: "status",
+					Op:    filter.Equal.Factory(),
+					Value: constant.GcpStateEnable,
+				},
+			},
+		}
+		dbQueryReq := &protoDsRegion.GcpRegionListReq{
+			Filter: expr,
+			Page:   &core.BasePage{Count: false, Start: offset, Limit: count},
+		}
+		dbList, err := r.cs.DataService().Gcp.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
+		if err != nil {
+			logs.Errorf("[%s-region]batch get regionlist db error. accountID: %s, offset: %d, "+
+				"limit: %d, err: %v", vendor, req.AccountID, offset, count, err)
+			return nil, err
+		}
+
+		if len(dbList.Details) == 0 {
+			return resourceMap, nil
+		}
+
+		for _, item := range dbList.Details {
+			resourceMap[item.RegionID] = item
+		}
+
+		if len(dbList.Details) < int(count) {
+			break
+		}
+		page++
+	}
+
+	return resourceMap, nil
+}
+
+// BatchSyncGcpRegionList batch sync vendor region list.
+func (r region) BatchSyncGcpRegionList(cts *rest.Contexts, req *protoHcRegion.GcpRegionSyncReq,
+	list *typesRegion.GcpRegionListResult, resourceDBMap map[string]cloudcore.GcpRegion) error {
+	createResources, updateResources, existIDMap, err := r.filterGcpRegionList(req, list, resourceDBMap)
+	if err != nil {
+		return err
+	}
+
+	// update resource data
+	if len(updateResources) > 0 {
+		updateReq := &protoDsRegion.GcpRegionBatchUpdateReq{
+			Regions: updateResources,
+		}
+		if err = r.cs.DataService().Gcp.Region.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
+			logs.Errorf("[%s-region] batch compare db update failed. accountID: %s, err: %v",
+				enumor.Gcp, req.AccountID, err)
+			return err
+		}
+	}
+
+	// add resource data
+	if len(createResources) > 0 {
+		createReq := &protoDsRegion.GcpRegionCreateReq{
+			Regions: createResources,
+		}
+		if _, err = r.cs.DataService().Gcp.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+			logs.Errorf("[%s-region] batch compare db create failed. accountID: %s, err: %v",
+				enumor.Gcp, req.AccountID, err)
+			return err
+		}
+	}
+
+	// delete resource data
+	deleteIDs := make([]string, 0)
+	for _, resourceItem := range resourceDBMap {
+		if _, ok := existIDMap[resourceItem.ID]; !ok {
+			deleteIDs = append(deleteIDs, resourceItem.ID)
+		}
+	}
+
+	if len(deleteIDs) > 0 {
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("id", deleteIDs),
+		}
+		if err := r.cs.DataService().Gcp.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+			return err
+		}
+		if err != nil {
+			logs.Errorf("[%s-region] batch compare db delete failed. accountID: %s, deleteIDs: %v, "+
+				"err: %v", enumor.Gcp, req.AccountID, deleteIDs, err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// filterGcpRegionList filter gcp region list
+func (r region) filterGcpRegionList(req *protoHcRegion.GcpRegionSyncReq,
+	list *typesRegion.GcpRegionListResult, resourceDBMap map[string]cloudcore.GcpRegion) (
+	createResources []protoDsRegion.GcpRegionBatchCreate, updateResources []protoDsRegion.GcpRegionBatchUpdate,
+	existIDMap map[string]bool, err error) {
+
+	if list == nil || len(list.Details) == 0 {
+		return nil, nil, nil,
+			fmt.Errorf("cloudapi regionlist is empty, accountID: %s", req.AccountID)
+	}
+
+	existIDMap = make(map[string]bool, 0)
+	for _, item := range list.Details {
+		// need compare and update resource data
+		if resourceInfo, ok := resourceDBMap[item.RegionID]; ok {
+			if resourceInfo.RegionID == item.RegionID && resourceInfo.RegionName == item.RegionName &&
+				resourceInfo.Status == item.RegionState {
+				continue
+			}
+
+			tmpRes := protoDsRegion.GcpRegionBatchUpdate{
+				ID:         resourceInfo.ID,
+				RegionID:   item.RegionID,
+				RegionName: item.RegionName,
+				Status:     item.RegionState,
+				SelfLink:   item.SelfLink,
+			}
+			updateResources = append(updateResources, tmpRes)
+			existIDMap[resourceInfo.ID] = true
+		} else {
+			// need add resource data
+			tmpRes := protoDsRegion.GcpRegionBatchCreate{
+				Vendor:     enumor.Gcp,
+				RegionID:   item.RegionID,
+				RegionName: item.RegionName,
+				Status:     item.RegionState,
+				SelfLink:   item.SelfLink,
+			}
+			createResources = append(createResources, tmpRes)
+		}
+	}
+
+	return createResources, updateResources, existIDMap, nil
 }

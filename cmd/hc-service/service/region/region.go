@@ -52,18 +52,20 @@ type region struct {
 // BatchSyncRegion batch sync region.
 func (r *region) BatchSyncRegion(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
-	if err := vendor.Validate(); err != nil {
+	err := vendor.Validate()
+	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	switch vendor {
 	case enumor.TCloud:
-		return r.TCloudSyncRegion(cts, vendor)
+		err = r.TCloudSyncRegion(cts, vendor)
 	case enumor.Aws:
-		return r.AwsSyncRegion(cts, vendor)
+		err = r.AwsSyncRegion(cts, vendor)
 	case enumor.Gcp:
-		return r.GcpSyncRegion(cts, vendor)
+		err = r.GcpSyncRegion(cts, vendor)
 	default:
-		return nil, fmt.Errorf("%s does not support the creation of cloud region", vendor)
+		err = fmt.Errorf("%s does not support the creation of cloud region", vendor)
 	}
+	return nil, err
 }
