@@ -19,7 +19,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 
-import { SecurityRuleEnum } from '@/typings';
+import { SecurityRuleEnum, HuaweiSecurityRuleEnum } from '@/typings';
 
 import {
   useRouter,
@@ -180,7 +180,7 @@ const inColumns = [
         [
           data.cloud_address_group_id || data.cloud_address_id
           || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
-          || data.ipv4_cidr || data.ipv6_cidr,
+          || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix,
         ],
       );
     },
@@ -204,7 +204,7 @@ const inColumns = [
         'span',
         {},
         [
-          SecurityRuleEnum[data.action],
+          props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : SecurityRuleEnum[data.action],
         ],
       );
     },
@@ -225,20 +225,7 @@ const inColumns = [
         'span',
         {},
         [
-          h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              onClick() {
-                handleSecurityRuleDialog(data);
-              },
-            },
-            [
-              t('编辑'),
-            ],
-          ),
-          h(
+          props.vendor === 'huawei' ? h(
             Button,
             {
               class: 'ml10',
@@ -252,7 +239,35 @@ const inColumns = [
             [
               t('删除'),
             ],
-          ),
+          )
+            : (h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                onClick() {
+                  handleSecurityRuleDialog(data);
+                },
+              },
+              [
+                t('编辑'),
+              ],
+            ),
+            h(
+              Button,
+              {
+                class: 'ml10',
+                text: true,
+                theme: 'primary',
+                onClick() {
+                  deleteDialogShow.value = true;
+                  deleteId.value = data.id;
+                },
+              },
+              [
+                t('删除'),
+              ],
+            )),
         ],
       );
     },
@@ -269,7 +284,7 @@ const outColumns = [
         [
           data.cloud_address_group_id || data.cloud_address_id
           || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
-          || data.ipv4_cidr || data.ipv6_cidr,
+          || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix,
         ],
       );
     },
@@ -293,7 +308,7 @@ const outColumns = [
         'span',
         {},
         [
-          SecurityRuleEnum[data.action],
+          props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : SecurityRuleEnum[data.action],
         ],
       );
     },
@@ -314,28 +329,7 @@ const outColumns = [
         'span',
         {},
         [
-          h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              onClick() {
-                router.push({
-                  name: 'resourceDetail',
-                  params: {
-                    type: 'gcp',
-                  },
-                  query: {
-                    id: data.id,
-                  },
-                });
-              },
-            },
-            [
-              t('编辑'),
-            ],
-          ),
-          h(
+          props.vendor === 'huawei' ? h(
             Button,
             {
               class: 'ml10',
@@ -349,7 +343,43 @@ const outColumns = [
             [
               t('删除'),
             ],
-          ),
+          )
+            :          (h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                onClick() {
+                  router.push({
+                    name: 'resourceDetail',
+                    params: {
+                      type: 'gcp',
+                    },
+                    query: {
+                      id: data.id,
+                    },
+                  });
+                },
+              },
+              [
+                t('编辑'),
+              ],
+            ),
+            h(
+              Button,
+              {
+                class: 'ml10',
+                text: true,
+                theme: 'primary',
+                onClick() {
+                  deleteDialogShow.value = true;
+                  deleteId.value = data.id;
+                },
+              },
+              [
+                t('删除'),
+              ],
+            )),
         ],
       );
     },
@@ -417,7 +447,7 @@ const types = [
   <security-rule
     v-model:isShow="isShowSecurityRule"
     :loading="securityRuleLoading"
-    :title="t('添加入站规则')"
+    :title="t(activeType === 'egress' ? '添加出站规则' : '添加入站规则')"
     :vendor="vendor"
     @submit="handleSubmitRule"
   />

@@ -2,8 +2,8 @@
 // @ts-nocheck
 import DetailHeader from '../../common/header/detail-header';
 import DetailInfo from '../../common/info/detail-info';
-import DetailTab from '../../common/tab/detail-tab';
-import GcpRelate from '../components/gcp/gcp-relate.vue';
+// import DetailTab from '../../common/tab/detail-tab';
+// import GcpRelate from '../components/gcp/gcp-relate.vue';
 import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
 import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
@@ -182,12 +182,12 @@ const handleDetailData = () => {
     ? [...detail?.source_ranges, ...detail?.source_service_accounts, ...detail?.source_tags] : '--';
 };
 
-const tabs = [
-  {
-    name: t('关联实例'),
-    value: 'relate',
-  },
-];
+// const tabs = [
+//   {
+//     name: t('关联实例'),
+//     value: 'relate',
+//   },
+// ];
 
 const isShowGcpAdd = ref(false);
 const gcpTitle = ref<string>(t('新增'));
@@ -258,11 +258,11 @@ const submit = async (data: any) => {
     />
   </bk-loading>
 
-  <detail-tab
+  <!-- <detail-tab
     :tabs="tabs"
   >
     <gcp-relate></gcp-relate>
-  </detail-tab>
+  </detail-tab> -->
   <gcp-add
     v-model:is-show="isShowGcpAdd"
     :gcp-title="gcpTitle"
