@@ -86,9 +86,10 @@ type CloudResourceDeleteInfo struct {
 
 // CloudResourceAssignInfo defines cloud resource updates info for audit.
 type CloudResourceAssignInfo struct {
-	ResType enumor.AuditResourceType `json:"res_type" validate:"required"`
-	ResID   string                   `json:"res_id" validate:"required"`
-	BkBizID int64                    `json:"bk_biz_id" validate:"required"`
+	ResType         enumor.AuditResourceType    `json:"res_type" validate:"required"`
+	ResID           string                      `json:"res_id" validate:"required"`
+	AssignedResType enumor.AuditAssignedResType `json:"assigned_res_type" validate:"required"`
+	AssignedResID   int64                       `json:"assigned_res_id" validate:"required"`
 }
 
 // CloudResourceAssignAuditReq cloud resource assign audit request.

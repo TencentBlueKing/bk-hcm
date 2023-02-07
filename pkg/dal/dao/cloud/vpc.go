@@ -24,12 +24,15 @@ import (
 	"strings"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/audit"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -54,13 +57,15 @@ var _ Vpc = new(vpcDao)
 type vpcDao struct {
 	orm   orm.Interface
 	idGen idgenerator.IDGenInterface
+	audit audit.Interface
 }
 
 // NewVpcDao create a vpc dao.
-func NewVpcDao(orm orm.Interface, idGen idgenerator.IDGenInterface) Vpc {
+func NewVpcDao(orm orm.Interface, idGen idgenerator.IDGenInterface, audit audit.Interface) Vpc {
 	return &vpcDao{
 		orm:   orm,
 		idGen: idGen,
+		audit: audit,
 	}
 }
 
@@ -92,6 +97,32 @@ func (v *vpcDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.VpcT
 	err = v.orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
+	}
+
+	// create audit.
+	audits := make([]*tableaudit.AuditTable, 0, len(models))
+	for _, one := range models {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ID,
+			CloudResID: one.CloudID,
+			ResName:    *one.Name,
+			ResType:    enumor.VpcCloudAuditResType,
+			Action:     enumor.Create,
+			BkBizID:    one.BkBizID,
+			Vendor:     string(one.Vendor),
+			AccountID:  one.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: one,
+			},
+		})
+	}
+	if err = v.audit.BatchCreate(kt, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	return ids, nil

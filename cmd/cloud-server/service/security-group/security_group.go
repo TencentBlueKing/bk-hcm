@@ -300,7 +300,7 @@ func (svc securityGroupSvc) AssignSecurityGroupToBiz(cts *rest.Contexts) (interf
 	}
 
 	// create assign audit.
-	err = svc.audit.ResAssignAudit(cts.Kit, enumor.SecurityGroupAuditResType, req.SecurityGroupIDs, req.BkBizID)
+	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.SecurityGroupAuditResType, req.SecurityGroupIDs, req.BkBizID)
 	if err != nil {
 		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

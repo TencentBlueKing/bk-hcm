@@ -81,7 +81,10 @@ func (ad Audit) buildUpdateAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 	switch resType {
 	case enumor.SecurityGroupAuditResType:
 		audits, err = ad.securityGroupUpdateAuditBuild(kt, updates)
-
+	case enumor.VpcCloudAuditResType:
+		audits, err = ad.vpcUpdateAuditBuild(kt, updates)
+	case enumor.SubnetAuditResType:
+		audits, err = ad.subnetUpdateAuditBuild(kt, updates)
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}

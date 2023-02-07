@@ -23,7 +23,7 @@ import (
 	"context"
 	"net/http"
 
-	"hcm/pkg/adaptor/types"
+	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -41,7 +41,7 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 }
 
 // Update subnet.
-func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *types.AzureSubnetUpdateOption) error {
+func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *hcservice.SubnetUpdateReq) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Patch().
