@@ -37,6 +37,7 @@ var (
 	accountNameInvalidError = errors.New("invalid account name: name should begin with a lowercase letter, " +
 		"contains lowercase letters(a-z), numbers(0-9) or hyphen(-), end with a lowercase letter or number, " +
 		"length should be 3 to 32 letters")
+	secretEmptyError = errors.New("SecretID/SecretKey can not be empty")
 )
 
 // -------------------------- Create --------------------------
@@ -45,13 +46,27 @@ var (
 type TCloudAccountExtensionCreateReq struct {
 	CloudMainAccountID string `json:"cloud_main_account_id" validate:"required"`
 	CloudSubAccountID  string `json:"cloud_sub_account_id" validate:"required"`
-	CloudSecretID      string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey     string `json:"cloud_secret_key" validate:"required"`
+	CloudSecretID      string `json:"cloud_secret_id" validate:"omitempty"`
+	CloudSecretKey     string `json:"cloud_secret_key" validate:"omitempty"`
 }
 
 // Validate ...
-func (req *TCloudAccountExtensionCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
+func (req *TCloudAccountExtensionCreateReq) Validate(accountType enumor.AccountType) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 登记账号密钥可为空，其他类型则必填
+	if accountType != enumor.RegistrationAccount && !req.HasFullSecret() {
+		return secretEmptyError
+	}
+
+	return nil
+}
+
+// HasFullSecret 对于不同账号类型，可能未提供密钥信息，该函数判断是否有完整的密钥信息，用于后续密钥校验的前置判断
+func (req *TCloudAccountExtensionCreateReq) HasFullSecret() bool {
+	return req.CloudSecretID != "" && req.CloudSecretKey != ""
 }
 
 // AwsAccountExtensionCreateReq ...
@@ -63,8 +78,22 @@ type AwsAccountExtensionCreateReq struct {
 }
 
 // Validate ...
-func (req *AwsAccountExtensionCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
+func (req *AwsAccountExtensionCreateReq) Validate(accountType enumor.AccountType) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 登记账号密钥可为空，其他类型则必填
+	if accountType != enumor.RegistrationAccount && !req.HasFullSecret() {
+		return secretEmptyError
+	}
+
+	return nil
+}
+
+// HasFullSecret 对于不同账号类型，可能未提供密钥信息，该函数判断是否有完整的密钥信息，用于后续密钥校验的前置判断
+func (req *AwsAccountExtensionCreateReq) HasFullSecret() bool {
+	return req.CloudSecretID != "" && req.CloudSecretKey != ""
 }
 
 // HuaWeiAccountExtensionCreateReq ...
@@ -79,8 +108,22 @@ type HuaWeiAccountExtensionCreateReq struct {
 }
 
 // Validate ...
-func (r *HuaWeiAccountExtensionCreateReq) Validate() error {
-	return validator.Validate.Struct(r)
+func (req *HuaWeiAccountExtensionCreateReq) Validate(accountType enumor.AccountType) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 登记账号密钥可为空，其他类型则必填
+	if accountType != enumor.RegistrationAccount && !req.HasFullSecret() {
+		return secretEmptyError
+	}
+
+	return nil
+}
+
+// HasFullSecret 对于不同账号类型，可能未提供密钥信息，该函数判断是否有完整的密钥信息，用于后续密钥校验的前置判断
+func (req *HuaWeiAccountExtensionCreateReq) HasFullSecret() bool {
+	return req.CloudSecretID != "" && req.CloudSecretKey != ""
 }
 
 // GcpAccountExtensionCreateReq ...
@@ -94,8 +137,22 @@ type GcpAccountExtensionCreateReq struct {
 }
 
 // Validate ...
-func (r *GcpAccountExtensionCreateReq) Validate() error {
-	return validator.Validate.Struct(r)
+func (req *GcpAccountExtensionCreateReq) Validate(accountType enumor.AccountType) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 登记账号密钥可为空，其他类型则必填
+	if accountType != enumor.RegistrationAccount && !req.HasFullSecret() {
+		return secretEmptyError
+	}
+
+	return nil
+}
+
+// HasFullSecret 对于不同账号类型，可能未提供密钥信息，该函数判断是否有完整的密钥信息，用于后续密钥校验的前置判断
+func (req *GcpAccountExtensionCreateReq) HasFullSecret() bool {
+	return req.CloudServiceSecretID != "" && req.CloudServiceSecretKey != ""
 }
 
 // AzureAccountExtensionCreateReq ...
@@ -110,8 +167,22 @@ type AzureAccountExtensionCreateReq struct {
 }
 
 // Validate ...
-func (r *AzureAccountExtensionCreateReq) Validate() error {
-	return validator.Validate.Struct(r)
+func (req *AzureAccountExtensionCreateReq) Validate(accountType enumor.AccountType) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 登记账号密钥可为空，其他类型则必填
+	if accountType != enumor.RegistrationAccount && !req.HasFullSecret() {
+		return secretEmptyError
+	}
+
+	return nil
+}
+
+// HasFullSecret 对于不同账号类型，可能未提供密钥信息，该函数判断是否有完整的密钥信息，用于后续密钥校验的前置判断
+func (req *AzureAccountExtensionCreateReq) HasFullSecret() bool {
+	return req.CloudClientSecretID != "" && req.CloudClientSecretKey != ""
 }
 
 // AccountCreateReq ...
@@ -146,10 +217,17 @@ func (req *AccountCreateReq) Validate() error {
 		return err
 	}
 
+	// 部分云只有国际站
+	if (req.Vendor == enumor.Gcp || req.Vendor == enumor.Azure || req.Vendor == enumor.HuaWei) && req.Site != enumor.InternationalSite {
+		return fmt.Errorf("%s support only international site", req.Vendor)
+	}
+
+	// 名称有限制特定规则
 	if !validAccountNameRegex.MatchString(req.Name) {
 		return accountNameInvalidError
 	}
 
+	// 全业务判断
 	bizCount := len(req.BkBizIDs)
 	for _, bizID := range req.BkBizIDs {
 		// 校验是否非法业务ID
@@ -169,7 +247,8 @@ func (req *AccountCreateReq) Validate() error {
 
 // AccountCheckReq ...
 type AccountCheckReq struct {
-	Vendor enumor.Vendor `json:"vendor" validate:"required"`
+	Vendor enumor.Vendor      `json:"vendor" validate:"required"`
+	Type   enumor.AccountType `json:"type" validate:"required"`
 	// Extension 各云差异化比较大，延后解析成对应结果进行校验
 	Extension json.RawMessage `json:"extension" validate:"required"`
 }
@@ -181,6 +260,10 @@ func (req *AccountCheckReq) Validate() error {
 	}
 
 	if err := req.Vendor.Validate(); err != nil {
+		return err
+	}
+
+	if err := req.Type.Validate(); err != nil {
 		return err
 	}
 
