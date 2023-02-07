@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"hcm/pkg/criteria/constant"
@@ -162,10 +161,7 @@ func (exp Expression) Validate(opt *ExprOption) (hitErr error) {
 		// all the rule's filed should exist in the reminder.
 		for one := range fieldsReminder {
 			if exist := reminder[one]; !exist {
-				// FIXME：这里对于extension.的JSON查询做特殊处理，认为全部正确，后面再考虑如何修复
-				if !strings.HasPrefix(one, "extension.") {
-					return fmt.Errorf("expression rules filed(%s) should not exist(not supported)", one)
-				}
+				return fmt.Errorf("expression rules filed(%s) should not exist(not supported)", one)
 			}
 		}
 	}

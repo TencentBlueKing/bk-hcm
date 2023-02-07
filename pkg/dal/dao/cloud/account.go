@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -129,7 +130,13 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 		return nil, errf.New(errf.InvalidParameter, "list account options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.AccountColumns.ColumnTypes())),
+	columnTypes := cloud.AccountColumns.ColumnTypes()
+	columnTypes["extension.cloud_main_account_id"] = enumor.String
+	columnTypes["extension.cloud_account_id"] = enumor.String
+	columnTypes["extension.cloud_main_account_name"] = enumor.String
+	columnTypes["extension.cloud_project_id"] = enumor.String
+	columnTypes["extension.cloud_tenant_id"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err
 	}
