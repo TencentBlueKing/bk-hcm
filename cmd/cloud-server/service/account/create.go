@@ -68,8 +68,8 @@ func (a *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 func (a *accountSvc) isDuplicateMainAccount(
 	cts *rest.Contexts, req *proto.AccountCreateReq, mainAccountIDFieldName string, mainAccountIDFieldValue string,
 ) error {
-	// 只需要检查资源账号的主账号是否重复，其他类型账号不检查
-	if req.Type != enumor.ResourceAccount {
+	// 只需要检查资源账号或安全审计账号的主账号是否重复，其他类型账号不检查
+	if req.Type != enumor.ResourceAccount && req.Type != enumor.SecurityAuditAccount {
 		return nil
 	}
 
@@ -86,6 +86,11 @@ func (a *accountSvc) isDuplicateMainAccount(
 						Field: "vendor",
 						Op:    filter.Equal.Factory(),
 						Value: string(req.Vendor),
+					},
+					filter.AtomRule{
+						Field: "type",
+						Op:    filter.Equal.Factory(),
+						Value: string(req.Type),
 					},
 					filter.AtomRule{
 						Field: fmt.Sprintf("extension.%s", mainAccountIDFieldName),
@@ -117,7 +122,7 @@ func (a *accountSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountCreat
 		return nil, err
 	}
 	// 校验Extension
-	if err := extension.Validate(); err != nil {
+	if err := extension.Validate(req.Type); err != nil {
 		return nil, err
 	}
 
@@ -127,18 +132,20 @@ func (a *accountSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountCreat
 	}
 
 	// 检查联通性，账号是否正确
-	err := a.client.HCService().TCloud.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.TCloudAccountCheckReq{
-			CloudMainAccountID: extension.CloudMainAccountID,
-			CloudSubAccountID:  extension.CloudSubAccountID,
-			CloudSecretID:      extension.CloudSecretID,
-			CloudSecretKey:     extension.CloudSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
+		err := a.client.HCService().TCloud.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.TCloudAccountCheckReq{
+				CloudMainAccountID: extension.CloudMainAccountID,
+				CloudSubAccountID:  extension.CloudSubAccountID,
+				CloudSecretID:      extension.CloudSecretID,
+				CloudSecretKey:     extension.CloudSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
 	}
 
 	// 创建
@@ -172,7 +179,7 @@ func (a *accountSvc) createForAws(cts *rest.Contexts, req *proto.AccountCreateRe
 		return nil, err
 	}
 	// 校验Extension
-	if err := extension.Validate(); err != nil {
+	if err := extension.Validate(req.Type); err != nil {
 		return nil, err
 	}
 
@@ -182,18 +189,20 @@ func (a *accountSvc) createForAws(cts *rest.Contexts, req *proto.AccountCreateRe
 	}
 
 	// 检查联通性，账号是否正确
-	err := a.client.HCService().Aws.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.AwsAccountCheckReq{
-			CloudAccountID:   extension.CloudAccountID,
-			CloudIamUsername: extension.CloudIamUsername,
-			CloudSecretID:    extension.CloudSecretID,
-			CloudSecretKey:   extension.CloudSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
+		err := a.client.HCService().Aws.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.AwsAccountCheckReq{
+				CloudAccountID:   extension.CloudAccountID,
+				CloudIamUsername: extension.CloudIamUsername,
+				CloudSecretID:    extension.CloudSecretID,
+				CloudSecretKey:   extension.CloudSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
 	}
 
 	// 创建
@@ -227,7 +236,7 @@ func (a *accountSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountCreat
 		return nil, err
 	}
 	// 校验Extension
-	if err := extension.Validate(); err != nil {
+	if err := extension.Validate(req.Type); err != nil {
 		return nil, err
 	}
 
@@ -237,21 +246,23 @@ func (a *accountSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountCreat
 	}
 
 	// 检查联通性，账号是否正确
-	err := a.client.HCService().HuaWei.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.HuaWeiAccountCheckReq{
-			CloudMainAccountName: extension.CloudMainAccountName,
-			CloudSubAccountID:    extension.CloudSubAccountID,
-			CloudSubAccountName:  extension.CloudSubAccountName,
-			CloudSecretID:        extension.CloudSecretID,
-			CloudSecretKey:       extension.CloudSecretKey,
-			CloudIamUserID:       extension.CloudIamUserID,
-			CloudIamUsername:     extension.CloudIamUsername,
-		},
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
+		err := a.client.HCService().HuaWei.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.HuaWeiAccountCheckReq{
+				CloudMainAccountName: extension.CloudMainAccountName,
+				CloudSubAccountID:    extension.CloudSubAccountID,
+				CloudSubAccountName:  extension.CloudSubAccountName,
+				CloudSecretID:        extension.CloudSecretID,
+				CloudSecretKey:       extension.CloudSecretKey,
+				CloudIamUserID:       extension.CloudIamUserID,
+				CloudIamUsername:     extension.CloudIamUsername,
+			},
+		)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
 	}
 
 	// 创建
@@ -288,7 +299,7 @@ func (a *accountSvc) createForGcp(cts *rest.Contexts, req *proto.AccountCreateRe
 		return nil, err
 	}
 	// 校验Extension
-	if err := extension.Validate(); err != nil {
+	if err := extension.Validate(req.Type); err != nil {
 		return nil, err
 	}
 
@@ -298,16 +309,18 @@ func (a *accountSvc) createForGcp(cts *rest.Contexts, req *proto.AccountCreateRe
 	}
 
 	// 检查联通性，账号是否正确
-	err := a.client.HCService().Gcp.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.GcpAccountCheckReq{
-			CloudProjectID:        extension.CloudProjectID,
-			CloudServiceSecretKey: extension.CloudServiceSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
+		err := a.client.HCService().Gcp.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.GcpAccountCheckReq{
+				CloudProjectID:        extension.CloudProjectID,
+				CloudServiceSecretKey: extension.CloudServiceSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
 	}
 
 	// 创建
@@ -343,7 +356,7 @@ func (a *accountSvc) createForAzure(cts *rest.Contexts, req *proto.AccountCreate
 		return nil, err
 	}
 	// 校验Extension
-	if err := extension.Validate(); err != nil {
+	if err := extension.Validate(req.Type); err != nil {
 		return nil, err
 	}
 
@@ -353,18 +366,20 @@ func (a *accountSvc) createForAzure(cts *rest.Contexts, req *proto.AccountCreate
 	}
 
 	// 检查联通性，账号是否正确
-	err := a.client.HCService().Azure.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.AzureAccountCheckReq{
-			CloudTenantID:        extension.CloudTenantID,
-			CloudSubscriptionID:  extension.CloudSubscriptionID,
-			CloudApplicationID:   extension.CloudApplicationID,
-			CloudClientSecretKey: extension.CloudClientSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
+		err := a.client.HCService().Azure.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.AzureAccountCheckReq{
+				CloudTenantID:        extension.CloudTenantID,
+				CloudSubscriptionID:  extension.CloudSubscriptionID,
+				CloudApplicationID:   extension.CloudApplicationID,
+				CloudClientSecretKey: extension.CloudClientSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
 	}
 
 	// 创建
