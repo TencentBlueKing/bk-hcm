@@ -95,3 +95,23 @@ func (a AuditAction) Exist() bool {
 	_, exist := AuditActionEnums[a]
 	return exist
 }
+
+// AuditAssignedResType audit assigned resource type.
+type AuditAssignedResType string
+
+const (
+	BizAuditAssignedResType       AuditAssignedResType = "biz"
+	CloudAreaAuditAssignedResType AuditAssignedResType = "cloud_area"
+)
+
+// AuditAssignedResTypeEnums audit assigned resource type map.
+var AuditAssignedResTypeEnums = map[AuditAssignedResType]struct{}{
+	BizAuditAssignedResType:       {},
+	CloudAreaAuditAssignedResType: {},
+}
+
+// Exist judge enum value exist.
+func (a AuditAssignedResType) Exist() bool {
+	_, exist := AuditAssignedResTypeEnums[a]
+	return exist
+}

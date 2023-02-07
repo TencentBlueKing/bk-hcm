@@ -30,42 +30,43 @@ import (
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
-func (ad Audit) securityGroupUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
+func (ad Audit) vpcUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(updates))
 	for _, one := range updates {
 		ids = append(ids, one.ResID)
 	}
-	idSgMap, err := ad.listSecurityGroup(kt, ids)
+	idVpcMap, err := ad.listVpc(kt, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(updates))
 	for _, one := range updates {
-		sg, exist := idSgMap[one.ResID]
+		vpc, exist := idVpcMap[one.ResID]
 		if !exist {
 			continue
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ResID,
-			CloudResID: sg.CloudID,
-			ResName:    sg.Name,
-			ResType:    enumor.SecurityGroupAuditResType,
+			CloudResID: vpc.CloudID,
+			ResName:    converter.PtrToVal(vpc.Name),
+			ResType:    enumor.VpcCloudAuditResType,
 			Action:     enumor.Update,
-			BkBizID:    sg.BkBizID,
-			Vendor:     sg.Vendor,
-			AccountID:  sg.AccountID,
+			BkBizID:    vpc.BkBizID,
+			Vendor:     string(vpc.Vendor),
+			AccountID:  vpc.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
-				Data:    sg,
+				Data:    vpc,
 				Changed: one.UpdateFields,
 			},
 		})
@@ -74,40 +75,40 @@ func (ad Audit) securityGroupUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.
 	return audits, nil
 }
 
-func (ad Audit) securityGroupDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
+func (ad Audit) vpcDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(deletes))
 	for _, one := range deletes {
 		ids = append(ids, one.ResID)
 	}
-	idSgMap, err := ad.listSecurityGroup(kt, ids)
+	idVpcMap, err := ad.listVpc(kt, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(deletes))
 	for _, one := range deletes {
-		sg, exist := idSgMap[one.ResID]
+		vpc, exist := idVpcMap[one.ResID]
 		if !exist {
 			continue
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ResID,
-			CloudResID: sg.CloudID,
-			ResName:    sg.Name,
-			ResType:    enumor.SecurityGroupAuditResType,
+			CloudResID: vpc.CloudID,
+			ResName:    converter.PtrToVal(vpc.Name),
+			ResType:    enumor.VpcCloudAuditResType,
 			Action:     enumor.Delete,
-			BkBizID:    sg.BkBizID,
-			Vendor:     sg.Vendor,
-			AccountID:  sg.AccountID,
+			BkBizID:    vpc.BkBizID,
+			Vendor:     string(vpc.Vendor),
+			AccountID:  vpc.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
-				Data: sg,
+				Data: vpc,
 			},
 		})
 	}
@@ -115,46 +116,50 @@ func (ad Audit) securityGroupDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.
 	return audits, nil
 }
 
-func (ad Audit) securityGroupAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
+func (ad Audit) vpcAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(assigns))
 	for _, one := range assigns {
 		ids = append(ids, one.ResID)
 	}
-	idSgMap, err := ad.listSecurityGroup(kt, ids)
+	idVpcMap, err := ad.listVpc(kt, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(assigns))
 	for _, one := range assigns {
-		sg, exist := idSgMap[one.ResID]
+		vpc, exist := idVpcMap[one.ResID]
 		if !exist {
 			continue
 		}
 
-		if one.AssignedResType != enumor.BizAuditAssignedResType {
+		changed := make(map[string]interface{})
+		switch one.AssignedResType {
+		case enumor.BizAuditAssignedResType:
+			changed["bk_biz_id"] = one.AssignedResID
+		case enumor.CloudAreaAuditAssignedResType:
+			changed["bk_cloud_id"] = one.AssignedResID
+		default:
 			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ResID,
-			CloudResID: sg.CloudID,
-			ResName:    sg.Name,
-			ResType:    enumor.SecurityGroupAuditResType,
+			CloudResID: vpc.CloudID,
+			ResName:    converter.PtrToVal(vpc.Name),
+			ResType:    enumor.VpcCloudAuditResType,
 			Action:     enumor.Assign,
-			BkBizID:    sg.BkBizID,
-			Vendor:     sg.Vendor,
-			AccountID:  sg.AccountID,
+			BkBizID:    vpc.BkBizID,
+			Vendor:     string(vpc.Vendor),
+			AccountID:  vpc.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
-				Changed: map[string]interface{}{
-					"bk_biz_id": one.AssignedResID,
-				},
+				Changed: changed,
 			},
 		})
 	}
@@ -162,18 +167,18 @@ func (ad Audit) securityGroupAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.
 	return audits, nil
 }
 
-func (ad Audit) listSecurityGroup(kt *kit.Kit, ids []string) (map[string]tablecloud.SecurityGroupTable, error) {
+func (ad Audit) listVpc(kt *kit.Kit, ids []string) (map[string]tablecloud.VpcTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.DefaultBasePage,
 	}
-	list, err := ad.dao.SecurityGroup().List(kt, opt)
+	list, err := ad.dao.Vpc().List(kt, opt)
 	if err != nil {
 		logs.Errorf("list security group failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
 		return nil, err
 	}
 
-	result := make(map[string]tablecloud.SecurityGroupTable, len(list.Details))
+	result := make(map[string]tablecloud.VpcTable, len(list.Details))
 	for _, one := range list.Details {
 		result[one.ID] = one
 	}

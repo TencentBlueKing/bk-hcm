@@ -22,6 +22,7 @@ package subnet
 import (
 	"fmt"
 
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
@@ -37,6 +38,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // InitSubnetService initialize the subnet service.
@@ -44,6 +46,7 @@ func InitSubnetService(c *capability.Capability) {
 	svc := &subnetSvc{
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
 
 	h := rest.NewHandler()
@@ -60,6 +63,7 @@ func InitSubnetService(c *capability.Capability) {
 type subnetSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+	audit      audit.Interface
 }
 
 // UpdateSubnet update subnet.
@@ -88,23 +92,31 @@ func (svc *subnetSvc) UpdateSubnet(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// create update audit.
+	updateFields, err := converter.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = svc.audit.ResUpdateAudit(cts.Kit, enumor.SubnetAuditResType, id, updateFields); err != nil {
+		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	// update subnet
+	updateReq := &hcservice.SubnetUpdateReq{
+		Memo: req.Memo,
+	}
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		err = svc.client.HCService().TCloud.Subnet.Update(cts.Kit.Ctx, cts.Kit.Header(), id, nil)
+		err = svc.client.HCService().TCloud.Subnet.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	case enumor.Aws:
-		err = svc.client.HCService().Aws.Subnet.Update(cts.Kit.Ctx, cts.Kit.Header(), id, nil)
+		err = svc.client.HCService().Aws.Subnet.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	case enumor.Gcp:
-		updateReq := &hcservice.SubnetUpdateReq{
-			Memo: req.Memo,
-		}
 		err = svc.client.HCService().Gcp.Subnet.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	case enumor.Azure:
-		err = svc.client.HCService().Azure.Subnet.Update(cts.Kit.Ctx, cts.Kit.Header(), id, nil)
+		err = svc.client.HCService().Azure.Subnet.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	case enumor.HuaWei:
-		updateReq := &hcservice.SubnetUpdateReq{
-			Memo: req.Memo,
-		}
 		err = svc.client.HCService().HuaWei.Subnet.Update(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	}
 
@@ -237,6 +249,12 @@ func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
+	// create delete audit.
+	if err := svc.audit.ResDeleteAudit(cts.Kit, enumor.SubnetAuditResType, req.IDs); err != nil {
+		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	// delete subnets
 	succeeded := make([]string, 0)
 	for _, id := range req.IDs {
@@ -303,6 +321,13 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 	}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
 	if err != nil {
+		return nil, err
+	}
+
+	// create assign audit.
+	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.SubnetAuditResType, req.SubnetIDs, req.BkBizID)
+	if err != nil {
+		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

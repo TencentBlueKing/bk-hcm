@@ -23,12 +23,15 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/audit"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -52,18 +55,20 @@ var _ Subnet = new(subnetDao)
 type subnetDao struct {
 	orm   orm.Interface
 	idGen idgenerator.IDGenInterface
+	audit audit.Interface
 }
 
 // NewSubnetDao create a subnet dao.
-func NewSubnetDao(orm orm.Interface, idGen idgenerator.IDGenInterface) Subnet {
+func NewSubnetDao(orm orm.Interface, idGen idgenerator.IDGenInterface, audit audit.Interface) Subnet {
 	return &subnetDao{
 		orm:   orm,
 		idGen: idGen,
+		audit: audit,
 	}
 }
 
 // BatchCreateWithTx create subnet with transaction.
-func (v *subnetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.SubnetTable) ([]string, error) {
+func (s *subnetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.SubnetTable) ([]string, error) {
 	if len(models) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "models to create cannot be empty")
 	}
@@ -83,7 +88,7 @@ func (v *subnetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.S
 	}
 
 	// generate subnet id
-	ids, err := v.idGen.Batch(kt, table.SubnetTable, len(models))
+	ids, err := s.idGen.Batch(kt, table.SubnetTable, len(models))
 	if err != nil {
 		return nil, err
 	}
@@ -95,16 +100,42 @@ func (v *subnetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.S
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(), cloud.SubnetColumns.ColumnExpr(),
 		cloud.SubnetColumns.ColonNameExpr())
 
-	err = v.orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	err = s.orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
+	}
+
+	// create audit.
+	audits := make([]*tableaudit.AuditTable, 0, len(models))
+	for _, one := range models {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ID,
+			CloudResID: one.CloudID,
+			ResName:    *one.Name,
+			ResType:    enumor.SubnetAuditResType,
+			Action:     enumor.Create,
+			BkBizID:    one.BkBizID,
+			Vendor:     string(one.Vendor),
+			AccountID:  one.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: one,
+			},
+		})
+	}
+	if err = s.audit.BatchCreate(kt, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	return ids, nil
 }
 
 // Update subnets.
-func (v *subnetDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cloud.SubnetTable) error {
+func (s *subnetDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cloud.SubnetTable) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -127,8 +158,8 @@ func (v *subnetDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
-	_, err = v.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := v.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+	_, err = s.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		effected, err := s.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update subnet failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -149,7 +180,7 @@ func (v *subnetDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 }
 
 // List subnets.
-func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (
+func (s *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (
 	*types.SubnetListResult, error) {
 
 	if opt == nil {
@@ -178,7 +209,7 @@ func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 		// this is a count request, do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.SubnetTable, whereExpr)
 
-		count, err := v.orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := s.orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count subnets failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -196,7 +227,7 @@ func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 		whereExpr, pageExpr)
 
 	details := make([]cloud.SubnetTable, 0)
-	if err = v.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = s.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -204,7 +235,7 @@ func (v *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 }
 
 // BatchDeleteWithTx batch delete subnet with transaction.
-func (v *subnetDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
+func (s *subnetDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -215,7 +246,7 @@ func (v *subnetDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filt
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.SubnetTable, whereExpr)
-	if _, err = v.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	if _, err = s.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete subnet failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

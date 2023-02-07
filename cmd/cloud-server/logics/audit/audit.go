@@ -34,8 +34,10 @@ type Interface interface {
 	ResDeleteAudit(kt *kit.Kit, resType enumor.AuditResourceType, ids []string) error
 	// ResUpdateAudit 资源更新审计
 	ResUpdateAudit(kt *kit.Kit, resType enumor.AuditResourceType, id string, updateFields map[string]interface{}) error
-	// ResAssignAudit 资源分配审计
-	ResAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, resIDs []string, bizID int64) error
+	// ResBizAssignAudit 资源分配到业务审计
+	ResBizAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, resIDs []string, bizID int64) error
+	// ResCloudAreaAssignAudit 资源分配到云区域审计
+	ResCloudAreaAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, opt []ResCloudAreaAssignOption) error
 }
 
 var _ Interface = new(audit)
@@ -51,19 +53,51 @@ type audit struct {
 	dataCli *dataservice.Client
 }
 
-// ResAssignAudit resource assign audit.
-func (a audit) ResAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, resIDs []string, bizID int64) error {
+// ResBizAssignAudit resource assign to biz audit.
+func (a audit) ResBizAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, resIDs []string, bizID int64) error {
 	req := &protoaudit.CloudResourceAssignAuditReq{
 		Assigns: make([]protoaudit.CloudResourceAssignInfo, 0, len(resIDs)),
 	}
 
 	for _, resID := range resIDs {
 		req.Assigns = append(req.Assigns, protoaudit.CloudResourceAssignInfo{
-			ResType: resType,
-			ResID:   resID,
-			BkBizID: bizID,
+			ResType:         resType,
+			ResID:           resID,
+			AssignedResType: enumor.BizAuditAssignedResType,
+			AssignedResID:   bizID,
 		})
 	}
+	if err := a.dataCli.Global.Audit.CloudResourceAssignAudit(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("request dataservice CloudResourceAssignAudit failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// ResCloudAreaAssignOption resource assign to cloud area option.
+type ResCloudAreaAssignOption struct {
+	ResID   string
+	CloudID int64
+}
+
+// ResCloudAreaAssignAudit resource assign to cloud area audit.
+func (a audit) ResCloudAreaAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType,
+	opt []ResCloudAreaAssignOption) error {
+
+	req := &protoaudit.CloudResourceAssignAuditReq{
+		Assigns: make([]protoaudit.CloudResourceAssignInfo, 0, len(opt)),
+	}
+
+	for _, op := range opt {
+		req.Assigns = append(req.Assigns, protoaudit.CloudResourceAssignInfo{
+			ResType:         resType,
+			ResID:           op.ResID,
+			AssignedResType: enumor.CloudAreaAuditAssignedResType,
+			AssignedResID:   op.CloudID,
+		})
+	}
+
 	if err := a.dataCli.Global.Audit.CloudResourceAssignAudit(kt.Ctx, kt.Header(), req); err != nil {
 		logs.Errorf("request dataservice CloudResourceAssignAudit failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 		return err
