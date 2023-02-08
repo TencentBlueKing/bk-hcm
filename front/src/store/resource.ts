@@ -34,7 +34,10 @@ export const useResourceStore = defineStore({
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/batch`, { data });
     },
     bindVPCWithCloudArea(data: any) {
-      return http.post('/api/v1/cloud/vpc/bind/cloud_area', data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/bind/cloud_areas`, data);
+    },
+    getCloudAreas(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/cloud_areas/list`, data);
     },
     // 分配到业务下
     assignBusiness(type: string, data: any) {

@@ -97,6 +97,10 @@ const computedSearchList = computed(() => {
   });
 });
 
+const handleUpdateModelValue = (a: any) => {
+  console.log(a);
+};
+
 // 状态保持
 watch(
   activeTab,
@@ -157,7 +161,8 @@ watch(
         :show-condition="false"
         :show-popover-tag-change="true"
         :data="computedSearchList"
-        v-model="filter"
+        :model-value="filter"
+        @update:modelValue="handleUpdateModelValue"
       />
     </section>
   </section>

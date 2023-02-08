@@ -44,9 +44,10 @@ const {
   DeleteDialog,
 } = useDelete(
   columns,
-  selections.value,
-  'vpc',
+  selections,
+  'vpcs',
   t('删除 VPC'),
+  true,
 );
 
 const {
@@ -56,8 +57,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryList(props, 'vpc');
-datas.value = [{ id: 333 }];
+} = useQueryList(props, 'vpcs');
 </script>
 
 <template>
@@ -68,6 +68,7 @@ datas.value = [{ id: 333 }];
       <bk-button
         class="w100"
         theme="primary"
+        :disabled="selections.length <= 0"
         @click="handleDistribution"
       >
         {{ t('分配') }}
@@ -75,6 +76,7 @@ datas.value = [{ id: 333 }];
       <bk-button
         class="w100 ml10"
         theme="primary"
+        :disabled="selections.length <= 0"
         @click="handleShowDelete"
       >
         {{ t('删除') }}

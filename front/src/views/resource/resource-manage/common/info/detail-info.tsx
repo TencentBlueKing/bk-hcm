@@ -10,10 +10,11 @@ import './detail-info.scss';
 type Field = {
   name: string;
   value?: string;
-  link?: string;
+  link?: string | ((cell: string) => string);
   copy?: string;
   edit?: boolean;
   prop?: string;
+  render?: (cell: string | boolean) => void;
 };
 
 export default defineComponent({

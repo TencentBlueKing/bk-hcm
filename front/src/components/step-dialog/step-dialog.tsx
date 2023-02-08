@@ -67,7 +67,7 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      curStep.value = 1;
+      // curStep.value = 1;
       emit('confirm');
     };
 

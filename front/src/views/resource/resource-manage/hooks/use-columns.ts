@@ -2,21 +2,64 @@
 import type {
   PlainObject,
 } from '@/typings/resource';
-
 import i18n from '@/language/i18n';
 import { CloudType } from '@/typings';
-
+import {
+  Button,
+  InfoBox,
+} from 'bkui-vue';
 import {
   h,
 } from 'vue';
-
 import {
   useRouter,
 } from 'vue-router';
+import {
+  useResourceStore,
+} from '@/store/resource';
 
 export default (type: string) => {
+  const resourceStore = useResourceStore();
   const router = useRouter();
   const { t } = i18n.global;
+
+  const getDeleteField = (type: string) => {
+    return {
+      label: '操作',
+      hiddenWhenDelete: true,
+      render({ data }: any) {
+        return h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            onClick() {
+              InfoBox({
+                title: '请确认是否删除',
+                subTitle: `将删除【${data.name}】`,
+                theme: 'danger',
+                headerAlign: 'center',
+                footerAlign: 'center',
+                contentAlign: 'center',
+                onConfirm() {
+                  resourceStore
+                    .deleteBatch(
+                      type,
+                      {
+                        ids: [data.id],
+                      },
+                    );
+                },
+              });
+            },
+          },
+          [
+            t('删除'),
+          ],
+        );
+      },
+    };
+  };
 
   const vpcColumns = [
     {
@@ -27,15 +70,20 @@ export default (type: string) => {
       label: 'ID',
       field: 'id',
       sort: true,
-      render({ cell }: PlainObject) {
+      render({ cell }: { cell: string }) {
         return h(
-          'span',
+          Button,
           {
+            text: true,
+            theme: 'primary',
             onClick() {
               router.push({
                 name: 'resourceDetail',
                 params: {
                   type: 'vpc',
+                },
+                query: {
+                  id: cell,
                 },
               });
             },
@@ -48,7 +96,7 @@ export default (type: string) => {
     },
     {
       label: '资源 ID',
-      field: 'cid',
+      field: 'cloud_id',
       sort: true,
     },
     {
@@ -59,45 +107,36 @@ export default (type: string) => {
     {
       label: '云厂商',
       field: 'vendor',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            CloudType[cell] || '--',
+          ],
+        );
+      },
     },
     {
       label: '云区域',
       field: 'bk_cloud_id',
+      render({ cell }: { cell: number }) {
+        if (cell > -1) {
+          return cell;
+        }
+        return '--';
+      },
     },
     {
-      label: '地域',
-      field: 'region',
-    },
-    {
-      label: 'IPv4 CIDR',
-      field: 'ipv4_cidr',
-    },
-    {
-      label: 'IPv6 CIDR',
-      field: 'ipv6_cidr',
-    },
-    {
-      label: '状态',
-      field: 'status',
-    },
-    {
-      label: '默认 VPC',
-      field: 'is_default',
-    },
-    {
-      label: '子网数',
-      field: '',
+      label: '更新时间',
+      field: 'updated_at',
+      sort: true,
     },
     {
       label: '创建时间',
       field: 'created_at',
       sort: true,
     },
-    {
-      label: '操作',
-      field: '',
-      hiddenWhenDelete: true,
-    },
+    getDeleteField('vpcs'),
   ];
 
   const subnetColumns = [
@@ -107,17 +146,22 @@ export default (type: string) => {
     },
     {
       label: 'ID',
-      field: '',
+      field: 'id',
       sort: true,
-      render({ cell }: PlainObject) {
+      render({ cell }: { cell: string }) {
         return h(
-          'span',
+          Button,
           {
+            text: true,
+            theme: 'primary',
             onClick() {
               router.push({
                 name: 'resourceDetail',
                 params: {
                   type: 'subnet',
+                },
+                query: {
+                  id: cell,
                 },
               });
             },
@@ -130,7 +174,7 @@ export default (type: string) => {
     },
     {
       label: '资源 ID',
-      field: 'cid',
+      field: 'cloud_id',
       sort: true,
     },
     {
@@ -141,49 +185,34 @@ export default (type: string) => {
     {
       label: '云厂商',
       field: 'vendor',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            CloudType[cell] || '--',
+          ],
+        );
+      },
     },
     {
       label: '所属 VPC',
-      field: 'vpc_cid',
-    },
-    {
-      label: '可用区',
-      field: 'zone',
-    },
-    {
-      label: 'IPv4 CIDR',
-      field: 'ipv4_cidr',
-    },
-    {
-      label: 'IPv6 CIDR',
-      field: 'ipv6_cidr',
+      field: 'vpc_id',
     },
     {
       label: '关联路由表',
       field: '',
     },
     {
-      label: '状态',
-      field: 'status',
-    },
-    {
-      label: '默认子网',
-      field: 'is_default',
-    },
-    {
-      label: '可用 IPv4 地址',
-      field: '',
+      label: '更新时间',
+      field: 'updated_at',
+      sort: true,
     },
     {
       label: '创建时间',
       field: 'created_at',
       sort: true,
     },
-    {
-      label: '操作',
-      field: '',
-      hiddenWhenDelete: true,
-    },
+    getDeleteField('subnets'),
   ];
 
   const groupColumns = [
@@ -337,11 +366,95 @@ export default (type: string) => {
     },
   ];
 
+  const driveColumns = [
+    {
+      type: 'selection',
+    },
+    {
+      label: 'ID',
+      field: 'id',
+      sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            onClick() {
+              router.push({
+                name: 'resourceDetail',
+                params: { type: 'drive' },
+                query: {
+                  id: cell,
+                },
+              });
+            },
+          },
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '资源 ID',
+      field: 'cloud_id',
+      sort: true,
+    },
+    {
+      label: '名称',
+      field: 'name',
+      sort: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            CloudType[cell] || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '类型',
+      field: 'disk_type',
+      sort: true,
+    },
+    {
+      label: '容量(GB)',
+      field: 'disk_size',
+      sort: true,
+    },
+    {
+      label: '运行状态',
+      field: '',
+    },
+    {
+      label: '可用区',
+      field: 'zone',
+      sort: true,
+    },
+    {
+      label: '挂载实例',
+      field: '',
+      sort: true,
+    },
+    {
+      label: '创建时间',
+      field: 'created_at',
+    },
+    getDeleteField('disks'),
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
     group: groupColumns,
     gcp: gcpColumns,
+    drive: driveColumns,
   };
 
   return columnsMap[type];

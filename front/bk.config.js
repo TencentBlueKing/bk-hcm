@@ -29,7 +29,7 @@ module.exports = {
       },
       devServer : {
         host: env.DEV_HOST,
-        port: 5000,
+        port: 80,
         historyApiFallback: true,
         before(app) {
           apiMocker(app, {

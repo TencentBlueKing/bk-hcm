@@ -1,5 +1,5 @@
 import {
-  onMounted,
+  onBeforeMount,
   ref,
 } from 'vue';
 
@@ -8,7 +8,7 @@ import {
 } from '@/store/resource';
 import { CloudType } from '@/typings';
 
-export default (type: string, id: string) => {
+export default (type: string, id: string, cb?: Function) => {
   const loading = ref(false);
   const detail = ref({});
   const resourceStore = useResourceStore();
@@ -16,24 +16,23 @@ export default (type: string, id: string) => {
   // 从接口获取数据，并拼装需要的信息
   const getDetail = async () => {
     loading.value = true;
-    try {
-      const { data } = await resourceStore.detail(type, id);
-      data.vendorName = CloudType[data.vendor];
-      data.bk_biz_id = data.bk_biz_id === -1 ? '全部' : data.bk_biz_id;
-      detail.value = {
-        ...data,
-        ...data.spec,
-        ...data.attachment,
-        ...data.revision,
-      };
-    } catch (error) {
-      console.log(error);
-    } finally {
-      loading.value = false;
-    }
+    resourceStore
+      .detail(type, id)
+      .then(({ data = {} }: { data: any }) => {
+        detail.value = {
+          ...data,
+          ...data.extension,
+          vendorName: CloudType[data.vendor],
+          bk_biz_id: data.bk_biz_id === -1 ? '全部' : data.bk_biz_id,
+        };
+        cb(detail.value);
+      })
+      .finally(() => {
+        loading.value = false;
+      });
   };
 
-  onMounted(getDetail);
+  onBeforeMount(getDetail);
 
   return {
     loading,

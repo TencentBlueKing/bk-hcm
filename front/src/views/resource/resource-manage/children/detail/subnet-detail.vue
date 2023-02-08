@@ -1,17 +1,29 @@
 <script lang="ts" setup>
+import { CloudType } from '@/typings/account';
+
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import DetailInfo from '../../common/info/detail-info';
 import SubnetRoute from '../../children/components/subnet/subnet-route.vue';
 
 import {
+  ref,
+} from 'vue';
+import {
+  useRoute,
+} from 'vue-router';
+import {
+  InfoBox,
+} from 'bkui-vue';
+import {
   useI18n,
 } from 'vue-i18n';
-import useColumns from '../../hooks/use-columns';
 import useDetail from '../../hooks/use-detail';
-import useDelete from '../../hooks/use-delete';
+import {
+  useResourceStore,
+} from '@/store/resource';
 
-const hostTabs = [
+const hostTabs = ref<any[]>([
   {
     name: '基本信息',
     value: 'detail',
@@ -20,14 +32,9 @@ const hostTabs = [
     name: '路由策略',
     value: 'network',
   },
-];
+]);
 
-const settingFields = [
-  {
-    name: '账号',
-    prop: 'account_id',
-    link: 'http://www.baidu.com',
-  },
+const settingFields = ref<any[]>([
   {
     name: '资源 ID',
     prop: 'id',
@@ -37,24 +44,26 @@ const settingFields = [
     prop: 'name',
   },
   {
-    name: '云厂商',
-    prop: 'vendor',
+    name: '账号',
+    prop: 'account_id',
+    link(val: string) {
+      return `/#/resource/account/detail/?id=${val}`;
+    },
   },
   {
     name: '业务',
-    prop: '1234223',
+    prop: 'bk_biz_id',
   },
   {
-    name: '状态',
-    prop: 'status',
-  },
-  {
-    name: '是否默认子网',
-    prop: 'is_default',
+    name: '云厂商',
+    prop: 'vendor',
+    render(cell: string) {
+      return CloudType[cell] || '--';
+    },
   },
   {
     name: '所属 VPC',
-    prop: 'is_default',
+    prop: 'vpc_id',
   },
   {
     name: 'IPv4 CIDR',
@@ -73,55 +82,197 @@ const settingFields = [
     prop: 'ipv4_cidr',
   },
   {
-    name: '地域 ID',
-    prop: 'region',
-  },
-  {
-    name: '地域名称',
-    prop: '12312321',
-  },
-  {
-    name: '可用区 ID',
-    prop: '1234223',
-  },
-  {
-    name: '可用区名称',
-    prop: '1234223',
-  },
-  {
     name: '创建时间',
     prop: 'created_at',
   },
   {
     name: '备注',
+    type: 'textarea',
     prop: 'memo',
-    edit: true,
+    // edit: true,
   },
-];
+]);
 
 const {
   t,
 } = useI18n();
 
-const columns = useColumns('subnet');
+const resourceStore = useResourceStore();
+const route = useRoute();
 
 const {
   loading,
   detail,
 } = useDetail(
-  'subnet',
-  '1',
+  'subnets',
+  route.query.id as string,
+  (detail: any) => {
+    switch (detail.vendor) {
+      case 'tcloud':
+        settingFields.value.push(...[
+          {
+            name: '是否默认子网',
+            prop: 'is_default',
+            render(val: boolean) {
+              return val ? '是' : '否';
+            },
+          },
+          {
+            name: '地域',
+            prop: 'region',
+          },
+          {
+            name: '可用区',
+            prop: 'zone',
+          },
+          {
+            name: '关联ACL',
+            prop: 'network_acl_id',
+          },
+        ]);
+        break;
+      case 'aws':
+        settingFields.value.push(...[
+          {
+            name: '状态',
+            prop: 'state',
+          },
+          {
+            name: '地域',
+            prop: 'region',
+          },
+          {
+            name: '可用区',
+            prop: 'zone',
+          },
+          {
+            name: '自动分配公有 IPv4 地址',
+            prop: 'map_public_ip_on_launch',
+            render(val: boolean) {
+              return val ? '是' : '否';
+            },
+          },
+          {
+            name: '是否默认子网',
+            prop: 'is_default',
+            render(val: boolean) {
+              return val ? '是' : '否';
+            },
+          },
+          {
+            name: '自动分配 IPv6 地址',
+            prop: 'assign_ipv6_address_on_creation',
+            render(val: boolean) {
+              return val ? '是' : '否';
+            },
+          },
+          {
+            name: '主机名称类型',
+            prop: 'hostname_type',
+          },
+        ]);
+        break;
+      case 'azure':
+        settingFields.value.push(...[
+          {
+            name: 'NAT网关',
+            prop: 'nat_gateway',
+          },
+          {
+            name: '网络安全组',
+            prop: 'network_security_group',
+          },
+        ]);
+        break;
+      case 'gcp':
+        settingFields.value.push(...[
+          {
+            name: '地域',
+            prop: 'region',
+          },
+          {
+            name: 'IP 栈类型',
+            prop: 'stack_type',
+          },
+          {
+            name: 'IPv6 权限类型',
+            prop: 'ipv6_access_type',
+          },
+          {
+            name: '网关',
+            prop: 'gateway_address',
+          },
+          {
+            name: '专用 Google 访问通道',
+            prop: 'private_ip_google_access',
+            render(val: boolean) {
+              return val ? '启用' : '关闭';
+            },
+          },
+          {
+            name: '流日志',
+            prop: 'enable_flow_logs',
+            render(val: boolean) {
+              return val ? '启用' : '关闭';
+            },
+          },
+        ]);
+        hostTabs.value.pop();
+        break;
+      case 'huawei':
+        settingFields.value.push(...[
+          {
+            name: '状态',
+            prop: 'status',
+          },
+          {
+            name: '地域',
+            prop: 'region',
+          },
+          {
+            name: 'DHCP',
+            prop: 'dhcp_enable',
+            render(val: boolean) {
+              return val ? '启用' : '关闭';
+            },
+          },
+          {
+            name: '网关',
+            prop: 'gateway_ip',
+          },
+          {
+            name: 'DNS 服务器地址',
+            prop: 'dns_list',
+          },
+          {
+            name: 'NTP 服务器地址',
+            prop: 'ntp_addresses',
+          },
+        ]);
+        break;
+    }
+  },
 );
 
-const {
-  handleShowDelete,
-  DeleteDialog,
-} = useDelete(
-  columns,
-  [detail],
-  'subnet',
-  t('删除子网'),
-);
+const handleShowDelete = () => {
+  InfoBox({
+    title: '请确认是否删除',
+    subTitle: `将删除【${detail.value.name}】`,
+    theme: 'danger',
+    headerAlign: 'center',
+    footerAlign: 'center',
+    contentAlign: 'center',
+    onConfirm() {
+      return resourceStore
+        .deleteBatch(
+          'subnets',
+          {
+            ids: [detail.value.id],
+          },
+        );
+    },
+  });
+};
 </script>
 
 <template>
@@ -156,11 +307,6 @@ const {
       </template>
     </detail-tab>
   </bk-loading>
-
-  <delete-dialog>
-    {{ t('请注意该子网包含一个或多个资源，在释放这些资源前，无法删除VPC') }}<br />
-    {{ t('CVM：{count} 个', { count: 5 }) }}
-  </delete-dialog>
 </template>
 
 <style lang="scss" scoped>

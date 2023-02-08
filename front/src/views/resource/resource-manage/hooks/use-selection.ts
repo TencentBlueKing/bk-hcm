@@ -18,7 +18,7 @@ export default () => {
   const handleSelectionChange = (selection: SelectionType) => {
     // 全选
     if (selection.isAll && selection.checked) {
-      selections.value = selection.data;
+      selections.value = JSON.parse(JSON.stringify(selection.data));
     }
     // 取消全选
     if (selection.isAll && !selection.checked) {

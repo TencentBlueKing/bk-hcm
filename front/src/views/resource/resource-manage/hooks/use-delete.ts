@@ -2,6 +2,7 @@
  * 删除相关事件和状态
  */
 import {
+  Ref,
   ref,
   h,
 } from 'vue';
@@ -17,7 +18,7 @@ import {
 
 export default (
   columns: any[],
-  data: any[],
+  data: Ref<any[]>,
   type: string,
   title: string,
   isBatch?: boolean,
@@ -84,7 +85,7 @@ export default (
           isDeleting: isDeleting.value,
           title,
           columns,
-          data,
+          data: data.value,
           onConfirm: handleDelete,
           onClose: handleClose,
         },

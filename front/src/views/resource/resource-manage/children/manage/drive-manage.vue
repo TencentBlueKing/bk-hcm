@@ -1,26 +1,33 @@
 <script setup lang="ts">
 import type {
-  PlainObject,
+  FilterType,
 } from '@/typings/resource';
 
 import {
-  h,
+  PropType,
 } from 'vue';
 import {
   useI18n,
 } from 'vue-i18n';
-import {
-  useRouter,
-} from 'vue-router';
 import useBusiness from '../../hooks/use-business';
 import useMountedDrive from '../../hooks/use-mounted-drive';
 import useUninstallDrive from '../../hooks/use-uninstall-drive';
+import useDelete from '../../hooks/use-delete';
+import useQueryList from '../../hooks/use-query-list';
+import useSelection from '../../hooks/use-selection';
+import useColumns from '../../hooks/use-columns';
+
+const props = defineProps({
+  filter: {
+    type: Object as PropType<FilterType>,
+  },
+});
 
 const {
   t,
 } = useI18n();
 
-const router = useRouter();
+const columns = useColumns('drive');
 
 const {
   isShowDistribution,
@@ -40,133 +47,87 @@ const {
   UninstallDrive,
 } = useUninstallDrive();
 
-const columns = [
-  {
-    type: 'selection',
-  },
-  {
-    label: 'ID',
-    field: '',
-    sort: true,
-    render({ cell }: PlainObject) {
-      return h(
-        'span',
-        {
-          onClick() {
-            router.push({
-              name: 'resourceDetail',
-              params: { type: 'drive' },
-            });
-          },
-        },
-        [
-          cell || '--',
-        ],
-      );
-    },
-  },
-  {
-    label: '实例 ID',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '名称',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '云厂商',
-    field: '',
-    sort: true,
-  },
-  {
-    label: 'IP',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '云区域',
-    field: '',
-  },
-  {
-    label: '地域',
-    field: '',
-    sort: true,
-  },
-  {
-    label: 'VPC',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '子网',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '状态',
-    field: '',
-  },
-  {
-    label: '创建时间',
-    field: '',
-  },
-  {
-    label: '操作',
-    field: '',
-  },
-];
-const tableData: any[] = [{}];
+const {
+  selections,
+  handleSelectionChange,
+} = useSelection();
 
-// 方法
-const handleSortBy = () => {
+const {
+  handleShowDelete,
+  DeleteDialog,
+} = useDelete(
+  columns,
+  selections,
+  'disks',
+  t('删除硬盘'),
+  true,
+);
 
-};
+const {
+  datas,
+  pagination,
+  isLoading,
+  handlePageChange,
+  handlePageSizeChange,
+  handleSort,
+} = useQueryList(props, 'disks');
 </script>
 
 <template>
-  <section>
-    <bk-button
-      class="w100"
-      theme="primary"
-      @click="handleDistribution"
-    >
-      {{ t('分配') }}
-    </bk-button>
-    <bk-button
-      class="w100 ml10"
-      theme="primary"
-      @click="handleMountedDrive"
-    >
-      {{ t('挂载') }}
-    </bk-button>
-    <bk-button
-      class="w100 ml10"
-      theme="primary"
-      @click="handleUninstallDrive"
-    >
-      {{ t('卸载') }}
-    </bk-button>
-    <bk-button
-      class="w100 ml10"
-      theme="primary"
-    >
-      {{ t('删除') }}
-    </bk-button>
-  </section>
+  <bk-loading
+    :loading="isLoading"
+  >
+    <section>
+      <bk-button
+        class="w100"
+        theme="primary"
+        :disabled="selections.length <= 0"
+        @click="handleDistribution"
+      >
+        {{ t('分配') }}
+      </bk-button>
+      <bk-button
+        class="w100 ml10"
+        theme="primary"
+        @click="handleMountedDrive"
+      >
+        {{ t('挂载') }}
+      </bk-button>
+      <bk-button
+        class="w100 ml10"
+        theme="primary"
+        @click="handleUninstallDrive"
+      >
+        {{ t('卸载') }}
+      </bk-button>
+      <bk-button
+        class="w100 ml10"
+        theme="primary"
+        :disabled="selections.length <= 0"
+        @click="handleShowDelete"
+      >
+        {{ t('删除') }}
+      </bk-button>
+    </section>
 
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-    @column-sort="handleSortBy"
-  />
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      :pagination="pagination"
+      :columns="columns"
+      :data="datas"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
+      @column-sort="handleSort"
+      @selection-change="handleSelectionChange"
+    />
+  </bk-loading>
 
   <resource-business
     v-model:is-show="isShowDistribution"
+    type="disks"
     :title="t('云硬盘分配')"
+    :list="selections"
   />
 
   <mounted-drive
@@ -176,6 +137,10 @@ const handleSortBy = () => {
   <uninstall-drive
     v-model:is-show="isShowUninstallDrive"
   />
+
+  <delete-dialog>
+    {{ t('请注意删除VPC后无法恢复，请谨慎操作') }}
+  </delete-dialog>
 </template>
 
 <style lang="scss" scoped>

@@ -2,14 +2,16 @@
 import type {
   FilterType,
 } from '@/typings/resource';
-
 import {
   PropType,
+  ref,
 } from 'vue';
-
 import {
   useI18n,
 } from 'vue-i18n';
+import {
+  useResourceStore,
+} from '@/store/resource';
 
 import useSteps from '../../hooks/use-steps';
 import useColumns from '../../hooks/use-columns';
@@ -23,10 +25,14 @@ const props = defineProps({
   },
 });
 
+const isLoadingVpc = ref(false);
+
 // use hooks
 const {
   t,
 } = useI18n();
+
+const resourceStore = useResourceStore();
 
 const {
   isShowDistribution,
@@ -46,9 +52,10 @@ const {
   DeleteDialog,
 } = useDelete(
   columns,
-  selections.value,
-  'subnet',
+  selections,
+  'subnets',
   t('删除子网'),
+  true,
 );
 
 const {
@@ -58,7 +65,42 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryList(props, 'subnet');
+} = useQueryList(props, 'subnets');
+
+// 分配 subnet
+const handleDistributionSubnet = () => {
+  isLoadingVpc.value = true;
+  // 获取 vpc 数据
+  resourceStore
+    .list(
+      {
+        page: {
+          count: false,
+          start: 0,
+          limit: selections.value.length,
+        },
+        filter: {
+          op: 'and',
+          rules: [{
+            field: 'id',
+            op: 'in',
+            value: selections.value.map(selection => selection.vpc_id),
+          }],
+        },
+      },
+      'vpcs',
+    )
+    .then((res: any) => {
+      selections.value.forEach((item) => {
+        const vpcData = res?.data?.details?.find((vpc: any) => vpc.id === item.vpc_id);
+        item.bk_cloud_id = vpcData.bk_cloud_id;
+      });
+      handleDistribution();
+    })
+    .finally(() => {
+      isLoadingVpc.value = false;
+    });
+};
 </script>
 
 <template>
@@ -69,13 +111,16 @@ const {
       <bk-button
         class="w100"
         theme="primary"
-        @click="handleDistribution"
+        :loading="isLoadingVpc"
+        :disabled="selections.length <= 0"
+        @click="handleDistributionSubnet"
       >
         {{ t('分配') }}
       </bk-button>
       <bk-button
         class="w100 ml10"
         theme="primary"
+        :disabled="selections.length <= 0"
         @click="handleShowDelete"
       >
         {{ t('删除') }}

@@ -23,10 +23,11 @@ import './info-list.scss';
 type Field = {
   name: string;
   value: string | any;
-  link?: string;
+  link?: string | ((cell: string) => string);
   copy?: boolean;
   edit?: boolean;
   type?: string;
+  render?: (cell: string) => void;
 };
 
 export default defineComponent({
@@ -94,10 +95,8 @@ export default defineComponent({
               <span>{e}</span>{field.value.length - 1 === index ? '' : ';'}
             </span>
           )));
-          break;
         default:
           return <span class="item-value">{field.value}</span>;
-          break;
       }
     };
 
@@ -111,11 +110,13 @@ export default defineComponent({
     ></RenderDetailEdit>;
 
     // 渲染链接
-    const renderLink = (field: Field) => <bk-link theme="primary" target="_blank" href={field.link}>{ field.value }</bk-link>;
+    const renderLink = (field: Field) => <bk-link theme="primary" target="_blank" href={typeof field.link === 'function' ? field.link(field.value) : field.link}>{ field.value }</bk-link>;
 
     // 渲染方法
     const renderField = (field: Field) => {
-      if (field.link) {
+      if (field.render) {
+        return field.render(field.value);
+      } if (field.link) {
         return renderLink(field);
       } if (field.edit) {
         return renderEditTxt(field);

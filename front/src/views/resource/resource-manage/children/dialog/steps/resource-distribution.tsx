@@ -1,23 +1,29 @@
 import './resource-distribution.scss';
-
+import { CloudType } from '@/typings';
 import {
   defineComponent,
   ref,
+  h,
+  watch,
+  computed,
 } from 'vue';
-
+import {
+  Select,
+  Message,
+} from 'bkui-vue';
 import {
   RESOURCE_TYPES,
 } from '@/common/constant';
-
 import StepDialog from '@/components/step-dialog/step-dialog';
-
 import {
   useI18n,
 } from 'vue-i18n';
-
 import {
   useResourceStore,
 } from '@/store/resource';
+import {
+  useAccountStore,
+} from '@/store';
 
 export default defineComponent({
   components: {
@@ -48,15 +54,23 @@ export default defineComponent({
     } = useI18n();
 
     const resourceStore = useResourceStore();
+    const accountStore = useAccountStore();
 
     // 状态
+    const validateMap = ref({});
     const business = ref('');
     const businessList = ref([]);
+    const isBusinessError = ref(false);
+    const cloudAreas = ref([]);
+    const isLoadingCloudAreas = ref(false);
+    const cloudAreaPage = ref(0);
     const isBindVPC = ref(false);
     const isBingdingVPC = ref(false);
     const hasBindVPC = ref(false);
     const disableNext = ref(true);
     const resourceTypes = ref([]);
+    const errorList = ref([]);
+    const isConfirmLoading = ref(false);
     const VPCColumns = [
       {
         label: 'ID',
@@ -64,7 +78,7 @@ export default defineComponent({
       },
       {
         label: '资源 ID',
-        field: 'vpc_cid',
+        field: 'cloud_id',
       },
       {
         label: '名称',
@@ -73,32 +87,78 @@ export default defineComponent({
       {
         label: '云厂商',
         field: 'vendor',
-      },
-      {
-        label: '地域',
-        field: 'region',
-      },
-      {
-        label: 'IPv4 CIDR',
-        field: 'ipv4_cidr',
+        render({ cell }: { cell: string }) {
+          return h(
+            'span',
+            [
+              CloudType[cell] || '--',
+            ],
+          );
+        },
       },
       {
         label: '云区域',
-        field: 'bk_cloud_id',
+        render({ data }: any) {
+          if (data.bk_cloud_id > -1) {
+            return data.bk_cloud_id;
+          }
+          // 校验
+          const validate = () => {
+            if (!data.temp_bk_cloud_id) {
+              errorList.value.push(data.id);
+              return false;
+            }
+            const index = errorList.value.findIndex(item => item === data.id);
+            errorList.value.splice(index, 1);
+            return true;
+          };
+          if (!validateMap.value[data.id]) {
+            validateMap.value[data.id] = validate;
+          }
+          // 未绑定需要先绑定云区域
+          return () => h(
+            Select,
+            {
+              class: {
+                'resource-is-error': errorList.value.includes(data.id),
+              },
+              displayKey: 'name',
+              idKey: 'id',
+              list: cloudAreas.value,
+              modelValue: data.temp_bk_cloud_id,
+              scrollLoading: isLoadingCloudAreas.value,
+              onScrollEnd() {
+                getCloudAreas();
+              },
+              onChange(val: string) {
+                data.temp_bk_cloud_id = val;
+                validate();
+              },
+            },
+          );
+        },
       },
     ];
     const businessColumns = [
       {
         label: '云厂商',
-        field: 'id',
+        field: 'vendor',
+        render({ cell }: { cell: string }) {
+          return h(
+            'span',
+            [
+              CloudType[cell] || '--',
+            ],
+          );
+        },
       },
       {
         label: '数量',
-        field: 'id',
+        field: 'num',
       },
       {
         label: '云区域（ID）',
-        field: 'id',
+        field: 'bk_cloud_id',
       },
     ];
 
@@ -108,20 +168,142 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      handleClose();
+      if (!business.value) {
+        Message({
+          theme: 'error',
+          message: '请先选择目标业务',
+        });
+        isBusinessError.value = true;
+        return;
+      }
+
+      isConfirmLoading.value = true;
+      resourceStore
+        .assignBusiness(
+          'vpcs',
+          {
+            vpc_ids: props.data.map((item: any) => item.vpc_id),
+            bk_biz_id: business.value,
+          },
+        )
+        .then(() => {
+          handleClose();
+        })
+        .finally(() => {
+          isConfirmLoading.value = false;
+        });
     };
+
+    const getCloudAreas = () => {
+      if (isLoadingCloudAreas.value) return;
+      isLoadingCloudAreas.value = true;
+      resourceStore
+        .getCloudAreas({
+          page: {
+            start: cloudAreaPage.value,
+            limit: 100,
+          },
+        })
+        .then((res: any) => {
+          cloudAreaPage.value += 1;
+          cloudAreas.value.push(...res?.data?.info || []);
+        })
+        .finally(() => {
+          isLoadingCloudAreas.value = false;
+        });
+    };
+
+    const getBusinessList = async () => {
+      try {
+        const res = await accountStore.getBizList();
+        businessList.value = res?.data;
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    const validateCloudArea = () => {
+      let hasError = false;
+      Object.values(validateMap.value).forEach((validate) => {
+        if (!(validate as Function)()) {
+          hasError = true;
+        }
+      });
+      return hasError;
+    };
+
     // 绑定vpc到云区域
     const handleBindVPC = () => {
+      // 校验不通过
+      if (validateCloudArea()) {
+        Message({
+          theme: 'error',
+          message: '请先选择云区域',
+        });
+        return;
+      }
+
       isBingdingVPC.value = true;
+      const bindCloudAreaData = props
+        .data
+        .filter((item: any) => item.bk_cloud_id <= -1 || !item.bk_cloud_id)
+        .map((item: any) => ({ vpc_id: item.vpc_id || item.id, bk_cloud_id: item.temp_bk_cloud_id }));
       resourceStore
-        .bindVPCWithCloudArea(props.data)
+        .bindVPCWithCloudArea(bindCloudAreaData)
         .then(() => {
+          props
+            .data
+            .filter((item: any) => item.bk_cloud_id <= -1 || !item.bk_cloud_id)
+            .forEach((item: any) => {
+              item.bk_cloud_id = item.temp_bk_cloud_id;
+            });
           disableNext.value = false;
         })
         .finally(() => {
           isBingdingVPC.value = false;
         });
     };
+
+    // 聚合分配确认数据
+    const computedCloudData = computed(() => {
+      return props.data.reduce((acc: any[], cur: any) => {
+        const cloudData = acc.find((item: any) => item.bk_cloud_id === cur.bk_cloud_id && item.vendor === cur.vendor);
+        if (cloudData) {
+          cloudData.num += 1;
+        } else {
+          acc.push({
+            bk_cloud_id: cur.bk_cloud_id,
+            vendor: cur.vendor,
+            num: 1,
+          });
+        }
+        return acc;
+      }, []);
+    });
+
+    watch(
+      () => props.isShow,
+      () => {
+        if (props.isShow) {
+          // 重置状态
+          cloudAreas.value = [];
+          cloudAreaPage.value = 0;
+          disableNext.value = true;
+          hasBindVPC.value = false;
+          business.value = '';
+          validateMap.value = {};
+          errorList.value = [];
+          // 获取数据
+          getCloudAreas();
+          getBusinessList();
+          // 判断是否需要绑定云区域
+          if (props.data.every((item: any) => item.bk_cloud_id > -1)) {
+            disableNext.value = false;
+            hasBindVPC.value = true;
+          }
+        }
+      },
+    );
 
     return {
       business,
@@ -133,6 +315,9 @@ export default defineComponent({
       resourceTypes,
       VPCColumns,
       businessColumns,
+      computedCloudData,
+      isConfirmLoading,
+      isBusinessError,
       t,
       handleClose,
       handleConfirm,
@@ -142,7 +327,7 @@ export default defineComponent({
 
   render() {
     // 渲染每一步
-    const steps = [
+    const steps: any[] = [
       {
         title: '前置检查',
         disableNext: this.disableNext,
@@ -153,33 +338,48 @@ export default defineComponent({
             columns={this.VPCColumns}
             data={this.data}
           />
-          <bk-checkbox class="mt5" v-model={this.isBindVPC}>
-            注：VPC绑定云区域信息无法修改，请提前确认
-          </bk-checkbox>
+          {
+            !this.hasBindVPC
+              ? <bk-checkbox class="mt10" v-model={this.isBindVPC}>
+                  注：VPC绑定云区域信息无法修改，请提前确认
+                </bk-checkbox>
+              : ''
+          }
         </>,
-        footer: () => <>
-          <bk-button
-            class="mr10"
-            loading={this.isBingdingVPC}
-            disabled={!this.isBindVPC}
-            onClick={this.handleBindVPC}
-          >VPC 绑定云区域</bk-button>
-        </>,
+        footer: () => <>{
+          !this.hasBindVPC
+            ? <><bk-button
+                class="mr10"
+                loading={this.isBingdingVPC}
+                disabled={!this.isBindVPC}
+                onClick={this.handleBindVPC}
+              >
+                VPC 绑定云区域
+              </bk-button>
+              </>
+            : ''
+        }</>
+        ,
       },
       {
         title: '分配确认',
+        isConfirmLoading: this.isConfirmLoading,
         component: () => <>
           <section class="resource-head">
-            { `${this.t('目标业务')}:${this.business}` }
+            { this.t('目标业务') }
             <bk-select
               v-model={this.business}
               filterable
-              class="ml10"
+              class={{
+                ml10: true,
+                'resource-is-error': this.isBusinessError,
+              }}
+              onChange={(val: any) => this.isBusinessError = !val}
             >
               {
                 this.businessList.map(business => <bk-option
-                  value={business.value}
-                  label={business.label}
+                  value={business.id}
+                  label={business.name}
                 />)
               }
             </bk-select>
@@ -188,7 +388,7 @@ export default defineComponent({
             class="mt20"
             row-hover="auto"
             columns={this.businessColumns}
-            data={this.data}
+            data={this.computedCloudData}
           />
         </>,
       },

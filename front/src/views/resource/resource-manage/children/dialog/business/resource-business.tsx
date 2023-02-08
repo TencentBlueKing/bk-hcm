@@ -6,7 +6,12 @@ import {
 // import {
 //   useI18n,
 // } from 'vue-i18n';
-import { useAccountStore } from '@/store';
+import {
+  useAccountStore,
+} from '@/store';
+import {
+  useResourceStore,
+} from '@/store/resource';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import './resource-business.scss';
 
@@ -22,14 +27,21 @@ export default defineComponent({
     isShow: {
       type: Boolean,
     },
+    type: {
+      type: String,
+    },
+    list: {
+      type: Array,
+    },
   },
 
   emits: ['update:isShow', 'handle-confirm'],
 
   setup(props, { emit }) {
-    const business = ref([]);
+    const business = ref('');
     const businessList = ref([]);
     const accountStore = useAccountStore();
+    const resourceStore = useResourceStore();
 
     // use hooks
     // const {
@@ -76,8 +88,18 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      emit('handle-confirm', business.value);
-      handleClose();
+      resourceStore
+        .assignBusiness(
+          props.type,
+          {
+            bk_biz_id: business.value,
+            ids: props.list.map((item: any) => item.id),
+          },
+        )
+        .then(() => {
+          emit('handle-confirm', business.value);
+          handleClose();
+        });
     };
 
     const getBusinessList = async () => {
@@ -101,6 +123,7 @@ export default defineComponent({
     return <>
       <step-dialog
         size="normal"
+        dialogWidth="500"
         title={this.title}
         isShow={this.isShow}
         steps={this.steps}

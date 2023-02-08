@@ -1,91 +1,141 @@
 <script lang="ts" setup>
 import {
   h,
+  watch,
+  ref,
 } from 'vue';
+
+import {
+  useRouter,
+} from 'vue-router';
+
 import {
   Button,
 } from 'bkui-vue';
 
-import {
-  useI18n,
-} from 'vue-i18n';
-import useSteps from '../../../hooks/use-steps';
+import useQueryList from '../../../hooks/use-query-list';
 
-const {
-  t,
-} = useI18n();
+const props = defineProps({
+  detail: {
+    type: Object,
+  },
+});
 
-const {
-  isShowDistribution,
-  handleDistribution,
-  ResourceDistribution,
-} = useSteps();
+const router = useRouter();
 
-const columns = [
+const columns = ref([
   {
     label: 'ID',
     field: 'id',
   },
   {
     label: '资源 ID',
-    render() {
+    field: 'cloud_id',
+    render({ cell }: { cell: string }) {
       return h(
         Button,
         {
           text: true,
           theme: 'primary',
           onClick() {
-            handleDistribution();
+            router.push({
+              name: 'resourceDetail',
+              params: {
+                type: 'subnet',
+              },
+              query: {
+                id: cell,
+              },
+            });
           },
         },
         [
-          'www',
+          cell,
         ],
       );
     },
   },
   {
     label: '名称',
-    field: 'id',
+    field: 'name',
+  },
+]);
+
+watch(
+  () => props.detail,
+  () => {
+    switch (props.detail.vendor) {
+      case 'tcloud':
+        columns.value.push(...[
+          {
+            label: '可用区',
+            field: 'id',
+          },
+          {
+            label: 'ID',
+            field: 'id',
+          },
+          {
+            label: 'ID',
+            field: 'id',
+          },
+          {
+            label: 'ID',
+            field: 'id',
+          },
+          {
+            label: 'ID',
+            field: 'id',
+          },
+          {
+            label: 'ID',
+            field: 'id',
+          },
+        ]);
+        break;
+      case 'aws':
+
+        break;
+      case 'azure':
+      case 'huawei':
+        break;
+    }
   },
   {
-    label: '可用区',
-    field: 'id',
+    deep: true,
+    immediate: true,
   },
+);
+
+const {
+  datas,
+  pagination,
+  isLoading,
+  handlePageChange,
+  handlePageSizeChange,
+} = useQueryList(
   {
-    label: '默认专有网络',
-    field: 'id',
+    filter: {
+      op: 'and',
+      rules: [],
+    },
   },
-  {
-    label: '网段',
-    field: 'id',
-  },
-  {
-    label: '关联路由表',
-    field: 'id',
-  },
-  {
-    label: '创建时间',
-    field: 'id',
-  },
-];
-const tableData = [
-  {
-    id: 233,
-  },
-];
+  'subnets',
+);
 </script>
 
 <template>
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-  />
-
-  <resource-distribution
-    v-model:is-show="isShowDistribution"
-    :title="t('子网分配')"
-  />
+  <bk-loading
+    :loading="isLoading"
+  >
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      :pagination="pagination"
+      :columns="columns"
+      :data="datas"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
+    />
+  </bk-loading>
 </template>

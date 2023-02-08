@@ -8,7 +8,7 @@ import {
 } from '@/store/resource';
 import {
   ref,
-  // onMounted,
+  onMounted,
   watch,
 } from 'vue';
 
@@ -22,7 +22,7 @@ type PropsType = {
   filter?: FilterType
 };
 
-export default async (props: PropsType, type: string) => {
+export default (props: PropsType, type: string) => {
   // 接口
   const resourceStore = useResourceStore();
 
@@ -38,42 +38,49 @@ export default async (props: PropsType, type: string) => {
   const order = ref();
 
   // 更新数据
-  const triggerApi = async () => {
+  const triggerApi = () => {
     isLoading.value = true;
-    const listCount = await resourceStore
-      .list(
-        {
-          page: {
-            count: true,
-          },
-          filter: props.filter,
-        },
-        type,
-      );
-    pagination.value.count = listCount.data.count;
-    const listData = await resourceStore
-      .list(
-        {
-          page: {
-            count: false,
-            start: (pagination.value.current - 1) * pagination.value.limit,
-            limit: pagination.value.limit,
-            sort: sort.value,
-            order: order.value,
-          },
-          filter: props.filter,
-        },
-        type,
-      );
-    datas.value = (listData.data.details || []).map((item: any) => {
-      return {
-        ...item,
-        ...item.spec,
-        ...item.attachment,
-        ...item.revision,
-      };
-    });
-    isLoading.value = false;
+    Promise
+      .all([
+        resourceStore
+          .list(
+            {
+              page: {
+                count: false,
+                start: (pagination.value.current - 1) * pagination.value.limit,
+                limit: pagination.value.limit,
+                sort: sort.value,
+                order: order.value,
+              },
+              filter: props.filter,
+            },
+            type,
+          ),
+        resourceStore
+          .list(
+            {
+              page: {
+                count: true,
+              },
+              filter: props.filter,
+            },
+            type,
+          ),
+      ])
+      .then(([listResult, countResult]) => {
+        datas.value = (listResult?.data?.details || []).map((item: any) => {
+          return {
+            ...item,
+            ...item.spec,
+            ...item.attachment,
+            ...item.revision,
+          };
+        });
+        pagination.value.count = countResult?.data?.count || 0;
+      })
+      .finally(() => {
+        isLoading.value = false;
+      });
   };
 
   // 页码变化发生的事件
@@ -104,13 +111,17 @@ export default async (props: PropsType, type: string) => {
       deep: true,
     },
   );
-  // 切换tab重新获取数据
-  watch(() => type, async (value) => {
-    console.log('value', value);
-    triggerApi();
-  });
 
-  await triggerApi();
+  // 切换tab重新获取数据
+  watch(
+    () => type,
+    () => {
+      triggerApi();
+    },
+  );
+
+  onMounted(triggerApi);
+
   return {
     datas,
     pagination,
