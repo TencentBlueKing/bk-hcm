@@ -39,7 +39,7 @@ func InitRegionService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("BatchSyncRegion", "POST", "/vendors/{vendor}/regions/batch/sync", v.BatchSyncRegion)
+	h.Add("BatchSyncRegion", "POST", "/vendors/{vendor}/regions/sync", v.BatchSyncRegion)
 
 	h.Load(cap.WebService)
 }
