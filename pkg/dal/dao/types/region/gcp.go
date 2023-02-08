@@ -17,34 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package region
 
 import (
-	"hcm/pkg/rest"
+	"hcm/pkg/dal/table/cloud/region"
 )
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
-	Region   *RegionClient
-}
-
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-		Region:     NewRegionClient(client),
-	}
+// GcpRegionListResult gcp region list result.
+type GcpRegionListResult struct {
+	Count   uint64                  `json:"count"`
+	Details []region.GcpRegionTable `json:"details"`
 }

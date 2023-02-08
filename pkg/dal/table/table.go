@@ -49,8 +49,6 @@ const (
 	SecurityGroupTagTable Name = "security_group_tag"
 	// SecurityGroupSubnetTable is security group subnet table's name.
 	SecurityGroupSubnetTable Name = "security_group_subnet"
-	// SecurityGroupBizRelTable is security group and biz rel table's name.
-	SecurityGroupBizRelTable Name = "security_group_biz_rel"
 	// SGSecurityGroupRuleTable is security group and rule rel table's name.
 	SGSecurityGroupRuleTable = "security_group_security_group_rule"
 	// TCloudSecurityGroupRuleTable is tcloud security group rule table's name.
@@ -71,7 +69,38 @@ const (
 	SubnetTable Name = "subnet"
 	// DiskTable is disk table's name.
 	DiskTable Name = "disk"
+	// TCloudRegionTable is tcloud region table's name.
+	TCloudRegionTable Name = "tcloud_region"
+	// AwsRegionTable is aws region table's name.
+	AwsRegionTable Name = "aws_region"
+	// GcpRegionTable is gcp region table's name.
+	GcpRegionTable Name = "gcp_region"
 )
+
+// TableMap table map config
+var TableMap = map[Name]struct{}{
+	AuditTable:                   {},
+	AccountTable:                 {},
+	AccountBizRelTable:           {},
+	VpcTable:                     {},
+	SubnetTable:                  {},
+	IDGenerator:                  {},
+	SecurityGroupTable:           {},
+	VpcSecurityGroupRelTable:     {},
+	SecurityGroupTagTable:        {},
+	SecurityGroupSubnetTable:     {},
+	SGSecurityGroupRuleTable:     {},
+	TCloudSecurityGroupRuleTable: {},
+	AwsSecurityGroupRuleTable:    {},
+	HuaWeiSecurityGroupRuleTable: {},
+	AzureSecurityGroupRuleTable:  {},
+	SGNetworkInterfaceRelTable:   {},
+	GcpFirewallRuleTable:         {},
+	TCloudRegionTable:            {},
+	AwsRegionTable:               {},
+	GcpRegionTable:               {},
+	DiskTable:                    {},
+}
 
 // Validate whether the table name is valid or not.
 func (n Name) Validate() error {
@@ -80,29 +109,11 @@ func (n Name) Validate() error {
 		return nil
 	}
 
-	switch n {
-	case AuditTable:
-	case AccountTable:
-	case AccountBizRelTable:
-	case VpcTable:
-	case SubnetTable:
-	case IDGenerator:
-	case SecurityGroupTable:
-	case VpcSecurityGroupRelTable:
-	case SecurityGroupTagTable:
-	case SecurityGroupSubnetTable:
-	case SGSecurityGroupRuleTable:
-	case TCloudSecurityGroupRuleTable:
-	case AwsSecurityGroupRuleTable:
-	case HuaWeiSecurityGroupRuleTable:
-	case AzureSecurityGroupRuleTable:
-	case SGNetworkInterfaceRelTable:
-	case GcpFirewallRuleTable:
-	default:
-		return fmt.Errorf("unknown table name: %s", n)
+	if _, ok := TableMap[n]; ok {
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("unknown table name: %s", n)
 }
 
 // Register 注册表名

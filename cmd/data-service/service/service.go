@@ -32,6 +32,7 @@ import (
 	"hcm/cmd/data-service/service/capability"
 	"hcm/cmd/data-service/service/cloud"
 	"hcm/cmd/data-service/service/cloud/disk"
+	"hcm/cmd/data-service/service/cloud/region"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
@@ -139,13 +140,14 @@ func (s *Service) apiSet() *restful.Container {
 	cloud.InitCloudService(cap)
 	auth.InitAuthService(cap)
 	disk.InitDiskService(cap)
+	region.InitRegionService(cap)
 	audit.InitAuditService(cap)
 
 	return restful.NewContainer().Add(cap.WebService)
 }
 
 // Healthz check whether the service is healthy.
-func (s *Service) Healthz(w http.ResponseWriter, req *http.Request) {
+func (s *Service) Healthz(w http.ResponseWriter, _ *http.Request) {
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
 	return
 }

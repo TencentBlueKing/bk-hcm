@@ -17,34 +17,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package region
 
 import (
-	"hcm/pkg/rest"
+	"errors"
 )
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
-	Region   *RegionClient
+// -------------------------- Sync --------------------------
+
+// GcpRegionSyncReq define aws region sync request.
+type GcpRegionSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
 }
 
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-		Region:     NewRegionClient(client),
+// Validate gcp region create request.
+func (req *GcpRegionSyncReq) Validate() error {
+	if len(req.AccountID) == 0 {
+		return errors.New("account_id is required")
 	}
+
+	return nil
 }

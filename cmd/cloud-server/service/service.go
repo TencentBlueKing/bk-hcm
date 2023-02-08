@@ -176,7 +176,7 @@ func (s *Service) apiSet() *restful.Container {
 }
 
 // Healthz check whether the service is healthy.
-func (s *Service) Healthz(w http.ResponseWriter, req *http.Request) {
+func (s *Service) Healthz(w http.ResponseWriter, _ *http.Request) {
 	if shutdown.IsShuttingDown() {
 		logs.Errorf("service healthz check failed, current service is shutting down")
 		w.WriteHeader(http.StatusServiceUnavailable)

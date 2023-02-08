@@ -136,7 +136,7 @@ func (v vpc) AzureVpcSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get vpc list from cloudapi.
 	list, err := v.BatchGetAzureVpcList(cts, req)
 	if err != nil {
-		logs.Errorf("[%s-vpc] request cloudapi response failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc request cloudapi response failed. accountID: %s, region: %s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (v vpc) AzureVpcSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get vpc map from db.
 	resourceDBMap, err := v.BatchGetVpcMapFromDB(cts, req, enumor.Azure)
 	if err != nil {
-		logs.Errorf("[%s-vpc] batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (v vpc) AzureVpcSync(cts *rest.Contexts) (interface{}, error) {
 	// batch sync vendor vpc list.
 	err = v.BatchSyncAzureVpcList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-vpc] compare api and dblist failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc compare api and dblist failed. accountID: %s, region: %s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (v vpc) BatchGetAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyn
 	}
 	list, err := cli.ListVpc(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("[%s-vpc]batch get cloud api failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc batch get cloud api failed. accountID: %s, region: %s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func (v vpc) BatchSyncAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSy
 			Vpcs: updateResources,
 		}
 		if err = v.cs.DataService().Azure.Vpc.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db update failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-vpc batch compare db update failed. accountID: %s, region: %s, err: %v",
 				enumor.Azure, req.AccountID, req.Region, err)
 			return err
 		}
@@ -209,7 +209,7 @@ func (v vpc) BatchSyncAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSy
 			Vpcs: createResources,
 		}
 		if _, err = v.cs.DataService().Azure.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db create failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-vpc batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.Azure, req.AccountID, req.Region, err)
 			return err
 		}
@@ -228,7 +228,7 @@ func (v vpc) BatchSyncAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSy
 			Filter: tools.ContainersExpression("id", deleteIDs),
 		}
 		if err = v.cs.DataService().Global.Vpc.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, err: %v",
+			logs.Errorf("%s-vpc batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, err: %v",
 				enumor.Azure, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}
@@ -328,7 +328,7 @@ func (v vpc) AzureSubnetSync(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
 	// batch get subnet list from cloudapi.
 	list, err := v.BatchGetAzureSubnetList(cts, req)
 	if err != nil {
-		logs.Errorf("[%s-vpc-subnet]request cloudapi response failed. accountID: %s, cloudVpcID: %s, err: %v",
+		logs.Errorf("%s-vpc-subnet request cloudapi response failed. accountID: %s, cloudVpcID: %s, err: %v",
 			enumor.Azure, req.AccountID, cloudVpcID, err)
 		return err
 	}
@@ -340,7 +340,7 @@ func (v vpc) AzureSubnetSync(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
 	// batch get subnet map from db.
 	resourceDBMap, err := v.BatchGetSubnetMapFromDB(cts, req, enumor.Azure, cloudVpcID)
 	if err != nil {
-		logs.Errorf("[%s-vpc-subnet]batch get subnetdblist failed. accountID: %s, cloudVpcID: %s, err: %v",
+		logs.Errorf("%s-vpc-subnet batch get subnetdblist failed. accountID: %s, cloudVpcID: %s, err: %v",
 			enumor.Azure, req.AccountID, cloudVpcID, err)
 		return err
 	}
@@ -348,7 +348,7 @@ func (v vpc) AzureSubnetSync(cts *rest.Contexts, req *hcservice.ResourceSyncReq,
 	// batch sync vendor subnet list.
 	err = v.BatchSyncAzureSubnetList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-vpc-subnet]compare api and dblist failed. accountID: %s, cloudVpcID: %s, err: %v",
+		logs.Errorf("%s-vpc-subnet compare api and dblist failed. accountID: %s, cloudVpcID: %s, err: %v",
 			enumor.Azure, req.AccountID, cloudVpcID, err)
 		return err
 	}
@@ -371,7 +371,7 @@ func (v vpc) BatchGetAzureSubnetList(cts *rest.Contexts, req *hcservice.Resource
 
 	list, err := cli.ListSubnet(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("[%s-vpc-subnet]batch get cloud api failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc-subnet batch get cloud api failed. accountID: %s, region: %s, err: %v",
 			enumor.Azure, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -414,7 +414,7 @@ func (v vpc) BatchGetSubnetMapFromDB(cts *rest.Contexts, req *hcservice.Resource
 
 		dbList, err := v.cs.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 		if err != nil {
-			logs.Errorf("[%s-vpc-subnet]batch list db error. accountID: %s, region: %s, offset: %d, limit: %d, "+
+			logs.Errorf("%s-vpc-subnet batch list db error. accountID: %s, region: %s, offset: %d, limit: %d, "+
 				"cloudVpcID: %s, err: %v", vendor, req.AccountID, req.Region, offset, count, cloudVpcID, err)
 			return nil, err
 		}
@@ -449,7 +449,7 @@ func (v vpc) BatchSyncAzureSubnetList(cts *rest.Contexts, req *hcservice.Resourc
 			Subnets: updateResources,
 		}
 		if err = v.cs.DataService().Azure.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-			logs.Errorf("[%s-vpc-subnet]batch compare db update failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-vpc-subnet batch compare db update failed. accountID: %s, region: %s, err: %v",
 				enumor.Azure, req.AccountID, req.Region, err)
 			return err
 		}
@@ -459,7 +459,7 @@ func (v vpc) BatchSyncAzureSubnetList(cts *rest.Contexts, req *hcservice.Resourc
 	if len(createResources) > 0 {
 		err = v.batchCreateAzureSubnet(cts, createResources)
 		if err != nil {
-			logs.Errorf("[%s-vpc-subnet]batch compare db create failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-vpc-subnet batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.Azure, req.AccountID, req.Region, err)
 			return err
 		}
@@ -476,7 +476,7 @@ func (v vpc) BatchSyncAzureSubnetList(cts *rest.Contexts, req *hcservice.Resourc
 	if len(deleteIDs) > 0 {
 		err = v.BatchDeleteVpcByIDs(cts, deleteIDs)
 		if err != nil {
-			logs.Errorf("[%s-vpc-subnet]batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, "+
+			logs.Errorf("%s-vpc-subnet batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, "+
 				"err: %v", enumor.Azure, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}

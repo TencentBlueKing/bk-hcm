@@ -146,7 +146,7 @@ func (s subnet) HuaWeiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get subnet list from cloudapi.
 	list, err := s.BatchGetHuaWeiSubnetList(cts, req)
 	if err != nil {
-		logs.Errorf("[%s-subnet] request cloudapi response failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-subnet request cloudapi response failed. accountID: %s, region: %s, err: %v",
 			enumor.HuaWei, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (s subnet) HuaWeiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get subnet map from db.
 	resourceDBMap, err := s.BatchGetSubnetMapFromDB(cts, req, enumor.HuaWei, "")
 	if err != nil {
-		logs.Errorf("[%s-subnet] batch get subnetdblist failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-subnet batch get subnetdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.HuaWei, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (s subnet) HuaWeiSubnetSync(cts *rest.Contexts) (interface{}, error) {
 	// batch sync vendor subnet list.
 	err = s.BatchSyncHuaWeiSubnetList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-subnet] compare api and subnetdblist failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-subnet compare api and subnetdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.HuaWei, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (s subnet) BatchGetHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.Reso
 
 		tmpList, tmpErr := cli.ListSubnet(cts.Kit, opt)
 		if tmpErr != nil {
-			logs.Errorf("[%s-subnet]batch get cloud api failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-subnet batch get cloud api failed. accountID: %s, region: %s, err: %v",
 				enumor.HuaWei, req.AccountID, req.Region, tmpErr)
 			return nil, tmpErr
 		}
@@ -219,7 +219,7 @@ func (s subnet) BatchSyncHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.Res
 			Subnets: updateResources,
 		}
 		if err = s.cs.DataService().HuaWei.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-			logs.Errorf("[%s-subnet]batch compare db update failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-subnet batch compare db update failed. accountID: %s, region: %s, err: %v",
 				enumor.HuaWei, req.AccountID, req.Region, err)
 			return err
 		}
@@ -229,7 +229,7 @@ func (s subnet) BatchSyncHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.Res
 	if len(createResources) > 0 {
 		err = s.batchCreateHuaWeiSubnet(cts, createResources)
 		if err != nil {
-			logs.Errorf("[%s-subnet]batch compare db create failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-subnet batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.HuaWei, req.AccountID, req.Region, err)
 			return err
 		}
@@ -246,7 +246,7 @@ func (s subnet) BatchSyncHuaWeiSubnetList(cts *rest.Contexts, req *hcservice.Res
 	if len(deleteIDs) > 0 {
 		err = s.BatchDeleteSubnetByIDs(cts, deleteIDs)
 		if err != nil {
-			logs.Errorf("[%s-subnet]batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, "+
+			logs.Errorf("%s-subnet batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, "+
 				"err: %v", enumor.HuaWei, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}

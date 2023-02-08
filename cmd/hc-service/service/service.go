@@ -31,6 +31,7 @@ import (
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/firewall"
+	hcRegion "hcm/cmd/hc-service/service/region"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
 	"hcm/cmd/hc-service/service/vpc"
@@ -147,6 +148,7 @@ func (s *Service) apiSet() *restful.Container {
 	firewall.InitFirewallService(c)
 	vpc.InitVpcService(c)
 	subnet.InitSubnetService(c)
+	hcRegion.InitRegionService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

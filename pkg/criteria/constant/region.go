@@ -17,34 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package constant
 
-import (
-	"hcm/pkg/rest"
+const (
+	// AwsDefaultRegion defines default value for aws's region.
+	AwsDefaultRegion = "ap-northeast-1"
+	// TCloudStateDisable defines disable value for tcloud region state
+	TCloudStateDisable = "UNAVAILABLE"
+	// AwsStateDisable If the Region is not enabled, the output includes the following
+	// https://docs.aws.amazon.com/general/latest/gr/rande-manage.html
+	AwsStateDisable = "not-opted-in"
+	// GcpStateDisable defines disable value for gcp region state
+	GcpStateDisable = "DOWN"
 )
-
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
-	Region   *RegionClient
-}
-
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-		Region:     NewRegionClient(client),
-	}
-}
