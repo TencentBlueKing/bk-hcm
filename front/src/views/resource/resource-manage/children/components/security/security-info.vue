@@ -24,19 +24,24 @@ const {
 
 const settingInfo = [
   {
-    name: t('账号'),
-    value: '我的账号',
-    prop: 'account_id',
-  },
-  {
-    name: t('资源ID'),
+    name: 'ID',
     value: '100',
     prop: 'id',
+  },
+  {
+    name: t('账号 ID'),
+    value: '我的账号',
+    prop: 'account_id',
   },
   {
     name: t('资源名称'),
     value: '100',
     prop: 'name',
+  },
+  {
+    name: t('云资源ID'),
+    value: '100',
+    prop: 'cloud_id',
   },
   {
     name: t('云厂商'),

@@ -30,3 +30,8 @@ export enum HuaweiSecurityRuleEnum {
   allow = '允许',
   deny = '拒绝',
 }
+
+export enum AzureSecurityRuleEnum {
+  Allow = '允许',
+  Deny = '拒绝',
+}

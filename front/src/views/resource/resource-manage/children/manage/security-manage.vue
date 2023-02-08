@@ -167,6 +167,7 @@ const groupColumns = [
         {
           text: true,
           theme: 'primary',
+          disabled: data.bk_biz_id !== -1,
           onClick() {
             router.push({
               name: 'resourceDetail',
@@ -175,6 +176,7 @@ const groupColumns = [
               },
               query: {
                 id: data.id,
+                vendor: data.vendor,
               },
             });
           },
@@ -186,7 +188,7 @@ const groupColumns = [
     },
   },
   {
-    label: t('资源 ID'),
+    label: t('账号 ID'),
     field: 'account_id',
     sort: true,
   },
@@ -241,6 +243,7 @@ const groupColumns = [
             Button,
             {
               text: true,
+              disabled: data.bk_biz_id !== -1,
               theme: 'primary',
               onClick() {
                 router.push({
@@ -264,6 +267,7 @@ const groupColumns = [
             Button,
             {
               class: 'ml10',
+              disabled: data.bk_biz_id !== -1,
               text: true,
               theme: 'primary',
               onClick() {
@@ -293,6 +297,7 @@ const gcpColumns = [
         {
           text: true,
           theme: 'primary',
+          disabled: data.bk_biz_id !== -1,
           onClick() {
             router.push({
               name: 'resourceDetail',
@@ -408,6 +413,7 @@ const gcpColumns = [
             {
               text: true,
               theme: 'primary',
+              disabled: data.bk_biz_id !== -1,
               onClick() {
                 router.push({
                   name: 'resourceDetail',
@@ -429,6 +435,7 @@ const gcpColumns = [
             {
               class: 'ml10',
               text: true,
+              disabled: data.bk_biz_id !== -1,
               theme: 'primary',
               onClick() {
                 securityHandleShowDelete([data.id]);
@@ -467,7 +474,7 @@ const handleConfirm = (bizId: number) => {
 };
 
 const isRowSelectEnable = ({ row }: DoublePlainObject) => {
-  return !row.assigned;
+  return row.bk_biz_id === -1;
 };
 </script>
 
@@ -529,6 +536,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
       :pagination="state.pagination"
       :columns="gcpColumns"
       :data="state.datas"
+      :is-row-select-enable="isRowSelectEnable"
       @page-limit-change="state.handlePageSizeChange"
       @page-value-change="state.handlePageChange"
       @column-sort="state.handleSort"

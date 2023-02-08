@@ -91,7 +91,8 @@ export enum CloudType {
 
 export enum AccountType {
   resource = '资源账号',
-  register = '登记账号',
+  registration = '登记账号',
+  security_audit = '安全审计账号'
 }
 
 export enum SiteType {

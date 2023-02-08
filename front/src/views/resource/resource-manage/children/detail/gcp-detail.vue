@@ -90,6 +90,10 @@ const gcpFields = [
     prop: 'account_id',
   },
   {
+    name: t('云资源ID'),
+    prop: 'cloud_id',
+  },
+  {
     name: t('业务'),
     prop: 'bk_biz_id',
   },

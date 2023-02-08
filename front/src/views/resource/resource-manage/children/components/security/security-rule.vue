@@ -19,7 +19,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 
-import { SecurityRuleEnum, HuaweiSecurityRuleEnum } from '@/typings';
+import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
 import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
@@ -174,7 +174,10 @@ const inColumns = [
         [
           data.cloud_address_group_id || data.cloud_address_id
           || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
-          || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix,
+          || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
+          || data.source_address_prefix || data.source_address_prefixs || data.cloud_source_security_group_ids
+          || data.destination_address_prefix || data.destination_address_prefixes
+          || data.cloud_destination_security_group_ids,
         ],
       );
     },
@@ -198,7 +201,9 @@ const inColumns = [
         'span',
         {},
         [
-          props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : SecurityRuleEnum[data.action],
+          // eslint-disable-next-line no-nested-ternary
+          props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : props.vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
+            : SecurityRuleEnum[data.action],
         ],
       );
     },
@@ -263,7 +268,10 @@ const outColumns = [
         [
           data.cloud_address_group_id || data.cloud_address_id
           || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
-          || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix,
+          || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
+          || data.source_address_prefix || data.source_address_prefixs || data.cloud_source_security_group_ids
+          || data.destination_address_prefix || data.destination_address_prefixes
+          || data.cloud_destination_security_group_ids,
         ],
       );
     },
@@ -287,7 +295,9 @@ const outColumns = [
         'span',
         {},
         [
-          props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : SecurityRuleEnum[data.action],
+          // eslint-disable-next-line no-nested-ternary
+          props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : props.vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
+            : SecurityRuleEnum[data.action],
         ],
       );
     },
