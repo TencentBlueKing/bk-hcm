@@ -39,7 +39,7 @@ func InitRegionService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("BatchSyncRegion", "POST", "/vendors/{vendor}/regions/sync", v.BatchSyncRegion)
+	h.Add("RegionSync", "POST", "/vendors/{vendor}/regions/sync", v.RegionSync)
 
 	h.Load(cap.WebService)
 }
@@ -49,8 +49,8 @@ type region struct {
 	cs *client.ClientSet
 }
 
-// BatchSyncRegion batch sync region.
-func (r *region) BatchSyncRegion(cts *rest.Contexts) (interface{}, error) {
+// RegionSync region sync.
+func (r *region) RegionSync(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	err := vendor.Validate()
 	if err != nil {
