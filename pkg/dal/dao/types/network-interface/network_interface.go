@@ -17,42 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package networkinterface
 
 import (
-	"hcm/pkg/rest"
+	tableni "hcm/pkg/dal/table/cloud/network-interface"
 )
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account    *AccountClient
-	Firewall   *FirewallClient
-	Vpc        *VpcClient
-	Subnet     *SubnetClient
-	Region     *RegionClient
-	Zone       *ZoneClient
-	Cvm        *CvmClient
-	RouteTable *RouteTableClient
-	NetworkInterface *NetworkInterfaceClient
-}
-
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-		Region:     NewRegionClient(client),
-		Zone:       NewZoneClient(client),
-		Cvm:        NewCloudCvmClient(client),
-		RouteTable: NewRouteTableClient(client),
-		NetworkInterface: NewNetworkInterfaceClient(client),
-	}
+// ListNetworkInterfaceDetails list network interface details.
+type ListNetworkInterfaceDetails struct {
+	Count   uint64                          `json:"count,omitempty"`
+	Details []tableni.NetworkInterfaceTable `json:"details,omitempty"`
 }

@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
 	"hcm/pkg/dal/dao/cloud/cvm"
+	networkinterface "hcm/pkg/dal/dao/cloud/network-interface"
 	"hcm/pkg/dal/dao/cloud/region"
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
@@ -114,6 +115,7 @@ type Set interface {
 	RouteTable() routetable.RouteTable
 	Route() routetable.Route
 	Application() application.Application
+	NetworkInterface() networkinterface.NetworkInterface
 
 	Txn() *Txn
 }
@@ -402,6 +404,14 @@ func (s *set) Audit() audit.Interface {
 // Application return application dao.
 func (s *set) Application() application.Application {
 	return &application.ApplicationDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// NetworkInterface return network interface dao.
+func (s *set) NetworkInterface() networkinterface.NetworkInterface {
+	return &networkinterface.NetworkInterfaceDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

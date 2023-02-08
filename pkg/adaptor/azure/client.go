@@ -225,3 +225,32 @@ func (c *clientSet) publicIPAddressesClient() (*armnetwork.PublicIPAddressesClie
 	}
 	return client, nil
 }
+
+func (c *clientSet) networkInterfaceClient() (*armnetwork.InterfacesClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init network interface credential failed, err: %v", err)
+	}
+
+	client, err := armnetwork.NewInterfacesClient(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init network interface client failed, err: %v", err)
+	}
+
+	return client, nil
+}
+
+func (c *clientSet) networkInterfaceIPConfigClient() (*armnetwork.InterfaceIPConfigurationsClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init network interface ipconfig credential failed, err: %v", err)
+	}
+
+	client, err := armnetwork.NewInterfaceIPConfigurationsClient(c.credential.CloudSubscriptionID, credential,
+		nil)
+	if err != nil {
+		return nil, fmt.Errorf("init network interface ipconfig client failed, err: %v", err)
+	}
+
+	return client, nil
+}

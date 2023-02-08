@@ -17,42 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package networkinterface
 
 import (
+	"hcm/cmd/hc-service/service/capability"
+	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/rest"
 )
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account    *AccountClient
-	Firewall   *FirewallClient
-	Vpc        *VpcClient
-	Subnet     *SubnetClient
-	Region     *RegionClient
-	Zone       *ZoneClient
-	Cvm        *CvmClient
-	RouteTable *RouteTableClient
-	NetworkInterface *NetworkInterfaceClient
-}
-
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-		Region:     NewRegionClient(client),
-		Zone:       NewZoneClient(client),
-		Cvm:        NewCloudCvmClient(client),
-		RouteTable: NewRouteTableClient(client),
-		NetworkInterface: NewNetworkInterfaceClient(client),
+// InitNetworkInterfaceService initial the network interface service
+func InitNetworkInterfaceService(cap *capability.Capability) {
+	n := &networkInterfaceAdaptor{
+		adaptor: cap.CloudAdaptor,
+		dataCli: cap.ClientSet.DataService(),
 	}
+
+	h := rest.NewHandler()
+
+	// network interface sync
+	h.Add("AzureNetworkInterfaceSync", "POST", "/vendors/azure/network_interfaces/sync",
+		n.AzureNetworkInterfaceSync)
+	h.Add("GcpNetworkInterfaceSync", "POST", "/vendors/gcp/network_interfaces/sync",
+		n.GcpNetworkInterfaceSync)
+	h.Add("HuaWeiNetworkInterfaceSync", "POST", "/vendors/huawei/network_interfaces/sync",
+		n.HuaWeiNetworkInterfaceSync)
+
+	h.Load(cap.WebService)
+}
+
+type networkInterfaceAdaptor struct {
+	adaptor *cloudclient.CloudAdaptorClient
+	dataCli *dataservice.Client
 }

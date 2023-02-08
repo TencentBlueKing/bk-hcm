@@ -108,6 +108,8 @@ const (
 
 	// ApplicationTable is application table name
 	ApplicationTable Name = "application"
+	// NetworkInterfaceTable is network interface table's name.
+	NetworkInterfaceTable Name = "network_interface"
 )
 
 // Validate whether the table name is valid or not.
@@ -158,6 +160,7 @@ var TableMap = map[Name]struct{}{
 	ZoneTable:                    {},
 	CvmTable:                     {},
 	ApplicationTable:             {},
+	NetworkInterfaceTable:        {},
 }
 
 // Register 注册表名

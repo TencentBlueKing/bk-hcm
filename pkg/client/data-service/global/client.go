@@ -39,6 +39,7 @@ type Client struct {
 	Cvm           *CvmClient
 	RouteTable    *RouteTableClient
 	SGCvmRel      *SGCvmRelClient
+	NetworkInterface *NetworkInterfaceClient
 
 	Application *ApplicationClient
 }
@@ -64,6 +65,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		Cvm:           NewCloudCvmClient(client),
 		RouteTable:    NewRouteTableClient(client),
 		SGCvmRel:      NewCloudSGCvmRelClient(client),
+		NetworkInterface: NewNetworkInterfaceClient(client),
 
 		Application: NewApplicationClient(client),
 	}

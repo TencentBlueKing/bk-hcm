@@ -17,42 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package cloudserver
 
 import (
-	"hcm/pkg/rest"
+	coreni "hcm/pkg/api/core/cloud/network-interface"
 )
 
-// Client is a gcp api client
-type Client struct {
-	*restClient
-	Account    *AccountClient
-	Firewall   *FirewallClient
-	Vpc        *VpcClient
-	Subnet     *SubnetClient
-	Region     *RegionClient
-	Zone       *ZoneClient
-	Cvm        *CvmClient
-	RouteTable *RouteTableClient
-	NetworkInterface *NetworkInterfaceClient
-}
+// -------------------------- List --------------------------
 
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new gcp api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Account:    NewAccountClient(client),
-		Firewall:   NewFirewallClient(client),
-		Vpc:        NewVpcClient(client),
-		Subnet:     NewSubnetClient(client),
-		Region:     NewRegionClient(client),
-		Zone:       NewZoneClient(client),
-		Cvm:        NewCloudCvmClient(client),
-		RouteTable: NewRouteTableClient(client),
-		NetworkInterface: NewNetworkInterfaceClient(client),
-	}
+// NetworkInterfaceListResult defines list network interface result.
+type NetworkInterfaceListResult struct {
+	Count   uint64                        `json:"count"`
+	Details []coreni.BaseNetworkInterface `json:"details"`
 }

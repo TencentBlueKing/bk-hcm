@@ -35,6 +35,7 @@ import (
 	"hcm/cmd/hc-service/service/eip"
 	"hcm/cmd/hc-service/service/firewall"
 	"hcm/cmd/hc-service/service/image"
+	networkinterface "hcm/cmd/hc-service/service/network-interface"
 	"hcm/cmd/hc-service/service/region"
 	routetable "hcm/cmd/hc-service/service/route-table"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
@@ -161,6 +162,7 @@ func (s *Service) apiSet() *restful.Container {
 	cvm.InitCvmService(c)
 	image.InitImageService(c)
 	routetable.InitRouteTableService(c)
+	networkinterface.InitNetworkInterfaceService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

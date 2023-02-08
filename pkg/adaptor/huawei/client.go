@@ -30,8 +30,11 @@ import (
 	dcs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2"
 	dcsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2/region"
 	ecs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2"
+	ecsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/region"
 	eip "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2"
 	eipregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2/region"
+	eipv3 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v3"
+	eipv3region "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v3/region"
 	evs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2"
 	iam "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3"
 	iamregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/region"
@@ -156,7 +159,7 @@ func (c *clientSet) ecsClient(regionID string) (cli *ecs.EcsClient, err error) {
 
 	client := ecs.NewEcsClient(
 		ecs.EcsClientBuilder().
-			WithRegion(vpcregion.ValueOf(regionID)).
+			WithRegion(ecsregion.ValueOf(regionID)).
 			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
@@ -185,6 +188,16 @@ func (c *clientSet) eipClient(regionID string) (*eip.EipClient, error) {
 	return eip.NewEipClient(
 		eip.EipClientBuilder().
 			WithRegion(eipregion.ValueOf(regionID)).
+			WithCredential(c.credentials).
+			WithHttpConfig(config.DefaultHttpConfig()).
+			Build(),
+	), nil
+}
+
+func (c *clientSet) eipV3Client(regionID string) (*eipv3.EipClient, error) {
+	return eipv3.NewEipClient(
+		eipv3.EipClientBuilder().
+			WithRegion(eipv3region.ValueOf(regionID)).
 			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build(),

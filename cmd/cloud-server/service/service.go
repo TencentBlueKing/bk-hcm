@@ -40,6 +40,7 @@ import (
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
 	routetable "hcm/cmd/cloud-server/service/route-table"
+	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	securitygroup "hcm/cmd/cloud-server/service/security-group"
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
@@ -221,6 +222,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	application.InitApplicationService(c, bkHcmUrl)
 
 	audit.InitService(c)
+	networkinterface.InitNetworkInterfaceService(c)
 
 	go sync.SyncTiming(c.ApiClient)
 

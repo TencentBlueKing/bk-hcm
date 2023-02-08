@@ -179,3 +179,8 @@ func genRouteTableResource(a *meta.ResourceAttribute) (client.ActionID, []client
 func genRouteResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return genResourceResource(a)
 }
+
+// genNetworkInterfaceResource generate network interface related iam resource.
+func genNetworkInterfaceResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genResourceResource(a)
+}

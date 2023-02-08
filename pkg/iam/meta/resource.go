@@ -55,4 +55,6 @@ const (
 	RecycleBin ResourceType = "recycle_bin"
 	// Audit defines audit log's hcm auth resource type
 	Audit ResourceType = "audit"
+	// NetworkInterface defines eip hcm network_interface resource type
+	NetworkInterface ResourceType = "network_interface"
 )

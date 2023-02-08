@@ -52,6 +52,8 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return table.CvmTable, nil
 	case RouteTableCloudResType:
 		return table.RouteTableTable, nil
+	case NetworkInterfaceCloudResType:
+		return table.NetworkInterfaceTable, nil
 	default:
 		return "", fmt.Errorf("%s does not have a corresponding table name", rt)
 	}
@@ -59,12 +61,13 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 
 // CloudResourceType define all cloud resource type.
 const (
-	AccountCloudResType       CloudResourceType = "account"
-	SecurityGroupCloudResType CloudResourceType = "security_group"
-	VpcCloudResType           CloudResourceType = "vpc"
-	SubnetCloudResType        CloudResourceType = "subnet"
-	EipCloudResType           CloudResourceType = "eip"
-	CvmCloudResType           CloudResourceType = "cvm"
-	DiskCloudResType          CloudResourceType = "disk"
-	RouteTableCloudResType    CloudResourceType = "route_table"
+	AccountCloudResType          CloudResourceType = "account"
+	SecurityGroupCloudResType    CloudResourceType = "security_group"
+	VpcCloudResType              CloudResourceType = "vpc"
+	SubnetCloudResType           CloudResourceType = "subnet"
+	EipCloudResType              CloudResourceType = "eip"
+	CvmCloudResType              CloudResourceType = "cvm"
+	DiskCloudResType             CloudResourceType = "disk"
+	RouteTableCloudResType       CloudResourceType = "route_table"
+	NetworkInterfaceCloudResType CloudResourceType = "network_interface"
 )

@@ -149,6 +149,7 @@ func (a AwsListOption) Validate() error {
 type GcpListOption struct {
 	ResourceIDs []string `json:"resource_ids,omitempty"`
 	Page        *GcpPage `json:"page,omitempty"`
+	Zone        string   `json:"zone,omitempty"`
 }
 
 // Validate gcp list option.
@@ -177,7 +178,8 @@ func (a GcpListOption) Validate() error {
 // AzureListOption defines basic azure list options.
 // TODO confirm resource group product form
 type AzureListOption struct {
-	ResourceGroupName string `json:"resource_group_name"`
+	ResourceGroupName    string `json:"resource_group_name"`
+	NetworkInterfaceName string `json:"network_interface_name"`
 }
 
 // Validate aws page.

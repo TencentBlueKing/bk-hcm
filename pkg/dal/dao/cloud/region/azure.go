@@ -21,6 +21,7 @@ package region
 
 import (
 	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
@@ -94,35 +95,35 @@ func (a AzureRegionDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.L
 }
 
 // CreateWithTx azure region with tx.
-func (a AzureRegionDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []*region.AzureRegionTable) ([]string, error) {
+func (a AzureRegionDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*region.AzureRegionTable) ([]string, error) {
 
-	ids, err := a.IDGen.Batch(kt, table.AzureRegionTable, len(regions))
+	ids, err := a.IDGen.Batch(kt, table.AzureRegionTable, len(models))
 	if err != nil {
 		return nil, err
 	}
-	for index := range regions {
-		regions[index].ID = ids[index]
+	for index := range models {
+		models[index].ID = ids[index]
 	}
 
-	for _, region := range regions {
-		if err := region.InsertValidate(); err != nil {
+	for _, item := range models {
+		if err := item.InsertValidate(); err != nil {
 			return nil, err
 		}
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AzureRegionTable,
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
 		region.AzureRegionColumns.ColumnExpr(), region.AzureRegionColumns.ColonNameExpr())
 
-	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, regions); err != nil {
-		logs.Errorf("insert %s failed, err: %v, rid: %s", table.AzureRegionTable, err, kt.Rid)
-		return nil, fmt.Errorf("insert %s failed, err: %v", table.AzureRegionTable, err)
+	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+		logs.Errorf("insert %s failed, err: %v, rid: %s", models[0].TableName(), err, kt.Rid)
+		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
 	}
 
 	return ids, nil
 }
 
 // Update azure region.
-func (a AzureRegionDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *region.AzureRegionTable) error {
+func (a AzureRegionDao) Update(_ *kit.Kit, _ *filter.Expression, _ *region.AzureRegionTable) error {
 	return nil
 }
 

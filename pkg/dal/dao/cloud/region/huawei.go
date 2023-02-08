@@ -21,6 +21,7 @@ package region
 
 import (
 	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
@@ -143,8 +144,8 @@ func (h HuaWeiRegionDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []*regio
 		regions[index].ID = ids[index]
 	}
 
-	for _, region := range regions {
-		if err := region.InsertValidate(); err != nil {
+	for _, item := range regions {
+		if err := item.InsertValidate(); err != nil {
 			return nil, err
 		}
 	}
