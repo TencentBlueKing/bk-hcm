@@ -22,15 +22,11 @@ package constant
 const (
 	// AwsDefaultRegion defines default value for aws's region.
 	AwsDefaultRegion = "ap-northeast-1"
-	// TCloudStateEnable defines enable value for tcloud region state
-	TCloudStateEnable = "AVAILABLE"
 	// TCloudStateDisable defines disable value for tcloud region state
 	TCloudStateDisable = "UNAVAILABLE"
 	// AwsStateDisable If the Region is not enabled, the output includes the following
 	// https://docs.aws.amazon.com/general/latest/gr/rande-manage.html
 	AwsStateDisable = "not-opted-in"
-	// GcpStateEnable defines enable value for gcp region state
-	GcpStateEnable = "UP"
 	// GcpStateDisable defines disable value for gcp region state
 	GcpStateDisable = "DOWN"
 )

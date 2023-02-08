@@ -30,7 +30,6 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	protoDsRegion "hcm/pkg/api/data-service/cloud/region"
 	protoHcRegion "hcm/pkg/api/hc-service/region"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -71,6 +70,8 @@ func (r region) GcpSyncRegion(cts *rest.Contexts, vendor enumor.Vendor) error {
 			enumor.Gcp, req.AccountID, err)
 		return err
 	}
+
+	logs.Infof("[%s-region] region sync success. accountID: %s", enumor.Gcp, req.AccountID)
 
 	return nil
 }
@@ -137,11 +138,6 @@ func (r region) BatchGetGcpRegionMapFromDB(cts *rest.Contexts, req *protoHcRegio
 					Op:    filter.Equal.Factory(),
 					Value: vendor,
 				},
-				&filter.AtomRule{
-					Field: "status",
-					Op:    filter.Equal.Factory(),
-					Value: constant.GcpStateEnable,
-				},
 			},
 		}
 		dbQueryReq := &protoDsRegion.GcpRegionListReq{
@@ -206,9 +202,11 @@ func (r region) BatchSyncGcpRegionList(cts *rest.Contexts, req *protoHcRegion.Gc
 
 	// delete resource data
 	deleteIDs := make([]string, 0)
-	for _, resourceItem := range resourceDBMap {
-		if _, ok := existIDMap[resourceItem.ID]; !ok {
-			deleteIDs = append(deleteIDs, resourceItem.ID)
+	if len(existIDMap) > 0 {
+		for _, resourceItem := range resourceDBMap {
+			if _, ok := existIDMap[resourceItem.RegionID]; !ok {
+				deleteIDs = append(deleteIDs, resourceItem.ID)
+			}
 		}
 	}
 
@@ -246,6 +244,7 @@ func (r region) filterGcpRegionList(req *protoHcRegion.GcpRegionSyncReq,
 		if resourceInfo, ok := resourceDBMap[item.RegionID]; ok {
 			if resourceInfo.RegionID == item.RegionID && resourceInfo.RegionName == item.RegionName &&
 				resourceInfo.Status == item.RegionState {
+				existIDMap[item.RegionID] = true
 				continue
 			}
 
@@ -257,7 +256,7 @@ func (r region) filterGcpRegionList(req *protoHcRegion.GcpRegionSyncReq,
 				SelfLink:   item.SelfLink,
 			}
 			updateResources = append(updateResources, tmpRes)
-			existIDMap[resourceInfo.ID] = true
+			existIDMap[item.RegionID] = true
 		} else {
 			// need add resource data
 			tmpRes := protoDsRegion.GcpRegionBatchCreate{
@@ -268,6 +267,7 @@ func (r region) filterGcpRegionList(req *protoHcRegion.GcpRegionSyncReq,
 				SelfLink:   item.SelfLink,
 			}
 			createResources = append(createResources, tmpRes)
+			existIDMap[resourceInfo.RegionID] = true
 		}
 	}
 
