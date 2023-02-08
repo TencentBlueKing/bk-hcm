@@ -47,7 +47,7 @@ func InitSecurityGroupService(cap *capability.Capability) {
 
 	h.Add("SyncAwsSecurityGroup", "POST", "/vendors/aws/security_groups/sync", sg.SyncAwsSecurityGroup)
 	h.Add("UpdateAwsSecurityGroup", "PATCH", "/vendors/aws/security_groups/{id}", sg.CreateAwsSecurityGroup)
-	h.Add("UpdateAwsSecurityGroup", "PATCH", "/vendors/aws/security_groups/{id}", sg.DeleteAwsSecurityGroup)
+	h.Add("DeleteAwsSecurityGroup", "DELETE", "/vendors/aws/security_groups/{id}", sg.DeleteAwsSecurityGroup)
 	h.Add("BatchCreateAwsSGRule", "POST", "/vendors/aws/security_groups/{security_group_id}/rules/batch/create",
 		sg.BatchCreateAwsSGRule)
 	h.Add("UpdateAwsSGRule", "PUT", "/vendors/aws/security_groups/{security_group_id}/rules/{id}",
