@@ -52,26 +52,26 @@ func (r region) GcpSyncRegion(cts *rest.Contexts, vendor enumor.Vendor) error {
 	// batch get region list from cloudapi.
 	list, err := r.BatchGetGcpRegionList(cts, req)
 	if err != nil {
-		logs.Errorf("[%s-region] request cloudapi response failed. accountID: %s, err: %v",
+		logs.Errorf("%s-region request cloudapi response failed. accountID: %s, err: %v",
 			enumor.Gcp, req.AccountID, err)
 		return err
 	}
 
 	resourceDBMap, err := r.BatchGetGcpRegionMapFromDB(cts, req, vendor)
 	if err != nil {
-		logs.Errorf("[%s-region] batch get vpcdblist failed. accountID: %s, err: %v",
+		logs.Errorf("%s-region batch get vpcdblist failed. accountID: %s, err: %v",
 			enumor.Gcp, req.AccountID, err)
 		return err
 	}
 
 	err = r.BatchSyncGcpRegionList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-region] compare api and dblist failed. accountID: %s, err: %v",
+		logs.Errorf("%s-region compare api and dblist failed. accountID: %s, err: %v",
 			enumor.Gcp, req.AccountID, err)
 		return err
 	}
 
-	logs.Infof("[%s-region] region sync success. accountID: %s", enumor.Gcp, req.AccountID)
+	logs.Infof("%s-region region sync success. accountID: %s", enumor.Gcp, req.AccountID)
 
 	return nil
 }
@@ -101,7 +101,7 @@ func (r region) BatchGetGcpRegionList(cts *rest.Contexts, req *protoHcRegion.Gcp
 
 		tmpList, tmpErr := cli.ListRegion(cts.Kit, opt)
 		if tmpErr != nil {
-			logs.Errorf("[%s-region] batch get cloud api failed. accountID: %s, nextToken: %s, err: %v",
+			logs.Errorf("%s-region batch get cloud api failed. accountID: %s, nextToken: %s, err: %v",
 				enumor.Gcp, req.AccountID, nextToken, tmpErr)
 			return nil, tmpErr
 		}
@@ -146,7 +146,7 @@ func (r region) BatchGetGcpRegionMapFromDB(cts *rest.Contexts, req *protoHcRegio
 		}
 		dbList, err := r.cs.DataService().Gcp.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 		if err != nil {
-			logs.Errorf("[%s-region]batch get regionlist db error. accountID: %s, offset: %d, "+
+			logs.Errorf("%s-region batch get regionlist db error. accountID: %s, offset: %d, "+
 				"limit: %d, err: %v", vendor, req.AccountID, offset, count, err)
 			return nil, err
 		}
@@ -182,7 +182,7 @@ func (r region) BatchSyncGcpRegionList(cts *rest.Contexts, req *protoHcRegion.Gc
 			Regions: updateResources,
 		}
 		if err = r.cs.DataService().Gcp.Region.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-			logs.Errorf("[%s-region] batch compare db update failed. accountID: %s, err: %v",
+			logs.Errorf("%s-region batch compare db update failed. accountID: %s, err: %v",
 				enumor.Gcp, req.AccountID, err)
 			return err
 		}
@@ -194,7 +194,7 @@ func (r region) BatchSyncGcpRegionList(cts *rest.Contexts, req *protoHcRegion.Gc
 			Regions: createResources,
 		}
 		if _, err = r.cs.DataService().Gcp.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-			logs.Errorf("[%s-region] batch compare db create failed. accountID: %s, err: %v",
+			logs.Errorf("%s-region batch compare db create failed. accountID: %s, err: %v",
 				enumor.Gcp, req.AccountID, err)
 			return err
 		}
@@ -218,7 +218,7 @@ func (r region) BatchSyncGcpRegionList(cts *rest.Contexts, req *protoHcRegion.Gc
 			return err
 		}
 		if err != nil {
-			logs.Errorf("[%s-region] batch compare db delete failed. accountID: %s, deleteIDs: %v, "+
+			logs.Errorf("%s-region batch compare db delete failed. accountID: %s, deleteIDs: %v, "+
 				"err: %v", enumor.Gcp, req.AccountID, deleteIDs, err)
 			return err
 		}

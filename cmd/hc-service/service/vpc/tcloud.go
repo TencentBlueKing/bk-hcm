@@ -136,7 +136,7 @@ func (v vpc) TCloudVpcSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get vpc list from cloudapi.
 	list, err := v.BatchGetTCloudVpcList(cts, req)
 	if err != nil {
-		logs.Errorf("[%s-vpc] request cloudapi response failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc request cloudapi response failed. accountID: %s, region: %s, err: %v",
 			enumor.TCloud, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (v vpc) TCloudVpcSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get vpc map from db.
 	resourceDBMap, err := v.BatchGetVpcMapFromDB(cts, req, enumor.TCloud)
 	if err != nil {
-		logs.Errorf("[%s-vpc] batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.TCloud, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (v vpc) TCloudVpcSync(cts *rest.Contexts) (interface{}, error) {
 	// batch sync vendor vpc list.
 	err = v.BatchSyncTcloudVpcList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-vpc] compare api and dblist failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc compare api and dblist failed. accountID: %s, region: %s, err: %v",
 			enumor.TCloud, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (v vpc) BatchGetTCloudVpcList(cts *rest.Contexts, req *hcservice.ResourceSy
 		}
 		tmpList, tmpErr := cli.ListVpc(cts.Kit, opt)
 		if tmpErr != nil {
-			logs.Errorf("[%s-vpc]batch get cloudapi failed. accountID: %s, region: %s, offset: %d, count: %d, "+
+			logs.Errorf("%s-vpc batch get cloudapi failed. accountID: %s, region: %s, offset: %d, count: %d, "+
 				"err: %v", enumor.TCloud, req.AccountID, req.Region, offset, count, tmpErr)
 			return nil, tmpErr
 		}
@@ -230,7 +230,7 @@ func (v vpc) BatchGetVpcMapFromDB(cts *rest.Contexts, req *hcservice.ResourceSyn
 		}
 		dbList, err := v.cs.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 		if err != nil {
-			logs.Errorf("[%s-vpc]batch get vpclist db error. accountID: %s, region: %s, offset: %d, limit: %d, "+
+			logs.Errorf("%s-vpc batch get vpclist db error. accountID: %s, region: %s, offset: %d, limit: %d, "+
 				"err: %v", vendor, req.AccountID, req.Region, offset, count, err)
 			return nil, err
 		}
@@ -266,7 +266,7 @@ func (v vpc) BatchSyncTcloudVpcList(cts *rest.Contexts, req *hcservice.ResourceS
 			Vpcs: updateResources,
 		}
 		if err = v.cs.DataService().TCloud.Vpc.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db update failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-vpc batch compare db update failed. accountID: %s, region: %s, err: %v",
 				enumor.TCloud, req.AccountID, req.Region, err)
 			return err
 		}
@@ -278,7 +278,7 @@ func (v vpc) BatchSyncTcloudVpcList(cts *rest.Contexts, req *hcservice.ResourceS
 			Vpcs: createResources,
 		}
 		if _, err = v.cs.DataService().TCloud.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db create failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-vpc batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.TCloud, req.AccountID, req.Region, err)
 			return err
 		}
@@ -295,7 +295,7 @@ func (v vpc) BatchSyncTcloudVpcList(cts *rest.Contexts, req *hcservice.ResourceS
 	if len(deleteIDs) > 0 {
 		err = v.BatchDeleteVpcByIDs(cts, deleteIDs)
 		if err != nil {
-			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID: %s, region: %s, deleteIDs: %v, "+
+			logs.Errorf("%s-vpc batch compare db delete failed. accountID: %s, region: %s, deleteIDs: %v, "+
 				"err: %v", enumor.TCloud, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}

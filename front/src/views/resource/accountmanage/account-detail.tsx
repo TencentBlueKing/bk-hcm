@@ -168,6 +168,7 @@ export default defineComponent({
             ],
           });
           break;
+          break;
         case 'tcloud':
           insertFormData = [
             {

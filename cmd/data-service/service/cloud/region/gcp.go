@@ -27,8 +27,6 @@ import (
 	protocore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
@@ -138,24 +136,6 @@ func (svc *regionSvc) BatchUpdateGcpRegion(cts *rest.Contexts) error {
 			logs.Errorf("update gcp region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return fmt.Errorf("update gcp region failed, err: %v", err)
 		}
-	}
-
-	return nil
-}
-
-// BatchForbiddenGcpRegionState batch forbidden regions state.
-func (svc *regionSvc) BatchForbiddenGcpRegionState(cts *rest.Contexts) error {
-	// update region state
-	updateRegion := &tableregion.GcpRegionTable{
-		Status:  constant.GcpStateDisable,
-		Reviser: cts.Kit.User,
-	}
-
-	err := svc.dao.GcpRegion().Update(cts.Kit,
-		tools.EqualExpression("vendor", enumor.Gcp), updateRegion)
-	if err != nil {
-		logs.Errorf("update gcp region state failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return fmt.Errorf("update gcp region state failed, err: %v", err)
 	}
 
 	return nil

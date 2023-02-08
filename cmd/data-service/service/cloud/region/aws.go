@@ -27,8 +27,6 @@ import (
 	protocore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -137,24 +135,6 @@ func (svc *regionSvc) BatchUpdateAwsRegion(cts *rest.Contexts) error {
 			logs.Errorf("update aws region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return fmt.Errorf("update aws region failed, err: %v", err)
 		}
-	}
-
-	return nil
-}
-
-// BatchForbiddenAwsRegionState batch forbidden regions state.
-func (svc *regionSvc) BatchForbiddenAwsRegionState(cts *rest.Contexts) error {
-	// update region state
-	updateRegion := &tableregion.AwsRegionTable{
-		Status:  constant.AwsStateDisable,
-		Reviser: cts.Kit.User,
-	}
-
-	err := svc.dao.AwsRegion().Update(cts.Kit,
-		tools.EqualExpression("vendor", enumor.Aws), updateRegion)
-	if err != nil {
-		logs.Errorf("update aws region state failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return fmt.Errorf("update aws region state failed, err: %v", err)
 	}
 
 	return nil

@@ -53,13 +53,13 @@ type Service struct {
 
 // NewService create a service instance.
 func NewService() (*Service, error) {
-	db, err := dao.NewDaoSet(cc.DataService().Database)
+	dao, err := dao.NewDaoSet(cc.DataService().Database)
 	if err != nil {
 		return nil, err
 	}
 
 	svr := &Service{
-		dao: db,
+		dao: dao,
 	}
 
 	return svr, nil

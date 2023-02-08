@@ -140,7 +140,7 @@ func (v vpc) HuaWeiVpcSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get vpc list from cloudapi
 	list, err := v.BatchGetHuaWeiVpcList(cts, req)
 	if err != nil {
-		logs.Errorf("[%s-vpc] request cloudapi response failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc request cloudapi response failed. accountID: %s, region: %s, err: %v",
 			enumor.HuaWei, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (v vpc) HuaWeiVpcSync(cts *rest.Contexts) (interface{}, error) {
 	// batch get vpc map from db.
 	resourceDBMap, err := v.BatchGetVpcMapFromDB(cts, req, enumor.HuaWei)
 	if err != nil {
-		logs.Errorf("[%s-vpc] batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.HuaWei, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (v vpc) HuaWeiVpcSync(cts *rest.Contexts) (interface{}, error) {
 	// batch sync vendor vpc list.
 	err = v.BatchSyncHuaWeiVpcList(cts, req, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("[%s-vpc] compare api and dblist failed. accountID: %s, region: %s, err: %v",
+		logs.Errorf("%s-vpc compare api and dblist failed. accountID: %s, region: %s, err: %v",
 			enumor.HuaWei, req.AccountID, req.Region, err)
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (v vpc) BatchGetHuaWeiVpcList(cts *rest.Contexts, req *hcservice.ResourceSy
 		}
 		tmpList, tmpErr := cli.ListVpc(cts.Kit, opt)
 		if tmpErr != nil {
-			logs.Errorf("[%s-vpc]batch get cloud api failed. accountID: %s, region: %s, marker: %s, err: %v",
+			logs.Errorf("%s-vpc batch get cloud api failed. accountID: %s, region: %s, marker: %s, err: %v",
 				enumor.HuaWei, req.AccountID, req.Region, nextMarker, tmpErr)
 			return nil, tmpErr
 		}
@@ -221,7 +221,7 @@ func (v vpc) BatchSyncHuaWeiVpcList(cts *rest.Contexts, req *hcservice.ResourceS
 			Vpcs: updateResources,
 		}
 		if err = v.cs.DataService().HuaWei.Vpc.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db update failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-vpc batch compare db update failed. accountID: %s, region: %s, err: %v",
 				enumor.HuaWei, req.AccountID, req.Region, err)
 			return err
 		}
@@ -233,7 +233,7 @@ func (v vpc) BatchSyncHuaWeiVpcList(cts *rest.Contexts, req *hcservice.ResourceS
 			Vpcs: createResources,
 		}
 		if _, err = v.cs.DataService().HuaWei.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-			logs.Errorf("[%s-vpc]batch compare db create failed. accountID: %s, region: %s, err: %v",
+			logs.Errorf("%s-vpc batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.HuaWei, req.AccountID, req.Region, err)
 			return err
 		}
@@ -250,7 +250,7 @@ func (v vpc) BatchSyncHuaWeiVpcList(cts *rest.Contexts, req *hcservice.ResourceS
 	if len(deleteIDs) > 0 {
 		err = v.BatchDeleteVpcByIDs(cts, deleteIDs)
 		if err != nil {
-			logs.Errorf("[%s-vpc]batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, err: %v",
+			logs.Errorf("%s-vpc batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, err: %v",
 				enumor.HuaWei, req.AccountID, req.Region, deleteIDs, err)
 			return err
 		}
