@@ -17,18 +17,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package securitygroup
 
 import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/audit"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -52,6 +55,7 @@ var _ TCloudSGRule = new(TCloudSGRuleDao)
 type TCloudSGRuleDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
+	Audit audit.Interface
 }
 
 // BatchCreateOrUpdateWithTx rule.
@@ -81,7 +85,67 @@ func (dao *TCloudSGRuleDao) BatchCreateOrUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, 
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.TCloudSecurityGroupRuleTable, err)
 	}
 
+	if err = dao.batchCreateAudit(kt, tx, rules); err != nil {
+		return nil, err
+	}
+
 	return ids, nil
+}
+
+func (dao *TCloudSGRuleDao) batchCreateAudit(kt *kit.Kit, tx *sqlx.Tx,
+	rules []*cloud.TCloudSecurityGroupRuleTable) error {
+
+	sgIDMap := make(map[string]bool, 0)
+	for _, rule := range rules {
+		sgIDMap[rule.SecurityGroupID] = true
+	}
+
+	sgIDs := make([]string, 0, len(sgIDMap))
+	for id, _ := range sgIDMap {
+		sgIDs = append(sgIDs, id)
+	}
+
+	idSgMap, err := listSecurityGroup(kt, dao.Orm, sgIDs)
+	if err != nil {
+		return err
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(rules))
+	for _, rule := range rules {
+		sg, exist := idSgMap[rule.SecurityGroupID]
+		if !exist {
+			return errf.Newf(errf.RecordNotFound, "security group: %s not found", rule.SecurityGroupID)
+		}
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      sg.ID,
+			CloudResID: sg.CloudID,
+			ResName:    sg.Name,
+			ResType:    enumor.SecurityGroupAuditResType,
+			Action:     enumor.Update,
+			BkBizID:    sg.BkBizID,
+			Vendor:     sg.Vendor,
+			AccountID:  sg.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: &tableaudit.ChildResAuditData{
+					ChildResType: enumor.SecurityGroupRuleAuditResType,
+					Action:       enumor.Create,
+					ChildRes:     rule,
+				},
+			},
+		})
+	}
+
+	if err = dao.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
 }
 
 // Update rule.

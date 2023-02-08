@@ -55,7 +55,7 @@ func (ad Audit) CloudResourceDeleteAudit(cts *rest.Contexts) (interface{}, error
 	// 根据分类后的删除信息，对所需要记录的审计信息进行查询
 	auditAll := make([]*tableaudit.AuditTable, 0, len(req.Deletes))
 	for resType, deletes := range deleteMap {
-		audits, err := ad.buildDeleteAuditInfo(cts.Kit, resType, deletes)
+		audits, err := ad.buildDeleteAuditInfo(cts.Kit, resType, req.ParentID, deletes)
 		if err != nil {
 			logs.Errorf("query delete audit info failed, err: %v, rid: %ad", err, cts.Kit.Rid)
 			return nil, err
@@ -73,14 +73,18 @@ func (ad Audit) CloudResourceDeleteAudit(cts *rest.Contexts) (interface{}, error
 	return nil, nil
 }
 
-func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceType,
+func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceType, parentID string,
 	deletes []protoaudit.CloudResourceDeleteInfo) ([]*tableaudit.AuditTable, error) {
 
 	var audits []*tableaudit.AuditTable
 	var err error
 	switch resType {
 	case enumor.SecurityGroupAuditResType:
-		audits, err = ad.securityGroupDeleteAuditBuild(kt, deletes)
+		audits, err = ad.securityGroup.SecurityGroupDeleteAuditBuild(kt, deletes)
+	case enumor.SecurityGroupRuleAuditResType:
+		audits, err = ad.securityGroup.SecurityGroupRuleDeleteAuditBuild(kt, parentID, deletes)
+	case enumor.GcpFirewallRuleAuditResType:
+		audits, err = ad.firewall.FirewallRuleDeleteAuditBuild(kt, deletes)
 	case enumor.VpcCloudAuditResType:
 		audits, err = ad.vpcDeleteAuditBuild(kt, deletes)
 	case enumor.SubnetAuditResType:

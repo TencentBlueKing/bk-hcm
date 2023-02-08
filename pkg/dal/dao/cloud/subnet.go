@@ -115,7 +115,7 @@ func (s *subnetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.S
 			ResType:    enumor.SubnetAuditResType,
 			Action:     enumor.Create,
 			BkBizID:    one.BkBizID,
-			Vendor:     string(one.Vendor),
+			Vendor:     one.Vendor,
 			AccountID:  one.AccountID,
 			Operator:   kt.User,
 			Source:     kt.GetRequestSource(),

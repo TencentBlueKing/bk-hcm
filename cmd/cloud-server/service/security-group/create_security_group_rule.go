@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
@@ -43,6 +44,14 @@ func (svc securityGroupSvc) CreateSecurityGroupRule(cts *rest.Contexts) (interfa
 
 	sgBaseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		enumor.SecurityGroupCloudResType, sgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroupRule, Action: meta.Create,
+		ResourceID: sgBaseInfo.AccountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +106,7 @@ func (svc securityGroupSvc) createTCloudSGRule(cts *rest.Contexts, sgBaseInfo *t
 
 	if len(req.IngressRuleSet) != 0 {
 		createReq.IngressRuleSet = make([]hcproto.TCloudSGRuleCreate, 0, len(req.IngressRuleSet))
-		for _, one := range req.EgressRuleSet {
+		for _, one := range req.IngressRuleSet {
 			createReq.IngressRuleSet = append(createReq.IngressRuleSet, hcproto.TCloudSGRuleCreate{
 				Protocol:                   one.Protocol,
 				Port:                       one.Port,
@@ -151,7 +160,7 @@ func (svc securityGroupSvc) createAwsSGRule(cts *rest.Contexts, sgBaseInfo *type
 
 	if len(req.IngressRuleSet) != 0 {
 		createReq.IngressRuleSet = make([]hcproto.AwsSGRuleCreate, 0, len(req.IngressRuleSet))
-		for _, one := range req.EgressRuleSet {
+		for _, one := range req.IngressRuleSet {
 			createReq.IngressRuleSet = append(createReq.IngressRuleSet, hcproto.AwsSGRuleCreate{
 				IPv4Cidr:                   one.IPv4Cidr,
 				IPv6Cidr:                   one.IPv6Cidr,
@@ -283,7 +292,7 @@ func (svc securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *ty
 
 	if len(req.IngressRuleSet) != 0 {
 		createReq.IngressRuleSet = make([]hcproto.AzureSGRuleCreate, 0, len(req.IngressRuleSet))
-		for _, one := range req.EgressRuleSet {
+		for _, one := range req.IngressRuleSet {
 			createReq.IngressRuleSet = append(createReq.IngressRuleSet, hcproto.AzureSGRuleCreate{
 				Name:                             one.Name,
 				Memo:                             one.Memo,

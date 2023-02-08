@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -63,6 +64,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.UpdateSecurityGroupRule)
 	h.Add("DeleteSecurityGroupRule", http.MethodDelete,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteSecurityGroupRule)
+	h.Add("GetAzureDefaultSGRule", http.MethodGet, "/vendors/azure/default/security_groups/rules/{type}",
+		svc.GetAzureDefaultSGRule)
 
 	h.Load(c.WebService)
 }
@@ -84,6 +87,14 @@ func (svc securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, e
 		enumor.SecurityGroupCloudResType, id)
 	if err != nil {
 		logs.Errorf("get resource vendor failed, id: %s, err: %s, rid: %s", id, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: meta.Find,
+		ResourceID: baseInfo.AccountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
 		return nil, err
 	}
 
@@ -128,6 +139,14 @@ func (svc securityGroupSvc) UpdateSecurityGroup(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: meta.Update,
+		ResourceID: baseInfo.AccountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
 	// create update audit.
 	updateFields, err := converter.StructToMap(req)
 	if err != nil {
@@ -139,20 +158,31 @@ func (svc securityGroupSvc) UpdateSecurityGroup(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
-	updateReq := &hcproto.SecurityGroupUpdateReq{
-		Name: req.Name,
-		Memo: req.Memo,
-	}
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
+		updateReq := &hcproto.SecurityGroupUpdateReq{
+			Name: req.Name,
+			Memo: req.Memo,
+		}
 		err = svc.client.HCService().TCloud.SecurityGroup.UpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
 			id, updateReq)
 
 	case enumor.HuaWei:
+		updateReq := &hcproto.SecurityGroupUpdateReq{
+			Name: req.Name,
+			Memo: req.Memo,
+		}
 		err = svc.client.HCService().HuaWei.SecurityGroup.UpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
 			id, updateReq)
 
 	case enumor.Azure:
+		if len(req.Name) != 0 {
+			return nil, errf.Newf(errf.InvalidParameter, "azure resource name not support update")
+		}
+
+		updateReq := &hcproto.AzureSecurityGroupUpdateReq{
+			Memo: req.Memo,
+		}
 		err = svc.client.HCService().Azure.SecurityGroup.UpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
 			id, updateReq)
 
@@ -176,6 +206,27 @@ func (svc securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (interf
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.SecurityGroupCloudResType,
+		IDs:          req.IDs,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		basicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// authorize
+	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
+	for _, info := range basicInfoMap {
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup,
+			Action: meta.Delete, ResourceID: info.AccountID}})
+	}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	if err != nil {
+		return nil, err
 	}
 
 	// create delete audit.
@@ -237,6 +288,18 @@ func (svc securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{}, 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// list authorized instances
+	authOpt := &meta.ListAuthResInput{Type: meta.SecurityGroup, Action: meta.Find}
+	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	if err != nil {
+		return nil, err
+	}
+
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
+	req.Filter = expr
+
 	dataReq := &dataproto.SecurityGroupListReq{
 		Filter: req.Filter,
 		Page:   req.Page,
@@ -263,6 +326,27 @@ func (svc securityGroupSvc) AssignSecurityGroupToBiz(cts *rest.Contexts) (interf
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// authorize
+	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.SecurityGroupCloudResType,
+		IDs:          req.SecurityGroupIDs,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		basicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
+	for _, info := range basicInfoMap {
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup,
+			Action: meta.Assign, ResourceID: info.AccountID}})
+	}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	if err != nil {
+		return nil, err
 	}
 
 	listReq := &dataproto.SecurityGroupListReq{

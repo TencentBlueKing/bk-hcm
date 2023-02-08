@@ -55,7 +55,7 @@ func (az *Azure) CreateSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleCrea
 	}
 
 	if len(opt.IngressRuleSet) != 0 {
-		rules, nameMap = convSecurityGroupRule(armnetwork.SecurityRuleDirectionOutbound, opt.IngressRuleSet)
+		rules, nameMap = convSecurityGroupRule(armnetwork.SecurityRuleDirectionInbound, opt.IngressRuleSet)
 	}
 	rules = append(sg.Properties.SecurityRules, rules...)
 

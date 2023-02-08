@@ -41,4 +41,10 @@ const (
 	RecycleBin ResourceType = "recycle_bin"
 	// Audit defines audit log's hcm auth resource type
 	Audit ResourceType = "audit"
+	// SecurityGroup defines security group's hcm auth resource type
+	SecurityGroup ResourceType = "security_group"
+	// SecurityGroupRule defines security group rule's hcm auth resource type
+	SecurityGroupRule ResourceType = "security_group_rule"
+	// GcpFirewallRule defines gcp firewall rule's hcm auth resource type
+	GcpFirewallRule ResourceType = "gcp_firewall_rule"
 )

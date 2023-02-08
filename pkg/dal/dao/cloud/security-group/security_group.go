@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package securitygroup
 
 import (
 	"fmt"
@@ -104,7 +104,7 @@ func (s SecurityGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, sgs []*clo
 			},
 		})
 	}
-	if err = s.Audit.BatchCreate(kt, audits); err != nil {
+	if err = s.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
 		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
@@ -247,4 +247,23 @@ func (s SecurityGroupDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Ex
 	}
 
 	return nil
+}
+
+// TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
+func listSecurityGroup(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]cloud.SecurityGroupTable, error) {
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, cloud.SecurityGroupColumns.FieldsNamedExpr(nil),
+		table.SecurityGroupTable)
+
+	sgs := make([]cloud.SecurityGroupTable, 0)
+	if err := orm.Do().Select(kt.Ctx, &sgs, sql, map[string]interface{}{"ids": ids}); err != nil {
+		return nil, err
+	}
+
+	idSgMap := make(map[string]cloud.SecurityGroupTable, len(ids))
+	for _, sg := range sgs {
+		idSgMap[sg.ID] = sg
+	}
+
+	return idSgMap, nil
 }

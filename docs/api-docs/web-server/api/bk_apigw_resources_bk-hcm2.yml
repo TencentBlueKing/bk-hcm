@@ -160,31 +160,6 @@ paths:
           userVerifiedRequired: true
         disabledStages: [ ]
         descriptionEn:
-  /api/v1/cloud/security_groups/{id}:
-    delete:
-      operationId: delete_security_group
-      description: 删除安全组
-      tags:
-        - SecurityGroup
-      responses:
-        default:
-          description: ''
-      x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
-        matchSubpath: false
-        backend:
-          type: HTTP
-          method: delete
-          path: /api/v1/cloud/security_groups/{id}
-          matchSubpath: false
-          timeout: 0
-          upstreams: { }
-          transformHeaders: { }
-        authConfig:
-          userVerifiedRequired: true
-        disabledStages: [ ]
-        descriptionEn:
     get:
       operationId: get_security_group
       description: 查询安全组详情

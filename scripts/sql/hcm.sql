@@ -219,8 +219,8 @@ create table if not exists `aws_security_group_rule`
     `ipv4_cidr`                      varchar(255)          default null,
     `ipv6_cidr`                      varchar(255)          default null,
     `memo`                           varchar(60)           default null,
-    `from_port`                      int(1) unsigned       default 0,
-    `to_port`                        int(1) unsigned       default 0,
+    `from_port`                      bigint(1) unsigned    default 0,
+    `to_port`                        bigint(1) unsigned    default 0,
     `protocol`                       varchar(10)           default null,
     `cloud_prefix_list_id`           varchar(255)          default null,
     `cloud_target_security_group_id` varchar(255)          default null,
@@ -231,7 +231,7 @@ create table if not exists `aws_security_group_rule`
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`)
 ) engine = innodb
-  default charset = utf8mb4;
+    default charset = utf8mb4;
 
 create table if not exists `huawei_security_group_rule`
 (

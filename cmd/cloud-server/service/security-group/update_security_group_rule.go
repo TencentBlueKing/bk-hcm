@@ -25,7 +25,10 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 // UpdateSecurityGroupRule update security group rule.
@@ -47,6 +50,14 @@ func (svc securityGroupSvc) UpdateSecurityGroupRule(cts *rest.Contexts) (interfa
 
 	sgBaseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		enumor.SecurityGroupCloudResType, sgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroupRule, Action: meta.Update,
+		ResourceID: sgBaseInfo.AccountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +89,18 @@ func (svc securityGroupSvc) updateTCloudSGRule(cts *rest.Contexts, sgBaseInfo *t
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// create update audit.
+	updateFields, err := converter.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	err = svc.audit.ChildResUpdateAudit(cts.Kit, enumor.SecurityGroupRuleAuditResType, sgBaseInfo.ID, id, updateFields)
+	if err != nil {
+		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	updateReq := &hcproto.TCloudSGRuleUpdateReq{
 		Protocol:                   req.Protocol,
 		Port:                       req.Port,
@@ -107,6 +130,18 @@ func (svc securityGroupSvc) updateAwsSGRule(cts *rest.Contexts, sgBaseInfo *type
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// create update audit.
+	updateFields, err := converter.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	err = svc.audit.ChildResUpdateAudit(cts.Kit, enumor.SecurityGroupRuleAuditResType, sgBaseInfo.ID, id, updateFields)
+	if err != nil {
+		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	updateReq := &hcproto.AwsSGRuleUpdateReq{
 		IPv4Cidr:                   req.IPv4Cidr,
 		IPv6Cidr:                   req.IPv6Cidr,
@@ -134,6 +169,18 @@ func (svc securityGroupSvc) updateAzureSGRule(cts *rest.Contexts, sgBaseInfo *ty
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// create update audit.
+	updateFields, err := converter.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	err = svc.audit.ChildResUpdateAudit(cts.Kit, enumor.SecurityGroupRuleAuditResType, sgBaseInfo.ID, id, updateFields)
+	if err != nil {
+		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	updateReq := &hcproto.AzureSGRuleUpdateReq{

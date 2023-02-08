@@ -23,7 +23,7 @@
 | 参数名称  | 参数类型        | 必选  | 描述                                         |
 |-------|-------------|-----|--------------------------------------------|
 | field | string      | 是   | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍 |
-| op    | enum string | 是   | 操作符（枚举值：eq、neq、gt、gte、le、lte、in、nin）       |
+| op    | enum string | 是   | 操作符（枚举值：eq、neq、gt、gte、le、lte、in、nin、cs、cis）       |
 | value | 可变类型        | 是   | 查询条件Value值                                 |
 
 ##### rules 表达式说明：

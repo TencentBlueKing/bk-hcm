@@ -17,25 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package core
+package audit
 
-import (
-	"hcm/pkg/rest"
-)
+import "hcm/pkg/criteria/enumor"
 
-// BatchCreateResp ...
-type BatchCreateResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *BatchCreateResult `json:"data"`
+// ChildResAuditData define child resource audit data.
+type ChildResAuditData struct {
+	ChildResType enumor.AuditResourceType `json:"child_res_type"`
+	Action       enumor.AuditAction       `json:"action"`
+	ChildRes     interface{}              `json:"child_res"`
 }
 
-// BatchCreateResult ...
-type BatchCreateResult struct {
-	IDs []string `json:"ids"`
-}
-
-// ListResult define list result.
-type ListResult struct {
-	Count   uint64        `json:"count,omitempty"`
-	Details []interface{} `json:"details,omitempty"`
+// AssociatedOperationAudit define associated operation audit.
+type AssociatedOperationAudit struct {
+	AsstResType enumor.AuditResourceType `json:"asst_res_type"`
+	Action      enumor.AuditAction       `json:"action"`
+	AsstResID   string                   `json:"asst_res_id"`
 }

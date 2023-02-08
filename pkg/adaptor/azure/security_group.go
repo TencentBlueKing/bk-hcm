@@ -66,41 +66,6 @@ func (az *Azure) CreateSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupO
 	return &resp.SecurityGroup, nil
 }
 
-// UpdateSecurityGroup update security group.
-// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
-func (az *Azure) UpdateSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupOption) error {
-
-	if opt == nil {
-		return errf.New(errf.InvalidParameter, "security group update option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := az.clientSet.securityGroupClient()
-	if err != nil {
-		return fmt.Errorf("new security group client failed, err: %v", err)
-	}
-
-	sg := armnetwork.SecurityGroup{
-		Location: &opt.Region,
-	}
-	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.Name, sg, nil)
-	if err != nil {
-		logs.Errorf("request to BeginCreateOrUpdate failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	_, err = poller.PollUntilDone(kt.Ctx, nil)
-	if err != nil {
-		logs.Errorf("pull the BeginCreateOrUpdate result failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	return nil
-}
-
 // DeleteSecurityGroup delete security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/delete?tabs=HTTP
 func (az *Azure) DeleteSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupOption) error {

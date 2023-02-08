@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
@@ -30,11 +31,16 @@ import (
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // InitFirewallService initial the security group service
@@ -42,12 +48,15 @@ func InitFirewallService(cap *capability.Capability) {
 	svc := &firewallSvc{
 		client:     cap.ApiClient,
 		authorizer: cap.Authorizer,
+		audit:      cap.Audit,
 	}
 
 	h := rest.NewHandler()
-	h.Add("DeleteGcpFirewallRule", http.MethodDelete, "/vendors/gcp/firewalls/rules/{id}", svc.DeleteGcpFirewallRule)
+	h.Add("BatchDeleteGcpFirewallRule", http.MethodDelete, "/vendors/gcp/firewalls/rules/batch",
+		svc.BatchDeleteGcpFirewallRule)
 	h.Add("UpdateGcpFirewallRule", http.MethodPut, "/vendors/gcp/firewalls/rules/{id}", svc.UpdateGcpFirewallRule)
 	h.Add("ListGcpFirewallRule", http.MethodPost, "/vendors/gcp/firewalls/rules/list", svc.ListGcpFirewallRule)
+	h.Add("GetGcpFirewallRule", http.MethodGet, "/vendors/gcp/firewalls/rules/{id}", svc.GetGcpFirewallRule)
 	h.Add("AssignGcpFirewallRuleToBiz", http.MethodPost, "/vendors/gcp/firewalls/rules/assign/bizs",
 		svc.AssignGcpFirewallRuleToBiz)
 
@@ -57,18 +66,60 @@ func InitFirewallService(cap *capability.Capability) {
 type firewallSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+	audit      audit.Interface
 }
 
-// DeleteGcpFirewallRule delete gcp firewallSvc rule.
-func (svc *firewallSvc) DeleteGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	id := cts.PathParameter("id").String()
-	if len(id) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "id is required")
+// BatchDeleteGcpFirewallRule batch delete gcp firewallSvc rule.
+func (svc *firewallSvc) BatchDeleteGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.GcpFirewallRuleBatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
 	}
 
-	if err := svc.client.HCService().Gcp.Firewall.DeleteFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), id); err != nil {
-		logs.Errorf("delete firewall rule failed, err: %v, id: %s, rid: %s", err, id, cts.Kit.Rid)
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listReq := &dataproto.GcpFirewallRuleListReq{
+		Field:  []string{"account_id"},
+		Filter: tools.ContainersExpression("id", req.IDs),
+		Page:   core.DefaultBasePage,
+	}
+	listResp, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	if err != nil {
 		return nil, err
+	}
+
+	// authorize
+	authRes := make([]meta.ResourceAttribute, 0, len(listResp.Details))
+	for _, one := range listResp.Details {
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule,
+			Action: meta.Delete, ResourceID: one.AccountID}})
+	}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	if err != nil {
+		return nil, err
+	}
+
+	// create delete audit.
+	if err := svc.audit.ResDeleteAudit(cts.Kit, enumor.GcpFirewallRuleAuditResType, req.IDs); err != nil {
+		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	successIDs := make([]string, 0)
+	for _, id := range req.IDs {
+		if err := svc.client.HCService().Gcp.Firewall.DeleteFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), id); err != nil {
+			return core.BatchDeleteResp{
+				Succeeded: successIDs,
+				Failed: &core.FailedInfo{
+					ID:    id,
+					Error: err.Error(),
+				},
+			}, errf.NewFromErr(errf.PartialFailed, err)
+		}
+
+		successIDs = append(successIDs, id)
 	}
 
 	return nil, nil
@@ -90,6 +141,30 @@ func (svc *firewallSvc) UpdateGcpFirewallRule(cts *rest.Contexts) (interface{}, 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	accountID, err := svc.queryAccountID(cts.Kit, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule, Action: meta.Update,
+		ResourceID: accountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	// create update audit.
+	updateFields, err := converter.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = svc.audit.ResUpdateAudit(cts.Kit, enumor.GcpFirewallRuleAuditResType, id, updateFields); err != nil {
+		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	updateReq := &hcproto.GcpFirewallRuleUpdateReq{
 		Memo:              req.Memo,
 		Priority:          req.Priority,
@@ -101,13 +176,32 @@ func (svc *firewallSvc) UpdateGcpFirewallRule(cts *rest.Contexts) (interface{}, 
 		DestinationRanges: req.DestinationRanges,
 		Disabled:          req.Disabled,
 	}
-	err := svc.client.HCService().Gcp.Firewall.UpdateFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
+	err = svc.client.HCService().Gcp.Firewall.UpdateFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), id, updateReq)
 	if err != nil {
 		logs.Errorf("update firewall rule failed, err: %v, id: %s, req: %v, rid: %s", err, id, updateReq, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+func (svc *firewallSvc) queryAccountID(kt *kit.Kit, ruleID string) (string, error) {
+	listReq := &dataproto.GcpFirewallRuleListReq{
+		Field:  []string{"account_id"},
+		Filter: tools.EqualExpression("id", ruleID),
+		Page:   core.DefaultBasePage,
+	}
+	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list firewall rule failed, err: %v, id: %s, rid: %s", err, ruleID, kt.Rid)
+		return "", err
+	}
+
+	if len(result.Details) == 0 {
+		return "", errf.Newf(errf.RecordNotFound, "gcp firewall rule: %s not found", ruleID)
+	}
+
+	return result.Details[0].AccountID, nil
 }
 
 // ListGcpFirewallRule list gcp firewall rule.
@@ -120,6 +214,18 @@ func (svc *firewallSvc) ListGcpFirewallRule(cts *rest.Contexts) (interface{}, er
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
+	// list authorized instances
+	authOpt := &meta.ListAuthResInput{Type: meta.GcpFirewallRule, Action: meta.Find}
+	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	if err != nil {
+		return nil, err
+	}
+
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
+	req.Filter = expr
 
 	listReq := &dataproto.GcpFirewallRuleListReq{
 		Filter: req.Filter,
@@ -143,6 +249,10 @@ func (svc *firewallSvc) AssignGcpFirewallRuleToBiz(cts *rest.Contexts) (interfac
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if err := svc.assignAuth(cts.Kit, req.FirewallRuleIDs); err != nil {
+		return nil, err
 	}
 
 	listReq := &dataproto.GcpFirewallRuleListReq{
@@ -179,6 +289,13 @@ func (svc *firewallSvc) AssignGcpFirewallRuleToBiz(cts *rest.Contexts) (interfac
 		return nil, fmt.Errorf("gcp firewall rule(ids=%v) already assigned", ids)
 	}
 
+	// create assign audit.
+	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.GcpFirewallRuleAuditResType, req.FirewallRuleIDs, req.BkBizID)
+	if err != nil {
+		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	rule := make([]dataproto.GcpFirewallRuleBatchUpdate, 0, len(req.FirewallRuleIDs))
 	for _, id := range req.FirewallRuleIDs {
 		rule = append(rule, dataproto.GcpFirewallRuleBatchUpdate{
@@ -198,4 +315,63 @@ func (svc *firewallSvc) AssignGcpFirewallRuleToBiz(cts *rest.Contexts) (interfac
 	}
 
 	return nil, nil
+}
+
+func (svc *firewallSvc) assignAuth(kt *kit.Kit, rules []string) error {
+	listReq := &dataproto.GcpFirewallRuleListReq{
+		Field:  []string{"account_id"},
+		Filter: tools.ContainersExpression("id", rules),
+		Page:   core.DefaultBasePage,
+	}
+	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list firewall rule failed, err: %v, ids: %s, rid: %s", err, rules, kt.Rid)
+		return err
+	}
+
+	authRes := make([]meta.ResourceAttribute, 0, len(result.Details))
+	for _, info := range result.Details {
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule,
+			Action: meta.Assign, ResourceID: info.AccountID}})
+	}
+	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetGcpFirewallRule get gcp firewall rule.
+func (svc *firewallSvc) GetGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	id := cts.PathParameter("id").String()
+
+	accountID, err := svc.queryAccountID(cts.Kit, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule, Action: meta.Find,
+		ResourceID: accountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	listReq := &dataproto.GcpFirewallRuleListReq{
+		Filter: tools.EqualExpression("id", id),
+		Page:   core.DefaultBasePage,
+	}
+	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list firewall rule failed, err: %v, id: %s, rid: %s", err, id, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(result.Details) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "gcp firewall rule: %s not found", id)
+	}
+
+	return result.Details[0], nil
 }

@@ -23,12 +23,15 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/audit"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -53,6 +56,7 @@ var _ GcpFirewallRule = new(GcpFirewallRuleDao)
 type GcpFirewallRuleDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
+	Audit audit.Interface
 }
 
 // BatchCreateWithTx rule.
@@ -77,6 +81,31 @@ func (g GcpFirewallRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []
 	if err = g.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rules); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.GcpFirewallRuleTable, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.GcpFirewallRuleTable, err)
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(rules))
+	for _, rule := range rules {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      rule.ID,
+			CloudResID: rule.CloudID,
+			ResName:    rule.Name,
+			ResType:    enumor.GcpFirewallRuleAuditResType,
+			Action:     enumor.Create,
+			BkBizID:    rule.BkBizID,
+			Vendor:     enumor.Gcp,
+			AccountID:  rule.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: rule,
+			},
+		})
+	}
+	if err = g.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	return ids, nil

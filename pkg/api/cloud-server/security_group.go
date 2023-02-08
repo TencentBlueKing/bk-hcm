@@ -52,7 +52,8 @@ type SecurityGroupListResult struct {
 
 // SecurityGroupRuleListReq security group rule list req.
 type SecurityGroupRuleListReq struct {
-	Page *core.PageWithoutSort `json:"page" validate:"required"`
+	Filter *filter.Expression    `json:"filter" validate:"required"`
+	Page   *core.PageWithoutSort `json:"page" validate:"required"`
 }
 
 // Validate security group list request.
