@@ -453,6 +453,8 @@ func validateFieldValue(v interface{}, typ enumor.ColumnType) error {
 		if err != nil {
 			return fmt.Errorf("parse time from value failed, err: %v", err)
 		}
+	case enumor.Json:
+		// json字段的类型任意都行，无法进行校验
 
 	default:
 		return fmt.Errorf("unsupported value type format: %s", typ)

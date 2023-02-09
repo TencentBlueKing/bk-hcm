@@ -90,3 +90,17 @@ expr := &Expression{
    },
 }
 ```
+
+4. 查询管理者中有Jim的数据。
+```go
+expr := &Expression{
+   Op: And,
+   Rules: []RuleFactory{
+      &AtomRule{
+         Field: "managers",
+         Op:    JSONContains.Factory(),
+         Value: "Jim",
+      }
+   },
+}
+```

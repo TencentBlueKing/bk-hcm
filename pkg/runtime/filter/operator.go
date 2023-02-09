@@ -50,6 +50,7 @@ func init() {
 
 	opFactory[JSONEqual.Factory()] = JSONEqualOp(JSONEqual)
 	opFactory[JSONIn.Factory()] = JSONInOp(JSONIn)
+	opFactory[JSONContains.Factory()] = JSONContainsOp(JSONContains)
 }
 
 const (
@@ -121,11 +122,17 @@ const (
 	// ContainsInsensitive operator match the value with
 	// regular expression with case-insensitive.
 	ContainsInsensitive OpType = "cis"
+)
 
+// reference: https://dev.mysql.com/doc/refman/5.7/en/json-function-reference.html
+const (
 	// JSONEqual is json field equal operator.
 	JSONEqual OpType = "json_eq"
 	// JSONIn is json field in operator.
 	JSONIn OpType = "json_in"
+	// JSONContains json array field contain operator.
+	// TODO: 目前仅支持JSON数组，不支持JSON中的数组字段。
+	JSONContains OpType = "json_contains"
 )
 
 // OpType defines the operators supported by mysql.
@@ -139,7 +146,7 @@ func (op OpType) Validate() error {
 		LessThan, LessThanEqual,
 		In, NotIn,
 		ContainsSensitive, ContainsInsensitive,
-		JSONEqual, JSONIn:
+		JSONEqual, JSONIn, JSONContains:
 	default:
 		return fmt.Errorf("unsupported operator: %s", op)
 	}
@@ -688,4 +695,34 @@ func jsonFiledSqlFormat(field string) (string, error) {
 
 	index := strings.Index(field, ".")
 	return fmt.Sprintf(`%s->>"$%s"`, field[0:index], field[index:]), nil
+}
+
+// JSONContainsOp is json array field contain operator
+type JSONContainsOp OpType
+
+// Name is json field in operator
+func (op JSONContainsOp) Name() OpType {
+	return JSONContains
+}
+
+// ValidateValue validate json field in's value
+func (op JSONContainsOp) ValidateValue(v interface{}, _ *ExprOption) error {
+	if !assert.IsBasicValue(v) {
+		return errors.New("invalid value field")
+	}
+	return nil
+}
+
+// SQLExprAndValue convert this operator's field and value to a mysql's sub query expression.
+func (op JSONContainsOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{}, error) {
+	if len(field) == 0 {
+		return "", nil, errors.New("field is empty")
+	}
+
+	if !assert.IsBasicValue(value) {
+		return "", nil, errors.New("invalid value field")
+	}
+
+	return fmt.Sprintf("JSON_CONTAINS(%s, JSON_ARRAY(%s%s))", field, SqlPlaceholder, field),
+		map[string]interface{}{field: value}, nil
 }
