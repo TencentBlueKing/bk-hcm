@@ -57,7 +57,7 @@ func (ad Audit) CloudResourceAssignAudit(cts *rest.Contexts) (interface{}, error
 	for resType, assigns := range assignMap {
 		audits, err := ad.buildAssignAuditInfo(cts.Kit, resType, assigns)
 		if err != nil {
-			logs.Errorf("query assign audit info failed, err: %v, rid: %ad", err, cts.Kit.Rid)
+			logs.Errorf("query assign audit info failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 
@@ -66,7 +66,7 @@ func (ad Audit) CloudResourceAssignAudit(cts *rest.Contexts) (interface{}, error
 
 	// 审计信息保存
 	if err := ad.dao.Audit().BatchCreate(cts.Kit, auditAll); err != nil {
-		logs.Errorf("batch create audit failed, err: %v, rid: %ad", err, cts.Kit.Rid)
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -74,8 +74,7 @@ func (ad Audit) CloudResourceAssignAudit(cts *rest.Contexts) (interface{}, error
 }
 
 func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceType,
-	assigns []protoaudit.CloudResourceAssignInfo,
-) ([]*tableaudit.AuditTable, error) {
+	assigns []protoaudit.CloudResourceAssignInfo) ([]*tableaudit.AuditTable, error) {
 	var audits []*tableaudit.AuditTable
 	var err error
 	switch resType {
@@ -89,6 +88,9 @@ func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.subnetAssignAuditBuild(kt, assigns)
 	case enumor.DiskAuditResType:
 		audits, err = ad.diskAssignAuditBuild(kt, assigns)
+	case enumor.CvmAuditResType:
+		audits, err = ad.cvm.CvmAssignAuditBuild(kt, assigns)
+
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}

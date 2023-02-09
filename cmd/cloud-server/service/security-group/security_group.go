@@ -274,15 +274,18 @@ func (svc securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (interf
 		case enumor.Azure:
 			err = svc.client.HCService().Azure.SecurityGroup.DeleteSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
 		default:
-			return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, baseInfo.Vendor)
-		}
-		if err != nil {
 			return core.BatchDeleteResp{
 				Succeeded: successIDs,
 				Failed: &core.FailedInfo{
 					ID:    id,
-					Error: err.Error(),
+					Error: errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, baseInfo.Vendor).Error(),
 				},
+			}, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, baseInfo.Vendor)
+		}
+		if err != nil {
+			return core.BatchDeleteResp{
+				Succeeded: successIDs,
+				Failed:    &core.FailedInfo{ID: id, Error: err.Error()},
 			}, errf.NewFromErr(errf.PartialFailed, err)
 		}
 

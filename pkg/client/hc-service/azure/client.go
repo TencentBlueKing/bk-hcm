@@ -31,6 +31,7 @@ type Client struct {
 	Subnet        *SubnetClient
 	Disk          *DiskClient
 	Image         *ImageClient
+	Cvm           *CvmClient
 }
 
 // NewClient create a new azure api client.
@@ -41,6 +42,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		Vpc:           NewVpcClient(client),
 		Subnet:        NewSubnetClient(client),
 		Disk:          NewCloudDiskClient(client),
+		Cvm:           NewCvmClient(client),
 		Image:         NewCloudPublicClient(client),
 	}
 }

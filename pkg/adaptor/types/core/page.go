@@ -111,3 +111,22 @@ func (h HuaWeiPage) Validate() error {
 
 	return nil
 }
+
+// HuaWeiOffsetPage define huawei offset page option.
+type HuaWeiOffsetPage struct {
+	Limit  *int32  `json:"limit,omitempty"`
+	Offset *string `json:"offset,omitempty"`
+}
+
+// Validate huawei offset page extension.
+func (h HuaWeiOffsetPage) Validate() error {
+	if h.Limit == nil {
+		return nil
+	}
+
+	if *h.Limit > 1000 {
+		return errf.New(errf.InvalidParameter, "huawei.pageSize should <= 1000")
+	}
+
+	return nil
+}

@@ -226,26 +226,26 @@
 
 #### data.details[n]
 
-| 参数名称                    | 参数类型   | 描述                                              |
-|-------------------------|--------|-------------------------------------------------|
-| id                      | uint64 | 审计ID                                            |
-| res_id                  | string | 资源ID                                            |
-| cloud_res_id            | string | 云资源ID                                           |
-| res_name                | string | 资源名称                                            |
-| res_type                | string | 资源类型                                            |
-| associated_res_id       | string | 关联资源ID                                          |
-| associated_cloud_res_id | string | 关联云资源ID                                         |
-| associated_res_name     | string | 关联资源名称                                          |
-| associated_res_type     | string | 关联资源类型                                          |
-| action                  | string | 动作（枚举值：create、update、delete）                    |
-| bk_biz_id               | string | 业务ID                                            |
-| vendor                  | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）            |
-| account_id              | string | 账号ID                                            |
-| operator                | string | 操作者                                             |
-| source                  | string | 请求来源（枚举值：api_call[API调用]、background_sync[后台同步]） |
-| rid                     | string | 请求ID                                            |
-| app_code                | string | 应用代码                                            |
-| created_at              | string | 创建时间                                            |
+| 参数名称                    | 参数类型   | 描述                                                                                                             |
+|-------------------------|--------|----------------------------------------------------------------------------------------------------------------|
+| id                      | uint64 | 审计ID                                                                                                           |
+| res_id                  | string | 资源ID                                                                                                           |
+| cloud_res_id            | string | 云资源ID                                                                                                          |
+| res_name                | string | 资源名称                                                                                                           |
+| res_type                | string | 资源类型（枚举值：account、security_group、vpc、subnet、disk、cvm、route_table、eip、gcp_firewall_rule、image、network_interface） |
+| associated_res_id       | string | 关联资源ID                                                                                                         |
+| associated_cloud_res_id | string | 关联云资源ID                                                                                                        |
+| associated_res_name     | string | 关联资源名称                                                                                                         |
+| associated_res_type     | string | 关联资源类型                                                                                                         |
+| action                  | string | 动作（枚举值：create、update、delete、assign、recycle、reboot、reload、start、stop、reset_pwd）                                 |
+| bk_biz_id               | string | 业务ID                                                                                                           |
+| vendor                  | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                                                                           |
+| account_id              | string | 账号ID                                                                                                           |
+| operator                | string | 操作者                                                                                                            |
+| source                  | string | 请求来源（枚举值：api_call[API调用]、background_sync[后台同步]）                                                                |
+| rid                     | string | 请求ID                                                                                                           |
+| app_code                | string | 应用代码                                                                                                           |
+| created_at              | string | 创建时间                                                                                                           |
 
 #### detail
 

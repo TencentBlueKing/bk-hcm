@@ -43,6 +43,8 @@ const (
 	SecurityGroupRule ResourceType = "security_group_rule"
 	// GcpFirewallRule defines gcp firewall rule's hcm auth resource type
 	GcpFirewallRule ResourceType = "gcp_firewall_rule"
+	// Cvm defines cvm hcm auth resource type
+	Cvm ResourceType = "cvm"
 	// RecycleBin defines recycle bin's hcm auth resource type
 	RecycleBin ResourceType = "recycle_bin"
 	// Audit defines audit log's hcm auth resource type

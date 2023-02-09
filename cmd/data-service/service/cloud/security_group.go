@@ -235,7 +235,7 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 		return nil, err
 	}
 
-	// TODO: 添加查询管理信息逻辑
+	// TODO: 添加查询关联信息逻辑
 
 	base := convTableToBaseSG(sgTable)
 	switch sgTable.Vendor {
@@ -328,7 +328,7 @@ func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Cont
 			}
 
 			if err := svc.dao.SecurityGroup().UpdateByIDWithTx(cts.Kit, txn, sg.ID, update); err != nil {
-				logs.Errorf("UpdateByIDWithTx failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				logs.Errorf("update security group by id failed, err: %v, id: %s, rid: %s", err, sg.ID, cts.Kit.Rid)
 				return nil, fmt.Errorf("update security group failed, err: %v", err)
 			}
 		}
@@ -342,11 +342,11 @@ func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Cont
 	return nil, nil
 }
 
-// listSecurityGroupExtension
 func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids []string) (
 	map[string]tabletype.JsonField, error) {
 
 	opt := &types.ListOption{
+		Fields: []string{"id", "extension"},
 		Filter: tools.ContainersExpression("id", ids),
 		Page: &core.BasePage{
 			Start: 1,
@@ -369,12 +369,12 @@ func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids [
 func getSecurityGroupByID(kt *kit.Kit, id string, svc *securityGroupSvc) (*tablecloud.SecurityGroupTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", id),
-		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
+		Page:   core.DefaultBasePage,
 	}
 	result, err := svc.dao.SecurityGroup().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list account failed, err: %v, rid: %s", kt.Rid)
-		return nil, fmt.Errorf("list account failed, err: %v", err)
+		logs.Errorf("list security group failed, err: %v, rid: %s", kt.Rid)
+		return nil, fmt.Errorf("list security group failed, err: %v", err)
 	}
 
 	if len(result.Details) != 1 {
@@ -386,6 +386,7 @@ func getSecurityGroupByID(kt *kit.Kit, id string, svc *securityGroupSvc) (*table
 
 func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.Vendor, svc *securityGroupSvc,
 	cts *rest.Contexts) (interface{}, error) {
+
 	req := new(protocloud.SecurityGroupBatchCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

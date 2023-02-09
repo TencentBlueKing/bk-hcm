@@ -30,6 +30,7 @@ type Client struct {
 	Vpc      *VpcClient
 	Subnet   *SubnetClient
 	Disk     *DiskClient
+	Cvm      *CvmClient
 	Image    *ImageClient
 }
 
@@ -41,6 +42,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		Vpc:      NewVpcClient(client),
 		Subnet:   NewSubnetClient(client),
 		Disk:     NewCloudDiskClient(client),
+		Cvm:      NewCvmClient(client),
 		Image:    NewCloudPublicClient(client),
 	}
 }

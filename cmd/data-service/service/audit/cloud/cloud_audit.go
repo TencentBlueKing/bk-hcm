@@ -20,6 +20,7 @@
 package cloud
 
 import (
+	"hcm/cmd/data-service/service/audit/cloud/cvm"
 	"hcm/cmd/data-service/service/audit/cloud/firewall"
 	securitygroup "hcm/cmd/data-service/service/audit/cloud/security-group"
 	"hcm/pkg/dal/dao"
@@ -31,6 +32,7 @@ func NewCloudAudit(dao dao.Set) *Audit {
 		dao:           dao,
 		securityGroup: securitygroup.NewSecurityGroup(dao),
 		firewall:      firewall.NewFirewall(dao),
+		cvm:           cvm.NewCvm(dao),
 	}
 }
 
@@ -39,4 +41,5 @@ type Audit struct {
 	dao           dao.Set
 	securityGroup *securitygroup.SecurityGroup
 	firewall      *firewall.Firewall
+	cvm           *cvm.Cvm
 }

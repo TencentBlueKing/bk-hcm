@@ -51,6 +51,8 @@ func InitAuditService(cap *capability.Capability) {
 		svc.cloudAudit.CloudResourceDeleteAudit)
 	h.Add("CloudResourceAssignAudit", http.MethodPost, "/cloud/resources/assign_audits/create",
 		svc.cloudAudit.CloudResourceAssignAudit)
+	h.Add("CloudResourceOperationAudit", http.MethodPost, "/cloud/resources/operation_audits/create",
+		svc.cloudAudit.CloudResourceOperationAudit)
 	h.Add("ListAudit", http.MethodPost, "/audits/list", svc.ListAudit)
 	h.Add("GetAudit", http.MethodGet, "/audits/{id}", svc.GetAudit)
 

@@ -124,6 +124,20 @@ func (c *clientSet) securityGroupClient() (*armnetwork.SecurityGroupsClient, err
 	return client, nil
 }
 
+func (c *clientSet) virtualMachineClient() (*armcompute.VirtualMachinesClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+
+	client, err := armcompute.NewVirtualMachinesClient(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init azure virtual machines client failed, err: %v", err)
+	}
+
+	return client, nil
+}
+
 func (c *clientSet) resourceGroupsClient() (*armresources.ResourceGroupsClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {

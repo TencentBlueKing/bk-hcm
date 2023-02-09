@@ -21,11 +21,12 @@ package tcloud
 
 import (
 	"context"
+	"net/http"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
-	"net/http"
 )
 
 // NewCloudDiskClient create a new disk api client.

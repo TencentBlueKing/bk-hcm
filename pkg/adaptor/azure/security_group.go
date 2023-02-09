@@ -116,7 +116,7 @@ func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupLis
 		return nil, fmt.Errorf("new security group client failed, err: %v", err)
 	}
 
-	securityGroups := []*armnetwork.SecurityGroup{}
+	securityGroups := make([]*armnetwork.SecurityGroup, 0)
 	pager := client.NewListPager(opt.ResourceGroupName, nil)
 	for pager.More() {
 		nextResult, err := pager.NextPage(kt.Ctx)

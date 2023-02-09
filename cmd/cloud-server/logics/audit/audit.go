@@ -43,6 +43,9 @@ type Interface interface {
 	ResBizAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, resIDs []string, bizID int64) error
 	// ResCloudAreaAssignAudit 资源分配到云区域审计
 	ResCloudAreaAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, opt []ResCloudAreaAssignOption) error
+	// ResBaseOperationAudit 资源基础操作审计，开机，关机等。
+	ResBaseOperationAudit(kt *kit.Kit, resType enumor.AuditResourceType, action protoaudit.OperationAction,
+		ids []string) error
 }
 
 var _ Interface = new(audit)
@@ -189,6 +192,30 @@ func (a audit) ChildResUpdateAudit(kt *kit.Kit, resType enumor.AuditResourceType
 	}
 	if err := a.dataCli.Global.Audit.CloudResourceUpdateAudit(kt.Ctx, kt.Header(), req); err != nil {
 		logs.Errorf("request dataservice CloudResourceUpdateAudit failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// ResBaseOperationAudit child resource operation audit.
+func (a audit) ResBaseOperationAudit(kt *kit.Kit, resType enumor.AuditResourceType, action protoaudit.OperationAction,
+	ids []string) error {
+
+	req := &protoaudit.CloudResourceOperationAuditReq{
+		Operations: make([]protoaudit.CloudResourceOperationInfo, 0, len(ids)),
+	}
+	for _, id := range ids {
+		req.Operations = append(req.Operations, protoaudit.CloudResourceOperationInfo{
+			ResType: resType,
+			ResID:   id,
+			Action:  action,
+		})
+	}
+
+	if err := a.dataCli.Global.Audit.CloudResourceOperationAudit(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("request dataservice CloudResourceOperationAudit failed, err: %v, req: %v, rid: %s", err,
+			req, kt.Rid)
 		return err
 	}
 

@@ -67,7 +67,7 @@ const (
 	VpcTable Name = "vpc"
 	// SubnetTable is subnet table's name.
 	SubnetTable Name = "subnet"
-	// HuaweiRegion is huawei region table's name.
+	// HuaWeiRegionTable is huawei region table's name.
 	HuaWeiRegionTable Name = "huawei_region"
 	// AzureRGTable is azure resource group table's name.
 	AzureRGTable Name = "azure_resource_group"
@@ -81,6 +81,8 @@ const (
 	AwsRegionTable Name = "aws_region"
 	// GcpRegionTable is gcp region table's name.
 	GcpRegionTable Name = "gcp_region"
+	// CvmTable is cvm table's name.
+	CvmTable Name = "cvm"
 )
 
 // Validate whether the table name is valid or not.
@@ -122,6 +124,7 @@ var TableMap = map[Name]bool{
 	GcpRegionTable:               true,
 	AwsRegionTable:               true,
 	TCloudRegionTable:            true,
+	CvmTable:                     true,
 }
 
 // Register 注册表名

@@ -57,7 +57,7 @@ func (ad Audit) CloudResourceUpdateAudit(cts *rest.Contexts) (interface{}, error
 	for resType, updates := range updateMap {
 		audits, err := ad.buildUpdateAuditInfo(cts.Kit, resType, req.ParentID, updates)
 		if err != nil {
-			logs.Errorf("query update audit info failed, err: %v, rid: %ad", err, cts.Kit.Rid)
+			logs.Errorf("query update audit info failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 
@@ -66,7 +66,7 @@ func (ad Audit) CloudResourceUpdateAudit(cts *rest.Contexts) (interface{}, error
 
 	// 审计信息保存
 	if err := ad.dao.Audit().BatchCreate(cts.Kit, auditAll); err != nil {
-		logs.Errorf("batch create audit failed, err: %v, rid: %ad", err, cts.Kit.Rid)
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -91,6 +91,9 @@ func (ad Audit) buildUpdateAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.vpcUpdateAuditBuild(kt, updates)
 	case enumor.SubnetAuditResType:
 		audits, err = ad.subnetUpdateAuditBuild(kt, updates)
+	case enumor.CvmAuditResType:
+		audits, err = ad.cvm.CvmUpdateAuditBuild(kt, updates)
+
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}

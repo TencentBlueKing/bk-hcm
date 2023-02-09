@@ -55,6 +55,8 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genRecycleBinResource(a)
 	case meta.Audit:
 		return genAuditResource(a)
+	case meta.Cvm:
+		return genCvmResource(a)
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm auth type: %s", a.Basic.Type)
 	}

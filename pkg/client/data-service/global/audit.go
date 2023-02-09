@@ -114,6 +114,30 @@ func (a *AuditClient) CloudResourceAssignAudit(ctx context.Context, h http.Heade
 	return nil
 }
 
+// CloudResourceOperationAudit cloud resource operation audit.
+func (a *AuditClient) CloudResourceOperationAudit(ctx context.Context, h http.Header,
+	request *protoaudit.CloudResourceOperationAuditReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/cloud/resources/operation_audits/create").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
 // ListAudit list audit.
 func (a *AuditClient) ListAudit(ctx context.Context, h http.Header, request *core.ListReq) (
 	*protoaudit.ListResult, error) {

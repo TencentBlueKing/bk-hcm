@@ -57,7 +57,7 @@ func (ad Audit) CloudResourceDeleteAudit(cts *rest.Contexts) (interface{}, error
 	for resType, deletes := range deleteMap {
 		audits, err := ad.buildDeleteAuditInfo(cts.Kit, resType, req.ParentID, deletes)
 		if err != nil {
-			logs.Errorf("query delete audit info failed, err: %v, rid: %ad", err, cts.Kit.Rid)
+			logs.Errorf("query delete audit info failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 
@@ -66,7 +66,7 @@ func (ad Audit) CloudResourceDeleteAudit(cts *rest.Contexts) (interface{}, error
 
 	// 审计信息保存
 	if err := ad.dao.Audit().BatchCreate(cts.Kit, auditAll); err != nil {
-		logs.Errorf("batch create audit failed, err: %v, rid: %ad", err, cts.Kit.Rid)
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -89,6 +89,9 @@ func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.vpcDeleteAuditBuild(kt, deletes)
 	case enumor.SubnetAuditResType:
 		audits, err = ad.subnetDeleteAuditBuild(kt, deletes)
+	case enumor.CvmAuditResType:
+		audits, err = ad.cvm.CvmDeleteAuditBuild(kt, deletes)
+
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}

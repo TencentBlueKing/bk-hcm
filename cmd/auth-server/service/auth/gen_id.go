@@ -82,7 +82,7 @@ func genResourceResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 	case meta.Assign:
 		// access resource secret keys is related to hcm account resource
 		return sys.ResourceAssign, []client.Resource{res}, nil
-	case meta.Manage, meta.Update, meta.Delete, meta.Create:
+	case meta.Update, meta.Delete, meta.Create:
 		// update resource is related to hcm account resource
 		return sys.ResourceManage, []client.Resource{res}, nil
 	default:
@@ -139,6 +139,32 @@ func genAuditResource(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 	switch a.Basic.Action {
 	case meta.Find:
 		return sys.AuditFind, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+func genCvmResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		// find resource is related to hcm account resource
+		return sys.ResourceFind, []client.Resource{res}, nil
+	case meta.Assign:
+		// access resource secret keys is related to hcm account resource
+		return sys.ResourceAssign, []client.Resource{res}, nil
+	case meta.Update, meta.Delete, meta.Create, meta.Stop, meta.Reboot, meta.Start, meta.ResetPwd:
+		// update resource is related to hcm account resource
+		return sys.ResourceManage, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}

@@ -113,6 +113,62 @@ func (req *CloudResourceAssignAuditReq) Validate() error {
 	return nil
 }
 
+// CloudResourceOperationInfo define cloud resource operation info.
+type CloudResourceOperationInfo struct {
+	ResType           enumor.AuditResourceType `json:"res_type" validate:"required"`
+	ResID             string                   `json:"res_id" validate:"required"`
+	Action            OperationAction          `json:"action" validate:"required"`
+	AssociatedResType enumor.AuditResourceType `json:"associated_res_type" validate:"omitempty"`
+	AssociatedResID   string                   `json:"associated_res_id" validate:"omitempty"`
+}
+
+// OperationAction define operation action.
+type OperationAction string
+
+// ConvAuditAction conv audit action from operation action.
+func (o *OperationAction) ConvAuditAction() (enumor.AuditAction, error) {
+	switch *o {
+	case Start:
+		return enumor.Start, nil
+	case Stop:
+		return enumor.Stop, nil
+	case Reboot:
+		return enumor.Reboot, nil
+	case ResetPwd:
+		return enumor.ResetPwd, nil
+
+	default:
+		return "", fmt.Errorf("action is not corresponding audit action")
+	}
+}
+
+const (
+	Start    OperationAction = "start"
+	Stop     OperationAction = "stop"
+	Reboot   OperationAction = "reboot"
+	ResetPwd OperationAction = "reset_pwd"
+	Mount    OperationAction = "mount"
+	UnMount  OperationAction = "unmount"
+)
+
+// CloudResourceOperationAuditReq define cloud resource operation audit req.
+type CloudResourceOperationAuditReq struct {
+	Operations []CloudResourceOperationInfo `json:"operations" validate:"required"`
+}
+
+// Validate cloud create audit request when cloud resource operate.
+func (req *CloudResourceOperationAuditReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if len(req.Operations) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("assign shuold <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // -------------------------- List --------------------------
 
 // ListResp defines list audit response.

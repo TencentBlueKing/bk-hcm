@@ -51,6 +51,10 @@ type SecurityGroupBatchCreate[Extension cloud.SecurityGroupExtension] struct {
 
 // Validate security group create request.
 func (req *SecurityGroupBatchCreateReq[T]) Validate() error {
+	if len(req.SecurityGroups) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
 	return validator.Validate.Struct(req)
 }
 

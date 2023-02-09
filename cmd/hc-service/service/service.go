@@ -30,6 +30,7 @@ import (
 	"hcm/cmd/hc-service/service/account"
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
+	"hcm/cmd/hc-service/service/cvm"
 	"hcm/cmd/hc-service/service/disk"
 	"hcm/cmd/hc-service/service/firewall"
 	"hcm/cmd/hc-service/service/image"
@@ -152,6 +153,7 @@ func (s *Service) apiSet() *restful.Container {
 	subnet.InitSubnetService(c)
 	region.InitRegionService(c)
 	disk.InitDiskService(c)
+	cvm.InitCvmService(c)
 	image.InitImageService(c)
 
 	return restful.NewContainer().Add(c.WebService)

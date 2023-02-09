@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
+	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/region"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
@@ -96,10 +97,11 @@ type Set interface {
 	HuaWeiRegion() region.HuaWeiRegion
 	AzureRG() region.AzureRG
 	AzureRegion() region.AzureRegion
-
 	TCloudRegion() region.TCloudRegion
 	AwsRegion() region.AwsRegion
 	GcpRegion() region.GcpRegion
+	Cvm() cvm.Interface
+
 	Txn() *Txn
 }
 
@@ -310,6 +312,15 @@ func (s *set) HuaWeiSGRule() securitygroup.HuaWeiSGRule {
 // AzureSGRule return azure security group rule dao.
 func (s *set) AzureSGRule() securitygroup.AzureSGRule {
 	return &securitygroup.AzureSGRuleDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// Cvm return cvm dao.
+func (s *set) Cvm() cvm.Interface {
+	return &cvm.Dao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,

@@ -75,19 +75,25 @@ const (
 	Recycle AuditAction = "recycle"
 	// Reboot 重启
 	Reboot AuditAction = "reboot"
-	// Reload 重装
-	Reload AuditAction = "reload"
+	// Start 开机
+	Start AuditAction = "start"
+	// Stop 关机
+	Stop AuditAction = "stop"
+	// ResetPwd 重置密码
+	ResetPwd AuditAction = "reset_pwd"
 )
 
 // AuditActionEnums op type map.
 var AuditActionEnums = map[AuditAction]struct{}{
-	Create:  {},
-	Update:  {},
-	Delete:  {},
-	Assign:  {},
-	Recycle: {},
-	Reboot:  {},
-	Reload:  {},
+	Create:   {},
+	Update:   {},
+	Delete:   {},
+	Assign:   {},
+	Recycle:  {},
+	Reboot:   {},
+	Start:    {},
+	Stop:     {},
+	ResetPwd: {},
 }
 
 // Exist judge enum value exist.

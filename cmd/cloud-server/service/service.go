@@ -31,6 +31,7 @@ import (
 	"hcm/cmd/cloud-server/service/account"
 	"hcm/cmd/cloud-server/service/audit"
 	"hcm/cmd/cloud-server/service/capability"
+	"hcm/cmd/cloud-server/service/cvm"
 	"hcm/cmd/cloud-server/service/disk"
 	"hcm/cmd/cloud-server/service/firewall"
 	"hcm/cmd/cloud-server/service/image"
@@ -175,6 +176,7 @@ func (s *Service) apiSet() *restful.Container {
 	sync.InitSyncService(c)
 	image.InitImageService(c)
 	audit.InitService(c)
+	cvm.InitCvmService(c)
 
 	go sync.SyncTiming(c.ApiClient)
 
