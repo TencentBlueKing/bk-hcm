@@ -19,7 +19,12 @@
 
 package disk
 
-import cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
+import (
+	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/validator"
+
+	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
+)
 
 // TCloudDiskChargeType 腾讯云盘计费模式
 var TCloudDiskChargeTypeEnum = struct {
@@ -71,4 +76,25 @@ type TCloudDiskChargePrepaid struct {
 	// RenewFlag 和 CurInstanceDeadline 取值参考 https://cloud.tencent.com/document/api/362/15669#DiskChargePrepaid
 	RenewFlag           *string
 	CurInstanceDeadline *string
+}
+
+// TCloudDiskListOption define tcloud disk list option.
+type TCloudDiskListOption struct {
+	Region string           `json:"region" validate:"required"`
+	Page   *core.TCloudPage `json:"page" validate:"omitempty"`
+}
+
+// Validate tcloud disk option.
+func (opt TCloudDiskListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return nil
+	}
+
+	if opt.Page != nil {
+		if err := opt.Page.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

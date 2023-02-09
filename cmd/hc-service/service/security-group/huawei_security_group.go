@@ -365,14 +365,12 @@ func (g *securityGroup) diffHWSecurityGroupSyncUpdate(cts *rest.Contexts, cloudM
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
 	}
 
-	if len(updateReq.SecurityGroups) <= 0 {
-		return nil
-	}
-
-	if err := g.dataCli.HuaWei.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
-		updateReq); err != nil {
-		logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return err
+	if len(updateReq.SecurityGroups) > 0 {
+		if err := g.dataCli.HuaWei.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
+			updateReq); err != nil {
+			logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
 	}
 
 	return nil

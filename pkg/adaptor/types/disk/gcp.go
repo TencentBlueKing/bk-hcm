@@ -22,6 +22,8 @@ package disk
 import (
 	"fmt"
 
+	"hcm/pkg/criteria/validator"
+
 	"google.golang.org/api/compute/v1"
 )
 
@@ -43,4 +45,18 @@ func (opt *GcpDiskCreateOption) ToCreateDiskRequest(cloudProjectID string) (*com
 			opt.DiskType),
 		SizeGb: opt.DiskSize,
 	}, nil
+}
+
+// GcpDiskListOption define gcp disk list option.
+type GcpDiskListOption struct {
+	Region string `json:"region" validate:"required"`
+}
+
+// Validate gcp disk list option.
+func (opt GcpDiskListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return nil
+	}
+
+	return nil
 }

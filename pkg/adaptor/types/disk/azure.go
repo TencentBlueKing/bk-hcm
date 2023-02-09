@@ -19,7 +19,11 @@
 
 package disk
 
-import "github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+import (
+	"hcm/pkg/criteria/validator"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+)
 
 // AzureDiskCreateOption ...
 type AzureDiskCreateOption struct {
@@ -43,4 +47,18 @@ func (opt *AzureDiskCreateOption) ToCreateDiskRequest() (*armcompute.Disk, error
 		SKU:        sku,
 		Properties: prop,
 	}, nil
+}
+
+// AzureDiskListOption define azure disk list option.
+type AzureDiskListOption struct {
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+}
+
+// Validate azure disk list option.
+func (opt AzureDiskListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return nil
+	}
+
+	return nil
 }

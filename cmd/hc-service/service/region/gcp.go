@@ -144,7 +144,7 @@ func (r region) BatchGetGcpRegionMapFromDB(cts *rest.Contexts, req *protoHcRegio
 			Filter: expr,
 			Page:   &core.BasePage{Count: false, Start: offset, Limit: count},
 		}
-		dbList, err := r.cs.DataService().Gcp.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
+		dbList, err := r.dataCli.Gcp.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 		if err != nil {
 			logs.Errorf("%s-region batch get regionlist db error. accountID: %s, offset: %d, "+
 				"limit: %d, err: %v", vendor, req.AccountID, offset, count, err)
@@ -181,7 +181,7 @@ func (r region) BatchSyncGcpRegionList(cts *rest.Contexts, req *protoHcRegion.Gc
 		updateReq := &protoDsRegion.GcpRegionBatchUpdateReq{
 			Regions: updateResources,
 		}
-		if err = r.cs.DataService().Gcp.Region.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
+		if err = r.dataCli.Gcp.Region.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
 			logs.Errorf("%s-region batch compare db update failed. accountID: %s, err: %v",
 				enumor.Gcp, req.AccountID, err)
 			return err
@@ -193,7 +193,7 @@ func (r region) BatchSyncGcpRegionList(cts *rest.Contexts, req *protoHcRegion.Gc
 		createReq := &protoDsRegion.GcpRegionCreateReq{
 			Regions: createResources,
 		}
-		if _, err = r.cs.DataService().Gcp.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+		if _, err = r.dataCli.Gcp.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
 			logs.Errorf("%s-region batch compare db create failed. accountID: %s, err: %v",
 				enumor.Gcp, req.AccountID, err)
 			return err
@@ -214,7 +214,7 @@ func (r region) BatchSyncGcpRegionList(cts *rest.Contexts, req *protoHcRegion.Gc
 		deleteReq := &dataservice.BatchDeleteReq{
 			Filter: tools.ContainersExpression("id", deleteIDs),
 		}
-		if err := r.cs.DataService().Gcp.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		if err := r.dataCli.Gcp.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
 			return err
 		}
 		if err != nil {

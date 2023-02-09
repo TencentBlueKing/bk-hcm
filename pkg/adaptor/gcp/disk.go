@@ -21,7 +21,9 @@ package gcp
 
 import (
 	"hcm/pkg/adaptor/types/disk"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 
 	"google.golang.org/api/compute/v1"
 )
@@ -47,4 +49,36 @@ func (g *Gcp) createDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.O
 	var call *compute.DisksInsertCall
 	call = client.Disks.Insert(cloudProjectID, opt.Zone, req).Context(kt.Ctx)
 	return call.Do()
+}
+
+// ListDisk 查看云硬盘
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/list
+func (g *Gcp) ListDisk(kit *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Disk, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "gcp disk list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := g.clientSet.computeClient(kit)
+	if err != nil {
+		return nil, err
+	}
+	cloudProjectID := g.clientSet.credential.CloudProjectID
+
+	yDisks := []*compute.Disk{}
+	req := client.Disks.List(cloudProjectID, opt.Region)
+	if err := req.Pages(kit.Ctx, func(page *compute.DiskList) error {
+		for _, disk := range page.Items {
+			yDisks = append(yDisks, disk)
+		}
+		return nil
+	}); err != nil {
+		logs.Errorf("failed to list disk, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return yDisks, nil
 }

@@ -41,6 +41,30 @@ type SecurityGroupClient struct {
 	client rest.ClientInterface
 }
 
+// SyncSecurityGroup sync security group.
+func (cli *SecurityGroupClient) SyncSecurityGroup(ctx context.Context, h http.Header,
+	request *proto.SecurityGroupSyncReq) error {
+
+	resp := new(core.SyncResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/security_groups/sync").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
 // UpdateSecurityGroup update security group rule.
 func (cli *SecurityGroupClient) UpdateSecurityGroup(ctx context.Context, h http.Header, id string,
 	request *proto.AzureSecurityGroupUpdateReq) error {

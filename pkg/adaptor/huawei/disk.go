@@ -21,6 +21,9 @@ package huawei
 
 import (
 	"hcm/pkg/adaptor/types/disk"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/region"
@@ -44,4 +47,36 @@ func (h *HuaWei) createDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolu
 	}
 
 	return client.CreateVolume(req)
+}
+
+// ListDisk 查看云硬盘
+// reference: https://support.huaweicloud.com/api-evs/evs_04_2006.html
+func (h *HuaWei) ListDisk(kt *kit.Kit, opt *disk.HuaWeiDiskListOption) ([]model.VolumeDetail, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "huawei disk list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := h.clientSet.evsClient(region.ValueOf(opt.Region))
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(model.ListVolumesRequest)
+	if opt.Page != nil {
+		req.Marker = opt.Page.Marker
+		req.Limit = opt.Page.Limit
+	}
+
+	resp, err := client.ListVolumes(req)
+	if err != nil {
+		logs.Errorf("list huawei disk failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return *resp.Volumes, nil
 }

@@ -19,6 +19,11 @@
 
 package disk
 
+import (
+	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	"hcm/pkg/criteria/validator"
+)
+
 // DiskBaseCreateReq 云盘基础请求数据
 type DiskBaseCreateReq struct {
 	AccountID string  `json:"account_id" validate:"required"`
@@ -29,4 +34,22 @@ type DiskBaseCreateReq struct {
 	DiskType  string  `json:"disk_type" validate:"required"`
 	DiskCount uint32  `json:"disk_count" validate:"required"`
 	Memo      *string `json:"memo"`
+}
+
+// DiskSyncReq disk sync request
+type DiskSyncReq struct {
+	AccountID         string `json:"account_id" validate:"required"`
+	Region            string `json:"region" validate:"omitempty"`
+	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
+}
+
+// Validate disk sync request.
+func (req *DiskSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// DiskSyncDS disk data-service
+type DiskSyncDS struct {
+	IsUpdated bool
+	HcDisk    *dataproto.DiskResult
 }

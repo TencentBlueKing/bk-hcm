@@ -22,6 +22,9 @@ package disk
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/validator"
+
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
 )
 
@@ -152,4 +155,26 @@ func getCreateVolumeIsAutoRenew(isAutoRenew string) (*model.BssParamForCreateVol
 	default:
 		return nil, fmt.Errorf("invalid autorenew flag %s", isAutoRenew)
 	}
+}
+
+// HuaWeiDiskListOption define huawei disk list option.
+type HuaWeiDiskListOption struct {
+	Region   string           `json:"region" validate:"required"`
+	CloudIDs []string         `json:"cloud_ids" validate:"omitempty"`
+	Page     *core.HuaWeiPage `json:"page" validate:"omitempty"`
+}
+
+// Validate huawei disk list option.
+func (opt HuaWeiDiskListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return nil
+	}
+
+	if opt.Page != nil {
+		if err := opt.Page.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

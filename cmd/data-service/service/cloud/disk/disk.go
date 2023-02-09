@@ -153,6 +153,7 @@ func (dSvc *diskSvc) RetrieveDiskExt(cts *rest.Contexts) (interface{}, error) {
 
 // BatchUpdateDiskExt ...
 func (dSvc *diskSvc) BatchUpdateDiskExt(cts *rest.Contexts) (interface{}, error) {
+
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -175,6 +176,7 @@ func (dSvc *diskSvc) BatchUpdateDiskExt(cts *rest.Contexts) (interface{}, error)
 
 // BatchUpdateDisk ...
 func (dSvc *diskSvc) BatchUpdateDisk(cts *rest.Contexts) (interface{}, error) {
+
 	req := new(dataproto.DiskBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -316,7 +318,7 @@ func (dSvc *diskSvc) rawExtensions(
 ) (map[string]tabletype.JsonField, error) {
 	opt := &types.ListOption{
 		Filter: filterExp,
-		Page:   &core.BasePage{Limit: 0},
+		Page:   core.DefaultBasePage,
 		Fields: []string{"id", "extension"},
 	}
 	data, err := dSvc.objectDao.List(cts.Kit, opt)

@@ -366,6 +366,21 @@ func (a *accountSvc) createForAzure(cts *rest.Contexts, req *proto.AccountCreate
 	}
 
 	// 检查联通性，账号是否正确
+	err := a.client.HCService().Azure.Account.Check(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&hcproto.AzureAccountCheckReq{
+			CloudTenantID:        extension.CloudTenantID,
+			CloudSubscriptionID:  extension.CloudSubscriptionID,
+			CloudApplicationID:   extension.CloudApplicationID,
+			CloudClientSecretKey: extension.CloudClientSecretKey,
+		},
+	)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 检查联通性，账号是否正确
 	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
 		err := a.client.HCService().Azure.Account.Check(
 			cts.Kit.Ctx,

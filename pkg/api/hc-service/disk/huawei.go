@@ -19,7 +19,11 @@
 
 package disk
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/criteria/validator"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
+)
 
 // HuaWeiDiskCreateReq ...
 type HuaWeiDiskCreateReq struct {
@@ -43,4 +47,9 @@ type HuaWeiDiskChargePrepaid struct {
 	PeriodNum   *int32  `json:"period_num"`
 	PeriodType  *string `json:"period_type"`
 	IsAutoRenew *string `json:"is_auto_renew"`
+}
+
+// HuaWeiDiskSyncDiff diff huawei disk
+type HuaWeiDiskSyncDiff struct {
+	Disk model.VolumeDetail
 }

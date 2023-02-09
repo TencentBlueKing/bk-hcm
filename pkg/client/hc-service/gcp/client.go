@@ -29,6 +29,7 @@ type Client struct {
 	Firewall *FirewallClient
 	Vpc      *VpcClient
 	Subnet   *SubnetClient
+	Disk     *DiskClient
 }
 
 // NewClient create a new gcp api client.
@@ -38,5 +39,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Firewall: NewFirewallClient(client),
 		Vpc:      NewVpcClient(client),
 		Subnet:   NewSubnetClient(client),
+		Disk:     NewCloudDiskClient(client),
 	}
 }

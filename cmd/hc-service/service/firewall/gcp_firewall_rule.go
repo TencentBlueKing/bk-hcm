@@ -61,6 +61,7 @@ type firewall struct {
 
 // DeleteGcpFirewallRule delete gcp firewall rule.
 func (f *firewall) DeleteGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")

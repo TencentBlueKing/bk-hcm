@@ -19,7 +19,11 @@
 
 package disk
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/criteria/validator"
+
+	"google.golang.org/api/compute/v1"
+)
 
 // GcpDiskCreateReq ...
 type GcpDiskCreateReq struct {
@@ -29,4 +33,9 @@ type GcpDiskCreateReq struct {
 // Validate ...
 func (req *GcpDiskCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// GcpDiskSyncDiff diff gcp disk
+type GcpDiskSyncDiff struct {
+	Disk *compute.Disk
 }

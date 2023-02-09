@@ -19,7 +19,11 @@
 
 package disk
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/criteria/validator"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
+)
 
 // AzureDiskCreateReq ...
 type AzureDiskCreateReq struct {
@@ -35,4 +39,9 @@ func (req *AzureDiskCreateReq) Validate() error {
 // AzureDiskExtensionCreateReq ...
 type AzureDiskExtensionCreateReq struct {
 	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+}
+
+// AzureDiskSyncDiff diff azure disk struct
+type AzureDiskSyncDiff struct {
+	Disk *armcompute.Disk
 }

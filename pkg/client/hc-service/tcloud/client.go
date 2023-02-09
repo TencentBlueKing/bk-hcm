@@ -29,6 +29,7 @@ type Client struct {
 	Subnet        *SubnetClient
 	SecurityGroup *SecurityGroupClient
 	Vpc           *VpcClient
+	Disk          *DiskClient
 }
 
 // NewClient create a new tcloud api client.
@@ -38,5 +39,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		SecurityGroup: NewCloudSecurityGroupClient(client),
 		Subnet:        NewSubnetClient(client),
 		Vpc:           NewVpcClient(client),
+		Disk:          NewCloudDiskClient(client),
 	}
 }

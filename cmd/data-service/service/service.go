@@ -127,23 +127,26 @@ func (s *Service) apiSet() *restful.Container {
 	ws.Path("/api/v1/data")
 	ws.Produces(restful.MIME_JSON)
 
-	cap := &capability.Capability{
+	capability := &capability.Capability{
 		WebService: ws,
 		Dao:        s.dao,
 	}
 
-	cloud.InitAccountService(cap)
-	cloud.InitSecurityGroupService(cap)
-	cloud.InitGcpFirewallRuleService(cap)
-	cloud.InitVpcService(cap)
-	cloud.InitSubnetService(cap)
-	cloud.InitCloudService(cap)
-	auth.InitAuthService(cap)
-	disk.InitDiskService(cap)
-	region.InitRegionService(cap)
-	audit.InitAuditService(cap)
+	cloud.InitAccountService(capability)
+	cloud.InitSecurityGroupService(capability)
+	cloud.InitGcpFirewallRuleService(capability)
+	cloud.InitVpcService(capability)
+	cloud.InitSubnetService(capability)
+	cloud.InitCloudService(capability)
+	auth.InitAuthService(capability)
+	disk.InitDiskService(capability)
+	region.InitRegionService(capability)
+	region.InitHuaWeiRegionService(capability)
+	region.InitAzureResourceGroupService(capability)
+	region.InitAzureRegionService(capability)
+	audit.InitAuditService(capability)
 
-	return restful.NewContainer().Add(cap.WebService)
+	return restful.NewContainer().Add(capability.WebService)
 }
 
 // Healthz check whether the service is healthy.

@@ -21,8 +21,11 @@ package disk
 
 import (
 	"hcm/pkg/adaptor/types/disk"
+	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	proto "hcm/pkg/api/hc-service/disk"
+	protodisk "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -55,4 +58,160 @@ func AzureCreateDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
 	// TODO save to data-service
 
 	return nil, nil
+}
+
+// AzureSyncDisk...
+func AzureSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
+
+	req, err := da.decodeDiskSyncReq(cts)
+	if err != nil {
+		logs.Errorf("request decodeDiskSyncReq failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cloudMap, err := da.getDatasFromAzureForDiskSync(cts, req)
+	if err != nil {
+		logs.Errorf("request getDatasFromAzureForDiskSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	dsMap, err := da.getDatasFromDSForDiskSync(cts, req)
+	if err != nil {
+		logs.Errorf("request getDatasFromDSForDiskSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	err = da.diffAzureDiskSync(cts, cloudMap, dsMap, req)
+	if err != nil {
+		logs.Errorf("request diffAzureDiskSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// getDatasFromAwsForDiskSync get datas from cloud
+func (da *diskAdaptor) getDatasFromAzureForDiskSync(cts *rest.Contexts,
+	req *protodisk.DiskSyncReq) (map[string]*proto.AzureDiskSyncDiff, error) {
+
+	client, err := da.adaptor.Azure(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	listOpt := &disk.AzureDiskListOption{
+		ResourceGroupName: req.ResourceGroupName,
+	}
+	datas, err := client.ListDisk(cts.Kit, listOpt)
+	if err != nil {
+		logs.Errorf("request adaptor to list azure disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cloudMap := make(map[string]*proto.AzureDiskSyncDiff)
+	for _, data := range datas {
+		sg := new(proto.AzureDiskSyncDiff)
+		sg.Disk = data
+		cloudMap[*data.ID] = sg
+	}
+
+	return cloudMap, nil
+}
+
+// diffAzureDiskSync diff cloud data-service
+func (da *diskAdaptor) diffAzureDiskSync(cts *rest.Contexts, cloudMap map[string]*proto.AzureDiskSyncDiff,
+	dsMap map[string]*protodisk.DiskSyncDS, req *proto.DiskSyncReq) error {
+
+	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
+	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
+
+	if len(deleteCloudIDs) > 0 {
+		err := da.diffDiskSyncDelete(cts, deleteCloudIDs)
+		if err != nil {
+			logs.Errorf("request diffDiskSyncDeletek failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+	}
+
+	if len(updateCloudIDs) > 0 {
+		err := da.diffAzureSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
+		if err != nil {
+			logs.Errorf("request diffAzureSyncUpdate failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+	}
+
+	if len(addCloudIDs) > 0 {
+		_, err := da.diffAzureDiskSyncAdd(cts, cloudMap, req, addCloudIDs)
+		if err != nil {
+			logs.Errorf("request diffAzureDiskSyncAdd failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// diffAzureDiskSyncAdd for add
+func (da *diskAdaptor) diffAzureDiskSyncAdd(cts *rest.Contexts, cloudMap map[string]*proto.AzureDiskSyncDiff,
+	req *proto.DiskSyncReq, addCloudIDs []string) ([]string, error) {
+
+	var createReq dataproto.DiskExtBatchCreateReq[dataproto.AzureDiskExtensionCreateReq]
+
+	for _, id := range addCloudIDs {
+		disk := &dataproto.DiskExtCreateReq[dataproto.AzureDiskExtensionCreateReq]{
+			AccountID:  req.AccountID,
+			Name:       *cloudMap[id].Disk.Name,
+			CloudID:    id,
+			Region:     req.Region,
+			Zone:       *cloudMap[id].Disk.Location,
+			DiskSize:   uint64(*cloudMap[id].Disk.Properties.DiskSizeBytes),
+			DiskType:   *cloudMap[id].Disk.Type,
+			DiskStatus: string(*cloudMap[id].Disk.Properties.DiskState),
+			Extension: &dataproto.AzureDiskExtensionCreateReq{
+				ResourceGroupName: req.ResourceGroupName,
+			},
+		}
+		createReq = append(createReq, disk)
+	}
+
+	if len(createReq) <= 0 {
+		return make([]string, 0), nil
+	}
+
+	results, err := da.dataCli.Azure.BatchCreateDisk(cts.Kit.Ctx, cts.Kit.Header(), &createReq)
+	if err != nil {
+		logs.Errorf("request dataservice to create azure disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return results.IDs, nil
+}
+
+// diffAzureSyncUpdate for update
+func (da *diskAdaptor) diffAzureSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.AzureDiskSyncDiff,
+	dsMap map[string]*protodisk.DiskSyncDS, updateCloudIDs []string) error {
+
+	var updateReq dataproto.DiskExtBatchUpadteReq[dataproto.AzureDiskExtensionUpdateReq]
+
+	for _, id := range updateCloudIDs {
+		if string(*cloudMap[id].Disk.Properties.DiskState) == dsMap[id].HcDisk.DiskStatus {
+			continue
+		}
+
+		disk := &dataproto.DiskExtUpdateReq[dataproto.AzureDiskExtensionUpdateReq]{
+			ID:         dsMap[id].HcDisk.ID,
+			DiskStatus: string(*cloudMap[id].Disk.Properties.DiskState),
+		}
+		updateReq = append(updateReq, disk)
+	}
+
+	if len(updateReq) > 0 {
+		if _, err := da.dataCli.Azure.BatchUpdateDisk(cts.Kit.Ctx, cts.Kit.Header(), &updateReq); err != nil {
+			logs.Errorf("request dataservice azure BatchUpdateDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+	}
+
+	return nil
 }

@@ -45,7 +45,10 @@ values ('account', '0'),
        ('disk', '0'),
        ('tcloud_region', '0'),
        ('aws_region', '0'),
-       ('gcp_region', '0')
+       ('gcp_region', '0'),
+       ('huawei_region', '0'),
+       ('azure_region', '0'),
+       ('azure_resource_group', '0')
 ON DUPLICATE KEY UPDATE resource=resource;
 
 create table if not exists `audit`
@@ -392,27 +395,82 @@ create table if not exists `subnet`
 ) engine = innodb
   default charset = utf8mb4;
 
+create table if not exists `huawei_region`
+(
+  `id` varchar(64) NOT NULL,
+  `region_id` varchar(64) NOT NULL,
+  `type` varchar(20) NOT NULL,
+  `locales_pt_br` varchar(20) default '',
+  `locales_zh_cn` varchar(20) default '',
+  `locales_en_us` varchar(20) default '',
+  `locales_es_us` varchar(20) default '',
+  `locales_es_es` varchar(20) default '',  
+  `creator` varchar(64) NOT NULL,
+  `reviser` varchar(64) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+  ) engine = innodb 
+  default charset = utf8mb4;
+
+create table if not exists `azure_resource_group`
+(
+  `id` varchar(64) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `type` varchar(64) NOT NULL,
+  `location` varchar(64) NOT NULL,
+  `creator` varchar(64) NOT NULL,
+  `reviser` varchar(64) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+  ) engine = innodb 
+  default charset = utf8mb4;
+
 create table if not exists `disk`
 (
-    `id`          varchar(64)        not null,
-    `vendor`      varchar(16)        not null,
-    `name`        varchar(128)       not null,
-    `account_id`  varchar(64)        not null,
-    `cloud_id`    varchar(128)       not null,
-    `bk_biz_id`   bigint(1)          not null default -1,
-    `region`      varchar(128)       not null,
-    `zone`        varchar(128)       not null,
-    `disk_size`   bigint(1) unsigned not null,
-    `disk_type`   varchar(128)       not null,
-    `disk_status` varchar(128)       not null,
-    `memo`        varchar(255)                default '',
-    `extension`   json               not null,
-    `creator`     varchar(64)        not null,
-    `reviser`     varchar(64)        not null,
-    `created_at`  timestamp          not null default current_timestamp,
-    `updated_at`  timestamp          not null default current_timestamp on update current_timestamp,
+    `id`            varchar(64) not null,
+    `vendor`        varchar(16) not null,
+    `name`          varchar(128) not null,
+    `account_id`    varchar(64) not null,
+    `cloud_id`      varchar(255) not null,
+    `bk_biz_id`     bigint(1) not null default -1,
+    `region`        varchar(128) not null,
+    `zone`          varchar(128) not null,
+    `disk_size`     bigint(1) unsigned not null,
+    `disk_type`     varchar(128) not null,
+    `disk_status`   varchar(128) not null,
+    `memo`          varchar(255) default '',
+    `extension`     json        not null,
+    `creator`       varchar(64) not null,
+    `reviser`       varchar(64) not null,
+    `created_at`    timestamp   not null default current_timestamp,
+    `updated_at`    timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`)
-) engine = innodb
+    ) engine = innodb 
+    default charset = utf8mb4;
+
+create table if not exists `azure_region`
+(
+  `id` varchar(64) NOT NULL,
+  `cloud_id` varchar(255) not null,
+  `name` varchar(64) NOT NULL,
+  `type` varchar(64) NOT NULL,
+  `display_name` varchar(64) NOT NULL,
+  `region_display_name` varchar(64) NOT NULL,
+  `geography_group` varchar(64) NOT NULL,
+  `latitude` varchar(64) default '',
+  `longitude` varchar(64) NOT NULL,
+  `physical_location` varchar(64) default '',
+  `region_type` varchar(64) NOT NULL,
+  `paired_region_name` varchar(64) default '',
+  `paired_region_id` varchar(255) default '',
+  `creator` varchar(64) NOT NULL,
+  `reviser` varchar(64) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+  ) engine = innodb 
   default charset = utf8mb4;
 
 -- ----------------------------

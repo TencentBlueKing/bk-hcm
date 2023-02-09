@@ -17,7 +17,6 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package region defines region service.
 package region
 
 import (
@@ -25,7 +24,7 @@ import (
 
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
-	"hcm/pkg/client"
+	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -33,20 +32,27 @@ import (
 
 // InitRegionService initial the region service
 func InitRegionService(cap *capability.Capability) {
-	v := &region{
-		ad: cap.CloudAdaptor,
-		cs: cap.ClientSet,
+	r := &region{
+		ad:      cap.CloudAdaptor,
+		dataCli: cap.ClientSet.DataService(),
 	}
 
 	h := rest.NewHandler()
-	h.Add("RegionSync", "POST", "/vendors/{vendor}/regions/sync", v.RegionSync)
+
+	h.Add("SyncAzureRG", "POST", "/vendors/azure/resource_groups/sync", r.SyncAzureRG)
+
+	h.Add("SyncAzureRegion", "POST", "/vendors/azure/regions/sync", r.SyncAzureRegion)
+
+	h.Add("SyncHuaWeiRegion", "POST", "/vendors/huawei/regions/sync", r.SyncHuaWeiRegion)
+
+	h.Add("RegionSync", "POST", "/vendors/{vendor}/regions/sync", r.RegionSync)
 
 	h.Load(cap.WebService)
 }
 
 type region struct {
-	ad *cloudadaptor.CloudAdaptorClient
-	cs *client.ClientSet
+	ad      *cloudadaptor.CloudAdaptorClient
+	dataCli *dataservice.Client
 }
 
 // RegionSync region sync.

@@ -21,7 +21,9 @@ package aws
 
 import (
 	"hcm/pkg/adaptor/types/disk"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -44,4 +46,37 @@ func (a *Aws) createDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*ec2.Volum
 	}
 
 	return client.CreateVolumeWithContext(kt.Ctx, req)
+}
+
+// ListDisk 查看云硬盘
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeVolumes.html
+func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "aws disk list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(ec2.DescribeVolumesInput)
+
+	if opt.Page != nil {
+		req.MaxResults = opt.Page.MaxResults
+		req.NextToken = opt.Page.NextToken
+	}
+
+	resp, err := client.DescribeVolumesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list aws security group failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return resp.Volumes, nil
 }

@@ -75,6 +75,12 @@ type DeleteResp struct {
 	Data          interface{} `json:"data"`
 }
 
+// SyncResp ...
+type SyncResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          interface{} `json:"data"`
+}
+
 // ListReq is a standard list operation http request.
 type ListReq struct {
 	Filter *filter.Expression `json:"filter"`

@@ -24,6 +24,7 @@ import (
 
 	"hcm/cmd/hc-service/service/capability"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -33,10 +34,14 @@ import (
 func InitDiskService(cap *capability.Capability) {
 	d := &diskAdaptor{
 		adaptor: cap.CloudAdaptor,
+		dataCli: cap.ClientSet.DataService(),
 	}
 
 	h := rest.NewHandler()
 
+	// 硬盘同步
+	h.Add("SyncDisks", "POST", "/vendors/{vendor}/disks/sync", d.SyncDisks)
+	// 硬盘创建
 	h.Add("CreateDisks", "POST", "/vendors/{vendor}/disks/create", d.CreateDisks)
 
 	h.Load(cap.WebService)
@@ -44,6 +49,7 @@ func InitDiskService(cap *capability.Capability) {
 
 type diskAdaptor struct {
 	adaptor *cloudclient.CloudAdaptorClient
+	dataCli *dataservice.Client
 }
 
 // CreateDisks 创建云硬盘
@@ -66,5 +72,27 @@ func (da *diskAdaptor) CreateDisks(cts *rest.Contexts) (interface{}, error) {
 		return GcpCreateDisk(da, cts)
 	default:
 		return nil, fmt.Errorf("%s does not support the creation of cloud disks", vendor)
+	}
+}
+
+var SyncFuncs = map[enumor.Vendor]func(da *diskAdaptor, cts *rest.Contexts) (interface{}, error){
+	enumor.TCloud: TCloudSyncDisk,
+	enumor.HuaWei: HuaWeiSyncDisk,
+	enumor.Aws:    AwsSyncDisk,
+	enumor.Azure:  AzureSyncDisk,
+	enumor.Gcp:    GcpSyncDisk,
+}
+
+// SyncDisks 同步云硬盘
+func (da *diskAdaptor) SyncDisks(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if cfunc, ok := SyncFuncs[vendor]; !ok {
+		return nil, fmt.Errorf("%s does not support the sync of cloud disks", vendor)
+	} else {
+		return cfunc(da, cts)
 	}
 }

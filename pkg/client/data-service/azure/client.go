@@ -30,6 +30,8 @@ type Client struct {
 	SecurityGroup *SecurityGroupClient
 	Vpc           *VpcClient
 	Subnet        *SubnetClient
+	ResourceGroup *ResourceGroupClient
+	Region        *RegionClient
 }
 
 type restClient struct {
@@ -44,5 +46,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		SecurityGroup: NewCloudSecurityGroupClient(client),
 		Vpc:           NewVpcClient(client),
 		Subnet:        NewSubnetClient(client),
+		ResourceGroup: NewResourceGroupClient(client),
+		Region:        NewRegionClient(client),
 	}
 }

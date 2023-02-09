@@ -67,6 +67,12 @@ const (
 	VpcTable Name = "vpc"
 	// SubnetTable is subnet table's name.
 	SubnetTable Name = "subnet"
+	// HuaweiRegion is huawei region table's name.
+	HuaWeiRegionTable Name = "huawei_region"
+	// AzureRGTable is azure resource group table's name.
+	AzureRGTable Name = "azure_resource_group"
+	// AzureRegionTable is azure region table's name.
+	AzureRegionTable Name = "azure_region"
 	// DiskTable is disk table's name.
 	DiskTable Name = "disk"
 	// TCloudRegionTable is tcloud region table's name.
@@ -77,31 +83,6 @@ const (
 	GcpRegionTable Name = "gcp_region"
 )
 
-// TableMap table map config
-var TableMap = map[Name]struct{}{
-	AuditTable:                   {},
-	AccountTable:                 {},
-	AccountBizRelTable:           {},
-	VpcTable:                     {},
-	SubnetTable:                  {},
-	IDGenerator:                  {},
-	SecurityGroupTable:           {},
-	VpcSecurityGroupRelTable:     {},
-	SecurityGroupTagTable:        {},
-	SecurityGroupSubnetTable:     {},
-	SGSecurityGroupRuleTable:     {},
-	TCloudSecurityGroupRuleTable: {},
-	AwsSecurityGroupRuleTable:    {},
-	HuaWeiSecurityGroupRuleTable: {},
-	AzureSecurityGroupRuleTable:  {},
-	SGNetworkInterfaceRelTable:   {},
-	GcpFirewallRuleTable:         {},
-	TCloudRegionTable:            {},
-	AwsRegionTable:               {},
-	GcpRegionTable:               {},
-	DiskTable:                    {},
-}
-
 // Validate whether the table name is valid or not.
 func (n Name) Validate() error {
 	valid := validTableNames[n]
@@ -109,11 +90,38 @@ func (n Name) Validate() error {
 		return nil
 	}
 
-	if _, ok := TableMap[n]; ok {
-		return nil
+	if _, ok := TableMap[n]; !ok {
+		return fmt.Errorf("unknown table name: %s", n)
 	}
 
-	return fmt.Errorf("unknown table name: %s", n)
+	return nil
+}
+
+// TableMap table map config
+var TableMap = map[Name]bool{
+	AuditTable:                   true,
+	AccountTable:                 true,
+	AccountBizRelTable:           true,
+	VpcTable:                     true,
+	SubnetTable:                  true,
+	IDGenerator:                  true,
+	SecurityGroupTable:           true,
+	VpcSecurityGroupRelTable:     true,
+	SecurityGroupTagTable:        true,
+	SecurityGroupSubnetTable:     true,
+	SGSecurityGroupRuleTable:     true,
+	TCloudSecurityGroupRuleTable: true,
+	AwsSecurityGroupRuleTable:    true,
+	HuaWeiSecurityGroupRuleTable: true,
+	AzureSecurityGroupRuleTable:  true,
+	SGNetworkInterfaceRelTable:   true,
+	GcpFirewallRuleTable:         true,
+	HuaWeiRegionTable:            true,
+	AzureRGTable:                 true,
+	AzureRegionTable:             true,
+	GcpRegionTable:               true,
+	AwsRegionTable:               true,
+	TCloudRegionTable:            true,
 }
 
 // Register 注册表名

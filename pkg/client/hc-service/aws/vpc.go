@@ -83,3 +83,25 @@ func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error 
 
 	return nil
 }
+
+// SyncVpc sync aws vpc.
+func (v *VpcClient) SyncVpc(ctx context.Context, h http.Header, req *hcservice.ResourceSyncReq) error {
+	resp := new(rest.BaseResp)
+
+	err := v.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/vpc/sync").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}

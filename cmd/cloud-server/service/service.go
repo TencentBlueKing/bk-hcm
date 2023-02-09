@@ -35,6 +35,7 @@ import (
 	"hcm/cmd/cloud-server/service/firewall"
 	securitygroup "hcm/cmd/cloud-server/service/security-group"
 	"hcm/cmd/cloud-server/service/subnet"
+	"hcm/cmd/cloud-server/service/sync"
 	"hcm/cmd/cloud-server/service/vpc"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -170,6 +171,9 @@ func (s *Service) apiSet() *restful.Container {
 	vpc.InitVpcService(c)
 	disk.InitDiskService(c)
 	subnet.InitSubnetService(c)
+	sync.InitSyncService(c)
+
+	go sync.SyncTiming(c.ApiClient)
 	audit.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)

@@ -29,6 +29,7 @@ type Client struct {
 	SecurityGroup *SecurityGroupClient
 	Vpc           *VpcClient
 	Subnet        *SubnetClient
+	Disk          *DiskClient
 }
 
 // NewClient create a new azure api client.
@@ -38,5 +39,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		SecurityGroup: NewCloudSecurityGroupClient(client),
 		Vpc:           NewVpcClient(client),
 		Subnet:        NewSubnetClient(client),
+		Disk:          NewCloudDiskClient(client),
 	}
 }

@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // decodeSecurityGroupSyncReq get par from body
@@ -54,7 +55,13 @@ func (g *securityGroup) getDatasFromDSForSecurityGroupSync(cts *rest.Contexts,
 	resultsHcm := make([]corecloud.BaseSecurityGroup, 0)
 	for {
 		dataReq := &dataproto.SecurityGroupListReq{
-			Filter: tools.EqualExpression("account_id", req.AccountID),
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: req.AccountID},
+					filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: req.Region},
+				},
+			},
 			Page: &core.BasePage{
 				Start: uint32(start),
 				Limit: core.DefaultMaxPageLimit,

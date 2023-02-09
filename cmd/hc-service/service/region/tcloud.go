@@ -122,7 +122,7 @@ func (r region) BatchGetTCloudRegionMapFromDB(cts *rest.Contexts, req *protoHcRe
 			Filter: expr,
 			Page:   &core.BasePage{Count: false, Start: offset, Limit: count},
 		}
-		dbList, err := r.cs.DataService().TCloud.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
+		dbList, err := r.dataCli.TCloud.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dbQueryReq)
 		if err != nil {
 			logs.Errorf("%s-region batch get regionlist db error. accountID: %s, offset: %d, "+
 				"limit: %d, err: %v", vendor, req.AccountID, offset, count, err)
@@ -159,7 +159,7 @@ func (r region) BatchSyncTCloudRegionList(cts *rest.Contexts, req *protoHcRegion
 		updateReq := &protoDsRegion.TCloudRegionBatchUpdateReq{
 			Regions: updateResources,
 		}
-		if err = r.cs.DataService().TCloud.Region.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
+		if err = r.dataCli.TCloud.Region.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
 			logs.Errorf("%s-region batch compare db update failed. accountID: %s, err: %v",
 				enumor.TCloud, req.AccountID, err)
 			return err
@@ -171,7 +171,7 @@ func (r region) BatchSyncTCloudRegionList(cts *rest.Contexts, req *protoHcRegion
 		createReq := &protoDsRegion.TCloudRegionCreateReq{
 			Regions: createResources,
 		}
-		if _, err = r.cs.DataService().TCloud.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+		if _, err = r.dataCli.TCloud.Region.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
 			logs.Errorf("%s-region batch compare db create failed. accountID: %s, err: %v",
 				enumor.TCloud, req.AccountID, err)
 			return err
@@ -192,7 +192,7 @@ func (r region) BatchSyncTCloudRegionList(cts *rest.Contexts, req *protoHcRegion
 		deleteReq := &dataservice.BatchDeleteReq{
 			Filter: tools.ContainersExpression("id", deleteIDs),
 		}
-		if err := r.cs.DataService().TCloud.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		if err := r.dataCli.TCloud.Region.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
 			return err
 		}
 		if err != nil {

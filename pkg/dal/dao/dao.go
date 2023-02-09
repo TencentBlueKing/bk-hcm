@@ -93,6 +93,10 @@ type Set interface {
 	AccountBizRel() cloud.AccountBizRel
 	Vpc() cloud.Vpc
 	Subnet() cloud.Subnet
+	HuaWeiRegion() region.HuaWeiRegion
+	AzureRG() region.AzureRG
+	AzureRegion() region.AzureRegion
+
 	TCloudRegion() region.TCloudRegion
 	AwsRegion() region.AwsRegion
 	GcpRegion() region.GcpRegion
@@ -158,6 +162,30 @@ type set struct {
 	audit audit.Interface
 
 	objectDaos map[table.Name]ObjectDao
+}
+
+// AzureRegion return AzureRegion dao.
+func (s *set) AzureRegion() region.AzureRegion {
+	return &region.AzureRegionDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AzureRG return AzureRG dao.
+func (s *set) AzureRG() region.AzureRG {
+	return &region.AzureRGDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// HuaWeiRegion return HuaWeiRegion dao.
+func (s *set) HuaWeiRegion() region.HuaWeiRegion {
+	return &region.HuaWeiRegionDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
 }
 
 // Account return account dao.

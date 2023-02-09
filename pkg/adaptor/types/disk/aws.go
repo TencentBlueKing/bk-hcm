@@ -19,7 +19,12 @@
 
 package disk
 
-import "github.com/aws/aws-sdk-go/service/ec2"
+import (
+	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/validator"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
+)
 
 // AwsDiskCreateOption AWS 创建云盘参数
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateVolume.html
@@ -37,4 +42,26 @@ func (opt *AwsDiskCreateOption) ToCreateVolumeInput() (*ec2.CreateVolumeInput, e
 		Size:             opt.DiskSize,
 		VolumeType:       opt.DiskType,
 	}, nil
+}
+
+// AwsDiskListOption define aws disk list option.
+type AwsDiskListOption struct {
+	Region   string        `json:"region" validate:"required"`
+	CloudIDs []string      `json:"cloud_ids" validate:"omitempty"`
+	Page     *core.AwsPage `json:"page" validate:"omitempty"`
+}
+
+// Validate disk list option.
+func (opt AwsDiskListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return nil
+	}
+
+	if opt.Page != nil {
+		if err := opt.Page.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

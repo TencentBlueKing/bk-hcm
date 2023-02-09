@@ -83,3 +83,25 @@ func (v *SubnetClient) Delete(ctx context.Context, h http.Header, id string) err
 
 	return nil
 }
+
+// SyncSubnet sync huawei subnet.
+func (v *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *hcservice.ResourceSyncReq) error {
+	resp := new(rest.BaseResp)
+
+	err := v.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/subnets/sync").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}

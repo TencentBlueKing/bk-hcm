@@ -42,7 +42,7 @@ var DiskColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "region", NamedC: "region", Type: enumor.String},
-	{Column: "availability_zone", NamedC: "availability_zone", Type: enumor.String},
+	{Column: "zone", NamedC: "zone", Type: enumor.String},
 	{Column: "disk_size", NamedC: "disk_size", Type: enumor.Numeric},
 	{Column: "disk_type", NamedC: "disk_type", Type: enumor.String},
 	{Column: "disk_status", NamedC: "disk_status", Type: enumor.String},

@@ -44,3 +44,24 @@ const (
 	// RequestSourceKey is blueking hcm request source header key.
 	RequestSourceKey = "X-Bkhcm-Request-Source"
 )
+
+// const for timing sync
+const (
+	// sync timing UserKey
+	SyncTimingUserKey = "sync-timing-admin"
+
+	// sync timing AppCodeKey
+	SyncTimingAppCodeKey = "hcm"
+
+	// sync timing AccountResource
+	SyncTimingAccountResource = "resource"
+
+	// sync timing list HuaWeiRegionList filter
+	SyncTimingListHuaWeiRegion = "public"
+
+	// sync timing list azure resource group filter
+	SyncTimingListAzureRG = "Microsoft.Resources/resourceGroups"
+
+	// sync timing list azure region filter
+	SyncTimingListAzureRegion = "Region"
+)

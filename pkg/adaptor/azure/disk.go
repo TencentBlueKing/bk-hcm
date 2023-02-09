@@ -21,7 +21,9 @@ package azure
 
 import (
 	"hcm/pkg/adaptor/types/disk"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
@@ -54,4 +56,34 @@ func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) (*armco
 	}
 
 	return &resp.Disk, nil
+}
+
+// ListDisk 查看云硬盘
+// reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
+func (a *Azure) ListDisk(kit *kit.Kit, opt *disk.AzureDiskListOption) ([]*armcompute.Disk, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "azure disk list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.diskClient()
+	if err != nil {
+		return nil, err
+	}
+
+	disks := []*armcompute.Disk{}
+	pager := client.NewListByResourceGroupPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kit.Ctx)
+		if err != nil {
+			logs.Errorf("failed to advance page, err: %v, rid: %s", err, kit.Rid)
+		}
+		disks = append(disks, nextResult.Value...)
+	}
+
+	return disks, nil
 }

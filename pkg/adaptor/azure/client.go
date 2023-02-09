@@ -27,6 +27,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
@@ -108,6 +110,34 @@ func (c *clientSet) securityGroupClient() (*armnetwork.SecurityGroupsClient, err
 	client, err := armnetwork.NewSecurityGroupsClient(c.credential.CloudSubscriptionID, credential, nil)
 	if err != nil {
 		return nil, fmt.Errorf("init azure security group client failed, err: %v", err)
+	}
+
+	return client, nil
+}
+
+func (c *clientSet) resourceGroupsClient() (*armresources.ResourceGroupsClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+
+	client, err := armresources.NewResourceGroupsClient(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init resourceGroups client failed, err: %v", err)
+	}
+
+	return client, nil
+}
+
+func (c *clientSet) regionClient() (*armsubscriptions.Client, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+
+	client, err := armsubscriptions.NewClient(credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init region client failed, err: %v", err)
 	}
 
 	return client, nil

@@ -41,6 +41,30 @@ type FirewallClient struct {
 	client rest.ClientInterface
 }
 
+// SyncFirewall sync fire wall.
+func (cli *FirewallClient) SyncFirewall(ctx context.Context, h http.Header,
+	request *proto.SecurityGroupSyncReq) error {
+
+	resp := new(core.SyncResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/firewalls/rules/sync").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
 // UpdateFirewallRule update firewall rule.
 func (cli *FirewallClient) UpdateFirewallRule(ctx context.Context, h http.Header, id string,
 	request *proto.GcpFirewallRuleUpdateReq) error {

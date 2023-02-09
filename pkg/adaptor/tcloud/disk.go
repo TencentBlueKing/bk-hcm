@@ -20,8 +20,12 @@
 package tcloud
 
 import (
+	"fmt"
+
 	"hcm/pkg/adaptor/types/disk"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 )
@@ -44,4 +48,37 @@ func (t *TCloud) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs
 	}
 
 	return client.CreateDisksWithContext(kt.Ctx, req)
+}
+
+// ListDisk 查询云硬盘列表
+// reference: https://cloud.tencent.com/document/api/362/16315
+func (t *TCloud) ListDisk(kt *kit.Kit, opt *disk.TCloudDiskListOption) ([]*cbs.Disk, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "tcloud disk list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.cbsClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new tcloud cbs client failed, err: %v", err)
+	}
+
+	req := cbs.NewDescribeDisksRequest()
+	if opt.Page != nil {
+		req.Offset = &opt.Page.Offset
+		req.Limit = &opt.Page.Limit
+	}
+
+	resp, err := client.DescribeDisksWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list tcloud disk failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return resp.Response.DiskSet, nil
+
 }
