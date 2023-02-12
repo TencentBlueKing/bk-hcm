@@ -11,7 +11,7 @@ const { FormItem } = Form;
 const { Option } = Select;
 const { Group } = Radio;
 export default defineComponent({
-  name: 'AccountManageAdd',
+  name: 'ServiceApplyAdd',
   setup() {
     const { t } = useI18n();
     const accountStore = useAccountStore();
@@ -55,7 +55,7 @@ export default defineComponent({
       ...initProjectModel,
     });
 
-    const optionalRequired: string[] = ['secretId', 'secretKey', 'accountName', 'accountId'];
+    const optionalRequired: string[] = ['secretId', 'secretKey'];
     const cloudType = reactive(CLOUD_TYPE);
     const submitLoading = ref(false);
 
@@ -163,6 +163,10 @@ export default defineComponent({
       } finally {
         submitLoading.value = false;
       }
+    };
+
+    const cancelBack = () => {
+      router.go(-1);
     };
 
     const changeCloud = (val: string) => {
@@ -453,7 +457,7 @@ export default defineComponent({
     // 表单检验
     const formRules = {
       name: [
-        { trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾业务与项目至少填一个', validator: check },
+        { trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾', validator: check },
       ],
     };
 
@@ -595,7 +599,12 @@ export default defineComponent({
       },
       {
         required: false,
-        component: () => <Button theme="primary" loading={submitLoading.value} onClick={submit}>{t('确认')}</Button>,
+        component: () => (
+          <section>
+            <Button theme="primary" loading={submitLoading.value} onClick={submit}>{t('提交审批')}</Button>
+            <Button onClick={cancelBack} style="margin-left: 30px;">{t('取消')}</Button>
+          </section>
+        ),
       },
     ]);
 

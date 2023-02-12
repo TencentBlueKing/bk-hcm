@@ -121,3 +121,16 @@ export function json2Query(param: any, key?: any) {
   }
   return paramStr.substr(1);
 }
+
+/**
+ * 浏览器视口的高度
+ *
+ * @return {number} 浏览器视口的高度
+ */
+export function getWindowHeight() {
+  const windowHeight = document.compatMode === 'CSS1Compat'
+    ? document.documentElement.clientHeight
+    : document.body.clientHeight;
+
+  return windowHeight;
+}

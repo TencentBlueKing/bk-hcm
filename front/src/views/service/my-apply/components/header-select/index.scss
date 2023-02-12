@@ -1,0 +1,19 @@
+.apply-select {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 42px;
+    line-height: 42px;
+    border-right: 1px solid #dcdee5;
+    border-bottom: 1px solid #dcdee5;
+    .title {
+        color: #63656e;
+    }
+    .transform180 {
+        transform: rotate(180deg);
+    }
+}
+
+.hide-dropdown-menu {
+    display: none;
+}

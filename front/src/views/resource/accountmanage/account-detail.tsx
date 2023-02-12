@@ -119,6 +119,10 @@ export default defineComponent({
     // 动态表单
     const renderBaseInfoForm = (data: any) => {
       let insertFormData: any = [];
+      formBaseInfo = formBaseInfo.filter(e => e.name !== t('密钥信息'));
+      const nameIndex = formBaseInfo[0].data.findIndex(e => e.property === 'name');
+      const managersIndex = formBaseInfo[0].data.findIndex(e => e.property === 'managers');
+      console.log(nameIndex, managersIndex);
       switch (data.vendor) {
         case 'huawei':
           insertFormData = [
@@ -141,7 +145,7 @@ export default defineComponent({
               component: () => <span>{projectModel.extension.cloud_sub_account_id || '--'}</span>,
             },
           ];
-          formBaseInfo[0].data.splice(4, 0, ...insertFormData);
+          formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
@@ -182,7 +186,8 @@ export default defineComponent({
               component: () => <span>{projectModel.extension.cloud_main_account_id || '--'}</span>,
             },
           ];
-          formBaseInfo[0].data.splice(4, 0, ...insertFormData);
+          console.log('formBaseInfo', formBaseInfo);
+          formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
@@ -216,7 +221,7 @@ export default defineComponent({
               component: () => <span>{projectModel.extension.cloud_account_id || '--'}</span>,
             },
           ];
-          formBaseInfo[0].data.splice(4, 0, ...insertFormData);
+          formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
@@ -262,7 +267,7 @@ export default defineComponent({
               component: () => <span>{projectModel.extension.cloud_subscription_name || '--'}</span>,
             },
           ];
-          formBaseInfo[0].data.splice(4, 0, ...insertFormData);
+          formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
@@ -308,7 +313,7 @@ export default defineComponent({
               component: () => <span>{projectModel.extension.cloud_project_name || '--'}</span>,
             },
           ];
-          formBaseInfo[0].data.splice(4, 0, ...insertFormData);
+          formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
           formBaseInfo.push({
             name: t('密钥信息'),
             data: [
@@ -481,6 +486,7 @@ export default defineComponent({
     };
 
     const check = (val: any): boolean => {
+      console.log('check', check);
       return  /^[a-z][a-z-z0-9_-]*$/.test(val);
     };
 
@@ -497,6 +503,7 @@ export default defineComponent({
         isOrganizationDetail.value = true;  // 改为详情展示态
       } else if (key === 'bizIds') {
         // 若选择全部业务，则参数是-1
+        console.log(projectModel[key].length, businessList.list.length);
         params.bk_biz_ids = projectModel[key].length === businessList.list.length
           ? [-1] : projectModel[key];
       } else {
@@ -519,6 +526,7 @@ export default defineComponent({
         console.log(error);
       } finally {
         isOrganizationDetail.value = true;  // 改为详情展示态
+        getDetail();    // 请求数据
       }
     };
 
@@ -636,7 +644,7 @@ export default defineComponent({
       isOrganizationDetail.value = false;
     };
 
-    const formBaseInfo = reactive([
+    let formBaseInfo = reactive([
       {
         name: t('基本信息'),
         data: [

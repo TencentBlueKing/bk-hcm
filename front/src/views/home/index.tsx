@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, reactive, watch } from 'vue';
+import { defineComponent, onMounted, reactive, watch, ref } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
 import { Menu, Navigation, Dropdown } from 'bkui-vue';
@@ -34,6 +34,7 @@ export default defineComponent({
     let menus: RouteRecordRaw[] = [];
     let openedKeys: string[] = [];
     let path = '';
+    const curPath = ref('');
 
     const changeMenus = (id: string, ...subPath: string[]) => {
       console.log('subPath', subPath);
@@ -77,10 +78,14 @@ export default defineComponent({
     watch(
       () => route,
       (val) => {
+        curPath.value = route.path;
         const pathArr = val.path.slice(1, val.path.length).split('/');
         changeMenus(pathArr.shift(), ...pathArr);
       },
-      { immediate: true },
+      {
+        immediate: true,
+        deep: true,
+      },
     );
 
     const handleHeaderMenuClick = (id: string, routeName: string): void => {
@@ -204,7 +209,7 @@ export default defineComponent({
                         <div class="navigation-breadcrumb">
                             <Breadcrumb></Breadcrumb>
                         </div>
-                        <div class="view-warp">
+                        <div class={ ['/service/my-apply'].includes(curPath.value) ? 'view-warp no-padding' : 'view-warp'}>
                           <RouterView></RouterView>
                         </div>
                       </>

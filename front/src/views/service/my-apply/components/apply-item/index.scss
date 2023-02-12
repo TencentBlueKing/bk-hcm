@@ -1,0 +1,75 @@
+$borderColor:  #f5f6fa;
+
+.item {
+    position: relative;
+    padding: 15px 10px 18px 20px;
+    border-right: 1px solid #dcdee5;
+    cursor: pointer;
+    &:hover {
+        border-right-color: $borderColor;
+        background: $borderColor;
+    }
+    &.has-bottom-border {
+        border-bottom: 1px solid #dcdee5;
+    }
+    &.is-active {
+        background: $borderColor;
+        border-right-color: $borderColor;
+    }
+    .is-read {
+        position: absolute;
+        top: 21px;
+        left: 10px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 1px solid #3a84ff;
+        background: #a3c5fd;
+    }
+    .header-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        .title {
+            font-size: 14px;
+            color: #313238;
+            max-width: 175px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: bottom;
+        }
+        .status {
+            padding: 1px 8px;
+            color: #ffffff;
+            border-radius: 10px;
+            font-size: 12px;
+            &.pending {
+                background: #367FF9;
+            }
+            &.reject {
+                background:#F39C3C;
+            }
+            &.pass {
+                background: #27BE78;
+            }
+            &.cancelled {
+                background: #AAAAAA;
+            }
+        }
+    }
+    .bottom-info {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 12px;
+        .value {
+            display: inline-block;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: bottom;
+        }
+    }
+}
