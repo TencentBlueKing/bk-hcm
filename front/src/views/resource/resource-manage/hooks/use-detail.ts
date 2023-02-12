@@ -8,7 +8,7 @@ import {
 } from '@/store/resource';
 import { CloudType } from '@/typings';
 
-export default (type: string, id: string, cb?: Function) => {
+export default (type: string, id: string, cb?: Function, vendor?: string) => {
   const loading = ref(false);
   const detail = ref({});
   const resourceStore = useResourceStore();
@@ -17,7 +17,7 @@ export default (type: string, id: string, cb?: Function) => {
   const getDetail = async () => {
     loading.value = true;
     resourceStore
-      .detail(type, id)
+      .detail(type, id, vendor)
       .then(({ data = {} }: { data: any }) => {
         detail.value = {
           ...data,
@@ -25,7 +25,7 @@ export default (type: string, id: string, cb?: Function) => {
           vendorName: CloudType[data.vendor],
           bk_biz_id: data.bk_biz_id === -1 ? '全部' : data.bk_biz_id,
         };
-        cb(detail.value);
+        cb?.(detail.value);
       })
       .finally(() => {
         loading.value = false;

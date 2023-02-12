@@ -5,6 +5,11 @@
   background: #fff;
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
   padding: 20px;
+
+  .title-content {
+    display: flex;
+    align-items: center;
+  }
 }
 
 .detail-header-arrows-left {

@@ -8,6 +8,7 @@ import DriveDetail from './children/detail/drive-detail.vue';
 import IpDetail from './children/detail/ip-detail.vue';
 import RoutingDetail from './children/detail/routing-detail.vue';
 import ImageDetail from './children/detail/image-detail.vue';
+import NetworkInterfaceDetail from './children/detail/network-interface-detail.vue';
 
 import {
   useRoute,
@@ -25,6 +26,7 @@ const componentMap = {
   route: RoutingDetail,
   gcp: GcpDetail,
   image: ImageDetail,
+  'network-interface': NetworkInterfaceDetail,
 };
 
 const renderComponent = componentMap[route.params.type as string];

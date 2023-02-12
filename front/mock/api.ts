@@ -12,6 +12,8 @@ const api = {
   add_account: `${domain}/add/`,
   get_account: `${domain}/get/`,
   account_sync: `${domain}/sync/`,
+  list_public_image: `${domain}/cloud/public_images/list/`,
+  detail_public_image: `${domain}/cloud/public_images/detail/`,
   // someOtherApi: `${domain}/otherApi`
 };
 

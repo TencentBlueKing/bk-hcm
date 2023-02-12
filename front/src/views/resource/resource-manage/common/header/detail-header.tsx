@@ -32,7 +32,7 @@ export default defineComponent({
   render() {
     return <>
       <section class="detail-header-main">
-        <span>
+        <div class="title-content">
           <arrows-left
             class="detail-header-arrows-left"
             onClick={this.goBack}
@@ -40,12 +40,12 @@ export default defineComponent({
           {
             this.$slots.default?.()
           }
-        </span>
-        <span>
+        </div>
+        <div>
           {
             this.$slots.right?.()
           }
-        </span>
+        </div>
       </section>
     </>;
   },

@@ -29,16 +29,17 @@ module.exports = {
       },
       devServer : {
         host: env.DEV_HOST,
-        port: 80,
+        port: 5000,
         historyApiFallback: true,
         before(app) {
           apiMocker(app, {
-                watch: [
-                  '/mock/api/v4/organization/user_info/',
-                  '/mock/api/v4/add/',
-                  '/mock/api/v4/get/',
-                  '/mock/api/v4/sync/'
-                ],
+                // watch: [
+                //   '/mock/api/v4/organization/user_info/',
+                //   '/mock/api/v4/add/',
+                //   '/mock/api/v4/get/',
+                //   '/mock/api/v4/sync/',
+                //   '/mock/api/v4/cloud/public_images/list/'
+                // ],
                 api: resolve(__dirname, './mock/api.ts')
             })
         },

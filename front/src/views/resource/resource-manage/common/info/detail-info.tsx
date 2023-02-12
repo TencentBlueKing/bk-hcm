@@ -11,7 +11,7 @@ type Field = {
   name: string;
   value?: string;
   link?: string | ((cell: string) => string);
-  copy?: string;
+  copy?: string | boolean;
   edit?: boolean;
   prop?: string;
   render?: (cell: string | boolean) => void;

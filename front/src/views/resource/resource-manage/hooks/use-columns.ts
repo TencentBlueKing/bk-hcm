@@ -453,6 +453,160 @@ export default (type: string) => {
     getDeleteField('disks'),
   ];
 
+  const imageColumns = [
+    {
+      label: 'ID',
+      field: 'id',
+      sort: true,
+      render({ data }: any) {
+        console.log('data,', data);
+        return h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            onClick() {
+              router.push({
+                name: 'resourceDetail',
+                params: {
+                  type: 'image',
+                },
+                query: {
+                  id: data.id,
+                  vendor: data.vendor,
+                },
+              });
+            },
+          },
+          [
+            data.id || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '实例 ID',
+      field: 'cloud_id',
+      sort: true,
+    },
+    {
+      label: '名称',
+      field: 'name',
+      sort: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            CloudType[cell] || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '架构',
+      field: 'architecture',
+      sort: true,
+    },
+    {
+      label: '状态',
+      field: 'state',
+    },
+    {
+      label: '类型',
+      field: 'type',
+      sort: true,
+    },
+    {
+      label: '平台',
+      field: 'platform',
+      sort: true,
+    },
+    {
+      label: '创建时间',
+      field: 'created_at',
+      sort: true,
+    },
+  ];
+
+  const networkInterfaceColumns = [
+    {
+      label: 'ID',
+      field: 'id',
+      sort: true,
+      render({ data }: any) {
+        return h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            onClick() {
+              router.push({
+                name: 'resourceDetail',
+                params: {
+                  type: 'network-interface',
+                },
+                query: {
+                  id: data.id,
+                  vendor: data.vendor,
+                },
+              });
+            },
+          },
+          [
+            data.id || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '名称',
+      field: 'name',
+      sort: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            CloudType[cell] || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '地域',
+      field: 'location',
+      sort: true,
+    },
+    {
+      label: '虚拟网络',
+      field: 'virtual_network',
+    },
+    {
+      label: '主要专用IP',
+      field: 'main_appoint_ip',
+      sort: true,
+    },
+    {
+      label: '资源组',
+      field: 'resource_group_name',
+      sort: true,
+    },
+    {
+      label: '创建时间',
+      field: 'created_at',
+      sort: true,
+    },
+  ];
+
   const routeColumns = [
     {
       label: 'ID',
@@ -554,6 +708,8 @@ export default (type: string) => {
     group: groupColumns,
     gcp: gcpColumns,
     drive: driveColumns,
+    image: imageColumns,
+    networkInterface: networkInterfaceColumns,
     route: routeColumns,
   };
 

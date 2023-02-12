@@ -21,9 +21,11 @@ export const useResourceStore = defineStore({
      */
     list(data: any, type: string) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/list`, data);
-      // return http.post(`http://9.135.119.6:9602/api/v1/cloud/${type}/list/`, data);
     },
-    detail(type: string, id: number | string) {
+    detail(type: string, id: number | string, vendor?: string) {
+      if (vendor) {
+        return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/${type}/${id}`);
+      }
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/${id}`);
     },
     delete(type: string, id: string | number) {

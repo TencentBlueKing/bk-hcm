@@ -21,6 +21,10 @@ export const RESOURCE_TYPES = [
     type: 'drive',
   },
   {
+    name: '网络接口',
+    type: 'network-interface',
+  },
+  {
     name: '弹性 IP',
     type: 'ip',
   },

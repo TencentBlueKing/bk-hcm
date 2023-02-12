@@ -16,7 +16,7 @@ const props = defineProps({
   },
 });
 
-const columns = useColumns('image');
+const columns = useColumns('networkInterface');
 
 const {
   datas,
@@ -25,7 +25,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryList(props, 'public_images');
+} = useQueryList(props, 'network_interface');
 </script>
 
 <template>

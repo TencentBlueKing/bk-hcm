@@ -13,6 +13,7 @@ import DriveManage from './children/manage/drive-manage.vue';
 import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
+import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
 
 import {
   RESOURCE_TYPES,
@@ -55,6 +56,7 @@ const componentMap = {
   ip: IpManage,
   routing: RoutingManage,
   image: ImageManage,
+  'network-interface': NetworkInterfaceManage,
 };
 
 // 标签相关数据
