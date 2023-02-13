@@ -94,6 +94,13 @@ func (svc *vpcSvc) UpdateVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// check if all vpcs are not assigned to biz, cannot operate biz resource in account api
+	vpcFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: id}
+	err = svc.checkVpcsInBiz(cts.Kit, vpcFilter, constant.UnassignedBiz)
+	if err != nil {
+		return nil, err
+	}
+
 	// create update audit.
 	updateFields, err := converter.StructToMap(req)
 	if err != nil {
@@ -150,6 +157,13 @@ func (svc *vpcSvc) GetVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// check if all vpcs are not assigned to biz, cannot operate biz resource in account api
+	vpcFilter := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}
+	err = svc.checkVpcsInBiz(cts.Kit, vpcFilter, constant.UnassignedBiz)
+	if err != nil {
+		return nil, err
+	}
+
 	// get vpc detail info
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
@@ -196,6 +210,12 @@ func (svc *vpcSvc) ListVpc(cts *rest.Contexts) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// check if all vpcs are not assigned to biz, cannot operate biz resource in account api
+	err := svc.checkVpcsInBiz(cts.Kit, req.Filter, constant.UnassignedBiz)
+	if err != nil {
+		return nil, err
 	}
 
 	// list authorized instances
@@ -247,6 +267,13 @@ func (svc *vpcSvc) BatchDeleteVpc(cts *rest.Contexts) (interface{}, error) {
 			ResourceID: info.AccountID}})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	if err != nil {
+		return nil, err
+	}
+
+	// check if all vpcs are not assigned to biz, cannot operate biz resource in account api
+	vpcFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
+	err = svc.checkVpcsInBiz(cts.Kit, vpcFilter, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
@@ -311,27 +338,11 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// check if all vpcs are not assigned
-	assignedReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.VpcIDs},
-				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: constant.UnassignedBiz},
-			},
-		},
-		Page: &core.BasePage{
-			Count: true,
-		},
-	}
-	result, err := svc.client.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), assignedReq)
+	// check if all vpcs are not assigned to biz, right now assigning resource twice is not allowed
+	vpcFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.VpcIDs}
+	err = svc.checkVpcsInBiz(cts.Kit, vpcFilter, constant.UnassignedBiz)
 	if err != nil {
-		logs.Errorf("count assigned vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
-	}
-
-	if result.Count != 0 {
-		return nil, fmt.Errorf("%d vpcs are already assigned", result.Count)
 	}
 
 	// create assign audit.
@@ -377,6 +388,13 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 	}
 
 	err := svc.authorizeVpcAssignOp(cts.Kit, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	// check if all vpcs are not assigned to biz, cannot operate biz resource in account api
+	vpcFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: ids}
+	err = svc.checkVpcsInBiz(cts.Kit, vpcFilter, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
@@ -457,6 +475,32 @@ func (svc *vpcSvc) authorizeVpcAssignOp(kt *kit.Kit, ids []string) error {
 	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// checkVpcsInBiz check if vpcs are in the specified biz.
+func (svc *vpcSvc) checkVpcsInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
+	req := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: bizID}, rule,
+			},
+		},
+		Page: &core.BasePage{
+			Count: true,
+		},
+	}
+	result, err := svc.client.DataService().Global.Vpc.List(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("count vpcs that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	if result.Count != 0 {
+		return fmt.Errorf("%d vpcs are already assigned", result.Count)
 	}
 
 	return nil

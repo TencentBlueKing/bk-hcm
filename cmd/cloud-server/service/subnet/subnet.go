@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -88,6 +89,13 @@ func (svc *subnetSvc) UpdateSubnet(cts *rest.Contexts) (interface{}, error) {
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Update,
 		ResourceID: basicInfo.AccountID}}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	// check if all subnets are not assigned, cannot operate biz resource in account api
+	subnetFilter := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}
+	err = svc.checkSubnetsInBiz(cts.Kit, subnetFilter, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +156,13 @@ func (svc *subnetSvc) GetSubnet(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// check if all subnets are not assigned, cannot operate biz resource in account api
+	subnetFilter := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}
+	err = svc.checkSubnetsInBiz(cts.Kit, subnetFilter, constant.UnassignedBiz)
+	if err != nil {
+		return nil, err
+	}
+
 	// get subnet detail info
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
@@ -194,6 +209,12 @@ func (svc *subnetSvc) ListSubnet(cts *rest.Contexts) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// check if all subnets are not assigned, cannot operate biz resource in account api
+	err := svc.checkSubnetsInBiz(cts.Kit, req.Filter, constant.UnassignedBiz)
+	if err != nil {
+		return nil, err
 	}
 
 	// list authorized instances
@@ -245,6 +266,13 @@ func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error)
 			ResourceID: info.AccountID}})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	if err != nil {
+		return nil, err
+	}
+
+	// check if all subnets are not assigned, cannot operate biz resource in account api
+	subnetFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
+	err = svc.checkSubnetsInBiz(cts.Kit, subnetFilter, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
@@ -324,34 +352,18 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
+	// check if all subnets are not assigned, right now assigning resource twice is not allowed
+	subnetFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.SubnetIDs}
+	err = svc.checkSubnetsInBiz(cts.Kit, subnetFilter, constant.UnassignedBiz)
+	if err != nil {
+		return nil, err
+	}
+
 	// create assign audit.
 	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.SubnetAuditResType, req.SubnetIDs, req.BkBizID)
 	if err != nil {
 		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
-	}
-
-	// check if all subnets are not assigned
-	assignedReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.SubnetIDs},
-				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: constant.UnassignedBiz},
-			},
-		},
-		Page: &core.BasePage{
-			Count: true,
-		},
-	}
-	result, err := svc.client.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), assignedReq)
-	if err != nil {
-		logs.Errorf("count assigned subnet failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if result.Count != 0 {
-		return nil, fmt.Errorf("%d subnets are already assigned", result.Count)
 	}
 
 	// update subnet biz relations
@@ -370,4 +382,30 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 	}
 
 	return nil, nil
+}
+
+// checkSubnetsInBiz check if subnets are in the specified biz.
+func (svc *subnetSvc) checkSubnetsInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
+	req := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: bizID}, rule,
+			},
+		},
+		Page: &core.BasePage{
+			Count: true,
+		},
+	}
+	result, err := svc.client.DataService().Global.Subnet.List(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("count subnets that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	if result.Count != 0 {
+		return fmt.Errorf("%d subnets are already assigned", result.Count)
+	}
+
+	return nil
 }
