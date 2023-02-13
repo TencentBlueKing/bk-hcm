@@ -37,7 +37,15 @@ const fileds = ref<any[]>([
 // 路由列表字段配置
 const columns = ref<any[]>([]);
 // 路由列表数据
-const tableData = ref([]);
+const datas = ref([]);
+// 加载状态
+const isLoading = ref(false);
+// 分页状态
+const pagination = ref({
+  current: 1,
+  limit: 10,
+  count: 0,
+});
 
 watch(
   () => props.detail,
@@ -303,49 +311,92 @@ watch(
         ]);
         break;
     }
-    if (props.detail.id) {
-      resourceStore
-        .getRouteList(
-          props.detail.vendor,
-          props.detail.id,
-          {
-            filter: {
-              op: 'and',
-              rules: [{
-                field: 'route_table_id',
-                op: 'eq',
-                value: props.detail.id
-              }]
-            },
-            page: {
-              count: false,
-              start: 0,
-              limit: 500
-            }
-          }
-        )
-        .then((res: any) => {
-          tableData.value = res?.data?.details || []
-        })
-    }
+    handleGetData()
   },
   {
     deep: true,
     immediate: true
   }
 )
+
+const handleGetData = () => {
+  if (props.detail.id) {
+    isLoading.value = true
+    const filter = {
+      op: 'and',
+      rules: [{
+        field: 'route_table_id',
+        op: 'eq',
+        value: props.detail.id
+      }]
+    }
+    Promise.all([
+      resourceStore
+        .getRouteList(
+          props.detail.vendor,
+          props.detail.id,
+          {
+            filter,
+            page: {
+              count: false,
+              start: (pagination.value.current - 1) * pagination.value.limit,
+              limit: pagination.value.limit,
+            },
+          }
+        ),
+      resourceStore
+        .getRouteList(
+          props.detail.vendor,
+          props.detail.id,
+          {
+            filter,
+            page: {
+              count: true,
+            },
+          }
+        )
+    ])
+    .then(([listResult, countResult]) => {
+      datas.value = listResult?.data?.details || []
+      pagination.value.count = countResult?.data?.count || 0;
+    })
+    .finally(() => {
+      isLoading.value = false
+    })
+  }
+}
+
+// 页码变化发生的事件
+const handlePageChange = (current: number) => {
+  pagination.value.current = current;
+  handleGetData();
+};
+
+// 条数变化发生的事件
+const handlePageSizeChange = (limit: number) => {
+  pagination.value.limit = limit;
+  handleGetData();
+};
 </script>
 
 <template>
-  <detail-info
-    class="mt20"
-    :fields="fileds"
-    :detail="detail"
-  ></detail-info>
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-  />
+  <bk-loading
+    :loading="isLoading"
+  >
+    <detail-info
+      class="mt20"
+      :fields="fileds"
+      :detail="detail"
+    ></detail-info>
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      remote-pagination
+      :pagination="pagination"
+      :columns="columns"
+      :data="datas"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
+    />
+  </bk-loading>
 </template>

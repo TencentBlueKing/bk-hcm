@@ -130,6 +130,7 @@ const {
     <bk-table
       class="mt20"
       row-hover="auto"
+      remote-pagination
       :pagination="pagination"
       :columns="columns"
       :data="datas"
