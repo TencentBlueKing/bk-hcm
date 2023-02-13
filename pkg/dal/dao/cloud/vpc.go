@@ -21,7 +21,6 @@ package cloud
 
 import (
 	"fmt"
-	"strings"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
@@ -47,7 +46,6 @@ type Vpc interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.VpcTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *cloud.VpcTable) error
 	List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (*types.VpcListResult, error)
-	ListByGcpSelfLink(kt *kit.Kit, links []string) ([]cloud.VpcTable, error)
 	BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
@@ -180,7 +178,9 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 		return nil, errf.New(errf.InvalidParameter, "list vpc options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.VpcColumns.ColumnTypes())),
+	columnTypes := cloud.VpcColumns.ColumnTypes()
+	columnTypes["extension.self_link"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err
 	}
@@ -225,32 +225,6 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 	}
 
 	return &types.VpcListResult{Details: details}, nil
-}
-
-// ListByGcpSelfLink list gcp vpcs by self links.
-// TODO remove this when JSON is supported
-func (v *vpcDao) ListByGcpSelfLink(kt *kit.Kit, links []string) ([]cloud.VpcTable, error) {
-	if len(links) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "self links are empty")
-	}
-
-	if len(links) > int(core.DefaultMaxPageLimit) {
-		return nil, errf.New(errf.InvalidParameter, "self links exceeds maximum limit")
-	}
-
-	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE vendor = "gcp" AND extension ->> '$.self_link' IN (:self_link)`,
-		cloud.VpcColumns.NamedExpr(), table.VpcTable)
-
-	details := make([]cloud.VpcTable, 0)
-
-	param := map[string]interface{}{
-		"self_link": strings.Join(links, "','"),
-	}
-	if err := v.orm.Do().Select(kt.Ctx, &details, sql, param); err != nil {
-		return nil, err
-	}
-
-	return details, nil
 }
 
 // BatchDeleteWithTx batch delete vpc with transaction.

@@ -37,3 +37,15 @@ func StringInSlice(str string, list []string) bool {
 	}
 	return false
 }
+
+func Unique[T comparable](list []T) []T {
+	uniqueMap := make(map[T]struct{})
+	uniqueList := make([]T, 0)
+	for _, item := range list {
+		if _, exists := uniqueMap[item]; !exists {
+			uniqueMap[item] = struct{}{}
+			uniqueList = append(uniqueList, item)
+		}
+	}
+	return list
+}

@@ -35,6 +35,7 @@ import (
 	"hcm/cmd/hc-service/service/firewall"
 	"hcm/cmd/hc-service/service/image"
 	"hcm/cmd/hc-service/service/region"
+	routetable "hcm/cmd/hc-service/service/route-table"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
 	"hcm/cmd/hc-service/service/vpc"
@@ -155,6 +156,7 @@ func (s *Service) apiSet() *restful.Container {
 	disk.InitDiskService(c)
 	cvm.InitCvmService(c)
 	image.InitImageService(c)
+	routetable.InitRouteTableService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

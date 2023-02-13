@@ -10,7 +10,6 @@
 |--------|--------------|-----|-----------------------------------------------|
 | filter | object       | 是   | 查询过滤条件                                        |
 | page   | object       | 是   | 分页设置                                          |
-| fields | string array | 否   | 属性列表，控制返回结果里有哪些字段，能够加速接口请求和减少网络流量传输，如果不传则返回全量 |
 
 #### filter
 
@@ -21,11 +20,11 @@
 
 #### filter.rules[n] （详情请看 rules 表达式说明）
 
-| 参数名称  | 参数类型        | 必选  | 描述                                         |
-|-------|-------------|-----|--------------------------------------------|
-| field | string      | 是   | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍 |
-| op    | enum string | 是   | 操作符（枚举值：eq、neq、gt、gte、le、lte、in、nin、cs、cis）       |
-| value | 可变类型        | 是   | 查询条件Value值                                 |
+| 参数名称  | 参数类型        | 必选  | 描述                                          |
+|-------|-------------|-----|---------------------------------------------|
+| field | string      | 是   | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍  |
+| op    | enum string | 是   | 操作符（枚举值：eq、neq、gt、gte、le、lte、in、nin、cs、cis） |
+| value | 可变类型        | 是   | 查询条件Value值                                  |
 
 ##### rules 表达式说明：
 
@@ -91,21 +90,25 @@
 
 #### 查询参数介绍：
 
-| 参数名称         | 参数类型   | 描述                            |
-|--------------|--------|-------------------------------|
-| id           | string | 子网的ID                         |
-| vendor       | string | 云厂商                           |
-| account_id   | string | 账号ID                          |
-| cloud_vpc_id | string | VPC的云ID                       |
-| cloud_id     | string | 子网的云ID                        |
-| name         | string | 子网名称                          |
-| memo         | string | 备注                            |
-| vpc_id       | string | VPC的云ID                       |
-| bk_biz_id    | int64  | 业务ID，-1表示没有分配到业务              |
-| creator      | string | 创建者                           |
-| reviser      | string | 更新者                           |
-| created_at   | string | 创建时间，标准格式：2006-01-02 15:04:05 |
-| updated_at   | string | 更新时间，标准格式：2006-01-02 15:04:05 |
+| 参数名称                 | 参数类型   | 描述                            |
+|----------------------|--------|-------------------------------|
+| id                   | string | 子网的ID                         |
+| vendor               | string | 云厂商                           |
+| account_id           | string | 账号ID                          |
+| cloud_vpc_id         | string | VPC的云ID                       |
+| cloud_route_table_id | string | 路由表的云ID                       |
+| cloud_id             | string | 子网的云ID                        |
+| name                 | string | 子网名称                          |
+| region               | string | 地域                            |
+| zone                 | string | 可用区                           |
+| memo                 | string | 备注                            |
+| vpc_id               | string | VPC的ID                        |
+| route_table_id       | string | 路由表的ID                        |
+| bk_biz_id            | int64  | 业务ID，-1表示没有分配到业务              |
+| creator              | string | 创建者                           |
+| reviser              | string | 更新者                           |
+| created_at           | string | 创建时间，标准格式：2006-01-02 15:04:05 |
+| updated_at           | string | 更新时间，标准格式：2006-01-02 15:04:05 |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -184,6 +187,8 @@
         "cloud_vpc_id": "vpc-xxxxxxxx",
         "cloud_id": "subnet-xxxxxxxx",
         "name": "subnet-default",
+        "region": "ap-guangzhou",
+        "zone": "ap-guangzhou-6",
         "ipv4_cidr": [
           "127.0.0.0/16"
         ],
@@ -232,20 +237,24 @@
 
 #### data.detail[n]
 
-| 参数名称         | 参数类型         | 描述                            |
-|--------------|--------------|-------------------------------|
-| id           | string       | 子网的ID                         |
-| vendor       | string       | 云厂商                           |
-| account_id   | string       | 账号ID                          |
-| cloud_vpc_id | string       | VPC的云ID                       |
-| cloud_id     | string       | 子网的云ID                        |
-| name         | string       | 子网名称                          |
-| ipv4_cidr    | string array | IPv4 CIDR                     |
-| ipv6_cidr    | string array | IPv6 CIDR                     |
-| memo         | string       | 备注                            |
-| vpc_id       | string       | VPC的云ID                       |
-| bk_biz_id    | int64        | 业务ID，-1表示没有分配到业务              |
-| creator      | string       | 创建者                           |
-| reviser      | string       | 更新者                           |
-| created_at   | string       | 创建时间，标准格式：2006-01-02 15:04:05 |
-| updated_at   | string       | 更新时间，标准格式：2006-01-02 15:04:05 |
+| 参数名称                 | 参数类型         | 描述                            |
+|----------------------|--------------|-------------------------------|
+| id                   | string       | 子网的ID                         |
+| vendor               | string       | 云厂商                           |
+| account_id           | string       | 账号ID                          |
+| cloud_vpc_id         | string       | VPC的云ID                       |
+| cloud_route_table_id | string       | 路由表的云ID                       |
+| cloud_id             | string       | 子网的云ID                        |
+| name                 | string       | 子网名称                          |
+| region               | string       | 地域                            |
+| zone                 | string       | 可用区                           |
+| ipv4_cidr            | string array | IPv4 CIDR                     |
+| ipv6_cidr            | string array | IPv6 CIDR                     |
+| memo                 | string       | 备注                            |
+| vpc_id               | string       | VPC的云ID                       |
+| bk_biz_id            | int64        | 业务ID，-1表示没有分配到业务              |
+| route_table_id       | string       | 路由表的ID                        |
+| creator              | string       | 创建者                           |
+| reviser              | string       | 更新者                           |
+| created_at           | string       | 创建时间，标准格式：2006-01-02 15:04:05 |
+| updated_at           | string       | 更新时间，标准格式：2006-01-02 15:04:05 |

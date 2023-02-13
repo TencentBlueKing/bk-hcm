@@ -55,7 +55,7 @@ func ContainersExpression(fieldName string, values interface{}) *filter.Expressi
 	}
 }
 
-// AllExpression 生成全亮查询filter。
+// AllExpression 生成全量查询filter。
 func AllExpression() *filter.Expression {
 	return &filter.Expression{
 		Op:    filter.And,

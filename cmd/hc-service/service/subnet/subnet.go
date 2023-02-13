@@ -55,6 +55,12 @@ func InitSubnetService(cap *capability.Capability) {
 	h.Add("AzureSubnetSync", "POST", "/vendors/azure/subnets/sync", s.AzureSubnetSync)
 	h.Add("GcpSubnetSync", "POST", "/vendors/gcp/subnets/sync", s.GcpSubnetSync)
 
+	// count subnet available ips
+	h.Add("TCloudSubnetCountIP", "POST", "/vendors/tcloud/subnets/{id}/ips/count", s.TCloudSubnetCountIP)
+	h.Add("AwsSubnetCountIP", "POST", "/vendors/aws/subnets/{id}/ips/count", s.AwsSubnetCountIP)
+	h.Add("AzureSubnetCountIP", "POST", "/vendors/azure/subnets/{id}/ips/count", s.AzureSubnetCountIP)
+	h.Add("HuaWeiSubnetCountIP", "POST", "/vendors/huawei/subnets/{id}/ips/count", s.HuaWeiSubnetCountIP)
+
 	h.Load(cap.WebService)
 }
 

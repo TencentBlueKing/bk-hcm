@@ -166,6 +166,7 @@ type HuaWeiVpcListResult struct {
 type Vpc[T cloud.VpcExtension] struct {
 	CloudID   string  `json:"cloud_id"`
 	Name      string  `json:"name"`
+	Region    string  `json:"region"`
 	Memo      *string `json:"memo,omitempty"`
 	Extension *T      `json:"extension"`
 }
@@ -184,3 +185,43 @@ type AzureVpc Vpc[cloud.AzureVpcExtension]
 
 // HuaWeiVpc defines huawei vpc.
 type HuaWeiVpc Vpc[cloud.HuaWeiVpcExtension]
+
+// -------------------------- IP --------------------------
+
+// HuaWeiVpcIPAvailGetOption get huawei vcp ip availabilities option.
+type HuaWeiVpcIPAvailGetOption struct {
+	Region   string `json:"region"`
+	SubnetID string `json:"subnet_id"`
+}
+
+// Validate HuaWeiVpcIPAvailGetOption.
+func (v HuaWeiVpcIPAvailGetOption) Validate() error {
+	if len(v.Region) == 0 {
+		return errf.New(errf.InvalidParameter, "region is required")
+	}
+
+	if len(v.SubnetID) == 0 {
+		return errf.New(errf.InvalidParameter, "subnetID id is required")
+	}
+
+	return nil
+}
+
+// AzureVpcListUsageOption defines azure list vpc usage options
+type AzureVpcListUsageOption struct {
+	ResourceGroupName string `json:"resource_group_name"`
+	VpcID             string `json:"vpc_name"`
+}
+
+// Validate AzureVpcIPAvailGetOption.
+func (v AzureVpcListUsageOption) Validate() error {
+	if len(v.ResourceGroupName) == 0 {
+		return errf.New(errf.InvalidParameter, "resource group is required")
+	}
+
+	if len(v.VpcID) == 0 {
+		return errf.New(errf.InvalidParameter, "vpc id is required")
+	}
+
+	return nil
+}

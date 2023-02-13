@@ -71,6 +71,22 @@ func (c *clientSet) vpcClient() (*armnetwork.VirtualNetworksClient, error) {
 	return client, nil
 }
 
+func (c *clientSet) usageClient() (*armnetwork.UsagesClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+
+	client, err := armnetwork.NewUsagesClient(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init azure usage client failed, err: %v", err)
+	}
+	return client, nil
+}
+
 func (c *clientSet) subnetClient() (*armnetwork.SubnetsClient, error) {
 	credential, err := c.newClientSecretCredential()
 	if err != nil {
@@ -163,5 +179,37 @@ func (c *clientSet) regionClient() (*armsubscriptions.Client, error) {
 		return nil, fmt.Errorf("init region client failed, err: %v", err)
 	}
 
+	return client, nil
+}
+
+func (c *clientSet) routeTableClient() (*armnetwork.RouteTablesClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+
+	client, err := armnetwork.NewRouteTablesClient(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init azure vpc client failed, err: %v", err)
+	}
+	return client, nil
+}
+
+func (c *clientSet) routeClient() (*armnetwork.RoutesClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+
+	client, err := armnetwork.NewRoutesClient(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init azure vpc client failed, err: %v", err)
+	}
 	return client, nil
 }

@@ -40,6 +40,7 @@ var VpcColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 	{Column: "cloud_id", NamedC: "cloud_id", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},
+	{Column: "region", NamedC: "region", Type: enumor.String},
 	{Column: "category", NamedC: "category", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
@@ -63,6 +64,8 @@ type VpcTable struct {
 	CloudID string `db:"cloud_id" validate:"max=255" json:"cloud_id"`
 	// Name vpc名称
 	Name *string `db:"name" validate:"omitempty,max=128" json:"name"`
+	// Region 地域
+	Region string `db:"region" validate:"max=255" json:"region"`
 	// Category 类别
 	Category enumor.VpcCategory `db:"category" validate:"max=32" json:"category"`
 	// Memo 备注
@@ -142,6 +145,10 @@ func (v VpcTable) UpdateValidate() error {
 
 	if len(v.CloudID) != 0 {
 		return errors.New("cloud id can not update")
+	}
+
+	if len(v.Region) != 0 {
+		return errors.New("region can not update")
 	}
 
 	if len(v.Creator) != 0 {

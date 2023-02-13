@@ -44,6 +44,7 @@ type StringArray []string
 // Scan is used to decode raw message which is read from db into StringArray.
 func (str *StringArray) Scan(raw interface{}) error {
 	if str == nil || raw == nil {
+		*str = make([]string, 0)
 		return nil
 	}
 
@@ -68,7 +69,7 @@ func (str *StringArray) Scan(raw interface{}) error {
 // Value encode the StringArray to a json raw, so that it can be stored to db with json raw.
 func (str StringArray) Value() (driver.Value, error) {
 	if str == nil {
-		return nil, nil
+		return "[]", nil
 	}
 
 	return json.Marshal(str)

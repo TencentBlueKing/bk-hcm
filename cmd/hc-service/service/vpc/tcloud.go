@@ -100,7 +100,7 @@ func (v vpc) TCloudVpcDelete(cts *rest.Contexts) (interface{}, error) {
 
 	delOpt := &adcore.BaseRegionalDeleteOption{
 		BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
-		Region:           getRes.Extension.Region,
+		Region:           getRes.Region,
 	}
 	err = cli.DeleteVpc(cts.Kit, delOpt)
 	if err != nil {
@@ -349,10 +349,10 @@ func (v vpc) filterTcloudVpcList(req *hcservice.ResourceSyncReq, list *types.TCl
 				AccountID: req.AccountID,
 				CloudID:   item.CloudID,
 				Name:      converter.ValToPtr(item.Name),
+				Region:    item.Region,
 				Category:  enumor.BizVpcCategory,
 				Memo:      item.Memo,
 				Extension: &cloud.TCloudVpcCreateExt{
-					Region:          item.Extension.Region,
 					IsDefault:       item.Extension.IsDefault,
 					EnableMulticast: item.Extension.EnableMulticast,
 					DnsServerSet:    item.Extension.DnsServerSet,

@@ -46,6 +46,7 @@ type Subnet interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.SubnetTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *cloud.SubnetTable) error
 	List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (*types.SubnetListResult, error)
+	Count(kt *kit.Kit, opt *types.CountOption) ([]types.CountResult, error)
 	BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
@@ -252,4 +253,43 @@ func (s *subnetDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filt
 	}
 
 	return nil
+}
+
+// Count subnets.
+func (s *subnetDao) Count(kt *kit.Kit, opt *types.CountOption) ([]types.CountResult, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "count disk options is nil")
+	}
+
+	exprOption := filter.NewExprOption(filter.RuleFields(cloud.SubnetColumns.ColumnTypes()))
+	if err := opt.Validate(exprOption); err != nil {
+		return nil, err
+	}
+
+	whereOpt := tools.DefaultSqlWhereOption
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(whereOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	if opt.GroupBy == "" {
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.SubnetTable, whereExpr)
+		count, err := s.orm.Do().Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.ErrorJson("count subnets failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
+			return nil, err
+		}
+
+		return []types.CountResult{{Count: count}}, nil
+	}
+
+	sql := fmt.Sprintf(`SELECT %s as group_field, COUNT(*) as count FROM %s %s GROUP BY %s`, opt.GroupBy,
+		table.SubnetTable, whereExpr, opt.GroupBy)
+
+	counts := make([]types.CountResult, 0)
+	err = s.orm.Do().Select(kt.Ctx, &counts, sql, whereValue)
+	if err != nil {
+		return nil, err
+	}
+	return counts, nil
 }

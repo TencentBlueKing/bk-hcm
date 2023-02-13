@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -138,7 +137,7 @@ func convertSubnet(data *model.Subnet, region string) *types.HuaWeiSubnet {
 		CloudID:    data.Id,
 		Name:       data.Name,
 		Memo:       &data.Description,
-		Extension: &cloud.HuaWeiSubnetExtension{
+		Extension: &types.HuaWeiSubnetExtension{
 			Region:     region,
 			Status:     data.Status.Value(),
 			DhcpEnable: data.DhcpEnable,
@@ -165,4 +164,31 @@ func convertSubnet(data *model.Subnet, region string) *types.HuaWeiSubnet {
 	}
 
 	return s
+}
+
+// GetSubnetIPAvailabilities get subnet ip availabilities.
+// reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_natworkip_0001.html
+func (h *HuaWei) GetSubnetIPAvailabilities(kt *kit.Kit, opt *types.HuaWeiVpcIPAvailGetOption) (
+	*model.NetworkIpAvailability, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	vpcClient, err := h.clientSet.vpcClientV2(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
+	}
+
+	req := &model.ShowNetworkIpAvailabilitiesRequest{
+		NetworkId: opt.SubnetID,
+	}
+
+	resp, err := vpcClient.ShowNetworkIpAvailabilities(req)
+	if err != nil {
+		logs.Errorf("get huawei vpc ip availabilities failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return resp.NetworkIpAvailability, nil
 }

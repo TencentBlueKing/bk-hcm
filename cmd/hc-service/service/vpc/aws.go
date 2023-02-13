@@ -98,7 +98,7 @@ func (v vpc) AwsVpcDelete(cts *rest.Contexts) (interface{}, error) {
 
 	delOpt := &adcore.BaseRegionalDeleteOption{
 		BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
-		Region:           getRes.Extension.Region,
+		Region:           getRes.Region,
 	}
 	err = cli.DeleteVpc(cts.Kit, delOpt)
 	if err != nil {
@@ -189,7 +189,7 @@ func (v vpc) BatchGetAwsVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 
 		// traversal vpclist supply fields
 		for _, item := range tmpList.Details {
-			dnsHostnames, dnsSupport, dnsErr := cli.GetVpcAttribute(cts.Kit, item.CloudID, item.Extension.Region)
+			dnsHostnames, dnsSupport, dnsErr := cli.GetVpcAttribute(cts.Kit, item.CloudID, item.Region)
 			if dnsErr == nil {
 				item.Extension.EnableDnsHostnames = dnsHostnames
 				item.Extension.EnableDnsSupport = dnsSupport
@@ -309,10 +309,10 @@ func (v vpc) filterAwsVpcList(req *hcservice.ResourceSyncReq, list *types.AwsVpc
 				AccountID: req.AccountID,
 				CloudID:   item.CloudID,
 				Name:      converter.ValToPtr(item.Name),
+				Region:    item.Region,
 				Category:  enumor.BizVpcCategory,
 				Memo:      item.Memo,
 				Extension: &cloud.AwsVpcCreateExt{
-					Region:             item.Extension.Region,
 					State:              item.Extension.State,
 					InstanceTenancy:    item.Extension.InstanceTenancy,
 					IsDefault:          item.Extension.IsDefault,

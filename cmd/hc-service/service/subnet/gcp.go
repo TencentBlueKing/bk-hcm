@@ -66,7 +66,7 @@ func (s subnet) GcpSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 			ResourceID: getRes.CloudID,
 			Data:       &types.BaseSubnetUpdateData{Memo: req.Memo},
 		},
-		Region: getRes.Extension.Region,
+		Region: getRes.Region,
 	}
 	err = cli.UpdateSubnet(cts.Kit, updateOpt)
 	if err != nil {
@@ -109,7 +109,7 @@ func (s subnet) GcpSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 
 	delOpt := &adcore.BaseRegionalDeleteOption{
 		BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
-		Region:           getRes.Extension.Region,
+		Region:           getRes.Region,
 	}
 	err = cli.DeleteSubnet(cts.Kit, delOpt)
 	if err != nil {
@@ -306,10 +306,10 @@ func (s subnet) filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.
 				CloudVpcID: item.CloudVpcID,
 				CloudID:    item.CloudID,
 				Name:       converter.ValToPtr(item.Name),
+				Region:     item.Extension.Region,
 				Ipv4Cidr:   item.Ipv4Cidr,
 				Memo:       item.Memo,
 				Extension: &cloud.GcpSubnetCreateExt{
-					Region:                item.Extension.Region,
 					StackType:             item.Extension.StackType,
 					Ipv6AccessType:        item.Extension.Ipv6AccessType,
 					GatewayAddress:        item.Extension.GatewayAddress,

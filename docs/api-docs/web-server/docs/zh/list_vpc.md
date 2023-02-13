@@ -10,7 +10,6 @@
 |--------|--------------|-----|-----------------------------------------------|
 | filter | object       | 是   | 查询过滤条件                                        |
 | page   | object       | 是   | 分页设置                                          |
-| fields | string array | 否   | 属性列表，控制返回结果里有哪些字段，能够加速接口请求和减少网络流量传输，如果不传则返回全量 |
 
 #### filter
 
@@ -21,11 +20,11 @@
 
 #### filter.rules[n] （详情请看 rules 表达式说明）
 
-| 参数名称  | 参数类型        | 必选  | 描述                                         |
-|-------|-------------|-----|--------------------------------------------|
-| field | string      | 是   | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍 |
-| op    | enum string | 是   | 操作符（枚举值：eq、neq、gt、gte、le、lte、in、nin、cs、cis）       |
-| value | 可变类型        | 是   | 查询条件Value值                                 |
+| 参数名称  | 参数类型        | 必选  | 描述                                          |
+|-------|-------------|-----|---------------------------------------------|
+| field | string      | 是   | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍  |
+| op    | enum string | 是   | 操作符（枚举值：eq、neq、gt、gte、le、lte、in、nin、cs、cis） |
+| value | 可变类型        | 是   | 查询条件Value值                                  |
 
 ##### rules 表达式说明：
 
@@ -98,6 +97,7 @@
 | account_id  | string | 云账号ID                                |
 | cloud_id    | string | VPC的云ID                              |
 | name        | string | VPC名称                                |
+| region      | string | 地域                                   |
 | category    | string | VPC类别                                |
 | memo        | string | 备注                                   |
 | bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
@@ -183,6 +183,7 @@
         "account_id": "00000001",
         "cloud_id": "vpc-xxxxxxxx",
         "name": "vpc-default",
+        "region": "ap-guangzhou",
         "category": "biz",
         "memo": "default vpc",
         "bk_biz_id": 100,
@@ -233,6 +234,7 @@
 | account_id  | string | 云账号ID                                |
 | cloud_id    | string | VPC的云ID                              |
 | name        | string | VPC名称                                |
+| region      | string | 地域                                   |
 | category    | string | VPC类别                                |
 | memo        | string | 备注                                   |
 | bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |

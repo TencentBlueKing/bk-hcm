@@ -67,7 +67,7 @@ func (s subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 			Data:       &types.BaseSubnetUpdateData{Memo: req.Memo},
 		},
 		Name:   getRes.Name,
-		Region: getRes.Extension.Region,
+		Region: getRes.Region,
 		VpcID:  getRes.CloudVpcID,
 	}
 	err = cli.UpdateSubnet(cts.Kit, updateOpt)
@@ -108,7 +108,7 @@ func (s subnet) HuaWeiSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	delOpt := &types.HuaWeiSubnetDeleteOption{
 		BaseRegionalDeleteOption: adcore.BaseRegionalDeleteOption{
 			BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
-			Region:           getRes.Extension.Region,
+			Region:           getRes.Region,
 		},
 		VpcID: getRes.CloudVpcID,
 	}
@@ -298,10 +298,10 @@ func (s subnet) filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *typ
 				CloudVpcID: item.CloudVpcID,
 				CloudID:    item.CloudID,
 				Name:       converter.ValToPtr(item.Name),
+				Region:     item.Extension.Region,
 				Ipv4Cidr:   item.Ipv4Cidr,
 				Memo:       item.Memo,
 				Extension: &cloud.HuaWeiSubnetCreateExt{
-					Region:       item.Extension.Region,
 					Status:       item.Extension.Status,
 					DhcpEnable:   item.Extension.DhcpEnable,
 					GatewayIp:    item.Extension.GatewayIp,
@@ -348,4 +348,35 @@ func (s subnet) batchCreateHuaWeiSubnet(cts *rest.Contexts,
 	}
 
 	return nil
+}
+
+// HuaWeiSubnetCountIP count huawei subnets' available ips.
+func (s subnet) HuaWeiSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	getRes, err := s.cs.DataService().HuaWei.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	if err != nil {
+		return nil, err
+	}
+
+	cli, err := s.ad.HuaWei(cts.Kit, getRes.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	listOpt := &types.HuaWeiVpcIPAvailGetOption{
+		Region:   getRes.Region,
+		SubnetID: getRes.CloudID,
+	}
+	availabilities, err := cli.GetSubnetIPAvailabilities(cts.Kit, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &hcservice.SubnetCountIPResult{
+		AvailableIPv4Count: uint64(availabilities.TotalIps - availabilities.UsedIps),
+	}, nil
 }

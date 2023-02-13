@@ -35,6 +35,7 @@ const (
 	DiskAuditResType              AuditResourceType = "disk"
 	CvmAuditResType               AuditResourceType = "cvm"
 	RouteTableAuditResType        AuditResourceType = "route_table"
+	RouteAuditResType             AuditResourceType = "route"
 	EipAuditResType               AuditResourceType = "eip"
 	GcpFirewallRuleAuditResType   AuditResourceType = "gcp_firewall_rule"
 )

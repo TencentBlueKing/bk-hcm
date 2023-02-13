@@ -21,7 +21,6 @@ package types
 
 import (
 	"hcm/pkg/adaptor/types/core"
-	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/errf"
 )
 
@@ -247,7 +246,7 @@ type HuaWeiSubnetListResult struct {
 }
 
 // Subnet defines subnet struct.
-type Subnet[T cloud.SubnetExtension] struct {
+type Subnet[T SubnetExtension] struct {
 	CloudVpcID string   `json:"cloud_vpc_id"`
 	CloudID    string   `json:"cloud_id"`
 	Name       string   `json:"name"`
@@ -257,17 +256,73 @@ type Subnet[T cloud.SubnetExtension] struct {
 	Extension  *T       `json:"extension"`
 }
 
+// SubnetExtension defines subnet extensional info.
+type SubnetExtension interface {
+	TCloudSubnetExtension | AwsSubnetExtension | GcpSubnetExtension | AzureSubnetExtension | HuaWeiSubnetExtension
+}
+
+// TCloudSubnetExtension defines tcloud subnet extensional info.
+type TCloudSubnetExtension struct {
+	IsDefault               bool    `json:"is_default"`
+	Region                  string  `json:"region"`
+	Zone                    string  `json:"zone"`
+	CloudRouteTableID       *string `json:"cloud_route_table_id,omitempty"`
+	CloudNetworkAclID       *string `json:"cloud_network_acl_id,omitempty"`
+	AvailableIPAddressCount uint64  `json:"available_ip_address_count,omitempty"`
+}
+
+// AwsSubnetExtension defines aws subnet extensional info.
+type AwsSubnetExtension struct {
+	State                       string `json:"state"`
+	Region                      string `json:"region"`
+	Zone                        string `json:"zone"`
+	IsDefault                   bool   `json:"is_default"`
+	MapPublicIpOnLaunch         bool   `json:"map_public_ip_on_launch"`
+	AssignIpv6AddressOnCreation bool   `json:"assign_ipv6_address_on_creation"`
+	HostnameType                string `json:"hostname_type"`
+	AvailableIPAddressCount     int64  `json:"available_ip_address_count"`
+}
+
+// GcpSubnetExtension defines gcp subnet extensional info.
+type GcpSubnetExtension struct {
+	SelfLink              string `json:"self_link"`
+	Region                string `json:"region"`
+	StackType             string `json:"stack_type"`
+	Ipv6AccessType        string `json:"ipv6_access_type"`
+	GatewayAddress        string `json:"gateway_address"`
+	PrivateIpGoogleAccess bool   `json:"private_ip_google_access"`
+	EnableFlowLogs        bool   `json:"enable_flow_logs"`
+}
+
+// AzureSubnetExtension defines azure subnet extensional info.
+type AzureSubnetExtension struct {
+	ResourceGroup        string  `json:"resource_group"`
+	CloudRouteTableID    *string `json:"cloud_route_table_id,omitempty"`
+	NatGateway           string  `json:"nat_gateway,omitempty"`
+	NetworkSecurityGroup string  `json:"network_security_group,omitempty"`
+}
+
+// HuaWeiSubnetExtension defines huawei subnet extensional info.
+type HuaWeiSubnetExtension struct {
+	Region       string   `json:"region"`
+	Status       string   `json:"status"`
+	DhcpEnable   bool     `json:"dhcp_enable"`
+	GatewayIp    string   `json:"gateway_ip"`
+	DnsList      []string `json:"dns_list"`
+	NtpAddresses []string `json:"ntp_addresses"`
+}
+
 // TCloudSubnet defines tencent cloud subnet.
-type TCloudSubnet Subnet[cloud.TCloudSubnetExtension]
+type TCloudSubnet Subnet[TCloudSubnetExtension]
 
 // AwsSubnet defines aws subnet.
-type AwsSubnet Subnet[cloud.AwsSubnetExtension]
+type AwsSubnet Subnet[AwsSubnetExtension]
 
 // GcpSubnet defines gcp subnet.
-type GcpSubnet Subnet[cloud.GcpSubnetExtension]
+type GcpSubnet Subnet[GcpSubnetExtension]
 
 // AzureSubnet defines azure subnet.
-type AzureSubnet Subnet[cloud.AzureSubnetExtension]
+type AzureSubnet Subnet[AzureSubnetExtension]
 
 // HuaWeiSubnet defines huawei subnet.
-type HuaWeiSubnet Subnet[cloud.HuaWeiSubnetExtension]
+type HuaWeiSubnet Subnet[HuaWeiSubnetExtension]

@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/dal/dao/cloud"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/region"
+	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -101,6 +102,8 @@ type Set interface {
 	AwsRegion() region.AwsRegion
 	GcpRegion() region.GcpRegion
 	Cvm() cvm.Interface
+	RouteTable() routetable.RouteTable
+	Route() routetable.Route
 
 	Txn() *Txn
 }
@@ -340,6 +343,16 @@ func (s *set) AwsRegion() region.AwsRegion {
 // GcpRegion returns gcp region dao.
 func (s *set) GcpRegion() region.GcpRegion {
 	return region.NewGcpRegionDao(s.orm, s.idGen)
+}
+
+// RouteTable returns route table dao.
+func (s *set) RouteTable() routetable.RouteTable {
+	return routetable.NewRouteTableDao(s.orm, s.idGen, s.audit)
+}
+
+// Route returns route dao.
+func (s *set) Route() routetable.Route {
+	return routetable.NewRouteDao(s.orm, s.idGen, s.audit)
 }
 
 // Audit return audit dao.

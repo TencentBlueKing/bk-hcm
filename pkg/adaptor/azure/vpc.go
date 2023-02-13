@@ -109,9 +109,9 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 	v := &types.AzureVpc{
 		CloudID: converter.PtrToVal(data.ID),
 		Name:    converter.PtrToVal(data.Name),
+		Region:  converter.PtrToVal(data.Location),
 		Extension: &cloud.AzureVpcExtension{
 			ResourceGroup: resourceGroup,
-			Region:        converter.PtrToVal(data.Location),
 			Cidr:          nil,
 		},
 	}
@@ -143,4 +143,40 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 	}
 
 	return v
+}
+
+// ListVpcUsage list vpc usage.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list-usage?tabs=HTTP
+func (a *Azure) ListVpcUsage(kt *kit.Kit, opt *types.AzureVpcListUsageOption) ([]armnetwork.VirtualNetworkUsage,
+	error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	usageClient, err := a.clientSet.vpcClient()
+	if err != nil {
+		return nil, fmt.Errorf("new usage client failed, err: %v", err)
+	}
+
+	req := new(armnetwork.VirtualNetworksClientListUsageOptions)
+
+	vpcName := parseIDToName(opt.VpcID)
+	pager := usageClient.NewListUsagePager(opt.ResourceGroupName, vpcName, req)
+	if err != nil {
+		logs.Errorf("list azure vpc usage failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("list azure vpc usage failed, err: %v", err)
+	}
+
+	details := make([]armnetwork.VirtualNetworkUsage, 0)
+	for pager.More() {
+		page, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list azure vpc usage but get next page failed, err: %v", err)
+		}
+
+		details = append(details, converter.PtrToSlice(page.Value)...)
+	}
+
+	return details, nil
 }

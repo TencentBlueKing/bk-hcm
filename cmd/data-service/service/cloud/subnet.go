@@ -24,6 +24,7 @@ import (
 	"reflect"
 
 	"hcm/cmd/data-service/service/capability"
+	"hcm/cmd/data-service/service/cloud/logics"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
@@ -40,7 +41,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
@@ -107,13 +107,22 @@ func batchCreateSubnet[T protocloud.SubnetCreateExtension](cts *rest.Contexts, v
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// get vpc cloud id to id mapping
+	// get vpc & route table cloud id to id mapping
 	vpcCloudIDs := make([]string, 0, len(req.Subnets))
+	rtCloudIDs := make([]string, 0)
 	for _, subnet := range req.Subnets {
 		vpcCloudIDs = append(vpcCloudIDs, subnet.CloudVpcID)
+		if len(subnet.CloudRouteTableID) != 0 {
+			rtCloudIDs = append(rtCloudIDs, subnet.CloudRouteTableID)
+		}
 	}
 
-	vpcIDMap, err := getVpcIDByCloudID(cts.Kit, svc.dao, vendor, vpcCloudIDs)
+	vpcIDMap, err := logics.GetVpcIDByCloudID(cts.Kit, svc.dao, vendor, vpcCloudIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	rtIDMap, err := logics.GetRouteTableIDByCloudID(cts.Kit, svc.dao, rtCloudIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -127,18 +136,22 @@ func batchCreateSubnet[T protocloud.SubnetCreateExtension](cts *rest.Contexts, v
 			}
 
 			subnet := tablecloud.SubnetTable{
-				Vendor:     vendor,
-				AccountID:  createReq.AccountID,
-				CloudVpcID: createReq.CloudVpcID,
-				CloudID:    createReq.CloudID,
-				Name:       createReq.Name,
-				Ipv4Cidr:   createReq.Ipv4Cidr,
-				Ipv6Cidr:   createReq.Ipv6Cidr,
-				Memo:       createReq.Memo,
-				Extension:  ext,
-				BkBizID:    constant.UnassignedBiz,
-				Creator:    cts.Kit.User,
-				Reviser:    cts.Kit.User,
+				Vendor:            vendor,
+				AccountID:         createReq.AccountID,
+				CloudVpcID:        createReq.CloudVpcID,
+				CloudRouteTableID: &createReq.CloudRouteTableID,
+				CloudID:           createReq.CloudID,
+				Name:              createReq.Name,
+				Region:            createReq.Region,
+				Zone:              createReq.Zone,
+				Ipv4Cidr:          createReq.Ipv4Cidr,
+				Ipv6Cidr:          createReq.Ipv6Cidr,
+				Memo:              createReq.Memo,
+				Extension:         ext,
+				RouteTableID:      converter.ValToPtr(rtIDMap[createReq.CloudRouteTableID]),
+				BkBizID:           constant.UnassignedBiz,
+				Creator:           cts.Kit.User,
+				Reviser:           cts.Kit.User,
 			}
 
 			vpcID, exists := vpcIDMap[createReq.CloudVpcID]
@@ -170,59 +183,6 @@ func batchCreateSubnet[T protocloud.SubnetCreateExtension](cts *rest.Contexts, v
 	}
 
 	return &core.BatchCreateResult{IDs: ids}, nil
-}
-
-// getVpcIDByCloudID get vpc cloud id to id map from cloud ids, used for related resources.
-func getVpcIDByCloudID(kt *kit.Kit, dao dao.Set, vendor enumor.Vendor, cloudIDs []string) (map[string]string, error) {
-	opt := &types.ListOption{
-		Page: &core.BasePage{Count: false, Start: 0, Limit: uint(len(cloudIDs))},
-	}
-
-	switch vendor {
-	// gcp vpc cloud id is self link for related resources.
-	case enumor.Gcp:
-		var err error
-
-		// TODO replace this when JSON is supported
-		vpcs, err := dao.Vpc().ListByGcpSelfLink(kt, cloudIDs)
-		if err != nil {
-			logs.Errorf("list vpc failed, err: %v, rid: %s", kt.Rid)
-			return nil, fmt.Errorf("list vpc failed, err: %v", err)
-		}
-
-		idMap := make(map[string]string, len(vpcs))
-		for _, detail := range vpcs {
-			extension := new(protocore.GcpVpcExtension)
-			err = json.UnmarshalFromString(string(detail.Extension), extension)
-			if err != nil {
-				return nil, fmt.Errorf("unmarshal db extension failed, err: %v", err)
-			}
-			idMap[extension.SelfLink] = detail.ID
-		}
-
-		return idMap, nil
-	}
-
-	opt.Filter = &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudIDs},
-			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
-		},
-	}
-
-	res, err := dao.Vpc().List(kt, opt)
-	if err != nil {
-		logs.Errorf("list vpc failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("list vpc failed, err: %v", err)
-	}
-
-	idMap := make(map[string]string, len(res.Details))
-	for _, detail := range res.Details {
-		idMap[detail.CloudID] = detail.ID
-	}
-
-	return idMap, nil
 }
 
 // BatchUpdateSubnet batch update subnet.
@@ -287,7 +247,10 @@ func batchUpdateSubnet[T protocloud.SubnetUpdateExtension](cts *rest.Contexts, s
 
 	for _, updateReq := range req.Subnets {
 		subnet.Name = updateReq.Name
+		subnet.Ipv4Cidr = updateReq.Ipv4Cidr
+		subnet.Ipv6Cidr = updateReq.Ipv6Cidr
 		subnet.Memo = updateReq.Memo
+		subnet.BkBizID = updateReq.BkBizID
 
 		// update extension
 		if updateReq.Extension != nil {
@@ -325,8 +288,12 @@ func (svc *subnetSvc) BatchUpdateSubnetBaseInfo(cts *rest.Contexts) (interface{}
 	}
 
 	ids := make([]string, 0)
+	rtCloudIDs := make([]string, 0)
 	for _, subnet := range req.Subnets {
 		ids = append(ids, subnet.IDs...)
+		if subnet.Data.CloudRouteTableID != nil && *subnet.Data.CloudRouteTableID != "" {
+			rtCloudIDs = append(rtCloudIDs, *subnet.Data.CloudRouteTableID)
+		}
 	}
 
 	// check if all subnets exists
@@ -343,6 +310,12 @@ func (svc *subnetSvc) BatchUpdateSubnetBaseInfo(cts *rest.Contexts) (interface{}
 		return nil, fmt.Errorf("list subnet failed, some subnet(ids=%+v) doesn't exist", ids)
 	}
 
+	// get route table cloud id to id map
+	rtIDMap, err := logics.GetRouteTableIDByCloudID(cts.Kit, svc.dao, rtCloudIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	// update subnet
 	subnet := &tablecloud.SubnetTable{
 		Reviser: cts.Kit.User,
@@ -354,7 +327,10 @@ func (svc *subnetSvc) BatchUpdateSubnetBaseInfo(cts *rest.Contexts) (interface{}
 		subnet.Ipv6Cidr = updateReq.Data.Ipv6Cidr
 		subnet.Memo = updateReq.Data.Memo
 		subnet.BkBizID = updateReq.Data.BkBizID
-
+		if updateReq.Data.CloudRouteTableID != nil {
+			subnet.RouteTableID = converter.ValToPtr(rtIDMap[*updateReq.Data.CloudRouteTableID])
+			subnet.CloudRouteTableID = updateReq.Data.CloudRouteTableID
+		}
 		err = svc.dao.Subnet().Update(cts.Kit, tools.ContainersExpression("id", updateReq.IDs), subnet)
 		if err != nil {
 			logs.Errorf("update subnet failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -381,8 +357,6 @@ func (svc *subnetSvc) GetSubnet(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	base := convertBaseSubnet(dbSubnet)
-	base.VpcID = dbSubnet.VpcID
-	base.BkBizID = dbSubnet.BkBizID
 
 	switch vendor {
 	case enumor.TCloud:
@@ -472,17 +446,21 @@ func convertBaseSubnet(dbSubnet *tablecloud.SubnetTable) *protocore.BaseSubnet {
 	}
 
 	return &protocore.BaseSubnet{
-		ID:         dbSubnet.ID,
-		Vendor:     dbSubnet.Vendor,
-		AccountID:  dbSubnet.AccountID,
-		CloudVpcID: dbSubnet.CloudVpcID,
-		CloudID:    dbSubnet.CloudID,
-		Name:       converter.PtrToVal(dbSubnet.Name),
-		Ipv4Cidr:   dbSubnet.Ipv4Cidr,
-		Ipv6Cidr:   dbSubnet.Ipv6Cidr,
-		Memo:       dbSubnet.Memo,
-		VpcID:      dbSubnet.VpcID,
-		BkBizID:    dbSubnet.BkBizID,
+		ID:                dbSubnet.ID,
+		Vendor:            dbSubnet.Vendor,
+		AccountID:         dbSubnet.AccountID,
+		CloudVpcID:        dbSubnet.CloudVpcID,
+		CloudRouteTableID: converter.PtrToVal(dbSubnet.CloudRouteTableID),
+		CloudID:           dbSubnet.CloudID,
+		Name:              converter.PtrToVal(dbSubnet.Name),
+		Region:            dbSubnet.Region,
+		Zone:              dbSubnet.Zone,
+		Ipv4Cidr:          dbSubnet.Ipv4Cidr,
+		Ipv6Cidr:          dbSubnet.Ipv6Cidr,
+		Memo:              dbSubnet.Memo,
+		VpcID:             dbSubnet.VpcID,
+		RouteTableID:      converter.PtrToVal(dbSubnet.RouteTableID),
+		BkBizID:           dbSubnet.BkBizID,
 		Revision: &core.Revision{
 			Creator:   dbSubnet.Creator,
 			Reviser:   dbSubnet.Reviser,

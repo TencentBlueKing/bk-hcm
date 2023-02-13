@@ -27,6 +27,7 @@
     "account_id": "00000001",
     "cloud_id": "vpc-xxxxxxxx",
     "name": "vpc-test",
+    "region": "ap-guangzhou",
     "category": "biz",
     "memo": "test vpc",
     "bk_biz_id": 100,
@@ -36,7 +37,6 @@
     "created_at": "2019-07-29 11:57:20",
     "updated_at": "2019-07-29 11:57:20",
     "extension": {
-      "region": "ap-guangzhou",
       "cidr": [
         {
           "type": "ipv4",
@@ -73,6 +73,7 @@
     "account_id": "00000001",
     "cloud_id": "vpc-xxxxxxxx",
     "name": "vpc-test",
+    "region": "us-east-1",
     "category": "biz",
     "memo": "test vpc",
     "bk_biz_id": 100,
@@ -82,7 +83,6 @@
     "created_at": "2019-07-29 11:57:20",
     "updated_at": "2019-07-29 11:57:20",
     "extension": {
-      "region": "us-east-1",
       "cidr": [
         {
           "type": "ipv4",
@@ -150,6 +150,7 @@
     "account_id": "00000001",
     "cloud_id": "xxx",
     "name": "vpc-test",
+    "region": "northeurope",
     "category": "biz",
     "memo": "test vpc",
     "bk_biz_id": 100,
@@ -160,7 +161,6 @@
     "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "resource_group": "test",
-      "region": "northeurope",
       "cidr": [
         {
           "cidr": "127.0.0.0/16",
@@ -187,6 +187,7 @@
     "account_id": "00000001",
     "cloud_id": "123",
     "name": "vpc-test",
+    "region": "ap-southeast-1",
     "category": "biz",
     "memo": "test vpc",
     "bk_biz_id": 100,
@@ -196,7 +197,6 @@
     "created_at": "2019-07-29 11:57:20",
     "updated_at": "2019-07-29 11:57:20",
     "extension": {
-      "region": "ap-southeast-1",
       "cidr": [
         {
           "cidr": "127.0.0.0/8",
@@ -227,6 +227,7 @@
 | account_id  | string | 云账号ID                                |
 | cloud_id    | string | VPC的云ID                              |
 | name        | string | VPC名称                                |
+| region      | string | 地域                                   |
 | category    | string | VPC类别（枚举值：biz【业务自用】、backbone【接入骨干网】） |
 | memo        | string | 备注                                   |
 | bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
@@ -241,7 +242,6 @@
 
 | 参数名称             | 参数类型         | 描述         |
 |------------------|--------------|------------|
-| region           | string       | 地域         |
 | cidr             | object array | CIDR列表     |
 | is_default       | boolean      | 是否是默认VPC   |
 | enable_multicast | boolean      | 是否开启组播     |
@@ -260,7 +260,6 @@
 
 | 参数名称                 | 参数类型         | 描述                               |
 |----------------------|--------------|----------------------------------|
-| region               | string       | 地域                               |
 | cidr                 | object array | CIDR信息                           |
 | state                | string       | 状态（枚举值：pending、available）        |
 | instance_tenancy     | string       | 实例租期（枚举值：default、dedicated、host） |
@@ -292,7 +291,6 @@
 | 参数名称           | 参数类型         | 描述       |
 |----------------|--------------|----------|
 | resource_group | string       | 资源组      |
-| region         | string       | 地域       |
 | dns_servers    | string array | DNS服务器列表 |
 | cidr           | object array | CIDR列表   |
 
@@ -307,7 +305,6 @@
 
 | 参数名称                  | 参数类型         | 描述                     |
 |-----------------------|--------------|------------------------|
-| region                | string       | 地域                     |
 | cidr                  | object array | CIDR列表                 |
 | status                | string       | 状态（枚举值：PENDING、ACTIVE） |
 | enterprise_project_id | string       | 企业项目ID                 |

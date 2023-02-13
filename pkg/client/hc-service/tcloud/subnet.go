@@ -105,3 +105,25 @@ func (v *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *hcser
 
 	return nil
 }
+
+// CountIP count tcloud subnet available ips.
+func (v *SubnetClient) CountIP(ctx context.Context, h http.Header, id string) (*hcservice.SubnetCountIPResult, error) {
+	resp := new(hcservice.SubnetCountIPResp)
+
+	err := v.client.Post().
+		WithContext(ctx).
+		Body(nil).
+		SubResourcef("/subnets/%s/ips/count", id).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

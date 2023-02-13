@@ -50,7 +50,15 @@ values ('account', '0'),
        ('azure_region', '0'),
        ('azure_resource_group', '0'),
        ('image', '0'),
-       ('cvm', '0');
+       ('cvm', '0'),
+       ('azure_resource_group', '0'),
+       ('gcp_region', '0'),
+       ('route_table', '0'),
+       ('tcloud_route', '0'),
+       ('aws_route', '0'),
+       ('azure_route', '0'),
+       ('huawei_route', '0'),
+       ('gcp_route', '0');
 
 create table if not exists `audit`
 (
@@ -355,6 +363,7 @@ create table if not exists `vpc`
     `account_id`  varchar(64)  not null,
     `cloud_id`    varchar(255) not null,
     `name`        varchar(128) not null,
+    `region`      varchar(255) not null,
     `category`    varchar(32)  not null,
     `memo`        varchar(255)          default '',
     `bk_cloud_id` bigint(1)             default -1,
@@ -373,24 +382,28 @@ create table if not exists `vpc`
 
 create table if not exists `subnet`
 (
-    `id`           varchar(64)  not null,
-    `vendor`       varchar(32)  not null,
-    `account_id`   varchar(64)  not null,
-    `cloud_vpc_id` varchar(255) not null,
-    `cloud_id`     varchar(255) not null,
-    `name`         varchar(128) not null,
-    `ipv4_cidr`    json         not null,
-    `ipv6_cidr`    json         not null,
-    `memo`         varchar(255)          default '',
-    `vpc_id`       varchar(64)  not null,
-    `bk_biz_id`    bigint(1)    not null default -1,
+    `id`                   varchar(64)  not null,
+    `vendor`               varchar(32)  not null,
+    `account_id`           varchar(64)  not null,
+    `cloud_vpc_id`         varchar(255) not null,
+    `cloud_route_table_id` varchar(255)          default '',
+    `cloud_id`             varchar(255) not null,
+    `name`                 varchar(128) not null,
+    `region`               varchar(255) not null,
+    `zone`                 varchar(255) not null,
+    `ipv4_cidr`            json         not null,
+    `ipv6_cidr`            json         not null,
+    `memo`                 varchar(255)          default '',
+    `vpc_id`               varchar(64)  not null,
+    `route_table_id`       varchar(64)           default '',
+    `bk_biz_id`            bigint(1)    not null default -1,
     # extension
-    `extension`    json         not null,
+    `extension`            json         not null,
     # revision
-    `creator`      varchar(64)  not null,
-    `reviser`      varchar(64)  not null,
-    `created_at`   timestamp    not null default current_timestamp,
-    `updated_at`   timestamp    not null default current_timestamp on update current_timestamp,
+    `creator`              varchar(64)  not null,
+    `reviser`              varchar(64)  not null,
+    `created_at`           timestamp    not null default current_timestamp,
+    `updated_at`           timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
@@ -588,5 +601,160 @@ create table if not exists `cvm`
     `updated_at`             timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `route_table`
+(
+    `id`           varchar(64)  not null,
+    `vendor`       varchar(32)  not null,
+    `account_id`   varchar(64)  not null,
+    `cloud_id`     varchar(255) not null,
+    `cloud_vpc_id` varchar(255) not null,
+    `name`         varchar(128) not null,
+    `region`       varchar(255) not null,
+    `memo`         varchar(255)          default '',
+    `vpc_id`       varchar(64)  not null,
+    `bk_biz_id`    bigint(1)             default -1,
+    # Extension
+    `extension`    json         not null,
+    # Revision
+    `creator`      varchar(64)  not null,
+    `reviser`      varchar(64)  not null,
+    `created_at`   timestamp    not null default current_timestamp,
+    `updated_at`   timestamp    not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `tcloud_route`
+(
+    `id`                          varchar(64)  not null,
+    `cloud_id`                    varchar(64)  not null,
+    `route_table_id`              varchar(64)  not null,
+    `cloud_route_table_id`        varchar(64)  not null,
+    `destination_cidr_block`      varchar(32)  not null,
+    `destination_ipv6_cidr_block` varchar(64)           default '',
+    `gateway_type`                varchar(32)  not null,
+    `cloud_gateway_id`            varchar(255) not null,
+    `enabled`                     boolean               default false,
+    `route_type`                  varchar(32)  not null,
+    `published_to_vbc`            boolean               default false,
+    `memo`                        varchar(255)          default '',
+    # Revision
+    `creator`                     varchar(64)  not null,
+    `reviser`                     varchar(64)  not null,
+    `created_at`                  timestamp    not null default current_timestamp,
+    `updated_at`                  timestamp    not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_cloud_id` (`cloud_id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `aws_route`
+(
+    `id`                                    varchar(64) not null,
+    `route_table_id`                        varchar(64) not null,
+    `cloud_route_table_id`                  varchar(64) not null,
+    `destination_cidr_block`                varchar(32)          default null,
+    `destination_ipv6_cidr_block`           varchar(64)          default null,
+    `cloud_destination_prefix_list_id`      varchar(255)         default '',
+    `cloud_carrier_gateway_id`              varchar(255)         default '',
+    `core_network_arn`                      varchar(255)         default '',
+    `cloud_egress_only_internet_gateway_id` varchar(255)         default '',
+    `cloud_gateway_id`                      varchar(255)         default '',
+    `cloud_instance_id`                     varchar(255)         default '',
+    `cloud_instance_owner_id`               varchar(255)         default '',
+    `cloud_local_gateway_id`                varchar(255)         default '',
+    `cloud_nat_gateway_id`                  varchar(255)         default '',
+    `cloud_network_interface_id`            varchar(255)         default '',
+    `cloud_transit_gateway_id`              varchar(255)         default '',
+    `cloud_vpc_peering_connection_id`       varchar(255)         default '',
+    `state`                                 varchar(32) not null,
+    `propagated`                            boolean              default false,
+    # Revision
+    `creator`                               varchar(64) not null,
+    `reviser`                               varchar(64) not null,
+    `created_at`                            timestamp   not null default current_timestamp,
+    `updated_at`                            timestamp   not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_route_table_id_destination_cidr_block` (`route_table_id`, `destination_cidr_block`),
+    unique key `idx_uk_route_table_id_destination_ipv6_cidr_block` (`route_table_id`, `destination_ipv6_cidr_block`),
+    unique key `idx_uk_route_table_id_cloud_dest_prefix_list_id` (`route_table_id`, `cloud_destination_prefix_list_id`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `azure_route`
+(
+    `id`                   varchar(64)  not null,
+    `cloud_id`             varchar(255) not null,
+    `route_table_id`       varchar(64)  not null,
+    `cloud_route_table_id` varchar(255) not null,
+    `name`                 varchar(80)  not null,
+    `address_prefix`       varchar(64)  not null,
+    `next_hop_type`        varchar(32)  not null,
+    `next_hop_ip_address`  varchar(255)          default '',
+    `provisioning_state`   varchar(32)  not null,
+    # Revision
+    `creator`              varchar(64)  not null,
+    `reviser`              varchar(64)  not null,
+    `created_at`           timestamp    not null default current_timestamp,
+    `updated_at`           timestamp    not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_cloud_id` (`cloud_id`),
+    unique key `idx_uk_route_table_id_name` (`route_table_id`, `name`),
+    unique key `idx_uk_route_table_id_address_prefix` (`route_table_id`, `address_prefix`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `huawei_route`
+(
+    `id`                   varchar(64)  not null,
+    `route_table_id`       varchar(64)  not null,
+    `cloud_route_table_id` varchar(64)  not null,
+    `type`                 varchar(32)  not null,
+    `destination`          varchar(64)  not null,
+    `nexthop`              varchar(255) not null,
+    `memo`                 varchar(255)          default '',
+    # Revision
+    `creator`              varchar(64)  not null,
+    `reviser`              varchar(64)  not null,
+    `created_at`           timestamp    not null default current_timestamp,
+    `updated_at`           timestamp    not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_route_table_id_destination` (`route_table_id`, `destination`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `gcp_route`
+(
+    `id`                  varchar(64)  not null,
+    `cloud_id`            varchar(64)  not null,
+    `route_table_id`      varchar(64)  not null,
+    `vpc_id`              varchar(64)  not null,
+    `cloud_vpc_id`        varchar(255) not null,
+    `self_link`           varchar(255) not null,
+    `name`                varchar(128) not null,
+    `dest_range`          varchar(64)  not null,
+    `next_hop_gateway`    varchar(255)          default '',
+    `next_hop_ilb`        varchar(255)          default '',
+    `next_hop_instance`   varchar(255)          default '',
+    `next_hop_ip`         varchar(255)          default '',
+    `next_hop_network`    varchar(255)          default '',
+    `next_hop_peering`    varchar(255)          default '',
+    `next_hop_vpn_tunnel` varchar(255)          default '',
+    `priority`            int(1) unsigned       default 0,
+    `route_status`        varchar(32)  not null,
+    `route_type`          varchar(32)  not null,
+    `tags`                json         not null,
+    `memo`                varchar(255)          default '',
+    # Revision
+    `creator`             varchar(64)  not null,
+    `reviser`             varchar(64)  not null,
+    `created_at`          timestamp    not null default current_timestamp,
+    `updated_at`          timestamp    not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_cloud_id` (`cloud_id`)
 ) engine = innodb
   default charset = utf8mb4;

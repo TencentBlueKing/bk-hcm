@@ -24,8 +24,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 )
 
-// TODO 可用IPv4地址数怎么获取？
-
 // Subnet defines subnet info.
 type Subnet[T SubnetExtension] struct {
 	BaseSubnet `json:",inline"`
@@ -34,18 +32,22 @@ type Subnet[T SubnetExtension] struct {
 
 // BaseSubnet defines base subnet info.
 type BaseSubnet struct {
-	ID             string        `json:"id"`
-	Vendor         enumor.Vendor `json:"vendor"`
-	AccountID      string        `json:"account_id"`
-	CloudVpcID     string        `json:"cloud_vpc_id"`
-	CloudID        string        `json:"cloud_id"`
-	Name           string        `json:"name"`
-	Ipv4Cidr       []string      `json:"ipv4_cidr,omitempty"`
-	Ipv6Cidr       []string      `json:"ipv6_cidr,omitempty"`
-	Memo           *string       `json:"memo,omitempty"`
-	VpcID          string        `json:"vpc_id"`
-	BkBizID        int64         `json:"bk_biz_id"`
-	*core.Revision `json:",inline"`
+	ID                string        `json:"id"`
+	Vendor            enumor.Vendor `json:"vendor"`
+	AccountID         string        `json:"account_id"`
+	CloudVpcID        string        `json:"cloud_vpc_id"`
+	CloudRouteTableID string        `json:"cloud_route_table_id"`
+	CloudID           string        `json:"cloud_id"`
+	Name              string        `json:"name"`
+	Region            string        `json:"region"`
+	Zone              string        `json:"zone"`
+	Ipv4Cidr          []string      `json:"ipv4_cidr,omitempty"`
+	Ipv6Cidr          []string      `json:"ipv6_cidr,omitempty"`
+	Memo              *string       `json:"memo,omitempty"`
+	VpcID             string        `json:"vpc_id"`
+	RouteTableID      string        `json:"route_table_id"`
+	BkBizID           int64         `json:"bk_biz_id"`
+	*core.Revision    `json:",inline"`
 }
 
 // SubnetExtension defines subnet extensional info.
@@ -55,17 +57,13 @@ type SubnetExtension interface {
 
 // TCloudSubnetExtension defines tencent cloud subnet extensional info.
 type TCloudSubnetExtension struct {
-	IsDefault    bool    `json:"is_default"`
-	Region       string  `json:"region"`
-	Zone         string  `json:"zone"`
-	NetworkAclId *string `json:"network_acl_id,omitempty"`
+	IsDefault         bool    `json:"is_default"`
+	CloudNetworkAclId *string `json:"cloud_network_acl_id,omitempty"`
 }
 
 // AwsSubnetExtension defines aws subnet extensional info.
 type AwsSubnetExtension struct {
 	State                       string `json:"state"`
-	Region                      string `json:"region"`
-	Zone                        string `json:"zone"`
 	IsDefault                   bool   `json:"is_default"`
 	MapPublicIpOnLaunch         bool   `json:"map_public_ip_on_launch"`
 	AssignIpv6AddressOnCreation bool   `json:"assign_ipv6_address_on_creation"`
@@ -75,7 +73,6 @@ type AwsSubnetExtension struct {
 // GcpSubnetExtension defines gcp subnet extensional info.
 type GcpSubnetExtension struct {
 	SelfLink              string `json:"self_link"`
-	Region                string `json:"region"`
 	StackType             string `json:"stack_type"`
 	Ipv6AccessType        string `json:"ipv6_access_type"`
 	GatewayAddress        string `json:"gateway_address"`
@@ -92,7 +89,6 @@ type AzureSubnetExtension struct {
 
 // HuaWeiSubnetExtension defines huawei subnet extensional info.
 type HuaWeiSubnetExtension struct {
-	Region       string   `json:"region"`
 	Status       string   `json:"status"`
 	DhcpEnable   bool     `json:"dhcp_enable"`
 	GatewayIp    string   `json:"gateway_ip"`

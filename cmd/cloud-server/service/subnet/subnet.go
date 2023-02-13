@@ -57,6 +57,7 @@ func InitSubnetService(c *capability.Capability) {
 	h.Add("UpdateSubnet", "PATCH", "/subnets/{id}", svc.UpdateSubnet)
 	h.Add("BatchDeleteSubnet", "DELETE", "/subnets/batch", svc.BatchDeleteSubnet)
 	h.Add("AssignSubnetToBiz", "POST", "/subnets/assign/bizs", svc.AssignSubnetToBiz)
+	h.Add("CountSubnetAvailableIPs", "POST", "/subnets/{id}/ips/count", svc.CountSubnetAvailableIPs)
 
 	h.Load(c.WebService)
 }
@@ -369,6 +370,58 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 	}
 
 	return nil, nil
+}
+
+// CountSubnetAvailableIPs count subnet available ips. **NOTICE** only for ui.
+func (svc *subnetSvc) CountSubnetAvailableIPs(cts *rest.Contexts) (interface{}, error) {
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		enumor.SubnetCloudResType, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Find,
+		ResourceID: basicInfo.AccountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	// get subnet detail info
+	switch basicInfo.Vendor {
+	case enumor.TCloud:
+		ipInfo, err := svc.client.HCService().TCloud.Subnet.CountIP(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+		return ipInfo, err
+	case enumor.Aws:
+		ipInfo, err := svc.client.HCService().Aws.Subnet.CountIP(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+		return ipInfo, err
+	case enumor.HuaWei:
+		ipInfo, err := svc.client.HCService().HuaWei.Subnet.CountIP(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+		return ipInfo, err
+	case enumor.Azure:
+		ipInfo, err := svc.client.HCService().Azure.Subnet.CountIP(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+		return ipInfo, err
+	default:
+		return nil, errf.New(errf.InvalidParameter, "vendor is invalid")
+	}
 }
 
 // checkSubnetsInBiz check if subnets are in the specified biz.

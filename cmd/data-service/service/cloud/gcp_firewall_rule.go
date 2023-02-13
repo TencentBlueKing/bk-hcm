@@ -24,8 +24,6 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/jmoiron/sqlx"
-
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -38,6 +36,8 @@ import (
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // InitGcpFirewallRuleService initial the gcp firewall rule service

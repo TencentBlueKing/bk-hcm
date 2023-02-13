@@ -100,3 +100,33 @@ func (l *ListReq) Validate() error {
 
 	return nil
 }
+
+// CountReq count request group by ids.
+type CountReq struct {
+	IDs []string `json:"ids"`
+}
+
+// Validate CountReq.
+func (a CountReq) Validate() error {
+	if len(a.IDs) == 0 {
+		return errf.New(errf.InvalidParameter, "route table ids are required")
+	}
+
+	if uint(len(a.IDs)) > DefaultMaxPageLimit {
+		return errf.Newf(errf.InvalidParameter, "route table ids exceeds maximum limit: %d", DefaultMaxPageLimit)
+	}
+
+	return nil
+}
+
+// CountResp count response group by ids.
+type CountResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          []CountResult `json:"data"`
+}
+
+// CountResult count result.
+type CountResult struct {
+	ID    string `json:"id"`
+	Count uint64 `json:"count"`
+}

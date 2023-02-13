@@ -37,6 +37,7 @@ type BaseVpc struct {
 	AccountID      string             `json:"account_id"`
 	CloudID        string             `json:"cloud_id"`
 	Name           string             `json:"name"`
+	Region         string             `json:"region"`
 	Category       enumor.VpcCategory `json:"category"`
 	Memo           *string            `json:"memo,omitempty"`
 	BkCloudID      int64              `json:"bk_cloud_id"`
@@ -51,7 +52,6 @@ type VpcExtension interface {
 
 // TCloudVpcExtension defines tencent cloud vpc extensional info.
 type TCloudVpcExtension struct {
-	Region          string       `json:"region"`
 	Cidr            []TCloudCidr `json:"cidr"`
 	IsDefault       bool         `json:"is_default"`
 	EnableMulticast bool         `json:"enable_multicast"`
@@ -68,7 +68,6 @@ type TCloudCidr struct {
 
 // AwsVpcExtension defines aws vpc extensional info.
 type AwsVpcExtension struct {
-	Region             string    `json:"region"`
 	Cidr               []AwsCidr `json:"cidr"`
 	State              string    `json:"state"`
 	InstanceTenancy    string    `json:"instance_tenancy"`
@@ -97,7 +96,6 @@ type GcpVpcExtension struct {
 // AzureVpcExtension defines azure vpc extensional info.
 type AzureVpcExtension struct {
 	ResourceGroup string      `json:"resource_group"`
-	Region        string      `json:"region"`
 	DNSServers    []string    `json:"dns_servers"`
 	Cidr          []AzureCidr `json:"cidr"`
 }
@@ -110,7 +108,6 @@ type AzureCidr struct {
 
 // HuaWeiVpcExtension defines huawei vpc extensional info.
 type HuaWeiVpcExtension struct {
-	Region              string       `json:"region"`
 	Cidr                []HuaWeiCidr `json:"cidr"`
 	Status              string       `json:"status"`
 	EnterpriseProjectId string       `json:"enterprise_project_id"`

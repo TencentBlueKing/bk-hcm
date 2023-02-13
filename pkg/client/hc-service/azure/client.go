@@ -32,6 +32,7 @@ type Client struct {
 	Disk          *DiskClient
 	Image         *ImageClient
 	Cvm           *CvmClient
+	RouteTable    *RouteTableClient
 }
 
 // NewClient create a new azure api client.
@@ -44,5 +45,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Disk:          NewCloudDiskClient(client),
 		Cvm:           NewCvmClient(client),
 		Image:         NewCloudPublicClient(client),
+		RouteTable:    NewRouteTableClient(client),
 	}
 }

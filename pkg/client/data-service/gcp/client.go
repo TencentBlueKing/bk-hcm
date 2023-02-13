@@ -26,12 +26,13 @@ import (
 // Client is a gcp api client
 type Client struct {
 	*restClient
-	Account  *AccountClient
-	Firewall *FirewallClient
-	Vpc      *VpcClient
-	Subnet   *SubnetClient
-	Region   *RegionClient
-	Cvm      *CvmClient
+	Account    *AccountClient
+	Firewall   *FirewallClient
+	Vpc        *VpcClient
+	Subnet     *SubnetClient
+	Region     *RegionClient
+	Cvm        *CvmClient
+	RouteTable *RouteTableClient
 }
 
 type restClient struct {
@@ -48,5 +49,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Subnet:     NewSubnetClient(client),
 		Region:     NewRegionClient(client),
 		Cvm:        NewCloudCvmClient(client),
+		RouteTable: NewRouteTableClient(client),
 	}
 }

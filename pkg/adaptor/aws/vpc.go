@@ -150,8 +150,8 @@ func convertVpc(data *ec2.Vpc, region string) *types.AwsVpc {
 
 	v := &types.AwsVpc{
 		CloudID: converter.PtrToVal(data.VpcId),
+		Region:  region,
 		Extension: &cloud.AwsVpcExtension{
-			Region:          region,
 			State:           converter.PtrToVal(data.State),
 			InstanceTenancy: converter.PtrToVal(data.InstanceTenancy),
 			IsDefault:       converter.PtrToVal(data.IsDefault),

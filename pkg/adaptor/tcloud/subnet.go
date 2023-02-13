@@ -25,7 +25,6 @@ import (
 
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
-	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -109,11 +108,13 @@ func convertSubnet(data *vpc.Subnet, region string) *types.TCloudSubnet {
 		CloudVpcID: converter.PtrToVal(data.VpcId),
 		CloudID:    converter.PtrToVal(data.SubnetId),
 		Name:       converter.PtrToVal(data.SubnetName),
-		Extension: &cloud.TCloudSubnetExtension{
-			IsDefault:    converter.PtrToVal(data.IsDefault),
-			Region:       region,
-			Zone:         converter.PtrToVal(data.Zone),
-			NetworkAclId: data.NetworkAclId,
+		Extension: &types.TCloudSubnetExtension{
+			IsDefault:               converter.PtrToVal(data.IsDefault),
+			Region:                  region,
+			Zone:                    converter.PtrToVal(data.Zone),
+			CloudRouteTableID:       data.RouteTableId,
+			CloudNetworkAclID:       data.NetworkAclId,
+			AvailableIPAddressCount: converter.PtrToVal(data.AvailableIpAddressCount),
 		},
 	}
 

@@ -30,7 +30,7 @@ import (
 
 // VpcBatchCreateReq defines batch create vpc request.
 type VpcBatchCreateReq[T VpcCreateExtension] struct {
-	Vpcs []VpcCreateReq[T] `json:"vpcs" validate:"required,max=100"`
+	Vpcs []VpcCreateReq[T] `json:"vpcs" validate:"min=1,max=100"`
 }
 
 // VpcCreateReq defines create vpc request.
@@ -38,6 +38,7 @@ type VpcCreateReq[T VpcCreateExtension] struct {
 	AccountID string             `json:"account_id" validate:"required"`
 	CloudID   string             `json:"cloud_id" validate:"required"`
 	Name      *string            `json:"name,omitempty" validate:"omitempty"`
+	Region    string             `json:"region" validate:"omitempty"`
 	Category  enumor.VpcCategory `json:"category" validate:"required"`
 	Memo      *string            `json:"memo,omitempty" validate:"omitempty"`
 	Extension *T                 `json:"extension" validate:"required"`
@@ -50,7 +51,6 @@ type VpcCreateExtension interface {
 
 // TCloudVpcCreateExt defines create tencent cloud vpc extensional info.
 type TCloudVpcCreateExt struct {
-	Region          string       `json:"region" validate:"required"`
 	Cidr            []TCloudCidr `json:"cidr" validate:"required"`
 	IsDefault       bool         `json:"is_default" validate:"required"`
 	EnableMulticast bool         `json:"enable_multicast" validate:"required"`
@@ -60,7 +60,6 @@ type TCloudVpcCreateExt struct {
 
 // AwsVpcCreateExt defines create aws vpc extensional info.
 type AwsVpcCreateExt struct {
-	Region             string    `json:"region" validate:"required"`
 	Cidr               []AwsCidr `json:"cidr" validate:"required"`
 	State              string    `json:"state" validate:"required"`
 	InstanceTenancy    string    `json:"instance_tenancy" validate:"omitempty"`
@@ -81,14 +80,12 @@ type GcpVpcCreateExt struct {
 // AzureVpcCreateExt defines azure vpc extensional info.
 type AzureVpcCreateExt struct {
 	ResourceGroup string      `json:"resource_group" validate:"required"`
-	Region        string      `json:"region" validate:"required"`
 	DNSServers    []string    `json:"dns_servers" validate:"omitempty"`
 	Cidr          []AzureCidr `json:"cidr" validate:"required"`
 }
 
 // HuaWeiVpcCreateExt defines huawei vpc extensional info.
 type HuaWeiVpcCreateExt struct {
-	Region              string       `json:"region" validate:"required"`
 	Cidr                []HuaWeiCidr `json:"cidr" validate:"required"`
 	Status              string       `json:"status" validate:"required"`
 	EnterpriseProjectId string       `json:"enterprise_project_id" validate:"omitempty"`
@@ -103,7 +100,7 @@ func (c *VpcBatchCreateReq[T]) Validate() error {
 
 // VpcBatchUpdateReq defines batch update vpc request.
 type VpcBatchUpdateReq[T VpcUpdateExtension] struct {
-	Vpcs []VpcUpdateReq[T] `json:"vpcs" validate:"required,max=100"`
+	Vpcs []VpcUpdateReq[T] `json:"vpcs" validate:"min=1,max=100"`
 }
 
 // Validate VpcBatchUpdateReq.

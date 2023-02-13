@@ -24,7 +24,6 @@ import (
 
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
-	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -111,7 +110,7 @@ func convertSubnet(data *compute.Subnetwork) *types.GcpSubnet {
 		CloudID:    strconv.FormatUint(data.Id, 10),
 		Name:       data.Name,
 		Memo:       &data.Description,
-		Extension: &cloud.GcpSubnetExtension{
+		Extension: &types.GcpSubnetExtension{
 			SelfLink:              data.SelfLink,
 			Region:                data.Region,
 			StackType:             data.StackType,

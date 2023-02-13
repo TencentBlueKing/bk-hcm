@@ -99,7 +99,7 @@ func (s subnet) AwsSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 
 	delOpt := &adcore.BaseRegionalDeleteOption{
 		BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
-		Region:           getRes.Extension.Region,
+		Region:           getRes.Region,
 	}
 	err = cli.DeleteSubnet(cts.Kit, delOpt)
 	if err != nil {
@@ -299,12 +299,12 @@ func (s subnet) filterAwsSubnetList(req *hcservice.ResourceSyncReq, list *types.
 				CloudVpcID: item.CloudVpcID,
 				CloudID:    item.CloudID,
 				Name:       converter.ValToPtr(item.Name),
+				Region:     item.Extension.Region,
+				Zone:       item.Extension.Zone,
 				Ipv4Cidr:   item.Ipv4Cidr,
 				Memo:       item.Memo,
 				Extension: &cloud.AwsSubnetCreateExt{
 					State:                       item.Extension.State,
-					Region:                      item.Extension.Region,
-					Zone:                        item.Extension.Zone,
 					IsDefault:                   item.Extension.IsDefault,
 					MapPublicIpOnLaunch:         item.Extension.MapPublicIpOnLaunch,
 					AssignIpv6AddressOnCreation: item.Extension.AssignIpv6AddressOnCreation,
@@ -351,4 +351,43 @@ func (s subnet) batchCreateAwsSubnet(cts *rest.Contexts,
 	}
 
 	return nil
+}
+
+// AwsSubnetCountIP count aws subnets' available ips.
+func (s subnet) AwsSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	getRes, err := s.cs.DataService().Aws.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	if err != nil {
+		return nil, err
+	}
+
+	cli, err := s.ad.Aws(cts.Kit, getRes.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	listOpt := &adcore.AwsListOption{
+		Region:      getRes.Region,
+		ResourceIDs: []string{getRes.CloudID},
+	}
+	subnetRes, err := cli.ListSubnet(cts.Kit, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(subnetRes.Details) != 1 {
+		return nil, errf.New(errf.InvalidParameter, "subnet details count is invalid")
+	}
+
+	if subnetRes.Details[0].Extension == nil {
+		return nil, errf.Newf(errf.InvalidParameter, "get aws subnet by cloud id %s failed", getRes.CloudID)
+	}
+
+	return &hcservice.SubnetCountIPResult{
+		AvailableIPv4Count: uint64(subnetRes.Details[0].Extension.AvailableIPAddressCount),
+	}, nil
 }

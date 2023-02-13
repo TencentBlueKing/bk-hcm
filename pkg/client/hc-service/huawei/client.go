@@ -32,6 +32,7 @@ type Client struct {
 	Disk          *DiskClient
 	Cvm           *CvmClient
 	Image         *ImageClient
+	RouteTable    *RouteTableClient
 }
 
 // NewClient create a new huawei api client.
@@ -40,6 +41,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		Account:       NewAccountClient(client),
 		Vpc:           NewVpcClient(client),
 		Subnet:        NewSubnetClient(client),
+		RouteTable:    NewRouteTableClient(client),
 		SecurityGroup: NewCloudSecurityGroupClient(client),
 		Disk:          NewCloudDiskClient(client),
 		Cvm:           NewCvmClient(client),

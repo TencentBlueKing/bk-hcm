@@ -169,3 +169,13 @@ func genCvmResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+// genRouteTableResource generate route table's related iam resource.
+func genRouteTableResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genResourceResource(a)
+}
+
+// genRouteResource generate route's related iam resource.
+func genRouteResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genResourceResource(a)
+}

@@ -100,7 +100,7 @@ func (s subnet) TCloudSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 
 	delOpt := &adcore.BaseRegionalDeleteOption{
 		BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
-		Region:           getRes.Extension.Region,
+		Region:           getRes.Region,
 	}
 	err = cli.DeleteSubnet(cts.Kit, delOpt)
 	if err != nil {
@@ -330,10 +330,10 @@ func (s subnet) filterTcloudSubnetList(req *hcservice.ResourceSyncReq, list *typ
 			tmpRes := cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt]{
 				ID: resourceInfo.ID,
 				Extension: &cloud.TCloudSubnetUpdateExt{
-					IsDefault:    item.Extension.IsDefault,
-					Region:       item.Extension.Region,
-					Zone:         item.Extension.Zone,
-					NetworkAclId: item.Extension.NetworkAclId,
+					IsDefault:         item.Extension.IsDefault,
+					Region:            item.Extension.Region,
+					Zone:              item.Extension.Zone,
+					CloudNetworkAclID: item.Extension.CloudNetworkAclID,
 				},
 			}
 			tmpRes.Name = converter.ValToPtr(item.Name)
@@ -350,14 +350,14 @@ func (s subnet) filterTcloudSubnetList(req *hcservice.ResourceSyncReq, list *typ
 				CloudVpcID: item.CloudVpcID,
 				CloudID:    item.CloudID,
 				Name:       converter.ValToPtr(item.Name),
+				Region:     item.Extension.Region,
+				Zone:       item.Extension.Zone,
 				Ipv4Cidr:   item.Ipv4Cidr,
 				Ipv6Cidr:   item.Ipv6Cidr,
 				Memo:       item.Memo,
 				Extension: &cloud.TCloudSubnetCreateExt{
-					IsDefault:    item.Extension.IsDefault,
-					Region:       item.Extension.Region,
-					Zone:         item.Extension.Zone,
-					NetworkAclId: item.Extension.NetworkAclId,
+					IsDefault:         item.Extension.IsDefault,
+					CloudNetworkAclID: item.Extension.CloudNetworkAclID,
 				},
 			}
 			createResources = append(createResources, tmpRes)
@@ -420,4 +420,43 @@ func (s subnet) BatchDeleteSubnetByIDs(cts *rest.Contexts, deleteIDs []string) e
 	}
 
 	return nil
+}
+
+// TCloudSubnetCountIP count tcloud subnets' available ips.
+func (s subnet) TCloudSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	getRes, err := s.cs.DataService().TCloud.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	if err != nil {
+		return nil, err
+	}
+
+	cli, err := s.ad.TCloud(cts.Kit, getRes.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	listOpt := &adcore.TCloudListOption{
+		Region:      getRes.Region,
+		ResourceIDs: []string{getRes.CloudID},
+	}
+	subnetRes, err := cli.ListSubnet(cts.Kit, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(subnetRes.Details) != 1 {
+		return nil, errf.New(errf.InvalidParameter, "subnet details count is invalid")
+	}
+
+	if subnetRes.Details[0].Extension == nil {
+		return nil, errf.Newf(errf.InvalidParameter, "get tcloud subnet by cloud id %s failed", getRes.CloudID)
+	}
+
+	return &hcservice.SubnetCountIPResult{
+		AvailableIPv4Count: subnetRes.Details[0].Extension.AvailableIPAddressCount,
+	}, nil
 }

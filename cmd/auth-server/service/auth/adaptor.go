@@ -51,6 +51,10 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genSecurityGroupRuleResource(a)
 	case meta.GcpFirewallRule:
 		return genGcpFirewallRuleResource(a)
+	case meta.RouteTable:
+		return genRouteTableResource(a)
+	case meta.Route:
+		return genRouteResource(a)
 	case meta.RecycleBin:
 		return genRecycleBinResource(a)
 	case meta.Audit:

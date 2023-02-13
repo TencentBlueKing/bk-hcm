@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -114,7 +113,7 @@ func convertSubnet(data *armnetwork.Subnet, subscription, resourceGroup, vpc str
 			subscription, resourceGroup, vpc),
 		CloudID: converter.PtrToVal(data.ID),
 		Name:    converter.PtrToVal(data.Name),
-		Extension: &cloud.AzureSubnetExtension{
+		Extension: &types.AzureSubnetExtension{
 			ResourceGroup: resourceGroup,
 		},
 	}
@@ -145,6 +144,10 @@ func convertSubnet(data *armnetwork.Subnet, subscription, resourceGroup, vpc str
 
 	if data.Properties.NetworkSecurityGroup != nil {
 		s.Extension.NetworkSecurityGroup = converter.PtrToVal(data.Properties.NetworkSecurityGroup.ID)
+	}
+
+	if data.Properties.RouteTable != nil {
+		s.Extension.CloudRouteTableID = data.Properties.RouteTable.ID
 	}
 
 	return s

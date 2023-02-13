@@ -28,6 +28,8 @@
     "cloud_vpc_id": "vpc-xxxxxxxx",
     "cloud_id": "subnet-xxxxxxxx",
     "name": "subnet-default",
+    "region": "ap-guangzhou",
+    "zone": "ap-guangzhou-6",
     "ipv4_cidr": [
       "127.0.0.0/16"
     ],
@@ -43,8 +45,6 @@
     "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "is_default": false,
-      "region": "ap-guangzhou",
-      "zone": "ap-guangzhou-6",
       "network_acl_id": ""
     }
   }
@@ -64,6 +64,8 @@
     "cloud_vpc_id": "vpc-xxxxxxxx",
     "cloud_id": "subnet-xxxxxxxx",
     "name": "subnet-default",
+    "region": "us-east-1",
+    "zone": "us-east-1a",
     "ipv4_cidr": [
       "127.0.0.0/16"
     ],
@@ -79,8 +81,6 @@
     "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "state": "available",
-      "region": "us-east-1",
-      "zone": "us-east-1a",
       "is_default": false,
       "map_public_ip_on_launch": false,
       "assign_ipv6_address_on_creation": false,
@@ -103,6 +103,7 @@
     "cloud_vpc_id": "https://www.googleapis.com/compute/v1/projects/xxx/global/networks/test",
     "cloud_id": "456",
     "name": "test",
+    "region": "https://www.googleapis.com/compute/v1/projects/xxx/regions/us-west1",
     "ipv4_cidr": [
       "127.0.0.0/16"
     ],
@@ -118,7 +119,6 @@
     "updated_at": "2019-07-29 11:57:20",
     "extension": {
       "self_link": "https://www.googleapis.com/compute/v1/projects/xxx/regions/us-west1/subnetworks/test",
-      "region": "https://www.googleapis.com/compute/v1/projects/xxx/regions/us-west1",
       "stack_type": "IPV4_IPV6",
       "ipv6_access_type": "INTERNAL",
       "gateway_address": "127.0.0.1",
@@ -177,6 +177,7 @@
     "cloud_vpc_id": "xxx",
     "cloud_id": "subnet-xxxxxxxx",
     "name": "subnet-default",
+    "region": "ap-southeast-1",
     "ipv4_cidr": [
       "127.0.0.0/16"
     ],
@@ -191,7 +192,6 @@
     "created_at": "2019-07-29 11:57:20",
     "updated_at": "2019-07-29 11:57:20",
     "extension": {
-      "region": "ap-southeast-1",
       "status": "ACTIVE",
       "dhcp_enable": true,
       "dns_list": [
@@ -224,6 +224,8 @@
 | cloud_vpc_id | string       | VPC的云ID                       |
 | cloud_id     | string       | 子网的云ID                        |
 | name         | string       | 子网名称                          |
+| region       | string       | 地域                            |
+| zone         | string       | 可用区                           |
 | ipv4_cidr    | string array | IPv4 CIDR                     |
 | ipv6_cidr    | string array | IPv6 CIDR                     |
 | memo         | string       | 备注                            |
@@ -237,20 +239,16 @@
 
 #### data.extension(tcloud)
 
-| 参数名称           | 参数类型    | 描述        |
-|----------------|---------|-----------|
-| is_default     | boolean | 是否是默认子网   |
-| region         | string  | 地域        |
-| zone           | string  | 可用区       |
-| network_acl_id | string  | 关联的ACL的ID |
+| 参数名称                 | 参数类型    | 描述        |
+|----------------------|---------|-----------|
+| is_default           | boolean | 是否是默认子网   |
+| cloud_network_acl_id | string  | 关联的ACL的ID |
 
 #### data.extension(aws)
 
 | 参数名称                            | 参数类型    | 描述                                |
 |---------------------------------|---------|-----------------------------------|
 | state                           | string  | 状态（枚举值：pending、available）         |
-| region                          | string  | 地域                                |
-| zone                            | string  | 可用区                               |
 | is_default                      | boolean | 是否是默认子网                           |
 | map_public_ip_on_launch         | boolean | 是否自动分配公有 IPv4 地址                  |
 | assign_ipv6_address_on_creation | boolean | 是否自动分配 IPv6 地址                    |
@@ -261,7 +259,6 @@
 | 参数名称                     | 参数类型    | 描述                              |
 |--------------------------|---------|---------------------------------|
 | self_link                | string  | 资源URL                           |
-| region                   | string  | 地域                              |
 | stack_type               | string  | IP栈类型（枚举值：IPV4_IPV6、IPV4_ONLY）  |
 | ipv6_access_type         | string  | IPv6权限类型（枚举值：EXTERNAL、INTERNAL） |
 | gateway_address          | string  | 网关地址                            |
@@ -280,7 +277,6 @@
 
 | 参数名称          | 参数类型         | 描述                           |
 |---------------|--------------|------------------------------|
-| region        | string       | 地域                           |
 | status        | string       | 状态（枚举值：ACTIVE、UNKNOWN、ERROR） |
 | dhcp_enable   | boolean      | 是否开启dhcp功能                   |
 | gateway_ip    | string       | 网关地址                         |

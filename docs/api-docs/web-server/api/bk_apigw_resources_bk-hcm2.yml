@@ -728,3 +728,229 @@ paths:
           userVerifiedRequired: true
         disabledStages: [ ]
         descriptionEn:
+  /api/v1/cloud/route_tables/list:
+    post:
+      operationId: list_route_table
+      description: 查询路由表列表
+      tags:
+        - RouteTable
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/route_tables/list
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v1/cloud/route_tables/{id}:
+    get:
+      operationId: get_route_table
+      description: 查询路由表详情
+      tags:
+        - RouteTable
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: get
+          path: /api/v1/cloud/route_tables/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v1/cloud/vendors/tcloud/route_tables/{route_table_id}/routes/list:
+    post:
+      operationId: list_tcloud_route
+      description: 查询腾讯云路由列表
+      tags:
+        - Route
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/tcloud/route_tables/{route_table_id}/routes/list
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v1/cloud/vendors/aws/route_tables/{route_table_id}/routes/list:
+    post:
+      operationId: list_aws_route
+      description: 查询AWS路由列表
+      tags:
+        - Route
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/route_tables/{route_table_id}/routes/list
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v1/cloud/vendors/azure/route_tables/{route_table_id}/routes/list:
+    post:
+      operationId: list_azure_route
+      description: 查询Azure路由列表
+      tags:
+        - Route
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/azure/route_tables/{route_table_id}/routes/list
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v1/cloud/vendors/huawei/route_tables/{route_table_id}/routes/list:
+    post:
+      operationId: list_huawei_route
+      description: 查询华为云路由列表
+      tags:
+        - Route
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/huawei/route_tables/{route_table_id}/routes/list
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v1/cloud/vendors/gcp/route_tables/{route_table_id}/routes/list:
+    post:
+      operationId: list_gcp_route
+      description: 查询Gcp路由列表
+      tags:
+        - Route
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/gcp/route_tables/{route_table_id}/routes/list
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v1/cloud/route_tables/subnets/count:
+    post:
+      operationId: count_route_table_subnets
+      description: 查询路由表关联的子网数量列表
+      tags:
+        - RouteTable
+        - Subnet
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/route_tables/subnets/count
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:
+  /api/v1/cloud/subnets/{id}/ips/count:
+    post:
+      operationId: count_subnet_ips
+      description: 查询路由表关联的子网数量列表
+      tags:
+        - Subnet
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/subnets/{id}/ips/count
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:

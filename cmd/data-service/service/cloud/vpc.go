@@ -117,6 +117,7 @@ func batchCreateVpc[T protocloud.VpcCreateExtension](cts *rest.Contexts, vendor 
 				AccountID: createReq.AccountID,
 				CloudID:   createReq.CloudID,
 				Name:      createReq.Name,
+				Region:    createReq.Region,
 				Category:  createReq.Category,
 				Memo:      createReq.Memo,
 				Extension: ext,
@@ -214,6 +215,8 @@ func batchUpdateVpc[T protocloud.VpcUpdateExtension](cts *rest.Contexts, svc *vp
 		vpc.Name = updateReq.Name
 		vpc.Category = updateReq.Category
 		vpc.Memo = updateReq.Memo
+		vpc.BkCloudID = updateReq.BkCloudID
+		vpc.BkBizID = updateReq.BkBizID
 
 		// update extension
 		if updateReq.Extension != nil {
@@ -308,8 +311,6 @@ func (svc *vpcSvc) GetVpc(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	base := convertBaseVpc(dbVpc)
-	base.BkCloudID = dbVpc.BkCloudID
-	base.BkBizID = dbVpc.BkBizID
 
 	switch vendor {
 	case enumor.TCloud:
@@ -404,6 +405,7 @@ func convertBaseVpc(dbVpc *tablecloud.VpcTable) *protocore.BaseVpc {
 		AccountID: dbVpc.AccountID,
 		CloudID:   dbVpc.CloudID,
 		Name:      converter.PtrToVal(dbVpc.Name),
+		Region:    dbVpc.Region,
 		Category:  dbVpc.Category,
 		Memo:      dbVpc.Memo,
 		BkCloudID: dbVpc.BkCloudID,
@@ -453,6 +455,11 @@ func (svc *vpcSvc) BatchDeleteVpc(cts *rest.Contexts) (interface{}, error) {
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		delVpcFilter := tools.ContainersExpression("id", delVpcIDs)
 		if err := svc.dao.Vpc().BatchDeleteWithTx(cts.Kit, txn, delVpcFilter); err != nil {
+			return nil, err
+		}
+
+		delSubnetFilter := tools.ContainersExpression("vpc_id", delVpcIDs)
+		if err := svc.dao.Subnet().BatchDeleteWithTx(cts.Kit, txn, delSubnetFilter); err != nil {
 			return nil, err
 		}
 

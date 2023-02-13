@@ -32,6 +32,7 @@ type Client struct {
 	Subnet        *SubnetClient
 	Region        *RegionClient
 	Cvm           *CvmClient
+	RouteTable    *RouteTableClient
 }
 
 type restClient struct {
@@ -48,5 +49,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Subnet:        NewSubnetClient(client),
 		Region:        NewRegionClient(client),
 		Cvm:           NewCloudCvmClient(client),
+		RouteTable:    NewRouteTableClient(client),
 	}
 }

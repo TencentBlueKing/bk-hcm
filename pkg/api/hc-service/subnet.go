@@ -19,7 +19,10 @@
 
 package hcservice
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
+)
 
 // SubnetUpdateReq defines update subnet request.
 type SubnetUpdateReq struct {
@@ -29,4 +32,15 @@ type SubnetUpdateReq struct {
 // Validate SubnetUpdateReq.
 func (u *SubnetUpdateReq) Validate() error {
 	return validator.Validate.Struct(u)
+}
+
+// SubnetCountIPResp count subnet available ips response.
+type SubnetCountIPResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *SubnetCountIPResult
+}
+
+// SubnetCountIPResult count subnet available ips result.
+type SubnetCountIPResult struct {
+	AvailableIPv4Count uint64 `json:"available_ipv4_count"`
 }

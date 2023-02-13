@@ -34,14 +34,17 @@ type SubnetBatchCreateReq[T SubnetCreateExtension] struct {
 
 // SubnetCreateReq defines create subnet request.
 type SubnetCreateReq[T SubnetCreateExtension] struct {
-	AccountID  string   `json:"account_id" validate:"required"`
-	CloudVpcID string   `json:"cloud_vpc_id" validate:"required"`
-	CloudID    string   `json:"cloud_id" validate:"required"`
-	Name       *string  `json:"name,omitempty" validate:"required"`
-	Ipv4Cidr   []string `json:"ipv4_cidr,omitempty" validate:"required"`
-	Ipv6Cidr   []string `json:"ipv6_cidr,omitempty" validate:"omitempty"`
-	Memo       *string  `json:"memo,omitempty" validate:"omitempty"`
-	Extension  *T       `json:"extension" validate:"required"`
+	AccountID         string   `json:"account_id" validate:"required"`
+	CloudVpcID        string   `json:"cloud_vpc_id" validate:"required"`
+	CloudRouteTableID string   `json:"cloud_route_table_id" validate:"omitempty"`
+	CloudID           string   `json:"cloud_id" validate:"required"`
+	Name              *string  `json:"name,omitempty" validate:"required"`
+	Region            string   `json:"region" validate:"omitempty"`
+	Zone              string   `json:"zone" validate:"omitempty"`
+	Ipv4Cidr          []string `json:"ipv4_cidr,omitempty" validate:"required"`
+	Ipv6Cidr          []string `json:"ipv6_cidr,omitempty" validate:"omitempty"`
+	Memo              *string  `json:"memo,omitempty" validate:"omitempty"`
+	Extension         *T       `json:"extension" validate:"required"`
 }
 
 // Validate SubnetBatchCreateReq.
@@ -56,17 +59,13 @@ type SubnetCreateExtension interface {
 
 // TCloudSubnetCreateExt defines create tencent cloud subnet extensional info.
 type TCloudSubnetCreateExt struct {
-	IsDefault    bool    `json:"is_default" validate:"required"`
-	Region       string  `json:"region" validate:"required"`
-	Zone         string  `json:"zone" validate:"required"`
-	NetworkAclId *string `json:"network_acl_id,omitempty" validate:"omitempty"`
+	IsDefault         bool    `json:"is_default" validate:"required"`
+	CloudNetworkAclID *string `json:"cloud_network_acl_id,omitempty" validate:"omitempty"`
 }
 
 // AwsSubnetCreateExt defines create aws subnet extensional info.
 type AwsSubnetCreateExt struct {
 	State                       string `json:"state" validate:"required"`
-	Region                      string `json:"region" validate:"required"`
-	Zone                        string `json:"zone" validate:"required"`
 	IsDefault                   bool   `json:"is_default" validate:"required"`
 	MapPublicIpOnLaunch         bool   `json:"map_public_ip_on_launch" validate:"required"`
 	AssignIpv6AddressOnCreation bool   `json:"assign_ipv6_address_on_creation" validate:"required"`
@@ -76,7 +75,6 @@ type AwsSubnetCreateExt struct {
 // GcpSubnetCreateExt defines create gcp subnet extensional info.
 type GcpSubnetCreateExt struct {
 	SelfLink              string `json:"self_link" validate:"required"`
-	Region                string `json:"region" validate:"required"`
 	StackType             string `json:"stack_type" validate:"required"`
 	Ipv6AccessType        string `json:"ipv6_access_type" validate:"required"`
 	GatewayAddress        string `json:"gateway_address" validate:"required"`
@@ -93,7 +91,6 @@ type AzureSubnetCreateExt struct {
 
 // HuaWeiSubnetCreateExt defines create huawei subnet extensional info.
 type HuaWeiSubnetCreateExt struct {
-	Region       string   `json:"region" validate:"required"`
 	Status       string   `json:"status" validate:"required"`
 	DhcpEnable   bool     `json:"dhcp_enable" validate:"required"`
 	GatewayIp    string   `json:"gateway_ip" validate:"required"`
@@ -122,11 +119,12 @@ type SubnetUpdateReq[T SubnetUpdateExtension] struct {
 
 // SubnetUpdateBaseInfo defines update subnet request base info.
 type SubnetUpdateBaseInfo struct {
-	Name     *string  `json:"name,omitempty" validate:"omitempty"`
-	Ipv4Cidr []string `json:"ipv4_cidr,omitempty" validate:"omitempty"`
-	Ipv6Cidr []string `json:"ipv6_cidr,omitempty" validate:"omitempty"`
-	Memo     *string  `json:"memo,omitempty" validate:"omitempty"`
-	BkBizID  int64    `json:"bk_biz_id,omitempty" validate:"omitempty"`
+	Name              *string  `json:"name,omitempty" validate:"omitempty"`
+	Ipv4Cidr          []string `json:"ipv4_cidr,omitempty" validate:"omitempty"`
+	Ipv6Cidr          []string `json:"ipv6_cidr,omitempty" validate:"omitempty"`
+	Memo              *string  `json:"memo,omitempty" validate:"omitempty"`
+	BkBizID           int64    `json:"bk_biz_id,omitempty" validate:"omitempty"`
+	CloudRouteTableID *string  `json:"cloud_route_table_id,omitempty" validate:"omitempty"`
 }
 
 // SubnetUpdateExtension defines subnet update request extensional info.
@@ -136,10 +134,10 @@ type SubnetUpdateExtension interface {
 
 // TCloudSubnetUpdateExt defines update tencent cloud subnet extensional info.
 type TCloudSubnetUpdateExt struct {
-	IsDefault    bool    `json:"is_default" validate:"omitempty"`
-	Region       string  `json:"region" validate:"omitempty"`
-	Zone         string  `json:"zone" validate:"omitempty"`
-	NetworkAclId *string `json:"network_acl_id,omitempty" validate:"omitempty"`
+	IsDefault         bool    `json:"is_default" validate:"omitempty"`
+	Region            string  `json:"region" validate:"omitempty"`
+	Zone              string  `json:"zone" validate:"omitempty"`
+	CloudNetworkAclID *string `json:"cloud_network_acl_id,omitempty" validate:"omitempty"`
 }
 
 // AwsSubnetUpdateExt defines update aws subnet extensional info.

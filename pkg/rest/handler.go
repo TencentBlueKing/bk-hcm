@@ -62,7 +62,13 @@ type action struct {
 
 // Handler contains all the restfull http handler actions
 type Handler struct {
-	actions []*action
+	rootPath string
+	actions  []*action
+}
+
+// Path defines the root path of the handler.
+func (r *Handler) Path(path string) {
+	r.rootPath = strings.TrimRight(path, "/")
 }
 
 // Add add a http handler
@@ -91,17 +97,22 @@ func (r *Handler) Load(ws *restful.WebService) {
 	}
 
 	for _, action := range r.actions {
+		path := action.Path
+		if r.rootPath != "" {
+			path = fmt.Sprintf("%s/%s", r.rootPath, strings.TrimLeft(action.Path, "/"))
+		}
+
 		switch action.Verb {
 		case http.MethodPost:
-			ws.Route(ws.POST(action.Path).To(r.wrapperAction(action)))
+			ws.Route(ws.POST(path).To(r.wrapperAction(action)))
 		case http.MethodDelete:
-			ws.Route(ws.DELETE(action.Path).To(r.wrapperAction(action)))
+			ws.Route(ws.DELETE(path).To(r.wrapperAction(action)))
 		case http.MethodPut:
-			ws.Route(ws.PUT(action.Path).To(r.wrapperAction(action)))
+			ws.Route(ws.PUT(path).To(r.wrapperAction(action)))
 		case http.MethodGet:
-			ws.Route(ws.GET(action.Path).To(r.wrapperAction(action)))
+			ws.Route(ws.GET(path).To(r.wrapperAction(action)))
 		case http.MethodPatch:
-			ws.Route(ws.PATCH(action.Path).To(r.wrapperAction(action)))
+			ws.Route(ws.PATCH(path).To(r.wrapperAction(action)))
 		default:
 			panic(fmt.Sprintf("add handler to webservice, but got unsupport verb: %s .", action.Verb))
 		}

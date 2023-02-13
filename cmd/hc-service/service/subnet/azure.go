@@ -385,3 +385,40 @@ func (s subnet) batchCreateAzureSubnet(cts *rest.Contexts,
 
 	return nil
 }
+
+// AzureSubnetCountIP count azure subnets' available ips.
+func (s subnet) AzureSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	getRes, err := s.cs.DataService().Azure.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	if err != nil {
+		return nil, err
+	}
+
+	cli, err := s.ad.Azure(cts.Kit, getRes.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	usageOpt := &types.AzureVpcListUsageOption{
+		ResourceGroupName: getRes.Extension.ResourceGroup,
+		VpcID:             getRes.CloudVpcID,
+	}
+	usages, err := cli.ListVpcUsage(cts.Kit, usageOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, usage := range usages {
+		if converter.PtrToVal(usage.ID) == getRes.CloudID {
+			return &hcservice.SubnetCountIPResult{
+				AvailableIPv4Count: uint64(converter.PtrToVal(usage.Limit) - converter.PtrToVal(usage.CurrentValue)),
+			}, nil
+		}
+	}
+
+	return nil, errf.New(errf.InvalidParameter, "subnet ip count is not found")
+}

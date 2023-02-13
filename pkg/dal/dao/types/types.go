@@ -63,7 +63,8 @@ func (opt ListOption) Validate(eo *filter.ExprOption, po *core.PageOption) error
 
 // CountOption defines options to count resources.
 type CountOption struct {
-	Filter *filter.Expression
+	Filter  *filter.Expression
+	GroupBy string
 }
 
 // Validate list option.
@@ -81,6 +82,12 @@ func (opt *CountOption) Validate(eo *filter.ExprOption) error {
 	}
 
 	return nil
+}
+
+// CountResult defines count resources with group by options result.
+type CountResult struct {
+	GroupField string `db:"group_field" json:"group_field"`
+	Count      uint64 `db:"count" json:"count"`
 }
 
 // DefaultIgnoredFields is default ignored field.

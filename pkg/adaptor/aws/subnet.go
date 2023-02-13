@@ -22,7 +22,6 @@ package aws
 import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
-	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -104,13 +103,14 @@ func convertSubnet(data *ec2.Subnet, region string) *types.AwsSubnet {
 	s := &types.AwsSubnet{
 		CloudVpcID: converter.PtrToVal(data.VpcId),
 		CloudID:    converter.PtrToVal(data.SubnetId),
-		Extension: &cloud.AwsSubnetExtension{
+		Extension: &types.AwsSubnetExtension{
 			State:                       converter.PtrToVal(data.State),
 			Region:                      region,
 			Zone:                        converter.PtrToVal(data.AvailabilityZone),
 			IsDefault:                   converter.PtrToVal(data.DefaultForAz),
 			MapPublicIpOnLaunch:         converter.PtrToVal(data.MapPublicIpOnLaunch),
 			AssignIpv6AddressOnCreation: converter.PtrToVal(data.AssignIpv6AddressOnCreation),
+			AvailableIPAddressCount:     converter.PtrToVal(data.AvailableIpAddressCount),
 		},
 	}
 

@@ -37,3 +37,17 @@ func (d *BatchDeleteReq) Validate() error {
 
 	return nil
 }
+
+// CountReq is a standard count operation http request for data-service.
+type CountReq struct {
+	Filter *filter.Expression `json:"filter"`
+}
+
+// Validate CountReq.
+func (d *CountReq) Validate() error {
+	if d.Filter == nil {
+		return errf.New(errf.InvalidParameter, "filter is required")
+	}
+
+	return nil
+}

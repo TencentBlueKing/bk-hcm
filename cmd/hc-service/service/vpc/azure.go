@@ -285,11 +285,11 @@ func (v vpc) filterAzureVpcList(cts *rest.Contexts, req *hcservice.ResourceSyncR
 				AccountID: req.AccountID,
 				CloudID:   item.CloudID,
 				Name:      converter.ValToPtr(item.Name),
+				Region:    item.Region,
 				Category:  enumor.BizVpcCategory,
 				Memo:      item.Memo,
 				Extension: &cloud.AzureVpcCreateExt{
 					ResourceGroup: item.Extension.ResourceGroup,
-					Region:        item.Extension.Region,
 					DNSServers:    item.Extension.DNSServers,
 				},
 			}

@@ -65,7 +65,7 @@ func (v vpc) HuaWeiVpcUpdate(cts *rest.Contexts) (interface{}, error) {
 			ResourceID: getRes.CloudID,
 			Data:       &types.BaseVpcUpdateData{Memo: req.Memo},
 		},
-		Region: getRes.Extension.Region,
+		Region: getRes.Region,
 	}
 	err = cli.UpdateVpc(cts.Kit, updateOpt)
 	if err != nil {
@@ -104,7 +104,7 @@ func (v vpc) HuaWeiVpcDelete(cts *rest.Contexts) (interface{}, error) {
 
 	delOpt := &adcore.BaseRegionalDeleteOption{
 		BaseDeleteOption: adcore.BaseDeleteOption{ResourceID: getRes.CloudID},
-		Region:           getRes.Extension.Region,
+		Region:           getRes.Region,
 	}
 	err = cli.DeleteVpc(cts.Kit, delOpt)
 	if err != nil {
@@ -301,10 +301,10 @@ func (v vpc) filterHuaWeiVpcList(req *hcservice.ResourceSyncReq, list *types.Hua
 				AccountID: req.AccountID,
 				CloudID:   item.CloudID,
 				Name:      converter.ValToPtr(item.Name),
+				Region:    item.Region,
 				Category:  enumor.BizVpcCategory,
 				Memo:      item.Memo,
 				Extension: &cloud.HuaWeiVpcCreateExt{
-					Region:              item.Extension.Region,
 					Status:              item.Extension.Status,
 					EnterpriseProjectId: item.Extension.EnterpriseProjectId,
 				},
