@@ -104,7 +104,7 @@ const showDeleteDialog = (fetchType: string, title: string) => {
     DeleteDialog,
   } = useDelete(
     state.columns,
-    selections.value,
+    selections,
     fetchType,
     t(title),
     true,

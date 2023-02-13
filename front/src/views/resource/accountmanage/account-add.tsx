@@ -216,13 +216,13 @@ export default defineComponent({
             },
             {
               label: t('SecretId/密钥ID'),
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />,
             },
             {
               label: 'SecretKey',
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />,
             },
@@ -469,7 +469,7 @@ export default defineComponent({
           });
         } else {
           formList?.forEach((e) => {
-            if (e.label && e.property !== 'remark') {   // 备注不需必填
+            if (e.label && e.property !== 'memo') {   // 备注不需必填
               e.required = true;
             }
           });
