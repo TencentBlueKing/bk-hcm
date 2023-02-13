@@ -193,6 +193,11 @@ const groupColumns = [
     sort: true,
   },
   {
+    label: t('云账号 ID'),
+    field: 'cloud_id',
+    sort: true,
+  },
+  {
     label: t('名称'),
     field: 'name',
     sort: true,

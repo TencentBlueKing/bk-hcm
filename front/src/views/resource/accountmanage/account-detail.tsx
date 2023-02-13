@@ -368,13 +368,13 @@ export default defineComponent({
             },
             {
               label: 'Secret ID',
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
             },
             {
               label: 'Secret Key',
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
             },
@@ -390,13 +390,13 @@ export default defineComponent({
             },
             {
               label: 'Secret ID',
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
             },
             {
               label: 'Secret Key',
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
             },
@@ -418,13 +418,13 @@ export default defineComponent({
             },
             {
               label: 'Secret ID',
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
             },
             {
               label: 'Secret Key',
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
             },
@@ -434,25 +434,25 @@ export default defineComponent({
           dialogForm.list = [
             {
               label: t('应用程序(客户端) ID'),
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'applicationId',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationId} />,
             },
             {
               label: t('应用程序名称'),
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'applicationName',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.applicationName} />,
             },
             {
               label: t('客户端ID'),
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
             },
             {
               label: t('客户端密钥'),
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
             },
@@ -462,13 +462,13 @@ export default defineComponent({
           dialogForm.list = [
             {
               label: 'Secret ID',
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
             },
             {
               label: 'Secret Key',
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
             },

@@ -234,11 +234,20 @@ export default defineComponent({
           if (v.type === 'condition') {
             state.filter.op = v.id || 'and';
           } else {
-            p.push({
-              field: v.id,
-              op: state.isAccurate ? 'eq' : 'cs',
-              value: v.values[0].id,
-            });
+            console.log('v.values[0].id', v.values[0].id);
+            if (v.id === 'managers') {
+              p.push({
+                field: v.id,
+                op: 'json_contains',
+                value: v.values[0].id,
+              });
+            } else {
+              p.push({
+                field: v.id,
+                op: state.isAccurate ? 'eq' : 'cs',
+                value: v.values[0].id,
+              });
+            }
           }
           return p;
         }, []);
