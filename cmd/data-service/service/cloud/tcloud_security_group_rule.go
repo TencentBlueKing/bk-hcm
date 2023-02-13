@@ -238,7 +238,7 @@ func (svc *tcloudSGRuleSvc) ListTCloudRule(cts *rest.Contexts) (interface{}, err
 			CloudPolicyIndex:           one.CloudPolicyIndex,
 			Version:                    one.Version,
 			Protocol:                   one.Protocol,
-			Port:                       one.Protocol,
+			Port:                       one.Port,
 			CloudServiceID:             one.CloudServiceID,
 			CloudServiceGroupID:        one.CloudServiceGroupID,
 			IPv4Cidr:                   one.IPv4Cidr,

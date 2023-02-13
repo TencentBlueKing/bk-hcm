@@ -48,8 +48,13 @@ func newClientSet(secret *types.BaseSecret) *clientSet {
 	}
 }
 
-func (c *clientSet) iamClient(region *region.Region) (*iam.IamClient, error) {
-	client := iam.NewIamClient(
+func (c *clientSet) iamClient(region *region.Region) (client *iam.IamClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+	client = iam.NewIamClient(
 		iam.IamClientBuilder().
 			WithRegion(region).
 			WithCredential(c.credentials).
@@ -59,8 +64,13 @@ func (c *clientSet) iamClient(region *region.Region) (*iam.IamClient, error) {
 	return client, nil
 }
 
-func (c *clientSet) iamRegionClient(region string) (*iam.IamClient, error) {
-	client := iam.NewIamClient(
+func (c *clientSet) iamRegionClient(region string) (client *iam.IamClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+	client = iam.NewIamClient(
 		iam.IamClientBuilder().
 			WithRegion(iamregion.ValueOf(region)).
 			WithCredential(c.credentials).
@@ -70,8 +80,13 @@ func (c *clientSet) iamRegionClient(region string) (*iam.IamClient, error) {
 	return client, nil
 }
 
-func (c *clientSet) evsClient(region *region.Region) (*evs.EvsClient, error) {
-	client := evs.NewEvsClient(
+func (c *clientSet) evsClient(region *region.Region) (client *evs.EvsClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+	client = evs.NewEvsClient(
 		evs.EvsClientBuilder().
 			WithRegion(region).
 			WithCredential(c.credentials).

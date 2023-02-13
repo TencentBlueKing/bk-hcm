@@ -22,10 +22,8 @@ package account
 import (
 	"fmt"
 
-	"hcm/cmd/cloud-server/service/common"
-	proto "hcm/pkg/api/cloud-server"
+	proto "hcm/pkg/api/cloud-server/account"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -95,32 +93,12 @@ func (a *accountSvc) updateForTCloud(
 	interface{}, error,
 ) {
 	// 解析Extension
-	extension := new(proto.TCloudAccountExtensionUpdateReq)
+	var (
+		extension *proto.TCloudAccountExtensionUpdateReq
+		err       error
+	)
 	if req.Extension != nil {
-		if err := common.DecodeExtension(cts, *req.Extension, extension); err != nil {
-			return nil, err
-		}
-		// 校验Extension
-		if err := extension.Validate(); err != nil {
-			return nil, err
-		}
-		// 查询账号其他信息
-		account, err := a.client.DataService().TCloud.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
-
-		// 检查联通性，账号是否正确
-		err = a.client.HCService().TCloud.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.TCloudAccountCheckReq{
-				CloudMainAccountID: account.Extension.CloudMainAccountID,
-				CloudSubAccountID:  extension.CloudSubAccountID,
-				CloudSecretID:      extension.CloudSecretID,
-				CloudSecretKey:     extension.CloudSecretKey,
-			},
-		)
+		extension, err = a.parseAndCheckTCloudExtensionByID(cts, accountID, req.Extension)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
@@ -130,13 +108,13 @@ func (a *accountSvc) updateForTCloud(
 	if req.Extension != nil {
 		shouldUpdatedExtension = &dataproto.TCloudAccountExtensionUpdateReq{
 			CloudSubAccountID: extension.CloudSubAccountID,
-			CloudSecretID:     extension.CloudSecretID,
-			CloudSecretKey:    extension.CloudSecretKey,
+			CloudSecretID:     &extension.CloudSecretID,
+			CloudSecretKey:    &extension.CloudSecretKey,
 		}
 	}
 
 	// 更新
-	_, err := a.client.DataService().TCloud.Account.Update(
+	_, err = a.client.DataService().TCloud.Account.Update(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		accountID,
@@ -162,32 +140,12 @@ func (a *accountSvc) updateForAws(
 	interface{}, error,
 ) {
 	// 解析Extension
-	extension := new(proto.AwsAccountExtensionUpdateReq)
+	var (
+		extension *proto.AwsAccountExtensionUpdateReq
+		err       error
+	)
 	if req.Extension != nil {
-		if err := common.DecodeExtension(cts, *req.Extension, extension); err != nil {
-			return nil, err
-		}
-		// 校验Extension
-		if err := extension.Validate(); err != nil {
-			return nil, err
-		}
-		// 查询账号其他信息
-		account, err := a.client.DataService().Aws.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
-
-		// 检查联通性，账号是否正确
-		err = a.client.HCService().Aws.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.AwsAccountCheckReq{
-				CloudAccountID:   account.Extension.CloudAccountID,
-				CloudIamUsername: extension.CloudIamUsername,
-				CloudSecretID:    extension.CloudSecretID,
-				CloudSecretKey:   extension.CloudSecretKey,
-			},
-		)
+		extension, err = a.parseAndCheckAwsExtensionByID(cts, accountID, req.Extension)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
@@ -197,13 +155,13 @@ func (a *accountSvc) updateForAws(
 	if req.Extension != nil {
 		shouldUpdatedExtension = &dataproto.AwsAccountExtensionUpdateReq{
 			CloudIamUsername: extension.CloudIamUsername,
-			CloudSecretID:    extension.CloudSecretID,
-			CloudSecretKey:   extension.CloudSecretKey,
+			CloudSecretID:    &extension.CloudSecretID,
+			CloudSecretKey:   &extension.CloudSecretKey,
 		}
 	}
 
 	// 更新
-	_, err := a.client.DataService().Aws.Account.Update(
+	_, err = a.client.DataService().Aws.Account.Update(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		accountID,
@@ -229,35 +187,12 @@ func (a *accountSvc) updateForHuaWei(
 	interface{}, error,
 ) {
 	// 解析Extension
-	extension := new(proto.HuaWeiAccountExtensionUpdateReq)
+	var (
+		extension *proto.HuaWeiAccountExtensionUpdateReq
+		err       error
+	)
 	if req.Extension != nil {
-		if err := common.DecodeExtension(cts, *req.Extension, extension); err != nil {
-			return nil, err
-		}
-		// 校验Extension
-		if err := extension.Validate(); err != nil {
-			return nil, err
-		}
-		// 查询账号其他信息
-		account, err := a.client.DataService().HuaWei.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
-
-		// 检查联通性，账号是否正确
-		err = a.client.HCService().HuaWei.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.HuaWeiAccountCheckReq{
-				CloudMainAccountName: account.Extension.CloudMainAccountName,
-				CloudSubAccountID:    account.Extension.CloudSubAccountID,
-				CloudSubAccountName:  account.Extension.CloudSubAccountName,
-				CloudIamUserID:       extension.CloudIamUserID,
-				CloudIamUsername:     extension.CloudIamUsername,
-				CloudSecretID:        extension.CloudSecretID,
-				CloudSecretKey:       extension.CloudSecretKey,
-			},
-		)
+		extension, err = a.parseAndCheckHuaWeiExtensionByID(cts, accountID, req.Extension)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
@@ -266,15 +201,15 @@ func (a *accountSvc) updateForHuaWei(
 	var shouldUpdatedExtension *dataproto.HuaWeiAccountExtensionUpdateReq = nil
 	if req.Extension != nil {
 		shouldUpdatedExtension = &dataproto.HuaWeiAccountExtensionUpdateReq{
-			CloudIamUserID:   extension.CloudIamUserID,
-			CloudIamUsername: extension.CloudIamUsername,
+			CloudIamUserID:   &extension.CloudIamUserID,
+			CloudIamUsername: &extension.CloudIamUsername,
 			CloudSecretID:    extension.CloudSecretID,
 			CloudSecretKey:   extension.CloudSecretKey,
 		}
 	}
 
 	// 更新
-	_, err := a.client.DataService().HuaWei.Account.Update(
+	_, err = a.client.DataService().HuaWei.Account.Update(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		accountID,
@@ -300,30 +235,12 @@ func (a *accountSvc) updateForGcp(
 	interface{}, error,
 ) {
 	// 解析Extension
-	extension := new(proto.GcpAccountExtensionUpdateReq)
+	var (
+		extension *proto.GcpAccountExtensionUpdateReq
+		err       error
+	)
 	if req.Extension != nil {
-		if err := common.DecodeExtension(cts, *req.Extension, extension); err != nil {
-			return nil, err
-		}
-		// 校验Extension
-		if err := extension.Validate(); err != nil {
-			return nil, err
-		}
-		// 查询账号其他信息
-		account, err := a.client.DataService().Gcp.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
-
-		// 检查联通性，账号是否正确
-		err = a.client.HCService().Gcp.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.GcpAccountCheckReq{
-				CloudProjectID:        account.Extension.CloudProjectID,
-				CloudServiceSecretKey: extension.CloudServiceSecretKey,
-			},
-		)
+		extension, err = a.parseAndCheckGcpExtensionByID(cts, accountID, req.Extension)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
@@ -332,15 +249,15 @@ func (a *accountSvc) updateForGcp(
 	var shouldUpdatedExtension *dataproto.GcpAccountExtensionUpdateReq = nil
 	if req.Extension != nil {
 		shouldUpdatedExtension = &dataproto.GcpAccountExtensionUpdateReq{
-			CloudServiceAccountID:   extension.CloudServiceAccountID,
-			CloudServiceAccountName: extension.CloudServiceAccountName,
-			CloudServiceSecretID:    extension.CloudServiceSecretID,
-			CloudServiceSecretKey:   extension.CloudServiceSecretKey,
+			CloudServiceAccountID:   &extension.CloudServiceAccountID,
+			CloudServiceAccountName: &extension.CloudServiceAccountName,
+			CloudServiceSecretID:    &extension.CloudServiceSecretID,
+			CloudServiceSecretKey:   &extension.CloudServiceSecretKey,
 		}
 	}
 
 	// 更新
-	_, err := a.client.DataService().Gcp.Account.Update(
+	_, err = a.client.DataService().Gcp.Account.Update(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		accountID,
@@ -366,32 +283,12 @@ func (a *accountSvc) updateForAzure(
 	interface{}, error,
 ) {
 	// 解析Extension
-	extension := new(proto.AzureAccountExtensionUpdateReq)
+	var (
+		extension *proto.AzureAccountExtensionUpdateReq
+		err       error
+	)
 	if req.Extension != nil {
-		if err := common.DecodeExtension(cts, *req.Extension, extension); err != nil {
-			return nil, err
-		}
-		// 校验Extension
-		if err := extension.Validate(); err != nil {
-			return nil, err
-		}
-		// 查询账号其他信息
-		account, err := a.client.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
-
-		// 检查联通性，账号是否正确
-		err = a.client.HCService().Azure.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.AzureAccountCheckReq{
-				CloudTenantID:        account.Extension.CloudTenantID,
-				CloudSubscriptionID:  account.Extension.CloudSubscriptionID,
-				CloudApplicationID:   extension.CloudApplicationID,
-				CloudClientSecretKey: extension.CloudClientSecretKey,
-			},
-		)
+		extension, err = a.parseAndCheckAzureExtensionByID(cts, accountID, req.Extension)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
@@ -400,15 +297,15 @@ func (a *accountSvc) updateForAzure(
 	var shouldUpdatedExtension *dataproto.AzureAccountExtensionUpdateReq = nil
 	if req.Extension != nil {
 		shouldUpdatedExtension = &dataproto.AzureAccountExtensionUpdateReq{
-			CloudApplicationID:   extension.CloudApplicationID,
-			CloudApplicationName: extension.CloudApplicationName,
-			CloudClientSecretID:  extension.CloudClientSecretID,
-			CloudClientSecretKey: extension.CloudClientSecretKey,
+			CloudApplicationID:   &extension.CloudApplicationID,
+			CloudApplicationName: &extension.CloudApplicationName,
+			CloudClientSecretID:  &extension.CloudClientSecretID,
+			CloudClientSecretKey: &extension.CloudClientSecretKey,
 		}
 	}
 
 	// 更新
-	_, err := a.client.DataService().Azure.Account.Update(
+	_, err = a.client.DataService().Azure.Account.Update(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		accountID,

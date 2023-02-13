@@ -105,48 +105,49 @@ func (c *AccountCreateReq[T]) Validate() error {
 // -------------------------- Update --------------------------
 
 // AccountExtensionUpdateReq Note: DataService的更新是与业务无关的，所以必须支持调用方根据场景需求来更新部分字段
+// Note: 对于允许为空字符串的字段，则其类型需要定义为指针，正常情况下，Json合并时空值会被忽略
 type AccountExtensionUpdateReq interface {
 	TCloudAccountExtensionUpdateReq | AwsAccountExtensionUpdateReq | HuaWeiAccountExtensionUpdateReq | GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
 }
 
 type TCloudAccountExtensionUpdateReq struct {
-	CloudMainAccountID string `json:"cloud_main_account_id,omitempty" validate:"omitempty"`
-	CloudSubAccountID  string `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
-	CloudSecretID      string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
-	CloudSecretKey     string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
+	CloudMainAccountID string  `json:"cloud_main_account_id,omitempty" validate:"omitempty"`
+	CloudSubAccountID  string  `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
+	CloudSecretID      *string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
+	CloudSecretKey     *string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
 }
 
 type AwsAccountExtensionUpdateReq struct {
-	CloudAccountID   string `json:"cloud_account_id,omitempty" validate:"omitempty"`
-	CloudIamUsername string `json:"cloud_iam_username,omitempty" validate:"omitempty"`
-	CloudSecretID    string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
-	CloudSecretKey   string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
+	CloudAccountID   string  `json:"cloud_account_id,omitempty" validate:"omitempty"`
+	CloudIamUsername string  `json:"cloud_iam_username,omitempty" validate:"omitempty"`
+	CloudSecretID    *string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
+	CloudSecretKey   *string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
 }
 type HuaWeiAccountExtensionUpdateReq struct {
-	CloudMainAccountName string `json:"cloud_main_account_name,omitempty" validate:"omitempty"`
-	CloudSubAccountID    string `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
-	CloudSubAccountName  string `json:"cloud_sub_account_name,omitempty" validate:"omitempty"`
-	CloudSecretID        string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
-	CloudSecretKey       string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
-	CloudIamUserID       string `json:"cloud_iam_user_id,omitempty" validate:"omitempty"`
-	CloudIamUsername     string `json:"cloud_iam_username,omitempty" validate:"omitempty"`
+	CloudMainAccountName string  `json:"cloud_main_account_name,omitempty" validate:"omitempty"`
+	CloudSubAccountID    string  `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
+	CloudSubAccountName  string  `json:"cloud_sub_account_name,omitempty" validate:"omitempty"`
+	CloudSecretID        string  `json:"cloud_secret_id,omitempty" validate:"omitempty"`
+	CloudSecretKey       string  `json:"cloud_secret_key,omitempty" validate:"omitempty"`
+	CloudIamUserID       *string `json:"cloud_iam_user_id,omitempty" validate:"omitempty"`
+	CloudIamUsername     *string `json:"cloud_iam_username,omitempty" validate:"omitempty"`
 }
 type GcpAccountExtensionUpdateReq struct {
-	CloudProjectID          string `json:"cloud_project_id,omitempty" validate:"omitempty"`
-	CloudProjectName        string `json:"cloud_project_name,omitempty" validate:"omitempty"`
-	CloudServiceAccountID   string `json:"cloud_service_account_id,omitempty" validate:"omitempty"`
-	CloudServiceAccountName string `json:"cloud_service_account_name,omitempty" validate:"omitempty"`
-	CloudServiceSecretID    string `json:"cloud_service_secret_id,omitempty" validate:"omitempty"`
-	CloudServiceSecretKey   string `json:"cloud_service_secret_key,omitempty" validate:"omitempty"`
+	CloudProjectID          string  `json:"cloud_project_id,omitempty" validate:"omitempty"`
+	CloudProjectName        string  `json:"cloud_project_name,omitempty" validate:"omitempty"`
+	CloudServiceAccountID   *string `json:"cloud_service_account_id,omitempty" validate:"omitempty"`
+	CloudServiceAccountName *string `json:"cloud_service_account_name,omitempty" validate:"omitempty"`
+	CloudServiceSecretID    *string `json:"cloud_service_secret_id,omitempty" validate:"omitempty"`
+	CloudServiceSecretKey   *string `json:"cloud_service_secret_key,omitempty" validate:"omitempty"`
 }
 type AzureAccountExtensionUpdateReq struct {
-	CloudTenantID         string `json:"cloud_tenant_id,omitempty" validate:"omitempty"`
-	CloudSubscriptionID   string `json:"cloud_subscription_id,omitempty" validate:"omitempty"`
-	CloudSubscriptionName string `json:"cloud_subscription_name,omitempty" validate:"omitempty"`
-	CloudApplicationID    string `json:"cloud_application_id,omitempty" validate:"omitempty"`
-	CloudApplicationName  string `json:"cloud_application_name,omitempty" validate:"omitempty"`
-	CloudClientSecretID   string `json:"cloud_client_secret_id,omitempty" validate:"omitempty"`
-	CloudClientSecretKey  string `json:"cloud_client_secret_key,omitempty" validate:"omitempty"`
+	CloudTenantID         string  `json:"cloud_tenant_id,omitempty" validate:"omitempty"`
+	CloudSubscriptionID   string  `json:"cloud_subscription_id,omitempty" validate:"omitempty"`
+	CloudSubscriptionName string  `json:"cloud_subscription_name,omitempty" validate:"omitempty"`
+	CloudApplicationID    *string `json:"cloud_application_id,omitempty" validate:"omitempty"`
+	CloudApplicationName  *string `json:"cloud_application_name,omitempty" validate:"omitempty"`
+	CloudClientSecretID   *string `json:"cloud_client_secret_id,omitempty" validate:"omitempty"`
+	CloudClientSecretKey  *string `json:"cloud_client_secret_key,omitempty" validate:"omitempty"`
 }
 
 // AccountUpdateReq ...

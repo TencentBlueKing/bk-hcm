@@ -22,11 +22,9 @@ package account
 import (
 	"fmt"
 
-	"hcm/cmd/cloud-server/service/common"
-	proto "hcm/pkg/api/cloud-server"
+	proto "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -116,36 +114,15 @@ func (a *accountSvc) isDuplicateMainAccount(
 }
 
 func (a *accountSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
-	// 解析Extension
-	extension := new(proto.TCloudAccountExtensionCreateReq)
-	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
-		return nil, err
-	}
-	// 校验Extension
-	if err := extension.Validate(req.Type); err != nil {
-		return nil, err
-	}
-
-	// 检查资源账号的主账号是否重复
-	if err := a.isDuplicateMainAccount(cts, req, "cloud_main_account_id", extension.CloudMainAccountID); err != nil {
+	extension, err := a.parseAndCheckTCloudExtension(cts, req.Type, req.Extension)
+	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 检查联通性，账号是否正确
-	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
-		err := a.client.HCService().TCloud.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.TCloudAccountCheckReq{
-				CloudMainAccountID: extension.CloudMainAccountID,
-				CloudSubAccountID:  extension.CloudSubAccountID,
-				CloudSecretID:      extension.CloudSecretID,
-				CloudSecretKey:     extension.CloudSecretKey,
-			},
-		)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	// 检查资源账号的主账号是否重复
+	err = a.isDuplicateMainAccount(cts, req, "cloud_main_account_id", extension.CloudMainAccountID)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 创建
@@ -173,36 +150,15 @@ func (a *accountSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountCreat
 }
 
 func (a *accountSvc) createForAws(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
-	// 解析Extension
-	extension := new(proto.AwsAccountExtensionCreateReq)
-	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
-		return nil, err
-	}
-	// 校验Extension
-	if err := extension.Validate(req.Type); err != nil {
-		return nil, err
-	}
-
-	// 检查资源账号的主账号是否重复
-	if err := a.isDuplicateMainAccount(cts, req, "cloud_account_id", extension.CloudAccountID); err != nil {
+	extension, err := a.parseAndCheckAwsExtension(cts, req.Type, req.Extension)
+	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 检查联通性，账号是否正确
-	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
-		err := a.client.HCService().Aws.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.AwsAccountCheckReq{
-				CloudAccountID:   extension.CloudAccountID,
-				CloudIamUsername: extension.CloudIamUsername,
-				CloudSecretID:    extension.CloudSecretID,
-				CloudSecretKey:   extension.CloudSecretKey,
-			},
-		)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	// 检查资源账号的主账号是否重复
+	err = a.isDuplicateMainAccount(cts, req, "cloud_account_id", extension.CloudAccountID)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 创建
@@ -230,39 +186,15 @@ func (a *accountSvc) createForAws(cts *rest.Contexts, req *proto.AccountCreateRe
 }
 
 func (a *accountSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
-	// 解析Extension
-	extension := new(proto.HuaWeiAccountExtensionCreateReq)
-	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
-		return nil, err
-	}
-	// 校验Extension
-	if err := extension.Validate(req.Type); err != nil {
-		return nil, err
-	}
-
-	// 检查资源账号的主账号是否重复
-	if err := a.isDuplicateMainAccount(cts, req, "cloud_main_account_name", extension.CloudMainAccountName); err != nil {
+	extension, err := a.parseAndCheckHuaWeiExtension(cts, req.Type, req.Extension)
+	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 检查联通性，账号是否正确
-	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
-		err := a.client.HCService().HuaWei.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.HuaWeiAccountCheckReq{
-				CloudMainAccountName: extension.CloudMainAccountName,
-				CloudSubAccountID:    extension.CloudSubAccountID,
-				CloudSubAccountName:  extension.CloudSubAccountName,
-				CloudSecretID:        extension.CloudSecretID,
-				CloudSecretKey:       extension.CloudSecretKey,
-				CloudIamUserID:       extension.CloudIamUserID,
-				CloudIamUsername:     extension.CloudIamUsername,
-			},
-		)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	// 检查资源账号的主账号是否重复
+	err = a.isDuplicateMainAccount(cts, req, "cloud_main_account_name", extension.CloudMainAccountName)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 创建
@@ -293,34 +225,15 @@ func (a *accountSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountCreat
 }
 
 func (a *accountSvc) createForGcp(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
-	// 解析Extension
-	extension := new(proto.GcpAccountExtensionCreateReq)
-	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
-		return nil, err
-	}
-	// 校验Extension
-	if err := extension.Validate(req.Type); err != nil {
-		return nil, err
-	}
-
-	// 检查资源账号的主账号是否重复
-	if err := a.isDuplicateMainAccount(cts, req, "cloud_project_id", extension.CloudProjectID); err != nil {
+	extension, err := a.parseAndCheckGcpExtension(cts, req.Type, req.Extension)
+	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 检查联通性，账号是否正确
-	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
-		err := a.client.HCService().Gcp.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.GcpAccountCheckReq{
-				CloudProjectID:        extension.CloudProjectID,
-				CloudServiceSecretKey: extension.CloudServiceSecretKey,
-			},
-		)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	// 检查资源账号的主账号是否重复
+	err = a.isDuplicateMainAccount(cts, req, "cloud_project_id", extension.CloudProjectID)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 创建
@@ -350,51 +263,15 @@ func (a *accountSvc) createForGcp(cts *rest.Contexts, req *proto.AccountCreateRe
 }
 
 func (a *accountSvc) createForAzure(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
-	// 解析Extension
-	extension := new(proto.AzureAccountExtensionCreateReq)
-	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
-		return nil, err
-	}
-	// 校验Extension
-	if err := extension.Validate(req.Type); err != nil {
-		return nil, err
-	}
-
-	// 检查资源账号的主账号是否重复
-	if err := a.isDuplicateMainAccount(cts, req, "cloud_tenant_id", extension.CloudTenantID); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// 检查联通性，账号是否正确
-	err := a.client.HCService().Azure.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.AzureAccountCheckReq{
-			CloudTenantID:        extension.CloudTenantID,
-			CloudSubscriptionID:  extension.CloudSubscriptionID,
-			CloudApplicationID:   extension.CloudApplicationID,
-			CloudClientSecretKey: extension.CloudClientSecretKey,
-		},
-	)
+	extension, err := a.parseAndCheckAzureExtension(cts, req.Type, req.Extension)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 检查联通性，账号是否正确
-	if req.Type != enumor.RegistrationAccount || extension.HasFullSecret() {
-		err := a.client.HCService().Azure.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.AzureAccountCheckReq{
-				CloudTenantID:        extension.CloudTenantID,
-				CloudSubscriptionID:  extension.CloudSubscriptionID,
-				CloudApplicationID:   extension.CloudApplicationID,
-				CloudClientSecretKey: extension.CloudClientSecretKey,
-			},
-		)
-		if err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	// 检查资源账号的主账号是否重复
+	err = a.isDuplicateMainAccount(cts, req, "cloud_tenant_id", extension.CloudTenantID)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 创建

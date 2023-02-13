@@ -20,7 +20,7 @@
 package account
 
 import (
-	proto "hcm/pkg/api/cloud-server"
+	proto "hcm/pkg/api/cloud-server/account"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"

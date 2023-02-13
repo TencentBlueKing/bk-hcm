@@ -142,7 +142,7 @@ func createAccount[T protocloud.AccountExtensionCreateReq](vendor enumor.Vendor,
 
 	id, ok := accountID.(string)
 	if !ok {
-		return nil, fmt.Errorf("create account but return id type not uint64, id type: %v",
+		return nil, fmt.Errorf("create account but return id type not string, id type: %v",
 			reflect.TypeOf(accountID).String())
 	}
 
