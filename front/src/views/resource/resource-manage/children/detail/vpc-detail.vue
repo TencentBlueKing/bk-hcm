@@ -31,6 +31,10 @@ const VPCFields = ref([
     prop: 'id',
   },
   {
+    name: '云资源 ID',
+    prop: 'cloud_id',
+  },
+  {
     name: '资源名称',
     prop: 'name',
   },

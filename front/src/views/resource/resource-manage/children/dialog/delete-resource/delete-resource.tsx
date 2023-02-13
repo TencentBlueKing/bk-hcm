@@ -54,7 +54,7 @@ export default defineComponent({
           <bk-table
             class="mb20"
             row-hover="auto"
-            columns={this.columns.filter(column => !column.hiddenWhenDelete)}
+            columns={this.columns.filter(column => !column.onlyShowOnList)}
             data={this.data}
           />
           <h3 class="g-resource-tips">

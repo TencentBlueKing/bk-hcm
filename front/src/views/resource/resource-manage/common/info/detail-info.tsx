@@ -32,7 +32,7 @@ export default defineComponent({
       return this.fields.map((field) => {
         return {
           ...field,
-          value: this.detail[field?.prop] || '--',
+          value: field.value || this.detail[field?.prop] || '--',
         };
       });
     },

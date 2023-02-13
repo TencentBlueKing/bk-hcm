@@ -7,10 +7,11 @@ import RouteSubnet from '../components/route/route-subnet.vue';
 import {
   useI18n,
 } from 'vue-i18n';
-
-const {
-  t,
-} = useI18n();
+import {
+  useRoute,
+} from 'vue-router';
+import useDetail from '../../hooks/use-detail';
+const route = useRoute();
 
 const routeTabs = [
   {
@@ -22,29 +23,38 @@ const routeTabs = [
     value: 'subnet',
   },
 ];
+
+const {
+  t,
+} = useI18n();
+
+const {
+  loading,
+  detail,
+} = useDetail(
+  'route_tables',
+  route.query.id as string,
+);
 </script>
 
 <template>
-  <detail-header>
-    路由表：ID（xxx）
-    <template #right>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-      >
-        {{ t('删除') }}
-      </bk-button>
-    </template>
-  </detail-header>
-
-  <detail-tab
-    :tabs="routeTabs"
+  <bk-loading
+    :loading="loading"
   >
-    <template #default="type">
-      <route-info v-if="type === 'detail'" />
-      <route-subnet v-if="type === 'subnet'" />
-    </template>
-  </detail-tab>
+    <detail-header>
+      路由表：（{{ detail.id }}）
+    </detail-header>
+
+    <detail-tab
+      :tabs="routeTabs"
+      class="route-tab"
+    >
+      <template #default="type">
+        <route-info v-if="type === 'detail'" :detail="detail" />
+        <route-subnet v-if="type === 'subnet'" :detail="detail" />
+      </template>
+    </detail-tab>
+  </bk-loading>
 </template>
 
 <style lang="scss" scoped>
@@ -53,5 +63,8 @@ const routeTabs = [
 }
 .w60 {
   width: 60px;
+}
+:deep(.detail-tab-main) .bk-tab-content {
+  height: calc(100vh - 300px);
 }
 </style>

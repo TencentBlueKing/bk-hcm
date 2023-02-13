@@ -39,6 +39,9 @@ export const useResourceStore = defineStore({
     getCloudAreas(data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/cloud_areas/list`, data);
     },
+    getRouteList(type: string, id: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${type}/route_tables/${id}/routes/list`, data);
+    },
     // 分配到业务下
     assignBusiness(type: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/assign/bizs`, data);

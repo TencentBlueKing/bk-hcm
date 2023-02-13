@@ -1,111 +1,13 @@
 <script lang="ts" setup>
 import {
-  h,
-  watch,
-  ref,
-} from 'vue';
-
-import {
-  useRouter,
+  useRoute
 } from 'vue-router';
-
-import {
-  Button,
-} from 'bkui-vue';
-
+import useColumns from '../../../hooks/use-columns';
 import useQueryList from '../../../hooks/use-query-list';
 
-const props = defineProps({
-  detail: {
-    type: Object,
-  },
-});
 
-const router = useRouter();
-
-const columns = ref([
-  {
-    label: 'ID',
-    field: 'id',
-  },
-  {
-    label: '资源 ID',
-    field: 'cloud_id',
-    render({ cell }: { cell: string }) {
-      return h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          onClick() {
-            router.push({
-              name: 'resourceDetail',
-              params: {
-                type: 'subnet',
-              },
-              query: {
-                id: cell,
-              },
-            });
-          },
-        },
-        [
-          cell,
-        ],
-      );
-    },
-  },
-  {
-    label: '名称',
-    field: 'name',
-  },
-]);
-
-watch(
-  () => props.detail,
-  () => {
-    switch (props.detail.vendor) {
-      case 'tcloud':
-        columns.value.push(...[
-          {
-            label: '可用区',
-            field: 'id',
-          },
-          {
-            label: 'ID',
-            field: 'id',
-          },
-          {
-            label: 'ID',
-            field: 'id',
-          },
-          {
-            label: 'ID',
-            field: 'id',
-          },
-          {
-            label: 'ID',
-            field: 'id',
-          },
-          {
-            label: 'ID',
-            field: 'id',
-          },
-        ]);
-        break;
-      case 'aws':
-
-        break;
-      case 'azure':
-      case 'huawei':
-        break;
-    }
-  },
-  {
-    deep: true,
-    immediate: true,
-  },
-);
+const route = useRoute();
+const columns = useColumns('subnet');
 
 const {
   datas,
@@ -117,7 +19,11 @@ const {
   {
     filter: {
       op: 'and',
-      rules: [],
+      rules: [{
+        field: 'vpc_id',
+        op: 'eq',
+        value: route.query.id,
+      }],
     },
   },
   'subnets',
@@ -131,8 +37,9 @@ const {
     <bk-table
       class="mt20"
       row-hover="auto"
+      remote-pagination
       :pagination="pagination"
-      :columns="columns"
+      :columns="columns.filter((column: any) => !column.onlyShowOnList)"
       :data="datas"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"

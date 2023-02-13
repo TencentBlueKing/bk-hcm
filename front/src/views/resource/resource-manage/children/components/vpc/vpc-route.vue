@@ -1,46 +1,47 @@
 <script lang="ts" setup>
-const columns = [
+import useQueryList from '../../../hooks/use-query-list';
+import useColumns from '../../../hooks/use-columns';
+import {
+  useRoute
+} from 'vue-router';
+
+const route = useRoute();
+const columns = useColumns('route');
+
+const {
+  datas,
+  pagination,
+  isLoading,
+  handlePageChange,
+  handlePageSizeChange,
+} = useQueryList(
   {
-    label: 'ID',
-    field: 'id',
+    filter: {
+      op: 'and',
+      rules: [{
+        field: 'vpc_id',
+        op: 'eq',
+        value: route.query.id,
+      }],
+    },
   },
-  {
-    label: '名称',
-    field: 'id',
-  },
-  {
-    label: '类型',
-    field: 'id',
-  },
-  {
-    label: '关联子网数',
-    field: 'id',
-  },
-  {
-    label: '计费模式',
-    field: 'id',
-  },
-  {
-    label: '创建时间',
-    field: 'id',
-  },
-  {
-    label: '过期时间',
-    field: 'id',
-  },
-];
-const tableData = [
-  {
-    id: 233,
-  },
-];
+  'route_tables',
+);
 </script>
 
 <template>
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-  />
+  <bk-loading
+    :loading="isLoading"
+  >
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      remote-pagination
+      :pagination="pagination"
+      :columns="columns.filter((column: any) => !column.onlyShowOnList)"
+      :data="datas"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
+    />
+  </bk-loading>
 </template>

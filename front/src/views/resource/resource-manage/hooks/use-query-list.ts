@@ -14,7 +14,7 @@ import {
 
 type SortType = {
   column: {
-    prop: string
+    field: string
   };
   type: string
 };
@@ -98,8 +98,8 @@ export default (props: PropsType, type: string) => {
   // 排序变化发生的事件
   const handleSort = ({ column, type }: SortType) => {
     pagination.value.current = 1;
-    sort.value = column.prop;
-    order.value = type;
+    sort.value = column.field;
+    order.value = type === 'desc' ? 'DESC' : 'ASC';
     triggerApi();
   };
 
