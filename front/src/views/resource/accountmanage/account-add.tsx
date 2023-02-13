@@ -55,7 +55,7 @@ export default defineComponent({
       ...initProjectModel,
     });
 
-    const optionalRequired: string[] = ['secretId', 'secretKey', 'accountName', 'accountId'];
+    const optionalRequired: string[] = ['secretId', 'secretKey', 'accountName', 'accountId', 'applicationId', 'applicationName'];
     const cloudType = reactive(CLOUD_TYPE);
     const submitLoading = ref(false);
 

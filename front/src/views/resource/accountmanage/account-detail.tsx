@@ -406,13 +406,13 @@ export default defineComponent({
           dialogForm.list = [
             {
               label: t('服务账号ID'),
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'accountId',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountId} />,
             },
             {
               label: t('服务账号名称'),
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'accountName',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.accountName} />,
             },
