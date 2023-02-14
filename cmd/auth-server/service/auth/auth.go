@@ -84,8 +84,11 @@ func (a *Auth) InitAuthService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("AuthorizeBatch", "POST", "/auth/authorize/batch", a.AuthorizeBatch)
+	h.Add("AuthorizeAnyBatch", "POST", "/auth/authorize/any/batch", a.AuthorizeAnyBatch)
 	h.Add("GetPermissionToApply", "POST", "/auth/find/permission_to_apply", a.GetPermissionToApply)
+	h.Add("GetApplyPermUrl", "POST", "/auth/find/apply_perm_url", a.GetApplyPermUrl)
 	h.Add("ListAuthorizedInstances", "POST", "/auth/list/authorized_resource", a.ListAuthorizedInstances)
+	h.Add("RegisterResCreatorAction", "POST", "/auth/register/resource_create_action", a.RegisterResourceCreatorAction)
 
 	h.Load(c.WebService)
 }
@@ -97,12 +100,27 @@ func (a *Auth) AuthorizeBatch(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	return a.authorizeBatch(cts.Kit, req, true)
+}
+
+// AuthorizeAnyBatch batch authorize if resource has any permission.
+func (a *Auth) AuthorizeAnyBatch(cts *rest.Contexts) (interface{}, error) {
+	req := new(authserver.AuthorizeBatchReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	return a.authorizeBatch(cts.Kit, req, false)
+}
+
+// AuthorizeBatch authorize resource batch.
+func (a *Auth) authorizeBatch(kt *kit.Kit, req *authserver.AuthorizeBatchReq, exact bool) ([]meta.Decision, error) {
 	if len(req.Resources) == 0 {
 		return make([]meta.Decision, 0), nil
 	}
 
 	// if write operations are disabled, returns corresponding error
-	if err := a.isWriteOperationDisabled(cts.Kit, req.Resources); err != nil {
+	if err := a.isWriteOperationDisabled(kt, req.Resources); err != nil {
 		return nil, err
 	}
 
@@ -116,7 +134,7 @@ func (a *Auth) AuthorizeBatch(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// parse hcm resource to iam resource
-	opts, decisions, err := parseAttributesToBatchOptions(cts.Kit, req.User, req.Resources...)
+	opts, decisions, err := parseAttributesToBatchOptions(kt, req.User, req.Resources...)
 	if err != nil {
 		return nil, err
 	}
@@ -127,10 +145,19 @@ func (a *Auth) AuthorizeBatch(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// do authentication
-	authDecisions, err := a.auth.AuthorizeBatch(cts.Kit.Ctx, opts)
-	if err != nil {
-		logs.Errorf("authorize batch failed, ops: %#v, req: %#v, err: %v, rid: %s", err, opts, req, cts.Kit.Rid)
-		return nil, err
+	var authDecisions []*client.Decision
+	if exact {
+		authDecisions, err = a.auth.AuthorizeBatch(kt.Ctx, opts)
+		if err != nil {
+			logs.Errorf("authorize batch failed, ops: %#v, req: %#v, err: %v, rid: %s", err, opts, req, kt.Rid)
+			return nil, err
+		}
+	} else {
+		authDecisions, err = a.auth.AuthorizeAnyBatch(kt.Ctx, opts)
+		if err != nil {
+			logs.Errorf("authorize any batch failed, ops: %#v, req: %#v, err: %v, rid: %s", err, opts, req, kt.Rid)
+			return nil, err
+		}
 	}
 
 	index := 0
@@ -460,4 +487,53 @@ func (a *Auth) ListAuthorizedInstances(cts *rest.Contexts) (interface{}, error) 
 	}
 
 	return authorizeList, nil
+}
+
+// RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
+// 注册创建者权限, 一个资源的创建者可以拥有这个资源的关联权限，如编辑和删除权限
+func (a *Auth) RegisterResourceCreatorAction(cts *rest.Contexts) (interface{}, error) {
+	req := new(authserver.RegisterResourceCreatorActionReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	opts := &client.InstanceWithCreator{
+		System:  sys.SystemIDHCM,
+		Type:    req.Instance.Type,
+		ID:      req.Instance.ID,
+		Name:    req.Instance.Name,
+		Creator: req.Creator,
+	}
+
+	for _, ancestor := range req.Instance.Ancestors {
+		opts.Ancestors = append(opts.Ancestors, client.InstanceAncestor{
+			System: sys.SystemIDHCM,
+			Type:   ancestor.Type,
+			ID:     ancestor.ID,
+		})
+	}
+
+	policies, err := a.auth.RegisterResourceCreatorAction(cts.Kit.Ctx, opts)
+	if err != nil {
+		logs.Errorf("list authorized instances failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return policies, nil
+}
+
+// GetApplyPermUrl get iam apply permission url.
+func (a *Auth) GetApplyPermUrl(cts *rest.Contexts) (interface{}, error) {
+	req := new(meta.IamPermission)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	url, err := a.auth.GetApplyPermUrl(cts.Kit.Ctx, req)
+	if err != nil {
+		logs.Errorf("get iam apply permission url failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return url, nil
 }

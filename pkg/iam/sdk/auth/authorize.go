@@ -25,12 +25,13 @@ import (
 	"fmt"
 	"sync"
 
-	"hcm/pkg/iam/sys"
-
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/iam/client"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sdk/operator"
+	"hcm/pkg/iam/sys"
 	"hcm/pkg/logs"
+	"hcm/pkg/thirdparty/esb"
 )
 
 // Authorize is the instance for the Authorizer factory.
@@ -39,6 +40,8 @@ type Authorize struct {
 	client *client.Client
 	// fetch resource if needed
 	fetcher ResourceFetcher
+	// esb client.
+	esbClient esb.Client
 }
 
 // Authorize check if a user's operate resource is already authorized or not.
@@ -247,4 +250,26 @@ func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *client.Au
 		return &client.AuthorizeList{}, nil
 	}
 	return a.countPolicy(ctx, policy, resourceType)
+}
+
+// RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
+func (a *Authorize) RegisterResourceCreatorAction(ctx context.Context, opts *client.InstanceWithCreator) (
+	[]client.CreatorActionPolicy, error) {
+
+	policies, err := a.esbClient.Iam().RegisterResourceCreatorAction(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return policies, nil
+}
+
+// GetApplyPermUrl get iam apply permission url.
+func (a *Authorize) GetApplyPermUrl(ctx context.Context, opts *meta.IamPermission) (string, error) {
+	url, err := a.esbClient.Iam().GetApplyPermUrl(ctx, opts)
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
 }

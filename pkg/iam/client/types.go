@@ -557,3 +557,26 @@ type ListWithAttributes struct {
 	AttrPolicies []*operator.Policy `json:"attr_policies"`
 	Type         TypeID             `json:"type"`
 }
+
+// InstanceWithCreator defines iam instance with creator.
+type InstanceWithCreator struct {
+	System    string             `json:"system"`
+	Type      string             `json:"type"`
+	ID        string             `json:"id"`
+	Name      string             `json:"name"`
+	Creator   string             `json:"creator"`
+	Ancestors []InstanceAncestor `json:"ancestors,omitempty"`
+}
+
+// InstanceAncestor defines iam instance ancestor.
+type InstanceAncestor struct {
+	System string `json:"system"`
+	Type   string `json:"type"`
+	ID     string `json:"id"`
+}
+
+// CreatorActionPolicy defines iam creator action policy.
+type CreatorActionPolicy struct {
+	Action   ActionWithID `json:"action"`
+	PolicyID int64        `json:"policy_id"`
+}

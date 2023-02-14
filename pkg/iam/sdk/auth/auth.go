@@ -24,6 +24,8 @@ import (
 
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/client"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/thirdparty/esb"
 )
 
 // Authorizer defines all the supported functionalities to do auth operation.
@@ -43,6 +45,12 @@ type Authorizer interface {
 	// the returned list may be huge, we do not do result paging
 	ListAuthorizedInstances(ctx context.Context, opts *client.AuthOptions, resourceType client.TypeID) (
 		*client.AuthorizeList, error)
+
+	// RegisterResourceCreatorAction registers iam resource so that creator will be authorized on related actions
+	RegisterResourceCreatorAction(ctx context.Context, opts *client.InstanceWithCreator) (
+		[]client.CreatorActionPolicy, error)
+
+	GetApplyPermUrl(ctx context.Context, opts *meta.IamPermission) (string, error)
 }
 
 // ResourceFetcher defines all the supported operations for iam to fetch resources from hcm
@@ -53,7 +61,7 @@ type ResourceFetcher interface {
 }
 
 // NewAuth initialize an authorizer
-func NewAuth(c *client.Client, fetcher ResourceFetcher) (Authorizer, error) {
+func NewAuth(c *client.Client, fetcher ResourceFetcher, esbClient esb.Client) (Authorizer, error) {
 	if c == nil {
 		return nil, errf.New(errf.InvalidParameter, "client is nil")
 	}
@@ -62,8 +70,13 @@ func NewAuth(c *client.Client, fetcher ResourceFetcher) (Authorizer, error) {
 		return nil, errf.New(errf.InvalidParameter, "fetcher is nil")
 	}
 
+	if esbClient == nil {
+		return nil, errf.New(errf.InvalidParameter, "esb client is nil")
+	}
+
 	return &Authorize{
-		client:  c,
-		fetcher: fetcher,
+		client:    c,
+		fetcher:   fetcher,
+		esbClient: esbClient,
 	}, nil
 }

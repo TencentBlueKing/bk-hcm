@@ -24,6 +24,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/esb/iam"
 	"hcm/pkg/thirdparty/esb/login"
 	"hcm/pkg/thirdparty/esb/usermgr"
 	"hcm/pkg/tools/ssl"
@@ -36,6 +37,7 @@ type Client interface {
 	Cmdb() cmdb.Client
 	Login() login.Client
 	Usermgr() usermgr.Client
+	Iam() iam.Client
 }
 
 // NewClient new esb client.
@@ -63,6 +65,7 @@ func NewClient(cfg *cc.Esb, reg prometheus.Registerer) (Client, error) {
 		cc:      cmdb.NewClient(restCli, cfg),
 		login:   login.NewClient(restCli, cfg),
 		usermgr: usermgr.NewClient(restCli, cfg),
+		iam:     iam.NewClient(restCli, cfg),
 	}, nil
 }
 
@@ -70,6 +73,7 @@ type esbCli struct {
 	cc      cmdb.Client
 	login   login.Client
 	usermgr usermgr.Client
+	iam     iam.Client
 }
 
 func (e *esbCli) Cmdb() cmdb.Client {
@@ -82,4 +86,8 @@ func (e *esbCli) Login() login.Client {
 
 func (e *esbCli) Usermgr() usermgr.Client {
 	return e.usermgr
+}
+
+func (e *esbCli) Iam() iam.Client {
+	return e.iam
 }

@@ -38,6 +38,8 @@ import (
 type Authorizer interface {
 	// Authorize if user has permission to the resources, returns auth status per resource and for all.
 	Authorize(kt *kit.Kit, resources ...meta.ResourceAttribute) ([]meta.Decision, bool, error)
+	// AuthorizeAny authorize if user has any permission to the resources, returns auth status per resource and for all.
+	AuthorizeAny(kt *kit.Kit, resources ...meta.ResourceAttribute) ([]meta.Decision, error)
 	// AuthorizeWithPerm authorize if user has permission, if not, returns unauthorized error.
 	AuthorizeWithPerm(kt *kit.Kit, resources ...meta.ResourceAttribute) error
 	// ListAuthorizedInstances list authorized instances info.
@@ -45,6 +47,10 @@ type Authorizer interface {
 	// ListAuthInstWithFilter returns resource filter with authorized instances info & if user has no permission flag.
 	ListAuthInstWithFilter(kt *kit.Kit, input *meta.ListAuthResInput, expr *filter.Expression, resIDField string) (
 		*filter.Expression, bool, error)
+	// RegisterResourceCreatorAction registers iam resource so that creator will be authorized on related actions
+	RegisterResourceCreatorAction(kt *kit.Kit, input *meta.RegisterResCreatorActionInst) error
+	// GetApplyPermUrl get iam apply permission url.
+	GetApplyPermUrl(kt *kit.Kit, input *meta.IamPermission) (string, error)
 }
 
 // NewAuthorizer create an authorizer for iam authorize related operation.
@@ -106,6 +112,24 @@ func (a authorizer) Authorize(kt *kit.Kit, resources ...meta.ResourceAttribute) 
 	}
 
 	return decisions, authorized, nil
+}
+
+// AuthorizeAny if user has any permission to the resources, returns auth status per resource and for all.
+func (a authorizer) AuthorizeAny(kt *kit.Kit, resources ...meta.ResourceAttribute) ([]meta.Decision, error) {
+	userInfo := &meta.UserInfo{UserName: kt.User}
+
+	req := &asproto.AuthorizeBatchReq{
+		User:      userInfo,
+		Resources: resources,
+	}
+
+	decisions, err := a.authClient.AuthorizeAnyBatch(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("authorize any failed, req: %#v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+
+	return decisions, nil
 }
 
 // AuthorizeWithPerm authorize if user has permission, if not, returns unauthorized error.
@@ -187,4 +211,39 @@ func (a authorizer) ListAuthInstWithFilter(kt *kit.Kit, input *meta.ListAuthResI
 		Op:    filter.And,
 		Rules: []filter.RuleFactory{authRule, expr},
 	}, false, nil
+}
+
+// RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
+func (a authorizer) RegisterResourceCreatorAction(kt *kit.Kit, input *meta.RegisterResCreatorActionInst) error {
+	if input == nil || len(input.Type) == 0 || len(input.ID) == 0 || len(input.Name) == 0 {
+		return errf.New(errf.InvalidParameter, "list authorized instances input is invalid")
+	}
+
+	req := &asproto.RegisterResourceCreatorActionReq{
+		Creator:  kt.User,
+		Instance: input,
+	}
+
+	_, err := a.authClient.RegisterResourceCreatorAction(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("register resource creator action failed, err: %v, req: %#v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// GetApplyPermUrl get iam apply permission url.
+func (a authorizer) GetApplyPermUrl(kt *kit.Kit, input *meta.IamPermission) (string, error) {
+	if input == nil {
+		return "", errf.New(errf.InvalidParameter, "get iam apply permission url input is nil")
+	}
+
+	url, err := a.authClient.GetApplyPermUrl(kt.Ctx, kt.Header(), input)
+	if err != nil {
+		logs.Errorf("get iam apply permission url failed, err: %v, input: %#v, rid: %s", err, input, kt.Rid)
+		return "", err
+	}
+
+	return url, nil
 }

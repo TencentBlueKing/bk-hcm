@@ -31,6 +31,7 @@ import (
 	"strconv"
 	"time"
 
+	authsvc "hcm/cmd/web-server/service/auth"
 	"hcm/cmd/web-server/service/capability"
 	"hcm/cmd/web-server/service/cmdb"
 	"hcm/cmd/web-server/service/user"
@@ -39,6 +40,7 @@ import (
 	apiclient "hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/handler"
+	"hcm/pkg/iam/auth"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
@@ -59,6 +61,8 @@ type Service struct {
 	esbClient esb.Client
 	// 透传代理请求到其他微服务
 	proxy *proxy
+	// authorizer 鉴权所需接口集合
+	authorizer auth.Authorizer
 }
 
 // NewService create a service instance.
@@ -91,6 +95,12 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
+	// create authorizer
+	authorizer, err := auth.NewAuthorizer(dis, network.TLS)
+	if err != nil {
+		return nil, err
+	}
+
 	// 创建代理
 	p, err := newProxy(dis, httpClient)
 	if err != nil {
@@ -98,9 +108,10 @@ func NewService(dis serviced.Discover) (*Service, error) {
 	}
 
 	return &Service{
-		client:    apiClientSet,
-		esbClient: esbClient,
-		proxy:     p,
+		client:     apiClientSet,
+		esbClient:  esbClient,
+		proxy:      p,
+		authorizer: authorizer,
 	}, nil
 }
 
@@ -200,11 +211,13 @@ func (s *Service) apiSet() *restful.WebService {
 		WebService: ws,
 		ApiClient:  s.client,
 		EsbClient:  s.esbClient,
+		Authorizer: s.authorizer,
 	}
 
 	user.InitUserService(c)
 	cmdb.InitCmdbService(c)
 	usermgr.InitUsermgrService(c)
+	authsvc.InitAuthService(c)
 
 	return ws
 }

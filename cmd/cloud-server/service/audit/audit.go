@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -54,6 +55,13 @@ type svc struct {
 
 // GetAudit get audit.
 func (svc svc) GetAudit(cts *rest.Contexts) (interface{}, error) {
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Audit, Action: meta.Find}}
+	err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
 	id, err := cts.PathParameter("id").Uint64()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -70,6 +78,13 @@ func (svc svc) GetAudit(cts *rest.Contexts) (interface{}, error) {
 
 // ListAudit list audit.
 func (svc svc) ListAudit(cts *rest.Contexts) (interface{}, error) {
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Audit, Action: meta.Find}}
+	err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
 	req := new(proto.AuditListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

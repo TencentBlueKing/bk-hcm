@@ -22,6 +22,7 @@ package authserver
 
 import (
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
@@ -80,4 +81,22 @@ type ListAuthorizedInstancesReq struct {
 type ListAuthorizedInstancesResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *meta.AuthorizedInstances `json:"data"`
+}
+
+// RegisterResourceCreatorActionReq register resource creator action request.
+type RegisterResourceCreatorActionReq struct {
+	Creator  string                             `json:"creator"`
+	Instance *meta.RegisterResCreatorActionInst `json:"instance"`
+}
+
+// RegisterResourceCreatorActionResp register resource creator action response.
+type RegisterResourceCreatorActionResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          []client.CreatorActionPolicy `json:"data"`
+}
+
+// GetNoAuthSkipUrlResp get iam apply permission url response.
+type GetNoAuthSkipUrlResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          string `json:"data"`
 }

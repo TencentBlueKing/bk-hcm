@@ -29,7 +29,7 @@ type UserInfo struct {
 type ResourceAttribute struct {
 	*Basic
 	// BizID biz id of the iam resource.
-	BizID uint32 `json:"biz_id,omitempty"`
+	BizID int64 `json:"biz_id,omitempty"`
 }
 
 // Basic defines the basic info for a resource.
@@ -105,4 +105,18 @@ type AuthorizedInstances struct {
 	IDs []string `json:"ids"`
 	// IsAny == true means the user have all the permissions to access the resources.
 	IsAny bool `json:"isAny"`
+}
+
+// RegisterResCreatorActionInst defines instance to register resource creator action.
+type RegisterResCreatorActionInst struct {
+	Type      string             `json:"type"`
+	ID        string             `json:"id"`
+	Name      string             `json:"name"`
+	Ancestors []InstanceAncestor `json:"ancestors,omitempty"`
+}
+
+// InstanceAncestor defines iam instance ancestor.
+type InstanceAncestor struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
 }

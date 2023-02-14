@@ -21,6 +21,7 @@ package capability
 
 import (
 	"hcm/pkg/client"
+	"hcm/pkg/iam/auth"
 	"hcm/pkg/thirdparty/esb"
 
 	"github.com/emicklei/go-restful/v3"
@@ -31,4 +32,5 @@ type Capability struct {
 	WebService *restful.WebService
 	ApiClient  *client.ClientSet
 	EsbClient  esb.Client
+	Authorizer auth.Authorizer
 }

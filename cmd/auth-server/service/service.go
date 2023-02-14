@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/metrics"
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/serviced"
+	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
 )
 
@@ -61,10 +62,10 @@ type Service struct {
 }
 
 // NewService create a service instance.
-func NewService(sd serviced.Discover, iamSettings cc.IAM, disableAuth bool,
+func NewService(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, disableAuth bool,
 	disableWriteOpt *options.DisableWriteOption) (*Service, error) {
 
-	cli, err := newClientSet(sd, iamSettings, disableAuth)
+	cli, err := newClientSet(sd, iamSettings, esbSettings, disableAuth)
 	if err != nil {
 		return nil, fmt.Errorf("new client set failed, err: %v", err)
 	}
@@ -88,7 +89,7 @@ func NewService(sd serviced.Discover, iamSettings cc.IAM, disableAuth bool,
 	return s, nil
 }
 
-func newClientSet(sd serviced.Discover, iamSettings cc.IAM, disableAuth bool) (*ClientSet, error) {
+func newClientSet(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, disableAuth bool) (*ClientSet, error) {
 
 	logs.Infof("start initialize the client set.")
 
@@ -136,7 +137,12 @@ func newClientSet(sd serviced.Discover, iamSettings cc.IAM, disableAuth bool) (*
 		return nil, fmt.Errorf("new iam logics failed, err: %v", err)
 	}
 
-	authSdk, err := pkgauth.NewAuth(iamCli, iamLgc)
+	esbClient, err := esb.NewClient(&esbSettings, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
+	authSdk, err := pkgauth.NewAuth(iamCli, iamLgc, esbClient)
 	if err != nil {
 		return nil, fmt.Errorf("new iam auth sdk failed, err: %v", err)
 	}

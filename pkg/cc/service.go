@@ -219,6 +219,7 @@ type AuthServerSetting struct {
 	Network Network   `yaml:"network"`
 	Service Service   `yaml:"service"`
 	Log     LogOption `yaml:"log"`
+	Esb     Esb       `yaml:"esb"`
 
 	IAM IAM `yaml:"iam"`
 }
@@ -239,12 +240,15 @@ func (s *AuthServerSetting) trySetDefault() {
 
 // Validate AuthServerSetting option.
 func (s AuthServerSetting) Validate() error {
-
 	if err := s.Network.validate(); err != nil {
 		return err
 	}
 
 	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Esb.validate(); err != nil {
 		return err
 	}
 

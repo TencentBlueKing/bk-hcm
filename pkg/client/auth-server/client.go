@@ -28,6 +28,7 @@ import (
 	"hcm/cmd/auth-server/types"
 	authserver "hcm/pkg/api/auth-server"
 	"hcm/pkg/criteria/errf"
+	iamcli "hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
@@ -107,6 +108,27 @@ func (c *Client) AuthorizeBatch(ctx context.Context, h http.Header, request *aut
 	return resp.Data, err
 }
 
+// AuthorizeAnyBatch batch authorize if resource has any permission.
+func (c *Client) AuthorizeAnyBatch(ctx context.Context, h http.Header, request *authserver.AuthorizeBatchReq) (
+	[]meta.Decision, error) {
+
+	resp := new(authserver.AuthorizeBatchResp)
+
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/auth/authorize/any/batch").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, err
+}
+
 // GetPermissionToApply iam pull resource callback.
 func (c *Client) GetPermissionToApply(ctx context.Context, h http.Header, request *authserver.GetPermissionToApplyReq) (
 	*meta.IamPermission, error) {
@@ -144,6 +166,46 @@ func (c *Client) ListAuthorizedInstances(ctx context.Context, h http.Header,
 
 	if resp.Code != errf.OK {
 		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, err
+}
+
+// RegisterResourceCreatorAction register resource creator action instances.
+func (c *Client) RegisterResourceCreatorAction(ctx context.Context, h http.Header,
+	req *authserver.RegisterResourceCreatorActionReq) ([]iamcli.CreatorActionPolicy, error) {
+
+	resp := new(authserver.RegisterResourceCreatorActionResp)
+
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/auth/list/authorized_resource").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, err
+}
+
+// GetApplyPermUrl get iam apply permission url.
+func (c *Client) GetApplyPermUrl(ctx context.Context, h http.Header, req *meta.IamPermission) (string, error) {
+	resp := new(authserver.GetNoAuthSkipUrlResp)
+
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/auth/find/apply_perm_url").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if resp.Code != errf.OK {
+		return "", errf.New(resp.Code, resp.Message)
 	}
 
 	return resp.Data, err

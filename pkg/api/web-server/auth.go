@@ -17,34 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package sys
+// Package webserver defines api-server api call protocols.
+package webserver
 
-import "hcm/pkg/iam/client"
+// AuthVerifyReq auth verify request.
+type AuthVerifyReq struct {
+	Resources []AuthVerifyResource `json:"resources"`
+}
 
-// GenerateResourceCreatorActions generate all the resource creator actions that need to be registered to IAM.
-func GenerateResourceCreatorActions() client.ResourceCreatorActions {
-	return client.ResourceCreatorActions{
-		Config: []client.ResourceCreatorAction{{
-			ResourceID: Account,
-			Actions: []client.CreatorRelatedAction{
-				{
-					ID:         AccountFind,
-					IsRequired: false,
-				},
-				{
-					ID:         AccountKeyAccess,
-					IsRequired: false,
-				},
-				{
-					ID:         AccountEdit,
-					IsRequired: false,
-				},
-				{
-					ID:         AccountDelete,
-					IsRequired: false,
-				},
-			},
-			SubResourceTypes: nil,
-		}},
-	}
+// AuthVerifyResource auth verify resource.
+type AuthVerifyResource struct {
+	BizID        int64  `json:"bk_biz_id"`
+	ResourceType string `json:"resource_type"`
+	ResourceID   string `json:"resource_id"`
+	Action       string `json:"action"`
+}
+
+// AuthVerifyRes auth verify result for one resource.
+type AuthVerifyRes struct {
+	Authorized bool `json:"authorized"`
 }
