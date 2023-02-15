@@ -340,18 +340,20 @@ func (a *accountSvc) parseAndCheckAwsExtensionByID(
 	}
 
 	// 检查联通性，账号是否正确
-	err = a.client.HCService().Aws.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.AwsAccountCheckReq{
-			CloudAccountID:   account.Extension.CloudAccountID,
-			CloudIamUsername: extension.CloudIamUsername,
-			CloudSecretID:    extension.CloudSecretID,
-			CloudSecretKey:   extension.CloudSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, err
+	if account.Type != enumor.RegistrationAccount || extension.IsFull() {
+		err = a.client.HCService().Aws.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.AwsAccountCheckReq{
+				CloudAccountID:   account.Extension.CloudAccountID,
+				CloudIamUsername: extension.CloudIamUsername,
+				CloudSecretID:    extension.CloudSecretID,
+				CloudSecretKey:   extension.CloudSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return extension, nil
@@ -379,21 +381,23 @@ func (a *accountSvc) parseAndCheckHuaWeiExtensionByID(
 	}
 
 	// 检查联通性，账号是否正确
-	err = a.client.HCService().HuaWei.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.HuaWeiAccountCheckReq{
-			CloudMainAccountName: account.Extension.CloudMainAccountName,
-			CloudSubAccountID:    account.Extension.CloudSubAccountID,
-			CloudSubAccountName:  account.Extension.CloudSubAccountName,
-			CloudIamUserID:       extension.CloudIamUserID,
-			CloudIamUsername:     extension.CloudIamUsername,
-			CloudSecretID:        extension.CloudSecretID,
-			CloudSecretKey:       extension.CloudSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, err
+	if account.Type != enumor.RegistrationAccount || extension.IsFull() {
+		err = a.client.HCService().HuaWei.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.HuaWeiAccountCheckReq{
+				CloudMainAccountName: account.Extension.CloudMainAccountName,
+				CloudSubAccountID:    account.Extension.CloudSubAccountID,
+				CloudSubAccountName:  account.Extension.CloudSubAccountName,
+				CloudIamUserID:       extension.CloudIamUserID,
+				CloudIamUsername:     extension.CloudIamUsername,
+				CloudSecretID:        extension.CloudSecretID,
+				CloudSecretKey:       extension.CloudSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return extension, nil
@@ -421,16 +425,18 @@ func (a *accountSvc) parseAndCheckGcpExtensionByID(
 	}
 
 	// 检查联通性，账号是否正确
-	err = a.client.HCService().Gcp.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.GcpAccountCheckReq{
-			CloudProjectID:        account.Extension.CloudProjectID,
-			CloudServiceSecretKey: extension.CloudServiceSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, err
+	if account.Type != enumor.RegistrationAccount || extension.IsFull() {
+		err = a.client.HCService().Gcp.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.GcpAccountCheckReq{
+				CloudProjectID:        account.Extension.CloudProjectID,
+				CloudServiceSecretKey: extension.CloudServiceSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return extension, nil
@@ -457,19 +463,21 @@ func (a *accountSvc) parseAndCheckAzureExtensionByID(
 		return nil, err
 	}
 
-	// 检查联通性，账号是否正确
-	err = a.client.HCService().Azure.Account.Check(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.AzureAccountCheckReq{
-			CloudTenantID:        account.Extension.CloudTenantID,
-			CloudSubscriptionID:  account.Extension.CloudSubscriptionID,
-			CloudApplicationID:   extension.CloudApplicationID,
-			CloudClientSecretKey: extension.CloudClientSecretKey,
-		},
-	)
-	if err != nil {
-		return nil, err
+	if account.Type != enumor.RegistrationAccount || extension.IsFull() {
+		// 检查联通性，账号是否正确
+		err = a.client.HCService().Azure.Account.Check(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.AzureAccountCheckReq{
+				CloudTenantID:        account.Extension.CloudTenantID,
+				CloudSubscriptionID:  account.Extension.CloudSubscriptionID,
+				CloudApplicationID:   extension.CloudApplicationID,
+				CloudClientSecretKey: extension.CloudClientSecretKey,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return extension, nil
