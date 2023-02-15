@@ -35,6 +35,7 @@ import (
 	"hcm/cmd/data-service/service/cloud/region"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/cryptography"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/handler"
 	"hcm/pkg/logs"
@@ -47,8 +48,9 @@ import (
 
 // Service do all the data service's work
 type Service struct {
-	serve *http.Server
-	dao   dao.Set
+	serve  *http.Server
+	dao    dao.Set
+	cipher cryptography.Crypto
 }
 
 // NewService create a service instance.
@@ -58,11 +60,25 @@ func NewService() (*Service, error) {
 		return nil, err
 	}
 
+	// 加解密器
+	cipher, err := newCipherFromConfig(cc.DataService().Crypto)
+	if err != nil {
+		return nil, err
+	}
+
 	svr := &Service{
-		dao: dao,
+		dao:    dao,
+		cipher: cipher,
 	}
 
 	return svr, nil
+}
+
+// newCipherFromConfig 根据配置文件里的加密配置，选择配置的算法并生成对应的加解密器
+func newCipherFromConfig(cryptoConfig cc.Crypto) (cryptography.Crypto, error) {
+	// TODO: 目前只支持国际加密，还未支持中国国家商业加密，待后续支持再调整
+	cfg := cryptoConfig.AesGcm
+	return cryptography.NewAESGcm([]byte(cfg.Key), []byte(cfg.Nonce))
 }
 
 // ListenAndServeRest listen and serve the restful server
@@ -130,6 +146,7 @@ func (s *Service) apiSet() *restful.Container {
 	capability := &capability.Capability{
 		WebService: ws,
 		Dao:        s.dao,
+		Cipher:     s.cipher,
 	}
 
 	cloud.InitAccountService(capability)

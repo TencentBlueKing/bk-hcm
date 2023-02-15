@@ -22,6 +22,7 @@ package cloud
 import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/cryptography"
 )
 
 // BaseAccount 云账号
@@ -49,12 +50,38 @@ type TCloudAccountExtension struct {
 	CloudSecretKey     string `json:"cloud_secret_key"`
 }
 
+// DecryptSecretKey ...
+func (e *TCloudAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error {
+	if e.CloudSecretKey != "" {
+		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudSecretKey)
+		if err != nil {
+			return err
+		}
+		e.CloudSecretKey = plainSecretKey
+	}
+
+	return nil
+}
+
 // AwsAccountExtension define aws account extension.
 type AwsAccountExtension struct {
 	CloudAccountID   string `json:"cloud_account_id"`
 	CloudIamUsername string `json:"cloud_iam_username"`
 	CloudSecretID    string `json:"cloud_secret_id"`
 	CloudSecretKey   string `json:"cloud_secret_key"`
+}
+
+// DecryptSecretKey ...
+func (e *AwsAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error {
+	if e.CloudSecretKey != "" {
+		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudSecretKey)
+		if err != nil {
+			return err
+		}
+		e.CloudSecretKey = plainSecretKey
+	}
+
+	return nil
 }
 
 // HuaWeiAccountExtension define huawei account extension.
@@ -68,6 +95,19 @@ type HuaWeiAccountExtension struct {
 	CloudIamUsername     string `json:"cloud_iam_username"`
 }
 
+// DecryptSecretKey ...
+func (e *HuaWeiAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error {
+	if e.CloudSecretKey != "" {
+		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudSecretKey)
+		if err != nil {
+			return err
+		}
+		e.CloudSecretKey = plainSecretKey
+	}
+
+	return nil
+}
+
 // GcpAccountExtension define gcp account extension.
 type GcpAccountExtension struct {
 	CloudProjectID          string `json:"cloud_project_id"`
@@ -76,6 +116,19 @@ type GcpAccountExtension struct {
 	CloudServiceAccountName string `json:"cloud_service_account_name"`
 	CloudServiceSecretID    string `json:"cloud_service_secret_id"`
 	CloudServiceSecretKey   string `json:"cloud_service_secret_key"`
+}
+
+// DecryptSecretKey ...
+func (e *GcpAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error {
+	if e.CloudServiceSecretKey != "" {
+		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudServiceSecretKey)
+		if err != nil {
+			return err
+		}
+		e.CloudServiceSecretKey = plainSecretKey
+	}
+
+	return nil
 }
 
 // AzureAccountExtension ...
@@ -87,4 +140,17 @@ type AzureAccountExtension struct {
 	CloudApplicationName  string `json:"cloud_application_name"`
 	CloudClientSecretID   string `json:"cloud_client_secret_id"`
 	CloudClientSecretKey  string `json:"cloud_client_secret_key"`
+}
+
+// DecryptSecretKey ...
+func (e *AzureAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error {
+	if e.CloudClientSecretKey != "" {
+		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudClientSecretKey)
+		if err != nil {
+			return err
+		}
+		e.CloudClientSecretKey = plainSecretKey
+	}
+
+	return nil
 }

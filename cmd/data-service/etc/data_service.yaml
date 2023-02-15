@@ -102,3 +102,12 @@ log:
   alsoToStdErr: false
   # log level.
   verbosity: 0
+
+# defines Crypto config
+crypto:
+  # Aes Gcm algorithm
+  aesGcm:
+    # aes secret key, length should be 16 or 32 bytes
+    key:
+    # gcm nonce, length should be 12 bytes
+    nonce:

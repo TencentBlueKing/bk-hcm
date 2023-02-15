@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/cryptography"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -45,12 +46,22 @@ type TCloudAccountExtensionCreateReq struct {
 	CloudSecretKey     string `json:"cloud_secret_key" validate:"omitempty"`
 }
 
+// EncryptSecretKey ...
+func (req *TCloudAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
+	req.CloudSecretKey = cipher.EncryptToBase64(req.CloudSecretKey)
+}
+
 // AwsAccountExtensionCreateReq ...
 type AwsAccountExtensionCreateReq struct {
 	CloudAccountID   string `json:"cloud_account_id" validate:"required"`
 	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
 	CloudSecretID    string `json:"cloud_secret_id" validate:"omitempty"`
 	CloudSecretKey   string `json:"cloud_secret_key" validate:"omitempty"`
+}
+
+// EncryptSecretKey ...
+func (req *AwsAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
+	req.CloudSecretKey = cipher.EncryptToBase64(req.CloudSecretKey)
 }
 
 // HuaWeiAccountExtensionCreateReq ...
@@ -64,14 +75,24 @@ type HuaWeiAccountExtensionCreateReq struct {
 	CloudIamUsername     string `json:"cloud_iam_username" validate:"required"`
 }
 
+// EncryptSecretKey ...
+func (req *HuaWeiAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
+	req.CloudSecretKey = cipher.EncryptToBase64(req.CloudSecretKey)
+}
+
 // GcpAccountExtensionCreateReq ...
 type GcpAccountExtensionCreateReq struct {
 	CloudProjectID          string `json:"cloud_project_id" validate:"required"`
 	CloudProjectName        string `json:"cloud_project_name" validate:"required"`
-	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"required"`
-	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
+	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"omitempty"`
+	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"omitempty"`
 	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"omitempty"`
 	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"omitempty"`
+}
+
+// EncryptSecretKey ...
+func (req *GcpAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
+	req.CloudServiceSecretKey = cipher.EncryptToBase64(req.CloudServiceSecretKey)
 }
 
 // AzureAccountExtensionCreateReq ...
@@ -79,10 +100,15 @@ type AzureAccountExtensionCreateReq struct {
 	CloudTenantID         string `json:"cloud_tenant_id" validate:"required"`
 	CloudSubscriptionID   string `json:"cloud_subscription_id" validate:"required"`
 	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
-	CloudApplicationID    string `json:"cloud_application_id" validate:"required"`
-	CloudApplicationName  string `json:"cloud_application_name" validate:"required"`
+	CloudApplicationID    string `json:"cloud_application_id" validate:"omitempty"`
+	CloudApplicationName  string `json:"cloud_application_name" validate:"omitempty"`
 	CloudClientSecretID   string `json:"cloud_client_secret_id" validate:"omitempty"`
 	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"omitempty"`
+}
+
+// EncryptSecretKey ...
+func (req *AzureAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
+	req.CloudClientSecretKey = cipher.EncryptToBase64(req.CloudClientSecretKey)
 }
 
 // AccountCreateReq ...
@@ -117,21 +143,47 @@ type TCloudAccountExtensionUpdateReq struct {
 	CloudSecretKey     *string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
 }
 
+// EncryptSecretKey ...
+func (req *TCloudAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Crypto) {
+	if req.CloudSecretKey != nil {
+		encryptedCloudSecretKey := cipher.EncryptToBase64(*req.CloudSecretKey)
+		req.CloudSecretKey = &encryptedCloudSecretKey
+	}
+}
+
 type AwsAccountExtensionUpdateReq struct {
 	CloudAccountID   string  `json:"cloud_account_id,omitempty" validate:"omitempty"`
 	CloudIamUsername string  `json:"cloud_iam_username,omitempty" validate:"omitempty"`
 	CloudSecretID    *string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
 	CloudSecretKey   *string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
 }
+
+// EncryptSecretKey ...
+func (req *AwsAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Crypto) {
+	if req.CloudSecretKey != nil {
+		encryptedCloudSecretKey := cipher.EncryptToBase64(*req.CloudSecretKey)
+		req.CloudSecretKey = &encryptedCloudSecretKey
+	}
+}
+
 type HuaWeiAccountExtensionUpdateReq struct {
 	CloudMainAccountName string  `json:"cloud_main_account_name,omitempty" validate:"omitempty"`
 	CloudSubAccountID    string  `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
 	CloudSubAccountName  string  `json:"cloud_sub_account_name,omitempty" validate:"omitempty"`
-	CloudSecretID        string  `json:"cloud_secret_id,omitempty" validate:"omitempty"`
-	CloudSecretKey       string  `json:"cloud_secret_key,omitempty" validate:"omitempty"`
-	CloudIamUserID       *string `json:"cloud_iam_user_id,omitempty" validate:"omitempty"`
-	CloudIamUsername     *string `json:"cloud_iam_username,omitempty" validate:"omitempty"`
+	CloudSecretID        *string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
+	CloudSecretKey       *string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
+	CloudIamUserID       string  `json:"cloud_iam_user_id,omitempty" validate:"omitempty"`
+	CloudIamUsername     string  `json:"cloud_iam_username,omitempty" validate:"omitempty"`
 }
+
+// EncryptSecretKey ...
+func (req *HuaWeiAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Crypto) {
+	if req.CloudSecretKey != nil {
+		encryptedCloudSecretKey := cipher.EncryptToBase64(*req.CloudSecretKey)
+		req.CloudSecretKey = &encryptedCloudSecretKey
+	}
+}
+
 type GcpAccountExtensionUpdateReq struct {
 	CloudProjectID          string  `json:"cloud_project_id,omitempty" validate:"omitempty"`
 	CloudProjectName        string  `json:"cloud_project_name,omitempty" validate:"omitempty"`
@@ -140,6 +192,15 @@ type GcpAccountExtensionUpdateReq struct {
 	CloudServiceSecretID    *string `json:"cloud_service_secret_id,omitempty" validate:"omitempty"`
 	CloudServiceSecretKey   *string `json:"cloud_service_secret_key,omitempty" validate:"omitempty"`
 }
+
+// EncryptSecretKey ...
+func (req *GcpAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Crypto) {
+	if req.CloudServiceSecretKey != nil {
+		encryptedCloudServiceSecretKey := cipher.EncryptToBase64(*req.CloudServiceSecretKey)
+		req.CloudServiceSecretKey = &encryptedCloudServiceSecretKey
+	}
+}
+
 type AzureAccountExtensionUpdateReq struct {
 	CloudTenantID         string  `json:"cloud_tenant_id,omitempty" validate:"omitempty"`
 	CloudSubscriptionID   string  `json:"cloud_subscription_id,omitempty" validate:"omitempty"`
@@ -148,6 +209,14 @@ type AzureAccountExtensionUpdateReq struct {
 	CloudApplicationName  *string `json:"cloud_application_name,omitempty" validate:"omitempty"`
 	CloudClientSecretID   *string `json:"cloud_client_secret_id,omitempty" validate:"omitempty"`
 	CloudClientSecretKey  *string `json:"cloud_client_secret_key,omitempty" validate:"omitempty"`
+}
+
+// EncryptSecretKey ...
+func (req *AzureAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Crypto) {
+	if req.CloudClientSecretKey != nil {
+		encryptedCloudClientSecretKey := cipher.EncryptToBase64(*req.CloudClientSecretKey)
+		req.CloudClientSecretKey = &encryptedCloudClientSecretKey
+	}
 }
 
 // AccountUpdateReq ...
@@ -245,4 +314,18 @@ type AccountBizRelUpdateReq struct {
 // Validate ...
 func (req *AccountBizRelUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// SecretEncryptor 用于加密"泛型"Extension密钥
+type SecretEncryptor[T AccountExtensionCreateReq | AccountExtensionUpdateReq] interface {
+	// EncryptSecretKey 加密约束，将密钥进行加密设置
+	EncryptSecretKey(cryptography.Crypto)
+	*T
+}
+
+// SecretDecryptor 用于解密"泛型"Extension密钥
+type SecretDecryptor[T AccountExtensionGetResp] interface {
+	// DecryptSecretKey 解密约束，需要支持将加密的密钥还原成明文
+	DecryptSecretKey(cryptography.Crypto) error
+	*T
 }

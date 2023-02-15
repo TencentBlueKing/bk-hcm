@@ -201,10 +201,10 @@ func (a *accountSvc) updateForHuaWei(
 	var shouldUpdatedExtension *dataproto.HuaWeiAccountExtensionUpdateReq = nil
 	if req.Extension != nil {
 		shouldUpdatedExtension = &dataproto.HuaWeiAccountExtensionUpdateReq{
-			CloudIamUserID:   &extension.CloudIamUserID,
-			CloudIamUsername: &extension.CloudIamUsername,
-			CloudSecretID:    extension.CloudSecretID,
-			CloudSecretKey:   extension.CloudSecretKey,
+			CloudIamUserID:   extension.CloudIamUserID,
+			CloudIamUsername: extension.CloudIamUsername,
+			CloudSecretID:    &extension.CloudSecretID,
+			CloudSecretKey:   &extension.CloudSecretKey,
 		}
 	}
 

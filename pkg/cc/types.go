@@ -515,3 +515,35 @@ func (s Esb) validate() error {
 	}
 	return nil
 }
+
+// AesGcm Aes Gcm加密
+type AesGcm struct {
+	Key   string `yaml:"key"`
+	Nonce string `yaml:"nonce"`
+}
+
+func (a AesGcm) validate() error {
+	if len(a.Key) != 16 && len(a.Key) != 32 {
+		return errors.New("invalid key, should be 16 or 32 bytes")
+	}
+
+	if len(a.Nonce) != 12 {
+		return errors.New("invalid nonce, should be 12 bytes")
+	}
+
+	return nil
+}
+
+// Crypto 定义项目里需要用到的加密，包括选择的算法等
+// TODO: 这里默认只支持AES Gcm算法，后续需要支持国密等的选择，可能还需要支持根据不同场景配置不同（比如不同场景，加密的密钥等都不一样）
+type Crypto struct {
+	AesGcm AesGcm `yaml:"aesGcm"`
+}
+
+func (c Crypto) validate() error {
+	if err := c.AesGcm.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}

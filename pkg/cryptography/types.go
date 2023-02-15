@@ -17,18 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package cryptography
 
-import (
-	"hcm/pkg/cryptography"
-	"hcm/pkg/dal/dao"
+// Crypto 定义了需要实现的三组加解密方法，分别是以字节、字符串、Base64字符串格式的方法
+type Crypto interface {
+	Encrypt(plaintext []byte) []byte
+	Decrypt(encryptedText []byte) ([]byte, error)
 
-	"github.com/emicklei/go-restful/v3"
-)
+	EncryptToString(plaintext []byte) string
+	DecryptString(encryptedText string) ([]byte, error)
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	Dao        dao.Set
-	Cipher     cryptography.Crypto
+	EncryptToBase64(plaintext string) string
+	DecryptFromBase64(encryptedTextB64 string) (string, error)
 }

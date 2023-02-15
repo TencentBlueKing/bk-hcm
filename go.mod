@@ -10,6 +10,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription v1.0.0
+	github.com/TencentBlueKing/gopkg v1.1.0
 	github.com/aws/aws-sdk-go v1.44.174
 	github.com/emicklei/go-restful/v3 v3.10.1
 	github.com/go-playground/validator/v10 v10.11.1

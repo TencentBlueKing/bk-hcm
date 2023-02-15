@@ -29,6 +29,7 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/cryptography"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -45,7 +46,8 @@ import (
 // InitAccountService initial the account service
 func InitAccountService(cap *capability.Capability) {
 	svc := &accountSvc{
-		dao: cap.Dao,
+		dao:    cap.Dao,
+		cipher: cap.Cipher,
 	}
 
 	h := rest.NewHandler()
@@ -61,7 +63,8 @@ func InitAccountService(cap *capability.Capability) {
 }
 
 type accountSvc struct {
-	dao dao.Set
+	dao    dao.Set
+	cipher cryptography.Crypto
 }
 
 // CreateAccount account with options
@@ -86,7 +89,7 @@ func (svc *accountSvc) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-func createAccount[T protocloud.AccountExtensionCreateReq](vendor enumor.Vendor, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
+func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretEncryptor[T]](vendor enumor.Vendor, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.AccountCreateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -94,6 +97,13 @@ func createAccount[T protocloud.AccountExtensionCreateReq](vendor enumor.Vendor,
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 将参数里的SecretKey加密
+	if req.Extension != nil {
+		p := PT(req.Extension)
+		// 加密密钥
+		p.EncryptSecretKey(svc.cipher)
 	}
 
 	accountID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
@@ -193,7 +203,7 @@ func getAccountFromTable(accountID string, svc *accountSvc, cts *rest.Contexts) 
 	return details[0], nil
 }
 
-func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID string, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
+func updateAccount[T protocloud.AccountExtensionUpdateReq, PT protocloud.SecretEncryptor[T]](accountID string, svc *accountSvc, cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.AccountUpdateReq[T])
 
 	if err := cts.DecodeInto(req); err != nil {
@@ -217,6 +227,10 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID string, svc
 
 	// 只有提供了Extension才进行更新
 	if req.Extension != nil {
+		// 将参数里的SecretKey加密
+		p := PT(req.Extension)
+		p.EncryptSecretKey(svc.cipher)
+
 		// 查询账号
 		dbAccount, err := getAccountFromTable(accountID, svc, cts)
 		if err != nil {
@@ -241,12 +255,22 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq](accountID string, svc
 	return nil, nil
 }
 
-func convertToAccountResult[T protocloud.AccountExtensionGetResp](baseAccount *protocore.BaseAccount, dbExtension tabletype.JsonField) (*protocloud.AccountGetResult[T], error) {
+func convertToAccountResult[T protocloud.AccountExtensionGetResp, PT protocloud.SecretDecryptor[T]](
+	baseAccount *protocore.BaseAccount, dbExtension tabletype.JsonField, svc *accountSvc,
+) (*protocloud.AccountGetResult[T], error) {
 	extension := new(T)
 	err := json.UnmarshalFromString(string(dbExtension), extension)
 	if err != nil {
 		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
 	}
+
+	// 解密密钥
+	p := PT(extension)
+	err = p.DecryptSecretKey(svc.cipher)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt secret key of extension failed, err: %v", err)
+	}
+
 	return &protocloud.AccountGetResult[T]{
 		BaseAccount: *baseAccount,
 		Extension:   extension,
@@ -310,15 +334,15 @@ func (svc *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 	var account interface{}
 	switch enumor.Vendor(dbAccount.Vendor) {
 	case enumor.TCloud:
-		account, err = convertToAccountResult[protocore.TCloudAccountExtension](baseAccount, dbAccount.Extension)
+		account, err = convertToAccountResult[protocore.TCloudAccountExtension](baseAccount, dbAccount.Extension, svc)
 	case enumor.Aws:
-		account, err = convertToAccountResult[protocore.AwsAccountExtension](baseAccount, dbAccount.Extension)
+		account, err = convertToAccountResult[protocore.AwsAccountExtension](baseAccount, dbAccount.Extension, svc)
 	case enumor.HuaWei:
-		account, err = convertToAccountResult[protocore.HuaWeiAccountExtension](baseAccount, dbAccount.Extension)
+		account, err = convertToAccountResult[protocore.HuaWeiAccountExtension](baseAccount, dbAccount.Extension, svc)
 	case enumor.Gcp:
-		account, err = convertToAccountResult[protocore.GcpAccountExtension](baseAccount, dbAccount.Extension)
+		account, err = convertToAccountResult[protocore.GcpAccountExtension](baseAccount, dbAccount.Extension, svc)
 	case enumor.Azure:
-		account, err = convertToAccountResult[protocore.AzureAccountExtension](baseAccount, dbAccount.Extension)
+		account, err = convertToAccountResult[protocore.AzureAccountExtension](baseAccount, dbAccount.Extension, svc)
 	}
 
 	if err != nil {

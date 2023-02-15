@@ -145,6 +145,7 @@ type DataServiceSetting struct {
 	Log     LogOption `yaml:"log"`
 
 	Database DataBase `yaml:"database"`
+	Crypto   Crypto   `yaml:"crypto"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -173,6 +174,10 @@ func (s DataServiceSetting) Validate() error {
 	}
 
 	if err := s.Database.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Crypto.validate(); err != nil {
 		return err
 	}
 
