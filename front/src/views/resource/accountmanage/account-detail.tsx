@@ -384,7 +384,7 @@ export default defineComponent({
           dialogForm.list = [
             {
               label: t('IAM用户名'),
-              required: false,
+              required: true,
               property: 'iamUserName',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.iamUserName} />,
             },

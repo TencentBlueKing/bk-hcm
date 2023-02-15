@@ -453,7 +453,7 @@ export default defineComponent({
     // 表单检验
     const formRules = {
       name: [
-        { trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾业务与项目至少填一个', validator: check },
+        { trigger: 'blur', message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾', validator: check },
       ],
     };
 
