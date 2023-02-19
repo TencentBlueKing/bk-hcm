@@ -23,11 +23,13 @@ import (
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // CreateSecurityGroupRule create security group rule.
@@ -52,6 +54,13 @@ func (svc securityGroupSvc) CreateSecurityGroupRule(cts *rest.Contexts) (interfa
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroupRule, Action: meta.Create,
 		ResourceID: sgBaseInfo.AccountID}}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	// 已分配业务的资源，不允许操作
+	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: sgID}
+	err = svc.checkSecurityGroupsInBiz(cts.Kit, flt, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}

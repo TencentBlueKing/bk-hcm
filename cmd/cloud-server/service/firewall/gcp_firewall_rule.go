@@ -101,6 +101,13 @@ func (svc *firewallSvc) BatchDeleteGcpFirewallRule(cts *rest.Contexts) (interfac
 		return nil, err
 	}
 
+	// 已分配业务的资源，不允许操作
+	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
+	err = svc.checkGcpFirewallRulesInBiz(cts.Kit, flt, constant.UnassignedBiz)
+	if err != nil {
+		return nil, err
+	}
+
 	// create delete audit.
 	if err := svc.audit.ResDeleteAudit(cts.Kit, enumor.GcpFirewallRuleAuditResType, req.IDs); err != nil {
 		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -150,6 +157,13 @@ func (svc *firewallSvc) UpdateGcpFirewallRule(cts *rest.Contexts) (interface{}, 
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule, Action: meta.Update,
 		ResourceID: accountID}}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	// 已分配业务的资源，不允许操作
+	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: id}
+	err = svc.checkGcpFirewallRulesInBiz(cts.Kit, flt, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
@@ -374,4 +388,30 @@ func (svc *firewallSvc) GetGcpFirewallRule(cts *rest.Contexts) (interface{}, err
 	}
 
 	return result.Details[0], nil
+}
+
+// checkGcpFirewallRulesInBiz check if gcp firewall rules are in the specified biz.
+func (svc *firewallSvc) checkGcpFirewallRulesInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
+	req := &dataproto.GcpFirewallRuleListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: bizID}, rule,
+			},
+		},
+		Page: &core.BasePage{
+			Count: true,
+		},
+	}
+	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("count firewall rules that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	if result.Count != 0 {
+		return fmt.Errorf("%d firewall rules are already assigned", result.Count)
+	}
+
+	return nil
 }

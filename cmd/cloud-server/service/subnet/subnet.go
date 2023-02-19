@@ -156,13 +156,6 @@ func (svc *subnetSvc) GetSubnet(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// check if all subnets are not assigned, cannot operate biz resource in account api
-	subnetFilter := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}
-	err = svc.checkSubnetsInBiz(cts.Kit, subnetFilter, constant.UnassignedBiz)
-	if err != nil {
-		return nil, err
-	}
-
 	// get subnet detail info
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
@@ -209,12 +202,6 @@ func (svc *subnetSvc) ListSubnet(cts *rest.Contexts) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// check if all subnets are not assigned, cannot operate biz resource in account api
-	err := svc.checkSubnetsInBiz(cts.Kit, req.Filter, constant.UnassignedBiz)
-	if err != nil {
-		return nil, err
 	}
 
 	// list authorized instances

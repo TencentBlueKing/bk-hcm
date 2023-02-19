@@ -20,11 +20,13 @@
 package securitygroup
 
 import (
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // DeleteSecurityGroupRule delete security group rule.
@@ -54,6 +56,13 @@ func (svc securityGroupSvc) DeleteSecurityGroupRule(cts *rest.Contexts) (interfa
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroupRule, Action: meta.Delete,
 		ResourceID: basicInfo.AccountID}}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	// 已分配业务的资源，不允许操作
+	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: sgID}
+	err = svc.checkSecurityGroupsInBiz(cts.Kit, flt, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}

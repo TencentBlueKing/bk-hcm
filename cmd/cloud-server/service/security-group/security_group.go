@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -147,6 +148,13 @@ func (svc securityGroupSvc) UpdateSecurityGroup(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
+	// 已分配业务的资源，不允许操作
+	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: id}
+	err = svc.checkSecurityGroupsInBiz(cts.Kit, flt, constant.UnassignedBiz)
+	if err != nil {
+		return nil, err
+	}
+
 	// create update audit.
 	updateFields, err := converter.StructToMap(req)
 	if err != nil {
@@ -225,6 +233,13 @@ func (svc securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (interf
 			Action: meta.Delete, ResourceID: info.AccountID}})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	if err != nil {
+		return nil, err
+	}
+
+	// 已分配业务的资源，不允许操作
+	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
+	err = svc.checkSecurityGroupsInBiz(cts.Kit, flt, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
@@ -403,4 +418,30 @@ func (svc securityGroupSvc) AssignSecurityGroupToBiz(cts *rest.Contexts) (interf
 	}
 
 	return nil, nil
+}
+
+// checkSecurityGroupsInBiz check if security groups are in the specified biz.
+func (svc *securityGroupSvc) checkSecurityGroupsInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
+	req := &dataproto.SecurityGroupListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: bizID}, rule,
+			},
+		},
+		Page: &core.BasePage{
+			Count: true,
+		},
+	}
+	result, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("count security groups that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	if result.Count != 0 {
+		return fmt.Errorf("%d security groups are already assigned", result.Count)
+	}
+
+	return nil
 }

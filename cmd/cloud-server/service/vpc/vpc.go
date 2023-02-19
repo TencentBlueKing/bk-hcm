@@ -157,13 +157,6 @@ func (svc *vpcSvc) GetVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// check if all vpcs are not assigned to biz, cannot operate biz resource in account api
-	vpcFilter := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}
-	err = svc.checkVpcsInBiz(cts.Kit, vpcFilter, constant.UnassignedBiz)
-	if err != nil {
-		return nil, err
-	}
-
 	// get vpc detail info
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
@@ -210,12 +203,6 @@ func (svc *vpcSvc) ListVpc(cts *rest.Contexts) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// check if all vpcs are not assigned to biz, cannot operate biz resource in account api
-	err := svc.checkVpcsInBiz(cts.Kit, req.Filter, constant.UnassignedBiz)
-	if err != nil {
-		return nil, err
 	}
 
 	// list authorized instances
