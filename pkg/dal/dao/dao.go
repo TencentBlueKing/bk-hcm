@@ -193,6 +193,7 @@ func (s *set) Account() cloud.Account {
 	return &cloud.AccountDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
 

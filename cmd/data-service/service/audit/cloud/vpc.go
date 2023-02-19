@@ -174,7 +174,7 @@ func (ad Audit) listVpc(kt *kit.Kit, ids []string) (map[string]tablecloud.VpcTab
 	}
 	list, err := ad.dao.Vpc().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list security group failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
+		logs.Errorf("list vpc failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
 		return nil, err
 	}
 

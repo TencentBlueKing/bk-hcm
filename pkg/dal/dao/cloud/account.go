@@ -25,11 +25,13 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/audit"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -53,6 +55,7 @@ var _ Account = new(AccountDao)
 type AccountDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
+	Audit audit.Interface
 }
 
 // CreateWithTx account with tx.
@@ -75,6 +78,27 @@ func (a AccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *cloud.AccountT
 	err = a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
 		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
+	}
+
+	// create audit.
+	auditInfo := &tableaudit.AuditTable{
+		ResID:     model.ID,
+		ResName:   model.Name,
+		ResType:   enumor.AccountAuditResType,
+		Action:    enumor.Create,
+		Vendor:    enumor.Vendor(model.Vendor),
+		AccountID: model.ID,
+		Operator:  kt.User,
+		Source:    kt.GetRequestSource(),
+		Rid:       kt.Rid,
+		AppCode:   kt.AppCode,
+		Detail: &tableaudit.BasicDetail{
+			Data: model,
+		},
+	}
+	if err = a.Audit.Create(kt, auditInfo); err != nil {
+		logs.Errorf("create account audit failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
 	}
 
 	return id, nil

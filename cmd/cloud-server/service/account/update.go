@@ -27,7 +27,9 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
@@ -54,6 +56,17 @@ func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
 	)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// create update audit.
+	updateFields, err := converter.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = a.audit.ResUpdateAudit(cts.Kit, enumor.AccountAuditResType, accountID, updateFields); err != nil {
+		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	// 更新账号与业务关系

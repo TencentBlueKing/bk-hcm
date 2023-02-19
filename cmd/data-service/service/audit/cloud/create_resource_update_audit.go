@@ -79,6 +79,8 @@ func (ad Audit) buildUpdateAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 	var audits []*tableaudit.AuditTable
 	var err error
 	switch resType {
+	case enumor.AccountAuditResType:
+		audits, err = ad.accountUpdateAuditBuild(kt, updates)
 	case enumor.SecurityGroupAuditResType:
 		audits, err = ad.securityGroup.SecurityGroupUpdateAuditBuild(kt, updates)
 	case enumor.SecurityGroupRuleAuditResType:

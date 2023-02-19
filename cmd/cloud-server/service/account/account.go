@@ -22,6 +22,7 @@ package account
 import (
 	"fmt"
 
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
@@ -35,6 +36,7 @@ func InitAccountService(c *capability.Capability) {
 	svc := &accountSvc{
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
 
 	h := rest.NewHandler()
@@ -51,6 +53,7 @@ func InitAccountService(c *capability.Capability) {
 type accountSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+	audit      audit.Interface
 }
 
 func (a *accountSvc) checkPermission(cts *rest.Contexts, action meta.Action, accountID string) error {
