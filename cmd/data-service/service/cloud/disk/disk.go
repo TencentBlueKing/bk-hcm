@@ -269,7 +269,7 @@ func (dSvc *diskSvc) ListDiskExt(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-// DeleteDisk 删除云盘
+// BatchDeleteDisk 删除云盘
 func (dSvc *diskSvc) BatchDeleteDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataproto.DiskDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {

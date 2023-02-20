@@ -68,6 +68,7 @@ func initSecurityGroupService(cap *capability.Capability) {
 	h.Add("GetSecurityGroup", http.MethodGet, "/vendors/{vendor}/security_groups/{id}",
 		svc.GetSecurityGroup)
 	h.Add("ListSecurityGroup", http.MethodPost, "/security_groups/list", svc.ListSecurityGroup)
+	h.Add("ListSecurityGroupExt", http.MethodPost, "/vendors/{vendor}/security_groups/list", svc.ListSecurityGroupExt)
 	h.Add("BatchDeleteSecurityGroup", http.MethodDelete, "/security_groups/batch", svc.BatchDeleteSecurityGroup)
 	h.Add("BatchUpdateSecurityGroupCommonInfo", http.MethodPatch, "/security_groups/common/info/batch/update",
 		svc.BatchUpdateSecurityGroupCommonInfo)
@@ -236,22 +237,8 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 
 	// TODO: 添加查询管理信息逻辑
 
-	base := &corecloud.BaseSecurityGroup{
-		ID:        sgTable.ID,
-		Vendor:    enumor.Vendor(sgTable.Vendor),
-		CloudID:   sgTable.CloudID,
-		BkBizID:   sgTable.BkBizID,
-		Region:    sgTable.Region,
-		Name:      sgTable.Name,
-		Memo:      sgTable.Memo,
-		AccountID: sgTable.AccountID,
-		Creator:   sgTable.Creator,
-		Reviser:   sgTable.Reviser,
-		CreatedAt: sgTable.CreatedAt,
-		UpdatedAt: sgTable.UpdatedAt,
-	}
-
-	switch enumor.Vendor(sgTable.Vendor) {
+	base := convTableToBaseSG(sgTable)
+	switch sgTable.Vendor {
 	case enumor.TCloud:
 		return convertToSGResult[corecloud.TCloudSecurityGroupExtension](base, sgTable.Extension)
 	case enumor.Aws:
@@ -262,6 +249,23 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 		return convertToSGResult[corecloud.AzureSecurityGroupExtension](base, sgTable.Extension)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
+	}
+}
+
+func convTableToBaseSG(sgTable *tablecloud.SecurityGroupTable) *corecloud.BaseSecurityGroup {
+	return &corecloud.BaseSecurityGroup{
+		ID:        sgTable.ID,
+		Vendor:    sgTable.Vendor,
+		CloudID:   sgTable.CloudID,
+		BkBizID:   sgTable.BkBizID,
+		Region:    sgTable.Region,
+		Name:      sgTable.Name,
+		Memo:      sgTable.Memo,
+		AccountID: sgTable.AccountID,
+		Creator:   sgTable.Creator,
+		Reviser:   sgTable.Reviser,
+		CreatedAt: sgTable.CreatedAt,
+		UpdatedAt: sgTable.UpdatedAt,
 	}
 }
 
@@ -453,4 +457,67 @@ func (svc *securityGroupSvc) BatchUpdateSecurityGroupCommonInfo(cts *rest.Contex
 	}
 
 	return nil, nil
+}
+
+// ListSecurityGroupExt list security group with extension.
+func (svc *securityGroupSvc) ListSecurityGroupExt(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+		Fields: req.Fields,
+	}
+	listResp, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list security group failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return convSecurityGroupExtListResult[corecloud.TCloudSecurityGroupExtension](listResp.Details)
+	case enumor.Aws:
+		return convSecurityGroupExtListResult[corecloud.AwsSecurityGroupExtension](listResp.Details)
+	case enumor.Azure:
+		return convSecurityGroupExtListResult[corecloud.AzureSecurityGroupExtension](listResp.Details)
+	case enumor.HuaWei:
+		return convSecurityGroupExtListResult[corecloud.HuaWeiSecurityGroupExtension](listResp.Details)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+	}
+}
+
+func convSecurityGroupExtListResult[T corecloud.SecurityGroupExtension](tables []tablecloud.SecurityGroupTable) (
+	*protocloud.SecurityGroupExtListResult[T], error) {
+
+	details := make([]corecloud.SecurityGroup[T], 0, len(tables))
+	for _, one := range tables {
+		extension := new(T)
+		err := json.UnmarshalFromString(string(one.Extension), &extension)
+		if err != nil {
+			return nil, fmt.Errorf("UnmarshalFromString security group json extension failed, err: %v", err)
+		}
+
+		details = append(details, corecloud.SecurityGroup[T]{
+			BaseSecurityGroup: *convTableToBaseSG(&one),
+			Extension:         extension,
+		})
+	}
+
+	return &protocloud.SecurityGroupExtListResult[T]{
+		Details: details,
+	}, nil
 }

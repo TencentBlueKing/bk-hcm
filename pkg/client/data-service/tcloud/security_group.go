@@ -114,6 +114,31 @@ func (cli *SecurityGroupClient) GetSecurityGroup(ctx context.Context, h http.Hea
 	return resp.Data, nil
 }
 
+// ListSecurityGroupExt list security group with extension.
+func (cli *SecurityGroupClient) ListSecurityGroupExt(ctx context.Context, h http.Header, req *core.ListReq) (
+	*protocloud.SecurityGroupExtListResult[corecloud.TCloudSecurityGroupExtension], error) {
+
+	resp := new(protocloud.SecurityGroupExtListResp[corecloud.TCloudSecurityGroupExtension])
+
+	err := cli.client.Get().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/security_groups/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // BatchCreateSecurityGroupRule batch create security group rule.
 func (cli *SecurityGroupClient) BatchCreateSecurityGroupRule(ctx context.Context, h http.Header, request *protocloud.
 	TCloudSGRuleCreateReq, sgID string) (*core.BatchCreateResult, error) {

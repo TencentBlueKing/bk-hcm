@@ -136,6 +136,18 @@ type SecurityGroupListResp struct {
 	Data          *SecurityGroupListResult `json:"data"`
 }
 
+// SecurityGroupExtListResult define security group with extension list result.
+type SecurityGroupExtListResult[T cloud.SecurityGroupExtension] struct {
+	Count   uint64                   `json:"count,omitempty"`
+	Details []cloud.SecurityGroup[T] `json:"details,omitempty"`
+}
+
+// SecurityGroupExtListResp define list resp.
+type SecurityGroupExtListResp[T cloud.SecurityGroupExtension] struct {
+	rest.BaseResp `json:",inline"`
+	Data          *SecurityGroupExtListResult[T] `json:"data"`
+}
+
 // -------------------------- Delete --------------------------
 
 // SecurityGroupBatchDeleteReq security group delete request.
