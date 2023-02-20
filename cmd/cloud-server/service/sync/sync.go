@@ -125,9 +125,5 @@ func SyncAllResource(c *client.ClientSet, kit *kit.Kit, header http.Header) erro
 		}
 	}
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

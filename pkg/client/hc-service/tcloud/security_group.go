@@ -41,6 +41,30 @@ type SecurityGroupClient struct {
 	client rest.ClientInterface
 }
 
+// SyncSecurityGroupRule sync security group rule.
+func (cli *SecurityGroupClient) SyncSecurityGroupRule(ctx context.Context, h http.Header,
+	request *proto.SecurityGroupSyncReq, id string) error {
+
+	resp := new(core.SyncResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/security_groups/%s/rules/sync", id).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
 // SyncSecurityGroup sync security group.
 func (cli *SecurityGroupClient) SyncSecurityGroup(ctx context.Context, h http.Header,
 	request *proto.SecurityGroupSyncReq) error {

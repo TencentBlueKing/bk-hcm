@@ -23,14 +23,17 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 )
 
 // SyncAzureAll sync azure all resource
@@ -94,6 +97,13 @@ func syncAzureWithResourceGroup(c *client.ClientSet, kit *kit.Kit, resourceGroup
 				err, region.Name, kit.Rid)
 		}
 
+		// sg rule
+		err = SyncAzureSGRule(c, kit, header, region.Name, accountID)
+		if err != nil {
+			logs.Errorf("sync do zure sync sg rule failed, err: %v, regionID: %s,  rid: %s",
+				err, region.Name, kit.Rid)
+		}
+
 		// disk
 		err = c.HCService().Azure.Disk.SyncDisk(
 			kit.Ctx,
@@ -127,6 +137,76 @@ func syncAzureWithResourceGroup(c *client.ClientSet, kit *kit.Kit, resourceGroup
 
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// SyncAzureSGRule ...
+func SyncAzureSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	region string, accountID string) error {
+
+	start := 0
+	for {
+		results, err := c.DataService().Global.SecurityGroup.ListSecurityGroup(
+			kit.Ctx,
+			header,
+			&dataproto.SecurityGroupListReq{
+				Filter: &filter.Expression{
+					Op: filter.And,
+					Rules: []filter.RuleFactory{
+						&filter.AtomRule{
+							Field: "vendor",
+							Op:    filter.Equal.Factory(),
+							Value: enumor.Azure,
+						},
+						&filter.AtomRule{
+							Field: "region",
+							Op:    filter.Equal.Factory(),
+							Value: region,
+						},
+						&filter.AtomRule{
+							Field: "account_id",
+							Op:    filter.Equal.Factory(),
+							Value: accountID,
+						},
+					},
+				},
+				Page: &core.BasePage{
+					Start: uint32(start),
+					Limit: core.DefaultMaxPageLimit,
+				},
+			},
+		)
+		if err != nil {
+			logs.Errorf("list azure security group failed, err: %v, rid: %s", err, kit.Rid)
+			return err
+		}
+
+		if len(results.Details) == 0 {
+			break
+		}
+
+		for _, v := range results.Details {
+			err = c.HCService().Azure.SecurityGroup.SyncSecurityGroupRule(
+				kit.Ctx,
+				header,
+				&proto.SecurityGroupSyncReq{
+					AccountID: v.AccountID,
+					Region:    v.Region,
+				},
+				v.ID,
+			)
+			if err != nil {
+				logs.Errorf("sync do azure sync sg rule failed, err: %v, regionID: %s, rid: %s",
+					err, v.Region, kit.Rid)
+			}
+		}
+
+		start += len(results.Details)
+		if uint(len(results.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
 	}
 
 	return nil

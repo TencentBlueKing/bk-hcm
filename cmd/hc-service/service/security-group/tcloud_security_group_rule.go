@@ -20,11 +20,15 @@
 package securitygroup
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
+	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
@@ -796,4 +800,386 @@ func (g *securityGroup) diffTCloudSGRuleSyncDelete(cts *rest.Contexts, deleteClo
 	}
 
 	return nil
+}
+
+// SyncTCloudSGRule sync tcloud security group rules.
+func (g *securityGroup) SyncTCloudSGRule(cts *rest.Contexts) (interface{}, error) {
+
+	sgID := cts.PathParameter("security_group_id").String()
+	if len(sgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "security group id is required")
+	}
+
+	req, err := g.decodeSecurityGroupSyncReq(cts)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	sg, err := g.dataCli.TCloud.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
+	if err != nil {
+		logs.Errorf("request dataservice get TCloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err, err
+	}
+
+	opt := &types.TCloudSGRuleListOption{
+		Region:               req.Region,
+		CloudSecurityGroupID: sg.CloudID,
+	}
+
+	rules, err := client.ListSecurityGroupRule(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("request adaptor to list TCloud security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(rules.Egress) <= 0 && len(rules.Ingress) <= 0 {
+		return nil, nil
+	}
+
+	cloudMap := make(map[string]*TCloudSGRuleSync)
+	for _, rule := range rules.Egress {
+		sgRuleSync := new(TCloudSGRuleSync)
+		sgRuleSync.Version = *rules.Version
+		sgRuleSync.IsUpdate = false
+		sgRuleSync.SGRule = rule
+		sgRuleSync.Typ = enumor.Egress
+		id := getTCloudSGRuleID(*rule.PolicyIndex, sg.CloudID, enumor.Egress)
+		cloudMap[id] = sgRuleSync
+	}
+
+	for _, rule := range rules.Ingress {
+		sgRuleSync := new(TCloudSGRuleSync)
+		sgRuleSync.Version = *rules.Version
+		sgRuleSync.IsUpdate = false
+		sgRuleSync.SGRule = rule
+		sgRuleSync.Typ = enumor.Ingress
+		id := getTCloudSGRuleID(*rule.PolicyIndex, sg.CloudID, enumor.Ingress)
+		cloudMap[id] = sgRuleSync
+	}
+
+	updateIDs, err := g.getTCloudSGRuleDSSync(cloudMap, req, cts, sgID)
+	if err != nil {
+		logs.Errorf("request getTCloudSGRuleDSSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(updateIDs) > 0 {
+		err := g.syncTCloudSGRuleUpdate(updateIDs, cloudMap, sgID, cts, req)
+		if err != nil {
+			logs.Errorf("request syncTCloudSGRuleUpdate failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+
+	addIDs := make([]string, 0)
+	for _, id := range updateIDs {
+		if _, ok := cloudMap[id]; ok {
+			cloudMap[id].IsUpdate = true
+		}
+	}
+
+	for k, v := range cloudMap {
+		if !v.IsUpdate {
+			addIDs = append(addIDs, k)
+		}
+	}
+
+	if len(addIDs) > 0 {
+		err := g.syncTCloudSGRuleAdd(addIDs, cts, req, cloudMap, sgID)
+		if err != nil {
+			logs.Errorf("request syncTCloudSGRuleAdd failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+
+	dsMap, err := g.getTCloudSGRuleAllDS(req, cts, sgID)
+	if err != nil {
+		logs.Errorf("request getTCloudSGRuleAllDS failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	deleteMap := make(map[string]*TCloudSGRuleSync)
+	for dsKey, dsValue := range dsMap {
+		if _, ok := cloudMap[dsKey]; !ok {
+			deleteMap[dsKey] = dsValue
+		}
+	}
+
+	if len(deleteMap) > 0 {
+		rules, err := client.ListSecurityGroupRule(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list TCloud security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		for _, rule := range rules.Egress {
+			id := getTCloudSGRuleID(*rule.PolicyIndex, sg.CloudID, enumor.Egress)
+			if _, ok := deleteMap[id]; ok {
+				delete(deleteMap, id)
+			}
+		}
+
+		for _, rule := range rules.Ingress {
+			id := getTCloudSGRuleID(*rule.PolicyIndex, sg.CloudID, enumor.Ingress)
+			if _, ok := deleteMap[id]; ok {
+				delete(deleteMap, id)
+			}
+		}
+
+		err = g.syncTCloudSGRuleDelete(cts, deleteMap, sgID, req)
+		if err != nil {
+			logs.Errorf("request syncTCloudSGRuleDelete failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func (g *securityGroup) syncTCloudSGRuleUpdate(updateIDs []string, cloudMap map[string]*TCloudSGRuleSync, sgID string,
+	cts *rest.Contexts, req *proto.SecurityGroupSyncReq) error {
+
+	rules := make([]*TCloudSGRuleSync, 0)
+	for _, id := range updateIDs {
+		if value, ok := cloudMap[id]; ok {
+			rules = append(rules, value)
+		}
+	}
+
+	sg, err := g.dataCli.TCloud.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
+	if err != nil {
+		logs.Errorf("request dataservice get huawei security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err
+	}
+
+	list := g.genTCloudUpdateRulesList(rules, cts, sgID, sg.CloudID)
+	updateReq := &protocloud.TCloudSGRuleBatchUpdateReq{
+		Rules: list,
+	}
+
+	if len(updateReq.Rules) > 0 {
+		err := g.dataCli.TCloud.SecurityGroup.BatchUpdateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), updateReq, sgID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (g *securityGroup) syncTCloudSGRuleAdd(addIDs []string, cts *rest.Contexts, req *proto.SecurityGroupSyncReq,
+	cloudMap map[string]*TCloudSGRuleSync, sgID string) error {
+
+	rules := make([]*TCloudSGRuleSync, 0)
+	for _, id := range addIDs {
+		if value, ok := cloudMap[id]; ok {
+			rules = append(rules, value)
+		}
+	}
+
+	sg, err := g.dataCli.TCloud.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), sgID)
+	if err != nil {
+		logs.Errorf("request dataservice get tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err
+	}
+
+	createRules := []corecloud.TCloudSecurityGroupRule{}
+	opt := &syncSecurityGroupRuleOption{
+		Region:               req.Region,
+		CloudSecurityGroupID: sg.CloudID,
+		SecurityGroupID:      sgID,
+		AccountID:            req.AccountID,
+	}
+	for _, rule := range rules {
+		createRules = append(createRules, *genTCloudSGRuleSpecByType(rule.SGRule, rule.Version, rule.Typ, opt))
+	}
+
+	_, err = g.createSecurityGroupRule(cts.Kit, sgID, createRules)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (g *securityGroup) syncTCloudSGRuleDelete(cts *rest.Contexts, deleteMap map[string]*TCloudSGRuleSync,
+	sgID string, req *proto.SecurityGroupSyncReq) error {
+
+	for _, v := range deleteMap {
+		deleteReq := &protocloud.TCloudSGRuleBatchDeleteReq{
+			Filter: tools.EqualExpression("id", v.SGRuleID),
+		}
+
+		err := g.dataCli.TCloud.SecurityGroup.BatchDeleteSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), deleteReq, sgID)
+		if err != nil {
+			logs.Errorf("dataservice delete tcloud security group rules failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (g *securityGroup) getTCloudSGRuleAllDS(req *proto.SecurityGroupSyncReq,
+	cts *rest.Contexts, sgID string) (map[string]*TCloudSGRuleSync, error) {
+
+	start := 0
+	dsMap := make(map[string]*TCloudSGRuleSync)
+	for {
+
+		dataReq := &protocloud.TCloudSGRuleListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					&filter.AtomRule{
+						Field: "region",
+						Op:    filter.Equal.Factory(),
+						Value: req.Region,
+					},
+					&filter.AtomRule{
+						Field: "account_id",
+						Op:    filter.Equal.Factory(),
+						Value: req.AccountID,
+					},
+					&filter.AtomRule{
+						Field: "security_group_id",
+						Op:    filter.Equal.Factory(),
+						Value: sgID,
+					},
+				},
+			},
+			Page: &apicore.BasePage{
+				Start: uint32(start),
+				Limit: apicore.DefaultMaxPageLimit,
+			},
+		}
+
+		results, err := g.dataCli.TCloud.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), dataReq, sgID)
+		if err != nil {
+			logs.Errorf("from data-service list sg rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return dsMap, err
+		}
+
+		if len(results.Details) > 0 {
+			for _, detail := range results.Details {
+				id := getTCloudSGRuleID(detail.CloudPolicyIndex, detail.CloudSecurityGroupID, detail.Type)
+				tcloudSync := new(TCloudSGRuleSync)
+				tcloudSync.SGRuleID = detail.ID
+				dsMap[id] = tcloudSync
+			}
+		}
+
+		start += len(results.Details)
+		if uint(len(results.Details)) < dataReq.Page.Limit {
+			break
+		}
+	}
+	return dsMap, nil
+}
+
+func (g *securityGroup) getTCloudSGRuleDSSync(cloudMap map[string]*TCloudSGRuleSync, req *proto.SecurityGroupSyncReq,
+	cts *rest.Contexts, sgID string) ([]string, error) {
+
+	updateIDs := make([]string, 0)
+
+	for _, v := range cloudMap {
+
+		dataReq := &protocloud.TCloudSGRuleListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					&filter.AtomRule{
+						Field: "region",
+						Op:    filter.Equal.Factory(),
+						Value: req.Region,
+					},
+					&filter.AtomRule{
+						Field: "account_id",
+						Op:    filter.Equal.Factory(),
+						Value: req.AccountID,
+					},
+					&filter.AtomRule{
+						Field: "security_group_id",
+						Op:    filter.Equal.Factory(),
+						Value: v.SGRule.SecurityGroupId,
+					},
+					&filter.AtomRule{
+						Field: "type",
+						Op:    filter.Equal.Factory(),
+						Value: string(v.Typ),
+					},
+					&filter.AtomRule{
+						Field: "cloud_policy_index",
+						Op:    filter.Equal.Factory(),
+						Value: *v.SGRule.PolicyIndex,
+					},
+				},
+			},
+			Page: &apicore.BasePage{
+				Start: uint32(0),
+				Limit: apicore.DefaultMaxPageLimit,
+			},
+		}
+
+		results, err := g.dataCli.TCloud.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), dataReq, sgID)
+		if err != nil {
+			logs.Errorf("from data-service list sg rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return updateIDs, err
+		}
+
+		if len(results.Details) > 0 {
+			for _, detail := range results.Details {
+				id := getTCloudSGRuleID(detail.CloudPolicyIndex, detail.CloudSecurityGroupID, detail.Type)
+				updateIDs = append(updateIDs, id)
+			}
+		}
+
+	}
+
+	return updateIDs, nil
+}
+
+func (g *securityGroup) genTCloudUpdateRulesList(sgRule []*TCloudSGRuleSync, cts *rest.Contexts,
+	sgID string, id string) []protocloud.TCloudSGRuleBatchUpdate {
+
+	list := make([]protocloud.TCloudSGRuleBatchUpdate, 0)
+
+	for _, rule := range sgRule {
+		rID, err := g.getTCloudSGRuleBy(cts, sgID, *rule.SGRule.PolicyIndex, id, rule.Typ)
+		if err != nil {
+			logs.Errorf("tcloud gen RulesList getTCloudSGRuleBy failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			continue
+		}
+
+		if *rID.Protocol == *rule.SGRule.Protocol &&
+			*rID.Port == *rule.SGRule.Port &&
+			*rID.IPv4Cidr == *rule.SGRule.CidrBlock &&
+			*rID.IPv6Cidr == *rule.SGRule.Ipv6CidrBlock &&
+			*rID.Memo == *rule.SGRule.PolicyDescription {
+			continue
+		}
+
+		list = append(list, protocloud.TCloudSGRuleBatchUpdate{
+			ID:       rID.ID,
+			Protocol: rule.SGRule.Protocol,
+			Port:     rule.SGRule.Port,
+			IPv4Cidr: rule.SGRule.CidrBlock,
+			IPv6Cidr: rule.SGRule.Ipv6CidrBlock,
+			Memo:     rule.SGRule.PolicyDescription,
+		})
+	}
+
+	return list
+}
+
+func getTCloudSGRuleID(pIndex int64, sgID string, typ enumor.SecurityGroupRuleType) string {
+	flag := strconv.FormatInt(pIndex, 10) + sgID + string(typ)
+	h := md5.New()
+	h.Write([]byte(flag))
+	return hex.EncodeToString(h.Sum(nil))
 }

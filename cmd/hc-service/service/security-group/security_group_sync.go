@@ -25,12 +25,49 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
+
+// AwsSGRuleSync ...
+type AwsSGRuleSync struct {
+	IsUpdate     bool
+	IsRealUpdate bool
+	SGRule       *ec2.SecurityGroupRule
+}
+
+// AzureSGRuleSync ...
+type AzureSGRuleSync struct {
+	IsUpdate     bool
+	IsRealUpdate bool
+	SGRule       *armnetwork.SecurityRule
+}
+
+// HuaWeiSGRuleSync ...
+type HuaWeiSGRuleSync struct {
+	IsUpdate     bool
+	IsRealUpdate bool
+	SGRule       model.SecurityGroupRule
+}
+
+// TCloudSGRuleSync ...
+type TCloudSGRuleSync struct {
+	Version      string
+	IsUpdate     bool
+	IsRealUpdate bool
+	SGRuleID     string
+	Typ          enumor.SecurityGroupRuleType
+	SGRule       *vpc.SecurityGroupPolicy
+}
 
 // decodeSecurityGroupSyncReq get par from body
 func (g *securityGroup) decodeSecurityGroupSyncReq(cts *rest.Contexts) (*proto.SecurityGroupSyncReq, error) {
@@ -115,7 +152,7 @@ func (g *securityGroup) diffSecurityGroupSyncDelete(cts *rest.Contexts, deleteCl
 // getAddCloudIDs
 func getAddCloudIDs[T any](cloudMap map[string]T, dsMap map[string]*proto.SecurityGroupSyncDS) []string {
 
-	addCloudIDs := []string{}
+	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
 		if _, ok := dsMap[id]; !ok {
 			addCloudIDs = append(addCloudIDs, id)
@@ -130,8 +167,8 @@ func getAddCloudIDs[T any](cloudMap map[string]T, dsMap map[string]*proto.Securi
 // getDeleteAndUpdateCloudIDs
 func getDeleteAndUpdateCloudIDs(dsMap map[string]*proto.SecurityGroupSyncDS) ([]string, []string) {
 
-	deleteCloudIDs := []string{}
-	updateCloudIDs := []string{}
+	deleteCloudIDs := make([]string, 0)
+	updateCloudIDs := make([]string, 0)
 	for id, one := range dsMap {
 		if !one.IsUpdated {
 			deleteCloudIDs = append(deleteCloudIDs, id)
