@@ -316,6 +316,28 @@ func (req *AccountBizRelUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// -------------------------- List --------------------------
+
+// BaseAccountWithExtensionListResp ...
+type BaseAccountWithExtensionListResp struct {
+	BaseAccountListResp `json:",inline"`
+	Extension           map[string]interface{} `json:"extension"`
+}
+
+// AccountWithExtensionListResult defines list instances for iam pull resource callback result.
+type AccountWithExtensionListResult struct {
+	Count   uint64                              `json:"count"`
+	Details []*BaseAccountWithExtensionListResp `json:"details"`
+}
+
+// AccountWithExtensionListResp ...
+type AccountWithExtensionListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *AccountWithExtensionListResult `json:"data"`
+}
+
+// -------------------------- Secret Encrypt And Decrypt --------------------------
+
 // SecretEncryptor 用于加密"泛型"Extension密钥
 type SecretEncryptor[T AccountExtensionCreateReq | AccountExtensionUpdateReq] interface {
 	// EncryptSecretKey 加密约束，将密钥进行加密设置

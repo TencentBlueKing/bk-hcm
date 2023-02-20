@@ -38,6 +38,7 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -56,6 +57,7 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("UpdateAccount", "PATCH", "/vendors/{vendor}/accounts/{account_id}", svc.UpdateAccount)
 	h.Add("GetAccount", "GET", "/vendors/{vendor}/accounts/{account_id}", svc.GetAccount)
 	h.Add("ListAccount", "POST", "/accounts/list", svc.ListAccount)
+	h.Add("ListAccountWithExtension", "POST", "/account_extensions/list", svc.ListAccountWithExtension)
 	h.Add("DeleteAccount", "DELETE", "/accounts", svc.DeleteAccount)
 	h.Add("UpdateAccountBizRel", "PUT", "/account_biz_rels/accounts/{account_id}", svc.UpdateAccountBizRel)
 
@@ -492,4 +494,93 @@ func (svc *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, err
 	}
 
 	return nil, err
+}
+
+func convertToAccountExtension[T protocloud.AccountExtensionGetResp, PT protocloud.SecretDecryptor[T]](
+	dbExtension tabletype.JsonField, svc *accountSvc,
+) (map[string]interface{}, error) {
+	extension := new(T)
+	err := json.UnmarshalFromString(string(dbExtension), extension)
+	if err != nil {
+		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
+	}
+
+	// 解密密钥
+	p := PT(extension)
+	err = p.DecryptSecretKey(svc.cipher)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt secret key of extension failed, err: %v", err)
+	}
+
+	return converter.StructToMap(extension)
+}
+
+// ListAccountWithExtension accounts with extension by filter
+func (svc *accountSvc) ListAccountWithExtension(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.AccountListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	daoAccountResp, err := svc.dao.Account().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list account with extension failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list account with extension failed, err: %v", err)
+	}
+	if req.Page.Count {
+		return &protocloud.AccountWithExtensionListResult{Count: daoAccountResp.Count}, nil
+	}
+
+	details := make([]*protocloud.BaseAccountWithExtensionListResp, 0, len(daoAccountResp.Details))
+	for _, account := range daoAccountResp.Details {
+		var extension map[string]interface{}
+		switch enumor.Vendor(account.Vendor) {
+		case enumor.TCloud:
+			extension, err = convertToAccountExtension[protocore.TCloudAccountExtension](account.Extension, svc)
+		case enumor.Aws:
+			extension, err = convertToAccountExtension[protocore.AwsAccountExtension](account.Extension, svc)
+		case enumor.HuaWei:
+			extension, err = convertToAccountExtension[protocore.HuaWeiAccountExtension](account.Extension, svc)
+		case enumor.Gcp:
+			extension, err = convertToAccountExtension[protocore.GcpAccountExtension](account.Extension, svc)
+		case enumor.Azure:
+			extension, err = convertToAccountExtension[protocore.AzureAccountExtension](account.Extension, svc)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("json unmarshal extension to vendor extension failed, err: %v", err)
+		}
+
+		details = append(details, &protocloud.BaseAccountWithExtensionListResp{
+			BaseAccountListResp: protocloud.BaseAccountListResp{
+				ID:            account.ID,
+				Vendor:        enumor.Vendor(account.Vendor),
+				Name:          account.Name,
+				Managers:      account.Managers,
+				DepartmentIDs: account.DepartmentIDs,
+				Type:          enumor.AccountType(account.Type),
+				Site:          enumor.AccountSiteType(account.Site),
+				SyncStatus:    enumor.AccountSyncStatus(account.SyncStatus),
+				Price:         account.Price,
+				PriceUnit:     account.PriceUnit,
+				Memo:          account.Memo,
+				Revision: core.Revision{
+					Creator:   account.Creator,
+					Reviser:   account.Reviser,
+					CreatedAt: account.CreatedAt,
+					UpdatedAt: account.UpdatedAt,
+				},
+			},
+			Extension: extension,
+		})
+	}
+
+	return &protocloud.AccountWithExtensionListResult{Details: details}, nil
 }

@@ -44,6 +44,7 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("Check", "POST", "/accounts/check", svc.Check)
 	h.Add("CheckByID", "POST", "/accounts/{account_id}/check", svc.CheckByID)
 	h.Add("List", "POST", "/accounts/list", svc.List)
+	h.Add("ListWithExtension", "POST", "/account_extensions/list", svc.ListWithExtension)
 	h.Add("Get", "GET", "/accounts/{account_id}", svc.Get)
 	h.Add("Update", "PATCH", "/accounts/{account_id}", svc.Update)
 
