@@ -74,8 +74,8 @@ func (ad Audit) CloudResourceAssignAudit(cts *rest.Contexts) (interface{}, error
 }
 
 func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceType,
-	assigns []protoaudit.CloudResourceAssignInfo) ([]*tableaudit.AuditTable, error) {
-
+	assigns []protoaudit.CloudResourceAssignInfo,
+) ([]*tableaudit.AuditTable, error) {
 	var audits []*tableaudit.AuditTable
 	var err error
 	switch resType {
@@ -87,6 +87,8 @@ func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.vpcAssignAuditBuild(kt, assigns)
 	case enumor.SubnetAuditResType:
 		audits, err = ad.subnetAssignAuditBuild(kt, assigns)
+	case enumor.DiskAuditResType:
+		audits, err = ad.diskAssignAuditBuild(kt, assigns)
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}
