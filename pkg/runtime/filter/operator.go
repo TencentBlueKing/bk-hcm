@@ -216,7 +216,9 @@ func (eo EqualOp) SQLExprAndValue(field string, value interface{}) (string, map[
 		return "", nil, errors.New("invalid value field")
 	}
 
-	return fmt.Sprintf(`%s = %s%s`, field, SqlPlaceholder, field), map[string]interface{}{field: value}, nil
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s = %s%s`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
 
 // NotEqualOp is not equal operator type
@@ -246,7 +248,9 @@ func (ne NotEqualOp) SQLExprAndValue(field string, value interface{}) (string, m
 		return "", nil, errors.New("invalid ne operator's value field")
 	}
 
-	return fmt.Sprintf(`%s != %s%s`, field, SqlPlaceholder, field), map[string]interface{}{field: value}, nil
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s != %s%s`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
 
 // GreaterThanOp is greater than operator
@@ -272,7 +276,9 @@ func (gt GreaterThanOp) SQLExprAndValue(field string, value interface{}) (string
 		return "", nil, errors.New("field is empty")
 	}
 
-	return fmt.Sprintf(`%s > %s%s`, field, SqlPlaceholder, field), map[string]interface{}{field: value}, nil
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s > %s%s`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
 
 // GreaterThanEqualOp is greater than equal operator
@@ -298,7 +304,9 @@ func (gte GreaterThanEqualOp) SQLExprAndValue(field string, value interface{}) (
 		return "", nil, errors.New("field is empty")
 	}
 
-	return fmt.Sprintf(`%s >= %s%s`, field, SqlPlaceholder, field), map[string]interface{}{field: value}, nil
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s >= %s%s`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
 
 // LessThanOp is less than operator
@@ -324,7 +332,9 @@ func (lt LessThanOp) SQLExprAndValue(field string, value interface{}) (string, m
 		return "", nil, errors.New("field is empty")
 	}
 
-	return fmt.Sprintf(`%s < %s%s`, field, SqlPlaceholder, field), map[string]interface{}{field: value}, nil
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s < %s%s`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
 
 // LessThanEqualOp is less than equal operator
@@ -350,7 +360,9 @@ func (lte LessThanEqualOp) SQLExprAndValue(field string, value interface{}) (str
 		return "", nil, errors.New("field is empty")
 	}
 
-	return fmt.Sprintf(`%s <= %s%s`, field, SqlPlaceholder, field), map[string]interface{}{field: value}, nil
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s <= %s%s`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
 
 // InOp is in operator
@@ -412,7 +424,9 @@ func (io InOp) SQLExprAndValue(field string, value interface{}) (string, map[str
 		return "", nil, errors.New("in operator's value should be an array")
 	}
 
-	return fmt.Sprintf(`%s IN (%s%s)`, field, SqlPlaceholder, field), map[string]interface{}{field: value}, nil
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s IN (%s%s)`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
 
 // NotInOp is not in operator
@@ -474,7 +488,9 @@ func (nio NotInOp) SQLExprAndValue(field string, value interface{}) (string, map
 		return "", nil, errors.New("nin operator's value should be an array")
 	}
 
-	return fmt.Sprintf(`%s NOT IN (%s%s)`, field, SqlPlaceholder, field), map[string]interface{}{field: value}, nil
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s NOT IN (%s%s)`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
 
 // ContainsSensitiveOp is contains sensitive operator
@@ -525,8 +541,9 @@ func (cso ContainsSensitiveOp) SQLExprAndValue(field string, value interface{}) 
 		return "", nil, errors.New("cs operator's value can not be a empty string")
 	}
 
-	return fmt.Sprintf(`%s LIKE BINARY %s%s`, field, SqlPlaceholder, field),
-		map[string]interface{}{field: "%" + s + "%"}, nil
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s LIKE BINARY %s%s`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: "%" + s + "%"}, nil
 }
 
 // ContainsInsensitiveOp is contains insensitive operator
@@ -577,8 +594,9 @@ func (cio ContainsInsensitiveOp) SQLExprAndValue(field string, value interface{}
 		return "", nil, errors.New("cis operator's value can not be a empty string")
 	}
 
-	return fmt.Sprintf(`%s LIKE %s%s`, field, SqlPlaceholder, field),
-		map[string]interface{}{field: "%" + s + "%"}, nil
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s LIKE %s%s`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: "%" + s + "%"}, nil
 }
 
 // JSONEqualOp is json field equal operator
@@ -612,10 +630,9 @@ func (op JSONEqualOp) SQLExprAndValue(field string, value interface{}) (string, 
 		return "", nil, err
 	}
 
-	jsonFieldAlias := strings.ReplaceAll(field, ".", "")
-
-	return fmt.Sprintf(`%s = %s%s`, jsonField, SqlPlaceholder, jsonFieldAlias),
-		map[string]interface{}{jsonFieldAlias: value}, nil
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	return fmt.Sprintf(`%s = %s%s`, jsonField, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
 
 // JSONInOp is json field in operator
@@ -681,10 +698,9 @@ func (op JSONInOp) SQLExprAndValue(field string, value interface{}) (string, map
 		return "", nil, err
 	}
 
-	jsonFieldAlias := strings.ReplaceAll(field, ".", "")
-
-	return fmt.Sprintf(`%s IN (%s%s)`, jsonField, SqlPlaceholder, jsonFieldAlias),
-		map[string]interface{}{jsonFieldAlias: value}, nil
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	return fmt.Sprintf(`%s IN (%s%s)`, jsonField, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
 
 // jsonFiledSqlFormat 会将用户传入的 json 字段名由 "extension.vpc_id" 转为 `extension->>"$.vpc_id"`
@@ -723,6 +739,7 @@ func (op JSONContainsOp) SQLExprAndValue(field string, value interface{}) (strin
 		return "", nil, errors.New("invalid value field")
 	}
 
-	return fmt.Sprintf("JSON_CONTAINS(%s, JSON_ARRAY(%s%s))", field, SqlPlaceholder, field),
-		map[string]interface{}{field: value}, nil
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	return fmt.Sprintf("JSON_CONTAINS(%s, JSON_ARRAY(%s%s))", field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
 }
