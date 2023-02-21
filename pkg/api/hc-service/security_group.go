@@ -61,12 +61,12 @@ func (req *HuaWeiSecurityGroupCreateReq) Validate() error {
 
 // AwsSecurityGroupCreateReq tcloud security group create request.
 type AwsSecurityGroupCreateReq struct {
-	Region    string  `json:"region" validate:"required"`
-	Name      string  `json:"name" validate:"required"`
-	Memo      *string `json:"memo" validate:"omitempty"`
-	AccountID string  `json:"account_id" validate:"required"`
-	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
-	VpcID     string  `json:"vpc_id" validate:"omitempty"`
+	Region     string  `json:"region" validate:"required"`
+	Name       string  `json:"name" validate:"required"`
+	Memo       *string `json:"memo" validate:"omitempty"`
+	AccountID  string  `json:"account_id" validate:"required"`
+	BkBizID    int64   `json:"bk_biz_id" validate:"required"`
+	CloudVpcID string  `json:"cloud_vpc_id" validate:"required"`
 }
 
 // Validate tcloud security group create request.

@@ -86,7 +86,7 @@ func (g *securityGroup) CreateAzureSecurityGroup(cts *rest.Contexts) (interface{
 		return nil, err
 	}
 
-	return result, nil
+	return core.CreateResult{ID: result.IDs[0]}, nil
 }
 
 // DeleteAzureSecurityGroup delete azure security group.

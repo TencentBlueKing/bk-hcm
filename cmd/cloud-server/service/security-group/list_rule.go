@@ -31,7 +31,7 @@ import (
 )
 
 // ListSecurityGroupRule list security group rule.
-func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
+func (svc *securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if len(vendor) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "vendor is required")
@@ -119,7 +119,7 @@ func (svc securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface
 }
 
 // GetAzureDefaultSGRule get azure default security group rule.
-func (svc securityGroupSvc) GetAzureDefaultSGRule(cts *rest.Contexts) (interface{}, error) {
+func (svc *securityGroupSvc) GetAzureDefaultSGRule(cts *rest.Contexts) (interface{}, error) {
 	ruleType := enumor.SecurityGroupRuleType(cts.PathParameter("type").String())
 
 	rules, exist := azureDefaultSGRuleMap[ruleType]

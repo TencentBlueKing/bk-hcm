@@ -30,7 +30,7 @@ import (
 )
 
 // DeleteSecurityGroupRule delete security group rule.
-func (svc securityGroupSvc) DeleteSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
+func (svc *securityGroupSvc) DeleteSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if len(vendor) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "vendor is required")

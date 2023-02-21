@@ -52,6 +52,18 @@ func (a *Aws) CreateSecurityGroup(kt *kit.Kit, opt *types.AwsSecurityGroupCreate
 	req := &ec2.CreateSecurityGroupInput{
 		Description: opt.Description,
 		GroupName:   aws.String(opt.Name),
+		TagSpecifications: []*ec2.TagSpecification{
+			{
+				// reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_TagSpecification.html
+				ResourceType: aws.String("security-group"),
+				Tags: []*ec2.Tag{
+					{
+						Key:   aws.String(tagKeyForResourceName),
+						Value: aws.String(opt.Name),
+					},
+				},
+			},
+		},
 	}
 
 	if len(opt.CloudVpcID) != 0 {

@@ -41,6 +41,30 @@ type SecurityGroupClient struct {
 	client rest.ClientInterface
 }
 
+// CreateSecurityGroup create security group.
+func (cli *SecurityGroupClient) CreateSecurityGroup(ctx context.Context, h http.Header,
+	request *proto.AzureSecurityGroupCreateReq) (*core.CreateResult, error) {
+
+	resp := new(core.CreateResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/security_groups/create").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // SyncSecurityGroupRule sync security group rule.
 func (cli *SecurityGroupClient) SyncSecurityGroupRule(ctx context.Context, h http.Header,
 	request *proto.SecurityGroupSyncReq, id string) error {

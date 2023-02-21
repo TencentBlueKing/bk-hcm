@@ -20,6 +20,7 @@
 package cloudserver
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -30,6 +31,33 @@ import (
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
+
+// -------------------------- Create --------------------------
+
+// SecurityGroupCreateReq security group create request.
+type SecurityGroupCreateReq struct {
+	Vendor    enumor.Vendor   `json:"vendor" validate:"required"`
+	AccountID string          `json:"account_id" validate:"required"`
+	Region    string          `json:"region" validate:"required"`
+	Name      string          `json:"name" validate:"required"`
+	Memo      *string         `json:"memo" validate:"omitempty"`
+	Extension json.RawMessage `json:"extension" validate:"omitempty"`
+}
+
+// Validate security group create request.
+func (req *SecurityGroupCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsSecurityGroupExtensionCreate ...
+type AwsSecurityGroupExtensionCreate struct {
+	CloudVpcID string `json:"cloud_vpc_id" validate:"omitempty"`
+}
+
+// AzureSecurityGroupExtensionCreate ...
+type AzureSecurityGroupExtensionCreate struct {
+	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
+}
 
 // -------------------------- List --------------------------
 
@@ -48,23 +76,6 @@ func (req *SecurityGroupListReq) Validate() error {
 type SecurityGroupListResult struct {
 	Count   uint64                    `json:"count,omitempty"`
 	Details []cloud.BaseSecurityGroup `json:"details,omitempty"`
-}
-
-// SecurityGroupRuleListReq security group rule list req.
-type SecurityGroupRuleListReq struct {
-	Filter *filter.Expression    `json:"filter" validate:"required"`
-	Page   *core.PageWithoutSort `json:"page" validate:"required"`
-}
-
-// Validate security group list request.
-func (req *SecurityGroupRuleListReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// SecurityGroupRuleListResult define security group rule list result.
-type SecurityGroupRuleListResult[T cloud.SecurityGroupRule] struct {
-	Count   uint64 `json:"count,omitempty"`
-	Details []T    `json:"details,omitempty"`
 }
 
 // -------------------------- Update --------------------------
@@ -123,62 +134,6 @@ func (req *AssignSecurityGroupToBizReq) Validate() error {
 	return nil
 }
 
-// TCloudSGRuleUpdateReq define tcloud security group rule update req.
-type TCloudSGRuleUpdateReq struct {
-	Protocol                   *string `json:"protocol"`
-	Port                       *string `json:"port"`
-	IPv4Cidr                   *string `json:"ipv4_cidr"`
-	IPv6Cidr                   *string `json:"ipv6_cidr"`
-	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
-	Action                     string  `json:"action"`
-	Memo                       *string `json:"memo"`
-}
-
-// Validate tcloud security group rule update request.
-func (req *TCloudSGRuleUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// AwsSGRuleUpdateReq define aws security group rule update req.
-type AwsSGRuleUpdateReq struct {
-	IPv4Cidr                   *string `json:"ipv4_cidr"`
-	IPv6Cidr                   *string `json:"ipv6_cidr"`
-	Memo                       *string `json:"memo"`
-	FromPort                   int64   `json:"from_port"`
-	ToPort                     int64   `json:"to_port"`
-	Protocol                   *string `json:"protocol"`
-	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
-}
-
-// Validate aws security group rule update request.
-func (req *AwsSGRuleUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// AzureSGRuleUpdateReq define azure security group rule update req.
-type AzureSGRuleUpdateReq struct {
-	Name                             string    `json:"name"`
-	Memo                             *string   `json:"memo"`
-	DestinationAddressPrefix         *string   `json:"destination_address_prefix"`
-	DestinationAddressPrefixes       []*string `json:"destination_address_prefixes"`
-	CloudDestinationSecurityGroupIDs []*string `json:"cloud_destination_security_group_ids"`
-	DestinationPortRange             *string   `json:"destination_port_range"`
-	DestinationPortRanges            []*string `json:"destination_port_ranges"`
-	Protocol                         string    `json:"protocol"`
-	SourceAddressPrefix              *string   `json:"source_address_prefix"`
-	SourceAddressPrefixes            []*string `json:"source_address_prefixes"`
-	CloudSourceSecurityGroupIDs      []*string `json:"cloud_source_security_group_ids"`
-	SourcePortRange                  *string   `json:"source_port_range"`
-	SourcePortRanges                 []*string `json:"source_port_ranges"`
-	Priority                         int32     `json:"priority"`
-	Access                           string    `json:"access"`
-}
-
-// Validate azure security group rule update request.
-func (req *AzureSGRuleUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
 // -------------------------- Delete --------------------------
 
 // SecurityGroupBatchDeleteReq security group update request.
@@ -189,85 +144,4 @@ type SecurityGroupBatchDeleteReq struct {
 // Validate security group delete request.
 func (req *SecurityGroupBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
-}
-
-// -------------------------- Create --------------------------
-
-// SecurityGroupRuleCreateReq define security group rule create req.
-type SecurityGroupRuleCreateReq[T SecurityGroupRule] struct {
-	EgressRuleSet  []T `json:"egress_rule_set" validate:"omitempty"`
-	IngressRuleSet []T `json:"ingress_rule_set" validate:"omitempty"`
-}
-
-// Validate security group rule create request.
-func (req *SecurityGroupRuleCreateReq[T]) Validate() error {
-	if len(req.EgressRuleSet) == 0 && len(req.IngressRuleSet) == 0 {
-		return errors.New("egress rule or ingress rule is required")
-	}
-
-	if len(req.EgressRuleSet) != 0 && len(req.IngressRuleSet) != 0 {
-		return errors.New("egress rule or ingress rule only one is allowed")
-	}
-
-	return nil
-}
-
-// SecurityGroupRule define security group rule when create.
-type SecurityGroupRule interface {
-	TCloudSecurityGroupRule | AwsSecurityGroupRule | HuaWeiSecurityGroupRule | AzureSecurityGroupRule
-}
-
-// TCloudSecurityGroupRule define tcloud security group rule spec.
-type TCloudSecurityGroupRule struct {
-	Protocol                   *string `json:"protocol"`
-	Port                       *string `json:"port"`
-	IPv4Cidr                   *string `json:"ipv4_cidr"`
-	IPv6Cidr                   *string `json:"ipv6_cidr"`
-	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
-	Action                     string  `json:"action"`
-	Memo                       *string `json:"memo"`
-}
-
-// AwsSecurityGroupRule define aws security group rule spec.
-type AwsSecurityGroupRule struct {
-	IPv4Cidr                   *string `json:"ipv4_cidr"`
-	IPv6Cidr                   *string `json:"ipv6_cidr"`
-	Memo                       *string `json:"memo"`
-	FromPort                   int64   `json:"from_port"`
-	ToPort                     int64   `json:"to_port"`
-	Protocol                   *string `json:"protocol"`
-	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
-}
-
-// HuaWeiSecurityGroupRule define huawei security group rule spec.
-type HuaWeiSecurityGroupRule struct {
-	Memo               *string `json:"memo"`
-	Ethertype          *string `json:"ethertype"`
-	Protocol           *string `json:"protocol"`
-	RemoteIPPrefix     *string `json:"remote_ip_prefix"`
-	CloudRemoteGroupID *string `json:"cloud_remote_group_id"`
-	Port               *string `json:"port"`
-	Action             *string `json:"action"`
-	Priority           int64   `json:"priority"`
-}
-
-// AzureSecurityGroupRule define azure security group rule spec.
-type AzureSecurityGroupRule struct {
-	Name                             string    `json:"name"`
-	Memo                             *string   `json:"memo"`
-	DestinationAddressPrefix         *string   `json:"destination_address_prefix"`
-	DestinationAddressPrefixes       []*string `json:"destination_address_prefixes"`
-	CloudDestinationSecurityGroupIDs []*string `json:"cloud_destination_security_group_ids"`
-	DestinationPortRange             *string   `json:"destination_port_range"`
-	DestinationPortRanges            []*string `json:"destination_port_ranges"`
-	Protocol                         string    `json:"protocol"`
-	SourceAddressPrefix              *string   `json:"source_address_prefix"`
-	SourceAddressPrefixes            []*string `json:"source_address_prefixes"`
-	CloudSourceSecurityGroupIDs      []*string `json:"cloud_source_security_group_ids"`
-	SourcePortRange                  *string   `json:"source_port_range"`
-	SourcePortRanges                 []*string `json:"source_port_ranges"`
-	Priority                         int32     `json:"priority"`
-	// Type 更新时该字段无法更新。
-	Type   enumor.SecurityGroupRuleType `json:"type"`
-	Access string                       `json:"access"`
 }

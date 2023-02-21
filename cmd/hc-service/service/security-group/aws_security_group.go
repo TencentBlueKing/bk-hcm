@@ -23,12 +23,14 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -53,7 +55,7 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		Region:      req.Region,
 		Name:        req.Name,
 		Description: req.Memo,
-		CloudVpcID:  req.VpcID,
+		CloudVpcID:  req.CloudVpcID,
 	}
 	cloudID, err := client.CreateSecurityGroup(cts.Kit, opt)
 	if err != nil {
@@ -78,6 +80,11 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, fmt.Errorf("create aws security group succeeds, but query failed")
 	}
 
+	vpcID, err := g.getVpcIDByCloudVpcID(cts.Kit, req.CloudVpcID)
+	if err != nil {
+		return nil, err
+	}
+
 	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.AwsSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.AwsSecurityGroupExtension]{
 			{
@@ -88,6 +95,7 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 				Memo:      result.SecurityGroups[0].Description,
 				AccountID: req.AccountID,
 				Extension: &corecloud.AwsSecurityGroupExtension{
+					VpcID:        vpcID,
 					CloudVpcID:   result.SecurityGroups[0].VpcId,
 					CloudOwnerID: result.SecurityGroups[0].OwnerId,
 				},
@@ -100,7 +108,26 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, err
 	}
 
-	return createResp, nil
+	return core.CreateResult{ID: createResp.IDs[0]}, nil
+}
+
+func (g *securityGroup) getVpcIDByCloudVpcID(kt *kit.Kit, cloudVpcID string) (string, error) {
+	req := &core.ListReq{
+		Filter: tools.EqualExpression("cloud_id", cloudVpcID),
+		Page:   core.DefaultBasePage,
+		Fields: []string{"id"},
+	}
+	result, err := g.dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("request dataservice to list vpc failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return "", err
+	}
+
+	if len(result.Details) == 0 {
+		return "", errf.Newf(errf.RecordNotFound, "vpc(cloud_id=%s) not found", cloudVpcID)
+	}
+
+	return result.Details[0].CloudID, nil
 }
 
 // DeleteAwsSecurityGroup delete aws security group.

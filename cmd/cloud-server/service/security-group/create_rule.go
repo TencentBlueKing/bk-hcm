@@ -33,7 +33,7 @@ import (
 )
 
 // CreateSecurityGroupRule create security group rule.
-func (svc securityGroupSvc) CreateSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
+func (svc *securityGroupSvc) CreateSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if len(vendor) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "vendor is required")
@@ -83,7 +83,7 @@ func (svc securityGroupSvc) CreateSecurityGroupRule(cts *rest.Contexts) (interfa
 	}
 }
 
-func (svc securityGroupSvc) createTCloudSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
+func (svc *securityGroupSvc) createTCloudSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
 	interface{}, error) {
 
 	req := new(proto.SecurityGroupRuleCreateReq[proto.TCloudSecurityGroupRule])
@@ -137,7 +137,7 @@ func (svc securityGroupSvc) createTCloudSGRule(cts *rest.Contexts, sgBaseInfo *t
 	return result, nil
 }
 
-func (svc securityGroupSvc) createAwsSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
+func (svc *securityGroupSvc) createAwsSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
 	interface{}, error) {
 
 	req := new(proto.SecurityGroupRuleCreateReq[proto.AwsSecurityGroupRule])
@@ -191,7 +191,7 @@ func (svc securityGroupSvc) createAwsSGRule(cts *rest.Contexts, sgBaseInfo *type
 	return result, nil
 }
 
-func (svc securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
+func (svc *securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
 	interface{}, error) {
 
 	req := new(proto.SecurityGroupRuleCreateReq[proto.HuaWeiSecurityGroupRule])
@@ -260,7 +260,7 @@ func (svc securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *t
 	return nil, nil
 }
 
-func (svc securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
+func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
 	interface{}, error) {
 
 	req := new(proto.SecurityGroupRuleCreateReq[proto.AzureSecurityGroupRule])

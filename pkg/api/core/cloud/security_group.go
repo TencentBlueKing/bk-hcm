@@ -65,6 +65,7 @@ type TCloudSecurityGroupExtension struct {
 
 // AwsSecurityGroupExtension define aws security group extension.
 type AwsSecurityGroupExtension struct {
+	VpcID string `json:"vpc_id"`
 	// CloudVpcID vpc云主键ID。
 	CloudVpcID *string `json:"cloud_vpc_id"`
 	// CloudOwnerID 拥有该安全组的Amazon账号ID。

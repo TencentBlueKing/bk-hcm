@@ -34,7 +34,7 @@ import (
 )
 
 // UpdateSecurityGroupRule update security group rule.
-func (svc securityGroupSvc) UpdateSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
+func (svc *securityGroupSvc) UpdateSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if len(vendor) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "vendor is required")
@@ -86,7 +86,7 @@ func (svc securityGroupSvc) UpdateSecurityGroupRule(cts *rest.Contexts) (interfa
 	}
 }
 
-func (svc securityGroupSvc) updateTCloudSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo,
+func (svc *securityGroupSvc) updateTCloudSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo,
 	id string) (interface{}, error) {
 
 	req := new(proto.TCloudSGRuleUpdateReq)
@@ -127,7 +127,7 @@ func (svc securityGroupSvc) updateTCloudSGRule(cts *rest.Contexts, sgBaseInfo *t
 	return nil, nil
 }
 
-func (svc securityGroupSvc) updateAwsSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo,
+func (svc *securityGroupSvc) updateAwsSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo,
 	id string) (interface{}, error) {
 
 	req := new(proto.AwsSGRuleUpdateReq)
@@ -168,7 +168,7 @@ func (svc securityGroupSvc) updateAwsSGRule(cts *rest.Contexts, sgBaseInfo *type
 	return nil, nil
 }
 
-func (svc securityGroupSvc) updateAzureSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo,
+func (svc *securityGroupSvc) updateAzureSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo,
 	id string) (interface{}, error) {
 
 	req := new(proto.AzureSGRuleUpdateReq)
