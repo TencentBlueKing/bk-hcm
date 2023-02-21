@@ -27,6 +27,8 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/config"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/region"
+	dcs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2"
+	dcsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2/region"
 	ecs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2"
 	evs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2"
 	iam "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3"
@@ -153,6 +155,23 @@ func (c *clientSet) ecsClient(regionID string) (cli *ecs.EcsClient, err error) {
 	client := ecs.NewEcsClient(
 		ecs.EcsClientBuilder().
 			WithRegion(vpcregion.ValueOf(regionID)).
+			WithCredential(c.credentials).
+			WithHttpConfig(config.DefaultHttpConfig()).
+			Build())
+
+	return client, nil
+}
+
+func (c *clientSet) dcsClient(regionID string) (cli *dcs.DcsClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+
+	client := dcs.NewDcsClient(
+		dcs.DcsClientBuilder().
+			WithRegion(dcsregion.ValueOf(regionID)).
 			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())

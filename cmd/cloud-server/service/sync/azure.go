@@ -27,6 +27,7 @@ import (
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	protohcregion "hcm/pkg/api/hc-service/region"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -74,6 +75,27 @@ func SyncAzureAll(c *client.ClientSet, kit *kit.Kit, header http.Header, account
 	}
 
 	return nil
+}
+
+// SyncAzurePublicResource ...
+func SyncAzurePublicResource(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+
+	err := SyncAzureRegion(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do azure sync region failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncAzureResourceGroup(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do azure sync resource group failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncAzureImage(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do azure sync image failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return err
 }
 
 func syncAzureWithResourceGroup(c *client.ClientSet, kit *kit.Kit, resourceGroup string,
@@ -138,7 +160,7 @@ func syncAzureWithResourceGroup(c *client.ClientSet, kit *kit.Kit, resourceGroup
 }
 
 // SyncAzureImage ...
-func SyncAzureImage(c *client.ClientSet, kit *kit.Kit, accountID string, header http.Header) error {
+func SyncAzureImage(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
 
 	resourceGroups, err := c.DataService().Azure.ResourceGroup.ListResourceGroup(
 		kit.Ctx,
@@ -242,4 +264,36 @@ func SyncAzureSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	}
 
 	return nil
+}
+
+// SyncAzureRegion sync azure region
+func SyncAzureRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	err := c.HCService().Azure.Region.SyncRegion(
+		kit.Ctx,
+		header,
+		&protohcregion.AzureRegionSyncReq{
+			AccountID: accountID,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do azure sync region failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return err
+}
+
+// SyncAzureResourceGroup sync azure rg
+func SyncAzureResourceGroup(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	err := c.HCService().Azure.ResourceGroup.SyncResourceGroup(
+		kit.Ctx,
+		header,
+		&protohcregion.AzureRGSyncReq{
+			AccountID: accountID,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do azure sync rg failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return err
 }

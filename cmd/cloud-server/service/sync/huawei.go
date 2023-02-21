@@ -27,6 +27,8 @@ import (
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	protohcregion "hcm/pkg/api/hc-service/region"
+	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -196,8 +198,28 @@ func SyncHuaWeiSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	return nil
 }
 
+// SyncHuaWeiPublicResource ...
+func SyncHuaWeiPublicResource(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	err := SyncHuaWeiRegion(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do huawei sync region failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncHuaWeiZone(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do huawei sync zone failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncHuaWeiImage(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do huawei sync image failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return err
+}
+
 // SyncHuaWeiImage ...
-func SyncHuaWeiImage(c *client.ClientSet, kit *kit.Kit, accountID string, header http.Header) error {
+func SyncHuaWeiImage(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
 	regions, err := c.DataService().HuaWei.Region.ListRegion(
 		kit.Ctx,
 		header,
@@ -226,6 +248,55 @@ func SyncHuaWeiImage(c *client.ClientSet, kit *kit.Kit, accountID string, header
 		} else {
 			logs.Errorf("sync huawei image failed, err: %v, rid: %s", err, kit.Rid)
 		}
+	}
+
+	return err
+}
+
+// SyncHuaWeiZone sync huawei zone
+func SyncHuaWeiZone(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	regions, err := c.DataService().HuaWei.Region.ListRegion(
+		kit.Ctx,
+		header,
+		&protoregion.HuaWeiRegionListReq{
+			Filter: tools.EqualExpression("type", constant.SyncTimingListHuaWeiRegion),
+			Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync list huawei region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	for _, region := range regions.Details {
+		err = c.HCService().HuaWei.Zone.SyncZone(
+			kit.Ctx,
+			header,
+			&zone.HuaWeiZoneSyncReq{
+				AccountID: accountID,
+				Region:    region.RegionID,
+			},
+		)
+		if err != nil {
+			logs.Errorf("sync do huawei sync zone failed, err: %v, regionID: %s, rid: %s",
+				err, region.RegionID, kit.Rid)
+		}
+	}
+
+	return err
+}
+
+// SyncHuaWeiRegion sync huawei region
+func SyncHuaWeiRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	err := c.HCService().HuaWei.Region.SyncRegion(
+		kit.Ctx,
+		header,
+		&protohcregion.HuaWeiRegionSyncReq{
+			AccountID: accountID,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do huawei sync region failed, err: %v, rid: %s", err, kit.Rid)
 	}
 
 	return err

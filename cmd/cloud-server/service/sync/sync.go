@@ -34,6 +34,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/TencentBlueKing/gopkg/collection/set"
 )
 
 // InitSyncService initial the sync service
@@ -108,6 +110,11 @@ func SyncAllResource(c *client.ClientSet, kit *kit.Kit, header http.Header) erro
 		return err
 	}
 
+	err = SyncPublicResource(kit, c, result, header)
+	if err != nil {
+		logs.Errorf("sync public resource failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
 	for _, account := range result.Details {
 		switch account.Vendor {
 		case enumor.TCloud:
@@ -125,52 +132,66 @@ func SyncAllResource(c *client.ClientSet, kit *kit.Kit, header http.Header) erro
 		}
 	}
 
-	err = SyncImage(kit, c, result, header)
-
 	return err
 }
 
-// SyncImage ...
-func SyncImage(kit *kit.Kit, c *client.ClientSet, accounts *dataproto.AccountListResult,
+// SyncPublicResource sync all region and zone
+func SyncPublicResource(kit *kit.Kit, c *client.ClientSet, accounts *dataproto.AccountListResult,
 	header http.Header) error {
-	var ret error
-	ret = nil
 
-	accountMap := make(map[string]bool)
+	accountSet := set.NewStringSet()
 
 	for _, account := range accounts.Details {
 		switch account.Vendor {
 		case enumor.TCloud:
-			if _, ok := accountMap[string(enumor.TCloud)]; ok {
+			if accountSet.Has(string(enumor.TCloud)) {
 				continue
 			}
-			accountMap[string(enumor.TCloud)] = true
-			ret = SyncTCloudImage(c, kit, account.ID, header)
+			accountSet.Add(string(enumor.TCloud))
+			err := SyncTCloudPublicResource(kit, c, header, account.ID)
+			if err != nil {
+				logs.Errorf("sync do tcloud sync public resource failed, err: %v, rid: %s", err, kit.Rid)
+			}
 		case enumor.HuaWei:
-			if _, ok := accountMap[string(enumor.HuaWei)]; ok {
+			if accountSet.Has(string(enumor.HuaWei)) {
 				continue
 			}
-			accountMap[string(enumor.HuaWei)] = true
-			ret = SyncHuaWeiImage(c, kit, account.ID, header)
+			accountSet.Add(string(enumor.HuaWei))
+			err := SyncHuaWeiPublicResource(kit, c, header, account.ID)
+			if err != nil {
+				logs.Errorf("sync do huawei sync public resource failed, err: %v, rid: %s", err, kit.Rid)
+			}
 		case enumor.Aws:
-			if _, ok := accountMap[string(enumor.Aws)]; ok {
+			if accountSet.Has(string(enumor.Aws)) {
 				continue
 			}
-			ret = SyncAwsImage(c, kit, account.ID, header)
+			accountSet.Add(string(enumor.Aws))
+			err := SyncAwsPublicResource(kit, c, header, account.ID)
+			if err != nil {
+				logs.Errorf("sync do aws sync public resource failed, err: %v, rid: %s", err, kit.Rid)
+			}
 		case enumor.Gcp:
-			if _, ok := accountMap[string(enumor.Gcp)]; ok {
+			if accountSet.Has(string(enumor.Gcp)) {
 				continue
 			}
-			ret = SyncGcpImage(c, kit, account.ID, header)
+			accountSet.Add(string(enumor.Gcp))
+			err := SyncGcpPublicResource(kit, c, header, account.ID)
+			if err != nil {
+				logs.Errorf("sync do gcp sync public resource failed, err: %v, rid: %s", err, kit.Rid)
+			}
 		case enumor.Azure:
-			if _, ok := accountMap[string(enumor.Azure)]; ok {
+			if accountSet.Has(string(enumor.Azure)) {
 				continue
 			}
-			ret = SyncAzureImage(c, kit, account.ID, header)
+			accountSet.Add(string(enumor.Azure))
+			err := SyncAzurePublicResource(kit, c, header, account.ID)
+			if err != nil {
+				logs.Errorf("sync do azure sync public resource failed, err: %v, rid: %s", err, kit.Rid)
+			}
 		default:
 			logs.Errorf("sync vendor %s not support, rid: %s", account.Vendor, kit.Rid)
 		}
 	}
 
-	return ret
+	return nil
 }

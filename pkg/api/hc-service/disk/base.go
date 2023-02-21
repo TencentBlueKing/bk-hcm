@@ -41,6 +41,7 @@ type DiskSyncReq struct {
 	AccountID         string `json:"account_id" validate:"required"`
 	Region            string `json:"region" validate:"omitempty"`
 	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
+	Zone              string `json:"zone" validate:"omitempty"`
 }
 
 // Validate disk sync request.

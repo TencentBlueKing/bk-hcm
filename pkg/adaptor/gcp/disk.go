@@ -70,7 +70,7 @@ func (g *Gcp) ListDisk(kit *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Di
 	cloudProjectID := g.clientSet.credential.CloudProjectID
 
 	yDisks := []*compute.Disk{}
-	req := client.Disks.List(cloudProjectID, opt.Region)
+	req := client.Disks.List(cloudProjectID, opt.Zone)
 	if err := req.Pages(kit.Ctx, func(page *compute.DiskList) error {
 		for _, disk := range page.Items {
 			yDisks = append(yDisks, disk)

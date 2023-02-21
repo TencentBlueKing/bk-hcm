@@ -49,6 +49,7 @@ values ('account', '0'),
        ('huawei_region', '0'),
        ('azure_region', '0'),
        ('azure_resource_group', '0'),
+       ('zone', '0'),
        ('image', '0'),
        ('cvm', '0'),
        ('azure_resource_group', '0'),
@@ -604,6 +605,25 @@ create table if not exists `cvm`
 ) engine = innodb
   default charset = utf8mb4;
 
+create table if not exists `zone`
+(
+    `id`                      varchar(64)  not null,
+    `vendor`                  varchar(16)  not null,
+    `cloud_id`                varchar(255) not null,
+    `name`                    varchar(64)  not null,
+    `name_cn`                 varchar(64)  not null,
+    `state`                   varchar(64)  not null,
+    `region`                  varchar(64)  not null,
+    `extension`               json         not null,
+    `creator`                 varchar(64)  not null,
+    `reviser`                 varchar(64)  not null,
+    `created_at`              timestamp    not null default current_timestamp,
+    `updated_at`              timestamp    not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
+) engine = innodb
+  default charset = utf8mb4;
+  
 create table if not exists `route_table`
 (
     `id`           varchar(64)  not null,

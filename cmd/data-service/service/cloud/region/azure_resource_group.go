@@ -47,13 +47,13 @@ func InitAzureResourceGroupService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("ListAzureResourceGroup", "POST", "/vendors/azure/resourcegroups/list", svc.ListAzureResourceGroup)
+	h.Add("ListAzureResourceGroup", "POST", "/vendors/azure/resource_groups/list", svc.ListAzureResourceGroup)
 
-	h.Add("DeleteAzureResourceGroup", "DELETE", "/vendors/azure/resourcegroups/batch", svc.DeleteAzureResourceGroup)
+	h.Add("DeleteAzureResourceGroup", "DELETE", "/vendors/azure/resource_groups/batch", svc.DeleteAzureResourceGroup)
 
-	h.Add("CreateAzureResourceGroup", "POST", "/vendors/azure/resourcegroups/batch/create", svc.CreateAzureResourceGroup)
+	h.Add("CreateAzureResourceGroup", "POST", "/vendors/azure/resource_groups/batch/create", svc.CreateAzureResourceGroup)
 
-	h.Add("UpdateAzureResourceGroup", "PUT", "/vendors/azure/resourcegroups/batch/update", svc.UpdateAzureResourceGroup)
+	h.Add("UpdateAzureResourceGroup", "PUT", "/vendors/azure/resource_groups/batch/update", svc.UpdateAzureResourceGroup)
 
 	h.Load(cap.WebService)
 }

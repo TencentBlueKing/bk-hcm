@@ -100,7 +100,7 @@ func (da *diskAdaptor) getDatasFromGcpForDiskSync(cts *rest.Contexts,
 	}
 
 	listOpt := &disk.GcpDiskListOption{
-		Region: req.Region,
+		Zone: req.Zone,
 	}
 	datas, err := client.ListDisk(cts.Kit, listOpt)
 	if err != nil {

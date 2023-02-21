@@ -24,8 +24,11 @@ import (
 
 	"hcm/pkg/api/core"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
+	protozone "hcm/pkg/api/data-service/cloud/zone"
 	proto "hcm/pkg/api/hc-service"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	protohcregion "hcm/pkg/api/hc-service/region"
+	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
@@ -65,20 +68,6 @@ func SyncGcpAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 				err, region.RegionID, kit.Rid)
 		}
 
-		// disk
-		err = c.HCService().Gcp.Disk.SyncDisk(
-			kit.Ctx,
-			header,
-			&protodisk.DiskSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
-		if err != nil {
-			logs.Errorf("sync do gcp sync disk failed, err: %v, regionID: %s, rid: %s",
-				err, region.RegionID, kit.Rid)
-		}
-
 		// Vpc
 		err = c.HCService().Gcp.Vpc.SyncVpc(
 			kit.Ctx,
@@ -109,15 +98,70 @@ func SyncGcpAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 
 	}
 
+	err = SyncGcpDisk(kit, c, header, accountID)
 	if err != nil {
+		logs.Errorf("sync do gcp sync disk failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return err
+}
+
+// SyncGcpDisk sync gcp disk
+func SyncGcpDisk(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	zones, err := c.DataService().Global.Zone.ListZone(
+		kit.Ctx,
+		header,
+		&protozone.ZoneListReq{
+			Filter: tools.EqualExpression("vendor", enumor.Gcp),
+			Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync list gcp zone failed, err: %v, rid: %s", err, kit.Rid)
 		return err
+	}
+
+	for _, zone := range zones.Details {
+		// disk
+		err = c.HCService().Gcp.Disk.SyncDisk(
+			kit.Ctx,
+			header,
+			&protodisk.DiskSyncReq{
+				AccountID: accountID,
+				Zone:      zone.Name,
+			},
+		)
+		if err != nil {
+			logs.Errorf("sync do gcp sync disk failed, err: %v, zone: %s, rid: %s",
+				err, zone.Name, kit.Rid)
+		}
 	}
 
 	return nil
 }
 
+// SyncGcpPublicResource ...
+func SyncGcpPublicResource(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	err := SyncGcpRegion(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do gcp sync region failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncGcpZone(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do gcp sync zone failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncGcpImage(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do gcp sync image failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return err
+}
+
 // SyncGcpImage ...
-func SyncGcpImage(c *client.ClientSet, kit *kit.Kit, accountID string, header http.Header) error {
+func SyncGcpImage(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
 
 	regions, err := c.DataService().Gcp.Region.ListRegion(
 		kit.Ctx,
@@ -147,6 +191,40 @@ func SyncGcpImage(c *client.ClientSet, kit *kit.Kit, accountID string, header ht
 		} else {
 			logs.Errorf("sync gcp image failed, err: %v, rid: %s", err, kit.Rid)
 		}
+	}
+
+	return err
+}
+
+// SyncGcpZone sync gcp zone
+func SyncGcpZone(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+
+	err := c.HCService().Gcp.Zone.SyncZone(
+		kit.Ctx,
+		header,
+		&zone.GcpZoneSyncReq{
+			AccountID: accountID,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do aws sync zone failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return err
+}
+
+// SyncGcpRegion sync gcp region
+func SyncGcpRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+
+	err := c.HCService().Gcp.Region.SyncRegion(
+		kit.Ctx,
+		header,
+		&protohcregion.GcpRegionSyncReq{
+			AccountID: accountID,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do tcloud sync region failed, err: %v, rid: %s", err, kit.Rid)
 	}
 
 	return err

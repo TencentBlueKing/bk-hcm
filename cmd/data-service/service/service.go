@@ -36,6 +36,7 @@ import (
 	"hcm/cmd/data-service/service/cloud/image"
 	"hcm/cmd/data-service/service/cloud/region"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
+	"hcm/cmd/data-service/service/cloud/zone"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/cryptography"
@@ -165,6 +166,7 @@ func (s *Service) apiSet() *restful.Container {
 	region.InitAzureResourceGroupService(capability)
 	region.InitAzureRegionService(capability)
 	audit.InitAuditService(capability)
+	zone.InitZoneService(capability)
 	image.InitImageService(capability)
 	cvm.InitService(capability)
 	routetable.InitRouteTableService(capability)

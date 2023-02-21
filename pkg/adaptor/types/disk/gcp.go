@@ -49,7 +49,7 @@ func (opt *GcpDiskCreateOption) ToCreateDiskRequest(cloudProjectID string) (*com
 
 // GcpDiskListOption define gcp disk list option.
 type GcpDiskListOption struct {
-	Region string `json:"region" validate:"required"`
+	Zone string `json:"zone" validate:"required"`
 }
 
 // Validate gcp disk list option.

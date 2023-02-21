@@ -27,6 +27,8 @@ import (
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	protohcregion "hcm/pkg/api/hc-service/region"
+	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
@@ -193,8 +195,28 @@ func SyncAwsSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	return nil
 }
 
+// SyncAwsPublicResource ...
+func SyncAwsPublicResource(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	err := SyncAwsRegion(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do aws sync region failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncAwsZone(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do aws sync zone failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncAwsImage(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do aws sync image failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return err
+}
+
 // SyncAwsImage ...
-func SyncAwsImage(c *client.ClientSet, kit *kit.Kit, accountID string, header http.Header) error {
+func SyncAwsImage(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
 	regions, err := c.DataService().Aws.Region.ListRegion(
 		kit.Ctx,
 		header,
@@ -223,6 +245,55 @@ func SyncAwsImage(c *client.ClientSet, kit *kit.Kit, accountID string, header ht
 		} else {
 			logs.Errorf("sync aws image failed, err: %v, rid: %s", err, kit.Rid)
 		}
+	}
+
+	return err
+}
+
+// SyncAwsZone sync aws zone
+func SyncAwsZone(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	regions, err := c.DataService().Aws.Region.ListRegion(
+		kit.Ctx,
+		header,
+		&protoregion.AwsRegionListReq{
+			Filter: tools.EqualExpression("vendor", enumor.Aws),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync list aws region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	for _, region := range regions.Details {
+		err = c.HCService().Aws.Zone.SyncZone(
+			kit.Ctx,
+			header,
+			&zone.AwsZoneSyncReq{
+				AccountID: accountID,
+				Region:    region.RegionID,
+			},
+		)
+		if err != nil {
+			logs.Errorf("sync do aws sync disk failed, err: %v, regionID: %s, rid: %s",
+				err, region.RegionID, kit.Rid)
+		}
+	}
+
+	return err
+}
+
+// SyncAwsRegion sync aws region
+func SyncAwsRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	err := c.HCService().Aws.Region.SyncRegion(
+		kit.Ctx,
+		header,
+		&protohcregion.AwsRegionSyncReq{
+			AccountID: accountID,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do aws sync region failed, err: %v, rid: %s", err, kit.Rid)
 	}
 
 	return err

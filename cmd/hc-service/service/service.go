@@ -39,6 +39,7 @@ import (
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
 	"hcm/cmd/hc-service/service/vpc"
+	"hcm/cmd/hc-service/service/zone"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
@@ -154,6 +155,7 @@ func (s *Service) apiSet() *restful.Container {
 	subnet.InitSubnetService(c)
 	region.InitRegionService(c)
 	disk.InitDiskService(c)
+	zone.InitZoneService(c)
 	cvm.InitCvmService(c)
 	image.InitImageService(c)
 	routetable.InitRouteTableService(c)

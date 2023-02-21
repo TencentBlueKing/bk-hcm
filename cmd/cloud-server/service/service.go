@@ -35,11 +35,14 @@ import (
 	"hcm/cmd/cloud-server/service/disk"
 	"hcm/cmd/cloud-server/service/firewall"
 	"hcm/cmd/cloud-server/service/image"
+	"hcm/cmd/cloud-server/service/region"
+	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
 	routetable "hcm/cmd/cloud-server/service/route-table"
 	securitygroup "hcm/cmd/cloud-server/service/security-group"
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
 	"hcm/cmd/cloud-server/service/vpc"
+	"hcm/cmd/cloud-server/service/zone"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
@@ -178,6 +181,9 @@ func (s *Service) apiSet() *restful.Container {
 	image.InitImageService(c)
 	routetable.InitRouteTableService(c)
 	cvm.InitCvmService(c)
+	resourcegroup.InitResourceGroupService(c)
+	zone.InitZoneService(c)
+	region.InitRegionService(c)
 
 	audit.InitService(c)
 

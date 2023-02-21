@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/cloud/region"
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
+	"hcm/pkg/dal/dao/cloud/zone"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/table"
@@ -98,6 +99,7 @@ type Set interface {
 	HuaWeiRegion() region.HuaWeiRegion
 	AzureRG() region.AzureRG
 	AzureRegion() region.AzureRegion
+	Zone() zone.Zone
 	TCloudRegion() region.TCloudRegion
 	AwsRegion() region.AwsRegion
 	GcpRegion() region.GcpRegion
@@ -167,6 +169,14 @@ type set struct {
 	audit audit.Interface
 
 	objectDaos map[table.Name]ObjectDao
+}
+
+// Zone return Zone dao.
+func (s *set) Zone() zone.Zone {
+	return &zone.ZoneDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
 }
 
 // AzureRegion return AzureRegion dao.

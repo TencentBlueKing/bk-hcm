@@ -49,7 +49,7 @@ func (cli *ResourceGroupClient) ListResourceGroup(ctx context.Context, h http.He
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/resourcegroups/list").
+		SubResourcef("/resource_groups/list").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -73,7 +73,7 @@ func (cli *ResourceGroupClient) BatchDeleteResourceGroup(ctx context.Context, h 
 	err := cli.client.Delete().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/resourcegroups/batch").
+		SubResourcef("/resource_groups/batch").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -97,7 +97,7 @@ func (cli *ResourceGroupClient) BatchCreateResourceGroup(ctx context.Context, h 
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/resourcegroups/batch/create").
+		SubResourcef("/resource_groups/batch/create").
 		WithHeaders(h).
 		Do().
 		Into(resp)
@@ -121,7 +121,7 @@ func (cli *ResourceGroupClient) BatchUpdateRG(ctx context.Context, h http.Header
 	err := cli.client.Put().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/resourcegroups/batch/update").
+		SubResourcef("/resource_groups/batch/update").
 		WithHeaders(h).
 		Do().
 		Into(resp)

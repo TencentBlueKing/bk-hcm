@@ -27,6 +27,8 @@ import (
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	protohcregion "hcm/pkg/api/hc-service/region"
+	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
@@ -195,8 +197,28 @@ func SyncTCloudSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	return nil
 }
 
+// SyncTCloudPublicResource ...
+func SyncTCloudPublicResource(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	err := SyncTCloudRegion(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do tcloud sync region failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncTCloudZone(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do tcloud sync zone failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncTCloudImage(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do tcloud sync image failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return err
+}
+
 // SyncTCloudImage ...
-func SyncTCloudImage(c *client.ClientSet, kit *kit.Kit, accountID string, header http.Header) error {
+func SyncTCloudImage(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
 	regions, err := c.DataService().TCloud.Region.ListRegion(
 		kit.Ctx,
 		header,
@@ -227,5 +249,52 @@ func SyncTCloudImage(c *client.ClientSet, kit *kit.Kit, accountID string, header
 		}
 	}
 
+	return err
+}
+
+// SyncTCloudZone sync tcloud zone
+func SyncTCloudZone(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	regions, err := c.DataService().TCloud.Region.ListRegion(
+		kit.Ctx,
+		header,
+		&protoregion.TCloudRegionListReq{
+			Filter: tools.EqualExpression("vendor", enumor.TCloud),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync list tcloud region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	for _, region := range regions.Details {
+		err = c.HCService().TCloud.Zone.SyncZone(
+			kit.Ctx,
+			header,
+			&zone.TCloudZoneSyncReq{
+				AccountID: accountID,
+				Region:    region.RegionID,
+			},
+		)
+		if err != nil {
+			logs.Errorf("sync do tcloud sync zone failed, err: %v, regionID: %s, rid: %s",
+				err, region.RegionID, kit.Rid)
+		}
+	}
+	return err
+}
+
+// SyncTCloudRegion sync tcloud region
+func SyncTCloudRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	err := c.HCService().TCloud.Region.SyncRegion(
+		kit.Ctx,
+		header,
+		&protohcregion.TCloudRegionSyncReq{
+			AccountID: accountID,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do tcloud sync region failed, err: %v, rid: %s", err, kit.Rid)
+	}
 	return err
 }

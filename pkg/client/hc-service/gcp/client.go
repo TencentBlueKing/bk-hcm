@@ -33,6 +33,8 @@ type Client struct {
 	Cvm        *CvmClient
 	Image      *ImageClient
 	RouteTable *RouteTableClient
+	Zone       *ZoneClient
+	Region     *RegionClient
 }
 
 // NewClient create a new gcp api client.
@@ -46,5 +48,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		Cvm:        NewCvmClient(client),
 		Image:      NewCloudPublicClient(client),
 		RouteTable: NewRouteTableClient(client),
+		Zone:       NewZoneClient(client),
+		Region:     NewRegionClient(client),
 	}
 }
