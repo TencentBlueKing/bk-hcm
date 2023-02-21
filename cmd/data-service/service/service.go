@@ -32,6 +32,7 @@ import (
 	"hcm/cmd/data-service/service/capability"
 	"hcm/cmd/data-service/service/cloud"
 	"hcm/cmd/data-service/service/cloud/disk"
+	"hcm/cmd/data-service/service/cloud/image"
 	"hcm/cmd/data-service/service/cloud/region"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
@@ -162,6 +163,7 @@ func (s *Service) apiSet() *restful.Container {
 	region.InitAzureResourceGroupService(capability)
 	region.InitAzureRegionService(capability)
 	audit.InitAuditService(capability)
+	image.InitImageService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

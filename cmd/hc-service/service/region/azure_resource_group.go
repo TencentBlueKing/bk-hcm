@@ -76,7 +76,7 @@ func (r *region) SyncAzureRG(cts *rest.Contexts) (interface{}, error) {
 	if len(updateIDs) > 0 {
 		err := r.syncAzureRGUpdate(updateIDs, cloudMap, dsMap, cts)
 		if err != nil {
-			logs.Errorf("request syncHuaWeiPublicImageUpdate failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("request syncHuaWeiImageUpdate failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 	}

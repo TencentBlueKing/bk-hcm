@@ -190,7 +190,9 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 		return nil, errf.New(errf.InvalidParameter, "list security group options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.SecurityGroupColumns.ColumnTypes())),
+	columnTypes := cloud.SecurityGroupColumns.ColumnTypes()
+	columnTypes["extension.resource_group_name"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err
 	}

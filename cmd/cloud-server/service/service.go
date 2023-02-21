@@ -33,6 +33,7 @@ import (
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/disk"
 	"hcm/cmd/cloud-server/service/firewall"
+	"hcm/cmd/cloud-server/service/image"
 	securitygroup "hcm/cmd/cloud-server/service/security-group"
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
@@ -172,9 +173,10 @@ func (s *Service) apiSet() *restful.Container {
 	disk.InitDiskService(c)
 	subnet.InitSubnetService(c)
 	sync.InitSyncService(c)
+	image.InitImageService(c)
+	audit.InitService(c)
 
 	go sync.SyncTiming(c.ApiClient)
-	audit.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

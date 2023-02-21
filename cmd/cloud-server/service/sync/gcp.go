@@ -106,6 +106,7 @@ func SyncGcpAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 			logs.Errorf("sync do gcp sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
 				err, accountID, region.RegionID, kit.Rid)
 		}
+
 	}
 
 	if err != nil {
@@ -113,4 +114,40 @@ func SyncGcpAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 	}
 
 	return nil
+}
+
+// SyncGcpImage ...
+func SyncGcpImage(c *client.ClientSet, kit *kit.Kit, accountID string, header http.Header) error {
+
+	regions, err := c.DataService().Gcp.Region.ListRegion(
+		kit.Ctx,
+		header,
+		&protoregion.GcpRegionListReq{
+			Filter: tools.EqualExpression("vendor", enumor.Gcp),
+			Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync list gcp region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	for _, region := range regions.Details {
+		err = c.HCService().Gcp.Image.SyncImage(
+			kit.Ctx,
+			header,
+			&protodisk.DiskSyncReq{
+				AccountID: accountID,
+				Region:    region.RegionID,
+			},
+		)
+		// sync only one time
+		if err == nil {
+			break
+		} else {
+			logs.Errorf("sync gcp image failed, err: %v, rid: %s", err, kit.Rid)
+		}
+	}
+
+	return err
 }

@@ -68,7 +68,7 @@ func SyncAzureAll(c *client.ClientSet, kit *kit.Kit, header http.Header, account
 	for _, resourceGroup := range resourceGroups.Details {
 		err := syncAzureWithResourceGroup(c, kit, resourceGroup.Name, header, regions, accountID)
 		if err != nil {
-			logs.Errorf("sync lsyncAzureWithResourceGroup failed, err: %v, rid: %s", err, kit.Rid)
+			logs.Errorf("sync syncAzureWithResourceGroup failed, err: %v, rid: %s", err, kit.Rid)
 			return err
 		}
 	}
@@ -78,10 +78,9 @@ func SyncAzureAll(c *client.ClientSet, kit *kit.Kit, header http.Header, account
 
 func syncAzureWithResourceGroup(c *client.ClientSet, kit *kit.Kit, resourceGroup string,
 	header http.Header, regions *protoregion.AzureRegionListResult, accountID string) error {
-
 	var err error
-	for _, region := range regions.Details {
 
+	for _, region := range regions.Details {
 		// sg
 		err = c.HCService().Azure.SecurityGroup.SyncSecurityGroup(
 			kit.Ctx,
@@ -135,11 +134,44 @@ func syncAzureWithResourceGroup(c *client.ClientSet, kit *kit.Kit, resourceGroup
 		}
 	}
 
+	return err
+}
+
+// SyncAzureImage ...
+func SyncAzureImage(c *client.ClientSet, kit *kit.Kit, accountID string, header http.Header) error {
+
+	resourceGroups, err := c.DataService().Azure.ResourceGroup.ListResourceGroup(
+		kit.Ctx,
+		header,
+		&protoregion.AzureRGListReq{
+			Filter: tools.EqualExpression("type", constant.SyncTimingListAzureRG),
+			Page:   core.DefaultBasePage,
+		},
+	)
 	if err != nil {
+		logs.Errorf("sync list resourceGroups failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
 
-	return nil
+	for _, resourceGroup := range resourceGroups.Details {
+		err = c.HCService().Azure.Image.SyncImage(
+			kit.Ctx,
+			header,
+			&protodisk.DiskSyncReq{
+				AccountID:         accountID,
+				Region:            resourceGroup.Location,
+				ResourceGroupName: resourceGroup.Name,
+			},
+		)
+		// sync only one time
+		if err == nil {
+			break
+		} else {
+			logs.Errorf("sync azure image failed, err: %v, rid: %s", err, kit.Rid)
+		}
+	}
+
+	return err
 }
 
 // SyncAzureSGRule ...

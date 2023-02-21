@@ -30,6 +30,7 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateVolume.html
+// SDK: https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/#EC2.CreateVolumeWithContext
 func (a *Aws) CreateDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*ec2.Volume, error) {
 	return a.createDisk(kt, opt)
 }

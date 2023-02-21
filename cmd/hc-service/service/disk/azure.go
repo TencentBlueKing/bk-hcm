@@ -21,12 +21,15 @@ package disk
 
 import (
 	"hcm/pkg/adaptor/types/disk"
+	"hcm/pkg/api/core"
+	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // AzureCreateDisk ...
@@ -75,9 +78,9 @@ func AzureSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	dsMap, err := da.getDatasFromDSForDiskSync(cts, req)
+	dsMap, err := da.getDatasFromAzureDSForDiskSync(cts, req)
 	if err != nil {
-		logs.Errorf("request getDatasFromDSForDiskSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("request getDatasFromAzureDSForDiskSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -88,6 +91,61 @@ func AzureSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+// getDatasFromAzureDSForDiskSync get azure datas from data-service
+func (da *diskAdaptor) getDatasFromAzureDSForDiskSync(cts *rest.Contexts,
+	req *protodisk.DiskSyncReq) (map[string]*protodisk.DiskSyncDS, error) {
+
+	start := 0
+	resultsHcm := make([]*datadisk.DiskResult, 0)
+	for {
+		dataReq := &datadisk.DiskListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					&filter.AtomRule{
+						Field: "account_id",
+						Op:    filter.Equal.Factory(),
+						Value: req.AccountID,
+					},
+					filter.AtomRule{
+						Field: "region",
+						Op:    filter.Equal.Factory(),
+						Value: req.Region,
+					},
+					&filter.AtomRule{
+						Field: "extension.resource_group_name",
+						Op:    filter.JSONEqual.Factory(),
+						Value: req.ResourceGroupName,
+					},
+				},
+			},
+			Page: &core.BasePage{Start: uint32(start), Limit: filter.DefaultMaxInLimit},
+		}
+
+		results, err := da.dataCli.Global.ListDisk(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
+		if err != nil {
+			logs.Errorf("from data-service list disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		resultsHcm = append(resultsHcm, results.Details...)
+		start += len(results.Details)
+		if uint(len(results.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+	}
+
+	dsMap := make(map[string]*protodisk.DiskSyncDS)
+	for _, result := range resultsHcm {
+		sg := new(protodisk.DiskSyncDS)
+		sg.IsUpdated = false
+		sg.HcDisk = result
+		dsMap[result.CloudID] = sg
+	}
+
+	return dsMap, nil
 }
 
 // getDatasFromAwsForDiskSync get datas from cloud

@@ -115,6 +115,7 @@ func SyncTCloudAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accoun
 			logs.Errorf("sync do tcloud sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
 				err, accountID, region.RegionID, kit.Rid)
 		}
+
 	}
 
 	if err != nil {
@@ -192,4 +193,39 @@ func SyncTCloudSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	}
 
 	return nil
+}
+
+// SyncTCloudImage ...
+func SyncTCloudImage(c *client.ClientSet, kit *kit.Kit, accountID string, header http.Header) error {
+	regions, err := c.DataService().TCloud.Region.ListRegion(
+		kit.Ctx,
+		header,
+		&protoregion.TCloudRegionListReq{
+			Filter: tools.EqualExpression("vendor", enumor.TCloud),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync list tcloud region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	for _, region := range regions.Details {
+		err = c.HCService().TCloud.Image.SyncImage(
+			kit.Ctx,
+			header,
+			&protodisk.DiskSyncReq{
+				AccountID: accountID,
+				Region:    region.RegionID,
+			},
+		)
+		// sync only one time
+		if err == nil {
+			break
+		} else {
+			logs.Errorf("sync tcloud image failed, err: %v, rid: %s", err, kit.Rid)
+		}
+	}
+
+	return err
 }

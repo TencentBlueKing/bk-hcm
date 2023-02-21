@@ -37,7 +37,7 @@ func (rc *restClient) BatchCreateDisk(ctx context.Context,
 	err := rc.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/disks/batch_create").
+		SubResourcef("/disks/batch/create").
 		WithHeaders(h).
 		Do().
 		Into(resp)

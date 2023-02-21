@@ -116,7 +116,6 @@ func SyncAwsAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 				err, accountID, region.RegionID, kit.Rid)
 		}
 	}
-
 	if err != nil {
 		return err
 	}
@@ -192,4 +191,39 @@ func SyncAwsSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	}
 
 	return nil
+}
+
+// SyncAwsImage ...
+func SyncAwsImage(c *client.ClientSet, kit *kit.Kit, accountID string, header http.Header) error {
+	regions, err := c.DataService().Aws.Region.ListRegion(
+		kit.Ctx,
+		header,
+		&protoregion.AwsRegionListReq{
+			Filter: tools.EqualExpression("vendor", enumor.Aws),
+			Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync list aws region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	for _, region := range regions.Details {
+		err = c.HCService().Aws.Image.SyncImage(
+			kit.Ctx,
+			header,
+			&protodisk.DiskSyncReq{
+				AccountID: accountID,
+				Region:    region.RegionID,
+			},
+		)
+		// sync only one time
+		if err == nil {
+			break
+		} else {
+			logs.Errorf("sync aws image failed, err: %v, rid: %s", err, kit.Rid)
+		}
+	}
+
+	return err
 }

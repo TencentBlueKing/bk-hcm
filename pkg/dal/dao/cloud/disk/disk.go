@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
@@ -144,7 +145,9 @@ func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.ListDis
 		return nil, errf.New(errf.InvalidParameter, "list disk options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(disk.DiskColumns.ColumnTypes())),
+	columnTypes := disk.DiskColumns.ColumnTypes()
+	columnTypes["extension.resource_group_name"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err
 	}

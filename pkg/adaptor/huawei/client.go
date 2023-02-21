@@ -30,6 +30,7 @@ import (
 	evs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2"
 	iam "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3"
 	iamregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/region"
+	ims "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2"
 	vpcv2 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2"
 	vpc "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3"
 	vpcregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/region"
@@ -123,6 +124,17 @@ func (c *clientSet) vpcClientV2(regionID string) (cli *vpcv2.VpcClient, err erro
 	client := vpcv2.NewVpcClient(
 		vpcv2.VpcClientBuilder().
 			WithRegion(vpcregion.ValueOf(regionID)).
+			WithCredential(c.credentials).
+			WithHttpConfig(config.DefaultHttpConfig()).
+			Build())
+
+	return client, nil
+}
+
+func (c *clientSet) imsClientV2(region *region.Region) (cli *ims.ImsClient, err error) {
+	client := ims.NewImsClient(
+		ims.ImsClientBuilder().
+			WithRegion(region).
 			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())

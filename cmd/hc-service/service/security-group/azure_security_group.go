@@ -21,7 +21,9 @@ package securitygroup
 
 import (
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/constant"
@@ -29,6 +31,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // CreateAzureSecurityGroup create azure security group.
@@ -176,7 +179,7 @@ func (g *securityGroup) SyncAzureSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, err
 	}
 
-	dsMap, err := g.getDatasFromDSForSecurityGroupSync(cts, req)
+	dsMap, err := g.getDatasFromAzureDSForSecurityGroupSync(cts, req)
 	if err != nil {
 		return nil, err
 	}
@@ -187,6 +190,70 @@ func (g *securityGroup) SyncAzureSecurityGroup(cts *rest.Contexts) (interface{},
 	}
 
 	return nil, nil
+}
+
+// getDatasFromDSForSecurityGroupSync get datas from cloud
+func (g *securityGroup) getDatasFromAzureDSForSecurityGroupSync(cts *rest.Contexts,
+	req *proto.SecurityGroupSyncReq) (map[string]*proto.SecurityGroupSyncDS, error) {
+
+	start := 0
+	resultsHcm := make([]corecloud.BaseSecurityGroup, 0)
+	for {
+		dataReq := &dataproto.SecurityGroupListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					&filter.AtomRule{
+						Field: "account_id",
+						Op:    filter.Equal.Factory(),
+						Value: req.AccountID,
+					},
+					filter.AtomRule{
+						Field: "region",
+						Op:    filter.Equal.Factory(),
+						Value: req.Region,
+					},
+					&filter.AtomRule{
+						Field: "extension.resource_group_name",
+						Op:    filter.JSONEqual.Factory(),
+						Value: req.ResourceGroupName,
+					},
+				},
+			},
+			Page: &core.BasePage{
+				Start: uint32(start),
+				Limit: core.DefaultMaxPageLimit,
+			},
+		}
+
+		results, err := g.dataCli.Global.SecurityGroup.ListSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
+			dataReq)
+
+		if err != nil {
+			logs.Errorf("from data-service list security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		if len(results.Details) == 0 {
+			break
+		}
+
+		resultsHcm = append(resultsHcm, results.Details...)
+		start += len(results.Details)
+		if uint(len(results.Details)) < dataReq.Page.Limit {
+			break
+		}
+	}
+
+	dsMap := make(map[string]*proto.SecurityGroupSyncDS)
+	for _, result := range resultsHcm {
+		sg := new(proto.SecurityGroupSyncDS)
+		sg.IsUpdated = false
+		sg.HcSecurityGroup = result
+		dsMap[result.CloudID] = sg
+	}
+
+	return dsMap, nil
 }
 
 // getDatasFromAzureForSecurityGroupSync get datas from cloud
@@ -286,6 +353,7 @@ func (g *securityGroup) diffAzureSecurityGroupSyncAdd(cts *rest.Contexts, cloudM
 			Memo:      nil,
 			AccountID: req.AccountID,
 			Extension: &corecloud.AzureSecurityGroupExtension{
+				ResourceGroupName: req.ResourceGroupName,
 				Etag:              cloudMap[id].SecurityGroup.Etag,
 				FlushConnection:   cloudMap[id].SecurityGroup.Properties.FlushConnection,
 				ResourceGUID:      cloudMap[id].SecurityGroup.Properties.ResourceGUID,

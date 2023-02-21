@@ -116,6 +116,7 @@ func SyncHuaWeiAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accoun
 			logs.Errorf("sync do huawei sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
 				err, accountID, region.RegionID, kit.Rid)
 		}
+
 	}
 
 	if err != nil {
@@ -193,4 +194,39 @@ func SyncHuaWeiSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	}
 
 	return nil
+}
+
+// SyncHuaWeiImage ...
+func SyncHuaWeiImage(c *client.ClientSet, kit *kit.Kit, accountID string, header http.Header) error {
+	regions, err := c.DataService().HuaWei.Region.ListRegion(
+		kit.Ctx,
+		header,
+		&protoregion.HuaWeiRegionListReq{
+			Filter: tools.EqualExpression("type", constant.SyncTimingListHuaWeiRegion),
+			Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync list huawei region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	for _, region := range regions.Details {
+		err = c.HCService().HuaWei.Image.SyncImage(
+			kit.Ctx,
+			header,
+			&protodisk.DiskSyncReq{
+				AccountID: accountID,
+				Region:    region.RegionID,
+			},
+		)
+		// sync only one time
+		if err == nil {
+			break
+		} else {
+			logs.Errorf("sync huawei image failed, err: %v, rid: %s", err, kit.Rid)
+		}
+	}
+
+	return err
 }

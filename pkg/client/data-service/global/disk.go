@@ -53,7 +53,13 @@ func (rc *restClient) DeleteDisk(
 	request *dataproto.DiskDeleteReq,
 ) (interface{}, error) {
 	resp := new(core.DeleteResp)
-	err := rc.client.Delete().WithContext(ctx).Body(request).SubResourcef("/disks").WithHeaders(h).Do().Into(resp)
+	err := rc.client.Delete().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/disks/batch").
+		WithHeaders(h).
+		Do().
+		Into(resp)
 	if err != nil {
 		return nil, err
 	}

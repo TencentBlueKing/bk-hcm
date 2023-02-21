@@ -125,5 +125,52 @@ func SyncAllResource(c *client.ClientSet, kit *kit.Kit, header http.Header) erro
 		}
 	}
 
+	err = SyncImage(kit, c, result, header)
+
 	return err
+}
+
+// SyncImage ...
+func SyncImage(kit *kit.Kit, c *client.ClientSet, accounts *dataproto.AccountListResult,
+	header http.Header) error {
+	var ret error
+	ret = nil
+
+	accountMap := make(map[string]bool)
+
+	for _, account := range accounts.Details {
+		switch account.Vendor {
+		case enumor.TCloud:
+			if _, ok := accountMap[string(enumor.TCloud)]; ok {
+				continue
+			}
+			accountMap[string(enumor.TCloud)] = true
+			ret = SyncTCloudImage(c, kit, account.ID, header)
+		case enumor.HuaWei:
+			if _, ok := accountMap[string(enumor.HuaWei)]; ok {
+				continue
+			}
+			accountMap[string(enumor.HuaWei)] = true
+			ret = SyncHuaWeiImage(c, kit, account.ID, header)
+		case enumor.Aws:
+			if _, ok := accountMap[string(enumor.Aws)]; ok {
+				continue
+			}
+			ret = SyncAwsImage(c, kit, account.ID, header)
+		case enumor.Gcp:
+			if _, ok := accountMap[string(enumor.Gcp)]; ok {
+				continue
+			}
+			ret = SyncGcpImage(c, kit, account.ID, header)
+		case enumor.Azure:
+			if _, ok := accountMap[string(enumor.Azure)]; ok {
+				continue
+			}
+			ret = SyncAzureImage(c, kit, account.ID, header)
+		default:
+			logs.Errorf("sync vendor %s not support, rid: %s", account.Vendor, kit.Rid)
+		}
+	}
+
+	return ret
 }
