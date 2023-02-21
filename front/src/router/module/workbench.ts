@@ -1,5 +1,8 @@
 // import { CogShape } from 'bkui-vue/lib/icon';
 import type { RouteRecordRaw } from 'vue-router';
+import i18n from '@/language/i18n';
+
+const { t } = i18n.global;
 
 const workbenchMenus: RouteRecordRaw[] = [
   {
@@ -18,11 +21,12 @@ const workbenchMenus: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/workbench-audit',
+    path: '/workbench/audit',
     name: '审计',
-    component: () => import('@/views/workbench/demo'),
+    component: () => import('@/views/workbench/audit'),
     meta: {
       activeKey: 'workbenchAudit',
+      breadcrumb: [t('工作台'), t('审计')],
     },
   },
 ];

@@ -10,6 +10,7 @@ module.exports = {
     'no-param-reassign': 0,
     'arrow-body-style': 'off',
     '@typescript-eslint/naming-convention': 0,
+    '@typescript-eslint/no-misused-promises': 0,
     'prefer-spread': 'off',
   },
 };

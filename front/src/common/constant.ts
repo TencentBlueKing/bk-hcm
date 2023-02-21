@@ -61,3 +61,51 @@ export const VENDORS = [
     name: '华为云',
   },
 ];
+
+// 审计资源类型（与资源类型暂时独立开）
+export const AUDIT_RESOURCE_TYPES = [
+  {
+    name: '云账号',
+    type: 'account',
+  },
+  {
+    name: 'CVM',
+    type: 'cvm',
+  },
+  {
+    name: 'VPC',
+    type: 'vpc',
+  },
+  {
+    name: '安全组',
+    type: 'security_group',
+  },
+  {
+    name: 'EIP',
+    type: 'eip',
+  },
+  {
+    name: '硬盘',
+    type: 'disk',
+  },
+  {
+    name: 'GCP防火墙',
+    type: 'gcp_firewall_rule',
+  },
+  {
+    name: '路由',
+    type: 'route_table',
+  },
+  {
+    name: '镜像',
+    type: 'image',
+  },
+  {
+    name: '网络接口',
+    type: 'network_interface',
+  },
+  {
+    name: '子网',
+    type: 'subnet',
+  },
+];
