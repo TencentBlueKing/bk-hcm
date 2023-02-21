@@ -49,6 +49,8 @@ type Authorizer interface {
 		*filter.Expression, bool, error)
 	// RegisterResourceCreatorAction registers iam resource so that creator will be authorized on related actions
 	RegisterResourceCreatorAction(kt *kit.Kit, input *meta.RegisterResCreatorActionInst) error
+	// GetPermissionToApply get permissions to apply.
+	GetPermissionToApply(kt *kit.Kit, res ...meta.ResourceAttribute) (*meta.IamPermission, error)
 	// GetApplyPermUrl get iam apply permission url.
 	GetApplyPermUrl(kt *kit.Kit, input *meta.IamPermission) (string, error)
 }
@@ -140,13 +142,9 @@ func (a authorizer) AuthorizeWithPerm(kt *kit.Kit, resources ...meta.ResourceAtt
 	}
 
 	if !authorized {
-		req := &asproto.GetPermissionToApplyReq{
-			Resources: resources,
-		}
-
-		permission, err := a.authClient.GetPermissionToApply(kt.Ctx, kt.Header(), req)
+		permission, err := a.GetPermissionToApply(kt, resources...)
 		if err != nil {
-			logs.Errorf("get permission to apply failed, req: %#v, err: %v, rid: %s", req, err, kt.Rid)
+			logs.Errorf("get permission to apply failed, resources: %#v, err: %v, rid: %s", resources, err, kt.Rid)
 			return errf.New(errf.DoAuthorizeFailed, "get permission to apply failed")
 		}
 
@@ -246,4 +244,20 @@ func (a authorizer) GetApplyPermUrl(kt *kit.Kit, input *meta.IamPermission) (str
 	}
 
 	return url, nil
+}
+
+// GetPermissionToApply get permissions to apply.
+func (a authorizer) GetPermissionToApply(kt *kit.Kit, res ...meta.ResourceAttribute) (*meta.IamPermission, error) {
+	req := &asproto.GetPermissionToApplyReq{
+		Resources: res,
+	}
+
+	permission, err := a.authClient.GetPermissionToApply(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("get permission to apply failed, req: %#v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, errf.New(errf.DoAuthorizeFailed, "get permission to apply failed")
+	}
+
+	return permission, nil
+
 }

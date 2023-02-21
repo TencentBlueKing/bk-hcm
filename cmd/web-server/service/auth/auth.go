@@ -80,6 +80,7 @@ func (a *authSvc) AuthVerify(cts *rest.Contexts) (interface{}, error) {
 
 	resourceLen := len(input.Resources)
 	resources := make([]webserver.AuthVerifyRes, resourceLen)
+	unauthorizedRes := make([]meta.ResourceAttribute, 0)
 
 	if len(exactAuthAttrs) > 0 {
 		verifyResults, _, err := a.authorizer.Authorize(cts.Kit, exactAuthAttrs...)
@@ -92,6 +93,9 @@ func (a *authSvc) AuthVerify(cts *rest.Contexts) (interface{}, error) {
 		for i := 0; i < resourceLen; i++ {
 			if _, exists := exactAuthMap[i]; exists {
 				resources[i].Authorized = verifyResults[index].Authorized
+				if !verifyResults[index].Authorized {
+					unauthorizedRes = append(unauthorizedRes, exactAuthAttrs[index])
+				}
 				index++
 			}
 		}
@@ -108,14 +112,24 @@ func (a *authSvc) AuthVerify(cts *rest.Contexts) (interface{}, error) {
 		for i := 0; i < resourceLen; i++ {
 			if _, exists := exactAuthMap[i]; !exists {
 				resources[i].Authorized = verifyResults[index].Authorized
+				if !verifyResults[index].Authorized {
+					unauthorizedRes = append(unauthorizedRes, anyAuthAttrs[index])
+				}
 				index++
 			}
 		}
 	}
 
-	// TODO confirm if original resource & permission is needed for response
+	if len(unauthorizedRes) == 0 {
+		return &webserver.AuthVerifyResp{Results: resources}, nil
+	}
 
-	return resources, nil
+	permission, err := a.authorizer.GetPermissionToApply(cts.Kit, unauthorizedRes...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &webserver.AuthVerifyResp{Results: resources, Permission: permission}, nil
 }
 
 // GetApplyPermUrl get iam apply permission url for front end to redirect auth to it.

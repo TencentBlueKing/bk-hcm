@@ -20,6 +20,8 @@
 // Package webserver defines api-server api call protocols.
 package webserver
 
+import "hcm/pkg/iam/meta"
+
 // AuthVerifyReq auth verify request.
 type AuthVerifyReq struct {
 	Resources []AuthVerifyResource `json:"resources"`
@@ -36,4 +38,10 @@ type AuthVerifyResource struct {
 // AuthVerifyRes auth verify result for one resource.
 type AuthVerifyRes struct {
 	Authorized bool `json:"authorized"`
+}
+
+// AuthVerifyResp auth verify response.
+type AuthVerifyResp struct {
+	Results    []AuthVerifyRes     `json:"results"`
+	Permission *meta.IamPermission `json:"permission"`
 }
