@@ -17,35 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cvm
+package types
 
 import (
-	"net/http"
+	"time"
 
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/rest"
+	"hcm/pkg/dal/table/cloud"
 )
 
-// InitService initial the security group service
-func InitService(cap *capability.Capability) {
-	svc := &cvmSvc{
-		dao: cap.Dao,
-	}
-
-	h := rest.NewHandler()
-
-	h.Add("BatchCreateCvm", http.MethodPost, "/vendors/{vendor}/cvms/batch/create", svc.BatchCreateCvm)
-	h.Add("BatchUpdateCvm", http.MethodPatch, "/vendors/{vendor}/cvms/batch/update", svc.BatchUpdateCvm)
-	h.Add("GetCvm", http.MethodGet, "/vendors/{vendor}/cvms/{id}", svc.GetCvm)
-	h.Add("ListCvm", http.MethodPost, "/cvms/list", svc.ListCvm)
-	h.Add("ListCvmExt", http.MethodPost, "/vendors/{vendor}/cvms/list", svc.ListCvmExt)
-	h.Add("BatchDeleteCvm", http.MethodDelete, "/cvms/batch", svc.BatchDeleteCvm)
-	h.Add("BatchUpdateCvmCommonInfo", http.MethodPatch, "/cvms/common/info/batch/update", svc.BatchUpdateCvmCommonInfo)
-
-	h.Load(cap.WebService)
+// ListSecurityGroupCvmRelDetails list security group and cvm relation details.
+type ListSecurityGroupCvmRelDetails struct {
+	Count   uint64                           `json:"count,omitempty"`
+	Details []cloud.SecurityGroupCvmRelTable `json:"details,omitempty"`
 }
 
-type cvmSvc struct {
-	dao dao.Set
+// ListSGCvmRelsJoinSGDetails list security group cvm relation join security group details.
+type ListSGCvmRelsJoinSGDetails struct {
+	Count   uint64                   `json:"count,omitempty"`
+	Details []SecurityGroupWithCvmID `json:"details,omitempty"`
+}
+
+// SecurityGroupWithCvmID security group with cvm id.
+type SecurityGroupWithCvmID struct {
+	cloud.SecurityGroupTable `db:",inline" json:",inline"`
+	CvmID                    string     `db:"cvm_id" json:"cvm_id"`
+	RelCreator               string     `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt             *time.Time `db:"rel_created_at" json:"rel_created_at"`
 }

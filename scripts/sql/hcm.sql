@@ -189,6 +189,18 @@ create table if not exists `security_group_subnet_rel`
 ) engine = innodb
   default charset = utf8mb4;
 
+create table if not exists `security_group_cvm_rel`
+(
+    `id`                bigint(1) unsigned not null auto_increment,
+    `security_group_id` varchar(64)        not null,
+    `cvm_id`            varchar(64)        not null,
+    `creator`           varchar(64)        not null,
+    `created_at`        timestamp          not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_security_group_id_cvm_id` (`security_group_id`, `cvm_id`)
+) engine = innodb
+  default charset = utf8mb4;
+
 create table if not exists `tcloud_security_group_rule`
 (
     `id`                             varchar(64)  not null,

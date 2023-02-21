@@ -248,3 +248,21 @@ func (dao Dao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) e
 
 	return nil
 }
+
+// ListCvm TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
+func ListCvm(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]tablecvm.Table, error) {
+	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, tablecvm.TableColumns.FieldsNamedExpr(nil),
+		table.CvmTable)
+
+	cvms := make([]tablecvm.Table, 0)
+	if err := orm.Do().Select(kt.Ctx, &cvms, sql, map[string]interface{}{"ids": ids}); err != nil {
+		return nil, err
+	}
+
+	idCvmMap := make(map[string]tablecvm.Table, len(ids))
+	for _, one := range cvms {
+		idCvmMap[one.ID] = one
+	}
+
+	return idCvmMap, nil
+}

@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cvm
+package sgcvmrel
 
 import (
 	"net/http"
@@ -29,23 +29,21 @@ import (
 
 // InitService initial the security group service
 func InitService(cap *capability.Capability) {
-	svc := &cvmSvc{
+	svc := &sgCvmRelSvc{
 		dao: cap.Dao,
 	}
 
 	h := rest.NewHandler()
 
-	h.Add("BatchCreateCvm", http.MethodPost, "/vendors/{vendor}/cvms/batch/create", svc.BatchCreateCvm)
-	h.Add("BatchUpdateCvm", http.MethodPatch, "/vendors/{vendor}/cvms/batch/update", svc.BatchUpdateCvm)
-	h.Add("GetCvm", http.MethodGet, "/vendors/{vendor}/cvms/{id}", svc.GetCvm)
-	h.Add("ListCvm", http.MethodPost, "/cvms/list", svc.ListCvm)
-	h.Add("ListCvmExt", http.MethodPost, "/vendors/{vendor}/cvms/list", svc.ListCvmExt)
-	h.Add("BatchDeleteCvm", http.MethodDelete, "/cvms/batch", svc.BatchDeleteCvm)
-	h.Add("BatchUpdateCvmCommonInfo", http.MethodPatch, "/cvms/common/info/batch/update", svc.BatchUpdateCvmCommonInfo)
+	h.Add("BatchCreate", http.MethodPost, "/security_group_cvm_rels/batch/create", svc.BatchCreate)
+	h.Add("BatchDelete", http.MethodDelete, "/security_group_cvm_rels/batch", svc.BatchDelete)
+	h.Add("List", http.MethodPost, "/security_group_cvm_rels/list", svc.List)
+	h.Add("ListWithSecurityGroup", http.MethodPost, "/security_group_cvm_rels/with/security_group/list",
+		svc.ListWithSecurityGroup)
 
 	h.Load(cap.WebService)
 }
 
-type cvmSvc struct {
+type sgCvmRelSvc struct {
 	dao dao.Set
 }

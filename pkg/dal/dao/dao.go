@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/cloud/region"
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
+	sgcvmrel "hcm/pkg/dal/dao/cloud/security-group-cvm-rel"
 	"hcm/pkg/dal/dao/cloud/zone"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -87,6 +88,7 @@ type Set interface {
 	Auth() auth.Auth
 	Account() cloud.Account
 	SecurityGroup() securitygroup.SecurityGroup
+	SGCvmRel() sgcvmrel.Interface
 	TCloudSGRule() securitygroup.TCloudSGRule
 	AwsSGRule() securitygroup.AwsSGRule
 	HuaWeiSGRule() securitygroup.HuaWeiSGRule
@@ -283,6 +285,13 @@ func (s *set) SecurityGroup() securitygroup.SecurityGroup {
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
+	}
+}
+
+// SGCvmRel return security group cvm rel dao.
+func (s *set) SGCvmRel() sgcvmrel.Interface {
+	return &sgcvmrel.Dao{
+		Orm: s.orm,
 	}
 }
 

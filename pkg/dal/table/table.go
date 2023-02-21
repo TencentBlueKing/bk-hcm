@@ -48,7 +48,9 @@ const (
 	// SecurityGroupTagTable is security group tag table's name.
 	SecurityGroupTagTable Name = "security_group_tag"
 	// SecurityGroupSubnetTable is security group subnet table's name.
-	SecurityGroupSubnetTable Name = "security_group_subnet"
+	SecurityGroupSubnetTable Name = "security_group_subnet_rel"
+	// SecurityGroupCvmTable is security group cvm table's name.
+	SecurityGroupCvmTable Name = "security_group_cvm_rel"
 	// SGSecurityGroupRuleTable is security group and rule rel table's name.
 	SGSecurityGroupRuleTable = "security_group_security_group_rule"
 	// TCloudSecurityGroupRuleTable is tcloud security group rule table's name.

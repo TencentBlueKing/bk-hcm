@@ -95,3 +95,6 @@ var DefaultIgnoredFields = []string{"id", "creator", "created_at", "tenant_id"}
 
 // DefaultPageSQLOption define default page sql option.
 var DefaultPageSQLOption = &PageSQLOption{Sort: SortOption{Sort: "id", IfNotPresent: true}}
+
+// DefaultRelJoinWithoutField 因为rel表join时，id、creator、created_at 在两张表中都有，该字段需要手动设置。
+var DefaultRelJoinWithoutField = []string{"id", "creator", "created_at"}

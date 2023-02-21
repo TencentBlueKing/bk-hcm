@@ -225,6 +225,7 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 
 	details := make([]cloud.SecurityGroupTable, 0)
 	if err = s.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		logs.ErrorJson("select security group failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 		return nil, err
 	}
 
@@ -251,8 +252,8 @@ func (s SecurityGroupDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Ex
 	return nil
 }
 
-// TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
-func listSecurityGroup(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]cloud.SecurityGroupTable, error) {
+// ListSecurityGroup TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
+func ListSecurityGroup(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]cloud.SecurityGroupTable, error) {
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, cloud.SecurityGroupColumns.FieldsNamedExpr(nil),
 		table.SecurityGroupTable)

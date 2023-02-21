@@ -105,7 +105,7 @@ func (dao *HuaWeiSGRuleDao) batchCreateAudit(kt *kit.Kit, tx *sqlx.Tx,
 		sgIDs = append(sgIDs, id)
 	}
 
-	idSgMap, err := listSecurityGroup(kt, dao.Orm, sgIDs)
+	idSgMap, err := ListSecurityGroup(kt, dao.Orm, sgIDs)
 	if err != nil {
 		return err
 	}

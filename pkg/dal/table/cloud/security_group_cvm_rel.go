@@ -28,33 +28,33 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// SecurityGroupSubnetRelColumns defines all the security group subnet rel table's columns.
-var SecurityGroupSubnetRelColumns = utils.MergeColumns(nil, SecurityGroupSubnetRelColumnDescriptor)
+// SecurityGroupCvmRelColumns defines all the security group cvm rel table's columns.
+var SecurityGroupCvmRelColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, SecurityGroupCvmRelColumnDescriptor)
 
-// SecurityGroupSubnetRelColumnDescriptor is vpc security group rel table column descriptors.
-var SecurityGroupSubnetRelColumnDescriptor = utils.ColumnDescriptors{
+// SecurityGroupCvmRelColumnDescriptor is vpc security group rel table column descriptors.
+var SecurityGroupCvmRelColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.Numeric},
-	{Column: "subnet_id", NamedC: "subnet_id", Type: enumor.String},
+	{Column: "cvm_id", NamedC: "cvm_id", Type: enumor.String},
 	{Column: "security_group_id", NamedC: "security_group_id", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 }
 
-// SecurityGroupSubnetRelTable define security group subnet rel table.
-type SecurityGroupSubnetRelTable struct {
+// SecurityGroupCvmRelTable define security group cvm rel table.
+type SecurityGroupCvmRelTable struct {
 	ID              uint64     `db:"id" validate:"required" json:"id"`
-	SubnetID        string     `db:"subnet_id" validate:"required,lte=64" json:"subnet_id"`
+	CvmID           string     `db:"cvm_id" validate:"required,lte=64" json:"cvm_id"`
 	SecurityGroupID string     `db:"security_group_id" validate:"required,lte=64" json:"security_group_id"`
 	Creator         string     `db:"creator" validate:"required,lte=64" json:"creator"`
 	CreatedAt       *time.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
 }
 
-// TableName return subnet and security group rel table name.
-func (t SecurityGroupSubnetRelTable) TableName() table.Name {
-	return table.SecurityGroupSubnetTable
+// TableName return cvm and security group rel table name.
+func (t SecurityGroupCvmRelTable) TableName() table.Name {
+	return table.SecurityGroupCvmTable
 }
 
-// InsertValidate security group and subnet rel table when insert.
-func (t SecurityGroupSubnetRelTable) InsertValidate() error {
+// InsertValidate security group and cvm rel table when insert.
+func (t SecurityGroupCvmRelTable) InsertValidate() error {
 	return validator.Validate.Struct(t)
 }

@@ -36,6 +36,7 @@ type Client struct {
 	Zone          *ZoneClient
 	Cvm           *CvmClient
 	RouteTable    *RouteTableClient
+	SGCvmRel      *SGCvmRelClient
 }
 
 type restClient struct {
@@ -56,5 +57,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Zone:          NewZoneClient(client),
 		Cvm:           NewCloudCvmClient(client),
 		RouteTable:    NewRouteTableClient(client),
+		SGCvmRel:      NewCloudSGCvmRelClient(client),
 	}
 }

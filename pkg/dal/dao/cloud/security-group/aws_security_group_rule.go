@@ -103,7 +103,7 @@ func (dao *AwsSGRuleDao) batchCreateAudit(kt *kit.Kit, tx *sqlx.Tx, rules []*clo
 		sgIDs = append(sgIDs, id)
 	}
 
-	idSgMap, err := listSecurityGroup(kt, dao.Orm, sgIDs)
+	idSgMap, err := ListSecurityGroup(kt, dao.Orm, sgIDs)
 	if err != nil {
 		return err
 	}

@@ -101,6 +101,27 @@ func (col Columns) FieldsNamedExpr(fields []string) string {
 	return strings.Join(namedExpr, ",")
 }
 
+// FieldsNamedExprWithout 返回排除掉 fields 之外的字段。
+func (col Columns) FieldsNamedExprWithout(fields []string) string {
+	if len(fields) == 0 {
+		return col.namedExpr
+	}
+
+	withoutMap := make(map[string]struct{}, len(fields))
+	for _, one := range fields {
+		withoutMap[one] = struct{}{}
+	}
+
+	namedExpr := make([]string, 0)
+	for field, _ := range col.fieldsNamedExpr {
+		if _, exist := withoutMap[field]; !exist {
+			namedExpr = append(namedExpr, field)
+		}
+	}
+
+	return strings.Join(namedExpr, ",")
+}
+
 // ColonNameExpr returns the joined 'named' columns with comma and
 // prefixed with colon, like: ":spec.name"
 func (col Columns) ColonNameExpr() string {

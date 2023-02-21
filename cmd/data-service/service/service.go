@@ -35,6 +35,7 @@ import (
 	"hcm/cmd/data-service/service/cloud/disk"
 	"hcm/cmd/data-service/service/cloud/image"
 	"hcm/cmd/data-service/service/cloud/region"
+	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
 	"hcm/cmd/data-service/service/cloud/zone"
 	"hcm/pkg/cc"
@@ -169,6 +170,7 @@ func (s *Service) apiSet() *restful.Container {
 	zone.InitZoneService(capability)
 	image.InitImageService(capability)
 	cvm.InitService(capability)
+	sgcvmrel.InitService(capability)
 	routetable.InitRouteTableService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
