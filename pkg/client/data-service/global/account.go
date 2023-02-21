@@ -122,7 +122,7 @@ func (a *AccountClient) ListWithExtension(ctx context.Context, h http.Header, re
 	err := a.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/account_extensions/list").
+		SubResourcef("/accounts/extensions/list").
 		WithHeaders(h).
 		Do().
 		Into(resp)

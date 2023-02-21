@@ -57,7 +57,7 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("UpdateAccount", "PATCH", "/vendors/{vendor}/accounts/{account_id}", svc.UpdateAccount)
 	h.Add("GetAccount", "GET", "/vendors/{vendor}/accounts/{account_id}", svc.GetAccount)
 	h.Add("ListAccount", "POST", "/accounts/list", svc.ListAccount)
-	h.Add("ListAccountWithExtension", "POST", "/account_extensions/list", svc.ListAccountWithExtension)
+	h.Add("ListAccountWithExtension", "POST", "/accounts/extensions/list", svc.ListAccountWithExtension)
 	h.Add("DeleteAccount", "DELETE", "/accounts", svc.DeleteAccount)
 	h.Add("UpdateAccountBizRel", "PUT", "/account_biz_rels/accounts/{account_id}", svc.UpdateAccountBizRel)
 

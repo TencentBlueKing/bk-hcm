@@ -35,3 +35,19 @@ type AccountListReq struct {
 func (req *AccountListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// ListSecretKeyReq ...
+type ListSecretKeyReq struct {
+	IDs []string `json:"ids" validate:"required,min=1,max=100"`
+}
+
+// Validate ...
+func (req *ListSecretKeyReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// SecretKeyData ...
+type SecretKeyData struct {
+	ID        string `json:"id"`
+	SecretKey string `json:"secret_key"`
+}

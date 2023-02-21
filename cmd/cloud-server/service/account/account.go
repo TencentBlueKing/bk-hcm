@@ -44,9 +44,12 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("Check", "POST", "/accounts/check", svc.Check)
 	h.Add("CheckByID", "POST", "/accounts/{account_id}/check", svc.CheckByID)
 	h.Add("List", "POST", "/accounts/list", svc.List)
-	h.Add("ListWithExtension", "POST", "/account_extensions/list", svc.ListWithExtension)
 	h.Add("Get", "GET", "/accounts/{account_id}", svc.Get)
 	h.Add("Update", "PATCH", "/accounts/{account_id}", svc.Update)
+
+	// 安全所需OpenAPI
+	h.Add("ListWithExtension", "POST", "/accounts/extensions/list", svc.ListWithExtension)
+	h.Add("ListSecretKey", "POST", "/accounts/secrets/list", svc.ListSecretKey)
 
 	h.Load(c.WebService)
 }
@@ -58,27 +61,41 @@ type accountSvc struct {
 }
 
 func (a *accountSvc) checkPermission(cts *rest.Contexts, action meta.Action, accountID string) error {
-	decisions, authorized, err := a.authorizer.Authorize(
-		cts.Kit,
-		meta.ResourceAttribute{
+	return a.checkPermissions(cts, action, []string{accountID})
+}
+
+func (a *accountSvc) checkPermissions(cts *rest.Contexts, action meta.Action, accountIDs []string) error {
+	resources := make([]meta.ResourceAttribute, 0, len(accountIDs))
+	for _, accountID := range accountIDs {
+		resources = append(resources, meta.ResourceAttribute{
 			Basic: &meta.Basic{
 				Type:       meta.Account,
 				Action:     action,
 				ResourceID: accountID,
 			},
-		},
-	)
-	if err != nil || len(decisions) != 1 {
+		})
+	}
+
+	decisions, authorized, err := a.authorizer.Authorize(cts.Kit, resources...)
+	if err != nil {
 		return errf.NewFromErr(
 			errf.PermissionDenied,
-			fmt.Errorf("check %s account permission failed, err: %v", action, err),
+			fmt.Errorf("check %s account permissions failed, err: %v", action, err),
 		)
 	}
 
 	if !authorized {
+		// 查询无权限的ID列表，用于提示
+		unauthorizedIDs := make([]string, 0, len(accountIDs))
+		for index, d := range decisions {
+			if !d.Authorized && index < len(accountIDs) {
+				unauthorizedIDs = append(unauthorizedIDs, accountIDs[index])
+			}
+		}
+
 		return errf.NewFromErr(
 			errf.PermissionDenied,
-			fmt.Errorf("you have not permission of %s account", action),
+			fmt.Errorf("you have not permission of %s accounts(ids=%v)", action, unauthorizedIDs),
 		)
 	}
 

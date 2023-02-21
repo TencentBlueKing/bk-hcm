@@ -23,12 +23,24 @@ import (
 	"fmt"
 
 	proto "hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+
+	"github.com/TencentBlueKing/gopkg/conv"
 )
+
+var vendorSecretKeyFieldMap = map[enumor.Vendor]string{
+	enumor.TCloud: "cloud_secret_key",
+	enumor.Aws:    "cloud_secret_key",
+	enumor.HuaWei: "cloud_secret_key",
+	enumor.Gcp:    "cloud_service_secret_key",
+	enumor.Azure:  "cloud_client_secret_key",
+}
 
 func canListAccountExtension(appCode string) error {
 	// TODO: 校验App来源, 这里只校验了非Web来请求，需要改造从配置文件读取，允许访问该接口的AppCode白名单（目前暂时可以借助APIGateway的应用认证白名单）
@@ -39,7 +51,7 @@ func canListAccountExtension(appCode string) error {
 	return nil
 }
 
-// ListWithExtension 该接口返回了Extension，包括了SecretKey信息，只提供给安全使用
+// ListWithExtension 该接口返回了Extension，不包括SecretKey，只提供给安全使用
 func (a *accountSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AccountListReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -82,7 +94,7 @@ func (a *accountSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) 
 		}
 	}
 
-	return a.client.DataService().Global.Account.ListWithExtension(
+	resp, err := a.client.DataService().Global.Account.ListWithExtension(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.AccountListReq{
@@ -90,4 +102,75 @@ func (a *accountSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) 
 			Page:   req.Page,
 		},
 	)
+	if err != nil || resp == nil {
+		return nil, err
+	}
+
+	// 去除SecretKey
+	if resp.Details != nil {
+		for _, detail := range resp.Details {
+			secretKeyField := vendorSecretKeyFieldMap[detail.Vendor]
+			// 存在SecretKey则删除
+			// Note: 资源账号、安全审计账号必然存在，登录账号大部分时候是不存在的
+			if _, ok := detail.Extension[secretKeyField]; ok {
+				delete(detail.Extension, secretKeyField)
+			}
+		}
+	}
+
+	return resp, nil
+}
+
+// ListSecretKey  批量获取Secret，只给安全提供
+func (a *accountSvc) ListSecretKey(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.ListSecretKeyReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 校验应用权限
+	if err := canListAccountExtension(cts.Kit.AppCode); err != nil {
+		return nil, err
+	}
+
+	// 校验用户是否有查询Secret的权限
+	if err := a.checkPermissions(cts, meta.KeyAccess, req.IDs); err != nil {
+		return nil, err
+	}
+
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs},
+		},
+	}
+
+	// 查询账号信息，带Extension的
+	resp, err := a.client.DataService().Global.Account.ListWithExtension(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&dataproto.AccountListReq{
+			Filter: reqFilter,
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil || resp == nil || resp.Details == nil {
+		return nil, err
+	}
+
+	secretKeyData := make([]proto.SecretKeyData, 0, len(resp.Details))
+	for _, detail := range resp.Details {
+		// 根据vendor获取SecretKey
+		secretKeyField := vendorSecretKeyFieldMap[detail.Vendor]
+		secretKeyData = append(secretKeyData, proto.SecretKeyData{
+			ID:        detail.ID,
+			SecretKey: conv.ToString(detail.Extension[secretKeyField]),
+		})
+	}
+
+	return secretKeyData, nil
 }
