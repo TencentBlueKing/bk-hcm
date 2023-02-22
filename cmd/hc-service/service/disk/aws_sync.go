@@ -25,43 +25,12 @@ import (
 	proto "hcm/pkg/api/hc-service/disk"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
-// AwsCreateDisk ...
-func AwsCreateDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.AwsDiskCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := da.adaptor.Aws(cts.Kit, req.Base.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	diskSize := int64(req.Base.DiskSize)
-	opt := &disk.AwsDiskCreateOption{
-		Region:   req.Base.Region,
-		Zone:     &req.Base.Zone,
-		DiskType: &req.Base.DiskType,
-		DiskSize: &diskSize,
-	}
-	client.CreateDisk(cts.Kit, opt)
-
-	// TODO save to data-service
-
-	return nil, nil
-}
-
 // AwsSyncDisk...
 func AwsSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
-
 	req, err := da.decodeDiskSyncReq(cts)
 	if err != nil {
 		logs.Errorf("request decodeDiskSyncReq failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -91,8 +60,8 @@ func AwsSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
 
 // getDatasFromAwsForDiskSync get datas from cloud
 func (da *diskAdaptor) getDatasFromAwsForDiskSync(cts *rest.Contexts,
-	req *protodisk.DiskSyncReq) (map[string]*proto.AwsDiskSyncDiff, error) {
-
+	req *protodisk.DiskSyncReq,
+) (map[string]*proto.AwsDiskSyncDiff, error) {
 	client, err := da.adaptor.Aws(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -119,8 +88,8 @@ func (da *diskAdaptor) getDatasFromAwsForDiskSync(cts *rest.Contexts,
 
 // diffAwsDiskSync diff cloud data-service
 func (da *diskAdaptor) diffAwsDiskSync(cts *rest.Contexts, cloudMap map[string]*proto.AwsDiskSyncDiff,
-	dsMap map[string]*protodisk.DiskSyncDS, req *proto.DiskSyncReq) error {
-
+	dsMap map[string]*protodisk.DiskSyncDS, req *proto.DiskSyncReq,
+) error {
 	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
@@ -153,8 +122,8 @@ func (da *diskAdaptor) diffAwsDiskSync(cts *rest.Contexts, cloudMap map[string]*
 
 // diffAwsDiskSyncAdd for add
 func (da *diskAdaptor) diffAwsDiskSyncAdd(cts *rest.Contexts, cloudMap map[string]*proto.AwsDiskSyncDiff,
-	req *proto.DiskSyncReq, addCloudIDs []string) ([]string, error) {
-
+	req *proto.DiskSyncReq, addCloudIDs []string,
+) ([]string, error) {
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.AwsDiskExtensionCreateReq]
 
 	for _, id := range addCloudIDs {
@@ -186,9 +155,9 @@ func (da *diskAdaptor) diffAwsDiskSyncAdd(cts *rest.Contexts, cloudMap map[strin
 
 // diffHuaWeiSyncUpdate for update
 func (da *diskAdaptor) diffAwsSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.AwsDiskSyncDiff,
-	dsMap map[string]*protodisk.DiskSyncDS, updateCloudIDs []string) error {
-
-	var updateReq dataproto.DiskExtBatchUpadteReq[dataproto.AwsDiskExtensionUpdateReq]
+	dsMap map[string]*protodisk.DiskSyncDS, updateCloudIDs []string,
+) error {
+	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.AwsDiskExtensionUpdateReq]
 
 	for _, id := range updateCloudIDs {
 		if *cloudMap[id].Disk.State == dsMap[id].HcDisk.DiskStatus {

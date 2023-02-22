@@ -22,30 +22,17 @@ package disk
 import (
 	"fmt"
 
-	"hcm/cmd/hc-service/service/capability"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	"hcm/cmd/hc-service/service/disk/aws"
+	"hcm/cmd/hc-service/service/disk/azure"
+	"hcm/cmd/hc-service/service/disk/gcp"
+	"hcm/cmd/hc-service/service/disk/huawei"
+	"hcm/cmd/hc-service/service/disk/tcloud"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
-
-// InitDiskService initial the disk service
-func InitDiskService(cap *capability.Capability) {
-	d := &diskAdaptor{
-		adaptor: cap.CloudAdaptor,
-		dataCli: cap.ClientSet.DataService(),
-	}
-
-	h := rest.NewHandler()
-
-	// 硬盘同步
-	h.Add("SyncDisks", "POST", "/vendors/{vendor}/disks/sync", d.SyncDisks)
-	// 硬盘创建
-	h.Add("CreateDisks", "POST", "/vendors/{vendor}/disks/create", d.CreateDisks)
-
-	h.Load(cap.WebService)
-}
 
 type diskAdaptor struct {
 	adaptor *cloudclient.CloudAdaptorClient
@@ -61,15 +48,15 @@ func (da *diskAdaptor) CreateDisks(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return TCloudCreateDisk(da, cts)
+		return tcloud.CreateDisk(da.adaptor, cts)
 	case enumor.HuaWei:
-		return HuaWeiCreateDisk(da, cts)
+		return huawei.CreateDisk(da.adaptor, cts)
 	case enumor.Aws:
-		return AwsCreateDisk(da, cts)
+		return aws.CreateDisk(da.adaptor, cts)
 	case enumor.Azure:
-		return AzureCreateDisk(da, cts)
+		return azure.CreateDisk(da.adaptor, cts)
 	case enumor.Gcp:
-		return GcpCreateDisk(da, cts)
+		return gcp.CreateDisk(da.adaptor, cts)
 	default:
 		return nil, fmt.Errorf("%s does not support the creation of cloud disks", vendor)
 	}

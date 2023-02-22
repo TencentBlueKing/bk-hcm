@@ -25,52 +25,11 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	protodisk "hcm/pkg/api/hc-service/disk"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 )
-
-// TCloudCreateDisk ...
-func TCloudCreateDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.TCloudDiskCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := da.adaptor.TCloud(cts.Kit, req.Base.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	diskCount := uint64(req.Base.DiskCount)
-	opt := &disk.TCloudDiskCreateOption{
-		Name:           &req.Base.Name,
-		Region:         req.Base.Region,
-		Zone:           &req.Base.Zone,
-		DiskType:       &req.Base.DiskType,
-		DiskSize:       &req.Base.DiskSize,
-		DiskCount:      &diskCount,
-		DiskChargeType: &req.Extension.DiskChargeType,
-	}
-
-	if prepaid := req.Extension.DiskChargePrepaid; prepaid != nil {
-		opt.DiskChargePrepaid = &disk.TCloudDiskChargePrepaid{
-			Period:    prepaid.Period,
-			RenewFlag: prepaid.RenewFlag,
-		}
-	}
-
-	client.CreateDisk(cts.Kit, opt)
-
-	// TODO save to data-service
-
-	return nil, nil
-}
 
 // TCloudSyncDisk sync tcloud to hcm
 func TCloudSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
@@ -102,8 +61,8 @@ func TCloudSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
 
 // getDatasFromTCloudForDiskSync get datas from cloud
 func (da *diskAdaptor) getDatasFromTCloudForDiskSync(cts *rest.Contexts,
-	req *protodisk.DiskSyncReq) (map[string]*proto.TCloudDiskSyncDiff, error) {
-
+	req *protodisk.DiskSyncReq,
+) (map[string]*proto.TCloudDiskSyncDiff, error) {
 	client, err := da.adaptor.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -142,8 +101,8 @@ func (da *diskAdaptor) getDatasFromTCloudForDiskSync(cts *rest.Contexts,
 
 // diffTCloudDiskSync diff cloud data-service
 func (da *diskAdaptor) diffTCloudDiskSync(cts *rest.Contexts, cloudMap map[string]*proto.TCloudDiskSyncDiff,
-	dsMap map[string]*protodisk.DiskSyncDS, req *proto.DiskSyncReq) error {
-
+	dsMap map[string]*protodisk.DiskSyncDS, req *proto.DiskSyncReq,
+) error {
 	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
@@ -176,8 +135,8 @@ func (da *diskAdaptor) diffTCloudDiskSync(cts *rest.Contexts, cloudMap map[strin
 
 // diffTCloudDiskSyncAdd for add
 func (da *diskAdaptor) diffTCloudDiskSyncAdd(cts *rest.Contexts, cloudMap map[string]*proto.TCloudDiskSyncDiff,
-	req *proto.DiskSyncReq, addCloudIDs []string) ([]string, error) {
-
+	req *proto.DiskSyncReq, addCloudIDs []string,
+) ([]string, error) {
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.TCloudDiskExtensionCreateReq]
 
 	for _, id := range addCloudIDs {
@@ -212,9 +171,9 @@ func (da *diskAdaptor) diffTCloudDiskSyncAdd(cts *rest.Contexts, cloudMap map[st
 
 // diffSecurityGroupSyncUpdate for update
 func (da *diskAdaptor) diffTCloudDiskSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.TCloudDiskSyncDiff,
-	dsMap map[string]*protodisk.DiskSyncDS, updateCloudIDs []string) error {
-
-	var updateReq dataproto.DiskExtBatchUpadteReq[dataproto.TCloudDiskExtensionUpdateReq]
+	dsMap map[string]*protodisk.DiskSyncDS, updateCloudIDs []string,
+) error {
+	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.TCloudDiskExtensionUpdateReq]
 
 	for _, id := range updateCloudIDs {
 		if *cloudMap[id].Disk.DiskState == dsMap[id].HcDisk.DiskStatus {

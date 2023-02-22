@@ -93,10 +93,10 @@ type DiskExtensionUpdateReq interface {
 }
 
 // DiskExtBatchUpdateReq ...
-type DiskExtBatchUpadteReq[T DiskExtensionUpdateReq] []*DiskExtUpdateReq[T]
+type DiskExtBatchUpdateReq[T DiskExtensionUpdateReq] []*DiskExtUpdateReq[T]
 
 // Validate ...
-func (req *DiskExtBatchUpadteReq[T]) Validate() error {
+func (req *DiskExtBatchUpdateReq[T]) Validate() error {
 	for _, r := range *req {
 		if err := r.Validate(); err != nil {
 			return err

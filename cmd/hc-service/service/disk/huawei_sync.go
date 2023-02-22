@@ -25,54 +25,12 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	protodisk "hcm/pkg/api/hc-service/disk"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
-// HuaWeiCreateDisk ...
-func HuaWeiCreateDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.HuaWeiDiskCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := da.adaptor.HuaWei(cts.Kit, req.Base.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	diskCount := int32(req.Base.DiskCount)
-	opt := &disk.HuaWeiDiskCreateOption{
-		Region:         req.Base.Region,
-		Zone:           req.Base.Zone,
-		DiskType:       req.Base.DiskType,
-		DiskSize:       int32(req.Base.DiskSize),
-		DiskCount:      &diskCount,
-		DiskChargeType: &req.Extension.DiskChargeType,
-	}
-
-	if prepaid := req.Extension.DiskChargePrepaid; prepaid != nil {
-		opt.DiskChargePrepaid = &disk.HuaWeiDiskChargePrepaid{
-			PeriodNum:   prepaid.PeriodNum,
-			PeriodType:  prepaid.PeriodType,
-			IsAutoRenew: prepaid.IsAutoRenew,
-		}
-	}
-
-	client.CreateDisk(opt)
-
-	// TODO save to data-service
-
-	return nil, nil
-}
-
 // HuaWeiSyncDisk sync huawei to hcm
 func HuaWeiSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
-
 	req, err := da.decodeDiskSyncReq(cts)
 	if err != nil {
 		logs.Errorf("request decodeDiskSyncReq failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -102,8 +60,8 @@ func HuaWeiSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
 
 // getDatasFromHuaWeiForDiskSync get datas from cloud
 func (da *diskAdaptor) getDatasFromHuaWeiForDiskSync(cts *rest.Contexts,
-	req *protodisk.DiskSyncReq) (map[string]*proto.HuaWeiDiskSyncDiff, error) {
-
+	req *protodisk.DiskSyncReq,
+) (map[string]*proto.HuaWeiDiskSyncDiff, error) {
 	client, err := da.adaptor.HuaWei(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -135,8 +93,8 @@ func (da *diskAdaptor) getDatasFromHuaWeiForDiskSync(cts *rest.Contexts,
 
 // diffTCloudDiskSync diff cloud data-service
 func (da *diskAdaptor) diffHuaWeiDiskSync(cts *rest.Contexts, cloudMap map[string]*proto.HuaWeiDiskSyncDiff,
-	dsMap map[string]*protodisk.DiskSyncDS, req *proto.DiskSyncReq) error {
-
+	dsMap map[string]*protodisk.DiskSyncDS, req *proto.DiskSyncReq,
+) error {
 	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
@@ -167,8 +125,8 @@ func (da *diskAdaptor) diffHuaWeiDiskSync(cts *rest.Contexts, cloudMap map[strin
 
 // diffHuaWeiDiskSyncAdd for add
 func (da *diskAdaptor) diffHuaWeiDiskSyncAdd(cts *rest.Contexts, cloudMap map[string]*proto.HuaWeiDiskSyncDiff,
-	req *proto.DiskSyncReq, addCloudIDs []string) ([]string, error) {
-
+	req *proto.DiskSyncReq, addCloudIDs []string,
+) ([]string, error) {
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.HuaWeiDiskExtensionCreateReq]
 
 	for _, id := range addCloudIDs {
@@ -204,9 +162,9 @@ func (da *diskAdaptor) diffHuaWeiDiskSyncAdd(cts *rest.Contexts, cloudMap map[st
 
 // diffHuaWeiSyncUpdate for update
 func (da *diskAdaptor) diffHuaWeiSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.HuaWeiDiskSyncDiff,
-	dsMap map[string]*protodisk.DiskSyncDS, updateCloudIDs []string) error {
-
-	var updateReq dataproto.DiskExtBatchUpadteReq[dataproto.HuaWeiDiskExtensionUpdateReq]
+	dsMap map[string]*protodisk.DiskSyncDS, updateCloudIDs []string,
+) error {
+	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.HuaWeiDiskExtensionUpdateReq]
 
 	for _, id := range updateCloudIDs {
 		if cloudMap[id].Disk.Description == *dsMap[id].HcDisk.Memo &&

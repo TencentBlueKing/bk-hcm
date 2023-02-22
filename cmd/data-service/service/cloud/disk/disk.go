@@ -153,7 +153,6 @@ func (dSvc *diskSvc) RetrieveDiskExt(cts *rest.Contexts) (interface{}, error) {
 
 // BatchUpdateDiskExt ...
 func (dSvc *diskSvc) BatchUpdateDiskExt(cts *rest.Contexts) (interface{}, error) {
-
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -176,7 +175,6 @@ func (dSvc *diskSvc) BatchUpdateDiskExt(cts *rest.Contexts) (interface{}, error)
 
 // BatchUpdateDisk ...
 func (dSvc *diskSvc) BatchUpdateDisk(cts *rest.Contexts) (interface{}, error) {
-
 	req := new(dataproto.DiskBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -384,7 +382,7 @@ func batchCreateDiskExt[T dataproto.DiskExtensionCreateReq](
 func batchUpdateDiskExt[T dataproto.DiskExtensionUpdateReq](cts *rest.Contexts,
 	dSvc *diskSvc,
 ) (interface{}, error) {
-	req := new(dataproto.DiskExtBatchUpadteReq[T])
+	req := new(dataproto.DiskExtBatchUpdateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

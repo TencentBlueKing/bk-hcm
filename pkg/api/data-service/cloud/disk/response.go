@@ -81,6 +81,7 @@ type DiskExtResult[T DiskExtensionResult] struct {
 	Vendor     string     `json:"vendor,omitempty"`
 	AccountID  string     `json:"account_id,omitempty"`
 	Name       string     `json:"name,omitempty"`
+	BkBizID    int64      `json:"bk_biz_id,omitempty'"`
 	CloudID    string     `json:"cloud_id,omitempty"`
 	Region     string     `json:"region,omitempty"`
 	Zone       string     `json:"zone,omitempty"`

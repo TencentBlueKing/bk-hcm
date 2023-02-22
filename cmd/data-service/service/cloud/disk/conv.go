@@ -55,6 +55,7 @@ func toProtoDiskExtResult[T dataproto.DiskExtensionResult](
 		ID:        m.ID,
 		Vendor:    m.Vendor,
 		AccountID: m.AccountID,
+		BkBizID:   m.BkBizID,
 		CloudID:   m.CloudID,
 		Name:      m.Name,
 		Region:    m.Region,

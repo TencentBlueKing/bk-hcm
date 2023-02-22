@@ -94,7 +94,7 @@ func (rc *restClient) ListDisk(
 func (rc *restClient) BatchUpdateDisk(
 	ctx context.Context,
 	h http.Header,
-	request *dataproto.DiskExtBatchUpadteReq[dataproto.AwsDiskExtensionUpdateReq],
+	request *dataproto.DiskExtBatchUpdateReq[dataproto.AwsDiskExtensionUpdateReq],
 ) (interface{}, error) {
 	resp := new(core.UpdateResp)
 	err := rc.client.Patch().WithContext(ctx).Body(request).SubResourcef("/disks").WithHeaders(h).Do().Into(resp)

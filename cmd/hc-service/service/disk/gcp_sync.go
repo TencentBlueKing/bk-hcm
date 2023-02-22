@@ -21,48 +21,17 @@ package disk
 
 import (
 	"fmt"
+
 	"hcm/pkg/adaptor/types/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	protodisk "hcm/pkg/api/hc-service/disk"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
-// GcpCreateDisk ...
-func GcpCreateDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.GcpDiskCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := da.adaptor.Gcp(cts.Kit, req.Base.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	diskSize := int64(req.Base.DiskSize)
-	opt := &disk.GcpDiskCreateOption{
-		Name:     req.Base.Name,
-		Region:   req.Base.Region,
-		Zone:     req.Base.Zone,
-		DiskType: req.Base.DiskType,
-		DiskSize: diskSize,
-	}
-	client.CreateDisk(cts.Kit, opt)
-
-	// TODO save to data-service
-
-	return nil, nil
-}
-
 // GcpSyncDisk...
 func GcpSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
-
 	req, err := da.decodeDiskSyncReq(cts)
 	if err != nil {
 		logs.Errorf("request decodeDiskSyncReq failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -92,8 +61,8 @@ func GcpSyncDisk(da *diskAdaptor, cts *rest.Contexts) (interface{}, error) {
 
 // getDatasFromGcpForDiskSync get datas from cloud
 func (da *diskAdaptor) getDatasFromGcpForDiskSync(cts *rest.Contexts,
-	req *protodisk.DiskSyncReq) (map[string]*proto.GcpDiskSyncDiff, error) {
-
+	req *protodisk.DiskSyncReq,
+) (map[string]*proto.GcpDiskSyncDiff, error) {
 	client, err := da.adaptor.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -120,8 +89,8 @@ func (da *diskAdaptor) getDatasFromGcpForDiskSync(cts *rest.Contexts,
 
 // diffGcpDiskSync diff gcp data-service
 func (da *diskAdaptor) diffGcpDiskSync(cts *rest.Contexts, cloudMap map[string]*proto.GcpDiskSyncDiff,
-	dsMap map[string]*protodisk.DiskSyncDS, req *proto.DiskSyncReq) error {
-
+	dsMap map[string]*protodisk.DiskSyncDS, req *proto.DiskSyncReq,
+) error {
 	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
 
@@ -154,8 +123,8 @@ func (da *diskAdaptor) diffGcpDiskSync(cts *rest.Contexts, cloudMap map[string]*
 
 // diffGcpDiskSyncAdd for add
 func (da *diskAdaptor) diffGcpDiskSyncAdd(cts *rest.Contexts, cloudMap map[string]*proto.GcpDiskSyncDiff,
-	req *proto.DiskSyncReq, addCloudIDs []string) ([]string, error) {
-
+	req *proto.DiskSyncReq, addCloudIDs []string,
+) ([]string, error) {
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.GcpDiskExtensionCreateReq]
 
 	for _, id := range addCloudIDs {
@@ -188,9 +157,9 @@ func (da *diskAdaptor) diffGcpDiskSyncAdd(cts *rest.Contexts, cloudMap map[strin
 
 // diffGcpSyncUpdate for update
 func (da *diskAdaptor) diffGcpSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.GcpDiskSyncDiff,
-	dsMap map[string]*protodisk.DiskSyncDS, updateCloudIDs []string) error {
-
-	var updateReq dataproto.DiskExtBatchUpadteReq[dataproto.AwsDiskExtensionUpdateReq]
+	dsMap map[string]*protodisk.DiskSyncDS, updateCloudIDs []string,
+) error {
+	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.AwsDiskExtensionUpdateReq]
 
 	for _, id := range updateCloudIDs {
 		if cloudMap[id].Disk.Status == dsMap[id].HcDisk.DiskStatus &&
