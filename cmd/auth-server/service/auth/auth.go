@@ -337,6 +337,17 @@ func (a *Auth) parseResources(kt *kit.Kit, resources []meta.ResourceAttribute) (
 		// generate iam resource resources by its paths and itself
 		for _, res := range resources {
 			if len(res.ID) == 0 && res.Attribute == nil {
+				resType, exists := permissionMap[actionID][res.Type]
+				if !exists {
+					resType = meta.IamResourceType{
+						SystemID:   res.System,
+						SystemName: sys.SystemIDNameMap[res.System],
+						Type:       string(res.Type),
+						TypeName:   sys.ResourceTypeIDMap[res.Type],
+						Instances:  make([][]meta.IamResourceInstance, 0),
+					}
+				}
+				permissionMap[actionID][res.Type] = resType
 				continue
 			}
 

@@ -102,7 +102,7 @@ func (i *iam) GetApplyPermUrl(ctx context.Context, opts *meta.IamPermission) (st
 	}
 
 	if !resp.Result || resp.Code != 0 {
-		return "", fmt.Errorf("register iam resource creator instance failed, code: %d, msg: %s, rid: %s", resp.Code,
+		return "", fmt.Errorf("get iam apply permission url failed, code: %d, msg: %s, rid: %s", resp.Code,
 			resp.Message, resp.Rid)
 	}
 
