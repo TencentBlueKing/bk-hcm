@@ -393,6 +393,18 @@ create table if not exists `vpc`
 ) engine = innodb
   default charset = utf8mb4;
 
+create table if not exists `vpc_cvm_rel`
+(
+    `id`         bigint(1) unsigned not null auto_increment,
+    `vpc_id`     varchar(64)        not null,
+    `cvm_id`     varchar(64)        not null,
+    `creator`    varchar(64)        not null,
+    `created_at` timestamp          not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_vpc_id_cvm_id` (`vpc_id`, `cvm_id`)
+) engine = innodb
+  default charset = utf8mb4;
+
 create table if not exists `subnet`
 (
     `id`                   varchar(64)  not null,

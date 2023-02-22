@@ -33,6 +33,7 @@ import (
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
 	sgcvmrel "hcm/pkg/dal/dao/cloud/security-group-cvm-rel"
+	vpccvmrel "hcm/pkg/dal/dao/cloud/vpc-cvm-rel"
 	"hcm/pkg/dal/dao/cloud/zone"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -97,6 +98,7 @@ type Set interface {
 	Cloud() cloud.Cloud
 	AccountBizRel() cloud.AccountBizRel
 	Vpc() cloud.Vpc
+	VpcCvmRel() vpccvmrel.Interface
 	Subnet() cloud.Subnet
 	HuaWeiRegion() region.HuaWeiRegion
 	AzureRG() region.AzureRG
@@ -224,6 +226,13 @@ func (s *set) AccountBizRel() cloud.AccountBizRel {
 // Vpc returns vpc dao.
 func (s *set) Vpc() cloud.Vpc {
 	return cloud.NewVpcDao(s.orm, s.idGen, s.audit)
+}
+
+// VpcCvmRel return vpc cvm rel dao.
+func (s *set) VpcCvmRel() vpccvmrel.Interface {
+	return &vpccvmrel.Dao{
+		Orm: s.orm,
+	}
 }
 
 // Subnet returns subnet dao.

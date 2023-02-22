@@ -67,6 +67,8 @@ const (
 	GcpFirewallRuleTable = "gcp_firewall_rule"
 	// VpcTable is vpc table's name.
 	VpcTable Name = "vpc"
+	// VpcCvmRelTable is vpc & cvm relation table's name.
+	VpcCvmRelTable Name = "vpc_cvm_rel"
 	// SubnetTable is subnet table's name.
 	SubnetTable Name = "subnet"
 	// HuaWeiRegionTable is huawei region table's name.

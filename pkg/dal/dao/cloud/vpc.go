@@ -246,3 +246,20 @@ func (v *vpcDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.
 
 	return nil
 }
+
+// ListVpc TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
+func ListVpc(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]cloud.VpcTable, error) {
+	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, cloud.VpcColumns.FieldsNamedExpr(nil), table.VpcTable)
+
+	vpcs := make([]cloud.VpcTable, 0)
+	if err := orm.Do().Select(kt.Ctx, &vpcs, sql, map[string]interface{}{"ids": ids}); err != nil {
+		return nil, err
+	}
+
+	idVpcMap := make(map[string]cloud.VpcTable, len(ids))
+	for _, one := range vpcs {
+		idVpcMap[one.ID] = one
+	}
+
+	return idVpcMap, nil
+}
