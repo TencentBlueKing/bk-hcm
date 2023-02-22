@@ -68,8 +68,8 @@ func toProtoImageExtResult[T dataproto.ImageExtensionResult](
 	}, nil
 }
 
-func toProtoImageResult(m *tablecloud.ImageModel) dataproto.ImageResult {
-	return dataproto.ImageResult{
+func toProtoImageResult(m *tablecloud.ImageModel) *dataproto.ImageResult {
+	return &dataproto.ImageResult{
 		ID:           m.ID,
 		Vendor:       m.Vendor,
 		CloudID:      m.CloudID,

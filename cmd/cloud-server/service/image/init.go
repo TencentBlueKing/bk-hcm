@@ -37,7 +37,7 @@ func InitImageService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("RetrieveImage", http.MethodGet, "/images/{id}", svc.RetrieveImage)
+	h.Add("RetrieveImage", http.MethodGet, "/vendors/{vendor}/images/{id}", svc.RetrieveImage)
 	h.Add("ListImage", http.MethodPost, "/images/list", svc.ListImage)
 
 	h.Load(c.WebService)

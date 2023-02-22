@@ -27,7 +27,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/dal/table/cloud/image"
 	"hcm/pkg/rest"
 )
 
@@ -35,17 +34,12 @@ import (
 func (svc *imageSvc) RetrieveImage(cts *rest.Contexts) (interface{}, error) {
 	imageID := cts.PathParameter("id").String()
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.CloudResourceType(image.ImageTableName),
-		imageID,
-	)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
 	}
 
-	switch baseInfo.Vendor {
+	switch vendor {
 	case enumor.TCloud:
 		return svc.client.DataService().TCloud.RetrieveImage(cts.Kit.Ctx, cts.Kit.Header(), imageID)
 	case enumor.Aws:
@@ -57,7 +51,7 @@ func (svc *imageSvc) RetrieveImage(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Azure:
 		return svc.client.DataService().Azure.RetrieveImage(cts.Kit.Ctx, cts.Kit.Header(), imageID)
 	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
 	}
 }
 

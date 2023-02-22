@@ -62,7 +62,7 @@ type ImageExtensionResult interface {
 // ImageListResp ...
 type ImageListResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          *ImageResult `json:"data"`
+	Data          *ImageListResult `json:"data"`
 }
 
 // ImageResult 查询公共镜像列表时的单个公共镜像数据
@@ -83,8 +83,8 @@ type ImageResult struct {
 
 // ImageListResult ...
 type ImageListResult struct {
-	Count   *uint64       `json:"count,omitempty"`
-	Details []ImageResult `json:"details"`
+	Count   *uint64        `json:"count,omitempty"`
+	Details []*ImageResult `json:"details"`
 }
 
 // ImageExtRetrieveResp 返回单个公共镜像详情

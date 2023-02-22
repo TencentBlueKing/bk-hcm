@@ -142,7 +142,7 @@ func (svc *imageSvc) ListImage(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	details := make([]dataproto.ImageResult, len(data.Details))
+	details := make([]*dataproto.ImageResult, len(data.Details))
 	for indx, d := range data.Details {
 		details[indx] = toProtoImageResult(d)
 	}

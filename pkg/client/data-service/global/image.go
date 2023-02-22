@@ -13,7 +13,7 @@ import (
 func (rc *restClient) ListImage(ctx context.Context,
 	h http.Header,
 	request *dataproto.ImageListReq,
-) (*dataproto.ImageResult, error) {
+) (*dataproto.ImageListResult, error) {
 	resp := new(dataproto.ImageListResp)
 	err := rc.client.Post().
 		WithContext(ctx).
