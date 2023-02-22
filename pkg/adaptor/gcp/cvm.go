@@ -22,13 +22,13 @@ package gcp
 import (
 	"strings"
 
-	"google.golang.org/api/compute/v1"
-
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+
+	"google.golang.org/api/compute/v1"
 )
 
 // ListCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
@@ -192,6 +192,85 @@ func (g *Gcp) ResetCvm(kt *kit.Kit, opt *typecvm.GcpResetOption) error {
 		logs.Errorf("reset instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return err
 	}
+
+	return nil
+}
+
+// CreateCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/reset
+func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "reset option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return err
+	}
+
+	script, err := opt.ImageProjectType.StartupScript(opt.Password)
+	if err != nil {
+		return err
+	}
+
+	req := &compute.BulkInsertInstanceResource{
+		Count: opt.RequiredCount,
+		InstanceProperties: &compute.InstanceProperties{
+			Description: opt.Description,
+			Disks: []*compute.AttachedDisk{
+				{
+					AutoDelete: true,
+					Boot:       true,
+					InitializeParams: &compute.AttachedDiskInitializeParams{
+						DiskSizeGb:  opt.SystemDisk.SizeGb,
+						DiskType:    opt.SystemDisk.DiskType,
+						SourceImage: opt.CloudImageID,
+					},
+				},
+			},
+			MachineType: opt.InstanceType,
+			Metadata: &compute.Metadata{
+				Items: []*compute.MetadataItems{
+					{
+						Key:   "startup-script",
+						Value: converter.ValToPtr(script),
+					},
+				},
+			},
+			NetworkInterfaces: []*compute.NetworkInterface{
+				{
+					Network:    opt.CloudVpcID,
+					Subnetwork: opt.CloudSubnetID,
+				},
+			},
+		},
+		MinCount:    opt.RequiredCount,
+		NamePattern: opt.Name,
+	}
+
+	if len(opt.DataDisk) != 0 {
+		for index, disk := range opt.DataDisk {
+			req.InstanceProperties.Disks = append(req.InstanceProperties.Disks, &compute.AttachedDisk{
+				Index: int64(index) + 1,
+				InitializeParams: &compute.AttachedDiskInitializeParams{
+					DiskSizeGb: disk.SizeGb,
+					DiskType:   disk.DiskType,
+				},
+			})
+		}
+	}
+
+	_, err = client.Instances.BulkInsert(g.CloudProjectID(), opt.Zone, req).
+		RequestId(opt.RequestID).Context(kt.Ctx).Do()
+	if err != nil {
+		logs.Errorf("reset instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return err
+	}
+
+	// TODO: 用什么标识这批资源？
 
 	return nil
 }

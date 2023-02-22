@@ -26,17 +26,32 @@ import (
 	"hcm/pkg/logs"
 )
 
-type PollingHandler[T any, R any] interface {
-	Done(pollResult R) bool
+// BaseDoneResult ...
+type BaseDoneResult struct {
+	SuccessCloudIDs []string
+	FailedCloudIDs  []string
+	FailedMessage   string
+}
+
+// PollingHandler polling handler.
+type PollingHandler[T any, R any, Result any] interface {
+	Done(pollResult R) (bool, *Result)
 	Poll(client T, kt *kit.Kit, ids []*string) (R, error)
 }
 
-type Poller[T any, R any] struct {
-	Handler PollingHandler[T, R]
+// Poller ...
+type Poller[T any, R any, Result any] struct {
+	Handler PollingHandler[T, R, Result]
+}
+
+// PollUntilDoneOption ...
+type PollUntilDoneOption struct {
 }
 
 // PollUntilDone ...
-func (poller *Poller[T, R]) PollUntilDone(client T, kt *kit.Kit, ids []*string) error {
+func (poller *Poller[T, R, Result]) PollUntilDone(client T, kt *kit.Kit, ids []*string,
+	opt *PollUntilDoneOption) (*Result, error) {
+
 	// TODO 增加超时控制等有效结束条件
 	for {
 		time.Sleep(1 * time.Second)
@@ -44,11 +59,12 @@ func (poller *Poller[T, R]) PollUntilDone(client T, kt *kit.Kit, ids []*string) 
 		pollResult, err := poller.Handler.Poll(client, kt, ids)
 		if err != nil {
 			logs.Errorf("failed to finish the request:  %v, cloudIDs: %v, rid: %s", err, ids, kt.Rid)
-			return err
+			return nil, err
 		}
 
-		if poller.Handler.Done(pollResult) {
-			return nil
+		done, result := poller.Handler.Done(pollResult)
+		if done {
+			return result, nil
 		}
 	}
 }

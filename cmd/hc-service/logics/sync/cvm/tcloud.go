@@ -228,7 +228,7 @@ func isTCloudCvmChange(cloud *cvm.Instance, db corecvm.Cvm[corecvm.TCloudCvmExte
 		return true
 	}
 
-	if db.CloudExpiredTime != *cloud.ExpiredTime {
+	if db.CloudExpiredTime != converter.PtrToVal(cloud.ExpiredTime) {
 		return true
 	}
 
@@ -390,8 +390,9 @@ func updateTCloudCvm(kt *kit.Kit, dataCli *dataservice.Client, tcloud *tcloud.TC
 			Status:               converter.PtrToVal(cvmFromCloud.InstanceState),
 			PrivateIPv4Addresses: converter.PtrToSlice(cvmFromCloud.PrivateIpAddresses),
 			PublicIPv4Addresses:  converter.PtrToSlice(cvmFromCloud.PublicIpAddresses),
-			CloudLaunchedTime:    *cvmFromCloud.ExpiredTime,
-			CloudExpiredTime:     *cvmFromCloud.ExpiredTime,
+			// 云上该字段没有
+			CloudLaunchedTime: "",
+			CloudExpiredTime:  converter.PtrToVal(cvmFromCloud.ExpiredTime),
 			Extension: &corecvm.TCloudCvmExtension{
 				Placement: &corecvm.TCloudPlacement{
 					CloudProjectID: cvmFromCloud.Placement.ProjectId,
@@ -491,10 +492,10 @@ func addTCloudCvm(kt *kit.Kit, dataCli *dataservice.Client, tcloud *tcloud.TClou
 			PrivateIPv4Addresses: converter.PtrToSlice(cvmFromCloud.PrivateIpAddresses),
 			PublicIPv4Addresses:  converter.PtrToSlice(cvmFromCloud.PublicIpAddresses),
 			MachineType:          *cvmFromCloud.InstanceType,
+			CloudCreatedTime:     *cvmFromCloud.CreatedTime,
 			// 该字段云上没有
-			CloudCreatedTime:  *cvmFromCloud.CreatedTime,
 			CloudLaunchedTime: "",
-			CloudExpiredTime:  *cvmFromCloud.ExpiredTime,
+			CloudExpiredTime:  converter.PtrToVal(cvmFromCloud.ExpiredTime),
 			Extension: &corecvm.TCloudCvmExtension{
 				Placement: &corecvm.TCloudPlacement{
 					CloudProjectID: cvmFromCloud.Placement.ProjectId,

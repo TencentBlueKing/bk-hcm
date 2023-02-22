@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/poller"
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -55,6 +56,7 @@ func (t *TCloud) ListEip(kt *kit.Kit, opt *eip.TCloudEipListOption) (*eip.TCloud
 				Values: converter.SliceToPtr(opt.CloudIDs),
 			},
 		}
+		req.Limit = common.Int64Ptr(int64(core.TCloudQueryLimit))
 	}
 
 	if len(opt.Ips) > 0 {
@@ -64,6 +66,7 @@ func (t *TCloud) ListEip(kt *kit.Kit, opt *eip.TCloudEipListOption) (*eip.TCloud
 				Values: converter.SliceToPtr(opt.Ips),
 			},
 		}
+		req.Limit = common.Int64Ptr(int64(core.TCloudQueryLimit))
 	}
 
 	if opt.Page != nil {
@@ -155,8 +158,14 @@ func (t *TCloud) AssociateEip(kt *kit.Kit, opt *eip.TCloudEipAssociateOption) er
 		return err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*eip.TCloudEip]{Handler: &associateEipPollingHandler{region: opt.Region}}
-	return respPoller.PollUntilDone(t, kt, []*string{&opt.CloudEipID})
+	respPoller := poller.Poller[*TCloud, []*eip.TCloudEip,
+		poller.BaseDoneResult]{Handler: &associateEipPollingHandler{region: opt.Region}}
+	_, err = respPoller.PollUntilDone(t, kt, []*string{&opt.CloudEipID}, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DisassociateEip ...
@@ -187,8 +196,14 @@ func (t *TCloud) DisassociateEip(kt *kit.Kit, opt *eip.TCloudEipDisassociateOpti
 		return err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*eip.TCloudEip]{Handler: &disassociateEipPollingHandler{region: opt.Region}}
-	return respPoller.PollUntilDone(t, kt, []*string{&opt.CloudEipID})
+	respPoller := poller.Poller[*TCloud, []*eip.TCloudEip,
+		poller.BaseDoneResult]{Handler: &disassociateEipPollingHandler{region: opt.Region}}
+	_, err = respPoller.PollUntilDone(t, kt, []*string{&opt.CloudEipID}, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DetermineIPv6Type 判断ipv6地址是否是公网ip
@@ -258,8 +273,9 @@ func (t *TCloud) CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) ([]*stri
 		return nil, err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*eip.TCloudEip]{Handler: &createEipPollingHandler{region: opt.Region}}
-	err = respPoller.PollUntilDone(t, kt, resp.Response.AddressSet)
+	respPoller := poller.Poller[*TCloud, []*eip.TCloudEip,
+		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
+	_, err = respPoller.PollUntilDone(t, kt, resp.Response.AddressSet, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -272,14 +288,14 @@ type createEipPollingHandler struct {
 }
 
 // Done ...
-func (h *createEipPollingHandler) Done(pollResult []*eip.TCloudEip) bool {
+func (h *createEipPollingHandler) Done(pollResult []*eip.TCloudEip) (bool, *poller.BaseDoneResult) {
 	for _, r := range pollResult {
 		if r.Status == nil || *r.Status == "CREATING" {
-			return false
+			return false, nil
 		}
 	}
 
-	return true
+	return true, nil
 }
 
 // Poll ...
@@ -293,7 +309,7 @@ func (h *createEipPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*
 	return result.Details, nil
 }
 
-var _ poller.PollingHandler[*TCloud, []*eip.TCloudEip] = new(createEipPollingHandler)
+var _ poller.PollingHandler[*TCloud, []*eip.TCloudEip, poller.BaseDoneResult] = new(createEipPollingHandler)
 
 type associateEipPollingHandler struct {
 	region string
@@ -311,14 +327,14 @@ func (h *associateEipPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs 
 }
 
 // Done ...
-func (h *associateEipPollingHandler) Done(pollResult []*eip.TCloudEip) bool {
+func (h *associateEipPollingHandler) Done(pollResult []*eip.TCloudEip) (bool, *poller.BaseDoneResult) {
 	for _, r := range pollResult {
 		if *r.Status != "BIND" {
-			return false
+			return false, nil
 		}
 	}
 
-	return true
+	return true, nil
 }
 
 type disassociateEipPollingHandler struct {
@@ -341,12 +357,12 @@ func (h *disassociateEipPollingHandler) Poll(
 }
 
 // Done ...
-func (h *disassociateEipPollingHandler) Done(pollResult []*eip.TCloudEip) bool {
+func (h *disassociateEipPollingHandler) Done(pollResult []*eip.TCloudEip) (bool, *poller.BaseDoneResult) {
 	for _, r := range pollResult {
 		if *r.Status != "UNBIND" {
-			return false
+			return false, nil
 		}
 	}
 
-	return true
+	return true, nil
 }

@@ -41,8 +41,8 @@ func (g *Gcp) CreateDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*string, e
 
 	targetId := strconv.FormatUint(resp.TargetId, 10)
 
-	respPoller := poller.Poller[*Gcp, []*compute.Disk]{Handler: new(createDiskPollingHandler)}
-	err = respPoller.PollUntilDone(g, kt, []*string{&targetId})
+	respPoller := poller.Poller[*Gcp, []*compute.Disk, poller.BaseDoneResult]{Handler: new(createDiskPollingHandler)}
+	_, err = respPoller.PollUntilDone(g, kt, []*string{&targetId}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -173,12 +173,12 @@ func (g *Gcp) DetachDisk(kt *kit.Kit, opt *disk.GcpDiskDetachOption) error {
 
 type createDiskPollingHandler struct{}
 
-func (h *createDiskPollingHandler) Done(pollResult []*compute.Disk) bool {
-	return true
+func (h *createDiskPollingHandler) Done(pollResult []*compute.Disk) (bool, *poller.BaseDoneResult) {
+	return true, nil
 }
 
 func (h *createDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]*compute.Disk, error) {
 	return nil, nil
 }
 
-var _ poller.PollingHandler[*Gcp, []*compute.Disk] = new(createDiskPollingHandler)
+var _ poller.PollingHandler[*Gcp, []*compute.Disk, poller.BaseDoneResult] = new(createDiskPollingHandler)

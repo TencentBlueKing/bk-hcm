@@ -110,3 +110,63 @@ type GcpResetOption struct {
 func (opt GcpResetOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// -------------------------- Create --------------------------
+
+// GcpCreateOption defines options to create gcp cvm instances.
+type GcpCreateOption struct {
+	Name          string `json:"name" validate:"required"`
+	Zone          string `json:"zone" validate:"required"`
+	InstanceType  string `json:"instance_type" validate:"required"`
+	CloudImageID  string `json:"cloud_image_id" validate:"required"`
+	Password      string `json:"password" validate:"required"`
+	RequiredCount int64  `json:"required_count" validate:"required"`
+	// RequestID 唯一标识支持生产请求
+	RequestID     string `json:"request_id" validate:"required"`
+	CloudVpcID    string `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID string `json:"cloud_subnet_id" validate:"required"`
+	Description   string `json:"description" validate:"omitempty"`
+	// ImageProjectType 用于判断是 linux 还是 windows 机器。
+	ImageProjectType GcpImageProjectType `json:"image_project_type" validate:"required"`
+	SystemDisk       *GcpDisk            `json:"system_disk" validate:"required"`
+	DataDisk         []GcpDisk           `json:"data_volume" validate:"omitempty"`
+}
+
+// Validate gcp cvm operation option.
+func (opt GcpCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// GcpDisk gcp disk.
+type GcpDisk struct {
+	DiskType string `json:"disk_type" validate:"required"`
+	SizeGb   int64  `json:"size_gb" validate:"required"`
+}
+
+// GcpImageProjectType gcp image project type.
+type GcpImageProjectType string
+
+// StartupScript return image project type's start up script.
+func (typ *GcpImageProjectType) StartupScript(passwd string) (string, error) {
+	switch *typ {
+	case Windows:
+		return fmt.Sprintf(`<script>
+net user administrator %s
+</script>`, passwd), nil
+	case Linux:
+		return fmt.Sprintf(`#!/bin/bash
+echo root:%s|chpasswd
+sed -i 's/PasswordAuthentication/\# PasswordAuthentication/g' /etc/ssh/sshd_config
+sed -i 's/PermitRootLogin/\# PermitRootLogin/g' /etc/ssh/sshd_config
+sed -i '20 a PasswordAuthentication yes' /etc/ssh/sshd_config
+sed -i '20 a PermitRootLogin yes' /etc/ssh/sshd_config
+systemctl restart sshd`, passwd), nil
+	default:
+		return "", fmt.Errorf("unknown %s image project type", &typ)
+	}
+}
+
+const (
+	Windows GcpImageProjectType = "windows"
+	Linux   GcpImageProjectType = "linux"
+)

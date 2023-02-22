@@ -150,6 +150,7 @@ func (t *TCloud) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCl
 	req := vpc.NewDescribeSubnetsRequest()
 	if len(opt.CloudIDs) != 0 {
 		req.SubnetIds = converter.SliceToPtr(opt.CloudIDs)
+		req.Limit = converter.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
 	}
 
 	if opt.Page != nil {

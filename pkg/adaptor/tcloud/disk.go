@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/poller"
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -40,8 +41,8 @@ func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) ([]*s
 		return nil, err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*cbs.Disk]{Handler: new(createDiskPollingHandler)}
-	err = respPoller.PollUntilDone(t, kt, resp.Response.DiskIdSet)
+	respPoller := poller.Poller[*TCloud, []*cbs.Disk, poller.BaseDoneResult]{Handler: new(createDiskPollingHandler)}
+	_, err = respPoller.PollUntilDone(t, kt, resp.Response.DiskIdSet, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +83,7 @@ func (t *TCloud) ListDisk(kt *kit.Kit, opt *disk.TCloudDiskListOption) ([]*cbs.D
 	req := cbs.NewDescribeDisksRequest()
 	if len(opt.CloudIDs) != 0 {
 		req.DiskIds = common.StringPtrs(opt.CloudIDs)
+		req.Limit = common.Uint64Ptr(uint64(core.TCloudQueryLimit))
 	}
 	if opt.Page != nil {
 		req.Offset = &opt.Page.Offset
@@ -193,12 +195,12 @@ func (t *TCloud) DetachDisk(kt *kit.Kit, opt *disk.TCloudDiskDetachOption) error
 
 type createDiskPollingHandler struct{}
 
-func (h *createDiskPollingHandler) Done(pollResult []*cbs.Disk) bool {
-	return true
+func (h *createDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
+	return true, nil
 }
 
 func (h *createDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
 	return nil, nil
 }
 
-var _ poller.PollingHandler[*TCloud, []*cbs.Disk] = new(createDiskPollingHandler)
+var _ poller.PollingHandler[*TCloud, []*cbs.Disk, poller.BaseDoneResult] = new(createDiskPollingHandler)

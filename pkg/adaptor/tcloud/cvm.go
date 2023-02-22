@@ -22,10 +22,14 @@ package tcloud
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/poller"
+	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
@@ -51,6 +55,7 @@ func (t *TCloud) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]*cvm.Ins
 	req := cvm.NewDescribeInstancesRequest()
 	if len(opt.CloudIDs) != 0 {
 		req.InstanceIds = common.StringPtrs(opt.CloudIDs)
+		req.Limit = common.Int64Ptr(int64(core.TCloudQueryLimit))
 	}
 
 	if opt.Page != nil {
@@ -215,7 +220,7 @@ func (t *TCloud) ResetCvmPwd(kt *kit.Kit, opt *typecvm.TCloudResetPwdOption) err
 // CreateCvm reference: https://cloud.tencent.com/document/api/213/15730
 // NOTE：返回实例`ID`列表并不代表实例创建成功，可根据 [DescribeInstances](https://cloud.tencent.com/document/api/213/15728)
 // 接口查询返回的InstancesSet中对应实例的`ID`的状态来判断创建是否完成；如果实例状态由“PENDING(创建中)”变为“RUNNING(运行中)”，则为创建成功。
-func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (ids []string, err error) {
+func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "create option is required")
 	}
@@ -234,22 +239,25 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (ids []
 		Zone: common.StringPtr(opt.Zone),
 	}
 	req.InstanceType = common.StringPtr(opt.InstanceType)
-	req.ImageId = common.StringPtr(opt.ImageID)
+	req.ImageId = common.StringPtr(opt.CloudImageID)
 	req.InstanceCount = common.Int64Ptr(opt.RequiredCount)
-	req.InstanceName = opt.Name
-	req.SecurityGroupIds = common.StringPtrs(opt.SecurityGroupIDs)
+	req.InstanceName = common.StringPtr(opt.Name)
+	req.SecurityGroupIds = common.StringPtrs(opt.CloudSecurityGroupIDs)
 	req.ClientToken = opt.ClientToken
 	req.InstanceChargeType = common.StringPtr(string(opt.InstanceChargeType))
 	req.VirtualPrivateCloud = &cvm.VirtualPrivateCloud{
-		VpcId:    common.StringPtr(opt.VpcID),
-		SubnetId: common.StringPtr(opt.SubnetID),
+		VpcId:    common.StringPtr(opt.CloudVpcID),
+		SubnetId: common.StringPtr(opt.CloudSubnetID),
 	}
 	req.LoginSettings = &cvm.LoginSettings{
 		Password: common.StringPtr(opt.Password),
 	}
+	req.InternetAccessible = &cvm.InternetAccessible{
+		PublicIpAssigned: common.BoolPtr(opt.PublicIPAssigned),
+	}
 
 	req.SystemDisk = &cvm.SystemDisk{
-		DiskId:   opt.SystemDisk.DiskID,
+		DiskId:   opt.SystemDisk.CloudDiskID,
 		DiskSize: opt.SystemDisk.DiskSizeGB,
 	}
 	if len(opt.SystemDisk.DiskType) != 0 {
@@ -261,7 +269,7 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (ids []
 		for _, one := range opt.DataDisk {
 			disk := &cvm.DataDisk{
 				DiskSize: one.DiskSizeGB,
-				DiskId:   one.DiskID,
+				DiskId:   one.CloudDiskID,
 			}
 
 			if len(one.DiskType) != 0 {
@@ -287,10 +295,75 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (ids []
 		return nil, err
 	}
 
-	resourceIDs := make([]string, len(resp.Response.InstanceIdSet))
-	for index, resourceID := range resp.Response.InstanceIdSet {
-		resourceIDs[index] = *resourceID
+	handler := &createTCloudCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	result, err := respPoller.PollUntilDone(t, kt, resp.Response.InstanceIdSet, nil)
+	if err != nil {
+		return nil, err
 	}
 
-	return resourceIDs, nil
+	return result, nil
 }
+
+type createTCloudCvmPollingHandler struct {
+	region string
+}
+
+func (h *createTCloudCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
+
+	result := &poller.BaseDoneResult{
+		SuccessCloudIDs: make([]string, 0),
+		FailedCloudIDs:  make([]string, 0),
+	}
+	for _, instance := range cvms {
+		// 创建中
+		if converter.PtrToVal(instance.InstanceState) == "PENDING" {
+			return false, nil
+		}
+
+		// 生产失败
+		if converter.PtrToVal(instance.InstanceState) == "LAUNCH_FAILED" {
+			result.FailedCloudIDs = append(result.FailedCloudIDs, *instance.InstanceId)
+			result.FailedMessage = converter.PtrToVal(instance.LatestOperationErrorMsg)
+			continue
+		}
+
+		result.SuccessCloudIDs = append(result.SuccessCloudIDs, *instance.InstanceId)
+	}
+
+	return true, result
+}
+
+func (h *createTCloudCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+
+	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
+
+	cvms := make([]*cvm.Instance, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := cvm.NewDescribeInstancesRequest()
+		req.InstanceIds = partIDs
+		req.Limit = converter.ValToPtr(int64(core.TCloudQueryLimit))
+
+		cvmCli, err := client.clientSet.cvmClient(h.region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := cvmCli.DescribeInstancesWithContext(kt.Ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		cvms = append(cvms, resp.Response.InstanceSet...)
+	}
+
+	if len(cvms) != len(cloudIDs) {
+		return nil, fmt.Errorf("query cvm count: %d not equal return count: %d", len(cloudIDs), len(cvms))
+	}
+
+	return cvms, nil
+}
+
+var _ poller.PollingHandler[*TCloud, []*cvm.Instance, poller.BaseDoneResult] = new(createTCloudCvmPollingHandler)

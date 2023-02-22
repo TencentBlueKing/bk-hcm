@@ -288,64 +288,107 @@ func (h *HuaWei) ResetCvmPwd(kt *kit.Kit, opt *typecvm.HuaWeiResetPwdOption) err
 }
 
 // CreateCvm reference: https://support.huaweicloud.com/api-ecs/ecs_02_0101.html
-func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) error {
+func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) ([]string, error) {
 
 	if opt == nil {
-		return errf.New(errf.InvalidParameter, "reset pwd option is required")
+		return nil, errf.New(errf.InvalidParameter, "reset pwd option is required")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	client, err := h.clientSet.ecsClient(opt.Region)
 	if err != nil {
-		return fmt.Errorf("new ecs client failed, err: %v", err)
+		return nil, fmt.Errorf("new ecs client failed, err: %v", err)
 	}
 
+	volumeType, err := opt.RootVolume.VolumeType.RootVolumeType()
+	if err != nil {
+		return nil, err
+	}
+
+	chargingMode, err := opt.InstanceCharge.ChargingMode.ChargingMode()
+	if err != nil {
+		return nil, err
+	}
 	req := &model.CreateServersRequest{
 		XClientToken: opt.ClientToken,
 		Body: &model.CreateServersRequestBody{
 			Server: &model.PrePaidServer{
-				ImageRef:         opt.ImageID,
-				FlavorRef:        opt.InstanceType,
-				Name:             opt.Name,
-				AdminPass:        converter.ValToPtr(opt.Password),
-				Vpcid:            opt.VpcID,
-				Nics:             nil,
+				ImageRef:  opt.CloudImageID,
+				FlavorRef: opt.InstanceType,
+				Name:      opt.Name,
+				AdminPass: converter.ValToPtr(opt.Password),
+				Vpcid:     opt.CloudVpcID,
+				Nics: []model.PrePaidServerNic{
+					{
+						SubnetId: opt.CloudSubnetID,
+					},
+				},
+				RootVolume: &model.PrePaidServerRootVolume{
+					Volumetype: volumeType,
+					Size:       converter.ValToPtr(opt.RootVolume.SizeGB),
+				},
 				Count:            converter.ValToPtr(opt.RequiredCount),
-				RootVolume:       nil,
-				DataVolumes:      nil,
-				SecurityGroups:   nil,
 				AvailabilityZone: converter.ValToPtr(opt.Zone),
 				Description:      opt.Description,
+				Extendparam: &model.PrePaidServerExtendParam{
+					ChargingMode: converter.ValToPtr(chargingMode),
+					IsAutoRenew:  converter.ValToPtr(model.GetPrePaidServerExtendParamIsAutoRenewEnum().TRUE),
+					IsAutoPay:    converter.ValToPtr(model.GetPrePaidServerExtendParamIsAutoPayEnum().TRUE),
+				},
 			},
 		},
 	}
 
-	if len(opt.SecurityGroupIDs) != 0 {
+	if opt.InstanceCharge.PeriodType != nil {
+		periodType, err := opt.InstanceCharge.PeriodType.PeriodType()
+		if err != nil {
+			return nil, err
+		}
+		req.Body.Server.Extendparam.PeriodType = converter.ValToPtr(periodType)
+		req.Body.Server.Extendparam.PeriodNum = opt.InstanceCharge.PeriodNum
+	}
+
+	if opt.InstanceCharge.IsAutoRenew != nil {
+		if *opt.InstanceCharge.IsAutoRenew {
+			req.Body.Server.Extendparam.IsAutoRenew = converter.ValToPtr(
+				model.GetPrePaidServerExtendParamIsAutoRenewEnum().TRUE)
+		} else {
+			req.Body.Server.Extendparam.IsAutoRenew = converter.ValToPtr(
+				model.GetPrePaidServerExtendParamIsAutoRenewEnum().FALSE)
+		}
+	}
+
+	if len(opt.CloudSecurityGroupIDs) != 0 {
 		req.Body.Server.SecurityGroups = new([]model.PrePaidServerSecurityGroup)
-		for _, sgID := range opt.SecurityGroupIDs {
+		for _, sgID := range opt.CloudSecurityGroupIDs {
 			*req.Body.Server.SecurityGroups = append(*req.Body.Server.SecurityGroups, model.PrePaidServerSecurityGroup{
 				Id: converter.ValToPtr(sgID),
 			})
 		}
 	}
 
-	req.Body.Server.Nics = make([]model.PrePaidServerNic, len(opt.Nics))
-	for _, nic := range opt.Nics {
-		req.Body.Server.Nics = append(req.Body.Server.Nics, model.PrePaidServerNic{
-			SubnetId:   nic.SubnetID,
-			IpAddress:  nic.IPAddress,
-			Ipv6Enable: nic.IPv6Enable,
-		})
+	if len(opt.DataVolume) != 0 {
+		req.Body.Server.DataVolumes = new([]model.PrePaidServerDataVolume)
+		for _, one := range opt.DataVolume {
+			volType, err := one.VolumeType.DataVolumeType()
+			if err != nil {
+				return nil, err
+			}
+			*req.Body.Server.DataVolumes = append(*req.Body.Server.DataVolumes, model.PrePaidServerDataVolume{
+				Volumetype: volType,
+				Size:       one.SizeGB,
+			})
+		}
 	}
 
-	_, err = client.CreateServers(req)
+	resp, err := client.CreateServers(req)
 	if err != nil {
 		logs.Errorf("create huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return nil, err
 	}
 
-	return err
+	return *resp.ServerIds, err
 }

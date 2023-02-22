@@ -119,17 +119,18 @@ func (opt AwsRebootOption) Validate() error {
 
 // AwsCreateOption defines options to create aws cvm instances.
 type AwsCreateOption struct {
-	Region             string                  `json:"region" validate:"required"`
-	Name               *string                 `json:"name" validate:"omitempty"`
-	Zone               *string                 `json:"zone" validate:"omitempty"`
-	InstanceType       string                  `json:"instance_type" validate:"required"`
-	ImageID            string                  `json:"image_id" validate:"required"`
-	Password           string                  `json:"password" validate:"required"`
-	RequiredCount      int64                   `json:"required_count" validate:"required"`
-	SecurityGroupIDs   []string                `json:"security_group_i_ds" validate:"omitempty"`
-	ClientToken        *string                 `json:"client_token" validate:"omitempty"`
-	SubnetID           string                  `json:"subnet_id" validate:"required"`
-	BlockDeviceMapping []AwsBlockDeviceMapping `json:"block_device_mapping" validate:"required"`
+	Region                string                  `json:"region" validate:"required"`
+	Name                  string                  `json:"name" validate:"required"`
+	Zone                  string                  `json:"zone" validate:"required"`
+	InstanceType          string                  `json:"instance_type" validate:"required"`
+	CloudImageID          string                  `json:"cloud_image_id" validate:"required"`
+	Password              string                  `json:"password" validate:"required"`
+	RequiredCount         int64                   `json:"required_count" validate:"required"`
+	CloudSecurityGroupIDs []string                `json:"cloud_security_group_ids" validate:"required"`
+	ClientToken           *string                 `json:"client_token" validate:"omitempty"`
+	CloudSubnetID         string                  `json:"cloud_subnet_id" validate:"required"`
+	BlockDeviceMapping    []AwsBlockDeviceMapping `json:"block_device_mapping" validate:"required"`
+	PublicIPAssigned      bool                    `json:"public_ip_assigned" validate:"required"`
 }
 
 // AwsBlockDeviceMapping ...
@@ -141,11 +142,31 @@ type AwsBlockDeviceMapping struct {
 
 // AwsEbs ...
 type AwsEbs struct {
-	VolumeSizeGB int64  `json:"volume_size_gb" validate:"required"`
-	VolumeType   string `json:"volume_type" validate:"required"`
-	// Iops volumeType为 io1 和 io2 时必填
+	VolumeSizeGB int64         `json:"volume_size_gb" validate:"required"`
+	VolumeType   AwsVolumeType `json:"volume_type" validate:"required"`
+	// Iops The number of I/O operations per second (IOPS). For gp3, io1, and io2 volumes,
+	// this represents the number of IOPS that are provisioned for the volume. For gp2 volumes,
+	// this represents the baseline performance of the volume and the rate at which the volume
+	// accumulates I/O credits for bursting.
+	// The following are the supported values for each volume type:
+	// gp3: 3,000-16,000 IOPS
+	// io1: 100-64,000 IOPS
+	// io2: 100-64,000 IOPS
 	Iops *int64 `json:"iops" validate:"omitempty"`
 }
+
+// AwsVolumeType aws volume type.
+type AwsVolumeType string
+
+const (
+	Standard AwsVolumeType = "standard"
+	IO1      AwsVolumeType = "io1"
+	IO2      AwsVolumeType = "io2"
+	GP2      AwsVolumeType = "gp2"
+	SC1      AwsVolumeType = "sc1"
+	ST1      AwsVolumeType = "st1"
+	GP3      AwsVolumeType = "gp3"
+)
 
 // Validate aws cvm operation option.
 func (opt AwsCreateOption) Validate() error {

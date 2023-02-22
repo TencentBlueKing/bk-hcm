@@ -20,8 +20,12 @@
 package cvm
 
 import (
+	"fmt"
+
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 )
 
 // -------------------------- List --------------------------
@@ -122,20 +126,21 @@ func (opt HuaWeiResetPwdOption) Validate() error {
 
 // HuaWeiCreateOption defines options to create aws cvm instances.
 type HuaWeiCreateOption struct {
-	Region           string                   `json:"region" validate:"required"`
-	Name             string                   `json:"name" validate:"required"`
-	Zone             string                   `json:"zone" validate:"required"`
-	InstanceType     string                   `json:"instance_type" validate:"required"`
-	ImageID          string                   `json:"image_id" validate:"required"`
-	Password         string                   `json:"password" validate:"required"`
-	RequiredCount    int32                    `json:"required_count" validate:"required"`
-	SecurityGroupIDs []string                 `json:"security_group_i_ds" validate:"omitempty"`
-	ClientToken      *string                  `json:"client_token" validate:"omitempty"`
-	VpcID            string                   `json:"vpc_id" validate:"required"`
-	Nics             []HuaWeiNetworkInterface `json:"nics" validate:"required"`
-	Description      *string                  `json:"description" validate:"omitempty"`
-	RootVolume       *HuaWeiVolume            `json:"root_volume" validate:"required"`
-	DataVolume       []HuaWeiVolume           `json:"data_volume" validate:"omitempty"`
+	Region                string                `json:"region" validate:"required"`
+	Name                  string                `json:"name" validate:"required"`
+	Zone                  string                `json:"zone" validate:"required"`
+	InstanceType          string                `json:"instance_type" validate:"required"`
+	CloudImageID          string                `json:"cloud_image_id" validate:"required"`
+	Password              string                `json:"password" validate:"required"`
+	RequiredCount         int32                 `json:"required_count" validate:"required"`
+	CloudSecurityGroupIDs []string              `json:"cloud_security_group_ids" validate:"required"`
+	ClientToken           *string               `json:"client_token" validate:"omitempty"`
+	CloudVpcID            string                `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID         string                `json:"cloud_subnet_id" validate:"required"`
+	Description           *string               `json:"description" validate:"omitempty"`
+	RootVolume            *HuaWeiVolume         `json:"root_volume" validate:"required"`
+	DataVolume            []HuaWeiVolume        `json:"data_volume" validate:"omitempty"`
+	InstanceCharge        *HuaWeiInstanceCharge `json:"instance_charge" validate:"required"`
 }
 
 // Validate aws cvm operation option.
@@ -143,14 +148,103 @@ func (opt HuaWeiCreateOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// HuaWeiInstanceCharge 计费相关参数
+type HuaWeiInstanceCharge struct {
+	ChargingMode HuaWeiChargingMode `json:"charging_mode" validate:"required"`
+	PeriodType   *PeriodType        `json:"period_type" validate:"omitempty"`
+	// PeriodNum 订购周期数。
+	// periodType=month（周期类型为月）时，取值为[1，9]；
+	// periodType=year（周期类型为年）时，取值为[1，3]；
+	PeriodNum   *int32 `json:"period_num" validate:"omitempty"`
+	IsAutoRenew *bool  `json:"is_auto_renew" validate:"omitempty"`
+}
+
+// HuaWeiChargingMode 计费模式
+type HuaWeiChargingMode string
+
+// ChargingMode charging mode.
+func (mod *HuaWeiChargingMode) ChargingMode() (model.PrePaidServerExtendParamChargingMode, error) {
+	switch *mod {
+	case PrePaid:
+		return model.GetPrePaidServerExtendParamChargingModeEnum().PRE_PAID, nil
+	case PostPaid:
+		return model.GetPrePaidServerExtendParamChargingModeEnum().POST_PAID, nil
+	default:
+		return model.PrePaidServerExtendParamChargingMode{}, fmt.Errorf("unknown %s charging model", *mod)
+	}
+}
+
+const (
+	// PrePaid 预付费，即包年包月；
+	PrePaid HuaWeiChargingMode = "prePaid"
+	// PostPaid 后付费，即按需付费；
+	PostPaid HuaWeiChargingMode = "postPaid"
+)
+
+// PeriodType 订购周期
+type PeriodType string
+
+// PeriodType period type.
+func (typ *PeriodType) PeriodType() (model.PrePaidServerExtendParamPeriodType, error) {
+	switch *typ {
+	case Month:
+		return model.GetPrePaidServerExtendParamPeriodTypeEnum().MONTH, nil
+	case Year:
+		return model.GetPrePaidServerExtendParamPeriodTypeEnum().YEAR, nil
+	default:
+		return model.PrePaidServerExtendParamPeriodType{}, fmt.Errorf("unknown %s period type", *typ)
+	}
+}
+
+const (
+	Month PeriodType = "month"
+	Year  PeriodType = "year"
+)
+
 // HuaWeiVolume ...
 type HuaWeiVolume struct {
 	VolumeType HuaWeiVolumeType `json:"volume_type" validate:"required"`
-	SizeGB     int64            `json:"size_gb" validate:"omitempty"`
+	SizeGB     int32            `json:"size_gb" validate:"required"`
 }
 
 // HuaWeiVolumeType 系统盘对应的磁盘类型，需要与系统所提供的磁盘类型相匹配。
 type HuaWeiVolumeType string
+
+// RootVolumeType return huawei root volume type.
+func (vol *HuaWeiVolumeType) RootVolumeType() (model.PrePaidServerRootVolumeVolumetype, error) {
+	switch *vol {
+	case Sata:
+		return model.GetPrePaidServerRootVolumeVolumetypeEnum().SATA, nil
+	case Sas:
+		return model.GetPrePaidServerRootVolumeVolumetypeEnum().SAS, nil
+	case Gpssd:
+		return model.GetPrePaidServerRootVolumeVolumetypeEnum().GPSSD, nil
+	case Ssd:
+		return model.GetPrePaidServerRootVolumeVolumetypeEnum().SSD, nil
+	case Essd:
+		return model.GetPrePaidServerRootVolumeVolumetypeEnum().ESSD, nil
+	default:
+		return model.PrePaidServerRootVolumeVolumetype{}, fmt.Errorf("unknown %s volume type", *vol)
+	}
+}
+
+// DataVolumeType return huawei data volume type.
+func (vol *HuaWeiVolumeType) DataVolumeType() (model.PrePaidServerDataVolumeVolumetype, error) {
+	switch *vol {
+	case Sata:
+		return model.GetPrePaidServerDataVolumeVolumetypeEnum().SATA, nil
+	case Sas:
+		return model.GetPrePaidServerDataVolumeVolumetypeEnum().SAS, nil
+	case Gpssd:
+		return model.GetPrePaidServerDataVolumeVolumetypeEnum().GPSSD, nil
+	case Ssd:
+		return model.GetPrePaidServerDataVolumeVolumetypeEnum().SSD, nil
+	case Essd:
+		return model.GetPrePaidServerDataVolumeVolumetypeEnum().ESSD, nil
+	default:
+		return model.PrePaidServerDataVolumeVolumetype{}, fmt.Errorf("unknown %s volume type", *vol)
+	}
+}
 
 const (
 	// Sata 普通IO云硬盘

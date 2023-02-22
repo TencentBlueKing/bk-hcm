@@ -50,9 +50,9 @@ func SyncAzureImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regi
 				logs.Errorf("sync azure public image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 				return err
 			}
-		}
 
-		break
+			break
+		}
 	}
 
 	return nil

@@ -24,10 +24,12 @@ import (
 	"fmt"
 	"strconv"
 
+	"hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
@@ -150,6 +152,7 @@ func (t *TCloud) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudListOpt
 	req := vpc.NewDescribeSecurityGroupsRequest()
 	if len(opt.CloudIDs) != 0 {
 		req.SecurityGroupIds = common.StringPtrs(opt.CloudIDs)
+		req.Limit = converter.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
 	}
 
 	if opt.Page != nil {

@@ -79,6 +79,7 @@ func (t *TCloud) ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*route
 	req := vpc.NewDescribeRouteTablesRequest()
 	if len(opt.CloudIDs) != 0 {
 		req.RouteTableIds = converter.SliceToPtr(opt.CloudIDs)
+		req.Limit = converter.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
 	}
 
 	if opt.Page != nil {

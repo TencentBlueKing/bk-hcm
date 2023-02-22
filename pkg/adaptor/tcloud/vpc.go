@@ -80,6 +80,7 @@ func (t *TCloud) ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCloud
 	req := vpc.NewDescribeVpcsRequest()
 	if len(opt.CloudIDs) != 0 {
 		req.VpcIds = converter.SliceToPtr(opt.CloudIDs)
+		req.Limit = converter.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
 	}
 
 	if opt.Page != nil {

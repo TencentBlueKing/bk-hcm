@@ -158,20 +158,21 @@ func (opt TCloudResetPwdOption) Validate() error {
 // TCloudCreateOption defines options to create aws cvm instances.
 type TCloudCreateOption struct {
 	Region                string                       `json:"region" validate:"required"`
-	Name                  *string                      `json:"name" validate:"omitempty"`
+	Name                  string                       `json:"name" validate:"required"`
 	Zone                  string                       `json:"zone" validate:"required"`
 	InstanceType          string                       `json:"instance_type" validate:"required"`
-	ImageID               string                       `json:"image_id" validate:"required"`
+	CloudImageID          string                       `json:"cloud_image_id" validate:"required"`
 	Password              string                       `json:"password" validate:"required"`
 	RequiredCount         int64                        `json:"required_count" validate:"required"`
-	SecurityGroupIDs      []string                     `json:"security_group_i_ds" validate:"omitempty"`
+	CloudSecurityGroupIDs []string                     `json:"cloud_security_group_ids" validate:"required"`
 	ClientToken           *string                      `json:"client_token" validate:"omitempty"`
-	VpcID                 string                       `json:"vpc_id" validate:"required"`
-	SubnetID              string                       `json:"subnet_id" validate:"required"`
+	CloudVpcID            string                       `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID         string                       `json:"cloud_subnet_id" validate:"required"`
 	InstanceChargeType    TCloudInstanceChargeType     `json:"instance_charge_type" validate:"required"`
 	InstanceChargePrepaid *TCloudInstanceChargePrepaid `json:"instance_charge_prepaid" validate:"omitempty"`
 	SystemDisk            *TCloudSystemDisk            `json:"system_disk" validate:"required"`
 	DataDisk              []TCloudDataDisk             `json:"data_disk" validate:"omitempty"`
+	PublicIPAssigned      bool                         `json:"public_ip_assigned" validate:"omitempty"`
 }
 
 // Validate aws cvm operation option.
@@ -215,9 +216,9 @@ const (
 
 // TCloudSystemDisk tcloud system disk.
 type TCloudSystemDisk struct {
-	DiskType   TCloudSystemDiskType `json:"disk_type" validate:"omitempty"`
-	DiskID     *string              `json:"disk_id" validate:"omitempty"`
-	DiskSizeGB *int64               `json:"disk_size_gb" validate:"omitempty"`
+	DiskType    TCloudSystemDiskType `json:"disk_type" validate:"omitempty"`
+	CloudDiskID *string              `json:"cloud_disk_id" validate:"omitempty"`
+	DiskSizeGB  *int64               `json:"disk_size_gb" validate:"omitempty"`
 }
 
 // TCloudSystemDiskType 硬盘类型。
@@ -240,9 +241,9 @@ const (
 
 // TCloudDataDisk tencent cloud cvm instance data disk information
 type TCloudDataDisk struct {
-	DiskSizeGB *int64             `json:"disk_size_gb" validate:"omitempty"`
-	DiskType   TCloudDataDiskType `json:"disk_type" validate:"omitempty"`
-	DiskID     *string            `json:"disk_id" validate:"omitempty"`
+	DiskSizeGB  *int64             `json:"disk_size_gb" validate:"omitempty"`
+	DiskType    TCloudDataDiskType `json:"disk_type" validate:"omitempty"`
+	CloudDiskID *string            `json:"cloud_disk_id" validate:"omitempty"`
 }
 
 // TCloudDataDiskType 硬盘类型。

@@ -41,8 +41,8 @@ func (a *Aws) CreateDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*string, e
 		return nil, err
 	}
 
-	respPoller := poller.Poller[*Aws, []*ec2.Volume]{Handler: new(createDiskPollingHandler)}
-	err = respPoller.PollUntilDone(a, kt, []*string{resp.VolumeId})
+	respPoller := poller.Poller[*Aws, []*ec2.Volume, poller.BaseDoneResult]{Handler: new(createDiskPollingHandler)}
+	_, err = respPoller.PollUntilDone(a, kt, []*string{resp.VolumeId}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -169,12 +169,12 @@ func (a *Aws) DetachDisk(kt *kit.Kit, opt *disk.AwsDiskDetachOption) error {
 
 type createDiskPollingHandler struct{}
 
-func (h *createDiskPollingHandler) Done(pollResult []*ec2.Volume) bool {
-	return true
+func (h *createDiskPollingHandler) Done(pollResult []*ec2.Volume) (bool, *poller.BaseDoneResult) {
+	return true, nil
 }
 
 func (h *createDiskPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Volume, error) {
 	return nil, nil
 }
 
-var _ poller.PollingHandler[*Aws, []*ec2.Volume] = new(createDiskPollingHandler)
+var _ poller.PollingHandler[*Aws, []*ec2.Volume, poller.BaseDoneResult] = new(createDiskPollingHandler)

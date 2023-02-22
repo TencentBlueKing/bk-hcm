@@ -38,6 +38,7 @@ import (
 func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
+	h.Add("BatchCreateTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/batch/create", svc.BatchCreateTCloudCvm)
 	h.Add("BatchStartTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/batch/start", svc.BatchStartTCloudCvm)
 	h.Add("BatchStopTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/batch/stop", svc.BatchStopTCloudCvm)
 	h.Add("BatchRebootTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/batch/reboot", svc.BatchRebootTCloudCvm)
@@ -45,6 +46,59 @@ func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
 	h.Add("BatchResetTCloudCvmPwd", http.MethodPost, "/vendors/tcloud/cvms/batch/reset/pwd", svc.BatchResetTCloudCvmPwd)
 
 	h.Load(cap.WebService)
+}
+
+// BatchCreateTCloudCvm ...
+func (svc *cvmSvc) BatchCreateTCloudCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.TCloudBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	createOpt := &typecvm.TCloudCreateOption{
+		Region:                req.Region,
+		Name:                  req.Name,
+		Zone:                  req.Zone,
+		InstanceType:          req.InstanceType,
+		CloudImageID:          req.CloudImageID,
+		Password:              req.Password,
+		RequiredCount:         req.RequiredCount,
+		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
+		ClientToken:           req.ClientToken,
+		CloudVpcID:            req.CloudVpcID,
+		CloudSubnetID:         req.CloudSubnetID,
+		InstanceChargeType:    req.InstanceChargeType,
+		InstanceChargePrepaid: req.InstanceChargePrepaid,
+		SystemDisk:            req.SystemDisk,
+		DataDisk:              req.DataDisk,
+		PublicIPAssigned:      req.PublicIPAssigned,
+	}
+	result, err := tcloud.CreateCvm(cts.Kit, createOpt)
+	if err != nil {
+		logs.Errorf("create cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	syncOpt := &cvm.SyncTCloudCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  result.SuccessCloudIDs,
+	}
+	if _, err = cvm.SyncTCloudCvmWithRelResource(cts.Kit, svc.ad, svc.dataCli, syncOpt); err != nil {
+		logs.Errorf("sync tcloud cvm with rel resource failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // BatchResetTCloudCvmPwd ...
@@ -318,7 +372,8 @@ func (svc *cvmSvc) BatchDeleteTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		Filter: tools.ContainersExpression("id", req.IDs),
 	}
 	if err = svc.dataCli.Global.Cvm.BatchDeleteCvm(cts.Kit.Ctx, cts.Kit.Header(), delReq); err != nil {
-		logs.Errorf("request dataservice delete tcloud cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
+		logs.Errorf("request dataservice delete tcloud cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs,
+			cts.Kit.Rid)
 		return nil, err
 	}
 

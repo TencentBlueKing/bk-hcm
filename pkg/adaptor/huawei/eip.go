@@ -139,8 +139,14 @@ func (h *HuaWei) AssociateEip(kt *kit.Kit, opt *eip.HuaWeiEipAssociateOption) er
 		return err
 	}
 
-	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip]{Handler: &associateEipPollingHandler{region: opt.Region}}
-	return respPoller.PollUntilDone(h, kt, []*string{&opt.CloudEipID})
+	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip,
+		poller.BaseDoneResult]{Handler: &associateEipPollingHandler{region: opt.Region}}
+	_, err = respPoller.PollUntilDone(h, kt, []*string{&opt.CloudEipID}, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DisassociateEip ...
@@ -166,8 +172,14 @@ func (h *HuaWei) DisassociateEip(kt *kit.Kit, opt *eip.HuaWeiEipDisassociateOpti
 		return err
 	}
 
-	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip]{Handler: &disassociateEipPollingHandler{region: opt.Region}}
-	return respPoller.PollUntilDone(h, kt, []*string{&opt.CloudEipID})
+	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip,
+		poller.BaseDoneResult]{Handler: &disassociateEipPollingHandler{region: opt.Region}}
+	_, err = respPoller.PollUntilDone(h, kt, []*string{&opt.CloudEipID}, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CreateEip ...
@@ -205,8 +217,9 @@ func (h *HuaWei) CreateEip(kt *kit.Kit, opt *eip.HuaWeiEipCreateOption) (*string
 
 	resp, err := client.CreatePublicip(req)
 
-	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip]{Handler: &createEipPollingHandler{region: opt.Region}}
-	err = respPoller.PollUntilDone(h, kt, []*string{resp.Publicip.Id})
+	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip,
+		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
+	_, err = respPoller.PollUntilDone(h, kt, []*string{resp.Publicip.Id}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -219,13 +232,14 @@ type createEipPollingHandler struct {
 }
 
 // Done ...
-func (h *createEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) bool {
+func (h *createEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poller.BaseDoneResult) {
 	for _, r := range pollResult {
 		if r.Status == nil || *r.Status == "PENDING_CREATE" || *r.Status == "NOTIFYING" {
-			return false
+			return false, nil
 		}
 	}
-	return true
+
+	return true, nil
 }
 
 // Poll ...
@@ -239,20 +253,21 @@ func (h *createEipPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*
 	return result.Details, nil
 }
 
-var _ poller.PollingHandler[*HuaWei, []*eip.HuaWeiEip] = new(createEipPollingHandler)
+var _ poller.PollingHandler[*HuaWei, []*eip.HuaWeiEip, poller.BaseDoneResult] = new(createEipPollingHandler)
 
 type associateEipPollingHandler struct {
 	region string
 }
 
 // Done ...
-func (h *associateEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) bool {
+func (h *associateEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poller.BaseDoneResult) {
 	for _, r := range pollResult {
 		if *r.Status != "ACTIVE" {
-			return false
+			return false, nil
 		}
 	}
-	return true
+
+	return true, nil
 }
 
 // Poll ...
@@ -271,13 +286,13 @@ type disassociateEipPollingHandler struct {
 }
 
 // Done ...
-func (h *disassociateEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) bool {
+func (h *disassociateEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poller.BaseDoneResult) {
 	for _, r := range pollResult {
 		if *r.Status != "DOWN" {
-			return false
+			return false, nil
 		}
 	}
-	return true
+	return true, nil
 }
 
 // Poll ...

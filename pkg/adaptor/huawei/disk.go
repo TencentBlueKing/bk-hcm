@@ -41,8 +41,8 @@ func (h *HuaWei) CreateDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption) ([]st
 		return nil, err
 	}
 
-	respPoller := poller.Poller[*HuaWei, []model.VolumeDetail]{Handler: new(createDiskPollingHandler)}
-	err = respPoller.PollUntilDone(h, kt, common.StringPtrs(*resp.VolumeIds))
+	respPoller := poller.Poller[*HuaWei, []model.VolumeDetail, poller.BaseDoneResult]{Handler: new(createDiskPollingHandler)}
+	_, err = respPoller.PollUntilDone(h, kt, common.StringPtrs(*resp.VolumeIds), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -196,8 +196,8 @@ func (h *HuaWei) DetachDisk(kt *kit.Kit, opt *disk.HuaWeiDiskDetachOption) error
 
 type createDiskPollingHandler struct{}
 
-func (h *createDiskPollingHandler) Done(pollResult []model.VolumeDetail) bool {
-	return true
+func (h *createDiskPollingHandler) Done(pollResult []model.VolumeDetail) (bool, *poller.BaseDoneResult) {
+	return true, nil
 }
 
 func (h *createDiskPollingHandler) Poll(
@@ -208,4 +208,4 @@ func (h *createDiskPollingHandler) Poll(
 	return nil, nil
 }
 
-var _ poller.PollingHandler[*HuaWei, []model.VolumeDetail] = new(createDiskPollingHandler)
+var _ poller.PollingHandler[*HuaWei, []model.VolumeDetail, poller.BaseDoneResult] = new(createDiskPollingHandler)

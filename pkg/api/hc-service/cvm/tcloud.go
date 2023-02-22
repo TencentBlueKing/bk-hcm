@@ -25,6 +25,7 @@ import (
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
 )
 
 // TCloudBatchDeleteReq define batch delete req.
@@ -111,4 +112,43 @@ func (req *TCloudBatchResetPwdReq) Validate() error {
 	}
 
 	return validator.Validate.Struct(req)
+}
+
+// TCloudBatchCreateReq tcloud batch create req.
+type TCloudBatchCreateReq struct {
+	AccountID             string                               `json:"account_id" validate:"required"`
+	Region                string                               `json:"region" validate:"required"`
+	Name                  string                               `json:"name" validate:"required"`
+	Zone                  string                               `json:"zone" validate:"required"`
+	InstanceType          string                               `json:"instance_type" validate:"required"`
+	CloudImageID          string                               `json:"cloud_image_id" validate:"required"`
+	Password              string                               `json:"password" validate:"required"`
+	RequiredCount         int64                                `json:"required_count" validate:"required"`
+	CloudSecurityGroupIDs []string                             `json:"cloud_security_group_ids" validate:"required"`
+	ClientToken           *string                              `json:"client_token" validate:"omitempty"`
+	CloudVpcID            string                               `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID         string                               `json:"cloud_subnet_id" validate:"required"`
+	InstanceChargeType    typecvm.TCloudInstanceChargeType     `json:"instance_charge_type" validate:"required"`
+	InstanceChargePrepaid *typecvm.TCloudInstanceChargePrepaid `json:"instance_charge_prepaid" validate:"omitempty"`
+	SystemDisk            *typecvm.TCloudSystemDisk            `json:"system_disk" validate:"required"`
+	DataDisk              []typecvm.TCloudDataDisk             `json:"data_disk" validate:"omitempty"`
+	PublicIPAssigned      bool                                 `json:"public_ip_assigned" validate:"omitempty"`
+}
+
+// Validate request.
+func (req *TCloudBatchCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// BatchCreateResult ...
+type BatchCreateResult struct {
+	SuccessCloudIDs []string `json:"success_cloud_ids"`
+	FailedCloudIDs  []string `json:"failed_cloud_ids"`
+	FailedMessage   string   `json:"failed_message"`
+}
+
+// BatchCreateResp ...
+type BatchCreateResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *BatchCreateResult `json:"data"`
 }

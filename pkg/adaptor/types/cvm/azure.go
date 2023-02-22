@@ -21,6 +21,8 @@ package cvm
 
 import (
 	"hcm/pkg/criteria/validator"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
 
 // -------------------------- List --------------------------
@@ -94,6 +96,41 @@ type AzureStopOption struct {
 // Validate cvm operation option.
 func (opt AzureStopOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// -------------------------- Create --------------------------
+
+// AzureCreateOption defines options to create azure cvm instances.
+type AzureCreateOption struct {
+	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
+	Region            string   `json:"region" validate:"required"`
+	Name              string   `json:"name" validate:"required"`
+	Zones             []string `json:"zones" validate:"required"`
+	InstanceType      string   `json:"instance_type" validate:"required"`
+	CloudImageID      string   `json:"cloud_image_id" validate:"required"`
+	Username          string   `json:"username" validate:"required"`
+	Password          string   `json:"password" validate:"required"`
+	// NetworkInterfaceID 已经绑定好了安全组的网络接口ID
+	CloudNetworkInterfaceID string          `json:"cloud_network_interface_id" validate:"required"`
+	OSDisk                  *AzureOSDisk    `json:"os_disk" validate:"required"`
+	DataDisk                []AzureDataDisk `json:"data_disk" validate:"omitempty"`
+}
+
+// Validate azure cvm operation option.
+func (opt AzureCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// AzureOSDisk azure os disk.
+type AzureOSDisk struct {
+	Name               string                         `json:"name" validate:"required"`
+	StorageAccountType armcompute.StorageAccountTypes `json:"storage_account_type" validate:"required"`
+}
+
+// AzureDataDisk azure data disk.
+type AzureDataDisk struct {
+	DiskSizeGB         int32                          `json:"disk_size_gb" validate:"required"`
+	StorageAccountType armcompute.StorageAccountTypes `json:"storage_account_type" validate:"required"`
 }
 
 // AzureGetOption ...

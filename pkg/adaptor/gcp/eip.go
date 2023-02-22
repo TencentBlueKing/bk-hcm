@@ -235,8 +235,9 @@ func (g *Gcp) CreateEip(kt *kit.Kit, opt *eip.GcpEipCreateOption) (*string, erro
 	resp, err := client.Addresses.Insert(g.CloudProjectID(), opt.Region, req).Context(kt.Ctx).Do()
 	cloudID := strconv.FormatUint(resp.TargetId, 10)
 
-	respPoller := poller.Poller[*Gcp, []*eip.GcpEip]{Handler: &createEipPollingHandler{region: opt.Region}}
-	err = respPoller.PollUntilDone(g, kt, []*string{&cloudID})
+	respPoller := poller.Poller[*Gcp, []*eip.GcpEip,
+		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
+	_, err = respPoller.PollUntilDone(g, kt, []*string{&cloudID}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -280,13 +281,13 @@ type createEipPollingHandler struct {
 }
 
 // Done ...
-func (h *createEipPollingHandler) Done(pollResult []*eip.GcpEip) bool {
+func (h *createEipPollingHandler) Done(pollResult []*eip.GcpEip) (bool, *poller.BaseDoneResult) {
 	for _, r := range pollResult {
 		if r.Status == nil || *r.Status == "RESERVING" {
-			return false
+			return false, nil
 		}
 	}
-	return true
+	return true, nil
 }
 
 // Poll ...
@@ -300,4 +301,4 @@ func (h *createEipPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*str
 	return result.Details, nil
 }
 
-var _ poller.PollingHandler[*Gcp, []*eip.GcpEip] = new(createEipPollingHandler)
+var _ poller.PollingHandler[*Gcp, []*eip.GcpEip, poller.BaseDoneResult] = new(createEipPollingHandler)

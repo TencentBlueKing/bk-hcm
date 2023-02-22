@@ -211,37 +211,39 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) ([]*ec2.Insta
 		return nil, err
 	}
 
-	userData, err := genCvmBase64UserData(kt, client, opt.ImageID, opt.Password)
+	userData, err := genCvmBase64UserData(kt, client, opt.CloudImageID, opt.Password)
 	if err != nil {
 		return nil, fmt.Errorf("gen cvm base64 user data failed, err: %v", err)
 	}
 
 	req := &ec2.RunInstancesInput{
 		ClientToken:      opt.ClientToken,
-		ImageId:          aws.String(opt.ImageID),
+		ImageId:          aws.String(opt.CloudImageID),
 		InstanceType:     aws.String(opt.InstanceType),
 		MaxCount:         aws.Int64(opt.RequiredCount),
 		MinCount:         aws.Int64(opt.RequiredCount),
-		SecurityGroupIds: aws.StringSlice(opt.SecurityGroupIDs),
-		SubnetId:         aws.String(opt.SubnetID),
+		SecurityGroupIds: aws.StringSlice(opt.CloudSecurityGroupIDs),
+		SubnetId:         aws.String(opt.CloudSubnetID),
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String("instance"),
 				Tags: []*ec2.Tag{
 					{
 						Key:   aws.String(tagKeyForResourceName),
-						Value: opt.Name,
+						Value: aws.String(opt.Name),
 					},
 				},
 			},
 		},
 		UserData: aws.String(userData),
-	}
-
-	if opt.Zone != nil {
-		req.Placement = &ec2.Placement{
-			AvailabilityZone: opt.Zone,
-		}
+		Placement: &ec2.Placement{
+			AvailabilityZone: aws.String(opt.Zone),
+		},
+		NetworkInterfaces: []*ec2.InstanceNetworkInterfaceSpecification{
+			{
+				AssociatePublicIpAddress: aws.Bool(opt.PublicIPAssigned),
+			},
+		},
 	}
 
 	if len(opt.BlockDeviceMapping) != 0 {
@@ -253,7 +255,7 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) ([]*ec2.Insta
 				req.BlockDeviceMappings[index].Ebs = &ec2.EbsBlockDevice{
 					Iops:       volume.Ebs.Iops,
 					VolumeSize: aws.Int64(volume.Ebs.VolumeSizeGB),
-					VolumeType: aws.String(volume.Ebs.VolumeType),
+					VolumeType: aws.String(string(volume.Ebs.VolumeType)),
 				}
 			}
 		}

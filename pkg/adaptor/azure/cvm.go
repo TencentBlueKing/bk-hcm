@@ -227,6 +227,85 @@ func (az *Azure) StopCvm(kt *kit.Kit, opt *typecvm.AzureStopOption) error {
 	return nil
 }
 
+// CreateCvm reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/create-or-update?tabs=HTTP
+func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string, error) {
+	if opt == nil {
+		return "", errf.New(errf.InvalidParameter, "create option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return "", errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := az.clientSet.virtualMachineClient()
+	if err != nil {
+		return "", fmt.Errorf("new cvm client failed, err: %v", err)
+	}
+
+	if len(opt.DataDisk) != 0 {
+		dataDisk := make([]*armcompute.DataDisk, len(opt.DataDisk))
+		for index, disk := range opt.DataDisk {
+			dataDisk[index] = &armcompute.DataDisk{
+				CreateOption: to.Ptr(armcompute.DiskCreateOptionTypesEmpty),
+				Lun:          to.Ptr(int32(index)),
+				DiskSizeGB:   to.Ptr(disk.DiskSizeGB),
+				ManagedDisk: &armcompute.ManagedDiskParameters{
+					StorageAccountType: to.Ptr(disk.StorageAccountType),
+				},
+			}
+		}
+	}
+
+	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.Name, armcompute.VirtualMachine{
+		Location: to.Ptr(opt.Region),
+		Properties: &armcompute.VirtualMachineProperties{
+			HardwareProfile: &armcompute.HardwareProfile{
+				VMSize: to.Ptr(armcompute.VirtualMachineSizeTypes(opt.InstanceType)),
+			},
+			NetworkProfile: &armcompute.NetworkProfile{
+				NetworkInterfaces: []*armcompute.NetworkInterfaceReference{
+					{
+						ID: to.Ptr(opt.CloudNetworkInterfaceID),
+						Properties: &armcompute.NetworkInterfaceReferenceProperties{
+							Primary: to.Ptr(true),
+						},
+					}},
+			},
+			OSProfile: &armcompute.OSProfile{
+				AdminPassword: to.Ptr(opt.Password),
+				AdminUsername: to.Ptr(opt.Username),
+				ComputerName:  to.Ptr(opt.Name),
+			},
+			StorageProfile: &armcompute.StorageProfile{
+				ImageReference: &armcompute.ImageReference{
+					ID: to.Ptr(opt.CloudImageID),
+				},
+				OSDisk: &armcompute.OSDisk{
+					Name: to.Ptr(opt.OSDisk.Name),
+					ManagedDisk: &armcompute.ManagedDiskParameters{
+						StorageAccountType: to.Ptr(opt.OSDisk.StorageAccountType),
+					},
+					Caching:      to.Ptr(armcompute.CachingTypesReadWrite),
+					CreateOption: to.Ptr(armcompute.DiskCreateOptionTypesFromImage),
+				},
+			},
+		},
+		Zones: to.SliceOfPtrs(opt.Zones...),
+	}, nil)
+	if err != nil {
+		logs.Errorf("begin create cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	resp, err := poller.PollUntilDone(kt.Ctx, nil)
+	if err != nil {
+		logs.Errorf("poll until cvm create failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	return *resp.ID, nil
+}
+
 // GetCvm 查询单个 cvm
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/get?tabs=Go
 func (az *Azure) GetCvm(kt *kit.Kit, opt *typecvm.AzureGetOption) (*armcompute.VirtualMachine, error) {
