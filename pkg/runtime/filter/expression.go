@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"hcm/pkg/criteria/constant"
@@ -321,30 +322,57 @@ func (exp *Expression) UnmarshalJSON(raw []byte) error {
 
 	rules := parsed[1]
 
-	typ, err := ruleType(rules)
-	if err != nil {
-		return err
+	if !rules.IsArray() {
+		return errors.New("rules should be an array")
 	}
 
-	switch typ {
-	case AtomType:
-		atoms := make([]*AtomRule, 0)
-		if err := json.Unmarshal([]byte(rules.Raw), &atoms); err != nil {
-			return err
+	if strings.TrimSpace(rules.Raw) == "[]" {
+		return nil
+	}
+
+	for _, value := range rules.Array() {
+		if isAtomType(value) {
+			atom := new(AtomRule)
+			if err := json.Unmarshal([]byte(value.Raw), &atom); err != nil {
+				return err
+			}
+
+			exp.Rules = append(exp.Rules, atom)
+			continue
 		}
 
-		for idx := range atoms {
-			exp.Rules = append(exp.Rules, atoms[idx])
+		if isExpressionType(value) {
+			expr := new(Expression)
+			if err := json.Unmarshal([]byte(value.Raw), &expr); err != nil {
+				return err
+			}
+
+			exp.Rules = append(exp.Rules, expr)
+			continue
 		}
 
-	case EmptyType:
-		exp.Rules = make([]RuleFactory, 0)
-
-	default:
-		return errors.New("unknown expression rule type")
+		return fmt.Errorf("unknown expression rule type: %s", value.Raw)
 	}
 
 	return nil
+}
+
+func isAtomType(value gjson.Result) bool {
+	parsed := gjson.GetMany(value.Raw, "field", "op", "value")
+	if !parsed[0].Exists() || !parsed[1].Exists() || !parsed[2].Exists() {
+		return false
+	}
+
+	return true
+}
+
+func isExpressionType(value gjson.Result) bool {
+	parsed := gjson.GetMany(value.Raw, "op", "rules")
+	if !parsed[0].Exists() || !parsed[1].Exists() {
+		return false
+	}
+
+	return true
 }
 
 // LogMarshal marshal Expression to string for log print.
