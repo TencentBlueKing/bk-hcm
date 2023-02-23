@@ -314,6 +314,10 @@ func doSoloSQLWhereExpr(opt *SQLWhereOption, op LogicOperator, rules []RuleFacto
 			return "", nil, err
 		}
 
+		if expr == "()" {
+			continue
+		}
+
 		subExpr = append(subExpr, expr)
 		for key, val := range value {
 			valueMap[key] = val

@@ -322,6 +322,10 @@ func (exp *Expression) UnmarshalJSON(raw []byte) error {
 
 	rules := parsed[1]
 
+	if rules.Raw == "null" {
+		return nil
+	}
+
 	if !rules.IsArray() {
 		return errors.New("rules should be an array")
 	}

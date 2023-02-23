@@ -44,7 +44,7 @@ func AwsSyncImage(da *imageAdaptor, cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// get cloud datas by page
+	// get cloud data by page
 	client, err := da.idaptor.Aws(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
