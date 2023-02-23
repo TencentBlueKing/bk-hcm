@@ -66,9 +66,9 @@ func genAccountActions() []client.ResourceAction {
 		RelatedActions:       nil,
 		Version:              1,
 	}, {
-		ID:                   AccountCreate,
-		Name:                 ActionIDNameMap[AccountCreate],
-		NameEn:               "Create Account",
+		ID:                   AccountImport,
+		Name:                 ActionIDNameMap[AccountImport],
+		NameEn:               "Import Account",
 		Type:                 Create,
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,

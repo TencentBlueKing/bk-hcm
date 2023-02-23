@@ -42,8 +42,8 @@ func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 校验用户有该账号的创建权限
-	if err := a.checkPermission(cts, meta.Create, ""); err != nil {
+	// 校验用户有该账号的录入权限
+	if err := a.checkPermission(cts, meta.Import, ""); err != nil {
 		return nil, err
 	}
 

@@ -52,8 +52,8 @@ const (
 	AccountFind client.ActionID = "account_find"
 	// AccountKeyAccess account secret key access action id to register iam.
 	AccountKeyAccess client.ActionID = "account_key_access"
-	// AccountCreate account create action id to register iam.
-	AccountCreate client.ActionID = "account_create"
+	// AccountImport account import action id to register iam.
+	AccountImport client.ActionID = "account_import"
 	// AccountEdit account edit action id to register iam.
 	AccountEdit client.ActionID = "account_edit"
 	// AccountDelete account delete action id to register iam.
@@ -82,7 +82,7 @@ const (
 var ActionIDNameMap = map[client.ActionID]string{
 	AccountFind:      "账号查看",
 	AccountKeyAccess: "账号密钥访问",
-	AccountCreate:    "账号新增",
+	AccountImport:    "账号录入",
 	AccountEdit:      "账号编辑",
 	AccountDelete:    "账号删除",
 	ResourceFind:     "资源查看",

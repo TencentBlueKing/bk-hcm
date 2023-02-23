@@ -43,7 +43,7 @@ func genBusinessManagementActionGroups() []client.ActionGroup {
 					Actions: []client.ActionWithID{
 						{ID: AccountFind},
 						{ID: AccountKeyAccess},
-						{ID: AccountCreate},
+						{ID: AccountImport},
 						{ID: AccountEdit},
 						{ID: AccountDelete},
 					},

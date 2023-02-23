@@ -50,8 +50,8 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 	case meta.KeyAccess:
 		// access account secret keys is related to hcm account resource
 		return sys.AccountKeyAccess, []client.Resource{res}, nil
-	case meta.Create:
-		return sys.AccountCreate, make([]client.Resource, 0), nil
+	case meta.Import:
+		return sys.AccountImport, make([]client.Resource, 0), nil
 	case meta.Update:
 		// update account is related to hcm account resource
 		return sys.AccountEdit, []client.Resource{res}, nil
