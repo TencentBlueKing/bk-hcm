@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 )
@@ -42,7 +41,7 @@ func (az *Azure) ListRegion(kit *kit.Kit) ([]*armsubscriptions.Location, error) 
 	for pager.More() {
 		nextResult, err := pager.NextPage(kit.Ctx)
 		if err != nil {
-			logs.Errorf("failed to advance page, err: %v, rid: %s", err, kit.Rid)
+			return nil, fmt.Errorf("failed to advance page: %v", err)
 		}
 		regions = append(regions, nextResult.Value...)
 	}

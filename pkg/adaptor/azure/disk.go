@@ -20,10 +20,11 @@
 package azure
 
 import (
+	"fmt"
+
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
@@ -80,7 +81,7 @@ func (a *Azure) ListDisk(kit *kit.Kit, opt *disk.AzureDiskListOption) ([]*armcom
 	for pager.More() {
 		nextResult, err := pager.NextPage(kit.Ctx)
 		if err != nil {
-			logs.Errorf("failed to advance page, err: %v, rid: %s", err, kit.Rid)
+			return nil, fmt.Errorf("failed to advance page: %v", err)
 		}
 		disks = append(disks, nextResult.Value...)
 	}
