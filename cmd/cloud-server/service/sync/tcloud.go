@@ -27,6 +27,7 @@ import (
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	protoeip "hcm/pkg/api/hc-service/eip"
 	protohcregion "hcm/pkg/api/hc-service/region"
 	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/client"
@@ -55,64 +56,37 @@ func SyncTCloudAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accoun
 
 	for _, region := range regions.Details {
 
-		// sg
-		err = c.HCService().TCloud.SecurityGroup.SyncSecurityGroup(
-			kit.Ctx,
-			header,
-			&proto.SecurityGroupSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncTCloudSG(c, kit, header, accountID, region.RegionID)
 		if err != nil {
 			logs.Errorf("sync do tcloud sync sg failed, err: %v, regionID: %s, rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
 
-		// sg rule
 		err = SyncTCloudSGRule(c, kit, header, region.RegionID, accountID)
 		if err != nil {
-			logs.Errorf("sync do tcloud sync sg rule failed, err: %v, regionID: %s,  rid: %s",
+			logs.Errorf("sync do tcloud sync sg rule failed, err: %v, regionID: %s, rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
 
-		// disk
-		err = c.HCService().TCloud.Disk.SyncDisk(
-			kit.Ctx,
-			header,
-			&protodisk.DiskSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncTCloudDisk(c, kit, header, accountID, region.RegionID)
 		if err != nil {
 			logs.Errorf("sync do tcloud sync disk failed, err: %v, regionID: %s, rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
 
-		// Vpc
-		err = c.HCService().TCloud.Vpc.SyncVpc(
-			kit.Ctx,
-			header,
-			&proto.ResourceSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncTCloudEip(c, kit, header, accountID, region.RegionID)
 		if err != nil {
-			logs.Errorf("sync do tcloud sync vpc failed, err: %v, accountID: %s, regionID: %s,  rid: %s",
+			logs.Errorf("sync do tcloud sync eip failed, err: %v, regionID: %s, rid: %s",
+				err, region.RegionID, kit.Rid)
+		}
+
+		err = SyncTCloudVpc(c, kit, header, accountID, region.RegionID)
+		if err != nil {
+			logs.Errorf("sync do tcloud sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
 				err, accountID, region.RegionID, kit.Rid)
 		}
 
-		// Subnet
-		err = c.HCService().TCloud.Subnet.SyncSubnet(
-			kit.Ctx,
-			header,
-			&proto.ResourceSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncTCloudSubnet(c, kit, header, accountID, region.RegionID)
 		if err != nil {
 			logs.Errorf("sync do tcloud sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
 				err, accountID, region.RegionID, kit.Rid)
@@ -121,6 +95,111 @@ func SyncTCloudAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accoun
 	}
 
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SyncTCloudSubnet ...
+func SyncTCloudSubnet(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().TCloud.Subnet.SyncSubnet(
+		kit.Ctx,
+		header,
+		&proto.ResourceSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do tcloud sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
+			err, accountID, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncTCloudVpc ...
+func SyncTCloudVpc(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().TCloud.Vpc.SyncVpc(
+		kit.Ctx,
+		header,
+		&proto.ResourceSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do tcloud sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
+			err, accountID, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncTCloudSG ...
+func SyncTCloudSG(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().TCloud.SecurityGroup.SyncSecurityGroup(
+		kit.Ctx,
+		header,
+		&proto.SecurityGroupSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do tcloud sync sg failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncTCloudDisk ...
+func SyncTCloudDisk(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().TCloud.Disk.SyncDisk(
+		kit.Ctx,
+		header,
+		&protodisk.DiskSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do tcloud sync disk failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncTCloudEip ...
+func SyncTCloudEip(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().TCloud.Eip.SyncEip(
+		kit.Ctx,
+		header,
+		&protoeip.EipSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do tcloud sync eip failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
 		return err
 	}
 
@@ -214,7 +293,7 @@ func SyncTCloudPublicResource(kit *kit.Kit, c *client.ClientSet, header http.Hea
 		logs.Errorf("sync do tcloud sync image failed, err: %v, rid: %s", err, kit.Rid)
 	}
 
-	return err
+	return nil
 }
 
 // SyncTCloudImage ...
@@ -241,11 +320,9 @@ func SyncTCloudImage(kit *kit.Kit, c *client.ClientSet, header http.Header, acco
 				Region:    region.RegionID,
 			},
 		)
-		// sync only one time
-		if err == nil {
-			break
-		} else {
+		if err != nil {
 			logs.Errorf("sync tcloud image failed, err: %v, rid: %s", err, kit.Rid)
+			continue
 		}
 	}
 
@@ -295,6 +372,7 @@ func SyncTCloudRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, acc
 	)
 	if err != nil {
 		logs.Errorf("sync do tcloud sync region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
-	return err
+	return nil
 }

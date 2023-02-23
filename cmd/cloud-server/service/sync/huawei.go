@@ -27,6 +27,7 @@ import (
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	protoeip "hcm/pkg/api/hc-service/eip"
 	protohcregion "hcm/pkg/api/hc-service/region"
 	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/client"
@@ -56,64 +57,37 @@ func SyncHuaWeiAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accoun
 
 	for _, region := range regions.Details {
 
-		// sg
-		err = c.HCService().HuaWei.SecurityGroup.SyncSecurityGroup(
-			kit.Ctx,
-			header,
-			&proto.SecurityGroupSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncHuaWeiSG(c, kit, header, accountID, region.RegionID)
 		if err != nil {
-			logs.Errorf("sync do huawei sync sg failed, err: %v, regionID: %s, rid: %s",
+			logs.Errorf("sync do huawei sync sg failed, err: %v, regionID: %s,  rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
 
-		// sg rule
 		err = SyncHuaWeiSGRule(c, kit, header, region.RegionID, accountID)
 		if err != nil {
 			logs.Errorf("sync do huawei sync sg rule failed, err: %v, regionID: %s,  rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
 
-		// disk
-		err = c.HCService().HuaWei.Disk.SyncDisk(
-			kit.Ctx,
-			header,
-			&protodisk.DiskSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncHuaWeiDisk(c, kit, header, accountID, region.RegionID)
 		if err != nil {
 			logs.Errorf("sync do huawei sync disk failed, err: %v, regionID: %s,  rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
 
-		// Vpc
-		err = c.HCService().HuaWei.Vpc.SyncVpc(
-			kit.Ctx,
-			header,
-			&proto.ResourceSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncHuaWeiEip(c, kit, header, accountID, region.RegionID)
 		if err != nil {
-			logs.Errorf("sync do huawei sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-				err, accountID, region.RegionID, kit.Rid)
+			logs.Errorf("sync do huawei sync eip failed, err: %v, regionID: %s,  rid: %s",
+				err, region.RegionID, kit.Rid)
 		}
 
-		// Subnet
-		err = c.HCService().HuaWei.Subnet.SyncSubnet(
-			kit.Ctx,
-			header,
-			&proto.ResourceSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncHuaWeiVpc(c, kit, header, accountID, region.RegionID)
+		if err != nil {
+			logs.Errorf("sync do huawei sync vpc failed, err: %v, regionID: %s,  rid: %s",
+				err, region.RegionID, kit.Rid)
+		}
+
+		err = SyncHuaWeiSubnet(c, kit, header, accountID, region.RegionID)
 		if err != nil {
 			logs.Errorf("sync do huawei sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
 				err, accountID, region.RegionID, kit.Rid)
@@ -122,6 +96,111 @@ func SyncHuaWeiAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accoun
 	}
 
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SyncHuaWeiSubnet ...
+func SyncHuaWeiSubnet(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().HuaWei.Subnet.SyncSubnet(
+		kit.Ctx,
+		header,
+		&proto.ResourceSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do huawei sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
+			err, accountID, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncHuaWeiVpc ...
+func SyncHuaWeiVpc(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().HuaWei.Vpc.SyncVpc(
+		kit.Ctx,
+		header,
+		&proto.ResourceSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do huawei sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
+			err, accountID, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncHuaWeiSG ...
+func SyncHuaWeiSG(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().HuaWei.SecurityGroup.SyncSecurityGroup(
+		kit.Ctx,
+		header,
+		&proto.SecurityGroupSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do huawei sync sg failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncHuaWeiDisk ...
+func SyncHuaWeiDisk(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().HuaWei.Disk.SyncDisk(
+		kit.Ctx,
+		header,
+		&protodisk.DiskSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do huawei sync disk failed, err: %v, regionID: %s,  rid: %s",
+			err, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncHuaWeiEip ...
+func SyncHuaWeiEip(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().HuaWei.Eip.SyncEip(
+		kit.Ctx,
+		header,
+		&protoeip.EipSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do huawei sync eip failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
 		return err
 	}
 
@@ -242,11 +321,9 @@ func SyncHuaWeiImage(kit *kit.Kit, c *client.ClientSet, header http.Header, acco
 				Region:    region.RegionID,
 			},
 		)
-		// sync only one time
-		if err == nil {
-			break
-		} else {
+		if err != nil {
 			logs.Errorf("sync huawei image failed, err: %v, rid: %s", err, kit.Rid)
+			continue
 		}
 	}
 
@@ -297,7 +374,8 @@ func SyncHuaWeiRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, acc
 	)
 	if err != nil {
 		logs.Errorf("sync do huawei sync region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
 
-	return err
+	return nil
 }

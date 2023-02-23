@@ -43,6 +43,8 @@ const (
 	SecurityGroupRule ResourceType = "security_group_rule"
 	// GcpFirewallRule defines gcp firewall rule's hcm auth resource type
 	GcpFirewallRule ResourceType = "gcp_firewall_rule"
+	// Eip defines eip hcm auth resource type
+	Eip ResourceType = "eip"
 	// Cvm defines cvm hcm auth resource type
 	Cvm ResourceType = "cvm"
 	// RouteTable defines route table's hcm auth resource type

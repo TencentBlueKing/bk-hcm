@@ -33,6 +33,7 @@ import (
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/cvm"
 	"hcm/cmd/cloud-server/service/disk"
+	"hcm/cmd/cloud-server/service/eip"
 	"hcm/cmd/cloud-server/service/firewall"
 	"hcm/cmd/cloud-server/service/image"
 	"hcm/cmd/cloud-server/service/region"
@@ -184,10 +185,8 @@ func (s *Service) apiSet() *restful.Container {
 	resourcegroup.InitResourceGroupService(c)
 	zone.InitZoneService(c)
 	region.InitRegionService(c)
-
+	eip.InitEipService(c)
 	audit.InitService(c)
-
-	go sync.SyncTiming(c.ApiClient)
 
 	go sync.SyncTiming(c.ApiClient)
 

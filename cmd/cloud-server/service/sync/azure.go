@@ -27,6 +27,7 @@ import (
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	protoeip "hcm/pkg/api/hc-service/eip"
 	protohcregion "hcm/pkg/api/hc-service/region"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
@@ -66,6 +67,12 @@ func SyncAzureAll(c *client.ClientSet, kit *kit.Kit, header http.Header, account
 		return err
 	}
 
+	// azure use list all public api, so one account sync one time
+	err = SyncAzureEip(c, kit, header, accountID, "")
+	if err != nil {
+		logs.Errorf("sync azure eip failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
 	for _, resourceGroup := range resourceGroups.Details {
 		err := syncAzureWithResourceGroup(c, kit, resourceGroup.Name, header, regions, accountID)
 		if err != nil {
@@ -77,64 +84,24 @@ func SyncAzureAll(c *client.ClientSet, kit *kit.Kit, header http.Header, account
 	return nil
 }
 
-// SyncAzurePublicResource ...
-func SyncAzurePublicResource(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
-
-	err := SyncAzureRegion(kit, c, header, accountID)
-	if err != nil {
-		logs.Errorf("sync do azure sync region failed, err: %v, rid: %s", err, kit.Rid)
-	}
-
-	err = SyncAzureResourceGroup(kit, c, header, accountID)
-	if err != nil {
-		logs.Errorf("sync do azure sync resource group failed, err: %v, rid: %s", err, kit.Rid)
-	}
-
-	err = SyncAzureImage(kit, c, header, accountID)
-	if err != nil {
-		logs.Errorf("sync do azure sync image failed, err: %v, rid: %s", err, kit.Rid)
-	}
-
-	return err
-}
-
 func syncAzureWithResourceGroup(c *client.ClientSet, kit *kit.Kit, resourceGroup string,
 	header http.Header, regions *protoregion.AzureRegionListResult, accountID string) error {
 	var err error
 
 	for _, region := range regions.Details {
-		// sg
-		err = c.HCService().Azure.SecurityGroup.SyncSecurityGroup(
-			kit.Ctx,
-			header,
-			&proto.SecurityGroupSyncReq{
-				AccountID:         accountID,
-				Region:            region.Name,
-				ResourceGroupName: resourceGroup,
-			},
-		)
+		err = SyncAzureSG(c, kit, header, accountID, region.Name, resourceGroup)
 		if err != nil {
 			logs.Errorf("sync do azure sync sg failed, err: %v, regionID: %s, rid: %s",
 				err, region.Name, kit.Rid)
 		}
 
-		// sg rule
 		err = SyncAzureSGRule(c, kit, header, region.Name, accountID)
 		if err != nil {
-			logs.Errorf("sync do zure sync sg rule failed, err: %v, regionID: %s,  rid: %s",
+			logs.Errorf("sync do azure sync sg rule failed, err: %v, regionID: %s, rid: %s",
 				err, region.Name, kit.Rid)
 		}
 
-		// disk
-		err = c.HCService().Azure.Disk.SyncDisk(
-			kit.Ctx,
-			header,
-			&protodisk.DiskSyncReq{
-				AccountID:         accountID,
-				Region:            region.Name,
-				ResourceGroupName: resourceGroup,
-			},
-		)
+		err = SyncAzureDisk(c, kit, header, accountID, region.Name, resourceGroup)
 		if err != nil {
 			logs.Errorf("sync do azure sync disk failed, err: %v, regionID: %s, rid: %s",
 				err, region.Name, kit.Rid)
@@ -153,43 +120,6 @@ func syncAzureWithResourceGroup(c *client.ClientSet, kit *kit.Kit, resourceGroup
 		if err != nil {
 			logs.Errorf("sync do azure sync vpc failed, err: %v, accountID: %s, regionID: %s, "+
 				"resourceGroup: %s, rid: %s", err, accountID, region.Name, resourceGroup, kit.Rid)
-		}
-	}
-
-	return err
-}
-
-// SyncAzureImage ...
-func SyncAzureImage(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
-
-	resourceGroups, err := c.DataService().Azure.ResourceGroup.ListResourceGroup(
-		kit.Ctx,
-		header,
-		&protoregion.AzureRGListReq{
-			Filter: tools.EqualExpression("type", constant.SyncTimingListAzureRG),
-			Page:   core.DefaultBasePage,
-		},
-	)
-	if err != nil {
-		logs.Errorf("sync list resourceGroups failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-
-	for _, resourceGroup := range resourceGroups.Details {
-		err = c.HCService().Azure.Image.SyncImage(
-			kit.Ctx,
-			header,
-			&protodisk.DiskSyncReq{
-				AccountID:         accountID,
-				Region:            resourceGroup.Location,
-				ResourceGroupName: resourceGroup.Name,
-			},
-		)
-		// sync only one time
-		if err == nil {
-			break
-		} else {
-			logs.Errorf("sync azure image failed, err: %v, rid: %s", err, kit.Rid)
 		}
 	}
 
@@ -266,6 +196,126 @@ func SyncAzureSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	return nil
 }
 
+// SyncAzureSG ...
+func SyncAzureSG(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string, resourceGroup string) error {
+
+	err := c.HCService().Azure.SecurityGroup.SyncSecurityGroup(
+		kit.Ctx,
+		header,
+		&proto.SecurityGroupSyncReq{
+			AccountID:         accountID,
+			Region:            region,
+			ResourceGroupName: resourceGroup,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do azure sync sg failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncAzureDisk ...
+func SyncAzureDisk(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string, resourceGroup string) error {
+
+	err := c.HCService().Azure.Disk.SyncDisk(
+		kit.Ctx,
+		header,
+		&protodisk.DiskSyncReq{
+			AccountID:         accountID,
+			Region:            region,
+			ResourceGroupName: resourceGroup,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do azure sync disk failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncAzureEip ...
+func SyncAzureEip(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().Azure.Eip.SyncEip(
+		kit.Ctx,
+		header,
+		&protoeip.EipSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do azure sync eip failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncAzurePublicResource ...
+func SyncAzurePublicResource(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+
+	err := SyncAzureRegion(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do azure sync region failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncAzureResourceGroup(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do azure sync resource group failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	err = SyncAzureImage(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do azure sync image failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
+	return err
+}
+
+// SyncAzureImage ...
+func SyncAzureImage(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
+	resourceGroups, err := c.DataService().Azure.ResourceGroup.ListResourceGroup(
+		kit.Ctx,
+		header,
+		&protoregion.AzureRGListReq{
+			Filter: tools.EqualExpression("type", constant.SyncTimingListAzureRG),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync list resourceGroups failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	for _, resourceGroup := range resourceGroups.Details {
+		err = c.HCService().Azure.Image.SyncImage(
+			kit.Ctx,
+			header,
+			&protodisk.DiskSyncReq{
+				AccountID:         accountID,
+				Region:            resourceGroup.Location,
+				ResourceGroupName: resourceGroup.Name,
+			},
+		)
+		if err != nil {
+			logs.Errorf("sync azure image failed, err: %v, rid: %s", err, kit.Rid)
+			continue
+		}
+	}
+
+	return err
+}
+
 // SyncAzureRegion sync azure region
 func SyncAzureRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
 	err := c.HCService().Azure.Region.SyncRegion(
@@ -277,9 +327,9 @@ func SyncAzureRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, acco
 	)
 	if err != nil {
 		logs.Errorf("sync do azure sync region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
-
-	return err
+	return nil
 }
 
 // SyncAzureResourceGroup sync azure rg
@@ -293,7 +343,7 @@ func SyncAzureResourceGroup(kit *kit.Kit, c *client.ClientSet, header http.Heade
 	)
 	if err != nil {
 		logs.Errorf("sync do azure sync rg failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
-
-	return err
+	return nil
 }

@@ -27,6 +27,7 @@ import (
 	protozone "hcm/pkg/api/data-service/cloud/zone"
 	proto "hcm/pkg/api/hc-service"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	protoeip "hcm/pkg/api/hc-service/eip"
 	protohcregion "hcm/pkg/api/hc-service/region"
 	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/client"
@@ -54,43 +55,25 @@ func SyncGcpAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 
 	for _, region := range regions.Details {
 
-		// gcp firewal
-		err = c.HCService().Gcp.Firewall.SyncFirewall(
-			kit.Ctx,
-			header,
-			&proto.SecurityGroupSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncGcpSG(c, kit, header, accountID, region.RegionID)
 		if err != nil {
-			logs.Errorf("sync do gcp sync sg failed, err: %v, regionID: %s, rid: %s",
-				err, region.RegionID, kit.Rid)
+			logs.Errorf("sync do gcp sync sg failed, err: %v, accountID: %s, regionID: %s, rid: %s",
+				err, accountID, region.RegionID, kit.Rid)
 		}
 
-		// Vpc
-		err = c.HCService().Gcp.Vpc.SyncVpc(
-			kit.Ctx,
-			header,
-			&proto.ResourceSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncGcpEip(c, kit, header, accountID, region.RegionID)
+		if err != nil {
+			logs.Errorf("sync do gcp sync eip failed, err: %v, accountID: %s, regionID: %s, rid: %s",
+				err, accountID, region.RegionID, kit.Rid)
+		}
+
+		err = SyncGcpVpc(c, kit, header, accountID, region.RegionID)
 		if err != nil {
 			logs.Errorf("sync do gcp sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
 				err, accountID, region.RegionID, kit.Rid)
 		}
 
-		// Subnet
-		err = c.HCService().Gcp.Subnet.SyncSubnet(
-			kit.Ctx,
-			header,
-			&proto.ResourceSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
+		err = SyncGcpSubnet(c, kit, header, accountID, region.RegionID)
 		if err != nil {
 			logs.Errorf("sync do gcp sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
 				err, accountID, region.RegionID, kit.Rid)
@@ -140,29 +123,109 @@ func SyncGcpDisk(kit *kit.Kit, c *client.ClientSet, header http.Header, accountI
 	return nil
 }
 
+// SyncGcpSubnet ...
+func SyncGcpSubnet(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().Gcp.Subnet.SyncSubnet(
+		kit.Ctx,
+		header,
+		&proto.ResourceSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do gcp sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
+			err, accountID, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncGcpVpc ...
+func SyncGcpVpc(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().Gcp.Vpc.SyncVpc(
+		kit.Ctx,
+		header,
+		&proto.ResourceSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do gcp sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
+			err, accountID, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncGcpSG ...
+func SyncGcpSG(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().Gcp.Firewall.SyncFirewall(
+		kit.Ctx,
+		header,
+		&proto.SecurityGroupSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do gcp sync sg failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SyncGcpEip ...
+func SyncGcpEip(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().Gcp.Eip.SyncEip(
+		kit.Ctx,
+		header,
+		&protoeip.EipSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+	if err != nil {
+		logs.Errorf("sync do gcp sync eip failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
+		return err
+	}
+
+	return nil
+}
+
 // SyncGcpPublicResource ...
 func SyncGcpPublicResource(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
 	err := SyncGcpRegion(kit, c, header, accountID)
 	if err != nil {
 		logs.Errorf("sync do gcp sync region failed, err: %v, rid: %s", err, kit.Rid)
 	}
-
 	err = SyncGcpZone(kit, c, header, accountID)
 	if err != nil {
 		logs.Errorf("sync do gcp sync zone failed, err: %v, rid: %s", err, kit.Rid)
 	}
-
 	err = SyncGcpImage(kit, c, header, accountID)
 	if err != nil {
 		logs.Errorf("sync do gcp sync image failed, err: %v, rid: %s", err, kit.Rid)
 	}
-
 	return err
 }
 
 // SyncGcpImage ...
 func SyncGcpImage(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
-
 	regions, err := c.DataService().Gcp.Region.ListRegion(
 		kit.Ctx,
 		header,
@@ -175,7 +238,6 @@ func SyncGcpImage(kit *kit.Kit, c *client.ClientSet, header http.Header, account
 		logs.Errorf("sync list gcp region failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
-
 	for _, region := range regions.Details {
 		err = c.HCService().Gcp.Image.SyncImage(
 			kit.Ctx,
@@ -185,20 +247,16 @@ func SyncGcpImage(kit *kit.Kit, c *client.ClientSet, header http.Header, account
 				Region:    region.RegionID,
 			},
 		)
-		// sync only one time
-		if err == nil {
-			break
-		} else {
+		if err != nil {
 			logs.Errorf("sync gcp image failed, err: %v, rid: %s", err, kit.Rid)
+			continue
 		}
 	}
-
 	return err
 }
 
 // SyncGcpZone sync gcp zone
 func SyncGcpZone(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
-
 	err := c.HCService().Gcp.Zone.SyncZone(
 		kit.Ctx,
 		header,
@@ -207,15 +265,14 @@ func SyncGcpZone(kit *kit.Kit, c *client.ClientSet, header http.Header, accountI
 		},
 	)
 	if err != nil {
-		logs.Errorf("sync do aws sync zone failed, err: %v, rid: %s", err, kit.Rid)
+		logs.Errorf("sync do gcp sync zone failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
-
-	return err
+	return nil
 }
 
 // SyncGcpRegion sync gcp region
 func SyncGcpRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
-
 	err := c.HCService().Gcp.Region.SyncRegion(
 		kit.Ctx,
 		header,
@@ -224,8 +281,8 @@ func SyncGcpRegion(kit *kit.Kit, c *client.ClientSet, header http.Header, accoun
 		},
 	)
 	if err != nil {
-		logs.Errorf("sync do tcloud sync region failed, err: %v, rid: %s", err, kit.Rid)
+		logs.Errorf("sync do gcp sync region failed, err: %v, rid: %s", err, kit.Rid)
+		return err
 	}
-
-	return err
+	return nil
 }

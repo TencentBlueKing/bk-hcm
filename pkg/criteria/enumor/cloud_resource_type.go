@@ -44,6 +44,8 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return table.VpcTable, nil
 	case SubnetCloudResType:
 		return table.SubnetTable, nil
+	case EipCloudResType:
+		return table.EipTable, nil
 	case DiskCloudResType:
 		return table.DiskTable, nil
 	case CvmCloudResType:
@@ -61,6 +63,7 @@ const (
 	SecurityGroupCloudResType CloudResourceType = "security_group"
 	VpcCloudResType           CloudResourceType = "vpc"
 	SubnetCloudResType        CloudResourceType = "subnet"
+	EipCloudResType           CloudResourceType = "eip"
 	CvmCloudResType           CloudResourceType = "cvm"
 	DiskCloudResType          CloudResourceType = "disk"
 	RouteTableCloudResType    CloudResourceType = "route_table"

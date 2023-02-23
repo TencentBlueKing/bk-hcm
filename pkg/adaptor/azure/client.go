@@ -213,3 +213,15 @@ func (c *clientSet) routeClient() (*armnetwork.RoutesClient, error) {
 	}
 	return client, nil
 }
+
+func (c *clientSet) publicIPAddressesClient() (*armnetwork.PublicIPAddressesClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init azure credential failed, err: %v", err)
+	}
+	client, err := armnetwork.NewPublicIPAddressesClient(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init azure public ip addresses client failed, err: %v", err)
+	}
+	return client, nil
+}

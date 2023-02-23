@@ -32,6 +32,7 @@ import (
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/cvm"
 	"hcm/cmd/hc-service/service/disk"
+	"hcm/cmd/hc-service/service/eip"
 	"hcm/cmd/hc-service/service/firewall"
 	"hcm/cmd/hc-service/service/image"
 	"hcm/cmd/hc-service/service/region"
@@ -153,6 +154,7 @@ func (s *Service) apiSet() *restful.Container {
 	firewall.InitFirewallService(c)
 	vpc.InitVpcService(c)
 	subnet.InitSubnetService(c)
+	eip.InitEipService(c)
 	region.InitRegionService(c)
 	disk.InitDiskService(c)
 	zone.InitZoneService(c)

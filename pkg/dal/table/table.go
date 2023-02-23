@@ -87,6 +87,8 @@ const (
 	AwsRegionTable Name = "aws_region"
 	// GcpRegionTable is gcp region table's name.
 	GcpRegionTable Name = "gcp_region"
+	// EipTable is eip table's name
+	EipTable Name = "eip"
 	// ZoneTable is zone table's name.
 	ZoneTable Name = "zone"
 	// CvmTable is cvm table's name.
@@ -146,6 +148,12 @@ var TableMap = map[Name]bool{
 	TCloudRegionTable:            true,
 	ZoneTable:                    true,
 	CvmTable:                     true,
+	RouteTableTable:              true,
+	TCloudRouteTable:             true,
+	AwsRouteTable:                true,
+	AzureRouteTable:              true,
+	HuaWeiRouteTable:             true,
+	GcpRouteTable:                true,
 }
 
 // Register 注册表名

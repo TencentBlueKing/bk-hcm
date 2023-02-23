@@ -35,6 +35,7 @@ type Client struct {
 	RouteTable *RouteTableClient
 	Zone       *ZoneClient
 	Region     *RegionClient
+	Eip        *EipClient
 }
 
 // NewClient create a new gcp api client.
@@ -50,5 +51,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		RouteTable: NewRouteTableClient(client),
 		Zone:       NewZoneClient(client),
 		Region:     NewRegionClient(client),
+		Eip:        NewEipClient(client),
 	}
 }

@@ -86,6 +86,8 @@ func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.vpcAssignAuditBuild(kt, assigns)
 	case enumor.SubnetAuditResType:
 		audits, err = ad.subnetAssignAuditBuild(kt, assigns)
+	case enumor.EipAuditResType:
+		audits, err = ad.eipAssignAuditBuild(kt, assigns)
 	case enumor.DiskAuditResType:
 		audits, err = ad.diskAssignAuditBuild(kt, assigns)
 	case enumor.CvmAuditResType:

@@ -46,6 +46,7 @@ values ('account', '0'),
        ('tcloud_region', '0'),
        ('aws_region', '0'),
        ('gcp_region', '0'),
+       ('eip', '0'),
        ('huawei_region', '0'),
        ('azure_region', '0'),
        ('azure_resource_group', '0'),
@@ -256,7 +257,7 @@ create table if not exists `aws_security_group_rule`
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`)
 ) engine = innodb
-    default charset = utf8mb4;
+  default charset = utf8mb4;
 
 create table if not exists `huawei_security_group_rule`
 (
@@ -605,37 +606,25 @@ create table if not exists `image`
 ) engine = innodb
   default charset = utf8mb4;
 
-create table if not exists `cvm`
+create table if not exists `eip`
 (
-    `id`                     varchar(64)  not null,
-    `cloud_id`               varchar(255) not null,
-    `name`                   varchar(255) not null,
-    `vendor`                 varchar(16)  not null,
-    `bk_biz_id`              bigint(1)    not null default -1,
-    `bk_cloud_id`            bigint(1)             default -1,
-    `account_id`             varchar(64)  not null,
-    `region`                 varchar(20)  not null,
-    `zone`                   varchar(20)           default '',
-    `cloud_vpc_ids`          json         not null,
-    `cloud_subnet_ids`       json         not null,
-    `cloud_image_id`         varchar(255) not null,
-    `image_id`               varchar(64)  not null,
-    `os_name`                varchar(255) not null,
-    `memo`                   varchar(255)          default '',
-    `status`                 varchar(50)  not null,
-    `private_ipv4_addresses` json                  default null,
-    `private_ipv6_addresses` json                  default null,
-    `public_ipv4_addresses`  json                  default null,
-    `public_ipv6_addresses`  json                  default null,
-    `machine_type`           varchar(50)  not null,
-    `extension`              json         not null,
-    `cloud_created_time`     varchar(50)           default '',
-    `cloud_launched_time`    varchar(50)           default '',
-    `cloud_expired_time`     varchar(50)           default '',
-    `creator`                varchar(64)  not null,
-    `reviser`                varchar(64)  not null,
-    `created_at`             timestamp    not null default current_timestamp,
-    `updated_at`             timestamp    not null default current_timestamp on update current_timestamp,
+    `id`            varchar(64)  not null,
+    `vendor`        varchar(16)  not null,
+    `name`          varchar(128)          DEFAULT '',
+    `account_id`    varchar(64)  not null,
+    `cloud_id`      varchar(255) not null,
+    `bk_biz_id`     bigint(1)    not null default -1,
+    `region`        varchar(128) not null,
+    `public_ip`     varchar(128) not null,
+    `private_ip`    varchar(128) not null,
+    `instance_id`   varchar(128) not null,
+    `instance_type` varchar(64)  not null,
+    `status`        varchar(128) not null,
+    `extension`     json         not null,
+    `creator`       varchar(64)  not null,
+    `reviser`       varchar(64)  not null,
+    `created_at`    timestamp    not null default current_timestamp,
+    `updated_at`    timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
@@ -814,3 +803,38 @@ create table if not exists `gcp_route`
     unique key `idx_uk_cloud_id` (`cloud_id`)
 ) engine = innodb
   default charset = utf8mb4;
+
+create table if not exists `cvm`
+(
+    `id`                     varchar(64)  not null,
+    `cloud_id`               varchar(255) not null,
+    `name`                   varchar(255) not null,
+    `vendor`                 varchar(16)  not null,
+    `bk_biz_id`              bigint(1)    not null default -1,
+    `bk_cloud_id`            bigint(1)             default -1,
+    `account_id`             varchar(64)  not null,
+    `region`                 varchar(20)  not null,
+    `zone`                   varchar(20)           default '',
+    `cloud_vpc_ids`          json         not null,
+    `cloud_subnet_ids`       json         not null,
+    `cloud_image_id`         varchar(255) not null,
+    `image_id`               varchar(64)  not null,
+    `os_name`                varchar(255) not null,
+    `memo`                   varchar(255)          default '',
+    `status`                 varchar(50)  not null,
+    `private_ipv4_addresses` json                  default null,
+    `private_ipv6_addresses` json                  default null,
+    `public_ipv4_addresses`  json                  default null,
+    `public_ipv6_addresses`  json                  default null,
+    `machine_type`           varchar(50)  not null,
+    `extension`              json         not null,
+    `cloud_created_time`     varchar(50)           default '',
+    `cloud_launched_time`    varchar(50)           default '',
+    `cloud_expired_time`     varchar(50)           default '',
+    `creator`                varchar(64)  not null,
+    `reviser`                varchar(64)  not null,
+    `created_at`             timestamp    not null default current_timestamp,
+    `updated_at`             timestamp    not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
+) engine = innodb

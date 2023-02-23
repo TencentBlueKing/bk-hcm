@@ -42,6 +42,12 @@ type BatchDeleteReq struct {
 	IDs []string `json:"ids"`
 }
 
+// SyncResp ...
+type SyncResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          interface{} `json:"data"`
+}
+
 // Validate BatchDeleteReq.
 func (d *BatchDeleteReq) Validate() error {
 	if len(d.IDs) == 0 {
@@ -71,12 +77,6 @@ type UpdateResp struct {
 
 // DeleteResp ...
 type DeleteResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          interface{} `json:"data"`
-}
-
-// SyncResp ...
-type SyncResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          interface{} `json:"data"`
 }
