@@ -1,19 +1,17 @@
 <template>
-  <div class="apply-left-wrapper">
-    <bk-loading
-      :loading="isLoading"
-    >
+  <bk-loading
+    :loading="listLoading"
+    :opacity="1"
+  >
+    <div class="apply-left-wrapper">
       <HeaderSelect
         :title="title"
         :filter-data="filterData"
         :active="active"
         @on-select="handleSelectChange"
       />
-      <div
-        :class="['apply-left-wrapper-list', { 'set-right-border': isEmpty || isLoading }]"
-        @scroll="handleScroll"
-      >
-        <template v-if="!isEmpty">
+      <div class="apply-left-wrapper-list" @scroll="handleScroll">
+        <template v-if="list.length">
           <apply-item
             v-for="(item, index) in list"
             :key="index"
@@ -22,20 +20,13 @@
             :active="currentActive"
             @on-change="handleChange"
           />
-          <div class="load-more-wrapper" v-if="isScrollLoading" />
-          <div class="no-data-tips" v-show="isShowNoDataTips">
-            {{ t("没有更多内容了") }}
-          </div>
-        </template>
-        <template v-else>
-          <div class="empty-wrapper">
-            <img :src="emptyChart" />
-            <div class="empty-tip">{{ t("暂无数据") }}</div>
-          </div>
         </template>
       </div>
-    </bk-loading>
-  </div>
+      <div class="loading-more pt10" v-if="!canScrollLoad">
+        {{ t("没有更多数据") }}
+      </div>
+    </div>
+  </bk-loading>
 </template>
 
 <script lang="ts">
@@ -44,6 +35,7 @@ import { useI18n } from 'vue-i18n';
 import HeaderSelect from '../header-select/index';
 import ApplyItem from '../apply-item/index.vue';
 import emptyChart from '@/assets/image/empty-chart.png';
+import _ from 'lodash';
 export default defineComponent({
   name: 'MyApplySide',
   components: {
@@ -51,7 +43,7 @@ export default defineComponent({
     ApplyItem,
   },
   props: {
-    isLoading: {
+    listLoading: {
       type: Boolean,
       default: false,
     },
@@ -78,7 +70,6 @@ export default defineComponent({
     let state = reactive({
       title: t('申请列表'),
       isLoading: false,
-      isEmpty: false,
       currentActive: 0,
       isScrollLoading: false,
       isShowNoDataTips: false,
@@ -99,18 +90,12 @@ export default defineComponent({
     };
 
     const handleScroll = (payload: any) => {
-      console.log(payload, '滚动');
-      if (props.isLoading) {
-        handleResetScrollLoading();
-        return;
-      }
-      if (props.canScrollLoad) {
-        state = Object.assign(state, {
-          isScrollLoading: false,
-          isShowNoDataTips: true,
-        });
-        return;
-      }
+      if (!props.canScrollLoad) return;
+      _throttle(payload);
+    };
+
+    // 节流处理滚动
+    const _throttle = _.throttle((payload) => {
       if (payload.target.scrollTop + payload.target.offsetHeight >= payload.target.scrollHeight) {
         state = Object.assign(state, {
           isScrollLoading: true,
@@ -118,7 +103,7 @@ export default defineComponent({
         });
         emit('on-load');
       }
-    };
+    }, 500);
 
     watch(() => props.list, (payload: any[]) => {
       if (!payload.length) {
@@ -126,19 +111,19 @@ export default defineComponent({
         return;
       }
       if (!payload.some((item: Record<string, any>) => item.id === state.currentActive)) {
-        console.log(payload, '数据');
         state.currentActive = payload[0].id;
       }
     },  {
       immediate: true,
+      deep: true,
     });
     return {
       emptyChart,
       ...toRefs(state),
       t,
-      handleScroll,
       handleChange,
       handleSelectChange,
+      handleScroll,
       handleResetScrollLoading,
     };
   },
@@ -146,6 +131,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+$borderColor:  #f5f6fa;
 .apply-left-wrapper {
   flex: 0 0 280px;
   height: calc(100vh - 61px);
@@ -153,9 +139,14 @@ export default defineComponent({
   overflow: hidden;
   &-list {
     position: relative;
-    height: calc(100% - 83px);
+    height: calc(100vh - 180px);
     overflow-x: hidden;
     overflow-y: auto;
   }
+  .loading-more{
+    text-align: center;
+    font-size: 12px;
+  }
 }
+
 </style>

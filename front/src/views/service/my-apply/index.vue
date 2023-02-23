@@ -9,7 +9,7 @@
           :list="applyList"
           :active="selectValue"
           :filter-data="filterData"
-          :is-loading="isApplyLoading"
+          :list-loading="isApplyLoading"
           :can-scroll-load="canScrollLoad"
           @on-change="handleChange"
           @on-filter-change="handleFilterChange"
@@ -37,6 +37,7 @@ import { defineComponent, computed, reactive, ref, onMounted } from 'vue';
 import LeftSide from './components/left-side/index.vue';
 import ApplyDetail from './components/apply-detail/index.vue';
 import { useAccountStore } from '@/store';
+import moment from 'moment';
 // 复杂数据结构先不按照泛型一个个定义，先从简
 export default defineComponent({
   name: 'MyApply',
@@ -66,7 +67,7 @@ export default defineComponent({
       return initRequestQueue.value.length > 0;
     });
 
-    const filterParams = ref({
+    const filterParams = ref<any>({
       filter: {
         op: 'and',
         rules: [
@@ -85,16 +86,9 @@ export default defineComponent({
     });
 
     const canScrollLoad = computed(() => {
-      const { totalPage, currentBackup } = pagination;
-      return totalPage > currentBackup;
+      return backupData.value.length >= 10;
     });
 
-    // 做滚动分页用得到
-    let pagination = reactive({
-      totalPage: 0,
-      current: 1,
-      currentBackup: 1,
-    });
     const filterData = ref([
       {
         label: '3天',
@@ -115,6 +109,7 @@ export default defineComponent({
     ]);
     const selectValue = ref(3);
     const applyList = ref([]);
+    const backupData = ref([]);
     const id = ref('');
     const isApplyLoading = ref(false);
     const initRequestQueue = ref(['applyList', 'applyDetail']);
@@ -127,33 +122,70 @@ export default defineComponent({
       },
     });
 
-    const handleFilterChange = (payload: Record<string, number>) => {
+    const handleFilterChange = (payload: any) => {
+      isApplyLoading.value = true;
       selectValue.value = payload.value;
-      pagination = Object.assign(pagination, { current: 1, currentBackup: 1 });
+      paramsReset();
+      if (payload.value === '*') {
+        filterParams.value.filter = {};
+      } else {
+        const value = moment().add(-payload.value, 'd')
+          .format('YYYY-MM-DD HH:mm:ss');
+        filterParams.value.filter.rules[0].value = value;
+      }
+      getMyApplyList();
     };
+
+    // 参数还原
+    const paramsReset = () => {
+      applyList.value = [];
+      filterParams.value.page = {
+        count: false,
+        start: 0,
+        limit: 10,
+      };
+    };
+
 
     const handleChange = (id: string) => {
       getMyApplyDetail(id);
     };
 
-    const handleLoadMore = () => {
-      pagination = Object.assign(pagination, { current: pagination.current + 1 });
+    // 滚动加载更多
+    const handleLoadMore = async () => {
+      filterParams.value.page.start = (filterParams.value.page.start + 1) * 10;
+      try {
+        isApplyLoading.value = true;
+        const res = await accountStore.getApplyAccountList(filterParams.value);
+        backupData.value = res.data.details;
+        applyList.value.push(...res.data.details);
+      } catch (error) {
+        console.log('error', error);
+      }  finally {
+        isApplyLoading.value = false;
+      }
     };
 
+    // 撤销
     const handleCancel = async (id: string) => {
       state.comInfo.cancelLoading = true;
-      const res = await accountStore.cancelApplyAccount(id);
-      getMyApplyDetail(id);
-      state.comInfo.cancelLoading = false;
-      console.log(res);
+      try {
+        await accountStore.cancelApplyAccount(id);
+        getMyApplyDetail(id);
+        changeApplyitemStatus(id);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        state.comInfo.cancelLoading = false;
+      }
     };
 
     // 获取我的申请列表
     const getMyApplyList = async () => {
       try {
-        isApplyLoading.value = true;
         const res = await accountStore.getApplyAccountList(filterParams.value);
-        applyList.value = res.data.details;
+        backupData.value = res.data.details;
+        applyList.value.push(...res.data.details);
         id.value = res.data.details[0].id;
         getMyApplyDetail(id.value);
       } catch (error) {
@@ -177,6 +209,16 @@ export default defineComponent({
         initRequestQueue.value.length > 0 && initRequestQueue.value.shift();
         state.comInfo.loading = false;
       }
+    };
+
+    // 改变当前撤销的状态
+    const changeApplyitemStatus = async (id: string) => {
+      applyList.value = applyList.value.map((e) => {
+        if (e.id === id) {
+          e.status = 'cancelled';
+        }
+        return e;
+      });
     };
 
     onMounted(() => {
