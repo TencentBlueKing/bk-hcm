@@ -1,9 +1,13 @@
 <template>
   <div class="template-warp">
     <div class="flex-row operate-warp justify-content-between align-items-center mb20">
-      <bk-button theme="primary" @click="handleJump('accountAdd')">
-        {{t('新增')}}
-      </bk-button>
+      <div @click="handleAuth('account_create')">
+        <bk-button
+          theme="primary" @click="handleJump('accountAdd')"
+          :disabled="!authVerifyData?.results?.create_authorized">
+          {{t('新增')}}
+        </bk-button>
+      </div>
       <div class="flex-row input-warp justify-content-between align-items-center">
         <bk-checkbox v-model="isAccurate" class="pr20">
           {{t('精确')}}
@@ -33,9 +37,12 @@
           prop="name"
         >
           <template #default="{ data }">
-            <bk-button
-              text theme="primary"
-              @click="handleJump('accountDetail', data.id)">{{data?.name}}</bk-button>
+            <div @click="handleAuth('account_edit')">
+              <bk-button
+                text theme="primary"
+                @click="handleJump('accountDetail', data.id)"
+                :disabled="!authVerifyData?.results?.update_authorized">{{data?.name}}</bk-button>
+            </div>
           </template>
         </bk-table-column>
         <bk-table-column
@@ -86,9 +93,13 @@
               <!-- <bk-button text theme="primary" @click="handleSync(props?.data.id)">
               {{t('同步')}}
             </bk-button> -->
-              <bk-button text theme="primary" @click="handleJump('accountDetail', props?.data.id)">
-                {{t('编辑')}}
-              </bk-button>
+              <div @click="handleAuth('account_edit')">
+                <bk-button
+                  text theme="primary" @click="handleJump('accountDetail', props?.data.id)"
+                  :disabled="!authVerifyData?.results?.update_authorized">
+                  {{t('编辑')}}
+                </bk-button>
+              </div>
             <!-- <bk-button text theme="primary" @click="handleDelete(props?.data.id, props?.data.name)">
               {{t('删除')}}
             </bk-button> -->
@@ -127,11 +138,18 @@
         </div>
       </bk-dialog>
     </bk-loading>
+
+    <permission-dialog
+      v-model:is-show="showPermissionDialog"
+      :params="permissionParams"
+      @cancel="handlePermissionDialog"
+      @confirm="handlePermissionConfirm"
+    ></permission-dialog>
   </div>
 </template>
 
 <script lang="ts">
-import { reactive, watch, toRefs, defineComponent, onMounted, onUnmounted } from 'vue';
+import { reactive, watch, toRefs, defineComponent, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import logo from '@/assets/image/logo.png';
@@ -141,10 +159,15 @@ import tcloud from '@/assets/image/tcloud.png';
 import { Message } from 'bkui-vue';
 import { CloudType, AccountType } from '@/typings';
 import { VENDORS } from '@/common/constant';
+import { useVerify } from '@/hooks';
+import permissionDialog from '@/components/permission-dialog';
 
 
 export default defineComponent({
   name: 'AccountManageList',
+  components: {
+    permissionDialog,
+  },
   setup() {
     const { t } = useI18n();
     const router = useRouter();
@@ -184,15 +207,27 @@ export default defineComponent({
       CloudType,
       AccountType,
       filter: { op: 'and', rules: [] },
+      actionData: ['create', 'update', 'key_access'],
     });
+
+    const showPermissionDialog = ref(false);    // 无权限弹窗
 
     onMounted(async () => {
       /* 获取账号列表接口 */
       // getListCount(); // 数量
       // init(); // 列表
     });
-    onUnmounted(() => {
-    });
+
+    // 权限hook
+    const {
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      handleAuth,
+      permissionParams,
+      authVerifyData,
+    } = useVerify(showPermissionDialog, state.actionData);
+
+    console.log('authVerifyData', authVerifyData);
 
     // 请求获取列表的总条数
     const getListCount = async () => {
@@ -346,10 +381,16 @@ export default defineComponent({
     return {
       ...toRefs(state),
       init,
+      showPermissionDialog,
+      handlePermissionDialog,
+      handlePermissionConfirm,
       handleDialogConfirm,
       handleJump,
       handleDelete,
       handleSync,
+      handleAuth,
+      permissionParams,
+      authVerifyData,
       handlePageLimitChange,
       handlePageValueChange,
       t,

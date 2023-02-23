@@ -11,7 +11,7 @@ import './account-detail.scss';
 const { FormItem } = Form;
 // const { Option } = Select;
 export default defineComponent({
-  name: 'AccountManageAdd',
+  name: 'AccountManageDetail',
   setup() {
     const { t } = useI18n();
     const formRef = ref<InstanceType<typeof Form>>(null);

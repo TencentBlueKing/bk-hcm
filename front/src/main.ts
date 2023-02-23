@@ -17,12 +17,14 @@ import 'bkui-vue/dist/style.css';
 
 const app = createApp(App);
 
+const pinia = createPinia();
+
 app.config.globalProperties.$bus = bus;
 app.config.globalProperties.$http = http;
 
 app.use(i18n)
   .use(router)
-  .use(createPinia())
+  .use(pinia)
   .use(bkui);
 
 router.isReady().then(() => {

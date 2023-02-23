@@ -1,35 +1,42 @@
 <template>
-  <div class="page-layout views-layout">
-    <div class="left-layout">
-      <LeftSide
-        :list="applyList"
-        :active="selectValue"
-        :filter-data="filterData"
-        :is-loading="isApplyLoading"
-        :can-scroll-load="canScrollLoad"
-        @on-change="handleChange"
-        @on-filter-change="handleFilterChange"
-        @on-load="handleLoadMore"
-      />
-    </div>
-    <slot name="apply-right">
-      <div class="right-layout">
-        <component
-          :key="comInfo.comKey"
-          :is="currCom"
-          :params="comInfo.currentApplyData"
-          :loading="comInfo.cancelLoading"
-          @on-cancel="handleCancel"
+  <bk-loading
+    :opacity="1"
+    :loading="pageLoading"
+  >
+    <div class="page-layout views-layout">
+      <div class="left-layout">
+        <LeftSide
+          :list="applyList"
+          :active="selectValue"
+          :filter-data="filterData"
+          :is-loading="isApplyLoading"
+          :can-scroll-load="canScrollLoad"
+          @on-change="handleChange"
+          @on-filter-change="handleFilterChange"
+          @on-load="handleLoadMore"
         />
       </div>
-    </slot>
-  </div>
+      <slot name="apply-right">
+        <div class="right-layout">
+          <component
+            :key="state.comInfo.comKey"
+            :is="currCom"
+            :params="state.comInfo.currentApplyData"
+            :loading="state.comInfo.loading"
+            :cancel-loading="state.comInfo.cancelLoading"
+            @on-cancel="handleCancel"
+          />
+        </div>
+      </slot>
+    </div>
+  </bk-loading>
 </template>
 
 <script lang="ts">
 import { defineComponent, computed, reactive, ref, onMounted } from 'vue';
 import LeftSide from './components/left-side/index.vue';
 import ApplyDetail from './components/apply-detail/index.vue';
+import { useAccountStore } from '@/store';
 // 复杂数据结构先不按照泛型一个个定义，先从简
 export default defineComponent({
   name: 'MyApply',
@@ -38,20 +45,43 @@ export default defineComponent({
     ApplyDetail,
   },
   setup() {
-    const COM_MAP = Object.freeze(new Map([[['account_apply', 'service_apply'], 'ApplyDetail']]));
+    const accountStore = useAccountStore();
+    const COM_MAP = Object.freeze(new Map([[['add_account', 'service_apply'], 'ApplyDetail']]));
 
     const currCom = computed(() => {
       let com = '';
       for (const [key, value] of COM_MAP.entries()) {
         if (
-          Object.keys(comInfo.currentApplyData).length > 0
-          && key.includes(comInfo.currentApplyData.type)
+          Object.keys(state.comInfo.currentApplyData).length > 0
+          && key.includes(state.comInfo.currentApplyData.type)
         ) {
           com = value;
           break;
         }
       }
       return com;
+    });
+
+    const pageLoading = computed(() => {
+      return initRequestQueue.value.length > 0;
+    });
+
+    const filterParams = ref({
+      filter: {
+        op: 'and',
+        rules: [
+          {
+            field: 'created_at',
+            op: 'gt',
+            value: '2020-01-02 00:00:00',
+          },
+        ],
+      },
+      page: {
+        count: false,
+        start: 0,
+        limit: 10,
+      },
     });
 
     const canScrollLoad = computed(() => {
@@ -84,130 +114,17 @@ export default defineComponent({
       },
     ]);
     const selectValue = ref(3);
-    const applyList = ref([
-      {
-        id: 94,
-        sn: 'REQ20230207000001',
-        type: 'account_apply',
-        applicant: 'poloohuang',
-        status: 'pending',
-        created_time: '2023-02-07 16:10:45',
-        resource: '账户申请',
-        remarks: '账户接入',
-        extra_info: {
-          system_name: '持续集成平台',
-        },
-      },
-      {
-        id: 95,
-        sn: 'REQ20230207000001',
-        type: 'service_apply',
-        applicant: 'poloohuang',
-        status: 'pass',
-        created_time: '2023-02-07 16:10:45',
-        resource: '账户申请',
-        remarks: '账户接入2',
-        extra_info: {
-          system_name: '持续集成平台',
-        },
-      },
-      {
-        id: 96,
-        sn: 'REQ20230207000001',
-        type: 'account_apply',
-        applicant: 'poloohuang',
-        status: 'reject',
-        created_time: '2023-02-07 16:10:45',
-        resource: '账户申请',
-        remarks: '账户接入3',
-        extra_info: {
-          system_name: '持续集成平台',
-        },
-      },
-      {
-        id: 97,
-        sn: 'REQ20230207000001',
-        type: 'account_apply',
-        applicant: 'poloohuang',
-        status: 'cancelled',
-        created_time: '2023-02-07 16:10:45',
-        resource: '账户申请',
-        remarks: '账户接入',
-        extra_info: {
-          system_name: '持续集成平台',
-        },
-      },
-      {
-        id: 98,
-        sn: 'REQ20230207000001',
-        type: 'account_apply',
-        applicant: 'poloohuang',
-        status: 'pending',
-        created_time: '2023-02-07 16:10:45',
-        resource: '账户申请',
-        remarks: '账户接入',
-        extra_info: {
-          system_name: '持续集成平台',
-        },
-      },
-      {
-        id: 88,
-        sn: 'REQ20230207000001',
-        type: 'account_apply',
-        applicant: 'poloohuang',
-        status: 'pass',
-        created_time: '2023-02-07 16:10:45',
-        resource: '账户申请',
-        remarks: '账户接入',
-        extra_info: {
-          system_name: '持续集成平台',
-        },
-      },
-      {
-        id: 87,
-        sn: 'REQ20230207000001',
-        type: 'account_apply',
-        applicant: 'poloohuang',
-        status: 'reject',
-        created_time: '2023-02-07 16:10:45',
-        resource: '账户申请',
-        remarks: '账户接入',
-        extra_info: {
-          system_name: '持续集成平台',
-        },
-      },
-      {
-        id: 86,
-        sn: 'REQ20230207000001',
-        type: 'account_apply',
-        applicant: 'poloohuang',
-        status: 'cancelled',
-        created_time: '2023-02-07 16:10:45',
-        resource: '账户申请',
-        remarks: '账户接入',
-        extra_info: {
-          system_name: '持续集成平台',
-        },
-      },
-      {
-        id: 85,
-        sn: 'REQ20230207000001',
-        type: 'account_apply',
-        applicant: 'poloohuang',
-        status: 'cancelled',
-        created_time: '2023-02-07 16:10:45',
-        resource: '账户申请',
-        remarks: '账户接入',
-        extra_info: {
-          system_name: '持续集成平台',
-        },
-      },
-    ]);
+    const applyList = ref([]);
+    const id = ref('');
     const isApplyLoading = ref(false);
-    let comInfo = reactive({
-      comKey: -1,
-      currentApplyData: {} as any,
-      cancelLoading: false,
+    const initRequestQueue = ref(['applyList', 'applyDetail']);
+    const state = reactive({
+      comInfo: {
+        comKey: -1,
+        currentApplyData: {} as any,
+        loading: false,
+        cancelLoading: false,
+      },
     });
 
     const handleFilterChange = (payload: Record<string, number>) => {
@@ -215,35 +132,69 @@ export default defineComponent({
       pagination = Object.assign(pagination, { current: 1, currentBackup: 1 });
     };
 
-    const handleChange = (payload: string) => {
-      comInfo = Object.assign(comInfo, {
-        currentApplyData: payload,
-      });
+    const handleChange = (id: string) => {
+      getMyApplyDetail(id);
     };
 
     const handleLoadMore = () => {
       pagination = Object.assign(pagination, { current: pagination.current + 1 });
     };
 
-    const handleCancel = () => {
-      comInfo.cancelLoading = true;
+    const handleCancel = async (id: string) => {
+      state.comInfo.cancelLoading = true;
+      const res = await accountStore.cancelApplyAccount(id);
+      getMyApplyDetail(id);
+      state.comInfo.cancelLoading = false;
+      console.log(res);
+    };
+
+    // 获取我的申请列表
+    const getMyApplyList = async () => {
+      try {
+        isApplyLoading.value = true;
+        const res = await accountStore.getApplyAccountList(filterParams.value);
+        applyList.value = res.data.details;
+        id.value = res.data.details[0].id;
+        getMyApplyDetail(id.value);
+      } catch (error) {
+        console.log('error', error);
+      }  finally {
+        isApplyLoading.value = false;
+        initRequestQueue.value.length > 0 && initRequestQueue.value.shift();
+      }
+    };
+
+    // 获取我的申请详情
+    const getMyApplyDetail = async (id: string) => {
+      state.comInfo.loading = true;
+      try {
+        const res = await accountStore.getApplyAccountDetail(id);
+        state.comInfo.currentApplyData = res.data;
+        state.comInfo.comKey = res.data.id;
+      } catch (error) {
+        console.log('error', error);
+      } finally {
+        initRequestQueue.value.length > 0 && initRequestQueue.value.shift();
+        state.comInfo.loading = false;
+      }
     };
 
     onMounted(() => {
-      comInfo = Object.assign(comInfo,  { currentApplyData: applyList.value.length ? applyList.value[0] : {} });
+      getMyApplyList();
     });
 
     return {
       filterData,
       applyList,
       selectValue,
-      comInfo,
+      state,
       currCom,
       isApplyLoading,
       handleFilterChange,
       handleChange,
       handleCancel,
       handleLoadMore,
+      pageLoading,
       canScrollLoad,
     };
   },

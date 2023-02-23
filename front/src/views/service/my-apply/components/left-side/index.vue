@@ -1,36 +1,40 @@
 <template>
   <div class="apply-left-wrapper">
-    <HeaderSelect
-      :title="title"
-      :filter-data="filterData"
-      :active="active"
-      @on-select="handleSelectChange"
-    />
-    <div
-      :class="['apply-left-wrapper-list', { 'set-right-border': isEmpty || isLoading }]"
-      @scroll="handleScroll"
+    <bk-loading
+      :loading="isLoading"
     >
-      <template v-if="!isEmpty">
-        <apply-item
-          v-for="(item, index) in list"
-          :key="index"
-          :data="item"
-          :has-bottom-border="index !== list.length - 1"
-          :active="currentActive"
-          @on-change="handleChange"
-        />
-        <div class="load-more-wrapper" v-if="isScrollLoading" />
-        <div class="no-data-tips" v-show="isShowNoDataTips">
-          {{ t("没有更多内容了") }}
-        </div>
-      </template>
-      <template v-else>
-        <div class="empty-wrapper">
-          <img :src="emptyChart" />
-          <div class="empty-tip">{{ t("暂无数据") }}</div>
-        </div>
-      </template>
-    </div>
+      <HeaderSelect
+        :title="title"
+        :filter-data="filterData"
+        :active="active"
+        @on-select="handleSelectChange"
+      />
+      <div
+        :class="['apply-left-wrapper-list', { 'set-right-border': isEmpty || isLoading }]"
+        @scroll="handleScroll"
+      >
+        <template v-if="!isEmpty">
+          <apply-item
+            v-for="(item, index) in list"
+            :key="index"
+            :data="item"
+            :has-bottom-border="index !== list.length - 1"
+            :active="currentActive"
+            @on-change="handleChange"
+          />
+          <div class="load-more-wrapper" v-if="isScrollLoading" />
+          <div class="no-data-tips" v-show="isShowNoDataTips">
+            {{ t("没有更多内容了") }}
+          </div>
+        </template>
+        <template v-else>
+          <div class="empty-wrapper">
+            <img :src="emptyChart" />
+            <div class="empty-tip">{{ t("暂无数据") }}</div>
+          </div>
+        </template>
+      </div>
+    </bk-loading>
   </div>
 </template>
 
@@ -80,9 +84,9 @@ export default defineComponent({
       isShowNoDataTips: false,
     });
 
-    const handleChange = (payload: Record<string, number>) => {
-      state = Object.assign(state, { currentActive: payload.id });
-      emit('on-change', payload);
+    const handleChange = (id: Record<string, number>) => {
+      state = Object.assign(state, { currentActive: id });
+      emit('on-change', id);
     };
 
     const handleSelectChange = (payload: Record<string, number | string>) => {

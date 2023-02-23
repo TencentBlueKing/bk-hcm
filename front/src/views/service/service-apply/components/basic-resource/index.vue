@@ -16,13 +16,12 @@ export default defineComponent({
     ResourceCard,
   },
   setup() {
-    const list = ref(new Array(Math.ceil(Math.random() * 900) + 100).fill('')
-      .map((_, index) => ({
-        name:
-          '主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机主机',
-        id: index + 1,
-        btnText: '立即申请',
-      })));
+    const list = ref([{
+      name:
+          '主机',
+      id: 1,
+      btnText: '立即申请',
+    }]);
 
     const handleApply = () => {
       console.log('立即申请');

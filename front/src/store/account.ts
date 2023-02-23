@@ -96,5 +96,37 @@ export const useAccountStore = defineStore({
     async accountDelete(id: number) {
       return await http.post('/mock/api/v4/sync/', id);
     },
+    /**
+     * @description: 申请账号
+     * @param {number} data
+     * @return {*}
+     */
+    async applyAccount(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/types/add_account`, data);
+    },
+    /**
+     * @description: 查询申请账号列表
+     * @param {number} data
+     * @return {*}
+     */
+    async getApplyAccountList(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/list`, data);
+    },
+    /**
+     * @description: 查询申请账号列表
+     * @param {number} data
+     * @return {*}
+     */
+    async getApplyAccountDetail(id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/${id}`);
+    },
+    /**
+     * @description: 撤销申请
+     * @param {number} id
+     * @return {*}
+     */
+    async cancelApplyAccount(id: string) {
+      return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/${id}/cancel`);
+    },
   },
 });

@@ -5,7 +5,7 @@ import type { RouteRecordRaw } from 'vue-router';
 
 const resourceInside: RouteRecordRaw[] = [
   {
-    path: '/resource/account/add/',
+    path: '/resource/account/add',
     name: 'accountAdd',
     component: () => import('@/views/resource/accountmanage/account-add'),
     meta: {
@@ -15,7 +15,7 @@ const resourceInside: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/resource/account/detail/',
+    path: '/resource/account/detail',
     name: 'accountDetail',
     component: () => import('@/views/resource/accountmanage/account-detail'),
     meta: {

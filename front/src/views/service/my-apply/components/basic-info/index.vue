@@ -11,21 +11,21 @@
     </div>
     <div class="item">
       <label class="label">{{ t('类型') }}：</label>
-      <div class="content">{{ getApplyTypeDisplay(data.type) }}</div>
+      <div class="content">{{ ServiceAccountType[data.type] }}</div>
     </div>
     <div class="item">
       <label class="label">{{ t('申请人') }}：</label>
-      <div class="content">{{ data.applicant }}</div>
+      <div class="content">{{ data.creator }}</div>
     </div>
     <div class="item">
       <label class="label">{{ $t('备注') }}：</label>
-      <div class="content" :title="data.remarks || ''">
-        {{ data.remarks || '--' }}
+      <div class="content" :title="data.memo || ''">
+        {{ data.memo || '--' }}
       </div>
     </div>
     <div class="item">
       <label class="label">{{ t('申请时间') }}：</label>
-      <div class="content">{{ data.created_time }}</div>
+      <div class="content">{{ data.created_at }}</div>
     </div>
   </div>
 </template>
@@ -33,6 +33,7 @@
 <script lang="ts">
 import { computed, defineComponent } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { ServiceAccountType } from '@/typings';
 
 export default defineComponent({
   name: 'MyApplyBasicInfo',
@@ -67,6 +68,7 @@ export default defineComponent({
       t,
       curLanguageIsCn,
       getApplyTypeDisplay,
+      ServiceAccountType,
     };
   },
 });

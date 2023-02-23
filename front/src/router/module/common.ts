@@ -17,6 +17,13 @@ const common: RouteRecordRaw[] = [
     path: '/*',
     redirect: '/',
   },
+  {
+    path: '/403',
+    component: () => import('@/views/error-pages/403'),
+    meta: {
+      breadcrumb: ['申请权限'],
+    },
+  },
 //   {
 //     path: '/root',
 //     name: 'root',

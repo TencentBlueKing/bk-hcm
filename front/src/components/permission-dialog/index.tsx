@@ -1,0 +1,145 @@
+import {
+  defineComponent,
+  PropType,
+  watch,
+  ref,
+  h,
+} from 'vue';
+import permissions from '@/assets/image/403.png';
+import { useVerify } from '@/hooks';
+import './index.scss';
+import {
+  useI18n,
+} from 'vue-i18n';
+
+  type permissionType = {
+    system_id: string;
+    actions: any;
+  };
+
+export default defineComponent({
+  props: {
+    title: {
+      type: String,
+      default: '',
+    },
+    isShow: {
+      type: Boolean,
+      default: false,
+    },
+    params: {
+      type: Object as PropType<permissionType>,
+    },
+    size: {
+      type: String,
+      default: 'medium',
+    },
+    loading: {
+      type: Boolean,
+    },
+  },
+
+  emits: ['confirm', 'cancel'],
+
+  setup(_, { emit }) {
+    const {
+      t,
+    } = useI18n();
+
+    const columns = [{
+      label: '需要申请的权限',
+      field: 'name',
+    },
+    {
+      label: '关联的资源实例',
+      field: 'memo',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data?.related_resource_types[0]?.type_name || '--',
+          ],
+        );
+      },
+    }];
+
+    const tableData = ref([]);
+    const url = ref('');
+
+    const handleClose = () => {
+      emit('cancel');
+    };
+
+    const handleConfirm = () => {
+      emit('confirm', url.value);
+    };
+
+    // hook
+    const { getActionPermission } = useVerify();
+    // 是否精确
+    watch(
+      () => _.isShow,
+      async (val) => {
+        console.log('val', _.params.actions);
+        if (val) {
+          tableData.value = _.params.actions;
+          url.value = await getActionPermission(_.params);
+        }
+      },
+    );
+
+    return {
+      t,
+      columns,
+      tableData,
+      handleClose,
+      handleConfirm,
+    };
+  },
+
+  render() {
+    return <>
+        <bk-dialog
+          class="permissions-dialog-cls"
+          theme="primary"
+          width={740}
+          height={450}
+          title={this.title}
+          size={this.size}
+          isShow={this.isShow}
+          onClosed={this.handleClose}
+        >
+          {{
+            default: () => {
+              return <>
+                <img class="no-permission-img" src={permissions} alt="403"></img>
+                <div class="no-permission-text">{this.t('没有权限访问或操作此资源')}</div>
+                <bk-table
+              class="mt20 no-permission-table"
+              row-hover="auto"
+              columns={this.columns}
+              data={this.tableData}
+            />
+              </>;
+            },
+            footer: () => {
+              return <>
+                <bk-button
+                    class="mr10 dialog-button"
+                    theme="primary"
+                    loading={this.loading}
+                    onClick={this.handleConfirm}
+                >{this.t('去申请')}</bk-button>
+                <bk-button
+                  class="dialog-button"
+                  onClick={this.handleClose}
+                >{this.t('取消')}</bk-button>
+              </>;
+            },
+          }}
+        </bk-dialog>
+      </>;
+  },
+});
+

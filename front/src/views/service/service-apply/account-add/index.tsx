@@ -55,7 +55,7 @@ export default defineComponent({
       ...initProjectModel,
     });
 
-    const optionalRequired: string[] = ['secretId', 'secretKey'];
+    const optionalRequired: string[] = ['secretId', 'secretKey', 'accountName', 'accountId', 'applicationId', 'applicationName'];
     const cloudType = reactive(CLOUD_TYPE);
     const submitLoading = ref(false);
 
@@ -149,14 +149,13 @@ export default defineComponent({
           vendor: params.vendor,
           type: projectModel.type,
           extension: params.extension });
-        await accountStore.addAccount(params);
+        await accountStore.applyAccount(params);
         Message({
-          message: t('新增成功'),
+          message: t('申请成功'),
           theme: 'success',
         });
-        // router.go(-1);
         router.push({
-          path: '/resource/account', // 返回列表
+          path: '/service/my-apply', // 跳转我的申请
         });
       } catch (error: any) {
         console.log(error);
@@ -220,13 +219,13 @@ export default defineComponent({
             },
             {
               label: t('SecretId/密钥ID'),
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretId',
               component: () => <Input class="w450" placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />,
             },
             {
               label: 'SecretKey',
-              required: true,
+              required: projectModel.type !== 'registration',
               property: 'secretKey',
               component: () => <Input class="w450" placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />,
             },
@@ -473,7 +472,7 @@ export default defineComponent({
           });
         } else {
           formList?.forEach((e) => {
-            if (e.label && e.property !== 'remark') {   // 备注不需必填
+            if (e.label && e.property !== 'memo') {   // 备注不需必填
               e.required = true;
             }
           });

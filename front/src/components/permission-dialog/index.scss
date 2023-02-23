@@ -1,0 +1,23 @@
+.permissions-dialog-cls{
+    .bk-dialog-header{
+        padding: 0 !important;
+    }
+    .bk-modal-content{
+        overflow: hidden !important;
+    }
+    .no-permission-table{
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    text-align: center;
+    .no-permission-img{
+        text-align: center;
+        height: 100px;
+    }
+    .no-permission-text{
+        color: #63656e;
+        font-size: 22px;
+        font-weight: 400;
+        margin: 15px 0 30px;
+    }
+}

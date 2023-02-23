@@ -17,6 +17,7 @@ const resourceMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'resourceAccount',
           breadcrumb: [t('云管'), t('账户')],
+          action: 'account_find',
         },
       },
       {

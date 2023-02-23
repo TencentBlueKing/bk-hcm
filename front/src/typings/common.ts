@@ -1,3 +1,9 @@
+export interface Verify {
+  action: string
+  resource_type: string
+  bk_biz_id?: number
+  resource_id?: number
+}
 export enum QueryRuleOPEnum {
   EQ = 'eq',
   NEQ = 'neq',
