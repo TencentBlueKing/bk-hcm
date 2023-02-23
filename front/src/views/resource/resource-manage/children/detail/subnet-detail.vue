@@ -8,6 +8,7 @@ import SubnetRoute from '../../children/components/subnet/subnet-route.vue';
 
 import {
   ref,
+  onBeforeMount
 } from 'vue';
 import {
   useRoute,
@@ -75,15 +76,11 @@ const settingFields = ref<any[]>([
   },
   {
     name: '可用 IPv4 地址数',
-    prop: 'ipv4_cidr',
+    prop: 'ipv4_nums',
   },
   {
     name: 'IPv6 CIDR',
     prop: 'ipv6_cidr',
-  },
-  {
-    name: '可用 IPv6 地址数',
-    prop: 'ipv4_cidr',
   },
   {
     name: '创建时间',
@@ -277,6 +274,14 @@ const handleShowDelete = () => {
     },
   });
 };
+
+onBeforeMount(() => {
+  resourceStore
+    .countSubnetIps(route.query.id as string)
+    .then((res: any) => {
+      detail.value.ipv4_nums = res?.data?.available_ipv4_count || 0
+    })
+})
 </script>
 
 <template>

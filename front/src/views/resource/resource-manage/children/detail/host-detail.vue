@@ -1,14 +1,11 @@
 <script lang="ts" setup>
 import DetailHeader from '../../common/header/detail-header';
-import DetailInfo from '../../common/info/detail-info';
 import DetailTab from '../../common/tab/detail-tab';
 import HostInfo from '../components/host/host-info.vue';
-import HostSubnet from '../components/host/host-subnet.vue';
+import HostNetwork from '../components/host/host-network.vue'
+import HostIp from '../components/host/host-ip.vue'
 import HostDrive from '../components/host/host-drive.vue';
 import HostSecurity from '../components/host/host-security.vue';
-import {
-  AngleRight,
-} from 'bkui-vue/lib/icon';
 
 import {
   useI18n,
@@ -53,61 +50,36 @@ const {
   HostBootUp,
 } = useBootUp();
 
-// 更多
-const moreOperations = [
-  {
-    name: t('重置密码'),
-    handler: handlePassword,
-  },
-  {
-    name: t('退回'),
-    handler: handleRefund,
-  },
-];
-
-const hostFields = [
-  {
-    name: 'ID',
-    value: '1234223',
-  },
-  {
-    name: '账号ID',
-    value: '1234223',
-    link: 'http://www.baidu.com',
-  },
-  {
-    name: '账号名称',
-    value: '1234223',
-  },
-  {
-    name: '备注',
-    value: '1234223',
-    edit: true,
-  },
-  {
-    name: 'VPC',
-    value: '1234223',
-    copy: '1234223',
-  },
-];
 const hostTabs = [
   {
-    name: '详细信息',
+    name: '基本信息',
     value: 'detail',
   },
   {
-    name: '网络',
+    name: '网络接口',
     value: 'network',
+  },
+  {
+    name: '弹性 IP',
+    value: 'ip',
   },
   {
     name: '云硬盘',
     value: 'drive',
   },
   {
-    name: '安全',
+    name: '安全组',
     value: 'security',
   },
 ];
+
+const componentMap = {
+  detail: HostInfo,
+  network: HostNetwork,
+  ip: HostIp,
+  drive: HostDrive,
+  security: HostSecurity
+}
 </script>
 
 <template>
@@ -135,46 +107,28 @@ const hostTabs = [
       >
         {{ t('重启') }}
       </bk-button>
-      <bk-dropdown
-        class="ml10"
-        placement="right-start"
+      <bk-button
+        class="w100 ml10"
+        theme="primary"
+        @click="handlePassword"
       >
-        <bk-button>
-          <span class="w60">
-            {{ t('更多') }}
-          </span>
-          <angle-right
-            width="16"
-            height="16"
-          />
-        </bk-button>
-        <template #content>
-          <bk-dropdown-menu>
-            <bk-dropdown-item
-              v-for="operation in moreOperations"
-              :key="operation.name"
-              @click="operation.handler"
-            >
-              {{ operation.name }}
-            </bk-dropdown-item>
-          </bk-dropdown-menu>
-        </template>
-      </bk-dropdown>
+        {{ t('重置密码') }}
+      </bk-button>
+      <bk-button
+        class="w100 ml10"
+        theme="primary"
+        @click="handleRefund"
+      >
+        {{ t('退回') }}
+      </bk-button>
     </template>
   </detail-header>
-
-  <detail-info
-    :fields="hostFields"
-  />
 
   <detail-tab
     :tabs="hostTabs"
   >
     <template #default="type">
-      <host-info v-if="type === 'detail'"></host-info>
-      <host-subnet v-if="type === 'network'"></host-subnet>
-      <host-drive v-if="type === 'drive'"></host-drive>
-      <host-security v-if="type === 'security'"></host-security>
+      <component :is="componentMap[type]"></component>
     </template>
   </detail-tab>
 

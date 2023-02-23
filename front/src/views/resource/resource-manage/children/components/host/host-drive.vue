@@ -8,6 +8,7 @@ import {
 
 import useMountedDrive from '../../../hooks/use-mounted-drive';
 import useUninstallDrive from '../../../hooks/use-uninstall-drive';
+import useExpansionDrive from '../../../hooks/use-expansion-drive';
 
 const {
   isShowMountedDrive,
@@ -20,6 +21,12 @@ const {
   handleUninstallDrive,
   UninstallDrive,
 } = useUninstallDrive();
+
+const {
+  isShowExpansionDrive,
+  handleExpansionDrive,
+  ExpansionDrive,
+} = useExpansionDrive();
 
 const columns = [
   {
@@ -86,10 +93,15 @@ const tableData = [
 
 <template>
   <bk-button
-    class="mt20"
+    class="mt20 mr20 w100"
     theme="primary"
     @click="handleMountedDrive"
   >挂载</bk-button>
+
+  <bk-button
+    class="mt20 w100"
+    @click="handleExpansionDrive"
+  >扩容</bk-button>
 
   <bk-table
     class="mt20"
@@ -105,11 +117,14 @@ const tableData = [
   <uninstall-drive
     v-model:is-show="isShowUninstallDrive"
   />
+
+  <expansion-drive
+    v-model:is-show="isShowExpansionDrive"
+  />
 </template>
 
 <style lang="scss" scoped>
-  .info-title {
-    font-size: 14px;
-    margin: 20px 0 5px;
+  .w100 {
+    width: 100px;
   }
 </style>

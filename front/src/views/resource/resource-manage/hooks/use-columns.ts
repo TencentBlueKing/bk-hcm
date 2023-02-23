@@ -199,6 +199,10 @@ export default (type: string) => {
       },
     },
     {
+      label: '地域',
+      field: 'region',
+    },
+    {
       label: '所属 VPC',
       field: 'vpc_id',
     },

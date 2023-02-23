@@ -5,15 +5,20 @@ import type {
 
 import {
   PropType,
+  ref,
 } from 'vue';
 import {
   useI18n,
 } from 'vue-i18n';
+import {
+  useResourceStore,
+} from '@/store/resource';
 import useSteps from '../../hooks/use-steps';
 import useColumns from '../../hooks/use-columns';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
+import { any } from 'vue-types';
 
 const props = defineProps({
   filter: {
@@ -21,10 +26,15 @@ const props = defineProps({
   },
 });
 
+const isLoadingSubnets = ref(false);
+const chooseVpcSubnetsNum = ref(0);
+
 // use hooks
 const {
   t,
 } = useI18n();
+
+const resourceStore = useResourceStore();
 
 const {
   isShowDistribution,
@@ -58,6 +68,35 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList(props, 'vpcs');
+
+const handleDeleteVpc = (vpcList: any) => {
+  const vpcIds = vpcList.map((vpc: any) => vpc.id)
+  isLoadingSubnets.value = true
+  resourceStore
+    .list(
+      {
+        page: {
+          count: true,
+        },
+        filter: {
+          op: 'and',
+          rules: [{
+            field: 'vpc_id',
+            op: 'in',
+            value: vpcIds,
+          }],
+        },
+      },
+      'subnets',
+    )
+    .then((countResult: any) => {
+      chooseVpcSubnetsNum.value = countResult?.data?.count || 0;
+      handleShowDelete(vpcIds)
+    })
+    .finally(() => {
+      isLoadingSubnets.value = false
+    })
+}
 </script>
 
 <template>
@@ -77,7 +116,8 @@ const {
         class="w100 ml10"
         theme="primary"
         :disabled="selections.length <= 0"
-        @click="handleShowDelete"
+        :loading="isLoadingSubnets"
+        @click="handleDeleteVpc(selections)"
       >
         {{ t('删除') }}
       </bk-button>
@@ -106,7 +146,6 @@ const {
   <delete-dialog>
     {{ t('请注意该VPC包含一个或多个资源，在释放这些资源前，无法删除VPC') }}<br />
     {{ t('子网：{count} 个', { count: 5 }) }}<br />
-    {{ t('CVM：{count} 个', { count: 5 }) }}
   </delete-dialog>
 </template>
 

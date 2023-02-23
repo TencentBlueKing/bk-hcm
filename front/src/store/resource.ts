@@ -56,5 +56,9 @@ export const useResourceStore = defineStore({
     update(type: string, data: any, id: string | number) {
       return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/${id}`, data);
     },
+    // 获取
+    countSubnetIps(id: string | number) {
+      return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/${id}/ips/count`);
+    }
   },
 });

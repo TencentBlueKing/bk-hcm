@@ -139,9 +139,7 @@ const {
     v-model:is-show="isShowUninstallDrive"
   />
 
-  <delete-dialog>
-    {{ t('请注意删除VPC后无法恢复，请谨慎操作') }}
-  </delete-dialog>
+  <delete-dialog></delete-dialog>
 </template>
 
 <style lang="scss" scoped>

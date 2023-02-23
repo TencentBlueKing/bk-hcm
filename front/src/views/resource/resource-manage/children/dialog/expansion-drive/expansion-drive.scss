@@ -1,0 +1,13 @@
+.expansion-info {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  .expansion-name {
+    display: inline-block;
+    width: 120px;
+    color: #979BA5;
+  }
+  .expansion-value {
+    width: 150px;
+  }
+}
