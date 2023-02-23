@@ -26,7 +26,7 @@ const fields = ref([
   },
   {
     name: '虚拟网络(VPC)',
-    prop: 'virtual_network',
+    prop: 'cloud_vpc_id',
   },
 ]);
 
@@ -44,7 +44,7 @@ watch(
         ipConfigData.value = detail.ip_configurations.map((data: any) => ({
           ...data,
           ...data.properties,
-          publicIPAddress: data.properties.publicIPAddress.name,
+          publicIPAddress: data.properties?.public_ip_address?.properties?.ip_address || '--',
         }));
 
         columns.value = [
@@ -54,15 +54,18 @@ watch(
           },
           {
             label: 'IP版本',
-            field: 'privateIPAddressVersion',
+            field: 'private_ip_address_version',
           },
           {
             label: '类型',
-            field: 'type',
+            field: 'primary',
+            render({ cell }: { cell: number }) {
+              return cell ? '主要' : '辅助';
+            },
           },
           {
             label: '专用IP地址',
-            field: 'privateIPAddress',
+            field: 'private_ip_address',
           },
           {
             label: '公共IP地址',
@@ -80,16 +83,24 @@ watch(
 </script>
 
 <template>
-  <detail-info
-    class="mt20"
-    :detail="detail"
-    :fields="fields"
-  />
-
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="ipConfigData"
-  />
+  <div class="ipconfig">
+    <detail-info
+      :detail="detail"
+      :fields="fields"
+    />
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      :columns="columns"
+      :data="ipConfigData"
+    />
+  </div>
 </template>
+
+<style lang="scss" scoped>
+.ipconfig {
+  :deep(.detail-info-main) {
+    height: auto;
+  }
+}
+</style>

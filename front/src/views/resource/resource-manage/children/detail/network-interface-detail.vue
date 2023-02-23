@@ -2,11 +2,12 @@
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import NetworkInterfaceInfo from '../components/network-interface/network-interface-info.vue';
+import NetworkInterfaceInfoGcp from '../components/network-interface/network-interface-info-gcp.vue';
+import NetworkInterfaceInfoHuawei from '../components/network-interface/network-interface-info-huawei.vue';
 import NetworkInterfaceIpconfig from '../components/network-interface/network-interface-ipconfig.vue';
 import NetworkInterfaceDnssvr from '../components/network-interface/network-interface-dnssvr.vue';
 import NetworkInterfaceNetsecgroup from '../components/network-interface/network-interface-netsecgroup.vue';
 
-import { ref } from 'vue';
 import {
   useRoute,
 } from 'vue-router';
@@ -14,7 +15,7 @@ import {
   useI18n,
 } from 'vue-i18n';
 import useDetail from '../../hooks/use-detail';
-
+import { computed } from '@vue/runtime-core';
 
 const route = useRoute();
 const {
@@ -24,11 +25,11 @@ const {
 const {
   loading,
   detail,
-} = useDetail(`vendors/${route.query.vendor}/network_interface`, route.query.id as string, (data: any) => {
-  data.virtualNetworkSubnetId = `${data.virtual_network}${data.cloud_subnet_id}`;
+} = useDetail('network_interfaces', route.query.id as string, (data: any) => {
+  data.virtualNetworkSubnetId = `${data.cloud_vpc_id || '--'}/${data.cloud_subnet_id || '--'}`;
   switch (data.vendor) {
     case 'azure':
-      data.gatewayLoadBalancerId = data.gateway_load_balancer.id;
+      data.gatewayLoadBalancerId = data.gateway_load_balancer?.id;
       data.associated = [];
       if (data.network_security_group?.id) {
         data.associated.push({
@@ -48,24 +49,34 @@ const {
   }
 });
 
-const tabs = [
-  {
-    name: '基本信息',
-    value: 'basic',
-  },
-  {
-    name: 'IP配置',
-    value: 'ipconfig',
-  },
-  {
-    name: 'DNS服务器',
-    value: 'dnssvr',
-  },
-  {
-    name: '网络安全组',
-    value: 'netsecgroup',
-  },
-];
+
+const tabs = computed(() => {
+  const list = [
+    {
+      name: '基本信息',
+      value: 'basic',
+    },
+  ];
+  if (detail.value.vendor === 'azure') {
+    list.push(
+      {
+        name: 'IP配置',
+        value: 'ipconfig',
+      },
+      {
+        name: 'DNS服务器',
+        value: 'dnssvr',
+      },
+      {
+        name: '网络安全组',
+        value: 'netsecgroup',
+      },
+    );
+  }
+
+  return list;
+});
+
 </script>
 
 <template>
@@ -78,10 +89,18 @@ const tabs = [
       :tabs="tabs"
     >
       <template #default="type">
-        <network-interface-info :detail="detail" v-if="type === 'basic'"></network-interface-info>
-        <network-interface-ipconfig :detail="detail" v-if="type === 'ipconfig'"></network-interface-ipconfig>
-        <network-interface-dnssvr :detail="detail" v-if="type === 'dnssvr'"></network-interface-dnssvr>
-        <network-interface-netsecgroup :detail="detail" v-if="type === 'netsecgroup'"></network-interface-netsecgroup>
+        <template v-if="detail.vendor === 'azure'">
+          <network-interface-info :detail="detail" v-if="type === 'basic'"></network-interface-info>
+          <network-interface-ipconfig :detail="detail" v-if="type === 'ipconfig'"></network-interface-ipconfig>
+          <network-interface-dnssvr :detail="detail" v-if="type === 'dnssvr'"></network-interface-dnssvr>
+          <network-interface-netsecgroup :detail="detail" v-if="type === 'netsecgroup'"></network-interface-netsecgroup>
+        </template>
+        <template v-else-if="detail.vendor === 'gcp'">
+          <network-interface-info-gcp :detail="detail" v-if="type === 'basic'"></network-interface-info-gcp>
+        </template>
+        <template v-else-if="detail.vendor === 'huawei'">
+          <network-interface-info-huawei :detail="detail" v-if="type === 'basic'"></network-interface-info-huawei>
+        </template>
       </template>
     </detail-tab>
   </bk-loading>

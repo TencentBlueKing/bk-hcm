@@ -282,7 +282,7 @@ query();
       }
 
       .input-prefix-select {
-        ::v-deep .bk-input {
+        :deep(.bk-input) {
           border-top: none;
           border-bottom: none;
           border-left: none;

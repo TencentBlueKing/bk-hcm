@@ -25,7 +25,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryList(props, 'network_interface');
+} = useQueryList(props, 'network_interfaces');
 </script>
 
 <template>

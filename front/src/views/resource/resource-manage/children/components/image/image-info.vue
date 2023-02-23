@@ -46,7 +46,7 @@ const fields = ref([
 const {
   loading,
   detail,
-} = useDetail('public_images', props.id, (detail: any) => {
+} = useDetail('images', props.id, (detail: any) => {
   switch (detail.vendor) {
     case 'tcloud':
       fields.value.push(...[

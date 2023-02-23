@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { h, ref, watchEffect } from 'vue';
 
 const props = defineProps({
@@ -18,7 +17,7 @@ const columns = ref([
 const data = ref([]);
 
 watchEffect(() => {
-  data.value = props.detail.dns_settings.appliedDnsServers?.map((item: any) => ({ name: item }));
+  data.value = props.detail.dns_settings?.applied_dns_servers?.map((item: any) => ({ name: item }));
 });
 
 </script>

@@ -5,8 +5,10 @@ import type {
 
 import {
   PropType,
+  watchEffect,
+  reactive,
 } from 'vue';
-
+import { cloneDeep } from 'lodash';
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
 
@@ -14,6 +16,16 @@ const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
+});
+
+let params = reactive(cloneDeep(props));
+watchEffect(() => {
+  params = cloneDeep(props);
+  params.filter.rules.push({
+    field: 'type',
+    op: 'eq',
+    value: 'public',
+  });
 });
 
 const columns = useColumns('image');
@@ -25,7 +37,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryList(props, 'public_images');
+} = useQueryList(params, 'images');
 </script>
 
 <template>

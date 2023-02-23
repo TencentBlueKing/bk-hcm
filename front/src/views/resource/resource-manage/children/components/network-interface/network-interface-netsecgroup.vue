@@ -20,7 +20,7 @@ const data = reactive({
 });
 
 watchEffect(() => {
-  data.networkSecurityGroup = props.detail.network_security_group.name;
+  data.networkSecurityGroup = props.detail?.network_security_group?.name;
 });
 
 </script>

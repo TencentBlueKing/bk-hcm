@@ -459,7 +459,6 @@ export default (type: string) => {
       field: 'id',
       sort: true,
       render({ data }: any) {
-        console.log('data,', data);
         return h(
           Button,
           {
@@ -583,22 +582,81 @@ export default (type: string) => {
     },
     {
       label: '地域',
-      field: 'location',
-      sort: true,
+      field: 'region',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '可用区域',
+      field: 'zone',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '虚拟网络',
-      field: 'virtual_network',
+      field: 'cloud_vpc_id',
+      showOverflowTooltip: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
-      label: '主要专用IP',
-      field: 'main_appoint_ip',
-      sort: true,
+      label: '子网',
+      showOverflowTooltip: true,
+      field: 'cloud_subnet_id',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
-      label: '资源组',
-      field: 'resource_group_name',
-      sort: true,
+      label: '关联的实例',
+      field: 'instance_id',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '内网IP地址',
+      field: 'internal_ip',
+    },
+    {
+      label: '关联的公网IP地址',
+      field: 'public_ip',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '创建时间',
