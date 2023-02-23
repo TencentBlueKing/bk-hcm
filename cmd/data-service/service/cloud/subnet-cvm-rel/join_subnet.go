@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package vpccvmrel
+package subnetcvmrel
 
 import (
 	"hcm/pkg/api/core"
@@ -29,9 +29,9 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// ListWithVpc list vpc cvm relations with vpc details.
-func (svc *vpcCvmRelSvc) ListWithVpc(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.VpcCvmRelWithVpcListReq)
+// ListWithSubnet list subnet cvm relations with subnet details.
+func (svc *subnetCvmRelSvc) ListWithSubnet(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.SubnetCvmRelWithSubnetListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -40,27 +40,32 @@ func (svc *vpcCvmRelSvc) ListWithVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	details, err := svc.dao.VpcCvmRel().ListJoinVpc(cts.Kit, req.CvmIDs)
+	details, err := svc.dao.SubnetCvmRel().ListJoinSubnet(cts.Kit, req.CvmIDs)
 	if err != nil {
-		logs.Errorf("list vpc cvm rels join vpc failed, err: %v, cvmIDs: %v, rid: %s", err,
+		logs.Errorf("list subnet cvm rels join subnet failed, err: %v, cvmIDs: %v, rid: %s", err,
 			req.CvmIDs, cts.Kit.Rid)
 		return nil, err
 	}
 
-	vpcs := make([]corecloud.VpcCvmRelWithBaseVpc, 0, len(details.Details))
+	subnets := make([]corecloud.SubnetCvmRelWithBaseSubnet, 0, len(details.Details))
 	for _, one := range details.Details {
-		vpcs = append(vpcs, corecloud.VpcCvmRelWithBaseVpc{
-			BaseVpc: corecloud.BaseVpc{
-				ID:        one.ID,
-				Vendor:    one.Vendor,
-				AccountID: one.AccountID,
-				CloudID:   one.CloudID,
-				Name:      converter.PtrToVal(one.Name),
-				Region:    one.Region,
-				Category:  one.Category,
-				Memo:      one.Memo,
-				BkCloudID: one.BkCloudID,
-				BkBizID:   one.BkBizID,
+		subnets = append(subnets, corecloud.SubnetCvmRelWithBaseSubnet{
+			BaseSubnet: corecloud.BaseSubnet{
+				ID:                one.ID,
+				Vendor:            one.Vendor,
+				AccountID:         one.AccountID,
+				CloudVpcID:        one.CloudVpcID,
+				CloudRouteTableID: converter.PtrToVal(one.CloudRouteTableID),
+				CloudID:           one.CloudID,
+				Name:              converter.PtrToVal(one.Name),
+				Region:            one.Region,
+				Zone:              one.Zone,
+				Ipv4Cidr:          one.Ipv4Cidr,
+				Ipv6Cidr:          one.Ipv6Cidr,
+				Memo:              one.Memo,
+				VpcID:             one.VpcID,
+				RouteTableID:      converter.PtrToVal(one.RouteTableID),
+				BkBizID:           one.BkBizID,
 				Revision: &core.Revision{
 					Creator:   one.Creator,
 					Reviser:   one.Reviser,
@@ -74,5 +79,5 @@ func (svc *vpcCvmRelSvc) ListWithVpc(cts *rest.Contexts) (interface{}, error) {
 		})
 	}
 
-	return vpcs, nil
+	return subnets, nil
 }

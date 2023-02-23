@@ -17,26 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cvm
+package subnetcvmrel
 
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
-
 	"hcm/pkg/api/core"
-	protocloud "hcm/pkg/api/data-service/cloud"
+	proto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/jmoiron/sqlx"
 )
 
-// BatchDeleteCvm cvm.
-func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.CvmBatchDeleteReq)
+// BatchDelete subnet cvm rels.
+func (svc *subnetCvmRelSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -50,33 +50,31 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 		Filter: req.Filter,
 		Page:   core.DefaultBasePage,
 	}
-	listResp, err := svc.dao.Cvm().List(cts.Kit, opt)
+	listResp, err := svc.dao.SubnetCvmRel().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list cvm failed, err: %v", err)
+		logs.Errorf("list subnet cvm rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list subnet cvm rels failed, err: %v", err)
 	}
 
 	if len(listResp.Details) == 0 {
 		return nil, nil
 	}
 
-	delIDs := make([]string, len(listResp.Details))
+	delIDs := make([]uint64, len(listResp.Details))
 	for index, one := range listResp.Details {
 		delIDs[index] = one.ID
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		delFilter := tools.ContainersExpression("id", delIDs)
-		if err := svc.dao.Cvm().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+		err := svc.dao.SubnetCvmRel().DeleteWithTx(cts.Kit, txn, tools.ContainersExpression("id", delIDs))
+		if err != nil {
 			return nil, err
 		}
-
-		// TODO: add delete relation operation.
 
 		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("delete cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("delete subnet cvm rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

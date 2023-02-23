@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -52,7 +52,7 @@ func (svc *sgCvmRelSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
 	}
 	listResp, err := svc.dao.SGCvmRel().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list security group cvm rels failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("list security group cvm rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list security group cvm rels failed, err: %v", err)
 	}
 

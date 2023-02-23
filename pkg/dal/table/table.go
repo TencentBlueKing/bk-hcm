@@ -71,6 +71,8 @@ const (
 	VpcCvmRelTable Name = "vpc_cvm_rel"
 	// SubnetTable is subnet table's name.
 	SubnetTable Name = "subnet"
+	// SubnetCvmRelTable is vpc & cvm relation table's name.
+	SubnetCvmRelTable Name = "subnet_cvm_rel"
 	// HuaWeiRegionTable is huawei region table's name.
 	HuaWeiRegionTable Name = "huawei_region"
 	// AzureRGTable is azure resource group table's name.

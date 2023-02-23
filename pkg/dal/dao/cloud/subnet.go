@@ -293,3 +293,21 @@ func (s *subnetDao) Count(kt *kit.Kit, opt *types.CountOption) ([]types.CountRes
 	}
 	return counts, nil
 }
+
+// ListSubnet TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
+func ListSubnet(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]cloud.SubnetTable, error) {
+	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, cloud.SubnetColumns.FieldsNamedExpr(nil),
+		table.SubnetTable)
+
+	subnets := make([]cloud.SubnetTable, 0)
+	if err := orm.Do().Select(kt.Ctx, &subnets, sql, map[string]interface{}{"ids": ids}); err != nil {
+		return nil, err
+	}
+
+	idSubnetMap := make(map[string]cloud.SubnetTable, len(ids))
+	for _, one := range subnets {
+		idSubnetMap[one.ID] = one
+	}
+
+	return idSubnetMap, nil
+}

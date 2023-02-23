@@ -150,7 +150,7 @@ func (svc *regionSvc) GetAwsRegion(cts *rest.Contexts) (interface{}, error) {
 	}
 	res, err := svc.dao.AwsRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list aws region failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("list aws region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list region failed, err: %v", err)
 	}
 

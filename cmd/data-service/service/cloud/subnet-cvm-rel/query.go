@@ -17,26 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cvm
+package subnetcvmrel
 
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
-
 	"hcm/pkg/api/core"
+	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/orm"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
-// BatchDeleteCvm cvm.
-func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.CvmBatchDeleteReq)
+// List subnet cvm rels.
+func (svc *subnetCvmRelSvc) List(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -46,39 +43,30 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	opt := &types.ListOption{
-		Fields: []string{"id"},
+		Fields: req.Fields,
 		Filter: req.Filter,
-		Page:   core.DefaultBasePage,
+		Page:   req.Page,
 	}
-	listResp, err := svc.dao.Cvm().List(cts.Kit, opt)
+	result, err := svc.dao.SubnetCvmRel().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list cvm failed, err: %v", err)
+		logs.Errorf("list subnet cvm rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list subnet cvm rels failed, err: %v", err)
 	}
 
-	if len(listResp.Details) == 0 {
-		return nil, nil
+	if req.Page.Count {
+		return &protocloud.SubnetCvmRelListResult{Count: result.Count}, nil
 	}
 
-	delIDs := make([]string, len(listResp.Details))
-	for index, one := range listResp.Details {
-		delIDs[index] = one.ID
+	details := make([]corecloud.SubnetCvmRel, 0, len(result.Details))
+	for _, one := range result.Details {
+		details = append(details, corecloud.SubnetCvmRel{
+			ID:        one.ID,
+			CvmID:     one.CvmID,
+			SubnetID:  one.SubnetID,
+			Creator:   one.Creator,
+			CreatedAt: one.CreatedAt,
+		})
 	}
 
-	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		delFilter := tools.ContainersExpression("id", delIDs)
-		if err := svc.dao.Cvm().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			return nil, err
-		}
-
-		// TODO: add delete relation operation.
-
-		return nil, nil
-	})
-	if err != nil {
-		logs.Errorf("delete cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
+	return &protocloud.SubnetCvmRelListResult{Details: details}, nil
 }

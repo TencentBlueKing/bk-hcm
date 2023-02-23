@@ -17,66 +17,50 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cvm
+package subnetcvmrel
 
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
-
-	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
-	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/dal/dao/types"
+	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/jmoiron/sqlx"
 )
 
-// BatchDeleteCvm cvm.
-func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocloud.CvmBatchDeleteReq)
+// BatchCreate subnet cvm rels.
+func (svc *subnetCvmRelSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.SubnetCvmRelBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt := &types.ListOption{
-		Fields: []string{"id"},
-		Filter: req.Filter,
-		Page:   core.DefaultBasePage,
-	}
-	listResp, err := svc.dao.Cvm().List(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list cvm failed, err: %v", err)
-	}
-
-	if len(listResp.Details) == 0 {
-		return nil, nil
-	}
-
-	delIDs := make([]string, len(listResp.Details))
-	for index, one := range listResp.Details {
-		delIDs[index] = one.ID
-	}
-
-	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		delFilter := tools.ContainersExpression("id", delIDs)
-		if err := svc.dao.Cvm().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			return nil, err
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		models := make([]tablecloud.SubnetCvmRelTable, 0, len(req.Rels))
+		for _, one := range req.Rels {
+			models = append(models, tablecloud.SubnetCvmRelTable{
+				CvmID:    one.CvmID,
+				SubnetID: one.SubnetID,
+				Creator:  cts.Kit.User,
+			})
 		}
 
-		// TODO: add delete relation operation.
+		if err := svc.dao.SubnetCvmRel().BatchCreateWithTx(cts.Kit, txn, models); err != nil {
+			return nil, fmt.Errorf("batch create subnet cvm rels failed, err: %v", err)
+		}
 
 		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("delete cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("batch create subnet cvm rels failed, err: %v, req: %v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
 

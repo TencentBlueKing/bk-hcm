@@ -286,7 +286,7 @@ func (svc *tcloudSGRuleSvc) DeleteTCloudRule(cts *rest.Contexts) (interface{}, e
 	}
 	listResp, err := svc.dao.TCloudSGRule().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list tcloud security group rule failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("list tcloud security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list tcloud security group rule failed, err: %v", err)
 	}
 

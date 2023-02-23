@@ -187,7 +187,7 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 	}
 	listResp, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list security group failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("list security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list security group failed, err: %v", err)
 	}
 

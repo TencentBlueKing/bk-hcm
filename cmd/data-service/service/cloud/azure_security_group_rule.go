@@ -319,7 +319,7 @@ func (svc *azureSGRuleSvc) DeleteAzureRule(cts *rest.Contexts) (interface{}, err
 	}
 	listResp, err := svc.dao.AzureSGRule().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list azure security group rule failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("list azure security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list azure security group rule failed, err: %v", err)
 	}
 

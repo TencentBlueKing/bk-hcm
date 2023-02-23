@@ -434,6 +434,18 @@ create table if not exists `subnet`
 ) engine = innodb
   default charset = utf8mb4;
 
+create table if not exists `subnet_cvm_rel`
+(
+    `id`         bigint(1) unsigned not null auto_increment,
+    `subnet_id`  varchar(64)        not null,
+    `cvm_id`     varchar(64)        not null,
+    `creator`    varchar(64)        not null,
+    `created_at` timestamp          not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_subnet_id_cvm_id` (`subnet_id`, `cvm_id`)
+) engine = innodb
+  default charset = utf8mb4;
+
 create table if not exists `huawei_region`
 (
     `id`            varchar(64) not null,

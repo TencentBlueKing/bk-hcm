@@ -176,7 +176,7 @@ func (svc *huaweiRegionSvc) ListHuaWeiRegion(cts *rest.Contexts) (interface{}, e
 	}
 	result, err := svc.dao.HuaWeiRegion().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list huawei region failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("list huawei region failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list huawei region failed, err: %v", err)
 	}
 

@@ -253,7 +253,7 @@ func (svc gcpFirewallRuleSvc) BatchDeleteGcpFirewallRule(cts *rest.Contexts) (in
 	}
 	listResp, err := svc.dao.GcpFirewallRule().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list gcp firewall rule failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("list gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list gcp firewall rule failed, err: %v", err)
 	}
 

@@ -35,8 +35,9 @@ import (
 	"hcm/cmd/data-service/service/cloud/disk"
 	"hcm/cmd/data-service/service/cloud/image"
 	"hcm/cmd/data-service/service/cloud/region"
-	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
+	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
+	subnetcvmrel "hcm/cmd/data-service/service/cloud/subnet-cvm-rel"
 	vpccvmrel "hcm/cmd/data-service/service/cloud/vpc-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/zone"
 	"hcm/pkg/cc"
@@ -161,6 +162,7 @@ func (s *Service) apiSet() *restful.Container {
 	cloud.InitVpcService(capability)
 	vpccvmrel.InitService(capability)
 	cloud.InitSubnetService(capability)
+	subnetcvmrel.InitService(capability)
 	cloud.InitCloudService(capability)
 	auth.InitAuthService(capability)
 	disk.InitDiskService(capability)

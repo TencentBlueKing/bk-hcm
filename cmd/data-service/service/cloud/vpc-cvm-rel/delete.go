@@ -52,7 +52,7 @@ func (svc *vpcCvmRelSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
 	}
 	listResp, err := svc.dao.VpcCvmRel().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list vpc cvm rels failed, err: %v, rid: %s", cts.Kit.Rid)
+		logs.Errorf("list vpc cvm rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list vpc cvm rels failed, err: %v", err)
 	}
 
