@@ -839,6 +839,7 @@ create table if not exists `cvm`
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
+  default charset = utf8mb4;
 
 create table if not exists `application`
 (
