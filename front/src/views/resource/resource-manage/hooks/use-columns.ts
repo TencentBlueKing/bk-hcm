@@ -637,6 +637,7 @@ export default (type: string) => {
     {
       label: '关联的实例',
       field: 'instance_id',
+      showOverflowTooltip: true,
       render({ cell }: { cell: string }) {
         return h(
           'span',
@@ -665,6 +666,7 @@ export default (type: string) => {
     {
       label: '创建时间',
       field: 'created_at',
+      width: 180,
       sort: true,
     },
   ];

@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import { Button } from 'bkui-vue';
-import { h, ref, watch } from 'vue';
+import { h, ref, watchEffect } from 'vue';
 
 const props = defineProps({
   detail: {
@@ -26,97 +25,93 @@ const fields = ref([
     },
   },
   {
-    name: '资源组',
-    prop: 'resource_group_name',
+    name: '地域',
+    prop: 'region',
   },
   {
-    name: '位置',
-    prop: 'region',
+    name: '可用区域',
+    prop: 'zone',
+  },
+  {
+    name: '业务',
+    prop: 'bk_biz_id',
+    render(val: number) {
+      return val === -1 ? '--' : val;
+    },
+  },
+  {
+    name: '状态',
+    prop: 'portState',
+  },
+  {
+    name: '所属网络(VPC)',
+    prop: 'cloud_vpc_id',
+    render(val: string) {
+      if (!val) {
+        return '--';
+      }
+      return h('div', { class: 'cell-content-list' }, val?.split(';')
+        .map(item => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())));
+    },
+  },
+  {
+    name: '所属子网',
+    prop: 'cloud_subnet_id',
+    render(val: string) {
+      if (!val) {
+        return '--';
+      }
+      return h('div', { class: 'cell-content-list' }, val?.split(';')
+        .map(item => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())));
+    },
+  },
+  {
+    name: '安全组',
+    prop: 'security_groups',
+    render(val: { id: string }[]) {
+      if (!val.length) {
+        return '--';
+      }
+      return h('div', { class: 'cell-content-list' }, val.map(item => h('p', { class: 'cell-content-item' }, item?.id)));
+    },
+  },
+  {
+    name: '已关联到',
+    prop: 'instance_id',
+  },
+  {
+    name: 'MAC地址',
+    prop: 'mac_addr',
   },
 ]);
 
-watch(
-  () => props.detail,
-  (detail) => {
-    switch (detail.vendor) {
-      case 'azure':
-        fields.value.push(...[
-          {
-            name: '订阅',
-            prop: 'subscribe_name',
-          },
-          {
-            name: '订阅ID',
-            prop: 'subscribe_id',
-          },
-          {
-            name: '类型',
-            prop: 'type',
-          },
-          {
-            name: '内网IPv4地址',
-            prop: 'internal_ip',
-          },
-          {
-            name: '公网IPv4地址',
-            prop: 'public_ip',
-          },
-          {
-            name: '专用IP地址(IPv6)',
-            prop: 'private_ipv6',
-          },
-          {
-            name: '公用IP地址(IPv6)',
-            prop: 'public_ipv6',
-          },
-          {
-            name: '更快的网络连接',
-            prop: 'enable_accelerated_networking',
-            render(val: boolean) {
-              return val ? '是' : '否';
-            },
-          },
-          {
-            name: '已关联到',
-            prop: 'associated',
-            render(val: [{ id: string, name: string, label: string }]) {
-              if (!val?.length) {
-                return '--';
-              }
-              return h('div', { style: { 'line-height': 'normal' } }, val?.map(({ name, label }) => h('p', h(
-                Button,
-                { text: true, theme: 'primary' },
-                `${name}(${label})`,
-              ))));
-            },
-          },
-          {
-            name: '虚拟网络/子网',
-            prop: 'virtualNetworkSubnetId',
-          },
-          {
-            name: 'MAC地址',
-            prop: 'mac_address',
-          },
-          {
-            name: '负载均衡器',
-            prop: 'gatewayLoadBalancerId',
-          },
-        ]);
-        break;
-    }
-  },
-  {
-    deep: true,
-    immediate: true,
-  },
-);
+const data = ref([]);
+watchEffect(() => {
+  data.value = {
+    ...props.detail,
+    portState: props.detail?.port_state,
+  };
+});
 </script>
 
 <template>
-  <detail-info
-    class="mt20"
-    :detail="detail"
-    :fields="fields"
-  />
+  <div class="field-list">
+    <detail-info
+      class="mt20"
+      :detail="data"
+      :fields="fields"
+    />
+  </div>
 </template>
+
+<style lang="scss" scoped>
+.field-list {
+  :deep(.cell-content-list) {
+    line-height: normal;
+    .cell-content-item {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+</style>

@@ -5,6 +5,7 @@ import NetworkInterfaceInfo from '../components/network-interface/network-interf
 import NetworkInterfaceInfoGcp from '../components/network-interface/network-interface-info-gcp.vue';
 import NetworkInterfaceInfoHuawei from '../components/network-interface/network-interface-info-huawei.vue';
 import NetworkInterfaceIpconfig from '../components/network-interface/network-interface-ipconfig.vue';
+import NetworkInterfaceIpconfigHuawei from '../components/network-interface/network-interface-ipconfig-huawei.vue';
 import NetworkInterfaceDnssvr from '../components/network-interface/network-interface-dnssvr.vue';
 import NetworkInterfaceNetsecgroup from '../components/network-interface/network-interface-netsecgroup.vue';
 
@@ -60,7 +61,7 @@ const tabs = computed(() => {
   if (detail.value.vendor === 'azure') {
     list.push(
       {
-        name: 'IP配置',
+        name: 'IP信息',
         value: 'ipconfig',
       },
       {
@@ -72,6 +73,12 @@ const tabs = computed(() => {
         value: 'netsecgroup',
       },
     );
+  }
+  if (detail.value.vendor === 'huawei') {
+    list.push({
+      name: 'IP信息',
+      value: 'ipconfig',
+    });
   }
 
   return list;
@@ -99,7 +106,12 @@ const tabs = computed(() => {
           <network-interface-info-gcp :detail="detail" v-if="type === 'basic'"></network-interface-info-gcp>
         </template>
         <template v-else-if="detail.vendor === 'huawei'">
-          <network-interface-info-huawei :detail="detail" v-if="type === 'basic'"></network-interface-info-huawei>
+          <network-interface-info-huawei
+            :detail="detail" v-if="type === 'basic'">
+          </network-interface-info-huawei>
+          <network-interface-ipconfig-huawei
+            :detail="detail" v-if="type === 'ipconfig'">
+          </network-interface-ipconfig-huawei>
         </template>
       </template>
     </detail-tab>

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { h, ref, watchEffect } from 'vue';
 
 const props = defineProps({
@@ -6,56 +7,85 @@ const props = defineProps({
     type: Object,
   },
 });
-const columns = ref([
+
+const fields = ref([
   {
-    label: '接口名称',
-    field: 'name',
+    name: '网络接口名称',
+    prop: 'name',
   },
   {
-    label: '内网IP',
-    field: 'internal_ip',
+    name: '网络接口ID',
+    prop: 'id',
   },
   {
-    label: '公网IP',
-    field: 'public_ip',
-  },
-  {
-    label: '所属网络(VPC)',
-    field: 'cloud_vpc_id',
-    showOverflowTooltip: true,
-    render({ cell }: { cell: string }) {
-      if (!cell) {
-        return '--';
-      }
-      return h('div', { class: 'cell-content-list' }, cell?.split(';')
-        .map(item => h('p', { class: 'cell-content-item' }, item)));
+    name: '账号',
+    prop: 'account_id',
+    link(val: string) {
+      return `/#/resource/account/detail/?id=${val}`;
     },
   },
   {
-    label: '所属子网',
-    field: 'cloud_subnet_id',
-    showOverflowTooltip: true,
-    render({ cell }: { cell: string }) {
-      if (!cell) {
-        return '--';
-      }
-      return h('div', { class: 'cell-content-list' }, cell?.split(';')
-        .map(item => h('p', { class: 'cell-content-item' }, item)));
+    name: '地域',
+    prop: 'region',
+  },
+  {
+    name: '可用区域',
+    prop: 'zone',
+  },
+  {
+    name: '业务',
+    prop: 'bk_biz_id',
+    render(val: number) {
+      return val === -1 ? '--' : val;
     },
   },
   {
-    label: '网络层级',
-    field: 'networkTier',
-    render({ cell }: { cell: number }) {
+    name: '内网IP',
+    prop: 'internal_ip',
+  },
+  {
+    name: '公网IP',
+    prop: 'internal_ip',
+  },
+  {
+    name: '所属网络(VPC)',
+    prop: 'cloud_vpc_id',
+    render(val: string) {
+      if (!val) {
+        return '--';
+      }
+      return h('div', { class: 'cell-content-list' }, val?.split(';')
+        .map(item => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())));
+    },
+  },
+  {
+    name: '所属子网',
+    prop: 'cloud_subnet_id',
+    render(val: string) {
+      if (!val) {
+        return '--';
+      }
+      return h('div', { class: 'cell-content-list' }, val?.split(';')
+        .map(item => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())));
+    },
+  },
+  {
+    name: '已关联到',
+    prop: 'instance_id',
+  },
+  {
+    name: '网络层级',
+    prop: 'networkTier',
+    render(val: string) {
       const vals = { PREMIUM: '高级', STANDARD: '标准' };
-      return vals[cell];
+      return vals[val];
     },
   },
   {
-    label: 'IP转发',
-    field: 'can_ip_forward',
-    render({ cell }: { cell: number }) {
-      return cell ? '开启' : '关闭';
+    name: 'IP转发',
+    prop: 'can_ip_forward',
+    render(val: boolean) {
+      return  val ? '开启' : '关闭';
     },
   },
 ]);
@@ -63,27 +93,27 @@ const columns = ref([
 const data = ref([]);
 
 watchEffect(() => {
-  data.value = [{
+  data.value = {
     ...props.detail,
     networkTier: props.detail?.access_configs?.[0]?.network_tier,
-  }];
-
-  console.log(data.value);
+  };
 });
 </script>
 
 <template>
-  <bk-table
-    class="table-list mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="data"
-  />
+  <div class="field-list">
+    <detail-info
+      class="field-list mt20"
+      :detail="data"
+      :fields="fields"
+    />
+  </div>
 </template>
 
 <style lang="scss" scoped>
-.table-list {
+.field-list {
   :deep(.cell-content-list) {
+    line-height: normal;
     .cell-content-item {
       overflow: hidden;
       text-overflow: ellipsis;

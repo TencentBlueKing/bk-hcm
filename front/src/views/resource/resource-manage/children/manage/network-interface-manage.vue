@@ -32,6 +32,7 @@ const {
   <bk-loading :loading="isLoading">
     <bk-table
       row-hover="auto"
+      remote-pagination
       :pagination="pagination"
       :columns="columns"
       :data="datas"
