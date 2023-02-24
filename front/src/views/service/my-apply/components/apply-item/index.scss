@@ -47,14 +47,17 @@ $borderColor:  #f5f6fa;
             &.pending {
                 background: #367FF9;
             }
-            &.reject {
-                background:#F39C3C;
+            &.rejected {
+                background:#ea3636;
             }
-            &.pass {
+            &.completed {
                 background: #27BE78;
             }
             &.cancelled {
                 background: #AAAAAA;
+            }
+            &.deliver_error {
+                background-color: #ea3636;
             }
         }
     }

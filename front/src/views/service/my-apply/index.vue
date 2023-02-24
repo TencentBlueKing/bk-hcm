@@ -82,6 +82,8 @@ export default defineComponent({
         count: false,
         start: 0,
         limit: 10,
+        sort: 'id',
+        order: 'DESC',
       },
     });
 
@@ -143,6 +145,8 @@ export default defineComponent({
         count: false,
         start: 0,
         limit: 10,
+        sort: 'id',
+        order: 'DESC',
       };
     };
 

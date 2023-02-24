@@ -11,12 +11,12 @@ const resourceMenus: RouteRecordRaw[] = [
     children: [
       {
         path: '/resource/account',
-        name: t('账户'),
+        name: t('账号'),
         alias: '',
         component: () => import('@/views/resource/accountmanage/index.vue'),
         meta: {
           activeKey: 'resourceAccount',
-          breadcrumb: [t('云管'), t('账户')],
+          breadcrumb: [t('云管'), t('账号')],
           action: 'account_find',
         },
       },

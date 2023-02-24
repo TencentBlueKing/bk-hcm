@@ -18,7 +18,7 @@ export default defineComponent({
   setup() {
     const list = ref([{
       name:
-          '主机',
+          '账号',
       id: 1,
       btnText: '立即申请',
     }]);

@@ -11,7 +11,7 @@ const resourceInside: RouteRecordRaw[] = [
     meta: {
       backRouter: -1,
       activeKey: 'resourceAccount',
-      breadcrumb: ['云管', '账户', '新增账户'],
+      breadcrumb: ['云管', '账号', '新增账号'],
     },
   },
   {
@@ -21,7 +21,7 @@ const resourceInside: RouteRecordRaw[] = [
     meta: {
       backRouter: -1,
       activeKey: 'resourceAccount',
-      breadcrumb: ['云管', '账户', '详情'],
+      breadcrumb: ['云管', '账号', '详情'],
     },
   },
 ];

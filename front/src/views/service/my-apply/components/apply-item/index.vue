@@ -55,12 +55,12 @@ export default defineComponent({
         label: t('审批中'),
         value: 'pending',
       },
-      reject: {
-        label: t('已拒绝'),
-        value: 'reject',
+      rejected: {
+        label: t('审批驳回'),
+        value: 'rejected',
       },
       pass: {
-        label: t('已通过'),
+        label: t('审批通过'),
         value: 'pass',
       },
       cancelled: {
@@ -75,9 +75,9 @@ export default defineComponent({
         label: t('已完成'),
         value: 'completed',
       },
-      error: {
-        label: t('异常'),
-        value: 'error',
+      deliver_error: {
+        label: t('交付异常'),
+        value: 'deliver_error',
       },
     });
     const state = reactive({

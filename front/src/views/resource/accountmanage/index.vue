@@ -4,7 +4,7 @@
       <div @click="handleAuth('account_create')">
         <bk-button
           theme="primary" @click="handleJump('accountAdd')"
-          :disabled="!authVerifyData?.results?.create_authorized">
+          :disabled="!authVerifyData?.results?.import_authorized">
           {{t('新增')}}
         </bk-button>
       </div>
@@ -207,7 +207,7 @@ export default defineComponent({
       CloudType,
       AccountType,
       filter: { op: 'and', rules: [] },
-      actionData: ['create', 'update', 'key_access'],
+      actionData: ['import', 'update', 'key_access'],
     });
 
     const showPermissionDialog = ref(false);    // 无权限弹窗

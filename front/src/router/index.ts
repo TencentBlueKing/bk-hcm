@@ -59,7 +59,7 @@ const routes: RouteRecordRaw[] = [
     redirect: '/resource/account',
     meta: {
       activeKey: 'resourceAccount',
-      breadcrumb: [t('云管'), t('账户')],
+      breadcrumb: [t('云管'), t('账号')],
     },
   },
   {
