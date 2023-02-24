@@ -17,45 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package image
+package cloud
 
 import (
-	"net/http"
+	"time"
 
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/rest"
+	"hcm/pkg/dal/table/cloud"
+	"hcm/pkg/dal/table/cloud/disk"
 )
 
-// InitService ...
-func InitService(cap *capability.Capability) {
-	pSvc := &imageSvc{
-		Set: cap.Dao,
-	}
-	pSvc.Init()
+// DiskCvmRelListResult ...
+type DiskCvmRelListResult struct {
+	Count   *uint64
+	Details []*cloud.DiskCvmRelModel
+}
 
-	h := rest.NewHandler()
+// DiskCvmRelJoinDiskListResult ...
+type DiskCvmRelJoinDiskListResult struct {
+	Details []*DiskWithCvmID `json:"details"`
+}
 
-	h.Add(
-		"BatchCreateImageExt",
-		http.MethodPost,
-		"/vendors/{vendor}/images/batch/create",
-		pSvc.BatchCreateImageExt,
-	)
-	h.Add(
-		"RetrieveImageExt",
-		http.MethodGet,
-		"/vendors/{vendor}/images/{id}",
-		pSvc.RetrieveImageExt,
-	)
-	h.Add("ListImage", http.MethodPost, "/images/list", pSvc.ListImage)
-	h.Add("ListImageExt", http.MethodPost, "/vendors/{vendor}/images/list", pSvc.ListImageExt)
-	h.Add(
-		"BatchUpdateImageExt",
-		http.MethodPatch,
-		"/vendors/{vendor}/images",
-		pSvc.BatchUpdateImageExt,
-	)
-	h.Add("BatchDeleteImage", http.MethodDelete, "/images/batch", pSvc.BatchDeleteImage)
-
-	h.Load(cap.WebService)
+// DiskWithCvmID ...
+type DiskWithCvmID struct {
+	disk.DiskModel `db:",inline" json:",inline"`
+	CvmID          string     `db:"cvm_id" json:"cvm_id"`
+	RelCreator     string     `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt   *time.Time `db:"rel_created_at" json:"rel_created_at"`
 }

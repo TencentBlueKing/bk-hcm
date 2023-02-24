@@ -29,7 +29,7 @@ import (
 )
 
 func toProtoDiskExtListResult[T dataproto.DiskExtensionResult](
-	data *cloud.ListDisk,
+	data *cloud.DiskListResult,
 ) (*dataproto.DiskExtListResult[T], error) {
 	details := make([]*dataproto.DiskExtResult[T], len(data.Details))
 	for indx, d := range data.Details {

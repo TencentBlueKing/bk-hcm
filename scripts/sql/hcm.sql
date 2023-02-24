@@ -633,23 +633,23 @@ create table if not exists `eip`
 
 create table if not exists `zone`
 (
-    `id`                      varchar(64)  not null,
-    `vendor`                  varchar(16)  not null,
-    `cloud_id`                varchar(255) not null,
-    `name`                    varchar(64)  not null,
-    `name_cn`                 varchar(64)  not null,
-    `state`                   varchar(64)  not null,
-    `region`                  varchar(64)  not null,
-    `extension`               json         not null,
-    `creator`                 varchar(64)  not null,
-    `reviser`                 varchar(64)  not null,
-    `created_at`              timestamp    not null default current_timestamp,
-    `updated_at`              timestamp    not null default current_timestamp on update current_timestamp,
+    `id`         varchar(64)  not null,
+    `vendor`     varchar(16)  not null,
+    `cloud_id`   varchar(255) not null,
+    `name`       varchar(64)  not null,
+    `name_cn`    varchar(64)  not null,
+    `state`      varchar(64)  not null,
+    `region`     varchar(64)  not null,
+    `extension`  json         not null,
+    `creator`    varchar(64)  not null,
+    `reviser`    varchar(64)  not null,
+    `created_at` timestamp    not null default current_timestamp,
+    `updated_at` timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
   default charset = utf8mb4;
-  
+
 create table if not exists `route_table`
 (
     `id`           varchar(64)  not null,
@@ -843,18 +843,30 @@ create table if not exists `cvm`
 
 create table if not exists `application`
 (
-    `id`             varchar(64) not null,
-    `sn`             varchar(64) not null,
-    `type`           varchar(64) not null,
-    `status`         varchar(32) not null,
-    `applicant`      varchar(64) not null,
-    `memo`           varchar(255) default '',
-    `content`        json        not null,
-    `creator`        varchar(64) not null,
-    `reviser`        varchar(64) not null,
-    `created_at`     timestamp   not null default current_timestamp,
-    `updated_at`     timestamp   not null default current_timestamp on update current_timestamp,
+    `id`         varchar(64) not null,
+    `sn`         varchar(64) not null,
+    `type`       varchar(64) not null,
+    `status`     varchar(32) not null,
+    `applicant`  varchar(64) not null,
+    `memo`       varchar(255)         default '',
+    `content`    json        not null,
+    `creator`    varchar(64) not null,
+    `reviser`    varchar(64) not null,
+    `created_at` timestamp   not null default current_timestamp,
+    `updated_at` timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_sn` (`sn`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `disk_cvm_rel`
+(
+    `id`         bigint(1) unsigned not null auto_increment,
+    `disk_id`    varchar(64)        not null,
+    `cvm_id`     varchar(64)        not null,
+    `creator`    varchar(64)        not null,
+    `created_at` timestamp          not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_disk_id_cvm_id` (`disk_id`, `cvm_id`)
 ) engine = innodb
   default charset = utf8mb4;

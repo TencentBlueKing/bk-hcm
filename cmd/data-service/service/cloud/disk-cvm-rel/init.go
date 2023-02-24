@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package image
+package diskcvmrel
 
 import (
 	"net/http"
@@ -28,34 +28,16 @@ import (
 
 // InitService ...
 func InitService(cap *capability.Capability) {
-	pSvc := &imageSvc{
+	svc := &relSvc{
 		Set: cap.Dao,
 	}
-	pSvc.Init()
+	svc.Init()
 
 	h := rest.NewHandler()
-
-	h.Add(
-		"BatchCreateImageExt",
-		http.MethodPost,
-		"/vendors/{vendor}/images/batch/create",
-		pSvc.BatchCreateImageExt,
-	)
-	h.Add(
-		"RetrieveImageExt",
-		http.MethodGet,
-		"/vendors/{vendor}/images/{id}",
-		pSvc.RetrieveImageExt,
-	)
-	h.Add("ListImage", http.MethodPost, "/images/list", pSvc.ListImage)
-	h.Add("ListImageExt", http.MethodPost, "/vendors/{vendor}/images/list", pSvc.ListImageExt)
-	h.Add(
-		"BatchUpdateImageExt",
-		http.MethodPatch,
-		"/vendors/{vendor}/images",
-		pSvc.BatchUpdateImageExt,
-	)
-	h.Add("BatchDeleteImage", http.MethodDelete, "/images/batch", pSvc.BatchDeleteImage)
+	h.Add("BatchCreate", http.MethodPost, "/disk_cvm_rels/batch/create", svc.BatchCreate)
+	h.Add("List", http.MethodPost, "/disk_cvm_rels/list", svc.List)
+	h.Add("ListWithDisk", http.MethodPost, "/disk_cvm_rels/with/disks/list", svc.ListWithDisk)
+	h.Add("BatchDelete", http.MethodDelete, "/disk_cvm_rels/batch", svc.BatchDelete)
 
 	h.Load(cap.WebService)
 }

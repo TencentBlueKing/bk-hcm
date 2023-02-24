@@ -140,7 +140,7 @@ func (diskDao *DiskDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, diskID string
 }
 
 // List 根据条件查询云盘列表
-func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.ListDisk, error) {
+func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskListResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list disk options is nil")
 	}
@@ -166,7 +166,7 @@ func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.ListDis
 			logs.ErrorJson("count disk failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
 		}
-		return &cloud.ListDisk{Count: &count}, nil
+		return &cloud.DiskListResult{Count: &count}, nil
 	}
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
 	if err != nil {
@@ -181,7 +181,7 @@ func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.ListDis
 		return nil, err
 	}
 
-	result := &cloud.ListDisk{Details: details}
+	result := &cloud.DiskListResult{Details: details}
 
 	return result, nil
 }
@@ -207,7 +207,7 @@ func (diskDao *DiskDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filte
 }
 
 // Count 根据条件统计云盘数量
-func (diskDao *DiskDao) Count(kt *kit.Kit, opt *types.CountOption) (*cloud.CountDisk, error) {
+func (diskDao *DiskDao) Count(kt *kit.Kit, opt *types.CountOption) (*cloud.DiskCountResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "count disk options is nil")
 	}
@@ -227,5 +227,20 @@ func (diskDao *DiskDao) Count(kt *kit.Kit, opt *types.CountOption) (*cloud.Count
 	if err != nil {
 		return nil, err
 	}
-	return &cloud.CountDisk{Count: count}, nil
+	return &cloud.DiskCountResult{Count: count}, nil
+}
+
+// ListByIDs ...
+func ListByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]disk.DiskModel, error) {
+	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, disk.DiskColumns.FieldsNamedExpr(nil), disk.TableName)
+	disks := make([]disk.DiskModel, 0)
+	if err := orm.Do().Select(kt.Ctx, &disks, sql, map[string]interface{}{"ids": ids}); err != nil {
+		return nil, err
+	}
+
+	idToDiskMap := make(map[string]disk.DiskModel, len(ids))
+	for _, d := range disks {
+		idToDiskMap[d.ID] = d
+	}
+	return idToDiskMap, nil
 }

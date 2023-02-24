@@ -21,9 +21,7 @@ package disk
 
 import (
 	"fmt"
-	"net/http"
 
-	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/constant"
@@ -42,33 +40,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 )
-
-// InitDiskService ...
-func InitDiskService(cap *capability.Capability) {
-	svc := &diskSvc{
-		Set: cap.Dao,
-	}
-	svc.Init()
-
-	h := rest.NewHandler()
-
-	// 批量创建云盘(支持 extension 字段)
-	h.Add("BatchCreateDiskExt", http.MethodPost, "/vendors/{vendor}/disks/batch/create", svc.BatchCreateDiskExt)
-	// 获取单个云盘
-	h.Add("RetrieveDiskExt", http.MethodGet, "/vendors/{vendor}/disks/{id}", svc.RetrieveDiskExt)
-	// 查询云盘列表 (不带 extension 字段)
-	h.Add("ListDisk", http.MethodPost, "/disks/list", svc.ListDisk)
-	// 查询云盘列表 (带 extension 字段)
-	h.Add("ListDiskExt", http.MethodPost, "/vendors/{vendor}/disks/list", svc.ListDiskExt)
-	// 批量更新云盘数据(支持 extension 字段)
-	h.Add("BatchUpdateDiskExt", http.MethodPatch, "/vendors/{vendor}/disks", svc.BatchUpdateDiskExt)
-	// 批量更新云盘基础数据
-	h.Add("BatchUpdateDisk", http.MethodPatch, "/disks", svc.BatchUpdateDisk)
-	h.Add("BatchDeleteDisk", http.MethodDelete, "/disks/batch", svc.BatchDeleteDisk)
-	h.Add("CountDisk", http.MethodPost, "/disks/count", svc.CountDisk)
-
-	h.Load(cap.WebService)
-}
 
 type diskSvc struct {
 	dao.Set

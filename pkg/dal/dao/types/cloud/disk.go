@@ -21,13 +21,13 @@ package cloud
 
 import "hcm/pkg/dal/table/cloud/disk"
 
-// ListDisk list disks
-type ListDisk struct {
+// DiskListResult list disks
+type DiskListResult struct {
 	Count   *uint64
 	Details []*disk.DiskModel
 }
 
-// CountDisk count disks
-type CountDisk struct {
+// DiskCountResult count disks
+type DiskCountResult struct {
 	Count uint64
 }

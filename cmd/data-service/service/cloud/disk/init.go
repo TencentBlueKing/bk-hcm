@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package image
+package disk
 
 import (
 	"net/http"
@@ -28,34 +28,27 @@ import (
 
 // InitService ...
 func InitService(cap *capability.Capability) {
-	pSvc := &imageSvc{
+	svc := &diskSvc{
 		Set: cap.Dao,
 	}
-	pSvc.Init()
+	svc.Init()
 
 	h := rest.NewHandler()
 
-	h.Add(
-		"BatchCreateImageExt",
-		http.MethodPost,
-		"/vendors/{vendor}/images/batch/create",
-		pSvc.BatchCreateImageExt,
-	)
-	h.Add(
-		"RetrieveImageExt",
-		http.MethodGet,
-		"/vendors/{vendor}/images/{id}",
-		pSvc.RetrieveImageExt,
-	)
-	h.Add("ListImage", http.MethodPost, "/images/list", pSvc.ListImage)
-	h.Add("ListImageExt", http.MethodPost, "/vendors/{vendor}/images/list", pSvc.ListImageExt)
-	h.Add(
-		"BatchUpdateImageExt",
-		http.MethodPatch,
-		"/vendors/{vendor}/images",
-		pSvc.BatchUpdateImageExt,
-	)
-	h.Add("BatchDeleteImage", http.MethodDelete, "/images/batch", pSvc.BatchDeleteImage)
+	// 批量创建云盘(支持 extension 字段)
+	h.Add("BatchCreateDiskExt", http.MethodPost, "/vendors/{vendor}/disks/batch/create", svc.BatchCreateDiskExt)
+	// 获取单个云盘
+	h.Add("RetrieveDiskExt", http.MethodGet, "/vendors/{vendor}/disks/{id}", svc.RetrieveDiskExt)
+	// 查询云盘列表 (不带 extension 字段)
+	h.Add("ListDisk", http.MethodPost, "/disks/list", svc.ListDisk)
+	// 查询云盘列表 (带 extension 字段)
+	h.Add("ListDiskExt", http.MethodPost, "/vendors/{vendor}/disks/list", svc.ListDiskExt)
+	// 批量更新云盘数据(支持 extension 字段)
+	h.Add("BatchUpdateDiskExt", http.MethodPatch, "/vendors/{vendor}/disks", svc.BatchUpdateDiskExt)
+	// 批量更新云盘基础数据
+	h.Add("BatchUpdateDisk", http.MethodPatch, "/disks", svc.BatchUpdateDisk)
+	h.Add("BatchDeleteDisk", http.MethodDelete, "/disks/batch", svc.BatchDeleteDisk)
+	h.Add("CountDisk", http.MethodPost, "/disks/count", svc.CountDisk)
 
 	h.Load(cap.WebService)
 }

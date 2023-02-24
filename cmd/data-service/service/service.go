@@ -34,6 +34,7 @@ import (
 	"hcm/cmd/data-service/service/cloud"
 	"hcm/cmd/data-service/service/cloud/cvm"
 	"hcm/cmd/data-service/service/cloud/disk"
+	diskcvmrel "hcm/cmd/data-service/service/cloud/disk-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/eip"
 	"hcm/cmd/data-service/service/cloud/image"
 	"hcm/cmd/data-service/service/cloud/region"
@@ -167,7 +168,7 @@ func (s *Service) apiSet() *restful.Container {
 	subnetcvmrel.InitService(capability)
 	cloud.InitCloudService(capability)
 	auth.InitAuthService(capability)
-	disk.InitDiskService(capability)
+	disk.InitService(capability)
 	region.InitRegionService(capability)
 	region.InitHuaWeiRegionService(capability)
 	region.InitAzureResourceGroupService(capability)
@@ -175,11 +176,12 @@ func (s *Service) apiSet() *restful.Container {
 	audit.InitAuditService(capability)
 	eip.InitEipService(capability)
 	zone.InitZoneService(capability)
-	image.InitImageService(capability)
+	image.InitService(capability)
 	cvm.InitService(capability)
 	sgcvmrel.InitService(capability)
 	routetable.InitRouteTableService(capability)
 	application.InitApplicationService(capability)
+	diskcvmrel.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }
