@@ -29,6 +29,7 @@ import (
 
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
+	"hcm/cmd/cloud-server/service/application"
 	"hcm/cmd/cloud-server/service/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/cvm"
@@ -47,13 +48,16 @@ import (
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/cryptography"
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
@@ -65,6 +69,9 @@ type Service struct {
 	serve      *http.Server
 	authorizer auth.Authorizer
 	audit      logicaudit.Interface
+	cipher     cryptography.Crypto
+	// EsbClient 调用接入ESB的第三方系统API集合
+	esbClient esb.Client
 }
 
 // NewService create a service instance.
@@ -94,19 +101,41 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		return nil, err
 	}
 
+	// 加解密器
+	cipher, err := newCipherFromConfig(cc.CloudServer().Crypto)
+	if err != nil {
+		return nil, err
+	}
+
+	// 创建ESB Client
+	esbConfig := cc.CloudServer().Esb
+	esbClient, err := esb.NewClient(&esbConfig, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
 	svr := &Service{
 		client:     apiClientSet,
 		authorizer: authorizer,
 		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
+		cipher:     cipher,
+		esbClient:  esbClient,
 	}
 
 	return svr, nil
 }
 
+// newCipherFromConfig 根据配置文件里的加密配置，选择配置的算法并生成对应的加解密器
+func newCipherFromConfig(cryptoConfig cc.Crypto) (cryptography.Crypto, error) {
+	// TODO: 目前只支持国际加密，还未支持中国国家商业加密，待后续支持再调整
+	cfg := cryptoConfig.AesGcm
+	return cryptography.NewAESGcm([]byte(cfg.Key), []byte(cfg.Nonce))
+}
+
 // ListenAndServeRest listen and serve the restful server
 func (s *Service) ListenAndServeRest() error {
 	root := http.NewServeMux()
-	root.HandleFunc("/", s.apiSet().ServeHTTP)
+	root.HandleFunc("/", s.apiSet(cc.CloudServer().BkHcmUrl).ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
 	handler.SetCommonHandler(root)
 
@@ -160,7 +189,7 @@ func (s *Service) ListenAndServeRest() error {
 	return nil
 }
 
-func (s *Service) apiSet() *restful.Container {
+func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	ws := new(restful.WebService)
 	ws.Path("/api/v1/cloud")
 	ws.Produces(restful.MIME_JSON)
@@ -170,6 +199,8 @@ func (s *Service) apiSet() *restful.Container {
 		ApiClient:  s.client,
 		Authorizer: s.authorizer,
 		Audit:      s.audit,
+		Cipher:     s.cipher,
+		EsbClient:  s.esbClient,
 	}
 
 	account.InitAccountService(c)
@@ -186,6 +217,9 @@ func (s *Service) apiSet() *restful.Container {
 	zone.InitZoneService(c)
 	region.InitRegionService(c)
 	eip.InitEipService(c)
+
+	application.InitApplicationService(c, bkHcmUrl)
+
 	audit.InitService(c)
 
 	go sync.SyncTiming(c.ApiClient)

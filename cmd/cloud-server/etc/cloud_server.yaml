@@ -61,3 +61,38 @@ log:
   alsoToStdErr: false
   # log level.
   verbosity: 0
+
+# defines Crypto config
+crypto:
+  # Aes Gcm algorithm
+  aesGcm:
+    # aes secret key, length should be 16 or 32 bytes
+    key:
+    # gcm nonce, length should be 12 bytes
+    nonce:
+
+# defines esb related settings.
+esb:
+  # endpoints is a seed list of host:port addresses of esb nodes.
+  endpoints:
+    - http://paas.bk.com
+  # appCode is the BlueKing app code of hcm to request esb.
+  appCode:
+  # appSecret is the BlueKing app secret of hcm to request esb.
+  appSecret:
+  # user is the BlueKing user of hcm to request esb.
+  user: admin
+  # defines tls related options.
+  tls:
+    # server should be accessed without verifying the TLS certificate.
+    insecureSkipVerify:
+    # server requires TLS client certificate authentication.
+    certFile:
+    # server requires TLS client certificate authentication.
+    keyFile:
+    # trusted root certificates for server.
+    caFile:
+    # the password to decrypt the certificate.
+    password:
+
+BkHcmUrl: "http://hcm.bk.com"

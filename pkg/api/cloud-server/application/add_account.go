@@ -17,24 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package application
 
 import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
+	proto "hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/criteria/validator"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
+// AccountAddReq ...
+type AccountAddReq struct {
+	proto.AccountCommonInfoCreateReq `json:",inline"`
+	// Extension 格式与AccountCreateReq.Extension，重新定义并覆盖
+	Extension map[string]string `json:"extension" validate:"required"`
+}
+
+// Validate ...
+func (req *AccountAddReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if err := req.AccountCommonInfoCreateReq.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -19,7 +19,14 @@
 
 package types
 
-import "hcm/pkg/cc"
+import (
+	"net/http"
+
+	"hcm/pkg/cc"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/tools/json"
+	"hcm/pkg/tools/uuid"
+)
 
 // CommParams defines esb request common parameter
 type CommParams struct {
@@ -35,6 +42,23 @@ func GetCommParams(config *cc.Esb) *CommParams {
 		AppSecret: config.AppSecret,
 		UserName:  config.User,
 	}
+}
+
+// GetCommonHeader 通用Header包括调用ESB所需用户和应用认证、RequestID
+func GetCommonHeader(config *cc.Esb) *http.Header {
+	h := http.Header{}
+	// RequestID
+	h.Set(constant.RidKey, uuid.UUID())
+
+	// ESB所需用户和应用认证, Note: json可以确保100%成功的，所以忽略error返回值
+	bkApiAuthorization, _ := json.MarshalToString(map[string]string{
+		"bk_app_code":   config.AppCode,
+		"bk_app_secret": config.AppSecret,
+		"bk_username":   config.User,
+	})
+	h.Set("X-Bkapi-Authorization", bkApiAuthorization)
+
+	return &h
 }
 
 // BaseResponse is esb http base response.

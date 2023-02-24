@@ -26,6 +26,7 @@ import (
 	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server/account"
 	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -42,23 +43,18 @@ func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 校验用户有该账号的录入权限
-	if err := a.checkPermission(cts, meta.Import, ""); err != nil {
-		return nil, err
-	}
-
 	var err error
 	switch req.Vendor {
 	case enumor.TCloud:
-		_, err = a.parseAndCheckTCloudExtension(cts, req.Type, req.Extension)
+		_, err = ParseAndCheckTCloudExtension(cts, a.client, req.Type, req.Extension)
 	case enumor.Aws:
-		_, err = a.parseAndCheckAwsExtension(cts, req.Type, req.Extension)
+		_, err = ParseAndCheckAwsExtension(cts, a.client, req.Type, req.Extension)
 	case enumor.HuaWei:
-		_, err = a.parseAndCheckHuaWeiExtension(cts, req.Type, req.Extension)
+		_, err = ParseAndCheckHuaWeiExtension(cts, a.client, req.Type, req.Extension)
 	case enumor.Gcp:
-		_, err = a.parseAndCheckGcpExtension(cts, req.Type, req.Extension)
+		_, err = ParseAndCheckGcpExtension(cts, a.client, req.Type, req.Extension)
 	case enumor.Azure:
-		_, err = a.parseAndCheckAzureExtension(cts, req.Type, req.Extension)
+		_, err = ParseAndCheckAzureExtension(cts, a.client, req.Type, req.Extension)
 	default:
 		err = fmt.Errorf("no support vendor: %s", req.Vendor)
 	}
@@ -66,8 +62,11 @@ func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
 	return nil, errf.NewFromErr(errf.InvalidParameter, err)
 }
 
-func (a *accountSvc) parseAndCheckTCloudExtension(
-	cts *rest.Contexts, accountType enumor.AccountType, reqExtension json.RawMessage,
+// TODO: ParseAndCheckXXXXExtension 公开是为了与申请新增账号复用，但是这里只是复用，没有抽象，不应该复用XXXXAccountExtensionCreateReq数据结构
+
+// ParseAndCheckTCloudExtension ...
+func ParseAndCheckTCloudExtension(
+	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
 ) (*proto.TCloudAccountExtensionCreateReq, error) {
 	// 解析Extension
 	extension := new(proto.TCloudAccountExtensionCreateReq)
@@ -81,7 +80,7 @@ func (a *accountSvc) parseAndCheckTCloudExtension(
 
 	// 检查联通性，账号是否正确
 	if accountType != enumor.RegistrationAccount || extension.IsFull() {
-		err := a.client.HCService().TCloud.Account.Check(
+		err := client.HCService().TCloud.Account.Check(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.TCloudAccountCheckReq{
@@ -99,8 +98,9 @@ func (a *accountSvc) parseAndCheckTCloudExtension(
 	return extension, nil
 }
 
-func (a *accountSvc) parseAndCheckAwsExtension(
-	cts *rest.Contexts, accountType enumor.AccountType, reqExtension json.RawMessage,
+// ParseAndCheckAwsExtension ...
+func ParseAndCheckAwsExtension(
+	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
 ) (*proto.AwsAccountExtensionCreateReq, error) {
 	// 解析Extension
 	extension := new(proto.AwsAccountExtensionCreateReq)
@@ -114,7 +114,7 @@ func (a *accountSvc) parseAndCheckAwsExtension(
 
 	// 检查联通性，账号是否正确
 	if accountType != enumor.RegistrationAccount || extension.IsFull() {
-		err := a.client.HCService().Aws.Account.Check(
+		err := client.HCService().Aws.Account.Check(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.AwsAccountCheckReq{
@@ -132,8 +132,8 @@ func (a *accountSvc) parseAndCheckAwsExtension(
 	return extension, nil
 }
 
-func (a *accountSvc) parseAndCheckHuaWeiExtension(
-	cts *rest.Contexts, accountType enumor.AccountType, reqExtension json.RawMessage,
+func ParseAndCheckHuaWeiExtension(
+	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
 ) (*proto.HuaWeiAccountExtensionCreateReq, error) {
 	// 解析Extension
 	extension := new(proto.HuaWeiAccountExtensionCreateReq)
@@ -147,7 +147,7 @@ func (a *accountSvc) parseAndCheckHuaWeiExtension(
 
 	// 检查联通性，账号是否正确
 	if accountType != enumor.RegistrationAccount || extension.IsFull() {
-		err := a.client.HCService().HuaWei.Account.Check(
+		err := client.HCService().HuaWei.Account.Check(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.HuaWeiAccountCheckReq{
@@ -168,8 +168,8 @@ func (a *accountSvc) parseAndCheckHuaWeiExtension(
 	return extension, nil
 }
 
-func (a *accountSvc) parseAndCheckGcpExtension(
-	cts *rest.Contexts, accountType enumor.AccountType, reqExtension json.RawMessage,
+func ParseAndCheckGcpExtension(
+	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
 ) (*proto.GcpAccountExtensionCreateReq, error) {
 	// 解析Extension
 	extension := new(proto.GcpAccountExtensionCreateReq)
@@ -183,7 +183,7 @@ func (a *accountSvc) parseAndCheckGcpExtension(
 
 	// 检查联通性，账号是否正确
 	if accountType != enumor.RegistrationAccount || extension.IsFull() {
-		err := a.client.HCService().Gcp.Account.Check(
+		err := client.HCService().Gcp.Account.Check(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.GcpAccountCheckReq{
@@ -199,8 +199,8 @@ func (a *accountSvc) parseAndCheckGcpExtension(
 	return extension, nil
 }
 
-func (a *accountSvc) parseAndCheckAzureExtension(
-	cts *rest.Contexts, accountType enumor.AccountType, reqExtension json.RawMessage,
+func ParseAndCheckAzureExtension(
+	cts *rest.Contexts, client *client.ClientSet, accountType enumor.AccountType, reqExtension json.RawMessage,
 ) (*proto.AzureAccountExtensionCreateReq, error) {
 	// 解析Extension
 	extension := new(proto.AzureAccountExtensionCreateReq)
@@ -214,7 +214,7 @@ func (a *accountSvc) parseAndCheckAzureExtension(
 
 	// 检查联通性，账号是否正确
 	if accountType != enumor.RegistrationAccount || extension.IsFull() {
-		err := a.client.HCService().Azure.Account.Check(
+		err := client.HCService().Azure.Account.Check(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			&hcproto.AzureAccountCheckReq{

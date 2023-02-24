@@ -17,24 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package application
 
 import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
+// ApplicationGetResp ...
+type ApplicationGetResp struct {
+	ID            string                   `json:"id"`
+	SN            string                   `json:"sn"`
+	Type          enumor.ApplicationType   `json:"type"`
+	Status        enumor.ApplicationStatus `json:"status"`
+	Applicant     string                   `json:"applicant"`
+	Content       string                   `json:"content"`
+	Memo          *string                  `json:"memo"`
+	core.Revision `json:",inline"`
+
+	TicketUrl string `json:"ticket_url"`
 }

@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"time"
 
+	"hcm/cmd/data-service/service/application"
 	"hcm/cmd/data-service/service/audit"
 	"hcm/cmd/data-service/service/auth"
 	"hcm/cmd/data-service/service/capability"
@@ -178,6 +179,7 @@ func (s *Service) apiSet() *restful.Container {
 	cvm.InitService(capability)
 	sgcvmrel.InitService(capability)
 	routetable.InitRouteTableService(capability)
+	application.InitApplicationService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

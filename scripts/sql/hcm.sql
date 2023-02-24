@@ -60,7 +60,8 @@ values ('account', '0'),
        ('aws_route', '0'),
        ('azure_route', '0'),
        ('huawei_route', '0'),
-       ('gcp_route', '0');
+       ('gcp_route', '0'),
+       ('application', '0');
 
 create table if not exists `audit`
 (
@@ -838,3 +839,21 @@ create table if not exists `cvm`
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
+
+create table if not exists `application`
+(
+    `id`             varchar(64) not null,
+    `sn`             varchar(64) not null,
+    `type`           varchar(64) not null,
+    `status`         varchar(32) not null,
+    `applicant`      varchar(64) not null,
+    `memo`           varchar(255) default '',
+    `content`        json        not null,
+    `creator`        varchar(64) not null,
+    `reviser`        varchar(64) not null,
+    `created_at`     timestamp   not null default current_timestamp,
+    `updated_at`     timestamp   not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_sn` (`sn`)
+) engine = innodb
+  default charset = utf8mb4;

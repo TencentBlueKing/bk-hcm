@@ -17,24 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package itsm
 
 import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/esb"
+	"context"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/cc"
+	"hcm/pkg/rest"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
+type Client interface {
+	CreateTicket(ctx context.Context, params *CreateTicketParams) (string, error)
+	GetTicketResult(ctx context.Context, sn string) (TicketResult, error)
+	WithdrawTicket(ctx context.Context, sn string, operator string) error
+	VerifyToken(ctx context.Context, token string) (bool, error)
+}
+
+// NewClient initialize a new itsm client
+func NewClient(client rest.ClientInterface, config *cc.Esb) Client {
+	return &itsm{
+		client: client,
+		config: config,
+	}
+}
+
+// itsm is an esb client to request itsm.
+type itsm struct {
+	config *cc.Esb
+	// http client instance
+	client rest.ClientInterface
 }

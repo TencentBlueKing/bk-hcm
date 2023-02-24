@@ -24,31 +24,48 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/tools/uuid"
 
 	"github.com/emicklei/go-restful/v3"
 )
 
-// NewUserUserAuthenticateFilter ...
-func NewUserUserAuthenticateFilter(esbClient esb.Client) restful.FilterFunction {
+func isITSMCallbackRequest(req *restful.Request) bool {
+	if strings.HasSuffix(req.Request.RequestURI, "/api/v1/cloud/applications/approve") &&
+		req.Request.Method == http.MethodPost {
+		return true
+	}
+	return false
+}
+
+// NewUserAuthenticateFilter ...
+func NewUserAuthenticateFilter(esbClient esb.Client) restful.FilterFunction {
 
 	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
-		// 获取cookie
-		cookie, err := req.Request.Cookie("bk_token")
-		// Note: err只有一个ErrNoCookie可能，所以这里是无登录票据的情况
-		if err != nil || cookie.Value == "" {
-			resp.WriteErrorString(http.StatusUnauthorized, "bk_token cookie don't exists")
-			return
-		}
-		// 校验bk_token是否有效
-		username, err := esbClient.Login().IsLogin(req.Request.Context(), cookie.Value)
-		if err != nil {
-			resp.WriteError(http.StatusUnauthorized, err)
-			return
+		username := ""
+		// 对于itsm 的回调请求，不能用户认证，而是处理请求时进行单独的Token认证，这里直接通过
+		if isITSMCallbackRequest(req) {
+			username = "itsm_callback"
+			req.Request.Header.Set(constant.RidKey, uuid.UUID())
+		} else {
+			// 获取cookie
+			cookie, err := req.Request.Cookie("bk_token")
+			// Note: err只有一个ErrNoCookie可能，所以这里是无登录票据的情况
+			if err != nil || cookie.Value == "" {
+				resp.WriteErrorString(http.StatusUnauthorized, "bk_token cookie don't exists")
+				return
+			}
+			// 校验bk_token是否有效
+			username, err = esbClient.Login().IsLogin(req.Request.Context(), cookie.Value)
+			if err != nil {
+				resp.WriteError(http.StatusUnauthorized, err)
+				return
+			}
 		}
 
 		// 这里直接修改请求的Header，后面需要用，可以直接从Header头里取

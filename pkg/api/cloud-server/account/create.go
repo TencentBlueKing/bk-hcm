@@ -182,8 +182,8 @@ func (req *AzureAccountExtensionCreateReq) IsFull() bool {
 		req.CloudApplicationName != ""
 }
 
-// AccountCreateReq ...
-type AccountCreateReq struct {
+// AccountCommonInfoCreateReq ...
+type AccountCommonInfoCreateReq struct {
 	Vendor        enumor.Vendor          `json:"vendor" validate:"required"`
 	Name          string                 `json:"name" validate:"required,min=3,max=32"`
 	Managers      []string               `json:"managers" validate:"required,max=5"`
@@ -192,16 +192,10 @@ type AccountCreateReq struct {
 	Site          enumor.AccountSiteType `json:"site" validate:"required"`
 	Memo          *string                `json:"memo" validate:"omitempty"`
 	BkBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
-	// Extension 各云差异化比较大，延后解析成对应结果进行校验
-	Extension json.RawMessage `json:"extension" validate:"required"`
 }
 
-// Validate create account request.
-func (req *AccountCreateReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
+// Validate ...
+func (req *AccountCommonInfoCreateReq) Validate() error {
 	if err := req.Vendor.Validate(); err != nil {
 		return err
 	}
@@ -227,6 +221,26 @@ func (req *AccountCreateReq) Validate() error {
 
 	// 业务合法性校验
 	if err := validateBkBizIDs(req.BkBizIDs); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AccountCreateReq ...
+type AccountCreateReq struct {
+	AccountCommonInfoCreateReq `json:",inline"`
+	// Extension 各云差异化比较大，延后解析成对应结果进行校验
+	Extension json.RawMessage `json:"extension" validate:"required"`
+}
+
+// Validate create account request.
+func (req *AccountCreateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if err := req.AccountCommonInfoCreateReq.Validate(); err != nil {
 		return err
 	}
 

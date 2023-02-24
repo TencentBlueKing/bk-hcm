@@ -17,24 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package types
 
 import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/dal/table/application"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
+// ListApplicationDetails list application details.
+type ListApplicationDetails struct {
+	Count   uint64                          `json:"count,omitempty"`
+	Details []*application.ApplicationTable `json:"details,omitempty"`
 }

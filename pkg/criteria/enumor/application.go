@@ -17,24 +17,46 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package enumor
 
 import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
+	"fmt"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
+// ApplicationType 申请单类型
+type ApplicationType string
+
+// Validate the ApplicationType is valid or not
+func (a ApplicationType) Validate() error {
+	switch a {
+	case AddAccount:
+	default:
+		return fmt.Errorf("unsupported application type: %s", a)
+	}
+
+	return nil
 }
+
+const (
+	// AddAccount 新增账号
+	AddAccount ApplicationType = "add_account"
+)
+
+type ApplicationStatus string
+
+const (
+	// Pending 审批中
+	Pending ApplicationStatus = "pending"
+	// Pass 审批通过
+	Pass ApplicationStatus = "pass"
+	// Rejected 审批驳回
+	Rejected ApplicationStatus = "rejected"
+	// Cancelled 单据撤销
+	Cancelled ApplicationStatus = "cancelled"
+	// Delivering 单据交付中
+	Delivering ApplicationStatus = "delivering"
+	// Completed 单据完成
+	Completed ApplicationStatus = "completed"
+	// DeliverError 单据交付异常
+	DeliverError ApplicationStatus = "deliver_error"
+)

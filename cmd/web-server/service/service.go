@@ -205,7 +205,7 @@ func (s *Service) apiSet() *restful.WebService {
 	ws.Produces(restful.MIME_JSON)
 
 	// Note: 所有API接口都需要经过用户认证
-	ws.Path("/api/v1/web").Filter(NewUserUserAuthenticateFilter(s.esbClient))
+	ws.Path("/api/v1/web").Filter(NewUserAuthenticateFilter(s.esbClient))
 
 	c := &capability.Capability{
 		WebService: ws,
@@ -228,7 +228,7 @@ func (s *Service) proxyApiSet() *restful.WebService {
 	ws.Produces(restful.MIME_JSON)
 
 	// Note: 所有API接口都需要经过用户认证
-	ws.Path("/api/v1/cloud").Filter(NewUserUserAuthenticateFilter(s.esbClient))
+	ws.Path("/api/v1/cloud").Filter(NewUserAuthenticateFilter(s.esbClient))
 	ws.Route(ws.GET("{.*}").To(s.proxy.Do))
 	ws.Route(ws.POST("{.*}").To(s.proxy.Do))
 	ws.Route(ws.PUT("{.*}").To(s.proxy.Do))

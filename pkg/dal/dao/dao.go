@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"hcm/pkg/cc"
+	"hcm/pkg/dal/dao/application"
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
@@ -112,6 +113,7 @@ type Set interface {
 	Cvm() cvm.Interface
 	RouteTable() routetable.RouteTable
 	Route() routetable.Route
+	Application() application.Application
 
 	Txn() *Txn
 }
@@ -395,4 +397,12 @@ func (s *set) Route() routetable.Route {
 // Audit return audit dao.
 func (s *set) Audit() audit.Interface {
 	return s.audit
+}
+
+// Application return application dao.
+func (s *set) Application() application.Application {
+	return &application.ApplicationDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
 }

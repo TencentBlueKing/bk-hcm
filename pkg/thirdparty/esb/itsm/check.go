@@ -17,24 +17,38 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package itsm
 
 import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/esb"
+	"context"
+	"fmt"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/thirdparty/esb/types"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
+type tokenVerifiedResp struct {
+	types.BaseResponse `json:",inline"`
+	Data               struct {
+		IsPassed bool `json:"is_passed"`
+	} `json:"data"`
+}
+
+func (i *itsm) VerifyToken(ctx context.Context, token string) (bool, error) {
+	req := map[string]string{"token": token}
+	resp := new(tokenVerifiedResp)
+	header := types.GetCommonHeader(i.config)
+	err := i.client.Post().
+		SubResourcef("/itsm/token/verify/").
+		WithContext(ctx).
+		WithHeaders(*header).
+		Body(req).
+		Do().Into(resp)
+	if err != nil {
+		return false, err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return false, fmt.Errorf("verify token failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
+	}
+
+	return resp.Data.IsPassed, nil
 }

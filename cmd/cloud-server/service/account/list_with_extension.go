@@ -34,7 +34,7 @@ import (
 	"github.com/TencentBlueKing/gopkg/conv"
 )
 
-var vendorSecretKeyFieldMap = map[enumor.Vendor]string{
+var VendorSecretKeyFieldMap = map[enumor.Vendor]string{
 	enumor.TCloud: "cloud_secret_key",
 	enumor.Aws:    "cloud_secret_key",
 	enumor.HuaWei: "cloud_secret_key",
@@ -109,7 +109,7 @@ func (a *accountSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) 
 	// 去除SecretKey
 	if resp.Details != nil {
 		for _, detail := range resp.Details {
-			secretKeyField := vendorSecretKeyFieldMap[detail.Vendor]
+			secretKeyField := VendorSecretKeyFieldMap[detail.Vendor]
 			// 存在SecretKey则删除
 			// Note: 资源账号、安全审计账号必然存在，登录账号大部分时候是不存在的
 			if _, ok := detail.Extension[secretKeyField]; ok {
@@ -165,7 +165,7 @@ func (a *accountSvc) ListSecretKey(cts *rest.Contexts) (interface{}, error) {
 	secretKeyData := make([]proto.SecretKeyData, 0, len(resp.Details))
 	for _, detail := range resp.Details {
 		// 根据vendor获取SecretKey
-		secretKeyField := vendorSecretKeyFieldMap[detail.Vendor]
+		secretKeyField := VendorSecretKeyFieldMap[detail.Vendor]
 		secretKeyData = append(secretKeyData, proto.SecretKeyData{
 			ID:        detail.ID,
 			SecretKey: conv.ToString(detail.Extension[secretKeyField]),

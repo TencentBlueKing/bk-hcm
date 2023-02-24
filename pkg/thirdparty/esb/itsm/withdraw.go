@@ -17,24 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package itsm
 
 import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/esb"
+	"context"
+	"fmt"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/thirdparty/esb/types"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
+func (i *itsm) WithdrawTicket(ctx context.Context, sn string, operator string) error {
+	req := map[string]interface{}{
+		"sn":             sn,
+		"operator":       operator,
+		"action_type":    "WITHDRAW",
+		"action_message": "applicant withdraw ticket",
+	}
+	resp := new(types.BaseResponse)
+	header := types.GetCommonHeader(i.config)
+	err := i.client.Post().
+		SubResourcef("/itsm/operate_ticket/").
+		WithContext(ctx).
+		WithHeaders(*header).
+		Body(req).
+		Do().Into(resp)
+	if err != nil {
+		return err
+	}
+	if !resp.Result || resp.Code != 0 {
+		return fmt.Errorf("withdraw ticket failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
+	}
+
+	return nil
 }

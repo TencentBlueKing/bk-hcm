@@ -17,24 +17,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package capability
+package application
 
 import (
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/criteria/validator"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
+// ItsmApproveResult ...
+type ItsmApproveResult struct {
+	SN            string `json:"sn" validate:"required"`
+	CurrentStatus string `json:"current_status" validate:"required"`
+	ApproveResult *bool  `json:"approve_result" validate:"required"`
+	Token         string `json:"token" validate:"required"`
+}
+
+// Validate ...
+func (req *ItsmApproveResult) Validate() error {
+	return validator.Validate.Struct(req)
 }

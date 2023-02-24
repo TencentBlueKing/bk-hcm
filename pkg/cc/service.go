@@ -20,6 +20,7 @@
 package cc
 
 import (
+	"fmt"
 	"net"
 	"sync"
 )
@@ -105,9 +106,12 @@ func (s ApiServerSetting) Validate() error {
 
 // CloudServerSetting defines cloud server used setting options.
 type CloudServerSetting struct {
-	Network Network   `yaml:"network"`
-	Service Service   `yaml:"service"`
-	Log     LogOption `yaml:"log"`
+	Network  Network   `yaml:"network"`
+	Service  Service   `yaml:"service"`
+	Log      LogOption `yaml:"log"`
+	Crypto   Crypto    `yaml:"crypto"`
+	Esb      Esb       `yaml:"esb"`
+	BkHcmUrl string    `yaml:"bkHcmUrl"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -133,6 +137,17 @@ func (s CloudServerSetting) Validate() error {
 
 	if err := s.Service.validate(); err != nil {
 		return err
+	}
+
+	if err := s.Crypto.validate(); err != nil {
+		return err
+	}
+	if err := s.Esb.validate(); err != nil {
+		return err
+	}
+
+	if s.BkHcmUrl == "" {
+		return fmt.Errorf("bkHcmUrl should not be empty")
 	}
 
 	return nil

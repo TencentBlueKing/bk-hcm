@@ -105,6 +105,9 @@ const (
 	HuaWeiRouteTable Name = "huawei_route"
 	// GcpRouteTable is gcp route's table name.
 	GcpRouteTable Name = "gcp_route"
+
+	// ApplicationTable is application table name
+	ApplicationTable Name = "application"
 )
 
 // Validate whether the table name is valid or not.
@@ -122,38 +125,39 @@ func (n Name) Validate() error {
 }
 
 // TableMap table map config
-var TableMap = map[Name]bool{
-	AuditTable:                   true,
-	AccountTable:                 true,
-	AccountBizRelTable:           true,
-	VpcTable:                     true,
-	SubnetTable:                  true,
-	IDGenerator:                  true,
-	SecurityGroupTable:           true,
-	VpcSecurityGroupRelTable:     true,
-	SecurityGroupTagTable:        true,
-	SecurityGroupSubnetTable:     true,
-	SGSecurityGroupRuleTable:     true,
-	TCloudSecurityGroupRuleTable: true,
-	AwsSecurityGroupRuleTable:    true,
-	HuaWeiSecurityGroupRuleTable: true,
-	AzureSecurityGroupRuleTable:  true,
-	SGNetworkInterfaceRelTable:   true,
-	GcpFirewallRuleTable:         true,
-	HuaWeiRegionTable:            true,
-	AzureRGTable:                 true,
-	AzureRegionTable:             true,
-	GcpRegionTable:               true,
-	AwsRegionTable:               true,
-	TCloudRegionTable:            true,
-	ZoneTable:                    true,
-	CvmTable:                     true,
-	RouteTableTable:              true,
-	TCloudRouteTable:             true,
-	AwsRouteTable:                true,
-	AzureRouteTable:              true,
-	HuaWeiRouteTable:             true,
-	GcpRouteTable:                true,
+var TableMap = map[Name]struct{}{
+	AuditTable:                   {},
+	AccountTable:                 {},
+	AccountBizRelTable:           {},
+	VpcTable:                     {},
+	SubnetTable:                  {},
+	IDGenerator:                  {},
+	SecurityGroupTable:           {},
+	VpcSecurityGroupRelTable:     {},
+	SecurityGroupTagTable:        {},
+	SecurityGroupSubnetTable:     {},
+	SGSecurityGroupRuleTable:     {},
+	TCloudSecurityGroupRuleTable: {},
+	AwsSecurityGroupRuleTable:    {},
+	HuaWeiSecurityGroupRuleTable: {},
+	AzureSecurityGroupRuleTable:  {},
+	SGNetworkInterfaceRelTable:   {},
+	GcpFirewallRuleTable:         {},
+	HuaWeiRegionTable:            {},
+	AzureRGTable:                 {},
+	AzureRegionTable:             {},
+	GcpRegionTable:               {},
+	AwsRegionTable:               {},
+	TCloudRegionTable:            {},
+	RouteTableTable:              {},
+	TCloudRouteTable:             {},
+	AwsRouteTable:                {},
+	AzureRouteTable:              {},
+	HuaWeiRouteTable:             {},
+	GcpRouteTable:                {},
+	ZoneTable:                    {},
+	CvmTable:                     {},
+	ApplicationTable:             {},
 }
 
 // Register 注册表名

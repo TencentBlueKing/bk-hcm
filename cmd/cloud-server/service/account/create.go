@@ -25,6 +25,7 @@ import (
 	proto "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -63,17 +64,19 @@ func (a *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-func (a *accountSvc) isDuplicateMainAccount(
-	cts *rest.Contexts, req *proto.AccountCreateReq, mainAccountIDFieldName string, mainAccountIDFieldValue string,
+func IsDuplicateMainAccount(
+	cts *rest.Contexts, client *client.ClientSet,
+	vendor enumor.Vendor, accountType enumor.AccountType,
+	mainAccountIDFieldName string, mainAccountIDFieldValue string,
 ) error {
 	// 只需要检查资源账号或安全审计账号的主账号是否重复，其他类型账号不检查
-	if req.Type != enumor.ResourceAccount && req.Type != enumor.SecurityAuditAccount {
+	if accountType != enumor.ResourceAccount && accountType != enumor.SecurityAuditAccount {
 		return nil
 	}
 
 	// TODO: 后续需要解决并发问题
 	// 后台查询是否主账号重复
-	result, err := a.client.DataService().Global.Account.List(
+	result, err := client.DataService().Global.Account.List(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.AccountListReq{
@@ -83,12 +86,12 @@ func (a *accountSvc) isDuplicateMainAccount(
 					filter.AtomRule{
 						Field: "vendor",
 						Op:    filter.Equal.Factory(),
-						Value: string(req.Vendor),
+						Value: string(vendor),
 					},
 					filter.AtomRule{
 						Field: "type",
 						Op:    filter.Equal.Factory(),
-						Value: string(req.Type),
+						Value: string(accountType),
 					},
 					filter.AtomRule{
 						Field: fmt.Sprintf("extension.%s", mainAccountIDFieldName),
@@ -114,13 +117,13 @@ func (a *accountSvc) isDuplicateMainAccount(
 }
 
 func (a *accountSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
-	extension, err := a.parseAndCheckTCloudExtension(cts, req.Type, req.Extension)
+	extension, err := ParseAndCheckTCloudExtension(cts, a.client, req.Type, req.Extension)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 检查资源账号的主账号是否重复
-	err = a.isDuplicateMainAccount(cts, req, "cloud_main_account_id", extension.CloudMainAccountID)
+	err = IsDuplicateMainAccount(cts, a.client, req.Vendor, req.Type, "cloud_main_account_id", extension.CloudMainAccountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -150,13 +153,13 @@ func (a *accountSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountCreat
 }
 
 func (a *accountSvc) createForAws(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
-	extension, err := a.parseAndCheckAwsExtension(cts, req.Type, req.Extension)
+	extension, err := ParseAndCheckAwsExtension(cts, a.client, req.Type, req.Extension)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 检查资源账号的主账号是否重复
-	err = a.isDuplicateMainAccount(cts, req, "cloud_account_id", extension.CloudAccountID)
+	err = IsDuplicateMainAccount(cts, a.client, req.Vendor, req.Type, "cloud_account_id", extension.CloudAccountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -186,13 +189,13 @@ func (a *accountSvc) createForAws(cts *rest.Contexts, req *proto.AccountCreateRe
 }
 
 func (a *accountSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
-	extension, err := a.parseAndCheckHuaWeiExtension(cts, req.Type, req.Extension)
+	extension, err := ParseAndCheckHuaWeiExtension(cts, a.client, req.Type, req.Extension)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 检查资源账号的主账号是否重复
-	err = a.isDuplicateMainAccount(cts, req, "cloud_main_account_name", extension.CloudMainAccountName)
+	err = IsDuplicateMainAccount(cts, a.client, req.Vendor, req.Type, "cloud_main_account_name", extension.CloudMainAccountName)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -225,13 +228,13 @@ func (a *accountSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountCreat
 }
 
 func (a *accountSvc) createForGcp(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
-	extension, err := a.parseAndCheckGcpExtension(cts, req.Type, req.Extension)
+	extension, err := ParseAndCheckGcpExtension(cts, a.client, req.Type, req.Extension)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 检查资源账号的主账号是否重复
-	err = a.isDuplicateMainAccount(cts, req, "cloud_project_id", extension.CloudProjectID)
+	err = IsDuplicateMainAccount(cts, a.client, req.Vendor, req.Type, "cloud_project_id", extension.CloudProjectID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -263,13 +266,13 @@ func (a *accountSvc) createForGcp(cts *rest.Contexts, req *proto.AccountCreateRe
 }
 
 func (a *accountSvc) createForAzure(cts *rest.Contexts, req *proto.AccountCreateReq) (interface{}, error) {
-	extension, err := a.parseAndCheckAzureExtension(cts, req.Type, req.Extension)
+	extension, err := ParseAndCheckAzureExtension(cts, a.client, req.Type, req.Extension)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 检查资源账号的主账号是否重复
-	err = a.isDuplicateMainAccount(cts, req, "cloud_tenant_id", extension.CloudTenantID)
+	err = IsDuplicateMainAccount(cts, a.client, req.Vendor, req.Type, "cloud_tenant_id", extension.CloudTenantID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
