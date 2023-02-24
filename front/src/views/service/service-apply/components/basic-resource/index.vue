@@ -18,7 +18,7 @@ export default defineComponent({
   setup() {
     const list = ref([{
       name:
-          '账号',
+          '云账号录入',
       id: 1,
       btnText: '立即申请',
     }]);

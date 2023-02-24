@@ -80,7 +80,11 @@
         <bk-table-column
           :label="t('创建时间')"
           prop="created_at"
-        />
+        >
+          <template #default="{ data }">
+            {{moment(data.created_at).format('YYYY-MM-DD HH:mm:ss')}}
+          </template>
+        </bk-table-column>
         <bk-table-column
           :label="t('备注')"
           prop="memo"
@@ -161,6 +165,7 @@ import { CloudType, AccountType } from '@/typings';
 import { VENDORS } from '@/common/constant';
 import { useVerify } from '@/hooks';
 import permissionDialog from '@/components/permission-dialog';
+import moment from 'moment';
 
 
 export default defineComponent({
@@ -208,6 +213,7 @@ export default defineComponent({
       AccountType,
       filter: { op: 'and', rules: [] },
       actionData: ['import', 'update', 'key_access'],
+      moment,
     });
 
     const showPermissionDialog = ref(false);    // 无权限弹窗
