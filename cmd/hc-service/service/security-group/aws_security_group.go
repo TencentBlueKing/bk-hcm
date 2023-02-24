@@ -22,7 +22,7 @@ package securitygroup
 import (
 	"fmt"
 
-	"hcm/pkg/adaptor/types"
+	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -51,7 +51,7 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, err
 	}
 
-	opt := &types.AwsSecurityGroupCreateOption{
+	opt := &securitygroup.AwsCreateOption{
 		Region:      req.Region,
 		Name:        req.Name,
 		Description: req.Memo,
@@ -64,7 +64,7 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, err
 	}
 
-	listOpt := &types.AwsSecurityGroupListOption{
+	listOpt := &securitygroup.AwsListOption{
 		Region:   req.Region,
 		CloudIDs: []string{cloudID},
 	}
@@ -149,7 +149,7 @@ func (g *securityGroup) DeleteAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, err
 	}
 
-	opt := &types.SecurityGroupDeleteOption{
+	opt := &securitygroup.AwsDeleteOption{
 		Region:  sg.Region,
 		CloudID: sg.CloudID,
 	}
@@ -206,7 +206,7 @@ func (g *securityGroup) getDatasFromAwsForSecurityGroupSync(cts *rest.Contexts,
 		return nil, err
 	}
 
-	listOpt := &types.AwsSecurityGroupListOption{
+	listOpt := &securitygroup.AwsListOption{
 		Region: req.Region,
 	}
 	result, err := client.ListSecurityGroup(cts.Kit, listOpt)

@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package securitygrouprule
 
 import (
 	"hcm/pkg/adaptor/types/core"
@@ -27,20 +27,20 @@ import (
 
 // -------------------------- Create --------------------------
 
-// HuaWeiSGRuleCreateOption huawei security group rule create option.
-type HuaWeiSGRuleCreateOption struct {
-	Region               string              `json:"region" validate:"required"`
-	CloudSecurityGroupID string              `json:"cloud_security_group_id" validate:"required"`
-	Rule                 *HuaWeiSGRuleCreate `json:"rule" validate:"required"`
+// HuaWeiCreateOption huawei security group rule create option.
+type HuaWeiCreateOption struct {
+	Region               string        `json:"region" validate:"required"`
+	CloudSecurityGroupID string        `json:"cloud_security_group_id" validate:"required"`
+	Rule                 *HuaWeiCreate `json:"rule" validate:"required"`
 }
 
 // Validate huawei security group rule create option.
-func (opt HuaWeiSGRuleCreateOption) Validate() error {
+func (opt HuaWeiCreateOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// HuaWeiSGRuleCreate huawei security group rule.
-type HuaWeiSGRuleCreate struct {
+// HuaWeiCreate huawei security group rule.
+type HuaWeiCreate struct {
 	Description        *string                      `json:"description"`
 	Ethertype          *string                      `json:"ethertype"`
 	Protocol           *string                      `json:"protocol"`
@@ -54,28 +54,28 @@ type HuaWeiSGRuleCreate struct {
 
 // -------------------------- Delete --------------------------
 
-// HuaWeiSGRuleDeleteOption huawei security group delete option.
-type HuaWeiSGRuleDeleteOption struct {
+// HuaWeiDeleteOption huawei security group delete option.
+type HuaWeiDeleteOption struct {
 	Region      string `json:"region" validate:"required"`
 	CloudRuleID string `json:"cloud_rule_id" validate:"required"`
 }
 
 // Validate huawei security group rule delete option.
-func (opt HuaWeiSGRuleDeleteOption) Validate() error {
+func (opt HuaWeiDeleteOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
 // -------------------------- List --------------------------
 
-// HuaWeiSGRuleListOption define huawei security group rule list option.
-type HuaWeiSGRuleListOption struct {
+// HuaWeiListOption define huawei security group rule list option.
+type HuaWeiListOption struct {
 	Region               string           `json:"region" validate:"required"`
 	CloudSecurityGroupID string           `json:"cloud_security_group_id" validate:"required"`
 	Page                 *core.HuaWeiPage `json:"page" validate:"omitempty"`
 }
 
 // Validate huawei security group rule list option.
-func (opt HuaWeiSGRuleListOption) Validate() error {
+func (opt HuaWeiListOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return nil
 	}

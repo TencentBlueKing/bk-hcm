@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package securitygrouprule
 
 import (
 	"errors"
@@ -28,17 +28,17 @@ import (
 
 // -------------------------- Create --------------------------
 
-// AzureSGRuleCreateOption azure security group rule create option.
-type AzureSGRuleCreateOption struct {
-	Region               string              `json:"region" validate:"required"`
-	ResourceGroupName    string              `json:"resource_group_name" validate:"required"`
-	CloudSecurityGroupID string              `json:"cloud_security_group_id" validate:"required"`
-	EgressRuleSet        []AzureSGRuleCreate `json:"egress_rule_set" validate:"omitempty"`
-	IngressRuleSet       []AzureSGRuleCreate `json:"ingress_rule_set" validate:"omitempty"`
+// AzureCreateOption azure security group rule create option.
+type AzureCreateOption struct {
+	Region               string        `json:"region" validate:"required"`
+	ResourceGroupName    string        `json:"resource_group_name" validate:"required"`
+	CloudSecurityGroupID string        `json:"cloud_security_group_id" validate:"required"`
+	EgressRuleSet        []AzureCreate `json:"egress_rule_set" validate:"omitempty"`
+	IngressRuleSet       []AzureCreate `json:"ingress_rule_set" validate:"omitempty"`
 }
 
 // Validate azure security group rule create option.
-func (opt AzureSGRuleCreateOption) Validate() error {
+func (opt AzureCreateOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
 	}
@@ -54,8 +54,8 @@ func (opt AzureSGRuleCreateOption) Validate() error {
 	return nil
 }
 
-// AzureSGRuleCreate azure security group rule.
-type AzureSGRuleCreate struct {
+// AzureCreate azure security group rule.
+type AzureCreate struct {
 	Name                             string                       `json:"name"`
 	Description                      *string                      `json:"description"`
 	DestinationAddressPrefix         *string                      `json:"destination_address_prefix"`
@@ -76,21 +76,21 @@ type AzureSGRuleCreate struct {
 
 // -------------------------- Update --------------------------
 
-// AzureSGRuleUpdateOption azure security group rule update option.
-type AzureSGRuleUpdateOption struct {
-	Region               string             `json:"region" validate:"required"`
-	ResourceGroupName    string             `json:"resource_group_name" validate:"required"`
-	CloudSecurityGroupID string             `json:"cloud_security_group_id" validate:"required"`
-	Rule                 *AzureSGRuleUpdate `json:"rule_set" validate:"required"`
+// AzureUpdateOption azure security group rule update option.
+type AzureUpdateOption struct {
+	Region               string       `json:"region" validate:"required"`
+	ResourceGroupName    string       `json:"resource_group_name" validate:"required"`
+	CloudSecurityGroupID string       `json:"cloud_security_group_id" validate:"required"`
+	Rule                 *AzureUpdate `json:"rule_set" validate:"required"`
 }
 
 // Validate azure security group rule delete option.
-func (opt AzureSGRuleUpdateOption) Validate() error {
+func (opt AzureUpdateOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// AzureSGRuleUpdate azure security group rule when update.
-type AzureSGRuleUpdate struct {
+// AzureUpdate azure security group rule when update.
+type AzureUpdate struct {
 	CloudID                          string    `json:"cloud_id"`
 	Name                             string    `json:"name"`
 	Description                      *string   `json:"description"`
@@ -111,8 +111,8 @@ type AzureSGRuleUpdate struct {
 
 // -------------------------- Delete --------------------------
 
-// AzureSGRuleDeleteOption azure security group delete option.
-type AzureSGRuleDeleteOption struct {
+// AzureDeleteOption azure security group delete option.
+type AzureDeleteOption struct {
 	Region               string `json:"region" validate:"required"`
 	ResourceGroupName    string `json:"resource_group_name" validate:"required"`
 	CloudSecurityGroupID string `json:"cloud_security_group_id" validate:"required"`
@@ -120,20 +120,20 @@ type AzureSGRuleDeleteOption struct {
 }
 
 // Validate azure security group rule delete option.
-func (opt AzureSGRuleDeleteOption) Validate() error {
+func (opt AzureDeleteOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
 // -------------------------- List --------------------------
 
-// AzureSGRuleListOption azure security group list option.
-type AzureSGRuleListOption struct {
+// AzureListOption azure security group list option.
+type AzureListOption struct {
 	Region               string `json:"region" validate:"required"`
 	ResourceGroupName    string `json:"resource_group_name" validate:"required"`
 	CloudSecurityGroupID string `json:"cloud_security_group_id" validate:"required"`
 }
 
 // Validate azure security group rule list option.
-func (opt AzureSGRuleListOption) Validate() error {
+func (opt AzureListOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }

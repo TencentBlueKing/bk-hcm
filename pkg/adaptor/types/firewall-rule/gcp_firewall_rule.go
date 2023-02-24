@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package firewallrule
 
 import (
 	"hcm/pkg/adaptor/types/core"
@@ -27,19 +27,19 @@ import (
 
 // -------------------------- Update --------------------------
 
-// GcpFirewallRuleUpdateOption define gcp firewall rule update option.
-type GcpFirewallRuleUpdateOption struct {
-	CloudID         string                 `json:"cloud_id" validate:"required"`
-	GcpFirewallRule *GcpFirewallRuleUpdate `json:"gcp_firewall_rule" validate:"required"`
+// UpdateOption define gcp firewall rule update option.
+type UpdateOption struct {
+	CloudID         string  `json:"cloud_id" validate:"required"`
+	GcpFirewallRule *Update `json:"gcp_firewall_rule" validate:"required"`
 }
 
 // Validate gcp firewall rule update option.
-func (opt GcpFirewallRuleUpdateOption) Validate() error {
+func (opt UpdateOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// GcpFirewallRuleUpdate define gcp firewall rule when update.
-type GcpFirewallRuleUpdate struct {
+// Update define gcp firewall rule when update.
+type Update struct {
 	Description       string                     `json:"description"`
 	Priority          int64                      `json:"priority"`
 	SourceTags        []string                   `json:"source_tags"`
@@ -57,13 +57,13 @@ type GcpFirewallRuleUpdate struct {
 
 // -------------------------- List --------------------------
 
-// GcpFirewallRuleListOption define gcp firewall rule list option.
-type GcpFirewallRuleListOption struct {
+// ListOption define gcp firewall rule list option.
+type ListOption struct {
 	Page *core.GcpPage `json:"page" validate:"omitempty"`
 }
 
 // Validate gcp firewall rule list option.
-func (opt GcpFirewallRuleListOption) Validate() error {
+func (opt ListOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return nil
 	}
@@ -79,12 +79,12 @@ func (opt GcpFirewallRuleListOption) Validate() error {
 
 // -------------------------- Delete --------------------------
 
-// GcpFirewallRuleDeleteOption gcp firewall rule delete option.
-type GcpFirewallRuleDeleteOption struct {
+// DeleteOption gcp firewall rule delete option.
+type DeleteOption struct {
 	CloudID string `json:"cloud_id" validate:"required"`
 }
 
 // Validate gcp firewall rule delete option.
-func (opt GcpFirewallRuleDeleteOption) Validate() error {
+func (opt DeleteOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }

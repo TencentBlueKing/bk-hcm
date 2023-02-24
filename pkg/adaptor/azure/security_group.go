@@ -22,7 +22,7 @@ package azure
 import (
 	"fmt"
 
-	"hcm/pkg/adaptor/types"
+	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -32,7 +32,7 @@ import (
 
 // CreateSecurityGroup create security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
-func (az *Azure) CreateSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupOption) (*armnetwork.SecurityGroup,
+func (az *Azure) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureOption) (*armnetwork.SecurityGroup,
 	error) {
 
 	if opt == nil {
@@ -68,7 +68,7 @@ func (az *Azure) CreateSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupO
 
 // DeleteSecurityGroup delete security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/delete?tabs=HTTP
-func (az *Azure) DeleteSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupOption) error {
+func (az *Azure) DeleteSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group delete option is required")
@@ -100,7 +100,7 @@ func (az *Azure) DeleteSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupO
 
 // ListSecurityGroup list security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
-func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *types.AzureSecurityGroupListOption) (
+func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureListOption) (
 	[]*armnetwork.SecurityGroup, error) {
 
 	if opt == nil {

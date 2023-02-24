@@ -26,7 +26,7 @@ import (
 	"strconv"
 
 	"hcm/pkg/adaptor/tcloud"
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -84,15 +84,15 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 		AccountID:            sg.AccountID,
 	}
 
-	opt := &types.TCloudSGRuleCreateOption{
+	opt := &securitygrouprule.TCloudCreateOption{
 		Region:               sg.Region,
 		CloudSecurityGroupID: sg.CloudID,
 	}
 	if req.EgressRuleSet != nil {
-		opt.EgressRuleSet = make([]types.TCloudSGRule, 0, len(req.EgressRuleSet))
+		opt.EgressRuleSet = make([]securitygrouprule.TCloud, 0, len(req.EgressRuleSet))
 
 		for _, rule := range req.EgressRuleSet {
-			opt.EgressRuleSet = append(opt.EgressRuleSet, types.TCloudSGRule{
+			opt.EgressRuleSet = append(opt.EgressRuleSet, securitygrouprule.TCloud{
 				Protocol:                   rule.Protocol,
 				Port:                       rule.Port,
 				IPv4Cidr:                   rule.IPv4Cidr,
@@ -105,10 +105,10 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 	}
 
 	if req.IngressRuleSet != nil {
-		opt.IngressRuleSet = make([]types.TCloudSGRule, 0, len(req.IngressRuleSet))
+		opt.IngressRuleSet = make([]securitygrouprule.TCloud, 0, len(req.IngressRuleSet))
 
 		for _, rule := range req.IngressRuleSet {
-			opt.IngressRuleSet = append(opt.IngressRuleSet, types.TCloudSGRule{
+			opt.IngressRuleSet = append(opt.IngressRuleSet, securitygrouprule.TCloud{
 				Protocol:                   rule.Protocol,
 				Port:                       rule.Port,
 				IPv4Cidr:                   rule.IPv4Cidr,
@@ -152,7 +152,7 @@ type syncSecurityGroupRuleOption struct {
 func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud, opt *syncSecurityGroupRuleOption) (
 	[]string, error) {
 
-	listOpt := &types.TCloudSGRuleListOption{
+	listOpt := &securitygrouprule.TCloudListOption{
 		Region:               opt.Region,
 		CloudSecurityGroupID: opt.CloudSecurityGroupID,
 	}
@@ -430,14 +430,14 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 		AccountID:            rule.AccountID,
 	}
 
-	opt := &types.TCloudSGRuleUpdateOption{
+	opt := &securitygrouprule.TCloudUpdateOption{
 		Region:               rule.Region,
 		CloudSecurityGroupID: rule.CloudSecurityGroupID,
 		Version:              rule.Version,
 	}
 	switch rule.Type {
 	case enumor.Egress:
-		opt.EgressRuleSet = []types.TCloudSGRuleUpdateSpec{
+		opt.EgressRuleSet = []securitygrouprule.TCloudUpdateSpec{
 			{
 				CloudPolicyIndex:           rule.CloudPolicyIndex,
 				Protocol:                   req.Protocol,
@@ -450,7 +450,7 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 			}}
 
 	case enumor.Ingress:
-		opt.IngressRuleSet = []types.TCloudSGRuleUpdateSpec{
+		opt.IngressRuleSet = []securitygrouprule.TCloudUpdateSpec{
 			{
 				CloudPolicyIndex:           rule.CloudPolicyIndex,
 				Protocol:                   req.Protocol,
@@ -535,7 +535,7 @@ func (g *securityGroup) DeleteTCloudSGRule(cts *rest.Contexts) (interface{}, err
 		AccountID:            rule.AccountID,
 	}
 
-	opt := &types.TCloudSGRuleDeleteOption{
+	opt := &securitygrouprule.TCloudDeleteOption{
 		Region:               rule.Region,
 		CloudSecurityGroupID: rule.CloudSecurityGroupID,
 		Version:              rule.Version,
@@ -586,7 +586,7 @@ func (g *securityGroup) diffTCloudSGRuleSyncAdd(cts *rest.Contexts, ids []string
 			return err
 		}
 
-		listOpt := &types.TCloudSGRuleListOption{
+		listOpt := &securitygrouprule.TCloudListOption{
 			Region:               req.Region,
 			CloudSecurityGroupID: sg.CloudID,
 		}
@@ -669,7 +669,7 @@ func (g *securityGroup) diffTCloudSGRuleSyncUpdate(cts *rest.Contexts, updateClo
 
 		sgID := dsMap[id].HcSecurityGroup.ID
 
-		listOpt := &types.TCloudSGRuleListOption{
+		listOpt := &securitygrouprule.TCloudListOption{
 			Region:               req.Region,
 			CloudSecurityGroupID: id,
 		}
@@ -826,7 +826,7 @@ func (g *securityGroup) SyncTCloudSGRule(cts *rest.Contexts) (interface{}, error
 		return err, err
 	}
 
-	opt := &types.TCloudSGRuleListOption{
+	opt := &securitygrouprule.TCloudListOption{
 		Region:               req.Region,
 		CloudSecurityGroupID: sg.CloudID,
 	}

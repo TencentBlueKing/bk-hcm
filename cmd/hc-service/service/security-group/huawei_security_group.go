@@ -20,8 +20,8 @@
 package securitygroup
 
 import (
-	"hcm/pkg/adaptor/types"
 	typcore "hcm/pkg/adaptor/types/core"
+	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -51,7 +51,7 @@ func (g *securityGroup) CreateHuaWeiSecurityGroup(cts *rest.Contexts) (interface
 		return nil, err
 	}
 
-	opt := &types.HuaWeiSecurityGroupCreateOption{
+	opt := &securitygroup.HuaWeiCreateOption{
 		Region:      req.Region,
 		Name:        req.Name,
 		Description: req.Memo,
@@ -107,7 +107,7 @@ func (g *securityGroup) DeleteHuaWeiSecurityGroup(cts *rest.Contexts) (interface
 		return nil, err
 	}
 
-	opt := &types.SecurityGroupDeleteOption{
+	opt := &securitygroup.HuaWeiDeleteOption{
 		Region:  sg.Region,
 		CloudID: sg.CloudID,
 	}
@@ -157,7 +157,7 @@ func (g *securityGroup) UpdateHuaWeiSecurityGroup(cts *rest.Contexts) (interface
 		return nil, err
 	}
 
-	opt := &types.HuaWeiSecurityGroupUpdateOption{
+	opt := &securitygroup.HuaWeiUpdateOption{
 		CloudID:     sg.CloudID,
 		Region:      sg.Region,
 		Name:        req.Name,
@@ -228,7 +228,7 @@ func (g *securityGroup) getDatasFromHuaWeiForSecurityGroupSync(cts *rest.Context
 	limit := int32(typcore.HuaWeiQueryLimit)
 	var marker *string = nil
 	for {
-		opt := &types.HuaWeiSecurityGroupListOption{
+		opt := &securitygroup.HuaWeiListOption{
 			Region: req.Region,
 			Page:   &typcore.HuaWeiPage{Limit: &limit, Marker: marker},
 		}

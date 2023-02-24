@@ -22,7 +22,7 @@ package azure
 import (
 	"fmt"
 
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -32,8 +32,8 @@ import (
 
 // CreateSecurityGroupRule create security group rule.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
-func (az *Azure) CreateSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleCreateOption) ([]*armnetwork.SecurityRule,
-	error) {
+func (az *Azure) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AzureCreateOption) (
+	[]*armnetwork.SecurityRule, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule create option is required")
@@ -92,7 +92,7 @@ func (az *Azure) CreateSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleCrea
 	return result, nil
 }
 
-func convSecurityGroupRule(direction armnetwork.SecurityRuleDirection, rules []types.AzureSGRuleCreate,
+func convSecurityGroupRule(direction armnetwork.SecurityRuleDirection, rules []securitygrouprule.AzureCreate,
 ) ([]*armnetwork.SecurityRule, map[string]bool) {
 
 	result := make([]*armnetwork.SecurityRule, 0, len(rules))
@@ -153,7 +153,7 @@ func convSecurityGroupRule(direction armnetwork.SecurityRuleDirection, rules []t
 
 // UpdateSecurityGroupRule update security group rule.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
-func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleUpdateOption) error {
+func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AzureUpdateOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule update option is required")
@@ -246,7 +246,7 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleUpda
 
 // DeleteSecurityGroupRule delete security group rule.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
-func (az *Azure) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleDeleteOption) error {
+func (az *Azure) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AzureDeleteOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule delete option is required")
@@ -304,7 +304,7 @@ func (az *Azure) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleDele
 
 // ListSecurityGroupRule list security group rule.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
-func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *types.AzureSGRuleListOption) ([]*armnetwork.SecurityRule,
+func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AzureListOption) ([]*armnetwork.SecurityRule,
 	error) {
 
 	if opt == nil {

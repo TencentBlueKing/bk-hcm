@@ -22,7 +22,7 @@ package tcloud
 import (
 	"fmt"
 
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -34,7 +34,7 @@ import (
 
 // CreateSecurityGroupRule create security group rule.
 // reference: https://cloud.tencent.com/document/api/215/15807
-func (t *TCloud) CreateSecurityGroupRule(kt *kit.Kit, opt *types.TCloudSGRuleCreateOption) error {
+func (t *TCloud) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudCreateOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule create option is required")
@@ -100,7 +100,7 @@ func (t *TCloud) CreateSecurityGroupRule(kt *kit.Kit, opt *types.TCloudSGRuleCre
 
 // DeleteSecurityGroupRule delete security group.
 // reference: https://cloud.tencent.com/document/api/215/15809
-func (t *TCloud) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.TCloudSGRuleDeleteOption) error {
+func (t *TCloud) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudDeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule delete option is required")
 	}
@@ -156,7 +156,7 @@ func (t *TCloud) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.TCloudSGRuleDel
 
 // UpdateSecurityGroupRule update security group.
 // reference: https://cloud.tencent.com/document/api/215/15811
-func (t *TCloud) UpdateSecurityGroupRule(kt *kit.Kit, opt *types.TCloudSGRuleUpdateOption) error {
+func (t *TCloud) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudUpdateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule update option is required")
 	}
@@ -226,7 +226,7 @@ func (t *TCloud) UpdateSecurityGroupRule(kt *kit.Kit, opt *types.TCloudSGRuleUpd
 
 // ListSecurityGroupRule list tcloud security group rule.
 // reference: https://cloud.tencent.com/document/api/215/15804
-func (t *TCloud) ListSecurityGroupRule(kt *kit.Kit, opt *types.TCloudSGRuleListOption) (
+func (t *TCloud) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudListOption) (
 	*vpc.SecurityGroupPolicySet, error) {
 
 	if opt == nil {

@@ -20,8 +20,8 @@
 package securitygroup
 
 import (
-	"hcm/pkg/adaptor/types"
 	typcore "hcm/pkg/adaptor/types/core"
+	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -51,7 +51,7 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 		return nil, err
 	}
 
-	opt := &types.TCloudSecurityGroupCreateOption{
+	opt := &securitygroup.TCloudCreateOption{
 		Region:      req.Region,
 		Name:        req.Name,
 		Description: req.Memo,
@@ -106,7 +106,7 @@ func (g *securityGroup) DeleteTCloudSecurityGroup(cts *rest.Contexts) (interface
 		return nil, err
 	}
 
-	opt := &types.SecurityGroupDeleteOption{
+	opt := &securitygroup.TCloudDeleteOption{
 		Region:  sg.Region,
 		CloudID: sg.CloudID,
 	}
@@ -156,7 +156,7 @@ func (g *securityGroup) UpdateTCloudSecurityGroup(cts *rest.Contexts) (interface
 		return nil, err
 	}
 
-	opt := &types.TCloudSecurityGroupUpdateOption{
+	opt := &securitygroup.TCloudUpdateOption{
 		CloudID:     sg.CloudID,
 		Region:      sg.Region,
 		Name:        req.Name,
@@ -226,7 +226,7 @@ func (g *securityGroup) getDatasFromTCloudForSecurityGroupSync(cts *rest.Context
 	offset := 0
 	datasCloud := []*vpc.SecurityGroup{}
 	for {
-		opt := &types.TCloudSecurityGroupListOption{
+		opt := &securitygroup.TCloudListOption{
 			Region: req.Region,
 			Page:   &typcore.TCloudPage{Offset: uint64(offset), Limit: uint64(typcore.TCloudQueryLimit)},
 		}

@@ -25,7 +25,7 @@ import (
 
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/firewall-rule"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -79,7 +79,7 @@ func (f *firewall) DeleteGcpFirewallRule(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	opt := &types.GcpFirewallRuleDeleteOption{
+	opt := &firewallrule.DeleteOption{
 		CloudID: rule.CloudID,
 	}
 	if err := client.DeleteFirewallRule(cts.Kit, opt); err != nil {
@@ -128,9 +128,9 @@ func (f *firewall) UpdateGcpFirewallRule(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	opt := &types.GcpFirewallRuleUpdateOption{
+	opt := &firewallrule.UpdateOption{
 		CloudID: rule.CloudID,
-		GcpFirewallRule: &types.GcpFirewallRuleUpdate{
+		GcpFirewallRule: &firewallrule.Update{
 			Description:           req.Memo,
 			Priority:              req.Priority,
 			SourceTags:            req.SourceTags,
@@ -208,7 +208,7 @@ func (f *firewall) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	resp, err := client.ListFirewallRule(cts.Kit, &types.GcpFirewallRuleListOption{})
+	resp, err := client.ListFirewallRule(cts.Kit, &firewallrule.ListOption{})
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func (f *firewall) SyncCreateGcpFirewallRule(cts *rest.Contexts, accountID strin
 		return nil, err
 	}
 
-	resp, err := client.ListFirewallRule(cts.Kit, &types.GcpFirewallRuleListOption{})
+	resp, err := client.ListFirewallRule(cts.Kit, &firewallrule.ListOption{})
 	if err != nil {
 		return nil, err
 	}

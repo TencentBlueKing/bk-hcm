@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -72,13 +72,13 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
-	opt := &types.HuaWeiSGRuleCreateOption{
+	opt := &securitygrouprule.HuaWeiCreateOption{
 		Region:               sg.Region,
 		CloudSecurityGroupID: sg.CloudID,
 	}
 	if req.EgressRule != nil {
 		priority := strconv.Itoa(int(req.EgressRule.Priority))
-		opt.Rule = &types.HuaWeiSGRuleCreate{
+		opt.Rule = &securitygrouprule.HuaWeiCreate{
 			Description:        req.EgressRule.Memo,
 			Ethertype:          req.EgressRule.Ethertype,
 			Protocol:           req.EgressRule.Protocol,
@@ -93,7 +93,7 @@ func (g *securityGroup) CreateHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 
 	if req.IngressRule != nil {
 		priority := strconv.Itoa(int(req.IngressRule.Priority))
-		opt.Rule = &types.HuaWeiSGRuleCreate{
+		opt.Rule = &securitygrouprule.HuaWeiCreate{
 			Description:        req.IngressRule.Memo,
 			Ethertype:          req.IngressRule.Ethertype,
 			Protocol:           req.IngressRule.Protocol,
@@ -172,7 +172,7 @@ func (g *securityGroup) DeleteHuaWeiSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
-	opt := &types.HuaWeiSGRuleDeleteOption{
+	opt := &securitygrouprule.HuaWeiDeleteOption{
 		Region:      rule.Region,
 		CloudRuleID: rule.CloudID,
 	}
@@ -231,7 +231,7 @@ func (g *securityGroup) diffHuaWeiSGRuleSyncAdd(cts *rest.Contexts, ids []string
 			return err
 		}
 		// TODO 分页逻辑
-		opt := &types.HuaWeiSGRuleListOption{
+		opt := &securitygrouprule.HuaWeiListOption{
 			Region:               req.Region,
 			CloudSecurityGroupID: sg.CloudID,
 		}
@@ -298,7 +298,7 @@ func (g *securityGroup) diffHuaWeiSGRuleSyncUpdate(cts *rest.Contexts, updateClo
 	for _, id := range updateCloudIDs {
 		sgID := dsMap[id].HcSecurityGroup.ID
 		// TODO 分页逻辑
-		opt := &types.HuaWeiSGRuleListOption{
+		opt := &securitygrouprule.HuaWeiListOption{
 			Region:               req.Region,
 			CloudSecurityGroupID: id,
 		}
@@ -439,7 +439,7 @@ func (g *securityGroup) SyncHuaWeiSGRule(cts *rest.Contexts) (interface{}, error
 	}
 
 	cloudAllIDs := make(map[string]bool)
-	opt := &types.HuaWeiSGRuleListOption{
+	opt := &securitygrouprule.HuaWeiListOption{
 		Region:               req.Region,
 		CloudSecurityGroupID: sg.CloudID,
 	}

@@ -20,7 +20,7 @@
 package aws
 
 import (
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -30,7 +30,8 @@ import (
 )
 
 // CreateSecurityGroupRule create security group rule.
-func (a *Aws) CreateSecurityGroupRule(kt *kit.Kit, opt *types.AwsSGRuleCreateOption) ([]*ec2.SecurityGroupRule, error) {
+func (a *Aws) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AwsCreateOption) (
+	[]*ec2.SecurityGroupRule, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule create option is required")
@@ -53,7 +54,9 @@ func (a *Aws) CreateSecurityGroupRule(kt *kit.Kit, opt *types.AwsSGRuleCreateOpt
 
 // createEgressSGRule create egress security group rule.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupEgress.html
-func (a *Aws) createEgressSGRule(kt *kit.Kit, opt *types.AwsSGRuleCreateOption) ([]*ec2.SecurityGroupRule, error) {
+func (a *Aws) createEgressSGRule(kt *kit.Kit, opt *securitygrouprule.AwsCreateOption) (
+	[]*ec2.SecurityGroupRule, error) {
+
 	client, err := a.clientSet.ec2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -113,7 +116,9 @@ func (a *Aws) createEgressSGRule(kt *kit.Kit, opt *types.AwsSGRuleCreateOption) 
 
 // createIngressSGRule create ingress security group rule.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_AuthorizeSecurityGroupIngress.html
-func (a *Aws) createIngressSGRule(kt *kit.Kit, opt *types.AwsSGRuleCreateOption) ([]*ec2.SecurityGroupRule, error) {
+func (a *Aws) createIngressSGRule(kt *kit.Kit, opt *securitygrouprule.AwsCreateOption) (
+	[]*ec2.SecurityGroupRule, error) {
+
 	client, err := a.clientSet.ec2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -174,7 +179,7 @@ func (a *Aws) createIngressSGRule(kt *kit.Kit, opt *types.AwsSGRuleCreateOption)
 // DeleteSecurityGroupRule delete security group rule.
 // Egress: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_RevokeSecurityGroupEgress.html
 // Ingress: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_RevokeSecurityGroupIngress.html
-func (a *Aws) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.AwsSGRuleDeleteOption) error {
+func (a *Aws) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AwsDeleteOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule delete option is required")
@@ -224,7 +229,8 @@ func (a *Aws) DeleteSecurityGroupRule(kt *kit.Kit, opt *types.AwsSGRuleDeleteOpt
 
 // ListSecurityGroupRule list security group rule.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeSecurityGroupRules.html
-func (a *Aws) ListSecurityGroupRule(kt *kit.Kit, opt *types.AwsSGRuleListOption) ([]*ec2.SecurityGroupRule, error) {
+func (a *Aws) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AwsListOption) (
+	[]*ec2.SecurityGroupRule, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule list option is required")
@@ -264,7 +270,7 @@ func (a *Aws) ListSecurityGroupRule(kt *kit.Kit, opt *types.AwsSGRuleListOption)
 
 // UpdateSecurityGroupRule update security group rule.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_ModifySecurityGroupRules.html
-func (a *Aws) UpdateSecurityGroupRule(kt *kit.Kit, opt *types.AwsSGRuleUpdateOption) error {
+func (a *Aws) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AwsUpdateOption) error {
 
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group rule update option is required")

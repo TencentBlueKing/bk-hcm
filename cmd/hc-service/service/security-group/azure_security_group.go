@@ -20,7 +20,7 @@
 package securitygroup
 
 import (
-	"hcm/pkg/adaptor/types"
+	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -50,7 +50,7 @@ func (g *securityGroup) CreateAzureSecurityGroup(cts *rest.Contexts) (interface{
 		return nil, err
 	}
 
-	opt := &types.AzureSecurityGroupOption{
+	opt := &securitygroup.AzureOption{
 		ResourceGroupName: req.ResourceGroupName,
 		Region:            req.Region,
 		Name:              req.Name,
@@ -108,7 +108,7 @@ func (g *securityGroup) DeleteAzureSecurityGroup(cts *rest.Contexts) (interface{
 		return nil, err
 	}
 
-	opt := &types.AzureSecurityGroupOption{
+	opt := &securitygroup.AzureOption{
 		ResourceGroupName: sg.Extension.ResourceGroupName,
 		Region:            sg.Region,
 		Name:              sg.Name,
@@ -265,7 +265,7 @@ func (g *securityGroup) getDatasFromAzureForSecurityGroupSync(cts *rest.Contexts
 		return nil, err
 	}
 
-	listOpt := &types.AzureSecurityGroupListOption{
+	listOpt := &securitygroup.AzureListOption{
 		ResourceGroupName: req.ResourceGroupName,
 	}
 	result, err := client.ListSecurityGroup(cts.Kit, listOpt)

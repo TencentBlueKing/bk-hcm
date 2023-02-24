@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"hcm/pkg/adaptor/types"
+	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -35,7 +35,7 @@ import (
 
 // CreateSecurityGroup create security group.
 // reference: https://cloud.tencent.com/document/api/215/15806
-func (t *TCloud) CreateSecurityGroup(kt *kit.Kit, opt *types.TCloudSecurityGroupCreateOption) (*vpc.SecurityGroup,
+func (t *TCloud) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudCreateOption) (*vpc.SecurityGroup,
 	error) {
 
 	if opt == nil {
@@ -70,7 +70,7 @@ func (t *TCloud) CreateSecurityGroup(kt *kit.Kit, opt *types.TCloudSecurityGroup
 
 // DeleteSecurityGroup delete security group.
 // reference: https://cloud.tencent.com/document/api/215/15803
-func (t *TCloud) DeleteSecurityGroup(kt *kit.Kit, opt *types.SecurityGroupDeleteOption) error {
+func (t *TCloud) DeleteSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudDeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group delete option is required")
 	}
@@ -98,7 +98,7 @@ func (t *TCloud) DeleteSecurityGroup(kt *kit.Kit, opt *types.SecurityGroupDelete
 
 // UpdateSecurityGroup update security group.
 // reference: https://cloud.tencent.com/document/api/215/15805
-func (t *TCloud) UpdateSecurityGroup(kt *kit.Kit, opt *types.TCloudSecurityGroupUpdateOption) error {
+func (t *TCloud) UpdateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudUpdateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "tcloud security group update option is required")
 	}
@@ -130,7 +130,7 @@ func (t *TCloud) UpdateSecurityGroup(kt *kit.Kit, opt *types.TCloudSecurityGroup
 
 // ListSecurityGroup list security group.
 // reference: https://cloud.tencent.com/document/api/215/15808
-func (t *TCloud) ListSecurityGroup(kt *kit.Kit, opt *types.TCloudSecurityGroupListOption) ([]*vpc.SecurityGroup,
+func (t *TCloud) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudListOption) ([]*vpc.SecurityGroup,
 	error) {
 
 	if opt == nil {

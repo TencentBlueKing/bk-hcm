@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package securitygrouprule
 
 import (
 	"errors"
@@ -27,16 +27,16 @@ import (
 
 // -------------------------- Create --------------------------
 
-// TCloudSGRuleCreateOption tcloud security group rule create option.
-type TCloudSGRuleCreateOption struct {
-	Region               string         `json:"region" validate:"required"`
-	CloudSecurityGroupID string         `json:"cloud_security_group_id" validate:"required"`
-	EgressRuleSet        []TCloudSGRule `json:"egress_rule_set" validate:"omitempty"`
-	IngressRuleSet       []TCloudSGRule `json:"ingress_rule_set" validate:"omitempty"`
+// TCloudCreateOption tcloud security group rule create option.
+type TCloudCreateOption struct {
+	Region               string   `json:"region" validate:"required"`
+	CloudSecurityGroupID string   `json:"cloud_security_group_id" validate:"required"`
+	EgressRuleSet        []TCloud `json:"egress_rule_set" validate:"omitempty"`
+	IngressRuleSet       []TCloud `json:"ingress_rule_set" validate:"omitempty"`
 }
 
 // Validate tcloud security group rule create option.
-func (opt TCloudSGRuleCreateOption) Validate() error {
+func (opt TCloudCreateOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
 	}
@@ -52,8 +52,8 @@ func (opt TCloudSGRuleCreateOption) Validate() error {
 	return nil
 }
 
-// TCloudSGRule tcloud security group rule.
-type TCloudSGRule struct {
+// TCloud tcloud security group rule.
+type TCloud struct {
 	Protocol                   *string `json:"protocol"`
 	Port                       *string `json:"port"`
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
@@ -65,8 +65,8 @@ type TCloudSGRule struct {
 
 // -------------------------- Delete --------------------------
 
-// TCloudSGRuleDeleteOption tcloud security group delete option.
-type TCloudSGRuleDeleteOption struct {
+// TCloudDeleteOption tcloud security group delete option.
+type TCloudDeleteOption struct {
 	Region               string  `json:"region" validate:"required"`
 	CloudSecurityGroupID string  `json:"cloud_security_group_id" validate:"required"`
 	Version              string  `json:"version" validate:"required"`
@@ -75,7 +75,7 @@ type TCloudSGRuleDeleteOption struct {
 }
 
 // Validate tcloud security group rule delete option.
-func (opt TCloudSGRuleDeleteOption) Validate() error {
+func (opt TCloudDeleteOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
 	}
@@ -93,17 +93,17 @@ func (opt TCloudSGRuleDeleteOption) Validate() error {
 
 // -------------------------- Update --------------------------
 
-// TCloudSGRuleUpdateOption tcloud security group rule update option.
-type TCloudSGRuleUpdateOption struct {
-	Region               string                   `json:"region" validate:"required"`
-	CloudSecurityGroupID string                   `json:"cloud_security_group_id" validate:"required"`
-	Version              string                   `json:"version" validate:"required"`
-	EgressRuleSet        []TCloudSGRuleUpdateSpec `json:"egress_rule_set" validate:"omitempty"`
-	IngressRuleSet       []TCloudSGRuleUpdateSpec `json:"ingress_rule_set" validate:"omitempty"`
+// TCloudUpdateOption tcloud security group rule update option.
+type TCloudUpdateOption struct {
+	Region               string             `json:"region" validate:"required"`
+	CloudSecurityGroupID string             `json:"cloud_security_group_id" validate:"required"`
+	Version              string             `json:"version" validate:"required"`
+	EgressRuleSet        []TCloudUpdateSpec `json:"egress_rule_set" validate:"omitempty"`
+	IngressRuleSet       []TCloudUpdateSpec `json:"ingress_rule_set" validate:"omitempty"`
 }
 
 // Validate tcloud security group rule delete option.
-func (opt TCloudSGRuleUpdateOption) Validate() error {
+func (opt TCloudUpdateOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
 	}
@@ -119,8 +119,8 @@ func (opt TCloudSGRuleUpdateOption) Validate() error {
 	return nil
 }
 
-// TCloudSGRuleUpdateSpec tcloud security group rule when update.
-type TCloudSGRuleUpdateSpec struct {
+// TCloudUpdateSpec tcloud security group rule when update.
+type TCloudUpdateSpec struct {
 	CloudPolicyIndex           int64   `json:"cloud_policy_index" validate:"required"`
 	Protocol                   *string `json:"protocol"`
 	Port                       *string `json:"port"`
@@ -133,13 +133,13 @@ type TCloudSGRuleUpdateSpec struct {
 
 // -------------------------- List --------------------------
 
-// TCloudSGRuleListOption define tcloud security group rule list option.
-type TCloudSGRuleListOption struct {
+// TCloudListOption define tcloud security group rule list option.
+type TCloudListOption struct {
 	Region               string `json:"region" validate:"required"`
 	CloudSecurityGroupID string `json:"cloud_security_group_id" validate:"required"`
 }
 
 // Validate tcloud security group rule list option.
-func (opt TCloudSGRuleListOption) Validate() error {
+func (opt TCloudListOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }

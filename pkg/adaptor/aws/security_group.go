@@ -23,7 +23,7 @@ import (
 	"errors"
 	"fmt"
 
-	"hcm/pkg/adaptor/types"
+	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -34,7 +34,7 @@ import (
 
 // CreateSecurityGroup create security group.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html
-func (a *Aws) CreateSecurityGroup(kt *kit.Kit, opt *types.AwsSecurityGroupCreateOption) (string, error) {
+func (a *Aws) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.AwsCreateOption) (string, error) {
 
 	if opt == nil {
 		return "", errf.New(errf.InvalidParameter, "security group create option is required")
@@ -85,7 +85,7 @@ func (a *Aws) CreateSecurityGroup(kt *kit.Kit, opt *types.AwsSecurityGroupCreate
 
 // ListSecurityGroup list security group.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeSecurityGroups.html
-func (a *Aws) ListSecurityGroup(kt *kit.Kit, opt *types.AwsSecurityGroupListOption) (*ec2.DescribeSecurityGroupsOutput,
+func (a *Aws) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AwsListOption) (*ec2.DescribeSecurityGroupsOutput,
 	error) {
 
 	if opt == nil {
@@ -123,7 +123,7 @@ func (a *Aws) ListSecurityGroup(kt *kit.Kit, opt *types.AwsSecurityGroupListOpti
 
 // DeleteSecurityGroup delete security group.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DeleteSecurityGroup.html
-func (a *Aws) DeleteSecurityGroup(kt *kit.Kit, opt *types.SecurityGroupDeleteOption) error {
+func (a *Aws) DeleteSecurityGroup(kt *kit.Kit, opt *securitygroup.AwsDeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "security group delete option is required")
 	}

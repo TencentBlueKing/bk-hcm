@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"strings"
 
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -72,16 +72,16 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 		return nil, err
 	}
 
-	opt := &types.AzureSGRuleCreateOption{
+	opt := &securitygrouprule.AzureCreateOption{
 		Region:               sg.Region,
 		CloudSecurityGroupID: sg.CloudID,
 		ResourceGroupName:    sg.Extension.ResourceGroupName,
 	}
 	if req.EgressRuleSet != nil {
-		opt.EgressRuleSet = make([]types.AzureSGRuleCreate, 0, len(req.EgressRuleSet))
+		opt.EgressRuleSet = make([]securitygrouprule.AzureCreate, 0, len(req.EgressRuleSet))
 
 		for _, rule := range req.EgressRuleSet {
-			opt.EgressRuleSet = append(opt.EgressRuleSet, types.AzureSGRuleCreate{
+			opt.EgressRuleSet = append(opt.EgressRuleSet, securitygrouprule.AzureCreate{
 				Name:                             rule.Name,
 				Description:                      rule.Memo,
 				DestinationAddressPrefix:         rule.DestinationAddressPrefix,
@@ -103,10 +103,10 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 	}
 
 	if req.IngressRuleSet != nil {
-		opt.IngressRuleSet = make([]types.AzureSGRuleCreate, 0, len(req.IngressRuleSet))
+		opt.IngressRuleSet = make([]securitygrouprule.AzureCreate, 0, len(req.IngressRuleSet))
 
 		for _, rule := range req.IngressRuleSet {
-			opt.IngressRuleSet = append(opt.IngressRuleSet, types.AzureSGRuleCreate{
+			opt.IngressRuleSet = append(opt.IngressRuleSet, securitygrouprule.AzureCreate{
 				Name:                             rule.Name,
 				Description:                      rule.Memo,
 				DestinationAddressPrefix:         rule.DestinationAddressPrefix,
@@ -235,11 +235,11 @@ func (g *securityGroup) UpdateAzureSGRule(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	opt := &types.AzureSGRuleUpdateOption{
+	opt := &securitygrouprule.AzureUpdateOption{
 		Region:               rule.Region,
 		CloudSecurityGroupID: rule.CloudSecurityGroupID,
 		ResourceGroupName:    sg.Extension.ResourceGroupName,
-		Rule: &types.AzureSGRuleUpdate{
+		Rule: &securitygrouprule.AzureUpdate{
 			CloudID:                          rule.CloudID,
 			Name:                             req.Name,
 			Description:                      req.Memo,
@@ -349,7 +349,7 @@ func (g *securityGroup) DeleteAzureSGRule(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	opt := &types.AzureSGRuleDeleteOption{
+	opt := &securitygrouprule.AzureDeleteOption{
 		Region:               rule.Region,
 		ResourceGroupName:    sg.Extension.ResourceGroupName,
 		CloudSecurityGroupID: rule.CloudSecurityGroupID,
@@ -389,7 +389,7 @@ func (g *securityGroup) diffAzureSGRuleSyncAdd(cts *rest.Contexts, ids []string,
 			return err
 		}
 
-		opt := &types.AzureSGRuleListOption{
+		opt := &securitygrouprule.AzureListOption{
 			Region:               req.Region,
 			ResourceGroupName:    req.ResourceGroupName,
 			CloudSecurityGroupID: sg.CloudID,
@@ -484,7 +484,7 @@ func (g *securityGroup) diffAzureSGRuleSyncUpdate(cts *rest.Contexts, updateClou
 
 	for _, id := range updateCloudIDs {
 		sgID := dsMap[id].HcSecurityGroup.ID
-		opt := &types.AzureSGRuleListOption{
+		opt := &securitygrouprule.AzureListOption{
 			Region:               req.Region,
 			ResourceGroupName:    req.ResourceGroupName,
 			CloudSecurityGroupID: id,
@@ -513,7 +513,7 @@ func (g *securityGroup) diffAzureSGRuleSyncUpdate(cts *rest.Contexts, updateClou
 	return nil
 }
 
-// genHuaWeiUpdateRulesList gen AzureSGRuleUpdate list
+// genHuaWeiUpdateRulesList gen AzureUpdate list
 func (g *securityGroup) genAzureUpdateRulesList(rules []*armnetwork.SecurityRule, sgID string,
 	cts *rest.Contexts, id string, req *proto.SecurityGroupSyncReq) []protocloud.AzureSGRuleUpdate {
 
@@ -640,7 +640,7 @@ func (g *securityGroup) SyncAzureSGRule(cts *rest.Contexts) (interface{}, error)
 	}
 
 	cloudAllIDs := make(map[string]bool)
-	opt := &types.AzureSGRuleListOption{
+	opt := &securitygrouprule.AzureListOption{
 		Region:               req.Region,
 		ResourceGroupName:    req.ResourceGroupName,
 		CloudSecurityGroupID: sg.CloudID,

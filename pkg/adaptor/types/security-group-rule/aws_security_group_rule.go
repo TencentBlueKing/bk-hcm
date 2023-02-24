@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package securitygrouprule
 
 import (
 	"errors"
@@ -28,16 +28,16 @@ import (
 
 // -------------------------- Create --------------------------
 
-// AwsSGRuleCreateOption aws security group rule create option.
-type AwsSGRuleCreateOption struct {
-	Region               string            `json:"region" validate:"required"`
-	CloudSecurityGroupID string            `json:"cloud_security_group_id" validate:"required"`
-	EgressRuleSet        []AwsSGRuleCreate `json:"egress_rule_set" validate:"omitempty"`
-	IngressRuleSet       []AwsSGRuleCreate `json:"ingress_rule_set" validate:"omitempty"`
+// AwsCreateOption aws security group rule create option.
+type AwsCreateOption struct {
+	Region               string      `json:"region" validate:"required"`
+	CloudSecurityGroupID string      `json:"cloud_security_group_id" validate:"required"`
+	EgressRuleSet        []AwsCreate `json:"egress_rule_set" validate:"omitempty"`
+	IngressRuleSet       []AwsCreate `json:"ingress_rule_set" validate:"omitempty"`
 }
 
 // Validate aws security group rule create option.
-func (opt AwsSGRuleCreateOption) Validate() error {
+func (opt AwsCreateOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
 	}
@@ -53,8 +53,8 @@ func (opt AwsSGRuleCreateOption) Validate() error {
 	return nil
 }
 
-// AwsSGRuleCreate aws security group rule.
-type AwsSGRuleCreate struct {
+// AwsCreate aws security group rule.
+type AwsCreate struct {
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
 	IPv6Cidr                   *string `json:"ipv6_cidr"`
 	Description                *string `json:"description"`
@@ -66,8 +66,8 @@ type AwsSGRuleCreate struct {
 
 // -------------------------- Delete --------------------------
 
-// AwsSGRuleDeleteOption aws security group delete option.
-type AwsSGRuleDeleteOption struct {
+// AwsDeleteOption aws security group delete option.
+type AwsDeleteOption struct {
 	Region               string   `json:"region" validate:"required"`
 	CloudSecurityGroupID string   `json:"cloud_security_group_id" validate:"required"`
 	CloudEgressRuleIDs   []string `json:"cloud_egress_rule_ids" validate:"omitempty"`
@@ -75,7 +75,7 @@ type AwsSGRuleDeleteOption struct {
 }
 
 // Validate aws security group rule delete option.
-func (opt AwsSGRuleDeleteOption) Validate() error {
+func (opt AwsDeleteOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
 	}
@@ -93,15 +93,15 @@ func (opt AwsSGRuleDeleteOption) Validate() error {
 
 // -------------------------- List --------------------------
 
-// AwsSGRuleListOption define aws security group rule list option.
-type AwsSGRuleListOption struct {
+// AwsListOption define aws security group rule list option.
+type AwsListOption struct {
 	Region               string        `json:"region" validate:"required"`
 	CloudSecurityGroupID string        `json:"cloud_security_group_id" validate:"required"`
 	Page                 *core.AwsPage `json:"page" validate:"omitempty"`
 }
 
 // Validate security group rule list option.
-func (opt AwsSGRuleListOption) Validate() error {
+func (opt AwsListOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return nil
 	}
@@ -117,15 +117,15 @@ func (opt AwsSGRuleListOption) Validate() error {
 
 // -------------------------- Update --------------------------
 
-// AwsSGRuleUpdateOption aws security group rule update option.
-type AwsSGRuleUpdateOption struct {
+// AwsUpdateOption aws security group rule update option.
+type AwsUpdateOption struct {
 	Region               string            `json:"region" validate:"required"`
 	CloudSecurityGroupID string            `json:"cloud_security_group_id" validate:"required"`
 	RuleSet              []AwsSGRuleUpdate `json:"rule_set" validate:"required"`
 }
 
 // Validate aws security group rule delete option.
-func (opt AwsSGRuleUpdateOption) Validate() error {
+func (opt AwsUpdateOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 

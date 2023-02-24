@@ -20,8 +20,8 @@
 package gcp
 
 import (
-	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/firewall-rule"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -31,7 +31,7 @@ import (
 
 // ListFirewallRule list firewall rule.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/list
-func (g *Gcp) ListFirewallRule(kt *kit.Kit, opt *types.GcpFirewallRuleListOption) (*compute.FirewallList, error) {
+func (g *Gcp) ListFirewallRule(kt *kit.Kit, opt *firewallrule.ListOption) (*compute.FirewallList, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
@@ -65,7 +65,7 @@ func (g *Gcp) ListFirewallRule(kt *kit.Kit, opt *types.GcpFirewallRuleListOption
 
 // UpdateFirewallRule update firewall rule.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/patch
-func (g *Gcp) UpdateFirewallRule(kt *kit.Kit, opt *types.GcpFirewallRuleUpdateOption) error {
+func (g *Gcp) UpdateFirewallRule(kt *kit.Kit, opt *firewallrule.UpdateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "update option is required")
 	}
@@ -122,7 +122,7 @@ func (g *Gcp) UpdateFirewallRule(kt *kit.Kit, opt *types.GcpFirewallRuleUpdateOp
 
 // DeleteFirewallRule delete firewall rule.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/delete
-func (g *Gcp) DeleteFirewallRule(kt *kit.Kit, opt *types.GcpFirewallRuleDeleteOption) error {
+func (g *Gcp) DeleteFirewallRule(kt *kit.Kit, opt *firewallrule.DeleteOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "delete option is required")
 	}

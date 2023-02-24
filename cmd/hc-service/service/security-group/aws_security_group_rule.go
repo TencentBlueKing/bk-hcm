@@ -22,7 +22,7 @@ package securitygroup
 import (
 	"fmt"
 
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -71,15 +71,15 @@ func (g *securityGroup) BatchCreateAwsSGRule(cts *rest.Contexts) (interface{}, e
 		return nil, err
 	}
 
-	opt := &types.AwsSGRuleCreateOption{
+	opt := &securitygrouprule.AwsCreateOption{
 		Region:               sg.Region,
 		CloudSecurityGroupID: sg.CloudID,
 	}
 	if req.EgressRuleSet != nil {
-		opt.EgressRuleSet = make([]types.AwsSGRuleCreate, 0, len(req.EgressRuleSet))
+		opt.EgressRuleSet = make([]securitygrouprule.AwsCreate, 0, len(req.EgressRuleSet))
 
 		for _, rule := range req.EgressRuleSet {
-			opt.EgressRuleSet = append(opt.EgressRuleSet, types.AwsSGRuleCreate{
+			opt.EgressRuleSet = append(opt.EgressRuleSet, securitygrouprule.AwsCreate{
 				IPv4Cidr:                   rule.IPv4Cidr,
 				IPv6Cidr:                   rule.IPv6Cidr,
 				Description:                rule.Memo,
@@ -92,10 +92,10 @@ func (g *securityGroup) BatchCreateAwsSGRule(cts *rest.Contexts) (interface{}, e
 	}
 
 	if req.IngressRuleSet != nil {
-		opt.IngressRuleSet = make([]types.AwsSGRuleCreate, 0, len(req.IngressRuleSet))
+		opt.IngressRuleSet = make([]securitygrouprule.AwsCreate, 0, len(req.IngressRuleSet))
 
 		for _, rule := range req.IngressRuleSet {
-			opt.IngressRuleSet = append(opt.IngressRuleSet, types.AwsSGRuleCreate{
+			opt.IngressRuleSet = append(opt.IngressRuleSet, securitygrouprule.AwsCreate{
 				IPv4Cidr:                   rule.IPv4Cidr,
 				IPv6Cidr:                   rule.IPv6Cidr,
 				Description:                rule.Memo,
@@ -185,10 +185,10 @@ func (g *securityGroup) UpdateAwsSGRule(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	opt := &types.AwsSGRuleUpdateOption{
+	opt := &securitygrouprule.AwsUpdateOption{
 		Region:               rule.Region,
 		CloudSecurityGroupID: rule.CloudSecurityGroupID,
-		RuleSet: []types.AwsSGRuleUpdate{
+		RuleSet: []securitygrouprule.AwsSGRuleUpdate{
 			{
 				CloudID:                    rule.CloudID,
 				IPv4Cidr:                   req.IPv4Cidr,
@@ -280,7 +280,7 @@ func (g *securityGroup) DeleteAwsSGRule(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	opt := &types.AwsSGRuleDeleteOption{
+	opt := &securitygrouprule.AwsDeleteOption{
 		Region:               rule.Region,
 		CloudSecurityGroupID: rule.CloudSecurityGroupID,
 	}
@@ -327,7 +327,7 @@ func (g *securityGroup) diffAwsSGRuleSyncAdd(cts *rest.Contexts, ids []string,
 			return err
 		}
 
-		opt := &types.AwsSGRuleListOption{
+		opt := &securitygrouprule.AwsListOption{
 			Region:               req.Region,
 			CloudSecurityGroupID: sg.CloudID,
 		}
@@ -401,7 +401,7 @@ func (g *securityGroup) diffAwsSGRuleSyncUpdate(cts *rest.Contexts, updateCloudI
 
 		sgID := dsMap[id].HcSecurityGroup.ID
 
-		opt := &types.AwsSGRuleListOption{
+		opt := &securitygrouprule.AwsListOption{
 			Region:               req.Region,
 			CloudSecurityGroupID: id,
 		}
@@ -548,7 +548,7 @@ func (g *securityGroup) SyncAwsSGRule(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	cloudAllIDs := make(map[string]bool)
-	opt := &types.AwsSGRuleListOption{
+	opt := &securitygrouprule.AwsListOption{
 		Region:               req.Region,
 		CloudSecurityGroupID: sg.CloudID,
 	}
