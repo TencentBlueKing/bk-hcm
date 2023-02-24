@@ -392,7 +392,7 @@ export default defineComponent({
             },
             {
               label: t('子账号ID'),
-              required: projectModel.type !== 'registration',
+              required: true,
               property: 'subAccount',
               component: () => <Input class="w450" placeholder={t('请输入子账号')} v-model={projectModel.subAccount} />,
             },
