@@ -1,7 +1,7 @@
 <template>
   <div class="template-warp">
     <div class="flex-row operate-warp justify-content-between align-items-center mb20">
-      <div @click="handleAuth('account_create')">
+      <div @click="handleAuth('account_import')">
         <bk-button
           theme="primary" @click="handleJump('accountAdd')"
           :disabled="!authVerifyData?.results?.import_authorized">
