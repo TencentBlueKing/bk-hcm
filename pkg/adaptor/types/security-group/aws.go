@@ -75,3 +75,17 @@ type AwsDeleteOption struct {
 func (opt AwsDeleteOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// -------------------------- Associate --------------------------
+
+// AwsAssociateCvmOption define security group bind cvm option.
+type AwsAssociateCvmOption struct {
+	Region               string `json:"region" validate:"required"`
+	CloudSecurityGroupID string `json:"cloud_security_group_id" validate:"required"`
+	CloudCvmID           string `json:"cloud_cvm_id" validate:"required"`
+}
+
+// Validate security group cvm bind option.
+func (opt AwsAssociateCvmOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

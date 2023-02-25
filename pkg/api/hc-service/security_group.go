@@ -151,3 +151,38 @@ type SecurityGroupSyncAwsDiff struct {
 type SecurityGroupSyncAzureDiff struct {
 	SecurityGroup *armnetwork.SecurityGroup
 }
+
+// -------------------------- Associate --------------------------
+
+// SecurityGroupAssociateCvmReq define security group bind cvm option.
+type SecurityGroupAssociateCvmReq struct {
+	SecurityGroupID string `json:"security_group_id" validate:"required"`
+	CvmID           string `json:"cvm_id" validate:"required"`
+}
+
+// Validate security group cvm bind option.
+func (opt SecurityGroupAssociateCvmReq) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// AzureSecurityGroupAssociateSubnetReq define security group bind subnet option.
+type AzureSecurityGroupAssociateSubnetReq struct {
+	SecurityGroupID string `json:"security_group_id" validate:"required"`
+	SubnetID        string `json:"subnet_id" validate:"required"`
+}
+
+// Validate security group subnet bind option.
+func (opt AzureSecurityGroupAssociateSubnetReq) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// AzureSecurityGroupAssociateNIReq define security group bind network interface option.
+type AzureSecurityGroupAssociateNIReq struct {
+	SecurityGroupID    string `json:"security_group_id" validate:"required"`
+	NetworkInterfaceID string `json:"network_interface_id" validate:"required"`
+}
+
+// Validate security group network interface bind option.
+func (opt AzureSecurityGroupAssociateNIReq) Validate() error {
+	return validator.Validate.Struct(opt)
+}

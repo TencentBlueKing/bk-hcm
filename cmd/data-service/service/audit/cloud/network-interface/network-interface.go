@@ -17,21 +17,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package audit
+package networkinterface
 
-import "hcm/pkg/criteria/enumor"
+import (
+	"hcm/pkg/api/core"
+	"hcm/pkg/dal/dao"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
+	tableni "hcm/pkg/dal/table/cloud/network-interface"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+)
 
-// ChildResAuditData define child resource audit data.
-type ChildResAuditData struct {
-	ChildResType enumor.AuditResourceType `json:"child_res_type"`
-	Action       enumor.AuditAction       `json:"action"`
-	ChildRes     interface{}              `json:"child_res"`
-}
+// ListNetworkInterface list network interface.
+func ListNetworkInterface(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tableni.NetworkInterfaceTable, error) {
+	opt := &types.ListOption{
+		Filter: tools.ContainersExpression("id", ids),
+		Page:   core.DefaultBasePage,
+	}
+	list, err := dao.NetworkInterface().List(kt, opt)
+	if err != nil {
+		logs.Errorf("list network interface failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
+		return nil, err
+	}
 
-// AssociatedOperationAudit define associated operation audit.
-type AssociatedOperationAudit struct {
-	AssResType    enumor.AuditResourceType `json:"ass_res_type"`
-	AssResID      string                   `json:"ass_res_id"`
-	AssResCloudID string                   `json:"ass_res_cloud_id"`
-	AssResName    string                   `json:"ass_res_name"`
+	result := make(map[string]tableni.NetworkInterfaceTable, len(list.Details))
+	for _, one := range list.Details {
+		result[one.ID] = one
+	}
+
+	return result, nil
 }

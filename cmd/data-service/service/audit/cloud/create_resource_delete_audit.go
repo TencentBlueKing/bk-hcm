@@ -88,7 +88,7 @@ func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 	case enumor.VpcCloudAuditResType:
 		audits, err = ad.vpcDeleteAuditBuild(kt, deletes)
 	case enumor.SubnetAuditResType:
-		audits, err = ad.subnetDeleteAuditBuild(kt, deletes)
+		audits, err = ad.subnet.SubnetDeleteAuditBuild(kt, deletes)
 	case enumor.CvmAuditResType:
 		audits, err = ad.cvm.CvmDeleteAuditBuild(kt, deletes)
 

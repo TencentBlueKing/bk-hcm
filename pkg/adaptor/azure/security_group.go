@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
@@ -151,4 +152,259 @@ func (az *Azure) getSecurityGroupByCloudID(kt *kit.Kit, resGroupName, cloudID st
 	}
 
 	return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", cloudID)
+}
+
+// SecurityGroupSubnetAssociate associate subnet.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/create-or-update?tabs=HTTP
+func (az *Azure) SecurityGroupSubnetAssociate(kt *kit.Kit, opt *securitygroup.AzureAssociateSubnetOption) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "associate option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := az.clientSet.subnetClient()
+	if err != nil {
+		return fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	vpcName := parseIDToName(opt.CloudVpcID)
+	pager := client.NewListPager(opt.ResourceGroupName, vpcName, new(armnetwork.SubnetsClientListOptions))
+	if err != nil {
+		logs.Errorf("list azure subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return fmt.Errorf("list azure subnet failed, err: %v", err)
+	}
+
+	var subnet *armnetwork.Subnet
+	for pager.More() {
+		page, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return fmt.Errorf("list azure subnet but get next page failed, err: %v", err)
+		}
+
+		for _, one := range page.Value {
+			if *one.ID == opt.CloudSubnetID {
+				subnet = one
+			}
+		}
+	}
+
+	if subnet == nil {
+		return fmt.Errorf("subnet: %s not found", opt.CloudSubnetID)
+	}
+
+	subnet.Properties.NetworkSecurityGroup = &armnetwork.SecurityGroup{
+		ID: converter.ValToPtr(opt.CloudSecurityGroupID),
+	}
+	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, vpcName, *subnet.Name, *subnet, nil)
+	if err != nil {
+		logs.Errorf("request to BeginCreateOrUpdate subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	_, err = poller.PollUntilDone(kt.Ctx, nil)
+	if err != nil {
+		logs.Errorf("pull the BeginCreateOrUpdate subnet result failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SecurityGroupSubnetDisassociate disassociate subnet.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/create-or-update?tabs=HTTP
+func (az *Azure) SecurityGroupSubnetDisassociate(kt *kit.Kit, opt *securitygroup.AzureAssociateSubnetOption) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "disassociate option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := az.clientSet.subnetClient()
+	if err != nil {
+		return fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	vpcName := parseIDToName(opt.CloudVpcID)
+	pager := client.NewListPager(opt.ResourceGroupName, vpcName, new(armnetwork.SubnetsClientListOptions))
+	if err != nil {
+		logs.Errorf("list azure subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return fmt.Errorf("list azure subnet failed, err: %v", err)
+	}
+
+	var subnet *armnetwork.Subnet
+	for pager.More() {
+		page, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return fmt.Errorf("list azure subnet but get next page failed, err: %v", err)
+		}
+
+		for _, one := range page.Value {
+			if *one.ID == opt.CloudSubnetID {
+				subnet = one
+			}
+		}
+	}
+
+	if subnet == nil {
+		return fmt.Errorf("subnet: %s not found", opt.CloudSubnetID)
+	}
+
+	if subnet.Properties.NetworkSecurityGroup == nil || subnet.Properties.NetworkSecurityGroup.ID == nil ||
+		*subnet.Properties.NetworkSecurityGroup.ID != opt.CloudSecurityGroupID {
+		return fmt.Errorf("subnet: %s not associate security group: %s", opt.CloudSubnetID, opt.CloudSecurityGroupID)
+	}
+
+	subnet.Properties.NetworkSecurityGroup = nil
+	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, vpcName, *subnet.Name, *subnet, nil)
+	if err != nil {
+		logs.Errorf("request to BeginCreateOrUpdate subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	_, err = poller.PollUntilDone(kt.Ctx, nil)
+	if err != nil {
+		logs.Errorf("pull the BeginCreateOrUpdate subnet result failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SecurityGroupNetworkInterfaceAssociate associate network interface.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/create-or-update?tabs=Go
+func (az *Azure) SecurityGroupNetworkInterfaceAssociate(kt *kit.Kit,
+	opt *securitygroup.AzureAssociateNetworkInterfaceOption) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "associate option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := az.clientSet.networkInterfaceClient()
+	if err != nil {
+		return fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	pager := client.NewListPager(opt.ResourceGroupName, new(armnetwork.InterfacesClientListOptions))
+	if err != nil {
+		logs.Errorf("list azure network interface failed, err: %v, rid: %s", err, kt.Rid)
+		return fmt.Errorf("list azure interface failed, err: %v", err)
+	}
+
+	var inter *armnetwork.Interface
+	for pager.More() {
+		page, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return fmt.Errorf("list azure interface but get next page failed, err: %v", err)
+		}
+
+		for _, one := range page.Value {
+			if *one.ID == opt.CloudNetworkInterfaceID {
+				inter = one
+			}
+		}
+	}
+
+	if inter == nil {
+		return fmt.Errorf("network interface: %s not found", opt.CloudNetworkInterfaceID)
+	}
+
+	if inter.Properties.NetworkSecurityGroup != nil && inter.Properties.NetworkSecurityGroup.ID != nil {
+		return fmt.Errorf("network interface: %s already associated security group: %s",
+			opt.CloudNetworkInterfaceID, opt.CloudSecurityGroupID)
+	}
+
+	inter.Properties.NetworkSecurityGroup = &armnetwork.SecurityGroup{
+		ID: converter.ValToPtr(opt.CloudSecurityGroupID),
+	}
+
+	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, *inter.Name, *inter,
+		new(armnetwork.InterfacesClientBeginCreateOrUpdateOptions))
+	if err != nil {
+		logs.Errorf("request to BeginCreateOrUpdate interface failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	_, err = poller.PollUntilDone(kt.Ctx, nil)
+	if err != nil {
+		logs.Errorf("pull the BeginCreateOrUpdate interface result failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SecurityGroupNetworkInterfaceDisassociate disassociate network interface.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/create-or-update?tabs=Go
+func (az *Azure) SecurityGroupNetworkInterfaceDisassociate(kt *kit.Kit,
+	opt *securitygroup.AzureAssociateNetworkInterfaceOption) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "disassociate option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := az.clientSet.networkInterfaceClient()
+	if err != nil {
+		return fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	pager := client.NewListPager(opt.ResourceGroupName, new(armnetwork.InterfacesClientListOptions))
+	if err != nil {
+		logs.Errorf("list azure interface failed, err: %v, rid: %s", err, kt.Rid)
+		return fmt.Errorf("list azure interface failed, err: %v", err)
+	}
+
+	var inter *armnetwork.Interface
+	for pager.More() {
+		page, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return fmt.Errorf("list azure interface but get next page failed, err: %v", err)
+		}
+
+		for _, one := range page.Value {
+			if *one.ID == opt.CloudNetworkInterfaceID {
+				inter = one
+			}
+		}
+	}
+
+	if inter == nil {
+		return fmt.Errorf("network interface: %s not found", opt.CloudNetworkInterfaceID)
+	}
+
+	if inter.Properties.NetworkSecurityGroup == nil || inter.Properties.NetworkSecurityGroup.ID == nil ||
+		*inter.Properties.NetworkSecurityGroup.ID != opt.CloudSecurityGroupID {
+		return fmt.Errorf("network interface: %s not associate security group: %s", opt.CloudNetworkInterfaceID,
+			opt.CloudSecurityGroupID)
+	}
+
+	inter.Properties.NetworkSecurityGroup = nil
+	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, *inter.Name, *inter,
+		new(armnetwork.InterfacesClientBeginCreateOrUpdateOptions))
+	if err != nil {
+		logs.Errorf("request to BeginCreateOrUpdate interface failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	_, err = poller.PollUntilDone(kt.Ctx, nil)
+	if err != nil {
+		logs.Errorf("pull the BeginCreateOrUpdate interface result failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
 }

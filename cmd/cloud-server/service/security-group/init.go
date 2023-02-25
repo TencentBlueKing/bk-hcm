@@ -46,6 +46,18 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("ListSecurityGroup", http.MethodPost, "/security_groups/list", svc.ListSecurityGroup)
 	h.Add("ListSecurityGroupsByCvmID", http.MethodGet, "/security_groups/cvms/{cvm_id}", svc.ListSecurityGroupsByCvmID)
 	h.Add("AssignSecurityGroupToBiz", http.MethodPost, "/security_groups/assign/bizs", svc.AssignSecurityGroupToBiz)
+	h.Add("AssociateCvm", http.MethodPost, "/security_groups/associate/cvms",
+		svc.AssociateCvm)
+	h.Add("DisassociateCvm", http.MethodPost, "/security_groups/disassociate/cvms",
+		svc.DisassociateCvm)
+	h.Add("AssociateSubnet", http.MethodPost, "/security_groups/associate/subnets",
+		svc.AssociateSubnet)
+	h.Add("DisAssociateSubnet", http.MethodPost, "/security_groups/disassociate/subnets",
+		svc.DisAssociateSubnet)
+	h.Add("AssociateNetworkInterface", http.MethodPost, "/security_groups/associate/network_interfaces",
+		svc.AssociateNetworkInterface)
+	h.Add("DisAssociateNetworkInterface", http.MethodPost, "/security_groups/disassociate/network_interfaces",
+		svc.DisAssociateNetworkInterface)
 
 	h.Add("CreateSecurityGroupRule", http.MethodPost,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/create", svc.CreateSecurityGroupRule)

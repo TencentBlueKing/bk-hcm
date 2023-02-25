@@ -145,3 +145,38 @@ type SecurityGroupBatchDeleteReq struct {
 func (req *SecurityGroupBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// -------------------------- Associate --------------------------
+
+// SecurityGroupAssociateCvmReq define security group associate cvm option.
+type SecurityGroupAssociateCvmReq struct {
+	SecurityGroupID string `json:"security_group_id" validate:"required"`
+	CvmID           string `json:"cvm_id" validate:"required"`
+}
+
+// Validate security group associate cvm request.
+func (req *SecurityGroupAssociateCvmReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// SecurityGroupAssociateSubnetReq define security group associate subnet option.
+type SecurityGroupAssociateSubnetReq struct {
+	SecurityGroupID string `json:"security_group_id" validate:"required"`
+	SubnetID        string `json:"subnet_id" validate:"required"`
+}
+
+// Validate security group associate subnet request.
+func (req *SecurityGroupAssociateSubnetReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// SecurityGroupAssociateNIReq define security group associate network interface option.
+type SecurityGroupAssociateNIReq struct {
+	SecurityGroupID    string `json:"security_group_id" validate:"required"`
+	NetworkInterfaceID string `json:"network_interface_id" validate:"required"`
+}
+
+// Validate security group associate network interface request.
+func (req *SecurityGroupAssociateNIReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

@@ -66,7 +66,7 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 
 	// 已分配业务的资源，不允许操作
 	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err = svc.checkSecurityGroupsInBiz(cts.Kit, flt, constant.UnassignedBiz)
+	err = CheckSecurityGroupsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}

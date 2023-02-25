@@ -84,19 +84,25 @@ const (
 	Stop AuditAction = "stop"
 	// ResetPwd 重置密码
 	ResetPwd AuditAction = "reset_pwd"
+	// Associate 资源关联操作
+	Associate AuditAction = "associate"
+	// Disassociate 资源解关联操作
+	Disassociate AuditAction = "disassociate"
 )
 
 // AuditActionEnums op type map.
 var AuditActionEnums = map[AuditAction]struct{}{
-	Create:   {},
-	Update:   {},
-	Delete:   {},
-	Assign:   {},
-	Recycle:  {},
-	Reboot:   {},
-	Start:    {},
-	Stop:     {},
-	ResetPwd: {},
+	Create:       {},
+	Update:       {},
+	Delete:       {},
+	Assign:       {},
+	Recycle:      {},
+	Reboot:       {},
+	Start:        {},
+	Stop:         {},
+	ResetPwd:     {},
+	Associate:    {},
+	Disassociate: {},
 }
 
 // Exist judge enum value exist.

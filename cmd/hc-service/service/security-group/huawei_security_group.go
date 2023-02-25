@@ -88,6 +88,101 @@ func (g *securityGroup) CreateHuaWeiSecurityGroup(cts *rest.Contexts) (interface
 	return &core.CreateResult{ID: result.IDs[0]}, nil
 }
 
+// HuaWeiSecurityGroupAssociateCvm ...
+func (g *securityGroup) HuaWeiSecurityGroupAssociateCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.SecurityGroupAssociateCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sg, cvm, err := g.getSecurityGroupAndCvm(cts.Kit, req.SecurityGroupID, req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := g.ad.HuaWei(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &securitygroup.HuaWeiAssociateCvmOption{
+		Region:               sg.Region,
+		CloudSecurityGroupID: sg.CloudID,
+		CloudCvmID:           cvm.CloudID,
+	}
+	if err = client.SecurityGroupCvmAssociate(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to huawei security group associate cvm failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	createReq := &protocloud.SGCvmRelBatchCreateReq{
+		Rels: []protocloud.SGCvmRelCreate{
+			{
+				SecurityGroupID: req.SecurityGroupID,
+				CvmID:           req.CvmID,
+			},
+		},
+	}
+	if err = g.dataCli.Global.SGCvmRel.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
+			err, createReq, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// TODO: 同步主机数据
+
+	return nil, nil
+}
+
+// HuaWeiSecurityGroupDisassociateCvm ...
+func (g *securityGroup) HuaWeiSecurityGroupDisassociateCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.SecurityGroupAssociateCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sg, cvm, err := g.getSecurityGroupAndCvm(cts.Kit, req.SecurityGroupID, req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := g.ad.HuaWei(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &securitygroup.HuaWeiAssociateCvmOption{
+		Region:               sg.Region,
+		CloudSecurityGroupID: sg.CloudID,
+		CloudCvmID:           cvm.CloudID,
+	}
+	if err = client.SecurityGroupCvmDisassociate(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to huawei security group disassociate cvm failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	deleteReq := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
+	if err = g.dataCli.Global.SGCvmRel.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
+			err, deleteReq, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// TODO: 同步主机数据
+
+	return nil, nil
+}
+
 // DeleteHuaWeiSecurityGroup delete huawei security group.
 func (g *securityGroup) DeleteHuaWeiSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()

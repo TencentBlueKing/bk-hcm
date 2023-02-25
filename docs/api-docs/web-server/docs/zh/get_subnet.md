@@ -158,7 +158,7 @@
     "extension": {
       "resource_group": "test",
       "nat_gateway": "xxx",
-      "network_security_group": "xxx"
+      "cloud_security_group_id": "xxx"
     }
   }
 }
@@ -267,11 +267,11 @@
 
 #### data.extension(azure)
 
-| 参数名称                   | 参数类型   | 描述    |
-|------------------------|--------|-------|
-| resource_group         | string | 资源组   |
-| nat_gateway            | string | NAT网关 |
-| network_security_group | string | 网络安全组 |
+| 参数名称                     | 参数类型   | 描述     |
+|--------------------------|--------|--------|
+| resource_group           | string | 资源组    |
+| nat_gateway              | string | NAT网关  |
+| cloud_security_group_id  | string | 云安全组ID |
 
 #### data.extension(huawei)
 

@@ -547,7 +547,7 @@ func (ar *AtomRule) UnmarshalJSON(raw []byte) error {
 		// in and nin operator's value should be an array.
 		array := make([]interface{}, 0)
 		if err := json.Unmarshal(br.Value, &array); err != nil {
-			return err
+			return fmt.Errorf("unmarshal in/not_in value to []interface{} failed, err: %v", err)
 		}
 
 		ar.Value = array

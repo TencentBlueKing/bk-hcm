@@ -59,8 +59,8 @@ func (svc *securityGroupSvc) CreateSecurityGroupRule(cts *rest.Contexts) (interf
 	}
 
 	// 已分配业务的资源，不允许操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: sgID}
-	err = svc.checkSecurityGroupsInBiz(cts.Kit, flt, constant.UnassignedBiz)
+	flt := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: sgID}
+	err = CheckSecurityGroupsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}

@@ -20,6 +20,8 @@
 package networkinterface
 
 import (
+	"fmt"
+
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/api/cloud-server"
@@ -30,7 +32,10 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // InitNetworkInterfaceService initialize the network interface service.
@@ -119,4 +124,30 @@ func (svc *netSvc) GetNetworkInterface(cts *rest.Contexts) (interface{}, error) 
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", basicInfo.Vendor)
 	}
+}
+
+// CheckNIInBiz check if network interface are in the specified biz.
+func CheckNIInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFactory, bizID int64) error {
+	req := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: bizID}, rule,
+			},
+		},
+		Page: &core.BasePage{
+			Count: true,
+		},
+	}
+	result, err := client.DataService().Global.NetworkInterface.List(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("count network interface that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	if result.Count != 0 {
+		return fmt.Errorf("%d network interface are already assigned", result.Count)
+	}
+
+	return nil
 }

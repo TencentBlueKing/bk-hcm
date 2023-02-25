@@ -228,3 +228,99 @@ func (cli *SecurityGroupClient) DeleteSecurityGroupRule(ctx context.Context, h h
 
 	return nil
 }
+
+// AssociateSubnet ...
+func (cli *SecurityGroupClient) AssociateSubnet(ctx context.Context, h http.Header,
+	req *proto.AzureSecurityGroupAssociateSubnetReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/security_groups/associate/subnets").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// DisassociateSubnet ...
+func (cli *SecurityGroupClient) DisassociateSubnet(ctx context.Context, h http.Header,
+	req *proto.AzureSecurityGroupAssociateSubnetReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/security_groups/disassociate/subnets").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// AssociateNetworkInterface ...
+func (cli *SecurityGroupClient) AssociateNetworkInterface(ctx context.Context, h http.Header,
+	req *proto.AzureSecurityGroupAssociateNIReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/security_groups/associate/network_interfaces").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// DisassociateNetworkInterface ...
+func (cli *SecurityGroupClient) DisassociateNetworkInterface(ctx context.Context, h http.Header,
+	req *proto.AzureSecurityGroupAssociateNIReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/security_groups/disassociate/network_interfaces").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}

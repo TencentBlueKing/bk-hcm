@@ -68,7 +68,7 @@ type SubnetTable struct {
 	// CloudVpcID 云上vpc的ID
 	CloudVpcID string `db:"cloud_vpc_id" validate:"max=255" json:"cloud_vpc_id"`
 	// CloudRouteTableID 云上的路由表ID
-	CloudRouteTableID *string `db:"cloud_route_table_id" validate:"max=255" json:"cloud_route_table_id"`
+	CloudRouteTableID *string `db:"cloud_route_table_id" validate:"omitempty,max=255" json:"cloud_route_table_id"`
 	// CloudID 云上ID
 	CloudID string `db:"cloud_id" validate:"max=255" json:"cloud_id"`
 	// Name subnet名称
@@ -88,7 +88,7 @@ type SubnetTable struct {
 	// VpcID vpc的ID
 	VpcID string `db:"vpc_id" validate:"max=64" json:"vpc_id"`
 	// RouteTableID 路由表ID
-	RouteTableID *string `db:"route_table_id" validate:"max=64" json:"route_table_id"`
+	RouteTableID *string `db:"route_table_id" validate:"omitempty,max=64" json:"route_table_id"`
 	// BkBizID 业务ID
 	BkBizID int64 `db:"bk_biz_id" validate:"min=-1" json:"bk_biz_id"`
 	// Creator 创建者

@@ -89,3 +89,17 @@ type HuaWeiDeleteOption struct {
 func (opt HuaWeiDeleteOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// -------------------------- Associate --------------------------
+
+// HuaWeiAssociateCvmOption define security group bind cvm option.
+type HuaWeiAssociateCvmOption struct {
+	Region               string `json:"region" validate:"required"`
+	CloudSecurityGroupID string `json:"cloud_security_group_id" validate:"required"`
+	CloudCvmID           string `json:"cloud_cvm_id" validate:"required"`
+}
+
+// Validate security group cvm bind option.
+func (opt HuaWeiAssociateCvmOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

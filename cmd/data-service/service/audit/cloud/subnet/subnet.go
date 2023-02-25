@@ -17,13 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package subnet
 
 import (
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
@@ -33,14 +34,27 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-func (ad Audit) subnetUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
+// NewSubnet new subnet.
+func NewSubnet(dao dao.Set) *Subnet {
+	return &Subnet{
+		dao: dao,
+	}
+}
+
+// Subnet define subnet audit.
+type Subnet struct {
+	dao dao.Set
+}
+
+// SubnetUpdateAuditBuild ...
+func (ad *Subnet) SubnetUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(updates))
 	for _, one := range updates {
 		ids = append(ids, one.ResID)
 	}
-	idSubnetMap, err := ad.listSubnet(kt, ids)
+	idSubnetMap, err := ListSubnet(kt, ad.dao, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -75,14 +89,15 @@ func (ad Audit) subnetUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudRe
 	return audits, nil
 }
 
-func (ad Audit) subnetDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
+// SubnetDeleteAuditBuild ...
+func (ad *Subnet) SubnetDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(deletes))
 	for _, one := range deletes {
 		ids = append(ids, one.ResID)
 	}
-	idSubnetMap, err := ad.listSubnet(kt, ids)
+	idSubnetMap, err := ListSubnet(kt, ad.dao, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -116,14 +131,15 @@ func (ad Audit) subnetDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudRe
 	return audits, nil
 }
 
-func (ad Audit) subnetAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
+// SubnetAssignAuditBuild ...
+func (ad *Subnet) SubnetAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
 	[]*tableaudit.AuditTable, error) {
 
 	ids := make([]string, 0, len(assigns))
 	for _, one := range assigns {
 		ids = append(ids, one.ResID)
 	}
-	idSubnetMap, err := ad.listSubnet(kt, ids)
+	idSubnetMap, err := ListSubnet(kt, ad.dao, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -163,14 +179,15 @@ func (ad Audit) subnetAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudRe
 	return audits, nil
 }
 
-func (ad Audit) listSubnet(kt *kit.Kit, ids []string) (map[string]tablecloud.SubnetTable, error) {
+// ListSubnet list subnet.
+func ListSubnet(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablecloud.SubnetTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.DefaultBasePage,
 	}
-	list, err := ad.dao.Subnet().List(kt, opt)
+	list, err := dao.Subnet().List(kt, opt)
 	if err != nil {
-		logs.Errorf("list security group failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
+		logs.Errorf("list subnets failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
 		return nil, err
 	}
 

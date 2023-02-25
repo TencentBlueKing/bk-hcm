@@ -57,4 +57,8 @@ const (
 	ResetPwd Action = "reset_pwd"
 	// Import operation's hcm auth action type
 	Import Action = "import"
+	// Associate operation's hcm auth action type
+	Associate Action = "associate"
+	// Disassociate operation's hcm auth action type
+	Disassociate Action = "disassociate"
 )

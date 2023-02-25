@@ -90,7 +90,7 @@ func (ad Audit) buildUpdateAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 	case enumor.VpcCloudAuditResType:
 		audits, err = ad.vpcUpdateAuditBuild(kt, updates)
 	case enumor.SubnetAuditResType:
-		audits, err = ad.subnetUpdateAuditBuild(kt, updates)
+		audits, err = ad.subnet.SubnetUpdateAuditBuild(kt, updates)
 	case enumor.CvmAuditResType:
 		audits, err = ad.cvm.CvmUpdateAuditBuild(kt, updates)
 

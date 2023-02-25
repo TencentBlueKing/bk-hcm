@@ -95,4 +95,4 @@ esb:
     # the password to decrypt the certificate.
     password:
 
-BkHcmUrl: "http://hcm.bk.com"
+bkHcmUrl: "http://hcm.bk.com"

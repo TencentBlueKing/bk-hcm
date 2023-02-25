@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
+	ecsmodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
 
@@ -173,4 +174,72 @@ func (h *HuaWei) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.HuaWeiListOpt
 	}
 
 	return resp.SecurityGroups, resp.PageInfo, err
+}
+
+// SecurityGroupCvmAssociate associate cvm.
+// reference: https://support.huaweicloud.com/api-ecs/ecs_03_0601.html
+func (h *HuaWei) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.HuaWeiAssociateCvmOption) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "associate option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := h.clientSet.ecsClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("new ecs client failed, err: %v", err)
+	}
+
+	req := new(ecsmodel.NovaAssociateSecurityGroupRequest)
+	req.ServerId = opt.CloudCvmID
+	req.Body = &ecsmodel.NovaAssociateSecurityGroupRequestBody{
+		AddSecurityGroup: &ecsmodel.NovaAddSecurityGroupOption{
+			Name: opt.CloudSecurityGroupID,
+		},
+	}
+
+	_, err = client.NovaAssociateSecurityGroup(req)
+	if err != nil {
+		logs.Errorf("associate tcloud security group and cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SecurityGroupCvmDisassociate disassociate cvm.
+// reference: https://support.huaweicloud.com/api-ecs/ecs_03_0601.html
+func (h *HuaWei) SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.HuaWeiAssociateCvmOption) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "disassociate option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := h.clientSet.ecsClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("new ecs client failed, err: %v", err)
+	}
+
+	req := new(ecsmodel.NovaDisassociateSecurityGroupRequest)
+	req.ServerId = opt.CloudCvmID
+	req.Body = &ecsmodel.NovaDisassociateSecurityGroupRequestBody{
+		RemoveSecurityGroup: &ecsmodel.NovaRemoveSecurityGroupOption{
+			Name: opt.CloudSecurityGroupID,
+		},
+	}
+
+	_, err = client.NovaDisassociateSecurityGroup(req)
+	if err != nil {
+		logs.Errorf("disassociate tcloud security group and cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
 }

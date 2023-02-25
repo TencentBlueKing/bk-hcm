@@ -163,7 +163,8 @@ type GcpSubnetUpdateExt struct {
 // AzureSubnetUpdateExt defines update azure subnet extensional info.
 type AzureSubnetUpdateExt struct {
 	NatGateway           *string `json:"nat_gateway,omitempty" validate:"omitempty"`
-	NetworkSecurityGroup *string `json:"network_security_group,omitempty" validate:"omitempty"`
+	CloudSecurityGroupID *string `json:"cloud_security_group_id,omitempty" validate:"omitempty"`
+	SecurityGroupID      *string `json:"security_group_id,omitempty" validate:"omitempty"`
 }
 
 // HuaWeiSubnetUpdateExt defines update huawei subnet extensional info.

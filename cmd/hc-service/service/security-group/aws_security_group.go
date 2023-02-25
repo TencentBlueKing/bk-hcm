@@ -111,6 +111,101 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 	return core.CreateResult{ID: createResp.IDs[0]}, nil
 }
 
+// AwsSecurityGroupAssociateCvm ...
+func (g *securityGroup) AwsSecurityGroupAssociateCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.SecurityGroupAssociateCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sg, cvm, err := g.getSecurityGroupAndCvm(cts.Kit, req.SecurityGroupID, req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := g.ad.Aws(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &securitygroup.AwsAssociateCvmOption{
+		Region:               sg.Region,
+		CloudSecurityGroupID: sg.CloudID,
+		CloudCvmID:           cvm.CloudID,
+	}
+	if err = client.SecurityGroupCvmAssociate(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to aws security group associate cvm failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	createReq := &protocloud.SGCvmRelBatchCreateReq{
+		Rels: []protocloud.SGCvmRelCreate{
+			{
+				SecurityGroupID: req.SecurityGroupID,
+				CvmID:           req.CvmID,
+			},
+		},
+	}
+	if err = g.dataCli.Global.SGCvmRel.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
+			err, createReq, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// TODO: 同步主机数据
+
+	return nil, nil
+}
+
+// AwsSecurityGroupDisassociateCvm ...
+func (g *securityGroup) AwsSecurityGroupDisassociateCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.SecurityGroupAssociateCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sg, cvm, err := g.getSecurityGroupAndCvm(cts.Kit, req.SecurityGroupID, req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := g.ad.Aws(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &securitygroup.AwsAssociateCvmOption{
+		Region:               sg.Region,
+		CloudSecurityGroupID: sg.CloudID,
+		CloudCvmID:           cvm.CloudID,
+	}
+	if err = client.SecurityGroupCvmDisassociate(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to aws security group disassociate cvm failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	deleteReq := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
+	if err = g.dataCli.Global.SGCvmRel.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
+			err, deleteReq, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// TODO: 同步主机数据
+
+	return nil, nil
+}
+
 func (g *securityGroup) getVpcIDByCloudVpcID(kt *kit.Kit, cloudVpcID string) (string, error) {
 	req := &core.ListReq{
 		Filter: tools.EqualExpression("cloud_id", cloudVpcID),
@@ -315,8 +410,8 @@ func (g *securityGroup) diffAwsSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap
 }
 
 // diffSecurityGroupSyncUpdate for update
-func (g *securityGroup) diffAwsSecurityGroupSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncAwsDiff,
-	dsMap map[string]*proto.SecurityGroupSyncDS, updateCloudIDs []string) error {
+func (g *securityGroup) diffAwsSecurityGroupSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.
+	SecurityGroupSyncAwsDiff, dsMap map[string]*proto.SecurityGroupSyncDS, updateCloudIDs []string) error {
 
 	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.AwsSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.AwsSecurityGroupExtension]{},

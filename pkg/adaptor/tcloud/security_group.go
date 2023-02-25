@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/logs"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
@@ -163,4 +164,71 @@ func (t *TCloud) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudListOpt
 	}
 
 	return resp.Response.SecurityGroupSet, nil
+}
+
+// SecurityGroupCvmAssociate associate cvm.
+// reference: https://cloud.tencent.com/document/api/213/31282
+func (t *TCloud) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "bind option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.cvmClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("new tcloud cvm client failed, err: %v", err)
+	}
+
+	req := cvm.NewAssociateSecurityGroupsRequest()
+	req.SecurityGroupIds = []*string{
+		common.StringPtr(opt.CloudSecurityGroupID),
+	}
+	req.InstanceIds = []*string{
+		common.StringPtr(opt.CloudCvmID),
+	}
+
+	_, err = client.AssociateSecurityGroupsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("associate tcloud security group and cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SecurityGroupCvmDisassociate disassociate cvm.
+// reference: https://cloud.tencent.com/document/api/213/31281
+func (t *TCloud) SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "bind option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.cvmClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("new tcloud cvm client failed, err: %v", err)
+	}
+
+	req := cvm.NewDisassociateSecurityGroupsRequest()
+	req.SecurityGroupIds = []*string{
+		common.StringPtr(opt.CloudSecurityGroupID),
+	}
+	req.InstanceIds = []*string{
+		common.StringPtr(opt.CloudCvmID),
+	}
+
+	_, err = client.DisassociateSecurityGroupsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("disassociate tcloud security group and cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
 }

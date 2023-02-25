@@ -77,17 +77,17 @@ func (opt TCloudListOption) Validate() error {
 	return nil
 }
 
-// -------------------------- Bind --------------------------
+// -------------------------- Associate --------------------------
 
-// TCloudBindCvmOption define security group bind cvm option.
-type TCloudBindCvmOption struct {
-	Region           string   `json:"region" validate:"required"`
-	SecurityGroupIDs []string `json:"security_group_ids" validate:"required"`
-	CvmIDs           []string `json:"cvm_ids" validate:"required"`
+// TCloudAssociateCvmOption define security group bind cvm option.
+type TCloudAssociateCvmOption struct {
+	Region               string `json:"region" validate:"required"`
+	CloudSecurityGroupID string `json:"cloud_security_group_id" validate:"required"`
+	CloudCvmID           string `json:"cloud_cvm_id" validate:"required"`
 }
 
 // Validate security group cvm bind option.
-func (opt TCloudBindCvmOption) Validate() error {
+func (opt TCloudAssociateCvmOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 

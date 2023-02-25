@@ -25,6 +25,7 @@ import (
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -114,8 +115,8 @@ func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{},
 	}, nil
 }
 
-// checkSecurityGroupsInBiz check if security groups are in the specified biz.
-func (svc *securityGroupSvc) checkSecurityGroupsInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
+// CheckSecurityGroupsInBiz check if security groups are in the specified biz.
+func CheckSecurityGroupsInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFactory, bizID int64) error {
 	req := &dataproto.SecurityGroupListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
@@ -127,7 +128,7 @@ func (svc *securityGroupSvc) checkSecurityGroupsInBiz(kt *kit.Kit, rule filter.R
 			Count: true,
 		},
 	}
-	result, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), req)
+	result, err := client.DataService().Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), req)
 	if err != nil {
 		logs.Errorf("count security groups that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return err

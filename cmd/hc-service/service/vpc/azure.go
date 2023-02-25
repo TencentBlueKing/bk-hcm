@@ -500,7 +500,7 @@ func (v vpc) filterAzureSubnetList(req *hcservice.ResourceSyncReq, list *types.A
 				ID: resourceInfo.ID,
 				Extension: &cloud.AzureSubnetUpdateExt{
 					NatGateway:           converter.ValToPtr(item.Extension.NatGateway),
-					NetworkSecurityGroup: converter.ValToPtr(item.Extension.NetworkSecurityGroup),
+					CloudSecurityGroupID: converter.ValToPtr(item.Extension.NetworkSecurityGroup),
 				},
 			}
 			tmpRes.Name = converter.ValToPtr(item.Name)

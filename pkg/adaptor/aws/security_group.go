@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/pkg/adaptor/types/cvm"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -142,6 +143,117 @@ func (a *Aws) DeleteSecurityGroup(kt *kit.Kit, opt *securitygroup.AwsDeleteOptio
 	}
 	if _, err = client.DeleteSecurityGroupWithContext(kt.Ctx, req); err != nil {
 		logs.Errorf("delete aws security group failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SecurityGroupCvmAssociate reference:
+// https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_ModifyInstanceAttribute.html
+func (a *Aws) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.AwsAssociateCvmOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "associate option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	listCvmOpt := &cvm.AwsListOption{
+		Region:   opt.Region,
+		CloudIDs: []string{opt.CloudCvmID},
+	}
+	instance, err := a.ListCvm(kt, listCvmOpt)
+	if err != nil {
+		return fmt.Errorf("associate security group to query cvm detail failed, err: %v", err)
+	}
+
+	if len(instance.Reservations) == 0 {
+		return fmt.Errorf("cvm(cloud_id=%s) not found", opt.CloudCvmID)
+	}
+
+	sgIDs := make([]*string, 0)
+	for _, sg := range instance.Reservations[0].Groups {
+		if *sg.GroupId == opt.CloudSecurityGroupID {
+			return fmt.Errorf("cvm: %s already associated security group: %s", opt.CloudCvmID, opt.CloudSecurityGroupID)
+		}
+		sgIDs = append(sgIDs, sg.GroupId)
+	}
+	sgIDs = append(sgIDs, aws.String(opt.CloudSecurityGroupID))
+
+	req := &ec2.ModifyInstanceAttributeInput{
+		Groups:     sgIDs,
+		InstanceId: aws.String(opt.CloudCvmID),
+	}
+	_, err = client.ModifyInstanceAttributeWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("associate aws security group failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// SecurityGroupCvmDisassociate reference:
+// https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_ModifyInstanceAttribute.html
+func (a *Aws) SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.AwsAssociateCvmOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "disassociate option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	listCvmOpt := &cvm.AwsListOption{
+		Region:   opt.Region,
+		CloudIDs: []string{opt.CloudCvmID},
+	}
+	instance, err := a.ListCvm(kt, listCvmOpt)
+	if err != nil {
+		return fmt.Errorf("disassociate security group to query cvm detail failed, err: %v", err)
+	}
+
+	if len(instance.Reservations) == 0 {
+		return fmt.Errorf("cvm(cloud_id=%s) not found", opt.CloudCvmID)
+	}
+
+	sgIDs := make([]*string, 0)
+	hit := false
+	for _, sg := range instance.Reservations[0].Groups {
+		if sg.GroupId != nil && *sg.GroupId == opt.CloudSecurityGroupID {
+			hit = true
+			continue
+		}
+		sgIDs = append(sgIDs, sg.GroupId)
+	}
+
+	if !hit {
+		return fmt.Errorf("cvm: %s not assoociate security group: %s", opt.CloudCvmID, opt.CloudSecurityGroupID)
+	}
+
+	if len(sgIDs) == 0 {
+		return errors.New("the last security group of the cvm is not allowed to disassociate")
+	}
+
+	req := &ec2.ModifyInstanceAttributeInput{
+		Groups:     sgIDs,
+		InstanceId: aws.String(opt.CloudCvmID),
+	}
+	_, err = client.ModifyInstanceAttributeWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("disassociate aws security group failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 

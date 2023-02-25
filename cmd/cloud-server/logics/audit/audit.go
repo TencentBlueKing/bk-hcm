@@ -46,6 +46,8 @@ type Interface interface {
 	// ResBaseOperationAudit 资源基础操作审计，开机，关机等。
 	ResBaseOperationAudit(kt *kit.Kit, resType enumor.AuditResourceType, action protoaudit.OperationAction,
 		ids []string) error
+	// ResOperationAudit 资源操作审计，如绑定、解绑、挂载、卸载等。
+	ResOperationAudit(kt *kit.Kit, info protoaudit.CloudResourceOperationInfo) error
 }
 
 var _ Interface = new(audit)
@@ -211,6 +213,23 @@ func (a audit) ResBaseOperationAudit(kt *kit.Kit, resType enumor.AuditResourceTy
 			ResID:   id,
 			Action:  action,
 		})
+	}
+
+	if err := a.dataCli.Global.Audit.CloudResourceOperationAudit(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("request dataservice CloudResourceOperationAudit failed, err: %v, req: %v, rid: %s", err,
+			req, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// ResOperationAudit resource operation audit.
+func (a audit) ResOperationAudit(kt *kit.Kit, info protoaudit.CloudResourceOperationInfo) error {
+	req := &protoaudit.CloudResourceOperationAuditReq{
+		Operations: []protoaudit.CloudResourceOperationInfo{
+			info,
+		},
 	}
 
 	if err := a.dataCli.Global.Audit.CloudResourceOperationAudit(kt.Ctx, kt.Header(), req); err != nil {

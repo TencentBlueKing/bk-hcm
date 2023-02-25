@@ -52,7 +52,7 @@ func (c *Cvm) CvmUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourc
 	for _, one := range updates {
 		ids = append(ids, one.ResID)
 	}
-	idMap, err := c.listCvm(kt, ids)
+	idMap, err := ListCvm(kt, c.dao, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (c *Cvm) CvmDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourc
 	for _, one := range deletes {
 		ids = append(ids, one.ResID)
 	}
-	idMap, err := c.listCvm(kt, ids)
+	idMap, err := ListCvm(kt, c.dao, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (c *Cvm) CvmAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourc
 	for _, one := range assigns {
 		ids = append(ids, one.ResID)
 	}
-	idMap, err := c.listCvm(kt, ids)
+	idMap, err := ListCvm(kt, c.dao, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -173,12 +173,13 @@ func (c *Cvm) CvmAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourc
 	return audits, nil
 }
 
-func (c *Cvm) listCvm(kt *kit.Kit, ids []string) (map[string]tablecvm.Table, error) {
+// ListCvm list cvm.
+func ListCvm(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tablecvm.Table, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.DefaultBasePage,
 	}
-	list, err := c.dao.Cvm().List(kt, opt)
+	list, err := dao.Cvm().List(kt, opt)
 	if err != nil {
 		logs.Errorf("list c failed, err: %v, ids: %v, rid: %f", err, ids, kt.Rid)
 		return nil, err

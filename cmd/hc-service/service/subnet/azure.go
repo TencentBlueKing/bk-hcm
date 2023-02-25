@@ -315,7 +315,7 @@ func (s subnet) filterAzureSubnetList(req *hcservice.ResourceSyncReq, list *type
 				ID: resourceInfo.ID,
 				Extension: &cloud.AzureSubnetUpdateExt{
 					NatGateway:           converter.ValToPtr(item.Extension.NatGateway),
-					NetworkSecurityGroup: converter.ValToPtr(item.Extension.NetworkSecurityGroup),
+					CloudSecurityGroupID: converter.ValToPtr(item.Extension.NetworkSecurityGroup),
 				},
 			}
 			tmpRes.Name = converter.ValToPtr(item.Name)

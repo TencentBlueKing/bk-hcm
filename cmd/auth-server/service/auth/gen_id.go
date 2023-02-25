@@ -107,7 +107,29 @@ func genDiskResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resou
 
 // genSecurityGroupResource generate security group related iam resource.
 func genSecurityGroupResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	return genResourceResource(a)
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		// find resource is related to hcm account resource
+		return sys.ResourceFind, []client.Resource{res}, nil
+	case meta.Assign:
+		// access resource secret keys is related to hcm account resource
+		return sys.ResourceAssign, []client.Resource{res}, nil
+	case meta.Update, meta.Delete, meta.Create, meta.Associate, meta.Disassociate:
+		// update resource is related to hcm account resource
+		return sys.ResourceManage, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
 }
 
 // genSecurityGroupRuleResource generate security group rule related iam resource.

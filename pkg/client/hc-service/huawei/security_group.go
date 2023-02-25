@@ -204,3 +204,51 @@ func (cli *SecurityGroupClient) DeleteSecurityGroupRule(ctx context.Context, h h
 
 	return nil
 }
+
+// AssociateCvm ...
+func (cli *SecurityGroupClient) AssociateCvm(ctx context.Context, h http.Header,
+	req *proto.SecurityGroupAssociateCvmReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/security_groups/associate/cvms").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// DisassociateCvm ...
+func (cli *SecurityGroupClient) DisassociateCvm(ctx context.Context, h http.Header,
+	req *proto.SecurityGroupAssociateCvmReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/security_groups/disassociate/cvms").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}

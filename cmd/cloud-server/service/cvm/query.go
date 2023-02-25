@@ -25,6 +25,7 @@ import (
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -106,8 +107,8 @@ func (svc *cvmSvc) GetCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-// checkCvmsInBiz check if cvms are in the specified biz.
-func (svc *cvmSvc) checkCvmsInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
+// CheckCvmsInBiz check if cvms are in the specified biz.
+func CheckCvmsInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFactory, bizID int64) error {
 	req := &dataproto.CvmListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
@@ -119,7 +120,7 @@ func (svc *cvmSvc) checkCvmsInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID in
 			Count: true,
 		},
 	}
-	result, err := svc.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), req)
+	result, err := client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), req)
 	if err != nil {
 		logs.Errorf("count cvms that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return err

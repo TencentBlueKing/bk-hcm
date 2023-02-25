@@ -71,7 +71,7 @@ func (svc *cvmSvc) BatchRebootCvm(cts *rest.Contexts) (interface{}, error) {
 
 	// 校验资源是否已经分配，已分配资源不允许进行操作
 	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err = svc.checkCvmsInBiz(cts.Kit, flt, constant.UnassignedBiz)
+	err = CheckCvmsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}

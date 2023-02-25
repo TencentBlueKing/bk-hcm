@@ -39,7 +39,7 @@ func (c *Cvm) CvmOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudR
 		switch operation.Action {
 		case protoaudit.Start, protoaudit.Stop, protoaudit.Reboot, protoaudit.ResetPwd:
 			baseOperations = append(baseOperations, operation)
-		case protoaudit.Mount, protoaudit.UnMount:
+		case protoaudit.Associate, protoaudit.Disassociate:
 			assOperations = append(assOperations, operation)
 
 		default:
@@ -49,7 +49,7 @@ func (c *Cvm) CvmOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudR
 
 	audits := make([]*tableaudit.AuditTable, 0, len(operations))
 	if len(baseOperations) != 0 {
-		audit, err := c.baseOperationAuditBuild(kt, operations)
+		audit, err := c.baseOperationAuditBuild(kt, baseOperations)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func (c *Cvm) CvmOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudR
 	}
 
 	if len(assOperations) != 0 {
-		audit, err := c.assOperationAuditBuild(kt, operations)
+		audit, err := c.assOperationAuditBuild(kt, assOperations)
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +76,7 @@ func (c *Cvm) baseOperationAuditBuild(kt *kit.Kit, operations []protoaudit.Cloud
 	for _, one := range operations {
 		ids = append(ids, one.ResID)
 	}
-	idMap, err := c.listCvm(kt, ids)
+	idMap, err := ListCvm(kt, c.dao, ids)
 	if err != nil {
 		return nil, err
 	}

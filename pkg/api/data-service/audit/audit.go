@@ -136,6 +136,10 @@ func (o *OperationAction) ConvAuditAction() (enumor.AuditAction, error) {
 		return enumor.Reboot, nil
 	case ResetPwd:
 		return enumor.ResetPwd, nil
+	case Associate:
+		return enumor.Associate, nil
+	case Disassociate:
+		return enumor.Disassociate, nil
 
 	default:
 		return "", fmt.Errorf("action is not corresponding audit action")
@@ -147,8 +151,10 @@ const (
 	Stop     OperationAction = "stop"
 	Reboot   OperationAction = "reboot"
 	ResetPwd OperationAction = "reset_pwd"
-	Mount    OperationAction = "mount"
-	UnMount  OperationAction = "unmount"
+	// Associate 绑定、挂载等操作
+	Associate OperationAction = "associate"
+	// Disassociate 解绑、解挂载等操作
+	Disassociate OperationAction = "disassociate"
 )
 
 // CloudResourceOperationAuditReq define cloud resource operation audit req.

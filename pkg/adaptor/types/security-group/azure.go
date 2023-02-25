@@ -63,3 +63,32 @@ type AzureDeleteOption struct {
 func (opt AzureDeleteOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// -------------------------- Associate --------------------------
+
+// AzureAssociateSubnetOption define security group bind subnet option.
+type AzureAssociateSubnetOption struct {
+	Region               string `json:"region" validate:"required"`
+	CloudSecurityGroupID string `json:"cloud_security_group_id" validate:"required"`
+	ResourceGroupName    string `json:"resource_group_name" validate:"required"`
+	CloudVpcID           string `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID        string `json:"cloud_subnet_id" validate:"required"`
+}
+
+// Validate security group cvm bind option.
+func (opt AzureAssociateSubnetOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// AzureAssociateNetworkInterfaceOption define security group bind network interface option.
+type AzureAssociateNetworkInterfaceOption struct {
+	Region                  string `json:"region" validate:"required"`
+	CloudSecurityGroupID    string `json:"cloud_security_group_id" validate:"required"`
+	CloudNetworkInterfaceID string `json:"cloud_network_interface_id" validate:"required"`
+	ResourceGroupName       string `json:"resource_group_name" validate:"required"`
+}
+
+// Validate security group cvm bind option.
+func (opt AzureAssociateNetworkInterfaceOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

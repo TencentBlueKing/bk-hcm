@@ -77,6 +77,7 @@ type AzureNICreateExt struct {
 	CloudGatewayLoadBalancerID *string `json:"cloud_gateway_load_balancer_id"`
 	// CloudSecurityGroupID 网络安全组ID
 	CloudSecurityGroupID *string `json:"cloud_security_group_id"`
+	SecurityGroupID      *string `json:"security_group_id,omitempty"`
 	// IPConfigurations IP配置列表
 	IPConfigurations []*coreni.InterfaceIPConfiguration `json:"ip_configurations"`
 }
@@ -89,7 +90,7 @@ type GcpNICreateExt struct {
 	AccessConfigs []*AccessConfig `json:"access_configs,omitempty"`
 }
 
-// AccessConfig: An access configuration attached to an instance's
+// AccessConfig An access configuration attached to an instance's
 // network interface. Only one access config per instance is supported.
 type AccessConfig struct {
 	// Name: The name of this access configuration. The default and
@@ -159,7 +160,7 @@ type HuaWeiNICreateExt struct {
 	// VirtualIPList 虚拟IP地址数组
 	VirtualIPList []NetVirtualIP `json:"virtual_ip_list,omitempty"`
 	// Addresses 云服务器对应的网络地址信息
-	Addresses *EipNetwork `json:"addresses"`
+	Addresses *EipNetwork `json:"addresses,omitempty"`
 	// CloudSecurityGroupIDs 云服务器所属安全组ID
 	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids"`
 }

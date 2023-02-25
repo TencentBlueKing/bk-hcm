@@ -96,7 +96,7 @@ func (svc *subnetSvc) UpdateSubnet(cts *rest.Contexts) (interface{}, error) {
 
 	// check if all subnets are not assigned, cannot operate biz resource in account api
 	subnetFilter := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}
-	err = svc.checkSubnetsInBiz(cts.Kit, subnetFilter, constant.UnassignedBiz)
+	err = CheckSubnetsInBiz(cts.Kit, svc.client, subnetFilter, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error)
 
 	// check if all subnets are not assigned, cannot operate biz resource in account api
 	subnetFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err = svc.checkSubnetsInBiz(cts.Kit, subnetFilter, constant.UnassignedBiz)
+	err = CheckSubnetsInBiz(cts.Kit, svc.client, subnetFilter, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +342,7 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 
 	// check if all subnets are not assigned, right now assigning resource twice is not allowed
 	subnetFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.SubnetIDs}
-	err = svc.checkSubnetsInBiz(cts.Kit, subnetFilter, constant.UnassignedBiz)
+	err = CheckSubnetsInBiz(cts.Kit, svc.client, subnetFilter, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
@@ -424,8 +424,8 @@ func (svc *subnetSvc) CountSubnetAvailableIPs(cts *rest.Contexts) (interface{}, 
 	}
 }
 
-// checkSubnetsInBiz check if subnets are in the specified biz.
-func (svc *subnetSvc) checkSubnetsInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
+// CheckSubnetsInBiz check if subnets are in the specified biz.
+func CheckSubnetsInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFactory, bizID int64) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
@@ -437,7 +437,7 @@ func (svc *subnetSvc) checkSubnetsInBiz(kt *kit.Kit, rule filter.RuleFactory, bi
 			Count: true,
 		},
 	}
-	result, err := svc.client.DataService().Global.Subnet.List(kt.Ctx, kt.Header(), req)
+	result, err := client.DataService().Global.Subnet.List(kt.Ctx, kt.Header(), req)
 	if err != nil {
 		logs.Errorf("count subnets that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return err
