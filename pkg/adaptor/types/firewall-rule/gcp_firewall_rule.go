@@ -20,10 +20,34 @@
 package firewallrule
 
 import (
+	"errors"
+
 	"hcm/pkg/adaptor/types/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/validator"
 )
+
+// -------------------------- Create --------------------------
+
+// CreateOption define gcp firewall rule create option.
+type CreateOption struct {
+	Name              string                     `json:"name" validate:"required"`
+	Description       string                     `json:"description"`
+	Priority          int64                      `json:"priority"`
+	CloudVpcID        string                     `json:"cloud_vpc_id" validate:"required"`
+	SourceTags        []string                   `json:"source_tags"`
+	TargetTags        []string                   `json:"target_tags"`
+	Denied            []corecloud.GcpProtocolSet `json:"denied"`
+	Allowed           []corecloud.GcpProtocolSet `json:"allowed"`
+	SourceRanges      []string                   `json:"source_ranges"`
+	DestinationRanges []string                   `json:"destination_ranges"`
+	Disabled          bool                       `json:"disabled"`
+}
+
+// Validate gcp firewall rule create option.
+func (opt CreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
 
 // -------------------------- Update --------------------------
 
@@ -59,6 +83,7 @@ type Update struct {
 
 // ListOption define gcp firewall rule list option.
 type ListOption struct {
+	IDs  []uint64      `json:"id" validate:"omitempty"`
 	Page *core.GcpPage `json:"page" validate:"omitempty"`
 }
 
@@ -66,6 +91,10 @@ type ListOption struct {
 func (opt ListOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return nil
+	}
+
+	if len(opt.IDs) != 0 && opt.Page != nil {
+		return errors.New("list firewall by ids, that not support page")
 	}
 
 	if opt.Page != nil {

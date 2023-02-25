@@ -65,6 +65,30 @@ func (cli *FirewallClient) SyncFirewall(ctx context.Context, h http.Header,
 	return nil
 }
 
+// CreateFirewallRule create firewall rule.
+func (cli *FirewallClient) CreateFirewallRule(ctx context.Context, h http.Header,
+	request *proto.GcpFirewallRuleCreateReq) (*core.CreateResult, error) {
+
+	resp := new(core.CreateResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/firewalls/rules/create").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // UpdateFirewallRule update firewall rule.
 func (cli *FirewallClient) UpdateFirewallRule(ctx context.Context, h http.Header, id string,
 	request *proto.GcpFirewallRuleUpdateReq) error {

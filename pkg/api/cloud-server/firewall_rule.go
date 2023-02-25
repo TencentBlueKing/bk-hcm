@@ -101,3 +101,26 @@ type GcpFirewallRuleBatchDeleteReq struct {
 func (req *GcpFirewallRuleBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// -------------------------- Create --------------------------
+
+// GcpFirewallRuleCreateReq ...
+type GcpFirewallRuleCreateReq struct {
+	AccountID         string                     `json:"account_id" validate:"required"`
+	CloudVpcID        string                     `json:"cloud_vpc_id" validate:"required"`
+	Name              string                     `json:"name" validate:"required"`
+	Memo              string                     `json:"memo"`
+	Priority          int64                      `json:"priority" validate:"required"`
+	SourceTags        []string                   `json:"source_tags"`
+	TargetTags        []string                   `json:"target_tags"`
+	Denied            []corecloud.GcpProtocolSet `json:"denied"`
+	Allowed           []corecloud.GcpProtocolSet `json:"allowed"`
+	SourceRanges      []string                   `json:"source_ranges"`
+	DestinationRanges []string                   `json:"destination_ranges"`
+	Disabled          bool                       `json:"disabled"`
+}
+
+// Validate gcp firewall rule create req.
+func (req *GcpFirewallRuleCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

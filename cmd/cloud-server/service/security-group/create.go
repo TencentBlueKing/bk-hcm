@@ -50,7 +50,7 @@ func (svc *securityGroupSvc) CreateSecurityGroup(cts *rest.Contexts) (interface{
 
 	// authorize
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: meta.Create,
-		ResourceID: strconv.Itoa(int(bizID))}}
+		ResourceID: strconv.FormatInt(bizID, 10)}}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	if err != nil {
 		return nil, err

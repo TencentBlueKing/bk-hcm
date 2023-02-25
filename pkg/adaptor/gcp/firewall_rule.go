@@ -25,24 +25,40 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"google.golang.org/api/compute/v1"
 )
 
 // ListFirewallRule list firewall rule.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/list
-func (g *Gcp) ListFirewallRule(kt *kit.Kit, opt *firewallrule.ListOption) (*compute.FirewallList, error) {
+func (g *Gcp) ListFirewallRule(kt *kit.Kit, opt *firewallrule.ListOption) ([]*compute.Firewall, string, error) {
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list option is required")
+		return nil, "", errf.New(errf.InvalidParameter, "list option is required")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, "", errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 分页查询
+	if len(opt.IDs) == 0 {
+		return g.listByPage(kt, opt)
+	}
+
+	// IDs 查询
+	items, err := g.listByIDs(kt, opt)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return items, "", nil
+}
+
+func (g *Gcp) listByPage(kt *kit.Kit, opt *firewallrule.ListOption) ([]*compute.Firewall, string, error) {
 	client, err := g.clientSet.computeClient(kt)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	request := client.Firewalls.List(g.CloudProjectID()).Context(kt.Ctx)
@@ -57,10 +73,26 @@ func (g *Gcp) ListFirewallRule(kt *kit.Kit, opt *firewallrule.ListOption) (*comp
 	resp, err := call.Do()
 	if err != nil {
 		logs.Errorf("list firewall rule failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, "", err
+	}
+
+	return resp.Items, resp.NextPageToken, nil
+}
+
+func (g *Gcp) listByIDs(kt *kit.Kit, opt *firewallrule.ListOption) ([]*compute.Firewall, error) {
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	resp, err := client.Firewalls.List(g.CloudProjectID()).Context(kt.Ctx).
+		Filter(generateResourceIDsFilter(converter.Uint64SliceToStringSlice(opt.IDs))).Do()
+	if err != nil {
+		logs.Errorf("list gcp firewall rule by ids failed, err: %v, ids: %s, rid: %s", err, opt.IDs, kt.Rid)
+		return nil, err
+	}
+
+	return resp.Items, nil
 }
 
 // UpdateFirewallRule update firewall rule.
@@ -103,7 +135,7 @@ func (g *Gcp) UpdateFirewallRule(kt *kit.Kit, opt *firewallrule.UpdateOption) er
 
 	if len(opt.GcpFirewallRule.Denied) != 0 {
 		update.Denied = make([]*compute.FirewallDenied, 0, len(opt.GcpFirewallRule.Denied))
-		for _, one := range opt.GcpFirewallRule.Allowed {
+		for _, one := range opt.GcpFirewallRule.Denied {
 			update.Denied = append(update.Denied, &compute.FirewallDenied{
 				IPProtocol: one.Protocol,
 				Ports:      one.Port,
@@ -142,4 +174,60 @@ func (g *Gcp) DeleteFirewallRule(kt *kit.Kit, opt *firewallrule.DeleteOption) er
 	}
 
 	return nil
+}
+
+// CreateFirewallRule create firewall rule.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/patch
+func (g *Gcp) CreateFirewallRule(kt *kit.Kit, opt *firewallrule.CreateOption) (uint64, error) {
+	if opt == nil {
+		return 0, errf.New(errf.InvalidParameter, "create option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return 0, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return 0, err
+	}
+
+	firewall := &compute.Firewall{
+		Name:              opt.Name,
+		Network:           opt.CloudVpcID,
+		Description:       opt.Description,
+		DestinationRanges: opt.DestinationRanges,
+		Disabled:          opt.Disabled,
+		Priority:          opt.Priority,
+		SourceRanges:      opt.SourceRanges,
+		SourceTags:        opt.SourceTags,
+		TargetTags:        opt.TargetTags,
+	}
+
+	if len(opt.Allowed) != 0 {
+		firewall.Allowed = make([]*compute.FirewallAllowed, 0, len(opt.Allowed))
+		for _, one := range opt.Allowed {
+			firewall.Allowed = append(firewall.Allowed, &compute.FirewallAllowed{
+				IPProtocol: one.Protocol,
+				Ports:      one.Port,
+			})
+		}
+	}
+
+	if len(opt.Denied) != 0 {
+		firewall.Denied = make([]*compute.FirewallDenied, 0, len(opt.Denied))
+		for _, one := range opt.Denied {
+			firewall.Denied = append(firewall.Denied, &compute.FirewallDenied{
+				IPProtocol: one.Protocol,
+				Ports:      one.Port,
+			})
+		}
+	}
+
+	resp, err := client.Firewalls.Insert(g.CloudProjectID(), firewall).Do()
+	if err != nil {
+		logs.Errorf("insert firewall rule failed, err: %v, firewall: %v, rid: %s", err, firewall, kt.Rid)
+	}
+
+	return resp.TargetId, nil
 }

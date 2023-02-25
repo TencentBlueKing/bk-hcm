@@ -20,6 +20,7 @@
 package firewall
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -34,8 +35,11 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"google.golang.org/api/compute/v1"
 )
 
 // InitFirewallService initial the security group service
@@ -200,76 +204,141 @@ func (f *firewall) getGcpFirewallRuleByID(cts *rest.Contexts, id string) (*corec
 	return &listResp.Details[0], nil
 }
 
-// CreateGcpFirewallRule TODO: 目前没有创建需求，所以占用该接口同步防火墙规则，之后进行调整。
+// CreateGcpFirewallRule ...
 func (f *firewall) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	accountID := "0000002d"
-	client, err := f.ad.Gcp(cts.Kit, accountID)
+	req := new(proto.GcpFirewallRuleCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	item, err := f.createFirewallRule(cts, req)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := client.ListFirewallRule(cts.Kit, &firewallrule.ListOption{})
+	vpcID, err := f.getVpcIDByCloudVpcID(cts.Kit, req.CloudVpcID)
 	if err != nil {
 		return nil, err
 	}
 
-	ruleCreates := make([]protocloud.GcpFirewallRuleBatchCreate, 0, len(resp.Items))
-	for _, item := range resp.Items {
-		rule := protocloud.GcpFirewallRuleBatchCreate{
-			CloudID:               strconv.FormatUint(item.Id, 10),
-			AccountID:             accountID,
-			Name:                  item.Name,
-			Priority:              item.Priority,
-			Memo:                  item.Description,
-			CloudVpcID:            item.Network,
-			VpcId:                 "todo",
-			SourceRanges:          item.SourceRanges,
-			BkBizID:               constant.UnassignedBiz,
-			DestinationRanges:     item.DestinationRanges,
-			SourceTags:            item.SourceTags,
-			TargetTags:            item.TargetTags,
-			SourceServiceAccounts: item.SourceServiceAccounts,
-			TargetServiceAccounts: item.TargetServiceAccounts,
-			Type:                  item.Direction,
-			LogEnable:             item.LogConfig.Enable,
-			Disabled:              item.Disabled,
-			SelfLink:              item.SelfLink,
-		}
-
-		if len(item.Denied) != 0 {
-			sets := make([]corecloud.GcpProtocolSet, 0, len(item.Denied))
-			for _, one := range item.Denied {
-				sets = append(sets, corecloud.GcpProtocolSet{
-					Protocol: one.IPProtocol,
-					Port:     one.Ports,
-				})
-			}
-			rule.Denied = sets
-		}
-
-		if len(item.Allowed) != 0 {
-			sets := make([]corecloud.GcpProtocolSet, 0, len(item.Allowed))
-			for _, one := range item.Allowed {
-				sets = append(sets, corecloud.GcpProtocolSet{
-					Protocol: one.IPProtocol,
-					Port:     one.Ports,
-				})
-			}
-			rule.Allowed = sets
-		}
-
-		ruleCreates = append(ruleCreates, rule)
+	rule := protocloud.GcpFirewallRuleBatchCreate{
+		CloudID:               strconv.FormatUint(item.Id, 10),
+		AccountID:             req.AccountID,
+		Name:                  item.Name,
+		Priority:              item.Priority,
+		Memo:                  item.Description,
+		CloudVpcID:            item.Network,
+		VpcId:                 vpcID,
+		SourceRanges:          item.SourceRanges,
+		BkBizID:               req.BkBizID,
+		DestinationRanges:     item.DestinationRanges,
+		SourceTags:            item.SourceTags,
+		TargetTags:            item.TargetTags,
+		SourceServiceAccounts: item.SourceServiceAccounts,
+		TargetServiceAccounts: item.TargetServiceAccounts,
+		Type:                  item.Direction,
+		LogEnable:             item.LogConfig.Enable,
+		Disabled:              item.Disabled,
+		SelfLink:              item.SelfLink,
 	}
 
-	req := &protocloud.GcpFirewallRuleBatchCreateReq{
-		FirewallRules: ruleCreates,
+	if len(item.Denied) != 0 {
+		sets := make([]corecloud.GcpProtocolSet, 0, len(item.Denied))
+		for _, one := range item.Denied {
+			sets = append(sets, corecloud.GcpProtocolSet{
+				Protocol: one.IPProtocol,
+				Port:     one.Ports,
+			})
+		}
+		rule.Denied = sets
 	}
-	result, err := f.dataCli.Gcp.Firewall.BatchCreateFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), req)
+
+	if len(item.Allowed) != 0 {
+		sets := make([]corecloud.GcpProtocolSet, 0, len(item.Allowed))
+		for _, one := range item.Allowed {
+			sets = append(sets, corecloud.GcpProtocolSet{
+				Protocol: one.IPProtocol,
+				Port:     one.Ports,
+			})
+		}
+		rule.Allowed = sets
+	}
+
+	createReq := &protocloud.GcpFirewallRuleBatchCreateReq{
+		FirewallRules: []protocloud.GcpFirewallRuleBatchCreate{rule},
+	}
+	result, err := f.dataCli.Gcp.Firewall.BatchCreateFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
+		logs.Errorf("request dataservice to create firewall rule failed, err: %v, req: %v, rid: %s",
+			err, createReq, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return result, nil
+}
+
+func (f *firewall) createFirewallRule(cts *rest.Contexts, req *proto.GcpFirewallRuleCreateReq) (*compute.Firewall,
+	error) {
+
+	client, err := f.ad.Gcp(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &firewallrule.CreateOption{
+		Name:              req.Name,
+		CloudVpcID:        req.CloudVpcID,
+		Description:       req.Memo,
+		Priority:          req.Priority,
+		SourceTags:        req.SourceTags,
+		TargetTags:        req.TargetTags,
+		Denied:            req.Denied,
+		Allowed:           req.Allowed,
+		SourceRanges:      req.SourceRanges,
+		DestinationRanges: req.DestinationRanges,
+		Disabled:          req.Disabled,
+	}
+	ruleID, err := client.CreateFirewallRule(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("request gcp create firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	items, _, err := client.ListFirewallRule(cts.Kit, &firewallrule.ListOption{
+		IDs: []uint64{ruleID},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(items) == 0 {
+		return nil, fmt.Errorf("create firewall rule success, but list failed, ruleID: %d", ruleID)
+	}
+
+	return items[0], nil
+}
+
+func (f *firewall) getVpcIDByCloudVpcID(kt *kit.Kit, cloudVpcID string) (string, error) {
+	req := &core.ListReq{
+		Filter: tools.EqualExpression("cloud_id", cloudVpcID),
+		Page:   core.DefaultBasePage,
+		Fields: []string{"id"},
+	}
+	result, err := f.dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("request dataservice to list vpc failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return "", err
+	}
+
+	if len(result.Details) == 0 {
+		return "", errf.Newf(errf.RecordNotFound, "vpc(cloud_id=%s) not found", cloudVpcID)
+	}
+
+	return result.Details[0].CloudID, nil
 }
 
 // SyncGcpFirewallRule sync gcp to hcm
@@ -333,13 +402,14 @@ func (f *firewall) SyncCreateGcpFirewallRule(cts *rest.Contexts, accountID strin
 		return nil, err
 	}
 
-	resp, err := client.ListFirewallRule(cts.Kit, &firewallrule.ListOption{})
+	// TODO: 只同步了第一页，修复这里的 bug
+	items, _, err := client.ListFirewallRule(cts.Kit, &firewallrule.ListOption{})
 	if err != nil {
 		return nil, err
 	}
 
-	ruleCreates := make([]protocloud.GcpFirewallRuleBatchCreate, 0, len(resp.Items))
-	for _, item := range resp.Items {
+	ruleCreates := make([]protocloud.GcpFirewallRuleBatchCreate, 0, len(items))
+	for _, item := range items {
 		rule := protocloud.GcpFirewallRuleBatchCreate{
 			CloudID:    strconv.FormatUint(item.Id, 10),
 			AccountID:  accountID,

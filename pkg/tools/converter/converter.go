@@ -19,7 +19,11 @@
 
 package converter
 
-import "hcm/pkg/tools/json"
+import (
+	"strconv"
+
+	"hcm/pkg/tools/json"
+)
 
 // ValToPtr convert one value to pointer.
 func ValToPtr[T any](val T) *T {
@@ -68,4 +72,14 @@ func StructToMap(source interface{}) (map[string]interface{}, error) {
 	}
 
 	return result, nil
+}
+
+// Uint64SliceToStringSlice []uint64 to []string.
+func Uint64SliceToStringSlice(source []uint64) []string {
+	target := make([]string, len(source))
+	for index, one := range source {
+		target[index] = strconv.FormatUint(one, 10)
+	}
+
+	return target
 }
