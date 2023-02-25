@@ -220,3 +220,18 @@ func (eipDao *EipDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.
 
 	return nil
 }
+
+// ListByIDs ...
+func ListByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]eip.EipModel, error) {
+	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, eip.EipColumns.FieldsNamedExpr(nil), eip.TableName)
+	eips := make([]eip.EipModel, 0)
+	if err := orm.Do().Select(kt.Ctx, &eips, sql, map[string]interface{}{"ids": ids}); err != nil {
+		return nil, err
+	}
+
+	idToEipMap := make(map[string]eip.EipModel, len(ids))
+	for _, d := range eips {
+		idToEipMap[d.ID] = d
+	}
+	return idToEipMap, nil
+}

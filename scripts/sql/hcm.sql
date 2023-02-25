@@ -870,3 +870,15 @@ create table if not exists `disk_cvm_rel`
     unique key `idx_uk_disk_id_cvm_id` (`disk_id`, `cvm_id`)
 ) engine = innodb
   default charset = utf8mb4;
+
+create table if not exists `eip_cvm_rel`
+(
+    `id`         bigint(1) unsigned not null auto_increment,
+    `eip_id`     varchar(64)        not null,
+    `cvm_id`     varchar(64)        not null,
+    `creator`    varchar(64)        not null,
+    `created_at` timestamp          not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_eip_id_cvm_id` (`eip_id`, `cvm_id`)
+) engine = innodb
+  default charset = utf8mb4;

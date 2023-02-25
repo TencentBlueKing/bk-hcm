@@ -36,6 +36,7 @@ import (
 	"hcm/cmd/data-service/service/cloud/disk"
 	diskcvmrel "hcm/cmd/data-service/service/cloud/disk-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/eip"
+	eipcvmrel "hcm/cmd/data-service/service/cloud/eip-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/image"
 	"hcm/cmd/data-service/service/cloud/region"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
@@ -182,6 +183,7 @@ func (s *Service) apiSet() *restful.Container {
 	routetable.InitRouteTableService(capability)
 	application.InitApplicationService(capability)
 	diskcvmrel.InitService(capability)
+	eipcvmrel.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }
