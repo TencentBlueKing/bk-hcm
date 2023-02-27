@@ -190,8 +190,12 @@ export default defineComponent({
         const res = await accountStore.getApplyAccountList(filterParams.value);
         backupData.value = res.data.details;
         applyList.value.push(...res.data.details);
-        id.value = res.data.details[0].id;
-        getMyApplyDetail(id.value);
+        id.value = res.data.details[0]?.id;
+        if (id.value) {
+          getMyApplyDetail(id.value);
+        } else {
+          initRequestQueue.value.length > 0 && initRequestQueue.value.shift();
+        }
       } catch (error) {
         console.log('error', error);
       }  finally {

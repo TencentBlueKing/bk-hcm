@@ -82,7 +82,7 @@
           prop="created_at"
         >
           <template #default="{ data }">
-            {{moment(data.created_at).format('YYYY-MM-DD HH:mm:ss')}}
+            {{data.created_at}}
           </template>
         </bk-table-column>
         <bk-table-column

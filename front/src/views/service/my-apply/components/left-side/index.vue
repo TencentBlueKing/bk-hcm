@@ -21,6 +21,12 @@
             @on-change="handleChange"
           />
         </template>
+        <template v-else>
+          <div class="empty-wrapper">
+            <img class="empty-img" :src="emptyChart" alt="error" />
+            <div class="empty-tip">{{ t("暂无数据") }}</div>
+          </div>
+        </template>
       </div>
       <div class="loading-more pt10" v-if="!canScrollLoad">
         {{ t("没有更多数据") }}
@@ -146,6 +152,14 @@ $borderColor:  #f5f6fa;
   .loading-more{
     text-align: center;
     font-size: 12px;
+  }
+
+  .empty-wrapper{
+    text-align: center;
+    margin-top: 50px;
+    .empty-img{
+      width: 150px;
+    }
   }
 }
 

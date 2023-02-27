@@ -47,8 +47,8 @@ export function useVerify(showPermissionDialog?: Ref<boolean>, actionData?: stri
 
   // 处理鉴权 actionName根据接口返回值传入
   const handleAuth = (actionName: string) => {
-    if (!authVerifyData.value?.permission) return;
     const actionItem = authVerifyData.value?.permission?.actions.filter((e: any) => e.id === actionName);
+    if (!authVerifyData.value?.permission || !actionItem.length) return;
     permissionParams.value = {
       system_id: authVerifyData.value?.permission.system_id,
       actions: actionItem,

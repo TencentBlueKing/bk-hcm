@@ -112,7 +112,6 @@ export default defineComponent({
       const res = await accountStore.getDepartmentInfo(id);
       departmentFullName.value = res?.data?.full_name;
       departmentData.value = res?.data?.ancestors.map((e: any) => e.id);
-      console.log('departmentData.value', departmentData.value);
       requestQueue.value.shift();
     };
 
@@ -122,7 +121,6 @@ export default defineComponent({
       formBaseInfo = formBaseInfo.filter(e => e.name !== t('密钥信息'));
       const nameIndex = formBaseInfo[0].data.findIndex(e => e.property === 'name');
       const managersIndex = formBaseInfo[0].data.findIndex(e => e.property === 'managers');
-      console.log(nameIndex, managersIndex);
       switch (data.vendor) {
         case 'huawei':
           insertFormData = [
@@ -186,7 +184,6 @@ export default defineComponent({
               component: () => <span>{projectModel.extension.cloud_main_account_id || '--'}</span>,
             },
           ];
-          console.log('formBaseInfo', formBaseInfo);
           formBaseInfo[0].data.splice(4, managersIndex - (nameIndex + 1), ...insertFormData);
           formBaseInfo.push({
             name: t('密钥信息'),
@@ -503,7 +500,6 @@ export default defineComponent({
         isOrganizationDetail.value = true;  // 改为详情展示态
       } else if (key === 'bizIds') {
         // 若选择全部业务，则参数是-1
-        console.log(projectModel[key].length, businessList.list.length);
         params.bk_biz_ids = projectModel[key].length === businessList.list.length
           ? [-1] : projectModel[key];
       } else {
@@ -611,7 +607,6 @@ export default defineComponent({
     };
 
     const handleEditStatus = (val: boolean, key: string) => {
-      console.log(val, key);
       formBaseInfo.forEach((e) => {
         e.data = e.data.map((item) => {
           if (item.property === key) {
