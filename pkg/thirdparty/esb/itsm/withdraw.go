@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/thirdparty/esb/types"
 )
 
+// WithdrawTicket 撤销单据
 func (i *itsm) WithdrawTicket(ctx context.Context, sn string, operator string) error {
 	req := map[string]interface{}{
 		"sn":             sn,

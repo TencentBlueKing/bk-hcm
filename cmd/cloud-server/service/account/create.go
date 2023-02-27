@@ -195,7 +195,7 @@ func (a *accountSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountCreat
 	}
 
 	// 检查资源账号的主账号是否重复
-	err = IsDuplicateMainAccount(cts, a.client, req.Vendor, req.Type, "cloud_main_account_name", extension.CloudMainAccountName)
+	err = IsDuplicateMainAccount(cts, a.client, req.Vendor, req.Type, "cloud_sub_account_id", extension.CloudSubAccountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}

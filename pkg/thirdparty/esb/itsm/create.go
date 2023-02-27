@@ -52,6 +52,7 @@ type createTicketResp struct {
 	Data               *createTicketResult `json:"data"`
 }
 
+// CreateTicket 创建单据
 func (i *itsm) CreateTicket(ctx context.Context, params *CreateTicketParams) (string, error) {
 	// 提单表单
 	fields := []map[string]interface{}{

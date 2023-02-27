@@ -45,7 +45,7 @@ var (
 	vendorMainAccountIDFieldMap = map[enumor.Vendor]string{
 		enumor.TCloud: "cloud_main_account_id",
 		enumor.Aws:    "cloud_account_id",
-		enumor.HuaWei: "cloud_main_account_name",
+		enumor.HuaWei: "cloud_sub_account_id",
 		enumor.Gcp:    "cloud_project_id",
 		enumor.Azure:  "cloud_tenant_id",
 	}

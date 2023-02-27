@@ -60,6 +60,7 @@ func (i *itsm) batchQueryTicketResult(ctx context.Context, sns []string) (result
 	return resp.Data, nil
 }
 
+// GetTicketResult 查询单据结果
 func (i *itsm) GetTicketResult(ctx context.Context, sn string) (result TicketResult, err error) {
 	results, err := i.batchQueryTicketResult(ctx, []string{sn})
 	if err != nil {
