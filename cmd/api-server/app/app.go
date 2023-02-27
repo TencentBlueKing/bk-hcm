@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/metrics"
 	"hcm/pkg/runtime/ctl"
 	"hcm/pkg/runtime/ctl/cmd"
+	"hcm/pkg/runtime/gwparser"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 )
@@ -71,6 +72,11 @@ func (as *apiService) prepare(opt *options.Option) error {
 	logs.InitLogger(cc.ApiServer().Log.Logs())
 
 	logs.Infof("load settings from config file success.")
+
+	if err := gwparser.Init(opt.DisableJWT, opt.PublicKey); err != nil {
+		return err
+	}
+	logs.Infof("jwt disable state: %v", opt.DisableJWT)
 
 	// init metrics
 	network := cc.ApiServer().Network

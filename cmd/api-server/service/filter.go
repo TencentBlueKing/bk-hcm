@@ -45,6 +45,7 @@ func (p *proxy) restFilter() restful.FilterFunction {
 			fmt.Fprintf(w, errf.Error(err).Error())
 			return
 		}
+		req.Request.Header = kt.Header()
 
 		body, err := peekRequest(r)
 		if err != nil {
