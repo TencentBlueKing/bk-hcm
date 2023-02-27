@@ -231,10 +231,9 @@ func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *client.Au
 	// find user's policy with action
 	getOpts := &client.GetPolicyByExtResOption{
 		AuthOptions: client.AuthOptions{
-			System:    opts.System,
-			Subject:   opts.Subject,
-			Action:    opts.Action,
-			Resources: opts.Resources,
+			System:  opts.System,
+			Subject: opts.Subject,
+			Action:  opts.Action,
 		},
 		ExtResources: make([]client.ExtResource, 0),
 	}
