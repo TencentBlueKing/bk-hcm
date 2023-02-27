@@ -139,3 +139,38 @@ func (svc *securityGroupSvc) checkSecurityGroupsInBiz(kt *kit.Kit, rule filter.R
 
 	return nil
 }
+
+// ListSecurityGroupsByCvmID list security groups by cvm_id.
+func (svc *securityGroupSvc) ListSecurityGroupsByCvmID(cts *rest.Contexts) (interface{}, error) {
+	cvmID := cts.PathParameter("cvm_id").String()
+	if len(cvmID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "cvm_id is required")
+	}
+
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		enumor.CvmCloudResType, cvmID)
+	if err != nil {
+		logs.Errorf("get resource vendor failed, err: %s, cvmID: %s, rid: %s", err, cvmID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: meta.Find,
+		ResourceID: baseInfo.AccountID}}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	listReq := &dataproto.SGCvmRelWithSecurityGroupListReq{
+		CvmIDs: []string{cvmID},
+	}
+	result, err := svc.client.DataService().Global.SGCvmRel.ListWithSecurityGroup(cts.Kit.Ctx,
+		cts.Kit.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list security group by cvm_id failed, err: %v, req: %v, rid: %s", err, cts.Kit.Rid, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}

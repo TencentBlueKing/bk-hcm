@@ -21,17 +21,13 @@ package cvm
 
 // HuaWeiCvmExtension cvm extension.
 type HuaWeiCvmExtension struct {
-	// KeyName 弹性云服务器使用的密钥对名称。
-	KeyName string `json:"key_name,omitempty"`
 	// AliasName 弹性云服务器别名。
 	AliasName string `json:"alias_name,omitempty"`
 	// HypervisorHostname 弹性云服务器所在虚拟化主机名。
 	HypervisorHostname    string        `json:"hypervisor_hostname,omitempty"`
 	Flavor                *HuaWeiFlavor `json:"flavor,omitempty"`
 	CloudSecurityGroupIDs []string      `json:"cloud_security_group_ids,omitempty"`
-	// UserID 创建弹性云服务器的用户ID，格式为UUID。
-	CloudUserID   string `json:"cloud_user_id,omitempty"`
-	CloudTenantID string `json:"cloud_tenant_id,omitempty"`
+	CloudTenantID         string        `json:"cloud_tenant_id,omitempty"`
 
 	// 扩展属性， diskConfig的类型。MANUAL，镜像空间不会扩展。AUTO，系统盘镜像空间会自动扩展为与flavor大小一致。
 	DiskConfig string `json:"disk_config,omitempty"`
@@ -42,8 +38,6 @@ type HuaWeiCvmExtension struct {
 	Metadata        *HuaWeiMetadata        `json:"metadata,omitempty"`
 	VolumesAttached *HuaWeiVolumesAttached `json:"volumes_attached,omitempty"`
 
-	// CloudReservationID 批量创建场景，弹性云服务器的预留ID，可以根据该id查询出批创的所有虚拟机。
-	CloudReservationID string `json:"cloud_reservation_id,omitempty"`
 	// RootDeviceName 弹性云服务器系统盘的设备名称，例如当系统盘的磁盘模式是VDB，为/dev/vda，磁盘模式是SCSI，为/dev/sda。
 	RootDeviceName string `json:"root_device_name,omitempty"`
 	// CloudEnterpriseProjectID 弹性云服务器所属的企业项目ID。
@@ -125,8 +119,6 @@ type HuaWeiVolumesAttached struct {
 	DeleteOnTermination string `json:"delete_on_termination,omitempty"`
 	// BootIndex 云硬盘启动顺序。 0为系统盘。非0为数据盘。
 	BootIndex string `json:"boot_index,omitempty"`
-	// Device 云硬盘挂载盘符，即磁盘挂载点。
-	Device string `json:"device,omitempty"`
 }
 
 // HuaWeiCpuOptions 自定义CPU选项。

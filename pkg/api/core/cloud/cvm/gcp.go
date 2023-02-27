@@ -27,11 +27,10 @@ type GcpCvmExtension struct {
 
 	// CanIpForward Allows this instance to send and receive packets with non-matching destination or
 	// source IPs. This is required if you plan to use this instance to forward routes.
-	CanIpForward        bool              `json:"can_ip_forward,omitempty"`
-	NetworkInterfaceIDs []string          `json:"network_interface_ids,omitempty"`
-	Disks               []GcpAttachedDisk `json:"disks,omitempty"`
-	Metadata            *GcpMetadata      `json:"metadata,omitempty"`
-	SelfLink            string            `json:"self_link,omitempty"`
+	CanIpForward             bool              `json:"can_ip_forward,omitempty"`
+	CloudNetworkInterfaceIDs []string          `json:"cloud_network_interface_ids,omitempty"`
+	Disks                    []GcpAttachedDisk `json:"disks,omitempty"`
+	SelfLink                 string            `json:"self_link,omitempty"`
 	// CpuPlatform The CPU platform used by this instance.
 	CpuPlatform string `json:"cpu_platform,omitempty"`
 	// Labels: Labels to apply to this instance. These can be later modified
@@ -65,208 +64,20 @@ type GcpCvmExtension struct {
 
 // GcpAttachedDisk An instance-attached disk resource.
 type GcpAttachedDisk struct {
-	// Architecture The architecture of the attached disk.
-	// Valid values are ARM64 or X86_64.
-	//
-	// Possible values:
-	//   "ARCHITECTURE_UNSPECIFIED" - Default value indicating Architecture
-	// is not set.
-	//   "ARM64" - Machines with architecture ARM64
-	//   "X86_64" - Machines with architecture X86_64
-	Architecture string `json:"architecture,omitempty"`
-
-	// AutoDelete: Specifies whether the disk will be auto-deleted when the
-	// instance is deleted (but not when the disk is detached from the
-	// instance).
-	AutoDelete bool `json:"auto_delete,omitempty"`
-
 	// Boot: Indicates that this is a boot disk. The virtual machine will
 	// use the first partition of the disk for its root filesystem.
 	Boot bool `json:"boot,omitempty"`
-
-	// DeviceName: Specifies a unique device name of your choice that is
-	// reflected into the /dev/disk/by-id/google-* tree of a Linux operating
-	// system running within the instance. This name can be used to
-	// reference the device for mounting, resizing, and so on, from within
-	// the instance. If not specified, the server chooses a default device
-	// name to apply to this disk, in the form persistent-disk-x, where x is
-	// a number assigned by Google Compute Engine. This field is only
-	// applicable for persistent disks.
-	DeviceName string `json:"device_name,omitempty"`
-
-	// ForceAttach: [Input Only] Whether to force attach the regional disk
-	// even if it's currently attached to another instance. If you try to
-	// force attach a zonal disk to an instance, you will receive an error.
-	ForceAttach bool `json:"force_attach,omitempty"`
-
-	// GuestOsFeatures: A list of features to enable on the guest operating
-	// system. Applicable only for bootable images. Read Enabling guest
-	// operating system features to see a list of available options.
-	GuestOsFeatures []GcpGuestOsFeature `json:"guest_os_features,omitempty"`
 
 	// Index A zero-based index to this disk, where 0 is
 	// reserved for the boot disk. If you have many disks attached to an
 	// instance, each disk would have a unique index number.
 	Index int64 `json:"index,omitempty"`
 
-	// Interface: Specifies the disk interface to use for attaching this
-	// disk, which is either SCSI or NVME. For most machine types, the
-	// default is SCSI. Local SSDs can use either NVME or SCSI. In certain
-	// configurations, persistent disks can use NVMe. For more information,
-	// see About persistent disks.
-	//
-	// Possible values:
-	//   "NVME"
-	//   "SCSI"
-	Interface string `json:"interface,omitempty"`
-
-	// Licenses Any valid publicly visible licenses.
-	Licenses []string `json:"licenses,omitempty"`
-
-	// Mode: The mode in which to attach this disk, either READ_WRITE or
-	// READ_ONLY. If not specified, the default is to attach the disk in
-	// READ_WRITE mode.
-	//
-	// Possible values:
-	//   "READ_ONLY" - Attaches this disk in read-only mode. Multiple
-	// virtual machines can use a disk in read-only mode at a time.
-	//   "READ_WRITE" - *[Default]* Attaches this disk in read-write mode.
-	// Only one virtual machine at a time can be attached to a disk in
-	// read-write mode.
-	Mode string `json:"mode,omitempty"`
-
 	CloudID string `json:"cloud_id,omitempty"`
-
-	// Type: Specifies the type of the disk, either SCRATCH or PERSISTENT.
-	// If not specified, the default is PERSISTENT.
-	//
-	// Possible values:
-	//   "PERSISTENT"
-	//   "SCRATCH"
-	Type string `json:"type,omitempty"`
-}
-
-// GcpCustomerEncryptionKey ...
-type GcpCustomerEncryptionKey struct {
-	// KmsKeyName: The name of the encryption key that is stored in Google
-	// Cloud KMS. For example: "kmsKeyName":
-	// "projects/kms_project_id/locations/region/keyRings/
-	// key_region/cryptoKeys/key
-	KmsKeyName string `json:"kms_key_name,omitempty"`
-
-	// KmsKeyServiceAccount: The service account being used for the
-	// encryption request for the given KMS key. If absent, the Compute
-	// Engine default service account is used. For example:
-	// "kmsKeyServiceAccount": "name@project_id.iam.gserviceaccount.com/
-	KmsKeyServiceAccount string `json:"kms_key_service_account,omitempty"`
-
-	// RawKey: Specifies a 256-bit customer-supplied encryption key, encoded
-	// in RFC 4648 base64 to either encrypt or decrypt this resource. You
-	// can provide either the rawKey or the rsaEncryptedKey. For example:
-	// "rawKey": "SGVsbG8gZnJvbSBHb29nbGUgQ2xvdWQgUGxhdGZvcm0="
-	RawKey string `json:"raw_key,omitempty"`
-
-	// RsaEncryptedKey: Specifies an RFC 4648 base64 encoded, RSA-wrapped
-	// 2048-bit customer-supplied encryption key to either encrypt or
-	// decrypt this resource. You can provide either the rawKey or the
-	// rsaEncryptedKey. For example: "rsaEncryptedKey":
-	// "ieCx/NcW06PcT7Ep1X6LUTc/hLvUDYyzSZPPVCVPTVEohpeHASqC8uw5TzyO9U+Fka9JF
-	// H
-	// z0mBibXUInrC/jEk014kCK/NPjYgEMOyssZ4ZINPKxlUh2zn1bV+MCaTICrdmuSBTWlUUi
-	// FoD
-	// D6PYznLwh8ZNdaheCeZ8ewEXgFQ8V+sDroLaN3Xs3MDTXQEMMoNUXMCZEIpg9Vtp9x2oe=
-	// =" The key must meet the following requirements before you can
-	// provide it to Compute Engine: 1. The key is wrapped using a RSA
-	// public key certificate provided by Google. 2. After being wrapped,
-	// the key must be encoded in RFC 4648 base64 encoding. Gets the RSA
-	// public key certificate provided by Google at:
-	// https://cloud-certs.storage.googleapis.com/google-cloud-csek-ingress.pem
-	RsaEncryptedKey string `json:"rsa_encrypted_key,omitempty"`
-
-	// Sha256: [Output only] The RFC 4648 base64 encoded SHA-256 hash of the
-	// customer-supplied encryption key that protects this resource.
-	Sha256 string `json:"sha_256,omitempty"`
-}
-
-// GcpGuestOsFeature Guest OS features.
-type GcpGuestOsFeature struct {
-	// Type: The ID of a supported feature. To add multiple values, use
-	// commas to separate values. Set to one or more of the following
-	// values: - VIRTIO_SCSI_MULTIQUEUE - WINDOWS - MULTI_IP_SUBNET -
-	// UEFI_COMPATIBLE - GVNIC - SEV_CAPABLE - SUSPEND_RESUME_COMPATIBLE -
-	// SEV_SNP_CAPABLE For more information, see Enabling guest operating
-	// system features.
-	//
-	// Possible values:
-	//   "FEATURE_TYPE_UNSPECIFIED"
-	//   "GVNIC"
-	//   "MULTI_IP_SUBNET"
-	//   "SECURE_BOOT"
-	//   "SEV_CAPABLE"
-	//   "UEFI_COMPATIBLE"
-	//   "VIRTIO_SCSI_MULTIQUEUE"
-	//   "WINDOWS"
-	Type string `json:"type,omitempty"`
-}
-
-// GcpMetadata A metadata key/value entry.
-type GcpMetadata struct {
-	// Fingerprint: Specifies a fingerprint for this request, which is
-	// essentially a hash of the metadata's contents and used for optimistic
-	// locking. The fingerprint is initially generated by Compute Engine and
-	// changes after every request to modify or update metadata. You must
-	// always provide an up-to-date fingerprint hash in order to update or
-	// change metadata, otherwise the request will fail with error 412
-	// conditionNotMet. To see the latest fingerprint, make a get() request
-	// to retrieve the resource.
-	Fingerprint string `json:"fingerprint,omitempty"`
-
-	// Items: Array of key/value pairs. The total size of all keys and
-	// values must be less than 512 KB.
-	Items []GcpMetadataItems `json:"items,omitempty"`
-
-	// Kind Type of the resource. Always compute#metadata for
-	// metadata.
-	Kind string `json:"kind,omitempty"`
-}
-
-// GcpMetadataItems Metadata
-type GcpMetadataItems struct {
-	// Key: Key for the metadata entry. Keys must conform to the following
-	// regexp: [a-zA-Z0-9-_]+, and be less than 128 bytes in length. This is
-	// reflected as part of a URL in the metadata server. Additionally, to
-	// avoid ambiguity, keys must not conflict with any other metadata keys
-	// for the project.
-	Key string `json:"key,omitempty"`
-
-	// Value: Value for the metadata entry. These are free-form strings, and
-	// only have meaning as interpreted by the image running in the
-	// instance. The only restriction placed on values is that their size
-	// must be less than or equal to 262144 bytes (256 KiB).
-	Value *string `json:"value,omitempty"`
-}
-
-// GcpSchedulingNodeAffinity Node Affinity: the configuration of desired
-// nodes onto which this Instance could be scheduled.
-type GcpSchedulingNodeAffinity struct {
-	// Key: Corresponds to the label key of Node resource.
-	Key string `json:"key,omitempty"`
-
-	// Operator: Defines the operation of node selection. Valid operators
-	// are IN for affinity and NOT_IN for anti-affinity.
-	//
-	// Possible values:
-	//   "IN" - Requires Compute Engine to seek for matched nodes.
-	//   "NOT_IN" - Requires Compute Engine to avoid certain nodes.
-	//   "OPERATOR_UNSPECIFIED"
-	Operator string `json:"operator,omitempty"`
-
-	// Values: Corresponds to the label values of Node resource.
-	Values []string `json:"values,omitempty"`
 }
 
 // GcpReservationAffinity Specifies the reservations that this instance
-// // can consume from.
+// can consume from.
 type GcpReservationAffinity struct {
 	// ConsumeReservationType: Specifies the type of reservation from which
 	// this instance can consume resources: ANY_RESERVATION (default),
@@ -322,12 +133,4 @@ type GcpAdvancedMachineFeatures struct {
 	// number of cores is inferred from the instance's nominal CPU count and
 	// the underlying platform's SMT width.
 	VisibleCoreCount int64 `json:"visible_core_count,omitempty"`
-}
-
-// GcpNetworkPerformanceConfig ...
-type GcpNetworkPerformanceConfig struct {
-	// Possible values:
-	//   "DEFAULT"
-	//   "TIER_1"
-	TotalEgressBandwidthTier string `json:"total_egress_bandwidth_tier,omitempty"`
 }

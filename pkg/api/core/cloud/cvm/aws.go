@@ -21,10 +21,8 @@ package cvm
 
 // AwsCvmExtension cvm extension.
 type AwsCvmExtension struct {
-	BlockDeviceMapping []BlockDeviceMapping `json:"block_device_mapping,omitempty"`
-	// ClientToken The idempotency token you provided when you launched the instance, if applicable.
-	ClientToken *string        `json:"client_token,omitempty"`
-	CpuOptions  *AwsCpuOptions `json:"cpu_options,omitempty"`
+	BlockDeviceMapping []AwsBlockDeviceMapping `json:"block_device_mapping,omitempty"`
+	CpuOptions         *AwsCpuOptions          `json:"cpu_options,omitempty"`
 	// DnsName (IPv4 only) The public DNS name assigned to the instance. This name is not available until the
 	// instance enters the running state. For EC2-VPC, this name is only available if you've enabled DNS hostnames
 	// for your VPC.
@@ -61,14 +59,8 @@ type AwsCvmExtension struct {
 	VirtualizationType *string `json:"virtualization_type,omitempty"`
 }
 
-// BlockDeviceMapping Describes a block device mapping.
-type BlockDeviceMapping struct {
-	// DeviceName The device name (for example, /dev/sdh or xvdh).
-	DeviceName *string `json:"device_name,omitempty"`
-	// AttachTime The time stamp when the attachment initiated.
-	AttachTime *string `json:"attach_time,omitempty"`
-	// DeleteOnTermination Indicates whether the volume is deleted on instance termination.
-	DeleteOnTermination *bool `json:"delete_on_termination,omitempty"`
+// AwsBlockDeviceMapping Describes a block device mapping.
+type AwsBlockDeviceMapping struct {
 	// Status The attachment state. (attaching | attached | detaching | detached)
 	Status *string `json:"status,omitempty"`
 	// CloudVolumeID The ID of the EBS volume.
@@ -83,50 +75,9 @@ type AwsCpuOptions struct {
 	ThreadsPerCore *int64 `json:"threads_per_core,omitempty"`
 }
 
-// AwsElasticGpuAssociation The Elastic GPU associated with the instance.
-type AwsElasticGpuAssociation struct {
-	// CloudElasticGpuAssociationID The ID of the association.
-	CloudElasticGpuAssociationID *string `json:"cloud_elastic_gpu_association_id,omitempty"`
-	// ElasticGpuAssociationState The state of the association between the instance and the Elastic
-	// Graphics accelerator.
-	ElasticGpuAssociationState *string `json:"elastic_gpu_association_state,omitempty"`
-	// ElasticGpuAssociationTime The time the Elastic Graphics accelerator was associated with the instance.
-	ElasticGpuAssociationTime *string `json:"elastic_gpu_association_time,omitempty"`
-	// CloudElasticGpuID The ID of the Elastic Graphics accelerator.
-	CloudElasticGpuID *string `json:"cloud_elastic_gpu_id,omitempty"`
-}
-
-// AwsElasticInferenceAcceleratorAssociationSet The elastic inference accelerator associated with the instance.
-type AwsElasticInferenceAcceleratorAssociationSet struct {
-	Arn             *string `json:"arn,omitempty"`
-	CloudID         *string `json:"cloud_id,omitempty"`
-	State           *string `json:"state,omitempty"`
-	AssociationTime *string `json:"association_time,omitempty"`
-}
-
-// AwsEnclaveOptions Indicates whether the instance is enabled for AWS Nitro Enclaves.
-type AwsEnclaveOptions struct {
-	// Enabled If this parameter is set to true, the instance is enabled for AWS Nitro Enclaves;
-	// otherwise, it is not enabled for AWS Nitro Enclaves.
-	Enabled *bool `json:"enabled,omitempty"`
-}
-
 // AwsHibernationOptions Indicates whether the instance is enabled for hibernation.
 type AwsHibernationOptions struct {
 	Configured *bool `json:"configured,omitempty"`
-}
-
-// AwsIamInstanceProfile The IAM instance profile associated with the instance, if applicable.
-type AwsIamInstanceProfile struct {
-	// Arn The Amazon Resource Name (ARN) of the instance profile.
-	Arn *string `json:"arn,omitempty"`
-	// ID The ID of the instance profile.
-	ID *string `json:"id,omitempty"`
-}
-
-// AwsLicenseConfiguration Describes a license configuration.
-type AwsLicenseConfiguration struct {
-	Arn *string `json:"arn,omitempty"`
 }
 
 // AwsInstanceNetworkInterfaceAssociation The association information for an Elastic IPv4 associated with

@@ -35,29 +35,18 @@ type AzureCvmExtension struct {
 	// Possible values for Linux Server operating system are:
 	// - RHEL_BYOS (for RHEL)
 	// - SLES_BYOS (for SUSE)
-	LicenseType         *string              `json:"license_type,omitempty"`
-	NetworkInterfaceIDs []string             `json:"network_interface_i_ds,omitempty"`
-	Priority            *string              `json:"priority,omitempty"`
-	StorageProfile      *AzureStorageProfile `json:"storage_profile,omitempty"`
-	Zones               []string             `json:"zones,omitempty"`
+	LicenseType              *string              `json:"license_type,omitempty"`
+	CloudNetworkInterfaceIDs []string             `json:"cloud_network_interface_ids,omitempty"`
+	Priority                 *string              `json:"priority,omitempty"`
+	StorageProfile           *AzureStorageProfile `json:"storage_profile,omitempty"`
+	Zones                    []string             `json:"zones,omitempty"`
 }
 
 // AzureStorageProfile
 // https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP#storageprofile
 type AzureStorageProfile struct {
-	DataDisks []AzureDataDisk `json:"data_disks,omitempty"`
-	OsDisk    *AzureOSDisk    `json:"os_disk,omitempty"`
-}
-
-// AzureOSDisk define azure os disk.
-type AzureOSDisk struct {
-	CloudID                 *string `json:"cloud_id,omitempty"`
-	Caching                 *string `json:"caching,omitempty"`
-	CreateOption            *string `json:"create_option,omitempty"`
-	DeleteOption            *string `json:"delete_option,omitempty"`
-	DiskSizeGB              *int64  `json:"disk_size_gb,omitempty"`
-	OsType                  *string `json:"os_type,omitempty"`
-	WriteAcceleratorEnabled *bool   `json:"write_accelerator_enabled,omitempty"`
+	CloudDataDiskIDs []string `json:"cloud_data_disk_ids,omitempty"`
+	CloudOsDiskID    string   `json:"cloud_os_disk_id,omitempty"`
 }
 
 // AzureKeyVaultKeyReference
@@ -79,20 +68,6 @@ type AzureKeyVaultSecretReference struct {
 type AzureDiffDiskSettings struct {
 	Option    *string `json:"option,omitempty"`
 	Placement *string `json:"placement,omitempty"`
-}
-
-// AzureDataDisk https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP#datadisk
-type AzureDataDisk struct {
-	CloudID                 *string `json:"cloud_id,omitempty"`
-	Caching                 *string `json:"caching,omitempty"`
-	CreateOption            *string `json:"create_option,omitempty"`
-	DeleteOption            *string `json:"delete_option,omitempty"`
-	DetachOption            *string `json:"detach_option,omitempty"`
-	DiskIOPSReadWrite       *int64  `json:"disk_iops_read_write,omitempty"`
-	DiskMBpsReadWrite       *int64  `json:"disk_mbps_read_write,omitempty"`
-	Lun                     *int64  `json:"lun,omitempty"`
-	ToBeDetached            *bool   `json:"to_be_detached,omitempty"`
-	WriteAcceleratorEnabled *bool   `json:"write_accelerator_enabled,omitempty"`
 }
 
 // AzureAdditionalCapabilities Specifies additional capabilities enabled or disabled on the virtual machine.

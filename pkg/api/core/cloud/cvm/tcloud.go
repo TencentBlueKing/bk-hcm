@@ -28,8 +28,8 @@ type TCloudCvmExtension struct {
 	InstanceChargeType  *string                    `json:"instance_charge_type,omitempty"`
 	Cpu                 *int64                     `json:"cpu,omitempty"`
 	Memory              *int64                     `json:"memory,omitempty"`
-	SystemDiskID        *string                    `json:"system_disk_id,omitempty"`
-	DataDiskIDs         []string                   `json:"data_disk_ids,omitempty"`
+	CloudSystemDiskID   *string                    `json:"cloud_system_disk_id,omitempty"`
+	CloudDataDiskIDs    []string                   `json:"cloud_data_disk_ids,omitempty"`
 	InternetAccessible  *TCloudInternetAccessible  `json:"internet_accessible,omitempty"`
 	VirtualPrivateCloud *TCloudVirtualPrivateCloud `json:"virtual_private_cloud,omitempty"`
 	/*
