@@ -129,7 +129,7 @@ export default defineComponent({
       selectValue.value = payload.value;
       paramsReset();
       if (payload.value === '*') {
-        filterParams.value.filter = {};
+        filterParams.value.filter = { op: 'and', rules: [] };
       } else {
         const value = moment().add(-payload.value, 'd')
           .format('YYYY-MM-DD HH:mm:ss');
