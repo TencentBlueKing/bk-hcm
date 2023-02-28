@@ -76,11 +76,6 @@ const router = createRouter({
   routes,
 });
 
-// const showPermissionDialog = ref(false);    // 无权限弹窗
-
-// const {
-//   authVerifyData,
-// } = useVerify(showPermissionDialog, ['find']);
 
 router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   if (authPagePath.includes(to.path)) {

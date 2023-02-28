@@ -39,30 +39,39 @@ const columns = [
     },
   },
 ];
+
+const selected = ref('出站规则');
 const tableData = [
   {
     id: 233,
   },
 ];
-const securityGroups = ref([]);
-const securityGroup = ref();
+const handleSelected = (v: string) => {
+  selected.value = v;
+};
 </script>
 
 <template>
-  <section class="security-head mt20">
-    <bk-select
-      v-model="securityGroup"
-      filterable
+  <bk-table
+    class="mt20"
+    row-hover="auto"
+    :columns="columns"
+    :data="tableData"
+  />
+  <bk-button-group class="mt20">
+    <bk-button
+      :selected="selected === '出站规则'"
+      @click="handleSelected('出站规则')"
     >
-      <bk-option
-        v-for="item in securityGroups"
-        :key="item.value"
-        :value="item.value"
-        :label="item.label"
-      />
-    </bk-select>
-    <bk-button class="ml10" theme="primary">解绑安全组</bk-button>
-  </section>
+      出站规则
+    </bk-button>
+    <bk-button
+      :selected="selected === '入站规则'"
+      @click="handleSelected('入站规则')"
+    >
+      入站规则
+    </bk-button>
+  </bk-button-group>
   <bk-table
     class="mt20"
     row-hover="auto"

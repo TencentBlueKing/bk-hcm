@@ -1,30 +1,49 @@
 import { useCommonStore } from '@/store';
 // import { Verify } from '@/typings';
 import {
-  onMounted,
   ref,
   Ref,
 } from 'vue';
 
-// 权限hook
-export function useVerify(showPermissionDialog?: Ref<boolean>, actionData?: string[]) {
-  const commonStore = useCommonStore();
-  const authVerifyData = ref<any>({});
-  const permissionParams = ref({ system_id: '', actions: [] });
+const authVerifyData = ref<any>({ permissionAction: '', urlParams: '' });
+const permissionParams = ref({ system_id: '', actions: [] });
 
+// 权限hook
+export function useVerify(showPermissionDialog?: Ref<boolean>) {
+  const commonStore = useCommonStore();
 
   // 根据参数获取权限
-  const getAuthVerifyData = async (action: string[]) => {
+  const getAuthVerifyData = async (action: any[]) => {
     if (!action) return;
+    // 格式化参数
     const params = action?.reduce((p, v) => {
       p.resources.push({
-        action: v,
-        resource_type: 'account',
+        action: v.action,
+        resource_type: v.type,
       });
       return p;
     }, { resources: [] });
-    const res = await commonStore.authVerify(params, action);
-    authVerifyData.value = res.data;
+    const res = await commonStore.authVerify(params);
+    if (res.data.permission) {    // 没有权限才需要获取跳转链接参数
+      // 每个操作对应的参数
+      const systemId = res.data.permission.system_id;
+      const urlParams = res.data.permission.actions.reduce((p: any, e: any) => {
+        p[e.id] = {
+          system_id: systemId,
+          actions: [e],
+        };
+        return p;
+      }, {});
+      authVerifyData.value.urlParams = urlParams;
+    }
+    // permissionAction 用于判断按钮状态
+    const permissionAction = res.data.results.reduce((p: any, e: any, i: number) => {    // 将数组转成对象
+      p[`${action[i].id}`] = e.authorized;
+      return p;
+    }, {});
+
+    authVerifyData.value.permissionAction  = permissionAction;
+    commonStore.addAuthVerifyData(authVerifyData);    // 全局变量管理
     return res.data;
   };
 
@@ -56,10 +75,6 @@ export function useVerify(showPermissionDialog?: Ref<boolean>, actionData?: stri
     };
     showPermissionDialog.value = true;
   };
-  // 处理页面需要鉴权的信息
-  onMounted(() => {
-    getAuthVerifyData(actionData);
-  });
 
   return {
     getAuthVerifyData,

@@ -81,7 +81,6 @@ export default defineComponent({
     watch(
       () => _.isShow,
       async (val) => {
-        console.log('val', _.params.actions);
         if (val) {
           tableData.value = _.params.actions;
           url.value = await getActionPermission(_.params);

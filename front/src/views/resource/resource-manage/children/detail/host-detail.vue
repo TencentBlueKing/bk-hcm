@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
-import HostInfo from '../components/host/host-info.vue';
-import HostNetwork from '../components/host/host-network.vue'
-import HostIp from '../components/host/host-ip.vue'
+import HostInfo from '../components/host/host-info/index.vue';
+import HostNetwork from '../components/host/host-network/index.vue';
+import HostIp from '../components/host/host-ip.vue';
 import HostDrive from '../components/host/host-drive.vue';
 import HostSecurity from '../components/host/host-security.vue';
 
@@ -15,10 +15,35 @@ import useReboot from '../../hooks/use-reboot';
 import usePassword from '../../hooks/use-password';
 import useRefund from '../../hooks/use-refund';
 import useBootUp from '../../hooks/use-boot-up';
+import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
+
+import {
+  ref,
+} from 'vue';
+
+
+import {
+  useRoute,
+} from 'vue-router';
 
 const {
   t,
 } = useI18n();
+
+const route = useRoute();
+
+const hostId = ref<any>(route.query?.id);
+const cloudType = ref<any>(route.query?.type);
+
+const {
+  loading,
+  detail,
+} = useDetail(
+  'cvms',
+  hostId.value,
+);
+
+console.log('extension', detail);
 
 const {
   isShowShutdown,
@@ -78,13 +103,13 @@ const componentMap = {
   network: HostNetwork,
   ip: HostIp,
   drive: HostDrive,
-  security: HostSecurity
-}
+  security: HostSecurity,
+};
 </script>
 
 <template>
   <detail-header>
-    主机：（xxx）
+    主机：ID（{{`${hostId}`}}）
     <template #right>
       <bk-button
         class="w100 ml10"
@@ -124,13 +149,19 @@ const componentMap = {
     </template>
   </detail-header>
 
-  <detail-tab
-    :tabs="hostTabs"
-  >
-    <template #default="type">
-      <component :is="componentMap[type]"></component>
-    </template>
-  </detail-tab>
+  <div class="host-detail">
+    <detail-tab
+      :tabs="hostTabs"
+    >
+      <template #default="type">
+        <bk-loading
+          :loading="loading"
+        >
+          <component :is="componentMap[type]" :data="detail" :type="cloudType"></component>
+        </bk-loading>
+      </template>
+    </detail-tab>
+  </div>
 
   <host-shutdown
     v-model:isShow="isShowShutdown"
@@ -164,5 +195,8 @@ const componentMap = {
 }
 .w60 {
   width: 60px;
+}
+:deep(.detail-tab-main) .bk-tab-content {
+  height: calc(100vh - 300px);
 }
 </style>

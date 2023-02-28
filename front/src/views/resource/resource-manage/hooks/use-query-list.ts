@@ -39,6 +39,7 @@ export default (props: PropsType, type: string) => {
 
   // 更新数据
   const triggerApi = () => {
+    console.log(1111);
     isLoading.value = true;
     Promise
       .all([
