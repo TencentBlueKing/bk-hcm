@@ -103,8 +103,8 @@ func (h *HuaWei) ListVpc(kt *kit.Kit, opt *types.HuaWeiVpcListOption) (*types.Hu
 
 	req := new(model.ListVpcsRequest)
 
-	if len(opt.ResourceIDs) != 0 {
-		req.Id = &opt.ResourceIDs
+	if len(opt.CloudIDs) != 0 {
+		req.Id = &opt.CloudIDs
 	}
 
 	if opt.Page != nil {

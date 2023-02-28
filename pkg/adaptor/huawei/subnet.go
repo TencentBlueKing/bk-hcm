@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -125,6 +126,64 @@ func (h *HuaWei) ListSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetListOption) (*ty
 	}
 
 	return &types.HuaWeiSubnetListResult{Details: details}, nil
+}
+
+// ListSubnetByID list subnet by id.
+// reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0003.html
+func (h *HuaWei) ListSubnetByID(kt *kit.Kit, opt *types.HuaWeiSubnetListByIDOption) (*types.HuaWeiSubnetListResult,
+	error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	vpcClient, err := h.clientSet.vpcClientV2(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	idMap := make(map[string]struct{}, len(opt.CloudIDs))
+	for _, id := range opt.CloudIDs {
+		idMap[id] = struct{}{}
+	}
+
+	subnets := make([]types.HuaWeiSubnet, 0, len(opt.CloudIDs))
+	req := &model.ListSubnetsRequest{
+		Limit:  converter.ValToPtr(int32(core.HuaWeiQueryLimit)),
+		Marker: nil,
+		VpcId:  &opt.VpcID,
+	}
+	for {
+		resp, err := vpcClient.ListSubnets(req)
+		if err != nil {
+			logs.Errorf("list huawei subnet failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, fmt.Errorf("list huawei subnet failed, err: %v", err)
+		}
+
+		if resp.Subnets == nil || len(*resp.Subnets) == 0 {
+			break
+		}
+
+		for _, one := range *resp.Subnets {
+			if _, exist := idMap[one.Id]; exist {
+				subnets = append(subnets, converter.PtrToVal(convertSubnet(&one, opt.Region)))
+				delete(idMap, one.Id)
+
+				if len(idMap) == 0 {
+					break
+				}
+			}
+		}
+
+		if len(idMap) == 0 {
+			break
+		}
+
+		tmp := *resp.Subnets
+		req.Marker = converter.ValToPtr(tmp[len(tmp)-1].Id)
+	}
+
+	return &types.HuaWeiSubnetListResult{Details: subnets}, nil
 }
 
 func convertSubnet(data *model.Subnet, region string) *types.HuaWeiSubnet {

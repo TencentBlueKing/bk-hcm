@@ -78,8 +78,8 @@ func (t *TCloud) ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCloud
 	}
 
 	req := vpc.NewDescribeVpcsRequest()
-	if len(opt.ResourceIDs) != 0 {
-		req.VpcIds = converter.SliceToPtr(opt.ResourceIDs)
+	if len(opt.CloudIDs) != 0 {
+		req.VpcIds = converter.SliceToPtr(opt.CloudIDs)
 	}
 
 	if opt.Page != nil {

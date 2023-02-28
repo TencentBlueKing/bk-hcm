@@ -77,9 +77,9 @@ func (a AzureDeleteOption) Validate() error {
 
 // TCloudListOption defines basic tencent cloud list options.
 type TCloudListOption struct {
-	Region      string      `json:"region"`
-	ResourceIDs []string    `json:"resource_ids,omitempty"`
-	Page        *TCloudPage `json:"page,omitempty"`
+	Region   string      `json:"region"`
+	CloudIDs []string    `json:"cloud_ids,omitempty"`
+	Page     *TCloudPage `json:"page,omitempty"`
 }
 
 // Validate tcloud list option.
@@ -88,12 +88,12 @@ func (t TCloudListOption) Validate() error {
 		return errf.New(errf.InvalidParameter, "region is required")
 	}
 
-	if len(t.ResourceIDs) != 0 {
+	if len(t.CloudIDs) != 0 {
 		if t.Page != nil {
 			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
 		}
 
-		if len(t.ResourceIDs) > TCloudQueryLimit {
+		if len(t.CloudIDs) > TCloudQueryLimit {
 			return errf.New(errf.InvalidParameter, "tcloud resource ids length should <= 100")
 		}
 
@@ -193,9 +193,9 @@ func (a AzureListOption) Validate() error {
 
 // HuaWeiListOption defines basic huawei list options.
 type HuaWeiListOption struct {
-	Region      string      `json:"region"`
-	ResourceIDs []string    `json:"resource_ids,omitempty"`
-	Page        *HuaWeiPage `json:"page,omitempty"`
+	Region   string      `json:"region"`
+	CloudIDs []string    `json:"cloud_ids,omitempty"`
+	Page     *HuaWeiPage `json:"page,omitempty"`
 }
 
 // Validate huawei list option.
@@ -204,12 +204,12 @@ func (a HuaWeiListOption) Validate() error {
 		return errf.New(errf.InvalidParameter, "region is required")
 	}
 
-	if len(a.ResourceIDs) != 0 {
+	if len(a.CloudIDs) != 0 {
 		if a.Page != nil {
 			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
 		}
 
-		if len(a.ResourceIDs) > HuaWeiQueryLimit {
+		if len(a.CloudIDs) > HuaWeiQueryLimit {
 			return errf.New(errf.InvalidParameter, "huawei resource ids length should <= 2000")
 		}
 

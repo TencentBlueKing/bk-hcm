@@ -75,8 +75,8 @@ func (t *TCloud) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCl
 	}
 
 	req := vpc.NewDescribeSubnetsRequest()
-	if len(opt.ResourceIDs) != 0 {
-		req.SubnetIds = converter.SliceToPtr(opt.ResourceIDs)
+	if len(opt.CloudIDs) != 0 {
+		req.SubnetIds = converter.SliceToPtr(opt.CloudIDs)
 	}
 
 	if opt.Page != nil {

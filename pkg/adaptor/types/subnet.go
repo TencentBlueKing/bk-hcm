@@ -20,8 +20,12 @@
 package types
 
 import (
+	"fmt"
+
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 )
 
 // -------------------------- Update --------------------------
@@ -235,6 +239,26 @@ func (s HuaWeiSubnetListOption) Validate() error {
 		if err := s.Page.Validate(); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// HuaWeiSubnetListByIDOption ...
+type HuaWeiSubnetListByIDOption struct {
+	Region   string   `json:"region" validate:"required"`
+	VpcID    string   `json:"vpc_id" validate:"required"`
+	CloudIDs []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate HuaWeiSubnetListByIDOption.
+func (opt HuaWeiSubnetListByIDOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil
