@@ -108,6 +108,8 @@ const (
 
 	// ApplicationTable is application table name
 	ApplicationTable Name = "application"
+	// ApprovalProcessTable is approval process table name
+	ApprovalProcessTable Name = "approval_process"
 	// NetworkInterfaceTable is network interface table's name.
 	NetworkInterfaceTable Name = "network_interface"
 )
@@ -160,6 +162,7 @@ var TableMap = map[Name]struct{}{
 	ZoneTable:                    {},
 	CvmTable:                     {},
 	ApplicationTable:             {},
+	ApprovalProcessTable:         {},
 	NetworkInterfaceTable:        {},
 }
 

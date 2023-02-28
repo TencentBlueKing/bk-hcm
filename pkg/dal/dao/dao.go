@@ -115,6 +115,7 @@ type Set interface {
 	RouteTable() routetable.RouteTable
 	Route() routetable.Route
 	Application() application.Application
+	ApprovalProcess() application.ApprovalProcess
 	NetworkInterface() networkinterface.NetworkInterface
 
 	Txn() *Txn
@@ -404,6 +405,14 @@ func (s *set) Audit() audit.Interface {
 // Application return application dao.
 func (s *set) Application() application.Application {
 	return &application.ApplicationDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// ApprovalProcess return application dao.
+func (s *set) ApprovalProcess() application.ApprovalProcess {
+	return &application.ApprovalProcessDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

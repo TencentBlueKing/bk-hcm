@@ -171,7 +171,10 @@ func (a *applicationSvc) approve(cts *rest.Contexts) (interface{}, error) {
 		err = a.addAccount(cts, application)
 		deliverStatus := enumor.Completed
 		if err != nil {
-			logs.Errorf("execute application[id=%s] of add account failed, err: %s", application.ID, err)
+			logs.Errorf(
+				"execute application[id=%s] of add account failed, err: %s, rid: %s",
+				application.ID, err, cts.Kit.Rid,
+			)
 			deliverStatus = enumor.DeliverError
 		}
 		err = a.updateStatus(cts, application.ID, deliverStatus)

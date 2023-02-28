@@ -25,6 +25,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
@@ -37,10 +38,10 @@ import (
 	"hcm/cmd/cloud-server/service/eip"
 	"hcm/cmd/cloud-server/service/firewall"
 	"hcm/cmd/cloud-server/service/image"
+	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
 	routetable "hcm/cmd/cloud-server/service/route-table"
-	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	securitygroup "hcm/cmd/cloud-server/service/security-group"
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
@@ -136,7 +137,7 @@ func newCipherFromConfig(cryptoConfig cc.Crypto) (cryptography.Crypto, error) {
 // ListenAndServeRest listen and serve the restful server
 func (s *Service) ListenAndServeRest() error {
 	root := http.NewServeMux()
-	root.HandleFunc("/", s.apiSet(cc.CloudServer().BkHcmUrl).ServeHTTP)
+	root.HandleFunc("/", s.apiSet(cc.CloudServer().BkHcmUrl, cc.CloudServer().PlatformManagers).ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
 	handler.SetCommonHandler(root)
 
@@ -190,7 +191,7 @@ func (s *Service) ListenAndServeRest() error {
 	return nil
 }
 
-func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
+func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Container {
 	ws := new(restful.WebService)
 	ws.Path("/api/v1/cloud")
 	ws.Produces(restful.MIME_JSON)
@@ -219,7 +220,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	region.InitRegionService(c)
 	eip.InitEipService(c)
 
-	application.InitApplicationService(c, bkHcmUrl)
+	application.InitApplicationService(c, bkHcmUrl, strings.Split(platformManagers, ","))
 
 	audit.InitService(c)
 	networkinterface.InitNetworkInterfaceService(c)

@@ -24,20 +24,25 @@ import (
 	"strings"
 
 	"hcm/cmd/cloud-server/service/capability"
+	"hcm/pkg/api/core"
+	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/cryptography"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/esb"
 )
 
-func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
+func InitApplicationService(c *capability.Capability, bkHcmUrl string, platformManagers []string) {
 	svc := &applicationSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-		cipher:     c.Cipher,
-		esbClient:  c.EsbClient,
-		bkHcmUrl:   bkHcmUrl,
+		client:           c.ApiClient,
+		authorizer:       c.Authorizer,
+		cipher:           c.Cipher,
+		esbClient:        c.EsbClient,
+		bkHcmUrl:         bkHcmUrl,
+		platformManagers: platformManagers,
 	}
 	h := rest.NewHandler()
 	h.Add("CreateForAddAccount", "POST", "/applications/types/add_account", svc.CreateForAddAccount)
@@ -50,13 +55,46 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 }
 
 type applicationSvc struct {
-	client     *client.ClientSet
-	authorizer auth.Authorizer
-	cipher     cryptography.Crypto
-	esbClient  esb.Client
-	bkHcmUrl   string
+	client           *client.ClientSet
+	authorizer       auth.Authorizer
+	cipher           cryptography.Crypto
+	esbClient        esb.Client
+	bkHcmUrl         string
+	platformManagers []string
 }
 
 func (a *applicationSvc) getCallbackUrl() string {
 	return fmt.Sprintf("%s/api/v1/cloud/applications/approve", strings.TrimRight(a.bkHcmUrl, "/"))
+}
+
+func (a *applicationSvc) getApprovalProcessServiceID(cts *rest.Contexts, applicationType enumor.ApplicationType) (int64, error) {
+	result, err := a.client.DataService().Global.ApprovalProcess.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&dataproto.ApprovalProcessListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{
+						Field: "application_type",
+						Op:    filter.Equal.Factory(),
+						Value: string(applicationType),
+					},
+				},
+			},
+			Page: &core.BasePage{
+				Count: false,
+				Start: 0,
+				Limit: 1,
+			},
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	if result.Details == nil || len(result.Details) != 1 {
+		return 0, fmt.Errorf("approval process of [%s] not init", applicationType)
+	}
+
+	return result.Details[0].ServiceID, nil
 }

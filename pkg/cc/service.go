@@ -106,12 +106,13 @@ func (s ApiServerSetting) Validate() error {
 
 // CloudServerSetting defines cloud server used setting options.
 type CloudServerSetting struct {
-	Network  Network   `yaml:"network"`
-	Service  Service   `yaml:"service"`
-	Log      LogOption `yaml:"log"`
-	Crypto   Crypto    `yaml:"crypto"`
-	Esb      Esb       `yaml:"esb"`
-	BkHcmUrl string    `yaml:"bkHcmUrl"`
+	Network          Network   `yaml:"network"`
+	Service          Service   `yaml:"service"`
+	Log              LogOption `yaml:"log"`
+	Crypto           Crypto    `yaml:"crypto"`
+	Esb              Esb       `yaml:"esb"`
+	BkHcmUrl         string    `yaml:"bkHcmUrl"`
+	PlatformManagers string    `yaml:"platformManagers"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -148,6 +149,9 @@ func (s CloudServerSetting) Validate() error {
 
 	if s.BkHcmUrl == "" {
 		return fmt.Errorf("bkHcmUrl should not be empty")
+	}
+	if s.PlatformManagers == "" {
+		return fmt.Errorf("platformManagers should not be empty")
 	}
 
 	return nil

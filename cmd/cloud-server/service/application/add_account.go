@@ -308,17 +308,23 @@ func (a *applicationSvc) createItsmTicketForAddAccount(cts *rest.Contexts, req *
 		return "", fmt.Errorf("render itsm application form error: %w", err)
 	}
 
+	// 查询审批流程服务ID
+	serviceID, err := a.getApprovalProcessServiceID(cts, enumor.AddAccount)
+	if err != nil {
+		return "", err
+	}
+
 	params := &itsm.CreateTicketParams{
-		// TODO: 从DB获取申请账号类型所需的流程服务ID，正在调整Helm Chart的初始化job,支持写入DB
-		ServiceID:      104,
+		// Note: 从DB获取申请账号类型所需的流程服务ID，运维方式[Helm Chart]初始化写入DB
+		ServiceID:      serviceID,
 		Creator:        cts.Kit.User,
 		CallbackURL:    a.getCallbackUrl(),
 		Title:          fmt.Sprintf("申请新增账号[%s]", req.Name),
 		ContentDisplay: contentDisplay,
 		VariableApprovers: []itsm.VariableApprover{
 			{
-				Variable:  "superuser",
-				Approvers: []string{"admin"},
+				Variable:  "platform_manager",
+				Approvers: a.platformManagers,
 			},
 		},
 	}

@@ -60,6 +60,7 @@ values ('account', '0'),
        ('huawei_route', '0'),
        ('gcp_route', '0'),
        ('application', '0'),
+       ('approval_process', '0'),
        ('network_interface', '0');
 
 create table if not exists `audit`
@@ -855,6 +856,20 @@ create table if not exists `application`
     `updated_at` timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_sn` (`sn`)
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `approval_process`
+(
+    `id`         varchar(64) not null,
+    `application_type`       varchar(64) not null,
+    `service_id`             bigint(1)   not null,
+    `creator`    varchar(64) not null,
+    `reviser`    varchar(64) not null,
+    `created_at` timestamp   not null default current_timestamp,
+    `updated_at` timestamp   not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_type` (`application_type`)
 ) engine = innodb
   default charset = utf8mb4;
 
