@@ -59,7 +59,8 @@ values ('account', '0'),
        ('azure_route', '0'),
        ('huawei_route', '0'),
        ('gcp_route', '0'),
-       ('application', '0');
+       ('application', '0'),
+       ('network_interface', '0');
 
 create table if not exists `audit`
 (
@@ -880,3 +881,30 @@ create table if not exists `eip_cvm_rel`
     unique key `idx_uk_eip_id_cvm_id` (`eip_id`, `cvm_id`)
 ) engine = innodb
   default charset = utf8mb4;
+
+create table if not exists `network_interface`
+(
+    `id`              varchar(64)  not null comment '主键',
+    `account_id`      varchar(64)  not null comment '账号id',
+    `vendor`          varchar(32)  not null default '' comment '云厂商标识',
+    `name`            varchar(64)  not null comment '网络接口名称',
+    `region`          varchar(255) not null default '' comment '区域/地域',
+    `zone`            varchar(255) not null default '' comment '可用区',
+    `cloud_id`        varchar(255)          default '' comment '网卡端口所属网络id',
+    `vpc_id`          varchar(255) not null default '' comment 'vpc的id',
+    `cloud_vpc_id`    varchar(255) not null default '' comment '云vpc的id',
+    `subnet_id`       varchar(64)  not null default '' comment '子网的id',
+    `cloud_subnet_id` varchar(255)          default '' comment '云子网的id',
+    `private_ip`      varchar(64)           default '' comment '内网ip',
+    `public_ip`       varchar(64)           default '' comment '公网ip',
+    `bk_biz_id`       bigint                default '-1',
+    `instance_id`     varchar(255)          default '' comment '关联的实例id',
+    `extension`       json                  default null comment '扩展字段',
+    `creator`         varchar(64)           default '' comment '创建人',
+    `reviser`         varchar(64)           default '' comment '修改人',
+    `created_at`      timestamp    not null default current_timestamp comment '创建时间',
+    `updated_at`      timestamp    not null default current_timestamp on update current_timestamp comment '更新时间',
+    primary key (`id`),
+    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
+) engine = innodb
+  default charset = utf8mb4 comment = '网络接口表';
