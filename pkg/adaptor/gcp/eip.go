@@ -22,12 +22,11 @@ package gcp
 import (
 	"strconv"
 
+	"google.golang.org/api/compute/v1"
+
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
-
-	"google.golang.org/api/compute/v1"
 )
 
 // ListEip ...
@@ -43,23 +42,47 @@ func (g *Gcp) ListEip(kt *kit.Kit, opt *eip.GcpEipListOption) (*eip.GcpEipListRe
 		return nil, err
 	}
 
-	var resp *compute.AddressList
 	if opt.Region == "global" {
-		gListCall := client.GlobalAddresses.List(g.CloudProjectID()).Context(kt.Ctx)
-		resp, err = gListCall.MaxResults(int64(filter.DefaultMaxInLimit)).PageToken(opt.PageToken).Do()
+		request := client.GlobalAddresses.List(g.CloudProjectID()).Context(kt.Ctx)
+
+		if len(opt.CloudIDs) > 0 {
+			request.Filter(generateResourceIDsFilter(opt.CloudIDs))
+		}
+
+		if opt.Page != nil {
+			request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+		}
+
+		resp, err := request.Do()
 		if err != nil {
-			logs.Errorf("list gcp global eip failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("list global address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 			return nil, err
 		}
-	} else {
-		listCall := client.Addresses.List(g.CloudProjectID(), opt.Region).Context(kt.Ctx)
-		resp, err = listCall.MaxResults(int64(filter.DefaultMaxInLimit)).PageToken(opt.PageToken).Do()
-		if err != nil {
-			logs.Errorf("list gcp %s eip failed, err: %v, rid: %s", opt.Region, err, kt.Rid)
-			return nil, err
-		}
+
+		return &eip.GcpEipListResult{Details: convert(resp, opt), NextPageToken: resp.NextPageToken}, nil
 	}
 
+	// 地域Eip
+	request := client.Addresses.List(g.CloudProjectID(), opt.Region).Context(kt.Ctx)
+
+	if len(opt.CloudIDs) > 0 {
+		request.Filter(generateResourceIDsFilter(opt.CloudIDs))
+	}
+
+	if opt.Page != nil {
+		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+	}
+
+	resp, err := request.Do()
+	if err != nil {
+		logs.Errorf("list address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, err
+	}
+
+	return &eip.GcpEipListResult{Details: convert(resp, opt), NextPageToken: resp.NextPageToken}, nil
+}
+
+func convert(resp *compute.AddressList, opt *eip.GcpEipListOption) []*eip.GcpEip {
 	eips := make([]*eip.GcpEip, len(resp.Items))
 
 	for idx, item := range resp.Items {
@@ -87,6 +110,5 @@ func (g *Gcp) ListEip(kt *kit.Kit, opt *eip.GcpEipListOption) (*eip.GcpEipListRe
 
 		eips[idx] = eIp
 	}
-
-	return &eip.GcpEipListResult{Details: eips, NextPageToken: resp.NextPageToken}, nil
+	return eips
 }

@@ -309,7 +309,7 @@ func (f *firewall) createFirewallRule(cts *rest.Contexts, req *proto.GcpFirewall
 	}
 
 	items, _, err := client.ListFirewallRule(cts.Kit, &firewallrule.ListOption{
-		IDs: []uint64{ruleID},
+		CloudIDs: []uint64{ruleID},
 	})
 	if err != nil {
 		return nil, err

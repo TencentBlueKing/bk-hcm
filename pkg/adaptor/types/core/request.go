@@ -113,9 +113,9 @@ func (t TCloudListOption) Validate() error {
 
 // AwsListOption defines basic aws list options.
 type AwsListOption struct {
-	Region      string   `json:"region"`
-	ResourceIDs []string `json:"resource_ids,omitempty"`
-	Page        *AwsPage `json:"page,omitempty"`
+	Region   string   `json:"region"`
+	CloudIDs []string `json:"cloud_ids,omitempty"`
+	Page     *AwsPage `json:"page,omitempty"`
 }
 
 // Validate aws list option.
@@ -124,12 +124,12 @@ func (a AwsListOption) Validate() error {
 		return errf.New(errf.InvalidParameter, "region is required")
 	}
 
-	if len(a.ResourceIDs) != 0 {
+	if len(a.CloudIDs) != 0 {
 		if a.Page != nil {
 			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
 		}
 
-		if len(a.ResourceIDs) > AwsQueryLimit {
+		if len(a.CloudIDs) > AwsQueryLimit {
 			return errf.New(errf.InvalidParameter, "aws resource ids length should <= 1000")
 		}
 
@@ -147,19 +147,19 @@ func (a AwsListOption) Validate() error {
 
 // GcpListOption defines basic gcp list options.
 type GcpListOption struct {
-	ResourceIDs []string `json:"resource_ids,omitempty"`
-	Page        *GcpPage `json:"page,omitempty"`
-	Zone        string   `json:"zone,omitempty"`
+	CloudIDs []string `json:"cloud_ids,omitempty"`
+	Page     *GcpPage `json:"page,omitempty"`
+	Zone     string   `json:"zone,omitempty"`
 }
 
 // Validate gcp list option.
 func (a GcpListOption) Validate() error {
-	if len(a.ResourceIDs) != 0 {
+	if len(a.CloudIDs) != 0 {
 		if a.Page != nil {
 			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
 		}
 
-		if len(a.ResourceIDs) > GcpQueryLimit {
+		if len(a.CloudIDs) > GcpQueryLimit {
 			return errf.New(errf.InvalidParameter, "gcp resource ids length should <= 500")
 		}
 

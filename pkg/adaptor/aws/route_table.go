@@ -76,8 +76,8 @@ func (a *Aws) ListRouteTable(kt *kit.Kit, opt *routetable.AwsRouteTableListOptio
 
 	req := new(ec2.DescribeRouteTablesInput)
 
-	if len(opt.ResourceIDs) != 0 {
-		req.RouteTableIds = aws.StringSlice(opt.ResourceIDs)
+	if len(opt.CloudIDs) != 0 {
+		req.RouteTableIds = aws.StringSlice(opt.CloudIDs)
 	}
 
 	if len(opt.SubnetIDs) != 0 {

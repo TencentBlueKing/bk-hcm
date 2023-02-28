@@ -20,46 +20,46 @@
 package gcp
 
 import (
-	"hcm/pkg/adaptor/types/core"
+	"google.golang.org/api/compute/v1"
+
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-
-	"google.golang.org/api/compute/v1"
 )
 
 // ListCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
-func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) (*compute.InstanceList, error) {
+func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) ([]*compute.Instance, string, error) {
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list option is required")
+		return nil, "", errf.New(errf.InvalidParameter, "list option is required")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, "", errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	client, err := g.clientSet.computeClient(kt)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	request := client.Instances.List(g.CloudProjectID(), "").Context(kt.Ctx)
 
-	var call *compute.InstancesListCall
-	if opt.Page != nil {
-		call = request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
-	} else {
-		call = request.MaxResults(core.GcpQueryLimit)
+	if len(opt.CloudIDs) > 0 {
+		request.Filter(generateResourceIDsFilter(opt.CloudIDs))
 	}
 
-	resp, err := call.Do()
+	if opt.Page != nil {
+		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+	}
+
+	resp, err := request.Do()
 	if err != nil {
 		logs.Errorf("list instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
-		return nil, err
+		return nil, "", err
 	}
 
-	return resp, nil
+	return resp.Items, resp.NextPageToken, nil
 }
 
 // DeleteCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/delete

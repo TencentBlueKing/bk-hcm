@@ -53,32 +53,36 @@ func (g *Gcp) createDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.O
 
 // ListDisk 查看云硬盘
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/list
-func (g *Gcp) ListDisk(kit *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Disk, error) {
+func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Disk, string, error) {
 
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "gcp disk list option is required")
+		return nil, "", errf.New(errf.InvalidParameter, "gcp disk list option is required")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, "", errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := g.clientSet.computeClient(kit)
+	client, err := g.clientSet.computeClient(kt)
 	if err != nil {
-		return nil, err
-	}
-	cloudProjectID := g.clientSet.credential.CloudProjectID
-
-	yDisks := []*compute.Disk{}
-	req := client.Disks.List(cloudProjectID, opt.Zone)
-	if err := req.Pages(kit.Ctx, func(page *compute.DiskList) error {
-		for _, disk := range page.Items {
-			yDisks = append(yDisks, disk)
-		}
-		return nil
-	}); err != nil {
-		logs.Errorf("failed to list disk, err: %v, rid: %s", err, kit.Rid)
+		return nil, "", err
 	}
 
-	return yDisks, nil
+	request := client.Disks.List(g.clientSet.credential.CloudProjectID, opt.Zone).Context(kt.Ctx)
+
+	if len(opt.CloudIDs) > 0 {
+		request.Filter(generateResourceIDsFilter(opt.CloudIDs))
+	}
+
+	if opt.Page != nil {
+		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+	}
+
+	resp, err := request.Do()
+	if err != nil {
+		logs.Errorf("list disks failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, "", err
+	}
+
+	return resp.Items, resp.NextPageToken, nil
 }

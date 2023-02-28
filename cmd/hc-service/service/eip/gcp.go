@@ -20,6 +20,7 @@
 package eip
 
 import (
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
 	apicore "hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
@@ -49,12 +50,15 @@ func GcpSyncEip(ea *eipAdaptor, cts *rest.Contexts) (interface{}, error) {
 	cloudAllIDs := make(map[string]bool)
 	for {
 		opt := &eip.GcpEipListOption{
-			Region:    req.Region,
-			PageToken: nextToken,
+			Region: req.Region,
+			Page: &core.GcpPage{
+				PageSize:  core.GcpQueryLimit,
+				PageToken: nextToken,
+			},
 		}
 
 		if nextToken != "" {
-			opt.PageToken = nextToken
+			opt.Page.PageToken = nextToken
 		}
 
 		datas, err := client.ListEip(cts.Kit, opt)
@@ -134,12 +138,15 @@ func GcpSyncEip(ea *eipAdaptor, cts *rest.Contexts) (interface{}, error) {
 		nextToken := ""
 		for {
 			opt := &eip.GcpEipListOption{
-				Region:    req.Region,
-				PageToken: nextToken,
+				Region: req.Region,
+				Page: &core.GcpPage{
+					PageSize:  core.GcpQueryLimit,
+					PageToken: nextToken,
+				},
 			}
 
 			if nextToken != "" {
-				opt.PageToken = nextToken
+				opt.Page.PageToken = nextToken
 			}
 
 			datas, err := client.ListEip(cts.Kit, opt)

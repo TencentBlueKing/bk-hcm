@@ -78,8 +78,8 @@ func (g *Gcp) ListSubnet(kt *kit.Kit, opt *types.GcpSubnetListOption) (*types.Gc
 
 	listCall := client.Subnetworks.List(cloudProjectID, opt.Region).Context(kt.Ctx)
 
-	if len(opt.ResourceIDs) > 0 {
-		listCall.Filter(generateResourceIDsFilter(opt.ResourceIDs))
+	if len(opt.CloudIDs) > 0 {
+		listCall.Filter(generateResourceIDsFilter(opt.CloudIDs))
 	}
 
 	if opt.Page != nil {

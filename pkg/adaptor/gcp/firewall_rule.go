@@ -20,7 +20,6 @@
 package gcp
 
 import (
-	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/firewall-rule"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -41,21 +40,6 @@ func (g *Gcp) ListFirewallRule(kt *kit.Kit, opt *firewallrule.ListOption) ([]*co
 		return nil, "", errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 分页查询
-	if len(opt.IDs) == 0 {
-		return g.listByPage(kt, opt)
-	}
-
-	// IDs 查询
-	items, err := g.listByIDs(kt, opt)
-	if err != nil {
-		return nil, "", err
-	}
-
-	return items, "", nil
-}
-
-func (g *Gcp) listByPage(kt *kit.Kit, opt *firewallrule.ListOption) ([]*compute.Firewall, string, error) {
 	client, err := g.clientSet.computeClient(kt)
 	if err != nil {
 		return nil, "", err
@@ -63,36 +47,21 @@ func (g *Gcp) listByPage(kt *kit.Kit, opt *firewallrule.ListOption) ([]*compute.
 
 	request := client.Firewalls.List(g.CloudProjectID()).Context(kt.Ctx)
 
-	var call *compute.FirewallsListCall
-	if opt.Page != nil {
-		call = request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
-	} else {
-		call = request.MaxResults(core.GcpQueryLimit)
+	if len(opt.CloudIDs) > 0 {
+		request.Filter(generateResourceIDsFilter(converter.Uint64SliceToStringSlice(opt.CloudIDs)))
 	}
 
-	resp, err := call.Do()
+	if opt.Page != nil {
+		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+	}
+
+	resp, err := request.Do()
 	if err != nil {
 		logs.Errorf("list firewall rule failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, "", err
 	}
 
 	return resp.Items, resp.NextPageToken, nil
-}
-
-func (g *Gcp) listByIDs(kt *kit.Kit, opt *firewallrule.ListOption) ([]*compute.Firewall, error) {
-	client, err := g.clientSet.computeClient(kt)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.Firewalls.List(g.CloudProjectID()).Context(kt.Ctx).
-		Filter(generateResourceIDsFilter(converter.Uint64SliceToStringSlice(opt.IDs))).Do()
-	if err != nil {
-		logs.Errorf("list gcp firewall rule by ids failed, err: %v, ids: %s, rid: %s", err, opt.IDs, kt.Rid)
-		return nil, err
-	}
-
-	return resp.Items, nil
 }
 
 // UpdateFirewallRule update firewall rule.

@@ -71,7 +71,8 @@ func (da *diskAdaptor) getDatasFromGcpForDiskSync(cts *rest.Contexts,
 	listOpt := &disk.GcpDiskListOption{
 		Zone: req.Zone,
 	}
-	datas, err := client.ListDisk(cts.Kit, listOpt)
+	// TODO: 只同步了前500条，待修复
+	datas, _, err := client.ListDisk(cts.Kit, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor to list gcp disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

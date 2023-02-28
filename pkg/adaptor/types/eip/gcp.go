@@ -19,12 +19,16 @@
 
 package eip
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/validator"
+)
 
 // GcpEipListOption ...
 type GcpEipListOption struct {
-	Region    string `validate:"required"`
-	PageToken string
+	Region   string        `json:"region" validate:"required"`
+	CloudIDs []string      `json:"cloud_ids" validate:"omitempty"`
+	Page     *core.GcpPage `json:"page" validate:"omitempty"`
 }
 
 // Validate ...

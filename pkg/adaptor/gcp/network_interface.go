@@ -73,6 +73,7 @@ func (g *Gcp) ListNetworkInterface(kt *kit.Kit, opt *core.GcpListOption) (*types
 		return nil
 	}); err != nil {
 		logs.Errorf("cloudapi failed to list network interface, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	return &typesniproto.GcpInterfaceListResult{Details: details}, nil

@@ -74,8 +74,8 @@ func (a *Aws) ListSubnet(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsSubnet
 
 	req := new(ec2.DescribeSubnetsInput)
 
-	if len(opt.ResourceIDs) != 0 {
-		req.SubnetIds = aws.StringSlice(opt.ResourceIDs)
+	if len(opt.CloudIDs) != 0 {
+		req.SubnetIds = aws.StringSlice(opt.CloudIDs)
 	} else {
 		req.NextToken = opt.Page.NextToken
 		req.MaxResults = opt.Page.MaxResults

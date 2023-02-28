@@ -371,8 +371,8 @@ func (s subnet) AwsSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	listOpt := &adcore.AwsListOption{
-		Region:      getRes.Region,
-		ResourceIDs: []string{getRes.CloudID},
+		Region:   getRes.Region,
+		CloudIDs: []string{getRes.CloudID},
 	}
 	subnetRes, err := cli.ListSubnet(cts.Kit, listOpt)
 	if err != nil {

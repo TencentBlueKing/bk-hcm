@@ -52,6 +52,8 @@ type BaseCvm struct {
 			REVERT_RESIZE、SHUTOFF、VERIFY_RESIZE、DELETED
 
 		gcp: PROVISIONING, STAGING, RUNNING, STOPPING, SUSPENDING, SUSPENDED, REPAIRING, and TERMINATED
+		aws: pending | running | shutting-down | terminated | stopping | stopped
+		azure：PowerState/running｜PowerState/stopped｜PowerState/deallocating｜PowerState/deallocated
 	*/
 	Status string `json:"status"`
 
