@@ -183,6 +183,7 @@ func (s *Service) apiSet() *restful.Container {
 	sgcvmrel.InitService(capability)
 	routetable.InitRouteTableService(capability)
 	application.InitApplicationService(capability)
+	application.InitApprovalProcessService(capability)
 	diskcvmrel.InitService(capability)
 	eipcvmrel.InitService(capability)
 	networkinterface.InitNetInterfaceService(capability)
