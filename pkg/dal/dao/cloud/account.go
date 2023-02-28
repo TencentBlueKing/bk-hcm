@@ -157,7 +157,7 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 	columnTypes := cloud.AccountColumns.ColumnTypes()
 	columnTypes["extension.cloud_main_account_id"] = enumor.String
 	columnTypes["extension.cloud_account_id"] = enumor.String
-	columnTypes["extension.cloud_main_account_name"] = enumor.String
+	columnTypes["extension.cloud_sub_account_id"] = enumor.String
 	columnTypes["extension.cloud_project_id"] = enumor.String
 	columnTypes["extension.cloud_tenant_id"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
