@@ -64,7 +64,6 @@ type NetworkInterfaceCreateExtension interface {
 
 // AzureNICreateExt defines azure network interface extensional info.
 type AzureNICreateExt struct {
-	Kind              string `json:"kind" validate:"omitempty"`
 	Type              string `json:"type" validate:"omitempty"`
 	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
 	MacAddress        string `json:"mac_address"`
@@ -74,10 +73,10 @@ type AzureNICreateExt struct {
 	EnableIPForwarding *bool `json:"enable_ip_forwarding"`
 	// DNSSettings DNS设置
 	DNSSettings *coreni.InterfaceDNSSettings `json:"dns_settings"`
-	// GatewayLoadBalancerID 网关负载均衡器ID
-	GatewayLoadBalancer *coreni.SubResource `json:"gateway_load_balancer"`
-	// NetworkSecurityGroup 网络安全组
-	NetworkSecurityGroup *coreni.SecurityGroup `json:"network_security_group"`
+	// CloudGatewayLoadBalancerID 网关负载均衡器ID
+	CloudGatewayLoadBalancerID *string `json:"cloud_gateway_load_balancer_id"`
+	// CloudSecurityGroupID 网络安全组ID
+	CloudSecurityGroupID *string `json:"cloud_security_group_id"`
 	// IPConfigurations IP配置列表
 	IPConfigurations []*coreni.InterfaceIPConfiguration `json:"ip_configurations"`
 }
@@ -159,10 +158,10 @@ type HuaWeiNICreateExt struct {
 	IpV6 *string `json:"ipv6,omitempty"`
 	// VirtualIPList 虚拟IP地址数组
 	VirtualIPList []NetVirtualIP `json:"virtual_ip_list,omitempty"`
-	// 云服务器对应的网络地址信息
+	// Addresses 云服务器对应的网络地址信息
 	Addresses *EipNetwork `json:"addresses"`
-	// 云服务器所属安全组列表
-	SecurityGroups []NovaServerSecurityGroup `json:"security_groups"`
+	// CloudSecurityGroupIDs 云服务器所属安全组ID
+	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids"`
 }
 
 // EipNetwork 华为云主机绑定的弹性IP
@@ -187,14 +186,6 @@ type NetVirtualIP struct {
 	IP string `json:"ip,omitempty"`
 	// ElasticityIP 弹性公网IP
 	ElasticityIP string `json:"elasticity_ip,omitempty"`
-}
-
-// NovaServerSecurityGroup 华为云主机绑定的安全组
-type NovaServerSecurityGroup struct {
-	// ID 安全组ID
-	ID *string `json:"id,omitempty"`
-	// Name 安全组名称或者uuid
-	Name *string `json:"name,omitempty"`
 }
 
 // ServerInterfaceFixedIp

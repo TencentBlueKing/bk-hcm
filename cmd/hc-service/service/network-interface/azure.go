@@ -255,9 +255,9 @@ func (n networkInterfaceAdaptor) filterAzureNetworkInterfaceList(_ *rest.Context
 					// DNSSettings DNS设置
 					DNSSettings: item.Extension.DNSSettings,
 					// GatewayLoadBalancerID 网关负载均衡器ID
-					GatewayLoadBalancer: item.Extension.GatewayLoadBalancer,
-					// NetworkSecurityGroup 网络安全组
-					NetworkSecurityGroup: item.Extension.NetworkSecurityGroup,
+					CloudGatewayLoadBalancerID: item.Extension.CloudGatewayLoadBalancerID,
+					// CloudSecurityGroupID 网络安全组ID
+					CloudSecurityGroupID: item.Extension.CloudSecurityGroupID,
 				}
 				// IPConfigurations IP配置列表
 				var tmpIPConfigs []*coreni.InterfaceIPConfiguration
@@ -294,9 +294,9 @@ func (n networkInterfaceAdaptor) filterAzureNetworkInterfaceList(_ *rest.Context
 					// DNSSettings DNS设置
 					DNSSettings: item.Extension.DNSSettings,
 					// GatewayLoadBalancerID 网关负载均衡器ID
-					GatewayLoadBalancer: item.Extension.GatewayLoadBalancer,
-					// NetworkSecurityGroup 网络安全组
-					NetworkSecurityGroup: item.Extension.NetworkSecurityGroup,
+					CloudGatewayLoadBalancerID: item.Extension.CloudGatewayLoadBalancerID,
+					// CloudSecurityGroupID 网络安全组ID
+					CloudSecurityGroupID: item.Extension.CloudSecurityGroupID,
 				}
 				// IPConfigurations IP配置列表
 				var tmpIPConfigs []*coreni.InterfaceIPConfiguration

@@ -208,9 +208,10 @@ func (n networkInterfaceAdaptor) filterHuaWeiNetworkInterfaceList(_ *rest.Contex
 					// MultiqueueNum 网卡多队列个数。
 					MultiqueueNum: item.Extension.MultiqueueNum,
 					// PciAddress 弹性网卡在Linux GuestOS里的BDF号
-					PciAddress: item.Extension.PciAddress,
-					IpV6:       item.Extension.IpV6,
-					Addresses:  (*dataproto.EipNetwork)(item.Extension.Addresses),
+					PciAddress:            item.Extension.PciAddress,
+					IpV6:                  item.Extension.IpV6,
+					Addresses:             (*dataproto.EipNetwork)(item.Extension.Addresses),
+					CloudSecurityGroupIDs: item.Extension.CloudSecurityGroupIDs,
 				}
 				// 网卡私网IP信息列表
 				var tmpFixIps []dataproto.ServerInterfaceFixedIp
@@ -230,18 +231,6 @@ func (n networkInterfaceAdaptor) filterHuaWeiNetworkInterfaceList(_ *rest.Contex
 					})
 				}
 				tmpRes.Extension.VirtualIPList = tmpVirtualIps
-
-				// 安全组
-				if len(item.Extension.SecurityGroups) > 0 {
-					var sgArr []dataproto.NovaServerSecurityGroup
-					for _, sgItem := range item.Extension.SecurityGroups {
-						sgArr = append(sgArr, dataproto.NovaServerSecurityGroup{
-							ID:   sgItem.CloudID,
-							Name: sgItem.Name,
-						})
-					}
-					tmpRes.Extension.SecurityGroups = sgArr
-				}
 			}
 
 			updateResources = append(updateResources, tmpRes)
@@ -279,9 +268,10 @@ func (n networkInterfaceAdaptor) filterHuaWeiNetworkInterfaceList(_ *rest.Contex
 					// MultiqueueNum 网卡多队列个数。
 					MultiqueueNum: item.Extension.MultiqueueNum,
 					// PciAddress 弹性网卡在Linux GuestOS里的BDF号
-					PciAddress: item.Extension.PciAddress,
-					IpV6:       item.Extension.IpV6,
-					Addresses:  (*dataproto.EipNetwork)(item.Extension.Addresses),
+					PciAddress:            item.Extension.PciAddress,
+					IpV6:                  item.Extension.IpV6,
+					Addresses:             (*dataproto.EipNetwork)(item.Extension.Addresses),
+					CloudSecurityGroupIDs: item.Extension.CloudSecurityGroupIDs,
 				}
 				// 网卡私网IP信息列表
 				var tmpFixIps []dataproto.ServerInterfaceFixedIp
@@ -301,18 +291,6 @@ func (n networkInterfaceAdaptor) filterHuaWeiNetworkInterfaceList(_ *rest.Contex
 					})
 				}
 				tmpRes.Extension.VirtualIPList = tmpVirtualIps
-
-				// 安全组
-				if len(item.Extension.SecurityGroups) > 0 {
-					var sgArr []dataproto.NovaServerSecurityGroup
-					for _, sgItem := range item.Extension.SecurityGroups {
-						sgArr = append(sgArr, dataproto.NovaServerSecurityGroup{
-							ID:   sgItem.CloudID,
-							Name: sgItem.Name,
-						})
-					}
-					tmpRes.Extension.SecurityGroups = sgArr
-				}
 			}
 
 			createResources = append(createResources, tmpRes)

@@ -58,25 +58,25 @@ type NetworkInterfaceExtension interface {
 // AzureNIExtension defines azure network interface extensional info.
 type AzureNIExtension struct {
 	// Type 网络接口类型
-	Type *string `json:"type"`
+	Type *string `json:"type,omitempty"`
 	// ResourceGroupName 资源组名称
-	ResourceGroupName string `json:"resource_group_name"`
+	ResourceGroupName string `json:"resource_group_name,omitempty"`
 	// MacAddress Mac地址
-	MacAddress *string `json:"mac_address"`
+	MacAddress *string `json:"mac_address,omitempty"`
 	// EnableAcceleratedNetworking 是否加速网络
-	EnableAcceleratedNetworking *bool `json:"enable_accelerated_networking"`
+	EnableAcceleratedNetworking *bool `json:"enable_accelerated_networking,omitempty"`
 	// EnableIPForwarding 是否允许IP转发
-	EnableIPForwarding *bool `json:"enable_ip_forwarding"`
+	EnableIPForwarding *bool `json:"enable_ip_forwarding,omitempty"`
 	// DNSSettings DNS设置
-	DNSSettings *InterfaceDNSSettings `json:"dns_settings"`
-	// GatewayLoadBalancerID 网关负载均衡器ID
-	GatewayLoadBalancer *SubResource `json:"gateway_load_balancer"`
-	//NetworkSecurityGroup 网络安全组
-	NetworkSecurityGroup *SecurityGroup `json:"network_security_group"`
+	DNSSettings *InterfaceDNSSettings `json:"dns_settings,omitempty"`
+	// CloudGatewayLoadBalancerID 网关负载均衡器ID
+	CloudGatewayLoadBalancerID *string `json:"cloud_gateway_load_balancer_id,omitempty"`
+	// CloudSecurityGroupID 网络安全组ID
+	CloudSecurityGroupID *string `json:"cloud_security_group_id,omitempty"`
 	// IPConfigurations IP配置列表
-	IPConfigurations []*InterfaceIPConfiguration `json:"ip_configurations"`
-	// VirtualMachine 虚拟机
-	VirtualMachine *SubResource `json:"virtual_machine,omitempty"`
+	IPConfigurations []*InterfaceIPConfiguration `json:"ip_configurations,omitempty"`
+	// CloudVirtualMachineID 虚拟机
+	CloudVirtualMachineID *string `json:"cloud_virtual_machine_id,omitempty"`
 }
 
 // InterfaceDNSSettings - DNS settings of a network interface.
@@ -90,12 +90,6 @@ type InterfaceDNSSettings struct {
 	// from all NICs that are part of the Availability Set. This property is what is
 	// configured on each of those VMs.
 	AppliedDNSServers []*string `json:"applied_dns_servers,omitempty" azure:"ro"`
-}
-
-// SecurityGroup - NetworkSecurityGroup resource.
-type SecurityGroup struct {
-	// Resource ID.
-	CloudID *string `json:"cloud_id,omitempty"`
 }
 
 // InterfaceIPConfiguration - IPConfiguration in a network interface.
@@ -119,7 +113,7 @@ type InterfaceIPConfiguration struct {
 // InterfaceIPConfigurationPropertiesFormat - Properties of IP configuration.
 type InterfaceIPConfigurationPropertiesFormat struct {
 	// The reference to gateway load balancer frontend IP.
-	GatewayLoadBalancer *SubResource `json:"gateway_load_balancer,omitempty"`
+	CloudGatewayLoadBalancerID *string `json:"cloud_gateway_load_balancer_id,omitempty"`
 
 	// Whether this is a primary customer address on the network interface.
 	Primary *bool `json:"primary,omitempty"`
@@ -136,8 +130,8 @@ type InterfaceIPConfigurationPropertiesFormat struct {
 	// Public IP address bound to the IP configuration.
 	PublicIPAddress *PublicIPAddress `json:"public_ip_address,omitempty"`
 
-	// Subnet bound to the IP configuration.
-	Subnet *Subnet `json:"subnet,omitempty"`
+	// CloudSubnetID bound to the IP configuration.
+	CloudSubnetID *string `json:"cloud_subnet_id,omitempty"`
 }
 
 // IPVersion - IP address version.
@@ -148,12 +142,6 @@ type IPAllocationMethod string
 
 // ProvisioningState - The current provisioning state.
 type ProvisioningState string
-
-// SubResource - Reference to another subresource.
-type SubResource struct {
-	// Resource ID.
-	CloudID *string `json:"cloud_id,omitempty"`
-}
 
 // PublicIPAddress - Public IP address resource.
 type PublicIPAddress struct {
@@ -191,7 +179,7 @@ type PublicIPAddressPropertiesFormat struct {
 	PublicIPAllocationMethod *IPAllocationMethod `json:"public_ip_allocation_method,omitempty"`
 
 	// The Public IP Prefix this Public IP Address should be allocated from.
-	PublicIPPrefix *SubResource `json:"public_ip_prefix,omitempty"`
+	CloudPublicIPPrefixID *string `json:"cloud_public_ip_prefix_id,omitempty"`
 
 	// READ-ONLY; The resource GUID property of the public IP address resource.
 	ResourceGUID *string `json:"resource_guid,omitempty" azure:"ro"`
@@ -236,10 +224,10 @@ type NatGatewayPropertiesFormat struct {
 	IdleTimeoutInMinutes *int32 `json:"idle_timeout_in_minutes,omitempty"`
 
 	// An array of public ip addresses associated with the nat gateway resource.
-	PublicIPAddresses []*SubResource `json:"public_ip_addresses,omitempty"`
+	CloudPublicIPAddressesID []*string `json:"cloud_public_ip_addresses_id,omitempty"`
 
 	// An array of public ip prefixes associated with the nat gateway resource.
-	PublicIPPrefixes []*SubResource `json:"public_ip_prefixes,omitempty"`
+	CloudPublicIPPrefixesID []*string `json:"cloud_public_ip_prefixes_id,omitempty"`
 
 	// READ-ONLY; The provisioning state of the NAT gateway resource.
 	ProvisioningState *ProvisioningState `json:"provisioning_state,omitempty" azure:"ro"`
@@ -248,31 +236,13 @@ type NatGatewayPropertiesFormat struct {
 	ResourceGUID *string `json:"resource_guid,omitempty" azure:"ro"`
 
 	// READ-ONLY; An array of references to the subnets using this nat gateway resource.
-	Subnets []*SubResource `json:"subnets,omitempty" azure:"ro"`
+	CloudSubnetIDs []*string `json:"cloud_subnet_ids,omitempty" azure:"ro"`
 }
 
 // NatGatewaySKU - SKU of nat gateway.
 type NatGatewaySKU struct {
 	// Name of Nat Gateway SKU.
 	Name *NatGatewaySKUName `json:"name,omitempty"`
-}
-
-// Subnet in a virtual network resource.
-type Subnet struct {
-	// Resource ID.
-	CloudID *string `json:"cloud_id,omitempty"`
-
-	// The name of the resource that is unique within a resource group. This name can be used to access the resource.
-	Name *string `json:"name,omitempty"`
-
-	// Properties of the subnet.
-	Properties *SubnetPropertiesFormat `json:"properties,omitempty"`
-
-	// Resource type.
-	Type *string `json:"type,omitempty"`
-
-	// READ-ONLY; A unique read-only string that changes whenever the resource is updated.
-	Etag *string `json:"etag,omitempty" azure:"ro"`
 }
 
 // SubnetPropertiesFormat - Properties of the subnet.
@@ -289,14 +259,14 @@ type SubnetPropertiesFormat struct {
 	// An array of references to the delegations on the subnet.
 	Delegations []*Delegation `json:"delegations,omitempty"`
 
-	// Array of IpAllocation which reference this subnet.
-	IPAllocations []*SubResource `json:"ip_allocations,omitempty"`
+	// CloudIPAllocationsID Array of IpAllocation which reference this subnet.
+	CloudIPAllocationIDs []*string `json:"cloud_ip_allocation_ids,omitempty"`
 
-	// Nat gateway associated with this subnet.
-	NatGateway *SubResource `json:"nat_gateway,omitempty"`
+	// CloudNatGatewayID Nat gateway associated with this subnet.
+	CloudNatGatewayID *string `json:"cloud_nat_gateway_id,omitempty"`
 
-	// The reference to the NetworkSecurityGroup resource.
-	NetworkSecurityGroup *SecurityGroup `json:"network_security_group,omitempty"`
+	// The reference to the CloudSecurityGroupID resource.
+	CloudSecurityGroupID *string `json:"cloud_security_group_id,omitempty"`
 
 	// Enable or Disable apply network policies on private end point in the subnet.
 	PrivateEndpointNetworkPolicies *VirtualNetworkPrivateEndpointNetworkPolicies `json:"private_endpoint_network_policies,omitempty"`
@@ -424,7 +394,7 @@ type ApplicationGatewayIPConfiguration struct {
 // ApplicationGatewayIPConfigurationPropertiesFormat - Properties of IP configuration of an application gateway.
 type ApplicationGatewayIPConfigurationPropertiesFormat struct {
 	// Reference to the subnet resource. A subnet from where application gateway gets its private address.
-	Subnet *SubResource `json:"subnet,omitempty"`
+	CloudSubnetID *string `json:"cloud_subnet_id,omitempty"`
 
 	// READ-ONLY; The provisioning state of the application gateway IP configuration resource.
 	ProvisioningState *ProvisioningState `json:"provisioning_state,omitempty" azure:"ro"`
@@ -550,7 +520,7 @@ type IPConfigurationPropertiesFormat struct {
 	PublicIPAddress *PublicIPAddress `json:"public_ip_address,omitempty"`
 
 	// The reference to the subnet resource.
-	Subnet *Subnet `json:"subnet,omitempty"`
+	CloudSubnetID *string `json:"cloud_subnet_id,omitempty"`
 
 	// READ-ONLY; The provisioning state of the IP configuration resource.
 	ProvisioningState *ProvisioningState `json:"provisioning_state,omitempty" azure:"ro"`
@@ -592,7 +562,7 @@ type ExtendedLocation struct {
 // IPConfigurationProfilePropertiesFormat - IP configuration profile properties.
 type IPConfigurationProfilePropertiesFormat struct {
 	// The reference to the subnet resource to create a container network interface ip configuration.
-	Subnet *Subnet `json:"subnet,omitempty"`
+	CloudSubnetID *string `json:"cloud_subnet_id,omitempty"`
 
 	// READ-ONLY; The provisioning state of the IP configuration profile resource.
 	ProvisioningState *ProvisioningState `json:"provisioning_state,omitempty" azure:"ro"`
@@ -620,7 +590,7 @@ type ServiceEndpointPolicyPropertiesFormat struct {
 	ResourceGUID *string `json:"resource_guid,omitempty" azure:"ro"`
 
 	// READ-ONLY; A collection of references to subnets.
-	Subnets []*Subnet `json:"subnets,omitempty" azure:"ro"`
+	CloudSubnetIDs []*string `json:"cloud_subnet_ids,omitempty" azure:"ro"`
 }
 
 // ServiceEndpointPolicyDefinition - Service Endpoint policy definitions.
@@ -695,7 +665,7 @@ type RouteTablePropertiesFormat struct {
 	ResourceGUID *string `json:"resource_guid,omitempty" azure:"ro"`
 
 	// READ-ONLY; A collection of references to subnets.
-	Subnets []*Subnet `json:"subnets,omitempty" azure:"ro"`
+	CloudSubnetIDs []*string `json:"cloud_subnet_ids,omitempty" azure:"ro"`
 }
 
 // Route resource.
@@ -769,26 +739,26 @@ type HuaWeiNIExtension struct {
 	IpV6 *string `json:"ipv6,omitempty"`
 	// VirtualIPList 虚拟IP地址数组
 	VirtualIPList []NetVirtualIP `json:"virtual_ip_list,omitempty"`
-	// 云服务器对应的网络地址信息
-	Addresses *EipNetwork `json:"addresses"`
-	// 云服务器所属安全组列表
-	SecurityGroups []NovaServerSecurityGroup `json:"security_groups"`
+	// Addresses 云服务器对应的网络地址信息
+	Addresses *EipNetwork `json:"addresses,omitempty"`
+	// CloudSecurityGroupIDs 云服务器所属安全组ID
+	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids,omitempty"`
 }
 
 // EipNetwork 华为云主机绑定的弹性IP
 type EipNetwork struct {
 	// IPVersion IP地址类型，值为4或6(4：IP地址类型是IPv4 6：IP地址类型是IPv6)
-	IPVersion int32 `json:"ip_version"`
+	IPVersion int32 `json:"ip_version,omitempty"`
 	// PublicIPAddress IP地址
-	PublicIPAddress string `json:"public_ip_address"`
+	PublicIPAddress string `json:"public_ip_address,omitempty"`
 	// PublicIPV6Address IPV6地址
-	PublicIPV6Address string `json:"public_ipv6_address"`
+	PublicIPV6Address string `json:"public_ipv6_address,omitempty"`
 	// BandwidthID 带宽ID
-	BandwidthID string `json:"bandwidth_id"`
+	BandwidthID string `json:"bandwidth_id,omitempty"`
 	// BandwidthSize 带宽大小
-	BandwidthSize int32 `json:"bandwidth_size"`
+	BandwidthSize int32 `json:"bandwidth_size,omitempty"`
 	// BandwidthType 带宽类型，示例:5_bgp(全动态BGP)
-	BandwidthType string `json:"bandwidth_type"`
+	BandwidthType string `json:"bandwidth_type,omitempty"`
 }
 
 // NetVirtualIP 网络接口的虚拟IP
@@ -797,14 +767,6 @@ type NetVirtualIP struct {
 	IP string `json:"ip,omitempty"`
 	// ElasticityIP 弹性公网IP
 	ElasticityIP string `json:"elasticity_ip,omitempty"`
-}
-
-// NovaServerSecurityGroup 华为云主机绑定的安全组
-type NovaServerSecurityGroup struct {
-	// CloudID 安全组ID
-	CloudID *string `json:"cloud_id,omitempty"`
-	// Name 安全组名称或者uuid
-	Name *string `json:"name,omitempty"`
 }
 
 // ServerInterfaceFixedIp

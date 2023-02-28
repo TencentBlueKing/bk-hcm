@@ -159,7 +159,7 @@ func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.Hua
 			opt.Region, tmpNetID, err, kt.Rid)
 	}
 	if sgList, ok := securityGroupMap[tmpNetID]; ok {
-		v.Extension.SecurityGroups = sgList
+		v.Extension.CloudSecurityGroupIDs = sgList
 	}
 	v.Extension.VirtualIPList = virtualIPs
 
@@ -212,7 +212,7 @@ func (h *HuaWei) GetPublicIpsMapByPortIDs(kt *kit.Kit, opt *typesniproto.HuaWeiE
 
 // GetSecurityGroupsByPortID get security groups by port id
 func (h *HuaWei) GetSecurityGroupsByPortID(kt *kit.Kit, opt *typesniproto.HuaWeiPortInfoOption) (
-	map[string][]*coreni.NovaServerSecurityGroup, error) {
+	map[string][]string, error) {
 
 	client, err := h.clientSet.vpcClientV2(opt.Region)
 	if err != nil {
@@ -228,14 +228,14 @@ func (h *HuaWei) GetSecurityGroupsByPortID(kt *kit.Kit, opt *typesniproto.HuaWei
 		return nil, err
 	}
 
-	var portMap = make(map[string][]*coreni.NovaServerSecurityGroup, 0)
+	var portMap = make(map[string][]string, 0)
 	if resp.Port == nil || len(resp.Port.SecurityGroups) == 0 {
 		return portMap, nil
 	}
 
-	var tmpSgList = make([]*coreni.NovaServerSecurityGroup, 0, len(resp.Port.SecurityGroups))
+	var tmpSgList = make([]string, 0)
 	for _, sgID := range resp.Port.SecurityGroups {
-		tmpSgList = append(tmpSgList, &coreni.NovaServerSecurityGroup{CloudID: converter.ValToPtr(sgID)})
+		tmpSgList = append(tmpSgList, sgID)
 	}
 	portMap[resp.Port.Id] = tmpSgList
 
@@ -244,7 +244,7 @@ func (h *HuaWei) GetSecurityGroupsByPortID(kt *kit.Kit, opt *typesniproto.HuaWei
 
 // GetSecurityGroupsByNetID get security groups by net id
 func (h *HuaWei) GetSecurityGroupsByNetID(kt *kit.Kit, opt *typesniproto.HuaWeiPortInfoOption) (
-	map[string][]coreni.NovaServerSecurityGroup, []coreni.NetVirtualIP, error) {
+	map[string][]string, []coreni.NetVirtualIP, error) {
 
 	client, err := h.clientSet.vpcClientV2(opt.Region)
 	if err != nil {
@@ -281,15 +281,15 @@ func (h *HuaWei) GetSecurityGroupsByNetID(kt *kit.Kit, opt *typesniproto.HuaWeiP
 	}
 
 	var (
-		securityGroupMap = make(map[string][]coreni.NovaServerSecurityGroup, 0)
-		tmpSgList        = make([]coreni.NovaServerSecurityGroup, 0)
+		securityGroupMap = make(map[string][]string, 0)
+		tmpSgList        = make([]string, 0)
 	)
 	for _, portItem := range *resp.Ports {
 		if len(portItem.SecurityGroups) == 0 {
 			continue
 		}
 		for _, sgID := range portItem.SecurityGroups {
-			tmpSgList = append(tmpSgList, coreni.NovaServerSecurityGroup{CloudID: converter.ValToPtr(sgID)})
+			tmpSgList = append(tmpSgList, sgID)
 		}
 		securityGroupMap[portItem.NetworkId] = tmpSgList
 	}

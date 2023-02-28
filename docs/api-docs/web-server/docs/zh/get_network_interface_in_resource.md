@@ -42,8 +42,6 @@
     "updated_at": "2019-07-29 11:57:20",
     "extension": {
         "resource_group_name": "test",
-        "subscribe_id": "subid_01",
-        "subscribe_name": "subname_01",
         "mac_address": "xx-xx-xx-xx-xx-xx",
         "enable_ip_forwarding": true,
         "enable_accelerated_networking": true,
@@ -57,17 +55,11 @@
                 "127.0.0.2"
             ]
         },
-        "gateway_load_balancer": {
-            "id": "clb_001"
-        },
-        "network_security_group": {
-            "id": "/subscriptions/1001-0000-0000-0000-xxxxxxxxxxx/resourceGroups/rsg1001/providers/Microsoft.Network/networkSecurityGroups/test-nsg",
-            "location": "eastasia",
-            "name": "test-nsg"
-        },
+        "cloud_gateway_load_balancer_id": "clb_001",
+        "cloud_network_security_group_id": "/subscriptions/1001-0000-0000-0000-xxxxxxxxxxx/resourceGroups/rsg1001/providers/Microsoft.Network/networkSecurityGroups/test-nsg",
         "ip_configurations": [
         {
-            "id": "ip-001",
+            "cloud_id": "ip-001",
             "name": "ipconfig-001",
             "type": "",
             "properties": {
@@ -76,7 +68,7 @@
                 "private_ip_address": "127.0.0.x",
                 "private_ip_allocation_method": "Dynamic",
                 "public_ip_address": {
-                    "id": "ip-id-1001",
+                    "cloud_id": "ip-id-1001",
                     "location": "eastasia",
                     "name": "ip-name-001",
                     "properties": {
@@ -85,15 +77,10 @@
                         "public_ip_allocation_method": "Static"
                     }
                 },
-                "subnet": {
-                    "id": "/subscriptions/1001-0000-0000-0000-xxxxxxxxx/resourceGroups/rsg1001/providers/Microsoft.Network/subnet/test-sub",
-                    "name": "test-sub"
-                }
+                "cloud_subnet_id": "/subscriptions/1001-0000-0000-0000-xxxxxxxxx/resourceGroups/rsg1001/providers/Microsoft.Network/subnet/test-sub"
             }
         }],
-        "virtual_machine": {
-            "id": "/subscriptions/1001-0000-0000-0000-xxxxxxxxx/resourceGroups/test_group/providers/Microsoft.Compute/virtualMachines/test001"
-        }
+        "cloud_virtual_machine_id": "/subscriptions/1001-0000-0000-0000-xxxxxxxxx/resourceGroups/test_group/providers/Microsoft.Compute/virtualMachines/test001"
     }
   }
 }
@@ -195,14 +182,7 @@
                 "bandwidth_size": 1,
                 "bandwidth_type": "5_bgp"
             },
-            "security_groups": [
-                {
-                    "id": "1001"
-                },
-                {
-                    "id": "1002"
-                }
-            ]
+            "cloud_security_group_ids": ["1001","1002"]
         }
     }
 }
@@ -246,16 +226,14 @@
 | 参数名称           | 参数类型         | 描述  |
 |----------------|--------------|------------|
 | resource_group_name | string  | 资源组名称   |
-| subscribe_id   | string       | 订阅ID      |
-| subscribe_name | string       | 订阅名称     |
 | mac_address    | string       | MAC地址     |
 | enable_ip_forwarding | bool  | 是否允许IP转发(0:否1:是)  |
 | enable_accelerated_networking | bool | 是否启用加速网络(0:否1:是) |
-| dns_settings   | object array | DNS设置             |
-| gateway_load_balancer | object array | 网关负载均衡  |
-| network_security_group | object array | 网络安全组   |
-| ip_configurations | list array | IP配置             |
-| virtual_machine | object array | 虚拟机             |
+| dns_settings   | object array | DNS设置                    |
+| cloud_gateway_load_balancer_id    | string | 网关负载均衡ID |
+| cloud_network_security_group_id   | string | 网络安全组     |
+| ip_configurations | list array    | IP配置                 |
+| cloud_virtual_machine_id | string | 虚拟机ID               |
 
 
 #### data.extension(azure).dns_settings
@@ -266,25 +244,11 @@
 | applied_dns_servers | string array | 应用的DNS服务器列表             |
 
 
-#### data.extension(azure).gateway_load_balancer
-
-| 参数名称     | 参数类型   | 描述                                     |
-|----------|--------|-----------------------------------------------|
-| id       | string | 网关负载均衡ID                                  |
-
-#### data.extension(azure).network_security_group
-
-| 参数名称     | 参数类型   | 描述                                     |
-|----------|--------|-----------------------------------------------|
-| id       | string | 网关安全组ID                                   |
-| location | string | 网关安全组地区                                  |
-| name     | string | 网关安全组名称                                  |
-
 #### data.extension(azure).ip_configurations
 
 | 参数名称     | 参数类型   | 描述                                     |
 |----------|--------|-----------------------------------------------|
-| id       | string | IP配置ID                                      |
+| cloud_id | string | IP配置ID                                      |
 | name     | string | IP配置名称                                     |
 | type     | string | 资源类型                                       |
 | properties | object array | IP配置属性                             |
@@ -298,14 +262,14 @@
 | private_ip_address | string | 专用IP地址                            |
 | private_ip_allocation_method | string | IP分配(Dynamic、Static)     |
 | public_ip_address  | object array | 公共IP地址                      |
-| subnet   | object array | 子网                                   |
+| cloud_subnet_id    | string | 子网ID                               |
 
 
 #### data.extension(azure).ip_configurations.public_ip_address
 
 | 参数名称     | 参数类型   | 描述                                   |
 |----------|--------|---------------------------------------------|
-| id       | string | 公共IP的ID                                   |
+| cloud_id | string | 公共IP的ID                                   |
 | location | string | 公共IP的地区                                  |
 | name     | string | 公共IP地址名称                                |
 | zone     | string array | 可用区列表                              |
@@ -318,13 +282,6 @@
 | ip_address | string | 公共IP地址                                   |
 | public_ip_allocation_method | string | 公共IP分配(Dynamic、Static) |
 | public_ip_address_version   | string | 公共IP版本(IPv4、IPv6)      |
-
-#### data.extension(azure).ip_configurations.subnet
-
-| 参数名称     | 参数类型   | 描述                                     |
-|----------|--------|-----------------------------------------------|
-| id       | string | 子网的ID                                       |
-| name     | string | 子网名称                                       |
 
 
 #### data.extension(azure).virtual_machine
@@ -367,10 +324,10 @@
 | min_rate    | int     | 网卡带宽下限                   |
 | multiqueue_num | int  | 队列个数(取值范围为 1, 2, 4, 8, 16，28) |
 | pci_address | string  | 弹性网卡在Linux GuestOS里的BDF号,网卡不支持时，返回为空 |
-| ipv6        | string         | IpV6地址               |
-| virtual_ip_list | list array   | 虚拟IP地址数组             |
-| addresses       | object array   | 云服务器对应的弹性网卡信息 |
-| security_groups | list array | 云服务器所属安全组列表         |
+| ipv6        | string         | IpV6地址                 |
+| virtual_ip_list | list array   | 虚拟IP地址数组           |
+| addresses       | object array | 云服务器对应的弹性网卡信息 |
+| cloud_security_group_ids | string array | 云服务器所属安全组列表 |
 
 
 #### data.extension(huawei).fixed_ips
@@ -391,7 +348,7 @@
 
 #### data.extension(huawei).addresses
 
-| 参数名称 | 参数类型 |         描述           |
+| 参数名称  | 参数类型 |         描述           |
 |----------|-----------|--------------------|
 | ip_version | string | IP地址类型，值为4或6（4：IP地址类型是IPv4 6：IP地址类型是IPv6）|
 | public_ip_address   | string | IP地址   |
@@ -399,10 +356,3 @@
 | bandwidth_id   | string | 带宽ID        |
 | bandwidth_size | string | 带宽大小       |
 | bandwidth_type | string | 带宽类型，示例：5_bgp（全动态BGP） |
-
-
-#### data.extension(huawei).security_groups
-
-| 参数名称 | 参数类型 |         描述           |
-|----------|-----------|--------------------|
-|  id      | string    |  安全组ID           |

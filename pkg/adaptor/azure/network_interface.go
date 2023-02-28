@@ -92,9 +92,7 @@ func convertCloudNetworkInterface(data *armnetwork.Interface) *typesniproto.Azur
 		}
 	}
 	if data.Properties.VirtualMachine != nil {
-		v.Extension.VirtualMachine = &coreni.SubResource{
-			CloudID: data.Properties.VirtualMachine.ID,
-		}
+		v.Extension.CloudVirtualMachineID = data.Properties.VirtualMachine.ID
 	}
 
 	cloudIDArr := strings.Split(converter.PtrToVal(data.ID), "/")
@@ -110,10 +108,7 @@ func convertCloudNetworkInterface(data *armnetwork.Interface) *typesniproto.Azur
 
 func getExtensionData(data *armnetwork.Interface, v *typesniproto.AzureNI) {
 	if data.Properties.NetworkSecurityGroup != nil {
-		tmpNetworkSG := data.Properties.NetworkSecurityGroup
-		v.Extension.NetworkSecurityGroup = &coreni.SecurityGroup{
-			CloudID: tmpNetworkSG.ID,
-		}
+		v.Extension.CloudSecurityGroupID = data.Properties.NetworkSecurityGroup.ID
 	}
 	getIpConfigExtensionData(data, v)
 
@@ -152,10 +147,8 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 				v.PrivateIP = tmpIP.Properties.PrivateIPAddress
 			}
 			if item.Properties.GatewayLoadBalancer != nil {
-				tmpIP.Properties.GatewayLoadBalancer = &coreni.SubResource{
-					CloudID: item.Properties.GatewayLoadBalancer.ID,
-				}
-				v.Extension.GatewayLoadBalancer = tmpIP.Properties.GatewayLoadBalancer
+				tmpIP.Properties.CloudGatewayLoadBalancerID = item.Properties.GatewayLoadBalancer.ID
+				v.Extension.CloudGatewayLoadBalancerID = tmpIP.Properties.CloudGatewayLoadBalancerID
 			}
 			if item.Properties.PublicIPAddress != nil {
 				tmpPublicIPAddress := item.Properties.PublicIPAddress
@@ -189,41 +182,13 @@ func getIpConfigSubnetData(item *armnetwork.InterfaceIPConfiguration, tmpIP *cor
 		return
 	}
 
-	tmpIP.Properties.Subnet = &coreni.Subnet{
-		CloudID: item.Properties.Subnet.ID,
-		Name:    item.Properties.Subnet.Name,
-		Type:    item.Properties.Subnet.Type,
-		Etag:    item.Properties.Subnet.Etag,
-	}
-
-	if item.Properties.Subnet.Properties != nil {
-		tmpIP.Properties.Subnet.Properties = &coreni.SubnetPropertiesFormat{
-			AddressPrefix:   item.Properties.Subnet.Properties.AddressPrefix,
-			AddressPrefixes: item.Properties.Subnet.Properties.AddressPrefixes,
-			NatGateway: &coreni.SubResource{
-				CloudID: item.Properties.Subnet.Properties.NatGateway.ID,
-			},
-			NetworkSecurityGroup: &coreni.SecurityGroup{
-				CloudID: item.Properties.Subnet.Properties.NetworkSecurityGroup.ID,
-			},
-			PrivateEndpointNetworkPolicies: (*coreni.VirtualNetworkPrivateEndpointNetworkPolicies)(
-				item.Properties.Subnet.Properties.PrivateEndpointNetworkPolicies),
-			PrivateLinkServiceNetworkPolicies: (*coreni.VirtualNetworkPrivateLinkServiceNetworkPolicies)(
-				item.Properties.Subnet.Properties.PrivateLinkServiceNetworkPolicies),
-			RouteTable: &coreni.RouteTable{
-				CloudID:  item.Properties.Subnet.Properties.RouteTable.ID,
-				Location: item.Properties.Subnet.Properties.RouteTable.Location,
-				Name:     item.Properties.Subnet.Properties.RouteTable.Name,
-			},
-			ProvisioningState: (*coreni.ProvisioningState)(item.Properties.ProvisioningState),
-		}
-	}
-
-	ipSubnetArr := strings.Split(converter.PtrToVal(tmpIP.Properties.Subnet.CloudID), "/")
+	tmpIP.Properties.CloudSubnetID = item.Properties.Subnet.ID
+	ipSubnetArr := strings.Split(converter.PtrToVal(tmpIP.Properties.CloudSubnetID), "/")
 	if len(ipSubnetArr) > 8 {
 		v.CloudVpcID = converter.ValToPtr(ipSubnetArr[8])
 	}
-	v.CloudSubnetID = tmpIP.Properties.Subnet.CloudID
+
+	v.CloudSubnetID = tmpIP.Properties.CloudSubnetID
 }
 
 // GetNetworkInterface get one network interface.

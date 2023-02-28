@@ -414,5 +414,6 @@ func (s *set) NetworkInterface() networkinterface.NetworkInterface {
 	return &networkinterface.NetworkInterfaceDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
