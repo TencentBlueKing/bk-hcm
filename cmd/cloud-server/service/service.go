@@ -225,7 +225,7 @@ func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Cont
 	audit.InitService(c)
 	networkinterface.InitNetworkInterfaceService(c)
 
-	go sync.SyncTiming(c.ApiClient)
+	// go sync.SyncTiming(c.ApiClient)
 
 	return restful.NewContainer().Add(c.WebService)
 }
