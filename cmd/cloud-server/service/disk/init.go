@@ -13,11 +13,9 @@
  * specific language governing permissions and limitations under the License.
  *
  * We undertake not to change the open source license (MIT license) applicable
- *
- * to the current version of the project delivered to anyone in the future.
  */
 
-package eip
+package disk
 
 import (
 	"net/http"
@@ -26,9 +24,9 @@ import (
 	"hcm/pkg/rest"
 )
 
-// InitEipService initialize the eip service.
-func InitEipService(c *capability.Capability) {
-	svc := &eipSvc{
+// InitDiskService initialize the disk service.
+func InitDiskService(c *capability.Capability) {
+	svc := &diskSvc{
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
@@ -36,11 +34,11 @@ func InitEipService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("ListEip", http.MethodPost, "/eips/list", svc.ListEip)
-	h.Add("RetrieveEip", http.MethodGet, "/eips/{id}", svc.RetrieveEip)
-	h.Add("AssignEip", http.MethodPost, "/eips/assign/bizs", svc.AssignEip)
+	h.Add("ListDisk", http.MethodPost, "/disks/list", svc.ListDisk)
+	h.Add("RetrieveDisk", http.MethodGet, "/disks/{id}", svc.RetrieveDisk)
+	h.Add("AssignDisk", http.MethodPost, "/disks/assign/bizs", svc.AssignDisk)
 
-	h.Add("ListEipExtByCvmID", http.MethodGet, "/vendors/{vendor}/eips/cvms/{cvm_id}", svc.ListEipExtByCvmID)
+	h.Add("ListDiskExtByCvmID", http.MethodGet, "/vendors/{vendor}/disks/cvms/{cvm_id}", svc.ListDiskExtByCvmID)
 
 	h.Load(c.WebService)
 }

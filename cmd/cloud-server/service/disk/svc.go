@@ -21,10 +21,8 @@ package disk
 
 import (
 	"fmt"
-	"net/http"
 
 	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/cmd/cloud-server/service/capability"
 	cloudproto "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
@@ -41,23 +39,6 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
-
-// InitDiskService initialize the disk service.
-func InitDiskService(c *capability.Capability) {
-	svc := &diskSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-		audit:      c.Audit,
-	}
-
-	h := rest.NewHandler()
-
-	h.Add("ListDisk", http.MethodPost, "/disks/list", svc.ListDisk)
-	h.Add("RetrieveDisk", http.MethodGet, "/disks/{id}", svc.RetrieveDisk)
-	h.Add("AssignDisk", http.MethodPost, "/disks/assign/bizs", svc.AssignDisk)
-
-	h.Load(c.WebService)
-}
 
 type diskSvc struct {
 	client     *client.ClientSet

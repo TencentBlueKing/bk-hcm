@@ -117,3 +117,27 @@ type EipWithCvmID struct {
 	RelCreator          string     `json:"rel_creator"`
 	RelCreatedAt        *time.Time `json:"rel_created_at"`
 }
+
+// EipCvmRelWithEipExtListReq ...
+type EipCvmRelWithEipExtListReq struct {
+	CvmIDs []string `json:"cvm_ids" validate:"required"`
+}
+
+// Validate ....
+func (req *EipCvmRelWithEipExtListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// EipCvmRelWithEipExtListResp ...
+type EipCvmRelWithEipExtListResp[T dataproto.EipExtensionResult] struct {
+	rest.BaseResp `json:",inline"`
+	Data          []*EipExtWithCvmID[T] `json:"data"`
+}
+
+// EipExtWithCvmID ...
+type EipExtWithCvmID[T dataproto.EipExtensionResult] struct {
+	dataproto.EipExtResult[T] `json:",inline"`
+	CvmID                     string     `json:"cvm_id"`
+	RelCreator                string     `json:"rel_creator"`
+	RelCreatedAt              *time.Time `json:"rel_created_at"`
+}

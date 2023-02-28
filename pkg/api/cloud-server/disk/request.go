@@ -38,7 +38,7 @@ func (req *DiskListReq) Validate() error {
 
 // DiskAssignReq ...
 type DiskAssignReq struct {
-	IDs     []string `json:"ids" validate:"required"`
+	IDs     []string `json:"disk_ids" validate:"required"`
 	BkBizID uint64   `json:"bk_biz_id" validate:"required"`
 }
 

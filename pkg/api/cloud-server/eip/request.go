@@ -38,7 +38,7 @@ func (req *EipListReq) Validate() error {
 
 // EipAssignReq ...
 type EipAssignReq struct {
-	IDs     []string `json:"ids" validate:"required"`
+	IDs     []string `json:"eip_ids" validate:"required"`
 	BkBizID uint64   `json:"bk_biz_id" validate:"required"`
 }
 

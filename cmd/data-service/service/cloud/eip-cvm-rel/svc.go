@@ -23,8 +23,9 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	dataproto "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/api/data-service/cloud/eip"
+	datarelproto "hcm/pkg/api/data-service/cloud"
+	dataproto "hcm/pkg/api/data-service/cloud/eip"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	reldao "hcm/pkg/dal/dao/cloud/eip-cvm-rel"
@@ -56,7 +57,7 @@ func (svc *relSvc) Init() {
 
 // BatchCreate ...
 func (svc *relSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.EipCvmRelBatchCreateReq)
+	req := new(datarelproto.EipCvmRelBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -83,7 +84,7 @@ func (svc *relSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
 
 // List ...
 func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.EipCvmRelListReq)
+	req := new(datarelproto.EipCvmRelListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -103,12 +104,12 @@ func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	if req.Page.Count {
-		return &dataproto.EipCvmRelListResult{Count: data.Count}, nil
+		return &datarelproto.EipCvmRelListResult{Count: data.Count}, nil
 	}
 
-	details := make([]*dataproto.EipCvmRelResult, len(data.Details))
+	details := make([]*datarelproto.EipCvmRelResult, len(data.Details))
 	for idx, r := range data.Details {
-		details[idx] = &dataproto.EipCvmRelResult{
+		details[idx] = &datarelproto.EipCvmRelResult{
 			ID:        r.ID,
 			EipID:     r.EipID,
 			CvmID:     r.CvmID,
@@ -117,12 +118,12 @@ func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
-	return &dataproto.EipCvmRelListResult{Details: details}, nil
+	return &datarelproto.EipCvmRelListResult{Details: details}, nil
 }
 
 // BatchDelete ...
 func (svc *relSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.EipCvmRelDeleteReq)
+	req := new(datarelproto.EipCvmRelDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func (svc *relSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
 
 // ListWithEip ...
 func (svc *relSvc) ListWithEip(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.EipCvmRelWithEipListReq)
+	req := new(datarelproto.EipCvmRelWithEipListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -173,30 +174,47 @@ func (svc *relSvc) ListWithEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	eips := make([]*dataproto.EipWithCvmID, len(data.Details))
+	eips := make([]*datarelproto.EipWithCvmID, len(data.Details))
 	for idx, d := range data.Details {
-		eips[idx] = &dataproto.EipWithCvmID{
-			EipResult: eip.EipResult{
-				ID:        d.ID,
-				Vendor:    d.Vendor,
-				CloudID:   d.CloudID,
-				AccountID: d.AccountID,
-				Name:      d.Name,
-				BkBizID:   d.BkBizID,
-				Region:    d.Region,
-				Status:    d.Status,
-				PublicIp:  d.PublicIp,
-				PrivateIp: d.PrivateIp,
-				Creator:   d.Creator,
-				Reviser:   d.Reviser,
-				CreatedAt: d.CreatedAt,
-				UpdatedAt: d.UpdatedAt,
-			},
-			CvmID:        d.CvmID,
-			RelCreator:   d.RelCreator,
-			RelCreatedAt: d.RelCreatedAt,
-		}
+		eips[idx] = toProtoEipWithCvmID(d)
 	}
 
 	return eips, nil
+}
+
+// ListWithEipExt ...
+func (svc *relSvc) ListWithEipExt(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(datarelproto.EipCvmRelWithEipExtListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	data, err := svc.objectDao.ListJoinEip(cts.Kit, req.CvmIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return toProtoEipExtWithCvmIDs[dataproto.TCloudEipExtensionResult](data)
+	case enumor.Aws:
+		return toProtoEipExtWithCvmIDs[dataproto.AwsEipExtensionResult](data)
+	case enumor.Gcp:
+		return toProtoEipExtWithCvmIDs[dataproto.GcpEipExtensionResult](data)
+	case enumor.Azure:
+		return toProtoEipExtWithCvmIDs[dataproto.AzureEipExtensionResult](data)
+	case enumor.HuaWei:
+		return toProtoEipExtWithCvmIDs[dataproto.HuaWeiEipExtensionResult](data)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+	}
 }

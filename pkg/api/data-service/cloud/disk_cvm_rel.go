@@ -122,3 +122,27 @@ type DiskWithCvmID struct {
 	RelCreator           string     `json:"rel_creator"`
 	RelCreatedAt         *time.Time `json:"rel_created_at"`
 }
+
+// DiskCvmRelWithDiskExtListReq ...
+type DiskCvmRelWithDiskExtListReq struct {
+	CvmIDs []string `json:"cvm_ids" validate:"required"`
+}
+
+// Validate ....
+func (req *DiskCvmRelWithDiskExtListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// DiskCvmRelWithDiskExtListResp ...
+type DiskCvmRelWithDiskExtListResp[T dataproto.DiskExtensionResult] struct {
+	rest.BaseResp `json:",inline"`
+	Data          []*DiskExtWithCvmID[T] `json:"data"`
+}
+
+// DiskExtWithCvmID ...
+type DiskExtWithCvmID[T dataproto.DiskExtensionResult] struct {
+	dataproto.DiskExtResult[T] `json:",inline"`
+	CvmID                      string     `json:"cvm_id"`
+	RelCreator                 string     `json:"rel_creator"`
+	RelCreatedAt               *time.Time `json:"rel_created_at"`
+}

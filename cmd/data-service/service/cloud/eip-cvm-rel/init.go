@@ -37,6 +37,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchCreate", http.MethodPost, "/eip_cvm_rels/batch/create", svc.BatchCreate)
 	h.Add("List", http.MethodPost, "/eip_cvm_rels/list", svc.List)
 	h.Add("ListWithEip", http.MethodPost, "/eip_cvm_rels/with/eips/list", svc.ListWithEip)
+	h.Add("ListWithEipExt", http.MethodPost, "/vendors/{vendor}/eip_cvm_rels/with/eips/list", svc.ListWithEipExt)
 	h.Add("BatchDelete", http.MethodDelete, "/eip_cvm_rels/batch", svc.BatchDelete)
 
 	h.Load(cap.WebService)

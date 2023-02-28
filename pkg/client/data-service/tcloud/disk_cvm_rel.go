@@ -17,30 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package eip
+package tcloud
 
 import (
+	"context"
 	"net/http"
 
-	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/rest"
+	datarelproto "hcm/pkg/api/data-service/cloud"
+	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	"hcm/pkg/criteria/errf"
 )
 
-// InitEipService initialize the eip service.
-func InitEipService(c *capability.Capability) {
-	svc := &eipSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-		audit:      c.Audit,
+// ListDiskCvmRelWithDisk ...
+func (rc *restClient) ListDiskCvmRelWithDisk(ctx context.Context,
+	h http.Header,
+	request *datarelproto.DiskCvmRelWithDiskListReq,
+) ([]*datarelproto.DiskExtWithCvmID[dataproto.TCloudDiskExtensionResult], error) {
+	resp := new(datarelproto.DiskCvmRelWithDiskExtListResp[dataproto.TCloudDiskExtensionResult])
+	err := rc.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/disk_cvm_rels/with/disks/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
 	}
 
-	h := rest.NewHandler()
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
 
-	h.Add("ListEip", http.MethodPost, "/eips/list", svc.ListEip)
-	h.Add("RetrieveEip", http.MethodGet, "/eips/{id}", svc.RetrieveEip)
-	h.Add("AssignEip", http.MethodPost, "/eips/assign/bizs", svc.AssignEip)
-
-	h.Add("ListEipExtByCvmID", http.MethodGet, "/vendors/{vendor}/eips/cvms/{cvm_id}", svc.ListEipExtByCvmID)
-
-	h.Load(c.WebService)
+	return resp.Data, nil
 }

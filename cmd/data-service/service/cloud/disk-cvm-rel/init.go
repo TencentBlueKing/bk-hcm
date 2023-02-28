@@ -37,6 +37,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchCreate", http.MethodPost, "/disk_cvm_rels/batch/create", svc.BatchCreate)
 	h.Add("List", http.MethodPost, "/disk_cvm_rels/list", svc.List)
 	h.Add("ListWithDisk", http.MethodPost, "/disk_cvm_rels/with/disks/list", svc.ListWithDisk)
+	h.Add("ListWithDiskExt", http.MethodPost, "/vendors/{vendor}/disk_cvm_rels/with/disks/list", svc.ListWithDiskExt)
 	h.Add("BatchDelete", http.MethodDelete, "/disk_cvm_rels/batch", svc.BatchDelete)
 
 	h.Load(cap.WebService)

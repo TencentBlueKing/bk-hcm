@@ -17,30 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package eip
+package azure
 
 import (
+	"context"
 	"net/http"
 
-	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/rest"
+	datarelproto "hcm/pkg/api/data-service/cloud"
+	dataproto "hcm/pkg/api/data-service/cloud/eip"
+	"hcm/pkg/criteria/errf"
 )
 
-// InitEipService initialize the eip service.
-func InitEipService(c *capability.Capability) {
-	svc := &eipSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-		audit:      c.Audit,
+// ListEipCvmRelWithEip ...
+func (rc *restClient) ListEipCvmRelWithEip(ctx context.Context,
+	h http.Header,
+	request *datarelproto.EipCvmRelWithEipListReq,
+) ([]*datarelproto.EipExtWithCvmID[dataproto.AzureEipExtensionResult], error) {
+	resp := new(datarelproto.EipCvmRelWithEipExtListResp[dataproto.AzureEipExtensionResult])
+	err := rc.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/eip_cvm_rels/with/eips/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
 	}
 
-	h := rest.NewHandler()
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
 
-	h.Add("ListEip", http.MethodPost, "/eips/list", svc.ListEip)
-	h.Add("RetrieveEip", http.MethodGet, "/eips/{id}", svc.RetrieveEip)
-	h.Add("AssignEip", http.MethodPost, "/eips/assign/bizs", svc.AssignEip)
-
-	h.Add("ListEipExtByCvmID", http.MethodGet, "/vendors/{vendor}/eips/cvms/{cvm_id}", svc.ListEipExtByCvmID)
-
-	h.Load(c.WebService)
+	return resp.Data, nil
 }

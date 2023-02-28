@@ -23,8 +23,9 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	dataproto "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/api/data-service/cloud/disk"
+	datarelproto "hcm/pkg/api/data-service/cloud"
+	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	reldao "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
@@ -56,7 +57,7 @@ func (svc *relSvc) Init() {
 
 // BatchCreate ...
 func (svc *relSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.DiskCvmRelBatchCreateReq)
+	req := new(datarelproto.DiskCvmRelBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -83,7 +84,7 @@ func (svc *relSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
 
 // List ...
 func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.DiskCvmRelListReq)
+	req := new(datarelproto.DiskCvmRelListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -103,12 +104,12 @@ func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	if req.Page.Count {
-		return &dataproto.DiskCvmRelListResult{Count: data.Count}, nil
+		return &datarelproto.DiskCvmRelListResult{Count: data.Count}, nil
 	}
 
-	details := make([]*dataproto.DiskCvmRelResult, len(data.Details))
+	details := make([]*datarelproto.DiskCvmRelResult, len(data.Details))
 	for idx, r := range data.Details {
-		details[idx] = &dataproto.DiskCvmRelResult{
+		details[idx] = &datarelproto.DiskCvmRelResult{
 			ID:        r.ID,
 			DiskID:    r.DiskID,
 			CvmID:     r.CvmID,
@@ -117,12 +118,12 @@ func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
-	return &dataproto.DiskCvmRelListResult{Details: details}, nil
+	return &datarelproto.DiskCvmRelListResult{Details: details}, nil
 }
 
 // BatchDelete ...
 func (svc *relSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.DiskCvmRelDeleteReq)
+	req := new(datarelproto.DiskCvmRelDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func (svc *relSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
 
 // ListWithDisk ...
 func (svc *relSvc) ListWithDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.DiskCvmRelWithDiskListReq)
+	req := new(datarelproto.DiskCvmRelWithDiskListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -173,32 +174,46 @@ func (svc *relSvc) ListWithDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	disks := make([]*dataproto.DiskWithCvmID, len(data.Details))
+	disks := make([]*datarelproto.DiskWithCvmID, len(data.Details))
 	for idx, d := range data.Details {
-		disks[idx] = &dataproto.DiskWithCvmID{
-			DiskResult: disk.DiskResult{
-				ID:         d.ID,
-				Vendor:     d.Vendor,
-				CloudID:    d.CloudID,
-				AccountID:  d.AccountID,
-				Name:       d.Name,
-				BkBizID:    d.BkBizID,
-				Region:     d.Region,
-				Zone:       d.Zone,
-				DiskSize:   d.DiskSize,
-				DiskType:   d.DiskType,
-				DiskStatus: d.DiskStatus,
-				Memo:       d.Memo,
-				Creator:    d.Creator,
-				Reviser:    d.Reviser,
-				CreatedAt:  d.CreatedAt,
-				UpdatedAt:  d.UpdatedAt,
-			},
-			CvmID:        d.CvmID,
-			RelCreator:   d.RelCreator,
-			RelCreatedAt: d.RelCreatedAt,
-		}
+		disks[idx] = toProtoDiskWithCvmID(d)
+	}
+	return disks, nil
+}
+
+// ListWithDiskExt ...
+func (svc *relSvc) ListWithDiskExt(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	return disks, nil
+	req := new(datarelproto.DiskCvmRelWithDiskExtListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	data, err := svc.objectDao.ListJoinDisk(cts.Kit, req.CvmIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return toProtoDiskExtWithCvmIDs[dataproto.TCloudDiskExtensionResult](data)
+	case enumor.Aws:
+		return toProtoDiskExtWithCvmIDs[dataproto.AwsDiskExtensionResult](data)
+	case enumor.Gcp:
+		return toProtoDiskExtWithCvmIDs[dataproto.GcpDiskExtensionResult](data)
+	case enumor.Azure:
+		return toProtoDiskExtWithCvmIDs[dataproto.AzureDiskExtensionResult](data)
+	case enumor.HuaWei:
+		return toProtoDiskExtWithCvmIDs[dataproto.HuaWeiDiskExtensionResult](data)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+	}
 }
