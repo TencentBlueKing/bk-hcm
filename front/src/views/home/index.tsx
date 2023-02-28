@@ -44,33 +44,26 @@ export default defineComponent({
           topMenuActiveItem = 'business';
           menus = reactive(business);
           path = '/business/host';
-          // openedKeys = [`/business${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
         case 'resource':
           topMenuActiveItem = 'resource';
           menus = reactive(resource);
           path = '/resource/account';
-          // openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
-          // openedKeys = [`/resource${subPath[1] ? `/${subPath.join('/')}` : ''}`];
           break;
         case 'service':
           topMenuActiveItem = 'service';
           menus = reactive(service);
           path = '/service/service-apply';
-          // openedKeys = [`/service${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
         case 'workbench':
           topMenuActiveItem = 'workbench';
           menus = reactive(workbench);
-          path = '/workbench/auto';
-          // openedKeys = [`/workbench${subPath[1] ? `/${subPath[0]}` : ''}`];
+          path = '/workbench/audit';
           break;
         default:
           topMenuActiveItem = 'resource';
           menus = reactive(resource);
           path = '/resource/account';
-          // openedKeys = ['/resource'];
-          // openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
           break;
       }
     };
