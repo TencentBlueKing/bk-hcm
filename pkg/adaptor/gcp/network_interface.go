@@ -36,6 +36,7 @@ import (
 
 // ListNetworkInterface list network interface.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
+// Note：该接口分页是针对于主机，而不是网络接口，有可能出现查询出来的网络接口数量超过分页数量的情况，使用注意！！！
 func (g *Gcp) ListNetworkInterface(kt *kit.Kit, opt *core.GcpListOption) (*typesniproto.GcpInterfaceListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
@@ -60,7 +61,7 @@ func (g *Gcp) ListNetworkInterface(kt *kit.Kit, opt *core.GcpListOption) (*types
 
 	resp, err := listCall.Do()
 	if err != nil {
-		logs.Errorf("list network interface failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	details := make([]typesniproto.GcpNI, 0, len(resp.Items))
@@ -77,6 +78,40 @@ func (g *Gcp) ListNetworkInterface(kt *kit.Kit, opt *core.GcpListOption) (*types
 	}
 
 	return &typesniproto.GcpInterfaceListResult{Details: details}, nil
+}
+
+// ListNetworkInterfaceByCvmID list network interface by cvm id.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
+func (g *Gcp) ListNetworkInterfaceByCvmID(kt *kit.Kit, opt *typesniproto.GcpListByCvmIDOption) (
+	map[string] /*CloudCvmID*/ []typesniproto.GcpNI, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Instances.List(g.CloudProjectID(), opt.Zone).Context(kt.Ctx).
+		Filter(generateResourceIDsFilter(opt.CloudCvmIDs)).Do()
+	if err != nil {
+		logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	result := make(map[string][]typesniproto.GcpNI, len(resp.Items))
+	for _, item := range resp.Items {
+		cvmID := strconv.FormatUint(item.Id, 10)
+		result[cvmID] = make([]typesniproto.GcpNI, 0, len(item.NetworkInterfaces))
+
+		for _, ni := range item.NetworkInterfaces {
+			result[cvmID] = append(result[cvmID], converter.PtrToVal(convertNetworkInterface(item, ni)))
+		}
+	}
+
+	return result, nil
 }
 
 func convertNetworkInterface(data *compute.Instance, niItem *compute.NetworkInterface) *typesniproto.GcpNI {

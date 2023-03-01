@@ -22,6 +22,7 @@ package networkinterface
 import (
 	"hcm/pkg/adaptor/types/core"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -134,10 +135,33 @@ type HuaWeiPortInfoOption struct {
 	IPAddress string `json:"ip_address" validate:"omitempty"`
 }
 
-// Validate huawei huawei port info option.
+// Validate port info option.
 func (v HuaWeiPortInfoOption) Validate() error {
 	if err := v.Validate(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// GcpListByCvmIDOption defines basic gcp list options.
+type GcpListByCvmIDOption struct {
+	CloudCvmIDs []string `json:"cloud_cvm_ids" validate:"required"`
+	Zone        string   `json:"zone" validate:"required"`
+}
+
+// Validate gcp list option.
+func (opt GcpListByCvmIDOption) Validate() error {
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	if len(opt.CloudCvmIDs) > core.GcpQueryLimit {
+		return errf.Newf(errf.InvalidParameter, "resource ids length should <= %d", len(opt.CloudCvmIDs))
+	}
+
+	if len(opt.CloudCvmIDs) == 0 {
+		return errf.New(errf.InvalidParameter, "cloud cvm ids is required")
 	}
 
 	return nil
