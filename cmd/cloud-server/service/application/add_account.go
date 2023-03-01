@@ -102,11 +102,12 @@ func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, e
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.ApplicationCreateReq{
-			SN:        sn,
-			Type:      enumor.AddAccount,
-			Status:    enumor.Pending,
-			Applicant: cts.Kit.User,
-			Content:   content,
+			SN:             sn,
+			Type:           enumor.AddAccount,
+			Status:         enumor.Pending,
+			Applicant:      cts.Kit.User,
+			Content:        content,
+			DeliveryDetail: "{}",
 		},
 	)
 	if err != nil {

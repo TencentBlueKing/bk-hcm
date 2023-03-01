@@ -29,12 +29,13 @@ import (
 
 // ApplicationCreateReq ...
 type ApplicationCreateReq struct {
-	SN        string                   `json:"sn" validate:"required"`
-	Type      enumor.ApplicationType   `json:"type" validate:"required"`
-	Status    enumor.ApplicationStatus `json:"status" validate:"required"`
-	Applicant string                   `json:"applicant" validate:"required"`
-	Content   string                   `json:"content" validate:"required"`
-	Memo      *string                  `json:"memo" validate:"omitempty"`
+	SN             string                   `json:"sn" validate:"required"`
+	Type           enumor.ApplicationType   `json:"type" validate:"required"`
+	Status         enumor.ApplicationStatus `json:"status" validate:"required"`
+	Applicant      string                   `json:"applicant" validate:"required"`
+	Content        string                   `json:"content" validate:"required"`
+	DeliveryDetail string                   `json:"delivery_detail" validate:"required"`
+	Memo           *string                  `json:"memo" validate:"omitempty"`
 }
 
 // Validate ...
@@ -44,7 +45,8 @@ func (req *ApplicationCreateReq) Validate() error {
 
 // ApplicationUpdateReq ...
 type ApplicationUpdateReq struct {
-	Status enumor.ApplicationStatus `json:"status" validate:"required"`
+	Status         enumor.ApplicationStatus `json:"status" validate:"required"`
+	DeliveryDetail *string                  `json:"delivery_detail" validate:"omitempty"`
 }
 
 // Validate ...
@@ -54,14 +56,15 @@ func (req *ApplicationUpdateReq) Validate() error {
 
 // ApplicationResp ...
 type ApplicationResp struct {
-	ID            string                   `json:"id"`
-	SN            string                   `json:"sn"`
-	Type          enumor.ApplicationType   `json:"type"`
-	Status        enumor.ApplicationStatus `json:"status"`
-	Applicant     string                   `json:"applicant"`
-	Content       string                   `json:"content"`
-	Memo          *string                  `json:"memo"`
-	core.Revision `json:",inline"`
+	ID             string                   `json:"id"`
+	SN             string                   `json:"sn"`
+	Type           enumor.ApplicationType   `json:"type"`
+	Status         enumor.ApplicationStatus `json:"status"`
+	Applicant      string                   `json:"applicant"`
+	Content        string                   `json:"content"`
+	DeliveryDetail string                   `json:"delivery_detail"`
+	Memo           *string                  `json:"memo"`
+	core.Revision  `json:",inline"`
 }
 
 // ApplicationGetResp ...

@@ -70,14 +70,15 @@ func (svc *applicationSvc) Create(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	application := &tableapplication.ApplicationTable{
-		SN:        req.SN,
-		Type:      string(req.Type),
-		Status:    string(req.Status),
-		Applicant: cts.Kit.User,
-		Content:   tabletype.JsonField(req.Content),
-		Memo:      req.Memo,
-		Creator:   cts.Kit.User,
-		Reviser:   cts.Kit.User,
+		SN:             req.SN,
+		Type:           string(req.Type),
+		Status:         string(req.Status),
+		Applicant:      cts.Kit.User,
+		Content:        tabletype.JsonField(req.Content),
+		DeliveryDetail: tabletype.JsonField(req.DeliveryDetail),
+		Memo:           req.Memo,
+		Creator:        cts.Kit.User,
+		Reviser:        cts.Kit.User,
 	}
 
 	applicationID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
@@ -115,6 +116,9 @@ func (svc *applicationSvc) Update(cts *rest.Contexts) (interface{}, error) {
 	application := &tableapplication.ApplicationTable{
 		Status: string(req.Status),
 	}
+	if req.DeliveryDetail != nil {
+		application.DeliveryDetail = tabletype.JsonField(*req.DeliveryDetail)
+	}
 
 	err := svc.dao.Application().Update(cts.Kit, tools.EqualExpression("id", applicationID), application)
 	if err != nil {
@@ -129,13 +133,14 @@ func (svc *applicationSvc) convertToApplicationResp(
 	application *tableapplication.ApplicationTable,
 ) *proto.ApplicationResp {
 	return &proto.ApplicationResp{
-		ID:        application.ID,
-		SN:        application.SN,
-		Type:      enumor.ApplicationType(application.Type),
-		Status:    enumor.ApplicationStatus(application.Status),
-		Applicant: application.Applicant,
-		Content:   string(application.Content),
-		Memo:      application.Memo,
+		ID:             application.ID,
+		SN:             application.SN,
+		Type:           enumor.ApplicationType(application.Type),
+		Status:         enumor.ApplicationStatus(application.Status),
+		Applicant:      application.Applicant,
+		Content:        string(application.Content),
+		DeliveryDetail: string(application.DeliveryDetail),
+		Memo:           application.Memo,
 		Revision: core.Revision{
 			Creator:   application.Creator,
 			Reviser:   application.Reviser,

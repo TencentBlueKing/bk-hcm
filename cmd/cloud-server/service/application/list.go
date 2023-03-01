@@ -66,6 +66,7 @@ func (a *applicationSvc) List(cts *rest.Contexts) (interface{}, error) {
 	if resp != nil && len(resp.Details) > 0 {
 		for _, detail := range resp.Details {
 			detail.Content = ""
+			detail.DeliveryDetail = ""
 		}
 	}
 

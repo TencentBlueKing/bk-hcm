@@ -35,11 +35,15 @@ import (
 	"hcm/pkg/tools/json"
 )
 
-func (a *applicationSvc) updateStatus(cts *rest.Contexts, applicationID string, status enumor.ApplicationStatus) error {
+func (a *applicationSvc) updateStatus(cts *rest.Contexts, applicationID string, status enumor.ApplicationStatus, deliveryDetail string) error {
+	req := &dataproto.ApplicationUpdateReq{Status: status}
+	if deliveryDetail != "" {
+		req.DeliveryDetail = &deliveryDetail
+	}
 	_, err := a.client.DataService().Global.Application.Update(
 		cts.Kit.Ctx, cts.Kit.Header(),
 		applicationID,
-		&dataproto.ApplicationUpdateReq{Status: status},
+		req,
 	)
 	return err
 }
@@ -66,7 +70,7 @@ func (a *applicationSvc) Cancel(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 更新状态
-	err = a.updateStatus(cts, applicationID, enumor.Cancelled)
+	err = a.updateStatus(cts, applicationID, enumor.Cancelled, "")
 	if err != nil {
 		return nil, err
 	}
@@ -161,14 +165,14 @@ func (a *applicationSvc) approve(cts *rest.Contexts) (interface{}, error) {
 		nextStatus = enumor.Delivering
 	}
 	// 更新状态
-	err = a.updateStatus(cts, application.ID, nextStatus)
+	err = a.updateStatus(cts, application.ID, nextStatus, "")
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: 需要引入异步任务，这里先暂时同步执行
 	if status == enumor.Pass {
-		err = a.addAccount(cts, application)
+		accountID, err := a.addAccount(cts, application)
 		deliverStatus := enumor.Completed
 		if err != nil {
 			logs.Errorf(
@@ -177,7 +181,12 @@ func (a *applicationSvc) approve(cts *rest.Contexts) (interface{}, error) {
 			)
 			deliverStatus = enumor.DeliverError
 		}
-		err = a.updateStatus(cts, application.ID, deliverStatus)
+		// 交付完成时将交付的账号ID写入
+		deliveryDetail := ""
+		if deliverStatus == enumor.Completed {
+			deliveryDetail, _ = json.MarshalToString(map[string]string{"account_id": accountID})
+		}
+		err = a.updateStatus(cts, application.ID, deliverStatus, deliveryDetail)
 		if err != nil {
 			return nil, err
 		}
@@ -187,7 +196,7 @@ func (a *applicationSvc) approve(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-func (a *applicationSvc) addAccount(cts *rest.Contexts, application *dataproto.ApplicationResp) error {
+func (a *applicationSvc) addAccount(cts *rest.Contexts, application *dataproto.ApplicationResp) (string, error) {
 	// 将执行人设置为申请人
 	cts.Kit.User = application.Applicant
 
@@ -195,21 +204,21 @@ func (a *applicationSvc) addAccount(cts *rest.Contexts, application *dataproto.A
 	req := new(proto.AccountAddReq)
 	err := json.UnmarshalFromString(application.Content, req)
 	if err != nil {
-		return fmt.Errorf("json unmarshal content error: %w", err)
+		return "", fmt.Errorf("json unmarshal content error: %w", err)
 	}
 
 	// 解密密钥
 	secretKeyField := accountsvc.VendorSecretKeyFieldMap[req.Vendor]
 	secretKey, err := a.cipher.DecryptFromBase64(req.Extension[secretKeyField])
 	if err != nil {
-		return fmt.Errorf("decrypt secret key failed, err: %w", err)
+		return "", fmt.Errorf("decrypt secret key failed, err: %w", err)
 	}
 	req.Extension[secretKeyField] = secretKey
 
 	// 再次检查数据正确性
 	err = a.checkForAddAccount(cts, req)
 	if err != nil {
-		return errf.NewFromErr(errf.InvalidParameter, err)
+		return "", errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 执行创建账号
@@ -226,11 +235,11 @@ func (a *applicationSvc) addAccount(cts *rest.Contexts, application *dataproto.A
 		return a.createForAzure(cts, req)
 	}
 
-	return nil
+	return "", nil
 }
 
-func (a *applicationSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountAddReq) error {
-	_, err := a.client.DataService().TCloud.Account.Create(
+func (a *applicationSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountAddReq) (string, error) {
+	result, err := a.client.DataService().TCloud.Account.Create(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataprotocloud.AccountCreateReq[dataprotocloud.TCloudAccountExtensionCreateReq]{
@@ -249,11 +258,14 @@ func (a *applicationSvc) createForTCloud(cts *rest.Contexts, req *proto.AccountA
 			},
 		},
 	)
-	return err
+	if err != nil {
+		return "", err
+	}
+	return result.ID, err
 }
 
-func (a *applicationSvc) createForAws(cts *rest.Contexts, req *proto.AccountAddReq) error {
-	_, err := a.client.DataService().Aws.Account.Create(
+func (a *applicationSvc) createForAws(cts *rest.Contexts, req *proto.AccountAddReq) (string, error) {
+	result, err := a.client.DataService().Aws.Account.Create(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataprotocloud.AccountCreateReq[dataprotocloud.AwsAccountExtensionCreateReq]{
@@ -272,11 +284,14 @@ func (a *applicationSvc) createForAws(cts *rest.Contexts, req *proto.AccountAddR
 			},
 		},
 	)
-	return err
+	if err != nil {
+		return "", err
+	}
+	return result.ID, err
 }
 
-func (a *applicationSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountAddReq) error {
-	_, err := a.client.DataService().HuaWei.Account.Create(
+func (a *applicationSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountAddReq) (string, error) {
+	result, err := a.client.DataService().HuaWei.Account.Create(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataprotocloud.AccountCreateReq[dataprotocloud.HuaWeiAccountExtensionCreateReq]{
@@ -298,11 +313,14 @@ func (a *applicationSvc) createForHuaWei(cts *rest.Contexts, req *proto.AccountA
 			},
 		},
 	)
-	return err
+	if err != nil {
+		return "", err
+	}
+	return result.ID, err
 }
 
-func (a *applicationSvc) createForGcp(cts *rest.Contexts, req *proto.AccountAddReq) error {
-	_, err := a.client.DataService().Gcp.Account.Create(
+func (a *applicationSvc) createForGcp(cts *rest.Contexts, req *proto.AccountAddReq) (string, error) {
+	result, err := a.client.DataService().Gcp.Account.Create(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataprotocloud.AccountCreateReq[dataprotocloud.GcpAccountExtensionCreateReq]{
@@ -323,11 +341,14 @@ func (a *applicationSvc) createForGcp(cts *rest.Contexts, req *proto.AccountAddR
 			},
 		},
 	)
-	return err
+	if err != nil {
+		return "", err
+	}
+	return result.ID, err
 }
 
-func (a *applicationSvc) createForAzure(cts *rest.Contexts, req *proto.AccountAddReq) error {
-	_, err := a.client.DataService().Azure.Account.Create(
+func (a *applicationSvc) createForAzure(cts *rest.Contexts, req *proto.AccountAddReq) (string, error) {
+	result, err := a.client.DataService().Azure.Account.Create(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataprotocloud.AccountCreateReq[dataprotocloud.AzureAccountExtensionCreateReq]{
@@ -349,5 +370,8 @@ func (a *applicationSvc) createForAzure(cts *rest.Contexts, req *proto.AccountAd
 			},
 		},
 	)
-	return err
+	if err != nil {
+		return "", err
+	}
+	return result.ID, err
 }

@@ -42,6 +42,7 @@ var ApplicationColumnDescriptor = utils.ColumnDescriptors{
 
 	{Column: "applicant", NamedC: "applicant", Type: enumor.String},
 	{Column: "content", NamedC: "content", Type: enumor.Json},
+	{Column: "delivery_detail", NamedC: "delivery_detail", Type: enumor.Json},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
@@ -65,6 +66,8 @@ type ApplicationTable struct {
 	Applicant string `db:"applicant" json:"applicant" validate:"max=64"`
 	// Content 申请的内容，不同类型的申请单，内容不一样
 	Content types.JsonField `db:"content" json:"content"`
+	// DeliveryDetail 交付细节，主要是包括一些交付资源ID
+	DeliveryDetail types.JsonField `db:"delivery_detail" json:"delivery_detail"`
 	// Memo 备注或申请理由
 	Memo *string `db:"memo" json:"memo" validate:"omitempty,max=255"`
 
@@ -111,6 +114,10 @@ func (a ApplicationTable) InsertValidate() error {
 
 	if len(a.Content) == 0 {
 		return errors.New("content is required")
+	}
+
+	if len(a.DeliveryDetail) == 0 {
+		return errors.New("delivery_detail is required")
 	}
 
 	if len(a.Creator) == 0 {
