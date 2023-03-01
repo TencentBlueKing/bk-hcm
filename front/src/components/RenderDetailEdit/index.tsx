@@ -98,7 +98,7 @@ export default defineComponent({
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)} />;
         case 'select':
           return <Select ref={selectRef} class="w320" modelValue={props.modelValue}
-          filterable multiple show-select-all multiple-mode="tag"
+          filterable multiple-mode="tag"
           placeholder={props.fromPlaceholder}
           onChange={handleChange} onBlur={() => handleBlur(props.fromKey)}>
             {props.selectData.map((item: any) => (

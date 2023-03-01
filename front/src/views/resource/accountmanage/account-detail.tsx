@@ -500,8 +500,9 @@ export default defineComponent({
         isOrganizationDetail.value = true;  // 改为详情展示态
       } else if (key === 'bizIds') {
         // 若选择全部业务，则参数是-1
-        params.bk_biz_ids = projectModel[key].length === businessList.list.length
-          ? [-1] : projectModel[key];
+        // params.bk_biz_ids = projectModel[key].length === businessList.list.length
+        //   ? [-1] : projectModel[key];
+        params.bk_biz_ids = projectModel[key] ?  [projectModel[key]] : [-1];
       } else {
         params = {};
         params[key] = projectModel[key];
@@ -619,6 +620,7 @@ export default defineComponent({
 
     // 处理失焦
     const handleblur = async (val: boolean, key: string) => {
+      console.log('key', key, projectModel[key].length);
       handleEditStatus(val, key);     // 未通过检验前状态为编辑态
       await formRef.value?.validate();
       if (projectModel[key].length) {
@@ -632,6 +634,13 @@ export default defineComponent({
     // 处理组织架构选择
     const handleOrganChange = (val: any) => {
       updateFormData('departmentId', val);    // 更新数据
+    };
+
+    const handleBizChange = async (val: any) => {
+      handleEditStatus(true, 'bizIds');     // 未通过检验前状态为编辑态
+      await formRef.value?.validate();
+      handleEditStatus(false, 'bizIds');   // 通过检验则把状态改为不可编辑态
+      updateFormData('bizIds', val);    // 更新数据
     };
 
     // 组织架构编辑
@@ -755,8 +764,10 @@ export default defineComponent({
             isEdit: false,
             component() {
               // eslint-disable-next-line max-len
+              // onBlur={handleblur}
+              // onChange={handleBizChange}
               return (<RenderDetailEdit v-model={projectModel.bizIds} fromKey={this.property}
-                selectData={businessList.list} fromType="select" isEdit={this.isEdit} onBlur={handleblur}/>);
+                selectData={businessList.list} fromType="select" isEdit={this.isEdit} onChange={handleBizChange} />);
             },
           },
         ],
