@@ -217,6 +217,25 @@ func (a AzureSubnetListOption) Validate() error {
 	return nil
 }
 
+// AzureSubnetListByIDOption defines azure list subnet options.
+type AzureSubnetListByIDOption struct {
+	core.AzureListByIDOption `json:",inline"`
+	VpcID                    string `json:"vpc_id"`
+}
+
+// Validate AzureSubnetListOption.
+func (a AzureSubnetListByIDOption) Validate() error {
+	if err := a.AzureListByIDOption.Validate(); err != nil {
+		return err
+	}
+
+	if len(a.VpcID) == 0 {
+		return errf.New(errf.InvalidParameter, "vpc id must be set")
+	}
+
+	return nil
+}
+
 // AzureSubnetListResult defines azure list subnet result.
 type AzureSubnetListResult struct {
 	Details []AzureSubnet `json:"details"`

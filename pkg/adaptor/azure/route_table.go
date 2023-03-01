@@ -100,6 +100,48 @@ func (a *Azure) ListRouteTable(kt *kit.Kit, opt *core.AzureListOption) (*routeta
 	return &routetable.AzureRouteTableListResult{Details: details}, nil
 }
 
+// ListRouteTableByID list route table.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/list?tabs=HTTP
+func (a *Azure) ListRouteTableByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
+	*routetable.AzureRouteTableListResult, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	routeTableClient, err := a.clientSet.routeTableClient()
+	if err != nil {
+		return nil, fmt.Errorf("new route table client failed, err: %v", err)
+	}
+
+	req := new(armnetwork.RouteTablesClientListOptions)
+
+	pager := routeTableClient.NewListPager(opt.ResourceGroupName, req)
+
+	idMap := converter.StringSliceToMap(opt.CloudIDs)
+	details := make([]routetable.AzureRouteTable, 0, len(idMap))
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list azure route table but get next page failed, err: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			if _, exist := idMap[*one.ID]; exist {
+				details = append(details, converter.PtrToVal(convertRouteTable(one, opt.ResourceGroupName,
+					a.clientSet.credential.CloudSubscriptionID)))
+				delete(idMap, *one.ID)
+
+				if len(idMap) == 0 {
+					return &routetable.AzureRouteTableListResult{Details: details}, nil
+				}
+			}
+		}
+	}
+
+	return &routetable.AzureRouteTableListResult{Details: details}, nil
+}
+
 // GetRouteTable get route table.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/get?tabs=HTTP
 func (a *Azure) GetRouteTable(kt *kit.Kit, opt *routetable.AzureRouteTableGetOption) (*routetable.AzureRouteTable,

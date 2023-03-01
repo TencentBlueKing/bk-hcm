@@ -43,21 +43,59 @@ func (a *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceL
 		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
 	}
 
-	pager := client.NewListAllPager(nil)
-	if err != nil {
-		logs.Errorf("list all azure network interface failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("list all azure network interface failed, err: %v", err)
-	}
-
 	details := make([]typesniproto.AzureNI, 0)
+	pager := client.NewListAllPager(nil)
 	for pager.More() {
-		page, err := pager.NextPage(kt.Ctx)
+		nextResult, err := pager.NextPage(kt.Ctx)
 		if err != nil {
-			return nil, fmt.Errorf("list all azure network interface but get next page failed, err: %v", err)
+			return nil, fmt.Errorf("failed to advance page: %v", err)
 		}
 
-		for _, item := range page.Value {
+		for _, item := range nextResult.Value {
 			details = append(details, converter.PtrToVal(convertCloudNetworkInterface(item)))
+		}
+	}
+
+	return &typesniproto.AzureInterfaceListResult{Details: details}, nil
+}
+
+// ListNetworkInterfaceByID list all network interface by id.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
+func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
+	*typesniproto.AzureInterfaceListResult, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.networkInterfaceClient()
+	if err != nil {
+		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
+	}
+
+	idMap := converter.StringSliceToMap(opt.CloudIDs)
+
+	details := make([]typesniproto.AzureNI, 0, len(idMap))
+	pager := client.NewListPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			if _, exist := idMap[*one.ID]; exist {
+				details = append(details, converter.PtrToVal(convertCloudNetworkInterface(one)))
+				delete(idMap, *one.ID)
+
+				if len(idMap) == 0 {
+					return &typesniproto.AzureInterfaceListResult{Details: details}, nil
+				}
+			}
 		}
 	}
 

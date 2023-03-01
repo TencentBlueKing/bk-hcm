@@ -22,9 +22,11 @@ package azure
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
@@ -84,6 +86,48 @@ func (a *Azure) ListDisk(kit *kit.Kit, opt *disk.AzureDiskListOption) ([]*armcom
 			return nil, fmt.Errorf("failed to advance page: %v", err)
 		}
 		disks = append(disks, nextResult.Value...)
+	}
+
+	return disks, nil
+}
+
+// ListDiskByID 查看云硬盘
+// reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
+func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*armcompute.Disk, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "azure disk list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.diskClient()
+	if err != nil {
+		return nil, err
+	}
+
+	idMap := converter.StringSliceToMap(opt.CloudIDs)
+
+	disks := make([]*armcompute.Disk, 0, len(idMap))
+	pager := client.NewListByResourceGroupPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kit.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			if _, exist := idMap[*one.ID]; exist {
+				disks = append(disks, one)
+				delete(idMap, *one.ID)
+
+				if len(idMap) == 0 {
+					return disks, nil
+				}
+			}
+		}
 	}
 
 	return disks, nil

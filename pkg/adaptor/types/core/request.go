@@ -20,7 +20,11 @@
 package core
 
 import (
+	"fmt"
+
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 )
 
 // BaseDeleteOption defines basic options to delete a cloud resource.
@@ -220,6 +224,29 @@ func (a HuaWeiListOption) Validate() error {
 		if err := a.Page.Validate(); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// AzureListByIDOption azure list by id option.
+type AzureListByIDOption struct {
+	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
+	CloudIDs          []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate azure list by id option.
+func (opt AzureListByIDOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return nil
+	}
+
+	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("cloud_ids should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	if len(opt.CloudIDs) == 0 {
+		return fmt.Errorf("cloud_ids shuold > 1")
 	}
 
 	return nil

@@ -101,6 +101,42 @@ func (a *Azure) ListVpc(kt *kit.Kit, opt *core.AzureListOption) (*types.AzureVpc
 	return &types.AzureVpcListResult{Details: details}, nil
 }
 
+// ListVpcByID list vpc.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list
+func (a *Azure) ListVpcByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*types.AzureVpcListResult, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	vpcClient, err := a.clientSet.vpcClient()
+	if err != nil {
+		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
+	}
+
+	pager := vpcClient.NewListPager(opt.ResourceGroupName, new(armnetwork.VirtualNetworksClientListOptions))
+	idMap := converter.StringSliceToMap(opt.CloudIDs)
+	details := make([]types.AzureVpc, 0, len(idMap))
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list azure vpc but get next page failed, err: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			if _, exist := idMap[*one.ID]; exist {
+				details = append(details, converter.PtrToVal(convertVpc(one, opt.ResourceGroupName)))
+				delete(idMap, *one.ID)
+
+				if len(idMap) == 0 {
+					return &types.AzureVpcListResult{Details: details}, nil
+				}
+			}
+		}
+	}
+
+	return &types.AzureVpcListResult{Details: details}, nil
+}
+
 func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.AzureVpc {
 	if data == nil {
 		return nil

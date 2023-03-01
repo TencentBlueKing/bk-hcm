@@ -103,6 +103,48 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*type
 	return &types.AzureSubnetListResult{Details: details}, nil
 }
 
+// ListSubnetByID list subnet.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/list?tabs=HTTP
+func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *types.AzureSubnetListByIDOption) (
+	*types.AzureSubnetListResult, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	subnetClient, err := a.clientSet.subnetClient()
+	if err != nil {
+		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	idMap := converter.StringSliceToMap(opt.CloudIDs)
+
+	req := new(armnetwork.SubnetsClientListOptions)
+	vpcName := parseIDToName(opt.VpcID)
+	pager := subnetClient.NewListPager(opt.ResourceGroupName, vpcName, req)
+	details := make([]types.AzureSubnet, 0, len(idMap))
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list azure subnet but get next page failed, err: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			if _, exist := idMap[*one.ID]; exist {
+				details = append(details, converter.PtrToVal(convertSubnet(one,
+					a.clientSet.credential.CloudSubscriptionID, opt.ResourceGroupName, vpcName)))
+				delete(idMap, *one.ID)
+
+				if len(idMap) == 0 {
+					return &types.AzureSubnetListResult{Details: details}, nil
+				}
+			}
+		}
+	}
+
+	return &types.AzureSubnetListResult{Details: details}, nil
+}
+
 func convertSubnet(data *armnetwork.Subnet, subscription, resourceGroup, vpc string) *types.AzureSubnet {
 	if data == nil {
 		return nil

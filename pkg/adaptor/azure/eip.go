@@ -22,9 +22,11 @@ package azure
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 // ListEip ...
@@ -59,6 +61,54 @@ func (a *Azure) ListEip(kt *kit.Kit, opt *eip.AzureEipListOption) (*eip.AzureEip
 			}
 
 			eips = append(eips, eIp)
+		}
+	}
+
+	return &eip.AzureEipListResult{Details: eips}, nil
+}
+
+// ListEipByID ...
+// reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/list-all?tabs=HTTP
+func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.AzureEipListResult, error) {
+	client, err := a.clientSet.publicIPAddressesClient()
+	if err != nil {
+		return nil, err
+	}
+
+	idMap := converter.StringSliceToMap(opt.CloudIDs)
+
+	eips := make([]*eip.AzureEip, 0, len(idMap))
+	pager := client.NewListPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			logs.Errorf("list azure eip failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, fmt.Errorf("list azure eip failed, err: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			if _, exist := idMap[*one.ID]; exist {
+				state := string(*one.Properties.ProvisioningState)
+				sku := string(*one.SKU.Name)
+				eIp := &eip.AzureEip{
+					CloudID:  *one.ID,
+					Name:     one.Name,
+					Region:   *one.Location,
+					Status:   &state,
+					PublicIp: one.Properties.IPAddress,
+					SKU:      &sku,
+				}
+				if one.Properties.IPConfiguration != nil {
+					eIp.IpConfigurationID = one.Properties.IPConfiguration.ID
+				}
+
+				eips = append(eips, eIp)
+				delete(idMap, *one.ID)
+
+				if len(idMap) == 0 {
+					return &eip.AzureEipListResult{Details: eips}, nil
+				}
+			}
 		}
 	}
 

@@ -83,3 +83,13 @@ func Uint64SliceToStringSlice(source []uint64) []string {
 
 	return target
 }
+
+// StringSliceToMap []string to map[string]struct.
+func StringSliceToMap(source []string) map[string]struct{} {
+	target := make(map[string]struct{}, len(source))
+	for _, one := range source {
+		target[one] = struct{}{}
+	}
+
+	return target
+}
