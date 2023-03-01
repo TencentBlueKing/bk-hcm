@@ -36,6 +36,17 @@ func (o *GcpEipListOption) Validate() error {
 	return validator.Validate.Struct(o)
 }
 
+// GcpEipListByIPOption ...
+type GcpEipListByIPOption struct {
+	Region    string `json:"region" validate:"required"`
+	IPAddress string `json:"ip_address" validate:"required"`
+}
+
+// Validate ...
+func (o *GcpEipListByIPOption) Validate() error {
+	return validator.Validate.Struct(o)
+}
+
 // GcpEipListResult ...
 type GcpEipListResult struct {
 	NextPageToken string
