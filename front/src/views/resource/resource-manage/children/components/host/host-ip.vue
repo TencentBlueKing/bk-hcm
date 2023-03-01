@@ -2,10 +2,24 @@
 import {
   ref,
   h,
+  watch,
 } from 'vue';
 import {
   Button,
 } from 'bkui-vue';
+
+import useQueryList from '../../../hooks/use-query-list'
+import {
+  useResourceStore,
+} from '@/store/resource';
+
+const props = defineProps({
+  data: {
+    type: Object,
+  },
+});
+
+const resourceStore = useResourceStore();
 
 // 状态
 const showAdjustNetwork = ref(false);
@@ -13,34 +27,26 @@ const showChangeIP = ref(false);
 const showUnbind = ref(false);
 const showBind = ref(false);
 
-const columns = [
+const columns = ref([
   {
     label: 'ID',
     field: 'id',
   },
   {
     label: '名称',
-    field: 'id',
+    field: 'name',
   },
   {
     label: 'IP地址',
-    field: 'id',
+    field: 'public_ip',
   },
   {
     label: 'IP类型',
-    field: 'id',
-  },
-  {
-    label: '计费模式',
-    field: 'id',
-  },
-  {
-    label: '带宽上限',
-    field: 'id',
+    field: 'address_type',
   },
   {
     label: '备注',
-    field: 'id',
+    field: 'memo',
   },
   {
     label: '操作',
@@ -90,13 +96,18 @@ const columns = [
       ]
     },
   },
-];
+]);
 
-const tableData = [
-  {
-    id: 233,
-  },
-];
+const {
+  datas,
+  isLoading,
+} = useQueryList(
+  {},
+  'eip',
+  () => {
+    return Promise.all([resourceStore.getEipListByCvmId(props.data.vendor, props.data.id)])
+  }
+);
 
 const handleToggleShowAdjustNetwork = () => {
   showAdjustNetwork.value = !showAdjustNetwork.value
@@ -129,22 +140,48 @@ const handleToggleShowBind = () => {
 const handleConfirmBind = () => {
   handleToggleShowBind()
 }
+
+watch(
+  () => props.data,
+  () => {
+    if (props.data.vendor === 'tcloud') {
+      columns.value.splice(4, 0 , ...[
+        {
+          label: '计费模式',
+          field: 'internet_charge_type',
+        },
+        {
+          label: '带宽上限',
+          field: 'bandwidth',
+        }
+      ])
+    }
+  },
+  {
+    deep: true,
+    immediate: true
+  }
+)
 </script>
 
 <template>
-  <bk-button
-    class="mt20"
-    theme="primary"
-    @click="handleToggleShowBind"
+  <bk-loading
+    :loading="isLoading"
   >
-    绑定
-  </bk-button>
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-  />
+    <bk-button
+      class="mt20"
+      theme="primary"
+      @click="handleToggleShowBind"
+    >
+      绑定
+    </bk-button>
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      :columns="columns"
+      :data="datas"
+    />
+  </bk-loading>
   <bk-dialog
     :is-show="showAdjustNetwork"
     title="调整网络"

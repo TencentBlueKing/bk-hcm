@@ -18,7 +18,6 @@ import useColumns from '../../hooks/use-columns';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
-import { any } from 'vue-types';
 
 const props = defineProps({
   filter: {

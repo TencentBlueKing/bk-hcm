@@ -59,6 +59,12 @@ export const useResourceStore = defineStore({
     // 获取
     countSubnetIps(id: string | number) {
       return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/${id}/ips/count`);
+    },
+    getEipListByCvmId(vendor: string, id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/eips/cvm/${id}`);
+    },
+    getDiskListByCvmId(vendor: string, id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/disks/cvms/${id}`);
     }
   },
 });
