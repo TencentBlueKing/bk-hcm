@@ -140,57 +140,6 @@ create table if not exists `security_group`
 ) engine = innodb
   default charset = utf8mb4;
 
-# vpc_security_group_rel is only used of aws.
-create table if not exists `vpc_security_group_rel`
-(
-    `id`                bigint(1) unsigned not null auto_increment,
-    `vpc_id`            varchar(64)        not null,
-    `security_group_id` varchar(64)        not null,
-    `creator`           varchar(64)        not null,
-    `created_at`        timestamp          not null default current_timestamp,
-    primary key (`id`),
-    unique key `idx_uk_vpc_id_security_group_id` (`vpc_id`, `security_group_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
-create table if not exists `security_group_biz_rel`
-(
-    `id`                bigint(1) unsigned not null auto_increment,
-    `bk_biz_id`         bigint(1)          not null,
-    `security_group_id` varchar(64)        not null,
-    `creator`           varchar(64)        not null,
-    `created_at`        timestamp          not null default current_timestamp,
-    primary key (`id`),
-    unique key `idx_uk_bk_biz_id_security_group_id` (`bk_biz_id`, `security_group_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
-# security_group_network_interface_rel is only used of azure.
-create table if not exists `security_group_network_interface_rel`
-(
-    `id`                   bigint(1) unsigned not null auto_increment,
-    `security_group_id`    varchar(64)        not null,
-    `network_interface_id` varchar(64)        not null,
-    `creator`              varchar(64)        not null,
-    `created_at`           timestamp          not null default current_timestamp,
-    primary key (`id`),
-    unique key `idx_uk_security_group_id_network_interface_id` (`security_group_id`, `network_interface_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
-# security_group_subnet_rel is only used of azure.
-create table if not exists `security_group_subnet_rel`
-(
-    `id`                bigint(1) unsigned not null auto_increment,
-    `security_group_id` varchar(64)        not null,
-    `subnet_id`         varchar(64)        not null,
-    `creator`           varchar(64)        not null,
-    `created_at`        timestamp          not null default current_timestamp,
-    primary key (`id`),
-    unique key `idx_uk_security_group_id_subnet_id` (`security_group_id`, `subnet_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
 create table if not exists `security_group_cvm_rel`
 (
     `id`                bigint(1) unsigned not null auto_increment,
@@ -324,20 +273,6 @@ create table if not exists `azure_security_group_rule`
 ) engine = innodb
   default charset = utf8mb4;
 
-create table if not exists `security_group_tag`
-(
-    `id`                varchar(64)  not null,
-    `security_group_id` varchar(64)  not null,
-    `key`               varchar(255) not null,
-    `value`             varchar(255)          default '',
-    `creator`           varchar(64)  not null,
-    `reviser`           varchar(64)  not null,
-    `created_at`        timestamp    not null default current_timestamp,
-    `updated_at`        timestamp    not null default current_timestamp on update current_timestamp,
-    primary key (`id`)
-) engine = innodb
-  default charset = utf8mb4;
-
 create table if not exists `gcp_firewall_rule`
 (
     `id`                      varchar(64)  not null,
@@ -395,18 +330,6 @@ create table if not exists `vpc`
 ) engine = innodb
   default charset = utf8mb4;
 
-create table if not exists `vpc_cvm_rel`
-(
-    `id`         bigint(1) unsigned not null auto_increment,
-    `vpc_id`     varchar(64)        not null,
-    `cvm_id`     varchar(64)        not null,
-    `creator`    varchar(64)        not null,
-    `created_at` timestamp          not null default current_timestamp,
-    primary key (`id`),
-    unique key `idx_uk_vpc_id_cvm_id` (`vpc_id`, `cvm_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
 create table if not exists `subnet`
 (
     `id`                   varchar(64)  not null,
@@ -433,18 +356,6 @@ create table if not exists `subnet`
     `updated_at`           timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
-) engine = innodb
-  default charset = utf8mb4;
-
-create table if not exists `subnet_cvm_rel`
-(
-    `id`         bigint(1) unsigned not null auto_increment,
-    `subnet_id`  varchar(64)        not null,
-    `cvm_id`     varchar(64)        not null,
-    `creator`    varchar(64)        not null,
-    `created_at` timestamp          not null default current_timestamp,
-    primary key (`id`),
-    unique key `idx_uk_subnet_id_cvm_id` (`subnet_id`, `cvm_id`)
 ) engine = innodb
   default charset = utf8mb4;
 
@@ -531,15 +442,15 @@ create table if not exists `azure_region`
 -- ----------------------------
 create table if not exists `tcloud_region`
 (
-    `id`          varchar(64) not null comment '主键',
-    `vendor`      varchar(32) not null comment '云厂商标识',
-    `region_id`   varchar(32) not null comment '地区id',
-    `region_name` varchar(64) not null comment '地区名称',
-    `status`      varchar(32)          default '' comment '地区状态(available:可用)',
-    `creator`     varchar(64)          default '' comment '创建人',
-    `reviser`     varchar(64)          default '' comment '修改人',
-    `created_at`  timestamp   not null default current_timestamp comment '创建时间',
-    `updated_at`  timestamp   not null default current_timestamp on update current_timestamp comment '更新时间',
+    `id`          varchar(64) not null,
+    `vendor`      varchar(32) not null,
+    `region_id`   varchar(32) not null,
+    `region_name` varchar(64) not null,
+    `status`      varchar(32)          default '',
+    `creator`     varchar(64)          default '',
+    `reviser`     varchar(64)          default '',
+    `created_at`  timestamp   not null default current_timestamp,
+    `updated_at`  timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_region_id_status` (`region_id`, `status`),
     key `idx_uk_vendor` (`vendor`)
@@ -551,16 +462,16 @@ create table if not exists `tcloud_region`
 -- ----------------------------
 create table if not exists `aws_region`
 (
-    `id`          varchar(64) not null comment '主键',
-    `vendor`      varchar(32) not null comment '云厂商标识',
-    `region_id`   varchar(32) not null comment '地区id',
-    `region_name` varchar(64) not null comment '地区名称',
-    `status`      varchar(32)          default '' comment '地区状态(opt-in-not-required、opted-in、not-opted-in)',
-    `endpoint`    varchar(64)          default '' comment 'endpoint',
-    `creator`     varchar(64)          default '' comment '创建人',
-    `reviser`     varchar(64)          default '' comment '修改人',
-    `created_at`  timestamp   not null default current_timestamp comment '创建时间',
-    `updated_at`  timestamp   not null default current_timestamp on update current_timestamp comment '更新时间',
+    `id`          varchar(64) not null,
+    `vendor`      varchar(32) not null,
+    `region_id`   varchar(32) not null,
+    `region_name` varchar(64) not null,
+    `status`      varchar(32)          default '',
+    `endpoint`    varchar(64)          default '',
+    `creator`     varchar(64)          default '',
+    `reviser`     varchar(64)          default '',
+    `created_at`  timestamp   not null default current_timestamp,
+    `updated_at`  timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_region_id_status` (`region_id`, `status`),
     key `idx_uk_vendor` (`vendor`)
@@ -572,16 +483,16 @@ create table if not exists `aws_region`
 -- ----------------------------
 create table if not exists `gcp_region`
 (
-    `id`          varchar(64) not null comment '主键',
-    `vendor`      varchar(32) not null comment '云厂商标识',
-    `region_id`   varchar(32) not null comment '地区id',
-    `region_name` varchar(64) not null comment '地区名称',
-    `status`      varchar(32)          default '' comment '地区状态(up:可用down:不可用)',
-    `self_link`   varchar(255)         default '' comment 'gcp的selflink',
-    `creator`     varchar(64)          default '' comment '创建人',
-    `reviser`     varchar(64)          default '' comment '修改人',
-    `created_at`  timestamp   not null default current_timestamp comment '创建时间',
-    `updated_at`  timestamp   not null default current_timestamp on update current_timestamp comment '更新时间',
+    `id`          varchar(64) not null,
+    `vendor`      varchar(32) not null,
+    `region_id`   varchar(32) not null,
+    `region_name` varchar(64) not null,
+    `status`      varchar(32)          default '',
+    `self_link`   varchar(255)         default '',
+    `creator`     varchar(64)          default '',
+    `reviser`     varchar(64)          default '',
+    `created_at`  timestamp   not null default current_timestamp,
+    `updated_at`  timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_region_id_status` (`region_id`, `status`),
     key `idx_uk_vendor` (`vendor`)
@@ -817,7 +728,9 @@ create table if not exists `cvm`
     `region`                 varchar(20)  not null,
     `zone`                   varchar(20)           default '',
     `cloud_vpc_ids`          json         not null,
+    `vpc_ids`                json         not null,
     `cloud_subnet_ids`       json         not null,
+    `subnet_ids`             json         not null,
     `cloud_image_id`         varchar(255) not null,
     `image_id`               varchar(64)  not null,
     `os_name`                varchar(255) not null,
@@ -900,26 +813,26 @@ create table if not exists `eip_cvm_rel`
 
 create table if not exists `network_interface`
 (
-    `id`              varchar(64)  not null comment '主键',
-    `account_id`      varchar(64)  not null comment '账号id',
-    `vendor`          varchar(32)  not null default '' comment '云厂商标识',
-    `name`            varchar(64)  not null comment '网络接口名称',
-    `region`          varchar(255) not null default '' comment '区域/地域',
-    `zone`            varchar(255) not null default '' comment '可用区',
-    `cloud_id`        varchar(255)          default '' comment '网卡端口所属网络id',
-    `vpc_id`          varchar(255) not null default '' comment 'vpc的id',
-    `cloud_vpc_id`    varchar(255) not null default '' comment '云vpc的id',
-    `subnet_id`       varchar(64)  not null default '' comment '子网的id',
-    `cloud_subnet_id` varchar(255)          default '' comment '云子网的id',
-    `private_ip`      varchar(64)           default '' comment '内网ip',
-    `public_ip`       varchar(64)           default '' comment '公网ip',
+    `id`              varchar(64)  not null,
+    `account_id`      varchar(64)  not null,
+    `vendor`          varchar(32)  not null default '',
+    `name`            varchar(64)  not null,
+    `region`          varchar(255) not null default '',
+    `zone`            varchar(255) not null default '',
+    `cloud_id`        varchar(255)          default '',
+    `vpc_id`          varchar(255) not null default '',
+    `cloud_vpc_id`    varchar(255) not null default '',
+    `subnet_id`       varchar(64)  not null default '',
+    `cloud_subnet_id` varchar(255)          default '',
+    `private_ip`      varchar(64)           default '',
+    `public_ip`       varchar(64)           default '',
     `bk_biz_id`       bigint                default '-1',
-    `instance_id`     varchar(255)          default '' comment '关联的实例id',
-    `extension`       json                  default null comment '扩展字段',
-    `creator`         varchar(64)           default '' comment '创建人',
-    `reviser`         varchar(64)           default '' comment '修改人',
-    `created_at`      timestamp    not null default current_timestamp comment '创建时间',
-    `updated_at`      timestamp    not null default current_timestamp on update current_timestamp comment '更新时间',
+    `instance_id`     varchar(255)          default '',
+    `extension`       json                  default null,
+    `creator`         varchar(64)           default '',
+    `reviser`         varchar(64)           default '',
+    `created_at`      timestamp    not null default current_timestamp,
+    `updated_at`      timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
