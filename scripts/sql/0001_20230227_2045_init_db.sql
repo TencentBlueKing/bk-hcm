@@ -756,18 +756,18 @@ create table if not exists `cvm`
 
 create table if not exists `application`
 (
-    `id`         varchar(64) not null,
-    `sn`         varchar(64) not null,
-    `type`       varchar(64) not null,
-    `status`     varchar(32) not null,
-    `applicant`  varchar(64) not null,
-    `memo`       varchar(255) default '',
-    `content`           json not null,
-    `delivery_detail`   json not null,
-    `creator`    varchar(64) not null,
-    `reviser`    varchar(64) not null,
-    `created_at` timestamp   not null default current_timestamp,
-    `updated_at` timestamp   not null default current_timestamp on update current_timestamp,
+    `id`              varchar(64) not null,
+    `sn`              varchar(64) not null,
+    `type`            varchar(64) not null,
+    `status`          varchar(32) not null,
+    `applicant`       varchar(64) not null,
+    `memo`            varchar(255)         default '',
+    `content`         json        not null,
+    `delivery_detail` json        not null,
+    `creator`         varchar(64) not null,
+    `reviser`         varchar(64) not null,
+    `created_at`      timestamp   not null default current_timestamp,
+    `updated_at`      timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_sn` (`sn`)
 ) engine = innodb
@@ -775,13 +775,13 @@ create table if not exists `application`
 
 create table if not exists `approval_process`
 (
-    `id`         varchar(64) not null,
-    `application_type`       varchar(64) not null,
-    `service_id`             bigint(1)   not null,
-    `creator`    varchar(64) not null,
-    `reviser`    varchar(64) not null,
-    `created_at` timestamp   not null default current_timestamp,
-    `updated_at` timestamp   not null default current_timestamp on update current_timestamp,
+    `id`               varchar(64) not null,
+    `application_type` varchar(64) not null,
+    `service_id`       bigint(1)   not null,
+    `creator`          varchar(64) not null,
+    `reviser`          varchar(64) not null,
+    `created_at`       timestamp   not null default current_timestamp,
+    `updated_at`       timestamp   not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_type` (`application_type`)
 ) engine = innodb
@@ -837,3 +837,15 @@ create table if not exists `network_interface`
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
   default charset = utf8mb4 comment = '网络接口表';
+
+CREATE TABLE if NOT EXISTS `network_interface_cvm_rel`
+(
+    `id`                   bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `cvm_id`               varchar(64)     NOT NULL COMMENT '主机ID',
+    `network_interface_id` varchar(64)     NOT NULL COMMENT '网络接口ID',
+    `creator`              varchar(64)          DEFAULT '' COMMENT '创建人',
+    `created_at`           timestamp       NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `idx_uk_cvm_id_network_interface_id` (`cvm_id`, `network_interface_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='网络接口跟主机的关联表';

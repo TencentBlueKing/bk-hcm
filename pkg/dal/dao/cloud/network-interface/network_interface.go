@@ -229,3 +229,23 @@ func (n NetworkInterfaceDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter
 
 	return nil
 }
+
+// ListNetworkInterface list network interface
+func ListNetworkInterface(kt *kit.Kit, orm orm.Interface, ids []string) (
+	map[string]tableni.NetworkInterfaceTable, error) {
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`,
+		tableni.NetworkInterfaceColumns.FieldsNamedExpr(nil), table.NetworkInterfaceTable)
+
+	list := make([]tableni.NetworkInterfaceTable, 0)
+	if err := orm.Do().Select(kt.Ctx, &list, sql, map[string]interface{}{"ids": ids}); err != nil {
+		return nil, err
+	}
+
+	idMap := make(map[string]tableni.NetworkInterfaceTable, len(ids))
+	for _, sg := range list {
+		idMap[sg.ID] = sg
+	}
+
+	return idMap, nil
+}

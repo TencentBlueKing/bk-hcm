@@ -50,6 +50,8 @@ func InitNetworkInterfaceService(c *capability.Capability) {
 
 	h.Add("ListNetworkInterface", "POST", "/network_interfaces/list", svc.ListNetworkInterface)
 	h.Add("GetNetworkInterface", "GET", "/network_interfaces/{id}", svc.GetNetworkInterface)
+	h.Add("ListEipExtByCvmID", "GET", "/vendors/{vendor}/network_interfaces/cvms/{cvm_id}",
+		svc.ListNetworkInterfaceExtByCvmID)
 
 	h.Load(c.WebService)
 }
@@ -141,7 +143,8 @@ func CheckNIInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFactory
 	}
 	result, err := client.DataService().Global.NetworkInterface.List(kt.Ctx, kt.Header(), req)
 	if err != nil {
-		logs.Errorf("count network interface that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		logs.Errorf("count network interface that are not in biz failed, err: %v, req: %+v, rid: %s",
+			err, req, kt.Rid)
 		return err
 	}
 
