@@ -108,15 +108,17 @@ const handleDistributionSubnet = () => {
     :loading="isLoading"
   >
     <section>
-      <bk-button
-        class="w100"
-        theme="primary"
-        :loading="isLoadingVpc"
-        :disabled="selections.length <= 0"
-        @click="handleDistributionSubnet"
-      >
-        {{ t('分配') }}
-      </bk-button>
+      <slot>
+        <bk-button
+          class="w100"
+          theme="primary"
+          :loading="isLoadingVpc"
+          :disabled="selections.length <= 0"
+          @click="handleDistributionSubnet"
+        >
+          {{ t('分配') }}
+        </bk-button>
+      </slot>
       <bk-button
         class="w100 ml10"
         theme="primary"

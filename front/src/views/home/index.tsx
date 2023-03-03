@@ -38,7 +38,7 @@ export default defineComponent({
 
     const changeMenus = (id: string, ...subPath: string[]) => {
       console.log('subPath', subPath);
-      openedKeys = [`/${id}`];
+      openedKeys.push(`/${id}`);
       switch (id) {
         case 'business':
           topMenuActiveItem = 'business';
@@ -119,7 +119,7 @@ export default defineComponent({
                 <Navigation
                   navigationType={NAV_TYPE}
                   hoverWidth={NAV_WIDTH}
-                  defaultOpen
+                  defaultOpen={true}
                 >
                   {{
                     'side-header': () => (
@@ -169,7 +169,7 @@ export default defineComponent({
                       </header>
                     ),
                     menu: () => (
-                      <Menu class="menu-warp" style={`width: ${NAV_WIDTH}px`} uniqueOpen openedKeys={openedKeys} activeKey={route.meta.activeKey as string}>
+                      <Menu class="menu-warp" style={`width: ${NAV_WIDTH}px`} uniqueOpen={false} openedKeys={openedKeys} activeKey={route.meta.activeKey as string}>
                         {
                           menus.map(menuItem => (Array.isArray(menuItem.children) ? (
                             <Menu.Submenu

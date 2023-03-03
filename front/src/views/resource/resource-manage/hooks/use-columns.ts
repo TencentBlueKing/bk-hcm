@@ -12,6 +12,7 @@ import {
   h,
 } from 'vue';
 import {
+  useRoute,
   useRouter,
 } from 'vue-router';
 import {
@@ -21,6 +22,7 @@ import {
 export default (type: string) => {
   const resourceStore = useResourceStore();
   const router = useRouter();
+  const route = useRoute();
   const { t } = i18n.global;
 
   const getDeleteField = (type: string) => {
@@ -61,14 +63,10 @@ export default (type: string) => {
     };
   };
 
-  const vpcColumns = [
-    {
-      type: 'selection',
-      onlyShowOnList: true,
-    },
-    {
-      label: 'ID',
-      field: 'id',
+  const getLinkField = (type: string, label: string = 'ID', field: string = 'id') => {
+    return {
+      label,
+      field,
       sort: true,
       render({ cell }: { cell: string }) {
         return h(
@@ -77,15 +75,31 @@ export default (type: string) => {
             text: true,
             theme: 'primary',
             onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'vpc',
-                },
+              const routeInfo: any = {
                 query: {
                   id: cell,
-                },
-              });
+                }
+              }
+              // 业务下
+              if (route.path.includes('business')) {
+                Object.assign(
+                  routeInfo,
+                  {
+                    name: `${type}BusinessDetail`,
+                  }
+                )
+              } else {
+                Object.assign(
+                  routeInfo,
+                  {
+                    name: 'resourceDetail',
+                    params: {
+                      type,
+                    }
+                  }
+                )
+              }
+              router.push(routeInfo);
             },
           },
           [
@@ -93,7 +107,15 @@ export default (type: string) => {
           ],
         );
       },
+    }
+  };
+
+  const vpcColumns = [
+    {
+      type: 'selection',
+      onlyShowOnList: true,
     },
+    getLinkField('vpc'),
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -148,34 +170,7 @@ export default (type: string) => {
       type: 'selection',
       onlyShowOnList: true,
     },
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ cell }: { cell: string }) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'subnet',
-                },
-                query: {
-                  id: cell,
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('subnet'),
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -228,29 +223,7 @@ export default (type: string) => {
       type: 'selection',
       onlyShowOnList: true,
     },
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ cell }: PlainObject) {
-        return h(
-          'span',
-          {
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'subnet',
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('subnet'),
     {
       label: '资源 ID',
       field: 'account_id',
@@ -281,33 +254,6 @@ export default (type: string) => {
       label: '描述',
       field: 'memo',
     },
-    // {
-    //   label: '关联实例',
-    //   field: '',
-    //   render() {
-    //     h(
-    //       Button,
-    //       {
-    //         text: true,
-    //         theme: 'primary',
-    //         onClick() {
-    //           router.push({
-    //             name: 'resourceDetail',
-    //             params: {
-    //               type: 'security',
-    //             },
-    //             query: {
-    //               activeTab: 'rule',
-    //             },
-    //           });
-    //         },
-    //       },
-    //       [
-    //         t('配置规则'),
-    //       ],
-    //     );
-    //   },
-    // },
   ];
 
   const gcpColumns = [
@@ -315,29 +261,7 @@ export default (type: string) => {
       type: 'selection',
       onlyShowOnList: true,
     },
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ cell }: PlainObject) {
-        return h(
-          'span',
-          {
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'subnet',
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('subnet'),
     {
       label: '资源 ID',
       field: 'account_id',
@@ -378,32 +302,7 @@ export default (type: string) => {
     {
       type: 'selection',
     },
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ cell }: { cell: string }) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: { type: 'drive' },
-                query: {
-                  id: cell,
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('drive'),
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -458,35 +357,7 @@ export default (type: string) => {
   ];
 
   const imageColumns = [
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ data }: any) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'image',
-                },
-                query: {
-                  id: data.id,
-                  vendor: data.vendor,
-                },
-              });
-            },
-          },
-          [
-            data.id || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('image'),
     {
       label: '实例 ID',
       field: 'cloud_id',
@@ -537,35 +408,7 @@ export default (type: string) => {
   ];
 
   const networkInterfaceColumns = [
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ data }: any) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'network-interface',
-                },
-                query: {
-                  id: data.id,
-                  vendor: data.vendor,
-                },
-              });
-            },
-          },
-          [
-            data.id || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('network-interface'),
     {
       label: '名称',
       field: 'name',
@@ -672,32 +515,7 @@ export default (type: string) => {
   ];
 
   const routeColumns = [
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ cell }: { cell: string }) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: { type: 'route' },
-                query: {
-                  id: cell,
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('route'),
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -725,32 +543,7 @@ export default (type: string) => {
       field: 'name',
       sort: true,
     },
-    {
-      label: '所属网络(VPC)',
-      field: 'vpc_id',
-      sort: true,
-      render({ cell }: { cell: string }) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: { type: 'vpc' },
-                query: {
-                  id: cell,
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('vpc', '所属网络(VPC)', 'vpc_id'),
     {
       label: '关联子网',
       field: '',

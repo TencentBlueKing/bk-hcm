@@ -7,7 +7,8 @@ import type {
 import { GcpTypeEnum, CloudType } from '@/typings';
 import {
   Button,
-  Message } from 'bkui-vue';
+  Message,
+} from 'bkui-vue';
 
 import {
   ref,
@@ -22,6 +23,7 @@ import {
 } from 'vue-i18n';
 import {
   useRouter,
+  useRoute,
 } from 'vue-router';
 import {
   useResourceStore,
@@ -44,6 +46,8 @@ const {
 } = useI18n();
 
 const router = useRouter();
+
+const route = useRoute();
 
 const resourceStore = useResourceStore();
 
@@ -169,16 +173,32 @@ const groupColumns = [
           theme: 'primary',
           disabled: data.bk_biz_id !== -1,
           onClick() {
-            router.push({
-              name: 'resourceDetail',
-              params: {
-                type: 'security',
-              },
+            const routeInfo: any = {
               query: {
                 id: data.id,
                 vendor: data.vendor,
-              },
-            });
+              }
+            }
+            // 业务下
+            if (route.path.includes('business')) {
+              Object.assign(
+                routeInfo,
+                {
+                  name: 'securityBusinessDetail',
+                }
+              )
+            } else {
+              Object.assign(
+                routeInfo,
+                {
+                  name: 'resourceDetail',
+                  params: {
+                    type: 'security',
+                  },
+                }
+              )
+            }
+            router.push(routeInfo);
           },
         },
         [
@@ -304,15 +324,31 @@ const gcpColumns = [
           theme: 'primary',
           disabled: data.bk_biz_id !== -1,
           onClick() {
-            router.push({
-              name: 'resourceDetail',
-              params: {
-                type: 'gcp',
-              },
+            const routeInfo: any = {
               query: {
                 id: data.id,
-              },
-            });
+              }
+            }
+            // 业务下
+            if (route.path.includes('business')) {
+              Object.assign(
+                routeInfo,
+                {
+                  name: 'gcpBusinessDetail',
+                }
+              )
+            } else {
+              Object.assign(
+                routeInfo,
+                {
+                  name: 'resourceDetail',
+                  params: {
+                    type: 'gcp',
+                  },
+                }
+              )
+            }
+            router.push(routeInfo);
           },
         },
         [
@@ -488,13 +524,15 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
     :loading="state.isLoading"
   >
     <section>
-      <bk-button
-        class="w100"
-        theme="primary"
-        @click="handleDistribution"
-      >
-        {{ t('分配') }}
-      </bk-button>
+      <slot>
+        <bk-button
+          class="w100"
+          theme="primary"
+          @click="handleDistribution"
+        >
+          {{ t('分配') }}
+        </bk-button>
+      </slot>
       <bk-button
         class="w100 ml10"
         theme="primary"

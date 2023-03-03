@@ -103,14 +103,16 @@ const handleDeleteVpc = (vpcList: any) => {
     :loading="isLoading"
   >
     <section>
-      <bk-button
-        class="w100"
-        theme="primary"
-        :disabled="selections.length <= 0"
-        @click="handleDistribution"
-      >
-        {{ t('分配') }}
-      </bk-button>
+      <slot>
+        <bk-button
+          class="w100"
+          theme="primary"
+          :disabled="selections.length <= 0"
+          @click="handleDistribution"
+        >
+          {{ t('分配') }}
+        </bk-button>
+      </slot>
       <bk-button
         class="w100 ml10"
         theme="primary"

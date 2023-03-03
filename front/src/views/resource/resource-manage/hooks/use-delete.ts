@@ -90,7 +90,7 @@ export default (
           onClose: handleClose,
         },
         {
-          default: slots.default ?? slots.default(),
+          default: slots.default ?? slots.default?.(),
         },
       );
     },
