@@ -38,6 +38,7 @@ var AzureRGTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "location", NamedC: "location", Type: enumor.String},
+	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -54,6 +55,8 @@ type AzureRGTable struct {
 	Type string `db:"type"`
 	// Location 地域
 	Location string `db:"location"`
+	// AccountID 地域
+	AccountID string `db:"account_id"`
 	// Creator 创建者
 	Creator string `db:"creator"`
 	// Reviser 更新者

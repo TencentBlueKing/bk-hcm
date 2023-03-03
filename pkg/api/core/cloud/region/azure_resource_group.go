@@ -27,6 +27,7 @@ type AzureRG struct {
 	Name      string     `json:"name"`
 	Type      string     `json:"type"`
 	Location  string     `json:"location"`
+	AccountID string     `json:"account_id"`
 	Creator   string     `json:"creator"`
 	Reviser   string     `json:"reviser"`
 	CreatedAt *time.Time `json:"created_at"`

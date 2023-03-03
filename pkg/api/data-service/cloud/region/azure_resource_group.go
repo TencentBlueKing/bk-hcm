@@ -66,9 +66,10 @@ type AzureRGBatchCreateReq struct {
 
 // AzureRGBatchCreate define azure resource group when create.
 type AzureRGBatchCreate struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	Location string `json:"location"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Location  string `json:"location"`
+	AccountID string `json:"account_id"`
 }
 
 // Validate azure resource group create request.

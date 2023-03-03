@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // InitZoneService initialize the zone service.
@@ -40,7 +41,7 @@ func InitZoneService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("ListZone", http.MethodPost, "/zones/list", svc.ListZone)
+	h.Add("ListZone", http.MethodPost, "/vendors/{vendor}/regions/{region}/zones/list", svc.ListZone)
 
 	h.Load(c.WebService)
 }
@@ -53,6 +54,16 @@ type ZoneSvc struct {
 
 // ListZone ...
 func (dSvc *ZoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
+	vendor := cts.PathParameter("vendor").String()
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
+
+	region := cts.PathParameter("region").String()
+	if len(region) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "region is required")
+	}
+
 	req := new(cloudproto.ZoneListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -66,8 +77,22 @@ func (dSvc *ZoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.ZoneListReq{
-			Filter: req.Filter,
-			Page:   req.Page,
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					&filter.AtomRule{
+						Field: "vendor",
+						Op:    filter.Equal.Factory(),
+						Value: vendor,
+					},
+					&filter.AtomRule{
+						Field: "region",
+						Op:    filter.Equal.Factory(),
+						Value: region,
+					},
+				},
+			},
+			Page: req.Page,
 		},
 	)
 }

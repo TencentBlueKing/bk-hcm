@@ -73,6 +73,12 @@ func SyncAzureAll(c *client.ClientSet, kit *kit.Kit, header http.Header, account
 		logs.Errorf("sync azure eip failed, err: %v, rid: %s", err, kit.Rid)
 	}
 
+	// one azure account have its resource group, so one account sync one time
+	err = SyncAzureResourceGroup(kit, c, header, accountID)
+	if err != nil {
+		logs.Errorf("sync do azure sync resource group failed, err: %v, rid: %s", err, kit.Rid)
+	}
+
 	for _, resourceGroup := range resourceGroups.Details {
 		err := syncAzureWithResourceGroup(c, kit, resourceGroup.Name, header, regions, accountID)
 		if err != nil {
@@ -267,11 +273,6 @@ func SyncAzurePublicResource(kit *kit.Kit, c *client.ClientSet, header http.Head
 	err := SyncAzureRegion(kit, c, header, accountID)
 	if err != nil {
 		logs.Errorf("sync do azure sync region failed, err: %v, rid: %s", err, kit.Rid)
-	}
-
-	err = SyncAzureResourceGroup(kit, c, header, accountID)
-	if err != nil {
-		logs.Errorf("sync do azure sync resource group failed, err: %v, rid: %s", err, kit.Rid)
 	}
 
 	err = SyncAzureImage(kit, c, header, accountID)

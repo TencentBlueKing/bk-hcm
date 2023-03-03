@@ -383,6 +383,7 @@ create table if not exists `azure_resource_group`
     `name`       varchar(64) not null,
     `type`       varchar(64) not null,
     `location`   varchar(64) not null,
+    `account_id` varchar(64) not null,
     `creator`    varchar(64) not null,
     `reviser`    varchar(64) not null,
     `created_at` timestamp   not null default current_timestamp,

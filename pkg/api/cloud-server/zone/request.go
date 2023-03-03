@@ -22,13 +22,11 @@ package zone
 import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/runtime/filter"
 )
 
 // ZoneListReq ...
 type ZoneListReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
+	Page *core.BasePage `json:"page" validate:"required"`
 }
 
 // Validate ...

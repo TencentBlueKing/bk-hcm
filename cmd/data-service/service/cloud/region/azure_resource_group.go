@@ -111,11 +111,12 @@ func (svc *azureRGSvc) CreateAzureResourceGroup(cts *rest.Contexts) (interface{}
 	regions := make([]*tableregion.AzureRGTable, 0, len(req.ResourceGroups))
 	for _, region := range req.ResourceGroups {
 		regions = append(regions, &tableregion.AzureRGTable{
-			Name:     region.Name,
-			Type:     region.Type,
-			Location: region.Location,
-			Creator:  cts.Kit.User,
-			Reviser:  cts.Kit.User,
+			Name:      region.Name,
+			Type:      region.Type,
+			Location:  region.Location,
+			AccountID: region.AccountID,
+			Creator:   cts.Kit.User,
+			Reviser:   cts.Kit.User,
 		})
 	}
 
@@ -191,6 +192,7 @@ func (svc *azureRGSvc) ListAzureResourceGroup(cts *rest.Contexts) (interface{}, 
 			Name:      one.Name,
 			Type:      one.Type,
 			Location:  one.Location,
+			AccountID: one.AccountID,
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
 			CreatedAt: one.CreatedAt,
