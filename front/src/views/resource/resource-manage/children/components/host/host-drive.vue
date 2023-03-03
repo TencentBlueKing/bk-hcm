@@ -13,7 +13,6 @@ import {
 } from 'vue-router';
 import useMountedDrive from '../../../hooks/use-mounted-drive';
 import useUninstallDrive from '../../../hooks/use-uninstall-drive';
-import useExpansionDrive from '../../../hooks/use-expansion-drive';
 import useQueryList from '../../../hooks/use-query-list'
 import {
   useResourceStore,
@@ -50,12 +49,6 @@ const {
   handleUninstallDrive,
   UninstallDrive,
 } = useUninstallDrive();
-
-const {
-  isShowExpansionDrive,
-  handleExpansionDrive,
-  ExpansionDrive,
-} = useExpansionDrive();
 
 const columns = ref([
   {
@@ -110,14 +103,14 @@ const columns = ref([
   },
   {
     label: '操作',
-    render() {
+    render(data: any) {
       return h(
         Button,
         {
           text: true,
           theme: 'primary',
           onClick() {
-            handleUninstallDrive();
+            handleUninstallDrive(data);
           },
         },
         [
@@ -205,11 +198,6 @@ watch(
       @click="handleMountedDrive"
     >挂载</bk-button>
 
-    <bk-button
-      class="mt20 w100"
-      @click="handleExpansionDrive"
-    >扩容</bk-button>
-
     <bk-table
       class="mt20"
       row-hover="auto"
@@ -220,14 +208,12 @@ watch(
 
   <mounted-drive
     v-model:is-show="isShowMountedDrive"
+    :vender="data.vender"
+    :id="data.id"
   />
 
   <uninstall-drive
     v-model:is-show="isShowUninstallDrive"
-  />
-
-  <expansion-drive
-    v-model:is-show="isShowExpansionDrive"
   />
 </template>
 

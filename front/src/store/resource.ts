@@ -65,6 +65,18 @@ export const useResourceStore = defineStore({
     },
     getDiskListByCvmId(vendor: string, id: string) {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/disks/cvms/${id}`);
-    }
+    },
+    attachDisk(vendor: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/vendors/${vendor}/disks/attach`, data);
+    },
+    detachDisk(vendor: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/vendors/${vendor}/disks/detach`, data);
+    },
+    associateEip(vendor: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/vendors/${vendor}/eips/associate`, data);
+    },
+    disassociateEip(vendor: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/vendors/${vendor}/eips/disassociate`, data);
+    },
   },
 });

@@ -1,11 +1,20 @@
 import {
+  Table,
+  Loading
+} from 'bkui-vue';
+import {
   defineComponent,
-  ref,
 } from 'vue';
 import {
   useI18n,
 } from 'vue-i18n';
 import StepDialog from '@/components/step-dialog/step-dialog';
+import useQueryList  from '../../../hooks/use-query-list';
+import useColumns from '../../../hooks/use-columns';
+import useSelection from '../../../hooks/use-selection';
+import {
+  useResourceStore
+} from '@/store/resource';
 
 export default defineComponent({
   components: {
@@ -19,6 +28,12 @@ export default defineComponent({
     isShow: {
       type: Boolean,
     },
+    vender: {
+      type: String,
+    },
+    id: {
+      type: String
+    }
   },
 
   emits: ['update:isShow'],
@@ -28,32 +43,35 @@ export default defineComponent({
       t,
     } = useI18n();
 
-    // 状态
-    const chooseDrive = ref([]);
-    const sources = ref([
-      { service_code: 'pipeline', service_name: '流水线' },
-      { service_code: 'codecc', service_name: '代码检查' },
-      { service_code: 'bcs', service_name: '容器服务' },
-      { service_code: 'artifactory', service_name: '版本仓库' },
-      { service_code: 'ticket', service_name: '凭证管理' },
-      { service_code: 'code', service_name: '代码库' },
-      { service_code: 'experience', service_name: '版本体验' },
-      { service_code: 'environment', service_name: '环境管理' },
-    ]);
-    const steps = [
+    const {
+      datas,
+      pagination,
+      isLoading,
+      handlePageChange,
+      handlePageSizeChange,
+      handleSort,
+    } = useQueryList(
       {
-        component: () => <>
-          <bk-transfer
-            target-list={chooseDrive.value}
-            source-list={sources.value}
-            title={[t('选择云硬盘'), t('已选择')]}
-            empty-content={[t('暂无云硬盘'), t('未选择任何云硬盘')]}
-            display-key="service_name"
-            setting-key="service_code"
-          />
-        </>,
+        filter: {
+          op: 'and',
+          rules: [{
+            field: 'vender',
+            op: 'eq',
+            value: props.vender,
+          }],
+        },
       },
-    ];
+      'disks'
+    );
+
+    const {
+      selections,
+      handleSelectionChange,
+    } = useSelection();
+
+    const columns = useColumns('drive');
+
+    const resourceStore = useResourceStore();
 
     // 方法
     const handleClose = () => {
@@ -61,11 +79,27 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      handleClose();
+      resourceStore.attachDisk(
+        props.vender,
+        selections.value.map(selection => ({
+          disk_id: selection.disk_id,
+          cvm_id: props.id,
+          caching_type: selection.caching_type
+        }))
+      ).then(() => {
+        handleClose();
+      })
     };
 
     return {
-      steps,
+      datas,
+      pagination,
+      isLoading,
+      columns,
+      handlePageChange,
+      handlePageSizeChange,
+      handleSort,
+      handleSelectionChange,
       t,
       handleClose,
       handleConfirm,
@@ -73,11 +107,31 @@ export default defineComponent({
   },
 
   render() {
+    const steps = [
+      {
+        component: () =>
+          <Loading loading={this.isLoading}>
+            <Table
+              class="mt20"
+              row-hover="auto"
+              remote-pagination
+              pagination={this.pagination}
+              columns={this.columns}
+              data={this.datas}
+              onPageLimitChange={this.handlePageSizeChange}
+              onPageValueChange={this.handlePageChange}
+              onColumnSort={this.handleSort}
+              onSelectionChange={this.handleSelectionChange}
+            />
+          </Loading>
+      },
+    ];
+
     return <>
       <step-dialog
         title={this.t('挂载云硬盘')}
         isShow={this.isShow}
-        steps={this.steps}
+        steps={steps}
         onConfirm={this.handleConfirm}
         onCancel={this.handleClose}
       >

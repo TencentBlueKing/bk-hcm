@@ -9,6 +9,7 @@ import {
 } from 'bkui-vue';
 
 import useQueryList from '../../../hooks/use-query-list'
+import useSelection from '../../../hooks/use-selection'
 import {
   useResourceStore,
 } from '@/store/resource';
@@ -16,7 +17,7 @@ import {
 const props = defineProps({
   data: {
     type: Object,
-  },
+  }
 });
 
 const resourceStore = useResourceStore();
@@ -26,6 +27,7 @@ const showAdjustNetwork = ref(false);
 const showChangeIP = ref(false);
 const showUnbind = ref(false);
 const showBind = ref(false);
+const unbindData = ref();
 
 const columns = ref([
   {
@@ -50,7 +52,7 @@ const columns = ref([
   },
   {
     label: '操作',
-    render() {
+    render(data: any) {
       return [
         h(
           Button,
@@ -86,7 +88,7 @@ const columns = ref([
             text: true,
             theme: 'primary',
             onClick() {
-              handleToggleShowUnbind();
+              handleToggleShowUnbind(data);
             },
           },
           [
@@ -109,6 +111,31 @@ const {
   }
 );
 
+const {
+  datas: eipList,
+  pagination,
+  handlePageChange,
+  handlePageSizeChange,
+  handleSort,
+} = useQueryList(
+  {
+    filter: {
+      op: 'and',
+      rules: [{
+        field: 'vender',
+        op: 'eq',
+        value: props.data.vender,
+      }],
+    },
+  },
+  'disks'
+);
+
+const {
+  selections,
+  handleSelectionChange,
+} = useSelection();
+
 const handleToggleShowAdjustNetwork = () => {
   showAdjustNetwork.value = !showAdjustNetwork.value
 }
@@ -125,12 +152,20 @@ const handleConfirmChangeIP = () => {
   handleToggleShowChangeIP()
 }
 
-const handleToggleShowUnbind = () => {
+const handleToggleShowUnbind = (data?: any) => {
+  unbindData.value = data
   showUnbind.value = !showUnbind.value
 }
 
 const handleConfirmUnbind = () => {
-  handleToggleShowUnbind()
+  resourceStore.disassociateEip(
+    props.data.vender,
+    {
+      eip_id: unbindData.value.id
+    }
+  ).then(() => {
+    handleToggleShowUnbind()
+  })
 }
 
 const handleToggleShowBind = () => {
@@ -138,7 +173,16 @@ const handleToggleShowBind = () => {
 }
 
 const handleConfirmBind = () => {
-  handleToggleShowBind()
+  resourceStore.associateEip(
+    props.data.vender,
+    selections.value.map((selection) => ({
+      eip_id: selection.id,
+      cvm_id: props.data.id,
+      network_interface_id: props.data.network_interface_id,
+    }))
+  ).then(() => {
+    handleToggleShowBind()
+  })
 }
 
 watch(
@@ -241,15 +285,15 @@ watch(
     <span class="adjust-title">主机xxx（172.23.9.8）要解除绑定的弹性IP：</span>
     <section class="adjust-info">
       <span class="adjust-name">网络接口ID</span>
-      <span class="adjust-value">xxx</span>
+      <span class="adjust-value">{{ unbindData }}</span>
     </section>
     <section class="adjust-info">
       <span class="adjust-name">内部IP</span>
-      <span class="adjust-value">xxx</span>
+      <span class="adjust-value">{{ unbindData }}</span>
     </section>
     <section class="adjust-info">
       <span class="adjust-name">公网IP地址</span>
-      <span class="adjust-value">共享带宽包</span>
+      <span class="adjust-value">{{ unbindData }}</span>
     </section>
   </bk-dialog>
 
@@ -270,18 +314,25 @@ watch(
       <bk-radio label="扩展网卡(192.168.0.169)" />
     </bk-radio-group>
     <bk-table
-      class="mt20"
-      dark-header
-      :data="[]"
+      :data="eipList"
       :outer-border="false"
+      class="mt20"
+      row-hover="auto"
+      remote-pagination
+      :pagination="pagination"
+      :columns="columns"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
+      @column-sort="handleSort"
+      @selection-change="handleSelectionChange"
     >
       <bk-table-column
         label="弹性公网IP"
-        prop="ip"
+        prop="public_ip"
       />
       <bk-table-column
         label="类型"
-        prop="ip"
+        prop="address_type"
       />
       <bk-table-column
         label="带宽大小"

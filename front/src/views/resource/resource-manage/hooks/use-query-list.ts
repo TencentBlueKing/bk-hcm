@@ -39,7 +39,6 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
 
   // 更新数据
   const triggerApi = () => {
-    console.log(1111);
     isLoading.value = true;
     
     // 默认拉取方法
