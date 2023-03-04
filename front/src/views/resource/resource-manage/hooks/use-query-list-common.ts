@@ -22,7 +22,7 @@ type PropsType = {
   filter?: FilterType
 };
 
-export default (props: PropsType, type: string, apiMethod?: Function) => {
+export default (props: PropsType, url: string, methodType?: string) => {
   // 接口
   const resourceStore = useResourceStore();
 
@@ -36,7 +36,6 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
   });
   const sort = ref();
   const order = ref();
-  const isFilter = ref(false);
 
   // 更新数据
   const triggerApi = () => {
@@ -45,7 +44,7 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
     // 默认拉取方法
     const getDefaultList = () => Promise
       .all([
-        resourceStore.list(
+        resourceStore.getCommonList(
           {
             page: {
               count: false,
@@ -56,20 +55,22 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
             },
             filter: props.filter,
           },
-          type,
+          url,
+          methodType,
         ),
-        resourceStore.list(
+        resourceStore.getCommonList(
           {
             page: {
               count: true,
             },
             filter: props.filter,
           },
-          type,
+          url,
+          methodType,
         ),
       ]);
     // 用户如果传了，就用传入的获取数据的方法
-    const method = apiMethod || getDefaultList;
+    const method = getDefaultList;
     // 执行获取数据的逻辑
     method().then(([listResult, countResult]: [any, any]) => {
       datas.value = (listResult?.data?.details || []).map((item: any) => {
@@ -85,20 +86,17 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
     })
       .finally(() => {
         isLoading.value = false;
-        isFilter.value = false;
       });
   };
 
   // 页码变化发生的事件
   const handlePageChange = (current: number) => {
-    if (isFilter.value) return;
     pagination.value.current = current;
     triggerApi();
   };
 
   // 条数变化发生的事件
   const handlePageSizeChange = (limit: number) => {
-    if (isFilter.value) return;
     pagination.value.limit = limit;
     triggerApi();
   };
@@ -114,12 +112,7 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
   // 过滤发生变化的时候，获取数据
   watch(
     () => props.filter,
-    () => {
-      isFilter.value = true;  // 如果是过滤则不需要再次请求
-      pagination.value.current = 1;   // 页码重置
-      pagination.value.limit = 10;
-      triggerApi();
-    },
+    triggerApi,
     {
       deep: true,
       immediate: true,
@@ -128,7 +121,7 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
 
   // 切换tab重新获取数据
   watch(
-    () => type,
+    () => url,
     () => {
       triggerApi();
     },

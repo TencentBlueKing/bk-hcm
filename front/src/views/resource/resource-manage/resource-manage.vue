@@ -2,7 +2,6 @@
 import {
   ref,
   watch,
-  computed,
 } from 'vue';
 
 import HostManage from './children/manage/host-manage.vue';
@@ -45,6 +44,19 @@ const {
 const currentAccount = '';
 const accounts: any[] = [];
 const isAccurate = ref(false);
+// 搜索过滤相关数据
+const searchValue = ref([]);
+const filter = ref({ op: 'and', rules: [] });
+const searchData = ref([
+  {
+    name: '名称',
+    id: 'name',
+  }, {
+    name: '云厂商',
+    id: 'vendor',
+    children: VENDORS,
+  },
+]);
 
 // 组件map
 const componentMap = {
@@ -69,39 +81,28 @@ const tabs = RESOURCE_TYPES.map((type) => {
 });
 const activeTab = ref(route.query.type || tabs[0].type);
 
-// 搜索过滤相关数据
-const filter = ref({ op: 'and', rules: [] });
-const computedSearchList = computed(() => {
-  const datas = [
-    {
-      name: '名称',
-      id: 'name',
-      multiable: false,
-    },
-    {
-      name: '云厂商',
-      id: 'vendor',
-      children: VENDORS,
-    },
-    {
-      name: '云区域',
-      id: 'k_cloud_id',
-      multiable: false,
-    },
-    {
-      name: '地域',
-      id: 'region',
-      multiable: false,
-    },
-  ];
-  return datas.filter((data) => {
-    return !filter.value.rules.find(val => val.field === data.id);
-  });
-});
-
-const handleUpdateModelValue = (a: any) => {
-  console.log(a);
-};
+// 搜索数据
+watch(
+  () => searchValue.value,
+  (val) => {
+    filter.value.rules = val.reduce((p, v) => {
+      if (v.type === 'condition') {
+        filter.value.op = v.id || 'and';
+      } else {
+        p.push({
+          field: v.id,
+          op: isAccurate.value ? 'eq' : 'cs',
+          value: v.values[0].id,
+        });
+      }
+      return p;
+    }, []);
+  },
+  {
+    deep: true,
+    immediate: true,
+  },
+);
 
 // 状态保持
 watch(
@@ -159,12 +160,8 @@ watch(
       <bk-search-select
         class="search-filter ml10"
         clearable
-        :conditions="[]"
-        :show-condition="false"
-        :show-popover-tag-change="true"
-        :data="computedSearchList"
-        :model-value="filter"
-        @update:modelValue="handleUpdateModelValue"
+        :data="searchData"
+        v-model="searchValue"
       />
     </section>
   </section>

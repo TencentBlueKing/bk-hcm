@@ -51,4 +51,5 @@ export enum HostCloudEnum {
   REBOOTING = '重启中',
   SHUTDOWN = '停止待销毁',
   TERMINATING = '销毁中',
+  running = '运行中'
 }

@@ -1,67 +1,105 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
+import type {
+  // PlainObject,
+  FilterType,
+} from '@/typings/resource';
 import {
   ref,
   h,
+  PropType,
 } from 'vue';
 import {
-  Button,
-  InfoBox,
+// Button,
+// InfoBox,
 } from 'bkui-vue';
+import {
+  useResourceStore,
+} from '@/store/resource';
+
+const props = defineProps({
+  filter: {
+    type: Object as PropType<FilterType>,
+  },
+  data: {
+    type: Object,
+  },
+});
 
 const { t } = useI18n();
+const resourceStore = useResourceStore();
 const showBind = ref(false);
+const tableData = ref<any>([]);
+const isLoading = ref(false);
+
 const columns = [
   {
-    label: '接口ID',
+    label: t('接口ID'),
     field: 'id',
   },
   {
-    label: '类型',
+    label: t('类型'),
     field: 'id',
-  },
-  {
-    label: '内网IP',
-    field: 'id',
-  },
-  {
-    label: '普通公网IP/EIP',
-    field: 'id',
-  },
-  {
-    label: '连接状态',
-    field: 'id',
-  },
-  {
-    label: '备注',
-    field: 'id',
-  },
-  {
-    label: '操作',
-    render() {
+    render({ data }: any) {
       return [
         h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            class: 'mr10',
-            onClick() {
-              handleFreedIp();
-            },
-          },
+          'span',
+          {},
           [
-            '解绑',
+            data?.extension?.type || '--',
           ],
         ),
       ];
     },
   },
-];
-const tableData = [
   {
-    id: 233,
+    label: t('内网IP'),
+    field: 'private_ip',
   },
+  {
+    label: t('普通公网IP/EIP'),
+    field: 'public_ip',
+    render({ data }: any) {
+      return [
+        h(
+          'span',
+          {},
+          [
+            data.public_ip || '--',
+          ],
+        ),
+      ];
+    },
+  },
+  {
+    label: t('地域'),
+    field: 'region',
+  },
+  {
+    label: t('备注'),
+    field: 'id',
+  },
+  // {
+  //   label: '操作',
+  //   render() {
+  //     return [
+  //       h(
+  //         Button,
+  //         {
+  //           text: true,
+  //           theme: 'primary',
+  //           class: 'mr10',
+  //           onClick() {
+  //             handleFreedIp();
+  //           },
+  //         },
+  //         [
+  //           '解绑',
+  //         ],
+  //       ),
+  //     ];
+  //   },
+  // },
 ];
 
 
@@ -73,60 +111,77 @@ const handleConfirmBind = () => {
   handleToggleShow();
 };
 
-const handleFreedIp = () => {
-  InfoBox({
-    title: '确定解绑此网络接口',
-    subTitle: '解绑网络接口',
-    headerAlign: 'center',
-    footerAlign: 'center',
-    contentAlign: 'center',
-    onConfirm() {
-      console.log('111');
-    },
-  });
-};
+// const handleFreedIp = () => {
+//   InfoBox({
+//     title: '确定解绑此网络接口',
+//     subTitle: '解绑网络接口',
+//     headerAlign: 'center',
+//     footerAlign: 'center',
+//     contentAlign: 'center',
+//     onConfirm() {
+//       console.log('111');
+//     },
+//   });
+// };
 
 const handleRadio = (item: any) => {
   console.log(item);
 };
 
+const getNetWorkList = async () => {
+  isLoading.value = true;
+  try {
+    const type = props.data.vendor;
+    const { id } = props.data;
+    const res = await resourceStore.getNetworkList(type, id);
+    console.log('res', res);
+    tableData.value = res.data;
+  } catch (error) {
+    console.log(error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+getNetWorkList();
+
 
 </script>
 
 <template>
-  <bk-button
-    class="mt20"
-    theme="primary"
-    @click="handleToggleShow"
+  <bk-loading
+    :loading="isLoading"
   >
-    {{ t('绑定已有网络接口') }}
-  </bk-button>
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-  />
-
-
-  <bk-dialog
-    :is-show="showBind"
-    width="620"
-    title="绑定虚拟IP"
-    theme="primary"
-    quick-close
-    @closed="handleToggleShow"
-    @confirm="handleConfirmBind">
+    <!-- <bk-button
+      class="mt20"
+      theme="primary"
+      @click="handleToggleShow"
+    >
+      {{ t('绑定已有网络接口') }}
+    </bk-button> -->
     <bk-table
       class="mt20"
-      dark-header
-      :data="[{ ip: 'testetstt' }]"
-      :outer-border="false"
-    >
-      <bk-table-column
-        label="内网IP"
+      row-hover="auto"
+      :columns="columns"
+      :data="tableData"
+    />
+
+
+    <bk-dialog
+      :is-show="showBind"
+      width="620"
+      title="绑定虚拟IP"
+      theme="primary"
+      quick-close
+      @closed="handleToggleShow"
+      @confirm="handleConfirmBind">
+      <bk-table
+        class="mt20"
+        :columns="columns"
       >
-        <template #default="{ data } ">
+        <bk-table-column
+          label="内网IP"
+        >
           <div class="cell-flex">
             <bk-radio
               label="" @click="() => {
@@ -134,14 +189,14 @@ const handleRadio = (item: any) => {
               }" />
             <span class="pl10">{{ data.ip }}</span>
           </div>
-        </template>
-      </bk-table-column>
-      <bk-table-column
-        label="已绑定的EIP"
-        prop="ip"
-      />
-    </bk-table>
-  </bk-dialog>
+        </bk-table-column>
+        <bk-table-column
+          label="已绑定的EIP"
+          prop="ip"
+        />
+      </bk-table>
+    </bk-dialog>
+  </bk-loading>
 </template>
 
 <style lang="scss" scoped>

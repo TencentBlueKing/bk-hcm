@@ -36,9 +36,7 @@ const componentMap = {
 };
 
 // const renderComponent = componentMap[route.params.type as string];
-console.log('props.data.vendor', props.type);
 const renderComponent = componentMap[props.type];
-console.log('renderComponent', renderComponent);
 </script>
 
 <template>

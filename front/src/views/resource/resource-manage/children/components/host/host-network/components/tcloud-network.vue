@@ -1,14 +1,50 @@
 <script lang="ts" setup>
+import type {
+  // PlainObject,
+  FilterType,
+} from '@/typings/resource';
 import { useI18n } from 'vue-i18n';
 import {
   ref,
   h,
   reactive,
+  PropType,
 } from 'vue';
 import {
   Button,
   InfoBox,
 } from 'bkui-vue';
+import {
+  useResourceStore,
+} from '@/store/resource';
+import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
+
+const props = defineProps({
+  filter: {
+    type: Object as PropType<FilterType>,
+  },
+  data: {
+    type: Object,
+  },
+});
+const resourceStore = useResourceStore();
+
+console.log('props.data.vendor', props.data.vendor);
+const {
+  datas,
+  pagination,
+  isLoading,
+  handlePageChange,
+  handlePageSizeChange,
+} = useQueryList(
+  props,
+  '',
+  () => {
+    return Promise.all([resourceStore.cvmNetwork(props.data.vendor, props.data.id)]);
+  },
+);
+
+console.log(datas, pagination, isLoading, handlePageChange, handlePageSizeChange);
 
 const { t } = useI18n();
 const showBind = ref(false);
@@ -100,8 +136,8 @@ const fromData = reactive({
   name: '',
 });
 
+
 const handleToggleShow = (type: string) => {
-  console.log('type', type);
   if (type === 'already') {
     showBind.value = !showBind.value;
   } else if (type === 'sub') {

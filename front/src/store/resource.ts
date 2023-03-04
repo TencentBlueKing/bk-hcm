@@ -66,6 +66,31 @@ export const useResourceStore = defineStore({
     getDiskListByCvmId(vendor: string, id: string) {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/disks/cvms/${id}`);
     },
+    // 获取根据主机安全组列表
+    getSecurityGroupsListByCvmId(id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/security_groups/cvms/${id}`);
+    },
+    // 获取根据主机安全组列表
+    cvmOperate(type: string, data: {ids: string[]}) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/batch/${type}`, data);
+    },
+    // 主机分配
+    cvmAssignBizs(data: {cvm_ids: string[], bk_biz_id: string}) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/assign/bizs`, data);
+    },
+    // 网络接口
+    cvmNetwork(type: string, id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${type}/network_interfaces/cvms/${id}`);
+    },
+    getCommonList(data: any, url: string, methodType?: string) {
+      if (!methodType || methodType === 'post') {
+        return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${url}`, data);
+      }
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${url}`);
+    },
+    getNetworkList(type: string, id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${type}/network_interfaces/cvms/${id}`);
+    },
     attachDisk(vendor: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/vendors/${vendor}/disks/attach`, data);
     },

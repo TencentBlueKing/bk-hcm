@@ -41,9 +41,7 @@ export default defineComponent({
                 label={tab.name}
                 key={tab.name}
               >
-                {
-                  this.$slots.default(this.activeTab)
-                }
+               {tab.value === this.activeTab ? this.$slots.default(this.activeTab) : ''}
               </bk-tab-panel>
             </>;
           })

@@ -6,11 +6,13 @@ import type {
 } from '@/typings/resource';
 import {
   Button,
+  Message,
 } from 'bkui-vue';
 
 import {
   PropType,
   h,
+  ref,
 } from 'vue';
 import {
   useI18n,
@@ -18,17 +20,23 @@ import {
 import {
   useRouter,
 } from 'vue-router';
-import {
-  AngleRight,
-} from 'bkui-vue/lib/icon';
-import useSteps from '../../hooks/use-steps';
-import useShutdown from '../../hooks/use-shutdown';
-import useReboot from '../../hooks/use-reboot';
-import usePassword from '../../hooks/use-password';
-import useRefund from '../../hooks/use-refund';
-import useBootUp from '../../hooks/use-boot-up';
+// import {
+//   AngleRight,
+// } from 'bkui-vue/lib/icon';
+// import useShutdown from '../../hooks/use-shutdown';
+// import useReboot from '../../hooks/use-reboot';
+// import usePassword from '../../hooks/use-password';
+// import useRefund from '../../hooks/use-refund';
+// import useBootUp from '../../hooks/use-boot-up';
 import useQueryList from '../../hooks/use-query-list';
+import useSelection from '../../hooks/use-selection';
 import { HostCloudEnum, CloudType } from '@/typings';
+import {
+  useResourceStore,
+} from '@/store/resource';
+import {
+  useAccountStore,
+} from '@/store';
 
 // use hook
 const {
@@ -42,6 +50,8 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const resourceStore = useResourceStore();
+const accountStore = useAccountStore();
 
 const {
   datas,
@@ -52,59 +62,59 @@ const {
   handleSort,
 } = useQueryList(props, 'cvms');
 
-console.log('datas', datas);
-
 const {
-  isShowDistribution,
-  handleDistribution,
-  ResourceDistribution,
-} = useSteps();
+  selections,
+  handleSelectionChange,
+} = useSelection();
 
-const {
-  isShowShutdown,
-  handleShutdown,
-  HostShutdown,
-} = useShutdown();
+// const {
+//   isShowShutdown,
+//   handleShutdown,
+//   HostShutdown,
+// } = useShutdown();
 
-const {
-  isShowReboot,
-  handleReboot,
-  HostReboot,
-} = useReboot();
+// const {
+//   isShowReboot,
+//   handleReboot,
+//   HostReboot,
+// } = useReboot();
 
-const {
-  isShowPassword,
-  handlePassword,
-  HostPassword,
-} = usePassword();
+// const {
+//   isShowPassword,
+//   handlePassword,
+//   HostPassword,
+// } = usePassword();
 
-const {
-  isShowRefund,
-  handleRefund,
-  HostRefund,
-} = useRefund();
+// const {
+//   isShowRefund,
+//   handleRefund,
+//   HostRefund,
+// } = useRefund();
 
-const {
-  isShowBootUp,
-  handleBootUp,
-  HostBootUp,
-} = useBootUp();
+// const {
+//   isShowBootUp,
+//   handleBootUp,
+//   HostBootUp,
+// } = useBootUp();
 
 // 更多
-const moreOperations = [
-  {
-    name: t('重启'),
-    handler: handleReboot,
-  },
-  {
-    name: t('重置密码'),
-    handler: handlePassword,
-  },
-  {
-    name: t('退回'),
-    handler: handleRefund,
-  },
-];
+// const moreOperations = [
+//   {
+//     name: t('重启'),
+//     handler: handleReboot,
+//   },
+//   {
+//     name: t('重置密码'),
+//     handler: handlePassword,
+//   },
+//   {
+//     name: t('退回'),
+//     handler: handleRefund,
+//   },
+// ];
+const isShowDistribution = ref(false);
+const businessId = ref('');
+const businessList = ref([]);
 const columns = [
   {
     type: 'selection',
@@ -267,6 +277,83 @@ const columns = [
   },
 ];
 
+const distribColumns = [
+  {
+    label: 'ID',
+    field: 'id',
+  },
+  {
+    label: '实例 ID',
+    field: 'cloud_id',
+  },
+  {
+    label: '云厂商',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          CloudType[data.vendor],
+        ],
+      );
+    },
+  },
+  {
+    label: '地域',
+    field: 'region',
+  },
+  {
+    label: '名称',
+    field: 'name',
+  },
+  {
+    label: '状态',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          HostCloudEnum[data.status] || data.status,
+        ],
+      );
+    },
+  },
+  {
+    label: '操作系统',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          data.os_name || '--',
+        ],
+      );
+    },
+  },
+  {
+    label: '云区域ID',
+    field: 'bk_cloud_id',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          data.bk_cloud_id === -1 ? '未分配' : data.bk_cloud_id,
+        ],
+      );
+    },
+  },
+];
+
+const getBusinessList = async () => {
+  try {
+    const res = await accountStore.getBizList();
+    businessList.value = res?.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 
 // 跳转
 const jumpTo = (name: string, params?: DoublePlainObject) => {
@@ -275,6 +362,38 @@ const jumpTo = (name: string, params?: DoublePlainObject) => {
     ...params,
   });
 };
+
+const distributionCvm = async () => {
+  const cvmIds = selections.value.map(e => e.id);
+  try {
+    await resourceStore.cvmAssignBizs({ cvm_ids: cvmIds, bk_biz_id: businessId.value });
+    Message({
+      message: t('操作成功'),
+      theme: 'success',
+    });
+  } catch (error) {
+    console.log(error);
+  } finally {
+  }
+};
+
+const handleDistributionConfirm = () => {
+  isShowDistribution.value = true;
+  distributionCvm();
+};
+
+const handleDistribution = () => {
+  isShowDistribution.value = true;
+  console.log(111);
+};
+
+const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+  if (row.id) {
+    return row.bk_biz_id !== -1;
+  }
+};
+
+getBusinessList();
 </script>
 
 <template>
@@ -282,19 +401,20 @@ const jumpTo = (name: string, params?: DoublePlainObject) => {
     :loading="isLoading"
   >
     <section>
-      <slot>
-        <bk-button
-          class="w100"
-          theme="primary"
-          @click="handleDistribution"
-        >
-          {{ t('分配') }}
-        </bk-button>
-      </slot>
       <bk-button
+        class="w100"
+        theme="primary"
+        :disabled="selections.length <= 0"
+        @click="handleDistribution"
+      >
+        {{ t('分配') }}
+      </bk-button>
+      <!-- <bk-button
         class="w100 ml10"
         theme="primary"
-        @click="handleBootUp"
+        @click="() => {
+          handleCvmOperate('bootUp')
+        }"
       >
         {{ t('开机') }}
       </bk-button>
@@ -329,7 +449,7 @@ const jumpTo = (name: string, params?: DoublePlainObject) => {
             </bk-dropdown-item>
           </bk-dropdown-menu>
         </template>
-      </bk-dropdown>
+      </bk-dropdown> -->
     </section>
 
     <bk-table
@@ -339,17 +459,44 @@ const jumpTo = (name: string, params?: DoublePlainObject) => {
       :data="datas"
       :pagination="pagination"
       remote-pagination
+      :is-row-select-enable="isRowSelectEnable"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
+      @selection-change="handleSelectionChange"
       @column-sort="handleSort"
     />
 
-    <resource-distribution
+    <bk-dialog
       v-model:is-show="isShowDistribution"
+      width="820"
       :title="t('主机分配')"
-    />
+      theme="primary"
+      quick-close
+      @confirm="handleDistributionConfirm">
+      <section class="distribution-cls">
+        目标业务
+        <bk-select
+          class="ml20"
+          v-model="businessId"
+          filterable
+        >
+          <bk-option
+            v-for="item in businessList"
+            :key="item.id"
+            :value="item.id"
+            :label="item.name"
+          />
+        </bk-select>
+      </section>
+      <bk-table
+        class="mt20"
+        row-hover="auto"
+        :columns="distribColumns"
+        :data="selections"
+      />
+    </bk-dialog>
 
-    <host-shutdown
+    <!-- <host-shutdown
       v-model:isShow="isShowShutdown"
       :title="t('关机')"
     />
@@ -372,7 +519,7 @@ const jumpTo = (name: string, params?: DoublePlainObject) => {
     <host-boot-up
       v-model:isShow="isShowBootUp"
       :title="t('开机')"
-    />
+    /> -->
   </bk-loading>
 </template>
 
@@ -385,5 +532,9 @@ const jumpTo = (name: string, params?: DoublePlainObject) => {
 }
 .mt20 {
   margin-top: 20px;
+}
+.distribution-cls{
+  display: flex;
+  align-items: center;
 }
 </style>

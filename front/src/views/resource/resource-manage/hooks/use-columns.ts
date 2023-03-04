@@ -3,7 +3,7 @@ import type {
   PlainObject,
 } from '@/typings/resource';
 import i18n from '@/language/i18n';
-import { CloudType } from '@/typings';
+import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import {
   Button,
   InfoBox,
@@ -559,6 +559,69 @@ export default (type: string) => {
     },
   ];
 
+  const securityCommonColumns = [
+    {
+      label: '来源',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.cloud_address_group_id || data.cloud_address_id
+            || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
+            || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
+            || data.source_address_prefix || data.source_address_prefixs || data.cloud_source_security_group_ids
+            || data.destination_address_prefix || data.destination_address_prefixes
+            || data.cloud_destination_security_group_ids,
+          ],
+        );
+      },
+    },
+    {
+      label: '协议端口',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            `${data.protocol}:${data.port}`,
+          ],
+        );
+      },
+    },
+    {
+      label: t('策略'),
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            // eslint-disable-next-line no-nested-ternary
+            data.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : data.vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
+              : SecurityRuleEnum[data.action],
+          ],
+        );
+      },
+    },
+    {
+      label: '备注',
+      field: 'memo',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.memo || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: t('修改时间'),
+      field: 'updated_at',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -568,6 +631,7 @@ export default (type: string) => {
     image: imageColumns,
     networkInterface: networkInterfaceColumns,
     route: routeColumns,
+    securityCommon: securityCommonColumns,
   };
 
   return columnsMap[type];

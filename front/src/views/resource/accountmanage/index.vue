@@ -268,6 +268,7 @@ export default defineComponent({
     watch(
       () => state.searchValue,
       (val) => {
+        console.log('val', val);
         state.filter.rules = val.reduce((p, v) => {
           if (v.type === 'condition') {
             state.filter.op = v.id || 'and';

@@ -4,13 +4,14 @@ import type {
   // PlainObject,
   FilterType,
 } from '@/typings/resource';
-import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import {
   ref,
+  h,
   reactive,
   PropType,
 } from 'vue';
 import {
+  Button,
   InfoBox,
 } from 'bkui-vue';
 
@@ -39,44 +40,81 @@ const showPrivate = ref(false);
 
 const isLoading = ref(false);
 const tableData = ref([]);
-const formInfo = [
+const columns = [
   {
-    name: '类型',
+    label: '类型',
+    field: 'id',
+  },
+  {
+    label: '内网IP',
+    field: 'id',
+  },
+  {
+    label: '弹性公网IP',
     render() {
-      return '华为';
+      return [
+        h(
+          'span',
+          {},
+          [
+            '无',
+          ],
+        ),
+        h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            class: 'ml10',
+            onClick() {
+              handleToggleShow('public');
+            },
+          },
+          [
+            '绑定公网IP',
+          ],
+        ),
+      ];
     },
   },
   {
-    name: '接口名称',
-    prop: 'name',
+    label: '备注',
+    field: 'id',
   },
   {
-    name: '接口id',
-    prop: 'instance_id',
-  },
-  {
-    name: '账号',
-    prop: 'account_id',
-  },
-  {
-    name: '地域',
-    prop: 'region',
-  },
-  {
-    name: '所属网络',
-    prop: 'vpc_id',
-  },
-  {
-    name: '子网',
-    prop: 'subnet_id',
-  },
-  {
-    name: '内网IPv4地址',
-    prop: 'private_ip',
-  },
-  {
-    name: '状态',
-    prop: 'port_state',
+    label: '操作',
+    render() {
+      return [
+        h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            class: 'mr10',
+            onClick() {
+              handleToggleShow('private');
+            },
+          },
+          [
+            '修改私有IP',
+          ],
+        ),
+        h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            class: 'mr10',
+            onClick() {
+              handleFreedIp('freed');
+            },
+          },
+          [
+            '释放虚拟IP',
+          ],
+        ),
+      ];
+    },
   },
 ];
 
@@ -129,16 +167,6 @@ const getNetWorkList = async () => {
     const { id } = props.data;
     const res = await resourceStore.getNetworkList(type, id);
     console.log('res', res);
-    res.data = res.data.map((item: any) => {
-      item = {
-        ...item,
-        ...item.spec,
-        ...item.attachment,
-        ...item.revision,
-        ...item.extension,
-      };
-      return item;
-    });
     tableData.value = res.data;
   } catch (error) {
     console.log(error);
@@ -153,59 +181,170 @@ getNetWorkList();
 </script>
 
 <template>
-  <section v-for="item in tableData" :key="item.id">
-    <bk-button
-      class="mt20"
-      theme="primary"
-      @click="() => {
-        handleToggleShow('network')
-      }"
-    >
-      添加网络接口
-    </bk-button>
-    <div class="main-network table-warp mt20">
-      <div class="table-flex">
-        <div>主网卡</div>
-        <div>
-          <bk-button
-            theme="primary"
-            @click="() => {
-              handleToggleShow('virtual')
-            }"
-          >
-            绑定虚拟IP
-          </bk-button>
-          <bk-button
-            class="ml20"
-            @click="() => {
-              handleToggleShow('vpc')
-            }"
-          >
-            更换VPC
-          </bk-button>
-          <bk-button
-            class="ml20"
-            @click="() => {
-              handleToggleShow('securityGroup')
-            }"
-          >
-            更换安全组
-          </bk-button>
-          <bk-button
-            class="ml20"
-            @click="() => {
-              handleFreedIp('unbind')
-            }"
-          >
-            删除
-          </bk-button>
-        </div>
-      </div>
-      <div class="warp-info">
-        <detail-info class="mt20" :fields="formInfo" :detail="item"></detail-info>
+  <bk-button
+    class="mt20"
+    theme="primary"
+    @click="() => {
+      handleToggleShow('network')
+    }"
+  >
+    添加网络接口
+  </bk-button>
+  <div class="main-network table-warp mt20">
+    <div class="table-flex">
+      <div>主网卡</div>
+      <div>
+        <bk-button
+          theme="primary"
+          @click="() => {
+            handleToggleShow('virtual')
+          }"
+        >
+          绑定虚拟IP
+        </bk-button>
+        <bk-button
+          class="ml20"
+          @click="() => {
+            handleToggleShow('vpc')
+          }"
+        >
+          更换VPC
+        </bk-button>
+        <bk-button
+          class="ml20"
+          @click="() => {
+            handleToggleShow('securityGroup')
+          }"
+        >
+          更换安全组
+        </bk-button>
+        <bk-button
+          class="ml20"
+          @click="() => {
+            handleFreedIp('unbind')
+          }"
+        >
+          删除
+        </bk-button>
       </div>
     </div>
-  </section>
+    <bk-form label-position="left" class="flex mt20 pt20 form-warp">
+      <bk-form-item
+        :label="t('状态')"
+        label-width="100"
+        class="item-warp"
+      >
+        <span>
+          新加坡
+        </span>
+      </bk-form-item>
+      <bk-form-item
+        :label="t('所属网络')"
+      >
+        <span>
+          新加坡
+        </span>
+      </bk-form-item>
+      <bk-form-item
+        :label="t('子网')"
+      >
+        <span>
+          新加坡
+        </span>
+      </bk-form-item>
+      <bk-form-item
+        :label="t('安全组')"
+      >
+        <span>
+          新加坡
+        </span>
+      </bk-form-item>
+    </bk-form>
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      :columns="columns"
+      :data="tableData"
+    />
+  </div>
+
+  <div class="main-network table-warp mt20">
+    <div class="table-flex">
+      <div>主网卡</div>
+      <div>
+        <bk-button
+          theme="primary"
+          @click="() => {
+            handleToggleShow('virtual')
+          }"
+        >
+          绑定虚拟IP
+        </bk-button>
+        <bk-button
+          class="ml20"
+          @click="() => {
+            handleToggleShow('vpc')
+          }"
+        >
+          更换VPC
+        </bk-button>
+        <bk-button
+          class="ml20"
+          @click="() => {
+            handleToggleShow('securityGroup')
+          }"
+        >
+          更换安全组
+        </bk-button>
+        <bk-button
+          class="ml20"
+          @click="() => {
+            handleFreedIp('unbind')
+          }"
+        >
+          删除
+        </bk-button>
+      </div>
+    </div>
+    <bk-form label-position="left" class="flex mt20 pt20 form-warp">
+      <bk-form-item
+        :label="t('状态')"
+        label-width="100"
+        class="item-warp"
+      >
+        <span>
+          新加坡
+        </span>
+      </bk-form-item>
+      <bk-form-item
+        :label="t('所属网络')"
+      >
+        <span>
+          新加坡
+        </span>
+      </bk-form-item>
+      <bk-form-item
+        :label="t('子网')"
+      >
+        <span>
+          新加坡
+        </span>
+      </bk-form-item>
+      <bk-form-item
+        :label="t('安全组')"
+      >
+        <span>
+          新加坡
+        </span>
+      </bk-form-item>
+    </bk-form>
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      :columns="columns"
+      :data="tableData"
+    />
+  </div>
 
   <bk-dialog
     :is-show="showNetworkDialog"
@@ -543,6 +682,4 @@ getNetWorkList();
   :deep(.detail-tab-main) .bk-tab-content {
     height: calc(100vh - 300px) !important;
   }
-
-  .info-warp{}
 </style>
