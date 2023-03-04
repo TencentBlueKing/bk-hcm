@@ -174,7 +174,6 @@ export default defineComponent({
             ],
           });
           break;
-          break;
         case 'tcloud':
           insertFormData = [
             {
@@ -633,6 +632,13 @@ export default defineComponent({
 
     // 处理组织架构选择
     const handleOrganChange = (val: any) => {
+      if (!projectModel.departmentId.length) {
+        Message({
+          message: t('请选择组织架构'),
+          theme: 'error',
+        });
+        return;
+      };
       updateFormData('departmentId', val);    // 更新数据
     };
 
@@ -744,7 +750,7 @@ export default defineComponent({
         data: [
           {
             label: t('组织架构'),
-            required: false,
+            required: true,
             property: 'departmentId',
             isEdit: true,
             component() {
