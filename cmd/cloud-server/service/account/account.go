@@ -47,6 +47,9 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("Get", "GET", "/accounts/{account_id}", svc.Get)
 	h.Add("Update", "PATCH", "/accounts/{account_id}", svc.Update)
 
+	// Rel
+	h.Add("ListByBkBizID", "GET", "/accounts/bizs/{bk_biz_id}", svc.ListByBkBizID)
+
 	// 安全所需OpenAPI
 	h.Add("ListWithExtension", "POST", "/accounts/extensions/list", svc.ListWithExtension)
 	h.Add("ListSecretKey", "POST", "/accounts/secrets/list", svc.ListSecretKey)

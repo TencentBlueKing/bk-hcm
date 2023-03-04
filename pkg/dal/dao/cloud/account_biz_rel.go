@@ -41,6 +41,8 @@ type AccountBizRel interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.AccountBizRelTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccountBizRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
+
+	ListJoinAccount(kt *kit.Kit, bkBizIDs []int64) (*types.ListAccountBizRelJoinAccountDetails, error)
 }
 
 var _ AccountBizRel = new(AccountBizRelDao)
@@ -130,4 +132,28 @@ func (a AccountBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *fil
 	}
 
 	return nil
+}
+
+// ListJoinAccount ...
+func (a AccountBizRelDao) ListJoinAccount(kt *kit.Kit, bkBizIDs []int64) (
+	*types.ListAccountBizRelJoinAccountDetails, error,
+) {
+	if len(bkBizIDs) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "bk biz ids is required")
+	}
+
+	sql := fmt.Sprintf(`SELECT %s, %s FROM %s AS rel LEFT JOIN %s AS account ON rel.account_id = account.id 
+    WHERE rel.bk_biz_id in (:bk_biz_ids)`,
+		cloud.AccountColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
+		tools.BaseRelJoinSqlBuild("rel", "account", "account_id", "bk_biz_id"),
+		table.AccountBizRelTable, table.AccountTable,
+	)
+
+	details := make([]*types.AccountWithBizID, 0)
+	if err := a.Orm.Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"bk_biz_ids": bkBizIDs}); err != nil {
+		logs.ErrorJson("select account biz rel join account failed, err: %v, sql: (%s), rid: %s", err, sql, kt.Rid)
+		return nil, err
+	}
+
+	return &types.ListAccountBizRelJoinAccountDetails{Details: details}, nil
 }

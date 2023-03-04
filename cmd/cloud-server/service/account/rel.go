@@ -17,14 +17,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package account
 
 import (
-	"hcm/pkg/dal/table/cloud"
+	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/rest"
 )
 
-// ListAccountDetails list account details.
-type ListAccountDetails struct {
-	Count   uint64                `json:"count,omitempty"`
-	Details []*cloud.AccountTable `json:"details,omitempty"`
+// ListByBkBizID ...
+func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&protocloud.AccountBizRelWithAccountListReq{
+			BkBizIDs: []int64{bkBizID},
+		},
+	)
 }

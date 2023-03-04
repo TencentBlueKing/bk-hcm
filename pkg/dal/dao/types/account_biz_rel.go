@@ -20,11 +20,27 @@
 package types
 
 import (
+	"time"
+
 	"hcm/pkg/dal/table/cloud"
 )
 
-// ListAccountDetails list account details.
-type ListAccountDetails struct {
-	Count   uint64                `json:"count,omitempty"`
-	Details []*cloud.AccountTable `json:"details,omitempty"`
+// ListAccountBizRelDetails list account and biz relation details.
+type ListAccountBizRelDetails struct {
+	Count   uint64                      `json:"count,omitempty"`
+	Details []*cloud.AccountBizRelTable `json:"details,omitempty"`
+}
+
+// ListAccountBizRelJoinAccountDetails list account and biz relation details.
+type ListAccountBizRelJoinAccountDetails struct {
+	Count   uint64              `json:"count,omitempty"`
+	Details []*AccountWithBizID `json:"details,omitempty"`
+}
+
+// AccountWithBizID ...
+type AccountWithBizID struct {
+	cloud.AccountTable `db:",inline" json:",inline"`
+	BkBizID            int64      `db:"bk_biz_id" json:"bk_biz_id"`
+	RelCreator         string     `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt       *time.Time `db:"rel_created_at" json:"rel_created_at"`
 }
