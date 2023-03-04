@@ -36,6 +36,7 @@ type Client struct {
 	Cvm           *CvmClient
 	Image         *ImageClient
 	RouteTable    *RouteTableClient
+	InstanceType  *InstanceTypeClient
 }
 
 // NewClient create a new tcloud api client.
@@ -52,5 +53,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Cvm:           NewCvmClient(client),
 		Image:         NewCloudPublicClient(client),
 		RouteTable:    NewRouteTableClient(client),
+		InstanceType:  NewInstanceTypeClient(client),
 	}
 }

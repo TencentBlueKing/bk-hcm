@@ -110,7 +110,6 @@ func (t *TCloud) StartCvm(kt *kit.Kit, opt *typecvm.TCloudStartOption) error {
 	if err != nil {
 		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
-
 	req := cvm.NewStartInstancesRequest()
 	req.InstanceIds = common.StringPtrs(opt.CloudIDs)
 

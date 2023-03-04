@@ -35,6 +35,7 @@ import (
 	"hcm/cmd/hc-service/service/eip"
 	"hcm/cmd/hc-service/service/firewall"
 	"hcm/cmd/hc-service/service/image"
+	instancetype "hcm/cmd/hc-service/service/instance-type"
 	networkinterface "hcm/cmd/hc-service/service/network-interface"
 	"hcm/cmd/hc-service/service/region"
 	routetable "hcm/cmd/hc-service/service/route-table"
@@ -163,6 +164,7 @@ func (s *Service) apiSet() *restful.Container {
 	image.InitImageService(c)
 	routetable.InitRouteTableService(c)
 	networkinterface.InitNetworkInterfaceService(c)
+	instancetype.InitInstanceTypeService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
