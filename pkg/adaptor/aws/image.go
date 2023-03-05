@@ -51,7 +51,7 @@ func (a *Aws) ListImage(
 		return nil, err
 	}
 
-	req := &ec2.DescribeImagesInput{}
+	req := &ec2.DescribeImagesInput{MaxResults: opt.Page.MaxResults, NextToken: opt.Page.NextToken}
 	req.Filters = []*ec2.Filter{
 		{Name: aws.String("name"), Values: aws.StringSlice(commonImages)},
 		{Name: aws.String("is-public"), Values: []*string{aws.String("true")}},
