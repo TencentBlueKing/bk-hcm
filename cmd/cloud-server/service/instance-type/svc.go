@@ -22,12 +22,13 @@ package instancetype
 import (
 	proto "hcm/pkg/api/cloud-server/instance-type"
 	hcproto "hcm/pkg/api/hc-service/instance-type"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// ListForTCloud ...
-func (svc *instanceTypeSvc) ListForTCloud(cts *rest.Contexts) (interface{}, error) {
+// List ...
+func (svc *instanceTypeSvc) List(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.InstanceTypeListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -37,13 +38,63 @@ func (svc *instanceTypeSvc) ListForTCloud(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	switch req.Vendor {
+	case enumor.TCloud:
+		return svc.ListForTCloud(cts, req)
+	case enumor.Aws:
+		return svc.ListForAws(cts, req)
+	case enumor.HuaWei:
+		return svc.ListForHuaWei(cts, req)
+	case enumor.Azure:
+		return svc.ListForAzure(cts, req)
+	case enumor.Gcp:
+		return svc.ListForGcp(cts, req)
+	}
+
+	return nil, nil
+}
+
+// ListForTCloud ...
+func (svc *instanceTypeSvc) ListForTCloud(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
 	return svc.client.HCService().TCloud.InstanceType.List(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
-		&hcproto.TCloudInstanceTypeListReq{
-			AccountID: req.AccountID,
-			Region:    req.Region,
-			Zone:      req.Zone,
-		},
+		&hcproto.TCloudInstanceTypeListReq{AccountID: req.AccountID, Region: req.Region, Zone: req.Zone},
+	)
+}
+
+// ListForAws ...
+func (svc *instanceTypeSvc) ListForAws(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
+	return svc.client.HCService().Aws.InstanceType.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&hcproto.AwsInstanceTypeListReq{AccountID: req.AccountID, Region: req.Region},
+	)
+}
+
+// ListForHuaWei ...
+func (svc *instanceTypeSvc) ListForHuaWei(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
+	return svc.client.HCService().HuaWei.InstanceType.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&hcproto.HuaWeiInstanceTypeListReq{AccountID: req.AccountID, Region: req.Region, Zone: req.Zone},
+	)
+}
+
+// ListForAzure ...
+func (svc *instanceTypeSvc) ListForAzure(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
+	return svc.client.HCService().Azure.InstanceType.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&hcproto.AzureInstanceTypeListReq{AccountID: req.AccountID, Region: req.Region},
+	)
+}
+
+// ListForGcp ...
+func (svc *instanceTypeSvc) ListForGcp(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
+	return svc.client.HCService().Gcp.InstanceType.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&hcproto.GcpInstanceTypeListReq{AccountID: req.AccountID, Zone: req.Zone},
 	)
 }

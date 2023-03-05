@@ -20,32 +20,26 @@
 package instancetype
 
 import (
-	"net/http"
-
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/rest"
+	"hcm/pkg/adaptor/types/core"
 )
 
-type instanceTypeSvc struct {
-	client     *client.ClientSet
-	authorizer auth.Authorizer
-	audit      audit.Interface
+// GcpInstanceTypeListOption ...
+type GcpInstanceTypeListOption struct {
+	Zone string
+	Page *core.GcpPage
 }
 
-// InitInstanceTypeService ...
-func InitInstanceTypeService(c *capability.Capability) {
-	svc := &instanceTypeSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-		audit:      c.Audit,
-	}
+// GcpInstanceTypeListResult ...
+type GcpInstanceTypeListResult struct {
+	Details       []*GcpInstanceType
+	NextPageToken string
+}
 
-	h := rest.NewHandler()
-
-	h.Add("List", http.MethodPost, "/instance_types/list", svc.List)
-
-	h.Load(c.WebService)
+// GcpInstanceType ...
+type GcpInstanceType struct {
+	InstanceType string
+	Memory       int64
+	CPU          int64
+	GPU          int64
+	FPGA         int64
 }

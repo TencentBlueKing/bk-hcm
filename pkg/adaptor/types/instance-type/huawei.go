@@ -19,33 +19,17 @@
 
 package instancetype
 
-import (
-	"net/http"
-
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/rest"
-)
-
-type instanceTypeSvc struct {
-	client     *client.ClientSet
-	authorizer auth.Authorizer
-	audit      audit.Interface
+// HuaWeiInstanceTypeListOption ...
+type HuaWeiInstanceTypeListOption struct {
+	Region string
+	Zone   string
 }
 
-// InitInstanceTypeService ...
-func InitInstanceTypeService(c *capability.Capability) {
-	svc := &instanceTypeSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-		audit:      c.Audit,
-	}
-
-	h := rest.NewHandler()
-
-	h.Add("List", http.MethodPost, "/instance_types/list", svc.List)
-
-	h.Load(c.WebService)
+// HuaWeiInstanceType ...
+type HuaWeiInstanceType struct {
+	InstanceType string
+	GPU          int64
+	CPU          int64
+	Memory       int64
+	FPGA         int64
 }

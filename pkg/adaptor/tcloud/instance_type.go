@@ -29,15 +29,11 @@ import (
 
 // ListInstanceType ...
 // reference: https://cloud.tencent.com/document/api/213/15749
-func (t *TCloud) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloudListOption) (
+func (t *TCloud) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloudInstanceTypeListOption) (
 	[]typesinstancetype.TCloudInstanceType, error,
 ) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	client, err := t.clientSet.cvmClient(opt.Region)
@@ -60,8 +56,9 @@ func (t *TCloud) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloudList
 			InstanceFamily: converter.PtrToVal(it.InstanceFamily),
 			GPU:            converter.PtrToVal(it.GPU),
 			CPU:            converter.PtrToVal(it.CPU),
-			Memory:         converter.PtrToVal(it.Memory),
-			FPGA:           converter.PtrToVal(it.FPGA),
+			// Note: 为保持与其他云一致，内存单位调整为MB
+			Memory: converter.PtrToVal(it.Memory) * 1024,
+			FPGA:   converter.PtrToVal(it.FPGA),
 		})
 	}
 

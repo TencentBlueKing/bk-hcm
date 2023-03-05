@@ -27,9 +27,9 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ListForTCloud ...
-func (i *instanceTypeAdaptor) ListForTCloud(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.TCloudInstanceTypeListReq)
+// ListForAzure ...
+func (i *instanceTypeAdaptor) ListForAzure(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AzureInstanceTypeListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -38,33 +38,28 @@ func (i *instanceTypeAdaptor) ListForTCloud(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := i.adaptor.TCloud(cts.Kit, req.AccountID)
+	client, err := i.adaptor.Azure(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	opt := &typesinstancetype.TCloudInstanceTypeListOption{
-		Region: req.Region,
-		Zone:   req.Zone,
-	}
+	opt := &typesinstancetype.AzureInstanceTypeListOption{Region: req.Region}
 
 	its, err := client.ListInstanceType(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("request adaptor to list tcloud instance type failed, err: %v, opt: %v, rid: %s", err, opt,
+		logs.Errorf("request adaptor to list azure instance type failed, err: %v, opt: %v, rid: %s", err, opt,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	data := make([]*proto.TCloudInstanceTypeResp, 0, len(its))
+	data := make([]*proto.AzureInstanceTypeResp, 0, len(its))
 	for _, one := range its {
-		data = append(data, &proto.TCloudInstanceTypeResp{
-			Zone:           one.Zone,
-			InstanceType:   one.InstanceType,
-			InstanceFamily: one.InstanceFamily,
-			GPU:            one.GPU,
-			CPU:            one.CPU,
-			Memory:         one.Memory,
-			FPGA:           one.FPGA,
+		data = append(data, &proto.AzureInstanceTypeResp{
+			InstanceType: one.InstanceType,
+			GPU:          one.GPU,
+			CPU:          one.CPU,
+			Memory:       one.Memory,
+			FPGA:         one.FPGA,
 		})
 	}
 

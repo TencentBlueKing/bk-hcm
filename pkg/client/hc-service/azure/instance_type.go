@@ -17,35 +17,50 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package instancetype
+package azure
 
 import (
+	"context"
 	"net/http"
 
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
+	instancetype "hcm/pkg/api/hc-service/instance-type"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-type instanceTypeSvc struct {
-	client     *client.ClientSet
-	authorizer auth.Authorizer
-	audit      audit.Interface
+// InstanceTypeClient ...
+type InstanceTypeClient struct {
+	client rest.ClientInterface
 }
 
-// InitInstanceTypeService ...
-func InitInstanceTypeService(c *capability.Capability) {
-	svc := &instanceTypeSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-		audit:      c.Audit,
+// NewInstanceTypeClient ...
+func NewInstanceTypeClient(client rest.ClientInterface) *InstanceTypeClient {
+	return &InstanceTypeClient{
+		client: client,
+	}
+}
+
+// List ...
+func (c *InstanceTypeClient) List(
+	ctx context.Context, h http.Header, request *instancetype.AzureInstanceTypeListReq,
+) ([]*instancetype.AzureInstanceTypeResp, error) {
+	resp := new(instancetype.AzureInstanceTypeListResp)
+
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/instance_types/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
 	}
 
-	h := rest.NewHandler()
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
 
-	h.Add("List", http.MethodPost, "/instance_types/list", svc.List)
-
-	h.Load(c.WebService)
+	return resp.Data, nil
 }

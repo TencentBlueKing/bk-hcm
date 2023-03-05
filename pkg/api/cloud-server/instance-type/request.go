@@ -20,14 +20,16 @@
 package instancetype
 
 import (
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
 // InstanceTypeListReq ...
 type InstanceTypeListReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	Region    string `json:"region" validate:"required"`
-	Zone      string `json:"zone" validate:"required"`
+	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID string        `json:"account_id" validate:"required"`
+	Region    string        `json:"region" validate:"required"`
+	Zone      string        `json:"zone" validate:"required"`
 }
 
 // Validate ...

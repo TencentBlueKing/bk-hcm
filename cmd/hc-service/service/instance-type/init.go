@@ -41,6 +41,10 @@ func InitInstanceTypeService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("ListForTCloud", "POST", "/vendors/tcloud/instance_types/list", i.ListForTCloud)
+	h.Add("ListForAws", "POST", "/vendors/aws/instance_types/list", i.ListForAws)
+	h.Add("ListForHuaWei", "POST", "/vendors/huawei/instance_types/list", i.ListForHuaWei)
+	h.Add("ListForAzure", "POST", "/vendors/azure/instance_types/list", i.ListForAzure)
+	h.Add("ListForGcp", "POST", "/vendors/gcp/instance_types/list", i.ListForGcp)
 
 	h.Load(cap.WebService)
 }

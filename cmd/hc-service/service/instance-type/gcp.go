@@ -20,16 +20,18 @@
 package instancetype
 
 import (
+	"hcm/pkg/adaptor/types/core"
 	typesinstancetype "hcm/pkg/adaptor/types/instance-type"
 	proto "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
-// ListForTCloud ...
-func (i *instanceTypeAdaptor) ListForTCloud(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.TCloudInstanceTypeListReq)
+// ListForGcp ...
+func (i *instanceTypeAdaptor) ListForGcp(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.GcpInstanceTypeListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -38,35 +40,50 @@ func (i *instanceTypeAdaptor) ListForTCloud(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := i.adaptor.TCloud(cts.Kit, req.AccountID)
+	client, err := i.adaptor.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	opt := &typesinstancetype.TCloudInstanceTypeListOption{
-		Region: req.Region,
-		Zone:   req.Zone,
-	}
+	data := make([]*proto.GcpInstanceTypeResp, 0)
+	// 分页遍历获取所有数据
+	nextPageToken := ""
+	for {
+		opt := &typesinstancetype.GcpInstanceTypeListOption{
+			Zone: req.Zone,
+			Page: &core.GcpPage{PageSize: int64(filter.DefaultMaxInLimit), PageToken: nextPageToken},
+		}
 
-	its, err := client.ListInstanceType(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to list tcloud instance type failed, err: %v, opt: %v, rid: %s", err, opt,
-			cts.Kit.Rid)
-		return nil, err
-	}
+		result, err := client.ListInstanceType(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list gcp instance type failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		if len(result.Details) <= 0 {
+			logs.Errorf("request adaptor to list gcp instance type num <= 0, rid: %s", cts.Kit.Rid)
+			return nil, err
+		}
 
-	data := make([]*proto.TCloudInstanceTypeResp, 0, len(its))
-	for _, one := range its {
-		data = append(data, &proto.TCloudInstanceTypeResp{
-			Zone:           one.Zone,
-			InstanceType:   one.InstanceType,
-			InstanceFamily: one.InstanceFamily,
-			GPU:            one.GPU,
-			CPU:            one.CPU,
-			Memory:         one.Memory,
-			FPGA:           one.FPGA,
-		})
+		for _, it := range result.Details {
+			data = append(data, toGcpInstanceTypeResp(it))
+		}
+
+		// 判断是否还有下一页
+		if result.NextPageToken == "" {
+			break
+		}
+		nextPageToken = result.NextPageToken
 	}
 
 	return data, nil
+}
+
+func toGcpInstanceTypeResp(it *typesinstancetype.GcpInstanceType) *proto.GcpInstanceTypeResp {
+	return &proto.GcpInstanceTypeResp{
+		InstanceType: it.InstanceType,
+		GPU:          it.GPU,
+		CPU:          it.CPU,
+		Memory:       it.Memory,
+		FPGA:         it.FPGA,
+	}
 }

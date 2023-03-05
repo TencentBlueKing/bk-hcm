@@ -20,32 +20,32 @@
 package instancetype
 
 import (
-	"net/http"
-
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
 
-type instanceTypeSvc struct {
-	client     *client.ClientSet
-	authorizer auth.Authorizer
-	audit      audit.Interface
+// GcpInstanceTypeListReq ...
+type GcpInstanceTypeListReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Zone      string `json:"zone" validate:"required"`
 }
 
-// InitInstanceTypeService ...
-func InitInstanceTypeService(c *capability.Capability) {
-	svc := &instanceTypeSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
-		audit:      c.Audit,
-	}
+// Validate ...
+func (req *GcpInstanceTypeListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
 
-	h := rest.NewHandler()
+// GcpInstanceTypeResp ...
+type GcpInstanceTypeResp struct {
+	InstanceType string `json:"instance_type"`
+	GPU          int64  `json:"gpu"`
+	CPU          int64  `json:"cpu"`
+	Memory       int64  `json:"memory"`
+	FPGA         int64  `json:"fpga"`
+}
 
-	h.Add("List", http.MethodPost, "/instance_types/list", svc.List)
-
-	h.Load(c.WebService)
+// GcpInstanceTypeListResp ...
+type GcpInstanceTypeListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          []*GcpInstanceTypeResp `json:"data"`
 }

@@ -20,26 +20,19 @@
 package instancetype
 
 import (
-	"hcm/pkg/criteria/validator"
-
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
 // -------------------------- List --------------------------
 
-// TCloudListOption ...
-type TCloudListOption struct {
-	Region string `json:"region" validate:"required"`
-	Zone   string `json:"zone" validate:"required"`
-}
-
-// Validate ...
-func (opt *TCloudListOption) Validate() error {
-	return validator.Validate.Struct(opt)
+// TCloudInstanceTypeListOption ...
+type TCloudInstanceTypeListOption struct {
+	Region string
+	Zone   string
 }
 
 // ToListRequest ...
-func (opt *TCloudListOption) ToListRequest() *cvm.DescribeInstanceTypeConfigsRequest {
+func (opt *TCloudInstanceTypeListOption) ToListRequest() *cvm.DescribeInstanceTypeConfigsRequest {
 	req := cvm.NewDescribeInstanceTypeConfigsRequest()
 
 	zoneFiled := "zone"
@@ -55,11 +48,11 @@ func (opt *TCloudListOption) ToListRequest() *cvm.DescribeInstanceTypeConfigsReq
 
 // TCloudInstanceType ...
 type TCloudInstanceType struct {
-	Zone           string `json:"zone"`
-	InstanceType   string `json:"instance_type"`
-	InstanceFamily string `json:"instance_family"`
-	GPU            int64  `json:"gpu"`
-	CPU            int64  `json:"cpu"`
-	Memory         int64  `json:"memory"`
-	FPGA           int64  `json:"fpga"`
+	Zone           string
+	InstanceType   string
+	InstanceFamily string
+	GPU            int64
+	CPU            int64
+	Memory         int64
+	FPGA           int64
 }
