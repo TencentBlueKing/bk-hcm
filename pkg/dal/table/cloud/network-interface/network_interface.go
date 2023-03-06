@@ -147,9 +147,5 @@ func (t NetworkInterfaceTable) UpdateValidate() error {
 		return errors.New("creator can not update")
 	}
 
-	if len(t.Reviser) == 0 {
-		return errors.New("reviser can not be empty")
-	}
-
 	return nil
 }

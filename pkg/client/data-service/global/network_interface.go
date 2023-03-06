@@ -66,7 +66,7 @@ func (v *NetworkInterfaceClient) List(ctx context.Context, h http.Header, req *c
 	return resp.Data, nil
 }
 
-// BatchDelete network interface.
+// BatchDelete batch delete network interface.
 func (v *NetworkInterfaceClient) BatchDelete(ctx context.Context, h http.Header,
 	req *dataservice.BatchDeleteReq) error {
 
@@ -76,6 +76,30 @@ func (v *NetworkInterfaceClient) BatchDelete(ctx context.Context, h http.Header,
 		WithContext(ctx).
 		Body(req).
 		SubResourcef("/network_interfaces/batch").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// BatchUpdateNetworkInterfaceCommonInfo batch update network interface common info.
+func (cli *NetworkInterfaceClient) BatchUpdateNetworkInterfaceCommonInfo(ctx context.Context, h http.Header,
+	request *datacloudniproto.NetworkInterfaceCommonInfoBatchUpdateReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Patch().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/network_interfaces/common/info/batch/update").
 		WithHeaders(h).
 		Do().
 		Into(resp)

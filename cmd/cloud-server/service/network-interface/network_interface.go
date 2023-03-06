@@ -52,6 +52,8 @@ func InitNetworkInterfaceService(c *capability.Capability) {
 	h.Add("GetNetworkInterface", "GET", "/network_interfaces/{id}", svc.GetNetworkInterface)
 	h.Add("ListEipExtByCvmID", "GET", "/vendors/{vendor}/network_interfaces/cvms/{cvm_id}",
 		svc.ListNetworkInterfaceExtByCvmID)
+	h.Add("AssignNetworkInterfaceToBiz", "POST", "/network_interfaces/assign/bizs",
+		svc.AssignNetworkInterfaceToBiz)
 
 	h.Load(c.WebService)
 }

@@ -57,6 +57,8 @@ func InitNetInterfaceService(cap *capability.Capability) {
 		svc.BatchCreateNetworkInterface)
 	h.Add("BatchUpdateNetworkInterface", "PATCH", "/vendors/{vendor}/network_interfaces/batch",
 		svc.BatchUpdateNetworkInterface)
+	h.Add("BatchUpdateNetworkInterfaceCommonInfo", "PATCH",
+		"/network_interfaces/common/info/batch/update", svc.BatchUpdateNetworkInterfaceCommonInfo)
 	h.Add("BatchDeleteNetworkInterface", "DELETE", "/network_interfaces/batch",
 		svc.BatchDeleteNetworkInterface)
 	h.Add("ListNetworkInterface", "POST", "/network_interfaces/list", svc.ListNetworkInterface)
@@ -245,6 +247,30 @@ func batchUpdateNI[T datacloudniproto.NetworkInterfaceCreateExtension](cts *rest
 			logs.Errorf("batch update network interface failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("update network interface failed, err: %v", err)
 		}
+	}
+
+	return nil, nil
+}
+
+// BatchUpdateNetworkInterfaceCommonInfo batch update network interface common info.
+func (svc *NetworkInterfaceSvc) BatchUpdateNetworkInterfaceCommonInfo(cts *rest.Contexts) (interface{}, error) {
+	req := new(datacloudniproto.NetworkInterfaceCommonInfoBatchUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	updateFilter := tools.ContainersExpression("id", req.IDs)
+	updateFiled := &tableni.NetworkInterfaceTable{
+		BkBizID: req.BkBizID,
+	}
+	if err := svc.dao.NetworkInterface().Update(cts.Kit, updateFilter, updateFiled); err != nil {
+		logs.Errorf("batch update network interface common info failed, req: %+v, err: %v, rid: %s",
+			req, err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	return nil, nil

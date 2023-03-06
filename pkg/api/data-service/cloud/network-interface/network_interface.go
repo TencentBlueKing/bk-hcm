@@ -261,6 +261,31 @@ func (req *NetworkInterfaceBatchUpdateReq[T]) Validate() error {
 	return nil
 }
 
+// -------------------------- Update Common --------------------------
+
+// NetworkInterfaceCommonInfoBatchUpdateReq define network interface common info batch update req.
+type NetworkInterfaceCommonInfoBatchUpdateReq struct {
+	IDs     []string `json:"ids" validate:"required"`
+	BkBizID int64    `json:"bk_biz_id" validate:"required"`
+}
+
+// Validate network interface common info batch update req.
+func (req *NetworkInterfaceCommonInfoBatchUpdateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if len(req.IDs) == 0 {
+		return errors.New("ids required")
+	}
+
+	if len(req.IDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("ids count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // -------------------------- Delete --------------------------
 
 // AzureNIBatchDeleteReq azure network interface delete request.
