@@ -81,6 +81,10 @@ func (g *Gcp) ListVpc(kt *kit.Kit, opt *core.GcpListOption) (*types.GcpVpcListRe
 		listCall.Filter(generateResourceIDsFilter(opt.CloudIDs))
 	}
 
+	if len(opt.SelfLinks) > 0 {
+		listCall.Filter(generateResourceFilter("selfLink", opt.SelfLinks))
+	}
+
 	if opt.Page != nil {
 		listCall.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
 	}

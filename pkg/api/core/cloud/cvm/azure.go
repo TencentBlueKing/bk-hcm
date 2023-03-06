@@ -86,7 +86,7 @@ type AzureSubResource struct {
 // AzureBillingProfile Specifies the billing related details of a Azure Spot virtual machine.
 type AzureBillingProfile struct {
 	// https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP#billingprofile
-	MaxPrice *int64 `json:"max_price,omitempty"`
+	MaxPrice *float64 `json:"max_price,omitempty"`
 }
 
 // AzureHardwareProfile Specifies the hardware settings for the virtual machine.
@@ -100,7 +100,7 @@ type AzureHardwareProfile struct {
 // AzureVmSizeProperties Specifies the properties for customizing the size of the virtual machine.
 type AzureVmSizeProperties struct {
 	// VCPUsAvailable Specifies the number of vCPUs available for the VM.
-	VCPUsAvailable *int64 `json:"vcpus_available,omitempty"`
+	VCPUsAvailable *int32 `json:"vcpus_available,omitempty"`
 	// VCPUsPerCore Specifies the vCPU to physical core ratio.
-	VCPUsPerCore *int64 `json:"vcpus_per_core,omitempty"`
+	VCPUsPerCore *int32 `json:"vcpus_per_core,omitempty"`
 }

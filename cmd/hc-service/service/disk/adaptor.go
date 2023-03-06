@@ -61,25 +61,3 @@ func (da *diskAdaptor) CreateDisks(cts *rest.Contexts) (interface{}, error) {
 		return nil, fmt.Errorf("%s does not support the creation of cloud disks", vendor)
 	}
 }
-
-var SyncFuncs = map[enumor.Vendor]func(da *diskAdaptor, cts *rest.Contexts) (interface{}, error){
-	enumor.TCloud: TCloudSyncDisk,
-	enumor.HuaWei: HuaWeiSyncDisk,
-	enumor.Aws:    AwsSyncDisk,
-	enumor.Azure:  AzureSyncDisk,
-	enumor.Gcp:    GcpSyncDisk,
-}
-
-// SyncDisks 同步云硬盘
-func (da *diskAdaptor) SyncDisks(cts *rest.Contexts) (interface{}, error) {
-	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
-	if err := vendor.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	if cfunc, ok := SyncFuncs[vendor]; !ok {
-		return nil, fmt.Errorf("%s does not support the sync of cloud disks", vendor)
-	} else {
-		return cfunc(da, cts)
-	}
-}

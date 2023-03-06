@@ -91,7 +91,7 @@ type NetworkInterfaceCvmRelResult struct {
 // NetworkInterfaceCvmRelListResp ...
 type NetworkInterfaceCvmRelListResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          *NetworkInterfaceCvmRelResult `json:"data"`
+	Data          *NetworkInterfaceCvmRelListResult `json:"data"`
 }
 
 // NetworkInterfaceCvmRelWithListReq ...

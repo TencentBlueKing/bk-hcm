@@ -135,7 +135,7 @@ func SyncAllResource(c *client.ClientSet, kit *kit.Kit, header http.Header) erro
 	return err
 }
 
-// SyncPublicResource sync all region and zone
+// SyncPublicResource sync all public resource
 func SyncPublicResource(kit *kit.Kit, c *client.ClientSet, accounts *dataproto.AccountListResult,
 	header http.Header) error {
 

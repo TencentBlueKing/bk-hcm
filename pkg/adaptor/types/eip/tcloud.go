@@ -22,29 +22,14 @@ package eip
 import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
-
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
-	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // TCloudEipListOption ...
 type TCloudEipListOption struct {
-	Region string `validate:"required"`
-	Page   *core.TCloudPage
-}
-
-// ToDescribeAddressesRequest ...
-func (o *TCloudEipListOption) ToDescribeAddressesRequest() (*vpc.DescribeAddressesRequest, error) {
-	if err := o.Validate(); err != nil {
-		return nil, err
-	}
-
-	req := vpc.NewDescribeAddressesRequest()
-	if o.Page != nil {
-		req.Offset = common.Int64Ptr(int64(o.Page.Offset))
-		req.Limit = common.Int64Ptr(int64(o.Page.Limit))
-	}
-	return req, nil
+	Region   string           `json:"region" validate:"required"`
+	Page     *core.TCloudPage `json:"page" validate:"omitempty"`
+	CloudIDs []string         `json:"cloud_ids" validate:"omitempty"`
+	Ips      []string         `json:"ips" validate:"omitempty"`
 }
 
 // Validate ...

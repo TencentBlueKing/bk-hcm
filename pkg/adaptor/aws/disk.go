@@ -20,12 +20,13 @@
 package aws
 
 import (
+	"github.com/aws/aws-sdk-go/service/ec2"
+
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-
-	"github.com/aws/aws-sdk-go/service/ec2"
+	"hcm/pkg/tools/converter"
 )
 
 // CreateDisk 创建云硬盘
@@ -67,6 +68,10 @@ func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume,
 	}
 
 	req := new(ec2.DescribeVolumesInput)
+
+	if len(opt.CloudIDs) > 0 {
+		req.VolumeIds = converter.SliceToPtr(opt.CloudIDs)
+	}
 
 	if opt.Page != nil {
 		req.MaxResults = opt.Page.MaxResults

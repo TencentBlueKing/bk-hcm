@@ -21,28 +21,18 @@ package eip
 
 import (
 	"hcm/pkg/criteria/validator"
-
-	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // AwsEipListOption ...
 type AwsEipListOption struct {
-	Region string `validate:"required"`
+	Region   string   `json:"region" validate:"required"`
+	CloudIDs []string `json:"cloud_ids" validate:"omitempty"`
+	Ips      []string `json:"ips" validate:"omitempty"`
 }
 
 // Validate ...
 func (o *AwsEipListOption) Validate() error {
 	return validator.Validate.Struct(o)
-}
-
-// ToDescribeAddressesInput ...
-func (o *AwsEipListOption) ToDescribeAddressesInput() (*ec2.DescribeAddressesInput, error) {
-	if err := o.Validate(); err != nil {
-		return nil, err
-	}
-
-	input := &ec2.DescribeAddressesInput{}
-	return input, nil
 }
 
 // AwsEipListResult ...

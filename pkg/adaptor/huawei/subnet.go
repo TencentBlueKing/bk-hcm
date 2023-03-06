@@ -179,6 +179,10 @@ func (h *HuaWei) ListSubnetByID(kt *kit.Kit, opt *types.HuaWeiSubnetListByIDOpti
 			break
 		}
 
+		if len(*resp.Subnets) < core.HuaWeiQueryLimit {
+			break
+		}
+
 		tmp := *resp.Subnets
 		req.Marker = converter.ValToPtr(tmp[len(tmp)-1].Id)
 	}

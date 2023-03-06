@@ -227,7 +227,7 @@ func (r *region) getAzureRGDSSync(cloudIDs []string, req *apiregion.AzureRGSyncR
 
 		results, err := r.dataCli.Azure.ResourceGroup.ListResourceGroup(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
 		if err != nil {
-			logs.Errorf("from data-service list public region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("from data-service list resource group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return updateIDs, dsMap, err
 		}
 
@@ -275,7 +275,7 @@ func (r *region) getAzureRGAllDS(req *apiregion.AzureRGSyncReq, cts *rest.Contex
 
 		results, err := r.dataCli.Azure.ResourceGroup.ListResourceGroup(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
 		if err != nil {
-			logs.Errorf("from data-service list public region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("from data-service list resource group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return dsIDs, err
 		}
 

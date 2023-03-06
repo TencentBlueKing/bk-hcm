@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 // ListCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
@@ -43,7 +44,7 @@ func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) ([]*compute.Insta
 		return nil, "", err
 	}
 
-	request := client.Instances.List(g.CloudProjectID(), "").Context(kt.Ctx)
+	request := client.Instances.List(g.CloudProjectID(), opt.Zone).Context(kt.Ctx)
 
 	if len(opt.CloudIDs) > 0 {
 		request.Filter(generateResourceIDsFilter(opt.CloudIDs))
@@ -60,6 +61,35 @@ func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) ([]*compute.Insta
 	}
 
 	return resp.Items, resp.NextPageToken, nil
+}
+
+// GetGcpIPAddresses ...
+func GetGcpIPAddresses(networkInterfaces []*compute.NetworkInterface) ([]string, []string, []string, []string) {
+	privateIPv4Map := make(map[string]struct{}, 0)
+	privateIPv6Map := make(map[string]struct{}, 0)
+	publicIPv4Map := make(map[string]struct{}, 0)
+	publicIPv6Map := make(map[string]struct{}, 0)
+
+	for _, one := range networkInterfaces {
+		if one.StackType == "IPV4_ONLY" {
+			privateIPv4Map[one.NetworkIP] = struct{}{}
+
+			for _, config := range one.AccessConfigs {
+				publicIPv4Map[config.NatIP] = struct{}{}
+			}
+		}
+
+		if one.StackType == "IPV6_ONLY" {
+			privateIPv6Map[one.NetworkIP] = struct{}{}
+
+			for _, config := range one.AccessConfigs {
+				publicIPv6Map[config.NatIP] = struct{}{}
+			}
+		}
+	}
+
+	return converter.MapKeyToStringSlice(privateIPv4Map), converter.MapKeyToStringSlice(publicIPv4Map),
+		converter.MapKeyToStringSlice(privateIPv6Map), converter.MapKeyToStringSlice(publicIPv6Map)
 }
 
 // DeleteCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/delete

@@ -20,15 +20,13 @@
 package gcp
 
 import (
-	"fmt"
 	"strconv"
 
+	"google.golang.org/api/compute/v1"
+
 	"hcm/pkg/adaptor/types/eip"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-
-	"google.golang.org/api/compute/v1"
 )
 
 // ListEip ...
@@ -49,6 +47,10 @@ func (g *Gcp) ListEip(kt *kit.Kit, opt *eip.GcpEipListOption) (*eip.GcpEipListRe
 
 		if len(opt.CloudIDs) > 0 {
 			request.Filter(generateResourceIDsFilter(opt.CloudIDs))
+		}
+
+		if len(opt.SelfLinks) > 0 {
+			request.Filter(generateResourceFilter("selfLink", opt.SelfLinks))
 		}
 
 		if opt.Page != nil {
@@ -84,10 +86,9 @@ func (g *Gcp) ListEip(kt *kit.Kit, opt *eip.GcpEipListOption) (*eip.GcpEipListRe
 	return &eip.GcpEipListResult{Details: convert(resp, opt.Region), NextPageToken: resp.NextPageToken}, nil
 }
 
-// ListEipByIP ...
-// reference: global address reference: https://cloud.google.com/compute/docs/reference/rest/v1/globalAddresses/list
-// reference: regional address reference: https://cloud.google.com/compute/docs/reference/rest/v1/addresses/list
-func (g *Gcp) ListEipByIP(kt *kit.Kit, opt *eip.GcpEipListByIPOption) (*compute.Address, error) {
+// ListAggregatedEip ...
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/addresses/aggregatedList
+func (g *Gcp) ListAggregatedEip(kt *kit.Kit, opt *eip.GcpEipAggregatedListOption) ([]*compute.Address, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -98,41 +99,21 @@ func (g *Gcp) ListEipByIP(kt *kit.Kit, opt *eip.GcpEipListByIPOption) (*compute.
 	}
 
 	// 地域Eip
-	resp, err := client.Addresses.List(g.CloudProjectID(), opt.Region).Context(kt.Ctx).
-		Filter(fmt.Sprintf(`address="%s"`, opt.IPAddress)).Do()
+	resp, err := client.Addresses.AggregatedList(g.CloudProjectID()).Context(kt.Ctx).
+		Filter(generateResourceFilter("address", opt.IPAddresses)).Do()
 	if err != nil {
-		logs.Errorf("list address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		logs.Errorf("list aggregated address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
-	if len(resp.Items) != 0 {
-		if len(resp.Items) > 1 {
-			logs.Errorf("list address return eip count not right, count: %d, opt: %v, rid: %s", len(resp.Items),
-				opt, kt.Rid)
-			return nil, fmt.Errorf("list address return eip count not right, count: %d", len(resp.Items))
+	result := make([]*compute.Address, 0, len(opt.IPAddresses))
+	for _, one := range resp.Items {
+		for _, address := range one.Addresses {
+			result = append(result, address)
 		}
-
-		return resp.Items[0], nil
 	}
 
-	globalResp, err := client.GlobalAddresses.List(g.CloudProjectID()).Context(kt.Ctx).
-		Filter(fmt.Sprintf(`address="%s"`, opt.IPAddress)).Do()
-	if err != nil {
-		logs.Errorf("list global address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
-		return nil, err
-	}
-
-	if len(globalResp.Items) == 0 {
-		return nil, errf.Newf(errf.RecordNotFound, "eip: %s not found", opt.IPAddress)
-	}
-
-	if len(globalResp.Items) > 1 {
-		logs.Errorf("list global address return eip count not right, count: %d, opt: %v, rid: %s",
-			len(globalResp.Items), opt, kt.Rid)
-		return nil, fmt.Errorf("list global address return eip count not right, count: %d", len(globalResp.Items))
-	}
-
-	return globalResp.Items[0], nil
+	return result, nil
 }
 
 func convert(resp *compute.AddressList, region string) []*eip.GcpEip {

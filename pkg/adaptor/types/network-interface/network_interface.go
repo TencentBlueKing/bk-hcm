@@ -98,9 +98,8 @@ func (opt AzureNetworkInterfaceListOption) Validate() error {
 
 // HuaWeiNIListOption defines huawei network interface list options.
 type HuaWeiNIListOption struct {
-	AccountID string `json:"account_id" validate:"required"`
-	ServerID  string `json:"server_id" validate:"required"`
-	Region    string `json:"region" validate:"required"`
+	ServerID string `json:"server_id" validate:"required"`
+	Region   string `json:"region" validate:"required"`
 }
 
 // Validate huawei network interface list option.
@@ -152,7 +151,7 @@ type GcpListByCvmIDOption struct {
 
 // Validate gcp list option.
 func (opt GcpListByCvmIDOption) Validate() error {
-	if err := opt.Validate(); err != nil {
+	if err := validator.Validate.Struct(opt); err != nil {
 		return err
 	}
 

@@ -80,8 +80,9 @@ type TCloudDiskChargePrepaid struct {
 
 // TCloudDiskListOption define tcloud disk list option.
 type TCloudDiskListOption struct {
-	Region string           `json:"region" validate:"required"`
-	Page   *core.TCloudPage `json:"page" validate:"omitempty"`
+	Region   string           `json:"region" validate:"required"`
+	Page     *core.TCloudPage `json:"page" validate:"omitempty"`
+	CloudIDs []string         `json:"cloud_ids" validate:"omitempty"`
 }
 
 // Validate tcloud disk option.

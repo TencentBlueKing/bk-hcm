@@ -95,6 +95,10 @@ func (m *EipModel) InsertValidate() error {
 		return errors.New("vendor is required")
 	}
 
+	if len(m.Status) == 0 {
+		return errors.New("status is required")
+	}
+
 	if len(m.CloudID) == 0 {
 		return errors.New("cloud_id is required")
 	}

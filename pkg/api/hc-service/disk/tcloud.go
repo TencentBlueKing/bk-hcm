@@ -21,8 +21,6 @@ package disk
 
 import (
 	"hcm/pkg/criteria/validator"
-
-	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 )
 
 // TCloudDiskCreateReq ...
@@ -46,9 +44,4 @@ type TCloudDiskExtensionCreateReq struct {
 type TCloudDiskChargePrepaid struct {
 	Period    *uint64 `json:"period"`
 	RenewFlag *string `json:"renew_flag"`
-}
-
-// TCloudDiskSyncDiff diff tcloud disk
-type TCloudDiskSyncDiff struct {
-	Disk *cbs.Disk
 }

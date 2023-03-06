@@ -75,10 +75,12 @@ func (z *zoneHC) SyncAwsZone(cts *rest.Contexts) (interface{}, error) {
 	start := 0
 	step := int(filter.DefaultMaxInLimit)
 	for {
-		tmpCloudIDs := make([]string, 0)
+		var tmpCloudIDs []string
 		if start+step > len(cloudIDs) {
+			tmpCloudIDs = make([]string, len(cloudIDs)-start)
 			copy(tmpCloudIDs, cloudIDs[start:])
 		} else {
+			tmpCloudIDs = make([]string, step)
 			copy(tmpCloudIDs, cloudIDs[start:start+step])
 		}
 

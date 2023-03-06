@@ -103,9 +103,9 @@ func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.Hua
 	}
 
 	v := &typesniproto.HuaWeiNI{
-		AccountID:  converter.ValToPtr(opt.AccountID),
-		CloudID:    data.NetId,                       // 网卡端口所属网络ID（network_id）
+		CloudID:    data.PortId,                      // 网卡端口ID
 		InstanceID: converter.ValToPtr(opt.ServerID), // 关联的实例ID
+		Region:     converter.ValToPtr(opt.Region),   // 区域
 		Extension: &coreni.HuaWeiNIExtension{
 			// FixedIps 网卡私网IP信息列表。
 			FixedIps: []coreni.ServerInterfaceFixedIp{},
@@ -113,8 +113,6 @@ func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.Hua
 			MacAddr: data.MacAddr,
 			// NetId 网卡端口所属网络ID。
 			NetId: data.NetId,
-			// PortId 网卡端口ID。
-			PortId: data.PortId,
 			// PortState 网卡端口状态。
 			PortState: data.PortState,
 			// DeleteOnTermination 卸载网卡时，是否删除网卡。
@@ -143,7 +141,7 @@ func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.Hua
 			ipAddressArr = append(ipAddressArr, *tmpFi.IpAddress)
 		}
 	}
-	v.CloudSubnetID = converter.ValToPtr(strings.Join(subnetIDArr, ";"))
+	v.CloudSubnetID = data.NetId
 	v.PrivateIP = converter.ValToPtr(strings.Join(ipAddressArr, ";"))
 	v.Name = converter.ValToPtr(fmt.Sprintf("name:%s", converter.PtrToVal(v.PrivateIP)))
 

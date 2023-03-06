@@ -55,6 +55,11 @@ func (h *HuaWei) ListCvm(kt *kit.Kit, opt *typecvm.HuaWeiListOption) (*[]model.S
 		req.ServerId = converter.ValToPtr(strings.Join(opt.CloudIDs, ","))
 	}
 
+	if opt.Page != nil {
+		req.Limit = converter.ValToPtr(opt.Page.Limit)
+		req.Offset = converter.ValToPtr(opt.Page.Offset)
+	}
+
 	resp, err := client.ListServersDetails(req)
 	if err != nil {
 		logs.Errorf("list huawei cvm failed, err: %v, rid: %s", err, kt.Rid)

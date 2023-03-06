@@ -151,9 +151,10 @@ func (a AwsListOption) Validate() error {
 
 // GcpListOption defines basic gcp list options.
 type GcpListOption struct {
-	CloudIDs []string `json:"cloud_ids,omitempty"`
-	Page     *GcpPage `json:"page,omitempty"`
-	Zone     string   `json:"zone,omitempty"`
+	Page      *GcpPage `json:"page,omitempty"`
+	Zone      string   `json:"zone,omitempty"`
+	CloudIDs  []string `json:"cloud_ids,omitempty"`
+	SelfLinks []string `json:"self_links" validate:"omitempty"`
 }
 
 // Validate gcp list option.
@@ -165,6 +166,18 @@ func (a GcpListOption) Validate() error {
 
 		if len(a.CloudIDs) > GcpQueryLimit {
 			return errf.New(errf.InvalidParameter, "gcp resource ids length should <= 500")
+		}
+
+		return nil
+	}
+
+	if len(a.SelfLinks) != 0 {
+		if a.Page != nil {
+			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
+		}
+
+		if len(a.SelfLinks) > GcpQueryLimit {
+			return errf.New(errf.InvalidParameter, "gcp resource self link length should <= 500")
 		}
 
 		return nil

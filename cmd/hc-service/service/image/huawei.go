@@ -90,15 +90,17 @@ func HuaWeiSyncImage(da *imageAdaptor, cts *rest.Contexts) (interface{}, error) 
 		start := 0
 		step := int(filter.DefaultMaxInLimit)
 		for {
-			tmpCloudIDs := make([]string, 0)
+			var tmpCloudIDs []string
 			if start+step > len(cloudIDs) {
+				tmpCloudIDs = make([]string, len(cloudIDs)-start)
 				copy(tmpCloudIDs, cloudIDs[start:])
 			} else {
+				tmpCloudIDs = make([]string, step)
 				copy(tmpCloudIDs, cloudIDs[start:start+step])
 			}
 
 			if len(tmpCloudIDs) > 0 {
-				tmpIDs, tmpMap, err := da.getHuaWeiImageDSSync(tmpCloudIDs, req, cts)
+				tmpIDs, tmpMap, err := da.getHuaWeiImageDSSync(tmpCloudIDs, req, cts, platform.Value())
 				if err != nil {
 					logs.Errorf("request getHuaWeiImageDSSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
 					return nil, err
@@ -145,7 +147,7 @@ func HuaWeiSyncImage(da *imageAdaptor, cts *rest.Contexts) (interface{}, error) 
 			}
 		}
 
-		dsIDs, err := da.getHuaWeiImageAllDS(req, cts)
+		dsIDs, err := da.getHuaWeiImageAllDS(req, cts, platform.Value())
 		if err != nil {
 			logs.Errorf("request getHuaWeiImageAllDS failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
@@ -250,7 +252,7 @@ func (da *imageAdaptor) syncHuaWeiImageUpdate(updateIDs []string, cloudMap map[s
 }
 
 func (da *imageAdaptor) getHuaWeiImageDSSync(cloudIDs []string, req *protoimage.HuaWeiImageSyncReq,
-	cts *rest.Contexts) ([]string, map[string]*HuaWeiDSImageSync, error) {
+	cts *rest.Contexts, platform string) ([]string, map[string]*HuaWeiDSImageSync, error) {
 
 	updateIDs := make([]string, 0)
 	dsMap := make(map[string]*HuaWeiDSImageSync)
@@ -266,6 +268,11 @@ func (da *imageAdaptor) getHuaWeiImageDSSync(cloudIDs []string, req *protoimage.
 						Field: "vendor",
 						Op:    filter.Equal.Factory(),
 						Value: enumor.HuaWei,
+					},
+					&filter.AtomRule{
+						Field: "platform",
+						Op:    filter.Equal.Factory(),
+						Value: platform,
 					},
 					&filter.AtomRule{
 						Field: "extension.region",
@@ -311,7 +318,7 @@ func (da *imageAdaptor) getHuaWeiImageDSSync(cloudIDs []string, req *protoimage.
 }
 
 func (da *imageAdaptor) getHuaWeiImageAllDS(req *protoimage.HuaWeiImageSyncReq,
-	cts *rest.Contexts) ([]string, error) {
+	cts *rest.Contexts, platform string) ([]string, error) {
 
 	start := 0
 	dsIDs := make([]string, 0)
@@ -325,6 +332,11 @@ func (da *imageAdaptor) getHuaWeiImageAllDS(req *protoimage.HuaWeiImageSyncReq,
 						Field: "vendor",
 						Op:    filter.Equal.Factory(),
 						Value: enumor.HuaWei,
+					},
+					&filter.AtomRule{
+						Field: "platform",
+						Op:    filter.Equal.Factory(),
+						Value: platform,
 					},
 					&filter.AtomRule{
 						Field: "extension.region",

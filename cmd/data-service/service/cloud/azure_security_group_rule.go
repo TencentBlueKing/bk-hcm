@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -132,11 +133,7 @@ func convStringSlice(data []*string) []string {
 		return nil
 	}
 
-	result := make([]string, 0, len(data))
-	for _, one := range data {
-		result = append(result, *one)
-	}
-	return result
+	return converter.PtrToSlice(data)
 }
 
 func convStringPtrSlice(data []string) []*string {
@@ -144,11 +141,7 @@ func convStringPtrSlice(data []string) []*string {
 		return nil
 	}
 
-	result := make([]*string, 0, len(data))
-	for _, one := range data {
-		result = append(result, &one)
-	}
-	return result
+	return converter.SliceToPtr(data)
 }
 
 // BatchUpdateAzureRule update azure rule.

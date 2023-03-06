@@ -80,7 +80,7 @@ type Table struct {
 	Region               string            `db:"region" validate:"lte=20" json:"region"`
 	Zone                 string            `db:"zone" validate:"lte=20" json:"zone"`
 	CloudVpcIDs          types.StringArray `db:"cloud_vpc_ids" json:"cloud_vpc_ids"`
-	VpcIDs               types.StringArray `db:"vpc_ids" json:"vpc_i_ds"`
+	VpcIDs               types.StringArray `db:"vpc_ids" json:"vpc_ids"`
 	CloudSubnetIDs       types.StringArray `db:"cloud_subnet_ids" json:"cloud_subnet_ids"`
 	SubnetIDs            types.StringArray `db:"subnet_ids" json:"subnet_i_ds"`
 	CloudImageID         string            `db:"cloud_image_id" json:"cloud_image_id"`
@@ -149,10 +149,6 @@ func (t Table) InsertValidate() error {
 
 	if len(t.SubnetIDs) == 0 {
 		return errors.New("subnet_id is required")
-	}
-
-	if len(t.Name) == 0 {
-		return errors.New("name is required")
 	}
 
 	if len(t.Extension) == 0 {

@@ -28,9 +28,9 @@ import (
 
 // HuaWeiListOption defines options to list huawei cvm instances.
 type HuaWeiListOption struct {
-	Region   string                 `json:"region" validate:"required"`
-	CloudIDs []string               `json:"cloud_ids" validate:"omitempty"`
-	Page     *core.HuaWeiOffsetPage `json:"page" validate:"omitempty"`
+	Region   string                    `json:"region" validate:"required"`
+	CloudIDs []string                  `json:"cloud_ids" validate:"omitempty"`
+	Page     *core.HuaWeiCvmOffsetPage `json:"page" validate:"omitempty"`
 }
 
 // Validate huawei cvm list option.

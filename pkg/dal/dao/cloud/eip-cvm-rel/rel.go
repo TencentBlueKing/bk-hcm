@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -195,7 +196,7 @@ func (relDao *EipCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.EipCv
 		logs.Errorf("list eip by ids failed, err: %v, ids: %v, rid: %s", err, eipIDs, kt.Rid)
 		return err
 	}
-	if len(idToEipMap) != relCount {
+	if len(idToEipMap) != len(converter.StringSliceToMap(eipIDs)) {
 		// TODO 将不存在的 ID 记录到错误信息中
 		return fmt.Errorf("some eip does not exists")
 	}
@@ -205,7 +206,7 @@ func (relDao *EipCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.EipCv
 		logs.Errorf("list cvm by ids failed, err: %v, ids: %v, rid: %s", err, cvmIDs, kt.Rid)
 		return err
 	}
-	if len(idToCvmMap) != relCount {
+	if len(idToCvmMap) != len(converter.StringSliceToMap(cvmIDs)) {
 		// TODO 将不存在的 ID 记录到错误信息中
 		return fmt.Errorf("some cvm does not exists")
 	}

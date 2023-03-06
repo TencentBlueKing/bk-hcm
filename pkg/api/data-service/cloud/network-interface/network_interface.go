@@ -141,8 +141,6 @@ type HuaWeiNICreateExt struct {
 	MacAddr *string `json:"mac_addr,omitempty"`
 	// NetId 网卡端口所属网络ID。
 	NetId *string `json:"net_id,omitempty"`
-	// PortId 网卡端口ID。
-	PortId *string `json:"port_id,omitempty"`
 	// PortState 网卡端口状态。
 	PortState *string `json:"port_state,omitempty"`
 	// DeleteOnTermination 卸载网卡时，是否删除网卡。

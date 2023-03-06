@@ -576,7 +576,7 @@ create table if not exists `route_table`
     `bk_biz_id`    bigint(1)             default -1,
     # Extension
     `extension`    json         not null,
-    # Revision
+    # revision
     `creator`      varchar(64)  not null,
     `reviser`      varchar(64)  not null,
     `created_at`   timestamp    not null default current_timestamp,
@@ -837,16 +837,16 @@ create table if not exists `network_interface`
     primary key (`id`),
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
-  default charset = utf8mb4 comment = '网络接口表';
+  default charset = utf8mb4;
 
-CREATE TABLE if NOT EXISTS `network_interface_cvm_rel`
+create table if not exists `network_interface_cvm_rel`
 (
-    `id`                   bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
-    `cvm_id`               varchar(64)     NOT NULL COMMENT '主机ID',
-    `network_interface_id` varchar(64)     NOT NULL COMMENT '网络接口ID',
-    `creator`              varchar(64)          DEFAULT '' COMMENT '创建人',
-    `created_at`           timestamp       NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_uk_cvm_id_network_interface_id` (`cvm_id`, `network_interface_id`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4 COMMENT ='网络接口跟主机的关联表';
+    `id`                   bigint unsigned not null auto_increment,
+    `cvm_id`               varchar(64)     not null,
+    `network_interface_id` varchar(64)     not null,
+    `creator`              varchar(64)          default '',
+    `created_at`           timestamp       null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_cvm_id_network_interface_id` (`cvm_id`, `network_interface_id`)
+) engine = innodb
+  default charset = utf8mb4;

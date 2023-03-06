@@ -50,9 +50,10 @@ func (opt *GcpDiskCreateOption) ToCreateDiskRequest(cloudProjectID string) (*com
 
 // GcpDiskListOption define gcp disk list option.
 type GcpDiskListOption struct {
-	Zone     string        `json:"zone" validate:"required"`
-	CloudIDs []string      `json:"cloud_ids" validate:"omitempty"`
-	Page     *core.GcpPage `json:"page" validate:"omitempty"`
+	Zone      string        `json:"zone" validate:"required"`
+	CloudIDs  []string      `json:"cloud_ids" validate:"omitempty"`
+	SelfLinks []string      `json:"self_links" validate:"omitempty"`
+	Page      *core.GcpPage `json:"page" validate:"omitempty"`
 }
 
 // Validate gcp disk list option.

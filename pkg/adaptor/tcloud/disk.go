@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/logs"
 
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
 // CreateDisk 创建云硬盘
@@ -68,6 +69,9 @@ func (t *TCloud) ListDisk(kt *kit.Kit, opt *disk.TCloudDiskListOption) ([]*cbs.D
 	}
 
 	req := cbs.NewDescribeDisksRequest()
+	if len(opt.CloudIDs) != 0 {
+		req.DiskIds = common.StringPtrs(opt.CloudIDs)
+	}
 	if opt.Page != nil {
 		req.Offset = &opt.Page.Offset
 		req.Limit = &opt.Page.Limit

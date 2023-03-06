@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -90,9 +91,8 @@ func (dao Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []cloud.Security
 		return err
 	}
 
-	if len(sgMap) != len(sgIDs) {
-		logs.Errorf("get security group count not right, err: %v, ids: %v, count: %d, rid: %s", err, sgIDs,
-			len(sgMap), kt.Rid)
+	if len(sgMap) != len(converter.StringSliceToMap(sgIDs)) {
+		logs.Errorf("get security group count not right, ids: %v, count: %d, rid: %s", sgIDs, len(sgMap), kt.Rid)
 		return fmt.Errorf("get security group count not right")
 	}
 
@@ -102,7 +102,7 @@ func (dao Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []cloud.Security
 		return err
 	}
 
-	if len(cvmMap) != len(cvmIDs) {
+	if len(cvmMap) != len(converter.StringSliceToMap(cvmIDs)) {
 		logs.Errorf("get cvm count not right, err: %v, ids: %v, count: %d, rid: %s", err, cvmIDs, len(cvmMap), kt.Rid)
 		return fmt.Errorf("get cvm count not right")
 	}

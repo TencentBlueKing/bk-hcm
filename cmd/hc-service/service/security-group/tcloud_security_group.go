@@ -20,19 +20,15 @@
 package securitygroup
 
 import (
-	typcore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-
-	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // CreateTCloudSecurityGroup create tcloud security group.
@@ -281,189 +277,4 @@ func (g *securityGroup) UpdateTCloudSecurityGroup(cts *rest.Contexts) (interface
 	}
 
 	return nil, nil
-}
-
-// SyncTCloudSecurityGroup sync tcloud security group to hcm.
-func (g *securityGroup) SyncTCloudSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-
-	req, err := g.decodeSecurityGroupSyncReq(cts)
-	if err != nil {
-		return nil, err
-	}
-
-	cloudMap, err := g.getDatasFromTCloudForSecurityGroupSync(cts, req)
-	if err != nil {
-		return nil, err
-	}
-
-	dsMap, err := g.getDatasFromDSForSecurityGroupSync(cts, req)
-	if err != nil {
-		return nil, err
-	}
-
-	err = g.diffTCloudSecurityGroupSync(cts, cloudMap, dsMap, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// getDatasFromTCloudForSecurityGroupSync get datas from cloud
-func (g *securityGroup) getDatasFromTCloudForSecurityGroupSync(cts *rest.Contexts,
-	req *proto.SecurityGroupSyncReq) (map[string]*proto.SecurityGroupSyncTCloudDiff, error) {
-
-	client, err := g.ad.TCloud(cts.Kit, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	offset := 0
-	datasCloud := []*vpc.SecurityGroup{}
-	for {
-		opt := &securitygroup.TCloudListOption{
-			Region: req.Region,
-			Page:   &typcore.TCloudPage{Offset: uint64(offset), Limit: uint64(typcore.TCloudQueryLimit)},
-		}
-		datas, err := client.ListSecurityGroup(cts.Kit, opt)
-		if err != nil {
-			logs.Errorf("request adaptor to list tcloud security group failed, err: %v, opt: %v, rid: %s", err, opt,
-				cts.Kit.Rid)
-			return nil, err
-		}
-		offset += len(datas)
-		datasCloud = append(datasCloud, datas...)
-		if len(datas) == 0 || uint(len(datas)) < typcore.TCloudQueryLimit {
-			break
-		}
-	}
-
-	cloudMap := make(map[string]*proto.SecurityGroupSyncTCloudDiff)
-	for _, data := range datasCloud {
-		sg := new(proto.SecurityGroupSyncTCloudDiff)
-		sg.SecurityGroup = data
-		cloudMap[*data.SecurityGroupId] = sg
-	}
-
-	return cloudMap, nil
-}
-
-// diffTCloudSecurityGroupSync make tcloud and data-service diff, process resources according to diff
-func (g *securityGroup) diffTCloudSecurityGroupSync(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncTCloudDiff,
-	dsMap map[string]*proto.SecurityGroupSyncDS, req *proto.SecurityGroupSyncReq) error {
-
-	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
-	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
-
-	if len(deleteCloudIDs) > 0 {
-		logs.Infof("do sync tcloud SecurityGroup delete operate, rid: %s", cts.Kit.Rid)
-		err := g.diffSecurityGroupSyncDelete(cts, deleteCloudIDs)
-		if err != nil {
-			logs.Errorf("sync delete tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return err
-		}
-		err = g.diffTCloudSGRuleSyncDelete(cts, deleteCloudIDs, dsMap)
-		if err != nil {
-			logs.Errorf("sync delete tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return err
-		}
-	}
-
-	if len(updateCloudIDs) > 0 {
-		logs.Infof("do sync tcloud SecurityGroup update operate, rid: %s", cts.Kit.Rid)
-		err := g.diffTCloudSecurityGroupSyncUpdate(cts, cloudMap, dsMap, updateCloudIDs)
-		if err != nil {
-			logs.Errorf("sync update tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return err
-		}
-		err = g.diffTCloudSGRuleSyncUpdate(cts, updateCloudIDs, req, dsMap)
-		if err != nil {
-			logs.Errorf("sync update tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return err
-		}
-	}
-
-	if len(addCloudIDs) > 0 {
-		logs.Infof("do sync tcloud SecurityGroup add operate, rid: %s", cts.Kit.Rid)
-		ids, err := g.diffTCloudSecurityGroupSyncAdd(cts, cloudMap, req, addCloudIDs)
-		if err != nil {
-			logs.Errorf("sync add tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return err
-		}
-		err = g.diffTCloudSGRuleSyncAdd(cts, ids, req)
-		if err != nil {
-			logs.Errorf("sync add tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return err
-		}
-	}
-
-	return nil
-}
-
-// diffSecurityGroupSyncAdd for add
-func (g *securityGroup) diffTCloudSecurityGroupSyncAdd(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncTCloudDiff,
-	req *proto.SecurityGroupSyncReq, addCloudIDs []string) ([]string, error) {
-
-	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.TCloudSecurityGroupExtension]{
-		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{},
-	}
-
-	for _, id := range addCloudIDs {
-		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{
-			CloudID:   *cloudMap[id].SecurityGroup.SecurityGroupId,
-			BkBizID:   constant.UnassignedBiz,
-			Region:    req.Region,
-			Name:      *cloudMap[id].SecurityGroup.SecurityGroupName,
-			Memo:      cloudMap[id].SecurityGroup.SecurityGroupDesc,
-			AccountID: req.AccountID,
-			Extension: &corecloud.TCloudSecurityGroupExtension{
-				CloudProjectID: cloudMap[id].SecurityGroup.ProjectId,
-			},
-		}
-		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
-	}
-
-	if len(createReq.SecurityGroups) <= 0 {
-		return make([]string, 0), nil
-	}
-
-	results, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
-	if err != nil {
-		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return results.IDs, nil
-}
-
-// diffSecurityGroupSyncUpdate for update
-func (g *securityGroup) diffTCloudSecurityGroupSyncUpdate(cts *rest.Contexts, cloudMap map[string]*proto.SecurityGroupSyncTCloudDiff,
-	dsMap map[string]*proto.SecurityGroupSyncDS, updateCloudIDs []string) error {
-
-	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.TCloudSecurityGroupExtension]{
-		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.TCloudSecurityGroupExtension]{},
-	}
-
-	for _, id := range updateCloudIDs {
-		if *cloudMap[id].SecurityGroup.SecurityGroupName == dsMap[id].HcSecurityGroup.Name &&
-			cloudMap[id].SecurityGroup.SecurityGroupDesc == dsMap[id].HcSecurityGroup.Memo {
-			continue
-		}
-		securityGroup := protocloud.SecurityGroupBatchUpdate[corecloud.TCloudSecurityGroupExtension]{
-			ID:   dsMap[id].HcSecurityGroup.ID,
-			Name: *cloudMap[id].SecurityGroup.SecurityGroupName,
-			Memo: cloudMap[id].SecurityGroup.SecurityGroupDesc,
-		}
-		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
-	}
-
-	if len(updateReq.SecurityGroups) > 0 {
-		if err := g.dataCli.TCloud.SecurityGroup.BatchUpdateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(),
-			updateReq); err != nil {
-			logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return err
-		}
-	}
-
-	return nil
 }

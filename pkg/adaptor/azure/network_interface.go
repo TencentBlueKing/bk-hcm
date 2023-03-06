@@ -216,14 +216,14 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 func getIpConfigSubnetData(item *armnetwork.InterfaceIPConfiguration, tmpIP *coreni.InterfaceIPConfiguration,
 	v *typesniproto.AzureNI) {
 
-	if item.Properties.Subnet != nil {
+	if item.Properties.Subnet == nil {
 		return
 	}
 
 	tmpIP.Properties.CloudSubnetID = item.Properties.Subnet.ID
 	ipSubnetArr := strings.Split(converter.PtrToVal(tmpIP.Properties.CloudSubnetID), "/")
-	if len(ipSubnetArr) > 8 {
-		v.CloudVpcID = converter.ValToPtr(ipSubnetArr[8])
+	if len(ipSubnetArr) > 9 {
+		v.CloudVpcID = converter.ValToPtr(strings.Join(ipSubnetArr[:9], "/"))
 	}
 
 	v.CloudSubnetID = tmpIP.Properties.CloudSubnetID

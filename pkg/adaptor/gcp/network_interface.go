@@ -147,5 +147,16 @@ func convertNetworkInterface(data *compute.Instance, niItem *compute.NetworkInte
 		}
 	}
 
+	if len(niItem.Ipv6AccessConfigs) != 0 {
+		for _, tmpAc := range niItem.Ipv6AccessConfigs {
+			v.Extension.Ipv6AccessConfigs = append(v.Extension.Ipv6AccessConfigs, &coreni.AccessConfig{
+				Type:        tmpAc.Type,
+				Name:        tmpAc.Name,
+				NatIP:       tmpAc.NatIP,
+				NetworkTier: tmpAc.NetworkTier,
+			})
+		}
+	}
+
 	return v
 }

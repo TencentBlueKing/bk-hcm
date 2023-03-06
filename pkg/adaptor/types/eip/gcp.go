@@ -26,9 +26,10 @@ import (
 
 // GcpEipListOption ...
 type GcpEipListOption struct {
-	Region   string        `json:"region" validate:"required"`
-	CloudIDs []string      `json:"cloud_ids" validate:"omitempty"`
-	Page     *core.GcpPage `json:"page" validate:"omitempty"`
+	Region    string        `json:"region" validate:"required"`
+	CloudIDs  []string      `json:"cloud_ids" validate:"omitempty"`
+	SelfLinks []string      `json:"self_links" validate:"omitempty"`
+	Page      *core.GcpPage `json:"page" validate:"omitempty"`
 }
 
 // Validate ...
@@ -36,14 +37,13 @@ func (o *GcpEipListOption) Validate() error {
 	return validator.Validate.Struct(o)
 }
 
-// GcpEipListByIPOption ...
-type GcpEipListByIPOption struct {
-	Region    string `json:"region" validate:"required"`
-	IPAddress string `json:"ip_address" validate:"required"`
+// GcpEipAggregatedListOption ...
+type GcpEipAggregatedListOption struct {
+	IPAddresses []string `json:"ip_addresses" validate:"required"`
 }
 
 // Validate ...
-func (o *GcpEipListByIPOption) Validate() error {
+func (o *GcpEipAggregatedListOption) Validate() error {
 	return validator.Validate.Struct(o)
 }
 

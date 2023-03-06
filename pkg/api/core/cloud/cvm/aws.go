@@ -144,10 +144,10 @@ type AwsInstancePrivateIpAddress struct {
 type AwsPrivateDnsNameOptions struct {
 	// EnableResourceNameDnsAAAARecord Indicates whether to respond to DNS queries for instance hostnames with
 	// DNS AAAA records.
-	EnableResourceNameDnsAAAARecord *string `json:"enable_resource_name_dns_aaaa_record,omitempty"`
+	EnableResourceNameDnsAAAARecord *bool `json:"enable_resource_name_dns_aaaa_record,omitempty"`
 	// EnableResourceNameDnsARecord Indicates whether to respond to DNS queries for instance hostnames
 	// with DNS A records.
-	EnableResourceNameDnsARecord *string `json:"enable_resource_name_dns_a_record,omitempty"`
+	EnableResourceNameDnsARecord *bool `json:"enable_resource_name_dns_a_record,omitempty"`
 	// HostnameType The type of hostname to assign to an instance.
 	// Valid Values: ip-name | resource-name
 	HostnameType *string `json:"hostname_type,omitempty"`

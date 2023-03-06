@@ -31,6 +31,7 @@ import (
 // GcpListOption defines options to list gcp cvm instances.
 type GcpListOption struct {
 	Region   string        `json:"region" validate:"required"`
+	Zone     string        `json:"zone" validate:"required"`
 	CloudIDs []string      `json:"cloud_ids" validate:"omitempty"`
 	Page     *core.GcpPage `json:"page" validate:"omitempty"`
 }

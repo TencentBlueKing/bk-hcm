@@ -21,6 +21,7 @@ package gcp
 
 import (
 	"strconv"
+	"strings"
 
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
@@ -34,7 +35,7 @@ import (
 // UpdateSubnet update subnet.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/patch
 // TODO right now only memo is supported to update, but gcp description can not be updated.
-func (g *Gcp) UpdateSubnet(kt *kit.Kit, opt *types.GcpSubnetUpdateOption) error {
+func (g *Gcp) UpdateSubnet(_ *kit.Kit, _ *types.GcpSubnetUpdateOption) error {
 	return nil
 }
 
@@ -82,6 +83,10 @@ func (g *Gcp) ListSubnet(kt *kit.Kit, opt *types.GcpSubnetListOption) (*types.Gc
 		listCall.Filter(generateResourceIDsFilter(opt.CloudIDs))
 	}
 
+	if len(opt.SelfLinks) > 0 {
+		listCall.Filter(generateResourceFilter("selfLink", opt.SelfLinks))
+	}
+
 	if opt.Page != nil {
 		listCall.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
 	}
@@ -105,6 +110,15 @@ func convertSubnet(data *compute.Subnetwork) *types.GcpSubnet {
 		return nil
 	}
 
+	// @see https://www.googleapis.com/compute/v1/projects/tencentqcpieg6/regions/us-centrall
+	region := ""
+	if len(data.Region) > 0 {
+		regionArr := strings.Split(data.Region, "/")
+		if len(regionArr) >= 9 && regionArr[7] == "regions" {
+			region = regionArr[8]
+		}
+	}
+
 	subnet := &types.GcpSubnet{
 		CloudVpcID: data.Network,
 		CloudID:    strconv.FormatUint(data.Id, 10),
@@ -112,7 +126,7 @@ func convertSubnet(data *compute.Subnetwork) *types.GcpSubnet {
 		Memo:       &data.Description,
 		Extension: &types.GcpSubnetExtension{
 			SelfLink:              data.SelfLink,
-			Region:                data.Region,
+			Region:                region,
 			StackType:             data.StackType,
 			Ipv6AccessType:        data.Ipv6AccessType,
 			GatewayAddress:        data.GatewayAddress,

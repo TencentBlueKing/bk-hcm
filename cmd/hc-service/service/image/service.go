@@ -40,7 +40,7 @@ func InitImageService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
 	// 公共镜像每个周期只同步一次
-	h.Add("SyncImages", "POST", "/vendors/{vendor}/image/sync", i.SyncImages)
+	h.Add("SyncImages", "POST", "/vendors/{vendor}/images/sync", i.SyncImages)
 
 	h.Load(cap.WebService)
 }

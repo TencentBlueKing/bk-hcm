@@ -74,6 +74,10 @@ func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Dis
 		request.Filter(generateResourceIDsFilter(opt.CloudIDs))
 	}
 
+	if len(opt.SelfLinks) > 0 {
+		request.Filter(generateResourceFilter("selfLink", opt.SelfLinks))
+	}
+
 	if opt.Page != nil {
 		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
 	}

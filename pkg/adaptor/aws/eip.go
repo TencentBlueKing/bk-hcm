@@ -25,6 +25,9 @@ import (
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // ListEip ...
@@ -39,9 +42,24 @@ func (a *Aws) ListEip(kt *kit.Kit, opt *eip.AwsEipListOption) (*eip.AwsEipListRe
 		return nil, err
 	}
 
-	req, err := opt.ToDescribeAddressesInput()
-	if err != nil {
-		return nil, err
+	req := &ec2.DescribeAddressesInput{}
+
+	if len(opt.Ips) > 0 {
+		req.Filters = []*ec2.Filter{
+			{
+				Name:   converter.ValToPtr("public-ip"),
+				Values: converter.SliceToPtr(opt.Ips),
+			},
+		}
+	}
+
+	if len(opt.CloudIDs) > 0 {
+		req.Filters = []*ec2.Filter{
+			{
+				Name:   converter.ValToPtr("allocation-id"),
+				Values: converter.SliceToPtr(opt.CloudIDs),
+			},
+		}
 	}
 
 	resp, err := client.DescribeAddressesWithContext(kt.Ctx, req)
@@ -56,6 +74,7 @@ func (a *Aws) ListEip(kt *kit.Kit, opt *eip.AwsEipListOption) (*eip.AwsEipListRe
 			CloudID:        *address.AllocationId,
 			InstanceId:     address.InstanceId,
 			Region:         opt.Region,
+			Status:         converter.ValToPtr("todo"),
 			PublicIp:       address.PublicIp,
 			PrivateIp:      address.PrivateIpAddress,
 			PublicIpv4Pool: address.PublicIpv4Pool,

@@ -779,10 +779,11 @@ type ServerInterfaceFixedIp struct {
 
 // GcpNIExtension defines gcp network interface extensional info.
 type GcpNIExtension struct {
-	CanIpForward  bool            `json:"can_ip_forward,omitempty"`
-	Status        string          `json:"status,omitempty"`
-	StackType     string          `json:"stack_type,omitempty"`
-	AccessConfigs []*AccessConfig `json:"access_configs,omitempty"`
+	CanIpForward      bool            `json:"can_ip_forward,omitempty"`
+	Status            string          `json:"status,omitempty"`
+	StackType         string          `json:"stack_type,omitempty"`
+	AccessConfigs     []*AccessConfig `json:"access_configs,omitempty"`
+	Ipv6AccessConfigs []*AccessConfig `json:"ipv6_access_configs,omitempty"`
 }
 
 // AccessConfig: An access configuration attached to an instance's

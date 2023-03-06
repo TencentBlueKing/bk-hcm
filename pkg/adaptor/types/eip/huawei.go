@@ -21,26 +21,20 @@ package eip
 
 import (
 	"hcm/pkg/criteria/validator"
-
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2/model"
 )
 
 // HuaWeiEipListOption ...
 type HuaWeiEipListOption struct {
-	Region string `validate:"required"`
-	Limit  *int32
-	Marker *string
+	Region   string   `json:"region" validate:"required"`
+	Limit    *int32   `json:"limit" validate:"omitempty"`
+	Marker   *string  `json:"marker" validate:"omitempty"`
+	CloudIDs []string `json:"cloud_ids" validate:"omitempty"`
+	Ips      []string `json:"ips" validate:"omitempty"`
 }
 
 // Validate ...
 func (o *HuaWeiEipListOption) Validate() error {
 	return validator.Validate.Struct(o)
-}
-
-// ToListPublicipsRequest ...
-func (o *HuaWeiEipListOption) ToListPublicipsRequest() (*model.ListPublicipsRequest, error) {
-	req := &model.ListPublicipsRequest{Limit: o.Limit, Marker: o.Marker}
-	return req, nil
 }
 
 // HuaWeiEipListResult ...

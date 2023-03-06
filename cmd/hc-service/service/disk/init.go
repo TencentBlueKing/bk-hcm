@@ -33,8 +33,6 @@ func InitDiskService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	// 硬盘同步
-	h.Add("SyncDisks", "POST", "/vendors/{vendor}/disks/sync", d.SyncDisks)
 	// 硬盘创建
 	h.Add("CreateDisks", "POST", "/vendors/{vendor}/disks/create", d.CreateDisks)
 

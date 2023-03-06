@@ -221,9 +221,7 @@ func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Cont
 	region.InitRegionService(c)
 	eip.InitEipService(c)
 	instancetype.InitInstanceTypeService(c)
-
 	application.InitApplicationService(c, bkHcmUrl, strings.Split(platformManagers, ","))
-
 	audit.InitService(c)
 	networkinterface.InitNetworkInterfaceService(c)
 

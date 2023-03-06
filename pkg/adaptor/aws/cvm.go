@@ -67,6 +67,21 @@ func (a *Aws) ListCvm(kt *kit.Kit, opt *typecvm.AwsListOption) (*ec2.DescribeIns
 	return resp, nil
 }
 
+// GetCvmNameFromTags ...
+func GetCvmNameFromTags(tags []*ec2.Tag) *string {
+	if len(tags) == 0 {
+		return nil
+	}
+
+	for _, tagPtr := range tags {
+		if tagPtr != nil && tagPtr.Key != nil && *tagPtr.Key == "Name" {
+			return tagPtr.Value
+		}
+	}
+
+	return nil
+}
+
 // DeleteCvm reference: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TerminateInstances.html
 func (a *Aws) DeleteCvm(kt *kit.Kit, opt *typecvm.AwsDeleteOption) error {
 	if opt == nil {

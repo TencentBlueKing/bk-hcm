@@ -20,8 +20,31 @@
 package cvm
 
 import (
+	"fmt"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
+
+// AzureOperateSyncReq cvm oprate sync request.
+type AzureOperateSyncReq struct {
+	AccountID         string   `json:"account_id" validate:"required"`
+	Region            string   `json:"region" validate:"required"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
+	CloudIDs          []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate cvm operate sync request.
+func (req *AzureOperateSyncReq) Validate() error {
+	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	if len(req.CloudIDs) <= 0 {
+		return fmt.Errorf("operate sync count should > 0")
+	}
+
+	return validator.Validate.Struct(req)
+}
 
 // AzureDeleteReq define delete req.
 type AzureDeleteReq struct {

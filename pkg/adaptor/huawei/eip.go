@@ -23,6 +23,8 @@ import (
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2/model"
 )
 
 // ListEip ...
@@ -37,9 +39,22 @@ func (h *HuaWei) ListEip(kt *kit.Kit, opt *eip.HuaWeiEipListOption) (*eip.HuaWei
 		return nil, err
 	}
 
-	req, err := opt.ToListPublicipsRequest()
-	if err != nil {
-		return nil, err
+	req := new(model.ListPublicipsRequest)
+
+	if len(opt.CloudIDs) > 0 {
+		req.Id = &opt.CloudIDs
+	}
+
+	if len(opt.Ips) > 0 {
+		req.PublicIpAddress = &opt.Ips
+	}
+
+	if opt.Limit != nil {
+		req.Limit = opt.Limit
+	}
+
+	if opt.Marker != nil {
+		req.Marker = opt.Marker
 	}
 
 	resp, err := client.ListPublicips(req)
@@ -63,5 +78,6 @@ func (h *HuaWei) ListEip(kt *kit.Kit, opt *eip.HuaWeiEipListOption) (*eip.HuaWei
 			BandwidthSize: publicIp.BandwidthSize,
 		}
 	}
+
 	return &eip.HuaWeiEipListResult{Details: eips}, nil
 }

@@ -55,7 +55,7 @@ type AzureRGTable struct {
 	Type string `db:"type"`
 	// Location 地域
 	Location string `db:"location"`
-	// AccountID 地域
+	// AccountID 账号id
 	AccountID string `db:"account_id"`
 	// Creator 创建者
 	Creator string `db:"creator"`
@@ -93,6 +93,10 @@ func (t AzureRGTable) InsertValidate() error {
 
 	if len(t.Location) == 0 {
 		return errors.New("location is required")
+	}
+
+	if len(t.AccountID) == 0 {
+		return errors.New("accout_id is required")
 	}
 
 	if len(t.Creator) == 0 {

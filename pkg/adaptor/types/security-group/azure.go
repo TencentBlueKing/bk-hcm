@@ -39,7 +39,8 @@ func (opt AzureOption) Validate() error {
 
 // AzureListOption define azure security group list option.
 type AzureListOption struct {
-	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
 }
 
 // Validate huawei security group list option.

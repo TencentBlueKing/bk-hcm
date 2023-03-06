@@ -22,6 +22,8 @@ package assert
 import (
 	"encoding/json"
 	"reflect"
+
+	"hcm/pkg/tools/converter"
 )
 
 // IsNumeric test if an interface is a numeric value or not.
@@ -69,4 +71,168 @@ func IsString(value interface{}) bool {
 	default:
 		return false
 	}
+}
+
+// IsPtrStringEqual 判断字符串指针是否相同
+func IsPtrStringEqual(a, b *string) bool {
+	if (a != nil && b != nil) && *a != *b {
+		return false
+	}
+
+	if (a != nil && b != nil) && *a == *b {
+		return true
+	}
+
+	if a != nil || b != nil {
+		return false
+	}
+
+	return true
+}
+
+// IsPtrBoolEqual ...
+func IsPtrBoolEqual(a, b *bool) bool {
+	if (a != nil && b != nil) && *a != *b {
+		return false
+	}
+
+	if (a != nil && b != nil) && *a == *b {
+		return true
+	}
+
+	if a != nil || b != nil {
+		return false
+	}
+
+	return true
+}
+
+// IsPtrInt64Equal ...
+func IsPtrInt64Equal(a, b *int64) bool {
+	if (a != nil && b != nil) && *a != *b {
+		return false
+	}
+
+	if (a != nil && b != nil) && *a == *b {
+		return true
+	}
+
+	if a != nil || b != nil {
+		return false
+	}
+
+	return true
+}
+
+// IsPtrFloat64Equal ...
+func IsPtrFloat64Equal(a, b *float64) bool {
+	if (a != nil && b != nil) && *a != *b {
+		return false
+	}
+
+	if (a != nil && b != nil) && *a == *b {
+		return true
+	}
+
+	if a != nil || b != nil {
+		return false
+	}
+
+	return true
+}
+
+// IsPtrInt32Equal ...
+func IsPtrInt32Equal(a, b *int32) bool {
+	if (a != nil && b != nil) && *a != *b {
+		return false
+	}
+
+	if (a != nil && b != nil) && *a == *b {
+		return true
+	}
+
+	if a != nil || b != nil {
+		return false
+	}
+
+	return true
+}
+
+// IsPtrStringSliceEqual 判断指针数组是否相等
+func IsPtrStringSliceEqual(a []*string, b []*string) bool {
+	if len(a) == 0 && len(b) != 0 {
+		return false
+	}
+
+	if len(a) != 0 && len(b) == 0 {
+		return false
+	}
+
+	if len(a) == 0 && len(b) == 0 {
+		return true
+	}
+
+	tmp := converter.StringSliceToMap(converter.PtrToSlice(a))
+	for _, one := range b {
+		delete(tmp, *one)
+	}
+
+	if len(tmp) != 0 {
+		return false
+	}
+
+	return true
+}
+
+// IsStringSliceEqual 判断字符串数组是否相等
+func IsStringSliceEqual(a []string, b []string) bool {
+	if len(a) == 0 && len(b) != 0 {
+		return false
+	}
+
+	if len(a) != 0 && len(b) == 0 {
+		return false
+	}
+
+	if len(a) == 0 && len(b) == 0 {
+		return true
+	}
+
+	tmp := converter.StringSliceToMap(a)
+	for _, one := range b {
+		delete(tmp, one)
+	}
+
+	if len(tmp) != 0 {
+		return false
+	}
+
+	return true
+}
+
+// IsStringMapEqual 判断字符字典是否相等
+func IsStringMapEqual(a map[string]string, b map[string]string) bool {
+	if len(a) == 0 && len(b) != 0 {
+		return false
+	}
+
+	if len(a) != 0 && len(b) == 0 {
+		return false
+	}
+
+	if len(a) == 0 && len(b) == 0 {
+		return true
+	}
+
+	for k, v := range a {
+		if _, ok := b[k]; !ok {
+			return false
+		} else {
+			if v != b[k] {
+				return false
+			}
+		}
+	}
+
+	return true
 }

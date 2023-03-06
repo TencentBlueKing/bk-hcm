@@ -60,7 +60,7 @@ func (t *TCloud) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]*cvm.Ins
 
 	resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("list tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("list tcloud instance failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 

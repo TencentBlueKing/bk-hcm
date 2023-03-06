@@ -20,7 +20,10 @@
 package eip
 
 // AzureEipListOption ...
-type AzureEipListOption struct{}
+type AzureEipListOption struct {
+	CloudIDs []string `json:"cloud_ids" validate:"omitempty"`
+	Ips      []string `json:"ips" validate:"omitempty"`
+}
 
 // AzureEipListResult ...
 type AzureEipListResult struct {

@@ -35,10 +35,11 @@ func (u *VpcUpdateReq) Validate() error {
 
 // ResourceSyncReq defines sync resource request.
 type ResourceSyncReq struct {
-	AccountID         string `json:"account_id" validate:"required"`
-	Region            string `json:"region" validate:"omitempty"`
-	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
-	VpcName           string `json:"vpc_name" validate:"omitempty"`
+	AccountID         string   `json:"account_id" validate:"required"`
+	Region            string   `json:"region" validate:"omitempty"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"omitempty"`
+	VpcID             string   `json:"vpc_id" validate:"omitempty"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
 }
 
 // ResourceSyncResult defines sync vpc result.
