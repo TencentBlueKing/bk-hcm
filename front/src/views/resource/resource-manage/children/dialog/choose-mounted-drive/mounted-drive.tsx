@@ -1,9 +1,13 @@
 import {
   Table,
-  Loading
+  Loading,
+  Radio,
+  Message,
 } from 'bkui-vue';
 import {
   defineComponent,
+  h,
+  ref,
 } from 'vue';
 import {
   useI18n,
@@ -11,11 +15,11 @@ import {
 import StepDialog from '@/components/step-dialog/step-dialog';
 import useQueryList  from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
-import useSelection from '../../../hooks/use-selection';
 import {
   useResourceStore
 } from '@/store/resource';
 
+// 主机选硬盘挂载
 export default defineComponent({
   components: {
     StepDialog,
@@ -28,7 +32,7 @@ export default defineComponent({
     isShow: {
       type: Boolean,
     },
-    vender: {
+    vendor: {
       type: String,
     },
     id: {
@@ -55,23 +59,43 @@ export default defineComponent({
         filter: {
           op: 'and',
           rules: [{
-            field: 'vender',
+            field: 'vendor',
             op: 'eq',
-            value: props.vender,
+            value: props.vendor,
           }],
         },
       },
       'disks'
     );
 
-    const {
-      selections,
-      handleSelectionChange,
-    } = useSelection();
-
-    const columns = useColumns('drive');
+    const columns = useColumns('drive', true);
 
     const resourceStore = useResourceStore();
+
+    const selection = ref<any>({});
+
+    const isConfirmLoading = ref(false);
+
+    const renderColumns = [
+      {
+        label: 'ID',
+        field: 'id',
+        render({ data }: any) {
+          return h(
+            Radio,
+            {
+              'model-value': selection.value.id,
+              label: data.id,
+              key: data.id,
+              onChange() {
+                selection.value = data;
+              },
+            }
+          );
+        },
+      },
+      ...columns
+    ]
 
     // 方法
     const handleClose = () => {
@@ -79,15 +103,23 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
+      isConfirmLoading.value = true;
       resourceStore.attachDisk(
-        props.vender,
-        selections.value.map(selection => ({
-          disk_id: selection.disk_id,
+        props.vendor,
+        {
+          disk_id: selection.value.id,
           cvm_id: props.id,
-          caching_type: selection.caching_type
-        }))
+          caching_type: selection.value.caching_type
+        }
       ).then(() => {
         handleClose();
+      }).catch((err: any) => {
+        Message({
+          theme: 'error',
+          message: err.message || err
+        })
+      }).finally(() => {
+        isConfirmLoading.value = false;
       })
     };
 
@@ -95,11 +127,11 @@ export default defineComponent({
       datas,
       pagination,
       isLoading,
-      columns,
+      renderColumns,
+      isConfirmLoading,
       handlePageChange,
       handlePageSizeChange,
       handleSort,
-      handleSelectionChange,
       t,
       handleClose,
       handleConfirm,
@@ -109,6 +141,7 @@ export default defineComponent({
   render() {
     const steps = [
       {
+        isConfirmLoading: this.isConfirmLoading,
         component: () =>
           <Loading loading={this.isLoading}>
             <Table
@@ -116,12 +149,11 @@ export default defineComponent({
               row-hover="auto"
               remote-pagination
               pagination={this.pagination}
-              columns={this.columns}
+              columns={this.renderColumns}
               data={this.datas}
               onPageLimitChange={this.handlePageSizeChange}
               onPageValueChange={this.handlePageChange}
               onColumnSort={this.handleSort}
-              onSelectionChange={this.handleSelectionChange}
             />
           </Loading>
       },

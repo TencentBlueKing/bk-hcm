@@ -1,9 +1,6 @@
 // table 字段相关信息
-import type {
-  PlainObject,
-} from '@/typings/resource';
 import i18n from '@/language/i18n';
-import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
+import { CloudType, HostCloudEnum, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import {
   Button,
   InfoBox,
@@ -19,7 +16,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 
-export default (type: string) => {
+export default (type: string, isSimpleShow: boolean = false) => {
   const resourceStore = useResourceStore();
   const router = useRouter();
   const route = useRoute();
@@ -298,11 +295,7 @@ export default (type: string) => {
     },
   ];
 
-  const driveColumns = [
-    {
-      type: 'selection',
-    },
-    getLinkField('drive'),
+  const driveColumns: any[] = [
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -353,8 +346,17 @@ export default (type: string) => {
       label: '创建时间',
       field: 'created_at',
     },
-    getDeleteField('disks'),
   ];
+
+  if (!isSimpleShow) {
+    driveColumns.unshift(...[
+      {
+        type: 'selection',
+      },
+      getLinkField('drive'),
+    ])
+    driveColumns.push(getDeleteField('disks'))
+  }
 
   const imageColumns = [
     getLinkField('image'),
@@ -559,6 +561,112 @@ export default (type: string) => {
     },
   ];
 
+  const cvmsColumns = [
+    {
+      label: '实例 ID',
+      field: 'cloud_id',
+    },
+    {
+      label: '云厂商',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            CloudType[data.vendor],
+          ],
+        );
+      },
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '名称',
+      field: 'name',
+    },
+    {
+      label: '状态',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            HostCloudEnum[data.status] || data.status,
+          ],
+        );
+      },
+    },
+    {
+      label: '操作系统',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.os_name || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '云区域ID',
+      field: 'bk_cloud_id',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.bk_cloud_id === -1 ? '未分配' : data.bk_cloud_id,
+          ],
+        );
+      },
+    },
+    {
+      label: '内网IP',
+      field: '',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.private_ipv4_addresses || data.private_ipv6_addresses,
+          ],
+        );
+      },
+    },
+    {
+      label: '公网IP',
+      field: '',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.public_ipv4_addresses || data.public_ipv6_addresses,
+          ],
+        );
+      },
+    },
+    {
+      label: '创建时间',
+      field: 'created_at',
+    },
+    {
+      label: '启动时间',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.cloud_launched_time || '--',
+          ],
+        );
+      },
+    },
+  ];
+
   const securityCommonColumns = [
     {
       label: '来源',
@@ -631,6 +739,7 @@ export default (type: string) => {
     image: imageColumns,
     networkInterface: networkInterfaceColumns,
     route: routeColumns,
+    cvms: cvmsColumns,
     securityCommon: securityCommonColumns,
   };
 

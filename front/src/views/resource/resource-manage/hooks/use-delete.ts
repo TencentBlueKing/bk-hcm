@@ -56,6 +56,12 @@ export default (
             message: t('删除成功'),
           });
         })
+        .catch((err: any) => {
+          Message({
+            theme: 'error',
+            message: err.message || err,
+          });
+        })
         .finally(() => {
           isDeleting.value = false;
         });
@@ -67,6 +73,12 @@ export default (
           Message({
             theme: 'success',
             message: t('删除成功'),
+          });
+        })
+        .catch((err: any) => {
+          Message({
+            theme: 'error',
+            message: err.message || err,
           });
         })
         .finally(() => {

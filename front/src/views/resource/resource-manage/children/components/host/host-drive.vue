@@ -103,7 +103,7 @@ const columns = ref([
   },
   {
     label: '操作',
-    render(data: any) {
+    render({ data }: any) {
       return h(
         Button,
         {
@@ -208,7 +208,7 @@ watch(
 
   <mounted-drive
     v-model:is-show="isShowMountedDrive"
-    :vender="data.vender"
+    :vendor="data.vendor"
     :id="data.id"
   />
 

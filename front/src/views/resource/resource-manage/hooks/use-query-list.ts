@@ -72,7 +72,7 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
     const method = apiMethod || getDefaultList;
     // 执行获取数据的逻辑
     method().then(([listResult, countResult]: [any, any]) => {
-      datas.value = (listResult?.data?.details || []).map((item: any) => {
+      datas.value = (listResult?.data?.details || listResult?.data || []).map((item: any) => {
         return {
           ...item,
           ...item.spec,

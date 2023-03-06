@@ -21,7 +21,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 import useDetail from '../../hooks/use-detail';
-import useMountedDrive from '../../hooks/use-mounted-drive';
+import useMountedDrive from '../../hooks/use-choose-host-drive';
 import useUninstallDrive from '../../hooks/use-uninstall-drive';
 
 const hostTabs = [
@@ -219,7 +219,7 @@ const handleShowDelete = () => {
     :loading="loading"
   >
     <detail-header>
-      云硬盘：ID（xxx）
+      云硬盘：ID（{{ detail.id }}）
       <template #right>
         <bk-button
           class="w100 ml10"
@@ -231,7 +231,7 @@ const handleShowDelete = () => {
         <bk-button
           class="w100 ml10"
           theme="primary"
-          @click="handleUninstallDrive"
+          @click="handleUninstallDrive(detail)"
         >
           {{ t('卸载') }}
         </bk-button>
@@ -258,7 +258,11 @@ const handleShowDelete = () => {
   </bk-loading>
 
   <mounted-drive
+    v-if="detail.id"
     v-model:is-show="isShowMountedDrive"
+    :vendor="detail.vendor"
+    :id="detail.id"
+    :cachingType="detail.caching_type"
   />
 
   <uninstall-drive

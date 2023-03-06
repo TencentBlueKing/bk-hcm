@@ -5,7 +5,7 @@ import {
   ref,
 } from 'vue';
 
-import MountedDrive from '../children/dialog/choose-mounted-drive/mounted-drive';
+import MountedDrive from '../children/dialog/choose-host-drive/mounted-drive';
 
 export default () => {
   const isShowMountedDrive = ref(false);

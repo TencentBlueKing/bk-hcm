@@ -25,7 +25,7 @@ export default () => {
         UninstallDrive,
         {
           ...props,
-          data: disk
+          data: disk.value
         },
       );
     },
