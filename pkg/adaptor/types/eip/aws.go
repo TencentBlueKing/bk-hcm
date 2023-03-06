@@ -21,6 +21,9 @@ package eip
 
 import (
 	"hcm/pkg/criteria/validator"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // AwsEipListOption ...
@@ -51,4 +54,67 @@ type AwsEip struct {
 	PrivateIp      *string
 	PublicIpv4Pool *string
 	Domain         *string
+}
+
+// AwsEipDeleteOption ...
+type AwsEipDeleteOption struct {
+	Region  string `json:"region" validate:"required"`
+	CloudID string `json:"cloud_id" validate:"required"`
+}
+
+// Validate ...
+func (opt *AwsEipDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToReleaseAddressInput ...
+func (opt *AwsEipDeleteOption) ToReleaseAddressInput() (*ec2.ReleaseAddressInput, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+	return &ec2.ReleaseAddressInput{AllocationId: aws.String(opt.CloudID)}, nil
+}
+
+// AwsEipAssociateOption ...
+type AwsEipAssociateOption struct {
+	Region     string `json:"region" validate:"required"`
+	CloudCvmID string `json:"cloud_cvm_id" validate:"required"`
+	PublicIp   string `json:"public_ip" validate:"required"`
+}
+
+// Validate ...
+func (opt *AwsEipAssociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToAssociateAddressInput ...
+func (opt *AwsEipAssociateOption) ToAssociateAddressInput() (*ec2.AssociateAddressInput, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &ec2.AssociateAddressInput{InstanceId: aws.String(opt.CloudCvmID), PublicIp: aws.String(opt.PublicIp)}, nil
+}
+
+// AwsEipDisassociateOption ...
+type AwsEipDisassociateOption struct {
+	Region   string `json:"region" validate:"required"`
+	PublicIp string `json:"public_ip" validate:"required"`
+}
+
+// Validate ...
+func (opt *AwsEipDisassociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToDisassociateAddressInput ...
+func (opt *AwsEipDisassociateOption) ToDisassociateAddressInput() (*ec2.DisassociateAddressInput, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+	return &ec2.DisassociateAddressInput{PublicIp: aws.String(opt.PublicIp)}, nil
 }

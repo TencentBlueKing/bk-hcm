@@ -18,3 +18,27 @@
  */
 
 package eip
+
+import "hcm/pkg/criteria/validator"
+
+// TCloudEipAssociateReq ...
+type TCloudEipAssociateReq struct {
+	EipID string `json:"eip_id" validate:"required"`
+	CvmID string `json:"cvm_id" validate:"required"`
+}
+
+// Validate ...
+func (req *TCloudEipAssociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudEipDisassociateReq ...
+type TCloudEipDisassociateReq struct {
+	EipID string `json:"eip_id" validate:"required"`
+	CvmID string `json:"cvm_id" validate:"required"`
+}
+
+// Validate ...
+func (req *TCloudEipDisassociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

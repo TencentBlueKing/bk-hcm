@@ -19,6 +19,13 @@
 
 package eip
 
+import (
+	"hcm/pkg/criteria/validator"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
+)
+
 // AzureEipListOption ...
 type AzureEipListOption struct {
 	CloudIDs []string `json:"cloud_ids" validate:"omitempty"`
@@ -41,4 +48,67 @@ type AzureEip struct {
 	PrivateIp         *string
 	IpConfigurationID *string
 	SKU               *string
+}
+
+// AzureEipDeleteOption ...
+type AzureEipDeleteOption struct {
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	EipName           string `json:"eip_name" validate:"required"`
+}
+
+// Validate ...
+func (opt *AzureEipDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// AzureEipAssociateOption ...
+type AzureEipAssociateOption struct {
+	ResourceGroupName string                `json:"resource_group_name" validate:"required"`
+	CloudEipID        string                `json:"cloud_eip_id" validate:"required"`
+	NetworkInterface  *armnetwork.Interface `json:",inline"  validate:"required"`
+}
+
+// Validate ...
+func (opt *AzureEipAssociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToInterfaceParams ...
+func (opt *AzureEipAssociateOption) ToInterfaceParams() (*armnetwork.Interface, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	params := opt.NetworkInterface
+
+	firstIpConfig := params.Properties.IPConfigurations[0]
+	firstIpConfig.Properties.PublicIPAddress = &armnetwork.PublicIPAddress{ID: to.Ptr(opt.CloudEipID)}
+
+	return params, nil
+}
+
+// AzureEipDisassociateOption ...
+type AzureEipDisassociateOption struct {
+	ResourceGroupName string                `json:"resource_group_name" validate:"required"`
+	CloudEipID        string                `json:"cloud_eip_id" validate:"required"`
+	NetworkInterface  *armnetwork.Interface `json:",inline"  validate:"required"`
+}
+
+// Validate ...
+func (opt *AzureEipDisassociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToInterfaceParams ...
+func (opt *AzureEipDisassociateOption) ToInterfaceParams() (*armnetwork.Interface, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	params := opt.NetworkInterface
+
+	firstIpConfig := params.Properties.IPConfigurations[0]
+	firstIpConfig.Properties.PublicIPAddress = nil
+
+	return params, nil
 }

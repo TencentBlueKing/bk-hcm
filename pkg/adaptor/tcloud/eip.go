@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -94,10 +95,103 @@ func (t *TCloud) ListEip(kt *kit.Kit, opt *eip.TCloudEipListOption) (*eip.TCloud
 	return &eip.TCloudEipListResult{Details: eips, Count: &count}, nil
 }
 
+// DeleteEip ...
+// reference: https://cloud.tencent.com/document/api/215/16700
+func (t *TCloud) DeleteEip(kt *kit.Kit, opt *eip.TCloudEipDeleteOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "tcloud eip delete option is required")
+	}
+
+	req, err := opt.ToReleaseAddressesRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := t.clientSet.vpcClient(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.ReleaseAddressesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf(
+			"tcloud release eip failed, err: %v, rid: %s, resp rid: %s",
+			err,
+			kt.Rid,
+			resp.Response.RequestId,
+		)
+		return err
+	}
+
+	return nil
+}
+
+// AssociateEip ...
+// reference: https://cloud.tencent.com/document/api/215/16700
+func (t *TCloud) AssociateEip(kt *kit.Kit, opt *eip.TCloudEipAssociateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "tcloud eip associate option is required")
+	}
+
+	req, err := opt.ToAssociateAddressRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := t.clientSet.vpcClient(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.AssociateAddressWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf(
+			"tcloud associate eip failed, err: %v, rid: %s, resp rid: %s",
+			err,
+			kt.Rid,
+			resp.Response.RequestId,
+		)
+		return err
+	}
+
+	return nil
+}
+
+// DisassociateEip ...
+// reference: https://cloud.tencent.com/document/api/215/16703
+func (t *TCloud) DisassociateEip(kt *kit.Kit, opt *eip.TCloudEipDisassociateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "tcloud eip disassociate option is required")
+	}
+
+	req, err := opt.ToDisassociateAddressRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := t.clientSet.vpcClient(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.DisassociateAddressWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf(
+			"tcloud disassociate eip failed, err: %v, rid: %s, resp rid: %s",
+			err,
+			kt.Rid,
+			resp.Response.RequestId,
+		)
+		return err
+	}
+
+	return nil
+}
+
 // DetermineIPv6Type 判断ipv6地址是否是公网ip
 func (t *TCloud) DetermineIPv6Type(kt *kit.Kit, region string, ipv6Addresses []*string) ([]*string,
-	[]*string, error) {
-
+	[]*string, error,
+) {
 	if len(region) == 0 || len(ipv6Addresses) == 0 {
 		return nil, nil, errors.New("region and ipv6Addresses is required")
 	}

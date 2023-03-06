@@ -22,11 +22,12 @@ package gcp
 import (
 	"strconv"
 
-	"google.golang.org/api/compute/v1"
-
 	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+
+	"google.golang.org/api/compute/v1"
 )
 
 // ListEip ...
@@ -42,7 +43,7 @@ func (g *Gcp) ListEip(kt *kit.Kit, opt *eip.GcpEipListOption) (*eip.GcpEipListRe
 		return nil, err
 	}
 
-	if opt.Region == "global" {
+	if opt.Region == eip.GcpGlobalRegion {
 		request := client.GlobalAddresses.List(g.CloudProjectID()).Context(kt.Ctx)
 
 		if len(opt.CloudIDs) > 0 {
@@ -114,6 +115,95 @@ func (g *Gcp) ListAggregatedEip(kt *kit.Kit, opt *eip.GcpEipAggregatedListOption
 	}
 
 	return result, nil
+}
+
+// DeleteEip ...
+// reference: global address reference: https://cloud.google.com/compute/docs/reference/rest/v1/globalAddresses/delete
+// reference: regional address reference: https://cloud.google.com/compute/docs/reference/rest/v1/addresses/delete
+func (g *Gcp) DeleteEip(kt *kit.Kit, opt *eip.GcpEipDeleteOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "gcp eip delete option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return err
+	}
+
+	if opt.Region == eip.GcpGlobalRegion {
+		_, err = client.GlobalAddresses.Delete(g.CloudProjectID(), opt.EipName).
+			Context(kt.Ctx).
+			RequestId(kt.Rid).
+			Do()
+	} else {
+		_, err = client.Addresses.Delete(g.CloudProjectID(), opt.Region, opt.EipName).Context(kt.Ctx).RequestId(kt.Rid).Do()
+	}
+
+	if err != nil {
+		logs.Errorf("delete address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// AssociateEip ...
+// reference:
+// https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address?hl=zh-cn#assign_new_instance
+func (g *Gcp) AssociateEip(kt *kit.Kit, opt *eip.GcpEipAssociateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "gcp eip associate option is required")
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Instances.AddAccessConfig(
+		g.CloudProjectID(),
+		opt.Zone,
+		opt.CvmName,
+		opt.NetworkInterfaceName,
+		&compute.AccessConfig{Name: eip.DefaultExternalNatName, NatIP: opt.PublicIp},
+	).Context(kt.Ctx).RequestId(kt.Rid).Do()
+	if err != nil {
+		logs.Errorf("associate gcp address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// DisassociateEip ...
+// reference: https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address?hl=zh-cn#api_6
+func (g *Gcp) DisassociateEip(kt *kit.Kit, opt *eip.GcpEipDisassociateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "gcp eip disassociate option is required")
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Instances.DeleteAccessConfig(
+		g.CloudProjectID(),
+		opt.Zone,
+		opt.CvmName,
+		eip.DefaultExternalNatName,
+		opt.NetworkInterfaceName,
+	).Context(kt.Ctx).RequestId(kt.Rid).Do()
+	if err != nil {
+		logs.Errorf("disassociate gcp address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return err
+	}
+
+	return nil
 }
 
 func convert(resp *compute.AddressList, region string) []*eip.GcpEip {

@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -113,4 +114,92 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 	}
 
 	return &eip.AzureEipListResult{Details: eips}, nil
+}
+
+// DeleteEip ...
+// reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/delete?tabs=HTTP
+func (a *Azure) DeleteEip(kt *kit.Kit, opt *eip.AzureEipDeleteOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "azure eip delete option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	client, err := a.clientSet.publicIPAddressesClient()
+	if err != nil {
+		return err
+	}
+	pollerResp, err := client.BeginDelete(kt.Ctx, opt.ResourceGroupName, opt.EipName, nil)
+	if err != nil {
+		return fmt.Errorf("failed to finish the request:  %v", err)
+	}
+	_, err = pollerResp.PollUntilDone(kt.Ctx, nil)
+
+	return err
+}
+
+// AssociateEip ...
+// reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/network-interfaces/create-or-update?tabs=Go
+func (a *Azure) AssociateEip(kt *kit.Kit, opt *eip.AzureEipAssociateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "azure eip associate option is required")
+	}
+
+	params, err := opt.ToInterfaceParams()
+	if err != nil {
+		return err
+	}
+
+	client, err := a.clientSet.networkInterfaceClient()
+	if err != nil {
+		return err
+	}
+
+	pollerResp, err := client.BeginCreateOrUpdate(
+		kt.Ctx,
+		opt.ResourceGroupName,
+		*opt.NetworkInterface.Name,
+		*params,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to finish the request:  %v", err)
+	}
+	_, err = pollerResp.PollUntilDone(kt.Ctx, nil)
+
+	return err
+}
+
+// DisassociateEip ...
+// reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/network-interfaces/create-or-update?tabs=Go
+func (a *Azure) DisassociateEip(kt *kit.Kit, opt *eip.AzureEipDisassociateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "azure eip associate option is required")
+	}
+
+	params, err := opt.ToInterfaceParams()
+	if err != nil {
+		return err
+	}
+
+	client, err := a.clientSet.networkInterfaceClient()
+	if err != nil {
+		return err
+	}
+
+	pollerResp, err := client.BeginCreateOrUpdate(
+		kt.Ctx,
+		opt.ResourceGroupName,
+		*opt.NetworkInterface.Name,
+		*params,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to finish the request:  %v", err)
+	}
+	_, err = pollerResp.PollUntilDone(kt.Ctx, nil)
+
+	return err
 }

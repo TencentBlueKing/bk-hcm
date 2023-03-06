@@ -60,6 +60,7 @@ import (
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
+	"hcm/cmd/hc-service/service/eip"
 )
 
 // Service do all the hc service's work
@@ -167,6 +168,7 @@ func (s *Service) apiSet() *restful.Container {
 	cvm.InitCvmService(c)
 	image.InitImageService(c)
 	routetable.InitRouteTableService(c)
+	eip.InitEipService(c)
 	syncsecuritygroup.InitSyncSecurityGroupService(c)
 	synccvm.InitSyncCvmService(c)
 	syncdisk.InitSyncDiskService(c)

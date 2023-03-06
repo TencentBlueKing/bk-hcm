@@ -62,8 +62,8 @@ func (a *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceL
 // ListNetworkInterfaceByID list all network interface by id.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
 func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
-	*typesniproto.AzureInterfaceListResult, error) {
-
+	*typesniproto.AzureInterfaceListResult, error,
+) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
@@ -100,6 +100,39 @@ func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOpt
 	}
 
 	return &typesniproto.AzureInterfaceListResult{Details: details}, nil
+}
+
+// ListRawNetworkInterfaceByIDs ...
+func (a *Azure) ListRawNetworkInterfaceByIDs(kt *kit.Kit, opt *core.AzureListByIDOption) (
+	[]*armnetwork.Interface, error,
+) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.networkInterfaceClient()
+	if err != nil {
+		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
+	}
+
+	networks := make([]*armnetwork.Interface, 0)
+	pager := client.NewListPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			networks = append(networks, one)
+		}
+	}
+
+	return networks, nil
 }
 
 func convertCloudNetworkInterface(data *armnetwork.Interface) *typesniproto.AzureNI {
@@ -213,9 +246,11 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 	v.Extension.IPConfigurations = tmpArr
 }
 
-func getIpConfigSubnetData(item *armnetwork.InterfaceIPConfiguration, tmpIP *coreni.InterfaceIPConfiguration,
-	v *typesniproto.AzureNI) {
-
+func getIpConfigSubnetData(
+	item *armnetwork.InterfaceIPConfiguration,
+	tmpIP *coreni.InterfaceIPConfiguration,
+	v *typesniproto.AzureNI,
+) {
 	if item.Properties.Subnet == nil {
 		return
 	}

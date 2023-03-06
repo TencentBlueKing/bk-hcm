@@ -18,3 +18,29 @@
  */
 
 package eip
+
+import "hcm/pkg/criteria/validator"
+
+// AzureEipAssociateReq ...
+type AzureEipAssociateReq struct {
+	EipID              string `json:"eip_id" validate:"required"`
+	CvmID              string `json:"cvm_id" validate:"required"`
+	NetworkInterfaceID string `json:"network_interface_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AzureEipAssociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AzureEipDisassociateReq ...
+type AzureEipDisassociateReq struct {
+	EipID              string `json:"eip_id" validate:"required"`
+	CvmID              string `json:"cvm_id" validate:"required"`
+	NetworkInterfaceID string `json:"network_interface_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AzureEipDisassociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

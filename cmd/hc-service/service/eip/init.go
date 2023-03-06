@@ -20,35 +20,27 @@
 package eip
 
 import (
-	"fmt"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/validator"
+	"net/http"
+
+	"hcm/cmd/hc-service/service/capability"
+	"hcm/pkg/rest"
 )
 
-// EipSyncReq eip sync request
-type EipSyncReq struct {
-	AccountID         string   `json:"account_id" validate:"required"`
-	Region            string   `json:"region" validate:"omitempty"`
-	ResourceGroupName string   `json:"resource_group_name" validate:"omitempty"`
-	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
-}
-
-// Validate eip sync request.
-func (req *EipSyncReq) Validate() error {
-	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
+// InitEipService initial the eip service
+func InitEipService(cap *capability.Capability) {
+	e := &eipAdaptor{
+		adaptor: cap.CloudAdaptor,
+		dataCli: cap.ClientSet.DataService(),
 	}
 
-	return validator.Validate.Struct(req)
-}
+	h := rest.NewHandler()
 
-// EipDeleteReq ...
-type EipDeleteReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	EipID     string `json:"eip_id" validate:"required"`
-}
+	// 删除 Eip
+	h.Add("DeleteEip", http.MethodDelete, "/vendors/{vendor}/eips/{id}", e.DeleteEip)
+	// 关联 Eip
+	h.Add("AssociateEip", http.MethodPost, "/vendors/{vendor}/eips/associate", e.AssociateEip)
+	// 解关联 Eip
+	h.Add("DisassociateEip", http.MethodPost, "/vendors/{vendor}/eips/disassociate", e.DisassociateEip)
 
-// Validate ...
-func (req *EipDeleteReq) Validate() error {
-	return validator.Validate.Struct(req)
+	h.Load(cap.WebService)
 }

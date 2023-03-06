@@ -17,38 +17,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package eip
+package datasvc
 
 import (
-	"fmt"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/validator"
+	dataproto "hcm/pkg/api/data-service/cloud/eip"
+	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/kit"
+	"hcm/pkg/runtime/filter"
 )
 
-// EipSyncReq eip sync request
-type EipSyncReq struct {
-	AccountID         string   `json:"account_id" validate:"required"`
-	Region            string   `json:"region" validate:"omitempty"`
-	ResourceGroupName string   `json:"resource_group_name" validate:"omitempty"`
-	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+// EipManager ...
+type EipManager struct {
+	DataCli *dataservice.Client
 }
 
-// Validate eip sync request.
-func (req *EipSyncReq) Validate() error {
-	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
+// Delete ...
+func (m *EipManager) Delete(kt *kit.Kit, eipIDs []string) error {
+	req := &dataproto.EipDeleteReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "id",
+					Op:    filter.In.Factory(),
+					Value: eipIDs,
+				},
+			},
+		},
 	}
-
-	return validator.Validate.Struct(req)
-}
-
-// EipDeleteReq ...
-type EipDeleteReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	EipID     string `json:"eip_id" validate:"required"`
-}
-
-// Validate ...
-func (req *EipDeleteReq) Validate() error {
-	return validator.Validate.Struct(req)
+	_, err := m.DataCli.Global.DeleteEip(kt.Ctx, kt.Header(), req)
+	return err
 }

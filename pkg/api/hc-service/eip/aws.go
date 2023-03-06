@@ -18,3 +18,29 @@
  */
 
 package eip
+
+import "hcm/pkg/criteria/validator"
+
+// AwsEipAssociateReq ...
+type AwsEipAssociateReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	CvmID     string `json:"cvm_id" validate:"required"`
+	EipID     string `json:"eip_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AwsEipAssociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsEipDisassociateReq ...
+type AwsEipDisassociateReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	CvmID     string `json:"cvm_id" validate:"required"`
+	EipID     string `json:"eip_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AwsEipDisassociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

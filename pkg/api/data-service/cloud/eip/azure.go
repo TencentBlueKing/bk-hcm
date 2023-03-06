@@ -29,6 +29,7 @@ type AzureEipExtensionCreateReq struct {
 type AzureEipExtensionResult struct {
 	IpConfigurationID *string `json:"ip_configuration_id"`
 	SKU               *string `json:"sku"`
+	ResourceGroupName string  `json:"resource_group_name"`
 }
 
 // AzureEipExtensionUpdateReq ...

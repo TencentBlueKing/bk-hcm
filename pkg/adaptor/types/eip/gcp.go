@@ -24,6 +24,13 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
+const (
+	// GcpGlobalRegion ...
+	GcpGlobalRegion = "global"
+	// DefaultExternalNatName ...
+	DefaultExternalNatName = "external-nat"
+)
+
 // GcpEipListOption ...
 type GcpEipListOption struct {
 	Region    string        `json:"region" validate:"required"`
@@ -70,4 +77,40 @@ type GcpEip struct {
 	Network      string
 	Subnetwork   string
 	SelfLink     string
+}
+
+// GcpEipDeleteOption ...
+type GcpEipDeleteOption struct {
+	Region  string `json:"region" validate:"required"`
+	EipName string `json:"eip_name" validate:"required"`
+}
+
+// Validate ...
+func (opt *GcpEipDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// GcpEipAssociateOption ...
+type GcpEipAssociateOption struct {
+	Zone                 string `json:"zone" validate:"required"`
+	CvmName              string `json:"cvm_name" validate:"required"`
+	NetworkInterfaceName string `json:"network_interface_name" validate:"required"`
+	PublicIp             string `json:"public_ip" validate:"required"`
+}
+
+// Validate ...
+func (opt *GcpEipAssociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// GcpEipDisassociateOption ...
+type GcpEipDisassociateOption struct {
+	Zone                 string `json:"zone" validate:"required"`
+	CvmName              string `json:"cvm_name" validate:"required"`
+	NetworkInterfaceName string `json:"network_interface_name" validate:"required"`
+}
+
+// Validate ...
+func (opt *GcpEipDisassociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }

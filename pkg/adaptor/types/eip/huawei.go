@@ -21,6 +21,8 @@ package eip
 
 import (
 	"hcm/pkg/criteria/validator"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2/model"
 )
 
 // HuaWeiEipListOption ...
@@ -55,4 +57,69 @@ type HuaWeiEip struct {
 	BandwidthId   *string
 	BandwidthName *string
 	BandwidthSize *int32
+}
+
+// HuaWeiEipDeleteOption ...
+type HuaWeiEipDeleteOption struct {
+	CloudID string `json:"cloud_id" validate:"required"`
+	Region  string `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (opt *HuaWeiEipDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToDeletePublicipRequest ...
+func (opt *HuaWeiEipDeleteOption) ToDeletePublicipRequest() (*model.DeletePublicipRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+	return &model.DeletePublicipRequest{PublicipId: opt.CloudID}, nil
+}
+
+// HuaWeiEipAssociateOption ...
+type HuaWeiEipAssociateOption struct {
+	CloudEipID              string `json:"cloud_eip_id" validate:"required"`
+	CloudNetworkInterfaceID string `json:"cloud_network_interface_id" validate:"required"`
+	Region                  string `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (opt *HuaWeiEipAssociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToUpdatePublicipRequest ...
+func (opt *HuaWeiEipAssociateOption) ToUpdatePublicipRequest() (*model.UpdatePublicipRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := &model.UpdatePublicipRequest{PublicipId: opt.CloudEipID}
+	req.Body = &model.UpdatePublicipsRequestBody{
+		Publicip: &model.UpdatePublicipOption{PortId: &opt.CloudNetworkInterfaceID},
+	}
+	return req, nil
+}
+
+// HuaWeiEipDisassociateOption ...
+type HuaWeiEipDisassociateOption struct {
+	CloudEipID string `json:"cloud_eip_id" validate:"required"`
+	Region     string `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (opt *HuaWeiEipDisassociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToUpdatePublicipRequest ...
+func (opt *HuaWeiEipDisassociateOption) ToUpdatePublicipRequest() (*model.UpdatePublicipRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := &model.UpdatePublicipRequest{PublicipId: opt.CloudEipID, Body: &model.UpdatePublicipsRequestBody{}}
+	return req, nil
 }
