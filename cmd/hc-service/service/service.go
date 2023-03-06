@@ -34,6 +34,7 @@ import (
 	"hcm/cmd/hc-service/service/disk"
 	"hcm/cmd/hc-service/service/firewall"
 	"hcm/cmd/hc-service/service/image"
+	instancetype "hcm/cmd/hc-service/service/instance-type"
 	"hcm/cmd/hc-service/service/region"
 	routetable "hcm/cmd/hc-service/service/route-table"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
@@ -59,8 +60,9 @@ import (
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
 
-	"github.com/emicklei/go-restful/v3"
 	"hcm/cmd/hc-service/service/eip"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Service do all the hc service's work
@@ -169,6 +171,7 @@ func (s *Service) apiSet() *restful.Container {
 	image.InitImageService(c)
 	routetable.InitRouteTableService(c)
 	eip.InitEipService(c)
+	instancetype.InitInstanceTypeService(c)
 	syncsecuritygroup.InitSyncSecurityGroupService(c)
 	synccvm.InitSyncCvmService(c)
 	syncdisk.InitSyncDiskService(c)
