@@ -16,7 +16,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 
-export default (type: string, isSimpleShow: boolean = false) => {
+export default (type: string, isSimpleShow = false) => {
   const resourceStore = useResourceStore();
   const router = useRouter();
   const route = useRoute();
@@ -60,7 +60,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
     };
   };
 
-  const getLinkField = (type: string, label: string = 'ID', field: string = 'id') => {
+  const getLinkField = (type: string, label = 'ID', field = 'id') => {
     return {
       label,
       field,
@@ -75,16 +75,16 @@ export default (type: string, isSimpleShow: boolean = false) => {
               const routeInfo: any = {
                 query: {
                   id: cell,
-                }
-              }
+                },
+              };
               // 业务下
               if (route.path.includes('business')) {
                 Object.assign(
                   routeInfo,
                   {
                     name: `${type}BusinessDetail`,
-                  }
-                )
+                  },
+                );
               } else {
                 Object.assign(
                   routeInfo,
@@ -92,9 +92,9 @@ export default (type: string, isSimpleShow: boolean = false) => {
                     name: 'resourceDetail',
                     params: {
                       type,
-                    }
-                  }
-                )
+                    },
+                  },
+                );
               }
               router.push(routeInfo);
             },
@@ -104,7 +104,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
           ],
         );
       },
-    }
+    };
   };
 
   const vpcColumns = [
@@ -354,8 +354,8 @@ export default (type: string, isSimpleShow: boolean = false) => {
         type: 'selection',
       },
       getLinkField('drive'),
-    ])
-    driveColumns.push(getDeleteField('disks'))
+    ]);
+    driveColumns.push(getDeleteField('disks'));
   }
 
   const imageColumns = [

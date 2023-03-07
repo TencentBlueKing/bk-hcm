@@ -10,6 +10,7 @@ export const useAccountStore = defineStore({
   state: () => ({
     fetching: false,
     list: shallowRef([]),
+    bizs: 0,
   }),
   actions: {
     /**
@@ -127,6 +128,14 @@ export const useAccountStore = defineStore({
      */
     async cancelApplyAccount(id: string) {
       return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/${id}/cancel`);
+    },
+    /**
+     * @description: 更新业务id
+     * @param {number} id
+     * @return {*}
+     */
+    async updateBizsId(id: number) {
+      this.bizs = id;
     },
   },
 });

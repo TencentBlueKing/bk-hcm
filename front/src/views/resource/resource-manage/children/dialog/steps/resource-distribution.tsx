@@ -15,6 +15,7 @@ import {
   RESOURCE_TYPES,
 } from '@/common/constant';
 import StepDialog from '@/components/step-dialog/step-dialog';
+import AccountSelector from '@/components/account-selector/index.vue';
 import {
   useI18n,
 } from 'vue-i18n';
@@ -42,10 +43,22 @@ export default defineComponent({
     },
     data: {
       type: Array,
+      default() {
+        return [];
+      },
+    },
+    pagination: {
+      type: Object,
+    },
+    isLoading: {
+      type: Boolean,
+      default() {
+        return false;
+      },
     },
   },
 
-  emits: ['update:isShow'],
+  emits: ['update:isShow', 'handlePageSizeChange', 'handlePageChange'],
 
   setup(props, { emit }) {
     // use hooks
@@ -59,6 +72,7 @@ export default defineComponent({
     // 状态
     const validateMap = ref({});
     const business = ref('');
+    const accountId = ref('');
     const businessList = ref([]);
     const isBusinessError = ref(false);
     const cloudAreas = ref([]);
@@ -68,7 +82,17 @@ export default defineComponent({
     const isBingdingVPC = ref(false);
     const hasBindVPC = ref(false);
     const disableNext = ref(true);
-    const resourceTypes = ref([]);
+    const resourceTypes = ref([
+      'host',
+      'vpc',
+      'subnet',
+      'security',
+      'drive',
+      'network-interface',
+      'ip',
+      'routing',
+      'image',
+    ]);
     const errorList = ref([]);
     const isConfirmLoading = ref(false);
     const VPCColumns = [
@@ -168,23 +192,35 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      if (!business.value) {
-        Message({
-          theme: 'error',
-          message: '请先选择目标业务',
-        });
-        isBusinessError.value = true;
-        return;
+      let type = 'vpcs';
+      let params: any = {
+        vpc_ids: props.data.map((item: any) => item.vpc_id),
+        bk_biz_id: business.value,
+      };
+
+      // 快速分配参数
+      if (props.chooseResourceType) {
+        type = 'resources';
+        params = {
+          account_id: accountId.value,
+          bk_biz_id: business.value,
+        };
+      } else {
+        if (!business.value) {
+          Message({
+            theme: 'error',
+            message: '请先选择目标业务',
+          });
+          isBusinessError.value = true;
+          return;
+        }
       }
 
       isConfirmLoading.value = true;
       resourceStore
         .assignBusiness(
-          'vpcs',
-          {
-            vpc_ids: props.data.map((item: any) => item.vpc_id),
-            bk_biz_id: business.value,
-          },
+          type,
+          params,
         )
         .then(() => {
           handleClose();
@@ -305,8 +341,33 @@ export default defineComponent({
       },
     );
 
+    watch(
+      // 翻页需要监听数据
+      () => props.data,
+      (value) => {
+        if (props.isShow) {
+          disableNext.value = true;
+          hasBindVPC.value = false;
+          // 判断是否需要绑定云区域
+          if (value.every((item: any) => item.bk_cloud_id > -1)) {
+            disableNext.value = false;
+            hasBindVPC.value = true;
+          }
+        }
+      },
+    );
+
+    const handlePageSizeChange = (value: any) => {
+      emit('handlePageSizeChange', value);
+    };
+
+    const handlePageChange = (value: any) => {
+      emit('handlePageChange', value);
+    };
+
     return {
       business,
+      accountId,
       businessList,
       isBindVPC,
       isBingdingVPC,
@@ -322,6 +383,8 @@ export default defineComponent({
       handleClose,
       handleConfirm,
       handleBindVPC,
+      handlePageSizeChange,
+      handlePageChange,
     };
   },
 
@@ -332,12 +395,26 @@ export default defineComponent({
         title: '前置检查',
         disableNext: this.disableNext,
         component: () => <>
-          <bk-table
-            class="mt20"
-            row-hover="auto"
-            columns={this.VPCColumns}
-            data={this.data}
-          />
+        {this.chooseResourceType
+          ? <bk-loading loading={this.isLoading}>
+        <bk-table
+          class="mt20"
+          row-hover="auto"
+          remote-pagination
+          pagination={this.pagination}
+          onPageLimitChange={this.handlePageSizeChange}
+          onPageValueChange={this.handlePageChange}
+          columns={this.VPCColumns}
+          data={this.data}
+        />
+        </bk-loading>
+          : <bk-table
+              class="mt20"
+              row-hover="auto"
+              columns={this.VPCColumns}
+              data={this.data}
+            />
+        }
           {
             !this.hasBindVPC
               ? <bk-checkbox class="mt10" v-model={this.isBindVPC}>
@@ -365,6 +442,15 @@ export default defineComponent({
         title: '分配确认',
         isConfirmLoading: this.isConfirmLoading,
         component: () => <>
+        <div class="flex-row align-items-center">
+          {this.chooseResourceType
+            ?  <>
+            <div class="flex-row align-items-center mr20">
+              <span class="pr10">{this.t('云账号')}</span>
+              <AccountSelector v-model={this.accountId}></AccountSelector>
+            </div>
+            </>
+            : ''}
           <section class="resource-head">
             { this.t('目标业务') }
             <bk-select
@@ -384,6 +470,7 @@ export default defineComponent({
               }
             </bk-select>
           </section>
+          </div>
           <bk-table
             class="mt20"
             row-hover="auto"
@@ -400,14 +487,14 @@ export default defineComponent({
         title: this.t('资源类型'),
         component: () => <>
           <section>
-            <span>分配资源类型</span>
+            <span>{this.t('分配资源类型')}</span>
             <bk-checkbox-group
               class="resource-types"
               v-model={this.resourceTypes}
             >
               {
                 RESOURCE_TYPES.map((type) => {
-                  return <bk-checkbox label={type.type}>{ this.t(type.name) }</bk-checkbox>;
+                  return <bk-checkbox disabled={true} label={type.type}>{ this.t(type.name) }</bk-checkbox>;
                 })
               }
             </bk-checkbox-group>

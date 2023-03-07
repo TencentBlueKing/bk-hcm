@@ -1,7 +1,7 @@
-import { defineComponent, onMounted, reactive, watch, ref } from 'vue';
+import { defineComponent, onMounted, reactive, watch, ref, nextTick } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
-import { Menu, Navigation, Dropdown } from 'bkui-vue';
+import { Menu, Navigation, Dropdown, Select } from 'bkui-vue';
 import { headRouteConfig } from '@/router/header-config';
 import Breadcrumb from './breadcrumb';
 import workbench from '@/router/module/workbench';
@@ -11,7 +11,7 @@ import business from '@/router/module/business';
 import { classes, deleteCookie } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
-import { useUserStore } from '@/store';
+import { useUserStore, useAccountStore } from '@/store';
 import { useI18n } from 'vue-i18n';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
@@ -29,12 +29,18 @@ export default defineComponent({
     const route = useRoute();
     const router = useRouter();
     const userStore = useUserStore();
+    const accountStore = useAccountStore();
+    const { Option } = Select;
 
     let topMenuActiveItem = '';
     let menus: RouteRecordRaw[] = [];
-    let openedKeys: string[] = [];
+    const openedKeys: string[] = [];
     let path = '';
     const curPath = ref('');
+    const businessId = ref<number>(0);
+    const businessList = ref<any[]>([]);
+    const loading = ref<Boolean>(false);
+    const isRouterAlive = ref<Boolean>(true);
 
     const changeMenus = (id: string, ...subPath: string[]) => {
       console.log('subPath', subPath);
@@ -108,7 +114,35 @@ export default defineComponent({
       }
     };
 
+    // 获取业务列表
+    const getBusinessList = async () => {
+      try {
+        loading.value = true;
+        const res = await accountStore.getBizList();
+        loading.value = false;
+        businessList.value = res?.data;
+        businessId.value = res?.data[0].id;   // 默认取第一个业务
+        accountStore.updateBizsId(businessId.value); // 设置全局业务id
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    // 选择业务
+    const handleChange = async () => {
+      accountStore.updateBizsId(businessId.value);    // 设置全局业务id
+      reload();
+    };
+
+    const reload = () => {
+      isRouterAlive.value = false;
+      nextTick(() => {
+        isRouterAlive.value = true;
+      });
+    };
+
     onMounted(() => {
+      getBusinessList();
     });
 
     return () => (
@@ -169,6 +203,23 @@ export default defineComponent({
                       </header>
                     ),
                     menu: () => (
+                      <>
+                    <Select class="biz-select-warp"
+                    v-model={businessId.value}
+                    placeholder="请选择业务"
+                    onChange={handleChange}>
+                      {businessList.value.map(item => (
+                          <Option
+                              key={item.id}
+                              value={item.id}
+                              label={item.name}
+                          >
+                              {item.name}
+                          </Option>
+                      ))
+                      }
+                      </Select>
+
                       <Menu class="menu-warp" style={`width: ${NAV_WIDTH}px`} uniqueOpen={false} openedKeys={openedKeys} activeKey={route.meta.activeKey as string}>
                         {
                           menus.map(menuItem => (Array.isArray(menuItem.children) ? (
@@ -203,6 +254,7 @@ export default defineComponent({
                           )))
                         }
                       </Menu>
+                      </>
                     ),
                     default: () => (
                       <>
@@ -210,7 +262,7 @@ export default defineComponent({
                             <Breadcrumb></Breadcrumb>
                         </div>
                         <div class={ ['/service/my-apply'].includes(curPath.value) ? 'view-warp no-padding' : 'view-warp'}>
-                          <RouterView></RouterView>
+                          {isRouterAlive.value ? <RouterView></RouterView> : ''}
                         </div>
                       </>
                     ),

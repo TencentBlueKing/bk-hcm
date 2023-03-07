@@ -13,6 +13,7 @@ import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
+import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
 
 import {
   RESOURCE_TYPES,
@@ -41,18 +42,16 @@ const {
 } = useSteps();
 
 // 状态
-const currentAccount = '';
-const accounts: any[] = [];
 const isAccurate = ref(false);
 // 搜索过滤相关数据
 const searchValue = ref([]);
 const filter = ref({ op: 'and', rules: [] });
 const searchData = ref([
   {
-    name: '名称',
+    name: t('名称'),
     id: 'name',
   }, {
-    name: '云厂商',
+    name: t('云厂商'),
     id: 'vendor',
     children: VENDORS,
   },
@@ -115,37 +114,32 @@ watch(
     });
   },
 );
+
+const {
+  datas,
+  isLoading,
+  pagination,
+  handlePageSizeChange,
+  handlePageChange,
+} = useQueryList({ filter: { op: 'and', rules: [] } }, 'vpcs');
+
+const handleVpcPageChange = (value: any) => {
+  handlePageChange(value);
+};
+
+const handleVpcPageSizeChange = (value: any) => {
+  handlePageSizeChange(value);
+};
+
 </script>
 
 <template>
   <section class="flex-center resource-header">
     <section class="flex-center">
-      <bk-select
-        v-model="currentAccount"
-        filterable
-      >
-        <bk-option
-          v-for="item in accounts"
-          :key="item.value"
-          :value="item.value"
-          :label="item.label"
-        />
-      </bk-select>
-      <bk-select
-        v-model="currentAccount"
-        filterable
-        class="ml10"
-      >
-        <bk-option
-          v-for="item in accounts"
-          :key="item.value"
-          :value="item.value"
-          :label="item.label"
-        />
-      </bk-select>
       <bk-button
         theme="primary"
         class="ml10"
+        :disabled="isLoading"
         @click="handleDistribution"
       >
         {{ t('快速分配') }}
@@ -188,6 +182,11 @@ watch(
     v-model:is-show="isShowDistribution"
     :choose-resource-type="true"
     :title="t('快速分配')"
+    :data="datas"
+    :pagination="pagination"
+    :is-loading="isLoading"
+    @handlePageSizeChange="handleVpcPageSizeChange"
+    @handlePageChange="handleVpcPageChange"
   />
 </template>
 
