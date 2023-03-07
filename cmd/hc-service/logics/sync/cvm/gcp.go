@@ -280,7 +280,7 @@ func isChangeGcp(cloud *GcpCvmSync, db *GcpDSCvmSync) bool {
 		return true
 	}
 
-	if db.Cvm.MachineType != cloud.Cvm.MachineType {
+	if db.Cvm.MachineType != gcp.GetMachineType(cloud.Cvm.MachineType) {
 		return true
 	}
 
@@ -340,20 +340,27 @@ func isChangeGcp(cloud *GcpCvmSync, db *GcpDSCvmSync) bool {
 		return true
 	}
 
-	if db.Cvm.Extension.AdvancedMachineFeatures.EnableNestedVirtualization != cloud.Cvm.AdvancedMachineFeatures.EnableNestedVirtualization {
+	if (db.Cvm.Extension.AdvancedMachineFeatures != nil && cloud.Cvm.AdvancedMachineFeatures == nil) ||
+		(db.Cvm.Extension.AdvancedMachineFeatures == nil && cloud.Cvm.AdvancedMachineFeatures != nil) {
 		return true
 	}
 
-	if db.Cvm.Extension.AdvancedMachineFeatures.EnableUefiNetworking != cloud.Cvm.AdvancedMachineFeatures.EnableUefiNetworking {
-		return true
-	}
+	if db.Cvm.Extension.AdvancedMachineFeatures != nil && cloud.Cvm.AdvancedMachineFeatures != nil {
+		if db.Cvm.Extension.AdvancedMachineFeatures.EnableNestedVirtualization != cloud.Cvm.AdvancedMachineFeatures.EnableNestedVirtualization {
+			return true
+		}
 
-	if db.Cvm.Extension.AdvancedMachineFeatures.ThreadsPerCore != cloud.Cvm.AdvancedMachineFeatures.ThreadsPerCore {
-		return true
-	}
+		if db.Cvm.Extension.AdvancedMachineFeatures.EnableUefiNetworking != cloud.Cvm.AdvancedMachineFeatures.EnableUefiNetworking {
+			return true
+		}
 
-	if db.Cvm.Extension.AdvancedMachineFeatures.VisibleCoreCount != cloud.Cvm.AdvancedMachineFeatures.ThreadsPerCore {
-		return true
+		if db.Cvm.Extension.AdvancedMachineFeatures.ThreadsPerCore != cloud.Cvm.AdvancedMachineFeatures.ThreadsPerCore {
+			return true
+		}
+
+		if db.Cvm.Extension.AdvancedMachineFeatures.VisibleCoreCount != cloud.Cvm.AdvancedMachineFeatures.ThreadsPerCore {
+			return true
+		}
 	}
 
 	if !assert.IsStringMapEqual(db.Cvm.Extension.Labels, cloud.Cvm.Labels) {
@@ -420,12 +427,12 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 			logs.Errorf("gcp cvm: %s more than one vpc", fmt.Sprintf("%d", cloudMap[id].Cvm.Id))
 		}
 
-		vpcID, bkCloudID, err := queryVpcID(kt, dataCli, cloudVpcIDs[0])
+		vpcID, bkCloudID, err := queryVpcIDBySelfLink(kt, dataCli, cloudVpcIDs[0])
 		if err != nil {
 			return err
 		}
 
-		subnetIDs, err := querySubnetIDs(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, err := querySubnetIDsBySelfLink(kt, dataCli, cloudSubnetIDs)
 		if err != nil {
 			return err
 		}
@@ -446,7 +453,6 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 		cvm := dataproto.CvmBatchUpdate[corecvm.GcpCvmExtension]{
 			ID:                   dsMap[id].Cvm.ID,
 			Name:                 cloudMap[id].Cvm.Name,
-			BkBizID:              constant.UnassignedBiz,
 			BkCloudID:            bkCloudID,
 			CloudVpcIDs:          cloudVpcIDs,
 			VpcIDs:               []string{vpcID},
@@ -476,14 +482,18 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 					Key:                    cloudMap[id].Cvm.ReservationAffinity.Key,
 					Values:                 cloudMap[id].Cvm.ReservationAffinity.Values,
 				},
-				Fingerprint: cloudMap[id].Cvm.Fingerprint,
-				AdvancedMachineFeatures: &corecvm.GcpAdvancedMachineFeatures{
-					EnableNestedVirtualization: cloudMap[id].Cvm.AdvancedMachineFeatures.EnableNestedVirtualization,
-					EnableUefiNetworking:       cloudMap[id].Cvm.AdvancedMachineFeatures.EnableUefiNetworking,
-					ThreadsPerCore:             cloudMap[id].Cvm.AdvancedMachineFeatures.ThreadsPerCore,
-					VisibleCoreCount:           cloudMap[id].Cvm.AdvancedMachineFeatures.VisibleCoreCount,
-				},
+				Fingerprint:             cloudMap[id].Cvm.Fingerprint,
+				AdvancedMachineFeatures: nil,
 			},
+		}
+
+		if cloudMap[id].Cvm.AdvancedMachineFeatures != nil {
+			cvm.Extension.AdvancedMachineFeatures = &corecvm.GcpAdvancedMachineFeatures{
+				EnableNestedVirtualization: cloudMap[id].Cvm.AdvancedMachineFeatures.EnableNestedVirtualization,
+				EnableUefiNetworking:       cloudMap[id].Cvm.AdvancedMachineFeatures.EnableUefiNetworking,
+				ThreadsPerCore:             cloudMap[id].Cvm.AdvancedMachineFeatures.ThreadsPerCore,
+				VisibleCoreCount:           cloudMap[id].Cvm.AdvancedMachineFeatures.VisibleCoreCount,
+			}
 		}
 
 		lists = append(lists, cvm)
@@ -509,34 +519,34 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 	lists := make([]dataproto.CvmBatchCreate[corecvm.GcpCvmExtension], 0)
 
 	for _, id := range addIDs {
-		cloudVpcIDs := make([]string, 0)
-		cloudSubnetIDs := make([]string, 0)
+		vpcSelfLinks := make([]string, 0)
+		subnetSelfLinks := make([]string, 0)
 		cloudNetWorkInterfaceIDs := make([]string, 0)
 		if len(cloudMap[id].Cvm.NetworkInterfaces) > 0 {
 			for _, networkInterface := range cloudMap[id].Cvm.NetworkInterfaces {
 				if networkInterface != nil {
 					cloudNetInterfaceID := fmt.Sprintf("%d", cloudMap[id].Cvm.Id) + "_" + networkInterface.Name
 					cloudNetWorkInterfaceIDs = append(cloudNetWorkInterfaceIDs, cloudNetInterfaceID)
-					cloudVpcIDs = append(cloudVpcIDs, networkInterface.Network)
-					cloudSubnetIDs = append(cloudSubnetIDs, networkInterface.Subnetwork)
+					vpcSelfLinks = append(vpcSelfLinks, networkInterface.Network)
+					subnetSelfLinks = append(subnetSelfLinks, networkInterface.Subnetwork)
 				}
 			}
 		}
 
-		if len(cloudVpcIDs) <= 0 {
+		if len(vpcSelfLinks) <= 0 {
 			return fmt.Errorf("gcp cvm: %s no vpc", fmt.Sprintf("%d", cloudMap[id].Cvm.Id))
 		}
 
-		if len(cloudVpcIDs) > 1 {
+		if len(vpcSelfLinks) > 1 {
 			logs.Errorf("gcp cvm: %s more than one vpc", fmt.Sprintf("%d", cloudMap[id].Cvm.Id))
 		}
 
-		vpcID, bkCloudID, err := queryVpcID(kt, dataCli, cloudVpcIDs[0])
+		vpcID, bkCloudID, err := queryVpcIDBySelfLink(kt, dataCli, vpcSelfLinks[0])
 		if err != nil {
 			return err
 		}
 
-		subnetIDs, err := querySubnetIDs(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, err := querySubnetIDsBySelfLink(kt, dataCli, subnetSelfLinks)
 		if err != nil {
 			return err
 		}
@@ -562,9 +572,9 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 			AccountID:      req.AccountID,
 			Region:         req.Region,
 			Zone:           req.Zone,
-			CloudVpcIDs:    cloudVpcIDs,
+			CloudVpcIDs:    vpcSelfLinks,
 			VpcIDs:         []string{vpcID},
-			CloudSubnetIDs: cloudSubnetIDs,
+			CloudSubnetIDs: subnetSelfLinks,
 			SubnetIDs:      subnetIDs,
 			CloudImageID:   cloudMap[id].Cvm.SourceMachineImage,
 			// gcp镜像是与硬盘绑定的
@@ -575,7 +585,7 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 			PrivateIPv6Addresses: pubIPv4,
 			PublicIPv4Addresses:  priIPv6,
 			PublicIPv6Addresses:  pubIPv6,
-			MachineType:          cloudMap[id].Cvm.MachineType,
+			MachineType:          gcp.GetMachineType(cloudMap[id].Cvm.MachineType),
 			CloudCreatedTime:     cloudMap[id].Cvm.CreationTimestamp,
 			CloudLaunchedTime:    cloudMap[id].Cvm.LastStartTimestamp,
 			CloudExpiredTime:     cloudMap[id].Cvm.LastStopTimestamp,
@@ -595,14 +605,18 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 					Key:                    cloudMap[id].Cvm.ReservationAffinity.Key,
 					Values:                 cloudMap[id].Cvm.ReservationAffinity.Values,
 				},
-				Fingerprint: cloudMap[id].Cvm.Fingerprint,
-				AdvancedMachineFeatures: &corecvm.GcpAdvancedMachineFeatures{
-					EnableNestedVirtualization: cloudMap[id].Cvm.AdvancedMachineFeatures.EnableNestedVirtualization,
-					EnableUefiNetworking:       cloudMap[id].Cvm.AdvancedMachineFeatures.EnableUefiNetworking,
-					ThreadsPerCore:             cloudMap[id].Cvm.AdvancedMachineFeatures.ThreadsPerCore,
-					VisibleCoreCount:           cloudMap[id].Cvm.AdvancedMachineFeatures.VisibleCoreCount,
-				},
+				Fingerprint:             cloudMap[id].Cvm.Fingerprint,
+				AdvancedMachineFeatures: nil,
 			},
+		}
+
+		if cloudMap[id].Cvm.AdvancedMachineFeatures != nil {
+			cvm.Extension.AdvancedMachineFeatures = &corecvm.GcpAdvancedMachineFeatures{
+				EnableNestedVirtualization: cloudMap[id].Cvm.AdvancedMachineFeatures.EnableNestedVirtualization,
+				EnableUefiNetworking:       cloudMap[id].Cvm.AdvancedMachineFeatures.EnableUefiNetworking,
+				ThreadsPerCore:             cloudMap[id].Cvm.AdvancedMachineFeatures.ThreadsPerCore,
+				VisibleCoreCount:           cloudMap[id].Cvm.AdvancedMachineFeatures.VisibleCoreCount,
+			}
 		}
 
 		lists = append(lists, cvm)
@@ -766,22 +780,21 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		return nil, err
 	}
 
-	cloudNetInterMap, cloudVpcMap, cloudSubnetMap, cloudEipMap, cloudDiskMap, err := getGcpCVMRelResourcesIDs(kt,
-		req, client)
+	niCloudIDMap, vpcSLMap, subnetSLMap, eipCloudIDMap, diskSLMap, err := getGcpCVMRelResourcesIDs(kt, req, client)
 	if err != nil {
 		logs.Errorf("request get gcp cvm rel resource ids failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	if len(cloudVpcMap) > 0 {
-		vpcCloudIDs := make([]string, 0)
-		for _, id := range cloudVpcMap {
-			vpcCloudIDs = append(vpcCloudIDs, id.RelID)
+	if len(vpcSLMap) > 0 {
+		vpcSelfLinks := make([]string, 0)
+		for _, id := range vpcSLMap {
+			vpcSelfLinks = append(vpcSelfLinks, id.RelID)
 		}
 		req := &hcservice.GcpResourceSyncReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
-			CloudIDs:  vpcCloudIDs,
+			SelfLinks: vpcSelfLinks,
 		}
 		_, err := vpc.GcpVpcSync(kt, req, ad, dataCli)
 		if err != nil {
@@ -790,15 +803,15 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		}
 	}
 
-	if len(cloudSubnetMap) > 0 {
-		subnetCloudIDs := make([]string, 0)
-		for _, id := range cloudSubnetMap {
-			subnetCloudIDs = append(subnetCloudIDs, id.RelID)
+	if len(subnetSLMap) > 0 {
+		subnetSelfLinks := make([]string, 0)
+		for _, id := range subnetSLMap {
+			subnetSelfLinks = append(subnetSelfLinks, id.RelID)
 		}
 		req := &hcservice.GcpResourceSyncReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
-			CloudIDs:  subnetCloudIDs,
+			SelfLinks: subnetSelfLinks,
 		}
 		_, err := subnet.GcpSubnetSync(kt, req, ad, dataCli)
 		if err != nil {
@@ -807,15 +820,15 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		}
 	}
 
-	if len(cloudEipMap) > 0 {
-		eipCloudIDs := make([]string, 0)
-		for _, id := range cloudEipMap {
-			eipCloudIDs = append(eipCloudIDs, id.RelID)
+	if len(eipCloudIDMap) > 0 {
+		cloudIDs := make([]string, 0)
+		for _, id := range eipCloudIDMap {
+			cloudIDs = append(cloudIDs, id.RelID)
 		}
 		req := &protoeip.EipSyncReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
-			CloudIDs:  eipCloudIDs,
+			CloudIDs:  cloudIDs,
 		}
 		_, err := synceip.SyncGcpEip(kt, req, ad, dataCli)
 		if err != nil {
@@ -824,15 +837,15 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		}
 	}
 
-	if len(cloudNetInterMap) > 0 {
+	if len(niCloudIDMap) > 0 {
 		netInterCloudIDs := make([]string, 0)
-		for _, id := range cloudNetInterMap {
+		for _, id := range niCloudIDMap {
 			netInterCloudIDs = append(netInterCloudIDs, id.RelID)
 		}
 		req := &hcservice.GcpNetworkInterfaceSyncReq{
 			AccountID:   req.AccountID,
 			Zone:        req.Zone,
-			CloudCvmIDs: netInterCloudIDs,
+			CloudCvmIDs: req.CloudIDs,
 		}
 		_, err := syncnetworkinterface.GcpNetworkInterfaceSync(kt, req, ad, dataCli)
 		if err != nil {
@@ -841,16 +854,16 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		}
 	}
 
-	if len(cloudDiskMap) > 0 {
-		diskCloudIDs := make([]string, 0)
-		for _, id := range cloudDiskMap {
-			diskCloudIDs = append(diskCloudIDs, id.RelID)
+	if len(diskSLMap) > 0 {
+		diskSelfLinks := make([]string, 0)
+		for _, id := range diskSLMap {
+			diskSelfLinks = append(diskSelfLinks, id.RelID)
 		}
 		req := &protodisk.DiskSyncReq{
 			AccountID: req.AccountID,
 			Zone:      req.Zone,
 			Region:    req.Region,
-			CloudIDs:  diskCloudIDs,
+			SelfLinks: diskSelfLinks,
 		}
 		_, err := disk.SyncGcpDisk(kt, req, ad, dataCli)
 		if err != nil {
@@ -876,43 +889,42 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		Region:    req.Region,
 		CloudIDs:  req.CloudIDs,
 	}
-
-	err = getDiskHcIDs(kt, hcReq, dataCli, cloudDiskMap)
+	err = getDiskHcIDsForGcp(kt, hcReq, dataCli, diskSLMap)
 	if err != nil {
 		logs.Errorf("request get cvm disk rel resource hc ids failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	err = getEipHcIDs(kt, hcReq, dataCli, cloudEipMap)
+	err = getEipHcIDs(kt, hcReq, dataCli, eipCloudIDMap)
 	if err != nil {
 		logs.Errorf("request get cvm eip rel resource hc ids failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	err = getNetworkInterfaceHcIDs(kt, hcReq, dataCli, cloudNetInterMap)
+	err = getNetworkInterfaceHcIDs(kt, hcReq, dataCli, niCloudIDMap)
 	if err != nil {
 		logs.Errorf("request get cvm networkinterface rel resource hc ids failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	if len(cloudNetInterMap) > 0 {
-		err := SyncCvmNetworkInterfaceRel(kt, cloudNetInterMap, dataCli)
+	if len(niCloudIDMap) > 0 {
+		err := SyncCvmNetworkInterfaceRel(kt, niCloudIDMap, dataCli)
 		if err != nil {
 			logs.Errorf("sync gcp cvm networkinterface rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 	}
 
-	if len(cloudEipMap) > 0 {
-		err := SyncCvmEipRel(kt, cloudEipMap, dataCli)
+	if len(eipCloudIDMap) > 0 {
+		err := SyncCvmEipRel(kt, eipCloudIDMap, dataCli)
 		if err != nil {
 			logs.Errorf("sync gcp cvm eip rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 	}
 
-	if len(cloudDiskMap) > 0 {
-		err := SyncCvmDiskRel(kt, cloudDiskMap, dataCli)
+	if len(diskSLMap) > 0 {
+		err := SyncCvmDiskRel(kt, diskSLMap, dataCli)
 		if err != nil {
 			logs.Errorf("sync gcp cvm disk rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -941,7 +953,7 @@ func getGcpCVMRelResourcesIDs(kt *kit.Kit, req *SyncGcpCvmOption,
 	datas, _, err := client.ListCvm(kt, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to list gcp cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return netInterMap, vpcMap, subnetMap, eipMap, diskMap, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	for _, data := range datas {

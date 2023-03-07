@@ -67,7 +67,6 @@ func (svc *syncCvmSvc) SyncAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	end := 0
 	syncOpt := &cvm.SyncAzureCvmOption{
 		AccountID:         req.AccountID,
-		Region:            req.Region,
 		ResourceGroupName: req.ResourceGroupName,
 		CloudIDs:          cloudIDs,
 	}
@@ -130,7 +129,6 @@ func (svc *syncCvmSvc) SyncAzureCvmWithRelResource(cts *rest.Contexts) (interfac
 	end := 0
 	syncOpt := &cvm.SyncAzureCvmOption{
 		AccountID:         req.AccountID,
-		Region:            req.Region,
 		ResourceGroupName: req.ResourceGroupName,
 		CloudIDs:          cloudIDs,
 	}

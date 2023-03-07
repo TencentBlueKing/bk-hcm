@@ -32,7 +32,6 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/network-interface"
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -46,10 +45,6 @@ import (
 // AzureNetworkInterfaceSync sync azure cloud network interface.
 func AzureNetworkInterfaceSync(kt *kit.Kit, req *hcservice.AzureNetworkInterfaceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
-
-	if len(req.CloudIDs) > 0 && len(req.CloudIDs) > constant.BatchOperationMaxLimit {
-		return nil, errf.New(errf.TooManyRequest, "cloud_ids length should <= 100")
-	}
 
 	// syncs network interface list from cloudapi.
 	allCloudIDMap, err := SyncAzureNetworkInterfaceList(kt, req, adaptor, dataCli)

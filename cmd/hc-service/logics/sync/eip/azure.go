@@ -184,7 +184,7 @@ func syncAzureEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
 	for _, id := range addIDs {
 		publicImage := &dataproto.EipExtCreateReq[dataproto.AzureEipExtensionCreateReq]{
 			CloudID:    id,
-			Region:     req.Region,
+			Region:     cloudMap[id].Eip.Region,
 			AccountID:  req.AccountID,
 			Name:       cloudMap[id].Eip.Name,
 			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
@@ -259,11 +259,6 @@ func getAzureEipDSSync(kt *kit.Kit, cloudIDs []string, req *protoeip.EipSyncReq,
 						Field: "account_id",
 						Op:    filter.Equal.Factory(),
 						Value: req.AccountID,
-					},
-					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: req.Region,
 					},
 					&filter.AtomRule{
 						Field: "cloud_id",

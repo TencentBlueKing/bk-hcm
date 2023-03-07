@@ -406,12 +406,12 @@ func syncAwsCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsC
 			logs.Errorf("aws cvm: %s more than one vpc", cloudMap[id].Cvm.InstanceId)
 		}
 
-		vpcID, bkCloudID, err := queryVpcID(kt, dataCli, cloudVpcIDs[0])
+		vpcID, bkCloudID, err := queryVpcIDByCloudID(kt, dataCli, cloudVpcIDs[0])
 		if err != nil {
 			return err
 		}
 
-		subnetIDs, err := querySubnetIDs(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, err := querySubnetIDsByCloudID(kt, dataCli, cloudSubnetIDs)
 		if err != nil {
 			return err
 		}
@@ -536,12 +536,12 @@ func syncAwsCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAwsCvmOption,
 			logs.Errorf("aws cvm: %s more than one vpc", cloudMap[id].Cvm.InstanceId)
 		}
 
-		vpcID, bkCloudID, err := queryVpcID(kt, dataCli, cloudVpcIDs[0])
+		vpcID, bkCloudID, err := queryVpcIDByCloudID(kt, dataCli, cloudVpcIDs[0])
 		if err != nil {
 			return err
 		}
 
-		subnetIDs, err := querySubnetIDs(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, err := querySubnetIDsByCloudID(kt, dataCli, cloudSubnetIDs)
 		if err != nil {
 			return err
 		}

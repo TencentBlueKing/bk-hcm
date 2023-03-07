@@ -33,7 +33,6 @@ import (
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -45,10 +44,6 @@ import (
 // AzureVpcSync sync azure cloud vpc.
 func AzureVpcSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
-
-	if len(req.ResourceGroupName) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "resource_group_name is required")
-	}
 
 	// batch get vpc list from cloudapi.
 	list, err := BatchGetAzureVpcList(kt, req, adaptor)

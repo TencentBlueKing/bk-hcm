@@ -69,7 +69,6 @@ func (req *GcpSyncReq) Validate() error {
 // AzureSyncReq azure sync request
 type AzureSyncReq struct {
 	AccountID         string `json:"account_id" validate:"required"`
-	Region            string `json:"region" validate:"required"`
 	ResourceGroupName string `json:"resource_group_name" validate:"required"`
 }
 

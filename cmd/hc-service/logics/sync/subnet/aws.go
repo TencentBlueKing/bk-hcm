@@ -31,7 +31,6 @@ import (
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -42,10 +41,6 @@ import (
 // AwsSubnetSync sync aws cloud subnet.
 func AwsSubnetSync(kt *kit.Kit, req *hcservice.AwsResourceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
-
-	if len(req.Region) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "region is required")
-	}
 
 	// batch get subnet list from cloudapi.
 	list, err := BatchGetAwsSubnetList(kt, req, adaptor)

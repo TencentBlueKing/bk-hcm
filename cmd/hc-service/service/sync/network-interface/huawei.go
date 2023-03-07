@@ -22,6 +22,7 @@ package networkinterface
 
 import (
 	netinterfacelogic "hcm/cmd/hc-service/logics/sync/network-interface"
+	"hcm/pkg/api/core"
 	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
@@ -38,6 +39,10 @@ func (v syncNetworkInterfaceSvc) SyncHuaWeiNetworkInterface(cts *rest.Contexts) 
 	err := req.Validate()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if len(req.CloudCvmIDs) > 0 && len(req.CloudCvmIDs) > int(core.DefaultMaxPageLimit) {
+		return nil, errf.New(errf.TooManyRequest, "cloud_cvm_ids length should <= 500")
 	}
 
 	resp, err := netinterfacelogic.HuaWeiNetworkInterfaceSync(cts.Kit, req, v.ad, v.dataCli)

@@ -30,9 +30,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/network-interface"
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -43,10 +41,6 @@ import (
 // HuaWeiNetworkInterfaceSync sync huawei cloud network interface.
 func HuaWeiNetworkInterfaceSync(kt *kit.Kit, req *hcservice.HuaWeiNetworkInterfaceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
-
-	if len(req.CloudCvmIDs) > 0 && len(req.CloudCvmIDs) > constant.BatchOperationMaxLimit {
-		return nil, errf.New(errf.TooManyRequest, "cloud_cvm_ids length should <= 100")
-	}
 
 	// syncs network interface list from cloudapi.
 	allCloudIDMap, err := SyncHuaWeiNetworkInterfaceList(kt, req, adaptor, dataCli)

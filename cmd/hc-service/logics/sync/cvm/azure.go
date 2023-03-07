@@ -51,7 +51,6 @@ import (
 // SyncAzureCvmOption ...
 type SyncAzureCvmOption struct {
 	AccountID         string   `json:"account_id" validate:"required"`
-	Region            string   `json:"region" validate:"required"`
 	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
 	CloudIDs          []string `json:"cloud_ids" validate:"required"`
 }
@@ -253,24 +252,10 @@ func isChangeAzure(kt *kit.Kit, cloud *AzureCvmSync, db *AzureDSCvmSync,
 			cloudSubnetIDs = append(cloudSubnetIDs, *netInter.CloudSubnetID)
 		}
 
-		if len(netInter.Extension.IPConfigurations) > 0 {
-			for _, ip := range netInter.Extension.IPConfigurations {
-				if ip != nil {
-					if string(*ip.Properties.PrivateIPAddressVersion) == "IPv4" {
-						privateIPv4Addresses = append(privateIPv4Addresses, converter.PtrToVal(ip.Properties.PrivateIPAddress))
-					}
-					if string(*ip.Properties.PrivateIPAddressVersion) == "IPv6" {
-						privateIPv6Addresses = append(privateIPv6Addresses, converter.PtrToVal(ip.Properties.PrivateIPAddress))
-					}
-					if string(*ip.Properties.PublicIPAddress.Properties.PublicIPAddressVersion) == "IPv4" {
-						publicIPv4Addresses = append(publicIPv4Addresses, converter.PtrToVal(ip.Properties.PublicIPAddress.Properties.IPAddress))
-					}
-					if string(*ip.Properties.PublicIPAddress.Properties.PublicIPAddressVersion) == "IPv6" {
-						publicIPv6Addresses = append(publicIPv6Addresses, converter.PtrToVal(ip.Properties.PublicIPAddress.Properties.IPAddress))
-					}
-				}
-			}
-		}
+		privateIPv4Addresses = append(privateIPv4Addresses, netInter.PrivateIPv4...)
+		privateIPv6Addresses = append(privateIPv6Addresses, netInter.PrivateIPv6...)
+		publicIPv4Addresses = append(publicIPv4Addresses, netInter.PublicIPv4...)
+		publicIPv6Addresses = append(publicIPv6Addresses, netInter.PublicIPv6...)
 	}
 
 	if len(db.Cvm.CloudVpcIDs) == 0 || len(cloudVpcIDs) == 0 || db.Cvm.CloudVpcIDs[0] != cloudVpcIDs[0] {
@@ -458,24 +443,10 @@ func syncAzureCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 				cloudSubnetIDs = append(cloudSubnetIDs, *netInter.CloudSubnetID)
 			}
 
-			if len(netInter.Extension.IPConfigurations) > 0 {
-				for _, ip := range netInter.Extension.IPConfigurations {
-					if ip != nil {
-						if string(*ip.Properties.PrivateIPAddressVersion) == "IPv4" {
-							privateIPv4Addresses = append(privateIPv4Addresses, converter.PtrToVal(ip.Properties.PrivateIPAddress))
-						}
-						if string(*ip.Properties.PrivateIPAddressVersion) == "IPv6" {
-							privateIPv6Addresses = append(privateIPv6Addresses, converter.PtrToVal(ip.Properties.PrivateIPAddress))
-						}
-						if string(*ip.Properties.PublicIPAddress.Properties.PublicIPAddressVersion) == "IPv4" {
-							publicIPv4Addresses = append(publicIPv4Addresses, converter.PtrToVal(ip.Properties.PublicIPAddress.Properties.IPAddress))
-						}
-						if string(*ip.Properties.PublicIPAddress.Properties.PublicIPAddressVersion) == "IPv6" {
-							publicIPv6Addresses = append(publicIPv6Addresses, converter.PtrToVal(ip.Properties.PublicIPAddress.Properties.IPAddress))
-						}
-					}
-				}
-			}
+			privateIPv4Addresses = append(privateIPv4Addresses, netInter.PrivateIPv4...)
+			privateIPv6Addresses = append(privateIPv6Addresses, netInter.PrivateIPv6...)
+			publicIPv4Addresses = append(publicIPv4Addresses, netInter.PublicIPv4...)
+			publicIPv6Addresses = append(publicIPv6Addresses, netInter.PublicIPv6...)
 		}
 
 		if len(cloudVpcIDs) <= 0 {
@@ -486,12 +457,12 @@ func syncAzureCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 			logs.Errorf("azure cvm: %s more than one vpc", converter.PtrToVal(cloudMap[id].Cvm.ID))
 		}
 
-		vpcID, bkCloudID, err := queryVpcID(kt, dataCli, cloudVpcIDs[0])
+		vpcID, bkCloudID, err := queryVpcIDByCloudID(kt, dataCli, cloudVpcIDs[0])
 		if err != nil {
 			return err
 		}
 
-		subnetIDs, err := querySubnetIDs(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, err := querySubnetIDsByCloudID(kt, dataCli, cloudSubnetIDs)
 		if err != nil {
 			return err
 		}
@@ -617,24 +588,10 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 				cloudSubnetIDs = append(cloudSubnetIDs, *netInter.CloudSubnetID)
 			}
 
-			if len(netInter.Extension.IPConfigurations) > 0 {
-				for _, ip := range netInter.Extension.IPConfigurations {
-					if ip != nil {
-						if string(*ip.Properties.PrivateIPAddressVersion) == "IPv4" {
-							privateIPv4Addresses = append(privateIPv4Addresses, converter.PtrToVal(ip.Properties.PrivateIPAddress))
-						}
-						if string(*ip.Properties.PrivateIPAddressVersion) == "IPv6" {
-							privateIPv6Addresses = append(privateIPv6Addresses, converter.PtrToVal(ip.Properties.PrivateIPAddress))
-						}
-						if string(*ip.Properties.PublicIPAddress.Properties.PublicIPAddressVersion) == "IPv4" {
-							publicIPv4Addresses = append(publicIPv4Addresses, converter.PtrToVal(ip.Properties.PublicIPAddress.Properties.IPAddress))
-						}
-						if string(*ip.Properties.PublicIPAddress.Properties.PublicIPAddressVersion) == "IPv6" {
-							publicIPv6Addresses = append(publicIPv6Addresses, converter.PtrToVal(ip.Properties.PublicIPAddress.Properties.IPAddress))
-						}
-					}
-				}
-			}
+			privateIPv4Addresses = append(privateIPv4Addresses, netInter.PrivateIPv4...)
+			privateIPv6Addresses = append(privateIPv6Addresses, netInter.PrivateIPv6...)
+			publicIPv4Addresses = append(publicIPv4Addresses, netInter.PublicIPv4...)
+			publicIPv6Addresses = append(publicIPv6Addresses, netInter.PublicIPv6...)
 		}
 
 		if len(cloudVpcIDs) <= 0 {
@@ -645,12 +602,12 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 			logs.Errorf("azure cvm: %s more than one vpc", converter.PtrToVal(cloudMap[id].Cvm.ID))
 		}
 
-		vpcID, bkCloudID, err := queryVpcID(kt, dataCli, cloudVpcIDs[0])
+		vpcID, bkCloudID, err := queryVpcIDByCloudID(kt, dataCli, cloudVpcIDs[0])
 		if err != nil {
 			return err
 		}
 
-		subnetIDs, err := querySubnetIDs(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, err := querySubnetIDsByCloudID(kt, dataCli, cloudSubnetIDs)
 		if err != nil {
 			return err
 		}
@@ -675,7 +632,7 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 			BkBizID:   constant.UnassignedBiz,
 			BkCloudID: bkCloudID,
 			AccountID: req.AccountID,
-			Region:    req.Region,
+			Region:    *cloudMap[id].Cvm.Location,
 			// 云上不支持该字段，azure可用区非地域概念
 			Zone:           "",
 			CloudVpcIDs:    cloudVpcIDs,
@@ -772,11 +729,6 @@ func getAzureCvmDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAzureCvmOption,
 						Value: req.AccountID,
 					},
 					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: req.Region,
-					},
-					&filter.AtomRule{
 						Field: "extension.resource_group_name",
 						Op:    filter.JSONEqual.Factory(),
 						Value: req.ResourceGroupName,
@@ -840,11 +792,6 @@ func geAzureCvmAllDSByVendor(kt *kit.Kit, req *SyncAzureCvmOption,
 						Value: req.AccountID,
 					},
 					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: req.Region,
-					},
-					&filter.AtomRule{
 						Field: "extension.resource_group_name",
 						Op:    filter.JSONEqual.Factory(),
 						Value: req.ResourceGroupName,
@@ -892,7 +839,8 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 		return nil, err
 	}
 
-	cloudNetInterMap, cloudVpcMap, cloudSubnetMap, cloudEipMap, cloudDiskMap, err := getAzureCVMRelResourcesIDs(kt, req, client)
+	cloudNetInterMap, cloudVpcMap, cloudSubnetMap, cloudEipMap, cloudDiskMap, err := getAzureCVMRelResourcesIDs(kt,
+		req, client)
 	if err != nil {
 		logs.Errorf("request get azure cvm rel resource ids failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -934,7 +882,6 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 		}
 		req := &protoeip.EipSyncReq{
 			AccountID:         req.AccountID,
-			Region:            req.Region,
 			ResourceGroupName: req.ResourceGroupName,
 			CloudIDs:          eipCloudIDs,
 		}
@@ -969,7 +916,6 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 		}
 		req := &protodisk.DiskSyncReq{
 			AccountID:         req.AccountID,
-			Region:            req.Region,
 			ResourceGroupName: req.ResourceGroupName,
 			CloudIDs:          diskCloudIDs,
 		}
@@ -982,7 +928,6 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 
 	cvmReq := &SyncAzureCvmOption{
 		AccountID:         req.AccountID,
-		Region:            req.Region,
 		ResourceGroupName: req.ResourceGroupName,
 		CloudIDs:          req.CloudIDs,
 	}
@@ -994,7 +939,6 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 
 	hcReq := &protocvm.OperateSyncReq{
 		AccountID: req.AccountID,
-		Region:    req.Region,
 		CloudIDs:  req.CloudIDs,
 	}
 
@@ -1060,7 +1004,6 @@ func getAzureCVMRelResourcesIDs(kt *kit.Kit, req *SyncAzureCvmOption,
 		ResourceGroupName: req.ResourceGroupName,
 		CloudIDs:          req.CloudIDs,
 	}
-
 	datas, err := client.ListCvmByID(kt, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to list azure cvm failed, err: %v, rid: %s", err, kt.Rid)

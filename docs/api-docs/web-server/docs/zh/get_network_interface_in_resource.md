@@ -179,9 +179,6 @@
                 "elasticity_ip": "127.0.0.2"
             }],
             "addresses": {
-                "ip_version": 4,
-                "public_ip_address": "127.0.0.1",
-                "public_ipv6_address": "",
                 "bandwidth_id": "00000-0000-0000-0000-xxxxxxxxx",
                 "bandwidth_size": 1,
                 "bandwidth_type": "5_bgp"
@@ -347,9 +344,6 @@
 
 | 参数名称  | 参数类型 |         描述           |
 |----------|-----------|--------------------|
-| ip_version | string | IP地址类型，值为4或6（4：IP地址类型是IPv4 6：IP地址类型是IPv6）|
-| public_ip_address   | string | IP地址   |
-| public_ipv6_address | string | IPV6地址 |
 | bandwidth_id   | string | 带宽ID        |
 | bandwidth_size | string | 带宽大小       |
 | bandwidth_type | string | 带宽类型，示例：5_bgp（全动态BGP） |

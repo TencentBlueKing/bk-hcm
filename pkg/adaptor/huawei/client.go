@@ -64,6 +64,7 @@ func (c *clientSet) iamClient(region *region.Region) (client *iam.IamClient, err
 			err = fmt.Errorf("panic recovered, err: %v", p)
 		}
 	}()
+
 	client = iam.NewIamClient(
 		iam.IamClientBuilder().
 			WithRegion(region).
@@ -141,14 +142,20 @@ func (c *clientSet) vpcClientV2(regionID string) (cli *vpcv2.VpcClient, err erro
 }
 
 func (c *clientSet) imsClientV2(region *region.Region) (cli *ims.ImsClient, err error) {
-	client := ims.NewImsClient(
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+
+	cli = ims.NewImsClient(
 		ims.ImsClientBuilder().
 			WithRegion(region).
 			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())
 
-	return client, nil
+	return cli, nil
 }
 
 func (c *clientSet) ecsClient(regionID string) (cli *ecs.EcsClient, err error) {
@@ -185,22 +192,36 @@ func (c *clientSet) dcsClient(regionID string) (cli *dcs.DcsClient, err error) {
 	return client, nil
 }
 
-func (c *clientSet) eipClient(regionID string) (*eip.EipClient, error) {
-	return eip.NewEipClient(
+func (c *clientSet) eipClient(regionID string) (cli *eip.EipClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+
+	cli = eip.NewEipClient(
 		eip.EipClientBuilder().
 			WithRegion(eipregion.ValueOf(regionID)).
 			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).
-			Build(),
-	), nil
+			Build())
+
+	return cli, nil
 }
 
-func (c *clientSet) eipV3Client(regionID string) (*eipv3.EipClient, error) {
-	return eipv3.NewEipClient(
+func (c *clientSet) eipV3Client(regionID string) (cli *eipv3.EipClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+
+	cli = eipv3.NewEipClient(
 		eipv3.EipClientBuilder().
 			WithRegion(eipv3region.ValueOf(regionID)).
 			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).
-			Build(),
-	), nil
+			Build())
+
+	return cli, nil
 }

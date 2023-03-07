@@ -103,11 +103,6 @@ func GetHcEipDatas(kt *kit.Kit, req *protoeip.EipSyncReq,
 						Op:    filter.Equal.Factory(),
 						Value: req.AccountID,
 					},
-					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: req.Region,
-					},
 				},
 			},
 			Page: &core.BasePage{

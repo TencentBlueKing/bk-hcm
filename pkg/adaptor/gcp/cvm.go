@@ -20,6 +20,8 @@
 package gcp
 
 import (
+	"strings"
+
 	"google.golang.org/api/compute/v1"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
@@ -61,6 +63,12 @@ func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) ([]*compute.Insta
 	}
 
 	return resp.Items, resp.NextPageToken, nil
+}
+
+// GetMachineType gcp设备类型为url，需要截取最后一个单词
+// e.g: https://www.googleapis.com/compute/v1/projects/xxx/zones/us-central1-a/machineTypes/e2-medium
+func GetMachineType(typ string) string {
+	return typ[strings.LastIndex(typ, "/")+1:]
 }
 
 // GetGcpIPAddresses ...

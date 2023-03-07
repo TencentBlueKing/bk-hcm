@@ -45,6 +45,7 @@ type DiskSyncReq struct {
 	ResourceGroupName string   `json:"resource_group_name" validate:"omitempty"`
 	Zone              string   `json:"zone" validate:"omitempty"`
 	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+	SelfLinks         []string `json:"self_links" validate:"omitempty"`
 }
 
 // Validate disk sync request.

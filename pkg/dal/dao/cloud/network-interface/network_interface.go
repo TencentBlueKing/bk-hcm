@@ -172,7 +172,9 @@ func (n NetworkInterfaceDao) List(kt *kit.Kit, opt *types.ListOption) (*typesni.
 		return nil, errf.New(errf.InvalidParameter, "list network interface options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tableni.NetworkInterfaceColumns.ColumnTypes())),
+	columnTypes := tableni.NetworkInterfaceColumns.ColumnTypes()
+	columnTypes["extension.self_link"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err
 	}

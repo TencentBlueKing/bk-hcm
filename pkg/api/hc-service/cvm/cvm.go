@@ -21,6 +21,7 @@ package cvm
 
 import (
 	"fmt"
+
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
@@ -47,5 +48,6 @@ func (req *CvmSyncReq) Validate() error {
 type OperateSyncReq struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	SelfLinks []string `json:"self_links" validate:"omitempty"`
 }

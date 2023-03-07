@@ -110,7 +110,7 @@ func convertSubnet(data *compute.Subnetwork) *types.GcpSubnet {
 		return nil
 	}
 
-	// @see https://www.googleapis.com/compute/v1/projects/tencentqcpieg6/regions/us-centrall
+	// @see https://www.googleapis.com/compute/v1/projects/xxxx/regions/us-centrall
 	region := ""
 	if len(data.Region) > 0 {
 		regionArr := strings.Split(data.Region, "/")

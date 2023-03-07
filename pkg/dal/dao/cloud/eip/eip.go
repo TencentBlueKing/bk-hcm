@@ -22,6 +22,7 @@ package eip
 import (
 	"fmt"
 
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/types"
@@ -91,6 +92,7 @@ func (eipDao *EipDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipListRe
 	}
 
 	columnTypes := eip.EipColumns.ColumnTypes()
+	columnTypes["extension.self_link"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err

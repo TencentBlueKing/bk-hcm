@@ -188,7 +188,9 @@ func (s *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 		return nil, errf.New(errf.InvalidParameter, "list subnet options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.SubnetColumns.ColumnTypes())),
+	columnTypes := cloud.SubnetColumns.ColumnTypes()
+	columnTypes["extension.self_link"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err
 	}

@@ -363,14 +363,14 @@ func updateTCloudCvm(kt *kit.Kit, dataCli *dataservice.Client, tcloud *tcloud.TC
 			return fmt.Errorf("cvm: %s not found from db", cloudID)
 		}
 
-		vpcID, bkCloudID, err := queryVpcID(kt, dataCli, *cvmFromCloud.VirtualPrivateCloud.VpcId)
+		vpcID, bkCloudID, err := queryVpcIDByCloudID(kt, dataCli, *cvmFromCloud.VirtualPrivateCloud.VpcId)
 		if err != nil {
 			return err
 		}
 
 		cloudSubnetIDs := make([]string, 0)
 		cloudSubnetIDs = append(cloudSubnetIDs, *cvmFromCloud.VirtualPrivateCloud.SubnetId)
-		subnetIDs, err := querySubnetIDs(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, err := querySubnetIDsByCloudID(kt, dataCli, cloudSubnetIDs)
 		if err != nil {
 			return err
 		}
@@ -457,14 +457,14 @@ func addTCloudCvm(kt *kit.Kit, dataCli *dataservice.Client, tcloud *tcloud.TClou
 			return fmt.Errorf("cvm: %s not found", cloudID)
 		}
 
-		vpcID, bkCloudID, err := queryVpcID(kt, dataCli, *cvmFromCloud.VirtualPrivateCloud.VpcId)
+		vpcID, bkCloudID, err := queryVpcIDByCloudID(kt, dataCli, *cvmFromCloud.VirtualPrivateCloud.VpcId)
 		if err != nil {
 			return err
 		}
 
 		cloudSubnetIDs := make([]string, 0)
 		cloudSubnetIDs = append(cloudSubnetIDs, *cvmFromCloud.VirtualPrivateCloud.SubnetId)
-		subnetIDs, err := querySubnetIDs(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, err := querySubnetIDsByCloudID(kt, dataCli, cloudSubnetIDs)
 		if err != nil {
 			return err
 		}

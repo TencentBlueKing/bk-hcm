@@ -22,6 +22,7 @@ package gcp
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"hcm/pkg/adaptor/types/core"
 	typesniproto "hcm/pkg/adaptor/types/network-interface"
@@ -115,9 +116,13 @@ func (g *Gcp) ListNetworkInterfaceByCvmID(kt *kit.Kit, opt *typesniproto.GcpList
 }
 
 func convertNetworkInterface(data *compute.Instance, niItem *compute.NetworkInterface) *typesniproto.GcpNI {
+	// @see https://www.googleapis.com/compute/v1/projects/xxxx/zones/us-central1-a
+	zone := data.Zone[(strings.LastIndex(data.Zone, "/") + 1):]
+	region := zone[:strings.LastIndex(zone, "-")]
 	v := &typesniproto.GcpNI{
 		Name:          converter.ValToPtr(niItem.Name),
-		Zone:          converter.ValToPtr(data.Zone),
+		Region:        converter.ValToPtr(region),
+		Zone:          converter.ValToPtr(zone),
 		CloudID:       converter.ValToPtr(fmt.Sprintf("%d_%s", data.Id, niItem.Name)),
 		InstanceID:    converter.ValToPtr(strconv.FormatUint(data.Id, 10)),
 		CloudVpcID:    converter.ValToPtr(niItem.Network),

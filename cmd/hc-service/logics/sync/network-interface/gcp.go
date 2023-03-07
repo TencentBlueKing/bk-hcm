@@ -22,15 +22,16 @@ package networkinterface
 
 import (
 	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	adcore "hcm/pkg/adaptor/types/core"
 	typesniproto "hcm/pkg/adaptor/types/network-interface"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
 	dataproto "hcm/pkg/api/data-service/cloud/network-interface"
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -43,10 +44,6 @@ import (
 // GcpNetworkInterfaceSync sync gcp cloud network interface.
 func GcpNetworkInterfaceSync(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
-
-	if len(req.CloudCvmIDs) > 0 && len(req.CloudCvmIDs) > constant.BatchOperationMaxLimit {
-		return nil, errf.New(errf.TooManyRequest, "cloud_ids length should <= 100")
-	}
 
 	// sync network interface list from cloudapi.
 	allCloudIDMap, err := SyncGcpNetworkInterfaceList(kt, req, adaptor, dataCli)
@@ -80,9 +77,9 @@ func SyncGcpNetworkInterfaceList(kt *kit.Kit, req *hcservice.GcpNetworkInterface
 		cloudList     *typesniproto.GcpInterfaceListResult
 	)
 	if len(req.CloudCvmIDs) > 0 {
-		cloudIDs, allCloudIDMap, cloudList, err = GetGcpNetworkInterfaceListByCloudIDs(kt, req, adaptor)
+		cloudIDs, allCloudIDMap, cloudList, err = GetGcpNetworkInterfaceListByCloudIDs(kt, req, adaptor, dataCli)
 	} else {
-		cloudIDs, allCloudIDMap, cloudList, err = GetGcpNetworkInterfaceAllList(kt, req, adaptor)
+		cloudIDs, allCloudIDMap, cloudList, err = GetGcpNetworkInterfaceAllList(kt, req, adaptor, dataCli)
 	}
 	if err != nil {
 		return nil, err
@@ -108,7 +105,8 @@ func SyncGcpNetworkInterfaceList(kt *kit.Kit, req *hcservice.GcpNetworkInterface
 }
 
 func GetGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
-	adaptor *cloudclient.CloudAdaptorClient) ([]string, map[string]bool, *typesniproto.GcpInterfaceListResult, error) {
+	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (
+	[]string, map[string]bool, *typesniproto.GcpInterfaceListResult, error) {
 
 	cli, err := adaptor.Gcp(kt, req.AccountID)
 	if err != nil {
@@ -136,6 +134,22 @@ func GetGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetwork
 			tmpID := converter.PtrToVal(niItem.CloudID)
 			cloudIDs = append(cloudIDs, tmpID)
 			allCloudIDMap[tmpID] = true
+
+			// get gcp vpc info by vpc-selflink
+			vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, niItem.CloudVpcID, dataCli)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			niItem.CloudVpcID = converter.ValToPtr(vpcDetail.CloudID)
+			niItem.VpcID = converter.ValToPtr(vpcDetail.ID)
+
+			// get gcp subnet info by subnet-selflink
+			subnetDetail, err := GetCloudSubnetInfoBySelfLink(kt, req, enumor.Gcp, niItem.CloudSubnetID, dataCli)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			niItem.CloudSubnetID = converter.ValToPtr(subnetDetail.CloudID)
+			niItem.SubnetID = converter.ValToPtr(subnetDetail.ID)
 			list.Details = append(list.Details, niItem)
 		}
 	}
@@ -144,7 +158,8 @@ func GetGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetwork
 }
 
 func GetGcpNetworkInterfaceAllList(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
-	adaptor *cloudclient.CloudAdaptorClient) ([]string, map[string]bool, *typesniproto.GcpInterfaceListResult, error) {
+	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (
+	[]string, map[string]bool, *typesniproto.GcpInterfaceListResult, error) {
 
 	cli, err := adaptor.Gcp(kt, req.AccountID)
 	if err != nil {
@@ -163,11 +178,30 @@ func GetGcpNetworkInterfaceAllList(kt *kit.Kit, req *hcservice.GcpNetworkInterfa
 
 	cloudIDs := make([]string, 0)
 	allCloudIDMap := make(map[string]bool, 0)
+	niDetails := make([]typesniproto.GcpNI, 0, len(list.Details))
 	for _, item := range list.Details {
 		tmpID := converter.PtrToVal(item.CloudID)
 		cloudIDs = append(cloudIDs, tmpID)
 		allCloudIDMap[tmpID] = true
+
+		// get gcp vpc info by vpc selflink
+		vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, item.CloudVpcID, dataCli)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		item.CloudVpcID = converter.ValToPtr(vpcDetail.CloudID)
+		item.VpcID = converter.ValToPtr(vpcDetail.ID)
+
+		// get gcp subnet info by subnet selflink
+		subnetDetail, err := GetCloudSubnetInfoBySelfLink(kt, req, enumor.Gcp, item.CloudSubnetID, dataCli)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		item.CloudSubnetID = converter.ValToPtr(subnetDetail.CloudID)
+		item.SubnetID = converter.ValToPtr(subnetDetail.ID)
+		niDetails = append(niDetails, item)
 	}
+	list.Details = niDetails
 
 	return cloudIDs, allCloudIDMap, list, nil
 }
@@ -240,7 +274,9 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 				Region:        converter.PtrToVal(item.Region),
 				Zone:          converter.PtrToVal(item.Zone),
 				CloudID:       converter.PtrToVal(item.CloudID),
+				VpcID:         converter.PtrToVal(item.VpcID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
+				SubnetID:      converter.PtrToVal(item.SubnetID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
 				PrivateIPv4:   item.PrivateIPv4,
 				PrivateIPv6:   item.PrivateIPv6,
@@ -277,7 +313,9 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 				Region:        converter.PtrToVal(item.Region),
 				Zone:          converter.PtrToVal(item.Zone),
 				CloudID:       converter.PtrToVal(item.CloudID),
+				VpcID:         converter.PtrToVal(item.VpcID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
+				SubnetID:      converter.PtrToVal(item.SubnetID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
 				PrivateIPv4:   item.PrivateIPv4,
 				PrivateIPv6:   item.PrivateIPv6,
@@ -389,4 +427,92 @@ func GetNeedDeleteGcpNetworkInterfaceList(_ *kit.Kit, _ *hcservice.GcpNetworkInt
 	}
 
 	return deleteIDs
+}
+
+// GetCloudVpcInfoBySelfLink get vpc info by selflink
+func GetCloudVpcInfoBySelfLink(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq, vendor enumor.Vendor,
+	selfLink *string, dataCli *dataclient.Client) (*cloud.BaseVpc, error) {
+
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "account_id",
+				Op:    filter.Equal.Factory(),
+				Value: req.AccountID,
+			},
+			&filter.AtomRule{
+				Field: "vendor",
+				Op:    filter.Equal.Factory(),
+				Value: vendor,
+			},
+			&filter.AtomRule{
+				Field: "extension.self_link",
+				Op:    filter.JSONIn.Factory(),
+				Value: []*string{selfLink},
+			},
+		},
+	}
+
+	dbQueryReq := &core.ListReq{
+		Filter: expr,
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
+	}
+	dbList, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), dbQueryReq)
+	if err != nil {
+		logs.Errorf("get gcp vpc list from db failed, accountID: %s, vendor: %s, err: %v",
+			req.AccountID, vendor, err)
+		return nil, err
+	}
+	if len(dbList.Details) == 0 {
+		logs.Errorf("get gcp vpc info is not found, accountID: %s, vendor: %s, selfLink: %s",
+			req.AccountID, vendor, converter.PtrToVal(selfLink))
+		return nil, errf.New(errf.RecordNotFound, "get gcp vpc info is not found.")
+	}
+
+	return &dbList.Details[0], nil
+}
+
+// GetCloudSubnetInfoBySelfLink get subnet info by selflink
+func GetCloudSubnetInfoBySelfLink(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq, vendor enumor.Vendor,
+	selfLink *string, dataCli *dataclient.Client) (*cloud.BaseSubnet, error) {
+
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "account_id",
+				Op:    filter.Equal.Factory(),
+				Value: req.AccountID,
+			},
+			&filter.AtomRule{
+				Field: "vendor",
+				Op:    filter.Equal.Factory(),
+				Value: vendor,
+			},
+			&filter.AtomRule{
+				Field: "extension.self_link",
+				Op:    filter.JSONIn.Factory(),
+				Value: []*string{selfLink},
+			},
+		},
+	}
+
+	dbQueryReq := &core.ListReq{
+		Filter: expr,
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
+	}
+	dbList, err := dataCli.Global.Subnet.List(kt.Ctx, kt.Header(), dbQueryReq)
+	if err != nil {
+		logs.Errorf("get gcp subnet list from db failed, accountID: %s, vendor: %s, err: %v",
+			req.AccountID, vendor, err)
+		return nil, err
+	}
+	if len(dbList.Details) == 0 {
+		logs.Errorf("get gcp subnet info is not found, accountID: %s, vendor: %s, selfLink: %s",
+			req.AccountID, vendor, converter.PtrToVal(selfLink))
+		return nil, errf.New(errf.RecordNotFound, "get gcp subnet info is not found.")
+	}
+
+	return &dbList.Details[0], nil
 }

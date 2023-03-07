@@ -491,12 +491,12 @@ func syncHuaWeiCvmUpdate(kt *kit.Kit, req *SyncHuaWeiCvmOption, updateIDs []stri
 			}
 		}
 		cloudVpcID := cloudMap[id].Cvm.Metadata["vpc_id"]
-		vpcID, bkCloudID, err := queryVpcID(kt, dataCli, cloudVpcID)
+		vpcID, bkCloudID, err := queryVpcIDByCloudID(kt, dataCli, cloudVpcID)
 		if err != nil {
 			return err
 		}
 
-		subnetIDs, err := querySubnetIDs(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, err := querySubnetIDsByCloudID(kt, dataCli, cloudSubnetIDs)
 		if err != nil {
 			return err
 		}
@@ -647,12 +647,12 @@ func syncHuaWeiCvmAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiCvmOption,
 			logs.Errorf("huawei cvm: %s more than one vpc", cloudMap[id].Cvm.Id)
 		}
 
-		vpcID, bkCloudID, err := queryVpcID(kt, dataCli, vpcIDs[0])
+		vpcID, bkCloudID, err := queryVpcIDByCloudID(kt, dataCli, vpcIDs[0])
 		if err != nil {
 			return err
 		}
 
-		subIDs, err := querySubnetIDs(kt, dataCli, subnetIDs)
+		subIDs, err := querySubnetIDsByCloudID(kt, dataCli, subnetIDs)
 		if err != nil {
 			return err
 		}

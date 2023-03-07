@@ -20,10 +20,13 @@
 package disk
 
 // GcpDiskExtensionCreateReq ...
-type GcpDiskExtensionCreateReq struct{}
+type GcpDiskExtensionCreateReq struct {
+	SelfLink string `json:"self_link" validate:"required"`
+}
 
 // GcpDiskExtensionResult ...
 type GcpDiskExtensionResult struct {
+	SelfLink string `json:"self_link" validate:"required"`
 	SourceImage string `json:"source_image,omitempty"`
 	Description string `json:"description,omitempty"`
 	Encrypted   *bool  `json:"encrypted,omitempty"`

@@ -61,11 +61,6 @@ func GetHcCvmDatas(kt *kit.Kit, req *protocvm.CvmSyncReq,
 						Op:    filter.Equal.Factory(),
 						Value: req.AccountID,
 					},
-					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: req.Region,
-					},
 				},
 			},
 			Page: &core.BasePage{
@@ -100,7 +95,7 @@ func GetHcCvmDatas(kt *kit.Kit, req *protocvm.CvmSyncReq,
 	return dsMap, nil
 }
 
-func queryVpcID(kt *kit.Kit, dataCli *dataservice.Client, vpcCloudID string) (
+func queryVpcIDByCloudID(kt *kit.Kit, dataCli *dataservice.Client, vpcCloudID string) (
 	string, int64, error) {
 
 	req := &core.ListReq{
@@ -121,7 +116,71 @@ func queryVpcID(kt *kit.Kit, dataCli *dataservice.Client, vpcCloudID string) (
 	return vpcResult.Details[0].ID, vpcResult.Details[0].BkCloudID, nil
 }
 
-func querySubnetIDs(kt *kit.Kit, dataCli *dataservice.Client, subnetCloudIDs []string) (
+func queryVpcIDBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLink string) (
+	string, int64, error) {
+
+	req := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "extension.self_link",
+					Op:    filter.JSONEqual.Factory(),
+					Value: selfLink,
+				},
+			},
+		},
+		Page:   core.DefaultBasePage,
+		Fields: []string{"id"},
+	}
+	vpcResult, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("list vpc failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return "", 0, err
+	}
+
+	if len(vpcResult.Details) != 1 {
+		return "", 0, errf.Newf(errf.RecordNotFound, "vpc: %s not found", selfLink)
+	}
+
+	return vpcResult.Details[0].ID, vpcResult.Details[0].BkCloudID, nil
+}
+
+func querySubnetIDsBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLinks []string) (
+	[]string, error) {
+
+	req := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "extension.self_link",
+					Op:    filter.JSONIn.Factory(),
+					Value: selfLinks,
+				},
+			},
+		},
+		Page:   core.DefaultBasePage,
+		Fields: []string{"id"},
+	}
+	subnetResult, err := dataCli.Global.Subnet.List(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("list subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return nil, err
+	}
+
+	if len(subnetResult.Details) != 1 {
+		return nil, errf.Newf(errf.RecordNotFound, "subnet: %v not found", selfLinks)
+	}
+
+	subnetIDs := make([]string, 0)
+	for _, v := range subnetResult.Details {
+		subnetIDs = append(subnetIDs, v.ID)
+	}
+	return subnetIDs, nil
+}
+
+func querySubnetIDsByCloudID(kt *kit.Kit, dataCli *dataservice.Client, subnetCloudIDs []string) (
 	[]string, error) {
 
 	req := &core.ListReq{
@@ -202,6 +261,7 @@ func getDiskHcIDs(kt *kit.Kit, req *protocvm.OperateSyncReq, dataCli *dataservic
 
 	cvmIDs := make([]string, 0)
 	diskCloudIDs := make([]string, 0)
+	selfLinks := make([]string, 0)
 	for _, id := range cloudDiskMap {
 		diskCloudIDs = append(diskCloudIDs, id.RelID)
 		cvmIDs = append(cvmIDs, id.InstanceID)
@@ -209,10 +269,9 @@ func getDiskHcIDs(kt *kit.Kit, req *protocvm.OperateSyncReq, dataCli *dataservic
 
 	diskReq := &protodisk.DiskSyncReq{
 		AccountID: req.AccountID,
-		Region:    req.Region,
 		CloudIDs:  diskCloudIDs,
+		SelfLinks: selfLinks,
 	}
-
 	diskDatas, err := disk.GetDatasFromDSForDiskSync(kt, diskReq, dataCli)
 	if err != nil {
 		logs.Errorf("request get disk from hc failed, err: %v, rid: %s", err, kt.Rid)
@@ -248,6 +307,59 @@ func getDiskHcIDs(kt *kit.Kit, req *protocvm.OperateSyncReq, dataCli *dataservic
 	return nil
 }
 
+func getDiskHcIDsForGcp(kt *kit.Kit, req *protocvm.OperateSyncReq, dataCli *dataservice.Client,
+	selfLinkMap map[string]*CVMOperateSync) error {
+
+	cvmIDs := make([]string, 0)
+	diskCloudIDs := make([]string, 0)
+	selfLinks := make([]string, 0)
+
+	for _, link := range selfLinkMap {
+		selfLinks = append(selfLinks, link.RelID)
+		cvmIDs = append(cvmIDs, link.InstanceID)
+	}
+
+	diskReq := &protodisk.DiskSyncReq{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  diskCloudIDs,
+		SelfLinks: selfLinks,
+	}
+	diskDatas, err := disk.GetSelfLinkMapFromDSForDiskSync(kt, diskReq, dataCli)
+	if err != nil {
+		logs.Errorf("request get disk from hc failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	cvmReq := &protocvm.CvmSyncReq{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cvmIDs,
+	}
+
+	cvmDatas, err := GetHcCvmDatas(kt, cvmReq, dataCli)
+	if err != nil {
+		logs.Errorf("request get cvm from hc failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	for _, cloudDisk := range selfLinkMap {
+		if _, ok := diskDatas[cloudDisk.RelID]; ok {
+			cloudDisk.HCRelID = diskDatas[cloudDisk.RelID].HcDisk.ID
+		} else {
+			return fmt.Errorf("disk: [%s] not found", cloudDisk.RelID)
+		}
+
+		if _, ok := cvmDatas[cloudDisk.InstanceID]; ok {
+			cloudDisk.HCInstanceID = cvmDatas[cloudDisk.InstanceID].ID
+		} else {
+			return fmt.Errorf("cvm: %s not found", cloudDisk.InstanceID)
+		}
+	}
+
+	return nil
+}
+
 func getEipHcIDs(kt *kit.Kit, req *protocvm.OperateSyncReq, dataCli *dataservice.Client,
 	cloudEipMap map[string]*CVMOperateSync) error {
 
@@ -260,10 +372,8 @@ func getEipHcIDs(kt *kit.Kit, req *protocvm.OperateSyncReq, dataCli *dataservice
 
 	eipReq := &protoeip.EipSyncReq{
 		AccountID: req.AccountID,
-		Region:    req.Region,
 		CloudIDs:  eipCloudIDs,
 	}
-
 	eipDatas, err := eip.GetHcEipDatas(kt, eipReq, dataCli)
 	if err != nil {
 		logs.Errorf("request get eip from hc failed, err: %v, rid: %s", err, kt.Rid)
@@ -272,10 +382,8 @@ func getEipHcIDs(kt *kit.Kit, req *protocvm.OperateSyncReq, dataCli *dataservice
 
 	cvmReq := &protocvm.CvmSyncReq{
 		AccountID: req.AccountID,
-		Region:    req.Region,
 		CloudIDs:  cvmIDs,
 	}
-
 	cvmDatas, err := GetHcCvmDatas(kt, cvmReq, dataCli)
 	if err != nil {
 		logs.Errorf("request get cvm from hc failed, err: %v, rid: %s", err, kt.Rid)

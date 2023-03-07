@@ -86,6 +86,7 @@ type AzureNICreateExt struct {
 
 // GcpNICreateExt defines gcp network interface extensional info.
 type GcpNICreateExt struct {
+	SelfLink      string          `json:"self_link,omitempty"`
 	CanIpForward  bool            `json:"can_ip_forward,omitempty"`
 	Status        string          `json:"status,omitempty"`
 	StackType     string          `json:"stack_type,omitempty"`

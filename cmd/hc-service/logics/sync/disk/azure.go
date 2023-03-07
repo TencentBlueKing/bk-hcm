@@ -102,11 +102,6 @@ func getDatasFromAzureDSForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 						Op:    filter.Equal.Factory(),
 						Value: req.AccountID,
 					},
-					filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: req.Region,
-					},
 					&filter.AtomRule{
 						Field: "extension.resource_group_name",
 						Op:    filter.JSONEqual.Factory(),
@@ -189,10 +184,11 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 			AccountID: req.AccountID,
 			Name:      *cloudMap[id].Disk.Name,
 			CloudID:   id,
-			Region:    req.Region,
-			Zone:      *cloudMap[id].Disk.Location,
-			DiskSize:  uint64(*cloudMap[id].Disk.Properties.DiskSizeBytes),
-			DiskType:  *cloudMap[id].Disk.Type,
+			Region:    *cloudMap[id].Disk.Location,
+			// 该云没有此字段
+			Zone:       "",
+			DiskSize:   uint64(*cloudMap[id].Disk.Properties.DiskSizeBytes),
+			DiskType:   *cloudMap[id].Disk.Type,
 			Status:    string(*cloudMap[id].Disk.Properties.DiskState),
 			Extension: &dataproto.AzureDiskExtensionCreateReq{
 				ResourceGroupName: req.ResourceGroupName,

@@ -49,11 +49,6 @@ func GetHcNetworkInterfaceDatas(kt *kit.Kit, req *protocvm.OperateSyncReq,
 					Op:    filter.Equal.Factory(),
 					Value: req.AccountID,
 				},
-				&filter.AtomRule{
-					Field: "region",
-					Op:    filter.Equal.Factory(),
-					Value: req.Region,
-				},
 			},
 		}
 		dbQueryReq := &core.ListReq{

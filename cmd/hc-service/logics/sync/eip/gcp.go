@@ -56,8 +56,10 @@ func SyncGcpEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 		if nextToken != "" {
 			opt.Page.PageToken = nextToken
 		}
+
 		if len(req.CloudIDs) > 0 {
-			opt.SelfLinks = req.CloudIDs
+			opt.CloudIDs = req.CloudIDs
+			opt.Page = nil
 		}
 
 		datas, err := client.ListEip(kt, opt)

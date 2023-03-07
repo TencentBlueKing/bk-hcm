@@ -68,6 +68,7 @@ type DiskSyncDS struct {
 	HcDisk    *dataproto.DiskResult
 }
 
+// GetDatasFromDSForDiskSync ...
 func GetDatasFromDSForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 	dataCli *dataservice.Client) (map[string]*DiskSyncDS, error) {
 	start := 0
@@ -78,7 +79,6 @@ func GetDatasFromDSForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
 					filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: req.AccountID},
-					filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: req.Region},
 				},
 			},
 			Page: &core.BasePage{Start: uint32(start), Limit: filter.DefaultMaxInLimit},
@@ -86,6 +86,12 @@ func GetDatasFromDSForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 
 		if len(req.CloudIDs) > 0 {
 			filter := filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: req.CloudIDs}
+			dataReq.Filter.Rules = append(dataReq.Filter.Rules, filter)
+		}
+
+		if len(req.SelfLinks) > 0 {
+			filter := filter.AtomRule{Field: "extension.self_link", Op: filter.JSONIn.Factory(),
+				Value: req.SelfLinks}
 			dataReq.Filter.Rules = append(dataReq.Filter.Rules, filter)
 		}
 
@@ -108,6 +114,75 @@ func GetDatasFromDSForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 		sg.IsUpdated = false
 		sg.HcDisk = result
 		dsMap[result.CloudID] = sg
+	}
+
+	return dsMap, nil
+}
+
+// GetSelfLinkMapFromDSForDiskSync ...
+func GetSelfLinkMapFromDSForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
+	dataCli *dataservice.Client) (map[string]*DiskSyncDS, error) {
+	start := 0
+	resultsHcm := make([]*datadisk.DiskExtResult[datadisk.GcpDiskExtensionResult], 0)
+	for {
+		dataReq := &datadisk.DiskListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: req.AccountID},
+					filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: req.Region},
+				},
+			},
+			Page: &core.BasePage{Start: uint32(start), Limit: filter.DefaultMaxInLimit},
+		}
+
+		if len(req.CloudIDs) > 0 {
+			filter := filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: req.CloudIDs}
+			dataReq.Filter.Rules = append(dataReq.Filter.Rules, filter)
+		}
+
+		if len(req.SelfLinks) > 0 {
+			filter := filter.AtomRule{Field: "extension.self_link", Op: filter.JSONIn.Factory(),
+				Value: req.SelfLinks}
+			dataReq.Filter.Rules = append(dataReq.Filter.Rules, filter)
+		}
+
+		results, err := dataCli.Gcp.ListDisk(kt.Ctx, kt.Header(), dataReq)
+		if err != nil {
+			logs.Errorf("from data-service list disk failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		resultsHcm = append(resultsHcm, results.Details...)
+		start += len(results.Details)
+		if uint(len(results.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+	}
+
+	dsMap := make(map[string]*DiskSyncDS)
+	for _, result := range resultsHcm {
+		sg := new(DiskSyncDS)
+		sg.IsUpdated = false
+		sg.HcDisk = &datadisk.DiskResult{
+			ID:        result.ID,
+			Vendor:    result.Vendor,
+			AccountID: result.AccountID,
+			Name:      result.Name,
+			BkBizID:   result.BkBizID,
+			CloudID:   result.CloudID,
+			Region:    result.Region,
+			Zone:      result.Zone,
+			DiskSize:  result.DiskSize,
+			DiskType:  result.DiskType,
+			Status:    result.Status,
+			Memo:      result.Memo,
+			Creator:   result.Creator,
+			Reviser:   result.Reviser,
+			CreatedAt: result.CreatedAt,
+			UpdatedAt: result.UpdatedAt,
+		}
+		dsMap[result.Extension.SelfLink] = sg
 	}
 
 	return dsMap, nil

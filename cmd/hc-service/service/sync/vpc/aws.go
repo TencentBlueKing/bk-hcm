@@ -22,6 +22,7 @@ package vpc
 
 import (
 	vpclogic "hcm/cmd/hc-service/logics/sync/vpc"
+	"hcm/pkg/api/core"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
@@ -37,6 +38,10 @@ func (v syncVpcSvc) SyncAwsVpc(cts *rest.Contexts) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if len(req.CloudIDs) > 0 && len(req.CloudIDs) > int(core.DefaultMaxPageLimit) {
+		return nil, errf.New(errf.TooManyRequest, "cloud_ids length should <= 500")
 	}
 
 	resp, err := vpclogic.AwsVpcSync(cts.Kit, req, v.ad, v.dataCli)

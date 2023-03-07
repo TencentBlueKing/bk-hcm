@@ -86,6 +86,11 @@ func getDatasFromGcpForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 			listOpt.Page = nil
 		}
 
+		if len(req.SelfLinks) > 0 {
+			listOpt.SelfLinks = req.SelfLinks
+			listOpt.Page = nil
+		}
+
 		datas, token, err := client.ListDisk(kt, listOpt)
 		if err != nil {
 			logs.Errorf("request adaptor to list gcp disk failed, err: %v, rid: %s", err, kt.Rid)
@@ -147,15 +152,18 @@ func diffGcpDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 
 	for _, id := range addCloudIDs {
 		disk := &dataproto.DiskExtCreateReq[dataproto.GcpDiskExtensionCreateReq]{
-			AccountID: req.AccountID,
-			Name:      cloudMap[id].Disk.Name,
-			CloudID:   id,
-			Region:    req.Region,
-			Zone:      cloudMap[id].Disk.Zone,
-			DiskSize:  uint64(cloudMap[id].Disk.SizeGb),
-			DiskType:  cloudMap[id].Disk.Type,
-			Status:    cloudMap[id].Disk.Status,
-			Memo:      &cloudMap[id].Disk.Description,
+			AccountID:  req.AccountID,
+			Name:       cloudMap[id].Disk.Name,
+			CloudID:    id,
+			Region:     req.Region,
+			Zone:       cloudMap[id].Disk.Zone,
+			DiskSize:   uint64(cloudMap[id].Disk.SizeGb),
+			DiskType:   cloudMap[id].Disk.Type,
+			Status:     cloudMap[id].Disk.Status,
+			Memo:       &cloudMap[id].Disk.Description,
+			Extension: &dataproto.GcpDiskExtensionCreateReq{
+				SelfLink: cloudMap[id].Disk.SelfLink,
+			},
 		}
 		createReq = append(createReq, disk)
 	}
