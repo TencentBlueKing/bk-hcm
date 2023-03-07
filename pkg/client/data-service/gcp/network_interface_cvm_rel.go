@@ -31,9 +31,9 @@ import (
 // ListNetworkCvmRelWithExt ...
 func (rc *restClient) ListNetworkCvmRelWithExt(ctx context.Context, h http.Header,
 	req *datarelproto.NetworkInterfaceCvmRelWithListReq) (
-	[]*datarelproto.NetworkInterfaceExtWithCvmID[coreni.AzureNIExtension], error) {
+	[]*datarelproto.NetworkInterfaceExtWithCvmID[coreni.GcpNIExtension], error) {
 
-	resp := new(datarelproto.NetworkInterfaceCvmRelWithExtListResp[coreni.AzureNIExtension])
+	resp := new(datarelproto.NetworkInterfaceCvmRelWithExtListResp[coreni.GcpNIExtension])
 	err := rc.client.Post().
 		WithContext(ctx).
 		Body(req).
