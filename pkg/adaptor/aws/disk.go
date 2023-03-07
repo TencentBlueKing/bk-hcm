@@ -53,7 +53,6 @@ func (a *Aws) createDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*ec2.Volum
 // ListDisk 查看云硬盘
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeVolumes.html
 func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume, error) {
-
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "aws disk list option is required")
 	}
@@ -85,4 +84,67 @@ func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume,
 	}
 
 	return resp.Volumes, nil
+}
+
+// DeleteDisk 删除云盘
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DeleteVolume.html
+func (a *Aws) DeleteDisk(kt *kit.Kit, opt *disk.AwsDiskDeleteOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "aws disk delete option is required")
+	}
+
+	input, err := opt.ToDeleteVolumeInput()
+	if err != nil {
+		return err
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.DeleteVolumeWithContext(kt.Ctx, input)
+	return err
+}
+
+// AttachDisk 挂载云盘
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_AttachVolume.html
+func (a *Aws) AttachDisk(kt *kit.Kit, opt *disk.AwsDiskAttachOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "aws disk attach option is required")
+	}
+
+	input, err := opt.ToAttachVolumeInput()
+	if err != nil {
+		return err
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.AttachVolumeWithContext(kt.Ctx, input)
+	return err
+}
+
+// DetachDisk 卸载云盘
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DetachVolume.html
+func (a *Aws) DetachDisk(kt *kit.Kit, opt *disk.AwsDiskDetachOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "aws disk detach option is required")
+	}
+
+	input, err := opt.ToDetachVolumeInput()
+	if err != nil {
+		return err
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.DetachVolumeWithContext(kt.Ctx, input)
+	return err
 }

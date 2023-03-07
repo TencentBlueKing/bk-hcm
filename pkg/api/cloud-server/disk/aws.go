@@ -19,23 +19,10 @@
 
 package disk
 
-import (
-	"hcm/pkg/criteria/validator"
-)
-
-// AwsDiskCreateReq ...
-type AwsDiskCreateReq struct {
-	Base *DiskBaseCreateReq `json:"base" validate:"required"`
-}
-
-// Validate ...
-func (req *AwsDiskCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
+import "hcm/pkg/criteria/validator"
 
 // AwsDiskAttachReq ...
 type AwsDiskAttachReq struct {
-	AccountID  string `json:"account_id" validate:"required"`
 	DiskID     string `json:"disk_id" validate:"required"`
 	CvmID      string `json:"cvm_id" validate:"required"`
 	DeviceName string `json:"device_name" validate:"required"`

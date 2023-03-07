@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
 
+	ecsmodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
 )
 
@@ -58,17 +59,27 @@ var HuaWeiDiskIsAutoRenewEnum = struct {
 // HuaWeiDiskCreateOption 华为云创建云盘参数
 // reference: https://support.huaweicloud.com/api-evs/evs_04_2003.html
 type HuaWeiDiskCreateOption struct {
-	Region            string
-	Zone              string
-	DiskType          string
-	DiskSize          int32
-	DiskCount         *int32
-	DiskChargeType    *string
-	DiskChargePrepaid *HuaWeiDiskChargePrepaid
+	DiskName          *string                  `json:"disk_name"`
+	Region            string                   `json:"region" validate:"required"`
+	Zone              string                   `json:"zone" validate:"required"`
+	DiskType          string                   `json:"disk_type" validate:"required"`
+	DiskSize          int32                    `json:"disk_size" validate:"required"`
+	DiskCount         *int32                   `json:"disk_count"`
+	DiskChargeType    *string                  `json:"disk_charge_type"`
+	DiskChargePrepaid *HuaWeiDiskChargePrepaid `json:"disk_charge_prepaid"`
+}
+
+// Validate ...
+func (opt *HuaWeiDiskCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }
 
 // ToCreateVolumeRequest 转换成接口需要的 CreateVolumeRequest 结构
 func (opt *HuaWeiDiskCreateOption) ToCreateVolumeRequest() (*model.CreateVolumeRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
 	req := &model.CreateVolumeRequest{}
 	req.Body = &model.CreateVolumeRequestBody{}
 
@@ -78,6 +89,7 @@ func (opt *HuaWeiDiskCreateOption) ToCreateVolumeRequest() (*model.CreateVolumeR
 	}
 
 	req.Body.Volume = &model.CreateVolumeOption{
+		Name:             opt.DiskName,
 		AvailabilityZone: opt.Zone,
 		VolumeType:       *volumeType,
 		Size:             opt.DiskSize,
@@ -177,4 +189,76 @@ func (opt HuaWeiDiskListOption) Validate() error {
 	}
 
 	return nil
+}
+
+// HuaWeiDiskDeleteOption ...
+type HuaWeiDiskDeleteOption struct {
+	Region  string `json:"region" validate:"required"`
+	CloudID string `json:"cloud_id" validate:"required"`
+}
+
+// Validate ...
+func (opt *HuaWeiDiskDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToDeleteVolumeRequest ...
+func (opt *HuaWeiDiskDeleteOption) ToDeleteVolumeRequest() (*model.DeleteVolumeRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+	return &model.DeleteVolumeRequest{VolumeId: opt.CloudID}, nil
+}
+
+// HuaWeiDiskAttachOption ...
+type HuaWeiDiskAttachOption struct {
+	Region     string `json:"region" validate:"required"`
+	CloudCvmID string `json:"cloud_cvm_id" validate:"required"`
+	// 待挂载磁盘的磁盘ID，UUID格式。
+	CloudDiskID string `json:"cloud_disk_id" validate:"required"`
+	// 磁盘挂载点。  > 说明：  - 新增加的磁盘挂载点不能和已有的磁盘挂载点相同。
+	// - 对于采用XEN虚拟化类型的弹性云服务器，device为必选参数；系统盘挂载点请指定/dev/sda；
+	//数据盘挂载点请按英文字母顺序依次指定，如/dev/sdb，/dev/sdc，如果指定了以“/dev/vd”开头的挂载点，系统默认改为“/dev/sd”。
+	//- 对于采用KVM虚拟化类型的弹性云服务器，系统盘挂载点请指定/dev/vda；数据盘挂载点可不用指定，也可按英文字母顺序依次指定，
+	//如/dev/vdb，/dev/vdc，如果指定了以“/dev/sd”开头的挂载点，系统默认改为“/dev/vd”。
+	DeviceName *string `json:"device_name"`
+}
+
+// Validate ...
+func (opt *HuaWeiDiskAttachOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToAttachServerVolumeRequest ...
+func (opt *HuaWeiDiskAttachOption) ToAttachServerVolumeRequest() (*ecsmodel.AttachServerVolumeRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+	req := &ecsmodel.AttachServerVolumeRequest{}
+	req.ServerId = opt.CloudCvmID
+	req.Body = &ecsmodel.AttachServerVolumeRequestBody{
+		VolumeAttachment: &ecsmodel.AttachServerVolumeOption{Device: opt.DeviceName, VolumeId: opt.CloudDiskID},
+	}
+
+	return req, nil
+}
+
+// HuaWeiDiskDetachOption ...
+type HuaWeiDiskDetachOption struct {
+	Region      string `json:"region" validate:"required"`
+	CloudCvmID  string `json:"cloud_cvm_id" validate:"required"`
+	CloudDiskID string `json:"cloud_disk_id" validate:"required"`
+}
+
+// Validate ...
+func (opt *HuaWeiDiskDetachOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToDetachServerVolumeRequest ...
+func (opt *HuaWeiDiskDetachOption) ToDetachServerVolumeRequest() (*ecsmodel.DetachServerVolumeRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+	return &ecsmodel.DetachServerVolumeRequest{ServerId: opt.CloudCvmID, VolumeId: opt.CloudDiskID}, nil
 }

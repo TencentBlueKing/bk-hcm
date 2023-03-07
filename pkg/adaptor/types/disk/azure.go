@@ -22,28 +22,45 @@ package disk
 import (
 	"hcm/pkg/criteria/validator"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
 
+// AzureCachingTypes ...
+var AzureCachingTypes = map[string]armcompute.CachingTypes{
+	"None":      armcompute.CachingTypesNone,
+	"ReadOnly":  armcompute.CachingTypesReadOnly,
+	"ReadWrite": armcompute.CachingTypesReadWrite,
+}
+
 // AzureDiskCreateOption ...
 type AzureDiskCreateOption struct {
-	Name              string
-	ResourceGroupName string
-	Region            *string
-	Zone              *string
-	DiskType          string
-	DiskSize          *int32
+	DiskName          string `json:"disk_name" validate:"required"`
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	Region            string `json:"region" validate:"required"`
+	Zone              string `json:"zone" validate:"required"`
+	DiskType          string `json:"disk_type" validate:"required"`
+	DiskSize          int32  `json:"disk_size" validate:"required"`
+}
+
+// Validate ...
+func (opt *AzureDiskCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }
 
 // ToCreateDiskRequest 转换成接口需要的 *armcompute.Disk 结构
 func (opt *AzureDiskCreateOption) ToCreateDiskRequest() (*armcompute.Disk, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
 	skuName := armcompute.DiskStorageAccountTypes(opt.DiskType)
-	sku := &armcompute.DiskSKU{Name: &skuName}
-	prop := &armcompute.DiskProperties{DiskSizeGB: opt.DiskSize}
+	sku := &armcompute.DiskSKU{Name: to.Ptr(skuName)}
+	prop := &armcompute.DiskProperties{DiskSizeGB: to.Ptr(opt.DiskSize)}
 
 	return &armcompute.Disk{
-		Zones:      []*string{opt.Zone},
-		Location:   opt.Region,
+		Zones:      to.SliceOfPtrs[string](opt.Zone),
+		Location:   to.Ptr(opt.Region),
 		SKU:        sku,
 		Properties: prop,
 	}, nil
@@ -57,9 +74,52 @@ type AzureDiskListOption struct {
 
 // Validate azure disk list option.
 func (opt AzureDiskListOption) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return nil
-	}
+	return validator.Validate.Struct(opt)
+}
 
-	return nil
+// AzureDiskGetOption ...
+type AzureDiskGetOption struct {
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	DiskName          string `json:"disk_name" validate:"required"`
+}
+
+// Validate ...
+func (opt *AzureDiskGetOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// AzureDiskDeleteOption ...
+type AzureDiskDeleteOption struct {
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	DiskName          string `json:"disk_name" validate:"required"`
+}
+
+// Validate ...
+func (opt *AzureDiskDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// AzureDiskAttachOption ...
+type AzureDiskAttachOption struct {
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	CvmName           string `json:"cvm_name" validate:"required"`
+	DiskName          string `json:"disk_name" validate:"required"`
+	CachingType       string `json:"caching_type" validate:"required,eq=None|eq=ReadOnly|eq=ReadWrite"`
+}
+
+// Validate ...
+func (opt *AzureDiskAttachOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// AzureDiskDetachOption ...
+type AzureDiskDetachOption struct {
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	CvmName           string `json:"cvm_name" validate:"required"`
+	DiskName          string `json:"disk_name" validate:"required"`
+}
+
+// Validate ...
+func (opt *AzureDiskDetachOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }

@@ -20,28 +20,43 @@
 package disk
 
 import (
-	"hcm/pkg/criteria/validator"
+	cloudproto "hcm/pkg/api/cloud-server/disk"
+	hcproto "hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/rest"
 )
 
-// AwsDiskCreateReq ...
-type AwsDiskCreateReq struct {
-	Base *DiskBaseCreateReq `json:"base" validate:"required"`
-}
+func (svc *diskSvc) gcpAttachDisk(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloudproto.GcpDiskAttachReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
 
-// Validate ...
-func (req *AwsDiskCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
-// AwsDiskAttachReq ...
-type AwsDiskAttachReq struct {
-	AccountID  string `json:"account_id" validate:"required"`
-	DiskID     string `json:"disk_id" validate:"required"`
-	CvmID      string `json:"cvm_id" validate:"required"`
-	DeviceName string `json:"device_name" validate:"required"`
-}
+	// TODO 增加鉴权和审计
+	// TODO 判断云盘是否可挂载
 
-// Validate ...
-func (req *AwsDiskAttachReq) Validate() error {
-	return validator.Validate.Struct(req)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		enumor.DiskCloudResType,
+		req.DiskID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, svc.client.HCService().Gcp.Disk.AttachDisk(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&hcproto.GcpDiskAttachReq{
+			AccountID: basicInfo.AccountID,
+			CvmID:     req.CvmID,
+			DiskID:    req.DiskID,
+		},
+	)
 }

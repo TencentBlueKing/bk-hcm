@@ -130,15 +130,15 @@ func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff,
 
 	for _, id := range addCloudIDs {
 		disk := &dataproto.DiskExtCreateReq[dataproto.HuaWeiDiskExtensionCreateReq]{
-			AccountID:  req.AccountID,
-			Name:       cloudMap[id].Disk.Name,
-			CloudID:    id,
-			Region:     req.Region,
-			Zone:       cloudMap[id].Disk.AvailabilityZone,
-			DiskSize:   uint64(cloudMap[id].Disk.Size),
-			DiskType:   cloudMap[id].Disk.VolumeType,
-			DiskStatus: cloudMap[id].Disk.Status,
-			Memo:       &cloudMap[id].Disk.Description,
+			AccountID: req.AccountID,
+			Name:      cloudMap[id].Disk.Name,
+			CloudID:   id,
+			Region:    req.Region,
+			Zone:      cloudMap[id].Disk.AvailabilityZone,
+			DiskSize:  uint64(cloudMap[id].Disk.Size),
+			DiskType:  cloudMap[id].Disk.VolumeType,
+			Status:    cloudMap[id].Disk.Status,
+			Memo:      &cloudMap[id].Disk.Description,
 			Extension: &dataproto.HuaWeiDiskExtensionCreateReq{
 				DiskChargeType: cloudMap[id].Disk.ServiceType,
 			},
@@ -166,13 +166,13 @@ func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, 
 
 	for _, id := range updateCloudIDs {
 		if cloudMap[id].Disk.Description == *dsMap[id].HcDisk.Memo &&
-			cloudMap[id].Disk.Status == dsMap[id].HcDisk.DiskStatus {
+			cloudMap[id].Disk.Status == dsMap[id].HcDisk.Status {
 			continue
 		}
 		disk := &dataproto.DiskExtUpdateReq[dataproto.HuaWeiDiskExtensionUpdateReq]{
-			ID:         dsMap[id].HcDisk.ID,
-			Memo:       &cloudMap[id].Disk.Description,
-			DiskStatus: cloudMap[id].Disk.Status,
+			ID:     dsMap[id].HcDisk.ID,
+			Memo:   &cloudMap[id].Disk.Description,
+			Status: cloudMap[id].Disk.Status,
 		}
 		updateReq = append(updateReq, disk)
 	}

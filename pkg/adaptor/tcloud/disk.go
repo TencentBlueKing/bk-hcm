@@ -54,7 +54,6 @@ func (t *TCloud) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs
 // ListDisk 查询云硬盘列表
 // reference: https://cloud.tencent.com/document/api/362/16315
 func (t *TCloud) ListDisk(kt *kit.Kit, opt *disk.TCloudDiskListOption) ([]*cbs.Disk, error) {
-
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "tcloud disk list option is required")
 	}
@@ -84,5 +83,98 @@ func (t *TCloud) ListDisk(kt *kit.Kit, opt *disk.TCloudDiskListOption) ([]*cbs.D
 	}
 
 	return resp.Response.DiskSet, nil
+}
 
+// DeleteDisk 删除云盘
+// reference: https://cloud.tencent.com/document/product/362/16321
+func (t *TCloud) DeleteDisk(kt *kit.Kit, opt *disk.TCloudDiskDeleteOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "tcloud disk delete option is required")
+	}
+
+	req, err := opt.ToTerminateDisksRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := t.clientSet.cbsClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("new tcloud cbs client failed, err: %v", err)
+	}
+
+	resp, err := client.TerminateDisksWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf(
+			"tcloud delete disk failed, err: %v, rid: %s, resp rid: %s",
+			err,
+			kt.Rid,
+			resp.Response.RequestId,
+		)
+		return err
+	}
+
+	return nil
+}
+
+// AttachDisk 挂载云盘
+// reference: https://cloud.tencent.com/document/product/362/16313
+func (t *TCloud) AttachDisk(kt *kit.Kit, opt *disk.TCloudDiskAttachOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "tcloud disk attach option is required")
+	}
+
+	req, err := opt.ToAttachDisksRequest()
+	if err != nil {
+		return err
+	}
+
+	// TODO 已挂载的云盘不允许再挂载到其他主机. 不过云上接口应该做了这个验证?
+	client, err := t.clientSet.cbsClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("new tcloud cbs client failed, err: %v", err)
+	}
+
+	resp, err := client.AttachDisksWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf(
+			"tcloud attach disk failed, err: %v, rid: %s, resp rid: %s",
+			err,
+			kt.Rid,
+			resp.Response.RequestId,
+		)
+		return err
+	}
+
+	return nil
+}
+
+// DetachDisk 卸载云盘
+// reference: https://cloud.tencent.com/document/product/362/16316
+func (t *TCloud) DetachDisk(kt *kit.Kit, opt *disk.TCloudDiskDetachOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "tcloud disk detach option is required")
+	}
+
+	req, err := opt.ToDetachDisksRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := t.clientSet.cbsClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("new tcloud cbs client failed, err: %v", err)
+	}
+
+	resp, err := client.DetachDisksWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf(
+			"tcloud detach disk failed, err: %v, rid: %s, resp rid: %s",
+			err,
+			kt.Rid,
+			resp.Response.RequestId,
+		)
+		return err
+	}
+
+	return nil
 }

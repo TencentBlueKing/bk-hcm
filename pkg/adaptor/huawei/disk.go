@@ -27,7 +27,6 @@ import (
 	"hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/region"
 )
 
 // CreateDisk 创建云硬盘
@@ -37,7 +36,7 @@ func (h *HuaWei) CreateDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolu
 }
 
 func (h *HuaWei) createDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {
-	client, err := h.clientSet.evsClient(region.ValueOf(opt.Region))
+	client, err := h.clientSet.evsClient(opt.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +52,6 @@ func (h *HuaWei) createDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolu
 // ListDisk 查看云硬盘
 // reference: https://support.huaweicloud.com/api-evs/evs_04_2006.html
 func (h *HuaWei) ListDisk(kt *kit.Kit, opt *disk.HuaWeiDiskListOption) ([]model.VolumeDetail, error) {
-
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "huawei disk list option is required")
 	}
@@ -62,7 +60,7 @@ func (h *HuaWei) ListDisk(kt *kit.Kit, opt *disk.HuaWeiDiskListOption) ([]model.
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := h.clientSet.evsClient(region.ValueOf(opt.Region))
+	client, err := h.clientSet.evsClient(opt.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -83,4 +81,97 @@ func (h *HuaWei) ListDisk(kt *kit.Kit, opt *disk.HuaWeiDiskListOption) ([]model.
 	}
 
 	return *resp.Volumes, nil
+}
+
+// DeleteDisk 删除云盘
+// reference: https://support.huaweicloud.com/api-evs/evs_04_2008.html
+func (h *HuaWei) DeleteDisk(kt *kit.Kit, opt *disk.HuaWeiDiskDeleteOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "huawei disk delete option is required")
+	}
+
+	client, err := h.clientSet.evsClient(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	req, err := opt.ToDeleteVolumeRequest()
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.DeleteVolume(req)
+	if err != nil {
+		logs.Errorf(
+			"huawei delete disk failed, err: %v, rid: %s, job id: %s",
+			err,
+			kt.Rid,
+			resp.JobId,
+		)
+		return err
+	}
+
+	return nil
+}
+
+// AttachDisk 挂载云盘
+// reference: https://support.huaweicloud.com/api-ecs/ecs_02_0605.html
+func (h *HuaWei) AttachDisk(kt *kit.Kit, opt *disk.HuaWeiDiskAttachOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "huawei disk attach option is required")
+	}
+
+	req, err := opt.ToAttachServerVolumeRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := h.clientSet.ecsClient(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.AttachServerVolume(req)
+	if err != nil {
+		logs.Errorf(
+			"huawei attach disk failed, err: %v, rid: %s, job id: %s",
+			err,
+			kt.Rid,
+			resp.JobId,
+		)
+		return err
+	}
+
+	return nil
+}
+
+// DetachDisk 卸载云盘
+// reference: https://support.huaweicloud.com/api-ecs/ecs_02_0606.html
+func (h *HuaWei) DetachDisk(kt *kit.Kit, opt *disk.HuaWeiDiskDetachOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "huawei disk detach option is required")
+	}
+
+	req, err := opt.ToDetachServerVolumeRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := h.clientSet.ecsClient(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.DetachServerVolume(req)
+	if err != nil {
+		logs.Errorf(
+			"huawei detach disk failed, err: %v, rid: %s, job id: %s",
+			err,
+			kt.Rid,
+			resp.JobId,
+		)
+		return err
+	}
+
+	return nil
 }

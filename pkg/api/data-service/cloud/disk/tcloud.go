@@ -29,6 +29,11 @@ type TCloudDiskExtensionCreateReq struct {
 type TCloudDiskExtensionResult struct {
 	DiskChargeType    string                   `json:"disk_charge_type"`
 	DiskChargePrepaid *TCloudDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
+	Encrypted         *bool                    `json:"encrypted,omitempty"`
+	Attached          *bool                    `json:"attached,omitempty"`
+	DiskUsage         *string                  `json:"disk_usage,omitempty"`
+	InstanceId        *string                  `json:"InstanceId,omitempty"`
+	InstanceType      *string                  `json:"InstanceType,omitempty"`
 }
 
 // TCloudDiskChargePrepaid ...

@@ -74,6 +74,8 @@ type GcpAttachedDisk struct {
 	Index int64 `json:"index,omitempty"`
 
 	CloudID string `json:"cloud_id,omitempty"`
+
+	DeviceName string `json:"device_name,omitempty"`
 }
 
 // GcpReservationAffinity Specifies the reservations that this instance

@@ -30,18 +30,27 @@ import (
 
 // GcpDiskCreateOption ...
 type GcpDiskCreateOption struct {
-	Name     string
-	Region   string
-	Zone     string
-	DiskType string
-	DiskSize int64
+	DiskName string `json:"disk_name" validate:"required"`
+	Region   string `json:"region" validate:"required"`
+	Zone     string `json:"zone" validate:"required"`
+	DiskType string `json:"disk_type" validate:"required"`
+	DiskSize int64  `json:"disk_size" validate:"required"`
+}
+
+// Validate ...
+func (opt *GcpDiskCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }
 
 // ToCreateDiskRequest 转换成接口需要的 *compute.Disk 结构
 func (opt *GcpDiskCreateOption) ToCreateDiskRequest(cloudProjectID string) (*compute.Disk, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
 	return &compute.Disk{
 		Region: opt.Region,
-		Name:   opt.Name,
+		Name:   opt.DiskName,
 		Type: fmt.Sprintf("projects/%s/zones/%s/diskTypes/%s", cloudProjectID, opt.Zone,
 			opt.DiskType),
 		SizeGb: opt.DiskSize,
@@ -59,9 +68,8 @@ type GcpDiskListOption struct {
 // Validate gcp disk list option.
 func (opt GcpDiskListOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
-		return nil
+		return err
 	}
-
 	if len(opt.CloudIDs) != 0 && opt.Page != nil {
 		return fmt.Errorf("list by cloud_ids not support page")
 	}
@@ -77,4 +85,51 @@ func (opt GcpDiskListOption) Validate() error {
 	}
 
 	return nil
+}
+
+// GcpDiskDeleteOption ...
+type GcpDiskDeleteOption struct {
+	Zone     string `json:"zone" validate:"required"`
+	DiskName string `json:"disk_name" validate:"required"`
+}
+
+// Validate ...
+func (opt *GcpDiskDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// GcpDiskAttachOption ...
+type GcpDiskAttachOption struct {
+	Zone       string `json:"zone" validate:"required"`
+	CvmName    string `json:"cvm_name" validate:"required"`
+	DiskName   string `json:"disk_name" validate:"required"`
+	DeviceName string `json:"device_name"`
+}
+
+// Validate ...
+func (opt *GcpDiskAttachOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToAttachDiskRequest ...
+func (opt *GcpDiskAttachOption) ToAttachDiskRequest() (*compute.AttachedDisk, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+	return &compute.AttachedDisk{
+		DeviceName:       opt.DeviceName,
+		InitializeParams: &compute.AttachedDiskInitializeParams{DiskName: opt.DiskName},
+	}, nil
+}
+
+// GcpDiskDetachOption ...
+type GcpDiskDetachOption struct {
+	Zone       string `json:"zone" validate:"required"`
+	CvmName    string `json:"cvm_name" validate:"required"`
+	DeviceName string `json:"device_name" validate:"required"`
+}
+
+// Validate ...
+func (opt *GcpDiskDetachOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }

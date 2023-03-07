@@ -20,44 +20,43 @@
 package disk
 
 import (
-	"fmt"
-
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	"hcm/cmd/hc-service/service/disk/aws"
-	"hcm/cmd/hc-service/service/disk/azure"
-	"hcm/cmd/hc-service/service/disk/gcp"
-	"hcm/cmd/hc-service/service/disk/huawei"
-	"hcm/cmd/hc-service/service/disk/tcloud"
-	dataservice "hcm/pkg/client/data-service"
+	cloudproto "hcm/pkg/api/cloud-server/disk"
+	hcproto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-type diskAdaptor struct {
-	adaptor *cloudclient.CloudAdaptorClient
-	dataCli *dataservice.Client
-}
+func (svc *diskSvc) azureAttachDisk(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloudproto.AzureDiskAttachReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
 
-// CreateDisks 创建云硬盘
-func (da *diskAdaptor) CreateDisks(cts *rest.Contexts) (interface{}, error) {
-	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
-	if err := vendor.Validate(); err != nil {
+	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	switch vendor {
-	case enumor.TCloud:
-		return tcloud.CreateDisk(da.adaptor, cts)
-	case enumor.HuaWei:
-		return huawei.CreateDisk(da.adaptor, cts)
-	case enumor.Aws:
-		return aws.CreateDisk(da.adaptor, cts)
-	case enumor.Azure:
-		return azure.CreateDisk(da.adaptor, cts)
-	case enumor.Gcp:
-		return gcp.CreateDisk(da.adaptor, cts)
-	default:
-		return nil, fmt.Errorf("%s does not support the creation of cloud disks", vendor)
+	// TODO 增加鉴权和审计
+	// TODO 判断云盘是否可挂载
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		enumor.DiskCloudResType,
+		req.DiskID,
+	)
+	if err != nil {
+		return nil, err
 	}
+	return nil, svc.client.HCService().Azure.Disk.AttachDisk(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&hcproto.AzureDiskAttachReq{
+			AccountID:   basicInfo.AccountID,
+			CvmID:       req.CvmID,
+			DiskID:      req.DiskID,
+			CachingType: req.CachingType,
+		},
+	)
 }

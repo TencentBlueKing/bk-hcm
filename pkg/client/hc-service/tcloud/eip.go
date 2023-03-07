@@ -89,8 +89,7 @@ func (cli *EipClient) DeleteEip(ctx context.Context, h http.Header, req *eip.Eip
 
 // AssociateEip ...
 func (cli *EipClient) AssociateEip(ctx context.Context, h http.Header, req *eip.TCloudEipAssociateReq) error {
-	// TODO 替换为 rest.GenericResp
-	resp := new(core.UpdateResp)
+	resp := new(rest.BaseResp)
 
 	err := cli.client.Post().
 		WithContext(ctx).

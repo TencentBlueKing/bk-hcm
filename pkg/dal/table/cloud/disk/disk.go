@@ -45,7 +45,7 @@ var DiskColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "zone", NamedC: "zone", Type: enumor.String},
 	{Column: "disk_size", NamedC: "disk_size", Type: enumor.Numeric},
 	{Column: "disk_type", NamedC: "disk_type", Type: enumor.String},
-	{Column: "disk_status", NamedC: "disk_status", Type: enumor.String},
+	{Column: "status", NamedC: "status", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
@@ -82,7 +82,7 @@ type DiskModel struct {
 	// 云盘类型
 	DiskType string `db:"disk_type" json:"disk_type"`
 	// 云盘状态
-	DiskStatus string `db:"disk_status" json:"disk_status"`
+	Status string `db:"status" json:"status"`
 	// Memo 备注
 	Memo *string `db:"memo" json:"memo"`
 	// Extension 云厂商差异扩展字段

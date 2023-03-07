@@ -186,14 +186,14 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 
 	for _, id := range addCloudIDs {
 		disk := &dataproto.DiskExtCreateReq[dataproto.AzureDiskExtensionCreateReq]{
-			AccountID:  req.AccountID,
-			Name:       *cloudMap[id].Disk.Name,
-			CloudID:    id,
-			Region:     req.Region,
-			Zone:       *cloudMap[id].Disk.Location,
-			DiskSize:   uint64(*cloudMap[id].Disk.Properties.DiskSizeBytes),
-			DiskType:   *cloudMap[id].Disk.Type,
-			DiskStatus: string(*cloudMap[id].Disk.Properties.DiskState),
+			AccountID: req.AccountID,
+			Name:      *cloudMap[id].Disk.Name,
+			CloudID:   id,
+			Region:    req.Region,
+			Zone:      *cloudMap[id].Disk.Location,
+			DiskSize:  uint64(*cloudMap[id].Disk.Properties.DiskSizeBytes),
+			DiskType:  *cloudMap[id].Disk.Type,
+			Status:    string(*cloudMap[id].Disk.Properties.DiskState),
 			Extension: &dataproto.AzureDiskExtensionCreateReq{
 				ResourceGroupName: req.ResourceGroupName,
 			},
@@ -220,13 +220,13 @@ func diffAzureSyncUpdate(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff,
 	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.AzureDiskExtensionUpdateReq]
 
 	for _, id := range updateCloudIDs {
-		if string(*cloudMap[id].Disk.Properties.DiskState) == dsMap[id].HcDisk.DiskStatus {
+		if string(*cloudMap[id].Disk.Properties.DiskState) == dsMap[id].HcDisk.Status {
 			continue
 		}
 
 		disk := &dataproto.DiskExtUpdateReq[dataproto.AzureDiskExtensionUpdateReq]{
-			ID:         dsMap[id].HcDisk.ID,
-			DiskStatus: string(*cloudMap[id].Disk.Properties.DiskState),
+			ID:     dsMap[id].HcDisk.ID,
+			Status: string(*cloudMap[id].Disk.Properties.DiskState),
 		}
 		updateReq = append(updateReq, disk)
 	}

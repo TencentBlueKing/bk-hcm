@@ -45,3 +45,15 @@ type TCloudDiskChargePrepaid struct {
 	Period    *uint64 `json:"period"`
 	RenewFlag *string `json:"renew_flag"`
 }
+
+// TCloudDiskAttachReq ...
+type TCloudDiskAttachReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	CvmID     string `json:"cvm_id" validate:"required"`
+	DiskID    string `json:"disk_id" validate:"required"`
+}
+
+// Validate ...
+func (req *TCloudDiskAttachReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

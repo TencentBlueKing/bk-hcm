@@ -155,9 +155,9 @@ func (dSvc *diskSvc) BatchUpdateDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	updateData := &tablecloud.DiskModel{
-		BkBizID:    int64(req.BkBizID),
-		DiskStatus: req.DiskStatus,
-		Memo:       req.Memo,
+		BkBizID: int64(req.BkBizID),
+		Status:  req.Status,
+		Memo:    req.Memo,
 	}
 	if err := dSvc.objectDao.Update(cts.Kit, tools.ContainersExpression("id", req.IDs), updateData); err != nil {
 		return nil, err
@@ -325,20 +325,20 @@ func batchCreateDiskExt[T dataproto.DiskExtensionCreateReq](
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
 			disks[indx] = &tablecloud.DiskModel{
-				Vendor:     string(vendor),
-				AccountID:  diskReq.AccountID,
-				CloudID:    diskReq.CloudID,
-				BkBizID:    constant.UnassignedBiz,
-				Name:       diskReq.Name,
-				Region:     diskReq.Region,
-				Zone:       diskReq.Zone,
-				DiskSize:   diskReq.DiskSize,
-				DiskType:   diskReq.DiskType,
-				DiskStatus: diskReq.DiskStatus,
-				Memo:       diskReq.Memo,
-				Extension:  tabletype.JsonField(extensionJson),
-				Creator:    cts.Kit.User,
-				Reviser:    cts.Kit.User,
+				Vendor:    string(vendor),
+				AccountID: diskReq.AccountID,
+				CloudID:   diskReq.CloudID,
+				BkBizID:   constant.UnassignedBiz,
+				Name:      diskReq.Name,
+				Region:    diskReq.Region,
+				Zone:      diskReq.Zone,
+				DiskSize:  diskReq.DiskSize,
+				DiskType:  diskReq.DiskType,
+				Status:    diskReq.Status,
+				Memo:      diskReq.Memo,
+				Extension: tabletype.JsonField(extensionJson),
+				Creator:   cts.Kit.User,
+				Reviser:   cts.Kit.User,
 			}
 		}
 		return dSvc.objectDao.BatchCreateWithTx(cts.Kit, txn, disks)
@@ -374,9 +374,9 @@ func batchUpdateDiskExt[T dataproto.DiskExtensionUpdateReq](cts *rest.Contexts,
 	_, err = dSvc.Set.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, diskReq := range *req {
 			updateData := &tablecloud.DiskModel{
-				BkBizID:    int64(diskReq.BkBizID),
-				DiskStatus: diskReq.DiskStatus,
-				Memo:       diskReq.Memo,
+				BkBizID: int64(diskReq.BkBizID),
+				Status:  diskReq.Status,
+				Memo:    diskReq.Memo,
 			}
 
 			if diskReq.Extension != nil {

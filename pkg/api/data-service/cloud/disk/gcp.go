@@ -23,7 +23,11 @@ package disk
 type GcpDiskExtensionCreateReq struct{}
 
 // GcpDiskExtensionResult ...
-type GcpDiskExtensionResult struct{}
+type GcpDiskExtensionResult struct {
+	SourceImage string `json:"source_image,omitempty"`
+	Description string `json:"description,omitempty"`
+	Encrypted   *bool  `json:"encrypted,omitempty"`
+}
 
 // GcpDiskExtensionUpdateReq ...
 // 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并

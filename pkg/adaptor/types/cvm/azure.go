@@ -95,3 +95,14 @@ type AzureStopOption struct {
 func (opt AzureStopOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// AzureGetOption ...
+type AzureGetOption struct {
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	Name              string `json:"name" validate:"required"`
+}
+
+// Validate ...
+func (opt *AzureGetOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

@@ -29,16 +29,16 @@ import (
 
 // DiskExtCreateReq ...
 type DiskExtCreateReq[T DiskExtensionCreateReq] struct {
-	AccountID  string  `json:"account_id" validate:"required"`
-	Name       string  `json:"name" validate:"required"`
-	CloudID    string  `json:"cloud_id" validate:"required"`
-	Region     string  `json:"region" validate:"required"`
-	Zone       string  `json:"zone" validate:"required"`
-	DiskSize   uint64  `json:"disk_size" validate:"required"`
-	DiskType   string  `json:"disk_type" validate:"required"`
-	DiskStatus string  `json:"disk_status" validate:"required"`
-	Memo       *string `json:"memo"`
-	Extension  *T      `json:"extension"`
+	AccountID string  `json:"account_id" validate:"required"`
+	Name      string  `json:"name" validate:"required"`
+	CloudID   string  `json:"cloud_id" validate:"required"`
+	Region    string  `json:"region" validate:"required"`
+	Zone      string  `json:"zone" validate:"required"`
+	DiskSize  uint64  `json:"disk_size" validate:"required"`
+	DiskType  string  `json:"disk_type" validate:"required"`
+	Status    string  `json:"status" validate:"required"`
+	Memo      *string `json:"memo"`
+	Extension *T      `json:"extension"`
 }
 
 // Validate ...
@@ -75,11 +75,11 @@ type DiskExtensionCreateReq interface {
 
 // DiskExtUpdateReq ...
 type DiskExtUpdateReq[T DiskExtensionUpdateReq] struct {
-	ID         string  `json:"id" validate:"required"`
-	BkBizID    uint64  `json:"bk_biz_id"`
-	DiskStatus string  `json:"disk_status"`
-	Memo       *string `json:"memo"`
-	Extension  *T      `json:"extension"`
+	ID        string  `json:"id" validate:"required"`
+	BkBizID   uint64  `json:"bk_biz_id"`
+	Status    string  `json:"status"`
+	Memo      *string `json:"memo"`
+	Extension *T      `json:"extension"`
 }
 
 // Validate ...
@@ -107,10 +107,10 @@ func (req *DiskExtBatchUpdateReq[T]) Validate() error {
 
 // DiskBatchUpdateReq ...
 type DiskBatchUpdateReq struct {
-	IDs        []string `json:"ids" validate:"required"`
-	BkBizID    uint64   `json:"bk_biz_id"`
-	DiskStatus string   `json:"disk_status"`
-	Memo       *string  `json:"memo"`
+	IDs     []string `json:"ids" validate:"required"`
+	BkBizID uint64   `json:"bk_biz_id"`
+	Status  string   `json:"status"`
+	Memo    *string  `json:"memo"`
 }
 
 // Validate ...

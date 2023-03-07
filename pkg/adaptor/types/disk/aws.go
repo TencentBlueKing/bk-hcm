@@ -23,23 +23,33 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // AwsDiskCreateOption AWS 创建云盘参数
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateVolume.html
 type AwsDiskCreateOption struct {
-	Region   string
-	Zone     *string
-	DiskType *string
-	DiskSize *int64
+	Region   string  `json:"region" validate:"required"`
+	Zone     string  `json:"zone" validate:"required"`
+	DiskType *string `json:"disk_type"`
+	DiskSize int64   `json:"disk_size" validate:"required"`
+}
+
+// Validate ...
+func (opt *AwsDiskCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }
 
 // ToCreateVolumeInput 转换成接口需要的 CreateVolumeInput 结构
 func (opt *AwsDiskCreateOption) ToCreateVolumeInput() (*ec2.CreateVolumeInput, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
 	return &ec2.CreateVolumeInput{
-		AvailabilityZone: opt.Zone,
-		Size:             opt.DiskSize,
+		AvailabilityZone: aws.String(opt.Zone),
+		Size:             aws.Int64(opt.DiskSize),
 		VolumeType:       opt.DiskType,
 	}, nil
 }
@@ -64,4 +74,70 @@ func (opt AwsDiskListOption) Validate() error {
 	}
 
 	return nil
+}
+
+// AwsDiskDeleteOption ...
+type AwsDiskDeleteOption struct {
+	Region  string `json:"region" validate:"required"`
+	CloudID string `json:"cloud_id" validate:"required"`
+}
+
+// Validate ...
+func (opt *AwsDiskDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToDeleteVolumeInput ...
+func (opt *AwsDiskDeleteOption) ToDeleteVolumeInput() (*ec2.DeleteVolumeInput, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &ec2.DeleteVolumeInput{VolumeId: aws.String(opt.CloudID)}, nil
+}
+
+// AwsDiskAttachOption ...
+type AwsDiskAttachOption struct {
+	Region      string `json:"region" validate:"required"`
+	DeviceName  string `json:"device_name" validate:"required"`
+	CloudCvmID  string `json:"cloud_cvm_id" validate:"required"`
+	CloudDiskID string `json:"cloud_disk_id" validate:"required"`
+}
+
+// Validate ...
+func (opt *AwsDiskAttachOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToAttachVolumeInput ...
+func (opt *AwsDiskAttachOption) ToAttachVolumeInput() (*ec2.AttachVolumeInput, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+	return &ec2.AttachVolumeInput{
+		Device:     aws.String(opt.DeviceName),
+		InstanceId: aws.String(opt.CloudCvmID),
+		VolumeId:   aws.String(opt.CloudDiskID),
+	}, nil
+}
+
+// AwsDiskDetachOption ...
+type AwsDiskDetachOption struct {
+	Region      string `json:"region" validate:"required"`
+	CloudCvmID  string `json:"cloud_cvm_id" validate:"required"`
+	CloudDiskID string `json:"cloud_disk_id" validate:"required"`
+}
+
+// Validate ...
+func (opt *AwsDiskDetachOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToDetachVolumeInput ...
+func (opt *AwsDiskDetachOption) ToDetachVolumeInput() (*ec2.DetachVolumeInput, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &ec2.DetachVolumeInput{InstanceId: aws.String(opt.CloudCvmID), VolumeId: aws.String(opt.CloudDiskID)}, nil
 }

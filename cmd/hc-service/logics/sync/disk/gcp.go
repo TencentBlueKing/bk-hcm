@@ -147,15 +147,15 @@ func diffGcpDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 
 	for _, id := range addCloudIDs {
 		disk := &dataproto.DiskExtCreateReq[dataproto.GcpDiskExtensionCreateReq]{
-			AccountID:  req.AccountID,
-			Name:       cloudMap[id].Disk.Name,
-			CloudID:    id,
-			Region:     req.Region,
-			Zone:       cloudMap[id].Disk.Zone,
-			DiskSize:   uint64(cloudMap[id].Disk.SizeGb),
-			DiskType:   cloudMap[id].Disk.Type,
-			DiskStatus: cloudMap[id].Disk.Status,
-			Memo:       &cloudMap[id].Disk.Description,
+			AccountID: req.AccountID,
+			Name:      cloudMap[id].Disk.Name,
+			CloudID:   id,
+			Region:    req.Region,
+			Zone:      cloudMap[id].Disk.Zone,
+			DiskSize:  uint64(cloudMap[id].Disk.SizeGb),
+			DiskType:  cloudMap[id].Disk.Type,
+			Status:    cloudMap[id].Disk.Status,
+			Memo:      &cloudMap[id].Disk.Description,
 		}
 		createReq = append(createReq, disk)
 	}
@@ -179,14 +179,14 @@ func diffGcpSyncUpdate(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.AwsDiskExtensionUpdateReq]
 
 	for _, id := range updateCloudIDs {
-		if cloudMap[id].Disk.Status == dsMap[id].HcDisk.DiskStatus &&
+		if cloudMap[id].Disk.Status == dsMap[id].HcDisk.Status &&
 			cloudMap[id].Disk.Description == *dsMap[id].HcDisk.Memo {
 			continue
 		}
 		disk := &dataproto.DiskExtUpdateReq[dataproto.AwsDiskExtensionUpdateReq]{
-			ID:         dsMap[id].HcDisk.ID,
-			DiskStatus: cloudMap[id].Disk.Status,
-			Memo:       &cloudMap[id].Disk.Description,
+			ID:     dsMap[id].HcDisk.ID,
+			Status: cloudMap[id].Disk.Status,
+			Memo:   &cloudMap[id].Disk.Description,
 		}
 		updateReq = append(updateReq, disk)
 	}

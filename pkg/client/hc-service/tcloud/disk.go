@@ -43,14 +43,80 @@ type DiskClient struct {
 
 // SyncDisk sync disk.
 func (cli *DiskClient) SyncDisk(ctx context.Context, h http.Header,
-	request *disk.DiskSyncReq) error {
-
+	request *disk.DiskSyncReq,
+) error {
 	resp := new(core.SyncResp)
 
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(request).
 		SubResourcef("/disks/sync").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// AttachDisk ...
+func (cli *DiskClient) AttachDisk(ctx context.Context, h http.Header, req *disk.TCloudDiskAttachReq) error {
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/disks/attach").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// DetachDisk ...
+func (cli *DiskClient) DetachDisk(ctx context.Context, h http.Header, req *disk.DiskDetachReq) error {
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/disks/detach").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// DeleteDisk ...
+func (cli *DiskClient) DeleteDisk(ctx context.Context, h http.Header, req *disk.DiskDeleteReq) error {
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Delete().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/disks").
 		WithHeaders(h).
 		Do().
 		Into(resp)

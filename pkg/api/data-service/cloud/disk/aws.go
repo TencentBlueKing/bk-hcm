@@ -19,11 +19,31 @@
 
 package disk
 
+import "time"
+
 // AwsDiskExtensionCreateReq ...
 type AwsDiskExtensionCreateReq struct{}
 
 // AwsDiskExtensionResult ...
-type AwsDiskExtensionResult struct{}
+type AwsDiskExtensionResult struct {
+	Attachment []*AwsDiskAttachment `json:"attachment,omitempty"`
+}
+
+// AwsDiskAttachment ...
+type AwsDiskAttachment struct {
+	// The time stamp when the attachment initiated.
+	AttachTime *time.Time `json:"attach_time"`
+	// Indicates whether the EBS volume is deleted on instance termination.
+	DeleteOnTermination *bool `json:"delete_on_termination,omitempty"`
+	// The device name.
+	DeviceName *string `json:"device_name"`
+	// The ID of the instance.
+	InstanceId *string `json:"instance_id"`
+	// The attachment state of the volume.
+	Status *string `json:"status"`
+	// The ID of the volume.
+	DiskId *string `json:"disk_id"`
+}
 
 // AwsDiskExtensionUpdateReq ...
 // 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并

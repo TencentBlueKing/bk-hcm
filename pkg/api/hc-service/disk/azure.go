@@ -38,3 +38,16 @@ func (req *AzureDiskCreateReq) Validate() error {
 type AzureDiskExtensionCreateReq struct {
 	ResourceGroupName string `json:"resource_group_name" validate:"required"`
 }
+
+// AzureDiskAttachReq ...
+type AzureDiskAttachReq struct {
+	AccountID   string `json:"account_id" validate:"required"`
+	DiskID      string `json:"disk_id" validate:"required"`
+	CvmID       string `json:"cvm_id" validate:"required"`
+	CachingType string `json:"caching_type" validate:"required,eq=None|eq=ReadOnly|eq=ReadWrite"`
+}
+
+// Validate ...
+func (req *AzureDiskAttachReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

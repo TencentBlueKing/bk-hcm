@@ -222,3 +222,32 @@ func (az *Azure) StopCvm(kt *kit.Kit, opt *typecvm.AzureStopOption) error {
 
 	return nil
 }
+
+// GetCvm 查询单个 cvm
+// reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/get?tabs=Go
+func (az *Azure) GetCvm(kt *kit.Kit, opt *typecvm.AzureGetOption) (*armcompute.VirtualMachine, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "get option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := az.clientSet.virtualMachineClient()
+	if err != nil {
+		return nil, fmt.Errorf("new cvm client failed, err: %v", err)
+	}
+
+	resp, err := client.Get(
+		kt.Ctx,
+		opt.ResourceGroupName,
+		opt.Name,
+		&armcompute.VirtualMachinesClientGetOptions{Expand: to.Ptr(armcompute.InstanceViewTypesUserData)},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cvm: %v", err)
+	}
+
+	return &resp.VirtualMachine, nil
+}

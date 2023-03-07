@@ -36,6 +36,7 @@ import (
 	eipv3 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v3"
 	eipv3region "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v3/region"
 	evs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2"
+	evsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/region"
 	iam "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3"
 	iamregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/region"
 	ims "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2"
@@ -89,7 +90,7 @@ func (c *clientSet) iamRegionClient(region string) (client *iam.IamClient, err e
 	return client, nil
 }
 
-func (c *clientSet) evsClient(region *region.Region) (client *evs.EvsClient, err error) {
+func (c *clientSet) evsClient(region string) (client *evs.EvsClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
 			err = fmt.Errorf("panic recovered, err: %v", p)
@@ -97,7 +98,7 @@ func (c *clientSet) evsClient(region *region.Region) (client *evs.EvsClient, err
 	}()
 	client = evs.NewEvsClient(
 		evs.EvsClientBuilder().
-			WithRegion(region).
+			WithRegion(evsregion.ValueOf(region)).
 			WithCredential(c.credentials).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())

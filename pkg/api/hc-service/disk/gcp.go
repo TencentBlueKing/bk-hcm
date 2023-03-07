@@ -32,3 +32,16 @@ type GcpDiskCreateReq struct {
 func (req *GcpDiskCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// GcpDiskAttachReq ...
+type GcpDiskAttachReq struct {
+	AccountID  string `json:"account_id" validate:"required"`
+	CvmID      string `json:"cvm_id" validate:"required"`
+	DiskID     string `json:"disk_id" validate:"required"`
+	DeviceName string `json:"device_name"`
+}
+
+// Validate ...
+func (req *GcpDiskAttachReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

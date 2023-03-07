@@ -46,3 +46,14 @@ type DiskAssignReq struct {
 func (req *DiskAssignReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// DiskDetachReq ...
+type DiskDetachReq struct {
+	DiskID string `json:"disk_id" validate:"required"`
+	CvmID  string `json:"cvm_id" validate:"required"`
+}
+
+// Validate ...
+func (req *DiskDetachReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

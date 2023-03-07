@@ -24,6 +24,7 @@ import (
 	"hcm/pkg/criteria/validator"
 
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
 // TCloudDiskChargeType 腾讯云盘计费模式
@@ -35,28 +36,34 @@ var TCloudDiskChargeTypeEnum = struct {
 // TCloudDiskCreateOption 腾讯云创建云盘参数
 // reference: https://cloud.tencent.com/document/api/362/16312
 type TCloudDiskCreateOption struct {
-	Name              *string
-	Region            string
-	Zone              *string
-	DiskType          *string
-	DiskSize          *uint64
-	DiskCount         *uint64
-	DiskChargeType    *string
+	DiskName          *string `json:"disk_name"`
+	Region            string  `json:"region" validate:"required"`
+	Zone              string  `json:"zone" validate:"required"`
+	DiskType          string  `json:"disk_type" validate:"required"`
+	DiskSize          *uint64 `json:"disk_size"`
+	DiskCount         *uint64 `json:"disk_count"`
+	DiskChargeType    string  `json:"disk_charge_type" validate:"required"`
 	DiskChargePrepaid *TCloudDiskChargePrepaid
 }
 
-// ToCreateDisksRequest 转换成接口需要的 CreateDisksRequest 结构
-// TODO 增加参数校验
-func (opt *TCloudDiskCreateOption) ToCreateDisksRequest() (*cbs.CreateDisksRequest, error) {
-	req := cbs.NewCreateDisksRequest()
+// Validate ...
+func (opt *TCloudDiskCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
 
-	req.DiskName = opt.Name
-	req.Placement = &cbs.Placement{Zone: opt.Zone}
-	req.DiskType = opt.DiskType
+// ToCreateDisksRequest 转换成接口需要的 CreateDisksRequest 结构
+func (opt *TCloudDiskCreateOption) ToCreateDisksRequest() (*cbs.CreateDisksRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := cbs.NewCreateDisksRequest()
+	req.DiskName = opt.DiskName
+	req.Placement = &cbs.Placement{Zone: common.StringPtr(opt.Zone)}
+	req.DiskType = common.StringPtr(opt.DiskType)
 	req.DiskCount = opt.DiskCount
 	req.DiskSize = opt.DiskSize
-	req.DiskChargeType = opt.DiskChargeType
-
+	req.DiskChargeType = common.StringPtr(opt.DiskChargeType)
 	// 预付费模式需要设定 DiskChargePrepaid
 	if *req.DiskChargeType == TCloudDiskChargeTypeEnum.PREPAID {
 		req.DiskChargePrepaid = &cbs.DiskChargePrepaid{
@@ -98,4 +105,81 @@ func (opt TCloudDiskListOption) Validate() error {
 	}
 
 	return nil
+}
+
+// TCloudDiskDeleteOption ...
+type TCloudDiskDeleteOption struct {
+	Region   string   `json:"region"  validate:"required"`
+	CloudIDs []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate ...
+func (o *TCloudDiskDeleteOption) Validate() error {
+	return validator.Validate.Struct(o)
+}
+
+// ToTerminateDisksRequest ...
+func (o *TCloudDiskDeleteOption) ToTerminateDisksRequest() (*cbs.TerminateDisksRequest, error) {
+	if err := o.Validate(); err != nil {
+		return nil, err
+	}
+	req := cbs.NewTerminateDisksRequest()
+	req.DiskIds = common.StringPtrs(o.CloudIDs)
+
+	return req, nil
+}
+
+// TCloudDiskAttachOption ...
+type TCloudDiskAttachOption struct {
+	Region       string   `json:"region"  validate:"required"`
+	CloudCvmID   string   `json:"cloud_cvm_id" validate:"required"`
+	CloudDiskIDs []string `json:"cloud_disk_ids" validate:"required"`
+	// 可选参数，不传该参数则仅执行挂载操作。传入`True`时，会在挂载成功后将云硬盘设置为随云主机销毁模式，仅对按量计费云硬盘有效。
+	DeleteWithInstance *bool `json:"delete_with_instance"`
+	// 可选参数，用于控制云盘挂载时使用的挂载模式，目前仅对黑石裸金属机型有效。取值范围：<br><li>PF<br><li>VF
+	AttachMode *string `json:"attach_mode"`
+}
+
+// Validate ...
+func (o *TCloudDiskAttachOption) Validate() error {
+	return validator.Validate.Struct(o)
+}
+
+// ToAttachDisksRequest ...
+func (o *TCloudDiskAttachOption) ToAttachDisksRequest() (*cbs.AttachDisksRequest, error) {
+	if err := o.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := cbs.NewAttachDisksRequest()
+	req.InstanceId = &o.CloudCvmID
+	req.DiskIds = common.StringPtrs(o.CloudDiskIDs)
+	req.AttachMode = o.AttachMode
+	req.DeleteWithInstance = o.DeleteWithInstance
+
+	return req, nil
+}
+
+// TCloudDiskDetachOption ...
+type TCloudDiskDetachOption struct {
+	Region       string   `json:"region"  validate:"required"`
+	CloudCvmID   string   `json:"cloud_cvm_id" validate:"required"`
+	CloudDiskIDs []string `json:"cloud_disk_ids" validate:"required"`
+}
+
+// Validate ...
+func (o *TCloudDiskDetachOption) Validate() error {
+	return validator.Validate.Struct(o)
+}
+
+// ToDetachDisksRequest ...
+func (o *TCloudDiskDetachOption) ToDetachDisksRequest() (*cbs.DetachDisksRequest, error) {
+	if err := o.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := cbs.NewDetachDisksRequest()
+	req.InstanceId = common.StringPtr(o.CloudCvmID)
+	req.DiskIds = common.StringPtrs(o.CloudDiskIDs)
+	return req, nil
 }

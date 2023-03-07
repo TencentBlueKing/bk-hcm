@@ -20,6 +20,8 @@
 package disk
 
 import (
+	"net/http"
+
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/rest"
 )
@@ -34,7 +36,13 @@ func InitDiskService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
 	// 硬盘创建
-	h.Add("CreateDisks", "POST", "/vendors/{vendor}/disks/create", d.CreateDisks)
+	h.Add("CreateDisks", http.MethodPost, "/vendors/{vendor}/disks/create", d.CreateDisks)
+	// 删除云盘
+	h.Add("DeleteDisk", http.MethodDelete, "/vendors/{vendor}/disks", d.DeleteDisk)
+	// 挂载云盘
+	h.Add("AttachDisk", http.MethodPost, "/vendors/{vendor}/disks/attach", d.AttachDisk)
+	// 卸载云盘
+	h.Add("DetachDisk", http.MethodPost, "/vendors/{vendor}/disks/detach", d.DetachDisk)
 
 	h.Load(cap.WebService)
 }

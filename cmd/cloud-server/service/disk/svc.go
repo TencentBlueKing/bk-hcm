@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	hcproto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -47,7 +48,7 @@ type diskSvc struct {
 }
 
 // ListDisk ...
-func (dSvc *diskSvc) ListDisk(cts *rest.Contexts) (interface{}, error) {
+func (svc *diskSvc) ListDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(cloudproto.DiskListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -59,7 +60,7 @@ func (dSvc *diskSvc) ListDisk(cts *rest.Contexts) (interface{}, error) {
 
 	// list authorized instances
 	authOpt := &meta.ListAuthResInput{Type: meta.Disk, Action: meta.Find}
-	expr, noPermFlag, err := dSvc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +69,7 @@ func (dSvc *diskSvc) ListDisk(cts *rest.Contexts) (interface{}, error) {
 		return &dataproto.DiskListResult{Details: make([]*dataproto.DiskResult, 0)}, nil
 	}
 
-	return dSvc.client.DataService().Global.ListDisk(
+	return svc.client.DataService().Global.ListDisk(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.DiskListReq{
@@ -78,11 +79,46 @@ func (dSvc *diskSvc) ListDisk(cts *rest.Contexts) (interface{}, error) {
 	)
 }
 
-// RetrieveDisk 查询云盘详情
-func (dSvc *diskSvc) RetrieveDisk(cts *rest.Contexts) (interface{}, error) {
+// DeleteDisk 删除云盘
+func (svc *diskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
 	diskID := cts.PathParameter("id").String()
 
-	basicInfo, err := dSvc.client.DataService().Global.Cloud.GetResourceBasicInfo(
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		enumor.CloudResourceType(disk.TableName),
+		diskID,
+	)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// TODO 增加鉴权和审计
+	// TODO 判断云盘是否可删除
+
+	deleteReq := &hcproto.DiskDeleteReq{DiskID: diskID, AccountID: basicInfo.AccountID}
+
+	switch basicInfo.Vendor {
+	case enumor.TCloud:
+		return nil, svc.client.HCService().TCloud.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	case enumor.Aws:
+		return nil, svc.client.HCService().Aws.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	case enumor.HuaWei:
+		return nil, svc.client.HCService().HuaWei.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	case enumor.Gcp:
+		return nil, svc.client.HCService().Gcp.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	case enumor.Azure:
+		return nil, svc.client.HCService().Azure.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	default:
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
+	}
+}
+
+// RetrieveDisk 查询云盘详情
+func (svc *diskSvc) RetrieveDisk(cts *rest.Contexts) (interface{}, error) {
+	diskID := cts.PathParameter("id").String()
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		enumor.CloudResourceType(disk.TableName),
@@ -97,29 +133,29 @@ func (dSvc *diskSvc) RetrieveDisk(cts *rest.Contexts) (interface{}, error) {
 		Type: meta.Disk, Action: meta.Find,
 		ResourceID: basicInfo.AccountID,
 	}}
-	err = dSvc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	if err != nil {
 		return nil, err
 	}
 
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		return dSvc.client.DataService().TCloud.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		return svc.client.DataService().TCloud.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
 	case enumor.Aws:
-		return dSvc.client.DataService().Aws.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		return svc.client.DataService().Aws.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
 	case enumor.HuaWei:
-		return dSvc.client.DataService().HuaWei.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		return svc.client.DataService().HuaWei.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
 	case enumor.Gcp:
-		return dSvc.client.DataService().Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		return svc.client.DataService().Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
 	case enumor.Azure:
-		return dSvc.client.DataService().Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		return svc.client.DataService().Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
 	}
 }
 
 // AssignDisk 将云盘分配给指定业务
-func (dSvc *diskSvc) AssignDisk(cts *rest.Contexts) (interface{}, error) {
+func (svc *diskSvc) AssignDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(cloudproto.DiskAssignReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -129,37 +165,110 @@ func (dSvc *diskSvc) AssignDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	if err := dSvc.authorizeDiskAssignOp(cts.Kit, req.IDs); err != nil {
+	if err := svc.authorizeDiskAssignOp(cts.Kit, req.IDs); err != nil {
 		return nil, err
 	}
 
 	// check if all disks are not assigned to biz, right now assigning resource twice is not allowed
 	diskFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err := dSvc.checkDisksInBiz(cts.Kit, diskFilter, constant.UnassignedBiz)
+	err := svc.checkDisksInBiz(cts.Kit, diskFilter, constant.UnassignedBiz)
 	if err != nil {
 		return nil, err
 	}
 
 	// create assign audit
-	err = dSvc.audit.ResBizAssignAudit(cts.Kit, enumor.EipAuditResType, req.IDs, int64(req.BkBizID))
+	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.EipAuditResType, req.IDs, int64(req.BkBizID))
 	if err != nil {
 		logs.Errorf("create assign disk audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return dSvc.client.DataService().Global.BatchUpdateDisk(
+	return svc.client.DataService().Global.BatchUpdateDisk(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.DiskBatchUpdateReq{IDs: req.IDs, BkBizID: req.BkBizID},
 	)
 }
 
-func (dSvc *diskSvc) authorizeDiskAssignOp(kt *kit.Kit, ids []string) error {
+// AttachDisk ...
+func (svc *diskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.tcloudAttachDisk(cts)
+	case enumor.Aws:
+		return svc.awsAttachDisk(cts)
+	case enumor.HuaWei:
+		return svc.huaweiAttachDisk(cts)
+	case enumor.Gcp:
+		return svc.gcpAttachDisk(cts)
+	case enumor.Azure:
+		return svc.azureAttachDisk(cts)
+	default:
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
+	}
+}
+
+// DetachDisk ...
+func (svc *diskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(cloudproto.DiskDetachReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// TODO 增加鉴权和审计
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		enumor.DiskCloudResType,
+		req.DiskID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	detachReq := &hcproto.DiskDetachReq{
+		AccountID: basicInfo.AccountID,
+		CvmID:     req.CvmID,
+		DiskID:    req.DiskID,
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return nil, svc.client.HCService().TCloud.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
+	case enumor.Aws:
+		return nil, svc.client.HCService().Aws.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
+	case enumor.HuaWei:
+		return nil, svc.client.HCService().HuaWei.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
+	case enumor.Gcp:
+		return nil, svc.client.HCService().Gcp.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
+	case enumor.Azure:
+		return nil, svc.client.HCService().Gcp.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
+	default:
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
+	}
+}
+
+func (svc *diskSvc) authorizeDiskAssignOp(kt *kit.Kit, ids []string) error {
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.DiskCloudResType,
 		IDs:          ids,
 	}
-	basicInfoMap, err := dSvc.client.DataService().Global.Cloud.ListResourceBasicInfo(
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(
 		kt.Ctx,
 		kt.Header(),
 		basicInfoReq,
@@ -175,7 +284,7 @@ func (dSvc *diskSvc) authorizeDiskAssignOp(kt *kit.Kit, ids []string) error {
 			ResourceID: info.AccountID,
 		}})
 	}
-	err = dSvc.authorizer.AuthorizeWithPerm(kt, authRes...)
+	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
 	if err != nil {
 		return err
 	}

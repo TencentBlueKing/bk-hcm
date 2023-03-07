@@ -21,6 +21,7 @@ package disk
 
 import (
 	"fmt"
+
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
@@ -52,5 +53,28 @@ func (req *DiskSyncReq) Validate() error {
 		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
+	return validator.Validate.Struct(req)
+}
+
+// DiskDeleteReq ...
+type DiskDeleteReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	DiskID    string `json:"disk_id" validate:"required"`
+}
+
+// Validate ...
+func (req *DiskDeleteReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// DiskDetachReq ...
+type DiskDetachReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	CvmID     string `json:"cvm_id" validate:"required"`
+	DiskID    string `json:"disk_id" validate:"required"`
+}
+
+// Validate ...
+func (req *DiskDetachReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

@@ -46,3 +46,16 @@ type HuaWeiDiskChargePrepaid struct {
 	PeriodType  *string `json:"period_type"`
 	IsAutoRenew *string `json:"is_auto_renew"`
 }
+
+// HuaWeiDiskAttachReq ...
+type HuaWeiDiskAttachReq struct {
+	AccountID  string  `json:"account_id" validate:"required"`
+	CvmID      string  `json:"cvm_id" validate:"required"`
+	DiskID     string  `json:"disk_id" validate:"required"`
+	DeviceName *string `json:"device_name"`
+}
+
+// Validate ...
+func (req *HuaWeiDiskAttachReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

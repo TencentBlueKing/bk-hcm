@@ -17,31 +17,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package disk
+package datasvc
 
 import (
-	"hcm/pkg/criteria/validator"
+	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/kit"
+	"hcm/pkg/runtime/filter"
 )
 
-// AwsDiskCreateReq ...
-type AwsDiskCreateReq struct {
-	Base *DiskBaseCreateReq `json:"base" validate:"required"`
+// DiskManager ...
+type DiskManager struct {
+	DataCli *dataservice.Client
 }
 
-// Validate ...
-func (req *AwsDiskCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// AwsDiskAttachReq ...
-type AwsDiskAttachReq struct {
-	AccountID  string `json:"account_id" validate:"required"`
-	DiskID     string `json:"disk_id" validate:"required"`
-	CvmID      string `json:"cvm_id" validate:"required"`
-	DeviceName string `json:"device_name" validate:"required"`
-}
-
-// Validate ...
-func (req *AwsDiskAttachReq) Validate() error {
-	return validator.Validate.Struct(req)
+// Delete ...
+func (m *DiskManager) Delete(kt *kit.Kit, diskIDs []string) error {
+	req := &dataproto.DiskDeleteReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "id",
+					Op:    filter.In.Factory(),
+					Value: diskIDs,
+				},
+			},
+		},
+	}
+	_, err := m.DataCli.Global.DeleteDisk(kt.Ctx, kt.Header(), req)
+	return err
 }

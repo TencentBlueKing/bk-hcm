@@ -37,8 +37,12 @@ func InitDiskService(c *capability.Capability) {
 	h.Add("ListDisk", http.MethodPost, "/disks/list", svc.ListDisk)
 	h.Add("RetrieveDisk", http.MethodGet, "/disks/{id}", svc.RetrieveDisk)
 	h.Add("AssignDisk", http.MethodPost, "/disks/assign/bizs", svc.AssignDisk)
+	h.Add("DeleteDisk", http.MethodDelete, "/disks/{id}", svc.DeleteDisk)
 
 	h.Add("ListDiskExtByCvmID", http.MethodGet, "/vendors/{vendor}/disks/cvms/{cvm_id}", svc.ListDiskExtByCvmID)
+
+	h.Add("AttachDisk", http.MethodPost, "/vendors/{vendor}/disks/attach", svc.AttachDisk)
+	h.Add("DetachDisk", http.MethodPost, "/vendors/{vendor}/disks/detach", svc.DetachDisk)
 
 	h.Load(c.WebService)
 }

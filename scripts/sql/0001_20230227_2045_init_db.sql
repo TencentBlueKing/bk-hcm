@@ -404,7 +404,7 @@ create table if not exists `disk`
     `zone`        varchar(128)       not null,
     `disk_size`   bigint(1) unsigned not null,
     `disk_type`   varchar(128)       not null,
-    `disk_status` varchar(128)       not null,
+    `status`      varchar(128)       not null,
     `memo`        varchar(255)                default '',
     `extension`   json               not null,
     `creator`     varchar(64)        not null,

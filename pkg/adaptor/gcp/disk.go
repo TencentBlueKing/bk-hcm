@@ -40,7 +40,7 @@ func (g *Gcp) createDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.O
 		return nil, err
 	}
 
-	cloudProjectID := g.clientSet.credential.CloudProjectID
+	cloudProjectID := g.CloudProjectID()
 	req, err := opt.ToCreateDiskRequest(cloudProjectID)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,6 @@ func (g *Gcp) createDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.O
 // ListDisk 查看云硬盘
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/list
 func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Disk, string, error) {
-
 	if opt == nil {
 		return nil, "", errf.New(errf.InvalidParameter, "gcp disk list option is required")
 	}
@@ -89,4 +88,69 @@ func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Dis
 	}
 
 	return resp.Items, resp.NextPageToken, nil
+}
+
+// DeleteDisk 删除云盘
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/delete
+func (g *Gcp) DeleteDisk(kt *kit.Kit, opt *disk.GcpDiskDeleteOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "gcp disk delete option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Disks.Delete(g.CloudProjectID(), opt.Zone, opt.DiskName).Context(kt.Ctx).Do()
+	return err
+}
+
+// AttachDisk 挂载云盘
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/attachDisk
+func (g *Gcp) AttachDisk(kt *kit.Kit, opt *disk.GcpDiskAttachOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "gcp disk attach option is required")
+	}
+
+	req, err := opt.ToAttachDiskRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Instances.AttachDisk(g.CloudProjectID(), opt.Zone, opt.CvmName, req).
+		Context(kt.Ctx).
+		Do()
+	return err
+}
+
+// DetachDisk 卸载云盘
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/detachDisk
+func (g *Gcp) DetachDisk(kt *kit.Kit, opt *disk.GcpDiskDetachOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "gcp disk detach option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Instances.DetachDisk(g.CloudProjectID(), opt.Zone, opt.CvmName, opt.DeviceName).
+		Context(kt.Ctx).
+		Do()
+	return err
 }
