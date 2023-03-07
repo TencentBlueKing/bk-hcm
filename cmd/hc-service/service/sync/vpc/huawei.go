@@ -22,15 +22,21 @@ package vpc
 
 import (
 	vpclogic "hcm/cmd/hc-service/logics/sync/vpc"
+	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
 // SyncHuaWeiVpc sync huawei vpc to hcm.
 func (v syncVpcSvc) SyncHuaWeiVpc(cts *rest.Contexts) (interface{}, error) {
-	req, err := decodeVpcSyncReq(cts)
-	if err != nil {
-		return nil, err
+	req := new(hcproto.HuaWeiResourceSyncReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	resp, err := vpclogic.HuaWeiVpcSync(cts.Kit, req, v.ad, v.dataCli)

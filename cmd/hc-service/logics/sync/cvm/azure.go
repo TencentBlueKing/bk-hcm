@@ -899,9 +899,8 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 	}
 
 	if len(cloudVpcMap) > 0 {
-		req := &hcservice.ResourceSyncReq{
+		req := &hcservice.AzureResourceSyncReq{
 			AccountID:         req.AccountID,
-			Region:            req.Region,
 			ResourceGroupName: req.ResourceGroupName,
 			CloudIDs:          converter.MapKeyToStringSlice(cloudVpcMap),
 		}
@@ -914,9 +913,8 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 
 	if len(cloudSubnetMap) > 0 {
 		for cloudVpcID, cloudSubnetIDMap := range cloudSubnetMap {
-			req := &hcservice.ResourceSyncReq{
+			req := &hcservice.AzureResourceSyncReq{
 				AccountID:         req.AccountID,
-				Region:            req.Region,
 				ResourceGroupName: req.ResourceGroupName,
 				VpcID:             cloudVpcID,
 				CloudIDs:          converter.MapKeyToStringSlice(cloudSubnetIDMap),

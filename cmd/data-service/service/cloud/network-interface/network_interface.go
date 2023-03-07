@@ -123,8 +123,10 @@ func batchCreateNI[T datacloudniproto.NetworkInterfaceCreateExtension](cts *rest
 				CloudVpcID:    createReq.CloudVpcID,
 				SubnetID:      createReq.SubnetID,
 				CloudSubnetID: createReq.CloudSubnetID,
-				PrivateIP:     createReq.PrivateIP,
-				PublicIP:      createReq.PublicIP,
+				PrivateIPv4:   createReq.PrivateIPv4,
+				PrivateIPv6:   createReq.PrivateIPv6,
+				PublicIPv4:    createReq.PublicIPv4,
+				PublicIPv6:    createReq.PublicIPv6,
 				BkBizID:       createReq.BkBizID,
 				InstanceID:    createReq.InstanceID,
 				Extension:     ext,
@@ -221,8 +223,10 @@ func batchUpdateNI[T datacloudniproto.NetworkInterfaceCreateExtension](cts *rest
 		ni.CloudVpcID = updateReq.CloudVpcID
 		ni.SubnetID = updateReq.SubnetID
 		ni.CloudSubnetID = updateReq.CloudSubnetID
-		ni.PrivateIP = updateReq.PrivateIP
-		ni.PublicIP = updateReq.PublicIP
+		ni.PrivateIPv4 = updateReq.PrivateIPv4
+		ni.PrivateIPv6 = updateReq.PrivateIPv6
+		ni.PublicIPv4 = updateReq.PublicIPv4
+		ni.PublicIPv6 = updateReq.PublicIPv6
 		ni.BkBizID = updateReq.BkBizID
 		ni.InstanceID = updateReq.InstanceID
 
@@ -420,8 +424,10 @@ func convertBaseNetworkInterface(dbDetail *tableni.NetworkInterfaceTable) *coren
 		CloudVpcID:    dbDetail.CloudVpcID,
 		SubnetID:      dbDetail.SubnetID,
 		CloudSubnetID: dbDetail.CloudSubnetID,
-		PrivateIP:     dbDetail.PrivateIP,
-		PublicIP:      dbDetail.PublicIP,
+		PrivateIPv4:   dbDetail.PrivateIPv4,
+		PrivateIPv6:   dbDetail.PrivateIPv6,
+		PublicIPv4:    dbDetail.PublicIPv4,
+		PublicIPv6:    dbDetail.PublicIPv6,
 		BkBizID:       dbDetail.BkBizID,
 		InstanceID:    dbDetail.InstanceID,
 

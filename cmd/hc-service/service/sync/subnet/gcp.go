@@ -22,15 +22,21 @@ package subnet
 
 import (
 	subnetlogic "hcm/cmd/hc-service/logics/sync/subnet"
+	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
 // SyncGcpSubnet sync gcp subnet to hcm.
 func (v syncSubnetSvc) SyncGcpSubnet(cts *rest.Contexts) (interface{}, error) {
-	req, err := decodeSubnetSyncReq(cts)
-	if err != nil {
-		return nil, err
+	req := new(hcproto.GcpResourceSyncReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	resp, err := subnetlogic.GcpSubnetSync(cts.Kit, req, v.ad, v.dataCli)

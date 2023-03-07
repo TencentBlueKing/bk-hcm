@@ -38,7 +38,7 @@ import (
 )
 
 // GcpVpcSync sync gcp cloud vpc.
-func GcpVpcSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
+func GcpVpcSync(kt *kit.Kit, req *hcservice.GcpResourceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
 	// batch get vpc list from cloudapi.
@@ -50,7 +50,7 @@ func GcpVpcSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
 	}
 
 	// batch get vpc map from db.
-	resourceDBMap, err := BatchGetVpcMapFromDB(kt, req, enumor.Gcp, dataCli)
+	resourceDBMap, err := BatchGetVpcMapFromDB(kt, enumor.Gcp, dataCli)
 	if err != nil {
 		logs.Errorf("%s-vpc batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.Gcp, req.AccountID, req.Region, err)
@@ -71,7 +71,7 @@ func GcpVpcSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
 }
 
 // BatchGetGcpVpcList batch get vpc list from cloudapi.
-func BatchGetGcpVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
+func BatchGetGcpVpcList(kt *kit.Kit, req *hcservice.GcpResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
 	*types.GcpVpcListResult, error) {
 
 	cli, err := adaptor.Gcp(kt, req.AccountID)
@@ -94,7 +94,10 @@ func BatchGetGcpVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cl
 		// 查询指定CloudIDs
 		if len(req.CloudIDs) > 0 {
 			opt.Page = nil
-			opt.SelfLinks = req.CloudIDs
+			opt.CloudIDs = req.CloudIDs
+		} else if len(req.SelfLinks) > 0 {
+			opt.Page = nil
+			opt.SelfLinks = req.SelfLinks
 		}
 
 		tmpList, tmpErr := cli.ListVpc(kt, opt)
@@ -120,7 +123,7 @@ func BatchGetGcpVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cl
 }
 
 // BatchSyncGcpVpcList batch sync vendor vpc list.
-func BatchSyncGcpVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *types.GcpVpcListResult,
+func BatchSyncGcpVpcList(kt *kit.Kit, req *hcservice.GcpResourceSyncReq, list *types.GcpVpcListResult,
 	resourceDBMap map[string]cloudcore.BaseVpc, dataCli *dataclient.Client) error {
 
 	createResources, updateResources, existIDMap, err := filterGcpVpcList(req, list, resourceDBMap)
@@ -173,7 +176,7 @@ func BatchSyncGcpVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *type
 }
 
 // filterGcpVpcList filter gcp vpc list
-func filterGcpVpcList(req *hcservice.ResourceSyncReq, list *types.GcpVpcListResult,
+func filterGcpVpcList(req *hcservice.GcpResourceSyncReq, list *types.GcpVpcListResult,
 	resourceDBMap map[string]cloudcore.BaseVpc) (createResources []cloud.VpcCreateReq[cloud.GcpVpcCreateExt],
 	updateResources []cloud.VpcUpdateReq[cloud.GcpVpcUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {
@@ -213,6 +216,7 @@ func filterGcpVpcList(req *hcservice.ResourceSyncReq, list *types.GcpVpcListResu
 				Category:  enumor.BizVpcCategory,
 				Memo:      item.Memo,
 				Extension: &cloud.GcpVpcCreateExt{
+					SelfLink:              item.Extension.SelfLink,
 					AutoCreateSubnetworks: item.Extension.AutoCreateSubnetworks,
 					EnableUlaInternalIpv6: item.Extension.EnableUlaInternalIpv6,
 					Mtu:                   item.Extension.Mtu,

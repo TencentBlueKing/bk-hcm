@@ -114,7 +114,7 @@ func SyncTCloudSubnet(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	err := c.HCService().TCloud.Subnet.SyncSubnet(
 		kit.Ctx,
 		header,
-		&proto.ResourceSyncReq{
+		&proto.TCloudResourceSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		},
@@ -135,7 +135,7 @@ func SyncTCloudVpc(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	err := c.HCService().TCloud.Vpc.SyncVpc(
 		kit.Ctx,
 		header,
-		&proto.ResourceSyncReq{
+		&proto.TCloudResourceSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		},

@@ -40,21 +40,23 @@ type NetworkInterfaceBatchCreateReq[T NetworkInterfaceCreateExtension] struct {
 
 // NetworkInterfaceReq defines create network interface request.
 type NetworkInterfaceReq[T NetworkInterfaceCreateExtension] struct {
-	Vendor        string `json:"vendor" validate:"required"`
-	Name          string `json:"name" validate:"required"`
-	AccountID     string `json:"account_id" validate:"required"`
-	Region        string `json:"region" validate:"omitempty"`
-	Zone          string `json:"zone" validate:"omitempty"`
-	CloudID       string `json:"cloud_id" validate:"omitempty"`
-	VpcID         string `json:"vpc_id" validate:"omitempty"`
-	CloudVpcID    string `json:"cloud_vpc_id" validate:"omitempty"`
-	SubnetID      string `json:"subnet_id" validate:"omitempty"`
-	CloudSubnetID string `json:"cloud_subnet_id" validate:"omitempty"`
-	PrivateIP     string `json:"private_ip,omitempty" validate:"omitempty"`
-	PublicIP      string `json:"public_ip,omitempty" validate:"omitempty"`
-	BkBizID       int64  `json:"bk_biz_id" validate:"omitempty"`
-	InstanceID    string `json:"instance_id,omitempty" validate:"omitempty"`
-	Extension     *T     `json:"extension" validate:"required"`
+	Vendor        string   `json:"vendor" validate:"required"`
+	Name          string   `json:"name" validate:"required"`
+	AccountID     string   `json:"account_id" validate:"required"`
+	Region        string   `json:"region" validate:"omitempty"`
+	Zone          string   `json:"zone" validate:"omitempty"`
+	CloudID       string   `json:"cloud_id" validate:"omitempty"`
+	VpcID         string   `json:"vpc_id" validate:"omitempty"`
+	CloudVpcID    string   `json:"cloud_vpc_id" validate:"omitempty"`
+	SubnetID      string   `json:"subnet_id" validate:"omitempty"`
+	CloudSubnetID string   `json:"cloud_subnet_id" validate:"omitempty"`
+	PrivateIPv4   []string `json:"private_ipv4,omitempty" validate:"omitempty"`
+	PrivateIPv6   []string `json:"private_ipv6,omitempty" validate:"omitempty"`
+	PublicIPv4    []string `json:"public_ipv4,omitempty" validate:"omitempty"`
+	PublicIPv6    []string `json:"public_ipv6,omitempty" validate:"omitempty"`
+	BkBizID       int64    `json:"bk_biz_id" validate:"omitempty"`
+	InstanceID    string   `json:"instance_id,omitempty" validate:"omitempty"`
+	Extension     *T       `json:"extension" validate:"required"`
 }
 
 // NetworkInterfaceCreateExtension defines create network interface extensional info.
@@ -202,20 +204,22 @@ func (c *NetworkInterfaceBatchCreateReq[T]) Validate() error {
 
 // AzureNIBatchCreate define azure network interface when create.
 type AzureNIBatchCreate struct {
-	Vendor        string `json:"vendor"`
-	Name          string `json:"name"`
-	AccountID     string `json:"account_id"`
-	Region        string `json:"region"`
-	Zone          string `json:"zone"`
-	CloudID       string `json:"cloud_id"`
-	VpcID         string `json:"vpc_id"`
-	CloudVpcID    string `json:"cloud_vpc_id"`
-	SubnetID      string `json:"subnet_id"`
-	CloudSubnetID string `json:"cloud_subnet_id"`
-	PrivateIP     string `json:"private_ip"`
-	PublicIP      string `json:"public_ip"`
-	BkBizID       int64  `json:"bk_biz_id"`
-	InstanceID    string `json:"instance_id"`
+	Vendor        string   `json:"vendor"`
+	Name          string   `json:"name"`
+	AccountID     string   `json:"account_id"`
+	Region        string   `json:"region"`
+	Zone          string   `json:"zone"`
+	CloudID       string   `json:"cloud_id"`
+	VpcID         string   `json:"vpc_id"`
+	CloudVpcID    string   `json:"cloud_vpc_id"`
+	SubnetID      string   `json:"subnet_id"`
+	CloudSubnetID string   `json:"cloud_subnet_id"`
+	PrivateIPv4   []string `json:"private_ipv4"`
+	PrivateIPv6   []string `json:"private_ipv6"`
+	PublicIPv4    []string `json:"public_ipv4"`
+	PublicIPv6    []string `json:"public_ipv6"`
+	BkBizID       int64    `json:"bk_biz_id"`
+	InstanceID    string   `json:"instance_id"`
 }
 
 // -------------------------- Update --------------------------
@@ -229,21 +233,23 @@ type NetworkInterfaceBatchUpdateReq[T NetworkInterfaceCreateExtension] struct {
 type NetworkInterfaceUpdateReq[T NetworkInterfaceCreateExtension] struct {
 	ID string `json:"id" validate:"required"`
 
-	Vendor        string `json:"vendor" validate:"required"`
-	Name          string `json:"name" validate:"required"`
-	AccountID     string `json:"account_id" validate:"required"`
-	Region        string `json:"region" validate:"omitempty"`
-	Zone          string `json:"zone" validate:"omitempty"`
-	CloudID       string `json:"cloud_id" validate:"omitempty"`
-	VpcID         string `json:"vpc_id" validate:"omitempty"`
-	CloudVpcID    string `json:"cloud_vpc_id" validate:"omitempty"`
-	SubnetID      string `json:"subnet_id" validate:"omitempty"`
-	CloudSubnetID string `json:"cloud_subnet_id" validate:"omitempty"`
-	PrivateIP     string `json:"private_ip,omitempty" validate:"omitempty"`
-	PublicIP      string `json:"public_ip,omitempty" validate:"omitempty"`
-	BkBizID       int64  `json:"bk_biz_id" validate:"omitempty"`
-	InstanceID    string `json:"instance_id" validate:"omitempty"`
-	Extension     *T     `json:"extension" validate:"required"`
+	Vendor        string   `json:"vendor" validate:"required"`
+	Name          string   `json:"name" validate:"required"`
+	AccountID     string   `json:"account_id" validate:"required"`
+	Region        string   `json:"region" validate:"omitempty"`
+	Zone          string   `json:"zone" validate:"omitempty"`
+	CloudID       string   `json:"cloud_id" validate:"omitempty"`
+	VpcID         string   `json:"vpc_id" validate:"omitempty"`
+	CloudVpcID    string   `json:"cloud_vpc_id" validate:"omitempty"`
+	SubnetID      string   `json:"subnet_id" validate:"omitempty"`
+	CloudSubnetID string   `json:"cloud_subnet_id" validate:"omitempty"`
+	PrivateIPv4   []string `json:"private_ipv4,omitempty" validate:"omitempty"`
+	PrivateIPv6   []string `json:"private_ipv6,omitempty" validate:"omitempty"`
+	PublicIPv4    []string `json:"public_ipv4,omitempty" validate:"omitempty"`
+	PublicIPv6    []string `json:"public_ipv6,omitempty" validate:"omitempty"`
+	BkBizID       int64    `json:"bk_biz_id" validate:"omitempty"`
+	InstanceID    string   `json:"instance_id" validate:"omitempty"`
+	Extension     *T       `json:"extension" validate:"required"`
 }
 
 // Validate network interface batch update request.

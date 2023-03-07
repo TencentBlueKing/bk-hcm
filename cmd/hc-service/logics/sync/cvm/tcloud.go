@@ -616,7 +616,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 		for _, id := range cloudVpcMap {
 			vpcCloudIDs = append(vpcCloudIDs, id.RelID)
 		}
-		req := &hcservice.ResourceSyncReq{
+		req := &hcservice.TCloudResourceSyncReq{
 			AccountID: option.AccountID,
 			Region:    option.Region,
 			CloudIDs:  vpcCloudIDs,
@@ -633,7 +633,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 		for _, id := range cloudSubnetMap {
 			subnetCloudIDs = append(subnetCloudIDs, id.RelID)
 		}
-		req := &hcservice.ResourceSyncReq{
+		req := &hcservice.TCloudResourceSyncReq{
 			AccountID: option.AccountID,
 			Region:    option.Region,
 			CloudIDs:  subnetCloudIDs,

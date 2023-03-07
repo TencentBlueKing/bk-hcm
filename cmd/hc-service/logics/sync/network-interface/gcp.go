@@ -22,7 +22,6 @@ package networkinterface
 
 import (
 	"fmt"
-
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	adcore "hcm/pkg/adaptor/types/core"
 	typesniproto "hcm/pkg/adaptor/types/network-interface"
@@ -31,6 +30,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/network-interface"
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -44,7 +44,7 @@ import (
 func GcpNetworkInterfaceSync(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
-	if len(req.CloudIDs) > 0 && len(req.CloudIDs) > 100 {
+	if len(req.CloudCvmIDs) > 0 && len(req.CloudCvmIDs) > constant.BatchOperationMaxLimit {
 		return nil, errf.New(errf.TooManyRequest, "cloud_ids length should <= 100")
 	}
 
@@ -79,7 +79,7 @@ func SyncGcpNetworkInterfaceList(kt *kit.Kit, req *hcservice.GcpNetworkInterface
 		allCloudIDMap = make(map[string]bool, 0)
 		cloudList     *typesniproto.GcpInterfaceListResult
 	)
-	if len(req.CloudIDs) > 0 {
+	if len(req.CloudCvmIDs) > 0 {
 		cloudIDs, allCloudIDMap, cloudList, err = GetGcpNetworkInterfaceListByCloudIDs(kt, req, adaptor)
 	} else {
 		cloudIDs, allCloudIDMap, cloudList, err = GetGcpNetworkInterfaceAllList(kt, req, adaptor)
@@ -118,7 +118,7 @@ func GetGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetwork
 	var cvmMap map[string] /*CloudCvmID*/ []typesniproto.GcpNI
 	opt := new(typesniproto.GcpListByCvmIDOption)
 	opt.Zone = req.Zone
-	opt.CloudCvmIDs = req.CloudIDs
+	opt.CloudCvmIDs = req.CloudCvmIDs
 	cvmMap, err = cli.ListNetworkInterfaceByCvmID(kt, opt)
 	if err != nil {
 		logs.Errorf("%s-networkinterface batch get cloudapi failed. accountID: %s, zone: %s, err: %v",
@@ -131,10 +131,13 @@ func GetGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetwork
 		allCloudIDMap = make(map[string]bool, 0)
 		list          = &typesniproto.GcpInterfaceListResult{}
 	)
-	for cvmID, niItem := range cvmMap {
-		cloudIDs = append(cloudIDs, cvmID)
-		allCloudIDMap[cvmID] = true
-		list.Details = append(list.Details, niItem...)
+	for _, niList := range cvmMap {
+		for _, niItem := range niList {
+			tmpID := converter.PtrToVal(niItem.CloudID)
+			cloudIDs = append(cloudIDs, tmpID)
+			allCloudIDMap[tmpID] = true
+			list.Details = append(list.Details, niItem)
+		}
 	}
 
 	return cloudIDs, allCloudIDMap, list, nil
@@ -226,8 +229,6 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 				resourceInfo.Region == converter.PtrToVal(item.Region) &&
 				resourceInfo.CloudVpcID == converter.PtrToVal(item.CloudVpcID) &&
 				resourceInfo.CloudSubnetID == converter.PtrToVal(item.CloudSubnetID) &&
-				resourceInfo.PrivateIP == converter.PtrToVal(item.PrivateIP) &&
-				resourceInfo.PublicIP == converter.PtrToVal(item.PublicIP) &&
 				resourceInfo.InstanceID == converter.PtrToVal(item.InstanceID) {
 				continue
 			}
@@ -241,8 +242,10 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 				CloudID:       converter.PtrToVal(item.CloudID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
-				PrivateIP:     converter.PtrToVal(item.PrivateIP),
-				PublicIP:      converter.PtrToVal(item.PublicIP),
+				PrivateIPv4:   item.PrivateIPv4,
+				PrivateIPv6:   item.PrivateIPv6,
+				PublicIPv4:    item.PublicIPv4,
+				PublicIPv6:    item.PublicIPv6,
 				InstanceID:    converter.PtrToVal(item.InstanceID),
 			}
 			if item.Extension != nil {
@@ -276,8 +279,10 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 				CloudID:       converter.PtrToVal(item.CloudID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
-				PrivateIP:     converter.PtrToVal(item.PrivateIP),
-				PublicIP:      converter.PtrToVal(item.PublicIP),
+				PrivateIPv4:   item.PrivateIPv4,
+				PrivateIPv6:   item.PrivateIPv6,
+				PublicIPv4:    item.PublicIPv4,
+				PublicIPv6:    item.PublicIPv6,
 				InstanceID:    converter.PtrToVal(item.InstanceID),
 			}
 			if item.Extension != nil {

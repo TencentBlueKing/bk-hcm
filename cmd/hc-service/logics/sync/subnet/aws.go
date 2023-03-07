@@ -40,7 +40,7 @@ import (
 )
 
 // AwsSubnetSync sync aws cloud subnet.
-func AwsSubnetSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
+func AwsSubnetSync(kt *kit.Kit, req *hcservice.AwsResourceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
 	if len(req.Region) == 0 {
@@ -56,7 +56,7 @@ func AwsSubnetSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
 	}
 
 	// batch get subnet map from db.
-	resourceDBMap, err := BatchGetSubnetMapFromDB(kt, req, enumor.Aws, "", dataCli)
+	resourceDBMap, err := BatchGetSubnetMapFromDB(kt, enumor.Aws, req.CloudIDs, "", dataCli)
 	if err != nil {
 		logs.Errorf("%s-subnet batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.Aws, req.AccountID, req.Region, err)
@@ -77,7 +77,7 @@ func AwsSubnetSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
 }
 
 // BatchGetAwsSubnetList batch get subnet list from cloudapi.
-func BatchGetAwsSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
+func BatchGetAwsSubnetList(kt *kit.Kit, req *hcservice.AwsResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
 	*types.AwsSubnetListResult, error) {
 
 	cli, err := adaptor.Aws(kt, req.AccountID)
@@ -128,7 +128,7 @@ func BatchGetAwsSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor 
 }
 
 // BatchSyncAwsSubnetList batch sync vendor subnet list.
-func BatchSyncAwsSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *types.AwsSubnetListResult,
+func BatchSyncAwsSubnetList(kt *kit.Kit, req *hcservice.AwsResourceSyncReq, list *types.AwsSubnetListResult,
 	resourceDBMap map[string]cloudcore.BaseSubnet, dataCli *dataclient.Client) error {
 
 	createResources, updateResources, existIDMap, err := filterAwsSubnetList(req, list, resourceDBMap)
@@ -179,7 +179,7 @@ func BatchSyncAwsSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *t
 }
 
 // filterAwsVpcList filter aws subnet list
-func filterAwsSubnetList(req *hcservice.ResourceSyncReq, list *types.AwsSubnetListResult,
+func filterAwsSubnetList(req *hcservice.AwsResourceSyncReq, list *types.AwsSubnetListResult,
 	resourceDBMap map[string]cloudcore.BaseSubnet) (createResources []cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt],
 	updateResources []cloud.SubnetUpdateReq[cloud.AwsSubnetUpdateExt], existIDMap map[string]bool, err error) {
 

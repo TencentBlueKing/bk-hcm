@@ -169,7 +169,7 @@ func (n NetworkInterfaceDao) Update(kt *kit.Kit, filterExpr *filter.Expression,
 func (n NetworkInterfaceDao) List(kt *kit.Kit, opt *types.ListOption) (*typesni.ListNetworkInterfaceDetails, error) {
 
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list azure network interface options is nil")
+		return nil, errf.New(errf.InvalidParameter, "list network interface options is nil")
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tableni.NetworkInterfaceColumns.ColumnTypes())),
@@ -186,7 +186,7 @@ func (n NetworkInterfaceDao) List(kt *kit.Kit, opt *types.ListOption) (*typesni.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.NetworkInterfaceTable, whereExpr)
 		count, err := n.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.ErrorJson("count azure network interface failed, err: %v, filter: %s, rid: %s",
+			logs.ErrorJson("count network interface failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
 			return nil, err
 		}

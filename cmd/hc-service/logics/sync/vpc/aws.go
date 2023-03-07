@@ -31,7 +31,6 @@ import (
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -39,12 +38,8 @@ import (
 )
 
 // AwsVpcSync sync aws cloud vpc.
-func AwsVpcSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
+func AwsVpcSync(kt *kit.Kit, req *hcservice.AwsResourceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
-
-	if len(req.Region) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "region is required")
-	}
 
 	// batch get vpc list from cloudapi.
 	list, err := BatchGetAwsVpcList(kt, req, adaptor)
@@ -55,7 +50,7 @@ func AwsVpcSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
 	}
 
 	// batch get vpc map from db.
-	resourceDBMap, err := BatchGetVpcMapFromDB(kt, req, enumor.Aws, dataCli)
+	resourceDBMap, err := BatchGetVpcMapFromDB(kt, enumor.Aws, dataCli)
 	if err != nil {
 		logs.Errorf("%s-vpc batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.Aws, req.AccountID, req.Region, err)
@@ -76,7 +71,7 @@ func AwsVpcSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
 }
 
 // BatchGetAwsVpcList batch get vpc list from cloudapi.
-func BatchGetAwsVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
+func BatchGetAwsVpcList(kt *kit.Kit, req *hcservice.AwsResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
 	*types.AwsVpcListResult, error) {
 
 	cli, err := adaptor.Aws(kt, req.AccountID)
@@ -134,7 +129,7 @@ func BatchGetAwsVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cl
 }
 
 // BatchSyncAwsVpcList batch sync vendor vpc list.
-func BatchSyncAwsVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *types.AwsVpcListResult,
+func BatchSyncAwsVpcList(kt *kit.Kit, req *hcservice.AwsResourceSyncReq, list *types.AwsVpcListResult,
 	resourceDBMap map[string]cloudcore.BaseVpc, dataCli *dataclient.Client) error {
 
 	createResources, updateResources, existIDMap, err := filterAwsVpcList(req, list, resourceDBMap)
@@ -187,7 +182,7 @@ func BatchSyncAwsVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *type
 }
 
 // filterAwsVpcList filter aws vpc list
-func filterAwsVpcList(req *hcservice.ResourceSyncReq, list *types.AwsVpcListResult,
+func filterAwsVpcList(req *hcservice.AwsResourceSyncReq, list *types.AwsVpcListResult,
 	resourceDBMap map[string]cloudcore.BaseVpc) (createResources []cloud.VpcCreateReq[cloud.AwsVpcCreateExt],
 	updateResources []cloud.VpcUpdateReq[cloud.AwsVpcUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {

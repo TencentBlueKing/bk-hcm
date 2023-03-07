@@ -115,7 +115,7 @@ func SyncHuaWeiSubnet(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	err := c.HCService().HuaWei.Subnet.SyncSubnet(
 		kit.Ctx,
 		header,
-		&proto.ResourceSyncReq{
+		&proto.HuaWeiResourceSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		},
@@ -136,7 +136,7 @@ func SyncHuaWeiVpc(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	err := c.HCService().HuaWei.Vpc.SyncVpc(
 		kit.Ctx,
 		header,
-		&proto.ResourceSyncReq{
+		&proto.HuaWeiResourceSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		},

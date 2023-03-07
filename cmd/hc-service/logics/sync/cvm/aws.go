@@ -22,7 +22,7 @@ package cvm
 import (
 	"fmt"
 
-	disk "hcm/cmd/hc-service/logics/sync/disk"
+	"hcm/cmd/hc-service/logics/sync/disk"
 	synceip "hcm/cmd/hc-service/logics/sync/eip"
 	securitygroup "hcm/cmd/hc-service/logics/sync/security-group"
 	"hcm/cmd/hc-service/logics/sync/subnet"
@@ -796,7 +796,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 		for _, id := range cloudVpcMap {
 			vpcCloudIDs = append(vpcCloudIDs, id.RelID)
 		}
-		req := &hcservice.ResourceSyncReq{
+		req := &hcservice.AwsResourceSyncReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  vpcCloudIDs,
@@ -813,7 +813,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 		for _, id := range cloudSubnetMap {
 			subnetCloudIDs = append(subnetCloudIDs, id.RelID)
 		}
-		req := &hcservice.ResourceSyncReq{
+		req := &hcservice.AwsResourceSyncReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  subnetCloudIDs,

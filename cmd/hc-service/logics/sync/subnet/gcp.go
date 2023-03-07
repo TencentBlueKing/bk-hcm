@@ -31,7 +31,6 @@ import (
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -40,12 +39,8 @@ import (
 )
 
 // GcpSubnetSync sync gcp cloud subnet.
-func GcpSubnetSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
+func GcpSubnetSync(kt *kit.Kit, req *hcservice.GcpResourceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
-
-	if len(req.Region) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "region is required")
-	}
 
 	// batch get subnet list from cloudapi.
 	list, err := BatchGetGcpSubnetList(kt, req, adaptor)
@@ -56,7 +51,7 @@ func GcpSubnetSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
 	}
 
 	// batch get subnet map from db.
-	resourceDBMap, err := BatchGetSubnetMapFromDB(kt, req, enumor.Gcp, "", dataCli)
+	resourceDBMap, err := BatchGetSubnetMapFromDB(kt, enumor.Gcp, req.CloudIDs, "", dataCli)
 	if err != nil {
 		logs.Errorf("%s-subnet batch get subnetdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.Gcp, req.AccountID, req.Region, err)
@@ -77,7 +72,7 @@ func GcpSubnetSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
 }
 
 // BatchGetGcpSubnetList batch get subnet list from cloudapi.
-func BatchGetGcpSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
+func BatchGetGcpSubnetList(kt *kit.Kit, req *hcservice.GcpResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
 	*types.GcpSubnetListResult, error) {
 	cli, err := adaptor.Gcp(kt, req.AccountID)
 	if err != nil {
@@ -93,7 +88,11 @@ func BatchGetGcpSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor 
 
 		// 查询指定CloudIDs
 		if len(req.CloudIDs) > 0 {
-			opt.SelfLinks = req.CloudIDs
+			opt.Page = nil
+			opt.CloudIDs = req.CloudIDs
+		} else if len(req.SelfLinks) > 0 {
+			opt.Page = nil
+			opt.SelfLinks = req.SelfLinks
 		} else {
 			opt.Page = &adcore.GcpPage{
 				PageSize: int64(adcore.GcpQueryLimit),
@@ -127,7 +126,7 @@ func BatchGetGcpSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor 
 }
 
 // BatchSyncGcpSubnetList batch sync vendor subnet list.
-func BatchSyncGcpSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *types.GcpSubnetListResult,
+func BatchSyncGcpSubnetList(kt *kit.Kit, req *hcservice.GcpResourceSyncReq, list *types.GcpSubnetListResult,
 	resourceDBMap map[string]cloudcore.BaseSubnet, dataCli *dataclient.Client) error {
 
 	createResources, updateResources, existIDMap, err := filterGcpSubnetList(req, list, resourceDBMap)
@@ -177,7 +176,7 @@ func BatchSyncGcpSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *t
 }
 
 // filterGcpSubnetList filter gcp subnet list
-func filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.GcpSubnetListResult,
+func filterGcpSubnetList(req *hcservice.GcpResourceSyncReq, list *types.GcpSubnetListResult,
 	resourceDBMap map[string]cloudcore.BaseSubnet) (createResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt],
 	updateResources []cloud.SubnetUpdateReq[cloud.GcpSubnetUpdateExt], existIDMap map[string]bool, err error) {
 
@@ -229,6 +228,7 @@ func filterGcpSubnetList(req *hcservice.ResourceSyncReq, list *types.GcpSubnetLi
 				Ipv4Cidr:   item.Ipv4Cidr,
 				Memo:       item.Memo,
 				Extension: &cloud.GcpSubnetCreateExt{
+					SelfLink:              item.Extension.SelfLink,
 					StackType:             item.Extension.StackType,
 					Ipv6AccessType:        item.Extension.Ipv6AccessType,
 					GatewayAddress:        item.Extension.GatewayAddress,

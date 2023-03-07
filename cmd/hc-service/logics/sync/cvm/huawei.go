@@ -916,7 +916,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	}
 
 	if len(cloudVpcMap) > 0 {
-		req := &hcservice.ResourceSyncReq{
+		req := &hcservice.HuaWeiResourceSyncReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  converter.MapKeyToStringSlice(cloudVpcMap),
@@ -930,7 +930,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 
 	if len(cloudSubnetMap) > 0 {
 		for cloudVpcID, cloudSubnetIDMap := range cloudSubnetMap {
-			req := &hcservice.ResourceSyncReq{
+			req := &hcservice.HuaWeiResourceSyncReq{
 				AccountID: req.AccountID,
 				Region:    req.Region,
 				VpcID:     cloudVpcID,

@@ -778,7 +778,7 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		for _, id := range cloudVpcMap {
 			vpcCloudIDs = append(vpcCloudIDs, id.RelID)
 		}
-		req := &hcservice.ResourceSyncReq{
+		req := &hcservice.GcpResourceSyncReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  vpcCloudIDs,
@@ -795,7 +795,7 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		for _, id := range cloudSubnetMap {
 			subnetCloudIDs = append(subnetCloudIDs, id.RelID)
 		}
-		req := &hcservice.ResourceSyncReq{
+		req := &hcservice.GcpResourceSyncReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  subnetCloudIDs,
@@ -830,9 +830,9 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 			netInterCloudIDs = append(netInterCloudIDs, id.RelID)
 		}
 		req := &hcservice.GcpNetworkInterfaceSyncReq{
-			AccountID: req.AccountID,
-			Zone:      req.Zone,
-			CloudIDs:  netInterCloudIDs,
+			AccountID:   req.AccountID,
+			Zone:        req.Zone,
+			CloudCvmIDs: netInterCloudIDs,
 		}
 		_, err := syncnetworkinterface.GcpNetworkInterfaceSync(kt, req, ad, dataCli)
 		if err != nil {

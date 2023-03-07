@@ -23,10 +23,8 @@ package vpc
 import (
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
-	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
@@ -54,17 +52,4 @@ type syncVpcSvc struct {
 	ad      *cloudadaptor.CloudAdaptorClient
 	cs      *client.ClientSet
 	dataCli *dataservice.Client
-}
-
-func decodeVpcSyncReq(cts *rest.Contexts) (*proto.ResourceSyncReq, error) {
-	req := new(proto.ResourceSyncReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	return req, nil
 }

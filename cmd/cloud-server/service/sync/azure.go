@@ -133,9 +133,8 @@ func syncAzureWithResourceGroup(c *client.ClientSet, kit *kit.Kit, resourceGroup
 		err = c.HCService().Azure.Vpc.SyncVpc(
 			kit.Ctx,
 			header,
-			&proto.ResourceSyncReq{
+			&proto.AzureResourceSyncReq{
 				AccountID:         accountID,
-				Region:            region.Name,
 				ResourceGroupName: resourceGroup,
 			},
 		)

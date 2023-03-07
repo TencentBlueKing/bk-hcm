@@ -111,8 +111,6 @@ func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.Hua
 			FixedIps: []coreni.ServerInterfaceFixedIp{},
 			// MacAddr 网卡Mac地址信息。
 			MacAddr: data.MacAddr,
-			// NetId 网卡端口所属网络ID。
-			NetId: data.NetId,
 			// PortState 网卡端口状态。
 			PortState: data.PortState,
 			// DeleteOnTermination 卸载网卡时，是否删除网卡。
@@ -129,28 +127,33 @@ func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.Hua
 	}
 
 	// 网卡私网IP信息列表
-	subnetIDArr := make([]string, 0)
-	ipAddressArr := make([]string, 0)
+	ipv4Map := make(map[string]bool, 0)
+	ipv6Map := make(map[string]bool, 0)
 	if data.FixedIps != nil {
 		for _, tmpFi := range *data.FixedIps {
 			v.Extension.FixedIps = append(v.Extension.FixedIps, coreni.ServerInterfaceFixedIp{
 				SubnetId:  tmpFi.SubnetId,
 				IpAddress: tmpFi.IpAddress,
 			})
-			subnetIDArr = append(subnetIDArr, *tmpFi.SubnetId)
-			ipAddressArr = append(ipAddressArr, *tmpFi.IpAddress)
+			if checkIsIPv4(*tmpFi.IpAddress) {
+				v.PrivateIPv4 = append(v.PrivateIPv4, *tmpFi.IpAddress)
+				ipv4Map[*tmpFi.IpAddress] = true
+			} else {
+				v.PrivateIPv6 = append(v.PrivateIPv6, *tmpFi.IpAddress)
+				ipv6Map[*tmpFi.IpAddress] = true
+			}
 		}
 	}
 	v.CloudSubnetID = data.NetId
-	v.PrivateIP = converter.ValToPtr(strings.Join(ipAddressArr, ";"))
-	v.Name = converter.ValToPtr(fmt.Sprintf("name:%s", converter.PtrToVal(v.PrivateIP)))
+	v.Name = converter.ValToPtr(fmt.Sprintf("name:%s", converter.PtrToVal(data.PortId)))
 
 	// get security groups by port id
 	tmpNetID := converter.PtrToVal(data.NetId)
 	securityGroupMap, virtualIPs, err := h.GetSecurityGroupsByNetID(kt, &typesniproto.HuaWeiPortInfoOption{
-		Region:    opt.Region,
-		NetID:     tmpNetID,
-		IPAddress: converter.PtrToVal(v.PrivateIP),
+		Region:         opt.Region,
+		NetID:          tmpNetID,
+		IPv4AddressMap: ipv4Map,
+		IPv6AddressMap: ipv6Map,
 	})
 	if err != nil {
 		logs.Errorf("list huawei security group map failed, region: %s, tmpNetID: %s, err: %v, rid: %s",
@@ -268,7 +271,14 @@ func (h *HuaWei) GetSecurityGroupsByNetID(kt *kit.Kit, opt *typesniproto.HuaWeiP
 			continue
 		}
 		for _, item := range portItem.AllowedAddressPairs {
-			if item.IpAddress == opt.IPAddress {
+			if _, ok := opt.IPv4AddressMap[item.IpAddress]; ok {
+				for _, fixIpItem := range portItem.FixedIps {
+					virtualIPs = append(virtualIPs, coreni.NetVirtualIP{
+						IP: converter.PtrToVal(fixIpItem.IpAddress),
+					})
+				}
+			}
+			if _, ok := opt.IPv6AddressMap[item.IpAddress]; ok {
 				for _, fixIpItem := range portItem.FixedIps {
 					virtualIPs = append(virtualIPs, coreni.NetVirtualIP{
 						IP: converter.PtrToVal(fixIpItem.IpAddress),
@@ -293,4 +303,13 @@ func (h *HuaWei) GetSecurityGroupsByNetID(kt *kit.Kit, opt *typesniproto.HuaWeiP
 	}
 
 	return securityGroupMap, virtualIPs, nil
+}
+
+func checkIsIPv4(ip string) bool {
+	if len(ip) == 0 {
+		return false
+	}
+
+	ipArr := strings.Split(ip, ".")
+	return len(ipArr) == 4
 }

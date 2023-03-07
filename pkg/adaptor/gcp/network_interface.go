@@ -119,10 +119,15 @@ func convertNetworkInterface(data *compute.Instance, niItem *compute.NetworkInte
 		Name:          converter.ValToPtr(niItem.Name),
 		Zone:          converter.ValToPtr(data.Zone),
 		CloudID:       converter.ValToPtr(fmt.Sprintf("%d_%s", data.Id, niItem.Name)),
-		PrivateIP:     converter.ValToPtr(niItem.NetworkIP),
 		InstanceID:    converter.ValToPtr(strconv.FormatUint(data.Id, 10)),
 		CloudVpcID:    converter.ValToPtr(niItem.Network),
 		CloudSubnetID: converter.ValToPtr(niItem.Subnetwork),
+	}
+	if len(niItem.NetworkIP) > 0 {
+		v.PrivateIPv4 = append(v.PrivateIPv4, niItem.NetworkIP)
+	}
+	if len(niItem.Ipv6Address) > 0 {
+		v.PrivateIPv6 = append(v.PrivateIPv6, niItem.Ipv6Address)
 	}
 
 	if niItem == nil {
@@ -144,6 +149,12 @@ func convertNetworkInterface(data *compute.Instance, niItem *compute.NetworkInte
 				NatIP:       tmpAc.NatIP,
 				NetworkTier: tmpAc.NetworkTier,
 			})
+			if len(tmpAc.NatIP) > 0 {
+				v.PublicIPv4 = append(v.PublicIPv4, tmpAc.NatIP)
+			}
+			if len(tmpAc.ExternalIpv6) > 0 {
+				v.PublicIPv6 = append(v.PublicIPv6, tmpAc.ExternalIpv6)
+			}
 		}
 	}
 
@@ -155,6 +166,13 @@ func convertNetworkInterface(data *compute.Instance, niItem *compute.NetworkInte
 				NatIP:       tmpAc.NatIP,
 				NetworkTier: tmpAc.NetworkTier,
 			})
+
+			if len(tmpAc.NatIP) > 0 {
+				v.PublicIPv4 = append(v.PrivateIPv4, tmpAc.NatIP)
+			}
+			if len(tmpAc.ExternalIpv6) > 0 {
+				v.PublicIPv6 = append(v.PublicIPv6, tmpAc.ExternalIpv6)
+			}
 		}
 	}
 

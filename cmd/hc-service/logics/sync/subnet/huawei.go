@@ -40,15 +40,11 @@ import (
 )
 
 // HuaWeiSubnetSync sync huawei cloud subnet.
-func HuaWeiSubnetSync(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient,
+func HuaWeiSubnetSync(kt *kit.Kit, req *hcservice.HuaWeiResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient,
 	dataCli *dataclient.Client) (interface{}, error) {
 
 	if len(req.CloudIDs) > 0 && len(req.VpcID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "vpc_id is required")
-	}
-
-	if len(req.Region) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "region is required")
 	}
 
 	// batch get subnet list from cloudapi.
@@ -64,7 +60,7 @@ func HuaWeiSubnetSync(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *clou
 	}
 
 	// batch get subnet map from db.
-	resourceDBMap, err := BatchGetSubnetMapFromDB(kt, req, enumor.HuaWei, "", dataCli)
+	resourceDBMap, err := BatchGetSubnetMapFromDB(kt, enumor.HuaWei, req.CloudIDs, "", dataCli)
 	if err != nil {
 		logs.Errorf("%s-subnet batch get subnetdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.HuaWei, req.AccountID, req.Region, err)
@@ -85,8 +81,8 @@ func HuaWeiSubnetSync(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *clou
 }
 
 // BatchGetHuaWeiSubnetList batch get subnet list from cloudapi.
-func BatchGetHuaWeiSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
-	*types.HuaWeiSubnetListResult, error) {
+func BatchGetHuaWeiSubnetList(kt *kit.Kit, req *hcservice.HuaWeiResourceSyncReq,
+	adaptor *cloudclient.CloudAdaptorClient) (*types.HuaWeiSubnetListResult, error) {
 
 	if len(req.CloudIDs) > 0 {
 		return BatchGetHuaWeiSubnetListByCloudIDs(kt, req, adaptor)
@@ -96,7 +92,7 @@ func BatchGetHuaWeiSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adapt
 }
 
 // BatchGetHuaWeiSubnetListByCloudIDs batch get subnet list from cloudapi.
-func BatchGetHuaWeiSubnetListByCloudIDs(kt *kit.Kit, req *hcservice.ResourceSyncReq,
+func BatchGetHuaWeiSubnetListByCloudIDs(kt *kit.Kit, req *hcservice.HuaWeiResourceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient) (*types.HuaWeiSubnetListResult, error) {
 
 	cli, err := adaptor.HuaWei(kt, req.AccountID)
@@ -111,7 +107,8 @@ func BatchGetHuaWeiSubnetListByCloudIDs(kt *kit.Kit, req *hcservice.ResourceSync
 	}
 	list, err := cli.ListSubnetByID(kt, opt)
 	if err != nil {
-		logs.Errorf("%s-subnet batch get cloud api failed, err: %v, opt: %v, rid: %s", enumor.HuaWei, err, opt, kt.Rid)
+		logs.Errorf("%s-subnet batch get cloud api failed, err: %v, opt: %v, rid: %s",
+			enumor.HuaWei, err, opt, kt.Rid)
 		return nil, err
 	}
 
@@ -119,8 +116,9 @@ func BatchGetHuaWeiSubnetListByCloudIDs(kt *kit.Kit, req *hcservice.ResourceSync
 }
 
 // BatchGetHuaWeiSubnetAllList batch get subnet list from cloudapi.
-func BatchGetHuaWeiSubnetAllList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
-	*types.HuaWeiSubnetListResult, error) {
+func BatchGetHuaWeiSubnetAllList(kt *kit.Kit, req *hcservice.HuaWeiResourceSyncReq,
+	adaptor *cloudclient.CloudAdaptorClient) (*types.HuaWeiSubnetListResult, error) {
+
 	cli, err := adaptor.HuaWei(kt, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -161,7 +159,7 @@ func BatchGetHuaWeiSubnetAllList(kt *kit.Kit, req *hcservice.ResourceSyncReq, ad
 }
 
 // BatchSyncHuaWeiSubnetList batch sync vendor subnet list.
-func BatchSyncHuaWeiSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *types.HuaWeiSubnetListResult,
+func BatchSyncHuaWeiSubnetList(kt *kit.Kit, req *hcservice.HuaWeiResourceSyncReq, list *types.HuaWeiSubnetListResult,
 	resourceDBMap map[string]cloudcore.BaseSubnet, dataCli *dataclient.Client) error {
 
 	createResources, updateResources, existIDMap, err := filterHuaWeiSubnetList(req, list, resourceDBMap)
@@ -212,7 +210,7 @@ func BatchSyncHuaWeiSubnetList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list
 }
 
 // filterHuaWeiSubnetList filter huawei subnet list
-func filterHuaWeiSubnetList(req *hcservice.ResourceSyncReq, list *types.HuaWeiSubnetListResult,
+func filterHuaWeiSubnetList(req *hcservice.HuaWeiResourceSyncReq, list *types.HuaWeiSubnetListResult,
 	resourceDBMap map[string]cloudcore.BaseSubnet) (
 	createResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt],
 	updateResources []cloud.SubnetUpdateReq[cloud.HuaWeiSubnetUpdateExt], existIDMap map[string]bool, err error) {

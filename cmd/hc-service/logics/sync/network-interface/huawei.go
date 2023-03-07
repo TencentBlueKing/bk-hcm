@@ -30,6 +30,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/network-interface"
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -43,7 +44,7 @@ import (
 func HuaWeiNetworkInterfaceSync(kt *kit.Kit, req *hcservice.HuaWeiNetworkInterfaceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
-	if len(req.CloudCvmIDs) > 0 && len(req.CloudCvmIDs) > 100 {
+	if len(req.CloudCvmIDs) > 0 && len(req.CloudCvmIDs) > constant.BatchOperationMaxLimit {
 		return nil, errf.New(errf.TooManyRequest, "cloud_cvm_ids length should <= 100")
 	}
 
@@ -194,8 +195,6 @@ func filterHuaWeiNetworkInterfaceList(_ *kit.Kit, req *hcservice.HuaWeiNetworkIn
 				resourceInfo.Region == converter.PtrToVal(item.Region) &&
 				resourceInfo.CloudVpcID == converter.PtrToVal(item.CloudVpcID) &&
 				resourceInfo.CloudSubnetID == converter.PtrToVal(item.CloudSubnetID) &&
-				resourceInfo.PrivateIP == converter.PtrToVal(item.PrivateIP) &&
-				resourceInfo.PublicIP == converter.PtrToVal(item.PublicIP) &&
 				resourceInfo.InstanceID == converter.PtrToVal(item.InstanceID) {
 				continue
 			}
@@ -209,8 +208,10 @@ func filterHuaWeiNetworkInterfaceList(_ *kit.Kit, req *hcservice.HuaWeiNetworkIn
 				CloudID:       converter.PtrToVal(item.CloudID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
-				PrivateIP:     converter.PtrToVal(item.PrivateIP),
-				PublicIP:      converter.PtrToVal(item.PublicIP),
+				PrivateIPv4:   item.PrivateIPv4,
+				PrivateIPv6:   item.PrivateIPv6,
+				PublicIPv4:    item.PublicIPv4,
+				PublicIPv6:    item.PublicIPv6,
 				InstanceID:    converter.PtrToVal(item.InstanceID),
 			}
 			if item.Extension != nil {
@@ -267,8 +268,10 @@ func filterHuaWeiNetworkInterfaceList(_ *kit.Kit, req *hcservice.HuaWeiNetworkIn
 				CloudID:       converter.PtrToVal(item.CloudID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
-				PrivateIP:     converter.PtrToVal(item.PrivateIP),
-				PublicIP:      converter.PtrToVal(item.PublicIP),
+				PrivateIPv4:   item.PrivateIPv4,
+				PrivateIPv6:   item.PrivateIPv6,
+				PublicIPv4:    item.PublicIPv4,
+				PublicIPv6:    item.PublicIPv6,
 				InstanceID:    converter.PtrToVal(item.InstanceID),
 			}
 			if item.Extension != nil {

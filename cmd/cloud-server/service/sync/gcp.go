@@ -191,7 +191,7 @@ func SyncGcpSubnet(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	err := c.HCService().Gcp.Subnet.SyncSubnet(
 		kit.Ctx,
 		header,
-		&proto.ResourceSyncReq{
+		&proto.GcpResourceSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		},
@@ -212,7 +212,7 @@ func SyncGcpVpc(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	err := c.HCService().Gcp.Vpc.SyncVpc(
 		kit.Ctx,
 		header,
-		&proto.ResourceSyncReq{
+		&proto.GcpResourceSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		},

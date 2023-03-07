@@ -214,8 +214,10 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 
 			getIpConfigSubnetData(item, tmpIP, v)
 
-			if converter.PtrToVal(tmpIP.Properties.Primary) {
-				v.PrivateIP = tmpIP.Properties.PrivateIPAddress
+			if item.Properties.PrivateIPAddressVersion == converter.ValToPtr(armnetwork.IPVersionIPv4) {
+				v.PrivateIPv4 = append(v.PrivateIPv4, converter.PtrToVal(tmpIP.Properties.PrivateIPAddress))
+			} else {
+				v.PrivateIPv6 = append(v.PrivateIPv6, converter.PtrToVal(tmpIP.Properties.PrivateIPAddress))
 			}
 			if item.Properties.GatewayLoadBalancer != nil {
 				tmpIP.Properties.CloudGatewayLoadBalancerID = item.Properties.GatewayLoadBalancer.ID
@@ -231,12 +233,11 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 					Type:     tmpPublicIPAddress.Type,
 				}
 				if tmpPublicIPAddress.Properties != nil {
-					tmpIP.Properties.PublicIPAddress.Properties = &coreni.PublicIPAddressPropertiesFormat{
-						IPAddress: tmpPublicIPAddress.Properties.IPAddress,
-						PublicIPAddressVersion: (*coreni.IPVersion)(
-							tmpPublicIPAddress.Properties.PublicIPAddressVersion),
-						PublicIPAllocationMethod: (*coreni.IPAllocationMethod)(
-							tmpPublicIPAddress.Properties.PublicIPAllocationMethod),
+					if tmpPublicIPAddress.Properties.PublicIPAddressVersion ==
+						converter.ValToPtr(armnetwork.IPVersionIPv4) {
+						v.PublicIPv4 = append(v.PublicIPv4, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
+					} else {
+						v.PublicIPv6 = append(v.PublicIPv6, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
 					}
 				}
 			}

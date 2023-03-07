@@ -46,8 +46,10 @@ var NetworkInterfaceTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "cloud_vpc_id", NamedC: "cloud_vpc_id", Type: enumor.String},
 	{Column: "subnet_id", NamedC: "subnet_id", Type: enumor.String},
 	{Column: "cloud_subnet_id", NamedC: "cloud_subnet_id", Type: enumor.String},
-	{Column: "private_ip", NamedC: "private_ip", Type: enumor.String},
-	{Column: "public_ip", NamedC: "public_ip", Type: enumor.String},
+	{Column: "private_ipv4", NamedC: "private_ipv4", Type: enumor.Json},
+	{Column: "private_ipv6", NamedC: "private_ipv6", Type: enumor.Json},
+	{Column: "public_ipv4", NamedC: "public_ipv4", Type: enumor.Json},
+	{Column: "public_ipv6", NamedC: "public_ipv6", Type: enumor.Json},
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "instance_id", NamedC: "instance_id", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
@@ -62,74 +64,77 @@ type NetworkInterfaceTable struct {
 	// ID 主键 ID
 	ID string `db:"id"`
 	// Vendor 云厂商
-	Vendor enumor.Vendor `db:"vendor" validate:"-"`
+	Vendor enumor.Vendor `db:"vendor" validate:"-" json:"vendor"`
 	// name 网络接口名称
-	Name string `db:"name"`
+	Name string `db:"name" json:"name"`
 	// AccountID 账号ID
-	AccountID string `db:"account_id"`
+	AccountID string `db:"account_id" json:"account_id"`
 	// Region 区域/地域
-	Region string `db:"region"`
+	Region string `db:"region" json:"region"`
 	// Zone 可用区
-	Zone string `db:"zone"`
+	Zone string `db:"zone" json:"zone"`
 	// CloudID 网卡端口所属网络ID
-	CloudID string `db:"cloud_id"`
+	CloudID string `db:"cloud_id" json:"cloud_id"`
 	// VpcID VPC的ID
-	VpcID string `db:"vpc_id"`
+	VpcID string `db:"vpc_id" json:"vpc_id"`
 	// CloudVpcID 云VPC的ID
-	CloudVpcID string `db:"cloud_vpc_id"`
+	CloudVpcID string `db:"cloud_vpc_id" json:"cloud_vpc_id"`
 	// SubnetID 子网ID
-	SubnetID string `db:"subnet_id"`
+	SubnetID string `db:"subnet_id" json:"subnet_id"`
 	// CloudSubnetID 云子网ID
-	CloudSubnetID string `db:"cloud_subnet_id"`
-	// PrivateIP 内网IP
-	PrivateIP string `db:"private_ip"`
-	// PublicIP 公网IP
-	PublicIP string `db:"public_ip"`
+	CloudSubnetID string `db:"cloud_subnet_id" validate:"-" json:"cloud_subnet_id"`
+	// PrivateIPv4 内网IPv4
+	PrivateIPv4 types.StringArray `db:"private_ipv4" validate:"-" json:"private_ipv4"`
+	// PrivateIPv6 内网IPv6
+	PrivateIPv6 types.StringArray `db:"private_ipv6" validate:"-" json:"private_ipv6"`
+	// PublicIPv4 公网IPv4
+	PublicIPv4 types.StringArray `db:"public_ipv4" json:"public_ipv4"`
+	// PublicIPv6 公网IPv6
+	PublicIPv6 types.StringArray `db:"public_ipv6" json:"public_ipv6"`
 	// BkBizID 业务ID
-	BkBizID int64 `db:"bk_biz_id"`
+	BkBizID int64 `db:"bk_biz_id" json:"bk_biz_id"`
 	// InstanceID 关联的实例ID
-	InstanceID string `db:"instance_id"`
+	InstanceID string `db:"instance_id" json:"public_ip"`
 	// Extension 云厂商差异扩展字段
 	Extension types.JsonField `db:"extension" json:"extension"`
 	// Creator 创建者
-	Creator string `db:"creator"`
+	Creator string `db:"creator" json:"creator"`
 	// Reviser 更新者
-	Reviser string `db:"reviser"`
+	Reviser string `db:"reviser" json:"reviser"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at"`
+	CreatedAt *time.Time `db:"created_at" validate:"isdefault" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at"`
+	UpdatedAt *time.Time `db:"updated_at" validate:"isdefault" json:"updated_at"`
 }
 
 // TableName return azure network interface table name.
-func (a NetworkInterfaceTable) TableName() table.Name {
+func (n NetworkInterfaceTable) TableName() table.Name {
 	return table.NetworkInterfaceTable
 }
 
 // InsertValidate network interface table when insert.
-func (t NetworkInterfaceTable) InsertValidate() error {
-	// length validate.
-	if err := validator.Validate.Struct(t); err != nil {
+func (n NetworkInterfaceTable) InsertValidate() error {
+	if err := validator.Validate.Struct(n); err != nil {
 		return err
 	}
 
-	if len(t.Vendor) == 0 {
+	if len(n.Vendor) == 0 {
 		return errors.New("vendor is required")
 	}
 
-	if len(t.Name) == 0 {
+	if len(n.Name) == 0 {
 		return errors.New("name is required")
 	}
 
-	if len(t.AccountID) == 0 {
+	if len(n.AccountID) == 0 {
 		return errors.New("account_id is required")
 	}
 
-	if len(t.Creator) == 0 {
+	if len(n.Creator) == 0 {
 		return errors.New("creator is required")
 	}
 
-	if len(t.Reviser) == 0 {
+	if len(n.Reviser) == 0 {
 		return errors.New("reviser is required")
 	}
 
@@ -137,14 +142,17 @@ func (t NetworkInterfaceTable) InsertValidate() error {
 }
 
 // UpdateValidate network interface table when update.
-func (t NetworkInterfaceTable) UpdateValidate() error {
-	// length validate.
-	if err := validator.Validate.Struct(t); err != nil {
+func (n NetworkInterfaceTable) UpdateValidate() error {
+	if err := validator.Validate.Struct(n); err != nil {
 		return err
 	}
 
-	if len(t.Creator) != 0 {
+	if len(n.Creator) != 0 {
 		return errors.New("creator can not update")
+	}
+
+	if len(n.Reviser) == 0 {
+		return errors.New("reviser can not be empty")
 	}
 
 	return nil

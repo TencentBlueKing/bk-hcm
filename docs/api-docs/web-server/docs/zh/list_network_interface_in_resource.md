@@ -102,8 +102,10 @@
 | cloud_vpc_id | string | 云VPC的ID                             |
 | subnet_id   | string | 子网ID                                 |
 | cloud_subnet_id | string | 云子网ID                           |
-| private_ip  | string  | 内网IP                                |
-| public_ip   | string  | 公网IP                                |
+| private_ipv4  | string array | 内网IPv4                       |
+| private_ipv6  | string array | 内网IPv6                       |
+| public_ipv4   | string array | 公网IPv4                       |
+| public_ipv6   | string array | 公网IPv6                       |
 | bk_biz_id   | int     | 业务ID                                |
 | instance_id | string  | 关联的实例ID                           |
 | creator     | string | 创建者                                  |
@@ -192,8 +194,10 @@
         "cloud_vpc_id": "/subscriptions/1001-0000-0000-0000-111111111111/resourceGroups/rsg1001/providers/Microsoft.Network/virtualNetworks/test-vnet",
         "subnet_id": "000002",
         "cloud_subnet_id": "/subscriptions/1001-0000-0000-0000-111111111111/resourceGroups/rsg1001/providers/Microsoft.Network/virtualNetworks/test-vnet/subnets/default",
-        "private_ip": "127.0.0.x",
-        "public_ip": "127.0.0.x",
+        "private_ipv4": ["127.0.0.1"],
+        "private_ipv6": ["xx:xx:xx:xx:xx"],
+        "public_ipv4": ["127.0.0.2"],
+        "public_ipv6": ["xx:xx:xx:xx:xx"],
         "bk_biz_id": 10010,
         "instance_id": "1001-0000-0000-0000-xxxxxxxxx",
         "creator": "tom",
@@ -247,8 +251,10 @@
 | cloud_vpc_id | string | 云VPC的ID                             |
 | subnet_id   | string | 子网ID                                 |
 | cloud_subnet_id | string | 云子网ID，格式：半角逗号分割           |
-| private_ip  | string  | 内网IP                                |
-| public_ip   | string  | 公网IP                                |
+| private_ipv4  | string array | 内网IPv4                       |
+| private_ipv6  | string array | 内网IPv6                       |
+| public_ipv4   | string array | 公网IPv4                       |
+| public_ipv6   | string array | 公网IPv6                       |
 | bk_biz_id   | int     | 业务ID                                |
 | instance_id | string  | 关联的实例ID                           |
 | creator     | string | 创建者                                  |

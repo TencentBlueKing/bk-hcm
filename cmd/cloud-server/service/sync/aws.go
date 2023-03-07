@@ -85,7 +85,7 @@ func SyncAwsAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 		err = c.HCService().Aws.Vpc.SyncVpc(
 			kit.Ctx,
 			header,
-			&proto.ResourceSyncReq{
+			&proto.AwsResourceSyncReq{
 				AccountID: accountID,
 				Region:    region.RegionID,
 			},
@@ -99,7 +99,7 @@ func SyncAwsAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 		err = c.HCService().Aws.Subnet.SyncSubnet(
 			kit.Ctx,
 			header,
-			&proto.ResourceSyncReq{
+			&proto.AwsResourceSyncReq{
 				AccountID: accountID,
 				Region:    region.RegionID,
 			},

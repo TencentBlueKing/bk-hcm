@@ -36,16 +36,11 @@ func (r *AzureNetworkInterfaceSyncReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
-// NetworkInterfaceSyncResult defines sync result.
-type NetworkInterfaceSyncResult struct {
-	TaskID string `json:"task_id"`
-}
-
 // GcpNetworkInterfaceSyncReq defines sync resource request.
 type GcpNetworkInterfaceSyncReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Zone      string   `json:"zone" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"max=100,omitempty"`
+	AccountID   string   `json:"account_id" validate:"required"`
+	Zone        string   `json:"zone" validate:"required"`
+	CloudCvmIDs []string `json:"cloud_cvm_ids" validate:"max=100,omitempty"`
 }
 
 // Validate validate sync vpc request.
@@ -63,4 +58,9 @@ type HuaWeiNetworkInterfaceSyncReq struct {
 // Validate validate sync vpc request.
 func (r *HuaWeiNetworkInterfaceSyncReq) Validate() error {
 	return validator.Validate.Struct(r)
+}
+
+// NetworkInterfaceSyncResult defines sync result.
+type NetworkInterfaceSyncResult struct {
+	TaskID string `json:"task_id"`
 }

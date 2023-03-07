@@ -66,8 +66,10 @@ func toProtoNetworkInterfaceExtWithCvmID[T coreni.NetworkInterfaceExtension](d *
 				CloudVpcID:    d.CloudVpcID,
 				SubnetID:      d.SubnetID,
 				CloudSubnetID: d.CloudSubnetID,
-				PrivateIP:     d.PrivateIP,
-				PublicIP:      d.PublicIP,
+				PrivateIPv4:   d.PrivateIPv4,
+				PrivateIPv6:   d.PrivateIPv6,
+				PublicIPv4:    d.PublicIPv4,
+				PublicIPv6:    d.PublicIPv6,
 				BkBizID:       d.BkBizID,
 				InstanceID:    d.InstanceID,
 				Revision: &core.Revision{

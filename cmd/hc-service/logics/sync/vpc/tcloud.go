@@ -32,7 +32,6 @@ import (
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -42,12 +41,8 @@ import (
 )
 
 // TCloudVpcSync sync tencent cloud vpc.
-func TCloudVpcSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
+func TCloudVpcSync(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
-
-	if len(req.Region) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "region is required")
-	}
 
 	// batch get vpc list from cloudapi.
 	list, err := BatchGetTCloudVpcList(kt, req, adaptor)
@@ -58,7 +53,7 @@ func TCloudVpcSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
 	}
 
 	// batch get vpc map from db.
-	resourceDBMap, err := BatchGetVpcMapFromDB(kt, req, enumor.TCloud, dataCli)
+	resourceDBMap, err := BatchGetVpcMapFromDB(kt, enumor.TCloud, dataCli)
 	if err != nil {
 		logs.Errorf("%s-vpc batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.TCloud, req.AccountID, req.Region, err)
@@ -79,7 +74,7 @@ func TCloudVpcSync(kt *kit.Kit, req *hcservice.ResourceSyncReq,
 }
 
 // BatchGetTCloudVpcList batch get vpc list from cloudapi.
-func BatchGetTCloudVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
+func BatchGetTCloudVpcList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
 	*types.TCloudVpcListResult, error) {
 	cli, err := adaptor.TCloud(kt, req.AccountID)
 	if err != nil {
@@ -125,8 +120,8 @@ func BatchGetTCloudVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, adaptor 
 }
 
 // BatchGetVpcMapFromDB batch get vpc map from db.
-func BatchGetVpcMapFromDB(kt *kit.Kit, req *hcservice.ResourceSyncReq, vendor enumor.Vendor,
-	dataCli *dataclient.Client) (map[string]cloudcore.BaseVpc, error) {
+func BatchGetVpcMapFromDB(kt *kit.Kit, vendor enumor.Vendor, dataCli *dataclient.Client) (
+	map[string]cloudcore.BaseVpc, error) {
 
 	page := uint32(0)
 	resourceMap := make(map[string]cloudcore.BaseVpc, 0)
@@ -149,8 +144,8 @@ func BatchGetVpcMapFromDB(kt *kit.Kit, req *hcservice.ResourceSyncReq, vendor en
 		}
 		dbList, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), dbQueryReq)
 		if err != nil {
-			logs.Errorf("%s-vpc batch get vpclist db error. accountID: %s, region: %s, offset: %d, limit: %d, "+
-				"err: %v", vendor, req.AccountID, req.Region, offset, count, err)
+			logs.Errorf("%s-vpc batch get vpclist db error. offset: %d, limit: %d, err: %v",
+				vendor, offset, count, err)
 			return nil, err
 		}
 
@@ -172,7 +167,7 @@ func BatchGetVpcMapFromDB(kt *kit.Kit, req *hcservice.ResourceSyncReq, vendor en
 }
 
 // BatchSyncTcloudVpcList batch sync vendor vpc list.
-func BatchSyncTcloudVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *types.TCloudVpcListResult,
+func BatchSyncTcloudVpcList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, list *types.TCloudVpcListResult,
 	resourceDBMap map[string]cloudcore.BaseVpc, dataCli *dataclient.Client) error {
 
 	createResources, updateResources, existIDMap, err := filterTcloudVpcList(req, list, resourceDBMap)
@@ -225,7 +220,7 @@ func BatchSyncTcloudVpcList(kt *kit.Kit, req *hcservice.ResourceSyncReq, list *t
 }
 
 // filterTcloudVpcList filter tcloud vpc list
-func filterTcloudVpcList(req *hcservice.ResourceSyncReq, list *types.TCloudVpcListResult,
+func filterTcloudVpcList(req *hcservice.TCloudResourceSyncReq, list *types.TCloudVpcListResult,
 	resourceDBMap map[string]cloudcore.BaseVpc) (createResources []cloud.VpcCreateReq[cloud.TCloudVpcCreateExt],
 	updateResources []cloud.VpcUpdateReq[cloud.TCloudVpcUpdateExt], existIDMap map[string]bool, err error) {
 	if list == nil || len(list.Details) == 0 {
