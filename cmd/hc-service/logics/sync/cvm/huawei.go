@@ -910,12 +910,12 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	}
 
 	if len(cloudVpcMap) > 0 {
-		req := &hcservice.HuaWeiResourceSyncReq{
+		opt := &vpc.SyncHuaWeiOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  converter.MapKeyToStringSlice(cloudVpcMap),
 		}
-		_, err := vpc.HuaWeiVpcSync(kt, req, ad, dataCli)
+		_, err := vpc.HuaWeiVpcSync(kt, opt, ad, dataCli)
 		if err != nil {
 			logs.Errorf("request to sync huawei vpc logic failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -924,13 +924,13 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 
 	if len(cloudSubnetMap) > 0 {
 		for cloudVpcID, cloudSubnetIDMap := range cloudSubnetMap {
-			req := &hcservice.HuaWeiResourceSyncReq{
-				AccountID: req.AccountID,
-				Region:    req.Region,
-				VpcID:     cloudVpcID,
-				CloudIDs:  converter.MapKeyToStringSlice(cloudSubnetIDMap),
+			req := &subnet.SyncHuaWeiOption{
+				AccountID:  req.AccountID,
+				Region:     req.Region,
+				CloudVpcID: cloudVpcID,
+				CloudIDs:   converter.MapKeyToStringSlice(cloudSubnetIDMap),
 			}
-			_, err := subnet.HuaWeiSubnetSync(kt, req, ad, dataCli)
+			_, err := subnet.SyncHuaWeiSubnet(kt, req, ad, dataCli)
 			if err != nil {
 				logs.Errorf("request to sync huawei subnet logic failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err

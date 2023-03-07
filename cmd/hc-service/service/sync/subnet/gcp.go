@@ -21,17 +21,24 @@
 package subnet
 
 import (
-	subnetlogic "hcm/cmd/hc-service/logics/sync/subnet"
-	"hcm/pkg/api/core"
-	hcproto "hcm/pkg/api/hc-service"
+	"hcm/cmd/hc-service/logics/sync/subnet"
+	"hcm/pkg/adaptor/gcp"
+	"hcm/pkg/adaptor/types"
+	typecore "hcm/pkg/adaptor/types/core"
+	dataproto "hcm/pkg/api/data-service"
+	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 // SyncGcpSubnet sync gcp subnet to hcm.
 func (v syncSubnetSvc) SyncGcpSubnet(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcproto.GcpResourceSyncReq)
+	req := new(sync.GcpSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -40,15 +47,122 @@ func (v syncSubnetSvc) SyncGcpSubnet(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	if len(req.CloudIDs) > 0 && len(req.CloudIDs) > int(core.DefaultMaxPageLimit) {
-		return nil, errf.New(errf.TooManyRequest, "cloud_ids length should <= 500")
-	}
-
-	resp, err := subnetlogic.GcpSubnetSync(cts.Kit, req, v.ad, v.dataCli)
+	cli, err := v.ad.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("request to sync gcp subnet logic failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return resp, nil
+	cloudTotalMap := make(map[string]struct{}, 0)
+	listOpt := &types.GcpSubnetListOption{
+		Region: req.Region,
+		GcpListOption: typecore.GcpListOption{
+			CloudIDs: nil,
+			Page: &typecore.GcpPage{
+				PageSize:  int64(constant.BatchOperationMaxLimit),
+				PageToken: "",
+			},
+		},
+	}
+	for {
+		subnetResult, err := cli.ListSubnet(cts.Kit, listOpt)
+		if err != nil {
+			logs.Errorf("request adaptor list gcp subnet failed, err: %v, opt: %v, rid: %s", err, listOpt, cts.Kit.Rid)
+			return nil, err
+		}
+
+		if len(subnetResult.Details) == 0 {
+			break
+		}
+
+		cloudIDs := make([]string, 0, len(subnetResult.Details))
+		for _, one := range subnetResult.Details {
+			cloudTotalMap[one.CloudID] = struct{}{}
+			cloudIDs = append(cloudIDs, one.CloudID)
+		}
+
+		syncOpt := &subnet.SyncGcpOption{
+			AccountID: req.AccountID,
+			Region:    req.Region,
+			CloudIDs:  cloudIDs,
+		}
+		_, err = subnet.GcpSubnetSync(cts.Kit, syncOpt, v.ad, v.dataCli)
+		if err != nil {
+			logs.Errorf("request to sync gcp subnet failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+			return nil, err
+		}
+
+		if len(subnetResult.NextPageToken) == 0 {
+			break
+		}
+
+		listOpt.Page.PageToken = subnetResult.NextPageToken
+	}
+
+	if err = v.delDBNotExistGcpSubnet(cts.Kit, cli, req, cloudTotalMap); err != nil {
+		logs.Errorf("remove db not exist subnet failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (v *syncSubnetSvc) delDBNotExistGcpSubnet(kt *kit.Kit, gcp *gcp.Gcp, req *sync.GcpSyncReq,
+	cloudCvmMap map[string]struct{}) error {
+
+	// 找出云上已经不存在的SubnetID
+	delCloudIDs, err := v.queryDeleteSubnet(kt, req.Region, req.AccountID, cloudCvmMap)
+	if err != nil {
+		return err
+	}
+
+	// 再用这部分SubnetID去云上确认是否存在，如果不存在，删除db数据，存在的忽略，等同步修复
+	start, end := 0, typecore.GcpQueryLimit
+	for {
+		if start+end > len(delCloudIDs) {
+			end = len(delCloudIDs)
+		} else {
+			end = int(start) + typecore.GcpQueryLimit
+		}
+		tmpCloudIDs := delCloudIDs[start:end]
+
+		if len(tmpCloudIDs) == 0 {
+			break
+		}
+
+		listOpt := &types.GcpSubnetListOption{
+			Region: req.Region,
+			GcpListOption: typecore.GcpListOption{
+				CloudIDs: tmpCloudIDs,
+			},
+		}
+		subnetResult, err := gcp.ListSubnet(kt, listOpt)
+		if err != nil {
+			logs.Errorf("list subnet from gcp failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+			return err
+		}
+
+		tmpMap := converter.StringSliceToMap(tmpCloudIDs)
+		for _, one := range subnetResult.Details {
+			delete(tmpMap, one.CloudID)
+		}
+
+		if len(tmpMap) == 0 {
+			start = end
+			continue
+		}
+
+		if err = v.dataCli.Global.Subnet.BatchDelete(kt.Ctx, kt.Header(), &dataproto.BatchDeleteReq{
+			Filter: tools.ContainersExpression("cloud_id", converter.MapKeyToStringSlice(tmpMap)),
+		}); err != nil {
+			logs.Errorf("batch delete db subnet failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+		start = end
+		if start == len(delCloudIDs) {
+			break
+		}
+	}
+
+	return nil
 }

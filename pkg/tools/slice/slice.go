@@ -16,6 +16,7 @@
  *
  * to the current version of the project delivered to anyone in the future.
  */
+
 package slice
 
 // Remove 移除首次匹配到的 item 元素
@@ -38,6 +39,7 @@ func StringInSlice(str string, list []string) bool {
 	return false
 }
 
+// Unique 去重
 func Unique[T comparable](list []T) []T {
 	uniqueMap := make(map[T]struct{})
 	uniqueList := make([]T, 0)
@@ -47,5 +49,6 @@ func Unique[T comparable](list []T) []T {
 			uniqueList = append(uniqueList, item)
 		}
 	}
-	return list
+
+	return uniqueList
 }

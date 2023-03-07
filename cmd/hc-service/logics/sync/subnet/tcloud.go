@@ -21,8 +21,10 @@
 package subnet
 
 import (
+	"errors"
 	"fmt"
 
+	"hcm/cmd/hc-service/logics/sync/logics"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
@@ -32,17 +34,44 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
 )
 
+// SyncTCloudOption define tcloud sync option.
+type SyncTCloudOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate SyncTCloudOption.
+func (opt SyncTCloudOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) == 0 {
+		return errors.New("cloudIDs is required")
+	}
+
+	if len(opt.CloudIDs) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("cloudIDs should <= %d", core.DefaultMaxPageLimit)
+	}
+
+	return nil
+}
+
 // TCloudSubnetSync sync tencent cloud subnet.
-func TCloudSubnetSync(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient,
+func TCloudSubnetSync(kt *kit.Kit, req *SyncTCloudOption, adaptor *cloudclient.CloudAdaptorClient,
 	dataCli *dataclient.Client) (interface{}, error) {
 
 	// batch get subnet list from cloudapi.
@@ -54,7 +83,7 @@ func TCloudSubnetSync(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, adaptor
 	}
 
 	// batch get subnet map from db.
-	resourceDBMap, err := BatchGetSubnetMapFromDB(kt, enumor.TCloud, req.CloudIDs, "", dataCli)
+	resourceDBMap, err := listTcloudSubnetMapFromDB(kt, req.CloudIDs, dataCli)
 	if err != nil {
 		logs.Errorf("%s-subnet batch get subnetdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.TCloud, req.AccountID, req.Region, err)
@@ -62,7 +91,7 @@ func TCloudSubnetSync(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, adaptor
 	}
 
 	// batch sync vendor subnet list.
-	err = BatchSyncTcloudSubnetList(kt, req, list, resourceDBMap, dataCli)
+	err = BatchSyncTcloudSubnetList(kt, req, list, resourceDBMap, dataCli, adaptor)
 	if err != nil {
 		logs.Errorf("%s-subnet compare api and subnetdblist failed. accountID: %s, region: %s, err: %v",
 			enumor.TCloud, req.AccountID, req.Region, err)
@@ -74,8 +103,39 @@ func TCloudSubnetSync(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, adaptor
 	}, nil
 }
 
+func listTcloudSubnetMapFromDB(kt *kit.Kit, cloudIDs []string, dataCli *dataclient.Client) (
+	map[string]cloudcore.Subnet[cloudcore.TCloudSubnetExtension], error) {
+
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "cloud_id",
+				Op:    filter.In.Factory(),
+				Value: cloudIDs,
+			},
+		},
+	}
+	resourceMap := make(map[string]cloudcore.Subnet[cloudcore.TCloudSubnetExtension], 0)
+	dbQueryReq := &core.ListReq{
+		Filter: expr,
+		Page:   core.DefaultBasePage,
+	}
+	dbList, err := dataCli.TCloud.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), dbQueryReq)
+	if err != nil {
+		logs.Errorf("tcloud-subnet list ext db failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	for _, item := range dbList.Details {
+		resourceMap[item.CloudID] = item
+	}
+
+	return resourceMap, nil
+}
+
 // BatchGetTCloudSubnetList batch get subnet list from cloudapi.
-func BatchGetTCloudSubnetList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq,
+func BatchGetTCloudSubnetList(kt *kit.Kit, req *SyncTCloudOption,
 	adaptor *cloudclient.CloudAdaptorClient) (*types.TCloudSubnetListResult, error) {
 
 	cli, err := adaptor.TCloud(kt, req.AccountID)
@@ -121,76 +181,12 @@ func BatchGetTCloudSubnetList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq,
 	return list, nil
 }
 
-// BatchGetSubnetMapFromDB batch get subnet map from db.
-func BatchGetSubnetMapFromDB(kt *kit.Kit, vendor enumor.Vendor, cloudIDs []string, cloudVpcID string,
-	dataCli *dataclient.Client) (map[string]cloudcore.BaseSubnet, error) {
-
-	rulesCommon := []filter.RuleFactory{
-		&filter.AtomRule{
-			Field: "vendor",
-			Op:    filter.Equal.Factory(),
-			Value: vendor,
-		},
-	}
-
-	if cloudVpcID != "" {
-		rulesCommon = append(rulesCommon, &filter.AtomRule{
-			Field: "cloud_vpc_id",
-			Op:    filter.Equal.Factory(),
-			Value: cloudVpcID,
-		})
-	}
-
-	if len(cloudIDs) > 0 {
-		rulesCommon = append(rulesCommon, &filter.AtomRule{
-			Field: "cloud_id",
-			Op:    filter.In.Factory(),
-			Value: cloudIDs,
-		})
-	}
-
-	page := uint32(0)
-	count := core.DefaultMaxPageLimit
-	resourceMap := make(map[string]cloudcore.BaseSubnet, 0)
-	for {
-		offset := page * uint32(count)
-		expr := &filter.Expression{
-			Op:    filter.And,
-			Rules: rulesCommon,
-		}
-		dbQueryReq := &core.ListReq{
-			Filter: expr,
-			Page:   &core.BasePage{Count: false, Start: offset, Limit: count},
-		}
-		dbList, err := dataCli.Global.Subnet.List(kt.Ctx, kt.Header(), dbQueryReq)
-		if err != nil {
-			logs.Errorf("%s-subnet batch list db error. offset: %d, limit: %d, err: %v",
-				vendor, offset, count, err)
-			return nil, err
-		}
-
-		if len(dbList.Details) == 0 {
-			return resourceMap, nil
-		}
-
-		for _, item := range dbList.Details {
-			resourceMap[item.CloudID] = item
-		}
-
-		if len(dbList.Details) < int(count) {
-			break
-		}
-		page++
-	}
-
-	return resourceMap, nil
-}
-
 // BatchSyncTcloudSubnetList batch sync vendor subnet list.
-func BatchSyncTcloudSubnetList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, list *types.TCloudSubnetListResult,
-	resourceDBMap map[string]cloudcore.BaseSubnet, dataCli *dataclient.Client) error {
+func BatchSyncTcloudSubnetList(kt *kit.Kit, req *SyncTCloudOption, list *types.TCloudSubnetListResult,
+	resourceDBMap map[string]cloudcore.Subnet[cloudcore.TCloudSubnetExtension], dataCli *dataclient.Client,
+	adaptor *cloudclient.CloudAdaptorClient) error {
 
-	createResources, updateResources, existIDMap, err := filterTcloudSubnetList(req, list, resourceDBMap)
+	createResources, updateResources, delCloudIDs, err := filterTcloudSubnetList(req, list, resourceDBMap)
 	if err != nil {
 		return err
 	}
@@ -209,7 +205,7 @@ func BatchSyncTcloudSubnetList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq
 
 	// add resource data
 	if len(createResources) > 0 {
-		err = batchCreateTcloudSubnet(kt, createResources, dataCli)
+		err = batchCreateTcloudSubnet(kt, createResources, dataCli, adaptor, req)
 		if err != nil {
 			logs.Errorf("%s-subnet batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.TCloud, req.AccountID, req.Region, err)
@@ -218,18 +214,10 @@ func BatchSyncTcloudSubnetList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq
 	}
 
 	// delete resource data
-	deleteIDs := make([]string, 0)
-	for _, resourceItem := range resourceDBMap {
-		if _, ok := existIDMap[resourceItem.ID]; !ok {
-			deleteIDs = append(deleteIDs, resourceItem.ID)
-		}
-	}
-
-	if len(deleteIDs) > 0 {
-		err = BatchDeleteSubnetByIDs(kt, deleteIDs, dataCli)
-		if err != nil {
+	if len(delCloudIDs) > 0 {
+		if err = BatchDeleteSubnetByIDs(kt, delCloudIDs, dataCli); err != nil {
 			logs.Errorf("%s-subnet batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, "+
-				"err: %v", enumor.TCloud, req.AccountID, req.Region, deleteIDs, err)
+				"err: %v", enumor.TCloud, req.AccountID, req.Region, delCloudIDs, err)
 			return err
 		}
 	}
@@ -238,54 +226,61 @@ func BatchSyncTcloudSubnetList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq
 }
 
 // filterTcloudSubnetList filter tcloud subnet list
-func filterTcloudSubnetList(req *hcservice.TCloudResourceSyncReq, list *types.TCloudSubnetListResult,
-	resourceDBMap map[string]cloudcore.BaseSubnet) (
-	createResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt],
-	updateResources []cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt], existIDMap map[string]bool, err error) {
+func filterTcloudSubnetList(req *SyncTCloudOption, list *types.TCloudSubnetListResult,
+	resourceDBMap map[string]cloudcore.Subnet[cloudcore.TCloudSubnetExtension]) (
+	[]cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt],
+	[]cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt], []string, error) {
 
 	if list == nil || len(list.Details) == 0 {
 		return nil, nil, nil,
 			fmt.Errorf("cloudapi subnetlist is empty, accountID: %s, region: %s", req.AccountID, req.Region)
 	}
 
-	existIDMap = make(map[string]bool, 0)
+	createResources := make([]cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt], 0)
+	updateResources := make([]cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt], 0)
 	for _, item := range list.Details {
 		// need compare and update resource data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
-			if resourceInfo.Name == item.Name && resourceInfo.CloudVpcID == item.CloudVpcID &&
-				converter.PtrToVal(resourceInfo.Memo) == converter.PtrToVal(item.Memo) {
-				existIDMap[resourceInfo.ID] = true
-				continue
+			if isTCloudSubnetChange(resourceInfo, item) {
+				tmpRes := cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt]{
+					ID: resourceInfo.ID,
+					SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
+						Name:              converter.ValToPtr(item.Name),
+						Ipv4Cidr:          item.Ipv4Cidr,
+						Ipv6Cidr:          item.Ipv6Cidr,
+						Memo:              item.Memo,
+						CloudRouteTableID: nil,
+						RouteTableID:      nil,
+					},
+					Extension: &cloud.TCloudSubnetUpdateExt{
+						IsDefault:         item.Extension.IsDefault,
+						Region:            item.Extension.Region,
+						Zone:              item.Extension.Zone,
+						CloudNetworkAclID: item.Extension.CloudNetworkAclID,
+					},
+				}
+
+				updateResources = append(updateResources, tmpRes)
 			}
 
-			tmpRes := cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt]{
-				ID: resourceInfo.ID,
-				Extension: &cloud.TCloudSubnetUpdateExt{
-					IsDefault:         item.Extension.IsDefault,
-					Region:            item.Extension.Region,
-					Zone:              item.Extension.Zone,
-					CloudNetworkAclID: item.Extension.CloudNetworkAclID,
-				},
-			}
-			tmpRes.Name = converter.ValToPtr(item.Name)
-			tmpRes.Ipv4Cidr = item.Ipv4Cidr
-			tmpRes.Ipv6Cidr = item.Ipv6Cidr
-			tmpRes.Memo = item.Memo
-
-			updateResources = append(updateResources, tmpRes)
-			existIDMap[resourceInfo.ID] = true
+			delete(resourceDBMap, item.CloudID)
 		} else {
 			// need add resource data
 			tmpRes := cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt]{
 				AccountID:  req.AccountID,
 				CloudVpcID: item.CloudVpcID,
-				CloudID:    item.CloudID,
-				Name:       converter.ValToPtr(item.Name),
-				Region:     item.Extension.Region,
-				Zone:       item.Extension.Zone,
-				Ipv4Cidr:   item.Ipv4Cidr,
-				Ipv6Cidr:   item.Ipv6Cidr,
-				Memo:       item.Memo,
+				VpcID:      "",
+				BkBizID:    constant.UnbindBkCloudID,
+				// 该字段不支持
+				CloudRouteTableID: "",
+				RouteTableID:      "",
+				CloudID:           item.CloudID,
+				Name:              converter.ValToPtr(item.Name),
+				Region:            item.Extension.Region,
+				Zone:              item.Extension.Zone,
+				Ipv4Cidr:          item.Ipv4Cidr,
+				Ipv6Cidr:          item.Ipv6Cidr,
+				Memo:              item.Memo,
 				Extension: &cloud.TCloudSubnetCreateExt{
 					IsDefault:         item.Extension.IsDefault,
 					CloudNetworkAclID: item.Extension.CloudNetworkAclID,
@@ -295,33 +290,81 @@ func filterTcloudSubnetList(req *hcservice.TCloudResourceSyncReq, list *types.TC
 		}
 	}
 
-	return createResources, updateResources, existIDMap, nil
+	deleteCloudIDs := make([]string, 0, len(resourceDBMap))
+	for _, vpc := range resourceDBMap {
+		deleteCloudIDs = append(deleteCloudIDs, vpc.CloudID)
+	}
+
+	return createResources, updateResources, deleteCloudIDs, nil
+}
+
+func isTCloudSubnetChange(info cloudcore.Subnet[cloudcore.TCloudSubnetExtension], item types.TCloudSubnet) bool {
+	if info.CloudVpcID != item.CloudVpcID {
+		return true
+	}
+
+	if info.Name != item.Name {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(info.Ipv4Cidr, item.Ipv4Cidr) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(info.Ipv6Cidr, item.Ipv6Cidr) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(item.Memo, info.Memo) {
+		return true
+	}
+
+	if info.Extension.IsDefault != item.Extension.IsDefault {
+		return true
+	}
+
+	if info.Extension.CloudNetworkAclId != item.Extension.CloudNetworkAclID {
+		return true
+	}
+
+	return false
 }
 
 func batchCreateTcloudSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt],
-	dataCli *dataclient.Client) error {
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncTCloudOption) error {
 
-	querySize := int(filter.DefaultMaxInLimit)
-	times := len(createResources) / querySize
-	if len(createResources)%querySize != 0 {
-		times++
+	cloudVpcIDs := make([]string, 0, len(createResources))
+	for _, one := range createResources {
+		cloudVpcIDs = append(cloudVpcIDs, one.CloudVpcID)
 	}
 
-	for i := 0; i < times; i++ {
-		var newResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt]
-		if i == times-1 {
-			newResources = append(newResources, createResources[i*querySize:]...)
-		} else {
-			newResources = append(newResources, createResources[i*querySize:(i+1)*querySize]...)
+	opt := &logics.QueryVpcIDsAndSyncOption{
+		Vendor:      enumor.TCloud,
+		AccountID:   req.AccountID,
+		CloudVpcIDs: cloudVpcIDs,
+		Region:      req.Region,
+	}
+	vpcMap, err := logics.QueryVpcIDsAndSync(kt, adaptor, dataCli, opt)
+	if err != nil {
+		logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	for index, resource := range createResources {
+		one, exist := vpcMap[resource.CloudVpcID]
+		if !exist {
+			return fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
 		}
 
-		createReq := &cloud.SubnetBatchCreateReq[cloud.TCloudSubnetCreateExt]{
-			Subnets: newResources,
-		}
+		createResources[index].VpcID = one
+	}
 
-		if _, err := dataCli.TCloud.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-			return err
-		}
+	createReq := &cloud.SubnetBatchCreateReq[cloud.TCloudSubnetCreateExt]{
+		Subnets: createResources,
+	}
+
+	if _, err := dataCli.TCloud.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
+		return err
 	}
 
 	return nil

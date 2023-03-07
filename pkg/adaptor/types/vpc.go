@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 )
 
 // -------------------------- Update --------------------------
@@ -117,6 +118,18 @@ func (v HuaWeiVpcUpdateOption) Validate() error {
 }
 
 // -------------------------- List --------------------------
+
+// GcpListOption defines options to list gcp vpc.
+type GcpListOption struct {
+	CloudIDs  []string      `json:"cloud_ids" validate:"omitempty"`
+	SelfLinks []string      `json:"self_links" validate:"omitempty"`
+	Page      *core.GcpPage `json:"page" validate:"omitempty"`
+}
+
+// Validate gcp cvm list option.
+func (opt GcpListOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
 
 // TCloudVpcListResult defines tencent cloud list vpc result.
 type TCloudVpcListResult struct {

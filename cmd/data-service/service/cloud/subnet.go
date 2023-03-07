@@ -24,12 +24,10 @@ import (
 	"reflect"
 
 	"hcm/cmd/data-service/service/capability"
-	"hcm/cmd/data-service/service/cloud/logics"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
@@ -60,6 +58,7 @@ func InitSubnetService(cap *capability.Capability) {
 	h.Add("BatchUpdateSubnetBaseInfo", "PATCH", "/subnets/base/batch", svc.BatchUpdateSubnetBaseInfo)
 	h.Add("GetSubnet", "GET", "/vendors/{vendor}/subnets/{id}", svc.GetSubnet)
 	h.Add("ListSubnet", "POST", "/subnets/list", svc.ListSubnet)
+	h.Add("ListSubnetExt", "POST", "/vendors/{vendor}/subnets/list", svc.ListSubnetExt)
 	h.Add("DeleteSubnet", "DELETE", "/subnets/batch", svc.BatchDeleteSubnet)
 
 	h.Load(cap.WebService)
@@ -68,8 +67,6 @@ func InitSubnetService(cap *capability.Capability) {
 type subnetSvc struct {
 	dao dao.Set
 }
-
-// TODO sync vpc id
 
 // BatchCreateSubnet batch create subnet.
 func (svc *subnetSvc) BatchCreateSubnet(cts *rest.Contexts) (interface{}, error) {
@@ -117,16 +114,6 @@ func batchCreateSubnet[T protocloud.SubnetCreateExtension](cts *rest.Contexts, v
 		}
 	}
 
-	vpcIDMap, err := logics.GetVpcIDByCloudID(cts.Kit, svc.dao, vendor, vpcCloudIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	rtIDMap, err := logics.GetRouteTableIDByCloudID(cts.Kit, svc.dao, rtCloudIDs)
-	if err != nil {
-		return nil, err
-	}
-
 	subnetIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		subnets := make([]tablecloud.SubnetTable, 0, len(req.Subnets))
 		for _, createReq := range req.Subnets {
@@ -142,24 +129,18 @@ func batchCreateSubnet[T protocloud.SubnetCreateExtension](cts *rest.Contexts, v
 				CloudRouteTableID: &createReq.CloudRouteTableID,
 				CloudID:           createReq.CloudID,
 				Name:              createReq.Name,
+				VpcID:             createReq.VpcID,
 				Region:            createReq.Region,
 				Zone:              createReq.Zone,
 				Ipv4Cidr:          createReq.Ipv4Cidr,
 				Ipv6Cidr:          createReq.Ipv6Cidr,
 				Memo:              createReq.Memo,
 				Extension:         ext,
-				RouteTableID:      converter.ValToPtr(rtIDMap[createReq.CloudRouteTableID]),
-				BkBizID:           constant.UnassignedBiz,
+				RouteTableID:      &createReq.RouteTableID,
+				BkBizID:           createReq.BkBizID,
 				Creator:           cts.Kit.User,
 				Reviser:           cts.Kit.User,
 			}
-
-			vpcID, exists := vpcIDMap[createReq.CloudVpcID]
-			if !exists {
-				vpcID = constant.NotFoundVpc
-			}
-
-			subnet.VpcID = vpcID
 
 			subnets = append(subnets, subnet)
 		}
@@ -310,12 +291,6 @@ func (svc *subnetSvc) BatchUpdateSubnetBaseInfo(cts *rest.Contexts) (interface{}
 		return nil, fmt.Errorf("list subnet failed, some subnet(ids=%+v) doesn't exist", ids)
 	}
 
-	// get route table cloud id to id map
-	rtIDMap, err := logics.GetRouteTableIDByCloudID(cts.Kit, svc.dao, rtCloudIDs)
-	if err != nil {
-		return nil, err
-	}
-
 	// update subnet
 	subnet := &tablecloud.SubnetTable{
 		Reviser: cts.Kit.User,
@@ -328,7 +303,7 @@ func (svc *subnetSvc) BatchUpdateSubnetBaseInfo(cts *rest.Contexts) (interface{}
 		subnet.Memo = updateReq.Data.Memo
 		subnet.BkBizID = updateReq.Data.BkBizID
 		if updateReq.Data.CloudRouteTableID != nil {
-			subnet.RouteTableID = converter.ValToPtr(rtIDMap[*updateReq.Data.CloudRouteTableID])
+			subnet.RouteTableID = updateReq.Data.RouteTableID
 			subnet.CloudRouteTableID = updateReq.Data.CloudRouteTableID
 		}
 		err = svc.dao.Subnet().Update(cts.Kit, tools.ContainersExpression("id", updateReq.IDs), subnet)
@@ -517,4 +492,69 @@ func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error)
 	}
 
 	return nil, nil
+}
+
+// ListSubnetExt ...
+func (svc *subnetSvc) ListSubnetExt(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+		Fields: req.Fields,
+	}
+	listResp, err := svc.dao.Subnet().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list subnet failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return conSubnetExtListResult[protocore.TCloudSubnetExtension](listResp.Details)
+	case enumor.Aws:
+		return conSubnetExtListResult[protocore.AwsSubnetExtension](listResp.Details)
+	case enumor.Azure:
+		return conSubnetExtListResult[protocore.AzureSubnetExtension](listResp.Details)
+	case enumor.HuaWei:
+		return conSubnetExtListResult[protocore.HuaWeiSubnetExtension](listResp.Details)
+	case enumor.Gcp:
+		return conSubnetExtListResult[protocore.GcpSubnetExtension](listResp.Details)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+	}
+}
+
+func conSubnetExtListResult[T protocore.SubnetExtension](tables []tablecloud.SubnetTable) (
+	*protocloud.SubnetExtListResult[T], error) {
+
+	details := make([]protocore.Subnet[T], 0, len(tables))
+	for _, one := range tables {
+		extension := new(T)
+		err := json.UnmarshalFromString(string(one.Extension), &extension)
+		if err != nil {
+			return nil, fmt.Errorf("UnmarshalFromString vpc json extension failed, err: %v", err)
+		}
+
+		details = append(details, protocore.Subnet[T]{
+			BaseSubnet: *convertBaseSubnet(&one),
+			Extension:  extension,
+		})
+	}
+
+	return &protocloud.SubnetExtListResult[T]{
+		Details: details,
+	}, nil
 }

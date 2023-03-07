@@ -22,16 +22,21 @@ package vpc
 
 import (
 	vpclogic "hcm/cmd/hc-service/logics/sync/vpc"
-	"hcm/pkg/api/core"
-	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/adaptor/tcloud"
+	typecore "hcm/pkg/adaptor/types/core"
+	dataproto "hcm/pkg/api/data-service"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 // SyncTCloudVpc sync tcloud vpc to hcm.
 func (v syncVpcSvc) SyncTCloudVpc(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcproto.TCloudResourceSyncReq)
+	req := new(sync.TCloudSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -40,15 +45,118 @@ func (v syncVpcSvc) SyncTCloudVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	if len(req.CloudIDs) > 0 && len(req.CloudIDs) > int(core.DefaultMaxPageLimit) {
-		return nil, errf.New(errf.TooManyRequest, "cloud_ids length should <= 500")
-	}
-
-	resp, err := vpclogic.TCloudVpcSync(cts.Kit, req, v.ad, v.dataCli)
+	cli, err := v.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("request to sync tcloud vpc logic failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return resp, nil
+	cloudTotalMap := make(map[string]struct{}, 0)
+	listOpt := &typecore.TCloudListOption{
+		Region:   req.Region,
+		CloudIDs: nil,
+		Page: &typecore.TCloudPage{
+			Offset: 0,
+			Limit:  typecore.TCloudQueryLimit,
+		},
+	}
+	for {
+		vpcResult, err := cli.ListVpc(cts.Kit, listOpt)
+		if err != nil {
+			logs.Errorf("request adaptor list tcloud vpc failed, err: %v, opt: %v, rid: %s", err, listOpt, cts.Kit.Rid)
+			return nil, err
+		}
+
+		if len(vpcResult.Details) == 0 {
+			break
+		}
+
+		cloudIDs := make([]string, 0, len(vpcResult.Details))
+		for _, one := range vpcResult.Details {
+			cloudTotalMap[one.CloudID] = struct{}{}
+			cloudIDs = append(cloudIDs, one.CloudID)
+		}
+
+		syncOpt := &vpclogic.SyncTCloudOption{
+			AccountID: req.AccountID,
+			Region:    req.Region,
+			CloudIDs:  cloudIDs,
+		}
+		_, err = vpclogic.TCloudVpcSync(cts.Kit, syncOpt, v.ad, v.dataCli)
+		if err != nil {
+			logs.Errorf("request to sync tcloud vpc failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+			return nil, err
+		}
+
+		if len(vpcResult.Details) < typecore.TCloudQueryLimit {
+			break
+		}
+
+		listOpt.Page.Offset += typecore.TCloudQueryLimit
+	}
+
+	if err = v.delDBNotExistTCloudVpc(cts.Kit, cli, req, cloudTotalMap); err != nil {
+		logs.Errorf("remove db not exist vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (v *syncVpcSvc) delDBNotExistTCloudVpc(kt *kit.Kit, tcloud *tcloud.TCloud, req *sync.TCloudSyncReq,
+	cloudCvmMap map[string]struct{}) error {
+
+	// 找出云上已经不存在的VpcID
+	delCloudVpcIDs, err := v.queryDeleteVpc(kt, req.Region, req.AccountID, cloudCvmMap)
+	if err != nil {
+		return err
+	}
+
+	// 再用这部分VpcID去云上确认是否存在，如果不存在，删除db数据，存在的忽略，等同步修复
+	start, end := 0, typecore.TCloudQueryLimit
+	for {
+		if start+end > len(delCloudVpcIDs) {
+			end = len(delCloudVpcIDs)
+		} else {
+			end = int(start) + typecore.TCloudQueryLimit
+		}
+		tmpCloudIDs := delCloudVpcIDs[start:end]
+
+		if len(tmpCloudIDs) == 0 {
+			break
+		}
+
+		listOpt := &typecore.TCloudListOption{
+			Region:   req.Region,
+			CloudIDs: tmpCloudIDs,
+		}
+		vpcResult, err := tcloud.ListVpc(kt, listOpt)
+		if err != nil {
+			logs.Errorf("list vpc from tcloud failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+			return err
+		}
+
+		tmpMap := converter.StringSliceToMap(tmpCloudIDs)
+		for _, vpc := range vpcResult.Details {
+			delete(tmpMap, vpc.CloudID)
+		}
+
+		if len(tmpMap) == 0 {
+			start = end
+			continue
+		}
+
+		if err = v.dataCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), &dataproto.BatchDeleteReq{
+			Filter: tools.ContainersExpression("cloud_id", converter.MapKeyToStringSlice(tmpMap)),
+		}); err != nil {
+			logs.Errorf("batch delete db vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+		start = end
+		if start == len(delCloudVpcIDs) {
+			break
+		}
+	}
+
+	return nil
 }

@@ -112,3 +112,28 @@ func (v *VpcClient) BatchUpdate(ctx context.Context, h http.Header,
 
 	return nil
 }
+
+// ListVpcExt list vpc with extension.
+func (v *VpcClient) ListVpcExt(ctx context.Context, h http.Header, req *core.ListReq) (
+	*protocloud.VpcExtListResult[corecloud.AwsVpcExtension], error) {
+
+	resp := new(protocloud.VpcExtListResp[corecloud.AwsVpcExtension])
+
+	err := v.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/vpcs/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

@@ -36,7 +36,10 @@ type SubnetBatchCreateReq[T SubnetCreateExtension] struct {
 type SubnetCreateReq[T SubnetCreateExtension] struct {
 	AccountID         string   `json:"account_id" validate:"required"`
 	CloudVpcID        string   `json:"cloud_vpc_id" validate:"required"`
+	VpcID             string   `json:"vpc_id" validate:"required"`
+	BkBizID           int64    `json:"bk_biz_id" validate:"required"`
 	CloudRouteTableID string   `json:"cloud_route_table_id" validate:"omitempty"`
+	RouteTableID      string   `json:"route_table_id" validate:"omitempty"`
 	CloudID           string   `json:"cloud_id" validate:"required"`
 	Name              *string  `json:"name,omitempty" validate:"required"`
 	Region            string   `json:"region" validate:"omitempty"`
@@ -84,9 +87,10 @@ type GcpSubnetCreateExt struct {
 
 // AzureSubnetCreateExt defines create azure subnet extensional info.
 type AzureSubnetCreateExt struct {
-	ResourceGroup        string `json:"resource_group" validate:"required"`
+	ResourceGroupName    string `json:"resource_group_name" validate:"required"`
 	NatGateway           string `json:"nat_gateway,omitempty" validate:"omitempty"`
-	NetworkSecurityGroup string `json:"network_security_group,omitempty" validate:"omitempty"`
+	CloudSecurityGroupID string `json:"cloud_security_group_id,omitempty" validate:"omitempty"`
+	SecurityGroupID      string `json:"security_group_id,omitempty" validate:"omitempty"`
 }
 
 // HuaWeiSubnetCreateExt defines create huawei subnet extensional info.
@@ -125,6 +129,7 @@ type SubnetUpdateBaseInfo struct {
 	Memo              *string  `json:"memo,omitempty" validate:"omitempty"`
 	BkBizID           int64    `json:"bk_biz_id,omitempty" validate:"omitempty"`
 	CloudRouteTableID *string  `json:"cloud_route_table_id,omitempty" validate:"omitempty"`
+	RouteTableID      *string  `json:"route_table_id" validate:"omitempty"`
 }
 
 // SubnetUpdateExtension defines subnet update request extensional info.
@@ -212,4 +217,16 @@ type SubnetListResp struct {
 type SubnetListResult struct {
 	Count   uint64             `json:"count"`
 	Details []cloud.BaseSubnet `json:"details"`
+}
+
+// SubnetExtListResult define subnet with extension list result.
+type SubnetExtListResult[T cloud.SubnetExtension] struct {
+	Count   uint64            `json:"count,omitempty"`
+	Details []cloud.Subnet[T] `json:"details,omitempty"`
+}
+
+// SubnetExtListResp define list resp.
+type SubnetExtListResp[T cloud.SubnetExtension] struct {
+	rest.BaseResp `json:",inline"`
+	Data          *SubnetExtListResult[T] `json:"data"`
 }

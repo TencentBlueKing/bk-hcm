@@ -37,6 +37,8 @@ type VpcBatchCreateReq[T VpcCreateExtension] struct {
 type VpcCreateReq[T VpcCreateExtension] struct {
 	AccountID string             `json:"account_id" validate:"required"`
 	CloudID   string             `json:"cloud_id" validate:"required"`
+	BkBizID   int64              `json:"bk_biz_id" validate:"required"`
+	BkCloudID int64              `json:"bk_cloud_id" validate:"required"`
 	Name      *string            `json:"name,omitempty" validate:"omitempty"`
 	Region    string             `json:"region" validate:"omitempty"`
 	Category  enumor.VpcCategory `json:"category" validate:"required"`
@@ -204,6 +206,18 @@ type VpcListResp struct {
 type VpcListResult struct {
 	Count   uint64          `json:"count"`
 	Details []cloud.BaseVpc `json:"details"`
+}
+
+// VpcExtListResult define vpc with extension list result.
+type VpcExtListResult[T cloud.VpcExtension] struct {
+	Count   uint64         `json:"count,omitempty"`
+	Details []cloud.Vpc[T] `json:"details,omitempty"`
+}
+
+// VpcExtListResp define list resp.
+type VpcExtListResp[T cloud.VpcExtension] struct {
+	rest.BaseResp `json:",inline"`
+	Data          *VpcExtListResult[T] `json:"data"`
 }
 
 // -------------------------- Cidr --------------------------

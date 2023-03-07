@@ -34,7 +34,7 @@ import (
 
 // SyncGcpCvm ...
 func (svc *syncCvmSvc) SyncGcpCvm(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.GcpSyncReq)
+	req := new(sync.GcpCvmSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -96,7 +96,7 @@ func (svc *syncCvmSvc) SyncGcpCvm(cts *rest.Contexts) (interface{}, error) {
 
 // SyncGcpCvmWithRelResource ...
 func (svc *syncCvmSvc) SyncGcpCvmWithRelResource(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.GcpSyncReq)
+	req := new(sync.GcpCvmSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

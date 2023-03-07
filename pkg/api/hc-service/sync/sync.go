@@ -54,15 +54,48 @@ func (req *HuaWeiSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// GcpSyncReq gcp sync request
-type GcpSyncReq struct {
+// HuaWeiSubnetSyncReq huawei subnet sync request
+type HuaWeiSubnetSyncReq struct {
+	AccountID  string `json:"account_id" validate:"required"`
+	CloudVpcID string `json:"cloud_vpc_id" validate:"required"`
+	Region     string `json:"region" validate:"required"`
+}
+
+// Validate huawei sync request.
+func (req *HuaWeiSubnetSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// GcpCvmSyncReq gcp sync request
+type GcpCvmSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
 	Zone      string `json:"zone" validate:"required"`
 }
 
 // Validate gcp sync request.
+func (req *GcpCvmSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// GcpSyncReq gcp sync request
+type GcpSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+}
+
+// Validate gcp sync request.
 func (req *GcpSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// GcpVpcSyncReq gcp vpc sync request
+type GcpVpcSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+}
+
+// Validate gcp vpc sync request.
+func (req *GcpVpcSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

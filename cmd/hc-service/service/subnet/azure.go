@@ -93,7 +93,7 @@ func (s subnet) AzureSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	delOpt := &types.AzureSubnetDeleteOption{
 		AzureDeleteOption: adcore.AzureDeleteOption{
 			BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.Name},
-			ResourceGroupName: getRes.Extension.ResourceGroup,
+			ResourceGroupName: getRes.Extension.ResourceGroupName,
 		},
 		VpcID: getRes.CloudVpcID,
 	}
@@ -131,7 +131,7 @@ func (s subnet) AzureSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	usageOpt := &types.AzureVpcListUsageOption{
-		ResourceGroupName: getRes.Extension.ResourceGroup,
+		ResourceGroupName: getRes.Extension.ResourceGroupName,
 		VpcID:             getRes.CloudVpcID,
 	}
 	usages, err := cli.ListVpcUsage(cts.Kit, usageOpt)

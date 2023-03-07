@@ -95,9 +95,9 @@ type GcpVpcExtension struct {
 
 // AzureVpcExtension defines azure vpc extensional info.
 type AzureVpcExtension struct {
-	ResourceGroup string      `json:"resource_group"`
-	DNSServers    []string    `json:"dns_servers"`
-	Cidr          []AzureCidr `json:"cidr"`
+	ResourceGroupName string      `json:"resource_group_name"`
+	DNSServers        []string    `json:"dns_servers"`
+	Cidr              []AzureCidr `json:"cidr"`
 }
 
 // AzureCidr azure cidr

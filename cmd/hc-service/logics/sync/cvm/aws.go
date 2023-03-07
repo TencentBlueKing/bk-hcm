@@ -35,7 +35,6 @@ import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	protoeip "hcm/pkg/api/hc-service/eip"
@@ -796,12 +795,12 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 		for _, id := range cloudVpcMap {
 			vpcCloudIDs = append(vpcCloudIDs, id.RelID)
 		}
-		req := &hcservice.AwsResourceSyncReq{
+		vpcOpt := &vpc.SyncAwsOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  vpcCloudIDs,
 		}
-		_, err := vpc.AwsVpcSync(kt, req, ad, dataCli)
+		_, err := vpc.AwsVpcSync(kt, ad, dataCli, vpcOpt)
 		if err != nil {
 			logs.Errorf("request to sync aws vpc logic failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -813,7 +812,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 		for _, id := range cloudSubnetMap {
 			subnetCloudIDs = append(subnetCloudIDs, id.RelID)
 		}
-		req := &hcservice.AwsResourceSyncReq{
+		req := &subnet.SyncAwsOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  subnetCloudIDs,

@@ -108,8 +108,8 @@ func (h *HuaWei) ListSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetListOption) (*ty
 		req.Limit = opt.Page.Limit
 	}
 
-	if len(opt.VpcID) != 0 {
-		req.VpcId = &opt.VpcID
+	if len(opt.CloudVpcID) != 0 {
+		req.VpcId = &opt.CloudVpcID
 	}
 
 	resp, err := vpcClient.ListSubnets(req)

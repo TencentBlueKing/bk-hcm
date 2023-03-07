@@ -28,7 +28,6 @@ import (
 	protocore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
@@ -59,6 +58,7 @@ func InitVpcService(cap *capability.Capability) {
 	h.Add("BatchUpdateVpcBaseInfo", "PATCH", "/vpcs/base/batch", svc.BatchUpdateVpcBaseInfo)
 	h.Add("GetVpc", "GET", "/vendors/{vendor}/vpcs/{id}", svc.GetVpc)
 	h.Add("ListVpc", "POST", "/vpcs/list", svc.ListVpc)
+	h.Add("ListVpcExt", "POST", "/vendors/{vendor}/vpcs/list", svc.ListVpcExt)
 	h.Add("DeleteVpc", "DELETE", "/vpcs/batch", svc.BatchDeleteVpc)
 
 	h.Load(cap.WebService)
@@ -121,8 +121,8 @@ func batchCreateVpc[T protocloud.VpcCreateExtension](cts *rest.Contexts, vendor 
 				Category:  createReq.Category,
 				Memo:      createReq.Memo,
 				Extension: ext,
-				BkCloudID: constant.UnbindBkCloudID,
-				BkBizID:   constant.UnassignedBiz,
+				BkCloudID: createReq.BkCloudID,
+				BkBizID:   createReq.BkBizID,
 				Creator:   cts.Kit.User,
 				Reviser:   cts.Kit.User,
 			}
@@ -471,4 +471,69 @@ func (svc *vpcSvc) BatchDeleteVpc(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+// ListVpcExt ...
+func (svc *vpcSvc) ListVpcExt(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+		Fields: req.Fields,
+	}
+	listResp, err := svc.dao.Vpc().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list vpc failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return conVpcExtListResult[protocore.TCloudVpcExtension](listResp.Details)
+	case enumor.Aws:
+		return conVpcExtListResult[protocore.AwsVpcExtension](listResp.Details)
+	case enumor.Azure:
+		return conVpcExtListResult[protocore.AzureVpcExtension](listResp.Details)
+	case enumor.HuaWei:
+		return conVpcExtListResult[protocore.HuaWeiVpcExtension](listResp.Details)
+	case enumor.Gcp:
+		return conVpcExtListResult[protocore.GcpVpcExtension](listResp.Details)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+	}
+}
+
+func conVpcExtListResult[T protocore.VpcExtension](tables []tablecloud.VpcTable) (
+	*protocloud.VpcExtListResult[T], error) {
+
+	details := make([]protocore.Vpc[T], 0, len(tables))
+	for _, one := range tables {
+		extension := new(T)
+		err := json.UnmarshalFromString(string(one.Extension), &extension)
+		if err != nil {
+			return nil, fmt.Errorf("UnmarshalFromString vpc json extension failed, err: %v", err)
+		}
+
+		details = append(details, protocore.Vpc[T]{
+			BaseVpc:   *convertBaseVpc(&one),
+			Extension: extension,
+		})
+	}
+
+	return &protocloud.VpcExtListResult[T]{
+		Details: details,
+	}, nil
 }

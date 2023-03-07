@@ -63,7 +63,7 @@ func (g *Gcp) DeleteVpc(kt *kit.Kit, opt *core.BaseDeleteOption) error {
 
 // ListVpc list vpc.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/list
-func (g *Gcp) ListVpc(kt *kit.Kit, opt *core.GcpListOption) (*types.GcpVpcListResult, error) {
+func (g *Gcp) ListVpc(kt *kit.Kit, opt *types.GcpListOption) (*types.GcpVpcListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}

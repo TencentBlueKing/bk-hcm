@@ -63,6 +63,7 @@ type TCloudSubnetExtension struct {
 
 // AwsSubnetExtension defines aws subnet extensional info.
 type AwsSubnetExtension struct {
+	// TODO: state -> status
 	State                       string `json:"state"`
 	IsDefault                   bool   `json:"is_default"`
 	MapPublicIpOnLaunch         bool   `json:"map_public_ip_on_launch"`
@@ -82,7 +83,7 @@ type GcpSubnetExtension struct {
 
 // AzureSubnetExtension defines azure subnet extensional info.
 type AzureSubnetExtension struct {
-	ResourceGroup        string `json:"resource_group"`
+	ResourceGroupName    string `json:"resource_group_name"`
 	NatGateway           string `json:"nat_gateway,omitempty"`
 	NetworkSecurityGroup string `json:"network_security_group,omitempty"`
 }

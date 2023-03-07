@@ -147,8 +147,8 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 		Name:    converter.PtrToVal(data.Name),
 		Region:  converter.PtrToVal(data.Location),
 		Extension: &cloud.AzureVpcExtension{
-			ResourceGroup: resourceGroup,
-			Cidr:          nil,
+			ResourceGroupName: resourceGroup,
+			Cidr:              nil,
 		},
 	}
 

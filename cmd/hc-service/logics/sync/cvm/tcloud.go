@@ -35,7 +35,6 @@ import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	protoeip "hcm/pkg/api/hc-service/eip"
@@ -616,7 +615,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 		for _, id := range cloudVpcMap {
 			vpcCloudIDs = append(vpcCloudIDs, id.RelID)
 		}
-		req := &hcservice.TCloudResourceSyncReq{
+		req := &vpc.SyncTCloudOption{
 			AccountID: option.AccountID,
 			Region:    option.Region,
 			CloudIDs:  vpcCloudIDs,
@@ -633,7 +632,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 		for _, id := range cloudSubnetMap {
 			subnetCloudIDs = append(subnetCloudIDs, id.RelID)
 		}
-		req := &hcservice.TCloudResourceSyncReq{
+		req := &subnet.SyncTCloudOption{
 			AccountID: option.AccountID,
 			Region:    option.Region,
 			CloudIDs:  subnetCloudIDs,

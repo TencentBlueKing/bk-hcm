@@ -791,9 +791,8 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		for _, id := range vpcSLMap {
 			vpcSelfLinks = append(vpcSelfLinks, id.RelID)
 		}
-		req := &hcservice.GcpResourceSyncReq{
+		req := &vpc.SyncGcpOption{
 			AccountID: req.AccountID,
-			Region:    req.Region,
 			SelfLinks: vpcSelfLinks,
 		}
 		_, err := vpc.GcpVpcSync(kt, req, ad, dataCli)
@@ -808,7 +807,7 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		for _, id := range subnetSLMap {
 			subnetSelfLinks = append(subnetSelfLinks, id.RelID)
 		}
-		req := &hcservice.GcpResourceSyncReq{
+		req := &subnet.SyncGcpOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			SelfLinks: subnetSelfLinks,

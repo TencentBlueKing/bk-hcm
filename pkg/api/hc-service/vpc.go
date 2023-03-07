@@ -75,7 +75,7 @@ func (r *GcpResourceSyncReq) Validate() error {
 type AzureResourceSyncReq struct {
 	AccountID         string   `json:"account_id" validate:"required"`
 	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
-	VpcID             string   `json:"vpc_id" validate:"required"`
+	CloudVpcID        string   `json:"cloud_vpc_id" validate:"omitempty"`
 	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
 }
 

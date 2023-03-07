@@ -21,19 +21,20 @@ package azure
 
 import (
 	"context"
+	"net/http"
+
 	"hcm/pkg/api/core"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
-	"net/http"
 )
 
-// ResourceGroupClient is data service ResourceGroup api client.
+// ResourceGroupClient is data service ResourceGroupName api client.
 type ResourceGroupClient struct {
 	client rest.ClientInterface
 }
 
-// ResourceGroupClient create a new ResourceGroup api client.
+// ResourceGroupClient create a new ResourceGroupName api client.
 func NewResourceGroupClient(client rest.ClientInterface) *ResourceGroupClient {
 	return &ResourceGroupClient{
 		client: client,
@@ -64,7 +65,7 @@ func (cli *ResourceGroupClient) ListResourceGroup(ctx context.Context, h http.He
 	return resp.Data, nil
 }
 
-// BatchDeleteResourceGroup delete ResourceGroup.
+// BatchDeleteResourceGroup delete ResourceGroupName.
 func (cli *ResourceGroupClient) BatchDeleteResourceGroup(ctx context.Context, h http.Header, request *protoregion.
 	AzureRGBatchDeleteReq) error {
 
@@ -88,7 +89,7 @@ func (cli *ResourceGroupClient) BatchDeleteResourceGroup(ctx context.Context, h 
 	return nil
 }
 
-// BatchCreateResourceGroup batch create ResourceGroup.
+// BatchCreateResourceGroup batch create ResourceGroupName.
 func (cli *ResourceGroupClient) BatchCreateResourceGroup(ctx context.Context, h http.Header, request *protoregion.
 	AzureRGBatchCreateReq) (*core.BatchCreateResult, error) {
 
@@ -112,7 +113,7 @@ func (cli *ResourceGroupClient) BatchCreateResourceGroup(ctx context.Context, h 
 	return resp.Data, nil
 }
 
-// BatchUpdateResourceGroup batch create ResourceGroup.
+// BatchUpdateResourceGroup batch create ResourceGroupName.
 func (cli *ResourceGroupClient) BatchUpdateRG(ctx context.Context, h http.Header, request *protoregion.
 	AzureRGBatchUpdateReq) error {
 

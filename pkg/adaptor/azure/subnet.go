@@ -95,8 +95,7 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*type
 		}
 
 		for _, subnet := range page.Value {
-			details = append(details, converter.PtrToVal(convertSubnet(subnet,
-				a.clientSet.credential.CloudSubscriptionID, opt.ResourceGroupName, vpcName)))
+			details = append(details, converter.PtrToVal(convertSubnet(subnet, opt.ResourceGroupName, opt.VpcID)))
 		}
 	}
 
@@ -131,8 +130,7 @@ func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *types.AzureSubnetListByIDOption
 
 		for _, one := range nextResult.Value {
 			if _, exist := idMap[*one.ID]; exist {
-				details = append(details, converter.PtrToVal(convertSubnet(one,
-					a.clientSet.credential.CloudSubscriptionID, opt.ResourceGroupName, vpcName)))
+				details = append(details, converter.PtrToVal(convertSubnet(one, opt.ResourceGroupName, opt.VpcID)))
 				delete(idMap, *one.ID)
 
 				if len(idMap) == 0 {
@@ -145,18 +143,17 @@ func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *types.AzureSubnetListByIDOption
 	return &types.AzureSubnetListResult{Details: details}, nil
 }
 
-func convertSubnet(data *armnetwork.Subnet, subscription, resourceGroup, vpc string) *types.AzureSubnet {
+func convertSubnet(data *armnetwork.Subnet, resourceGroup, cloudVpcID string) *types.AzureSubnet {
 	if data == nil {
 		return nil
 	}
 
 	s := &types.AzureSubnet{
-		CloudVpcID: fmt.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network/virtualNetworks/%s",
-			subscription, resourceGroup, vpc),
-		CloudID: converter.PtrToVal(data.ID),
-		Name:    converter.PtrToVal(data.Name),
+		CloudVpcID: cloudVpcID,
+		CloudID:    converter.PtrToVal(data.ID),
+		Name:       converter.PtrToVal(data.Name),
 		Extension: &types.AzureSubnetExtension{
-			ResourceGroup: resourceGroup,
+			ResourceGroupName: resourceGroup,
 		},
 	}
 

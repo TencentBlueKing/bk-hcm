@@ -39,7 +39,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// InitAzureResourceGroupService initial the azure ResourceGroup service
+// InitAzureResourceGroupService initial the azure ResourceGroupName service
 func InitAzureResourceGroupService(cap *capability.Capability) {
 	svc := &azureRGSvc{
 		dao: cap.Dao,
@@ -62,7 +62,7 @@ type azureRGSvc struct {
 	dao dao.Set
 }
 
-// UpdateAzureResourceGroup update azure ResourceGroup.
+// UpdateAzureResourceGroup update azure ResourceGroupName.
 func (svc *azureRGSvc) UpdateAzureResourceGroup(cts *rest.Contexts) (interface{}, error) {
 
 	req := new(protoregion.AzureRGBatchUpdateReq)
@@ -97,7 +97,7 @@ func (svc *azureRGSvc) UpdateAzureResourceGroup(cts *rest.Contexts) (interface{}
 	return nil, nil
 }
 
-// CreateAzureResourceGroup create ResourceGroup.
+// CreateAzureResourceGroup create ResourceGroupName.
 func (svc *azureRGSvc) CreateAzureResourceGroup(cts *rest.Contexts) (interface{}, error) {
 	req := new(protoregion.AzureRGBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {

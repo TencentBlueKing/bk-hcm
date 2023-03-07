@@ -864,7 +864,7 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 			req := &hcservice.AzureResourceSyncReq{
 				AccountID:         req.AccountID,
 				ResourceGroupName: req.ResourceGroupName,
-				VpcID:             cloudVpcID,
+				CloudVpcID:        cloudVpcID,
 				CloudIDs:          converter.MapKeyToStringSlice(cloudSubnetIDMap),
 			}
 			_, err := subnet.AzureSubnetSync(kt, req, ad, dataCli)

@@ -243,9 +243,9 @@ type AzureSubnetListResult struct {
 
 // HuaWeiSubnetListOption defines huawei list subnet options.
 type HuaWeiSubnetListOption struct {
-	Region string           `json:"region"`
-	Page   *core.HuaWeiPage `json:"page,omitempty"`
-	VpcID  string           `json:"vpc_id,omitempty"`
+	Region     string           `json:"region"`
+	Page       *core.HuaWeiPage `json:"page,omitempty"`
+	CloudVpcID string           `json:"vpc_id,omitempty"`
 }
 
 // Validate huawei list option.
@@ -339,7 +339,7 @@ type GcpSubnetExtension struct {
 
 // AzureSubnetExtension defines azure subnet extensional info.
 type AzureSubnetExtension struct {
-	ResourceGroup        string  `json:"resource_group"`
+	ResourceGroupName    string  `json:"resource_group"`
 	CloudRouteTableID    *string `json:"cloud_route_table_id,omitempty"`
 	NatGateway           string  `json:"nat_gateway,omitempty"`
 	NetworkSecurityGroup string  `json:"network_security_group,omitempty"`

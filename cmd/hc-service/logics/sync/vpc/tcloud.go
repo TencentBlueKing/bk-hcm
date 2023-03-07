@@ -21,7 +21,9 @@
 package vpc
 
 import (
+	"errors"
 	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
@@ -31,40 +33,75 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
 )
 
+// SyncTCloudOption define tcloud sync option.
+type SyncTCloudOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate SyncTCloudOption.
+func (opt SyncTCloudOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) == 0 {
+		return errors.New("cloudIDs is required")
+	}
+
+	if len(opt.CloudIDs) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("cloudIDs should <= %d", core.DefaultMaxPageLimit)
+	}
+
+	return nil
+}
+
 // TCloudVpcSync sync tencent cloud vpc.
-func TCloudVpcSync(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq,
+func TCloudVpcSync(kt *kit.Kit, opt *SyncTCloudOption,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
 	// batch get vpc list from cloudapi.
-	list, err := BatchGetTCloudVpcList(kt, req, adaptor)
+	list, err := BatchGetTCloudVpcList(kt, opt, adaptor)
 	if err != nil {
 		logs.Errorf("%s-vpc request cloudapi response failed. accountID: %s, region: %s, err: %v",
-			enumor.TCloud, req.AccountID, req.Region, err)
+			enumor.TCloud, opt.AccountID, opt.Region, err)
 		return nil, err
 	}
 
 	// batch get vpc map from db.
-	resourceDBMap, err := BatchGetVpcMapFromDB(kt, enumor.TCloud, dataCli)
+	resourceDBMap, err := listTcloudVpcMapFromDB(kt, dataCli, &BatchGetVpcMapOption{
+		AccountID: opt.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  opt.CloudIDs,
+	})
 	if err != nil {
 		logs.Errorf("%s-vpc batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
-			enumor.TCloud, req.AccountID, req.Region, err)
+			enumor.TCloud, opt.AccountID, opt.Region, err)
 		return nil, err
 	}
 
 	// batch sync vendor vpc list.
-	err = BatchSyncTcloudVpcList(kt, req, list, resourceDBMap, dataCli)
+	err = BatchSyncTcloudVpcList(kt, opt, list, resourceDBMap, dataCli)
 	if err != nil {
 		logs.Errorf("%s-vpc compare api and dblist failed. accountID: %s, region: %s, err: %v",
-			enumor.TCloud, req.AccountID, req.Region, err)
+			enumor.TCloud, opt.AccountID, opt.Region, err)
 		return nil, err
 	}
 
@@ -73,8 +110,56 @@ func TCloudVpcSync(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq,
 	}, nil
 }
 
+func listTcloudVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *BatchGetVpcMapOption) (
+	map[string]cloudcore.Vpc[cloudcore.TCloudVpcExtension], error) {
+
+	resourceMap := make(map[string]cloudcore.Vpc[cloudcore.TCloudVpcExtension], 0)
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "account_id",
+				Op:    filter.Equal.Factory(),
+				Value: opt.AccountID,
+			},
+		},
+	}
+
+	if len(opt.Region) != 0 {
+		expr.Rules = append(expr.Rules, &filter.AtomRule{
+			Field: "region",
+			Op:    filter.Equal.Factory(),
+			Value: opt.Region,
+		})
+	}
+
+	if len(opt.CloudIDs) != 0 {
+		expr.Rules = append(expr.Rules, &filter.AtomRule{
+			Field: "cloud_id",
+			Op:    filter.In.Factory(),
+			Value: opt.CloudIDs,
+		})
+	}
+
+	dbQueryReq := &core.ListReq{
+		Filter: expr,
+		Page:   core.DefaultBasePage,
+	}
+	dbList, err := dataCli.TCloud.Vpc.ListVpcExt(kt.Ctx, kt.Header(), dbQueryReq)
+	if err != nil {
+		logs.Errorf("list tcloud vpc from db failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	for _, item := range dbList.Details {
+		resourceMap[item.CloudID] = item
+	}
+
+	return resourceMap, nil
+}
+
 // BatchGetTCloudVpcList batch get vpc list from cloudapi.
-func BatchGetTCloudVpcList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
+func BatchGetTCloudVpcList(kt *kit.Kit, req *SyncTCloudOption, adaptor *cloudclient.CloudAdaptorClient) (
 	*types.TCloudVpcListResult, error) {
 	cli, err := adaptor.TCloud(kt, req.AccountID)
 	if err != nil {
@@ -119,58 +204,19 @@ func BatchGetTCloudVpcList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, ad
 	return list, nil
 }
 
-// BatchGetVpcMapFromDB batch get vpc map from db.
-func BatchGetVpcMapFromDB(kt *kit.Kit, vendor enumor.Vendor, dataCli *dataclient.Client) (
-	map[string]cloudcore.BaseVpc, error) {
-
-	page := uint32(0)
-	resourceMap := make(map[string]cloudcore.BaseVpc, 0)
-	for {
-		count := core.DefaultMaxPageLimit
-		offset := page * uint32(count)
-		expr := &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "vendor",
-					Op:    filter.Equal.Factory(),
-					Value: vendor,
-				},
-			},
-		}
-		dbQueryReq := &core.ListReq{
-			Filter: expr,
-			Page:   &core.BasePage{Count: false, Start: offset, Limit: count},
-		}
-		dbList, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), dbQueryReq)
-		if err != nil {
-			logs.Errorf("%s-vpc batch get vpclist db error. offset: %d, limit: %d, err: %v",
-				vendor, offset, count, err)
-			return nil, err
-		}
-
-		if len(dbList.Details) == 0 {
-			return resourceMap, nil
-		}
-
-		for _, item := range dbList.Details {
-			resourceMap[item.CloudID] = item
-		}
-
-		if len(dbList.Details) < int(count) {
-			break
-		}
-		page++
-	}
-
-	return resourceMap, nil
+// BatchGetVpcMapOption ...
+type BatchGetVpcMapOption struct {
+	AccountID         string   `json:"account_id" validate:"required"`
+	Region            string   `json:"region" validate:"omitempty"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"omitempty"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
 }
 
 // BatchSyncTcloudVpcList batch sync vendor vpc list.
-func BatchSyncTcloudVpcList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, list *types.TCloudVpcListResult,
-	resourceDBMap map[string]cloudcore.BaseVpc, dataCli *dataclient.Client) error {
+func BatchSyncTcloudVpcList(kt *kit.Kit, req *SyncTCloudOption, list *types.TCloudVpcListResult,
+	resourceDBMap map[string]cloudcore.Vpc[cloudcore.TCloudVpcExtension], dataCli *dataclient.Client) error {
 
-	createResources, updateResources, existIDMap, err := filterTcloudVpcList(req, list, resourceDBMap)
+	createResources, updateResources, delCloudIDs, err := filterTcloudVpcList(req, list, resourceDBMap)
 	if err != nil {
 		return err
 	}
@@ -200,18 +246,13 @@ func BatchSyncTcloudVpcList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, l
 	}
 
 	// delete resource data
-	deleteIDs := make([]string, 0)
-	for _, resourceItem := range resourceDBMap {
-		if _, ok := existIDMap[resourceItem.ID]; !ok {
-			deleteIDs = append(deleteIDs, resourceItem.ID)
+	if len(delCloudIDs) > 0 {
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 		}
-	}
-
-	if len(deleteIDs) > 0 {
-		err = BatchDeleteVpcByIDs(kt, deleteIDs, dataCli)
-		if err != nil {
-			logs.Errorf("%s-vpc batch compare db delete failed. accountID: %s, region: %s, deleteIDs: %v, "+
-				"err: %v", enumor.TCloud, req.AccountID, req.Region, deleteIDs, err)
+		if err := dataCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
+			logs.Errorf("%s-vpc batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, err: %v",
+				enumor.TCloud, req.AccountID, req.Region, delCloudIDs, err)
 			return err
 		}
 	}
@@ -220,56 +261,58 @@ func BatchSyncTcloudVpcList(kt *kit.Kit, req *hcservice.TCloudResourceSyncReq, l
 }
 
 // filterTcloudVpcList filter tcloud vpc list
-func filterTcloudVpcList(req *hcservice.TCloudResourceSyncReq, list *types.TCloudVpcListResult,
-	resourceDBMap map[string]cloudcore.BaseVpc) (createResources []cloud.VpcCreateReq[cloud.TCloudVpcCreateExt],
-	updateResources []cloud.VpcUpdateReq[cloud.TCloudVpcUpdateExt], existIDMap map[string]bool, err error) {
+func filterTcloudVpcList(req *SyncTCloudOption, list *types.TCloudVpcListResult,
+	resourceDBMap map[string]cloudcore.Vpc[cloudcore.TCloudVpcExtension]) (
+	[]cloud.VpcCreateReq[cloud.TCloudVpcCreateExt], []cloud.VpcUpdateReq[cloud.TCloudVpcUpdateExt], []string, error) {
 	if list == nil || len(list.Details) == 0 {
 		return nil, nil, nil,
 			fmt.Errorf("cloudapi vpclist is empty, accountID: %s, region: %s", req.AccountID, req.Region)
 	}
 
-	existIDMap = make(map[string]bool, 0)
+	createResources := make([]cloud.VpcCreateReq[cloud.TCloudVpcCreateExt], 0)
+	updateResources := make([]cloud.VpcUpdateReq[cloud.TCloudVpcUpdateExt], 0)
 	for _, item := range list.Details {
 		// need compare and update resource data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
-			if resourceInfo.Name == item.Name && resourceInfo.Region == item.Region &&
-				converter.PtrToVal(resourceInfo.Memo) == converter.PtrToVal(item.Memo) {
-				existIDMap[resourceInfo.ID] = true
-				continue
-			}
-
-			tmpRes := cloud.VpcUpdateReq[cloud.TCloudVpcUpdateExt]{
-				ID: resourceInfo.ID,
-				Extension: &cloud.TCloudVpcUpdateExt{
-					IsDefault:       converter.ValToPtr(item.Extension.IsDefault),
-					EnableMulticast: converter.ValToPtr(item.Extension.EnableMulticast),
-					DnsServerSet:    item.Extension.DnsServerSet,
-					DomainName:      converter.ValToPtr(item.Extension.DomainName),
-				},
-			}
-			tmpRes.Name = converter.ValToPtr(item.Name)
-			tmpRes.Memo = item.Memo
-
-			if item.Extension.Cidr != nil {
-				tmpCidrs := []cloud.TCloudCidr{}
-				for _, cidrItem := range item.Extension.Cidr {
-					tmpCidrs = append(tmpCidrs, cloud.TCloudCidr{
-						Type:     cidrItem.Type,
-						Cidr:     cidrItem.Cidr,
-						Category: cidrItem.Category,
-					})
+			if isTCloudVpcChange(resourceInfo, item) {
+				tmpRes := cloud.VpcUpdateReq[cloud.TCloudVpcUpdateExt]{
+					ID: resourceInfo.ID,
+					VpcUpdateBaseInfo: cloud.VpcUpdateBaseInfo{
+						Name: converter.ValToPtr(item.Name),
+						Memo: item.Memo,
+					},
+					Extension: &cloud.TCloudVpcUpdateExt{
+						IsDefault:       converter.ValToPtr(item.Extension.IsDefault),
+						EnableMulticast: converter.ValToPtr(item.Extension.EnableMulticast),
+						DnsServerSet:    item.Extension.DnsServerSet,
+						DomainName:      converter.ValToPtr(item.Extension.DomainName),
+					},
 				}
-				tmpRes.Extension.Cidr = tmpCidrs
+
+				if item.Extension.Cidr != nil {
+					tmpCidrs := make([]cloud.TCloudCidr, 0, len(item.Extension.Cidr))
+					for _, cidrItem := range item.Extension.Cidr {
+						tmpCidrs = append(tmpCidrs, cloud.TCloudCidr{
+							Type:     cidrItem.Type,
+							Cidr:     cidrItem.Cidr,
+							Category: cidrItem.Category,
+						})
+					}
+					tmpRes.Extension.Cidr = tmpCidrs
+				}
+
+				updateResources = append(updateResources, tmpRes)
 			}
 
-			updateResources = append(updateResources, tmpRes)
-			existIDMap[resourceInfo.ID] = true
+			delete(resourceDBMap, item.CloudID)
 		} else {
 			// need add resource data
 			tmpRes := cloud.VpcCreateReq[cloud.TCloudVpcCreateExt]{
 				AccountID: req.AccountID,
 				CloudID:   item.CloudID,
 				Name:      converter.ValToPtr(item.Name),
+				BkBizID:   constant.UnassignedBiz,
+				BkCloudID: constant.UnbindBkCloudID,
 				Region:    item.Region,
 				Category:  enumor.BizVpcCategory,
 				Memo:      item.Memo,
@@ -282,7 +325,7 @@ func filterTcloudVpcList(req *hcservice.TCloudResourceSyncReq, list *types.TClou
 			}
 
 			if item.Extension.Cidr != nil {
-				tmpCidrs := []cloud.TCloudCidr{}
+				tmpCidrs := make([]cloud.TCloudCidr, 0, len(item.Extension.Cidr))
 				for _, cidrItem := range item.Extension.Cidr {
 					tmpCidrs = append(tmpCidrs, cloud.TCloudCidr{
 						Type:     cidrItem.Type,
@@ -297,31 +340,78 @@ func filterTcloudVpcList(req *hcservice.TCloudResourceSyncReq, list *types.TClou
 		}
 	}
 
-	return createResources, updateResources, existIDMap, nil
+	deleteCloudIDs := make([]string, 0, len(resourceDBMap))
+	for _, vpc := range resourceDBMap {
+		deleteCloudIDs = append(deleteCloudIDs, vpc.CloudID)
+	}
+
+	return createResources, updateResources, deleteCloudIDs, nil
+}
+
+func isTCloudVpcChange(info cloudcore.Vpc[cloudcore.TCloudVpcExtension], item types.TCloudVpc) bool {
+	if info.Name != item.Name {
+		return true
+	}
+
+	if info.Region != item.Region {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(info.Memo, item.Memo) {
+		return true
+	}
+
+	for _, db := range info.Extension.Cidr {
+		for _, cloud := range item.Extension.Cidr {
+			if db.Cidr != cloud.Cidr {
+				return true
+			}
+
+			if db.Category != cloud.Category {
+				return true
+			}
+
+			if db.Type != cloud.Type {
+				return true
+			}
+		}
+	}
+
+	if info.Extension.IsDefault != item.Extension.IsDefault {
+		return true
+	}
+
+	if info.Extension.EnableMulticast != item.Extension.EnableMulticast {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(info.Extension.DnsServerSet, item.Extension.DnsServerSet) {
+		return true
+	}
+
+	if info.Extension.DomainName != item.Extension.DomainName {
+		return true
+	}
+
+	return false
 }
 
 // BatchDeleteVpcByIDs batch delete vpc ids
-func BatchDeleteVpcByIDs(kt *kit.Kit, deleteIDs []string, dataCli *dataclient.Client) error {
+func BatchDeleteVpcByIDs(kt *kit.Kit, deleteCloudIDs []string, dataCli *dataclient.Client) error {
 	querySize := int(filter.DefaultMaxInLimit)
-	times := len(deleteIDs) / querySize
-	if len(deleteIDs)%querySize != 0 {
+	times := len(deleteCloudIDs) / querySize
+	if len(deleteCloudIDs)%querySize != 0 {
 		times++
 	}
 
 	for i := 0; i < times; i++ {
 		var newDeleteIDs []string
 		if i == times-1 {
-			newDeleteIDs = append(newDeleteIDs, deleteIDs[i*querySize:]...)
+			newDeleteIDs = append(newDeleteIDs, deleteCloudIDs[i*querySize:]...)
 		} else {
-			newDeleteIDs = append(newDeleteIDs, deleteIDs[i*querySize:(i+1)*querySize]...)
+			newDeleteIDs = append(newDeleteIDs, deleteCloudIDs[i*querySize:(i+1)*querySize]...)
 		}
 
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", newDeleteIDs),
-		}
-		if err := dataCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
-			return err
-		}
 	}
 
 	return nil
