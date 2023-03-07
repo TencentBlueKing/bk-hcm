@@ -59,7 +59,7 @@ export default defineComponent({
           />
           <h3 class="g-resource-tips">
             {
-              this.$slots.tips ?? this.$slots.default()
+              this.$slots.tips ?? this.$slots?.default?.()
             }
           </h3>
         </>,

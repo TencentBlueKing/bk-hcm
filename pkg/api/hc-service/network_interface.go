@@ -25,9 +25,10 @@ import "hcm/pkg/criteria/validator"
 
 // AzureNetworkInterfaceSyncReq defines sync resource request.
 type AzureNetworkInterfaceSyncReq struct {
-	AccountID            string `json:"account_id" validate:"required"`
-	ResourceGroupName    string `json:"resource_group_name" validate:"omitempty"`
-	NetworkInterfaceName string `json:"network_interface_name" validate:"omitempty"`
+	AccountID            string   `json:"account_id" validate:"required"`
+	ResourceGroupName    string   `json:"resource_group_name" validate:"omitempty"`
+	NetworkInterfaceName string   `json:"network_interface_name" validate:"omitempty"`
+	CloudIDs             []string `json:"cloud_ids" validate:"max=100,omitempty"`
 }
 
 // Validate validate sync vpc request.
@@ -35,15 +36,11 @@ func (r *AzureNetworkInterfaceSyncReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
-// NetworkInterfaceSyncResult defines sync result.
-type NetworkInterfaceSyncResult struct {
-	TaskID string `json:"task_id"`
-}
-
 // GcpNetworkInterfaceSyncReq defines sync resource request.
 type GcpNetworkInterfaceSyncReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	Zone      string `json:"zone" validate:"required"`
+	AccountID   string   `json:"account_id" validate:"required"`
+	Zone        string   `json:"zone" validate:"required"`
+	CloudCvmIDs []string `json:"cloud_cvm_ids" validate:"max=100,omitempty"`
 }
 
 // Validate validate sync vpc request.
@@ -53,12 +50,17 @@ func (r *GcpNetworkInterfaceSyncReq) Validate() error {
 
 // HuaWeiNetworkInterfaceSyncReq defines sync resource request.
 type HuaWeiNetworkInterfaceSyncReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	ServerID  string `json:"server_id" validate:"required"`
-	Region    string `json:"region" validate:"omitempty"`
+	AccountID   string   `json:"account_id" validate:"required"`
+	Region      string   `json:"region" validate:"omitempty"`
+	CloudCvmIDs []string `json:"cloud_cvm_ids" validate:"max=100,required"`
 }
 
 // Validate validate sync vpc request.
 func (r *HuaWeiNetworkInterfaceSyncReq) Validate() error {
 	return validator.Validate.Struct(r)
+}
+
+// NetworkInterfaceSyncResult defines sync result.
+type NetworkInterfaceSyncResult struct {
+	TaskID string `json:"task_id"`
 }

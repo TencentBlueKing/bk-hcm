@@ -102,11 +102,12 @@ func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, e
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.ApplicationCreateReq{
-			SN:        sn,
-			Type:      enumor.AddAccount,
-			Status:    enumor.Pending,
-			Applicant: cts.Kit.User,
-			Content:   content,
+			SN:             sn,
+			Type:           enumor.AddAccount,
+			Status:         enumor.Pending,
+			Applicant:      cts.Kit.User,
+			Content:        content,
+			DeliveryDetail: "{}",
 		},
 	)
 	if err != nil {
@@ -311,7 +312,7 @@ func (a *applicationSvc) createItsmTicketForAddAccount(cts *rest.Contexts, req *
 	// 查询审批流程服务ID
 	serviceID, err := a.getApprovalProcessServiceID(cts, enumor.AddAccount)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("get approval process service id failed, err: %v", err)
 	}
 
 	params := &itsm.CreateTicketParams{

@@ -24,7 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/api/hc-service/image"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -43,14 +43,14 @@ type ImageClient struct {
 
 // SyncImage sync image.
 func (cli *ImageClient) SyncImage(ctx context.Context, h http.Header,
-	request *disk.DiskSyncReq) error {
+	request *image.HuaWeiImageSyncReq) error {
 
 	resp := new(core.SyncResp)
 
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/image/sync").
+		SubResourcef("/images/sync").
 		WithHeaders(h).
 		Do().
 		Into(resp)

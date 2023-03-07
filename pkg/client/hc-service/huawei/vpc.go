@@ -85,7 +85,7 @@ func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error 
 }
 
 // SyncVpc sync huawei vpc.
-func (v *VpcClient) SyncVpc(ctx context.Context, h http.Header, req *hcservice.ResourceSyncReq) error {
+func (v *VpcClient) SyncVpc(ctx context.Context, h http.Header, req *hcservice.HuaWeiResourceSyncReq) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Post().

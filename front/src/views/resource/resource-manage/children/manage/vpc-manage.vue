@@ -18,7 +18,6 @@ import useColumns from '../../hooks/use-columns';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
-import { any } from 'vue-types';
 
 const props = defineProps({
   filter: {
@@ -104,14 +103,16 @@ const handleDeleteVpc = (vpcList: any) => {
     :loading="isLoading"
   >
     <section>
-      <bk-button
-        class="w100"
-        theme="primary"
-        :disabled="selections.length <= 0"
-        @click="handleDistribution"
-      >
-        {{ t('分配') }}
-      </bk-button>
+      <slot>
+        <bk-button
+          class="w100"
+          theme="primary"
+          :disabled="selections.length <= 0"
+          @click="handleDistribution"
+        >
+          {{ t('分配') }}
+        </bk-button>
+      </slot>
       <bk-button
         class="w100 ml10"
         theme="primary"

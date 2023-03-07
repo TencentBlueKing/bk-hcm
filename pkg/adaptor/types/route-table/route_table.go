@@ -121,7 +121,7 @@ func (r AwsRouteTableListOption) Validate() error {
 		return err
 	}
 
-	if len(r.SubnetIDs) > AwsRouteTableListLimit || len(r.ResourceIDs) > AwsRouteTableListLimit {
+	if len(r.SubnetIDs) > AwsRouteTableListLimit || len(r.CloudIDs) > AwsRouteTableListLimit {
 		return errf.Newf(errf.InvalidParameter, "ids can not exceeds max limit %d", AwsRouteTableListLimit)
 	}
 
@@ -237,7 +237,7 @@ type TCloudRouteTableExtension struct {
 type TCloudRouteTableAsst struct {
 	CloudSubnetID string `json:"cloud_subnet_id"`
 	// TODO confirm if all route table id is this route table's id
-	//CloudRouteTableID string `json:"cloud_route_table_id"`
+	// CloudRouteTableID string `json:"cloud_route_table_id"`
 }
 
 // AwsRouteTableExtension defines aws route table extensional info.
@@ -250,8 +250,8 @@ type AwsRouteTableExtension struct {
 // AwsRouteTableAsst defines aws route table association info.
 type AwsRouteTableAsst struct {
 	// TODO confirm if all route table id is this route table's id
-	//RouteTableAssociationID string  `json:"route_table_association_id"`
-	//RouteTableID            string  `json:"routeTable_id"`
+	// RouteTableAssociationID string  `json:"route_table_association_id"`
+	// RouteTableID            string  `json:"routeTable_id"`
 	AssociationState string  `json:"association_state,omitempty"`
 	CloudGatewayID   *string `json:"cloud_gateway_id,omitempty"`
 	CloudSubnetID    *string `json:"cloud_subnet_id,omitempty"`

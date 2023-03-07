@@ -43,25 +43,96 @@ func (a *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceL
 		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
 	}
 
-	pager := client.NewListAllPager(nil)
-	if err != nil {
-		logs.Errorf("list all azure network interface failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("list all azure network interface failed, err: %v", err)
-	}
-
 	details := make([]typesniproto.AzureNI, 0)
+	pager := client.NewListAllPager(nil)
 	for pager.More() {
-		page, err := pager.NextPage(kt.Ctx)
+		nextResult, err := pager.NextPage(kt.Ctx)
 		if err != nil {
-			return nil, fmt.Errorf("list all azure network interface but get next page failed, err: %v", err)
+			return nil, fmt.Errorf("failed to advance page: %v", err)
 		}
 
-		for _, item := range page.Value {
+		for _, item := range nextResult.Value {
 			details = append(details, converter.PtrToVal(convertCloudNetworkInterface(item)))
 		}
 	}
 
 	return &typesniproto.AzureInterfaceListResult{Details: details}, nil
+}
+
+// ListNetworkInterfaceByID list all network interface by id.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
+func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
+	*typesniproto.AzureInterfaceListResult, error,
+) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.networkInterfaceClient()
+	if err != nil {
+		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
+	}
+
+	idMap := converter.StringSliceToMap(opt.CloudIDs)
+
+	details := make([]typesniproto.AzureNI, 0, len(idMap))
+	pager := client.NewListPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			if _, exist := idMap[*one.ID]; exist {
+				details = append(details, converter.PtrToVal(convertCloudNetworkInterface(one)))
+				delete(idMap, *one.ID)
+
+				if len(idMap) == 0 {
+					return &typesniproto.AzureInterfaceListResult{Details: details}, nil
+				}
+			}
+		}
+	}
+
+	return &typesniproto.AzureInterfaceListResult{Details: details}, nil
+}
+
+// ListRawNetworkInterfaceByIDs ...
+func (a *Azure) ListRawNetworkInterfaceByIDs(kt *kit.Kit, opt *core.AzureListByIDOption) (
+	[]*armnetwork.Interface, error,
+) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.networkInterfaceClient()
+	if err != nil {
+		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
+	}
+
+	networks := make([]*armnetwork.Interface, 0)
+	pager := client.NewListPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			networks = append(networks, one)
+		}
+	}
+
+	return networks, nil
 }
 
 func convertCloudNetworkInterface(data *armnetwork.Interface) *typesniproto.AzureNI {
@@ -143,8 +214,10 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 
 			getIpConfigSubnetData(item, tmpIP, v)
 
-			if converter.PtrToVal(tmpIP.Properties.Primary) {
-				v.PrivateIP = tmpIP.Properties.PrivateIPAddress
+			if item.Properties.PrivateIPAddressVersion == converter.ValToPtr(armnetwork.IPVersionIPv4) {
+				v.PrivateIPv4 = append(v.PrivateIPv4, converter.PtrToVal(tmpIP.Properties.PrivateIPAddress))
+			} else {
+				v.PrivateIPv6 = append(v.PrivateIPv6, converter.PtrToVal(tmpIP.Properties.PrivateIPAddress))
 			}
 			if item.Properties.GatewayLoadBalancer != nil {
 				tmpIP.Properties.CloudGatewayLoadBalancerID = item.Properties.GatewayLoadBalancer.ID
@@ -160,12 +233,11 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 					Type:     tmpPublicIPAddress.Type,
 				}
 				if tmpPublicIPAddress.Properties != nil {
-					tmpIP.Properties.PublicIPAddress.Properties = &coreni.PublicIPAddressPropertiesFormat{
-						IPAddress: tmpPublicIPAddress.Properties.IPAddress,
-						PublicIPAddressVersion: (*coreni.IPVersion)(
-							tmpPublicIPAddress.Properties.PublicIPAddressVersion),
-						PublicIPAllocationMethod: (*coreni.IPAllocationMethod)(
-							tmpPublicIPAddress.Properties.PublicIPAllocationMethod),
+					if tmpPublicIPAddress.Properties.PublicIPAddressVersion ==
+						converter.ValToPtr(armnetwork.IPVersionIPv4) {
+						v.PublicIPv4 = append(v.PublicIPv4, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
+					} else {
+						v.PublicIPv6 = append(v.PublicIPv6, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
 					}
 				}
 			}
@@ -175,17 +247,19 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 	v.Extension.IPConfigurations = tmpArr
 }
 
-func getIpConfigSubnetData(item *armnetwork.InterfaceIPConfiguration, tmpIP *coreni.InterfaceIPConfiguration,
-	v *typesniproto.AzureNI) {
-
-	if item.Properties.Subnet != nil {
+func getIpConfigSubnetData(
+	item *armnetwork.InterfaceIPConfiguration,
+	tmpIP *coreni.InterfaceIPConfiguration,
+	v *typesniproto.AzureNI,
+) {
+	if item.Properties.Subnet == nil {
 		return
 	}
 
 	tmpIP.Properties.CloudSubnetID = item.Properties.Subnet.ID
 	ipSubnetArr := strings.Split(converter.PtrToVal(tmpIP.Properties.CloudSubnetID), "/")
-	if len(ipSubnetArr) > 8 {
-		v.CloudVpcID = converter.ValToPtr(ipSubnetArr[8])
+	if len(ipSubnetArr) > 9 {
+		v.CloudVpcID = converter.ValToPtr(strings.Join(ipSubnetArr[:9], "/"))
 	}
 
 	v.CloudSubnetID = tmpIP.Properties.CloudSubnetID

@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -195,7 +196,8 @@ func (relDao *DiskCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.Disk
 		logs.Errorf("list disk by ids failed, err: %v, ids: %v, rid: %s", err, diskIDs, kt.Rid)
 		return err
 	}
-	if len(idToDiskMap) != relCount {
+
+	if len(idToDiskMap) != len(converter.StringSliceToMap(diskIDs)) {
 		// TODO 将不存在的 ID 记录到错误信息中
 		return fmt.Errorf("some disk does not exists")
 	}
@@ -205,7 +207,8 @@ func (relDao *DiskCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.Disk
 		logs.Errorf("list cvm by ids failed, err: %v, ids: %v, rid: %s", err, cvmIDs, kt.Rid)
 		return err
 	}
-	if len(idToCvmMap) != relCount {
+
+	if len(idToCvmMap) != len(converter.StringSliceToMap(cvmIDs)) {
 		// TODO 将不存在的 ID 记录到错误信息中
 		return fmt.Errorf("some cvm does not exists")
 	}

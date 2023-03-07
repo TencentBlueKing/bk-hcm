@@ -26,8 +26,10 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
+	protocvm "hcm/pkg/api/hc-service/cvm"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	protoeip "hcm/pkg/api/hc-service/eip"
+	protoimage "hcm/pkg/api/hc-service/image"
 	protohcregion "hcm/pkg/api/hc-service/region"
 	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/client"
@@ -55,7 +57,6 @@ func SyncAwsAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 	}
 
 	for _, region := range regions.Details {
-
 		err = SyncAwsSG(c, kit, header, accountID, region.RegionID)
 		if err != nil {
 			logs.Errorf("sync do aws sync sg failed, err: %v, regionID: %s, rid: %s",
@@ -76,7 +77,7 @@ func SyncAwsAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 
 		err = SyncAwsEip(c, kit, header, accountID, region.RegionID)
 		if err != nil {
-			logs.Errorf("sync do aws sync disk failed, err: %v, regionID: %s, rid: %s",
+			logs.Errorf("sync do aws sync eip failed, err: %v, regionID: %s, rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
 
@@ -84,7 +85,7 @@ func SyncAwsAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 		err = c.HCService().Aws.Vpc.SyncVpc(
 			kit.Ctx,
 			header,
-			&proto.ResourceSyncReq{
+			&proto.AwsResourceSyncReq{
 				AccountID: accountID,
 				Region:    region.RegionID,
 			},
@@ -98,7 +99,7 @@ func SyncAwsAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 		err = c.HCService().Aws.Subnet.SyncSubnet(
 			kit.Ctx,
 			header,
-			&proto.ResourceSyncReq{
+			&proto.AwsResourceSyncReq{
 				AccountID: accountID,
 				Region:    region.RegionID,
 			},
@@ -106,6 +107,12 @@ func SyncAwsAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 		if err != nil {
 			logs.Errorf("sync do aws sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
 				err, accountID, region.RegionID, kit.Rid)
+		}
+
+		err = SyncAwsCvm(c, kit, header, accountID, region.RegionID)
+		if err != nil {
+			logs.Errorf("sync do aws sync cvm failed, err: %v, regionID: %s, rid: %s",
+				err, region.RegionID, kit.Rid)
 		}
 	}
 	if err != nil {
@@ -248,6 +255,27 @@ func SyncAwsSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	return nil
 }
 
+// SyncAwsCvm ...
+func SyncAwsCvm(c *client.ClientSet, kit *kit.Kit, header http.Header,
+	accountID string, region string) error {
+
+	err := c.HCService().Aws.Cvm.SyncCvm(
+		kit.Ctx,
+		header,
+		&protocvm.CvmSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		},
+	)
+
+	if err != nil {
+		logs.Errorf("sync do aws sync cvm failed, err: %v, regionID: %s, rid: %s",
+			err, region, kit.Rid)
+	}
+
+	return err
+}
+
 // SyncAwsPublicResource ...
 func SyncAwsPublicResource(kit *kit.Kit, c *client.ClientSet, header http.Header, accountID string) error {
 	err := SyncAwsRegion(kit, c, header, accountID)
@@ -287,7 +315,7 @@ func SyncAwsImage(kit *kit.Kit, c *client.ClientSet, header http.Header, account
 		err = c.HCService().Aws.Image.SyncImage(
 			kit.Ctx,
 			header,
-			&protodisk.DiskSyncReq{
+			&protoimage.AwsImageSyncReq{
 				AccountID: accountID,
 				Region:    region.RegionID,
 			},
@@ -326,7 +354,7 @@ func SyncAwsZone(kit *kit.Kit, c *client.ClientSet, header http.Header, accountI
 			},
 		)
 		if err != nil {
-			logs.Errorf("sync do aws sync disk failed, err: %v, regionID: %s, rid: %s",
+			logs.Errorf("sync do aws sync zone failed, err: %v, regionID: %s, rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
 	}

@@ -35,7 +35,7 @@ var ApprovalProcessColumns = utils.MergeColumns(nil, ApprovalProcessColumnDescri
 // ApprovalProcessColumnDescriptor is Approval Process's column descriptors.
 var ApprovalProcessColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
-	{Column: "application_type", NamedC: "type", Type: enumor.String},
+	{Column: "application_type", NamedC: "application_type", Type: enumor.String},
 	{Column: "service_id", NamedC: "service_id", Type: enumor.Numeric},
 
 	{Column: "creator", NamedC: "creator", Type: enumor.String},

@@ -59,7 +59,7 @@ type cvmSvc struct {
 }
 
 func cvmClassificationByVendor(infoMap map[string]types.CloudResourceBasicInfo) map[enumor.Vendor][]types.
-CloudResourceBasicInfo {
+	CloudResourceBasicInfo {
 
 	cvmVendorMap := make(map[enumor.Vendor][]types.CloudResourceBasicInfo, 0)
 	for _, info := range infoMap {

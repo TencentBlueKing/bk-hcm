@@ -55,7 +55,7 @@ func (t *DiskCvmRelTable) TableName() table.Name {
 
 // DiskCvmRelModel 云盘主机关联数据模型
 type DiskCvmRelModel struct {
-	ID        uint64     `db:"id" validate:"required" json:"id"`
+	ID        uint64     `db:"id" json:"id"`
 	DiskID    string     `db:"disk_id" validate:"required,lte=64" json:"disk_id"`
 	CvmID     string     `db:"cvm_id" validate:"required,lte=64" json:"cvm_id"`
 	Creator   string     `db:"creator" validate:"required,lte=64" json:"creator"`

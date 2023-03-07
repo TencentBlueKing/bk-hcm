@@ -24,6 +24,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/region"
@@ -70,6 +71,9 @@ func (h *HuaWei) ListDisk(kt *kit.Kit, opt *disk.HuaWeiDiskListOption) ([]model.
 	if opt.Page != nil {
 		req.Marker = opt.Page.Marker
 		req.Limit = opt.Page.Limit
+	}
+	if len(opt.CloudIDs) > 0 {
+		req.Ids = converter.StringSliceToSliceStringPtr(opt.CloudIDs)
 	}
 
 	resp, err := client.ListVolumes(req)

@@ -90,24 +90,17 @@ type EipModel struct {
 
 // InsertValidate ...
 func (m *EipModel) InsertValidate() error {
-	if len(m.ID) == 0 {
-		return errors.New("id is required")
-	}
 
 	if len(m.Vendor) == 0 {
 		return errors.New("vendor is required")
 	}
 
 	if len(m.Status) == 0 {
-		return errors.New("state is required")
+		return errors.New("status is required")
 	}
 
 	if len(m.CloudID) == 0 {
 		return errors.New("cloud_id is required")
-	}
-
-	if len(*m.Name) == 0 {
-		return errors.New("name is required")
 	}
 
 	if len(m.Extension) == 0 {

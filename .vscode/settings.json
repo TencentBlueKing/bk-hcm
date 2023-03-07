@@ -23,5 +23,6 @@
     "enable": true
   },
   "editor.rulers": [],
-  "editor.selectionHighlight": true
+  "editor.selectionHighlight": true,
+  "preCI.localCodeCheck.toolType": "binary"
 }

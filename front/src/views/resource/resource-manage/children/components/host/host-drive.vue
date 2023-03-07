@@ -1,14 +1,42 @@
 <script lang="ts" setup>
 import {
   h,
+  watch,
+  ref,
 } from 'vue';
 import {
   Button,
 } from 'bkui-vue';
 
+import {
+  useRouter
+} from 'vue-router';
 import useMountedDrive from '../../../hooks/use-mounted-drive';
 import useUninstallDrive from '../../../hooks/use-uninstall-drive';
-import useExpansionDrive from '../../../hooks/use-expansion-drive';
+import useQueryList from '../../../hooks/use-query-list'
+import {
+  useResourceStore,
+} from '@/store/resource';
+
+const props = defineProps({
+  data: {
+    type: Object,
+  },
+});
+
+const resourceStore = useResourceStore();
+const router = useRouter()
+
+const {
+  datas,
+  isLoading,
+} = useQueryList(
+  {},
+  'disk',
+  () => {
+    return Promise.all([resourceStore.getDiskListByCvmId(props.data.vendor, props.data.id)])
+  }
+);
 
 const {
   isShowMountedDrive,
@@ -22,59 +50,67 @@ const {
   UninstallDrive,
 } = useUninstallDrive();
 
-const {
-  isShowExpansionDrive,
-  handleExpansionDrive,
-  ExpansionDrive,
-} = useExpansionDrive();
-
-const columns = [
+const columns = ref([
   {
-    label: 'ID',
-    field: 'id',
+    label: '硬盘用途',
+    field: '',
   },
   {
     label: '名称',
-    field: 'id',
+    field: 'name',
   },
   {
-    label: '属性',
+    label: 'ID',
     field: 'id',
-  },
-  {
-    label: '类型',
-    field: 'id',
-  },
-  {
-    label: '容量（GB）',
-    field: 'id',
-  },
-  {
-    label: '创建时间',
-    field: 'id',
-  },
-  {
-    label: '计费模式',
-    field: 'id',
-  },
-  {
-    label: '过期时间',
-    field: 'id',
-  },
-  {
-    label: '运行状态',
-    field: 'id',
-  },
-  {
-    label: '操作',
-    render() {
+    sort: true,
+    render({ cell }: { cell: string }) {
       return h(
         Button,
         {
           text: true,
           theme: 'primary',
           onClick() {
-            handleUninstallDrive();
+            router.push({
+              name: 'resourceDetail',
+              params: { type: 'drive' },
+              query: {
+                id: cell,
+              },
+            });
+          },
+        },
+        [
+          cell || '--',
+        ],
+      );
+    },
+  },
+  {
+    label: '连接状态',
+    field: '',
+  },
+  {
+    label: '容量',
+    field: 'disk_size',
+  },
+  {
+    label: '已加密',
+    field: '',
+  },
+  {
+    label: '删除实例时',
+    field: '',
+  },
+  {
+    label: '操作',
+    render({ data }: any) {
+      return h(
+        Button,
+        {
+          text: true,
+          theme: 'primary',
+          onClick() {
+            handleUninstallDrive(data);
           },
         },
         [
@@ -83,43 +119,101 @@ const columns = [
       );
     },
   },
-];
-const tableData = [
-  {
-    id: 233,
+]);
+
+watch(
+  () => props.data,
+  () => {
+    if (props.data.vendor === 'tcloud') {
+      columns.value.splice(2, 4 , ...[
+        {
+          label: '硬盘类型',
+          field: 'disk_type',
+        },
+        {
+          label: '容量',
+          field: 'disk_size',
+        },
+        {
+          label: '计费类型',
+          field: 'disk_charge_type',
+        },
+        {
+          label: '到期时间',
+          field: '',
+        }
+      ])
+    }
+    if (props.data.vendor === 'aws') {
+      columns.value.splice(2, 4 , ...[
+        {
+          label: '硬盘类型',
+          field: 'disk_type',
+        },
+        {
+          label: '接口类型',
+          field: '',
+        },
+        {
+          label: '容量',
+          field: 'disk_size',
+        },
+        {
+          label: '加密类型',
+          field: '',
+        },
+        {
+          label: '模式',
+          field: '',
+        },
+        {
+          label: '删除实例时',
+          field: '',
+        }
+      ])
+    }
+    if (props.data.vendor === 'azure') {
+      columns.value.splice(5, 1 , ...[
+        {
+          label: '终止时删除',
+          field: '',
+        },
+      ])
+    }
   },
-];
+  {
+    deep: true,
+    immediate: true
+  }
+)
 </script>
 
 <template>
-  <bk-button
-    class="mt20 mr20 w100"
-    theme="primary"
-    @click="handleMountedDrive"
-  >挂载</bk-button>
+  <bk-loading
+    :loading="isLoading"
+  >
+    <bk-button
+      class="mt20 mr20 w100"
+      theme="primary"
+      @click="handleMountedDrive"
+    >挂载</bk-button>
 
-  <bk-button
-    class="mt20 w100"
-    @click="handleExpansionDrive"
-  >扩容</bk-button>
-
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-  />
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      :columns="columns"
+      :data="datas"
+    />
+  </bk-loading>
 
   <mounted-drive
     v-model:is-show="isShowMountedDrive"
+    :vendor="data.vendor"
+    :id="data.id"
   />
 
   <uninstall-drive
     v-model:is-show="isShowUninstallDrive"
-  />
-
-  <expansion-drive
-    v-model:is-show="isShowExpansionDrive"
   />
 </template>
 

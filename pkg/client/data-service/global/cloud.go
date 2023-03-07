@@ -44,8 +44,8 @@ func NewCloudClient(client rest.ClientInterface) *CloudClient {
 
 // GetResourceBasicInfo get cloud resource basic info.
 func (cli *CloudClient) GetResourceBasicInfo(ctx context.Context, h http.Header, resType enumor.CloudResourceType,
-	resID string) (*types.CloudResourceBasicInfo, error) {
-
+	resID string,
+) (*types.CloudResourceBasicInfo, error) {
 	resp := new(protocloud.GetResourceBasicInfoResp)
 
 	err := cli.client.Get().
@@ -67,8 +67,8 @@ func (cli *CloudClient) GetResourceBasicInfo(ctx context.Context, h http.Header,
 
 // ListResourceBasicInfo list cloud resource basic info.
 func (cli *CloudClient) ListResourceBasicInfo(ctx context.Context, h http.Header,
-	req protocloud.ListResourceBasicInfoReq) (map[string]types.CloudResourceBasicInfo, error) {
-
+	req protocloud.ListResourceBasicInfoReq,
+) (map[string]types.CloudResourceBasicInfo, error) {
 	resp := new(protocloud.ListResourceBasicInfoResp)
 
 	err := cli.client.Post().

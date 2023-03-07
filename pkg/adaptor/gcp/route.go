@@ -45,8 +45,8 @@ func (g *Gcp) ListRoute(kt *kit.Kit, opt *core.GcpListOption) (*routetable.GcpRo
 
 	listCall := client.Routes.List(g.clientSet.credential.CloudProjectID).Context(kt.Ctx)
 
-	if len(opt.ResourceIDs) > 0 {
-		listCall.Filter(generateResourceIDsFilter(opt.ResourceIDs))
+	if len(opt.CloudIDs) > 0 {
+		listCall.Filter(generateResourceIDsFilter(opt.CloudIDs))
 	}
 
 	if opt.Page != nil {

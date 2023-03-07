@@ -136,3 +136,27 @@ func (a *AccountClient) ListWithExtension(ctx context.Context, h http.Header, re
 
 	return resp.Data, nil
 }
+
+// ListAccountBizRelWithAccount ...
+func (a *AccountClient) ListAccountBizRelWithAccount(ctx context.Context, h http.Header,
+	request *protocloud.AccountBizRelWithAccountListReq) ([]*protocloud.AccountBizRelWithAccount, error) {
+
+	resp := new(protocloud.AccountBizRelWithAccountListResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/account_biz_rels/with/accounts/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

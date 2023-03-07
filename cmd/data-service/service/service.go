@@ -39,11 +39,10 @@ import (
 	eipcvmrel "hcm/cmd/data-service/service/cloud/eip-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/image"
 	networkinterface "hcm/cmd/data-service/service/cloud/network-interface"
+	networkcvmrel "hcm/cmd/data-service/service/cloud/network-interface-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/region"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
 	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
-	subnetcvmrel "hcm/cmd/data-service/service/cloud/subnet-cvm-rel"
-	vpccvmrel "hcm/cmd/data-service/service/cloud/vpc-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/zone"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
@@ -165,9 +164,7 @@ func (s *Service) apiSet() *restful.Container {
 	cloud.InitSecurityGroupService(capability)
 	cloud.InitGcpFirewallRuleService(capability)
 	cloud.InitVpcService(capability)
-	vpccvmrel.InitService(capability)
 	cloud.InitSubnetService(capability)
-	subnetcvmrel.InitService(capability)
 	cloud.InitCloudService(capability)
 	auth.InitAuthService(capability)
 	disk.InitService(capability)
@@ -183,9 +180,11 @@ func (s *Service) apiSet() *restful.Container {
 	sgcvmrel.InitService(capability)
 	routetable.InitRouteTableService(capability)
 	application.InitApplicationService(capability)
+	application.InitApprovalProcessService(capability)
 	diskcvmrel.InitService(capability)
 	eipcvmrel.InitService(capability)
 	networkinterface.InitNetInterfaceService(capability)
+	networkcvmrel.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

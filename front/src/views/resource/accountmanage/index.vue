@@ -4,8 +4,8 @@
       <div @click="handleAuth('account_import')">
         <bk-button
           theme="primary" @click="handleJump('accountAdd')"
-          :disabled="!authVerifyData?.results?.import_authorized">
-          {{t('新增')}}
+          :disabled="!authVerifyData.permissionAction.account_import">
+          {{t('新增') }}
         </bk-button>
       </div>
       <div class="flex-row input-warp justify-content-between align-items-center">
@@ -41,7 +41,7 @@
               <bk-button
                 text theme="primary"
                 @click="handleJump('accountDetail', data.id)"
-                :disabled="!authVerifyData?.results?.update_authorized">{{data?.name}}</bk-button>
+                :disabled="!authVerifyData.permissionAction?.account_edit">{{data?.name}}</bk-button>
             </div>
           </template>
         </bk-table-column>
@@ -100,7 +100,7 @@
               <div @click="handleAuth('account_edit')">
                 <bk-button
                   text theme="primary" @click="handleJump('accountDetail', props?.data.id)"
-                  :disabled="!authVerifyData?.results?.update_authorized">
+                  :disabled="!authVerifyData.permissionAction.account_edit">
                   {{t('编辑')}}
                 </bk-button>
               </div>
@@ -165,7 +165,6 @@ import { CloudType, AccountType } from '@/typings';
 import { VENDORS } from '@/common/constant';
 import { useVerify } from '@/hooks';
 import permissionDialog from '@/components/permission-dialog';
-import moment from 'moment';
 
 
 export default defineComponent({
@@ -212,8 +211,6 @@ export default defineComponent({
       CloudType,
       AccountType,
       filter: { op: 'and', rules: [] },
-      actionData: ['import', 'update', 'key_access'],
-      moment,
     });
 
     const showPermissionDialog = ref(false);    // 无权限弹窗
@@ -231,7 +228,7 @@ export default defineComponent({
       handleAuth,
       permissionParams,
       authVerifyData,
-    } = useVerify(showPermissionDialog, state.actionData);
+    } = useVerify(showPermissionDialog);
 
     console.log('authVerifyData', authVerifyData);
 
@@ -271,6 +268,7 @@ export default defineComponent({
     watch(
       () => state.searchValue,
       (val) => {
+        console.log('val', val);
         state.filter.rules = val.reduce((p, v) => {
           if (v.type === 'condition') {
             state.filter.op = v.id || 'and';

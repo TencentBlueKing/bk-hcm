@@ -219,7 +219,7 @@ func (r *region) getHuaWeiRegionDSSync(cts *rest.Contexts, cloudIDs []string,
 					},
 				},
 			},
-			Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+			Page: &core.BasePage{Start: uint32(start), Limit: core.DefaultMaxPageLimit},
 		}
 
 		results, err := r.dataCli.HuaWei.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
@@ -262,7 +262,7 @@ func (r *region) getHuaWeiRegionAllDS(cts *rest.Contexts, req *apiregion.HuaWeiR
 					},
 				},
 			},
-			Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+			Page: &core.BasePage{Start: uint32(start), Limit: core.DefaultMaxPageLimit},
 		}
 
 		results, err := r.dataCli.HuaWei.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dataReq)

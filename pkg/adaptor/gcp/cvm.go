@@ -20,46 +20,76 @@
 package gcp
 
 import (
-	"hcm/pkg/adaptor/types/core"
+	"google.golang.org/api/compute/v1"
+
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-
-	"google.golang.org/api/compute/v1"
+	"hcm/pkg/tools/converter"
 )
 
 // ListCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
-func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) (*compute.InstanceList, error) {
+func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) ([]*compute.Instance, string, error) {
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list option is required")
+		return nil, "", errf.New(errf.InvalidParameter, "list option is required")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, "", errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	client, err := g.clientSet.computeClient(kt)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	request := client.Instances.List(g.CloudProjectID(), "").Context(kt.Ctx)
+	request := client.Instances.List(g.CloudProjectID(), opt.Zone).Context(kt.Ctx)
 
-	var call *compute.InstancesListCall
+	if len(opt.CloudIDs) > 0 {
+		request.Filter(generateResourceIDsFilter(opt.CloudIDs))
+	}
+
 	if opt.Page != nil {
-		call = request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
-	} else {
-		call = request.MaxResults(core.GcpQueryLimit)
+		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
 	}
 
-	resp, err := call.Do()
+	resp, err := request.Do()
 	if err != nil {
 		logs.Errorf("list instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
-		return nil, err
+		return nil, "", err
 	}
 
-	return resp, nil
+	return resp.Items, resp.NextPageToken, nil
+}
+
+// GetGcpIPAddresses ...
+func GetGcpIPAddresses(networkInterfaces []*compute.NetworkInterface) ([]string, []string, []string, []string) {
+	privateIPv4Map := make(map[string]struct{}, 0)
+	privateIPv6Map := make(map[string]struct{}, 0)
+	publicIPv4Map := make(map[string]struct{}, 0)
+	publicIPv6Map := make(map[string]struct{}, 0)
+
+	for _, one := range networkInterfaces {
+		if one.StackType == "IPV4_ONLY" {
+			privateIPv4Map[one.NetworkIP] = struct{}{}
+
+			for _, config := range one.AccessConfigs {
+				publicIPv4Map[config.NatIP] = struct{}{}
+			}
+		}
+
+		if one.StackType == "IPV6_ONLY" {
+			privateIPv6Map[one.NetworkIP] = struct{}{}
+
+			for _, config := range one.AccessConfigs {
+				publicIPv6Map[config.NatIP] = struct{}{}
+			}
+		}
+	}
+
+	return converter.MapKeyToStringSlice(privateIPv4Map), converter.MapKeyToStringSlice(publicIPv4Map),
+		converter.MapKeyToStringSlice(privateIPv6Map), converter.MapKeyToStringSlice(publicIPv6Map)
 }
 
 // DeleteCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/delete

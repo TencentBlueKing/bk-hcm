@@ -21,8 +21,11 @@ package huawei
 
 import (
 	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2/model"
 )
 
 // ListEip ...
@@ -37,9 +40,22 @@ func (h *HuaWei) ListEip(kt *kit.Kit, opt *eip.HuaWeiEipListOption) (*eip.HuaWei
 		return nil, err
 	}
 
-	req, err := opt.ToListPublicipsRequest()
-	if err != nil {
-		return nil, err
+	req := new(model.ListPublicipsRequest)
+
+	if len(opt.CloudIDs) > 0 {
+		req.Id = &opt.CloudIDs
+	}
+
+	if len(opt.Ips) > 0 {
+		req.PublicIpAddress = &opt.Ips
+	}
+
+	if opt.Limit != nil {
+		req.Limit = opt.Limit
+	}
+
+	if opt.Marker != nil {
+		req.Marker = opt.Marker
 	}
 
 	resp, err := client.ListPublicips(req)
@@ -63,5 +79,84 @@ func (h *HuaWei) ListEip(kt *kit.Kit, opt *eip.HuaWeiEipListOption) (*eip.HuaWei
 			BandwidthSize: publicIp.BandwidthSize,
 		}
 	}
+
 	return &eip.HuaWeiEipListResult{Details: eips}, nil
+}
+
+// DeleteEip ...
+// reference: https://support.huaweicloud.com/api-eip/eip_api_0005.html
+func (h *HuaWei) DeleteEip(kt *kit.Kit, opt *eip.HuaWeiEipDeleteOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "huawei eip delete option is required")
+	}
+
+	req, err := opt.ToDeletePublicipRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := h.clientSet.eipClient(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.DeletePublicip(req)
+	if err != nil {
+		logs.Errorf("delete huawei eip failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// AssociateEip ...
+// reference: https://support.huaweicloud.com/api-eip/eip_api_0004.html
+func (h *HuaWei) AssociateEip(kt *kit.Kit, opt *eip.HuaWeiEipAssociateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "huawei eip associate option is required")
+	}
+
+	req, err := opt.ToUpdatePublicipRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := h.clientSet.eipClient(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.UpdatePublicip(req)
+	if err != nil {
+		logs.Errorf("associate huawei eip failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// DisassociateEip ...
+// reference: https://support.huaweicloud.com/api-eip/eip_api_0004.html
+func (h *HuaWei) DisassociateEip(kt *kit.Kit, opt *eip.HuaWeiEipDisassociateOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "huawei eip disassociate option is required")
+	}
+
+	req, err := opt.ToUpdatePublicipRequest()
+	if err != nil {
+		return err
+	}
+
+	client, err := h.clientSet.eipClient(opt.Region)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.UpdatePublicip(req)
+	if err != nil {
+		logs.Errorf("disassociate huawei eip failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
 }

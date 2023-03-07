@@ -20,6 +20,8 @@
 package cvm
 
 import (
+	"fmt"
+
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
 )
@@ -29,6 +31,7 @@ import (
 // GcpListOption defines options to list gcp cvm instances.
 type GcpListOption struct {
 	Region   string        `json:"region" validate:"required"`
+	Zone     string        `json:"zone" validate:"required"`
 	CloudIDs []string      `json:"cloud_ids" validate:"omitempty"`
 	Page     *core.GcpPage `json:"page" validate:"omitempty"`
 }
@@ -37,6 +40,14 @@ type GcpListOption struct {
 func (opt GcpListOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return nil
+	}
+
+	if len(opt.CloudIDs) != 0 && opt.Page != nil {
+		return fmt.Errorf("list by cloud_ids not support page")
+	}
+
+	if len(opt.CloudIDs) > core.GcpQueryLimit {
+		return fmt.Errorf("cloud_ids should <= %d", core.GcpQueryLimit)
 	}
 
 	if opt.Page != nil {

@@ -19,16 +19,38 @@
 
 package eip
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/validator"
+)
+
+const (
+	// GcpGlobalRegion ...
+	GcpGlobalRegion = "global"
+	// DefaultExternalNatName ...
+	DefaultExternalNatName = "external-nat"
+)
 
 // GcpEipListOption ...
 type GcpEipListOption struct {
-	Region    string `validate:"required"`
-	PageToken string
+	Region    string        `json:"region" validate:"required"`
+	CloudIDs  []string      `json:"cloud_ids" validate:"omitempty"`
+	SelfLinks []string      `json:"self_links" validate:"omitempty"`
+	Page      *core.GcpPage `json:"page" validate:"omitempty"`
 }
 
 // Validate ...
 func (o *GcpEipListOption) Validate() error {
+	return validator.Validate.Struct(o)
+}
+
+// GcpEipAggregatedListOption ...
+type GcpEipAggregatedListOption struct {
+	IPAddresses []string `json:"ip_addresses" validate:"required"`
+}
+
+// Validate ...
+func (o *GcpEipAggregatedListOption) Validate() error {
 	return validator.Validate.Struct(o)
 }
 
@@ -55,4 +77,40 @@ type GcpEip struct {
 	Network      string
 	Subnetwork   string
 	SelfLink     string
+}
+
+// GcpEipDeleteOption ...
+type GcpEipDeleteOption struct {
+	Region  string `json:"region" validate:"required"`
+	EipName string `json:"eip_name" validate:"required"`
+}
+
+// Validate ...
+func (opt *GcpEipDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// GcpEipAssociateOption ...
+type GcpEipAssociateOption struct {
+	Zone                 string `json:"zone" validate:"required"`
+	CvmName              string `json:"cvm_name" validate:"required"`
+	NetworkInterfaceName string `json:"network_interface_name" validate:"required"`
+	PublicIp             string `json:"public_ip" validate:"required"`
+}
+
+// Validate ...
+func (opt *GcpEipAssociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// GcpEipDisassociateOption ...
+type GcpEipDisassociateOption struct {
+	Zone                 string `json:"zone" validate:"required"`
+	CvmName              string `json:"cvm_name" validate:"required"`
+	NetworkInterfaceName string `json:"network_interface_name" validate:"required"`
+}
+
+// Validate ...
+func (opt *GcpEipDisassociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }

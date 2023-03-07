@@ -38,6 +38,7 @@ import (
 	"hcm/cmd/cloud-server/service/eip"
 	"hcm/cmd/cloud-server/service/firewall"
 	"hcm/cmd/cloud-server/service/image"
+	instancetype "hcm/cmd/cloud-server/service/instance-type"
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
@@ -219,9 +220,8 @@ func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Cont
 	zone.InitZoneService(c)
 	region.InitRegionService(c)
 	eip.InitEipService(c)
-
+	instancetype.InitInstanceTypeService(c)
 	application.InitApplicationService(c, bkHcmUrl, strings.Split(platformManagers, ","))
-
 	audit.InitService(c)
 	networkinterface.InitNetworkInterfaceService(c)
 

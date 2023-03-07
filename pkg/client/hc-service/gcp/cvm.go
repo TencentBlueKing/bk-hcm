@@ -23,6 +23,8 @@ import (
 	"context"
 	"net/http"
 
+	"hcm/pkg/api/core"
+	"hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -37,6 +39,30 @@ func NewCvmClient(client rest.ClientInterface) *CvmClient {
 // CvmClient is hc service cvm api client.
 type CvmClient struct {
 	client rest.ClientInterface
+}
+
+// SyncCvm sync cvm.
+func (cli *CvmClient) SyncCvm(ctx context.Context, h http.Header,
+	request *cvm.CvmSyncReq) error {
+
+	resp := new(core.SyncResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/cvms/sync").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
 }
 
 // StartCvm ....

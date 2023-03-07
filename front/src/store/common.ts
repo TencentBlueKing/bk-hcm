@@ -18,13 +18,8 @@ export const useCommonStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    async authVerify(data: any, action: string[]) {
+    async authVerify(data: any) {
       const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/auth/verify`, data);
-      res.data.results = res.data.results.reduce((p: any, e: any, i: number) => {    // 将数组转成对象
-        p[`${action[i]}_authorized`] = e.authorized;
-        return p;
-      }, {});
-      this.authVerifyData = res.data;
       return res;
     },
 
@@ -40,6 +35,14 @@ export const useCommonStore = defineStore({
 
     async addAuthVerifyParams(data: any) {
       this.authVerifyParams = data;
+    },
+    /**
+     * @description: 管理全局的按钮是否disabled和获取跳转链接的参数
+     * @param {any} data
+     * @return {*}
+     */
+    async addAuthVerifyData(data: any) {
+      this.authVerifyData = data;
     },
   },
 });

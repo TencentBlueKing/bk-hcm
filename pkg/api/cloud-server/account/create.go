@@ -191,7 +191,9 @@ type AccountCommonInfoCreateReq struct {
 	Type          enumor.AccountType     `json:"type" validate:"required"`
 	Site          enumor.AccountSiteType `json:"site" validate:"required"`
 	Memo          *string                `json:"memo" validate:"omitempty"`
-	BkBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
+	// Note: 第一期只支持关联一个业务，且不能关联全部业务
+	// BkBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
+	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required,len=1,dive,min=1"`
 }
 
 // Validate ...

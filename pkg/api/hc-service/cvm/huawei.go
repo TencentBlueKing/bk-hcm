@@ -26,6 +26,26 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
+// HuaWeiOperateSyncReq cvm oprate sync request.
+type HuaWeiOperateSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate cvm operate sync request.
+func (req *HuaWeiOperateSyncReq) Validate() error {
+	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	if len(req.CloudIDs) <= 0 {
+		return fmt.Errorf("operate sync count should > 0")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
 // HuaWeiBatchDeleteReq define batch delete req.
 type HuaWeiBatchDeleteReq struct {
 	AccountID      string   `json:"account_id" validate:"required"`

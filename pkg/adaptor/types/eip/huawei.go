@@ -27,20 +27,16 @@ import (
 
 // HuaWeiEipListOption ...
 type HuaWeiEipListOption struct {
-	Region string `validate:"required"`
-	Limit  *int32
-	Marker *string
+	Region   string   `json:"region" validate:"required"`
+	Limit    *int32   `json:"limit" validate:"omitempty"`
+	Marker   *string  `json:"marker" validate:"omitempty"`
+	CloudIDs []string `json:"cloud_ids" validate:"omitempty"`
+	Ips      []string `json:"ips" validate:"omitempty"`
 }
 
 // Validate ...
 func (o *HuaWeiEipListOption) Validate() error {
 	return validator.Validate.Struct(o)
-}
-
-// ToListPublicipsRequest ...
-func (o *HuaWeiEipListOption) ToListPublicipsRequest() (*model.ListPublicipsRequest, error) {
-	req := &model.ListPublicipsRequest{Limit: o.Limit, Marker: o.Marker}
-	return req, nil
 }
 
 // HuaWeiEipListResult ...
@@ -61,4 +57,69 @@ type HuaWeiEip struct {
 	BandwidthId   *string
 	BandwidthName *string
 	BandwidthSize *int32
+}
+
+// HuaWeiEipDeleteOption ...
+type HuaWeiEipDeleteOption struct {
+	CloudID string `json:"cloud_id" validate:"required"`
+	Region  string `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (opt *HuaWeiEipDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToDeletePublicipRequest ...
+func (opt *HuaWeiEipDeleteOption) ToDeletePublicipRequest() (*model.DeletePublicipRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+	return &model.DeletePublicipRequest{PublicipId: opt.CloudID}, nil
+}
+
+// HuaWeiEipAssociateOption ...
+type HuaWeiEipAssociateOption struct {
+	CloudEipID              string `json:"cloud_eip_id" validate:"required"`
+	CloudNetworkInterfaceID string `json:"cloud_network_interface_id" validate:"required"`
+	Region                  string `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (opt *HuaWeiEipAssociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToUpdatePublicipRequest ...
+func (opt *HuaWeiEipAssociateOption) ToUpdatePublicipRequest() (*model.UpdatePublicipRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := &model.UpdatePublicipRequest{PublicipId: opt.CloudEipID}
+	req.Body = &model.UpdatePublicipsRequestBody{
+		Publicip: &model.UpdatePublicipOption{PortId: &opt.CloudNetworkInterfaceID},
+	}
+	return req, nil
+}
+
+// HuaWeiEipDisassociateOption ...
+type HuaWeiEipDisassociateOption struct {
+	CloudEipID string `json:"cloud_eip_id" validate:"required"`
+	Region     string `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (opt *HuaWeiEipDisassociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToUpdatePublicipRequest ...
+func (opt *HuaWeiEipDisassociateOption) ToUpdatePublicipRequest() (*model.UpdatePublicipRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := &model.UpdatePublicipRequest{PublicipId: opt.CloudEipID, Body: &model.UpdatePublicipsRequestBody{}}
+	return req, nil
 }

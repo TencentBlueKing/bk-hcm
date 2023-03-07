@@ -60,7 +60,7 @@ func (t *TCloud) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]*cvm.Ins
 
 	resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("list tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("list tcloud instance failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -110,7 +110,6 @@ func (t *TCloud) StartCvm(kt *kit.Kit, opt *typecvm.TCloudStartOption) error {
 	if err != nil {
 		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
-
 	req := cvm.NewStartInstancesRequest()
 	req.InstanceIds = common.StringPtrs(opt.CloudIDs)
 

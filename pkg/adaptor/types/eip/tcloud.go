@@ -29,22 +29,10 @@ import (
 
 // TCloudEipListOption ...
 type TCloudEipListOption struct {
-	Region string `validate:"required"`
-	Page   *core.TCloudPage
-}
-
-// ToDescribeAddressesRequest ...
-func (o *TCloudEipListOption) ToDescribeAddressesRequest() (*vpc.DescribeAddressesRequest, error) {
-	if err := o.Validate(); err != nil {
-		return nil, err
-	}
-
-	req := vpc.NewDescribeAddressesRequest()
-	if o.Page != nil {
-		req.Offset = common.Int64Ptr(int64(o.Page.Offset))
-		req.Limit = common.Int64Ptr(int64(o.Page.Limit))
-	}
-	return req, nil
+	Region   string           `json:"region" validate:"required"`
+	Page     *core.TCloudPage `json:"page" validate:"omitempty"`
+	CloudIDs []string         `json:"cloud_ids" validate:"omitempty"`
+	Ips      []string         `json:"ips" validate:"omitempty"`
 }
 
 // Validate ...
@@ -77,4 +65,70 @@ type TCloudEip struct {
 	PrivateIp          *string
 	Bandwidth          *uint64
 	InternetChargeType *string
+}
+
+// TCloudEipDeleteOption ...
+type TCloudEipDeleteOption struct {
+	CloudIDs []string `json:"cloud_ids" validate:"required"`
+	Region   string   `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (opt *TCloudEipDeleteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToReleaseAddressesRequest ...
+func (opt *TCloudEipDeleteOption) ToReleaseAddressesRequest() (*vpc.ReleaseAddressesRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &vpc.ReleaseAddressesRequest{AddressIds: common.StringPtrs(opt.CloudIDs)}, nil
+}
+
+// TCloudEipAssociateOption ...
+type TCloudEipAssociateOption struct {
+	Region     string `json:"region" validate:"required"`
+	CloudEipID string `json:"cloud_eip_id" validate:"required"`
+	CloudCvmID string `json:"cloud_cvm_id" validate:"required"`
+}
+
+// Validate ...
+func (opt *TCloudEipAssociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToAssociateAddressRequest ...
+func (opt *TCloudEipAssociateOption) ToAssociateAddressRequest() (*vpc.AssociateAddressRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &vpc.AssociateAddressRequest{
+		AddressId:  common.StringPtr(opt.CloudEipID),
+		InstanceId: common.StringPtr(opt.CloudCvmID),
+	}, nil
+}
+
+// TCloudEipDisassociateOption ...
+type TCloudEipDisassociateOption struct {
+	Region     string `json:"region" validate:"required"`
+	CloudEipID string `json:"cloud_eip_id" validate:"required"`
+}
+
+// Validate ...
+func (opt *TCloudEipDisassociateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToDisassociateAddressRequest ...
+func (opt *TCloudEipDisassociateOption) ToDisassociateAddressRequest() (*vpc.DisassociateAddressRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &vpc.DisassociateAddressRequest{
+		AddressId: common.StringPtr(opt.CloudEipID),
+	}, nil
 }

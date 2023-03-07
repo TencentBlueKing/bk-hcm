@@ -43,14 +43,81 @@ type EipClient struct {
 
 // SyncEip sync eip.
 func (cli *EipClient) SyncEip(ctx context.Context, h http.Header,
-	request *eip.EipSyncReq) error {
-
+	request *eip.EipSyncReq,
+) error {
 	resp := new(core.SyncResp)
 
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(request).
 		SubResourcef("/eips/sync").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// DeleteEip ...
+func (cli *EipClient) DeleteEip(ctx context.Context, h http.Header, req *eip.EipDeleteReq) error {
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Delete().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/eips").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// AssociateEip ...
+func (cli *EipClient) AssociateEip(ctx context.Context, h http.Header, req *eip.TCloudEipAssociateReq) error {
+	// TODO 替换为 rest.GenericResp
+	resp := new(core.UpdateResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/eips/associate").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// DisassociateEip ...
+func (cli *EipClient) DisassociateEip(ctx context.Context, h http.Header, req *eip.TCloudEipDisassociateReq) error {
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/eips/disassociate").
 		WithHeaders(h).
 		Do().
 		Into(resp)

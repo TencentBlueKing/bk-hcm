@@ -37,7 +37,9 @@ type BaseCvm struct {
 	Zone      string        `json:"zone"`
 
 	CloudVpcIDs    []string `json:"cloud_vpc_ids"`
+	VpcIDs         []string `json:"vpc_ids"`
 	CloudSubnetIDs []string `json:"cloud_subnet_ids"`
+	SubnetIDs      []string `json:"subnet_ids"`
 
 	CloudImageID string `json:"cloud_image_id"`
 	// ImageID 预留字段，因为目前 hcm 还没有支持镜像资源。
@@ -52,6 +54,8 @@ type BaseCvm struct {
 			REVERT_RESIZE、SHUTOFF、VERIFY_RESIZE、DELETED
 
 		gcp: PROVISIONING, STAGING, RUNNING, STOPPING, SUSPENDING, SUSPENDED, REPAIRING, and TERMINATED
+		aws: pending | running | shutting-down | terminated | stopping | stopped
+		azure：PowerState/running｜PowerState/stopped｜PowerState/deallocating｜PowerState/deallocated
 	*/
 	Status string `json:"status"`
 

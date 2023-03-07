@@ -77,8 +77,8 @@ func (a *Aws) ListVpc(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsVpcListRe
 
 	req := new(ec2.DescribeVpcsInput)
 
-	if len(opt.ResourceIDs) != 0 {
-		req.VpcIds = aws.StringSlice(opt.ResourceIDs)
+	if len(opt.CloudIDs) != 0 {
+		req.VpcIds = aws.StringSlice(opt.CloudIDs)
 	} else {
 		req.NextToken = opt.Page.NextToken
 		req.MaxResults = opt.Page.MaxResults

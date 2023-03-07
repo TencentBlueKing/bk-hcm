@@ -306,17 +306,7 @@ func (d *AccountDeleteReq) Validate() error {
 	return validator.Validate.Struct(d)
 }
 
-// AccountBizRelUpdateReq ...
-type AccountBizRelUpdateReq struct {
-	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required"`
-}
-
-// Validate ...
-func (req *AccountBizRelUpdateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// -------------------------- List --------------------------
+// -------------------------- List With Extension/Secret--------------------------
 
 // BaseAccountWithExtensionListResp ...
 type BaseAccountWithExtensionListResp struct {

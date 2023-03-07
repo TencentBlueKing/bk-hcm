@@ -83,8 +83,8 @@ type Update struct {
 
 // ListOption define gcp firewall rule list option.
 type ListOption struct {
-	IDs  []uint64      `json:"id" validate:"omitempty"`
-	Page *core.GcpPage `json:"page" validate:"omitempty"`
+	CloudIDs []uint64      `json:"cloud_ids,omitempty"`
+	Page     *core.GcpPage `json:"page" validate:"omitempty"`
 }
 
 // Validate gcp firewall rule list option.
@@ -93,7 +93,7 @@ func (opt ListOption) Validate() error {
 		return nil
 	}
 
-	if len(opt.IDs) != 0 && opt.Page != nil {
+	if len(opt.CloudIDs) != 0 && opt.Page != nil {
 		return errors.New("list firewall by ids, that not support page")
 	}
 

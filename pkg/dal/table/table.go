@@ -112,6 +112,8 @@ const (
 	ApprovalProcessTable Name = "approval_process"
 	// NetworkInterfaceTable is network interface table's name.
 	NetworkInterfaceTable Name = "network_interface"
+	// NetworkInterfaceCvmRelTable is network interface and cvm rel table's name.
+	NetworkInterfaceCvmRelTable Name = "network_interface_cvm_rel"
 )
 
 // Validate whether the table name is valid or not.
@@ -164,6 +166,7 @@ var TableMap = map[Name]struct{}{
 	ApplicationTable:             {},
 	ApprovalProcessTable:         {},
 	NetworkInterfaceTable:        {},
+	NetworkInterfaceCvmRelTable:  {},
 }
 
 // Register 注册表名

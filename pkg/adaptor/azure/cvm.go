@@ -22,10 +22,12 @@ package azure
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
@@ -54,6 +56,46 @@ func (az *Azure) ListCvm(kt *kit.Kit, opt *typecvm.AzureListOption) ([]*armcompu
 			return nil, fmt.Errorf("failed to advance page: %v", err)
 		}
 		vms = append(vms, nextResult.Value...)
+	}
+
+	return vms, nil
+}
+
+// ListCvmByID reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP
+func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*armcompute.VirtualMachine, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := az.clientSet.virtualMachineClient()
+	if err != nil {
+		return nil, fmt.Errorf("new cvm client failed, err: %v", err)
+	}
+
+	idMap := converter.StringSliceToMap(opt.CloudIDs)
+
+	vms := make([]*armcompute.VirtualMachine, 0, len(idMap))
+	pager := client.NewListPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			if _, exist := idMap[*one.ID]; exist {
+				vms = append(vms, one)
+				delete(idMap, *one.ID)
+
+				if len(idMap) == 0 {
+					return vms, nil
+				}
+			}
+		}
 	}
 
 	return vms, nil

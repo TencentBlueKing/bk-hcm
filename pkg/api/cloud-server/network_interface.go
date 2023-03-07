@@ -20,7 +20,12 @@
 package cloudserver
 
 import (
+	"errors"
+	"fmt"
+
 	coreni "hcm/pkg/api/core/cloud/network-interface"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/validator"
 )
 
 // -------------------------- List --------------------------
@@ -29,4 +34,31 @@ import (
 type NetworkInterfaceListResult struct {
 	Count   uint64                        `json:"count"`
 	Details []coreni.BaseNetworkInterface `json:"details"`
+}
+
+// AssignNetworkInterfaceToBizReq define assign network interface to biz req.
+type AssignNetworkInterfaceToBizReq struct {
+	BkBizID             int64    `json:"bk_biz_id" validate:"required"`
+	NetworkInterfaceIDs []string `json:"network_interface_ids" validate:"required"`
+}
+
+// Validate assign network interface to biz request.
+func (req *AssignNetworkInterfaceToBizReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if req.BkBizID <= 0 {
+		return errors.New("bk_biz_id should >= 0")
+	}
+
+	if len(req.NetworkInterfaceIDs) == 0 {
+		return errors.New("network_interface ids is required")
+	}
+
+	if len(req.NetworkInterfaceIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("network_interface ids should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }

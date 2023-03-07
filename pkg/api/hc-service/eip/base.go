@@ -19,16 +19,36 @@
 
 package eip
 
-import "hcm/pkg/criteria/validator"
+import (
+	"fmt"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/validator"
+)
 
 // EipSyncReq eip sync request
 type EipSyncReq struct {
-	AccountID         string `json:"account_id" validate:"required"`
-	Region            string `json:"region" validate:"omitempty"`
-	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
+	AccountID         string   `json:"account_id" validate:"required"`
+	Region            string   `json:"region" validate:"omitempty"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"omitempty"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
 }
 
 // Validate eip sync request.
 func (req *EipSyncReq) Validate() error {
+	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// EipDeleteReq ...
+type EipDeleteReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	EipID     string `json:"eip_id" validate:"required"`
+}
+
+// Validate ...
+func (req *EipDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

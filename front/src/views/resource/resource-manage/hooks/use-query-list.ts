@@ -22,7 +22,7 @@ type PropsType = {
   filter?: FilterType
 };
 
-export default (props: PropsType, type: string) => {
+export default (props: PropsType, type: string, apiMethod?: Function) => {
   // 接口
   const resourceStore = useResourceStore();
 
@@ -36,61 +36,69 @@ export default (props: PropsType, type: string) => {
   });
   const sort = ref();
   const order = ref();
+  const isFilter = ref(false);
 
   // 更新数据
   const triggerApi = () => {
     isLoading.value = true;
-    Promise
+
+    // 默认拉取方法
+    const getDefaultList = () => Promise
       .all([
-        resourceStore
-          .list(
-            {
-              page: {
-                count: false,
-                start: (pagination.value.current - 1) * pagination.value.limit,
-                limit: pagination.value.limit,
-                sort: sort.value,
-                order: order.value,
-              },
-              filter: props.filter,
+        resourceStore.list(
+          {
+            page: {
+              count: false,
+              start: (pagination.value.current - 1) * pagination.value.limit,
+              limit: pagination.value.limit,
+              sort: sort.value,
+              order: order.value,
             },
-            type,
-          ),
-        resourceStore
-          .list(
-            {
-              page: {
-                count: true,
-              },
-              filter: props.filter,
+            filter: props.filter,
+          },
+          type,
+        ),
+        resourceStore.list(
+          {
+            page: {
+              count: true,
             },
-            type,
-          ),
-      ])
-      .then(([listResult, countResult]) => {
-        datas.value = (listResult?.data?.details || []).map((item: any) => {
-          return {
-            ...item,
-            ...item.spec,
-            ...item.attachment,
-            ...item.revision,
-          };
-        });
-        pagination.value.count = countResult?.data?.count || 0;
-      })
+            filter: props.filter,
+          },
+          type,
+        ),
+      ]);
+    // 用户如果传了，就用传入的获取数据的方法
+    const method = apiMethod || getDefaultList;
+    // 执行获取数据的逻辑
+    method().then(([listResult, countResult]: [any, any]) => {
+      datas.value = (listResult?.data?.details || listResult?.data || []).map((item: any) => {
+        return {
+          ...item,
+          ...item.spec,
+          ...item.attachment,
+          ...item.revision,
+          ...item.extension,
+        };
+      });
+      pagination.value.count = countResult?.data?.count || 0;
+    })
       .finally(() => {
         isLoading.value = false;
+        isFilter.value = false;
       });
   };
 
   // 页码变化发生的事件
   const handlePageChange = (current: number) => {
+    if (isFilter.value) return;
     pagination.value.current = current;
     triggerApi();
   };
 
   // 条数变化发生的事件
   const handlePageSizeChange = (limit: number) => {
+    if (isFilter.value) return;
     pagination.value.limit = limit;
     triggerApi();
   };
@@ -106,9 +114,15 @@ export default (props: PropsType, type: string) => {
   // 过滤发生变化的时候，获取数据
   watch(
     () => props.filter,
-    triggerApi,
+    () => {
+      isFilter.value = true;  // 如果是过滤则不需要再次请求
+      pagination.value.current = 1;   // 页码重置
+      pagination.value.limit = 10;
+      triggerApi();
+    },
     {
       deep: true,
+      immediate: true,
     },
   );
 

@@ -20,7 +20,8 @@
 package disk
 
 import (
-	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	"fmt"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -38,19 +39,18 @@ type DiskBaseCreateReq struct {
 
 // DiskSyncReq disk sync request
 type DiskSyncReq struct {
-	AccountID         string `json:"account_id" validate:"required"`
-	Region            string `json:"region" validate:"omitempty"`
-	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
-	Zone              string `json:"zone" validate:"omitempty"`
+	AccountID         string   `json:"account_id" validate:"required"`
+	Region            string   `json:"region" validate:"omitempty"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"omitempty"`
+	Zone              string   `json:"zone" validate:"omitempty"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
 }
 
 // Validate disk sync request.
 func (req *DiskSyncReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
+	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
+	}
 
-// DiskSyncDS disk data-service
-type DiskSyncDS struct {
-	IsUpdated bool
-	HcDisk    *dataproto.DiskResult
+	return validator.Validate.Struct(req)
 }

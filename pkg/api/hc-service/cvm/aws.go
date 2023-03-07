@@ -26,6 +26,26 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
+// AwsOperateSyncReq cvm oprate sync request.
+type AwsOperateSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate cvm operate sync request.
+func (req *AwsOperateSyncReq) Validate() error {
+	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	if len(req.CloudIDs) <= 0 {
+		return fmt.Errorf("operate sync count should > 0")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
 // AwsBatchDeleteReq define batch delete req.
 type AwsBatchDeleteReq struct {
 	AccountID string   `json:"account_id" validate:"required"`

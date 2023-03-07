@@ -77,8 +77,12 @@ func (g *Gcp) ListVpc(kt *kit.Kit, opt *core.GcpListOption) (*types.GcpVpcListRe
 
 	listCall := client.Networks.List(cloudProjectID).Context(kt.Ctx)
 
-	if len(opt.ResourceIDs) > 0 {
-		listCall.Filter(generateResourceIDsFilter(opt.ResourceIDs))
+	if len(opt.CloudIDs) > 0 {
+		listCall.Filter(generateResourceIDsFilter(opt.CloudIDs))
+	}
+
+	if len(opt.SelfLinks) > 0 {
+		listCall.Filter(generateResourceFilter("selfLink", opt.SelfLinks))
 	}
 
 	if opt.Page != nil {

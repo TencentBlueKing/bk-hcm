@@ -159,9 +159,10 @@ func (r *region) syncAzureRGAdd(addIDs []string, cts *rest.Contexts, req *apireg
 	list := make([]protoregion.AzureRGBatchCreate, 0, len(addIDs))
 	for _, id := range addIDs {
 		one := protoregion.AzureRGBatchCreate{
-			Name:     *cloudMap[id].Region.Name,
-			Type:     string(*cloudMap[id].Region.Type),
-			Location: *cloudMap[id].Region.Location,
+			Name:      *cloudMap[id].Region.Name,
+			Type:      string(*cloudMap[id].Region.Type),
+			Location:  *cloudMap[id].Region.Location,
+			AccountID: req.AccountID,
 		}
 		list = append(list, one)
 	}
@@ -210,18 +211,23 @@ func (r *region) getAzureRGDSSync(cloudIDs []string, req *apiregion.AzureRGSyncR
 						Value: constant.SyncTimingListAzureRG,
 					},
 					&filter.AtomRule{
+						Field: "account_id",
+						Op:    filter.Equal.Factory(),
+						Value: req.AccountID,
+					},
+					&filter.AtomRule{
 						Field: "name",
 						Op:    filter.In.Factory(),
 						Value: cloudIDs,
 					},
 				},
 			},
-			Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+			Page: &core.BasePage{Start: uint32(start), Limit: core.DefaultMaxPageLimit},
 		}
 
 		results, err := r.dataCli.Azure.ResourceGroup.ListResourceGroup(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
 		if err != nil {
-			logs.Errorf("from data-service list public region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("from data-service list resource group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return updateIDs, dsMap, err
 		}
 
@@ -257,14 +263,19 @@ func (r *region) getAzureRGAllDS(req *apiregion.AzureRGSyncReq, cts *rest.Contex
 						Op:    filter.Equal.Factory(),
 						Value: constant.SyncTimingListAzureRG,
 					},
+					&filter.AtomRule{
+						Field: "account_id",
+						Op:    filter.Equal.Factory(),
+						Value: req.AccountID,
+					},
 				},
 			},
-			Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+			Page: &core.BasePage{Start: uint32(start), Limit: core.DefaultMaxPageLimit},
 		}
 
 		results, err := r.dataCli.Azure.ResourceGroup.ListResourceGroup(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
 		if err != nil {
-			logs.Errorf("from data-service list public region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("from data-service list resource group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return dsIDs, err
 		}
 

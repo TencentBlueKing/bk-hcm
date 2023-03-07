@@ -10,8 +10,6 @@ import {
   useI18n,
 } from 'vue-i18n';
 import useBusiness from '../../hooks/use-business';
-import useMountedDrive from '../../hooks/use-mounted-drive';
-import useUninstallDrive from '../../hooks/use-uninstall-drive';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
@@ -28,24 +26,13 @@ const {
 } = useI18n();
 
 const columns = useColumns('drive');
+const simpleColumns = useColumns('drive', true);
 
 const {
   isShowDistribution,
   handleDistribution,
   ResourceBusiness,
 } = useBusiness();
-
-const {
-  isShowMountedDrive,
-  handleMountedDrive,
-  MountedDrive,
-} = useMountedDrive();
-
-const {
-  isShowUninstallDrive,
-  handleUninstallDrive,
-  UninstallDrive,
-} = useUninstallDrive();
 
 const {
   selections,
@@ -56,7 +43,7 @@ const {
   handleShowDelete,
   DeleteDialog,
 } = useDelete(
-  columns,
+  simpleColumns,
   selections,
   'disks',
   t('删除硬盘'),
@@ -78,28 +65,16 @@ const {
     :loading="isLoading"
   >
     <section>
-      <bk-button
-        class="w100"
-        theme="primary"
-        :disabled="selections.length <= 0"
-        @click="handleDistribution"
-      >
-        {{ t('分配') }}
-      </bk-button>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-        @click="handleMountedDrive"
-      >
-        {{ t('挂载') }}
-      </bk-button>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-        @click="handleUninstallDrive"
-      >
-        {{ t('卸载') }}
-      </bk-button>
+      <slot>
+        <bk-button
+          class="w100"
+          theme="primary"
+          :disabled="selections.length <= 0"
+          @click="handleDistribution"
+        >
+          {{ t('分配') }}
+        </bk-button>
+      </slot>
       <bk-button
         class="w100 ml10"
         theme="primary"
@@ -131,15 +106,7 @@ const {
     :list="selections"
   />
 
-  <mounted-drive
-    v-model:is-show="isShowMountedDrive"
-  />
-
-  <uninstall-drive
-    v-model:is-show="isShowUninstallDrive"
-  />
-
-  <delete-dialog></delete-dialog>
+  <delete-dialog />
 </template>
 
 <style lang="scss" scoped>

@@ -21,8 +21,6 @@ package disk
 
 import (
 	"hcm/pkg/criteria/validator"
-
-	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // AwsDiskCreateReq ...
@@ -33,9 +31,4 @@ type AwsDiskCreateReq struct {
 // Validate ...
 func (req *AwsDiskCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
-}
-
-// AwsDiskSyncDiff aws disk diff struct
-type AwsDiskSyncDiff struct {
-	Disk *ec2.Volume
 }

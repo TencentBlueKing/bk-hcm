@@ -32,14 +32,21 @@ import (
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/cvm"
 	"hcm/cmd/hc-service/service/disk"
-	"hcm/cmd/hc-service/service/eip"
 	"hcm/cmd/hc-service/service/firewall"
 	"hcm/cmd/hc-service/service/image"
-	networkinterface "hcm/cmd/hc-service/service/network-interface"
+	instancetype "hcm/cmd/hc-service/service/instance-type"
 	"hcm/cmd/hc-service/service/region"
 	routetable "hcm/cmd/hc-service/service/route-table"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
+	synccvm "hcm/cmd/hc-service/service/sync/cvm"
+	syncdisk "hcm/cmd/hc-service/service/sync/disk"
+	synceip "hcm/cmd/hc-service/service/sync/eip"
+	syncfirewall "hcm/cmd/hc-service/service/sync/firewall"
+	syncnetworkinterface "hcm/cmd/hc-service/service/sync/network-interface"
+	syncsecuritygroup "hcm/cmd/hc-service/service/sync/security-group"
+	syncsubnet "hcm/cmd/hc-service/service/sync/subnet"
+	syncvpc "hcm/cmd/hc-service/service/sync/vpc"
 	"hcm/cmd/hc-service/service/vpc"
 	"hcm/cmd/hc-service/service/zone"
 	"hcm/pkg/cc"
@@ -52,6 +59,8 @@ import (
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
+
+	"hcm/cmd/hc-service/service/eip"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -155,14 +164,22 @@ func (s *Service) apiSet() *restful.Container {
 	firewall.InitFirewallService(c)
 	vpc.InitVpcService(c)
 	subnet.InitSubnetService(c)
-	eip.InitEipService(c)
 	region.InitRegionService(c)
 	disk.InitDiskService(c)
 	zone.InitZoneService(c)
 	cvm.InitCvmService(c)
 	image.InitImageService(c)
 	routetable.InitRouteTableService(c)
-	networkinterface.InitNetworkInterfaceService(c)
+	eip.InitEipService(c)
+	instancetype.InitInstanceTypeService(c)
+	syncsecuritygroup.InitSyncSecurityGroupService(c)
+	synccvm.InitSyncCvmService(c)
+	syncdisk.InitSyncDiskService(c)
+	synceip.InitSyncEipService(c)
+	syncfirewall.InitFireWallService(c)
+	syncvpc.InitSyncVpcService(c)
+	syncsubnet.InitSyncSubnetService(c)
+	syncnetworkinterface.InitSyncNetworkInterfaceService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

@@ -45,7 +45,9 @@ var TableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "region", NamedC: "region", Type: enumor.String},
 	{Column: "zone", NamedC: "zone", Type: enumor.String},
 	{Column: "cloud_vpc_ids", NamedC: "cloud_vpc_ids", Type: enumor.Json},
+	{Column: "vpc_ids", NamedC: "vpc_ids", Type: enumor.Json},
 	{Column: "cloud_subnet_ids", NamedC: "cloud_subnet_ids", Type: enumor.Json},
+	{Column: "subnet_ids", NamedC: "subnet_ids", Type: enumor.Json},
 	{Column: "cloud_image_id", NamedC: "cloud_image_id", Type: enumor.String},
 	{Column: "image_id", NamedC: "image_id", Type: enumor.String},
 	{Column: "os_name", NamedC: "os_name", Type: enumor.String},
@@ -78,7 +80,9 @@ type Table struct {
 	Region               string            `db:"region" validate:"lte=20" json:"region"`
 	Zone                 string            `db:"zone" validate:"lte=20" json:"zone"`
 	CloudVpcIDs          types.StringArray `db:"cloud_vpc_ids" json:"cloud_vpc_ids"`
+	VpcIDs               types.StringArray `db:"vpc_ids" json:"vpc_ids"`
 	CloudSubnetIDs       types.StringArray `db:"cloud_subnet_ids" json:"cloud_subnet_ids"`
+	SubnetIDs            types.StringArray `db:"subnet_ids" json:"subnet_i_ds"`
 	CloudImageID         string            `db:"cloud_image_id" json:"cloud_image_id"`
 	ImageID              string            `db:"image_id" json:"image_id"`
 	OsName               string            `db:"os_name" json:"os_name"`
@@ -131,8 +135,20 @@ func (t Table) InsertValidate() error {
 		return errors.New("region is required")
 	}
 
-	if len(t.Name) == 0 {
-		return errors.New("name is required")
+	if len(t.CloudVpcIDs) == 0 {
+		return errors.New("cloud_vpc_id is required")
+	}
+
+	if len(t.CloudSubnetIDs) == 0 {
+		return errors.New("cloud_subnet_id is required")
+	}
+
+	if len(t.VpcIDs) == 0 {
+		return errors.New("vpc_id is required")
+	}
+
+	if len(t.SubnetIDs) == 0 {
+		return errors.New("subnet_id is required")
 	}
 
 	if len(t.Extension) == 0 {

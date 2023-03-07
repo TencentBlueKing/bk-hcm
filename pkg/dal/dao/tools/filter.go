@@ -20,6 +20,8 @@
 package tools
 
 import (
+	"fmt"
+
 	"hcm/pkg/runtime/filter"
 )
 
@@ -66,4 +68,36 @@ func AllExpression() *filter.Expression {
 // DefaultSqlWhereOption define sql where option.
 var DefaultSqlWhereOption = &filter.SQLWhereOption{
 	Priority: filter.Priority{"id"},
+}
+
+// And merge expressions using 'and' operation.
+func And(rules ...filter.RuleFactory) (*filter.Expression, error) {
+	if len(rules) == 0 {
+		return nil, fmt.Errorf("rules are not set")
+	}
+
+	andRules := make([]filter.RuleFactory, 0)
+	for _, rule := range rules {
+		switch rule.WithType() {
+		case filter.AtomType:
+			andRules = append(andRules, rule)
+		case filter.ExpressionType:
+			expr, ok := rule.(*filter.Expression)
+			if !ok {
+				return nil, fmt.Errorf("rule type is not expression")
+			}
+			if expr.Op == filter.And {
+				andRules = append(andRules, expr.Rules...)
+				continue
+			}
+			andRules = append(andRules, expr)
+		default:
+			return nil, fmt.Errorf("rule type %s is invalid", rule.WithType())
+		}
+	}
+
+	return &filter.Expression{
+		Op:    filter.And,
+		Rules: andRules,
+	}, nil
 }

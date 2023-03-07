@@ -32,8 +32,10 @@
     "cloud_vpc_id": "/subscriptions/1001-0000-0000-0000-xxxxxxxx/resourceGroups/test/providers/Microsoft.Network/virtualNetworks/test-vnet",
     "subnet_id": "000002",
     "cloud_subnet_id": "/subscriptions/1001-0000-0000-0000-xxxxxxxx/resourceGroups/test/providers/Microsoft.Network/virtualNetworks/test-vnet/subnets/default",
-    "private_ip": "127.0.0.1",
-    "public_ip": "127.0.0.2",
+    "private_ipv4": ["127.0.0.1"],
+    "private_ipv6": ["xx:xx:xx:xx:xx"],
+    "public_ipv4": ["127.0.0.2"],
+    "public_ipv6": ["xx:xx:xx:xx:xx"],
     "bk_biz_id": 10010,
     "instance_id": "/resource/subscriptions/1001-0000-0000-0000-xxxxxxxx/resourceGroups/test/providers/Microsoft.Compute/virtualMachines/test",
     "creator": "tom",
@@ -103,8 +105,10 @@
         "cloud_vpc_id": "https://www.googleapis.com/compute/v1/projects/tencentgcpieg6/global/networks/test001",
         "subnet_id": "",
         "cloud_subnet_id": "https://www.googleapis.com/compute/v1/projects/tencentgcpieg6/regions/us-west1/subnetworks/test-sub1",
-        "private_ip": "127.0.0.1",
-        "public_ip": "127.0.0.2",
+        "private_ipv4": ["127.0.0.1"],
+        "private_ipv6": ["xx:xx:xx:xx:xx"],
+        "public_ipv4": ["127.0.0.2"],
+        "public_ipv6": ["xx:xx:xx:xx:xx"],
         "bk_biz_id": 10010,
         "instance_id": "1000000001",
         "creator": "tom",
@@ -145,8 +149,10 @@
         "cloud_vpc_id": "/subscriptions/1001-0000-0000-0000-xxxxxxxx/resourceGroups/rsgtest/providers/Microsoft.Network/virtualNetworks/test-vnet",
         "subnet_id": "000002",
         "cloud_subnet_id": "/subscriptions/1001-0000-0000-0000-xxxxxxxx/resourceGroups/rsgtest/providers/Microsoft.Network/virtualNetworks/test-vnet/subnets/default",
-        "private_ip": "127.0.0.1",
-        "public_ip": "127.0.0.2",
+        "private_ipv4": ["127.0.0.1"],
+        "private_ipv6": ["xx:xx:xx:xx:xx"],
+        "public_ipv4": ["127.0.0.2"],
+        "public_ipv6": ["xx:xx:xx:xx:xx"],
         "bk_biz_id": 10010,
         "instance_id": "1001-0000-0000-0000-xxxxxxxxx",
         "creator": "tom",
@@ -161,8 +167,6 @@
                     "ip_address": "127.0.0.1"
                 }
             ],
-            "net_id": "1001-0000-0000-0000-xxxxxxxxxx",
-            "port_id": "1001-0000-0000-0000-xxxxxxxxx",
             "mac_addr": "xx:xx:xx:xx:xx:xx",
             "delete_on_termination": false,
             "driver_mode": "virtio",
@@ -211,8 +215,10 @@
 | cloud_vpc_id | string | 云VPCID                               |
 | subnet_id    | string | 子网的ID                               |
 | cloud_subnet_id | string  | 云子网ID，格式：半角逗号分割          |
-| private_ip  | string  | 内网IP                                 |
-| public_ip   | string  | 公网IP                                 |
+| private_ipv4  | string array | 内网IPv4                       |
+| private_ipv6  | string array | 内网IPv6                       |
+| public_ipv4   | string array | 公网IPv4                       |
+| public_ipv6   | string array | 公网IPv6                       |
 | bk_biz_id   | int     | 业务ID                                 |
 | instance_id | string  | 关联的实例ID                            |
 | creator     | string | 创建者                                  |
@@ -284,13 +290,6 @@
 | public_ip_address_version   | string | 公共IP版本(IPv4、IPv6)      |
 
 
-#### data.extension(azure).virtual_machine
-
-| 参数名称     | 参数类型   | 描述                                     |
-|----------|--------|-----------------------------------------------|
-| id       | string | 虚拟机的ID                                   |
-
-
 #### data.extension(gcp)
 
 | 参数名称  | 参数类型   | 描述                      |
@@ -316,8 +315,6 @@
 |----------|-----------|--------------------------|
 | port_state  | string  | 网卡端口状态                  |
 | fixed_ips   | list array | 网卡私网IP信息列表          |
-| net_id      | string  | 网卡端口所属网络ID（network_id）|
-| port_id     | string  | 网卡端口ID                    |
 | mac_addr    | string  | 网卡Mac地址信息                |
 | delete_on_termination | bool | 卸载网卡时，是否删除网卡(true: 删除； false: 不删除)  |
 | driver_mode | string  | 从guest os中，网卡的驱动类型。可选值为virtio和hinic，默认为virtio |
@@ -342,8 +339,8 @@
 
 | 参数名称 | 参数类型 |         描述           |
 |----------|-----------|--------------------|
-|  ip            | string |  虚拟IP地址      |
-|  elasticity_ip | string |  弹性公网IP地址   |
+| ip            | string |  虚拟IP地址       |
+| elasticity_ip | string |  弹性公网IP地址    |
 
 
 #### data.extension(huawei).addresses

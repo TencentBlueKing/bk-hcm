@@ -23,16 +23,21 @@ import (
 	"fmt"
 
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/cmd/cloud-server/service/eip/aws"
+	"hcm/cmd/cloud-server/service/eip/azure"
+	"hcm/cmd/cloud-server/service/eip/gcp"
+	"hcm/cmd/cloud-server/service/eip/huawei"
+	"hcm/cmd/cloud-server/service/eip/tcloud"
 	cloudproto "hcm/pkg/api/cloud-server/eip"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
+	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/dal/table/cloud/eip"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
@@ -90,7 +95,7 @@ func (svc *eipSvc) RetrieveEip(cts *rest.Contexts) (interface{}, error) {
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
-		enumor.CloudResourceType(eip.TableName),
+		enumor.EipCloudResType,
 		eipID,
 	)
 	if err != nil {
@@ -157,6 +162,87 @@ func (svc *eipSvc) AssignEip(cts *rest.Contexts) (interface{}, error) {
 		cts.Kit.Header(),
 		&dataproto.EipBatchUpdateReq{IDs: req.IDs, BkBizID: req.BkBizID},
 	)
+}
+
+// DeleteEip ...
+func (svc *eipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
+	eipID := cts.PathParameter("id").String()
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		enumor.EipCloudResType,
+		eipID,
+	)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// TODO 增加鉴权和审计
+	// TODO 判断 Eip 是否可删除
+
+	deleteReq := &hcproto.EipDeleteReq{EipID: eipID, AccountID: basicInfo.AccountID}
+
+	switch basicInfo.Vendor {
+	case enumor.TCloud:
+		return nil, svc.client.HCService().TCloud.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	case enumor.Aws:
+		return nil, svc.client.HCService().Aws.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	case enumor.HuaWei:
+		return nil, svc.client.HCService().HuaWei.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	case enumor.Gcp:
+		return nil, svc.client.HCService().Gcp.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	case enumor.Azure:
+		return nil, svc.client.HCService().Azure.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	default:
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
+	}
+}
+
+// AssociateEip ...
+func (svc *eipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return tcloud.AssociateEip(svc.client, cts)
+	case enumor.Aws:
+		return aws.AssociateEip(svc.client, cts)
+	case enumor.HuaWei:
+		return huawei.AssociateEip(svc.client, cts)
+	case enumor.Gcp:
+		return gcp.AssociateEip(svc.client, cts)
+	case enumor.Azure:
+		return azure.AssociateEip(svc.client, cts)
+	default:
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
+	}
+}
+
+// DisassociateEip ...
+func (svc *eipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return tcloud.DisassociateEip(svc.client, cts)
+	case enumor.Aws:
+		return aws.DisassociateEip(svc.client, cts)
+	case enumor.HuaWei:
+		return huawei.DisassociateEip(svc.client, cts)
+	case enumor.Gcp:
+		return gcp.DisassociateEip(svc.client, cts)
+	case enumor.Azure:
+		return azure.DisassociateEip(svc.client, cts)
+	default:
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
+	}
 }
 
 func (svc *eipSvc) authorizeEipAssignOp(kt *kit.Kit, ids []string) error {

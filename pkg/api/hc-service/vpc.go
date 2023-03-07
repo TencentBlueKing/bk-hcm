@@ -33,20 +33,70 @@ func (u *VpcUpdateReq) Validate() error {
 
 // -------------------------- Sync --------------------------
 
-// ResourceSyncReq defines sync resource request.
-type ResourceSyncReq struct {
-	AccountID         string `json:"account_id" validate:"required"`
-	Region            string `json:"region" validate:"omitempty"`
-	ResourceGroupName string `json:"resource_group_name" validate:"omitempty"`
-	VpcName           string `json:"vpc_name" validate:"omitempty"`
+// TCloudResourceSyncReq defines sync resource request.
+type TCloudResourceSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate validate sync vpc request.
+func (r *TCloudResourceSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// HuaWeiResourceSyncReq defines sync resource request.
+type HuaWeiResourceSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	VpcID     string   `json:"vpc_id" validate:"omitempty"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate validate sync vpc request.
+func (r *HuaWeiResourceSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// GcpResourceSyncReq defines sync resource request.
+type GcpResourceSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	SelfLinks []string `json:"self_links" validate:"omitempty"`
+}
+
+// Validate validate sync vpc request.
+func (r *GcpResourceSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// AzureResourceSyncReq defines sync resource request.
+type AzureResourceSyncReq struct {
+	AccountID         string   `json:"account_id" validate:"required"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
+	VpcID             string   `json:"vpc_id" validate:"required"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate validate sync vpc request.
+func (r *AzureResourceSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// AwsResourceSyncReq defines sync resource request.
+type AwsResourceSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate validate sync vpc request.
+func (r *AwsResourceSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
 }
 
 // ResourceSyncResult defines sync vpc result.
 type ResourceSyncResult struct {
 	TaskID string `json:"task_id"`
-}
-
-// Validate validate sync vpc request.
-func (r *ResourceSyncReq) Validate() error {
-	return validator.Validate.Struct(r)
 }

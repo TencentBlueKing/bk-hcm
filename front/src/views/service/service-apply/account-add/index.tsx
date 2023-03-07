@@ -89,8 +89,7 @@ export default defineComponent({
           memo: projectModel.memo,
           department_ids: projectModel.departmentId,
           site: projectModel.site,
-          bk_biz_ids: projectModel.bizIds.length === businessList.list.length
-            ? [-1] : projectModel.bizIds,
+          bk_biz_ids: projectModel.bizIds ? [projectModel.bizIds] : [-1],
           extension: {},
         };
         switch (projectModel.vendor) {
@@ -577,7 +576,7 @@ export default defineComponent({
         label: t('使用业务'),
         required: true,
         property: 'bizIds',
-        component: () => <Select multiple show-select-all filterable collapse-tags multipleMode='tag'
+        component: () => <Select filterable collapse-tags multipleMode='tag'
         placeholder={t('请选择使用业务')} class="w450" v-model={projectModel.bizIds}>
           {businessList.list.map(item => (
               <Option

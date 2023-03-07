@@ -22,6 +22,7 @@ package azure
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -125,6 +126,49 @@ func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureListOpti
 			return nil, fmt.Errorf("failed to advance page: %v", err)
 		}
 		securityGroups = append(securityGroups, nextResult.Value...)
+	}
+
+	return securityGroups, nil
+}
+
+// ListSecurityGroupByID list security group.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
+func (az *Azure) ListSecurityGroupByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
+	[]*armnetwork.SecurityGroup, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "security group list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	idMap := converter.StringSliceToMap(opt.CloudIDs)
+
+	client, err := az.clientSet.securityGroupClient()
+	if err != nil {
+		return nil, fmt.Errorf("new security group client failed, err: %v", err)
+	}
+
+	securityGroups := make([]*armnetwork.SecurityGroup, 0, len(idMap))
+	pager := client.NewListPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			if _, exist := idMap[*one.ID]; exist {
+				securityGroups = append(securityGroups, one)
+				delete(idMap, *one.ID)
+
+				if len(idMap) == 0 {
+					return securityGroups, nil
+				}
+			}
+		}
 	}
 
 	return securityGroups, nil

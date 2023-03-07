@@ -22,6 +22,7 @@ package cvm
 import (
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
+	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
 )
 
@@ -42,4 +43,5 @@ func InitCvmService(cap *capability.Capability) {
 type cvmSvc struct {
 	ad      *cloudadaptor.CloudAdaptorClient
 	dataCli *dataservice.Client
+	client  *client.ClientSet
 }

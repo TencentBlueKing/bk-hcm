@@ -54,9 +54,10 @@ func (a *applicationSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		Status:    application.Status,
 		Applicant: application.Applicant,
 		// 暂时不需要，需要时再将JSON解析成struct或map
-		Content:   "",
-		Memo:      application.Memo,
-		Revision:  application.Revision,
-		TicketUrl: ticket.TicketURL,
+		Content:        "",
+		DeliveryDetail: "",
+		Memo:           application.Memo,
+		Revision:       application.Revision,
+		TicketUrl:      ticket.TicketURL,
 	}, nil
 }

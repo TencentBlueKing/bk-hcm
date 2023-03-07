@@ -28,9 +28,3 @@ type ListAccountDetails struct {
 	Count   uint64                `json:"count,omitempty"`
 	Details []*cloud.AccountTable `json:"details,omitempty"`
 }
-
-// ListAccountBizRelDetails list account and biz relation details.
-type ListAccountBizRelDetails struct {
-	Count   uint64                      `json:"count,omitempty"`
-	Details []*cloud.AccountBizRelTable `json:"details,omitempty"`
-}

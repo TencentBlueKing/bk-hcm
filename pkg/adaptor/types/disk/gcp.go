@@ -22,6 +22,7 @@ package disk
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
 
 	"google.golang.org/api/compute/v1"
@@ -49,13 +50,30 @@ func (opt *GcpDiskCreateOption) ToCreateDiskRequest(cloudProjectID string) (*com
 
 // GcpDiskListOption define gcp disk list option.
 type GcpDiskListOption struct {
-	Zone string `json:"zone" validate:"required"`
+	Zone      string        `json:"zone" validate:"required"`
+	CloudIDs  []string      `json:"cloud_ids" validate:"omitempty"`
+	SelfLinks []string      `json:"self_links" validate:"omitempty"`
+	Page      *core.GcpPage `json:"page" validate:"omitempty"`
 }
 
 // Validate gcp disk list option.
 func (opt GcpDiskListOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return nil
+	}
+
+	if len(opt.CloudIDs) != 0 && opt.Page != nil {
+		return fmt.Errorf("list by cloud_ids not support page")
+	}
+
+	if len(opt.CloudIDs) > core.GcpQueryLimit {
+		return fmt.Errorf("cloud_ids should <= %d", core.GcpQueryLimit)
+	}
+
+	if opt.Page != nil {
+		if err := opt.Page.Validate(); err != nil {
+			return err
+		}
 	}
 
 	return nil

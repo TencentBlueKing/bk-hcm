@@ -26,14 +26,15 @@ import (
 
 // ApplicationGetResp ...
 type ApplicationGetResp struct {
-	ID            string                   `json:"id"`
-	SN            string                   `json:"sn"`
-	Type          enumor.ApplicationType   `json:"type"`
-	Status        enumor.ApplicationStatus `json:"status"`
-	Applicant     string                   `json:"applicant"`
-	Content       string                   `json:"content"`
-	Memo          *string                  `json:"memo"`
-	core.Revision `json:",inline"`
+	ID             string                   `json:"id"`
+	SN             string                   `json:"sn"`
+	Type           enumor.ApplicationType   `json:"type"`
+	Status         enumor.ApplicationStatus `json:"status"`
+	Applicant      string                   `json:"applicant"`
+	Content        string                   `json:"content"`
+	DeliveryDetail string                   `json:"delivery_detail"`
+	Memo           *string                  `json:"memo"`
+	core.Revision  `json:",inline"`
 
 	TicketUrl string `json:"ticket_url"`
 }

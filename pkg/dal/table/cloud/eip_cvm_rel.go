@@ -55,7 +55,7 @@ func (t *EipCvmRelTable) TableName() table.Name {
 
 // EipCvmRelModel Eip 主机关联数据模型
 type EipCvmRelModel struct {
-	ID        uint64     `db:"id" validate:"required" json:"id"`
+	ID        uint64     `db:"id" json:"id"`
 	EipID     string     `db:"eip_id" validate:"required,lte=64" json:"eip_id"`
 	CvmID     string     `db:"cvm_id" validate:"required,lte=64" json:"cvm_id"`
 	Creator   string     `db:"creator" validate:"required,lte=64" json:"creator"`

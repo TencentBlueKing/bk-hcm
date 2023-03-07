@@ -51,7 +51,8 @@ func (opt *AzureDiskCreateOption) ToCreateDiskRequest() (*armcompute.Disk, error
 
 // AzureDiskListOption define azure disk list option.
 type AzureDiskListOption struct {
-	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
 }
 
 // Validate azure disk list option.

@@ -187,7 +187,7 @@ func (r *region) getAzureRegionDSSync(cts *rest.Contexts, cloudIDs []string,
 					},
 				},
 			},
-			Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+			Page: &core.BasePage{Start: uint32(start), Limit: core.DefaultMaxPageLimit},
 		}
 
 		results, err := r.dataCli.Azure.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
@@ -230,7 +230,7 @@ func (r *region) getAzureRegionAllDS(cts *rest.Contexts, req *apiregion.AzureReg
 					},
 				},
 			},
-			Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+			Page: &core.BasePage{Start: uint32(start), Limit: core.DefaultMaxPageLimit},
 		}
 
 		results, err := r.dataCli.Azure.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dataReq)

@@ -20,6 +20,7 @@
 package gcp
 
 import (
+	"fmt"
 	"strings"
 
 	"hcm/pkg/adaptor/types"
@@ -49,6 +50,19 @@ func generateResourceIDsFilter(resourceIDs []string) string {
 	for idx, id := range resourceIDs {
 		filterExp += "id=" + id
 		if idx != len(resourceIDs)-1 {
+			filterExp += " OR "
+		}
+	}
+
+	return filterExp
+}
+
+// generateResourceFilter generate gcp resource ids filter
+func generateResourceFilter(field string, values []string) string {
+	filterExp := ""
+	for idx, one := range values {
+		filterExp += fmt.Sprintf(`%s="%s"`, field, one)
+		if idx != len(values)-1 {
 			filterExp += " OR "
 		}
 	}

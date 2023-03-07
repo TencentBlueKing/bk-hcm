@@ -1,9 +1,6 @@
 // table 字段相关信息
-import type {
-  PlainObject,
-} from '@/typings/resource';
 import i18n from '@/language/i18n';
-import { CloudType } from '@/typings';
+import { CloudType, HostCloudEnum, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import {
   Button,
   InfoBox,
@@ -12,15 +9,17 @@ import {
   h,
 } from 'vue';
 import {
+  useRoute,
   useRouter,
 } from 'vue-router';
 import {
   useResourceStore,
 } from '@/store/resource';
 
-export default (type: string) => {
+export default (type: string, isSimpleShow: boolean = false) => {
   const resourceStore = useResourceStore();
   const router = useRouter();
+  const route = useRoute();
   const { t } = i18n.global;
 
   const getDeleteField = (type: string) => {
@@ -61,14 +60,10 @@ export default (type: string) => {
     };
   };
 
-  const vpcColumns = [
-    {
-      type: 'selection',
-      onlyShowOnList: true,
-    },
-    {
-      label: 'ID',
-      field: 'id',
+  const getLinkField = (type: string, label: string = 'ID', field: string = 'id') => {
+    return {
+      label,
+      field,
       sort: true,
       render({ cell }: { cell: string }) {
         return h(
@@ -77,15 +72,31 @@ export default (type: string) => {
             text: true,
             theme: 'primary',
             onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'vpc',
-                },
+              const routeInfo: any = {
                 query: {
                   id: cell,
-                },
-              });
+                }
+              }
+              // 业务下
+              if (route.path.includes('business')) {
+                Object.assign(
+                  routeInfo,
+                  {
+                    name: `${type}BusinessDetail`,
+                  }
+                )
+              } else {
+                Object.assign(
+                  routeInfo,
+                  {
+                    name: 'resourceDetail',
+                    params: {
+                      type,
+                    }
+                  }
+                )
+              }
+              router.push(routeInfo);
             },
           },
           [
@@ -93,7 +104,15 @@ export default (type: string) => {
           ],
         );
       },
+    }
+  };
+
+  const vpcColumns = [
+    {
+      type: 'selection',
+      onlyShowOnList: true,
     },
+    getLinkField('vpc'),
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -148,34 +167,7 @@ export default (type: string) => {
       type: 'selection',
       onlyShowOnList: true,
     },
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ cell }: { cell: string }) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'subnet',
-                },
-                query: {
-                  id: cell,
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('subnet'),
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -228,29 +220,7 @@ export default (type: string) => {
       type: 'selection',
       onlyShowOnList: true,
     },
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ cell }: PlainObject) {
-        return h(
-          'span',
-          {
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'subnet',
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('subnet'),
     {
       label: '资源 ID',
       field: 'account_id',
@@ -281,33 +251,6 @@ export default (type: string) => {
       label: '描述',
       field: 'memo',
     },
-    // {
-    //   label: '关联实例',
-    //   field: '',
-    //   render() {
-    //     h(
-    //       Button,
-    //       {
-    //         text: true,
-    //         theme: 'primary',
-    //         onClick() {
-    //           router.push({
-    //             name: 'resourceDetail',
-    //             params: {
-    //               type: 'security',
-    //             },
-    //             query: {
-    //               activeTab: 'rule',
-    //             },
-    //           });
-    //         },
-    //       },
-    //       [
-    //         t('配置规则'),
-    //       ],
-    //     );
-    //   },
-    // },
   ];
 
   const gcpColumns = [
@@ -315,29 +258,7 @@ export default (type: string) => {
       type: 'selection',
       onlyShowOnList: true,
     },
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ cell }: PlainObject) {
-        return h(
-          'span',
-          {
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'subnet',
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('subnet'),
     {
       label: '资源 ID',
       field: 'account_id',
@@ -374,36 +295,7 @@ export default (type: string) => {
     },
   ];
 
-  const driveColumns = [
-    {
-      type: 'selection',
-    },
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ cell }: { cell: string }) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: { type: 'drive' },
-                query: {
-                  id: cell,
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+  const driveColumns: any[] = [
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -454,39 +346,20 @@ export default (type: string) => {
       label: '创建时间',
       field: 'created_at',
     },
-    getDeleteField('disks'),
   ];
 
-  const imageColumns = [
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ data }: any) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'image',
-                },
-                query: {
-                  id: data.id,
-                  vendor: data.vendor,
-                },
-              });
-            },
-          },
-          [
-            data.id || '--',
-          ],
-        );
+  if (!isSimpleShow) {
+    driveColumns.unshift(...[
+      {
+        type: 'selection',
       },
-    },
+      getLinkField('drive'),
+    ])
+    driveColumns.push(getDeleteField('disks'))
+  }
+
+  const imageColumns = [
+    getLinkField('image'),
     {
       label: '实例 ID',
       field: 'cloud_id',
@@ -537,35 +410,7 @@ export default (type: string) => {
   ];
 
   const networkInterfaceColumns = [
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ data }: any) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: {
-                  type: 'network-interface',
-                },
-                query: {
-                  id: data.id,
-                  vendor: data.vendor,
-                },
-              });
-            },
-          },
-          [
-            data.id || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('network-interface'),
     {
       label: '名称',
       field: 'name',
@@ -672,32 +517,7 @@ export default (type: string) => {
   ];
 
   const routeColumns = [
-    {
-      label: 'ID',
-      field: 'id',
-      sort: true,
-      render({ cell }: { cell: string }) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: { type: 'route' },
-                query: {
-                  id: cell,
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('route'),
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -725,32 +545,7 @@ export default (type: string) => {
       field: 'name',
       sort: true,
     },
-    {
-      label: '所属网络(VPC)',
-      field: 'vpc_id',
-      sort: true,
-      render({ cell }: { cell: string }) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              router.push({
-                name: 'resourceDetail',
-                params: { type: 'vpc' },
-                query: {
-                  id: cell,
-                },
-              });
-            },
-          },
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('vpc', '所属网络(VPC)', 'vpc_id'),
     {
       label: '关联子网',
       field: '',
@@ -766,6 +561,175 @@ export default (type: string) => {
     },
   ];
 
+  const cvmsColumns = [
+    {
+      label: '实例 ID',
+      field: 'cloud_id',
+    },
+    {
+      label: '云厂商',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            CloudType[data.vendor],
+          ],
+        );
+      },
+    },
+    {
+      label: '地域',
+      field: 'region',
+    },
+    {
+      label: '名称',
+      field: 'name',
+    },
+    {
+      label: '状态',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            HostCloudEnum[data.status] || data.status,
+          ],
+        );
+      },
+    },
+    {
+      label: '操作系统',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.os_name || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '云区域ID',
+      field: 'bk_cloud_id',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.bk_cloud_id === -1 ? '未分配' : data.bk_cloud_id,
+          ],
+        );
+      },
+    },
+    {
+      label: '内网IP',
+      field: '',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.private_ipv4_addresses || data.private_ipv6_addresses,
+          ],
+        );
+      },
+    },
+    {
+      label: '公网IP',
+      field: '',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.public_ipv4_addresses || data.public_ipv6_addresses,
+          ],
+        );
+      },
+    },
+    {
+      label: '创建时间',
+      field: 'created_at',
+    },
+    {
+      label: '启动时间',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.cloud_launched_time || '--',
+          ],
+        );
+      },
+    },
+  ];
+
+  const securityCommonColumns = [
+    {
+      label: '来源',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.cloud_address_group_id || data.cloud_address_id
+            || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
+            || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
+            || data.source_address_prefix || data.source_address_prefixs || data.cloud_source_security_group_ids
+            || data.destination_address_prefix || data.destination_address_prefixes
+            || data.cloud_destination_security_group_ids,
+          ],
+        );
+      },
+    },
+    {
+      label: '协议端口',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            `${data.protocol}:${data.port}`,
+          ],
+        );
+      },
+    },
+    {
+      label: t('策略'),
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            // eslint-disable-next-line no-nested-ternary
+            data.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : data.vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
+              : SecurityRuleEnum[data.action],
+          ],
+        );
+      },
+    },
+    {
+      label: '备注',
+      field: 'memo',
+      render({ data }: any) {
+        return h(
+          'span',
+          {},
+          [
+            data.memo || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: t('修改时间'),
+      field: 'updated_at',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -775,6 +739,8 @@ export default (type: string) => {
     image: imageColumns,
     networkInterface: networkInterfaceColumns,
     route: routeColumns,
+    cvms: cvmsColumns,
+    securityCommon: securityCommonColumns,
   };
 
   return columnsMap[type];

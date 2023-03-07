@@ -3,20 +3,31 @@
  */
 import {
   ref,
+  h
 } from 'vue';
 
 import UninstallDrive from '../children/dialog/uninstall-drive/uninstall-drive';
 
 export default () => {
+  const disk = ref({})
   const isShowUninstallDrive = ref(false);
 
-  const handleUninstallDrive = () => {
+  const handleUninstallDrive = (data: any) => {
+    disk.value = data
     isShowUninstallDrive.value = true;
   };
 
   return {
     isShowUninstallDrive,
     handleUninstallDrive,
-    UninstallDrive,
+    UninstallDrive: (props: any, { slots }: any) => {
+      return h(
+        UninstallDrive,
+        {
+          ...props,
+          data: disk.value
+        },
+      );
+    },
   };
 };

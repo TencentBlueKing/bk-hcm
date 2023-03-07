@@ -43,8 +43,10 @@ type BaseNetworkInterface struct {
 	CloudVpcID     string        `json:"cloud_vpc_id"`
 	SubnetID       string        `json:"subnet_id"`
 	CloudSubnetID  string        `json:"cloud_subnet_id"`
-	PrivateIP      string        `json:"private_ip"`
-	PublicIP       string        `json:"public_ip"`
+	PrivateIPv4    []string      `json:"private_ipv4"`
+	PrivateIPv6    []string      `json:"private_ipv6"`
+	PublicIPv4     []string      `json:"public_ipv4"`
+	PublicIPv6     []string      `json:"public_ipv6"`
 	BkBizID        int64         `json:"bk_biz_id"`
 	InstanceID     string        `json:"instance_id"`
 	*core.Revision `json:",inline"`
@@ -779,10 +781,11 @@ type ServerInterfaceFixedIp struct {
 
 // GcpNIExtension defines gcp network interface extensional info.
 type GcpNIExtension struct {
-	CanIpForward  bool            `json:"can_ip_forward,omitempty"`
-	Status        string          `json:"status,omitempty"`
-	StackType     string          `json:"stack_type,omitempty"`
-	AccessConfigs []*AccessConfig `json:"access_configs,omitempty"`
+	CanIpForward      bool            `json:"can_ip_forward,omitempty"`
+	Status            string          `json:"status,omitempty"`
+	StackType         string          `json:"stack_type,omitempty"`
+	AccessConfigs     []*AccessConfig `json:"access_configs,omitempty"`
+	Ipv6AccessConfigs []*AccessConfig `json:"ipv6_access_configs,omitempty"`
 }
 
 // AccessConfig: An access configuration attached to an instance's

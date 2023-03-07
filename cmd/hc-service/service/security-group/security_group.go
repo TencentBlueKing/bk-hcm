@@ -38,9 +38,6 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.TCloudSecurityGroupAssociateCvm)
 	h.Add("TCloudSecurityGroupDisassociateCvm", "POST", "/vendors/tcloud/security_groups/disassociate/cvms",
 		sg.TCloudSecurityGroupDisassociateCvm)
-	h.Add("SyncTCloudSecurityGroup", "POST", "/vendors/tcloud/security_groups/sync", sg.SyncTCloudSecurityGroup)
-	h.Add("SyncTCloudSGRule", "POST", "/vendors/tcloud/security_groups/{security_group_id}/rules/sync",
-		sg.SyncTCloudSGRule)
 	h.Add("CreateTCloudSecurityGroup", "POST", "/vendors/tcloud/security_groups/create", sg.CreateTCloudSecurityGroup)
 	h.Add("DeleteTCloudSecurityGroup", "DELETE", "/vendors/tcloud/security_groups/{id}", sg.DeleteTCloudSecurityGroup)
 	h.Add("UpdateTCloudSecurityGroup", "PATCH", "/vendors/tcloud/security_groups/{id}", sg.UpdateTCloudSecurityGroup)
@@ -55,8 +52,6 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.AwsSecurityGroupAssociateCvm)
 	h.Add("AwsSecurityGroupDisassociateCvm", "POST", "/vendors/aws/security_groups/disassociate/cvms",
 		sg.AwsSecurityGroupDisassociateCvm)
-	h.Add("SyncAwsSecurityGroup", "POST", "/vendors/aws/security_groups/sync", sg.SyncAwsSecurityGroup)
-	h.Add("SyncAwsSGRule", "POST", "/vendors/aws/security_groups/{security_group_id}/rules/sync", sg.SyncAwsSGRule)
 	h.Add("CreateAwsSecurityGroup", "POST", "/vendors/aws/security_groups/create", sg.CreateAwsSecurityGroup)
 	h.Add("DeleteAwsSecurityGroup", "DELETE", "/vendors/aws/security_groups/{id}", sg.DeleteAwsSecurityGroup)
 	h.Add("BatchCreateAwsSGRule", "POST", "/vendors/aws/security_groups/{security_group_id}/rules/batch/create",
@@ -70,8 +65,6 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.HuaWeiSecurityGroupAssociateCvm)
 	h.Add("HuaWeiSecurityGroupDisassociateCvm", "POST", "/vendors/huawei/security_groups/disassociate/cvms",
 		sg.HuaWeiSecurityGroupDisassociateCvm)
-	h.Add("SyncHuaWeiSecurityGroup", "POST", "/vendors/huawei/security_groups/sync", sg.SyncHuaWeiSecurityGroup)
-	h.Add("SyncHuaWeiSGRule", "POST", "/vendors/huawei/security_groups/{security_group_id}/rules/sync", sg.SyncHuaWeiSGRule)
 	h.Add("CreateHuaWeiSecurityGroup", "POST", "/vendors/huawei/security_groups/create", sg.CreateHuaWeiSecurityGroup)
 	h.Add("DeleteHuaWeiSecurityGroup", "DELETE", "/vendors/huawei/security_groups/{id}", sg.DeleteHuaWeiSecurityGroup)
 	h.Add("UpdateHuaWeiSecurityGroup", "PATCH", "/vendors/huawei/security_groups/{id}", sg.UpdateHuaWeiSecurityGroup)
@@ -88,8 +81,6 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.AzureSecurityGroupDisassociateSubnet)
 	h.Add("AzureSecurityGroupDisassociateNI", "POST", "/vendors/azure/security_groups/disassociate/network_interfaces",
 		sg.AzureSecurityGroupDisassociateNI)
-	h.Add("SyncAzureSecurityGroup", "POST", "/vendors/azure/security_groups/sync", sg.SyncAzureSecurityGroup)
-	h.Add("SyncAzureSGRule", "POST", "/vendors/azure/security_groups/{security_group_id}/rules/sync", sg.SyncAzureSGRule)
 	h.Add("CreateAzureSecurityGroup", "POST", "/vendors/azure/security_groups/create", sg.CreateAzureSecurityGroup)
 	h.Add("DeleteAzureSecurityGroup", "DELETE", "/vendors/azure/security_groups/{id}", sg.DeleteAzureSecurityGroup)
 	h.Add("UpdateAzureSecurityGroup", "PATCH", "/vendors/azure/security_groups/{id}", sg.UpdateAzureSecurityGroup)

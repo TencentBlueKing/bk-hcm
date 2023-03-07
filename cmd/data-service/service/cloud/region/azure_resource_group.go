@@ -108,32 +108,33 @@ func (svc *azureRGSvc) CreateAzureResourceGroup(cts *rest.Contexts) (interface{}
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	regions := make([]*tableregion.AzureRGTable, 0, len(req.ResourceGroups))
-	for _, region := range req.ResourceGroups {
-		regions = append(regions, &tableregion.AzureRGTable{
-			Name:     region.Name,
-			Type:     region.Type,
-			Location: region.Location,
-			Creator:  cts.Kit.User,
-			Reviser:  cts.Kit.User,
+	resourceGroups := make([]*tableregion.AzureRGTable, 0, len(req.ResourceGroups))
+	for _, resourceGroup := range req.ResourceGroups {
+		resourceGroups = append(resourceGroups, &tableregion.AzureRGTable{
+			Name:      resourceGroup.Name,
+			Type:      resourceGroup.Type,
+			Location:  resourceGroup.Location,
+			AccountID: resourceGroup.AccountID,
+			Creator:   cts.Kit.User,
+			Reviser:   cts.Kit.User,
 		})
 	}
 
-	regionIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		regionIDs, err := svc.dao.AzureRG().CreateWithTx(cts.Kit, txn, regions)
+	resourceGroupIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		resourceGroupIDs, err := svc.dao.AzureRG().CreateWithTx(cts.Kit, txn, resourceGroups)
 		if err != nil {
-			return nil, fmt.Errorf("batch create azure region failed, err: %v", err)
+			return nil, fmt.Errorf("batch create azure resource group failed, err: %v", err)
 		}
-		return regionIDs, nil
+		return resourceGroupIDs, nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	ids, ok := regionIDs.([]string)
+	ids, ok := resourceGroupIDs.([]string)
 	if !ok {
-		return nil, fmt.Errorf("batch create azure region but return id type is not string, id type: %v",
-			reflect.TypeOf(regionIDs).String())
+		return nil, fmt.Errorf("batch create azure resource group but return id type is not string, id type: %v",
+			reflect.TypeOf(resourceGroupIDs).String())
 	}
 
 	return &core.BatchCreateResult{IDs: ids}, nil
@@ -159,7 +160,7 @@ func (svc *azureRGSvc) DeleteAzureResourceGroup(cts *rest.Contexts) (interface{}
 	return nil, nil
 }
 
-// ListAzureRG list azure resourcd group with filter
+// ListAzureResourceGroup list azure resource group with filter
 func (svc *azureRGSvc) ListAzureResourceGroup(cts *rest.Contexts) (interface{}, error) {
 	req := new(protoregion.AzureRGListReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -176,8 +177,8 @@ func (svc *azureRGSvc) ListAzureResourceGroup(cts *rest.Contexts) (interface{}, 
 	}
 	result, err := svc.dao.AzureRG().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list azure region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list azure region failed, err: %v", err)
+		logs.Errorf("list azure resource group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list azure resource group failed, err: %v", err)
 	}
 
 	if req.Page.Count {
@@ -191,6 +192,7 @@ func (svc *azureRGSvc) ListAzureResourceGroup(cts *rest.Contexts) (interface{}, 
 			Name:      one.Name,
 			Type:      one.Type,
 			Location:  one.Location,
+			AccountID: one.AccountID,
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
 			CreatedAt: one.CreatedAt,

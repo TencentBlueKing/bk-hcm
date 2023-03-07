@@ -173,12 +173,14 @@ func (req *AzureAccountExtensionUpdateReq) IsFull() bool {
 
 // AccountUpdateReq ...
 type AccountUpdateReq struct {
-	Name          string           `json:"name" validate:"omitempty"`
-	Managers      []string         `json:"managers" validate:"omitempty,max=5"`
-	DepartmentIDs []int64          `json:"department_ids" validate:"omitempty,max=1"`
-	Memo          *string          `json:"memo" validate:"omitempty"`
-	BkBizIDs      []int64          `json:"bk_biz_ids" validate:"omitempty"`
-	Extension     *json.RawMessage `json:"extension" validate:"omitempty"`
+	Name          string   `json:"name" validate:"omitempty"`
+	Managers      []string `json:"managers" validate:"omitempty,max=5"`
+	DepartmentIDs []int64  `json:"department_ids" validate:"omitempty,max=1"`
+	Memo          *string  `json:"memo" validate:"omitempty"`
+	// Note: 第一期只支持关联一个业务，且不能关联全部业务
+	// BkBizIDs  []int64          `json:"bk_biz_ids" validate:"omitempty"`
+	BkBizIDs  []int64          `json:"bk_biz_ids" validate:"omitempty,len=1,dive,min=1"`
+	Extension *json.RawMessage `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...

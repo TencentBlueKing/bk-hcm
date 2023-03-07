@@ -22,6 +22,7 @@ package networkinterface
 import (
 	"hcm/pkg/adaptor/types/core"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -53,20 +54,22 @@ type GcpNI CloudNetworkInterface[coreni.GcpNIExtension]
 
 // CloudNetworkInterface defines network interface struct.
 type CloudNetworkInterface[T coreni.NetworkInterfaceExtension] struct {
-	Name          *string `json:"name"`
-	AccountID     *string `json:"account_id"`
-	Region        *string `json:"region"`
-	Zone          *string `json:"zone"`
-	CloudID       *string `json:"cloud_id"`
-	VpcID         *string `json:"vpc_id"`
-	CloudVpcID    *string `json:"cloud_vpc_id"`
-	SubnetID      *string `json:"subnet_id"`
-	CloudSubnetID *string `json:"cloud_subnet_id"`
-	PrivateIP     *string `json:"private_ip"`
-	PublicIP      *string `json:"public_ip"`
-	BkBizID       *int64  `json:"bk_biz_id"`
-	InstanceID    *string `json:"instance_id"`
-	Extension     *T      `json:"extension"`
+	Name          *string  `json:"name"`
+	AccountID     *string  `json:"account_id"`
+	Region        *string  `json:"region"`
+	Zone          *string  `json:"zone"`
+	CloudID       *string  `json:"cloud_id"`
+	VpcID         *string  `json:"vpc_id"`
+	CloudVpcID    *string  `json:"cloud_vpc_id"`
+	SubnetID      *string  `json:"subnet_id"`
+	CloudSubnetID *string  `json:"cloud_subnet_id"`
+	PrivateIPv4   []string `json:"private_ipv4"`
+	PrivateIPv6   []string `json:"private_ipv6"`
+	PublicIPv4    []string `json:"public_ipv4"`
+	PublicIPv6    []string `json:"public_ipv6"`
+	BkBizID       *int64   `json:"bk_biz_id"`
+	InstanceID    *string  `json:"instance_id"`
+	Extension     *T       `json:"extension"`
 }
 
 // AzureInterfaceListResponse defines azure list network interface response.
@@ -97,9 +100,8 @@ func (opt AzureNetworkInterfaceListOption) Validate() error {
 
 // HuaWeiNIListOption defines huawei network interface list options.
 type HuaWeiNIListOption struct {
-	AccountID string `json:"account_id" validate:"required"`
-	ServerID  string `json:"server_id" validate:"required"`
-	Region    string `json:"region" validate:"required"`
+	ServerID string `json:"server_id" validate:"required"`
+	Region   string `json:"region" validate:"required"`
 }
 
 // Validate huawei network interface list option.
@@ -128,17 +130,40 @@ func (v HuaWeiEipListOption) Validate() error {
 
 // HuaWeiPortInfoOption defines huawei port info options.
 type HuaWeiPortInfoOption struct {
-	Region    string `json:"region" validate:"required"`
-	PortID    string `json:"port_id" validate:"omitempty"`
-	NetID     string `json:"net_id" validate:"omitempty"`
-	IPAddress string `json:"ip_address" validate:"omitempty"`
+	Region         string          `json:"region" validate:"required"`
+	PortID         string          `json:"port_id" validate:"omitempty"`
+	NetID          string          `json:"net_id" validate:"omitempty"`
+	IPv4AddressMap map[string]bool `json:"ipv4_address" validate:"omitempty"`
+	IPv6AddressMap map[string]bool `json:"ipv6_address" validate:"omitempty"`
 }
 
-// Validate huawei huawei port info option.
+// Validate port info option.
 func (v HuaWeiPortInfoOption) Validate() error {
 	if err := v.Validate(); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// GcpListByCvmIDOption defines basic gcp list options.
+type GcpListByCvmIDOption struct {
+	CloudCvmIDs []string `json:"cloud_cvm_ids" validate:"required"`
+	Zone        string   `json:"zone" validate:"required"`
+}
+
+// Validate gcp list option.
+func (opt GcpListByCvmIDOption) Validate() error {
+	if len(opt.CloudCvmIDs) > core.GcpQueryLimit {
+		return errf.Newf(errf.InvalidParameter, "resource ids length should <= %d", len(opt.CloudCvmIDs))
+	}
+
+	if len(opt.CloudCvmIDs) == 0 {
+		return errf.New(errf.InvalidParameter, "cloud cvm ids is required")
+	}
+
+	if len(opt.Zone) == 0 {
+		return errf.New(errf.InvalidParameter, "zone is required")
+	}
 	return nil
 }

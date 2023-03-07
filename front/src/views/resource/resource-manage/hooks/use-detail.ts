@@ -10,7 +10,7 @@ import { CloudType } from '@/typings';
 
 export default (type: string, id: string, cb?: Function, vendor?: string) => {
   const loading = ref(false);
-  const detail = ref({});
+  const detail = ref<any>({});
   const resourceStore = useResourceStore();
 
   // 从接口获取数据，并拼装需要的信息

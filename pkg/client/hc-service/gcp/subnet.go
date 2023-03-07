@@ -85,7 +85,7 @@ func (v *SubnetClient) Delete(ctx context.Context, h http.Header, id string) err
 }
 
 // SyncSubnet sync gcp subnet.
-func (v *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *hcservice.ResourceSyncReq) error {
+func (v *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *hcservice.GcpResourceSyncReq) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Post().

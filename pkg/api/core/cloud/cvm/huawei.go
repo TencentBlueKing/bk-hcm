@@ -30,18 +30,19 @@ type HuaWeiCvmExtension struct {
 	CloudTenantID         string        `json:"cloud_tenant_id,omitempty"`
 
 	// 扩展属性， diskConfig的类型。MANUAL，镜像空间不会扩展。AUTO，系统盘镜像空间会自动扩展为与flavor大小一致。
-	DiskConfig string `json:"disk_config,omitempty"`
+	DiskConfig *string `json:"disk_config,omitempty"`
 	// PowerState 弹性云服务器电源状态。0：NOSTATE 1：RUNNING 4：SHUTDOWN
-	PowerState string `json:"power_state,omitempty"`
+	PowerState int32 `json:"power_state,omitempty"`
 	// ConfigDrive config drive信息。
-	ConfigDrive     string                 `json:"config_drive,omitempty"`
-	Metadata        *HuaWeiMetadata        `json:"metadata,omitempty"`
-	VolumesAttached *HuaWeiVolumesAttached `json:"volumes_attached,omitempty"`
+	ConfigDrive        string          `json:"config_drive,omitempty"`
+	Metadata           *HuaWeiMetadata `json:"metadata,omitempty"`
+	CloudOSVolumeID    string          `json:"cloud_os_volume_id,omitempty"`
+	CloudDataVolumeIDs []string        `json:"cloud_data_volume_ids,omitempty"`
 
 	// RootDeviceName 弹性云服务器系统盘的设备名称，例如当系统盘的磁盘模式是VDB，为/dev/vda，磁盘模式是SCSI，为/dev/sda。
 	RootDeviceName string `json:"root_device_name,omitempty"`
 	// CloudEnterpriseProjectID 弹性云服务器所属的企业项目ID。
-	CloudEnterpriseProjectID string            `json:"cloud_enterprise_project_id,omitempty"`
+	CloudEnterpriseProjectID *string           `json:"cloud_enterprise_project_id,omitempty"`
 	CpuOptions               *HuaWeiCpuOptions `json:"cpu_options,omitempty"`
 }
 
@@ -126,5 +127,5 @@ type HuaWeiCpuOptions struct {
 	// CpuThreads CPU超线程数， 决定CPU是否开启超线程。取值范围：1，2。
 	// 1: 关闭超线程。
 	// 2: 打开超线程。
-	CpuThreads int64 `json:"cpu_threads,omitempty"`
+	CpuThreads *int32 `json:"cpu_threads,omitempty"`
 }

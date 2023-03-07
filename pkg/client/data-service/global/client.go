@@ -26,23 +26,23 @@ import (
 // Client is a global api client
 type Client struct {
 	*restClient
-	Auth             *AuthClient
-	Account          *AccountClient
-	Cloud            *CloudClient
-	SecurityGroup    *SecurityGroupClient
-	Vpc              *VpcClient
-	VpcCvmRel        *VpcCvmRelClient
-	Subnet           *SubnetClient
-	SubnetCvmRel     *SubnetCvmRelClient
-	Audit            *AuditClient
-	Zone             *ZoneClient
-	Cvm              *CvmClient
-	RouteTable       *RouteTableClient
-	SGCvmRel         *SGCvmRelClient
-	NetworkInterface *NetworkInterfaceClient
-
-	Application     *ApplicationClient
-	ApprovalProcess *ApprovalProcessClient
+	Auth                   *AuthClient
+	Account                *AccountClient
+	Cloud                  *CloudClient
+	SecurityGroup          *SecurityGroupClient
+	Vpc                    *VpcClient
+	VpcCvmRel              *VpcCvmRelClient
+	Subnet                 *SubnetClient
+	SubnetCvmRel           *SubnetCvmRelClient
+	Audit                  *AuditClient
+	Zone                   *ZoneClient
+	Cvm                    *CvmClient
+	RouteTable             *RouteTableClient
+	SGCvmRel               *SGCvmRelClient
+	NetworkInterface       *NetworkInterfaceClient
+	NetworkInterfaceCvmRel *NetworkInterfaceCvmRelClient
+	Application            *ApplicationClient
+	ApprovalProcess        *ApprovalProcessClient
 }
 
 type restClient struct {
@@ -52,23 +52,23 @@ type restClient struct {
 // NewClient create a new global api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		restClient:       &restClient{client: client},
-		Auth:             NewAuthClient(client),
-		Account:          NewAccountClient(client),
-		Cloud:            NewCloudClient(client),
-		SecurityGroup:    NewCloudSecurityGroupClient(client),
-		Vpc:              NewVpcClient(client),
-		VpcCvmRel:        NewVpcCvmRelClient(client),
-		Subnet:           NewSubnetClient(client),
-		SubnetCvmRel:     NewSubnetCvmRelClient(client),
-		Audit:            NewAuditClient(client),
-		Zone:             NewZoneClient(client),
-		Cvm:              NewCloudCvmClient(client),
-		RouteTable:       NewRouteTableClient(client),
-		SGCvmRel:         NewCloudSGCvmRelClient(client),
-		NetworkInterface: NewNetworkInterfaceClient(client),
-
-		Application:     NewApplicationClient(client),
-		ApprovalProcess: NewApprovalProcessClient(client),
+		restClient:             &restClient{client: client},
+		Auth:                   NewAuthClient(client),
+		Account:                NewAccountClient(client),
+		Cloud:                  NewCloudClient(client),
+		SecurityGroup:          NewCloudSecurityGroupClient(client),
+		Vpc:                    NewVpcClient(client),
+		VpcCvmRel:              NewVpcCvmRelClient(client),
+		Subnet:                 NewSubnetClient(client),
+		SubnetCvmRel:           NewSubnetCvmRelClient(client),
+		Audit:                  NewAuditClient(client),
+		Zone:                   NewZoneClient(client),
+		Cvm:                    NewCloudCvmClient(client),
+		RouteTable:             NewRouteTableClient(client),
+		SGCvmRel:               NewCloudSGCvmRelClient(client),
+		NetworkInterface:       NewNetworkInterfaceClient(client),
+		NetworkInterfaceCvmRel: NewNetworkInterfaceCvmRelClient(client),
+		Application:            NewApplicationClient(client),
+		ApprovalProcess:        NewApprovalProcessClient(client),
 	}
 }

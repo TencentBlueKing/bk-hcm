@@ -42,8 +42,8 @@ func PtrToVal[T any](ptr *T) T {
 // SliceToPtr convert slice to pointer.
 func SliceToPtr[T any](slice []T) []*T {
 	ptrArr := make([]*T, len(slice))
-	for idx, val := range slice {
-		ptrArr[idx] = &val
+	for idx := range slice {
+		ptrArr[idx] = &slice[idx]
 	}
 	return ptrArr
 }
@@ -82,4 +82,42 @@ func Uint64SliceToStringSlice(source []uint64) []string {
 	}
 
 	return target
+}
+
+// StringSliceToMap []string to map[string]struct.
+func StringSliceToMap(source []string) map[string]struct{} {
+	target := make(map[string]struct{}, len(source))
+	for _, one := range source {
+		target[one] = struct{}{}
+	}
+
+	return target
+}
+
+// MapKeyToStringSlice map[string]struct{} to []string.
+func MapKeyToStringSlice(source map[string]struct{}) []string {
+	target := make([]string, 0, len(source))
+	for key, _ := range source {
+		target = append(target, key)
+	}
+
+	return target
+}
+
+// StringSliceToSliceStringPtr []string to "['id1','id2',...]" ptr.
+func StringSliceToSliceStringPtr(source []string) *string {
+	if len(source) <= 0 {
+		return nil
+	}
+
+	target := "["
+	for index, one := range source {
+		target = target + "'" + one + "'"
+		if index != len(source)-1 {
+			target += ","
+		}
+	}
+	target += "]"
+
+	return &target
 }
