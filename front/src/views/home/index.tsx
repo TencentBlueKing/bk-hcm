@@ -204,21 +204,23 @@ export default defineComponent({
                     ),
                     menu: () => (
                       <>
-                    <Select class="biz-select-warp"
-                    v-model={businessId.value}
-                    placeholder="请选择业务"
-                    onChange={handleChange}>
-                      {businessList.value.map(item => (
-                          <Option
-                              key={item.id}
-                              value={item.id}
-                              label={item.name}
-                          >
-                              {item.name}
-                          </Option>
-                      ))
-                      }
-                      </Select>
+                      {topMenuActiveItem === 'business'
+                        ? <Select class="biz-select-warp"
+                      v-model={businessId.value}
+                      placeholder="请选择业务"
+                      onChange={handleChange}>
+                        {businessList.value.map(item => (
+                            <Option
+                                key={item.id}
+                                value={item.id}
+                                label={item.name}
+                            >
+                                {item.name}
+                            </Option>
+                        ))
+                        }
+                        </Select> : ''}
+
 
                       <Menu class="menu-warp" style={`width: ${NAV_WIDTH}px`} uniqueOpen={false} openedKeys={openedKeys} activeKey={route.meta.activeKey as string}>
                         {
