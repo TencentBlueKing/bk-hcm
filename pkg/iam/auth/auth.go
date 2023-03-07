@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/client/auth-server"
 	"hcm/pkg/client/discovery"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -205,10 +206,11 @@ func (a authorizer) ListAuthInstWithFilter(kt *kit.Kit, input *meta.ListAuthResI
 		}, false, nil
 	}
 
-	return &filter.Expression{
-		Op:    filter.And,
-		Rules: []filter.RuleFactory{authRule, expr},
-	}, false, nil
+	filterExpr, err := tools.And(authRule, expr)
+	if err != nil {
+		return nil, false, err
+	}
+	return filterExpr, false, nil
 }
 
 // RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
