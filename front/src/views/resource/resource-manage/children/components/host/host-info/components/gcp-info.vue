@@ -69,12 +69,20 @@ const netInfo = [
     prop: 'cloud_network_interface_ids',
   },
   {
-    name: '内网IP',
+    name: '私有 IPv4 地址',
     prop: 'private_ipv4_addresses',
   },
   {
-    name: '公网IP',
+    name: '公有 IPv4 地址',
     prop: 'public_ipv4_addresses',
+  },
+  {
+    name: '私有 IPv6 地址',
+    prop: 'private_ipv6_addresses',
+  },
+  {
+    name: '公有IPv6 地址',
+    prop: 'public_ipv6_addresses',
   },
   {
     name: '所属网络',
@@ -84,10 +92,10 @@ const netInfo = [
     name: '所属子网',
     prop: 'cloud_subnet_ids',
   },
-  {
-    name: '网络层级',
-    prop: 'private_dns_name',
-  },
+  // {
+  //   name: '网络层级',
+  //   prop: 'private_dns_name',
+  // },
   {
     name: 'IP转发',
     render() {
@@ -102,30 +110,8 @@ const settingInfo = [
     prop: 'machine_type',
   },
   {
-    name: 'CPU',
-    prop: 'cpu',
-  },
-  {
-    name: '内存',
-    prop: 'memory',
-  },
-  {
     name: '操作系统',
     prop: 'os_name',
-  },
-  {
-    name: '镜像名称',
-    prop: 'image_name',
-  },
-  {
-    name: '镜像类型',
-    render() {
-      return ImageTypeEnum[props.data.image_type] || '--';
-    },
-  },
-  {
-    name: '镜像id',
-    prop: 'image_id',
   },
 ];
 </script>

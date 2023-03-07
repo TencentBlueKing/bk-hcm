@@ -88,7 +88,11 @@ const netInfo = [
     prop: 'public_ipv4_addresses',
   },
   {
-    name: 'IPv6 地址',
+    name: '私有 IPv6 地址',
+    prop: 'private_ipv6_addresses',
+  },
+  {
+    name: '公有IPv6 地址',
     prop: 'public_ipv6_addresses',
   },
   {
@@ -108,27 +112,17 @@ const settingInfo = [
   },
   {
     name: 'CPU',
-    prop: 'cpu',
-  },
-  {
-    name: '内存',
-    prop: 'memory',
+    render() {
+      return props.data.cpu_options.core_count;
+    },
   },
   {
     name: '操作系统',
     prop: 'os_name',
   },
   {
-    name: '镜像名称',
-    prop: 'image_name',
-  },
-  {
-    name: '镜像类型',
-    prop: 'image_type',
-  },
-  {
-    name: '镜像类型',
-    prop: 'image_id',
+    name: '镜像id',
+    prop: 'cloud_image_id',
   },
 ];
 </script>

@@ -47,6 +47,14 @@ const cvmInfo = [
     prop: 'cloud_launched_time',
   },
   {
+    name: '创建时间',
+    prop: 'cloud_created_time',
+  },
+  {
+    name: '过期时间',
+    prop: 'cloud_expired_time',
+  },
+  {
     name: '当前状态',
     prop: 'status',
   },
@@ -73,12 +81,20 @@ const netInfo = [
     prop: 'cloud_subnet_ids',
   },
   {
-    name: '主IPv4内网IP',
+    name: '私有 IPv4 地址',
     prop: 'private_ipv4_addresses',
   },
   {
-    name: '主IPv4公网IP',
+    name: '公有 IPv4 地址',
     prop: 'public_ipv4_addresses',
+  },
+  {
+    name: '私有 IPv6 地址',
+    prop: 'private_ipv6_addresses',
+  },
+  {
+    name: '公有IPv6 地址',
+    prop: 'public_ipv6_addresses',
   },
 ];
 
@@ -108,29 +124,23 @@ const settingInfo = [
   },
   {
     name: 'CPU',
-    prop: 'cpu',
+    render() {
+      return props.data?.flavor?.vcpus;
+    },
   },
   {
     name: '内存',
-    prop: 'memory',
+    render() {
+      return props.data?.flavor?.ram;
+    },
   },
   {
     name: '操作系统',
     prop: 'os_name',
   },
   {
-    name: '镜像名称',
-    prop: 'image_name',
-  },
-  {
-    name: '镜像类型',
-    render() {
-      return ImageTypeEnum[props.data.image_type] || '--';
-    },
-  },
-  {
     name: '镜像id',
-    prop: 'image_id',
+    prop: 'cloud_image_id',
   },
 ];
 

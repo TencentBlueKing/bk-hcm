@@ -36,15 +36,17 @@ const cvmInfo = [
   },
   {
     name: '可用区域',
-    prop: 'zone',
+    render() {
+      return props.data.zones;
+    },
   },
   {
     name: '业务',
     prop: 'bk_biz_id',
   },
   {
-    name: '启动时间',
-    prop: 'cloud_launched_time',
+    name: '创建时间',
+    prop: 'cloud_created_time',
   },
   {
     name: '当前状态',
@@ -82,7 +84,7 @@ const netInfo = [
   },
   {
     name: '公有IPv6地址',
-    prop: 'public_ipv4_addresses',
+    prop: 'public_ipv6_addresses',
   },
 ];
 
@@ -104,18 +106,8 @@ const settingInfo = [
     prop: 'os_name',
   },
   {
-    name: '镜像名称',
-    prop: 'image_name',
-  },
-  {
-    name: '镜像类型',
-    render() {
-      return ImageTypeEnum[props.data.image_type] || '--';
-    },
-  },
-  {
     name: '镜像id',
-    prop: 'image_id',
+    prop: 'cloud_image_id',
   },
 ];
 </script>
