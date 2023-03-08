@@ -21,10 +21,14 @@ package cmdb
 
 import (
 	"fmt"
+	"strconv"
 
 	"hcm/cmd/web-server/service/capability"
 	webserver "hcm/pkg/api/web-server"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/auth"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/thirdparty/esb/cmdb"
@@ -33,26 +37,75 @@ import (
 // InitCmdbService initial the cmdbSvc service
 func InitCmdbService(c *capability.Capability) {
 	svr := &cmdbSvc{
-		esbClient: c.EsbClient,
+		esbClient:  c.EsbClient,
+		authorizer: c.Authorizer,
 	}
 
 	h := rest.NewHandler()
 	h.Add("ListBiz", "POST", "/bk_bizs/list", svr.ListBiz)
+	h.Add("ListAuthorizedBiz", "POST", "/authorized/bizs/list", svr.ListAuthorizedBiz)
 	h.Add("ListCloudArea", "POST", "/cloud_areas/list", svr.ListCloudArea)
 
 	h.Load(c.WebService)
 }
 
 type cmdbSvc struct {
-	esbClient esb.Client
+	esbClient  esb.Client
+	authorizer auth.Authorizer
 }
 
 // ListBiz list all biz from cmdb
 func (c *cmdbSvc) ListBiz(cts *rest.Contexts) (interface{}, error) {
-	params := &cmdb.SearchBizParams{
-		Fields: []string{"bk_biz_id", "bk_biz_name"},
+	return c.listBiz(cts.Kit, nil)
+}
+
+// ListAuthorizedBiz list authorized biz with biz access permission from cmdb
+func (c *cmdbSvc) ListAuthorizedBiz(cts *rest.Contexts) (interface{}, error) {
+	authInstReq := &meta.ListAuthResInput{Type: meta.Biz, Action: meta.Access}
+	authInstRes, err := c.authorizer.ListAuthorizedInstances(cts.Kit, authInstReq)
+	if err != nil {
+		return nil, err
 	}
-	resp, err := c.esbClient.Cmdb().SearchBusiness(cts.Kit.Ctx, params)
+
+	if authInstRes.IsAny {
+		return c.listBiz(cts.Kit, nil)
+	}
+
+	if len(authInstRes.IDs) == 0 {
+		return make([]map[string]interface{}, 0), nil
+	}
+
+	ids := make([]int64, len(authInstRes.IDs))
+	for i, id := range authInstRes.IDs {
+		intID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return nil, errf.Newf(errf.InvalidParameter, "parse id %s failed, err: %v", id, err)
+		}
+		ids[i] = intID
+	}
+
+	filter := &cmdb.QueryFilter{
+		Rule: &cmdb.CombinedRule{
+			Condition: "AND",
+			Rules: []cmdb.Rule{
+				&cmdb.AtomRule{
+					Field:    "bk_biz_id",
+					Operator: "in",
+					Value:    ids,
+				},
+			},
+		},
+	}
+
+	return c.listBiz(cts.Kit, filter)
+}
+
+func (c *cmdbSvc) listBiz(kt *kit.Kit, filter *cmdb.QueryFilter) (interface{}, error) {
+	params := &cmdb.SearchBizParams{
+		BizPropertyFilter: filter,
+		Fields:            []string{"bk_biz_id", "bk_biz_name"},
+	}
+	resp, err := c.esbClient.Cmdb().SearchBusiness(kt.Ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("call cmdb search business api failed, err: %v", err)
 	}

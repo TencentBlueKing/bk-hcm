@@ -59,7 +59,7 @@ func (svc *cvmSvc) AssignCvmToBiz(cts *rest.Contexts) (interface{}, error) {
 	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
 	for _, info := range basicInfoMap {
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm,
-			Action: meta.Assign, ResourceID: info.AccountID}})
+			Action: meta.Assign, ResourceID: info.AccountID}, BizID: info.BkBizID})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
 	if err != nil {

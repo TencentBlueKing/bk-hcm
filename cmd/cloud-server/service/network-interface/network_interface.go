@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // InitNetworkInterfaceService initialize the network interface service.
@@ -55,6 +56,12 @@ func InitNetworkInterfaceService(c *capability.Capability) {
 	h.Add("AssignNetworkInterfaceToBiz", "POST", "/network_interfaces/assign/bizs",
 		svc.AssignNetworkInterfaceToBiz)
 
+	// network interface biz apis
+	h.Add("ListBizNetworkInterface", "POST", "/bizs/{bk_biz_id}/network_interfaces/list", svc.ListBizNetworkInterface)
+	h.Add("GetBizNetworkInterface", "GET", "/bizs/{bk_biz_id}/network_interfaces/{id}", svc.GetBizNetworkInterface)
+	h.Add("ListBizNICExtByCvmID", "GET", "/bizs/{bk_biz_id}/vendors/{vendor}/network_interfaces/cvms/{cvm_id}",
+		svc.ListBizNICExtByCvmID)
+
 	h.Load(c.WebService)
 }
 
@@ -66,6 +73,17 @@ type netSvc struct {
 
 // ListNetworkInterface list network interface.
 func (svc *netSvc) ListNetworkInterface(cts *rest.Contexts) (interface{}, error) {
+	return svc.listNetworkInterface(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizNetworkInterface list biz network interface.
+func (svc *netSvc) ListBizNetworkInterface(cts *rest.Contexts) (interface{}, error) {
+	return svc.listNetworkInterface(cts, handler.ListBizAuthRes)
+}
+
+func (svc *netSvc) listNetworkInterface(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{},
+	error) {
+
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -76,8 +94,8 @@ func (svc *netSvc) ListNetworkInterface(cts *rest.Contexts) (interface{}, error)
 	}
 
 	// list authorized instances
-	authOpt := &meta.ListAuthResInput{Type: meta.NetworkInterface, Action: meta.Find}
-	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.NetworkInterface, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +116,17 @@ func (svc *netSvc) ListNetworkInterface(cts *rest.Contexts) (interface{}, error)
 
 // GetNetworkInterface get network interface details.
 func (svc *netSvc) GetNetworkInterface(cts *rest.Contexts) (interface{}, error) {
+	return svc.getNetworkInterface(cts, handler.ResValidWithAuth)
+}
+
+// GetBizNetworkInterface get biz network interface details.
+func (svc *netSvc) GetBizNetworkInterface(cts *rest.Contexts) (interface{}, error) {
+	return svc.getNetworkInterface(cts, handler.BizValidWithAuth)
+}
+
+func (svc *netSvc) getNetworkInterface(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -109,10 +138,9 @@ func (svc *netSvc) GetNetworkInterface(cts *rest.Contexts) (interface{}, error) 
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.NetworkInterface, Action: meta.Find,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.NetworkInterface,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

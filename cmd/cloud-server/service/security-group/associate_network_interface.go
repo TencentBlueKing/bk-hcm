@@ -20,22 +20,31 @@
 package securitygroup
 
 import (
-	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	proto "hcm/pkg/api/cloud-server"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// AssociateNetworkInterface ...
+// AssociateNetworkInterface associate network interface.
 func (svc *securityGroupSvc) AssociateNetworkInterface(cts *rest.Contexts) (interface{}, error) {
-	req, err := svc.decodeAndValidateAssocNIReq(cts, meta.Associate)
+	return svc.associateNIC(cts, handler.ResValidWithAuth)
+}
+
+// AssociateBizNIC associate biz network interface.
+func (svc *securityGroupSvc) AssociateBizNIC(cts *rest.Contexts) (interface{}, error) {
+	return svc.associateNIC(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) associateNIC(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
+	req, err := svc.decodeAndValidateAssocNIReq(cts, meta.Associate, validHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -68,9 +77,20 @@ func (svc *securityGroupSvc) AssociateNetworkInterface(cts *rest.Contexts) (inte
 	return nil, nil
 }
 
-// DisAssociateNetworkInterface ...
+// DisAssociateNetworkInterface disassociate network interface.
 func (svc *securityGroupSvc) DisAssociateNetworkInterface(cts *rest.Contexts) (interface{}, error) {
-	req, err := svc.decodeAndValidateAssocNIReq(cts, meta.Disassociate)
+	return svc.disassociateNIC(cts, handler.ResValidWithAuth)
+}
+
+// DisAssociateBizNIC disassociate biz network interface.
+func (svc *securityGroupSvc) DisAssociateBizNIC(cts *rest.Contexts) (interface{}, error) {
+	return svc.disassociateNIC(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) disassociateNIC(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req, err := svc.decodeAndValidateAssocNIReq(cts, meta.Disassociate, validHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -103,8 +123,8 @@ func (svc *securityGroupSvc) DisAssociateNetworkInterface(cts *rest.Contexts) (i
 	return nil, nil
 }
 
-func (svc *securityGroupSvc) decodeAndValidateAssocNIReq(cts *rest.Contexts, action meta.Action) (
-	*proto.SecurityGroupAssociateNIReq, error) {
+func (svc *securityGroupSvc) decodeAndValidateAssocNIReq(cts *rest.Contexts, action meta.Action,
+	validHandler handler.ValidWithAuthHandler) (*proto.SecurityGroupAssociateNIReq, error) {
 
 	req := new(proto.SecurityGroupAssociateNIReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -126,23 +146,9 @@ func (svc *securityGroupSvc) decodeAndValidateAssocNIReq(cts *rest.Contexts, act
 		return nil, errf.Newf(errf.InvalidParameter, "associate network interface only support azure")
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: action,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
-	}
-
-	// 已分配业务的资源，不允许操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: req.SecurityGroupID}
-	err = CheckSecurityGroupsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
-	if err != nil {
-		return nil, err
-	}
-
-	flt = &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: req.NetworkInterfaceID}
-	err = networkinterface.CheckNIInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: action, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

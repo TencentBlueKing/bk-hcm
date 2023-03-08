@@ -27,15 +27,28 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // ListGcpFirewallRule list gcp firewall rule.
 func (svc *firewallSvc) ListGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.listGcpFirewallRule(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizGcpFirewallRule list biz gcp firewall rule.
+func (svc *firewallSvc) ListBizGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.listGcpFirewallRule(cts, handler.ListBizAuthRes)
+}
+
+func (svc *firewallSvc) listGcpFirewallRule(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (
+	interface{}, error) {
+
 	req := new(proto.GcpFirewallRuleListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -46,8 +59,8 @@ func (svc *firewallSvc) ListGcpFirewallRule(cts *rest.Contexts) (interface{}, er
 	}
 
 	// list authorized instances
-	authOpt := &meta.ListAuthResInput{Type: meta.GcpFirewallRule, Action: meta.Find}
-	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.GcpFirewallRule, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		return nil, err
 	}
@@ -72,17 +85,27 @@ func (svc *firewallSvc) ListGcpFirewallRule(cts *rest.Contexts) (interface{}, er
 
 // GetGcpFirewallRule get gcp firewall rule.
 func (svc *firewallSvc) GetGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.getGcpFirewallRule(cts, handler.ResValidWithAuth)
+}
+
+// GetBizGcpFirewallRule get biz gcp firewall rule.
+func (svc *firewallSvc) GetBizGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.getGcpFirewallRule(cts, handler.BizValidWithAuth)
+}
+
+func (svc *firewallSvc) getGcpFirewallRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
 	id := cts.PathParameter("id").String()
 
-	accountID, err := svc.queryAccountID(cts.Kit, id)
+	basicInfo, err := svc.getBasicInfo(cts.Kit, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule, Action: meta.Find,
-		ResourceID: accountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.GcpFirewallRule,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -130,21 +153,42 @@ func (svc *firewallSvc) checkGcpFirewallRulesInBiz(kt *kit.Kit, rule filter.Rule
 	return nil
 }
 
-func (svc *firewallSvc) queryAccountID(kt *kit.Kit, ruleID string) (string, error) {
+func (svc *firewallSvc) listBasicInfo(kt *kit.Kit, ruleIDs []string) (map[string]types.CloudResourceBasicInfo, error) {
 	listReq := &dataproto.GcpFirewallRuleListReq{
-		Field:  []string{"account_id"},
+		Field:  []string{"account_id", "bk_biz_id"},
+		Filter: tools.ContainersExpression("id", ruleIDs),
+		Page:   core.DefaultBasePage,
+	}
+	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list firewall rule failed, err: %v, ids: %+v, rid: %s", err, ruleIDs, kt.Rid)
+		return nil, err
+	}
+
+	basicInfoMap := make(map[string]types.CloudResourceBasicInfo)
+	for _, rule := range result.Details {
+		basicInfoMap[rule.ID] = types.CloudResourceBasicInfo{AccountID: rule.AccountID, BkBizID: rule.BkBizID}
+	}
+
+	return basicInfoMap, nil
+}
+
+func (svc *firewallSvc) getBasicInfo(kt *kit.Kit, ruleID string) (*types.CloudResourceBasicInfo, error) {
+	listReq := &dataproto.GcpFirewallRuleListReq{
+		Field:  []string{"account_id", "bk_biz_id"},
 		Filter: tools.EqualExpression("id", ruleID),
 		Page:   core.DefaultBasePage,
 	}
 	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(kt.Ctx, kt.Header(), listReq)
 	if err != nil {
 		logs.Errorf("list firewall rule failed, err: %v, id: %s, rid: %s", err, ruleID, kt.Rid)
-		return "", err
+		return nil, err
 	}
 
 	if len(result.Details) == 0 {
-		return "", errf.Newf(errf.RecordNotFound, "gcp firewall rule: %s not found", ruleID)
+		return nil, errf.Newf(errf.RecordNotFound, "gcp firewall rule: %s not found", ruleID)
 	}
 
-	return result.Details[0].AccountID, nil
+	rule := result.Details[0]
+	return &types.CloudResourceBasicInfo{AccountID: rule.AccountID, BkBizID: rule.BkBizID}, nil
 }

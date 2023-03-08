@@ -30,10 +30,22 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// UpdateGcpFirewallRule update gcp firewallSvc rule.
+// UpdateGcpFirewallRule update gcp firewall rule.
 func (svc *firewallSvc) UpdateGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.updateGcpFirewallRule(cts, handler.ResValidWithAuth)
+}
+
+// UpdateBizGcpFirewallRule update biz gcp firewall rule.
+func (svc *firewallSvc) UpdateBizGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.updateGcpFirewallRule(cts, handler.BizValidWithAuth)
+}
+
+func (svc *firewallSvc) updateGcpFirewallRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -48,15 +60,14 @@ func (svc *firewallSvc) UpdateGcpFirewallRule(cts *rest.Contexts) (interface{}, 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	accountID, err := svc.queryAccountID(cts.Kit, id)
+	basicInfo, err := svc.getBasicInfo(cts.Kit, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule, Action: meta.Update,
-		ResourceID: accountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.GcpFirewallRule,
+		Action: meta.Update, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

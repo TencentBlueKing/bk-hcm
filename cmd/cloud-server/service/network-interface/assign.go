@@ -47,7 +47,7 @@ func (svc *netSvc) AssignNetworkInterfaceToBiz(cts *rest.Contexts) (interface{},
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := svc.checkAuthorize(cts.Kit, req)
+	err := svc.authorizeNICAssignOp(cts.Kit, req.NetworkInterfaceIDs, req.BkBizID)
 	if err != nil {
 		return nil, err
 	}
@@ -107,11 +107,11 @@ func (svc *netSvc) AssignNetworkInterfaceToBiz(cts *rest.Contexts) (interface{},
 	return nil, nil
 }
 
-func (svc *netSvc) checkAuthorize(kt *kit.Kit, req *proto.AssignNetworkInterfaceToBizReq) error {
+func (svc *netSvc) authorizeNICAssignOp(kt *kit.Kit, ids []string, bizID int64) error {
 	// authorize
 	basicInfoReq := dataproto.ListResourceBasicInfoReq{
 		ResourceType: enumor.NetworkInterfaceCloudResType,
-		IDs:          req.NetworkInterfaceIDs,
+		IDs:          ids,
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(kt.Ctx, kt.Header(), basicInfoReq)
 	if err != nil {
@@ -125,7 +125,9 @@ func (svc *netSvc) checkAuthorize(kt *kit.Kit, req *proto.AssignNetworkInterface
 				Type:       meta.NetworkInterface,
 				Action:     meta.Assign,
 				ResourceID: info.AccountID,
-			}})
+			},
+			BizID: bizID,
+		})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
 	if err != nil {

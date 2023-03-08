@@ -149,9 +149,10 @@ func newClientSet(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, 
 	logs.Infof("initialize iam auth sdk success.")
 
 	cs := &ClientSet{
-		ds:   apiClientSet.DataService(),
-		sys:  iamSys,
-		auth: authSdk,
+		ds:     apiClientSet.DataService(),
+		sys:    iamSys,
+		auth:   authSdk,
+		esbCli: esbClient,
 	}
 	logs.Infof("initialize the client set success.")
 	return cs, nil
@@ -165,6 +166,8 @@ type ClientSet struct {
 	sys *sys.Sys
 	// auth related operate.
 	auth pkgauth.Authorizer
+	// esb client.
+	esbCli esb.Client
 }
 
 // initLogicModule init logic module.
@@ -181,7 +184,7 @@ func (s *Service) initLogicModule() error {
 		return err
 	}
 
-	s.auth, err = auth.NewAuth(s.client.auth, s.client.ds, s.disableAuth, s.disableWriteOpt)
+	s.auth, err = auth.NewAuth(s.client.auth, s.client.ds, s.disableAuth, s.client.esbCli, s.disableWriteOpt)
 	if err != nil {
 		return err
 	}

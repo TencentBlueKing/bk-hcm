@@ -20,16 +20,36 @@
 package huawei
 
 import (
+	"hcm/cmd/cloud-server/logics/audit"
 	cloudproto "hcm/pkg/api/cloud-server/eip"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/auth"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// AssociateEip ...
-func AssociateEip(cli *client.ClientSet, cts *rest.Contexts) (interface{}, error) {
+// HuaWei eip service.
+type HuaWei struct {
+	client     *client.ClientSet
+	authorizer auth.Authorizer
+	audit      audit.Interface
+}
+
+// NewHuaWei init huawei eip service.
+func NewHuaWei(client *client.ClientSet, authorizer auth.Authorizer, audit audit.Interface) *HuaWei {
+	return &HuaWei{
+		client:     client,
+		authorizer: authorizer,
+		audit:      audit,
+	}
+}
+
+// AssociateEip associate eip.
+func (h *HuaWei) AssociateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	req := new(cloudproto.HuaWeiEipAssociateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -39,10 +59,10 @@ func AssociateEip(cli *client.ClientSet, cts *rest.Contexts) (interface{}, error
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 增加鉴权和审计
+	// TODO 增加审计
 	// TODO 判断 Eip 是否可关联
 
-	basicInfo, err := cli.DataService().Global.Cloud.GetResourceBasicInfo(
+	basicInfo, err := h.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		enumor.EipCloudResType,
@@ -52,7 +72,14 @@ func AssociateEip(cli *client.ClientSet, cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	return nil, cli.HCService().HuaWei.Eip.AssociateEip(
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: h.authorizer, ResType: meta.Eip,
+		Action: meta.Associate, BasicInfo: basicInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, h.client.HCService().HuaWei.Eip.AssociateEip(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.HuaWeiEipAssociateReq{
@@ -64,8 +91,8 @@ func AssociateEip(cli *client.ClientSet, cts *rest.Contexts) (interface{}, error
 	)
 }
 
-// DisassociateEip ...
-func DisassociateEip(cli *client.ClientSet, cts *rest.Contexts) (interface{}, error) {
+// DisassociateEip disassociate eip.
+func (h *HuaWei) DisassociateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	req := new(cloudproto.HuaWeiEipDisassociateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -77,7 +104,7 @@ func DisassociateEip(cli *client.ClientSet, cts *rest.Contexts) (interface{}, er
 
 	// TODO 增加鉴权和审计
 
-	basicInfo, err := cli.DataService().Global.Cloud.GetResourceBasicInfo(
+	basicInfo, err := h.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		enumor.EipCloudResType,
@@ -87,7 +114,14 @@ func DisassociateEip(cli *client.ClientSet, cts *rest.Contexts) (interface{}, er
 		return nil, err
 	}
 
-	return nil, cli.HCService().HuaWei.Eip.DisassociateEip(
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: h.authorizer, ResType: meta.Eip,
+		Action: meta.Disassociate, BasicInfo: basicInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, h.client.HCService().HuaWei.Eip.DisassociateEip(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.HuaWeiEipDisassociateReq{

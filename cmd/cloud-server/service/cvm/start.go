@@ -25,7 +25,6 @@ import (
 	protoaudit "hcm/pkg/api/data-service/audit"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -33,11 +32,22 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// BatchStartCvm ...
+// BatchStartCvm batch start cvm.
 func (svc *cvmSvc) BatchStartCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchStartCvmSvc(cts, handler.ResValidWithAuth)
+}
+
+// BatchStartBizCvm batch start biz cvm.
+func (svc *cvmSvc) BatchStartBizCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchStartCvmSvc(cts, handler.BizValidWithAuth)
+}
+
+func (svc *cvmSvc) batchStartCvmSvc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	req := new(proto.BatchStartCvmReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -57,20 +67,9 @@ func (svc *cvmSvc) BatchStartCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// authorize
-	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
-	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm,
-			Action: meta.Start, ResourceID: info.AccountID}})
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
-	if err != nil {
-		return nil, err
-	}
-
-	// 校验资源是否已经分配，已分配资源不允许进行操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err = CheckCvmsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
+		Action: meta.Start, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}

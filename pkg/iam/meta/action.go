@@ -61,4 +61,6 @@ const (
 	Associate Action = "associate"
 	// Disassociate operation's hcm auth action type
 	Disassociate Action = "disassociate"
+	// Access operation's hcm auth action type
+	Access Action = "access"
 )

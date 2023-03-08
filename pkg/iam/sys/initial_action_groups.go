@@ -34,27 +34,53 @@ func GenerateStaticActionGroups() []client.ActionGroup {
 func genBusinessManagementActionGroups() []client.ActionGroup {
 	return []client.ActionGroup{
 		{
-			Name:   "云管",
-			NameEn: "Cloud Management",
+			Name:   "业务",
+			NameEn: "Biz Management",
+			Actions: []client.ActionWithID{
+				{ID: BizAccess},
+			},
 			SubGroups: []client.ActionGroup{
 				{
-					Name:   "账号",
-					NameEn: "Account Management",
+					Name:   "IaaS资源",
+					NameEn: "Biz IaaS Resource Management",
 					Actions: []client.ActionWithID{
-						{ID: AccountFind},
-						{ID: AccountKeyAccess},
-						{ID: AccountImport},
-						{ID: AccountEdit},
-						{ID: AccountDelete},
+						{ID: BizIaaSResCreate},
+						{ID: BizIaaSResOperate},
+						{ID: BizIaaSResDelete},
 					},
 				},
+			},
+		},
+		{
+			Name:   "账号",
+			NameEn: "Account Management",
+			Actions: []client.ActionWithID{
+				{ID: AccountFind},
+				{ID: AccountImport},
+				{ID: AccountEdit},
+				{ID: AccountDelete},
+				{ID: AccountKeyAccess},
+			},
+		},
+		{
+			Name:   "资源",
+			NameEn: "Resource Management",
+			SubGroups: []client.ActionGroup{
 				{
-					Name:   "资源",
-					NameEn: "Resource Management",
+					Name:   "公共",
+					NameEn: "Public Resource Management",
 					Actions: []client.ActionWithID{
 						{ID: ResourceFind},
 						{ID: ResourceAssign},
-						{ID: ResourceManage},
+					},
+				},
+				{
+					Name:   "IaaS资源",
+					NameEn: "IaaS Resource Management",
+					Actions: []client.ActionWithID{
+						{ID: IaaSResourceCreate},
+						{ID: IaaSResourceOperate},
+						{ID: IaaSResourceDelete},
 					},
 				},
 				{
@@ -65,13 +91,14 @@ func genBusinessManagementActionGroups() []client.ActionGroup {
 						{ID: RecycleBinManage},
 					},
 				},
-				{
-					Name:   "工作台",
-					NameEn: "Workspace",
-					Actions: []client.ActionWithID{
-						{ID: AuditFind},
-					},
-				},
+			},
+		},
+		{
+			Name:   "工作台",
+			NameEn: "Workspace",
+			Actions: []client.ActionWithID{
+				{ID: BizAuditFind},
+				{ID: ResourceAuditFind},
 			},
 		},
 	}

@@ -23,17 +23,27 @@ import (
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // CreateSecurityGroupRule create security group rule.
 func (svc *securityGroupSvc) CreateSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.createSGRule(cts, handler.ResValidWithAuth)
+}
+
+// CreateBizSGRule create biz security group rule.
+func (svc *securityGroupSvc) CreateBizSGRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.createSGRule(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) createSGRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if len(vendor) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "vendor is required")
@@ -50,17 +60,9 @@ func (svc *securityGroupSvc) CreateSecurityGroupRule(cts *rest.Contexts) (interf
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroupRule, Action: meta.Create,
-		ResourceID: sgBaseInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
-	}
-
-	// 已分配业务的资源，不允许操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: sgID}
-	err = CheckSecurityGroupsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroupRule,
+		Action: meta.Create, BasicInfo: sgBaseInfo})
 	if err != nil {
 		return nil, err
 	}

@@ -128,7 +128,7 @@ func (svc *firewallSvc) assignAuth(kt *kit.Kit, rules []string) error {
 	authRes := make([]meta.ResourceAttribute, 0, len(result.Details))
 	for _, info := range result.Details {
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule,
-			Action: meta.Assign, ResourceID: info.AccountID}})
+			Action: meta.Assign, ResourceID: info.AccountID}, BizID: info.BkBizID})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
 	if err != nil {

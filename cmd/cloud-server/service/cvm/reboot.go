@@ -23,22 +23,30 @@ import (
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
-	protoaudit "hcm/pkg/api/data-service/audit"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// BatchRebootCvm ...
+// BatchRebootCvm batch reboot cvm.
 func (svc *cvmSvc) BatchRebootCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchRebootCvmSvc(cts, handler.ResValidWithAuth)
+}
+
+// BatchRebootBizCvm batch reboot biz cvm.
+func (svc *cvmSvc) BatchRebootBizCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchRebootCvmSvc(cts, handler.BizValidWithAuth)
+}
+
+func (svc *cvmSvc) batchRebootCvmSvc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	req := new(proto.BatchRebootCvmReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -58,26 +66,10 @@ func (svc *cvmSvc) BatchRebootCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// authorize
-	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
-	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm,
-			Action: meta.Reboot, ResourceID: info.AccountID}})
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
+		Action: meta.Reboot, BasicInfos: basicInfoMap})
 	if err != nil {
-		return nil, err
-	}
-
-	// 校验资源是否已经分配，已分配资源不允许进行操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err = CheckCvmsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = svc.audit.ResBaseOperationAudit(cts.Kit, enumor.CvmAuditResType, protoaudit.Reboot, req.IDs); err != nil {
-		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

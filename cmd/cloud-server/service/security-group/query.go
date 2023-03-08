@@ -33,10 +33,22 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // GetSecurityGroup get security group.
 func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	return svc.getSecurityGroup(cts, handler.ResValidWithAuth)
+}
+
+// GetBizSecurityGroup get biz security group.
+func (svc *securityGroupSvc) GetBizSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	return svc.getSecurityGroup(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) getSecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -49,10 +61,9 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: meta.Find,
-		ResourceID: baseInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Find, BasicInfo: baseInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +88,17 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 
 // ListSecurityGroup list security group.
 func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSecurityGroup(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizSecurityGroup list biz security group.
+func (svc *securityGroupSvc) ListBizSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSecurityGroup(cts, handler.ListBizAuthRes)
+}
+
+func (svc *securityGroupSvc) listSecurityGroup(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (
+	interface{}, error) {
+
 	req := new(proto.SecurityGroupListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -87,8 +109,8 @@ func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{},
 	}
 
 	// list authorized instances
-	authOpt := &meta.ListAuthResInput{Type: meta.SecurityGroup, Action: meta.Find}
-	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.SecurityGroup, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		return nil, err
 	}
@@ -143,6 +165,17 @@ func CheckSecurityGroupsInBiz(kt *kit.Kit, client *client.ClientSet, rule filter
 
 // ListSecurityGroupsByCvmID list security groups by cvm_id.
 func (svc *securityGroupSvc) ListSecurityGroupsByCvmID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGByCvmID(cts, handler.ResValidWithAuth)
+}
+
+// ListBizSecurityGroupsByCvmID list biz security groups by cvm_id.
+func (svc *securityGroupSvc) ListBizSecurityGroupsByCvmID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGByCvmID(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) listSGByCvmID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
 	cvmID := cts.PathParameter("cvm_id").String()
 	if len(cvmID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "cvm_id is required")
@@ -155,10 +188,9 @@ func (svc *securityGroupSvc) ListSecurityGroupsByCvmID(cts *rest.Contexts) (inte
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: meta.Find,
-		ResourceID: baseInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Find, BasicInfo: baseInfo})
 	if err != nil {
 		return nil, err
 	}

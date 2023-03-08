@@ -34,18 +34,68 @@ var (
 			},
 		},
 	}
+
+	bizResource = []client.RelateResourceType{
+		{
+			SystemID: SystemIDCMDB,
+			ID:       Biz,
+			InstanceSelections: []client.RelatedInstanceSelection{
+				{
+					SystemID: SystemIDCMDB,
+					ID:       BizSelection,
+				},
+			},
+		},
+	}
 )
 
 // GenerateStaticActions return need to register action.
 func GenerateStaticActions() []client.ResourceAction {
 	resourceActionList := make([]client.ResourceAction, 0)
 
+	resourceActionList = append(resourceActionList, genBizActions()...)
 	resourceActionList = append(resourceActionList, genAccountActions()...)
 	resourceActionList = append(resourceActionList, genResourceActions()...)
 	resourceActionList = append(resourceActionList, genRecycleBinActions()...)
 	resourceActionList = append(resourceActionList, genAuditActions()...)
 
 	return resourceActionList
+}
+
+func genBizActions() []client.ResourceAction {
+	return []client.ResourceAction{{
+		ID:                   BizAccess,
+		Name:                 ActionIDNameMap[BizAccess],
+		NameEn:               "Access Biz",
+		Type:                 View,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       []client.ActionID{ResourceAssign},
+		Version:              1,
+	}, {
+		ID:                   BizIaaSResCreate,
+		Name:                 ActionIDNameMap[BizIaaSResCreate],
+		NameEn:               "Create Biz IaaS Resource",
+		Type:                 Create,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   BizIaaSResOperate,
+		Name:                 ActionIDNameMap[BizIaaSResOperate],
+		NameEn:               "Operate Biz IaaS Resource",
+		Type:                 Edit,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       []client.ActionID{BizAccess},
+		Version:              1,
+	}, {
+		ID:                   BizIaaSResDelete,
+		Name:                 ActionIDNameMap[BizIaaSResDelete],
+		NameEn:               "Delete Biz IaaS Resource",
+		Type:                 Delete,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       []client.ActionID{BizAccess},
+		Version:              1,
+	}}
 }
 
 func genAccountActions() []client.ResourceAction {
@@ -99,23 +149,39 @@ func genResourceActions() []client.ResourceAction {
 		NameEn:               "Find Resource",
 		Type:                 View,
 		RelatedResourceTypes: accountResource,
-		RelatedActions:       nil,
+		RelatedActions:       []client.ActionID{RecycleBinFind},
 		Version:              1,
 	}, {
 		ID:                   ResourceAssign,
 		Name:                 ActionIDNameMap[ResourceAssign],
 		NameEn:               "Assign Resource To Business",
 		Type:                 Edit,
+		RelatedResourceTypes: append(accountResource, bizResource...),
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   IaaSResourceCreate,
+		Name:                 ActionIDNameMap[IaaSResourceCreate],
+		NameEn:               "Create IaaS Resource",
+		Type:                 Create,
 		RelatedResourceTypes: accountResource,
 		RelatedActions:       nil,
 		Version:              1,
 	}, {
-		ID:                   ResourceManage,
-		Name:                 ActionIDNameMap[ResourceManage],
-		NameEn:               "Manage Resource",
+		ID:                   IaaSResourceOperate,
+		Name:                 ActionIDNameMap[IaaSResourceOperate],
+		NameEn:               "Operate IaaS Resource",
 		Type:                 Edit,
 		RelatedResourceTypes: accountResource,
-		RelatedActions:       nil,
+		RelatedActions:       []client.ActionID{ResourceFind},
+		Version:              1,
+	}, {
+		ID:                   IaaSResourceDelete,
+		Name:                 ActionIDNameMap[IaaSResourceDelete],
+		NameEn:               "Delete IaaS Resource",
+		Type:                 Delete,
+		RelatedResourceTypes: accountResource,
+		RelatedActions:       []client.ActionID{ResourceFind},
 		Version:              1,
 	}}
 }
@@ -134,19 +200,27 @@ func genRecycleBinActions() []client.ResourceAction {
 		Name:                 ActionIDNameMap[RecycleBinManage],
 		NameEn:               "Manage Resource In Recycle Bin",
 		Type:                 Edit,
-		RelatedResourceTypes: accountResource,
-		RelatedActions:       nil,
+		RelatedResourceTypes: append(accountResource, bizResource...),
+		RelatedActions:       []client.ActionID{RecycleBinFind},
 		Version:              1,
 	}}
 }
 
 func genAuditActions() []client.ResourceAction {
 	return []client.ResourceAction{{
-		ID:                   AuditFind,
-		Name:                 ActionIDNameMap[AuditFind],
-		NameEn:               "Find Audit Log",
+		ID:                   BizAuditFind,
+		Name:                 ActionIDNameMap[BizAuditFind],
+		NameEn:               "Find Biz Audit Log",
 		Type:                 View,
-		RelatedResourceTypes: nil,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   ResourceAuditFind,
+		Name:                 ActionIDNameMap[ResourceAuditFind],
+		NameEn:               "Find Resource Audit Log",
+		Type:                 View,
+		RelatedResourceTypes: accountResource,
 		RelatedActions:       nil,
 		Version:              1,
 	}}

@@ -23,6 +23,11 @@ import (
 	"net/http"
 
 	"hcm/cmd/cloud-server/service/capability"
+	"hcm/cmd/cloud-server/service/eip/aws"
+	"hcm/cmd/cloud-server/service/eip/azure"
+	"hcm/cmd/cloud-server/service/eip/gcp"
+	"hcm/cmd/cloud-server/service/eip/huawei"
+	"hcm/cmd/cloud-server/service/eip/tcloud"
 	"hcm/pkg/rest"
 )
 
@@ -32,6 +37,11 @@ func InitEipService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
+		tcloud:     tcloud.NewTCloud(c.ApiClient, c.Authorizer, c.Audit),
+		aws:        aws.NewAws(c.ApiClient, c.Authorizer, c.Audit),
+		azure:      azure.NewAzure(c.ApiClient, c.Authorizer, c.Audit),
+		gcp:        gcp.NewGcp(c.ApiClient, c.Authorizer, c.Audit),
+		huawei:     huawei.NewHuaWei(c.ApiClient, c.Authorizer, c.Audit),
 	}
 
 	h := rest.NewHandler()
@@ -45,6 +55,16 @@ func InitEipService(c *capability.Capability) {
 
 	h.Add("AssociateEip", http.MethodPost, "/vendors/{vendor}/eips/associate", svc.AssociateEip)
 	h.Add("DisassociateEip", http.MethodPost, "/vendors/{vendor}/eips/disassociate", svc.DisassociateEip)
+
+	// eip apis in biz
+	h.Add("ListBizEip", http.MethodPost, "/bizs/{bk_biz_id}/eips/list", svc.ListBizEip)
+	h.Add("ListBizEipExtByCvmID", http.MethodGet, "/bizs/{bk_biz_id}/vendors/{vendor}/eips/cvms/{cvm_id}",
+		svc.ListBizEipExtByCvmID)
+	h.Add("RetrieveBizEip", http.MethodGet, "/bizs/{bk_biz_id}/eips/{id}", svc.RetrieveBizEip)
+	h.Add("DeleteBizEip", http.MethodDelete, "/bizs/{bk_biz_id}/eips/{id}", svc.DeleteBizEip)
+	h.Add("AssociateBizEip", http.MethodPost, "/bizs/{bk_biz_id}/vendors/{vendor}/eips/associate", svc.AssociateBizEip)
+	h.Add("DisassociateBizEip", http.MethodPost, "/bizs/{bk_biz_id}/vendors/{vendor}/eips/disassociate",
+		svc.DisassociateBizEip)
 
 	h.Load(c.WebService)
 }

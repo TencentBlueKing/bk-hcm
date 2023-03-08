@@ -20,22 +20,31 @@
 package securitygroup
 
 import (
-	"hcm/cmd/cloud-server/service/subnet"
 	proto "hcm/pkg/api/cloud-server"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// AssociateSubnet ...
+// AssociateSubnet associate subnet.
 func (svc *securityGroupSvc) AssociateSubnet(cts *rest.Contexts) (interface{}, error) {
-	req, err := svc.decodeAndValidateAssocSubnetReq(cts, meta.Associate)
+	return svc.associateSubnet(cts, handler.ResValidWithAuth)
+}
+
+// AssociateBizSubnet associate biz subnet.
+func (svc *securityGroupSvc) AssociateBizSubnet(cts *rest.Contexts) (interface{}, error) {
+	return svc.associateSubnet(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) associateSubnet(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req, err := svc.decodeAndValidateAssocSubnetReq(cts, meta.Associate, validHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +76,20 @@ func (svc *securityGroupSvc) AssociateSubnet(cts *rest.Contexts) (interface{}, e
 	return nil, nil
 }
 
-// DisAssociateSubnet ...
+// DisAssociateSubnet disassociate subnet.
 func (svc *securityGroupSvc) DisAssociateSubnet(cts *rest.Contexts) (interface{}, error) {
-	req, err := svc.decodeAndValidateAssocSubnetReq(cts, meta.Disassociate)
+	return svc.disassociateSubnet(cts, handler.ResValidWithAuth)
+}
+
+// DisAssociateBizSubnet disassociate biz subnet.
+func (svc *securityGroupSvc) DisAssociateBizSubnet(cts *rest.Contexts) (interface{}, error) {
+	return svc.disassociateSubnet(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) disassociateSubnet(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req, err := svc.decodeAndValidateAssocSubnetReq(cts, meta.Disassociate, validHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +121,8 @@ func (svc *securityGroupSvc) DisAssociateSubnet(cts *rest.Contexts) (interface{}
 	return nil, nil
 }
 
-func (svc *securityGroupSvc) decodeAndValidateAssocSubnetReq(cts *rest.Contexts, action meta.Action) (
-	*proto.SecurityGroupAssociateSubnetReq, error) {
+func (svc *securityGroupSvc) decodeAndValidateAssocSubnetReq(cts *rest.Contexts, action meta.Action,
+	validHandler handler.ValidWithAuthHandler) (*proto.SecurityGroupAssociateSubnetReq, error) {
 
 	req := new(proto.SecurityGroupAssociateSubnetReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -124,23 +144,9 @@ func (svc *securityGroupSvc) decodeAndValidateAssocSubnetReq(cts *rest.Contexts,
 		return nil, errf.Newf(errf.InvalidParameter, "associate subnet only support azure")
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: action,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
-	}
-
-	// 已分配业务的资源，不允许操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: req.SecurityGroupID}
-	err = CheckSecurityGroupsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
-	if err != nil {
-		return nil, err
-	}
-
-	flt = &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: req.SubnetID}
-	err = subnet.CheckSubnetsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: action, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

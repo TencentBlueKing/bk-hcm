@@ -25,10 +25,22 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// ListNetworkInterfaceExtByCvmID ...
+// ListNetworkInterfaceExtByCvmID list network interface with extension by cvm id.
 func (svc *netSvc) ListNetworkInterfaceExtByCvmID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listNICExtByCvmID(cts, handler.ResValidWithAuth)
+}
+
+// ListBizNICExtByCvmID list biz network interface with extension by cvm id.
+func (svc *netSvc) ListBizNICExtByCvmID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listNICExtByCvmID(cts, handler.BizValidWithAuth)
+}
+
+func (svc *netSvc) listNICExtByCvmID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	cvmID := cts.Request.PathParameter("cvm_id")
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
@@ -52,12 +64,9 @@ func (svc *netSvc) ListNetworkInterfaceExtByCvmID(cts *rest.Contexts) (interface
 		)
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
-		Type: meta.NetworkInterface, Action: meta.Find,
-		ResourceID: basicInfo.AccountID,
-	}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.NetworkInterface,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

@@ -25,12 +25,16 @@ import (
 	"hcm/cmd/cloud-server/service/capability"
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
+	coreaudit "hcm/pkg/api/core/audit"
+	"hcm/pkg/api/data-service/audit"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // InitService initialize the audit service.
@@ -45,6 +49,10 @@ func InitService(c *capability.Capability) {
 	h.Add("GetAudit", http.MethodGet, "/audits/{id}", svc.GetAudit)
 	h.Add("ListAudit", http.MethodPost, "/audits/list", svc.ListAudit)
 
+	// biz audit apis
+	h.Add("GetBizAudit", http.MethodGet, "/bizs/{bk_biz_id}/audits/{id}", svc.GetBizAudit)
+	h.Add("ListBizAudit", http.MethodPost, "/bizs/{bk_biz_id}/audits/list", svc.ListBizAudit)
+
 	h.Load(c.WebService)
 }
 
@@ -55,13 +63,15 @@ type svc struct {
 
 // GetAudit get audit.
 func (svc svc) GetAudit(cts *rest.Contexts) (interface{}, error) {
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Audit, Action: meta.Find}}
-	err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
-	}
+	return svc.getAudit(cts, handler.ResValidWithAuth)
+}
 
+// GetBizAudit get biz audit.
+func (svc svc) GetBizAudit(cts *rest.Contexts) (interface{}, error) {
+	return svc.getAudit(cts, handler.BizValidWithAuth)
+}
+
+func (svc svc) getAudit(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	id, err := cts.PathParameter("id").Uint64()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -73,18 +83,27 @@ func (svc svc) GetAudit(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Audit,
+		Action: meta.Find, BasicInfo: &types.CloudResourceBasicInfo{BkBizID: audit.BkBizID, AccountID: audit.AccountID}})
+	if err != nil {
+		return nil, err
+	}
+
 	return audit, nil
 }
 
 // ListAudit list audit.
 func (svc svc) ListAudit(cts *rest.Contexts) (interface{}, error) {
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Audit, Action: meta.Find}}
-	err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
-	}
+	return svc.listAudit(cts, handler.ListResourceAuthRes)
+}
 
+// ListBizAudit list biz audit.
+func (svc svc) ListBizAudit(cts *rest.Contexts) (interface{}, error) {
+	return svc.listAudit(cts, handler.ListBizAuthRes)
+}
+
+func (svc svc) listAudit(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
 	req := new(proto.AuditListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -93,6 +112,18 @@ func (svc svc) ListAudit(cts *rest.Contexts) (interface{}, error) {
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
+	// authorize
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Audit, Action: meta.Find, Filter: req.Filter})
+	if err != nil {
+		return nil, err
+	}
+
+	if noPermFlag {
+		return &audit.ListResult{Count: 0, Details: make([]coreaudit.Audit, 0)}, nil
+	}
+	req.Filter = expr
 
 	listReq := &core.ListReq{
 		Filter: req.Filter,

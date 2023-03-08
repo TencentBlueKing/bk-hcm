@@ -49,6 +49,14 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchStopCvm", http.MethodPost, "/cvms/batch/stop", svc.BatchStopCvm)
 	h.Add("BatchRebootCvm", http.MethodPost, "/cvms/batch/reboot", svc.BatchRebootCvm)
 
+	// cvm apis in biz
+	h.Add("GetBizCvm", http.MethodGet, "/bizs/{bk_biz_id}/cvms/{id}", svc.GetBizCvm)
+	h.Add("ListBizCvmExt", http.MethodPost, "/bizs/{bk_biz_id}/cvms/list", svc.ListBizCvm)
+	h.Add("BatchDeleteBizCvm", http.MethodDelete, "/bizs/{bk_biz_id}/cvms/batch", svc.BatchDeleteBizCvm)
+	h.Add("BatchStartBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/start", svc.BatchStartBizCvm)
+	h.Add("BatchStopBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/stop", svc.BatchStopBizCvm)
+	h.Add("BatchRebootBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/reboot", svc.BatchRebootBizCvm)
+
 	h.Load(c.WebService)
 }
 

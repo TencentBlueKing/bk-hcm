@@ -28,10 +28,22 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // ListSecurityGroupRule list security group rule.
 func (svc *securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGRule(cts, handler.ResValidWithAuth)
+}
+
+// ListBizSGRule list biz security group rule.
+func (svc *securityGroupSvc) ListBizSGRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGRule(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if len(vendor) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "vendor is required")
@@ -51,15 +63,15 @@ func (svc *securityGroupSvc) ListSecurityGroupRule(cts *rest.Contexts) (interfac
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// list authorized instances
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
 		return nil, err
 	}
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroupRule, Action: meta.Find,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroupRule,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

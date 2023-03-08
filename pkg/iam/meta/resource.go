@@ -53,8 +53,10 @@ const (
 	Route ResourceType = "route"
 	// RecycleBin defines recycle bin's hcm auth resource type
 	RecycleBin ResourceType = "recycle_bin"
-	// Audit defines audit log's hcm auth resource type
-	Audit ResourceType = "audit"
 	// NetworkInterface defines eip hcm network_interface resource type
 	NetworkInterface ResourceType = "network_interface"
+	// Audit defines audit log's hcm auth resource type
+	Audit ResourceType = "biz_audit"
+	// Biz defines biz's hcm auth resource type
+	Biz ResourceType = "biz"
 )

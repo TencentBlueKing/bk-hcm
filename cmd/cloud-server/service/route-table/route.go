@@ -27,10 +27,20 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // ListRoute list routes.
 func (svc *routeTableSvc) ListRoute(cts *rest.Contexts) (interface{}, error) {
+	return svc.listRoute(cts, handler.ResValidWithAuth)
+}
+
+// ListBizRoute list biz routes.
+func (svc *routeTableSvc) ListBizRoute(cts *rest.Contexts) (interface{}, error) {
+	return svc.listRoute(cts, handler.BizValidWithAuth)
+}
+
+func (svc *routeTableSvc) listRoute(cts *rest.Contexts, validator handler.ValidWithAuthHandler) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if len(vendor) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "vendor is required")
@@ -56,10 +66,9 @@ func (svc *routeTableSvc) ListRoute(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RouteTable, Action: meta.Find,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validator(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.RouteTable,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

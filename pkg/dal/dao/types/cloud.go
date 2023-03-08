@@ -26,5 +26,6 @@ type CloudResourceBasicInfo struct {
 	ID        string        `json:"id" db:"id"`
 	Vendor    enumor.Vendor `json:"vendor" db:"vendor"`
 	AccountID string        `json:"account_id" db:"account_id"`
-	Region    string        `db:"region" json:"region"`
+	BkBizID   int64         `json:"bk_biz_id" db:"bk_biz_id"`
+	Region    string        `json:"region" db:"region"`
 }

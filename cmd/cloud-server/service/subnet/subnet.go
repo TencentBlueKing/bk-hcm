@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // InitSubnetService initialize the subnet service.
@@ -59,6 +60,13 @@ func InitSubnetService(c *capability.Capability) {
 	h.Add("AssignSubnetToBiz", "POST", "/subnets/assign/bizs", svc.AssignSubnetToBiz)
 	h.Add("CountSubnetAvailableIPs", "POST", "/subnets/{id}/ips/count", svc.CountSubnetAvailableIPs)
 
+	// subnet apis in biz
+	h.Add("GetBizSubnet", "GET", "/bizs/{bk_biz_id}/subnets/{id}", svc.GetBizSubnet)
+	h.Add("ListBizSubnet", "POST", "/bizs/{bk_biz_id}/subnets/list", svc.ListBizSubnet)
+	h.Add("UpdateBizSubnet", "PATCH", "/bizs/{bk_biz_id}/subnets/{id}", svc.UpdateBizSubnet)
+	h.Add("BatchDeleteBizSubnet", "DELETE", "/bizs/{bk_biz_id}/subnets/batch", svc.BatchDeleteBizSubnet)
+	h.Add("CountBizSubnetAvailIPs", "POST", "/bizs/{bk_biz_id}/subnets/{id}/ips/count", svc.CountBizSubnetAvailIPs)
+
 	h.Load(c.WebService)
 }
 
@@ -70,6 +78,15 @@ type subnetSvc struct {
 
 // UpdateSubnet update subnet.
 func (svc *subnetSvc) UpdateSubnet(cts *rest.Contexts) (interface{}, error) {
+	return svc.updateSubnet(cts, handler.ResValidWithAuth)
+}
+
+// UpdateBizSubnet update biz subnet.
+func (svc *subnetSvc) UpdateBizSubnet(cts *rest.Contexts) (interface{}, error) {
+	return svc.updateSubnet(cts, handler.BizValidWithAuth)
+}
+
+func (svc *subnetSvc) updateSubnet(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	req := new(cloudserver.SubnetUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -86,17 +103,9 @@ func (svc *subnetSvc) UpdateSubnet(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Update,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
-	}
-
-	// check if all subnets are not assigned, cannot operate biz resource in account api
-	subnetFilter := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}
-	err = CheckSubnetsInBiz(cts.Kit, svc.client, subnetFilter, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Subnet,
+		Action: meta.Update, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -138,6 +147,15 @@ func (svc *subnetSvc) UpdateSubnet(cts *rest.Contexts) (interface{}, error) {
 
 // GetSubnet get subnet details.
 func (svc *subnetSvc) GetSubnet(cts *rest.Contexts) (interface{}, error) {
+	return svc.getSubnet(cts, handler.ResValidWithAuth)
+}
+
+// GetBizSubnet get biz subnet details.
+func (svc *subnetSvc) GetBizSubnet(cts *rest.Contexts) (interface{}, error) {
+	return svc.getSubnet(cts, handler.BizValidWithAuth)
+}
+
+func (svc *subnetSvc) getSubnet(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -149,10 +167,9 @@ func (svc *subnetSvc) GetSubnet(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Find,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Subnet,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -194,8 +211,17 @@ func (svc *subnetSvc) GetSubnet(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// ListSubnet list subnets.
+// ListSubnet list subnet.
 func (svc *subnetSvc) ListSubnet(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSubnet(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizSubnet list biz subnet.
+func (svc *subnetSvc) ListBizSubnet(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSubnet(cts, handler.ListBizAuthRes)
+}
+
+func (svc *subnetSvc) listSubnet(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -206,8 +232,8 @@ func (svc *subnetSvc) ListSubnet(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// list authorized instances
-	authOpt := &meta.ListAuthResInput{Type: meta.Subnet, Action: meta.Find}
-	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Subnet, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		return nil, err
 	}
@@ -226,8 +252,19 @@ func (svc *subnetSvc) ListSubnet(cts *rest.Contexts) (interface{}, error) {
 	return &cloudserver.SubnetListResult{Count: res.Count, Details: res.Details}, nil
 }
 
-// BatchDeleteSubnet batch delete subnets.
+// BatchDeleteSubnet batch delete subnet.
 func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteSubnet(cts, handler.ResValidWithAuth)
+}
+
+// BatchDeleteBizSubnet batch delete biz subnet.
+func (svc *subnetSvc) BatchDeleteBizSubnet(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteSubnet(cts, handler.BizValidWithAuth)
+}
+
+func (svc *subnetSvc) batchDeleteSubnet(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	req := new(core.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -247,20 +284,9 @@ func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	// authorize
-	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
-	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Delete,
-			ResourceID: info.AccountID}})
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
-	if err != nil {
-		return nil, err
-	}
-
-	// check if all subnets are not assigned, cannot operate biz resource in account api
-	subnetFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err = CheckSubnetsInBiz(cts.Kit, svc.client, subnetFilter, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Subnet,
+		Action: meta.Delete, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}
@@ -374,6 +400,17 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 
 // CountSubnetAvailableIPs count subnet available ips. **NOTICE** only for ui.
 func (svc *subnetSvc) CountSubnetAvailableIPs(cts *rest.Contexts) (interface{}, error) {
+	return svc.countSubnetAvailableIPs(cts, handler.ResValidWithAuth)
+}
+
+// CountBizSubnetAvailIPs count biz subnet available ips. **NOTICE** only for ui.
+func (svc *subnetSvc) CountBizSubnetAvailIPs(cts *rest.Contexts) (interface{}, error) {
+	return svc.countSubnetAvailableIPs(cts, handler.BizValidWithAuth)
+}
+
+func (svc *subnetSvc) countSubnetAvailableIPs(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -385,10 +422,9 @@ func (svc *subnetSvc) CountSubnetAvailableIPs(cts *rest.Contexts) (interface{}, 
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Find,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Subnet,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

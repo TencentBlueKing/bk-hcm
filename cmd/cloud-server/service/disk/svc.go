@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 type diskSvc struct {
@@ -47,8 +48,17 @@ type diskSvc struct {
 	audit      audit.Interface
 }
 
-// ListDisk ...
+// ListDisk list disk.
 func (svc *diskSvc) ListDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.listDisk(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizDisk list biz disk.
+func (svc *diskSvc) ListBizDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.listDisk(cts, handler.ListBizAuthRes)
+}
+
+func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
 	req := new(cloudproto.DiskListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -59,8 +69,8 @@ func (svc *diskSvc) ListDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// list authorized instances
-	authOpt := &meta.ListAuthResInput{Type: meta.Disk, Action: meta.Find}
-	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Disk, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +89,17 @@ func (svc *diskSvc) ListDisk(cts *rest.Contexts) (interface{}, error) {
 	)
 }
 
-// DeleteDisk 删除云盘
+// DeleteDisk 删除云盘.
 func (svc *diskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.deleteDisk(cts, handler.ResValidWithAuth)
+}
+
+// DeleteBizDisk 删除业务下的云盘.
+func (svc *diskSvc) DeleteBizDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.deleteDisk(cts, handler.BizValidWithAuth)
+}
+
+func (svc *diskSvc) deleteDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	diskID := cts.PathParameter("id").String()
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
@@ -93,7 +112,14 @@ func (svc *diskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 增加鉴权和审计
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
+		Action: meta.Delete, BasicInfo: basicInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO 增加审计
 	// TODO 判断云盘是否可删除
 
 	deleteReq := &hcproto.DiskDeleteReq{DiskID: diskID, AccountID: basicInfo.AccountID}
@@ -114,8 +140,17 @@ func (svc *diskSvc) DeleteDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-// RetrieveDisk 查询云盘详情
+// RetrieveDisk 查询云盘详情.
 func (svc *diskSvc) RetrieveDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.retrieveDisk(cts, handler.ResValidWithAuth)
+}
+
+// RetrieveBizDisk 查询业务下的云盘详情.
+func (svc *diskSvc) RetrieveBizDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.retrieveDisk(cts, handler.BizValidWithAuth)
+}
+
+func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	diskID := cts.PathParameter("id").String()
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
@@ -128,12 +163,9 @@ func (svc *diskSvc) RetrieveDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
-		Type: meta.Disk, Action: meta.Find,
-		ResourceID: basicInfo.AccountID,
-	}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -190,8 +222,17 @@ func (svc *diskSvc) AssignDisk(cts *rest.Contexts) (interface{}, error) {
 	)
 }
 
-// AttachDisk ...
+// AttachDisk attach disk.
 func (svc *diskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.attachDisk(cts, handler.ResValidWithAuth)
+}
+
+// AttachBizDisk  attach biz disk.
+func (svc *diskSvc) AttachBizDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.attachDisk(cts, handler.BizValidWithAuth)
+}
+
+func (svc *diskSvc) attachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -199,22 +240,31 @@ func (svc *diskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return svc.tcloudAttachDisk(cts)
+		return svc.tcloudAttachDisk(cts, validHandler)
 	case enumor.Aws:
-		return svc.awsAttachDisk(cts)
+		return svc.awsAttachDisk(cts, validHandler)
 	case enumor.HuaWei:
-		return svc.huaweiAttachDisk(cts)
+		return svc.huaweiAttachDisk(cts, validHandler)
 	case enumor.Gcp:
-		return svc.gcpAttachDisk(cts)
+		return svc.gcpAttachDisk(cts, validHandler)
 	case enumor.Azure:
-		return svc.azureAttachDisk(cts)
+		return svc.azureAttachDisk(cts, validHandler)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
 	}
 }
 
-// DetachDisk ...
+// DetachDisk detach disk.
 func (svc *diskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.detachDisk(cts, handler.ResValidWithAuth)
+}
+
+// DetachBizDisk  detach biz disk.
+func (svc *diskSvc) DetachBizDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.detachDisk(cts, handler.BizValidWithAuth)
+}
+
+func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -229,7 +279,7 @@ func (svc *diskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 增加鉴权和审计
+	// TODO 增加审计
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
@@ -237,6 +287,13 @@ func (svc *diskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		enumor.DiskCloudResType,
 		req.DiskID,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
+		Action: meta.Disassociate, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +339,7 @@ func (svc *diskSvc) authorizeDiskAssignOp(kt *kit.Kit, ids []string) error {
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{
 			Type: meta.Disk, Action: meta.Assign,
 			ResourceID: info.AccountID,
-		}})
+		}, BizID: info.BkBizID})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
 	if err != nil {

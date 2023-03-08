@@ -44,16 +44,31 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 type eipSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
+	tcloud     *tcloud.TCloud
+	aws        *aws.Aws
+	azure      *azure.Azure
+	gcp        *gcp.Gcp
+	huawei     *huawei.HuaWei
 }
 
-// ListEip ...
+// ListEip list eip.
 func (svc *eipSvc) ListEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.listEip(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizEip list biz eip.
+func (svc *eipSvc) ListBizEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.listEip(cts, handler.ListBizAuthRes)
+}
+
+func (svc *eipSvc) listEip(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
 	req := new(cloudproto.EipListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -64,8 +79,8 @@ func (svc *eipSvc) ListEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// list authorized instances
-	authOpt := &meta.ListAuthResInput{Type: meta.Eip, Action: meta.Find}
-	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Eip, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +103,17 @@ func (svc *eipSvc) ListEip(cts *rest.Contexts) (interface{}, error) {
 	)
 }
 
-// RetrieveEip ...
+// RetrieveEip get eip.
 func (svc *eipSvc) RetrieveEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.retrieveEip(cts, handler.ResValidWithAuth)
+}
+
+// RetrieveBizEip get biz eip.
+func (svc *eipSvc) RetrieveBizEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.retrieveEip(cts, handler.BizValidWithAuth)
+}
+
+func (svc *eipSvc) retrieveEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	eipID := cts.PathParameter("id").String()
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
@@ -102,12 +126,9 @@ func (svc *eipSvc) RetrieveEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
-		Type: meta.Eip, Action: meta.Find,
-		ResourceID: basicInfo.AccountID,
-	}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Eip,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +185,17 @@ func (svc *eipSvc) AssignEip(cts *rest.Contexts) (interface{}, error) {
 	)
 }
 
-// DeleteEip ...
+// DeleteEip delete eip.
 func (svc *eipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.deleteEip(cts, handler.ResValidWithAuth)
+}
+
+// DeleteBizEip delete biz eip.
+func (svc *eipSvc) DeleteBizEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.deleteEip(cts, handler.BizValidWithAuth)
+}
+
+func (svc *eipSvc) deleteEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	eipID := cts.PathParameter("id").String()
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
@@ -178,7 +208,14 @@ func (svc *eipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 增加鉴权和审计
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Eip,
+		Action: meta.Delete, BasicInfo: basicInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO 增加审计
 	// TODO 判断 Eip 是否可删除
 
 	deleteReq := &hcproto.EipDeleteReq{EipID: eipID, AccountID: basicInfo.AccountID}
@@ -199,8 +236,17 @@ func (svc *eipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-// AssociateEip ...
+// AssociateEip associate eip.
 func (svc *eipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.associateEip(cts, handler.ResValidWithAuth)
+}
+
+// AssociateBizEip associate biz eip.
+func (svc *eipSvc) AssociateBizEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.associateEip(cts, handler.BizValidWithAuth)
+}
+
+func (svc *eipSvc) associateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -208,22 +254,31 @@ func (svc *eipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return tcloud.AssociateEip(svc.client, cts)
+		return svc.tcloud.AssociateEip(cts, validHandler)
 	case enumor.Aws:
-		return aws.AssociateEip(svc.client, cts)
+		return svc.aws.AssociateEip(cts, validHandler)
 	case enumor.HuaWei:
-		return huawei.AssociateEip(svc.client, cts)
+		return svc.huawei.AssociateEip(cts, validHandler)
 	case enumor.Gcp:
-		return gcp.AssociateEip(svc.client, cts)
+		return svc.gcp.AssociateEip(cts, validHandler)
 	case enumor.Azure:
-		return azure.AssociateEip(svc.client, cts)
+		return svc.azure.AssociateEip(cts, validHandler)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
 	}
 }
 
-// DisassociateEip ...
+// DisassociateEip disassociate eip.
 func (svc *eipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.disassociateEip(cts, handler.ResValidWithAuth)
+}
+
+// DisassociateBizEip disassociate biz eip.
+func (svc *eipSvc) DisassociateBizEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.disassociateEip(cts, handler.BizValidWithAuth)
+}
+
+func (svc *eipSvc) disassociateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -231,15 +286,15 @@ func (svc *eipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return tcloud.DisassociateEip(svc.client, cts)
+		return svc.tcloud.DisassociateEip(cts, validHandler)
 	case enumor.Aws:
-		return aws.DisassociateEip(svc.client, cts)
+		return svc.aws.DisassociateEip(cts, validHandler)
 	case enumor.HuaWei:
-		return huawei.DisassociateEip(svc.client, cts)
+		return svc.huawei.DisassociateEip(cts, validHandler)
 	case enumor.Gcp:
-		return gcp.DisassociateEip(svc.client, cts)
+		return svc.gcp.DisassociateEip(cts, validHandler)
 	case enumor.Azure:
-		return azure.DisassociateEip(svc.client, cts)
+		return svc.azure.DisassociateEip(cts, validHandler)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
 	}
@@ -260,7 +315,7 @@ func (svc *eipSvc) authorizeEipAssignOp(kt *kit.Kit, ids []string) error {
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{
 			Type: meta.Eip, Action: meta.Assign,
 			ResourceID: info.AccountID,
-		}})
+		}, BizID: info.BkBizID})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
 	if err != nil {

@@ -24,6 +24,7 @@ import "hcm/pkg/iam/client"
 // ResourceTypeIDMap resource type map.
 var ResourceTypeIDMap = map[client.TypeID]string{
 	Account: "账号",
+	Biz:     "业务",
 }
 
 // GenerateStaticResourceTypes generate all the static resource types to register to IAM.

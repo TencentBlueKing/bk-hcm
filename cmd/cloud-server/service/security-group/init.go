@@ -46,14 +46,10 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("ListSecurityGroup", http.MethodPost, "/security_groups/list", svc.ListSecurityGroup)
 	h.Add("ListSecurityGroupsByCvmID", http.MethodGet, "/security_groups/cvms/{cvm_id}", svc.ListSecurityGroupsByCvmID)
 	h.Add("AssignSecurityGroupToBiz", http.MethodPost, "/security_groups/assign/bizs", svc.AssignSecurityGroupToBiz)
-	h.Add("AssociateCvm", http.MethodPost, "/security_groups/associate/cvms",
-		svc.AssociateCvm)
-	h.Add("DisassociateCvm", http.MethodPost, "/security_groups/disassociate/cvms",
-		svc.DisassociateCvm)
-	h.Add("AssociateSubnet", http.MethodPost, "/security_groups/associate/subnets",
-		svc.AssociateSubnet)
-	h.Add("DisAssociateSubnet", http.MethodPost, "/security_groups/disassociate/subnets",
-		svc.DisAssociateSubnet)
+	h.Add("AssociateCvm", http.MethodPost, "/security_groups/associate/cvms", svc.AssociateCvm)
+	h.Add("DisassociateCvm", http.MethodPost, "/security_groups/disassociate/cvms", svc.DisassociateCvm)
+	h.Add("AssociateSubnet", http.MethodPost, "/security_groups/associate/subnets", svc.AssociateSubnet)
+	h.Add("DisAssociateSubnet", http.MethodPost, "/security_groups/disassociate/subnets", svc.DisAssociateSubnet)
 	h.Add("AssociateNetworkInterface", http.MethodPost, "/security_groups/associate/network_interfaces",
 		svc.AssociateNetworkInterface)
 	h.Add("DisAssociateNetworkInterface", http.MethodPost, "/security_groups/disassociate/network_interfaces",
@@ -72,6 +68,34 @@ func InitSecurityGroupService(c *capability.Capability) {
 
 	// 业务下安全组相关接口
 	h.Add("CreateSecurityGroup", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/create", svc.CreateSecurityGroup)
+	h.Add("GetBizSecurityGroup", http.MethodGet, "/bizs/{bk_biz_id}/security_groups/{id}", svc.GetBizSecurityGroup)
+	h.Add("UpdateBizSecurityGroup", http.MethodPatch, "/bizs/{bk_biz_id}/security_groups/{id}",
+		svc.UpdateBizSecurityGroup)
+	h.Add("BatchDeleteBizSecurityGroup", http.MethodDelete, "/bizs/{bk_biz_id}/security_groups/batch",
+		svc.BatchDeleteBizSecurityGroup)
+	h.Add("ListBizSecurityGroup", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/list", svc.ListBizSecurityGroup)
+	h.Add("ListBizSecurityGroupsByCvmID", http.MethodGet, "/bizs/{bk_biz_id}/security_groups/cvms/{cvm_id}",
+		svc.ListBizSecurityGroupsByCvmID)
+	h.Add("AssociateBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/associate/cvms", svc.AssociateBizCvm)
+	h.Add("DisassociateCvm", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/disassociate/cvms",
+		svc.DisassociateBizCvm)
+	h.Add("AssociateBizSubnet", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/associate/subnets",
+		svc.AssociateBizSubnet)
+	h.Add("DisAssociateBizSubnet", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/disassociate/subnets",
+		svc.DisAssociateBizSubnet)
+	h.Add("AssociateBizNIC", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/associate/network_interfaces",
+		svc.AssociateBizNIC)
+	h.Add("DisAssociateBizNIC", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/disassociate/network_interfaces",
+		svc.DisAssociateBizNIC)
+
+	h.Add("CreateBizSGRule", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/create", svc.CreateBizSGRule)
+	h.Add("ListBizSGRule", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/list", svc.ListBizSGRule)
+	h.Add("UpdateBizSGRule", http.MethodPut,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.UpdateBizSGRule)
+	h.Add("DeleteBizSGRule", http.MethodDelete,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteBizSGRule)
 
 	h.Load(c.WebService)
 }

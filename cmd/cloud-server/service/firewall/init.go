@@ -50,6 +50,14 @@ func InitFirewallService(cap *capability.Capability) {
 	// 业务下相关接口
 	h.Add("CreateGcpFirewallRule", http.MethodPost, "/bizs/{bk_biz_id}/vendors/gcp/firewalls/rules/create",
 		svc.CreateGcpFirewallRule)
+	h.Add("BatchDeleteBizGcpFirewallRule", http.MethodDelete, "/bizs/{bk_biz_id}/vendors/gcp/firewalls/rules/batch",
+		svc.BatchDeleteBizGcpFirewallRule)
+	h.Add("UpdateBizGcpFirewallRule", http.MethodPut, "/bizs/{bk_biz_id}/vendors/gcp/firewalls/rules/{id}",
+		svc.UpdateBizGcpFirewallRule)
+	h.Add("ListBizGcpFirewallRule", http.MethodPost, "/bizs/{bk_biz_id}/vendors/gcp/firewalls/rules/list",
+		svc.ListBizGcpFirewallRule)
+	h.Add("GetBizGcpFirewallRule", http.MethodGet, "/bizs/{bk_biz_id}/vendors/gcp/firewalls/rules/{id}",
+		svc.GetBizGcpFirewallRule)
 
 	h.Load(cap.WebService)
 }

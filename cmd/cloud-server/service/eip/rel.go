@@ -25,10 +25,22 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// ListEipExtByCvmID ...
+// ListEipExtByCvmID list eip with extension by cvm_id.
 func (svc *eipSvc) ListEipExtByCvmID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listEipExtByCvmID(cts, handler.ResValidWithAuth)
+}
+
+// ListBizEipExtByCvmID list biz eip with extension by cvm_id.
+func (svc *eipSvc) ListBizEipExtByCvmID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listEipExtByCvmID(cts, handler.BizValidWithAuth)
+}
+
+func (svc *eipSvc) listEipExtByCvmID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	CvmID := cts.Request.PathParameter("cvm_id")
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
@@ -52,12 +64,9 @@ func (svc *eipSvc) ListEipExtByCvmID(cts *rest.Contexts) (interface{}, error) {
 		)
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
-		Type: meta.Eip, Action: meta.Find,
-		ResourceID: basicInfo.AccountID,
-	}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Eip,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

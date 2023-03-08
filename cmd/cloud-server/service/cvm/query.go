@@ -33,10 +33,20 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // ListCvm list cvm.
 func (svc *cvmSvc) ListCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.listCvm(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizCvm list biz cvm.
+func (svc *cvmSvc) ListBizCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.listCvm(cts, handler.ListBizAuthRes)
+}
+
+func (svc *cvmSvc) listCvm(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
 	req := new(proto.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -47,8 +57,8 @@ func (svc *cvmSvc) ListCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// list authorized instances
-	authOpt := &meta.ListAuthResInput{Type: meta.Cvm, Action: meta.Find}
-	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Cvm, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +77,15 @@ func (svc *cvmSvc) ListCvm(cts *rest.Contexts) (interface{}, error) {
 
 // GetCvm get cvm.
 func (svc *cvmSvc) GetCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.getCvm(cts, handler.ResValidWithAuth)
+}
+
+// GetBizCvm get biz cvm.
+func (svc *cvmSvc) GetBizCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.getCvm(cts, handler.BizValidWithAuth)
+}
+
+func (svc *cvmSvc) getCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -78,10 +97,9 @@ func (svc *cvmSvc) GetCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm, Action: meta.Find,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

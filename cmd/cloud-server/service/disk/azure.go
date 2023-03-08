@@ -24,10 +24,14 @@ import (
 	hcproto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-func (svc *diskSvc) azureAttachDisk(cts *rest.Contexts) (interface{}, error) {
+func (svc *diskSvc) azureAttachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	req := new(cloudproto.AzureDiskAttachReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -37,7 +41,7 @@ func (svc *diskSvc) azureAttachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 增加鉴权和审计
+	// TODO 增加审计
 	// TODO 判断云盘是否可挂载
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
@@ -49,6 +53,14 @@ func (svc *diskSvc) azureAttachDisk(cts *rest.Contexts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
+		Action: meta.Associate, BasicInfo: basicInfo})
+	if err != nil {
+		return nil, err
+	}
+
 	return nil, svc.client.HCService().Azure.Disk.AttachDisk(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),

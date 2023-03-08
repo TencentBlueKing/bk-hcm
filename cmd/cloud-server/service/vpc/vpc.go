@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // InitVpcService initialize the vpc service.
@@ -59,6 +60,12 @@ func InitVpcService(c *capability.Capability) {
 	h.Add("AssignVpcToBiz", "POST", "/vpcs/assign/bizs", svc.AssignVpcToBiz)
 	h.Add("BindVpcWithCloudArea", "POST", "/vpcs/bind/cloud_areas", svc.BindVpcWithCloudArea)
 
+	// vpc apis in biz
+	h.Add("GetBizVpc", "GET", "/bizs/{bk_biz_id}/vpcs/{id}", svc.GetBizVpc)
+	h.Add("ListBizVpc", "POST", "/bizs/{bk_biz_id}/vpcs/list", svc.ListBizVpc)
+	h.Add("UpdateBizVpc", "PATCH", "/bizs/{bk_biz_id}/vpcs/{id}", svc.UpdateBizVpc)
+	h.Add("BatchDeleteBizVpc", "DELETE", "/bizs/{bk_biz_id}/vpcs/batch", svc.BatchDeleteBizVpc)
+
 	h.Load(c.WebService)
 }
 
@@ -70,6 +77,15 @@ type vpcSvc struct {
 
 // UpdateVpc update vpc.
 func (svc *vpcSvc) UpdateVpc(cts *rest.Contexts) (interface{}, error) {
+	return svc.updateVpc(cts, handler.ResValidWithAuth)
+}
+
+// UpdateBizVpc update biz vpc.
+func (svc *vpcSvc) UpdateBizVpc(cts *rest.Contexts) (interface{}, error) {
+	return svc.updateVpc(cts, handler.BizValidWithAuth)
+}
+
+func (svc *vpcSvc) updateVpc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	req := new(cloudserver.VpcUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -86,17 +102,9 @@ func (svc *vpcSvc) UpdateVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Update,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
-	}
-
-	// check if all vpcs are not assigned to biz, cannot operate biz resource in account api
-	vpcFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: id}
-	err = svc.checkVpcsInBiz(cts.Kit, vpcFilter, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Vpc,
+		Action: meta.Update, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -138,6 +146,15 @@ func (svc *vpcSvc) UpdateVpc(cts *rest.Contexts) (interface{}, error) {
 
 // GetVpc get vpc details.
 func (svc *vpcSvc) GetVpc(cts *rest.Contexts) (interface{}, error) {
+	return svc.getVpc(cts, handler.ResValidWithAuth)
+}
+
+// GetBizVpc get biz vpc details.
+func (svc *vpcSvc) GetBizVpc(cts *rest.Contexts) (interface{}, error) {
+	return svc.getVpc(cts, handler.BizValidWithAuth)
+}
+
+func (svc *vpcSvc) getVpc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -149,10 +166,9 @@ func (svc *vpcSvc) GetVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Find,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Vpc,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -194,8 +210,17 @@ func (svc *vpcSvc) GetVpc(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// ListVpc list vpcs.
+// ListVpc list vpc.
 func (svc *vpcSvc) ListVpc(cts *rest.Contexts) (interface{}, error) {
+	return svc.listVpc(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizVpc list biz vpc.
+func (svc *vpcSvc) ListBizVpc(cts *rest.Contexts) (interface{}, error) {
+	return svc.listVpc(cts, handler.ListBizAuthRes)
+}
+
+func (svc *vpcSvc) listVpc(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -206,12 +231,8 @@ func (svc *vpcSvc) ListVpc(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// list authorized instances
-	authOpt := &meta.ListAuthResInput{Type: meta.Vpc, Action: meta.Find}
-	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
-	if err != nil {
-		return nil, err
-	}
-
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer, ResType: meta.Vpc,
+		Action: meta.Find, Filter: req.Filter})
 	if noPermFlag {
 		return &cloudserver.VpcListResult{Count: 0, Details: make([]corecloud.BaseVpc, 0)}, nil
 	}
@@ -226,8 +247,17 @@ func (svc *vpcSvc) ListVpc(cts *rest.Contexts) (interface{}, error) {
 	return &cloudserver.VpcListResult{Count: res.Count, Details: res.Details}, nil
 }
 
-// BatchDeleteVpc batch delete vpcs.
+// BatchDeleteVpc batch delete vpc.
 func (svc *vpcSvc) BatchDeleteVpc(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteVpc(cts, handler.ResValidWithAuth)
+}
+
+// BatchDeleteBizVpc batch delete biz vpc.
+func (svc *vpcSvc) BatchDeleteBizVpc(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteVpc(cts, handler.BizValidWithAuth)
+}
+
+func (svc *vpcSvc) batchDeleteVpc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	req := new(core.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -247,20 +277,9 @@ func (svc *vpcSvc) BatchDeleteVpc(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// authorize
-	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
-	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Delete,
-			ResourceID: info.AccountID}})
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
-	if err != nil {
-		return nil, err
-	}
-
-	// check if all vpcs are not assigned to biz, cannot operate biz resource in account api
-	vpcFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err = svc.checkVpcsInBiz(cts.Kit, vpcFilter, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Vpc,
+		Action: meta.Find, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +339,7 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// authorize
-	err := svc.authorizeVpcAssignOp(cts.Kit, req.VpcIDs)
+	err := svc.authorizeVpcAssignOp(cts.Kit, req.VpcIDs, req.BkBizID)
 	if err != nil {
 		return nil, err
 	}
@@ -374,7 +393,7 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 		ids = append(ids, rel.VpcID)
 	}
 
-	err := svc.authorizeVpcAssignOp(cts.Kit, ids)
+	err := svc.authorizeVpcAssignOp(cts.Kit, ids, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -444,7 +463,7 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 	return nil, nil
 }
 
-func (svc *vpcSvc) authorizeVpcAssignOp(kt *kit.Kit, ids []string) error {
+func (svc *vpcSvc) authorizeVpcAssignOp(kt *kit.Kit, ids []string, bizID int64) error {
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.VpcCloudResType,
 		IDs:          ids,
@@ -457,7 +476,7 @@ func (svc *vpcSvc) authorizeVpcAssignOp(kt *kit.Kit, ids []string) error {
 	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
 	for _, info := range basicInfoMap {
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Assign,
-			ResourceID: info.AccountID}})
+			ResourceID: info.AccountID}, BizID: bizID})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
 	if err != nil {

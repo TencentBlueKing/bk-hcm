@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // InitRouteTableService initialize the route table service.
@@ -51,6 +52,14 @@ func InitRouteTableService(c *capability.Capability) {
 	h.Add("CountRouteTableSubnets", "POST", "/route_tables/subnets/count", svc.CountRouteTableSubnets)
 
 	h.Add("ListRoute", "POST", "/vendors/{vendor}/route_tables/{route_table_id}/routes/list", svc.ListRoute)
+
+	// route table & route apis in biz
+	h.Add("GetBizRouteTable", "GET", "/bizs/{bk_biz_id}/route_tables/{id}", svc.GetBizRouteTable)
+	h.Add("ListBizRouteTable", "POST", "/bizs/{bk_biz_id}/route_tables/list", svc.ListBizRouteTable)
+	h.Add("CountBizRTSubnets", "POST", "/bizs/{bk_biz_id}/route_tables/subnets/count", svc.CountBizRTSubnets)
+
+	h.Add("ListBizRoute", "POST", "/bizs/{bk_biz_id}/vendors/{vendor}/route_tables/{route_table_id}/routes/list",
+		svc.ListBizRoute)
 
 	h.Load(c.WebService)
 }
@@ -115,6 +124,17 @@ func (svc *routeTableSvc) UpdateRouteTable(cts *rest.Contexts) (interface{}, err
 
 // GetRouteTable get route table details.
 func (svc *routeTableSvc) GetRouteTable(cts *rest.Contexts) (interface{}, error) {
+	return svc.getRouteTable(cts, handler.ResValidWithAuth)
+}
+
+// GetBizRouteTable get biz route table details.
+func (svc *routeTableSvc) GetBizRouteTable(cts *rest.Contexts) (interface{}, error) {
+	return svc.getRouteTable(cts, handler.BizValidWithAuth)
+}
+
+func (svc *routeTableSvc) getRouteTable(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -126,10 +146,9 @@ func (svc *routeTableSvc) GetRouteTable(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RouteTable, Action: meta.Find,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.RouteTable,
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -181,8 +200,19 @@ func (svc *routeTableSvc) GetRouteTable(cts *rest.Contexts) (interface{}, error)
 	return nil, nil
 }
 
-// ListRouteTable list route tables.
+// ListRouteTable list route table.
 func (svc *routeTableSvc) ListRouteTable(cts *rest.Contexts) (interface{}, error) {
+	return svc.listRouteTable(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizRouteTable list biz route table.
+func (svc *routeTableSvc) ListBizRouteTable(cts *rest.Contexts) (interface{}, error) {
+	return svc.listRouteTable(cts, handler.ListBizAuthRes)
+}
+
+func (svc *routeTableSvc) listRouteTable(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{},
+	error) {
+
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -193,8 +223,8 @@ func (svc *routeTableSvc) ListRouteTable(cts *rest.Contexts) (interface{}, error
 	}
 
 	// list authorized instances
-	authOpt := &meta.ListAuthResInput{Type: meta.RouteTable, Action: meta.Find}
-	expr, noPermFlag, err := svc.authorizer.ListAuthInstWithFilter(cts.Kit, authOpt, req.Filter, "account_id")
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.RouteTable, Action: meta.Find, Filter: req.Filter})
 	if err != nil {
 		return nil, err
 	}
@@ -215,6 +245,17 @@ func (svc *routeTableSvc) ListRouteTable(cts *rest.Contexts) (interface{}, error
 
 // CountRouteTableSubnets count subnets in route tables. **NOTICE** only for ui.
 func (svc *routeTableSvc) CountRouteTableSubnets(cts *rest.Contexts) (interface{}, error) {
+	return svc.countRouteTableSubnets(cts, handler.ResValidWithAuth)
+}
+
+// CountBizRTSubnets count subnets in route tables for biz use. **NOTICE** only for ui.
+func (svc *routeTableSvc) CountBizRTSubnets(cts *rest.Contexts) (interface{}, error) {
+	return svc.countRouteTableSubnets(cts, handler.BizValidWithAuth)
+}
+
+func (svc *routeTableSvc) countRouteTableSubnets(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
 	req := new(core.CountReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -235,12 +276,9 @@ func (svc *routeTableSvc) CountRouteTableSubnets(cts *rest.Contexts) (interface{
 		return nil, err
 	}
 
-	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
-	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RouteTable, Action: meta.Find,
-			ResourceID: info.AccountID}})
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.RouteTable,
+		Action: meta.Find, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}

@@ -25,12 +25,24 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// ListDiskExtByCvmID ...
-func (dSvc *diskSvc) ListDiskExtByCvmID(cts *rest.Contexts) (interface{}, error) {
+// ListDiskExtByCvmID list disk with extension by cvm_id.
+func (svc *diskSvc) ListDiskExtByCvmID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listDiskExtByCvmID(cts, handler.ResValidWithAuth)
+}
+
+// ListBizDiskExtByCvmID list biz disk with extension by cvm_id.
+func (svc *diskSvc) ListBizDiskExtByCvmID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listDiskExtByCvmID(cts, handler.BizValidWithAuth)
+}
+
+func (svc *diskSvc) listDiskExtByCvmID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
 	CvmID := cts.Request.PathParameter("cvm_id")
-	basicInfo, err := dSvc.client.DataService().Global.Cloud.GetResourceBasicInfo(
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		enumor.CvmCloudResType,
@@ -57,7 +69,7 @@ func (dSvc *diskSvc) ListDiskExtByCvmID(cts *rest.Contexts) (interface{}, error)
 		Type: meta.Disk, Action: meta.Find,
 		ResourceID: basicInfo.AccountID,
 	}}
-	err = dSvc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	if err != nil {
 		return nil, err
 	}
@@ -66,15 +78,15 @@ func (dSvc *diskSvc) ListDiskExtByCvmID(cts *rest.Contexts) (interface{}, error)
 
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		return dSvc.client.DataService().TCloud.ListDiskCvmRelWithDisk(cts.Kit.Ctx, cts.Kit.Header(), reqData)
+		return svc.client.DataService().TCloud.ListDiskCvmRelWithDisk(cts.Kit.Ctx, cts.Kit.Header(), reqData)
 	case enumor.Aws:
-		return dSvc.client.DataService().Aws.ListDiskCvmRelWithDisk(cts.Kit.Ctx, cts.Kit.Header(), reqData)
+		return svc.client.DataService().Aws.ListDiskCvmRelWithDisk(cts.Kit.Ctx, cts.Kit.Header(), reqData)
 	case enumor.HuaWei:
-		return dSvc.client.DataService().HuaWei.ListDiskCvmRelWithDisk(cts.Kit.Ctx, cts.Kit.Header(), reqData)
+		return svc.client.DataService().HuaWei.ListDiskCvmRelWithDisk(cts.Kit.Ctx, cts.Kit.Header(), reqData)
 	case enumor.Gcp:
-		return dSvc.client.DataService().Gcp.ListDiskCvmRelWithDisk(cts.Kit.Ctx, cts.Kit.Header(), reqData)
+		return svc.client.DataService().Gcp.ListDiskCvmRelWithDisk(cts.Kit.Ctx, cts.Kit.Header(), reqData)
 	case enumor.Azure:
-		return dSvc.client.DataService().Azure.ListDiskCvmRelWithDisk(cts.Kit.Ctx, cts.Kit.Header(), reqData)
+		return svc.client.DataService().Azure.ListDiskCvmRelWithDisk(cts.Kit.Ctx, cts.Kit.Header(), reqData)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
 	}

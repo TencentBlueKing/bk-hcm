@@ -22,19 +22,27 @@ package firewall
 import (
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
-	dataproto "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// BatchDeleteGcpFirewallRule batch delete gcp firewallSvc rule.
+// BatchDeleteGcpFirewallRule batch delete gcp firewall rule.
 func (svc *firewallSvc) BatchDeleteGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteGcpFirewallRule(cts, handler.ResValidWithAuth)
+}
+
+// BatchDeleteBizGcpFirewallRule batch delete biz gcp firewall rule.
+func (svc *firewallSvc) BatchDeleteBizGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteGcpFirewallRule(cts, handler.BizValidWithAuth)
+}
+
+func (svc *firewallSvc) batchDeleteGcpFirewallRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
 	req := new(proto.GcpFirewallRuleBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -44,30 +52,14 @@ func (svc *firewallSvc) BatchDeleteGcpFirewallRule(cts *rest.Contexts) (interfac
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listReq := &dataproto.GcpFirewallRuleListReq{
-		Field:  []string{"account_id"},
-		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   core.DefaultBasePage,
-	}
-	listResp, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	basicInfoMap, err := svc.listBasicInfo(cts.Kit, req.IDs)
 	if err != nil {
 		return nil, err
 	}
 
-	// authorize
-	authRes := make([]meta.ResourceAttribute, 0, len(listResp.Details))
-	for _, one := range listResp.Details {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule,
-			Action: meta.Delete, ResourceID: one.AccountID}})
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
-	if err != nil {
-		return nil, err
-	}
-
-	// 已分配业务的资源，不允许操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err = svc.checkGcpFirewallRulesInBiz(cts.Kit, flt, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.GcpFirewallRule,
+		Action: meta.Delete, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}

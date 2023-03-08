@@ -20,22 +20,31 @@
 package securitygroup
 
 import (
-	"hcm/cmd/cloud-server/service/cvm"
 	proto "hcm/pkg/api/cloud-server"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// AssociateCvm ...
+// AssociateCvm associate cvm.
 func (svc *securityGroupSvc) AssociateCvm(cts *rest.Contexts) (interface{}, error) {
-	req, vendor, err := svc.decodeAndValidateAssocCvmReq(cts, meta.Associate)
+	return svc.associateCvm(cts, handler.ResValidWithAuth)
+}
+
+// AssociateBizCvm associate biz cvm.
+func (svc *securityGroupSvc) AssociateBizCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.associateCvm(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) associateCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
+	req, vendor, err := svc.decodeAndValidateAssocCvmReq(cts, meta.Associate, validHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -90,9 +99,20 @@ func (svc *securityGroupSvc) AssociateCvm(cts *rest.Contexts) (interface{}, erro
 	return nil, nil
 }
 
-// DisassociateCvm ...
+// DisassociateCvm disassociate cvm.
 func (svc *securityGroupSvc) DisassociateCvm(cts *rest.Contexts) (interface{}, error) {
-	req, vendor, err := svc.decodeAndValidateAssocCvmReq(cts, meta.Disassociate)
+	return svc.disassociateCvm(cts, handler.ResValidWithAuth)
+}
+
+// DisassociateBizCvm disassociate biz cvm.
+func (svc *securityGroupSvc) DisassociateBizCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.disassociateCvm(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) disassociateCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req, vendor, err := svc.decodeAndValidateAssocCvmReq(cts, meta.Disassociate, validHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -147,8 +167,8 @@ func (svc *securityGroupSvc) DisassociateCvm(cts *rest.Contexts) (interface{}, e
 	return nil, nil
 }
 
-func (svc *securityGroupSvc) decodeAndValidateAssocCvmReq(cts *rest.Contexts, action meta.Action) (
-	*proto.SecurityGroupAssociateCvmReq, enumor.Vendor, error) {
+func (svc *securityGroupSvc) decodeAndValidateAssocCvmReq(cts *rest.Contexts, action meta.Action,
+	validHandler handler.ValidWithAuthHandler) (*proto.SecurityGroupAssociateCvmReq, enumor.Vendor, error) {
 
 	req := new(proto.SecurityGroupAssociateCvmReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -166,23 +186,9 @@ func (svc *securityGroupSvc) decodeAndValidateAssocCvmReq(cts *rest.Contexts, ac
 		return nil, "", err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: action,
-		ResourceID: basicInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, "", err
-	}
-
-	// 已分配业务的资源，不允许操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: req.SecurityGroupID}
-	err = CheckSecurityGroupsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
-	if err != nil {
-		return nil, "", err
-	}
-
-	flt = &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: req.CvmID}
-	err = cvm.CheckCvmsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: action, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, "", err
 	}

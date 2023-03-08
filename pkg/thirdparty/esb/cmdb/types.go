@@ -83,6 +83,7 @@ type Operator string
 
 var (
 	OperatorEqual = Operator("equal")
+	OperatorIn    = Operator("in")
 )
 
 // GetDeep get query rule depth.

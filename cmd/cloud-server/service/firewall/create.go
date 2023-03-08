@@ -20,8 +20,6 @@
 package firewall
 
 import (
-	"strconv"
-
 	proto "hcm/pkg/api/cloud-server"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
@@ -47,8 +45,7 @@ func (svc *firewallSvc) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, 
 	}
 
 	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule, Action: meta.Create,
-		ResourceID: strconv.FormatInt(bizID, 10)}}
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule, Action: meta.Create}, BizID: bizID}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	if err != nil {
 		return nil, err

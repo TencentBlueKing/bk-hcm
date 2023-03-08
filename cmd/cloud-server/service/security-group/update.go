@@ -22,18 +22,28 @@ package securitygroup
 import (
 	proto "hcm/pkg/api/cloud-server"
 	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // UpdateSecurityGroup update security group.
 func (svc *securityGroupSvc) UpdateSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	return svc.updateSecurityGroup(cts, handler.ResValidWithAuth)
+}
+
+// UpdateBizSecurityGroup update biz security group.
+func (svc *securityGroupSvc) UpdateBizSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	return svc.updateSecurityGroup(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) updateSecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -55,17 +65,9 @@ func (svc *securityGroupSvc) UpdateSecurityGroup(cts *rest.Contexts) (interface{
 		return nil, err
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: meta.Update,
-		ResourceID: baseInfo.AccountID}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
-	}
-
-	// 已分配业务的资源，不允许操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}
-	err = CheckSecurityGroupsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Update, BasicInfo: baseInfo})
 	if err != nil {
 		return nil, err
 	}

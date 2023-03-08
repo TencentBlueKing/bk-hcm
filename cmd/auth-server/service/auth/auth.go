@@ -22,6 +22,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"hcm/cmd/auth-server/options"
@@ -39,6 +40,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/esb/cmdb"
 )
 
 // Auth related operate.
@@ -51,10 +54,12 @@ type Auth struct {
 	disableAuth bool
 	// disableWriteOpt defines which biz's write operation needs to be disabled
 	disableWriteOpt *options.DisableWriteOption
+	// esb client.
+	esbCli esb.Client
 }
 
 // NewAuth new auth.
-func NewAuth(auth auth.Authorizer, ds *dataservice.Client, disableAuth bool,
+func NewAuth(auth auth.Authorizer, ds *dataservice.Client, disableAuth bool, esbCli esb.Client,
 	disableWriteOpt *options.DisableWriteOption) (*Auth, error) {
 
 	if auth == nil {
@@ -74,6 +79,7 @@ func NewAuth(auth auth.Authorizer, ds *dataservice.Client, disableAuth bool,
 		ds:              ds,
 		disableAuth:     disableAuth,
 		disableWriteOpt: disableWriteOpt,
+		esbCli:          esbCli,
 	}
 
 	return i, nil
@@ -430,6 +436,15 @@ func (a *Auth) getInstIDNameMap(kt *kit.Kit, resTypeIDsMap map[client.TypeID][]s
 	instMap := make(map[client.TypeID]map[string]string)
 
 	for resType, ids := range resTypeIDsMap {
+		if resType == sys.Biz {
+			bizIDNameMap, err := a.getBizIDNameMap(kt, ids)
+			if err != nil {
+				return nil, err
+			}
+			instMap[resType] = bizIDNameMap
+			continue
+		}
+
 		req := &dsproto.ListInstancesReq{
 			ResourceType: resType,
 			Filter:       tools.ContainersExpression("id", ids),
@@ -451,6 +466,45 @@ func (a *Auth) getInstIDNameMap(kt *kit.Kit, resTypeIDsMap map[client.TypeID][]s
 	}
 
 	return instMap, nil
+}
+
+// getBizIDNameMap get cmdb biz resource id to name map by resource ids
+func (a *Auth) getBizIDNameMap(kt *kit.Kit, rawIDs []string) (map[string]string, error) {
+	ids := make([]int64, len(rawIDs))
+	for i, id := range rawIDs {
+		intID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return nil, errf.Newf(errf.InvalidParameter, "parse id %s failed, err: %v", id, err)
+		}
+		ids[i] = intID
+	}
+
+	bizReq := &cmdb.SearchBizParams{
+		Fields: []string{"bk_biz_id", "bk_biz_name"},
+		BizPropertyFilter: &cmdb.QueryFilter{
+			Rule: &cmdb.CombinedRule{
+				Condition: cmdb.ConditionAnd,
+				Rules: []cmdb.Rule{
+					&cmdb.AtomRule{
+						Field:    "bk_biz_id",
+						Operator: cmdb.OperatorIn,
+						Value:    ids,
+					},
+				},
+			},
+		},
+	}
+	bizResp, err := a.esbCli.Cmdb().SearchBusiness(kt.Ctx, bizReq)
+	if err != nil {
+		return nil, err
+	}
+
+	idNameMap := make(map[string]string)
+	for _, biz := range bizResp.Info {
+		idNameMap[strconv.FormatInt(biz.BizID, 10)] = biz.BizName
+	}
+
+	return idNameMap, nil
 }
 
 // ListAuthorizedInstances list authorized instances info.

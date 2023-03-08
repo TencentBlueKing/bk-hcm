@@ -23,17 +23,27 @@ import (
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // BatchDeleteSecurityGroup batch delete security group.
 func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteSecurityGroup(cts, handler.ResValidWithAuth)
+}
+
+// BatchDeleteBizSecurityGroup batch delete biz security group.
+func (svc *securityGroupSvc) BatchDeleteBizSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteSecurityGroup(cts, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) batchDeleteSecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
 	req := new(proto.SecurityGroupBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -53,20 +63,9 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 		return nil, err
 	}
 
-	// authorize
-	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
-	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup,
-			Action: meta.Delete, ResourceID: info.AccountID}})
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
-	if err != nil {
-		return nil, err
-	}
-
-	// 已分配业务的资源，不允许操作
-	flt := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs}
-	err = CheckSecurityGroupsInBiz(cts.Kit, svc.client, flt, constant.UnassignedBiz)
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Delete, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}

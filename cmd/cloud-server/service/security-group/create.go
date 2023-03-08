@@ -20,8 +20,6 @@
 package securitygroup
 
 import (
-	"strconv"
-
 	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server"
 	hcproto "hcm/pkg/api/hc-service"
@@ -49,8 +47,7 @@ func (svc *securityGroupSvc) CreateSecurityGroup(cts *rest.Contexts) (interface{
 	}
 
 	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: meta.Create,
-		ResourceID: strconv.FormatInt(bizID, 10)}}
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: meta.Create}, BizID: bizID}
 	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	if err != nil {
 		return nil, err
