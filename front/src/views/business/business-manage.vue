@@ -20,10 +20,13 @@ import {
   useRoute,
 } from 'vue-router';
 
+import { useAccountStore } from '@/store/account';
+
 const isShowSideSlider = ref(false);
 
 // use hooks
 const route = useRoute();
+const accountStore = useAccountStore();
 
 // 组件map
 const componentMap = {
@@ -78,7 +81,9 @@ const handleAdd = () => {
     quick-close
   >
     <template #default>
-      <component :is="renderForm"></component>
+      <bk-loading :loading="!accountStore.bizs">
+        <component :is="renderForm" v-if="accountStore.bizs"></component>
+      </bk-loading>
     </template>
   </bk-sideslider>
 </template>

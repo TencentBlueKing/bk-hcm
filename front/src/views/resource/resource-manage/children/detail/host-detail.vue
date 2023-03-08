@@ -216,7 +216,13 @@ const modifyCvmStatus = async (type: string) => {
         <bk-loading
           :loading="loading"
         >
-          <component :is="componentMap[type]" :data="detail" :type="cloudType" :filter="filter"></component>
+          <component
+            v-if="!loading"
+            :is="componentMap[type]"
+            :data="detail"
+            :type="cloudType"
+            :filter="filter"
+          ></component>
         </bk-loading>
       </template>
     </detail-tab>

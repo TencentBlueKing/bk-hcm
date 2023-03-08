@@ -1,7 +1,4 @@
 <script lang="ts" setup>
-import {
-  ref,
-} from 'vue';
 import HostDetail from './children/detail/host-detail.vue';
 import VpcDetail from './children/detail/vpc-detail.vue';
 import SubnetDetail from './children/detail/subnet-detail.vue';
