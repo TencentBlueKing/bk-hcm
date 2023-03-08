@@ -16,6 +16,7 @@ import {
   PropType,
   watch,
   reactive,
+  defineExpose,
 } from 'vue';
 
 import {
@@ -27,7 +28,7 @@ import {
 } from 'vue-router';
 import {
   useResourceStore,
-} from '@/store/resource';
+} from '@/store';
 import useBusiness from '../../hooks/use-business';
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
@@ -129,6 +130,7 @@ watch(
   },
 );
 
+
 const handleSwtichType = async (type: string) => {
   const params = {
     fetchUrl: 'security_groups',
@@ -154,7 +156,14 @@ const handleSwtichType = async (type: string) => {
   SecurityDeleteDialog = DeleteDialog;
 };
 
+// 抛出请求数据的方法，新增成功使用
+const fetchComponentsData = () => {
+  handleSwtichType(activeType.value);
+};
+
 handleSwtichType(activeType.value);
+
+defineExpose({ fetchComponentsData });
 
 const groupColumns = [
   {
@@ -177,16 +186,16 @@ const groupColumns = [
               query: {
                 id: data.id,
                 vendor: data.vendor,
-              }
-            }
+              },
+            };
             // 业务下
             if (route.path.includes('business')) {
               Object.assign(
                 routeInfo,
                 {
                   name: 'securityBusinessDetail',
-                }
-              )
+                },
+              );
             } else {
               Object.assign(
                 routeInfo,
@@ -195,8 +204,8 @@ const groupColumns = [
                   params: {
                     type: 'security',
                   },
-                }
-              )
+                },
+              );
             }
             router.push(routeInfo);
           },
@@ -327,16 +336,16 @@ const gcpColumns = [
             const routeInfo: any = {
               query: {
                 id: data.id,
-              }
-            }
+              },
+            };
             // 业务下
             if (route.path.includes('business')) {
               Object.assign(
                 routeInfo,
                 {
                   name: 'gcpBusinessDetail',
-                }
-              )
+                },
+              );
             } else {
               Object.assign(
                 routeInfo,
@@ -345,8 +354,8 @@ const gcpColumns = [
                   params: {
                     type: 'gcp',
                   },
-                }
-              )
+                },
+              );
             }
             router.push(routeInfo);
           },

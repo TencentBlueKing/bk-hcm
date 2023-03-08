@@ -14,7 +14,9 @@ import RoutingManage from '@/views/resource/resource-manage/children/manage/rout
 import ImageManage from '@/views/resource/resource-manage/children/manage/image-manage.vue';
 import NetworkInterfaceManage from '@/views/resource/resource-manage/children/manage/network-interface-manage.vue';
 // forms
-import EipTcloudForm from './forms/eip/tcloud.vue'
+import EipTcloudForm from './forms/eip/tcloud.vue';
+import subnetForm from './forms/subnet/index.vue';
+import securityForm from './forms/security/index.vue';
 
 import {
   useRoute,
@@ -23,6 +25,7 @@ import {
 import { useAccountStore } from '@/store/account';
 
 const isShowSideSlider = ref(false);
+const componentRef = ref();
 
 // use hooks
 const route = useRoute();
@@ -41,33 +44,46 @@ const componentMap = {
   'network-interface': NetworkInterfaceManage,
 };
 const formMap = {
-  ip: EipTcloudForm
-}
+  ip: EipTcloudForm,
+  subnet: subnetForm,
+  security: securityForm,
+};
 
 const filter = ref({ op: 'and', rules: [] });
 
 const renderComponent = computed(() => {
   return Object.keys(componentMap).reduce((acc, cur) => {
-    if (route.path.includes(cur)) acc = componentMap[cur]
-    return acc
-  }, {})
-})
+    if (route.path.includes(cur)) acc = componentMap[cur];
+    return acc;
+  }, {});
+});
 
 const renderForm = computed(() => {
   return Object.keys(formMap).reduce((acc, cur) => {
-    if (route.path.includes(cur)) acc = formMap[cur]
-    return acc
-  }, {})
-})
+    if (route.path.includes(cur)) acc = formMap[cur];
+    return acc;
+  }, {});
+});
 
 const handleAdd = () => {
-  isShowSideSlider.value = true
-}
+  isShowSideSlider.value = true;
+};
+
+const handleCancel = () => {
+  isShowSideSlider.value = false;
+};
+
+// 新增成功 刷新列表
+const handleSuccess = () => {
+  componentRef.value.fetchComponentsData();
+  handleCancel();
+};
 </script>
 
 <template>
   <section class="business-manage-wrapper">
     <component
+      ref="componentRef"
       :is="renderComponent"
       :filter="filter"
     >
@@ -82,7 +98,7 @@ const handleAdd = () => {
   >
     <template #default>
       <bk-loading :loading="!accountStore.bizs">
-        <component :is="renderForm" v-if="accountStore.bizs"></component>
+        <component :is="renderForm" :filter="filter" @cancel="handleCancel" @success="handleSuccess" v-if="accountStore.bizs"></component>
       </bk-loading>
     </template>
   </bk-sideslider>

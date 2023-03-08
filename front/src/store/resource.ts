@@ -114,5 +114,8 @@ export const useResourceStore = defineStore({
     disassociateEip(vendor: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/vendors/${vendor}/eips/disassociate`, data);
     },
+    getCloudRegion(type: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${type}/regions/list`, data);
+    },
   },
 });

@@ -143,5 +143,6 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
     handlePageChange,
     handlePageSizeChange,
     handleSort,
+    triggerApi,
   };
 };
