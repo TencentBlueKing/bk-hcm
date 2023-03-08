@@ -63,6 +63,8 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genCvmResource(a)
 	case meta.NetworkInterface:
 		return genNetworkInterfaceResource(a)
+	case meta.Eip:
+		return genEipResource(a)
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm auth type: %s", a.Basic.Type)
 	}

@@ -206,3 +206,8 @@ func genRouteResource(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 func genNetworkInterfaceResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return genResourceResource(a)
 }
+
+// genEipResource ...
+func genEipResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genResourceResource(a)
+}
