@@ -16,7 +16,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 
-export default (type: string, isSimpleShow = false) => {
+export default (type: string, isSimpleShow: boolean = false) => {
   const resourceStore = useResourceStore();
   const router = useRouter();
   const route = useRoute();
