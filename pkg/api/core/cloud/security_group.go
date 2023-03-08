@@ -91,12 +91,4 @@ type AzureSecurityGroupExtension struct {
 	FlushConnection *bool `json:"flush_connection"`
 	// ResourceGUID 网络安全组资源的资源GUID。
 	ResourceGUID *string `json:"resource_guid"`
-	// ProvisioningState 资源调配状态。（枚举值：Deleting、Failed、Succeeded、Updating）
-	ProvisioningState string `json:"provisioning_state"`
-	// CloudNetworkInterfaceIDs 关联网络接口ID列表。
-	// e.g: "/subscriptions/${}/resourceGroups/${}/providers/Microsoft.Network/networkInterfaces/${}"}
-	CloudNetworkInterfaceIDs []string `json:"cloud_network_interface_ids"`
-	// CloudSubnetIDs 关联子网ID列表。
-	// e.g: "/subscriptions/${}/resourceGroups/${}/providers/Microsoft.Network/virtualNetworks/${}/subnets/${}"
-	CloudSubnetIDs []string `json:"cloud_subnet_ids"`
 }

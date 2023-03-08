@@ -206,7 +206,10 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 			return nil, err
 		}
 
-		// TODO: add delete relation operation.
+		delFilter = tools.ContainersExpression("security_group_id", delIDs)
+		if err = svc.dao.SGCvmRel().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+			return nil, err
+		}
 
 		return nil, nil
 	})
@@ -349,7 +352,7 @@ func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids [
 		Fields: []string{"id", "extension"},
 		Filter: tools.ContainersExpression("id", ids),
 		Page: &core.BasePage{
-			Start: 1,
+			Start: 0,
 			Limit: core.DefaultMaxPageLimit,
 		},
 	}

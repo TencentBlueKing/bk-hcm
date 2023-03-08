@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
@@ -251,7 +252,6 @@ func diffAzureSecurityGroupSyncAdd(kt *kit.Kit, cloudMap map[string]*SecurityGro
 				Etag:              cloudMap[id].SecurityGroup.Etag,
 				FlushConnection:   cloudMap[id].SecurityGroup.Properties.FlushConnection,
 				ResourceGUID:      cloudMap[id].SecurityGroup.Properties.ResourceGUID,
-				ProvisioningState: string(*cloudMap[id].SecurityGroup.Properties.ProvisioningState),
 			},
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)

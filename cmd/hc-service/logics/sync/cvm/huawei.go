@@ -453,10 +453,6 @@ func isChangeHuaWei(cloud *HuaWeiCvmSync, db *HuaWeiDSCvmSync, kt *kit.Kit,
 		return true
 	}
 
-	if db.Cvm.Extension.Metadata.OsType != cloud.Cvm.Metadata["os_type"] {
-		return true
-	}
-
 	if db.Cvm.Extension.Metadata.SupportAgentList != cloud.Cvm.Metadata["__support_agent_list"] {
 		return true
 	}
@@ -580,7 +576,6 @@ func syncHuaWeiCvmUpdate(kt *kit.Kit, req *SyncHuaWeiCvmOption, updateIDs []stri
 					ImageName:         cloudMap[id].Cvm.Metadata["image_name"],
 					AgencyName:        cloudMap[id].Cvm.Metadata["agency_name"],
 					OSBit:             cloudMap[id].Cvm.Metadata["os_bit"],
-					OsType:            cloudMap[id].Cvm.Metadata["os_type"],
 					SupportAgentList:  cloudMap[id].Cvm.Metadata["__support_agent_list"],
 				},
 				CloudOSVolumeID:          osDiskId,
@@ -706,7 +701,7 @@ func syncHuaWeiCvmAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiCvmOption,
 			CloudSubnetIDs:       subIDs,
 			SubnetIDs:            subnetIDs,
 			CloudImageID:         cloudMap[id].Cvm.Image.Id,
-			OsName:               cloudMap[id].Cvm.OSEXTSRVATTRhost,
+			OsName:               cloudMap[id].Cvm.Metadata["os_type"],
 			Memo:                 cloudMap[id].Cvm.Description,
 			Status:               cloudMap[id].Cvm.Status,
 			PrivateIPv4Addresses: privateIPv4Addresses,
@@ -744,7 +739,6 @@ func syncHuaWeiCvmAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiCvmOption,
 					ImageName:         cloudMap[id].Cvm.Metadata["image_name"],
 					AgencyName:        cloudMap[id].Cvm.Metadata["agency_name"],
 					OSBit:             cloudMap[id].Cvm.Metadata["os_bit"],
-					OsType:            cloudMap[id].Cvm.Metadata["os_type"],
 					SupportAgentList:  cloudMap[id].Cvm.Metadata["__support_agent_list"],
 				},
 				CloudOSVolumeID:          osDiskId,

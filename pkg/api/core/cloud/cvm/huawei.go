@@ -102,8 +102,6 @@ type HuaWeiMetadata struct {
 	AgencyName string `json:"agency_name,omitempty"`
 	// OSBit 操作系统位数，一般取值为“32”或者“64”。
 	OSBit string `json:"os_bit,omitempty"`
-	// OsType 操作系统类型，取值为：Linux、Windows。
-	OsType string `json:"os_type,omitempty"`
 	// SupportAgentList 云服务器是否支持企业主机安全、主机监控。
 	// “hss”：企业主机安全
 	// “ces”：主机监控

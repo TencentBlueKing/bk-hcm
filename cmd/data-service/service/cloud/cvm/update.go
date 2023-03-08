@@ -135,7 +135,7 @@ func listCvmExtension(cts *rest.Contexts, svc *cvmSvc, ids []string) (map[string
 		Fields: []string{"id", "extension"},
 		Filter: tools.ContainersExpression("id", ids),
 		Page: &core.BasePage{
-			Start: 1,
+			Start: 0,
 			Limit: core.DefaultMaxPageLimit,
 		},
 	}

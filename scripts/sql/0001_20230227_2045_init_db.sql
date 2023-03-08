@@ -309,7 +309,7 @@ create table if not exists `gcp_firewall_rule`
 create table if not exists `vpc`
 (
     `id`          varchar(64)  not null,
-    `vendor`      varchar(32)  not null,
+    `vendor`      varchar(16)  not null,
     `account_id`  varchar(64)  not null,
     `cloud_id`    varchar(255) not null,
     `name`        varchar(128) not null,
@@ -333,7 +333,7 @@ create table if not exists `vpc`
 create table if not exists `subnet`
 (
     `id`                   varchar(64)  not null,
-    `vendor`               varchar(32)  not null,
+    `vendor`               varchar(16)  not null,
     `account_id`           varchar(64)  not null,
     `cloud_vpc_id`         varchar(255) not null,
     `cloud_route_table_id` varchar(255)          default '',
@@ -438,13 +438,10 @@ create table if not exists `azure_region`
 ) engine = innodb
   default charset = utf8mb4;
 
--- ----------------------------
--- table structure for tcloud_region
--- ----------------------------
 create table if not exists `tcloud_region`
 (
     `id`          varchar(64) not null,
-    `vendor`      varchar(32) not null,
+    `vendor`      varchar(16) not null,
     `region_id`   varchar(32) not null,
     `region_name` varchar(64) not null,
     `status`      varchar(32)          default '',
@@ -458,13 +455,10 @@ create table if not exists `tcloud_region`
 ) engine = innodb
   default charset = utf8mb4 comment ='云厂商支持的地区列表';
 
--- ----------------------------
--- table structure for aws_region
--- ----------------------------
 create table if not exists `aws_region`
 (
     `id`          varchar(64) not null,
-    `vendor`      varchar(32) not null,
+    `vendor`      varchar(16) not null,
     `region_id`   varchar(32) not null,
     `region_name` varchar(64) not null,
     `status`      varchar(32)          default '',
@@ -479,13 +473,10 @@ create table if not exists `aws_region`
 ) engine = innodb
   default charset = utf8mb4 comment ='云厂商支持的地区列表';
 
--- ----------------------------
--- table structure for gcp_region
--- ----------------------------
 create table if not exists `gcp_region`
 (
     `id`          varchar(64) not null,
-    `vendor`      varchar(32) not null,
+    `vendor`      varchar(16) not null,
     `region_id`   varchar(32) not null,
     `region_name` varchar(64) not null,
     `status`      varchar(32)          default '',
@@ -565,7 +556,7 @@ create table if not exists `zone`
 create table if not exists `route_table`
 (
     `id`           varchar(64)  not null,
-    `vendor`       varchar(32)  not null,
+    `vendor`       varchar(16)  not null,
     `account_id`   varchar(64)  not null,
     `cloud_id`     varchar(255) not null,
     `cloud_vpc_id` varchar(255) not null,
@@ -816,7 +807,7 @@ create table if not exists `network_interface`
 (
     `id`              varchar(64)  not null,
     `account_id`      varchar(64)  not null,
-    `vendor`          varchar(32)  not null default '',
+    `vendor`          varchar(16)  not null default '',
     `name`            varchar(64)  not null,
     `region`          varchar(255) not null default '',
     `zone`            varchar(255) not null default '',

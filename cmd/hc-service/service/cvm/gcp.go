@@ -22,7 +22,9 @@ package cvm
 import (
 	"net/http"
 
+	"hcm/cmd/hc-service/logics/sync/cvm"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/cmd/hc-service/service/sync"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
@@ -49,28 +51,39 @@ func (svc *cvmSvc) StartGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	cvm, err := svc.dataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
+	cvmFromDB, err := svc.dataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		logs.Errorf("request dataservice get tcloud security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	client, err := svc.ad.Gcp(cts.Kit, cvm.AccountID)
+	client, err := svc.ad.Gcp(cts.Kit, cvmFromDB.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &typecvm.GcpStartOption{
-		Zone: cvm.Zone,
-		Name: cvm.Name,
+		Zone: cvmFromDB.Zone,
+		Name: cvmFromDB.Name,
 	}
 	if err = client.StartCvm(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to start gcp cvm failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncGcpCvmOption{
+		AccountID: cvmFromDB.AccountID,
+		Region:    cvmFromDB.Region,
+		Zone:      cvmFromDB.Zone,
+		CloudIDs:  []string{cvmFromDB.CloudID},
+	}
+	_, err = cvm.SyncGcpCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+	if err != nil {
+		logs.Errorf("sync gcp cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -82,28 +95,39 @@ func (svc *cvmSvc) StopGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	cvm, err := svc.dataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
+	cvmFromDB, err := svc.dataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		logs.Errorf("request dataservice get tcloud security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	client, err := svc.ad.Gcp(cts.Kit, cvm.AccountID)
+	client, err := svc.ad.Gcp(cts.Kit, cvmFromDB.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &typecvm.GcpStopOption{
-		Zone: cvm.Zone,
-		Name: cvm.Name,
+		Zone: cvmFromDB.Zone,
+		Name: cvmFromDB.Name,
 	}
 	if err = client.StopCvm(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to stop gcp cvm failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncGcpCvmOption{
+		AccountID: cvmFromDB.AccountID,
+		Region:    cvmFromDB.Region,
+		Zone:      cvmFromDB.Zone,
+		CloudIDs:  []string{cvmFromDB.CloudID},
+	}
+	_, err = cvm.SyncGcpCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+	if err != nil {
+		logs.Errorf("sync gcp cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -115,28 +139,39 @@ func (svc *cvmSvc) RebootGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	cvm, err := svc.dataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
+	cvmFromDB, err := svc.dataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		logs.Errorf("request dataservice get tcloud security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	client, err := svc.ad.Gcp(cts.Kit, cvm.AccountID)
+	client, err := svc.ad.Gcp(cts.Kit, cvmFromDB.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &typecvm.GcpResetOption{
-		Zone: cvm.Zone,
-		Name: cvm.Name,
+		Zone: cvmFromDB.Zone,
+		Name: cvmFromDB.Name,
 	}
 	if err = client.ResetCvm(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to reset gcp cvm failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncGcpCvmOption{
+		AccountID: cvmFromDB.AccountID,
+		Region:    cvmFromDB.Region,
+		Zone:      cvmFromDB.Zone,
+		CloudIDs:  []string{cvmFromDB.CloudID},
+	}
+	_, err = cvm.SyncGcpCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+	if err != nil {
+		logs.Errorf("sync gcp cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }

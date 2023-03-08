@@ -22,13 +22,22 @@ package cvm
 import (
 	"net/http"
 
+	"hcm/cmd/hc-service/logics/sync/cvm"
+	"hcm/cmd/hc-service/logics/sync/disk"
+	"hcm/cmd/hc-service/logics/sync/eip"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/cmd/hc-service/service/sync"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	datadisk "hcm/pkg/api/data-service/cloud/disk"
+	dataeip "hcm/pkg/api/data-service/cloud/eip"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	protodisk "hcm/pkg/api/hc-service/disk"
+	protoeip "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -87,7 +96,17 @@ func (svc *cvmSvc) BatchResetHuaWeiCvmPwd(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncHuaWeiCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	_, err = cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.ad, svc.dataCli)
+	if err != nil {
+		logs.Errorf("sync huawei cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -133,7 +152,17 @@ func (svc *cvmSvc) BatchStartHuaWeiCvm(cts *rest.Contexts) (interface{}, error) 
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncHuaWeiCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	_, err = cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.ad, svc.dataCli)
+	if err != nil {
+		logs.Errorf("sync huawei cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -180,7 +209,17 @@ func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncHuaWeiCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	_, err = cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.ad, svc.dataCli)
+	if err != nil {
+		logs.Errorf("sync huawei cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -227,7 +266,17 @@ func (svc *cvmSvc) BatchRebootHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncHuaWeiCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	_, err = cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.ad, svc.dataCli)
+	if err != nil {
+		logs.Errorf("sync huawei cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -284,7 +333,113 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	// TODO: 添加删除弹性IP 和 卷的逻辑
+	if req.DeletePublicIP {
+		if err = svc.syncCvmRelEip(cts.Kit, req.AccountID, req.Region, req.IDs); err != nil {
+			logs.Errorf("delete cvm success, but delete relation eip failed, err: %v, req: %v, rid: %s", err,
+				req, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+
+	if req.DeleteDisk {
+		if err = svc.syncCvmRelDisk(cts.Kit, req.AccountID, req.Region, req.IDs); err != nil {
+			logs.Errorf("delete cvm success, but delete relation disk failed, err: %v, req: %v, rid: %s", err,
+				req, cts.Kit.Rid)
+			return nil, err
+		}
+	}
 
 	return nil, nil
+}
+
+func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []string) error {
+	listEipRel := &dataproto.EipCvmRelListReq{
+		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
+		Page:   core.DefaultBasePage,
+	}
+	rels, err := svc.dataCli.Global.ListEipCvmRel(kt.Ctx, kt.Header(), listEipRel)
+	if err != nil {
+		logs.Errorf("list eip_cvm_rel from db failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	eipIDs := make([]string, 0, len(rels.Details))
+	for _, one := range rels.Details {
+		eipIDs = append(eipIDs, one.EipID)
+	}
+
+	listEip := &dataeip.EipListReq{
+		Filter: tools.ContainersExpression("id", eipIDs),
+		Page:   core.DefaultBasePage,
+		Fields: []string{"cloud_id"},
+	}
+	eips, err := svc.dataCli.Global.ListEip(kt.Ctx, kt.Header(), listEip)
+	if err != nil {
+		logs.Errorf("list eip from db failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	cloudIDs := make([]string, len(eips.Details))
+	for _, one := range eips.Details {
+		cloudIDs = append(cloudIDs, one.CloudID)
+	}
+
+	req := &protoeip.EipSyncReq{
+		AccountID: accountID,
+		Region:    region,
+		CloudIDs:  cloudIDs,
+	}
+	_, err = eip.SyncHuaWeiEip(kt, req, svc.ad, svc.dataCli)
+	if err != nil {
+		logs.Errorf("sync huawei eip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs []string) error {
+	listEipRel := &dataproto.DiskCvmRelListReq{
+		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
+		Page:   core.DefaultBasePage,
+	}
+	rels, err := svc.dataCli.Global.ListDiskCvmRel(kt.Ctx, kt.Header(), listEipRel)
+	if err != nil {
+		logs.Errorf("list disk_cvm_rel from db failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	diskIDs := make([]string, 0, len(rels.Details))
+	for _, one := range rels.Details {
+		diskIDs = append(diskIDs, one.DiskID)
+	}
+
+	listEip := &datadisk.DiskListReq{
+		Filter: tools.ContainersExpression("id", diskIDs),
+		Page:   core.DefaultBasePage,
+		Fields: []string{"cloud_id"},
+	}
+	disks, err := svc.dataCli.Global.ListDisk(kt.Ctx, kt.Header(), listEip)
+	if err != nil {
+		logs.Errorf("list disk from db failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	cloudIDs := make([]string, len(disks.Details))
+	for _, one := range disks.Details {
+		cloudIDs = append(cloudIDs, one.CloudID)
+	}
+
+	req := &protodisk.DiskSyncReq{
+		AccountID: accountID,
+		Region:    region,
+		CloudIDs:  cloudIDs,
+	}
+	_, err = disk.SyncHuaWeiDisk(kt, req, svc.ad, svc.dataCli)
+	if err != nil {
+		logs.Errorf("sync huawei disk failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	return nil
 }

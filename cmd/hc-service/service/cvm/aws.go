@@ -22,7 +22,9 @@ package cvm
 import (
 	"net/http"
 
+	"hcm/cmd/hc-service/logics/sync/cvm"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/cmd/hc-service/service/sync"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -85,7 +87,17 @@ func (svc *cvmSvc) BatchStartAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncAwsCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	_, err = cvm.SyncAwsCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+	if err != nil {
+		logs.Errorf("sync aws cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -133,7 +145,17 @@ func (svc *cvmSvc) BatchStopAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncAwsCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	_, err = cvm.SyncAwsCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+	if err != nil {
+		logs.Errorf("sync aws cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -179,7 +201,17 @@ func (svc *cvmSvc) BatchRebootAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncAwsCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	_, err = cvm.SyncAwsCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+	if err != nil {
+		logs.Errorf("sync aws cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }

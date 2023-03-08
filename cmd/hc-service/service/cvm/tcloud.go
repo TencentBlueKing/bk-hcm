@@ -22,7 +22,9 @@ package cvm
 import (
 	"net/http"
 
+	"hcm/cmd/hc-service/logics/sync/cvm"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/cmd/hc-service/service/sync"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -89,7 +91,16 @@ func (svc *cvmSvc) BatchResetTCloudCvmPwd(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncTCloudCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	if err = cvm.SyncTCloudCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt); err != nil {
+		logs.Errorf("sync tcloud cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -135,7 +146,16 @@ func (svc *cvmSvc) BatchStartTCloudCvm(cts *rest.Contexts) (interface{}, error) 
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncTCloudCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	if err = cvm.SyncTCloudCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt); err != nil {
+		logs.Errorf("sync tcloud cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -183,7 +203,16 @@ func (svc *cvmSvc) BatchStopTCloudCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncTCloudCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	if err = cvm.SyncTCloudCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt); err != nil {
+		logs.Errorf("sync tcloud cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -230,7 +259,16 @@ func (svc *cvmSvc) BatchRebootTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncTCloudCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudIDs,
+	}
+	if err = cvm.SyncTCloudCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt); err != nil {
+		logs.Errorf("sync tcloud cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }

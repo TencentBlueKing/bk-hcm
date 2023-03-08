@@ -24,14 +24,42 @@ import (
 
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/dal/dao"
+	diskrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
+	eiprel "hcm/pkg/dal/dao/cloud/eip-cvm-rel"
+	nirel "hcm/pkg/dal/dao/cloud/network-interface-cvm-rel"
 	"hcm/pkg/rest"
 )
 
 // InitService initial the security group service
 func InitService(cap *capability.Capability) {
 	svc := &cvmSvc{
+		Set: cap.Dao,
 		dao: cap.Dao,
 	}
+
+	disk := &diskrel.DiskCvmRelDao{}
+	diskRelDao := svc.GetObjectDao(disk.Name())
+	if diskRelDao == nil {
+		disk.ObjectDaoManager = new(dao.ObjectDaoManager)
+		svc.RegisterObjectDao(disk)
+	}
+	svc.diskCvmRelDao = svc.GetObjectDao(disk.Name()).(*diskrel.DiskCvmRelDao)
+
+	eip := &eiprel.EipCvmRelDao{}
+	eipRel := svc.GetObjectDao(eip.Name())
+	if eipRel == nil {
+		eip.ObjectDaoManager = new(dao.ObjectDaoManager)
+		svc.RegisterObjectDao(eip)
+	}
+	svc.eipCvmRelDao = svc.GetObjectDao(eip.Name()).(*eiprel.EipCvmRelDao)
+
+	ni := &nirel.NetworkCvmRelDao{}
+	niRel := svc.GetObjectDao(ni.Name())
+	if niRel == nil {
+		ni.ObjectDaoManager = new(dao.ObjectDaoManager)
+		svc.RegisterObjectDao(ni)
+	}
+	svc.niCvmRelDao = svc.GetObjectDao(ni.Name()).(*nirel.NetworkCvmRelDao)
 
 	h := rest.NewHandler()
 
@@ -47,5 +75,9 @@ func InitService(cap *capability.Capability) {
 }
 
 type cvmSvc struct {
-	dao dao.Set
+	dao.Set
+	dao           dao.Set
+	diskCvmRelDao *diskrel.DiskCvmRelDao
+	eipCvmRelDao  *eiprel.EipCvmRelDao
+	niCvmRelDao   *nirel.NetworkCvmRelDao
 }

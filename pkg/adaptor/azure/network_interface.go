@@ -214,7 +214,7 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 
 			getIpConfigSubnetData(item, tmpIP, v)
 
-			if item.Properties.PrivateIPAddressVersion == converter.ValToPtr(armnetwork.IPVersionIPv4) {
+			if *item.Properties.PrivateIPAddressVersion == armnetwork.IPVersionIPv4 {
 				v.PrivateIPv4 = append(v.PrivateIPv4, converter.PtrToVal(tmpIP.Properties.PrivateIPAddress))
 			} else {
 				v.PrivateIPv6 = append(v.PrivateIPv6, converter.PtrToVal(tmpIP.Properties.PrivateIPAddress))

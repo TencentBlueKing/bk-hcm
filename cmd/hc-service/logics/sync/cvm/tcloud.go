@@ -495,8 +495,8 @@ func addTCloudCvm(kt *kit.Kit, dataCli *dataservice.Client, tcloud *tcloud.TClou
 			PublicIPv4Addresses:  converter.PtrToSlice(cvmFromCloud.PublicIpAddresses),
 			MachineType:          *cvmFromCloud.InstanceType,
 			// 该字段云上没有
-			CloudCreatedTime:  "",
-			CloudLaunchedTime: *cvmFromCloud.ExpiredTime,
+			CloudCreatedTime:  *cvmFromCloud.CreatedTime,
+			CloudLaunchedTime: "",
 			CloudExpiredTime:  *cvmFromCloud.ExpiredTime,
 			Extension: &corecvm.TCloudCvmExtension{
 				Placement: &corecvm.TCloudPlacement{

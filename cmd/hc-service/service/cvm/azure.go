@@ -22,7 +22,9 @@ package cvm
 import (
 	"net/http"
 
+	"hcm/cmd/hc-service/logics/sync/cvm"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/cmd/hc-service/service/sync"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
@@ -50,28 +52,38 @@ func (svc *cvmSvc) StartAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	cvm, err := svc.dataCli.Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
+	cvmFromDB, err := svc.dataCli.Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		logs.Errorf("request dataservice get tcloud security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	client, err := svc.ad.Azure(cts.Kit, cvm.AccountID)
+	client, err := svc.ad.Azure(cts.Kit, cvmFromDB.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &typecvm.AzureStartOption{
-		ResourceGroupName: cvm.Extension.ResourceGroupName,
-		Name:              cvm.Name,
+		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
+		Name:              cvmFromDB.Name,
 	}
 	if err = client.StartCvm(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to start azure cvm failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncAzureCvmOption{
+		AccountID:         cvmFromDB.AccountID,
+		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
+		CloudIDs:          []string{cvmFromDB.CloudID},
+	}
+	_, err = cvm.SyncAzureCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+	if err != nil {
+		logs.Errorf("sync azure cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -92,21 +104,21 @@ func (svc *cvmSvc) StopAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cvm, err := svc.dataCli.Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
+	cvmFromDB, err := svc.dataCli.Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		logs.Errorf("request dataservice get tcloud security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	client, err := svc.ad.Azure(cts.Kit, cvm.AccountID)
+	client, err := svc.ad.Azure(cts.Kit, cvmFromDB.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &typecvm.AzureStopOption{
-		ResourceGroupName: cvm.Extension.ResourceGroupName,
-		Name:              cvm.Name,
+		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
+		Name:              cvmFromDB.Name,
 		SkipShutdown:      req.SkipShutdown,
 	}
 	if err = client.StopCvm(cts.Kit, opt); err != nil {
@@ -114,7 +126,17 @@ func (svc *cvmSvc) StopAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncAzureCvmOption{
+		AccountID:         cvmFromDB.AccountID,
+		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
+		CloudIDs:          []string{cvmFromDB.CloudID},
+	}
+	_, err = cvm.SyncAzureCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+	if err != nil {
+		logs.Errorf("sync azure cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
@@ -126,28 +148,38 @@ func (svc *cvmSvc) RebootAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	cvm, err := svc.dataCli.Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
+	cvmFromDB, err := svc.dataCli.Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
 	if err != nil {
 		logs.Errorf("request dataservice get tcloud security group failed, err: %v, id: %s, rid: %s", err, id,
 			cts.Kit.Rid)
 		return nil, err
 	}
 
-	client, err := svc.ad.Azure(cts.Kit, cvm.AccountID)
+	client, err := svc.ad.Azure(cts.Kit, cvmFromDB.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	opt := &typecvm.AzureRebootOption{
-		ResourceGroupName: cvm.Extension.ResourceGroupName,
-		Name:              cvm.Name,
+		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
+		Name:              cvmFromDB.Name,
 	}
 	if err = client.RebootCvm(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to reboot azure cvm failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 
-	// TODO: 操作完主机后需调用主机同步接口更新该操作相关数据。
+	sync.SleepBeforeSync()
+	syncOpt := &cvm.SyncAzureCvmOption{
+		AccountID:         cvmFromDB.AccountID,
+		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
+		CloudIDs:          []string{cvmFromDB.CloudID},
+	}
+	_, err = cvm.SyncAzureCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+	if err != nil {
+		logs.Errorf("sync azure cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
 
 	return nil, nil
 }
