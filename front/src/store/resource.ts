@@ -72,7 +72,7 @@ export const useResourceStore = defineStore({
       return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}subnets/${id}/ips/count`);
     },
     getEipListByCvmId(vendor: string, id: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/eips/cvm/${id}`);
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/eips/cvms/${id}`);
     },
     getDiskListByCvmId(vendor: string, id: string) {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/disks/cvms/${id}`);
