@@ -118,7 +118,7 @@ func (r *tcloudRouteDao) batchCreateAudit(kt *kit.Kit, tx *sqlx.Tx, routes []rou
 		rtIDs = append(rtIDs, id)
 	}
 
-	idRtMap, err := listRouteTable(kt, r.orm, rtIDs)
+	idRtMap, err := listRouteTable(kt, r.orm, tx, rtIDs)
 	if err != nil {
 		return err
 	}

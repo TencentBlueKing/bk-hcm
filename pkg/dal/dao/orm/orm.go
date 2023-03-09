@@ -52,6 +52,7 @@ type DoOrm interface {
 
 // DoOrmWithTransaction defines all the orm method with transaction.
 type DoOrmWithTransaction interface {
+	Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error
 	Delete(ctx context.Context, expr string, args map[string]interface{}) (int64, error)
 	Update(ctx context.Context, expr string, args map[string]interface{}) (int64, error)
 

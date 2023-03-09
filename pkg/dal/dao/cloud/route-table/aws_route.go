@@ -118,7 +118,7 @@ func (r *awsRouteDao) batchCreateAudit(kt *kit.Kit, tx *sqlx.Tx, routes []routet
 		rtIDs = append(rtIDs, id)
 	}
 
-	idRtMap, err := listRouteTable(kt, r.orm, rtIDs)
+	idRtMap, err := listRouteTable(kt, r.orm, tx, rtIDs)
 	if err != nil {
 		return err
 	}

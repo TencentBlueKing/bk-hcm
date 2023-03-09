@@ -249,12 +249,14 @@ func (r *routeTableDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *
 }
 
 // TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
-func listRouteTable(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]routetable.RouteTableTable, error) {
+func listRouteTable(kt *kit.Kit, orm orm.Interface, tx *sqlx.Tx, ids []string) (map[string]routetable.RouteTableTable,
+	error) {
+
 	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, routetable.RouteTableColumns.FieldsNamedExpr(nil),
 		table.RouteTableTable)
 
 	rts := make([]routetable.RouteTableTable, 0)
-	if err := orm.Do().Select(kt.Ctx, &rts, sql, map[string]interface{}{"ids": ids}); err != nil {
+	if err := orm.Txn(tx).Select(kt.Ctx, &rts, sql, map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err
 	}
 
