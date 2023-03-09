@@ -34,8 +34,13 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) CreateDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) (*armcompute.Disk, error) {
-	return a.createDisk(kt, opt)
+func (a *Azure) CreateDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) (*string, error) {
+	resp, err := a.createDisk(kt, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.ID, nil
 }
 
 func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) (*armcompute.Disk, error) {

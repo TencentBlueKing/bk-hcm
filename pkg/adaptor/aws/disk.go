@@ -20,20 +20,32 @@
 package aws
 
 import (
-	"github.com/aws/aws-sdk-go/service/ec2"
-
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // CreateDisk 创建云硬盘
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateVolume.html
 // SDK: https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/#EC2.CreateVolumeWithContext
-func (a *Aws) CreateDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*ec2.Volume, error) {
-	return a.createDisk(kt, opt)
+func (a *Aws) CreateDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*string, error) {
+	resp, err := a.createDisk(kt, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	respPoller := poller.Poller[*Aws, []*ec2.Volume]{Handler: new(createDiskPollingHandler)}
+	err = respPoller.PollUntilDone(a, kt, []*string{resp.VolumeId})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.VolumeId, nil
 }
 
 func (a *Aws) createDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*ec2.Volume, error) {
@@ -148,3 +160,15 @@ func (a *Aws) DetachDisk(kt *kit.Kit, opt *disk.AwsDiskDetachOption) error {
 	_, err = client.DetachVolumeWithContext(kt.Ctx, input)
 	return err
 }
+
+type createDiskPollingHandler struct{}
+
+func (h *createDiskPollingHandler) Done(pollResult []*ec2.Volume) bool {
+	return true
+}
+
+func (h *createDiskPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Volume, error) {
+	return nil, nil
+}
+
+var _ poller.PollingHandler[*Aws, []*ec2.Volume] = new(createDiskPollingHandler)

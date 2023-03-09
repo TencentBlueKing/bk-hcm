@@ -20,6 +20,9 @@
 package gcp
 
 import (
+	"strconv"
+
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -30,8 +33,21 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/insert
-func (g *Gcp) CreateDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.Operation, error) {
-	return g.createDisk(kt, opt)
+func (g *Gcp) CreateDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*string, error) {
+	resp, err := g.createDisk(kt, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	targetId := strconv.FormatUint(resp.TargetId, 10)
+
+	respPoller := poller.Poller[*Gcp, []*compute.Disk]{Handler: new(createDiskPollingHandler)}
+	err = respPoller.PollUntilDone(g, kt, []*string{&targetId})
+	if err != nil {
+		return nil, err
+	}
+
+	return &targetId, nil
 }
 
 func (g *Gcp) createDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.Operation, error) {
@@ -154,3 +170,15 @@ func (g *Gcp) DetachDisk(kt *kit.Kit, opt *disk.GcpDiskDetachOption) error {
 		Do()
 	return err
 }
+
+type createDiskPollingHandler struct{}
+
+func (h *createDiskPollingHandler) Done(pollResult []*compute.Disk) bool {
+	return true
+}
+
+func (h *createDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]*compute.Disk, error) {
+	return nil, nil
+}
+
+var _ poller.PollingHandler[*Gcp, []*compute.Disk] = new(createDiskPollingHandler)

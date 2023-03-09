@@ -22,6 +22,7 @@ package tcloud
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -33,8 +34,19 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://cloud.tencent.com/document/api/362/16312
-func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs.CreateDisksResponse, error) {
-	return t.createDisk(kt, opt)
+func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) ([]*string, error) {
+	resp, err := t.createDisk(kt, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	respPoller := poller.Poller[*TCloud, []*cbs.Disk]{Handler: new(createDiskPollingHandler)}
+	err = respPoller.PollUntilDone(t, kt, resp.Response.DiskIdSet)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Response.DiskIdSet, nil
 }
 
 func (t *TCloud) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs.CreateDisksResponse, error) {
@@ -178,3 +190,15 @@ func (t *TCloud) DetachDisk(kt *kit.Kit, opt *disk.TCloudDiskDetachOption) error
 
 	return nil
 }
+
+type createDiskPollingHandler struct{}
+
+func (h *createDiskPollingHandler) Done(pollResult []*cbs.Disk) bool {
+	return true
+}
+
+func (h *createDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
+	return nil, nil
+}
+
+var _ poller.PollingHandler[*TCloud, []*cbs.Disk] = new(createDiskPollingHandler)

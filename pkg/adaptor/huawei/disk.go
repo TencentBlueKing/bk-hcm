@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -27,12 +28,24 @@ import (
 	"hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
 // CreateDisk 创建云硬盘
 // reference: https://support.huaweicloud.com/api-evs/evs_04_2003.html
-func (h *HuaWei) CreateDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {
-	return h.createDisk(opt)
+func (h *HuaWei) CreateDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption) ([]string, error) {
+	resp, err := h.createDisk(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	respPoller := poller.Poller[*HuaWei, []model.VolumeDetail]{Handler: new(createDiskPollingHandler)}
+	err = respPoller.PollUntilDone(h, kt, common.StringPtrs(*resp.VolumeIds))
+	if err != nil {
+		return nil, err
+	}
+
+	return *resp.VolumeIds, nil
 }
 
 func (h *HuaWei) createDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolumeResponse, error) {
@@ -175,3 +188,19 @@ func (h *HuaWei) DetachDisk(kt *kit.Kit, opt *disk.HuaWeiDiskDetachOption) error
 
 	return nil
 }
+
+type createDiskPollingHandler struct{}
+
+func (h *createDiskPollingHandler) Done(pollResult []model.VolumeDetail) bool {
+	return true
+}
+
+func (h *createDiskPollingHandler) Poll(
+	client *HuaWei,
+	kt *kit.Kit,
+	cloudIDs []*string,
+) ([]model.VolumeDetail, error) {
+	return nil, nil
+}
+
+var _ poller.PollingHandler[*HuaWei, []model.VolumeDetail] = new(createDiskPollingHandler)

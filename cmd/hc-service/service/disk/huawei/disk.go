@@ -69,7 +69,7 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
-	client.CreateDisk(opt)
+	client.CreateDisk(cts.Kit, opt)
 
 	// TODO save to data-service
 

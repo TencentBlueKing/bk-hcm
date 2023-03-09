@@ -324,11 +324,17 @@ func batchCreateDiskExt[T dataproto.DiskExtensionCreateReq](
 			if err != nil {
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
+
+			bkBizID := diskReq.BkBizID
+			if bkBizID == 0 {
+				bkBizID = constant.UnassignedBiz
+			}
+
 			disks[indx] = &tablecloud.DiskModel{
 				Vendor:    string(vendor),
 				AccountID: diskReq.AccountID,
 				CloudID:   diskReq.CloudID,
-				BkBizID:   constant.UnassignedBiz,
+				BkBizID:   bkBizID,
 				Name:      diskReq.Name,
 				Region:    diskReq.Region,
 				Zone:      diskReq.Zone,
