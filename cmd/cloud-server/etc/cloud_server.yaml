@@ -99,3 +99,12 @@ bkHcmUrl: "http://hcm.bk.com"
 
 # use comma ”,“ separated when multiple manager
 platformManagers: "admin"
+
+# cloudResource cloud resource relation settings.
+cloudResource:
+  # sync cloud resource sync relation settings.
+  sync:
+    # enable if enable cloud resource sync.
+    enable: true
+    # syncIntervalMin cloud resource sync interval, unit: min.
+    syncIntervalMin: 360

@@ -125,6 +125,11 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		esbClient:  esbClient,
 	}
 
+	if cc.CloudServer().CloudResource.Sync.Enable {
+		interval := time.Duration(cc.CloudServer().CloudResource.Sync.SyncIntervalMin) * time.Minute
+		go sync.CloudResourceSync(interval, sd, apiClientSet)
+	}
+
 	return svr, nil
 }
 
@@ -212,7 +217,6 @@ func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Cont
 	vpc.InitVpcService(c)
 	disk.InitDiskService(c)
 	subnet.InitSubnetService(c)
-	sync.InitSyncService(c)
 	image.InitImageService(c)
 	routetable.InitRouteTableService(c)
 	cvm.InitCvmService(c)
@@ -224,8 +228,6 @@ func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Cont
 	application.InitApplicationService(c, bkHcmUrl, strings.Split(platformManagers, ","))
 	audit.InitService(c)
 	networkinterface.InitNetworkInterfaceService(c)
-
-	// go sync.SyncTiming(c.ApiClient)
 
 	return restful.NewContainer().Add(c.WebService)
 }

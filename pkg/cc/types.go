@@ -548,3 +548,31 @@ func (c Crypto) validate() error {
 
 	return nil
 }
+
+// CloudResource 云资源配置
+type CloudResource struct {
+	Sync CloudResourceSync `yaml:"sync"`
+}
+
+func (c CloudResource) validate() error {
+	if err := c.Sync.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CloudResourceSync 云资源同步配置
+type CloudResourceSync struct {
+	Enable          bool   `yaml:"enable"`
+	SyncIntervalMin uint64 `yaml:"syncIntervalMin"`
+}
+
+func (c CloudResourceSync) validate() error {
+	// TODO: 确认最新同步时间是多长
+	if c.SyncIntervalMin < 3 {
+		return errors.New("syncIntervalMin should >= 3")
+	}
+
+	return nil
+}
