@@ -16,6 +16,7 @@ import {
 } from '@/common/constant';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import AccountSelector from '@/components/account-selector/index.vue';
+import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
 import {
   useI18n,
 } from 'vue-i18n';
@@ -29,6 +30,7 @@ import {
 export default defineComponent({
   components: {
     StepDialog,
+    AccountSelector,
   },
 
   props: {
@@ -45,15 +47,6 @@ export default defineComponent({
       type: Array,
       default() {
         return [];
-      },
-    },
-    pagination: {
-      type: Object,
-    },
-    isLoading: {
-      type: Boolean,
-      default() {
-        return false;
       },
     },
   },
@@ -82,6 +75,7 @@ export default defineComponent({
     const isBingdingVPC = ref(false);
     const hasBindVPC = ref(false);
     const disableNext = ref(true);
+    const vpcFilter: any = ref({ filter: { op: 'and', rules: [] } });
     const resourceTypes = ref([
       'host',
       'vpc',
@@ -99,6 +93,10 @@ export default defineComponent({
       {
         label: 'ID',
         field: 'id',
+      },
+      {
+        label: '账号 ID',
+        field: 'account_id',
       },
       {
         label: '资源 ID',
@@ -258,6 +256,7 @@ export default defineComponent({
       }
     };
 
+
     const validateCloudArea = () => {
       let hasError = false;
       Object.values(validateMap.value).forEach((validate) => {
@@ -333,9 +332,11 @@ export default defineComponent({
           getCloudAreas();
           getBusinessList();
           // 判断是否需要绑定云区域
-          if (props.data.every((item: any) => item.bk_cloud_id > -1)) {
-            disableNext.value = false;
-            hasBindVPC.value = true;
+          if (!props.chooseResourceType) {
+            if (props.data.every((item: any) => item.bk_cloud_id > -1)) {
+              disableNext.value = false;
+              hasBindVPC.value = true;
+            }
           }
         }
       },
@@ -357,13 +358,29 @@ export default defineComponent({
       },
     );
 
-    const handlePageSizeChange = (value: any) => {
-      emit('handlePageSizeChange', value);
-    };
+    // 根据选择账号获取vpc列表
+    watch(
+      accountId,
+      (value) => {
+        Object.assign(vpcFilter.value, { filter: {
+          op: 'and',
+          rules: [{
+            field: 'account_id',
+            op: 'eq',
+            value,
+          }] } });
+      },
+    );
 
-    const handlePageChange = (value: any) => {
-      emit('handlePageChange', value);
-    };
+
+    const {
+      datas,
+      isLoading,
+      pagination,
+      handlePageSizeChange,
+      handlePageChange,
+      // handleChangeData,
+    } = useQueryList(vpcFilter.value, 'vpcs');
 
     return {
       business,
@@ -385,6 +402,9 @@ export default defineComponent({
       handleBindVPC,
       handlePageSizeChange,
       handlePageChange,
+      pagination,
+      isLoading,
+      datas,
     };
   },
 
@@ -397,6 +417,10 @@ export default defineComponent({
         component: () => <>
         {this.chooseResourceType
           ? <bk-loading loading={this.isLoading}>
+        <div class="flex-row align-items-center mr20">
+          <span class="pr10">{this.t('云账号')}</span>
+          <AccountSelector v-model={this.accountId}></AccountSelector>
+        </div>
         <bk-table
           class="mt20"
           row-hover="auto"
@@ -405,7 +429,7 @@ export default defineComponent({
           onPageLimitChange={this.handlePageSizeChange}
           onPageValueChange={this.handlePageChange}
           columns={this.VPCColumns}
-          data={this.data}
+          data={this.chooseResourceType ? this.datas : this.data}
         />
         </bk-loading>
           : <bk-table
@@ -443,14 +467,6 @@ export default defineComponent({
         isConfirmLoading: this.isConfirmLoading,
         component: () => <>
         <div class="flex-row align-items-center">
-          {this.chooseResourceType
-            ?  <>
-            <div class="flex-row align-items-center mr20">
-              <span class="pr10">{this.t('云账号')}</span>
-              <AccountSelector v-model={this.accountId}></AccountSelector>
-            </div>
-            </>
-            : ''}
           <section class="resource-head">
             { this.t('目标业务') }
             <bk-select
@@ -507,6 +523,7 @@ export default defineComponent({
       <step-dialog
         title={this.title}
         isShow={this.isShow}
+        dialogHeight={this.chooseResourceType ? '800' : '720'}
         steps={steps}
         onConfirm={this.handleConfirm}
         onCancel={this.handleClose}

@@ -48,6 +48,7 @@ defineExpose({
     v-model="selectedValue"
     filterable
     @scroll-end="getAccoutList"
+    :loading="loading"
   >
     <bk-option
       v-for="(item, index) in accountList"

@@ -13,7 +13,6 @@ import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
-import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
 
 import {
   RESOURCE_TYPES,
@@ -115,21 +114,6 @@ watch(
   },
 );
 
-const {
-  datas,
-  isLoading,
-  pagination,
-  handlePageSizeChange,
-  handlePageChange,
-} = useQueryList({ filter: { op: 'and', rules: [] } }, 'vpcs');
-
-const handleVpcPageChange = (value: any) => {
-  handlePageChange(value);
-};
-
-const handleVpcPageSizeChange = (value: any) => {
-  handlePageSizeChange(value);
-};
 
 </script>
 
@@ -139,7 +123,6 @@ const handleVpcPageSizeChange = (value: any) => {
       <bk-button
         theme="primary"
         class="ml10"
-        :disabled="isLoading"
         @click="handleDistribution"
       >
         {{ t('快速分配') }}
@@ -182,11 +165,7 @@ const handleVpcPageSizeChange = (value: any) => {
     v-model:is-show="isShowDistribution"
     :choose-resource-type="true"
     :title="t('快速分配')"
-    :data="datas"
-    :pagination="pagination"
-    :is-loading="isLoading"
-    @handlePageSizeChange="handleVpcPageSizeChange"
-    @handlePageChange="handleVpcPageChange"
+    :data="[]"
   />
 </template>
 

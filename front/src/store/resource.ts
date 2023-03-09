@@ -9,11 +9,10 @@ const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const getBusinessApiPath = () => {
   const store = useAccountStore();
   if (location.href.includes('business')) {
-    return `bizs/${store.bizs}/`
-  } else {
-    return ''
+    return `bizs/${store.bizs}/`;
   }
-}
+  return '';
+};
 
 export const useResourceStore = defineStore({
   id: 'resourceStore',
