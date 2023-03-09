@@ -106,12 +106,12 @@ export default defineComponent({
     const logout = () => {
       deleteCookie('bk_token');
       deleteCookie('bk_ticket');
-      const cUrl = window.location.href;
-      if (window.PROJECT_CONFIG.LOGIN_FULL) {
-        window.location.href = `${window.LOGIN_FULL}?c_url=${cUrl}`;
-      } else {
-        window.location.href = `${window.PROJECT_CONFIG.BK_COMPONENT_API_URL || ''}/console/accounts/logout/`;
-      }
+      window.location.href = `${window.PROJECT_CONFIG.BK_LOGIN_URL}/?is_from_logout=1&c_url=${window.location.href}`;
+      // if (window.PROJECT_CONFIG.LOGIN_FULL) {
+      //   window.location.href = `${window.LOGIN_FULL}?c_url=${cUrl}`;
+      // } else {
+      //   window.location.href = `${window.PROJECT_CONFIG.BK_COMPONENT_API_URL || ''}/console/accounts/logout/`;
+      // }
     };
 
     // 获取业务列表

@@ -619,7 +619,13 @@ export default defineComponent({
 
     // 处理失焦
     const handleblur = async (val: boolean, key: string) => {
-      console.log('key', key, projectModel[key].length);
+      if (!projectModel.managers.length) {
+        Message({
+          message: t('请选择负责人'),
+          theme: 'error',
+        });
+        return;
+      }
       handleEditStatus(val, key);     // 未通过检验前状态为编辑态
       await formRef.value?.validate();
       if (projectModel[key].length) {
