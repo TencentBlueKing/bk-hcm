@@ -46,6 +46,7 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("List", "POST", "/accounts/list", svc.List)
 	h.Add("Get", "GET", "/accounts/{account_id}", svc.Get)
 	h.Add("Update", "PATCH", "/accounts/{account_id}", svc.Update)
+	h.Add("Sync", "POST", "/accounts/{account_id}/sync", svc.Sync)
 
 	// Rel
 	h.Add("ListByBkBizID", "GET", "/accounts/bizs/{bk_biz_id}", svc.ListByBkBizID)

@@ -81,9 +81,9 @@ type GcpVpcCreateExt struct {
 
 // AzureVpcCreateExt defines azure vpc extensional info.
 type AzureVpcCreateExt struct {
-	ResourceGroup string      `json:"resource_group" validate:"required"`
-	DNSServers    []string    `json:"dns_servers" validate:"omitempty"`
-	Cidr          []AzureCidr `json:"cidr" validate:"required"`
+	ResourceGroupName string      `json:"resource_group_name" validate:"required"`
+	DNSServers        []string    `json:"dns_servers" validate:"omitempty"`
+	Cidr              []AzureCidr `json:"cidr" validate:"required"`
 }
 
 // HuaWeiVpcCreateExt defines huawei vpc extensional info.

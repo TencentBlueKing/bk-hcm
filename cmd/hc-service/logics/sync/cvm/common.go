@@ -42,6 +42,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 )
 
 // GetHcCvmDatas get cvm datas from hc
@@ -149,6 +150,7 @@ func queryVpcIDBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLink str
 func querySubnetIDsBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLinks []string) (
 	[]string, error) {
 
+	unique := slice.Unique(selfLinks)
 	req := &core.ListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
@@ -156,7 +158,7 @@ func querySubnetIDsBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLink
 				&filter.AtomRule{
 					Field: "extension.self_link",
 					Op:    filter.JSONIn.Factory(),
-					Value: selfLinks,
+					Value: unique,
 				},
 			},
 		},
@@ -169,8 +171,10 @@ func querySubnetIDsBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLink
 		return nil, err
 	}
 
-	if len(subnetResult.Details) != 1 {
-		return nil, errf.Newf(errf.RecordNotFound, "subnet: %v not found", selfLinks)
+	if len(subnetResult.Details) != len(unique) {
+		logs.Errorf("list subnet but some subnet not found, selfLinks: %v, count: %d, rid: %s", unique,
+			len(subnetResult.Details), kt.Rid)
+		return nil, errf.Newf(errf.RecordNotFound, "some subnet not found")
 	}
 
 	subnetIDs := make([]string, 0)
@@ -183,8 +187,9 @@ func querySubnetIDsBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLink
 func querySubnetIDsByCloudID(kt *kit.Kit, dataCli *dataservice.Client, subnetCloudIDs []string) (
 	[]string, error) {
 
+	unique := slice.Unique(subnetCloudIDs)
 	req := &core.ListReq{
-		Filter: tools.ContainersExpression("cloud_id", subnetCloudIDs),
+		Filter: tools.ContainersExpression("cloud_id", unique),
 		Page:   core.DefaultBasePage,
 		Fields: []string{"id"},
 	}
@@ -194,8 +199,10 @@ func querySubnetIDsByCloudID(kt *kit.Kit, dataCli *dataservice.Client, subnetClo
 		return nil, err
 	}
 
-	if len(subnetResult.Details) != 1 {
-		return nil, errf.Newf(errf.RecordNotFound, "subnet: %v not found", subnetCloudIDs)
+	if len(subnetResult.Details) != len(unique) {
+		logs.Errorf("list subnet but some subnet not found, cloudIDs: %v, count: %d, rid: %s", unique,
+			len(subnetResult.Details), kt.Rid)
+		return nil, errf.Newf(errf.RecordNotFound, "some subnet not found")
 	}
 
 	subnetIDs := make([]string, 0)

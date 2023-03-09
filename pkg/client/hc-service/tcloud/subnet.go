@@ -24,6 +24,7 @@ import (
 	"net/http"
 
 	hcservice "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -85,7 +86,7 @@ func (v *SubnetClient) Delete(ctx context.Context, h http.Header, id string) err
 }
 
 // SyncSubnet sync tcloud subnet.
-func (v *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *hcservice.TCloudResourceSyncReq) error {
+func (v *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *sync.TCloudSyncReq) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Post().

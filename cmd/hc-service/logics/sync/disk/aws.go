@@ -25,7 +25,6 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
@@ -127,7 +126,7 @@ func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 	for _, id := range addCloudIDs {
 		disk := &dataproto.DiskExtCreateReq[dataproto.AwsDiskExtensionCreateReq]{
 			AccountID: req.AccountID,
-			Name:      constant.DiskDefaultName,
+			Name:      "todo",
 			CloudID:   id,
 			Region:    req.Region,
 			Zone:      *cloudMap[id].Disk.AvailabilityZone,

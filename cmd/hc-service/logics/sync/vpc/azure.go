@@ -67,6 +67,12 @@ func AzureVpcSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq,
 		return nil, err
 	}
 
+	if len(list.Details) == 0 && len(resourceDBMap) == 0 {
+		return &hcservice.ResourceSyncResult{
+			TaskID: uuid.UUID(),
+		}, nil
+	}
+
 	// batch sync vendor vpc list.
 	err = BatchSyncAzureVpcList(kt, req, list, resourceDBMap, adaptor, dataCli)
 	if err != nil {
@@ -273,8 +279,8 @@ func filterAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, list *
 				Category:  enumor.BizVpcCategory,
 				Memo:      item.Memo,
 				Extension: &cloud.AzureVpcCreateExt{
-					ResourceGroup: item.Extension.ResourceGroupName,
-					DNSServers:    item.Extension.DNSServers,
+					ResourceGroupName: item.Extension.ResourceGroupName,
+					DNSServers:        item.Extension.DNSServers,
 				},
 			}
 

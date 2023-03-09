@@ -1,0 +1,90 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+package huawei
+
+import (
+	"errors"
+	"time"
+
+	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud/zone"
+	"hcm/pkg/api/hc-service/zone"
+	dataservice "hcm/pkg/client/data-service"
+	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
+)
+
+// SyncZone sync zone
+func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []string) error {
+
+	start := time.Now()
+	logs.V(3).Infof("huawei account[%s] sync zone start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	defer func() {
+		logs.V(3).Infof("huawei account[%s] sync zone end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
+	}()
+
+	for _, region := range regions {
+		syncReq := &zone.HuaWeiZoneSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		}
+		if err := hcCli.HuaWei.Zone.SyncZone(kt.Ctx, kt.Header(), syncReq); Error(err) != nil {
+			logs.Errorf("sync huawei zone failed, err: %v, req: %v, rid: %s", err, syncReq, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// GetRegionsAndRegionZoneMap ...
+func GetRegionsAndRegionZoneMap(kt *kit.Kit, dataCli *dataservice.Client) ([]string, map[string][]string, error) {
+	listReq := &protocloud.ZoneListReq{
+		Filter: tools.EqualExpression("vendor", enumor.HuaWei),
+		Page:   core.DefaultBasePage,
+	}
+	result, err := dataCli.Global.Zone.ListZone(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list huawei zone failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, nil, err
+	}
+
+	if len(result.Details) == 0 {
+		return nil, nil, errors.New("huawei zone is empty")
+	}
+
+	regionZoneMap := make(map[string][]string)
+	regionMap := make(map[string]struct{})
+	for _, one := range result.Details {
+		if _, exist := regionZoneMap[one.Region]; !exist {
+			regionMap[one.Region] = struct{}{}
+			regionZoneMap[one.Region] = make([]string, 0)
+		}
+
+		regionZoneMap[one.Region] = append(regionZoneMap[one.Region], one.Name)
+	}
+
+	return converter.MapKeyToStringSlice(regionMap), regionZoneMap, nil
+}

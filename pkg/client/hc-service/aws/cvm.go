@@ -24,8 +24,8 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/hc-service/cvm"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -42,16 +42,15 @@ type CvmClient struct {
 	client rest.ClientInterface
 }
 
-// SyncCvm sync cvm.
-func (cli *CvmClient) SyncCvm(ctx context.Context, h http.Header,
-	request *cvm.CvmSyncReq) error {
+// SyncCvmWithRelResource sync cvm with rel resource.
+func (cli *CvmClient) SyncCvmWithRelResource(ctx context.Context, h http.Header, request *sync.AwsSyncReq) error {
 
 	resp := new(core.SyncResp)
 
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/cvms/sync").
+		SubResourcef("/cvms/with/relation_resource/sync").
 		WithHeaders(h).
 		Do().
 		Into(resp)

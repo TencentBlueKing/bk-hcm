@@ -26,7 +26,6 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
-	protocvm "hcm/pkg/api/hc-service/cvm"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	protoeip "hcm/pkg/api/hc-service/eip"
 	protoimage "hcm/pkg/api/hc-service/image"
@@ -78,40 +77,6 @@ func SyncAwsAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 		err = SyncAwsEip(c, kit, header, accountID, region.RegionID)
 		if err != nil {
 			logs.Errorf("sync do aws sync eip failed, err: %v, regionID: %s, rid: %s",
-				err, region.RegionID, kit.Rid)
-		}
-
-		// Vpc
-		err = c.HCService().Aws.Vpc.SyncVpc(
-			kit.Ctx,
-			header,
-			&proto.AwsResourceSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
-		if err != nil {
-			logs.Errorf("sync do aws sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-				err, accountID, region.RegionID, kit.Rid)
-		}
-
-		// Subnet
-		err = c.HCService().Aws.Subnet.SyncSubnet(
-			kit.Ctx,
-			header,
-			&proto.AwsResourceSyncReq{
-				AccountID: accountID,
-				Region:    region.RegionID,
-			},
-		)
-		if err != nil {
-			logs.Errorf("sync do aws sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-				err, accountID, region.RegionID, kit.Rid)
-		}
-
-		err = SyncAwsCvm(c, kit, header, accountID, region.RegionID)
-		if err != nil {
-			logs.Errorf("sync do aws sync cvm failed, err: %v, regionID: %s, rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
 	}
@@ -253,27 +218,6 @@ func SyncAwsSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	}
 
 	return nil
-}
-
-// SyncAwsCvm ...
-func SyncAwsCvm(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string) error {
-
-	err := c.HCService().Aws.Cvm.SyncCvm(
-		kit.Ctx,
-		header,
-		&protocvm.CvmSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		},
-	)
-
-	if err != nil {
-		logs.Errorf("sync do aws sync cvm failed, err: %v, regionID: %s, rid: %s",
-			err, region, kit.Rid)
-	}
-
-	return err
 }
 
 // SyncAwsPublicResource ...

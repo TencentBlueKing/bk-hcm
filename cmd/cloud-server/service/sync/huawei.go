@@ -26,7 +26,6 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
-	protocvm "hcm/pkg/api/hc-service/cvm"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	protoeip "hcm/pkg/api/hc-service/eip"
 	protoimage "hcm/pkg/api/hc-service/image"
@@ -81,69 +80,9 @@ func SyncHuaWeiAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accoun
 			logs.Errorf("sync do huawei sync eip failed, err: %v, regionID: %s,  rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
-
-		err = SyncHuaWeiVpc(c, kit, header, accountID, region.RegionID)
-		if err != nil {
-			logs.Errorf("sync do huawei sync vpc failed, err: %v, regionID: %s,  rid: %s",
-				err, region.RegionID, kit.Rid)
-		}
-
-		err = SyncHuaWeiSubnet(c, kit, header, accountID, region.RegionID)
-		if err != nil {
-			logs.Errorf("sync do huawei sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-				err, accountID, region.RegionID, kit.Rid)
-		}
-
-		err = SyncHuaWeiCvm(c, kit, header, accountID, region.RegionID)
-		if err != nil {
-			logs.Errorf("sync do huawei sync cvm failed, err: %v, regionID: %s,  rid: %s",
-				err, region.RegionID, kit.Rid)
-		}
 	}
 
 	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// SyncHuaWeiSubnet ...
-func SyncHuaWeiSubnet(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string) error {
-
-	err := c.HCService().HuaWei.Subnet.SyncSubnet(
-		kit.Ctx,
-		header,
-		&proto.HuaWeiResourceSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		},
-	)
-	if err != nil {
-		logs.Errorf("sync do huawei sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-			err, accountID, region, kit.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// SyncHuaWeiVpc ...
-func SyncHuaWeiVpc(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string) error {
-
-	err := c.HCService().HuaWei.Vpc.SyncVpc(
-		kit.Ctx,
-		header,
-		&proto.HuaWeiResourceSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		},
-	)
-	if err != nil {
-		logs.Errorf("sync do huawei sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-			err, accountID, region, kit.Rid)
 		return err
 	}
 
@@ -281,27 +220,6 @@ func SyncHuaWeiSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	}
 
 	return nil
-}
-
-// SyncHuaWeiCvm ...
-func SyncHuaWeiCvm(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string) error {
-
-	err := c.HCService().HuaWei.Cvm.SyncCvm(
-		kit.Ctx,
-		header,
-		&protocvm.CvmSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		},
-	)
-
-	if err != nil {
-		logs.Errorf("sync do huawei sync cvm failed, err: %v, regionID: %s, rid: %s",
-			err, region, kit.Rid)
-	}
-
-	return err
 }
 
 // SyncHuaWeiPublicResource ...

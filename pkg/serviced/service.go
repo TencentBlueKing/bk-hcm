@@ -322,9 +322,8 @@ func (s *service) isMaster(srvPath, srvKey string) (bool, error) {
 	}
 	firstCR := resp.Kvs[0].CreateRevision
 
-	if logs.V(3) {
-		logs.Infof("current service(%s) master state: %v", srvKey, cr == firstCR)
-	}
+	logs.V(7).Infof("current service(%s) master state: %v", srvKey, cr == firstCR)
+
 	return cr == firstCR, nil
 }
 

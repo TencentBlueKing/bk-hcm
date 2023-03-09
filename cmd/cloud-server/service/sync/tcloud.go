@@ -26,7 +26,6 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
-	protocvm "hcm/pkg/api/hc-service/cvm"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	protoeip "hcm/pkg/api/hc-service/eip"
 	protoimage "hcm/pkg/api/hc-service/image"
@@ -80,69 +79,9 @@ func SyncTCloudAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accoun
 			logs.Errorf("sync do tcloud sync eip failed, err: %v, regionID: %s, rid: %s",
 				err, region.RegionID, kit.Rid)
 		}
-
-		err = SyncTCloudVpc(c, kit, header, accountID, region.RegionID)
-		if err != nil {
-			logs.Errorf("sync do tcloud sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-				err, accountID, region.RegionID, kit.Rid)
-		}
-
-		err = SyncTCloudSubnet(c, kit, header, accountID, region.RegionID)
-		if err != nil {
-			logs.Errorf("sync do tcloud sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-				err, accountID, region.RegionID, kit.Rid)
-		}
-
-		err = SyncTCloudCvm(c, kit, header, accountID, region.RegionID)
-		if err != nil {
-			logs.Errorf("sync do tcloud sync cvm failed, err: %v, regionID: %s, rid: %s",
-				err, region.RegionID, kit.Rid)
-		}
 	}
 
 	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// SyncTCloudSubnet ...
-func SyncTCloudSubnet(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string) error {
-
-	err := c.HCService().TCloud.Subnet.SyncSubnet(
-		kit.Ctx,
-		header,
-		&proto.TCloudResourceSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		},
-	)
-	if err != nil {
-		logs.Errorf("sync do tcloud sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-			err, accountID, region, kit.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// SyncTCloudVpc ...
-func SyncTCloudVpc(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string) error {
-
-	err := c.HCService().TCloud.Vpc.SyncVpc(
-		kit.Ctx,
-		header,
-		&proto.TCloudResourceSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		},
-	)
-	if err != nil {
-		logs.Errorf("sync do tcloud sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-			err, accountID, region, kit.Rid)
 		return err
 	}
 
@@ -280,27 +219,6 @@ func SyncTCloudSGRule(c *client.ClientSet, kit *kit.Kit, header http.Header,
 	}
 
 	return nil
-}
-
-// SyncTCloudCvm ...
-func SyncTCloudCvm(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string) error {
-
-	err := c.HCService().TCloud.Cvm.SyncCvm(
-		kit.Ctx,
-		header,
-		&protocvm.CvmSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		},
-	)
-
-	if err != nil {
-		logs.Errorf("sync do tcloud sync cvm failed, err: %v, regionID: %s, rid: %s",
-			err, region, kit.Rid)
-	}
-
-	return err
 }
 
 // SyncTCloudPublicResource ...

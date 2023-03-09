@@ -47,7 +47,6 @@ func InitSyncService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	// TODO: add鉴权
 	h.Add("SyncAll", http.MethodPost, "/vendors/accounts/all/sync", svc.SyncAll)
 
 	h.Load(c.WebService)

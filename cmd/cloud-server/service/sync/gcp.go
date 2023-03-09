@@ -26,7 +26,6 @@ import (
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	protozone "hcm/pkg/api/data-service/cloud/zone"
 	proto "hcm/pkg/api/hc-service"
-	protocvm "hcm/pkg/api/hc-service/cvm"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	protoeip "hcm/pkg/api/hc-service/eip"
 	protoimage "hcm/pkg/api/hc-service/image"
@@ -37,7 +36,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 )
 
 // SyncGcpAll sync gcp all resource
@@ -66,24 +64,6 @@ func SyncGcpAll(c *client.ClientSet, kit *kit.Kit, header http.Header, accountID
 		err = SyncGcpEip(c, kit, header, accountID, region.RegionID)
 		if err != nil {
 			logs.Errorf("sync do gcp sync eip failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-				err, accountID, region.RegionID, kit.Rid)
-		}
-
-		err = SyncGcpVpc(c, kit, header, accountID, region.RegionID)
-		if err != nil {
-			logs.Errorf("sync do gcp sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-				err, accountID, region.RegionID, kit.Rid)
-		}
-
-		err = SyncGcpSubnet(c, kit, header, accountID, region.RegionID)
-		if err != nil {
-			logs.Errorf("sync do gcp sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-				err, accountID, region.RegionID, kit.Rid)
-		}
-
-		err = SyncGcpCvm(c, kit, header, accountID, region.RegionID)
-		if err != nil {
-			logs.Errorf("sync do gcp sync cvm failed, err: %v, accountID: %s, regionID: %s, rid: %s",
 				err, accountID, region.RegionID, kit.Rid)
 		}
 	}
@@ -125,102 +105,6 @@ func SyncGcpDisk(kit *kit.Kit, c *client.ClientSet, header http.Header, accountI
 			logs.Errorf("sync do gcp sync disk failed, err: %v, zone: %s, rid: %s",
 				err, zone.Name, kit.Rid)
 		}
-	}
-
-	return nil
-}
-
-// SyncGcpCvm ...
-func SyncGcpCvm(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string) error {
-
-	zones, err := c.DataService().Global.Zone.ListZone(
-		kit.Ctx,
-		kit.Header(),
-		&protozone.ZoneListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					&filter.AtomRule{
-						Field: "vendor",
-						Op:    filter.Equal.Factory(),
-						Value: enumor.Gcp,
-					},
-					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: region,
-					},
-				},
-			},
-			Page: &core.BasePage{
-				Start: uint32(0),
-				Limit: core.DefaultMaxPageLimit,
-			},
-		},
-	)
-
-	if err != nil {
-		logs.Errorf("sync list gcp zone failed, err: %v, rid: %s", err, kit.Rid)
-		return err
-	}
-
-	for _, zone := range zones.Details {
-		err := c.HCService().Gcp.Cvm.SyncCvm(
-			kit.Ctx,
-			header,
-			&protocvm.CvmSyncReq{
-				AccountID: accountID,
-				Region:    region,
-				Zone:      zone.Name,
-			},
-		)
-		if err != nil {
-			logs.Errorf("sync do gcp sync cvm failed, err: %v, regionID: %s, rid: %s",
-				err, region, kit.Rid)
-		}
-	}
-
-	return nil
-}
-
-// SyncGcpSubnet ...
-func SyncGcpSubnet(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string) error {
-
-	err := c.HCService().Gcp.Subnet.SyncSubnet(
-		kit.Ctx,
-		header,
-		&proto.GcpResourceSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		},
-	)
-	if err != nil {
-		logs.Errorf("sync do gcp sync subnet failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-			err, accountID, region, kit.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// SyncGcpVpc ...
-func SyncGcpVpc(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string) error {
-
-	err := c.HCService().Gcp.Vpc.SyncVpc(
-		kit.Ctx,
-		header,
-		&proto.GcpResourceSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		},
-	)
-	if err != nil {
-		logs.Errorf("sync do gcp sync vpc failed, err: %v, accountID: %s, regionID: %s, rid: %s",
-			err, accountID, region, kit.Rid)
-		return err
 	}
 
 	return nil

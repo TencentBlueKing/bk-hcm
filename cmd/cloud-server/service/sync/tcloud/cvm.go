@@ -17,16 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package tcloud
 
-const (
-	// AwsDefaultRegion defines default value for aws's region.
-	AwsDefaultRegion = "ap-northeast-1"
-	// TCloudStateDisable defines disable value for tcloud region state
-	TCloudStateDisable = "UNAVAILABLE"
-	// AwsStateDisable If the Region is not enabled, the output includes the following
-	// https://docs.aws.amazon.com/general/latest/gr/rande-manage.html
-	AwsStateDisable = "not-opted-in"
-	// GcpStateDisable defines disable value for gcp region state
-	GcpStateDisable = "DOWN"
+import (
+	"time"
+
+	"hcm/pkg/api/hc-service/sync"
+	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 )
+
+// SyncCvm ...
+func SyncCvm(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+
+	start := time.Now()
+	logs.V(3).Infof("tcloud account[%s] sync cvm start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	defer func() {
+		logs.V(3).Infof("tcloud account[%s] sync cvm end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
+	}()
+
+	for _, region := range regions {
+		req := &sync.TCloudSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		}
+		if err := service.TCloud.Cvm.SyncCvmWithRelResource(kt.Ctx, kt.Header(), req); err != nil {
+			logs.Errorf("sync tcloud cvm failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}

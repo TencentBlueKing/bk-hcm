@@ -193,8 +193,8 @@ func (svc *syncCvmSvc) removeDBNotExistCvm(kt *kit.Kit, tcloud *tcloud.TCloud, r
 	return nil
 }
 
-// OperateSyncTCloudCvm ...
-func (svc *syncCvmSvc) OperateSyncTCloudCvm(cts *rest.Contexts) (interface{}, error) {
+// SyncTCloudCvmWithRelResource ...
+func (svc *syncCvmSvc) SyncTCloudCvmWithRelResource(cts *rest.Contexts) (interface{}, error) {
 	req := new(sync.TCloudSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

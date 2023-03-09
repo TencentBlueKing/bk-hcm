@@ -24,9 +24,7 @@ import (
 
 	"hcm/cmd/hc-service/service/capability"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	protocvm "hcm/pkg/api/hc-service/cvm"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
@@ -41,7 +39,7 @@ func InitSyncCvmService(cap *capability.Capability) {
 
 	h.Add("SyncTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/sync", svc.SyncTCloudCvm)
 	h.Add("SyncTCloudCvmWithRelResource", http.MethodPost, "/vendors/tcloud/cvms/with/relation_resource/sync",
-		svc.OperateSyncTCloudCvm)
+		svc.SyncTCloudCvmWithRelResource)
 
 	h.Add("SyncHuaWeiCvm", http.MethodPost, "/vendors/huawei/cvms/sync", svc.SyncHuaWeiCvm)
 	h.Add("SyncHuaWeiCvmWithRelResource", http.MethodPost, "/vendors/huawei/cvms/with/relation_resource/sync",
@@ -65,17 +63,4 @@ func InitSyncCvmService(cap *capability.Capability) {
 type syncCvmSvc struct {
 	adaptor *cloudclient.CloudAdaptorClient
 	dataCli *dataservice.Client
-}
-
-func decodeCvmSyncReq(cts *rest.Contexts) (*protocvm.CvmSyncReq, error) {
-	req := new(protocvm.CvmSyncReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	return req, nil
 }

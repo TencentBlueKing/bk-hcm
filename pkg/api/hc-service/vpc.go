@@ -73,10 +73,11 @@ func (r *GcpResourceSyncReq) Validate() error {
 
 // AzureResourceSyncReq defines sync resource request.
 type AzureResourceSyncReq struct {
-	AccountID         string   `json:"account_id" validate:"required"`
-	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
-	CloudVpcID        string   `json:"cloud_vpc_id" validate:"omitempty"`
-	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID         string `json:"account_id" validate:"required"`
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	CloudVpcID        string `json:"cloud_vpc_id" validate:"omitempty"`
+	// CloudIDs 仅hcservice内部使用
+	CloudIDs []string `json:"cloud_ids" validate:"omitempty"`
 }
 
 // Validate validate sync vpc request.

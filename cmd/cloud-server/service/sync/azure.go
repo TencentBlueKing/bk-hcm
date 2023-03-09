@@ -26,7 +26,6 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	proto "hcm/pkg/api/hc-service"
-	protocvm "hcm/pkg/api/hc-service/cvm"
 	protodisk "hcm/pkg/api/hc-service/disk"
 	protoeip "hcm/pkg/api/hc-service/eip"
 	protoimage "hcm/pkg/api/hc-service/image"
@@ -141,12 +140,6 @@ func syncAzureWithResourceGroup(c *client.ClientSet, kit *kit.Kit, resourceGroup
 		if err != nil {
 			logs.Errorf("sync do azure sync vpc failed, err: %v, accountID: %s, regionID: %s, "+
 				"resourceGroup: %s, rid: %s", err, accountID, region.Name, resourceGroup, kit.Rid)
-		}
-
-		err = SyncAzureCvm(c, kit, header, accountID, region.Name, resourceGroup)
-		if err != nil {
-			logs.Errorf("sync do azure sync cvm failed, err: %v, regionID: %s, rid: %s",
-				err, region.Name, kit.Rid)
 		}
 	}
 
@@ -363,28 +356,5 @@ func SyncAzureResourceGroup(kit *kit.Kit, c *client.ClientSet, header http.Heade
 		logs.Errorf("sync do azure sync rg failed, err: %v, rid: %s", err, kit.Rid)
 		return err
 	}
-	return nil
-}
-
-// SyncAzureCvm ...
-func SyncAzureCvm(c *client.ClientSet, kit *kit.Kit, header http.Header,
-	accountID string, region string, resourceGroup string) error {
-
-	err := c.HCService().Azure.Cvm.SyncCvm(
-		kit.Ctx,
-		header,
-		&protocvm.CvmSyncReq{
-			AccountID:         accountID,
-			Region:            region,
-			ResourceGroupName: resourceGroup,
-		},
-	)
-
-	if err != nil {
-		logs.Errorf("sync do azure sync cvm failed, err: %v, regionID: %s, rid: %s",
-			err, region, kit.Rid)
-		return err
-	}
-
 	return nil
 }

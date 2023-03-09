@@ -21,7 +21,6 @@ package aws
 
 import (
 	typesRegion "hcm/pkg/adaptor/types/region"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -33,7 +32,7 @@ import (
 // reference: https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/DescribeRegions
 // Managing AWS Regions: https://docs.aws.amazon.com/general/latest/gr/rande-manage.html
 func (a *Aws) ListRegion(kt *kit.Kit) (*typesRegion.AwsRegionListResult, error) {
-	client, err := a.clientSet.ec2Client(constant.AwsDefaultRegion)
+	client, err := a.clientSet.ec2Client("ap-northeast-1")
 	if err != nil {
 		return nil, err
 	}

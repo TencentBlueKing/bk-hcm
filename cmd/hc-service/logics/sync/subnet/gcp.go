@@ -114,15 +114,17 @@ func listGcpSubnetMapFromDB(kt *kit.Kit, cloudIDs []string, dataCli *dataclient.
 	map[string]cloudcore.Subnet[cloudcore.GcpSubnetExtension], error) {
 
 	expr := &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{
-			&filter.AtomRule{
-				Field: "cloud_id",
-				Op:    filter.In.Factory(),
-				Value: cloudIDs,
-			},
-		},
+		Op:    filter.And,
+		Rules: []filter.RuleFactory{},
 	}
+	if len(cloudIDs) != 0 {
+		expr.Rules = append(expr.Rules, &filter.AtomRule{
+			Field: "cloud_id",
+			Op:    filter.In.Factory(),
+			Value: cloudIDs,
+		})
+	}
+
 	resourceMap := make(map[string]cloudcore.Subnet[cloudcore.GcpSubnetExtension], 0)
 	dbQueryReq := &core.ListReq{
 		Filter: expr,

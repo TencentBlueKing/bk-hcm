@@ -67,6 +67,12 @@ func AzureSubnetSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq,
 		return nil, err
 	}
 
+	if len(list.Details) == 0 && len(resourceDBMap) == 0 {
+		return &hcservice.ResourceSyncResult{
+			TaskID: uuid.UUID(),
+		}, nil
+	}
+
 	// batch sync vendor subnet list.
 	err = BatchSyncAzureSubnetList(kt, req, list, resourceDBMap, dataCli, adaptor)
 	if err != nil {
