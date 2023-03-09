@@ -69,6 +69,9 @@ func newCheckLogin(esbClient esb.Client, bkLoginUrl, bkLoginCookieName string) f
 		}
 	}
 
+	// 默认只能是bk_token,不支持其他的
+	bkLoginCookieName = "bk_token"
+
 	return func(req *restful.Request) (string, error) {
 		// 获取cookie
 		cookie, err := req.Request.Cookie(bkLoginCookieName)
