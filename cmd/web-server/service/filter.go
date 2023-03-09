@@ -21,6 +21,7 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -43,25 +44,61 @@ func isITSMCallbackRequest(req *restful.Request) bool {
 	return false
 }
 
+func newCheckLogin(esbClient esb.Client, bkLoginUrl, bkLoginCookieName string) func(*restful.Request) (string, error) {
+	if bkLoginCookieName == "bk_ticket" {
+		// 解析Login URL
+		oaLoginClient, err := newOALoginClient(bkLoginUrl)
+		if err != nil {
+			// 登录有问题，则启动没意义
+			panic(err)
+		}
+
+		return func(req *restful.Request) (string, error) {
+			// 获取cookie
+			cookie, err := req.Request.Cookie(bkLoginCookieName)
+			// Note: err只有一个ErrNoCookie可能，所以这里是无登录票据的情况
+			if err != nil || cookie.Value == "" {
+				return "", fmt.Errorf("%s cookie don't exists", bkLoginCookieName)
+			}
+			// 校验bk_token是否有效
+			username, err := oaLoginClient.Verify(req.Request.Context(), cookie.Value)
+			if err != nil {
+				return "", err
+			}
+			return username, nil
+		}
+	}
+
+	return func(req *restful.Request) (string, error) {
+		// 获取cookie
+		cookie, err := req.Request.Cookie(bkLoginCookieName)
+		// Note: err只有一个ErrNoCookie可能，所以这里是无登录票据的情况
+		if err != nil || cookie.Value == "" {
+			return "", fmt.Errorf("%s cookie don't exists", bkLoginCookieName)
+		}
+		// 校验bk_token是否有效
+		username, err := esbClient.Login().IsLogin(req.Request.Context(), cookie.Value)
+		if err != nil {
+			return "", err
+		}
+		return username, nil
+	}
+}
+
 // NewUserAuthenticateFilter ...
-func NewUserAuthenticateFilter(esbClient esb.Client) restful.FilterFunction {
+func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieName string) restful.FilterFunction {
+
+	checkLogin := newCheckLogin(esbClient, bkLoginUrl, bkLoginCookieName)
 
 	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+		var err error
 		username := ""
 		// 对于itsm 的回调请求，不能用户认证，而是处理请求时进行单独的Token认证，这里直接通过
 		if isITSMCallbackRequest(req) {
 			username = "itsm_callback"
 			req.Request.Header.Set(constant.RidKey, uuid.UUID())
 		} else {
-			// 获取cookie
-			cookie, err := req.Request.Cookie("bk_token")
-			// Note: err只有一个ErrNoCookie可能，所以这里是无登录票据的情况
-			if err != nil || cookie.Value == "" {
-				resp.WriteErrorString(http.StatusUnauthorized, "bk_token cookie don't exists")
-				return
-			}
-			// 校验bk_token是否有效
-			username, err = esbClient.Login().IsLogin(req.Request.Context(), cookie.Value)
+			username, err = checkLogin(req)
 			if err != nil {
 				resp.WriteError(http.StatusUnauthorized, err)
 				return

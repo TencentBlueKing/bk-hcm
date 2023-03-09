@@ -465,10 +465,11 @@ func (s IAM) validate() error {
 
 // Web 服务依赖所需特有配置， 包括登录、静态文件等配置的定义
 type Web struct {
-	StaticFileDirPath string `yaml:"static_file_dir_path"`
+	StaticFileDirPath string `yaml:"staticFileDirPath"`
 
-	BkLoginUrl        string `yaml:"bk_login_url"`
-	BkComponentApiUrl string `yaml:"bk_component_api_url"`
+	BkLoginCookieName string `yaml:"bkLoginCookieName"`
+	BkLoginUrl        string `yaml:"bkLoginUrl"`
+	BkComponentApiUrl string `yaml:"bkComponentApiUrl"`
 }
 
 func (s Web) validate() error {
