@@ -77,7 +77,7 @@ const {
         :label="t('备注')"
         class="item-warp"
       >
-        <bk-input class="item-warp-component" v-model="formData.memo" :placeholder="t('请输入IP')" />
+        <bk-input type="textarea" class="item-warp-component" v-model="formData.memo" :placeholder="t('请输入备注')" />
       </bk-form-item>
 
       <bk-form-item
@@ -114,11 +114,7 @@ const {
 </template>
 <style lang="scss" scoped>
 .form-subnet{
-  border-top: 1px solid #C4C6CC;
-  padding-top: 20px;
-  .item-warp-component{
-    width: 200px;
-  }
+  padding-right: 20px;
   .item-warp-button{
     width: 100px;
   }

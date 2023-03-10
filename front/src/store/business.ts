@@ -16,5 +16,37 @@ export const useBusinessStore = defineStore({
     addSecurity(id: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${id}/security_groups/create`, data);
     },
+    /**
+     * @description: 获取可用区列表
+     * @param {any} data
+     * @return {*}
+     */
+    getZonesList({ vendor, region, page }: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/regions/${region}/zones/list`, { page });
+    },
+    /**
+     * @description: 获取资源组列表
+     * @param {any} data
+     * @return {*}
+     */
+    getResourceGroupList(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/azure/resource_groups/list`, data);
+    },
+    /**
+     * @description: 获取路由表列表
+     * @param {any} data
+     * @return {*}
+     */
+    getRouteTableList(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/route_tables/list`, data);
+    },
+    /**
+     * @description: 创建子网
+     * @param {any} data
+     * @return {*}
+     */
+    createSubnet(bizs: number, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizs}subnets/create`, data);
+    },
   },
 });

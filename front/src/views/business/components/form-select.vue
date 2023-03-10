@@ -27,10 +27,16 @@ const state = reactive<{filter: BusinessFormFilter}>({
 watch(
   () => state.filter,
   (value) => {
-    console.log('value', value);
     emit('change', value);
   },
   { deep: true },
+);
+
+watch(
+  () => state.filter.vendor,
+  () => {
+    state.filter.region = '';
+  },
 );
 
 const getAccountList = async () => {
@@ -86,10 +92,10 @@ getAccountList();
   <bk-form class="mt20 pt20 bussine-form">
     <bk-form-item
       :label="t('云厂商')"
-      label-width="80"
       class="item-warp"
     >
       <bk-select
+        class="item-warp-component"
         v-model="state.filter.vendor"
         @change="handleCloudChange"
       >
@@ -103,10 +109,10 @@ getAccountList();
     </bk-form-item>
     <bk-form-item
       :label="t('云账号')"
-      label-width="80"
       class="item-warp"
     >
       <bk-select
+        class="item-warp-component"
         :loading="accountLoading"
         v-model="state.filter.account_id"
       >
@@ -120,10 +126,10 @@ getAccountList();
     </bk-form-item>
     <bk-form-item
       :label="t('云区域')"
-      label-width="80"
       class="item-warp"
     >
       <bk-select
+        class="item-warp-component"
         :disabled="!state.filter.vendor"
         :loading="cloudRegionsLoading"
         v-model="state.filter.region"
@@ -141,10 +147,5 @@ getAccountList();
 <style lang="scss" scoped>
   .bussine-form{
     padding-right: 20px;
-    display: flex;
-    align-items: center;
-    .item-warp{
-      flex: 1;
-    }
   }
 </style>

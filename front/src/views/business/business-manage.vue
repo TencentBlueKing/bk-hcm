@@ -86,6 +86,7 @@ const handleSuccess = () => {
       ref="componentRef"
       :is="renderComponent"
       :filter="filter"
+      v-if="accountStore.bizs"
     >
       <bk-button theme="primary" class="new-button" @click="handleAdd">新增</bk-button>
     </component>
