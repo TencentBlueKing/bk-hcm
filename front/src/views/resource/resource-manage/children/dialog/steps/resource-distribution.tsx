@@ -76,6 +76,7 @@ export default defineComponent({
     const hasBindVPC = ref(false);
     const disableNext = ref(true);
     const vpcFilter: any = ref({ filter: { op: 'and', rules: [] } });
+    const vpcTableData = ref<any>([]);
     const resourceTypes = ref([
       'host',
       'vpc',
@@ -279,8 +280,8 @@ export default defineComponent({
       }
 
       isBingdingVPC.value = true;
-      const bindCloudAreaData = props
-        .data
+      const dataList = props.chooseResourceType ? vpcTableData.value : props.data;
+      const bindCloudAreaData = dataList
         .filter((item: any) => item.bk_cloud_id <= -1 || !item.bk_cloud_id)
         .map((item: any) => ({ vpc_id: item.vpc_id || item.id, bk_cloud_id: item.temp_bk_cloud_id }));
       resourceStore
@@ -301,7 +302,8 @@ export default defineComponent({
 
     // 聚合分配确认数据
     const computedCloudData = computed(() => {
-      return props.data.reduce((acc: any[], cur: any) => {
+      const computedData = props.chooseResourceType ? vpcTableData.value : props.data;
+      return computedData.reduce((acc: any[], cur: any) => {
         const cloudData = acc.find((item: any) => item.bk_cloud_id === cur.bk_cloud_id && item.vendor === cur.vendor);
         if (cloudData) {
           cloudData.num += 1;
@@ -342,21 +344,6 @@ export default defineComponent({
       },
     );
 
-    watch(
-      // 翻页需要监听数据
-      () => props.data,
-      (value) => {
-        if (props.isShow) {
-          disableNext.value = true;
-          hasBindVPC.value = false;
-          // 判断是否需要绑定云区域
-          if (value.every((item: any) => item.bk_cloud_id > -1)) {
-            disableNext.value = false;
-            hasBindVPC.value = true;
-          }
-        }
-      },
-    );
 
     // 根据选择账号获取vpc列表
     watch(
@@ -379,8 +366,30 @@ export default defineComponent({
       pagination,
       handlePageSizeChange,
       handlePageChange,
-      // handleChangeData,
     } = useQueryList(vpcFilter.value, 'vpcs');
+
+
+    watch(
+      // 监听数据
+      () => datas,
+      (vpcData) => {
+        if (props.isShow) {
+          vpcTableData.value = vpcData.value;
+          disableNext.value = true;
+          hasBindVPC.value = false;
+          business.value = '';
+          validateMap.value = {};
+          errorList.value = [];
+          // 判断是否需要绑定云区域
+          if (vpcTableData.value.every((item: any) => item.bk_cloud_id > -1)) {
+            disableNext.value = false;
+            hasBindVPC.value = true;
+          }
+        }
+      },
+      { deep: true, immediate: true },
+    );
+
 
     return {
       business,
@@ -404,6 +413,7 @@ export default defineComponent({
       handlePageChange,
       pagination,
       isLoading,
+      vpcTableData,
       datas,
     };
   },
@@ -429,7 +439,7 @@ export default defineComponent({
           onPageLimitChange={this.handlePageSizeChange}
           onPageValueChange={this.handlePageChange}
           columns={this.VPCColumns}
-          data={this.chooseResourceType ? this.datas : this.data}
+          data={this.vpcTableData.length ? this.vpcTableData : this.datas}
         />
         </bk-loading>
           : <bk-table
