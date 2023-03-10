@@ -100,6 +100,12 @@ type RouteTableBaseInfoUpdateReq struct {
 	Data *RouteTableUpdateBaseInfo `json:"data" validate:"required"`
 }
 
+// RouteTableSubnetReq update route table subnet request.
+type RouteTableSubnetReq struct {
+	RouteTableID      string `json:"route_table_id" validate:"required"`
+	CloudRouteTableID string `json:"cloud_route_table_id" validate:"required"`
+}
+
 // -------------------------- Get --------------------------
 
 // RouteTableGetResp defines get route table response.

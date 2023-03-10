@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	"hcm/pkg/adaptor/huawei"
 	adcore "hcm/pkg/adaptor/types/core"
 	routetable "hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/api/core"
@@ -39,6 +40,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
 )
@@ -77,63 +79,121 @@ func SyncHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRouteTableSyn
 		return nil, err
 	}
 
+	var nextMarker string
+	var allCloudIDMap = make(map[string]bool, 0)
+	for {
+		tmpIDs, err := BatchGetHuaWeiRouteTableList(kt, req, cli, nextMarker)
+		if err != nil {
+			logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, region: %s, err: %v",
+				enumor.HuaWei, req.AccountID, req.Region, err)
+			return nil, err
+		}
+		if len(tmpIDs) == 0 {
+			return nil, errf.New(errf.RecordNotFound, "huawei cloud route table is empty")
+		}
+
+		cloudIDs := make([]string, 0)
+		for _, tmpCloudID := range tmpIDs {
+			cloudIDs = append(cloudIDs, tmpCloudID)
+			allCloudIDMap[tmpCloudID] = true
+		}
+
+		// get route table info from db.
+		resourceDBMap, err := GetHuaWeiRouteTableInfoFromDB(kt, cloudIDs, dataCli)
+		if err != nil {
+			logs.Errorf("%s-routetable get routetabledblist failed. accountID: %s, region: %s, err: %v",
+				enumor.HuaWei, req.AccountID, req.Region, err)
+			return nil, err
+		}
+
+		tmpDetails := make([]routetable.HuaWeiRouteTable, 0, len(tmpIDs))
+		for _, tmpCloudID := range tmpIDs {
+			routeOpt := &routetable.HuaWeiRouteTableGetOption{
+				Region: req.Region,
+				ID:     tmpCloudID,
+			}
+			tmpRouteTable, err := cli.GetRouteTable(kt, routeOpt)
+			if err == nil {
+				tmpDetails = append(tmpDetails, converter.PtrToVal(tmpRouteTable))
+			}
+		}
+		tmpList := &routetable.HuaWeiRouteTableListResult{
+			Details: tmpDetails,
+		}
+		tmpList.Details = tmpDetails
+
+		// compare and update route table list.
+		err = compareUpdateHuaWeiRouteTableList(kt, req, tmpList, resourceDBMap, dataCli)
+		if err != nil {
+			logs.Errorf("%s-routetable compare and update routetabledblist failed. accountID: %s, "+
+				"region: %s, err: %v", enumor.HuaWei, req.AccountID, req.Region, err)
+			return nil, err
+		}
+
+		if len(req.CloudIDs) > 0 || len(tmpIDs) < adcore.HuaWeiQueryLimit {
+			break
+		}
+
+		nextMarker = tmpIDs[len(tmpIDs)-1]
+	}
+	return allCloudIDMap, nil
+}
+
+// BatchGetHuaWeiRouteTableList batch get route table list from cloudapi.
+func BatchGetHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRouteTableSyncReq, cli *huawei.HuaWei,
+	nextMarker string) ([]string, error) {
+
+	if len(req.CloudIDs) > 0 {
+		return BatchGetHuaWeiRouteTableListByCloudIDs(kt, req, cli)
+	}
+
+	return BatchGetHuaWeiRouteTableAllList(kt, req, cli, nextMarker)
+}
+
+// BatchGetHuaWeiRouteTableListByCloudIDs batch get route table list from cloudapi by cloud_ids.
+func BatchGetHuaWeiRouteTableListByCloudIDs(kt *kit.Kit, req *hcroutetable.HuaWeiRouteTableSyncReq,
+	cli *huawei.HuaWei) ([]string, error) {
+
+	var idArr []string
+	for _, tmpCloudID := range req.CloudIDs {
+		opt := &routetable.HuaWeiRouteTableListOption{
+			Region: req.Region,
+			ID:     tmpCloudID,
+		}
+		tmpIDs, err := cli.ListRouteTableIDs(kt, opt)
+		if err != nil {
+			logs.Errorf("%s-routetable batch get cloud api by id failed, req: %+v, err: %v, rid: %s",
+				enumor.HuaWei, req, err, kt.Rid)
+			return nil, err
+		}
+		idArr = append(idArr, tmpIDs...)
+	}
+
+	return idArr, nil
+}
+
+// BatchGetHuaWeiRouteTableAllList batch get route table list from cloudapi.
+func BatchGetHuaWeiRouteTableAllList(kt *kit.Kit, req *hcroutetable.HuaWeiRouteTableSyncReq, cli *huawei.HuaWei,
+	nextMarker string) ([]string, error) {
+
 	opt := &routetable.HuaWeiRouteTableListOption{
 		Region: req.Region,
 		Page: &adcore.HuaWeiPage{
 			Limit: converter.ValToPtr(int32(adcore.HuaWeiQueryLimit)),
 		},
 	}
+	if len(nextMarker) != 0 {
+		opt.Page.Marker = converter.ValToPtr(nextMarker)
+	}
+
 	tmpIDs, tmpErr := cli.ListRouteTableIDs(kt, opt)
 	if tmpErr != nil {
-		logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, region: %s, err: %v",
-			enumor.HuaWei, req.AccountID, req.Region, tmpErr)
+		logs.Errorf("%s-routetable batch get cloud api failed. req: %+v, err: %v, rid: %s",
+			enumor.HuaWei, req, tmpErr, kt.Rid)
 		return nil, tmpErr
 	}
 
-	if len(tmpIDs) == 0 {
-		return nil, errf.New(errf.RecordNotFound, "huawei cloud route table is empty")
-	}
-
-	cloudIDs := make([]string, 0)
-	allCloudIDMap := make(map[string]bool, 0)
-	for _, tmpCloudID := range tmpIDs {
-		cloudIDs = append(cloudIDs, tmpCloudID)
-		allCloudIDMap[tmpCloudID] = true
-	}
-
-	// get route table info from db.
-	resourceDBMap, err := GetHuaWeiRouteTableInfoFromDB(kt, cloudIDs, dataCli)
-	if err != nil {
-		logs.Errorf("%s-routetable get routetabledblist failed. accountID: %s, region: %s, err: %v",
-			enumor.HuaWei, req.AccountID, req.Region, err)
-		return allCloudIDMap, err
-	}
-
-	tmpDetails := make([]routetable.HuaWeiRouteTable, 0, len(tmpIDs))
-	for _, tmpCloudID := range tmpIDs {
-		routeOpt := &routetable.HuaWeiRouteTableGetOption{
-			Region: req.Region,
-			ID:     tmpCloudID,
-		}
-		tmpRouteTable, err := cli.GetRouteTable(kt, routeOpt)
-		if err == nil {
-			tmpDetails = append(tmpDetails, converter.PtrToVal(tmpRouteTable))
-		}
-	}
-	tmpList := &routetable.HuaWeiRouteTableListResult{
-		Details: tmpDetails,
-	}
-	tmpList.Details = tmpDetails
-
-	// compare and update route table list.
-	err = compareUpdateHuaWeiRouteTableList(kt, req, tmpList, resourceDBMap, dataCli)
-	if err != nil {
-		logs.Errorf("%s-routetable compare and update routetabledblist failed. accountID: %s, "+
-			"region: %s, err: %v", enumor.HuaWei, req.AccountID, req.Region, err)
-		return allCloudIDMap, err
-	}
-
-	return allCloudIDMap, nil
+	return tmpIDs, nil
 }
 
 // GetHuaWeiRouteTableInfoFromDB get route table info from db.
@@ -179,13 +239,16 @@ func GetHuaWeiRouteTableInfoFromDB(kt *kit.Kit, cloudIDs []string, dataCli *data
 }
 
 func checkHuaWeiIsUpdate(item routetable.HuaWeiRouteTable,
-	resourceInfo *cloudRouteTable.RouteTable[cloudRouteTable.HuaWeiRouteTableExtension]) bool {
+	dbInfo *cloudRouteTable.RouteTable[cloudRouteTable.HuaWeiRouteTableExtension]) bool {
 
-	if resourceInfo.Name == item.Name && converter.PtrToVal(resourceInfo.Memo) == converter.PtrToVal(item.Memo) {
-		return false
+	if dbInfo.Name != item.Name {
+		return true
+	}
+	if !assert.IsPtrStringEqual(item.Memo, dbInfo.Memo) {
+		return true
 	}
 
-	return true
+	return false
 }
 
 // compareUpdateHuaWeiRouteTableList compare and update route table list.
@@ -194,7 +257,8 @@ func compareUpdateHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRout
 	resourceDBMap map[string]*cloudRouteTable.RouteTable[cloudRouteTable.HuaWeiRouteTableExtension],
 	dataCli *dataclient.Client) error {
 
-	createResources, updateResources, err := filterHuaWeiRouteTableList(kt, req, list, resourceDBMap, dataCli)
+	createResources, updateResources, subnetMap, err := filterHuaWeiRouteTableList(kt, req, list, resourceDBMap,
+		dataCli)
 	if err != nil {
 		return err
 	}
@@ -245,6 +309,9 @@ func compareUpdateHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRout
 			}
 		}
 	}
+	if len(subnetMap) > 0 {
+		UpdateSubnetRouteTableByIDs(kt, enumor.HuaWei, subnetMap, dataCli)
+	}
 
 	return nil
 }
@@ -254,13 +321,15 @@ func filterHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRouteTableS
 	list *routetable.HuaWeiRouteTableListResult,
 	resourceDBMap map[string]*cloudRouteTable.RouteTable[cloudRouteTable.HuaWeiRouteTableExtension],
 	dataCli *dataclient.Client) (createResources []dataproto.RouteTableCreateReq[dataproto.HuaWeiRouteTableCreateExt],
-	updateResources []dataproto.RouteTableBaseInfoUpdateReq, err error) {
+	updateResources []dataproto.RouteTableBaseInfoUpdateReq, subnetMap map[string]dataproto.RouteTableSubnetReq,
+	err error) {
 
 	if list == nil || len(list.Details) == 0 {
-		return createResources, updateResources,
+		return createResources, updateResources, nil,
 			fmt.Errorf("cloudapi routetablelist is empty, accountID: %s, region: %s", req.AccountID, req.Region)
 	}
 
+	subnetMap = make(map[string]dataproto.RouteTableSubnetReq, 0)
 	for _, item := range list.Details {
 		// need compare and update resource data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
@@ -274,6 +343,14 @@ func filterHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRouteTableS
 			tmpRes.Data = &dataproto.RouteTableUpdateBaseInfo{
 				Name: converter.ValToPtr(item.Name),
 				Memo: item.Memo,
+			}
+			if item.Extension != nil && len(item.Extension.CloudSubnetIDs) > 0 {
+				for _, tmpSubnetID := range item.Extension.CloudSubnetIDs {
+					subnetMap[tmpSubnetID] = dataproto.RouteTableSubnetReq{
+						RouteTableID:      resourceInfo.ID,
+						CloudRouteTableID: item.CloudID,
+					}
+				}
 			}
 
 			updateResources = append(updateResources, tmpRes)
@@ -300,13 +377,18 @@ func filterHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRouteTableS
 					Default:  item.Extension.Default,
 					TenantID: item.Extension.TenantID,
 				}
+				for _, tmpSubnetID := range item.Extension.CloudSubnetIDs {
+					subnetMap[tmpSubnetID] = dataproto.RouteTableSubnetReq{
+						CloudRouteTableID: item.CloudID,
+					}
+				}
 			}
 
 			createResources = append(createResources, tmpRes)
 		}
 	}
 
-	return createResources, updateResources, nil
+	return createResources, updateResources, subnetMap, nil
 }
 
 // GetNeedDeleteHuaWeiRouteTableList get need delete huawei route table list

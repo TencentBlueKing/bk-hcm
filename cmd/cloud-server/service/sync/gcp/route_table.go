@@ -18,3 +18,36 @@
  */
 
 package gcp
+
+import (
+	"time"
+
+	routetable "hcm/pkg/api/hc-service/route-table"
+	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+)
+
+// SyncRouteTable 同步路由表
+func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string) error {
+	start := time.Now()
+	logs.V(3).Infof("cloud-server-sync-%s account[%s] sync route table start, time: %v, rid: %s",
+		enumor.Gcp, accountID, start, kt.Rid)
+
+	defer func() {
+		logs.V(3).Infof("cloud-server-sync-%s account[%s] sync route table end, cost: %v, rid: %s",
+			enumor.Gcp, accountID, time.Since(start), kt.Rid)
+	}()
+
+	req := &routetable.GcpRouteTableSyncReq{
+		AccountID: accountID,
+	}
+	if err := service.Gcp.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("cloud-server-sync-%s account[%s] sync route table failed, req: %v, err: %v, rid: %s",
+			enumor.Gcp, accountID, req, err, kt.Rid)
+		return err
+	}
+
+	return nil
+}

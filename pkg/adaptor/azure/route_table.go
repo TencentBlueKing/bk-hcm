@@ -92,12 +92,32 @@ func (a *Azure) ListRouteTable(kt *kit.Kit, opt *core.AzureListOption) (*routeta
 		}
 
 		for _, routeTable := range page.Value {
-			details = append(details, converter.PtrToVal(convertRouteTable(routeTable, opt.ResourceGroupName,
+			details = append(details, converter.PtrToVal(a.ConvertRouteTable(routeTable, opt.ResourceGroupName,
 				a.clientSet.credential.CloudSubscriptionID)))
 		}
 	}
 
 	return &routetable.AzureRouteTableListResult{Details: details}, nil
+}
+
+// ListRouteTablePage list route table page.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/list?tabs=HTTP
+func (a *Azure) ListRouteTablePage(opt *core.AzureListByIDOption) (
+	*runtime.Pager[armnetwork.RouteTablesClientListResponse], string, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, "", err
+	}
+
+	routeTableClient, err := a.clientSet.routeTableClient()
+	if err != nil {
+		return nil, "", fmt.Errorf("new route table client failed, err: %v", err)
+	}
+
+	req := new(armnetwork.RouteTablesClientListOptions)
+
+	pager := routeTableClient.NewListPager(opt.ResourceGroupName, req)
+	return pager, a.clientSet.credential.CloudSubscriptionID, nil
 }
 
 // ListRouteTableByID list route table.
@@ -128,7 +148,7 @@ func (a *Azure) ListRouteTableByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
 
 		for _, one := range nextResult.Value {
 			if _, exist := idMap[*one.ID]; exist {
-				details = append(details, converter.PtrToVal(convertRouteTable(one, opt.ResourceGroupName,
+				details = append(details, converter.PtrToVal(a.ConvertRouteTable(one, opt.ResourceGroupName,
 					a.clientSet.credential.CloudSubscriptionID)))
 				delete(idMap, *one.ID)
 
@@ -164,11 +184,13 @@ func (a *Azure) GetRouteTable(kt *kit.Kit, opt *routetable.AzureRouteTableGetOpt
 		return nil, fmt.Errorf("list azure route table failed, err: %v", err)
 	}
 
-	return convertRouteTable(&routeTableRes.RouteTable, opt.ResourceGroupName,
+	return a.ConvertRouteTable(&routeTableRes.RouteTable, opt.ResourceGroupName,
 		a.clientSet.credential.CloudSubscriptionID), nil
 }
 
-func convertRouteTable(data *armnetwork.RouteTable, resourceGroup, subscription string) *routetable.AzureRouteTable {
+func (a *Azure) ConvertRouteTable(data *armnetwork.RouteTable, resourceGroup,
+	subscription string) *routetable.AzureRouteTable {
+
 	if data == nil {
 		return nil
 	}

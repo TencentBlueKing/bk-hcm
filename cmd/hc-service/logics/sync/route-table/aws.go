@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
 )
@@ -91,6 +92,12 @@ func SyncAwsRouteTableList(kt *kit.Kit, req *hcproto.AwsRouteTableSyncReq, adapt
 
 		if nextToken != "" {
 			opt.Page.NextToken = converter.ValToPtr(nextToken)
+		}
+
+		// 查询指定CloudIDs
+		if len(req.CloudIDs) != 0 {
+			opt.Page = nil
+			opt.CloudIDs = req.CloudIDs
 		}
 
 		tmpList, tmpErr := cli.ListRouteTable(kt, opt)
@@ -177,36 +184,59 @@ func GetAwsRouteTableInfoFromDB(kt *kit.Kit, cloudIDs []string, dataCli *datacli
 }
 
 func checkAwsIsUpdate(item routetable.AwsRouteTable,
-	resourceInfo *cloudRouteTable.RouteTable[cloudRouteTable.AwsRouteTableExtension]) bool {
+	dbInfo *cloudRouteTable.RouteTable[cloudRouteTable.AwsRouteTableExtension]) bool {
 
-	if resourceInfo.Name == item.Name && converter.PtrToVal(resourceInfo.Memo) == converter.PtrToVal(item.Memo) {
-		return false
+	if dbInfo.Name != item.Name {
+		return true
+	}
+	if !assert.IsPtrStringEqual(item.Memo, dbInfo.Memo) {
+		return true
 	}
 
-	return true
+	return false
 }
 
-func checkAwsRouteIsUpdate(routeItem routetable.AwsRoute, resourceInfo cloudRouteTable.AwsRoute) bool {
-	if converter.PtrToVal(resourceInfo.CloudCarrierGatewayID) == converter.PtrToVal(routeItem.CloudCarrierGatewayID) &&
-		converter.PtrToVal(resourceInfo.CoreNetworkArn) == converter.PtrToVal(routeItem.CoreNetworkArn) &&
-		converter.PtrToVal(resourceInfo.CloudEgressOnlyInternetGatewayID) ==
-			converter.PtrToVal(routeItem.CloudEgressOnlyInternetGatewayID) &&
-		resourceInfo.CloudGatewayID == routeItem.CloudGatewayID &&
-		resourceInfo.CloudInstanceID == routeItem.CloudInstanceID &&
-		resourceInfo.CloudInstanceOwnerID == routeItem.CloudInstanceOwnerID &&
-		converter.PtrToVal(resourceInfo.CloudLocalGatewayID) == converter.PtrToVal(routeItem.CloudLocalGatewayID) &&
-		converter.PtrToVal(resourceInfo.CloudNatGatewayID) == converter.PtrToVal(routeItem.CloudNatGatewayID) &&
-		converter.PtrToVal(resourceInfo.CloudNetworkInterfaceID) ==
-			converter.PtrToVal(routeItem.CloudNetworkInterfaceID) &&
-		converter.PtrToVal(resourceInfo.CloudTransitGatewayID) == converter.PtrToVal(routeItem.CloudTransitGatewayID) &&
-		converter.PtrToVal(resourceInfo.CloudVpcPeeringConnectionID) ==
-			converter.PtrToVal(routeItem.CloudVpcPeeringConnectionID) &&
-		resourceInfo.State == routeItem.State &&
-		resourceInfo.Propagated == routeItem.Propagated {
-		return false
+func checkAwsRouteIsUpdate(routeItem routetable.AwsRoute, dbInfo cloudRouteTable.AwsRoute) bool {
+	if !assert.IsPtrStringEqual(routeItem.CloudCarrierGatewayID, dbInfo.CloudCarrierGatewayID) {
+		return true
 	}
-
-	return true
+	if !assert.IsPtrStringEqual(routeItem.CoreNetworkArn, dbInfo.CoreNetworkArn) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(routeItem.CloudEgressOnlyInternetGatewayID, dbInfo.CloudEgressOnlyInternetGatewayID) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(routeItem.CloudGatewayID, dbInfo.CloudGatewayID) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(routeItem.CloudInstanceID, dbInfo.CloudInstanceID) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(routeItem.CloudInstanceOwnerID, dbInfo.CloudInstanceOwnerID) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(routeItem.CloudLocalGatewayID, dbInfo.CloudLocalGatewayID) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(routeItem.CloudNatGatewayID, dbInfo.CloudNatGatewayID) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(routeItem.CloudNetworkInterfaceID, dbInfo.CloudNetworkInterfaceID) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(routeItem.CloudTransitGatewayID, dbInfo.CloudTransitGatewayID) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(routeItem.CloudVpcPeeringConnectionID, dbInfo.CloudVpcPeeringConnectionID) {
+		return true
+	}
+	if routeItem.State != dbInfo.State {
+		return true
+	}
+	if routeItem.Propagated != dbInfo.Propagated {
+		return true
+	}
+	return false
 }
 
 // compareUpdateAwsRouteTableList compare and update route table list.
@@ -215,7 +245,7 @@ func compareUpdateAwsRouteTableList(kt *kit.Kit, req *hcproto.AwsRouteTableSyncR
 	resourceDBMap map[string]*cloudRouteTable.RouteTable[cloudRouteTable.AwsRouteTableExtension],
 	dataCli *dataclient.Client) error {
 
-	createResources, updateResources, err := filterAwsRouteTableList(kt, req, list, resourceDBMap, dataCli)
+	createResources, updateResources, subnetMap, err := filterAwsRouteTableList(kt, req, list, resourceDBMap, dataCli)
 	if err != nil {
 		return err
 	}
@@ -266,6 +296,9 @@ func compareUpdateAwsRouteTableList(kt *kit.Kit, req *hcproto.AwsRouteTableSyncR
 			}
 		}
 	}
+	if len(subnetMap) > 0 {
+		UpdateSubnetRouteTableByIDs(kt, enumor.Aws, subnetMap, dataCli)
+	}
 
 	return nil
 }
@@ -275,13 +308,15 @@ func filterAwsRouteTableList(kt *kit.Kit, req *hcproto.AwsRouteTableSyncReq,
 	list *routetable.AwsRouteTableListResult,
 	resourceDBMap map[string]*cloudRouteTable.RouteTable[cloudRouteTable.AwsRouteTableExtension],
 	dataCli *dataclient.Client) (createResources []dataproto.RouteTableCreateReq[dataproto.AwsRouteTableCreateExt],
-	updateResources []dataproto.RouteTableBaseInfoUpdateReq, err error) {
+	updateResources []dataproto.RouteTableBaseInfoUpdateReq, subnetMap map[string]dataproto.RouteTableSubnetReq,
+	err error) {
 
 	if list == nil || len(list.Details) == 0 {
-		return createResources, updateResources,
+		return createResources, updateResources, nil,
 			fmt.Errorf("cloudapi routetablelist is empty, accountID: %s, region: %s", req.AccountID, req.Region)
 	}
 
+	subnetMap = make(map[string]dataproto.RouteTableSubnetReq, 0)
 	for _, item := range list.Details {
 		// need compare and update resource data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
@@ -296,6 +331,14 @@ func filterAwsRouteTableList(kt *kit.Kit, req *hcproto.AwsRouteTableSyncReq,
 				Name: converter.ValToPtr(item.Name),
 				Memo: item.Memo,
 			}
+			if item.Extension != nil && len(item.Extension.Associations) > 0 {
+				for _, subnetItem := range item.Extension.Associations {
+					subnetMap[converter.PtrToVal(subnetItem.CloudSubnetID)] = dataproto.RouteTableSubnetReq{
+						RouteTableID:      resourceInfo.ID,
+						CloudRouteTableID: item.CloudID,
+					}
+				}
+			}
 
 			updateResources = append(updateResources, tmpRes)
 
@@ -305,7 +348,6 @@ func filterAwsRouteTableList(kt *kit.Kit, req *hcproto.AwsRouteTableSyncReq,
 				logs.Errorf("%s-routetable sync update route failed. accountID: %s, region: %s, err: %v",
 					enumor.Aws, req.AccountID, req.Region, err)
 			}
-			continue
 		} else {
 			// need add resource data
 			tmpRes := dataproto.RouteTableCreateReq[dataproto.AwsRouteTableCreateExt]{
@@ -320,13 +362,18 @@ func filterAwsRouteTableList(kt *kit.Kit, req *hcproto.AwsRouteTableSyncReq,
 				tmpRes.Extension = &dataproto.AwsRouteTableCreateExt{
 					Main: item.Extension.Main,
 				}
+				for _, subnetItem := range item.Extension.Associations {
+					subnetMap[converter.PtrToVal(subnetItem.CloudSubnetID)] = dataproto.RouteTableSubnetReq{
+						CloudRouteTableID: item.CloudID,
+					}
+				}
 			}
 
 			createResources = append(createResources, tmpRes)
 		}
 	}
 
-	return createResources, updateResources, nil
+	return createResources, updateResources, subnetMap, nil
 }
 
 // GetNeedDeleteAwsRouteTableList get need delete aws route table list

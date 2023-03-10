@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
 )
@@ -76,38 +77,75 @@ func SyncAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyncR
 		return nil, err
 	}
 
-	opt := &adcore.AzureListOption{
+	opt := &adcore.AzureListByIDOption{
 		ResourceGroupName: req.ResourceGroupName,
 	}
-
-	tmpList, tmpErr := cli.ListRouteTable(kt, opt)
-	if tmpErr != nil {
+	pager, subscriptionID, err := cli.ListRouteTablePage(opt)
+	if err != nil {
 		logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, resGroupName: %s, err: %v",
-			enumor.Azure, req.AccountID, req.ResourceGroupName, tmpErr)
-		return nil, tmpErr
-	}
-
-	cloudIDs := make([]string, 0)
-	allCloudIDMap := make(map[string]bool, 0)
-	for _, item := range tmpList.Details {
-		cloudIDs = append(cloudIDs, item.CloudID)
-		allCloudIDMap[item.CloudID] = true
-	}
-
-	// get route table info from db.
-	resourceDBMap, err := GetAzureRouteTableInfoFromDB(kt, cloudIDs, dataCli)
-	if err != nil {
-		logs.Errorf("%s-routetable get routetabledblist failed. accountID: %s, resGroupName: %s, err: %v",
 			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
-		return allCloudIDMap, err
+		return nil, err
 	}
 
-	// compare and update route table list.
-	err = compareUpdateAzureRouteTableList(kt, req, tmpList, resourceDBMap, dataCli)
-	if err != nil {
-		logs.Errorf("%s-routetable compare and update routetabledblist failed. accountID: %s, "+
-			"resGroupName: %s, err: %v", enumor.Azure, req.AccountID, req.ResourceGroupName, err)
-		return allCloudIDMap, err
+	details := make([]routetable.AzureRouteTable, 0)
+	idMap := make(map[string]struct{}, 0)
+	if len(req.CloudIDs) == 0 {
+		idMap = converter.StringSliceToMap(req.CloudIDs)
+		details = make([]routetable.AzureRouteTable, 0, len(idMap))
+	}
+
+	allCloudIDMap := make(map[string]bool, 0)
+	for pager.More() {
+		page, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list azure route table but get next page failed, err: %v", err)
+		}
+
+		tmpList := &routetable.AzureRouteTableListResult{}
+		if len(req.CloudIDs) == 0 {
+			for _, routeTable := range page.Value {
+				details = append(details, converter.PtrToVal(cli.ConvertRouteTable(routeTable,
+					opt.ResourceGroupName, subscriptionID)))
+			}
+			tmpList.Details = details
+		} else {
+			for _, routeTable := range page.Value {
+				if _, exist := idMap[*routeTable.ID]; !exist {
+					continue
+				}
+
+				details = append(details, converter.PtrToVal(cli.ConvertRouteTable(routeTable,
+					opt.ResourceGroupName, subscriptionID)))
+				delete(idMap, *routeTable.ID)
+
+				if len(idMap) == 0 {
+					tmpList.Details = details
+					break
+				}
+			}
+		}
+
+		cloudIDs := make([]string, 0)
+		for _, item := range tmpList.Details {
+			cloudIDs = append(cloudIDs, item.CloudID)
+			allCloudIDMap[item.CloudID] = true
+		}
+
+		// get route table info from db.
+		resourceDBMap, err := GetAzureRouteTableInfoFromDB(kt, cloudIDs, dataCli)
+		if err != nil {
+			logs.Errorf("%s-routetable get routetabledblist failed. accountID: %s, resGroupName: %s, err: %v",
+				enumor.Azure, req.AccountID, req.ResourceGroupName, err)
+			return nil, err
+		}
+
+		// compare and update route table list.
+		err = compareUpdateAzureRouteTableList(kt, req, tmpList, resourceDBMap, dataCli)
+		if err != nil {
+			logs.Errorf("%s-routetable compare and update routetabledblist failed. accountID: %s, "+
+				"resGroupName: %s, err: %v", enumor.Azure, req.AccountID, req.ResourceGroupName, err)
+			return nil, err
+		}
 	}
 
 	return allCloudIDMap, nil
@@ -161,7 +199,7 @@ func compareUpdateAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteT
 	resourceDBMap map[string]*cloudRouteTable.RouteTable[cloudRouteTable.AzureRouteTableExtension],
 	dataCli *dataclient.Client) error {
 
-	createResources, updateResources, err := filterAzureRouteTableList(kt, req, list, resourceDBMap, dataCli)
+	createResources, updateResources, subnetMap, err := filterAzureRouteTableList(kt, req, list, resourceDBMap, dataCli)
 	if err != nil {
 		return err
 	}
@@ -212,6 +250,9 @@ func compareUpdateAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteT
 			}
 		}
 	}
+	if len(subnetMap) > 0 {
+		UpdateSubnetRouteTableByIDs(kt, enumor.Azure, subnetMap, dataCli)
+	}
 
 	return nil
 }
@@ -221,14 +262,16 @@ func filterAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyn
 	list *routetable.AzureRouteTableListResult,
 	resourceDBMap map[string]*cloudRouteTable.RouteTable[cloudRouteTable.AzureRouteTableExtension],
 	dataCli *dataclient.Client) (createResources []dataproto.RouteTableCreateReq[dataproto.AzureRouteTableCreateExt],
-	updateResources []dataproto.RouteTableBaseInfoUpdateReq, err error) {
+	updateResources []dataproto.RouteTableBaseInfoUpdateReq, subnetMap map[string]dataproto.RouteTableSubnetReq,
+	err error) {
 
 	if list == nil || len(list.Details) == 0 {
-		return createResources, updateResources,
+		return createResources, updateResources, nil,
 			fmt.Errorf("cloudapi routetablelist is empty, accountID: %s, resGroupName: %s",
 				req.AccountID, req.ResourceGroupName)
 	}
 
+	subnetMap = make(map[string]dataproto.RouteTableSubnetReq, 0)
 	for _, item := range list.Details {
 		// need compare and update resource data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
@@ -242,6 +285,14 @@ func filterAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyn
 			tmpRes.Data = &dataproto.RouteTableUpdateBaseInfo{
 				Name: converter.ValToPtr(item.Name),
 				Memo: item.Memo,
+			}
+			if item.Extension != nil && len(item.Extension.CloudSubnetIDs) > 0 {
+				for _, tmpSubnetID := range item.Extension.CloudSubnetIDs {
+					subnetMap[tmpSubnetID] = dataproto.RouteTableSubnetReq{
+						RouteTableID:      resourceInfo.ID,
+						CloudRouteTableID: item.CloudID,
+					}
+				}
 			}
 
 			updateResources = append(updateResources, tmpRes)
@@ -267,13 +318,18 @@ func filterAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyn
 				tmpRes.Extension = &dataproto.AzureRouteTableCreateExt{
 					ResourceGroupName: item.Extension.ResourceGroupName,
 				}
+				for _, tmpSubnetID := range item.Extension.CloudSubnetIDs {
+					subnetMap[tmpSubnetID] = dataproto.RouteTableSubnetReq{
+						CloudRouteTableID: item.CloudID,
+					}
+				}
 			}
 
 			createResources = append(createResources, tmpRes)
 		}
 	}
 
-	return createResources, updateResources, nil
+	return createResources, updateResources, subnetMap, nil
 }
 
 // AzureRouteSync azure route sync.
@@ -473,13 +529,16 @@ func BatchCreateAzureRoute(kt *kit.Kit, newID string, list *routetable.AzureRout
 }
 
 func checkAzureIsUpdate(item routetable.AzureRouteTable,
-	resourceInfo *cloudRouteTable.RouteTable[cloudRouteTable.AzureRouteTableExtension]) bool {
+	dbInfo *cloudRouteTable.RouteTable[cloudRouteTable.AzureRouteTableExtension]) bool {
 
-	if resourceInfo.Name == item.Name && converter.PtrToVal(resourceInfo.Memo) == converter.PtrToVal(item.Memo) {
-		return false
+	if dbInfo.Name != item.Name {
+		return true
+	}
+	if !assert.IsPtrStringEqual(item.Memo, dbInfo.Memo) {
+		return true
 	}
 
-	return true
+	return false
 }
 
 // compareDeleteAzureRouteTableList compare and delete route table list from db.

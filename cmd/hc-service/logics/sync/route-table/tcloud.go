@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/api/core"
 	cloudRouteTable "hcm/pkg/api/core/cloud/route-table"
 	dataservice "hcm/pkg/api/data-service"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/route-table"
 	hcservice "hcm/pkg/api/hc-service"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
@@ -38,6 +39,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
 )
@@ -186,7 +188,8 @@ func compareUpdateTCloudRouteTableList(kt *kit.Kit, req *hcroutetable.TCloudRout
 	resourceDBMap map[string]*cloudRouteTable.RouteTable[cloudRouteTable.TCloudRouteTableExtension],
 	dataCli *dataclient.Client) error {
 
-	createResources, updateResources, err := filterTCloudRouteTableList(kt, req, list, resourceDBMap, dataCli)
+	createResources, updateResources, subnetMap, err := filterTCloudRouteTableList(kt, req, list,
+		resourceDBMap, dataCli)
 	if err != nil {
 		return err
 	}
@@ -237,8 +240,110 @@ func compareUpdateTCloudRouteTableList(kt *kit.Kit, req *hcroutetable.TCloudRout
 			}
 		}
 	}
+	if len(subnetMap) > 0 {
+		UpdateSubnetRouteTableByIDs(kt, enumor.TCloud, subnetMap, dataCli)
+	}
 
 	return nil
+}
+
+func UpdateSubnetRouteTableByIDs(kt *kit.Kit, vendor enumor.Vendor, subnetMap map[string]dataproto.RouteTableSubnetReq,
+	dataCli *dataclient.Client) {
+
+	tmpCloudIDs := make([]string, 0)
+	tmpCloudSubnetIDs := make([]string, 0)
+	for tmpSubnetID, tmpRouteItem := range subnetMap {
+		tmpCloudIDs = append(tmpCloudIDs, tmpRouteItem.CloudRouteTableID)
+		tmpCloudSubnetIDs = append(tmpCloudSubnetIDs, tmpSubnetID)
+	}
+	subnetListReq := &core.ListReq{
+		Fields: []string{"id", "cloud_id", "cloud_route_table_id", "route_table_id"},
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.In.Factory(),
+					Value: tmpCloudSubnetIDs,
+				},
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: vendor,
+				},
+			},
+		},
+		Page: core.DefaultBasePage,
+	}
+	subnetList, err := dataCli.Global.Subnet.List(kt.Ctx, kt.Header(), subnetListReq)
+	if err != nil {
+		logs.Errorf("%s-routetable update subnet route_table_id failed. subnetMap: %+v, err: %v",
+			vendor, subnetMap, err)
+		return
+	}
+	if len(subnetList.Details) == 0 {
+		return
+	}
+
+	rtListReq := &core.ListReq{
+		Fields: []string{"id", "cloud_id"},
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.In.Factory(),
+					Value: tmpCloudIDs,
+				},
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: vendor,
+				},
+			},
+		},
+		Page: core.DefaultBasePage,
+	}
+	routeTableList, err := dataCli.Global.RouteTable.List(kt.Ctx, kt.Header(), rtListReq)
+	if err != nil {
+		return
+	}
+	routeTableInfoMap := make(map[string]dataproto.RouteTableSubnetReq, 0)
+	for _, rtItem := range routeTableList.Details {
+		routeTableInfoMap[rtItem.CloudID] = dataproto.RouteTableSubnetReq{
+			RouteTableID:      rtItem.ID,
+			CloudRouteTableID: rtItem.CloudID,
+		}
+	}
+
+	tmpSubnetArr := make([]protocloud.SubnetBaseInfoUpdateReq, 0)
+	for _, tmpItem := range subnetList.Details {
+		if len(tmpItem.RouteTableID) > 0 && len(tmpItem.CloudRouteTableID) > 0 {
+			continue
+		}
+		rtSubnetInfo, ok := subnetMap[tmpItem.CloudID]
+		if !ok {
+			continue
+		}
+		tmpSubnetReq := protocloud.SubnetBaseInfoUpdateReq{
+			IDs: []string{tmpItem.ID},
+			Data: &protocloud.SubnetUpdateBaseInfo{
+				CloudRouteTableID: converter.ValToPtr(rtSubnetInfo.CloudRouteTableID),
+			},
+		}
+		// 检查routeTable表的cloud_id是否存在
+		if rtInfo, ok := routeTableInfoMap[rtSubnetInfo.CloudRouteTableID]; ok {
+			tmpSubnetReq.Data.RouteTableID = converter.ValToPtr(rtInfo.RouteTableID)
+		}
+		tmpSubnetArr = append(tmpSubnetArr, tmpSubnetReq)
+	}
+
+	if len(tmpSubnetArr) > 0 {
+		subnetReq := &protocloud.SubnetBaseInfoBatchUpdateReq{
+			Subnets: tmpSubnetArr,
+		}
+		err = dataCli.Global.Subnet.BatchUpdateBaseInfo(kt.Ctx, kt.Header(), subnetReq)
+	}
 }
 
 // filterTCloudRouteTableList filter tcloud route table list
@@ -246,13 +351,15 @@ func filterTCloudRouteTableList(kt *kit.Kit, req *hcroutetable.TCloudRouteTableS
 	list *routetable.TCloudRouteTableListResult,
 	resourceDBMap map[string]*cloudRouteTable.RouteTable[cloudRouteTable.TCloudRouteTableExtension],
 	dataCli *dataclient.Client) (createResources []dataproto.RouteTableCreateReq[dataproto.TCloudRouteTableCreateExt],
-	updateResources []dataproto.RouteTableBaseInfoUpdateReq, err error) {
+	updateResources []dataproto.RouteTableBaseInfoUpdateReq, subnetMap map[string]dataproto.RouteTableSubnetReq,
+	err error) {
 
 	if list == nil || len(list.Details) == 0 {
-		return createResources, updateResources,
+		return createResources, updateResources, nil,
 			fmt.Errorf("cloudapi routetablelist is empty, accountID: %s, region: %s", req.AccountID, req.Region)
 	}
 
+	subnetMap = make(map[string]dataproto.RouteTableSubnetReq, 0)
 	for _, item := range list.Details {
 		// need compare and update resource data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
@@ -266,6 +373,14 @@ func filterTCloudRouteTableList(kt *kit.Kit, req *hcroutetable.TCloudRouteTableS
 			tmpRes.Data = &dataproto.RouteTableUpdateBaseInfo{
 				Name: converter.ValToPtr(item.Name),
 				Memo: item.Memo,
+			}
+			if item.Extension != nil && len(item.Extension.Associations) > 0 {
+				for _, subnetItem := range item.Extension.Associations {
+					subnetMap[subnetItem.CloudSubnetID] = dataproto.RouteTableSubnetReq{
+						RouteTableID:      resourceInfo.ID,
+						CloudRouteTableID: item.CloudID,
+					}
+				}
 			}
 
 			updateResources = append(updateResources, tmpRes)
@@ -291,23 +406,31 @@ func filterTCloudRouteTableList(kt *kit.Kit, req *hcroutetable.TCloudRouteTableS
 				tmpRes.Extension = &dataproto.TCloudRouteTableCreateExt{
 					Main: item.Extension.Main,
 				}
+				for _, subnetItem := range item.Extension.Associations {
+					subnetMap[subnetItem.CloudSubnetID] = dataproto.RouteTableSubnetReq{
+						CloudRouteTableID: item.CloudID,
+					}
+				}
 			}
 
 			createResources = append(createResources, tmpRes)
 		}
 	}
 
-	return createResources, updateResources, nil
+	return createResources, updateResources, subnetMap, nil
 }
 
 func checkTCloudIsUpdate(item routetable.TCloudRouteTable,
-	resourceInfo *cloudRouteTable.RouteTable[cloudRouteTable.TCloudRouteTableExtension]) bool {
+	dbInfo *cloudRouteTable.RouteTable[cloudRouteTable.TCloudRouteTableExtension]) bool {
 
-	if resourceInfo.Name == item.Name && converter.PtrToVal(resourceInfo.Memo) == converter.PtrToVal(item.Memo) {
-		return false
+	if dbInfo.Name != item.Name {
+		return true
+	}
+	if !assert.IsPtrStringEqual(item.Memo, dbInfo.Memo) {
+		return true
 	}
 
-	return true
+	return false
 }
 
 // compareDeleteTCloudRouteTableList compare and delete route table list from db.
