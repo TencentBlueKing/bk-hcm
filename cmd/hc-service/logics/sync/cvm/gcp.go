@@ -37,11 +37,10 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
-	protodisk "hcm/pkg/api/hc-service/disk"
-	protoeip "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -53,7 +52,20 @@ type SyncGcpCvmOption struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Region    string   `json:"region" validate:"required"`
 	Zone      string   `json:"zone" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncGcpCvmOption
+func (opt SyncGcpCvmOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }
 
 // SyncGcpCvm sync cvm self
@@ -365,18 +377,6 @@ func isChangeGcp(cloud *GcpCvmSync, db *GcpDSCvmSync) bool {
 
 	if !assert.IsStringMapEqual(db.Cvm.Extension.Labels, cloud.Cvm.Labels) {
 		return true
-	}
-
-	disks := make([]corecvm.GcpAttachedDisk, 0)
-	if len(cloud.Cvm.Disks) > 0 {
-		for _, v := range cloud.Cvm.Disks {
-			tmp := corecvm.GcpAttachedDisk{
-				Boot:    v.Boot,
-				Index:   v.Index,
-				CloudID: v.Source,
-			}
-			disks = append(disks, tmp)
-		}
 	}
 
 	for _, dbValue := range db.Cvm.Extension.Disks {
@@ -824,7 +824,7 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		for _, id := range eipCloudIDMap {
 			cloudIDs = append(cloudIDs, id.RelID)
 		}
-		req := &protoeip.EipSyncReq{
+		req := &synceip.SyncGcpEipOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  cloudIDs,
@@ -858,10 +858,9 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		for _, id := range diskSLMap {
 			diskSelfLinks = append(diskSelfLinks, id.RelID)
 		}
-		req := &protodisk.DiskSyncReq{
+		req := &disk.SyncGcpDiskOption{
 			AccountID: req.AccountID,
 			Zone:      req.Zone,
-			Region:    req.Region,
 			SelfLinks: diskSelfLinks,
 		}
 		_, err := disk.SyncGcpDisk(kt, req, ad, dataCli)

@@ -33,8 +33,6 @@ import (
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
 	protocvm "hcm/pkg/api/hc-service/cvm"
-	protodisk "hcm/pkg/api/hc-service/disk"
-	protoeip "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -384,7 +382,7 @@ func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []
 		cloudIDs = append(cloudIDs, one.CloudID)
 	}
 
-	req := &protoeip.EipSyncReq{
+	req := &eip.SyncHuaWeiEipOption{
 		AccountID: accountID,
 		Region:    region,
 		CloudIDs:  cloudIDs,
@@ -430,7 +428,7 @@ func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs [
 		cloudIDs = append(cloudIDs, one.CloudID)
 	}
 
-	req := &protodisk.DiskSyncReq{
+	req := &disk.SyncHuaWeiDiskOption{
 		AccountID: accountID,
 		Region:    region,
 		CloudIDs:  cloudIDs,

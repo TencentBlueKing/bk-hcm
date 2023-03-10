@@ -18,3 +18,36 @@
  */
 
 package tcloud
+
+import (
+	"time"
+
+	proto "hcm/pkg/api/hc-service"
+	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+)
+
+// SyncSG ...
+func SyncSG(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+
+	start := time.Now()
+	logs.V(3).Infof("tcloud account[%s] sync sg start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	defer func() {
+		logs.V(3).Infof("tcloud account[%s] sync sg end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
+	}()
+
+	for _, region := range regions {
+		req := &proto.SecurityGroupSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		}
+		if err := service.TCloud.SecurityGroup.SyncSecurityGroup(kt.Ctx, kt.Header(), req); err != nil {
+			logs.Errorf("sync tcloud sg failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}

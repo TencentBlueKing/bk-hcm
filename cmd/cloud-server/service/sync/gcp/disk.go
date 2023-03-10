@@ -18,3 +18,37 @@
  */
 
 package gcp
+
+import (
+	"hcm/pkg/api/hc-service/disk"
+	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"time"
+)
+
+// SyncDisk ...
+func SyncDisk(kt *kit.Kit, service *hcservice.Client, accountID string, regionZoneMap map[string][]string) error {
+
+	start := time.Now()
+	logs.V(3).Infof("gcp account[%s] sync disk start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	defer func() {
+		logs.V(3).Infof("gcp account[%s] sync disk end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
+	}()
+
+	for _, zones := range regionZoneMap {
+		for _, zone := range zones {
+			req := &disk.DiskSyncReq{
+				AccountID: accountID,
+				Zone:      zone,
+			}
+			if err := service.Gcp.Disk.SyncDisk(kt.Ctx, kt.Header(), req); err != nil {
+				logs.Errorf("sync gcp disk failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				return err
+			}
+		}
+	}
+
+	return nil
+}

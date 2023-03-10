@@ -88,27 +88,30 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 		}
 
 		for _, one := range nextResult.Value {
-			if _, exist := idMap[*one.ID]; exist {
-				state := string(*one.Properties.ProvisioningState)
-				sku := string(*one.SKU.Name)
-				eIp := &eip.AzureEip{
-					CloudID:  *one.ID,
-					Name:     one.Name,
-					Region:   *one.Location,
-					Status:   &state,
-					PublicIp: one.Properties.IPAddress,
-					SKU:      &sku,
-				}
-				if one.Properties.IPConfiguration != nil {
-					eIp.IpConfigurationID = one.Properties.IPConfiguration.ID
-				}
+			state := string(*one.Properties.ProvisioningState)
+			sku := string(*one.SKU.Name)
+			eIp := &eip.AzureEip{
+				CloudID:  *one.ID,
+				Name:     one.Name,
+				Region:   *one.Location,
+				Status:   &state,
+				PublicIp: one.Properties.IPAddress,
+				SKU:      &sku,
+			}
+			if one.Properties.IPConfiguration != nil {
+				eIp.IpConfigurationID = one.Properties.IPConfiguration.ID
+			}
 
+			if len(opt.CloudIDs) > 0 {
+				if _, exist := idMap[*one.ID]; exist {
+					eips = append(eips, eIp)
+					delete(idMap, *one.ID)
+					if len(idMap) == 0 {
+						return &eip.AzureEipListResult{Details: eips}, nil
+					}
+				}
+			} else {
 				eips = append(eips, eIp)
-				delete(idMap, *one.ID)
-
-				if len(idMap) == 0 {
-					return &eip.AzureEipListResult{Details: eips}, nil
-				}
 			}
 		}
 	}

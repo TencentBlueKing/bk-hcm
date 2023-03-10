@@ -20,7 +20,13 @@
 package firewall
 
 import (
+	"fmt"
+
 	firewall "hcm/cmd/hc-service/logics/sync/firewall"
+	"hcm/pkg/adaptor/gcp"
+	adcore "hcm/pkg/adaptor/types/core"
+	firewallrule "hcm/pkg/adaptor/types/firewall-rule"
+	hcservice "hcm/pkg/api/hc-service"
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
@@ -39,11 +45,124 @@ func (svc *syncFireWallSvc) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	_, err := firewall.SyncGcpFirewallRule(cts.Kit, req, svc.adaptor, svc.dataCli)
+	client, err := svc.adaptor.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("request to sync gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	allCloudIDs := make(map[string]struct{})
+	nextToken := ""
+	for {
+		opt := &firewallrule.ListOption{
+			Page: &adcore.GcpPage{
+				PageSize: int64(adcore.GcpQueryLimit),
+			},
+		}
+
+		if nextToken != "" {
+			opt.Page.PageToken = nextToken
+		}
+
+		results, token, err := client.ListFirewallRule(cts.Kit, opt)
+		if err != nil {
+			return nil, err
+		}
+
+		cloudIDs := make([]string, 0, len(results))
+		for _, one := range results {
+			cloudIDs = append(cloudIDs, fmt.Sprint(one.Id))
+			allCloudIDs[fmt.Sprint(one.Id)] = struct{}{}
+		}
+
+		if len(cloudIDs) > 0 {
+			req.CloudIDs = cloudIDs
+		}
+		_, err = firewall.SyncGcpFirewallRule(cts.Kit, req, svc.adaptor, svc.dataCli)
+		if err != nil {
+			logs.Errorf("request to sync gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		if len(token) == 0 {
+			break
+		}
+		nextToken = token
+	}
+
+	commonReq := &hcservice.GcpFirewallSyncReq{
+		AccountID: req.AccountID,
+	}
+	dsIDs, err := firewall.GetDatasFromDSForGcpFireWallSync(cts.Kit, commonReq, svc.dataCli)
+	if err != nil {
+		return nil, err
+	}
+
+	deleteIDs := make([]string, 0)
+	for id := range dsIDs {
+		if _, ok := allCloudIDs[id]; !ok {
+			deleteIDs = append(deleteIDs, id)
+		}
+	}
+
+	err = svc.deleteGcpFireWall(cts, client, req, deleteIDs)
+	if err != nil {
+		logs.Errorf("request deleteGcpFireWall failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+func (svc *syncFireWallSvc) deleteGcpFireWall(cts *rest.Contexts, client *gcp.Gcp,
+	req *proto.GcpFirewallSyncReq, deleteIDs []string) error {
+
+	if len(deleteIDs) > 0 {
+		realDeleteIDs := make([]string, 0)
+		nextToken := ""
+		for {
+			opt := &firewallrule.ListOption{
+				Page: &adcore.GcpPage{
+					PageSize: int64(adcore.GcpQueryLimit),
+				},
+			}
+
+			if nextToken != "" {
+				opt.Page.PageToken = nextToken
+			}
+
+			results, token, err := client.ListFirewallRule(cts.Kit, opt)
+			if err != nil {
+				return err
+			}
+
+			for _, id := range deleteIDs {
+				realDeleteFlag := true
+				for _, data := range results {
+					if fmt.Sprint(data.Id) == id {
+						realDeleteFlag = false
+						break
+					}
+				}
+
+				if realDeleteFlag {
+					realDeleteIDs = append(realDeleteIDs, id)
+				}
+			}
+
+			if len(token) == 0 {
+				break
+			}
+			nextToken = token
+		}
+
+		if len(realDeleteIDs) > 0 {
+			err := firewall.DiffFireWallSyncDelete(cts.Kit, realDeleteIDs, svc.dataCli)
+			if err != nil {
+				logs.Errorf("sync delete gcp firewall failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return err
+			}
+		}
+	}
+
+	return nil
 }

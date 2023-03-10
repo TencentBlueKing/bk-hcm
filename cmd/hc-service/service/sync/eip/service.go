@@ -22,9 +22,7 @@ package eip
 import (
 	"hcm/cmd/hc-service/service/capability"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	protoeip "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
@@ -49,17 +47,4 @@ func InitSyncEipService(cap *capability.Capability) {
 type syncEipSvc struct {
 	adaptor *cloudclient.CloudAdaptorClient
 	dataCli *dataservice.Client
-}
-
-func decodeEipSyncReq(cts *rest.Contexts) (*protoeip.EipSyncReq, error) {
-	req := new(protoeip.EipSyncReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	return req, nil
 }

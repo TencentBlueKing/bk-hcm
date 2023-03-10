@@ -20,22 +20,51 @@
 package eip
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/adaptor/types/core"
 	apicore "hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
-	protoeip "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 )
 
+// SyncAzureEipOption ...
+type SyncAzureEipOption struct {
+	AccountID         string   `json:"account_id" validate:"required"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncAzureEipOption
+func (opt SyncAzureEipOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncAzureEip sync eip self
-func SyncAzureEip(kt *kit.Kit, req *protoeip.EipSyncReq,
+func SyncAzureEip(kt *kit.Kit, req *SyncAzureEipOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	client, err := ad.Azure(kt, req.AccountID)
 	if err != nil {
@@ -44,11 +73,13 @@ func SyncAzureEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 
 	cloudAllIDs := make(map[string]bool)
 
-	opt := &eip.AzureEipListOption{}
+	opt := &core.AzureListByIDOption{
+		ResourceGroupName: req.ResourceGroupName,
+	}
 	if len(req.CloudIDs) > 0 {
 		opt.CloudIDs = req.CloudIDs
 	}
-	datas, err := client.ListEip(kt, opt)
+	datas, err := client.ListEipByID(kt, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to list azure eip failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -100,7 +131,7 @@ func SyncAzureEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 	}
 
 	if len(updateIDs) > 0 {
-		err := syncAzureEipUpdate(kt, updateIDs, cloudMap, dsMap, dataCli)
+		err := syncAzureEipUpdate(kt, updateIDs, cloudMap, dsMap, dataCli, req)
 		if err != nil {
 			logs.Errorf("request syncAzureEipUpdate failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -143,8 +174,7 @@ func SyncAzureEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)
-
-		datas, err := client.ListEip(kt, opt)
+		datas, err := client.ListEipByID(kt, opt)
 		if err != nil {
 			logs.Errorf("request adaptor to list azure eip failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -176,13 +206,13 @@ func SyncAzureEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 	return nil, nil
 }
 
-func syncAzureEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
+func syncAzureEipAdd(kt *kit.Kit, addIDs []string, req *SyncAzureEipOption,
 	cloudMap map[string]*AzureEipSync, dataCli *dataservice.Client) error {
 
 	var createReq dataproto.EipExtBatchCreateReq[dataproto.AzureEipExtensionCreateReq]
 
 	for _, id := range addIDs {
-		publicImage := &dataproto.EipExtCreateReq[dataproto.AzureEipExtensionCreateReq]{
+		eip := &dataproto.EipExtCreateReq[dataproto.AzureEipExtensionCreateReq]{
 			CloudID:    id,
 			Region:     cloudMap[id].Eip.Region,
 			AccountID:  req.AccountID,
@@ -192,10 +222,12 @@ func syncAzureEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
 			Extension: &dataproto.AzureEipExtensionCreateReq{
+				ResourceGroupName: req.ResourceGroupName,
 				IpConfigurationID: cloudMap[id].Eip.IpConfigurationID,
+				SKU:               cloudMap[id].Eip.SKU,
 			},
 		}
-		createReq = append(createReq, publicImage)
+		createReq = append(createReq, eip)
 	}
 
 	if len(createReq) > 0 {
@@ -209,22 +241,45 @@ func syncAzureEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
 	return nil
 }
 
+func isAzureEipChange(db *AzureDSEipSync, cloud *AzureEipSync) bool {
+
+	if converter.PtrToVal(cloud.Eip.Status) != db.Eip.Status {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Eip.IpConfigurationID, db.Eip.Extension.IpConfigurationID) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Eip.SKU, db.Eip.Extension.SKU) {
+		return true
+	}
+
+	return false
+}
+
 func syncAzureEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AzureEipSync,
-	dsMap map[string]*AzureDSEipSync, dataCli *dataservice.Client) error {
+	dsMap map[string]*AzureDSEipSync, dataCli *dataservice.Client, req *SyncAzureEipOption) error {
 
 	var updateReq dataproto.EipExtBatchUpdateReq[dataproto.AzureEipExtensionUpdateReq]
 
 	for _, id := range updateIDs {
-		if cloudMap[id].Eip.Status != nil && *cloudMap[id].Eip.Status == dsMap[id].Eip.Status {
+
+		if !isAzureEipChange(dsMap[id], cloudMap[id]) {
 			continue
 		}
 
-		publicImage := &dataproto.EipExtUpdateReq[dataproto.AzureEipExtensionUpdateReq]{
+		eip := &dataproto.EipExtUpdateReq[dataproto.AzureEipExtensionUpdateReq]{
 			ID:     dsMap[id].Eip.ID,
-			Status: *cloudMap[id].Eip.Status,
+			Status: converter.PtrToVal(cloudMap[id].Eip.Status),
+			Extension: &dataproto.AzureEipExtensionUpdateReq{
+				ResourceGroupName: req.ResourceGroupName,
+				IpConfigurationID: cloudMap[id].Eip.IpConfigurationID,
+				SKU:               cloudMap[id].Eip.SKU,
+			},
 		}
 
-		updateReq = append(updateReq, publicImage)
+		updateReq = append(updateReq, eip)
 	}
 
 	if len(updateReq) > 0 {
@@ -237,7 +292,7 @@ func syncAzureEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 	return nil
 }
 
-func getAzureEipDSSync(kt *kit.Kit, cloudIDs []string, req *protoeip.EipSyncReq,
+func getAzureEipDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAzureEipOption,
 	dataCli *dataservice.Client) ([]string, map[string]*AzureDSEipSync, error) {
 
 	updateIDs := make([]string, 0)
@@ -259,6 +314,11 @@ func getAzureEipDSSync(kt *kit.Kit, cloudIDs []string, req *protoeip.EipSyncReq,
 						Field: "account_id",
 						Op:    filter.Equal.Factory(),
 						Value: req.AccountID,
+					},
+					&filter.AtomRule{
+						Field: "extension.resource_group_name",
+						Op:    filter.JSONEqual.Factory(),
+						Value: req.ResourceGroupName,
 					},
 					&filter.AtomRule{
 						Field: "cloud_id",
@@ -297,7 +357,7 @@ func getAzureEipDSSync(kt *kit.Kit, cloudIDs []string, req *protoeip.EipSyncReq,
 	return updateIDs, dsMap, nil
 }
 
-func getAzureEipAllDS(kt *kit.Kit, req *protoeip.EipSyncReq, dataCli *dataservice.Client) ([]string, error) {
+func getAzureEipAllDS(kt *kit.Kit, req *SyncAzureEipOption, dataCli *dataservice.Client) ([]string, error) {
 
 	start := 0
 	dsIDs := make([]string, 0)
@@ -317,9 +377,9 @@ func getAzureEipAllDS(kt *kit.Kit, req *protoeip.EipSyncReq, dataCli *dataservic
 						Value: req.AccountID,
 					},
 					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: req.Region,
+						Field: "extension.resource_group_name",
+						Op:    filter.JSONEqual.Factory(),
+						Value: req.ResourceGroupName,
 					},
 				},
 			},

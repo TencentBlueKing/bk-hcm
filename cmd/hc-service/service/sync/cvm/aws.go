@@ -42,52 +42,13 @@ func (svc *syncCvmSvc) SyncAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cli, err := svc.adaptor.Aws(cts.Kit, req.AccountID)
-	if err != nil {
+	syncOpt := &cvm.SyncAwsCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+	}
+	if _, err := cvm.SyncAwsCvm(cts.Kit, svc.adaptor, svc.dataCli, syncOpt); err != nil {
+		logs.Errorf("request to sync aws cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
 		return nil, err
-	}
-
-	listOpt := &typecvm.AwsListOption{
-		Region:   req.Region,
-		CloudIDs: nil,
-		Page: &typecore.AwsPage{
-			MaxResults: converter.ValToPtr(int64(constant.BatchOperationMaxLimit)),
-			NextToken:  nil,
-		},
-	}
-	for {
-		resp, err := cli.ListCvm(cts.Kit, listOpt)
-		if err != nil {
-			logs.Errorf("request adaptor list aws cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, cts.Kit.Rid)
-			return nil, err
-		}
-
-		cloudIDs := make([]string, 0)
-		for _, one := range resp.Reservations {
-			for _, instance := range one.Instances {
-				cloudIDs = append(cloudIDs, *instance.InstanceId)
-			}
-		}
-
-		if len(cloudIDs) == 0 {
-			break
-		}
-
-		syncOpt := &cvm.SyncAwsCvmOption{
-			AccountID: req.AccountID,
-			Region:    req.Region,
-			CloudIDs:  cloudIDs,
-		}
-		if _, err = cvm.SyncAwsCvm(cts.Kit, svc.adaptor, svc.dataCli, syncOpt); err != nil {
-			logs.Errorf("request to sync aws cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
-			return nil, err
-		}
-
-		if resp.NextToken == nil {
-			break
-		}
-
-		listOpt.Page.NextToken = resp.NextToken
 	}
 
 	return nil, nil

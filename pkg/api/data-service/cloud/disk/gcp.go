@@ -21,12 +21,15 @@ package disk
 
 // GcpDiskExtensionCreateReq ...
 type GcpDiskExtensionCreateReq struct {
-	SelfLink string `json:"self_link" validate:"required"`
+	SelfLink    string `json:"self_link" validate:"required"`
+	SourceImage string `json:"source_image,omitempty"`
+	Description string `json:"description,omitempty"`
+	Encrypted   *bool  `json:"encrypted,omitempty"`
 }
 
 // GcpDiskExtensionResult ...
 type GcpDiskExtensionResult struct {
-	SelfLink string `json:"self_link" validate:"required"`
+	SelfLink    string `json:"self_link" validate:"required"`
 	SourceImage string `json:"source_image,omitempty"`
 	Description string `json:"description,omitempty"`
 	Encrypted   *bool  `json:"encrypted,omitempty"`
@@ -34,4 +37,9 @@ type GcpDiskExtensionResult struct {
 
 // GcpDiskExtensionUpdateReq ...
 // 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
-type GcpDiskExtensionUpdateReq struct{}
+type GcpDiskExtensionUpdateReq struct {
+	SelfLink    string `json:"self_link" validate:"required"`
+	SourceImage string `json:"source_image,omitempty"`
+	Description string `json:"description,omitempty"`
+	Encrypted   *bool  `json:"encrypted,omitempty"`
+}

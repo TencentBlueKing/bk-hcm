@@ -21,6 +21,10 @@ package securitygroup
 
 import (
 	securitygroup "hcm/cmd/hc-service/logics/sync/security-group"
+	"hcm/pkg/adaptor/tcloud"
+	typcore "hcm/pkg/adaptor/types/core"
+	typessg "hcm/pkg/adaptor/types/security-group"
+	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -38,11 +42,118 @@ func (svc *syncSecurityGroupSvc) SyncTCloudSecurityGroup(cts *rest.Contexts) (in
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	_, err := securitygroup.SyncTCloudSecurityGroup(cts.Kit, req, svc.adaptor, svc.dataCli)
+	client, err := svc.adaptor.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("request to sync tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	allCloudIDs := make(map[string]struct{})
+	offset := 0
+	for {
+		opt := &typessg.TCloudListOption{
+			Region: req.Region,
+			Page:   &typcore.TCloudPage{Offset: uint64(offset), Limit: uint64(typcore.TCloudQueryLimit)},
+		}
+
+		datas, err := client.ListSecurityGroup(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list tcloud security group failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
+			return nil, err
+		}
+
+		cloudIDs := make([]string, 0, len(datas))
+		for _, one := range datas {
+			cloudIDs = append(cloudIDs, *one.SecurityGroupId)
+			allCloudIDs[*one.SecurityGroupId] = struct{}{}
+		}
+
+		if len(cloudIDs) > 0 {
+			req.CloudIDs = cloudIDs
+		}
+		_, err = securitygroup.SyncTCloudSecurityGroup(cts.Kit, req, svc.adaptor, svc.dataCli)
+		if err != nil {
+			logs.Errorf("request to sync tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		offset += len(datas)
+		if uint(len(datas)) < typcore.TCloudQueryLimit {
+			break
+		}
+	}
+
+	commonReq := &hcservice.SecurityGroupSyncReq{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+	}
+	dsIDs, err := securitygroup.GetDatasFromDSForSecurityGroupSync(cts.Kit, commonReq, svc.dataCli)
+	if err != nil {
+		return nil, err
+	}
+
+	deleteIDs := make([]string, 0)
+	for id := range dsIDs {
+		if _, ok := allCloudIDs[id]; !ok {
+			deleteIDs = append(deleteIDs, id)
+		}
+	}
+
+	err = svc.deleteTCloudSG(cts, client, req, deleteIDs)
+	if err != nil {
+		logs.Errorf("request deleteTCloudSG failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+func (svc *syncSecurityGroupSvc) deleteTCloudSG(cts *rest.Contexts, client *tcloud.TCloud,
+	req *securitygroup.SyncTCloudSecurityGroupOption, deleteIDs []string) error {
+
+	if len(deleteIDs) > 0 {
+		realDeleteIDs := make([]string, 0)
+		offset := 0
+		for {
+			opt := &typessg.TCloudListOption{
+				Region: req.Region,
+				Page:   &typcore.TCloudPage{Offset: uint64(offset), Limit: uint64(typcore.TCloudQueryLimit)},
+			}
+
+			datas, err := client.ListSecurityGroup(cts.Kit, opt)
+			if err != nil {
+				logs.Errorf("request adaptor to list tcloud security group failed, err: %v, opt: %v, rid: %s",
+					err, opt, cts.Kit.Rid)
+				return err
+			}
+
+			for _, id := range deleteIDs {
+				realDeleteFlag := true
+				for _, data := range datas {
+					if *data.SecurityGroupId == id {
+						realDeleteFlag = false
+						break
+					}
+				}
+
+				if realDeleteFlag {
+					realDeleteIDs = append(realDeleteIDs, id)
+				}
+			}
+
+			offset += len(datas)
+			if uint(len(datas)) < typcore.TCloudQueryLimit {
+				break
+			}
+		}
+
+		if len(realDeleteIDs) > 0 {
+			err := securitygroup.DiffSecurityGroupSyncDelete(cts.Kit, realDeleteIDs, svc.dataCli)
+			if err != nil {
+				logs.Errorf("sync delete tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return err
+			}
+		}
+	}
+
+	return nil
 }

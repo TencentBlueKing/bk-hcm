@@ -18,3 +18,35 @@
  */
 
 package azure
+
+import (
+	"hcm/pkg/api/hc-service/eip"
+	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"time"
+)
+
+// SyncEip ...
+func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, resourceGroupNames []string) error {
+
+	start := time.Now()
+	logs.V(3).Infof("azure account[%s] sync eip start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	defer func() {
+		logs.V(3).Infof("azure account[%s] sync eip end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
+	}()
+
+	for _, name := range resourceGroupNames {
+		req := &eip.EipSyncReq{
+			AccountID:         accountID,
+			ResourceGroupName: name,
+		}
+		if err := service.Azure.Eip.SyncEip(kt.Ctx, kt.Header(), req); err != nil {
+			logs.Errorf("sync azure eip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}

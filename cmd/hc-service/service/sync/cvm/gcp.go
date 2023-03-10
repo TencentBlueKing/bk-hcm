@@ -43,52 +43,15 @@ func (svc *syncCvmSvc) SyncGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cli, err := svc.adaptor.Gcp(cts.Kit, req.AccountID)
-	if err != nil {
+	syncOpt := &cvm.SyncGcpCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		Zone:      req.Zone,
+	}
+
+	if _, err := cvm.SyncGcpCvm(cts.Kit, svc.adaptor, svc.dataCli, syncOpt); err != nil {
+		logs.Errorf("request to sync gcp cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
 		return nil, err
-	}
-
-	listOpt := &typecvm.GcpListOption{
-		Region:   req.Region,
-		Zone:     req.Zone,
-		CloudIDs: nil,
-		Page: &typecore.GcpPage{
-			PageSize:  int64(constant.BatchOperationMaxLimit),
-			PageToken: "",
-		},
-	}
-	for {
-		cvms, pageToken, err := cli.ListCvm(cts.Kit, listOpt)
-		if err != nil {
-			logs.Errorf("request adaptor list gcp cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, cts.Kit.Rid)
-			return nil, err
-		}
-
-		if len(cvms) == 0 {
-			break
-		}
-
-		cloudIDs := make([]string, 0)
-		for _, one := range cvms {
-			cloudIDs = append(cloudIDs, strconv.FormatUint(one.Id, 10))
-		}
-
-		syncOpt := &cvm.SyncGcpCvmOption{
-			AccountID: req.AccountID,
-			Region:    req.Region,
-			Zone:      req.Zone,
-			CloudIDs:  cloudIDs,
-		}
-		if _, err = cvm.SyncGcpCvm(cts.Kit, svc.adaptor, svc.dataCli, syncOpt); err != nil {
-			logs.Errorf("request to sync gcp cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
-			return nil, err
-		}
-
-		if len(pageToken) == 0 {
-			break
-		}
-
-		listOpt.Page.PageToken = pageToken
 	}
 
 	return nil, nil

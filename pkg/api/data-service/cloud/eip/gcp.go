@@ -46,4 +46,14 @@ type GcpEipExtensionResult struct {
 }
 
 // GcpEipExtensionUpdateReq ...
-type GcpEipExtensionUpdateReq struct{}
+type GcpEipExtensionUpdateReq struct {
+	AddressType  string `json:"address_type"`
+	Description  string `json:"description"`
+	IpVersion    string `json:"ip_version"`
+	NetworkTier  string `json:"network_tier"`
+	PrefixLength int64  `json:"prefix_length"`
+	Purpose      string `json:"purpose"`
+	Network      string `json:"network"`
+	Subnetwork   string `json:"subnetwork"`
+	SelfLink     string `json:"self_link"`
+}

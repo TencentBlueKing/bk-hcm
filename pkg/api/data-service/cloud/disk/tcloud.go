@@ -23,6 +23,11 @@ package disk
 type TCloudDiskExtensionCreateReq struct {
 	DiskChargeType    string                   `json:"disk_charge_type" validate:"required"`
 	DiskChargePrepaid *TCloudDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
+	Encrypted         *bool                    `json:"encrypted,omitempty"`
+	Attached          *bool                    `json:"attached,omitempty"`
+	DiskUsage         *string                  `json:"disk_usage,omitempty"`
+	InstanceId        *string                  `json:"InstanceId,omitempty"`
+	InstanceType      *string                  `json:"InstanceType,omitempty"`
 }
 
 // TCloudDiskExtensionResult ...
@@ -38,10 +43,18 @@ type TCloudDiskExtensionResult struct {
 
 // TCloudDiskChargePrepaid ...
 type TCloudDiskChargePrepaid struct {
-	Period    *uint64 `json:"period"`
+	Period    *int64  `json:"period"`
 	RenewFlag *string `json:"renew_flag"`
 }
 
 // TCloudDiskExtensionUpdateReq ...
 // 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
-type TCloudDiskExtensionUpdateReq struct{}
+type TCloudDiskExtensionUpdateReq struct {
+	DiskChargeType    string                   `json:"disk_charge_type" validate:"required"`
+	DiskChargePrepaid *TCloudDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
+	Encrypted         *bool                    `json:"encrypted,omitempty"`
+	Attached          *bool                    `json:"attached,omitempty"`
+	DiskUsage         *string                  `json:"disk_usage,omitempty"`
+	InstanceId        *string                  `json:"InstanceId,omitempty"`
+	InstanceType      *string                  `json:"InstanceType,omitempty"`
+}

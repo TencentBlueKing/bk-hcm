@@ -148,6 +148,10 @@
 ```
 
 ### huawei req
+### ecs 对应 cvm disk networkinterface
+### vpc 对应 vpc subnet sg sgRule routetable
+### eip 对应 eip
+### ims 对应 publicimage
 ```json 
 {
   "filter": {
@@ -157,6 +161,11 @@
         "field": "type",
         "op": "eq",
         "value": "public"
+      },
+      {
+        "field": "service",
+        "op": "eq",
+        "value": "ims"
       }
     ]
   },
@@ -171,28 +180,282 @@
 ### huawei resp
 ```json 
 {
-  {
     "code": 0,
     "message": "",
     "data": {
         "details": [
             {
-                "id": "000000cb",
-                "region_id": "af-south-1",
+                "id": "000000kc",
+                "service": "ims",
+                "region_id": "cn-east-3",
                 "type": "public",
                 "locales_pt_br": "",
-                "locales_zh_cn": "非洲-约翰内斯堡",
+                "locales_zh_cn": "",
                 "locales_en_us": "",
                 "locales_es_us": "",
                 "locales_es_es": "",
-                "creator": "sync-timing-admin",
-                "reviser": "sync-timing-admin",
-                "created_at": "2023-02-21T15:26:50Z",
-                "updated_at": "2023-02-21T15:26:50Z"
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000kh",
+                "service": "ims",
+                "region_id": "cn-north-1",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000kp",
+                "service": "ims",
+                "region_id": "cn-southwest-2",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000kr",
+                "service": "ims",
+                "region_id": "na-mexico-1",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000kt",
+                "service": "ims",
+                "region_id": "cn-north-9",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000kv",
+                "service": "ims",
+                "region_id": "ap-southeast-1",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000kw",
+                "service": "ims",
+                "region_id": "ap-southeast-2",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000kx",
+                "service": "ims",
+                "region_id": "af-south-1",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000l0",
+                "service": "ims",
+                "region_id": "cn-east-2",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000lb",
+                "service": "ims",
+                "region_id": "sa-brazil-1",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000lh",
+                "service": "ims",
+                "region_id": "ap-southeast-3",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000lj",
+                "service": "ims",
+                "region_id": "cn-north-2",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000ll",
+                "service": "ims",
+                "region_id": "cn-north-4",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000lo",
+                "service": "ims",
+                "region_id": "ap-southeast-4",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000lr",
+                "service": "ims",
+                "region_id": "cn-south-2",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000lt",
+                "service": "ims",
+                "region_id": "cn-south-1",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000lu",
+                "service": "ims",
+                "region_id": "la-south-2",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
+            },
+            {
+                "id": "000000m8",
+                "service": "ims",
+                "region_id": "la-north-2",
+                "type": "public",
+                "locales_pt_br": "",
+                "locales_zh_cn": "",
+                "locales_en_us": "",
+                "locales_es_us": "",
+                "locales_es_es": "",
+                "creator": "brookszhang",
+                "reviser": "brookszhang",
+                "created_at": "2023-03-09T20:11:47Z",
+                "updated_at": "2023-03-09T20:11:47Z"
             }
         ]
     }
-}
 }
 ```
 

@@ -77,6 +77,30 @@ type SecurityGroupSyncDS struct {
 	HcSecurityGroup cloud.BaseSecurityGroup
 }
 
+// TCloudSecurityGroupSyncDS data-service diff for sync
+type TCloudSecurityGroupSyncDS struct {
+	IsUpdated       bool
+	HcSecurityGroup corecloud.SecurityGroup[corecloud.TCloudSecurityGroupExtension]
+}
+
+// HuaWeiSecurityGroupSyncDS data-service diff for sync
+type HuaWeiSecurityGroupSyncDS struct {
+	IsUpdated       bool
+	HcSecurityGroup corecloud.SecurityGroup[corecloud.HuaWeiSecurityGroupExtension]
+}
+
+// AwsSecurityGroupSyncDS data-service diff for sync
+type AwsSecurityGroupSyncDS struct {
+	IsUpdated       bool
+	HcSecurityGroup corecloud.SecurityGroup[corecloud.AwsSecurityGroupExtension]
+}
+
+// AzureSecurityGroupSyncDS data-service diff for sync
+type AzureSecurityGroupSyncDS struct {
+	IsUpdated       bool
+	HcSecurityGroup corecloud.SecurityGroup[corecloud.AzureSecurityGroupExtension]
+}
+
 // SecurityGroupSyncHuaWeiDiff huawei cloud diff for sync
 type SecurityGroupSyncHuaWeiDiff struct {
 	SecurityGroup model.SecurityGroup
@@ -153,7 +177,8 @@ func GetDatasFromDSForSecurityGroupSync(kt *kit.Kit, req *proto.SecurityGroupSyn
 	return dsMap, nil
 }
 
-func diffSecurityGroupSyncDelete(kt *kit.Kit, deleteCloudIDs []string,
+// DiffSecurityGroupSyncDelete ...
+func DiffSecurityGroupSyncDelete(kt *kit.Kit, deleteCloudIDs []string,
 	dataCli *dataservice.Client) error {
 
 	batchDeleteReq := &protocloud.SecurityGroupBatchDeleteReq{
@@ -165,31 +190,4 @@ func diffSecurityGroupSyncDelete(kt *kit.Kit, deleteCloudIDs []string,
 	}
 
 	return nil
-}
-
-func getAddCloudIDs[T any](cloudMap map[string]T, dsMap map[string]*SecurityGroupSyncDS) []string {
-	addCloudIDs := make([]string, 0)
-	for id := range cloudMap {
-		if _, ok := dsMap[id]; !ok {
-			addCloudIDs = append(addCloudIDs, id)
-		} else {
-			dsMap[id].IsUpdated = true
-		}
-	}
-
-	return addCloudIDs
-}
-
-func getDeleteAndUpdateCloudIDs(dsMap map[string]*SecurityGroupSyncDS) ([]string, []string) {
-	deleteCloudIDs := make([]string, 0)
-	updateCloudIDs := make([]string, 0)
-	for id, one := range dsMap {
-		if !one.IsUpdated {
-			deleteCloudIDs = append(deleteCloudIDs, id)
-		} else {
-			updateCloudIDs = append(updateCloudIDs, id)
-		}
-	}
-
-	return deleteCloudIDs, updateCloudIDs
 }

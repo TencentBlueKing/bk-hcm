@@ -128,7 +128,6 @@ func (opt AzureDeleteOption) Validate() error {
 
 // AzureListOption azure security group list option.
 type AzureListOption struct {
-	Region               string `json:"region" validate:"required"`
 	ResourceGroupName    string `json:"resource_group_name" validate:"required"`
 	CloudSecurityGroupID string `json:"cloud_security_group_id" validate:"required"`
 }

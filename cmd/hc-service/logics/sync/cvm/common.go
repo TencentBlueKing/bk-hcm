@@ -279,7 +279,7 @@ func getDiskHcIDs(kt *kit.Kit, req *protocvm.OperateSyncReq, dataCli *dataservic
 		CloudIDs:  diskCloudIDs,
 		SelfLinks: selfLinks,
 	}
-	diskDatas, err := disk.GetDatasFromDSForDiskSync(kt, diskReq, dataCli)
+	diskDatas, err := disk.GetDatasFromDSForCvmDiskSync(kt, diskReq, dataCli)
 	if err != nil {
 		logs.Errorf("request get disk from hc failed, err: %v, rid: %s", err, kt.Rid)
 		return err

@@ -40,52 +40,13 @@ func (svc *syncCvmSvc) SyncAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cli, err := svc.adaptor.Azure(cts.Kit, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	listOpt := &typecvm.AzureListOption{
-		ResourceGroupName: req.ResourceGroupName,
-	}
-	cvms, err := cli.ListCvm(cts.Kit, listOpt)
-	if err != nil {
-		logs.Errorf("request adaptor list azure cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if len(cvms) == 0 {
-		return nil, nil
-	}
-
-	cloudIDs := make([]string, 0)
-	for _, one := range cvms {
-		cloudIDs = append(cloudIDs, *one.ID)
-	}
-
-	start := 0
-	end := 0
 	syncOpt := &cvm.SyncAzureCvmOption{
 		AccountID:         req.AccountID,
 		ResourceGroupName: req.ResourceGroupName,
-		CloudIDs:          cloudIDs,
 	}
-	for {
-		if start+constant.BatchOperationMaxLimit > len(cloudIDs) {
-			end = len(cloudIDs)
-		} else {
-			end = start + constant.BatchOperationMaxLimit
-		}
-
-		syncOpt.CloudIDs = cloudIDs[start:end]
-		if _, err = cvm.SyncAzureCvm(cts.Kit, svc.adaptor, svc.dataCli, syncOpt); err != nil {
-			logs.Errorf("request to sync azure cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
-			return nil, err
-		}
-
-		if end == len(cloudIDs) {
-			break
-		}
+	if _, err := cvm.SyncAzureCvm(cts.Kit, svc.adaptor, svc.dataCli, syncOpt); err != nil {
+		logs.Errorf("request to sync azure cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
 	}
 
 	return nil, nil

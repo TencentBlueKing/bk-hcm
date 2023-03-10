@@ -35,6 +35,7 @@ var HuaWeiRegionColumns = utils.MergeColumns(nil, HuaWeiRegionTableColumnDescrip
 // HuaWeiRegionTableColumnDescriptor is HuaWeiRegion's column descriptors.
 var HuaWeiRegionTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
+	{Column: "service", NamedC: "service", Type: enumor.String},
 	{Column: "region_id", NamedC: "region_id", Type: enumor.String},
 	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "locales_pt_br", NamedC: "locales_pt_br", Type: enumor.String},
@@ -52,6 +53,8 @@ var HuaWeiRegionTableColumnDescriptor = utils.ColumnDescriptors{
 type HuaWeiRegionTable struct {
 	// ID 账号 ID
 	ID string `db:"id"`
+	// Service 资源类型
+	Service string `db:"service"`
 	// RegionID 地域ID
 	RegionID string `db:"region_id"`
 	// Type 地域类型

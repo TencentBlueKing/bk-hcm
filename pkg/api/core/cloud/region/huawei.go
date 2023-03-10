@@ -24,6 +24,7 @@ import "time"
 // HuaWeiRegion define huawei region.
 type HuaWeiRegion struct {
 	ID          string     `json:"id"`
+	Service     string     `json:"service"`
 	RegionID    string     `json:"region_id"`
 	Type        string     `json:"type"`
 	LocalesPtBr string     `json:"locales_pt_br"`

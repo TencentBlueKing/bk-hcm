@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
@@ -54,7 +55,6 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 
 	cloudAllIDs := make(map[string]bool)
 	opt := &securitygrouprule.AzureListOption{
-		Region:               req.Region,
 		ResourceGroupName:    req.ResourceGroupName,
 		CloudSecurityGroupID: sg.CloudID,
 	}
@@ -178,7 +178,7 @@ func syncAzureSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]
 		return err
 	}
 
-	list := genAzureUpdateRulesList(kt, rules, sgID, sg.CloudID, req, dataCli)
+	list := genAzureUpdateRulesList(kt, rules, sgID, sg.CloudID, req, dataCli, sg.Region)
 	updateReq := &protocloud.AzureSGRuleBatchUpdateReq{
 		Rules: list,
 	}
@@ -212,7 +212,7 @@ func syncAzureSGRuleAdd(kt *kit.Kit, addIDs []string, req *SyncAzureSecurityGrou
 		return err
 	}
 
-	list := genAzureAddRulesList(rules, sg.CloudID, sgID, req)
+	list := genAzureAddRulesList(rules, sg.CloudID, sgID, req, sg.Region)
 	createReq := &protocloud.AzureSGRuleCreateReq{
 		Rules: list,
 	}
@@ -255,11 +255,6 @@ func getAzureSGRuleAllDS(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 			Filter: &filter.Expression{
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
-					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: req.Region,
-					},
 					&filter.AtomRule{
 						Field: "account_id",
 						Op:    filter.Equal.Factory(),
@@ -312,11 +307,6 @@ func getAzureSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAzureSecurity
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
 					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: req.Region,
-					},
-					&filter.AtomRule{
 						Field: "cloud_id",
 						Op:    filter.In.Factory(),
 						Value: cloudIDs,
@@ -360,8 +350,95 @@ func getAzureSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAzureSecurity
 	return updateIDs, nil
 }
 
+func isAzureSGRuleChange(db *corecloud.AzureSecurityGroupRule, cloud *armnetwork.SecurityRule) bool {
+
+	if db.Etag != cloud.Etag {
+		return true
+	}
+
+	if db.Name != *cloud.Name {
+		return true
+	}
+
+	if db.Memo != cloud.Properties.Description {
+		return true
+	}
+
+	if db.DestinationAddressPrefix != cloud.Properties.DestinationAddressPrefix {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.DestinationAddressPrefixes, cloud.Properties.DestinationAddressPrefixes) {
+		return true
+	}
+
+	if db.DestinationPortRange != cloud.Properties.DestinationPortRange {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.DestinationPortRanges, cloud.Properties.DestinationPortRanges) {
+		return true
+	}
+
+	if db.Protocol != string(*cloud.Properties.Protocol) {
+		return true
+	}
+
+	if db.ProvisioningState != string(*cloud.Properties.ProvisioningState) {
+		return true
+	}
+
+	if db.SourceAddressPrefix != cloud.Properties.SourceAddressPrefix {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.SourceAddressPrefixes, cloud.Properties.SourceAddressPrefixes) {
+		return true
+	}
+
+	if db.SourcePortRange != cloud.Properties.SourcePortRange {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.SourcePortRanges, cloud.Properties.SourcePortRanges) {
+		return true
+	}
+
+	if db.Priority != *cloud.Properties.Priority {
+		return true
+	}
+
+	if db.Access != string(*cloud.Properties.Access) {
+		return true
+	}
+
+	destinationIDs := make([]*string, 0)
+	if len(cloud.Properties.DestinationApplicationSecurityGroups) != 0 {
+		for _, one := range cloud.Properties.DestinationApplicationSecurityGroups {
+			destinationIDs = append(destinationIDs, one.ID)
+		}
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.CloudDestinationSecurityGroupIDs, destinationIDs) {
+		return true
+	}
+
+	sourceIDs := make([]*string, 0)
+	if len(cloud.Properties.SourceApplicationSecurityGroups) != 0 {
+		for _, one := range cloud.Properties.SourceApplicationSecurityGroups {
+			sourceIDs = append(sourceIDs, one.ID)
+		}
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.CloudSourceSecurityGroupIDs, sourceIDs) {
+		return true
+	}
+
+	return false
+}
+
 func genAzureUpdateRulesList(kt *kit.Kit, rules []*armnetwork.SecurityRule, sgID string,
-	id string, req *SyncAzureSecurityGroupOption, dataCli *dataservice.Client) []protocloud.AzureSGRuleUpdate {
+	id string, req *SyncAzureSecurityGroupOption, dataCli *dataservice.Client, region string) []protocloud.AzureSGRuleUpdate {
 
 	list := make([]protocloud.AzureSGRuleUpdate, 0, len(rules))
 
@@ -371,6 +448,11 @@ func genAzureUpdateRulesList(kt *kit.Kit, rules []*armnetwork.SecurityRule, sgID
 			logs.Errorf("azure gen update RulesList getAzureSGRuleByCid failed, err: %v, rid: %s", err, kt.Rid)
 			continue
 		}
+
+		if !isAzureSGRuleChange(one, rule) {
+			continue
+		}
+
 		spec := protocloud.AzureSGRuleUpdate{
 			ID:                         one.ID,
 			CloudID:                    *rule.ID,
@@ -390,8 +472,8 @@ func genAzureUpdateRulesList(kt *kit.Kit, rules []*armnetwork.SecurityRule, sgID
 			Priority:                   *rule.Properties.Priority,
 			Access:                     string(*rule.Properties.Access),
 			CloudSecurityGroupID:       id,
+			Region:                     region,
 			AccountID:                  req.AccountID,
-			Region:                     req.Region,
 			SecurityGroupID:            sgID,
 		}
 		switch *rule.Properties.Direction {
@@ -442,7 +524,7 @@ func getAzureSGRuleByCid(kt *kit.Kit, cID string, sgID string,
 }
 
 func genAzureAddRulesList(rules []*armnetwork.SecurityRule, sgCloudID string,
-	id string, req *SyncAzureSecurityGroupOption) []protocloud.AzureSGRuleBatchCreate {
+	id string, req *SyncAzureSecurityGroupOption, region string) []protocloud.AzureSGRuleBatchCreate {
 
 	list := make([]protocloud.AzureSGRuleBatchCreate, 0, len(rules))
 
@@ -465,8 +547,8 @@ func genAzureAddRulesList(rules []*armnetwork.SecurityRule, sgCloudID string,
 			Priority:                   *rule.Properties.Priority,
 			Access:                     string(*rule.Properties.Access),
 			CloudSecurityGroupID:       sgCloudID,
+			Region:                     region,
 			AccountID:                  req.AccountID,
-			Region:                     req.Region,
 			SecurityGroupID:            id,
 		}
 		switch *rule.Properties.Direction {
@@ -490,6 +572,7 @@ func genAzureAddRulesList(rules []*armnetwork.SecurityRule, sgCloudID string,
 			}
 			spec.CloudSourceSecurityGroupIDs = ids
 		}
+
 		list = append(list, spec)
 	}
 

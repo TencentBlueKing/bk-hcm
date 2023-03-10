@@ -392,6 +392,55 @@ func genHuaWeiAddRuleList(rules *model.ListSecurityGroupRulesResponse, req *Sync
 	return list
 }
 
+func isHuaWeiSGRuleChange(db *corecloud.HuaWeiSecurityGroupRule, cloud model.SecurityGroupRule) bool {
+
+	if *db.Memo != cloud.Description {
+		return true
+	}
+
+	if db.Protocol != cloud.Protocol {
+		return true
+	}
+
+	if db.Ethertype != cloud.Ethertype {
+		return true
+	}
+
+	if db.CloudRemoteGroupID != cloud.RemoteGroupId {
+		return true
+	}
+
+	if db.RemoteIPPrefix != cloud.RemoteIpPrefix {
+		return true
+	}
+
+	if db.CloudRemoteAddressGroupID != cloud.RemoteAddressGroupId {
+		return true
+	}
+
+	if db.Port != cloud.Multiport {
+		return true
+	}
+
+	if db.Priority != int64(cloud.Priority) {
+		return true
+	}
+
+	if db.Action != cloud.Action {
+		return true
+	}
+
+	if db.Type != enumor.SecurityGroupRuleType(cloud.Direction) {
+		return true
+	}
+
+	if db.CloudProjectID != cloud.ProjectId {
+		return true
+	}
+
+	return false
+}
+
 func genHuaWeiUpdateRulesList(kt *kit.Kit, rules *model.ListSecurityGroupRulesResponse,
 	sgID string, id string, req *SyncHuaWeiSecurityGroupOption, dataCli *dataservice.Client) []protocloud.HuaWeiSGRuleBatchUpdate {
 
@@ -403,19 +452,11 @@ func genHuaWeiUpdateRulesList(kt *kit.Kit, rules *model.ListSecurityGroupRulesRe
 			logs.Errorf("huawei gen update RulesList getHuaWeiSGRuleByCid failed, err: %v, rid: %s", err, kt.Rid)
 			continue
 		}
-		if *one.Memo == sgRule.Description &&
-			one.Protocol == sgRule.Protocol &&
-			one.Ethertype == sgRule.Ethertype &&
-			one.CloudRemoteGroupID == sgRule.RemoteGroupId &&
-			one.RemoteIPPrefix == sgRule.RemoteIpPrefix &&
-			one.CloudRemoteAddressGroupID == sgRule.RemoteAddressGroupId &&
-			one.Port == sgRule.Multiport &&
-			one.Priority == int64(sgRule.Priority) &&
-			one.Action == sgRule.Action &&
-			one.Type == enumor.SecurityGroupRuleType(sgRule.Direction) &&
-			one.CloudProjectID == sgRule.ProjectId {
+
+		if !isHuaWeiSGRuleChange(one, sgRule) {
 			continue
 		}
+
 		rule := protocloud.HuaWeiSGRuleBatchUpdate{
 			ID:                        one.ID,
 			CloudID:                   sgRule.Id,

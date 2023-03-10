@@ -21,23 +21,138 @@ package disk
 
 import (
 	disk "hcm/cmd/hc-service/logics/sync/disk"
+	"hcm/pkg/adaptor/tcloud"
+	"hcm/pkg/adaptor/types/core"
+	typesdisk "hcm/pkg/adaptor/types/disk"
+	protodisk "hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
 // SyncTCloudDisk ...
 func (svc *syncDiskSvc) SyncTCloudDisk(cts *rest.Contexts) (interface{}, error) {
-	req, err := decodeDiskSyncReq(cts)
+	req := new(disk.SyncTCloudDiskOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.adaptor.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("request decodeDiskSyncReq failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	_, err = disk.SyncTCloudDisk(cts.Kit, req, svc.adaptor, svc.dataCli)
+	allCloudIDs := make(map[string]struct{})
+	offset := 0
+	for {
+		opt := &typesdisk.TCloudDiskListOption{
+			Region: req.Region,
+			Page:   &core.TCloudPage{Offset: uint64(offset), Limit: uint64(core.TCloudQueryLimit)},
+		}
+
+		datas, err := client.ListDisk(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list tcloud disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		cloudIDs := make([]string, 0, len(datas))
+		for _, one := range datas {
+			cloudIDs = append(cloudIDs, *one.DiskId)
+			allCloudIDs[*one.DiskId] = struct{}{}
+		}
+
+		if len(cloudIDs) > 0 {
+			req.CloudIDs = cloudIDs
+		}
+		_, err = disk.SyncTCloudDisk(cts.Kit, req, svc.adaptor, svc.dataCli)
+		if err != nil {
+			logs.Errorf("request to sync tcloud disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		offset += len(datas)
+		if uint(len(datas)) < core.TCloudQueryLimit {
+			break
+		}
+	}
+
+	commReq := &protodisk.DiskSyncReq{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+	}
+	dsIDs, err := disk.GetDatasFromDSForDiskSync(cts.Kit, commReq, svc.dataCli)
 	if err != nil {
-		logs.Errorf("request to sync tcloud disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("request GetDatasFromDSForDiskSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	deleteIDs := make([]string, 0)
+	for id := range dsIDs {
+		if _, ok := allCloudIDs[id]; !ok {
+			deleteIDs = append(deleteIDs, id)
+		}
+	}
+
+	err = svc.deleteTCloudDisk(cts, client, req, deleteIDs)
+	if err != nil {
+		logs.Errorf("request deleteTCloudDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+func (svc *syncDiskSvc) deleteTCloudDisk(cts *rest.Contexts, client *tcloud.TCloud,
+	req *disk.SyncTCloudDiskOption, deleteIDs []string) error {
+
+	if len(deleteIDs) > 0 {
+		realDeleteIDs := make([]string, 0)
+		offset := 0
+		for {
+			opt := &typesdisk.TCloudDiskListOption{
+				Region: req.Region,
+				Page:   &core.TCloudPage{Offset: uint64(offset), Limit: uint64(core.TCloudQueryLimit)},
+			}
+
+			datas, err := client.ListDisk(cts.Kit, opt)
+			if err != nil {
+				logs.Errorf("request adaptor to list tcloud disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return err
+			}
+
+			for _, id := range deleteIDs {
+				realDeleteFlag := true
+				for _, data := range datas {
+					if *data.DiskId == id {
+						realDeleteFlag = false
+						break
+					}
+				}
+
+				if realDeleteFlag {
+					realDeleteIDs = append(realDeleteIDs, id)
+				}
+			}
+
+			offset += len(datas)
+			if uint(len(datas)) < core.TCloudQueryLimit {
+				break
+			}
+		}
+
+		if len(realDeleteIDs) > 0 {
+			err := disk.DiffDiskSyncDelete(cts.Kit, realDeleteIDs, svc.dataCli)
+			if err != nil {
+				logs.Errorf("request diffDiskSyncDelete failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return err
+			}
+		}
+	}
+
+	return nil
 }

@@ -36,4 +36,9 @@ type HuaWeiEipExtensionResult struct {
 }
 
 // HuaWeiEipExtensionUpdateReq ...
-type HuaWeiEipExtensionUpdateReq struct{}
+type HuaWeiEipExtensionUpdateReq struct {
+	PortID        *string `json:"port_id"`
+	BandwidthId   *string `json:"bandwidth_id"`
+	BandwidthName *string `json:"bandwidth_name"`
+	BandwidthSize *int32  `json:"bandwidth_size"`
+}

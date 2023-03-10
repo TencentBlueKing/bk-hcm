@@ -20,37 +20,67 @@
 package eip
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
 	apicore "hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
-	protoeip "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 )
 
+// SyncTCloudEipOption define sync tcloud eip option.
+type SyncTCloudEipOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncTCloudEipOption
+func (opt SyncTCloudEipOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncTCloudEip sync eip self
-func SyncTCloudEip(kt *kit.Kit, req *protoeip.EipSyncReq,
+func SyncTCloudEip(kt *kit.Kit, req *SyncTCloudEipOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	client, err := ad.TCloud(kt, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	offset := 0
 	cloudAllIDs := make(map[string]bool)
+	offset := 0
 	for {
 		opt := &eip.TCloudEipListOption{
 			Region: req.Region,
 			Page:   &core.TCloudPage{Offset: uint64(offset), Limit: uint64(filter.DefaultMaxInLimit)},
 		}
 		if len(req.CloudIDs) > 0 {
+			opt.Page = nil
 			opt.CloudIDs = req.CloudIDs
 		}
 
@@ -74,7 +104,6 @@ func SyncTCloudEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 		updateIDs, dsMap, err := getTCloudEipDSSync(kt, cloudIDs, req, dataCli)
 		if err != nil {
 			logs.Errorf("request getTCloudEipDSSync failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
 		}
 
 		if len(updateIDs) > 0 {
@@ -127,12 +156,15 @@ func SyncTCloudEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)
-
 		offset := 0
 		for {
 			opt := &eip.TCloudEipListOption{
 				Region: req.Region,
 				Page:   &core.TCloudPage{Offset: uint64(offset), Limit: uint64(filter.DefaultMaxInLimit)},
+			}
+			if len(req.CloudIDs) > 0 {
+				opt.Page = nil
+				opt.CloudIDs = req.CloudIDs
 			}
 
 			datas, err := client.ListEip(kt, opt)
@@ -173,12 +205,13 @@ func SyncTCloudEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 	return nil, nil
 }
 
-func syncTCloudEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
+func syncTCloudEipAdd(kt *kit.Kit, addIDs []string, req *SyncTCloudEipOption,
 	cloudMap map[string]*TCloudEipSync, dataCli *dataservice.Client) error {
 
 	createReq := make(dataproto.EipExtBatchCreateReq[dataproto.TCloudEipExtensionCreateReq], 0, len(addIDs))
+
 	for _, id := range addIDs {
-		publicImage := &dataproto.EipExtCreateReq[dataproto.TCloudEipExtensionCreateReq]{
+		eip := &dataproto.EipExtCreateReq[dataproto.TCloudEipExtensionCreateReq]{
 			CloudID:    id,
 			Region:     req.Region,
 			AccountID:  req.AccountID,
@@ -188,10 +221,11 @@ func syncTCloudEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
 			Extension: &dataproto.TCloudEipExtensionCreateReq{
-				Bandwidth: cloudMap[id].Eip.Bandwidth,
+				Bandwidth:          cloudMap[id].Eip.Bandwidth,
+				InternetChargeType: cloudMap[id].Eip.InternetChargeType,
 			},
 		}
-		createReq = append(createReq, publicImage)
+		createReq = append(createReq, eip)
 	}
 
 	if len(createReq) > 0 {
@@ -205,22 +239,44 @@ func syncTCloudEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
 	return nil
 }
 
+func isTCloudEipChange(db *TCloudDSEipSync, cloud *TCloudEipSync) bool {
+
+	if converter.PtrToVal(cloud.Eip.Status) != db.Eip.Status {
+		return true
+	}
+
+	if !assert.IsPtrUint64Equal(cloud.Eip.Bandwidth, db.Eip.Extension.Bandwidth) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Eip.InternetChargeType, db.Eip.Extension.InternetChargeType) {
+		return true
+	}
+
+	return false
+}
+
 func syncTCloudEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*TCloudEipSync,
 	dsMap map[string]*TCloudDSEipSync, dataCli *dataservice.Client) error {
 
 	var updateReq dataproto.EipExtBatchUpdateReq[dataproto.TCloudEipExtensionUpdateReq]
 
 	for _, id := range updateIDs {
-		if cloudMap[id].Eip.Status != nil && *cloudMap[id].Eip.Status == dsMap[id].Eip.Status {
+
+		if !isTCloudEipChange(dsMap[id], cloudMap[id]) {
 			continue
 		}
 
-		publicImage := &dataproto.EipExtUpdateReq[dataproto.TCloudEipExtensionUpdateReq]{
+		eip := &dataproto.EipExtUpdateReq[dataproto.TCloudEipExtensionUpdateReq]{
 			ID:     dsMap[id].Eip.ID,
-			Status: *cloudMap[id].Eip.Status,
+			Status: converter.PtrToVal(cloudMap[id].Eip.Status),
+			Extension: &dataproto.TCloudEipExtensionUpdateReq{
+				Bandwidth:          cloudMap[id].Eip.Bandwidth,
+				InternetChargeType: cloudMap[id].Eip.InternetChargeType,
+			},
 		}
 
-		updateReq = append(updateReq, publicImage)
+		updateReq = append(updateReq, eip)
 	}
 
 	if len(updateReq) > 0 {
@@ -233,7 +289,7 @@ func syncTCloudEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*T
 	return nil
 }
 
-func getTCloudEipDSSync(kt *kit.Kit, cloudIDs []string, req *protoeip.EipSyncReq,
+func getTCloudEipDSSync(kt *kit.Kit, cloudIDs []string, req *SyncTCloudEipOption,
 	dataCli *dataservice.Client) ([]string, map[string]*TCloudDSEipSync, error) {
 
 	updateIDs := make([]string, 0)
@@ -297,10 +353,11 @@ func getTCloudEipDSSync(kt *kit.Kit, cloudIDs []string, req *protoeip.EipSyncReq
 	return updateIDs, dsMap, nil
 }
 
-func getTCloudEipAllDS(kt *kit.Kit, req *protoeip.EipSyncReq,
+func getTCloudEipAllDS(kt *kit.Kit, req *SyncTCloudEipOption,
 	dataCli *dataservice.Client) ([]string, error) {
-	start := 0
+
 	dsIDs := make([]string, 0)
+	start := 0
 	for {
 		dataReq := &dataproto.EipListReq{
 			Filter: &filter.Expression{

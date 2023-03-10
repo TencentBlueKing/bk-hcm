@@ -144,14 +144,19 @@ func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*ar
 		}
 
 		for _, one := range nextResult.Value {
-			if _, exist := idMap[*one.ID]; exist {
-				disks = append(disks, one)
-				delete(idMap, *one.ID)
+			if len(opt.CloudIDs) > 0 {
+				if _, exist := idMap[*one.ID]; exist {
+					disks = append(disks, one)
+					delete(idMap, *one.ID)
 
-				if len(idMap) == 0 {
-					return disks, nil
+					if len(idMap) == 0 {
+						return disks, nil
+					}
 				}
+			} else {
+				disks = append(disks, one)
 			}
+
 		}
 	}
 

@@ -21,9 +21,15 @@ package securitygroup
 
 import (
 	securitygroup "hcm/cmd/hc-service/logics/sync/security-group"
+	"hcm/pkg/adaptor/aws"
+	typcore "hcm/pkg/adaptor/types/core"
+	typessg "hcm/pkg/adaptor/types/security-group"
+	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // SyncAwsSecurityGroup sync aws security group to hcm.
@@ -38,11 +44,127 @@ func (svc *syncSecurityGroupSvc) SyncAwsSecurityGroup(cts *rest.Contexts) (inter
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	_, err := securitygroup.SyncAwsSecurityGroup(cts.Kit, req, svc.adaptor, svc.dataCli)
+	client, err := svc.adaptor.Aws(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("request to sync aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	allCloudIDs := make(map[string]struct{})
+	nextToken := ""
+	for {
+		listOpt := &typessg.AwsListOption{
+			Region: req.Region,
+			Page: &typcore.AwsPage{
+				MaxResults: converter.ValToPtr(int64(filter.DefaultMaxInLimit)),
+			},
+		}
+		if nextToken != "" {
+			listOpt.Page.NextToken = converter.ValToPtr(nextToken)
+		}
+
+		results, err := client.ListSecurityGroup(cts.Kit, listOpt)
+		if err != nil {
+			logs.Errorf("request adaptor to list aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		cloudIDs := make([]string, 0, len(results.SecurityGroups))
+		for _, one := range results.SecurityGroups {
+			cloudIDs = append(cloudIDs, *one.GroupId)
+			allCloudIDs[*one.GroupId] = struct{}{}
+		}
+
+		if len(cloudIDs) > 0 {
+			req.CloudIDs = cloudIDs
+		}
+		_, err = securitygroup.SyncAwsSecurityGroup(cts.Kit, req, svc.adaptor, svc.dataCli)
+		if err != nil {
+			logs.Errorf("request to sync aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		if results.NextToken == nil {
+			break
+		}
+		nextToken = *results.NextToken
+	}
+
+	commonReq := &hcservice.SecurityGroupSyncReq{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+	}
+	dsIDs, err := securitygroup.GetDatasFromDSForSecurityGroupSync(cts.Kit, commonReq, svc.dataCli)
+	if err != nil {
+		return nil, err
+	}
+
+	deleteIDs := make([]string, 0)
+	for id := range dsIDs {
+		if _, ok := allCloudIDs[id]; !ok {
+			deleteIDs = append(deleteIDs, id)
+		}
+	}
+
+	err = svc.deleteAwsSG(cts, client, req, deleteIDs)
+	if err != nil {
+		logs.Errorf("request deleteAwsSG failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+func (svc *syncSecurityGroupSvc) deleteAwsSG(cts *rest.Contexts, client *aws.Aws,
+	req *securitygroup.SyncAwsSecurityGroupOption, deleteIDs []string) error {
+
+	if len(deleteIDs) > 0 {
+		realDeleteIDs := make([]string, 0)
+		nextToken := ""
+		for {
+			listOpt := &typessg.AwsListOption{
+				Region: req.Region,
+				Page: &typcore.AwsPage{
+					MaxResults: converter.ValToPtr(int64(filter.DefaultMaxInLimit)),
+				},
+			}
+			if nextToken != "" {
+				listOpt.Page.NextToken = converter.ValToPtr(nextToken)
+			}
+
+			results, err := client.ListSecurityGroup(cts.Kit, listOpt)
+			if err != nil {
+				logs.Errorf("request adaptor to list aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return err
+			}
+
+			for _, id := range deleteIDs {
+				realDeleteFlag := true
+				for _, data := range results.SecurityGroups {
+					if *data.GroupId == id {
+						realDeleteFlag = false
+						break
+					}
+				}
+
+				if realDeleteFlag {
+					realDeleteIDs = append(realDeleteIDs, id)
+				}
+			}
+
+			if results.NextToken == nil {
+				break
+			}
+			nextToken = *results.NextToken
+		}
+
+		if len(realDeleteIDs) > 0 {
+			err := securitygroup.DiffSecurityGroupSyncDelete(cts.Kit, realDeleteIDs, svc.dataCli)
+			if err != nil {
+				logs.Errorf("sync delete aws security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return err
+			}
+		}
+	}
+
+	return nil
 }

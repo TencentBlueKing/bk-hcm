@@ -24,14 +24,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
-	iammodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/model"
 )
-
-// HuaWeiRegionSync ...
-type HuaWeiRegionSync struct {
-	IsUpdate bool
-	Region   iammodel.Region
-}
 
 // HuaWeiDSRegionSync ...
 type HuaWeiDSRegionSync struct {

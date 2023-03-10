@@ -85,12 +85,24 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		}
 	}
 
+	if hitErr = SyncDisk(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		return hitErr
+	}
+
 	if hitErr = SyncVpc(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
 		return hitErr
 	}
 
 	if hitErr = SyncSubnet(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID,
 		resourceGroupNames); hitErr != nil {
+		return hitErr
+	}
+
+	if hitErr = SyncEip(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		return hitErr
+	}
+
+	if hitErr = SyncSG(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
 		return hitErr
 	}
 

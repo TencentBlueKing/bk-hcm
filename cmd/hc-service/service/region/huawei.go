@@ -20,12 +20,12 @@
 package region
 
 import (
+	typesregion "hcm/pkg/adaptor/types/region"
 	"hcm/pkg/api/core"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	apiregion "hcm/pkg/api/hc-service/region"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -54,70 +54,54 @@ func (r *region) SyncHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cloudAllIDs := make(map[string]bool)
-
-	cloudMap := make(map[string]*HuaWeiRegionSync)
-	cloudIDs := make([]string, 0, len(regions))
-	for _, data := range regions {
-		regionSync := new(HuaWeiRegionSync)
-		regionSync.IsUpdate = false
-		regionSync.Region = data
-		cloudMap[data.Id] = regionSync
-		cloudIDs = append(cloudIDs, data.Id)
-		cloudAllIDs[data.Id] = true
+	cloudMap := make(map[string]*typesregion.HuaWeiRegionModel)
+	for _, region := range regions {
+		cloudMap[region.Service+"_"+region.RegionID] = region
 	}
 
-	updateIDs, dsMap, err := r.getHuaWeiRegionDSSync(cts, cloudIDs, req)
+	dsMap, err := r.getHuaWeiRegionAllDS(cts, req)
 	if err != nil {
-		logs.Errorf("request getHuaWeiRegionDSSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("request getHuaWeiRegionAllDS failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	if len(updateIDs) > 0 {
-		err := r.syncHuaWeiRegionUpdate(cts, updateIDs, cloudMap, dsMap)
+	addMap := make(map[string]*typesregion.HuaWeiRegionModel)
+	updateMap := make(map[string]*typesregion.HuaWeiRegionModel)
+	for k, v := range cloudMap {
+		if _, ok := dsMap[k]; !ok {
+			addMap[k] = v
+		} else {
+			updateMap[k] = v
+		}
+	}
+
+	deleteMap := make(map[string]*typesregion.HuaWeiRegionModel)
+	for k, v := range dsMap {
+		if _, ok := cloudMap[k]; !ok {
+			deleteMap[k] = v
+		}
+	}
+
+	if len(deleteMap) > 0 {
+		err := r.syncHuaWeiRegionDelete(cts, deleteMap)
+		if err != nil {
+			logs.Errorf("request syncHuaWeiRegionDelete failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+
+	if len(updateMap) > 0 {
+		err := r.syncHuaWeiRegionUpdate(cts, updateMap, dsMap)
 		if err != nil {
 			logs.Errorf("request syncHuaWeiRegionUpdate failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 	}
 
-	addIDs := make([]string, 0)
-	for _, id := range updateIDs {
-		if _, ok := cloudMap[id]; ok {
-			cloudMap[id].IsUpdate = true
-		}
-	}
-	for k, v := range cloudMap {
-		if !v.IsUpdate {
-			addIDs = append(addIDs, k)
-		}
-	}
-
-	if len(addIDs) > 0 {
-		err := r.syncHuaWeiRegionAdd(cts, addIDs, req, cloudMap)
+	if len(addMap) > 0 {
+		err := r.syncHuaWeiRegionAdd(cts, addMap)
 		if err != nil {
 			logs.Errorf("request syncHuaWeiRegionAdd failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-	}
-
-	dsIDs, err := r.getHuaWeiRegionAllDS(cts, req)
-	if err != nil {
-		logs.Errorf("request getHuaWeiRegionAllDS failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	deleteIDs := make([]string, 0)
-	for _, id := range dsIDs {
-		if _, ok := cloudAllIDs[id]; !ok {
-			deleteIDs = append(deleteIDs, id)
-		}
-	}
-
-	if len(deleteIDs) > 0 {
-		err := r.syncRegionDelete(cts, deleteIDs)
-		if err != nil {
-			logs.Errorf("request syncRegionDelete failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 	}
@@ -125,22 +109,97 @@ func (r *region) SyncHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-func (r *region) syncHuaWeiRegionUpdate(cts *rest.Contexts, updateIDs []string, cloudMap map[string]*HuaWeiRegionSync,
-	dsMap map[string]*HuaWeiDSRegionSync) error {
+func (r *region) getHuaWeiRegionAllDS(cts *rest.Contexts,
+	req *apiregion.HuaWeiRegionSyncReq) (map[string]*typesregion.HuaWeiRegionModel, error) {
 
-	list := make([]protoregion.HuaWeiRegionBatchUpdate, 0, len(updateIDs))
-	for _, id := range updateIDs {
-		if cloudMap[id].Region.Type == dsMap[id].Region.Type &&
-			cloudMap[id].Region.Locales.ZhCn == dsMap[id].Region.LocalesZhCn {
-			continue
+	start := 0
+	dsMap := make(map[string]*typesregion.HuaWeiRegionModel, 0)
+	for {
+		dataReq := &protoregion.HuaWeiRegionListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					&filter.AtomRule{
+						Field: "type",
+						Op:    filter.Equal.Factory(),
+						Value: constant.SyncTimingListHuaWeiRegion,
+					},
+				},
+			},
+			Page: &core.BasePage{Start: uint32(start), Limit: core.DefaultMaxPageLimit},
 		}
 
-		one := protoregion.HuaWeiRegionBatchUpdate{
-			ID:          dsMap[id].Region.ID,
-			Type:        cloudMap[id].Region.Type,
-			LocalesZhCn: cloudMap[id].Region.Locales.ZhCn,
+		results, err := r.dataCli.HuaWei.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
+		if err != nil {
+			logs.Errorf("from data-service list public region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
 		}
-		list = append(list, one)
+
+		if len(results.Details) > 0 {
+			for _, detail := range results.Details {
+				region := new(typesregion.HuaWeiRegionModel)
+				region.ID = detail.ID
+				region.RegionID = detail.RegionID
+				region.Service = detail.Service
+				region.Type = detail.Type
+				dsMap[detail.Service+"_"+detail.RegionID] = region
+			}
+		}
+
+		start += len(results.Details)
+		if uint(len(results.Details)) < dataReq.Page.Limit {
+			break
+		}
+	}
+
+	return dsMap, nil
+}
+
+func (r *region) syncHuaWeiRegionDelete(cts *rest.Contexts, deleteMap map[string]*typesregion.HuaWeiRegionModel) error {
+
+	for _, v := range deleteMap {
+		deleteReq := &protoregion.HuaWeiRegionBatchDeleteReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					&filter.AtomRule{
+						Field: "service",
+						Op:    filter.Equal.Factory(),
+						Value: v.Service,
+					},
+					&filter.AtomRule{
+						Field: "region_id",
+						Op:    filter.Equal.Factory(),
+						Value: v.RegionID,
+					},
+				},
+			},
+		}
+		err := r.dataCli.HuaWei.Region.BatchDeleteRegion(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *region) syncHuaWeiRegionUpdate(cts *rest.Contexts, cloudMap map[string]*typesregion.HuaWeiRegionModel,
+	dsMap map[string]*typesregion.HuaWeiRegionModel) error {
+
+	list := make([]protoregion.HuaWeiRegionBatchUpdate, 0)
+	for k, v := range cloudMap {
+		if _, ok := dsMap[k]; ok {
+			if v.Type == dsMap[k].Type {
+				continue
+			}
+
+			one := protoregion.HuaWeiRegionBatchUpdate{
+				ID:   dsMap[k].ID,
+				Type: cloudMap[k].Type,
+			}
+			list = append(list, one)
+		}
 	}
 
 	updateReq := &protoregion.HuaWeiRegionBatchUpdateReq{
@@ -156,15 +215,14 @@ func (r *region) syncHuaWeiRegionUpdate(cts *rest.Contexts, updateIDs []string, 
 	return nil
 }
 
-func (r *region) syncHuaWeiRegionAdd(cts *rest.Contexts, addIDs []string, req *apiregion.HuaWeiRegionSyncReq,
-	cloudMap map[string]*HuaWeiRegionSync) error {
+func (r *region) syncHuaWeiRegionAdd(cts *rest.Contexts, cloudMap map[string]*typesregion.HuaWeiRegionModel) error {
 
-	list := make([]protoregion.HuaWeiRegionBatchCreate, 0, len(addIDs))
-	for _, id := range addIDs {
+	list := make([]protoregion.HuaWeiRegionBatchCreate, 0)
+	for _, v := range cloudMap {
 		one := protoregion.HuaWeiRegionBatchCreate{
-			RegionID:    cloudMap[id].Region.Id,
-			Type:        cloudMap[id].Region.Type,
-			LocalesZhCn: cloudMap[id].Region.Locales.ZhCn,
+			RegionID: v.RegionID,
+			Type:     v.Type,
+			Service:  v.Service,
 		}
 		list = append(list, one)
 	}
@@ -179,109 +237,4 @@ func (r *region) syncHuaWeiRegionAdd(cts *rest.Contexts, addIDs []string, req *a
 	}
 
 	return nil
-}
-
-func (r *region) syncRegionDelete(cts *rest.Contexts, deleteCloudIDs []string) error {
-
-	deleteReq := &protoregion.HuaWeiRegionBatchDeleteReq{
-		Filter: tools.ContainersExpression("region_id", deleteCloudIDs),
-	}
-
-	err := r.dataCli.HuaWei.Region.BatchDeleteRegion(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *region) getHuaWeiRegionDSSync(cts *rest.Contexts, cloudIDs []string,
-	req *apiregion.HuaWeiRegionSyncReq) ([]string, map[string]*HuaWeiDSRegionSync, error) {
-
-	updateIDs := make([]string, 0)
-	dsMap := make(map[string]*HuaWeiDSRegionSync)
-
-	start := 0
-	for {
-		dataReq := &protoregion.HuaWeiRegionListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					&filter.AtomRule{
-						Field: "type",
-						Op:    filter.Equal.Factory(),
-						Value: constant.SyncTimingListHuaWeiRegion,
-					},
-					&filter.AtomRule{
-						Field: "region_id",
-						Op:    filter.In.Factory(),
-						Value: cloudIDs,
-					},
-				},
-			},
-			Page: &core.BasePage{Start: uint32(start), Limit: core.DefaultMaxPageLimit},
-		}
-
-		results, err := r.dataCli.HuaWei.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
-		if err != nil {
-			logs.Errorf("from data-service list public region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return updateIDs, dsMap, err
-		}
-
-		if len(results.Details) > 0 {
-			for _, detail := range results.Details {
-				updateIDs = append(updateIDs, detail.RegionID)
-				dsRegionSync := new(HuaWeiDSRegionSync)
-				dsRegionSync.Region = detail
-				dsMap[detail.RegionID] = dsRegionSync
-			}
-		}
-
-		start += len(results.Details)
-		if uint(len(results.Details)) < dataReq.Page.Limit {
-			break
-		}
-	}
-
-	return updateIDs, dsMap, nil
-}
-
-func (r *region) getHuaWeiRegionAllDS(cts *rest.Contexts, req *apiregion.HuaWeiRegionSyncReq) ([]string, error) {
-
-	start := 0
-	dsIDs := make([]string, 0)
-	for {
-		dataReq := &protoregion.HuaWeiRegionListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					&filter.AtomRule{
-						Field: "type",
-						Op:    filter.Equal.Factory(),
-						Value: constant.SyncTimingListHuaWeiRegion,
-					},
-				},
-			},
-			Page: &core.BasePage{Start: uint32(start), Limit: core.DefaultMaxPageLimit},
-		}
-
-		results, err := r.dataCli.HuaWei.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
-		if err != nil {
-			logs.Errorf("from data-service list public region failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return dsIDs, err
-		}
-
-		if len(results.Details) > 0 {
-			for _, detail := range results.Details {
-				dsIDs = append(dsIDs, detail.RegionID)
-			}
-		}
-
-		start += len(results.Details)
-		if uint(len(results.Details)) < dataReq.Page.Limit {
-			break
-		}
-	}
-
-	return dsIDs, nil
 }

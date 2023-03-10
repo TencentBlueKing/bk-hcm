@@ -36,11 +36,10 @@ import (
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
-	protodisk "hcm/pkg/api/hc-service/disk"
-	protoeip "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -52,7 +51,20 @@ import (
 type SyncAwsCvmOption struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncAwsCvmOption
+func (opt SyncAwsCvmOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
 }
 
 // SyncAwsCvm sync cvm self
@@ -829,7 +841,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 		for _, id := range cloudEipMap {
 			eipCloudIDs = append(eipCloudIDs, id.RelID)
 		}
-		req := &protoeip.EipSyncReq{
+		req := &synceip.SyncAwsEipOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  eipCloudIDs,
@@ -863,7 +875,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 		for _, id := range cloudDiskMap {
 			diskCloudIDs = append(diskCloudIDs, id.RelID)
 		}
-		req := &protodisk.DiskSyncReq{
+		req := &disk.SyncAwsDiskOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  diskCloudIDs,

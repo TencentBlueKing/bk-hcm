@@ -20,19 +20,52 @@
 package disk
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
+	apicore "hcm/pkg/api/core"
+	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
-	protodisk "hcm/pkg/api/hc-service/disk"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/converter"
 )
 
+// SyncHuaWeiDiskOption define sync huawei disk option.
+type SyncHuaWeiDiskOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncHuaWeiDiskOption
+func (opt SyncHuaWeiDiskOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncHuaWeiDisk sync disk self
-func SyncHuaWeiDisk(kt *kit.Kit, req *protodisk.DiskSyncReq,
+func SyncHuaWeiDisk(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	cloudMap, err := getDatasFromHuaWeiForDiskSync(kt, req, ad)
 	if err != nil {
@@ -40,7 +73,7 @@ func SyncHuaWeiDisk(kt *kit.Kit, req *protodisk.DiskSyncReq,
 		return nil, err
 	}
 
-	dsMap, err := GetDatasFromDSForDiskSync(kt, req, dataCli)
+	dsMap, err := getDatasFromDSForHuaWeiDiskSync(kt, req, dataCli)
 	if err != nil {
 		logs.Errorf("request getDatasFromDSForDiskSync failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -55,7 +88,51 @@ func SyncHuaWeiDisk(kt *kit.Kit, req *protodisk.DiskSyncReq,
 	return nil, nil
 }
 
-func getDatasFromHuaWeiForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
+func getDatasFromDSForHuaWeiDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
+	dataCli *dataservice.Client) (map[string]*HuaWeiDiskSyncDS, error) {
+	start := 0
+	resultsHcm := make([]*datadisk.DiskExtResult[dataproto.HuaWeiDiskExtensionResult], 0)
+	for {
+		dataReq := &datadisk.DiskListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: req.AccountID},
+					filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: req.Region},
+				},
+			},
+			Page: &apicore.BasePage{Start: uint32(start), Limit: filter.DefaultMaxInLimit},
+		}
+
+		if len(req.CloudIDs) > 0 {
+			filter := filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: req.CloudIDs}
+			dataReq.Filter.Rules = append(dataReq.Filter.Rules, filter)
+		}
+
+		results, err := dataCli.HuaWei.ListDisk(kt.Ctx, kt.Header(), dataReq)
+		if err != nil {
+			logs.Errorf("from data-service list disk failed, err: %v, rid: %s", err, kt.Rid)
+		}
+
+		resultsHcm = append(resultsHcm, results.Details...)
+		start += len(results.Details)
+		if uint(len(results.Details)) < apicore.DefaultMaxPageLimit {
+			break
+		}
+	}
+
+	dsMap := make(map[string]*HuaWeiDiskSyncDS)
+	for _, result := range resultsHcm {
+		sg := new(HuaWeiDiskSyncDS)
+		sg.IsUpdated = false
+		sg.HcDisk = result
+		dsMap[result.CloudID] = sg
+	}
+
+	return dsMap, nil
+}
+
+func getDatasFromHuaWeiForDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*HuaWeiDiskSyncDiff, error) {
 
 	client, err := ad.HuaWei(kt, req.AccountID)
@@ -90,14 +167,30 @@ func getDatasFromHuaWeiForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 	return cloudMap, nil
 }
 
-func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, dsMap map[string]*DiskSyncDS,
-	req *protodisk.DiskSyncReq, dataCli *dataservice.Client) error {
+func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, dsMap map[string]*HuaWeiDiskSyncDS,
+	req *SyncHuaWeiDiskOption, dataCli *dataservice.Client) error {
 
-	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
-	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
+	addCloudIDs := []string{}
+	for id := range cloudMap {
+		if _, ok := dsMap[id]; !ok {
+			addCloudIDs = append(addCloudIDs, id)
+		} else {
+			dsMap[id].IsUpdated = true
+		}
+	}
+
+	deleteCloudIDs := []string{}
+	updateCloudIDs := []string{}
+	for id, one := range dsMap {
+		if !one.IsUpdated {
+			deleteCloudIDs = append(deleteCloudIDs, id)
+		} else {
+			updateCloudIDs = append(updateCloudIDs, id)
+		}
+	}
 
 	if len(deleteCloudIDs) > 0 {
-		err := diffDiskSyncDelete(kt, deleteCloudIDs, dataCli)
+		err := DiffDiskSyncDelete(kt, deleteCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("request diffDiskSyncDelete failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -123,12 +216,29 @@ func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, ds
 	return nil
 }
 
-func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, req *protodisk.DiskSyncReq,
+func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, req *SyncHuaWeiDiskOption,
 	addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.HuaWeiDiskExtensionCreateReq]
 
 	for _, id := range addCloudIDs {
+
+		attachments := make([]*dataproto.HuaWeiDiskAttachment, 0)
+		if len(cloudMap[id].Disk.Attachments) > 0 {
+			for _, v := range cloudMap[id].Disk.Attachments {
+				tmp := &dataproto.HuaWeiDiskAttachment{
+					AttachedAt:   v.AttachedAt,
+					AttachmentId: v.AttachmentId,
+					DeviceName:   v.Device,
+					HostName:     v.HostName,
+					Id:           v.Id,
+					InstanceId:   v.ServerId,
+					DiskId:       v.VolumeId,
+				}
+				attachments = append(attachments, tmp)
+			}
+		}
+
 		disk := &dataproto.DiskExtCreateReq[dataproto.HuaWeiDiskExtensionCreateReq]{
 			AccountID: req.AccountID,
 			Name:      cloudMap[id].Disk.Name,
@@ -140,7 +250,17 @@ func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff,
 			Status:    cloudMap[id].Disk.Status,
 			Memo:      &cloudMap[id].Disk.Description,
 			Extension: &dataproto.HuaWeiDiskExtensionCreateReq{
-				DiskChargeType: cloudMap[id].Disk.ServiceType,
+				// TODO: not find
+				DiskChargeType: "todo",
+				// TODO: not find
+				DiskChargePrepaid: &dataproto.HuaWeiDiskChargePrepaid{
+					PeriodNum:   nil,
+					PeriodType:  nil,
+					IsAutoRenew: nil,
+				},
+				ServiceType: cloudMap[id].Disk.ServiceType,
+				Encrypted:   cloudMap[id].Disk.Encrypted,
+				Attachment:  attachments,
 			},
 		}
 		createReq = append(createReq, disk)
@@ -159,20 +279,87 @@ func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff,
 	return results.IDs, nil
 }
 
-func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, dsMap map[string]*DiskSyncDS,
+func isHuaWeiDiskChange(db *HuaWeiDiskSyncDS, cloud *HuaWeiDiskSyncDiff) bool {
+
+	if cloud.Disk.Status != db.HcDisk.Status {
+		return true
+	}
+
+	if cloud.Disk.Description != converter.PtrToVal(db.HcDisk.Memo) {
+		return true
+	}
+
+	if cloud.Disk.ServiceType != db.HcDisk.Extension.ServiceType {
+		return true
+	}
+
+	if !assert.IsPtrBoolEqual(cloud.Disk.Encrypted, db.HcDisk.Extension.Encrypted) {
+		return true
+	}
+
+	for _, dbValue := range db.HcDisk.Extension.Attachment {
+		isEqual := false
+		for _, cloudValue := range cloud.Disk.Attachments {
+			if dbValue.AttachedAt == cloudValue.AttachedAt && dbValue.AttachmentId == cloudValue.AttachmentId &&
+				dbValue.DeviceName == cloudValue.Device && dbValue.HostName == cloudValue.HostName &&
+				dbValue.Id == cloudValue.Id && dbValue.InstanceId == cloudValue.ServerId &&
+				dbValue.DiskId == cloudValue.VolumeId {
+				isEqual = true
+				break
+			}
+		}
+		if !isEqual {
+			return true
+		}
+	}
+
+	return false
+}
+
+func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, dsMap map[string]*HuaWeiDiskSyncDS,
 	updateCloudIDs []string, dataCli *dataservice.Client) error {
 
 	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.HuaWeiDiskExtensionUpdateReq]
 
 	for _, id := range updateCloudIDs {
-		if cloudMap[id].Disk.Description == *dsMap[id].HcDisk.Memo &&
-			cloudMap[id].Disk.Status == dsMap[id].HcDisk.Status {
+
+		if !isHuaWeiDiskChange(dsMap[id], cloudMap[id]) {
 			continue
 		}
+
+		attachments := make([]*dataproto.HuaWeiDiskAttachment, 0)
+		if len(cloudMap[id].Disk.Attachments) > 0 {
+			for _, v := range cloudMap[id].Disk.Attachments {
+				tmp := &dataproto.HuaWeiDiskAttachment{
+					AttachedAt:   v.AttachedAt,
+					AttachmentId: v.AttachmentId,
+					DeviceName:   v.Device,
+					HostName:     v.HostName,
+					Id:           v.Id,
+					InstanceId:   v.ServerId,
+					DiskId:       v.VolumeId,
+				}
+				attachments = append(attachments, tmp)
+			}
+		}
+
 		disk := &dataproto.DiskExtUpdateReq[dataproto.HuaWeiDiskExtensionUpdateReq]{
 			ID:     dsMap[id].HcDisk.ID,
 			Memo:   &cloudMap[id].Disk.Description,
 			Status: cloudMap[id].Disk.Status,
+			Extension: &dataproto.HuaWeiDiskExtensionUpdateReq{
+				// TODO: not find
+				DiskChargeType: "todo",
+				// TODO: not find
+				DiskChargePrepaid: &dataproto.HuaWeiDiskChargePrepaid{
+					PeriodNum:   nil,
+					PeriodType:  nil,
+					IsAutoRenew: nil,
+				},
+				ServiceType: cloudMap[id].Disk.ServiceType,
+				Encrypted:   cloudMap[id].Disk.Encrypted,
+				Attachment:  attachments,
+			},
 		}
 		updateReq = append(updateReq, disk)
 	}

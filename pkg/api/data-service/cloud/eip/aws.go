@@ -32,4 +32,7 @@ type AwsEipExtensionResult struct {
 }
 
 // AwsEipExtensionUpdateReq ...
-type AwsEipExtensionUpdateReq struct{}
+type AwsEipExtensionUpdateReq struct {
+	PublicIpv4Pool *string `json:"public_ipv4_pool"`
+	Domain         *string `json:"domain"`
+}

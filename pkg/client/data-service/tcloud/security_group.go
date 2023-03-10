@@ -120,7 +120,7 @@ func (cli *SecurityGroupClient) ListSecurityGroupExt(ctx context.Context, h http
 
 	resp := new(protocloud.SecurityGroupExtListResp[corecloud.TCloudSecurityGroupExtension])
 
-	err := cli.client.Get().
+	err := cli.client.Post().
 		WithContext(ctx).
 		Body(req).
 		SubResourcef("/security_groups/list").

@@ -21,19 +21,23 @@ package eip
 
 import (
 	eip "hcm/cmd/hc-service/logics/sync/eip"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
 // SyncHuaWeiEip ...
 func (svc *syncEipSvc) SyncHuaWeiEip(cts *rest.Contexts) (interface{}, error) {
-	req, err := decodeEipSyncReq(cts)
-	if err != nil {
-		logs.Errorf("request decodeEipSyncReq failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+	req := new(eip.SyncHuaWeiEipOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	_, err = eip.SyncHuaWeiEip(cts.Kit, req, svc.adaptor, svc.dataCli)
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := eip.SyncHuaWeiEip(cts.Kit, req, svc.adaptor, svc.dataCli)
 	if err != nil {
 		logs.Errorf("request to sync huawei eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

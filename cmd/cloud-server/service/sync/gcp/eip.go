@@ -18,3 +18,36 @@
  */
 
 package gcp
+
+import (
+	"time"
+
+	"hcm/pkg/api/hc-service/eip"
+	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+)
+
+// SyncEip ...
+func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+
+	start := time.Now()
+	logs.V(3).Infof("gcp account[%s] sync eip start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	defer func() {
+		logs.V(3).Infof("gcp account[%s] sync eip end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
+	}()
+
+	for _, region := range regions {
+		req := &eip.EipSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		}
+		if err := service.Gcp.Eip.SyncEip(kt.Ctx, kt.Header(), req); err != nil {
+			logs.Errorf("sync gcp eip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}

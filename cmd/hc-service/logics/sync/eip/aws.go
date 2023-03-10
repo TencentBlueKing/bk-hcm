@@ -20,22 +20,51 @@
 package eip
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types/eip"
 	apicore "hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
-	protoeip "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 )
 
+// SyncAwsEipOption define sync aws eip option.
+type SyncAwsEipOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncAwsEipOption
+func (opt SyncAwsEipOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncAwsEip sync eip self
-func SyncAwsEip(kt *kit.Kit, req *protoeip.EipSyncReq,
+func SyncAwsEip(kt *kit.Kit, req *SyncAwsEipOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	client, err := ad.Aws(kt, req.AccountID)
 	if err != nil {
@@ -178,13 +207,13 @@ func SyncAwsEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 	return nil, nil
 }
 
-func syncAwsEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
+func syncAwsEipAdd(kt *kit.Kit, addIDs []string, req *SyncAwsEipOption,
 	cloudMap map[string]*AwsEipSync, dataCli *dataservice.Client) error {
 
 	var createReq dataproto.EipExtBatchCreateReq[dataproto.AwsEipExtensionCreateReq]
 
 	for _, id := range addIDs {
-		publicImage := &dataproto.EipExtCreateReq[dataproto.AwsEipExtensionCreateReq]{
+		eip := &dataproto.EipExtCreateReq[dataproto.AwsEipExtensionCreateReq]{
 			CloudID:    id,
 			Region:     req.Region,
 			AccountID:  req.AccountID,
@@ -193,8 +222,12 @@ func syncAwsEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
+			Extension: &dataproto.AwsEipExtensionCreateReq{
+				PublicIpv4Pool: cloudMap[id].Eip.PublicIpv4Pool,
+				Domain:         cloudMap[id].Eip.Domain,
+			},
 		}
-		createReq = append(createReq, publicImage)
+		createReq = append(createReq, eip)
 	}
 
 	if len(createReq) > 0 {
@@ -208,22 +241,43 @@ func syncAwsEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
 	return nil
 }
 
+func isAwsEipChange(db *AwsDSEipSync, cloud *AwsEipSync) bool {
+
+	if converter.PtrToVal(cloud.Eip.Status) != db.Eip.Status {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Eip.PublicIpv4Pool, db.Eip.Extension.PublicIpv4Pool) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Eip.Domain, db.Eip.Extension.Domain) {
+		return true
+	}
+
+	return false
+}
+
 func syncAwsEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsEipSync,
 	dsMap map[string]*AwsDSEipSync, dataCli *dataservice.Client) error {
 
 	var updateReq dataproto.EipExtBatchUpdateReq[dataproto.AwsEipExtensionUpdateReq]
 
 	for _, id := range updateIDs {
-		if cloudMap[id].Eip.Status != nil && *cloudMap[id].Eip.Status == dsMap[id].Eip.Status {
+		if !isAwsEipChange(dsMap[id], cloudMap[id]) {
 			continue
 		}
 
-		publicImage := &dataproto.EipExtUpdateReq[dataproto.AwsEipExtensionUpdateReq]{
+		eip := &dataproto.EipExtUpdateReq[dataproto.AwsEipExtensionUpdateReq]{
 			ID:     dsMap[id].Eip.ID,
-			Status: *cloudMap[id].Eip.Status,
+			Status: converter.PtrToVal(cloudMap[id].Eip.Status),
+			Extension: &dataproto.AwsEipExtensionUpdateReq{
+				PublicIpv4Pool: cloudMap[id].Eip.PublicIpv4Pool,
+				Domain:         cloudMap[id].Eip.Domain,
+			},
 		}
 
-		updateReq = append(updateReq, publicImage)
+		updateReq = append(updateReq, eip)
 	}
 
 	if len(updateReq) > 0 {
@@ -236,7 +290,7 @@ func syncAwsEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsE
 	return nil
 }
 
-func getAwsEipDSSync(kt *kit.Kit, cloudIDs []string, req *protoeip.EipSyncReq,
+func getAwsEipDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAwsEipOption,
 	dataCli *dataservice.Client) ([]string, map[string]*AwsDSEipSync, error) {
 
 	updateIDs := make([]string, 0)
@@ -301,7 +355,7 @@ func getAwsEipDSSync(kt *kit.Kit, cloudIDs []string, req *protoeip.EipSyncReq,
 	return updateIDs, dsMap, nil
 }
 
-func getAwsEipAllDS(kt *kit.Kit, req *protoeip.EipSyncReq,
+func getAwsEipAllDS(kt *kit.Kit, req *SyncAwsEipOption,
 	dataCli *dataservice.Client) ([]string, error) {
 
 	start := 0

@@ -64,18 +64,19 @@ func (a *Aws) createDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*ec2.Volum
 
 // ListDisk 查看云硬盘
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeVolumes.html
-func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume, error) {
+func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume, *string, error) {
+
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "aws disk list option is required")
+		return nil, nil, errf.New(errf.InvalidParameter, "aws disk list option is required")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	client, err := a.clientSet.ec2Client(opt.Region)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	req := new(ec2.DescribeVolumesInput)
@@ -92,10 +93,10 @@ func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume,
 	resp, err := client.DescribeVolumesWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list aws security group failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+		return nil, nil, err
 	}
 
-	return resp.Volumes, nil
+	return resp.Volumes, resp.NextToken, err
 }
 
 // DeleteDisk 删除云盘

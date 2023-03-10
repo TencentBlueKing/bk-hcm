@@ -20,22 +20,55 @@
 package disk
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
+	apicore "hcm/pkg/api/core"
+	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
-	protodisk "hcm/pkg/api/hc-service/disk"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/converter"
 
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 )
 
+// SyncTCloudDiskOption define sync tcloud disk option.
+type SyncTCloudDiskOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncTCloudDiskOption
+func (opt SyncTCloudDiskOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncTCloudDisk sync disk self
-func SyncTCloudDisk(kt *kit.Kit, req *protodisk.DiskSyncReq,
+func SyncTCloudDisk(kt *kit.Kit, req *SyncTCloudDiskOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	cloudMap, err := getDatasFromTCloudForDiskSync(kt, req, ad)
 	if err != nil {
@@ -43,7 +76,7 @@ func SyncTCloudDisk(kt *kit.Kit, req *protodisk.DiskSyncReq,
 		return nil, err
 	}
 
-	dsMap, err := GetDatasFromDSForDiskSync(kt, req, dataCli)
+	dsMap, err := getDatasFromDSForTCloudDiskSync(kt, req, dataCli)
 	if err != nil {
 		logs.Errorf("request getDatasFromDSForDiskSync failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -58,7 +91,51 @@ func SyncTCloudDisk(kt *kit.Kit, req *protodisk.DiskSyncReq,
 	return nil, nil
 }
 
-func getDatasFromTCloudForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
+func getDatasFromDSForTCloudDiskSync(kt *kit.Kit, req *SyncTCloudDiskOption,
+	dataCli *dataservice.Client) (map[string]*TCloudDiskSyncDS, error) {
+	start := 0
+	resultsHcm := make([]*datadisk.DiskExtResult[dataproto.TCloudDiskExtensionResult], 0)
+	for {
+		dataReq := &datadisk.DiskListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: req.AccountID},
+					filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: req.Region},
+				},
+			},
+			Page: &apicore.BasePage{Start: uint32(start), Limit: filter.DefaultMaxInLimit},
+		}
+
+		if len(req.CloudIDs) > 0 {
+			filter := filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: req.CloudIDs}
+			dataReq.Filter.Rules = append(dataReq.Filter.Rules, filter)
+		}
+
+		results, err := dataCli.TCloud.ListDisk(kt.Ctx, kt.Header(), dataReq)
+		if err != nil {
+			logs.Errorf("from data-service list disk failed, err: %v, rid: %s", err, kt.Rid)
+		}
+
+		resultsHcm = append(resultsHcm, results.Details...)
+		start += len(results.Details)
+		if uint(len(results.Details)) < apicore.DefaultMaxPageLimit {
+			break
+		}
+	}
+
+	dsMap := make(map[string]*TCloudDiskSyncDS)
+	for _, result := range resultsHcm {
+		sg := new(TCloudDiskSyncDS)
+		sg.IsUpdated = false
+		sg.HcDisk = result
+		dsMap[result.CloudID] = sg
+	}
+
+	return dsMap, nil
+}
+
+func getDatasFromTCloudForDiskSync(kt *kit.Kit, req *SyncTCloudDiskOption,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*TCloudDiskSyncDiff, error) {
 
 	client, err := ad.TCloud(kt, req.AccountID)
@@ -85,7 +162,7 @@ func getDatasFromTCloudForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 }
 
 func getTCloudDiskAllSync(kt *kit.Kit, client *tcloud.TCloud,
-	req *protodisk.DiskSyncReq) (map[string]*TCloudDiskSyncDiff, error) {
+	req *SyncTCloudDiskOption) (map[string]*TCloudDiskSyncDiff, error) {
 
 	offset := 0
 	datasCloud := make([]*cbs.Disk, 0)
@@ -120,7 +197,7 @@ func getTCloudDiskAllSync(kt *kit.Kit, client *tcloud.TCloud,
 }
 
 func getTCloudDiskByCloudIDsSync(kt *kit.Kit, client *tcloud.TCloud,
-	req *protodisk.DiskSyncReq) (map[string]*TCloudDiskSyncDiff, error) {
+	req *SyncTCloudDiskOption) (map[string]*TCloudDiskSyncDiff, error) {
 
 	opt := &disk.TCloudDiskListOption{
 		Region:   req.Region,
@@ -144,12 +221,29 @@ func getTCloudDiskByCloudIDsSync(kt *kit.Kit, client *tcloud.TCloud,
 }
 
 func diffTCloudDiskSync(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
-	dsMap map[string]*DiskSyncDS, req *protodisk.DiskSyncReq, dataCli *dataservice.Client) error {
-	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
-	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
+	dsMap map[string]*TCloudDiskSyncDS, req *SyncTCloudDiskOption, dataCli *dataservice.Client) error {
+
+	addCloudIDs := []string{}
+	for id := range cloudMap {
+		if _, ok := dsMap[id]; !ok {
+			addCloudIDs = append(addCloudIDs, id)
+		} else {
+			dsMap[id].IsUpdated = true
+		}
+	}
+
+	deleteCloudIDs := []string{}
+	updateCloudIDs := []string{}
+	for id, one := range dsMap {
+		if !one.IsUpdated {
+			deleteCloudIDs = append(deleteCloudIDs, id)
+		} else {
+			updateCloudIDs = append(updateCloudIDs, id)
+		}
+	}
 
 	if len(deleteCloudIDs) > 0 {
-		err := diffDiskSyncDelete(kt, deleteCloudIDs, dataCli)
+		err := DiffDiskSyncDelete(kt, deleteCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("request diffDiskSyncDelete failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -176,21 +270,32 @@ func diffTCloudDiskSync(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
 }
 
 func diffTCloudDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
-	req *protodisk.DiskSyncReq, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+	req *SyncTCloudDiskOption, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.TCloudDiskExtensionCreateReq]
 
 	for _, id := range addCloudIDs {
 		disk := &dataproto.DiskExtCreateReq[dataproto.TCloudDiskExtensionCreateReq]{
 			AccountID: req.AccountID,
-			Name:      *cloudMap[id].Disk.DiskName,
+			Name:      converter.PtrToVal(cloudMap[id].Disk.DiskName),
 			CloudID:   id,
 			Region:    req.Region,
-			Zone:      *cloudMap[id].Disk.Placement.Zone,
-			DiskSize:  *cloudMap[id].Disk.DiskSize,
-			DiskType:  *cloudMap[id].Disk.DiskType,
-			Status:    *cloudMap[id].Disk.DiskState,
+			Zone:      converter.PtrToVal(cloudMap[id].Disk.Placement.Zone),
+			DiskSize:  converter.PtrToVal(cloudMap[id].Disk.DiskSize),
+			DiskType:  converter.PtrToVal(cloudMap[id].Disk.DiskType),
+			Status:    converter.PtrToVal(cloudMap[id].Disk.DiskState),
+			// tcloud no memo
+			Memo: nil,
 			Extension: &dataproto.TCloudDiskExtensionCreateReq{
-				DiskChargeType: *cloudMap[id].Disk.DiskChargeType,
+				DiskChargeType: converter.PtrToVal(cloudMap[id].Disk.DiskChargeType),
+				DiskChargePrepaid: &dataproto.TCloudDiskChargePrepaid{
+					RenewFlag: cloudMap[id].Disk.RenewFlag,
+					Period:    cloudMap[id].Disk.DifferDaysOfDeadline,
+				},
+				Encrypted:    cloudMap[id].Disk.Encrypt,
+				Attached:     cloudMap[id].Disk.Attached,
+				DiskUsage:    cloudMap[id].Disk.DiskUsage,
+				InstanceId:   cloudMap[id].Disk.InstanceId,
+				InstanceType: cloudMap[id].Disk.InstanceType,
 			},
 		}
 		createReq = append(createReq, disk)
@@ -209,17 +314,72 @@ func diffTCloudDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
 	return results.IDs, nil
 }
 
+func isTCloudDiskChange(db *TCloudDiskSyncDS, cloud *TCloudDiskSyncDiff) bool {
+
+	if converter.PtrToVal(cloud.Disk.DiskState) != db.HcDisk.Status {
+		return true
+	}
+
+	if converter.PtrToVal(cloud.Disk.DiskChargeType) != db.HcDisk.Extension.DiskChargeType {
+		return true
+	}
+
+	if !assert.IsPtrBoolEqual(cloud.Disk.Encrypt, db.HcDisk.Extension.Encrypted) {
+		return true
+	}
+
+	if !assert.IsPtrBoolEqual(cloud.Disk.Attached, db.HcDisk.Extension.Attached) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Disk.DiskUsage, db.HcDisk.Extension.DiskUsage) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Disk.InstanceId, db.HcDisk.Extension.InstanceId) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Disk.InstanceType, db.HcDisk.Extension.InstanceType) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Disk.RenewFlag, db.HcDisk.Extension.DiskChargePrepaid.RenewFlag) {
+		return true
+	}
+
+	if !assert.IsPtrInt64Equal(cloud.Disk.DifferDaysOfDeadline, db.HcDisk.Extension.DiskChargePrepaid.Period) {
+		return true
+	}
+
+	return false
+}
+
 func diffTCloudDiskSyncUpdate(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
-	dsMap map[string]*DiskSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
+	dsMap map[string]*TCloudDiskSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
 	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.TCloudDiskExtensionUpdateReq]
 
 	for _, id := range updateCloudIDs {
-		if *cloudMap[id].Disk.DiskState == dsMap[id].HcDisk.Status {
+
+		if !isTCloudDiskChange(dsMap[id], cloudMap[id]) {
 			continue
 		}
+
 		disk := &dataproto.DiskExtUpdateReq[dataproto.TCloudDiskExtensionUpdateReq]{
 			ID:     dsMap[id].HcDisk.ID,
 			Status: *cloudMap[id].Disk.DiskState,
+			Extension: &dataproto.TCloudDiskExtensionUpdateReq{
+				DiskChargeType: converter.PtrToVal(cloudMap[id].Disk.DiskChargeType),
+				DiskChargePrepaid: &dataproto.TCloudDiskChargePrepaid{
+					RenewFlag: cloudMap[id].Disk.RenewFlag,
+					Period:    cloudMap[id].Disk.DifferDaysOfDeadline,
+				},
+				Encrypted:    cloudMap[id].Disk.Encrypt,
+				Attached:     cloudMap[id].Disk.Attached,
+				DiskUsage:    cloudMap[id].Disk.DiskUsage,
+				InstanceId:   cloudMap[id].Disk.InstanceId,
+				InstanceType: cloudMap[id].Disk.InstanceType,
+			},
 		}
 		updateReq = append(updateReq, disk)
 	}

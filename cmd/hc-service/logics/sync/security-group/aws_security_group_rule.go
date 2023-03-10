@@ -352,6 +352,57 @@ func getAwsSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAwsSecurityGrou
 	return updateIDs, nil
 }
 
+func isAwsSGRuleChange(db *corecloud.AwsSecurityGroupRule, cloud *ec2.SecurityGroupRule) bool {
+
+	if db.CloudID != *cloud.SecurityGroupRuleId {
+		return true
+	}
+
+	if db.IPv4Cidr != cloud.CidrIpv4 {
+		return true
+	}
+
+	if db.IPv6Cidr != cloud.CidrIpv6 {
+		return true
+	}
+
+	if db.Memo != cloud.Description {
+		return true
+	}
+
+	if db.FromPort != *cloud.FromPort {
+		return true
+	}
+
+	if db.ToPort != *cloud.ToPort {
+		return true
+	}
+
+	if db.Protocol != cloud.IpProtocol {
+		return true
+	}
+
+	if db.CloudPrefixListID != cloud.PrefixListId {
+		return true
+	}
+
+	if db.CloudSecurityGroupID != *cloud.GroupId {
+		return true
+	}
+
+	if db.CloudGroupOwnerID != *cloud.GroupOwnerId {
+		return true
+	}
+
+	if cloud.ReferencedGroupInfo != nil {
+		if db.CloudTargetSecurityGroupID != cloud.ReferencedGroupInfo.GroupId {
+			return true
+		}
+	}
+
+	return false
+}
+
 func genAwsUpdateRulesList(kt *kit.Kit, rules []*ec2.SecurityGroupRule, req *SyncAwsSecurityGroupOption,
 	sgID string, dataCli *dataservice.Client) []protocloud.AwsSGRuleUpdate {
 
@@ -363,18 +414,11 @@ func genAwsUpdateRulesList(kt *kit.Kit, rules []*ec2.SecurityGroupRule, req *Syn
 			logs.Errorf("aws gen update RulesList getAwsSGRuleByCid failed, err: %v, rid: %s", err, kt.Rid)
 			continue
 		}
-		if cOne.CloudID == *rule.SecurityGroupRuleId &&
-			cOne.IPv4Cidr == rule.CidrIpv4 &&
-			cOne.IPv6Cidr == rule.CidrIpv6 &&
-			cOne.Memo == rule.Description &&
-			cOne.FromPort == *rule.FromPort &&
-			cOne.ToPort == *rule.ToPort &&
-			cOne.Protocol == rule.IpProtocol &&
-			cOne.CloudPrefixListID == rule.PrefixListId &&
-			cOne.CloudSecurityGroupID == *rule.GroupId &&
-			cOne.CloudGroupOwnerID == *rule.GroupOwnerId {
+
+		if !isAwsSGRuleChange(cOne, rule) {
 			continue
 		}
+
 		one := protocloud.AwsSGRuleUpdate{
 			ID:                   cOne.ID,
 			CloudID:              *rule.SecurityGroupRuleId,

@@ -67,6 +67,7 @@ type HuaWeiRegionBatchCreateReq struct {
 
 // HuaWeiRegionBatchCreate define huawei region when create.
 type HuaWeiRegionBatchCreate struct {
+	Service     string `json:service`
 	RegionID    string `json:"region_id"`
 	Type        string `json:"type"`
 	LocalesPtBr string `json:"locales_pt_br"`

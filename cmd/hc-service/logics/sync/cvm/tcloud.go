@@ -36,8 +36,6 @@ import (
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
-	protodisk "hcm/pkg/api/hc-service/disk"
-	protoeip "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -666,7 +664,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 		for _, id := range cloudDiskMap {
 			diskCloudIDs = append(diskCloudIDs, id.RelID)
 		}
-		req := &protodisk.DiskSyncReq{
+		req := &disk.SyncTCloudDiskOption{
 			AccountID: option.AccountID,
 			Region:    option.Region,
 			CloudIDs:  diskCloudIDs,
@@ -683,7 +681,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 		for _, id := range cloudEipMap {
 			eipCloudIDs = append(eipCloudIDs, id.RelID)
 		}
-		req := &protoeip.EipSyncReq{
+		req := &synceip.SyncTCloudEipOption{
 			AccountID: option.AccountID,
 			Region:    option.Region,
 			CloudIDs:  eipCloudIDs,

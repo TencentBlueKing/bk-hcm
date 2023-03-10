@@ -26,14 +26,17 @@ import (
 	"hcm/pkg/adaptor/huawei"
 	typcore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
@@ -51,8 +54,8 @@ func (opt SyncHuaWeiSecurityGroupOption) Validate() error {
 		return err
 	}
 
-	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
+	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
 	}
 
 	return nil
@@ -62,17 +65,16 @@ func (opt SyncHuaWeiSecurityGroupOption) Validate() error {
 func SyncHuaWeiSecurityGroup(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	cloudMap, err := getDatasFromHuaWeiForSecurityGroupSync(kt, adaptor, req)
 	if err != nil {
 		return nil, err
 	}
 
-	commonReq := &hcservice.SecurityGroupSyncReq{
-		AccountID: req.AccountID,
-		Region:    req.Region,
-		CloudIDs:  req.CloudIDs,
-	}
-	dsMap, err := GetDatasFromDSForSecurityGroupSync(kt, commonReq, dataCli)
+	dsMap, err := getDatasFromDSForHuaWeiSGSync(kt, req, dataCli)
 	if err != nil {
 		return nil, err
 	}
@@ -83,6 +85,59 @@ func SyncHuaWeiSecurityGroup(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
 	}
 
 	return nil, nil
+}
+
+func getDatasFromDSForHuaWeiSGSync(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
+	dataCli *dataservice.Client) (map[string]*HuaWeiSecurityGroupSyncDS, error) {
+
+	start := 0
+	resultsHcm := make([]corecloud.SecurityGroup[corecloud.HuaWeiSecurityGroupExtension], 0)
+	for {
+		dataReq := &core.ListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: req.AccountID},
+					filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: req.Region},
+				},
+			},
+			Page: &core.BasePage{
+				Start: uint32(start),
+				Limit: core.DefaultMaxPageLimit,
+			},
+		}
+
+		if len(req.CloudIDs) > 0 {
+			filter := filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: req.CloudIDs}
+			dataReq.Filter.Rules = append(dataReq.Filter.Rules, filter)
+		}
+
+		results, err := dataCli.HuaWei.SecurityGroup.ListSecurityGroupExt(kt.Ctx, kt.Header(),
+			dataReq)
+		if err != nil {
+			logs.Errorf("from data-service list security group failed, err: %v, rid: %s", err, kt.Rid)
+		}
+
+		if results == nil || len(results.Details) == 0 {
+			break
+		}
+
+		resultsHcm = append(resultsHcm, results.Details...)
+		start += len(results.Details)
+		if uint(len(results.Details)) < dataReq.Page.Limit {
+			break
+		}
+	}
+
+	dsMap := make(map[string]*HuaWeiSecurityGroupSyncDS)
+	for _, result := range resultsHcm {
+		sg := new(HuaWeiSecurityGroupSyncDS)
+		sg.IsUpdated = false
+		sg.HcSecurityGroup = result
+		dsMap[result.CloudID] = sg
+	}
+
+	return dsMap, nil
 }
 
 func getDatasFromHuaWeiForSecurityGroupSync(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient,
@@ -172,15 +227,31 @@ func getHuaWeiSGAllSync(kt *kit.Kit, client *huawei.HuaWei,
 	return cloudMap, nil
 }
 
-func diffHWSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncHuaWeiDiff, dsMap map[string]*SecurityGroupSyncDS,
+func diffHWSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncHuaWeiDiff, dsMap map[string]*HuaWeiSecurityGroupSyncDS,
 	req *SyncHuaWeiSecurityGroupOption, adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) error {
 
-	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
-	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
+	addCloudIDs := make([]string, 0)
+	for id := range cloudMap {
+		if _, ok := dsMap[id]; !ok {
+			addCloudIDs = append(addCloudIDs, id)
+		} else {
+			dsMap[id].IsUpdated = true
+		}
+	}
+
+	deleteCloudIDs := make([]string, 0)
+	updateCloudIDs := make([]string, 0)
+	for id, one := range dsMap {
+		if !one.IsUpdated {
+			deleteCloudIDs = append(deleteCloudIDs, id)
+		} else {
+			updateCloudIDs = append(updateCloudIDs, id)
+		}
+	}
 
 	if len(deleteCloudIDs) > 0 {
 		logs.Infof("do sync huawei SecurityGroup delete operate, rid: %s", kt.Rid)
-		err := diffSecurityGroupSyncDelete(kt, deleteCloudIDs, dataCli)
+		err := DiffSecurityGroupSyncDelete(kt, deleteCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("sync delete huawei security group failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -262,22 +333,47 @@ func diffHWSecurityGroupSyncAdd(kt *kit.Kit, cloudMap map[string]*SecurityGroupS
 	return ids.IDs, nil
 }
 
+func isHuaWeiSGChange(db *HuaWeiSecurityGroupSyncDS, cloud *SecurityGroupSyncHuaWeiDiff) bool {
+
+	if cloud.SecurityGroup.Name != db.HcSecurityGroup.BaseSecurityGroup.Name {
+		return true
+	}
+
+	if cloud.SecurityGroup.Description != converter.PtrToVal(db.HcSecurityGroup.BaseSecurityGroup.Memo) {
+		return true
+	}
+
+	if cloud.SecurityGroup.ProjectId != db.HcSecurityGroup.Extension.CloudProjectID {
+		return true
+	}
+
+	if cloud.SecurityGroup.EnterpriseProjectId != db.HcSecurityGroup.Extension.CloudEnterpriseProjectID {
+		return true
+	}
+
+	return false
+}
+
 func diffHWSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncHuaWeiDiff,
-	dsMap map[string]*SecurityGroupSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
+	dsMap map[string]*HuaWeiSecurityGroupSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
 
 	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.HuaWeiSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.HuaWeiSecurityGroupExtension]{},
 	}
 
 	for _, id := range updateCloudIDs {
-		if cloudMap[id].SecurityGroup.Name == dsMap[id].HcSecurityGroup.Name &&
-			cloudMap[id].SecurityGroup.Description == *dsMap[id].HcSecurityGroup.Memo {
+		if !isHuaWeiSGChange(dsMap[id], cloudMap[id]) {
 			continue
 		}
+
 		securityGroup := protocloud.SecurityGroupBatchUpdate[corecloud.HuaWeiSecurityGroupExtension]{
 			ID:   dsMap[id].HcSecurityGroup.ID,
 			Name: cloudMap[id].SecurityGroup.Name,
 			Memo: &cloudMap[id].SecurityGroup.Description,
+			Extension: &corecloud.HuaWeiSecurityGroupExtension{
+				CloudProjectID:           cloudMap[id].SecurityGroup.ProjectId,
+				CloudEnterpriseProjectID: cloudMap[id].SecurityGroup.EnterpriseProjectId,
+			},
 		}
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
 	}

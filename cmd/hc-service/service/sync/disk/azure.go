@@ -21,19 +21,23 @@ package disk
 
 import (
 	disk "hcm/cmd/hc-service/logics/sync/disk"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
 // SyncAzureDisk ...
 func (svc *syncDiskSvc) SyncAzureDisk(cts *rest.Contexts) (interface{}, error) {
-	req, err := decodeDiskSyncReq(cts)
-	if err != nil {
-		logs.Errorf("request decodeDiskSyncReq failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+	req := new(disk.SyncAzureDiskOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	_, err = disk.SyncAzureDisk(cts.Kit, req, svc.adaptor, svc.dataCli)
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := disk.SyncAzureDisk(cts.Kit, req, svc.adaptor, svc.dataCli)
 	if err != nil {
 		logs.Errorf("request to sync azure disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

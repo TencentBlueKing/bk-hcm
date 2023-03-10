@@ -116,11 +116,11 @@ func (cli *SecurityGroupClient) GetSecurityGroup(ctx context.Context, h http.Hea
 
 // ListSecurityGroupExt list security group with extension.
 func (cli *SecurityGroupClient) ListSecurityGroupExt(ctx context.Context, h http.Header, req *core.ListReq) (
-	*protocloud.SecurityGroupExtListResult[corecloud.TCloudSecurityGroupExtension], error) {
+	*protocloud.SecurityGroupExtListResult[corecloud.AzureSecurityGroupExtension], error) {
 
-	resp := new(protocloud.SecurityGroupExtListResp[corecloud.TCloudSecurityGroupExtension])
+	resp := new(protocloud.SecurityGroupExtListResp[corecloud.AzureSecurityGroupExtension])
 
-	err := cli.client.Get().
+	err := cli.client.Post().
 		WithContext(ctx).
 		Body(req).
 		SubResourcef("/security_groups/list").

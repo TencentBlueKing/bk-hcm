@@ -18,3 +18,33 @@
  */
 
 package gcp
+
+import (
+	"time"
+
+	proto "hcm/pkg/api/hc-service"
+	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+)
+
+// SyncFireWall ...
+func SyncFireWall(kt *kit.Kit, service *hcservice.Client, accountID string) error {
+
+	start := time.Now()
+	logs.V(3).Infof("gcp account[%s] sync firewall start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	defer func() {
+		logs.V(3).Infof("gcp account[%s] sync firewall end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
+	}()
+
+	req := &proto.SecurityGroupSyncReq{
+		AccountID: accountID,
+	}
+	if err := service.Gcp.Firewall.SyncFirewall(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("sync gcp firewall failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	return nil
+}

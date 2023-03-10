@@ -77,9 +77,8 @@ func (svc *huaweiRegionSvc) UpdateHuaWeiRegion(cts *rest.Contexts) (interface{},
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, one := range req.Regions {
 			rule := &tableregion.HuaWeiRegionTable{
-				LocalesZhCn: one.LocalesZhCn,
-				Type:        one.Type,
-				Reviser:     cts.Kit.User,
+				Type:    one.Type,
+				Reviser: cts.Kit.User,
 			}
 
 			flt := tools.EqualExpression("id", one.ID)
@@ -112,11 +111,11 @@ func (svc *huaweiRegionSvc) CreateHuaWeiRegion(cts *rest.Contexts) (interface{},
 	regions := make([]*tableregion.HuaWeiRegionTable, 0, len(req.Regions))
 	for _, region := range req.Regions {
 		regions = append(regions, &tableregion.HuaWeiRegionTable{
-			RegionID:    region.RegionID,
-			Type:        region.Type,
-			LocalesZhCn: region.LocalesZhCn,
-			Creator:     cts.Kit.User,
-			Reviser:     cts.Kit.User,
+			RegionID: region.RegionID,
+			Type:     region.Type,
+			Service:  region.Service,
+			Creator:  cts.Kit.User,
+			Reviser:  cts.Kit.User,
 		})
 	}
 
@@ -188,6 +187,7 @@ func (svc *huaweiRegionSvc) ListHuaWeiRegion(cts *rest.Contexts) (interface{}, e
 	for _, one := range result.Details {
 		details = append(details, coreregion.HuaWeiRegion{
 			ID:          one.ID,
+			Service:     one.Service,
 			RegionID:    one.RegionID,
 			Type:        one.Type,
 			LocalesPtBr: one.LocalesPtBr,

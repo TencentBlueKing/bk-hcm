@@ -20,7 +20,6 @@
 package cvm
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/cmd/hc-service/logics/sync/disk"
@@ -31,6 +30,7 @@ import (
 	"hcm/cmd/hc-service/logics/sync/vpc"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/huawei"
+	typecore "hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/eip"
 	networkinterface "hcm/pkg/adaptor/types/network-interface"
@@ -39,8 +39,6 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
-	protodisk "hcm/pkg/api/hc-service/disk"
-	protoeip "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -56,17 +54,13 @@ import (
 type SyncHuaWeiCvmOption struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_i_ds" validate:"required"`
+	CloudIDs  []string `json:"cloud_i_ds" validate:"omitempty"`
 }
 
 // Validate SyncHuaWeiCvmOption
 func (opt SyncHuaWeiCvmOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
-	}
-
-	if len(opt.CloudIDs) == 0 {
-		return errors.New("cloudIDs is required")
 	}
 
 	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
@@ -87,96 +81,75 @@ func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 
 	cloudAllIDs := make(map[string]bool)
 
-	opt := &typecvm.HuaWeiListOption{
+	listOpt := &typecvm.HuaWeiListOption{
 		Region: req.Region,
+		Page: &typecore.HuaWeiCvmOffsetPage{
+			Offset: int32(0),
+			Limit:  int32(constant.BatchOperationMaxLimit),
+		},
 	}
-
-	if len(req.CloudIDs) > 0 {
-		opt.CloudIDs = req.CloudIDs
-	}
-
-	datas, err := client.ListCvm(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to list huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	if len(*datas) <= 0 {
-		return nil, nil
-	}
-
-	cloudMap := make(map[string]*HuaWeiCvmSync)
-	cloudIDs := make([]string, 0, len(*datas))
-	for _, data := range *datas {
-		cvmSync := new(HuaWeiCvmSync)
-		cvmSync.IsUpdate = false
-		cvmSync.Cvm = data
-		cloudMap[data.Id] = cvmSync
-		cloudIDs = append(cloudIDs, data.Id)
-		cloudAllIDs[data.Id] = true
-	}
-
-	updateIDs := make([]string, 0)
-	dsMap := make(map[string]*HuaWeiDSCvmSync)
-
-	start := 0
-	step := int(filter.DefaultMaxInLimit)
 	for {
-		var tmpCloudIDs []string
-		if start+step > len(cloudIDs) {
-			tmpCloudIDs = make([]string, len(cloudIDs)-start)
-			copy(tmpCloudIDs, cloudIDs[start:])
-		} else {
-			tmpCloudIDs = make([]string, step)
-			copy(tmpCloudIDs, cloudIDs[start:start+step])
+		if len(req.CloudIDs) > 0 {
+			listOpt.Page = nil
+			listOpt.CloudIDs = req.CloudIDs
 		}
 
-		if len(tmpCloudIDs) > 0 {
-			tmpIDs, tmpMap, err := getHuaWeiCvmDSSync(kt, tmpCloudIDs, req, dataCli)
+		datas, err := client.ListCvm(kt, listOpt)
+		if err != nil {
+			logs.Errorf("request adaptor to list huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		cloudMap := make(map[string]*HuaWeiCvmSync)
+		cloudIDs := make([]string, 0, len(*datas))
+		for _, data := range *datas {
+			cvmSync := new(HuaWeiCvmSync)
+			cvmSync.IsUpdate = false
+			cvmSync.Cvm = data
+			cloudMap[data.Id] = cvmSync
+			cloudIDs = append(cloudIDs, data.Id)
+			cloudAllIDs[data.Id] = true
+		}
+
+		updateIDs, dsMap, err := getHuaWeiCvmDSSync(kt, cloudIDs, req, dataCli)
+		if err != nil {
+			logs.Errorf("request getHuaWeiCvmDSSync failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		if len(updateIDs) > 0 {
+			err := syncHuaWeiCvmUpdate(kt, req, updateIDs, cloudMap, dsMap, client, dataCli)
 			if err != nil {
-				logs.Errorf("request getHuaWeiEipDSSync failed, err: %v, rid: %s", err, kt.Rid)
+				logs.Errorf("request syncHuaWeiCvmUpdate failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+		}
 
-			updateIDs = append(updateIDs, tmpIDs...)
-			for k, v := range tmpMap {
-				dsMap[k] = v
+		addIDs := make([]string, 0)
+		for _, id := range updateIDs {
+			if _, ok := cloudMap[id]; ok {
+				cloudMap[id].IsUpdate = true
 			}
 		}
 
-		start = start + step
-		if start > len(cloudIDs) {
+		for k, v := range cloudMap {
+			if !v.IsUpdate {
+				addIDs = append(addIDs, k)
+			}
+		}
+
+		if len(addIDs) > 0 {
+			err := syncHuaWeiCvmAdd(kt, addIDs, req, cloudMap, client, dataCli)
+			if err != nil {
+				logs.Errorf("request syncHuaWeiCvmAdd failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+		}
+
+		if len(*datas) < typecore.TCloudQueryLimit {
 			break
 		}
-	}
-
-	if len(updateIDs) > 0 {
-		err := syncHuaWeiCvmUpdate(kt, req, updateIDs, cloudMap, dsMap, client, dataCli)
-		if err != nil {
-			logs.Errorf("request syncHuaWeiCvmUpdate failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-	}
-
-	addIDs := make([]string, 0)
-	for _, id := range updateIDs {
-		if _, ok := cloudMap[id]; ok {
-			cloudMap[id].IsUpdate = true
-		}
-	}
-
-	for k, v := range cloudMap {
-		if !v.IsUpdate {
-			addIDs = append(addIDs, k)
-		}
-	}
-
-	if len(addIDs) > 0 {
-		err := syncHuaWeiCvmAdd(kt, addIDs, req, cloudMap, client, dataCli)
-		if err != nil {
-			logs.Errorf("request syncHuaWeiCvmAdd failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
+		listOpt.Page.Offset += typecore.TCloudQueryLimit
 	}
 
 	dsIDs, err := getHuaWeiCvmAllDSByVendor(kt, req, enumor.HuaWei, dataCli)
@@ -194,25 +167,36 @@ func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)
+		for {
+			if len(req.CloudIDs) > 0 {
+				listOpt.Page = nil
+				listOpt.CloudIDs = req.CloudIDs
+			}
 
-		datas, err := client.ListCvm(kt, opt)
-		if err != nil {
-			logs.Errorf("request adaptor to list huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
+			datas, err := client.ListCvm(kt, listOpt)
+			if err != nil {
+				logs.Errorf("request adaptor to list huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
 
-		for _, id := range deleteIDs {
-			realDeleteFlag := true
-			for _, data := range *datas {
-				if data.Id == id {
-					realDeleteFlag = false
-					break
+			for _, id := range deleteIDs {
+				realDeleteFlag := true
+				for _, data := range *datas {
+					if data.Id == id {
+						realDeleteFlag = false
+						break
+					}
+				}
+
+				if realDeleteFlag {
+					realDeleteIDs = append(realDeleteIDs, id)
 				}
 			}
 
-			if realDeleteFlag {
-				realDeleteIDs = append(realDeleteIDs, id)
+			if len(*datas) < typecore.TCloudQueryLimit {
+				break
 			}
+			listOpt.Page.Offset += typecore.TCloudQueryLimit
 		}
 
 		if len(realDeleteIDs) > 0 {
@@ -944,7 +928,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 			eipCloudIDs = append(eipCloudIDs, id.RelID)
 		}
 
-		req := &protoeip.EipSyncReq{
+		req := &synceip.SyncHuaWeiEipOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  eipCloudIDs,
@@ -991,7 +975,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 		for _, id := range cloudDiskMap {
 			diskCloudIDs = append(diskCloudIDs, id.RelID)
 		}
-		req := &protodisk.DiskSyncReq{
+		req := &disk.SyncHuaWeiDiskOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  diskCloudIDs,

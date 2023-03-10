@@ -21,23 +21,150 @@ package disk
 
 import (
 	disk "hcm/cmd/hc-service/logics/sync/disk"
+	"hcm/pkg/adaptor/aws"
+	typcore "hcm/pkg/adaptor/types/core"
+	typesdisk "hcm/pkg/adaptor/types/disk"
+	protodisk "hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // SyncAwsDisk ...
 func (svc *syncDiskSvc) SyncAwsDisk(cts *rest.Contexts) (interface{}, error) {
-	req, err := decodeDiskSyncReq(cts)
+	req := new(disk.SyncAwsDiskOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.adaptor.Aws(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("request decodeDiskSyncReq failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	_, err = disk.SyncAwsDisk(cts.Kit, req, svc.adaptor, svc.dataCli)
+	allCloudIDs := make(map[string]struct{})
+	nextToken := ""
+	for {
+		listOpt := &typesdisk.AwsDiskListOption{
+			Region: req.Region,
+			Page: &typcore.AwsPage{
+				MaxResults: converter.ValToPtr(int64(filter.DefaultMaxInLimit)),
+			},
+		}
+		if nextToken != "" {
+			listOpt.Page.NextToken = converter.ValToPtr(nextToken)
+		}
+
+		datas, token, err := client.ListDisk(cts.Kit, listOpt)
+		if err != nil {
+			logs.Errorf("request adaptor to list aws disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		cloudIDs := make([]string, 0, len(datas))
+		for _, one := range datas {
+			cloudIDs = append(cloudIDs, *one.VolumeId)
+			allCloudIDs[*one.VolumeId] = struct{}{}
+		}
+
+		if len(cloudIDs) > 0 {
+			req.CloudIDs = cloudIDs
+		}
+		_, err = disk.SyncAwsDisk(cts.Kit, req, svc.adaptor, svc.dataCli)
+		if err != nil {
+			logs.Errorf("request to sync aws disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		if token == nil {
+			break
+		}
+		nextToken = *token
+	}
+
+	commReq := &protodisk.DiskSyncReq{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+	}
+	dsIDs, err := disk.GetDatasFromDSForDiskSync(cts.Kit, commReq, svc.dataCli)
 	if err != nil {
-		logs.Errorf("request to sync aws disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("request getTCloudEipAllDS failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	deleteIDs := make([]string, 0)
+	for id := range dsIDs {
+		if _, ok := allCloudIDs[id]; !ok {
+			deleteIDs = append(deleteIDs, id)
+		}
+	}
+
+	err = svc.deleteAwsDisk(cts, client, req, deleteIDs)
+	if err != nil {
+		logs.Errorf("request deleteAwsDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+func (svc *syncDiskSvc) deleteAwsDisk(cts *rest.Contexts, client *aws.Aws,
+	req *disk.SyncAwsDiskOption, deleteIDs []string) error {
+
+	if len(deleteIDs) > 0 {
+		realDeleteIDs := make([]string, 0)
+		nextToken := ""
+		for {
+			listOpt := &typesdisk.AwsDiskListOption{
+				Region: req.Region,
+				Page: &typcore.AwsPage{
+					MaxResults: converter.ValToPtr(int64(filter.DefaultMaxInLimit)),
+				},
+			}
+			if nextToken != "" {
+				listOpt.Page.NextToken = converter.ValToPtr(nextToken)
+			}
+
+			datas, token, err := client.ListDisk(cts.Kit, listOpt)
+			if err != nil {
+				logs.Errorf("request adaptor to list aws disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return err
+			}
+
+			for _, id := range deleteIDs {
+				realDeleteFlag := true
+				for _, data := range datas {
+					if *data.VolumeId == id {
+						realDeleteFlag = false
+						break
+					}
+				}
+
+				if realDeleteFlag {
+					realDeleteIDs = append(realDeleteIDs, id)
+				}
+			}
+
+			if token == nil {
+				break
+			}
+			nextToken = *token
+		}
+
+		if len(realDeleteIDs) > 0 {
+			err := disk.DiffDiskSyncDelete(cts.Kit, realDeleteIDs, svc.dataCli)
+			if err != nil {
+				logs.Errorf("request diffDiskSyncDelete failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return err
+			}
+		}
+	}
+
+	return nil
 }

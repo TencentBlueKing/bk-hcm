@@ -84,6 +84,19 @@ func Uint64SliceToStringSlice(source []uint64) []string {
 	return target
 }
 
+// StringSliceToUint64Slice []string to []uint64.
+func StringSliceToUint64Slice(source []string) []uint64 {
+	target := make([]uint64, len(source))
+	for index, one := range source {
+		uint64Tmp, err := strconv.ParseUint(one, 10, 64)
+		if err == nil {
+			target[index] = uint64Tmp
+		}
+	}
+
+	return target
+}
+
 // StringSliceToMap []string to map[string]struct.
 func StringSliceToMap(source []string) map[string]struct{} {
 	target := make(map[string]struct{}, len(source))
@@ -97,7 +110,7 @@ func StringSliceToMap(source []string) map[string]struct{} {
 // MapKeyToStringSlice map[string]struct{} to []string.
 func MapKeyToStringSlice(source map[string]struct{}) []string {
 	target := make([]string, 0, len(source))
-	for key, _ := range source {
+	for key := range source {
 		target = append(target, key)
 	}
 

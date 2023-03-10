@@ -20,23 +20,51 @@
 package eip
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	typecore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
 	apicore "hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
-	protoeip "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 )
 
+// SyncGcpEipOption define sync gcp eip option.
+type SyncGcpEipOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncGcpEipOption
+func (opt SyncGcpEipOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncGcpEip sync eip self
-func SyncGcpEip(kt *kit.Kit, req *protoeip.EipSyncReq,
+func SyncGcpEip(kt *kit.Kit, req *SyncGcpEipOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	client, err := ad.Gcp(kt, req.AccountID)
 	if err != nil {
@@ -82,7 +110,6 @@ func SyncGcpEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 		updateIDs, dsMap, err := getGcpEipDSSync(kt, cloudIDs, req, dataCli)
 		if err != nil {
 			logs.Errorf("request getGcpEipDSSync failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
 		}
 
 		if len(updateIDs) > 0 {
@@ -192,13 +219,13 @@ func SyncGcpEip(kt *kit.Kit, req *protoeip.EipSyncReq,
 	return nil, nil
 }
 
-func syncGcpEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
+func syncGcpEipAdd(kt *kit.Kit, addIDs []string, req *SyncGcpEipOption,
 	cloudMap map[string]*GcpEipSync, dataCli *dataservice.Client) error {
 
 	var createReq dataproto.EipExtBatchCreateReq[dataproto.GcpEipExtensionCreateReq]
 
 	for _, id := range addIDs {
-		publicImage := &dataproto.EipExtCreateReq[dataproto.GcpEipExtensionCreateReq]{
+		eip := &dataproto.EipExtCreateReq[dataproto.GcpEipExtensionCreateReq]{
 			CloudID:   id,
 			Region:    req.Region,
 			AccountID: req.AccountID,
@@ -218,7 +245,7 @@ func syncGcpEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
 				SelfLink:     cloudMap[id].Eip.SelfLink,
 			},
 		}
-		createReq = append(createReq, publicImage)
+		createReq = append(createReq, eip)
 	}
 
 	if len(createReq) > 0 {
@@ -232,22 +259,79 @@ func syncGcpEipAdd(kt *kit.Kit, addIDs []string, req *protoeip.EipSyncReq,
 	return nil
 }
 
+func isGcpEipChange(db *GcpDSEipSync, cloud *GcpEipSync) bool {
+
+	if converter.PtrToVal(cloud.Eip.Status) != db.Eip.Status {
+		return true
+	}
+
+	if cloud.Eip.AddressType != db.Eip.Extension.AddressType {
+		return true
+	}
+
+	if cloud.Eip.Description != db.Eip.Extension.Description {
+		return true
+	}
+
+	if cloud.Eip.IpVersion != db.Eip.Extension.IpVersion {
+		return true
+	}
+
+	if cloud.Eip.NetworkTier != db.Eip.Extension.NetworkTier {
+		return true
+	}
+
+	if cloud.Eip.PrefixLength != db.Eip.Extension.PrefixLength {
+		return true
+	}
+
+	if cloud.Eip.Purpose != db.Eip.Extension.Purpose {
+		return true
+	}
+
+	if cloud.Eip.Network != db.Eip.Extension.Network {
+		return true
+	}
+
+	if cloud.Eip.Subnetwork != db.Eip.Extension.Subnetwork {
+		return true
+	}
+
+	if cloud.Eip.SelfLink != db.Eip.Extension.SelfLink {
+		return true
+	}
+
+	return false
+}
+
 func syncGcpEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpEipSync,
 	dsMap map[string]*GcpDSEipSync, dataCli *dataservice.Client) error {
 
 	var updateReq dataproto.EipExtBatchUpdateReq[dataproto.GcpEipExtensionUpdateReq]
 
 	for _, id := range updateIDs {
-		if cloudMap[id].Eip.Status != nil && *cloudMap[id].Eip.Status == dsMap[id].Eip.Status {
+
+		if !isGcpEipChange(dsMap[id], cloudMap[id]) {
 			continue
 		}
 
-		publicImage := &dataproto.EipExtUpdateReq[dataproto.GcpEipExtensionUpdateReq]{
+		eip := &dataproto.EipExtUpdateReq[dataproto.GcpEipExtensionUpdateReq]{
 			ID:     dsMap[id].Eip.ID,
-			Status: *cloudMap[id].Eip.Status,
+			Status: converter.PtrToVal(cloudMap[id].Eip.Status),
+			Extension: &dataproto.GcpEipExtensionUpdateReq{
+				AddressType:  cloudMap[id].Eip.AddressType,
+				Description:  cloudMap[id].Eip.Description,
+				IpVersion:    cloudMap[id].Eip.IpVersion,
+				NetworkTier:  cloudMap[id].Eip.NetworkTier,
+				PrefixLength: cloudMap[id].Eip.PrefixLength,
+				Purpose:      cloudMap[id].Eip.Purpose,
+				Network:      cloudMap[id].Eip.Network,
+				Subnetwork:   cloudMap[id].Eip.Subnetwork,
+				SelfLink:     cloudMap[id].Eip.SelfLink,
+			},
 		}
 
-		updateReq = append(updateReq, publicImage)
+		updateReq = append(updateReq, eip)
 	}
 
 	if len(updateReq) > 0 {
@@ -260,7 +344,7 @@ func syncGcpEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpE
 	return nil
 }
 
-func getGcpEipDSSync(kt *kit.Kit, cloudIDs []string, req *protoeip.EipSyncReq,
+func getGcpEipDSSync(kt *kit.Kit, cloudIDs []string, req *SyncGcpEipOption,
 	dataCli *dataservice.Client) ([]string, map[string]*GcpDSEipSync, error) {
 
 	updateIDs := make([]string, 0)
@@ -325,7 +409,7 @@ func getGcpEipDSSync(kt *kit.Kit, cloudIDs []string, req *protoeip.EipSyncReq,
 	return updateIDs, dsMap, nil
 }
 
-func getGcpEipAllDS(kt *kit.Kit, req *protoeip.EipSyncReq, dataCli *dataservice.Client) ([]string, error) {
+func getGcpEipAllDS(kt *kit.Kit, req *SyncGcpEipOption, dataCli *dataservice.Client) ([]string, error) {
 	start := 0
 	dsIDs := make([]string, 0)
 	for {

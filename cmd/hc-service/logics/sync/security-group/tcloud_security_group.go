@@ -26,14 +26,18 @@ import (
 	"hcm/pkg/adaptor/tcloud"
 	typcore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/converter"
 
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
@@ -51,8 +55,8 @@ func (opt SyncTCloudSecurityGroupOption) Validate() error {
 		return err
 	}
 
-	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
+	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
 	}
 
 	return nil
@@ -62,17 +66,16 @@ func (opt SyncTCloudSecurityGroupOption) Validate() error {
 func SyncTCloudSecurityGroup(kt *kit.Kit, req *SyncTCloudSecurityGroupOption,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	cloudMap, err := getDatasFromTCloudForSecurityGroupSync(kt, req, adaptor)
 	if err != nil {
 		return nil, err
 	}
 
-	commonReq := &hcservice.SecurityGroupSyncReq{
-		AccountID: req.AccountID,
-		Region:    req.Region,
-		CloudIDs:  req.CloudIDs,
-	}
-	dsMap, err := GetDatasFromDSForSecurityGroupSync(kt, commonReq, dataCli)
+	dsMap, err := getDatasFromDSForTCloudSGSync(kt, req, dataCli)
 	if err != nil {
 		return nil, err
 	}
@@ -83,6 +86,59 @@ func SyncTCloudSecurityGroup(kt *kit.Kit, req *SyncTCloudSecurityGroupOption,
 	}
 
 	return nil, nil
+}
+
+func getDatasFromDSForTCloudSGSync(kt *kit.Kit, req *SyncTCloudSecurityGroupOption,
+	dataCli *dataservice.Client) (map[string]*TCloudSecurityGroupSyncDS, error) {
+
+	start := 0
+	resultsHcm := make([]corecloud.SecurityGroup[corecloud.TCloudSecurityGroupExtension], 0)
+	for {
+		dataReq := &core.ListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: req.AccountID},
+					filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: req.Region},
+				},
+			},
+			Page: &core.BasePage{
+				Start: uint32(start),
+				Limit: core.DefaultMaxPageLimit,
+			},
+		}
+
+		if len(req.CloudIDs) > 0 {
+			filter := filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: req.CloudIDs}
+			dataReq.Filter.Rules = append(dataReq.Filter.Rules, filter)
+		}
+
+		results, err := dataCli.TCloud.SecurityGroup.ListSecurityGroupExt(kt.Ctx, kt.Header(),
+			dataReq)
+		if err != nil {
+			logs.Errorf("from data-service list security group failed, err: %v, rid: %s", err, kt.Rid)
+		}
+
+		if results == nil || len(results.Details) == 0 {
+			break
+		}
+
+		resultsHcm = append(resultsHcm, results.Details...)
+		start += len(results.Details)
+		if uint(len(results.Details)) < dataReq.Page.Limit {
+			break
+		}
+	}
+
+	dsMap := make(map[string]*TCloudSecurityGroupSyncDS)
+	for _, result := range resultsHcm {
+		sg := new(TCloudSecurityGroupSyncDS)
+		sg.IsUpdated = false
+		sg.HcSecurityGroup = result
+		dsMap[result.CloudID] = sg
+	}
+
+	return dsMap, nil
 }
 
 func getDatasFromTCloudForSecurityGroupSync(kt *kit.Kit, req *SyncTCloudSecurityGroupOption,
@@ -140,7 +196,6 @@ func getTCloudSGAllSync(kt *kit.Kit, client *tcloud.TCloud,
 
 	offset := 0
 	datasCloud := []*vpc.SecurityGroup{}
-
 	for {
 		opt := &securitygroup.TCloudListOption{
 			Region: req.Region,
@@ -151,9 +206,10 @@ func getTCloudSGAllSync(kt *kit.Kit, client *tcloud.TCloud,
 			logs.Errorf("request adaptor to list tcloud security group failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 			return nil, err
 		}
-		offset += len(datas)
 		datasCloud = append(datasCloud, datas...)
-		if len(datas) == 0 || uint(len(datas)) < typcore.TCloudQueryLimit {
+
+		offset += len(datas)
+		if uint(len(datas)) < typcore.TCloudQueryLimit {
 			break
 		}
 	}
@@ -169,15 +225,31 @@ func getTCloudSGAllSync(kt *kit.Kit, client *tcloud.TCloud,
 }
 
 func diffTCloudSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncTCloudDiff,
-	dsMap map[string]*SecurityGroupSyncDS, req *SyncTCloudSecurityGroupOption,
+	dsMap map[string]*TCloudSecurityGroupSyncDS, req *SyncTCloudSecurityGroupOption,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) error {
 
-	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
-	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
+	addCloudIDs := make([]string, 0)
+	for id := range cloudMap {
+		if _, ok := dsMap[id]; !ok {
+			addCloudIDs = append(addCloudIDs, id)
+		} else {
+			dsMap[id].IsUpdated = true
+		}
+	}
+
+	deleteCloudIDs := make([]string, 0)
+	updateCloudIDs := make([]string, 0)
+	for id, one := range dsMap {
+		if !one.IsUpdated {
+			deleteCloudIDs = append(deleteCloudIDs, id)
+		} else {
+			updateCloudIDs = append(updateCloudIDs, id)
+		}
+	}
 
 	if len(deleteCloudIDs) > 0 {
 		logs.Infof("do sync tcloud SecurityGroup delete operate, rid: %s", kt.Rid)
-		err := diffSecurityGroupSyncDelete(kt, deleteCloudIDs, dataCli)
+		err := DiffSecurityGroupSyncDelete(kt, deleteCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("sync delete tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -223,22 +295,43 @@ func diffTCloudSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroup
 	return nil
 }
 
+func isTCloudSGChange(db *TCloudSecurityGroupSyncDS, cloud *SecurityGroupSyncTCloudDiff) bool {
+
+	if converter.PtrToVal(cloud.SecurityGroup.SecurityGroupName) != db.HcSecurityGroup.BaseSecurityGroup.Name {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.SecurityGroup.SecurityGroupDesc, db.HcSecurityGroup.BaseSecurityGroup.Memo) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.SecurityGroup.ProjectId, db.HcSecurityGroup.Extension.CloudProjectID) {
+		return true
+	}
+
+	return false
+}
+
 func diffTCloudSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncTCloudDiff,
-	dsMap map[string]*SecurityGroupSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
+	dsMap map[string]*TCloudSecurityGroupSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
 
 	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.TCloudSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.TCloudSecurityGroupExtension]{},
 	}
 
 	for _, id := range updateCloudIDs {
-		if *cloudMap[id].SecurityGroup.SecurityGroupName == dsMap[id].HcSecurityGroup.Name &&
-			cloudMap[id].SecurityGroup.SecurityGroupDesc == dsMap[id].HcSecurityGroup.Memo {
+
+		if !isTCloudSGChange(dsMap[id], cloudMap[id]) {
 			continue
 		}
+
 		securityGroup := protocloud.SecurityGroupBatchUpdate[corecloud.TCloudSecurityGroupExtension]{
 			ID:   dsMap[id].HcSecurityGroup.ID,
-			Name: *cloudMap[id].SecurityGroup.SecurityGroupName,
+			Name: converter.PtrToVal(cloudMap[id].SecurityGroup.SecurityGroupName),
 			Memo: cloudMap[id].SecurityGroup.SecurityGroupDesc,
+			Extension: &corecloud.TCloudSecurityGroupExtension{
+				CloudProjectID: cloudMap[id].SecurityGroup.ProjectId,
+			},
 		}
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
 	}
@@ -263,10 +356,10 @@ func diffTCloudSecurityGroupSyncAdd(kt *kit.Kit, cloudMap map[string]*SecurityGr
 
 	for _, id := range addCloudIDs {
 		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{
-			CloudID:   *cloudMap[id].SecurityGroup.SecurityGroupId,
+			CloudID:   converter.PtrToVal(cloudMap[id].SecurityGroup.SecurityGroupId),
 			BkBizID:   constant.UnassignedBiz,
 			Region:    req.Region,
-			Name:      *cloudMap[id].SecurityGroup.SecurityGroupName,
+			Name:      converter.PtrToVal(cloudMap[id].SecurityGroup.SecurityGroupName),
 			Memo:      cloudMap[id].SecurityGroup.SecurityGroupDesc,
 			AccountID: req.AccountID,
 			Extension: &corecloud.TCloudSecurityGroupExtension{

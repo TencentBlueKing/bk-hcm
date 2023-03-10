@@ -20,7 +20,7 @@
 package gcp
 
 import (
-	"hcm/pkg/adaptor/types/firewall-rule"
+	firewallrule "hcm/pkg/adaptor/types/firewall-rule"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"

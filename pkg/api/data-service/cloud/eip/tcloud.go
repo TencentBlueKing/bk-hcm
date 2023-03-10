@@ -32,4 +32,7 @@ type TCloudEipExtensionResult struct {
 }
 
 // TCloudEipExtensionUpdateReq ...
-type TCloudEipExtensionUpdateReq struct{}
+type TCloudEipExtensionUpdateReq struct {
+	Bandwidth          *uint64 `json:"bandwidth"`
+	InternetChargeType *string `json:"internet_charge_type"`
+}

@@ -22,6 +22,7 @@ package disk
 // AzureDiskExtensionCreateReq ...
 type AzureDiskExtensionCreateReq struct {
 	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	Encrypted         *bool  `json:"encrypted,omitempty"`
 }
 
 // AzureDiskExtensionResult ...
@@ -32,4 +33,7 @@ type AzureDiskExtensionResult struct {
 
 // AzureDiskExtensionUpdateReq ...
 // 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
-type AzureDiskExtensionUpdateReq struct{}
+type AzureDiskExtensionUpdateReq struct {
+	ResourceGroupName string `json:"resource_group_name"`
+	Encrypted         *bool  `json:"encrypted,omitempty"`
+}

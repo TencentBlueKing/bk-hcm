@@ -17,25 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package eip
+package region
 
-// AzureEipExtensionCreateReq ...
-type AzureEipExtensionCreateReq struct {
-	IpConfigurationID *string `json:"ip_configuration_id"`
-	SKU               *string `json:"sku"`
-	ResourceGroupName string  `json:"resource_group_name"`
-}
-
-// AzureEipExtensionResult ...
-type AzureEipExtensionResult struct {
-	IpConfigurationID *string `json:"ip_configuration_id"`
-	SKU               *string `json:"sku"`
-	ResourceGroupName string  `json:"resource_group_name"`
-}
-
-// AzureEipExtensionUpdateReq ...
-type AzureEipExtensionUpdateReq struct {
-	IpConfigurationID *string `json:"ip_configuration_id"`
-	SKU               *string `json:"sku"`
-	ResourceGroupName string  `json:"resource_group_name"`
+// HuaWeiRegionModel ...
+type HuaWeiRegionModel struct {
+	ID       string `json:"id"`
+	Service  string `json:"service"`
+	RegionID string `json:"region_id"`
+	Type     string `json:"type"`
 }

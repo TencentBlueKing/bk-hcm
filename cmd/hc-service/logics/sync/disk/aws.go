@@ -20,18 +20,51 @@
 package disk
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types/disk"
+	apicore "hcm/pkg/api/core"
+	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
-	protodisk "hcm/pkg/api/hc-service/disk"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/converter"
 )
 
+// SyncAwsDiskOption define sync aws disk option.
+type SyncAwsDiskOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncAwsDiskOption
+func (opt SyncAwsDiskOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncAwsDisk sync disk self
-func SyncAwsDisk(kt *kit.Kit, req *protodisk.DiskSyncReq,
+func SyncAwsDisk(kt *kit.Kit, req *SyncAwsDiskOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	cloudMap, err := getDatasFromAwsForDiskSync(kt, req, ad)
 	if err != nil {
@@ -39,7 +72,7 @@ func SyncAwsDisk(kt *kit.Kit, req *protodisk.DiskSyncReq,
 		return nil, err
 	}
 
-	dsMap, err := GetDatasFromDSForDiskSync(kt, req, dataCli)
+	dsMap, err := getDatasFromDSForAwsDiskSync(kt, req, dataCli)
 	if err != nil {
 		logs.Errorf("request getDatasFromDSForDiskSync failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -54,7 +87,51 @@ func SyncAwsDisk(kt *kit.Kit, req *protodisk.DiskSyncReq,
 	return nil, nil
 }
 
-func getDatasFromAwsForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
+func getDatasFromDSForAwsDiskSync(kt *kit.Kit, req *SyncAwsDiskOption,
+	dataCli *dataservice.Client) (map[string]*AwsDiskSyncDS, error) {
+	start := 0
+	resultsHcm := make([]*datadisk.DiskExtResult[dataproto.AwsDiskExtensionResult], 0)
+	for {
+		dataReq := &datadisk.DiskListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: req.AccountID},
+					filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: req.Region},
+				},
+			},
+			Page: &apicore.BasePage{Start: uint32(start), Limit: filter.DefaultMaxInLimit},
+		}
+
+		if len(req.CloudIDs) > 0 {
+			filter := filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: req.CloudIDs}
+			dataReq.Filter.Rules = append(dataReq.Filter.Rules, filter)
+		}
+
+		results, err := dataCli.Aws.ListDisk(kt.Ctx, kt.Header(), dataReq)
+		if err != nil {
+			logs.Errorf("from data-service list disk failed, err: %v, rid: %s", err, kt.Rid)
+		}
+
+		resultsHcm = append(resultsHcm, results.Details...)
+		start += len(results.Details)
+		if uint(len(results.Details)) < apicore.DefaultMaxPageLimit {
+			break
+		}
+	}
+
+	dsMap := make(map[string]*AwsDiskSyncDS)
+	for _, result := range resultsHcm {
+		sg := new(AwsDiskSyncDS)
+		sg.IsUpdated = false
+		sg.HcDisk = result
+		dsMap[result.CloudID] = sg
+	}
+
+	return dsMap, nil
+}
+
+func getDatasFromAwsForDiskSync(kt *kit.Kit, req *SyncAwsDiskOption,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*AwsDiskSyncDiff, error) {
 
 	client, err := ad.Aws(kt, req.AccountID)
@@ -69,10 +146,9 @@ func getDatasFromAwsForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 		listOpt.CloudIDs = req.CloudIDs
 	}
 
-	datas, err := client.ListDisk(kt, listOpt)
+	datas, _, err := client.ListDisk(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor to list aws disk failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
 	}
 
 	cloudMap := make(map[string]*AwsDiskSyncDiff)
@@ -85,14 +161,30 @@ func getDatasFromAwsForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 	return cloudMap, nil
 }
 
-func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap map[string]*DiskSyncDS,
-	req *protodisk.DiskSyncReq, dataCli *dataservice.Client) error {
+func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap map[string]*AwsDiskSyncDS,
+	req *SyncAwsDiskOption, dataCli *dataservice.Client) error {
 
-	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
-	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
+	addCloudIDs := []string{}
+	for id := range cloudMap {
+		if _, ok := dsMap[id]; !ok {
+			addCloudIDs = append(addCloudIDs, id)
+		} else {
+			dsMap[id].IsUpdated = true
+		}
+	}
+
+	deleteCloudIDs := []string{}
+	updateCloudIDs := []string{}
+	for id, one := range dsMap {
+		if !one.IsUpdated {
+			deleteCloudIDs = append(deleteCloudIDs, id)
+		} else {
+			updateCloudIDs = append(updateCloudIDs, id)
+		}
+	}
 
 	if len(deleteCloudIDs) > 0 {
-		err := diffDiskSyncDelete(kt, deleteCloudIDs, dataCli)
+		err := DiffDiskSyncDelete(kt, deleteCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("request diffDiskSyncDelete failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -119,20 +211,42 @@ func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap ma
 }
 
 func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
-	req *protodisk.DiskSyncReq, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+	req *SyncAwsDiskOption, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.AwsDiskExtensionCreateReq]
 
 	for _, id := range addCloudIDs {
+		attachments := make([]*dataproto.AwsDiskAttachment, 0)
+		if len(cloudMap[id].Disk.Attachments) > 0 {
+			for _, v := range cloudMap[id].Disk.Attachments {
+				if v != nil {
+					tmp := &dataproto.AwsDiskAttachment{
+						AttachTime:          v.AttachTime,
+						DeleteOnTermination: v.DeleteOnTermination,
+						DeviceName:          v.Device,
+						InstanceId:          v.InstanceId,
+						Status:              v.State,
+						DiskId:              v.VolumeId,
+					}
+					attachments = append(attachments, tmp)
+				}
+			}
+		}
+
 		disk := &dataproto.DiskExtCreateReq[dataproto.AwsDiskExtensionCreateReq]{
 			AccountID: req.AccountID,
 			Name:      "todo",
 			CloudID:   id,
 			Region:    req.Region,
-			Zone:      *cloudMap[id].Disk.AvailabilityZone,
-			DiskSize:  uint64(*cloudMap[id].Disk.Size),
-			DiskType:  *cloudMap[id].Disk.VolumeType,
-			Status:    *cloudMap[id].Disk.State,
+			Zone:      converter.PtrToVal(cloudMap[id].Disk.AvailabilityZone),
+			DiskSize:  uint64(converter.PtrToVal(cloudMap[id].Disk.Size)),
+			DiskType:  converter.PtrToVal(cloudMap[id].Disk.VolumeType),
+			Status:    converter.PtrToVal(cloudMap[id].Disk.State),
+			// 该云没有此字段
+			Memo: nil,
+			Extension: &dataproto.AwsDiskExtensionCreateReq{
+				Attachment: attachments,
+			},
 		}
 		createReq = append(createReq, disk)
 	}
@@ -150,18 +264,66 @@ func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 	return results.IDs, nil
 }
 
+func isAwsDiskChange(db *AwsDiskSyncDS, cloud *AwsDiskSyncDiff) bool {
+
+	if converter.PtrToVal(cloud.Disk.State) != db.HcDisk.Status {
+		return true
+	}
+
+	for _, dbValue := range db.HcDisk.Extension.Attachment {
+		isEqual := false
+		for _, cloudValue := range cloud.Disk.Attachments {
+			if dbValue.AttachTime.String() == cloudValue.AttachTime.String() &&
+				assert.IsPtrBoolEqual(dbValue.DeleteOnTermination, cloudValue.DeleteOnTermination) &&
+				assert.IsPtrStringEqual(dbValue.DeviceName, cloudValue.Device) &&
+				assert.IsPtrStringEqual(dbValue.InstanceId, cloudValue.InstanceId) &&
+				assert.IsPtrStringEqual(dbValue.Status, cloudValue.State) &&
+				assert.IsPtrStringEqual(dbValue.DiskId, cloudValue.VolumeId) {
+				isEqual = true
+				break
+			}
+		}
+		if !isEqual {
+			return true
+		}
+	}
+
+	return false
+}
+
 func diffAwsSyncUpdate(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
-	dsMap map[string]*DiskSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
+	dsMap map[string]*AwsDiskSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
 
 	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.AwsDiskExtensionUpdateReq]
 
 	for _, id := range updateCloudIDs {
-		if *cloudMap[id].Disk.State == dsMap[id].HcDisk.Status {
+		if !isAwsDiskChange(dsMap[id], cloudMap[id]) {
 			continue
 		}
+
+		attachments := make([]*dataproto.AwsDiskAttachment, 0)
+		if len(cloudMap[id].Disk.Attachments) > 0 {
+			for _, v := range cloudMap[id].Disk.Attachments {
+				if v != nil {
+					tmp := &dataproto.AwsDiskAttachment{
+						AttachTime:          v.AttachTime,
+						DeleteOnTermination: v.DeleteOnTermination,
+						DeviceName:          v.Device,
+						InstanceId:          v.InstanceId,
+						Status:              v.State,
+						DiskId:              v.VolumeId,
+					}
+					attachments = append(attachments, tmp)
+				}
+			}
+		}
+
 		disk := &dataproto.DiskExtUpdateReq[dataproto.AwsDiskExtensionUpdateReq]{
 			ID:     dsMap[id].HcDisk.ID,
 			Status: *cloudMap[id].Disk.State,
+			Extension: &dataproto.AwsDiskExtensionUpdateReq{
+				Attachment: attachments,
+			},
 		}
 		updateReq = append(updateReq, disk)
 	}

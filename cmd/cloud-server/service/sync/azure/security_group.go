@@ -18,3 +18,36 @@
  */
 
 package azure
+
+import (
+	"time"
+
+	proto "hcm/pkg/api/hc-service"
+	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+)
+
+// SyncSG ...
+func SyncSG(kt *kit.Kit, service *hcservice.Client, accountID string, resourceGroupNames []string) error {
+
+	start := time.Now()
+	logs.V(3).Infof("azure account[%s] sync sg start, time: %v, rid: %s", accountID, start, kt.Rid)
+
+	defer func() {
+		logs.V(3).Infof("azure account[%s] sync sg end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
+	}()
+
+	for _, name := range resourceGroupNames {
+		req := &proto.SecurityGroupSyncReq{
+			AccountID:         accountID,
+			ResourceGroupName: name,
+		}
+		if err := service.Azure.SecurityGroup.SyncSecurityGroup(kt.Ctx, kt.Header(), req); err != nil {
+			logs.Errorf("sync azure sg failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}

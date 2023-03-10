@@ -124,6 +124,23 @@ func IsPtrInt64Equal(a, b *int64) bool {
 	return true
 }
 
+// IsPtrUint64Equal ...
+func IsPtrUint64Equal(a, b *uint64) bool {
+	if (a != nil && b != nil) && *a != *b {
+		return false
+	}
+
+	if (a != nil && b != nil) && *a == *b {
+		return true
+	}
+
+	if a != nil || b != nil {
+		return false
+	}
+
+	return true
+}
+
 // IsPtrFloat64Equal ...
 func IsPtrFloat64Equal(a, b *float64) bool {
 	if (a != nil && b != nil) && *a != *b {

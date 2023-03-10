@@ -20,29 +20,109 @@
 package huawei
 
 import (
+	"hcm/pkg/adaptor/types/region"
 	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 
-	iammodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/model"
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/iam/v3/region"
+	ecsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/region"
+	eipregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2/region"
+	imsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2/region"
+	vpcregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/region"
 )
 
 // ListRegion 查看地域
 // reference: https://support.huaweicloud.com/api-iam/iam_05_0001.html
-func (h *HuaWei) ListRegion(kt *kit.Kit) ([]iammodel.Region, error) {
+func (h *HuaWei) ListRegion(kt *kit.Kit) ([]*region.HuaWeiRegionModel, error) {
+	// huawei region need by resource but we can use in public
+	regions := make([]*region.HuaWeiRegionModel, 0)
 
-	client, err := h.clientSet.iamRegionClient(region.AP_SOUTHEAST_1.Id)
-	if err != nil {
-		return nil, err
+	// ecs: cvm disk networkinterface
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.CN_NORTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.CN_NORTH_4.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.CN_SOUTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.CN_EAST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.CN_EAST_3.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.CN_SOUTHWEST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.AP_SOUTHEAST_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.AP_SOUTHEAST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.AP_SOUTHEAST_3.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.AF_SOUTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.SA_BRAZIL_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.LA_NORTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.CN_SOUTH_4.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.NA_MEXICO_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.LA_SOUTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.CN_SOUTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.CN_NORTH_9.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.CN_NORTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ecs", ecsregion.AP_SOUTHEAST_4.Id))
+
+	// vpc: vpc subnet sg sgRule routetable
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.AF_SOUTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.CN_NORTH_4.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.CN_NORTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.CN_EAST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.CN_EAST_3.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.CN_SOUTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.CN_SOUTHWEST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.AP_SOUTHEAST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.CN_NORTH_9.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.AP_SOUTHEAST_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.AP_SOUTHEAST_3.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.SA_BRAZIL_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.LA_NORTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.CN_SOUTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.CN_NORTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.LA_SOUTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.NA_MEXICO_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("vpc", vpcregion.AP_SOUTHEAST_4.Id))
+
+	// eip: eip
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.AF_SOUTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.CN_NORTH_4.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.CN_NORTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.CN_EAST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.CN_EAST_3.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.CN_SOUTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.CN_SOUTHWEST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.AP_SOUTHEAST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.AP_SOUTHEAST_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.AP_SOUTHEAST_3.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.CN_NORTH_9.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.LA_NORTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.SA_BRAZIL_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.CN_NORTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.LA_SOUTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.NA_MEXICO_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("eip", eipregion.AP_SOUTHEAST_4.Id))
+
+	// ims: publicimage
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.AF_SOUTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.CN_NORTH_4.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.CN_NORTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.CN_EAST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.CN_EAST_3.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.CN_SOUTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.CN_SOUTHWEST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.AP_SOUTHEAST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.AP_SOUTHEAST_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.AP_SOUTHEAST_3.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.CN_NORTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.CN_SOUTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.CN_NORTH_9.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.LA_SOUTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.SA_BRAZIL_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.LA_NORTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.NA_MEXICO_1.Id))
+	regions = append(regions, getHuaWeiModelRegion("ims", imsregion.AP_SOUTHEAST_4.Id))
+
+	return regions, nil
+}
+
+func getHuaWeiModelRegion(service string, regionId string) *region.HuaWeiRegionModel {
+	region := &region.HuaWeiRegionModel{
+		Service:  service,
+		RegionID: regionId,
+		Type:     "public",
 	}
-
-	req := new(iammodel.KeystoneListRegionsRequest)
-
-	resp, err := client.KeystoneListRegions(req)
-	if err != nil {
-		logs.Errorf("list huawei region failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	return *resp.Regions, nil
+	return region
 }

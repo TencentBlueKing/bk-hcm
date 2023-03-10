@@ -22,9 +22,7 @@ package disk
 import (
 	"hcm/cmd/hc-service/service/capability"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	protodisk "hcm/pkg/api/hc-service/disk"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
@@ -49,17 +47,4 @@ func InitSyncDiskService(cap *capability.Capability) {
 type syncDiskSvc struct {
 	adaptor *cloudclient.CloudAdaptorClient
 	dataCli *dataservice.Client
-}
-
-func decodeDiskSyncReq(cts *rest.Contexts) (*protodisk.DiskSyncReq, error) {
-	req := new(protodisk.DiskSyncReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	return req, nil
 }

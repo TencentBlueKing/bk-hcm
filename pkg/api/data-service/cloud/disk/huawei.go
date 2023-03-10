@@ -23,6 +23,11 @@ package disk
 type HuaWeiDiskExtensionCreateReq struct {
 	DiskChargeType    string                   `json:"disk_charge_type" validate:"required"`
 	DiskChargePrepaid *HuaWeiDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
+	// 服务类型，结果为EVS、DSS、DESS.
+	ServiceType string `json:"service_type"`
+	// 当前云硬盘服务不支持该字段
+	Encrypted  *bool                   `json:"encrypted,omitempty"`
+	Attachment []*HuaWeiDiskAttachment `json:"attachment,omitempty"`
 }
 
 // HuaWeiDiskExtensionResult ...
@@ -63,4 +68,12 @@ type HuaWeiDiskAttachment struct {
 
 // HuaWeiDiskExtensionUpdateReq ...
 // 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
-type HuaWeiDiskExtensionUpdateReq struct{}
+type HuaWeiDiskExtensionUpdateReq struct {
+	DiskChargeType    string                   `json:"disk_charge_type" validate:"required"`
+	DiskChargePrepaid *HuaWeiDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
+	// 服务类型，结果为EVS、DSS、DESS.
+	ServiceType string `json:"service_type"`
+	// 当前云硬盘服务不支持该字段
+	Encrypted  *bool                   `json:"encrypted,omitempty"`
+	Attachment []*HuaWeiDiskAttachment `json:"attachment,omitempty"`
+}

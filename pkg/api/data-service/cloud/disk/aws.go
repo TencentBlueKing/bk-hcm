@@ -22,7 +22,9 @@ package disk
 import "time"
 
 // AwsDiskExtensionCreateReq ...
-type AwsDiskExtensionCreateReq struct{}
+type AwsDiskExtensionCreateReq struct {
+	Attachment []*AwsDiskAttachment `json:"attachment,omitempty"`
+}
 
 // AwsDiskExtensionResult ...
 type AwsDiskExtensionResult struct {
@@ -47,4 +49,6 @@ type AwsDiskAttachment struct {
 
 // AwsDiskExtensionUpdateReq ...
 // 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
-type AwsDiskExtensionUpdateReq struct{}
+type AwsDiskExtensionUpdateReq struct {
+	Attachment []*AwsDiskAttachment `json:"attachment,omitempty"`
+}

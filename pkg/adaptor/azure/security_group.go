@@ -160,13 +160,17 @@ func (az *Azure) ListSecurityGroupByID(kt *kit.Kit, opt *core.AzureListByIDOptio
 		}
 
 		for _, one := range nextResult.Value {
-			if _, exist := idMap[*one.ID]; exist {
-				securityGroups = append(securityGroups, one)
-				delete(idMap, *one.ID)
+			if len(opt.CloudIDs) > 0 {
+				if _, exist := idMap[*one.ID]; exist {
+					securityGroups = append(securityGroups, one)
+					delete(idMap, *one.ID)
 
-				if len(idMap) == 0 {
-					return securityGroups, nil
+					if len(idMap) == 0 {
+						return securityGroups, nil
+					}
 				}
+			} else {
+				securityGroups = append(securityGroups, one)
 			}
 		}
 	}

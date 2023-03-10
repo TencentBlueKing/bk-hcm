@@ -21,7 +21,6 @@ package cvm
 
 import (
 	"hcm/cmd/hc-service/logics/sync/cvm"
-	"hcm/pkg/adaptor/types/core"
 	typecore "hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/hc-service/sync"
@@ -42,52 +41,15 @@ func (svc *syncCvmSvc) SyncHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cli, err := svc.adaptor.HuaWei(cts.Kit, req.AccountID)
+	syncOpt := &cvm.SyncHuaWeiCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+	}
+
+	_, err := cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.adaptor, svc.dataCli)
 	if err != nil {
+		logs.Errorf("request to sync huawei cvm all rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
-	}
-
-	listOpt := &typecvm.HuaWeiListOption{
-		Region:   req.Region,
-		CloudIDs: nil,
-		Page: &core.HuaWeiCvmOffsetPage{
-			Offset: int32(0),
-			Limit:  int32(constant.BatchOperationMaxLimit),
-		},
-	}
-	for {
-		cvms, err := cli.ListCvm(cts.Kit, listOpt)
-		if err != nil {
-			logs.Errorf("request adaptor list huawei cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, cts.Kit.Rid)
-			return nil, err
-		}
-
-		if len(*cvms) == 0 {
-			break
-		}
-
-		cloudIDs := make([]string, 0, len(*cvms))
-		for _, one := range *cvms {
-			cloudIDs = append(cloudIDs, one.Id)
-		}
-
-		syncOpt := &cvm.SyncHuaWeiCvmOption{
-			AccountID: req.AccountID,
-			Region:    req.Region,
-			CloudIDs:  cloudIDs,
-		}
-
-		_, err = cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.adaptor, svc.dataCli)
-		if err != nil {
-			logs.Errorf("request to sync huawei cvm all rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-
-		if len(*cvms) < typecore.TCloudQueryLimit {
-			break
-		}
-
-		listOpt.Page.Offset += typecore.TCloudQueryLimit
 	}
 
 	return nil, nil
@@ -112,7 +74,7 @@ func (svc *syncCvmSvc) SyncHuaWeiCvmWithRelResource(cts *rest.Contexts) (interfa
 	listOpt := &typecvm.HuaWeiListOption{
 		Region:   req.Region,
 		CloudIDs: nil,
-		Page: &core.HuaWeiCvmOffsetPage{
+		Page: &typecore.HuaWeiCvmOffsetPage{
 			Offset: int32(0),
 			Limit:  int32(constant.BatchOperationMaxLimit),
 		},
