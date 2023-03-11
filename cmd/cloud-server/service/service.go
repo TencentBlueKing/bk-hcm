@@ -31,6 +31,7 @@ import (
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
 	"hcm/cmd/cloud-server/service/application"
+	"hcm/cmd/cloud-server/service/assign"
 	"hcm/cmd/cloud-server/service/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/cvm"
@@ -228,6 +229,7 @@ func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Cont
 	application.InitApplicationService(c, bkHcmUrl, strings.Split(platformManagers, ","))
 	audit.InitService(c)
 	networkinterface.InitNetworkInterfaceService(c)
+	assign.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

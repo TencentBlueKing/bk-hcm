@@ -88,3 +88,27 @@ func (cli *CloudClient) ListResourceBasicInfo(ctx context.Context, h http.Header
 
 	return resp.Data, nil
 }
+
+// AssignResourceToBiz assign an account's cloud resource to biz, **only for ui**.
+func (cli *CloudClient) AssignResourceToBiz(ctx context.Context, h http.Header,
+	req *protocloud.AssignResourceToBizReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/cloud/resources/assign/bizs").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}

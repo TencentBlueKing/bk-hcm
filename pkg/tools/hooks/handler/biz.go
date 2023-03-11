@@ -56,8 +56,8 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 			notMatchedIDs = append(notMatchedIDs, id)
 		}
 
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action,
-			ResourceID: info.AccountID}})
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action},
+			BizID: bizID})
 	}
 
 	if len(notMatchedIDs) > 0 {

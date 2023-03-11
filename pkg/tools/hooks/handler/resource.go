@@ -31,7 +31,7 @@ import (
 func ResValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	// authorize one resource
 	if opt.BasicInfo != nil {
-		if opt.BasicInfo.BkBizID != constant.UnassignedBiz {
+		if opt.BasicInfo.BkBizID != constant.UnassignedBiz && opt.BasicInfo.BkBizID != 0 {
 			return errf.Newf(errf.InvalidParameter, "resource %s is already assigned", opt.BasicInfo.ID)
 		}
 
@@ -44,7 +44,7 @@ func ResValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	authRes := make([]meta.ResourceAttribute, 0, len(opt.BasicInfos))
 	assignedIDs := make([]string, 0)
 	for id, info := range opt.BasicInfos {
-		if info.BkBizID != 0 {
+		if info.BkBizID != constant.UnassignedBiz && info.BkBizID != 0 {
 			assignedIDs = append(assignedIDs, id)
 		}
 

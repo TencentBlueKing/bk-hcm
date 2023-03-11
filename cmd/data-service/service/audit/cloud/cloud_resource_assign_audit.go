@@ -38,6 +38,28 @@ func (ad Audit) CloudResourceAssignAudit(cts *rest.Contexts) (interface{}, error
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
+	auditAll, err := ad.GenCloudResAssignAudit(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// 审计信息保存
+	if err := ad.dao.Audit().BatchCreate(cts.Kit, auditAll); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// GenCloudResAssignAudit generate cloud resource assign audit.
+func (ad Audit) GenCloudResAssignAudit(kt *kit.Kit, req *protoaudit.CloudResourceAssignAuditReq) (
+	[]*tableaudit.AuditTable, error) {
+
+	if req == nil {
+		return nil, errf.New(errf.InvalidParameter, "cloud resource assign audit request cannot be empty")
+	}
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -55,22 +77,16 @@ func (ad Audit) CloudResourceAssignAudit(cts *rest.Contexts) (interface{}, error
 	// 根据分类后的分配信息，对所需要记录的审计信息进行查询
 	auditAll := make([]*tableaudit.AuditTable, 0, len(req.Assigns))
 	for resType, assigns := range assignMap {
-		audits, err := ad.buildAssignAuditInfo(cts.Kit, resType, assigns)
+		audits, err := ad.buildAssignAuditInfo(kt, resType, assigns)
 		if err != nil {
-			logs.Errorf("query assign audit info failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("query assign audit info failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 
 		auditAll = append(auditAll, audits...)
 	}
 
-	// 审计信息保存
-	if err := ad.dao.Audit().BatchCreate(cts.Kit, auditAll); err != nil {
-		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
+	return auditAll, nil
 }
 
 func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceType,

@@ -23,32 +23,45 @@ import (
 	"fmt"
 	"net/http"
 
+	"hcm/cmd/data-service/service/audit/cloud"
 	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/api/data-service/audit"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	audittable "hcm/pkg/dal/table/audit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // InitCloudService initial the cloud service
 func InitCloudService(cap *capability.Capability) {
 	svc := &cloudSvc{
-		dao: cap.Dao,
+		dao:   cap.Dao,
+		audit: cloud.NewCloudAudit(cap.Dao),
 	}
 
 	h := rest.NewHandler()
 
 	h.Add("GetResourceBasicInfo", http.MethodGet, "/cloud/resources/bases/{type}/id/{id}", svc.GetResourceBasicInfo)
 	h.Add("ListResourceBasicInfo", http.MethodPost, "/cloud/resources/bases/list", svc.ListResourceBasicInfo)
+	h.Add("AssignResourceToBiz", http.MethodPost, "/cloud/resources/assign/bizs", svc.AssignResourceToBiz)
 
 	h.Load(cap.WebService)
 }
 
 type cloudSvc struct {
-	dao dao.Set
+	dao   dao.Set
+	audit *cloud.Audit
 }
 
 // GetResourceBasicInfo get resource basic info.
@@ -107,4 +120,89 @@ func (svc cloudSvc) ListResourceBasicInfo(cts *rest.Contexts) (interface{}, erro
 	}
 
 	return result, nil
+}
+
+var assignResAuditTypeMap = map[enumor.CloudResourceType]enumor.AuditResourceType{
+	enumor.SecurityGroupCloudResType:    enumor.SecurityGroupAuditResType,
+	enumor.VpcCloudResType:              enumor.VpcCloudAuditResType,
+	enumor.SubnetCloudResType:           enumor.SubnetAuditResType,
+	enumor.EipCloudResType:              enumor.EipAuditResType,
+	enumor.CvmCloudResType:              enumor.CvmAuditResType,
+	enumor.DiskCloudResType:             enumor.DiskAuditResType,
+	enumor.RouteTableCloudResType:       enumor.RouteTableAuditResType,
+	enumor.GcpFirewallRuleCloudResType:  enumor.GcpFirewallRuleAuditResType,
+	enumor.NetworkInterfaceCloudResType: enumor.NetworkInterfaceAuditResType,
+}
+
+// AssignResourceToBiz assign an account's cloud resource to biz, **only for ui**.
+func (svc cloudSvc) AssignResourceToBiz(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.AssignResourceToBizReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		auditOpts := make([]audit.CloudResourceAssignInfo, 0)
+
+		for _, resType := range req.ResTypes {
+			auditType, exists := assignResAuditTypeMap[resType]
+			if !exists {
+				return nil, errf.Newf(errf.InvalidParameter, "resource type %s cannot be assigned", resType)
+			}
+
+			expr := tools.EqualWithOpExpression(filter.And, map[string]interface{}{"account_id": req.AccountID,
+				"bk_biz_id": constant.UnassignedBiz})
+
+			ids, err := svc.dao.Cloud().ListResourceIDs(cts.Kit, resType, expr)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(ids) == 0 {
+				continue
+			}
+
+			assignFilter := tools.ContainersExpression("id", ids)
+			err = svc.dao.Cloud().AssignResourceToBiz(cts.Kit, txn, resType, assignFilter, req.BkBizID)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, id := range ids {
+				auditOpts = append(auditOpts, audit.CloudResourceAssignInfo{
+					ResType:         auditType,
+					ResID:           id,
+					AssignedResType: enumor.BizAuditAssignedResType,
+					AssignedResID:   req.BkBizID,
+				})
+			}
+		}
+
+		// create audit
+		auditAssignOpts := slice.Split(auditOpts, constant.BatchOperationMaxLimit)
+		allAudits := make([]*audittable.AuditTable, 0, len(auditOpts))
+		for _, opts := range auditAssignOpts {
+			audits, err := svc.audit.GenCloudResAssignAudit(cts.Kit, &audit.CloudResourceAssignAuditReq{Assigns: opts})
+			if err != nil {
+				return nil, err
+			}
+			allAudits = append(allAudits, audits...)
+		}
+
+		err := svc.dao.Audit().BatchCreateWithTx(cts.Kit, txn, allAudits)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }

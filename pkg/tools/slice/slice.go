@@ -52,3 +52,22 @@ func Unique[T comparable](list []T) []T {
 
 	return uniqueList
 }
+
+// Split list to array of lists with specified length.
+func Split[T any](list []T, length int) [][]T {
+	listLen := len(list)
+
+	lists := make([][]T, 0)
+	if length <= 0 || listLen == 0 {
+		return lists
+	}
+
+	for i := 0; i < listLen; i += length {
+		if (i + length) >= listLen {
+			lists = append(lists, list[i:listLen])
+		} else {
+			lists = append(lists, list[i:i+length])
+		}
+	}
+	return lists
+}

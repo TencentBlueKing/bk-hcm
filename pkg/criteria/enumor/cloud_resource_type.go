@@ -40,6 +40,8 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 		return table.AccountTable, nil
 	case SecurityGroupCloudResType:
 		return table.SecurityGroupTable, nil
+	case GcpFirewallRuleCloudResType:
+		return table.GcpFirewallRuleTable, nil
 	case VpcCloudResType:
 		return table.VpcTable, nil
 	case SubnetCloudResType:
@@ -63,6 +65,7 @@ func (rt CloudResourceType) ConvTableName() (table.Name, error) {
 const (
 	AccountCloudResType          CloudResourceType = "account"
 	SecurityGroupCloudResType    CloudResourceType = "security_group"
+	GcpFirewallRuleCloudResType  CloudResourceType = "gcp_firewall_rule"
 	VpcCloudResType              CloudResourceType = "vpc"
 	SubnetCloudResType           CloudResourceType = "subnet"
 	EipCloudResType              CloudResourceType = "eip"

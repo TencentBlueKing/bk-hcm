@@ -954,3 +954,28 @@ paths:
           userVerifiedRequired: true
         disabledStages: [ ]
         descriptionEn:
+  /api/v1/cloud/resources/assign/bizs:
+    post:
+      operationId: quick_assign_resource_to_biz
+      description: 快速分配一个账号下的资源到业务下
+      tags:
+        - CloudResource
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/resources/assign/bizs
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:

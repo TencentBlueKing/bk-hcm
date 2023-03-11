@@ -52,3 +52,17 @@ type ListResourceBasicInfoResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          map[string]types.CloudResourceBasicInfo `json:"data"`
 }
+
+// ------------------------- Assign -------------------------
+
+// AssignResourceToBizReq assign cloud resource to biz request.
+type AssignResourceToBizReq struct {
+	AccountID string                     `json:"account_id"  validate:"required"`
+	BkBizID   int64                      `json:"bk_biz_id"  validate:"min=1"`
+	ResTypes  []enumor.CloudResourceType `json:"res_types"  validate:"min=1"`
+}
+
+// Validate AssignResourceToBizReq.
+func (a AssignResourceToBizReq) Validate() error {
+	return validator.Validate.Struct(a)
+}

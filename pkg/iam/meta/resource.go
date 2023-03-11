@@ -59,4 +59,6 @@ const (
 	Audit ResourceType = "biz_audit"
 	// Biz defines biz's hcm auth resource type
 	Biz ResourceType = "biz"
+	// CloudResource is a special resource type that contains all cloud resource.
+	CloudResource ResourceType = "cloud_resource"
 )

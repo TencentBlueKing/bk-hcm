@@ -25,16 +25,23 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // Cloud only used for cloud common operation.
 type Cloud interface {
 	ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResourceType, ids []string) (
 		[]types.CloudResourceBasicInfo, error)
+	ListResourceIDs(kt *kit.Kit, resType enumor.CloudResourceType, expr *filter.Expression) ([]string, error)
+	AssignResourceToBiz(kt *kit.Kit, tx *sqlx.Tx, resType enumor.CloudResourceType, expr *filter.Expression,
+		bizID int64) error
 }
 
 var _ Cloud = new(CloudDao)
@@ -72,4 +79,68 @@ func (dao CloudDao) ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResou
 	}
 
 	return list, nil
+}
+
+// ListResourceIDs list cloud resource ids.
+func (dao CloudDao) ListResourceIDs(kt *kit.Kit, resType enumor.CloudResourceType, expr *filter.Expression) ([]string,
+	error) {
+
+	tableName, err := resType.ConvTableName()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if expr == nil {
+		return nil, errf.New(errf.InvalidParameter, "ids is required")
+	}
+
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf("select id from %s %s", tableName, whereExpr)
+
+	list := make([]types.CloudResourceBasicInfo, 0)
+	if err := dao.Orm.Do().Select(kt.Ctx, &list, sql, whereValue); err != nil {
+		logs.Errorf("select %s resource id failed, err: %v, expr: %v, rid: %s", resType, err, expr, kt.Rid)
+		return nil, err
+	}
+
+	ids := make([]string, len(list))
+	for idx, info := range list {
+		ids[idx] = info.ID
+	}
+
+	return ids, nil
+}
+
+// AssignResourceToBiz assign an account's cloud resource to biz, **only for ui**.
+func (dao CloudDao) AssignResourceToBiz(kt *kit.Kit, tx *sqlx.Tx, resType enumor.CloudResourceType,
+	expr *filter.Expression, bizID int64) error {
+
+	tableName, err := resType.ConvTableName()
+	if err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return err
+	}
+
+	sql := fmt.Sprintf(`update %s set bk_biz_id = :bk_biz_id %s`, tableName, whereExpr)
+
+	updateData := map[string]interface{}{
+		"bk_biz_id": bizID,
+	}
+
+	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(updateData, whereValue))
+	if err != nil {
+		logs.ErrorJson("assign %s resource to biz failed, err: %v, biz: %d, filter: %+v, rid: %v", resType, err, bizID,
+			expr, kt.Rid)
+		return err
+	}
+
+	return nil
 }

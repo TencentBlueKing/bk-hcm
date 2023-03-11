@@ -96,8 +96,7 @@ type CloudResourceAssignInfo struct {
 
 // CloudResourceAssignAuditReq cloud resource assign audit request.
 type CloudResourceAssignAuditReq struct {
-	ParentID string                    `json:"parent_id" validate:"omitempty"`
-	Assigns  []CloudResourceAssignInfo `json:"assigns" validate:"required"`
+	Assigns []CloudResourceAssignInfo `json:"assigns" validate:"required"`
 }
 
 // Validate cloud create audit request when cloud resource assign.
