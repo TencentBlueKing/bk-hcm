@@ -114,6 +114,10 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		return hitErr
 	}
 
+	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		return hitErr
+	}
+
 	// TODO: 更新同步状态字段为同步结束，更新结束时间
 
 	return nil

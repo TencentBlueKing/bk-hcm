@@ -324,3 +324,15 @@ type NetworkInterfaceListResult struct {
 	Count   uint64                        `json:"count"`
 	Details []coreni.BaseNetworkInterface `json:"details"`
 }
+
+// NetworkInterfaceExtListResult define network interface with extension list result.
+type NetworkInterfaceExtListResult[T coreni.NetworkInterfaceExtension] struct {
+	Count   uint64                       `json:"count,omitempty"`
+	Details []coreni.NetworkInterface[T] `json:"details,omitempty"`
+}
+
+// NetworkInterfaceExtListResp define network interface with extension list response.
+type NetworkInterfaceExtListResp[T coreni.NetworkInterfaceExtension] struct {
+	rest.BaseResp `json:",inline"`
+	Data          *NetworkInterfaceExtListResult[T] `json:"data"`
+}

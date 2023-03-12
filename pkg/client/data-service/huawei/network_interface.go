@@ -113,3 +113,28 @@ func (v *NetworkInterfaceClient) Get(ctx context.Context, h http.Header, id stri
 
 	return resp.Data, nil
 }
+
+// ListNetworkInterfaceExt list network interface with extension.
+func (v *NetworkInterfaceClient) ListNetworkInterfaceExt(ctx context.Context, h http.Header, req *core.ListReq) (
+	*datacloudniproto.NetworkInterfaceExtListResult[coreni.HuaWeiNIExtension], error) {
+
+	resp := new(datacloudniproto.NetworkInterfaceExtListResp[coreni.HuaWeiNIExtension])
+
+	err := v.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/network_interfaces/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

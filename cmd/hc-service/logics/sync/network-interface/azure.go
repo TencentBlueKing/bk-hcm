@@ -23,10 +23,14 @@ package networkinterface
 import (
 	"fmt"
 
+	"hcm/cmd/hc-service/logics/sync/logics"
+	securitygrouplogics "hcm/cmd/hc-service/logics/sync/logics/security-group"
+	subnetlogics "hcm/cmd/hc-service/logics/sync/logics/subnet"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	adcore "hcm/pkg/adaptor/types/core"
 	typesniproto "hcm/pkg/adaptor/types/network-interface"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
 	dataservice "hcm/pkg/api/data-service"
 	dataproto "hcm/pkg/api/data-service/cloud/network-interface"
@@ -38,6 +42,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
 )
@@ -46,8 +51,14 @@ import (
 func AzureNetworkInterfaceSync(kt *kit.Kit, req *hcservice.AzureNetworkInterfaceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
-	// syncs network interface list from cloudapi.
-	allCloudIDMap, err := SyncAzureNetworkInterfaceList(kt, req, adaptor, dataCli)
+	// sync network interface list from cloudapi.
+	var allCloudIDMap map[string]bool
+	var err error
+	if len(req.CloudIDs) == 0 {
+		allCloudIDMap, err = SyncAzureNetworkInterfaceAll(kt, req, adaptor, dataCli)
+	} else {
+		allCloudIDMap, err = SyncAzureNetworkInterfaceByID(kt, req, adaptor, dataCli)
+	}
 	if err != nil {
 		logs.Errorf("%s-networkinterface request cloudapi response failed. accountID: %s, resGroupName: %s, "+
 			"err: %v", enumor.Azure, req.AccountID, req.ResourceGroupName, err)
@@ -67,12 +78,12 @@ func AzureNetworkInterfaceSync(kt *kit.Kit, req *hcservice.AzureNetworkInterface
 	}, nil
 }
 
-// SyncAzureNetworkInterfaceList sync network interface from cloudapi.
-func SyncAzureNetworkInterfaceList(kt *kit.Kit, req *hcservice.AzureNetworkInterfaceSyncReq,
+// SyncAzureNetworkInterfaceAll sync network interface all from cloudapi.
+func SyncAzureNetworkInterfaceAll(kt *kit.Kit, req *hcservice.AzureNetworkInterfaceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (map[string]bool, error) {
 
-	if len(req.CloudIDs) > 0 && len(req.CloudIDs) > 100 {
-		return nil, errf.New(errf.TooManyRequest, "cloud_ids length should <= 100")
+	if len(req.CloudIDs) > 0 {
+		return nil, errf.New(errf.InvalidParameter, "cloud_ids is not empty")
 	}
 
 	cli, err := adaptor.Azure(kt, req.AccountID)
@@ -80,34 +91,139 @@ func SyncAzureNetworkInterfaceList(kt *kit.Kit, req *hcservice.AzureNetworkInter
 		return nil, err
 	}
 
-	// 查询指定CloudIDs
-	var tmpList *typesniproto.AzureInterfaceListResult
-	if len(req.CloudIDs) > 0 {
-		opt := &adcore.AzureListByIDOption{
-			ResourceGroupName: req.ResourceGroupName,
-			CloudIDs:          req.CloudIDs,
-		}
-		tmpList, err = cli.ListNetworkInterfaceByID(kt, opt)
-	} else {
-		tmpList, err = cli.ListNetworkInterface(kt)
-	}
-
+	pager, err := cli.ListNetworkInterfacePage()
 	if err != nil {
-		logs.Errorf("%s-networkinterface batch get cloudapi failed. accountID: %s, resGroupName: %s, err: %v",
+		logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, resGroupName: %s, err: %v",
 			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
 		return nil, err
 	}
 
-	cloudIDs := make([]string, 0)
 	allCloudIDMap := make(map[string]bool, 0)
+	for pager.More() {
+		page, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list azure route table but get next page failed, err: %v", err)
+		}
+
+		tmpList := &typesniproto.AzureInterfaceListResult{}
+		details := make([]typesniproto.AzureNI, 0, len(page.Value))
+		for _, niItem := range page.Value {
+			details = append(details, converter.PtrToVal(cli.ConvertCloudNetworkInterface(niItem)))
+		}
+		tmpList.Details = details
+
+		allCloudIDMap, err = processCompareAzureNetworkInterface(kt, req, adaptor, dataCli, tmpList, allCloudIDMap)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return allCloudIDMap, nil
+}
+
+// SyncAzureNetworkInterfaceByID sync network interface by id from cloudapi.
+func SyncAzureNetworkInterfaceByID(kt *kit.Kit, req *hcservice.AzureNetworkInterfaceSyncReq,
+	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (map[string]bool, error) {
+
+	if len(req.CloudIDs) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "cloud_ids is empty")
+	}
+	if len(req.CloudIDs) > int(core.DefaultMaxPageLimit) {
+		return nil, errf.New(errf.TooManyRequest, fmt.Sprintf("cloud_ids length should <= %d",
+			core.DefaultMaxPageLimit))
+	}
+
+	cli, err := adaptor.Azure(kt, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &adcore.AzureListByIDOption{
+		ResourceGroupName: req.ResourceGroupName,
+		CloudIDs:          req.CloudIDs,
+	}
+	pager, err := cli.ListNetworkInterfaceByIDPage(opt)
+	if err != nil {
+		logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, resGroupName: %s, err: %v",
+			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
+		return nil, err
+	}
+
+	idMap := converter.StringSliceToMap(req.CloudIDs)
+	allCloudIDMap := make(map[string]bool, 0)
+	for pager.More() {
+		page, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("list azure route table but get next page failed, err: %v", err)
+		}
+
+		tmpList := &typesniproto.AzureInterfaceListResult{}
+		details := make([]typesniproto.AzureNI, 0, len(idMap))
+		for _, niItem := range page.Value {
+			if _, exist := idMap[*niItem.ID]; !exist {
+				continue
+			}
+			details = append(details, converter.PtrToVal(cli.ConvertCloudNetworkInterface(niItem)))
+			delete(idMap, *niItem.ID)
+			if len(idMap) == 0 {
+				tmpList.Details = details
+				break
+			}
+		}
+
+		allCloudIDMap, err = processCompareAzureNetworkInterface(kt, req, adaptor, dataCli, tmpList, allCloudIDMap)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return allCloudIDMap, nil
+}
+
+func processCompareAzureNetworkInterface(kt *kit.Kit, req *hcservice.AzureNetworkInterfaceSyncReq,
+	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client, tmpList *typesniproto.AzureInterfaceListResult,
+	allCloudIDMap map[string]bool) (map[string]bool, error) {
+
+	cloudIDs := make([]string, 0)
+	niDetails := make([]typesniproto.AzureNI, 0, len(tmpList.Details))
 	for _, item := range tmpList.Details {
 		tmpID := converter.PtrToVal(item.CloudID)
 		cloudIDs = append(cloudIDs, tmpID)
 		allCloudIDMap[tmpID] = true
+
+		// get subnet info by cloud_subnet_id
+		subnetDetail, err := GetAzureCloudSubnetInfoByID(kt, adaptor, dataCli, req.AccountID,
+			converter.PtrToVal(item.CloudSubnetID), converter.PtrToVal(item.CloudVpcID), req.ResourceGroupName)
+		if err != nil {
+			return nil, err
+		}
+		item.SubnetID = converter.ValToPtr(subnetDetail.ID)
+		item.VpcID = converter.ValToPtr(subnetDetail.VpcID)
+
+		// get security group ids by cloud_security_group_ids
+		tmpSGCloudID := converter.PtrToVal(item.Extension.CloudSecurityGroupID)
+		opt := &securitygrouplogics.QuerySecurityGroupIDsAndSyncOption{
+			Vendor:                enumor.Azure,
+			AccountID:             req.AccountID,
+			CloudSecurityGroupIDs: []string{tmpSGCloudID},
+			ResourceGroupName:     req.ResourceGroupName,
+			Region:                converter.PtrToVal(item.Region),
+		}
+		securityGroupMap, err := securitygrouplogics.QuerySecurityGroupIDsAndSync(kt, adaptor, dataCli, opt)
+		if err != nil {
+			logs.Errorf("%s-networkinterface query security_group_ids and sync failed. accountID: %s, "+
+				"resGroupName: %s, opt: %+v, err: %v, rid: %s",
+				enumor.Azure, req.AccountID, req.ResourceGroupName, opt, err, kt.Rid)
+			return nil, err
+		}
+		if tmpSGID, ok := securityGroupMap[tmpSGCloudID]; ok {
+			item.Extension.SecurityGroupID = converter.ValToPtr(tmpSGID)
+		}
+
+		niDetails = append(niDetails, item)
 	}
+	tmpList.Details = niDetails
 
 	// get network interface info from db.
-	resourceDBMap, err := BatchGetNetworkInterfaceMapFromDB(kt, enumor.Azure, cloudIDs, dataCli)
+	resourceDBMap, err := BatchAzureGetNetworkInterfaceMapFromDB(kt, enumor.Azure, cloudIDs, dataCli)
 	if err != nil {
 		logs.Errorf("%s-networkinterface get routetabledblist failed. accountID: %s, resGroupName: %s, err: %v",
 			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
@@ -121,13 +237,12 @@ func SyncAzureNetworkInterfaceList(kt *kit.Kit, req *hcservice.AzureNetworkInter
 			"resGroupName: %s, err: %v", enumor.Azure, req.AccountID, req.ResourceGroupName, err)
 		return nil, err
 	}
-
 	return allCloudIDMap, nil
 }
 
-// BatchGetNetworkInterfaceMapFromDB batch get network interface info from db.
-func BatchGetNetworkInterfaceMapFromDB(kt *kit.Kit, vendor enumor.Vendor, cloudIDs []string,
-	dataCli *dataclient.Client) (map[string]coreni.BaseNetworkInterface, error) {
+// BatchAzureGetNetworkInterfaceMapFromDB batch get network interface info from db.
+func BatchAzureGetNetworkInterfaceMapFromDB(kt *kit.Kit, vendor enumor.Vendor, cloudIDs []string,
+	dataCli *dataclient.Client) (map[string]coreni.NetworkInterface[coreni.AzureNIExtension], error) {
 
 	expr := &filter.Expression{
 		Op: filter.And,
@@ -148,14 +263,14 @@ func BatchGetNetworkInterfaceMapFromDB(kt *kit.Kit, vendor enumor.Vendor, cloudI
 		Filter: expr,
 		Page:   &core.BasePage{Count: false, Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
-	dbList, err := dataCli.Global.NetworkInterface.List(kt.Ctx, kt.Header(), dbQueryReq)
+	dbList, err := dataCli.Azure.NetworkInterface.ListNetworkInterfaceExt(kt.Ctx, kt.Header(), dbQueryReq)
 	if err != nil {
 		logs.Errorf("%s-networkinterface batch get networkinterfacelist db error. limit: %d, err: %v",
 			vendor, core.DefaultMaxPageLimit, err)
 		return nil, err
 	}
 
-	resourceMap := make(map[string]coreni.BaseNetworkInterface, 0)
+	resourceMap := make(map[string]coreni.NetworkInterface[coreni.AzureNIExtension], 0)
 	if len(dbList.Details) == 0 {
 		return resourceMap, nil
 	}
@@ -183,8 +298,8 @@ func GetAzureNetworkInterfaceInfoFromDB(kt *kit.Kit, id string, dataCli *datacli
 
 // compareUpdateAzureNetworkInterfaceList compare and update network interface list.
 func compareUpdateAzureNetworkInterfaceList(kt *kit.Kit, req *hcservice.AzureNetworkInterfaceSyncReq,
-	list *typesniproto.AzureInterfaceListResult, resourceDBMap map[string]coreni.BaseNetworkInterface,
-	dataCli *dataclient.Client) error {
+	list *typesniproto.AzureInterfaceListResult,
+	resourceDBMap map[string]coreni.NetworkInterface[coreni.AzureNIExtension], dataCli *dataclient.Client) error {
 
 	createResources, updateResources, err := filterAzureNetworkInterfaceList(kt, req, list, resourceDBMap)
 	if err != nil {
@@ -220,7 +335,8 @@ func compareUpdateAzureNetworkInterfaceList(kt *kit.Kit, req *hcservice.AzureNet
 
 // filterAzureNetworkInterfaceList filter azure network interface list
 func filterAzureNetworkInterfaceList(_ *kit.Kit, req *hcservice.AzureNetworkInterfaceSyncReq,
-	list *typesniproto.AzureInterfaceListResult, resourceDBMap map[string]coreni.BaseNetworkInterface) (
+	list *typesniproto.AzureInterfaceListResult,
+	resourceDBMap map[string]coreni.NetworkInterface[coreni.AzureNIExtension]) (
 	createResources []dataproto.NetworkInterfaceReq[dataproto.AzureNICreateExt],
 	updateResources []dataproto.NetworkInterfaceUpdateReq[dataproto.AzureNICreateExt], err error) {
 
@@ -234,11 +350,7 @@ func filterAzureNetworkInterfaceList(_ *kit.Kit, req *hcservice.AzureNetworkInte
 		// need compare and update resource data
 		tmpCloudID := converter.PtrToVal(item.CloudID)
 		if resourceInfo, ok := resourceDBMap[tmpCloudID]; ok {
-			if resourceInfo.Name == converter.PtrToVal(item.Name) &&
-				resourceInfo.Region == converter.PtrToVal(item.Region) &&
-				resourceInfo.CloudVpcID == converter.PtrToVal(item.CloudVpcID) &&
-				resourceInfo.CloudSubnetID == converter.PtrToVal(item.CloudSubnetID) &&
-				resourceInfo.InstanceID == converter.PtrToVal(item.InstanceID) {
+			if !isAzureChange(item, resourceInfo) {
 				continue
 			}
 
@@ -249,7 +361,9 @@ func filterAzureNetworkInterfaceList(_ *kit.Kit, req *hcservice.AzureNetworkInte
 				Region:        converter.PtrToVal(item.Region),
 				Zone:          converter.PtrToVal(item.Zone),
 				CloudID:       converter.PtrToVal(item.CloudID),
+				VpcID:         converter.PtrToVal(item.VpcID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
+				SubnetID:      converter.PtrToVal(item.SubnetID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
 				PrivateIPv4:   item.PrivateIPv4,
 				PrivateIPv6:   item.PrivateIPv6,
@@ -271,6 +385,7 @@ func filterAzureNetworkInterfaceList(_ *kit.Kit, req *hcservice.AzureNetworkInte
 					CloudGatewayLoadBalancerID: item.Extension.CloudGatewayLoadBalancerID,
 					// CloudSecurityGroupID 网络安全组ID
 					CloudSecurityGroupID: item.Extension.CloudSecurityGroupID,
+					SecurityGroupID:      item.Extension.SecurityGroupID,
 				}
 				// IPConfigurations IP配置列表
 				var tmpIPConfigs []*coreni.InterfaceIPConfiguration
@@ -290,7 +405,9 @@ func filterAzureNetworkInterfaceList(_ *kit.Kit, req *hcservice.AzureNetworkInte
 				Region:        converter.PtrToVal(item.Region),
 				Zone:          converter.PtrToVal(item.Zone),
 				CloudID:       converter.PtrToVal(item.CloudID),
+				VpcID:         converter.PtrToVal(item.VpcID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
+				SubnetID:      converter.PtrToVal(item.SubnetID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
 				PrivateIPv4:   item.PrivateIPv4,
 				PrivateIPv6:   item.PrivateIPv6,
@@ -312,6 +429,7 @@ func filterAzureNetworkInterfaceList(_ *kit.Kit, req *hcservice.AzureNetworkInte
 					CloudGatewayLoadBalancerID: item.Extension.CloudGatewayLoadBalancerID,
 					// CloudSecurityGroupID 网络安全组ID
 					CloudSecurityGroupID: item.Extension.CloudSecurityGroupID,
+					SecurityGroupID:      item.Extension.SecurityGroupID,
 				}
 				// IPConfigurations IP配置列表
 				var tmpIPConfigs []*coreni.InterfaceIPConfiguration
@@ -326,6 +444,127 @@ func filterAzureNetworkInterfaceList(_ *kit.Kit, req *hcservice.AzureNetworkInte
 	}
 
 	return createResources, updateResources, nil
+}
+
+func isAzureChange(item typesniproto.AzureNI, dbInfo coreni.NetworkInterface[coreni.AzureNIExtension]) bool {
+	if dbInfo.Name != converter.PtrToVal(item.Name) || dbInfo.Region != converter.PtrToVal(item.Region) ||
+		dbInfo.Zone != converter.PtrToVal(item.Zone) || dbInfo.CloudID != converter.PtrToVal(item.CloudID) ||
+		dbInfo.CloudVpcID != converter.PtrToVal(item.CloudVpcID) ||
+		dbInfo.CloudSubnetID != converter.PtrToVal(item.CloudSubnetID) ||
+		dbInfo.InstanceID != converter.PtrToVal(item.InstanceID) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PrivateIPv4, dbInfo.PrivateIPv4) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PrivateIPv6, dbInfo.PrivateIPv6) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PublicIPv4, dbInfo.PublicIPv4) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PublicIPv6, dbInfo.PublicIPv6) {
+		return true
+	}
+	if dbInfo.Extension == nil {
+		return false
+	}
+
+	extRet := checkAzureExt(item, dbInfo)
+	if extRet {
+		return true
+	}
+
+	ipExtRet := checkAzureIPConfigIsUpdate(item, dbInfo)
+	if ipExtRet {
+		return true
+	}
+	return true
+}
+
+func checkAzureExt(item typesniproto.AzureNI, dbInfo coreni.NetworkInterface[coreni.AzureNIExtension]) bool {
+	if item.Extension.ResourceGroupName != dbInfo.Extension.ResourceGroupName {
+		return true
+	}
+	if !assert.IsPtrStringEqual(item.Extension.MacAddress, dbInfo.Extension.MacAddress) {
+		return true
+	}
+	if !assert.IsPtrBoolEqual(item.Extension.EnableAcceleratedNetworking,
+		dbInfo.Extension.EnableAcceleratedNetworking) {
+		return true
+	}
+	if !assert.IsPtrBoolEqual(item.Extension.EnableIPForwarding, dbInfo.Extension.EnableIPForwarding) {
+		return true
+	}
+	if item.Extension.DNSSettings != nil {
+		if !assert.IsPtrStringSliceEqual(item.Extension.DNSSettings.DNSServers,
+			dbInfo.Extension.DNSSettings.DNSServers) {
+			return true
+		}
+	}
+	if !assert.IsPtrStringEqual(item.Extension.CloudGatewayLoadBalancerID,
+		dbInfo.Extension.CloudGatewayLoadBalancerID) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(item.Extension.CloudSecurityGroupID, dbInfo.Extension.CloudSecurityGroupID) {
+		return true
+	}
+	return false
+}
+
+func checkAzureIPConfigIsUpdate(item typesniproto.AzureNI,
+	dbInfo coreni.NetworkInterface[coreni.AzureNIExtension]) bool {
+
+	for index, remote := range item.Extension.IPConfigurations {
+		if len(dbInfo.Extension.IPConfigurations) > index {
+			dbIpInfo := dbInfo.Extension.IPConfigurations[index]
+			if !assert.IsPtrStringEqual(remote.CloudID, dbIpInfo.CloudID) {
+				return true
+			}
+			if !assert.IsPtrStringEqual(remote.Name, dbIpInfo.Name) {
+				return true
+			}
+			if !assert.IsPtrStringEqual(remote.Type, dbIpInfo.Type) {
+				return true
+			}
+			if dbIpInfo.Properties != nil {
+				if !assert.IsPtrBoolEqual(remote.Properties.Primary, dbIpInfo.Properties.Primary) {
+					return true
+				}
+				if !assert.IsPtrStringEqual(remote.Properties.PrivateIPAddress, dbIpInfo.Properties.PrivateIPAddress) {
+					return true
+				}
+				if !assert.IsPtrStringEqual((*string)(remote.Properties.PrivateIPAddressVersion),
+					(*string)(dbIpInfo.Properties.PrivateIPAddressVersion)) {
+					return true
+				}
+				if !assert.IsPtrStringEqual((*string)(remote.Properties.PrivateIPAllocationMethod),
+					(*string)(dbIpInfo.Properties.PrivateIPAllocationMethod)) {
+					return true
+				}
+				if !assert.IsPtrStringEqual(remote.Properties.CloudSubnetID, dbIpInfo.Properties.CloudSubnetID) {
+					return true
+				}
+				if dbIpInfo.Properties.PublicIPAddress != nil && dbIpInfo.Properties.PublicIPAddress.Properties != nil {
+					if !assert.IsPtrStringEqual(remote.Properties.PublicIPAddress.Properties.IPAddress,
+						dbIpInfo.Properties.PublicIPAddress.Properties.IPAddress) {
+						return true
+					}
+					if !assert.IsPtrStringEqual(
+						(*string)(remote.Properties.PublicIPAddress.Properties.PublicIPAddressVersion),
+						(*string)(dbIpInfo.Properties.PublicIPAddress.Properties.PublicIPAddressVersion)) {
+						return true
+					}
+					if !assert.IsPtrStringEqual(
+						(*string)(remote.Properties.PublicIPAddress.Properties.PublicIPAllocationMethod),
+						(*string)(dbIpInfo.Properties.PublicIPAddress.Properties.PublicIPAllocationMethod)) {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 // compareDeleteAzureNetworkInterfaceList compare and delete network interface list from db.
@@ -460,4 +699,48 @@ func GetNeedDeleteAzureNetworkInterfaceList(kt *kit.Kit, req *hcservice.AzureNet
 	}
 
 	return deleteIDs
+}
+
+// GetAzureCloudSubnetInfoByID get subnet info by cloud_subnet_id
+func GetAzureCloudSubnetInfoByID(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client,
+	accountID, cloudSubnetID, cloudVpcID, resourceGroupName string) (*cloud.BaseSubnet, error) {
+
+	// query subnet info by cloud_subnet_id
+	opt := &subnetlogics.QuerySubnetIDsAndSyncOption{
+		Vendor:            enumor.Azure,
+		AccountID:         accountID,
+		CloudSubnetIDs:    []string{cloudSubnetID},
+		ResourceGroupName: resourceGroupName,
+		CloudVpcID:        cloudVpcID,
+	}
+	subnetMap, err := subnetlogics.QuerySubnetIDsAndSync(kt, adaptor, dataCli, opt)
+	if err != nil {
+		logs.Errorf("get network interface subnet list failed, vendor: %s, accountID: %s, cloudSubnetID: %s, "+
+			"rgName: %s, err: %v, rid: %s", enumor.Azure, accountID, cloudSubnetID, resourceGroupName, err, kt.Rid)
+		return nil, err
+	}
+	subnetDetail, ok := subnetMap[cloudSubnetID]
+	if !ok {
+		return &cloud.BaseSubnet{}, nil
+	}
+
+	if len(subnetDetail.VpcID) == 0 && len(subnetDetail.CloudVpcID) != 0 {
+		vpcOpt := &logics.QueryVpcIDsAndSyncOption{
+			Vendor:            enumor.Azure,
+			AccountID:         accountID,
+			CloudVpcIDs:       []string{subnetDetail.CloudVpcID},
+			ResourceGroupName: resourceGroupName,
+		}
+		vpcMap, err := logics.QueryVpcIDsAndSync(kt, adaptor, dataCli, vpcOpt)
+		if err != nil {
+			logs.Errorf("get network interface query vpc_ids and sync failed, vendor: %s, accountID: %s, "+
+				"vpcOpt: %+v, err: %v, rid: %s", enumor.Azure, accountID, vpcOpt, err, kt.Rid)
+			return nil, err
+		}
+		if tmpVpcID, ok := vpcMap[subnetDetail.CloudVpcID]; ok {
+			subnetDetail.VpcID = tmpVpcID
+		}
+	}
+
+	return &subnetDetail, nil
 }

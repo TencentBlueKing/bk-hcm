@@ -52,9 +52,7 @@ func (g *Gcp) ListNetworkInterface(kt *kit.Kit, opt *core.GcpListOption) (*types
 		return nil, err
 	}
 
-	cloudProjectID := g.clientSet.credential.CloudProjectID
-
-	listCall := client.Instances.List(cloudProjectID, opt.Zone).Context(kt.Ctx)
+	listCall := client.Instances.List(g.CloudProjectID(), opt.Zone).Context(kt.Ctx)
 
 	if opt.Page != nil {
 		listCall.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
@@ -69,7 +67,7 @@ func (g *Gcp) ListNetworkInterface(kt *kit.Kit, opt *core.GcpListOption) (*types
 	if err := listCall.Pages(kt.Ctx, func(page *compute.InstanceList) error {
 		for _, item := range page.Items {
 			for _, niItem := range item.NetworkInterfaces {
-				details = append(details, converter.PtrToVal(convertNetworkInterface(item, niItem)))
+				details = append(details, converter.PtrToVal(g.ConvertNetworkInterface(item, niItem)))
 			}
 		}
 		return nil
@@ -79,6 +77,29 @@ func (g *Gcp) ListNetworkInterface(kt *kit.Kit, opt *core.GcpListOption) (*types
 	}
 
 	return &typesniproto.GcpInterfaceListResult{Details: details}, nil
+}
+
+// ListNetworkInterfacePage list network interface page.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
+func (g *Gcp) ListNetworkInterfacePage(kt *kit.Kit, opt *core.GcpListOption) (*compute.InstancesListCall, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	if len(opt.Zone) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "zone is not empty")
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	listCall := client.Instances.List(g.CloudProjectID(), opt.Zone).Context(kt.Ctx)
+	if opt.Page != nil {
+		listCall.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+	}
+	return listCall, nil
 }
 
 // ListNetworkInterfaceByCvmID list network interface by cvm id.
@@ -108,14 +129,14 @@ func (g *Gcp) ListNetworkInterfaceByCvmID(kt *kit.Kit, opt *typesniproto.GcpList
 		result[cvmID] = make([]typesniproto.GcpNI, 0, len(item.NetworkInterfaces))
 
 		for _, ni := range item.NetworkInterfaces {
-			result[cvmID] = append(result[cvmID], converter.PtrToVal(convertNetworkInterface(item, ni)))
+			result[cvmID] = append(result[cvmID], converter.PtrToVal(g.ConvertNetworkInterface(item, ni)))
 		}
 	}
 
 	return result, nil
 }
 
-func convertNetworkInterface(data *compute.Instance, niItem *compute.NetworkInterface) *typesniproto.GcpNI {
+func (g *Gcp) ConvertNetworkInterface(data *compute.Instance, niItem *compute.NetworkInterface) *typesniproto.GcpNI {
 	// @see https://www.googleapis.com/compute/v1/projects/xxxx/zones/us-central1-a
 	zone := data.Zone[(strings.LastIndex(data.Zone, "/") + 1):]
 	region := zone[:strings.LastIndex(zone, "-")]

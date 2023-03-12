@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
 
@@ -52,7 +53,7 @@ func (a *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceL
 		}
 
 		for _, item := range nextResult.Value {
-			details = append(details, converter.PtrToVal(convertCloudNetworkInterface(item)))
+			details = append(details, converter.PtrToVal(a.ConvertCloudNetworkInterface(item)))
 		}
 	}
 
@@ -89,7 +90,7 @@ func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOpt
 
 		for _, one := range nextResult.Value {
 			if _, exist := idMap[*one.ID]; exist {
-				details = append(details, converter.PtrToVal(convertCloudNetworkInterface(one)))
+				details = append(details, converter.PtrToVal(a.ConvertCloudNetworkInterface(one)))
 				delete(idMap, *one.ID)
 
 				if len(idMap) == 0 {
@@ -135,7 +136,7 @@ func (a *Azure) ListRawNetworkInterfaceByIDs(kt *kit.Kit, opt *core.AzureListByI
 	return networks, nil
 }
 
-func convertCloudNetworkInterface(data *armnetwork.Interface) *typesniproto.AzureNI {
+func (a *Azure) ConvertCloudNetworkInterface(data *armnetwork.Interface) *typesniproto.AzureNI {
 	if data == nil {
 		return nil
 	}
@@ -295,7 +296,7 @@ func (a *Azure) GetNetworkInterface(kt *kit.Kit, opt *core.AzureListOption) (*ty
 		Location:   res.Location,
 		Properties: res.Properties,
 	}
-	return convertCloudNetworkInterface(niDetail), nil
+	return a.ConvertCloudNetworkInterface(niDetail), nil
 }
 
 // ListNetworkSecurityGroup list network security group.
@@ -385,4 +386,38 @@ func convertCloudNetworkInterfaceIPConfig(data *armnetwork.InterfaceIPConfigurat
 		}
 	}
 	return v
+}
+
+// ListNetworkInterfacePage list network interface page.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
+func (a *Azure) ListNetworkInterfacePage() (*runtime.Pager[armnetwork.InterfacesClientListAllResponse], error) {
+
+	client, err := a.clientSet.networkInterfaceClient()
+	if err != nil {
+		return nil, fmt.Errorf("new network interface cloud client failed, err: %v", err)
+	}
+
+	pager := client.NewListAllPager(nil)
+	return pager, nil
+}
+
+// ListNetworkInterfaceByIDPage list network interface by id page.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
+func (a *Azure) ListNetworkInterfaceByIDPage(opt *core.AzureListByIDOption) (
+	*runtime.Pager[armnetwork.InterfacesClientListResponse], error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "new network interface client list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.networkInterfaceClient()
+	if err != nil {
+		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
+	}
+
+	pager := client.NewListPager(opt.ResourceGroupName, nil)
+	return pager, nil
 }

@@ -25,34 +25,36 @@ import (
 
 // Client is a azure api client
 type Client struct {
-	Account       *AccountClient
-	SecurityGroup *SecurityGroupClient
-	Vpc           *VpcClient
-	Subnet        *SubnetClient
-	Eip           *EipClient
-	Disk          *DiskClient
-	Region        *RegionClient
-	ResourceGroup *ResourceGroupClient
-	Image         *ImageClient
-	Cvm           *CvmClient
-	RouteTable    *RouteTableClient
-	InstanceType  *InstanceTypeClient
+	Account          *AccountClient
+	SecurityGroup    *SecurityGroupClient
+	Vpc              *VpcClient
+	Subnet           *SubnetClient
+	Eip              *EipClient
+	Disk             *DiskClient
+	Region           *RegionClient
+	ResourceGroup    *ResourceGroupClient
+	Image            *ImageClient
+	Cvm              *CvmClient
+	RouteTable       *RouteTableClient
+	InstanceType     *InstanceTypeClient
+	NetworkInterface *NetworkInterfaceClient
 }
 
 // NewClient create a new azure api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		Account:       NewAccountClient(client),
-		SecurityGroup: NewCloudSecurityGroupClient(client),
-		Vpc:           NewVpcClient(client),
-		Subnet:        NewSubnetClient(client),
-		Eip:           NewEipClient(client),
-		Disk:          NewCloudDiskClient(client),
-		Region:        NewRegionClient(client),
-		ResourceGroup: NewResourceGroupClient(client),
-		Cvm:           NewCvmClient(client),
-		Image:         NewCloudPublicClient(client),
-		RouteTable:    NewRouteTableClient(client),
-		InstanceType:  NewInstanceTypeClient(client),
+		Account:          NewAccountClient(client),
+		SecurityGroup:    NewCloudSecurityGroupClient(client),
+		Vpc:              NewVpcClient(client),
+		Subnet:           NewSubnetClient(client),
+		Eip:              NewEipClient(client),
+		Disk:             NewCloudDiskClient(client),
+		Region:           NewRegionClient(client),
+		ResourceGroup:    NewResourceGroupClient(client),
+		Cvm:              NewCvmClient(client),
+		Image:            NewCloudPublicClient(client),
+		RouteTable:       NewRouteTableClient(client),
+		InstanceType:     NewInstanceTypeClient(client),
+		NetworkInterface: NewNetworkInterfaceClient(client),
 	}
 }

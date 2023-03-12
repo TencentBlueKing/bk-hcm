@@ -62,6 +62,8 @@ func InitNetInterfaceService(cap *capability.Capability) {
 	h.Add("BatchDeleteNetworkInterface", "DELETE", "/network_interfaces/batch",
 		svc.BatchDeleteNetworkInterface)
 	h.Add("ListNetworkInterface", "POST", "/network_interfaces/list", svc.ListNetworkInterface)
+	h.Add("ListNetworkInterfaceExt", "POST", "/vendors/{vendor}/network_interfaces/list",
+		svc.ListNetworkInterfaceExt)
 	h.Add("GetNetworkInterface", "GET", "/vendors/{vendor}/network_interfaces/{id}",
 		svc.GetNetworkInterface)
 
@@ -360,6 +362,67 @@ func (svc *NetworkInterfaceSvc) ListNetworkInterface(cts *rest.Contexts) (interf
 	}
 
 	return &datacloudniproto.NetworkInterfaceListResult{Details: details}, nil
+}
+
+// ListNetworkInterfaceExt list network interface with extension.
+func (svc *NetworkInterfaceSvc) ListNetworkInterfaceExt(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+		Fields: req.Fields,
+	}
+	listResp, err := svc.dao.NetworkInterface().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list network interface extension failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.Azure:
+		return convertNetworkInterfaceExtListResult[coreni.AzureNIExtension](listResp.Details)
+	case enumor.HuaWei:
+		return convertNetworkInterfaceExtListResult[coreni.HuaWeiNIExtension](listResp.Details)
+	case enumor.Gcp:
+		return convertNetworkInterfaceExtListResult[coreni.GcpNIExtension](listResp.Details)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+	}
+}
+
+func convertNetworkInterfaceExtListResult[T coreni.NetworkInterfaceExtension](
+	tables []tableni.NetworkInterfaceTable) (*datacloudniproto.NetworkInterfaceExtListResult[T], error) {
+
+	details := make([]coreni.NetworkInterface[T], 0, len(tables))
+	for _, one := range tables {
+		extension := new(T)
+		err := json.UnmarshalFromString(string(one.Extension), &extension)
+		if err != nil {
+			return nil, fmt.Errorf("UnmarshalFromString network interface json extension failed, err: %v", err)
+		}
+
+		details = append(details, coreni.NetworkInterface[T]{
+			BaseNetworkInterface: *convertBaseNetworkInterface(&one),
+			Extension:            extension,
+		})
+	}
+
+	return &datacloudniproto.NetworkInterfaceExtListResult[T]{
+		Details: details,
+	}, nil
 }
 
 // GetNetworkInterface get network interface detail.

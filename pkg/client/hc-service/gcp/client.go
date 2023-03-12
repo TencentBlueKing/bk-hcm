@@ -25,34 +25,36 @@ import (
 
 // Client is a gcp api client
 type Client struct {
-	Account      *AccountClient
-	Firewall     *FirewallClient
-	Vpc          *VpcClient
-	Subnet       *SubnetClient
-	Disk         *DiskClient
-	Cvm          *CvmClient
-	Image        *ImageClient
-	RouteTable   *RouteTableClient
-	Zone         *ZoneClient
-	Region       *RegionClient
-	Eip          *EipClient
-	InstanceType *InstanceTypeClient
+	Account          *AccountClient
+	Firewall         *FirewallClient
+	Vpc              *VpcClient
+	Subnet           *SubnetClient
+	Disk             *DiskClient
+	Cvm              *CvmClient
+	Image            *ImageClient
+	RouteTable       *RouteTableClient
+	Zone             *ZoneClient
+	Region           *RegionClient
+	Eip              *EipClient
+	InstanceType     *InstanceTypeClient
+	NetworkInterface *NetworkInterfaceClient
 }
 
 // NewClient create a new gcp api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		Account:      NewAccountClient(client),
-		Firewall:     NewFirewallClient(client),
-		Vpc:          NewVpcClient(client),
-		Subnet:       NewSubnetClient(client),
-		Disk:         NewCloudDiskClient(client),
-		Cvm:          NewCvmClient(client),
-		Image:        NewCloudPublicClient(client),
-		RouteTable:   NewRouteTableClient(client),
-		Zone:         NewZoneClient(client),
-		Region:       NewRegionClient(client),
-		Eip:          NewEipClient(client),
-		InstanceType: NewInstanceTypeClient(client),
+		Account:          NewAccountClient(client),
+		Firewall:         NewFirewallClient(client),
+		Vpc:              NewVpcClient(client),
+		Subnet:           NewSubnetClient(client),
+		Disk:             NewCloudDiskClient(client),
+		Cvm:              NewCvmClient(client),
+		Image:            NewCloudPublicClient(client),
+		RouteTable:       NewRouteTableClient(client),
+		Zone:             NewZoneClient(client),
+		Region:           NewRegionClient(client),
+		Eip:              NewEipClient(client),
+		InstanceType:     NewInstanceTypeClient(client),
+		NetworkInterface: NewNetworkInterfaceClient(client),
 	}
 }

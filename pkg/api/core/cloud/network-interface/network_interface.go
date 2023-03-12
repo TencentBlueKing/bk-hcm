@@ -75,6 +75,7 @@ type AzureNIExtension struct {
 	CloudGatewayLoadBalancerID *string `json:"cloud_gateway_load_balancer_id,omitempty"`
 	// CloudSecurityGroupID 网络安全组ID
 	CloudSecurityGroupID *string `json:"cloud_security_group_id,omitempty"`
+	SecurityGroupID      *string `json:"security_group_id,omitempty"`
 	// IPConfigurations IP配置列表
 	IPConfigurations []*InterfaceIPConfiguration `json:"ip_configurations,omitempty"`
 	// CloudVirtualMachineID 虚拟机

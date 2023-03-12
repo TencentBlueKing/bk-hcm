@@ -37,8 +37,11 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
+
+	"google.golang.org/api/compute/v1"
 )
 
 // GcpNetworkInterfaceSync sync gcp cloud network interface.
@@ -46,7 +49,15 @@ func GcpNetworkInterfaceSync(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSync
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
 	// sync network interface list from cloudapi.
-	allCloudIDMap, err := SyncGcpNetworkInterfaceList(kt, req, adaptor, dataCli)
+	var (
+		err           error
+		allCloudIDMap = make(map[string]bool, 0)
+	)
+	if len(req.CloudCvmIDs) == 0 {
+		allCloudIDMap, err = SyncGcpNetworkInterfaceListAll(kt, req, adaptor, dataCli)
+	} else {
+		allCloudIDMap, err = SyncGcpNetworkInterfaceListByCloudIDs(kt, req, adaptor, dataCli)
+	}
 	if err != nil {
 		logs.Errorf("%s-networkinterface request cloudapi response failed. accountID: %s, zone: %s, err: %v",
 			enumor.Gcp, req.AccountID, req.Zone, err)
@@ -66,70 +77,117 @@ func GcpNetworkInterfaceSync(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSync
 	}, nil
 }
 
-// SyncGcpNetworkInterfaceList sync network interface list from cloudapi.
-func SyncGcpNetworkInterfaceList(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
+func SyncGcpNetworkInterfaceListAll(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (map[string]bool, error) {
 
-	var (
-		err           error
-		cloudIDs      = make([]string, 0)
-		allCloudIDMap = make(map[string]bool, 0)
-		cloudList     *typesniproto.GcpInterfaceListResult
-	)
-	if len(req.CloudCvmIDs) > 0 {
-		cloudIDs, allCloudIDMap, cloudList, err = GetGcpNetworkInterfaceListByCloudIDs(kt, req, adaptor, dataCli)
-	} else {
-		cloudIDs, allCloudIDMap, cloudList, err = GetGcpNetworkInterfaceAllList(kt, req, adaptor, dataCli)
-	}
+	cli, err := adaptor.Gcp(kt, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	// get network interface info from db.
-	resourceDBMap, err := BatchGetNetworkInterfaceMapFromDB(kt, enumor.Gcp, cloudIDs, dataCli)
+	opt := &adcore.GcpListOption{
+		Zone: req.Zone,
+	}
+	listCall, err := cli.ListNetworkInterfacePage(kt, opt)
 	if err != nil {
-		logs.Errorf("%s-networkinterface get routetabledblist failed. accountID: %s, zone: %s, err: %v",
+		logs.Errorf("%s-networkinterface batch get cloudapi failed. accountID: %s, zone: %s, err: %v",
 			enumor.Gcp, req.AccountID, req.Zone, err)
-		return allCloudIDMap, err
+		return nil, err
 	}
 
-	// compare and update network interface list.
-	err = compareUpdateGcpNetworkInterfaceList(kt, req, cloudList, resourceDBMap, dataCli)
-	if err != nil {
-		logs.Errorf("%s-networkinterface compare and update routetabledblist failed. accountID: %s, "+
-			"zone: %s, err: %v", enumor.Gcp, req.AccountID, req.Zone, err)
-		return allCloudIDMap, err
+	allCloudIDMap := make(map[string]bool, 0)
+	if err := listCall.Pages(kt.Ctx, func(page *compute.InstanceList) error {
+		details := make([]typesniproto.GcpNI, 0, len(page.Items))
+		for _, item := range page.Items {
+			for _, niItem := range item.NetworkInterfaces {
+				details = append(details, converter.PtrToVal(cli.ConvertNetworkInterface(item, niItem)))
+			}
+		}
+
+		list := &typesniproto.GcpInterfaceListResult{}
+		niDetails := make([]typesniproto.GcpNI, 0, len(details))
+		cloudIDs := make([]string, 0)
+		for _, item := range details {
+			tmpID := converter.PtrToVal(item.CloudID)
+			cloudIDs = append(cloudIDs, tmpID)
+			allCloudIDMap[tmpID] = true
+
+			// get gcp vpc info by vpc selflink
+			vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, item.CloudVpcID, dataCli)
+			if err != nil {
+				return err
+			}
+			item.CloudVpcID = converter.ValToPtr(vpcDetail.CloudID)
+			item.VpcID = converter.ValToPtr(vpcDetail.ID)
+
+			// get gcp subnet info by subnet selflink
+			subnetDetail, err := GetCloudSubnetInfoBySelfLink(kt, req, enumor.Gcp, item.CloudSubnetID, dataCli)
+			if err != nil {
+				return err
+			}
+			item.CloudSubnetID = converter.ValToPtr(subnetDetail.CloudID)
+			item.SubnetID = converter.ValToPtr(subnetDetail.ID)
+			niDetails = append(niDetails, item)
+		}
+		list.Details = niDetails
+
+		// get network interface info from db.
+		resourceDBMap, err := BatchGcpGetNetworkInterfaceMapFromDB(kt, enumor.Gcp, cloudIDs, dataCli)
+		if err != nil {
+			logs.Errorf("%s-networkinterface get routetabledblist failed. accountID: %s, zone: %s, err: %v",
+				enumor.Gcp, req.AccountID, req.Zone, err)
+			return err
+		}
+
+		// compare and update network interface list.
+		err = compareUpdateGcpNetworkInterfaceList(kt, req, list, resourceDBMap, dataCli)
+		if err != nil {
+			logs.Errorf("%s-networkinterface compare and update routetabledblist failed. accountID: %s, "+
+				"zone: %s, err: %v", enumor.Gcp, req.AccountID, req.Zone, err)
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		logs.Errorf("cloudapi failed to list gcp network interface, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	return allCloudIDMap, nil
 }
 
-func GetGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
-	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (
-	[]string, map[string]bool, *typesniproto.GcpInterfaceListResult, error) {
+func SyncGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
+	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (map[string]bool, error) {
+
+	if len(req.CloudCvmIDs) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "cloud_cvm_ids is empty")
+	}
+	if len(req.CloudCvmIDs) > int(core.DefaultMaxPageLimit) {
+		return nil, errf.New(errf.TooManyRequest, fmt.Sprintf("cloud_cvm_ids length should <= %d",
+			core.DefaultMaxPageLimit))
+	}
 
 	cli, err := adaptor.Gcp(kt, req.AccountID)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
 	var cvmMap map[string] /*CloudCvmID*/ []typesniproto.GcpNI
-	opt := new(typesniproto.GcpListByCvmIDOption)
-	opt.Zone = req.Zone
-	opt.CloudCvmIDs = req.CloudCvmIDs
+	opt := &typesniproto.GcpListByCvmIDOption{
+		Zone:        req.Zone,
+		CloudCvmIDs: req.CloudCvmIDs,
+	}
 	cvmMap, err = cli.ListNetworkInterfaceByCvmID(kt, opt)
 	if err != nil {
 		logs.Errorf("%s-networkinterface batch get cloudapi failed. accountID: %s, zone: %s, err: %v",
 			enumor.Gcp, req.AccountID, req.Zone, err)
-		return nil, nil, nil, err
+		return nil, err
 	}
 
-	var (
-		cloudIDs      = make([]string, 0)
-		allCloudIDMap = make(map[string]bool, 0)
-		list          = &typesniproto.GcpInterfaceListResult{}
-	)
+	var allCloudIDMap = make(map[string]bool, 0)
 	for _, niList := range cvmMap {
+		var cloudIDs = make([]string, 0)
+		var list = &typesniproto.GcpInterfaceListResult{}
 		for _, niItem := range niList {
 			tmpID := converter.PtrToVal(niItem.CloudID)
 			cloudIDs = append(cloudIDs, tmpID)
@@ -138,7 +196,7 @@ func GetGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetwork
 			// get gcp vpc info by vpc-selflink
 			vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, niItem.CloudVpcID, dataCli)
 			if err != nil {
-				return nil, nil, nil, err
+				return nil, err
 			}
 			niItem.CloudVpcID = converter.ValToPtr(vpcDetail.CloudID)
 			niItem.VpcID = converter.ValToPtr(vpcDetail.ID)
@@ -146,69 +204,78 @@ func GetGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetwork
 			// get gcp subnet info by subnet-selflink
 			subnetDetail, err := GetCloudSubnetInfoBySelfLink(kt, req, enumor.Gcp, niItem.CloudSubnetID, dataCli)
 			if err != nil {
-				return nil, nil, nil, err
+				return nil, err
 			}
 			niItem.CloudSubnetID = converter.ValToPtr(subnetDetail.CloudID)
 			niItem.SubnetID = converter.ValToPtr(subnetDetail.ID)
 			list.Details = append(list.Details, niItem)
 		}
+
+		// get network interface info from db.
+		resourceDBMap, err := BatchGcpGetNetworkInterfaceMapFromDB(kt, enumor.Gcp, cloudIDs, dataCli)
+		if err != nil {
+			logs.Errorf("%s-networkinterface get routetabledblist failed. accountID: %s, zone: %s, err: %v",
+				enumor.Gcp, req.AccountID, req.Zone, err)
+			return nil, err
+		}
+
+		// compare and update network interface list.
+		err = compareUpdateGcpNetworkInterfaceList(kt, req, list, resourceDBMap, dataCli)
+		if err != nil {
+			logs.Errorf("%s-networkinterface compare and update routetabledblist failed. accountID: %s, "+
+				"zone: %s, err: %v", enumor.Gcp, req.AccountID, req.Zone, err)
+			return nil, err
+		}
 	}
 
-	return cloudIDs, allCloudIDMap, list, nil
+	return allCloudIDMap, nil
 }
 
-func GetGcpNetworkInterfaceAllList(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
-	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (
-	[]string, map[string]bool, *typesniproto.GcpInterfaceListResult, error) {
+// BatchGcpGetNetworkInterfaceMapFromDB batch get network interface info from db.
+func BatchGcpGetNetworkInterfaceMapFromDB(kt *kit.Kit, vendor enumor.Vendor, cloudIDs []string,
+	dataCli *dataclient.Client) (map[string]coreni.NetworkInterface[coreni.GcpNIExtension], error) {
 
-	cli, err := adaptor.Gcp(kt, req.AccountID)
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "vendor",
+				Op:    filter.Equal.Factory(),
+				Value: vendor,
+			},
+			&filter.AtomRule{
+				Field: "cloud_id",
+				Op:    filter.In.Factory(),
+				Value: cloudIDs,
+			},
+		},
+	}
+	dbQueryReq := &core.ListReq{
+		Filter: expr,
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: core.DefaultMaxPageLimit},
+	}
+	dbList, err := dataCli.Gcp.NetworkInterface.ListNetworkInterfaceExt(kt.Ctx, kt.Header(), dbQueryReq)
 	if err != nil {
-		return nil, nil, nil, err
+		logs.Errorf("%s-networkinterface batch get networkinterfacelist db error. limit: %d, err: %v",
+			vendor, core.DefaultMaxPageLimit, err)
+		return nil, err
 	}
 
-	var list *typesniproto.GcpInterfaceListResult
-	opt := new(adcore.GcpListOption)
-	opt.Zone = req.Zone
-	list, err = cli.ListNetworkInterface(kt, opt)
-	if err != nil {
-		logs.Errorf("%s-networkinterface batch get cloudapi failed. accountID: %s, zone: %s, err: %v",
-			enumor.Gcp, req.AccountID, req.Zone, err)
-		return nil, nil, nil, err
+	resourceMap := make(map[string]coreni.NetworkInterface[coreni.GcpNIExtension], 0)
+	if len(dbList.Details) == 0 {
+		return resourceMap, nil
 	}
 
-	cloudIDs := make([]string, 0)
-	allCloudIDMap := make(map[string]bool, 0)
-	niDetails := make([]typesniproto.GcpNI, 0, len(list.Details))
-	for _, item := range list.Details {
-		tmpID := converter.PtrToVal(item.CloudID)
-		cloudIDs = append(cloudIDs, tmpID)
-		allCloudIDMap[tmpID] = true
-
-		// get gcp vpc info by vpc selflink
-		vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, item.CloudVpcID, dataCli)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		item.CloudVpcID = converter.ValToPtr(vpcDetail.CloudID)
-		item.VpcID = converter.ValToPtr(vpcDetail.ID)
-
-		// get gcp subnet info by subnet selflink
-		subnetDetail, err := GetCloudSubnetInfoBySelfLink(kt, req, enumor.Gcp, item.CloudSubnetID, dataCli)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		item.CloudSubnetID = converter.ValToPtr(subnetDetail.CloudID)
-		item.SubnetID = converter.ValToPtr(subnetDetail.ID)
-		niDetails = append(niDetails, item)
+	for _, item := range dbList.Details {
+		resourceMap[item.CloudID] = item
 	}
-	list.Details = niDetails
 
-	return cloudIDs, allCloudIDMap, list, nil
+	return resourceMap, nil
 }
 
 // compareUpdateGcpNetworkInterfaceList compare and update network interface list.
 func compareUpdateGcpNetworkInterfaceList(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
-	list *typesniproto.GcpInterfaceListResult, resourceDBMap map[string]coreni.BaseNetworkInterface,
+	list *typesniproto.GcpInterfaceListResult, resourceDBMap map[string]coreni.NetworkInterface[coreni.GcpNIExtension],
 	dataCli *dataclient.Client) error {
 
 	createResources, updateResources, err := filterGcpNetworkInterfaceList(kt, req, list, resourceDBMap)
@@ -245,7 +312,8 @@ func compareUpdateGcpNetworkInterfaceList(kt *kit.Kit, req *hcservice.GcpNetwork
 
 // filterGcpNetworkInterfaceList filter gcp network interface list
 func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
-	list *typesniproto.GcpInterfaceListResult, resourceDBMap map[string]coreni.BaseNetworkInterface) (
+	list *typesniproto.GcpInterfaceListResult,
+	resourceDBMap map[string]coreni.NetworkInterface[coreni.GcpNIExtension]) (
 	createResources []dataproto.NetworkInterfaceReq[dataproto.GcpNICreateExt],
 	updateResources []dataproto.NetworkInterfaceUpdateReq[dataproto.GcpNICreateExt], err error) {
 
@@ -259,11 +327,7 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 		// need compare and update resource data
 		tmpCloudID := converter.PtrToVal(item.CloudID)
 		if resourceInfo, ok := resourceDBMap[tmpCloudID]; ok {
-			if resourceInfo.Name == converter.PtrToVal(item.Name) &&
-				resourceInfo.Region == converter.PtrToVal(item.Region) &&
-				resourceInfo.CloudVpcID == converter.PtrToVal(item.CloudVpcID) &&
-				resourceInfo.CloudSubnetID == converter.PtrToVal(item.CloudSubnetID) &&
-				resourceInfo.InstanceID == converter.PtrToVal(item.InstanceID) {
+			if !isGcpChange(item, resourceInfo) {
 				continue
 			}
 
@@ -349,6 +413,64 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 	}
 
 	return createResources, updateResources, nil
+}
+
+func isGcpChange(item typesniproto.GcpNI, dbInfo coreni.NetworkInterface[coreni.GcpNIExtension]) bool {
+	if dbInfo.Name != converter.PtrToVal(item.Name) || dbInfo.Region != converter.PtrToVal(item.Region) ||
+		dbInfo.Zone != converter.PtrToVal(item.Zone) || dbInfo.CloudID != converter.PtrToVal(item.CloudID) ||
+		dbInfo.CloudVpcID != converter.PtrToVal(item.CloudVpcID) ||
+		dbInfo.CloudSubnetID != converter.PtrToVal(item.CloudSubnetID) ||
+		dbInfo.InstanceID != converter.PtrToVal(item.InstanceID) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PrivateIPv4, dbInfo.PrivateIPv4) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PrivateIPv6, dbInfo.PrivateIPv6) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PublicIPv4, dbInfo.PublicIPv4) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PublicIPv6, dbInfo.PublicIPv6) {
+		return true
+	}
+	if dbInfo.Extension == nil {
+		return false
+	}
+	extRet := checkGcpExt(item, dbInfo)
+	if extRet {
+		return true
+	}
+	return false
+}
+
+func checkGcpExt(item typesniproto.GcpNI, dbInfo coreni.NetworkInterface[coreni.GcpNIExtension]) bool {
+	if item.Extension.CanIpForward != dbInfo.Extension.CanIpForward {
+		return true
+	}
+	if item.Extension.Status != dbInfo.Extension.Status {
+		return true
+	}
+	if item.Extension.StackType != dbInfo.Extension.StackType {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PublicIPv4, dbInfo.PublicIPv4) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PublicIPv6, dbInfo.PublicIPv6) {
+		return true
+	}
+
+	for _, remote := range item.Extension.AccessConfigs {
+		for _, db := range dbInfo.Extension.AccessConfigs {
+			if remote.Name != db.Name || remote.NatIP != db.NatIP || remote.NetworkTier != db.NetworkTier ||
+				remote.Type != db.Type {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // compareDeleteGcpNetworkInterfaceList compare and delete network interface list from db.

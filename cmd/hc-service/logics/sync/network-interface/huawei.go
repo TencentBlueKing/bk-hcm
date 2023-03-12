@@ -23,18 +23,24 @@ package networkinterface
 import (
 	"fmt"
 
+	"hcm/cmd/hc-service/logics/sync/logics"
+	subnetlogics "hcm/cmd/hc-service/logics/sync/logics/subnet"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	typesniproto "hcm/pkg/adaptor/types/network-interface"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
 	dataproto "hcm/pkg/api/data-service/cloud/network-interface"
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/uuid"
 )
 
@@ -67,7 +73,7 @@ func HuaWeiNetworkInterfaceSync(kt *kit.Kit, req *hcservice.HuaWeiNetworkInterfa
 func SyncHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiNetworkInterfaceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (map[string]bool, error) {
 
-	cloudIDs, allCloudIDMap, cloudList, err := GetHuaWeiNetworkInterfaceList(kt, req, adaptor)
+	cloudIDs, allCloudIDMap, cloudList, err := GetHuaWeiNetworkInterfaceList(kt, req, adaptor, dataCli)
 	if err != nil {
 		logs.Errorf("%s-networkinterface batch get cloudapi failed. accountID: %s, cvmIDs: %s, region: %s, "+
 			"err: %v", enumor.HuaWei, req.AccountID, req.CloudCvmIDs, req.Region, err)
@@ -75,7 +81,7 @@ func SyncHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiNetworkInt
 	}
 
 	// get network interface info from db.
-	resourceDBMap, err := BatchGetNetworkInterfaceMapFromDB(kt, enumor.HuaWei, cloudIDs, dataCli)
+	resourceDBMap, err := BatchHuaWeiGetNetworkInterfaceMapFromDB(kt, enumor.HuaWei, cloudIDs, dataCli)
 	if err != nil {
 		logs.Errorf("%s-networkinterface get routetabledblist failed. accountID: %s, region: %s, err: %v",
 			enumor.HuaWei, req.AccountID, req.Region, err)
@@ -94,8 +100,16 @@ func SyncHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiNetworkInt
 }
 
 func GetHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiNetworkInterfaceSyncReq,
-	adaptor *cloudclient.CloudAdaptorClient) (
+	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (
 	[]string, map[string]bool, *typesniproto.HuaWeiInterfaceListResult, error) {
+
+	if len(req.CloudCvmIDs) == 0 {
+		return nil, nil, nil, errf.New(errf.InvalidParameter, "cloud_cvm_ids is empty")
+	}
+	if len(req.CloudCvmIDs) > int(core.DefaultMaxPageLimit) {
+		return nil, nil, nil, errf.New(errf.TooManyRequest, fmt.Sprintf("cloud_cvm_ids length should <= %d",
+			core.DefaultMaxPageLimit))
+	}
 
 	cli, err := adaptor.HuaWei(kt, req.AccountID)
 	if err != nil {
@@ -121,21 +135,76 @@ func GetHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiNetworkInte
 		}
 
 		result[cvmID] = append(result[cvmID], tmpList.Details...)
-		list.Details = append(list.Details, tmpList.Details...)
+		niDetails := make([]typesniproto.HuaWeiNI, 0, len(tmpList.Details))
 		for _, item := range tmpList.Details {
 			tmpID := converter.PtrToVal(item.CloudID)
 			cloudIDs = append(cloudIDs, tmpID)
 			allCloudIDMap[tmpID] = true
+
+			// get subnet info by cloud_subnet_id
+			subnetDetail, err := GetHuaWeiCloudSubnetInfoByID(kt, adaptor, dataCli, req.AccountID,
+				converter.PtrToVal(item.CloudSubnetID), converter.PtrToVal(item.CloudVpcID), req.Region)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			item.SubnetID = converter.ValToPtr(subnetDetail.ID)
+			item.VpcID = converter.ValToPtr(subnetDetail.VpcID)
+			item.CloudVpcID = converter.ValToPtr(subnetDetail.CloudVpcID)
+
+			niDetails = append(niDetails, item)
 		}
+		list.Details = niDetails
 	}
 
 	return cloudIDs, allCloudIDMap, list, nil
 }
 
+// BatchHuaWeiGetNetworkInterfaceMapFromDB batch get network interface info from db.
+func BatchHuaWeiGetNetworkInterfaceMapFromDB(kt *kit.Kit, vendor enumor.Vendor, cloudIDs []string,
+	dataCli *dataclient.Client) (map[string]coreni.NetworkInterface[coreni.HuaWeiNIExtension], error) {
+
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "vendor",
+				Op:    filter.Equal.Factory(),
+				Value: vendor,
+			},
+			&filter.AtomRule{
+				Field: "cloud_id",
+				Op:    filter.In.Factory(),
+				Value: cloudIDs,
+			},
+		},
+	}
+	dbQueryReq := &core.ListReq{
+		Filter: expr,
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: core.DefaultMaxPageLimit},
+	}
+	dbList, err := dataCli.HuaWei.NetworkInterface.ListNetworkInterfaceExt(kt.Ctx, kt.Header(), dbQueryReq)
+	if err != nil {
+		logs.Errorf("%s-networkinterface batch get networkinterfacelist db error. limit: %d, err: %v",
+			vendor, core.DefaultMaxPageLimit, err)
+		return nil, err
+	}
+
+	resourceMap := make(map[string]coreni.NetworkInterface[coreni.HuaWeiNIExtension], 0)
+	if len(dbList.Details) == 0 {
+		return resourceMap, nil
+	}
+
+	for _, item := range dbList.Details {
+		resourceMap[item.CloudID] = item
+	}
+
+	return resourceMap, nil
+}
+
 // compareUpdateHuaWeiNetworkInterfaceList compare and update network interface list.
 func compareUpdateHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiNetworkInterfaceSyncReq,
-	list *typesniproto.HuaWeiInterfaceListResult, resourceDBMap map[string]coreni.BaseNetworkInterface,
-	dataCli *dataclient.Client) error {
+	list *typesniproto.HuaWeiInterfaceListResult,
+	resourceDBMap map[string]coreni.NetworkInterface[coreni.HuaWeiNIExtension], dataCli *dataclient.Client) error {
 
 	createResources, updateResources, err := filterHuaWeiNetworkInterfaceList(kt, req, list, resourceDBMap)
 	if err != nil {
@@ -171,7 +240,8 @@ func compareUpdateHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiN
 
 // filterHuaWeiNetworkInterfaceList filter huawei network interface list
 func filterHuaWeiNetworkInterfaceList(_ *kit.Kit, req *hcservice.HuaWeiNetworkInterfaceSyncReq,
-	list *typesniproto.HuaWeiInterfaceListResult, resourceDBMap map[string]coreni.BaseNetworkInterface) (
+	list *typesniproto.HuaWeiInterfaceListResult,
+	resourceDBMap map[string]coreni.NetworkInterface[coreni.HuaWeiNIExtension]) (
 	createResources []dataproto.NetworkInterfaceReq[dataproto.HuaWeiNICreateExt],
 	updateResources []dataproto.NetworkInterfaceUpdateReq[dataproto.HuaWeiNICreateExt], err error) {
 
@@ -185,11 +255,7 @@ func filterHuaWeiNetworkInterfaceList(_ *kit.Kit, req *hcservice.HuaWeiNetworkIn
 		// need compare and update resource data
 		tmpCloudID := converter.PtrToVal(item.CloudID)
 		if resourceInfo, ok := resourceDBMap[tmpCloudID]; ok {
-			if resourceInfo.Name == converter.PtrToVal(item.Name) &&
-				resourceInfo.Region == converter.PtrToVal(item.Region) &&
-				resourceInfo.CloudVpcID == converter.PtrToVal(item.CloudVpcID) &&
-				resourceInfo.CloudSubnetID == converter.PtrToVal(item.CloudSubnetID) &&
-				resourceInfo.InstanceID == converter.PtrToVal(item.InstanceID) {
+			if !isHuaWeiChange(item, resourceInfo) {
 				continue
 			}
 
@@ -200,7 +266,9 @@ func filterHuaWeiNetworkInterfaceList(_ *kit.Kit, req *hcservice.HuaWeiNetworkIn
 				Region:        converter.PtrToVal(item.Region),
 				Zone:          converter.PtrToVal(item.Zone),
 				CloudID:       converter.PtrToVal(item.CloudID),
+				VpcID:         converter.PtrToVal(item.VpcID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
+				SubnetID:      converter.PtrToVal(item.SubnetID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
 				PrivateIPv4:   item.PrivateIPv4,
 				PrivateIPv6:   item.PrivateIPv6,
@@ -228,7 +296,7 @@ func filterHuaWeiNetworkInterfaceList(_ *kit.Kit, req *hcservice.HuaWeiNetworkIn
 					PciAddress:            item.Extension.PciAddress,
 					IpV6:                  item.Extension.IpV6,
 					Addresses:             (*dataproto.EipNetwork)(item.Extension.Addresses),
-					CloudSecurityGroupIDs: item.Extension.CloudSecurityGroupIDs,
+					CloudSecurityGroupIDs: slice.Unique(item.Extension.CloudSecurityGroupIDs),
 				}
 				// 网卡私网IP信息列表
 				var tmpFixIps []dataproto.ServerInterfaceFixedIp
@@ -260,7 +328,9 @@ func filterHuaWeiNetworkInterfaceList(_ *kit.Kit, req *hcservice.HuaWeiNetworkIn
 				Region:        converter.PtrToVal(item.Region),
 				Zone:          converter.PtrToVal(item.Zone),
 				CloudID:       converter.PtrToVal(item.CloudID),
+				VpcID:         converter.PtrToVal(item.VpcID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
+				SubnetID:      converter.PtrToVal(item.SubnetID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
 				PrivateIPv4:   item.PrivateIPv4,
 				PrivateIPv6:   item.PrivateIPv6,
@@ -288,7 +358,7 @@ func filterHuaWeiNetworkInterfaceList(_ *kit.Kit, req *hcservice.HuaWeiNetworkIn
 					PciAddress:            item.Extension.PciAddress,
 					IpV6:                  item.Extension.IpV6,
 					Addresses:             (*dataproto.EipNetwork)(item.Extension.Addresses),
-					CloudSecurityGroupIDs: item.Extension.CloudSecurityGroupIDs,
+					CloudSecurityGroupIDs: slice.Unique(item.Extension.CloudSecurityGroupIDs),
 				}
 				// 网卡私网IP信息列表
 				var tmpFixIps []dataproto.ServerInterfaceFixedIp
@@ -315,6 +385,94 @@ func filterHuaWeiNetworkInterfaceList(_ *kit.Kit, req *hcservice.HuaWeiNetworkIn
 	}
 
 	return createResources, updateResources, nil
+}
+
+func isHuaWeiChange(item typesniproto.HuaWeiNI, dbInfo coreni.NetworkInterface[coreni.HuaWeiNIExtension]) bool {
+	if dbInfo.Name != converter.PtrToVal(item.Name) || dbInfo.Region != converter.PtrToVal(item.Region) ||
+		dbInfo.Zone != converter.PtrToVal(item.Zone) || dbInfo.CloudID != converter.PtrToVal(item.CloudID) ||
+		dbInfo.CloudVpcID != converter.PtrToVal(item.CloudVpcID) ||
+		dbInfo.CloudSubnetID != converter.PtrToVal(item.CloudSubnetID) ||
+		dbInfo.InstanceID != converter.PtrToVal(item.InstanceID) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PrivateIPv4, dbInfo.PrivateIPv4) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PrivateIPv6, dbInfo.PrivateIPv6) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PublicIPv4, dbInfo.PublicIPv4) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.PublicIPv6, dbInfo.PublicIPv6) {
+		return true
+	}
+	if dbInfo.Extension == nil {
+		return false
+	}
+	extRet := checkHuaWeiExt(item, dbInfo)
+	if extRet {
+		return true
+	}
+	return false
+}
+
+func checkHuaWeiExt(item typesniproto.HuaWeiNI, dbInfo coreni.NetworkInterface[coreni.HuaWeiNIExtension]) bool {
+	if !assert.IsPtrStringEqual(item.Extension.MacAddr, dbInfo.Extension.MacAddr) {
+		return true
+	}
+	if item.Extension.FixedIps != nil {
+		for index, remote := range item.Extension.FixedIps {
+			if len(dbInfo.Extension.FixedIps) > index {
+				dbFixIpInfo := dbInfo.Extension.FixedIps[index]
+				if !assert.IsPtrStringEqual(remote.SubnetId, dbFixIpInfo.SubnetId) {
+					return true
+				}
+				if !assert.IsPtrStringEqual(remote.IpAddress, dbFixIpInfo.IpAddress) {
+					return true
+				}
+			}
+		}
+	}
+	if !assert.IsPtrStringEqual(item.Extension.NetId, dbInfo.Extension.NetId) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(item.Extension.PortState, dbInfo.Extension.PortState) {
+		return true
+	}
+	if !assert.IsPtrBoolEqual(item.Extension.DeleteOnTermination, dbInfo.Extension.DeleteOnTermination) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(item.Extension.DriverMode, dbInfo.Extension.DriverMode) {
+		return true
+	}
+	if !assert.IsPtrInt32Equal(item.Extension.MinRate, dbInfo.Extension.MinRate) {
+		return true
+	}
+	if !assert.IsPtrInt32Equal(item.Extension.MultiqueueNum, dbInfo.Extension.MultiqueueNum) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(item.Extension.PciAddress, dbInfo.Extension.PciAddress) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(item.Extension.IpV6, dbInfo.Extension.IpV6) {
+		return true
+	}
+	if !assert.IsStringSliceEqual(item.Extension.CloudSecurityGroupIDs, dbInfo.Extension.CloudSecurityGroupIDs) {
+		return true
+	}
+	if item.Extension.Addresses != nil {
+		if item.Extension.Addresses.BandwidthID != dbInfo.Extension.Addresses.BandwidthID {
+			return true
+		}
+		if item.Extension.Addresses.BandwidthSize != dbInfo.Extension.Addresses.BandwidthSize {
+			return true
+		}
+		if item.Extension.Addresses.BandwidthType != dbInfo.Extension.Addresses.BandwidthType {
+			return true
+		}
+	}
+	return false
 }
 
 // compareDeleteHuaWeiNetworkInterfaceList compare and delete network interface list from db.
@@ -393,4 +551,47 @@ func GetNeedDeleteHuaWeiNetworkInterfaceList(_ *kit.Kit, _ *hcservice.HuaWeiNetw
 	}
 
 	return deleteIDs
+}
+
+// GetHuaWeiCloudSubnetInfoByID get subnet info by cloud_subnet_id
+func GetHuaWeiCloudSubnetInfoByID(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client,
+	accountID, cloudSubnetID, cloudVpcID, region string) (*cloud.BaseSubnet, error) {
+
+	// query subnet info by cloud_subnet_id
+	opt := &subnetlogics.QuerySubnetIDsAndSyncOption{
+		Vendor:         enumor.HuaWei,
+		AccountID:      accountID,
+		CloudSubnetIDs: []string{cloudSubnetID},
+		Region:         region,
+		CloudVpcID:     cloudVpcID,
+	}
+	subnetMap, err := subnetlogics.QuerySubnetIDsAndSync(kt, adaptor, dataCli, opt)
+	if err != nil {
+		logs.Errorf("get network interface subnet list failed, vendor: %s, accountID: %s, cloudSubnetID: %s, "+
+			"region: %s, err: %v, rid: %s", enumor.HuaWei, accountID, cloudSubnetID, region, err, kt.Rid)
+		return nil, err
+	}
+	subnetDetail, ok := subnetMap[cloudSubnetID]
+	if !ok {
+		return &cloud.BaseSubnet{}, nil
+	}
+
+	if len(subnetDetail.VpcID) == 0 && len(subnetDetail.CloudVpcID) != 0 {
+		vpcOpt := &logics.QueryVpcIDsAndSyncOption{
+			Vendor:      enumor.HuaWei,
+			AccountID:   accountID,
+			CloudVpcIDs: []string{subnetDetail.CloudVpcID},
+			Region:      region,
+		}
+		vpcMap, err := logics.QueryVpcIDsAndSync(kt, adaptor, dataCli, vpcOpt)
+		if err != nil {
+			logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		if tmpVpcID, ok := vpcMap[subnetDetail.CloudVpcID]; ok {
+			subnetDetail.VpcID = tmpVpcID
+		}
+	}
+
+	return &subnetDetail, nil
 }

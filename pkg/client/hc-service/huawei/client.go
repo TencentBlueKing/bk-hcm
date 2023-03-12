@@ -25,34 +25,36 @@ import (
 
 // Client is a huawei api client
 type Client struct {
-	Account       *AccountClient
-	SecurityGroup *SecurityGroupClient
-	Vpc           *VpcClient
-	Subnet        *SubnetClient
-	Eip           *EipClient
-	Disk          *DiskClient
-	Zone          *ZoneClient
-	Region        *RegionClient
-	Cvm           *CvmClient
-	Image         *ImageClient
-	RouteTable    *RouteTableClient
-	InstanceType  *InstanceTypeClient
+	Account          *AccountClient
+	SecurityGroup    *SecurityGroupClient
+	Vpc              *VpcClient
+	Subnet           *SubnetClient
+	Eip              *EipClient
+	Disk             *DiskClient
+	Zone             *ZoneClient
+	Region           *RegionClient
+	Cvm              *CvmClient
+	Image            *ImageClient
+	RouteTable       *RouteTableClient
+	InstanceType     *InstanceTypeClient
+	NetworkInterface *NetworkInterfaceClient
 }
 
 // NewClient create a new huawei api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		Account:       NewAccountClient(client),
-		Vpc:           NewVpcClient(client),
-		Subnet:        NewSubnetClient(client),
-		RouteTable:    NewRouteTableClient(client),
-		SecurityGroup: NewCloudSecurityGroupClient(client),
-		Eip:           NewEipClient(client),
-		Disk:          NewCloudDiskClient(client),
-		Zone:          NewZoneClient(client),
-		Region:        NewRegionClient(client),
-		Cvm:           NewCvmClient(client),
-		Image:         NewCloudPublicClient(client),
-		InstanceType:  NewInstanceTypeClient(client),
+		Account:          NewAccountClient(client),
+		Vpc:              NewVpcClient(client),
+		Subnet:           NewSubnetClient(client),
+		RouteTable:       NewRouteTableClient(client),
+		SecurityGroup:    NewCloudSecurityGroupClient(client),
+		Eip:              NewEipClient(client),
+		Disk:             NewCloudDiskClient(client),
+		Zone:             NewZoneClient(client),
+		Region:           NewRegionClient(client),
+		Cvm:              NewCvmClient(client),
+		Image:            NewCloudPublicClient(client),
+		InstanceType:     NewInstanceTypeClient(client),
+		NetworkInterface: NewNetworkInterfaceClient(client),
 	}
 }
