@@ -1,32 +1,42 @@
 <script lang="ts" setup>
 import BusinessSelector from '@/components/business-selector/index.vue';
+import AccountSelector from '@/components/account-selector/index.vue';
 import MemberSelect from '@/components/MemberSelect';
 import FilterItemAction from './children/filter-item-action.vue';
 import AuditDetail from './detail.vue';
 
-import { reactive, ref, watchEffect } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import dayjs from 'dayjs';
-
+import { useRoute } from 'vue-router';
 import {
   useI18n,
 } from 'vue-i18n';
 import useList from './use-list';
 import { AUDIT_RESOURCE_TYPES } from '@/common/constant';
-import { useAccountStore } from '@/store';
 import { timeFormatter } from '@/common/util';
 import { AUDIT_SOURCE_MAP, AUDIT_ACTION_MAP } from './constants';
 
 const {
   t,
 } = useI18n();
+const route = useRoute();
 
 const businessSelectorComp = ref(null);
 
-const accountStore = useAccountStore();
+const tabs = [
+  {
+    type: 'biz',
+    label: '业务',
+  }, {
+    type: 'resource',
+    label: '资源',
+  },
+];
+
 const todayStart = dayjs(new Date()).format('YYYY-MM-DD 00:00:00');
 const todayEnd = dayjs(new Date()).format('YYYY-MM-DD 23:59:59');
 const defaultFilter = () => ({
-  bk_biz_id: '',
+  bk_biz_id: null as number,
   account_id: '',
   res_type: 'account',
   action: '',
@@ -41,36 +51,18 @@ const filterOptions = reactive({
   instValue: '',
   instType: 'name',
   instFuzzy: false,
+  auditType: route.query.type || tabs[0].type,
 });
 
 const details = reactive({
   id: undefined,
+  bizId: undefined,
   show: false,
 });
 
-const accountOptions = ref([]);
 const sourceOptions = Object.entries(AUDIT_SOURCE_MAP);
 
-const resourceTypeOptions = AUDIT_RESOURCE_TYPES.filter(item => item.type === 'account');
-
-const loading = reactive({
-  auditList: false,
-  accountList: false,
-});
-
-watchEffect(void (async () => {
-  loading.accountList = true;
-  const res = await accountStore.getAccountList({
-    filter: { op: 'and', rules: [] },
-    page: {
-      count: false,
-      start: 0,
-      limit: 500,
-    },
-  });
-  loading.accountList = false;
-  accountOptions.value = res?.data?.details;
-})());
+const resourceTypeOptions = AUDIT_RESOURCE_TYPES;
 
 const {
   query,
@@ -80,6 +72,8 @@ const {
   handlePageChange,
   handlePageSizeChange,
 } = useList({ filter, filterOptions });
+
+const isBizType = computed(() => filterOptions.auditType === 'biz');
 
 const getBizName = (id: number) => {
   return businessSelectorComp?.value?.businessList?.find(item => item.id === id)?.name ?? '--';
@@ -92,40 +86,66 @@ const handleReset = () => {
   filter = Object.assign(filter, defaultFilter());
   query();
 };
-const handleShowDetailSlider = (id: number) => {
-  details.id = id;
+const handleShowDetailSlider = (row: any) => {
+  details.id = row.id;
+  if (isBizType.value) {
+    details.bizId = row.bk_biz_id;
+  }
   details.show = true;
 };
 
-query();
+watch(() => filter.bk_biz_id, (bizId, oldBizId) => {
+  if (oldBizId === null && bizId !== oldBizId) {
+    query();
+  }
+});
+
+watch(isBizType, (isBizType) => {
+  if (!isBizType) {
+    filter.bk_biz_id = null;
+  }
+});
 </script>
 
 <template>
+  <bk-tab
+    v-model:active="filterOptions.auditType"
+    type="unborder-card"
+    class="resource-main g-scroller"
+  >
+    <bk-tab-panel
+      v-for="item in tabs"
+      :key="item.type"
+      :name="item.type"
+      :label="item.label"
+      render-directive="if"
+    >
+    </bk-tab-panel>
+  </bk-tab>
+
   <div class="audit-filter">
-    <div class="filter-item">
+    <div class="filter-item" v-if="isBizType">
       <div class="filter-item-label">业务</div>
       <div class="filter-item-content">
-        <business-selector v-model="filter.bk_biz_id" ref="businessSelectorComp"></business-selector>
+        <business-selector
+          v-model="filter.bk_biz_id"
+          :authed="isBizType"
+          :auto-select="true"
+          :clearable="false"
+          ref="businessSelectorComp"
+        />
       </div>
     </div>
     <div class="filter-item">
       <div class="filter-item-label">云账号</div>
       <div class="filter-item-content">
-        <bk-select
-          :loading="loading.accountList"
+        <account-selector
           v-model="filter.account_id"
+          :biz-id="filter.bk_biz_id"
           multiple-mode="tag"
           filterable
           multiple
-          allow-create
-        >
-          <bk-option
-            v-for="(item, index) in accountOptions"
-            :key="index"
-            :value="item.id"
-            :label="item.name"
-          />
-        </bk-select>
+          allow-create />
       </div>
     </div>
     <div class="filter-item">
@@ -179,7 +199,9 @@ query();
             </bk-select>
           </template>
           <template #suffix>
-            <bk-checkbox v-model="filterOptions.instFuzzy" size="small" class="input-suffix-checkbox">模糊</bk-checkbox>
+            <bk-checkbox v-model="filterOptions.instFuzzy" size="small" class="input-suffix-checkbox">
+              模糊
+            </bk-checkbox>
           </template>
         </bk-input>
       </div>
@@ -207,17 +229,22 @@ query();
     :loading="isLoading"
   >
     <bk-table
-      class="audit-list"
+      class="audit-list-table"
       row-hover="auto"
       remote-pagination
+      :border="['outer']"
       :data="datas"
       :pagination="pagination"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
     >
-      <bk-table-column label="ID" prop="id" :width="80" />
-      <bk-table-column :label="t('云资源 ID')" prop="cloud_res_id" />
-      <bk-table-column :label="t('名称')" show-overflow-tooltip prop="res_name" />
+      <bk-table-column label="ID" prop="id" :width="120" />
+      <bk-table-column :label="t('云资源 ID')" prop="cloud_res_id" show-overflow-tooltip>
+        <template #default="{ row }">
+          {{ row?.cloud_res_id || '--' }}
+        </template>
+      </bk-table-column>
+      <bk-table-column :label="t('名称')" prop="res_name" show-overflow-tooltip />
       <bk-table-column :label="t('资源类型')" prop="res_type" />
       <bk-table-column :label="t('动作')" prop="action">
         <template #default="{ row }">
@@ -243,7 +270,7 @@ query();
       </bk-table-column>
       <bk-table-column :label="t('操作')">
         <template #default="{ row }">
-          <bk-button theme="primary" @click="handleShowDetailSlider(row?.id)">详情</bk-button>
+          <bk-button theme="primary" @click="handleShowDetailSlider(row)">详情</bk-button>
         </template>
       </bk-table-column>
     </bk-table>
@@ -256,12 +283,15 @@ query();
     quick-close
   >
     <template #default>
-      <audit-detail :id="details.id"></audit-detail>
+      <audit-detail :id="details.id" :biz-id="details.bizId"></audit-detail>
     </template>
   </bk-sideslider>
 </template>
 
 <style lang="scss" scoped>
+.audit-container {
+  background: #fff;
+}
 .audit-filter {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
@@ -304,7 +334,11 @@ query();
     }
   }
 }
-.audit-list {
+.audit-list-table {
   margin-top: 20px;
+
+  :deep(.bk-table-footer) {
+    padding: 0 15px;
+  }
 }
 </style>

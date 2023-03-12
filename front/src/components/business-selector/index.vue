@@ -1,28 +1,44 @@
 <script lang="ts" setup>
-import { computed, ref, watchEffect, defineExpose } from 'vue';
+import { computed, ref, watchEffect, defineExpose, PropType } from 'vue';
 import {
   useAccountStore,
 } from '@/store';
 
-const emit = defineEmits(['input']);
+const props = defineProps(({
+  modelValue: Number as PropType<number>,
+  authed: Boolean  as PropType<boolean>,
+  autoSelect: Boolean as PropType<boolean>,
+}));
+const emit = defineEmits(['update:modelValue']);
 
 const accountStore = useAccountStore();
 const businessList = ref([]);
 const loading = ref(null);
 
-watchEffect(void (async () => {
+watchEffect(async () => {
   loading.value = true;
-  const res = await accountStore.getBizList();
+
+  const req = props.authed ? accountStore.getBizListWithAuth : accountStore.getBizList;
+  const res = await req();
+
   loading.value = false;
   businessList.value = res?.data;
-})());
+});
 
 const selectedValue = computed({
   get() {
-    return '';
+    if (props.modelValue) {
+      return props.modelValue;
+    }
+    if (props.autoSelect) {
+      const val = businessList.value.at(0)?.id ?? null;
+      emit('update:modelValue', val);
+      return val;
+    }
+    return null;
   },
   set(val) {
-    emit('input', val);
+    emit('update:modelValue', val);
   },
 });
 

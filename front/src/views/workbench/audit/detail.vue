@@ -1,17 +1,37 @@
 <script lang="ts" setup>
+import { computed } from 'vue';
 import DetailDiffAccount from './children/detail-diff-account.vue';
+import DetailDiffCVM from './children/detail-diff-cvm.vue';
+import DetailDiffVPC from './children/detail-diff-vpc.vue';
+import DetailDiffGcpFirewallRule from './children/detail-diff-gpc-firewall-rule.vue';
 import BusinessName from './children/business-name';
 import useDetail from './use-detail';
 import { CloudType } from '@/typings/account';
 import { timeFormatter } from '@/common/util';
 import { AUDIT_SOURCE_MAP, AUDIT_ACTION_MAP } from './constants';
 
-const props = defineProps<{ id: number }>();
+const props = defineProps<{
+  id: number,
+  bizId: number,
+}>();
 
 const { details, isLoading } = useDetail(props);
 
+const isJsonDisplay = computed(() => [
+  'security_group',
+  'eip',
+  'disk',
+  'route_table',
+  'image',
+  'network_interface',
+  'subnet',
+].includes(details.value.res_type));
+
 const diffCompMap = {
   account: DetailDiffAccount,
+  cvm: DetailDiffCVM,
+  vpc: DetailDiffVPC,
+  gcp_firewall_rule: DetailDiffGcpFirewallRule,
 };
 </script>
 
@@ -69,10 +89,10 @@ const diffCompMap = {
         <div class="item-content">{{ AUDIT_SOURCE_MAP[details.source]}}</div>
       </div>
     </div>
-    <!-- <div class="details-json">
+    <div class="details-json" v-if="isJsonDisplay">
       <pre><code>{{ details?.detail?.data }}</code></pre>
-    </div> -->
-    <div class="details-table">
+    </div>
+    <div class="details-table" v-else>
       <component
         :is="diffCompMap[details.res_type]"
         :action="details?.action"

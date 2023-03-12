@@ -24,9 +24,13 @@ export const useAccountStore = defineStore({
     /**
      * @description: 获取账号列表
      * @param {any} data
+     * @param {number} bizId
      * @return {*}
      */
-    async getAccountList(params: any) {
+    async getAccountList(params: any, bizId: number) {
+      if (bizId > 0) {
+        return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/bizs/${bizId}`);
+      }
       return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/list`, params);
     },
     /**
@@ -72,6 +76,14 @@ export const useAccountStore = defineStore({
      */
     async getBizList() {
       return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bk_bizs/list`);
+    },
+    /**
+     * @description: 获取有权限的业务列表
+     * @param {any}
+     * @return {*}
+     */
+    async getBizListWithAuth() {
+      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/authorized/bizs/list`);
     },
     /**
      * @description: 获取部门信息

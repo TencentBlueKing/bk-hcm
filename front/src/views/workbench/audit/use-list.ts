@@ -32,9 +32,13 @@ export default (options: { filter: any, filterOptions: any }) => {
 
   // 更新数据
   const query = () => {
-    isLoading.value = true;
-
     const { filter, filterOptions } = options;
+
+    if (filterOptions.auditType === 'biz' && !filter.bk_biz_id) {
+      return;
+    }
+
+    isLoading.value = true;
     filter.res_id = '';
     filter.res_name = '';
     if (filterOptions.instType === 'id') {
@@ -51,7 +55,7 @@ export default (options: { filter: any, filterOptions: any }) => {
     };
     for (let i = 0, key; key = filterIds[i]; i++) {
       const value = filter[key];
-      if (!value) {
+      if (!value || !value?.length) {
         continue;
       }
 
@@ -84,9 +88,6 @@ export default (options: { filter: any, filterOptions: any }) => {
       });
     }
 
-
-    console.log(queryFilter, filter);
-
     Promise
       .all([
         auditStore
@@ -99,14 +100,14 @@ export default (options: { filter: any, filterOptions: any }) => {
               order: order.value,
             },
             filter: queryFilter,
-          }),
+          }, filter.bk_biz_id),
         auditStore
           .list({
             page: {
               count: true,
             },
             filter: queryFilter,
-          }),
+          }, filter.bk_biz_id),
       ])
       .then(([listResult, countResult]) => {
         datas.value = listResult?.data?.details || [];

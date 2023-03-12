@@ -8,19 +8,69 @@ const props = defineProps({
 
 const emit = defineEmits(['input']);
 
-const baseActions = [
-  { id: AuditActionEnum.CREATE, name: AuditActionNameEnum.CREATE },
-  { id: AuditActionEnum.UPDATE, name: AuditActionNameEnum.UPDATE },
-  { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
-];
 const typeActions = {
+  account: [
+    { id: AuditActionEnum.CREATE, name: AuditActionNameEnum.CREATE },
+    { id: AuditActionEnum.UPDATE, name: AuditActionNameEnum.UPDATE },
+    { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
+    { id: AuditActionEnum.SYNC, name: AuditActionNameEnum.SYNC },
+  ],
+  cvm: [
+    { id: AuditActionEnum.APPLY, name: AuditActionNameEnum.APPLY },
+    { id: AuditActionEnum.SYNC, name: AuditActionNameEnum.SYNC },
+    { id: AuditActionEnum.ASSIGN, name: AuditActionNameEnum.ASSIGN },
+    { id: AuditActionEnum.EDIT, name: AuditActionNameEnum.EDIT },
+    { id: AuditActionEnum.REBOOT, name: AuditActionNameEnum.REBOOT },
+    { id: AuditActionEnum.START, name: AuditActionNameEnum.START },
+    { id: AuditActionEnum.STOP, name: AuditActionNameEnum.STOP },
+    { id: AuditActionEnum.RESET_PWD, name: AuditActionNameEnum.RESET_PWD },
+    { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
+  ],
+  vpc: [
+    { id: AuditActionEnum.APPLY, name: AuditActionNameEnum.APPLY },
+    { id: AuditActionEnum.SYNC, name: AuditActionNameEnum.SYNC },
+    { id: AuditActionEnum.ASSIGN, name: AuditActionNameEnum.ASSIGN },
+    { id: AuditActionEnum.EDIT, name: AuditActionNameEnum.EDIT },
+    { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
+  ],
+  security_group: [
+    { id: AuditActionEnum.ADD, name: AuditActionNameEnum.ADD },
+    { id: AuditActionEnum.EDIT, name: AuditActionNameEnum.EDIT },
+    { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
+  ],
+  disk: [
+    { id: AuditActionEnum.MOUNT, name: AuditActionNameEnum.MOUNT },
+    { id: AuditActionEnum.UNMOUNT, name: AuditActionNameEnum.UNMOUNT },
+    { id: AuditActionEnum.RECYCLE, name: AuditActionNameEnum.RECYCLE },
+  ],
   gcp_firewall_rule: [
-    { id: AuditActionEnum.RESTART, name: AuditActionNameEnum.RESTART },
+    { id: AuditActionEnum.CREATE, name: AuditActionNameEnum.CREATE },
+    { id: AuditActionEnum.UPDATE, name: AuditActionNameEnum.UPDATE },
+    { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
+  ],
+  route_table: [
+    { id: AuditActionEnum.CREATE, name: AuditActionNameEnum.CREATE },
+    { id: AuditActionEnum.UPDATE, name: AuditActionNameEnum.UPDATE },
+    { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
+  ],
+  image: [
+    { id: AuditActionEnum.CREATE, name: AuditActionNameEnum.CREATE },
+    { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
+  ],
+  network_interface: [
+    { id: AuditActionEnum.CREATE, name: AuditActionNameEnum.CREATE },
+    { id: AuditActionEnum.UPDATE, name: AuditActionNameEnum.UPDATE },
+    { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
+  ],
+  subnet: [
+    { id: AuditActionEnum.CREATE, name: AuditActionNameEnum.CREATE },
+    { id: AuditActionEnum.UPDATE, name: AuditActionNameEnum.UPDATE },
+    { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
   ],
 };
 
 const actions = computed(() => {
-  return [...baseActions, ...(typeActions[props.type] || [])];
+  return typeActions[props.type] || [];
 });
 
 const selectedValue = computed({

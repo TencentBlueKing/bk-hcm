@@ -5,7 +5,7 @@ import {
   ref, watchEffect,
 } from 'vue';
 
-export default (props: { id: number }) => {
+export default (props: { id: number, bizId: number }) => {
   const auditStore = useAuditStore();
 
   const isLoading = ref(false);
@@ -14,7 +14,7 @@ export default (props: { id: number }) => {
   watchEffect(void (async () => {
     isLoading.value = true;
 
-    const result = await auditStore.detail(props.id);
+    const result = await auditStore.detail(props.id, props.bizId);
     details.value = result?.data;
 
     isLoading.value = false;
