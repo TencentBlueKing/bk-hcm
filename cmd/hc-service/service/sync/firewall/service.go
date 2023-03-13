@@ -20,11 +20,12 @@
 package firewall
 
 import (
+	"net/http"
+
 	"hcm/cmd/hc-service/service/capability"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/rest"
-	"net/http"
 )
 
 // InitFireWallService initial the sync firewall service

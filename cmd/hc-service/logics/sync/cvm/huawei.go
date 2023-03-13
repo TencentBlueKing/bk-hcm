@@ -39,9 +39,11 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -54,7 +56,7 @@ import (
 type SyncHuaWeiCvmOption struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_i_ds" validate:"omitempty"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
 }
 
 // Validate SyncHuaWeiCvmOption
@@ -63,8 +65,8 @@ func (opt SyncHuaWeiCvmOption) Validate() error {
 		return err
 	}
 
-	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
 	}
 
 	return nil
@@ -73,6 +75,10 @@ func (opt SyncHuaWeiCvmOption) Validate() error {
 // SyncHuaWeiCvm sync cvm self
 func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	client, err := ad.HuaWei(kt, req.AccountID)
 	if err != nil {
@@ -101,14 +107,16 @@ func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 		}
 
 		cloudMap := make(map[string]*HuaWeiCvmSync)
-		cloudIDs := make([]string, 0, len(*datas))
-		for _, data := range *datas {
-			cvmSync := new(HuaWeiCvmSync)
-			cvmSync.IsUpdate = false
-			cvmSync.Cvm = data
-			cloudMap[data.Id] = cvmSync
-			cloudIDs = append(cloudIDs, data.Id)
-			cloudAllIDs[data.Id] = true
+		cloudIDs := make([]string, 0)
+		if datas != nil {
+			for _, data := range *datas {
+				cvmSync := new(HuaWeiCvmSync)
+				cvmSync.IsUpdate = false
+				cvmSync.Cvm = data
+				cloudMap[data.Id] = cvmSync
+				cloudIDs = append(cloudIDs, data.Id)
+				cloudAllIDs[data.Id] = true
+			}
 		}
 
 		updateIDs, dsMap, err := getHuaWeiCvmDSSync(kt, cloudIDs, req, dataCli)
@@ -146,7 +154,7 @@ func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 			}
 		}
 
-		if len(*datas) < typecore.TCloudQueryLimit {
+		if datas == nil || len(*datas) < typecore.TCloudQueryLimit {
 			break
 		}
 		listOpt.Page.Offset += typecore.TCloudQueryLimit
@@ -181,10 +189,12 @@ func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 
 			for _, id := range deleteIDs {
 				realDeleteFlag := true
-				for _, data := range *datas {
-					if data.Id == id {
-						realDeleteFlag = false
-						break
+				if datas != nil {
+					for _, data := range *datas {
+						if data.Id == id {
+							realDeleteFlag = false
+							break
+						}
 					}
 				}
 
@@ -193,7 +203,7 @@ func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 				}
 			}
 
-			if len(*datas) < typecore.TCloudQueryLimit {
+			if datas == nil || len(*datas) < typecore.TCloudQueryLimit {
 				break
 			}
 			listOpt.Page.Offset += typecore.TCloudQueryLimit
@@ -759,6 +769,10 @@ func getHuaWeiCvmDSSync(kt *kit.Kit, cloudIDs []string, req *SyncHuaWeiCvmOption
 	updateIDs := make([]string, 0)
 	dsMap := make(map[string]*HuaWeiDSCvmSync)
 
+	if len(cloudIDs) <= 0 {
+		return updateIDs, dsMap, nil
+	}
+
 	start := 0
 	for {
 		dataReq := &dataproto.CvmListReq{
@@ -958,7 +972,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 		for _, id := range cloudSGMap {
 			sGCloudIDs = append(sGCloudIDs, id.RelID)
 		}
-		req := &securitygroup.SyncHuaWeiSecurityGroupOption{
+		req := &sync.SyncHuaWeiSecurityGroupReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  sGCloudIDs,
@@ -975,7 +989,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 		for _, id := range cloudDiskMap {
 			diskCloudIDs = append(diskCloudIDs, id.RelID)
 		}
-		req := &disk.SyncHuaWeiDiskOption{
+		req := &sync.SyncHuaWeiDiskReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  diskCloudIDs,

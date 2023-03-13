@@ -25,6 +25,7 @@ import (
 	typcore "hcm/pkg/adaptor/types/core"
 	typesdisk "hcm/pkg/adaptor/types/disk"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -34,7 +35,7 @@ import (
 
 // SyncAwsDisk ...
 func (svc *syncDiskSvc) SyncAwsDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(disk.SyncAwsDiskOption)
+	req := new(sync.SyncAwsDiskReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -115,7 +116,7 @@ func (svc *syncDiskSvc) SyncAwsDisk(cts *rest.Contexts) (interface{}, error) {
 }
 
 func (svc *syncDiskSvc) deleteAwsDisk(cts *rest.Contexts, client *aws.Aws,
-	req *disk.SyncAwsDiskOption, deleteIDs []string) error {
+	req *sync.SyncAwsDiskReq, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

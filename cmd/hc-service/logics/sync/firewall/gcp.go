@@ -28,7 +28,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	apicloud "hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
@@ -54,8 +54,12 @@ type FireWallSyncDS struct {
 }
 
 // SyncGcpFirewallRule sync gcp firewall rules to hcm.
-func SyncGcpFirewallRule(kt *kit.Kit, req *hcservice.GcpFirewallSyncReq,
+func SyncGcpFirewallRule(kt *kit.Kit, req *sync.GcpFirewallSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	cloudMap, err := getDatasFromGcpForFireWallSync(kt, adaptor, req)
 	if err != nil {
@@ -76,7 +80,7 @@ func SyncGcpFirewallRule(kt *kit.Kit, req *hcservice.GcpFirewallSyncReq,
 }
 
 // GetDatasFromDSForGcpFireWallSync get gcp firewall datas from hc
-func GetDatasFromDSForGcpFireWallSync(kt *kit.Kit, req *hcservice.GcpFirewallSyncReq,
+func GetDatasFromDSForGcpFireWallSync(kt *kit.Kit, req *sync.GcpFirewallSyncReq,
 	dataCli *dataservice.Client) (map[string]*FireWallSyncDS, error) {
 
 	dsMap := make(map[string]*FireWallSyncDS)
@@ -106,11 +110,13 @@ func GetDatasFromDSForGcpFireWallSync(kt *kit.Kit, req *hcservice.GcpFirewallSyn
 			return nil, err
 		}
 
-		for _, result := range results.Details {
-			sg := new(FireWallSyncDS)
-			sg.IsUpdated = false
-			sg.HcFireWall = result
-			dsMap[result.CloudID] = sg
+		if results != nil {
+			for _, result := range results.Details {
+				sg := new(FireWallSyncDS)
+				sg.IsUpdated = false
+				sg.HcFireWall = result
+				dsMap[result.CloudID] = sg
+			}
 		}
 
 		start += len(results.Details)
@@ -138,7 +144,7 @@ func DiffFireWallSyncDelete(kt *kit.Kit, deleteCloudIDs []string,
 }
 
 func getDatasFromGcpForFireWallSync(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient,
-	req *hcservice.GcpFirewallSyncReq) (map[string]*FireWallGcpDiff, error) {
+	req *sync.GcpFirewallSyncReq) (map[string]*FireWallGcpDiff, error) {
 
 	client, err := ad.Gcp(kt, req.AccountID)
 	if err != nil {
@@ -152,6 +158,7 @@ func getDatasFromGcpForFireWallSync(kt *kit.Kit, ad *cloudclient.CloudAdaptorCli
 
 	results, _, err := client.ListFirewallRule(kt, opt)
 	if err != nil {
+		logs.Errorf("request cloud list gcp firewall rule failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -166,7 +173,7 @@ func getDatasFromGcpForFireWallSync(kt *kit.Kit, ad *cloudclient.CloudAdaptorCli
 }
 
 func diffGcpFireWallSync(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, dsMap map[string]*FireWallSyncDS,
-	req *hcservice.GcpFirewallSyncReq, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
+	req *sync.GcpFirewallSyncReq, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
 
 	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
@@ -263,7 +270,7 @@ func isGcpChange(db *FireWallSyncDS, cloud *FireWallGcpDiff, vpcID string) bool 
 	return false
 }
 
-func diffFireWallSyncUpdate(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *hcservice.GcpFirewallSyncReq,
+func diffFireWallSyncUpdate(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *sync.GcpFirewallSyncReq,
 	dsMap map[string]*FireWallSyncDS, updateCloudIDs []string, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
 
 	rulesUpdate := make([]apicloud.GcpFirewallRuleBatchUpdate, 0)
@@ -360,7 +367,7 @@ func diffFireWallSyncUpdate(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, r
 	return nil
 }
 
-func diffFireWallSyncAdd(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *hcservice.GcpFirewallSyncReq, addCloudIDs []string,
+func diffFireWallSyncAdd(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *sync.GcpFirewallSyncReq, addCloudIDs []string,
 	dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) ([]string, error) {
 
 	rulesCreate := make([]apicloud.GcpFirewallRuleBatchCreate, 0)

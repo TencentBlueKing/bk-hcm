@@ -36,6 +36,7 @@ import (
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -647,7 +648,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 		for _, id := range cloudSGMap {
 			sGCloudIDs = append(sGCloudIDs, id.RelID)
 		}
-		req := &securitygroup.SyncTCloudSecurityGroupOption{
+		req := &sync.SyncTCloudSecurityGroupReq{
 			AccountID: option.AccountID,
 			Region:    option.Region,
 			CloudIDs:  sGCloudIDs,
@@ -664,7 +665,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 		for _, id := range cloudDiskMap {
 			diskCloudIDs = append(diskCloudIDs, id.RelID)
 		}
-		req := &disk.SyncTCloudDiskOption{
+		req := &sync.SyncTCloudDiskReq{
 			AccountID: option.AccountID,
 			Region:    option.Region,
 			CloudIDs:  diskCloudIDs,

@@ -20,8 +20,6 @@
 package securitygroup
 
 import (
-	"fmt"
-
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/huawei"
 	typcore "hcm/pkg/adaptor/types/core"
@@ -29,10 +27,10 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -41,28 +39,8 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
 
-// SyncHuaWeiSecurityGroupOption define sync huawei sg and sg rule option.
-type SyncHuaWeiSecurityGroupOption struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
-}
-
-// Validate SyncHuaWeiSecurityGroupOption
-func (opt SyncHuaWeiSecurityGroupOption) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
-	}
-
-	return nil
-}
-
 // SyncHuaWeiSecurityGroup sync huawei security group and rules to hcm.
-func SyncHuaWeiSecurityGroup(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
+func SyncHuaWeiSecurityGroup(kt *kit.Kit, req *sync.SyncHuaWeiSecurityGroupReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -87,7 +65,7 @@ func SyncHuaWeiSecurityGroup(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
 	return nil, nil
 }
 
-func getDatasFromDSForHuaWeiSGSync(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
+func getDatasFromDSForHuaWeiSGSync(kt *kit.Kit, req *sync.SyncHuaWeiSecurityGroupReq,
 	dataCli *dataservice.Client) (map[string]*HuaWeiSecurityGroupSyncDS, error) {
 
 	start := 0
@@ -141,7 +119,7 @@ func getDatasFromDSForHuaWeiSGSync(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOpti
 }
 
 func getDatasFromHuaWeiForSecurityGroupSync(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient,
-	req *SyncHuaWeiSecurityGroupOption) (map[string]*SecurityGroupSyncHuaWeiDiff, error) {
+	req *sync.SyncHuaWeiSecurityGroupReq) (map[string]*SecurityGroupSyncHuaWeiDiff, error) {
 
 	client, err := ad.HuaWei(kt, req.AccountID)
 	if err != nil {
@@ -167,7 +145,7 @@ func getDatasFromHuaWeiForSecurityGroupSync(kt *kit.Kit, ad *cloudclient.CloudAd
 }
 
 func getHuaWeiSGByCloudIDsSync(kt *kit.Kit, client *huawei.HuaWei,
-	req *SyncHuaWeiSecurityGroupOption) (map[string]*SecurityGroupSyncHuaWeiDiff, error) {
+	req *sync.SyncHuaWeiSecurityGroupReq) (map[string]*SecurityGroupSyncHuaWeiDiff, error) {
 
 	opt := &securitygroup.HuaWeiListOption{
 		Region:   req.Region,
@@ -191,7 +169,7 @@ func getHuaWeiSGByCloudIDsSync(kt *kit.Kit, client *huawei.HuaWei,
 }
 
 func getHuaWeiSGAllSync(kt *kit.Kit, client *huawei.HuaWei,
-	req *SyncHuaWeiSecurityGroupOption) (map[string]*SecurityGroupSyncHuaWeiDiff, error) {
+	req *sync.SyncHuaWeiSecurityGroupReq) (map[string]*SecurityGroupSyncHuaWeiDiff, error) {
 
 	datasCloud := []model.SecurityGroup{}
 
@@ -228,7 +206,7 @@ func getHuaWeiSGAllSync(kt *kit.Kit, client *huawei.HuaWei,
 }
 
 func diffHWSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncHuaWeiDiff, dsMap map[string]*HuaWeiSecurityGroupSyncDS,
-	req *SyncHuaWeiSecurityGroupOption, adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) error {
+	req *sync.SyncHuaWeiSecurityGroupReq, adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) error {
 
 	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
@@ -298,7 +276,7 @@ func diffHWSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSync
 }
 
 func diffHWSecurityGroupSyncAdd(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncHuaWeiDiff,
-	req *SyncHuaWeiSecurityGroupOption, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+	req *sync.SyncHuaWeiSecurityGroupReq, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 
 	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.HuaWeiSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.HuaWeiSecurityGroupExtension]{},

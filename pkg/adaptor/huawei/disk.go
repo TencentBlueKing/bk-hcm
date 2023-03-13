@@ -20,6 +20,8 @@
 package huawei
 
 import (
+	"strings"
+
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
@@ -89,6 +91,9 @@ func (h *HuaWei) ListDisk(kt *kit.Kit, opt *disk.HuaWeiDiskListOption) ([]model.
 
 	resp, err := client.ListVolumes(req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return make([]model.VolumeDetail, 0), nil
+		}
 		logs.Errorf("list huawei disk failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}

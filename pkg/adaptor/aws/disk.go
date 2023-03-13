@@ -20,6 +20,8 @@
 package aws
 
 import (
+	"strings"
+
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
@@ -92,6 +94,9 @@ func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume,
 
 	resp, err := client.DescribeVolumesWithContext(kt.Ctx, req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return make([]*ec2.Volume, 0), nil, nil
+		}
 		logs.Errorf("list aws security group failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, nil, err
 	}

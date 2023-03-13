@@ -26,6 +26,7 @@ import (
 	typcore "hcm/pkg/adaptor/types/core"
 	typesdisk "hcm/pkg/adaptor/types/disk"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -33,7 +34,7 @@ import (
 
 // SyncHuaWeiDisk ...
 func (svc *syncDiskSvc) SyncHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(disk.SyncHuaWeiDiskOption)
+	req := new(sync.SyncHuaWeiDiskReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -112,7 +113,7 @@ func (svc *syncDiskSvc) SyncHuaWeiDisk(cts *rest.Contexts) (interface{}, error) 
 }
 
 func (svc *syncDiskSvc) deleteHuaWeiDisk(cts *rest.Contexts, client *huawei.HuaWei,
-	req *disk.SyncHuaWeiDiskOption, deleteIDs []string) error {
+	req *sync.SyncHuaWeiDiskReq, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

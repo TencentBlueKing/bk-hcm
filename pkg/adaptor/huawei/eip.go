@@ -20,6 +20,8 @@
 package huawei
 
 import (
+	"strings"
+
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -60,6 +62,9 @@ func (h *HuaWei) ListEip(kt *kit.Kit, opt *eip.HuaWeiEipListOption) (*eip.HuaWei
 
 	resp, err := client.ListPublicips(req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return new(eip.HuaWeiEipListResult), nil
+		}
 		logs.Errorf("list huawei eip failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}

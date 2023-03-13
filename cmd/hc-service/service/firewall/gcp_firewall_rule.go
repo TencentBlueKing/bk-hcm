@@ -32,6 +32,7 @@ import (
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
@@ -344,7 +345,7 @@ func (f *firewall) getVpcIDByCloudVpcID(kt *kit.Kit, cloudVpcID string) (string,
 
 // SyncGcpFirewallRule sync gcp to hcm
 func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.GcpFirewallSyncReq)
+	req := new(sync.GcpFirewallSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

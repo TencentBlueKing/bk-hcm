@@ -20,6 +20,8 @@
 package aws
 
 import (
+	"strings"
+
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/kit"
@@ -83,6 +85,9 @@ func (a *Aws) ListSubnet(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsSubnet
 
 	resp, err := client.DescribeSubnetsWithContext(kt.Ctx, req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return new(types.AwsSubnetListResult), nil
+		}
 		logs.Errorf("list aws subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}

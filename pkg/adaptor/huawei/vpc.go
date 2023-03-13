@@ -21,6 +21,7 @@ package huawei
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
@@ -118,6 +119,9 @@ func (h *HuaWei) ListVpc(kt *kit.Kit, opt *types.HuaWeiVpcListOption) (*types.Hu
 
 	resp, err := vpcClient.ListVpcs(req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return new(types.HuaWeiVpcListResult), nil
+		}
 		logs.Errorf("list huawei vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list huawei vpc failed, err: %v", err)
 	}

@@ -45,6 +45,10 @@ import (
 	vpcregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/region"
 )
 
+const (
+	ErrDataNotFound = "readObjectStart: expect { or n, but found"
+)
+
 type clientSet struct {
 	credentials *basic.Credentials
 }

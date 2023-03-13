@@ -20,18 +20,15 @@
 package disk
 
 import (
-	"fmt"
-
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
 	apicore "hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -39,28 +36,8 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// SyncHuaWeiDiskOption define sync huawei disk option.
-type SyncHuaWeiDiskOption struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
-}
-
-// Validate SyncHuaWeiDiskOption
-func (opt SyncHuaWeiDiskOption) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
-	}
-
-	return nil
-}
-
 // SyncHuaWeiDisk sync disk self
-func SyncHuaWeiDisk(kt *kit.Kit, req *SyncHuaWeiDiskOption,
+func SyncHuaWeiDisk(kt *kit.Kit, req *sync.SyncHuaWeiDiskReq,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -88,7 +65,7 @@ func SyncHuaWeiDisk(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 	return nil, nil
 }
 
-func getDatasFromDSForHuaWeiDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
+func getDatasFromDSForHuaWeiDiskSync(kt *kit.Kit, req *sync.SyncHuaWeiDiskReq,
 	dataCli *dataservice.Client) (map[string]*HuaWeiDiskSyncDS, error) {
 	start := 0
 	resultsHcm := make([]*datadisk.DiskExtResult[dataproto.HuaWeiDiskExtensionResult], 0)
@@ -112,6 +89,7 @@ func getDatasFromDSForHuaWeiDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 		results, err := dataCli.HuaWei.ListDisk(kt.Ctx, kt.Header(), dataReq)
 		if err != nil {
 			logs.Errorf("from data-service list disk failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 
 		resultsHcm = append(resultsHcm, results.Details...)
@@ -132,7 +110,7 @@ func getDatasFromDSForHuaWeiDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 	return dsMap, nil
 }
 
-func getDatasFromHuaWeiForDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
+func getDatasFromHuaWeiForDiskSync(kt *kit.Kit, req *sync.SyncHuaWeiDiskReq,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*HuaWeiDiskSyncDiff, error) {
 
 	client, err := ad.HuaWei(kt, req.AccountID)
@@ -168,7 +146,7 @@ func getDatasFromHuaWeiForDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 }
 
 func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, dsMap map[string]*HuaWeiDiskSyncDS,
-	req *SyncHuaWeiDiskOption, dataCli *dataservice.Client) error {
+	req *sync.SyncHuaWeiDiskReq, dataCli *dataservice.Client) error {
 
 	addCloudIDs := []string{}
 	for id := range cloudMap {
@@ -216,7 +194,7 @@ func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, ds
 	return nil
 }
 
-func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, req *SyncHuaWeiDiskOption,
+func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, req *sync.SyncHuaWeiDiskReq,
 	addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.HuaWeiDiskExtensionCreateReq]

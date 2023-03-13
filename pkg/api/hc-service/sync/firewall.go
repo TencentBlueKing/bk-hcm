@@ -17,37 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package eip
+package sync
 
 import (
-	eip "hcm/cmd/hc-service/logics/sync/eip"
-	"hcm/pkg/api/hc-service/sync"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/logs"
-	"hcm/pkg/rest"
+	"fmt"
+
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/validator"
 )
 
-// SyncAwsEip ...
-func (svc *syncEipSvc) SyncAwsEip(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.SyncAwsEipReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+// GcpFirewallSyncReq gcp firewall sync request.
+type GcpFirewallSyncReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate  gcp firewall sync request.
+func (req *GcpFirewallSyncReq) Validate() error {
+	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	opt := &eip.SyncAwsEipOption{
-		AccountID: req.AccountID,
-		Region:    req.Region,
-		CloudIDs:  req.CloudIDs,
-	}
-	_, err := eip.SyncAwsEip(cts.Kit, opt, svc.adaptor, svc.dataCli)
-	if err != nil {
-		logs.Errorf("request to sync aws eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
+	return validator.Validate.Struct(req)
 }

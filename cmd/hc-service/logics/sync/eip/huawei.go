@@ -109,6 +109,7 @@ func SyncHuaWeiEip(kt *kit.Kit, req *SyncHuaWeiEipOption,
 		updateIDs, dsMap, err := getHuaWeiEipDSSync(kt, cloudIDs, req, dataCli)
 		if err != nil {
 			logs.Errorf("request getHuaWeiEipDSSync failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 
 		if len(updateIDs) > 0 {
@@ -309,6 +310,10 @@ func getHuaWeiEipDSSync(kt *kit.Kit, cloudIDs []string, req *SyncHuaWeiEipOption
 
 	updateIDs := make([]string, 0)
 	dsMap := make(map[string]*HuaWeiDSEipSync)
+
+	if len(cloudIDs) <= 0 {
+		return updateIDs, dsMap, nil
+	}
 
 	start := 0
 	for {

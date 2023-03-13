@@ -20,9 +20,7 @@
 package hcservice
 
 import (
-	"fmt"
 	corecloud "hcm/pkg/api/core/cloud"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -67,22 +65,5 @@ type GcpFirewallRuleCreateReq struct {
 
 // Validate gcp firewall rule create req.
 func (req *GcpFirewallRuleCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// -------------------------- Sync --------------------------
-
-// GcpFirewallSyncReq gcp firewall sync request.
-type GcpFirewallSyncReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
-}
-
-// Validate  gcp firewall sync request.
-func (req *GcpFirewallSyncReq) Validate() error {
-	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
-	}
-
 	return validator.Validate.Struct(req)
 }

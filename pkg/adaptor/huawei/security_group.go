@@ -22,6 +22,7 @@ package huawei
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/criteria/errf"
@@ -169,6 +170,9 @@ func (h *HuaWei) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.HuaWeiListOpt
 
 	resp, err := client.ListSecurityGroups(req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return nil, nil, nil
+		}
 		logs.Errorf("update huawei security group failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, nil, err
 	}

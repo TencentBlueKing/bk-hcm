@@ -34,7 +34,7 @@ import (
 
 // SyncGcpCvm ...
 func (svc *syncCvmSvc) SyncGcpCvm(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.GcpCvmSyncReq)
+	req := new(sync.SyncGcpCvmReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -43,14 +43,13 @@ func (svc *syncCvmSvc) SyncGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	syncOpt := &cvm.SyncGcpCvmOption{
+	opt := &cvm.SyncGcpCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		Zone:      req.Zone,
 	}
-
-	if _, err := cvm.SyncGcpCvm(cts.Kit, svc.adaptor, svc.dataCli, syncOpt); err != nil {
-		logs.Errorf("request to sync gcp cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+	if _, err := cvm.SyncGcpCvm(cts.Kit, svc.adaptor, svc.dataCli, opt); err != nil {
+		logs.Errorf("request to sync gcp cvm failed, err: %v, opt: %v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
 

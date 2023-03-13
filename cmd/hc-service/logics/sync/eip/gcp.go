@@ -110,6 +110,7 @@ func SyncGcpEip(kt *kit.Kit, req *SyncGcpEipOption,
 		updateIDs, dsMap, err := getGcpEipDSSync(kt, cloudIDs, req, dataCli)
 		if err != nil {
 			logs.Errorf("request getGcpEipDSSync failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 
 		if len(updateIDs) > 0 {
@@ -349,6 +350,10 @@ func getGcpEipDSSync(kt *kit.Kit, cloudIDs []string, req *SyncGcpEipOption,
 
 	updateIDs := make([]string, 0)
 	dsMap := make(map[string]*GcpDSEipSync)
+
+	if len(cloudIDs) <= 0 {
+		return updateIDs, dsMap, nil
+	}
 
 	start := 0
 	for {

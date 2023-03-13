@@ -22,6 +22,7 @@ package aws
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types/cvm"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
@@ -115,6 +116,9 @@ func (a *Aws) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AwsListOption) (
 
 	resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return new(ec2.DescribeSecurityGroupsOutput), nil
+		}
 		logs.Errorf("list aws security group failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}

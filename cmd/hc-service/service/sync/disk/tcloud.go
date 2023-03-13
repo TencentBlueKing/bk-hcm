@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	typesdisk "hcm/pkg/adaptor/types/disk"
 	protodisk "hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -32,7 +33,7 @@ import (
 
 // SyncTCloudDisk ...
 func (svc *syncDiskSvc) SyncTCloudDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(disk.SyncTCloudDiskOption)
+	req := new(sync.SyncTCloudDiskReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -108,7 +109,7 @@ func (svc *syncDiskSvc) SyncTCloudDisk(cts *rest.Contexts) (interface{}, error) 
 }
 
 func (svc *syncDiskSvc) deleteTCloudDisk(cts *rest.Contexts, client *tcloud.TCloud,
-	req *disk.SyncTCloudDiskOption, deleteIDs []string) error {
+	req *sync.SyncTCloudDiskReq, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

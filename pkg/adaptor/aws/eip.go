@@ -21,6 +21,7 @@ package aws
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/criteria/errf"
@@ -65,6 +66,9 @@ func (a *Aws) ListEip(kt *kit.Kit, opt *eip.AwsEipListOption) (*eip.AwsEipListRe
 
 	resp, err := client.DescribeAddressesWithContext(kt.Ctx, req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return new(eip.AwsEipListResult), nil
+		}
 		logs.Errorf("list aws cloud eip failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list aws cloud eip failed, err: %v", err)
 	}

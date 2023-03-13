@@ -20,6 +20,8 @@
 package aws
 
 import (
+	"strings"
+
 	"hcm/pkg/adaptor/types/core"
 	routetable "hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/kit"
@@ -94,6 +96,9 @@ func (a *Aws) ListRouteTable(kt *kit.Kit, opt *routetable.AwsRouteTableListOptio
 
 	resp, err := client.DescribeRouteTablesWithContext(kt.Ctx, req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return new(routetable.AwsRouteTableListResult), nil
+		}
 		logs.Errorf("list aws route table failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}

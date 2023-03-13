@@ -20,19 +20,17 @@
 package securitygroup
 
 import (
-	"fmt"
-
 	"hcm/cmd/hc-service/logics/sync/logics"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -40,28 +38,8 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// SyncAwsSecurityGroupOption define sync aws sg and sg rule option.
-type SyncAwsSecurityGroupOption struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
-}
-
-// Validate SyncAwsSecurityGroupOption
-func (opt SyncAwsSecurityGroupOption) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
-	}
-
-	return nil
-}
-
 // SyncAwsSecurityGroup sync aws security group and rules to hcm.
-func SyncAwsSecurityGroup(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
+func SyncAwsSecurityGroup(kt *kit.Kit, req *sync.SyncAwsSecurityGroupReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -86,7 +64,7 @@ func SyncAwsSecurityGroup(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
 	return nil, nil
 }
 
-func getDatasFromDSForAwsSGSync(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
+func getDatasFromDSForAwsSGSync(kt *kit.Kit, req *sync.SyncAwsSecurityGroupReq,
 	dataCli *dataservice.Client) (map[string]*AwsSecurityGroupSyncDS, error) {
 
 	start := 0
@@ -140,7 +118,7 @@ func getDatasFromDSForAwsSGSync(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
 }
 
 func getDatasFromAwsForSecurityGroupSync(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient,
-	req *SyncAwsSecurityGroupOption) (map[string]*SecurityGroupSyncAwsDiff, error) {
+	req *sync.SyncAwsSecurityGroupReq) (map[string]*SecurityGroupSyncAwsDiff, error) {
 
 	client, err := ad.Aws(kt, req.AccountID)
 	if err != nil {
@@ -161,17 +139,19 @@ func getDatasFromAwsForSecurityGroupSync(kt *kit.Kit, ad *cloudclient.CloudAdapt
 	}
 
 	cloudMap := make(map[string]*SecurityGroupSyncAwsDiff)
-	for _, one := range result.SecurityGroups {
-		sg := new(SecurityGroupSyncAwsDiff)
-		sg.SecurityGroup = one
-		cloudMap[*one.GroupId] = sg
+	if result != nil {
+		for _, one := range result.SecurityGroups {
+			sg := new(SecurityGroupSyncAwsDiff)
+			sg.SecurityGroup = one
+			cloudMap[*one.GroupId] = sg
+		}
 	}
 
 	return cloudMap, nil
 }
 
 func diffAwsSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncAwsDiff, dsMap map[string]*AwsSecurityGroupSyncDS,
-	req *SyncAwsSecurityGroupOption, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
+	req *sync.SyncAwsSecurityGroupReq, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
 
 	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
@@ -241,7 +221,7 @@ func diffAwsSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyn
 }
 
 func diffAwsSecurityGroupSyncAdd(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncAwsDiff,
-	req *SyncAwsSecurityGroupOption, addCloudIDs []string, dataCli *dataservice.Client, ad *cloudclient.CloudAdaptorClient) ([]string, error) {
+	req *sync.SyncAwsSecurityGroupReq, addCloudIDs []string, dataCli *dataservice.Client, ad *cloudclient.CloudAdaptorClient) ([]string, error) {
 
 	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.AwsSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.AwsSecurityGroupExtension]{},
@@ -322,7 +302,7 @@ func isAwsSGChange(db *AwsSecurityGroupSyncDS, cloud *SecurityGroupSyncAwsDiff, 
 }
 
 func diffAwsSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncAwsDiff, dsMap map[string]*AwsSecurityGroupSyncDS,
-	updateCloudIDs []string, dataCli *dataservice.Client, req *SyncAwsSecurityGroupOption, ad *cloudclient.CloudAdaptorClient) error {
+	updateCloudIDs []string, dataCli *dataservice.Client, req *sync.SyncAwsSecurityGroupReq, ad *cloudclient.CloudAdaptorClient) error {
 
 	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.AwsSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.AwsSecurityGroupExtension]{},

@@ -48,6 +48,9 @@ func (h *HuaWei) ListNetworkInterface(kt *kit.Kit, opt *typesniproto.HuaWeiNILis
 	req.ServerId = opt.ServerID
 	resp, err := client.ListServerInterfaces(req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return new(typesniproto.HuaWeiInterfaceListResult), nil
+		}
 		logs.Errorf("list huawei network interface failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}

@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	securitygroup "hcm/cmd/hc-service/logics/sync/security-group"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -29,7 +30,7 @@ import (
 // SyncAzureSecurityGroup sync azure security group to hcm.
 func (svc *syncSecurityGroupSvc) SyncAzureSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(securitygroup.SyncAzureSecurityGroupOption)
+	req := new(sync.SyncAzureSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

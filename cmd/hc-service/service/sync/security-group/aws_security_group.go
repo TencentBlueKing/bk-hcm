@@ -25,6 +25,7 @@ import (
 	typcore "hcm/pkg/adaptor/types/core"
 	typessg "hcm/pkg/adaptor/types/security-group"
 	hcservice "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -35,7 +36,7 @@ import (
 // SyncAwsSecurityGroup sync aws security group to hcm.
 func (svc *syncSecurityGroupSvc) SyncAwsSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(securitygroup.SyncAwsSecurityGroupOption)
+	req := new(sync.SyncAwsSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -115,7 +116,7 @@ func (svc *syncSecurityGroupSvc) SyncAwsSecurityGroup(cts *rest.Contexts) (inter
 }
 
 func (svc *syncSecurityGroupSvc) deleteAwsSG(cts *rest.Contexts, client *aws.Aws,
-	req *securitygroup.SyncAwsSecurityGroupOption, deleteIDs []string) error {
+	req *sync.SyncAwsSecurityGroupReq, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

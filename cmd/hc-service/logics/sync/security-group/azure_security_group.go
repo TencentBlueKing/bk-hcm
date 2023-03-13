@@ -20,17 +20,15 @@
 package securitygroup
 
 import (
-	"fmt"
-
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	typescore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -38,28 +36,8 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// SyncAzureSecurityGroupOption define sync azure sg and sg rule option.
-type SyncAzureSecurityGroupOption struct {
-	AccountID         string   `json:"account_id" validate:"required"`
-	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
-	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
-}
-
-// Validate SyncAzureSecurityGroupOption
-func (opt SyncAzureSecurityGroupOption) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
-	}
-
-	return nil
-}
-
 // SyncAzureSecurityGroup sync azure security group and rules to hcm.
-func SyncAzureSecurityGroup(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
+func SyncAzureSecurityGroup(kt *kit.Kit, req *sync.SyncAzureSecurityGroupReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -84,7 +62,7 @@ func SyncAzureSecurityGroup(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 	return nil, nil
 }
 
-func getDatasFromAzureForSecurityGroupSync(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
+func getDatasFromAzureForSecurityGroupSync(kt *kit.Kit, req *sync.SyncAzureSecurityGroupReq,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*SecurityGroupSyncAzureDiff, error) {
 
 	client, err := ad.Azure(kt, req.AccountID)
@@ -115,7 +93,7 @@ func getDatasFromAzureForSecurityGroupSync(kt *kit.Kit, req *SyncAzureSecurityGr
 	return cloudMap, nil
 }
 
-func getDatasFromAzureDSForSecurityGroupSync(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
+func getDatasFromAzureDSForSecurityGroupSync(kt *kit.Kit, req *sync.SyncAzureSecurityGroupReq,
 	dataCli *dataservice.Client) (map[string]*AzureSecurityGroupSyncDS, error) {
 
 	start := 0
@@ -177,7 +155,7 @@ func getDatasFromAzureDSForSecurityGroupSync(kt *kit.Kit, req *SyncAzureSecurity
 }
 
 func diffAzureSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncAzureDiff, dsMap map[string]*AzureSecurityGroupSyncDS,
-	req *SyncAzureSecurityGroupOption, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
+	req *sync.SyncAzureSecurityGroupReq, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
 
 	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
@@ -247,7 +225,7 @@ func diffAzureSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupS
 }
 
 func diffAzureSecurityGroupSyncAdd(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncAzureDiff,
-	req *SyncAzureSecurityGroupOption, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+	req *sync.SyncAzureSecurityGroupReq, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 
 	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.AzureSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.AzureSecurityGroupExtension]{},
@@ -319,28 +297,11 @@ func isAzureSGChange(db *AzureSecurityGroupSyncDS, cloud *SecurityGroupSyncAzure
 		return true
 	}
 
-	cloudSubnetIDs := make([]string, 0)
-	if len(cloud.SecurityGroup.Properties.Subnets) > 0 {
-		for _, v := range cloud.SecurityGroup.Properties.Subnets {
-			if v != nil {
-				cloudSubnetIDs = append(cloudSubnetIDs, *v.ID)
-			}
-		}
-	}
-	cloudNetworkInterfaceIDs := make([]string, 0)
-	if len(cloud.SecurityGroup.Properties.NetworkInterfaces) > 0 {
-		for _, v := range cloud.SecurityGroup.Properties.NetworkInterfaces {
-			if v != nil {
-				cloudNetworkInterfaceIDs = append(cloudNetworkInterfaceIDs, *v.ID)
-			}
-		}
-	}
-
 	return false
 }
 
 func diffAzureSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncAzureDiff, dsMap map[string]*AzureSecurityGroupSyncDS,
-	updateCloudIDs []string, dataCli *dataservice.Client, req *SyncAzureSecurityGroupOption) error {
+	updateCloudIDs []string, dataCli *dataservice.Client, req *sync.SyncAzureSecurityGroupReq) error {
 
 	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.AzureSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.AzureSecurityGroupExtension]{},
@@ -351,22 +312,6 @@ func diffAzureSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*Security
 			continue
 		}
 
-		cloudSubnetIDs := make([]string, 0)
-		if len(cloudMap[id].SecurityGroup.Properties.Subnets) > 0 {
-			for _, v := range cloudMap[id].SecurityGroup.Properties.Subnets {
-				if v != nil {
-					cloudSubnetIDs = append(cloudSubnetIDs, *v.ID)
-				}
-			}
-		}
-		cloudNetworkInterfaceIDs := make([]string, 0)
-		if len(cloudMap[id].SecurityGroup.Properties.NetworkInterfaces) > 0 {
-			for _, v := range cloudMap[id].SecurityGroup.Properties.NetworkInterfaces {
-				if v != nil {
-					cloudNetworkInterfaceIDs = append(cloudNetworkInterfaceIDs, *v.ID)
-				}
-			}
-		}
 		securityGroup := protocloud.SecurityGroupBatchUpdate[corecloud.AzureSecurityGroupExtension]{
 			ID:   dsMap[id].HcSecurityGroup.ID,
 			Name: converter.PtrToVal(cloudMap[id].SecurityGroup.Name),

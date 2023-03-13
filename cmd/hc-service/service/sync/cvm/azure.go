@@ -31,7 +31,7 @@ import (
 
 // SyncAzureCvm ...
 func (svc *syncCvmSvc) SyncAzureCvm(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.AzureSyncReq)
+	req := new(sync.SyncAzureCvmReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -40,12 +40,13 @@ func (svc *syncCvmSvc) SyncAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	syncOpt := &cvm.SyncAzureCvmOption{
+	opt := &cvm.SyncAzureCvmOption{
 		AccountID:         req.AccountID,
 		ResourceGroupName: req.ResourceGroupName,
+		CloudIDs:          req.CloudIDs,
 	}
-	if _, err := cvm.SyncAzureCvm(cts.Kit, svc.adaptor, svc.dataCli, syncOpt); err != nil {
-		logs.Errorf("request to sync azure cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+	if _, err := cvm.SyncAzureCvm(cts.Kit, svc.adaptor, svc.dataCli, opt); err != nil {
+		logs.Errorf("request to sync azure cvm failed, err: %v, opt: %v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
 

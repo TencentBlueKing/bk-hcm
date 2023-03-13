@@ -21,6 +21,7 @@ package disk
 
 import (
 	disk "hcm/cmd/hc-service/logics/sync/disk"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -28,7 +29,7 @@ import (
 
 // SyncAzureDisk ...
 func (svc *syncDiskSvc) SyncAzureDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(disk.SyncAzureDiskOption)
+	req := new(sync.SyncAzureDiskReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

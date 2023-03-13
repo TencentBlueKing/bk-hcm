@@ -32,7 +32,7 @@ import (
 
 // SyncHuaWeiCvm ...
 func (svc *syncCvmSvc) SyncHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.HuaWeiSyncReq)
+	req := new(sync.SyncHuaWeiCvmReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -41,12 +41,12 @@ func (svc *syncCvmSvc) SyncHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	syncOpt := &cvm.SyncHuaWeiCvmOption{
+	opt := &cvm.SyncHuaWeiCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
+		CloudIDs:  req.CloudIDs,
 	}
-
-	_, err := cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.adaptor, svc.dataCli)
+	_, err := cvm.SyncHuaWeiCvm(cts.Kit, opt, svc.adaptor, svc.dataCli)
 	if err != nil {
 		logs.Errorf("request to sync huawei cvm all rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

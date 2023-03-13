@@ -21,6 +21,7 @@ package eip
 
 import (
 	eip "hcm/cmd/hc-service/logics/sync/eip"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -28,7 +29,7 @@ import (
 
 // SyncTCloudEip ...
 func (svc *syncEipSvc) SyncTCloudEip(cts *rest.Contexts) (interface{}, error) {
-	req := new(eip.SyncTCloudEipOption)
+	req := new(sync.SyncTCloudEipReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -37,7 +38,12 @@ func (svc *syncEipSvc) SyncTCloudEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	_, err := eip.SyncTCloudEip(cts.Kit, req, svc.adaptor, svc.dataCli)
+	opt := &eip.SyncTCloudEipOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  req.CloudIDs,
+	}
+	_, err := eip.SyncTCloudEip(cts.Kit, opt, svc.adaptor, svc.dataCli)
 	if err != nil {
 		logs.Errorf("request to sync tcloud eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

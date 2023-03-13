@@ -28,39 +28,17 @@ import (
 	apicore "hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 )
 
-// SyncGcpDiskOption define sync gcp disk option.
-type SyncGcpDiskOption struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Zone      string   `json:"zone" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
-	SelfLinks []string `json:"self_links" validate:"omitempty"`
-}
-
-// Validate SyncGcpDiskOption
-func (opt SyncGcpDiskOption) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
-	}
-
-	return nil
-}
-
 // SyncGcpDisk sync disk self
-func SyncGcpDisk(kt *kit.Kit, req *SyncGcpDiskOption,
+func SyncGcpDisk(kt *kit.Kit, req *sync.SyncGcpDiskReq,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -88,7 +66,7 @@ func SyncGcpDisk(kt *kit.Kit, req *SyncGcpDiskOption,
 	return nil, nil
 }
 
-func getDatasFromDSForGcpDiskSync(kt *kit.Kit, req *SyncGcpDiskOption,
+func getDatasFromDSForGcpDiskSync(kt *kit.Kit, req *sync.SyncGcpDiskReq,
 	dataCli *dataservice.Client) (map[string]*GcpDiskSyncDS, error) {
 	start := 0
 	resultsHcm := make([]*datadisk.DiskExtResult[dataproto.GcpDiskExtensionResult], 0)
@@ -138,7 +116,7 @@ func getDatasFromDSForGcpDiskSync(kt *kit.Kit, req *SyncGcpDiskOption,
 	return dsMap, nil
 }
 
-func getDatasFromGcpForDiskSync(kt *kit.Kit, req *SyncGcpDiskOption,
+func getDatasFromGcpForDiskSync(kt *kit.Kit, req *sync.SyncGcpDiskReq,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*GcpDiskSyncDiff, error) {
 
 	client, err := ad.Gcp(kt, req.AccountID)
@@ -193,7 +171,7 @@ func getDatasFromGcpForDiskSync(kt *kit.Kit, req *SyncGcpDiskOption,
 }
 
 func diffGcpDiskSync(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
-	dsMap map[string]*GcpDiskSyncDS, req *SyncGcpDiskOption, dataCli *dataservice.Client) error {
+	dsMap map[string]*GcpDiskSyncDS, req *sync.SyncGcpDiskReq, dataCli *dataservice.Client) error {
 
 	addCloudIDs := []string{}
 	for id := range cloudMap {
@@ -242,7 +220,7 @@ func diffGcpDiskSync(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 }
 
 func diffGcpDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
-	req *SyncGcpDiskOption, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+	req *sync.SyncGcpDiskReq, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.GcpDiskExtensionCreateReq]
 

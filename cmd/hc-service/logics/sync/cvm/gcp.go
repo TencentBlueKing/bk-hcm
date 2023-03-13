@@ -37,9 +37,11 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -61,8 +63,8 @@ func (opt SyncGcpCvmOption) Validate() error {
 		return err
 	}
 
-	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
 	}
 
 	return nil
@@ -71,6 +73,10 @@ func (opt SyncGcpCvmOption) Validate() error {
 // SyncGcpCvm sync cvm self
 func SyncGcpCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client,
 	req *SyncGcpCvmOption) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	client, err := ad.Gcp(kt, req.AccountID)
 	if err != nil {
@@ -643,6 +649,10 @@ func getGcpCvmDSSync(kt *kit.Kit, cloudIDs []string, req *SyncGcpCvmOption,
 	updateIDs := make([]string, 0)
 	dsMap := make(map[string]*GcpDSCvmSync)
 
+	if len(cloudIDs) <= 0 {
+		return updateIDs, dsMap, nil
+	}
+
 	start := 0
 	for {
 		dataReq := &dataproto.CvmListReq{
@@ -858,7 +868,7 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		for _, id := range diskSLMap {
 			diskSelfLinks = append(diskSelfLinks, id.RelID)
 		}
-		req := &disk.SyncGcpDiskOption{
+		req := &sync.SyncGcpDiskReq{
 			AccountID: req.AccountID,
 			Zone:      req.Zone,
 			SelfLinks: diskSelfLinks,

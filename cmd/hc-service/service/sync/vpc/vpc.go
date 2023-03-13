@@ -39,11 +39,11 @@ func InitSyncVpcService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
 	// vpc sync
-	h.Add("TCloudVpcSync", "POST", "/vendors/tcloud/vpc/sync", v.SyncTCloudVpc)
-	h.Add("HuaWeiVpcSync", "POST", "/vendors/huawei/vpc/sync", v.SyncHuaWeiVpc)
-	h.Add("AwsVpcSync", "POST", "/vendors/aws/vpc/sync", v.SyncAwsVpc)
-	h.Add("AzureVpcSync", "POST", "/vendors/azure/vpc/sync", v.SyncAzureVpc)
-	h.Add("GcpVpcSync", "POST", "/vendors/gcp/vpc/sync", v.SyncGcpVpc)
+	h.Add("TCloudVpcSync", "POST", "/vendors/tcloud/vpcs/sync", v.SyncTCloudVpc)
+	h.Add("HuaWeiVpcSync", "POST", "/vendors/huawei/vpcs/sync", v.SyncHuaWeiVpc)
+	h.Add("AwsVpcSync", "POST", "/vendors/aws/vpcs/sync", v.SyncAwsVpc)
+	h.Add("AzureVpcSync", "POST", "/vendors/azure/vpcs/sync", v.SyncAzureVpc)
+	h.Add("GcpVpcSync", "POST", "/vendors/gcp/vpcs/sync", v.SyncGcpVpc)
 
 	h.Load(cap.WebService)
 }

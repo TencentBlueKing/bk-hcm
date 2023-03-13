@@ -62,6 +62,9 @@ func (h *HuaWei) ListCvm(kt *kit.Kit, opt *typecvm.HuaWeiListOption) (*[]model.S
 
 	resp, err := client.ListServersDetails(req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return nil, nil
+		}
 		logs.Errorf("list huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}

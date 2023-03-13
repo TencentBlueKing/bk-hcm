@@ -21,6 +21,7 @@ package huawei
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types/core"
 	routetable "hcm/pkg/adaptor/types/route-table"
@@ -119,6 +120,9 @@ func (h *HuaWei) ListRouteTableIDs(kt *kit.Kit, opt *routetable.HuaWeiRouteTable
 
 	resp, err := vpcClient.ListRouteTables(req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return make([]string, 0), nil
+		}
 		logs.Errorf("list huawei route table failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list huawei route table failed, err: %v", err)
 	}

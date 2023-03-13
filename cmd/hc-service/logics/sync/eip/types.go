@@ -118,7 +118,7 @@ func GetHcEipDatas(kt *kit.Kit, req *protoeip.EipSyncReq,
 
 		results, err := dataCli.Global.ListEip(kt.Ctx, kt.Header(), dataReq)
 		if err != nil {
-			logs.Errorf("from data-service list cvm failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("from data-service list eip failed, err: %v, rid: %s", err, kt.Rid)
 			return dsMap, err
 		}
 

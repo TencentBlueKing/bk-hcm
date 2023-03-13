@@ -33,7 +33,7 @@ import (
 
 // SyncAwsCvm ...
 func (svc *syncCvmSvc) SyncAwsCvm(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.AwsSyncReq)
+	req := new(sync.SyncAwsCvmReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -42,12 +42,13 @@ func (svc *syncCvmSvc) SyncAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	syncOpt := &cvm.SyncAwsCvmOption{
+	opt := &cvm.SyncAwsCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
+		CloudIDs:  req.CloudIDs,
 	}
-	if _, err := cvm.SyncAwsCvm(cts.Kit, svc.adaptor, svc.dataCli, syncOpt); err != nil {
-		logs.Errorf("request to sync aws cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+	if _, err := cvm.SyncAwsCvm(cts.Kit, svc.adaptor, svc.dataCli, opt); err != nil {
+		logs.Errorf("request to sync aws cvm failed, err: %v, opt: %v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
 

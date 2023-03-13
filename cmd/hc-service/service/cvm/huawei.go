@@ -33,6 +33,7 @@ import (
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	apisync "hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -428,7 +429,7 @@ func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs [
 		cloudIDs = append(cloudIDs, one.CloudID)
 	}
 
-	req := &disk.SyncHuaWeiDiskOption{
+	req := &apisync.SyncHuaWeiDiskReq{
 		AccountID: accountID,
 		Region:    region,
 		CloudIDs:  cloudIDs,

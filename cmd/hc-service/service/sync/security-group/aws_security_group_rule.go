@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	securitygroup "hcm/cmd/hc-service/logics/sync/security-group"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -33,7 +34,7 @@ func (svc *syncSecurityGroupSvc) SyncAwsSGRule(cts *rest.Contexts) (interface{},
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
 
-	req := new(securitygroup.SyncAwsSecurityGroupOption)
+	req := new(sync.SyncAwsSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

@@ -22,6 +22,7 @@ package aws
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
@@ -61,6 +62,9 @@ func (a *Aws) ListCvm(kt *kit.Kit, opt *typecvm.AwsListOption) (*ec2.DescribeIns
 
 	resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return new(ec2.DescribeInstancesOutput), nil
+		}
 		return nil, fmt.Errorf("list aws cvm instances failed, err: %v", err)
 	}
 

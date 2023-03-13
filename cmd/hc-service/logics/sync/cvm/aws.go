@@ -36,9 +36,11 @@ import (
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -60,8 +62,8 @@ func (opt SyncAwsCvmOption) Validate() error {
 		return err
 	}
 
-	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
 	}
 
 	return nil
@@ -70,6 +72,10 @@ func (opt SyncAwsCvmOption) Validate() error {
 // SyncAwsCvm sync cvm self
 func SyncAwsCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client,
 	req *SyncAwsCvmOption) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	client, err := ad.Aws(kt, req.AccountID)
 	if err != nil {
@@ -103,18 +109,22 @@ func SyncAwsCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *datase
 
 		cloudMap := make(map[string]*AwsCvmSync)
 		cloudIDs := make([]string, 0)
-		for _, reservation := range datas.Reservations {
-			for _, data := range reservation.Instances {
-				cvmSync := new(AwsCvmSync)
-				cvmSync.IsUpdate = false
-				cvmSync.Cvm = data
-				cloudMap[*data.InstanceId] = cvmSync
-				cloudIDs = append(cloudIDs, *data.InstanceId)
-				cloudAllIDs[*data.InstanceId] = true
+		if datas != nil {
+			for _, reservation := range datas.Reservations {
+				if reservation != nil {
+					for _, data := range reservation.Instances {
+						cvmSync := new(AwsCvmSync)
+						cvmSync.IsUpdate = false
+						cvmSync.Cvm = data
+						cloudMap[*data.InstanceId] = cvmSync
+						cloudIDs = append(cloudIDs, *data.InstanceId)
+						cloudAllIDs[*data.InstanceId] = true
+					}
+				}
 			}
 		}
 
-		if len(cloudIDs) <= 0 {
+		if datas == nil || len(cloudIDs) <= 0 {
 			break
 		}
 
@@ -153,7 +163,7 @@ func SyncAwsCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *datase
 			}
 		}
 
-		if datas.NextToken == nil {
+		if datas == nil || datas.NextToken == nil {
 			break
 		}
 		nextToken = *datas.NextToken
@@ -201,11 +211,15 @@ func SyncAwsCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *datase
 
 			for _, id := range deleteIDs {
 				realDeleteFlag := true
-				for _, reservation := range datas.Reservations {
-					for _, data := range reservation.Instances {
-						if *data.InstanceId == id {
-							realDeleteFlag = false
-							break
+				if datas != nil {
+					for _, reservation := range datas.Reservations {
+						if reservation != nil {
+							for _, data := range reservation.Instances {
+								if *data.InstanceId == id {
+									realDeleteFlag = false
+									break
+								}
+							}
 						}
 					}
 				}
@@ -215,7 +229,7 @@ func SyncAwsCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *datase
 				}
 			}
 
-			if datas.NextToken == nil {
+			if datas == nil || datas.NextToken == nil {
 				break
 			}
 			nextToken = *datas.NextToken
@@ -669,6 +683,10 @@ func getAwsCvmDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAwsCvmOption,
 	updateIDs := make([]string, 0)
 	dsMap := make(map[string]*AwsDSCvmSync)
 
+	if len(cloudIDs) <= 0 {
+		return updateIDs, dsMap, nil
+	}
+
 	start := 0
 	for {
 		dataReq := &dataproto.CvmListReq{
@@ -858,7 +876,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 		for _, id := range cloudSGMap {
 			sGCloudIDs = append(sGCloudIDs, id.RelID)
 		}
-		req := &securitygroup.SyncAwsSecurityGroupOption{
+		req := &sync.SyncAwsSecurityGroupReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  sGCloudIDs,
@@ -875,7 +893,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 		for _, id := range cloudDiskMap {
 			diskCloudIDs = append(diskCloudIDs, id.RelID)
 		}
-		req := &disk.SyncAwsDiskOption{
+		req := &sync.SyncAwsDiskReq{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  diskCloudIDs,

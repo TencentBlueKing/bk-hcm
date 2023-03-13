@@ -29,6 +29,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
+const (
+	ErrDataNotFound = "InvalidInstanceID.Malformed: Invalid id"
+)
+
 type clientSet struct {
 	credentials *credentials.Credentials
 }

@@ -36,9 +36,11 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -60,8 +62,8 @@ func (opt SyncAzureCvmOption) Validate() error {
 		return err
 	}
 
-	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
 	}
 
 	return nil
@@ -70,6 +72,10 @@ func (opt SyncAzureCvmOption) Validate() error {
 // SyncAzureCvm sync cvm self
 func SyncAzureCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client,
 	req *SyncAzureCvmOption) (interface{}, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	client, err := ad.Azure(kt, req.AccountID)
 	if err != nil {
@@ -89,10 +95,6 @@ func SyncAzureCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *data
 	if err != nil {
 		logs.Errorf("request adaptor to list azure cvm failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
-	}
-
-	if len(datas) <= 0 {
-		return nil, nil
 	}
 
 	cloudMap := make(map[string]*AzureCvmSync)
@@ -515,18 +517,18 @@ func syncAzureCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 			Extension: &corecvm.AzureCvmExtension{
 				ResourceGroupName: req.ResourceGroupName,
 				AdditionalCapabilities: &corecvm.AzureAdditionalCapabilities{
-					HibernationEnabled: cloudMap[id].Cvm.Properties.AdditionalCapabilities.HibernationEnabled,
-					UltraSSDEnabled:    cloudMap[id].Cvm.Properties.AdditionalCapabilities.UltraSSDEnabled,
+					HibernationEnabled: nil,
+					UltraSSDEnabled:    nil,
 				},
 				BillingProfile: &corecvm.AzureBillingProfile{
-					MaxPrice: cloudMap[id].Cvm.Properties.BillingProfile.MaxPrice,
+					MaxPrice: nil,
 				},
 				EvictionPolicy: (*string)(cloudMap[id].Cvm.Properties.EvictionPolicy),
 				HardwareProfile: &corecvm.AzureHardwareProfile{
-					VmSize: (*string)(cloudMap[id].Cvm.Properties.HardwareProfile.VMSize),
+					VmSize: nil,
 					VmSizeProperties: &corecvm.AzureVmSizeProperties{
-						VCPUsAvailable: cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties.VCPUsAvailable,
-						VCPUsPerCore:   cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties.VCPUsPerCore,
+						VCPUsAvailable: nil,
+						VCPUsPerCore:   nil,
 					},
 				},
 				LicenseType:              cloudMap[id].Cvm.Properties.LicenseType,
@@ -538,6 +540,24 @@ func syncAzureCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 				},
 				Zones: converter.PtrToSlice(cloudMap[id].Cvm.Zones),
 			},
+		}
+
+		if cloudMap[id].Cvm.Properties.AdditionalCapabilities != nil {
+			cvm.Extension.AdditionalCapabilities.HibernationEnabled = cloudMap[id].Cvm.Properties.AdditionalCapabilities.HibernationEnabled
+			cvm.Extension.AdditionalCapabilities.UltraSSDEnabled = cloudMap[id].Cvm.Properties.AdditionalCapabilities.UltraSSDEnabled
+		}
+
+		if cloudMap[id].Cvm.Properties.BillingProfile != nil {
+			cvm.Extension.BillingProfile.MaxPrice = cloudMap[id].Cvm.Properties.BillingProfile.MaxPrice
+		}
+
+		if cloudMap[id].Cvm.Properties.HardwareProfile != nil {
+			cvm.Extension.HardwareProfile.VmSize = (*string)(cloudMap[id].Cvm.Properties.HardwareProfile.VMSize)
+		}
+
+		if cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties != nil {
+			cvm.Extension.HardwareProfile.VmSizeProperties.VCPUsAvailable = cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties.VCPUsAvailable
+			cvm.Extension.HardwareProfile.VmSizeProperties.VCPUsPerCore = cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties.VCPUsPerCore
 		}
 
 		lists = append(lists, cvm)
@@ -693,6 +713,10 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 
 		if cloudMap[id].Cvm.Properties.BillingProfile != nil {
 			cvm.Extension.BillingProfile.MaxPrice = cloudMap[id].Cvm.Properties.BillingProfile.MaxPrice
+		}
+
+		if cloudMap[id].Cvm.Properties.HardwareProfile != nil {
+			cvm.Extension.HardwareProfile.VmSize = (*string)(cloudMap[id].Cvm.Properties.HardwareProfile.VMSize)
 		}
 
 		if cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties != nil {
@@ -926,7 +950,7 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 		for _, id := range cloudDiskMap {
 			diskCloudIDs = append(diskCloudIDs, id.RelID)
 		}
-		req := &disk.SyncAzureDiskOption{
+		req := &sync.SyncAzureDiskReq{
 			AccountID:         req.AccountID,
 			ResourceGroupName: req.ResourceGroupName,
 			CloudIDs:          diskCloudIDs,

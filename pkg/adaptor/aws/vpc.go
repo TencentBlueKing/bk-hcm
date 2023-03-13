@@ -20,6 +20,8 @@
 package aws
 
 import (
+	"strings"
+
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
@@ -85,6 +87,9 @@ func (a *Aws) ListVpc(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsVpcListRe
 	}
 	resp, err := client.DescribeVpcsWithContext(kt.Ctx, req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return new(types.AwsVpcListResult), nil
+		}
 		logs.Errorf("list aws vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}

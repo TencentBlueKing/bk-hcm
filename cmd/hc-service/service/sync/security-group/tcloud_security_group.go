@@ -25,6 +25,7 @@ import (
 	typcore "hcm/pkg/adaptor/types/core"
 	typessg "hcm/pkg/adaptor/types/security-group"
 	hcservice "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -33,7 +34,7 @@ import (
 // SyncTCloudSecurityGroup sync tcloud security group to hcm.
 func (svc *syncSecurityGroupSvc) SyncTCloudSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(securitygroup.SyncTCloudSecurityGroupOption)
+	req := new(sync.SyncTCloudSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -108,7 +109,7 @@ func (svc *syncSecurityGroupSvc) SyncTCloudSecurityGroup(cts *rest.Contexts) (in
 }
 
 func (svc *syncSecurityGroupSvc) deleteTCloudSG(cts *rest.Contexts, client *tcloud.TCloud,
-	req *securitygroup.SyncTCloudSecurityGroupOption, deleteIDs []string) error {
+	req *sync.SyncTCloudSecurityGroupReq, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

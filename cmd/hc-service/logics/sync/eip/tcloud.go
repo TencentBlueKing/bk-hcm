@@ -104,6 +104,7 @@ func SyncTCloudEip(kt *kit.Kit, req *SyncTCloudEipOption,
 		updateIDs, dsMap, err := getTCloudEipDSSync(kt, cloudIDs, req, dataCli)
 		if err != nil {
 			logs.Errorf("request getTCloudEipDSSync failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 
 		if len(updateIDs) > 0 {
@@ -294,6 +295,10 @@ func getTCloudEipDSSync(kt *kit.Kit, cloudIDs []string, req *SyncTCloudEipOption
 
 	updateIDs := make([]string, 0)
 	dsMap := make(map[string]*TCloudDSEipSync)
+
+	if len(cloudIDs) <= 0 {
+		return updateIDs, dsMap, nil
+	}
 
 	start := 0
 	for {

@@ -91,7 +91,7 @@ func (v *VpcClient) SyncVpc(ctx context.Context, h http.Header, req *hcservice.A
 	err := v.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/vpc/sync").
+		SubResourcef("/vpcs/sync").
 		WithHeaders(h).
 		Do().
 		Into(resp)

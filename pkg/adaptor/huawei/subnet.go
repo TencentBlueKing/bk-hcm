@@ -21,6 +21,7 @@ package huawei
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
@@ -114,6 +115,9 @@ func (h *HuaWei) ListSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetListOption) (*ty
 
 	resp, err := vpcClient.ListSubnets(req)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return new(types.HuaWeiSubnetListResult), nil
+		}
 		logs.Errorf("list huawei subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list huawei subnet failed, err: %v", err)
 	}

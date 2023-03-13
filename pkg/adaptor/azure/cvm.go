@@ -87,13 +87,17 @@ func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*arm
 		}
 
 		for _, one := range nextResult.Value {
-			if _, exist := idMap[*one.ID]; exist {
-				vms = append(vms, one)
-				delete(idMap, *one.ID)
+			if len(opt.CloudIDs) > 0 {
+				if _, exist := idMap[*one.ID]; exist {
+					vms = append(vms, one)
+					delete(idMap, *one.ID)
 
-				if len(idMap) == 0 {
-					return vms, nil
+					if len(idMap) == 0 {
+						return vms, nil
+					}
 				}
+			} else {
+				vms = append(vms, one)
 			}
 		}
 	}
