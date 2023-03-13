@@ -5,7 +5,7 @@ import {
   Ref,
 } from 'vue';
 
-const authVerifyData = ref<any>({ permissionAction: '', urlParams: '' });
+const authVerifyData = ref<any>({ permissionAction: {}, urlParams: {} });
 const permissionParams = ref({ system_id: '', actions: [] });
 
 // 权限hook
@@ -13,10 +13,10 @@ export function useVerify(showPermissionDialog?: Ref<boolean>) {
   const commonStore = useCommonStore();
 
   // 根据参数获取权限
-  const getAuthVerifyData = async (action: any[]) => {
-    if (!action) return;
+  const getAuthVerifyData = async (authData: any[]) => {
+    if (!authData) return;
     // 格式化参数
-    const params = action?.reduce((p, v) => {
+    const params = authData?.reduce((p, v) => {
       p.resources.push({
         action: v.action,
         resource_type: v.type,
@@ -36,9 +36,9 @@ export function useVerify(showPermissionDialog?: Ref<boolean>) {
       }, {});
       authVerifyData.value.urlParams = urlParams;
     }
-    // permissionAction 用于判断按钮状态
+    // permissionAction 用于判断按钮状态 仅针对操作按钮有用
     const permissionAction = res.data.results.reduce((p: any, e: any, i: number) => {    // 将数组转成对象
-      p[`${action[i].id}`] = e.authorized;
+      p[`${authData[i].id}`] = e.authorized;
       return p;
     }, {});
 
@@ -66,13 +66,10 @@ export function useVerify(showPermissionDialog?: Ref<boolean>) {
 
   // 处理鉴权 actionName根据接口返回值传入
   const handleAuth = (actionName: string) => {
-    if (!authVerifyData.value?.permission) return;
-    const actionItem = authVerifyData.value?.permission?.actions.filter((e: any) => e.id === actionName);
-    if (!actionItem.length) return;
-    permissionParams.value = {
-      system_id: authVerifyData.value?.permission.system_id,
-      actions: actionItem,
-    };
+    if (!authVerifyData.value?.permissionAction) return;
+    const actionItem = authVerifyData.value?.urlParams[actionName];
+    if (!actionItem) return;
+    permissionParams.value = actionItem;
     showPermissionDialog.value = true;
   };
 

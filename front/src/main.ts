@@ -14,7 +14,6 @@ import './assets/iconfont/style.css';
 import bkui from 'bkui-vue';
 // 全量引入 bkui-vue 样式
 import 'bkui-vue/dist/style.css';
-import { useVerify } from '@/hooks';
 
 const app = createApp(App);
 
@@ -28,13 +27,7 @@ app.use(i18n)
   .use(pinia)
   .use(bkui);
 
-const action = [
-  { type: 'account', action: 'import', id: 'account_import' },
-  { type: 'account', action: 'update', id: 'account_edit' },
-];
-
-const { getAuthVerifyData } = useVerify();    // 权限中心权限
-getAuthVerifyData(action);
+console.log(1234344342314);
 router.isReady().then(() => {
   app.mount('#app');
 });

@@ -13,34 +13,10 @@ import service from './module/service';
 import serviceInside from './module/service-inside';
 import business from './module/business';
 import i18n from '@/language/i18n';
-import http from '@/http';
-
 import { useCommonStore } from '@/store';
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+import { useVerify } from '@/hooks';
 
 const { t } = i18n.global;
-
-const authPagePath = ['/resource/account'];   // 需要鉴权的列表页
-const action = [{ type: 'account', action: 'find', id: 'account_find' }];
-
-// 修改符合格式的参数
-const getParams = (action: any) => {
-  const params = action?.reduce((p: any, v: any) => {
-    p.resources.push({
-      action: v.action,
-      resource_type: v.type,
-    });
-    return p;
-  }, { resources: [] });
-  return params;
-};
-
-
-// 管理全局列表权限变量
-const addAuthVerifyListParams = (data: any) => {
-  const commonStore = useCommonStore();
-  commonStore.addAuthVerifyParams(data);
-};
 
 
 const routes: RouteRecordRaw[] = [
@@ -76,27 +52,46 @@ const router = createRouter({
   routes,
 });
 
-
-router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
-  if (authPagePath.includes(to.path)) {
-    const params = getParams(action);
-    const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/auth/verify`, params);
-    const { permission } = res.data;
-    if (permission) {   // 没有权限
-      const actionItem = permission.actions.filter((e: any) => e.id === to.meta.action);
-      const routerParams = {
-        system_id: permission.system_id,
-        actions: actionItem,
-      };
-      addAuthVerifyListParams(routerParams);
+// 进入目标页面
+// eslint-disable-next-line max-len
+const toCurrentPage = (authVerifyData: any, currentFindAuthData: any, next: NavigationGuardNext, to?: RouteLocationNormalized) => {
+  console.log('currentFindAuthData', currentFindAuthData);
+  if (currentFindAuthData) {   // 当前页面需要鉴权
+    if (authVerifyData && !authVerifyData?.permissionAction[currentFindAuthData.id]) { // 当前页面没有权限
       next({
-        path: '/403',
+        name: '403',
+        params: {
+          id: currentFindAuthData.id,
+        },
       });
     } else {
       next();
     }
   } else {
-    next();
+    if (to && to.name === '403' && authVerifyData && authVerifyData?.permissionAction?.account_find) {      // 无权限用户切换到有权限用户时需要判断
+      next({
+        path: '/resource/account',
+      });
+    } else {
+      next();
+    }
+  }
+};
+
+
+router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
+  const commonStore = useCommonStore();
+  const { pageAuthData, authVerifyData } = commonStore;      // 所有需要检验的查看权限数据
+  const currentFindAuthData = pageAuthData.find((e: any) => e.path === to.path);
+
+  if (from.path === '/') { // 刷新或者首次进入请求权限接口
+    const { getAuthVerifyData } = useVerify();    // 权限中心权限
+    getAuthVerifyData(pageAuthData).then(() => {
+      const { authVerifyData } = commonStore;
+      toCurrentPage(authVerifyData, currentFindAuthData, next, to);
+    });
+  } else {
+    toCurrentPage(authVerifyData, currentFindAuthData, next);
   }
 });
 

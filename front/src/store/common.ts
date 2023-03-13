@@ -11,6 +11,11 @@ export const useCommonStore = defineStore({
     list: shallowRef([]),
     authVerifyData: null,
     authVerifyParams: null,
+    pageAuthData: [
+      { type: 'account', action: 'find', id: 'account_find', path: '/resource/account' }, // 如果是列表 需要加上path
+      { type: 'account', action: 'import', id: 'account_import' },
+      { type: 'account', action: 'update', id: 'account_edit' },
+    ],
   }),
   actions: {
     /**
@@ -33,9 +38,6 @@ export const useCommonStore = defineStore({
       return res.data;
     },
 
-    async addAuthVerifyParams(data: any) {
-      this.authVerifyParams = data;
-    },
     /**
      * @description: 管理全局的按钮是否disabled和获取跳转链接的参数
      * @param {any} data
