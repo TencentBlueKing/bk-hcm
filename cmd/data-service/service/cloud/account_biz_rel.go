@@ -96,6 +96,11 @@ func (a *accountSvc) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 
 	accounts := make([]*protocloud.AccountBizRelWithAccount, 0, len(details.Details))
 	for _, one := range details.Details {
+		// 过滤账号类型
+		if req.AccountType != "" && req.AccountType != one.Type {
+			continue
+		}
+
 		accounts = append(accounts, &protocloud.AccountBizRelWithAccount{
 			BaseAccount: corecloud.BaseAccount{
 				ID:            one.ID,

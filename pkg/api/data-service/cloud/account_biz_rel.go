@@ -23,6 +23,7 @@ import (
 	"time"
 
 	corecloud "hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
@@ -43,12 +44,23 @@ func (req *AccountBizRelUpdateReq) Validate() error {
 
 // AccountBizRelWithAccountListReq ...
 type AccountBizRelWithAccountListReq struct {
-	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required"`
+	BkBizIDs    []int64 `json:"bk_biz_ids" validate:"required"`
+	AccountType string  `json:"account_type" validate:"omitempty"`
 }
 
 // Validate ...
 func (req *AccountBizRelWithAccountListReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if req.AccountType != "" {
+		if err := enumor.AccountType(req.AccountType).Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type AccountBizRelWithAccountListResp struct {

@@ -28,6 +28,8 @@ import (
 // ListByBkBizID ...
 func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	accountType := cts.Request.QueryParameter("account_type")
+
 	if err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -35,7 +37,8 @@ func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&protocloud.AccountBizRelWithAccountListReq{
-			BkBizIDs: []int64{bkBizID},
+			BkBizIDs:    []int64{bkBizID},
+			AccountType: accountType,
 		},
 	)
 }
