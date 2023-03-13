@@ -59,6 +59,7 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("ListAccount", "POST", "/accounts/list", svc.ListAccount)
 	h.Add("ListAccountWithExtension", "POST", "/accounts/extensions/list", svc.ListAccountWithExtension)
 	h.Add("DeleteAccount", "DELETE", "/accounts", svc.DeleteAccount)
+	h.Add("DeleteValidate", "POST", "/accounts/{account_id}/delete/validate", svc.DeleteValidate)
 
 	h.Add("UpdateAccountBizRel", "PUT", "/account_biz_rels/accounts/{account_id}", svc.UpdateAccountBizRel)
 	h.Add("ListWithAccount", "POST", "/account_biz_rels/with/accounts/list", svc.ListWithAccount)
@@ -434,6 +435,12 @@ func (a *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 
 	delAccountIDs := make([]string, len(listResp.Details))
 	for index, one := range listResp.Details {
+		// 校验账号下是否还有资源存在
+		_, err = a.dao.Account().DeleteValidate(cts.Kit, one.ID)
+		if err != nil {
+			return nil, err
+		}
+
 		delAccountIDs[index] = one.ID
 	}
 
@@ -545,4 +552,19 @@ func (a *accountSvc) ListAccountWithExtension(cts *rest.Contexts) (interface{}, 
 	}
 
 	return &protocloud.AccountWithExtensionListResult{Details: details}, nil
+}
+
+// DeleteValidate account delete validate.
+func (a *accountSvc) DeleteValidate(cts *rest.Contexts) (interface{}, error) {
+	accountID := cts.PathParameter("account_id").String()
+	if len(accountID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "account_id is required")
+	}
+
+	validateResult, err := a.dao.Account().DeleteValidate(cts.Kit, accountID)
+	if err != nil {
+		return validateResult, err
+	}
+
+	return nil, nil
 }

@@ -56,7 +56,7 @@ func (s *Sys) GetSystemToken(ctx context.Context) (string, error) {
 3. 因为资源的名称在系统中是唯一的，所以可能遇到循环依赖的情况（如两个资源分别更新成对方的名字），此时需要引入一个中间变量进行二次更新
 
 综上，具体操作顺序如下：
-  1. 注册cc系统信息
+  1. 注册hcm系统信息
   2. 删除Action。该操作无依赖
   3. 更新ResourceType，先更新名字冲突的(包括需要删除的)为中间值，再更新其它的。该操作无依赖
   4. 新增ResourceType。该操作依赖于上一步中同名的ResourceType均已更新

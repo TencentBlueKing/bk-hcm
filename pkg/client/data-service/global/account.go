@@ -89,6 +89,29 @@ func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *prot
 	return resp.Data, nil
 }
 
+// DeleteValidate ...
+func (a *AccountClient) DeleteValidate(ctx context.Context, h http.Header, accountID string) (
+	map[string]uint64, error) {
+
+	resp := new(protocloud.AccountDeleteValidateResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		SubResourcef("/accounts/%s/delete/validate", accountID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return resp.Data, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // UpdateBizRel update account and biz rel api, only support put all biz for account_id.
 func (a *AccountClient) UpdateBizRel(ctx context.Context, h http.Header, accountID string,
 	request *protocloud.AccountBizRelUpdateReq) (interface{}, error) {

@@ -306,6 +306,12 @@ func (d *AccountDeleteReq) Validate() error {
 	return validator.Validate.Struct(d)
 }
 
+// AccountDeleteValidateResp ...
+type AccountDeleteValidateResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          map[string]uint64 `json:"data"`
+}
+
 // -------------------------- List With Extension/Secret--------------------------
 
 // BaseAccountWithExtensionListResp ...

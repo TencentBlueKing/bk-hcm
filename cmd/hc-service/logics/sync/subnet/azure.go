@@ -280,7 +280,7 @@ func filterAzureSubnetList(req *hcservice.AzureResourceSyncReq, list *types.Azur
 						Ipv4Cidr:          item.Ipv4Cidr,
 						Ipv6Cidr:          item.Ipv6Cidr,
 						Memo:              item.Memo,
-						CloudRouteTableID: nil,
+						CloudRouteTableID: item.Extension.CloudRouteTableID,
 						RouteTableID:      nil,
 					},
 					Extension: &cloud.AzureSubnetUpdateExt{
@@ -302,7 +302,7 @@ func filterAzureSubnetList(req *hcservice.AzureResourceSyncReq, list *types.Azur
 				CloudVpcID:        item.CloudVpcID,
 				VpcID:             "",
 				BkBizID:           constant.UnassignedBiz,
-				CloudRouteTableID: "",
+				CloudRouteTableID: converter.PtrToVal(item.Extension.CloudRouteTableID),
 				RouteTableID:      "",
 				CloudID:           item.CloudID,
 				Name:              converter.ValToPtr(item.Name),
@@ -352,6 +352,10 @@ func isAzureSubnetChange(info cloudcore.Subnet[cloudcore.AzureSubnetExtension], 
 	}
 
 	if info.Extension.NatGateway != item.Extension.NatGateway {
+		return true
+	}
+
+	if info.CloudRouteTableID != converter.PtrToVal(item.Extension.CloudRouteTableID) {
 		return true
 	}
 

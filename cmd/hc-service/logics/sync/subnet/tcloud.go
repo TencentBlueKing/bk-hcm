@@ -249,7 +249,7 @@ func filterTcloudSubnetList(req *SyncTCloudOption, list *types.TCloudSubnetListR
 						Ipv4Cidr:          item.Ipv4Cidr,
 						Ipv6Cidr:          item.Ipv6Cidr,
 						Memo:              item.Memo,
-						CloudRouteTableID: nil,
+						CloudRouteTableID: item.Extension.CloudRouteTableID,
 						RouteTableID:      nil,
 					},
 					Extension: &cloud.TCloudSubnetUpdateExt{
@@ -272,7 +272,7 @@ func filterTcloudSubnetList(req *SyncTCloudOption, list *types.TCloudSubnetListR
 				VpcID:      "",
 				BkBizID:    constant.UnbindBkCloudID,
 				// 该字段不支持
-				CloudRouteTableID: "",
+				CloudRouteTableID: converter.PtrToVal(item.Extension.CloudRouteTableID),
 				RouteTableID:      "",
 				CloudID:           item.CloudID,
 				Name:              converter.ValToPtr(item.Name),
@@ -320,6 +320,10 @@ func isTCloudSubnetChange(info cloudcore.Subnet[cloudcore.TCloudSubnetExtension]
 	}
 
 	if info.Extension.IsDefault != item.Extension.IsDefault {
+		return true
+	}
+
+	if info.CloudRouteTableID != converter.PtrToVal(item.Extension.CloudRouteTableID) {
 		return true
 	}
 

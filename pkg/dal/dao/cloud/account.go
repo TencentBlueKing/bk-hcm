@@ -47,6 +47,7 @@ type Account interface {
 	Update(kt *kit.Kit, expr *filter.Expression, model *cloud.AccountTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccountDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
+	DeleteValidate(kt *kit.Kit, accountID string) (map[string]uint64, error)
 }
 
 var _ Account = new(AccountDao)
@@ -56,6 +57,64 @@ type AccountDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
 	Audit audit.Interface
+}
+
+// tableNames define table name.
+type tableNames struct {
+	Name string `db:"name" json:"name"`
+}
+
+// DeleteValidate ...
+func (a AccountDao) DeleteValidate(kt *kit.Kit, accountID string) (map[string]uint64, error) {
+	ingoreTable := map[table.Name]struct{}{
+		table.AuditTable:                   {},
+		table.AccountBizRelTable:           {},
+		table.AwsSecurityGroupRuleTable:    {},
+		table.AzureSecurityGroupRuleTable:  {},
+		table.TCloudSecurityGroupRuleTable: {},
+		table.HuaWeiSecurityGroupRuleTable: {},
+	}
+
+	expr := `select table_name as name from information_schema.columns where column_name = :column_name;`
+	value := map[string]interface{}{
+		"column_name": "account_id",
+	}
+	tableNames := make([]tableNames, 0)
+	if err := a.Orm.Do().Select(kt.Ctx, &tableNames, expr, value); err != nil {
+		logs.Errorf("list table name, that contain 'account_id' field name failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	resourceTable := make([]string, 0)
+	for _, one := range tableNames {
+		if _, exist := ingoreTable[table.Name(one.Name)]; !exist {
+			resourceTable = append(resourceTable, one.Name)
+		}
+	}
+
+	resourceMap := make(map[string]uint64)
+	for _, tableName := range resourceTable {
+		sql := fmt.Sprintf(`select count(*) from %s where account_id = :account_id`, tableName)
+		value = map[string]interface{}{
+			"account_id": accountID,
+		}
+		count, err := a.Orm.Do().Count(kt.Ctx, sql, value)
+		if err != nil {
+			logs.Errorf("count resource number failed, err: %v, tableName: %s, accountID: %s, rid: %s",
+				err, tableName, accountID, kt.Rid)
+			return nil, err
+		}
+
+		resourceMap[tableName] = count
+	}
+
+	for _, count := range resourceMap {
+		if count != 0 {
+			return resourceMap, fmt.Errorf("account: %s has some cloud resource, that can not delete", accountID)
+		}
+	}
+
+	return nil, nil
 }
 
 // CreateWithTx account with tx.
