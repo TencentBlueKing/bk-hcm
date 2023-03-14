@@ -21,15 +21,127 @@
 package subnet
 
 import (
+	"strconv"
+
+	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
+	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
+
+// GcpSubnetCreate create gcp subnet.
+func (s subnet) GcpSubnetCreate(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcservice.SubnetCreateReq[hcservice.GcpSubnetCreateExt])
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cli, err := s.ad.Gcp(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// get gcp vpc self link by cloud id
+	vpcReq := &core.ListReq{
+		Filter: tools.EqualExpression("cloud_id", req.CloudVpcID),
+		Page:   core.DefaultBasePage,
+		Fields: []string{"extension"},
+	}
+	vpcRes, err := s.cs.DataService().Gcp.Vpc.ListVpcExt(cts.Kit.Ctx, cts.Kit.Header(), vpcReq)
+	if err != nil {
+		logs.Errorf("get vpc by cloud id %s failed, err: %v, rid: %s", req.CloudVpcID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(vpcRes.Details) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "gcp vpc(cloud id: %s) not exists", req.CloudVpcID)
+	}
+
+	// create gcp subnet
+	gcpCreateOpt := &types.GcpSubnetCreateOption{
+		Name:       req.Name,
+		Memo:       req.Memo,
+		CloudVpcID: vpcRes.Details[0].Extension.SelfLink,
+		Extension: &types.GcpSubnetCreateExt{
+			Region:                req.Extension.Region,
+			IPv4Cidr:              req.Extension.IPv4Cidr,
+			PrivateIpGoogleAccess: req.Extension.PrivateIpGoogleAccess,
+			EnableFlowLogs:        req.Extension.EnableFlowLogs,
+		},
+	}
+	createdID, err := cli.CreateSubnet(cts.Kit, gcpCreateOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	// get created subnet
+	subnetRes, err := cli.ListSubnet(cts.Kit, &types.GcpSubnetListOption{
+		GcpListOption: adcore.GcpListOption{CloudIDs: []string{strconv.FormatUint(createdID, 10)}},
+		Region:        req.Extension.Region,
+	})
+	if err != nil {
+		logs.Errorf("get subnet failed, err: %v,s, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(subnetRes.Details) == 0 {
+		return nil, errf.New(errf.RecordNotFound, "created subnet is not found")
+	}
+
+	// create hcm subnet
+	sync.SleepBeforeSync()
+
+	syncOpt := &syncsubnet.SyncGcpOption{
+		AccountID: req.AccountID,
+		Region:    req.Extension.Region,
+	}
+	createReqs := []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt]{convertGcpSubnetCreateReq(&subnetRes.Details[0],
+		req.CloudVpcID, req.AccountID, req.BkBizID)}
+	res, err := syncsubnet.BatchCreateGcpSubnet(cts.Kit, createReqs, s.cs.DataService(), s.ad, syncOpt)
+	if err != nil {
+		logs.Errorf("sync gcp subnet failed, err: %v, reqs: %+v, rid: %s", err, createReqs, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return core.CreateResult{ID: res.IDs[0]}, nil
+}
+
+func convertGcpSubnetCreateReq(data *types.GcpSubnet, cloudVpcID, accountID string,
+	bizID int64) cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt] {
+
+	subnetReq := cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt]{
+		AccountID:  accountID,
+		CloudVpcID: cloudVpcID,
+		CloudID:    data.CloudID,
+		Name:       &data.Name,
+		Region:     data.Extension.Region,
+		Ipv4Cidr:   data.Ipv4Cidr,
+		Ipv6Cidr:   data.Ipv6Cidr,
+		Memo:       data.Memo,
+		BkBizID:    bizID,
+		Extension: &cloud.GcpSubnetCreateExt{
+			SelfLink:              data.Extension.SelfLink,
+			StackType:             data.Extension.StackType,
+			Ipv6AccessType:        data.Extension.Ipv6AccessType,
+			GatewayAddress:        data.Extension.GatewayAddress,
+			PrivateIpGoogleAccess: data.Extension.PrivateIpGoogleAccess,
+			EnableFlowLogs:        data.Extension.EnableFlowLogs,
+		},
+	}
+
+	return subnetReq
+}
 
 // GcpSubnetUpdate update gcp subnet.
 func (s subnet) GcpSubnetUpdate(cts *rest.Contexts) (interface{}, error) {

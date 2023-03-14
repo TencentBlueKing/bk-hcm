@@ -61,7 +61,6 @@ func (r *HuaWeiRouteTableSyncReq) Validate() error {
 type AzureRouteTableSyncReq struct {
 	AccountID         string   `json:"account_id" validate:"required"`
 	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
-	Region            string   `json:"region" validate:"omitempty"`
 	CloudIDs          []string `json:"cloud_ids,omitempty"`
 }
 

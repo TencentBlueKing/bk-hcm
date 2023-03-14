@@ -20,6 +20,7 @@
 package subnet
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"hcm/cmd/cloud-server/logics/audit"
@@ -53,6 +54,7 @@ func InitSubnetService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
+	h.Add("CreateSubnet", "POST", "/bizs/{bk_biz_id}/subnets/create", svc.CreateSubnet)
 	h.Add("GetSubnet", "GET", "/subnets/{id}", svc.GetSubnet)
 	h.Add("ListSubnet", "POST", "/subnets/list", svc.ListSubnet)
 	h.Add("UpdateSubnet", "PATCH", "/subnets/{id}", svc.UpdateSubnet)
@@ -74,6 +76,200 @@ type subnetSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
+}
+
+// CreateSubnet create subnet.
+func (svc *subnetSvc) CreateSubnet(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Create}, BizID: bizID}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(cloudserver.RawCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	switch req.Vendor {
+	case enumor.TCloud:
+		return svc.createTCloudSubnet(cts.Kit, bizID, req.Data)
+	case enumor.Aws:
+		return svc.createAwsSubnet(cts.Kit, bizID, req.Data)
+	case enumor.Gcp:
+		return svc.createGcpSubnet(cts.Kit, bizID, req.Data)
+	case enumor.Azure:
+		return svc.createAzureSubnet(cts.Kit, bizID, req.Data)
+	case enumor.HuaWei:
+		return svc.createHuaWeiSubnet(cts.Kit, bizID, req.Data)
+	}
+	return nil, nil
+}
+
+func (svc *subnetSvc) createTCloudSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (
+	interface{}, error) {
+
+	req := new(cloudserver.TCloudSubnetCreateReq)
+	if err := json.Unmarshal(data, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &hcservice.TCloudSubnetBatchCreateReq{
+		BkBizID:    bizID,
+		AccountID:  req.AccountID,
+		Region:     req.Region,
+		CloudVpcID: req.CloudVpcID,
+		Subnets: []hcservice.TCloudOneSubnetCreateReq{{
+			IPv4Cidr:          req.IPv4Cidr,
+			Name:              req.Name,
+			Zone:              req.Zone,
+			CloudRouteTableID: req.CloudRouteTableID,
+		}},
+	}
+	createRes, err := svc.client.HCService().TCloud.Subnet.BatchCreate(kt.Ctx, kt.Header(), opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return core.CreateResult{ID: createRes.IDs[0]}, nil
+}
+
+func (svc *subnetSvc) createAwsSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (
+	interface{}, error) {
+
+	req := new(cloudserver.AwsSubnetCreateReq)
+	if err := json.Unmarshal(data, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &hcservice.SubnetCreateReq[hcservice.AwsSubnetCreateExt]{
+		BaseSubnetCreateReq: convertBaseSubnetCreateReq(bizID, req.BaseSubnetCreateReq),
+		Extension: &hcservice.AwsSubnetCreateExt{
+			Region:   req.Region,
+			Zone:     req.Zone,
+			IPv4Cidr: req.IPv4Cidr,
+			IPv6Cidr: req.IPv6Cidr,
+		},
+	}
+	createRes, err := svc.client.HCService().Aws.Subnet.Create(kt.Ctx, kt.Header(), opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return createRes, nil
+}
+
+func (svc *subnetSvc) createGcpSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (
+	interface{}, error) {
+
+	req := new(cloudserver.GcpSubnetCreateReq)
+	if err := json.Unmarshal(data, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &hcservice.SubnetCreateReq[hcservice.GcpSubnetCreateExt]{
+		BaseSubnetCreateReq: convertBaseSubnetCreateReq(bizID, req.BaseSubnetCreateReq),
+		Extension: &hcservice.GcpSubnetCreateExt{
+			Region:                req.Region,
+			IPv4Cidr:              req.IPv4Cidr,
+			PrivateIpGoogleAccess: req.PrivateIpGoogleAccess,
+			EnableFlowLogs:        req.EnableFlowLogs,
+		},
+	}
+	createRes, err := svc.client.HCService().Gcp.Subnet.Create(kt.Ctx, kt.Header(), opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return createRes, nil
+}
+
+func (svc *subnetSvc) createAzureSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (
+	interface{}, error) {
+
+	req := new(cloudserver.AzureSubnetCreateReq)
+	if err := json.Unmarshal(data, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &hcservice.SubnetCreateReq[hcservice.AzureSubnetCreateExt]{
+		BaseSubnetCreateReq: convertBaseSubnetCreateReq(bizID, req.BaseSubnetCreateReq),
+		Extension: &hcservice.AzureSubnetCreateExt{
+			ResourceGroup:        req.ResourceGroup,
+			IPv4Cidr:             req.IPv4Cidr,
+			IPv6Cidr:             req.IPv6Cidr,
+			CloudRouteTableID:    req.CloudRouteTableID,
+			NatGateway:           req.NatGateway,
+			NetworkSecurityGroup: req.NetworkSecurityGroup,
+		},
+	}
+	createRes, err := svc.client.HCService().Azure.Subnet.Create(kt.Ctx, kt.Header(), opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return createRes, nil
+}
+
+func (svc *subnetSvc) createHuaWeiSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (
+	interface{}, error) {
+
+	req := new(cloudserver.HuaWeiSubnetCreateReq)
+	if err := json.Unmarshal(data, req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &hcservice.SubnetCreateReq[hcservice.HuaWeiSubnetCreateExt]{
+		BaseSubnetCreateReq: convertBaseSubnetCreateReq(bizID, req.BaseSubnetCreateReq),
+		Extension: &hcservice.HuaWeiSubnetCreateExt{
+			Region:     req.Region,
+			Zone:       req.Zone,
+			IPv4Cidr:   req.IPv4Cidr,
+			Ipv6Enable: req.Ipv6Enable,
+			GatewayIp:  req.GatewayIp,
+		},
+	}
+	createRes, err := svc.client.HCService().HuaWei.Subnet.Create(kt.Ctx, kt.Header(), opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return createRes, nil
+}
+
+func convertBaseSubnetCreateReq(bizID int64, req *cloudserver.BaseSubnetCreateReq) *hcservice.BaseSubnetCreateReq {
+	return &hcservice.BaseSubnetCreateReq{
+		AccountID:  req.AccountID,
+		Name:       req.Name,
+		Memo:       req.Memo,
+		CloudVpcID: req.CloudVpcID,
+		BkBizID:    bizID,
+	}
 }
 
 // UpdateSubnet update subnet.

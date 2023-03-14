@@ -91,7 +91,7 @@ func (svc *securityGroupSvc) createAwsSecurityGroup(cts *rest.Contexts, bizID in
 	req *proto.SecurityGroupCreateReq) (interface{}, error) {
 
 	extension := new(proto.AwsSecurityGroupExtensionCreate)
-	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, req.Extension, extension); err != nil {
 		return nil, err
 	}
 
@@ -137,7 +137,7 @@ func (svc *securityGroupSvc) createAzureSecurityGroup(cts *rest.Contexts, bizID 
 	req *proto.SecurityGroupCreateReq) (interface{}, error) {
 
 	extension := new(proto.AzureSecurityGroupExtensionCreate)
-	if err := common.DecodeExtension(cts, req.Extension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, req.Extension, extension); err != nil {
 		return nil, err
 	}
 

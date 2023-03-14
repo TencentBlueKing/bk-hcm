@@ -178,8 +178,8 @@ type AccountUpdateReq struct {
 	Memo     *string  `json:"memo" validate:"omitempty"`
 	// Note: 第一期只支持关联一个业务，且不能关联全部业务
 	// BkBizIDs  []int64          `json:"bk_biz_ids" validate:"omitempty"`
-	BkBizIDs  []int64          `json:"bk_biz_ids" validate:"omitempty,len=1,dive,min=1"`
-	Extension *json.RawMessage `json:"extension" validate:"omitempty"`
+	BkBizIDs  []int64         `json:"bk_biz_ids" validate:"omitempty,len=1,dive,min=1"`
+	Extension json.RawMessage `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...

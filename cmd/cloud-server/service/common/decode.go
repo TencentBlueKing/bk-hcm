@@ -23,16 +23,16 @@ import (
 	rawjson "encoding/json"
 
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
 )
 
-// DecodeExtension ...
-func DecodeExtension(cts *rest.Contexts, rawExtension rawjson.RawMessage, extension interface{}) error {
+// DecodeExtension decode extension from raw json extension.
+func DecodeExtension(kt *kit.Kit, rawExtension rawjson.RawMessage, extension interface{}) error {
 	err := json.Unmarshal(rawExtension, &extension)
 	if err != nil {
-		logs.ErrorDepthf(1, "decode extension from request body failed, err: %s, rid: %s", err.Error(), cts.Kit.Rid)
+		logs.ErrorDepthf(1, "decode extension from request body failed, err: %s, rid: %s", err.Error(), kt.Rid)
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	return nil

@@ -32,6 +32,66 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
+// CreateSubnet create subnet.
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateSubnet.html
+func (a *Aws) CreateSubnet(kt *kit.Kit, opt *types.AwsSubnetCreateOption) (*types.AwsSubnet, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Extension.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &ec2.CreateSubnetInput{
+		AvailabilityZone:   opt.Extension.Zone,
+		AvailabilityZoneId: nil,
+		CidrBlock:          opt.Extension.IPv4Cidr,
+		DryRun:             nil,
+		Ipv6CidrBlock:      opt.Extension.IPv6Cidr,
+		Ipv6Native:         nil,
+		OutpostArn:         nil,
+		TagSpecifications:  genNameTags(subnetTagResType, opt.Name),
+		VpcId:              aws.String(opt.CloudVpcID),
+	}
+
+	resp, err := client.CreateSubnetWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("create aws subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return convertSubnet(resp.Subnet, opt.Extension.Region), nil
+}
+
+// CreateDefaultSubnet create default subnet.
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateDefaultSubnet.html
+func (a *Aws) CreateDefaultSubnet(kt *kit.Kit, opt *types.AwsDefaultSubnetCreateOption) (*types.AwsSubnet, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &ec2.CreateDefaultSubnetInput{
+		AvailabilityZone: aws.String(opt.Zone),
+		DryRun:           nil,
+		Ipv6Native:       nil,
+	}
+
+	resp, err := client.CreateDefaultSubnetWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("create aws subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return convertSubnet(resp.Subnet, opt.Region), nil
+}
+
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
 func (a *Aws) UpdateSubnet(_ *kit.Kit, _ *types.AwsSubnetUpdateOption) error {

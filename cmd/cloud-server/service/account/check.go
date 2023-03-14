@@ -70,7 +70,7 @@ func ParseAndCheckTCloudExtension(
 ) (*proto.TCloudAccountExtensionCreateReq, error) {
 	// 解析Extension
 	extension := new(proto.TCloudAccountExtensionCreateReq)
-	if err := common.DecodeExtension(cts, reqExtension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -104,7 +104,7 @@ func ParseAndCheckAwsExtension(
 ) (*proto.AwsAccountExtensionCreateReq, error) {
 	// 解析Extension
 	extension := new(proto.AwsAccountExtensionCreateReq)
-	if err := common.DecodeExtension(cts, reqExtension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -137,7 +137,7 @@ func ParseAndCheckHuaWeiExtension(
 ) (*proto.HuaWeiAccountExtensionCreateReq, error) {
 	// 解析Extension
 	extension := new(proto.HuaWeiAccountExtensionCreateReq)
-	if err := common.DecodeExtension(cts, reqExtension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -173,7 +173,7 @@ func ParseAndCheckGcpExtension(
 ) (*proto.GcpAccountExtensionCreateReq, error) {
 	// 解析Extension
 	extension := new(proto.GcpAccountExtensionCreateReq)
-	if err := common.DecodeExtension(cts, reqExtension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -204,7 +204,7 @@ func ParseAndCheckAzureExtension(
 ) (*proto.AzureAccountExtensionCreateReq, error) {
 	// 解析Extension
 	extension := new(proto.AzureAccountExtensionCreateReq)
-	if err := common.DecodeExtension(cts, reqExtension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
 		return nil, err
 	}
 	// 校验Extension
@@ -261,15 +261,15 @@ func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		_, err = a.parseAndCheckTCloudExtensionByID(cts, accountID, &req.Extension)
+		_, err = a.parseAndCheckTCloudExtensionByID(cts, accountID, req.Extension)
 	case enumor.Aws:
-		_, err = a.parseAndCheckAwsExtensionByID(cts, accountID, &req.Extension)
+		_, err = a.parseAndCheckAwsExtensionByID(cts, accountID, req.Extension)
 	case enumor.HuaWei:
-		_, err = a.parseAndCheckHuaWeiExtensionByID(cts, accountID, &req.Extension)
+		_, err = a.parseAndCheckHuaWeiExtensionByID(cts, accountID, req.Extension)
 	case enumor.Gcp:
-		_, err = a.parseAndCheckGcpExtensionByID(cts, accountID, &req.Extension)
+		_, err = a.parseAndCheckGcpExtensionByID(cts, accountID, req.Extension)
 	case enumor.Azure:
-		_, err = a.parseAndCheckAzureExtensionByID(cts, accountID, &req.Extension)
+		_, err = a.parseAndCheckAzureExtensionByID(cts, accountID, req.Extension)
 	default:
 		err = fmt.Errorf("no support vendor: %s", baseInfo.Vendor)
 	}
@@ -278,11 +278,11 @@ func (a *accountSvc) CheckByID(cts *rest.Contexts) (interface{}, error) {
 }
 
 func (a *accountSvc) parseAndCheckTCloudExtensionByID(
-	cts *rest.Contexts, accountID string, reqExtension *json.RawMessage,
+	cts *rest.Contexts, accountID string, reqExtension json.RawMessage,
 ) (*proto.TCloudAccountExtensionUpdateReq, error) {
 	// 解析Extension
 	extension := new(proto.TCloudAccountExtensionUpdateReq)
-	if err := common.DecodeExtension(cts, *reqExtension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
 		return nil, err
 	}
 
@@ -319,11 +319,11 @@ func (a *accountSvc) parseAndCheckTCloudExtensionByID(
 }
 
 func (a *accountSvc) parseAndCheckAwsExtensionByID(
-	cts *rest.Contexts, accountID string, reqExtension *json.RawMessage,
+	cts *rest.Contexts, accountID string, reqExtension json.RawMessage,
 ) (*proto.AwsAccountExtensionUpdateReq, error) {
 	// 解析Extension
 	extension := new(proto.AwsAccountExtensionUpdateReq)
-	if err := common.DecodeExtension(cts, *reqExtension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
 		return nil, err
 	}
 
@@ -360,11 +360,11 @@ func (a *accountSvc) parseAndCheckAwsExtensionByID(
 }
 
 func (a *accountSvc) parseAndCheckHuaWeiExtensionByID(
-	cts *rest.Contexts, accountID string, reqExtension *json.RawMessage,
+	cts *rest.Contexts, accountID string, reqExtension json.RawMessage,
 ) (*proto.HuaWeiAccountExtensionUpdateReq, error) {
 	// 解析Extension
 	extension := new(proto.HuaWeiAccountExtensionUpdateReq)
-	if err := common.DecodeExtension(cts, *reqExtension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
 		return nil, err
 	}
 
@@ -404,11 +404,11 @@ func (a *accountSvc) parseAndCheckHuaWeiExtensionByID(
 }
 
 func (a *accountSvc) parseAndCheckGcpExtensionByID(
-	cts *rest.Contexts, accountID string, reqExtension *json.RawMessage,
+	cts *rest.Contexts, accountID string, reqExtension json.RawMessage,
 ) (*proto.GcpAccountExtensionUpdateReq, error) {
 	// 解析Extension
 	extension := new(proto.GcpAccountExtensionUpdateReq)
-	if err := common.DecodeExtension(cts, *reqExtension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
 		return nil, err
 	}
 
@@ -443,11 +443,11 @@ func (a *accountSvc) parseAndCheckGcpExtensionByID(
 }
 
 func (a *accountSvc) parseAndCheckAzureExtensionByID(
-	cts *rest.Contexts, accountID string, reqExtension *json.RawMessage,
+	cts *rest.Contexts, accountID string, reqExtension json.RawMessage,
 ) (*proto.AzureAccountExtensionUpdateReq, error) {
 	// 解析Extension
 	extension := new(proto.AzureAccountExtensionUpdateReq)
-	if err := common.DecodeExtension(cts, *reqExtension, extension); err != nil {
+	if err := common.DecodeExtension(cts.Kit, reqExtension, extension); err != nil {
 		return nil, err
 	}
 

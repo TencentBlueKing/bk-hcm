@@ -23,6 +23,7 @@ import (
 	"context"
 	"net/http"
 
+	"hcm/pkg/api/core"
 	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -40,11 +41,35 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 	}
 }
 
+// Create subnet.
+func (s *SubnetClient) Create(ctx context.Context, h http.Header,
+	req *hcservice.SubnetCreateReq[hcservice.AzureSubnetCreateExt]) (*core.CreateResult, error) {
+
+	resp := new(core.CreateResp)
+
+	err := s.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/subnets/create").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // Update subnet.
-func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *hcservice.SubnetUpdateReq) error {
+func (s *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *hcservice.SubnetUpdateReq) error {
 	resp := new(rest.BaseResp)
 
-	err := v.client.Patch().
+	err := s.client.Patch().
 		WithContext(ctx).
 		Body(req).
 		SubResourcef("/subnets/%s", id).
@@ -63,10 +88,10 @@ func (v *SubnetClient) Update(ctx context.Context, h http.Header, id string, req
 }
 
 // Delete subnet.
-func (v *SubnetClient) Delete(ctx context.Context, h http.Header, id string) error {
+func (s *SubnetClient) Delete(ctx context.Context, h http.Header, id string) error {
 	resp := new(rest.BaseResp)
 
-	err := v.client.Delete().
+	err := s.client.Delete().
 		WithContext(ctx).
 		Body(nil).
 		SubResourcef("/subnets/%s", id).
@@ -85,10 +110,10 @@ func (v *SubnetClient) Delete(ctx context.Context, h http.Header, id string) err
 }
 
 // SyncSubnet sync azure subnet.
-func (v *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *hcservice.AzureResourceSyncReq) error {
+func (s *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *hcservice.AzureResourceSyncReq) error {
 	resp := new(rest.BaseResp)
 
-	err := v.client.Post().
+	err := s.client.Post().
 		WithContext(ctx).
 		Body(req).
 		SubResourcef("/subnets/sync").
@@ -107,10 +132,10 @@ func (v *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *hcser
 }
 
 // CountIP count azure subnet available ips.
-func (v *SubnetClient) CountIP(ctx context.Context, h http.Header, id string) (*hcservice.SubnetCountIPResult, error) {
+func (s *SubnetClient) CountIP(ctx context.Context, h http.Header, id string) (*hcservice.SubnetCountIPResult, error) {
 	resp := new(hcservice.SubnetCountIPResp)
 
-	err := v.client.Post().
+	err := s.client.Post().
 		WithContext(ctx).
 		Body(nil).
 		SubResourcef("/subnets/%s/ips/count", id).

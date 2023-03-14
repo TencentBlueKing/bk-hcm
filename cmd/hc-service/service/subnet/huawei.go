@@ -21,15 +21,95 @@
 package subnet
 
 import (
+	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
+	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
+
+// HuaWeiSubnetCreate create huawei subnet.
+func (s subnet) HuaWeiSubnetCreate(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcservice.SubnetCreateReq[hcservice.HuaWeiSubnetCreateExt])
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cli, err := s.ad.HuaWei(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	huaweiCreateOpt := &types.HuaWeiSubnetCreateOption{
+		Name:       req.Name,
+		Memo:       req.Memo,
+		CloudVpcID: req.CloudVpcID,
+		Extension: &types.HuaWeiSubnetCreateExt{
+			Region:     req.Extension.Region,
+			Zone:       req.Extension.Zone,
+			IPv4Cidr:   req.Extension.IPv4Cidr,
+			Ipv6Enable: req.Extension.Ipv6Enable,
+			GatewayIp:  req.Extension.GatewayIp,
+		},
+	}
+	huaweiCreateRes, err := cli.CreateSubnet(cts.Kit, huaweiCreateOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	// create hcm subnet
+	sync.SleepBeforeSync()
+
+	syncOpt := &syncsubnet.SyncHuaWeiOption{
+		AccountID:  req.AccountID,
+		Region:     req.Extension.Region,
+		CloudVpcID: req.CloudVpcID,
+	}
+	createReqs := []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]{convertHuaWeiSubnetCreateReq(huaweiCreateRes,
+		req.AccountID, req.BkBizID)}
+	res, err := syncsubnet.BatchCreateHuaWeiSubnet(cts.Kit, createReqs, s.cs.DataService(), s.ad, syncOpt)
+	if err != nil {
+		logs.Errorf("sync huawei subnet failed, err: %v, reqs: %+v, rid: %s", err, createReqs, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return core.CreateResult{ID: res.IDs[0]}, nil
+}
+
+func convertHuaWeiSubnetCreateReq(data *types.HuaWeiSubnet, accountID string,
+	bizID int64) cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt] {
+
+	subnetReq := cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]{
+		AccountID:  accountID,
+		CloudVpcID: data.CloudVpcID,
+		CloudID:    data.CloudID,
+		Name:       &data.Name,
+		Region:     data.Extension.Region,
+		Ipv4Cidr:   data.Ipv4Cidr,
+		Ipv6Cidr:   data.Ipv6Cidr,
+		Memo:       data.Memo,
+		BkBizID:    bizID,
+		Extension: &cloud.HuaWeiSubnetCreateExt{
+			Status:       data.Extension.Status,
+			DhcpEnable:   data.Extension.DhcpEnable,
+			GatewayIp:    data.Extension.GatewayIp,
+			DnsList:      data.Extension.DnsList,
+			NtpAddresses: data.Extension.NtpAddresses,
+		},
+	}
+
+	return subnetReq
+}
 
 // HuaWeiSubnetUpdate update huawei subnet.
 func (s subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {

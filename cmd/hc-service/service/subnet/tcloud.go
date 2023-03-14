@@ -21,15 +21,116 @@
 package subnet
 
 import (
+	routetable "hcm/cmd/hc-service/logics/sync/route-table"
+	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
+	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
+	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
+
+// TCloudSubnetBatchCreate batch create tcloud subnet.
+func (s subnet) TCloudSubnetBatchCreate(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcservice.TCloudSubnetBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cli, err := s.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// create tencent cloud subnets
+	subnetReqs := make([]types.TCloudOneSubnetCreateOpt, 0, len(req.Subnets))
+	for _, subnetReq := range req.Subnets {
+		subnetReqs = append(subnetReqs, types.TCloudOneSubnetCreateOpt{
+			IPv4Cidr:          subnetReq.IPv4Cidr,
+			Name:              subnetReq.Name,
+			Zone:              subnetReq.Zone,
+			CloudRouteTableID: subnetReq.CloudRouteTableID,
+		})
+	}
+
+	tcloudCreateOpt := &types.TCloudSubnetsCreateOption{
+		AccountID:  req.AccountID,
+		Region:     req.Region,
+		CloudVpcID: req.CloudVpcID,
+		Subnets:    subnetReqs,
+	}
+	createdSubnets, err := cli.CreateSubnets(cts.Kit, tcloudCreateOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	// sync hcm subnets and related route tables
+	sync.SleepBeforeSync()
+
+	createReqs := make([]cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt], 0, len(createdSubnets))
+	cloudRTIDs := make([]string, 0, len(req.Subnets))
+	for _, subnet := range createdSubnets {
+		createReq := convertTCloudSubnetCreateReq(&subnet, req.AccountID, req.BkBizID)
+		createReqs = append(createReqs, createReq)
+		cloudRTIDs = append(cloudRTIDs, createReq.CloudRouteTableID)
+	}
+
+	syncOpt := &syncsubnet.SyncTCloudOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+	}
+	res, err := syncsubnet.BatchCreateTcloudSubnet(cts.Kit, createReqs, s.cs.DataService(), s.ad, syncOpt)
+	if err != nil {
+		logs.Errorf("sync tcloud subnet failed, err: %v, reqs: %+v, rid: %s", err, createReqs, cts.Kit.Rid)
+		return nil, err
+	}
+
+	rtSyncOpt := &hcroutetable.TCloudRouteTableSyncReq{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  cloudRTIDs,
+	}
+	_, err = routetable.TCloudRouteTableSync(cts.Kit, rtSyncOpt, s.ad, s.cs.DataService())
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func convertTCloudSubnetCreateReq(data *types.TCloudSubnet, accountID string,
+	bizID int64) cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt] {
+
+	subnetReq := cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt]{
+		AccountID:         accountID,
+		CloudVpcID:        data.CloudVpcID,
+		BkBizID:           bizID,
+		CloudRouteTableID: converter.PtrToVal(data.Extension.CloudRouteTableID),
+		CloudID:           data.CloudID,
+		Name:              &data.Name,
+		Region:            data.Extension.Region,
+		Zone:              data.Extension.Zone,
+		Ipv4Cidr:          data.Ipv4Cidr,
+		Ipv6Cidr:          data.Ipv6Cidr,
+		Memo:              data.Memo,
+		Extension: &cloud.TCloudSubnetCreateExt{
+			IsDefault:         data.Extension.IsDefault,
+			CloudNetworkAclID: data.Extension.CloudNetworkAclID,
+		},
+	}
+
+	return subnetReq
+}
 
 // TCloudSubnetUpdate update tencent cloud subnet.
 func (s subnet) TCloudSubnetUpdate(cts *rest.Contexts) (interface{}, error) {

@@ -979,3 +979,28 @@ paths:
           userVerifiedRequired: true
         disabledStages: [ ]
         descriptionEn:
+  /api/v1/cloud/bizs/{bk_biz_id}/subnets/create:
+    post:
+      operationId: create_subnet_in_biz
+      description: 在业务下创建子网
+      tags:
+        - Subnet
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/bizs/{bk_biz_id}/subnets/create
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:

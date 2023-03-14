@@ -32,6 +32,46 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2/model"
 )
 
+// CreateSubnet create subnet.
+// reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0001.html
+func (h *HuaWei) CreateSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetCreateOption) (*types.HuaWeiSubnet, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	subnetClient, err := h.clientSet.vpcClientV2(opt.Extension.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	req := &model.CreateSubnetRequest{
+		Body: &model.CreateSubnetRequestBody{
+			Subnet: &model.CreateSubnetOption{
+				Name:             opt.Name,
+				Description:      opt.Memo,
+				Cidr:             opt.Extension.IPv4Cidr,
+				VpcId:            opt.CloudVpcID,
+				GatewayIp:        opt.Extension.GatewayIp,
+				Ipv6Enable:       &opt.Extension.Ipv6Enable,
+				DhcpEnable:       nil,
+				PrimaryDns:       nil,
+				SecondaryDns:     nil,
+				DnsList:          nil,
+				AvailabilityZone: opt.Extension.Zone,
+				ExtraDhcpOpts:    nil,
+			},
+		},
+	}
+
+	resp, err := subnetClient.CreateSubnet(req)
+	if err != nil {
+		logs.Errorf("create huawei subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return convertSubnet(resp.Subnet, opt.Extension.Region), nil
+}
+
 // UpdateSubnet update subnet.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_subnet01_0004.html
 func (h *HuaWei) UpdateSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetUpdateOption) error {

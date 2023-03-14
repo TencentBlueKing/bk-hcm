@@ -146,7 +146,7 @@
   "message": "ok",
   "data": {
     "id": "00000001",
-    "vendor": "huawei",
+    "vendor": "azure",
     "account_id": "00000001",
     "cloud_id": "xxx",
     "name": "vpc-test",
@@ -183,7 +183,7 @@
   "message": "ok",
   "data": {
     "id": "00000001",
-    "vendor": "gcp",
+    "vendor": "huawei",
     "account_id": "00000001",
     "cloud_id": "123",
     "name": "vpc-test",

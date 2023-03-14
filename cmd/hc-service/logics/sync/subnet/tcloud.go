@@ -205,7 +205,7 @@ func BatchSyncTcloudSubnetList(kt *kit.Kit, req *SyncTCloudOption, list *types.T
 
 	// add resource data
 	if len(createResources) > 0 {
-		err = batchCreateTcloudSubnet(kt, createResources, dataCli, adaptor, req)
+		_, err = BatchCreateTcloudSubnet(kt, createResources, dataCli, adaptor, req)
 		if err != nil {
 			logs.Errorf("%s-subnet batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.TCloud, req.AccountID, req.Region, err)
@@ -334,8 +334,9 @@ func isTCloudSubnetChange(info cloudcore.Subnet[cloudcore.TCloudSubnetExtension]
 	return false
 }
 
-func batchCreateTcloudSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt],
-	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncTCloudOption) error {
+func BatchCreateTcloudSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncTCloudOption) (
+	*core.BatchCreateResult, error) {
 
 	cloudVpcIDs := make([]string, 0, len(createResources))
 	for _, one := range createResources {
@@ -351,13 +352,13 @@ func batchCreateTcloudSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateRe
 	vpcMap, err := logics.QueryVpcIDsAndSync(kt, adaptor, dataCli, opt)
 	if err != nil {
 		logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return nil, err
 	}
 
 	for index, resource := range createResources {
 		one, exist := vpcMap[resource.CloudVpcID]
 		if !exist {
-			return fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
+			return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
 		}
 
 		createResources[index].VpcID = one
@@ -367,11 +368,12 @@ func batchCreateTcloudSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateRe
 		Subnets: createResources,
 	}
 
-	if _, err := dataCli.TCloud.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-		return err
+	res, err := dataCli.TCloud.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return res, nil
 }
 
 // BatchDeleteSubnetByIDs batch delete subnet ids

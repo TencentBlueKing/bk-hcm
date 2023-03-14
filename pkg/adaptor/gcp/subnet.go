@@ -32,6 +32,48 @@ import (
 	"google.golang.org/api/compute/v1"
 )
 
+// CreateSubnet create subnet.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/insert
+func (g *Gcp) CreateSubnet(kt *kit.Kit, opt *types.GcpSubnetCreateOption) (uint64, error) {
+	if err := opt.Validate(); err != nil {
+		return 0, err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return 0, err
+	}
+
+	req := &compute.Subnetwork{
+		Description:             converter.PtrToVal(opt.Memo),
+		EnableFlowLogs:          opt.Extension.EnableFlowLogs,
+		ExternalIpv6Prefix:      "",
+		IpCidrRange:             opt.Extension.IPv4Cidr,
+		Ipv6AccessType:          "",
+		LogConfig:               nil,
+		Name:                    opt.Name,
+		Network:                 opt.CloudVpcID,
+		PrivateIpGoogleAccess:   opt.Extension.PrivateIpGoogleAccess,
+		PrivateIpv6GoogleAccess: "",
+		Purpose:                 "",
+		Region:                  opt.Extension.Region,
+		Role:                    "",
+		SecondaryIpRanges:       nil,
+		StackType:               "",
+		ForceSendFields:         nil,
+		NullFields:              nil,
+	}
+
+	cloudProjectID := g.clientSet.credential.CloudProjectID
+	resp, err := client.Subnetworks.Insert(cloudProjectID, opt.Extension.Region, req).Context(kt.Ctx).Do()
+	if err != nil {
+		logs.Errorf("create subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return 0, err
+	}
+
+	return resp.TargetId, nil
+}
+
 // UpdateSubnet update subnet.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/patch
 // TODO right now only memo is supported to update, but gcp description can not be updated.
@@ -53,8 +95,7 @@ func (g *Gcp) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) erro
 
 	cloudProjectID := g.clientSet.credential.CloudProjectID
 	region := parseSelfLinkToName(opt.Region)
-	_, err = client.Subnetworks.Delete(cloudProjectID, region, opt.ResourceID).Context(kt.Ctx).
-		RequestId(kt.Rid).Do()
+	_, err = client.Subnetworks.Delete(cloudProjectID, region, opt.ResourceID).Context(kt.Ctx).Do()
 	if err != nil {
 		logs.Errorf("delete subnet failed, err: %v, rid: %s", err, kt.Rid)
 		return err

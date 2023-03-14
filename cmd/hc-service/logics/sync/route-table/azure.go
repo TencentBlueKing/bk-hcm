@@ -241,8 +241,8 @@ func compareUpdateAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteT
 
 				err = BatchCreateAzureRoute(kt, newID, &item, dataCli)
 				if err != nil {
-					logs.Errorf("%s-routetable sync create route failed. accountID: %s, region: %s, err: %v",
-						enumor.Azure, req.AccountID, req.Region, err)
+					logs.Errorf("%s-routetable sync create route failed. accountID: %s, err: %v", enumor.Azure,
+						req.AccountID, err)
 					continue
 				}
 				existRouteTableIDMap[newID] = item.CloudID
@@ -404,8 +404,8 @@ func BatchSyncAzureRoute(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyncReq, 
 			AzureRoutes: updateResources,
 		}
 		if err = dataCli.Azure.RouteTable.BatchUpdateRoute(kt.Ctx, kt.Header(), routeTableID, updateReq); err != nil {
-			logs.Errorf("%s-routetable-route batch compare db update failed. accountID: %s, region: %s, "+
-				"routeTableID: %s, err: %v", enumor.Azure, req.AccountID, req.Region, routeTableID, err)
+			logs.Errorf("%s-routetable-route batch compare db update failed. accountID: %s, routeTableID: %s, err: %v",
+				enumor.Azure, req.AccountID, routeTableID, err)
 			return err
 		}
 	}
@@ -417,8 +417,8 @@ func BatchSyncAzureRoute(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyncReq, 
 		}
 
 		if _, err = dataCli.Azure.RouteTable.BatchCreateRoute(kt.Ctx, kt.Header(), routeTableID, createReq); err != nil {
-			logs.Errorf("%s-routetable-route batch compare db create failed. accountID: %s, region: %s, "+
-				"routeTableID: %s, err: %v", enumor.Azure, req.AccountID, req.Region, routeTableID, err)
+			logs.Errorf("%s-routetable-route batch compare db create failed. accountID: %s, routeTableID: %s, err: %v",
+				enumor.Azure, req.AccountID, routeTableID, err)
 			return err
 		}
 	}
@@ -436,8 +436,8 @@ func BatchSyncAzureRoute(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyncReq, 
 			Filter: tools.ContainersExpression("id", deleteIDs),
 		}
 		if err = dataCli.Azure.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), routeTableID, deleteReq); err != nil {
-			logs.Errorf("%s-routetable-route batch compare db delete failed. accountID: %s, region: %s, "+
-				"routeTableID: %s, delIDs: %v, err: %v", enumor.Azure, req.AccountID, req.Region, routeTableID,
+			logs.Errorf("%s-routetable-route batch compare db delete failed. accountID: %s, routeTableID: %s, "+
+				"delIDs: %v, err: %v", enumor.Azure, req.AccountID, routeTableID,
 				deleteIDs, err)
 			return err
 		}
@@ -453,7 +453,7 @@ func filterAzureRouteList(req *hcroutetable.AzureRouteTableSyncReq,
 
 	if list == nil || list.Extension == nil {
 		return nil, nil, nil,
-			fmt.Errorf("cloudapi azureroutelist is empty, accountID: %s, region: %s", req.AccountID, req.Region)
+			fmt.Errorf("cloudapi azureroutelist is empty, accountID: %s", req.AccountID)
 	}
 
 	existIDMap = make(map[string]bool, 0)

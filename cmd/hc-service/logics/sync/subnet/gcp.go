@@ -221,7 +221,7 @@ func BatchSyncGcpSubnetList(kt *kit.Kit, req *SyncGcpOption, list *types.GcpSubn
 
 	// add resource data
 	if len(createResources) > 0 {
-		err = batchCreateGcpSubnet(kt, createResources, dataCli, adaptor, req)
+		_, err = BatchCreateGcpSubnet(kt, createResources, dataCli, adaptor, req)
 		if err != nil {
 			logs.Errorf("%s-subnet batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.Gcp, req.AccountID, req.Region, err)
@@ -366,8 +366,9 @@ func isGcpSubnetChange(info cloudcore.Subnet[cloudcore.GcpSubnetExtension], item
 	return false
 }
 
-func batchCreateGcpSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt],
-	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncGcpOption) error {
+func BatchCreateGcpSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncGcpOption) (
+	*core.BatchCreateResult, error) {
 
 	selfLinks := make([]string, 0, len(createResources))
 	for _, one := range createResources {
@@ -377,13 +378,13 @@ func batchCreateGcpSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[c
 	vpcMap, err := logics.QueryVpcIDsAndSyncForGcp(kt, adaptor, dataCli, req.AccountID, selfLinks)
 	if err != nil {
 		logs.Errorf("query vpcIDs and sync for gcp failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return nil, err
 	}
 
 	for index, resource := range createResources {
 		one, exist := vpcMap[resource.CloudVpcID]
 		if !exist {
-			return fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
+			return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
 		}
 
 		createResources[index].VpcID = one.ID
@@ -393,9 +394,5 @@ func batchCreateGcpSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[c
 	createReq := &cloud.SubnetBatchCreateReq[cloud.GcpSubnetCreateExt]{
 		Subnets: createResources,
 	}
-	if _, err := dataCli.Gcp.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-		return err
-	}
-
-	return nil
+	return dataCli.Gcp.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
 }

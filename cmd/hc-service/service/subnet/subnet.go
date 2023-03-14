@@ -36,6 +36,12 @@ func InitSubnetService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
+	h.Add("TCloudSubnetBatchCreate", "POST", "/vendors/tcloud/subnets/batch/create", s.TCloudSubnetBatchCreate)
+	h.Add("AwsSubnetCreate", "POST", "/vendors/aws/subnets/create", s.AwsSubnetCreate)
+	h.Add("HuaWeiSubnetCreate", "POST", "/vendors/huawei/subnets/create", s.HuaWeiSubnetCreate)
+	h.Add("GcpSubnetCreate", "POST", "/vendors/gcp/subnets/create", s.GcpSubnetCreate)
+	h.Add("AzureSubnetCreate", "POST", "/vendors/azure/subnets/create", s.AzureSubnetCreate)
+
 	h.Add("TCloudSubnetUpdate", "PATCH", "/vendors/tcloud/subnets/{id}", s.TCloudSubnetUpdate)
 	h.Add("AwsSubnetUpdate", "PATCH", "/vendors/aws/subnets/{id}", s.AwsSubnetUpdate)
 	h.Add("HuaWeiSubnetUpdate", "PATCH", "/vendors/huawei/subnets/{id}", s.HuaWeiSubnetUpdate)

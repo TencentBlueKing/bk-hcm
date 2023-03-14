@@ -28,6 +28,135 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
+// -------------------------- Create --------------------------
+
+// SubnetCreateOption defines create subnet options.
+type SubnetCreateOption[T SubnetCreateExt] struct {
+	Name       string  `json:"name" validate:"required"`
+	Memo       *string `json:"memo,omitempty" validate:"omitempty"`
+	CloudVpcID string  `json:"cloud_vpc_id" validate:"required"`
+	Extension  *T      `json:"extension" validate:"required"`
+}
+
+// SubnetCreateExt defines create subnet extensional info.
+type SubnetCreateExt interface {
+	TCloudSubnetCreateExt | AwsSubnetCreateExt | GcpSubnetCreateExt | AzureSubnetCreateExt | HuaWeiSubnetCreateExt
+}
+
+// TCloudSubnetCreateExt defines tencent cloud create subnet extensional info.
+type TCloudSubnetCreateExt struct {
+	Region   string `json:"region" validate:"required"`
+	Zone     string `json:"zone" validate:"required"`
+	IPv4Cidr string `json:"ipv4_cidr" validate:"required,cidrv4"`
+}
+
+// AwsSubnetCreateExt defines create aws subnet extensional info.
+type AwsSubnetCreateExt struct {
+	Region   string  `json:"region" validate:"required"`
+	Zone     *string `json:"zone" validate:"omitempty"`
+	IPv4Cidr *string `json:"ipv4_cidr" validate:"omitempty,cidrv4"`
+	IPv6Cidr *string `json:"ipv6_cidr" validate:"omitempty,cidrv6"`
+}
+
+// GcpSubnetCreateExt defines create gcp subnet extensional info.
+type GcpSubnetCreateExt struct {
+	Region                string `json:"region" validate:"required"`
+	IPv4Cidr              string `json:"ipv4_cidr" validate:"required,cidrv4"`
+	PrivateIpGoogleAccess bool   `json:"private_ip_google_access" validate:"omitempty"`
+	EnableFlowLogs        bool   `json:"enable_flow_logs" validate:"omitempty"`
+}
+
+// AzureSubnetCreateExt defines create azure subnet extensional info.
+type AzureSubnetCreateExt struct {
+	ResourceGroup        string   `json:"resource_group" validate:"required"`
+	IPv4Cidr             []string `json:"ipv4_cidr" validate:"required,dive,cidrv4"`
+	IPv6Cidr             []string `json:"ipv6_cidr" validate:"omitempty,dive,cidrv6"`
+	CloudRouteTableID    string   `json:"cloud_route_table_id,omitempty" validate:"omitempty"`
+	NatGateway           string   `json:"nat_gateway,omitempty" validate:"omitempty"`
+	NetworkSecurityGroup string   `json:"network_security_group,omitempty" validate:"omitempty"`
+}
+
+// HuaWeiSubnetCreateExt defines create huawei subnet extensional info.
+type HuaWeiSubnetCreateExt struct {
+	Region     string  `json:"region" validate:"required"`
+	Zone       *string `json:"zone" validate:"omitempty"`
+	IPv4Cidr   string  `json:"ipv4_cidr" validate:"required,cidrv4"`
+	Ipv6Enable bool    `json:"ipv6_enable" validate:"omitempty"`
+	GatewayIp  string  `json:"gateway_ip" validate:"required"`
+}
+
+// TCloudSubnetCreateOption defines tcloud create subnet options.
+type TCloudSubnetCreateOption SubnetCreateOption[TCloudSubnetCreateExt]
+
+// Validate TCloudSubnetCreateOption.
+func (c TCloudSubnetCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// TCloudSubnetsCreateOption defines create tencent cloud subnets options.
+type TCloudSubnetsCreateOption struct {
+	AccountID  string                     `json:"account_id" validate:"required"`
+	Region     string                     `json:"region" validate:"required"`
+	CloudVpcID string                     `json:"cloud_vpc_id" validate:"required"`
+	Subnets    []TCloudOneSubnetCreateOpt `json:"subnets" validate:"min=1"`
+}
+
+// TCloudOneSubnetCreateOpt defines create one tencent cloud subnets options for TCloudSubnetsCreateOption.
+type TCloudOneSubnetCreateOpt struct {
+	IPv4Cidr          string `json:"ipv4_cidr" validate:"required,cidrv4"`
+	Name              string `json:"name" validate:"required"`
+	Zone              string `json:"zone" validate:"required"`
+	CloudRouteTableID string `json:"cloud_route_table_id" validate:"omitempty"`
+}
+
+// Validate TCloudSubnetsCreateOption.
+func (c TCloudSubnetsCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// AwsSubnetCreateOption defines aws create subnet options.
+type AwsSubnetCreateOption SubnetCreateOption[AwsSubnetCreateExt]
+
+// Validate AwsSubnetCreateOption.
+func (c AwsSubnetCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// AwsDefaultSubnetCreateOption defines create default aws subnet extensional info.
+type AwsDefaultSubnetCreateOption struct {
+	Region string `json:"region" validate:"required"`
+	Zone   string `json:"zone" validate:"required"`
+}
+
+// Validate AwsDefaultSubnetCreateOption.
+func (c AwsDefaultSubnetCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// GcpSubnetCreateOption defines gcp create subnet options.
+type GcpSubnetCreateOption SubnetCreateOption[GcpSubnetCreateExt]
+
+// Validate GcpSubnetCreateOption.
+func (c GcpSubnetCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// AzureSubnetCreateOption defines azure create subnet options.
+type AzureSubnetCreateOption SubnetCreateOption[AzureSubnetCreateExt]
+
+// Validate AzureSubnetCreateOption.
+func (c AzureSubnetCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// HuaWeiSubnetCreateOption defines HuaWei create subnet options.
+type HuaWeiSubnetCreateOption SubnetCreateOption[HuaWeiSubnetCreateExt]
+
+// Validate HuaWeiSubnetCreateOption.
+func (c HuaWeiSubnetCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
 // -------------------------- Update --------------------------
 
 // SubnetUpdateOption defines update subnet options.

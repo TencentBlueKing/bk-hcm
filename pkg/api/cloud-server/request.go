@@ -20,13 +20,17 @@
 package cloudserver
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
+
+	"github.com/tidwall/gjson"
 )
 
 // ListReq is a standard list operation http request.
@@ -62,4 +66,19 @@ func (req *BatchDeleteReq) Validate() error {
 	}
 
 	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Create --------------------------
+
+// RawCreateReq raw create request, only vendor is decoded, others are raw json.
+type RawCreateReq struct {
+	Vendor enumor.Vendor
+	Data   json.RawMessage
+}
+
+// UnmarshalJSON unmarshal raw json to RawCreateReq
+func (r *RawCreateReq) UnmarshalJSON(raw []byte) error {
+	r.Vendor = enumor.Vendor(gjson.GetBytes(raw, "vendor").String())
+	r.Data = raw
+	return nil
 }

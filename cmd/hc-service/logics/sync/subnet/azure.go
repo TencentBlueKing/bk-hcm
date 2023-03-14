@@ -228,7 +228,7 @@ func BatchSyncAzureSubnetList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, 
 
 	// add resource data
 	if len(createResources) > 0 {
-		err = batchCreateAzureSubnet(kt, createResources, dataCli, adaptor, req)
+		_, err = BatchCreateAzureSubnet(kt, createResources, dataCli, adaptor, req)
 		if err != nil {
 			logs.Errorf("%s-subnet batch compare db create failed. accountID: %s, rgName: %s, err: %v",
 				enumor.Azure, req.AccountID, req.ResourceGroupName, err)
@@ -366,8 +366,9 @@ func isAzureSubnetChange(info cloudcore.Subnet[cloudcore.AzureSubnetExtension], 
 	return false
 }
 
-func batchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt],
-	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *hcservice.AzureResourceSyncReq) error {
+func BatchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *hcservice.AzureResourceSyncReq) (
+	*core.BatchCreateResult, error) {
 
 	querySize := int(filter.DefaultMaxInLimit)
 	times := len(createResources) / querySize
@@ -375,6 +376,7 @@ func batchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq
 		times++
 	}
 
+	createRes := &core.BatchCreateResult{IDs: make([]string, 0)}
 	for i := 0; i < times; i++ {
 		var newResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt]
 		if i == times-1 {
@@ -392,13 +394,13 @@ func batchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq
 		vpcMap, err := logics.QueryVpcIDsAndSync(kt, adaptor, dataCli, opt)
 		if err != nil {
 			logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+			return nil, err
 		}
 
 		for index, resource := range newResources {
 			one, exist := vpcMap[resource.CloudVpcID]
 			if !exist {
-				return fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
+				return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
 			}
 
 			newResources[index].VpcID = one
@@ -407,10 +409,12 @@ func batchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq
 		createReq := &cloud.SubnetBatchCreateReq[cloud.AzureSubnetCreateExt]{
 			Subnets: newResources,
 		}
-		if _, err := dataCli.Azure.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-			return err
+		res, err := dataCli.Azure.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
+		if err != nil {
+			return nil, err
 		}
+		createRes.IDs = append(createRes.IDs, res.IDs...)
 	}
 
-	return nil
+	return createRes, nil
 }

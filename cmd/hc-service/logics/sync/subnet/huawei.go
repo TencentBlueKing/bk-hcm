@@ -244,7 +244,7 @@ func BatchSyncHuaWeiSubnetList(kt *kit.Kit, req *SyncHuaWeiOption, list *types.H
 
 	// add resource data
 	if len(createResources) > 0 {
-		err = batchCreateHuaWeiSubnet(kt, createResources, dataCli, adaptor, req)
+		_, err = BatchCreateHuaWeiSubnet(kt, createResources, dataCli, adaptor, req)
 		if err != nil {
 			logs.Errorf("%s-subnet batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.HuaWei, req.AccountID, req.Region, err)
@@ -384,8 +384,9 @@ func isHuaWeiSubnetChange(info cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension]
 	return false
 }
 
-func batchCreateHuaWeiSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt],
-	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncHuaWeiOption) error {
+func BatchCreateHuaWeiSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncHuaWeiOption) (
+	*core.BatchCreateResult, error) {
 
 	opt := &logics.QueryVpcIDsAndSyncOption{
 		Vendor:      enumor.HuaWei,
@@ -396,13 +397,13 @@ func batchCreateHuaWeiSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateRe
 	vpcMap, err := logics.QueryVpcIDsAndSync(kt, adaptor, dataCli, opt)
 	if err != nil {
 		logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return nil, err
 	}
 
 	for index, resource := range createResources {
 		one, exist := vpcMap[resource.CloudVpcID]
 		if !exist {
-			return fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
+			return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
 		}
 
 		createResources[index].VpcID = one
@@ -411,9 +412,5 @@ func batchCreateHuaWeiSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateRe
 	createReq := &cloud.SubnetBatchCreateReq[cloud.HuaWeiSubnetCreateExt]{
 		Subnets: createResources,
 	}
-	if _, err := dataCli.HuaWei.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-		return err
-	}
-
-	return nil
+	return dataCli.HuaWei.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
 }

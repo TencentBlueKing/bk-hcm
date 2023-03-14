@@ -59,7 +59,7 @@
   "message": "ok",
   "data": {
     "id": "00000001",
-    "vendor": "tcloud",
+    "vendor": "aws",
     "account_id": "00000001",
     "cloud_vpc_id": "vpc-xxxxxxxx",
     "cloud_id": "subnet-xxxxxxxx",
@@ -98,7 +98,7 @@
   "message": "ok",
   "data": {
     "id": "00000001",
-    "vendor": "tcloud",
+    "vendor": "gcp",
     "account_id": "00000001",
     "cloud_vpc_id": "https://www.googleapis.com/compute/v1/projects/xxx/global/networks/test",
     "cloud_id": "456",
@@ -137,7 +137,7 @@
   "message": "ok",
   "data": {
     "id": "00000001",
-    "vendor": "tcloud",
+    "vendor": "azure",
     "account_id": "00000001",
     "cloud_vpc_id": "xxx",
     "cloud_id": "subnet-xxxxxxxx",
@@ -172,7 +172,7 @@
   "message": "ok",
   "data": {
     "id": "00000001",
-    "vendor": "tcloud",
+    "vendor": "huawei",
     "account_id": "00000001",
     "cloud_vpc_id": "xxx",
     "cloud_id": "subnet-xxxxxxxx",
@@ -267,11 +267,11 @@
 
 #### data.extension(azure)
 
-| 参数名称                     | 参数类型   | 描述     |
-|--------------------------|--------|--------|
-| resource_group           | string | 资源组    |
-| nat_gateway              | string | NAT网关  |
-| cloud_security_group_id  | string | 云安全组ID |
+| 参数名称                    | 参数类型   | 描述     |
+|-------------------------|--------|--------|
+| resource_group          | string | 资源组    |
+| nat_gateway             | string | NAT网关  |
+| cloud_security_group_id | string | 云安全组ID |
 
 #### data.extension(huawei)
 

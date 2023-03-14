@@ -207,7 +207,7 @@ func BatchSyncAwsSubnetList(kt *kit.Kit, req *SyncAwsOption, list *types.AwsSubn
 
 	// add resource data
 	if len(createResources) > 0 {
-		err = batchCreateAwsSubnet(kt, createResources, dataCli, adaptor, req)
+		_, err = BatchCreateAwsSubnet(kt, createResources, dataCli, adaptor, req)
 		if err != nil {
 			logs.Errorf("%s-subnet batch compare db create failed. accountID: %s, region: %s, err: %v",
 				enumor.Aws, req.AccountID, req.Region, err)
@@ -347,8 +347,9 @@ func isAwsSubnetChange(info cloudcore.Subnet[cloudcore.AwsSubnetExtension], item
 	return false
 }
 
-func batchCreateAwsSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt],
-	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncAwsOption) error {
+func BatchCreateAwsSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncAwsOption) (
+	*core.BatchCreateResult, error) {
 
 	cloudVpcIDs := make([]string, 0, len(createResources))
 	for _, one := range createResources {
@@ -364,13 +365,13 @@ func batchCreateAwsSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[c
 	vpcMap, err := logics.QueryVpcIDsAndSync(kt, adaptor, dataCli, opt)
 	if err != nil {
 		logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return nil, err
 	}
 
 	for index, resource := range createResources {
 		one, exist := vpcMap[resource.CloudVpcID]
 		if !exist {
-			return fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
+			return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
 		}
 
 		createResources[index].VpcID = one
@@ -380,9 +381,5 @@ func batchCreateAwsSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[c
 		Subnets: createResources,
 	}
 
-	if _, err := dataCli.Aws.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-		return err
-	}
-
-	return nil
+	return dataCli.Aws.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
 }

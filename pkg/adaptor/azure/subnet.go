@@ -33,6 +33,79 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
 
+// CreateSubnet create subnet.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/create-or-update?tabs=HTTP
+func (a *Azure) CreateSubnet(kt *kit.Kit, opt *types.AzureSubnetCreateOption) (*types.AzureSubnet, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := a.clientSet.subnetClient()
+	if err != nil {
+		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	req := converter.PtrToVal(convertSubnetCreateReq(opt))
+	vpc := parseIDToName(opt.CloudVpcID)
+	resp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.Extension.ResourceGroup, vpc, opt.Name, req, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := resp.PollUntilDone(kt.Ctx, new(runtime.PollUntilDoneOptions))
+	if err != nil {
+		return nil, err
+	}
+
+	subnet := convertSubnet(&res.Subnet, opt.Extension.ResourceGroup, opt.CloudVpcID)
+	return subnet, nil
+}
+
+func convertSubnetCreateReq(opt *types.AzureSubnetCreateOption) *armnetwork.Subnet {
+	if opt == nil {
+		return nil
+	}
+
+	subnet := &armnetwork.Subnet{
+		Properties: &armnetwork.SubnetPropertiesFormat{
+			AddressPrefix: nil,
+			AddressPrefixes: converter.SliceToPtr(append(opt.Extension.IPv4Cidr,
+				opt.Extension.IPv6Cidr...)),
+			ApplicationGatewayIPConfigurations: nil,
+			Delegations:                        nil,
+			IPAllocations:                      nil,
+			NatGateway:                         nil,
+			NetworkSecurityGroup:               nil,
+			PrivateEndpointNetworkPolicies:     nil,
+			PrivateLinkServiceNetworkPolicies:  nil,
+			RouteTable:                         nil,
+			ServiceEndpointPolicies:            nil,
+			ServiceEndpoints:                   nil,
+			IPConfigurationProfiles:            nil,
+			IPConfigurations:                   nil,
+			PrivateEndpoints:                   nil,
+			ProvisioningState:                  nil,
+			Purpose:                            nil,
+			ResourceNavigationLinks:            nil,
+			ServiceAssociationLinks:            nil,
+		},
+	}
+
+	if len(opt.Extension.CloudRouteTableID) > 0 {
+		subnet.Properties.RouteTable = &armnetwork.RouteTable{ID: &opt.Extension.CloudRouteTableID}
+	}
+
+	if len(opt.Extension.NetworkSecurityGroup) > 0 {
+		subnet.Properties.NetworkSecurityGroup = &armnetwork.SecurityGroup{ID: &opt.Extension.NetworkSecurityGroup}
+	}
+
+	if len(opt.Extension.NatGateway) > 0 {
+		subnet.Properties.NatGateway = &armnetwork.SubResource{ID: &opt.Extension.NatGateway}
+	}
+
+	return subnet
+}
+
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
 func (a *Azure) UpdateSubnet(_ *kit.Kit, _ *types.AzureSubnetUpdateOption) error {

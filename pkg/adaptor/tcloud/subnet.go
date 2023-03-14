@@ -29,8 +29,81 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
+
+// CreateSubnet create subnet.
+// reference: https://cloud.tencent.com/document/api/215/15782
+func (t *TCloud) CreateSubnet(kt *kit.Kit, opt *types.TCloudSubnetCreateOption) (*types.TCloudSubnet, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	subnetClient, err := t.clientSet.vpcClient(opt.Extension.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	req := vpc.NewCreateSubnetRequest()
+	req.VpcId = common.StringPtr(opt.CloudVpcID)
+	req.SubnetName = common.StringPtr(opt.Name)
+	req.CidrBlock = common.StringPtr(opt.Extension.IPv4Cidr)
+	req.Zone = common.StringPtr(opt.Extension.Zone)
+
+	resp, err := subnetClient.CreateSubnetWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("create tencent cloud subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return convertSubnet(resp.Response.Subnet, opt.Extension.Region), nil
+}
+
+// CreateSubnets create subnets.
+// reference: https://cloud.tencent.com/document/api/215/31960
+func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *types.TCloudSubnetsCreateOption) ([]types.TCloudSubnet, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	subnetClient, err := t.clientSet.vpcClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	req := vpc.NewCreateSubnetsRequest()
+	req.VpcId = common.StringPtr(opt.CloudVpcID)
+	for _, subnet := range opt.Subnets {
+		one := &vpc.SubnetInput{
+			CidrBlock:  common.StringPtr(subnet.IPv4Cidr),
+			SubnetName: common.StringPtr(subnet.Name),
+			Zone:       common.StringPtr(subnet.Zone),
+		}
+
+		if len(subnet.CloudRouteTableID) != 0 {
+			one.RouteTableId = common.StringPtr(subnet.CloudRouteTableID)
+		}
+		req.Subnets = append(req.Subnets, one)
+	}
+
+	resp, err := subnetClient.CreateSubnetsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("create tencent cloud subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	results := make([]types.TCloudSubnet, 0)
+	for _, subnet := range resp.Response.SubnetSet {
+		if subnet == nil {
+			continue
+		}
+
+		results = append(results, converter.PtrToVal(convertSubnet(subnet, opt.Region)))
+	}
+
+	return results, nil
+}
 
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
