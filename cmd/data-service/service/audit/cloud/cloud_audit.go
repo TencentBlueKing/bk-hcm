@@ -23,6 +23,7 @@ import (
 	"hcm/cmd/data-service/service/audit/cloud/cvm"
 	"hcm/cmd/data-service/service/audit/cloud/firewall"
 	networkinterface "hcm/cmd/data-service/service/audit/cloud/network-interface"
+	routetable "hcm/cmd/data-service/service/audit/cloud/route-table"
 	securitygroup "hcm/cmd/data-service/service/audit/cloud/security-group"
 	"hcm/cmd/data-service/service/audit/cloud/subnet"
 	"hcm/pkg/dal/dao"
@@ -37,6 +38,7 @@ func NewCloudAudit(dao dao.Set) *Audit {
 		cvm:              cvm.NewCvm(dao),
 		subnet:           subnet.NewSubnet(dao),
 		networkInterface: networkinterface.NewNetworkInterface(dao),
+		routeTable:       routetable.NewRouteTable(dao),
 	}
 }
 
@@ -48,4 +50,5 @@ type Audit struct {
 	cvm              *cvm.Cvm
 	subnet           *subnet.Subnet
 	networkInterface *networkinterface.NetworkInterface
+	routeTable       *routetable.RouteTable
 }

@@ -20,21 +20,28 @@
 package routetable
 
 import (
+	"fmt"
+
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud/route-table"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
+	routetable "hcm/pkg/api/data-service/cloud/route-table"
 	hcproto "hcm/pkg/api/hc-service/route-table"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -50,6 +57,7 @@ func InitRouteTableService(c *capability.Capability) {
 	h.Add("GetRouteTable", "GET", "/route_tables/{id}", svc.GetRouteTable)
 	h.Add("ListRouteTable", "POST", "/route_tables/list", svc.ListRouteTable)
 	h.Add("CountRouteTableSubnets", "POST", "/route_tables/subnets/count", svc.CountRouteTableSubnets)
+	h.Add("AssignRouteTableToBiz", "POST", "/route_tables/assign/bizs", svc.AssignRouteTableToBiz)
 
 	h.Add("ListRoute", "POST", "/vendors/{vendor}/route_tables/{route_table_id}/routes/list", svc.ListRoute)
 
@@ -67,6 +75,7 @@ func InitRouteTableService(c *capability.Capability) {
 type routeTableSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+	audit      audit.Interface
 }
 
 // UpdateRouteTable update route table.
@@ -292,4 +301,102 @@ func (svc *routeTableSvc) countRouteTableSubnets(cts *rest.Contexts, validHandle
 	}
 
 	return result, nil
+}
+
+// AssignRouteTableToBiz assign route tables to biz.
+func (svc *routeTableSvc) AssignRouteTableToBiz(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloudserver.AssignRouteTableToBizReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// authorize
+	err := svc.authorizeRouteTableAssignOp(cts.Kit, req.RouteTableIDs, req.BkBizID)
+	if err != nil {
+		return nil, err
+	}
+
+	// check if all route tables are not assigned to biz, right now assigning resource twice is not allowed
+	routeTableFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.RouteTableIDs}
+	err = svc.checkRouteTablesInBiz(cts.Kit, routeTableFilter, constant.UnassignedBiz)
+	if err != nil {
+		return nil, err
+	}
+
+	// create assign audit.
+	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.RouteTableAuditResType, req.RouteTableIDs, req.BkBizID)
+	if err != nil {
+		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// update route table biz relations
+	createReq := &routetable.RouteTableBaseInfoBatchUpdateReq{
+		RouteTables: []routetable.RouteTableBaseInfoUpdateReq{{
+			IDs: req.RouteTableIDs,
+			Data: &routetable.RouteTableUpdateBaseInfo{
+				BkBizID: req.BkBizID,
+			},
+		}},
+	}
+
+	err = svc.client.DataService().Global.RouteTable.BatchUpdateBaseInfo(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (svc *routeTableSvc) authorizeRouteTableAssignOp(kt *kit.Kit, ids []string, bizID int64) error {
+	basicInfoReq := cloud.ListResourceBasicInfoReq{
+		ResourceType: enumor.RouteTableCloudResType,
+		IDs:          ids,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(kt.Ctx, kt.Header(), basicInfoReq)
+	if err != nil {
+		return err
+	}
+
+	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
+	for _, info := range basicInfoMap {
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RouteTable, Action: meta.Assign,
+			ResourceID: info.AccountID}, BizID: bizID})
+	}
+	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// checkRouteTablesInBiz check if routeTables are in the specified biz.
+func (svc *routeTableSvc) checkRouteTablesInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID int64) error {
+	req := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "bk_biz_id", Op: filter.NotEqual.Factory(), Value: bizID}, rule,
+			},
+		},
+		Page: &core.BasePage{
+			Count: true,
+		},
+	}
+	result, err := svc.client.DataService().Global.RouteTable.List(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("count route tables that are not in biz failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	if result.Count != 0 {
+		return fmt.Errorf("%d route tables are already assigned", result.Count)
+	}
+
+	return nil
 }

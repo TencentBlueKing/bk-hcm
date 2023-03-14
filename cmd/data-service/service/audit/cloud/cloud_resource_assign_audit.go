@@ -110,6 +110,8 @@ func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.cvm.CvmAssignAuditBuild(kt, assigns)
 	case enumor.NetworkInterfaceAuditResType:
 		audits, err = ad.networkInterface.NetworkInterfaceAssignAuditBuild(kt, assigns)
+	case enumor.RouteTableAuditResType:
+		audits, err = ad.routeTable.RouteTableAssignAuditBuild(kt, assigns)
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}
