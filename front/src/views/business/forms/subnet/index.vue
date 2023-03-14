@@ -33,7 +33,6 @@ const handleFormFilter = (data: BusinessFormFilter) => {
   formData.region = data.region;
   formData.account_id = data.account_id;
 };
-const accountList = ref([]);
 
 
 // 提交
@@ -75,7 +74,7 @@ const cancel = async () => {
         :label="t('所属的VPC')"
         class="item-warp"
       >
-        <vpc-selector v-model="formData.cloud_vpc_id"></vpc-selector>
+        <vpc-selector :vendor="formData.vendor" v-model="formData.cloud_vpc_id"></vpc-selector>
       </bk-form-item>
       <bk-form-item
         :label="t('可用区')"
@@ -135,6 +134,7 @@ const cancel = async () => {
         class="item-warp"
       >
         <bk-switcher
+          disabled
           v-model="formData.private_ip_google_access"
         />
       </bk-form-item>
@@ -144,6 +144,7 @@ const cancel = async () => {
         class="item-warp"
       >
         <bk-switcher
+          disabled
           v-model="formData.enable_flow_logs"
         />
       </bk-form-item>
@@ -156,21 +157,10 @@ const cancel = async () => {
           v-model="formData.resource_group"></resource-group-selector>
       </bk-form-item>
       <bk-form-item
-        v-if="formData.vendor === 'azure'"
-        :label="t('关联NAT网关')"
+        :label="t('备注')"
         class="item-warp"
       >
-        <bk-select
-          class="item-warp-component"
-          v-model="formData.nat_gateway"
-        >
-          <bk-option
-            v-for="(item, index) in accountList"
-            :key="index"
-            :value="item.id"
-            :label="item.name"
-          />
-        </bk-select>
+        <bk-input class="item-warp-component" type="textarea" v-model="formData.memo" :placeholder="t('请输入备注')" />
       </bk-form-item>
       <bk-form-item
         :label="t('备注')"

@@ -5,6 +5,12 @@ import {
 } from '@/store';
 
 const props = defineProps({
+  vendor: {
+    type: String,
+    default() {
+      return 'tcloud';
+    },
+  },
   modelValue: {
     type: String,
   },
@@ -22,8 +28,12 @@ const hasMoreData = ref(true);
 const getVpcList = async () => {
   if (!hasMoreData.value) return;
   loading.value = true;
+  const rulesData = [];
+  if (props.vendor) {
+    rulesData.push({ field: 'vendor', op: 'eq', value: props.vendor });
+  }
   const res = await resourceStore.list({
-    filter: { op: 'and', rules: [] },
+    filter: { op: 'and', rules: rulesData },
     page: {
       start: vpcPage.value * 100,
       limit: 100,
@@ -43,6 +53,14 @@ watch(() => selectedValue.value, (val) => {
   emit('update:modelValue', val);
 });
 
+watch(() => props.vendor, () => {
+  vpcPage.value = 0;
+  hasMoreData.value = true;
+  vpcList.value = [];
+  selectedValue.value = '';
+  getVpcList();
+});
+
 defineExpose({
   vpcList,
 });
@@ -58,7 +76,7 @@ defineExpose({
     <bk-option
       v-for="(item, index) in vpcList"
       :key="index"
-      :value="item.id"
+      :value="item.cloud_id"
       :label="item.name"
     />
   </bk-select>

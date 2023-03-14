@@ -26,7 +26,7 @@ const selectedValue = ref(props.modelValue);
 const hasMoreData = ref(true);
 
 const getZonesData = async () => {
-  if (!props.vendor || !props.region || !hasMoreData.value) return;
+  if (!hasMoreData.value || !props.vendor || !props.region) return;
   loading.value = true;
   const res = await businessStore.getZonesList({
     vendor: props.vendor,
@@ -47,20 +47,25 @@ watchEffect(void (async () => {
 })());
 
 watch(() => props.vendor, () => {
-  zonesList.value = [];
-  selectedValue.value = '';
+  resetData();
   getZonesData();
 });
 
 watch(() => props.region, () => {
-  zonesList.value = [];
-  selectedValue.value = '';
+  resetData();
   getZonesData();
 });
 
 watch(() => selectedValue.value, (val) => {
   emit('update:modelValue', val);
 });
+
+const resetData = () => {
+  zonePage.value = 0;
+  hasMoreData.value = true;
+  zonesList.value = [];
+  selectedValue.value = '';
+};
 
 defineExpose({
   zonesList,
@@ -77,7 +82,7 @@ defineExpose({
     <bk-option
       v-for="(item, index) in zonesList"
       :key="index"
-      :value="item.id"
+      :value="item.name"
       :label="item.name_cn || item.name"
     />
   </bk-select>

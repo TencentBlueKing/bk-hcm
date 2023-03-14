@@ -5,6 +5,7 @@ import type {
 import {
   PropType,
   ref,
+  defineExpose,
 } from 'vue';
 import {
   useI18n,
@@ -66,6 +67,12 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList(props, 'subnets');
+
+// 抛出请求数据的方法，新增成功使用
+const fetchComponentsData = () => {
+  handlePageChange(1);
+};
+defineExpose({ fetchComponentsData });
 
 // 分配 subnet
 const handleDistributionSubnet = () => {

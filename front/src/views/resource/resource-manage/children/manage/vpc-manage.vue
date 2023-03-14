@@ -6,6 +6,7 @@ import type {
 import {
   PropType,
   ref,
+  defineExpose,
 } from 'vue';
 import {
   useI18n,
@@ -68,9 +69,15 @@ const {
   handleSort,
 } = useQueryList(props, 'vpcs');
 
+// 抛出请求数据的方法，新增成功使用
+const fetchComponentsData = () => {
+  handlePageChange(1);
+};
+defineExpose({ fetchComponentsData });
+
 const handleDeleteVpc = (vpcList: any) => {
-  const vpcIds = vpcList.map((vpc: any) => vpc.id)
-  isLoadingSubnets.value = true
+  const vpcIds = vpcList.map((vpc: any) => vpc.id);
+  isLoadingSubnets.value = true;
   resourceStore
     .list(
       {
@@ -90,12 +97,12 @@ const handleDeleteVpc = (vpcList: any) => {
     )
     .then((countResult: any) => {
       chooseVpcSubnetsNum.value = countResult?.data?.count || 0;
-      handleShowDelete(vpcIds)
+      handleShowDelete(vpcIds);
     })
     .finally(() => {
-      isLoadingSubnets.value = false
-    })
-}
+      isLoadingSubnets.value = false;
+    });
+};
 </script>
 
 <template>

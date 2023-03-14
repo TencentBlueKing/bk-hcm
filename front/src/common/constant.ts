@@ -13,7 +13,7 @@ export const RESOURCE_TYPES = [
     type: 'subnet',
   },
   {
-    name: '安全组/GCP防火墙',
+    name: '安全组',
     type: 'security',
   },
   {

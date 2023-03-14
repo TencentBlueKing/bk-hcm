@@ -75,8 +75,8 @@ const handleCancel = () => {
 
 // 新增成功 刷新列表
 const handleSuccess = () => {
-  componentRef.value.fetchComponentsData();
   handleCancel();
+  componentRef.value.fetchComponentsData();
 };
 </script>
 

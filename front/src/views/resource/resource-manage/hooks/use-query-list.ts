@@ -122,7 +122,7 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
     },
     {
       deep: true,
-      immediate: true,
+      // immediate: true,
     },
   );
 
