@@ -46,15 +46,23 @@ func GetCommParams(config *cc.Esb) *CommParams {
 
 // GetCommonHeader 通用Header包括调用ESB所需用户和应用认证、RequestID
 func GetCommonHeader(config *cc.Esb) *http.Header {
+	return GetCommonHeaderByUser(config, "")
+}
+
+// GetCommonHeaderByUser 通用Header包括调用ESB所需用户和应用认证、RequestID，支持传入自定义的username
+func GetCommonHeaderByUser(config *cc.Esb, username string) *http.Header {
 	h := http.Header{}
 	// RequestID
 	h.Set(constant.RidKey, uuid.UUID())
 
+	if username == "" {
+		username = config.User
+	}
 	// ESB所需用户和应用认证, Note: json可以确保100%成功的，所以忽略error返回值
 	bkApiAuthorization, _ := json.MarshalToString(map[string]string{
 		"bk_app_code":   config.AppCode,
 		"bk_app_secret": config.AppSecret,
-		"bk_username":   config.User,
+		"bk_username":   username,
 	})
 	h.Set("X-Bkapi-Authorization", bkApiAuthorization)
 

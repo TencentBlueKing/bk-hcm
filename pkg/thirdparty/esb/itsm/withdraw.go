@@ -35,7 +35,9 @@ func (i *itsm) WithdrawTicket(ctx context.Context, sn string, operator string) e
 		"action_message": "applicant withdraw ticket",
 	}
 	resp := new(types.BaseResponse)
-	header := types.GetCommonHeader(i.config)
+	//  Note: 由于某些版本的ESB bkApiAuthorization里的bk_username 会与接口参数里的operator冲突，导致接口里的operator会被bk_username覆盖
+	//   所以这里传入operator避免被默认esb调用bk_username替代
+	header := types.GetCommonHeaderByUser(i.config, operator)
 	err := i.client.Post().
 		SubResourcef("/itsm/operate_ticket/").
 		WithContext(ctx).
