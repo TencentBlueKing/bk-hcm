@@ -34,8 +34,10 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	tableaudit "hcm/pkg/dal/table/audit"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	tabletype "hcm/pkg/dal/table/types"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
@@ -404,6 +406,81 @@ func (a *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 	return &protocloud.AccountListResult{Details: details}, nil
 }
 
+// ListAccountWithBiz 查询账号列表带业务ID列表，但extension中没有密钥相关信息。
+func (a *accountSvc) ListAccountWithBiz(kt *kit.Kit, ids []string) ([]types.Account, error) {
+
+	if len(ids) > int(core.DefaultMaxPageLimit) {
+		return nil, fmt.Errorf("ids shuold <= %d", core.DefaultMaxPageLimit)
+	}
+
+	listOpt := &types.ListOption{
+		Filter: tools.ContainersExpression("id", ids),
+		Page:   core.DefaultBasePage,
+	}
+	result, err := a.dao.Account().List(kt, listOpt)
+	if err != nil {
+		logs.Errorf("list account failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	listBizOpt := &types.ListOption{
+		Filter: tools.ContainersExpression("account_id", ids),
+		Page:   core.DefaultBasePage,
+	}
+	bizResult, err := a.dao.AccountBizRel().List(kt, listBizOpt)
+	if err != nil {
+		logs.Errorf("list account biz rel failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	accountBizMap := make(map[string][]int64, 0)
+	for _, one := range bizResult.Details {
+		if _, exist := accountBizMap[one.AccountID]; !exist {
+			accountBizMap[one.AccountID] = make([]int64, 0)
+		}
+
+		accountBizMap[one.AccountID] = append(accountBizMap[one.AccountID], one.BkBizID)
+	}
+
+	accounts := make([]types.Account, 0, len(result.Details))
+	for _, one := range result.Details {
+		bizIDs := make([]int64, 0)
+		if list, exist := accountBizMap[one.ID]; exist {
+			bizIDs = list
+		}
+
+		extension, err := tools.AccountExtensionRemoveSecretKey(string(one.Extension))
+		if err != nil {
+			logs.Errorf("account extension remove secret key failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		accounts = append(accounts, types.Account{
+			AccountTable: tablecloud.AccountTable{
+				ID:         one.ID,
+				Name:       one.Name,
+				Vendor:     one.Vendor,
+				Managers:   one.Managers,
+				Type:       one.Type,
+				Site:       one.Site,
+				SyncStatus: one.SyncStatus,
+				Price:      one.Price,
+				PriceUnit:  one.PriceUnit,
+				Extension:  tabletype.JsonField(extension),
+				TenantID:   one.TenantID,
+				Creator:    one.Creator,
+				Reviser:    one.Reviser,
+				CreatedAt:  one.CreatedAt,
+				UpdatedAt:  one.UpdatedAt,
+				Memo:       one.Memo,
+			},
+			BkBizIDs: bizIDs,
+		})
+	}
+
+	return accounts, nil
+}
+
 // DeleteAccount account with filter.
 func (a *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.AccountDeleteReq)
@@ -441,6 +518,11 @@ func (a *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	_, err = a.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		accounts, err := a.ListAccountWithBiz(cts.Kit, delAccountIDs)
+		if err != nil {
+			return nil, err
+		}
+
 		delAccountFilter := tools.ContainersExpression("id", delAccountIDs)
 		if err := a.dao.Account().DeleteWithTx(cts.Kit, txn, delAccountFilter); err != nil {
 			return nil, err
@@ -448,6 +530,31 @@ func (a *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 
 		delAccountBizRelFilter := tools.ContainersExpression("account_id", delAccountIDs)
 		if err := a.dao.AccountBizRel().DeleteWithTx(cts.Kit, txn, delAccountBizRelFilter); err != nil {
+			return nil, err
+		}
+
+		audits := make([]*tableaudit.AuditTable, 0, len(accounts))
+		for _, one := range accounts {
+			audits = append(audits, &tableaudit.AuditTable{
+				ResID:      one.ID,
+				CloudResID: "",
+				ResName:    one.Name,
+				ResType:    enumor.AccountAuditResType,
+				Action:     enumor.Delete,
+				BkBizID:    0,
+				Vendor:     enumor.Vendor(one.Vendor),
+				AccountID:  one.ID,
+				Operator:   cts.Kit.User,
+				Source:     cts.Kit.GetRequestSource(),
+				Rid:        cts.Kit.Rid,
+				AppCode:    cts.Kit.AppCode,
+				Detail: &tableaudit.BasicDetail{
+					Data: one,
+				},
+			})
+		}
+		if err = a.dao.Audit().BatchCreate(cts.Kit, audits); err != nil {
+			logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 

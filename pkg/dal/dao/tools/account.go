@@ -17,20 +17,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package tools
 
 import (
-	"hcm/pkg/dal/table/cloud"
+	"strings"
+
+	"hcm/pkg/tools/json"
+
+	"github.com/tidwall/gjson"
 )
 
-// ListAccountDetails list account details.
-type ListAccountDetails struct {
-	Count   uint64                `json:"count,omitempty"`
-	Details []*cloud.AccountTable `json:"details,omitempty"`
-}
+// AccountExtensionRemoveSecretKey ...
+func AccountExtensionRemoveSecretKey(extension string) (string, error) {
+	m := gjson.Parse(extension).Map()
 
-// Account ...
-type Account struct {
-	cloud.AccountTable `json:",inline"`
-	BkBizIDs           []int64 `db:"bk_biz_ids" json:"bk_biz_ids"`
+	for key := range m {
+		if strings.Contains(key, "secret_key") {
+			delete(m, key)
+		}
+	}
+
+	return json.MarshalToString(m)
 }
