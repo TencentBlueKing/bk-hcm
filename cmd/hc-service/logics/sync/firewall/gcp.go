@@ -28,10 +28,10 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	apicloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -41,6 +41,21 @@ import (
 
 	"google.golang.org/api/compute/v1"
 )
+
+// GcpFirewallSyncOption gcp firewall sync option.
+type GcpFirewallSyncOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate GcpFirewallSyncOption gcp firewall sync request.
+func (req *GcpFirewallSyncOption) Validate() error {
+	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return validator.Validate.Struct(req)
+}
 
 // FireWallGcpDiff gcp diff for sync
 type FireWallGcpDiff struct {
@@ -54,7 +69,7 @@ type FireWallSyncDS struct {
 }
 
 // SyncGcpFirewallRule sync gcp firewall rules to hcm.
-func SyncGcpFirewallRule(kt *kit.Kit, req *sync.GcpFirewallSyncReq,
+func SyncGcpFirewallRule(kt *kit.Kit, req *GcpFirewallSyncOption,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -80,7 +95,7 @@ func SyncGcpFirewallRule(kt *kit.Kit, req *sync.GcpFirewallSyncReq,
 }
 
 // GetDatasFromDSForGcpFireWallSync get gcp firewall datas from hc
-func GetDatasFromDSForGcpFireWallSync(kt *kit.Kit, req *sync.GcpFirewallSyncReq,
+func GetDatasFromDSForGcpFireWallSync(kt *kit.Kit, req *GcpFirewallSyncOption,
 	dataCli *dataservice.Client) (map[string]*FireWallSyncDS, error) {
 
 	dsMap := make(map[string]*FireWallSyncDS)
@@ -144,7 +159,7 @@ func DiffFireWallSyncDelete(kt *kit.Kit, deleteCloudIDs []string,
 }
 
 func getDatasFromGcpForFireWallSync(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient,
-	req *sync.GcpFirewallSyncReq) (map[string]*FireWallGcpDiff, error) {
+	req *GcpFirewallSyncOption) (map[string]*FireWallGcpDiff, error) {
 
 	client, err := ad.Gcp(kt, req.AccountID)
 	if err != nil {
@@ -173,7 +188,7 @@ func getDatasFromGcpForFireWallSync(kt *kit.Kit, ad *cloudclient.CloudAdaptorCli
 }
 
 func diffGcpFireWallSync(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, dsMap map[string]*FireWallSyncDS,
-	req *sync.GcpFirewallSyncReq, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
+	req *GcpFirewallSyncOption, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
 
 	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
 	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
@@ -270,7 +285,7 @@ func isGcpChange(db *FireWallSyncDS, cloud *FireWallGcpDiff, vpcID string) bool 
 	return false
 }
 
-func diffFireWallSyncUpdate(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *sync.GcpFirewallSyncReq,
+func diffFireWallSyncUpdate(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *GcpFirewallSyncOption,
 	dsMap map[string]*FireWallSyncDS, updateCloudIDs []string, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
 
 	rulesUpdate := make([]apicloud.GcpFirewallRuleBatchUpdate, 0)
@@ -367,7 +382,7 @@ func diffFireWallSyncUpdate(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, r
 	return nil
 }
 
-func diffFireWallSyncAdd(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *sync.GcpFirewallSyncReq, addCloudIDs []string,
+func diffFireWallSyncAdd(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *GcpFirewallSyncOption, addCloudIDs []string,
 	dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) ([]string, error) {
 
 	rulesCreate := make([]apicloud.GcpFirewallRuleBatchCreate, 0)

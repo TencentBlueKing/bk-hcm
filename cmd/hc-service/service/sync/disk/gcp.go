@@ -36,15 +36,19 @@ import (
 
 // SyncGcpDisk ...
 func (svc *syncDiskSvc) SyncGcpDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.SyncGcpDiskReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncGcpDiskReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	req := &disk.SyncGcpDiskOption{
+		AccountID: syncReq.AccountID,
+		Zone:      syncReq.Zone,
+	}
 	client, err := svc.adaptor.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -115,7 +119,7 @@ func (svc *syncDiskSvc) SyncGcpDisk(cts *rest.Contexts) (interface{}, error) {
 }
 
 func (svc *syncDiskSvc) deleteGcpDisk(cts *rest.Contexts, client *gcp.Gcp,
-	req *sync.SyncGcpDiskReq, deleteIDs []string) error {
+	req *disk.SyncGcpDiskOption, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

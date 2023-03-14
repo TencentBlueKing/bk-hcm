@@ -43,7 +43,6 @@ func (svc *syncCvmSvc) SyncAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	opt := &cvm.SyncAzureCvmOption{
 		AccountID:         req.AccountID,
 		ResourceGroupName: req.ResourceGroupName,
-		CloudIDs:          req.CloudIDs,
 	}
 	if _, err := cvm.SyncAzureCvm(cts.Kit, svc.adaptor, svc.dataCli, opt); err != nil {
 		logs.Errorf("request to sync azure cvm failed, err: %v, opt: %v, rid: %s", err, req, cts.Kit.Rid)

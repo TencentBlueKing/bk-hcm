@@ -41,7 +41,6 @@ func (svc *syncEipSvc) SyncHuaWeiEip(cts *rest.Contexts) (interface{}, error) {
 	opt := &eip.SyncHuaWeiEipOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
-		CloudIDs:  req.CloudIDs,
 	}
 	_, err := eip.SyncHuaWeiEip(cts.Kit, opt, svc.adaptor, svc.dataCli)
 	if err != nil {

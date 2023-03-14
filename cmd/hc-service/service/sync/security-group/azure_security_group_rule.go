@@ -34,15 +34,19 @@ func (svc *syncSecurityGroupSvc) SyncAzureSGRule(cts *rest.Contexts) (interface{
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
 
-	req := new(sync.SyncAzureSecurityGroupReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncAzureSecurityGroupReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	req := &securitygroup.SyncAzureSecurityGroupOption{
+		AccountID:         syncReq.AccountID,
+		ResourceGroupName: syncReq.ResourceGroupName,
+	}
 	_, err := securitygroup.SyncAzureSGRule(cts.Kit, req, svc.adaptor, svc.dataCli, sgID)
 	if err != nil {
 		logs.Errorf("request to sync azure security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)

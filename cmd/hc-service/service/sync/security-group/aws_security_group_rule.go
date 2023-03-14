@@ -34,15 +34,19 @@ func (svc *syncSecurityGroupSvc) SyncAwsSGRule(cts *rest.Contexts) (interface{},
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
 
-	req := new(sync.SyncAwsSecurityGroupReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncAwsSecurityGroupReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	req := &securitygroup.SyncAwsSecurityGroupOption{
+		AccountID: syncReq.AccountID,
+		Region:    syncReq.Region,
+	}
 	_, err := securitygroup.SyncAwsSGRule(cts.Kit, req, svc.adaptor, svc.dataCli, sgID)
 	if err != nil {
 		logs.Errorf("request to sync aws security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)

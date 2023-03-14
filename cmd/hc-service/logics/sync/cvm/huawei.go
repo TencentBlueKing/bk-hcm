@@ -39,7 +39,6 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -972,7 +971,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 		for _, id := range cloudSGMap {
 			sGCloudIDs = append(sGCloudIDs, id.RelID)
 		}
-		req := &sync.SyncHuaWeiSecurityGroupReq{
+		req := &securitygroup.SyncHuaWeiSecurityGroupOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  sGCloudIDs,
@@ -989,7 +988,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 		for _, id := range cloudDiskMap {
 			diskCloudIDs = append(diskCloudIDs, id.RelID)
 		}
-		req := &sync.SyncHuaWeiDiskReq{
+		req := &disk.SyncHuaWeiDiskOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  diskCloudIDs,

@@ -37,7 +37,6 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -868,7 +867,7 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		for _, id := range diskSLMap {
 			diskSelfLinks = append(diskSelfLinks, id.RelID)
 		}
-		req := &sync.SyncGcpDiskReq{
+		req := &disk.SyncGcpDiskOption{
 			AccountID: req.AccountID,
 			Zone:      req.Zone,
 			SelfLinks: diskSelfLinks,

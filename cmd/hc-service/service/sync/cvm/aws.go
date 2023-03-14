@@ -45,7 +45,6 @@ func (svc *syncCvmSvc) SyncAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	opt := &cvm.SyncAwsCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
-		CloudIDs:  req.CloudIDs,
 	}
 	if _, err := cvm.SyncAwsCvm(cts.Kit, svc.adaptor, svc.dataCli, opt); err != nil {
 		logs.Errorf("request to sync aws cvm failed, err: %v, opt: %v, rid: %s", err, req, cts.Kit.Rid)

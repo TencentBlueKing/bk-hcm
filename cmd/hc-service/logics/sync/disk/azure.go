@@ -20,22 +20,45 @@
 package disk
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	typescore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 )
 
+// SyncAzureDiskOption define sync azure disk option.
+type SyncAzureDiskOption struct {
+	AccountID         string   `json:"account_id" validate:"required"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncAzureDiskOption
+func (opt SyncAzureDiskOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncAzureDisk sync disk self
-func SyncAzureDisk(kt *kit.Kit, req *sync.SyncAzureDiskReq,
+func SyncAzureDisk(kt *kit.Kit, req *SyncAzureDiskOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -63,7 +86,7 @@ func SyncAzureDisk(kt *kit.Kit, req *sync.SyncAzureDiskReq,
 	return nil, nil
 }
 
-func getDatasFromAzureDSForDiskSync(kt *kit.Kit, req *sync.SyncAzureDiskReq,
+func getDatasFromAzureDSForDiskSync(kt *kit.Kit, req *SyncAzureDiskOption,
 	dataCli *dataservice.Client) (map[string]*AzureDiskSyncDS, error) {
 
 	start := 0
@@ -116,7 +139,7 @@ func getDatasFromAzureDSForDiskSync(kt *kit.Kit, req *sync.SyncAzureDiskReq,
 	return dsMap, nil
 }
 
-func getDatasFromAzureForDiskSync(kt *kit.Kit, req *sync.SyncAzureDiskReq,
+func getDatasFromAzureForDiskSync(kt *kit.Kit, req *SyncAzureDiskOption,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*AzureDiskSyncDiff, error) {
 
 	client, err := ad.Azure(kt, req.AccountID)
@@ -147,7 +170,7 @@ func getDatasFromAzureForDiskSync(kt *kit.Kit, req *sync.SyncAzureDiskReq,
 }
 
 func diffAzureDiskSync(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff,
-	dsMap map[string]*AzureDiskSyncDS, req *sync.SyncAzureDiskReq, dataCli *dataservice.Client) error {
+	dsMap map[string]*AzureDiskSyncDS, req *SyncAzureDiskOption, dataCli *dataservice.Client) error {
 
 	addCloudIDs := []string{}
 	for id := range cloudMap {
@@ -195,7 +218,7 @@ func diffAzureDiskSync(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff,
 	return nil
 }
 
-func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, req *sync.SyncAzureDiskReq,
+func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, req *SyncAzureDiskOption,
 	addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.AzureDiskExtensionCreateReq]
@@ -206,7 +229,7 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 			Name:      converter.PtrToVal(cloudMap[id].Disk.Name),
 			CloudID:   id,
 			Region:    converter.PtrToVal(cloudMap[id].Disk.Location),
-			DiskSize:  uint64(*cloudMap[id].Disk.Properties.DiskSizeBytes),
+			DiskSize:  uint64(*cloudMap[id].Disk.Properties.DiskSizeBytes) / 1024 / 1024 / 1024,
 			DiskType:  converter.PtrToVal(cloudMap[id].Disk.Type),
 			Status:    string(*cloudMap[id].Disk.Properties.DiskState),
 			// 该云没有此字段
@@ -243,7 +266,7 @@ func isAzureDiskChange(db *AzureDiskSyncDS, cloud *AzureDiskSyncDiff) bool {
 }
 
 func diffAzureSyncUpdate(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, dsMap map[string]*AzureDiskSyncDS,
-	updateCloudIDs []string, dataCli *dataservice.Client, req *sync.SyncAzureDiskReq) error {
+	updateCloudIDs []string, dataCli *dataservice.Client, req *SyncAzureDiskOption) error {
 
 	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.AzureDiskExtensionUpdateReq]
 

@@ -36,15 +36,19 @@ import (
 // SyncAwsSecurityGroup sync aws security group to hcm.
 func (svc *syncSecurityGroupSvc) SyncAwsSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(sync.SyncAwsSecurityGroupReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncAwsSecurityGroupReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	req := &securitygroup.SyncAwsSecurityGroupOption{
+		AccountID: syncReq.AccountID,
+		Region:    syncReq.Region,
+	}
 	client, err := svc.adaptor.Aws(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -116,7 +120,7 @@ func (svc *syncSecurityGroupSvc) SyncAwsSecurityGroup(cts *rest.Contexts) (inter
 }
 
 func (svc *syncSecurityGroupSvc) deleteAwsSG(cts *rest.Contexts, client *aws.Aws,
-	req *sync.SyncAwsSecurityGroupReq, deleteIDs []string) error {
+	req *securitygroup.SyncAwsSecurityGroupOption, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

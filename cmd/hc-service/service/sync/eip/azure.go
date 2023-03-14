@@ -41,7 +41,6 @@ func (svc *syncEipSvc) SyncAzureEip(cts *rest.Contexts) (interface{}, error) {
 	opt := &eip.SyncAzureEipOption{
 		AccountID:         req.AccountID,
 		ResourceGroupName: req.ResourceGroupName,
-		CloudIDs:          req.CloudIDs,
 	}
 	_, err := eip.SyncAzureEip(cts.Kit, opt, svc.adaptor, svc.dataCli)
 	if err != nil {

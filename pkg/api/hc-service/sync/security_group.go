@@ -20,88 +20,49 @@
 package sync
 
 import (
-	"fmt"
-
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
 
 // SyncTCloudSecurityGroupReq define sync tcloud sg and sg rule req.
 type SyncTCloudSecurityGroupReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncTCloudSecurityGroupReq
-func (opt SyncTCloudSecurityGroupReq) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
-	}
-
-	return nil
+func (req SyncTCloudSecurityGroupReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // SyncHuaWeiSecurityGroupReq define sync huawei sg and sg rule req.
 type SyncHuaWeiSecurityGroupReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncHuaWeiSecurityGroupReq
-func (opt SyncHuaWeiSecurityGroupReq) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
-	}
-
-	return nil
+func (req SyncHuaWeiSecurityGroupReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // SyncAzureSecurityGroupReq define sync azure sg and sg rule req.
 type SyncAzureSecurityGroupReq struct {
-	AccountID         string   `json:"account_id" validate:"required"`
-	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
-	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID         string `json:"account_id" validate:"required"`
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
 }
 
 // Validate SyncAzureSecurityGroupReq
-func (opt SyncAzureSecurityGroupReq) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
-	}
-
-	return nil
+func (req SyncAzureSecurityGroupReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // SyncAwsSecurityGroupReq define sync aws sg and sg rule req.
 type SyncAwsSecurityGroupReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncAwsSecurityGroupReq
-func (opt SyncAwsSecurityGroupReq) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
-	}
-
-	return nil
+func (req SyncAwsSecurityGroupReq) Validate() error {
+	return validator.Validate.Struct(req)
 }

@@ -20,109 +20,60 @@
 package sync
 
 import (
-	"fmt"
-
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
 
 // SyncTCloudDiskReq define sync tcloud disk req.
 type SyncTCloudDiskReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncTCloudDiskReq
-func (opt SyncTCloudDiskReq) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
-	}
-
-	return nil
+func (req SyncTCloudDiskReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // SyncHuaWeiDiskReq define sync huawei disk req.
 type SyncHuaWeiDiskReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncHuaWeiDiskReq
-func (opt SyncHuaWeiDiskReq) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
-	}
-
-	return nil
+func (req SyncHuaWeiDiskReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // SyncGcpDiskReq define sync gcp disk req.
 type SyncGcpDiskReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Zone      string   `json:"zone" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
-	SelfLinks []string `json:"self_links" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Zone      string `json:"zone" validate:"required"`
 }
 
 // Validate SyncGcpDiskReq
-func (opt SyncGcpDiskReq) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
-	}
-
-	return nil
+func (req SyncGcpDiskReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // SyncAzureDiskReq define sync azure disk req.
 type SyncAzureDiskReq struct {
-	AccountID         string   `json:"account_id" validate:"required"`
-	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
-	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID         string `json:"account_id" validate:"required"`
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
 }
 
 // Validate SyncAzureDiskReq
-func (opt SyncAzureDiskReq) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
-	}
-
-	return nil
+func (req SyncAzureDiskReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // SyncAwsDiskReq define sync aws disk req.
 type SyncAwsDiskReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncAwsDiskReq
-func (opt SyncAwsDiskReq) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return err
-	}
-
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
-	}
-
-	return nil
+func (req SyncAwsDiskReq) Validate() error {
+	return validator.Validate.Struct(req)
 }

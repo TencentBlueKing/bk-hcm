@@ -20,23 +20,15 @@
 package sync
 
 import (
-	"fmt"
-
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
 
 // GcpFirewallSyncReq gcp firewall sync request.
 type GcpFirewallSyncReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
 }
 
 // Validate  gcp firewall sync request.
 func (req *GcpFirewallSyncReq) Validate() error {
-	if len(req.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("operate sync count should <= %d", constant.BatchOperationMaxLimit)
-	}
-
 	return validator.Validate.Struct(req)
 }

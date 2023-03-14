@@ -23,9 +23,8 @@ import "hcm/pkg/criteria/validator"
 
 // SyncTCloudEipReq define sync tcloud eip req.
 type SyncTCloudEipReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncTCloudEipReq
@@ -35,9 +34,8 @@ func (req SyncTCloudEipReq) Validate() error {
 
 // SyncHuaWeiEipReq define sync huawei eip req.
 type SyncHuaWeiEipReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncHuaWeiEipReq
@@ -47,9 +45,8 @@ func (req SyncHuaWeiEipReq) Validate() error {
 
 // SyncGcpEipReq define sync gcp eip req.
 type SyncGcpEipReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncGcpEipReq
@@ -59,9 +56,8 @@ func (req SyncGcpEipReq) Validate() error {
 
 // SyncAzureEipReq ...
 type SyncAzureEipReq struct {
-	AccountID         string   `json:"account_id" validate:"required"`
-	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
-	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID         string `json:"account_id" validate:"required"`
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
 }
 
 // Validate SyncAzureEipReq
@@ -71,9 +67,8 @@ func (req SyncAzureEipReq) Validate() error {
 
 // SyncAwsEipReq define sync aws eip req.
 type SyncAwsEipReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncAwsEipReq

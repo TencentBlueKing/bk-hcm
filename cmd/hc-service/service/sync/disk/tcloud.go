@@ -33,15 +33,19 @@ import (
 
 // SyncTCloudDisk ...
 func (svc *syncDiskSvc) SyncTCloudDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.SyncTCloudDiskReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncTCloudDiskReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	req := &disk.SyncTCloudDiskOption{
+		AccountID: syncReq.AccountID,
+		Region:    syncReq.Region,
+	}
 	client, err := svc.adaptor.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -109,7 +113,7 @@ func (svc *syncDiskSvc) SyncTCloudDisk(cts *rest.Contexts) (interface{}, error) 
 }
 
 func (svc *syncDiskSvc) deleteTCloudDisk(cts *rest.Contexts, client *tcloud.TCloud,
-	req *sync.SyncTCloudDiskReq, deleteIDs []string) error {
+	req *disk.SyncTCloudDiskOption, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

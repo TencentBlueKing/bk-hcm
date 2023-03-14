@@ -26,7 +26,6 @@ import (
 	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -39,7 +38,7 @@ import (
 )
 
 // SyncHuaWeiSGRule sync huawei security group rules.
-func SyncHuaWeiSGRule(kt *kit.Kit, req *sync.SyncHuaWeiSecurityGroupReq,
+func SyncHuaWeiSGRule(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client, sgID string) (interface{}, error) {
 
 	client, err := ad.HuaWei(kt, req.AccountID)
@@ -163,7 +162,7 @@ func SyncHuaWeiSGRule(kt *kit.Kit, req *sync.SyncHuaWeiSecurityGroupReq,
 }
 
 func syncHuaWeiSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*HuaWeiSGRuleSync,
-	sgID string, req *sync.SyncHuaWeiSecurityGroupReq, dataCli *dataservice.Client) error {
+	sgID string, req *SyncHuaWeiSecurityGroupOption, dataCli *dataservice.Client) error {
 
 	rulesResp := new(model.ListSecurityGroupRulesResponse)
 	rules := make([]model.SecurityGroupRule, 0)
@@ -198,7 +197,7 @@ func syncHuaWeiSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string
 	return nil
 }
 
-func syncHuaWeiSGRuleAdd(kt *kit.Kit, addIDs []string, req *sync.SyncHuaWeiSecurityGroupReq,
+func syncHuaWeiSGRuleAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiSecurityGroupOption,
 	cloudMap map[string]*HuaWeiSGRuleSync, sgID string, dataCli *dataservice.Client) error {
 
 	rulesResp := new(model.ListSecurityGroupRulesResponse)
@@ -248,7 +247,7 @@ func syncHuaWeiSGRuleDelete(kt *kit.Kit, deleteCloudIDs []string, sgID string,
 	return nil
 }
 
-func getHuaWeiSGRuleAllDS(kt *kit.Kit, req *sync.SyncHuaWeiSecurityGroupReq, sgID string,
+func getHuaWeiSGRuleAllDS(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption, sgID string,
 	dataCli *dataservice.Client) ([]string, error) {
 
 	start := 0
@@ -302,7 +301,7 @@ func getHuaWeiSGRuleAllDS(kt *kit.Kit, req *sync.SyncHuaWeiSecurityGroupReq, sgI
 	return dsIDs, nil
 }
 
-func getHuaWeiSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *sync.SyncHuaWeiSecurityGroupReq,
+func getHuaWeiSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *SyncHuaWeiSecurityGroupOption,
 	sgID string, dataCli *dataservice.Client) ([]string, error) {
 
 	updateIDs := make([]string, 0)
@@ -363,7 +362,7 @@ func getHuaWeiSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *sync.SyncHuaWeiS
 	return updateIDs, nil
 }
 
-func genHuaWeiAddRuleList(rules *model.ListSecurityGroupRulesResponse, req *sync.SyncHuaWeiSecurityGroupReq,
+func genHuaWeiAddRuleList(rules *model.ListSecurityGroupRulesResponse, req *SyncHuaWeiSecurityGroupOption,
 	sgCloudID string, id string) []protocloud.HuaWeiSGRuleBatchCreate {
 
 	list := make([]protocloud.HuaWeiSGRuleBatchCreate, 0, len(*rules.SecurityGroupRules))
@@ -443,7 +442,7 @@ func isHuaWeiSGRuleChange(db *corecloud.HuaWeiSecurityGroupRule, cloud model.Sec
 }
 
 func genHuaWeiUpdateRulesList(kt *kit.Kit, rules *model.ListSecurityGroupRulesResponse,
-	sgID string, id string, req *sync.SyncHuaWeiSecurityGroupReq, dataCli *dataservice.Client) []protocloud.HuaWeiSGRuleBatchUpdate {
+	sgID string, id string, req *SyncHuaWeiSecurityGroupOption, dataCli *dataservice.Client) []protocloud.HuaWeiSGRuleBatchUpdate {
 
 	list := make([]protocloud.HuaWeiSGRuleBatchUpdate, 0)
 

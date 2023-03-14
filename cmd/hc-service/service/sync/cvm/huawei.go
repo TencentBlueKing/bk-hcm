@@ -44,7 +44,6 @@ func (svc *syncCvmSvc) SyncHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 	opt := &cvm.SyncHuaWeiCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
-		CloudIDs:  req.CloudIDs,
 	}
 	_, err := cvm.SyncHuaWeiCvm(cts.Kit, opt, svc.adaptor, svc.dataCli)
 	if err != nil {

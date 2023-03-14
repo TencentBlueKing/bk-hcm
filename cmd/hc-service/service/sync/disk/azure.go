@@ -29,15 +29,19 @@ import (
 
 // SyncAzureDisk ...
 func (svc *syncDiskSvc) SyncAzureDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.SyncAzureDiskReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncAzureDiskReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	req := &disk.SyncAzureDiskOption{
+		AccountID:         syncReq.AccountID,
+		ResourceGroupName: syncReq.ResourceGroupName,
+	}
 	_, err := disk.SyncAzureDisk(cts.Kit, req, svc.adaptor, svc.dataCli)
 	if err != nil {
 		logs.Errorf("request to sync azure disk failed, err: %v, rid: %s", err, cts.Kit.Rid)

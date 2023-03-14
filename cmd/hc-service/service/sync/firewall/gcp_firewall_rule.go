@@ -35,13 +35,17 @@ import (
 // SyncGcpFirewallRule sync gcp firewall rule to hcm.
 func (svc *syncFireWallSvc) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(sync.GcpFirewallSyncReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.GcpFirewallSyncReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := &firewall.GcpFirewallSyncOption{
+		AccountID: syncReq.AccountID,
 	}
 
 	client, err := svc.adaptor.Gcp(cts.Kit, req.AccountID)
@@ -88,7 +92,7 @@ func (svc *syncFireWallSvc) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}
 		nextToken = token
 	}
 
-	commonReq := &sync.GcpFirewallSyncReq{
+	commonReq := &firewall.GcpFirewallSyncOption{
 		AccountID: req.AccountID,
 	}
 	dsIDs, err := firewall.GetDatasFromDSForGcpFireWallSync(cts.Kit, commonReq, svc.dataCli)
@@ -103,7 +107,7 @@ func (svc *syncFireWallSvc) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}
 		}
 	}
 
-	err = svc.deleteGcpFireWall(cts, client, req, deleteIDs)
+	err = svc.deleteGcpFireWall(cts, client, deleteIDs)
 	if err != nil {
 		logs.Errorf("request deleteGcpFireWall failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -113,7 +117,7 @@ func (svc *syncFireWallSvc) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}
 }
 
 func (svc *syncFireWallSvc) deleteGcpFireWall(cts *rest.Contexts, client *gcp.Gcp,
-	req *sync.GcpFirewallSyncReq, deleteIDs []string) error {
+	deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

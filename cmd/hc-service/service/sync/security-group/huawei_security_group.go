@@ -34,15 +34,19 @@ import (
 // SyncHuaWeiSecurityGroup sync huawei security group to hcm.
 func (svc *syncSecurityGroupSvc) SyncHuaWeiSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(sync.SyncHuaWeiSecurityGroupReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncHuaWeiSecurityGroupReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	req := &securitygroup.SyncHuaWeiSecurityGroupOption{
+		AccountID: syncReq.AccountID,
+		Region:    syncReq.Region,
+	}
 	client, err := svc.adaptor.HuaWei(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -110,7 +114,7 @@ func (svc *syncSecurityGroupSvc) SyncHuaWeiSecurityGroup(cts *rest.Contexts) (in
 }
 
 func (svc *syncSecurityGroupSvc) deleteHuaWeiSG(cts *rest.Contexts, client *huawei.HuaWei,
-	req *sync.SyncHuaWeiSecurityGroupReq, deleteIDs []string) error {
+	req *securitygroup.SyncHuaWeiSecurityGroupOption, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

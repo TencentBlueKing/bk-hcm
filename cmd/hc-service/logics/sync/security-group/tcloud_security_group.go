@@ -20,6 +20,8 @@
 package securitygroup
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/tcloud"
 	typcore "hcm/pkg/adaptor/types/core"
@@ -27,10 +29,10 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -40,8 +42,28 @@ import (
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
+// SyncTCloudSecurityGroupOption define sync tcloud sg and sg rule option.
+type SyncTCloudSecurityGroupOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncTCloudSecurityGroupOption
+func (opt SyncTCloudSecurityGroupOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncTCloudSecurityGroup sync tcloud security group and rules to hcm.
-func SyncTCloudSecurityGroup(kt *kit.Kit, req *sync.SyncTCloudSecurityGroupReq,
+func SyncTCloudSecurityGroup(kt *kit.Kit, req *SyncTCloudSecurityGroupOption,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -66,7 +88,7 @@ func SyncTCloudSecurityGroup(kt *kit.Kit, req *sync.SyncTCloudSecurityGroupReq,
 	return nil, nil
 }
 
-func getDatasFromDSForTCloudSGSync(kt *kit.Kit, req *sync.SyncTCloudSecurityGroupReq,
+func getDatasFromDSForTCloudSGSync(kt *kit.Kit, req *SyncTCloudSecurityGroupOption,
 	dataCli *dataservice.Client) (map[string]*TCloudSecurityGroupSyncDS, error) {
 
 	start := 0
@@ -120,7 +142,7 @@ func getDatasFromDSForTCloudSGSync(kt *kit.Kit, req *sync.SyncTCloudSecurityGrou
 	return dsMap, nil
 }
 
-func getDatasFromTCloudForSecurityGroupSync(kt *kit.Kit, req *sync.SyncTCloudSecurityGroupReq,
+func getDatasFromTCloudForSecurityGroupSync(kt *kit.Kit, req *SyncTCloudSecurityGroupOption,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*SecurityGroupSyncTCloudDiff, error) {
 
 	client, err := ad.TCloud(kt, req.AccountID)
@@ -147,7 +169,7 @@ func getDatasFromTCloudForSecurityGroupSync(kt *kit.Kit, req *sync.SyncTCloudSec
 }
 
 func getTCloudSGByCloudIDsSync(kt *kit.Kit, client *tcloud.TCloud,
-	req *sync.SyncTCloudSecurityGroupReq) (map[string]*SecurityGroupSyncTCloudDiff, error) {
+	req *SyncTCloudSecurityGroupOption) (map[string]*SecurityGroupSyncTCloudDiff, error) {
 
 	opt := &securitygroup.TCloudListOption{
 		Region:   req.Region,
@@ -171,7 +193,7 @@ func getTCloudSGByCloudIDsSync(kt *kit.Kit, client *tcloud.TCloud,
 }
 
 func getTCloudSGAllSync(kt *kit.Kit, client *tcloud.TCloud,
-	req *sync.SyncTCloudSecurityGroupReq) (map[string]*SecurityGroupSyncTCloudDiff, error) {
+	req *SyncTCloudSecurityGroupOption) (map[string]*SecurityGroupSyncTCloudDiff, error) {
 
 	offset := 0
 	datasCloud := []*vpc.SecurityGroup{}
@@ -204,7 +226,7 @@ func getTCloudSGAllSync(kt *kit.Kit, client *tcloud.TCloud,
 }
 
 func diffTCloudSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncTCloudDiff,
-	dsMap map[string]*TCloudSecurityGroupSyncDS, req *sync.SyncTCloudSecurityGroupReq,
+	dsMap map[string]*TCloudSecurityGroupSyncDS, req *SyncTCloudSecurityGroupOption,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) error {
 
 	addCloudIDs := make([]string, 0)
@@ -327,7 +349,7 @@ func diffTCloudSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*Securit
 }
 
 func diffTCloudSecurityGroupSyncAdd(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncTCloudDiff,
-	req *sync.SyncTCloudSecurityGroupReq, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+	req *SyncTCloudSecurityGroupOption, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 
 	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.TCloudSecurityGroupExtension]{
 		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{},

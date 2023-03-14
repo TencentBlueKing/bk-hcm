@@ -26,7 +26,6 @@ import (
 	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -39,7 +38,7 @@ import (
 )
 
 // SyncAwsSGRule sync aws security group rules.
-func SyncAwsSGRule(kt *kit.Kit, req *sync.SyncAwsSecurityGroupReq,
+func SyncAwsSGRule(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client, sgID string) (interface{}, error) {
 
 	client, err := ad.Aws(kt, req.AccountID)
@@ -163,7 +162,7 @@ func SyncAwsSGRule(kt *kit.Kit, req *sync.SyncAwsSecurityGroupReq,
 }
 
 func syncAwsSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsSGRuleSync, sgID string,
-	req *sync.SyncAwsSecurityGroupReq, dataCli *dataservice.Client) error {
+	req *SyncAwsSecurityGroupOption, dataCli *dataservice.Client) error {
 
 	rules := make([]*ec2.SecurityGroupRule, 0)
 	for _, id := range updateIDs {
@@ -190,7 +189,7 @@ func syncAwsSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*A
 	return nil
 }
 
-func syncAwsSGRuleAdd(kt *kit.Kit, addIDs []string, req *sync.SyncAwsSecurityGroupReq,
+func syncAwsSGRuleAdd(kt *kit.Kit, addIDs []string, req *SyncAwsSecurityGroupOption,
 	cloudMap map[string]*AwsSGRuleSync, sgID string, dataCli *dataservice.Client) error {
 
 	rules := make([]*ec2.SecurityGroupRule, 0)
@@ -238,7 +237,7 @@ func syncAwsSGRuleDelete(kt *kit.Kit, deleteCloudIDs []string, sgID string,
 	return nil
 }
 
-func getAwsSGRuleAllDS(kt *kit.Kit, req *sync.SyncAwsSecurityGroupReq,
+func getAwsSGRuleAllDS(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
 	sgID string, dataCli *dataservice.Client) ([]string, error) {
 
 	start := 0
@@ -292,7 +291,7 @@ func getAwsSGRuleAllDS(kt *kit.Kit, req *sync.SyncAwsSecurityGroupReq,
 	return dsIDs, nil
 }
 
-func getAwsSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *sync.SyncAwsSecurityGroupReq,
+func getAwsSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAwsSecurityGroupOption,
 	sgID string, dataCli *dataservice.Client) ([]string, error) {
 
 	updateIDs := make([]string, 0)
@@ -404,7 +403,7 @@ func isAwsSGRuleChange(db *corecloud.AwsSecurityGroupRule, cloud *ec2.SecurityGr
 	return false
 }
 
-func genAwsUpdateRulesList(kt *kit.Kit, rules []*ec2.SecurityGroupRule, req *sync.SyncAwsSecurityGroupReq,
+func genAwsUpdateRulesList(kt *kit.Kit, rules []*ec2.SecurityGroupRule, req *SyncAwsSecurityGroupOption,
 	sgID string, dataCli *dataservice.Client) []protocloud.AwsSGRuleUpdate {
 
 	list := make([]protocloud.AwsSGRuleUpdate, 0, len(rules))
@@ -473,7 +472,7 @@ func getAwsSGRuleByCid(kt *kit.Kit, cID string, sgID string,
 	return &listResp.Details[0], nil
 }
 
-func genAwsAddRulesList(rules []*ec2.SecurityGroupRule, req *sync.SyncAwsSecurityGroupReq,
+func genAwsAddRulesList(rules []*ec2.SecurityGroupRule, req *SyncAwsSecurityGroupOption,
 	id string) []protocloud.AwsSGRuleBatchCreate {
 
 	list := make([]protocloud.AwsSGRuleBatchCreate, 0, len(rules))

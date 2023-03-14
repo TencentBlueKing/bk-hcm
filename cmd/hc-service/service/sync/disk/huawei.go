@@ -34,15 +34,19 @@ import (
 
 // SyncHuaWeiDisk ...
 func (svc *syncDiskSvc) SyncHuaWeiDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.SyncHuaWeiDiskReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncHuaWeiDiskReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	req := &disk.SyncHuaWeiDiskOption{
+		AccountID: syncReq.AccountID,
+		Region:    syncReq.Region,
+	}
 	client, err := svc.adaptor.HuaWei(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -113,7 +117,7 @@ func (svc *syncDiskSvc) SyncHuaWeiDisk(cts *rest.Contexts) (interface{}, error) 
 }
 
 func (svc *syncDiskSvc) deleteHuaWeiDisk(cts *rest.Contexts, client *huawei.HuaWei,
-	req *sync.SyncHuaWeiDiskReq, deleteIDs []string) error {
+	req *disk.SyncHuaWeiDiskOption, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

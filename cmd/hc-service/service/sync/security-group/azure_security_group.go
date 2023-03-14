@@ -30,15 +30,19 @@ import (
 // SyncAzureSecurityGroup sync azure security group to hcm.
 func (svc *syncSecurityGroupSvc) SyncAzureSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(sync.SyncAzureSecurityGroupReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncAzureSecurityGroupReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	req := &securitygroup.SyncAzureSecurityGroupOption{
+		AccountID:         syncReq.AccountID,
+		ResourceGroupName: syncReq.ResourceGroupName,
+	}
 	_, err := securitygroup.SyncAzureSecurityGroup(cts.Kit, req, svc.adaptor, svc.dataCli)
 	if err != nil {
 		logs.Errorf("request to sync azure security group failed, err: %v, rid: %s", err, cts.Kit.Rid)

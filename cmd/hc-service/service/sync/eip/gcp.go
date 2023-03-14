@@ -41,7 +41,6 @@ func (svc *syncEipSvc) SyncGcpEip(cts *rest.Contexts) (interface{}, error) {
 	opt := &eip.SyncGcpEipOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
-		CloudIDs:  req.CloudIDs,
 	}
 	_, err := eip.SyncGcpEip(cts.Kit, opt, svc.adaptor, svc.dataCli)
 	if err != nil {

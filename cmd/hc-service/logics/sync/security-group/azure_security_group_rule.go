@@ -26,7 +26,6 @@ import (
 	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -40,7 +39,7 @@ import (
 )
 
 // SyncAzureSGRule sync azure security group rules.
-func SyncAzureSGRule(kt *kit.Kit, req *sync.SyncAzureSecurityGroupReq,
+func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client, sgID string) (interface{}, error) {
 
 	client, err := ad.Azure(kt, req.AccountID)
@@ -164,7 +163,7 @@ func SyncAzureSGRule(kt *kit.Kit, req *sync.SyncAzureSecurityGroupReq,
 }
 
 func syncAzureSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AzureSGRuleSync,
-	sgID string, req *sync.SyncAzureSecurityGroupReq, dataCli *dataservice.Client) error {
+	sgID string, req *SyncAzureSecurityGroupOption, dataCli *dataservice.Client) error {
 
 	rules := make([]*armnetwork.SecurityRule, 0)
 	for _, id := range updateIDs {
@@ -197,7 +196,7 @@ func syncAzureSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]
 	return nil
 }
 
-func syncAzureSGRuleAdd(kt *kit.Kit, addIDs []string, req *sync.SyncAzureSecurityGroupReq,
+func syncAzureSGRuleAdd(kt *kit.Kit, addIDs []string, req *SyncAzureSecurityGroupOption,
 	cloudMap map[string]*AzureSGRuleSync, sgID string, dataCli *dataservice.Client) error {
 
 	rules := make([]*armnetwork.SecurityRule, 0)
@@ -245,7 +244,7 @@ func syncAzureSGRuleDelete(kt *kit.Kit, deleteCloudIDs []string,
 	return nil
 }
 
-func getAzureSGRuleAllDS(kt *kit.Kit, req *sync.SyncAzureSecurityGroupReq,
+func getAzureSGRuleAllDS(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 	sgID string, dataCli *dataservice.Client) ([]string, error) {
 
 	start := 0
@@ -295,7 +294,7 @@ func getAzureSGRuleAllDS(kt *kit.Kit, req *sync.SyncAzureSecurityGroupReq,
 	return dsIDs, nil
 }
 
-func getAzureSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *sync.SyncAzureSecurityGroupReq,
+func getAzureSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAzureSecurityGroupOption,
 	sgID string, dataCli *dataservice.Client) ([]string, error) {
 
 	updateIDs := make([]string, 0)
@@ -439,7 +438,7 @@ func isAzureSGRuleChange(db *corecloud.AzureSecurityGroupRule, cloud *armnetwork
 }
 
 func genAzureUpdateRulesList(kt *kit.Kit, rules []*armnetwork.SecurityRule, sgID string,
-	id string, req *sync.SyncAzureSecurityGroupReq, dataCli *dataservice.Client, region string) []protocloud.AzureSGRuleUpdate {
+	id string, req *SyncAzureSecurityGroupOption, dataCli *dataservice.Client, region string) []protocloud.AzureSGRuleUpdate {
 
 	list := make([]protocloud.AzureSGRuleUpdate, 0, len(rules))
 
@@ -525,7 +524,7 @@ func getAzureSGRuleByCid(kt *kit.Kit, cID string, sgID string,
 }
 
 func genAzureAddRulesList(rules []*armnetwork.SecurityRule, sgCloudID string,
-	id string, req *sync.SyncAzureSecurityGroupReq, region string) []protocloud.AzureSGRuleBatchCreate {
+	id string, req *SyncAzureSecurityGroupOption, region string) []protocloud.AzureSGRuleBatchCreate {
 
 	list := make([]protocloud.AzureSGRuleBatchCreate, 0, len(rules))
 

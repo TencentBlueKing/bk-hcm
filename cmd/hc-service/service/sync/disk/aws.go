@@ -35,15 +35,19 @@ import (
 
 // SyncAwsDisk ...
 func (svc *syncDiskSvc) SyncAwsDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.SyncAwsDiskReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncAwsDiskReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	req := &disk.SyncAwsDiskOption{
+		AccountID: syncReq.AccountID,
+		Region:    syncReq.Region,
+	}
 	client, err := svc.adaptor.Aws(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -116,7 +120,7 @@ func (svc *syncDiskSvc) SyncAwsDisk(cts *rest.Contexts) (interface{}, error) {
 }
 
 func (svc *syncDiskSvc) deleteAwsDisk(cts *rest.Contexts, client *aws.Aws,
-	req *sync.SyncAwsDiskReq, deleteIDs []string) error {
+	req *disk.SyncAwsDiskOption, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

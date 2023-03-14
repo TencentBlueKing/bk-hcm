@@ -25,9 +25,8 @@ import (
 
 // SyncHuaWeiCvmReq define sync huawei cvm req.
 type SyncHuaWeiCvmReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncHuaWeiCvmReq
@@ -37,10 +36,9 @@ func (req SyncHuaWeiCvmReq) Validate() error {
 
 // SyncGcpCvmReq ...
 type SyncGcpCvmReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	Zone      string   `json:"zone" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+	Zone      string `json:"zone" validate:"required"`
 }
 
 // Validate SyncGcpCvmReq
@@ -50,9 +48,8 @@ func (req SyncGcpCvmReq) Validate() error {
 
 // SyncAzureCvmReq ...
 type SyncAzureCvmReq struct {
-	AccountID         string   `json:"account_id" validate:"required"`
-	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
-	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID         string `json:"account_id" validate:"required"`
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
 }
 
 // Validate SyncAzureCvmReq
@@ -62,9 +59,8 @@ func (req SyncAzureCvmReq) Validate() error {
 
 // SyncAwsCvmReq define sync aws cvm option.
 type SyncAwsCvmReq struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
 }
 
 // Validate SyncAwsCvmReq

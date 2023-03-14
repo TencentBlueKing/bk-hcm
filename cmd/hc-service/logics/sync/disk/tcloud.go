@@ -20,6 +20,8 @@
 package disk
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types/core"
@@ -27,9 +29,10 @@ import (
 	apicore "hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -39,8 +42,28 @@ import (
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 )
 
+// SyncTCloudDiskOption define sync tcloud disk option.
+type SyncTCloudDiskOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncTCloudDiskOption
+func (opt SyncTCloudDiskOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncTCloudDisk sync disk self
-func SyncTCloudDisk(kt *kit.Kit, req *sync.SyncTCloudDiskReq,
+func SyncTCloudDisk(kt *kit.Kit, req *SyncTCloudDiskOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -68,7 +91,7 @@ func SyncTCloudDisk(kt *kit.Kit, req *sync.SyncTCloudDiskReq,
 	return nil, nil
 }
 
-func getDatasFromDSForTCloudDiskSync(kt *kit.Kit, req *sync.SyncTCloudDiskReq,
+func getDatasFromDSForTCloudDiskSync(kt *kit.Kit, req *SyncTCloudDiskOption,
 	dataCli *dataservice.Client) (map[string]*TCloudDiskSyncDS, error) {
 	start := 0
 	resultsHcm := make([]*datadisk.DiskExtResult[dataproto.TCloudDiskExtensionResult], 0)
@@ -112,7 +135,7 @@ func getDatasFromDSForTCloudDiskSync(kt *kit.Kit, req *sync.SyncTCloudDiskReq,
 	return dsMap, nil
 }
 
-func getDatasFromTCloudForDiskSync(kt *kit.Kit, req *sync.SyncTCloudDiskReq,
+func getDatasFromTCloudForDiskSync(kt *kit.Kit, req *SyncTCloudDiskOption,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*TCloudDiskSyncDiff, error) {
 
 	client, err := ad.TCloud(kt, req.AccountID)
@@ -139,7 +162,7 @@ func getDatasFromTCloudForDiskSync(kt *kit.Kit, req *sync.SyncTCloudDiskReq,
 }
 
 func getTCloudDiskAllSync(kt *kit.Kit, client *tcloud.TCloud,
-	req *sync.SyncTCloudDiskReq) (map[string]*TCloudDiskSyncDiff, error) {
+	req *SyncTCloudDiskOption) (map[string]*TCloudDiskSyncDiff, error) {
 
 	offset := 0
 	datasCloud := make([]*cbs.Disk, 0)
@@ -174,7 +197,7 @@ func getTCloudDiskAllSync(kt *kit.Kit, client *tcloud.TCloud,
 }
 
 func getTCloudDiskByCloudIDsSync(kt *kit.Kit, client *tcloud.TCloud,
-	req *sync.SyncTCloudDiskReq) (map[string]*TCloudDiskSyncDiff, error) {
+	req *SyncTCloudDiskOption) (map[string]*TCloudDiskSyncDiff, error) {
 
 	opt := &disk.TCloudDiskListOption{
 		Region:   req.Region,
@@ -198,7 +221,7 @@ func getTCloudDiskByCloudIDsSync(kt *kit.Kit, client *tcloud.TCloud,
 }
 
 func diffTCloudDiskSync(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
-	dsMap map[string]*TCloudDiskSyncDS, req *sync.SyncTCloudDiskReq, dataCli *dataservice.Client) error {
+	dsMap map[string]*TCloudDiskSyncDS, req *SyncTCloudDiskOption, dataCli *dataservice.Client) error {
 
 	addCloudIDs := []string{}
 	for id := range cloudMap {
@@ -247,7 +270,7 @@ func diffTCloudDiskSync(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
 }
 
 func diffTCloudDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
-	req *sync.SyncTCloudDiskReq, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+	req *SyncTCloudDiskOption, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.TCloudDiskExtensionCreateReq]
 
 	for _, id := range addCloudIDs {

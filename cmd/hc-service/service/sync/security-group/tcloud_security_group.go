@@ -34,13 +34,18 @@ import (
 // SyncTCloudSecurityGroup sync tcloud security group to hcm.
 func (svc *syncSecurityGroupSvc) SyncTCloudSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(sync.SyncTCloudSecurityGroupReq)
-	if err := cts.DecodeInto(req); err != nil {
+	syncReq := new(sync.SyncTCloudSecurityGroupReq)
+	if err := cts.DecodeInto(syncReq); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := syncReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := &securitygroup.SyncTCloudSecurityGroupOption{
+		AccountID: syncReq.AccountID,
+		Region:    syncReq.Region,
 	}
 
 	client, err := svc.adaptor.TCloud(cts.Kit, req.AccountID)
@@ -109,7 +114,7 @@ func (svc *syncSecurityGroupSvc) SyncTCloudSecurityGroup(cts *rest.Contexts) (in
 }
 
 func (svc *syncSecurityGroupSvc) deleteTCloudSG(cts *rest.Contexts, client *tcloud.TCloud,
-	req *sync.SyncTCloudSecurityGroupReq, deleteIDs []string) error {
+	req *securitygroup.SyncTCloudSecurityGroupOption, deleteIDs []string) error {
 
 	if len(deleteIDs) > 0 {
 		realDeleteIDs := make([]string, 0)

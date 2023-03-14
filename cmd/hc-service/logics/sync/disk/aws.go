@@ -20,14 +20,17 @@
 package disk
 
 import (
+	"fmt"
+
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types/disk"
 	apicore "hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -35,8 +38,28 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
+// SyncAwsDiskOption define sync aws disk option.
+type SyncAwsDiskOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncAwsDiskOption
+func (opt SyncAwsDiskOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncAwsDisk sync disk self
-func SyncAwsDisk(kt *kit.Kit, req *sync.SyncAwsDiskReq,
+func SyncAwsDisk(kt *kit.Kit, req *SyncAwsDiskOption,
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -64,7 +87,7 @@ func SyncAwsDisk(kt *kit.Kit, req *sync.SyncAwsDiskReq,
 	return nil, nil
 }
 
-func getDatasFromDSForAwsDiskSync(kt *kit.Kit, req *sync.SyncAwsDiskReq,
+func getDatasFromDSForAwsDiskSync(kt *kit.Kit, req *SyncAwsDiskOption,
 	dataCli *dataservice.Client) (map[string]*AwsDiskSyncDS, error) {
 	start := 0
 	resultsHcm := make([]*datadisk.DiskExtResult[dataproto.AwsDiskExtensionResult], 0)
@@ -108,7 +131,7 @@ func getDatasFromDSForAwsDiskSync(kt *kit.Kit, req *sync.SyncAwsDiskReq,
 	return dsMap, nil
 }
 
-func getDatasFromAwsForDiskSync(kt *kit.Kit, req *sync.SyncAwsDiskReq,
+func getDatasFromAwsForDiskSync(kt *kit.Kit, req *SyncAwsDiskOption,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*AwsDiskSyncDiff, error) {
 
 	client, err := ad.Aws(kt, req.AccountID)
@@ -140,7 +163,7 @@ func getDatasFromAwsForDiskSync(kt *kit.Kit, req *sync.SyncAwsDiskReq,
 }
 
 func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap map[string]*AwsDiskSyncDS,
-	req *sync.SyncAwsDiskReq, dataCli *dataservice.Client) error {
+	req *SyncAwsDiskOption, dataCli *dataservice.Client) error {
 
 	addCloudIDs := []string{}
 	for id := range cloudMap {
@@ -189,7 +212,7 @@ func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap ma
 }
 
 func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
-	req *sync.SyncAwsDiskReq, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+	req *SyncAwsDiskOption, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
 
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.AwsDiskExtensionCreateReq]
 

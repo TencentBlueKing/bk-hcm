@@ -26,7 +26,6 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
@@ -45,7 +44,7 @@ type syncSecurityGroupRuleOption struct {
 }
 
 // SyncTCloudSGRule sync tcloud security group rules.
-func SyncTCloudSGRule(kt *kit.Kit, req *sync.SyncTCloudSecurityGroupReq, ad *cloudclient.CloudAdaptorClient,
+func SyncTCloudSGRule(kt *kit.Kit, req *SyncTCloudSecurityGroupOption, ad *cloudclient.CloudAdaptorClient,
 	dataCli *dataservice.Client, sgID string) ([]string, error) {
 
 	client, err := ad.TCloud(kt, req.AccountID)

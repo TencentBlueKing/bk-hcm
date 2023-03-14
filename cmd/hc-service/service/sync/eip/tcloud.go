@@ -41,7 +41,6 @@ func (svc *syncEipSvc) SyncTCloudEip(cts *rest.Contexts) (interface{}, error) {
 	opt := &eip.SyncTCloudEipOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
-		CloudIDs:  req.CloudIDs,
 	}
 	_, err := eip.SyncTCloudEip(cts.Kit, opt, svc.adaptor, svc.dataCli)
 	if err != nil {
