@@ -118,7 +118,7 @@ export default defineComponent({
     const getBusinessList = async () => {
       try {
         loading.value = true;
-        const res = await accountStore.getBizList();
+        const res = await accountStore.getBizListWithAuth();
         loading.value = false;
         businessList.value = res?.data;
         businessId.value = res?.data[0].id;   // 默认取第一个业务

@@ -62,7 +62,7 @@ export default defineComponent({
     });    // 业务列表
     const getBusinessList = async () => {
       try {
-        const res = await accountStore.getBizList();
+        const res = await accountStore.getBizListWithAuth();
         businessList.list = res?.data || BUSINESS_TYPE;
       } catch (error: any) {
         Message({ theme: 'error', message: error?.message || '系统异常' });

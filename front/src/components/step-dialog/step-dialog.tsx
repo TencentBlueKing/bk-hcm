@@ -23,6 +23,9 @@ export default defineComponent({
     title: {
       type: String,
     },
+    business: {
+      type: String,
+    },
     isShow: {
       type: Boolean,
     },
@@ -127,7 +130,7 @@ export default defineComponent({
                   ? <bk-button
                       class="mr10 dialog-button"
                       theme="primary"
-                      disabled={this.steps[this.curStep - 1].disableNext}
+                      disabled={this.steps[this.curStep - 1].disableNext || (this.curStep > 1 ? !this.business : false)}
                       onClick={this.handleNextStep}
                     >{this.t('下一步')}</bk-button>
                   : ''

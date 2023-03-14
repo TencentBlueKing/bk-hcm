@@ -615,16 +615,11 @@ export default defineComponent({
       }
     };
 
-    const handleBizChange = async (val: any) => {
+    const handleBizChange = async () => {
       handleEditStatus(true, 'bizIds');     // 未通过检验前状态为编辑态
       await formRef.value?.validate();
       handleEditStatus(false, 'bizIds');   // 通过检验则把状态改为不可编辑态
-      updateFormData('bizIds', val);    // 更新数据
-    };
-
-    // 组织架构编辑
-    const handleEdit = () => {
-      isOrganizationDetail.value = false;
+      updateFormData('bizIds');    // 更新数据
     };
 
     let formBaseInfo = reactive([

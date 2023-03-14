@@ -50,7 +50,7 @@ const resourceMenus: RouteRecordRaw[] = [
       {
         path: '/resource/recyclebin',
         name: t('回收站'),
-        component: () => import('@/views/workbench/demo2'),
+        component: () => import('@/views/resource/recyclebin-manager/recyclebin-manager.vue'),
         meta: {
           activeKey: 'resourceRecyclebin',
           breadcrumb: [t('云管'), t('回收站')],

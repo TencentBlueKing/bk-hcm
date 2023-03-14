@@ -203,16 +203,8 @@ export default defineComponent({
         params = {
           account_id: accountId.value,
           bk_biz_id: business.value,
+          is_all_res_type: true,
         };
-      } else {
-        if (!business.value) {
-          Message({
-            theme: 'error',
-            message: '请先选择目标业务',
-          });
-          isBusinessError.value = true;
-          return;
-        }
       }
 
       isConfirmLoading.value = true;
@@ -222,6 +214,10 @@ export default defineComponent({
           params,
         )
         .then(() => {
+          Message({
+            theme: 'success',
+            message: '已分配',
+          });
           handleClose();
         })
         .finally(() => {
@@ -377,7 +373,6 @@ export default defineComponent({
           vpcTableData.value = vpcData.value;
           disableNext.value = true;
           hasBindVPC.value = false;
-          business.value = '';
           validateMap.value = {};
           errorList.value = [];
           // 判断是否需要绑定云区域
@@ -430,6 +425,27 @@ export default defineComponent({
         <div class="flex-row align-items-center mr20">
           <span class="pr10">{this.t('云账号')}</span>
           <AccountSelector v-model={this.accountId}></AccountSelector>
+          <div class="flex-row align-items-center">
+          <section class="resource-head ml20">
+            { this.t('目标业务') }
+            <bk-select
+              v-model={this.business}
+              filterable
+              class={{
+                ml10: true,
+                'resource-is-error': this.isBusinessError,
+              }}
+              onChange={(val: any) => this.isBusinessError = !val}
+            >
+              {
+                this.businessList.map(business => <bk-option
+                  value={business.id}
+                  label={business.name}
+                />)
+              }
+            </bk-select>
+          </section>
+          </div>
         </div>
         <bk-table
           class="mt20"
@@ -476,27 +492,6 @@ export default defineComponent({
         title: '分配确认',
         isConfirmLoading: this.isConfirmLoading,
         component: () => <>
-        <div class="flex-row align-items-center">
-          <section class="resource-head">
-            { this.t('目标业务') }
-            <bk-select
-              v-model={this.business}
-              filterable
-              class={{
-                ml10: true,
-                'resource-is-error': this.isBusinessError,
-              }}
-              onChange={(val: any) => this.isBusinessError = !val}
-            >
-              {
-                this.businessList.map(business => <bk-option
-                  value={business.id}
-                  label={business.name}
-                />)
-              }
-            </bk-select>
-          </section>
-          </div>
           <bk-table
             class="mt20"
             row-hover="auto"
@@ -531,6 +526,7 @@ export default defineComponent({
 
     return <>
       <step-dialog
+        business={this.business}
         title={this.title}
         isShow={this.isShow}
         dialogHeight={this.chooseResourceType ? '800' : '720'}

@@ -7,6 +7,15 @@ import { useAccountStore, useResourceStore } from '@/store';
 import { BusinessFormFilter } from '@/typings';
 import { CLOUD_TYPE } from '@/constants';
 
+const props = defineProps({
+  hidden: {
+    type: Array,
+    default() {
+      return [];
+    },
+  },
+});
+
 const { t } = useI18n();
 const accountStore = useAccountStore();
 const resourceStore = useResourceStore();
@@ -36,14 +45,19 @@ watch(
   () => state.filter.vendor,
   () => {
     state.filter.region = '';
+    state.filter.account_id = '';
   },
 );
 
 const getAccountList = async () => {
+  const rulesData = [];
+  if (state.filter.vendor) {
+    rulesData.push({ field: 'vendor', op: 'cs', value: state.filter.vendor });
+  }
   try {
     accountLoading.value = true;
     const res = await accountStore.getAccountList({
-      filter: { op: 'and', rules: [] },
+      filter: { op: 'and', rules: rulesData },
       page: {
         count: false,
         start: 0,
@@ -83,6 +97,7 @@ const getCloudRegionList = () => {
 const handleCloudChange = () => {
   cloudRegionsList.value = [];
   getCloudRegionList();
+  getAccountList();
 };
 
 getAccountList();
@@ -127,6 +142,7 @@ handleCloudChange();
     <bk-form-item
       :label="t('云区域')"
       class="item-warp"
+      v-if="!props.hidden.includes('region')"
     >
       <bk-select
         class="item-warp-component"
@@ -138,7 +154,7 @@ handleCloudChange();
           v-for="(item, index) in cloudRegionsList"
           :key="index"
           :value="item.region_id"
-          :label="item.region_name"
+          :label="item.region_name || item.region_id"
         />
       </bk-select>
     </bk-form-item>

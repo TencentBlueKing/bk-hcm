@@ -19,7 +19,7 @@ export const useStaffStore = defineStore({
       const params = {
         app_code: 'bk-magicbox',
         page: 1,
-        page_size: 2000,
+        page_size: 200000,
         callback: 'callbackStaff',
       };
       const scriptTag = document.createElement('script');

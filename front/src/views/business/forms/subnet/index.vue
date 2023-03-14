@@ -9,6 +9,7 @@ import {
 import {
   reactive,
   ref,
+  watch,
 } from 'vue';
 import {
   useBusinessStore,
@@ -23,7 +24,7 @@ import ResourceGroupSelector from '@/components/resource-group/index.vue';
 
 const emit = defineEmits(['cancel', 'success']);
 const { t } = useI18n();
-const formData = reactive<any>({});
+const formData = reactive<any>({ ipv4_cidr: '' });
 const businessStore = useBusinessStore();
 const accountStore = useAccountStore();
 const submitLoading = ref(false);
@@ -58,11 +59,19 @@ const cancel = async () => {
   emit('cancel');
 };
 
+watch(() => formData.vendor, (val) => {
+  if (val === 'azure') {
+    formData.ipv4_cidr = [];
+  } else {
+    formData.ipv4_cidr = '';
+  }
+});
+
 </script>
 
 <template>
   <div class="business-dialog-warp">
-    <form-select @change="handleFormFilter"></form-select>
+    <form-select :hidden="formData.vendor === 'azure' ? ['region'] : []" @change="handleFormFilter"></form-select>
     <bk-form class="form-subnet">
       <bk-form-item
         :label="t('名称')"
@@ -96,10 +105,14 @@ const cancel = async () => {
         :label="t('IPv4 CIDR')"
         class="item-warp"
       >
-        <bk-input class="item-warp-component" v-model="formData.ipv4_cidr" :placeholder="t('请输入IPV4')" />
+        <bk-tag-input
+          v-if="formData.vendor === 'azure'" v-model="formData.ipv4_cidr"
+          allow-create allow-auto-match
+          :list="[]" :placeholder="t('请输入IPV4')" />
+        <bk-input v-else class="item-warp-component" v-model="formData.ipv4_cidr" :placeholder="t('请输入IPV4')" />
       </bk-form-item>
       <bk-form-item
-        v-if="formData.vendor === 'aws' || formData.vendor === 'azure'"
+        v-if="formData.vendor === 'aws'"
         :label="t('IPv6 CIDR')"
         class="item-warp"
       >
@@ -155,12 +168,6 @@ const cancel = async () => {
       >
         <resource-group-selector
           v-model="formData.resource_group"></resource-group-selector>
-      </bk-form-item>
-      <bk-form-item
-        :label="t('备注')"
-        class="item-warp"
-      >
-        <bk-input class="item-warp-component" type="textarea" v-model="formData.memo" :placeholder="t('请输入备注')" />
       </bk-form-item>
       <bk-form-item
         :label="t('备注')"
