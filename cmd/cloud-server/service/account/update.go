@@ -132,11 +132,10 @@ func (a *accountSvc) updateForTCloud(
 		cts.Kit.Header(),
 		accountID,
 		&dataproto.AccountUpdateReq[dataproto.TCloudAccountExtensionUpdateReq]{
-			Name:          req.Name,
-			Managers:      req.Managers,
-			DepartmentIDs: req.DepartmentIDs,
-			Memo:          req.Memo,
-			Extension:     shouldUpdatedExtension,
+			Name:      req.Name,
+			Managers:  req.Managers,
+			Memo:      req.Memo,
+			Extension: shouldUpdatedExtension,
 		},
 	)
 	if err != nil {
@@ -179,11 +178,10 @@ func (a *accountSvc) updateForAws(
 		cts.Kit.Header(),
 		accountID,
 		&dataproto.AccountUpdateReq[dataproto.AwsAccountExtensionUpdateReq]{
-			Name:          req.Name,
-			Managers:      req.Managers,
-			DepartmentIDs: req.DepartmentIDs,
-			Memo:          req.Memo,
-			Extension:     shouldUpdatedExtension,
+			Name:      req.Name,
+			Managers:  req.Managers,
+			Memo:      req.Memo,
+			Extension: shouldUpdatedExtension,
 		},
 	)
 	if err != nil {
@@ -227,11 +225,10 @@ func (a *accountSvc) updateForHuaWei(
 		cts.Kit.Header(),
 		accountID,
 		&dataproto.AccountUpdateReq[dataproto.HuaWeiAccountExtensionUpdateReq]{
-			Name:          req.Name,
-			Managers:      req.Managers,
-			DepartmentIDs: req.DepartmentIDs,
-			Memo:          req.Memo,
-			Extension:     shouldUpdatedExtension,
+			Name:      req.Name,
+			Managers:  req.Managers,
+			Memo:      req.Memo,
+			Extension: shouldUpdatedExtension,
 		},
 	)
 	if err != nil {
@@ -275,11 +272,10 @@ func (a *accountSvc) updateForGcp(
 		cts.Kit.Header(),
 		accountID,
 		&dataproto.AccountUpdateReq[dataproto.GcpAccountExtensionUpdateReq]{
-			Name:          req.Name,
-			Managers:      req.Managers,
-			DepartmentIDs: req.DepartmentIDs,
-			Memo:          req.Memo,
-			Extension:     shouldUpdatedExtension,
+			Name:      req.Name,
+			Managers:  req.Managers,
+			Memo:      req.Memo,
+			Extension: shouldUpdatedExtension,
 		},
 	)
 	if err != nil {
@@ -323,11 +319,10 @@ func (a *accountSvc) updateForAzure(
 		cts.Kit.Header(),
 		accountID,
 		&dataproto.AccountUpdateReq[dataproto.AzureAccountExtensionUpdateReq]{
-			Name:          req.Name,
-			Managers:      req.Managers,
-			DepartmentIDs: req.DepartmentIDs,
-			Memo:          req.Memo,
-			Extension:     shouldUpdatedExtension,
+			Name:      req.Name,
+			Managers:  req.Managers,
+			Memo:      req.Memo,
+			Extension: shouldUpdatedExtension,
 		},
 	)
 	if err != nil {

@@ -31,7 +31,6 @@ type BaseAccount struct {
 	Vendor        enumor.Vendor            `json:"vendor"`
 	Name          string                   `json:"name"`
 	Managers      []string                 `json:"managers"`
-	DepartmentIDs []int64                  `json:"department_ids"`
 	Type          enumor.AccountType       `json:"type"`
 	Site          enumor.AccountSiteType   `json:"site"`
 	SyncStatus    enumor.AccountSyncStatus `json:"sync_status"`

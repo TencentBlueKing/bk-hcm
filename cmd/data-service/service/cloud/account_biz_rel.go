@@ -103,17 +103,16 @@ func (a *accountSvc) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 
 		accounts = append(accounts, &protocloud.AccountBizRelWithAccount{
 			BaseAccount: corecloud.BaseAccount{
-				ID:            one.ID,
-				Vendor:        enumor.Vendor(one.Vendor),
-				Name:          one.Name,
-				Managers:      one.Managers,
-				DepartmentIDs: one.DepartmentIDs,
-				Type:          enumor.AccountType(one.Type),
-				Site:          enumor.AccountSiteType(one.Site),
-				SyncStatus:    enumor.AccountSyncStatus(one.SyncStatus),
-				Price:         one.Price,
-				PriceUnit:     one.PriceUnit,
-				Memo:          one.Memo,
+				ID:         one.ID,
+				Vendor:     enumor.Vendor(one.Vendor),
+				Name:       one.Name,
+				Managers:   one.Managers,
+				Type:       enumor.AccountType(one.Type),
+				Site:       enumor.AccountSiteType(one.Site),
+				SyncStatus: enumor.AccountSyncStatus(one.SyncStatus),
+				Price:      one.Price,
+				PriceUnit:  one.PriceUnit,
+				Memo:       one.Memo,
 				Revision: core.Revision{
 					Creator:   one.Creator,
 					Reviser:   one.Reviser,

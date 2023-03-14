@@ -27,7 +27,6 @@ import (
 	"hcm/pkg/thirdparty/esb/iam"
 	"hcm/pkg/thirdparty/esb/itsm"
 	"hcm/pkg/thirdparty/esb/login"
-	"hcm/pkg/thirdparty/esb/usermgr"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -37,7 +36,6 @@ import (
 type Client interface {
 	Cmdb() cmdb.Client
 	Login() login.Client
-	Usermgr() usermgr.Client
 	Iam() iam.Client
 	Itsm() itsm.Client
 }
@@ -64,20 +62,18 @@ func NewClient(cfg *cc.Esb, reg prometheus.Registerer) (Client, error) {
 	}
 	restCli := rest.NewClient(c, "/api/c/compapi/v2")
 	return &esbCli{
-		cc:      cmdb.NewClient(restCli, cfg),
-		login:   login.NewClient(restCli, cfg),
-		usermgr: usermgr.NewClient(restCli, cfg),
-		iam:     iam.NewClient(restCli, cfg),
-		itsm:    itsm.NewClient(restCli, cfg),
+		cc:    cmdb.NewClient(restCli, cfg),
+		login: login.NewClient(restCli, cfg),
+		iam:   iam.NewClient(restCli, cfg),
+		itsm:  itsm.NewClient(restCli, cfg),
 	}, nil
 }
 
 type esbCli struct {
-	cc      cmdb.Client
-	login   login.Client
-	usermgr usermgr.Client
-	iam     iam.Client
-	itsm    itsm.Client
+	cc    cmdb.Client
+	login login.Client
+	iam   iam.Client
+	itsm  itsm.Client
 }
 
 func (e *esbCli) Cmdb() cmdb.Client {
@@ -86,10 +82,6 @@ func (e *esbCli) Cmdb() cmdb.Client {
 
 func (e *esbCli) Login() login.Client {
 	return e.login
-}
-
-func (e *esbCli) Usermgr() usermgr.Client {
-	return e.usermgr
 }
 
 func (e *esbCli) Iam() iam.Client {

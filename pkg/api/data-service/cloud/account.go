@@ -113,14 +113,13 @@ func (req *AzureAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.
 
 // AccountCreateReq ...
 type AccountCreateReq[T AccountExtensionCreateReq] struct {
-	Name          string                 `json:"name" validate:"required"`
-	Managers      []string               `json:"managers" validate:"required"`
-	DepartmentIDs []int64                `json:"department_ids" validate:"required"`
-	Type          enumor.AccountType     `json:"type" validate:"required"`
-	Site          enumor.AccountSiteType `json:"site" validate:"required"`
-	Memo          *string                `json:"memo" validate:"required"`
-	Extension     *T                     `json:"extension" validate:"required"`
-	BkBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
+	Name      string                 `json:"name" validate:"required"`
+	Managers  []string               `json:"managers" validate:"required"`
+	Type      enumor.AccountType     `json:"type" validate:"required"`
+	Site      enumor.AccountSiteType `json:"site" validate:"required"`
+	Memo      *string                `json:"memo" validate:"required"`
+	Extension *T                     `json:"extension" validate:"required"`
+	BkBizIDs  []int64                `json:"bk_biz_ids" validate:"required"`
 }
 
 // Validate ...
@@ -221,14 +220,13 @@ func (req *AzureAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.
 
 // AccountUpdateReq ...
 type AccountUpdateReq[T AccountExtensionUpdateReq] struct {
-	Name          string   `json:"name" validate:"omitempty"`
-	Managers      []string `json:"managers" validate:"omitempty"`
-	DepartmentIDs []int64  `json:"department_ids" validate:"omitempty"`
-	SyncStatus    string   `json:"sync_status" validate:"omitempty"`
-	Price         string   `json:"price" validate:"omitempty"`
-	PriceUnit     string   `json:"price_unit" validate:"omitempty"`
-	Memo          *string  `json:"memo" validate:"omitempty"`
-	Extension     *T       `json:"extension" validate:"omitempty"`
+	Name       string   `json:"name" validate:"omitempty"`
+	Managers   []string `json:"managers" validate:"omitempty"`
+	SyncStatus string   `json:"sync_status" validate:"omitempty"`
+	Price      string   `json:"price" validate:"omitempty"`
+	PriceUnit  string   `json:"price_unit" validate:"omitempty"`
+	Memo       *string  `json:"memo" validate:"omitempty"`
+	Extension  *T       `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...
@@ -271,7 +269,6 @@ type BaseAccountListResp struct {
 	Vendor        enumor.Vendor            `json:"vendor"`
 	Name          string                   `json:"name"`
 	Managers      []string                 `json:"managers"`
-	DepartmentIDs []int64                  `json:"department_ids"`
 	Type          enumor.AccountType       `json:"type"`
 	Site          enumor.AccountSiteType   `json:"site"`
 	SyncStatus    enumor.AccountSyncStatus `json:"sync_status"`

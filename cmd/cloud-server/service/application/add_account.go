@@ -35,7 +35,6 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/esb/cmdb"
 	"hcm/pkg/thirdparty/esb/itsm"
-	"hcm/pkg/thirdparty/esb/usermgr"
 	"hcm/pkg/tools/json"
 
 	"github.com/TencentBlueKing/gopkg/conv"
@@ -253,17 +252,6 @@ func (a *applicationSvc) renderItsmApplicationForm(cts *rest.Contexts, req *prot
 
 	// 负责人
 	formItems = append(formItems, formItem{Label: "责任人", Value: strings.Join(req.Managers, ",")})
-
-	// 查询部门名称
-	departmentInfo, err := a.esbClient.Usermgr().RetrieveDepartment(cts.Kit.Ctx, &usermgr.RetrieveDepartmentReq{
-		ID:            req.DepartmentIDs[0],
-		Fields:        []string{},
-		WithAncestors: true,
-	})
-	if err != nil {
-		return "", fmt.Errorf("call usermgr retrieve department api failed, err: %v", err)
-	}
-	formItems = append(formItems, formItem{Label: "组织架构", Value: departmentInfo.FullName})
 
 	// 查询业务名称
 	if req.BkBizIDs[0] == constant.AttachedAllBiz {

@@ -35,7 +35,6 @@ import (
 	"hcm/cmd/web-server/service/capability"
 	"hcm/cmd/web-server/service/cmdb"
 	"hcm/cmd/web-server/service/user"
-	"hcm/cmd/web-server/service/usermgr"
 	"hcm/pkg/cc"
 	apiclient "hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
@@ -218,7 +217,6 @@ func (s *Service) apiSet() *restful.WebService {
 
 	user.InitUserService(c)
 	cmdb.InitCmdbService(c)
-	usermgr.InitUsermgrService(c)
 	authsvc.InitAuthService(c)
 
 	return ws

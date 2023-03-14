@@ -184,13 +184,12 @@ func (req *AzureAccountExtensionCreateReq) IsFull() bool {
 
 // AccountCommonInfoCreateReq ...
 type AccountCommonInfoCreateReq struct {
-	Vendor        enumor.Vendor          `json:"vendor" validate:"required"`
-	Name          string                 `json:"name" validate:"required,min=3,max=32"`
-	Managers      []string               `json:"managers" validate:"required,max=5"`
-	DepartmentIDs []int64                `json:"department_ids" validate:"required,min=1,max=1"`
-	Type          enumor.AccountType     `json:"type" validate:"required"`
-	Site          enumor.AccountSiteType `json:"site" validate:"required"`
-	Memo          *string                `json:"memo" validate:"omitempty"`
+	Vendor   enumor.Vendor          `json:"vendor" validate:"required"`
+	Name     string                 `json:"name" validate:"required,min=3,max=32"`
+	Managers []string               `json:"managers" validate:"required,max=5"`
+	Type     enumor.AccountType     `json:"type" validate:"required"`
+	Site     enumor.AccountSiteType `json:"site" validate:"required"`
+	Memo     *string                `json:"memo" validate:"omitempty"`
 	// Note: 第一期只支持关联一个业务，且不能关联全部业务
 	// BkBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
 	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required,len=1,dive,min=1"`

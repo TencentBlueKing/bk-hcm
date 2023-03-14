@@ -118,17 +118,16 @@ func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretE
 		}
 
 		account := &tablecloud.AccountTable{
-			Vendor:        string(vendor),
-			Name:          req.Name,
-			Managers:      req.Managers,
-			DepartmentIDs: req.DepartmentIDs,
-			Type:          string(req.Type),
-			Site:          string(req.Site),
-			SyncStatus:    enumor.NotStart,
-			Memo:          req.Memo,
-			Extension:     tabletype.JsonField(extensionJson),
-			Creator:       cts.Kit.User,
-			Reviser:       cts.Kit.User,
+			Vendor:     string(vendor),
+			Name:       req.Name,
+			Managers:   req.Managers,
+			Type:       string(req.Type),
+			Site:       string(req.Site),
+			SyncStatus: enumor.NotStart,
+			Memo:       req.Memo,
+			Extension:  tabletype.JsonField(extensionJson),
+			Creator:    cts.Kit.User,
+			Reviser:    cts.Kit.User,
 		}
 
 		accountID, err := svc.dao.Account().CreateWithTx(cts.Kit, txn, account)
@@ -220,14 +219,13 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq, PT protocloud.SecretE
 	}
 
 	account := &tablecloud.AccountTable{
-		Name:          req.Name,
-		Managers:      req.Managers,
-		DepartmentIDs: req.DepartmentIDs,
-		SyncStatus:    req.SyncStatus,
-		Price:         req.Price,
-		PriceUnit:     req.PriceUnit,
-		Memo:          req.Memo,
-		Reviser:       cts.Kit.User,
+		Name:       req.Name,
+		Managers:   req.Managers,
+		SyncStatus: req.SyncStatus,
+		Price:      req.Price,
+		PriceUnit:  req.PriceUnit,
+		Memo:       req.Memo,
+		Reviser:    cts.Kit.User,
 	}
 
 	// 只有提供了Extension才进行更新
@@ -315,18 +313,17 @@ func (a *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 
 	// 组装响应数据 - 账号基本信息
 	baseAccount := &protocore.BaseAccount{
-		ID:            dbAccount.ID,
-		Vendor:        enumor.Vendor(dbAccount.Vendor),
-		Name:          dbAccount.Name,
-		Managers:      dbAccount.Managers,
-		DepartmentIDs: dbAccount.DepartmentIDs,
-		Type:          enumor.AccountType(dbAccount.Type),
-		Site:          enumor.AccountSiteType(dbAccount.Site),
-		SyncStatus:    enumor.AccountSyncStatus(dbAccount.SyncStatus),
-		Price:         dbAccount.Price,
-		PriceUnit:     dbAccount.PriceUnit,
-		Memo:          dbAccount.Memo,
-		BkBizIDs:      bizIDs,
+		ID:         dbAccount.ID,
+		Vendor:     enumor.Vendor(dbAccount.Vendor),
+		Name:       dbAccount.Name,
+		Managers:   dbAccount.Managers,
+		Type:       enumor.AccountType(dbAccount.Type),
+		Site:       enumor.AccountSiteType(dbAccount.Site),
+		SyncStatus: enumor.AccountSyncStatus(dbAccount.SyncStatus),
+		Price:      dbAccount.Price,
+		PriceUnit:  dbAccount.PriceUnit,
+		Memo:       dbAccount.Memo,
+		BkBizIDs:   bizIDs,
 		Revision: core.Revision{
 			Creator:   dbAccount.Creator,
 			Reviser:   dbAccount.Reviser,
@@ -384,17 +381,16 @@ func (a *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 	details := make([]*protocloud.BaseAccountListResp, 0, len(daoAccountResp.Details))
 	for _, account := range daoAccountResp.Details {
 		details = append(details, &protocloud.BaseAccountListResp{
-			ID:            account.ID,
-			Vendor:        enumor.Vendor(account.Vendor),
-			Name:          account.Name,
-			Managers:      account.Managers,
-			DepartmentIDs: account.DepartmentIDs,
-			Type:          enumor.AccountType(account.Type),
-			Site:          enumor.AccountSiteType(account.Site),
-			SyncStatus:    enumor.AccountSyncStatus(account.SyncStatus),
-			Price:         account.Price,
-			PriceUnit:     account.PriceUnit,
-			Memo:          account.Memo,
+			ID:         account.ID,
+			Vendor:     enumor.Vendor(account.Vendor),
+			Name:       account.Name,
+			Managers:   account.Managers,
+			Type:       enumor.AccountType(account.Type),
+			Site:       enumor.AccountSiteType(account.Site),
+			SyncStatus: enumor.AccountSyncStatus(account.SyncStatus),
+			Price:      account.Price,
+			PriceUnit:  account.PriceUnit,
+			Memo:       account.Memo,
 			Revision: core.Revision{
 				Creator:   account.Creator,
 				Reviser:   account.Reviser,
@@ -529,17 +525,16 @@ func (a *accountSvc) ListAccountWithExtension(cts *rest.Contexts) (interface{}, 
 
 		details = append(details, &protocloud.BaseAccountWithExtensionListResp{
 			BaseAccountListResp: protocloud.BaseAccountListResp{
-				ID:            account.ID,
-				Vendor:        enumor.Vendor(account.Vendor),
-				Name:          account.Name,
-				Managers:      account.Managers,
-				DepartmentIDs: account.DepartmentIDs,
-				Type:          enumor.AccountType(account.Type),
-				Site:          enumor.AccountSiteType(account.Site),
-				SyncStatus:    enumor.AccountSyncStatus(account.SyncStatus),
-				Price:         account.Price,
-				PriceUnit:     account.PriceUnit,
-				Memo:          account.Memo,
+				ID:         account.ID,
+				Vendor:     enumor.Vendor(account.Vendor),
+				Name:       account.Name,
+				Managers:   account.Managers,
+				Type:       enumor.AccountType(account.Type),
+				Site:       enumor.AccountSiteType(account.Site),
+				SyncStatus: enumor.AccountSyncStatus(account.SyncStatus),
+				Price:      account.Price,
+				PriceUnit:  account.PriceUnit,
+				Memo:       account.Memo,
 				Revision: core.Revision{
 					Creator:   account.Creator,
 					Reviser:   account.Reviser,

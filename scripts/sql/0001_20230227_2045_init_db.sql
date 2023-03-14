@@ -20,10 +20,6 @@
     6. 云资源关联关系统一通过关联关系表存储，避免后期对接云的资源关联关系和其他云不一致，导致db数据迁移，但仅限云资源的关联关系，
     其他场景根据实际情况去设置。且关联关系表中仅存储hcm云资源唯一ID即可。关联关系表名为 aTable_bTable_rel，e.g: cvm_vpc_rel。
 */
-create database if not exists hcm;
-
-use hcm;
-
 create table if not exists `id_generator`
 (
     `resource` varchar(64) not null,

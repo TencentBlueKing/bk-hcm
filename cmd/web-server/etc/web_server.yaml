@@ -64,11 +64,11 @@ log:
 
 web:
   # Web服务静态文件目录
-  static_file_dir_path: ../front
+  staticFileDirPath: ../front
   # 蓝鲸统一登录
-  bk_login_url: http://paas.bk.com/login
+  bkLoginUrl: http://paas.bk.com/login
   # ESB API
-  bk_component_api_url: http://paas.bk.com
+  bkComponentApiUrl: http://paas.bk.com
 
 # defines esb related settings.
 esb:

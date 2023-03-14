@@ -49,7 +49,6 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "managers", NamedC: "managers", Type: enumor.Json},
-	{Column: "department_ids", NamedC: "department_ids", Type: enumor.Json},
 	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "site", NamedC: "site", Type: enumor.String},
 	{Column: "sync_status", NamedC: "sync_status", Type: enumor.String},
@@ -73,8 +72,6 @@ type AccountTable struct {
 	Vendor string `db:"vendor" json:"vendor"`
 	// Managers 责任人
 	Managers types.StringArray `db:"managers" json:"managers"`
-	// DepartmentIDs 部门 ID列表
-	DepartmentIDs types.Int64Array `db:"department_ids" json:"department_ids"`
 	// Type 账号类型(资源账号|登记账号)
 	Type string `db:"type" json:"type"`
 	// Site 站点(中国站｜国际站)
