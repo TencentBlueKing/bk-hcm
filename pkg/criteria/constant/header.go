@@ -48,7 +48,7 @@ const (
 // const for timing sync
 const (
 	// SyncTimingUserKey sync timing UserKey
-	SyncTimingUserKey = "sync-timing-admin"
+	SyncTimingUserKey = "hcm-backend-sync"
 
 	// SyncTimingAppCodeKey sync timing AppCodeKey
 	SyncTimingAppCodeKey = "hcm"
