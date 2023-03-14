@@ -5,7 +5,6 @@ import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
 import Loading from '@/components/loading';
-import OrganizationSelect from '@/components/OrganizationSelect';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
 import './account-detail.scss';
 const { FormItem } = Form;
@@ -18,7 +17,7 @@ export default defineComponent({
     const accountStore = useAccountStore();
     const route = useRoute();
     const formDiaRef = ref(null);
-    const requestQueue = ref(['detail', 'departments', 'bizsList']);
+    const requestQueue = ref(['detail', 'bizsList']);
 
     const initProjectModel: ProjectModel = {
       id: 1,
@@ -31,15 +30,11 @@ export default defineComponent({
       secretId: '',    // 密钥id
       secretKey: '',  // 密钥key
       managers: [], // 责任人
-      departmentId: [],   // 组织架构
       bizIds: [],   // 使用业务
       memo: '',     // 备注
       price: 0,
       extension: {},   // 特殊信息
     };
-
-    const departmentFullName = ref('IEG互动娱乐事业群/技术运营部/计算资源中心');
-    const departmentData = ref([]);
     const isShowModifyScretDialog = ref(false);
     const buttonLoading = ref<boolean>(false);
 
@@ -78,7 +73,6 @@ export default defineComponent({
       projectModel.price_unit = res?.data.price_unit;
       projectModel.site = res?.data.site;
       projectModel.memo = res?.data.memo;
-      projectModel.departmentId = res?.data.department_ids; // 1
       projectModel.creator = res?.data.creator;
       projectModel.reviser = res?.data.reviser;
       projectModel.created_at = res?.data.created_at;
@@ -87,7 +81,6 @@ export default defineComponent({
       projectModel.bizIds = res?.data?.bk_biz_ids;
       requestQueue.value.shift();
       getBusinessList();
-      getDepartmentInfo(res?.data.department_ids);
       renderDialogForm(projectModel);
       renderBaseInfoForm(projectModel);
     };
@@ -104,14 +97,6 @@ export default defineComponent({
     const getBusinessList = async () => {
       const res = await accountStore.getBizList();
       businessList.list = res.data;
-      requestQueue.value.shift();
-    };
-
-    // 获取部门信息
-    const getDepartmentInfo = async (id: number) => {
-      const res = await accountStore.getDepartmentInfo(id);
-      departmentFullName.value = res?.data?.full_name;
-      departmentData.value = res?.data?.ancestors.map((e: any) => e.id);
       requestQueue.value.shift();
     };
 
@@ -492,12 +477,9 @@ export default defineComponent({
       ],
     };
     // 更新信息方法
-    const updateFormData = async (key: any, val?: any) => {
+    const updateFormData = async (key: any) => {
       let params: any = {};
-      if (key === 'departmentId') {
-        params.department_ids = projectModel[key];
-        isOrganizationDetail.value = true;  // 改为详情展示态
-      } else if (key === 'bizIds') {
+      if (key === 'bizIds') {
         // 若选择全部业务，则参数是-1
         // params.bk_biz_ids = projectModel[key].length === businessList.list.length
         //   ? [-1] : projectModel[key];
@@ -515,9 +497,6 @@ export default defineComponent({
           message: t('更新成功'),
           theme: 'success',
         });
-        if (key === 'departmentId') {
-          departmentFullName.value = val;
-        }
       } catch (error) {
         console.log(error);
       } finally {
@@ -636,18 +615,6 @@ export default defineComponent({
       }
     };
 
-    // 处理组织架构选择
-    const handleOrganChange = (val: any) => {
-      if (!projectModel.departmentId.length) {
-        Message({
-          message: t('请选择组织架构'),
-          theme: 'error',
-        });
-        return;
-      };
-      updateFormData('departmentId', val);    // 更新数据
-    };
-
     const handleBizChange = async (val: any) => {
       handleEditStatus(true, 'bizIds');     // 未通过检验前状态为编辑态
       await formRef.value?.validate();
@@ -754,21 +721,6 @@ export default defineComponent({
       {
         name: t('业务信息'),
         data: [
-          {
-            label: t('组织架构'),
-            required: true,
-            property: 'departmentId',
-            isEdit: true,
-            component() {
-              return (
-                isOrganizationDetail.value ? (<div class="flex-row align-items-center">
-                  <span>{departmentFullName.value}</span>
-                  <i onClick={handleEdit} class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>
-                </div>)
-                  : (<OrganizationSelect v-model={projectModel.departmentId} onChange={handleOrganChange}/>)
-              );
-            },
-          },
           {
             label: t('使用业务'),
             required: false,

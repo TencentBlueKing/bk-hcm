@@ -5,7 +5,6 @@ import { ProjectModel, FormItems } from '@/typings';
 import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE, SITE_TYPE } from '@/constants';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
-import OrganizationSelect from '@/components/OrganizationSelect';
 import { useAccountStore, useUserStore } from '@/store';
 const { FormItem } = Form;
 const { Option } = Select;
@@ -24,7 +23,6 @@ export default defineComponent({
       name: '', // 名称
       vendor: '', // 云厂商
       managers: [useUser.username], // 责任人
-      departmentId: [],   // 组织架构
       bizIds: '',   // 使用业务
       memo: '',     // 备注
       mainAccount: '',    // 主账号
@@ -87,7 +85,6 @@ export default defineComponent({
           name: projectModel.name,
           managers: projectModel.managers,
           memo: projectModel.memo,
-          department_ids: projectModel.departmentId,
           site: projectModel.site,
           bk_biz_ids: projectModel.bizIds ? [projectModel.bizIds] : [-1],
           extension: {},
@@ -480,16 +477,6 @@ export default defineComponent({
       { immediate: true },
     );
 
-    watch(
-      () => projectModel.departmentId,    // 监听组织架构内容
-      async () => {
-        if (projectModel.departmentId.length) {
-          await formRef.value?.clearValidate();
-        }
-      },
-      { deep: true },
-    );
-
 
     const formList = reactive<FormItems[]>([
       {
@@ -559,16 +546,6 @@ export default defineComponent({
         content: () => (
           <section>
             <MemberSelect class="w450" v-model={projectModel.managers}/>
-          </section>
-        ),
-      },
-      {
-        label: t('组织架构'),
-        required: true,
-        property: 'departmentId',
-        content: () => (
-          <section>
-            <OrganizationSelect class="w450" v-model={projectModel.departmentId} />
           </section>
         ),
       },
