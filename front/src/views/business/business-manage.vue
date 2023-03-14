@@ -14,7 +14,7 @@ import RoutingManage from '@/views/resource/resource-manage/children/manage/rout
 import ImageManage from '@/views/resource/resource-manage/children/manage/image-manage.vue';
 import NetworkInterfaceManage from '@/views/resource/resource-manage/children/manage/network-interface-manage.vue';
 // forms
-import EipTcloudForm from './forms/eip/tcloud.vue';
+import EipForm from './forms/eip/index.vue';
 import subnetForm from './forms/subnet/index.vue';
 import securityForm from './forms/security/index.vue';
 
@@ -44,7 +44,7 @@ const componentMap = {
   'network-interface': NetworkInterfaceManage,
 };
 const formMap = {
-  ip: EipTcloudForm,
+  ip: EipForm,
   subnet: subnetForm,
   security: securityForm,
 };
@@ -82,14 +82,16 @@ const handleSuccess = () => {
 
 <template>
   <section class="business-manage-wrapper">
-    <component
-      ref="componentRef"
-      :is="renderComponent"
-      :filter="filter"
-      v-if="accountStore.bizs"
-    >
-      <bk-button theme="primary" class="new-button" @click="handleAdd">新增</bk-button>
-    </component>
+    <bk-loading :loading="!accountStore.bizs">
+      <component
+        v-if="accountStore.bizs"
+        ref="componentRef"
+        :is="renderComponent"
+        :filter="filter"
+      >
+        <bk-button theme="primary" class="new-button" @click="handleAdd">新增</bk-button>
+      </component>
+    </bk-loading>
   </section>
   <bk-sideslider
     v-model:isShow="isShowSideSlider"
@@ -98,9 +100,7 @@ const handleSuccess = () => {
     quick-close
   >
     <template #default>
-      <bk-loading :loading="!accountStore.bizs">
-        <component :is="renderForm" :filter="filter" @cancel="handleCancel" @success="handleSuccess" v-if="accountStore.bizs"></component>
-      </bk-loading>
+      <component :is="renderForm" :filter="filter" @cancel="handleCancel" @success="handleSuccess"></component>
     </template>
   </bk-sideslider>
 </template>

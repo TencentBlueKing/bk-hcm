@@ -26,6 +26,9 @@ export const useBusinessStore = defineStore({
     addSecurity(id: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${id}/security_groups/create`, data);
     },
+    addEip(id: number, vendor: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${id}/vendors/${vendor}/eips/create`, data);
+    },
     /**
      * @description: 获取可用区列表
      * @param {any} data

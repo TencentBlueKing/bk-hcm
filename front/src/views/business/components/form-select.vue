@@ -18,7 +18,7 @@ const cloudRegionsLoading = ref(false);
 const cloudAreaPage = ref(0);
 const state = reactive<{filter: BusinessFormFilter}>({
   filter: {
-    vendor: '',
+    vendor: 'tcloud',
     account_id: '',
     region: '',
   },
@@ -86,7 +86,7 @@ const handleCloudChange = () => {
 };
 
 getAccountList();
-
+handleCloudChange();
 </script>
 <template>
   <bk-form class="mt20 pt20 bussine-form">
