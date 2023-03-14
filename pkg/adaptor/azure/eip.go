@@ -206,3 +206,29 @@ func (a *Azure) DisassociateEip(kt *kit.Kit, opt *eip.AzureEipDisassociateOption
 
 	return err
 }
+
+// CreateEip ...
+// reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/create-or-update?tabs=HTTP
+func (a *Azure) CreateEip(kt *kit.Kit, opt *eip.AzureEipCreateOption) (*string, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "azure eip create option is required")
+	}
+
+	params, err := opt.ToPublicIPAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := a.clientSet.publicIPAddressesClient()
+	if err != nil {
+		return nil, err
+	}
+
+	pollerResp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.EipName, *params, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to finish the request:  %v", err)
+	}
+	resp, err := pollerResp.PollUntilDone(kt.Ctx, nil)
+
+	return resp.ID, err
+}

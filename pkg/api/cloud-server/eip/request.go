@@ -46,3 +46,23 @@ type EipAssignReq struct {
 func (req *EipAssignReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// AccountReq ...
+type AccountReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AccountReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// EipReq ...
+type EipReq struct {
+	EipID string `json:"eip_id" validate:"required"`
+}
+
+// Validate ...
+func (req *EipReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

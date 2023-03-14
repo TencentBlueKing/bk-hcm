@@ -19,7 +19,10 @@
 
 package eip
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/validator"
+)
 
 // AzureEipAssociateReq ...
 type AzureEipAssociateReq struct {
@@ -42,5 +45,16 @@ type AzureEipDisassociateReq struct {
 
 // Validate ...
 func (req *AzureEipDisassociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AzureEipCreateReq ...
+type AzureEipCreateReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	*eip.AzureEipCreateOption
+}
+
+// Validate ...
+func (req *AzureEipCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

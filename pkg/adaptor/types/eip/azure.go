@@ -26,6 +26,30 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
 
+// PublicIPAddressSKUEnum ...
+var PublicIPAddressSKUEnum = map[string]armnetwork.PublicIPAddressSKUName{
+	"Standard": armnetwork.PublicIPAddressSKUNameStandard,
+	"Basic":    armnetwork.PublicIPAddressSKUNameBasic,
+}
+
+// PublicIPAddressSKUTierEnum ...
+var PublicIPAddressSKUTierEnum = map[string]armnetwork.PublicIPAddressSKUTier{
+	"Global":   armnetwork.PublicIPAddressSKUTierGlobal,
+	"Regional": armnetwork.PublicIPAddressSKUTierRegional,
+}
+
+// IPAllocationMethodEnum ...
+var IPAllocationMethodEnum = map[string]armnetwork.IPAllocationMethod{
+	"Dynamic": armnetwork.IPAllocationMethodDynamic,
+	"Static":  armnetwork.IPAllocationMethodStatic,
+}
+
+// IPVersionEnum ...
+var IPVersionEnum = map[string]armnetwork.IPVersion{
+	"ipv6": armnetwork.IPVersionIPv6,
+	"ipv4": armnetwork.IPVersionIPv4,
+}
+
 // AzureEipListOption ...
 type AzureEipListOption struct {
 	CloudIDs []string `json:"cloud_ids" validate:"omitempty"`
@@ -111,4 +135,46 @@ func (opt *AzureEipDisassociateOption) ToInterfaceParams() (*armnetwork.Interfac
 	firstIpConfig.Properties.PublicIPAddress = nil
 
 	return params, nil
+}
+
+// AzureEipCreateOption ...
+type AzureEipCreateOption struct {
+	ResourceGroupName    string `json:"resource_group_name" validate:"required"`
+	EipName              string `json:"eip_name" validate:"required"`
+	Region               string `json:"region" validate:"required"`
+	Zone                 string `json:"zone" validate:"required"`
+	SKUName              string `json:"sku_name" validate:"required,eq=Standard|eq=Basic"`
+	SKUTier              string `json:"sku_tier" validate:"required,eq=Regional|eq=Global"`
+	AllocationMethod     string `json:"allocation_method" validate:"required,eq=Dynamic|eq=Static"`
+	IPVersion            string `json:"ip_version" validate:"required,eq=ipv6|eq=ipv4"`
+	IdleTimeoutInMinutes int32  `json:"idle_timeout_in_minutes" validate:"required"`
+}
+
+// Validate ...
+func (opt *AzureEipCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToPublicIPAddress ...
+func (opt *AzureEipCreateOption) ToPublicIPAddress() (*armnetwork.PublicIPAddress, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := &armnetwork.PublicIPAddress{Location: to.Ptr(opt.Region)}
+
+	allocationMethod := IPAllocationMethodEnum[opt.AllocationMethod]
+	ipVersion := IPVersionEnum[opt.IPVersion]
+	req.Properties = &armnetwork.PublicIPAddressPropertiesFormat{
+		IdleTimeoutInMinutes:     to.Ptr(opt.IdleTimeoutInMinutes),
+		PublicIPAllocationMethod: to.Ptr(allocationMethod),
+		PublicIPAddressVersion:   to.Ptr(ipVersion),
+	}
+	req.SKU = &armnetwork.PublicIPAddressSKU{
+		Name: to.Ptr(PublicIPAddressSKUEnum[opt.SKUName]),
+		Tier: to.Ptr(PublicIPAddressSKUTierEnum[opt.SKUTier]),
+	}
+	req.Zones = to.SliceOfPtrs[string](opt.Zone)
+
+	return req, nil
 }

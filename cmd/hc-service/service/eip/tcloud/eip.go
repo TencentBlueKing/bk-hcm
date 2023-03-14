@@ -20,14 +20,21 @@
 package tcloud
 
 import (
+	"hcm/cmd/hc-service/logics/sync/cvm"
+	synceip "hcm/cmd/hc-service/logics/sync/eip"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/api/core"
+	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	proto "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // EipSvc ...
@@ -91,7 +98,27 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.EipCvmRelManager{CvmID: req.CvmID, EipID: req.EipID, DataCli: svc.DataCli}
-	return nil, manager.Create(cts.Kit)
+	err = manager.Create(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = synceip.SyncTCloudEip(
+		cts.Kit,
+		&synceip.SyncTCloudEipOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudEipID}},
+		svc.Adaptor, svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncTCloudEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, cvm.SyncTCloudCvm(
+		cts.Kit,
+		svc.Adaptor,
+		svc.DataCli,
+		&cvm.SyncTCloudCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
+	)
 }
 
 // DisassociateEip ...
@@ -120,7 +147,99 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.EipCvmRelManager{CvmID: req.CvmID, EipID: req.EipID, DataCli: svc.DataCli}
-	return nil, manager.Delete(cts.Kit)
+	err = manager.Delete(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = synceip.SyncTCloudEip(
+		cts.Kit,
+		&synceip.SyncTCloudEipOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudEipID}},
+		svc.Adaptor, svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncTCloudEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cvmData, err := svc.DataCli.TCloud.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, cvm.SyncTCloudCvm(
+		cts.Kit,
+		svc.Adaptor,
+		svc.DataCli,
+		&cvm.SyncTCloudCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{cvmData.CloudID}},
+	)
+}
+
+// CreateEip ...
+func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.TCloudEipCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.Adaptor.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt, err := svc.makeEipCreateOption(req)
+	if err != nil {
+		return nil, err
+	}
+
+	eipCloudIDs, err := client.CreateEip(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	cloudIDs := make([]string, len(eipCloudIDs))
+	for idx, idptr := range eipCloudIDs {
+		cloudIDs[idx] = *idptr
+	}
+
+	_, err = synceip.SyncTCloudEip(
+		cts.Kit,
+		&synceip.SyncTCloudEipOption{AccountID: req.AccountID, Region: req.Region, CloudIDs: cloudIDs},
+		svc.Adaptor, svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncTCloudEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	resp, err := svc.DataCli.Global.ListEip(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&dataproto.EipListReq{Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.In.Factory(),
+					Value: cloudIDs,
+				}, &filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: string(enumor.TCloud),
+				},
+			},
+		}, Page: &core.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},
+	)
+
+	eipIDs := make([]string, len(cloudIDs))
+	for idx, eipData := range resp.Details {
+		eipIDs[idx] = eipData.ID
+	}
+
+	return &core.BatchCreateResult{IDs: eipIDs}, nil
 }
 
 func (svc *EipSvc) makeEipDeleteOption(
@@ -167,4 +286,18 @@ func (svc *EipSvc) makeEipDisassociateOption(
 	}
 
 	return &eip.TCloudEipDisassociateOption{Region: eipData.Region, CloudEipID: eipData.CloudID}, nil
+}
+
+func (svc *EipSvc) makeEipCreateOption(req *proto.TCloudEipCreateReq) (*eip.TCloudEipCreateOption, error) {
+	return &eip.TCloudEipCreateOption{
+		Region:                req.Region,
+		EipName:               req.EipName,
+		EipCount:              req.EipCount,
+		ServiceProvider:       req.ServiceProvider,
+		AddressType:           req.AddressType,
+		InternetChargeType:    req.InternetChargeType,
+		InternetChargePrepaid: req.InternetChargePrepaid,
+		MaxBandwidthOut:       req.MaxBandwidthOut,
+		Egress:                req.Egress,
+	}, nil
 }

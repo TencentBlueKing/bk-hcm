@@ -41,6 +41,8 @@ func InitEipService(cap *capability.Capability) {
 	h.Add("AssociateEip", http.MethodPost, "/vendors/{vendor}/eips/associate", e.AssociateEip)
 	// 解关联 Eip
 	h.Add("DisassociateEip", http.MethodPost, "/vendors/{vendor}/eips/disassociate", e.DisassociateEip)
+	// 创建 Eip
+	h.Add("CreateEip", http.MethodPost, "/vendors/{vendor}/eips/create", e.CreateEip)
 
 	h.Load(cap.WebService)
 }

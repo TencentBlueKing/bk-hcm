@@ -21,13 +21,18 @@ package gcp
 
 import (
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/pkg/adaptor/types/eip"
 	cloudproto "hcm/pkg/api/cloud-server/eip"
+	protoaudit "hcm/pkg/api/data-service/audit"
+	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
 )
@@ -49,7 +54,11 @@ func NewGcp(client *client.ClientSet, authorizer auth.Authorizer, audit audit.In
 }
 
 // AssociateEip associate eip.
-func (g *Gcp) AssociateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (g *Gcp) AssociateEip(
+	cts *rest.Contexts,
+	basicInfo *types.CloudResourceBasicInfo,
+	validHandler handler.ValidWithAuthHandler,
+) (interface{}, error) {
 	req := new(cloudproto.GcpEipAssociateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -59,23 +68,27 @@ func (g *Gcp) AssociateEip(cts *rest.Contexts, validHandler handler.ValidWithAut
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 增加审计
 	// TODO 判断 Eip 是否可关联
 
-	basicInfo, err := g.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.EipCloudResType,
-		req.EipID,
-	)
+	// validate biz and authorize
+	err := validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: g.authorizer, ResType: meta.Eip,
+		Action: meta.Associate, BasicInfo: basicInfo,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: g.authorizer, ResType: meta.Eip,
-		Action: meta.Associate, BasicInfo: basicInfo})
+	operationInfo := protoaudit.CloudResourceOperationInfo{
+		ResType:           enumor.EipAuditResType,
+		ResID:             req.EipID,
+		Action:            protoaudit.Associate,
+		AssociatedResType: enumor.NetworkInterfaceAuditResType,
+		AssociatedResID:   req.NetworkInterfaceID,
+	}
+	err = g.audit.ResOperationAudit(cts.Kit, operationInfo)
 	if err != nil {
+		logs.Errorf("create associate eip audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -92,7 +105,11 @@ func (g *Gcp) AssociateEip(cts *rest.Contexts, validHandler handler.ValidWithAut
 }
 
 // DisassociateEip disassociate eip.
-func (g *Gcp) DisassociateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (g *Gcp) DisassociateEip(
+	cts *rest.Contexts,
+	basicInfo *types.CloudResourceBasicInfo,
+	validHandler handler.ValidWithAuthHandler,
+) (interface{}, error) {
 	req := new(cloudproto.GcpEipDisassociateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -102,22 +119,25 @@ func (g *Gcp) DisassociateEip(cts *rest.Contexts, validHandler handler.ValidWith
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 增加鉴权和审计
-
-	basicInfo, err := g.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.EipCloudResType,
-		req.EipID,
-	)
+	// validate biz and authorize
+	err := validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: g.authorizer, ResType: meta.Eip,
+		Action: meta.Disassociate, BasicInfo: basicInfo,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: g.authorizer, ResType: meta.Eip,
-		Action: meta.Disassociate, BasicInfo: basicInfo})
+	operationInfo := protoaudit.CloudResourceOperationInfo{
+		ResType:           enumor.EipAuditResType,
+		ResID:             req.EipID,
+		Action:            protoaudit.Disassociate,
+		AssociatedResType: enumor.NetworkInterfaceAuditResType,
+		AssociatedResID:   req.NetworkInterfaceID,
+	}
+	err = g.audit.ResOperationAudit(cts.Kit, operationInfo)
 	if err != nil {
+		logs.Errorf("create disassociate eip audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -131,4 +151,57 @@ func (g *Gcp) DisassociateEip(cts *rest.Contexts, validHandler handler.ValidWith
 			NetworkInterfaceID: req.NetworkInterfaceID,
 		},
 	)
+}
+
+// CreateEip ...
+func (g *Gcp) CreateEip(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloudproto.GcpEipCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	bkBizID, err := cts.PathParameter("bk_biz_id").Uint64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	// validate biz and authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Eip, Action: meta.Create}, BizID: int64(bkBizID)}
+	err = g.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := g.client.HCService().Gcp.Eip.CreateEip(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&hcproto.GcpEipCreateReq{
+			AccountID: req.AccountID,
+			GcpEipCreateOption: &eip.GcpEipCreateOption{
+				Region:      req.Region,
+				NetworkTier: req.NetworkTier,
+				IpVersion:   req.IpVersion,
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// 分配业务
+	_, err = g.client.DataService().Global.BatchUpdateEip(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&dataproto.EipBatchUpdateReq{IDs: resp.IDs, BkBizID: bkBizID},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }

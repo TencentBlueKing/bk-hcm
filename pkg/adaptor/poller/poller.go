@@ -20,6 +20,8 @@
 package poller
 
 import (
+	"time"
+
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
@@ -37,6 +39,8 @@ type Poller[T any, R any] struct {
 func (poller *Poller[T, R]) PollUntilDone(client T, kt *kit.Kit, ids []*string) error {
 	// TODO 增加超时控制等有效结束条件
 	for {
+		time.Sleep(1 * time.Second)
+
 		pollResult, err := poller.Handler.Poll(client, kt, ids)
 		if err != nil {
 			logs.Errorf("failed to finish the request:  %v, cloudIDs: %v, rid: %s", err, ids, kt.Rid)

@@ -74,8 +74,8 @@ func (ad Audit) CloudResourceOperationAudit(cts *rest.Contexts) (interface{}, er
 }
 
 func (ad Audit) buildOperationAuditInfo(kt *kit.Kit, resType enumor.AuditResourceType,
-	operations []protoaudit.CloudResourceOperationInfo) ([]*tableaudit.AuditTable, error) {
-
+	operations []protoaudit.CloudResourceOperationInfo,
+) ([]*tableaudit.AuditTable, error) {
 	var audits []*tableaudit.AuditTable
 	var err error
 	switch resType {
@@ -83,6 +83,8 @@ func (ad Audit) buildOperationAuditInfo(kt *kit.Kit, resType enumor.AuditResourc
 		audits, err = ad.cvm.CvmOperationAuditBuild(kt, operations)
 	case enumor.SecurityGroupRuleAuditResType:
 		audits, err = ad.securityGroup.OperationAuditBuild(kt, operations)
+	case enumor.EipAuditResType:
+		audits, err = ad.eipOperationAuditBuild(kt, operations)
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}

@@ -44,6 +44,7 @@ type EipService interface {
 	DeleteEip(cts *rest.Contexts) (interface{}, error)
 	AssociateEip(cts *rest.Contexts) (interface{}, error)
 	DisassociateEip(cts *rest.Contexts) (interface{}, error)
+	CreateEip(cts *rest.Contexts) (interface{}, error)
 }
 
 // DeleteEip ...
@@ -119,4 +120,29 @@ func (da *eipAdaptor) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, fmt.Errorf("%s does not support the detach of cloud disks", vendor)
 	}
 	return svc.DisassociateEip(cts)
+}
+
+// CreateEip ...
+func (da *eipAdaptor) CreateEip(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	var svc EipService
+	switch vendor {
+	case enumor.TCloud:
+		svc = &tcloud.EipSvc{Adaptor: da.adaptor, DataCli: da.dataCli}
+	case enumor.HuaWei:
+		svc = &huawei.EipSvc{Adaptor: da.adaptor, DataCli: da.dataCli}
+	case enumor.Aws:
+		svc = &aws.EipSvc{Adaptor: da.adaptor, DataCli: da.dataCli}
+	case enumor.Azure:
+		svc = &azure.EipSvc{Adaptor: da.adaptor, DataCli: da.dataCli}
+	case enumor.Gcp:
+		svc = &gcp.EipSvc{Adaptor: da.adaptor, DataCli: da.dataCli}
+	default:
+		return nil, fmt.Errorf("%s does not support the detach of cloud disks", vendor)
+	}
+	return svc.CreateEip(cts)
 }

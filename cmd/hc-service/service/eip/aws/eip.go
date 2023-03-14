@@ -20,14 +20,21 @@
 package aws
 
 import (
+	"hcm/cmd/hc-service/logics/sync/cvm"
+	synceip "hcm/cmd/hc-service/logics/sync/eip"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/types/eip"
+	apicore "hcm/pkg/api/core"
+	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	proto "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // EipSvc ...
@@ -91,7 +98,36 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.EipCvmRelManager{CvmID: req.CvmID, EipID: req.EipID, DataCli: svc.DataCli}
-	return nil, manager.Create(cts.Kit)
+	err = manager.Create(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	eipData, err := svc.DataCli.Aws.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), req.EipID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = synceip.SyncAwsEip(
+		cts.Kit,
+		&synceip.SyncAwsEipOption{
+			AccountID: req.AccountID,
+			CloudIDs:  []string{eipData.CloudID},
+		},
+		svc.Adaptor,
+		svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncAwsEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return cvm.SyncAwsCvm(
+		cts.Kit,
+		svc.Adaptor,
+		svc.DataCli,
+		&cvm.SyncAwsCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
+	)
 }
 
 // DisassociateEip ...
@@ -120,7 +156,102 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.EipCvmRelManager{CvmID: req.CvmID, EipID: req.EipID, DataCli: svc.DataCli}
-	return nil, manager.Delete(cts.Kit)
+	err = manager.Delete(cts.Kit)
+
+	eipData, err := svc.DataCli.Aws.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), req.EipID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = synceip.SyncAwsEip(
+		cts.Kit,
+		&synceip.SyncAwsEipOption{
+			AccountID: req.AccountID,
+			CloudIDs:  []string{eipData.CloudID},
+		},
+		svc.Adaptor,
+		svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncAwsEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cvmData, err := svc.DataCli.Aws.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cvm.SyncAwsCvm(
+		cts.Kit,
+		svc.Adaptor,
+		svc.DataCli,
+		&cvm.SyncAwsCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{cvmData.CloudID}},
+	)
+}
+
+// CreateEip ...
+func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsEipCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.Adaptor.Aws(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt, err := svc.makeEipCreateOption(req)
+	if err != nil {
+		return nil, err
+	}
+
+	eipPtr, err := client.CreateEip(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	cloudIDs := []string{*eipPtr}
+
+	_, err = synceip.SyncAwsEip(
+		cts.Kit,
+		&synceip.SyncAwsEipOption{AccountID: req.AccountID, Region: req.Region, CloudIDs: cloudIDs},
+		svc.Adaptor, svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncAwsEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	resp, err := svc.DataCli.Global.ListEip(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&dataproto.EipListReq{Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.In.Factory(),
+					Value: cloudIDs,
+				}, &filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: string(enumor.TCloud),
+				},
+			},
+		}, Page: &apicore.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},
+	)
+
+	eipIDs := make([]string, len(cloudIDs))
+	for idx, eipData := range resp.Details {
+		eipIDs[idx] = eipData.ID
+	}
+
+	return &apicore.BatchCreateResult{IDs: eipIDs}, nil
 }
 
 func (svc *EipSvc) makeEipDeleteOption(
@@ -170,4 +301,12 @@ func (svc *EipSvc) makeEipDisassociateOption(
 	}
 
 	return &eip.AwsEipDisassociateOption{Region: eipData.Region, PublicIp: eipData.PublicIp}, nil
+}
+
+func (svc *EipSvc) makeEipCreateOption(req *proto.AwsEipCreateReq) (*eip.AwsEipCreateOption, error) {
+	return &eip.AwsEipCreateOption{
+		Region:             req.Region,
+		PublicIpv4Pool:     req.PublicIpv4Pool,
+		NetworkBorderGroup: req.NetworkBorderGroup,
+	}, nil
 }

@@ -74,8 +74,8 @@ func (ad Audit) CloudResourceDeleteAudit(cts *rest.Contexts) (interface{}, error
 }
 
 func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceType, parentID string,
-	deletes []protoaudit.CloudResourceDeleteInfo) ([]*tableaudit.AuditTable, error) {
-
+	deletes []protoaudit.CloudResourceDeleteInfo,
+) ([]*tableaudit.AuditTable, error) {
 	var audits []*tableaudit.AuditTable
 	var err error
 	switch resType {
@@ -91,6 +91,8 @@ func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.subnet.SubnetDeleteAuditBuild(kt, deletes)
 	case enumor.CvmAuditResType:
 		audits, err = ad.cvm.CvmDeleteAuditBuild(kt, deletes)
+	case enumor.EipAuditResType:
+		audits, err = ad.eipDeleteAuditBuild(kt, deletes)
 
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)

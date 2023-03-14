@@ -22,10 +22,12 @@ package gcp
 import (
 	"strconv"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"google.golang.org/api/compute/v1"
 )
@@ -206,6 +208,42 @@ func (g *Gcp) DisassociateEip(kt *kit.Kit, opt *eip.GcpEipDisassociateOption) er
 	return nil
 }
 
+// CreateEip ...
+// reference: regional https://cloud.google.com/compute/docs/reference/rest/v1/addresses/insert
+// reference: global https://cloud.google.com/compute/docs/reference/rest/v1/globalAddresses/insert
+func (g *Gcp) CreateEip(kt *kit.Kit, opt *eip.GcpEipCreateOption) (*string, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "gcp eip create option is required")
+	}
+
+	req, err := opt.ToAddress()
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	if opt.Region == eip.GcpGlobalRegion {
+		resp, err := client.GlobalAddresses.Insert(g.CloudProjectID(), req).Context(kt.Ctx).Do()
+		cloudID := strconv.FormatUint(resp.TargetId, 10)
+		return &cloudID, err
+	}
+
+	resp, err := client.Addresses.Insert(g.CloudProjectID(), opt.Region, req).Context(kt.Ctx).Do()
+	cloudID := strconv.FormatUint(resp.TargetId, 10)
+
+	respPoller := poller.Poller[*Gcp, []*eip.GcpEip]{Handler: &createEipPollingHandler{region: opt.Region}}
+	err = respPoller.PollUntilDone(g, kt, []*string{&cloudID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &cloudID, err
+}
+
 func convert(resp *compute.AddressList, region string) []*eip.GcpEip {
 	eips := make([]*eip.GcpEip, len(resp.Items))
 
@@ -236,3 +274,30 @@ func convert(resp *compute.AddressList, region string) []*eip.GcpEip {
 	}
 	return eips
 }
+
+type createEipPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *createEipPollingHandler) Done(pollResult []*eip.GcpEip) bool {
+	for _, r := range pollResult {
+		if r.Status == nil || *r.Status == "RESERVING" {
+			return false
+		}
+	}
+	return true
+}
+
+// Poll ...
+func (h *createEipPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]*eip.GcpEip, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, err := client.ListEip(kt, &eip.GcpEipListOption{Region: h.region, CloudIDs: cIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Details, nil
+}
+
+var _ poller.PollingHandler[*Gcp, []*eip.GcpEip] = new(createEipPollingHandler)

@@ -167,3 +167,25 @@ func (a *Aws) DisassociateEip(kt *kit.Kit, opt *eip.AwsEipDisassociateOption) er
 
 	return nil
 }
+
+// CreateEip ...
+// reference: https://docs.amazonaws.cn/en_us/AWSEC2/latest/APIReference/API_AllocateAddress.html
+func (a *Aws) CreateEip(kt *kit.Kit, opt *eip.AwsEipCreateOption) (*string, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "aws eip create option is required")
+	}
+
+	req, err := opt.ToAllocateAddressInput()
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.AllocateAddressWithContext(kt.Ctx, req)
+
+	return resp.AllocationId, err
+}

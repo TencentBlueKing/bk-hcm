@@ -56,6 +56,7 @@ func (svc *eipSvc) Init() {
 	}
 
 	svc.objectDao = svc.GetObjectDao(d.Name()).(*eipdao.EipDao)
+	svc.objectDao.Audit = svc.Audit()
 }
 
 // BatchCreateEipExt ...

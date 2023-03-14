@@ -84,14 +84,18 @@ func (opt *TCloudEipDeleteOption) ToReleaseAddressesRequest() (*vpc.ReleaseAddre
 		return nil, err
 	}
 
-	return &vpc.ReleaseAddressesRequest{AddressIds: common.StringPtrs(opt.CloudIDs)}, nil
+	req := vpc.NewReleaseAddressesRequest()
+	req.AddressIds = common.StringPtrs(opt.CloudIDs)
+
+	return req, nil
 }
 
 // TCloudEipAssociateOption ...
 type TCloudEipAssociateOption struct {
-	Region     string `json:"region" validate:"required"`
-	CloudEipID string `json:"cloud_eip_id" validate:"required"`
-	CloudCvmID string `json:"cloud_cvm_id" validate:"required"`
+	Region                  string `json:"region" validate:"required"`
+	CloudEipID              string `json:"cloud_eip_id" validate:"required"`
+	CloudCvmID              string `json:"cloud_cvm_id" validate:"required"`
+	CloudNetworkInterfaceID string `json:"cloud_network_interface_id"`
 }
 
 // Validate ...
@@ -105,10 +109,16 @@ func (opt *TCloudEipAssociateOption) ToAssociateAddressRequest() (*vpc.Associate
 		return nil, err
 	}
 
-	return &vpc.AssociateAddressRequest{
-		AddressId:  common.StringPtr(opt.CloudEipID),
-		InstanceId: common.StringPtr(opt.CloudCvmID),
-	}, nil
+	req := vpc.NewAssociateAddressRequest()
+	req.AddressId = common.StringPtr(opt.CloudEipID)
+
+	if opt.CloudNetworkInterfaceID != "" {
+		req.NetworkInterfaceId = &opt.CloudNetworkInterfaceID
+	} else {
+		req.InstanceId = common.StringPtr(opt.CloudCvmID)
+	}
+
+	return req, nil
 }
 
 // TCloudEipDisassociateOption ...
@@ -128,7 +138,57 @@ func (opt *TCloudEipDisassociateOption) ToDisassociateAddressRequest() (*vpc.Dis
 		return nil, err
 	}
 
-	return &vpc.DisassociateAddressRequest{
-		AddressId: common.StringPtr(opt.CloudEipID),
-	}, nil
+	req := vpc.NewDisassociateAddressRequest()
+	req.AddressId = common.StringPtr(opt.CloudEipID)
+	return req, nil
+}
+
+// TCloudEipCreateOption ...
+type TCloudEipCreateOption struct {
+	Region                string                      `json:"region" validate:"required"`
+	EipName               *string                     `json:"eip_name"`
+	EipCount              int64                       `json:"eip_count"  validate:"required"`
+	ServiceProvider       string                      `json:"service_provider" validate:"required,eq=BGP|eq=CMCC|eq=CTCC|eq=CUCC"`
+	AddressType           string                      `json:"address_type" validate:"required,eq=EIP|eq=AnycastEIP|eq=HighQualityEIP"`
+	InternetChargeType    string                      `json:"internet_charge_type" validate:"required,eq=BANDWIDTH_PACKAGE|eq=BANDWIDTH_POSTPAID_BY_HOUR|eq=BANDWIDTH_PREPAID_BY_MONTH|eq=TRAFFIC_POSTPAID_BY_HOUR"`
+	InternetChargePrepaid *TCloudAddressChargePrepaid `json:"internet_charge_prepaid"`
+	MaxBandwidthOut       int64                       `json:"max_bandwidth_out" validate:"required,eq=BANDWIDTH_PACKAGE|eq=BANDWIDTH_POSTPAID_BY_HOUR|eq=BANDWIDTH_PREPAID_BY_MONTH|eq=TRAFFIC_POSTPAID_BY_HOUR"`
+	Egress                *string                     `json:"egress"`
+}
+
+// Validate ...
+func (opt *TCloudEipCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToAllocateAddressesRequest ...
+func (opt *TCloudEipCreateOption) ToAllocateAddressesRequest() (*vpc.AllocateAddressesRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := vpc.NewAllocateAddressesRequest()
+	req.AddressCount = common.Int64Ptr(opt.EipCount)
+	req.InternetServiceProvider = common.StringPtr(opt.ServiceProvider)
+	req.AddressName = opt.EipName
+	req.InternetChargeType = common.StringPtr(opt.InternetChargeType)
+	req.InternetMaxBandwidthOut = common.Int64Ptr(opt.MaxBandwidthOut)
+	req.AddressType = common.StringPtr(opt.AddressType)
+
+	if opt.InternetChargeType == "BANDWIDTH_PREPAID_BY_MONTH" {
+		req.AddressChargePrepaid = &vpc.AddressChargePrepaid{
+			Period:        common.Int64Ptr(opt.InternetChargePrepaid.Period),
+			AutoRenewFlag: common.Int64Ptr(opt.InternetChargePrepaid.AutoRenewFlag),
+		}
+	}
+
+	req.Egress = opt.Egress
+
+	return req, nil
+}
+
+// TCloudAddressChargePrepaid ...
+type TCloudAddressChargePrepaid struct {
+	Period        int64 `json:"period"`
+	AutoRenewFlag int64 `json:"auto_renew_flag"`
 }

@@ -25,6 +25,30 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2/model"
 )
 
+// HuaWeiBandwidthShareTypeEnum ...
+var HuaWeiBandwidthShareTypeEnum = map[string]model.CreatePublicipBandwidthOptionShareType{
+	"WHOLE": model.GetCreatePublicipBandwidthOptionShareTypeEnum().WHOLE,
+	"PER":   model.GetCreatePublicipBandwidthOptionShareTypeEnum().PER,
+}
+
+// HuaWeiBandwidthChargeModeTypeEnum ...
+var HuaWeiBandwidthChargeModeTypeEnum = map[string]model.CreatePublicipBandwidthOptionChargeMode{
+	"BANDWIDTH": model.GetCreatePublicipBandwidthOptionChargeModeEnum().BANDWIDTH,
+	"TRAFFIC":   model.GetCreatePublicipBandwidthOptionChargeModeEnum().TRAFFIC,
+}
+
+// HuaWeiBandwidthChargeModeTypeEnum ...
+var HuaWeiChargeModeTypeEnum = map[string]model.CreatePrePaidPublicipExtendParamOptionChargeMode{
+	"prePaid":  model.GetCreatePrePaidPublicipExtendParamOptionChargeModeEnum().PRE_PAID,
+	"postPaid": model.GetCreatePrePaidPublicipExtendParamOptionChargeModeEnum().POST_PAID,
+}
+
+// HuaWeiPeriodTypeEnum ...
+var HuaWeiPeriodTypeEnum = map[string]model.CreatePrePaidPublicipExtendParamOptionPeriodType{
+	"month": model.GetCreatePrePaidPublicipExtendParamOptionPeriodTypeEnum().MONTH,
+	"year":  model.GetCreatePrePaidPublicipExtendParamOptionPeriodTypeEnum().YEAR,
+}
+
 // HuaWeiEipListOption ...
 type HuaWeiEipListOption struct {
 	Region   string   `json:"region" validate:"required"`
@@ -122,4 +146,93 @@ func (opt *HuaWeiEipDisassociateOption) ToUpdatePublicipRequest() (*model.Update
 
 	req := &model.UpdatePublicipRequest{PublicipId: opt.CloudEipID, Body: &model.UpdatePublicipsRequestBody{}}
 	return req, nil
+}
+
+// HuaWeiEipCreateOption ...
+type HuaWeiEipCreateOption struct {
+	Region                string                      `json:"region" validate:"required"`
+	EipName               *string                     `json:"eip_name"`
+	EipType               string                      `json:"eip_type"  validate:"required,eq=5_bgp|eq=5_sbgp"`
+	EipCount              int64                       `json:"eip_count"  validate:"required"`
+	InternetChargeType    string                      `json:"internet_charge_type" validate:"required,eq=prePaid|eq=postPaid"`
+	InternetChargePrepaid *HuaWeiAddressChargePrepaid `json:"internet_charge_prepaid"`
+	BandwidthOption       *HuaWeiBandwidthOption      `json:"bandwidth_option" validate:"required"`
+}
+
+// Validate ...
+func (opt *HuaWeiEipCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToCreatePublicipRequest 按需付费参数
+func (opt *HuaWeiEipCreateOption) ToCreatePublicipRequest() (*model.CreatePublicipRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := &model.CreatePublicipRequest{}
+	req.Body = &model.CreatePublicipRequestBody{}
+
+	bandwidthOpt := opt.BandwidthOption
+	chargeMode := HuaWeiBandwidthChargeModeTypeEnum[bandwidthOpt.ChargeMode]
+	req.Body.Bandwidth = &model.CreatePublicipBandwidthOption{
+		ShareType:  HuaWeiBandwidthShareTypeEnum[bandwidthOpt.ShareType],
+		ChargeMode: &chargeMode,
+		Name:       bandwidthOpt.Name,
+		Id:         bandwidthOpt.Id,
+		Size:       bandwidthOpt.Size,
+	}
+
+	req.Body.Publicip = &model.CreatePublicipOption{Alias: opt.EipName, Type: opt.EipType}
+
+	return req, nil
+}
+
+// ToCreatePrePaidPublicipRequest 包年/包月付费参数
+func (opt *HuaWeiEipCreateOption) ToCreatePrePaidPublicipRequest() (*model.CreatePrePaidPublicipRequest, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := &model.CreatePrePaidPublicipRequest{}
+	req.Body = &model.CreatePrePaidPublicipRequestBody{}
+
+	bandwidthOpt := opt.BandwidthOption
+	chargeMode := HuaWeiBandwidthChargeModeTypeEnum[bandwidthOpt.ChargeMode]
+	req.Body.Bandwidth = &model.CreatePublicipBandwidthOption{
+		ShareType:  HuaWeiBandwidthShareTypeEnum[bandwidthOpt.ShareType],
+		ChargeMode: &chargeMode,
+		Name:       bandwidthOpt.Name,
+		Id:         bandwidthOpt.Id,
+		Size:       bandwidthOpt.Size,
+	}
+
+	req.Body.Publicip = &model.CreatePrePaidPublicipOption{Alias: opt.EipName, Type: opt.EipType}
+
+	periodType := HuaWeiPeriodTypeEnum[opt.InternetChargePrepaid.PeriodType]
+	prePaidChargeMode := HuaWeiChargeModeTypeEnum["prePaid"]
+	req.Body.ExtendParam = &model.CreatePrePaidPublicipExtendParamOption{
+		IsAutoRenew: &opt.InternetChargePrepaid.IsAutoRenew,
+		PeriodNum:   &opt.InternetChargePrepaid.PeriodNum,
+		PeriodType:  &periodType,
+		ChargeMode:  &prePaidChargeMode,
+	}
+
+	return req, nil
+}
+
+// HuaWeiBandwidthOption ...
+type HuaWeiBandwidthOption struct {
+	ShareType  string  `json:"share_type" validate:"required,eq=PER|eq=WHOLE"`
+	ChargeMode string  `json:"charge_mode" validate:"required,eq=bandwidth|eq=traffic"`
+	Name       *string `json:"name"`
+	Id         *string `json:"id"`
+	Size       *int32  `json:"size"`
+}
+
+// HuaWeiAddressChargePrepaid ...
+type HuaWeiAddressChargePrepaid struct {
+	PeriodNum   int32  `json:"period_num"`
+	PeriodType  string `json:"period_type"`
+	IsAutoRenew bool   `json:"is_auto_renew"`
 }

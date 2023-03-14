@@ -20,6 +20,10 @@
 package cloud
 
 import (
+	"fmt"
+
+	"hcm/cmd/data-service/service/audit/cloud/cvm"
+	networkinterface "hcm/cmd/data-service/service/audit/cloud/network-interface"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
@@ -29,6 +33,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud/eip"
+	tableni "hcm/pkg/dal/table/cloud/network-interface"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -81,6 +86,51 @@ func (ad Audit) eipAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResou
 	return audits, nil
 }
 
+func (ad Audit) eipOperationAuditBuild(kt *kit.Kit, ops []protoaudit.CloudResourceOperationInfo) (
+	[]*tableaudit.AuditTable, error,
+) {
+	assCvmOps := make([]protoaudit.CloudResourceOperationInfo, 0)
+	assNetworkOps := make([]protoaudit.CloudResourceOperationInfo, 0)
+
+	for _, op := range ops {
+		switch op.Action {
+		case protoaudit.Associate, protoaudit.Disassociate:
+			switch op.AssociatedResType {
+			case enumor.CvmAuditResType:
+				assCvmOps = append(assCvmOps, op)
+			case enumor.NetworkInterfaceAuditResType:
+				assNetworkOps = append(assNetworkOps, op)
+			default:
+				return nil, fmt.Errorf("audit associated resource type: %s not support", op.AssociatedResType)
+			}
+
+		default:
+			return nil, fmt.Errorf("audit action: %s not support", op.Action)
+		}
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(ops))
+	if len(assCvmOps) != 0 {
+		audit, err := ad.eipAssCvmOperationAuditBuild(kt, assCvmOps)
+		if err != nil {
+			return nil, err
+		}
+
+		audits = append(audits, audit...)
+	}
+
+	if len(assNetworkOps) != 0 {
+		audit, err := ad.eipAssNetworkOperationAuditBuild(kt, assNetworkOps)
+		if err != nil {
+			return nil, err
+		}
+
+		audits = append(audits, audit...)
+	}
+
+	return audits, nil
+}
+
 func (ad Audit) listEip(kt *kit.Kit, ids []string) (map[string]*eip.EipModel, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
@@ -98,4 +148,185 @@ func (ad Audit) listEip(kt *kit.Kit, ids []string) (map[string]*eip.EipModel, er
 	}
 
 	return result, nil
+}
+
+func (ad Audit) eipAssCvmOperationAuditBuild(
+	kt *kit.Kit,
+	ops []protoaudit.CloudResourceOperationInfo,
+) ([]*tableaudit.AuditTable, error) {
+	eipIDs := make([]string, 0)
+	cvmIDs := make([]string, 0)
+	for _, one := range ops {
+		eipIDs = append(eipIDs, one.ResID)
+		cvmIDs = append(cvmIDs, one.AssociatedResID)
+	}
+
+	eipIDMap, err := ad.listEip(kt, eipIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	cvmIDMap, err := cvm.ListCvm(kt, ad.dao, cvmIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	audits := make([]*tableaudit.AuditTable, len(ops))
+	for _, one := range ops {
+
+		eipData, exist := eipIDMap[one.ResID]
+		if !exist {
+			return nil, errf.Newf(errf.RecordNotFound, "eip: %s not found", one.ResID)
+		}
+
+		cvmData, exist := cvmIDMap[one.AssociatedResID]
+		if !exist {
+			return nil, errf.Newf(errf.RecordNotFound, "cvm: %s not found", one.AssociatedResID)
+		}
+
+		action, err := one.Action.ConvAuditAction()
+		if err != nil {
+			return nil, err
+		}
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      eipData.ID,
+			CloudResID: eipData.CloudID,
+			ResName:    *eipData.Name,
+			ResType:    enumor.EipAuditResType,
+			Action:     action,
+			BkBizID:    eipData.BkBizID,
+			Vendor:     enumor.Vendor(eipData.Vendor),
+			AccountID:  eipData.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: &tableaudit.AssociatedOperationAudit{
+					AssResType:    enumor.CvmAuditResType,
+					AssResID:      cvmData.ID,
+					AssResCloudID: cvmData.CloudID,
+					AssResName:    cvmData.Name,
+				},
+			},
+		})
+	}
+	return audits, nil
+}
+
+func (ad Audit) eipAssNetworkOperationAuditBuild(
+	kt *kit.Kit,
+	ops []protoaudit.CloudResourceOperationInfo,
+) ([]*tableaudit.AuditTable, error) {
+	eipIDs := make([]string, 0)
+	networkIDs := make([]string, 0)
+	for _, one := range ops {
+		eipIDs = append(eipIDs, one.ResID)
+		// 统计有效 ID
+		if one.AssociatedResID != "" {
+			networkIDs = append(networkIDs, one.AssociatedResID)
+		}
+	}
+
+	eipIDMap, err := ad.listEip(kt, eipIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	var networkIDMap map[string]tableni.NetworkInterfaceTable
+
+	if len(networkIDs) > 0 {
+		networkIDMap, err = networkinterface.ListNetworkInterface(kt, ad.dao, networkIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	audits := make([]*tableaudit.AuditTable, len(ops))
+	for _, one := range ops {
+		eipData, exist := eipIDMap[one.ResID]
+		if !exist {
+			return nil, errf.Newf(errf.RecordNotFound, "eip: %s not found", one.ResID)
+		}
+
+		basicDetail := new(tableaudit.AssociatedOperationAudit)
+		if one.AssociatedResID != "" {
+			networkData, exist := networkIDMap[one.AssociatedResID]
+			if !exist {
+				return nil, errf.Newf(errf.RecordNotFound, "network interface: %s not found", one.AssociatedResID)
+			}
+			basicDetail.AssResType = enumor.NetworkInterfaceAuditResType
+			basicDetail.AssResID = networkData.ID
+			basicDetail.AssResCloudID = networkData.CloudID
+			basicDetail.AssResName = networkData.Name
+		}
+
+		action, err := one.Action.ConvAuditAction()
+		if err != nil {
+			return nil, err
+		}
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      eipData.ID,
+			CloudResID: eipData.CloudID,
+			ResName:    *eipData.Name,
+			ResType:    enumor.EipAuditResType,
+			Action:     action,
+			BkBizID:    eipData.BkBizID,
+			Vendor:     enumor.Vendor(eipData.Vendor),
+			AccountID:  eipData.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: basicDetail,
+			},
+		})
+	}
+
+	return audits, nil
+}
+
+func (ad Audit) eipDeleteAuditBuild(
+	kt *kit.Kit,
+	deletes []protoaudit.CloudResourceDeleteInfo,
+) ([]*tableaudit.AuditTable, error) {
+	ids := make([]string, 0, len(deletes))
+	for _, one := range deletes {
+		ids = append(ids, one.ResID)
+	}
+	eipIDMap, err := ad.listEip(kt, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(deletes))
+	for _, one := range deletes {
+		eipData, exist := eipIDMap[one.ResID]
+		if !exist {
+			continue
+		}
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ResID,
+			CloudResID: eipData.CloudID,
+			ResName:    *eipData.Name,
+			ResType:    enumor.EipAuditResType,
+			Action:     enumor.Delete,
+			BkBizID:    eipData.BkBizID,
+			Vendor:     enumor.Vendor(eipData.Vendor),
+			AccountID:  eipData.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: eipData,
+			},
+		})
+	}
+
+	return audits, nil
 }

@@ -118,3 +118,27 @@ func (opt *AwsEipDisassociateOption) ToDisassociateAddressInput() (*ec2.Disassoc
 	}
 	return &ec2.DisassociateAddressInput{PublicIp: aws.String(opt.PublicIp)}, nil
 }
+
+// AwsEipCreateOption ...
+type AwsEipCreateOption struct {
+	Region             string `json:"region" validate:"required"`
+	PublicIpv4Pool     string `json:"public_ipv4_pool" validate:"required"`
+	NetworkBorderGroup string `json:"network_border_group" validate:"required"`
+}
+
+// Validate ...
+func (opt *AwsEipCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToAllocateAddressInput ...
+func (opt *AwsEipCreateOption) ToAllocateAddressInput() (*ec2.AllocateAddressInput, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	return &ec2.AllocateAddressInput{
+		PublicIpv4Pool:     aws.String(opt.PublicIpv4Pool),
+		NetworkBorderGroup: aws.String(opt.NetworkBorderGroup),
+	}, nil
+}

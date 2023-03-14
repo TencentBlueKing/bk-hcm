@@ -22,10 +22,12 @@ package huawei
 import (
 	"strings"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2/model"
 )
@@ -137,7 +139,8 @@ func (h *HuaWei) AssociateEip(kt *kit.Kit, opt *eip.HuaWeiEipAssociateOption) er
 		return err
 	}
 
-	return nil
+	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip]{Handler: &associateEipPollingHandler{region: opt.Region}}
+	return respPoller.PollUntilDone(h, kt, []*string{&opt.CloudEipID})
 }
 
 // DisassociateEip ...
@@ -163,5 +166,131 @@ func (h *HuaWei) DisassociateEip(kt *kit.Kit, opt *eip.HuaWeiEipDisassociateOpti
 		return err
 	}
 
-	return nil
+	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip]{Handler: &disassociateEipPollingHandler{region: opt.Region}}
+	return respPoller.PollUntilDone(h, kt, []*string{&opt.CloudEipID})
+}
+
+// CreateEip ...
+// reference: https://support.huaweicloud.com/api-eip/eip_api_0001.html
+// https://support.huaweicloud.com/api-eip/eip_api_0006.html
+func (h *HuaWei) CreateEip(kt *kit.Kit, opt *eip.HuaWeiEipCreateOption) (*string, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "huawei eip create option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := h.clientSet.eipClient(opt.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	// 包年包月
+	if opt.InternetChargeType == "prePaid" {
+		req, err := opt.ToCreatePrePaidPublicipRequest()
+		if err != nil {
+			return nil, err
+		}
+
+		response, err := client.CreatePrePaidPublicip(req)
+		return response.Publicip.Id, err
+	}
+	// 按需计费
+	req, err := opt.ToCreatePublicipRequest()
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.CreatePublicip(req)
+
+	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip]{Handler: &createEipPollingHandler{region: opt.Region}}
+	err = respPoller.PollUntilDone(h, kt, []*string{resp.Publicip.Id})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Publicip.Id, err
+}
+
+type createEipPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *createEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) bool {
+	for _, r := range pollResult {
+		if r.Status == nil || *r.Status == "PENDING_CREATE" || *r.Status == "NOTIFYING" {
+			return false
+		}
+	}
+	return true
+}
+
+// Poll ...
+func (h *createEipPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]*eip.HuaWeiEip, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, err := client.ListEip(kt, &eip.HuaWeiEipListOption{Region: h.region, CloudIDs: cIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Details, nil
+}
+
+var _ poller.PollingHandler[*HuaWei, []*eip.HuaWeiEip] = new(createEipPollingHandler)
+
+type associateEipPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *associateEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) bool {
+	for _, r := range pollResult {
+		if *r.Status != "ACTIVE" {
+			return false
+		}
+	}
+	return true
+}
+
+// Poll ...
+func (h *associateEipPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]*eip.HuaWeiEip, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, err := client.ListEip(kt, &eip.HuaWeiEipListOption{Region: h.region, CloudIDs: cIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Details, nil
+}
+
+type disassociateEipPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *disassociateEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) bool {
+	for _, r := range pollResult {
+		if *r.Status != "DOWN" {
+			return false
+		}
+	}
+	return true
+}
+
+// Poll ...
+func (h *disassociateEipPollingHandler) Poll(
+	client *HuaWei,
+	kt *kit.Kit,
+	cloudIDs []*string,
+) ([]*eip.HuaWeiEip, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, err := client.ListEip(kt, &eip.HuaWeiEipListOption{Region: h.region, CloudIDs: cIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Details, nil
 }

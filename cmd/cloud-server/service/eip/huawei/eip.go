@@ -21,13 +21,18 @@ package huawei
 
 import (
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/pkg/adaptor/types/eip"
 	cloudproto "hcm/pkg/api/cloud-server/eip"
+	protoaudit "hcm/pkg/api/data-service/audit"
+	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
 )
@@ -49,7 +54,11 @@ func NewHuaWei(client *client.ClientSet, authorizer auth.Authorizer, audit audit
 }
 
 // AssociateEip associate eip.
-func (h *HuaWei) AssociateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (h *HuaWei) AssociateEip(
+	cts *rest.Contexts,
+	basicInfo *types.CloudResourceBasicInfo,
+	validHandler handler.ValidWithAuthHandler,
+) (interface{}, error) {
 	req := new(cloudproto.HuaWeiEipAssociateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -59,23 +68,27 @@ func (h *HuaWei) AssociateEip(cts *rest.Contexts, validHandler handler.ValidWith
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 增加审计
 	// TODO 判断 Eip 是否可关联
 
-	basicInfo, err := h.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.EipCloudResType,
-		req.EipID,
-	)
+	// validate biz and authorize
+	err := validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: h.authorizer, ResType: meta.Eip,
+		Action: meta.Associate, BasicInfo: basicInfo,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: h.authorizer, ResType: meta.Eip,
-		Action: meta.Associate, BasicInfo: basicInfo})
+	operationInfo := protoaudit.CloudResourceOperationInfo{
+		ResType:           enumor.EipAuditResType,
+		ResID:             req.EipID,
+		Action:            protoaudit.Associate,
+		AssociatedResType: enumor.NetworkInterfaceAuditResType,
+		AssociatedResID:   req.NetworkInterfaceID,
+	}
+	err = h.audit.ResOperationAudit(cts.Kit, operationInfo)
 	if err != nil {
+		logs.Errorf("create associate eip audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -92,7 +105,11 @@ func (h *HuaWei) AssociateEip(cts *rest.Contexts, validHandler handler.ValidWith
 }
 
 // DisassociateEip disassociate eip.
-func (h *HuaWei) DisassociateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (h *HuaWei) DisassociateEip(
+	cts *rest.Contexts,
+	basicInfo *types.CloudResourceBasicInfo,
+	validHandler handler.ValidWithAuthHandler,
+) (interface{}, error) {
 	req := new(cloudproto.HuaWeiEipDisassociateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -102,22 +119,24 @@ func (h *HuaWei) DisassociateEip(cts *rest.Contexts, validHandler handler.ValidW
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 增加鉴权和审计
-
-	basicInfo, err := h.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.EipCloudResType,
-		req.EipID,
-	)
+	// validate biz and authorize
+	err := validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: h.authorizer, ResType: meta.Eip,
+		Action: meta.Disassociate, BasicInfo: basicInfo,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: h.authorizer, ResType: meta.Eip,
-		Action: meta.Disassociate, BasicInfo: basicInfo})
+	operationInfo := protoaudit.CloudResourceOperationInfo{
+		ResType:           enumor.EipAuditResType,
+		ResID:             req.EipID,
+		Action:            protoaudit.Disassociate,
+		AssociatedResType: enumor.NetworkInterfaceAuditResType,
+	}
+	err = h.audit.ResOperationAudit(cts.Kit, operationInfo)
 	if err != nil {
+		logs.Errorf("create disassociate eip audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -130,4 +149,61 @@ func (h *HuaWei) DisassociateEip(cts *rest.Contexts, validHandler handler.ValidW
 			EipID:     req.EipID,
 		},
 	)
+}
+
+// CreateEip ...
+func (h *HuaWei) CreateEip(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloudproto.HuaWeiEipCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	bkBizID, err := cts.PathParameter("bk_biz_id").Uint64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	// validate biz and authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Eip, Action: meta.Create}, BizID: int64(bkBizID)}
+	err = h.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := h.client.HCService().HuaWei.Eip.CreateEip(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&hcproto.HuaWeiEipCreateReq{
+			AccountID: req.AccountID,
+			HuaWeiEipCreateOption: &eip.HuaWeiEipCreateOption{
+				Region:                req.Region,
+				EipName:               req.EipName,
+				EipType:               req.EipType,
+				EipCount:              req.EipCount,
+				InternetChargeType:    req.InternetChargeType,
+				InternetChargePrepaid: req.InternetChargePrepaid,
+				BandwidthOption:       req.BandwidthOption,
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// 分配业务
+	_, err = h.client.DataService().Global.BatchUpdateEip(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&dataproto.EipBatchUpdateReq{IDs: resp.IDs, BkBizID: bkBizID},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }

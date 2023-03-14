@@ -19,7 +19,10 @@
 
 package eip
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/validator"
+)
 
 // HuaWeiEipAssociateReq ...
 type HuaWeiEipAssociateReq struct {
@@ -43,5 +46,16 @@ type HuaWeiEipDisassociateReq struct {
 
 // Validate ...
 func (req *HuaWeiEipDisassociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// HuaWeiEipCreateReq ...
+type HuaWeiEipCreateReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	*eip.HuaWeiEipCreateOption
+}
+
+// Validate ...
+func (req *HuaWeiEipCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

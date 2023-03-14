@@ -22,6 +22,8 @@ package eip
 import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+
+	"google.golang.org/api/compute/v1"
 )
 
 const (
@@ -113,4 +115,30 @@ type GcpEipDisassociateOption struct {
 // Validate ...
 func (opt *GcpEipDisassociateOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// GcpEipCreateOption ...
+type GcpEipCreateOption struct {
+	Region      string `json:"region" validate:"required"`
+	NetworkTier string `json:"network_tier" validate:"required,eq=PREMIUM|eq=STANDARD"`
+	IpVersion   string `json:"ip_version" validate:"required"`
+}
+
+// Validate ...
+func (opt *GcpEipCreateOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ToAddress ...
+func (opt *GcpEipCreateOption) ToAddress() (*compute.Address, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	req := &compute.Address{NetworkTier: opt.NetworkTier}
+	if opt.Region == GcpGlobalRegion {
+		req.IpVersion = opt.IpVersion
+	}
+
+	return req, nil
 }

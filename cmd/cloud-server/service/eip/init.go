@@ -53,8 +53,8 @@ func InitEipService(c *capability.Capability) {
 
 	h.Add("ListEipExtByCvmID", http.MethodGet, "/vendors/{vendor}/eips/cvms/{cvm_id}", svc.ListEipExtByCvmID)
 
-	h.Add("AssociateEip", http.MethodPost, "/vendors/{vendor}/eips/associate", svc.AssociateEip)
-	h.Add("DisassociateEip", http.MethodPost, "/vendors/{vendor}/eips/disassociate", svc.DisassociateEip)
+	h.Add("AssociateEip", http.MethodPost, "/eips/associate", svc.AssociateEip)
+	h.Add("DisassociateEip", http.MethodPost, "/eips/disassociate", svc.DisassociateEip)
 
 	// eip apis in biz
 	h.Add("ListBizEip", http.MethodPost, "/bizs/{bk_biz_id}/eips/list", svc.ListBizEip)
@@ -62,9 +62,9 @@ func InitEipService(c *capability.Capability) {
 		svc.ListBizEipExtByCvmID)
 	h.Add("RetrieveBizEip", http.MethodGet, "/bizs/{bk_biz_id}/eips/{id}", svc.RetrieveBizEip)
 	h.Add("DeleteBizEip", http.MethodDelete, "/bizs/{bk_biz_id}/eips/{id}", svc.DeleteBizEip)
-	h.Add("AssociateBizEip", http.MethodPost, "/bizs/{bk_biz_id}/vendors/{vendor}/eips/associate", svc.AssociateBizEip)
-	h.Add("DisassociateBizEip", http.MethodPost, "/bizs/{bk_biz_id}/vendors/{vendor}/eips/disassociate",
-		svc.DisassociateBizEip)
+	h.Add("AssociateBizEip", http.MethodPost, "/bizs/{bk_biz_id}/eips/associate", svc.AssociateBizEip)
+	h.Add("DisassociateBizEip", http.MethodPost, "/bizs/{bk_biz_id}/eips/disassociate", svc.DisassociateBizEip)
+	h.Add("CreateBizEip", http.MethodPost, "/bizs/{bk_biz_id}/eips/create", svc.CreateBizEip)
 
 	h.Load(c.WebService)
 }

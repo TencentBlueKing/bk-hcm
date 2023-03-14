@@ -19,12 +19,16 @@
 
 package eip
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/validator"
+)
 
 // TCloudEipAssociateReq ...
 type TCloudEipAssociateReq struct {
-	EipID string `json:"eip_id" validate:"required"`
-	CvmID string `json:"cvm_id" validate:"required"`
+	EipID              string `json:"eip_id" validate:"required"`
+	CvmID              string `json:"cvm_id" validate:"required"`
+	NetworkInterfaceID string `json:"network_interface_id"`
 }
 
 // Validate ...
@@ -40,5 +44,16 @@ type TCloudEipDisassociateReq struct {
 
 // Validate ...
 func (req *TCloudEipDisassociateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudEipCreateReq ...
+type TCloudEipCreateReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	*eip.TCloudEipCreateOption
+}
+
+// Validate ...
+func (req *TCloudEipCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

@@ -22,28 +22,30 @@ package eip
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/dal/dao/audit"
+	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/dao/types/cloud"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/cloud/eip"
-	"hcm/pkg/kit"
-
-	"github.com/jmoiron/sqlx"
-
-	"hcm/pkg/api/core"
-	"hcm/pkg/dal/dao/orm"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/table/utils"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+
+	"github.com/jmoiron/sqlx"
+	tableaudit "hcm/pkg/dal/table/audit"
 )
 
 // EipDao ...
 type EipDao struct {
 	*dao.ObjectDaoManager
+	Audit audit.Interface
 }
 
 var _ dao.ObjectDao = new(EipDao)
@@ -82,6 +84,31 @@ func (eipDao *EipDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, eips []*eip.Ei
 		return nil, fmt.Errorf("insert %s failed, err: %v", eipDao.Name(), err)
 	}
 
+	// create audit.
+	audits := make([]*tableaudit.AuditTable, 0, len(eips))
+	for _, one := range eips {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ID,
+			CloudResID: one.CloudID,
+			ResName:    *one.Name,
+			ResType:    enumor.EipAuditResType,
+			Action:     enumor.Create,
+			BkBizID:    one.BkBizID,
+			Vendor:     enumor.Vendor(one.Vendor),
+			AccountID:  one.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: one,
+			},
+		})
+	}
+	if err = eipDao.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
 	return ids, nil
 }
 
