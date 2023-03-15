@@ -1,34 +1,323 @@
 <script lang="ts" setup>
-import InfoList from '../../../common/info-list/info-list';
+import {
+  defineProps,
+  ref,
+  watch,
+} from 'vue';
+import DetailList from '../../../common/info/detail-info';
+import DetailTab from '../../../common/tab/detail-tab';
 
-const settingInfo = [
+const props = defineProps({
+  detail: Object
+});
+
+const baseTabs = [
   {
-    name: '操作系统',
-    value: 'win',
-  },
-  {
-    name: 'CPU',
-    value: '100',
-  },
-  {
-    name: '内存',
-    value: '100',
-  },
-  {
-    name: '镜像 ID',
-    value: '100',
-  },
-  {
-    name: '镜像名称',
-    value: 'mirror.tencent',
-  },
-  {
-    name: '镜像类型',
-    value: 'image',
+    name: '基本信息',
+    value: 'detail',
   },
 ];
+const bindTabs = [
+  {
+    name: '绑定信息',
+    value: 'detail',
+  },
+];
+const otherTabs = [
+  {
+    name: '其他信息',
+    value: 'detail',
+  },
+];
+const huaweiTabs = [
+  {
+    name: '带宽',
+    value: 'detail',
+  },
+];
+
+const baseInfo = [
+  {
+    name: 'EIP名称',
+    prop: 'name',
+  },
+  {
+    name: 'EIP ID',
+    prop: 'id',
+  },
+  {
+    name: 'IP地址',
+    prop: 'public_ip',
+  },
+  {
+    name: '账号',
+    prop: 'account_id',
+    link(val: string) {
+      return `/#/resource/account/detail/?id=${val}`;
+    },
+  },
+  {
+    name: '云厂商',
+    prop: 'vendorName',
+  },
+  {
+    name: '地域',
+    prop: 'region',
+  },
+  {
+    name: '地域ID',
+    prop: '',
+  },
+  {
+    name: '可用区域',
+    prop: 'zone',
+  },
+  {
+    name: '业务',
+    prop: 'bk_biz_id',
+  },
+  {
+    name: '创建时间',
+    prop: 'created_at',
+  },
+];
+
+const bindInfo = ref([
+  {
+    name: '绑定的资源类型',
+    prop: 'instance_type',
+  },
+  {
+    name: '绑定资源实例',
+    prop: 'instance_id',
+  },
+  {
+    name: '状态',
+    prop: 'status',
+  },
+]);
+
+const otherInfo = ref([]);
+
+const bandInfo = [
+  {
+    name: '带宽名称',
+    prop: 'bandwidth_name',
+  },
+  {
+    name: '带宽ID',
+    prop: 'bandwidth_id',
+  },
+  {
+    name: '计费模式',
+    prop: '',
+  },
+  {
+    name: '计费方式',
+    prop: '',
+  },
+  {
+    name: '带宽大小 (Mbit/s)',
+    prop: 'bandwidth_size',
+  },
+  {
+    name: '带宽类型',
+    prop: '',
+  }
+]
+
+watch(
+  () => props.detail,
+  () => {
+    switch (props.detail.vendor) {
+      case 'tcloud':
+        otherInfo.value = [
+          {
+            name: '线路类型',
+            prop: '',
+          },
+          {
+            name: '带宽上限',
+            prop: 'bandwidth',
+          },
+          {
+            name: '加速地区',
+            prop: '',
+          },
+          {
+            name: '计费模式',
+            prop: 'internet_charge_type',
+          },
+        ];
+        break;
+      case 'aws':
+        otherInfo.value = [
+          {
+            name: '范围',
+            prop: 'domain',
+          },
+          {
+            name: '地址池',
+            prop: 'public_ipv4_pool',
+          },
+          {
+            name: '内网IP',
+            prop: '',
+          },
+          {
+            name: '网络接口',
+            prop: '',
+          },
+          {
+            name: 'NAT网关ID',
+            prop: '',
+          },
+          {
+            name: '公网DNS',
+            prop: '',
+          },
+          {
+            name: '反向DNS解析',
+            prop: '',
+          },
+        ];
+        break;
+      case 'gcp':
+        otherInfo.value = [
+          {
+            name: '权限类型',
+            prop: '',
+          },
+          {
+            name: '类型',
+            prop: 'address_type',
+          },
+          {
+            name: '网络层',
+            prop: '',
+          },
+        ];
+        break;
+      case 'azure':
+        otherInfo.value = [
+          {
+            name: '资源组',
+            prop: '',
+          },
+          {
+            name: '位置',
+            prop: '',
+          },
+          {
+            name: 'SKU',
+            prop: 'sku',
+          },
+          {
+            name: '层',
+            prop: '',
+          },
+          {
+            name: 'DNS 名称',
+            prop: '',
+          },
+        ];
+        break;
+      case 'huawei':
+        otherInfo.value = [
+          {
+            name: '企业项目',
+            prop: '',
+          },
+          {
+            name: '所属VPC',
+            prop: '',
+          },
+          {
+            name: '子网',
+            prop: '',
+          },
+          {
+            name: '已绑定网卡',
+            prop: '',
+          },
+          {
+            name: '类型',
+            prop: '',
+          },
+          {
+            name: '公网DNS',
+            prop: '',
+          },
+          {
+            name: '反向DNS解析',
+            prop: '',
+          },
+        ];
+        break;
+    }
+  }
+)
 </script>
 
 <template>
-  <info-list class="mt20" :fields="settingInfo"></info-list>
+  <detail-tab
+    :tabs="baseTabs"
+    class="auto-tab"
+  >
+    <template #default>
+      <detail-list
+        class="mt20"
+        :fields="baseInfo"
+        :detail="detail"
+      ></detail-list>
+    </template>
+  </detail-tab>
+
+  <detail-tab
+    :tabs="bindTabs"
+    class="auto-tab"
+  >
+    <template #default>
+      <detail-list
+        class="mt20"
+        :fields="bindInfo"
+        :detail="detail"
+      ></detail-list>
+    </template>
+  </detail-tab>
+
+  <detail-tab
+    :tabs="otherTabs"
+    class="auto-tab"
+  >
+    <template #default>
+      <detail-list
+        class="mt20"
+        :fields="otherInfo"
+        :detail="detail"
+      ></detail-list>
+    </template>
+  </detail-tab>
+
+  <detail-tab
+    v-if="detail.vendor === 'huawei'"
+    :tabs="huaweiTabs"
+    class="auto-tab"
+  >
+    <template #default>
+      <detail-list
+        class="mt20"
+        :fields="bandInfo"
+        :detail="detail"
+      ></detail-list>
+    </template>
+  </detail-tab>
 </template>
+
+<style lang="scss">
+  .auto-tab {
+    .bk-tab-content, .detail-info-main, .bk-tab-panel {
+      height: auto !important;
+    }
+  }
+</style>

@@ -1,64 +1,109 @@
 <script lang="ts" setup>
+import { ref } from 'vue';
 import DetailHeader from '../../common/header/detail-header';
-import DetailTab from '../../common/tab/detail-tab';
 import IpInfo from '../components/ip/ip-info.vue';
+import AssignEip from '../dialog/assign-eip/assign-eip';
+
+import {
+  useRoute,
+} from 'vue-router';
+import useDetail from '../../hooks/use-detail';
+import {
+  useResourceStore
+} from '@/store/resource';
 
 import {
   useI18n,
 } from 'vue-i18n';
 
+const route = useRoute();
+const resourceStore = useResourceStore();
 const {
   t,
 } = useI18n();
 
+const isShowAssignEip = ref(false);
+const showDelete = ref(false);
 
-const hostTabs = [
-  {
-    name: '基本信息',
-    value: 'detail',
-  },
-];
+const {
+  loading,
+  detail,
+} = useDetail(
+  'eips',
+  route.query.id as string,
+);
+
+const handleShowAssignEip = () => {
+  isShowAssignEip.value = true;
+}
+
+const handleShowDeleteDialog = () => {
+  showDelete.value = true;
+}
+
+const handleCloseDeleteEip = () => {
+  showDelete.value = false;
+}
+
+const handleDeleteEip = () => {
+  resourceStore
+    .disassociateEip({
+      eip_id: route.query.id
+    })
+    .then(() => {
+      handleCloseDeleteEip()
+    })
+}
 </script>
 
 <template>
-  <detail-header>
-    弹性IP：ID（xxx）
-    <template #right>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-      >
-        {{ t('绑定') }}
-      </bk-button>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-      >
-        {{ t('解绑') }}
-      </bk-button>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-      >
-        {{ t('释放') }}
-      </bk-button>
-    </template>
-  </detail-header>
-
-  <detail-tab
-    :tabs="hostTabs"
+  <bk-loading
+    :loading="loading"
   >
-    <template #default>
-      <ip-info></ip-info>
-    </template>
-  </detail-tab>
+    <detail-header>
+      弹性IP：ID（{{ detail.id }}）
+      <template #right>
+        <bk-button
+          class="w100 ml10"
+          theme="primary"
+          @click="handleShowAssignEip"
+        >
+          {{ t('绑定') }}
+        </bk-button>
+        <bk-button
+          class="w100 ml10"
+          theme="primary"
+          @click="handleShowDeleteDialog"
+        >
+          {{ t('解绑') }}
+        </bk-button>
+      </template>
+    </detail-header>
+
+    <ip-info :detail="detail"/>
+
+    <assign-eip
+      v-if="detail.id"
+      v-model:is-show="isShowAssignEip"
+      :vendor="detail.vendor"
+      :id="detail.id"
+    />
+
+    <bk-dialog
+      title="解绑EIP"
+      theme="danger"
+      :is-show="showDelete"
+      :quick-close="false"
+      @closed="handleCloseDeleteEip"
+      @confirm="handleDeleteEip"
+    >
+      <div>确定解绑EIP【{{ detail.id }}】吗</div>
+    </bk-dialog>
+  </bk-loading>
 </template>
 
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
-}
-.w60 {
-  width: 60px;
 }
 </style>

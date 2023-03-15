@@ -117,11 +117,27 @@ export default (type: string, isSimpleShow: boolean = false) => {
       label: '资源 ID',
       field: 'cloud_id',
       sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '名称',
       field: 'name',
       sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '云厂商',
@@ -138,6 +154,14 @@ export default (type: string, isSimpleShow: boolean = false) => {
     {
       label: '地域',
       field: 'region',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '云区域',
@@ -172,11 +196,27 @@ export default (type: string, isSimpleShow: boolean = false) => {
       label: '资源 ID',
       field: 'cloud_id',
       sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '名称',
       field: 'name',
       sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '云厂商',
@@ -193,14 +233,38 @@ export default (type: string, isSimpleShow: boolean = false) => {
     {
       label: '地域',
       field: 'region',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '所属 VPC',
       field: 'vpc_id',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '关联路由表',
       field: '',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '更新时间',
@@ -322,25 +386,65 @@ export default (type: string, isSimpleShow: boolean = false) => {
       label: '类型',
       field: 'disk_type',
       sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '容量(GB)',
       field: 'disk_size',
       sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '运行状态',
       field: '',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '可用区',
       field: 'zone',
       sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '挂载实例',
       field: '',
       sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
     },
     {
       label: '创建时间',
@@ -730,6 +834,86 @@ export default (type: string, isSimpleShow: boolean = false) => {
     },
   ];
 
+  const eipColumns = [
+    getLinkField('eips'),
+    {
+      label: '实例 ID',
+      field: 'cloud_id',
+      sort: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            CloudType[cell] || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '地域',
+      field: 'region',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '名称',
+      field: 'name',
+      sort: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '绑定资源的实例',
+      field: 'instance_id',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '绑定资源的类型',
+      field: 'instance_type',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: '更新时间',
+      field: 'updated_at',
+      sort: true,
+    },
+    {
+      label: '创建时间',
+      field: 'created_at',
+      sort: true,
+    },
+  ]
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -741,6 +925,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
     route: routeColumns,
     cvms: cvmsColumns,
     securityCommon: securityCommonColumns,
+    eips: eipColumns,
   };
 
   return columnsMap[type];

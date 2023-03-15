@@ -60,7 +60,6 @@ const handleSubmit = () => {
     .then(() => {
       return businessStore.addEip(
         accountStore.bizs,
-        type.value,
         formData.value
       )
       .then(() => {

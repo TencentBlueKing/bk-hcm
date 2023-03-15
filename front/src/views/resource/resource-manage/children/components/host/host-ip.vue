@@ -156,7 +156,6 @@ const handleToggleShowUnbind = (data?: any) => {
 
 const handleConfirmUnbind = () => {
   resourceStore.disassociateEip(
-    props.data.vendor,
     {
       eip_id: unbindData.value.id
     }
@@ -176,7 +175,6 @@ const handleToggleShowBind = () => {
 
 const handleConfirmBind = () => {
   resourceStore.associateEip(
-    props.data.vendor,
     {
       eip_id: selection.value.id,
       cvm_id: props.data.id,

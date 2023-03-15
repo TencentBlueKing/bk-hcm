@@ -1,160 +1,51 @@
 <script setup lang="ts">
 import type {
-  PlainObject,
+  FilterType,
 } from '@/typings/resource';
 
 import {
-  h,
+  PropType,
 } from 'vue';
+import useQueryList from '../../hooks/use-query-list';
+import useColumns from '../../hooks/use-columns';
 
-import {
-  useI18n,
-} from 'vue-i18n';
-import {
-  useRouter,
-} from 'vue-router';
-import useBusiness from '../../hooks/use-business';
-import useSelection from '../../hooks/use-selection';
+const props = defineProps({
+  filter: {
+    type: Object as PropType<FilterType>,
+  },
+});
 
 // use hooks
 const {
-  t,
-} = useI18n();
+  datas,
+  pagination,
+  isLoading,
+  handlePageChange,
+  handlePageSizeChange,
+  handleSort,
+} = useQueryList(props, 'eips');
 
-const router = useRouter();
-
-const {
-  isShowDistribution,
-  handleDistribution,
-  ResourceBusiness,
-} = useBusiness();
-
-const {
-  selections,
-  handleSelectionChange,
-} = useSelection();
-
-// 状态
-const columns = [
-  {
-    type: 'selection',
-  },
-  {
-    label: 'ID',
-    field: '',
-    sort: true,
-    render({ cell }: PlainObject) {
-      return h(
-        'span',
-        {
-          onClick() {
-            router.push({
-              name: 'resourceDetail',
-              params: {
-                type: 'ip',
-              },
-            });
-          },
-        },
-        [
-          cell || '--',
-        ],
-      );
-    },
-  },
-  {
-    label: '实例 ID',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '名称',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '云厂商',
-    field: '',
-    sort: true,
-  },
-  {
-    label: 'IP',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '云区域',
-    field: '',
-  },
-  {
-    label: '地域',
-    field: '',
-    sort: true,
-  },
-  {
-    label: 'VPC',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '子网',
-    field: '',
-    sort: true,
-  },
-  {
-    label: '状态',
-    field: '',
-  },
-  {
-    label: '创建时间',
-    field: '',
-  },
-  {
-    label: '操作',
-    field: '',
-  },
-];
-const tableData: any[] = [{ id: 1 }, { id: 2 }];
-
-// 方法
-const handleSortBy = () => {
-
-};
+const columns = useColumns('eips');
 </script>
 
 <template>
-  <section>
-    <slot>
-      <bk-button
-        class="w100"
-        theme="primary"
-        @click="handleDistribution"
-      >
-        {{ t('分配') }}
-      </bk-button>
-    </slot>
-    <bk-button
-      class="w100 ml10"
-      theme="primary"
-    >
-      {{ t('释放') }}
-    </bk-button>
-  </section>
+  <bk-loading
+    :loading="isLoading"
+  >
+    <slot></slot>
 
-  <bk-table
-    class="mt20"
-    row-hover="auto"
-    :columns="columns"
-    :data="tableData"
-    @column-sort="handleSortBy"
-    @selection-change="handleSelectionChange"
-  />
-
-  <resource-business
-    v-model:is-show="isShowDistribution"
-    :data="selections"
-    :title="t('弹性IP分配')"
-  />
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      remote-pagination
+      :pagination="pagination"
+      :columns="columns"
+      :data="datas"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
+      @column-sort="handleSort"
+    />
+  </bk-loading>
 </template>
 
 <style lang="scss" scoped>

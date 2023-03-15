@@ -22,7 +22,7 @@ const componentMap = {
   subnet: SubnetDetail,
   security: SecurityDetail,
   drive: DriveDetail,
-  ip: IpDetail,
+  eips: IpDetail,
   route: RoutingDetail,
   gcp: GcpDetail,
   image: ImageDetail,
