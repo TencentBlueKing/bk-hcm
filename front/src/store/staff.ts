@@ -12,16 +12,19 @@ export const useStaffStore = defineStore({
     list: shallowRef([]),
   }),
   actions: {
-    async fetchStaffs() {
-      if (this.list.length > 0 || this.fetching) return;
+    async fetchStaffs(name?: string) {
+      if (this.fetching) return;
       this.fetching = true;
       const prefix = `${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fs_list_users`;
-      const params = {
+      const params: any = {
         app_code: 'bk-magicbox',
         page: 1,
-        page_size: 200000,
+        page_size: 200,
         callback: 'callbackStaff',
       };
+      if (name) {
+        params.fuzzy_lookups = name;
+      }
       const scriptTag = document.createElement('script');
       scriptTag.setAttribute('type', 'text/javascript');
       scriptTag.setAttribute('src', `${prefix}?${QueryString.stringify(params)}`);

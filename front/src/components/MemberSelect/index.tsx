@@ -63,6 +63,10 @@ export default defineComponent({
       ctx.emit('blur', val);
     }
 
+    function handleInput(userName: string) {
+      staffStore.fetchStaffs(userName);
+    }
+
     function handleSearch(lowerCaseValue: string, _: string | string[], list: Staff[]) {
       return list.filter((item) => {
         const username = item.username.toLowerCase();
@@ -96,6 +100,7 @@ export default defineComponent({
         modelValue={props.modelValue}
         onChange={handleChange}
         onBlur={handleBlur}
+        onInput={handleInput}
         tpl={tpl}
         tagTpl={tpl}
         clearable={props.clearable}

@@ -50,7 +50,7 @@
           prop="vendor"
         >
           <template #default="props">
-            {{CloudType[props.data.vendor]}}
+            {{CloudType[props?.data?.vendor]}}
           </template>
         </bk-table-column>
         <bk-table-column
@@ -66,7 +66,7 @@
           prop="managers"
         >
           <template #default="{ data }">
-            {{data.managers?.join(',')}}
+            {{data?.managers?.join(',')}}
           </template>
         </bk-table-column>
         <bk-table-column
@@ -82,7 +82,7 @@
           prop="created_at"
         >
           <template #default="{ data }">
-            {{data.created_at}}
+            {{data?.created_at}}
           </template>
         </bk-table-column>
         <bk-table-column
