@@ -51,6 +51,7 @@ func init() {
 	opFactory[JSONEqual.Factory()] = JSONEqualOp(JSONEqual)
 	opFactory[JSONIn.Factory()] = JSONInOp(JSONIn)
 	opFactory[JSONContains.Factory()] = JSONContainsOp(JSONContains)
+	opFactory[JSONOverlaps.Factory()] = JSONOverlapsOp(JSONOverlaps)
 }
 
 const (
@@ -133,6 +134,8 @@ const (
 	// JSONContains json array field contain operator.
 	// TODO: 目前仅支持JSON数组，不支持JSON中的数组字段。
 	JSONContains OpType = "json_contains"
+	// JSONOverlaps 函数检测两个 JSON 文档是否拥有任何一个相同键值对或数组元素。
+	JSONOverlaps OpType = "json_overlaps"
 )
 
 // OpType defines the operators supported by mysql.
@@ -146,7 +149,7 @@ func (op OpType) Validate() error {
 		LessThan, LessThanEqual,
 		In, NotIn,
 		ContainsSensitive, ContainsInsensitive,
-		JSONEqual, JSONIn, JSONContains:
+		JSONEqual, JSONIn, JSONContains, JSONOverlaps:
 	default:
 		return fmt.Errorf("unsupported operator: %s", op)
 	}
@@ -742,4 +745,82 @@ func (op JSONContainsOp) SQLExprAndValue(field string, value interface{}) (strin
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
 	return fmt.Sprintf("JSON_CONTAINS(%s, JSON_ARRAY(%s%s))", field, SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
+}
+
+// JSONOverlapsOp 函数检测两个 JSON 文档是否拥有任何一个相同键值对或数组元素。
+type JSONOverlapsOp OpType
+
+// Name is json field in operator
+func (op JSONOverlapsOp) Name() OpType {
+	return JSONOverlaps
+}
+
+// ValidateValue validate json field in's value
+func (op JSONOverlapsOp) ValidateValue(v interface{}, opt *ExprOption) error {
+	switch reflect.TypeOf(v).Kind() {
+	case reflect.Array:
+	case reflect.Slice:
+	default:
+		return errors.New("json in operator's value should be an array")
+	}
+
+	value := reflect.ValueOf(v)
+	length := value.Len()
+	if length == 0 {
+		return errors.New("invalid json in operator's value, at least have one element")
+	}
+
+	maxInV := DefaultMaxInLimit
+	if opt != nil {
+		if opt.MaxInLimit > 0 {
+			maxInV = opt.MaxInLimit
+		}
+	}
+
+	if length > int(maxInV) {
+		return fmt.Errorf("invalid json in operator's value, at most have %d elements", maxInV)
+	}
+
+	// each element in the array or slice should be a basic type.
+	for i := 0; i < length; i++ {
+		if !assert.IsBasicValue(value.Index(i).Interface()) {
+			return fmt.Errorf("invalid json in operator's value: %v, each element's value should be a basic type",
+				value.Index(i).Interface())
+		}
+	}
+
+	return nil
+}
+
+// SQLExprAndValue convert this operator's field and value to a mysql's sub query expression.
+func (op JSONOverlapsOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{}, error) {
+	if len(field) == 0 {
+		return "", nil, errors.New("field is empty")
+	}
+
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Array:
+	case reflect.Slice:
+	default:
+		return "", nil, errors.New("in operator's value should be an array")
+	}
+
+	arrayFunc := "JSON_ARRAY("
+	valueMap := make(map[string]interface{})
+	valueOf := reflect.ValueOf(value)
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	for i := 0; i < valueOf.Len(); i++ {
+		oneFieldName := fmt.Sprintf("%s_%d", placeholder, i)
+
+		if i == valueOf.Len()-1 {
+			arrayFunc += fmt.Sprintf("%s%s)", SqlPlaceholder, oneFieldName)
+			valueMap[oneFieldName] = valueOf.Index(i).Interface()
+			break
+		}
+
+		arrayFunc += fmt.Sprintf("%s%s,", SqlPlaceholder, oneFieldName)
+		valueMap[oneFieldName] = valueOf.Index(i).Interface()
+	}
+
+	return fmt.Sprintf("JSON_OVERLAPS(%s, %s)", field, arrayFunc), valueMap, nil
 }
