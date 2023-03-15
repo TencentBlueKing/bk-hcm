@@ -13,6 +13,7 @@ import { AUDIT_SOURCE_MAP, AUDIT_ACTION_MAP } from './constants';
 const props = defineProps<{
   id: number,
   bizId: number,
+  type: string,
 }>();
 
 const { details, isLoading } = useDetail(props);
@@ -97,6 +98,7 @@ const diffCompMap = {
         :is="diffCompMap[details.res_type]"
         :action="details?.action"
         :detail="details?.detail"
+        :audit-type="props.type"
         :business-list="businessList">
       </component>
     </div>

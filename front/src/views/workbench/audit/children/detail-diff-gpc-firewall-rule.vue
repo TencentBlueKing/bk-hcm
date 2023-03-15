@@ -46,11 +46,11 @@ const getCellStyle = (column, index, row) => {
     <bk-table-column :label="t('变更前')" v-if="isShowBefore" prop="before" show-overflow-tooltip>
       <template #default="{ cell, row }">
         <template v-if="row?.prop?.id === 'target_tags'">
-          {{ cell?.join(',') }}
+          {{ cell?.join?.(',') || '--' }}
         </template>
         <template v-else-if="row?.prop?.id === 'allowed'">
           <div v-for="(item, index) in cell" :key="index">
-            {{ item.protocol }}:{{ item.port?.join(',') }}
+            {{ item.protocol }}:{{ item.port?.join?.(',') }}
           </div>
         </template>
         <span v-else>{{ cell }}</span>
@@ -59,11 +59,11 @@ const getCellStyle = (column, index, row) => {
     <bk-table-column :label="t('变更后')" v-if="isShowAfter" prop="after" show-overflow-tooltip>
       <template #default="{ cell, row }">
         <template v-if="row?.prop?.id === 'target_tags'">
-          {{ cell?.join(',') }}
+          {{ cell?.join?.(',') }}
         </template>
         <template v-else-if="row?.prop?.id === 'allowed'">
           <div v-for="(item, index) in cell" :key="index">
-            {{ item.protocol }}:{{ item.port?.join(',') }}
+            {{ item.protocol }}:{{ item.port?.join?.(',') }}
           </div>
         </template>
         <span v-else>{{ cell }}</span>

@@ -55,7 +55,7 @@ export default (options: { filter: any, filterOptions: any }) => {
     };
     for (let i = 0, key; key = filterIds[i]; i++) {
       const value = filter[key];
-      if (!value || !value?.length) {
+      if (!value || !value?.length || (Array.isArray(value) && !value.every(val => val))) {
         continue;
       }
 

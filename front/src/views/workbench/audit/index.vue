@@ -5,7 +5,7 @@ import MemberSelect from '@/components/MemberSelect';
 import FilterItemAction from './children/filter-item-action.vue';
 import AuditDetail from './detail.vue';
 
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch, h } from 'vue';
 import dayjs from 'dayjs';
 import { useRoute } from 'vue-router';
 import {
@@ -15,6 +15,7 @@ import useList from './use-list';
 import { AUDIT_RESOURCE_TYPES } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
 import { AUDIT_SOURCE_MAP, AUDIT_ACTION_MAP } from './constants';
+import { Button } from 'bkui-vue';
 
 const {
   t,
@@ -79,6 +80,107 @@ const getBizName = (id: number) => {
   return businessSelectorComp?.value?.businessList?.find(item => item.id === id)?.name ?? '--';
 };
 
+const columns = computed(() => {
+  const values = [
+    {
+      label: 'ID',
+      field: 'id',
+      width: 120,
+    },
+    {
+      label: t('云资源 ID'),
+      field: 'cloud_res_id',
+      showOverflowTooltip: true,
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: t('名称'),
+      field: 'res_name',
+      showOverflowTooltip: true,
+    },
+    {
+      label: t('资源类型'),
+      field: 'res_type',
+    },
+    {
+      label: t('动作'),
+      field: 'action',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            AUDIT_ACTION_MAP[cell] || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: t('所属业务'),
+      field: 'bk_biz_id',
+      visible: isBizType.value,
+      render({ cell }: { cell: number }) {
+        return h('span', getBizName(cell));
+      },
+    },
+    {
+      label: t('云账号'),
+      field: 'account_id',
+    },
+    {
+      label: t('操作者'),
+      field: 'operator',
+    },
+    {
+      label: t('来源'),
+      field: 'source',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            AUDIT_SOURCE_MAP[cell] || '--',
+          ],
+        );
+      },
+    },
+    {
+      label: t('时间'),
+      field: 'created_at',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            timeFormatter(cell),
+          ],
+        );
+      },
+    },
+    {
+      label: t('操作'),
+      render({ data }: any) {
+        return h(
+          Button,
+          {
+            theme: 'primary',
+            onClick() {
+              handleShowDetailSlider(data);
+            },
+          }, '详情',
+        );
+      },
+    },
+  ];
+
+  return values.filter(item => item.visible !== false);
+});
+
+
 const handleSearch = () => {
   query();
 };
@@ -103,6 +205,7 @@ watch(() => filter.bk_biz_id, (bizId, oldBizId) => {
 watch(isBizType, (isBizType) => {
   if (!isBizType) {
     filter.bk_biz_id = null;
+    datas.value = [];
   }
 });
 </script>
@@ -177,7 +280,7 @@ watch(isBizType, (isBizType) => {
         <bk-date-picker
           class="audit-date-picker"
           v-model="filter.created_at"
-          clearable
+          :clearable="false"
           type="daterange"
         />
       </div>
@@ -193,7 +296,7 @@ watch(isBizType, (isBizType) => {
       <div class="filter-item-content">
         <bk-input v-model="filterOptions.instValue" placeholder="请输入">
           <template #prefix>
-            <bk-select v-model="filterOptions.instType" class="input-prefix-select">
+            <bk-select v-model="filterOptions.instType" :clearable="false" class="input-prefix-select">
               <bk-option value="name" label="名称" />
               <bk-option value="id" label="ID" />
             </bk-select>
@@ -233,47 +336,12 @@ watch(isBizType, (isBizType) => {
       row-hover="auto"
       remote-pagination
       :border="['outer']"
+      :columns="columns"
       :data="datas"
       :pagination="pagination"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
-    >
-      <bk-table-column label="ID" prop="id" :width="120" />
-      <bk-table-column :label="t('云资源 ID')" prop="cloud_res_id" show-overflow-tooltip>
-        <template #default="{ row }">
-          {{ row?.cloud_res_id || '--' }}
-        </template>
-      </bk-table-column>
-      <bk-table-column :label="t('名称')" prop="res_name" show-overflow-tooltip />
-      <bk-table-column :label="t('资源类型')" prop="res_type" />
-      <bk-table-column :label="t('动作')" prop="action">
-        <template #default="{ row }">
-          {{ AUDIT_ACTION_MAP[row?.action] }}
-        </template>
-      </bk-table-column>
-      <bk-table-column :label="t('所属业务')" prop="bk_biz_id">
-        <template #default="{ row }">
-          {{ getBizName(row?.bk_biz_id) }}
-        </template>
-      </bk-table-column>
-      <bk-table-column :label="t('云账号')" prop="account_id" />
-      <bk-table-column :label="t('操作者')" prop="operator" />
-      <bk-table-column :label="t('来源')" prop="source">
-        <template #default="{ row }">
-          {{ AUDIT_SOURCE_MAP[row?.source] }}
-        </template>
-      </bk-table-column>
-      <bk-table-column :label="t('时间')" :width="160" prop="created_at">
-        <template #default="{ row }">
-          {{ timeFormatter(row?.created_at) }}
-        </template>
-      </bk-table-column>
-      <bk-table-column :label="t('操作')">
-        <template #default="{ row }">
-          <bk-button theme="primary" @click="handleShowDetailSlider(row)">详情</bk-button>
-        </template>
-      </bk-table-column>
-    </bk-table>
+    />
   </bk-loading>
 
   <bk-sideslider
@@ -283,7 +351,7 @@ watch(isBizType, (isBizType) => {
     quick-close
   >
     <template #default>
-      <audit-detail :id="details.id" :biz-id="details.bizId"></audit-detail>
+      <audit-detail :id="details.id" :biz-id="details.bizId" :type="filterOptions.auditType"></audit-detail>
     </template>
   </bk-sideslider>
 </template>
@@ -312,6 +380,7 @@ watch(isBizType, (isBizType) => {
       }
 
       .input-prefix-select {
+        width: 90px;
         :deep(.bk-input) {
           border-top: none;
           border-bottom: none;
