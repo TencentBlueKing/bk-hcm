@@ -110,6 +110,14 @@ export const useAccountStore = defineStore({
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`);
     },
     /**
+     * @description: 删除前校验
+     * @param {number} id
+     * @return {*}
+     */
+    async accountDeleteValidate(id: number) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}/delete/validate`) ;
+    },
+    /**
      * @description: 申请账号
      * @param {number} data
      * @return {*}

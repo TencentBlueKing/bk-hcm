@@ -13,6 +13,8 @@ import IpManage from './children/manage/ip-manage.vue';
 import RoutingManage from './children/manage/routing-manage.vue';
 import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
+import AccountSelector from '@/components/account-selector/index.vue';
+import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 
 import {
   RESOURCE_TYPES,
@@ -40,21 +42,21 @@ const {
   ResourceDistribution,
 } = useSteps();
 
-// 状态
-const isAccurate = ref(false);
 // 搜索过滤相关数据
-const searchValue = ref([]);
 const filter = ref({ op: 'and', rules: [] });
-const searchData = ref([
-  {
-    name: t('名称'),
-    id: 'name',
-  }, {
-    name: t('云厂商'),
-    id: 'vendor',
-    children: VENDORS,
-  },
-]);
+const accountId = ref('');
+const status = ref('');
+const op = ref('eq');
+// const searchData = ref([
+//   {
+//     name: t('名称'),
+//     id: 'name',
+//   }, {
+//     name: t('云厂商'),
+//     id: 'vendor',
+//     children: VENDORS,
+//   },
+// ]);
 
 // 组件map
 const componentMap = {
@@ -79,26 +81,67 @@ const tabs = RESOURCE_TYPES.map((type) => {
 });
 const activeTab = ref(route.query.type || tabs[0].type);
 
+const filterData = (key: string, val: string | number) => {
+  if (!filter.value.rules.length) {
+    if (val === 1) {    // 已分配标志
+      op.value = 'neq';
+    }
+    filter.value.rules.push({
+      field: key, op: op.value, value: -1,
+    });
+  } else {
+    filter.value.rules.forEach((e: any) => {
+      console.log(e.field, key, e.field === key);
+      if (e.field === key) {
+        e.op = val === 1 ? 'neq' : 'eq';
+        return;
+      }
+      if (filter.value.rules.length === 2) return;
+      if (val === 1) {    // 已分配标志
+        op.value = 'neq';
+      }
+      filter.value.rules.push({
+        field: key, op: op.value, value: -1,
+      });
+    });
+  }
+};
+
 // 搜索数据
 watch(
-  () => searchValue.value,
+  () => accountId.value,
   (val) => {
-    filter.value.rules = val.reduce((p, v) => {
-      if (v.type === 'condition') {
-        filter.value.op = v.id || 'and';
+    if (val) {
+      if (!filter.value.rules.length) {
+        filter.value.rules.push({
+          field: 'account_id', op: 'eq', value: val,
+        });
       } else {
-        p.push({
-          field: v.id,
-          op: isAccurate.value ? 'eq' : 'cs',
-          value: v.values[0].id,
+        filter.value.rules.forEach((e: any) => {
+          if (e.field === 'account_id') {
+            e.value = val;
+          } else {
+            if (filter.value.rules.length === 2) return;
+            filter.value.rules.push({
+              field: 'account_id', op: 'eq', value: val,
+            });
+          }
         });
       }
-      return p;
-    }, []);
+    } else {
+      filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'account_id');
+    }
   },
-  {
-    deep: true,
-    immediate: true,
+);
+
+watch(
+  () => status.value,
+  (val) => {
+    if (val) {
+      filterData('bk_biz_id', val);
+    } else {
+      filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'bk_biz_id');
+    }
   },
 );
 
@@ -120,6 +163,29 @@ watch(
 <template>
   <section class="flex-center resource-header">
     <section class="flex-center">
+      <div class="mr10">{{t('云账号')}}</div>
+      <div class="mr20">
+        <account-selector
+          v-model="accountId"
+        />
+      </div>
+    </section>
+    <section class="flex-center">
+      <div class="mr10">{{t('分配状态')}}</div>
+      <div class="mr20">
+        <bk-select
+          v-model="status"
+        >
+          <bk-option
+            v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
+            :key="index"
+            :value="item.value"
+            :label="item.label"
+          />
+        </bk-select>
+      </div>
+    </section>
+    <section class="flex-center">
       <bk-button
         theme="primary"
         class="ml10"
@@ -128,7 +194,7 @@ watch(
         {{ t('快速分配') }}
       </bk-button>
     </section>
-    <section class="flex-center">
+    <!-- <section class="flex-center">
       <bk-checkbox
         v-model="isAccurate"
       >
@@ -140,7 +206,7 @@ watch(
         :data="searchData"
         v-model="searchValue"
       />
-    </section>
+    </section> -->
   </section>
   <bk-tab
     v-model:active="activeTab"
@@ -175,7 +241,6 @@ watch(
   align-items: center;
 }
 .resource-header {
-  justify-content: space-between;
   background: #fff;
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
   padding: 20px;

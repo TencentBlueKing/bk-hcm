@@ -104,9 +104,9 @@
                   {{t('编辑')}}
                 </bk-button>
               </div>
-              <!-- <bk-button class="ml15" text theme="primary" @click="handleOperate(props?.data.id, 'del')">
+              <bk-button class="ml15" text theme="primary" @click="handleOperate(props?.data.id, 'del')">
                 {{t('删除')}}
-              </bk-button> -->
+              </bk-button>
             </div>
           </template>
         </bk-table-column>
@@ -359,11 +359,21 @@ export default defineComponent({
     };
 
     // 删除
-    const handleOperate = (id: number, type: string) => {
+    const handleOperate = async (id: number, type: string) => {
       state.dataId = id;
       state.type = type;
-      state.deleteBoxTitle = `确认${type === 'del' ? '删除' : '同步'}?`;
-      state.showDeleteBox = true;
+      if (type === 'del') {
+        try {
+          await accountStore.accountDeleteValidate(state.dataId);
+          state.deleteBoxTitle = '确认删除';
+          state.showDeleteBox = true;
+        } catch (error) {
+          console.log(error);
+        }
+      } else {
+        state.deleteBoxTitle = '确认同步';
+        state.showDeleteBox = true;
+      }
     };
 
     // 处理翻页

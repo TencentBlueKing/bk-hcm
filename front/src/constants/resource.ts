@@ -176,3 +176,17 @@ export const HUAWEI_TYPE_LIST = [
     name: 'IPv6',
   },
 ];
+export const DISTRIBUTE_STATUS_LIST = [
+  {
+    label: '未分配',
+    value: -1,
+  },
+  {
+    label: '已分配',
+    value: 1,
+  },
+  {
+    label: '全部',
+    value: 0,
+  },
+];
