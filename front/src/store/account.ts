@@ -99,7 +99,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async accountSync(id: number) {
-      await http.post('/mock/api/v4/sync/', id);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}/sync`);
     },
     /**
      * @description: 删除
@@ -107,7 +107,7 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async accountDelete(id: number) {
-      return await http.post('/mock/api/v4/sync/', id);
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`);
     },
     /**
      * @description: 申请账号

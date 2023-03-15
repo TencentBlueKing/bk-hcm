@@ -42,7 +42,7 @@ export default defineComponent({
 
     onMounted(() => {
       if (staffStore.list.length === 0) {
-        staffStore.fetchStaffs(props.type);
+        staffStore.fetchStaffs();
       }
     });
 

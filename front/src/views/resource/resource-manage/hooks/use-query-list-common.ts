@@ -8,7 +8,6 @@ import {
 } from '@/store/resource';
 import {
   ref,
-  onMounted,
   watch,
 } from 'vue';
 
@@ -127,7 +126,12 @@ export default (props: PropsType, url: string, methodType?: string) => {
     },
   );
 
-  onMounted(triggerApi);
+
+  const getList = () => {
+    pagination.value.limit = 10;
+    pagination.value.current = 1;
+    triggerApi();
+  };
 
   return {
     datas,
@@ -136,5 +140,6 @@ export default (props: PropsType, url: string, methodType?: string) => {
     handlePageChange,
     handlePageSizeChange,
     handleSort,
+    getList,
   };
 };

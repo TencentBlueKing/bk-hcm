@@ -116,5 +116,13 @@ export const useResourceStore = defineStore({
     getCloudRegion(type: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${type}/regions/list`, data);
     },
+    // 销毁
+    deleteRecycledData(type: string, data: any) {
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/recycled/${type}/batch`, data);
+    },
+    // 回收
+    recoverRecycledData(type: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/recover`, data);
+    },
   },
 });

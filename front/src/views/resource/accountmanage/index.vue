@@ -94,9 +94,9 @@
         >
           <template #default="props">
             <div class="operate-button">
-              <!-- <bk-button text theme="primary" @click="handleSync(props?.data.id)">
-              {{t('同步')}}
-            </bk-button> -->
+              <bk-button text theme="primary" @click="handleOperate(props?.data.id, 'sync')">
+                {{t('同步')}}
+              </bk-button>
               <div @click="handleAuth('account_edit')">
                 <bk-button
                   text theme="primary" @click="handleJump('accountDetail', props?.data.id)"
@@ -104,9 +104,9 @@
                   {{t('编辑')}}
                 </bk-button>
               </div>
-            <!-- <bk-button text theme="primary" @click="handleDelete(props?.data.id, props?.data.name)">
-              {{t('删除')}}
-            </bk-button> -->
+              <!-- <bk-button class="ml15" text theme="primary" @click="handleOperate(props?.data.id, 'del')">
+                {{t('删除')}}
+              </bk-button> -->
             </div>
           </template>
         </bk-table-column>
@@ -115,30 +115,27 @@
         :is-show="showDeleteBox"
         :title="deleteBoxTitle"
         :theme="'primary'"
-        :quick-close="false"
-        @closed="showDeleteBox = false"
-        @confirm="() => handleDialogConfirm('del')"
+        :dialog-type="'show'"
       >
-        <div>{{t('删除之后无法恢复账户信息')}}</div>
-      </bk-dialog>
+        <div v-if="type === 'del'">
+          {{t('删除之后无法恢复账户信息')}}
+        </div>
+        <div v-else>
+          <div v-if="btnLoading">{{t('同步中...')}}</div>
+          <div v-else>{{t('确认同步该账号')}}</div>
+        </div>
 
-      <bk-dialog
-        :is-show="showSyncBox"
-        :title="syncTitle"
-        :theme="'primary'"
-        :quick-close="false"
-        @closed="showSyncBox = false"
-        @confirm="() => handleDialogConfirm('sync')"
-      >
-        <div class="sync-dialog-warp">
-          <div class="flex-row justify-content-between align-items-center">
-            <img class="t-icon" :src="tcloudSrc" />
-            <div class="flex-row arrow-icon align-items-center">
-              <img class="content" :src="rightArrow" />
-            </div>
-            <img class="logo-icon" :src="logo" />
-          </div>
-          <div class="text-center pt20 bg-default">{{t('同步中...')}}</div>
+        <div class="flex-row btn-warp">
+          <bk-button
+            class="mr10 dialog-button"
+            theme="primary"
+            :loading="btnLoading"
+            @click="handleDialogConfirm(type)"
+          >确认</bk-button>
+          <bk-button
+            class="mr10 dialog-button"
+            @click="handleDialogCancel"
+          >取消</bk-button>
         </div>
       </bk-dialog>
     </bk-loading>
@@ -156,10 +153,8 @@
 import { reactive, watch, toRefs, defineComponent, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import logo from '@/assets/image/logo.png';
 import { useAccountStore } from '@/store';
 import rightArrow from '@/assets/image/right-arrow.png';
-import tcloud from '@/assets/image/tcloud.png';
 import { Message } from 'bkui-vue';
 import { CloudType, AccountType } from '@/typings';
 import { VENDORS } from '@/common/constant';
@@ -202,15 +197,14 @@ export default defineComponent({
       showDeleteBox: false,
       deleteBoxTitle: '',
       syncTitle: t('同步'),
-      showSyncBox: false,
-      logo,
       rightArrow,
-      tcloudSrc: tcloud,
       loading: true,
       dataId: null,
       CloudType,
       AccountType,
       filter: { op: 'and', rules: [] },
+      type: '',
+      btnLoading: false,
     });
 
     const showPermissionDialog = ref(false);    // 无权限弹窗
@@ -325,6 +319,7 @@ export default defineComponent({
     };
     // 弹窗确认
     const handleDialogConfirm = async (diaType: string) => {
+      state.btnLoading = true;
       try {
         if (diaType === 'del') {    // 删除
           await accountStore.accountDelete(state.dataId);
@@ -335,14 +330,19 @@ export default defineComponent({
           message: t(diaType === 'del' ? '删除成功' : '同步成功'),
           theme: 'success',
         });
+        state.btnLoading = false;
         // 重新请求列表
         init();
       } catch (error) {
         console.log(error);
       } finally {
-        state.showDeleteBox = false;
-        state.showSyncBox = false;
+        // state.showDeleteBox = false;
       }
+    };
+
+    const handleDialogCancel = () => {
+      state.showDeleteBox = false;
+      state.btnLoading = false;
     };
     // 跳转页面
     const handleJump = (routerName: string, id?: string) => {
@@ -359,16 +359,11 @@ export default defineComponent({
     };
 
     // 删除
-    const handleDelete = (id: number, name: string) => {
+    const handleOperate = (id: number, type: string) => {
       state.dataId = id;
-      state.deleteBoxTitle = `确认要删除${name}?`;
+      state.type = type;
+      state.deleteBoxTitle = `确认${type === 'del' ? '删除' : '同步'}?`;
       state.showDeleteBox = true;
-    };
-
-    // 同步
-    const handleSync = (id: number) => {
-      state.dataId = id;
-      state.showSyncBox = true;
     };
 
     // 处理翻页
@@ -390,19 +385,26 @@ export default defineComponent({
       handlePermissionConfirm,
       handleDialogConfirm,
       handleJump,
-      handleDelete,
-      handleSync,
+      handleOperate,
       handleAuth,
       permissionParams,
       authVerifyData,
       handlePageLimitChange,
       handlePageValueChange,
+      handleDialogCancel,
       t,
     };
   },
 });
 </script>
 <style lang="scss">
+.operate-button{
+  display: flex;
+}
+.btn-warp{
+  margin-top: 30px;
+  justify-content: end;
+}
   .sync-dialog-warp{
     height: 150px;
     .t-icon{
