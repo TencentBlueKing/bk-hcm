@@ -38,12 +38,61 @@ import (
 func (svc *cvmSvc) initAwsCvmService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
+	h.Add("BatchCreateAwsCvm", http.MethodPost, "/vendors/aws/cvms/batch/create", svc.BatchCreateAwsCvm)
 	h.Add("BatchStartAwsCvm", http.MethodPost, "/vendors/aws/cvms/batch/start", svc.BatchStartAwsCvm)
 	h.Add("BatchStopAwsCvm", http.MethodPost, "/vendors/aws/cvms/batch/stop", svc.BatchStopAwsCvm)
 	h.Add("BatchRebootAwsCvm", http.MethodPost, "/vendors/aws/cvms/batch/reboot", svc.BatchRebootAwsCvm)
 	h.Add("BatchDeleteAwsCvm", http.MethodDelete, "/vendors/aws/cvms/batch/delete", svc.BatchDeleteAwsCvm)
 
 	h.Load(cap.WebService)
+}
+
+func (svc *cvmSvc) BatchCreateAwsCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.AwsBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	awsCli, err := svc.ad.Aws(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	createOpt := &typecvm.AwsCreateOption{
+		Region:                req.Region,
+		Name:                  req.Name,
+		Zone:                  req.Zone,
+		InstanceType:          req.InstanceType,
+		CloudImageID:          req.CloudImageID,
+		Password:              req.Password,
+		RequiredCount:         req.RequiredCount,
+		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
+		ClientToken:           req.ClientToken,
+		CloudSubnetID:         req.CloudSubnetID,
+		BlockDeviceMapping:    req.BlockDeviceMapping,
+		PublicIPAssigned:      req.PublicIPAssigned,
+	}
+	result, err := awsCli.CreateCvm(cts.Kit, createOpt)
+	if err != nil {
+		logs.Errorf("create aws cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	syncOpt := &cvm.SyncAwsCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  result.SuccessCloudIDs,
+	}
+	if _, err = cvm.SyncAwsCvmWithRelResource(cts.Kit, syncOpt, svc.ad, svc.dataCli); err != nil {
+		logs.Errorf("sync aws cvm with rel resource failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // BatchStartAwsCvm ...

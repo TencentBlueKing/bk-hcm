@@ -858,12 +858,12 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 		for _, id := range cloudEipMap {
 			eipCloudIDs = append(eipCloudIDs, id.RelID)
 		}
-		req := &synceip.SyncAwsEipOption{
+		syncEipOpt := &synceip.SyncAwsEipOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
 			CloudIDs:  eipCloudIDs,
 		}
-		_, err := synceip.SyncAwsEip(kt, req, ad, dataCli)
+		_, err = synceip.SyncAwsEip(kt, syncEipOpt, ad, dataCli)
 		if err != nil {
 			logs.Errorf("sync aws cvm rel eip failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

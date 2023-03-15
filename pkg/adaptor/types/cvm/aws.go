@@ -130,7 +130,7 @@ type AwsCreateOption struct {
 	ClientToken           *string                 `json:"client_token" validate:"omitempty"`
 	CloudSubnetID         string                  `json:"cloud_subnet_id" validate:"required"`
 	BlockDeviceMapping    []AwsBlockDeviceMapping `json:"block_device_mapping" validate:"required"`
-	PublicIPAssigned      bool                    `json:"public_ip_assigned" validate:"required"`
+	PublicIPAssigned      bool                    `json:"public_ip_assigned" validate:"omitempty"`
 }
 
 // AwsBlockDeviceMapping ...

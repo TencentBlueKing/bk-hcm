@@ -152,8 +152,7 @@ func SyncAwsEip(kt *kit.Kit, req *SyncAwsEipOption,
 	}
 
 	if len(addIDs) > 0 {
-		err := syncAwsEipAdd(kt, addIDs, req, cloudMap, dataCli)
-		if err != nil {
+		if err = syncAwsEipAdd(kt, addIDs, req, cloudMap, dataCli); err != nil {
 			logs.Errorf("request syncAwsEipAdd failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
@@ -210,7 +209,7 @@ func SyncAwsEip(kt *kit.Kit, req *SyncAwsEipOption,
 func syncAwsEipAdd(kt *kit.Kit, addIDs []string, req *SyncAwsEipOption,
 	cloudMap map[string]*AwsEipSync, dataCli *dataservice.Client) error {
 
-	var createReq dataproto.EipExtBatchCreateReq[dataproto.AwsEipExtensionCreateReq]
+	createReq := new(dataproto.EipExtBatchCreateReq[dataproto.AwsEipExtensionCreateReq])
 
 	for _, id := range addIDs {
 		eip := &dataproto.EipExtCreateReq[dataproto.AwsEipExtensionCreateReq]{
@@ -227,11 +226,11 @@ func syncAwsEipAdd(kt *kit.Kit, addIDs []string, req *SyncAwsEipOption,
 				Domain:         cloudMap[id].Eip.Domain,
 			},
 		}
-		createReq = append(createReq, eip)
+		*createReq = append(*createReq, eip)
 	}
 
-	if len(createReq) > 0 {
-		_, err := dataCli.Aws.BatchCreateEip(kt.Ctx, kt.Header(), &createReq)
+	if len(*createReq) > 0 {
+		_, err := dataCli.Aws.BatchCreateEip(kt.Ctx, kt.Header(), createReq)
 		if err != nil {
 			logs.Errorf("request dataservice to create aws eip failed, err: %v, rid: %s", err, kt.Rid)
 			return err

@@ -37,8 +37,10 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
+
 	tableaudit "hcm/pkg/dal/table/audit"
 )
 
@@ -90,7 +92,7 @@ func (eipDao *EipDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, eips []*eip.Ei
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      one.ID,
 			CloudResID: one.CloudID,
-			ResName:    *one.Name,
+			ResName:    converter.PtrToVal(one.Name),
 			ResType:    enumor.EipAuditResType,
 			Action:     enumor.Create,
 			BkBizID:    one.BkBizID,

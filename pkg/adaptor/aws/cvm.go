@@ -24,10 +24,14 @@ import (
 	"fmt"
 	"strings"
 
+	"hcm/pkg/adaptor/poller"
+	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -197,7 +201,7 @@ func (a *Aws) RebootCvm(kt *kit.Kit, opt *typecvm.AwsRebootOption) error {
 }
 
 // CreateCvm reference: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RunInstances.html
-func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) ([]*ec2.Instance, error) {
+func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "create option is required")
 	}
@@ -239,17 +243,23 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) ([]*ec2.Insta
 		Placement: &ec2.Placement{
 			AvailabilityZone: aws.String(opt.Zone),
 		},
-		NetworkInterfaces: []*ec2.InstanceNetworkInterfaceSpecification{
+	}
+
+	if opt.PublicIPAssigned {
+		req.NetworkInterfaces = []*ec2.InstanceNetworkInterfaceSpecification{
 			{
+				DeviceIndex:              converter.ValToPtr(int64(0)),
 				AssociatePublicIpAddress: aws.Bool(opt.PublicIPAssigned),
 			},
-		},
+		}
 	}
 
 	if len(opt.BlockDeviceMapping) != 0 {
 		req.BlockDeviceMappings = make([]*ec2.BlockDeviceMapping, len(opt.BlockDeviceMapping))
 		for index, volume := range opt.BlockDeviceMapping {
-			req.BlockDeviceMappings[index].DeviceName = volume.DeviceName
+			req.BlockDeviceMappings[index] = &ec2.BlockDeviceMapping{
+				DeviceName: volume.DeviceName,
+			}
 
 			if volume.Ebs != nil {
 				req.BlockDeviceMappings[index].Ebs = &ec2.EbsBlockDevice{
@@ -267,8 +277,85 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) ([]*ec2.Insta
 		return nil, err
 	}
 
-	return resp.Instances, nil
+	cloudIDs := make([]*string, 0, len(resp.Instances))
+	for _, one := range resp.Instances {
+		cloudIDs = append(cloudIDs, one.InstanceId)
+	}
+
+	// 等待生产成功
+	handler := &createAwsCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*Aws, []*ec2.Instance, poller.BaseDoneResult]{Handler: handler}
+	result, err := respPoller.PollUntilDone(a, kt, cloudIDs, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
+
+type createAwsCvmPollingHandler struct {
+	region string
+}
+
+func (h *createAwsCvmPollingHandler) Done(cvms []*ec2.Instance) (bool, *poller.BaseDoneResult) {
+
+	result := &poller.BaseDoneResult{
+		SuccessCloudIDs: make([]string, 0),
+		FailedCloudIDs:  make([]string, 0),
+	}
+	for _, instance := range cvms {
+		// 创建中
+		if converter.PtrToVal(instance.State.Code) == 0 {
+			return false, nil
+		}
+
+		// 生产失败
+		if converter.PtrToVal(instance.State.Code) == 48 {
+			result.FailedCloudIDs = append(result.FailedCloudIDs, *instance.InstanceId)
+			result.FailedMessage = converter.PtrToVal(instance.StateReason.Message)
+			continue
+		}
+
+		result.SuccessCloudIDs = append(result.SuccessCloudIDs, *instance.InstanceId)
+	}
+
+	return true, result
+}
+
+func (h *createAwsCvmPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Instance, error) {
+
+	cloudIDSplit := slice.Split(cloudIDs, core.AwsQueryLimit)
+
+	cvms := make([]*ec2.Instance, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := new(ec2.DescribeInstancesInput)
+		req.InstanceIds = partIDs
+
+		cvmCli, err := client.clientSet.ec2Client(h.region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := cvmCli.DescribeInstancesWithContext(kt.Ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, reservation := range resp.Reservations {
+			cvms = append(cvms, reservation.Instances...)
+		}
+	}
+
+	if len(cvms) != len(cloudIDs) {
+		return nil, fmt.Errorf("query cvm count: %d not equal return count: %d", len(cloudIDs), len(cvms))
+	}
+
+	return cvms, nil
+}
+
+var _ poller.PollingHandler[*Aws, []*ec2.Instance, poller.BaseDoneResult] = new(createAwsCvmPollingHandler)
 
 func genCvmBase64UserData(kt *kit.Kit, ec2Client *ec2.EC2, imageID string, passwd string) (string, error) {
 	req := new(ec2.DescribeImagesInput)

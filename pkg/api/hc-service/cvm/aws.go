@@ -22,6 +22,7 @@ package cvm
 import (
 	"fmt"
 
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
@@ -109,5 +110,27 @@ func (req *AwsBatchRebootReq) Validate() error {
 		return fmt.Errorf("batch operation resource count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
+	return validator.Validate.Struct(req)
+}
+
+// AwsBatchCreateReq aws batch create req.
+type AwsBatchCreateReq struct {
+	AccountID             string                          `json:"account_id" validate:"required"`
+	Region                string                          `json:"region" validate:"required"`
+	Zone                  string                          `json:"zone" validate:"required"`
+	Name                  string                          `json:"name" validate:"required"`
+	InstanceType          string                          `json:"instance_type" validate:"required"`
+	CloudImageID          string                          `json:"cloud_image_id" validate:"required"`
+	CloudSubnetID         string                          `json:"cloud_subnet_id" validate:"required"`
+	PublicIPAssigned      bool                            `json:"public_ip_assigned" validate:"omitempty"`
+	CloudSecurityGroupIDs []string                        `json:"cloud_security_group_ids" validate:"required"`
+	BlockDeviceMapping    []typecvm.AwsBlockDeviceMapping `json:"block_device_mapping" validate:"required"`
+	Password              string                          `json:"password" validate:"required"`
+	RequiredCount         int64                           `json:"required_count" validate:"required"`
+	ClientToken           *string                         `json:"client_token" validate:"omitempty"`
+}
+
+// Validate request.
+func (req *AwsBatchCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
