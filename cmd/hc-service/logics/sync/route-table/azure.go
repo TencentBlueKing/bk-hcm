@@ -584,12 +584,21 @@ func compareDeleteAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteT
 			}
 		}
 
-		// batch query need delete route table list
-		err = BatchDeleteRouteTableByIDs(kt, deleteIDs, dataCli)
-		if err != nil {
-			logs.Errorf("%s-routetable batch compare db delete failed. deleteIDs: %v, err: %v",
-				enumor.Azure, deleteIDs, err)
-			return err
+		if len(deleteIDs) > 0 {
+			err = cancelRouteTableSubnetRel(kt, dataCli, enumor.Azure, deleteIDs)
+			if err != nil {
+				logs.Errorf("%s-routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
+					enumor.Azure, deleteIDs, err)
+				return err
+			}
+
+			// batch query need delete route table list
+			err = BatchDeleteRouteTableByIDs(kt, deleteIDs, dataCli)
+			if err != nil {
+				logs.Errorf("%s-routetable batch compare db delete failed. deleteIDs: %v, err: %v",
+					enumor.Azure, deleteIDs, err)
+				return err
+			}
 		}
 		deleteIDs = nil
 

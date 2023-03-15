@@ -318,9 +318,6 @@ func UpdateSubnetRouteTableByIDs(kt *kit.Kit, vendor enumor.Vendor, subnetMap ma
 
 	tmpSubnetArr := make([]protocloud.SubnetBaseInfoUpdateReq, 0)
 	for _, tmpItem := range subnetList.Details {
-		if len(tmpItem.RouteTableID) > 0 && len(tmpItem.CloudRouteTableID) > 0 {
-			continue
-		}
 		rtSubnetInfo, ok := subnetMap[tmpItem.CloudID]
 		if !ok {
 			continue
@@ -479,6 +476,13 @@ func compareDeleteTCloudRouteTableList(kt *kit.Kit, req *hcroutetable.TCloudRout
 		// batch query need delete route table list
 		deleteIDs := GetNeedDeleteTCloudRouteTableList(kt, req, deleteCloudIDMap, adaptor)
 		if len(deleteIDs) > 0 {
+			err = cancelRouteTableSubnetRel(kt, dataCli, enumor.TCloud, deleteIDs)
+			if err != nil {
+				logs.Errorf("%s-routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
+					enumor.TCloud, deleteIDs, err)
+				return err
+			}
+
 			err = BatchDeleteRouteTableByIDs(kt, deleteIDs, dataCli)
 			if err != nil {
 				logs.Errorf("%s-routetable batch compare db delete failed. deleteIDs: %v, err: %v",
@@ -554,8 +558,8 @@ func GetNeedDeleteTCloudRouteTableList(kt *kit.Kit, req *hcroutetable.TCloudRout
 
 	tmpList, tmpErr := cli.ListRouteTable(kt, opt)
 	if tmpErr != nil {
-		logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, region: %s, err: %v",
-			enumor.TCloud, req.AccountID, req.Region, tmpErr)
+		logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, opt: %+v, err: %v",
+			enumor.TCloud, req.AccountID, opt, tmpErr)
 		return deleteIDs
 	}
 
@@ -790,4 +794,59 @@ func BatchCreateTCloudRoute(kt *kit.Kit, newID string, list *routetable.TCloudRo
 	}
 
 	return nil
+}
+
+// cancelRouteTableSubnetRel cancel route table and subnet rel.
+func cancelRouteTableSubnetRel(kt *kit.Kit, dataCli *dataclient.Client, vendor enumor.Vendor, delIDs []string) error {
+	if len(delIDs) == 0 {
+		return nil
+	}
+
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "vendor",
+				Op:    filter.Equal.Factory(),
+				Value: vendor,
+			},
+			&filter.AtomRule{
+				Field: "route_table_id",
+				Op:    filter.In.Factory(),
+				Value: delIDs,
+			},
+		},
+	}
+	dbQueryReq := &core.ListReq{
+		Filter: expr,
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: core.DefaultMaxPageLimit},
+	}
+	dbList, err := dataCli.Global.Subnet.List(kt.Ctx, kt.Header(), dbQueryReq)
+	if err != nil {
+		logs.Errorf("%s-routetable-route batch cancel route table and subnet rel failed. delIDs: %v, err: %v, "+
+			"rid: %s", vendor, delIDs, err, kt.Rid)
+		return err
+	}
+
+	if len(dbList.Details) == 0 {
+		return nil
+	}
+
+	var subnetUpdateReq = &protocloud.SubnetBaseInfoBatchUpdateReq{}
+	for _, item := range dbList.Details {
+		tmpSubnet := protocloud.SubnetBaseInfoUpdateReq{
+			IDs: []string{item.ID},
+			Data: &protocloud.SubnetUpdateBaseInfo{
+				Name:              converter.ValToPtr(item.Name),
+				Ipv4Cidr:          item.Ipv4Cidr,
+				Ipv6Cidr:          item.Ipv6Cidr,
+				Memo:              item.Memo,
+				BkBizID:           item.BkBizID,
+				CloudRouteTableID: converter.ValToPtr(""),
+				RouteTableID:      converter.ValToPtr(""),
+			},
+		}
+		subnetUpdateReq.Subnets = append(subnetUpdateReq.Subnets, tmpSubnet)
+	}
+	return dataCli.Global.Subnet.BatchUpdateBaseInfo(kt.Ctx, kt.Header(), subnetUpdateReq)
 }

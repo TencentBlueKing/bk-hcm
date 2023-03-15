@@ -661,6 +661,13 @@ func compareDeleteHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRout
 		// batch query need delete route table list
 		deleteIDs := GetNeedDeleteHuaWeiRouteTableList(kt, req, deleteCloudIDMap, adaptor)
 		if len(deleteIDs) > 0 {
+			err = cancelRouteTableSubnetRel(kt, dataCli, enumor.HuaWei, deleteIDs)
+			if err != nil {
+				logs.Errorf("%s-routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
+					enumor.HuaWei, deleteIDs, err)
+				return err
+			}
+
 			err = BatchDeleteRouteTableByIDs(kt, deleteIDs, dataCli)
 			if err != nil {
 				logs.Errorf("%s-routetable batch compare db delete failed. deleteIDs: %v, err: %v",

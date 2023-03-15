@@ -291,6 +291,13 @@ func compareDeleteGcpRouteTableList(kt *kit.Kit, req *hcroutetable.GcpRouteTable
 		// batch query need delete route table list
 		deleteIDs := GetNeedDeleteGcpRouteTableList(kt, req, deleteCloudIDMap, adaptor)
 		if len(deleteIDs) > 0 {
+			err = cancelRouteTableSubnetRel(kt, dataCli, enumor.Gcp, deleteIDs)
+			if err != nil {
+				logs.Errorf("%s-routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
+					enumor.Gcp, deleteIDs, err)
+				return err
+			}
+
 			err = BatchDeleteGcpRouteByIDs(kt, deleteIDs, dataCli)
 			if err != nil {
 				logs.Errorf("%s-routetable batch compare db delete failed. deleteIDs: %v, err: %v",

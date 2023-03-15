@@ -689,6 +689,13 @@ func compareDeleteAwsRouteTableList(kt *kit.Kit, req *hcroutetable.AwsRouteTable
 		// batch query need delete route table list
 		deleteIDs := GetNeedDeleteAwsRouteTableList(kt, req, deleteCloudIDMap, adaptor)
 		if len(deleteIDs) > 0 {
+			err = cancelRouteTableSubnetRel(kt, dataCli, enumor.Aws, deleteIDs)
+			if err != nil {
+				logs.Errorf("%s-routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
+					enumor.Aws, deleteIDs, err)
+				return err
+			}
+
 			err = BatchDeleteRouteTableByIDs(kt, deleteIDs, dataCli)
 			if err != nil {
 				logs.Errorf("%s-routetable batch compare db delete failed. deleteIDs: %v, err: %v",
