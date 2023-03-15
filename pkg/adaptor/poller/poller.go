@@ -59,7 +59,8 @@ func (poller *Poller[T, R, Result]) PollUntilDone(client T, kt *kit.Kit, ids []*
 		pollResult, err := poller.Handler.Poll(client, kt, ids)
 		if err != nil {
 			logs.Errorf("failed to finish the request:  %v, cloudIDs: %v, rid: %s", err, ids, kt.Rid)
-			return nil, err
+			time.Sleep(1 * time.Second)
+			continue
 		}
 
 		done, result := poller.Handler.Done(pollResult)

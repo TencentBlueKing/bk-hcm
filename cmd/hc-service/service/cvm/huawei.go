@@ -43,6 +43,7 @@ import (
 func (svc *cvmSvc) initHuaWeiCvmService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
+	h.Add("BatchCreateHuaWeiCvm", http.MethodPost, "/vendors/huawei/cvms/batch/create", svc.BatchCreateHuaWeiCvm)
 	h.Add("BatchStartHuaWeiCvm", http.MethodPost, "/vendors/huawei/cvms/batch/start", svc.BatchStartHuaWeiCvm)
 	h.Add("BatchStopHuaWeiCvm", http.MethodPost, "/vendors/huawei/cvms/batch/stop", svc.BatchStopHuaWeiCvm)
 	h.Add("BatchRebootHuaWeiCvm", http.MethodPost, "/vendors/huawei/cvms/batch/reboot", svc.BatchRebootHuaWeiCvm)
@@ -50,6 +51,58 @@ func (svc *cvmSvc) initHuaWeiCvmService(cap *capability.Capability) {
 	h.Add("BatchResetHuaWeiCvmPwd", http.MethodPost, "/vendors/huawei/cvms/batch/reset/pwd", svc.BatchResetHuaWeiCvmPwd)
 
 	h.Load(cap.WebService)
+}
+
+// BatchCreateHuaWeiCvm ...
+func (svc *cvmSvc) BatchCreateHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.HuaWeiBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	huawei, err := svc.ad.HuaWei(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	createOpt := &typecvm.HuaWeiCreateOption{
+		Region:                req.Region,
+		Name:                  req.Name,
+		Zone:                  req.Zone,
+		InstanceType:          req.InstanceType,
+		CloudImageID:          req.CloudImageID,
+		Password:              req.Password,
+		RequiredCount:         req.RequiredCount,
+		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
+		ClientToken:           req.ClientToken,
+		CloudVpcID:            req.CloudVpcID,
+		CloudSubnetID:         req.CloudSubnetID,
+		Description:           req.Description,
+		RootVolume:            req.RootVolume,
+		DataVolume:            req.DataVolume,
+		InstanceCharge:        req.InstanceCharge,
+	}
+	result, err := huawei.CreateCvm(cts.Kit, createOpt)
+	if err != nil {
+		logs.Errorf("create huawei cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	syncOpt := &cvm.SyncHuaWeiCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  result.SuccessCloudIDs,
+	}
+	if _, err = cvm.SyncHuaWeiCvmWithRelResource(cts.Kit, syncOpt, svc.ad, svc.dataCli); err != nil {
+		logs.Errorf("sync huawei cvm with rel resource failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // BatchResetHuaWeiCvmPwd ...

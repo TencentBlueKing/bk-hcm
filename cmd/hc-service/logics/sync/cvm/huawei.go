@@ -519,7 +519,7 @@ func syncHuaWeiCvmUpdate(kt *kit.Kit, req *SyncHuaWeiCvmOption, updateIDs []stri
 		osDiskId := ""
 		dataDiskIds := make([]string, 0)
 		for _, v := range cloudMap[id].Cvm.OsExtendedVolumesvolumesAttached {
-			if *v.BootIndex == "0" {
+			if converter.PtrToVal(v.BootIndex) == "0" {
 				osDiskId = v.Id
 			} else {
 				dataDiskIds = append(dataDiskIds, v.Id)
@@ -674,7 +674,7 @@ func syncHuaWeiCvmAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiCvmOption,
 		osDiskId := ""
 		dataDiskIds := make([]string, 0)
 		for _, v := range cloudMap[id].Cvm.OsExtendedVolumesvolumesAttached {
-			if *v.BootIndex == "0" {
+			if converter.PtrToVal(v.BootIndex) == "0" {
 				osDiskId = v.Id
 			} else {
 				dataDiskIds = append(dataDiskIds, v.Id)
@@ -701,7 +701,7 @@ func syncHuaWeiCvmAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiCvmOption,
 			PrivateIPv6Addresses: privateIPv6Addresses,
 			PublicIPv4Addresses:  publicIPv4Addresses,
 			PublicIPv6Addresses:  publicIPv6Addresses,
-			MachineType:          cloudMap[id].Cvm.OSEXTSTSvmState,
+			MachineType:          cloudMap[id].Cvm.Flavor.Id,
 			CloudCreatedTime:     cloudMap[id].Cvm.Created,
 			CloudLaunchedTime:    cloudMap[id].Cvm.OSSRVUSGlaunchedAt,
 			CloudExpiredTime:     cloudMap[id].Cvm.AutoTerminateTime,
@@ -954,12 +954,12 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	}
 
 	if len(cloudNetInterMap) > 0 {
-		req := &hcservice.HuaWeiNetworkInterfaceSyncReq{
+		niSyncReq := &hcservice.HuaWeiNetworkInterfaceSyncReq{
 			AccountID:   req.AccountID,
 			Region:      req.Region,
 			CloudCvmIDs: req.CloudIDs,
 		}
-		_, err := syncnetworkinterface.HuaWeiNetworkInterfaceSync(kt, req, ad, dataCli)
+		_, err = syncnetworkinterface.HuaWeiNetworkInterfaceSync(kt, niSyncReq, ad, dataCli)
 		if err != nil {
 			logs.Errorf("request to sync huawei networkinterface logic failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

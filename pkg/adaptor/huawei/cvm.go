@@ -23,11 +23,14 @@ import (
 	"fmt"
 	"strings"
 
+	"hcm/pkg/adaptor/poller"
+	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 )
@@ -288,7 +291,7 @@ func (h *HuaWei) ResetCvmPwd(kt *kit.Kit, opt *typecvm.HuaWeiResetPwdOption) err
 }
 
 // CreateCvm reference: https://support.huaweicloud.com/api-ecs/ecs_02_0101.html
-func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) ([]string, error) {
+func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) (*poller.BaseDoneResult, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "reset pwd option is required")
@@ -390,5 +393,75 @@ func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) ([]stri
 		return nil, err
 	}
 
-	return *resp.ServerIds, err
+	handler := &createCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: handler}
+	result, err := respPoller.PollUntilDone(h, kt, converter.SliceToPtr(converter.PtrToVal(resp.ServerIds)), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
 }
+
+type createCvmPollingHandler struct {
+	region string
+}
+
+func (h *createCvmPollingHandler) Done(cvms []model.ServerDetail) (bool, *poller.BaseDoneResult) {
+
+	result := &poller.BaseDoneResult{
+		SuccessCloudIDs: make([]string, 0),
+		FailedCloudIDs:  make([]string, 0),
+	}
+	for _, instance := range cvms {
+		// 创建中
+		if instance.Status == "BUILD" {
+			return false, nil
+		}
+
+		// 生产失败
+		if instance.Status == "ERROR" || instance.Status == "UNKNOWN" {
+			result.FailedCloudIDs = append(result.FailedCloudIDs, instance.Id)
+			result.FailedMessage = instance.Fault.String()
+			continue
+		}
+
+		result.SuccessCloudIDs = append(result.SuccessCloudIDs, instance.Id)
+	}
+
+	return true, result
+}
+
+func (h *createCvmPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.ServerDetail, error) {
+
+	cloudIDSplit := slice.Split(cloudIDs, core.HuaWeiQueryLimit)
+
+	cvms := make([]model.ServerDetail, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := new(model.ListServersDetailsRequest)
+		req.ServerId = converter.ValToPtr(strings.Join(converter.PtrToSlice(partIDs), ","))
+		req.Limit = converter.ValToPtr(int32(core.HuaWeiQueryLimit))
+
+		cvmCli, err := client.clientSet.ecsClient(h.region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := cvmCli.ListServersDetails(req)
+		if err != nil {
+			return nil, err
+		}
+
+		cvms = append(cvms, *resp.Servers...)
+	}
+
+	if len(cvms) != len(cloudIDs) {
+		return nil, fmt.Errorf("query cvm count: %d not equal return count: %d", len(cloudIDs), len(cvms))
+	}
+
+	return cvms, nil
+}
+
+var _ poller.PollingHandler[*HuaWei, []model.ServerDetail, poller.BaseDoneResult] = new(createCvmPollingHandler)

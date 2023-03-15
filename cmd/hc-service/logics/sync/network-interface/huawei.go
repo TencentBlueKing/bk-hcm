@@ -153,7 +153,7 @@ func GetHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiNetworkInte
 
 			niDetails = append(niDetails, item)
 		}
-		list.Details = niDetails
+		list.Details = append(list.Details, niDetails...)
 	}
 
 	return cloudIDs, allCloudIDMap, list, nil

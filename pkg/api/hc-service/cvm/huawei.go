@@ -22,6 +22,7 @@ package cvm
 import (
 	"fmt"
 
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
@@ -128,5 +129,30 @@ func (req *HuaWeiBatchResetPwdReq) Validate() error {
 		return fmt.Errorf("batch operation resource count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
+	return validator.Validate.Struct(req)
+}
+
+// HuaWeiBatchCreateReq batch create req.
+type HuaWeiBatchCreateReq struct {
+	AccountID             string                        `json:"account_id" validate:"required"`
+	Region                string                        `json:"region" validate:"required"`
+	Name                  string                        `json:"name" validate:"required"`
+	Zone                  string                        `json:"zone" validate:"required"`
+	InstanceType          string                        `json:"instance_type" validate:"required"`
+	CloudImageID          string                        `json:"cloud_image_id" validate:"required"`
+	Password              string                        `json:"password" validate:"required"`
+	RequiredCount         int32                         `json:"required_count" validate:"required"`
+	CloudSecurityGroupIDs []string                      `json:"cloud_security_group_ids" validate:"required"`
+	ClientToken           *string                       `json:"client_token" validate:"omitempty"`
+	CloudVpcID            string                        `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID         string                        `json:"cloud_subnet_id" validate:"required"`
+	Description           *string                       `json:"description" validate:"omitempty"`
+	RootVolume            *typecvm.HuaWeiVolume         `json:"root_volume" validate:"required"`
+	DataVolume            []typecvm.HuaWeiVolume        `json:"data_volume" validate:"omitempty"`
+	InstanceCharge        *typecvm.HuaWeiInstanceCharge `json:"instance_charge" validate:"required"`
+}
+
+// Validate request.
+func (req *HuaWeiBatchCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

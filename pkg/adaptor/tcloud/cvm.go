@@ -295,7 +295,7 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 		return nil, err
 	}
 
-	handler := &createTCloudCvmPollingHandler{
+	handler := &createCvmPollingHandler{
 		opt.Region,
 	}
 	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
@@ -307,11 +307,11 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 	return result, nil
 }
 
-type createTCloudCvmPollingHandler struct {
+type createCvmPollingHandler struct {
 	region string
 }
 
-func (h *createTCloudCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
+func (h *createCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
 
 	result := &poller.BaseDoneResult{
 		SuccessCloudIDs: make([]string, 0),
@@ -336,7 +336,7 @@ func (h *createTCloudCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *polle
 	return true, result
 }
 
-func (h *createTCloudCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+func (h *createCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
 
 	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
 
@@ -366,4 +366,4 @@ func (h *createTCloudCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudI
 	return cvms, nil
 }
 
-var _ poller.PollingHandler[*TCloud, []*cvm.Instance, poller.BaseDoneResult] = new(createTCloudCvmPollingHandler)
+var _ poller.PollingHandler[*TCloud, []*cvm.Instance, poller.BaseDoneResult] = new(createCvmPollingHandler)

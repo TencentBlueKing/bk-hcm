@@ -52,6 +52,7 @@ type BaseCvm struct {
 
 		huawei: ACTIVE、BUILD、ERROR、HARD_REBOOT、MIGRATING、REBOOT、REBUILD、RESIZE、
 			REVERT_RESIZE、SHUTOFF、VERIFY_RESIZE、DELETED
+		huawei_link: https://support.huaweicloud.com/api-ecs/ecs_08_0002.html
 
 		gcp: PROVISIONING, STAGING, RUNNING, STOPPING, SUSPENDING, SUSPENDED, REPAIRING, and TERMINATED
 		aws: pending | running | shutting-down | terminated | stopping | stopped
