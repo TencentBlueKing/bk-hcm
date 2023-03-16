@@ -5,7 +5,6 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import {
-  Button,
   Message,
 } from 'bkui-vue';
 
@@ -17,9 +16,6 @@ import {
 import {
   useI18n,
 } from 'vue-i18n';
-import {
-  useRouter,
-} from 'vue-router';
 // import {
 //   AngleRight,
 // } from 'bkui-vue/lib/icon';
@@ -30,6 +26,7 @@ import {
 // import useBootUp from '../../hooks/use-boot-up';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
+import useColumns from '../../hooks/use-columns';
 import { HostCloudEnum, CloudType } from '@/typings';
 import {
   useResourceStore,
@@ -49,7 +46,6 @@ const props = defineProps({
   },
 });
 
-const router = useRouter();
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
 
@@ -115,167 +111,7 @@ const {
 const isShowDistribution = ref(false);
 const businessId = ref('');
 const businessList = ref([]);
-const columns = [
-  {
-    type: 'selection',
-  },
-  {
-    label: 'ID',
-    field: '',
-    sort: true,
-    render({ data }: any) {
-      return h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          class: 'mr10',
-          onClick() {
-            jumpTo('resourceDetail', {
-              params: { type: 'host' },
-              query: {
-                id: data.id,
-                type: data.vendor,
-              },
-            });
-          },
-        },
-        [
-          data.id || '--',
-        ],
-      );
-    },
-  },
-  {
-    label: '实例 ID',
-    field: 'cloud_id',
-  },
-  {
-    label: '云厂商',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          CloudType[data.vendor],
-        ],
-      );
-    },
-  },
-  {
-    label: '地域',
-    field: 'region',
-  },
-  {
-    label: '名称',
-    field: 'name',
-  },
-  {
-    label: '状态',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          HostCloudEnum[data.status] || data.status,
-        ],
-      );
-    },
-  },
-  {
-    label: '操作系统',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.os_name || '--',
-        ],
-      );
-    },
-  },
-  {
-    label: '云区域ID',
-    field: 'bk_cloud_id',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.bk_cloud_id === -1 ? '未分配' : data.bk_cloud_id,
-        ],
-      );
-    },
-  },
-  {
-    label: '内网IP',
-    field: '',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.private_ipv4_addresses || data.private_ipv6_addresses,
-        ],
-      );
-    },
-  },
-  {
-    label: '公网IP',
-    field: '',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.public_ipv4_addresses || data.public_ipv6_addresses,
-        ],
-      );
-    },
-  },
-  {
-    label: '创建时间',
-    field: 'created_at',
-  },
-  {
-    label: '启动时间',
-    render({ data }: any) {
-      return h(
-        'span',
-        {},
-        [
-          data.cloud_launched_time || '--',
-        ],
-      );
-    },
-  },
-  {
-    label: '操作',
-    field: '',
-    render({ data }: any) {
-      return h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          class: 'mr10',
-          onClick() {
-            jumpTo('resourceDetail', {
-              params: { type: 'host' },
-              query: {
-                id: data.id,
-                type: data.vendor,
-              },
-            });
-          },
-        },
-        [
-          '详情',
-        ],
-      );
-    },
-  },
-];
+const columns = useColumns('cvms');
 
 const distribColumns = [
   {
@@ -352,15 +188,6 @@ const getBusinessList = async () => {
   } catch (error) {
     console.log(error);
   }
-};
-
-
-// 跳转
-const jumpTo = (name: string, params?: DoublePlainObject) => {
-  router.push({
-    name,
-    ...params,
-  });
 };
 
 const distributionCvm = async () => {

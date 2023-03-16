@@ -53,7 +53,7 @@ const settingFields = ref<any[]>([
   },
   {
     name: '状态',
-    prop: '',
+    prop: 'status',
   },
   {
     name: '云厂商',
@@ -84,11 +84,14 @@ const settingFields = ref<any[]>([
   },
   {
     name: '是否已挂载',
-    prop: '',
+    prop: 'instance_id',
+    render (instance_id: string) {
+      return instance_id ? '已挂载' : '未挂载'
+    }
   },
   {
     name: '挂载主机',
-    prop: '',
+    prop: 'instance_id',
   },
   {
     name: '挂载主机名称',

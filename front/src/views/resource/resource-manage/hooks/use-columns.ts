@@ -65,6 +65,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
       label,
       field,
       sort: true,
+      onlyShowOnList: true,
       render({ data }: { cell: string, data: any }) {
         return h(
           Button,
@@ -255,18 +256,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
         );
       },
     },
-    {
-      label: '关联路由表',
-      field: '',
-      render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('route', '关联路由表', 'route_table_id', 'route_table_id'),
     {
       label: '更新时间',
       field: 'updated_at',
@@ -362,6 +352,11 @@ export default (type: string, isSimpleShow: boolean = false) => {
 
   const driveColumns: any[] = [
     {
+      type: 'selection',
+      onlyShowOnList: true,
+    },
+    getLinkField('drive'),
+    {
       label: '资源 ID',
       field: 'cloud_id',
       sort: true,
@@ -439,17 +434,8 @@ export default (type: string, isSimpleShow: boolean = false) => {
       label: '创建时间',
       field: 'created_at',
     },
+    getDeleteField('disks'),
   ];
-
-  if (!isSimpleShow) {
-    driveColumns.unshift(...[
-      {
-        type: 'selection',
-      },
-      getLinkField('drive'),
-    ]);
-    driveColumns.push(getDeleteField('disks'));
-  }
 
   const imageColumns = [
     getLinkField('image'),
@@ -655,6 +641,11 @@ export default (type: string, isSimpleShow: boolean = false) => {
   ];
 
   const cvmsColumns = [
+    {
+      type: 'selection',
+      onlyShowOnList: true
+    },
+    getLinkField('host'),
     {
       label: '实例 ID',
       field: 'cloud_id',
@@ -918,5 +909,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
     eips: eipColumns,
   };
 
-  return columnsMap[type];
+  const columns = columnsMap[type] || []
+
+  return columns.filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
 };

@@ -47,6 +47,53 @@ const pagination = ref({
   count: 0,
 });
 
+const handleGetData = () => {
+  if (props.detail.id) {
+    isLoading.value = true
+    const filter = {
+      op: 'and',
+      rules: [{
+        field: 'route_table_id',
+        op: 'eq',
+        value: props.detail.id
+      }]
+    }
+    Promise.all([
+      resourceStore
+        .getRouteList(
+          props.detail.vendor,
+          props.detail.id,
+          {
+            filter,
+            page: {
+              count: false,
+              start: (pagination.value.current - 1) * pagination.value.limit,
+              limit: pagination.value.limit,
+            },
+          }
+        ),
+      resourceStore
+        .getRouteList(
+          props.detail.vendor,
+          props.detail.id,
+          {
+            filter,
+            page: {
+              count: true,
+            },
+          }
+        )
+    ])
+    .then(([listResult, countResult]) => {
+      datas.value = listResult?.data?.details || []
+      pagination.value.count = countResult?.data?.count || 0;
+    })
+    .finally(() => {
+      isLoading.value = false
+    })
+  }
+}
+
 watch(
   () => props.detail,
   () => {
@@ -318,53 +365,6 @@ watch(
     immediate: true
   }
 )
-
-const handleGetData = () => {
-  if (props.detail.id) {
-    isLoading.value = true
-    const filter = {
-      op: 'and',
-      rules: [{
-        field: 'route_table_id',
-        op: 'eq',
-        value: props.detail.id
-      }]
-    }
-    Promise.all([
-      resourceStore
-        .getRouteList(
-          props.detail.vendor,
-          props.detail.id,
-          {
-            filter,
-            page: {
-              count: false,
-              start: (pagination.value.current - 1) * pagination.value.limit,
-              limit: pagination.value.limit,
-            },
-          }
-        ),
-      resourceStore
-        .getRouteList(
-          props.detail.vendor,
-          props.detail.id,
-          {
-            filter,
-            page: {
-              count: true,
-            },
-          }
-        )
-    ])
-    .then(([listResult, countResult]) => {
-      datas.value = listResult?.data?.details || []
-      pagination.value.count = countResult?.data?.count || 0;
-    })
-    .finally(() => {
-      isLoading.value = false
-    })
-  }
-}
 
 // 页码变化发生的事件
 const handlePageChange = (current: number) => {

@@ -79,7 +79,7 @@ const handleCancel = () => {
 <template>
   <form-select @change="handleFormFilter"></form-select>
   <component
-    class="pd20 mb20"
+    class="mb20 pdr20"
     ref="formRef"
     :is="componentMap[type]"
     :region="formData.region"
@@ -101,7 +101,7 @@ const handleCancel = () => {
 </template>
 
 <style lang="scss" scoped>
-  .pd20 {
-    padding: 0 20px;
+  .pdr20 {
+    padding-right: 20px;
   }
 </style>

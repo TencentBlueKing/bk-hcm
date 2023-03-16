@@ -8,6 +8,7 @@ import {
   defineComponent,
   h,
   ref,
+  computed,
 } from 'vue';
 import {
   useI18n,
@@ -130,6 +131,10 @@ export default defineComponent({
       ...columns
     ]
 
+    const renderList = computed(() => {
+      return datas.value.map((data) => !data.instance_id)
+    })
+
     // 方法
     const handleClose = () => {
       emit('update:isShow', false);
@@ -185,7 +190,7 @@ export default defineComponent({
       deviceName,
       cachingType,
       cacheTypes,
-      datas,
+      renderList,
       pagination,
       isLoading,
       renderColumns,
@@ -235,7 +240,7 @@ export default defineComponent({
               remote-pagination
               pagination={this.pagination}
               columns={this.renderColumns}
-              data={this.datas}
+              data={this.renderList}
               onPageLimitChange={this.handlePageSizeChange}
               onPageValueChange={this.handlePageChange}
               onColumnSort={this.handleSort}

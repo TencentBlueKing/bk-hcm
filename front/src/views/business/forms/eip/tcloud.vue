@@ -48,7 +48,6 @@ defineExpose([validate]);
 
 <template>
   <bk-form
-    form-type="vertical"
     ref="formRef"
     :model="formData"
     :rules="rules"

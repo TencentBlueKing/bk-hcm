@@ -28,6 +28,8 @@ const props = defineProps({
 
 const isLoadingSubnets = ref(false);
 const chooseVpcSubnetsNum = ref(0);
+const chooseVpcCvmsNum = ref(0);
+const chooseVpcEipsNum = ref(0);
 
 // use hooks
 const {
@@ -78,25 +80,35 @@ defineExpose({ fetchComponentsData });
 const handleDeleteVpc = (vpcList: any) => {
   const vpcIds = vpcList.map((vpc: any) => vpc.id);
   isLoadingSubnets.value = true;
-  resourceStore
-    .list(
-      {
-        page: {
-          count: true,
+  const getRelateNum = (type: string) => {
+    return resourceStore
+      .list(
+        {
+          page: {
+            count: true,
+          },
+          filter: {
+            op: 'and',
+            rules: [{
+              field: 'vpc_id',
+              op: 'in',
+              value: vpcIds,
+            }],
+          },
         },
-        filter: {
-          op: 'and',
-          rules: [{
-            field: 'vpc_id',
-            op: 'in',
-            value: vpcIds,
-          }],
-        },
-      },
-      'subnets',
-    )
-    .then((countResult: any) => {
-      chooseVpcSubnetsNum.value = countResult?.data?.count || 0;
+        type,
+      )
+  }
+  Promise
+    .all([
+      getRelateNum('cvms'),
+      getRelateNum('eips'),
+      getRelateNum('subnets')
+    ])
+    .then(([cvmsResult, eipsResult, subnetsResult]: any) => {
+      chooseVpcCvmsNum.value = cvmsResult?.data?.count || 0;
+      chooseVpcEipsNum.value = eipsResult?.data?.count || 0;
+      chooseVpcSubnetsNum.value = subnetsResult?.data?.count || 0;
       handleShowDelete(vpcIds);
     })
     .finally(() => {
@@ -152,8 +164,12 @@ const handleDeleteVpc = (vpcList: any) => {
   />
 
   <delete-dialog>
-    {{ t('请注意该VPC包含一个或多个资源，在释放这些资源前，无法删除VPC') }}<br />
-    {{ t('子网：{count} 个', { count: 5 }) }}<br />
+    <template v-if="chooseVpcCvmsNum || chooseVpcEipsNum || chooseVpcSubnetsNum">
+      {{ t('请注意该VPC包含一个或多个资源，在释放这些资源前，无法删除VPC') }}<br />
+      {{ `子网${chooseVpcSubnetsNum}个` }}<br />
+      {{ `弹性IP${chooseVpcEipsNum}个` }}<br />
+      {{ `主机${chooseVpcCvmsNum}个` }}<br />
+    </template>
   </delete-dialog>
 </template>
 

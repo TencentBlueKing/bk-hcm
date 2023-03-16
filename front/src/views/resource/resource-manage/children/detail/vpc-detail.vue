@@ -179,7 +179,7 @@ const {
         VPCFields.value.push(...[
           {
             name: '资源组',
-            prop: 'resource_group',
+            prop: 'resource_group_name',
           },
           {
             name: '地域',
