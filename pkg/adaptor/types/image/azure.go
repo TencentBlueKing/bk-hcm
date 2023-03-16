@@ -37,6 +37,7 @@ type AzureImage struct {
 	Platform     string `json:"platform"`
 	State        string `json:"state"`
 	Type         string `json:"type"`
+	Sku          string `json:"sku"`
 	ImageSize    int64  `json:"image_size"`
 	ImageSource  string `json:"image_source"`
 }

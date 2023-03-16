@@ -214,6 +214,7 @@ func (da *imageAdaptor) syncAzureImageAdd(addIDs []string, cts *rest.Contexts, r
 				Region:    req.Region,
 				Publisher: filter.Publisher,
 				Offer:     filter.Offer,
+				Sku:       cloudMap[id].Image.Sku,
 			},
 		}
 		createReq = append(createReq, image)

@@ -24,6 +24,7 @@ type AzureImageExtensionCreateReq struct {
 	Region    string `json:"region" validate:"required"`
 	Publisher string `json:"publisher" validate:"required"`
 	Offer     string `json:"offer" validate:"required"`
+	Sku       string `json:"sku" validate:"required"`
 }
 
 // AzureImageExtensionResult ...

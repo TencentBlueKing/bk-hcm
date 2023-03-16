@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v4"
 )
@@ -55,9 +56,10 @@ func (a *Azure) ListImage(
 
 		for _, pImage := range res.VirtualMachineImageResourceArray {
 			images = append(images, image.AzureImage{
-				CloudID:  *pImage.ID,
-				Name:     *pImage.Name,
+				CloudID:  converter.PtrToVal(pImage.ID),
+				Name:     converter.PtrToVal(pImage.Name),
 				Platform: opt.Offer,
+				Sku:      converter.PtrToVal(sku.Name),
 				State:    "available",
 				Type:     "public",
 			})
