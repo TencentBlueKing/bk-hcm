@@ -268,3 +268,8 @@ func (c *clientSet) networkInterfaceIPConfigClient() (*armnetwork.InterfaceIPCon
 
 	return client, nil
 }
+
+// GenResourceName 生产azure批量创建资源名称
+func GenResourceName(namePrefix string, number int) string {
+	return fmt.Sprintf("%s-%04d", namePrefix, number)
+}

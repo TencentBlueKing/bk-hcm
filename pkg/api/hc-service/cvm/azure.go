@@ -21,6 +21,8 @@ package cvm
 
 import (
 	"fmt"
+
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
@@ -63,5 +65,28 @@ type AzureStopReq struct {
 
 // Validate request.
 func (req *AzureStopReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AzureBatchCreateReq azure batch create req.
+type AzureBatchCreateReq struct {
+	AccountID            string                  `json:"account_id" validate:"required"`
+	ResourceGroupName    string                  `json:"resource_group_name" validate:"required"`
+	Region               string                  `json:"region" validate:"required"`
+	Name                 string                  `json:"name" validate:"required"`
+	Zones                []string                `json:"zones" validate:"required"`
+	InstanceType         string                  `json:"instance_type" validate:"required"`
+	CloudImageID         string                  `json:"cloud_image_id" validate:"required"`
+	Username             string                  `json:"username" validate:"required"`
+	Password             string                  `json:"password" validate:"required"`
+	CloudSubnetID        string                  `json:"cloud_subnet_id" validate:"required"`
+	CloudSecurityGroupID string                  `json:"cloud_security_group_id" validate:"required"`
+	OSDisk               *typecvm.AzureOSDisk    `json:"os_disk" validate:"required"`
+	DataDisk             []typecvm.AzureDataDisk `json:"data_disk" validate:"omitempty"`
+	RequiredCount        int64                   `json:"required_count" validate:"required"`
+}
+
+// Validate request.
+func (req *AzureBatchCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

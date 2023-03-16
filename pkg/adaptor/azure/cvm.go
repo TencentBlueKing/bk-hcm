@@ -246,12 +246,10 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 		dataDisk := make([]*armcompute.DataDisk, len(opt.DataDisk))
 		for index, disk := range opt.DataDisk {
 			dataDisk[index] = &armcompute.DataDisk{
+				Name:         to.Ptr(disk.Name),
 				CreateOption: to.Ptr(armcompute.DiskCreateOptionTypesEmpty),
 				Lun:          to.Ptr(int32(index)),
-				DiskSizeGB:   to.Ptr(disk.DiskSizeGB),
-				ManagedDisk: &armcompute.ManagedDiskParameters{
-					StorageAccountType: to.Ptr(disk.StorageAccountType),
-				},
+				DiskSizeGB:   to.Ptr(disk.SizeGB),
 			}
 		}
 	}
@@ -263,13 +261,29 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 				VMSize: to.Ptr(armcompute.VirtualMachineSizeTypes(opt.InstanceType)),
 			},
 			NetworkProfile: &armcompute.NetworkProfile{
-				NetworkInterfaces: []*armcompute.NetworkInterfaceReference{
+				NetworkAPIVersion: to.Ptr(armcompute.NetworkAPIVersionTwoThousandTwenty1101),
+				NetworkInterfaceConfigurations: []*armcompute.VirtualMachineNetworkInterfaceConfiguration{
 					{
-						ID: to.Ptr(opt.CloudNetworkInterfaceID),
-						Properties: &armcompute.NetworkInterfaceReferenceProperties{
+						Name: to.Ptr(opt.Name + "-ni"),
+						Properties: &armcompute.VirtualMachineNetworkInterfaceConfigurationProperties{
+							IPConfigurations: []*armcompute.VirtualMachineNetworkInterfaceIPConfiguration{
+								{
+									Name: to.Ptr(opt.Name + "ni-ip-config"),
+									Properties: &armcompute.VirtualMachineNetworkInterfaceIPConfigurationProperties{
+										Primary: to.Ptr(true),
+										Subnet: &armcompute.SubResource{
+											ID: to.Ptr(opt.CloudSubnetID),
+										},
+									},
+								},
+							},
+							NetworkSecurityGroup: &armcompute.SubResource{
+								ID: to.Ptr(opt.CloudSecurityGroupID),
+							},
 							Primary: to.Ptr(true),
 						},
-					}},
+					},
+				},
 			},
 			OSProfile: &armcompute.OSProfile{
 				AdminPassword: to.Ptr(opt.Password),
@@ -278,13 +292,14 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 			},
 			StorageProfile: &armcompute.StorageProfile{
 				ImageReference: &armcompute.ImageReference{
-					ID: to.Ptr(opt.CloudImageID),
+					Offer:     to.Ptr(opt.Image.Offer),
+					Publisher: to.Ptr(opt.Image.Publisher),
+					SKU:       to.Ptr(opt.Image.Sku),
+					Version:   to.Ptr(opt.Image.Version),
 				},
 				OSDisk: &armcompute.OSDisk{
-					Name: to.Ptr(opt.OSDisk.Name),
-					ManagedDisk: &armcompute.ManagedDiskParameters{
-						StorageAccountType: to.Ptr(opt.OSDisk.StorageAccountType),
-					},
+					Name:         to.Ptr(opt.OSDisk.Name),
+					DiskSizeGB:   to.Ptr(opt.OSDisk.SizeGB),
 					Caching:      to.Ptr(armcompute.CachingTypesReadWrite),
 					CreateOption: to.Ptr(armcompute.DiskCreateOptionTypesFromImage),
 				},

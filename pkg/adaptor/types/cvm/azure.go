@@ -21,8 +21,6 @@ package cvm
 
 import (
 	"hcm/pkg/criteria/validator"
-
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
 
 // -------------------------- List --------------------------
@@ -102,18 +100,26 @@ func (opt AzureStopOption) Validate() error {
 
 // AzureCreateOption defines options to create azure cvm instances.
 type AzureCreateOption struct {
-	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
-	Region            string   `json:"region" validate:"required"`
-	Name              string   `json:"name" validate:"required"`
-	Zones             []string `json:"zones" validate:"required"`
-	InstanceType      string   `json:"instance_type" validate:"required"`
-	CloudImageID      string   `json:"cloud_image_id" validate:"required"`
-	Username          string   `json:"username" validate:"required"`
-	Password          string   `json:"password" validate:"required"`
-	// NetworkInterfaceID 已经绑定好了安全组的网络接口ID
-	CloudNetworkInterfaceID string          `json:"cloud_network_interface_id" validate:"required"`
-	OSDisk                  *AzureOSDisk    `json:"os_disk" validate:"required"`
-	DataDisk                []AzureDataDisk `json:"data_disk" validate:"omitempty"`
+	ResourceGroupName    string          `json:"resource_group_name" validate:"required"`
+	Region               string          `json:"region" validate:"required"`
+	Name                 string          `json:"name" validate:"required"`
+	Zones                []string        `json:"zones" validate:"required"`
+	InstanceType         string          `json:"instance_type" validate:"required"`
+	Image                *AzureImage     `json:"image" validate:"required"`
+	Username             string          `json:"username" validate:"required"`
+	Password             string          `json:"password" validate:"required"`
+	CloudSubnetID        string          `json:"cloud_subnet_id" validate:"required"`
+	CloudSecurityGroupID string          `json:"cloud_security_group_id" validate:"required"`
+	OSDisk               *AzureOSDisk    `json:"os_disk" validate:"required"`
+	DataDisk             []AzureDataDisk `json:"data_disk" validate:"omitempty"`
+}
+
+// AzureImage ...
+type AzureImage struct {
+	Offer     string `json:"offer" validate:"required"`
+	Publisher string `json:"publisher" validate:"required"`
+	Sku       string `json:"skus" validate:"required"`
+	Version   string `json:"version" validate:"required"`
 }
 
 // Validate azure cvm operation option.
@@ -123,14 +129,14 @@ func (opt AzureCreateOption) Validate() error {
 
 // AzureOSDisk azure os disk.
 type AzureOSDisk struct {
-	Name               string                         `json:"name" validate:"required"`
-	StorageAccountType armcompute.StorageAccountTypes `json:"storage_account_type" validate:"required"`
+	Name   string `json:"name" validate:"required"`
+	SizeGB int32  `json:"size_gb" validate:"required"`
 }
 
 // AzureDataDisk azure data disk.
 type AzureDataDisk struct {
-	DiskSizeGB         int32                          `json:"disk_size_gb" validate:"required"`
-	StorageAccountType armcompute.StorageAccountTypes `json:"storage_account_type" validate:"required"`
+	Name   string `json:"name" validate:"required"`
+	SizeGB int32  `json:"size_gb" validate:"required"`
 }
 
 // AzureGetOption ...

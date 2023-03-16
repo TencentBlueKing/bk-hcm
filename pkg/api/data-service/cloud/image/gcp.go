@@ -29,6 +29,9 @@ type GcpImageExtensionCreateReq struct {
 // GcpImageExtensionResult ...
 type GcpImageExtensionResult struct {
 	Region    string `json:"region" validate:"required"`
+	Publisher string `json:"publisher" validate:"required"`
+	Offer     string `json:"offer" validate:"required"`
+	Sku       string `json:"sku" validate:"required"`
 	SelfLink  string `json:"self_link" validate:"required"`
 	ProjectID string `json:"project_id" validate:"required"`
 }

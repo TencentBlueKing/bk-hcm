@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	imageproto "hcm/pkg/api/data-service/cloud/image"
 	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	dataservice "hcm/pkg/client/data-service"
@@ -46,6 +47,8 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
 
 // SyncAzureCvmOption ...
@@ -657,6 +660,12 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 			}
 		}
 
+		cloudImageID, err := queryGcpCloudImageID(kt, dataCli,
+			cloudMap[id].Cvm.Properties.StorageProfile.ImageReference)
+		if err != nil {
+			return err
+		}
+
 		cvm := dataproto.CvmBatchCreate[corecvm.AzureCvmExtension]{
 			CloudID:   converter.PtrToVal(cloudMap[id].Cvm.ID),
 			Name:      converter.PtrToVal(cloudMap[id].Cvm.Name),
@@ -670,7 +679,7 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 			VpcIDs:         []string{vpcID},
 			CloudSubnetIDs: cloudSubnetIDs,
 			SubnetIDs:      subnetIDs,
-			CloudImageID:   converter.PtrToVal(cloudMap[id].Cvm.Properties.StorageProfile.ImageReference.ID),
+			CloudImageID:   cloudImageID,
 			OsName:         converter.PtrToVal(cloudMap[id].Cvm.Properties.OSProfile.ComputerName),
 			// 云上不支持该字段
 			Memo:                 nil,
@@ -739,6 +748,48 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 	}
 
 	return nil
+}
+
+func queryGcpCloudImageID(kt *kit.Kit, dataCli *dataservice.Client, image *armcompute.ImageReference) (string, error) {
+	req := &imageproto.ImageListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "name",
+					Op:    filter.Equal.Factory(),
+					Value: image.ExactVersion,
+				},
+				&filter.AtomRule{
+					Field: "extension.sku",
+					Op:    filter.JSONEqual.Factory(),
+					Value: image.SKU,
+				},
+				&filter.AtomRule{
+					Field: "extension.offer",
+					Op:    filter.JSONEqual.Factory(),
+					Value: image.Offer,
+				},
+				&filter.AtomRule{
+					Field: "extension.publisher",
+					Op:    filter.JSONEqual.Factory(),
+					Value: image.Publisher,
+				},
+			},
+		},
+		Page:   core.DefaultBasePage,
+		Fields: []string{"cloud_id"},
+	}
+	result, err := dataCli.Gcp.ListImage(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		return "", err
+	}
+
+	if len(result.Details) == 0 {
+		return "", nil
+	}
+
+	return result.Details[0].CloudID, nil
 }
 
 func getAzureCvmDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAzureCvmOption,
@@ -1098,6 +1149,10 @@ func getAzureCVMRelResourcesIDs(kt *kit.Kit, req *SyncAzureCvmOption,
 
 		if len(netInter.Extension.IPConfigurations) > 0 {
 			for _, ip := range netInter.Extension.IPConfigurations {
+				if ip == nil || ip.Properties.PublicIPAddress == nil {
+					continue
+				}
+
 				id := getCVMRelID(*ip.Properties.PublicIPAddress.CloudID, *netInter.InstanceID)
 				eipMap[id] = &CVMOperateSync{RelID: *ip.Properties.PublicIPAddress.CloudID, InstanceID: *netInter.InstanceID}
 			}

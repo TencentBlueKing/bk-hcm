@@ -20,13 +20,17 @@
 package cvm
 
 import (
+	"fmt"
 	"net/http"
 
 	"hcm/cmd/hc-service/logics/sync/cvm"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/cmd/hc-service/service/sync"
+	"hcm/pkg/adaptor/azure"
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	imageproto "hcm/pkg/api/data-service/cloud/image"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -37,12 +41,106 @@ import (
 func (svc *cvmSvc) initAzureCvmService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
+	h.Add("BatchCreateAzureCvm", http.MethodPost, "/vendors/azure/cvms/batch/create", svc.BatchCreateAzureCvm)
 	h.Add("StartAzureCvm", http.MethodPost, "/vendors/azure/cvms/{id}/start", svc.StartAzureCvm)
 	h.Add("StopAzureCvm", http.MethodPost, "/vendors/azure/cvms/{id}/stop", svc.StopAzureCvm)
 	h.Add("RebootAzureCvm", http.MethodPost, "/vendors/azure/cvms/{id}/reboot", svc.RebootAzureCvm)
 	h.Add("DeleteAzureCvm", http.MethodDelete, "/vendors/azure/cvms/{id}", svc.DeleteAzureCvm)
 
 	h.Load(cap.WebService)
+}
+
+// BatchCreateAzureCvm ...
+func (svc *cvmSvc) BatchCreateAzureCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.AzureBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	azureCli, err := svc.ad.Azure(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	listImageReq := &imageproto.ImageListReq{
+		Filter: tools.EqualExpression("cloud_id", req.CloudImageID),
+		Page:   core.DefaultBasePage,
+	}
+	imageResult, err := svc.dataCli.Gcp.ListImage(cts.Kit.Ctx, cts.Kit.Header(), listImageReq)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(imageResult.Details) == 0 {
+		return nil, fmt.Errorf("image: %s not found", req.CloudImageID)
+	}
+	image := imageResult.Details[0]
+
+	result := protocvm.BatchCreateResult{
+		SuccessCloudIDs: make([]string, 0),
+		FailedCloudIDs:  make([]string, 0),
+		FailedMessage:   "",
+	}
+
+	for i := 0; i < int(req.RequiredCount); i++ {
+		createOpt := &typecvm.AzureCreateOption{
+			ResourceGroupName: req.ResourceGroupName,
+			Region:            req.Region,
+			Name:              azure.GenResourceName(req.Name, i+1),
+			Zones:             req.Zones,
+			InstanceType:      req.InstanceType,
+			Image: &typecvm.AzureImage{
+				Offer:     image.Extension.Offer,
+				Publisher: image.Extension.Publisher,
+				Sku:       image.Extension.Sku,
+				Version:   image.Name,
+			},
+			Username:             req.Username,
+			Password:             req.Password,
+			CloudSubnetID:        req.CloudSubnetID,
+			CloudSecurityGroupID: req.CloudSecurityGroupID,
+			OSDisk: &typecvm.AzureOSDisk{
+				Name:   azure.GenResourceName(req.OSDisk.Name, i+1),
+				SizeGB: req.OSDisk.SizeGB,
+			},
+			DataDisk: make([]typecvm.AzureDataDisk, len(req.DataDisk)),
+		}
+		for j, one := range req.DataDisk {
+			createOpt.DataDisk[j] = typecvm.AzureDataDisk{
+				Name:   azure.GenResourceName(fmt.Sprintf("%s-%d", one.Name, i), j+1),
+				SizeGB: one.SizeGB,
+			}
+		}
+
+		cloudID, err := azureCli.CreateCvm(cts.Kit, createOpt)
+		if err != nil {
+			logs.Errorf("create cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			result.FailedMessage = err.Error()
+			break
+		}
+
+		result.SuccessCloudIDs = append(result.SuccessCloudIDs, cloudID)
+	}
+
+	if len(result.SuccessCloudIDs) == 0 {
+		return result, nil
+	}
+
+	syncOpt := &cvm.SyncAzureCvmOption{
+		AccountID:         req.AccountID,
+		ResourceGroupName: req.ResourceGroupName,
+		CloudIDs:          result.SuccessCloudIDs,
+	}
+	if _, err = cvm.SyncAzureCvmWithRelResource(cts.Kit, svc.ad, svc.dataCli, syncOpt); err != nil {
+		logs.Errorf("sync azure cvm with rel resource failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // StartAzureCvm ...
