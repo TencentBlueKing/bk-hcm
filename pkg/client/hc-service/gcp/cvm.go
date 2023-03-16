@@ -24,6 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
+	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -150,4 +151,28 @@ func (cli *CvmClient) DeleteCvm(ctx context.Context, h http.Header, id string) e
 	}
 
 	return nil
+}
+
+// BatchCreateCvm ....
+func (cli *CvmClient) BatchCreateCvm(ctx context.Context, h http.Header, request *protocvm.GcpBatchCreateReq) (
+	*protocvm.BatchCreateResult, error) {
+
+	resp := new(protocvm.BatchCreateResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/cvms/batch/create").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }

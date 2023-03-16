@@ -21,6 +21,7 @@ package gcp
 
 import (
 	"strconv"
+	"strings"
 
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types/disk"
@@ -101,6 +102,11 @@ func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Dis
 	if err != nil {
 		logs.Errorf("list disks failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, "", err
+	}
+
+	for index := range resp.Items {
+		resp.Items[index].Region = resp.Items[index].
+			Zone[strings.LastIndex(resp.Items[index].Zone, "/")+1 : strings.LastIndex(resp.Items[index].Zone, "-")]
 	}
 
 	return resp.Items, resp.NextPageToken, nil

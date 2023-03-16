@@ -33,6 +33,7 @@ type GcpListOption struct {
 	Region   string        `json:"region" validate:"required"`
 	Zone     string        `json:"zone" validate:"required"`
 	CloudIDs []string      `json:"cloud_ids" validate:"omitempty"`
+	Names    []string      `json:"names" validate:"omitempty"`
 	Page     *core.GcpPage `json:"page" validate:"omitempty"`
 }
 
@@ -48,6 +49,14 @@ func (opt GcpListOption) Validate() error {
 
 	if len(opt.CloudIDs) > core.GcpQueryLimit {
 		return fmt.Errorf("cloud_ids should <= %d", core.GcpQueryLimit)
+	}
+
+	if len(opt.Names) != 0 && opt.Page != nil {
+		return fmt.Errorf("list by names not support page")
+	}
+
+	if len(opt.Names) > core.GcpQueryLimit {
+		return fmt.Errorf("nnames should <= %d", core.GcpQueryLimit)
 	}
 
 	if opt.Page != nil {
@@ -115,21 +124,21 @@ func (opt GcpResetOption) Validate() error {
 
 // GcpCreateOption defines options to create gcp cvm instances.
 type GcpCreateOption struct {
-	Name          string `json:"name" validate:"required"`
-	Zone          string `json:"zone" validate:"required"`
-	InstanceType  string `json:"instance_type" validate:"required"`
-	CloudImageID  string `json:"cloud_image_id" validate:"required"`
-	Password      string `json:"password" validate:"required"`
-	RequiredCount int64  `json:"required_count" validate:"required"`
+	NamePrefix         string `json:"name_prefix" validate:"required"`
+	Zone               string `json:"zone" validate:"required"`
+	InstanceType       string `json:"instance_type" validate:"required"`
+	CloudImageSelfLink string `json:"cloud_image_self_link" validate:"required"`
+	Password           string `json:"password" validate:"required"`
+	RequiredCount      int64  `json:"required_count" validate:"required"`
 	// RequestID 唯一标识支持生产请求
-	RequestID     string `json:"request_id" validate:"required"`
-	CloudVpcID    string `json:"cloud_vpc_id" validate:"required"`
-	CloudSubnetID string `json:"cloud_subnet_id" validate:"required"`
-	Description   string `json:"description" validate:"omitempty"`
+	RequestID           string `json:"request_id" validate:"required"`
+	CloudVpcSelfLink    string `json:"cloud_vpc_self_link" validate:"required"`
+	CloudSubnetSelfLink string `json:"cloud_subnet_self_link" validate:"required"`
+	Description         string `json:"description" validate:"omitempty"`
 	// ImageProjectType 用于判断是 linux 还是 windows 机器。
 	ImageProjectType GcpImageProjectType `json:"image_project_type" validate:"required"`
-	SystemDisk       *GcpDisk            `json:"system_disk" validate:"required"`
-	DataDisk         []GcpDisk           `json:"data_volume" validate:"omitempty"`
+	SystemDisk       *GcpOsDisk          `json:"system_disk" validate:"required"`
+	DataDisk         []GcpDataDisk       `json:"data_volume" validate:"omitempty"`
 }
 
 // Validate gcp cvm operation option.
@@ -137,11 +146,42 @@ func (opt GcpCreateOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// GcpDisk gcp disk.
-type GcpDisk struct {
-	DiskType string `json:"disk_type" validate:"required"`
-	SizeGb   int64  `json:"size_gb" validate:"required"`
+// GcpOsDisk gcp os disk.
+type GcpOsDisk struct {
+	DiskType GcpDiskType `json:"disk_type" validate:"required"`
+	SizeGb   int64       `json:"size_gb" validate:"required"`
 }
+
+// GcpDataDisk gcp disk.
+type GcpDataDisk struct {
+	DiskName   string      `json:"disk_name" validate:"required"`
+	DiskType   GcpDiskType `json:"disk_type" validate:"required"`
+	SizeGb     int64       `json:"size_gb" validate:"required"`
+	Mode       GcpDiskMode `json:"mode" validate:"required"`
+	AutoDelete bool        `json:"auto_delete" validate:"omitempty"`
+}
+
+// GcpDiskType ...
+type GcpDiskType string
+
+const (
+	// PdStandard 标准永久性磁盘
+	PdStandard GcpDiskType = "pd-standard"
+	// PdBalanced 均衡永久性磁盘
+	PdBalanced GcpDiskType = "pd-balanced"
+	// PdSsd 性能(SSD)永久性磁盘
+	PdSsd GcpDiskType = "pd-ssd"
+	// PdExtreme 极端永久性磁盘
+	PdExtreme GcpDiskType = "pd-extreme"
+)
+
+// GcpDiskMode gcp disk model.
+type GcpDiskMode string
+
+const (
+	ReadOnly  GcpDiskMode = "READ_ONLY"
+	ReadWrite GcpDiskMode = "READ_WRITE"
+)
 
 // GcpImageProjectType gcp image project type.
 type GcpImageProjectType string

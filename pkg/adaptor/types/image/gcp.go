@@ -32,6 +32,7 @@ type GcpImageListResult struct {
 
 // GcpImage ...
 type GcpImage struct {
+	SelfLink     string `json:"self_link"`
 	CloudID      string `json:"cloud_id"`
 	Name         string `json:"name"`
 	Architecture string `json:"architecture"`

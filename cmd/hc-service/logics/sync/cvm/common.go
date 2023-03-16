@@ -24,7 +24,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	disk "hcm/cmd/hc-service/logics/sync/disk"
+	"hcm/cmd/hc-service/logics/sync/disk"
 	"hcm/cmd/hc-service/logics/sync/eip"
 	networkinterface "hcm/cmd/hc-service/logics/sync/network-interface"
 	securitygroup "hcm/cmd/hc-service/logics/sync/security-group"
@@ -118,7 +118,7 @@ func queryVpcIDByCloudID(kt *kit.Kit, dataCli *dataservice.Client, vpcCloudID st
 }
 
 func queryVpcIDBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLink string) (
-	string, int64, error) {
+	string, string, int64, error) {
 
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -132,23 +132,23 @@ func queryVpcIDBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLink str
 			},
 		},
 		Page:   core.DefaultBasePage,
-		Fields: []string{"id"},
+		Fields: []string{"id", "cloud_id", "bk_cloud_id"},
 	}
 	vpcResult, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), req)
 	if err != nil {
 		logs.Errorf("list vpc failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-		return "", 0, err
+		return "", "", 0, err
 	}
 
 	if len(vpcResult.Details) != 1 {
-		return "", 0, errf.Newf(errf.RecordNotFound, "vpc: %s not found", selfLink)
+		return "", "", 0, errf.Newf(errf.RecordNotFound, "vpc: %s not found", selfLink)
 	}
 
-	return vpcResult.Details[0].ID, vpcResult.Details[0].BkCloudID, nil
+	return vpcResult.Details[0].ID, vpcResult.Details[0].CloudID, vpcResult.Details[0].BkCloudID, nil
 }
 
 func querySubnetIDsBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLinks []string) (
-	[]string, error) {
+	[]string, []string, error) {
 
 	unique := slice.Unique(selfLinks)
 	req := &core.ListReq{
@@ -163,25 +163,27 @@ func querySubnetIDsBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLink
 			},
 		},
 		Page:   core.DefaultBasePage,
-		Fields: []string{"id"},
+		Fields: []string{"id", "cloud_id"},
 	}
 	subnetResult, err := dataCli.Global.Subnet.List(kt.Ctx, kt.Header(), req)
 	if err != nil {
 		logs.Errorf("list subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(subnetResult.Details) != len(unique) {
 		logs.Errorf("list subnet but some subnet not found, selfLinks: %v, count: %d, rid: %s", unique,
 			len(subnetResult.Details), kt.Rid)
-		return nil, errf.Newf(errf.RecordNotFound, "some subnet not found")
+		return nil, nil, errf.Newf(errf.RecordNotFound, "some subnet not found")
 	}
 
 	subnetIDs := make([]string, 0)
+	cloudSubnetIDs := make([]string, 0)
 	for _, v := range subnetResult.Details {
 		subnetIDs = append(subnetIDs, v.ID)
+		cloudSubnetIDs = append(cloudSubnetIDs, v.CloudID)
 	}
-	return subnetIDs, nil
+	return subnetIDs, cloudSubnetIDs, nil
 }
 
 func querySubnetIDsByCloudID(kt *kit.Kit, dataCli *dataservice.Client, subnetCloudIDs []string) (

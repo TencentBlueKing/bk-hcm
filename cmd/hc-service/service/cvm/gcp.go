@@ -20,15 +20,21 @@
 package cvm
 
 import (
+	"fmt"
 	"net/http"
 
 	"hcm/cmd/hc-service/logics/sync/cvm"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/cmd/hc-service/service/sync"
+	"hcm/pkg/adaptor/gcp"
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	imageproto "hcm/pkg/api/data-service/cloud/image"
+	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -36,12 +42,144 @@ import (
 func (svc *cvmSvc) initGcpCvmService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
+	h.Add("BatchCreateGcpCvm", http.MethodPost, "/vendors/gcp/cvms/batch/create", svc.BatchCreateGcpCvm)
 	h.Add("StartGcpCvm", http.MethodPost, "/vendors/gcp/cvms/{id}/start", svc.StartGcpCvm)
 	h.Add("StopGcpCvm", http.MethodPost, "/vendors/gcp/cvms/{id}/stop", svc.StopGcpCvm)
 	h.Add("RebootGcpCvm", http.MethodPost, "/vendors/gcp/cvms/{id}/reboot", svc.RebootGcpCvm)
 	h.Add("DeleteGcpCvm", http.MethodDelete, "/vendors/gcp/cvms/{id}", svc.DeleteGcpCvm)
 
 	h.Load(cap.WebService)
+}
+
+// BatchCreateGcpCvm ...
+func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.GcpBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	gcpCli, err := svc.ad.Gcp(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	vpcSelfLink, err := svc.getVpcSelfLinkByCloudID(cts.Kit, req.CloudVpcID)
+	if err != nil {
+		return nil, err
+	}
+
+	subnetSelfLink, err := svc.getSubnetSelfLinkByCloudID(cts.Kit, req.CloudSubnetID)
+	if err != nil {
+		return nil, err
+	}
+
+	image, err := svc.getImageByCloudID(cts.Kit, req.CloudImageID)
+	if err != nil {
+		return nil, err
+	}
+
+	platform, err := gcp.GetSystemPlatformFromImagePlatforms(image.Extension.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+
+	createOpt := &typecvm.GcpCreateOption{
+		NamePrefix:          req.NamePrefix,
+		Zone:                req.Zone,
+		InstanceType:        req.InstanceType,
+		CloudImageSelfLink:  image.Extension.SelfLink,
+		Password:            req.Password,
+		RequiredCount:       req.RequiredCount,
+		RequestID:           req.RequestID,
+		CloudVpcSelfLink:    vpcSelfLink,
+		CloudSubnetSelfLink: subnetSelfLink,
+		Description:         req.Description,
+		ImageProjectType:    platform,
+		SystemDisk:          req.SystemDisk,
+		DataDisk:            req.DataDisk,
+	}
+	result, err := gcpCli.CreateCvm(cts.Kit, createOpt)
+	if err != nil {
+		logs.Errorf("create cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(result.SuccessCloudIDs) == 0 {
+		return new(protocvm.BatchCreateResult), nil
+	}
+
+	syncOpt := &cvm.SyncGcpCvmOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		Zone:      req.Zone,
+		CloudIDs:  result.SuccessCloudIDs,
+	}
+	if _, err = cvm.SyncGcpCvmWithRelResource(cts.Kit, svc.ad, svc.dataCli, syncOpt); err != nil {
+		logs.Errorf("sync gcp cvm with rel resource failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (svc *cvmSvc) getImageByCloudID(kt *kit.Kit, cloudID string) (
+	*imageproto.ImageExtResult[imageproto.GcpImageExtensionResult], error) {
+
+	req := &imageproto.ImageListReq{
+		Filter: tools.EqualExpression("cloud_id", cloudID),
+		Page:   core.DefaultBasePage,
+		Fields: nil,
+	}
+	images, err := svc.dataCli.Gcp.ListImage(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(images.Details) == 0 {
+		return nil, fmt.Errorf("image: %s not found", cloudID)
+	}
+
+	return images.Details[0], nil
+}
+
+func (svc *cvmSvc) getSubnetSelfLinkByCloudID(kt *kit.Kit, cloudID string) (string, error) {
+	req := &core.ListReq{
+		Filter: tools.EqualExpression("cloud_id", cloudID),
+		Page:   core.DefaultBasePage,
+		Fields: []string{"extension"},
+	}
+	subnets, err := svc.dataCli.Gcp.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		return "", err
+	}
+
+	if len(subnets.Details) == 0 {
+		return "", fmt.Errorf("subnet: %s not found", cloudID)
+	}
+
+	return subnets.Details[0].Extension.SelfLink, nil
+}
+
+func (svc *cvmSvc) getVpcSelfLinkByCloudID(kt *kit.Kit, cloudID string) (string, error) {
+	req := &core.ListReq{
+		Filter: tools.EqualExpression("cloud_id", cloudID),
+		Page:   core.DefaultBasePage,
+		Fields: []string{"extension"},
+	}
+	vpcs, err := svc.dataCli.Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		return "", err
+	}
+
+	if len(vpcs.Details) == 0 {
+		return "", fmt.Errorf("vpc: %s not found", cloudID)
+	}
+
+	return vpcs.Details[0].Extension.SelfLink, nil
 }
 
 // StartGcpCvm ...

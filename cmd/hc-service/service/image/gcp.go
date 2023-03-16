@@ -20,6 +20,7 @@
 package image
 
 import (
+	"hcm/pkg/adaptor/gcp"
 	"hcm/pkg/adaptor/types/image"
 	apicore "hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/image"
@@ -47,7 +48,7 @@ func GcpSyncImage(da *imageAdaptor, cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	for _, projectID := range []string{"centos-cloud", "windows-cloud"} {
+	for _, projectID := range gcp.PublicImagePlatforms {
 		cloudAllIDs := make(map[string]bool)
 
 		nextToken := ""
@@ -201,6 +202,7 @@ func (da *imageAdaptor) syncGcpImageAdd(addIDs []string, cts *rest.Contexts, req
 			State:        cloudMap[id].Image.State,
 			Type:         cloudMap[id].Image.Type,
 			Extension: &dataproto.GcpImageExtensionCreateReq{
+				SelfLink:  cloudMap[id].Image.SelfLink,
 				Region:    req.Region,
 				ProjectID: projectID,
 			},

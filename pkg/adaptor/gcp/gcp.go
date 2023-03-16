@@ -34,7 +34,7 @@ func NewGcp(credential *types.GcpCredential) (*Gcp, error) {
 	return &Gcp{clientSet: newClientSet(credential)}, nil
 }
 
-// Gcp is hcp operator.
+// Gcp is gcp operator.
 type Gcp struct {
 	clientSet *clientSet
 }

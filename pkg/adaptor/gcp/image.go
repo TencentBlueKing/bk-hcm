@@ -20,13 +20,32 @@
 package gcp
 
 import (
+	"fmt"
 	"strconv"
 
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 )
+
+// PublicImagePlatforms 公有镜像平台类型
+var PublicImagePlatforms = []string{"centos-cloud", "windows-cloud"}
+
+// GetSystemPlatformFromImagePlatforms get system platform from image platforms.
+func GetSystemPlatformFromImagePlatforms(platform string) (typecvm.GcpImageProjectType, error) {
+	switch platform {
+	case "centos-cloud":
+		return typecvm.Linux, nil
+
+	case "windows-cloud":
+		return typecvm.Windows, nil
+
+	default:
+		return "", fmt.Errorf("unknown image platform type: %s", platform)
+	}
+}
 
 // ListImage ...
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/images/list
@@ -52,6 +71,7 @@ func (g *Gcp) ListImage(
 	}
 	for _, pImage := range resp.Items {
 		images = append(images, image.GcpImage{
+			SelfLink:     pImage.SelfLink,
 			CloudID:      strconv.FormatUint(pImage.Id, 10),
 			Name:         pImage.Name,
 			Architecture: pImage.Architecture,

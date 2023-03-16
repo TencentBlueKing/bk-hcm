@@ -20,14 +20,19 @@
 package gcp
 
 import (
+	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 
+	"hcm/pkg/adaptor/poller"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"google.golang.org/api/compute/v1"
 )
 
@@ -50,6 +55,10 @@ func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) ([]*compute.Insta
 
 	if len(opt.CloudIDs) > 0 {
 		request.Filter(generateResourceIDsFilter(opt.CloudIDs))
+	}
+
+	if len(opt.Names) > 0 {
+		request.Filter(generateResourceFilter("name", opt.Names))
 	}
 
 	if opt.Page != nil {
@@ -196,24 +205,24 @@ func (g *Gcp) ResetCvm(kt *kit.Kit, opt *typecvm.GcpResetOption) error {
 	return nil
 }
 
-// CreateCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/reset
-func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) error {
+// CreateCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/insert
+func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
-		return errf.New(errf.InvalidParameter, "reset option is required")
+		return nil, errf.New(errf.InvalidParameter, "reset option is required")
 	}
 
 	if err := opt.Validate(); err != nil {
-		return errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	client, err := g.clientSet.computeClient(kt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	script, err := opt.ImageProjectType.StartupScript(opt.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req := &compute.BulkInsertInstanceResource{
@@ -226,8 +235,8 @@ func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) error {
 					Boot:       true,
 					InitializeParams: &compute.AttachedDiskInitializeParams{
 						DiskSizeGb:  opt.SystemDisk.SizeGb,
-						DiskType:    opt.SystemDisk.DiskType,
-						SourceImage: opt.CloudImageID,
+						DiskType:    string(opt.SystemDisk.DiskType),
+						SourceImage: opt.CloudImageSelfLink,
 					},
 				},
 			},
@@ -242,13 +251,13 @@ func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) error {
 			},
 			NetworkInterfaces: []*compute.NetworkInterface{
 				{
-					Network:    opt.CloudVpcID,
-					Subnetwork: opt.CloudSubnetID,
+					Network:    opt.CloudVpcSelfLink,
+					Subnetwork: opt.CloudSubnetSelfLink,
 				},
 			},
 		},
 		MinCount:    opt.RequiredCount,
-		NamePattern: opt.Name,
+		NamePattern: opt.NamePrefix + "-####",
 	}
 
 	if len(opt.DataDisk) != 0 {
@@ -257,20 +266,76 @@ func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) error {
 				Index: int64(index) + 1,
 				InitializeParams: &compute.AttachedDiskInitializeParams{
 					DiskSizeGb: disk.SizeGb,
-					DiskType:   disk.DiskType,
+					DiskType:   string(disk.DiskType),
+					DiskName:   disk.DiskName,
 				},
+				Mode:       string(disk.Mode),
+				AutoDelete: disk.AutoDelete,
 			})
 		}
 	}
 
-	_, err = client.Instances.BulkInsert(g.CloudProjectID(), opt.Zone, req).
+	resp, err := client.Instances.BulkInsert(g.CloudProjectID(), opt.Zone, req).
 		RequestId(opt.RequestID).Context(kt.Ctx).Do()
 	if err != nil {
-		logs.Errorf("reset instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
-		return err
+		logs.Errorf("create instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, err
 	}
 
-	// TODO: 用什么标识这批资源？
+	handler := &createCvmPollingHandler{
+		opt.Zone,
+	}
+	respPoller := poller.Poller[*Gcp, []*compute.Operation, poller.BaseDoneResult]{Handler: handler}
+	result, err := respPoller.PollUntilDone(g, kt, []*string{to.Ptr(resp.OperationGroupId)}, nil)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil
+	return result, nil
 }
+
+type createCvmPollingHandler struct {
+	zone string
+}
+
+func (h *createCvmPollingHandler) Done(items []*compute.Operation) (bool, *poller.BaseDoneResult) {
+
+	result := &poller.BaseDoneResult{
+		SuccessCloudIDs: make([]string, 0),
+		FailedCloudIDs:  make([]string, 0),
+	}
+	for _, item := range items {
+		if item.OperationType == "insert" {
+			result.SuccessCloudIDs = append(result.SuccessCloudIDs, strconv.FormatUint(item.TargetId, 10))
+		}
+	}
+
+	return true, result
+}
+
+func (h *createCvmPollingHandler) Poll(client *Gcp, kt *kit.Kit, operGroupIDs []*string) ([]*compute.Operation, error) {
+
+	if len(operGroupIDs) == 0 {
+		return nil, errors.New("operation group id is required")
+	}
+
+	computeClient, err := client.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	operResp, err := computeClient.ZoneOperations.List(client.CloudProjectID(), h.zone).Context(kt.Ctx).
+		Filter(fmt.Sprintf(`operationGroupId="%s"`, *operGroupIDs[0])).Do()
+	if err != nil {
+		logs.Errorf("list zone operations failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	if len(operResp.Items) <= 1 {
+		return nil, errors.New("operation has not been created yet, need to wait")
+	}
+
+	return operResp.Items, nil
+}
+
+var _ poller.PollingHandler[*Gcp, []*compute.Operation, poller.BaseDoneResult] = new(createCvmPollingHandler)

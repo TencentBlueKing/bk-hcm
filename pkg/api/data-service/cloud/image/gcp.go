@@ -21,13 +21,16 @@ package image
 
 // GcpImageExtensionCreateReq ...
 type GcpImageExtensionCreateReq struct {
+	SelfLink  string `json:"self_link" validate:"required"`
 	Region    string `json:"region" validate:"required"`
 	ProjectID string `json:"project_id" validate:"required"`
 }
 
 // GcpImageExtensionResult ...
 type GcpImageExtensionResult struct {
-	Region string `json:"region" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+	SelfLink  string `json:"self_link" validate:"required"`
+	ProjectID string `json:"project_id" validate:"required"`
 }
 
 // GcpImageExtensionUpdateReq ...

@@ -21,6 +21,8 @@ package cvm
 
 import (
 	"fmt"
+
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
@@ -43,5 +45,29 @@ func (req *GcpOperateSyncReq) Validate() error {
 		return fmt.Errorf("operate sync count should > 0")
 	}
 
+	return validator.Validate.Struct(req)
+}
+
+// GcpBatchCreateReq gcp batch create req.
+type GcpBatchCreateReq struct {
+	AccountID     string `json:"account_id" validate:"required"`
+	NamePrefix    string `json:"name_prefix" validate:"required"`
+	Region        string `json:"region" validate:"required"`
+	Zone          string `json:"zone" validate:"required"`
+	InstanceType  string `json:"instance_type" validate:"required"`
+	CloudImageID  string `json:"cloud_image_id" validate:"required"`
+	Password      string `json:"password" validate:"required"`
+	RequiredCount int64  `json:"required_count" validate:"required"`
+	// RequestID 唯一标识支持生产请求
+	RequestID     string                `json:"request_id" validate:"required"`
+	CloudVpcID    string                `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID string                `json:"cloud_subnet_id" validate:"required"`
+	Description   string                `json:"description" validate:"omitempty"`
+	SystemDisk    *typecvm.GcpOsDisk    `json:"system_disk" validate:"required"`
+	DataDisk      []typecvm.GcpDataDisk `json:"data_volume" validate:"omitempty"`
+}
+
+// Validate request.
+func (req *GcpBatchCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

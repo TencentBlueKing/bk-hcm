@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	diskproto "hcm/pkg/api/data-service/cloud/disk"
 	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	dataservice "hcm/pkg/client/data-service"
@@ -46,6 +47,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncGcpCvmOption ...
@@ -432,26 +434,39 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 			logs.Errorf("gcp cvm: %s more than one vpc", fmt.Sprintf("%d", cloudMap[id].Cvm.Id))
 		}
 
-		vpcID, bkCloudID, err := queryVpcIDBySelfLink(kt, dataCli, cloudVpcIDs[0])
+		vpcID, cloudVpcID, bkCloudID, err := queryVpcIDBySelfLink(kt, dataCli, cloudVpcIDs[0])
 		if err != nil {
 			return err
 		}
 
-		subnetIDs, err := querySubnetIDsBySelfLink(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, cloudSubIDs, err := querySubnetIDsBySelfLink(kt, dataCli, cloudSubnetIDs)
+		if err != nil {
+			return err
+		}
+
+		diskSelfLinks := make([]string, 0, len(cloudMap[id].Cvm.Disks))
+		for _, one := range cloudMap[id].Cvm.Disks {
+			diskSelfLinks = append(diskSelfLinks, one.Source)
+		}
+
+		cloudIDMap, err := queryCloudDiskIDMapBySelfLink(kt, dataCli, diskSelfLinks)
 		if err != nil {
 			return err
 		}
 
 		disks := make([]corecvm.GcpAttachedDisk, 0)
-		if len(cloudMap[id].Cvm.Disks) > 0 {
-			for _, v := range cloudMap[id].Cvm.Disks {
-				tmp := corecvm.GcpAttachedDisk{
-					Boot:    v.Boot,
-					Index:   v.Index,
-					CloudID: v.Source,
-				}
-				disks = append(disks, tmp)
+		for _, v := range cloudMap[id].Cvm.Disks {
+			cloudID, exist := cloudIDMap[v.Source]
+			if !exist {
+				return fmt.Errorf("cvm: %d not found disk: %s in db", cloudMap[id].Cvm.Id, v.Source)
 			}
+
+			tmp := corecvm.GcpAttachedDisk{
+				Boot:    v.Boot,
+				Index:   v.Index,
+				CloudID: cloudID,
+			}
+			disks = append(disks, tmp)
 		}
 
 		priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(cloudMap[id].Cvm.NetworkInterfaces)
@@ -459,9 +474,9 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 			ID:                   dsMap[id].Cvm.ID,
 			Name:                 cloudMap[id].Cvm.Name,
 			BkCloudID:            bkCloudID,
-			CloudVpcIDs:          cloudVpcIDs,
+			CloudVpcIDs:          []string{cloudVpcID},
 			VpcIDs:               []string{vpcID},
-			CloudSubnetIDs:       cloudSubnetIDs,
+			CloudSubnetIDs:       cloudSubIDs,
 			SubnetIDs:            subnetIDs,
 			Memo:                 &cloudMap[id].Cvm.Description,
 			Status:               cloudMap[id].Cvm.Status,
@@ -482,14 +497,18 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 				MinCpuPlatform:           cloudMap[id].Cvm.MinCpuPlatform,
 				StartRestricted:          cloudMap[id].Cvm.StartRestricted,
 				ResourcePolicies:         cloudMap[id].Cvm.ResourcePolicies,
-				ReservationAffinity: &corecvm.GcpReservationAffinity{
-					ConsumeReservationType: cloudMap[id].Cvm.ReservationAffinity.ConsumeReservationType,
-					Key:                    cloudMap[id].Cvm.ReservationAffinity.Key,
-					Values:                 cloudMap[id].Cvm.ReservationAffinity.Values,
-				},
-				Fingerprint:             cloudMap[id].Cvm.Fingerprint,
-				AdvancedMachineFeatures: nil,
+				ReservationAffinity:      nil,
+				Fingerprint:              cloudMap[id].Cvm.Fingerprint,
+				AdvancedMachineFeatures:  nil,
 			},
+		}
+
+		if cloudMap[id].Cvm.ReservationAffinity != nil {
+			cvm.Extension.ReservationAffinity = &corecvm.GcpReservationAffinity{
+				ConsumeReservationType: cloudMap[id].Cvm.ReservationAffinity.ConsumeReservationType,
+				Key:                    cloudMap[id].Cvm.ReservationAffinity.Key,
+				Values:                 cloudMap[id].Cvm.ReservationAffinity.Values,
+			}
 		}
 
 		if cloudMap[id].Cvm.AdvancedMachineFeatures != nil {
@@ -516,6 +535,43 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 	}
 
 	return nil
+}
+
+func queryCloudDiskIDMapBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLinks []string) (
+	map[string]string, error) {
+
+	unique := slice.Unique(selfLinks)
+	req := &diskproto.DiskListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "extension.self_link",
+					Op:    filter.JSONIn.Factory(),
+					Value: unique,
+				},
+			},
+		},
+		Page:   core.DefaultBasePage,
+		Fields: []string{"cloud_id", "extension"},
+	}
+	result, err := dataCli.Gcp.ListDisk(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("list disk failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return nil, err
+	}
+
+	if len(result.Details) != len(unique) {
+		logs.Errorf("list disk but some disk not found, selfLinks: %v, count: %d, rid: %s", unique,
+			len(result.Details), kt.Rid)
+		return nil, errf.Newf(errf.RecordNotFound, "some disk not found")
+	}
+
+	cloudIDMap := make(map[string]string)
+	for _, v := range result.Details {
+		cloudIDMap[v.Extension.SelfLink] = v.CloudID
+	}
+	return cloudIDMap, nil
 }
 
 func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
@@ -546,26 +602,39 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 			logs.Errorf("gcp cvm: %s more than one vpc", fmt.Sprintf("%d", cloudMap[id].Cvm.Id))
 		}
 
-		vpcID, bkCloudID, err := queryVpcIDBySelfLink(kt, dataCli, vpcSelfLinks[0])
+		vpcID, cloudVpcID, bkCloudID, err := queryVpcIDBySelfLink(kt, dataCli, vpcSelfLinks[0])
 		if err != nil {
 			return err
 		}
 
-		subnetIDs, err := querySubnetIDsBySelfLink(kt, dataCli, subnetSelfLinks)
+		subnetIDs, cloudSubIDs, err := querySubnetIDsBySelfLink(kt, dataCli, subnetSelfLinks)
+		if err != nil {
+			return err
+		}
+
+		diskSelfLinks := make([]string, 0, len(cloudMap[id].Cvm.Disks))
+		for _, one := range cloudMap[id].Cvm.Disks {
+			diskSelfLinks = append(diskSelfLinks, one.Source)
+		}
+
+		cloudIDMap, err := queryCloudDiskIDMapBySelfLink(kt, dataCli, diskSelfLinks)
 		if err != nil {
 			return err
 		}
 
 		disks := make([]corecvm.GcpAttachedDisk, 0)
-		if len(cloudMap[id].Cvm.Disks) > 0 {
-			for _, v := range cloudMap[id].Cvm.Disks {
-				tmp := corecvm.GcpAttachedDisk{
-					Boot:    v.Boot,
-					Index:   v.Index,
-					CloudID: v.Source,
-				}
-				disks = append(disks, tmp)
+		for _, v := range cloudMap[id].Cvm.Disks {
+			cloudID, exist := cloudIDMap[v.Source]
+			if !exist {
+				return fmt.Errorf("cvm: %d not found disk: %s in db", cloudMap[id].Cvm.Id, v.Source)
 			}
+
+			tmp := corecvm.GcpAttachedDisk{
+				Boot:    v.Boot,
+				Index:   v.Index,
+				CloudID: cloudID,
+			}
+			disks = append(disks, tmp)
 		}
 
 		priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(cloudMap[id].Cvm.NetworkInterfaces)
@@ -577,9 +646,9 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 			AccountID:      req.AccountID,
 			Region:         req.Region,
 			Zone:           req.Zone,
-			CloudVpcIDs:    vpcSelfLinks,
+			CloudVpcIDs:    []string{cloudVpcID},
 			VpcIDs:         []string{vpcID},
-			CloudSubnetIDs: subnetSelfLinks,
+			CloudSubnetIDs: cloudSubIDs,
 			SubnetIDs:      subnetIDs,
 			CloudImageID:   cloudMap[id].Cvm.SourceMachineImage,
 			// gcp镜像是与硬盘绑定的
@@ -605,14 +674,18 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 				MinCpuPlatform:           cloudMap[id].Cvm.MinCpuPlatform,
 				StartRestricted:          cloudMap[id].Cvm.StartRestricted,
 				ResourcePolicies:         cloudMap[id].Cvm.ResourcePolicies,
-				ReservationAffinity: &corecvm.GcpReservationAffinity{
-					ConsumeReservationType: cloudMap[id].Cvm.ReservationAffinity.ConsumeReservationType,
-					Key:                    cloudMap[id].Cvm.ReservationAffinity.Key,
-					Values:                 cloudMap[id].Cvm.ReservationAffinity.Values,
-				},
-				Fingerprint:             cloudMap[id].Cvm.Fingerprint,
-				AdvancedMachineFeatures: nil,
+				ReservationAffinity:      nil,
+				Fingerprint:              cloudMap[id].Cvm.Fingerprint,
+				AdvancedMachineFeatures:  nil,
 			},
+		}
+
+		if cloudMap[id].Cvm.ReservationAffinity != nil {
+			cvm.Extension.ReservationAffinity = &corecvm.GcpReservationAffinity{
+				ConsumeReservationType: cloudMap[id].Cvm.ReservationAffinity.ConsumeReservationType,
+				Key:                    cloudMap[id].Cvm.ReservationAffinity.Key,
+				Values:                 cloudMap[id].Cvm.ReservationAffinity.Values,
+			}
 		}
 
 		if cloudMap[id].Cvm.AdvancedMachineFeatures != nil {
