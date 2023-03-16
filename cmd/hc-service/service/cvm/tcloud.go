@@ -65,6 +65,7 @@ func (svc *cvmSvc) BatchCreateTCloudCvm(cts *rest.Contexts) (interface{}, error)
 	}
 
 	createOpt := &typecvm.TCloudCreateOption{
+		DryRun:                req.DryRun,
 		Region:                req.Region,
 		Name:                  req.Name,
 		Zone:                  req.Zone,
@@ -86,6 +87,10 @@ func (svc *cvmSvc) BatchCreateTCloudCvm(cts *rest.Contexts) (interface{}, error)
 	if err != nil {
 		logs.Errorf("create cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+
+	if len(result.SuccessCloudIDs) == 0 {
+		return result, nil
 	}
 
 	syncOpt := &cvm.SyncTCloudCvmOption{

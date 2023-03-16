@@ -115,6 +115,7 @@ func (req *AwsBatchRebootReq) Validate() error {
 
 // AwsBatchCreateReq aws batch create req.
 type AwsBatchCreateReq struct {
+	DryRun                bool                            `json:"dry_run" validate:"omitempty"`
 	AccountID             string                          `json:"account_id" validate:"required"`
 	Region                string                          `json:"region" validate:"required"`
 	Zone                  string                          `json:"zone" validate:"required"`

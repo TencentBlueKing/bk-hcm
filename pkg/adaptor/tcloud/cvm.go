@@ -238,6 +238,7 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 	req.Placement = &cvm.Placement{
 		Zone: common.StringPtr(opt.Zone),
 	}
+	req.DryRun = common.BoolPtr(opt.DryRun)
 	req.InstanceType = common.StringPtr(opt.InstanceType)
 	req.ImageId = common.StringPtr(opt.CloudImageID)
 	req.InstanceCount = common.Int64Ptr(opt.RequiredCount)
@@ -293,6 +294,11 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 	if err != nil {
 		logs.Errorf("run tencent cloud cvm instance failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
+	}
+
+	// 参数预校验不生产资源
+	if opt.DryRun {
+		return new(poller.BaseDoneResult), nil
 	}
 
 	handler := &createCvmPollingHandler{

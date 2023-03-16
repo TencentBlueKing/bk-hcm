@@ -30,7 +30,8 @@ import (
 )
 
 const (
-	ErrDataNotFound = "InvalidInstanceID.Malformed: Invalid id"
+	ErrDataNotFound  = "InvalidInstanceID.Malformed: Invalid id"
+	ErrDryRunSuccess = "DryRunOperation: Request would have succeeded, but DryRun flag is set"
 )
 
 type clientSet struct {

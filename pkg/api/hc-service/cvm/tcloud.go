@@ -116,6 +116,7 @@ func (req *TCloudBatchResetPwdReq) Validate() error {
 
 // TCloudBatchCreateReq tcloud batch create req.
 type TCloudBatchCreateReq struct {
+	DryRun                bool                                 `json:"dry_run" validate:"omitempty"`
 	AccountID             string                               `json:"account_id" validate:"required"`
 	Region                string                               `json:"region" validate:"required"`
 	Name                  string                               `json:"name" validate:"required"`

@@ -318,6 +318,7 @@ func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) (*polle
 	req := &model.CreateServersRequest{
 		XClientToken: opt.ClientToken,
 		Body: &model.CreateServersRequestBody{
+			DryRun: converter.ValToPtr(opt.DryRun),
 			Server: &model.PrePaidServer{
 				ImageRef:  opt.CloudImageID,
 				FlavorRef: opt.InstanceType,
@@ -391,6 +392,10 @@ func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) (*polle
 	if err != nil {
 		logs.Errorf("create huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
+	}
+
+	if opt.DryRun {
+		return new(poller.BaseDoneResult), nil
 	}
 
 	handler := &createCvmPollingHandler{

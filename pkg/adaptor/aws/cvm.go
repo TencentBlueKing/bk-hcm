@@ -221,6 +221,7 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 	}
 
 	req := &ec2.RunInstancesInput{
+		DryRun:           aws.Bool(opt.DryRun),
 		ClientToken:      opt.ClientToken,
 		ImageId:          aws.String(opt.CloudImageID),
 		InstanceType:     aws.String(opt.InstanceType),
@@ -273,6 +274,11 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 
 	resp, err := client.RunInstancesWithContext(kt.Ctx, req)
 	if err != nil {
+		// 参数预校验报错，正常现象
+		if strings.Contains(err.Error(), ErrDryRunSuccess) {
+			return new(poller.BaseDoneResult), nil
+		}
+
 		logs.Errorf("run instances failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 		return nil, err
 	}

@@ -119,6 +119,7 @@ func (opt AwsRebootOption) Validate() error {
 
 // AwsCreateOption defines options to create aws cvm instances.
 type AwsCreateOption struct {
+	DryRun                bool                    `json:"dry_run" validate:"omitempty"`
 	Region                string                  `json:"region" validate:"required"`
 	Name                  string                  `json:"name" validate:"required"`
 	Zone                  string                  `json:"zone" validate:"required"`
