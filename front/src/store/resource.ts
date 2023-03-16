@@ -42,8 +42,7 @@ export const useResourceStore = defineStore({
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/${id}`);
     },
     deleteBatch(type: string, data: any) {
-      console.log('dataqq11', data);
-      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/batch`, { data });
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/recycled/${getBusinessApiPath(type)}${type}/batch`, { data });
     },
     bindVPCWithCloudArea(data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vpcs/bind/cloud_areas`, data);
@@ -101,17 +100,17 @@ export const useResourceStore = defineStore({
     getNetworkList(type: string, id: string) {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}vendors/${type}/network_interfaces/cvms/${id}`);
     },
-    attachDisk(vendor: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/vendors/${vendor}/disks/attach`, data);
+    attachDisk(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/disks/attach`, data);
     },
-    detachDisk(vendor: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/vendors/${vendor}/disks/detach`, data);
+    detachDisk(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/disks/detach`, data);
     },
     associateEip(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/eips/associate`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/eips/associate`, data);
     },
     disassociateEip(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/eips/disassociate`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/eips/disassociate`, data);
     },
     getCloudRegion(type: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${type}/regions/list`, data);

@@ -85,8 +85,7 @@ const handleDeleteEip = () => {
     <assign-eip
       v-if="detail.id"
       v-model:is-show="isShowAssignEip"
-      :vendor="detail.vendor"
-      :id="detail.id"
+      :detail="detail"
     />
 
     <bk-dialog

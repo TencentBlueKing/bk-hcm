@@ -60,12 +60,12 @@ export default (type: string, isSimpleShow: boolean = false) => {
     };
   };
 
-  const getLinkField = (type: string, label = 'ID', field = 'id') => {
+  const getLinkField = (type: string, label = 'ID', field = 'id', idFiled = 'id') => {
     return {
       label,
       field,
       sort: true,
-      render({ cell }: { cell: string }) {
+      render({ data }: { cell: string, data: any }) {
         return h(
           Button,
           {
@@ -74,7 +74,8 @@ export default (type: string, isSimpleShow: boolean = false) => {
             onClick() {
               const routeInfo: any = {
                 query: {
-                  id: cell,
+                  id: data[idFiled],
+                  type: data.vendor,
                 },
               };
               // 业务下
@@ -100,7 +101,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
             },
           },
           [
-            cell || '--',
+            data[field] || '--',
           ],
         );
       },
@@ -410,7 +411,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
     },
     {
       label: '运行状态',
-      field: '',
+      field: 'status',
       render({ cell }: { cell: string }) {
         return h(
           'span',
@@ -433,19 +434,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
         );
       },
     },
-    {
-      label: '挂载实例',
-      field: '',
-      sort: true,
-      render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            cell || '--',
-          ],
-        );
-      },
-    },
+    getLinkField('host', '挂载实例', 'instance_id', 'cvm_id'),
     {
       label: '创建时间',
       field: 'created_at',
@@ -879,8 +868,8 @@ export default (type: string, isSimpleShow: boolean = false) => {
       },
     },
     {
-      label: '绑定资源的实例',
-      field: 'instance_id',
+      label: '公网 IP',
+      field: 'public_ip',
       render({ cell }: { cell: string }) {
         return h(
           'span',
@@ -890,6 +879,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
         );
       },
     },
+    getLinkField('host', '绑定资源的实例', 'instance_id', 'cvm_id'),
     {
       label: '绑定资源的类型',
       field: 'instance_type',

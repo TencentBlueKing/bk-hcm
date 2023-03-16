@@ -32,14 +32,8 @@ export default defineComponent({
     isShow: {
       type: Boolean,
     },
-    vendor: {
-      type: String,
-    },
-    id: {
-      type: String
-    },
-    cachingType: {
-      type: String
+    detail: {
+      type: Object
     }
   },
 
@@ -49,6 +43,46 @@ export default defineComponent({
     const {
       t,
     } = useI18n();
+
+    const deviceName = ref();
+    const cachingType = ref();
+
+    const cacheTypes = [
+      'None',
+      'ReadOnly',
+      'ReadWrite'
+    ]
+
+    const rules = [
+      {
+        field: 'vendor',
+        op: 'eq',
+        value: props.detail.vendor,
+      },
+      {
+        field: 'account_id',
+        op: 'eq',
+        value: props.detail.account_id,
+      },
+      {
+        field: 'zone',
+        op: 'eq',
+        value: props.detail.zone,
+      },
+      {
+        field: 'region',
+        op: 'eq',
+        value: props.detail.region,
+      }
+    ]
+
+    if (props.detail.vendor === 'azure') {
+      rules.push({
+        field: 'resource_group_name',
+        op: 'eq',
+        value: props.detail.resource_group_name
+      })
+    }
 
     const {
       datas,
@@ -61,11 +95,7 @@ export default defineComponent({
       {
         filter: {
           op: 'and',
-          rules: [{
-            field: 'vendor',
-            op: 'eq',
-            value: props.vendor,
-          }],
+          rules,
         },
       },
       'cvms'
@@ -107,14 +137,38 @@ export default defineComponent({
 
     const handleConfirm = () => {
       isConfirmLoading.value = true;
-      resourceStore.attachDisk(
-        props.vendor,
-        {
-          disk_id: props.id,
-          cvm_id: selection.value.id,
-          caching_type: props.cachingType
+      const postData: any = {
+        disk_id: props.detail.id,
+        cvm_id: selection.value.id
+      }
+      if (!selection.value.id) {
+        Message({
+          theme: 'error',
+          message: '请先选择主机'
+        })
+        return
+      }
+      if (props.detail.vendor === 'aws') {
+        if (!deviceName.value) {
+          Message({
+            theme: 'error',
+            message: '请先输入设备名称'
+          })
+          return
         }
-      ).then(() => {
+        postData.device_name = deviceName.value
+      }
+      if (props.detail.vendor === 'azure') {
+        if (!cachingType.value) {
+          Message({
+            theme: 'error',
+            message: '请先选择缓存类型'
+          })
+          return
+        }
+        postData.caching_type = cachingType.value
+      }
+      resourceStore.attachDisk(postData).then(() => {
         handleClose();
       }).catch((err: any) => {
         Message({
@@ -127,6 +181,9 @@ export default defineComponent({
     };
 
     return {
+      deviceName,
+      cachingType,
+      cacheTypes,
       datas,
       pagination,
       isLoading,
@@ -147,6 +204,30 @@ export default defineComponent({
         isConfirmLoading: this.isConfirmLoading,
         component: () =>
           <Loading loading={this.isLoading}>
+            {
+              this.detail.vendor === 'aws'
+              ? <>
+                <span class="mr10">设备名称:</span>
+                <bk-input v-model={this.deviceName} style="width: 200px;"></bk-input>
+                </>
+              : ''
+            }
+            {
+              this.detail.vendor === 'azure'
+              ? <>
+                <span class="mr10">缓存类型:</span>
+                <bk-select v-model={this.cachingType} style="width: 200px;display: inline-block;">
+                  {
+                    this.cacheTypes.map((type) => <bk-option
+                      key={type}
+                      value={type}
+                      label={type}
+                  />)
+                  }
+                </bk-select>
+              </>
+              : ''
+            }
             <Table
               class="mt20"
               row-hover="auto"

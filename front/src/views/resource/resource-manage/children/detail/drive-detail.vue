@@ -260,9 +260,7 @@ const handleShowDelete = () => {
   <mounted-drive
     v-if="detail.id"
     v-model:is-show="isShowMountedDrive"
-    :vendor="detail.vendor"
-    :id="detail.id"
-    :cachingType="detail.caching_type"
+    :detail="detail"
   />
 
   <uninstall-drive

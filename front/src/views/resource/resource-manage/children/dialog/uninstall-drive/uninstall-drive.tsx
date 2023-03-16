@@ -31,7 +31,7 @@ export default defineComponent({
     }
   },
 
-  emits: ['update:isShow'],
+  emits: ['update:isShow', 'success'],
 
   setup(props, { emit }) {
     const {
@@ -58,12 +58,12 @@ export default defineComponent({
     const handleConfirm = () => {
       isLoading.value = true
       resourceStore.detachDisk(
-        props.data.vendor,
         {
           disk_id: props.data.id,
           cvm_id: props.data.cvm_id
         }
       ).then(() => {
+        emit('success')
         handleClose();
       }).catch((err: any) => {
         Message({

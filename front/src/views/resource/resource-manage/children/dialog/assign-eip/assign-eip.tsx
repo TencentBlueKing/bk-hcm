@@ -29,11 +29,8 @@ export default defineComponent({
     isShow: {
       type: Boolean,
     },
-    vendor: {
-      type: String,
-    },
-    id: {
-      type: String
+    detail: {
+      type: Object,
     },
   },
 
@@ -44,8 +41,41 @@ export default defineComponent({
       t,
     } = useI18n();
 
-    const type = ['tcloud', 'aws'].includes(props.vendor) ? 'cvms' : 'network_interfaces'
-    const columnType = ['tcloud', 'aws'].includes(props.vendor) ? 'cvms' : 'networkInterface'
+    const type = ['tcloud', 'aws'].includes(props.detail.vendor) ? 'cvms' : 'network_interfaces'
+    const columnType = ['tcloud', 'aws'].includes(props.detail.vendor) ? 'cvms' : 'networkInterface'
+
+    const rules = [
+      {
+        field: 'vendor',
+        op: 'eq',
+        value: props.detail.vendor,
+      },
+      {
+        field: 'account_id',
+        op: 'eq',
+        value: props.detail.account_id,
+      },
+      {
+        field: 'region',
+        op: 'eq',
+        value: props.detail.region,
+      },
+    ]
+
+    if (props.detail.vendor === 'azure') {
+      rules.push(...[
+        {
+          field: 'resource_group_name',
+          op: 'eq',
+          value: props.detail.resource_group_name
+        },
+        {
+          field: 'zone',
+          op: 'eq',
+          value: props.detail.zone
+        }
+      ])
+    }
 
     const {
       datas,
@@ -58,11 +88,7 @@ export default defineComponent({
       {
         filter: {
           op: 'and',
-          rules: [{
-            field: 'vendor',
-            op: 'eq',
-            value: props.vendor,
-          }],
+          rules
         },
       },
       type
@@ -102,11 +128,11 @@ export default defineComponent({
       isConfirmLoading.value = true;
       const postData = type === 'cvms'
         ? {
-          eip_id: props.id,
+          eip_id: props.detail.id,
           cvm_id: selection.value.id
         }
         : {
-          eip_id: props.id,
+          eip_id: props.detail.id,
           network_interface_id: selection.value.id,
           cvm_id: selection.value.cvm_id
         }

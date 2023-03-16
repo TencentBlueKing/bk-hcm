@@ -29,6 +29,7 @@ const router = useRouter()
 
 const {
   datas,
+  triggerApi,
   isLoading,
 } = useQueryList(
   {},
@@ -208,12 +209,13 @@ watch(
 
   <mounted-drive
     v-model:is-show="isShowMountedDrive"
-    :vendor="data.vendor"
-    :id="data.id"
+    :detail="data"
+    @success="triggerApi"
   />
 
   <uninstall-drive
     v-model:is-show="isShowUninstallDrive"
+    @success="triggerApi"
   />
 </template>
 

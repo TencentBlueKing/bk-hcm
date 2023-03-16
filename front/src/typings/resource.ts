@@ -11,8 +11,8 @@ export type FilterType = {
   op: 'and' | 'or';
   rules: {
     field: string;
-    op: 'eq';
-    value: string | number | string[];
+    op: string;
+    value: string | number | string[] | any;
   }[]
 };
 
