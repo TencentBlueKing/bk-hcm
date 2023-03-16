@@ -26,6 +26,10 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    allowCreate: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['change', 'input', 'blur'],
   setup(props, ctx) {
@@ -104,6 +108,7 @@ export default defineComponent({
         tpl={tpl}
         tagTpl={tpl}
         clearable={props.clearable}
+        allowCreate={props.allowCreate}
         popoverProps={popoverProps}
       >
           {{

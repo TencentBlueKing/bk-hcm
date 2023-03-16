@@ -42,6 +42,7 @@ const defaultFilter = () => ({
   res_type: 'account',
   action: '',
   created_at: [todayStart, todayEnd],
+  operator: [] as any[],
   res_id: '',
   res_name: '',
   source: '',
@@ -288,7 +289,7 @@ watch(isBizType, (isBizType) => {
     <div class="filter-item">
       <div class="filter-item-label">操作者</div>
       <div class="filter-item-content">
-        <member-select></member-select>
+        <member-select v-model="filter.operator" :allow-create="true" />
       </div>
     </div>
     <div class="filter-item">
