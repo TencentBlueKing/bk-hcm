@@ -79,7 +79,7 @@ export const useResourceStore = defineStore({
     getSecurityGroupsListByCvmId(id: string) {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/cvms/${id}`);
     },
-    // 获取根据主机安全组列表
+    // 操作主机相关
     cvmOperate(type: string, data: {ids: string[]}) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}cvms/batch/${type}`, data);
     },
@@ -91,11 +91,8 @@ export const useResourceStore = defineStore({
     cvmNetwork(type: string, id: string) {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}vendors/${type}/network_interfaces/cvms/${id}`);
     },
-    getCommonList(data: any, url: string, methodType?: string) {
-      if (!methodType || methodType === 'post') {
-        return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data);
-      }
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`);
+    getCommonList(data: any, url: string) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data);
     },
     getNetworkList(type: string, id: string) {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}vendors/${type}/network_interfaces/cvms/${id}`);
@@ -117,7 +114,7 @@ export const useResourceStore = defineStore({
     },
     // 销毁
     deleteRecycledData(type: string, data: any) {
-      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/recycled/${type}/batch`, data);
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/recycled/${type}/batch`, { data });
     },
     // 回收
     recoverRecycledData(type: string, data: any) {

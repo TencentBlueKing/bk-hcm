@@ -38,8 +38,12 @@
         :pagination="pagination"
         @page-value-change="handlePageChange"
         @page-limit-change="handlePageSizeChange"
+        @selection-change="handleSelectionChange"
         row-hover="auto"
       >
+        <bk-table-column
+          type="selection"
+        />
         <bk-table-column
           label="ID"
           prop="id"
@@ -55,7 +59,7 @@
           prop="vendor"
         >
           <template #default="props">
-            {{CloudType[props.data.vendor]}}
+            {{CloudType[props?.data?.vendor]}}
           </template>
         </bk-table-column>
         <bk-table-column
@@ -69,7 +73,7 @@
         >
         </bk-table-column>
         <bk-table-column
-          :label="t('实例ID')"
+          :label="t('资源实例ID')"
           prop="res_id"
         >
         </bk-table-column>
@@ -88,27 +92,19 @@
           prop="created_at"
         >
           <template #default="{ data }">
-            {{data.created_at}}
-          </template>
-        </bk-table-column>
-        <bk-table-column
-          :label="t('过期时间')"
-          prop="created_at"
-        >
-          <template #default="{ data }">
-            {{data.created_at}}
+            {{data?.created_at}}
           </template>
         </bk-table-column>
         <bk-table-column
           :label="t('操作')"
         >
-          <template #default="props">
+          <template #default="{ data }">
             <div class="operate-button">
-              <bk-button text theme="primary" @click="handleOperate('destroy')">
+              <bk-button text theme="primary" @click="handleOperate('destroy', [data.res_id])">
                 {{t('立即销毁')}}
               </bk-button>
               <bk-button
-                text theme="primary" @click="handleOperate('recover')"
+                text theme="primary" @click="handleOperate('recover', [data.res_id])"
               >
                 {{t('撤销恢复')}}
               </bk-button>
@@ -125,9 +121,10 @@
         :theme="'primary'"
         :quick-close="false"
         @closed="showDeleteBox = false"
-        @confirm="() => handleDialogConfirm('del')"
+        @confirm="handleDialogConfirm"
       >
-        <!-- <div>{{t('删除之后无法恢复账户信息')}}</div> -->
+        <div v-if="type === 'destroy'">{{t('销毁之后无法恢复账户信息')}}</div>
+        <div v-else>{{t('将恢复账户信息')}}</div>
       </bk-dialog>
     </bk-loading>
   </div>
@@ -142,7 +139,7 @@ import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query
 import { useResourceStore } from '@/store';
 import { CloudType, AccountType } from '@/typings';
 import { VENDORS } from '@/common/constant';
-
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 
 export default defineComponent({
   name: 'AccountManageList',
@@ -169,7 +166,7 @@ export default defineComponent({
           id: 'managers',
         },
       ],
-      tableData: [],
+      tableData: [{ id: '1', res_id: 2 }, { id: '2', res_id: 3 }],
       showDeleteBox: false,
       deleteBoxTitle: '',
       loading: true,
@@ -180,6 +177,7 @@ export default defineComponent({
       recycleTypeData: [{ name: t('主机回收'), value: 'cvms' }, { name: t('硬盘回收'), value: 'disks' }],
       selectedType: 'cvms',
       type: '',
+      selectedIds: [],
     });
 
 
@@ -192,6 +190,11 @@ export default defineComponent({
       handlePageChange,
       getList,
     } = useQueryCommonList({ filter: state.filter }, 'recycle_records/list');
+
+    const {
+      selections,
+      handleSelectionChange,
+    } = useSelection();
 
     // 是否精确
     watch(
@@ -206,7 +209,7 @@ export default defineComponent({
     // 弹窗确认
     const handleDialogConfirm = async () => {
       const params: any = {
-        ids: [],
+        ids: state.selectedIds,
       };
       try {
         if (state.type === 'destroy') {
@@ -222,7 +225,7 @@ export default defineComponent({
           theme: 'success',
         });
         // 重新请求列表
-        // init();
+        getList();
       } catch (error) {
         console.log(error);
       } finally {
@@ -244,7 +247,9 @@ export default defineComponent({
     };
 
     // 销毁恢复
-    const handleOperate = (type: string) => {
+    const handleOperate = (type: string, ids: string[]) => {
+      console.log('selections', ids, selections.value);
+      state.selectedIds = ids ? ids : selections.value.map(e => e.res_id);
       state.type = type;
       state.deleteBoxTitle = `确认要 ${type === 'destroy' ? t('销毁') : t('恢复')}`;
       state.showDeleteBox = true;
@@ -271,6 +276,8 @@ export default defineComponent({
       handlePageChange,
       pagination,
       datas,
+      handleSelectionChange,
+      selections,
       t,
     };
   },

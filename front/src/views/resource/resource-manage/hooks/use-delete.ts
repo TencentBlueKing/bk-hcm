@@ -22,6 +22,7 @@ export default (
   type: string,
   title: string,
   isBatch?: boolean,
+  cb?: Function,
 ) => {
   const resourceStore = useResourceStore();
 
@@ -55,6 +56,7 @@ export default (
             theme: 'success',
             message: t('删除成功'),
           });
+          cb?.(); // 删除数据回调列表接口
         })
         .catch((err: any) => {
           Message({

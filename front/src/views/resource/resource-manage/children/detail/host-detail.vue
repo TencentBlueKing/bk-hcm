@@ -17,11 +17,6 @@ import {
   InfoBox,
   Message,
 } from 'bkui-vue';
-// import useShutdown from '../../hooks/use-shutdown';
-// import useReboot from '../../hooks/use-reboot';
-// import usePassword from '../../hooks/use-password';
-import useRefund from '../../hooks/use-refund';
-// import useBootUp from '../../hooks/use-boot-up';
 import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 
 import {
@@ -45,50 +40,24 @@ const hostId = ref<any>(route.query?.id);
 const cloudType = ref<any>(route.query?.type);
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
-const cvmStatus = ref({
-  start: ['RUNNING'],
-  stop: ['STOPPED', 'SHUTOFF', 'STOPPING', 'shutting-down', 'PowerState', 'stopped'],
+
+
+// 操作的相关信息
+const cvmInfo = ref({
+  start: { op: '关机', loading: false, status: ['RUNNING', 'running'] },
+  stop: { op: '开机', loading: false, status: ['STOPPED', 'SHUTOFF', 'STOPPING', 'shutting-down', 'PowerState', 'stopped'] },
+  reboot: { op: '重启', loading: false },
+  destroy: { op: '回收', loading: false },
 });
 
 const {
   loading,
   detail,
+  getDetail,
 } = useDetail(
   'cvms',
   hostId.value,
 );
-
-console.log('extension', detail);
-
-// const {
-//   isShowShutdown,
-//   handleShutdown,
-//   HostShutdown,
-// } = useShutdown();
-
-// const {
-//   isShowReboot,
-//   handleReboot,
-//   HostReboot,
-// } = useReboot();
-
-// const {
-//   isShowPassword,
-//   handlePassword,
-//   HostPassword,
-// } = usePassword();
-
-const {
-  isShowRefund,
-  handleRefund,
-  HostRefund,
-} = useRefund();
-
-// const {
-//   isShowBootUp,
-//   handleBootUp,
-//   HostBootUp,
-// } = useBootUp();
 
 const hostTabs = [
   {
@@ -125,12 +94,7 @@ const componentMap = {
 };
 
 const handleCvmOperate = (type: string) => {
-  let title = '开机';
-  if (type === 'stop') {
-    title = '关机';
-  } else if (type === 'reboot') {
-    title = '重启';
-  }
+  const title = cvmInfo.value[type].op;
   InfoBox({
     title: `确定${title}`,
     subTitle: `确定将此主机${title}`,
@@ -145,14 +109,25 @@ const handleCvmOperate = (type: string) => {
 
 const modifyCvmStatus = async (type: string) => {
   try {
-    await resourceStore.cvmOperate(type, { ids: [hostId.value] });
+    Message({
+      message: `${cvmInfo.value[type].op}中, 请不要操作`,
+      theme: 'warning',
+    });
+    cvmInfo.value[type].loading = true;
+    if (type === 'destroy') {
+      await resourceStore.deleteRecycledData('cvms', { ids: [hostId.value] });
+    } else {
+      await resourceStore.cvmOperate(type, { ids: [hostId.value] });
+    }
     Message({
       message: t('操作成功'),
       theme: 'success',
     });
+    getDetail();
   } catch (error) {
     console.log(error);
   } finally {
+    cvmInfo.value[type].loading = false;
   }
 };
 
@@ -165,7 +140,8 @@ const modifyCvmStatus = async (type: string) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        :disabled="cvmStatus.start.includes(detail.status)"
+        :disabled="cvmInfo.start.status.includes(detail.status)"
+        :loading="cvmInfo.start.loading"
         @click="() => {
           handleCvmOperate('start')
         }"
@@ -175,7 +151,8 @@ const modifyCvmStatus = async (type: string) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        :disabled="cvmStatus.stop.includes(detail.status)"
+        :disabled="cvmInfo.stop.status.includes(detail.status)"
+        :loading="cvmInfo.stop.loading"
         @click="() => {
           handleCvmOperate('stop')
         }"
@@ -185,6 +162,7 @@ const modifyCvmStatus = async (type: string) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
+        :loading="cvmInfo.reboot.loading"
         @click="() => {
           handleCvmOperate('reboot')
         }"
@@ -201,7 +179,10 @@ const modifyCvmStatus = async (type: string) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        @click="handleRefund"
+        :loading="cvmInfo.destroy.loading"
+        @click="() => {
+          handleCvmOperate('destroy')
+        }"
       >
         {{ t('回收') }}
       </bk-button>
@@ -227,31 +208,6 @@ const modifyCvmStatus = async (type: string) => {
       </template>
     </detail-tab>
   </div>
-
-  <!-- <host-shutdown
-    v-model:isShow="isShowShutdown"
-    :title="t('关机')"
-  />
-
-  <host-reboot
-    v-model:isShow="isShowReboot"
-    :title="t('重启')"
-  /> -->
-
-  <!-- <host-password
-    v-model:isShow="isShowPassword"
-    :title="t('修改密码')"
-  /> -->
-
-  <host-refund
-    v-model:isShow="isShowRefund"
-    :title="t('主机回收')"
-  />
-
-  <!-- <host-boot-up
-    v-model:isShow="isShowBootUp"
-    :title="t('开机')" -->
-  <!-- /> -->
 </template>
 
 <style lang="scss" scoped>

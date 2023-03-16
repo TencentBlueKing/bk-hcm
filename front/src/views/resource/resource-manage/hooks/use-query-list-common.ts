@@ -7,6 +7,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 import {
+  Ref,
   ref,
   watch,
 } from 'vue';
@@ -21,7 +22,7 @@ type PropsType = {
   filter?: FilterType
 };
 
-export default (props: PropsType, url: string, methodType?: string) => {
+export default (props: PropsType, url: Ref<string>) => {
   // 接口
   const resourceStore = useResourceStore();
 
@@ -40,8 +41,7 @@ export default (props: PropsType, url: string, methodType?: string) => {
   const triggerApi = () => {
     isLoading.value = true;
 
-    // 默认拉取方法
-    const getDefaultList = () => Promise
+    Promise
       .all([
         resourceStore.getCommonList(
           {
@@ -54,8 +54,7 @@ export default (props: PropsType, url: string, methodType?: string) => {
             },
             filter: props.filter,
           },
-          url,
-          methodType,
+          url.value,
         ),
         resourceStore.getCommonList(
           {
@@ -64,25 +63,20 @@ export default (props: PropsType, url: string, methodType?: string) => {
             },
             filter: props.filter,
           },
-          url,
-          methodType,
+          url.value,
         ),
-      ]);
-    // 用户如果传了，就用传入的获取数据的方法
-    const method = getDefaultList;
-    // 执行获取数据的逻辑
-    method().then(([listResult, countResult]: [any, any]) => {
-      datas.value = (listResult?.data?.details || []).map((item: any) => {
-        return {
-          ...item,
-          ...item.spec,
-          ...item.attachment,
-          ...item.revision,
-          ...item.extension,
-        };
-      });
-      pagination.value.count = countResult?.data?.count || 0;
-    })
+      ]).then(([listResult, countResult]: [any, any]) => {
+        datas.value = (listResult?.data?.details || []).map((item: any) => {
+          return {
+            ...item,
+            ...item.spec,
+            ...item.attachment,
+            ...item.revision,
+            ...item.extension,
+          };
+        });
+        pagination.value.count = countResult?.data?.count || 0;
+      })
       .finally(() => {
         isLoading.value = false;
       });
@@ -124,12 +118,11 @@ export default (props: PropsType, url: string, methodType?: string) => {
     () => {
       triggerApi();
     },
+    { deep: true },
   );
 
 
   const getList = () => {
-    pagination.value.limit = 10;
-    pagination.value.current = 1;
     triggerApi();
   };
 

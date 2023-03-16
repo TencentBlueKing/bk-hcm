@@ -30,7 +30,7 @@ import {
   useResourceStore,
 } from '@/store';
 import useBusiness from '../../hooks/use-business';
-import useQueryList from '../../hooks/use-query-list';
+import useQueryCommonList from '../../hooks/use-query-list-common';
 import useColumns from '../../hooks/use-columns';
 import useDelete from '../../hooks/use-delete';
 import useSelection from '../../hooks/use-selection';
@@ -53,6 +53,7 @@ const route = useRoute();
 const resourceStore = useResourceStore();
 
 const activeType = ref('group');
+const fetchUrl = ref<string>('security_groups/list');
 
 const state = reactive<any>({
   datas: [],
@@ -66,6 +67,11 @@ const state = reactive<any>({
   handlePageSizeChange: () => {},
   handleSort: () => {},
   columns: useColumns('group'),
+  params: {
+    fetchUrl: 'security_groups',
+    columns: 'group',
+    dialogName: t('删除安全组'),
+  },
 });
 
 let securityHandleShowDelete: any;
@@ -82,27 +88,15 @@ const {
   handleSelectionChange,
 } = useSelection();
 
-
-const fetchList = async (fetchType: string) => {
-  console.log('fetchType', fetchType, props);
-  const {
-    datas,
-    pagination,
-    isLoading,
-    handlePageChange,
-    handlePageSizeChange,
-    handleSort,
-  } = await useQueryList(props, fetchType);
-  return {
-    datas,
-    pagination,
-    isLoading,
-    handlePageChange,
-    handlePageSizeChange,
-    handleSort,
-  };
-};
-
+const {
+  datas,
+  pagination,
+  isLoading,
+  handlePageChange,
+  handlePageSizeChange,
+  handleSort,
+  getList,
+} = useQueryCommonList(props, fetchUrl);
 const showDeleteDialog = (fetchType: string, title: string) => {
   const {
     handleShowDelete,
@@ -113,6 +107,9 @@ const showDeleteDialog = (fetchType: string, title: string) => {
     fetchType,
     t(title),
     true,
+    () => {
+      getList();
+    },  // 删除成功请求方法
   );
   return {
     handleShowDelete,
@@ -132,26 +129,27 @@ watch(
 
 
 const handleSwtichType = async (type: string) => {
-  const params = {
-    fetchUrl: 'security_groups',
-    columns: 'group',
-    dialogName: t('删除安全组'),
-  };
   if (type === 'gcp') {
-    params.fetchUrl = 'vendors/gcp/firewalls/rules';
-    params.columns = 'gcp';
-    params.dialogName = t('删除防火墙规则');
+    fetchUrl.value = 'vendors/gcp/firewalls/rules/list';
+    state.params.fetchUrl = 'vendors/gcp/firewalls/rules';
+    state.params.columns = 'gcp';
+    state.params.dialogName = t('删除防火墙规则');
+  } else {
+    fetchUrl.value = 'security_groups/list';
+    state.params.fetchUrl = 'security_groups';
+    state.params.columns = 'group';
+    state.params.dialogName = t('删除安全组规则');
   }
+  console.log('state.params.fetchUrl', state.params.fetchUrl);
   // eslint-disable-next-line max-len
-  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = await fetchList(params.fetchUrl);
   state.datas = datas;
   state.isLoading = isLoading;
   state.pagination = pagination;
   state.handlePageChange = handlePageChange;
   state.handlePageSizeChange = handlePageSizeChange;
   state.handleSort = handleSort;
-  state.columns = useColumns(params.columns);
-  const { handleShowDelete, DeleteDialog } = showDeleteDialog(params.fetchUrl, params.dialogName);
+  state.columns = useColumns(state.params.columns);
+  const { handleShowDelete, DeleteDialog } = showDeleteDialog(state.params.fetchUrl, state.params.dialogName);
   securityHandleShowDelete = handleShowDelete;
   SecurityDeleteDialog = DeleteDialog;
 };

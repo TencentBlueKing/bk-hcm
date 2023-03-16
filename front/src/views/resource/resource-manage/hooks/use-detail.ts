@@ -37,5 +37,6 @@ export default (type: string, id: string, cb?: Function, vendor?: string) => {
   return {
     loading,
     detail,
+    getDetail,
   };
 };
