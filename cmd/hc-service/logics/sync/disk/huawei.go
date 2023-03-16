@@ -171,7 +171,7 @@ func getDatasFromHuaWeiForDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, dsMap map[string]*HuaWeiDiskSyncDS,
 	req *SyncHuaWeiDiskOption, dataCli *dataservice.Client) error {
 
-	addCloudIDs := []string{}
+	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
 		if _, ok := dsMap[id]; !ok {
 			addCloudIDs = append(addCloudIDs, id)
@@ -180,8 +180,8 @@ func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, ds
 		}
 	}
 
-	deleteCloudIDs := []string{}
-	updateCloudIDs := []string{}
+	deleteCloudIDs := make([]string, 0)
+	updateCloudIDs := make([]string, 0)
 	for id, one := range dsMap {
 		if !one.IsUpdated {
 			deleteCloudIDs = append(deleteCloudIDs, id)

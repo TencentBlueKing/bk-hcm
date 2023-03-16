@@ -20,16 +20,20 @@
 package disk
 
 import (
+	"errors"
 	"fmt"
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	typecore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
+	"hcm/pkg/api/core"
 	apicore "hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	"hcm/pkg/api/data-service/cloud/zone"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
@@ -195,7 +199,7 @@ func getDatasFromGcpForDiskSync(kt *kit.Kit, req *SyncGcpDiskOption,
 func diffGcpDiskSync(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 	dsMap map[string]*GcpDiskSyncDS, req *SyncGcpDiskOption, dataCli *dataservice.Client) error {
 
-	addCloudIDs := []string{}
+	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
 		if _, ok := dsMap[id]; !ok {
 			addCloudIDs = append(addCloudIDs, id)
@@ -204,8 +208,8 @@ func diffGcpDiskSync(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 		}
 	}
 
-	deleteCloudIDs := []string{}
-	updateCloudIDs := []string{}
+	deleteCloudIDs := make([]string, 0)
+	updateCloudIDs := make([]string, 0)
 	for id, one := range dsMap {
 		if !one.IsUpdated {
 			deleteCloudIDs = append(deleteCloudIDs, id)
@@ -265,6 +269,14 @@ func diffGcpDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 				Encrypted: nil,
 			},
 		}
+		if disk.Region == "" {
+			region, err := getRegion(kt, dataCli, req.Zone)
+			if err != nil {
+				logs.Errorf("request gcp disk to get region failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+			disk.Region = region
+		}
 		createReq = append(createReq, disk)
 	}
 
@@ -279,6 +291,38 @@ func diffGcpDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 	}
 
 	return results.IDs, nil
+}
+
+func getRegion(kt *kit.Kit, dataCli *dataservice.Client, gcpZone string) (string, error) {
+	listReq := &zone.ZoneListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: enumor.Gcp,
+				},
+				&filter.AtomRule{
+					Field: "name",
+					Op:    filter.Equal.Factory(),
+					Value: gcpZone,
+				},
+			},
+		},
+		Page: core.DefaultBasePage,
+	}
+	result, err := dataCli.Global.Zone.ListZone(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list gcp zone failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	if len(result.Details) == 0 {
+		return "", errors.New("gcp zone is empty")
+	}
+
+	return result.Details[0].Region, nil
 }
 
 func isGcpDiskChange(db *GcpDiskSyncDS, cloud *GcpDiskSyncDiff) bool {

@@ -165,7 +165,7 @@ func getDatasFromAwsForDiskSync(kt *kit.Kit, req *SyncAwsDiskOption,
 func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap map[string]*AwsDiskSyncDS,
 	req *SyncAwsDiskOption, dataCli *dataservice.Client) error {
 
-	addCloudIDs := []string{}
+	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
 		if _, ok := dsMap[id]; !ok {
 			addCloudIDs = append(addCloudIDs, id)
@@ -174,8 +174,8 @@ func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap ma
 		}
 	}
 
-	deleteCloudIDs := []string{}
-	updateCloudIDs := []string{}
+	deleteCloudIDs := make([]string, 0)
+	updateCloudIDs := make([]string, 0)
 	for id, one := range dsMap {
 		if !one.IsUpdated {
 			deleteCloudIDs = append(deleteCloudIDs, id)

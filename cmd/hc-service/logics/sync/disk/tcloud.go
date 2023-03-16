@@ -223,7 +223,7 @@ func getTCloudDiskByCloudIDsSync(kt *kit.Kit, client *tcloud.TCloud,
 func diffTCloudDiskSync(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
 	dsMap map[string]*TCloudDiskSyncDS, req *SyncTCloudDiskOption, dataCli *dataservice.Client) error {
 
-	addCloudIDs := []string{}
+	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
 		if _, ok := dsMap[id]; !ok {
 			addCloudIDs = append(addCloudIDs, id)
@@ -232,8 +232,8 @@ func diffTCloudDiskSync(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
 		}
 	}
 
-	deleteCloudIDs := []string{}
-	updateCloudIDs := []string{}
+	deleteCloudIDs := make([]string, 0)
+	updateCloudIDs := make([]string, 0)
 	for id, one := range dsMap {
 		if !one.IsUpdated {
 			deleteCloudIDs = append(deleteCloudIDs, id)

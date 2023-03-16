@@ -172,7 +172,7 @@ func getDatasFromAzureForDiskSync(kt *kit.Kit, req *SyncAzureDiskOption,
 func diffAzureDiskSync(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff,
 	dsMap map[string]*AzureDiskSyncDS, req *SyncAzureDiskOption, dataCli *dataservice.Client) error {
 
-	addCloudIDs := []string{}
+	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
 		if _, ok := dsMap[id]; !ok {
 			addCloudIDs = append(addCloudIDs, id)
@@ -181,8 +181,8 @@ func diffAzureDiskSync(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff,
 		}
 	}
 
-	deleteCloudIDs := []string{}
-	updateCloudIDs := []string{}
+	deleteCloudIDs := make([]string, 0)
+	updateCloudIDs := make([]string, 0)
 	for id, one := range dsMap {
 		if !one.IsUpdated {
 			deleteCloudIDs = append(deleteCloudIDs, id)
@@ -232,13 +232,15 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 			DiskSize:  uint64(*cloudMap[id].Disk.Properties.DiskSizeBytes) / 1024 / 1024 / 1024,
 			DiskType:  converter.PtrToVal(cloudMap[id].Disk.Type),
 			Status:    string(*cloudMap[id].Disk.Properties.DiskState),
-			// 该云没有此字段
-			Zone: "",
+			Zone:      "",
 			// 该云没有此字段
 			Memo: nil,
 			Extension: &dataproto.AzureDiskExtensionCreateReq{
 				ResourceGroupName: req.ResourceGroupName,
 			},
+		}
+		if len(cloudMap[id].Disk.Zones) > 0 {
+			disk.Zone = converter.PtrToVal(cloudMap[id].Disk.Zones[0])
 		}
 		createReq = append(createReq, disk)
 	}
