@@ -56,7 +56,7 @@ func (a *Azure) ListImage(
 
 		for _, pImage := range res.VirtualMachineImageResourceArray {
 			images = append(images, image.AzureImage{
-				CloudID:  converter.PtrToVal(pImage.ID),
+				CloudID:  SPtrToLowerStr(pImage.ID),
 				Name:     converter.PtrToVal(pImage.Name),
 				Platform: opt.Offer,
 				Sku:      converter.PtrToVal(sku.Name),

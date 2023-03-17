@@ -165,7 +165,7 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 func syncAzureSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AzureSGRuleSync,
 	sgID string, req *SyncAzureSecurityGroupOption, dataCli *dataservice.Client) error {
 
-	rules := make([]*armnetwork.SecurityRule, 0)
+	rules := make([]*securitygrouprule.AzureSecurityRule, 0)
 	for _, id := range updateIDs {
 		if value, ok := cloudMap[id]; ok {
 			rules = append(rules, value.SGRule)
@@ -199,7 +199,7 @@ func syncAzureSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]
 func syncAzureSGRuleAdd(kt *kit.Kit, addIDs []string, req *SyncAzureSecurityGroupOption,
 	cloudMap map[string]*AzureSGRuleSync, sgID string, dataCli *dataservice.Client) error {
 
-	rules := make([]*armnetwork.SecurityRule, 0)
+	rules := make([]*securitygrouprule.AzureSecurityRule, 0)
 	for _, id := range addIDs {
 		if value, ok := cloudMap[id]; ok {
 			rules = append(rules, value.SGRule)
@@ -350,7 +350,7 @@ func getAzureSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAzureSecurity
 	return updateIDs, nil
 }
 
-func isAzureSGRuleChange(db *corecloud.AzureSecurityGroupRule, cloud *armnetwork.SecurityRule) bool {
+func isAzureSGRuleChange(db *corecloud.AzureSecurityGroupRule, cloud *securitygrouprule.AzureSecurityRule) bool {
 
 	if db.Etag != cloud.Etag {
 		return true
@@ -360,61 +360,61 @@ func isAzureSGRuleChange(db *corecloud.AzureSecurityGroupRule, cloud *armnetwork
 		return true
 	}
 
-	if db.Memo != cloud.Properties.Description {
+	if db.Memo != cloud.Description {
 		return true
 	}
 
-	if db.DestinationAddressPrefix != cloud.Properties.DestinationAddressPrefix {
+	if db.DestinationAddressPrefix != cloud.DestinationAddressPrefix {
 		return true
 	}
 
-	if !assert.IsPtrStringSliceEqual(db.DestinationAddressPrefixes, cloud.Properties.DestinationAddressPrefixes) {
+	if !assert.IsPtrStringSliceEqual(db.DestinationAddressPrefixes, cloud.DestinationAddressPrefixes) {
 		return true
 	}
 
-	if db.DestinationPortRange != cloud.Properties.DestinationPortRange {
+	if db.DestinationPortRange != cloud.DestinationPortRange {
 		return true
 	}
 
-	if !assert.IsPtrStringSliceEqual(db.DestinationPortRanges, cloud.Properties.DestinationPortRanges) {
+	if !assert.IsPtrStringSliceEqual(db.DestinationPortRanges, cloud.DestinationPortRanges) {
 		return true
 	}
 
-	if db.Protocol != string(*cloud.Properties.Protocol) {
+	if db.Protocol != string(*cloud.Protocol) {
 		return true
 	}
 
-	if db.ProvisioningState != string(*cloud.Properties.ProvisioningState) {
+	if db.ProvisioningState != string(*cloud.ProvisioningState) {
 		return true
 	}
 
-	if db.SourceAddressPrefix != cloud.Properties.SourceAddressPrefix {
+	if db.SourceAddressPrefix != cloud.SourceAddressPrefix {
 		return true
 	}
 
-	if !assert.IsPtrStringSliceEqual(db.SourceAddressPrefixes, cloud.Properties.SourceAddressPrefixes) {
+	if !assert.IsPtrStringSliceEqual(db.SourceAddressPrefixes, cloud.SourceAddressPrefixes) {
 		return true
 	}
 
-	if db.SourcePortRange != cloud.Properties.SourcePortRange {
+	if db.SourcePortRange != cloud.SourcePortRange {
 		return true
 	}
 
-	if !assert.IsPtrStringSliceEqual(db.SourcePortRanges, cloud.Properties.SourcePortRanges) {
+	if !assert.IsPtrStringSliceEqual(db.SourcePortRanges, cloud.SourcePortRanges) {
 		return true
 	}
 
-	if db.Priority != *cloud.Properties.Priority {
+	if db.Priority != *cloud.Priority {
 		return true
 	}
 
-	if db.Access != string(*cloud.Properties.Access) {
+	if db.Access != string(*cloud.Access) {
 		return true
 	}
 
 	destinationIDs := make([]*string, 0)
-	if len(cloud.Properties.DestinationApplicationSecurityGroups) != 0 {
-		for _, one := range cloud.Properties.DestinationApplicationSecurityGroups {
+	if len(cloud.DestinationApplicationSecurityGroups) != 0 {
+		for _, one := range cloud.DestinationApplicationSecurityGroups {
 			destinationIDs = append(destinationIDs, one.ID)
 		}
 	}
@@ -424,8 +424,8 @@ func isAzureSGRuleChange(db *corecloud.AzureSecurityGroupRule, cloud *armnetwork
 	}
 
 	sourceIDs := make([]*string, 0)
-	if len(cloud.Properties.SourceApplicationSecurityGroups) != 0 {
-		for _, one := range cloud.Properties.SourceApplicationSecurityGroups {
+	if len(cloud.SourceApplicationSecurityGroups) != 0 {
+		for _, one := range cloud.SourceApplicationSecurityGroups {
 			sourceIDs = append(sourceIDs, one.ID)
 		}
 	}
@@ -437,7 +437,7 @@ func isAzureSGRuleChange(db *corecloud.AzureSecurityGroupRule, cloud *armnetwork
 	return false
 }
 
-func genAzureUpdateRulesList(kt *kit.Kit, rules []*armnetwork.SecurityRule, sgID string,
+func genAzureUpdateRulesList(kt *kit.Kit, rules []*securitygrouprule.AzureSecurityRule, sgID string,
 	id string, req *SyncAzureSecurityGroupOption, dataCli *dataservice.Client, region string) []protocloud.AzureSGRuleUpdate {
 
 	list := make([]protocloud.AzureSGRuleUpdate, 0, len(rules))
@@ -458,41 +458,41 @@ func genAzureUpdateRulesList(kt *kit.Kit, rules []*armnetwork.SecurityRule, sgID
 			CloudID:                    *rule.ID,
 			Etag:                       rule.Etag,
 			Name:                       *rule.Name,
-			Memo:                       rule.Properties.Description,
-			DestinationAddressPrefix:   rule.Properties.DestinationAddressPrefix,
-			DestinationAddressPrefixes: rule.Properties.DestinationAddressPrefixes,
-			DestinationPortRange:       rule.Properties.DestinationPortRange,
-			DestinationPortRanges:      rule.Properties.DestinationPortRanges,
-			Protocol:                   string(*rule.Properties.Protocol),
-			ProvisioningState:          string(*rule.Properties.ProvisioningState),
-			SourceAddressPrefix:        rule.Properties.SourceAddressPrefix,
-			SourceAddressPrefixes:      rule.Properties.SourceAddressPrefixes,
-			SourcePortRange:            rule.Properties.SourcePortRange,
-			SourcePortRanges:           rule.Properties.SourcePortRanges,
-			Priority:                   *rule.Properties.Priority,
-			Access:                     string(*rule.Properties.Access),
+			Memo:                       rule.Description,
+			DestinationAddressPrefix:   rule.DestinationAddressPrefix,
+			DestinationAddressPrefixes: rule.DestinationAddressPrefixes,
+			DestinationPortRange:       rule.DestinationPortRange,
+			DestinationPortRanges:      rule.DestinationPortRanges,
+			Protocol:                   string(*rule.Protocol),
+			ProvisioningState:          string(*rule.ProvisioningState),
+			SourceAddressPrefix:        rule.SourceAddressPrefix,
+			SourceAddressPrefixes:      rule.SourceAddressPrefixes,
+			SourcePortRange:            rule.SourcePortRange,
+			SourcePortRanges:           rule.SourcePortRanges,
+			Priority:                   *rule.Priority,
+			Access:                     string(*rule.Access),
 			CloudSecurityGroupID:       id,
 			Region:                     region,
 			AccountID:                  req.AccountID,
 			SecurityGroupID:            sgID,
 		}
-		switch *rule.Properties.Direction {
+		switch *rule.Direction {
 		case armnetwork.SecurityRuleDirectionInbound:
 			spec.Type = enumor.Ingress
 		case armnetwork.SecurityRuleDirectionOutbound:
 			spec.Type = enumor.Egress
 		default:
 		}
-		if len(rule.Properties.DestinationApplicationSecurityGroups) != 0 {
-			ids := make([]*string, 0, len(rule.Properties.DestinationApplicationSecurityGroups))
-			for _, one := range rule.Properties.DestinationApplicationSecurityGroups {
+		if len(rule.DestinationApplicationSecurityGroups) != 0 {
+			ids := make([]*string, 0, len(rule.DestinationApplicationSecurityGroups))
+			for _, one := range rule.DestinationApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
 			spec.CloudDestinationSecurityGroupIDs = ids
 		}
-		if len(rule.Properties.SourceApplicationSecurityGroups) != 0 {
-			ids := make([]*string, 0, len(rule.Properties.SourceApplicationSecurityGroups))
-			for _, one := range rule.Properties.SourceApplicationSecurityGroups {
+		if len(rule.SourceApplicationSecurityGroups) != 0 {
+			ids := make([]*string, 0, len(rule.SourceApplicationSecurityGroups))
+			for _, one := range rule.SourceApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
 			spec.CloudSourceSecurityGroupIDs = ids
@@ -523,7 +523,7 @@ func getAzureSGRuleByCid(kt *kit.Kit, cID string, sgID string,
 	return &listResp.Details[0], nil
 }
 
-func genAzureAddRulesList(rules []*armnetwork.SecurityRule, sgCloudID string,
+func genAzureAddRulesList(rules []*securitygrouprule.AzureSecurityRule, sgCloudID string,
 	id string, req *SyncAzureSecurityGroupOption, region string) []protocloud.AzureSGRuleBatchCreate {
 
 	list := make([]protocloud.AzureSGRuleBatchCreate, 0, len(rules))
@@ -533,41 +533,41 @@ func genAzureAddRulesList(rules []*armnetwork.SecurityRule, sgCloudID string,
 			CloudID:                    *rule.ID,
 			Etag:                       rule.Etag,
 			Name:                       *rule.Name,
-			Memo:                       rule.Properties.Description,
-			DestinationAddressPrefix:   rule.Properties.DestinationAddressPrefix,
-			DestinationAddressPrefixes: rule.Properties.DestinationAddressPrefixes,
-			DestinationPortRange:       rule.Properties.DestinationPortRange,
-			DestinationPortRanges:      rule.Properties.DestinationPortRanges,
-			Protocol:                   string(*rule.Properties.Protocol),
-			ProvisioningState:          string(*rule.Properties.ProvisioningState),
-			SourceAddressPrefix:        rule.Properties.SourceAddressPrefix,
-			SourceAddressPrefixes:      rule.Properties.SourceAddressPrefixes,
-			SourcePortRange:            rule.Properties.SourcePortRange,
-			SourcePortRanges:           rule.Properties.SourcePortRanges,
-			Priority:                   *rule.Properties.Priority,
-			Access:                     string(*rule.Properties.Access),
+			Memo:                       rule.Description,
+			DestinationAddressPrefix:   rule.DestinationAddressPrefix,
+			DestinationAddressPrefixes: rule.DestinationAddressPrefixes,
+			DestinationPortRange:       rule.DestinationPortRange,
+			DestinationPortRanges:      rule.DestinationPortRanges,
+			Protocol:                   string(*rule.Protocol),
+			ProvisioningState:          string(*rule.ProvisioningState),
+			SourceAddressPrefix:        rule.SourceAddressPrefix,
+			SourceAddressPrefixes:      rule.SourceAddressPrefixes,
+			SourcePortRange:            rule.SourcePortRange,
+			SourcePortRanges:           rule.SourcePortRanges,
+			Priority:                   *rule.Priority,
+			Access:                     string(*rule.Access),
 			CloudSecurityGroupID:       sgCloudID,
 			Region:                     region,
 			AccountID:                  req.AccountID,
 			SecurityGroupID:            id,
 		}
-		switch *rule.Properties.Direction {
+		switch *rule.Direction {
 		case armnetwork.SecurityRuleDirectionInbound:
 			spec.Type = enumor.Ingress
 		case armnetwork.SecurityRuleDirectionOutbound:
 			spec.Type = enumor.Egress
 		default:
 		}
-		if len(rule.Properties.DestinationApplicationSecurityGroups) != 0 {
-			ids := make([]*string, 0, len(rule.Properties.DestinationApplicationSecurityGroups))
-			for _, one := range rule.Properties.DestinationApplicationSecurityGroups {
+		if len(rule.DestinationApplicationSecurityGroups) != 0 {
+			ids := make([]*string, 0, len(rule.DestinationApplicationSecurityGroups))
+			for _, one := range rule.DestinationApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
 			spec.CloudDestinationSecurityGroupIDs = ids
 		}
-		if len(rule.Properties.SourceApplicationSecurityGroups) != 0 {
-			ids := make([]*string, 0, len(rule.Properties.SourceApplicationSecurityGroups))
-			for _, one := range rule.Properties.SourceApplicationSecurityGroups {
+		if len(rule.SourceApplicationSecurityGroups) != 0 {
+			ids := make([]*string, 0, len(rule.SourceApplicationSecurityGroups))
+			for _, one := range rule.SourceApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
 			spec.CloudSourceSecurityGroupIDs = ids

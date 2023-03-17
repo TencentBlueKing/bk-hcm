@@ -65,8 +65,12 @@ func (opt *QuerySecurityGroupIDsAndSyncOption) Validate() error {
 // QuerySecurityGroupIDsAndSync 查询安全组，如果不存在则同步完再进行查询.
 func QuerySecurityGroupIDsAndSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
 	dataCli *dataclient.Client, opt *QuerySecurityGroupIDsAndSyncOption) (map[string]string, error) {
+	if len(opt.CloudSecurityGroupIDs) <= 0 {
+		return make(map[string]string), nil
+	}
 
 	cloudIDs := slice.Unique(opt.CloudSecurityGroupIDs)
+
 	listReq := &protocloud.SecurityGroupListReq{
 		Filter: tools.ContainersExpression("cloud_id", cloudIDs),
 		Page:   core.DefaultBasePage,

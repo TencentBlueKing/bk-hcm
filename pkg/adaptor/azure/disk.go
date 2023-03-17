@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
+	typedisk "hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/tools/converter"
@@ -90,7 +91,7 @@ func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption, diskNam
 
 // GetDisk 查询单个云盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/get?tabs=Go
-func (a *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*armcompute.Disk, error) {
+func (a *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*typedisk.AzureDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure disk get option is required")
 	}
@@ -103,16 +104,28 @@ func (a *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*armcompute.
 	if err != nil {
 		return nil, err
 	}
+
 	resp, err := client.Get(kt.Ctx, opt.ResourceGroupName, opt.DiskName, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get disk: %v", err)
 	}
-	return &resp.Disk, nil
+
+	converterResp := &typedisk.AzureDisk{
+		ID:       SPtrToLowerSPtr(resp.Disk.ID),
+		Name:     SPtrToLowerSPtr(resp.Disk.Name),
+		Location: SPtrToLowerNoSpaceSPtr(resp.Disk.Location),
+		Type:     resp.Disk.Type,
+		Status:   (*string)(resp.Disk.Properties.DiskState),
+		DiskSize: resp.Disk.Properties.DiskSizeBytes,
+		Zones:    resp.Disk.Zones,
+	}
+
+	return converterResp, nil
 }
 
 // ListDisk 查看云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*armcompute.Disk, error) {
+func (a *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*typedisk.AzureDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure disk list option is required")
 	}
@@ -136,12 +149,12 @@ func (a *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*armcomp
 		disks = append(disks, nextResult.Value...)
 	}
 
-	return disks, nil
+	return converterDisk(disks), nil
 }
 
 // ListDiskByID 查看云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*armcompute.Disk, error) {
+func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*typedisk.AzureDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure disk list option is required")
 	}
@@ -166,12 +179,13 @@ func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*ar
 
 		for _, one := range nextResult.Value {
 			if len(opt.CloudIDs) > 0 {
-				if _, exist := idMap[*one.ID]; exist {
+				id := SPtrToLowerSPtr(one.ID)
+				if _, exist := idMap[*id]; exist {
 					disks = append(disks, one)
-					delete(idMap, *one.ID)
+					delete(idMap, *id)
 
 					if len(idMap) == 0 {
-						return disks, nil
+						return converterDisk(disks), nil
 					}
 				}
 			} else {
@@ -180,7 +194,26 @@ func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*ar
 		}
 	}
 
-	return disks, nil
+	return converterDisk(disks), nil
+}
+
+func converterDisk(disks []*armcompute.Disk) []*typedisk.AzureDisk {
+	typesDisk := make([]*typedisk.AzureDisk, 0)
+
+	for _, v := range disks {
+		tmp := &typedisk.AzureDisk{
+			ID:       SPtrToLowerSPtr(v.ID),
+			Name:     SPtrToLowerSPtr(v.Name),
+			Location: SPtrToLowerNoSpaceSPtr(v.Location),
+			Type:     v.Type,
+			Status:   (*string)(v.Properties.DiskState),
+			DiskSize: v.Properties.DiskSizeBytes,
+			Zones:    v.Zones,
+		}
+		typesDisk = append(typesDisk, tmp)
+	}
+
+	return typesDisk
 }
 
 // DeleteDisk 删除云盘
@@ -235,7 +268,7 @@ func (a *Azure) AttachDisk(kt *kit.Kit, opt *disk.AzureDiskAttachOption) error {
 		return err
 	}
 
-	return a.attachDisk(kt, opt, cvmData.Properties.StorageProfile, diskData)
+	return a.attachDisk(kt, opt, cvmData.StorageProfile, diskData)
 }
 
 // DetachDisk 卸载云盘
@@ -265,7 +298,7 @@ func (a *Azure) DetachDisk(kt *kit.Kit, opt *disk.AzureDiskDetachOption) error {
 		return err
 	}
 
-	return a.detachDisk(kt, opt, cvmData.Properties.StorageProfile, diskData)
+	return a.detachDisk(kt, opt, cvmData.StorageProfile, diskData)
 }
 
 // attachDisk 通过 vm 的 BeginCreateOrUpdate 接口完成云盘挂载
@@ -273,7 +306,7 @@ func (a *Azure) attachDisk(
 	kt *kit.Kit,
 	opt *disk.AzureDiskAttachOption,
 	storageProfile *armcompute.StorageProfile,
-	diskData *armcompute.Disk,
+	diskData *typedisk.AzureDisk,
 ) error {
 	client, err := a.clientSet.virtualMachineClient()
 	if err != nil {
@@ -314,7 +347,7 @@ func (a *Azure) detachDisk(
 	kt *kit.Kit,
 	opt *disk.AzureDiskDetachOption,
 	storageProfile *armcompute.StorageProfile,
-	diskData *armcompute.Disk,
+	diskData *typedisk.AzureDisk,
 ) error {
 	client, err := a.clientSet.virtualMachineClient()
 	if err != nil {

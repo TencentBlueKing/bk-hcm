@@ -20,6 +20,7 @@
 package disk
 
 import (
+	typedisk "hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
@@ -30,7 +31,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
@@ -54,7 +54,7 @@ type GcpDiskSyncDiff struct {
 
 // AzureDiskSyncDiff diff azure disk struct
 type AzureDiskSyncDiff struct {
-	Disk *armcompute.Disk
+	Disk *typedisk.AzureDisk
 }
 
 // AwsDiskSyncDiff aws disk diff struct

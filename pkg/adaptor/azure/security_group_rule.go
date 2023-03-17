@@ -22,7 +22,7 @@ package azure
 import (
 	"fmt"
 
-	"hcm/pkg/adaptor/types/security-group-rule"
+	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -57,7 +57,7 @@ func (az *Azure) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 	if len(opt.IngressRuleSet) != 0 {
 		rules, nameMap = convSecurityGroupRule(armnetwork.SecurityRuleDirectionInbound, opt.IngressRuleSet)
 	}
-	rules = append(sg.Properties.SecurityRules, rules...)
+	rules = append(sg.SecurityRules, rules...)
 
 	client, err := az.clientSet.securityGroupClient()
 	if err != nil {
@@ -169,7 +169,7 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 	}
 
 	exist := false
-	for _, rule := range sg.Properties.SecurityRules {
+	for _, rule := range sg.SecurityRules {
 		if *rule.ID == opt.Rule.CloudID {
 			exist = true
 			access := armnetwork.SecurityRuleAccess(opt.Rule.Access)
@@ -226,7 +226,7 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 	req := armnetwork.SecurityGroup{
 		Location: &opt.Region,
 		Properties: &armnetwork.SecurityGroupPropertiesFormat{
-			SecurityRules: sg.Properties.SecurityRules,
+			SecurityRules: sg.SecurityRules,
 		},
 	}
 	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, *sg.Name, req, nil)
@@ -263,7 +263,7 @@ func (az *Azure) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 
 	exist := false
 	rules := make([]*armnetwork.SecurityRule, 0)
-	for _, rule := range sg.Properties.SecurityRules {
+	for _, rule := range sg.SecurityRules {
 		if *rule.ID == opt.CloudRuleID {
 			exist = true
 			continue
@@ -304,7 +304,7 @@ func (az *Azure) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 
 // ListSecurityGroupRule list security group rule.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
-func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AzureListOption) ([]*armnetwork.SecurityRule,
+func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AzureListOption) ([]*securitygrouprule.AzureSecurityRule,
 	error) {
 
 	if opt == nil {
@@ -320,5 +320,30 @@ func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azure
 		return nil, err
 	}
 
-	return sg.Properties.SecurityRules, nil
+	securityRules := make([]*securitygrouprule.AzureSecurityRule, 0)
+	for _, v := range sg.SecurityRules {
+		tmp := &securitygrouprule.AzureSecurityRule{
+			ID:                                   SPtrToLowerSPtr(v.ID),
+			Etag:                                 v.Etag,
+			Name:                                 SPtrToLowerSPtr(v.Name),
+			Description:                          v.Properties.Description,
+			DestinationAddressPrefix:             v.Properties.DestinationAddressPrefix,
+			DestinationAddressPrefixes:           v.Properties.DestinationAddressPrefixes,
+			DestinationPortRange:                 v.Properties.DestinationPortRange,
+			DestinationPortRanges:                v.Properties.DestinationPortRanges,
+			Protocol:                             v.Properties.Protocol,
+			ProvisioningState:                    v.Properties.ProvisioningState,
+			SourceAddressPrefix:                  v.Properties.SourceAddressPrefix,
+			SourceAddressPrefixes:                v.Properties.SourceAddressPrefixes,
+			SourcePortRange:                      v.Properties.SourcePortRange,
+			SourcePortRanges:                     v.Properties.SourcePortRanges,
+			Priority:                             v.Properties.Priority,
+			Access:                               v.Properties.Access,
+			Direction:                            v.Properties.Direction,
+			DestinationApplicationSecurityGroups: v.Properties.DestinationApplicationSecurityGroups,
+			SourceApplicationSecurityGroups:      v.Properties.SourceApplicationSecurityGroups,
+		}
+		securityRules = append(securityRules, tmp)
+	}
+	return securityRules, nil
 }

@@ -20,7 +20,11 @@
 package cvm
 
 import (
+	"time"
+
 	"hcm/pkg/criteria/validator"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
 
 // -------------------------- List --------------------------
@@ -148,4 +152,30 @@ type AzureGetOption struct {
 // Validate ...
 func (opt *AzureGetOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// AzureCvm ...
+type AzureCvm struct {
+	ID                  *string                                       `json:"id"`
+	Name                *string                                       `json:"name"`
+	Location            *string                                       `json:"region"`
+	Type                *string                                       `json:"type"`
+	CloudImageID        *string                                       `json:"cloud_image_id"`
+	ComputerName        *string                                       `json:"computer_name"`
+	ProvisioningState   *string                                       `json:"provisioning_state"`
+	EvictionPolicy      *armcompute.VirtualMachineEvictionPolicyTypes `json:"eviction_policy"`
+	VMSize              *armcompute.VirtualMachineSizeTypes           `json:"vm_size"`
+	LicenseType         *string                                       `json:"license_type"`
+	NetworkInterfaceIDs []string                                      `json:"network_interface_ids"`
+	Priority            *armcompute.VirtualMachinePriorityTypes       `json:"priority"`
+	CloudDataDiskIDs    []string                                      `json:"cloud_data_disk_ids"`
+	CloudOsDiskID       string                                        `json:"cloud_os_disk_id"`
+	Zones               []*string                                     `json:"zones"`
+	HibernationEnabled  *bool                                         `json:"hibernation_enabled"`
+	UltraSSDEnabled     *bool                                         `json:"ultra_ssd_enabled"`
+	MaxPrice            *float64                                      `json:"max_price"`
+	VCPUsAvailable      *int32                                        `json:"vcpus_available"`
+	VCPUsPerCore        *int32                                        `json:"vcpus_per_core"`
+	TimeCreated         *time.Time                                    `json:"time_created"`
+	StorageProfile      *armcompute.StorageProfile                    `json:"storage_profile"`
 }

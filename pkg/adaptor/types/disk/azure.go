@@ -124,3 +124,14 @@ type AzureDiskDetachOption struct {
 func (opt *AzureDiskDetachOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// AzureDisk define azure disk.
+type AzureDisk struct {
+	ID       *string   `json:"id"`
+	Name     *string   `json:"name"`
+	Location *string   `json:"location"`
+	Type     *string   `json:"type"`
+	Status   *string   `json:"status"`
+	DiskSize *int64    `json:"disk_size"`
+	Zones    []*string `json:"zone"`
+}

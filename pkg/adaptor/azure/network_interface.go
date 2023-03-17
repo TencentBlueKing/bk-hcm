@@ -89,9 +89,10 @@ func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOpt
 		}
 
 		for _, one := range nextResult.Value {
-			if _, exist := idMap[*one.ID]; exist {
+			id := SPtrToLowerSPtr(one.ID)
+			if _, exist := idMap[*id]; exist {
 				details = append(details, converter.PtrToVal(a.ConvertCloudNetworkInterface(one)))
-				delete(idMap, *one.ID)
+				delete(idMap, *id)
 
 				if len(idMap) == 0 {
 					return &typesniproto.AzureInterfaceListResult{Details: details}, nil
@@ -136,15 +137,16 @@ func (a *Azure) ListRawNetworkInterfaceByIDs(kt *kit.Kit, opt *core.AzureListByI
 	return networks, nil
 }
 
+// ConvertCloudNetworkInterface ...
 func (a *Azure) ConvertCloudNetworkInterface(data *armnetwork.Interface) *typesniproto.AzureNI {
 	if data == nil {
 		return nil
 	}
 
 	v := &typesniproto.AzureNI{
-		Name:    data.Name,
-		Region:  data.Location,
-		CloudID: data.ID,
+		Name:    SPtrToLowerSPtr(data.Name),
+		Region:  SPtrToLowerSPtr(data.Location),
+		CloudID: SPtrToLowerSPtr(data.ID),
 	}
 
 	if data.Properties == nil {
@@ -164,15 +166,15 @@ func (a *Azure) ConvertCloudNetworkInterface(data *armnetwork.Interface) *typesn
 		}
 	}
 	if data.Properties.VirtualMachine != nil {
-		v.Extension.CloudVirtualMachineID = data.Properties.VirtualMachine.ID
+		v.Extension.CloudVirtualMachineID = SPtrToLowerSPtr(data.Properties.VirtualMachine.ID)
 	}
 
 	cloudIDArr := strings.Split(converter.PtrToVal(data.ID), "/")
 	if len(cloudIDArr) > 4 {
-		v.Extension.ResourceGroupName = cloudIDArr[4]
+		v.Extension.ResourceGroupName = strings.ToLower(cloudIDArr[4])
 	}
 	if data.Properties.VirtualMachine != nil {
-		v.InstanceID = data.Properties.VirtualMachine.ID
+		v.InstanceID = SPtrToLowerSPtr(data.Properties.VirtualMachine.ID)
 	}
 	getExtensionData(data, v)
 	return v
@@ -180,7 +182,7 @@ func (a *Azure) ConvertCloudNetworkInterface(data *armnetwork.Interface) *typesn
 
 func getExtensionData(data *armnetwork.Interface, v *typesniproto.AzureNI) {
 	if data.Properties.NetworkSecurityGroup != nil {
-		v.Extension.CloudSecurityGroupID = data.Properties.NetworkSecurityGroup.ID
+		v.Extension.CloudSecurityGroupID = SPtrToLowerSPtr(data.Properties.NetworkSecurityGroup.ID)
 	}
 	getIpConfigExtensionData(data, v)
 
@@ -201,8 +203,8 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 	tmpArr := make([]*coreni.InterfaceIPConfiguration, 0)
 	for _, item := range data.Properties.IPConfigurations {
 		tmpIP := &coreni.InterfaceIPConfiguration{
-			CloudID: item.ID,
-			Name:    item.Name,
+			CloudID: SPtrToLowerSPtr(item.ID),
+			Name:    SPtrToLowerSPtr(item.Name),
 			Type:    item.Type,
 		}
 		if item.Properties != nil {
@@ -221,16 +223,16 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 				v.PrivateIPv6 = append(v.PrivateIPv6, converter.PtrToVal(tmpIP.Properties.PrivateIPAddress))
 			}
 			if item.Properties.GatewayLoadBalancer != nil {
-				tmpIP.Properties.CloudGatewayLoadBalancerID = item.Properties.GatewayLoadBalancer.ID
-				v.Extension.CloudGatewayLoadBalancerID = tmpIP.Properties.CloudGatewayLoadBalancerID
+				tmpIP.Properties.CloudGatewayLoadBalancerID = SPtrToLowerSPtr(item.Properties.GatewayLoadBalancer.ID)
+				v.Extension.CloudGatewayLoadBalancerID = SPtrToLowerSPtr(tmpIP.Properties.CloudGatewayLoadBalancerID)
 			}
 			if item.Properties.PublicIPAddress != nil {
 				tmpPublicIPAddress := item.Properties.PublicIPAddress
 				tmpIP.Properties.PublicIPAddress = &coreni.PublicIPAddress{
-					CloudID:  tmpPublicIPAddress.ID,
-					Location: tmpPublicIPAddress.Location,
+					CloudID:  SPtrToLowerSPtr(tmpPublicIPAddress.ID),
+					Location: SPtrToLowerNoSpaceSPtr(tmpPublicIPAddress.Location),
 					Zones:    tmpPublicIPAddress.Zones,
-					Name:     tmpPublicIPAddress.Name,
+					Name:     SPtrToLowerSPtr(tmpPublicIPAddress.Name),
 					Type:     tmpPublicIPAddress.Type,
 				}
 				if tmpPublicIPAddress.Properties != nil {
@@ -260,10 +262,10 @@ func getIpConfigSubnetData(
 	tmpIP.Properties.CloudSubnetID = item.Properties.Subnet.ID
 	ipSubnetArr := strings.Split(converter.PtrToVal(tmpIP.Properties.CloudSubnetID), "/")
 	if len(ipSubnetArr) > 9 {
-		v.CloudVpcID = converter.ValToPtr(strings.Join(ipSubnetArr[:9], "/"))
+		v.CloudVpcID = SPtrToLowerSPtr(converter.ValToPtr(strings.Join(ipSubnetArr[:9], "/")))
 	}
 
-	v.CloudSubnetID = tmpIP.Properties.CloudSubnetID
+	v.CloudSubnetID = SPtrToLowerSPtr(tmpIP.Properties.CloudSubnetID)
 }
 
 // GetNetworkInterface get one network interface.
@@ -367,8 +369,8 @@ func convertCloudNetworkInterfaceIPConfig(data *armnetwork.InterfaceIPConfigurat
 	}
 
 	v := &coreni.InterfaceIPConfiguration{
-		CloudID: data.ID,
-		Name:    data.Name,
+		CloudID: SPtrToLowerSPtr(data.ID),
+		Name:    SPtrToLowerSPtr(data.Name),
 		Type:    data.Type,
 		Properties: &coreni.InterfaceIPConfigurationPropertiesFormat{
 			Primary:                   data.Properties.Primary,
@@ -379,9 +381,9 @@ func convertCloudNetworkInterfaceIPConfig(data *armnetwork.InterfaceIPConfigurat
 	}
 	if data.Properties.PublicIPAddress != nil {
 		v.Properties.PublicIPAddress = &coreni.PublicIPAddress{
-			CloudID:  data.Properties.PublicIPAddress.ID,
-			Name:     data.Properties.PublicIPAddress.Name,
-			Location: data.Properties.PublicIPAddress.Location,
+			CloudID:  SPtrToLowerSPtr(data.Properties.PublicIPAddress.ID),
+			Name:     SPtrToLowerSPtr(data.Properties.PublicIPAddress.Name),
+			Location: SPtrToLowerNoSpaceSPtr(data.Properties.PublicIPAddress.Location),
 			Zones:    data.Properties.PublicIPAddress.Zones,
 		}
 	}

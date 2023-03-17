@@ -27,6 +27,7 @@ import (
 	securitygrouplogics "hcm/cmd/hc-service/logics/sync/logics/security-group"
 	subnetlogics "hcm/cmd/hc-service/logics/sync/logics/subnet"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	adaptorazure "hcm/pkg/adaptor/azure"
 	adcore "hcm/pkg/adaptor/types/core"
 	typesniproto "hcm/pkg/adaptor/types/network-interface"
 	"hcm/pkg/api/core"
@@ -159,11 +160,13 @@ func SyncAzureNetworkInterfaceByID(kt *kit.Kit, req *hcservice.AzureNetworkInter
 		tmpList := &typesniproto.AzureInterfaceListResult{}
 		details := make([]typesniproto.AzureNI, 0, len(idMap))
 		for _, niItem := range page.Value {
-			if _, exist := idMap[*niItem.ID]; !exist {
+			id := adaptorazure.SPtrToLowerStr(niItem.ID)
+			if _, exist := idMap[id]; !exist {
 				continue
 			}
+
 			details = append(details, converter.PtrToVal(cli.ConvertCloudNetworkInterface(niItem)))
-			delete(idMap, *niItem.ID)
+			delete(idMap, id)
 			if len(idMap) == 0 {
 				tmpList.Details = details
 				break
@@ -199,13 +202,16 @@ func processCompareAzureNetworkInterface(kt *kit.Kit, req *hcservice.AzureNetwor
 		item.VpcID = converter.ValToPtr(subnetDetail.VpcID)
 
 		// get security group ids by cloud_security_group_ids
-		tmpSGCloudID := converter.PtrToVal(item.Extension.CloudSecurityGroupID)
 		opt := &securitygrouplogics.QuerySecurityGroupIDsAndSyncOption{
 			Vendor:                enumor.Azure,
 			AccountID:             req.AccountID,
-			CloudSecurityGroupIDs: []string{tmpSGCloudID},
+			CloudSecurityGroupIDs: make([]string, 0),
 			ResourceGroupName:     req.ResourceGroupName,
 			Region:                converter.PtrToVal(item.Region),
+		}
+		tmpSGCloudID := adaptorazure.SPtrToLowerStr(item.Extension.CloudSecurityGroupID)
+		if len(tmpSGCloudID) != 0 {
+			opt.CloudSecurityGroupIDs = append(opt.CloudSecurityGroupIDs, tmpSGCloudID)
 		}
 		securityGroupMap, err := securitygrouplogics.QuerySecurityGroupIDsAndSync(kt, adaptor, dataCli, opt)
 		if err != nil {
@@ -243,6 +249,10 @@ func processCompareAzureNetworkInterface(kt *kit.Kit, req *hcservice.AzureNetwor
 // BatchAzureGetNetworkInterfaceMapFromDB batch get network interface info from db.
 func BatchAzureGetNetworkInterfaceMapFromDB(kt *kit.Kit, vendor enumor.Vendor, cloudIDs []string,
 	dataCli *dataclient.Client) (map[string]coreni.NetworkInterface[coreni.AzureNIExtension], error) {
+
+	if len(cloudIDs) <= 0 {
+		return make(map[string]coreni.NetworkInterface[coreni.AzureNIExtension]), nil
+	}
 
 	expr := &filter.Expression{
 		Op: filter.And,

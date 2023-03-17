@@ -69,7 +69,6 @@ func (cli *CvmClient) BatchCreateCvm(ctx context.Context, h http.Header,
 // BatchUpdateCvm batch update cvm.
 func (cli *CvmClient) BatchUpdateCvm(ctx context.Context, h http.Header,
 	request *protocloud.CvmBatchUpdateReq[corecvm.GcpCvmExtension]) error {
-
 	resp := new(rest.BaseResp)
 
 	err := cli.client.Patch().

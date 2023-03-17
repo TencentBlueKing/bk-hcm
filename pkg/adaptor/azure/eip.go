@@ -21,6 +21,7 @@ package azure
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
@@ -50,15 +51,16 @@ func (a *Azure) ListEip(kt *kit.Kit, opt *eip.AzureEipListOption) (*eip.AzureEip
 			state := string(*v.Properties.ProvisioningState)
 			sku := string(*v.SKU.Name)
 			eIp := &eip.AzureEip{
-				CloudID:  *v.ID,
-				Name:     v.Name,
-				Region:   *v.Location,
+				CloudID:  strings.ToLower(*v.ID),
+				Name:     SPtrToLowerSPtr(v.Name),
+				Region:   SPtrToLowerNoSpaceStr(v.Location),
 				Status:   &state,
 				PublicIp: v.Properties.IPAddress,
 				SKU:      &sku,
 			}
+
 			if v.Properties.IPConfiguration != nil {
-				eIp.IpConfigurationID = v.Properties.IPConfiguration.ID
+				eIp.IpConfigurationID = SPtrToLowerSPtr(v.Properties.IPConfiguration.ID)
 			}
 
 			eips = append(eips, eIp)
@@ -91,21 +93,23 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 			state := string(*one.Properties.ProvisioningState)
 			sku := string(*one.SKU.Name)
 			eIp := &eip.AzureEip{
-				CloudID:  *one.ID,
-				Name:     one.Name,
-				Region:   *one.Location,
+				CloudID:  strings.ToLower(*one.ID),
+				Name:     SPtrToLowerSPtr(one.Name),
+				Region:   StrToLowerNoSpaceStr(*one.Location),
 				Status:   &state,
 				PublicIp: one.Properties.IPAddress,
 				SKU:      &sku,
 			}
+
 			if one.Properties.IPConfiguration != nil {
-				eIp.IpConfigurationID = one.Properties.IPConfiguration.ID
+				eIp.IpConfigurationID = SPtrToLowerSPtr(one.Properties.IPConfiguration.ID)
 			}
 
 			if len(opt.CloudIDs) > 0 {
-				if _, exist := idMap[*one.ID]; exist {
+				id := SPtrToLowerSPtr(one.ID)
+				if _, exist := idMap[*id]; exist {
 					eips = append(eips, eIp)
-					delete(idMap, *one.ID)
+					delete(idMap, *id)
 					if len(idMap) == 0 {
 						return &eip.AzureEipListResult{Details: eips}, nil
 					}

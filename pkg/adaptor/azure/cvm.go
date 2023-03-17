@@ -34,7 +34,7 @@ import (
 )
 
 // ListCvm reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP
-func (az *Azure) ListCvm(kt *kit.Kit, opt *typecvm.AzureListOption) ([]*armcompute.VirtualMachine, error) {
+func (az *Azure) ListCvm(kt *kit.Kit, opt *typecvm.AzureListOption) ([]*typecvm.AzureCvm, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
@@ -58,11 +58,11 @@ func (az *Azure) ListCvm(kt *kit.Kit, opt *typecvm.AzureListOption) ([]*armcompu
 		vms = append(vms, nextResult.Value...)
 	}
 
-	return vms, nil
+	return converterToAzureCvm(vms), nil
 }
 
 // ListCvmByID reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP
-func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*armcompute.VirtualMachine, error) {
+func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*typecvm.AzureCvm, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
@@ -88,12 +88,13 @@ func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*arm
 
 		for _, one := range nextResult.Value {
 			if len(opt.CloudIDs) > 0 {
-				if _, exist := idMap[*one.ID]; exist {
+				id := SPtrToLowerSPtr(one.ID)
+				if _, exist := idMap[*id]; exist {
 					vms = append(vms, one)
-					delete(idMap, *one.ID)
+					delete(idMap, *id)
 
 					if len(idMap) == 0 {
-						return vms, nil
+						return converterToAzureCvm(vms), nil
 					}
 				}
 			} else {
@@ -102,7 +103,99 @@ func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*arm
 		}
 	}
 
-	return vms, nil
+	return converterToAzureCvm(vms), nil
+}
+
+func converterToAzureCvm(vms []*armcompute.VirtualMachine) []*typecvm.AzureCvm {
+	results := make([]*typecvm.AzureCvm, 0)
+	if len(vms) <= 0 {
+		return results
+	}
+
+	for _, v := range vms {
+		tmp := &typecvm.AzureCvm{
+			ID:       SPtrToLowerSPtr(v.ID),
+			Name:     SPtrToLowerSPtr(v.Name),
+			Location: SPtrToLowerNoSpaceSPtr(v.Location),
+			Type:     v.Type,
+			Zones:    v.Zones,
+		}
+
+		if v.Properties == nil {
+			results = append(results, tmp)
+			continue
+		}
+
+		if v.Properties.StorageProfile != nil {
+			tmp.StorageProfile = v.Properties.StorageProfile
+
+			if v.Properties.StorageProfile.ImageReference != nil {
+				tmp.CloudImageID = SPtrToLowerSPtr(v.Properties.StorageProfile.ImageReference.ID)
+			}
+
+			if v.Properties.StorageProfile.OSDisk != nil {
+				if v.Properties.StorageProfile.OSDisk.ManagedDisk != nil {
+					tmp.CloudOsDiskID = SPtrToLowerStr(v.Properties.StorageProfile.OSDisk.ManagedDisk.ID)
+				}
+			}
+
+			tmp.CloudDataDiskIDs = make([]string, 0)
+			if len(v.Properties.StorageProfile.DataDisks) > 0 {
+				for _, disk := range v.Properties.StorageProfile.DataDisks {
+					if disk != nil {
+						tmp.CloudDataDiskIDs = append(tmp.CloudDataDiskIDs, SPtrToLowerStr(disk.ManagedDisk.ID))
+					}
+				}
+			}
+		}
+
+		if v.Properties.OSProfile != nil {
+			tmp.ComputerName = v.Properties.OSProfile.ComputerName
+		}
+
+		tmp.ProvisioningState = v.Properties.ProvisioningState
+
+		tmp.EvictionPolicy = v.Properties.EvictionPolicy
+
+		if v.Properties.HardwareProfile != nil {
+			tmp.VMSize = v.Properties.HardwareProfile.VMSize
+		}
+
+		tmp.LicenseType = v.Properties.LicenseType
+
+		tmp.NetworkInterfaceIDs = make([]string, 0)
+		if v.Properties.NetworkProfile != nil {
+			if len(v.Properties.NetworkProfile.NetworkInterfaces) > 0 {
+				for _, networkInterface := range v.Properties.NetworkProfile.NetworkInterfaces {
+					if networkInterface != nil {
+						tmp.NetworkInterfaceIDs = append(tmp.NetworkInterfaceIDs, SPtrToLowerStr(networkInterface.ID))
+					}
+				}
+			}
+		}
+
+		tmp.Priority = v.Properties.Priority
+
+		if v.Properties.AdditionalCapabilities != nil {
+			tmp.HibernationEnabled = v.Properties.AdditionalCapabilities.HibernationEnabled
+			tmp.UltraSSDEnabled = v.Properties.AdditionalCapabilities.UltraSSDEnabled
+		}
+
+		if v.Properties.BillingProfile != nil {
+			tmp.MaxPrice = v.Properties.BillingProfile.MaxPrice
+		}
+
+		if v.Properties.HardwareProfile.VMSizeProperties != nil {
+			tmp.VCPUsAvailable = v.Properties.HardwareProfile.VMSizeProperties.VCPUsAvailable
+			tmp.VCPUsPerCore = v.Properties.HardwareProfile.VMSizeProperties.VCPUsPerCore
+		}
+
+		tmp.TimeCreated = v.Properties.TimeCreated
+
+		results = append(results, tmp)
+	}
+
+	return results
 }
 
 // DeleteCvm reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/delete?tabs=Go
@@ -323,7 +416,7 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 
 // GetCvm 查询单个 cvm
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/get?tabs=Go
-func (az *Azure) GetCvm(kt *kit.Kit, opt *typecvm.AzureGetOption) (*armcompute.VirtualMachine, error) {
+func (az *Azure) GetCvm(kt *kit.Kit, opt *typecvm.AzureGetOption) (*typecvm.AzureCvm, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "get option is required")
 	}
@@ -347,5 +440,10 @@ func (az *Azure) GetCvm(kt *kit.Kit, opt *typecvm.AzureGetOption) (*armcompute.V
 		return nil, fmt.Errorf("failed to get cvm: %v", err)
 	}
 
-	return &resp.VirtualMachine, nil
+	converterResp := converterToAzureCvm([]*armcompute.VirtualMachine{&resp.VirtualMachine})
+	if len(converterResp) > 0 {
+		return converterResp[0], nil
+	}
+
+	return new(typecvm.AzureCvm), nil
 }

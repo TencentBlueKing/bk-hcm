@@ -230,6 +230,10 @@ func isGcpChange(db *FireWallSyncDS, cloud *FireWallGcpDiff, vpcID string) bool 
 		return true
 	}
 
+	if db.HcFireWall.CloudVpcID != cloud.FireWall.Network {
+		return true
+	}
+
 	if db.HcFireWall.VpcId != vpcID {
 		return true
 	}

@@ -254,22 +254,6 @@ func diffAzureSecurityGroupSyncAdd(kt *kit.Kit, cloudMap map[string]*SecurityGro
 	}
 
 	for _, id := range addCloudIDs {
-		cloudSubnetIDs := make([]string, 0)
-		if len(cloudMap[id].SecurityGroup.Properties.Subnets) > 0 {
-			for _, v := range cloudMap[id].SecurityGroup.Properties.Subnets {
-				if v != nil {
-					cloudSubnetIDs = append(cloudSubnetIDs, *v.ID)
-				}
-			}
-		}
-		cloudNetworkInterfaceIDs := make([]string, 0)
-		if len(cloudMap[id].SecurityGroup.Properties.NetworkInterfaces) > 0 {
-			for _, v := range cloudMap[id].SecurityGroup.Properties.NetworkInterfaces {
-				if v != nil {
-					cloudNetworkInterfaceIDs = append(cloudNetworkInterfaceIDs, *v.ID)
-				}
-			}
-		}
 		securityGroup := protocloud.SecurityGroupBatchCreate[corecloud.AzureSecurityGroupExtension]{
 			CloudID: converter.PtrToVal(cloudMap[id].SecurityGroup.ID),
 			BkBizID: constant.UnassignedBiz,
@@ -281,8 +265,8 @@ func diffAzureSecurityGroupSyncAdd(kt *kit.Kit, cloudMap map[string]*SecurityGro
 			Extension: &corecloud.AzureSecurityGroupExtension{
 				ResourceGroupName: req.ResourceGroupName,
 				Etag:              cloudMap[id].SecurityGroup.Etag,
-				FlushConnection:   cloudMap[id].SecurityGroup.Properties.FlushConnection,
-				ResourceGUID:      cloudMap[id].SecurityGroup.Properties.ResourceGUID,
+				FlushConnection:   cloudMap[id].SecurityGroup.FlushConnection,
+				ResourceGUID:      cloudMap[id].SecurityGroup.ResourceGUID,
 			},
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
@@ -311,11 +295,11 @@ func isAzureSGChange(db *AzureSecurityGroupSyncDS, cloud *SecurityGroupSyncAzure
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(cloud.SecurityGroup.Properties.FlushConnection, db.HcSecurityGroup.Extension.FlushConnection) {
+	if !assert.IsPtrBoolEqual(cloud.SecurityGroup.FlushConnection, db.HcSecurityGroup.Extension.FlushConnection) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(cloud.SecurityGroup.Properties.ResourceGUID, db.HcSecurityGroup.Extension.ResourceGUID) {
+	if !assert.IsPtrStringEqual(cloud.SecurityGroup.ResourceGUID, db.HcSecurityGroup.Extension.ResourceGUID) {
 		return true
 	}
 
@@ -340,8 +324,8 @@ func diffAzureSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*Security
 			Extension: &corecloud.AzureSecurityGroupExtension{
 				ResourceGroupName: req.ResourceGroupName,
 				Etag:              cloudMap[id].SecurityGroup.Etag,
-				FlushConnection:   cloudMap[id].SecurityGroup.Properties.FlushConnection,
-				ResourceGUID:      cloudMap[id].SecurityGroup.Properties.ResourceGUID,
+				FlushConnection:   cloudMap[id].SecurityGroup.FlushConnection,
+				ResourceGUID:      cloudMap[id].SecurityGroup.ResourceGUID,
 			},
 		}
 		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)

@@ -17,35 +17,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package azure
+package region
 
-import (
-	"strings"
-
-	routetable "hcm/pkg/adaptor/types/route-table"
-	"hcm/pkg/tools/converter"
-
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
-)
-
-func convertRoute(data *armnetwork.Route, cloudRouteTableID string) *routetable.AzureRoute {
-	if data == nil {
-		return nil
-	}
-
-	r := &routetable.AzureRoute{
-		CloudID:           SPtrToLowerStr(data.ID),
-		CloudRouteTableID: strings.ToLower(cloudRouteTableID),
-		Name:              SPtrToLowerStr(data.Name),
-		AddressPrefix:     converter.PtrToVal(data.Properties.AddressPrefix),
-		NextHopType:       string(converter.PtrToVal(data.Properties.NextHopType)),
-		NextHopIPAddress:  data.Properties.NextHopIPAddress,
-		ProvisioningState: string(converter.PtrToVal(data.Properties.ProvisioningState)),
-	}
-
-	if data.Properties == nil {
-		return r
-	}
-
-	return r
+// AzureRegion define azure location.
+type AzureRegion struct {
+	ID                  *string `json:"id"`
+	Name                *string `json:"name"`
+	Type                string  `json:"type"`
+	DisplayName         *string `json:"display_name"`
+	RegionalDisplayName *string `json:"regional_display_name"`
 }

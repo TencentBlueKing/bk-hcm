@@ -153,6 +153,7 @@ func getDatasFromAzureForDiskSync(kt *kit.Kit, req *SyncAzureDiskOption,
 	if len(req.CloudIDs) > 0 {
 		listOpt.CloudIDs = req.CloudIDs
 	}
+
 	datas, err := client.ListDiskByID(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor to list azure disk failed, err: %v, rid: %s", err, kt.Rid)
@@ -229,9 +230,9 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 			Name:      converter.PtrToVal(cloudMap[id].Disk.Name),
 			CloudID:   id,
 			Region:    converter.PtrToVal(cloudMap[id].Disk.Location),
-			DiskSize:  uint64(*cloudMap[id].Disk.Properties.DiskSizeBytes) / 1024 / 1024 / 1024,
+			DiskSize:  uint64(*cloudMap[id].Disk.DiskSize) / 1024 / 1024 / 1024,
 			DiskType:  converter.PtrToVal(cloudMap[id].Disk.Type),
-			Status:    string(*cloudMap[id].Disk.Properties.DiskState),
+			Status:    string(*cloudMap[id].Disk.Status),
 			Zone:      "",
 			// 该云没有此字段
 			Memo: nil,
@@ -260,7 +261,7 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 
 func isAzureDiskChange(db *AzureDiskSyncDS, cloud *AzureDiskSyncDiff) bool {
 
-	if string(converter.PtrToVal(cloud.Disk.Properties.DiskState)) != db.HcDisk.Status {
+	if converter.PtrToVal(cloud.Disk.Status) != db.HcDisk.Status {
 		return true
 	}
 
@@ -279,7 +280,7 @@ func diffAzureSyncUpdate(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, ds
 
 		disk := &dataproto.DiskExtUpdateReq[dataproto.AzureDiskExtensionUpdateReq]{
 			ID:     dsMap[id].HcDisk.ID,
-			Status: string(*cloudMap[id].Disk.Properties.DiskState),
+			Status: string(*cloudMap[id].Disk.Status),
 			Extension: &dataproto.AzureDiskExtensionUpdateReq{
 				ResourceGroupName: req.ResourceGroupName,
 			},

@@ -29,7 +29,6 @@ import (
 	"hcm/cmd/hc-service/logics/sync/vpc"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/azure"
-	typecore "hcm/pkg/adaptor/types/core"
 	typescore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
@@ -86,7 +85,7 @@ func SyncAzureCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *data
 
 	cloudAllIDs := make(map[string]bool)
 
-	opt := &typecore.AzureListByIDOption{
+	opt := &typescore.AzureListByIDOption{
 		ResourceGroupName: req.ResourceGroupName,
 	}
 	if len(req.CloudIDs) > 0 {
@@ -232,16 +231,7 @@ func isChangeAzure(kt *kit.Kit, cloud *AzureCvmSync, db *AzureDSCvmSync,
 		return true
 	}
 
-	netInterIDs := make([]string, 0)
-	if cloud.Cvm.Properties.NetworkProfile != nil {
-		if len(cloud.Cvm.Properties.NetworkProfile.NetworkInterfaces) > 0 {
-			for _, networkInterface := range cloud.Cvm.Properties.NetworkProfile.NetworkInterfaces {
-				if networkInterface != nil {
-					netInterIDs = append(netInterIDs, *networkInterface.ID)
-				}
-			}
-		}
-	}
+	netInterIDs := cloud.Cvm.NetworkInterfaceIDs
 
 	netInterOpt := &typescore.AzureListByIDOption{
 		ResourceGroupName: req.ResourceGroupName,
@@ -283,15 +273,15 @@ func isChangeAzure(kt *kit.Kit, cloud *AzureCvmSync, db *AzureDSCvmSync,
 		return true
 	}
 
-	if db.Cvm.CloudImageID != converter.PtrToVal(cloud.Cvm.Properties.StorageProfile.ImageReference.ID) {
+	if db.Cvm.CloudImageID != converter.PtrToVal(cloud.Cvm.CloudImageID) {
 		return true
 	}
 
-	if db.Cvm.OsName != *cloud.Cvm.Properties.OSProfile.ComputerName {
+	if db.Cvm.OsName != *cloud.Cvm.ComputerName {
 		return true
 	}
 
-	if db.Cvm.Status != *cloud.Cvm.Properties.ProvisioningState {
+	if db.Cvm.Status != *cloud.Cvm.ProvisioningState {
 		return true
 	}
 
@@ -315,41 +305,31 @@ func isChangeAzure(kt *kit.Kit, cloud *AzureCvmSync, db *AzureDSCvmSync,
 		return true
 	}
 
-	if (db.Cvm.Extension.AdditionalCapabilities != nil && cloud.Cvm.Properties.AdditionalCapabilities == nil) ||
-		(db.Cvm.Extension.AdditionalCapabilities == nil && cloud.Cvm.Properties.AdditionalCapabilities != nil) {
-		return true
-	}
-
-	if db.Cvm.Extension.AdditionalCapabilities != nil && cloud.Cvm.Properties.AdditionalCapabilities != nil {
+	if db.Cvm.Extension.AdditionalCapabilities != nil {
 		if !assert.IsPtrBoolEqual(db.Cvm.Extension.AdditionalCapabilities.HibernationEnabled,
-			cloud.Cvm.Properties.AdditionalCapabilities.HibernationEnabled) {
+			cloud.Cvm.HibernationEnabled) {
 			return true
 		}
 
 		if !assert.IsPtrBoolEqual(db.Cvm.Extension.AdditionalCapabilities.UltraSSDEnabled,
-			cloud.Cvm.Properties.AdditionalCapabilities.UltraSSDEnabled) {
+			cloud.Cvm.UltraSSDEnabled) {
 			return true
 		}
 	}
 
-	if (db.Cvm.Extension.BillingProfile != nil && cloud.Cvm.Properties.BillingProfile == nil) ||
-		(db.Cvm.Extension.BillingProfile == nil && cloud.Cvm.Properties.BillingProfile != nil) {
-		return true
-	}
-
-	if db.Cvm.Extension.BillingProfile != nil && cloud.Cvm.Properties.BillingProfile != nil {
+	if db.Cvm.Extension.BillingProfile != nil {
 		if !assert.IsPtrFloat64Equal(db.Cvm.Extension.BillingProfile.MaxPrice,
-			cloud.Cvm.Properties.BillingProfile.MaxPrice) {
+			cloud.Cvm.MaxPrice) {
 			return true
 		}
 	}
 
 	if !assert.IsPtrStringEqual(db.Cvm.Extension.EvictionPolicy,
-		(*string)(cloud.Cvm.Properties.EvictionPolicy)) {
+		(*string)(cloud.Cvm.EvictionPolicy)) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Cvm.Extension.LicenseType, cloud.Cvm.Properties.LicenseType) {
+	if !assert.IsPtrStringEqual(db.Cvm.Extension.LicenseType, cloud.Cvm.LicenseType) {
 		return true
 	}
 
@@ -358,7 +338,7 @@ func isChangeAzure(kt *kit.Kit, cloud *AzureCvmSync, db *AzureDSCvmSync,
 	}
 
 	if !assert.IsPtrStringEqual(db.Cvm.Extension.Priority,
-		(*string)(cloud.Cvm.Properties.Priority)) {
+		(*string)(cloud.Cvm.Priority)) {
 		return true
 	}
 
@@ -366,46 +346,27 @@ func isChangeAzure(kt *kit.Kit, cloud *AzureCvmSync, db *AzureDSCvmSync,
 		return true
 	}
 
-	cloudDataDiskIDs := make([]string, 0)
-	cloudOsDiskID := ""
-	if cloud.Cvm.Properties.StorageProfile.OSDisk != nil {
-		cloudOsDiskID = converter.PtrToVal(cloud.Cvm.Properties.StorageProfile.OSDisk.ManagedDisk.ID)
-	}
-
-	if len(cloud.Cvm.Properties.StorageProfile.DataDisks) > 0 {
-		for _, disk := range cloud.Cvm.Properties.StorageProfile.DataDisks {
-			if disk != nil {
-				cloudDataDiskIDs = append(cloudDataDiskIDs, converter.PtrToVal(disk.ManagedDisk.ID))
-			}
-		}
-	}
-
-	if db.Cvm.Extension.StorageProfile.CloudOsDiskID != cloudOsDiskID {
+	if db.Cvm.Extension.StorageProfile.CloudOsDiskID != cloud.Cvm.CloudOsDiskID {
 		return true
 	}
 
-	if !assert.IsStringSliceEqual(db.Cvm.Extension.StorageProfile.CloudDataDiskIDs, cloudDataDiskIDs) {
+	if !assert.IsStringSliceEqual(db.Cvm.Extension.StorageProfile.CloudDataDiskIDs, cloud.Cvm.CloudDataDiskIDs) {
 		return true
 	}
 
 	if !assert.IsPtrStringEqual(db.Cvm.Extension.HardwareProfile.VmSize,
-		(*string)(cloud.Cvm.Properties.HardwareProfile.VMSize)) {
+		(*string)(cloud.Cvm.VMSize)) {
 		return true
 	}
 
-	if (db.Cvm.Extension.HardwareProfile.VmSizeProperties != nil && cloud.Cvm.Properties.HardwareProfile.VMSizeProperties == nil) ||
-		(db.Cvm.Extension.HardwareProfile.VmSizeProperties == nil && cloud.Cvm.Properties.HardwareProfile.VMSizeProperties != nil) {
-		return true
-	}
-
-	if db.Cvm.Extension.HardwareProfile.VmSizeProperties != nil && cloud.Cvm.Properties.HardwareProfile.VMSizeProperties != nil {
+	if db.Cvm.Extension.HardwareProfile.VmSizeProperties != nil {
 		if !assert.IsPtrInt32Equal(db.Cvm.Extension.HardwareProfile.VmSizeProperties.VCPUsAvailable,
-			cloud.Cvm.Properties.HardwareProfile.VMSizeProperties.VCPUsAvailable) {
+			cloud.Cvm.VCPUsAvailable) {
 			return true
 		}
 
 		if !assert.IsPtrInt32Equal(db.Cvm.Extension.HardwareProfile.VmSizeProperties.VCPUsPerCore,
-			cloud.Cvm.Properties.HardwareProfile.VMSizeProperties.VCPUsPerCore) {
+			cloud.Cvm.VCPUsPerCore) {
 			return true
 		}
 	}
@@ -423,20 +384,9 @@ func syncAzureCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 			continue
 		}
 
-		netInterIDs := make([]string, 0)
-		if cloudMap[id].Cvm.Properties.NetworkProfile != nil {
-			if len(cloudMap[id].Cvm.Properties.NetworkProfile.NetworkInterfaces) > 0 {
-				for _, networkInterface := range cloudMap[id].Cvm.Properties.NetworkProfile.NetworkInterfaces {
-					if networkInterface != nil {
-						netInterIDs = append(netInterIDs, *networkInterface.ID)
-					}
-				}
-			}
-		}
-
 		netInterOpt := &typescore.AzureListByIDOption{
 			ResourceGroupName: req.ResourceGroupName,
-			CloudIDs:          netInterIDs,
+			CloudIDs:          cloudMap[id].Cvm.NetworkInterfaceIDs,
 		}
 
 		netInterDatas, err := client.ListNetworkInterfaceByID(kt, netInterOpt)
@@ -483,20 +433,6 @@ func syncAzureCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 			return err
 		}
 
-		cloudDataDiskIDs := make([]string, 0)
-		cloudOsDiskID := ""
-		if cloudMap[id].Cvm.Properties.StorageProfile.OSDisk != nil {
-			cloudOsDiskID = converter.PtrToVal(cloudMap[id].Cvm.Properties.StorageProfile.OSDisk.ManagedDisk.ID)
-		}
-
-		if len(cloudMap[id].Cvm.Properties.StorageProfile.DataDisks) > 0 {
-			for _, disk := range cloudMap[id].Cvm.Properties.StorageProfile.DataDisks {
-				if disk != nil {
-					cloudDataDiskIDs = append(cloudDataDiskIDs, converter.PtrToVal(disk.ManagedDisk.ID))
-				}
-			}
-		}
-
 		cvm := dataproto.CvmBatchUpdate[corecvm.AzureCvmExtension]{
 			ID:             dsMap[id].Cvm.ID,
 			Name:           converter.PtrToVal(cloudMap[id].Cvm.Name),
@@ -507,7 +443,7 @@ func syncAzureCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 			SubnetIDs:      subnetIDs,
 			// 云上不支持该字段
 			Memo:                 nil,
-			Status:               converter.PtrToVal(cloudMap[id].Cvm.Properties.ProvisioningState),
+			Status:               converter.PtrToVal(cloudMap[id].Cvm.ProvisioningState),
 			PrivateIPv4Addresses: privateIPv4Addresses,
 			PrivateIPv6Addresses: privateIPv6Addresses,
 			PublicIPv4Addresses:  publicIPv4Addresses,
@@ -519,47 +455,29 @@ func syncAzureCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 			Extension: &corecvm.AzureCvmExtension{
 				ResourceGroupName: req.ResourceGroupName,
 				AdditionalCapabilities: &corecvm.AzureAdditionalCapabilities{
-					HibernationEnabled: nil,
-					UltraSSDEnabled:    nil,
+					HibernationEnabled: cloudMap[id].Cvm.HibernationEnabled,
+					UltraSSDEnabled:    cloudMap[id].Cvm.UltraSSDEnabled,
 				},
 				BillingProfile: &corecvm.AzureBillingProfile{
-					MaxPrice: nil,
+					MaxPrice: cloudMap[id].Cvm.MaxPrice,
 				},
-				EvictionPolicy: (*string)(cloudMap[id].Cvm.Properties.EvictionPolicy),
+				EvictionPolicy: (*string)(cloudMap[id].Cvm.EvictionPolicy),
 				HardwareProfile: &corecvm.AzureHardwareProfile{
-					VmSize: nil,
+					VmSize: (*string)(cloudMap[id].Cvm.VMSize),
 					VmSizeProperties: &corecvm.AzureVmSizeProperties{
-						VCPUsAvailable: nil,
-						VCPUsPerCore:   nil,
+						VCPUsAvailable: cloudMap[id].Cvm.VCPUsAvailable,
+						VCPUsPerCore:   cloudMap[id].Cvm.VCPUsPerCore,
 					},
 				},
-				LicenseType:              cloudMap[id].Cvm.Properties.LicenseType,
-				CloudNetworkInterfaceIDs: netInterIDs,
-				Priority:                 (*string)(cloudMap[id].Cvm.Properties.Priority),
+				LicenseType:              cloudMap[id].Cvm.LicenseType,
+				CloudNetworkInterfaceIDs: cloudMap[id].Cvm.NetworkInterfaceIDs,
+				Priority:                 (*string)(cloudMap[id].Cvm.Priority),
 				StorageProfile: &corecvm.AzureStorageProfile{
-					CloudDataDiskIDs: cloudDataDiskIDs,
-					CloudOsDiskID:    cloudOsDiskID,
+					CloudDataDiskIDs: cloudMap[id].Cvm.CloudDataDiskIDs,
+					CloudOsDiskID:    cloudMap[id].Cvm.CloudOsDiskID,
 				},
 				Zones: converter.PtrToSlice(cloudMap[id].Cvm.Zones),
 			},
-		}
-
-		if cloudMap[id].Cvm.Properties.AdditionalCapabilities != nil {
-			cvm.Extension.AdditionalCapabilities.HibernationEnabled = cloudMap[id].Cvm.Properties.AdditionalCapabilities.HibernationEnabled
-			cvm.Extension.AdditionalCapabilities.UltraSSDEnabled = cloudMap[id].Cvm.Properties.AdditionalCapabilities.UltraSSDEnabled
-		}
-
-		if cloudMap[id].Cvm.Properties.BillingProfile != nil {
-			cvm.Extension.BillingProfile.MaxPrice = cloudMap[id].Cvm.Properties.BillingProfile.MaxPrice
-		}
-
-		if cloudMap[id].Cvm.Properties.HardwareProfile != nil {
-			cvm.Extension.HardwareProfile.VmSize = (*string)(cloudMap[id].Cvm.Properties.HardwareProfile.VMSize)
-		}
-
-		if cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties != nil {
-			cvm.Extension.HardwareProfile.VmSizeProperties.VCPUsAvailable = cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties.VCPUsAvailable
-			cvm.Extension.HardwareProfile.VmSizeProperties.VCPUsPerCore = cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties.VCPUsPerCore
 		}
 
 		lists = append(lists, cvm)
@@ -586,20 +504,9 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 
 	for _, id := range addIDs {
 
-		netInterIDs := make([]string, 0)
-		if cloudMap[id].Cvm.Properties.NetworkProfile != nil {
-			if len(cloudMap[id].Cvm.Properties.NetworkProfile.NetworkInterfaces) > 0 {
-				for _, networkInterface := range cloudMap[id].Cvm.Properties.NetworkProfile.NetworkInterfaces {
-					if networkInterface != nil {
-						netInterIDs = append(netInterIDs, *networkInterface.ID)
-					}
-				}
-			}
-		}
-
 		netInterOpt := &typescore.AzureListByIDOption{
 			ResourceGroupName: req.ResourceGroupName,
-			CloudIDs:          netInterIDs,
+			CloudIDs:          cloudMap[id].Cvm.NetworkInterfaceIDs,
 		}
 
 		netInterDatas, err := client.ListNetworkInterfaceByID(kt, netInterOpt)
@@ -646,90 +553,60 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 			return err
 		}
 
-		cloudDataDiskIDs := make([]string, 0)
-		cloudOsDiskID := ""
-		if cloudMap[id].Cvm.Properties.StorageProfile.OSDisk != nil {
-			cloudOsDiskID = converter.PtrToVal(cloudMap[id].Cvm.Properties.StorageProfile.OSDisk.ManagedDisk.ID)
-		}
-
-		if len(cloudMap[id].Cvm.Properties.StorageProfile.DataDisks) > 0 {
-			for _, disk := range cloudMap[id].Cvm.Properties.StorageProfile.DataDisks {
-				if disk != nil {
-					cloudDataDiskIDs = append(cloudDataDiskIDs, converter.PtrToVal(disk.ManagedDisk.ID))
-				}
-			}
-		}
-
-		cloudImageID, err := queryGcpCloudImageID(kt, dataCli,
-			cloudMap[id].Cvm.Properties.StorageProfile.ImageReference)
-		if err != nil {
-			return err
-		}
-
 		cvm := dataproto.CvmBatchCreate[corecvm.AzureCvmExtension]{
 			CloudID:   converter.PtrToVal(cloudMap[id].Cvm.ID),
 			Name:      converter.PtrToVal(cloudMap[id].Cvm.Name),
 			BkBizID:   constant.UnassignedBiz,
 			BkCloudID: bkCloudID,
 			AccountID: req.AccountID,
-			Region:    *cloudMap[id].Cvm.Location,
+			Region:    converter.PtrToVal(cloudMap[id].Cvm.Location),
 			// 云上不支持该字段，azure可用区非地域概念
 			Zone:           "",
 			CloudVpcIDs:    cloudVpcIDs,
 			VpcIDs:         []string{vpcID},
 			CloudSubnetIDs: cloudSubnetIDs,
 			SubnetIDs:      subnetIDs,
-			CloudImageID:   cloudImageID,
-			OsName:         converter.PtrToVal(cloudMap[id].Cvm.Properties.OSProfile.ComputerName),
+			CloudImageID:   converter.PtrToVal(cloudMap[id].Cvm.CloudImageID),
+			OsName:         converter.PtrToVal(cloudMap[id].Cvm.ComputerName),
 			// 云上不支持该字段
 			Memo:                 nil,
-			Status:               converter.PtrToVal(cloudMap[id].Cvm.Properties.ProvisioningState),
+			Status:               converter.PtrToVal(cloudMap[id].Cvm.ProvisioningState),
 			PrivateIPv4Addresses: privateIPv4Addresses,
 			PrivateIPv6Addresses: privateIPv6Addresses,
 			PublicIPv4Addresses:  publicIPv4Addresses,
 			PublicIPv6Addresses:  publicIPv6Addresses,
 			MachineType:          converter.PtrToVal(cloudMap[id].Cvm.Type),
-			CloudCreatedTime:     cloudMap[id].Cvm.Properties.TimeCreated.String(),
+			CloudCreatedTime:     cloudMap[id].Cvm.TimeCreated.String(),
 			// 云上不支持该字段
 			CloudLaunchedTime: "",
 			// 云上不支持该字段
 			CloudExpiredTime: "",
 			Extension: &corecvm.AzureCvmExtension{
-				ResourceGroupName:      req.ResourceGroupName,
-				AdditionalCapabilities: nil,
-				BillingProfile:         nil,
-				EvictionPolicy:         (*string)(cloudMap[id].Cvm.Properties.EvictionPolicy),
-				HardwareProfile: &corecvm.AzureHardwareProfile{
-					VmSize:           (*string)(cloudMap[id].Cvm.Properties.HardwareProfile.VMSize),
-					VmSizeProperties: nil,
+				ResourceGroupName: req.ResourceGroupName,
+				AdditionalCapabilities: &corecvm.AzureAdditionalCapabilities{
+					HibernationEnabled: cloudMap[id].Cvm.HibernationEnabled,
+					UltraSSDEnabled:    cloudMap[id].Cvm.UltraSSDEnabled,
 				},
-				LicenseType:              cloudMap[id].Cvm.Properties.LicenseType,
-				CloudNetworkInterfaceIDs: netInterIDs,
-				Priority:                 (*string)(cloudMap[id].Cvm.Properties.Priority),
+				BillingProfile: &corecvm.AzureBillingProfile{
+					MaxPrice: cloudMap[id].Cvm.MaxPrice,
+				},
+				EvictionPolicy: (*string)(cloudMap[id].Cvm.EvictionPolicy),
+				HardwareProfile: &corecvm.AzureHardwareProfile{
+					VmSize: (*string)(cloudMap[id].Cvm.VMSize),
+					VmSizeProperties: &corecvm.AzureVmSizeProperties{
+						VCPUsAvailable: cloudMap[id].Cvm.VCPUsAvailable,
+						VCPUsPerCore:   cloudMap[id].Cvm.VCPUsPerCore,
+					},
+				},
+				LicenseType:              cloudMap[id].Cvm.LicenseType,
+				CloudNetworkInterfaceIDs: cloudMap[id].Cvm.NetworkInterfaceIDs,
+				Priority:                 (*string)(cloudMap[id].Cvm.Priority),
 				StorageProfile: &corecvm.AzureStorageProfile{
-					CloudDataDiskIDs: cloudDataDiskIDs,
-					CloudOsDiskID:    cloudOsDiskID,
+					CloudDataDiskIDs: cloudMap[id].Cvm.CloudDataDiskIDs,
+					CloudOsDiskID:    cloudMap[id].Cvm.CloudOsDiskID,
 				},
 				Zones: converter.PtrToSlice(cloudMap[id].Cvm.Zones),
 			},
-		}
-
-		if cloudMap[id].Cvm.Properties.AdditionalCapabilities != nil {
-			cvm.Extension.AdditionalCapabilities.HibernationEnabled = cloudMap[id].Cvm.Properties.AdditionalCapabilities.HibernationEnabled
-			cvm.Extension.AdditionalCapabilities.UltraSSDEnabled = cloudMap[id].Cvm.Properties.AdditionalCapabilities.UltraSSDEnabled
-		}
-
-		if cloudMap[id].Cvm.Properties.BillingProfile != nil {
-			cvm.Extension.BillingProfile.MaxPrice = cloudMap[id].Cvm.Properties.BillingProfile.MaxPrice
-		}
-
-		if cloudMap[id].Cvm.Properties.HardwareProfile != nil {
-			cvm.Extension.HardwareProfile.VmSize = (*string)(cloudMap[id].Cvm.Properties.HardwareProfile.VMSize)
-		}
-
-		if cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties != nil {
-			cvm.Extension.HardwareProfile.VmSizeProperties.VCPUsAvailable = cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties.VCPUsAvailable
-			cvm.Extension.HardwareProfile.VmSizeProperties.VCPUsPerCore = cloudMap[id].Cvm.Properties.HardwareProfile.VMSizeProperties.VCPUsPerCore
 		}
 
 		lists = append(lists, cvm)
@@ -1097,32 +974,22 @@ func getAzureCVMRelResourcesIDs(kt *kit.Kit, req *SyncAzureCvmOption,
 	}
 
 	for _, data := range datas {
-		if data != nil {
-			if data.Properties.NetworkProfile != nil {
-				if len(data.Properties.NetworkProfile.NetworkInterfaces) > 0 {
-					for _, networkInterface := range data.Properties.NetworkProfile.NetworkInterfaces {
-						if networkInterface != nil {
-							id := getCVMRelID(*networkInterface.ID, *data.ID)
-							netInterMap[id] = &CVMOperateSync{RelID: *networkInterface.ID, InstanceID: *data.ID}
-							netInterIDs = append(netInterIDs, *networkInterface.ID)
-						}
-					}
-				}
-			}
+		if data == nil {
+			continue
+		}
 
-			if data.Properties.StorageProfile.OSDisk != nil {
-				id := getCVMRelID(*data.Properties.StorageProfile.OSDisk.ManagedDisk.ID, *data.ID)
-				diskMap[id] = &CVMOperateSync{RelID: *data.Properties.StorageProfile.OSDisk.ManagedDisk.ID, InstanceID: *data.ID}
-			}
+		for _, one := range data.NetworkInterfaceIDs {
+			id := getCVMRelID(one, *data.ID)
+			netInterMap[id] = &CVMOperateSync{RelID: one, InstanceID: *data.ID}
+			netInterIDs = append(netInterIDs, one)
+		}
 
-			if len(data.Properties.StorageProfile.DataDisks) > 0 {
-				for _, disk := range data.Properties.StorageProfile.DataDisks {
-					if disk != nil {
-						id := getCVMRelID(*disk.ManagedDisk.ID, *data.ID)
-						diskMap[id] = &CVMOperateSync{RelID: *disk.ManagedDisk.ID, InstanceID: *data.ID}
-					}
-				}
-			}
+		osDiskId := getCVMRelID(data.CloudOsDiskID, *data.ID)
+		diskMap[osDiskId] = &CVMOperateSync{RelID: data.CloudOsDiskID, InstanceID: *data.ID}
+
+		for _, one := range data.CloudDataDiskIDs {
+			id := getCVMRelID(one, *data.ID)
+			diskMap[id] = &CVMOperateSync{RelID: one, InstanceID: *data.ID}
 		}
 	}
 
@@ -1149,12 +1016,10 @@ func getAzureCVMRelResourcesIDs(kt *kit.Kit, req *SyncAzureCvmOption,
 
 		if len(netInter.Extension.IPConfigurations) > 0 {
 			for _, ip := range netInter.Extension.IPConfigurations {
-				if ip == nil || ip.Properties.PublicIPAddress == nil {
-					continue
+				if ip.Properties.PublicIPAddress != nil {
+					id := getCVMRelID(*ip.Properties.PublicIPAddress.CloudID, *netInter.InstanceID)
+					eipMap[id] = &CVMOperateSync{RelID: *ip.Properties.PublicIPAddress.CloudID, InstanceID: *netInter.InstanceID}
 				}
-
-				id := getCVMRelID(*ip.Properties.PublicIPAddress.CloudID, *netInter.InstanceID)
-				eipMap[id] = &CVMOperateSync{RelID: *ip.Properties.PublicIPAddress.CloudID, InstanceID: *netInter.InstanceID}
 			}
 		}
 	}

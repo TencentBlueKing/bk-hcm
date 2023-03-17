@@ -20,10 +20,9 @@
 package region
 
 import (
+	typesregion "hcm/pkg/adaptor/types/region"
+	resourcegroup "hcm/pkg/adaptor/types/resource-group"
 	apicloudregion "hcm/pkg/api/core/cloud/region"
-
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 )
 
 // HuaWeiDSRegionSync ...
@@ -34,7 +33,7 @@ type HuaWeiDSRegionSync struct {
 // AzureRegionSync ...
 type AzureRegionSync struct {
 	IsUpdate bool
-	Region   *armsubscriptions.Location
+	Region   *typesregion.AzureRegion
 }
 
 // AzureDSRegionSync ...
@@ -45,7 +44,7 @@ type AzureDSRegionSync struct {
 // AzureRGSync ...
 type AzureRGSync struct {
 	IsUpdate bool
-	Region   *armresources.ResourceGroup
+	Region   *resourcegroup.AzureResourceGroup
 }
 
 // AzureDSRGSync ...

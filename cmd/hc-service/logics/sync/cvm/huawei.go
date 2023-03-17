@@ -21,6 +21,7 @@ package cvm
 
 import (
 	"fmt"
+	"strconv"
 
 	"hcm/cmd/hc-service/logics/sync/disk"
 	synceip "hcm/cmd/hc-service/logics/sync/eip"
@@ -543,15 +544,9 @@ func syncHuaWeiCvmUpdate(kt *kit.Kit, req *SyncHuaWeiCvmOption, updateIDs []stri
 			CloudLaunchedTime:    cloudMap[id].Cvm.OSSRVUSGlaunchedAt,
 			CloudExpiredTime:     cloudMap[id].Cvm.AutoTerminateTime,
 			Extension: &corecvm.HuaWeiCvmExtension{
-				AliasName:          cloudMap[id].Cvm.OSEXTSRVATTRinstanceName,
-				HypervisorHostname: cloudMap[id].Cvm.OSEXTSRVATTRhypervisorHostname,
-				Flavor: &corecvm.HuaWeiFlavor{
-					CloudID: cloudMap[id].Cvm.Flavor.Id,
-					Name:    cloudMap[id].Cvm.Flavor.Name,
-					Disk:    cloudMap[id].Cvm.Flavor.Disk,
-					VCpus:   cloudMap[id].Cvm.Flavor.Vcpus,
-					Ram:     cloudMap[id].Cvm.Flavor.Ram,
-				},
+				AliasName:             cloudMap[id].Cvm.OSEXTSRVATTRinstanceName,
+				HypervisorHostname:    cloudMap[id].Cvm.OSEXTSRVATTRhypervisorHostname,
+				Flavor:                nil,
 				CloudSecurityGroupIDs: sgIDs,
 				CloudTenantID:         cloudMap[id].Cvm.TenantId,
 				DiskConfig:            cloudMap[id].Cvm.OSDCFdiskConfig,
@@ -575,10 +570,30 @@ func syncHuaWeiCvmUpdate(kt *kit.Kit, req *SyncHuaWeiCvmOption, updateIDs []stri
 				CloudDataVolumeIDs:       dataDiskIds,
 				RootDeviceName:           cloudMap[id].Cvm.OSEXTSRVATTRrootDeviceName,
 				CloudEnterpriseProjectID: cloudMap[id].Cvm.EnterpriseProjectId,
-				CpuOptions: &corecvm.HuaWeiCpuOptions{
-					CpuThreads: cloudMap[id].Cvm.CpuOptions.HwcpuThreads,
-				},
+				CpuOptions:               nil,
 			},
+		}
+
+		if cloudMap[id].Cvm.Flavor != nil {
+			ramInt, err := strconv.Atoi(cloudMap[id].Cvm.Flavor.Ram)
+			if err != nil {
+				logs.Errorf("request huawei cvm ram strconv atoi, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			ram := strconv.Itoa(ramInt / 1024)
+			cvm.Extension.Flavor = &corecvm.HuaWeiFlavor{
+				CloudID: cloudMap[id].Cvm.Flavor.Id,
+				Name:    cloudMap[id].Cvm.Flavor.Name,
+				Disk:    cloudMap[id].Cvm.Flavor.Disk,
+				VCpus:   cloudMap[id].Cvm.Flavor.Vcpus,
+				Ram:     ram,
+			}
+		}
+
+		if cloudMap[id].Cvm.CpuOptions != nil {
+			cvm.Extension.CpuOptions = &corecvm.HuaWeiCpuOptions{
+				CpuThreads: cloudMap[id].Cvm.CpuOptions.HwcpuThreads,
+			}
 		}
 
 		lists = append(lists, cvm)
@@ -706,15 +721,9 @@ func syncHuaWeiCvmAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiCvmOption,
 			CloudLaunchedTime:    cloudMap[id].Cvm.OSSRVUSGlaunchedAt,
 			CloudExpiredTime:     cloudMap[id].Cvm.AutoTerminateTime,
 			Extension: &corecvm.HuaWeiCvmExtension{
-				AliasName:          cloudMap[id].Cvm.OSEXTSRVATTRinstanceName,
-				HypervisorHostname: cloudMap[id].Cvm.OSEXTSRVATTRhypervisorHostname,
-				Flavor: &corecvm.HuaWeiFlavor{
-					CloudID: cloudMap[id].Cvm.Flavor.Id,
-					Name:    cloudMap[id].Cvm.Flavor.Name,
-					Disk:    cloudMap[id].Cvm.Flavor.Disk,
-					VCpus:   cloudMap[id].Cvm.Flavor.Vcpus,
-					Ram:     cloudMap[id].Cvm.Flavor.Ram,
-				},
+				AliasName:             cloudMap[id].Cvm.OSEXTSRVATTRinstanceName,
+				HypervisorHostname:    cloudMap[id].Cvm.OSEXTSRVATTRhypervisorHostname,
+				Flavor:                nil,
 				CloudSecurityGroupIDs: sgIDs,
 				CloudTenantID:         cloudMap[id].Cvm.TenantId,
 				DiskConfig:            cloudMap[id].Cvm.OSDCFdiskConfig,
@@ -738,10 +747,30 @@ func syncHuaWeiCvmAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiCvmOption,
 				CloudDataVolumeIDs:       dataDiskIds,
 				RootDeviceName:           cloudMap[id].Cvm.OSEXTSRVATTRrootDeviceName,
 				CloudEnterpriseProjectID: cloudMap[id].Cvm.EnterpriseProjectId,
-				CpuOptions: &corecvm.HuaWeiCpuOptions{
-					CpuThreads: cloudMap[id].Cvm.CpuOptions.HwcpuThreads,
-				},
+				CpuOptions:               nil,
 			},
+		}
+
+		if cloudMap[id].Cvm.Flavor != nil {
+			ramInt, err := strconv.Atoi(cloudMap[id].Cvm.Flavor.Ram)
+			if err != nil {
+				logs.Errorf("request huawei cvm ram strconv atoi, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			ram := strconv.Itoa(ramInt / 1024)
+			cvm.Extension.Flavor = &corecvm.HuaWeiFlavor{
+				CloudID: cloudMap[id].Cvm.Flavor.Id,
+				Name:    cloudMap[id].Cvm.Flavor.Name,
+				Disk:    cloudMap[id].Cvm.Flavor.Disk,
+				VCpus:   cloudMap[id].Cvm.Flavor.Vcpus,
+				Ram:     ram,
+			}
+		}
+
+		if cloudMap[id].Cvm.CpuOptions != nil {
+			cvm.Extension.CpuOptions = &corecvm.HuaWeiCpuOptions{
+				CpuThreads: cloudMap[id].Cvm.CpuOptions.HwcpuThreads,
+			}
 		}
 
 		lists = append(lists, cvm)

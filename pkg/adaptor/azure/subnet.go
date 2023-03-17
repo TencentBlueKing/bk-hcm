@@ -21,6 +21,7 @@ package azure
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/criteria/enumor"
@@ -202,9 +203,10 @@ func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *types.AzureSubnetListByIDOption
 		}
 
 		for _, one := range nextResult.Value {
-			if _, exist := idMap[*one.ID]; exist {
+			id := SPtrToLowerSPtr(one.ID)
+			if _, exist := idMap[*id]; exist {
 				details = append(details, converter.PtrToVal(convertSubnet(one, opt.ResourceGroupName, opt.VpcID)))
-				delete(idMap, *one.ID)
+				delete(idMap, *id)
 
 				if len(idMap) == 0 {
 					return &types.AzureSubnetListResult{Details: details}, nil
@@ -222,11 +224,11 @@ func convertSubnet(data *armnetwork.Subnet, resourceGroup, cloudVpcID string) *t
 	}
 
 	s := &types.AzureSubnet{
-		CloudVpcID: cloudVpcID,
-		CloudID:    converter.PtrToVal(data.ID),
-		Name:       converter.PtrToVal(data.Name),
+		CloudVpcID: strings.ToLower(cloudVpcID),
+		CloudID:    SPtrToLowerStr(data.ID),
+		Name:       SPtrToLowerStr(data.Name),
 		Extension: &types.AzureSubnetExtension{
-			ResourceGroupName: resourceGroup,
+			ResourceGroupName: strings.ToLower(resourceGroup),
 		},
 	}
 
@@ -251,15 +253,15 @@ func convertSubnet(data *armnetwork.Subnet, resourceGroup, cloudVpcID string) *t
 	}
 
 	if data.Properties.NatGateway != nil {
-		s.Extension.NatGateway = converter.PtrToVal(data.Properties.NatGateway.ID)
+		s.Extension.NatGateway = SPtrToLowerStr(data.Properties.NatGateway.ID)
 	}
 
 	if data.Properties.NetworkSecurityGroup != nil {
-		s.Extension.NetworkSecurityGroup = converter.PtrToVal(data.Properties.NetworkSecurityGroup.ID)
+		s.Extension.NetworkSecurityGroup = SPtrToLowerStr(data.Properties.NetworkSecurityGroup.ID)
 	}
 
 	if data.Properties.RouteTable != nil {
-		s.Extension.CloudRouteTableID = data.Properties.RouteTable.ID
+		s.Extension.CloudRouteTableID = SPtrToLowerSPtr(data.Properties.RouteTable.ID)
 	}
 
 	return s

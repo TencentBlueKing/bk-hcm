@@ -24,6 +24,8 @@ import (
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
 
 // -------------------------- Create --------------------------
@@ -135,4 +137,27 @@ type AzureListOption struct {
 // Validate azure security group rule list option.
 func (opt AzureListOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// AzureSecurityRule define azure security rule.
+type AzureSecurityRule struct {
+	ID                                   *string                                `json:"id"`
+	Etag                                 *string                                `json:"etag"`
+	Name                                 *string                                `json:"name"`
+	Description                          *string                                `json:"description"`
+	DestinationAddressPrefix             *string                                `json:"destination_address_prefix"`
+	DestinationAddressPrefixes           []*string                              `json:"destination_address_prefixes"`
+	DestinationPortRange                 *string                                `json:"destination_port_range"`
+	DestinationPortRanges                []*string                              `json:"destination_port_ranges"`
+	Protocol                             *armnetwork.SecurityRuleProtocol       `json:"protocol"`
+	ProvisioningState                    *armnetwork.ProvisioningState          `json:"provisioning_state"`
+	SourceAddressPrefix                  *string                                `json:"source_address_prefix"`
+	SourceAddressPrefixes                []*string                              `json:"source_address_prefixes"`
+	SourcePortRange                      *string                                `json:"source_port_range"`
+	SourcePortRanges                     []*string                              `json:"source_port_ranges"`
+	Priority                             *int32                                 `json:"priority"`
+	Access                               *armnetwork.SecurityRuleAccess         `json:"access"`
+	Direction                            *armnetwork.SecurityRuleDirection      `json:"direction"`
+	DestinationApplicationSecurityGroups []*armnetwork.ApplicationSecurityGroup `json:"destination_application_security_groups"`
+	SourceApplicationSecurityGroups      []*armnetwork.ApplicationSecurityGroup `json:"source_application_security_groups"`
 }

@@ -199,6 +199,13 @@ type AzureVpc Vpc[cloud.AzureVpcExtension]
 // HuaWeiVpc defines huawei vpc.
 type HuaWeiVpc Vpc[cloud.HuaWeiVpcExtension]
 
+// VpcUsage define vpc usage.
+type VpcUsage struct {
+	ID           *string  `json:"id"`
+	Limit        *float64 `json:"limit"`
+	CurrentValue *float64 `json:"current_value"`
+}
+
 // -------------------------- IP --------------------------
 
 // HuaWeiVpcIPAvailGetOption get huawei vcp ip availabilities option.

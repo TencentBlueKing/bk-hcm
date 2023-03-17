@@ -22,6 +22,7 @@ package azure
 import (
 	"fmt"
 
+	region "hcm/pkg/adaptor/types/region"
 	"hcm/pkg/kit"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -29,7 +30,7 @@ import (
 
 // ListRegion list region.
 // reference: https://learn.microsoft.com/en-us/rest/api/resources/subscriptions/list-locations?tabs=HTTP#examples
-func (az *Azure) ListRegion(kit *kit.Kit) ([]*armsubscriptions.Location, error) {
+func (az *Azure) ListRegion(kit *kit.Kit) ([]*region.AzureRegion, error) {
 
 	client, err := az.clientSet.regionClient()
 	if err != nil {
@@ -46,5 +47,17 @@ func (az *Azure) ListRegion(kit *kit.Kit) ([]*armsubscriptions.Location, error) 
 		regions = append(regions, nextResult.Value...)
 	}
 
-	return regions, nil
+	typeRegions := make([]*region.AzureRegion, 0)
+	for _, v := range regions {
+		tmp := &region.AzureRegion{
+			ID:                  SPtrToLowerSPtr(v.ID),
+			Name:                SPtrToLowerSPtr(v.Name),
+			Type:                string(*v.Type),
+			DisplayName:         v.DisplayName,
+			RegionalDisplayName: v.RegionalDisplayName,
+		}
+		typeRegions = append(typeRegions, tmp)
+	}
+
+	return typeRegions, nil
 }

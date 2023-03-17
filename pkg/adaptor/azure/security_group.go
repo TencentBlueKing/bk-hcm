@@ -103,7 +103,7 @@ func (az *Azure) DeleteSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureOption
 // ListSecurityGroup list security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
 func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureListOption) (
-	[]*armnetwork.SecurityGroup, error) {
+	[]*securitygroup.AzureSecurityGroup, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group list option is required")
@@ -128,13 +128,30 @@ func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureListOpti
 		securityGroups = append(securityGroups, nextResult.Value...)
 	}
 
-	return securityGroups, nil
+	typesSecurityGroups := make([]*securitygroup.AzureSecurityGroup, 0)
+	for _, v := range securityGroups {
+		tmp := &securitygroup.AzureSecurityGroup{
+			ID:              SPtrToLowerSPtr(v.ID),
+			Location:        SPtrToLowerNoSpaceSPtr(v.Location),
+			Name:            SPtrToLowerSPtr(v.Name),
+			Etag:            v.Etag,
+			FlushConnection: nil,
+			ResourceGUID:    nil,
+		}
+		if v.Properties != nil {
+			tmp.FlushConnection = v.Properties.FlushConnection
+			tmp.ResourceGUID = v.Properties.ResourceGUID
+		}
+		typesSecurityGroups = append(typesSecurityGroups, tmp)
+	}
+
+	return typesSecurityGroups, nil
 }
 
 // ListSecurityGroupByID list security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
 func (az *Azure) ListSecurityGroupByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
-	[]*armnetwork.SecurityGroup, error) {
+	[]*securitygroup.AzureSecurityGroup, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group list option is required")
@@ -152,6 +169,7 @@ func (az *Azure) ListSecurityGroupByID(kt *kit.Kit, opt *core.AzureListByIDOptio
 	}
 
 	securityGroups := make([]*armnetwork.SecurityGroup, 0, len(idMap))
+	typesSecurityGroups := make([]*securitygroup.AzureSecurityGroup, 0)
 	pager := client.NewListPager(opt.ResourceGroupName, nil)
 	for pager.More() {
 		nextResult, err := pager.NextPage(kt.Ctx)
@@ -161,12 +179,13 @@ func (az *Azure) ListSecurityGroupByID(kt *kit.Kit, opt *core.AzureListByIDOptio
 
 		for _, one := range nextResult.Value {
 			if len(opt.CloudIDs) > 0 {
-				if _, exist := idMap[*one.ID]; exist {
+				id := SPtrToLowerSPtr(one.ID)
+				if _, exist := idMap[*id]; exist {
 					securityGroups = append(securityGroups, one)
-					delete(idMap, *one.ID)
+					delete(idMap, *id)
 
 					if len(idMap) == 0 {
-						return securityGroups, nil
+						return typesSecurityGroups, nil
 					}
 				}
 			} else {
@@ -175,10 +194,26 @@ func (az *Azure) ListSecurityGroupByID(kt *kit.Kit, opt *core.AzureListByIDOptio
 		}
 	}
 
-	return securityGroups, nil
+	for _, v := range securityGroups {
+		tmp := &securitygroup.AzureSecurityGroup{
+			ID:              SPtrToLowerSPtr(v.ID),
+			Location:        SPtrToLowerNoSpaceSPtr(v.Location),
+			Name:            SPtrToLowerSPtr(v.Name),
+			Etag:            v.Etag,
+			FlushConnection: nil,
+			ResourceGUID:    nil,
+		}
+		if v.Properties != nil {
+			tmp.FlushConnection = v.Properties.FlushConnection
+			tmp.ResourceGUID = v.Properties.ResourceGUID
+		}
+		typesSecurityGroups = append(typesSecurityGroups, tmp)
+	}
+
+	return typesSecurityGroups, nil
 }
 
-func (az *Azure) getSecurityGroupByCloudID(kt *kit.Kit, resGroupName, cloudID string) (*armnetwork.SecurityGroup,
+func (az *Azure) getSecurityGroupByCloudID(kt *kit.Kit, resGroupName, cloudID string) (*securitygroup.AzureSecurityGroup,
 	error) {
 
 	client, err := az.clientSet.securityGroupClient()
@@ -193,8 +228,21 @@ func (az *Azure) getSecurityGroupByCloudID(kt *kit.Kit, resGroupName, cloudID st
 			return nil, fmt.Errorf("failed to advance page: %v", err)
 		}
 		for _, one := range nextResult.Value {
-			if *one.ID == cloudID {
-				return one, nil
+			if SPtrToLowerStr(one.ID) == cloudID {
+				tmp := &securitygroup.AzureSecurityGroup{
+					ID:              SPtrToLowerSPtr(one.ID),
+					Location:        SPtrToLowerNoSpaceSPtr(one.Location),
+					Name:            SPtrToLowerSPtr(one.Name),
+					Etag:            one.Etag,
+					FlushConnection: nil,
+					ResourceGUID:    nil,
+				}
+				if one.Properties != nil {
+					tmp.FlushConnection = one.Properties.FlushConnection
+					tmp.ResourceGUID = one.Properties.ResourceGUID
+					tmp.SecurityRules = one.Properties.SecurityRules
+				}
+				return tmp, nil
 			}
 		}
 	}
@@ -234,7 +282,7 @@ func (az *Azure) SecurityGroupSubnetAssociate(kt *kit.Kit, opt *securitygroup.Az
 		}
 
 		for _, one := range page.Value {
-			if *one.ID == opt.CloudSubnetID {
+			if SPtrToLowerStr(one.ID) == opt.CloudSubnetID {
 				subnet = one
 			}
 		}
@@ -294,7 +342,7 @@ func (az *Azure) SecurityGroupSubnetDisassociate(kt *kit.Kit, opt *securitygroup
 		}
 
 		for _, one := range page.Value {
-			if *one.ID == opt.CloudSubnetID {
+			if SPtrToLowerStr(one.ID) == opt.CloudSubnetID {
 				subnet = one
 			}
 		}
@@ -305,7 +353,7 @@ func (az *Azure) SecurityGroupSubnetDisassociate(kt *kit.Kit, opt *securitygroup
 	}
 
 	if subnet.Properties.NetworkSecurityGroup == nil || subnet.Properties.NetworkSecurityGroup.ID == nil ||
-		*subnet.Properties.NetworkSecurityGroup.ID != opt.CloudSecurityGroupID {
+		SPtrToLowerStr(subnet.Properties.NetworkSecurityGroup.ID) != opt.CloudSecurityGroupID {
 		return fmt.Errorf("subnet: %s not associate security group: %s", opt.CloudSubnetID, opt.CloudSecurityGroupID)
 	}
 
@@ -357,7 +405,7 @@ func (az *Azure) SecurityGroupNetworkInterfaceAssociate(kt *kit.Kit,
 		}
 
 		for _, one := range page.Value {
-			if *one.ID == opt.CloudNetworkInterfaceID {
+			if SPtrToLowerStr(one.ID) == opt.CloudNetworkInterfaceID {
 				inter = one
 			}
 		}
@@ -424,7 +472,7 @@ func (az *Azure) SecurityGroupNetworkInterfaceDisassociate(kt *kit.Kit,
 		}
 
 		for _, one := range page.Value {
-			if *one.ID == opt.CloudNetworkInterfaceID {
+			if SPtrToLowerStr(one.ID) == opt.CloudNetworkInterfaceID {
 				inter = one
 			}
 		}
@@ -435,7 +483,7 @@ func (az *Azure) SecurityGroupNetworkInterfaceDisassociate(kt *kit.Kit,
 	}
 
 	if inter.Properties.NetworkSecurityGroup == nil || inter.Properties.NetworkSecurityGroup.ID == nil ||
-		*inter.Properties.NetworkSecurityGroup.ID != opt.CloudSecurityGroupID {
+		SPtrToLowerStr(inter.Properties.NetworkSecurityGroup.ID) != opt.CloudSecurityGroupID {
 		return fmt.Errorf("network interface: %s not associate security group: %s", opt.CloudNetworkInterfaceID,
 			opt.CloudSecurityGroupID)
 	}

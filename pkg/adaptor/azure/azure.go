@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/tools/converter"
 )
 
 // NewAzure new azure.
@@ -44,4 +45,41 @@ type Azure struct {
 func parseIDToName(id string) string {
 	idx := strings.LastIndex(id, "/")
 	return id[idx+1:]
+}
+
+// StrToLowerNoSpaceStr azure location need no space
+func StrToLowerNoSpaceStr(str string) string {
+	return strings.ToLower(strings.TrimSpace(str))
+}
+
+// SPtrToLowerNoSpaceSPtr azure location need no space
+func SPtrToLowerNoSpaceSPtr(str *string) *string {
+	if str == nil {
+		return nil
+	}
+	return converter.ValToPtr(strings.ToLower(strings.TrimSpace(*str)))
+}
+
+// SPtrToLowerNoSpaceStr azure location need no space
+func SPtrToLowerNoSpaceStr(str *string) string {
+	if str == nil {
+		return ""
+	}
+	return strings.ToLower(strings.TrimSpace(*str))
+}
+
+// SPtrToLowerSPtr ...
+func SPtrToLowerSPtr(str *string) *string {
+	if str == nil {
+		return nil
+	}
+	return converter.ValToPtr(strings.ToLower(*str))
+}
+
+// SPtrToLowerStr ...
+func SPtrToLowerStr(str *string) string {
+	if str == nil {
+		return ""
+	}
+	return strings.ToLower(*str)
 }

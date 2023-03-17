@@ -251,14 +251,6 @@ func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff,
 			Status:    cloudMap[id].Disk.Status,
 			Memo:      &cloudMap[id].Disk.Description,
 			Extension: &dataproto.HuaWeiDiskExtensionCreateReq{
-				// TODO: not find
-				DiskChargeType: "todo",
-				// TODO: not find
-				DiskChargePrepaid: &dataproto.HuaWeiDiskChargePrepaid{
-					PeriodNum:   nil,
-					PeriodType:  nil,
-					IsAutoRenew: nil,
-				},
 				ServiceType: cloudMap[id].Disk.ServiceType,
 				Encrypted:   cloudMap[id].Disk.Encrypted,
 				Attachment:  attachments,
@@ -349,14 +341,6 @@ func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, 
 			Memo:   &cloudMap[id].Disk.Description,
 			Status: cloudMap[id].Disk.Status,
 			Extension: &dataproto.HuaWeiDiskExtensionUpdateReq{
-				// TODO: not find
-				DiskChargeType: "todo",
-				// TODO: not find
-				DiskChargePrepaid: &dataproto.HuaWeiDiskChargePrepaid{
-					PeriodNum:   nil,
-					PeriodType:  nil,
-					IsAutoRenew: nil,
-				},
 				ServiceType: cloudMap[id].Disk.ServiceType,
 				Encrypted:   cloudMap[id].Disk.Encrypted,
 				Attachment:  attachments,

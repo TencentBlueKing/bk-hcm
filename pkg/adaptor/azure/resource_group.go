@@ -22,6 +22,7 @@ package azure
 import (
 	"fmt"
 
+	resourcegroup "hcm/pkg/adaptor/types/resource-group"
 	"hcm/pkg/kit"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
@@ -29,7 +30,7 @@ import (
 
 // ListResourceGroup list resource group.
 // reference: https://learn.microsoft.com/en-us/rest/api/resources/resource-groups/list#resourcegroup
-func (az *Azure) ListResourceGroup(kt *kit.Kit) ([]*armresources.ResourceGroup, error) {
+func (az *Azure) ListResourceGroup(kt *kit.Kit) ([]*resourcegroup.AzureResourceGroup, error) {
 
 	client, err := az.clientSet.resourceGroupsClient()
 	if err != nil {
@@ -46,5 +47,14 @@ func (az *Azure) ListResourceGroup(kt *kit.Kit) ([]*armresources.ResourceGroup, 
 		resourceGroup = append(resourceGroup, nextResult.Value...)
 	}
 
-	return resourceGroup, nil
+	typesResourceGroup := make([]*resourcegroup.AzureResourceGroup, 0)
+	for _, v := range resourceGroup {
+		tmp := &resourcegroup.AzureResourceGroup{
+			Name:     SPtrToLowerSPtr(v.Name),
+			Type:     v.Type,
+			Location: SPtrToLowerNoSpaceSPtr(v.Location),
+		}
+		typesResourceGroup = append(typesResourceGroup, tmp)
+	}
+	return typesResourceGroup, nil
 }

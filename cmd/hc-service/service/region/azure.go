@@ -129,10 +129,9 @@ func (r *region) syncAzureRegionAdd(addIDs []string, cts *rest.Contexts, req *ap
 		one := protoregion.AzureRegionBatchCreate{
 			Cloud_ID:          *cloudMap[id].Region.ID,
 			Name:              *cloudMap[id].Region.Name,
-			Type:              string(*cloudMap[id].Region.Type),
+			Type:              cloudMap[id].Region.Type,
 			DisplayName:       *cloudMap[id].Region.DisplayName,
 			RegionDisplayName: *cloudMap[id].Region.RegionalDisplayName,
-			RegionType:        string(*cloudMap[id].Region.Metadata.RegionType),
 		}
 		list = append(list, one)
 	}

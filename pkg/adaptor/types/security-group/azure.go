@@ -19,7 +19,11 @@
 
 package securitygroup
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/criteria/validator"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
+)
 
 // -------------------------- Update --------------------------
 
@@ -92,4 +96,15 @@ type AzureAssociateNetworkInterfaceOption struct {
 // Validate security group cvm bind option.
 func (opt AzureAssociateNetworkInterfaceOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// AzureSecurityGroup define azure security group.
+type AzureSecurityGroup struct {
+	ID              *string                    `json:"id"`
+	Location        *string                    `json:"location"`
+	Name            *string                    `json:"name"`
+	Etag            *string                    `json:"etag"`
+	FlushConnection *bool                      `json:"flush_connection"`
+	ResourceGUID    *string                    `json:"resource_guid"`
+	SecurityRules   []*armnetwork.SecurityRule `json:"security_rules"`
 }

@@ -811,6 +811,8 @@ func getTCloudCVMRelResourcesIDs(kt *kit.Kit, option *SyncTCloudCvmOption,
 				if disk.DiskId == nil {
 					continue
 				}
+				id := getCVMRelID(*disk.DiskId, *data.InstanceId)
+				diskMap[id] = &CVMOperateSync{RelID: *disk.DiskId, InstanceID: *data.InstanceId}
 			}
 		}
 

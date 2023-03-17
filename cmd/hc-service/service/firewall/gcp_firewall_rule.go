@@ -26,15 +26,12 @@ import (
 
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
-	adcore "hcm/pkg/adaptor/types/core"
 	firewallrule "hcm/pkg/adaptor/types/firewall-rule"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
-	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -341,148 +338,4 @@ func (f *firewall) getVpcIDByCloudVpcID(kt *kit.Kit, cloudVpcID string) (string,
 	}
 
 	return result.Details[0].CloudID, nil
-}
-
-// SyncGcpFirewallRule sync gcp to hcm
-func (f *firewall) SyncGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.GcpFirewallSyncReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	listReq := &protocloud.GcpFirewallRuleListReq{
-		Filter: tools.EqualExpression("account_id", req.AccountID),
-		Page: &core.BasePage{
-			Start: uint32(0),
-			Limit: core.DefaultMaxPageLimit,
-		},
-	}
-	ids := make([]string, 0)
-
-	for {
-		results, err := f.dataCli.Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), listReq)
-		if err != nil {
-			logs.Errorf("request dataservice list gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		for _, result := range results.Details {
-			ids = append(ids, result.ID)
-		}
-		listReq.Page.Start += uint32(len(results.Details))
-		if uint(len(results.Details)) < core.DefaultMaxPageLimit {
-			break
-		}
-	}
-
-	if len(ids) > 0 {
-		req := &protocloud.GcpFirewallRuleBatchDeleteReq{
-			Filter: tools.ContainersExpression("id", ids),
-		}
-		if err := f.dataCli.Gcp.Firewall.BatchDeleteFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), req); err != nil {
-			logs.Errorf("request dataservice delete gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-	}
-
-	_, err := f.SyncCreateGcpFirewallRule(cts, req.AccountID)
-	if err != nil {
-		logs.Errorf("create gcp firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// SyncCreateGcpFirewallRule create GcpFirewallRule for sync
-func (f *firewall) SyncCreateGcpFirewallRule(cts *rest.Contexts, accountID string) (interface{}, error) {
-	client, err := f.ad.Gcp(cts.Kit, accountID)
-	if err != nil {
-		return nil, err
-	}
-
-	ruleCreates := make([]protocloud.GcpFirewallRuleBatchCreate, 0)
-	nextToken := ""
-	for {
-		opt := &firewallrule.ListOption{
-			Page: &adcore.GcpPage{
-				PageSize: int64(adcore.GcpQueryLimit),
-			},
-		}
-
-		if nextToken != "" {
-			opt.Page.PageToken = nextToken
-		}
-
-		resp, token, err := client.ListFirewallRule(cts.Kit, opt)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, item := range resp {
-			rule := protocloud.GcpFirewallRuleBatchCreate{
-				CloudID:    strconv.FormatUint(item.Id, 10),
-				AccountID:  accountID,
-				Name:       item.Name,
-				Priority:   item.Priority,
-				Memo:       item.Description,
-				CloudVpcID: item.Network,
-				// TODO: 待处理和vpc关联字段
-				VpcId:                 "todo",
-				SourceRanges:          item.SourceRanges,
-				BkBizID:               constant.UnassignedBiz,
-				DestinationRanges:     item.DestinationRanges,
-				SourceTags:            item.SourceTags,
-				TargetTags:            item.TargetTags,
-				SourceServiceAccounts: item.SourceServiceAccounts,
-				TargetServiceAccounts: item.TargetServiceAccounts,
-				Type:                  item.Direction,
-				LogEnable:             item.LogConfig.Enable,
-				Disabled:              item.Disabled,
-				SelfLink:              item.SelfLink,
-			}
-
-			if len(item.Denied) != 0 {
-				sets := make([]corecloud.GcpProtocolSet, 0, len(item.Denied))
-				for _, one := range item.Denied {
-					sets = append(sets, corecloud.GcpProtocolSet{
-						Protocol: one.IPProtocol,
-						Port:     one.Ports,
-					})
-				}
-				rule.Denied = sets
-			}
-
-			if len(item.Allowed) != 0 {
-				sets := make([]corecloud.GcpProtocolSet, 0, len(item.Allowed))
-				for _, one := range item.Allowed {
-					sets = append(sets, corecloud.GcpProtocolSet{
-						Protocol: one.IPProtocol,
-						Port:     one.Ports,
-					})
-				}
-				rule.Allowed = sets
-			}
-
-			ruleCreates = append(ruleCreates, rule)
-		}
-
-		if len(token) == 0 {
-			break
-		}
-		nextToken = token
-	}
-
-	req := &protocloud.GcpFirewallRuleBatchCreateReq{
-		FirewallRules: ruleCreates,
-	}
-	result, err := f.dataCli.Gcp.Firewall.BatchCreateFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), req)
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
 }

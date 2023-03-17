@@ -21,6 +21,7 @@ package azure
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
@@ -123,9 +124,10 @@ func (a *Azure) ListVpcByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*types.
 		}
 
 		for _, one := range nextResult.Value {
-			if _, exist := idMap[*one.ID]; exist {
+			id := SPtrToLowerSPtr(one.ID)
+			if _, exist := idMap[*id]; exist {
 				details = append(details, converter.PtrToVal(convertVpc(one, opt.ResourceGroupName)))
-				delete(idMap, *one.ID)
+				delete(idMap, *id)
 
 				if len(idMap) == 0 {
 					return &types.AzureVpcListResult{Details: details}, nil
@@ -143,11 +145,11 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 	}
 
 	v := &types.AzureVpc{
-		CloudID: converter.PtrToVal(data.ID),
-		Name:    converter.PtrToVal(data.Name),
-		Region:  converter.PtrToVal(data.Location),
+		CloudID: SPtrToLowerStr(data.ID),
+		Name:    SPtrToLowerStr(data.Name),
+		Region:  SPtrToLowerNoSpaceStr(data.Location),
 		Extension: &cloud.AzureVpcExtension{
-			ResourceGroupName: resourceGroup,
+			ResourceGroupName: strings.ToLower(resourceGroup),
 			DNSServers:        make([]string, 0),
 			Cidr:              nil,
 		},
@@ -185,7 +187,7 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 
 // ListVpcUsage list vpc usage.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list-usage?tabs=HTTP
-func (a *Azure) ListVpcUsage(kt *kit.Kit, opt *types.AzureVpcListUsageOption) ([]armnetwork.VirtualNetworkUsage,
+func (a *Azure) ListVpcUsage(kt *kit.Kit, opt *types.AzureVpcListUsageOption) ([]types.VpcUsage,
 	error) {
 
 	if err := opt.Validate(); err != nil {
@@ -216,5 +218,15 @@ func (a *Azure) ListVpcUsage(kt *kit.Kit, opt *types.AzureVpcListUsageOption) ([
 		details = append(details, converter.PtrToSlice(page.Value)...)
 	}
 
-	return details, nil
+	typesDetails := make([]types.VpcUsage, 0)
+	for _, v := range details {
+		tmp := types.VpcUsage{
+			ID:           SPtrToLowerSPtr(v.ID),
+			Limit:        v.Limit,
+			CurrentValue: v.CurrentValue,
+		}
+		typesDetails = append(typesDetails, tmp)
+	}
+
+	return typesDetails, nil
 }

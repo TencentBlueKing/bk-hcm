@@ -236,13 +236,14 @@ func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 
 		disk := &dataproto.DiskExtCreateReq[dataproto.AwsDiskExtensionCreateReq]{
 			AccountID: req.AccountID,
-			Name:      "todo",
-			CloudID:   id,
-			Region:    req.Region,
-			Zone:      converter.PtrToVal(cloudMap[id].Disk.AvailabilityZone),
-			DiskSize:  uint64(converter.PtrToVal(cloudMap[id].Disk.Size)),
-			DiskType:  converter.PtrToVal(cloudMap[id].Disk.VolumeType),
-			Status:    converter.PtrToVal(cloudMap[id].Disk.State),
+			// 该云没有此字段
+			Name:     "",
+			CloudID:  id,
+			Region:   req.Region,
+			Zone:     converter.PtrToVal(cloudMap[id].Disk.AvailabilityZone),
+			DiskSize: uint64(converter.PtrToVal(cloudMap[id].Disk.Size)),
+			DiskType: converter.PtrToVal(cloudMap[id].Disk.VolumeType),
+			Status:   converter.PtrToVal(cloudMap[id].Disk.State),
 			// 该云没有此字段
 			Memo: nil,
 			Extension: &dataproto.AwsDiskExtensionCreateReq{

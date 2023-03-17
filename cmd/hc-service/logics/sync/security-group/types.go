@@ -20,6 +20,8 @@
 package securitygroup
 
 import (
+	securitygroup "hcm/pkg/adaptor/types/security-group"
+	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -33,7 +35,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 	tcloud "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
@@ -51,7 +52,7 @@ type AwsSGRuleSync struct {
 type AzureSGRuleSync struct {
 	IsUpdate     bool
 	IsRealUpdate bool
-	SGRule       *armnetwork.SecurityRule
+	SGRule       *securitygrouprule.AzureSecurityRule
 }
 
 // HuaWeiSGRuleSync ...
@@ -118,7 +119,7 @@ type SecurityGroupSyncAwsDiff struct {
 
 // SecurityGroupSyncAzureDiff azure diff for sync
 type SecurityGroupSyncAzureDiff struct {
-	SecurityGroup *armnetwork.SecurityGroup
+	SecurityGroup *securitygroup.AzureSecurityGroup
 }
 
 // GetDatasFromDSForSecurityGroupSync get sg datas from hc

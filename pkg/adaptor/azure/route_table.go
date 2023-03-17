@@ -21,6 +21,7 @@ package azure
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types/core"
 	routetable "hcm/pkg/adaptor/types/route-table"
@@ -147,10 +148,11 @@ func (a *Azure) ListRouteTableByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
 		}
 
 		for _, one := range nextResult.Value {
-			if _, exist := idMap[*one.ID]; exist {
+			id := SPtrToLowerSPtr(one.ID)
+			if _, exist := idMap[*id]; exist {
 				details = append(details, converter.PtrToVal(a.ConvertRouteTable(one, opt.ResourceGroupName,
 					a.clientSet.credential.CloudSubscriptionID)))
-				delete(idMap, *one.ID)
+				delete(idMap, *id)
 
 				if len(idMap) == 0 {
 					return &routetable.AzureRouteTableListResult{Details: details}, nil
@@ -188,6 +190,7 @@ func (a *Azure) GetRouteTable(kt *kit.Kit, opt *routetable.AzureRouteTableGetOpt
 		a.clientSet.credential.CloudSubscriptionID), nil
 }
 
+// ConvertRouteTable ...
 func (a *Azure) ConvertRouteTable(data *armnetwork.RouteTable, resourceGroup,
 	subscription string) *routetable.AzureRouteTable {
 
@@ -196,12 +199,12 @@ func (a *Azure) ConvertRouteTable(data *armnetwork.RouteTable, resourceGroup,
 	}
 
 	r := &routetable.AzureRouteTable{
-		CloudID: converter.PtrToVal(data.ID),
-		Name:    converter.PtrToVal(data.Name),
-		Region:  converter.PtrToVal(data.Location),
+		CloudID: SPtrToLowerStr(data.ID),
+		Name:    SPtrToLowerStr(data.Name),
+		Region:  SPtrToLowerNoSpaceStr(data.Location),
 		Extension: &routetable.AzureRouteTableExtension{
-			ResourceGroupName:   resourceGroup,
-			CloudSubscriptionID: subscription,
+			ResourceGroupName:   strings.ToLower(resourceGroup),
+			CloudSubscriptionID: strings.ToLower(subscription),
 			Routes:              nil,
 			CloudSubnetIDs:      nil,
 		},
@@ -224,7 +227,7 @@ func (a *Azure) ConvertRouteTable(data *armnetwork.RouteTable, resourceGroup,
 			continue
 		}
 
-		r.Extension.CloudSubnetIDs = append(r.Extension.CloudSubnetIDs, converter.PtrToVal(subnet.ID))
+		r.Extension.CloudSubnetIDs = append(r.Extension.CloudSubnetIDs, SPtrToLowerStr(subnet.ID))
 	}
 
 	return r

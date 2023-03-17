@@ -504,19 +504,23 @@ func syncAwsCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsC
 				EbsOptimized:          cloudMap[id].Cvm.EbsOptimized,
 				CloudSecurityGroupIDs: sgIDs,
 				PrivateDnsName:        cloudMap[id].Cvm.PrivateDnsName,
-				PrivateDnsNameOptions: &corecvm.AwsPrivateDnsNameOptions{
-					EnableResourceNameDnsAAAARecord: cloudMap[id].Cvm.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
-					EnableResourceNameDnsARecord:    cloudMap[id].Cvm.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
-					HostnameType:                    cloudMap[id].Cvm.PrivateDnsNameOptions.HostnameType,
-				},
-				CloudRamDiskID:     cloudMap[id].Cvm.RamdiskId,
-				RootDeviceName:     cloudMap[id].Cvm.RootDeviceName,
-				RootDeviceType:     cloudMap[id].Cvm.RootDeviceType,
-				SourceDestCheck:    cloudMap[id].Cvm.SourceDestCheck,
-				SriovNetSupport:    cloudMap[id].Cvm.SriovNetSupport,
-				VirtualizationType: cloudMap[id].Cvm.VirtualizationType,
-				BlockDeviceMapping: awsBlockDeviceMapping,
+				PrivateDnsNameOptions: nil,
+				CloudRamDiskID:        cloudMap[id].Cvm.RamdiskId,
+				RootDeviceName:        cloudMap[id].Cvm.RootDeviceName,
+				RootDeviceType:        cloudMap[id].Cvm.RootDeviceType,
+				SourceDestCheck:       cloudMap[id].Cvm.SourceDestCheck,
+				SriovNetSupport:       cloudMap[id].Cvm.SriovNetSupport,
+				VirtualizationType:    cloudMap[id].Cvm.VirtualizationType,
+				BlockDeviceMapping:    awsBlockDeviceMapping,
 			},
+		}
+
+		if cloudMap[id].Cvm.PrivateDnsNameOptions != nil {
+			cvm.Extension.PrivateDnsNameOptions = &corecvm.AwsPrivateDnsNameOptions{
+				EnableResourceNameDnsAAAARecord: cloudMap[id].Cvm.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
+				EnableResourceNameDnsARecord:    cloudMap[id].Cvm.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
+				HostnameType:                    cloudMap[id].Cvm.PrivateDnsNameOptions.HostnameType,
+			}
 		}
 
 		lists = append(lists, cvm)
@@ -643,19 +647,23 @@ func syncAwsCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAwsCvmOption,
 				EbsOptimized:          cloudMap[id].Cvm.EbsOptimized,
 				CloudSecurityGroupIDs: sgIDs,
 				PrivateDnsName:        cloudMap[id].Cvm.PrivateDnsName,
-				PrivateDnsNameOptions: &corecvm.AwsPrivateDnsNameOptions{
-					EnableResourceNameDnsAAAARecord: cloudMap[id].Cvm.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
-					EnableResourceNameDnsARecord:    cloudMap[id].Cvm.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
-					HostnameType:                    cloudMap[id].Cvm.PrivateDnsNameOptions.HostnameType,
-				},
-				CloudRamDiskID:     cloudMap[id].Cvm.RamdiskId,
-				RootDeviceName:     cloudMap[id].Cvm.RootDeviceName,
-				RootDeviceType:     cloudMap[id].Cvm.RootDeviceType,
-				SourceDestCheck:    cloudMap[id].Cvm.SourceDestCheck,
-				SriovNetSupport:    cloudMap[id].Cvm.SriovNetSupport,
-				VirtualizationType: cloudMap[id].Cvm.VirtualizationType,
-				BlockDeviceMapping: awsBlockDeviceMapping,
+				PrivateDnsNameOptions: nil,
+				CloudRamDiskID:        cloudMap[id].Cvm.RamdiskId,
+				RootDeviceName:        cloudMap[id].Cvm.RootDeviceName,
+				RootDeviceType:        cloudMap[id].Cvm.RootDeviceType,
+				SourceDestCheck:       cloudMap[id].Cvm.SourceDestCheck,
+				SriovNetSupport:       cloudMap[id].Cvm.SriovNetSupport,
+				VirtualizationType:    cloudMap[id].Cvm.VirtualizationType,
+				BlockDeviceMapping:    awsBlockDeviceMapping,
 			},
+		}
+
+		if cloudMap[id].Cvm.PrivateDnsNameOptions != nil {
+			cvm.Extension.PrivateDnsNameOptions = &corecvm.AwsPrivateDnsNameOptions{
+				EnableResourceNameDnsAAAARecord: cloudMap[id].Cvm.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
+				EnableResourceNameDnsARecord:    cloudMap[id].Cvm.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
+				HostnameType:                    cloudMap[id].Cvm.PrivateDnsNameOptions.HostnameType,
+			}
 		}
 
 		lists = append(lists, cvm)

@@ -20,9 +20,9 @@
 package cvm
 
 import (
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
@@ -76,7 +76,7 @@ type GcpDSCvmSync struct {
 // AzureCvmSync ...
 type AzureCvmSync struct {
 	IsUpdate bool
-	Cvm      *armcompute.VirtualMachine
+	Cvm      *typecvm.AzureCvm
 }
 
 // AzureDSCvmSync
