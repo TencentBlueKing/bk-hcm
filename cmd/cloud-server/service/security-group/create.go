@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/assert"
 )
 
 // CreateSecurityGroup create security group.
@@ -141,6 +142,11 @@ func (svc *securityGroupSvc) createAzureSecurityGroup(cts *rest.Contexts, bizID 
 		return nil, err
 	}
 
+	// Check Azure's SecurityGroup Params
+	if err := svc.checkAzureSGParams(req, extension.ResourceGroupName); err != nil {
+		return nil, err
+	}
+
 	createReq := &hcproto.AzureSecurityGroupCreateReq{
 		Region:            req.Region,
 		Name:              req.Name,
@@ -157,4 +163,21 @@ func (svc *securityGroupSvc) createAzureSecurityGroup(cts *rest.Contexts, bizID 
 	}
 
 	return result, nil
+}
+
+// checkAzureSGParams check azure security group params
+func (svc *securityGroupSvc) checkAzureSGParams(req *proto.SecurityGroupCreateReq, resGroupName string) error {
+	if !assert.IsSameCaseNoSpaceString(req.Region) {
+		return errf.New(errf.InvalidParameter, "region can only be lowercase")
+	}
+
+	if !assert.IsSameCaseString(req.Name) {
+		return errf.New(errf.InvalidParameter, "name can only be lowercase")
+	}
+
+	if !assert.IsSameCaseString(resGroupName) {
+		return errf.New(errf.InvalidParameter, "resource_group_name can only be lowercase")
+	}
+
+	return nil
 }

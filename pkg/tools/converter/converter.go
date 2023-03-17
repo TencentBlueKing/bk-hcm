@@ -21,6 +21,7 @@ package converter
 
 import (
 	"strconv"
+	"strings"
 
 	"hcm/pkg/tools/json"
 )
@@ -133,4 +134,9 @@ func StringSliceToSliceStringPtr(source []string) *string {
 	target += "]"
 
 	return &target
+}
+
+// StrToLowerNoSpaceStr azure location need no space
+func StrToLowerNoSpaceStr(str string) string {
+	return strings.ToLower(strings.Replace(str, " ", "", -1))
 }

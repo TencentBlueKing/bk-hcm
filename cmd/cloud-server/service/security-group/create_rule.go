@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -280,7 +281,7 @@ func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 	if len(req.EgressRuleSet) != 0 {
 		createReq.EgressRuleSet = make([]hcproto.AzureSGRuleCreate, 0, len(req.EgressRuleSet))
 		for _, one := range req.EgressRuleSet {
-			createReq.EgressRuleSet = append(createReq.EgressRuleSet, hcproto.AzureSGRuleCreate{
+			tmpEgressRule := hcproto.AzureSGRuleCreate{
 				Name:                             one.Name,
 				Memo:                             one.Memo,
 				DestinationAddressPrefix:         one.DestinationAddressPrefix,
@@ -297,14 +298,20 @@ func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 				Priority:                         one.Priority,
 				Type:                             one.Type,
 				Access:                           one.Access,
-			})
+			}
+
+			if err := svc.checkCreateAzureSGRuleParams(tmpEgressRule); err != nil {
+				return nil, err
+			}
+
+			createReq.EgressRuleSet = append(createReq.EgressRuleSet, tmpEgressRule)
 		}
 	}
 
 	if len(req.IngressRuleSet) != 0 {
 		createReq.IngressRuleSet = make([]hcproto.AzureSGRuleCreate, 0, len(req.IngressRuleSet))
 		for _, one := range req.IngressRuleSet {
-			createReq.IngressRuleSet = append(createReq.IngressRuleSet, hcproto.AzureSGRuleCreate{
+			tmpIngressRule := hcproto.AzureSGRuleCreate{
 				Name:                             one.Name,
 				Memo:                             one.Memo,
 				DestinationAddressPrefix:         one.DestinationAddressPrefix,
@@ -321,7 +328,13 @@ func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 				Priority:                         one.Priority,
 				Type:                             one.Type,
 				Access:                           one.Access,
-			})
+			}
+
+			if err := svc.checkCreateAzureSGRuleParams(tmpIngressRule); err != nil {
+				return nil, err
+			}
+
+			createReq.IngressRuleSet = append(createReq.IngressRuleSet, tmpIngressRule)
 		}
 	}
 
@@ -332,4 +345,21 @@ func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 	}
 
 	return result, nil
+}
+
+// checkCreateAzureSGRuleParams check create azure security group rule params
+func (svc *securityGroupSvc) checkCreateAzureSGRuleParams(req hcproto.AzureSGRuleCreate) error {
+	if !assert.IsSameCaseString(req.Name) {
+		return errf.New(errf.InvalidParameter, "name can only be lowercase")
+	}
+
+	if !assert.IsSameCasePtrStringSlice(req.CloudDestinationSecurityGroupIDs) {
+		return errf.New(errf.InvalidParameter, "cloud_destination_security_group_ids can only be lowercase")
+	}
+
+	if !assert.IsSameCasePtrStringSlice(req.CloudSourceSecurityGroupIDs) {
+		return errf.New(errf.InvalidParameter, "cloud_source_security_group_ids can only be lowercase")
+	}
+
+	return nil
 }

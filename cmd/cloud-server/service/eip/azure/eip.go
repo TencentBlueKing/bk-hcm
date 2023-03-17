@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -169,6 +170,10 @@ func (a *Azure) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
+	if err = a.checkAzureEipParams(req); err != nil {
+		return nil, err
+	}
+
 	// validate biz and authorize
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Eip, Action: meta.Create}, BizID: int64(bkBizID)}
 	err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
@@ -210,4 +215,25 @@ func (a *Azure) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return resp, nil
+}
+
+// checkAzureEipParams check azure eip params
+func (a *Azure) checkAzureEipParams(req *cloudproto.AzureEipCreateReq) error {
+	if !assert.IsSameCaseString(req.ResourceGroupName) {
+		return errf.New(errf.InvalidParameter, "resource_group_name can only be lowercase")
+	}
+
+	if !assert.IsSameCaseString(req.EipName) {
+		return errf.New(errf.InvalidParameter, "eip_name can only be lowercase")
+	}
+
+	if !assert.IsSameCaseNoSpaceString(req.Region) {
+		return errf.New(errf.InvalidParameter, "region can only be lowercase")
+	}
+
+	if !assert.IsSameCaseNoSpaceString(req.Zone) {
+		return errf.New(errf.InvalidParameter, "zone can only be lowercase")
+	}
+
+	return nil
 }

@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
@@ -211,6 +212,11 @@ func (svc *subnetSvc) createAzureSubnet(kt *kit.Kit, bizID int64, data json.RawM
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// check azure subnet params
+	if err := svc.checkAzureSubnetParams(req); err != nil {
+		return nil, err
 	}
 
 	opt := &hcservice.SubnetCreateReq[hcservice.AzureSubnetCreateExt]{
@@ -677,6 +683,31 @@ func CheckSubnetsInBiz(kt *kit.Kit, client *client.ClientSet, rule filter.RuleFa
 
 	if result.Count != 0 {
 		return fmt.Errorf("%d subnets are already assigned", result.Count)
+	}
+
+	return nil
+}
+
+// checkAzureSubnetParams check azure subnet params
+func (svc *subnetSvc) checkAzureSubnetParams(req *cloudserver.AzureSubnetCreateReq) error {
+	if !assert.IsSameCaseString(req.Name) {
+		return errf.New(errf.InvalidParameter, "name can only be lowercase")
+	}
+
+	if !assert.IsSameCaseString(req.CloudVpcID) {
+		return errf.New(errf.InvalidParameter, "cloud_vpc_id can only be lowercase")
+	}
+
+	if !assert.IsSameCaseString(req.ResourceGroup) {
+		return errf.New(errf.InvalidParameter, "resource_group can only be lowercase")
+	}
+
+	if !assert.IsSameCaseString(req.CloudRouteTableID) {
+		return errf.New(errf.InvalidParameter, "cloud_route_table_id can only be lowercase")
+	}
+
+	if !assert.IsSameCaseString(req.NetworkSecurityGroup) {
+		return errf.New(errf.InvalidParameter, "network_security_group can only be lowercase")
 	}
 
 	return nil

@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
@@ -211,10 +212,32 @@ func (svc *securityGroupSvc) updateAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 		Priority:                         req.Priority,
 		Access:                           req.Access,
 	}
+
+	if err := svc.checkUpdateAzureSGRuleParams(updateReq); err != nil {
+		return nil, err
+	}
+
 	if err := svc.client.HCService().Azure.SecurityGroup.UpdateSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
 		sgBaseInfo.ID, id, updateReq); err != nil {
 		return nil, err
 	}
 
 	return nil, nil
+}
+
+// checkUpdateAzureSGRuleParams check azure security group rule params
+func (svc *securityGroupSvc) checkUpdateAzureSGRuleParams(req *hcproto.AzureSGRuleUpdateReq) error {
+	if !assert.IsSameCaseString(req.Name) {
+		return errf.New(errf.InvalidParameter, "name can only be lowercase")
+	}
+
+	if !assert.IsSameCasePtrStringSlice(req.CloudDestinationSecurityGroupIDs) {
+		return errf.New(errf.InvalidParameter, "cloud_destination_security_group_ids can only be lowercase")
+	}
+
+	if !assert.IsSameCasePtrStringSlice(req.CloudSourceSecurityGroupIDs) {
+		return errf.New(errf.InvalidParameter, "cloud_source_security_group_ids can only be lowercase")
+	}
+
+	return nil
 }

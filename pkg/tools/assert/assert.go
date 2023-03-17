@@ -22,6 +22,7 @@ package assert
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
 
 	"hcm/pkg/tools/converter"
 )
@@ -71,6 +72,32 @@ func IsString(value interface{}) bool {
 	default:
 		return false
 	}
+}
+
+// IsSameCaseNoSpaceString 判断字符串是否没有空格且大小写敏感
+func IsSameCaseNoSpaceString(a string) bool {
+	return a == converter.StrToLowerNoSpaceStr(a)
+}
+
+// IsSameCaseString 判断字符串是否大小写敏感
+func IsSameCaseString(a string) bool {
+	return a == strings.ToLower(a)
+}
+
+// IsSameCasePtrStringSlice 判断指针数组中的元素是否大小写敏感
+func IsSameCasePtrStringSlice(a []*string) bool {
+	if len(a) == 0 {
+		return true
+	}
+
+	tmp := converter.PtrToSlice(a)
+	for _, one := range tmp {
+		if !IsSameCaseString(one) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // IsPtrStringEqual 判断字符串指针是否相同
