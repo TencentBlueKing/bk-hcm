@@ -22,6 +22,7 @@ package cvm
 import (
 	"fmt"
 	"net/http"
+	gosync "sync"
 
 	"hcm/cmd/hc-service/logics/sync/cvm"
 	"hcm/cmd/hc-service/service/capability"
@@ -32,10 +33,13 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	imageproto "hcm/pkg/api/data-service/cloud/image"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 func (svc *cvmSvc) initAzureCvmService(cap *capability.Capability) {
@@ -61,16 +65,25 @@ func (svc *cvmSvc) BatchCreateAzureCvm(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	azureCli, err := svc.ad.Azure(cts.Kit, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
 	listImageReq := &imageproto.ImageListReq{
-		Filter: tools.EqualExpression("cloud_id", req.CloudImageID),
-		Page:   core.DefaultBasePage,
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: enumor.Azure,
+				},
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.Equal.Factory(),
+					Value: req.CloudImageID,
+				},
+			},
+		},
+		Page: core.DefaultBasePage,
 	}
-	imageResult, err := svc.dataCli.Gcp.ListImage(cts.Kit.Ctx, cts.Kit.Header(), listImageReq)
+	imageResult, err := svc.dataCli.Azure.ListImage(cts.Kit.Ctx, cts.Kit.Header(), listImageReq)
 	if err != nil {
 		return nil, err
 	}
@@ -78,53 +91,8 @@ func (svc *cvmSvc) BatchCreateAzureCvm(cts *rest.Contexts) (interface{}, error) 
 	if len(imageResult.Details) == 0 {
 		return nil, fmt.Errorf("image: %s not found", req.CloudImageID)
 	}
-	image := imageResult.Details[0]
 
-	result := protocvm.BatchCreateResult{
-		SuccessCloudIDs: make([]string, 0),
-		FailedCloudIDs:  make([]string, 0),
-		FailedMessage:   "",
-	}
-
-	for i := 0; i < int(req.RequiredCount); i++ {
-		createOpt := &typecvm.AzureCreateOption{
-			ResourceGroupName: req.ResourceGroupName,
-			Region:            req.Region,
-			Name:              azure.GenResourceName(req.Name, i+1),
-			Zones:             req.Zones,
-			InstanceType:      req.InstanceType,
-			Image: &typecvm.AzureImage{
-				Offer:     image.Extension.Offer,
-				Publisher: image.Extension.Publisher,
-				Sku:       image.Extension.Sku,
-				Version:   image.Name,
-			},
-			Username:             req.Username,
-			Password:             req.Password,
-			CloudSubnetID:        req.CloudSubnetID,
-			CloudSecurityGroupID: req.CloudSecurityGroupID,
-			OSDisk: &typecvm.AzureOSDisk{
-				Name:   azure.GenResourceName(req.OSDisk.Name, i+1),
-				SizeGB: req.OSDisk.SizeGB,
-			},
-			DataDisk: make([]typecvm.AzureDataDisk, len(req.DataDisk)),
-		}
-		for j, one := range req.DataDisk {
-			createOpt.DataDisk[j] = typecvm.AzureDataDisk{
-				Name:   azure.GenResourceName(fmt.Sprintf("%s-%d", one.Name, i), j+1),
-				SizeGB: one.SizeGB,
-			}
-		}
-
-		cloudID, err := azureCli.CreateCvm(cts.Kit, createOpt)
-		if err != nil {
-			logs.Errorf("create cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			result.FailedMessage = err.Error()
-			break
-		}
-
-		result.SuccessCloudIDs = append(result.SuccessCloudIDs, cloudID)
-	}
+	result := svc.bulkCreateAzureCvm(cts.Kit, req, imageResult.Details[0])
 
 	if len(result.SuccessCloudIDs) == 0 {
 		return result, nil
@@ -141,6 +109,83 @@ func (svc *cvmSvc) BatchCreateAzureCvm(cts *rest.Contexts) (interface{}, error) 
 	}
 
 	return result, nil
+}
+
+func (svc *cvmSvc) bulkCreateAzureCvm(kt *kit.Kit, req *protocvm.AzureBatchCreateReq,
+	image *imageproto.ImageExtResult[imageproto.AzureImageExtensionResult]) *protocvm.BatchCreateResult {
+
+	result := &protocvm.BatchCreateResult{
+		SuccessCloudIDs: make([]string, 0),
+		FailedCloudIDs:  make([]string, 0),
+		FailedMessage:   "",
+	}
+
+	azureCli, err := svc.ad.Azure(kt, req.AccountID)
+	if err != nil {
+		result.FailedMessage = err.Error()
+		return result
+	}
+
+	pipeline := make(chan bool, 5)
+	mapLock := new(gosync.Mutex)
+	var wg gosync.WaitGroup
+
+	for i := 0; i < int(req.RequiredCount); i++ {
+		pipeline <- true
+		wg.Add(1)
+
+		go func(result *protocvm.BatchCreateResult, mapLock *gosync.Mutex, i int) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			createOpt := &typecvm.AzureCreateOption{
+				ResourceGroupName: req.ResourceGroupName,
+				Region:            req.Region,
+				Name:              azure.GenResourceName(req.Name, i+1),
+				Zones:             req.Zones,
+				InstanceType:      req.InstanceType,
+				Image: &typecvm.AzureImage{
+					Offer:     image.Extension.Offer,
+					Publisher: image.Extension.Publisher,
+					Sku:       image.Extension.Sku,
+					Version:   image.Name,
+				},
+				Username:             req.Username,
+				Password:             req.Password,
+				CloudSubnetID:        req.CloudSubnetID,
+				CloudSecurityGroupID: req.CloudSecurityGroupID,
+				OSDisk: &typecvm.AzureOSDisk{
+					Name:   azure.GenResourceName(req.OSDisk.Name, i+1),
+					SizeGB: req.OSDisk.SizeGB,
+				},
+				DataDisk: make([]typecvm.AzureDataDisk, len(req.DataDisk)),
+			}
+			for j, one := range req.DataDisk {
+				createOpt.DataDisk[j] = typecvm.AzureDataDisk{
+					Name:   azure.GenResourceName(fmt.Sprintf("%s-%d", one.Name, i), j+1),
+					SizeGB: one.SizeGB,
+				}
+			}
+
+			cloudID, err := azureCli.CreateCvm(kt, createOpt)
+			if err != nil {
+				if len(result.FailedMessage) == 0 {
+					result.FailedMessage = err.Error()
+				}
+
+				return
+			}
+
+			mapLock.Lock()
+			defer mapLock.Unlock()
+			result.SuccessCloudIDs = append(result.SuccessCloudIDs, cloudID)
+		}(result, mapLock, i)
+	}
+
+	wg.Wait()
+	return result
 }
 
 // StartAzureCvm ...
