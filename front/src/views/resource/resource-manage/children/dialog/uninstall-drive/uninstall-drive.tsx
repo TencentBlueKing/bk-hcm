@@ -60,7 +60,7 @@ export default defineComponent({
       resourceStore.detachDisk(
         {
           disk_id: props.data.id,
-          cvm_id: props.data.cvm_id
+          cvm_id: props.data.instance_id
         }
       ).then(() => {
         emit('success')

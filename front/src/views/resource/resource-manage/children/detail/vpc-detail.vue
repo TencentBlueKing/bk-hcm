@@ -188,6 +188,9 @@ const {
           {
             name: 'DNS服务器',
             prop: 'dns_servers',
+            render (val: any) {
+              return val ? val : 'Azure提供的DNS服务'
+            }
           },
         ]);
         break;
