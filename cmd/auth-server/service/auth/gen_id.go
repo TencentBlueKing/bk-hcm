@@ -369,8 +369,12 @@ func genCloudResResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 		return sys.ResourceFind, []client.Resource{res}, nil
 	case meta.Assign:
 		// assign resource to biz is related to hcm account & cmdb biz resource
-		// TODO support biz auth after biz is supported
-		return sys.ResourceAssign, []client.Resource{res}, nil
+		bizRes := client.Resource{
+			System: sys.SystemIDCMDB,
+			Type:   sys.Biz,
+			ID:     strconv.FormatInt(a.BizID, 10),
+		}
+		return sys.ResourceAssign, []client.Resource{res, bizRes}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}

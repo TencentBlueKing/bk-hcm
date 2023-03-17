@@ -174,6 +174,18 @@ func convertVpc(data *ec2.Vpc, region string) *types.AwsVpc {
 	}
 
 	for _, asst := range data.CidrBlockAssociationSet {
+		if asst == nil || asst.CidrBlock == nil || *asst.CidrBlock == "" {
+			continue
+		}
+
+		// update primary cidr state if cidr equals
+		if *asst.CidrBlock == converter.PtrToVal(data.CidrBlock) {
+			if asst.CidrBlockState != nil && asst.CidrBlockState.State != nil {
+				v.Extension.Cidr[0].State = *asst.CidrBlockState.State
+			}
+			continue
+		}
+
 		cidr := cloud.AwsCidr{
 			Type: enumor.Ipv4,
 			Cidr: converter.PtrToVal(asst.CidrBlock),

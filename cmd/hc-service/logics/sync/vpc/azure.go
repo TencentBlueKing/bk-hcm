@@ -74,7 +74,7 @@ func AzureVpcSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq,
 	}
 
 	// batch sync vendor vpc list.
-	err = BatchSyncAzureVpcList(kt, req, list, resourceDBMap, adaptor, dataCli)
+	err = BatchSyncAzureVpcList(kt, req, list, resourceDBMap, dataCli)
 	if err != nil {
 		logs.Errorf("%s-vpc compare api and dblist failed. accountID: %s, rgName: %s, err: %v",
 			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
@@ -173,10 +173,9 @@ func BatchGetAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, adap
 // BatchSyncAzureVpcList batch sync vendor vpc list.
 func BatchSyncAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq,
 	list *types.AzureVpcListResult, resourceDBMap map[string]cloudcore.Vpc[cloudcore.AzureVpcExtension],
-	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) error {
+	dataCli *dataclient.Client) error {
 
-	createResources, updateResources, delCloudIDs, err := filterAzureVpcList(kt, req, list, resourceDBMap,
-		adaptor, dataCli)
+	createResources, updateResources, delCloudIDs, err := filterAzureVpcList(req, list, resourceDBMap)
 	if err != nil {
 		return err
 	}
@@ -221,9 +220,8 @@ func BatchSyncAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq,
 }
 
 // filterAzureVpcList filter azure vpc list
-func filterAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, list *types.AzureVpcListResult,
-	resourceDBMap map[string]cloudcore.Vpc[cloudcore.AzureVpcExtension], adaptor *cloudclient.CloudAdaptorClient,
-	dataCli *dataclient.Client) ([]cloud.VpcCreateReq[cloud.AzureVpcCreateExt],
+func filterAzureVpcList(req *hcservice.AzureResourceSyncReq, list *types.AzureVpcListResult,
+	resourceDBMap map[string]cloudcore.Vpc[cloudcore.AzureVpcExtension]) ([]cloud.VpcCreateReq[cloud.AzureVpcCreateExt],
 	[]cloud.VpcUpdateReq[cloud.AzureVpcUpdateExt], []string, error) {
 
 	if list == nil || len(list.Details) == 0 {
@@ -253,7 +251,7 @@ func filterAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, list *
 				}
 
 				if item.Extension.Cidr != nil {
-					tmpCidrs := make([]cloud.AzureCidr, len(item.Extension.Cidr))
+					tmpCidrs := make([]cloud.AzureCidr, 0, len(item.Extension.Cidr))
 					for _, cidrItem := range item.Extension.Cidr {
 						tmpCidrs = append(tmpCidrs, cloud.AzureCidr{
 							Type: cidrItem.Type,
@@ -285,7 +283,7 @@ func filterAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, list *
 			}
 
 			if item.Extension.Cidr != nil {
-				tmpCidrs := make([]cloud.AzureCidr, len(item.Extension.Cidr))
+				tmpCidrs := make([]cloud.AzureCidr, 0, len(item.Extension.Cidr))
 				for _, cidrItem := range item.Extension.Cidr {
 					tmpCidrs = append(tmpCidrs, cloud.AzureCidr{
 						Type: cidrItem.Type,

@@ -148,6 +148,7 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 		Region:  converter.PtrToVal(data.Location),
 		Extension: &cloud.AzureVpcExtension{
 			ResourceGroupName: resourceGroup,
+			DNSServers:        make([]string, 0),
 			Cidr:              nil,
 		},
 	}
@@ -162,13 +163,14 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 
 	if data.Properties.AddressSpace != nil {
 		for _, prefix := range data.Properties.AddressSpace.AddressPrefixes {
-			if prefix == nil {
+			if prefix == nil || *prefix == "" {
 				continue
 			}
 
 			addressType, err := cidr.CidrIPAddressType(*prefix)
 			if err != nil {
 				logs.Errorf("get cidr ip address type failed, cidr: %v, err: %v", *prefix, err)
+				continue
 			}
 
 			v.Extension.Cidr = append(v.Extension.Cidr, cloud.AzureCidr{

@@ -339,7 +339,7 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// authorize
-	err := svc.authorizeVpcAssignOp(cts.Kit, req.VpcIDs, req.BkBizID)
+	err := svc.authorizeVpcBatchOp(cts.Kit, meta.Assign, req.VpcIDs, req.BkBizID)
 	if err != nil {
 		return nil, err
 	}
@@ -393,7 +393,7 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 		ids = append(ids, rel.VpcID)
 	}
 
-	err := svc.authorizeVpcAssignOp(cts.Kit, ids, 0)
+	err := svc.authorizeVpcBatchOp(cts.Kit, meta.Update, ids, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -463,7 +463,7 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 	return nil, nil
 }
 
-func (svc *vpcSvc) authorizeVpcAssignOp(kt *kit.Kit, ids []string, bizID int64) error {
+func (svc *vpcSvc) authorizeVpcBatchOp(kt *kit.Kit, action meta.Action, ids []string, bizID int64) error {
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.VpcCloudResType,
 		IDs:          ids,
@@ -475,7 +475,7 @@ func (svc *vpcSvc) authorizeVpcAssignOp(kt *kit.Kit, ids []string, bizID int64) 
 
 	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
 	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Assign,
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: action,
 			ResourceID: info.AccountID}, BizID: bizID})
 	}
 	err = svc.authorizer.AuthorizeWithPerm(kt, authRes...)

@@ -136,7 +136,7 @@ type TCloudVpcUpdateExt struct {
 	Cidr            []TCloudCidr `json:"cidr,omitempty" validate:"omitempty"`
 	IsDefault       *bool        `json:"is_default,omitempty" validate:"omitempty"`
 	EnableMulticast *bool        `json:"enable_multicast,omitempty" validate:"omitempty"`
-	DnsServerSet    []string     `json:"dns_server_set,omitempty" validate:"omitempty"`
+	DnsServerSet    []string     `json:"dns_server_set" validate:"omitempty"`
 	DomainName      *string      `json:"domain_name,omitempty" validate:"omitempty"`
 }
 
@@ -159,7 +159,7 @@ type GcpVpcUpdateExt struct {
 
 // AzureVpcUpdateExt defines azure vpc extensional info.
 type AzureVpcUpdateExt struct {
-	DNSServers []string    `json:"dns_servers,omitempty" validate:"omitempty"`
+	DNSServers []string    `json:"dns_servers" validate:"omitempty"`
 	Cidr       []AzureCidr `json:"cidr,omitempty" validate:"omitempty"`
 }
 
