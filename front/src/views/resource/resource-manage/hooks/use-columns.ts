@@ -870,6 +870,18 @@ export default (type: string, isSimpleShow: boolean = false) => {
         );
       },
     },
+    {
+      label: '状态',
+      field: 'status',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
     getLinkField('host', '绑定资源的实例', 'instance_id', 'cvm_id'),
     {
       label: '绑定资源的类型',

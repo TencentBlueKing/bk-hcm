@@ -132,7 +132,7 @@ export default defineComponent({
     ]
 
     const renderList = computed(() => {
-      return datas.value.map((data) => !data.instance_id)
+      return datas.value.filter((data) => !data.instance_id)
     })
 
     // 方法

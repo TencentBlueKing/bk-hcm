@@ -128,9 +128,10 @@ export default defineComponent({
     return <ul class="info-list-main g-scroller">
       {
         this.fields.map((field) => {
+          const value = renderField(field) || '--'
           return <>
             <li class="info-list-item">
-              { field.name }：<span class={typeof field.cls === 'function' ? field.cls(field.value) : field.cls}>{ renderField(field) }</span>
+              { field.name }：<span class={["item-value", typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>{ value }</span>
               {
                 field.copy ? <copy class="info-item-copy ml5" onClick={() => this.handleCopy(field.value)}></copy> : ''
               }

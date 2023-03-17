@@ -14,9 +14,9 @@
   align-items: center;
   line-height: 50px;
   .item-value{
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     word-break: break-all;

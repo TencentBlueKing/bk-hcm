@@ -225,6 +225,7 @@ const handleShowDelete = () => {
       云硬盘：ID（{{ detail.id }}）
       <template #right>
         <bk-button
+          v-if="!detail.instance_id"
           class="w100 ml10"
           theme="primary"
           @click="handleMountedDrive"
@@ -232,6 +233,7 @@ const handleShowDelete = () => {
           {{ t('挂载') }}
         </bk-button>
         <bk-button
+          v-else
           class="w100 ml10"
           theme="primary"
           @click="handleUninstallDrive(detail)"
