@@ -13,6 +13,7 @@ import IpManage from '@/views/resource/resource-manage/children/manage/ip-manage
 import RoutingManage from '@/views/resource/resource-manage/children/manage/routing-manage.vue';
 import ImageManage from '@/views/resource/resource-manage/children/manage/image-manage.vue';
 import NetworkInterfaceManage from '@/views/resource/resource-manage/children/manage/network-interface-manage.vue';
+import recyclebinManage from '@/views/resource/recyclebin-manager/recyclebin-manager.vue';
 // forms
 import EipForm from './forms/eip/index.vue';
 import subnetForm from './forms/subnet/index.vue';
@@ -42,6 +43,7 @@ const componentMap = {
   routing: RoutingManage,
   image: ImageManage,
   'network-interface': NetworkInterfaceManage,
+  recyclebin: recyclebinManage,
 };
 const formMap = {
   ip: EipForm,

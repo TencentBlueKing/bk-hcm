@@ -42,41 +42,54 @@ export default defineComponent({
     const loading = ref<Boolean>(false);
     const isRouterAlive = ref<Boolean>(true);
 
+
+    // 获取业务列表
+    const getBusinessList = async () => {
+      try {
+        loading.value = true;
+        const res = await accountStore.getBizListWithAuth();
+        loading.value = false;
+        businessList.value = res?.data;
+        businessId.value = res?.data[0].id;   // 默认取第一个业务
+        accountStore.updateBizsId(businessId.value); // 设置全局业务id
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
     const changeMenus = (id: string, ...subPath: string[]) => {
-      console.log('subPath', subPath);
+      console.log('subPath', subPath, id);
       openedKeys.push(`/${id}`);
       switch (id) {
         case 'business':
           topMenuActiveItem = 'business';
           menus = reactive(business);
           path = '/business/host';
-          // openedKeys = [`/business${subPath[1] ? `/${subPath[0]}` : ''}`];
+          getBusinessList();    // 业务下需要获取业务列表
           break;
         case 'resource':
           topMenuActiveItem = 'resource';
           menus = reactive(resource);
           path = '/resource/account';
-          // openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
-          // openedKeys = [`/resource${subPath[1] ? `/${subPath.join('/')}` : ''}`];
+          accountStore.updateBizsId(0); // 初始化业务ID
           break;
         case 'service':
           topMenuActiveItem = 'service';
           menus = reactive(service);
           path = '/service/service-apply';
-          // openedKeys = [`/service${subPath[1] ? `/${subPath[0]}` : ''}`];
+          accountStore.updateBizsId(0); // 初始化业务ID
           break;
         case 'workbench':
           topMenuActiveItem = 'workbench';
           menus = reactive(workbench);
           path = '/workbench/auto';
-          // openedKeys = [`/workbench${subPath[1] ? `/${subPath[0]}` : ''}`];
+          accountStore.updateBizsId(0); // 初始化业务ID
           break;
         default:
           topMenuActiveItem = 'resource';
           menus = reactive(resource);
           path = '/resource/account';
-          // openedKeys = ['/resource'];
-          // openedKeys = [`/resource${subPath[1] ? `/${subPath[0]}` : ''}`];
+          accountStore.updateBizsId(0); // 初始化业务ID
           break;
       }
     };
@@ -114,20 +127,6 @@ export default defineComponent({
       // }
     };
 
-    // 获取业务列表
-    const getBusinessList = async () => {
-      try {
-        loading.value = true;
-        const res = await accountStore.getBizListWithAuth();
-        loading.value = false;
-        businessList.value = res?.data;
-        businessId.value = res?.data[0].id;   // 默认取第一个业务
-        accountStore.updateBizsId(businessId.value); // 设置全局业务id
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
     // 选择业务
     const handleChange = async () => {
       accountStore.updateBizsId(businessId.value);    // 设置全局业务id
@@ -140,10 +139,6 @@ export default defineComponent({
         isRouterAlive.value = true;
       });
     };
-
-    onMounted(() => {
-      getBusinessList();
-    });
 
     return () => (
       <main class="flex-column full-page">

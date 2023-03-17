@@ -10,6 +10,7 @@ import './detail-info.scss';
 type Field = {
   name: string;
   value?: string;
+  cls?: string | ((cell: string) => string);
   link?: string | ((cell: string) => string);
   copy?: string | boolean;
   edit?: boolean;

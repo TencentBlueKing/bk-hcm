@@ -216,7 +216,7 @@ const handleDistribution = () => {
 
 const isRowSelectEnable = ({ row }: DoublePlainObject) => {
   if (row.id) {
-    return row.bk_biz_id !== -1;
+    return row.bk_biz_id === -1;
   }
 };
 

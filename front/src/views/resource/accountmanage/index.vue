@@ -336,7 +336,7 @@ export default defineComponent({
       } catch (error) {
         console.log(error);
       } finally {
-        // state.showDeleteBox = false;
+        state.showDeleteBox = false;
       }
     };
 

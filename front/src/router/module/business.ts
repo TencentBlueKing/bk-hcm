@@ -27,7 +27,7 @@ const businesseMenus: RouteRecordRaw[] = [
               activeKey: 'businessHost',
               breadcrumb: ['计算', '主机', '详情'],
             },
-          }
+          },
         ],
         meta: {
           activeKey: 'businessHost',
@@ -54,7 +54,7 @@ const businesseMenus: RouteRecordRaw[] = [
               activeKey: 'businessDisk',
               breadcrumb: ['计算', '硬盘', '详情'],
             },
-          }
+          },
         ],
         meta: {
           activeKey: 'businessDisk',
@@ -81,21 +81,22 @@ const businesseMenus: RouteRecordRaw[] = [
               activeKey: 'businessImage',
               breadcrumb: ['计算', '镜像', '详情'],
             },
-          }
+          },
         ],
         meta: {
           activeKey: 'businessImage',
           breadcrumb: ['计算', '镜像'],
         },
       },
-      // {
-      //   path: '/business/snapshot',
-      //   name: '快照',
-      //   component: () => import('@/views/business/demo2'),
-      //   meta: {
-      //     activeKey: 'businessSnapshot',
-      //   },
-      // },
+      {
+        path: '/business/recyclebin',
+        name: '回收站 ',    // 加个空格 防止和资源回收站name相同
+        component: () => import('@/views/business/business-manage.vue'),
+        meta: {
+          activeKey: 'businessRecyclebin',
+          breadcrumb: ['计算', '回收站'],
+        },
+      },
     ],
   },
   {
@@ -122,7 +123,7 @@ const businesseMenus: RouteRecordRaw[] = [
               activeKey: 'businessVpc',
               breadcrumb: ['计算', 'VPC', '详情'],
             },
-          }
+          },
         ],
         meta: {
           activeKey: 'businessVpc',
@@ -149,7 +150,7 @@ const businesseMenus: RouteRecordRaw[] = [
               activeKey: 'businessSubnet',
               breadcrumb: ['计算', '子网', '详情'],
             },
-          }
+          },
         ],
         meta: {
           activeKey: 'businessSubnet',
@@ -176,7 +177,7 @@ const businesseMenus: RouteRecordRaw[] = [
               activeKey: 'businessElasticIP',
               breadcrumb: ['计算', '弹性IP', '详情'],
             },
-          }
+          },
         ],
         meta: {
           activeKey: 'businessElasticIP',
@@ -203,7 +204,7 @@ const businesseMenus: RouteRecordRaw[] = [
               activeKey: 'businessNetwork',
               breadcrumb: ['计算', '网络接口', '详情'],
             },
-          }
+          },
         ],
         meta: {
           activeKey: 'businessNetwork',
@@ -230,7 +231,7 @@ const businesseMenus: RouteRecordRaw[] = [
               activeKey: 'businessRoutingTable',
               breadcrumb: ['计算', '路由表', '详情'],
             },
-          }
+          },
         ],
         meta: {
           activeKey: 'businessRoutingTable',
@@ -257,7 +258,7 @@ const businesseMenus: RouteRecordRaw[] = [
               activeKey: 'businessSecurityGroup',
               breadcrumb: ['计算', '安全组', '详情'],
             },
-          }
+          },
         ],
         meta: {
           activeKey: 'businessSecurityGroup',

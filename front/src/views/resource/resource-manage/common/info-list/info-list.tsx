@@ -23,6 +23,7 @@ import './info-list.scss';
 type Field = {
   name: string;
   value: string | any;
+  cls?: string | ((cell: string) => string);
   link?: string | ((cell: string) => string);
   copy?: boolean;
   edit?: boolean;
@@ -129,7 +130,7 @@ export default defineComponent({
         this.fields.map((field) => {
           return <>
             <li class="info-list-item">
-              { field.name }：{ renderField(field) }
+              { field.name }：<span class={typeof field.cls === 'function' ? field.cls(field.value) : field.cls}>{ renderField(field) }</span>
               {
                 field.copy ? <copy class="info-item-copy ml5" onClick={() => this.handleCopy(field.value)}></copy> : ''
               }

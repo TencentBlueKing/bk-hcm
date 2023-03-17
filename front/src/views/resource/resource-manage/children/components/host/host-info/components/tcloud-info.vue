@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 // import InfoList from '../../../common/info-list/info-list';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import { ImageTypeEnum, HostCloudEnum } from '@/typings';
+import { HostCloudEnum } from '@/typings';
 
 import {
   PropType,
@@ -49,6 +49,9 @@ const cvmInfo = [
   {
     name: '当前状态',
     prop: 'status',
+    cls(val: string) {
+      return `status-${val}`;
+    },
     render() {
       return HostCloudEnum[props.data.status];
     },

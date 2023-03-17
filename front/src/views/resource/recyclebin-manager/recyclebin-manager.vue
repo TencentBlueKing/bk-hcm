@@ -1,5 +1,18 @@
 <template>
   <div class="template-warp">
+    <section v-if="isResourcePage">
+      <bk-button
+        theme="primary"
+        @click="handleOperate('destroy')"
+      >{{ t('立即销毁') }}
+      </bk-button>
+      <bk-button
+        class="ml10 mb20"
+        theme="primary"
+        @click="handleOperate('recover')"
+      >{{ t('撤销恢复') }}
+      </bk-button>
+    </section>
     <div class="flex-row operate-warp justify-content-between align-items-center mb20">
       <div>
         <bk-button-group>
@@ -20,20 +33,12 @@
         <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
       </div> -->
     </div>
-    <bk-button
-      theme="primary"
-      @click="handleOperate('destroy')"
-    >{{ t('立即销毁') }}</bk-button>
-    <bk-button
-      class="ml20 mb20"
-      @click="handleOperate('recover')"
-    >{{ t('撤销恢复') }}</bk-button>
     <bk-loading
       :loading="isLoading"
     >
       <bk-table
         class="table-layout"
-        :data="tableData"
+        :data="datas"
         remote-pagination
         :pagination="pagination"
         @page-value-change="handlePageChange"
@@ -76,9 +81,17 @@
           :label="t('资源实例ID')"
           prop="res_id"
         >
+          <template #default="{ data }">
+            <bk-button
+              text theme="primary" @click="() => {
+                handleToPage(data?.res_type, data?.res_id, data?.vendor)
+              }">
+              {{data?.res_id}}
+            </bk-button>
+          </template>
         </bk-table-column>
         <bk-table-column
-          :label="selectedType === 'cvms' ? t('资源名称') : t('关联的主机')"
+          :label="selectedType === 'cvm' ? t('资源名称') : t('关联的主机')"
           prop="res_name"
         >
         </bk-table-column>
@@ -96,22 +109,18 @@
           </template>
         </bk-table-column>
         <bk-table-column
+          v-if="isResourcePage"
           :label="t('操作')"
         >
           <template #default="{ data }">
-            <div class="operate-button">
-              <bk-button text theme="primary" @click="handleOperate('destroy', [data.res_id])">
-                {{t('立即销毁')}}
-              </bk-button>
-              <bk-button
-                text theme="primary" @click="handleOperate('recover', [data.res_id])"
-              >
-                {{t('撤销恢复')}}
-              </bk-button>
-            <!-- <bk-button text theme="primary" @click="handleDelete(props?.data.id, props?.data.name)">
-              {{t('删除')}}
-            </bk-button> -->
-            </div>
+            <bk-button text theme="primary" class="mr10" @click="handleOperate('destroy', [data.res_id])">
+              {{t('立即销毁')}}
+            </bk-button>
+            <bk-button
+              text theme="primary" @click="handleOperate('recover', [data.res_id])"
+            >
+              {{t('撤销恢复')}}
+            </bk-button>
           </template>
         </bk-table-column>
       </bk-table>
@@ -131,24 +140,26 @@
 </template>
 
 <script lang="ts">
-import { reactive, watch, toRefs, defineComponent } from 'vue';
+import { reactive, watch, toRefs, defineComponent, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Message } from 'bkui-vue';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
-import { useResourceStore } from '@/store';
-import { CloudType, AccountType } from '@/typings';
+import { useResourceStore, useAccountStore } from '@/store';
+import { CloudType } from '@/typings';
 import { VENDORS } from '@/common/constant';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 
 export default defineComponent({
-  name: 'AccountManageList',
+  name: 'RecyclebinManageList',
   components: {
   },
   setup() {
     const { t } = useI18n();
     const router = useRouter();
     const resourceStore = useResourceStore();
+    const accountStore = useAccountStore();
+    const fetchUrl = ref<string>('recycle_records/list');
 
     const state = reactive({
       isAccurate: false,    // 是否精确
@@ -166,16 +177,14 @@ export default defineComponent({
           id: 'managers',
         },
       ],
-      tableData: [{ id: '1', res_id: 2 }, { id: '2', res_id: 3 }],
       showDeleteBox: false,
       deleteBoxTitle: '',
       loading: true,
       dataId: 0,
       CloudType,
-      AccountType,
       filter: { op: 'and', rules: [{ field: 'res_type', op: 'eq', value: 'cvm' }] },
-      recycleTypeData: [{ name: t('主机回收'), value: 'cvms' }, { name: t('硬盘回收'), value: 'disks' }],
-      selectedType: 'cvms',
+      recycleTypeData: [{ name: t('主机回收'), value: 'cvm' }, { name: t('硬盘回收'), value: 'disk' }],
+      selectedType: 'cvm',
       type: '',
       selectedIds: [],
     });
@@ -189,7 +198,7 @@ export default defineComponent({
       handlePageSizeChange,
       handlePageChange,
       getList,
-    } = useQueryCommonList({ filter: state.filter }, 'recycle_records/list');
+    } = useQueryCommonList({ filter: state.filter }, fetchUrl);
 
     const {
       selections,
@@ -206,6 +215,10 @@ export default defineComponent({
       },
     );
 
+    const isResourcePage = computed(() => {   // 资源下没有业务ID
+      return !accountStore.bizs;
+    });
+
     // 弹窗确认
     const handleDialogConfirm = async () => {
       const params: any = {
@@ -213,13 +226,13 @@ export default defineComponent({
       };
       try {
         if (state.type === 'destroy') {
-          await resourceStore.deleteRecycledData(state.selectedType, params);
+          await resourceStore.deleteRecycledData(`${state.selectedType}s`, params);
         } else {
-          await resourceStore.recoverRecycledData(state.selectedType, params);
+          await resourceStore.recoverRecycledData(`${state.selectedType}s`, params);
         }
 
         const operate = state.type === 'destroy' ? t('销毁') : t('回收');
-        const resourceName = state.selectedType === 'cvms' ? t('主机') : t('硬盘');
+        const resourceName = state.selectedType === 'cvm' ? t('主机') : t('硬盘');
         Message({
           message: `${operate}${resourceName}成功`,
           theme: 'success',
@@ -247,7 +260,7 @@ export default defineComponent({
     };
 
     // 销毁恢复
-    const handleOperate = (type: string, ids: string[]) => {
+    const handleOperate = (type: string, ids?: string[]) => {
       console.log('selections', ids, selections.value);
       state.selectedIds = ids ? ids : selections.value.map(e => e.res_id);
       state.type = type;
@@ -255,6 +268,7 @@ export default defineComponent({
       state.showDeleteBox = true;
     };
 
+    // 选择类型
     const handleSelected = (v) => {
       state.filter.rules = [{
         field: 'res_type',
@@ -263,6 +277,21 @@ export default defineComponent({
       }];
       getList();
       state.selectedType = v;
+    };
+
+    // 跳转到具体的资源详情
+    const handleToPage = (type: string, id: string, vendor: string) => {
+      type = type === 'cvm' ? 'host' : 'drive';
+      router.push({
+        name: isResourcePage.value ? 'resourceDetail' : `${type}BusinessDetail`,
+        query: {
+          id,
+          type: vendor,
+        },
+        params: {
+          type,
+        },
+      });
     };
 
     return {
@@ -278,6 +307,8 @@ export default defineComponent({
       datas,
       handleSelectionChange,
       selections,
+      isResourcePage,
+      handleToPage,
       t,
     };
   },

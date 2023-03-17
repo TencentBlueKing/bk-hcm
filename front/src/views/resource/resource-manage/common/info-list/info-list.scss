@@ -30,3 +30,13 @@
   cursor: pointer;
   color: #5594fa;
 }
+
+.status-stopped {
+  color: #ea3636;
+}
+.status-RUNNING{
+  color: #2dcb56;
+}
+.status-STOPPING{
+  color: #ff9c01;
+}

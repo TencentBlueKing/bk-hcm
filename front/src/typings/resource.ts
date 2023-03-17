@@ -46,6 +46,7 @@ export enum HostCloudEnum {
   LAUNCH_FAILED = '创建失败',
   RUNNING = '运行中',
   STOPPED = '关机',
+  stopped = '关机',
   STARTING = '开机中',
   STOPPING = '关机中',
   REBOOTING = '重启中',
