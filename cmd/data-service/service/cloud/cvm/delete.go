@@ -22,8 +22,6 @@ package cvm
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
-
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
@@ -32,6 +30,8 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // BatchDeleteCvm cvm.
@@ -46,7 +46,7 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	opt := &types.ListOption{
-		Fields: []string{"id"},
+		Fields: []string{"id", "vendor", "cloud_id", "bk_biz_id"},
 		Filter: req.Filter,
 		Page:   core.DefaultBasePage,
 	}
@@ -93,6 +93,11 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 
 		delFilter = tools.ContainersExpression("cvm_id", delIDs)
 		if err = svc.niCvmRelDao.DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+			return nil, err
+		}
+
+		// delete cmdb cloud hosts
+		if err = deleteCmdbHosts(svc, cts.Kit, listResp.Details); err != nil {
 			return nil, err
 		}
 

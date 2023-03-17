@@ -132,8 +132,8 @@ func (c *cmdbSvc) ListCloudArea(cts *rest.Contexts) (interface{}, error) {
 	params := &cmdb.SearchCloudAreaParams{
 		Fields: []string{"bk_cloud_id", "bk_cloud_name"},
 		Page: cmdb.BasePage{
-			Limit: req.Page.Limit,
-			Start: req.Page.Start,
+			Limit: int64(req.Page.Limit),
+			Start: int64(req.Page.Start),
 			Sort:  "bk_cloud_id",
 		},
 		Condition: map[string]interface{}{"bk_cloud_id": map[string]interface{}{"$ne": 0}},
@@ -155,8 +155,8 @@ func (c *cmdbSvc) ListCloudArea(cts *rest.Contexts) (interface{}, error) {
 
 	for _, cloudArea := range res.Info {
 		result.Info = append(result.Info, webserver.CloudArea{
-			ID:   cloudArea.BkCloudID,
-			Name: cloudArea.BkCloudName,
+			ID:   cloudArea.CloudID,
+			Name: cloudArea.CloudName,
 		})
 	}
 

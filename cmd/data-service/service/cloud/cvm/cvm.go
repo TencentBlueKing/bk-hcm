@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"hcm/cmd/data-service/service/capability"
+	"hcm/cmd/data-service/service/cloud/logics/cmdb"
 	"hcm/pkg/dal/dao"
 	diskrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
 	eiprel "hcm/pkg/dal/dao/cloud/eip-cvm-rel"
@@ -61,6 +62,8 @@ func InitService(cap *capability.Capability) {
 	}
 	svc.niCvmRelDao = svc.GetObjectDao(ni.Name()).(*nirel.NetworkCvmRelDao)
 
+	svc.cmdbLogics = cmdb.NewCmdbLogics(cap.EsbClient.Cmdb())
+
 	h := rest.NewHandler()
 
 	h.Add("BatchCreateCvm", http.MethodPost, "/vendors/{vendor}/cvms/batch/create", svc.BatchCreateCvm)
@@ -80,4 +83,5 @@ type cvmSvc struct {
 	diskCvmRelDao *diskrel.DiskCvmRelDao
 	eipCvmRelDao  *eiprel.EipCvmRelDao
 	niCvmRelDao   *nirel.NetworkCvmRelDao
+	cmdbLogics    *cmdb.CmdbLogics
 }

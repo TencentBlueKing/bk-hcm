@@ -35,6 +35,9 @@ import (
 type Client interface {
 	SearchBusiness(ctx context.Context, params *SearchBizParams) (*SearchBizResp, error)
 	SearchCloudArea(ctx context.Context, params *SearchCloudAreaParams) (*SearchCloudAreaResult, error)
+	AddCloudHostToBiz(ctx context.Context, params *AddCloudHostToBizParams) (*BatchCreateResult, error)
+	DeleteCloudHostFromBiz(ctx context.Context, params *DeleteCloudHostFromBizParams) error
+	ListBizHost(ctx context.Context, params *ListBizHostParams) (*ListBizHostResult, error)
 }
 
 // NewClient initialize a new cmdb client
@@ -101,4 +104,90 @@ func (c *cmdb) SearchCloudArea(ctx context.Context, params *SearchCloudAreaParam
 		return nil, fmt.Errorf("find cloud area failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
 	}
 	return resp.Data, nil
+}
+
+// AddCloudHostToBiz add cmdb cloud host to biz.
+func (c *cmdb) AddCloudHostToBiz(ctx context.Context, params *AddCloudHostToBizParams) (*BatchCreateResult, error) {
+	resp := new(BatchCreateResp)
+
+	req := &esbAddCloudHostToBizParams{
+		CommParams:              types.GetCommParams(c.config),
+		AddCloudHostToBizParams: params,
+	}
+
+	h := http.Header{}
+	h.Set(constant.RidKey, uuid.UUID())
+
+	err := c.client.Post().
+		SubResourcef("/cc/add_cloud_host_to_biz/").
+		WithContext(ctx).
+		WithHeaders(h).
+		Body(req).
+		Do().Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("add cloud host to biz failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message,
+			resp.Rid)
+	}
+	return resp.Data, nil
+}
+
+// DeleteCloudHostFromBiz delete cmdb cloud host from biz.
+func (c *cmdb) DeleteCloudHostFromBiz(ctx context.Context, params *DeleteCloudHostFromBizParams) error {
+	resp := new(types.BaseResponse)
+
+	req := &esbDeleteCloudHostFromBizParams{
+		CommParams:                   types.GetCommParams(c.config),
+		DeleteCloudHostFromBizParams: params,
+	}
+
+	h := http.Header{}
+	h.Set(constant.RidKey, uuid.UUID())
+
+	err := c.client.Post().
+		SubResourcef("/cc/delete_cloud_host_from_biz/").
+		WithContext(ctx).
+		WithHeaders(h).
+		Body(req).
+		Do().Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if !resp.Result || resp.Code != 0 {
+		return fmt.Errorf("delete cloud host from biz failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message,
+			resp.Rid)
+	}
+	return nil
+}
+
+// ListBizHost list cmdb host in biz.
+func (c *cmdb) ListBizHost(ctx context.Context, params *ListBizHostParams) (*ListBizHostResult, error) {
+	resp := new(ListBizHostResp)
+
+	req := &esbListBizHostParams{
+		CommParams:        types.GetCommParams(c.config),
+		ListBizHostParams: params,
+	}
+
+	h := http.Header{}
+	h.Set(constant.RidKey, uuid.UUID())
+
+	err := c.client.Post().
+		SubResourcef("/cc/list_biz_hosts/").
+		WithContext(ctx).
+		WithHeaders(h).
+		Body(req).
+		Do().Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("list biz host failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
+	}
+	return resp.ListBizHostResult, nil
 }

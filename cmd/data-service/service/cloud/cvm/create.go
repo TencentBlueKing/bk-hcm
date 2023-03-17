@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jmoiron/sqlx"
-
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -35,6 +33,8 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // BatchCreateCvm cvm.
@@ -113,6 +113,12 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		ids, err := svc.dao.Cvm().BatchCreateWithTx(cts.Kit, txn, models)
 		if err != nil {
 			return nil, fmt.Errorf("batch create cvm failed, err: %v", err)
+		}
+
+		// create cmdb cloud hosts
+		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models)
+		if err != nil {
+			return nil, err
 		}
 
 		return ids, nil

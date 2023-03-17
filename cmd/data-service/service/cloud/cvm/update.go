@@ -22,8 +22,6 @@ package cvm
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
-
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -36,7 +34,10 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // BatchUpdateCvm cvm.
@@ -48,21 +49,21 @@ func (svc *cvmSvc) BatchUpdateCvm(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return batchUpdateCvm[corecvm.TCloudCvmExtension](cts, svc)
+		return batchUpdateCvm[corecvm.TCloudCvmExtension](cts, svc, vendor)
 	case enumor.Aws:
-		return batchUpdateCvm[corecvm.AwsCvmExtension](cts, svc)
+		return batchUpdateCvm[corecvm.AwsCvmExtension](cts, svc, vendor)
 	case enumor.HuaWei:
-		return batchUpdateCvm[corecvm.HuaWeiCvmExtension](cts, svc)
+		return batchUpdateCvm[corecvm.HuaWeiCvmExtension](cts, svc, vendor)
 	case enumor.Azure:
-		return batchUpdateCvm[corecvm.AzureCvmExtension](cts, svc)
+		return batchUpdateCvm[corecvm.AzureCvmExtension](cts, svc, vendor)
 	case enumor.Gcp:
-		return batchUpdateCvm[corecvm.GcpCvmExtension](cts, svc)
+		return batchUpdateCvm[corecvm.GcpCvmExtension](cts, svc, vendor)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
 }
 
-func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc) (interface{}, error) {
+func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor enumor.Vendor) (interface{}, error) {
 
 	req := new(protocloud.CvmBatchUpdateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
@@ -77,12 +78,15 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc) (inter
 	for _, one := range req.Cvms {
 		ids = append(ids, one.ID)
 	}
-	extensionMap, err := listCvmExtension(cts, svc, ids)
+	// TODO list extension and cloud id
+	existCvmMap, err := listCvmInfo(cts, svc, ids)
 	if err != nil {
 		return nil, err
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		models := make([]*tablecvm.Table, 0, len(req.Cvms))
+
 		for _, one := range req.Cvms {
 			update := &tablecvm.Table{
 				Name:                 one.Name,
@@ -101,13 +105,13 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc) (inter
 				Reviser:              cts.Kit.User,
 			}
 
-			if one.Extension != nil {
-				extension, exist := extensionMap[one.ID]
-				if !exist {
-					continue
-				}
+			existCvm, exist := existCvmMap[one.ID]
+			if !exist {
+				continue
+			}
 
-				merge, err := json.UpdateMerge(one.Extension, string(extension))
+			if one.Extension != nil {
+				merge, err := json.UpdateMerge(one.Extension, string(existCvm.Extension))
 				if err != nil {
 					return nil, fmt.Errorf("json UpdateMerge extension failed, err: %v", err)
 				}
@@ -118,6 +122,16 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc) (inter
 				logs.Errorf("update cvm by id failed, err: %v, id: %s, rid: %s", err, one.ID, cts.Kit.Rid)
 				return nil, fmt.Errorf("update cvm failed, err: %v", err)
 			}
+
+			update.CloudID = existCvm.CloudID
+			update.BkBizID = existCvm.BkBizID
+			models = append(models, update)
+		}
+
+		// upsert cmdb cloud hosts
+		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models)
+		if err != nil {
+			return nil, err
 		}
 
 		return nil, nil
@@ -129,10 +143,9 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc) (inter
 	return nil, nil
 }
 
-func listCvmExtension(cts *rest.Contexts, svc *cvmSvc, ids []string) (map[string]tabletype.JsonField, error) {
-
+func listCvmInfo(cts *rest.Contexts, svc *cvmSvc, ids []string) (map[string]tablecvm.Table, error) {
 	opt := &types.ListOption{
-		Fields: []string{"id", "extension"},
+		Fields: []string{"id", "extension", "cloud_id", "bk_biz_id"},
 		Filter: tools.ContainersExpression("id", ids),
 		Page: &core.BasePage{
 			Start: 0,
@@ -144,9 +157,9 @@ func listCvmExtension(cts *rest.Contexts, svc *cvmSvc, ids []string) (map[string
 		return nil, err
 	}
 
-	result := make(map[string]tabletype.JsonField, len(list.Details))
+	result := make(map[string]tablecvm.Table, len(list.Details))
 	for _, one := range list.Details {
-		result[one.ID] = one.Extension
+		result[one.ID] = one
 	}
 
 	return result, nil
@@ -168,6 +181,27 @@ func (svc *cvmSvc) BatchUpdateCvmCommonInfo(cts *rest.Contexts) (interface{}, er
 		BkBizID: req.BkBizID,
 	}
 	if err := svc.dao.Cvm().Update(cts.Kit, updateFilter, updateFiled); err != nil {
+		return nil, err
+	}
+
+	// upsert cmdb cloud hosts
+	opt := &types.ListOption{
+		Fields: []string{"vendor", "cloud_id"},
+		Filter: updateFilter,
+		Page:   core.DefaultBasePage,
+	}
+	listResp, err := svc.dao.Cvm().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list cvm failed, err: %v", err)
+	}
+
+	for idx := range listResp.Details {
+		listResp.Details[idx].BkBizID = req.BkBizID
+	}
+
+	err = upsertBaseCmdbHosts(svc, cts.Kit, converter.SliceToPtr(listResp.Details))
+	if err != nil {
 		return nil, err
 	}
 

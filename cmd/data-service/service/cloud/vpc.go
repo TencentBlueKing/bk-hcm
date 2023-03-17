@@ -35,10 +35,12 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
+	"hcm/pkg/dal/table/cloud/cvm"
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
@@ -234,13 +236,42 @@ func batchUpdateVpc[T protocloud.VpcUpdateExtension](cts *rest.Contexts, svc *vp
 			vpc.Extension = tabletype.JsonField(updatedExtension)
 		}
 
-		err = svc.dao.Vpc().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), vpc)
+		err = svc.updateVpc(cts.Kit, []string{updateReq.ID}, vpc)
 		if err != nil {
-			logs.Errorf("update vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update vpc failed, err: %v", err)
+			return nil, err
 		}
 	}
 	return nil, nil
+}
+
+func (svc *vpcSvc) updateVpc(kt *kit.Kit, ids []string, vpc *tablecloud.VpcTable) error {
+	if len(ids) == 0 || vpc == nil {
+		return errf.New(errf.InvalidParameter, "update vpc ids or update data is not set")
+	}
+
+	// update vpc
+	err := svc.dao.Vpc().Update(kt, tools.ContainersExpression("id", ids), vpc)
+	if err != nil {
+		logs.Errorf("update vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return fmt.Errorf("update vpc failed, err: %v", err)
+	}
+
+	// update host cloud area in vpc
+	cvmFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "vpc_ids", Op: filter.JSONOverlaps.Factory(), Value: ids},
+			filter.AtomRule{Field: "bk_cloud_id", Op: filter.NotEqual.Factory(), Value: vpc.BkCloudID},
+		},
+	}
+	cvmData := &cvm.Table{BkCloudID: vpc.BkCloudID}
+	err = svc.dao.Cvm().Update(kt, cvmFilter, cvmData)
+	if err != nil {
+		logs.Errorf("update cvm cloud area failed, err: %v, vpc ids: %+v, rid: %s", err, ids, kt.Rid)
+		return fmt.Errorf("update cvm cloud area failed, err: %v", err)
+	}
+
+	return nil
 }
 
 // BatchUpdateVpcBaseInfo batch update vpc base info.
@@ -285,12 +316,10 @@ func (svc *vpcSvc) BatchUpdateVpcBaseInfo(cts *rest.Contexts) (interface{}, erro
 		vpc.BkCloudID = updateReq.Data.BkCloudID
 		vpc.BkBizID = updateReq.Data.BkBizID
 
-		err = svc.dao.Vpc().Update(cts.Kit, tools.ContainersExpression("id", updateReq.IDs), vpc)
+		err = svc.updateVpc(cts.Kit, updateReq.IDs, vpc)
 		if err != nil {
-			logs.Errorf("update vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update vpc failed, err: %v", err)
+			return nil, err
 		}
-
 	}
 
 	return nil, nil

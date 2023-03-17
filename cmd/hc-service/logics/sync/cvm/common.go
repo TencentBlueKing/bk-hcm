@@ -102,7 +102,7 @@ func queryVpcIDByCloudID(kt *kit.Kit, dataCli *dataservice.Client, vpcCloudID st
 	req := &core.ListReq{
 		Filter: tools.EqualExpression("cloud_id", vpcCloudID),
 		Page:   core.DefaultBasePage,
-		Fields: []string{"id"},
+		Fields: []string{"id", "bk_cloud_id"},
 	}
 	vpcResult, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), req)
 	if err != nil {

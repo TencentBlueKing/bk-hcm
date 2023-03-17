@@ -22,6 +22,7 @@ package capability
 import (
 	"hcm/pkg/cryptography"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/thirdparty/esb"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -31,4 +32,5 @@ type Capability struct {
 	WebService *restful.WebService
 	Dao        dao.Set
 	Cipher     cryptography.Crypto
+	EsbClient  esb.Client
 }
