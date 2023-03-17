@@ -228,8 +228,10 @@ func (svc *eipSvc) BatchUpdateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	updateData := &tablecloud.EipModel{
-		BkBizID: int64(req.BkBizID),
-		Status:  req.Status,
+		BkBizID:      int64(req.BkBizID),
+		Status:       req.Status,
+		InstanceId:   req.InstanceId,
+		InstanceType: req.InstanceType,
 	}
 	if err := svc.objectDao.Update(cts.Kit, tools.ContainersExpression("id", req.IDs), updateData); err != nil {
 		return nil, err
@@ -349,8 +351,10 @@ func batchUpdateEipExt[T dataproto.EipExtensionUpdateReq](cts *rest.Contexts, sv
 	_, err = svc.Set.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, eipReq := range *req {
 			updateData := &tablecloud.EipModel{
-				BkBizID: int64(eipReq.BkBizID),
-				Status:  eipReq.Status,
+				BkBizID:      int64(eipReq.BkBizID),
+				Status:       eipReq.Status,
+				InstanceId:   eipReq.InstanceId,
+				InstanceType: eipReq.InstanceType,
 			}
 
 			if eipReq.Extension != nil {
