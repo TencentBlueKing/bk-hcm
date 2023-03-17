@@ -389,7 +389,8 @@ func isChangeGcp(cloud *GcpCvmSync, db *GcpDSCvmSync) bool {
 	for _, dbValue := range db.Cvm.Extension.Disks {
 		isEqual := false
 		for _, cloudValue := range cloud.Cvm.Disks {
-			if dbValue.Boot == cloudValue.Boot && dbValue.Index == cloudValue.Index && dbValue.CloudID == cloudValue.Source {
+			if dbValue.Boot == cloudValue.Boot && dbValue.Index == cloudValue.Index &&
+				dbValue.CloudID == cloudValue.Source && dbValue.DeviceName == cloudValue.DeviceName {
 				isEqual = true
 				break
 			}
@@ -462,9 +463,10 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 			}
 
 			tmp := corecvm.GcpAttachedDisk{
-				Boot:    v.Boot,
-				Index:   v.Index,
-				CloudID: cloudID,
+				Boot:       v.Boot,
+				Index:      v.Index,
+				CloudID:    cloudID,
+				DeviceName: v.DeviceName,
 			}
 			disks = append(disks, tmp)
 		}
@@ -630,9 +632,10 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 			}
 
 			tmp := corecvm.GcpAttachedDisk{
-				Boot:    v.Boot,
-				Index:   v.Index,
-				CloudID: cloudID,
+				Boot:       v.Boot,
+				Index:      v.Index,
+				CloudID:    cloudID,
+				DeviceName: v.DeviceName,
 			}
 			disks = append(disks, tmp)
 		}
