@@ -20,6 +20,8 @@
 package azure
 
 import (
+	"hcm/cmd/hc-service/logics/sync/cvm"
+	syncdisk "hcm/cmd/hc-service/logics/sync/disk"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
 	"hcm/pkg/adaptor/types/disk"
@@ -27,6 +29,7 @@ import (
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -122,7 +125,44 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	return nil, manager.Create(cts.Kit)
+	err = manager.Create(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	diskData, err := svc.DataCli.Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = syncdisk.SyncAzureDisk(
+		cts.Kit,
+		&syncdisk.SyncAzureDiskOption{
+			AccountID:         req.AccountID,
+			ResourceGroupName: opt.ResourceGroupName,
+			CloudIDs:          []string{diskData.CloudID},
+		},
+		svc.Adaptor,
+		svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncAzureDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cvmData, err := svc.DataCli.Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+	return cvm.SyncAzureCvm(
+		cts.Kit,
+		svc.Adaptor,
+		svc.DataCli,
+		&cvm.SyncAzureCvmOption{
+			AccountID:         req.AccountID,
+			ResourceGroupName: opt.ResourceGroupName,
+			CloudIDs:          []string{cvmData.CloudID},
+		},
+	)
 }
 
 // DetachDisk ...
@@ -151,7 +191,44 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	return nil, manager.Delete(cts.Kit)
+	err = manager.Delete(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	diskData, err := svc.DataCli.Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = syncdisk.SyncAzureDisk(
+		cts.Kit,
+		&syncdisk.SyncAzureDiskOption{
+			AccountID:         req.AccountID,
+			ResourceGroupName: opt.ResourceGroupName,
+			CloudIDs:          []string{diskData.CloudID},
+		},
+		svc.Adaptor,
+		svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncAzureDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cvmData, err := svc.DataCli.Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+	return cvm.SyncAzureCvm(
+		cts.Kit,
+		svc.Adaptor,
+		svc.DataCli,
+		&cvm.SyncAzureCvmOption{
+			AccountID:         req.AccountID,
+			ResourceGroupName: opt.ResourceGroupName,
+			CloudIDs:          []string{cvmData.CloudID},
+		},
+	)
 }
 
 func (svc *DiskSvc) makeDiskAttachOption(

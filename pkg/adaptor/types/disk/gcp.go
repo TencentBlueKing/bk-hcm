@@ -30,11 +30,12 @@ import (
 
 // GcpDiskCreateOption ...
 type GcpDiskCreateOption struct {
-	DiskName string `json:"disk_name" validate:"required"`
-	Region   string `json:"region" validate:"required"`
-	Zone     string `json:"zone" validate:"required"`
-	DiskType string `json:"disk_type" validate:"required"`
-	DiskSize int64  `json:"disk_size" validate:"required"`
+	DiskName  string  `json:"disk_name" validate:"required"`
+	Region    string  `json:"region" validate:"required"`
+	Zone      string  `json:"zone" validate:"required"`
+	DiskType  string  `json:"disk_type" validate:"required"`
+	DiskSize  int64   `json:"disk_size" validate:"required"`
+	DiskCount *uint64 `json:"disk_count" validate:"required"`
 }
 
 // Validate ...

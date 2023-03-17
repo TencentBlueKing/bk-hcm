@@ -134,7 +134,31 @@ func genSubnetResource(a *meta.ResourceAttribute) (client.ActionID, []client.Res
 
 // genDiskResource generate disk related iam resource.
 func genDiskResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	return genIaaSResourceResource(a)
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	bizRes := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Associate, meta.Disassociate:
+		if a.BizID > 0 {
+			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+		}
+		return sys.IaaSResourceOperate, []client.Resource{res}, nil
+	default:
+		return genIaaSResourceResource(a)
+	}
 }
 
 // genSecurityGroupResource generate security group related iam resource.
@@ -304,7 +328,31 @@ func genNetworkInterfaceResource(a *meta.ResourceAttribute) (client.ActionID, []
 
 // genEipResource ...
 func genEipResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	return genIaaSResourceResource(a)
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	bizRes := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Associate, meta.Disassociate:
+		if a.BizID > 0 {
+			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+		}
+		return sys.IaaSResourceOperate, []client.Resource{res}, nil
+	default:
+		return genIaaSResourceResource(a)
+	}
 }
 
 // genCloudResResource generate all cloud resource related iam resource.

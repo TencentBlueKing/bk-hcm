@@ -21,15 +21,22 @@ package disk
 
 import (
 	cloudproto "hcm/pkg/api/cloud-server/disk"
+	protoaudit "hcm/pkg/api/data-service/audit"
 	hcproto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
 )
 
-func (svc *diskSvc) awsAttachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (svc *diskSvc) awsAttachDisk(
+	cts *rest.Contexts,
+	basicInfo *types.CloudResourceBasicInfo,
+	validHandler handler.ValidWithAuthHandler,
+) (interface{}, error) {
 	req := new(cloudproto.AwsDiskAttachReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -39,23 +46,28 @@ func (svc *diskSvc) awsAttachDisk(cts *rest.Contexts, validHandler handler.Valid
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO 增加审计
 	// TODO 判断云盘是否可挂载
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.DiskCloudResType,
-		req.DiskID,
-	)
+	// validate biz and authorize
+	err := validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer, ResType: meta.Disk,
+		Action: meta.Associate, BasicInfo: basicInfo,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
-		Action: meta.Associate, BasicInfo: basicInfo})
+	operationInfo := protoaudit.CloudResourceOperationInfo{
+		ResType:           enumor.DiskAuditResType,
+		ResID:             req.DiskID,
+		Action:            protoaudit.Associate,
+		AssociatedResType: enumor.CvmAuditResType,
+		AssociatedResID:   req.CvmID,
+	}
+
+	err = svc.audit.ResOperationAudit(cts.Kit, operationInfo)
 	if err != nil {
+		logs.Errorf("create attach disk audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

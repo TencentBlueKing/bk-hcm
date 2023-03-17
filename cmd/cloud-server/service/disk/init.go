@@ -35,14 +35,16 @@ func InitDiskService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("ListDisk", http.MethodPost, "/disks/list", svc.ListDisk)
-	h.Add("RetrieveDisk", http.MethodGet, "/disks/{id}", svc.RetrieveDisk)
+
+	h.Add("AttachDisk", http.MethodPost, "/disks/attach", svc.AttachDisk)
+	h.Add("DetachDisk", http.MethodPost, "/disks/detach", svc.DetachDisk)
 	h.Add("AssignDisk", http.MethodPost, "/disks/assign/bizs", svc.AssignDisk)
+
+	h.Add("RetrieveDisk", http.MethodGet, "/disks/{id}", svc.RetrieveDisk)
 	h.Add("DeleteDisk", http.MethodDelete, "/disks/{id}", svc.DeleteDisk)
 
 	h.Add("ListDiskExtByCvmID", http.MethodGet, "/vendors/{vendor}/disks/cvms/{cvm_id}", svc.ListDiskExtByCvmID)
-
-	h.Add("AttachDisk", http.MethodPost, "/vendors/{vendor}/disks/attach", svc.AttachDisk)
-	h.Add("DetachDisk", http.MethodPost, "/vendors/{vendor}/disks/detach", svc.DetachDisk)
+	h.Add("ListDiskCvmRel", http.MethodPost, "/disk_cvm_rels/list", svc.ListDiskCvmRel)
 
 	// disk apis in biz
 	h.Add("ListBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/list", svc.ListBizDisk)
@@ -50,8 +52,8 @@ func InitDiskService(c *capability.Capability) {
 		svc.ListBizDiskExtByCvmID)
 	h.Add("RetrieveBizDisk", http.MethodGet, "/bizs/{bk_biz_id}/disks/{id}", svc.RetrieveBizDisk)
 	h.Add("DeleteBizDisk", http.MethodDelete, "/bizs/{bk_biz_id}/disks/{id}", svc.DeleteBizDisk)
-	h.Add("AttachBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/vendors/{vendor}/disks/attach", svc.AttachBizDisk)
-	h.Add("DetachBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/vendors/{vendor}/disks/detach", svc.DetachBizDisk)
+	h.Add("AttachBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/attach", svc.AttachBizDisk)
+	h.Add("DetachBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/detach", svc.DetachBizDisk)
 
 	h.Load(c.WebService)
 }

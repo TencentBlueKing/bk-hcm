@@ -20,18 +20,23 @@
 package disk
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 
 	"hcm/cmd/cloud-server/logics/audit"
 	cloudproto "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/api/core"
+	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/api/data-service/cloud"
+	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	hcproto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/table/cloud/disk"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
@@ -69,17 +74,19 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 	}
 
 	// list authorized instances
-	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
-		ResType: meta.Disk, Action: meta.Find, Filter: req.Filter})
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.Disk, Action: meta.Find, Filter: req.Filter,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	if noPermFlag {
-		return &dataproto.DiskListResult{Details: make([]*dataproto.DiskResult, 0)}, nil
+		return &cloudproto.DiskListResult{Details: make([]*cloudproto.DiskResult, 0)}, nil
 	}
 
-	return svc.client.DataService().Global.ListDisk(
+	resp, err := svc.client.DataService().Global.ListDisk(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.DiskListReq{
@@ -87,6 +94,46 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 			Page:   req.Page,
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.Details) == 0 {
+		return &cloudproto.DiskListResult{Details: make([]*cloudproto.DiskResult, 0), Count: resp.Count}, nil
+	}
+
+	diskIDs := make([]string, len(resp.Details))
+	for idx, diskData := range resp.Details {
+		diskIDs[idx] = diskData.ID
+	}
+
+	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&datarelproto.DiskCvmRelListReq{
+			Filter: tools.ContainersExpression("disk_id", diskIDs),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	diskIDToCvmID := make(map[string]string)
+	for _, relData := range rels.Details {
+		diskIDToCvmID[relData.DiskID] = relData.CvmID
+	}
+
+	details := make([]*cloudproto.DiskResult, len(resp.Details))
+	for idx, diskData := range resp.Details {
+		details[idx] = &cloudproto.DiskResult{
+			InstanceID:   diskIDToCvmID[diskData.ID],
+			InstanceType: "cvm",
+			DiskResult:   diskData,
+		}
+	}
+
+	return &cloudproto.DiskListResult{Details: details, Count: resp.Count}, nil
 }
 
 // DeleteDisk 删除云盘.
@@ -113,14 +160,20 @@ func (svc *diskSvc) deleteDisk(cts *rest.Contexts, validHandler handler.ValidWit
 	}
 
 	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
-		Action: meta.Delete, BasicInfo: basicInfo})
+	err = validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer, ResType: meta.Disk,
+		Action: meta.Delete, BasicInfo: basicInfo,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO 增加审计
-	// TODO 判断云盘是否可删除
+	// create delete audit.
+	err = svc.audit.ResDeleteAudit(cts.Kit, enumor.DiskAuditResType, []string{diskID})
+	if err != nil {
+		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
 
 	deleteReq := &hcproto.DiskDeleteReq{DiskID: diskID, AccountID: basicInfo.AccountID}
 
@@ -164,23 +217,62 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 	}
 
 	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
-		Action: meta.Find, BasicInfo: basicInfo})
+	err = validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer, ResType: meta.Disk,
+		Action: meta.Find, BasicInfo: basicInfo,
+	})
 	if err != nil {
 		return nil, err
 	}
 
+	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&datarelproto.DiskCvmRelListReq{
+			Filter: tools.ContainersExpression("disk_id", []string{diskID}),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var instanceID string
+	if len(rels.Details) > 0 {
+		instanceID = rels.Details[0].CvmID
+	}
+
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		return svc.client.DataService().TCloud.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		resp, err := svc.client.DataService().TCloud.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		if err != nil {
+			return nil, err
+		}
+		return cloudproto.TCloudDiskExtResult{DiskExtResult: resp, InstanceType: "cvm", InstanceID: instanceID}, nil
 	case enumor.Aws:
-		return svc.client.DataService().Aws.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		resp, err := svc.client.DataService().Aws.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		if err != nil {
+			return nil, err
+		}
+		return cloudproto.AwsDiskExtResult{DiskExtResult: resp, InstanceType: "cvm", InstanceID: instanceID}, nil
 	case enumor.HuaWei:
-		return svc.client.DataService().HuaWei.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		resp, err := svc.client.DataService().HuaWei.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		if err != nil {
+			return nil, err
+		}
+		return cloudproto.HuaWeiDiskExtResult{DiskExtResult: resp, InstanceType: "cvm", InstanceID: instanceID}, nil
 	case enumor.Gcp:
-		return svc.client.DataService().Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		resp, err := svc.client.DataService().Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		if err != nil {
+			return nil, err
+		}
+		return cloudproto.GcpDiskExtResult{DiskExtResult: resp, InstanceType: "cvm", InstanceID: instanceID}, nil
 	case enumor.Azure:
-		return svc.client.DataService().Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		resp, err := svc.client.DataService().Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
+		if err != nil {
+			return nil, err
+		}
+		return cloudproto.AzureDiskExtResult{DiskExtResult: resp, InstanceType: "cvm", InstanceID: instanceID}, nil
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
 	}
@@ -233,24 +325,34 @@ func (svc *diskSvc) AttachBizDisk(cts *rest.Contexts) (interface{}, error) {
 }
 
 func (svc *diskSvc) attachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
-	if err := vendor.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	diskID, err := extractDiskID(cts)
+	if err != nil {
+		return nil, err
 	}
 
-	switch vendor {
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		enumor.DiskCloudResType,
+		diskID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		return svc.tcloudAttachDisk(cts, validHandler)
+		return svc.tcloudAttachDisk(cts, basicInfo, validHandler)
 	case enumor.Aws:
-		return svc.awsAttachDisk(cts, validHandler)
+		return svc.awsAttachDisk(cts, basicInfo, validHandler)
 	case enumor.HuaWei:
-		return svc.huaweiAttachDisk(cts, validHandler)
+		return svc.huaweiAttachDisk(cts, basicInfo, validHandler)
 	case enumor.Gcp:
-		return svc.gcpAttachDisk(cts, validHandler)
+		return svc.gcpAttachDisk(cts, basicInfo, validHandler)
 	case enumor.Azure:
-		return svc.azureAttachDisk(cts, validHandler)
+		return svc.azureAttachDisk(cts, basicInfo, validHandler)
 	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
 	}
 }
 
@@ -265,11 +367,6 @@ func (svc *diskSvc) DetachBizDisk(cts *rest.Contexts) (interface{}, error) {
 }
 
 func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
-	if err := vendor.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
 	req := new(cloudproto.DiskDetachReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -278,8 +375,6 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	// TODO 增加审计
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
@@ -292,9 +387,25 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 	}
 
 	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
-		Action: meta.Disassociate, BasicInfo: basicInfo})
+	err = validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer, ResType: meta.Disk,
+		Action: meta.Disassociate, BasicInfo: basicInfo,
+	})
 	if err != nil {
+		return nil, err
+	}
+
+	operationInfo := protoaudit.CloudResourceOperationInfo{
+		ResType:           enumor.DiskAuditResType,
+		ResID:             req.DiskID,
+		Action:            protoaudit.Disassociate,
+		AssociatedResType: enumor.CvmAuditResType,
+		AssociatedResID:   req.CvmID,
+	}
+
+	err = svc.audit.ResOperationAudit(cts.Kit, operationInfo)
+	if err != nil {
+		logs.Errorf("create detach disk audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -304,7 +415,7 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		DiskID:    req.DiskID,
 	}
 
-	switch vendor {
+	switch basicInfo.Vendor {
 	case enumor.TCloud:
 		return nil, svc.client.HCService().TCloud.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
 	case enumor.Aws:
@@ -316,7 +427,7 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 	case enumor.Azure:
 		return nil, svc.client.HCService().Gcp.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
 	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
 	}
 }
 
@@ -373,4 +484,22 @@ func (svc *diskSvc) checkDisksInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID 
 	}
 
 	return nil
+}
+
+func extractDiskID(cts *rest.Contexts) (string, error) {
+	req := new(cloudproto.DiskReq)
+	reqData, _ := ioutil.ReadAll(cts.Request.Request.Body)
+
+	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
+	if err := cts.DecodeInto(req); err != nil {
+		return "", err
+	}
+
+	if err := req.Validate(); err != nil {
+		return "", errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
+
+	return req.DiskID, nil
 }

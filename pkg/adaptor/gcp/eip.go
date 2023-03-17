@@ -232,8 +232,23 @@ func (g *Gcp) CreateEip(kt *kit.Kit, opt *eip.GcpEipCreateOption) (*string, erro
 		return &cloudID, err
 	}
 
-	resp, err := client.Addresses.Insert(g.CloudProjectID(), opt.Region, req).Context(kt.Ctx).Do()
-	cloudID := strconv.FormatUint(resp.TargetId, 10)
+	_, err = client.Addresses.Insert(g.CloudProjectID(), opt.Region, req).Context(kt.Ctx).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	var cloudID string
+	for {
+		address, err := g.getEip(kt, opt.Region, opt.EipName)
+		if err != nil {
+			return nil, err
+		}
+
+		if address != nil && address.Name == opt.EipName {
+			cloudID = strconv.FormatUint(address.Id, 10)
+			break
+		}
+	}
 
 	respPoller := poller.Poller[*Gcp, []*eip.GcpEip,
 		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
@@ -243,6 +258,19 @@ func (g *Gcp) CreateEip(kt *kit.Kit, opt *eip.GcpEipCreateOption) (*string, erro
 	}
 
 	return &cloudID, err
+}
+
+func (g *Gcp) getEip(kt *kit.Kit, region string, eipName string) (*compute.Address, error) {
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	if region == eip.GcpGlobalRegion {
+		return client.GlobalAddresses.Get(g.CloudProjectID(), eipName).Context(kt.Ctx).Do()
+	} else {
+		return client.Addresses.Get(g.CloudProjectID(), region, eipName).Context(kt.Ctx).Do()
+	}
 }
 
 func convert(resp *compute.AddressList, region string) []*eip.GcpEip {

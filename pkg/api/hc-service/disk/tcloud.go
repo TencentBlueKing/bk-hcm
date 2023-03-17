@@ -25,8 +25,8 @@ import (
 
 // TCloudDiskCreateReq ...
 type TCloudDiskCreateReq struct {
-	Base      *DiskBaseCreateReq            `json:"base" validate:"required"`
-	Extension *TCloudDiskExtensionCreateReq `json:"extension" validate:"required"`
+	*DiskBaseCreateReq `json:",inline" validate:"required"`
+	Extension          *TCloudDiskExtensionCreateReq `json:"extension" validate:"required"`
 }
 
 // Validate ...

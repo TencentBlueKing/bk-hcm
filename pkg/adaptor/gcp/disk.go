@@ -20,35 +20,61 @@
 package gcp
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
 	"hcm/pkg/adaptor/poller"
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"google.golang.org/api/compute/v1"
 )
 
 // CreateDisk 创建云硬盘
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/insert
-func (g *Gcp) CreateDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*string, error) {
-	resp, err := g.createDisk(kt, opt)
+func (g *Gcp) CreateDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) ([]string, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "gcp disk create option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	diskCloudIDs := make([]string, 0)
+
+	if *opt.DiskCount == 1 {
+		resp, err := g.createDisk(kt, opt)
+		if err != nil {
+			return nil, err
+		}
+		diskCloudIDs = append(diskCloudIDs, strconv.FormatUint(resp.TargetId, 10))
+	} else {
+		diskName := opt.DiskName
+		for i := uint64(1); i <= *opt.DiskCount; i++ {
+			opt.DiskName = fmt.Sprintf("%s-%s", diskName, i)
+			resp, err := g.createDisk(kt, opt)
+			if err != nil {
+				return nil, err
+			}
+			diskCloudIDs = append(diskCloudIDs, strconv.FormatUint(resp.TargetId, 10))
+		}
+	}
+
+	respPoller := poller.Poller[*Gcp, []*compute.Disk, poller.BaseDoneResult]{
+		Handler: &createDiskPollingHandler{Zone: opt.Zone},
+	}
+	_, err := respPoller.PollUntilDone(g, kt, converter.SliceToPtr(diskCloudIDs), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	targetId := strconv.FormatUint(resp.TargetId, 10)
-
-	respPoller := poller.Poller[*Gcp, []*compute.Disk, poller.BaseDoneResult]{Handler: new(createDiskPollingHandler)}
-	_, err = respPoller.PollUntilDone(g, kt, []*string{&targetId}, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return &targetId, nil
+	return diskCloudIDs, nil
 }
 
 func (g *Gcp) createDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.Operation, error) {
@@ -152,6 +178,7 @@ func (g *Gcp) AttachDisk(kt *kit.Kit, opt *disk.GcpDiskAttachOption) error {
 	_, err = client.Instances.AttachDisk(g.CloudProjectID(), opt.Zone, opt.CvmName, req).
 		Context(kt.Ctx).
 		Do()
+
 	return err
 }
 
@@ -177,14 +204,73 @@ func (g *Gcp) DetachDisk(kt *kit.Kit, opt *disk.GcpDiskDetachOption) error {
 	return err
 }
 
-type createDiskPollingHandler struct{}
+type createDiskPollingHandler struct {
+	Zone string
+}
 
 func (h *createDiskPollingHandler) Done(pollResult []*compute.Disk) (bool, *poller.BaseDoneResult) {
+	for _, r := range pollResult {
+		if r.Status == "CREATING" {
+			return false, nil
+		}
+	}
+
 	return true, nil
 }
 
 func (h *createDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]*compute.Disk, error) {
-	return nil, nil
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, _, err := client.ListDisk(
+		kt,
+		&disk.GcpDiskListOption{Zone: h.Zone, CloudIDs: cIDs, Page: &core.GcpPage{PageSize: core.GcpQueryLimit}},
+	)
+	return result, err
 }
 
 var _ poller.PollingHandler[*Gcp, []*compute.Disk, poller.BaseDoneResult] = new(createDiskPollingHandler)
+
+type attachDiskPollingHandler struct {
+	Zone string
+}
+
+func (h *attachDiskPollingHandler) Done(pollResult []*compute.Disk) (bool, *poller.BaseDoneResult) {
+	for _, r := range pollResult {
+		if len(r.Users) == 0 {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (h *attachDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]*compute.Disk, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, _, err := client.ListDisk(
+		kt,
+		&disk.GcpDiskListOption{Zone: h.Zone, CloudIDs: cIDs, Page: &core.GcpPage{PageSize: core.GcpQueryLimit}},
+	)
+	return result, err
+}
+
+type detachDiskPollingHandler struct {
+	Zone string
+}
+
+func (h *detachDiskPollingHandler) Done(pollResult []*compute.Disk) (bool, *poller.BaseDoneResult) {
+	for _, r := range pollResult {
+		if len(r.Users) > 0 {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (h *detachDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]*compute.Disk, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, _, err := client.ListDisk(
+		kt,
+		&disk.GcpDiskListOption{Zone: h.Zone, CloudIDs: cIDs, Page: &core.GcpPage{PageSize: core.GcpQueryLimit}},
+	)
+	return result, err
+}

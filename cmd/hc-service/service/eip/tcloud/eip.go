@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // EipSvc ...
@@ -200,11 +201,7 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cloudIDs := make([]string, len(eipCloudIDs))
-	for idx, idptr := range eipCloudIDs {
-		cloudIDs[idx] = *idptr
-	}
-
+	cloudIDs := converter.PtrToSlice(eipCloudIDs)
 	_, err = synceip.SyncTCloudEip(
 		cts.Kit,
 		&synceip.SyncTCloudEipOption{AccountID: req.AccountID, Region: req.Region, CloudIDs: cloudIDs},

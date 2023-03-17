@@ -36,12 +36,18 @@ import (
 // CreateDisk 创建云硬盘
 // reference: https://support.huaweicloud.com/api-evs/evs_04_2003.html
 func (h *HuaWei) CreateDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption) ([]string, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "huawei disk create option is required")
+	}
+
 	resp, err := h.createDisk(opt)
 	if err != nil {
 		return nil, err
 	}
 
-	respPoller := poller.Poller[*HuaWei, []model.VolumeDetail, poller.BaseDoneResult]{Handler: new(createDiskPollingHandler)}
+	respPoller := poller.Poller[*HuaWei, []model.VolumeDetail, poller.BaseDoneResult]{
+		Handler: &createDiskPollingHandler{region: opt.Region},
+	}
 	_, err = respPoller.PollUntilDone(h, kt, common.StringPtrs(*resp.VolumeIds), nil)
 	if err != nil {
 		return nil, err
@@ -149,18 +155,17 @@ func (h *HuaWei) AttachDisk(kt *kit.Kit, opt *disk.HuaWeiDiskAttachOption) error
 		return err
 	}
 
-	resp, err := client.AttachServerVolume(req)
+	_, err = client.AttachServerVolume(req)
 	if err != nil {
-		logs.Errorf(
-			"huawei attach disk failed, err: %v, rid: %s, job id: %s",
-			err,
-			kt.Rid,
-			resp.JobId,
-		)
+		logs.Errorf("huawei attach disk failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	return nil
+	respPoller := poller.Poller[*HuaWei, []model.VolumeDetail, poller.BaseDoneResult]{
+		Handler: &attachDiskPollingHandler{region: opt.Region},
+	}
+	_, err = respPoller.PollUntilDone(h, kt, []*string{&opt.CloudDiskID}, nil)
+	return err
 }
 
 // DetachDisk 卸载云盘
@@ -180,23 +185,29 @@ func (h *HuaWei) DetachDisk(kt *kit.Kit, opt *disk.HuaWeiDiskDetachOption) error
 		return err
 	}
 
-	resp, err := client.DetachServerVolume(req)
+	_, err = client.DetachServerVolume(req)
 	if err != nil {
-		logs.Errorf(
-			"huawei detach disk failed, err: %v, rid: %s, job id: %s",
-			err,
-			kt.Rid,
-			resp.JobId,
-		)
+		logs.Errorf("huawei detach disk failed, err: %v, rid: %s, job id: %s", err, kt.Rid)
 		return err
 	}
 
-	return nil
+	respPoller := poller.Poller[*HuaWei, []model.VolumeDetail, poller.BaseDoneResult]{
+		Handler: &detachDiskPollingHandler{region: opt.Region},
+	}
+	_, err = respPoller.PollUntilDone(h, kt, []*string{&opt.CloudDiskID}, nil)
+	return err
 }
 
-type createDiskPollingHandler struct{}
+type createDiskPollingHandler struct {
+	region string
+}
 
 func (h *createDiskPollingHandler) Done(pollResult []model.VolumeDetail) (bool, *poller.BaseDoneResult) {
+	for _, r := range pollResult {
+		if r.Status == "creating" {
+			return false, nil
+		}
+	}
 	return true, nil
 }
 
@@ -205,7 +216,67 @@ func (h *createDiskPollingHandler) Poll(
 	kt *kit.Kit,
 	cloudIDs []*string,
 ) ([]model.VolumeDetail, error) {
-	return nil, nil
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, err := client.ListDisk(kt, &disk.HuaWeiDiskListOption{Region: h.region, CloudIDs: cIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 var _ poller.PollingHandler[*HuaWei, []model.VolumeDetail, poller.BaseDoneResult] = new(createDiskPollingHandler)
+
+type attachDiskPollingHandler struct {
+	region string
+}
+
+func (h *attachDiskPollingHandler) Done(pollResult []model.VolumeDetail) (bool, *poller.BaseDoneResult) {
+	for _, r := range pollResult {
+		if r.Status != "in-use" {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (h *attachDiskPollingHandler) Poll(
+	client *HuaWei,
+	kt *kit.Kit,
+	cloudIDs []*string,
+) ([]model.VolumeDetail, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, err := client.ListDisk(kt, &disk.HuaWeiDiskListOption{Region: h.region, CloudIDs: cIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+type detachDiskPollingHandler struct {
+	region string
+}
+
+func (h *detachDiskPollingHandler) Done(pollResult []model.VolumeDetail) (bool, *poller.BaseDoneResult) {
+	for _, r := range pollResult {
+		if r.Status != "available" {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (h *detachDiskPollingHandler) Poll(
+	client *HuaWei,
+	kt *kit.Kit,
+	cloudIDs []*string,
+) ([]model.VolumeDetail, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, err := client.ListDisk(kt, &disk.HuaWeiDiskListOption{Region: h.region, CloudIDs: cIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

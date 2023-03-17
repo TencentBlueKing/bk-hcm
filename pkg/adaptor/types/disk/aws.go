@@ -30,10 +30,11 @@ import (
 // AwsDiskCreateOption AWS 创建云盘参数
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateVolume.html
 type AwsDiskCreateOption struct {
-	Region   string  `json:"region" validate:"required"`
-	Zone     string  `json:"zone" validate:"required"`
-	DiskType *string `json:"disk_type"`
-	DiskSize int64   `json:"disk_size" validate:"required"`
+	Region    string  `json:"region" validate:"required"`
+	Zone      string  `json:"zone" validate:"required"`
+	DiskType  *string `json:"disk_type"`
+	DiskSize  int64   `json:"disk_size" validate:"required"`
+	DiskCount *uint64 `json:"disk_count" validate:"required"`
 }
 
 // Validate ...

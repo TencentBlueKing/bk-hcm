@@ -20,14 +20,22 @@
 package tcloud
 
 import (
+	"hcm/cmd/hc-service/logics/sync/cvm"
+	syncdisk "hcm/cmd/hc-service/logics/sync/disk"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
 	"hcm/pkg/adaptor/types/disk"
+	"hcm/pkg/api/core"
+	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // DiskSvc ...
@@ -46,18 +54,18 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := svc.Adaptor.TCloud(cts.Kit, req.Base.AccountID)
+	client, err := svc.Adaptor.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	diskCount := uint64(req.Base.DiskCount)
+	diskCount := uint64(req.DiskCount)
 	opt := &disk.TCloudDiskCreateOption{
-		DiskName:       &req.Base.Name,
-		Region:         req.Base.Region,
-		Zone:           req.Base.Zone,
-		DiskType:       req.Base.DiskType,
-		DiskSize:       &req.Base.DiskSize,
+		DiskName:       &req.Name,
+		Region:         req.Region,
+		Zone:           req.Zone,
+		DiskType:       req.DiskType,
+		DiskSize:       &req.DiskSize,
 		DiskCount:      &diskCount,
 		DiskChargeType: req.Extension.DiskChargeType,
 	}
@@ -69,11 +77,50 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
-	client.CreateDisk(cts.Kit, opt)
+	cloudIDs, err := client.CreateDisk(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
 
-	// TODO save to data-service
+	_, err = syncdisk.SyncTCloudDisk(
+		cts.Kit,
+		&syncdisk.SyncTCloudDiskOption{
+			AccountID: req.AccountID,
+			Region:    req.Region,
+			CloudIDs:  converter.PtrToSlice(cloudIDs),
+		},
+		svc.Adaptor,
+		svc.DataCli,
+	)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	resp, err := svc.DataCli.Global.ListDisk(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&dataproto.DiskListReq{Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.In.Factory(),
+					Value: cloudIDs,
+				}, &filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: string(enumor.TCloud),
+				},
+			},
+		}, Page: &core.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},
+	)
+
+	diskIDs := make([]string, len(cloudIDs))
+	for idx, diskData := range resp.Details {
+		diskIDs[idx] = diskData.ID
+	}
+
+	return &core.BatchCreateResult{IDs: diskIDs}, nil
 }
 
 // DeleteDisk ...
@@ -131,7 +178,27 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	return nil, manager.Create(cts.Kit)
+	err = manager.Create(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = syncdisk.SyncTCloudDisk(
+		cts.Kit,
+		&syncdisk.SyncTCloudDiskOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: opt.CloudDiskIDs},
+		svc.Adaptor, svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncTCloudDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, cvm.SyncTCloudCvm(
+		cts.Kit,
+		svc.Adaptor,
+		svc.DataCli,
+		&cvm.SyncTCloudCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
+	)
 }
 
 // DetachDisk ...
@@ -160,7 +227,27 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	return nil, manager.Delete(cts.Kit)
+	err = manager.Delete(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = syncdisk.SyncTCloudDisk(
+		cts.Kit,
+		&syncdisk.SyncTCloudDiskOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: opt.CloudDiskIDs},
+		svc.Adaptor, svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncTCloudDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, cvm.SyncTCloudCvm(
+		cts.Kit,
+		svc.Adaptor,
+		svc.DataCli,
+		&cvm.SyncTCloudCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
+	)
 }
 
 func (svc *DiskSvc) makeDiskAttachOption(

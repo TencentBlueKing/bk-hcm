@@ -26,11 +26,13 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/dao/types/cloud"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud/disk"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -43,6 +45,7 @@ import (
 // DiskDao ...
 type DiskDao struct {
 	*dao.ObjectDaoManager
+	Audit audit.Interface
 }
 
 var _ dao.ObjectDao = new(DiskDao)
@@ -74,6 +77,32 @@ func (diskDao *DiskDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, disks []*dis
 	err = diskDao.Orm().Txn(tx).BulkInsert(kt.Ctx, sql, disks)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", disk.TableName, err)
+	}
+
+	// create audit.
+	audits := make([]*tableaudit.AuditTable, 0, len(disks))
+	for _, one := range disks {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      one.ID,
+			CloudResID: one.CloudID,
+			ResName:    one.Name,
+			ResType:    enumor.DiskAuditResType,
+			Action:     enumor.Create,
+			BkBizID:    one.BkBizID,
+			Vendor:     enumor.Vendor(one.Vendor),
+			AccountID:  one.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: one,
+			},
+		})
+	}
+	if err = diskDao.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	return ids, nil

@@ -21,6 +21,7 @@ package disk
 
 import (
 	"hcm/pkg/api/core"
+	datarelproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
@@ -57,3 +58,25 @@ type DiskDetachReq struct {
 func (req *DiskDetachReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// AccountReq ...
+type AccountReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AccountReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// DiskReq ...
+type DiskReq struct {
+	DiskID string `json:"disk_id" validate:"required"`
+}
+
+// Validate ...
+func (req *DiskReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+type DiskCvmRelListReq = datarelproto.DiskCvmRelListReq

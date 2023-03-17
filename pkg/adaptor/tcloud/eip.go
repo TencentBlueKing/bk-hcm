@@ -147,14 +147,9 @@ func (t *TCloud) AssociateEip(kt *kit.Kit, opt *eip.TCloudEipAssociateOption) er
 		return err
 	}
 
-	resp, err := client.AssociateAddressWithContext(kt.Ctx, req)
+	_, err = client.AssociateAddressWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf(
-			"tcloud associate eip failed, err: %v, rid: %s, resp rid: %s",
-			err,
-			kt.Rid,
-			resp.Response.RequestId,
-		)
+		logs.Errorf("tcloud associate eip failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
@@ -185,14 +180,9 @@ func (t *TCloud) DisassociateEip(kt *kit.Kit, opt *eip.TCloudEipDisassociateOpti
 		return err
 	}
 
-	resp, err := client.DisassociateAddressWithContext(kt.Ctx, req)
+	_, err = client.DisassociateAddressWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf(
-			"tcloud disassociate eip failed, err: %v, rid: %s, resp rid: %s",
-			err,
-			kt.Rid,
-			resp.Response.RequestId,
-		)
+		logs.Errorf("tcloud disassociate eip failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 

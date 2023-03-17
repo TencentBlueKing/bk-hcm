@@ -20,6 +20,8 @@
 package huawei
 
 import (
+	"hcm/cmd/hc-service/logics/sync/cvm"
+	syncdisk "hcm/cmd/hc-service/logics/sync/disk"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
 	"hcm/pkg/adaptor/types/disk"
@@ -27,6 +29,7 @@ import (
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -131,7 +134,32 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	return nil, manager.Create(cts.Kit)
+	err = manager.Create(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = syncdisk.SyncHuaWeiDisk(
+		cts.Kit,
+		&syncdisk.SyncHuaWeiDiskOption{
+			AccountID: req.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  []string{opt.CloudDiskID},
+		},
+		svc.Adaptor,
+		svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncHuaWeiDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return cvm.SyncHuaWeiCvm(
+		cts.Kit,
+		&cvm.SyncHuaWeiCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
+		svc.Adaptor,
+		svc.DataCli,
+	)
 }
 
 // DetachDisk ...
@@ -160,7 +188,32 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	return nil, manager.Delete(cts.Kit)
+	err = manager.Delete(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = syncdisk.SyncHuaWeiDisk(
+		cts.Kit,
+		&syncdisk.SyncHuaWeiDiskOption{
+			AccountID: req.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  []string{opt.CloudDiskID},
+		},
+		svc.Adaptor,
+		svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncHuaWeiDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return cvm.SyncHuaWeiCvm(
+		cts.Kit,
+		&cvm.SyncHuaWeiCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
+		svc.Adaptor,
+		svc.DataCli,
+	)
 }
 
 func (svc *DiskSvc) makeDiskAttachOption(

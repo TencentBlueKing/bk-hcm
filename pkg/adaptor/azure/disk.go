@@ -34,16 +34,37 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) CreateDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) (*string, error) {
-	resp, err := a.createDisk(kt, opt)
-	if err != nil {
+func (a *Azure) CreateDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) ([]string, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "azure disk create option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	return resp.ID, nil
+	diskCloudIDs := make([]string, 0)
+
+	if *opt.DiskCount == 1 {
+		resp, err := a.createDisk(kt, opt, opt.DiskName)
+		if err != nil {
+			return nil, err
+		}
+		diskCloudIDs = append(diskCloudIDs, *resp.ID)
+	} else {
+		for i := uint64(1); i <= *opt.DiskCount; i++ {
+			resp, err := a.createDisk(kt, opt, fmt.Sprintf("%s-%s", opt.DiskName, i))
+			if err != nil {
+				return nil, err
+			}
+			diskCloudIDs = append(diskCloudIDs, *resp.ID)
+		}
+	}
+
+	return diskCloudIDs, nil
 }
 
-func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) (*armcompute.Disk, error) {
+func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption, diskName string) (*armcompute.Disk, error) {
 	client, err := a.clientSet.diskClient()
 	if err != nil {
 		return nil, err
@@ -54,7 +75,7 @@ func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) (*armco
 		return nil, err
 	}
 
-	pollerResp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.DiskName, *diskReq, nil)
+	pollerResp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, diskName, *diskReq, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +177,6 @@ func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*ar
 			} else {
 				disks = append(disks, one)
 			}
-
 		}
 	}
 

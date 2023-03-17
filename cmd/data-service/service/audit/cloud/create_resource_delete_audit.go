@@ -93,6 +93,8 @@ func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.cvm.CvmDeleteAuditBuild(kt, deletes)
 	case enumor.EipAuditResType:
 		audits, err = ad.eipDeleteAuditBuild(kt, deletes)
+	case enumor.DiskAuditResType:
+		audits, err = ad.diskDeleteAuditBuild(kt, deletes)
 
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)

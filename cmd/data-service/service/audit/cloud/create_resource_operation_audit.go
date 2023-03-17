@@ -85,6 +85,8 @@ func (ad Audit) buildOperationAuditInfo(kt *kit.Kit, resType enumor.AuditResourc
 		audits, err = ad.securityGroup.OperationAuditBuild(kt, operations)
 	case enumor.EipAuditResType:
 		audits, err = ad.eipOperationAuditBuild(kt, operations)
+	case enumor.DiskAuditResType:
+		audits, err = ad.diskOperationAuditBuild(kt, operations)
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}

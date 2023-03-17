@@ -20,6 +20,7 @@ package disk
 import (
 	"fmt"
 
+	cloudproto "hcm/pkg/api/cloud-server/disk"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -39,8 +40,8 @@ func (svc *diskSvc) ListBizDiskExtByCvmID(cts *rest.Contexts) (interface{}, erro
 }
 
 func (svc *diskSvc) listDiskExtByCvmID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
-	error) {
-
+	error,
+) {
 	CvmID := cts.Request.PathParameter("cvm_id")
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
@@ -90,4 +91,18 @@ func (svc *diskSvc) listDiskExtByCvmID(cts *rest.Contexts, validHandler handler.
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
 	}
+}
+
+// ListDiskCvmRel ...
+func (svc *diskSvc) ListDiskCvmRel(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloudproto.DiskCvmRelListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return svc.client.DataService().Global.ListDiskCvmRel(cts.Kit.Ctx, cts.Kit.Header(), req)
 }

@@ -20,6 +20,8 @@
 package gcp
 
 import (
+	"hcm/cmd/hc-service/logics/sync/cvm"
+	syncdisk "hcm/cmd/hc-service/logics/sync/disk"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
 	"hcm/pkg/adaptor/types/disk"
@@ -27,6 +29,7 @@ import (
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -121,7 +124,41 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	return nil, manager.Create(cts.Kit)
+	err = manager.Create(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	diskData, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
+	if err != nil {
+		return nil, err
+	}
+	_, err = syncdisk.SyncGcpDisk(
+		cts.Kit,
+		&syncdisk.SyncGcpDiskOption{
+			AccountID: req.AccountID,
+			Zone:      opt.Zone,
+			CloudIDs:  []string{diskData.CloudID},
+		},
+		svc.Adaptor,
+		svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncGcpDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cvmData, err := svc.DataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cvm.SyncGcpCvm(
+		cts.Kit,
+		svc.Adaptor,
+		svc.DataCli,
+		&cvm.SyncGcpCvmOption{AccountID: req.AccountID, Region: cvmData.Region, CloudIDs: []string{cvmData.CloudID}},
+	)
 }
 
 // DetachDisk ...
@@ -150,7 +187,42 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	return nil, manager.Delete(cts.Kit)
+	err = manager.Delete(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	diskData, err := svc.DataCli.Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = syncdisk.SyncGcpDisk(
+		cts.Kit,
+		&syncdisk.SyncGcpDiskOption{
+			AccountID: req.AccountID,
+			Zone:      opt.Zone,
+			CloudIDs:  []string{diskData.CloudID},
+		},
+		svc.Adaptor,
+		svc.DataCli,
+	)
+	if err != nil {
+		logs.Errorf("SyncGcpDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cvmData, err := svc.DataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cvm.SyncGcpCvm(
+		cts.Kit,
+		svc.Adaptor,
+		svc.DataCli,
+		&cvm.SyncGcpCvmOption{AccountID: req.AccountID, Region: cvmData.Region, CloudIDs: []string{cvmData.CloudID}},
+	)
 }
 
 func (svc *DiskSvc) makeDiskAttachOption(

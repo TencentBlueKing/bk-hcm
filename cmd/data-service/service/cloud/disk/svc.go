@@ -56,6 +56,7 @@ func (dSvc *diskSvc) Init() {
 	}
 
 	dSvc.objectDao = dSvc.GetObjectDao(d.Name()).(*diskdao.DiskDao)
+	dSvc.objectDao.Audit = dSvc.Audit()
 }
 
 // BatchCreateDiskExt 批量创建云盘(支持 extension 字段)

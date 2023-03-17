@@ -20,7 +20,9 @@
 package eip
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/eip/aws"
@@ -31,6 +33,7 @@ import (
 	cloudproto "hcm/pkg/api/cloud-server/eip"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
+	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
@@ -95,7 +98,8 @@ func (svc *eipSvc) listEip(cts *rest.Contexts, authHandler handler.ListAuthResHa
 	if filterExp == nil {
 		filterExp = tools.AllExpression()
 	}
-	return svc.client.DataService().Global.ListEip(
+
+	resp, err := svc.client.DataService().Global.ListEip(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.EipListReq{
@@ -103,6 +107,45 @@ func (svc *eipSvc) listEip(cts *rest.Contexts, authHandler handler.ListAuthResHa
 			Page:   req.Page,
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.Details) == 0 {
+		return &cloudproto.EipListResult{Details: make([]*cloudproto.EipResult, 0), Count: resp.Count}, nil
+	}
+
+	eipIDs := make([]string, len(resp.Details))
+	for idx, eipData := range resp.Details {
+		eipIDs[idx] = eipData.ID
+	}
+
+	rels, err := svc.client.DataService().Global.ListEipCvmRel(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&datarelproto.EipCvmRelListReq{
+			Filter: tools.ContainersExpression("eip_id", eipIDs),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	eipIDToCvmID := make(map[string]string)
+	for _, relData := range rels.Details {
+		eipIDToCvmID[relData.EipID] = relData.CvmID
+	}
+
+	details := make([]*cloudproto.EipResult, len(resp.Details))
+	for idx, eipData := range resp.Details {
+		details[idx] = &cloudproto.EipResult{
+			CvmID:     eipIDToCvmID[eipData.ID],
+			EipResult: eipData,
+		}
+	}
+
+	return &cloudproto.EipListResult{Details: details, Count: resp.Count}, nil
 }
 
 // RetrieveEip get eip.
@@ -137,17 +180,54 @@ func (svc *eipSvc) retrieveEip(cts *rest.Contexts, validHandler handler.ValidWit
 		return nil, err
 	}
 
+	rels, err := svc.client.DataService().Global.ListEipCvmRel(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&datarelproto.EipCvmRelListReq{
+			Filter: tools.ContainersExpression("eip_id", []string{eipID}),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var cvmID string
+	if len(rels.Details) > 0 {
+		cvmID = rels.Details[0].CvmID
+	}
+
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		return svc.client.DataService().TCloud.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+		resp, err := svc.client.DataService().TCloud.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+		if err != nil {
+			return nil, err
+		}
+		return cloudproto.TCloudEipExtResult{EipExtResult: resp, CvmID: cvmID}, nil
 	case enumor.Aws:
-		return svc.client.DataService().Aws.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+		resp, err := svc.client.DataService().Aws.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+		if err != nil {
+			return nil, err
+		}
+		return cloudproto.AwsEipExtResult{EipExtResult: resp, CvmID: cvmID}, nil
 	case enumor.HuaWei:
-		return svc.client.DataService().HuaWei.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+		resp, err := svc.client.DataService().HuaWei.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+		if err != nil {
+			return nil, err
+		}
+		return cloudproto.HuaWeiEipExtResult{EipExtResult: resp, CvmID: cvmID}, nil
 	case enumor.Gcp:
-		return svc.client.DataService().Gcp.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+		resp, err := svc.client.DataService().Gcp.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+		if err != nil {
+			return nil, err
+		}
+		return cloudproto.GcpEipExtResult{EipExtResult: resp, CvmID: cvmID}, nil
 	case enumor.Azure:
-		return svc.client.DataService().Azure.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+		resp, err := svc.client.DataService().Azure.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+		if err != nil {
+			return nil, err
+		}
+		return cloudproto.AzureEipExtResult{EipExtResult: resp, CvmID: cvmID}, nil
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
 	}
@@ -259,20 +339,16 @@ func (svc *eipSvc) AssociateBizEip(cts *rest.Contexts) (interface{}, error) {
 }
 
 func (svc *eipSvc) associateEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	req := new(cloudproto.EipReq)
-	if err := cts.DecodeInto(req); err != nil {
+	eipID, err := extractEipID(cts)
+	if err != nil {
 		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		enumor.EipCloudResType,
-		req.EipID,
+		eipID,
 	)
 	if err != nil {
 		return nil, err
@@ -308,20 +384,16 @@ func (svc *eipSvc) disassociateEip(
 	cts *rest.Contexts,
 	validHandler handler.ValidWithAuthHandler,
 ) (interface{}, error) {
-	req := new(cloudproto.EipReq)
-	if err := cts.DecodeInto(req); err != nil {
+	eipID, err := extractEipID(cts)
+	if err != nil {
 		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		enumor.EipCloudResType,
-		req.EipID,
+		eipID,
 	)
 	if err != nil {
 		return nil, err
@@ -345,12 +417,8 @@ func (svc *eipSvc) disassociateEip(
 
 // CreateBizEip ...
 func (svc *eipSvc) CreateBizEip(cts *rest.Contexts) (interface{}, error) {
-	req := new(cloudproto.AccountReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
+	accountID, err := extractAccountID(cts)
+	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -359,7 +427,7 @@ func (svc *eipSvc) CreateBizEip(cts *rest.Contexts) (interface{}, error) {
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		enumor.AccountCloudResType,
-		req.AccountID,
+		accountID,
 	)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -430,4 +498,40 @@ func (svc *eipSvc) checkEipsInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID in
 	}
 
 	return nil
+}
+
+func extractEipID(cts *rest.Contexts) (string, error) {
+	req := new(cloudproto.EipReq)
+	reqData, _ := ioutil.ReadAll(cts.Request.Request.Body)
+
+	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
+	if err := cts.DecodeInto(req); err != nil {
+		return "", err
+	}
+
+	if err := req.Validate(); err != nil {
+		return "", errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
+
+	return req.EipID, nil
+}
+
+func extractAccountID(cts *rest.Contexts) (string, error) {
+	req := new(cloudproto.AccountReq)
+	reqData, _ := ioutil.ReadAll(cts.Request.Request.Body)
+
+	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
+	if err := cts.DecodeInto(req); err != nil {
+		return "", err
+	}
+
+	if err := req.Validate(); err != nil {
+		return "", errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
+
+	return req.AccountID, nil
 }

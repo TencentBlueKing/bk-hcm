@@ -119,6 +119,7 @@ func (opt *GcpEipDisassociateOption) Validate() error {
 
 // GcpEipCreateOption ...
 type GcpEipCreateOption struct {
+	EipName     string `json:"eip_name" validate:"required"`
 	Region      string `json:"region" validate:"required"`
 	NetworkTier string `json:"network_tier" validate:"required,eq=PREMIUM|eq=STANDARD"`
 	IpVersion   string `json:"ip_version" validate:"required"`
@@ -139,6 +140,7 @@ func (opt *GcpEipCreateOption) ToAddress() (*compute.Address, error) {
 	if opt.Region == GcpGlobalRegion {
 		req.IpVersion = opt.IpVersion
 	}
+	req.Name = opt.EipName
 
 	return req, nil
 }

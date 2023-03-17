@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -36,12 +37,18 @@ import (
 // CreateDisk 创建云硬盘
 // reference: https://cloud.tencent.com/document/api/362/16312
 func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) ([]*string, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "tcloud disk create option is required")
+	}
+
 	resp, err := t.createDisk(kt, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*cbs.Disk, poller.BaseDoneResult]{Handler: new(createDiskPollingHandler)}
+	respPoller := poller.Poller[*TCloud, []*cbs.Disk, poller.BaseDoneResult]{
+		Handler: &createDiskPollingHandler{region: opt.Region},
+	}
 	_, err = respPoller.PollUntilDone(t, kt, resp.Response.DiskIdSet, nil)
 	if err != nil {
 		return nil, err
@@ -142,24 +149,22 @@ func (t *TCloud) AttachDisk(kt *kit.Kit, opt *disk.TCloudDiskAttachOption) error
 		return err
 	}
 
-	// TODO 已挂载的云盘不允许再挂载到其他主机. 不过云上接口应该做了这个验证?
 	client, err := t.clientSet.cbsClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new tcloud cbs client failed, err: %v", err)
 	}
 
-	resp, err := client.AttachDisksWithContext(kt.Ctx, req)
+	_, err = client.AttachDisksWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf(
-			"tcloud attach disk failed, err: %v, rid: %s, resp rid: %s",
-			err,
-			kt.Rid,
-			resp.Response.RequestId,
-		)
+		logs.Errorf("tcloud attach disk failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	return nil
+	respPoller := poller.Poller[*TCloud, []*cbs.Disk, poller.BaseDoneResult]{
+		Handler: &attachDiskPollingHandler{region: opt.Region},
+	}
+	_, err = respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudDiskIDs), nil)
+	return err
 }
 
 // DetachDisk 卸载云盘
@@ -179,28 +184,74 @@ func (t *TCloud) DetachDisk(kt *kit.Kit, opt *disk.TCloudDiskDetachOption) error
 		return fmt.Errorf("new tcloud cbs client failed, err: %v", err)
 	}
 
-	resp, err := client.DetachDisksWithContext(kt.Ctx, req)
+	_, err = client.DetachDisksWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf(
-			"tcloud detach disk failed, err: %v, rid: %s, resp rid: %s",
-			err,
-			kt.Rid,
-			resp.Response.RequestId,
-		)
+		logs.Errorf("tcloud detach disk failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	return nil
+	respPoller := poller.Poller[*TCloud, []*cbs.Disk, poller.BaseDoneResult]{
+		Handler: &detachDiskPollingHandler{region: opt.Region},
+	}
+	_, err = respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudDiskIDs), nil)
+	return err
 }
 
-type createDiskPollingHandler struct{}
+type createDiskPollingHandler struct {
+	region string
+}
 
 func (h *createDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
+	for _, r := range pollResult {
+		if r.DiskState == nil || *r.DiskState == "UNATTACHED" {
+			return false, nil
+		}
+	}
+
 	return true, nil
 }
 
 func (h *createDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
-	return nil, nil
+	cIDs := converter.PtrToSlice(cloudIDs)
+	return client.ListDisk(kt, &disk.TCloudDiskListOption{Region: h.region, CloudIDs: cIDs})
 }
 
 var _ poller.PollingHandler[*TCloud, []*cbs.Disk, poller.BaseDoneResult] = new(createDiskPollingHandler)
+
+type attachDiskPollingHandler struct {
+	region string
+}
+
+func (h *attachDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
+	for _, r := range pollResult {
+		if *r.DiskState != "ATTACHED" {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (h *attachDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	return client.ListDisk(kt, &disk.TCloudDiskListOption{Region: h.region, CloudIDs: cIDs})
+}
+
+type detachDiskPollingHandler struct {
+	region string
+}
+
+func (h *detachDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
+	for _, r := range pollResult {
+		if *r.DiskState != "UNATTACHED" {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (h *detachDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	return client.ListDisk(kt, &disk.TCloudDiskListOption{Region: h.region, CloudIDs: cIDs})
+}

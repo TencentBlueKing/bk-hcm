@@ -21,7 +21,7 @@ package eip
 
 import (
 	"fmt"
-
+	
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/dao/types/cloud"
 	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud/eip"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -40,8 +41,6 @@ import (
 	"hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
-
-	tableaudit "hcm/pkg/dal/table/audit"
 )
 
 // EipDao ...
