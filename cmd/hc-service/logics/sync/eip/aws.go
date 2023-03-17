@@ -246,6 +246,10 @@ func isAwsEipChange(db *AwsDSEipSync, cloud *AwsEipSync) bool {
 		return true
 	}
 
+	if converter.PtrToVal(cloud.Eip.InstanceId) != db.Eip.InstanceId {
+		return true
+	}
+
 	if !assert.IsPtrStringEqual(cloud.Eip.PublicIpv4Pool, db.Eip.Extension.PublicIpv4Pool) {
 		return true
 	}
@@ -268,8 +272,9 @@ func syncAwsEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsE
 		}
 
 		eip := &dataproto.EipExtUpdateReq[dataproto.AwsEipExtensionUpdateReq]{
-			ID:     dsMap[id].Eip.ID,
-			Status: converter.PtrToVal(cloudMap[id].Eip.Status),
+			ID:         dsMap[id].Eip.ID,
+			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
+			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
 			Extension: &dataproto.AwsEipExtensionUpdateReq{
 				PublicIpv4Pool: cloudMap[id].Eip.PublicIpv4Pool,
 				Domain:         cloudMap[id].Eip.Domain,

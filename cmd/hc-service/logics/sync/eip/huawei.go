@@ -251,6 +251,10 @@ func isHuaWeiEipChange(db *HuaWeiDSEipSync, cloud *HuaWeiEipSync) bool {
 		return true
 	}
 
+	if converter.PtrToVal(cloud.Eip.InstanceId) != db.Eip.InstanceId {
+		return true
+	}
+
 	if !assert.IsPtrStringEqual(cloud.Eip.PortID, db.Eip.Extension.PortID) {
 		return true
 	}
@@ -282,8 +286,9 @@ func syncHuaWeiEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*H
 		}
 
 		eip := &dataproto.EipExtUpdateReq[dataproto.HuaWeiEipExtensionUpdateReq]{
-			ID:     dsMap[id].Eip.ID,
-			Status: converter.PtrToVal(cloudMap[id].Eip.Status),
+			ID:         dsMap[id].Eip.ID,
+			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
+			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
 			Extension: &dataproto.HuaWeiEipExtensionUpdateReq{
 				PortID:        cloudMap[id].Eip.PortID,
 				BandwidthId:   cloudMap[id].Eip.BandwidthId,

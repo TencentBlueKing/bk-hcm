@@ -246,6 +246,10 @@ func isTCloudEipChange(db *TCloudDSEipSync, cloud *TCloudEipSync) bool {
 		return true
 	}
 
+	if converter.PtrToVal(cloud.Eip.InstanceId) != db.Eip.InstanceId {
+		return true
+	}
+
 	if !assert.IsPtrUint64Equal(cloud.Eip.Bandwidth, db.Eip.Extension.Bandwidth) {
 		return true
 	}
@@ -269,8 +273,9 @@ func syncTCloudEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*T
 		}
 
 		eip := &dataproto.EipExtUpdateReq[dataproto.TCloudEipExtensionUpdateReq]{
-			ID:     dsMap[id].Eip.ID,
-			Status: converter.PtrToVal(cloudMap[id].Eip.Status),
+			ID:         dsMap[id].Eip.ID,
+			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
+			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
 			Extension: &dataproto.TCloudEipExtensionUpdateReq{
 				Bandwidth:          cloudMap[id].Eip.Bandwidth,
 				InternetChargeType: cloudMap[id].Eip.InternetChargeType,

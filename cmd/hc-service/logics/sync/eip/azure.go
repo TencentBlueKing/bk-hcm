@@ -247,6 +247,10 @@ func isAzureEipChange(db *AzureDSEipSync, cloud *AzureEipSync) bool {
 		return true
 	}
 
+	if converter.PtrToVal(cloud.Eip.InstanceId) != db.Eip.InstanceId {
+		return true
+	}
+
 	if !assert.IsPtrStringEqual(cloud.Eip.IpConfigurationID, db.Eip.Extension.IpConfigurationID) {
 		return true
 	}
@@ -270,8 +274,9 @@ func syncAzureEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 		}
 
 		eip := &dataproto.EipExtUpdateReq[dataproto.AzureEipExtensionUpdateReq]{
-			ID:     dsMap[id].Eip.ID,
-			Status: converter.PtrToVal(cloudMap[id].Eip.Status),
+			ID:         dsMap[id].Eip.ID,
+			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
+			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
 			Extension: &dataproto.AzureEipExtensionUpdateReq{
 				ResourceGroupName: req.ResourceGroupName,
 				IpConfigurationID: cloudMap[id].Eip.IpConfigurationID,
