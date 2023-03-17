@@ -40,6 +40,8 @@ func (a ApplicationType) Validate() error {
 const (
 	// AddAccount 新增账号
 	AddAccount ApplicationType = "add_account"
+	// CreateCvm 创建虚拟机
+	CreateCvm ApplicationType = "create_cvm"
 )
 
 type ApplicationStatus string
@@ -57,6 +59,8 @@ const (
 	Delivering ApplicationStatus = "delivering"
 	// Completed 单据完成
 	Completed ApplicationStatus = "completed"
+	// DeliverError 部分交付
+	DeliverPartial = "deliver_partial"
 	// DeliverError 单据交付异常
 	DeliverError ApplicationStatus = "deliver_error"
 )

@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/thirdparty/esb"
 )
 
+// InitApplicationService ...
 func InitApplicationService(c *capability.Capability, bkHcmUrl string, platformManagers []string) {
 	svc := &applicationSvc{
 		client:           c.ApiClient,
@@ -45,11 +46,13 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string, platformM
 		platformManagers: platformManagers,
 	}
 	h := rest.NewHandler()
-	h.Add("CreateForAddAccount", "POST", "/applications/types/add_account", svc.CreateForAddAccount)
 	h.Add("List", "POST", "/applications/list", svc.List)
 	h.Add("Get", "GET", "/applications/{application_id}", svc.Get)
 	h.Add("Cancel", "PATCH", "/applications/{application_id}/cancel", svc.Cancel)
 	h.Add("Approve", "POST", "/applications/approve", svc.Approve)
+
+	h.Add("CreateForAddAccount", "POST", "/applications/types/add_account", svc.CreateForAddAccount)
+	h.Add("CreateForCreateCvm", "POST", "/vendors/{vendor}/applications/types/create_cvm", svc.CreateForCreateCvm)
 
 	h.Load(c.WebService)
 }
@@ -67,7 +70,9 @@ func (a *applicationSvc) getCallbackUrl() string {
 	return fmt.Sprintf("%s/api/v1/cloud/applications/approve", strings.TrimRight(a.bkHcmUrl, "/"))
 }
 
-func (a *applicationSvc) getApprovalProcessServiceID(cts *rest.Contexts, applicationType enumor.ApplicationType) (int64, error) {
+func (a *applicationSvc) getApprovalProcessServiceID(
+	cts *rest.Contexts, applicationType enumor.ApplicationType,
+) (int64, error) {
 	result, err := a.client.DataService().Global.ApprovalProcess.List(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
@@ -97,4 +102,46 @@ func (a *applicationSvc) getApprovalProcessServiceID(cts *rest.Contexts, applica
 	}
 
 	return result.Details[0].ServiceID, nil
+}
+
+func (a *applicationSvc) updateStatusWithDetail(
+	cts *rest.Contexts, applicationID string, status enumor.ApplicationStatus, deliveryDetail string,
+) error {
+	req := &dataproto.ApplicationUpdateReq{Status: status}
+	if deliveryDetail != "" {
+		req.DeliveryDetail = &deliveryDetail
+	}
+	_, err := a.client.DataService().Global.Application.Update(
+		cts.Kit.Ctx, cts.Kit.Header(),
+		applicationID,
+		req,
+	)
+	return err
+}
+
+func (a *applicationSvc) getApplicationBySN(cts *rest.Contexts, sn string) (*dataproto.ApplicationResp, error) {
+	// 构造过滤条件，只能查询自己的单据
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "sn", Op: filter.Equal.Factory(), Value: sn},
+		},
+	}
+	// 查询
+	resp, err := a.client.DataService().Global.Application.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&dataproto.ApplicationListReq{
+			Filter: reqFilter,
+			Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found application by sn(%s)", sn)
+	}
+
+	return resp.Details[0], nil
 }
