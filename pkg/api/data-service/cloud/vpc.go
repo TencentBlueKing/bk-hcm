@@ -90,7 +90,7 @@ type AzureVpcCreateExt struct {
 type HuaWeiVpcCreateExt struct {
 	Cidr                []HuaWeiCidr `json:"cidr" validate:"required"`
 	Status              string       `json:"status" validate:"required"`
-	EnterpriseProjectId string       `json:"enterprise_project_id" validate:"omitempty"`
+	EnterpriseProjectID string       `json:"enterprise_project_id" validate:"omitempty"`
 }
 
 // Validate VpcBatchCreateReq.

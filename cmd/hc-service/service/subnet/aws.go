@@ -21,8 +21,7 @@
 package subnet
 
 import (
-	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
-	"hcm/cmd/hc-service/service/sync"
+	subnetlogics "hcm/cmd/hc-service/logics/subnet"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
@@ -31,7 +30,6 @@ import (
 	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -45,69 +43,19 @@ func (s subnet) AwsSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cli, err := s.ad.Aws(cts.Kit, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	awsCreateOpt := &types.AwsSubnetCreateOption{
-		Name:       req.Name,
-		Memo:       req.Memo,
+	awsCreateOpt := &subnetlogics.SubnetCreateOptions[hcservice.AwsSubnetCreateExt]{
+		BkBizID:    req.BkBizID,
+		AccountID:  req.AccountID,
+		Region:     req.Extension.Region,
 		CloudVpcID: req.CloudVpcID,
-		Extension: &types.AwsSubnetCreateExt{
-			Region:   req.Extension.Region,
-			Zone:     req.Extension.Zone,
-			IPv4Cidr: req.Extension.IPv4Cidr,
-			IPv6Cidr: req.Extension.IPv6Cidr,
-		},
+		CreateReqs: []hcservice.SubnetCreateReq[hcservice.AwsSubnetCreateExt]{*req},
 	}
-	awsCreateRes, err := cli.CreateSubnet(cts.Kit, awsCreateOpt)
+	res, err := s.subnet.AwsSubnetCreate(cts.Kit, awsCreateOpt)
 	if err != nil {
-		return nil, err
-	}
-
-	// create hcm subnet
-	sync.SleepBeforeSync()
-
-	syncOpt := &syncsubnet.SyncAwsOption{
-		AccountID: req.AccountID,
-		Region:    req.Extension.Region,
-	}
-	createReqs := []cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt]{convertAwsSubnetCreateReq(awsCreateRes,
-		req.AccountID, req.BkBizID)}
-	res, err := syncsubnet.BatchCreateAwsSubnet(cts.Kit, createReqs, s.cs.DataService(), s.ad, syncOpt)
-	if err != nil {
-		logs.Errorf("sync aws subnet failed, err: %v, reqs: %+v, rid: %s", err, createReqs, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return core.CreateResult{ID: res.IDs[0]}, nil
-}
-
-func convertAwsSubnetCreateReq(data *types.AwsSubnet, accountID string,
-	bizID int64) cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt] {
-
-	subnetReq := cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt]{
-		AccountID:  accountID,
-		CloudVpcID: data.CloudVpcID,
-		CloudID:    data.CloudID,
-		Name:       &data.Name,
-		Region:     data.Extension.Region,
-		Zone:       data.Extension.Zone,
-		Ipv4Cidr:   data.Ipv4Cidr,
-		Ipv6Cidr:   data.Ipv6Cidr,
-		Memo:       data.Memo,
-		BkBizID:    bizID,
-		Extension: &cloud.AwsSubnetCreateExt{
-			State:                       data.Extension.State,
-			IsDefault:                   data.Extension.IsDefault,
-			MapPublicIpOnLaunch:         data.Extension.MapPublicIpOnLaunch,
-			AssignIpv6AddressOnCreation: data.Extension.AssignIpv6AddressOnCreation,
-			HostnameType:                data.Extension.HostnameType,
-		},
-	}
-
-	return subnetReq
 }
 
 // AwsSubnetUpdate update aws subnet.

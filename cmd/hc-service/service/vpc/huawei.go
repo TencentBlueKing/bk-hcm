@@ -21,8 +21,11 @@
 package vpc
 
 import (
+	"hcm/cmd/hc-service/logics/subnet"
+	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
@@ -30,6 +33,117 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
 )
+
+// HuaWeiVpcCreate create huawei vpc.
+func (v vpc) HuaWeiVpcCreate(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcservice.VpcCreateReq[hcservice.HuaWeiVpcCreateExt])
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cli, err := v.ad.HuaWei(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// create huawei vpc
+	opt := &types.HuaWeiVpcCreateOption{
+		AccountID: req.AccountID,
+		Name:      req.Name,
+		Memo:      req.Memo,
+		Extension: &types.HuaWeiVpcCreateExt{
+			Region:              req.Extension.Region,
+			IPv4Cidr:            req.Extension.IPv4Cidr,
+			EnterpriseProjectID: req.Extension.EnterpriseProjectID,
+		},
+	}
+	err = cli.CreateVpc(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	// get created vpc info
+	sync.SleepBeforeSync()
+
+	listOpt := &types.HuaWeiVpcListOption{
+		HuaWeiListOption: adcore.HuaWeiListOption{
+			Region: req.Extension.Region,
+		},
+		Names: []string{req.Name},
+	}
+	listRes, err := cli.ListVpc(cts.Kit, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(listRes.Details) != 1 {
+		return nil, errf.Newf(errf.Aborted, "get created vpc detail, but result count is invalid")
+	}
+
+	// create hcm vpc
+	createReq := &cloud.VpcBatchCreateReq[cloud.HuaWeiVpcCreateExt]{
+		Vpcs: []cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt]{convertHuaWeiVpcCreateReq(req, &listRes.Details[0])},
+	}
+	result, err := v.cs.DataService().HuaWei.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.IDs) != 1 {
+		return nil, errf.New(errf.Aborted, "create result is invalid")
+	}
+
+	// create huawei subnets
+	if len(req.Extension.Subnets) == 0 {
+		return core.CreateResult{ID: result.IDs[0]}, nil
+	}
+
+	subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.HuaWeiSubnetCreateExt]{
+		BkBizID:    req.BkBizID,
+		AccountID:  req.AccountID,
+		Region:     listRes.Details[0].Region,
+		CloudVpcID: listRes.Details[0].CloudID,
+		CreateReqs: req.Extension.Subnets,
+	}
+	_, err = v.subnet.HuaWeiSubnetCreate(cts.Kit, subnetCreateOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return core.CreateResult{ID: result.IDs[0]}, nil
+}
+
+func convertHuaWeiVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.HuaWeiVpcCreateExt],
+	data *types.HuaWeiVpc) cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt] {
+
+	vpcReq := cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt]{
+		AccountID: req.AccountID,
+		CloudID:   data.CloudID,
+		BkBizID:   req.BkBizID,
+		BkCloudID: req.BkCloudID,
+		Name:      &data.Name,
+		Region:    data.Region,
+		Category:  req.Category,
+		Memo:      req.Memo,
+		Extension: &cloud.HuaWeiVpcCreateExt{
+			Cidr:                make([]cloud.HuaWeiCidr, 0, len(data.Extension.Cidr)),
+			Status:              data.Extension.Status,
+			EnterpriseProjectID: data.Extension.EnterpriseProjectId,
+		},
+	}
+
+	for _, cidr := range data.Extension.Cidr {
+		vpcReq.Extension.Cidr = append(vpcReq.Extension.Cidr, cloud.HuaWeiCidr{
+			Type: cidr.Type,
+			Cidr: cidr.Cidr,
+		})
+	}
+
+	return vpcReq
+}
 
 // HuaWeiVpcUpdate update huawei vpc.
 func (v vpc) HuaWeiVpcUpdate(cts *rest.Contexts) (interface{}, error) {

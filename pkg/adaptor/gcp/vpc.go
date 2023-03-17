@@ -32,6 +32,52 @@ import (
 	"google.golang.org/api/compute/v1"
 )
 
+// CreateVpc create vpc.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/insert
+func (g *Gcp) CreateVpc(kt *kit.Kit, opt *types.GcpVpcCreateOption) (uint64, error) {
+	if err := opt.Validate(); err != nil {
+		return 0, err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return 0, err
+	}
+
+	req := &compute.Network{
+		IPv4Range:                             "",
+		AutoCreateSubnetworks:                 opt.Extension.AutoCreateSubnetworks,
+		Description:                           converter.PtrToVal(opt.Memo),
+		EnableUlaInternalIpv6:                 opt.Extension.EnableUlaInternalIpv6,
+		InternalIpv6Range:                     opt.Extension.InternalIpv6Range,
+		Mtu:                                   0,
+		Name:                                  opt.Name,
+		NetworkFirewallPolicyEnforcementOrder: "",
+		RoutingConfig:                         nil,
+		// make sure AutoCreateSubnetworks field is included in request
+		// gcp has a bug with this api, if this is not specified, the request will fail
+		ForceSendFields: []string{"AutoCreateSubnetworks"},
+		NullFields:      nil,
+	}
+
+	if opt.Extension.RoutingMode != "" {
+		req.RoutingConfig = &compute.NetworkRoutingConfig{
+			RoutingMode:     opt.Extension.RoutingMode,
+			ForceSendFields: nil,
+			NullFields:      nil,
+		}
+	}
+
+	cloudProjectID := g.clientSet.credential.CloudProjectID
+	resp, err := client.Networks.Insert(cloudProjectID, req).Context(kt.Ctx).Do()
+	if err != nil {
+		logs.Errorf("create vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return 0, err
+	}
+
+	return resp.TargetId, nil
+}
+
 // UpdateVpc update vpc.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/networks/patch
 // TODO right now only memo is supported to update, but gcp description can not be updated.
@@ -52,7 +98,7 @@ func (g *Gcp) DeleteVpc(kt *kit.Kit, opt *core.BaseDeleteOption) error {
 	}
 
 	cloudProjectID := g.clientSet.credential.CloudProjectID
-	_, err = client.Networks.Delete(cloudProjectID, opt.ResourceID).Context(kt.Ctx).RequestId(kt.Rid).Do()
+	_, err = client.Networks.Delete(cloudProjectID, opt.ResourceID).Context(kt.Ctx).Do()
 	if err != nil {
 		logs.Errorf("delete vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return err

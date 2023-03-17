@@ -21,6 +21,7 @@
 package vpc
 
 import (
+	"hcm/cmd/hc-service/logics/subnet"
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/client"
@@ -30,11 +31,18 @@ import (
 // InitVpcService initial the vpc service
 func InitVpcService(cap *capability.Capability) {
 	v := &vpc{
-		ad: cap.CloudAdaptor,
-		cs: cap.ClientSet,
+		ad:     cap.CloudAdaptor,
+		cs:     cap.ClientSet,
+		subnet: subnet.NewSubnet(cap.ClientSet, cap.CloudAdaptor),
 	}
 
 	h := rest.NewHandler()
+
+	h.Add("TCloudVpcCreate", "POST", "/vendors/tcloud/vpcs/create", v.TCloudVpcCreate)
+	h.Add("AwsVpcCreate", "POST", "/vendors/aws/vpcs/create", v.AwsVpcCreate)
+	h.Add("HuaWeiVpcCreate", "POST", "/vendors/huawei/vpcs/create", v.HuaWeiVpcCreate)
+	h.Add("GcpVpcCreate", "POST", "/vendors/gcp/vpcs/create", v.GcpVpcCreate)
+	h.Add("AzureVpcCreate", "POST", "/vendors/azure/vpcs/create", v.AzureVpcCreate)
 
 	h.Add("TCloudVpcUpdate", "PATCH", "/vendors/tcloud/vpcs/{id}", v.TCloudVpcUpdate)
 	h.Add("AwsVpcUpdate", "PATCH", "/vendors/aws/vpcs/{id}", v.AwsVpcUpdate)
@@ -52,6 +60,7 @@ func InitVpcService(cap *capability.Capability) {
 }
 
 type vpc struct {
-	ad *cloudadaptor.CloudAdaptorClient
-	cs *client.ClientSet
+	ad     *cloudadaptor.CloudAdaptorClient
+	cs     *client.ClientSet
+	subnet *subnet.Subnet
 }

@@ -35,6 +35,31 @@ import (
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
+// CreateVpc create vpc.
+// reference: https://cloud.tencent.com/document/api/215/15774
+func (t *TCloud) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*types.TCloudVpc, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	vpcClient, err := t.clientSet.vpcClient(opt.Extension.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewCreateVpcRequest()
+	req.VpcName = converter.ValToPtr(opt.Name)
+	req.CidrBlock = converter.ValToPtr(opt.Extension.IPv4Cidr)
+
+	resp, err := vpcClient.CreateVpcWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("create tencent cloud vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return convertVpc(resp.Response.Vpc, opt.Extension.Region), nil
+}
+
 // UpdateVpc update vpc.
 // TODO right now only memo is supported to update, add other update operations later.
 func (t *TCloud) UpdateVpc(_ *kit.Kit, _ *types.TCloudVpcUpdateOption) error {
@@ -80,7 +105,6 @@ func (t *TCloud) ListVpc(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCloud
 	req := vpc.NewDescribeVpcsRequest()
 	if len(opt.CloudIDs) != 0 {
 		req.VpcIds = converter.SliceToPtr(opt.CloudIDs)
-		req.Limit = converter.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
 	}
 
 	if opt.Page != nil {

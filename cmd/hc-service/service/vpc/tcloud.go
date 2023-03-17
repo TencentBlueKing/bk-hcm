@@ -21,8 +21,10 @@
 package vpc
 
 import (
+	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
@@ -30,6 +32,112 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
 )
+
+// TCloudVpcCreate create tcloud vpc.
+func (v vpc) TCloudVpcCreate(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcservice.VpcCreateReq[hcservice.TCloudVpcCreateExt])
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cli, err := v.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// create tcloud vpc
+	opt := &types.TCloudVpcCreateOption{
+		AccountID: req.AccountID,
+		Name:      req.Name,
+		Memo:      req.Memo,
+		Extension: &types.TCloudVpcCreateExt{
+			Region:   req.Extension.Region,
+			IPv4Cidr: req.Extension.IPv4Cidr,
+		},
+	}
+	data, err := cli.CreateVpc(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	// create hcm vpc
+	sync.SleepBeforeSync()
+
+	createReq := &cloud.VpcBatchCreateReq[cloud.TCloudVpcCreateExt]{
+		Vpcs: []cloud.VpcCreateReq[cloud.TCloudVpcCreateExt]{convertTCloudVpcCreateReq(req, data)},
+	}
+	result, err := v.cs.DataService().TCloud.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.IDs) != 1 {
+		return nil, errf.New(errf.Aborted, "create result is invalid")
+	}
+
+	// create tcloud subnets
+	if len(req.Extension.Subnets) == 0 {
+		return core.CreateResult{ID: result.IDs[0]}, nil
+	}
+
+	subnetCreateOpt := &hcservice.TCloudSubnetBatchCreateReq{
+		BkBizID:    req.BkBizID,
+		AccountID:  req.AccountID,
+		Region:     data.Region,
+		CloudVpcID: data.CloudID,
+		Subnets:    make([]hcservice.TCloudOneSubnetCreateReq, 0, len(req.Extension.Subnets)),
+	}
+
+	for _, subnetCreateReq := range req.Extension.Subnets {
+		subnetCreateOpt.Subnets = append(subnetCreateOpt.Subnets, hcservice.TCloudOneSubnetCreateReq{
+			IPv4Cidr:          subnetCreateReq.IPv4Cidr,
+			Name:              subnetCreateReq.Name,
+			Zone:              subnetCreateReq.Zone,
+			CloudRouteTableID: subnetCreateReq.CloudRouteTableID,
+		})
+	}
+	_, err = v.subnet.TCloudSubnetCreate(cts.Kit, subnetCreateOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return core.CreateResult{ID: result.IDs[0]}, nil
+}
+
+func convertTCloudVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.TCloudVpcCreateExt],
+	data *types.TCloudVpc) cloud.VpcCreateReq[cloud.TCloudVpcCreateExt] {
+
+	vpcReq := cloud.VpcCreateReq[cloud.TCloudVpcCreateExt]{
+		AccountID: req.AccountID,
+		CloudID:   data.CloudID,
+		BkBizID:   req.BkBizID,
+		BkCloudID: req.BkCloudID,
+		Name:      &data.Name,
+		Region:    data.Region,
+		Category:  req.Category,
+		Memo:      req.Memo,
+		Extension: &cloud.TCloudVpcCreateExt{
+			Cidr:            make([]cloud.TCloudCidr, 0, len(data.Extension.Cidr)),
+			IsDefault:       data.Extension.IsDefault,
+			EnableMulticast: data.Extension.EnableMulticast,
+			DnsServerSet:    data.Extension.DnsServerSet,
+			DomainName:      data.Extension.DomainName,
+		},
+	}
+
+	for _, cidr := range data.Extension.Cidr {
+		vpcReq.Extension.Cidr = append(vpcReq.Extension.Cidr, cloud.TCloudCidr{
+			Type:     cidr.Type,
+			Cidr:     cidr.Cidr,
+			Category: cidr.Category,
+		})
+	}
+
+	return vpcReq
+}
 
 // TCloudVpcUpdate update tencent cloud vpc.
 func (v vpc) TCloudVpcUpdate(cts *rest.Contexts) (interface{}, error) {

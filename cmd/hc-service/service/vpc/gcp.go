@@ -21,8 +21,13 @@
 package vpc
 
 import (
+	"strconv"
+
+	"hcm/cmd/hc-service/logics/subnet"
+	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
@@ -30,6 +35,115 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
 )
+
+// GcpVpcCreate create gcp vpc.
+func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcservice.VpcCreateReq[hcservice.GcpVpcCreateExt])
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cli, err := v.ad.Gcp(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// create gcp vpc
+	opt := &types.GcpVpcCreateOption{
+		AccountID: req.AccountID,
+		Name:      req.Name,
+		Memo:      req.Memo,
+		Extension: &types.GcpVpcCreateExt{
+			AutoCreateSubnetworks: req.Extension.AutoCreateSubnetworks,
+			EnableUlaInternalIpv6: req.Extension.EnableUlaInternalIpv6,
+			InternalIpv6Range:     req.Extension.InternalIpv6Range,
+			RoutingMode:           req.Extension.RoutingMode,
+		},
+	}
+	vpcID, err := cli.CreateVpc(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	// get created vpc info
+	sync.SleepBeforeSync()
+
+	listOpt := &types.GcpListOption{CloudIDs: []string{strconv.FormatUint(vpcID, 10)}}
+	listRes, err := cli.ListVpc(cts.Kit, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(listRes.Details) != 1 {
+		return nil, errf.Newf(errf.Aborted, "get created vpc detail, but result count is invalid")
+	}
+
+	// create hcm vpc
+	createReq := &cloud.VpcBatchCreateReq[cloud.GcpVpcCreateExt]{
+		Vpcs: []cloud.VpcCreateReq[cloud.GcpVpcCreateExt]{convertGcpVpcCreateReq(req, &listRes.Details[0])},
+	}
+	result, err := v.cs.DataService().Gcp.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.IDs) != 1 {
+		return nil, errf.New(errf.Aborted, "create result is invalid")
+	}
+
+	// create gcp subnets
+	if len(req.Extension.Subnets) == 0 {
+		return core.CreateResult{ID: result.IDs[0]}, nil
+	}
+
+	regionSubnetMap := make(map[string][]hcservice.SubnetCreateReq[hcservice.GcpSubnetCreateExt])
+	for _, s := range req.Extension.Subnets {
+		regionSubnetMap[s.Extension.Region] = append(regionSubnetMap[s.Extension.Region], s)
+	}
+
+	for region, subnets := range regionSubnetMap {
+		subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.GcpSubnetCreateExt]{
+			BkBizID:    req.BkBizID,
+			AccountID:  req.AccountID,
+			Region:     region,
+			CloudVpcID: listRes.Details[0].CloudID,
+			CreateReqs: subnets,
+		}
+		_, err = v.subnet.GcpSubnetCreate(cts.Kit, subnetCreateOpt)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return core.CreateResult{ID: result.IDs[0]}, nil
+}
+
+func convertGcpVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.GcpVpcCreateExt],
+	data *types.GcpVpc) cloud.VpcCreateReq[cloud.GcpVpcCreateExt] {
+
+	vpcReq := cloud.VpcCreateReq[cloud.GcpVpcCreateExt]{
+		AccountID: req.AccountID,
+		CloudID:   data.CloudID,
+		BkBizID:   req.BkBizID,
+		BkCloudID: req.BkCloudID,
+		Name:      &data.Name,
+		Region:    data.Region,
+		Category:  req.Category,
+		Memo:      req.Memo,
+		Extension: &cloud.GcpVpcCreateExt{
+			SelfLink:              data.Extension.SelfLink,
+			AutoCreateSubnetworks: data.Extension.AutoCreateSubnetworks,
+			EnableUlaInternalIpv6: data.Extension.EnableUlaInternalIpv6,
+			Mtu:                   data.Extension.Mtu,
+			RoutingMode:           data.Extension.RoutingMode,
+		},
+	}
+
+	return vpcReq
+}
 
 // GcpVpcUpdate update gcp vpc.
 func (v vpc) GcpVpcUpdate(cts *rest.Contexts) (interface{}, error) {

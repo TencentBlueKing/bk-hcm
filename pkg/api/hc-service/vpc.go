@@ -19,7 +19,89 @@
 
 package hcservice
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
+)
+
+// -------------------------- Create --------------------------
+
+// VpcCreateReq defines create vpc request.
+type VpcCreateReq[T VpcCreateExt] struct {
+	*BaseVpcCreateReq `json:",inline" validate:"required"`
+	Extension         *T `json:"extension" validate:"required"`
+}
+
+// BaseVpcCreateReq defines base create vpc request info.
+type BaseVpcCreateReq struct {
+	AccountID string             `json:"account_id" validate:"required"`
+	Name      string             `json:"name" validate:"required"`
+	Category  enumor.VpcCategory `json:"category" validate:"required"`
+	Memo      *string            `json:"memo,omitempty" validate:"omitempty"`
+	BkCloudID int64              `json:"bk_cloud_id" validate:"required"`
+	BkBizID   int64              `json:"bk_biz_id" validate:"required"`
+}
+
+// Validate VpcCreateReq.
+func (c VpcCreateReq[T]) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// VpcCreateExt defines vpc extensional info.
+type VpcCreateExt interface {
+	TCloudVpcCreateExt | AwsVpcCreateExt | GcpVpcCreateExt | AzureVpcCreateExt | HuaWeiVpcCreateExt
+}
+
+// TCloudVpcCreateExt defines tencent cloud vpc extensional info.
+type TCloudVpcCreateExt struct {
+	Region   string `json:"region" validate:"required"`
+	IPv4Cidr string `json:"ipv4_cidr" validate:"required"`
+	// Subnets defines subnets that should be created in vpc. **not supported in cloud, only for product demand**
+	Subnets []TCloudOneSubnetCreateReq `json:"subnets" validate:"omitempty,max=100"`
+}
+
+// AwsVpcCreateExt defines aws vpc extensional info.
+type AwsVpcCreateExt struct {
+	Region                      string `json:"region" validate:"required"`
+	IPv4Cidr                    string `json:"ipv4_cidr" validate:"required"`
+	AmazonProvidedIpv6CidrBlock bool   `json:"amazon_provided_ipv6_cidr_block" validate:"-"`
+	InstanceTenancy             string `json:"instance_tenancy" validate:"required"`
+	// TODO dns选项，用ModifyVpcAttribute操作的
+	// Subnets defines subnets that should be created in vpc. **not supported in cloud, only for product demand**
+	Subnets []SubnetCreateReq[AwsSubnetCreateExt] `json:"subnets" validate:"omitempty,max=100"`
+}
+
+// GcpVpcCreateExt defines gcp vpc extensional info.
+type GcpVpcCreateExt struct {
+	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks" validate:"-"`
+	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6" validate:"-"`
+	InternalIpv6Range     string `json:"internal_ipv6_range" validate:"-"`
+	RoutingMode           string `json:"routing_mode,omitempty" validate:"omitempty"`
+	// Subnets defines subnets that should be created in vpc. **not supported in cloud, only for product demand**
+	Subnets []SubnetCreateReq[GcpSubnetCreateExt] `json:"subnets" validate:"omitempty,max=100"`
+}
+
+// AzureVpcCreateExt defines azure vpc extensional info.
+type AzureVpcCreateExt struct {
+	Region        string   `json:"region" validate:"required"`
+	ResourceGroup string   `json:"resource_group" validate:"required"`
+	IPv4Cidr      []string `json:"ipv4_cidr" validate:"omitempty"`
+	IPv6Cidr      []string `json:"ipv6_cidr" validate:"omitempty"`
+	// TODO BastionHost 等选项，暂时不支持启用，先不支持
+	// Subnets defines subnets that should be created in vpc. **required**
+	Subnets []SubnetCreateReq[AzureSubnetCreateExt] `json:"subnets" validate:"min=1,max=100"`
+}
+
+// HuaWeiVpcCreateExt defines huawei vpc extensional info.
+type HuaWeiVpcCreateExt struct {
+	Region              string  `json:"region" validate:"required"`
+	IPv4Cidr            string  `json:"ipv4_cidr"`
+	EnterpriseProjectID *string `json:"enterprise_project_id" validate:"omitempty"`
+	// Subnets defines subnets that should be created in vpc. **not supported in cloud, only for product demand**
+	Subnets []SubnetCreateReq[HuaWeiSubnetCreateExt] `json:"subnets" validate:"omitempty,max=100"`
+}
+
+// ------------------------- Update -------------------------
 
 // VpcUpdateReq defines update vpc request.
 type VpcUpdateReq struct {

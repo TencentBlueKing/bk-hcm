@@ -68,6 +68,7 @@ func convertSubnetCreateReq(opt *types.AzureSubnetCreateOption) *armnetwork.Subn
 	}
 
 	subnet := &armnetwork.Subnet{
+		Name: &opt.Name,
 		Properties: &armnetwork.SubnetPropertiesFormat{
 			AddressPrefix: nil,
 			AddressPrefixes: converter.SliceToPtr(append(opt.Extension.IPv4Cidr,

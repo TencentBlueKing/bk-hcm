@@ -23,6 +23,7 @@ import (
 	"context"
 	"net/http"
 
+	"hcm/pkg/api/core"
 	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
@@ -39,6 +40,30 @@ func NewVpcClient(client rest.ClientInterface) *VpcClient {
 	return &VpcClient{
 		client: client,
 	}
+}
+
+// Create vpc.
+func (v *VpcClient) Create(ctx context.Context, h http.Header,
+	req *hcservice.VpcCreateReq[hcservice.TCloudVpcCreateExt]) (*core.CreateResult, error) {
+
+	resp := new(core.CreateResp)
+
+	err := v.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/vpcs/create").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }
 
 // Update vpc.

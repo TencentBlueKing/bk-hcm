@@ -35,6 +35,42 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
+// CreateVpc create vpc.
+// reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_CreateVpc.html
+func (a *Aws) CreateVpc(kt *kit.Kit, opt *types.AwsVpcCreateOption) (*types.AwsVpc, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Extension.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &ec2.CreateVpcInput{
+		AmazonProvidedIpv6CidrBlock:     aws.Bool(opt.Extension.AmazonProvidedIpv6CidrBlock),
+		CidrBlock:                       aws.String(opt.Extension.IPv4Cidr),
+		DryRun:                          nil,
+		InstanceTenancy:                 aws.String(opt.Extension.InstanceTenancy),
+		Ipv4IpamPoolId:                  nil,
+		Ipv4NetmaskLength:               nil,
+		Ipv6CidrBlock:                   nil,
+		Ipv6CidrBlockNetworkBorderGroup: nil,
+		Ipv6IpamPoolId:                  nil,
+		Ipv6NetmaskLength:               nil,
+		Ipv6Pool:                        nil,
+		TagSpecifications:               genNameTags(vpcTagResType, opt.Name),
+	}
+
+	resp, err := client.CreateVpcWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("create aws vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return convertVpc(resp.Vpc, opt.Extension.Region), nil
+}
+
 // UpdateVpc update vpc.
 // TODO right now only memo is supported to update, add other update operations later.
 func (a *Aws) UpdateVpc(kt *kit.Kit, opt *types.AwsVpcUpdateOption) error {

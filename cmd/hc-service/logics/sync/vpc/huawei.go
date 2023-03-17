@@ -311,7 +311,7 @@ func filterHuaWeiVpcList(req *SyncHuaWeiOption, list *types.HuaWeiVpcListResult,
 				Memo:      item.Memo,
 				Extension: &cloud.HuaWeiVpcCreateExt{
 					Status:              item.Extension.Status,
-					EnterpriseProjectId: item.Extension.EnterpriseProjectId,
+					EnterpriseProjectID: item.Extension.EnterpriseProjectId,
 				},
 			}
 

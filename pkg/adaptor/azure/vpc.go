@@ -35,6 +35,52 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
 
+// CreateVpc create vpc.
+// reference: https://docs.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/create-or-update
+func (a *Azure) CreateVpc(kt *kit.Kit, opt *types.AzureVpcCreateOption) (*types.AzureVpc, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := a.clientSet.vpcClient()
+	if err != nil {
+		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
+	}
+
+	req := armnetwork.VirtualNetwork{
+		ExtendedLocation: nil,
+		Location:         &opt.Extension.Region,
+		Properties: &armnetwork.VirtualNetworkPropertiesFormat{
+			AddressSpace: &armnetwork.AddressSpace{AddressPrefixes: converter.SliceToPtr(
+				append(opt.Extension.IPv4Cidr, opt.Extension.IPv6Cidr...))},
+			BgpCommunities:         nil,
+			DdosProtectionPlan:     nil,
+			DhcpOptions:            nil,
+			EnableDdosProtection:   nil,
+			EnableVMProtection:     nil,
+			Encryption:             nil,
+			FlowTimeoutInMinutes:   nil,
+			IPAllocations:          nil,
+			Subnets:                make([]*armnetwork.Subnet, 0, len(opt.Extension.Subnets)),
+			VirtualNetworkPeerings: nil,
+		},
+	}
+	for idx := range opt.Extension.Subnets {
+		req.Properties.Subnets = append(req.Properties.Subnets, convertSubnetCreateReq(&opt.Extension.Subnets[idx]))
+	}
+	resp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.Extension.ResourceGroup, opt.Name, req, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := resp.PollUntilDone(kt.Ctx, new(runtime.PollUntilDoneOptions))
+	if err != nil {
+		return nil, err
+	}
+
+	return convertVpc(&res.VirtualNetwork, opt.Extension.ResourceGroup), nil
+}
+
 // UpdateVpc update vpc.
 // TODO right now only memo is supported to update, add other update operations later.
 func (a *Azure) UpdateVpc(kt *kit.Kit, opt *types.AzureVpcUpdateOption) error {
@@ -148,7 +194,7 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 		CloudID: SPtrToLowerStr(data.ID),
 		Name:    SPtrToLowerStr(data.Name),
 		Region:  SPtrToLowerNoSpaceStr(data.Location),
-		Extension: &cloud.AzureVpcExtension{
+		Extension: &types.AzureVpcExtension{
 			ResourceGroupName: strings.ToLower(resourceGroup),
 			DNSServers:        make([]string, 0),
 			Cidr:              nil,
@@ -180,6 +226,14 @@ func convertVpc(data *armnetwork.VirtualNetwork, resourceGroup string) *types.Az
 				Cidr: *prefix,
 			})
 		}
+	}
+
+	for _, subnet := range data.Properties.Subnets {
+		if subnet == nil {
+			continue
+		}
+
+		v.Extension.Subnets = append(v.Extension.Subnets, *convertSubnet(subnet, resourceGroup, v.CloudID))
 	}
 
 	return v

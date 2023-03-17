@@ -21,8 +21,11 @@
 package vpc
 
 import (
+	"hcm/cmd/hc-service/logics/subnet"
+	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
@@ -30,6 +33,106 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
 )
+
+// AwsVpcCreate create aws vpc.
+func (v vpc) AwsVpcCreate(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcservice.VpcCreateReq[hcservice.AwsVpcCreateExt])
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cli, err := v.ad.Aws(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// create aws vpc
+	opt := &types.AwsVpcCreateOption{
+		AccountID: req.AccountID,
+		Name:      req.Name,
+		Memo:      req.Memo,
+		Extension: &types.AwsVpcCreateExt{
+			Region:                      req.Extension.Region,
+			IPv4Cidr:                    req.Extension.IPv4Cidr,
+			AmazonProvidedIpv6CidrBlock: req.Extension.AmazonProvidedIpv6CidrBlock,
+			InstanceTenancy:             req.Extension.InstanceTenancy,
+		},
+	}
+	data, err := cli.CreateVpc(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	// create hcm vpc
+	sync.SleepBeforeSync()
+
+	createReq := &cloud.VpcBatchCreateReq[cloud.AwsVpcCreateExt]{
+		Vpcs: []cloud.VpcCreateReq[cloud.AwsVpcCreateExt]{convertAwsVpcCreateReq(req, data)},
+	}
+	result, err := v.cs.DataService().Aws.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.IDs) != 1 {
+		return nil, errf.New(errf.Aborted, "create result is invalid")
+	}
+
+	// create aws subnets
+	if len(req.Extension.Subnets) == 0 {
+		return core.CreateResult{ID: result.IDs[0]}, nil
+	}
+
+	subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.AwsSubnetCreateExt]{
+		BkBizID:    req.BkBizID,
+		AccountID:  req.AccountID,
+		Region:     data.Region,
+		CloudVpcID: data.CloudID,
+		CreateReqs: req.Extension.Subnets,
+	}
+	_, err = v.subnet.AwsSubnetCreate(cts.Kit, subnetCreateOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return core.CreateResult{ID: result.IDs[0]}, nil
+}
+
+func convertAwsVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.AwsVpcCreateExt],
+	data *types.AwsVpc) cloud.VpcCreateReq[cloud.AwsVpcCreateExt] {
+
+	vpcReq := cloud.VpcCreateReq[cloud.AwsVpcCreateExt]{
+		AccountID: req.AccountID,
+		CloudID:   data.CloudID,
+		BkBizID:   req.BkBizID,
+		BkCloudID: req.BkCloudID,
+		Name:      &data.Name,
+		Region:    data.Region,
+		Category:  req.Category,
+		Memo:      req.Memo,
+		Extension: &cloud.AwsVpcCreateExt{
+			Cidr:               make([]cloud.AwsCidr, 0, len(data.Extension.Cidr)),
+			State:              data.Extension.State,
+			InstanceTenancy:    data.Extension.InstanceTenancy,
+			IsDefault:          data.Extension.IsDefault,
+			EnableDnsHostnames: data.Extension.EnableDnsHostnames,
+			EnableDnsSupport:   data.Extension.EnableDnsSupport,
+		},
+	}
+	for _, cidr := range data.Extension.Cidr {
+		vpcReq.Extension.Cidr = append(vpcReq.Extension.Cidr, cloud.AwsCidr{
+			Type:        cidr.Type,
+			Cidr:        cidr.Cidr,
+			AddressPool: cidr.AddressPool,
+			State:       cidr.State,
+		})
+	}
+
+	return vpcReq
+}
 
 // AwsVpcUpdate update aws vpc.
 func (v vpc) AwsVpcUpdate(cts *rest.Contexts) (interface{}, error) {

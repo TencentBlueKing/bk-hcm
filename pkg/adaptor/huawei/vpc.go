@@ -35,6 +35,39 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
 
+// CreateVpc create vpc.
+// reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_api01_0001.html
+// TODO returns created vpc after sdk supports (API docs returns created vpc info)
+func (h *HuaWei) CreateVpc(kt *kit.Kit, opt *types.HuaWeiVpcCreateOption) error {
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	vpcClient, err := h.clientSet.vpcClientV2(opt.Extension.Region)
+	if err != nil {
+		return fmt.Errorf("new vpc client failed, err: %v", err)
+	}
+
+	req := &v2.CreateVpcRequest{
+		Body: &v2.CreateVpcRequestBody{
+			Vpc: &v2.CreateVpcOption{
+				Name:                &opt.Name,
+				Description:         opt.Memo,
+				Cidr:                &opt.Extension.IPv4Cidr,
+				EnterpriseProjectId: opt.Extension.EnterpriseProjectID,
+			},
+		},
+	}
+
+	_, err = vpcClient.CreateVpc(req)
+	if err != nil {
+		logs.Errorf("create huawei vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
 // UpdateVpc update vpc.
 // reference: https://support.huaweicloud.com/intl/zh-cn/api-vpc/vpc_api01_0004.html
 func (h *HuaWei) UpdateVpc(kt *kit.Kit, opt *types.HuaWeiVpcUpdateOption) error {

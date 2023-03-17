@@ -26,6 +26,99 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
+// -------------------------- Create --------------------------
+
+// VpcCreateOption defines create vpc options.
+type VpcCreateOption[T VpcCreateExt] struct {
+	AccountID string  `json:"account_id" validate:"required"`
+	Name      string  `json:"name" validate:"required"`
+	Memo      *string `json:"memo,omitempty" validate:"omitempty"`
+	Extension *T      `json:"extension" validate:"required"`
+}
+
+// VpcCreateExt defines vpc extensional info.
+type VpcCreateExt interface {
+	TCloudVpcCreateExt | AwsVpcCreateExt | GcpVpcCreateExt | AzureVpcCreateExt | HuaWeiVpcCreateExt
+}
+
+// TCloudVpcCreateExt defines tencent cloud vpc extensional info.
+type TCloudVpcCreateExt struct {
+	Region   string `json:"region" validate:"required"`
+	IPv4Cidr string `json:"ipv4_cidr" validate:"required,cidrv4"`
+}
+
+// AwsVpcCreateExt defines aws vpc extensional info.
+type AwsVpcCreateExt struct {
+	Region                      string `json:"region" validate:"required"`
+	IPv4Cidr                    string `json:"ipv4_cidr" validate:"required,cidrv4"`
+	AmazonProvidedIpv6CidrBlock bool   `json:"amazon_provided_ipv6_cidr_block" validate:"-"`
+	InstanceTenancy             string `json:"instance_tenancy" validate:"required"`
+}
+
+// GcpVpcCreateExt defines gcp vpc extensional info.
+type GcpVpcCreateExt struct {
+	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks" validate:"-"`
+	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6" validate:"-"`
+	InternalIpv6Range     string `json:"internal_ipv6_range" validate:"-"`
+	RoutingMode           string `json:"routing_mode,omitempty" validate:"omitempty"`
+}
+
+// AzureVpcCreateExt defines azure vpc extensional info.
+type AzureVpcCreateExt struct {
+	Region        string                    `json:"region" validate:"required"`
+	ResourceGroup string                    `json:"resource_group" validate:"required"`
+	IPv4Cidr      []string                  `json:"ipv4_cidr" validate:"required,dive,cidrv4"`
+	IPv6Cidr      []string                  `json:"ipv6_cidr" validate:"omitempty,dive,cidrv6"`
+	Subnets       []AzureSubnetCreateOption `json:"subnets" validate:"min=1,max=100"`
+}
+
+// HuaWeiVpcCreateExt defines huawei vpc extensional info.
+type HuaWeiVpcCreateExt struct {
+	Region              string  `json:"region" validate:"required"`
+	IPv4Cidr            string  `json:"ipv4_cidr" validate:"required,cidrv4"`
+	EnterpriseProjectID *string `json:"enterprise_project_id" validate:"omitempty"`
+}
+
+// TCloudVpcCreateOption defines tencent cloud create vpc options.
+type TCloudVpcCreateOption VpcCreateOption[TCloudVpcCreateExt]
+
+// Validate TCloudVpcCreateOption.
+func (c TCloudVpcCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// AwsVpcCreateOption defines aws create vpc options.
+type AwsVpcCreateOption VpcCreateOption[AwsVpcCreateExt]
+
+// Validate AwsVpcCreateOption.
+func (c AwsVpcCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// GcpVpcCreateOption defines gcp create vpc options.
+type GcpVpcCreateOption VpcCreateOption[GcpVpcCreateExt]
+
+// Validate GcpVpcCreateOption.
+func (c GcpVpcCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// AzureVpcCreateOption defines azure create vpc options.
+type AzureVpcCreateOption VpcCreateOption[AzureVpcCreateExt]
+
+// Validate AzureVpcCreateOption.
+func (c AzureVpcCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
+// HuaWeiVpcCreateOption defines HuaWei create vpc options.
+type HuaWeiVpcCreateOption VpcCreateOption[HuaWeiVpcCreateExt]
+
+// Validate HuaWeiVpcCreateOption.
+func (c HuaWeiVpcCreateOption) Validate() error {
+	return validator.Validate.Struct(c)
+}
+
 // -------------------------- Update --------------------------
 
 // VpcUpdateOption defines update vpc options.
@@ -176,12 +269,26 @@ type HuaWeiVpcListResult struct {
 }
 
 // Vpc defines vpc struct.
-type Vpc[T cloud.VpcExtension] struct {
+type Vpc[T VpcExtension] struct {
 	CloudID   string  `json:"cloud_id"`
 	Name      string  `json:"name"`
 	Region    string  `json:"region"`
 	Memo      *string `json:"memo,omitempty"`
 	Extension *T      `json:"extension"`
+}
+
+// AzureVpcExtension defines azure vpc extensional info.
+type AzureVpcExtension struct {
+	ResourceGroupName string            `json:"resource_group_name"`
+	DNSServers        []string          `json:"dns_servers"`
+	Cidr              []cloud.AzureCidr `json:"cidr"`
+	Subnets           []AzureSubnet
+}
+
+// VpcExtension defines vpc extensional info.
+type VpcExtension interface {
+	cloud.TCloudVpcExtension | cloud.AwsVpcExtension | cloud.GcpVpcExtension | AzureVpcExtension |
+		cloud.HuaWeiVpcExtension
 }
 
 // TCloudVpc defines tencent cloud vpc.
@@ -194,7 +301,7 @@ type AwsVpc Vpc[cloud.AwsVpcExtension]
 type GcpVpc Vpc[cloud.GcpVpcExtension]
 
 // AzureVpc defines azure vpc.
-type AzureVpc Vpc[cloud.AzureVpcExtension]
+type AzureVpc Vpc[AzureVpcExtension]
 
 // HuaWeiVpc defines huawei vpc.
 type HuaWeiVpc Vpc[cloud.HuaWeiVpcExtension]

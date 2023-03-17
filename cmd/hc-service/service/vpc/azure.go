@@ -21,8 +21,11 @@
 package vpc
 
 import (
+	subnetlogics "hcm/cmd/hc-service/logics/subnet"
+	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
@@ -30,6 +33,104 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
 )
+
+// AzureVpcCreate create azure vpc.
+func (v vpc) AzureVpcCreate(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcservice.VpcCreateReq[hcservice.AzureVpcCreateExt])
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cli, err := v.ad.Azure(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// create azure vpc
+	opt := &types.AzureVpcCreateOption{
+		AccountID: req.AccountID,
+		Name:      req.Name,
+		Memo:      req.Memo,
+		Extension: &types.AzureVpcCreateExt{
+			Region:        req.Extension.Region,
+			ResourceGroup: req.Extension.ResourceGroup,
+			IPv4Cidr:      req.Extension.IPv4Cidr,
+			IPv6Cidr:      req.Extension.IPv6Cidr,
+			Subnets:       make([]types.AzureSubnetCreateOption, 0, len(req.Extension.Subnets)),
+		},
+	}
+	for _, subnet := range req.Extension.Subnets {
+		opt.Extension.Subnets = append(opt.Extension.Subnets, *subnetlogics.ConvAzureCreateReq(&subnet))
+	}
+	data, err := cli.CreateVpc(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	// create hcm vpc & subnets
+	sync.SleepBeforeSync()
+
+	createReq := &cloud.VpcBatchCreateReq[cloud.AzureVpcCreateExt]{
+		Vpcs: []cloud.VpcCreateReq[cloud.AzureVpcCreateExt]{convertVpcCreateReq(req, data)},
+	}
+	result, err := v.cs.DataService().Azure.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.IDs) != 1 {
+		return nil, errf.New(errf.Aborted, "create result is invalid")
+	}
+
+	if len(req.Extension.Subnets) == 0 {
+		return core.CreateResult{ID: result.IDs[0]}, nil
+	}
+
+	subnetSyncOpt := &subnetlogics.AzureSubnetSyncOptions{
+		BkBizID:       req.BkBizID,
+		AccountID:     req.AccountID,
+		CloudVpcID:    data.CloudID,
+		ResourceGroup: data.Extension.ResourceGroupName,
+		Subnets:       data.Extension.Subnets,
+	}
+	_, err = v.subnet.AzureSubnetSync(cts.Kit, subnetSyncOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return core.CreateResult{ID: result.IDs[0]}, nil
+}
+
+func convertVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.AzureVpcCreateExt],
+	data *types.AzureVpc) cloud.VpcCreateReq[cloud.AzureVpcCreateExt] {
+
+	vpcReq := cloud.VpcCreateReq[cloud.AzureVpcCreateExt]{
+		AccountID: req.AccountID,
+		CloudID:   data.CloudID,
+		BkBizID:   req.BkBizID,
+		BkCloudID: req.BkCloudID,
+		Name:      &data.Name,
+		Region:    data.Region,
+		Category:  req.Category,
+		Memo:      req.Memo,
+		Extension: &cloud.AzureVpcCreateExt{
+			ResourceGroupName: data.Extension.ResourceGroupName,
+			DNSServers:        data.Extension.DNSServers,
+			Cidr:              make([]cloud.AzureCidr, 0, len(data.Extension.Cidr)),
+		},
+	}
+	for _, cidr := range data.Extension.Cidr {
+		vpcReq.Extension.Cidr = append(vpcReq.Extension.Cidr, cloud.AzureCidr{
+			Type: cidr.Type,
+			Cidr: cidr.Cidr,
+		})
+	}
+
+	return vpcReq
+}
 
 // AzureVpcUpdate update azure vpc.
 func (v vpc) AzureVpcUpdate(cts *rest.Contexts) (interface{}, error) {

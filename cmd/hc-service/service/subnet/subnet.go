@@ -21,6 +21,7 @@
 package subnet
 
 import (
+	subnetlogics "hcm/cmd/hc-service/logics/subnet"
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/client"
@@ -30,8 +31,9 @@ import (
 // InitSubnetService initial the subnet service
 func InitSubnetService(cap *capability.Capability) {
 	s := &subnet{
-		ad: cap.CloudAdaptor,
-		cs: cap.ClientSet,
+		ad:     cap.CloudAdaptor,
+		cs:     cap.ClientSet,
+		subnet: subnetlogics.NewSubnet(cap.ClientSet, cap.CloudAdaptor),
 	}
 
 	h := rest.NewHandler()
@@ -64,6 +66,7 @@ func InitSubnetService(cap *capability.Capability) {
 }
 
 type subnet struct {
-	ad *cloudadaptor.CloudAdaptorClient
-	cs *client.ClientSet
+	ad     *cloudadaptor.CloudAdaptorClient
+	cs     *client.ClientSet
+	subnet *subnetlogics.Subnet
 }

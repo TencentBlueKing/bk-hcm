@@ -98,7 +98,7 @@ type TCloudSubnetsCreateOption struct {
 	AccountID  string                     `json:"account_id" validate:"required"`
 	Region     string                     `json:"region" validate:"required"`
 	CloudVpcID string                     `json:"cloud_vpc_id" validate:"required"`
-	Subnets    []TCloudOneSubnetCreateOpt `json:"subnets" validate:"min=1"`
+	Subnets    []TCloudOneSubnetCreateOpt `json:"subnets" validate:"min=1,max=100"`
 }
 
 // TCloudOneSubnetCreateOpt defines create one tencent cloud subnets options for TCloudSubnetsCreateOption.
