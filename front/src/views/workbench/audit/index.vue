@@ -191,9 +191,7 @@ const handleReset = () => {
 };
 const handleShowDetailSlider = (row: any) => {
   details.id = row.id;
-  if (isBizType.value) {
-    details.bizId = row.bk_biz_id;
-  }
+  details.bizId = isBizType.value ? row.bk_biz_id : null;
   details.show = true;
 };
 
@@ -206,8 +204,8 @@ watch(() => filter.bk_biz_id, (bizId, oldBizId) => {
 watch(isBizType, (isBizType) => {
   if (!isBizType) {
     filter.bk_biz_id = null;
-    datas.value = [];
   }
+  datas.value = [];
 });
 </script>
 
