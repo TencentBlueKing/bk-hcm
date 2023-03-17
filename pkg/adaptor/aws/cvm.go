@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"hcm/pkg/adaptor/poller"
+	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
@@ -293,7 +294,7 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 		opt.Region,
 	}
 	respPoller := poller.Poller[*Aws, []*ec2.Instance, poller.BaseDoneResult]{Handler: handler}
-	result, err := respPoller.PollUntilDone(a, kt, cloudIDs, nil)
+	result, err := respPoller.PollUntilDone(a, kt, cloudIDs, types.NewBatchCreateCvmPollerOption())
 	if err != nil {
 		return nil, err
 	}
@@ -311,10 +312,13 @@ func (h *createAwsCvmPollingHandler) Done(cvms []*ec2.Instance) (bool, *poller.B
 		SuccessCloudIDs: make([]string, 0),
 		FailedCloudIDs:  make([]string, 0),
 	}
+	flag := true
 	for _, instance := range cvms {
 		// 创建中
 		if converter.PtrToVal(instance.State.Code) == 0 {
-			return false, nil
+			flag = false
+			result.UnknownCloudIDs = append(result.UnknownCloudIDs, *instance.InstanceId)
+			continue
 		}
 
 		// 生产失败
@@ -327,7 +331,7 @@ func (h *createAwsCvmPollingHandler) Done(cvms []*ec2.Instance) (bool, *poller.B
 		result.SuccessCloudIDs = append(result.SuccessCloudIDs, *instance.InstanceId)
 	}
 
-	return true, result
+	return flag, result
 }
 
 func (h *createAwsCvmPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Instance, error) {

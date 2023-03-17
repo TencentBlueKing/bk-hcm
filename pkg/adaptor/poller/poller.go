@@ -20,22 +20,29 @@
 package poller
 
 import (
+	"errors"
 	"time"
 
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/retry"
 )
 
 // BaseDoneResult ...
 type BaseDoneResult struct {
 	SuccessCloudIDs []string
 	FailedCloudIDs  []string
+	UnknownCloudIDs []string
 	FailedMessage   string
 }
 
 // PollingHandler polling handler.
 type PollingHandler[T any, R any, Result any] interface {
+	// Done 根据 poll 获取的实例数据，判断是否符合预期，如果有实例状态无法判断，返回false
 	Done(pollResult R) (bool, *Result)
+	// Poll 通过实例ids查询实例结果，如果查询不到报错
 	Poll(client T, kt *kit.Kit, ids []*string) (R, error)
 }
 
@@ -44,28 +51,92 @@ type Poller[T any, R any, Result any] struct {
 	Handler PollingHandler[T, R, Result]
 }
 
+const (
+	DefaultTimeoutTimeSec = 60
+)
+
 // PollUntilDoneOption ...
 type PollUntilDoneOption struct {
+	TimeoutTimeSecond uint64             `json:"timeout_time_second" validate:"required"`
+	Retry             *retry.RetryPolicy `json:"retry" validate:"required"`
+}
+
+// TrySetDefaultValue ...
+func (opt *PollUntilDoneOption) TrySetDefaultValue() {
+	if opt == nil {
+		return
+	}
+
+	if opt.TimeoutTimeSecond == 0 {
+		opt.TimeoutTimeSecond = DefaultTimeoutTimeSec
+	}
+
+	if opt.Retry == nil {
+		opt.Retry = retry.NewRetryPolicy(0, [2]uint{})
+	}
+}
+
+// Validate ...
+func (opt PollUntilDoneOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }
 
 // PollUntilDone ...
 func (poller *Poller[T, R, Result]) PollUntilDone(client T, kt *kit.Kit, ids []*string,
 	opt *PollUntilDoneOption) (*Result, error) {
 
-	// TODO 增加超时控制等有效结束条件
-	for {
-		time.Sleep(1 * time.Second)
+	if opt == nil {
+		return nil, errors.New("option is required")
+	}
 
+	opt.TrySetDefaultValue()
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	// 重试次数归位
+	opt.Retry.Reset()
+
+	pollerFunc := func() (bool, *Result, error) {
 		pollResult, err := poller.Handler.Poll(client, kt, ids)
 		if err != nil {
-			logs.Errorf("failed to finish the request:  %v, cloudIDs: %v, rid: %s", err, ids, kt.Rid)
-			time.Sleep(1 * time.Second)
+			return false, nil, err
+		}
+
+		ok, result := poller.Handler.Done(pollResult)
+		return ok, result, nil
+	}
+
+	endTime := time.Now().Add(time.Duration(opt.TimeoutTimeSecond) * time.Second)
+	for {
+		if time.Now().After(endTime) {
+			// 达到超时时间，成功多少返回多少，无法判断的统一放到unknown类
+			_, result, err := pollerFunc()
+			if err != nil {
+				logs.Errorf("poll until done timeout, but exec poller func failed, err: %v, ids: %v, timeout: %ds, "+
+					"rid: %s", err, converter.SliceToPtr(ids), opt.TimeoutTimeSecond, kt.Rid)
+				return nil, err
+			}
+
+			logs.V(2).Infof("poll until done timeout, ids: %v, result: %v, rid: %s", converter.SliceToPtr(ids),
+				result, kt.Rid)
+			return result, nil
+		}
+
+		ok, result, err := pollerFunc()
+		if err != nil {
+			logs.V(3).Errorf("exec poller func failed, err: %v, retryCount: %d, rid: %s", err,
+				opt.Retry.RetryCount(), kt.Rid)
+			opt.Retry.Sleep()
 			continue
 		}
 
-		done, result := poller.Handler.Done(pollResult)
-		if done {
-			return result, nil
+		if !ok {
+			opt.Retry.Sleep()
+			continue
 		}
+
+		return result, nil
 	}
 }

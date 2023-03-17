@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/poller"
+	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
@@ -305,7 +306,7 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 		opt.Region,
 	}
 	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
-	result, err := respPoller.PollUntilDone(t, kt, resp.Response.InstanceIdSet, nil)
+	result, err := respPoller.PollUntilDone(t, kt, resp.Response.InstanceIdSet, types.NewBatchCreateCvmPollerOption())
 	if err != nil {
 		return nil, err
 	}
@@ -322,11 +323,15 @@ func (h *createCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.Base
 	result := &poller.BaseDoneResult{
 		SuccessCloudIDs: make([]string, 0),
 		FailedCloudIDs:  make([]string, 0),
+		UnknownCloudIDs: make([]string, 0),
 	}
+	flag := true
 	for _, instance := range cvms {
 		// 创建中
 		if converter.PtrToVal(instance.InstanceState) == "PENDING" {
-			return false, nil
+			flag = false
+			result.UnknownCloudIDs = append(result.UnknownCloudIDs, *instance.InstanceId)
+			continue
 		}
 
 		// 生产失败
@@ -339,7 +344,7 @@ func (h *createCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.Base
 		result.SuccessCloudIDs = append(result.SuccessCloudIDs, *instance.InstanceId)
 	}
 
-	return true, result
+	return flag, result
 }
 
 func (h *createCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {

@@ -86,7 +86,6 @@
 //		"glob" pattern and N is a V level. For instance,
 //			-vmodule=gopher*=3
 //		sets the V level to 3 in all Go files whose names begin "gopher".
-//
 package glog
 
 import (
@@ -1097,6 +1096,14 @@ func (v Verbose) Infoln(args ...interface{}) {
 func (v Verbose) Infof(format string, args ...interface{}) {
 	if v {
 		logging.printf(infoLog, format, args...)
+	}
+}
+
+// Errorf is equivalent to the global Errorf function, guarded by the value of v.
+// See the documentation of V for usage.
+func (v Verbose) Errorf(format string, args ...interface{}) {
+	if v {
+		logging.printf(errorLog, format, args...)
 	}
 }
 

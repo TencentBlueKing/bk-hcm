@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"hcm/pkg/adaptor/poller"
+	"hcm/pkg/adaptor/types"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -286,7 +287,8 @@ func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) (*poller.Base
 		opt.Zone,
 	}
 	respPoller := poller.Poller[*Gcp, []*compute.Operation, poller.BaseDoneResult]{Handler: handler}
-	result, err := respPoller.PollUntilDone(g, kt, []*string{to.Ptr(resp.OperationGroupId)}, nil)
+	result, err := respPoller.PollUntilDone(g, kt, []*string{to.Ptr(resp.OperationGroupId)},
+		types.NewBatchCreateCvmPollerOption())
 	if err != nil {
 		return nil, err
 	}
@@ -304,13 +306,27 @@ func (h *createCvmPollingHandler) Done(items []*compute.Operation) (bool, *polle
 		SuccessCloudIDs: make([]string, 0),
 		FailedCloudIDs:  make([]string, 0),
 	}
+	flag := true
 	for _, item := range items {
-		if item.OperationType == "insert" {
+		if item.OperationType == "insert" && item.Status == "DONE" {
 			result.SuccessCloudIDs = append(result.SuccessCloudIDs, strconv.FormatUint(item.TargetId, 10))
+			continue
+		}
+
+		if item.OperationType == "insert" && item.Status == "PENDING" {
+			flag = false
+			result.UnknownCloudIDs = append(result.UnknownCloudIDs, strconv.FormatUint(item.TargetId, 10))
+			continue
+		}
+
+		if item.OperationType == "insert" && item.Status == "RUNNING" {
+			flag = false
+			result.UnknownCloudIDs = append(result.UnknownCloudIDs, strconv.FormatUint(item.TargetId, 10))
+			continue
 		}
 	}
 
-	return true, result
+	return flag, result
 }
 
 func (h *createCvmPollingHandler) Poll(client *Gcp, kt *kit.Kit, operGroupIDs []*string) ([]*compute.Operation, error) {
