@@ -17,28 +17,42 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package handlers
 
 import (
-	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	"fmt"
+
+	dataprotoimage "hcm/pkg/api/data-service/cloud/image"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/runtime/filter"
 )
 
-type ApplicationOfAddAccount struct {
-	handlers.BaseApplicationHandler
-
-	req              *proto.AccountAddReq
-	platformManagers []string
-}
-
-// NewApplicationOfAddAccount ...
-func NewApplicationOfAddAccount(
-	opt *handlers.HandlerOption, req *proto.AccountAddReq, platformManagers []string,
-) *ApplicationOfAddAccount {
-	return &ApplicationOfAddAccount{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.AddAccount),
-		req:                    req,
-		platformManagers:       platformManagers,
+// GetImage 查询镜像
+func (a *BaseApplicationHandler) GetImage(
+	vendor enumor.Vendor, cloudImageID string,
+) (*dataprotoimage.ImageResult, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+			filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: cloudImageID},
+		},
 	}
+	// 查询
+	resp, err := a.Client.DataService().Global.ListImage(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&dataprotoimage.ImageListReq{
+			Filter: reqFilter,
+			Page:   a.getPageOfOneLimit(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found %s image by cloud_id(%s)", vendor, cloudImageID)
+	}
+
+	return resp.Details[0], nil
 }

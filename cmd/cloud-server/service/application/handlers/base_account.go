@@ -17,28 +17,38 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package handlers
 
 import (
-	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
-	"hcm/pkg/criteria/enumor"
+	"fmt"
+
+	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/runtime/filter"
 )
 
-type ApplicationOfAddAccount struct {
-	handlers.BaseApplicationHandler
-
-	req              *proto.AccountAddReq
-	platformManagers []string
-}
-
-// NewApplicationOfAddAccount ...
-func NewApplicationOfAddAccount(
-	opt *handlers.HandlerOption, req *proto.AccountAddReq, platformManagers []string,
-) *ApplicationOfAddAccount {
-	return &ApplicationOfAddAccount{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.AddAccount),
-		req:                    req,
-		platformManagers:       platformManagers,
+// GetAccount 查询账号信息
+func (a *BaseApplicationHandler) GetAccount(accountID string) (*dataproto.BaseAccountListResp, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: accountID},
+		},
 	}
+	// 查询
+	resp, err := a.Client.DataService().Global.Account.List(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&dataproto.AccountListReq{
+			Filter: reqFilter,
+			Page:   a.getPageOfOneLimit(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found account by id(%s)", accountID)
+	}
+
+	return resp.Details[0], nil
 }

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strings"
 
+	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service"
@@ -68,6 +69,10 @@ type applicationSvc struct {
 
 func (a *applicationSvc) getCallbackUrl() string {
 	return fmt.Sprintf("%s/api/v1/cloud/applications/approve", strings.TrimRight(a.bkHcmUrl, "/"))
+}
+
+func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerOption {
+	return &handlers.HandlerOption{Cts: cts, Client: a.client, EsbClient: a.esbClient, Cipher: a.cipher}
 }
 
 func (a *applicationSvc) getApprovalProcessServiceID(

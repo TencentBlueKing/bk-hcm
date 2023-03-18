@@ -17,28 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package handlers
 
 import (
-	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
-	"hcm/pkg/criteria/enumor"
+	"fmt"
+
+	hcprotoinstancetype "hcm/pkg/api/hc-service/instance-type"
 )
 
-type ApplicationOfAddAccount struct {
-	handlers.BaseApplicationHandler
-
-	req              *proto.AccountAddReq
-	platformManagers []string
-}
-
-// NewApplicationOfAddAccount ...
-func NewApplicationOfAddAccount(
-	opt *handlers.HandlerOption, req *proto.AccountAddReq, platformManagers []string,
-) *ApplicationOfAddAccount {
-	return &ApplicationOfAddAccount{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.AddAccount),
-		req:                    req,
-		platformManagers:       platformManagers,
+// GetTCloudInstanceType 查询机型
+func (a *BaseApplicationHandler) GetTCloudInstanceType(
+	accountID, region, zone, instanceType string,
+) (*hcprotoinstancetype.TCloudInstanceTypeResp, error) {
+	resp, err := a.Client.HCService().TCloud.InstanceType.List(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&hcprotoinstancetype.TCloudInstanceTypeListReq{AccountID: accountID, Region: region, Zone: zone},
+	)
+	if err != nil {
+		return nil, err
 	}
+
+	// 遍历查找
+	for _, i := range resp {
+		if i.InstanceType == instanceType {
+			return i, nil
+		}
+	}
+
+	return nil, fmt.Errorf(
+		"not found tcloud instanceType by accountID(%s), region(%s), zone (%s)",
+		accountID, region, zone,
+	)
 }

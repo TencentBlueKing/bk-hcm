@@ -17,28 +17,39 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package handlers
 
 import (
-	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
-	"hcm/pkg/criteria/enumor"
+	"fmt"
+
+	corecloud "hcm/pkg/api/core/cloud"
+	dataprotoregion "hcm/pkg/api/data-service/cloud/region"
+	"hcm/pkg/runtime/filter"
 )
 
-type ApplicationOfAddAccount struct {
-	handlers.BaseApplicationHandler
-
-	req              *proto.AccountAddReq
-	platformManagers []string
-}
-
-// NewApplicationOfAddAccount ...
-func NewApplicationOfAddAccount(
-	opt *handlers.HandlerOption, req *proto.AccountAddReq, platformManagers []string,
-) *ApplicationOfAddAccount {
-	return &ApplicationOfAddAccount{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.AddAccount),
-		req:                    req,
-		platformManagers:       platformManagers,
+// GetTCloudRegion 查询云地域信息
+func (a *BaseApplicationHandler) GetTCloudRegion(region string) (*corecloud.TCloudRegion, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "region_id", Op: filter.Equal.Factory(), Value: region},
+		},
 	}
+	// 查询
+	resp, err := a.Client.DataService().TCloud.Region.ListRegion(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&dataprotoregion.TCloudRegionListReq{
+			Filter: reqFilter,
+			Page:   a.getPageOfOneLimit(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found tcloud region by region_id(%s)", region)
+	}
+
+	return &resp.Details[0], nil
 }

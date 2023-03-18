@@ -127,6 +127,8 @@ func parseReqFromApplicationContent[T any](content string) (*T, error) {
 func (a *applicationSvc) getHandlerByApplication(
 	cts *rest.Contexts, application *dataproto.ApplicationResp,
 ) (handlers.ApplicationHandler, error) {
+	opt := a.getHandlerOption(cts)
+
 	// 只解析申请单的vendor
 	onlyVendor, err := parseReqFromApplicationContent[struct {
 		Vendor enumor.Vendor `json:"vendor"`
@@ -143,7 +145,7 @@ func (a *applicationSvc) getHandlerByApplication(
 		if err != nil {
 			return nil, err
 		}
-		return accounthandler.NewApplicationOfAddAccount(cts, a.client, a.esbClient, a.cipher, req, []string{}), nil
+		return accounthandler.NewApplicationOfAddAccount(opt, req, []string{}), nil
 	case enumor.CreateCvm:
 		switch vendor {
 		case enumor.TCloud:
@@ -151,9 +153,7 @@ func (a *applicationSvc) getHandlerByApplication(
 			if err != nil {
 				return nil, err
 			}
-			return tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(
-				cts, a.client, a.esbClient, a.cipher, req, []string{}, true,
-			), nil
+			return tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req, []string{}, true), nil
 		}
 	}
 	return nil, errors.New("not handler to support")

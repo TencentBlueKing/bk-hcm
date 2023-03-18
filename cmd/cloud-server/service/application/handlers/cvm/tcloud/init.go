@@ -24,11 +24,7 @@ import (
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	proto "hcm/pkg/api/cloud-server/application"
 	hcproto "hcm/pkg/api/hc-service/cvm"
-	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/esb"
 )
 
 // ApplicationOfCreateTCloudCvm ...
@@ -39,6 +35,19 @@ type ApplicationOfCreateTCloudCvm struct {
 	req                        *proto.TCloudCvmCreateReq
 	platformManagers           []string
 	ignorePasswordVerification bool
+}
+
+// NewApplicationOfCreateTCloudCvm ...
+func NewApplicationOfCreateTCloudCvm(
+	opt *handlers.HandlerOption, req *proto.TCloudCvmCreateReq, platformManagers []string, ignorePasswordVerification bool,
+) *ApplicationOfCreateTCloudCvm {
+	return &ApplicationOfCreateTCloudCvm{
+		BaseApplicationHandler:     handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm),
+		vendor:                     enumor.TCloud,
+		req:                        req,
+		platformManagers:           platformManagers,
+		ignorePasswordVerification: ignorePasswordVerification,
+	}
 }
 
 func (a *ApplicationOfCreateTCloudCvm) toHcProtoTCloudBatchCreateReq(dryRun bool) *hcproto.TCloudBatchCreateReq {
@@ -66,6 +75,7 @@ func (a *ApplicationOfCreateTCloudCvm) toHcProtoTCloudBatchCreateReq(dryRun bool
 	}
 
 	return &hcproto.TCloudBatchCreateReq{
+		DryRun:                dryRun,
 		AccountID:             req.AccountID,
 		Region:                req.Region,
 		Name:                  req.Name,
@@ -87,25 +97,5 @@ func (a *ApplicationOfCreateTCloudCvm) toHcProtoTCloudBatchCreateReq(dryRun bool
 		},
 		DataDisk:         dataDisk,
 		PublicIPAssigned: req.PublicIPAssigned,
-	}
-}
-
-// NewApplicationOfCreateTCloudCvm ...
-func NewApplicationOfCreateTCloudCvm(
-	cts *rest.Contexts, client *client.ClientSet, esbClient esb.Client, cipher cryptography.Crypto,
-	req *proto.TCloudCvmCreateReq, platformManagers []string, ignorePasswordVerification bool,
-) *ApplicationOfCreateTCloudCvm {
-	return &ApplicationOfCreateTCloudCvm{
-		BaseApplicationHandler: handlers.BaseApplicationHandler{
-			ApplicationType: enumor.CreateCvm,
-			Cts:             cts,
-			Client:          client,
-			EsbClient:       esbClient,
-			Cipher:          cipher,
-		},
-		vendor:                     enumor.TCloud,
-		req:                        req,
-		platformManagers:           platformManagers,
-		ignorePasswordVerification: ignorePasswordVerification,
 	}
 }

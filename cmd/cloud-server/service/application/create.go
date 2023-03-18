@@ -89,7 +89,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 func parseReqFromRequestBody[T any](cts *rest.Contexts) (*T, error) {
 	req := new(T)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 	return req, nil
 }
@@ -98,9 +98,9 @@ func parseReqFromRequestBody[T any](cts *rest.Contexts) (*T, error) {
 func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, error) {
 	req, err := parseReqFromRequestBody[proto.AccountAddReq](cts)
 	if err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		return nil, err
 	}
-	handler := accounthandler.NewApplicationOfAddAccount(cts, a.client, a.esbClient, a.cipher, req, a.platformManagers)
+	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), req, a.platformManagers)
 
 	return a.create(cts, handler)
 }
@@ -112,15 +112,15 @@ func (a *applicationSvc) CreateForCreateCvm(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	opt := a.getHandlerOption(cts)
+
 	switch vendor {
 	case enumor.TCloud:
 		req, err := parseReqFromRequestBody[proto.TCloudCvmCreateReq](cts)
 		if err != nil {
-			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+			return nil, err
 		}
-		handler := tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(
-			cts, a.client, a.esbClient, a.cipher, req, a.platformManagers, false,
-		)
+		handler := tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req, a.platformManagers, false)
 		return a.create(cts, handler)
 	}
 

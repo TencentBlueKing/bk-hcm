@@ -17,28 +17,44 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package account
+package handlers
 
 import (
-	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	"fmt"
+
+	"hcm/pkg/api/core"
+	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/runtime/filter"
 )
 
-type ApplicationOfAddAccount struct {
-	handlers.BaseApplicationHandler
-
-	req              *proto.AccountAddReq
-	platformManagers []string
-}
-
-// NewApplicationOfAddAccount ...
-func NewApplicationOfAddAccount(
-	opt *handlers.HandlerOption, req *proto.AccountAddReq, platformManagers []string,
-) *ApplicationOfAddAccount {
-	return &ApplicationOfAddAccount{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.AddAccount),
-		req:                    req,
-		platformManagers:       platformManagers,
+// GetVpc 查询VPC
+func (a *BaseApplicationHandler) GetVpc(
+	vendor enumor.Vendor, accountID, cloudVpcID string,
+) (*corecloud.BaseVpc, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+			filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
+			filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: cloudVpcID},
+		},
 	}
+	// 查询
+	resp, err := a.Client.DataService().Global.Vpc.List(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&core.ListReq{
+			Filter: reqFilter,
+			Page:   a.getPageOfOneLimit(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found %s vpc by cloud_id(%s)", vendor, cloudVpcID)
+	}
+
+	return &resp.Details[0], nil
 }
