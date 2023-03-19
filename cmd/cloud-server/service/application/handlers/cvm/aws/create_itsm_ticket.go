@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package aws
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ import (
 )
 
 // CreateITSMTicket 使用请求数据创建申请
-func (a *ApplicationOfCreateTCloudCvm) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
+func (a *ApplicationOfCreateAwsCvm) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
 	// 渲染ITSM表单内容
 	contentDisplay, err := a.renderITSMForm()
 	if err != nil {
@@ -63,7 +63,7 @@ type formItem struct {
 	Value string
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
+func (a *ApplicationOfCreateAwsCvm) renderBaseInfo() ([]formItem, error) {
 	req := a.req
 	formItems := make([]formItem, 0)
 
@@ -85,7 +85,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.vendor]})
 
 	// 云地域
-	regionInfo, err := a.GetTCloudRegion(req.Region)
+	regionInfo, err := a.GetAwsRegion(req.Region)
 	if err != nil {
 		return formItems, err
 	}
@@ -99,7 +99,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "名称", Value: req.Name})
 
 	// 机型
-	instanceTypeInfo, err := a.GetTCloudInstanceType(req.AccountID, req.Region, req.Zone, req.InstanceType)
+	instanceTypeInfo, err := a.GetAwsInstanceType(req.AccountID, req.Region, req.InstanceType)
 	if err != nil {
 		return formItems, err
 	}
@@ -119,7 +119,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	return formItems, nil
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
+func (a *ApplicationOfCreateAwsCvm) renderNetwork() ([]formItem, error) {
 	req := a.req
 	formItems := make([]formItem, 0)
 
@@ -162,53 +162,27 @@ func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
 	return formItems, nil
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderDiskForm() []formItem {
+func (a *ApplicationOfCreateAwsCvm) renderDiskForm() []formItem {
 	req := a.req
 	formItems := make([]formItem, 0)
 
 	// 系统盘
 	formItems = append(formItems, formItem{
 		Label: "系统盘",
-		Value: fmt.Sprintf("%s, %dGB", SystemDiskTypeNameMap[req.SystemDisk.DiskType], req.SystemDisk.DiskSizeGB),
+		Value: fmt.Sprintf("%s, %dGB", DiskTypeNameMap[req.SystemDisk.DiskType], req.SystemDisk.DiskSizeGB),
 	})
 
 	// 数据盘
 	disks := make([]string, 0, len(req.DataDisk))
 	for _, d := range req.DataDisk {
-		disks = append(disks, fmt.Sprintf("%s(%dGB,%d个)", DataDiskTypeNameMap[d.DiskType], d.DiskSizeGB, d.DiskCount))
+		disks = append(disks, fmt.Sprintf("%s(%dGB,%d个)", DiskTypeNameMap[d.DiskType], d.DiskSizeGB, d.DiskCount))
 	}
 	formItems = append(formItems, formItem{Label: "数据盘", Value: strings.Join(disks, ",")})
 
 	return formItems
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderInstanceChargeForm() []formItem {
-	req := a.req
-	formItems := make([]formItem, 0)
-
-	// 计费模式
-	formItems = append(formItems, formItem{Label: "计费模式", Value: InstanceChargeTypeNameMap[req.InstanceChargeType]})
-	// 购买时长
-	if req.InstanceChargePaidPeriod < 12 {
-		formItems = append(
-			formItems, formItem{Label: "购买时长", Value: fmt.Sprintf("%d月", req.InstanceChargePaidPeriod)},
-		)
-	} else {
-		formItems = append(
-			formItems, formItem{Label: "购买时长", Value: fmt.Sprintf("%d年", req.InstanceChargePaidPeriod/12)},
-		)
-	}
-	// 是否自动续费
-	if req.AutoRenew {
-		formItems = append(formItems, formItem{Label: "是否自动续费", Value: "是"})
-	} else {
-		formItems = append(formItems, formItem{Label: "是否自动续费", Value: "否"})
-	}
-
-	return formItems
-}
-
-func (a *ApplicationOfCreateTCloudCvm) renderITSMForm() (string, error) {
+func (a *ApplicationOfCreateAwsCvm) renderITSMForm() (string, error) {
 	req := a.req
 
 	formItems := make([]formItem, 0)
@@ -229,9 +203,6 @@ func (a *ApplicationOfCreateTCloudCvm) renderITSMForm() (string, error) {
 
 	// 硬盘
 	formItems = append(formItems, a.renderDiskForm()...)
-
-	// 计费
-	formItems = append(formItems, a.renderInstanceChargeForm()...)
 
 	// 购买数量
 	formItems = append(formItems, formItem{Label: "购买数量", Value: fmt.Sprintf("%d", req.RequiredCount)})

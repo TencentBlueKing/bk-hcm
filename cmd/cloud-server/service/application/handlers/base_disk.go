@@ -17,30 +17,39 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package handlers
 
 import (
-	"errors"
+	"hcm/pkg/api/core"
+	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/runtime/filter"
 )
 
-// CheckReq 检查申请单的数据是否正确
-func (a *ApplicationOfCreateTCloudCvm) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
-		return err
+// ListDiskIDByCvm 查询主机对应的硬盘
+func (a *BaseApplicationHandler) ListDiskIDByCvm(cvmIDs []string) ([]string, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "cmv_id", Op: filter.In.Factory(), Value: cvmIDs},
+		},
 	}
-
-	// TCloud 支持 DryRun，可预校验
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(
+	// 查询
+	resp, err := a.Client.DataService().Global.ListDiskCvmRel(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		a.toHcProtoTCloudBatchCreateReq(true),
+		&dataproto.DiskCvmRelListReq{
+			Filter: reqFilter,
+			Page:   &core.BasePage{Count: false, Start: 0, Limit: uint(len(cvmIDs) * 20)}, // 每台主机最多挂20块硬盘
+		},
 	)
 	if err != nil {
-		return err
-	}
-	if result != nil && result.FailedMessage != "" {
-		return errors.New(result.FailedMessage)
+		return nil, err
 	}
 
-	return nil
+	diskIDs := make([]string, 0, len(resp.Details))
+	for _, rel := range resp.Details {
+		diskIDs = append(diskIDs, rel.DiskID)
+	}
+
+	return diskIDs, nil
 }

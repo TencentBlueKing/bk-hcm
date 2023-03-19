@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package aws
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ import (
 )
 
 // PrepareReq 预处理请求参数，比如敏感数据加密
-func (a *ApplicationOfCreateTCloudCvm) PrepareReq() error {
+func (a *ApplicationOfCreateAwsCvm) PrepareReq() error {
 	// 密码加密
 	encryptedPassword := a.Cipher.EncryptToBase64(a.req.Password)
 	a.req.Password = encryptedPassword
@@ -37,19 +37,19 @@ func (a *ApplicationOfCreateTCloudCvm) PrepareReq() error {
 }
 
 // GenerateApplicationContent 获取预处理过的数据，以interface格式
-func (a *ApplicationOfCreateTCloudCvm) GenerateApplicationContent() interface{} {
+func (a *ApplicationOfCreateAwsCvm) GenerateApplicationContent() interface{} {
 	// 需要将Vendor也存储进去
 	return &struct {
-		*proto.TCloudCvmCreateReq `json:",inline"`
-		Vendor                    enumor.Vendor `json:"vendor"`
+		*proto.AwsCvmCreateReq `json:",inline"`
+		Vendor                 enumor.Vendor `json:"vendor"`
 	}{
-		TCloudCvmCreateReq: a.req,
-		Vendor:             a.vendor,
+		AwsCvmCreateReq: a.req,
+		Vendor:          a.vendor,
 	}
 }
 
 // PrepareReqFromContent 预处理请求参数，对于申请内容来着DB，其实入库前是加密了的
-func (a *ApplicationOfCreateTCloudCvm) PrepareReqFromContent() error {
+func (a *ApplicationOfCreateAwsCvm) PrepareReqFromContent() error {
 	// 解密密码
 	password, err := a.Cipher.DecryptFromBase64(a.req.Password)
 	if err != nil {

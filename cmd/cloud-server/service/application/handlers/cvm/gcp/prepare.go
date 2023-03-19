@@ -17,30 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package gcp
 
 import (
-	"errors"
+	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/pkg/criteria/enumor"
 )
 
-// CheckReq 检查申请单的数据是否正确
-func (a *ApplicationOfCreateTCloudCvm) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
-		return err
-	}
+// PrepareReq 预处理请求参数，比如敏感数据加密
+func (a *ApplicationOfCreateGcpCvm) PrepareReq() error {
+	// GCP 主机公钥无需加密
+	return nil
+}
 
-	// TCloud 支持 DryRun，可预校验
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		a.toHcProtoTCloudBatchCreateReq(true),
-	)
-	if err != nil {
-		return err
+// GenerateApplicationContent 获取预处理过的数据，以interface格式
+func (a *ApplicationOfCreateGcpCvm) GenerateApplicationContent() interface{} {
+	// 需要将Vendor也存储进去
+	return &struct {
+		*proto.GcpCvmCreateReq `json:",inline"`
+		Vendor                 enumor.Vendor `json:"vendor"`
+	}{
+		GcpCvmCreateReq: a.req,
+		Vendor:          a.vendor,
 	}
-	if result != nil && result.FailedMessage != "" {
-		return errors.New(result.FailedMessage)
-	}
+}
 
+// PrepareReqFromContent 预处理请求参数，对于申请内容来着DB，其实入库前是加密了的
+func (a *ApplicationOfCreateGcpCvm) PrepareReqFromContent() error {
+	// GCP 主机公钥无需解密
 	return nil
 }

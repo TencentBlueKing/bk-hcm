@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package huawei
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
@@ -27,52 +27,49 @@ import (
 	"hcm/pkg/criteria/enumor"
 )
 
-// ApplicationOfCreateTCloudCvm ...
-type ApplicationOfCreateTCloudCvm struct {
+// ApplicationOfCreateHuaWeiCvm ...
+type ApplicationOfCreateHuaWeiCvm struct {
 	handlers.BaseApplicationHandler
 
 	vendor           enumor.Vendor
-	req              *proto.TCloudCvmCreateReq
+	req              *proto.HuaWeiCvmCreateReq
 	platformManagers []string
 }
 
-// NewApplicationOfCreateTCloudCvm ...
-func NewApplicationOfCreateTCloudCvm(
-	opt *handlers.HandlerOption, req *proto.TCloudCvmCreateReq, platformManagers []string,
-) *ApplicationOfCreateTCloudCvm {
-	return &ApplicationOfCreateTCloudCvm{
+// NewApplicationOfCreateHuaWeiCvm ...
+func NewApplicationOfCreateHuaWeiCvm(
+	opt *handlers.HandlerOption, req *proto.HuaWeiCvmCreateReq, platformManagers []string,
+) *ApplicationOfCreateHuaWeiCvm {
+	return &ApplicationOfCreateHuaWeiCvm{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm),
-		vendor:                 enumor.TCloud,
+		vendor:                 enumor.HuaWei,
 		req:                    req,
 		platformManagers:       platformManagers,
 	}
 }
 
-func (a *ApplicationOfCreateTCloudCvm) toHcProtoTCloudBatchCreateReq(dryRun bool) *hcproto.TCloudBatchCreateReq {
+func (a *ApplicationOfCreateHuaWeiCvm) toHcProtoHuaWeiBatchCreateReq(dryRun bool) *hcproto.HuaWeiBatchCreateReq {
 	req := a.req
-
-	// 自动续费&续费周期
-	instanceChargePrepaid := &typecvm.TCloudInstanceChargePrepaid{
-		Period: &req.InstanceChargePaidPeriod,
-		// 默认通知但不自动续费
-		RenewFlag: typecvm.NotifyAndManualRenew,
-	}
-	if req.AutoRenew {
-		instanceChargePrepaid.RenewFlag = typecvm.NotifyAndAutoRenew
-	}
-
 	// 数据盘
-	dataDisk := make([]typecvm.TCloudDataDisk, 0)
+	dataVolumes := make([]typecvm.HuaWeiVolume, 0)
 	for _, d := range req.DataDisk {
 		for i := int64(0); i < d.DiskCount; i++ {
-			dataDisk = append(dataDisk, typecvm.TCloudDataDisk{
-				DiskSizeGB: &d.DiskSizeGB,
-				DiskType:   d.DiskType,
+			dataVolumes = append(dataVolumes, typecvm.HuaWeiVolume{
+				VolumeType: d.DiskType,
+				SizeGB:     int32(d.DiskSizeGB),
 			})
 		}
 	}
 
-	return &hcproto.TCloudBatchCreateReq{
+	// 计费
+	periodType := typecvm.Month
+	periodNum := int32(req.InstanceChargePaidPeriod)
+	if periodNum > 9 {
+		periodType = typecvm.Year
+		periodNum = int32(req.InstanceChargePaidPeriod / 12)
+	}
+
+	return &hcproto.HuaWeiBatchCreateReq{
 		DryRun:                dryRun,
 		AccountID:             req.AccountID,
 		Region:                req.Region,
@@ -81,19 +78,23 @@ func (a *ApplicationOfCreateTCloudCvm) toHcProtoTCloudBatchCreateReq(dryRun bool
 		InstanceType:          req.InstanceType,
 		CloudImageID:          req.CloudImageID,
 		Password:              req.Password,
-		RequiredCount:         req.RequiredCount,
+		RequiredCount:         int32(req.RequiredCount),
 		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
 		// TODO: 暂不支持
-		// ClientToken:           ,
-		CloudVpcID:            req.CloudVpcID,
-		CloudSubnetID:         req.CloudSubnetID,
-		InstanceChargeType:    req.InstanceChargeType,
-		InstanceChargePrepaid: instanceChargePrepaid,
-		SystemDisk: &typecvm.TCloudSystemDisk{
-			DiskType:   req.SystemDisk.DiskType,
-			DiskSizeGB: &req.SystemDisk.DiskSizeGB,
+		// ClientToken: nil,
+		CloudVpcID:    req.CloudVpcID,
+		CloudSubnetID: req.CloudSubnetID,
+		Description:   req.Memo,
+		RootVolume: &typecvm.HuaWeiVolume{
+			VolumeType: req.SystemDisk.DiskType,
+			SizeGB:     int32(req.SystemDisk.DiskSizeGB),
 		},
-		DataDisk:         dataDisk,
-		PublicIPAssigned: req.PublicIPAssigned,
+		DataVolume: dataVolumes,
+		InstanceCharge: &typecvm.HuaWeiInstanceCharge{
+			ChargingMode: req.InstanceChargeType,
+			PeriodType:   &periodType,
+			PeriodNum:    &periodNum,
+			IsAutoRenew:  &req.AutoRenew,
+		},
 	}
 }

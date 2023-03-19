@@ -17,18 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package gcp
 
 import (
 	"fmt"
 	"strings"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/thirdparty/esb/itsm"
 )
 
 // CreateITSMTicket 使用请求数据创建申请
-func (a *ApplicationOfCreateTCloudCvm) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
+func (a *ApplicationOfCreateGcpCvm) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
 	// 渲染ITSM表单内容
 	contentDisplay, err := a.renderITSMForm()
 	if err != nil {
@@ -63,7 +64,7 @@ type formItem struct {
 	Value string
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
+func (a *ApplicationOfCreateGcpCvm) renderBaseInfo() ([]formItem, error) {
 	req := a.req
 	formItems := make([]formItem, 0)
 
@@ -85,7 +86,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.vendor]})
 
 	// 云地域
-	regionInfo, err := a.GetTCloudRegion(req.Region)
+	regionInfo, err := a.GetGcpRegion(req.Region)
 	if err != nil {
 		return formItems, err
 	}
@@ -99,7 +100,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "名称", Value: req.Name})
 
 	// 机型
-	instanceTypeInfo, err := a.GetTCloudInstanceType(req.AccountID, req.Region, req.Zone, req.InstanceType)
+	instanceTypeInfo, err := a.GetGcpInstanceType(req.AccountID, req.Zone, req.InstanceType)
 	if err != nil {
 		return formItems, err
 	}
@@ -119,7 +120,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	return formItems, nil
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
+func (a *ApplicationOfCreateGcpCvm) renderNetwork() ([]formItem, error) {
 	req := a.req
 	formItems := make([]formItem, 0)
 
@@ -137,13 +138,6 @@ func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
 	}
 	formItems = append(formItems, formItem{Label: "子网", Value: subnetInfo.Name})
 
-	// 是否自动分配公网IP
-	if req.PublicIPAssigned {
-		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "是"})
-	} else {
-		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "否"})
-	}
-
 	// 所属的蓝鲸云区域
 	bkCloudAreaName, err := a.GetCloudAreaName(vpcInfo.BkCloudID)
 	if err != nil {
@@ -151,64 +145,39 @@ func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
 	}
 	formItems = append(formItems, formItem{Label: "所属的蓝鲸云区域", Value: bkCloudAreaName})
 
-	// 安全组
-	securityGroups, err := a.ListSecurityGroup(a.vendor, req.AccountID, req.CloudSecurityGroupIDs)
-	securityGroupNames := make([]string, 0, len(req.CloudSecurityGroupIDs))
-	for _, s := range securityGroups {
-		securityGroupNames = append(securityGroupNames, s.Name)
-	}
-	formItems = append(formItems, formItem{Label: "安全组", Value: strings.Join(securityGroupNames, ",")})
-
 	return formItems, nil
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderDiskForm() []formItem {
+func (a *ApplicationOfCreateGcpCvm) renderDiskForm() []formItem {
 	req := a.req
 	formItems := make([]formItem, 0)
 
 	// 系统盘
 	formItems = append(formItems, formItem{
 		Label: "系统盘",
-		Value: fmt.Sprintf("%s, %dGB", SystemDiskTypeNameMap[req.SystemDisk.DiskType], req.SystemDisk.DiskSizeGB),
+		Value: fmt.Sprintf("%s, %dGB", DiskTypeNameMap[req.SystemDisk.DiskType], req.SystemDisk.DiskSizeGB),
 	})
 
 	// 数据盘
 	disks := make([]string, 0, len(req.DataDisk))
+	modeNameMap := map[typecvm.GcpDiskMode]string{typecvm.ReadOnly: "只读", typecvm.ReadWrite: "读写"}
+	autoDeleteNameMap := map[bool]string{true: "删除磁盘", false: "保留磁盘"}
 	for _, d := range req.DataDisk {
-		disks = append(disks, fmt.Sprintf("%s(%dGB,%d个)", DataDiskTypeNameMap[d.DiskType], d.DiskSizeGB, d.DiskCount))
+		disks = append(
+			disks,
+			fmt.Sprintf(
+				"%s(%dGB,%d个,%s,%s)",
+				DiskTypeNameMap[d.DiskType], d.DiskSizeGB, d.DiskCount,
+				modeNameMap[d.Mode], autoDeleteNameMap[d.AutoDelete],
+			),
+		)
 	}
 	formItems = append(formItems, formItem{Label: "数据盘", Value: strings.Join(disks, ",")})
 
 	return formItems
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderInstanceChargeForm() []formItem {
-	req := a.req
-	formItems := make([]formItem, 0)
-
-	// 计费模式
-	formItems = append(formItems, formItem{Label: "计费模式", Value: InstanceChargeTypeNameMap[req.InstanceChargeType]})
-	// 购买时长
-	if req.InstanceChargePaidPeriod < 12 {
-		formItems = append(
-			formItems, formItem{Label: "购买时长", Value: fmt.Sprintf("%d月", req.InstanceChargePaidPeriod)},
-		)
-	} else {
-		formItems = append(
-			formItems, formItem{Label: "购买时长", Value: fmt.Sprintf("%d年", req.InstanceChargePaidPeriod/12)},
-		)
-	}
-	// 是否自动续费
-	if req.AutoRenew {
-		formItems = append(formItems, formItem{Label: "是否自动续费", Value: "是"})
-	} else {
-		formItems = append(formItems, formItem{Label: "是否自动续费", Value: "否"})
-	}
-
-	return formItems
-}
-
-func (a *ApplicationOfCreateTCloudCvm) renderITSMForm() (string, error) {
+func (a *ApplicationOfCreateGcpCvm) renderITSMForm() (string, error) {
 	req := a.req
 
 	formItems := make([]formItem, 0)
@@ -229,9 +198,6 @@ func (a *ApplicationOfCreateTCloudCvm) renderITSMForm() (string, error) {
 
 	// 硬盘
 	formItems = append(formItems, a.renderDiskForm()...)
-
-	// 计费
-	formItems = append(formItems, a.renderInstanceChargeForm()...)
 
 	// 购买数量
 	formItems = append(formItems, formItem{Label: "购买数量", Value: fmt.Sprintf("%d", req.RequiredCount)})

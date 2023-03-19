@@ -17,30 +17,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package gcp
 
 import (
-	"errors"
+	typecvm "hcm/pkg/adaptor/types/cvm"
 )
 
-// CheckReq 检查申请单的数据是否正确
-func (a *ApplicationOfCreateTCloudCvm) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
-		return err
+var (
+	DiskTypeNameMap = map[typecvm.GcpDiskType]string{
+		typecvm.PdStandard: "标准永久性磁盘",
+		typecvm.PdBalanced: "均衡永久性磁盘",
+		typecvm.PdSsd:      "性能(SSD)永久性磁盘",
+		typecvm.PdExtreme:  "极端永久性磁盘",
 	}
-
-	// TCloud 支持 DryRun，可预校验
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		a.toHcProtoTCloudBatchCreateReq(true),
-	)
-	if err != nil {
-		return err
-	}
-	if result != nil && result.FailedMessage != "" {
-		return errors.New(result.FailedMessage)
-	}
-
-	return nil
-}
+)

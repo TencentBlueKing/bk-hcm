@@ -17,30 +17,22 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package huawei
 
 import (
-	"errors"
+	typecvm "hcm/pkg/adaptor/types/cvm"
 )
 
-// CheckReq 检查申请单的数据是否正确
-func (a *ApplicationOfCreateTCloudCvm) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
-		return err
+var (
+	DiskTypeNameMap = map[typecvm.HuaWeiVolumeType]string{
+		typecvm.Sata:  "SATA",
+		typecvm.Sas:   "SAS",
+		typecvm.Gpssd: "GPSSD",
+		typecvm.Ssd:   "SSD",
+		typecvm.Essd:  "ESSD",
 	}
-
-	// TCloud 支持 DryRun，可预校验
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		a.toHcProtoTCloudBatchCreateReq(true),
-	)
-	if err != nil {
-		return err
+	InstanceChargeTypeNameMap = map[typecvm.HuaWeiChargingMode]string{
+		typecvm.PrePaid:  "包年包月",
+		typecvm.PostPaid: "按量计费",
 	}
-	if result != nil && result.FailedMessage != "" {
-		return errors.New(result.FailedMessage)
-	}
-
-	return nil
-}
+)

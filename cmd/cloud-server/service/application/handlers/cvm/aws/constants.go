@@ -17,30 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package aws
 
 import (
-	"errors"
+	typecvm "hcm/pkg/adaptor/types/cvm"
 )
 
-// CheckReq 检查申请单的数据是否正确
-func (a *ApplicationOfCreateTCloudCvm) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
-		return err
+var (
+	DiskTypeNameMap = map[typecvm.AwsVolumeType]string{
+		typecvm.GP3:      "通用型SSD卷(gp3)",
+		typecvm.GP2:      "通用型SSD卷(gp2)",
+		typecvm.IO1:      "预置IOPS SSD卷(io1)",
+		typecvm.IO2:      "预置IOPS SSD卷(io2)",
+		typecvm.ST1:      "吞吐量优化型HDD卷(st1)",
+		typecvm.SC1:      "Cold HDD卷(sc1)",
+		typecvm.Standard: "上一代磁介质卷(standard)",
 	}
-
-	// TCloud 支持 DryRun，可预校验
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		a.toHcProtoTCloudBatchCreateReq(true),
-	)
-	if err != nil {
-		return err
-	}
-	if result != nil && result.FailedMessage != "" {
-		return errors.New(result.FailedMessage)
-	}
-
-	return nil
-}
+)

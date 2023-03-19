@@ -17,30 +17,40 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package handlers
 
 import (
-	"errors"
+	"hcm/pkg/api/core"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
+	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/runtime/filter"
 )
 
-// CheckReq 检查申请单的数据是否正确
-func (a *ApplicationOfCreateTCloudCvm) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
-		return err
+// ListCvm 查询主机列表
+func (a *BaseApplicationHandler) ListCvm(
+	vendor enumor.Vendor, accountID string, cloudCvmIDs []string,
+) ([]corecvm.BaseCvm, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+			filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
+			filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudCvmIDs},
+		},
 	}
-
-	// TCloud 支持 DryRun，可预校验
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(
+	// 查询
+	resp, err := a.Client.DataService().Global.Cvm.ListCvm(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		a.toHcProtoTCloudBatchCreateReq(true),
+		&dataproto.CvmListReq{
+			Filter: reqFilter,
+			Page:   &core.BasePage{Count: false, Start: 0, Limit: uint(len(cloudCvmIDs))},
+		},
 	)
 	if err != nil {
-		return err
-	}
-	if result != nil && result.FailedMessage != "" {
-		return errors.New(result.FailedMessage)
+		return nil, err
 	}
 
-	return nil
+	return resp.Details, nil
 }

@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package gcp
 
 import (
 	"fmt"
@@ -28,12 +28,12 @@ import (
 )
 
 // Deliver 执行资源交付
-func (a *ApplicationOfCreateTCloudCvm) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
+func (a *ApplicationOfCreateGcpCvm) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
 	// 创建主机
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(
+	result, err := a.Client.HCService().Gcp.Cvm.BatchCreateCvm(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		a.toHcProtoTCloudBatchCreateReq(false),
+		a.toHcProtoGcpBatchCreateReq(),
 	)
 	if err != nil || result == nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err}, err
@@ -65,7 +65,7 @@ func (a *ApplicationOfCreateTCloudCvm) Deliver() (enumor.ApplicationStatus, map[
 	return status, deliverDetail, nil
 }
 
-func (a *ApplicationOfCreateTCloudCvm) assignToBiz(cloudCvmIDs []string) ([]string, error) {
+func (a *ApplicationOfCreateGcpCvm) assignToBiz(cloudCvmIDs []string) ([]string, error) {
 	req := a.req
 	// 云ID查询主机
 	cvmInfo, err := a.ListCvm(a.vendor, req.AccountID, cloudCvmIDs)

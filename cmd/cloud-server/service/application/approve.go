@@ -25,6 +25,10 @@ import (
 
 	"hcm/cmd/cloud-server/service/application/handlers"
 	accounthandler "hcm/cmd/cloud-server/service/application/handlers/account"
+	awscvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/aws"
+	azurecvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/azure"
+	gcpcvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/gcp"
+	huaweicvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/huawei"
 	tcloudcvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
 	dataproto "hcm/pkg/api/data-service"
@@ -124,6 +128,45 @@ func parseReqFromApplicationContent[T any](content string) (*T, error) {
 	return req, nil
 }
 
+func (a *applicationSvc) getHandlerOfCreateCvm(
+	opt *handlers.HandlerOption, vendor enumor.Vendor, application *dataproto.ApplicationResp,
+) (handlers.ApplicationHandler, error) {
+	switch vendor {
+	case enumor.TCloud:
+		req, err := parseReqFromApplicationContent[proto.TCloudCvmCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req, []string{}), nil
+	case enumor.Aws:
+		req, err := parseReqFromApplicationContent[proto.AwsCvmCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return awscvmhandler.NewApplicationOfCreateAwsCvm(opt, req, []string{}), nil
+	case enumor.HuaWei:
+		req, err := parseReqFromApplicationContent[proto.HuaWeiCvmCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return huaweicvmhandler.NewApplicationOfCreateHuaWeiCvm(opt, req, []string{}), nil
+	case enumor.Gcp:
+		req, err := parseReqFromApplicationContent[proto.GcpCvmCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return gcpcvmhandler.NewApplicationOfCreateGcpCvm(opt, req, []string{}), nil
+	case enumor.Azure:
+		req, err := parseReqFromApplicationContent[proto.AzureCvmCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return azurecvmhandler.NewApplicationOfCreateAzureCvm(opt, req, []string{}), nil
+	}
+
+	return nil, fmt.Errorf("not support handler of create %s cvm", vendor)
+}
+
 func (a *applicationSvc) getHandlerByApplication(
 	cts *rest.Contexts, application *dataproto.ApplicationResp,
 ) (handlers.ApplicationHandler, error) {
@@ -147,14 +190,7 @@ func (a *applicationSvc) getHandlerByApplication(
 		}
 		return accounthandler.NewApplicationOfAddAccount(opt, req, []string{}), nil
 	case enumor.CreateCvm:
-		switch vendor {
-		case enumor.TCloud:
-			req, err := parseReqFromApplicationContent[proto.TCloudCvmCreateReq](application.Content)
-			if err != nil {
-				return nil, err
-			}
-			return tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req, []string{}, true), nil
-		}
+		return a.getHandlerOfCreateCvm(opt, vendor, application)
 	}
 	return nil, errors.New("not handler to support")
 }

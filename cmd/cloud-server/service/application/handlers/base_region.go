@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	corecloud "hcm/pkg/api/core/cloud"
+	corecloudregion "hcm/pkg/api/core/cloud/region"
 	dataprotoregion "hcm/pkg/api/data-service/cloud/region"
 	"hcm/pkg/runtime/filter"
 )
@@ -49,6 +50,114 @@ func (a *BaseApplicationHandler) GetTCloudRegion(region string) (*corecloud.TClo
 	}
 	if resp == nil || len(resp.Details) == 0 {
 		return nil, fmt.Errorf("not found tcloud region by region_id(%s)", region)
+	}
+
+	return &resp.Details[0], nil
+}
+
+// GetAwsRegion 查询云地域信息
+func (a *BaseApplicationHandler) GetAwsRegion(region string) (*corecloud.AwsRegion, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "region_id", Op: filter.Equal.Factory(), Value: region},
+		},
+	}
+	// 查询
+	resp, err := a.Client.DataService().Aws.Region.ListRegion(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&dataprotoregion.AwsRegionListReq{
+			Filter: reqFilter,
+			Page:   a.getPageOfOneLimit(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found aws region by region_id(%s)", region)
+	}
+
+	return &resp.Details[0], nil
+}
+
+// GetHuaWeiRegion 查询云地域信息
+func (a *BaseApplicationHandler) GetHuaWeiRegion(region string) (*corecloudregion.HuaWeiRegion, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "region_id", Op: filter.Equal.Factory(), Value: region},
+		},
+	}
+	// 查询
+	resp, err := a.Client.DataService().HuaWei.Region.ListRegion(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&dataprotoregion.HuaWeiRegionListReq{
+			Filter: reqFilter,
+			Page:   a.getPageOfOneLimit(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found huawei region by region_id(%s)", region)
+	}
+
+	return &resp.Details[0], nil
+}
+
+// GetGcpRegion 查询云地域信息
+func (a *BaseApplicationHandler) GetGcpRegion(region string) (*corecloud.GcpRegion, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "region_id", Op: filter.Equal.Factory(), Value: region},
+		},
+	}
+	// 查询
+	resp, err := a.Client.DataService().Gcp.Region.ListRegion(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&dataprotoregion.GcpRegionListReq{
+			Filter: reqFilter,
+			Page:   a.getPageOfOneLimit(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found gcp region by region_id(%s)", region)
+	}
+
+	return &resp.Details[0], nil
+}
+
+// GetAzureRegion 查询云地域信息
+func (a *BaseApplicationHandler) GetAzureRegion(region string) (*corecloudregion.AzureRegion, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: region},
+		},
+	}
+	// 查询
+	resp, err := a.Client.DataService().Azure.Region.ListRegion(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&dataprotoregion.AzureRegionListReq{
+			Filter: reqFilter,
+			Page:   a.getPageOfOneLimit(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found azure region by region_id(%s)", region)
 	}
 
 	return &resp.Details[0], nil

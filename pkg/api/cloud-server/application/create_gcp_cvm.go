@@ -1,0 +1,85 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+package application
+
+import (
+	"fmt"
+
+	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/criteria/validator"
+)
+
+// GcpCvmCreateReq ...
+type GcpCvmCreateReq struct {
+	BkBizID       int64  `json:"bk_biz_id" validate:"required,min=1"`
+	AccountID     string `json:"account_id" validate:"required"`
+	Region        string `json:"region" validate:"required"`
+	Zone          string `json:"zone" validate:"required"`
+	Name          string `json:"name" validate:"required,min=1,max=60"`
+	InstanceType  string `json:"instance_type" validate:"required"`
+	CloudImageID  string `json:"cloud_image_id" validate:"required"`
+	CloudVpcID    string `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID string `json:"cloud_subnet_id" validate:"required"`
+
+	SystemDisk struct {
+		DiskType   typecvm.GcpDiskType `json:"disk_type" validate:"required"`
+		DiskSizeGB int64               `json:"disk_size_gb" validate:"required,min=10"`
+	} `json:"system_disk" validate:"required"`
+
+	DataDisk []struct {
+		DiskType   typecvm.GcpDiskType `json:"disk_type" validate:"required"`
+		DiskSizeGB int64               `json:"disk_size_gb" validate:"required,min=10"`
+		DiskCount  int64               `json:"disk_count" validate:"required,min=1"`
+		DiskName   string              `json:"disk_name" validate:"required"`
+		Mode       typecvm.GcpDiskMode `json:"mode" validate:"required"`
+		AutoDelete bool                `json:"auto_delete" validate:"required"`
+	} `json:"data_disk" validate:"required"`
+
+	// 访问主机的ssh公钥
+	Password string `json:"password" validate:"required"`
+
+	RequiredCount int64 `json:"required_count" validate:"required,min=1,max=500"`
+
+	Memo *string `json:"memo" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *GcpCvmCreateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	// 校验系统硬盘
+	if !req.isMultipleOfTwo(req.SystemDisk.DiskSizeGB) {
+		return fmt.Errorf("disk size[%d] should be not multiple of 2GB", req.SystemDisk.DiskSizeGB)
+	}
+	// 校验数据盘
+	for _, d := range req.DataDisk {
+		if !req.isMultipleOfTwo(d.DiskSizeGB) {
+			return fmt.Errorf("disk size[%d] should be not multiple of 2GB", d.DiskSizeGB)
+		}
+	}
+
+	return nil
+}
+
+func (req *GcpCvmCreateReq) isMultipleOfTwo(size int64) bool {
+	return size%2 == 0
+}

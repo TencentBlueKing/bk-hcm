@@ -24,6 +24,10 @@ import (
 
 	"hcm/cmd/cloud-server/service/application/handlers"
 	accounthandler "hcm/cmd/cloud-server/service/application/handlers/account"
+	awscvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/aws"
+	azurecvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/azure"
+	gcpcvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/gcp"
+	huaweicvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/huawei"
 	tcloudcvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
 	dataproto "hcm/pkg/api/data-service"
@@ -120,7 +124,35 @@ func (a *applicationSvc) CreateForCreateCvm(cts *rest.Contexts) (interface{}, er
 		if err != nil {
 			return nil, err
 		}
-		handler := tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req, a.platformManagers, false)
+		handler := tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.Aws:
+		req, err := parseReqFromRequestBody[proto.AwsCvmCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := awscvmhandler.NewApplicationOfCreateAwsCvm(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.HuaWei:
+		req, err := parseReqFromRequestBody[proto.HuaWeiCvmCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := huaweicvmhandler.NewApplicationOfCreateHuaWeiCvm(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.Gcp:
+		req, err := parseReqFromRequestBody[proto.GcpCvmCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := gcpcvmhandler.NewApplicationOfCreateGcpCvm(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.Azure:
+		req, err := parseReqFromRequestBody[proto.AzureCvmCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := azurecvmhandler.NewApplicationOfCreateAzureCvm(opt, req, a.platformManagers)
 		return a.create(cts, handler)
 	}
 

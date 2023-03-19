@@ -17,23 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package huawei
 
 import (
 	"errors"
 )
 
 // CheckReq 检查申请单的数据是否正确
-func (a *ApplicationOfCreateTCloudCvm) CheckReq() error {
+func (a *ApplicationOfCreateHuaWeiCvm) CheckReq() error {
 	if err := a.req.Validate(); err != nil {
 		return err
 	}
 
 	// TCloud 支持 DryRun，可预校验
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(
+	result, err := a.Client.HCService().HuaWei.Cvm.BatchCreateCvm(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		a.toHcProtoTCloudBatchCreateReq(true),
+		a.toHcProtoHuaWeiBatchCreateReq(true),
 	)
 	if err != nil {
 		return err

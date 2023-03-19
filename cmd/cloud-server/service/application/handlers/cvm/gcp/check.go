@@ -17,29 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
-
-import (
-	"errors"
-)
+package gcp
 
 // CheckReq 检查申请单的数据是否正确
-func (a *ApplicationOfCreateTCloudCvm) CheckReq() error {
+func (a *ApplicationOfCreateGcpCvm) CheckReq() error {
 	if err := a.req.Validate(); err != nil {
 		return err
-	}
-
-	// TCloud 支持 DryRun，可预校验
-	result, err := a.Client.HCService().TCloud.Cvm.BatchCreateCvm(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		a.toHcProtoTCloudBatchCreateReq(true),
-	)
-	if err != nil {
-		return err
-	}
-	if result != nil && result.FailedMessage != "" {
-		return errors.New(result.FailedMessage)
 	}
 
 	return nil

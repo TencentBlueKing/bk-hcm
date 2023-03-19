@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package azure
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ import (
 )
 
 // CreateITSMTicket 使用请求数据创建申请
-func (a *ApplicationOfCreateTCloudCvm) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
+func (a *ApplicationOfCreateAzureCvm) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
 	// 渲染ITSM表单内容
 	contentDisplay, err := a.renderITSMForm()
 	if err != nil {
@@ -63,7 +63,7 @@ type formItem struct {
 	Value string
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
+func (a *ApplicationOfCreateAzureCvm) renderBaseInfo() ([]formItem, error) {
 	req := a.req
 	formItems := make([]formItem, 0)
 
@@ -84,22 +84,24 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	// 云厂商
 	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.vendor]})
 
+	// 资源组
+	formItems = append(formItems, formItem{Label: "资源组", Value: req.ResourceGroupName})
+
 	// 云地域
-	regionInfo, err := a.GetTCloudRegion(req.Region)
+	regionInfo, err := a.GetAzureRegion(req.Region)
 	if err != nil {
 		return formItems, err
 	}
-	formItems = append(formItems, formItem{Label: "云地域", Value: regionInfo.RegionName})
+	formItems = append(formItems, formItem{Label: "云地域", Value: regionInfo.Name})
 
-	// 可用区
-	zoneInfo, err := a.GetZone(a.vendor, req.Region, req.Zone)
-	formItems = append(formItems, formItem{Label: "可用区", Value: zoneInfo.Name})
+	// Note: 主机申请这里的可用区与Azure的统一可用区不是一个概念
+	formItems = append(formItems, formItem{Label: "可用区", Value: req.Zone})
 
 	// 名称
 	formItems = append(formItems, formItem{Label: "名称", Value: req.Name})
 
 	// 机型
-	instanceTypeInfo, err := a.GetTCloudInstanceType(req.AccountID, req.Region, req.Zone, req.InstanceType)
+	instanceTypeInfo, err := a.GetAzureInstanceType(req.AccountID, req.Region, req.InstanceType)
 	if err != nil {
 		return formItems, err
 	}
@@ -119,7 +121,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	return formItems, nil
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
+func (a *ApplicationOfCreateAzureCvm) renderNetwork() ([]formItem, error) {
 	req := a.req
 	formItems := make([]formItem, 0)
 
@@ -136,13 +138,6 @@ func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
 		return formItems, err
 	}
 	formItems = append(formItems, formItem{Label: "子网", Value: subnetInfo.Name})
-
-	// 是否自动分配公网IP
-	if req.PublicIPAssigned {
-		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "是"})
-	} else {
-		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "否"})
-	}
 
 	// 所属的蓝鲸云区域
 	bkCloudAreaName, err := a.GetCloudAreaName(vpcInfo.BkCloudID)
@@ -162,53 +157,29 @@ func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
 	return formItems, nil
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderDiskForm() []formItem {
+func (a *ApplicationOfCreateAzureCvm) renderDiskForm() []formItem {
 	req := a.req
 	formItems := make([]formItem, 0)
 
 	// 系统盘
 	formItems = append(formItems, formItem{
 		Label: "系统盘",
-		Value: fmt.Sprintf("%s, %dGB", SystemDiskTypeNameMap[req.SystemDisk.DiskType], req.SystemDisk.DiskSizeGB),
+		// TODO: 硬盘类型待hc-service支持后添加Name的映射
+		Value: fmt.Sprintf("%s, %dGB", req.SystemDisk.DiskType, req.SystemDisk.DiskSizeGB),
 	})
 
 	// 数据盘
 	disks := make([]string, 0, len(req.DataDisk))
 	for _, d := range req.DataDisk {
-		disks = append(disks, fmt.Sprintf("%s(%dGB,%d个)", DataDiskTypeNameMap[d.DiskType], d.DiskSizeGB, d.DiskCount))
+		// TODO: 硬盘类型待hc-service支持后添加Name的映射
+		disks = append(disks, fmt.Sprintf("%s(%dGB,%d个)", d.DiskType, d.DiskSizeGB, d.DiskCount))
 	}
 	formItems = append(formItems, formItem{Label: "数据盘", Value: strings.Join(disks, ",")})
 
 	return formItems
 }
 
-func (a *ApplicationOfCreateTCloudCvm) renderInstanceChargeForm() []formItem {
-	req := a.req
-	formItems := make([]formItem, 0)
-
-	// 计费模式
-	formItems = append(formItems, formItem{Label: "计费模式", Value: InstanceChargeTypeNameMap[req.InstanceChargeType]})
-	// 购买时长
-	if req.InstanceChargePaidPeriod < 12 {
-		formItems = append(
-			formItems, formItem{Label: "购买时长", Value: fmt.Sprintf("%d月", req.InstanceChargePaidPeriod)},
-		)
-	} else {
-		formItems = append(
-			formItems, formItem{Label: "购买时长", Value: fmt.Sprintf("%d年", req.InstanceChargePaidPeriod/12)},
-		)
-	}
-	// 是否自动续费
-	if req.AutoRenew {
-		formItems = append(formItems, formItem{Label: "是否自动续费", Value: "是"})
-	} else {
-		formItems = append(formItems, formItem{Label: "是否自动续费", Value: "否"})
-	}
-
-	return formItems
-}
-
-func (a *ApplicationOfCreateTCloudCvm) renderITSMForm() (string, error) {
+func (a *ApplicationOfCreateAzureCvm) renderITSMForm() (string, error) {
 	req := a.req
 
 	formItems := make([]formItem, 0)
@@ -230,8 +201,8 @@ func (a *ApplicationOfCreateTCloudCvm) renderITSMForm() (string, error) {
 	// 硬盘
 	formItems = append(formItems, a.renderDiskForm()...)
 
-	// 计费
-	formItems = append(formItems, a.renderInstanceChargeForm()...)
+	// 登录用户名
+	formItems = append(formItems, formItem{Label: "登录用户名", Value: req.Username})
 
 	// 购买数量
 	formItems = append(formItems, formItem{Label: "购买数量", Value: fmt.Sprintf("%d", req.RequiredCount)})

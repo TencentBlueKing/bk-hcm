@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package aws
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
@@ -27,73 +27,65 @@ import (
 	"hcm/pkg/criteria/enumor"
 )
 
-// ApplicationOfCreateTCloudCvm ...
-type ApplicationOfCreateTCloudCvm struct {
+// ApplicationOfCreateAwsCvm ...
+type ApplicationOfCreateAwsCvm struct {
 	handlers.BaseApplicationHandler
 
 	vendor           enumor.Vendor
-	req              *proto.TCloudCvmCreateReq
+	req              *proto.AwsCvmCreateReq
 	platformManagers []string
 }
 
-// NewApplicationOfCreateTCloudCvm ...
-func NewApplicationOfCreateTCloudCvm(
-	opt *handlers.HandlerOption, req *proto.TCloudCvmCreateReq, platformManagers []string,
-) *ApplicationOfCreateTCloudCvm {
-	return &ApplicationOfCreateTCloudCvm{
+// NewApplicationOfCreateAwsCvm ...
+func NewApplicationOfCreateAwsCvm(
+	opt *handlers.HandlerOption, req *proto.AwsCvmCreateReq, platformManagers []string,
+) *ApplicationOfCreateAwsCvm {
+	return &ApplicationOfCreateAwsCvm{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm),
-		vendor:                 enumor.TCloud,
+		vendor:                 enumor.Aws,
 		req:                    req,
 		platformManagers:       platformManagers,
 	}
 }
 
-func (a *ApplicationOfCreateTCloudCvm) toHcProtoTCloudBatchCreateReq(dryRun bool) *hcproto.TCloudBatchCreateReq {
+func (a *ApplicationOfCreateAwsCvm) toHcProtoAwsBatchCreateReq(dryRun bool) *hcproto.AwsBatchCreateReq {
 	req := a.req
 
-	// 自动续费&续费周期
-	instanceChargePrepaid := &typecvm.TCloudInstanceChargePrepaid{
-		Period: &req.InstanceChargePaidPeriod,
-		// 默认通知但不自动续费
-		RenewFlag: typecvm.NotifyAndManualRenew,
-	}
-	if req.AutoRenew {
-		instanceChargePrepaid.RenewFlag = typecvm.NotifyAndAutoRenew
-	}
-
+	blockDeviceMapping := make([]typecvm.AwsBlockDeviceMapping, 0)
+	// 系统盘
+	blockDeviceMapping = append(blockDeviceMapping, typecvm.AwsBlockDeviceMapping{
+		Ebs: &typecvm.AwsEbs{
+			VolumeSizeGB: req.SystemDisk.DiskSizeGB,
+			VolumeType:   req.SystemDisk.DiskType,
+		},
+	})
 	// 数据盘
-	dataDisk := make([]typecvm.TCloudDataDisk, 0)
 	for _, d := range req.DataDisk {
 		for i := int64(0); i < d.DiskCount; i++ {
-			dataDisk = append(dataDisk, typecvm.TCloudDataDisk{
-				DiskSizeGB: &d.DiskSizeGB,
-				DiskType:   d.DiskType,
+			blockDeviceMapping = append(blockDeviceMapping, typecvm.AwsBlockDeviceMapping{
+				Ebs: &typecvm.AwsEbs{
+					VolumeSizeGB: d.DiskSizeGB,
+					VolumeType:   d.DiskType,
+				},
 			})
 		}
 	}
 
-	return &hcproto.TCloudBatchCreateReq{
+	return &hcproto.AwsBatchCreateReq{
 		DryRun:                dryRun,
 		AccountID:             req.AccountID,
 		Region:                req.Region,
-		Name:                  req.Name,
 		Zone:                  req.Zone,
+		Name:                  req.Name,
 		InstanceType:          req.InstanceType,
 		CloudImageID:          req.CloudImageID,
+		CloudSubnetID:         req.CloudSubnetID,
+		PublicIPAssigned:      req.PublicIPAssigned,
+		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
+		BlockDeviceMapping:    blockDeviceMapping,
 		Password:              req.Password,
 		RequiredCount:         req.RequiredCount,
-		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
 		// TODO: 暂不支持
-		// ClientToken:           ,
-		CloudVpcID:            req.CloudVpcID,
-		CloudSubnetID:         req.CloudSubnetID,
-		InstanceChargeType:    req.InstanceChargeType,
-		InstanceChargePrepaid: instanceChargePrepaid,
-		SystemDisk: &typecvm.TCloudSystemDisk{
-			DiskType:   req.SystemDisk.DiskType,
-			DiskSizeGB: &req.SystemDisk.DiskSizeGB,
-		},
-		DataDisk:         dataDisk,
-		PublicIPAssigned: req.PublicIPAssigned,
+		// ClientToken: nil,
 	}
 }
