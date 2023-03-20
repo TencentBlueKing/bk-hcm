@@ -15,6 +15,7 @@ import {
 } from 'vue-router';
 import {
   InfoBox,
+  Message,
 } from 'bkui-vue';
 import {
   useI18n,
@@ -255,25 +256,63 @@ const {
   },
 );
 
-const handleShowDelete = () => {
-  InfoBox({
-    title: '请确认是否删除',
-    subTitle: `将删除【${detail.value.name}】`,
-    theme: 'danger',
-    headerAlign: 'center',
-    footerAlign: 'center',
-    contentAlign: 'center',
-    onConfirm() {
-      return resourceStore
-        .deleteBatch(
-          'subnets',
-          {
-            ids: [detail.value.id],
+const handleDeleteSubnet = (data: any) => {
+  const subnetIds = [data.id];
+  const getRelateNum = (type: string, field = 'subnet_id', op = 'in') => {
+    return resourceStore
+      .list(
+        {
+          page: {
+            count: true,
           },
-        );
-    },
-  });
-};
+          filter: {
+            op: 'and',
+            rules: [{
+              field,
+              op,
+              value: subnetIds,
+            }],
+          },
+        },
+        type,
+      )
+  }
+  Promise
+    .all([
+      getRelateNum('cvms', 'subnet_ids', 'json_overlaps'),
+      getRelateNum('network_interfaces'),
+    ])
+    .then(([cvmsResult, networkResult]: any) => {
+      if (cvmsResult?.data?.count || networkResult?.data?.count) {
+        const getMessage = (result: any, name: string) => {
+          if (result?.data?.count) {
+            return `${result?.data?.count}个${name}，`
+          }
+          return ''
+        }
+        Message({
+          theme: 'error',
+          message: `该子网关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`
+        })
+      } else {
+        InfoBox({
+          title: '请确认是否删除',
+          subTitle: `将删除【${data.name}】`,
+          theme: 'danger',
+          headerAlign: 'center',
+          footerAlign: 'center',
+          contentAlign: 'center',
+          onConfirm() {
+            resourceStore
+              .delete(
+                'subnets',
+                data.id,
+              );
+          },
+        });
+      }
+    });
+}
 
 onBeforeMount(() => {
   resourceStore
@@ -289,12 +328,12 @@ onBeforeMount(() => {
     :loading="loading"
   >
     <detail-header>
-      子网：ID（xxx）
+      子网：ID（{{ detail.id }}）
       <template #right>
         <bk-button
           class="w100 ml10"
           theme="primary"
-          @click="handleShowDelete"
+          @click="handleDeleteSubnet(detail)"
         >
           {{ t('删除') }}
         </bk-button>
@@ -312,6 +351,7 @@ onBeforeMount(() => {
         />
         <subnet-route
           v-if="type === 'network'"
+          :detail="detail"
         />
       </template>
     </detail-tab>

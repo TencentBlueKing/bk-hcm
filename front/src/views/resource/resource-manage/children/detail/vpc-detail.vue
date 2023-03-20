@@ -13,6 +13,7 @@ import {
 } from 'vue';
 import {
   InfoBox,
+  Message,
 } from 'bkui-vue';
 import {
   useRoute,
@@ -241,24 +242,64 @@ const {
   },
 );
 
-const handleShowDelete = () => {
-  InfoBox({
-    title: '请确认是否删除',
-    subTitle: `将删除【${detail.value.name}】`,
-    theme: 'danger',
-    headerAlign: 'center',
-    footerAlign: 'center',
-    contentAlign: 'center',
-    onConfirm() {
-      return resourceStore
-        .deleteBatch(
-          'vpcs',
-          {
-            ids: [detail.value.id],
+const handleDeleteVpc = (data: any) => {
+  const vpcIds = [data.id];
+  const getRelateNum = (type: string, field = 'vpc_id', op = 'in') => {
+    return resourceStore
+      .list(
+        {
+          page: {
+            count: true,
           },
-        );
-    },
-  });
+          filter: {
+            op: 'and',
+            rules: [{
+              field,
+              op,
+              value: vpcIds,
+            }],
+          },
+        },
+        type,
+      )
+  }
+  Promise
+    .all([
+      getRelateNum('cvms', 'vpc_ids', 'json_overlaps'),
+      getRelateNum('subnets'),
+      getRelateNum('route_tables'),
+      getRelateNum('network_interfaces'),
+    ])
+    .then(([cvmsResult, subnetsResult, routeResult, networkResult]: any) => {
+      if (cvmsResult?.data?.count || subnetsResult?.data?.count || routeResult?.data?.count || networkResult?.data?.count) {
+        const getMessage = (result: any, name: string) => {
+          if (result?.data?.count) {
+            return `${result?.data?.count}个${name}，`
+          }
+          return ''
+        }
+        Message({
+          theme: 'error',
+          message: `该VPC关联${getMessage(cvmsResult, 'CVM')}${getMessage(subnetsResult, '子网')}${getMessage(routeResult, '路由表')}${getMessage(networkResult, '网络接口')}不能删除`
+        })
+      } else {
+        InfoBox({
+          title: '请确认是否删除',
+          subTitle: `将删除【${data.name}】`,
+          theme: 'danger',
+          headerAlign: 'center',
+          footerAlign: 'center',
+          contentAlign: 'center',
+          onConfirm() {
+            resourceStore
+              .delete(
+                'vpcs',
+                data.id,
+              );
+          },
+        });
+      }
+    });
 };
 </script>
 
@@ -272,7 +313,7 @@ const handleShowDelete = () => {
         <bk-button
           class="w100 ml10"
           theme="primary"
-          @click="handleShowDelete"
+          @click="handleDeleteVpc(detail)"
         >
           {{ t('删除') }}
         </bk-button>

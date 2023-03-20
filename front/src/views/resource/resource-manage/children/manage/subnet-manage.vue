@@ -4,21 +4,20 @@ import type {
 } from '@/typings/resource';
 import {
   PropType,
-  ref,
   defineExpose,
+  h,
 } from 'vue';
 import {
-  useI18n,
-} from 'vue-i18n';
+  Button,
+  Message,
+  InfoBox,
+} from 'bkui-vue';
 import {
   useResourceStore,
 } from '@/store/resource';
 
-import useSteps from '../../hooks/use-steps';
 import useColumns from '../../hooks/use-columns';
-import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
-import useSelection from '../../hooks/use-selection';
 
 const props = defineProps({
   filter: {
@@ -26,39 +25,8 @@ const props = defineProps({
   },
 });
 
-const isLoadingVpc = ref(false);
-
-// use hooks
-const {
-  t,
-} = useI18n();
-
 const resourceStore = useResourceStore();
-
-const {
-  isShowDistribution,
-  handleDistribution,
-  ResourceDistribution,
-} = useSteps();
-
 const columns = useColumns('subnet');
-
-const {
-  selections,
-  handleSelectionChange,
-} = useSelection();
-
-const {
-  handleShowDelete,
-  DeleteDialog,
-} = useDelete(
-  columns,
-  selections,
-  'subnets',
-  t('删除子网'),
-  true,
-);
-
 const {
   datas,
   pagination,
@@ -72,42 +40,88 @@ const {
 const fetchComponentsData = () => {
   handlePageChange(1);
 };
-defineExpose({ fetchComponentsData });
 
-// 分配 subnet
-const handleDistributionSubnet = () => {
-  isLoadingVpc.value = true;
-  // 获取 vpc 数据
-  resourceStore
-    .list(
-      {
-        page: {
-          count: false,
-          start: 0,
-          limit: selections.value.length,
+const handleDeleteSubnet = (data: any) => {
+  const subnetIds = [data.id];
+  const getRelateNum = (type: string, field = 'subnet_id', op = 'in') => {
+    return resourceStore
+      .list(
+        {
+          page: {
+            count: true,
+          },
+          filter: {
+            op: 'and',
+            rules: [{
+              field,
+              op,
+              value: subnetIds,
+            }],
+          },
         },
-        filter: {
-          op: 'and',
-          rules: [{
-            field: 'id',
-            op: 'in',
-            value: selections.value.map(selection => selection.vpc_id),
-          }],
-        },
-      },
-      'vpcs',
-    )
-    .then((res: any) => {
-      selections.value.forEach((item) => {
-        const vpcData = res?.data?.details?.find((vpc: any) => vpc.id === item.vpc_id);
-        item.bk_cloud_id = vpcData.bk_cloud_id;
-      });
-      handleDistribution();
-    })
-    .finally(() => {
-      isLoadingVpc.value = false;
+        type,
+      )
+  }
+  Promise
+    .all([
+      getRelateNum('cvms', 'subnet_ids', 'json_overlaps'),
+      getRelateNum('network_interfaces'),
+    ])
+    .then(([cvmsResult, networkResult]: any) => {
+      if (cvmsResult?.data?.count || networkResult?.data?.count) {
+        const getMessage = (result: any, name: string) => {
+          if (result?.data?.count) {
+            return `${result?.data?.count}个${name}，`
+          }
+          return ''
+        }
+        Message({
+          theme: 'error',
+          message: `该子网关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`
+        })
+      } else {
+        InfoBox({
+          title: '请确认是否删除',
+          subTitle: `将删除【${data.name}】`,
+          theme: 'danger',
+          headerAlign: 'center',
+          footerAlign: 'center',
+          contentAlign: 'center',
+          onConfirm() {
+            resourceStore
+              .delete(
+                'subnets',
+                data.id,
+              );
+          },
+        });
+      }
     });
-};
+}
+
+const renderColumns = [
+  ...columns,
+  {
+    label: '操作',
+    render({ data }: any) {
+      return h(
+        Button,
+        {
+          text: true,
+          theme: 'primary',
+          onClick() {
+            handleDeleteSubnet(data)
+          },
+        },
+        [
+          '删除',
+        ],
+      );
+    },
+  }
+]
+
+defineExpose({ fetchComponentsData });
 </script>
 
 <template>
@@ -116,24 +130,7 @@ const handleDistributionSubnet = () => {
   >
     <section>
       <slot>
-        <bk-button
-          class="w100"
-          theme="primary"
-          :loading="isLoadingVpc"
-          :disabled="selections.length <= 0"
-          @click="handleDistributionSubnet"
-        >
-          {{ t('分配') }}
-        </bk-button>
       </slot>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-        :disabled="selections.length <= 0"
-        @click="handleShowDelete"
-      >
-        {{ t('删除') }}
-      </bk-button>
     </section>
 
     <bk-table
@@ -141,25 +138,13 @@ const handleDistributionSubnet = () => {
       row-hover="auto"
       remote-pagination
       :pagination="pagination"
-      :columns="columns"
+      :columns="renderColumns"
       :data="datas"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"
-      @selection-change="handleSelectionChange"
     />
   </bk-loading>
-
-  <resource-distribution
-    v-model:is-show="isShowDistribution"
-    :data="selections"
-    :title="t('子网分配')"
-  />
-
-  <delete-dialog>
-    {{ t('请注意该子网包含一个或多个资源，在释放这些资源前，无法删除VPC') }}<br />
-    {{ t('CVM：{count} 个', { count: 5 }) }}
-  </delete-dialog>
 </template>
 
 <style lang="scss" scoped>

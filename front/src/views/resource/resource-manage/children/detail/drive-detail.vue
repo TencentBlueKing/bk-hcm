@@ -33,8 +33,12 @@ const hostTabs = [
 
 const settingFields = ref<any[]>([
   {
-    name: '资源 ID',
+    name: 'ID',
     prop: 'id',
+  },
+  {
+    name: '资源 ID',
+    prop: 'cloud_id',
   },
   {
     name: '资源名称',

@@ -64,6 +64,7 @@ const handleDeleteEip = () => {
       弹性IP：ID（{{ detail.id }}）
       <template #right>
         <bk-button
+          v-if="!detail.instance_id"
           class="w100 ml10"
           theme="primary"
           @click="handleShowAssignEip"
@@ -71,6 +72,7 @@ const handleDeleteEip = () => {
           {{ t('绑定') }}
         </bk-button>
         <bk-button
+          v-else
           class="w100 ml10"
           theme="primary"
           @click="handleShowDeleteDialog"

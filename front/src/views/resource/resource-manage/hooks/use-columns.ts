@@ -60,12 +60,12 @@ export default (type: string, isSimpleShow: boolean = false) => {
     };
   };
 
-  const getLinkField = (type: string, label = 'ID', field = 'id', idFiled = 'id') => {
+  const getLinkField = (type: string, label = 'ID', field = 'id', idFiled = 'id', onlyShowOnList = true) => {
     return {
       label,
       field,
       sort: true,
-      onlyShowOnList: true,
+      onlyShowOnList,
       render({ data }: { cell: string, data: any }) {
         return h(
           Button,
@@ -110,10 +110,6 @@ export default (type: string, isSimpleShow: boolean = false) => {
   };
 
   const vpcColumns = [
-    {
-      type: 'selection',
-      onlyShowOnList: true,
-    },
     getLinkField('vpc'),
     {
       label: '资源 ID',
@@ -185,15 +181,10 @@ export default (type: string, isSimpleShow: boolean = false) => {
       field: 'created_at',
       sort: true,
     },
-    getDeleteField('vpcs'),
   ];
 
   const subnetColumns = [
-    {
-      type: 'selection',
-      onlyShowOnList: true,
-    },
-    getLinkField('subnet'),
+    getLinkField('subnet', 'ID','id', 'id', false),
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -256,7 +247,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
         );
       },
     },
-    getLinkField('route', '关联路由表', 'route_table_id', 'route_table_id'),
+    getLinkField('route', '关联路由表', 'route_table_id', 'route_table_id', false),
     {
       label: '更新时间',
       field: 'updated_at',
@@ -267,7 +258,6 @@ export default (type: string, isSimpleShow: boolean = false) => {
       field: 'created_at',
       sort: true,
     },
-    getDeleteField('subnets'),
   ];
 
   const groupColumns = [

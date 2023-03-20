@@ -11,6 +11,9 @@ import ImageDetail from './children/detail/image-detail.vue';
 import NetworkInterfaceDetail from './children/detail/network-interface-detail.vue';
 
 import {
+  computed,
+} from 'vue';
+import {
   useRoute,
 } from 'vue-router';
 
@@ -29,7 +32,9 @@ const componentMap = {
   'network-interface': NetworkInterfaceDetail,
 };
 
-const renderComponent = componentMap[route.params.type as string];
+const renderComponent = computed(() => {
+  return componentMap[route.params.type as string]
+});
 </script>
 
 <template>
