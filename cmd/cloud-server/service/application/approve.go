@@ -35,6 +35,11 @@ import (
 	gcpdiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/gcp"
 	huaweidiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/huawei"
 	tclouddiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/tcloud"
+	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
+	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
+	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
+	huaweivpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/huawei"
+	tcloudvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -171,6 +176,45 @@ func (a *applicationSvc) getHandlerOfCreateCvm(
 	return nil, fmt.Errorf("not support handler of create %s cvm", vendor)
 }
 
+func (a *applicationSvc) getHandlerOfCreateVpc(
+	opt *handlers.HandlerOption, vendor enumor.Vendor, application *dataproto.ApplicationResp,
+) (handlers.ApplicationHandler, error) {
+	switch vendor {
+	case enumor.TCloud:
+		req, err := parseReqFromApplicationContent[proto.TCloudVpcCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return tcloudvpchandler.NewApplicationOfCreateTCloudVpc(opt, req, []string{}), nil
+	case enumor.Aws:
+		req, err := parseReqFromApplicationContent[proto.AwsVpcCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return awsvpchandler.NewApplicationOfCreateAwsVpc(opt, req, []string{}), nil
+	case enumor.HuaWei:
+		req, err := parseReqFromApplicationContent[proto.HuaWeiVpcCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return huaweivpchandler.NewApplicationOfCreateHuaWeiVpc(opt, req, []string{}), nil
+	case enumor.Gcp:
+		req, err := parseReqFromApplicationContent[proto.GcpVpcCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return gcpvpchandler.NewApplicationOfCreateGcpVpc(opt, req, []string{}), nil
+	case enumor.Azure:
+		req, err := parseReqFromApplicationContent[proto.AzureVpcCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return azurevpchandler.NewApplicationOfCreateAzureVpc(opt, req, []string{}), nil
+	}
+
+	return nil, fmt.Errorf("not support handler of create %s vpc", vendor)
+}
+
 func (a *applicationSvc) getHandlerOfCreateDisk(
 	opt *handlers.HandlerOption, vendor enumor.Vendor, application *dataproto.ApplicationResp,
 ) (handlers.ApplicationHandler, error) {
@@ -234,6 +278,8 @@ func (a *applicationSvc) getHandlerByApplication(
 		return accounthandler.NewApplicationOfAddAccount(opt, req, []string{}), nil
 	case enumor.CreateCvm:
 		return a.getHandlerOfCreateCvm(opt, vendor, application)
+	case enumor.CreateVpc:
+		return a.getHandlerOfCreateVpc(opt, vendor, application)
 	case enumor.CreateDisk:
 		return a.getHandlerOfCreateDisk(opt, vendor, application)
 	}

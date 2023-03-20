@@ -20,17 +20,28 @@
 package azure
 
 import (
-	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/cmd/cloud-server/service/application/handlers"
+	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/pkg/criteria/enumor"
 )
 
-var (
-	DiskTypeNameMap = map[typecvm.AzureDiskType]string{
-		typecvm.PremiumLRS:     "高级SSD",
-		typecvm.PremiumV2LRS:   "高级SSDv2",
-		typecvm.PremiumZRS:     "高级SSD托管磁盘",
-		typecvm.StandardLRS:    "标准HDD",
-		typecvm.StandardSSDLRS: "标准SSD",
-		typecvm.StandardSSDZRS: "标准SSD托管磁盘",
-		typecvm.UltraSSDLRS:    "超级磁盘",
+// ApplicationOfCreateAzureVpc ...
+type ApplicationOfCreateAzureVpc struct {
+	handlers.BaseApplicationHandler
+
+	vendor           enumor.Vendor
+	req              *proto.AzureVpcCreateReq
+	platformManagers []string
+}
+
+// NewApplicationOfCreateAzureVpc ...
+func NewApplicationOfCreateAzureVpc(
+	opt *handlers.HandlerOption, req *proto.AzureVpcCreateReq, platformManagers []string,
+) *ApplicationOfCreateAzureVpc {
+	return &ApplicationOfCreateAzureVpc{
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc),
+		vendor:                 enumor.Azure,
+		req:                    req,
+		platformManagers:       platformManagers,
 	}
-)
+}

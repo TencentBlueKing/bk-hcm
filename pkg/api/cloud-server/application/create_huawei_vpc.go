@@ -17,20 +17,35 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package azure
+package application
 
 import (
-	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/criteria/validator"
 )
 
-var (
-	DiskTypeNameMap = map[typecvm.AzureDiskType]string{
-		typecvm.PremiumLRS:     "高级SSD",
-		typecvm.PremiumV2LRS:   "高级SSDv2",
-		typecvm.PremiumZRS:     "高级SSD托管磁盘",
-		typecvm.StandardLRS:    "标准HDD",
-		typecvm.StandardSSDLRS: "标准SSD",
-		typecvm.StandardSSDZRS: "标准SSD托管磁盘",
-		typecvm.UltraSSDLRS:    "超级磁盘",
+// HuaWeiVpcCreateReq ...
+type HuaWeiVpcCreateReq struct {
+	BkBizID   int64  `json:"bk_biz_id" validate:"required,min=1"`
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+	Name      string `json:"name" validate:"required,min=1,max=60"`
+	IPv4Cidr  string `json:"ipv4_cidr" validate:"required,cidrv4"`
+	BkCloudID int64  `json:"bk_cloud_id" validate:"required,min=1"`
+
+	Subnet struct {
+		Name       string `json:"name" validate:"required,min=1,max=60"`
+		IPv4Cidr   string `json:"ipv4_cidr" validate:"required,cidrv4"`
+		IPv6Enable bool   `json:"ipv6_enable" validate:"required"`
+	} `json:"subnet" validate:"required"`
+
+	Memo *string `json:"memo" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *HuaWeiVpcCreateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
 	}
-)
+
+	return nil
+}

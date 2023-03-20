@@ -17,20 +17,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package azure
+package gcp
 
-import (
-	typecvm "hcm/pkg/adaptor/types/cvm"
-)
-
-var (
-	DiskTypeNameMap = map[typecvm.AzureDiskType]string{
-		typecvm.PremiumLRS:     "高级SSD",
-		typecvm.PremiumV2LRS:   "高级SSDv2",
-		typecvm.PremiumZRS:     "高级SSD托管磁盘",
-		typecvm.StandardLRS:    "标准HDD",
-		typecvm.StandardSSDLRS: "标准SSD",
-		typecvm.StandardSSDZRS: "标准SSD托管磁盘",
-		typecvm.UltraSSDLRS:    "超级磁盘",
+// CheckReq 检查申请单的数据是否正确
+func (a *ApplicationOfCreateGcpVpc) CheckReq() error {
+	if err := a.req.Validate(); err != nil {
+		return err
 	}
-)
+
+	return nil
+}

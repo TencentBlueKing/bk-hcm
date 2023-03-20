@@ -24,12 +24,11 @@ import (
 	"strings"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
-	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/thirdparty/esb/itsm"
 )
 
 // CreateITSMTicket 使用请求数据创建申请
-func (a *ApplicationOfCreateGcpCvm) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
+func (a *ApplicationOfCreateGcpVpc) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
 	// 渲染ITSM表单内容
 	contentDisplay, err := a.renderITSMForm()
 	if err != nil {
@@ -40,7 +39,7 @@ func (a *ApplicationOfCreateGcpCvm) CreateITSMTicket(serviceID int64, callbackUr
 		ServiceID:      serviceID,
 		Creator:        a.Cts.Kit.User,
 		CallbackURL:    callbackUrl,
-		Title:          fmt.Sprintf("申请新增虚拟机[%s]", a.req.Name),
+		Title:          fmt.Sprintf("申请新增VPC[%s]", a.req.Name),
 		ContentDisplay: contentDisplay,
 		// ITSM流程里使用变量引用的方式设置各个节点审批人
 		VariableApprovers: []itsm.VariableApprover{
@@ -64,7 +63,7 @@ type formItem struct {
 	Value string
 }
 
-func (a *ApplicationOfCreateGcpCvm) renderBaseInfo() ([]formItem, error) {
+func (a *ApplicationOfCreateGcpVpc) renderBaseInfo() ([]formItem, error) {
 	req := a.req
 	formItems := make([]formItem, 0)
 
@@ -92,95 +91,58 @@ func (a *ApplicationOfCreateGcpCvm) renderBaseInfo() ([]formItem, error) {
 	}
 	formItems = append(formItems, formItem{Label: "云地域", Value: regionInfo.RegionName})
 
-	// 可用区
-	zoneInfo, err := a.GetZone(a.vendor, req.Region, req.Zone)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "可用区", Value: zoneInfo.Name})
+	return formItems, nil
+}
+
+func (a *ApplicationOfCreateGcpVpc) renderVpc() ([]formItem, error) {
+	req := a.req
+	formItems := make([]formItem, 0)
 
 	// 名称
 	formItems = append(formItems, formItem{Label: "名称", Value: req.Name})
 
-	// 机型
-	instanceTypeInfo, err := a.GetGcpInstanceType(req.AccountID, req.Zone, req.InstanceType)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{
-		Label: "机型",
-		Value: fmt.Sprintf("%s (%d核%sG)",
-			req.InstanceType, instanceTypeInfo.CPU, a.ConvertMemoryMBToGB(instanceTypeInfo.Memory)),
-	})
-
-	// 镜像
-	imageInfo, err := a.GetImage(a.vendor, req.CloudImageID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "镜像", Value: imageInfo.Name})
-
-	return formItems, nil
-}
-
-func (a *ApplicationOfCreateGcpCvm) renderNetwork() ([]formItem, error) {
-	req := a.req
-	formItems := make([]formItem, 0)
-
-	// VPC
-	vpcInfo, err := a.GetVpc(a.vendor, req.AccountID, req.CloudVpcID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "VPC", Value: vpcInfo.Name})
-
-	// 子网
-	subnetInfo, err := a.GetSubnet(a.vendor, req.AccountID, req.CloudVpcID, req.CloudSubnetID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "子网", Value: subnetInfo.Name})
-
 	// 所属的蓝鲸云区域
-	bkCloudAreaName, err := a.GetCloudAreaName(vpcInfo.BkCloudID)
+	bkCloudAreaName, err := a.GetCloudAreaName(req.BkCloudID)
 	if err != nil {
 		return formItems, err
 	}
 	formItems = append(formItems, formItem{Label: "所属的蓝鲸云区域", Value: bkCloudAreaName})
 
+	// 动态路由模式
+	RoutingModeNameMap := map[string]string{"REGIONAL": "区域", "GLOBAL": "全局"}
+	formItems = append(formItems, formItem{Label: "动态路由模式", Value: RoutingModeNameMap[req.RoutingMode]})
+
 	return formItems, nil
 }
 
-func (a *ApplicationOfCreateGcpCvm) renderDiskForm() []formItem {
+func (a *ApplicationOfCreateGcpVpc) renderSubnet() ([]formItem, error) {
 	req := a.req
 	formItems := make([]formItem, 0)
 
-	// 系统盘
+	// 名称
+	formItems = append(formItems, formItem{Label: "子网名称", Value: req.Subnet.Name})
+
+	// IPv4 CIDR
+	formItems = append(formItems, formItem{Label: "子网IPv4 CIDR", Value: req.Subnet.IPv4Cidr})
+
+	// 专用 Google 访问通道
+	PrivateIPGoogleAccessNameMap := map[bool]string{true: "启用", false: "禁用"}
 	formItems = append(formItems, formItem{
-		Label: "系统盘",
-		Value: fmt.Sprintf("%s, %dGB", DiskTypeNameMap[req.SystemDisk.DiskType], req.SystemDisk.DiskSizeGB),
+		Label: "子网专用 Google 访问通道",
+		Value: PrivateIPGoogleAccessNameMap[req.Subnet.PrivateIPGoogleAccess],
 	})
 
-	// 数据盘
-	disks := make([]string, 0, len(req.DataDisk))
-	modeNameMap := map[typecvm.GcpDiskMode]string{typecvm.ReadOnly: "只读", typecvm.ReadWrite: "读写"}
-	autoDeleteNameMap := map[bool]string{true: "删除磁盘", false: "保留磁盘"}
-	for _, d := range req.DataDisk {
-		disks = append(
-			disks,
-			fmt.Sprintf(
-				"%s(%dGB,%d个,%s,%s)",
-				DiskTypeNameMap[d.DiskType], d.DiskSizeGB, d.DiskCount,
-				modeNameMap[d.Mode], autoDeleteNameMap[d.AutoDelete],
-			),
-		)
-	}
-	formItems = append(formItems, formItem{Label: "数据盘", Value: strings.Join(disks, ",")})
+	// 流日志
+	EnableFlowLogsNameMap := map[bool]string{true: "启用", false: "禁用"}
+	formItems = append(formItems, formItem{
+		Label: "子网流日志",
+		Value: EnableFlowLogsNameMap[req.Subnet.EnableFlowLogs],
+	})
 
-	return formItems
+	return formItems, nil
 }
 
-func (a *ApplicationOfCreateGcpCvm) renderITSMForm() (string, error) {
+func (a *ApplicationOfCreateGcpVpc) renderITSMForm() (string, error) {
 	req := a.req
 
 	formItems := make([]formItem, 0)
@@ -192,18 +154,19 @@ func (a *ApplicationOfCreateGcpCvm) renderITSMForm() (string, error) {
 	}
 	formItems = append(formItems, baseInfoFormItems...)
 
-	// 网络
-	networkFormItems, err := a.renderNetwork()
+	// VPC
+	vpcFormItems, err := a.renderVpc()
 	if err != nil {
 		return "", err
 	}
-	formItems = append(formItems, networkFormItems...)
+	formItems = append(formItems, vpcFormItems...)
 
-	// 硬盘
-	formItems = append(formItems, a.renderDiskForm()...)
-
-	// 购买数量
-	formItems = append(formItems, formItem{Label: "购买数量", Value: fmt.Sprintf("%d", req.RequiredCount)})
+	// 子网
+	subnetFormItems, err := a.renderSubnet()
+	if err != nil {
+		return "", err
+	}
+	formItems = append(formItems, subnetFormItems...)
 
 	// 备注
 	if req.Memo != nil && *req.Memo != "" {

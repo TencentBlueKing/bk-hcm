@@ -42,6 +42,8 @@ const (
 	AddAccount ApplicationType = "add_account"
 	// CreateCvm 创建虚拟机
 	CreateCvm ApplicationType = "create_cvm"
+	// CreateVpc 创建VPC
+	CreateVpc ApplicationType = "create_vpc"
 	// CreateDisk 创建云盘
 	CreateDisk ApplicationType = "create_disk"
 )
@@ -61,7 +63,7 @@ const (
 	Delivering ApplicationStatus = "delivering"
 	// Completed 单据完成
 	Completed ApplicationStatus = "completed"
-	// DeliverError 部分交付
+	// DeliverPartial 部分交付
 	DeliverPartial = "deliver_partial"
 	// DeliverError 单据交付异常
 	DeliverError ApplicationStatus = "deliver_error"

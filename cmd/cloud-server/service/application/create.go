@@ -34,6 +34,11 @@ import (
 	gcpdiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/gcp"
 	huaweidiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/huawei"
 	tclouddiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/tcloud"
+	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
+	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
+	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
+	huaweivpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/huawei"
+	tcloudvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -161,6 +166,57 @@ func (a *applicationSvc) CreateForCreateCvm(cts *rest.Contexts) (interface{}, er
 			return nil, err
 		}
 		handler := azurecvmhandler.NewApplicationOfCreateAzureCvm(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	}
+
+	return nil, nil
+}
+
+// CreateForCreateVpc ...
+func (a *applicationSvc) CreateForCreateVpc(cts *rest.Contexts) (interface{}, error) {
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := a.getHandlerOption(cts)
+
+	switch vendor {
+	case enumor.TCloud:
+		req, err := parseReqFromRequestBody[proto.TCloudVpcCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := tcloudvpchandler.NewApplicationOfCreateTCloudVpc(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.Aws:
+		req, err := parseReqFromRequestBody[proto.AwsVpcCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := awsvpchandler.NewApplicationOfCreateAwsVpc(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.HuaWei:
+		req, err := parseReqFromRequestBody[proto.HuaWeiVpcCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := huaweivpchandler.NewApplicationOfCreateHuaWeiVpc(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.Gcp:
+		req, err := parseReqFromRequestBody[proto.GcpVpcCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := gcpvpchandler.NewApplicationOfCreateGcpVpc(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.Azure:
+		req, err := parseReqFromRequestBody[proto.AzureVpcCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := azurevpchandler.NewApplicationOfCreateAzureVpc(opt, req, a.platformManagers)
 		return a.create(cts, handler)
 	}
 

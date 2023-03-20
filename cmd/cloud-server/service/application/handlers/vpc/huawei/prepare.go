@@ -17,20 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package azure
+package huawei
 
 import (
-	typecvm "hcm/pkg/adaptor/types/cvm"
+	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/pkg/criteria/enumor"
 )
 
-var (
-	DiskTypeNameMap = map[typecvm.AzureDiskType]string{
-		typecvm.PremiumLRS:     "高级SSD",
-		typecvm.PremiumV2LRS:   "高级SSDv2",
-		typecvm.PremiumZRS:     "高级SSD托管磁盘",
-		typecvm.StandardLRS:    "标准HDD",
-		typecvm.StandardSSDLRS: "标准SSD",
-		typecvm.StandardSSDZRS: "标准SSD托管磁盘",
-		typecvm.UltraSSDLRS:    "超级磁盘",
+// PrepareReq 预处理请求参数，比如敏感数据加密
+func (a *ApplicationOfCreateHuaWeiVpc) PrepareReq() error {
+
+	return nil
+}
+
+// GenerateApplicationContent 获取预处理过的数据，以interface格式
+func (a *ApplicationOfCreateHuaWeiVpc) GenerateApplicationContent() interface{} {
+	// 需要将Vendor也存储进去
+	return &struct {
+		*proto.HuaWeiVpcCreateReq `json:",inline"`
+		Vendor                    enumor.Vendor `json:"vendor"`
+	}{
+		HuaWeiVpcCreateReq: a.req,
+		Vendor:             a.vendor,
 	}
-)
+}
+
+// PrepareReqFromContent 预处理请求参数，对于申请内容来着DB，其实入库前是加密了的
+func (a *ApplicationOfCreateHuaWeiVpc) PrepareReqFromContent() error {
+
+	return nil
+}

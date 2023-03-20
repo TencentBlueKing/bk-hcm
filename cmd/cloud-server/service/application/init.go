@@ -54,6 +54,7 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string, platformM
 
 	h.Add("CreateForAddAccount", "POST", "/applications/types/add_account", svc.CreateForAddAccount)
 	h.Add("CreateForCreateCvm", "POST", "/vendors/{vendor}/applications/types/create_cvm", svc.CreateForCreateCvm)
+	h.Add("CreateForCreateVpc", "POST", "/vendors/{vendor}/applications/types/create_vpc", svc.CreateForCreateVpc)
 	h.Add("CreateForCreateDisk", "POST", "/vendors/{vendor}/applications/types/create_disk", svc.CreateForCreateDisk)
 
 	h.Load(c.WebService)
@@ -79,6 +80,10 @@ func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerO
 func (a *applicationSvc) getApprovalProcessServiceID(
 	cts *rest.Contexts, applicationType enumor.ApplicationType,
 ) (int64, error) {
+	// Note: 这里强制所有申请都使用同一流程，因为现阶段是相同的，后续不同时再这段代码去除即可，然后在DB初始化各自的流程配置
+	if applicationType != enumor.AddAccount {
+		applicationType = enumor.AddAccount
+	}
 	result, err := a.client.DataService().Global.ApprovalProcess.List(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),

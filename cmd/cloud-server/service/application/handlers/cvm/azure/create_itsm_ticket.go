@@ -164,15 +164,13 @@ func (a *ApplicationOfCreateAzureCvm) renderDiskForm() []formItem {
 	// 系统盘
 	formItems = append(formItems, formItem{
 		Label: "系统盘",
-		// TODO: 硬盘类型待hc-service支持后添加Name的映射
-		Value: fmt.Sprintf("%s, %dGB", req.SystemDisk.DiskType, req.SystemDisk.DiskSizeGB),
+		Value: fmt.Sprintf("%s, %dGB", DiskTypeNameMap[req.SystemDisk.DiskType], req.SystemDisk.DiskSizeGB),
 	})
 
 	// 数据盘
 	disks := make([]string, 0, len(req.DataDisk))
 	for _, d := range req.DataDisk {
-		// TODO: 硬盘类型待hc-service支持后添加Name的映射
-		disks = append(disks, fmt.Sprintf("%s(%dGB,%d个)", d.DiskType, d.DiskSizeGB, d.DiskCount))
+		disks = append(disks, fmt.Sprintf("%s(%dGB,%d个)", DiskTypeNameMap[d.DiskType], d.DiskSizeGB, d.DiskCount))
 	}
 	formItems = append(formItems, formItem{Label: "数据盘", Value: strings.Join(disks, ",")})
 

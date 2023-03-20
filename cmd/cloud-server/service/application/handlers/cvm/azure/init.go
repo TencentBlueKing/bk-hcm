@@ -60,6 +60,7 @@ func (a *ApplicationOfCreateAzureCvm) toHcProtoAzureBatchCreateReq() *hcproto.Az
 			dataDisk = append(dataDisk, typecvm.AzureDataDisk{
 				Name:   fmt.Sprintf("data%d", index),
 				SizeGB: int32(d.DiskSizeGB),
+				Type:   d.DiskType,
 			})
 			index += 1
 		}
@@ -80,6 +81,7 @@ func (a *ApplicationOfCreateAzureCvm) toHcProtoAzureBatchCreateReq() *hcproto.Az
 		OSDisk: &typecvm.AzureOSDisk{
 			Name:   "os1",
 			SizeGB: int32(req.SystemDisk.DiskSizeGB),
+			Type:   req.SystemDisk.DiskType,
 		},
 		DataDisk:      dataDisk,
 		RequiredCount: req.RequiredCount,

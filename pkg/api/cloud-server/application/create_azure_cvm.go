@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strings"
 
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/validator"
 
 	"github.com/TencentBlueKing/gopkg/collection/set"
@@ -53,16 +54,14 @@ type AzureCvmCreateReq struct {
 	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required,min=1,max=1"`
 
 	SystemDisk struct {
-		// TODO: 硬盘类型待hc-service支持
-		DiskType   string `json:"disk_type" validate:"required"`
-		DiskSizeGB int64  `json:"disk_size_gb" validate:"required,min=20,max=36767"`
+		DiskType   typecvm.AzureDiskType `json:"disk_type" validate:"required"`
+		DiskSizeGB int64                 `json:"disk_size_gb" validate:"required,min=20,max=36767"`
 	} `json:"system_disk" validate:"required"`
 
 	DataDisk []struct {
-		// TODO: 硬盘类型待hc-service支持
-		DiskType   string `json:"disk_type" validate:"required"`
-		DiskSizeGB int64  `json:"disk_size_gb" validate:"required,min=20,max=36767"`
-		DiskCount  int64  `json:"disk_count" validate:"required,min=1"`
+		DiskType   typecvm.AzureDiskType `json:"disk_type" validate:"required"`
+		DiskSizeGB int64                 `json:"disk_size_gb" validate:"required,min=20,max=36767"`
+		DiskCount  int64                 `json:"disk_count" validate:"required,min=1"`
 	} `json:"data_disk" validate:"required"`
 
 	// Note: 不同系统对用户名和密码要求不一样，这里暂时以Linux为主

@@ -93,6 +93,9 @@ func (a *ApplicationOfCreateHuaWeiCvm) renderBaseInfo() ([]formItem, error) {
 
 	// 可用区
 	zoneInfo, err := a.GetZone(a.vendor, req.Region, req.Zone)
+	if err != nil {
+		return formItems, err
+	}
 	formItems = append(formItems, formItem{Label: "可用区", Value: zoneInfo.Name})
 
 	// 名称
