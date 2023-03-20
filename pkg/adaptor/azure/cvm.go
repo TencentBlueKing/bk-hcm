@@ -343,6 +343,9 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 				CreateOption: to.Ptr(armcompute.DiskCreateOptionTypesEmpty),
 				Lun:          to.Ptr(int32(index)),
 				DiskSizeGB:   to.Ptr(disk.SizeGB),
+				ManagedDisk: &armcompute.ManagedDiskParameters{
+					StorageAccountType: converter.ValToPtr(armcompute.StorageAccountTypes(disk.Type)),
+				},
 			}
 		}
 	}
@@ -395,6 +398,9 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 					DiskSizeGB:   to.Ptr(opt.OSDisk.SizeGB),
 					Caching:      to.Ptr(armcompute.CachingTypesReadWrite),
 					CreateOption: to.Ptr(armcompute.DiskCreateOptionTypesFromImage),
+					ManagedDisk: &armcompute.ManagedDiskParameters{
+						StorageAccountType: converter.ValToPtr(armcompute.StorageAccountTypes(opt.OSDisk.Type)),
+					},
 				},
 			},
 		},

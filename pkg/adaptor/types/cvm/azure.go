@@ -133,14 +133,38 @@ func (opt AzureCreateOption) Validate() error {
 
 // AzureOSDisk azure os disk.
 type AzureOSDisk struct {
-	Name   string `json:"name" validate:"required"`
-	SizeGB int32  `json:"size_gb" validate:"required"`
+	Name   string        `json:"name" validate:"required"`
+	SizeGB int32         `json:"size_gb" validate:"required"`
+	Type   AzureDiskType `json:"type" validate:"required"`
 }
+
+type AzureDiskType string
+
+const (
+	/*
+		- 本地冗余存储 (LRS)：一种简单的低成本冗余策略。 数据在主要区域中的单个物理位置中同步复制三次。
+		- 区域冗余存储 (ZRS)：冗余，适用于需要高可用性的方案。 跨主要区域中的 3 个 Azure 可用性区域同步复制数据。
+		- 异地冗余存储 (GRS)：跨区域冗余以防范区域性服务中断。 在主要区域同步复制数据三次，然后将数据异步复制到次要区域。
+		若要对次要区域中的数据进行读取访问，请启用读取访问异地冗余存储 (RA-GRS)。
+		- 地域冗余存储 (GZRS)：冗余，适用于要求高可用性和最大持续性的方案。 跨主要区域中的 3 个 Azure 可用性区域同步复制数据，
+		然后将数据异步复制到次要区域。 若要对次要区域进行读取访问，可启用读取访问异地区域冗余存储 (RA-GZRS)。
+	*/
+
+	PremiumLRS     AzureDiskType = "Premium_LRS"
+	PremiumV2LRS   AzureDiskType = "PremiumV2_LRS"
+	PremiumZRS     AzureDiskType = "Premium_ZRS"
+	StandardLRS    AzureDiskType = "Standard_LRS"
+	StandardSSDLRS AzureDiskType = "StandardSSD_LRS"
+	StandardSSDZRS AzureDiskType = "StandardSSD_ZRS"
+	// UltraSSDLRS can only be used with data disks.
+	UltraSSDLRS AzureDiskType = "UltraSSD_LRS"
+)
 
 // AzureDataDisk azure data disk.
 type AzureDataDisk struct {
-	Name   string `json:"name" validate:"required"`
-	SizeGB int32  `json:"size_gb" validate:"required"`
+	Name   string        `json:"name" validate:"required"`
+	SizeGB int32         `json:"size_gb" validate:"required"`
+	Type   AzureDiskType `json:"type" validate:"required"`
 }
 
 // AzureGetOption ...

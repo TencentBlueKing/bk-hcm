@@ -159,6 +159,7 @@ func (svc *cvmSvc) bulkCreateAzureCvm(kt *kit.Kit, req *protocvm.AzureBatchCreat
 				OSDisk: &typecvm.AzureOSDisk{
 					Name:   azure.GenResourceName(req.OSDisk.Name, i+1),
 					SizeGB: req.OSDisk.SizeGB,
+					Type:   req.OSDisk.Type,
 				},
 				DataDisk: make([]typecvm.AzureDataDisk, len(req.DataDisk)),
 			}
@@ -166,6 +167,7 @@ func (svc *cvmSvc) bulkCreateAzureCvm(kt *kit.Kit, req *protocvm.AzureBatchCreat
 				createOpt.DataDisk[j] = typecvm.AzureDataDisk{
 					Name:   azure.GenResourceName(fmt.Sprintf("%s-%d", one.Name, i), j+1),
 					SizeGB: one.SizeGB,
+					Type:   one.Type,
 				}
 			}
 
