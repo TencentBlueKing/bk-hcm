@@ -56,7 +56,7 @@ func InitVpcService(c *capability.Capability) {
 	h.Add("GetVpc", "GET", "/vpcs/{id}", svc.GetVpc)
 	h.Add("ListVpc", "POST", "/vpcs/list", svc.ListVpc)
 	h.Add("UpdateVpc", "PATCH", "/vpcs/{id}", svc.UpdateVpc)
-	h.Add("BatchDeleteVpc", "DELETE", "/vpcs/batch", svc.BatchDeleteVpc)
+	h.Add("DeleteVpc", "DELETE", "/vpcs/{id}", svc.DeleteVpc)
 	h.Add("AssignVpcToBiz", "POST", "/vpcs/assign/bizs", svc.AssignVpcToBiz)
 	h.Add("BindVpcWithCloudArea", "POST", "/vpcs/bind/cloud_areas", svc.BindVpcWithCloudArea)
 
@@ -64,7 +64,7 @@ func InitVpcService(c *capability.Capability) {
 	h.Add("GetBizVpc", "GET", "/bizs/{bk_biz_id}/vpcs/{id}", svc.GetBizVpc)
 	h.Add("ListBizVpc", "POST", "/bizs/{bk_biz_id}/vpcs/list", svc.ListBizVpc)
 	h.Add("UpdateBizVpc", "PATCH", "/bizs/{bk_biz_id}/vpcs/{id}", svc.UpdateBizVpc)
-	h.Add("BatchDeleteBizVpc", "DELETE", "/bizs/{bk_biz_id}/vpcs/batch", svc.BatchDeleteBizVpc)
+	h.Add("DeleteBizVpc", "DELETE", "/bizs/{bk_biz_id}/vpcs/{id}", svc.DeleteBizVpc)
 
 	h.Load(c.WebService)
 }
@@ -247,84 +247,61 @@ func (svc *vpcSvc) listVpc(cts *rest.Contexts, authHandler handler.ListAuthResHa
 	return &cloudserver.VpcListResult{Count: res.Count, Details: res.Details}, nil
 }
 
-// BatchDeleteVpc batch delete vpc.
-func (svc *vpcSvc) BatchDeleteVpc(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteVpc(cts, handler.ResValidWithAuth)
+// DeleteVpc delete vpc.
+func (svc *vpcSvc) DeleteVpc(cts *rest.Contexts) (interface{}, error) {
+	return svc.deleteVpc(cts, handler.ResValidWithAuth)
 }
 
-// BatchDeleteBizVpc batch delete biz vpc.
-func (svc *vpcSvc) BatchDeleteBizVpc(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchDeleteVpc(cts, handler.BizValidWithAuth)
+// DeleteBizVpc delete biz vpc.
+func (svc *vpcSvc) DeleteBizVpc(cts *rest.Contexts) (interface{}, error) {
+	return svc.deleteVpc(cts, handler.BizValidWithAuth)
 }
 
-func (svc *vpcSvc) batchDeleteVpc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	req := new(core.BatchDeleteReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+func (svc *vpcSvc) deleteVpc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
 
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	basicInfoReq := cloud.ListResourceBasicInfoReq{
-		ResourceType: enumor.VpcCloudResType,
-		IDs:          req.IDs,
-	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		basicInfoReq)
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		enumor.VpcCloudResType, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Vpc,
-		Action: meta.Find, BasicInfos: basicInfoMap})
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
 
 	// create delete audit.
-	if err := svc.audit.ResDeleteAudit(cts.Kit, enumor.VpcCloudAuditResType, req.IDs); err != nil {
+	if err := svc.audit.ResDeleteAudit(cts.Kit, enumor.VpcCloudAuditResType, []string{id}); err != nil {
 		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	// delete vpcs
-	succeeded := make([]string, 0)
-	for _, id := range req.IDs {
-		basicInfo, exists := basicInfoMap[id]
-		if !exists {
-			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s has no corresponding vendor", id))
-		}
-
-		switch basicInfo.Vendor {
-		case enumor.TCloud:
-			err = svc.client.HCService().TCloud.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.Aws:
-			err = svc.client.HCService().Aws.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.Gcp:
-			err = svc.client.HCService().Gcp.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.Azure:
-			err = svc.client.HCService().Azure.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
-		case enumor.HuaWei:
-			err = svc.client.HCService().HuaWei.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
-		}
-
-		if err != nil {
-			return core.BatchDeleteResp{
-				Succeeded: succeeded,
-				Failed: &core.FailedInfo{
-					ID:    id,
-					Error: err.Error(),
-				},
-			}, errf.NewFromErr(errf.PartialFailed, err)
-		}
-
-		succeeded = append(succeeded, id)
+	switch basicInfo.Vendor {
+	case enumor.TCloud:
+		err = svc.client.HCService().TCloud.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
+	case enumor.Aws:
+		err = svc.client.HCService().Aws.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
+	case enumor.Gcp:
+		err = svc.client.HCService().Gcp.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
+	case enumor.Azure:
+		err = svc.client.HCService().Azure.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
+	case enumor.HuaWei:
+		err = svc.client.HCService().HuaWei.Vpc.Delete(cts.Kit.Ctx, cts.Kit.Header(), id)
 	}
 
-	return core.BatchDeleteResp{Succeeded: succeeded}, nil
+	if err != nil {
+		logs.Errorf("delete vpc %s failed, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 // AssignVpcToBiz assign vpcs to biz.

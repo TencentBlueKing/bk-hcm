@@ -480,31 +480,6 @@ paths:
           userVerifiedRequired: true
         disabledStages: [ ]
         descriptionEn:
-  /api/v1/cloud/vpcs/batch:
-    delete:
-      operationId: batch_delete_vpc
-      description: 批量删除VPC
-      tags:
-        - Vpc
-      responses:
-        default:
-          description: ''
-      x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
-        matchSubpath: false
-        backend:
-          type: HTTP
-          method: delete
-          path: /api/v1/cloud/vpcs/batch
-          matchSubpath: false
-          timeout: 0
-          upstreams: { }
-          transformHeaders: { }
-        authConfig:
-          userVerifiedRequired: true
-        disabledStages: [ ]
-        descriptionEn:
   /api/v1/cloud/vpcs/bind/cloud_areas:
     post:
       operationId: bind_vpc_with_cloud_area
@@ -595,6 +570,30 @@ paths:
         backend:
           type: HTTP
           method: patch
+          path: /api/v1/cloud/vpcs/{id}
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:
+    delete:
+      operationId: delete_vpc_in_resource
+      description: 删除VPC
+      tags:
+        - Vpc
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
           path: /api/v1/cloud/vpcs/{id}
           matchSubpath: false
           timeout: 0
