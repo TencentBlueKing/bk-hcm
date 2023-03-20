@@ -20,7 +20,9 @@
 package application
 
 import (
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/assert"
 )
 
 // AzureVpcCreateReq ...
@@ -28,13 +30,13 @@ type AzureVpcCreateReq struct {
 	BkBizID           int64  `json:"bk_biz_id" validate:"required,min=1"`
 	AccountID         string `json:"account_id" validate:"required"`
 	ResourceGroupName string `json:"resource_group_name" validate:"required,lowercase"`
-	Region            string `json:"region" validate:"required"`
-	Name              string `json:"name" validate:"required,min=1,max=60"`
+	Region            string `json:"region" validate:"required,lowercase"`
+	Name              string `json:"name" validate:"required,min=1,max=60,lowercase"`
 	IPv4Cidr          string `json:"ipv4_cidr" validate:"required,cidrv4"`
 	BkCloudID         int64  `json:"bk_cloud_id" validate:"required,min=1"`
 
 	Subnet struct {
-		Name     string `json:"name" validate:"required,min=1,max=60"`
+		Name     string `json:"name" validate:"required,min=1,max=60,lowercase"`
 		IPv4Cidr string `json:"ipv4_cidr" validate:"required,cidrv4"`
 	} `json:"subnet" validate:"required"`
 
@@ -45,6 +47,11 @@ type AzureVpcCreateReq struct {
 func (req *AzureVpcCreateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
+	}
+
+	// region can be no space lowercase
+	if !assert.IsSameCaseNoSpaceString(req.Region) {
+		return errf.New(errf.InvalidParameter, "region can only be lowercase")
 	}
 
 	return nil

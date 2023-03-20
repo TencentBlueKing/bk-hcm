@@ -24,7 +24,9 @@ import (
 	"strings"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/assert"
 
 	"github.com/TencentBlueKing/gopkg/collection/set"
 )
@@ -34,7 +36,7 @@ var (
 		"1", "123", "a", "actuser", "adm", "admin", "admin1", "admin2", "administrator", "aspnet",
 		"backup", "console", "david", "guest", "john", "owner", "root", "server", "sql", "support_388945a0",
 		"support", "sys", "test", "test1", "test2", "test3", "user", "user1", "user2",
-		// Note: 以上是linxu和windows都敏感的用户名，以下是linux比windows多出的
+		// Note: 以上是linux和windows都敏感的用户名，以下是linux比windows多出的
 		"user3", "user4", "user5", "video",
 	})
 )
@@ -43,14 +45,14 @@ var (
 type AzureCvmCreateReq struct {
 	BkBizID               int64    `json:"bk_biz_id" validate:"required,min=1"`
 	AccountID             string   `json:"account_id" validate:"required"`
-	ResourceGroupName     string   `json:"resource_group_name" validate:"required"`
-	Region                string   `json:"region" validate:"required"`
-	Zone                  string   `json:"zone" validate:"required"`
-	Name                  string   `json:"name" validate:"required,min=1,max=60"`
+	ResourceGroupName     string   `json:"resource_group_name" validate:"required,lowercase"`
+	Region                string   `json:"region" validate:"required,lowercase"`
+	Zone                  string   `json:"zone" validate:"required,lowercase"`
+	Name                  string   `json:"name" validate:"required,min=1,max=60,lowercase"`
 	InstanceType          string   `json:"instance_type" validate:"required"`
-	CloudImageID          string   `json:"cloud_image_id" validate:"required"`
-	CloudVpcID            string   `json:"cloud_vpc_id" validate:"required"`
-	CloudSubnetID         string   `json:"cloud_subnet_id" validate:"required"`
+	CloudImageID          string   `json:"cloud_image_id" validate:"required,lowercase"`
+	CloudVpcID            string   `json:"cloud_vpc_id" validate:"required,lowercase"`
+	CloudSubnetID         string   `json:"cloud_subnet_id" validate:"required,lowercase"`
 	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required,min=1,max=1"`
 
 	SystemDisk struct {
@@ -85,6 +87,22 @@ func (req *AzureCvmCreateReq) Validate() error {
 	// 校验用户名
 	if err := req.validateUsername(); err != nil {
 		return err
+	}
+
+	// region can be no space lowercase
+	if !assert.IsSameCaseNoSpaceString(req.Region) {
+		return errf.New(errf.InvalidParameter, "region can only be lowercase")
+	}
+
+	// zone can be no space lowercase
+	if !assert.IsSameCaseNoSpaceString(req.Zone) {
+		return errf.New(errf.InvalidParameter, "zone can only be lowercase")
+	}
+
+	for _, sgID := range req.CloudSecurityGroupIDs {
+		if !assert.IsSameCaseString(sgID) {
+			return errf.New(errf.InvalidParameter, "cloud_security_group_ids can only be lowercase")
+		}
 	}
 
 	// TODO: 密码校验比较复杂，暂时不支持
