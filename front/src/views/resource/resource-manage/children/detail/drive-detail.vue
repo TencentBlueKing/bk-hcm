@@ -4,12 +4,15 @@ import { CloudType } from '@/typings/account';
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import DetailInfo from '../../common/info/detail-info';
+import { useAccountStore } from '@/store';
 
 import {
   ref,
+  computed,
 } from 'vue';
 import {
   useRoute,
+  useRouter,
 } from 'vue-router';
 import {
   InfoBox,
@@ -89,9 +92,9 @@ const settingFields = ref<any[]>([
   {
     name: '是否已挂载',
     prop: 'instance_id',
-    render (instance_id: string) {
-      return instance_id ? '已挂载' : '未挂载'
-    }
+    render(instance_id: string) {
+      return instance_id ? '已挂载' : '未挂载';
+    },
   },
   {
     name: '挂载主机',
@@ -123,6 +126,12 @@ const settingFields = ref<any[]>([
 
 const resourceStore = useResourceStore();
 const route = useRoute();
+const router =  useRouter();
+const accountStore = useAccountStore();
+
+const isResourcePage = computed(() => {   // 资源下没有业务ID
+  return !accountStore.bizs;
+});
 
 const {
   t,
@@ -219,6 +228,13 @@ const handleShowDelete = () => {
     },
   });
 };
+
+
+const handleToPage = () => {
+  router.push({
+    path: '/business/drive/recyclebin/disk',
+  });
+};
 </script>
 
 <template>
@@ -258,6 +274,13 @@ const handleShowDelete = () => {
       :tabs="hostTabs"
     >
       <template #default>
+        <bk-button
+          v-if="!isResourcePage"
+          class="f-right mt10"
+          theme="primary"
+          @click="handleToPage">
+          {{ '回收记录' }}
+        </bk-button>
         <detail-info
           :fields="settingFields"
           :detail="detail"
@@ -283,5 +306,8 @@ const handleShowDelete = () => {
 }
 .w60 {
   width: 60px;
+}
+.f-right{
+  float: right;
 }
 </style>

@@ -13,7 +13,7 @@
       >{{ t('撤销恢复') }}
       </bk-button>
     </section>
-    <div class="flex-row operate-warp justify-content-between align-items-center mb20">
+    <div class="flex-row operate-warp justify-content-between align-items-center mb20" v-if="isResourcePage">
       <div>
         <bk-button-group>
           <bk-button
@@ -47,6 +47,7 @@
         row-hover="auto"
       >
         <bk-table-column
+          v-if="isResourcePage"
           type="selection"
         />
         <bk-table-column
@@ -141,7 +142,7 @@
 
 <script lang="ts">
 import { reactive, watch, toRefs, defineComponent, ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Message } from 'bkui-vue';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
@@ -157,6 +158,7 @@ export default defineComponent({
   setup() {
     const { t } = useI18n();
     const router = useRouter();
+    const route = useRoute();
     const resourceStore = useResourceStore();
     const accountStore = useAccountStore();
     const fetchUrl = ref<string>('recycle_records/list');
@@ -205,6 +207,17 @@ export default defineComponent({
       handleSelectionChange,
     } = useSelection();
 
+    // 选择类型
+    const handleSelected = (v) => {
+      state.filter.rules = [{
+        field: 'res_type',
+        op: 'eq',
+        value: v,
+      }];
+      getList();
+      state.selectedType = v;
+    };
+
     // 是否精确
     watch(
       () => state.isAccurate,
@@ -214,6 +227,15 @@ export default defineComponent({
         });
       },
     );
+
+    watch(() => route.params, (params) => {
+      console.log(params.type);
+      if (params.type) {
+        // @ts-ignore
+        state.selectedType = params.type;
+        handleSelected(params.type);
+      }
+    }, { immediate: true });
 
     const isResourcePage = computed(() => {   // 资源下没有业务ID
       return !accountStore.bizs;
@@ -266,17 +288,6 @@ export default defineComponent({
       state.type = type;
       state.deleteBoxTitle = `确认要 ${type === 'destroy' ? t('销毁') : t('恢复')}`;
       state.showDeleteBox = true;
-    };
-
-    // 选择类型
-    const handleSelected = (v) => {
-      state.filter.rules = [{
-        field: 'res_type',
-        op: 'eq',
-        value: v,
-      }];
-      getList();
-      state.selectedType = v;
     };
 
     // 跳转到具体的资源详情

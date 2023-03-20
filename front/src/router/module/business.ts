@@ -28,6 +28,15 @@ const businesseMenus: RouteRecordRaw[] = [
               breadcrumb: ['计算', '主机', '详情'],
             },
           },
+          {
+            path: 'recyclebin/:type',
+            name: 'hostBusinessRecyclebin ',
+            component: () => import('@/views/business/business-manage.vue'),
+            meta: {
+              activeKey: 'businessHost',
+              breadcrumb: ['计算', '主机', '回收站'],
+            },
+          },
         ],
         meta: {
           activeKey: 'businessHost',
@@ -53,6 +62,15 @@ const businesseMenus: RouteRecordRaw[] = [
             meta: {
               activeKey: 'businessDisk',
               breadcrumb: ['计算', '硬盘', '详情'],
+            },
+          },
+          {
+            path: 'recyclebin/:type',
+            name: 'hostBusinessRecyclebin',
+            component: () => import('@/views/business/business-manage.vue'),
+            meta: {
+              activeKey: 'businessDisk',
+              breadcrumb: ['计算', '硬盘', '回收站'],
             },
           },
         ],
@@ -86,15 +104,6 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessImage',
           breadcrumb: ['计算', '镜像'],
-        },
-      },
-      {
-        path: '/business/recyclebin',
-        name: '回收站 ',    // 加个空格 防止和资源回收站name相同
-        component: () => import('@/views/business/business-manage.vue'),
-        meta: {
-          activeKey: 'businessRecyclebin',
-          breadcrumb: ['计算', '回收站'],
         },
       },
     ],

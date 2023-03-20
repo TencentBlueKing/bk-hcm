@@ -37,6 +37,9 @@ export default defineComponent({
     dialogWidth: {
       type: String,
     },
+    activeType: {
+      type: String,
+    },
   },
 
   emits: ['update:isShow', 'submit'],
@@ -177,7 +180,7 @@ export default defineComponent({
           );
         },
       },
-      { label: t('源地址'),
+      { label: t(props.activeType === 'egress' ? '出站地址' : '源地址'),
         field: 'id',
         render: ({ data }: any) => {
           return (

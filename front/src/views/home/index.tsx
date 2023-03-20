@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, reactive, watch, ref, nextTick } from 'vue';
+import { defineComponent, reactive, watch, ref, nextTick } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
 import { Menu, Navigation, Dropdown, Select } from 'bkui-vue';
@@ -46,6 +46,10 @@ export default defineComponent({
     // 获取业务列表
     const getBusinessList = async () => {
       try {
+        if (accountStore.bizs) {
+          businessId.value = accountStore.bizs;
+          return;
+        }
         loading.value = true;
         const res = await accountStore.getBizListWithAuth();
         loading.value = false;

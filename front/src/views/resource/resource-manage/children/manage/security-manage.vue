@@ -532,13 +532,13 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
   >
     <section>
       <slot>
-        <bk-button
+        <!-- <bk-button
           class="w100"
           theme="primary"
           @click="handleDistribution"
         >
           {{ t('分配') }}
-        </bk-button>
+        </bk-button> -->
       </slot>
       <bk-button
         class="w100 ml10"

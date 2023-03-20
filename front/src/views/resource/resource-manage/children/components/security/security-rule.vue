@@ -157,6 +157,7 @@ const handleSubmitRule = async (data: any) => {
 };
 
 const handleSecurityRuleDialog = (data: any) => {
+  console.log('data', data);
   resourceStore.setSecurityRuleDetail(data);
   handleSecurityRule();
 };
@@ -224,7 +225,7 @@ const inColumns = [
         'span',
         {},
         [
-          h(
+          props.vendor !== 'huawei' && h(
             Button,
             {
               text: true,
@@ -318,7 +319,7 @@ const outColumns = [
         'span',
         {},
         [
-          h(
+          props.vendor !== 'huawei' && h(
             Button,
             {
               text: true,
@@ -414,6 +415,7 @@ const types = [
     v-model:isShow="isShowSecurityRule"
     :loading="securityRuleLoading"
     dialog-width="1200"
+    :active-type="activeType"
     :title="t(activeType === 'egress' ? '添加出站规则' : '添加入站规则')"
     :vendor="vendor"
     @submit="handleSubmitRule"

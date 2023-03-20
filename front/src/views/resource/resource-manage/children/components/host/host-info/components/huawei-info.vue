@@ -20,7 +20,7 @@ const cvmInfo = [
   },
   {
     name: '实例ID',
-    prop: 'id',
+    prop: 'cloud_id',
   },
   {
     name: '账号',
