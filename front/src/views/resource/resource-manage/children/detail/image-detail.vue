@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
-import ImageInfo from '../components/image/image-info';
+import ImageInfo from '../components/image/image-info.vue';
 
 import { ref } from 'vue';
 import {
@@ -16,8 +16,8 @@ const {
   t,
 } = useI18n();
 
-const imageId = ref(route.query?.id);
-const vendor = ref(route.query?.vendor);
+const imageId = ref<string>(route.query?.id as string);
+const vendor = ref<string>(route.query?.type as string);
 
 const hostTabs = [
   {

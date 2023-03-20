@@ -16,7 +16,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 
-export default (type: string, isSimpleShow: boolean = false) => {
+export default (type: string, isSimpleShow = false) => {
   const resourceStore = useResourceStore();
   const router = useRouter();
   const route = useRoute();
@@ -633,7 +633,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
   const cvmsColumns = [
     {
       type: 'selection',
-      onlyShowOnList: true
+      onlyShowOnList: true,
     },
     getLinkField('host'),
     {
@@ -895,7 +895,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
       field: 'created_at',
       sort: true,
     },
-  ]
+  ];
 
   const columnsMap = {
     vpc: vpcColumns,
@@ -911,7 +911,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
     eips: eipColumns,
   };
 
-  const columns = columnsMap[type] || []
+  const columns = columnsMap[type] || [];
 
   return columns.filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
 };

@@ -27,8 +27,8 @@ export default (options: { filter: any, filterOptions: any }) => {
     limit: 10,
     count: 0,
   });
-  const sort = ref();
-  const order = ref();
+  const sort = ref('created_at');
+  const order = ref('DESC');
 
   // 更新数据
   const query = () => {

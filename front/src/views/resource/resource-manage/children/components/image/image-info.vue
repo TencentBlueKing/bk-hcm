@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import { ref } from 'vue';
+import { PropType, ref } from 'vue';
 import useDetail from '../../../hooks/use-detail';
 
 const props = defineProps({
   id: {
-    type: String,
+    type: String as PropType<string>,
   },
   vendor: {
-    type: String,
+    type: String as PropType<string>,
   },
 });
 

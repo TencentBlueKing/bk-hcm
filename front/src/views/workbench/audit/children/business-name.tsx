@@ -5,6 +5,10 @@ import { useAccountStore } from '@/store';
 export default defineComponent({
   props: {
     id: [Array, String],
+    emptyText: {
+      type: String,
+      default: '--',
+    },
   },
   setup(props) {
     const accountStore = useAccountStore();
@@ -20,7 +24,7 @@ export default defineComponent({
     const names = computed(() => {
       const result = [];
       ids.value.forEach((id) => {
-        result.push(businessList.value.find(item => item.id === id)?.name ?? '--');
+        result.push(businessList.value.find(item => item.id === id)?.name ?? props.emptyText);
       });
 
       return result.join(',');

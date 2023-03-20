@@ -54,7 +54,7 @@ const diffCompMap = {
       <div class="details-item">
         <div class="item-label">业务</div>
         <div class="item-content">
-          <business-name :id="details.bk_biz_id"></business-name>
+          <business-name :id="details.bk_biz_id" :empty-text="'未分配'"></business-name>
         </div>
       </div>
       <div class="details-item">
@@ -67,7 +67,7 @@ const diffCompMap = {
       </div>
       <div class="details-item">
         <div class="item-label">云资源ID</div>
-        <div class="item-content">{{ details.associated_cloud_res_id || '--' }}</div>
+        <div class="item-content">{{ details.cloud_res_id || '--' }}</div>
       </div>
       <div class="details-item">
         <div class="item-label">动作</div>

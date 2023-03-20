@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { AuditActionEnum, AuditActionNameEnum } from '../constants';
 
 const props = defineProps({
@@ -64,6 +64,7 @@ const typeActions = {
     { id: AuditActionEnum.CREATE, name: AuditActionNameEnum.CREATE },
     { id: AuditActionEnum.UPDATE, name: AuditActionNameEnum.UPDATE },
     { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
+    { id: AuditActionEnum.ASSIGN, name: AuditActionNameEnum.ASSIGN },
   ],
 };
 
@@ -73,16 +74,19 @@ const actions = computed(() => {
 
 const selectedValue = computed({
   get() {
-    return actions.value?.[0]?.id;
+    return actions.value?.[0]?.id || '';
   },
   set(val) {
     emit('input', val);
   },
 });
+
+watch(selectedValue, v => console.log(v));
 </script>
 
 <template>
   <bk-select
+    :key="props.type"
     v-model="selectedValue"
     filterable
     :multiple="false"

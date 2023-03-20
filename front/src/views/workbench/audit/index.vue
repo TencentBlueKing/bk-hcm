@@ -73,6 +73,7 @@ const {
   pagination,
   handlePageChange,
   handlePageSizeChange,
+  handleSort,
 } = useList({ filter, filterOptions });
 
 const isBizType = computed(() => filterOptions.auditType === 'biz');
@@ -92,6 +93,7 @@ const columns = computed(() => {
       label: t('云资源 ID'),
       field: 'cloud_res_id',
       showOverflowTooltip: true,
+      sort: true,
       render({ cell }: { cell: string }) {
         return h(
           'span',
@@ -104,6 +106,7 @@ const columns = computed(() => {
     {
       label: t('名称'),
       field: 'res_name',
+      sort: true,
       showOverflowTooltip: true,
     },
     {
@@ -113,6 +116,7 @@ const columns = computed(() => {
     {
       label: t('动作'),
       field: 'action',
+      sort: true,
       render({ cell }: { cell: string }) {
         return h(
           'span',
@@ -125,6 +129,7 @@ const columns = computed(() => {
     {
       label: t('所属业务'),
       field: 'bk_biz_id',
+      sort: true,
       visible: isBizType.value,
       render({ cell }: { cell: number }) {
         return h('span', getBizName(cell));
@@ -132,6 +137,7 @@ const columns = computed(() => {
     },
     {
       label: t('云账号'),
+      sort: true,
       field: 'account_id',
     },
     {
@@ -141,6 +147,7 @@ const columns = computed(() => {
     {
       label: t('来源'),
       field: 'source',
+      sort: true,
       render({ cell }: { cell: string }) {
         return h(
           'span',
@@ -153,6 +160,7 @@ const columns = computed(() => {
     {
       label: t('时间'),
       field: 'created_at',
+      sort: true,
       render({ cell }: { cell: string }) {
         return h(
           'span',
@@ -257,6 +265,7 @@ watch(isBizType, (isBizType) => {
           v-model="filter.res_type"
           filterable
           :multiple="false"
+          @change="filter.action = ''"
         >
           <bk-option
             v-for="(item, index) in resourceTypeOptions"
@@ -340,6 +349,7 @@ watch(isBizType, (isBizType) => {
       :pagination="pagination"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
+      @column-sort="handleSort"
     />
   </bk-loading>
 
