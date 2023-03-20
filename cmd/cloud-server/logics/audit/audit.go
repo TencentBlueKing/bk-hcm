@@ -41,8 +41,8 @@ type Interface interface {
 		updateFields map[string]interface{}) error
 	// ResBizAssignAudit 资源分配到业务审计
 	ResBizAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, resIDs []string, bizID int64) error
-	// ResCloudAreaAssignAudit 资源分配到云区域审计
-	ResCloudAreaAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, opt []ResCloudAreaAssignOption) error
+	// ResCloudAreaBindAudit 资源绑定云区域审计
+	ResCloudAreaBindAudit(kt *kit.Kit, resType enumor.AuditResourceType, opt []ResCloudAreaBindOption) error
 	// ResBaseOperationAudit 资源基础操作审计，开机，关机等。
 	ResBaseOperationAudit(kt *kit.Kit, resType enumor.AuditResourceType, action protoaudit.OperationAction,
 		ids []string) error
@@ -85,15 +85,15 @@ func (a audit) ResBizAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, 
 	return nil
 }
 
-// ResCloudAreaAssignOption resource assign to cloud area option.
-type ResCloudAreaAssignOption struct {
+// ResCloudAreaBindOption resource bind cloud area option.
+type ResCloudAreaBindOption struct {
 	ResID   string
 	CloudID int64
 }
 
-// ResCloudAreaAssignAudit resource assign to cloud area audit.
-func (a audit) ResCloudAreaAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType,
-	opt []ResCloudAreaAssignOption) error {
+// ResCloudAreaBindAudit resource bind cloud area audit.
+func (a audit) ResCloudAreaBindAudit(kt *kit.Kit, resType enumor.AuditResourceType,
+	opt []ResCloudAreaBindOption) error {
 
 	req := &protoaudit.CloudResourceAssignAuditReq{
 		Assigns: make([]protoaudit.CloudResourceAssignInfo, 0, len(opt)),

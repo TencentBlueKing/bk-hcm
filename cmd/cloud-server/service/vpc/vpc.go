@@ -429,14 +429,14 @@ func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error)
 	}
 
 	// create assign audit.
-	auditOpt := make([]audit.ResCloudAreaAssignOption, 0, len(req))
+	auditOpt := make([]audit.ResCloudAreaBindOption, 0, len(req))
 	for _, info := range req {
-		auditOpt = append(auditOpt, audit.ResCloudAreaAssignOption{
+		auditOpt = append(auditOpt, audit.ResCloudAreaBindOption{
 			ResID:   info.VpcID,
 			CloudID: info.BkCloudID,
 		})
 	}
-	err = svc.audit.ResCloudAreaAssignAudit(cts.Kit, enumor.VpcCloudAuditResType, auditOpt)
+	err = svc.audit.ResCloudAreaBindAudit(cts.Kit, enumor.VpcCloudAuditResType, auditOpt)
 	if err != nil {
 		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

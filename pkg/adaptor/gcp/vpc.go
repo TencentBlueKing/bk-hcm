@@ -162,6 +162,7 @@ func convertVpc(data *compute.Network) *types.GcpVpc {
 			SelfLink:              data.SelfLink,
 			AutoCreateSubnetworks: data.AutoCreateSubnetworks,
 			EnableUlaInternalIpv6: data.EnableUlaInternalIpv6,
+			InternalIpv6Range:     data.InternalIpv6Range,
 			Mtu:                   data.Mtu,
 			RoutingMode:           converter.PtrToVal(data.RoutingConfig).RoutingMode,
 		},

@@ -130,7 +130,8 @@
     "extension": {
       "self_link": "https://www.googleapis.com/compute/v1/projects/xxx/global/networks/test",
       "auto_create_subnetworks": false,
-      "enable_ula_internal_ipv6": false,
+      "enable_ula_internal_ipv6": true,
+      "internal_ipv6_range": "::/48",
       "mtu": 1460,
       "routing_mode": "REGIONAL"
     }
@@ -283,6 +284,7 @@
 | self_link                | string  | 资源URL                       |
 | auto_create_subnetworks  | boolean | 是否默认创建子网                    |
 | enable_ula_internal_ipv6 | boolean | 是否启用 VPC 网络 ULA 内部 IPv6 范围  |
+| internal_ipv6_range      | string  | VPC 网络 ULA 内部 IPv6 范围       |
 | mtu                      | int64   | 最大传输单元                      |
 | routing_mode             | string  | 动态路由模式（枚举值：REGIONAL、GLOBAL） |
 

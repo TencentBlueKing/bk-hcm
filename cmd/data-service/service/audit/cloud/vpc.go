@@ -135,17 +135,7 @@ func (ad Audit) vpcAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResou
 			continue
 		}
 
-		changed := make(map[string]interface{})
-		switch one.AssignedResType {
-		case enumor.BizAuditAssignedResType:
-			changed["bk_biz_id"] = one.AssignedResID
-		case enumor.CloudAreaAuditAssignedResType:
-			changed["bk_cloud_id"] = one.AssignedResID
-		default:
-			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
-		}
-
-		audits = append(audits, &tableaudit.AuditTable{
+		audit := &tableaudit.AuditTable{
 			ResID:      one.ResID,
 			CloudResID: vpc.CloudID,
 			ResName:    converter.PtrToVal(vpc.Name),
@@ -158,10 +148,23 @@ func (ad Audit) vpcAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResou
 			Source:     kt.GetRequestSource(),
 			Rid:        kt.Rid,
 			AppCode:    kt.AppCode,
-			Detail: &tableaudit.BasicDetail{
-				Changed: changed,
-			},
-		})
+		}
+
+		changed := make(map[string]interface{})
+		switch one.AssignedResType {
+		case enumor.BizAuditAssignedResType:
+			changed["bk_biz_id"] = one.AssignedResID
+		case enumor.CloudAreaAuditAssignedResType:
+			changed["bk_cloud_id"] = one.AssignedResID
+			audit.Action = enumor.Bind
+		default:
+			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
+		}
+
+		audit.Detail = &tableaudit.BasicDetail{
+			Changed: changed,
+		}
+		audits = append(audits, audit)
 	}
 
 	return audits, nil

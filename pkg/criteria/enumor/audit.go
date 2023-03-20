@@ -88,6 +88,8 @@ const (
 	Associate AuditAction = "associate"
 	// Disassociate 资源解关联操作
 	Disassociate AuditAction = "disassociate"
+	// Bind 绑定
+	Bind AuditAction = "bind"
 )
 
 // AuditActionEnums op type map.
@@ -103,6 +105,7 @@ var AuditActionEnums = map[AuditAction]struct{}{
 	ResetPwd:     {},
 	Associate:    {},
 	Disassociate: {},
+	Bind:         {},
 }
 
 // Exist judge enum value exist.

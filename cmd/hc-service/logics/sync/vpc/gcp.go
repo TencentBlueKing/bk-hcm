@@ -280,8 +280,9 @@ func filterGcpVpcList(req *SyncGcpOption, list *types.GcpVpcListResult,
 					},
 					Extension: &cloud.GcpVpcUpdateExt{
 						EnableUlaInternalIpv6: converter.ValToPtr(item.Extension.EnableUlaInternalIpv6),
+						InternalIpv6Range:     &item.Extension.InternalIpv6Range,
 						Mtu:                   item.Extension.Mtu,
-						RoutingMode:           item.Extension.RoutingMode,
+						RoutingMode:           &item.Extension.RoutingMode,
 					},
 				}
 
@@ -304,6 +305,7 @@ func filterGcpVpcList(req *SyncGcpOption, list *types.GcpVpcListResult,
 					SelfLink:              item.Extension.SelfLink,
 					AutoCreateSubnetworks: item.Extension.AutoCreateSubnetworks,
 					EnableUlaInternalIpv6: item.Extension.EnableUlaInternalIpv6,
+					InternalIpv6Range:     item.Extension.InternalIpv6Range,
 					Mtu:                   item.Extension.Mtu,
 					RoutingMode:           item.Extension.RoutingMode,
 				},
@@ -342,6 +344,10 @@ func isGcpVpcChange(info cloudcore.Vpc[cloudcore.GcpVpcExtension], item types.Gc
 	}
 
 	if info.Extension.EnableUlaInternalIpv6 != item.Extension.EnableUlaInternalIpv6 {
+		return true
+	}
+
+	if info.Extension.InternalIpv6Range != item.Extension.InternalIpv6Range {
 		return true
 	}
 

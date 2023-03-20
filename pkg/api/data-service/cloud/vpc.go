@@ -54,8 +54,8 @@ type VpcCreateExtension interface {
 // TCloudVpcCreateExt defines create tencent cloud vpc extensional info.
 type TCloudVpcCreateExt struct {
 	Cidr            []TCloudCidr `json:"cidr" validate:"required"`
-	IsDefault       bool         `json:"is_default" validate:"required"`
-	EnableMulticast bool         `json:"enable_multicast" validate:"required"`
+	IsDefault       bool         `json:"is_default" validate:"omitempty"`
+	EnableMulticast bool         `json:"enable_multicast" validate:"omitempty"`
 	DnsServerSet    []string     `json:"dns_server_set" validate:"omitempty"`
 	DomainName      string       `json:"domain_name,omitempty" validate:"omitempty"`
 }
@@ -65,16 +65,17 @@ type AwsVpcCreateExt struct {
 	Cidr               []AwsCidr `json:"cidr" validate:"required"`
 	State              string    `json:"state" validate:"required"`
 	InstanceTenancy    string    `json:"instance_tenancy" validate:"omitempty"`
-	IsDefault          bool      `json:"is_default" validate:"required"`
-	EnableDnsHostnames bool      `json:"enable_dns_hostnames" validate:"required"`
-	EnableDnsSupport   bool      `json:"enable_dns_support" validate:"required"`
+	IsDefault          bool      `json:"is_default" validate:"omitempty"`
+	EnableDnsHostnames bool      `json:"enable_dns_hostnames" validate:"omitempty"`
+	EnableDnsSupport   bool      `json:"enable_dns_support" validate:"omitempty"`
 }
 
 // GcpVpcCreateExt defines gcp vpc extensional info.
 type GcpVpcCreateExt struct {
 	SelfLink              string `json:"self_link" validate:"required"`
-	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks" validate:"required"`
-	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6" validate:"required"`
+	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks" validate:"omitempty"`
+	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6" validate:"omitempty"`
+	InternalIpv6Range     string `json:"internal_ipv6_range" validate:"omitempty"`
 	Mtu                   int64  `json:"mtu" validate:"required"`
 	RoutingMode           string `json:"routing_mode" validate:"omitempty"`
 }
@@ -83,12 +84,12 @@ type GcpVpcCreateExt struct {
 type AzureVpcCreateExt struct {
 	ResourceGroupName string      `json:"resource_group_name" validate:"required"`
 	DNSServers        []string    `json:"dns_servers" validate:"omitempty"`
-	Cidr              []AzureCidr `json:"cidr" validate:"required"`
+	Cidr              []AzureCidr `json:"cidr" validate:"required,min=1"`
 }
 
 // HuaWeiVpcCreateExt defines huawei vpc extensional info.
 type HuaWeiVpcCreateExt struct {
-	Cidr                []HuaWeiCidr `json:"cidr" validate:"required"`
+	Cidr                []HuaWeiCidr `json:"cidr" validate:"required,min=1"`
 	Status              string       `json:"status" validate:"required"`
 	EnterpriseProjectID string       `json:"enterprise_project_id" validate:"omitempty"`
 }
@@ -152,9 +153,10 @@ type AwsVpcUpdateExt struct {
 
 // GcpVpcUpdateExt defines gcp vpc extensional info.
 type GcpVpcUpdateExt struct {
-	EnableUlaInternalIpv6 *bool  `json:"enable_ula_internal_ipv6,omitempty" validate:"omitempty"`
-	Mtu                   int64  `json:"mtu,omitempty" validate:"omitempty"`
-	RoutingMode           string `json:"routing_mode,omitempty" validate:"omitempty"`
+	EnableUlaInternalIpv6 *bool   `json:"enable_ula_internal_ipv6,omitempty" validate:"omitempty"`
+	InternalIpv6Range     *string `json:"internal_ipv6_range,omitempty" validate:"omitempty"`
+	Mtu                   int64   `json:"mtu,omitempty" validate:"omitempty"`
+	RoutingMode           *string `json:"routing_mode,omitempty" validate:"omitempty"`
 }
 
 // AzureVpcUpdateExt defines azure vpc extensional info.

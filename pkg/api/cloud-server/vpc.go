@@ -20,72 +20,10 @@
 package cloudserver
 
 import (
-	"encoding/json"
-
 	"hcm/pkg/api/core/cloud"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 )
-
-// -------------------------- Create --------------------------
-
-// VpcCreateReq defines create vpc request.
-type VpcCreateReq struct {
-	Vendor    enumor.Vendor      `json:"vendor" validate:"required"`
-	AccountID string             `json:"account_id" validate:"required"`
-	Name      string             `json:"name" validate:"required"`
-	Region    string             `json:"region" validate:"required"`
-	Category  enumor.VpcCategory `json:"category" validate:"required"`
-	Memo      *string            `json:"memo,omitempty" validate:"omitempty"`
-	BkCloudID int64              `json:"bk_cloud_id" validate:"required"`
-	Extension json.RawMessage    `json:"extension" validate:"required"`
-}
-
-// Validate VpcCreateReq.
-func (c VpcCreateReq) Validate() error {
-	return validator.Validate.Struct(c)
-}
-
-// VpcCreateExt defines vpc extensional info.
-type VpcCreateExt interface {
-	TCloudVpcCreateExt | AwsVpcCreateExt | GcpVpcCreateExt | AzureVpcCreateExt | HuaWeiVpcCreateExt
-}
-
-// TODO add subnets options in vpc extensions
-
-// TCloudVpcCreateExt defines tencent cloud vpc extensional info.
-type TCloudVpcCreateExt struct {
-	IPv4Cidr string `json:"ipv4_cidr" validate:"required"`
-}
-
-// AwsVpcCreateExt defines aws vpc extensional info.
-type AwsVpcCreateExt struct {
-	IPv4Cidr                    string `json:"ipv4_cidr" validate:"required"`
-	AmazonProvidedIpv6CidrBlock bool   `json:"amazon_provided_ipv6_cidr_block" validate:"-"`
-	InstanceTenancy             string `json:"instance_tenancy" validate:"required"`
-}
-
-// GcpVpcCreateExt defines gcp vpc extensional info.
-type GcpVpcCreateExt struct {
-	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks" validate:"-"`
-	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6" validate:"-"`
-	InternalIpv6Range     string `json:"internal_ipv6_range" validate:"-"`
-	RoutingMode           string `json:"routing_mode,omitempty" validate:"omitempty"`
-}
-
-// AzureVpcCreateExt defines azure vpc extensional info.
-type AzureVpcCreateExt struct {
-	ResourceGroup string   `json:"resource_group" validate:"required"`
-	IPv4Cidr      []string `json:"ipv4_cidr" validate:"omitempty"`
-	IPv6Cidr      []string `json:"ipv6_cidr" validate:"omitempty"`
-}
-
-// HuaWeiVpcCreateExt defines huawei vpc extensional info.
-type HuaWeiVpcCreateExt struct {
-	IPv4Cidr            string  `json:"ipv4_cidr" validate:"required"`
-	EnterpriseProjectID *string `json:"enterprise_project_id" validate:"omitempty"`
-}
 
 // -------------------------- Update --------------------------
 

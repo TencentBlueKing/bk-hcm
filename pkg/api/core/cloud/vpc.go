@@ -89,6 +89,7 @@ type GcpVpcExtension struct {
 	SelfLink              string `json:"self_link"`
 	AutoCreateSubnetworks bool   `json:"auto_create_subnetworks"`
 	EnableUlaInternalIpv6 bool   `json:"enable_ula_internal_ipv6"`
+	InternalIpv6Range     string `json:"internal_ipv6_range"`
 	Mtu                   int64  `json:"mtu"`
 	RoutingMode           string `json:"routing_mode"`
 }

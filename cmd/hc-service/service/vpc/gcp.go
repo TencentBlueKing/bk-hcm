@@ -137,6 +137,7 @@ func convertGcpVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.GcpVpcCreateEx
 			SelfLink:              data.Extension.SelfLink,
 			AutoCreateSubnetworks: data.Extension.AutoCreateSubnetworks,
 			EnableUlaInternalIpv6: data.Extension.EnableUlaInternalIpv6,
+			InternalIpv6Range:     data.Extension.InternalIpv6Range,
 			Mtu:                   data.Extension.Mtu,
 			RoutingMode:           data.Extension.RoutingMode,
 		},
