@@ -31,7 +31,6 @@ import (
 	"hcm/pkg/api/core"
 	cloudcore "hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -41,7 +40,6 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/uuid"
 )
 
 // SyncAwsOption define aws sync option.
@@ -72,59 +70,68 @@ func (opt SyncAwsOption) Validate() error {
 func AwsSubnetSync(kt *kit.Kit, opt *SyncAwsOption,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
-	// batch get subnet list from cloudapi.
-	list, err := BatchGetAwsSubnetList(kt, opt, adaptor)
-	if err != nil {
-		logs.Errorf("%s-subnet request cloudapi response failed. accountID: %s, region: %s, err: %v",
-			enumor.Aws, opt.AccountID, opt.Region, err)
+	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	// batch get subnet map from db.
-	resourceDBMap, err := listAwsSubnetMapFromDB(kt, opt.CloudIDs, dataCli)
+	list, err := listAwsSubnetFromCloud(kt, opt, adaptor)
 	if err != nil {
-		logs.Errorf("%s-subnet batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
-			enumor.Aws, opt.AccountID, opt.Region, err)
+		logs.Errorf("list aws subnet from cloud failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
-	// batch sync vendor subnet list.
-	err = BatchSyncAwsSubnetList(kt, opt, list, resourceDBMap, dataCli, adaptor)
+	resourceDBMap, err := listAwsSubnetMapFromDB(kt, opt, dataCli)
 	if err != nil {
-		logs.Errorf("%s-subnet compare api and dblist failed. accountID: %s, region: %s, err: %v",
-			enumor.Aws, opt.AccountID, opt.Region, err)
+		logs.Errorf("list aws subnet from db failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
-	return &hcservice.ResourceSyncResult{
-		TaskID: uuid.UUID(),
-	}, nil
+	if len(list.Details) == 0 && len(resourceDBMap) == 0 {
+		return nil, nil
+	}
+
+	err = diffAwsSubnetAndSync(kt, opt, list, resourceDBMap, dataCli, adaptor)
+	if err != nil {
+		logs.Errorf("diff aws subnet and sync failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }
 
-func listAwsSubnetMapFromDB(kt *kit.Kit, cloudIDs []string, dataCli *dataclient.Client) (
+func listAwsSubnetMapFromDB(kt *kit.Kit, opt *SyncAwsOption, dataCli *dataclient.Client) (
 	map[string]cloudcore.Subnet[cloudcore.AwsSubnetExtension], error) {
 
 	expr := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
 			&filter.AtomRule{
+				Field: "account_id",
+				Op:    filter.Equal.Factory(),
+				Value: opt.AccountID,
+			},
+			&filter.AtomRule{
+				Field: "region",
+				Op:    filter.Equal.Factory(),
+				Value: opt.Region,
+			},
+			&filter.AtomRule{
 				Field: "cloud_id",
 				Op:    filter.In.Factory(),
-				Value: cloudIDs,
+				Value: opt.CloudIDs,
 			},
 		},
 	}
-	resourceMap := make(map[string]cloudcore.Subnet[cloudcore.AwsSubnetExtension], 0)
 	dbQueryReq := &core.ListReq{
 		Filter: expr,
 		Page:   core.DefaultBasePage,
 	}
 	dbList, err := dataCli.Aws.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), dbQueryReq)
 	if err != nil {
-		logs.Errorf("aws-subnet list ext db failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
+	resourceMap := make(map[string]cloudcore.Subnet[cloudcore.AwsSubnetExtension], len(dbList.Details))
 	for _, item := range dbList.Details {
 		resourceMap[item.CloudID] = item
 	}
@@ -132,8 +139,8 @@ func listAwsSubnetMapFromDB(kt *kit.Kit, cloudIDs []string, dataCli *dataclient.
 	return resourceMap, nil
 }
 
-// BatchGetAwsSubnetList batch get subnet list from cloudapi.
-func BatchGetAwsSubnetList(kt *kit.Kit, req *SyncAwsOption, adaptor *cloudclient.CloudAdaptorClient) (
+// listAwsSubnetFromCloud batch get subnet list from cloudapi.
+func listAwsSubnetFromCloud(kt *kit.Kit, req *SyncAwsOption, adaptor *cloudclient.CloudAdaptorClient) (
 	*types.AwsSubnetListResult, error) {
 
 	cli, err := adaptor.Aws(kt, req.AccountID)
@@ -141,54 +148,25 @@ func BatchGetAwsSubnetList(kt *kit.Kit, req *SyncAwsOption, adaptor *cloudclient
 		return nil, err
 	}
 
-	nextToken := ""
-	list := new(types.AwsSubnetListResult)
-	for {
-		opt := new(adcore.AwsListOption)
-		opt.Region = req.Region
-
-		// 查询指定CloudIDs
-		if len(req.CloudIDs) > 0 {
-			opt.CloudIDs = req.CloudIDs
-		} else {
-			count := int64(adcore.AwsQueryLimit)
-			opt.Page = &adcore.AwsPage{
-				MaxResults: converter.ValToPtr(count),
-			}
-
-			if nextToken != "" {
-				opt.Page.NextToken = converter.ValToPtr(nextToken)
-			}
-		}
-
-		tmpList, tmpErr := cli.ListSubnet(kt, opt)
-		if tmpErr != nil {
-			logs.Errorf("%s-subnet batch get cloud api failed. accountID: %s, region: %s, nextToken: %s, "+
-				"err: %v", enumor.Aws, req.AccountID, req.Region, nextToken, tmpErr)
-			return nil, tmpErr
-		}
-
-		if len(tmpList.Details) == 0 {
-			break
-		}
-
-		list.Details = append(list.Details, tmpList.Details...)
-		if len(req.CloudIDs) > 0 || tmpList.NextToken == nil {
-			break
-		}
-
-		nextToken = *tmpList.NextToken
+	opt := &adcore.AwsListOption{
+		Region:   req.Region,
+		CloudIDs: req.CloudIDs,
 	}
 
-	return list, nil
+	result, err := cli.ListSubnet(kt, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
-// BatchSyncAwsSubnetList batch sync vendor subnet list.
-func BatchSyncAwsSubnetList(kt *kit.Kit, req *SyncAwsOption, list *types.AwsSubnetListResult,
+// diffAwsSubnetAndSync batch sync vendor subnet list.
+func diffAwsSubnetAndSync(kt *kit.Kit, req *SyncAwsOption, list *types.AwsSubnetListResult,
 	resourceDBMap map[string]cloudcore.Subnet[cloudcore.AwsSubnetExtension], dataCli *dataclient.Client,
 	adaptor *cloudclient.CloudAdaptorClient) error {
 
-	createResources, updateResources, delCloudIDs, err := filterAwsSubnetList(req, list, resourceDBMap)
+	createResources, updateResources, delCloudIDs, err := diffAwsSubnet(req, list, resourceDBMap)
 	if err != nil {
 		return err
 	}
@@ -199,27 +177,34 @@ func BatchSyncAwsSubnetList(kt *kit.Kit, req *SyncAwsOption, list *types.AwsSubn
 			Subnets: updateResources,
 		}
 		if err = dataCli.Aws.Subnet.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-			logs.Errorf("%s-subnet batch compare db update failed. accountID: %s, region: %s, err: %v",
-				enumor.Aws, req.AccountID, req.Region, err)
 			return err
 		}
 	}
 
-	// add resource data
 	if len(createResources) > 0 {
 		_, err = BatchCreateAwsSubnet(kt, createResources, dataCli, adaptor, req)
 		if err != nil {
-			logs.Errorf("%s-subnet batch compare db create failed. accountID: %s, region: %s, err: %v",
-				enumor.Aws, req.AccountID, req.Region, err)
 			return err
 		}
 	}
 
-	// delete resource data
 	if len(delCloudIDs) > 0 {
-		if err = BatchDeleteSubnetByIDs(kt, delCloudIDs, dataCli); err != nil {
-			logs.Errorf("%s-subnet batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, "+
-				"err: %v", enumor.Aws, req.AccountID, req.Region, delCloudIDs, err)
+		delListOpt := &SyncAwsOption{
+			AccountID: req.AccountID,
+			Region:    req.Region,
+			CloudIDs:  delCloudIDs,
+		}
+		delResult, err := listAwsSubnetFromCloud(kt, delListOpt, adaptor)
+		if err != nil {
+			return err
+		}
+
+		if len(delResult.Details) > 0 {
+			logs.Errorf("validate subnet not exist failed, before delete, opt: %v, rid: %s", delListOpt, kt.Rid)
+			return fmt.Errorf("validate subnet not exist failed, before delete")
+		}
+
+		if err = batchDeleteSubnetByIDs(kt, delCloudIDs, dataCli); err != nil {
 			return err
 		}
 	}
@@ -228,7 +213,7 @@ func BatchSyncAwsSubnetList(kt *kit.Kit, req *SyncAwsOption, list *types.AwsSubn
 }
 
 // filterAwsVpcList filter aws subnet list
-func filterAwsSubnetList(req *SyncAwsOption, list *types.AwsSubnetListResult,
+func diffAwsSubnet(req *SyncAwsOption, list *types.AwsSubnetListResult,
 	resourceDBMap map[string]cloudcore.Subnet[cloudcore.AwsSubnetExtension]) (
 	[]cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt],
 	[]cloud.SubnetUpdateReq[cloud.AwsSubnetUpdateExt], []string, error) {
@@ -347,6 +332,7 @@ func isAwsSubnetChange(info cloudcore.Subnet[cloudcore.AwsSubnetExtension], item
 	return false
 }
 
+// BatchCreateAwsSubnet ...
 func BatchCreateAwsSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt],
 	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncAwsOption) (
 	*core.BatchCreateResult, error) {

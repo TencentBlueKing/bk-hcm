@@ -81,10 +81,9 @@ func (a AzureDeleteOption) Validate() error {
 
 // TCloudListOption defines basic tencent cloud list options.
 type TCloudListOption struct {
-	Region    string      `json:"region"`
-	CloudIDs  []string    `json:"cloud_ids,omitempty"`
-	SelfLinks []string    `json:"self_links,omitempty"`
-	Page      *TCloudPage `json:"page,omitempty"`
+	Region   string      `json:"region"`
+	CloudIDs []string    `json:"cloud_ids,omitempty"`
+	Page     *TCloudPage `json:"page,omitempty"`
 }
 
 // Validate tcloud list option.
@@ -105,18 +104,6 @@ func (t TCloudListOption) Validate() error {
 		return nil
 	}
 
-	if len(t.SelfLinks) != 0 {
-		if t.Page != nil {
-			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
-		}
-
-		if len(t.SelfLinks) > GcpQueryLimit {
-			return errf.New(errf.InvalidParameter, "gcp resource self link length should <= 500")
-		}
-
-		return nil
-	}
-
 	if t.Page == nil {
 		return errf.New(errf.InvalidParameter, "one of tcloud resource ids and page is required")
 	}
@@ -130,10 +117,9 @@ func (t TCloudListOption) Validate() error {
 
 // AwsListOption defines basic aws list options.
 type AwsListOption struct {
-	Region    string   `json:"region"`
-	CloudIDs  []string `json:"cloud_ids,omitempty"`
-	SelfLinks []string `json:"self_links,omitempty"`
-	Page      *AwsPage `json:"page,omitempty"`
+	Region   string   `json:"region"`
+	CloudIDs []string `json:"cloud_ids,omitempty"`
+	Page     *AwsPage `json:"page,omitempty"`
 }
 
 // Validate aws list option.
@@ -149,18 +135,6 @@ func (a AwsListOption) Validate() error {
 
 		if len(a.CloudIDs) > AwsQueryLimit {
 			return errf.New(errf.InvalidParameter, "aws resource ids length should <= 1000")
-		}
-
-		return nil
-	}
-
-	if len(a.SelfLinks) != 0 {
-		if a.Page != nil {
-			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
-		}
-
-		if len(a.SelfLinks) > GcpQueryLimit {
-			return errf.New(errf.InvalidParameter, "gcp resource self link length should <= 500")
 		}
 
 		return nil

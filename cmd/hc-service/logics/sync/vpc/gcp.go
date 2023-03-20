@@ -26,12 +26,10 @@ import (
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
-	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	cloudcore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -42,7 +40,6 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/uuid"
 )
 
 // SyncGcpOption define gcp sync option.
@@ -78,46 +75,86 @@ func (opt SyncGcpOption) Validate() error {
 }
 
 // GcpVpcSync sync gcp cloud vpc.
-func GcpVpcSync(kt *kit.Kit, opt *SyncGcpOption,
-	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
+func GcpVpcSync(kt *kit.Kit, opt *SyncGcpOption, adaptor *cloudclient.CloudAdaptorClient,
+	dataCli *dataclient.Client) (interface{}, error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	// batch get vpc list from cloudapi.
-	list, err := BatchGetGcpVpcList(kt, opt, adaptor)
+	list, err := listGcpVpcFromCloud(kt, opt, adaptor)
 	if err != nil {
-		logs.Errorf("%s-vpc request cloudapi response failed. accountID: %s, err: %v", enumor.Gcp, opt.AccountID, err)
+		logs.Errorf("list gcp vpc from cloud failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
-	// batch get vpc map from db.
-	resourceDBMap, err := listGcpVpcMapFromDB(kt, dataCli, &BatchGetVpcMapOption{
-		AccountID: opt.AccountID,
-		CloudIDs:  opt.CloudIDs,
-	})
+	resourceDBMap, err := listGcpVpcMapFromDB(kt, dataCli, opt)
 	if err != nil {
-		logs.Errorf("%s-vpc batch get vpcdblist failed. accountID: %s, err: %v", enumor.Gcp, opt.AccountID, err)
+		logs.Errorf("list gcp vpc from db failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
-	// batch sync vendor vpc list.
-	err = BatchSyncGcpVpcList(kt, opt, list, resourceDBMap, dataCli)
+	if len(list.Details) == 0 && len(resourceDBMap) == 0 {
+		return nil, nil
+	}
+
+	createResources, updateResources, delCloudIDs, err := diffGcpVpc(opt, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("%s-vpc compare api and dblist failed. accountID: %s, err: %v", enumor.Gcp, opt.AccountID, err)
+		logs.Errorf("diff gcp vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	return &hcservice.ResourceSyncResult{
-		TaskID: uuid.UUID(),
-	}, nil
+	if len(updateResources) > 0 {
+		updateReq := &cloud.VpcBatchUpdateReq[cloud.GcpVpcUpdateExt]{
+			Vpcs: updateResources,
+		}
+		if err = dataCli.Gcp.Vpc.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
+			logs.Errorf("batch update db vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if len(createResources) > 0 {
+		createReq := &cloud.VpcBatchCreateReq[cloud.GcpVpcCreateExt]{
+			Vpcs: createResources,
+		}
+		if _, err = dataCli.Gcp.Vpc.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
+			logs.Errorf("batch create db vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if len(delCloudIDs) > 0 {
+		delListOpt := &SyncGcpOption{
+			AccountID: opt.AccountID,
+			CloudIDs:  delCloudIDs,
+		}
+		delResult, err := listGcpVpcFromCloud(kt, delListOpt, adaptor)
+		if err != nil {
+			logs.Errorf("list gcp vpc failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+			return nil, err
+		}
+
+		if len(delResult.Details) > 0 {
+			logs.Errorf("validate vpc not exist failed, before delete, opt: %v, rid: %s", opt, kt.Rid)
+			return nil, fmt.Errorf("validate vpc not exist failed, before delete")
+		}
+
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		}
+		if err = dataCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
+			logs.Errorf("batch delete db vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	return nil, nil
 }
 
-func listGcpVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *BatchGetVpcMapOption) (
+func listGcpVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *SyncGcpOption) (
 	map[string]cloudcore.Vpc[cloudcore.GcpVpcExtension], error) {
 
-	resourceMap := make(map[string]cloudcore.Vpc[cloudcore.GcpVpcExtension], 0)
 	expr := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
@@ -137,6 +174,14 @@ func listGcpVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *BatchGetV
 		})
 	}
 
+	if len(opt.SelfLinks) != 0 {
+		expr.Rules = append(expr.Rules, &filter.AtomRule{
+			Field: "extension.self_link",
+			Op:    filter.JSONIn.Factory(),
+			Value: opt.SelfLinks,
+		})
+	}
+
 	dbQueryReq := &core.ListReq{
 		Filter: expr,
 		Page:   core.DefaultBasePage,
@@ -147,6 +192,7 @@ func listGcpVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *BatchGetV
 		return nil, err
 	}
 
+	resourceMap := make(map[string]cloudcore.Vpc[cloudcore.GcpVpcExtension], len(dbList.Details))
 	for _, item := range dbList.Details {
 		resourceMap[item.CloudID] = item
 	}
@@ -154,8 +200,8 @@ func listGcpVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *BatchGetV
 	return resourceMap, nil
 }
 
-// BatchGetGcpVpcList batch get vpc list from cloudapi.
-func BatchGetGcpVpcList(kt *kit.Kit, req *SyncGcpOption, adaptor *cloudclient.CloudAdaptorClient) (
+// listGcpVpcFromCloud batch get vpc list from cloudapi.
+func listGcpVpcFromCloud(kt *kit.Kit, req *SyncGcpOption, adaptor *cloudclient.CloudAdaptorClient) (
 	*types.GcpVpcListResult, error) {
 
 	cli, err := adaptor.Gcp(kt, req.AccountID)
@@ -163,99 +209,26 @@ func BatchGetGcpVpcList(kt *kit.Kit, req *SyncGcpOption, adaptor *cloudclient.Cl
 		return nil, err
 	}
 
-	nextToken := ""
-	list := new(types.GcpVpcListResult)
-	for {
-		opt := new(types.GcpListOption)
-		opt.Page = &adcore.GcpPage{
-			PageSize: int64(adcore.GcpQueryLimit),
-		}
+	opt := new(types.GcpListOption)
 
-		if nextToken != "" {
-			opt.Page.PageToken = nextToken
-		}
-
-		// 查询指定CloudIDs
-		if len(req.CloudIDs) > 0 {
-			opt.Page = nil
-			opt.CloudIDs = req.CloudIDs
-		} else if len(req.SelfLinks) > 0 {
-			opt.Page = nil
-			opt.SelfLinks = req.SelfLinks
-		}
-
-		tmpList, tmpErr := cli.ListVpc(kt, opt)
-		if tmpErr != nil {
-			logs.Errorf("%s-vpc batch get cloud api failed. accountID: %s, nextToken: %s, err: %v",
-				enumor.Gcp, req.AccountID, nextToken, tmpErr)
-			return nil, tmpErr
-		}
-
-		if len(tmpList.Details) == 0 {
-			break
-		}
-
-		list.Details = append(list.Details, tmpList.Details...)
-		if len(req.CloudIDs) > 0 || len(tmpList.NextPageToken) == 0 {
-			break
-		}
-
-		nextToken = tmpList.NextPageToken
+	if len(req.CloudIDs) > 0 {
+		opt.CloudIDs = req.CloudIDs
 	}
 
-	return list, nil
-}
+	if len(req.SelfLinks) > 0 {
+		opt.SelfLinks = req.SelfLinks
+	}
 
-// BatchSyncGcpVpcList batch sync vendor vpc list.
-func BatchSyncGcpVpcList(kt *kit.Kit, req *SyncGcpOption, list *types.GcpVpcListResult,
-	resourceDBMap map[string]cloudcore.Vpc[cloudcore.GcpVpcExtension], dataCli *dataclient.Client) error {
-
-	createResources, updateResources, delCloudIDs, err := filterGcpVpcList(req, list, resourceDBMap)
+	result, err := cli.ListVpc(kt, opt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// update resource data
-	if len(updateResources) > 0 {
-		updateReq := &cloud.VpcBatchUpdateReq[cloud.GcpVpcUpdateExt]{
-			Vpcs: updateResources,
-		}
-		if err = dataCli.Gcp.Vpc.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-			logs.Errorf("%s-vpc batch compare db update failed. accountID: %s, err: %v",
-				enumor.Gcp, req.AccountID, err)
-			return err
-		}
-	}
-
-	// add resource data
-	if len(createResources) > 0 {
-		createReq := &cloud.VpcBatchCreateReq[cloud.GcpVpcCreateExt]{
-			Vpcs: createResources,
-		}
-		if _, err = dataCli.Gcp.Vpc.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-			logs.Errorf("%s-vpc batch compare db create failed. accountID: %s, err: %v",
-				enumor.Gcp, req.AccountID, err)
-			return err
-		}
-	}
-
-	// delete resource data
-	if len(delCloudIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
-		}
-		if err := dataCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
-			logs.Errorf("%s-vpc batch compare db delete failed. accountID: %s, delIDs: %v, err: %v",
-				enumor.Gcp, req.AccountID, delCloudIDs, err)
-			return err
-		}
-	}
-
-	return nil
+	return result, nil
 }
 
-// filterGcpVpcList filter gcp vpc list
-func filterGcpVpcList(req *SyncGcpOption, list *types.GcpVpcListResult,
+// diffGcpVpc filter gcp vpc list
+func diffGcpVpc(req *SyncGcpOption, list *types.GcpVpcListResult,
 	resourceDBMap map[string]cloudcore.Vpc[cloudcore.GcpVpcExtension]) ([]cloud.VpcCreateReq[cloud.GcpVpcCreateExt],
 	[]cloud.VpcUpdateReq[cloud.GcpVpcUpdateExt], []string, error) {
 	if list == nil || len(list.Details) == 0 {

@@ -31,7 +31,6 @@ import (
 	cloudcore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -42,7 +41,6 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/uuid"
 )
 
 // SyncHuaWeiOption define huawei sync option.
@@ -77,143 +75,26 @@ func HuaWeiVpcSync(kt *kit.Kit, opt *SyncHuaWeiOption,
 		return nil, err
 	}
 
-	// batch get vpc list from cloudapi
-	list, err := BatchGetHuaWeiVpcList(kt, opt, adaptor)
+	list, err := listHuaWeiVpcFromCloud(kt, opt, adaptor)
 	if err != nil {
-		logs.Errorf("%s-vpc request cloudapi response failed. accountID: %s, region: %s, err: %v",
-			enumor.HuaWei, opt.AccountID, opt.Region, err)
+		logs.Errorf("list huawei vpc from cloud failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
-	// batch get vpc map from db.
-	resourceDBMap, err := listHuaWeiVpcMapFromDB(kt, dataCli, &BatchGetVpcMapOption{
-		AccountID: opt.AccountID,
-		Region:    opt.Region,
-		CloudIDs:  opt.CloudIDs,
-	})
+	resourceDBMap, err := listHuaWeiVpcMapFromDB(kt, dataCli, opt)
 	if err != nil {
-		logs.Errorf("%s-vpc batch get vpcdblist failed. accountID: %s, region: %s, err: %v",
-			enumor.HuaWei, opt.AccountID, opt.Region, err)
+		logs.Errorf("list huawei vpc from db failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
-	// batch sync vendor vpc list.
-	err = BatchSyncHuaWeiVpcList(kt, opt, list, resourceDBMap, dataCli)
+	if len(list.Details) == 0 && len(resourceDBMap) == 0 {
+		return nil, nil
+	}
+
+	createResources, updateResources, delCloudIDs, err := diffHuaWeiVpc(list, resourceDBMap, opt)
 	if err != nil {
-		logs.Errorf("%s-vpc compare api and dblist failed. accountID: %s, region: %s, err: %v",
-			enumor.HuaWei, opt.AccountID, opt.Region, err)
+		logs.Errorf("diff huawei vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
-	}
-
-	return &hcservice.ResourceSyncResult{
-		TaskID: uuid.UUID(),
-	}, nil
-}
-
-// listHuaWeiVpcMapFromDB batch get vpc map from db.
-func listHuaWeiVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *BatchGetVpcMapOption) (
-	map[string]cloudcore.Vpc[cloudcore.HuaWeiVpcExtension], error) {
-
-	resourceMap := make(map[string]cloudcore.Vpc[cloudcore.HuaWeiVpcExtension], 0)
-	expr := &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{
-			&filter.AtomRule{
-				Field: "account_id",
-				Op:    filter.Equal.Factory(),
-				Value: opt.AccountID,
-			},
-		},
-	}
-
-	if len(opt.Region) != 0 {
-		expr.Rules = append(expr.Rules, &filter.AtomRule{
-			Field: "region",
-			Op:    filter.Equal.Factory(),
-			Value: opt.Region,
-		})
-	}
-
-	if len(opt.CloudIDs) != 0 {
-		expr.Rules = append(expr.Rules, &filter.AtomRule{
-			Field: "cloud_id",
-			Op:    filter.In.Factory(),
-			Value: opt.CloudIDs,
-		})
-	}
-
-	dbQueryReq := &core.ListReq{
-		Filter: expr,
-		Page:   core.DefaultBasePage,
-	}
-	dbList, err := dataCli.HuaWei.Vpc.ListVpcExt(kt.Ctx, kt.Header(), dbQueryReq)
-	if err != nil {
-		logs.Errorf("list vpc from db failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	for _, item := range dbList.Details {
-		resourceMap[item.CloudID] = item
-	}
-
-	return resourceMap, nil
-}
-
-// BatchGetHuaWeiVpcList batch get vpc list from cloudapi.
-func BatchGetHuaWeiVpcList(kt *kit.Kit, req *SyncHuaWeiOption, adaptor *cloudclient.CloudAdaptorClient) (
-	*types.HuaWeiVpcListResult, error) {
-	cli, err := adaptor.HuaWei(kt, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	nextMarker := ""
-	list := new(types.HuaWeiVpcListResult)
-	for {
-		opt := new(types.HuaWeiVpcListOption)
-		opt.Region = req.Region
-
-		// 查询指定CloudIDs
-		if len(req.CloudIDs) > 0 {
-			opt.CloudIDs = req.CloudIDs
-		} else {
-			opt.Page = &adcore.HuaWeiPage{
-				Limit: converter.ValToPtr(int32(adcore.HuaWeiQueryLimit)),
-			}
-			if nextMarker != "" {
-				opt.Page.Marker = converter.ValToPtr(nextMarker)
-			}
-		}
-
-		tmpList, tmpErr := cli.ListVpc(kt, opt)
-		if tmpErr != nil {
-			logs.Errorf("%s-vpc batch get cloud api failed. accountID: %s, region: %s, marker: %s, err: %v",
-				enumor.HuaWei, req.AccountID, req.Region, nextMarker, tmpErr)
-			return nil, tmpErr
-		}
-
-		if len(tmpList.Details) == 0 {
-			break
-		}
-
-		list.Details = append(list.Details, tmpList.Details...)
-
-		if len(req.CloudIDs) > 0 || tmpList.NextMarker == nil {
-			break
-		}
-
-		nextMarker = *tmpList.NextMarker
-	}
-	return list, nil
-}
-
-// BatchSyncHuaWeiVpcList batch sync vendor vpc list.
-func BatchSyncHuaWeiVpcList(kt *kit.Kit, req *SyncHuaWeiOption, list *types.HuaWeiVpcListResult,
-	resourceDBMap map[string]cloudcore.Vpc[cloudcore.HuaWeiVpcExtension], dataCli *dataclient.Client) error {
-
-	createResources, updateResources, delCloudIDs, err := filterHuaWeiVpcList(req, list, resourceDBMap)
-	if err != nil {
-		return err
 	}
 
 	// update resource data
@@ -222,9 +103,8 @@ func BatchSyncHuaWeiVpcList(kt *kit.Kit, req *SyncHuaWeiOption, list *types.HuaW
 			Vpcs: updateResources,
 		}
 		if err = dataCli.HuaWei.Vpc.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-			logs.Errorf("%s-vpc batch compare db update failed. accountID: %s, region: %s, err: %v",
-				enumor.HuaWei, req.AccountID, req.Region, err)
-			return err
+			logs.Errorf("batch update vpc from db failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 	}
 
@@ -234,35 +114,112 @@ func BatchSyncHuaWeiVpcList(kt *kit.Kit, req *SyncHuaWeiOption, list *types.HuaW
 			Vpcs: createResources,
 		}
 		if _, err = dataCli.HuaWei.Vpc.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-			logs.Errorf("%s-vpc batch compare db create failed. accountID: %s, region: %s, err: %v",
-				enumor.HuaWei, req.AccountID, req.Region, err)
-			return err
+			logs.Errorf("batch create vpc to db failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 	}
 
 	// delete resource data
 	if len(delCloudIDs) > 0 {
+		delListOpt := &SyncHuaWeiOption{
+			AccountID: opt.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  delCloudIDs,
+		}
+		delResult, err := listHuaWeiVpcFromCloud(kt, delListOpt, adaptor)
+		if err != nil {
+			logs.Errorf("list huawei vpc failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+			return nil, err
+		}
+
+		if len(delResult.Details) > 0 {
+			logs.Errorf("validate vpc not exist failed, before delete, opt: %v, rid: %s", opt, kt.Rid)
+			return nil, fmt.Errorf("validate vpc not exist failed, before delete")
+		}
+
 		deleteReq := &dataservice.BatchDeleteReq{
 			Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 		}
 		if err := dataCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
-			logs.Errorf("%s-vpc batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, err: %v",
-				enumor.HuaWei, req.AccountID, req.Region, delCloudIDs, err)
-			return err
+			logs.Errorf("batch delete vpc from db failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
-// filterHuaWeiVpcList filter huawei vpc list
-func filterHuaWeiVpcList(req *SyncHuaWeiOption, list *types.HuaWeiVpcListResult,
-	resourceDBMap map[string]cloudcore.Vpc[cloudcore.HuaWeiVpcExtension]) (
-	[]cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt], []cloud.VpcUpdateReq[cloud.HuaWeiVpcUpdateExt], []string, error) {
+func listHuaWeiVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *SyncHuaWeiOption) (
+	map[string]cloudcore.Vpc[cloudcore.HuaWeiVpcExtension], error) {
+
+	dbQueryReq := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: opt.AccountID,
+				}, &filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.In.Factory(),
+					Value: opt.CloudIDs,
+				},
+				&filter.AtomRule{
+					Field: "region",
+					Op:    filter.Equal.Factory(),
+					Value: opt.Region,
+				},
+			},
+		},
+		Page: core.DefaultBasePage,
+	}
+	dbList, err := dataCli.HuaWei.Vpc.ListVpcExt(kt.Ctx, kt.Header(), dbQueryReq)
+	if err != nil {
+		logs.Errorf("list vpc from db failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	resourceMap := make(map[string]cloudcore.Vpc[cloudcore.HuaWeiVpcExtension], len(dbList.Details))
+	for _, item := range dbList.Details {
+		resourceMap[item.CloudID] = item
+	}
+
+	return resourceMap, nil
+}
+
+// listHuaWeiVpcFromCloud batch get vpc list from cloudapi.
+func listHuaWeiVpcFromCloud(kt *kit.Kit, req *SyncHuaWeiOption, adaptor *cloudclient.CloudAdaptorClient) (
+	*types.HuaWeiVpcListResult, error) {
+
+	cli, err := adaptor.HuaWei(kt, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &types.HuaWeiVpcListOption{
+		HuaWeiListOption: adcore.HuaWeiListOption{
+			Region:   req.Region,
+			CloudIDs: req.CloudIDs,
+		},
+	}
+
+	result, err := cli.ListVpc(kt, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// diffHuaWeiVpc filter huawei vpc list
+func diffHuaWeiVpc(list *types.HuaWeiVpcListResult, resourceDBMap map[string]cloudcore.
+	Vpc[cloudcore.HuaWeiVpcExtension], opt *SyncHuaWeiOption) ([]cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt],
+	[]cloud.VpcUpdateReq[cloud.HuaWeiVpcUpdateExt], []string, error) {
 
 	if list == nil || len(list.Details) == 0 {
 		return nil, nil, nil,
-			fmt.Errorf("cloudapi vpclist is empty, accountID: %s, region: %s", req.AccountID, req.Region)
+			fmt.Errorf("cloudapi vpclist is empty, accountID: %s, region: %s", opt.AccountID, opt.Region)
 	}
 
 	createResources := make([]cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt], 0)
@@ -301,7 +258,7 @@ func filterHuaWeiVpcList(req *SyncHuaWeiOption, list *types.HuaWeiVpcListResult,
 		} else {
 			// need add vpc data
 			tmpRes := cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt]{
-				AccountID: req.AccountID,
+				AccountID: opt.AccountID,
 				CloudID:   item.CloudID,
 				BkBizID:   constant.UnassignedBiz,
 				BkCloudID: constant.UnbindBkCloudID,

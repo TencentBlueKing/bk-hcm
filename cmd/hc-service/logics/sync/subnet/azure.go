@@ -25,6 +25,7 @@ import (
 	"fmt"
 
 	"hcm/cmd/hc-service/logics/sync/logics"
+	securitygrouplogics "hcm/cmd/hc-service/logics/sync/logics/security-group"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
@@ -39,71 +40,74 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/uuid"
 )
 
 // AzureSubnetSync sync azure cloud subnet.
-func AzureSubnetSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq,
+func AzureSubnetSync(kt *kit.Kit, opt *hcservice.AzureResourceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
-	// batch get subnet list from cloudapi.
-	list, err := BatchGetAzureSubnetList(kt, req, adaptor)
-	if err != nil {
-		logs.Errorf("%s-subnet request cloudapi response failed. accountID: %s, rgName: %s, err: %v",
-			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
+	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	// get vpc info from db for azure
-	if len(req.CloudVpcID) == 0 {
+	if len(opt.CloudVpcID) == 0 {
 		return nil, errors.New("cloud_vpc_id is required")
 	}
 
-	// batch get subnet map from db.
-	resourceDBMap, err := listAzureSubnetMapFromDB(kt, req.CloudIDs, req.CloudVpcID, dataCli)
+	list, err := listAzureSubnetFromCloud(kt, opt, adaptor)
 	if err != nil {
-		logs.Errorf("%s-subnet batch get subnetdblist failed. accountID: %s, rgName: %s, err: %v",
-			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
+		logs.Errorf("list azure subnet from cloud failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, err
+	}
+
+	resourceDBMap, err := listAzureSubnetMapFromDB(kt, opt, dataCli)
+	if err != nil {
+		logs.Errorf("list azure subnet from db failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
 	if len(list.Details) == 0 && len(resourceDBMap) == 0 {
-		return &hcservice.ResourceSyncResult{
-			TaskID: uuid.UUID(),
-		}, nil
+		return nil, nil
 	}
 
-	// batch sync vendor subnet list.
-	err = BatchSyncAzureSubnetList(kt, req, list, resourceDBMap, dataCli, adaptor)
+	err = diffAzureSubnetAndSync(kt, opt, list, resourceDBMap, dataCli, adaptor)
 	if err != nil {
-		logs.Errorf("%s-subnet compare api and dblist failed. accountID: %s, rgName: %s, err: %v",
-			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
+		logs.Errorf("diff azure subnet and sync failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
-	return &hcservice.ResourceSyncResult{
-		TaskID: uuid.UUID(),
-	}, nil
+	return nil, nil
 }
 
-func listAzureSubnetMapFromDB(kt *kit.Kit, cloudIDs []string, cloudVpcID string,
+func listAzureSubnetMapFromDB(kt *kit.Kit, opt *hcservice.AzureResourceSyncReq,
 	dataCli *dataclient.Client) (map[string]cloudcore.Subnet[cloudcore.AzureSubnetExtension], error) {
 
-	rulesCommon := make([]filter.RuleFactory, 0)
-
-	if cloudVpcID != "" {
-		rulesCommon = append(rulesCommon, &filter.AtomRule{
-			Field: "cloud_vpc_id",
-			Op:    filter.Equal.Factory(),
-			Value: cloudVpcID,
-		})
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "account_id",
+				Op:    filter.Equal.Factory(),
+				Value: opt.AccountID,
+			},
+			&filter.AtomRule{
+				Field: "cloud_vpc_id",
+				Op:    filter.Equal.Factory(),
+				Value: opt.CloudVpcID,
+			},
+			&filter.AtomRule{
+				Field: "extension.resource_group_name",
+				Op:    filter.JSONEqual.Factory(),
+				Value: opt.ResourceGroupName,
+			},
+		},
 	}
 
-	if len(cloudIDs) > 0 {
-		rulesCommon = append(rulesCommon, &filter.AtomRule{
+	if len(opt.CloudIDs) > 0 {
+		expr.Rules = append(expr.Rules, &filter.AtomRule{
 			Field: "cloud_id",
 			Op:    filter.In.Factory(),
-			Value: cloudIDs,
+			Value: opt.CloudIDs,
 		})
 	}
 
@@ -112,10 +116,6 @@ func listAzureSubnetMapFromDB(kt *kit.Kit, cloudIDs []string, cloudVpcID string,
 	resourceMap := make(map[string]cloudcore.Subnet[cloudcore.AzureSubnetExtension], 0)
 	for {
 		offset := page * uint32(count)
-		expr := &filter.Expression{
-			Op:    filter.And,
-			Rules: rulesCommon,
-		}
 		dbQueryReq := &core.ListReq{
 			Filter: expr,
 			Page:   &core.BasePage{Count: false, Start: offset, Limit: count},
@@ -143,8 +143,8 @@ func listAzureSubnetMapFromDB(kt *kit.Kit, cloudIDs []string, cloudVpcID string,
 	return resourceMap, nil
 }
 
-// BatchGetAzureSubnetList batch get subnet list from cloudapi.
-func BatchGetAzureSubnetList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
+// listAzureSubnetFromCloud batch get subnet list from cloudapi.
+func listAzureSubnetFromCloud(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
 	*types.AzureSubnetListResult, error) {
 
 	// 查询指定CloudIDs
@@ -204,12 +204,12 @@ func BatchGetAzureSubnetAllList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq
 	return list, nil
 }
 
-// BatchSyncAzureSubnetList batch sync vendor subnet list.
-func BatchSyncAzureSubnetList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, list *types.AzureSubnetListResult,
+// diffAzureSubnetAndSync batch sync vendor subnet list.
+func diffAzureSubnetAndSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, list *types.AzureSubnetListResult,
 	resourceDBMap map[string]cloudcore.Subnet[cloudcore.AzureSubnetExtension], dataCli *dataclient.Client,
 	adaptor *cloudclient.CloudAdaptorClient) error {
 
-	createResources, updateResources, existIDMap, err := filterAzureSubnetList(req, list, resourceDBMap)
+	createResources, updateResources, existIDMap, err := diffAzureSubnet(req, list, resourceDBMap)
 	if err != nil {
 		return err
 	}
@@ -220,8 +220,6 @@ func BatchSyncAzureSubnetList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, 
 			Subnets: updateResources,
 		}
 		if err = dataCli.Azure.Subnet.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-			logs.Errorf("%s-subnet batch compare db update failed. accountID: %s, rgName: %s, err: %v",
-				enumor.Azure, req.AccountID, req.ResourceGroupName, err)
 			return err
 		}
 	}
@@ -230,8 +228,6 @@ func BatchSyncAzureSubnetList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, 
 	if len(createResources) > 0 {
 		_, err = BatchCreateAzureSubnet(kt, createResources, dataCli, adaptor, req)
 		if err != nil {
-			logs.Errorf("%s-subnet batch compare db create failed. accountID: %s, rgName: %s, err: %v",
-				enumor.Azure, req.AccountID, req.ResourceGroupName, err)
 			return err
 		}
 	}
@@ -245,10 +241,23 @@ func BatchSyncAzureSubnetList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, 
 	}
 
 	if len(deleteIDs) > 0 {
-		err = BatchDeleteSubnetByIDs(kt, deleteIDs, dataCli)
+		delListOpt := &hcservice.AzureResourceSyncReq{
+			AccountID:         req.AccountID,
+			ResourceGroupName: req.ResourceGroupName,
+			CloudVpcID:        req.CloudVpcID,
+			CloudIDs:          deleteIDs,
+		}
+		delResult, err := listAzureSubnetFromCloud(kt, delListOpt, adaptor)
 		if err != nil {
-			logs.Errorf("%s-subnet batch compare db delete failed. accountID: %s, rgName: %s, delIDs: %v, "+
-				"err: %v", enumor.Azure, req.AccountID, req.ResourceGroupName, deleteIDs, err)
+			return err
+		}
+
+		if len(delResult.Details) > 0 {
+			logs.Errorf("validate subnet not exist failed, before delete, opt: %v, rid: %s", delListOpt, kt.Rid)
+			return fmt.Errorf("validate subnet not exist failed, before delete")
+		}
+
+		if err = batchDeleteSubnetByIDs(kt, deleteIDs, dataCli); err != nil {
 			return err
 		}
 	}
@@ -256,17 +265,11 @@ func BatchSyncAzureSubnetList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, 
 	return nil
 }
 
-// filterAzureSubnetList filter azure subnet list
-func filterAzureSubnetList(req *hcservice.AzureResourceSyncReq, list *types.AzureSubnetListResult,
+// diffAzureSubnet filter azure subnet list
+func diffAzureSubnet(req *hcservice.AzureResourceSyncReq, list *types.AzureSubnetListResult,
 	resourceDBMap map[string]cloudcore.Subnet[cloudcore.AzureSubnetExtension]) (
 	createResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt],
 	updateResources []cloud.SubnetUpdateReq[cloud.AzureSubnetUpdateExt], existIDMap map[string]bool, err error) {
-
-	if list == nil || len(list.Details) == 0 {
-		return nil, nil, nil,
-			fmt.Errorf("cloudapi subnetlist is empty, accountID: %s, rgName: %s",
-				req.AccountID, req.ResourceGroupName)
-	}
 
 	existIDMap = make(map[string]bool, 0)
 	for _, item := range list.Details {
@@ -366,6 +369,7 @@ func isAzureSubnetChange(info cloudcore.Subnet[cloudcore.AzureSubnetExtension], 
 	return false
 }
 
+// BatchCreateAzureSubnet ...
 func BatchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt],
 	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *hcservice.AzureResourceSyncReq) (
 	*core.BatchCreateResult, error) {
@@ -374,6 +378,18 @@ func BatchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq
 	times := len(createResources) / querySize
 	if len(createResources)%querySize != 0 {
 		times++
+	}
+
+	listVpcOpt := &logics.QueryVpcIDsAndSyncOption{
+		Vendor:            enumor.Azure,
+		AccountID:         req.AccountID,
+		CloudVpcIDs:       []string{req.CloudVpcID},
+		ResourceGroupName: req.ResourceGroupName,
+	}
+	vpcMap, err := logics.QueryVpcIDsAndSync(kt, adaptor, dataCli, listVpcOpt)
+	if err != nil {
+		logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	createRes := &core.BatchCreateResult{IDs: make([]string, 0)}
@@ -385,25 +401,38 @@ func BatchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq
 			newResources = append(newResources, createResources[i*querySize:(i+1)*querySize]...)
 		}
 
-		opt := &logics.QueryVpcIDsAndSyncOption{
-			Vendor:            enumor.Azure,
-			AccountID:         req.AccountID,
-			CloudVpcIDs:       []string{req.CloudVpcID},
-			ResourceGroupName: req.ResourceGroupName,
+		cloudSGIDs := make([]string, 0)
+		for _, one := range newResources {
+			if len(one.Extension.CloudSecurityGroupID) != 0 {
+				cloudSGIDs = append(cloudSGIDs, one.Extension.CloudSecurityGroupID)
+			}
 		}
-		vpcMap, err := logics.QueryVpcIDsAndSync(kt, adaptor, dataCli, opt)
+
+		listSGOpt := &securitygrouplogics.QuerySecurityGroupIDsAndSyncOption{
+			Vendor:                enumor.Azure,
+			AccountID:             req.AccountID,
+			ResourceGroupName:     req.ResourceGroupName,
+			CloudSecurityGroupIDs: cloudSGIDs,
+		}
+		securityGroupMap, err := securitygrouplogics.QuerySecurityGroupIDsAndSync(kt, adaptor, dataCli, listSGOpt)
 		if err != nil {
-			logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 
 		for index, resource := range newResources {
-			one, exist := vpcMap[resource.CloudVpcID]
+			vpcID, exist := vpcMap[resource.CloudVpcID]
 			if !exist {
 				return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
 			}
+			newResources[index].VpcID = vpcID
 
-			newResources[index].VpcID = one
+			if len(resource.Extension.CloudSecurityGroupID) != 0 {
+				sgID, exist := securityGroupMap[resource.Extension.CloudSecurityGroupID]
+				if !exist {
+					return nil, fmt.Errorf("security group: %s not sync from cloud", resource.Extension.CloudSecurityGroupID)
+				}
+				newResources[index].Extension.SecurityGroupID = sgID
+			}
 		}
 
 		createReq := &cloud.SubnetBatchCreateReq[cloud.AzureSubnetCreateExt]{

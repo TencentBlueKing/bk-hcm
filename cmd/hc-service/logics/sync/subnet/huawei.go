@@ -27,22 +27,18 @@ import (
 	"hcm/cmd/hc-service/logics/sync/logics"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
-	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	cloudcore "hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/uuid"
 )
 
 // SyncHuaWeiOption define huawei sync option.
@@ -71,70 +67,76 @@ func (opt SyncHuaWeiOption) Validate() error {
 }
 
 // SyncHuaWeiSubnet sync huawei cloud subnet.
-func SyncHuaWeiSubnet(kt *kit.Kit, req *SyncHuaWeiOption, adaptor *cloudclient.CloudAdaptorClient,
+func SyncHuaWeiSubnet(kt *kit.Kit, opt *SyncHuaWeiOption, adaptor *cloudclient.CloudAdaptorClient,
 	dataCli *dataclient.Client) (interface{}, error) {
 
-	if len(req.CloudIDs) > 0 && len(req.CloudVpcID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vpc_id is required")
-	}
-
-	// batch get subnet list from cloudapi.
-	list, err := BatchGetHuaWeiSubnetList(kt, req, adaptor)
-	if err != nil {
-		logs.Errorf("%s-subnet request cloudapi response failed. accountID: %s, region: %s, err: %v",
-			enumor.HuaWei, req.AccountID, req.Region, err)
+	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
 
-	if list.Details == nil {
+	list, err := listHuaWeiSubnetFromCloud(kt, opt, adaptor)
+	if err != nil {
+		logs.Errorf("list huawei subnet from cloud failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, err
+	}
+
+	resourceDBMap, err := listHuaWeiSubnetMapFromDB(kt, opt, dataCli)
+	if err != nil {
+		logs.Errorf("list huawei subnet from db failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, err
+	}
+
+	if len(list.Details) == 0 && len(resourceDBMap) == 0 {
 		return nil, nil
 	}
 
-	// batch get subnet map from db.
-	resourceDBMap, err := listHuaWeiSubnetMapFromDB(kt, req.CloudIDs, dataCli)
+	err = diffHuaWeiSubnetAndSync(kt, opt, list, resourceDBMap, dataCli, adaptor)
 	if err != nil {
-		logs.Errorf("%s-subnet batch get subnetdblist failed. accountID: %s, region: %s, err: %v",
-			enumor.HuaWei, req.AccountID, req.Region, err)
+		logs.Errorf("diff huawei subnet and sync failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
-	// batch sync vendor subnet list.
-	err = BatchSyncHuaWeiSubnetList(kt, req, list, resourceDBMap, dataCli, adaptor)
-	if err != nil {
-		logs.Errorf("%s-subnet compare api and subnetdblist failed. accountID: %s, region: %s, err: %v",
-			enumor.HuaWei, req.AccountID, req.Region, err)
-		return nil, err
-	}
-
-	return &hcservice.ResourceSyncResult{
-		TaskID: uuid.UUID(),
-	}, nil
+	return nil, nil
 }
 
-func listHuaWeiSubnetMapFromDB(kt *kit.Kit, cloudIDs []string, dataCli *dataclient.Client) (
+func listHuaWeiSubnetMapFromDB(kt *kit.Kit, opt *SyncHuaWeiOption, dataCli *dataclient.Client) (
 	map[string]cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension], error) {
 
 	expr := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
 			&filter.AtomRule{
+				Field: "account_id",
+				Op:    filter.Equal.Factory(),
+				Value: opt.AccountID,
+			},
+			&filter.AtomRule{
+				Field: "region",
+				Op:    filter.Equal.Factory(),
+				Value: opt.Region,
+			},
+			&filter.AtomRule{
 				Field: "cloud_id",
 				Op:    filter.In.Factory(),
-				Value: cloudIDs,
+				Value: opt.CloudIDs,
+			},
+			&filter.AtomRule{
+				Field: "cloud_vpc_id",
+				Op:    filter.Equal.Factory(),
+				Value: opt.CloudVpcID,
 			},
 		},
 	}
-	resourceMap := make(map[string]cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension], 0)
 	dbQueryReq := &core.ListReq{
 		Filter: expr,
 		Page:   core.DefaultBasePage,
 	}
 	dbList, err := dataCli.HuaWei.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), dbQueryReq)
 	if err != nil {
-		logs.Errorf("huawei-subnet list ext db failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
+	resourceMap := make(map[string]cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension], len(dbList.Details))
 	for _, item := range dbList.Details {
 		resourceMap[item.CloudID] = item
 	}
@@ -142,19 +144,8 @@ func listHuaWeiSubnetMapFromDB(kt *kit.Kit, cloudIDs []string, dataCli *dataclie
 	return resourceMap, nil
 }
 
-// BatchGetHuaWeiSubnetList batch get subnet list from cloudapi.
-func BatchGetHuaWeiSubnetList(kt *kit.Kit, req *SyncHuaWeiOption,
-	adaptor *cloudclient.CloudAdaptorClient) (*types.HuaWeiSubnetListResult, error) {
-
-	if len(req.CloudIDs) > 0 {
-		return BatchGetHuaWeiSubnetListByCloudIDs(kt, req, adaptor)
-	}
-
-	return BatchGetHuaWeiSubnetAllList(kt, req, adaptor)
-}
-
-// BatchGetHuaWeiSubnetListByCloudIDs batch get subnet list from cloudapi.
-func BatchGetHuaWeiSubnetListByCloudIDs(kt *kit.Kit, req *SyncHuaWeiOption,
+// listHuaWeiSubnetFromCloud batch get subnet list from cloudapi.
+func listHuaWeiSubnetFromCloud(kt *kit.Kit, req *SyncHuaWeiOption,
 	adaptor *cloudclient.CloudAdaptorClient) (*types.HuaWeiSubnetListResult, error) {
 
 	cli, err := adaptor.HuaWei(kt, req.AccountID)
@@ -169,59 +160,14 @@ func BatchGetHuaWeiSubnetListByCloudIDs(kt *kit.Kit, req *SyncHuaWeiOption,
 	}
 	list, err := cli.ListSubnetByID(kt, opt)
 	if err != nil {
-		logs.Errorf("%s-subnet batch get cloud api failed, err: %v, opt: %v, rid: %s",
-			enumor.HuaWei, err, opt, kt.Rid)
 		return nil, err
 	}
 
 	return list, nil
 }
 
-// BatchGetHuaWeiSubnetAllList batch get subnet list from cloudapi.
-func BatchGetHuaWeiSubnetAllList(kt *kit.Kit, req *SyncHuaWeiOption,
-	adaptor *cloudclient.CloudAdaptorClient) (*types.HuaWeiSubnetListResult, error) {
-
-	cli, err := adaptor.HuaWei(kt, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	var nextMarker *string
-	list := new(types.HuaWeiSubnetListResult)
-	for {
-		opt := &types.HuaWeiSubnetListOption{
-			Region: req.Region,
-			Page: &adcore.HuaWeiPage{
-				Limit: converter.ValToPtr(int32(adcore.HuaWeiQueryLimit)),
-			},
-			CloudVpcID: req.CloudVpcID,
-		}
-
-		// 分页查询的起始资源ID，表示从指定资源的下一条记录开始查询。
-		if nextMarker != nil {
-			opt.Page.Marker = nextMarker
-		}
-
-		tmpList, tmpErr := cli.ListSubnet(kt, opt)
-		if tmpErr != nil {
-			logs.Errorf("%s-subnet batch get cloud api failed. accountID: %s, region: %s, err: %v",
-				enumor.HuaWei, req.AccountID, req.Region, tmpErr)
-			return nil, tmpErr
-		}
-
-		list.Details = append(list.Details, tmpList.Details...)
-		nextMarker = converter.ValToPtr(tmpList.Details[len(tmpList.Details)-1].CloudID)
-
-		if len(tmpList.Details) < adcore.HuaWeiQueryLimit {
-			break
-		}
-	}
-
-	return list, nil
-}
-
-// BatchSyncHuaWeiSubnetList batch sync vendor subnet list.
-func BatchSyncHuaWeiSubnetList(kt *kit.Kit, req *SyncHuaWeiOption, list *types.HuaWeiSubnetListResult,
+// diffHuaWeiSubnetAndSync batch sync vendor subnet list.
+func diffHuaWeiSubnetAndSync(kt *kit.Kit, req *SyncHuaWeiOption, list *types.HuaWeiSubnetListResult,
 	resourceDBMap map[string]cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension], dataCli *dataclient.Client,
 	adaptor *cloudclient.CloudAdaptorClient) error {
 
@@ -236,8 +182,6 @@ func BatchSyncHuaWeiSubnetList(kt *kit.Kit, req *SyncHuaWeiOption, list *types.H
 			Subnets: updateResources,
 		}
 		if err = dataCli.HuaWei.Subnet.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-			logs.Errorf("%s-subnet batch compare db update failed. accountID: %s, region: %s, err: %v",
-				enumor.HuaWei, req.AccountID, req.Region, err)
 			return err
 		}
 	}
@@ -246,17 +190,29 @@ func BatchSyncHuaWeiSubnetList(kt *kit.Kit, req *SyncHuaWeiOption, list *types.H
 	if len(createResources) > 0 {
 		_, err = BatchCreateHuaWeiSubnet(kt, createResources, dataCli, adaptor, req)
 		if err != nil {
-			logs.Errorf("%s-subnet batch compare db create failed. accountID: %s, region: %s, err: %v",
-				enumor.HuaWei, req.AccountID, req.Region, err)
 			return err
 		}
 	}
 
 	// delete resource data
 	if len(delCloudIDs) > 0 {
-		if err = BatchDeleteSubnetByIDs(kt, delCloudIDs, dataCli); err != nil {
-			logs.Errorf("%s-subnet batch compare db delete failed. accountID: %s, region: %s, delIDs: %v, "+
-				"err: %v", enumor.HuaWei, req.AccountID, req.Region, delCloudIDs, err)
+		delListOpt := &SyncHuaWeiOption{
+			AccountID:  req.AccountID,
+			Region:     req.Region,
+			CloudVpcID: req.CloudVpcID,
+			CloudIDs:   delCloudIDs,
+		}
+		delResult, err := listHuaWeiSubnetFromCloud(kt, delListOpt, adaptor)
+		if err != nil {
+			return err
+		}
+
+		if len(delResult.Details) > 0 {
+			logs.Errorf("validate subnet not exist failed, before delete, opt: %v, rid: %s", delListOpt, kt.Rid)
+			return fmt.Errorf("validate subnet not exist failed, before delete")
+		}
+
+		if err = batchDeleteSubnetByIDs(kt, delCloudIDs, dataCli); err != nil {
 			return err
 		}
 	}
@@ -384,6 +340,7 @@ func isHuaWeiSubnetChange(info cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension]
 	return false
 }
 
+// BatchCreateHuaWeiSubnet ...
 func BatchCreateHuaWeiSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt],
 	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncHuaWeiOption) (
 	*core.BatchCreateResult, error) {

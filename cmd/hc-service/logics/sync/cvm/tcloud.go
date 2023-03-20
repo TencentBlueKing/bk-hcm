@@ -619,7 +619,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 			Region:    option.Region,
 			CloudIDs:  vpcCloudIDs,
 		}
-		_, err := vpc.TCloudVpcSync(kt, req, ad, dataCli)
+		_, err := vpc.TCloudVpcSync(kt, ad, dataCli, req)
 		if err != nil {
 			logs.Errorf("request to sync tcloud vpc logic failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

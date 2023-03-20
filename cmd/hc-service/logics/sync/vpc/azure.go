@@ -40,50 +40,90 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/uuid"
 )
 
 // AzureVpcSync sync azure cloud vpc.
-func AzureVpcSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq,
+func AzureVpcSync(kt *kit.Kit, opt *hcservice.AzureResourceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
-	// batch get vpc list from cloudapi.
-	list, err := BatchGetAzureVpcList(kt, req, adaptor)
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	list, err := listAzureVpcFromCloud(kt, opt, adaptor)
 	if err != nil {
-		logs.Errorf("%s-vpc request cloudapi response failed. accountID: %s, rgName: %s, err: %v",
-			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
+		logs.Errorf("list azure vpc from cloud failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
 	// batch get vpc map from db.
 	resourceDBMap, err := listAzureVpcMapFromDB(kt, dataCli, &BatchGetVpcMapOption{
-		AccountID:         req.AccountID,
-		ResourceGroupName: req.ResourceGroupName,
-		CloudIDs:          req.CloudIDs,
+		AccountID:         opt.AccountID,
+		ResourceGroupName: opt.ResourceGroupName,
+		CloudIDs:          opt.CloudIDs,
 	})
 	if err != nil {
-		logs.Errorf("%s-vpc batch get vpcdblist failed. accountID: %s, rgName: %s, err: %v",
-			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
+		logs.Errorf("list azure vpc from db failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
 	if len(list.Details) == 0 && len(resourceDBMap) == 0 {
-		return &hcservice.ResourceSyncResult{
-			TaskID: uuid.UUID(),
-		}, nil
+		return nil, nil
 	}
 
-	// batch sync vendor vpc list.
-	err = BatchSyncAzureVpcList(kt, req, list, resourceDBMap, dataCli)
+	createResources, updateResources, delCloudIDs, err := diffAzureVpc(opt, list, resourceDBMap)
 	if err != nil {
-		logs.Errorf("%s-vpc compare api and dblist failed. accountID: %s, rgName: %s, err: %v",
-			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
+		logs.Errorf("diff azure vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	return &hcservice.ResourceSyncResult{
-		TaskID: uuid.UUID(),
-	}, nil
+	if len(updateResources) > 0 {
+		updateReq := &cloud.VpcBatchUpdateReq[cloud.AzureVpcUpdateExt]{
+			Vpcs: updateResources,
+		}
+		if err = dataCli.Azure.Vpc.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
+			logs.Errorf("batch update db vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if len(createResources) > 0 {
+		createReq := &cloud.VpcBatchCreateReq[cloud.AzureVpcCreateExt]{
+			Vpcs: createResources,
+		}
+		if _, err = dataCli.Azure.Vpc.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
+			logs.Errorf("batch create db vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if len(delCloudIDs) > 0 {
+		delListOpt := &hcservice.AzureResourceSyncReq{
+			AccountID:         opt.AccountID,
+			ResourceGroupName: opt.ResourceGroupName,
+			CloudIDs:          delCloudIDs,
+		}
+		delResult, err := listAzureVpcFromCloud(kt, delListOpt, adaptor)
+		if err != nil {
+			logs.Errorf("list azure vpc failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+			return nil, err
+		}
+
+		if len(delResult.Details) > 0 {
+			logs.Errorf("validate vpc not exist failed, before delete, opt: %v, rid: %s", opt, kt.Rid)
+			return nil, fmt.Errorf("validate vpc not exist failed, before delete")
+		}
+
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		}
+		if err = dataCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
+			logs.Errorf("batch delete db vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	return nil, nil
 }
 
 func listAzureVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *BatchGetVpcMapOption) (
@@ -98,6 +138,11 @@ func listAzureVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *BatchGe
 				Op:    filter.Equal.Factory(),
 				Value: opt.AccountID,
 			},
+			&filter.AtomRule{
+				Field: "extension.resource_group_name",
+				Op:    filter.JSONEqual.Factory(),
+				Value: opt.ResourceGroupName,
+			},
 		},
 	}
 
@@ -109,21 +154,12 @@ func listAzureVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *BatchGe
 		})
 	}
 
-	if len(opt.ResourceGroupName) != 0 {
-		expr.Rules = append(expr.Rules, &filter.AtomRule{
-			Field: "extension.resource_group_name",
-			Op:    filter.JSONEqual.Factory(),
-			Value: opt.ResourceGroupName,
-		})
-	}
-
 	dbQueryReq := &core.ListReq{
 		Filter: expr,
 		Page:   core.DefaultBasePage,
 	}
 	dbList, err := dataCli.Azure.Vpc.ListVpcExt(kt.Ctx, kt.Header(), dbQueryReq)
 	if err != nil {
-		logs.Errorf("list vpc from db failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -134,8 +170,7 @@ func listAzureVpcMapFromDB(kt *kit.Kit, dataCli *dataclient.Client, opt *BatchGe
 	return resourceMap, nil
 }
 
-// BatchGetAzureVpcList batch get vpc list from cloudapi.
-func BatchGetAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
+func listAzureVpcFromCloud(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, adaptor *cloudclient.CloudAdaptorClient) (
 	*types.AzureVpcListResult, error) {
 	cli, err := adaptor.Azure(kt, req.AccountID)
 	if err != nil {
@@ -148,8 +183,6 @@ func BatchGetAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, adap
 		}
 		list, err := cli.ListVpc(kt, opt)
 		if err != nil {
-			logs.Errorf("%s-vpc batch get cloud api failed. accountID: %s, rgName: %s, err: %v",
-				enumor.Azure, req.AccountID, req.ResourceGroupName, err)
 			return nil, err
 		}
 
@@ -162,65 +195,14 @@ func BatchGetAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, adap
 	}
 	list, err := cli.ListVpcByID(kt, opt)
 	if err != nil {
-		logs.Errorf("%s-vpc batch get cloud api failed. accountID: %s, rgName: %s, err: %v",
-			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
 		return nil, err
 	}
 
 	return list, nil
 }
 
-// BatchSyncAzureVpcList batch sync vendor vpc list.
-func BatchSyncAzureVpcList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq,
-	list *types.AzureVpcListResult, resourceDBMap map[string]cloudcore.Vpc[cloudcore.AzureVpcExtension],
-	dataCli *dataclient.Client) error {
-
-	createResources, updateResources, delCloudIDs, err := filterAzureVpcList(req, list, resourceDBMap)
-	if err != nil {
-		return err
-	}
-
-	// update resource data
-	if len(updateResources) > 0 {
-		updateReq := &cloud.VpcBatchUpdateReq[cloud.AzureVpcUpdateExt]{
-			Vpcs: updateResources,
-		}
-		if err = dataCli.Azure.Vpc.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-			logs.Errorf("%s-vpc batch compare db update failed. accountID: %s, rgName: %s, err: %v",
-				enumor.Azure, req.AccountID, req.ResourceGroupName, err)
-			return err
-		}
-	}
-
-	// add resource data
-	if len(createResources) > 0 {
-		createReq := &cloud.VpcBatchCreateReq[cloud.AzureVpcCreateExt]{
-			Vpcs: createResources,
-		}
-		if _, err = dataCli.Azure.Vpc.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-			logs.Errorf("%s-vpc batch compare db create failed. accountID: %s, rgName: %s, err: %v",
-				enumor.Azure, req.AccountID, req.ResourceGroupName, err)
-			return err
-		}
-	}
-
-	// delete resource data
-	if len(delCloudIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
-		}
-		if err := dataCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
-			logs.Errorf("%s-vpc batch compare db delete failed. accountID: %s, resourceGroupName: %s, "+
-				"delIDs: %v, err: %v", enumor.Azure, req.AccountID, req.ResourceGroupName, delCloudIDs, err)
-			return err
-		}
-	}
-
-	return nil
-}
-
-// filterAzureVpcList filter azure vpc list
-func filterAzureVpcList(req *hcservice.AzureResourceSyncReq, list *types.AzureVpcListResult,
+// diffAzureVpc filter azure vpc list
+func diffAzureVpc(req *hcservice.AzureResourceSyncReq, list *types.AzureVpcListResult,
 	resourceDBMap map[string]cloudcore.Vpc[cloudcore.AzureVpcExtension]) ([]cloud.VpcCreateReq[cloud.AzureVpcCreateExt],
 	[]cloud.VpcUpdateReq[cloud.AzureVpcUpdateExt], []string, error) {
 

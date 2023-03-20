@@ -113,7 +113,7 @@ func QueryVpcIDsAndSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
 			Region:    opt.Region,
 			CloudIDs:  notExistCloudID,
 		}
-		if _, err = vpc.TCloudVpcSync(kt, syncOpt, adaptor, dataCli); err != nil {
+		if _, err = vpc.TCloudVpcSync(kt, adaptor, dataCli, syncOpt); err != nil {
 			return nil, err
 		}
 

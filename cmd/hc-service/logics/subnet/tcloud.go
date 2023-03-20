@@ -85,7 +85,7 @@ func (s *Subnet) TCloudSubnetCreate(kt *kit.Kit, req *hcservice.TCloudSubnetBatc
 		AccountID: req.AccountID,
 		Region:    req.Region,
 	}
-	res, err := syncsubnet.BatchCreateTcloudSubnet(kt, createReqs, s.client.DataService(), s.adaptor, syncOpt)
+	res, err := syncsubnet.BatchCreateTCloudSubnet(kt, createReqs, s.client.DataService(), s.adaptor, syncOpt)
 	if err != nil {
 		logs.Errorf("sync tcloud subnet failed, err: %v, reqs: %+v, rid: %s", err, createReqs, kt.Rid)
 		return nil, err

@@ -81,7 +81,7 @@ func (v syncVpcSvc) SyncTCloudVpc(cts *rest.Contexts) (interface{}, error) {
 			Region:    req.Region,
 			CloudIDs:  cloudIDs,
 		}
-		_, err = vpclogic.TCloudVpcSync(cts.Kit, syncOpt, v.ad, v.dataCli)
+		_, err = vpclogic.TCloudVpcSync(cts.Kit, v.ad, v.dataCli, syncOpt)
 		if err != nil {
 			logs.Errorf("request to sync tcloud vpc failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
 			return nil, err
