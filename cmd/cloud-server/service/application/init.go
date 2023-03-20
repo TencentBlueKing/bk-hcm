@@ -54,6 +54,7 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string, platformM
 
 	h.Add("CreateForAddAccount", "POST", "/applications/types/add_account", svc.CreateForAddAccount)
 	h.Add("CreateForCreateCvm", "POST", "/vendors/{vendor}/applications/types/create_cvm", svc.CreateForCreateCvm)
+	h.Add("CreateForCreateDisk", "POST", "/vendors/{vendor}/applications/types/create_disk", svc.CreateForCreateDisk)
 
 	h.Load(c.WebService)
 }

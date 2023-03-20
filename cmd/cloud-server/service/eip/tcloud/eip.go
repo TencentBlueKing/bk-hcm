@@ -20,15 +20,20 @@
 package tcloud
 
 import (
+	"fmt"
+
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/adaptor/types/eip"
 	cloudproto "hcm/pkg/api/cloud-server/eip"
+	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
+	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
@@ -141,12 +146,26 @@ func (t *TCloud) DisassociateEip(
 		return nil, err
 	}
 
+	rels, err := t.client.DataService().Global.ListEipCvmRel(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&datarelproto.EipCvmRelListReq{
+			Filter: tools.ContainersExpression("eip_id", []string{req.EipID}),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if len(rels.Details) == 0 {
+		return nil, fmt.Errorf("eip(%s) not associated", req.EipID)
+	}
+
+	cvmID := rels.Details[0].CvmID
+
 	operationInfo := protoaudit.CloudResourceOperationInfo{
 		ResType:           enumor.EipAuditResType,
 		ResID:             req.EipID,
 		Action:            protoaudit.Disassociate,
 		AssociatedResType: enumor.CvmAuditResType,
-		AssociatedResID:   req.CvmID,
+		AssociatedResID:   cvmID,
 	}
 	err = t.audit.ResOperationAudit(cts.Kit, operationInfo)
 	if err != nil {
@@ -159,7 +178,7 @@ func (t *TCloud) DisassociateEip(
 		cts.Kit.Header(),
 		&hcproto.TCloudEipDisassociateReq{
 			AccountID: basicInfo.AccountID,
-			CvmID:     req.CvmID,
+			CvmID:     cvmID,
 			EipID:     req.EipID,
 		},
 	)

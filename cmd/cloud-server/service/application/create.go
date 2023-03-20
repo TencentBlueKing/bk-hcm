@@ -29,6 +29,11 @@ import (
 	gcpcvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/gcp"
 	huaweicvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/huawei"
 	tcloudcvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/tcloud"
+	awsdiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/aws"
+	azurediskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/azure"
+	gcpdiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/gcp"
+	huaweidiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/huawei"
+	tclouddiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -68,7 +73,10 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
 	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("json marshal request data failed, err: %w", err))
+		return nil, errf.NewFromErr(
+			errf.InvalidParameter,
+			fmt.Errorf("json marshal request data failed, err: %w", err),
+		)
 	}
 
 	result, err := a.client.DataService().Global.Application.Create(
@@ -153,6 +161,56 @@ func (a *applicationSvc) CreateForCreateCvm(cts *rest.Contexts) (interface{}, er
 			return nil, err
 		}
 		handler := azurecvmhandler.NewApplicationOfCreateAzureCvm(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	}
+
+	return nil, nil
+}
+
+// CreateForCreateDisk ...
+func (a *applicationSvc) CreateForCreateDisk(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := a.getHandlerOption(cts)
+
+	switch vendor {
+	case enumor.TCloud:
+		req, err := parseReqFromRequestBody[proto.TCloudDiskCreateReq](cts)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		}
+		handler := tclouddiskhandler.NewApplicationOfCreateTCloudDisk(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.Gcp:
+		req, err := parseReqFromRequestBody[proto.GcpDiskCreateReq](cts)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		}
+		handler := gcpdiskhandler.NewApplicationOfCreateGcpDisk(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.Aws:
+		req, err := parseReqFromRequestBody[proto.AwsDiskCreateReq](cts)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		}
+		handler := awsdiskhandler.NewApplicationOfCreateAwsDisk(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.HuaWei:
+		req, err := parseReqFromRequestBody[proto.HuaWeiDiskCreateReq](cts)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		}
+		handler := huaweidiskhandler.NewApplicationOfCreateHuaWeiDisk(opt, req, a.platformManagers)
+		return a.create(cts, handler)
+	case enumor.Azure:
+		req, err := parseReqFromRequestBody[proto.AzureDiskCreateReq](cts)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		}
+		handler := azurediskhandler.NewApplicationOfCreateAzureDisk(opt, req, a.platformManagers)
 		return a.create(cts, handler)
 	}
 

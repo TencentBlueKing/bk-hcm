@@ -171,7 +171,7 @@ func (ad Audit) eipAssCvmOperationAuditBuild(
 		return nil, err
 	}
 
-	audits := make([]*tableaudit.AuditTable, len(ops))
+	audits := make([]*tableaudit.AuditTable, 0)
 	for _, one := range ops {
 
 		eipData, exist := eipIDMap[one.ResID]
@@ -189,10 +189,14 @@ func (ad Audit) eipAssCvmOperationAuditBuild(
 			return nil, err
 		}
 
+		var resName string
+		if eipData.Name != nil {
+			resName = *eipData.Name
+		}
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      eipData.ID,
 			CloudResID: eipData.CloudID,
-			ResName:    *eipData.Name,
+			ResName:    resName,
 			ResType:    enumor.EipAuditResType,
 			Action:     action,
 			BkBizID:    eipData.BkBizID,
@@ -243,7 +247,7 @@ func (ad Audit) eipAssNetworkOperationAuditBuild(
 		}
 	}
 
-	audits := make([]*tableaudit.AuditTable, len(ops))
+	audits := make([]*tableaudit.AuditTable, 0)
 	for _, one := range ops {
 		eipData, exist := eipIDMap[one.ResID]
 		if !exist {
@@ -302,7 +306,7 @@ func (ad Audit) eipDeleteAuditBuild(
 		return nil, err
 	}
 
-	audits := make([]*tableaudit.AuditTable, 0, len(deletes))
+	audits := make([]*tableaudit.AuditTable, 0)
 	for _, one := range deletes {
 		eipData, exist := eipIDMap[one.ResID]
 		if !exist {

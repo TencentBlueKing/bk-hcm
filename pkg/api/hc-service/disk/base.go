@@ -29,7 +29,7 @@ import (
 // DiskBaseCreateReq 云盘基础请求数据
 type DiskBaseCreateReq struct {
 	AccountID string  `json:"account_id" validate:"required"`
-	Name      string  `json:"name" validate:"required"`
+	DiskName  *string `json:"disk_name"`
 	Region    string  `json:"region" validate:"required"`
 	Zone      string  `json:"zone" validate:"required"`
 	DiskSize  uint64  `json:"disk_size" validate:"required"`

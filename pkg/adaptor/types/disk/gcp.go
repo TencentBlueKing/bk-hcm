@@ -117,16 +117,20 @@ func (opt *GcpDiskAttachOption) ToAttachDiskRequest() (*compute.AttachedDisk, er
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
-	return &compute.AttachedDisk{
-		DeviceName:       opt.DeviceName,
-		InitializeParams: &compute.AttachedDiskInitializeParams{DiskName: opt.DiskName},
-	}, nil
+
+	req := &compute.AttachedDisk{}
+	if opt.DeviceName != "" {
+		req.DeviceName = opt.DeviceName
+	}
+
+	return req, nil
 }
 
 // GcpDiskDetachOption ...
 type GcpDiskDetachOption struct {
 	Zone       string `json:"zone" validate:"required"`
 	CvmName    string `json:"cvm_name" validate:"required"`
+	DiskName   string `json:"disk_name" validate:"required"`
 	DeviceName string `json:"device_name" validate:"required"`
 }
 

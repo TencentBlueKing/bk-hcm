@@ -29,7 +29,8 @@ import (
 )
 
 // ListDisk 查询云盘列表
-func (rc *restClient) ListDisk(ctx context.Context,
+func (rc *restClient) ListDisk(
+	ctx context.Context,
 	h http.Header,
 	request *dataproto.DiskListReq,
 ) (*dataproto.DiskListResult, error) {
@@ -72,7 +73,8 @@ func (rc *restClient) DeleteDisk(
 }
 
 // BatchUpdateDisk 批量更新云盘的基础信息
-func (rc *restClient) BatchUpdateDisk(ctx context.Context,
+func (rc *restClient) BatchUpdateDisk(
+	ctx context.Context,
 	h http.Header,
 	request *dataproto.DiskBatchUpdateReq,
 ) (interface{}, error) {

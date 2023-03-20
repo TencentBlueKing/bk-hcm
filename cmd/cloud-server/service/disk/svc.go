@@ -395,12 +395,26 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		return nil, err
 	}
 
+	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&datarelproto.DiskCvmRelListReq{
+			Filter: tools.ContainersExpression("disk_id", []string{req.DiskID}),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if len(rels.Details) == 0 {
+		return nil, fmt.Errorf("disk(%s) not attached", req.DiskID)
+	}
+
+	cvmID := rels.Details[0].CvmID
+
 	operationInfo := protoaudit.CloudResourceOperationInfo{
 		ResType:           enumor.DiskAuditResType,
 		ResID:             req.DiskID,
 		Action:            protoaudit.Disassociate,
 		AssociatedResType: enumor.CvmAuditResType,
-		AssociatedResID:   req.CvmID,
+		AssociatedResID:   cvmID,
 	}
 
 	err = svc.audit.ResOperationAudit(cts.Kit, operationInfo)
@@ -411,7 +425,7 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 
 	detachReq := &hcproto.DiskDetachReq{
 		AccountID: basicInfo.AccountID,
-		CvmID:     req.CvmID,
+		CvmID:     cvmID,
 		DiskID:    req.DiskID,
 	}
 

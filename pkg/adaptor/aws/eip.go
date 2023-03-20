@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/tools/converter"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"hcm/pkg/adaptor/poller"
 )
 
 // ListEip ...
@@ -84,6 +85,7 @@ func (a *Aws) ListEip(kt *kit.Kit, opt *eip.AwsEipListOption) (*eip.AwsEipListRe
 			PrivateIp:      address.PrivateIpAddress,
 			PublicIpv4Pool: address.PublicIpv4Pool,
 			Domain:         address.Domain,
+			AssociationId:  address.AssociationId,
 		}
 	}
 
@@ -139,6 +141,13 @@ func (a *Aws) AssociateEip(kt *kit.Kit, opt *eip.AwsEipAssociateOption) error {
 		return err
 	}
 
+	respPoller := poller.Poller[*Aws, []*eip.AwsEip,
+		poller.BaseDoneResult]{Handler: &associateEipPollingHandler{region: opt.Region}}
+	_, err = respPoller.PollUntilDone(a, kt, []*string{&opt.PublicIp}, nil)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -159,9 +168,23 @@ func (a *Aws) DisassociateEip(kt *kit.Kit, opt *eip.AwsEipDisassociateOption) er
 		return err
 	}
 
+	result, err := a.ListEip(kt, &eip.AwsEipListOption{Region: opt.Region, Ips: []string{opt.PublicIp}})
+	if err != nil {
+		return err
+	}
+
+	req.AssociationId = result.Details[0].AssociationId
+
 	_, err = client.DisassociateAddressWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("disassociate aws eip failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	respPoller := poller.Poller[*Aws, []*eip.AwsEip,
+		poller.BaseDoneResult]{Handler: &disassociateEipPollingHandler{region: opt.Region}}
+	_, err = respPoller.PollUntilDone(a, kt, []*string{&opt.PublicIp}, nil)
+	if err != nil {
 		return err
 	}
 
@@ -188,4 +211,58 @@ func (a *Aws) CreateEip(kt *kit.Kit, opt *eip.AwsEipCreateOption) (*string, erro
 	resp, err := client.AllocateAddressWithContext(kt.Ctx, req)
 
 	return resp.AllocationId, err
+}
+
+type associateEipPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *associateEipPollingHandler) Done(pollResult []*eip.AwsEip) (bool, *poller.BaseDoneResult) {
+	r := pollResult[0]
+	if r.InstanceId == nil || *r.InstanceId == "" {
+		return false, nil
+	}
+	return true, nil
+}
+
+// Poll ...
+func (h *associateEipPollingHandler) Poll(client *Aws, kt *kit.Kit, Ips []*string) ([]*eip.AwsEip, error) {
+	if len(Ips) != 1 {
+		return nil, fmt.Errorf("poll only support one ip param, but get %v. rid: %s", Ips, kt.Rid)
+	}
+
+	result, err := client.ListEip(kt, &eip.AwsEipListOption{Region: h.region, Ips: converter.PtrToSlice(Ips)})
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Details, nil
+}
+
+type disassociateEipPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *disassociateEipPollingHandler) Done(pollResult []*eip.AwsEip) (bool, *poller.BaseDoneResult) {
+	r := pollResult[0]
+	if r.InstanceId != nil && *r.InstanceId != "" {
+		return false, nil
+	}
+	return true, nil
+}
+
+// Poll ...
+func (h *disassociateEipPollingHandler) Poll(client *Aws, kt *kit.Kit, Ips []*string) ([]*eip.AwsEip, error) {
+	if len(Ips) != 1 {
+		return nil, fmt.Errorf("poll only support one ip param, but get %v. rid: %s", Ips, kt.Rid)
+	}
+
+	result, err := client.ListEip(kt, &eip.AwsEipListOption{Region: h.region, Ips: converter.PtrToSlice(Ips)})
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Details, nil
 }

@@ -25,7 +25,7 @@ import (
 
 // GcpDiskCreateReq ...
 type GcpDiskCreateReq struct {
-	Base *DiskBaseCreateReq `json:"base" validate:"required"`
+	*DiskBaseCreateReq `json:"base" validate:"required"`
 }
 
 // Validate ...

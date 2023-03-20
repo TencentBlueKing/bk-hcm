@@ -211,7 +211,7 @@ func (g *Gcp) DisassociateEip(kt *kit.Kit, opt *eip.GcpEipDisassociateOption) er
 // CreateEip ...
 // reference: regional https://cloud.google.com/compute/docs/reference/rest/v1/addresses/insert
 // reference: global https://cloud.google.com/compute/docs/reference/rest/v1/globalAddresses/insert
-func (g *Gcp) CreateEip(kt *kit.Kit, opt *eip.GcpEipCreateOption) (*string, error) {
+func (g *Gcp) CreateEip(kt *kit.Kit, opt *eip.GcpEipCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "gcp eip create option is required")
 	}
@@ -227,14 +227,15 @@ func (g *Gcp) CreateEip(kt *kit.Kit, opt *eip.GcpEipCreateOption) (*string, erro
 	}
 
 	if opt.Region == eip.GcpGlobalRegion {
-		resp, err := client.GlobalAddresses.Insert(g.CloudProjectID(), req).Context(kt.Ctx).Do()
-		cloudID := strconv.FormatUint(resp.TargetId, 10)
-		return &cloudID, err
-	}
-
-	_, err = client.Addresses.Insert(g.CloudProjectID(), opt.Region, req).Context(kt.Ctx).Do()
-	if err != nil {
-		return nil, err
+		_, err := client.GlobalAddresses.Insert(g.CloudProjectID(), req).Context(kt.Ctx).Do()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		_, err = client.Addresses.Insert(g.CloudProjectID(), opt.Region, req).Context(kt.Ctx).Do()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var cloudID string
@@ -252,12 +253,7 @@ func (g *Gcp) CreateEip(kt *kit.Kit, opt *eip.GcpEipCreateOption) (*string, erro
 
 	respPoller := poller.Poller[*Gcp, []*eip.GcpEip,
 		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
-	_, err = respPoller.PollUntilDone(g, kt, []*string{&cloudID}, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cloudID, err
+	return respPoller.PollUntilDone(g, kt, []*string{&cloudID}, nil)
 }
 
 func (g *Gcp) getEip(kt *kit.Kit, region string, eipName string) (*compute.Address, error) {
@@ -310,12 +306,26 @@ type createEipPollingHandler struct {
 
 // Done ...
 func (h *createEipPollingHandler) Done(pollResult []*eip.GcpEip) (bool, *poller.BaseDoneResult) {
+	successCloudIDs := make([]string, 0)
+	unknownCloudIDs := make([]string, 0)
+
 	for _, r := range pollResult {
 		if r.Status == nil || *r.Status == "RESERVING" {
-			return false, nil
+			unknownCloudIDs = append(unknownCloudIDs, r.CloudID)
+		} else {
+			successCloudIDs = append(successCloudIDs, r.CloudID)
 		}
 	}
-	return true, nil
+
+	isDone := false
+	if len(unknownCloudIDs) == 0 {
+		isDone = true
+	}
+
+	return isDone, &poller.BaseDoneResult{
+		SuccessCloudIDs: successCloudIDs,
+		UnknownCloudIDs: unknownCloudIDs,
+	}
 }
 
 // Poll ...

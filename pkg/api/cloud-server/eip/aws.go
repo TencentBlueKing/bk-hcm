@@ -38,7 +38,6 @@ func (req *AwsEipAssociateReq) Validate() error {
 // AwsEipDisassociateReq ...
 type AwsEipDisassociateReq struct {
 	EipID string `json:"eip_id" validate:"required"`
-	CvmID string `json:"cvm_id" validate:"required"`
 }
 
 // Validate ...

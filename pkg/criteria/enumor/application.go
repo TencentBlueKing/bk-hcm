@@ -42,6 +42,8 @@ const (
 	AddAccount ApplicationType = "add_account"
 	// CreateCvm 创建虚拟机
 	CreateCvm ApplicationType = "create_cvm"
+	// CreateDisk 创建云盘
+	CreateDisk ApplicationType = "create_disk"
 )
 
 type ApplicationStatus string

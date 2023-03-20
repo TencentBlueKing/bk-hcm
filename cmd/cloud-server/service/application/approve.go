@@ -30,6 +30,11 @@ import (
 	gcpcvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/gcp"
 	huaweicvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/huawei"
 	tcloudcvmhandler "hcm/cmd/cloud-server/service/application/handlers/cvm/tcloud"
+	awsdiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/aws"
+	azurediskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/azure"
+	gcpdiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/gcp"
+	huaweidiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/huawei"
+	tclouddiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -111,7 +116,6 @@ func (a *applicationSvc) approve(cts *rest.Contexts) (interface{}, error) {
 	if status == enumor.Pass {
 		// TODO: 需要引入异步任务框架，这里先暂时用goroutine异步执行，无法记录状态等的，包括可能被kill等异常情况都无法处理和记录
 		go a.deliver(cts, application)
-
 	}
 
 	return nil, nil
@@ -167,6 +171,45 @@ func (a *applicationSvc) getHandlerOfCreateCvm(
 	return nil, fmt.Errorf("not support handler of create %s cvm", vendor)
 }
 
+func (a *applicationSvc) getHandlerOfCreateDisk(
+	opt *handlers.HandlerOption, vendor enumor.Vendor, application *dataproto.ApplicationResp,
+) (handlers.ApplicationHandler, error) {
+	switch vendor {
+	case enumor.TCloud:
+		req, err := parseReqFromApplicationContent[proto.TCloudDiskCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return tclouddiskhandler.NewApplicationOfCreateTCloudDisk(opt, req, []string{}), nil
+	case enumor.Gcp:
+		req, err := parseReqFromApplicationContent[proto.GcpDiskCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return gcpdiskhandler.NewApplicationOfCreateGcpDisk(opt, req, []string{}), nil
+	case enumor.Aws:
+		req, err := parseReqFromApplicationContent[proto.AwsDiskCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return awsdiskhandler.NewApplicationOfCreateAwsDisk(opt, req, []string{}), nil
+	case enumor.HuaWei:
+		req, err := parseReqFromApplicationContent[proto.HuaWeiDiskCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return huaweidiskhandler.NewApplicationOfCreateHuaWeiDisk(opt, req, []string{}), nil
+	case enumor.Azure:
+		req, err := parseReqFromApplicationContent[proto.AzureDiskCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return azurediskhandler.NewApplicationOfCreateAzureDisk(opt, req, []string{}), nil
+	default:
+		return nil, fmt.Errorf("not support handler of create %s disk", vendor)
+	}
+}
+
 func (a *applicationSvc) getHandlerByApplication(
 	cts *rest.Contexts, application *dataproto.ApplicationResp,
 ) (handlers.ApplicationHandler, error) {
@@ -191,6 +234,8 @@ func (a *applicationSvc) getHandlerByApplication(
 		return accounthandler.NewApplicationOfAddAccount(opt, req, []string{}), nil
 	case enumor.CreateCvm:
 		return a.getHandlerOfCreateCvm(opt, vendor, application)
+	case enumor.CreateDisk:
+		return a.getHandlerOfCreateDisk(opt, vendor, application)
 	}
 	return nil, errors.New("not handler to support")
 }

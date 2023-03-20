@@ -20,6 +20,7 @@
 package aws
 
 import (
+	"fmt"
 	"strings"
 
 	"hcm/pkg/adaptor/poller"
@@ -37,7 +38,7 @@ import (
 // CreateDisk 创建云硬盘
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateVolume.html
 // SDK: https://docs.aws.amazon.com/sdk-for-go/api/service/ec2/#EC2.CreateVolumeWithContext
-func (a *Aws) CreateDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) ([]*string, error) {
+func (a *Aws) CreateDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "aws disk create option is required")
 	}
@@ -59,12 +60,7 @@ func (a *Aws) CreateDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) ([]*string,
 	respPoller := poller.Poller[*Aws, []*ec2.Volume, poller.BaseDoneResult]{
 		Handler: &createDiskPollingHandler{region: opt.Region},
 	}
-	_, err := respPoller.PollUntilDone(a, kt, diskCloudIDs, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return diskCloudIDs, nil
+	return respPoller.PollUntilDone(a, kt, diskCloudIDs, nil)
 }
 
 func (a *Aws) createDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*ec2.Volume, error) {
@@ -204,13 +200,26 @@ type createDiskPollingHandler struct {
 }
 
 func (h *createDiskPollingHandler) Done(pollResult []*ec2.Volume) (bool, *poller.BaseDoneResult) {
+	successCloudIDs := make([]string, 0)
+	unknownCloudIDs := make([]string, 0)
+
 	for _, r := range pollResult {
 		if r.State == nil || *r.State == "creating" {
-			return false, nil
+			unknownCloudIDs = append(unknownCloudIDs, *r.VolumeId)
+		} else {
+			successCloudIDs = append(successCloudIDs, *r.VolumeId)
 		}
 	}
 
-	return true, nil
+	isDone := false
+	if len(unknownCloudIDs) == 0 {
+		isDone = true
+	}
+
+	return isDone, &poller.BaseDoneResult{
+		SuccessCloudIDs: successCloudIDs,
+		UnknownCloudIDs: unknownCloudIDs,
+	}
 }
 
 func (h *createDiskPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Volume, error) {
@@ -233,16 +242,18 @@ type attachDiskPollingHandler struct {
 }
 
 func (h *attachDiskPollingHandler) Done(pollResult []*ec2.Volume) (bool, *poller.BaseDoneResult) {
-	for _, r := range pollResult {
-		if *r.State != "in-use" {
-			return false, nil
-		}
+	r := pollResult[0]
+	if *r.State != "in-use" {
+		return false, nil
 	}
-
 	return true, nil
 }
 
 func (h *attachDiskPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Volume, error) {
+	if len(cloudIDs) != 1 {
+		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
+	}
+
 	cIDs := converter.PtrToSlice(cloudIDs)
 	result, _, err := client.ListDisk(
 		kt,
@@ -260,12 +271,10 @@ type detachDiskPollingHandler struct {
 }
 
 func (h *detachDiskPollingHandler) Done(pollResult []*ec2.Volume) (bool, *poller.BaseDoneResult) {
-	for _, r := range pollResult {
-		if *r.State != "available" {
-			return false, nil
-		}
+	r := pollResult[0]
+	if *r.State != "available" {
+		return false, nil
 	}
-
 	return true, nil
 }
 

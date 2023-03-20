@@ -113,6 +113,7 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		&synceip.SyncAwsEipOption{
 			AccountID: req.AccountID,
 			CloudIDs:  []string{eipData.CloudID},
+			Region:    opt.Region,
 		},
 		svc.Adaptor,
 		svc.DataCli,
@@ -168,6 +169,7 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		&synceip.SyncAwsEipOption{
 			AccountID: req.AccountID,
 			CloudIDs:  []string{eipData.CloudID},
+			Region:    opt.Region,
 		},
 		svc.Adaptor,
 		svc.DataCli,

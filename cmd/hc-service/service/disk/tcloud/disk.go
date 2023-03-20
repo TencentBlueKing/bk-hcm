@@ -35,7 +35,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/converter"
 )
 
 // DiskSvc ...
@@ -61,7 +60,7 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 
 	diskCount := uint64(req.DiskCount)
 	opt := &disk.TCloudDiskCreateOption{
-		DiskName:       &req.Name,
+		DiskName:       req.DiskName,
 		Region:         req.Region,
 		Zone:           req.Zone,
 		DiskType:       req.DiskType,
@@ -77,17 +76,23 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
-	cloudIDs, err := client.CreateDisk(cts.Kit, opt)
+	result, err := client.CreateDisk(cts.Kit, opt)
 	if err != nil {
 		return nil, err
 	}
+
+	if len(result.UnknownCloudIDs) > 0 {
+		logs.Errorf("disk(%v) is unknown, rid: %s", result.UnknownCloudIDs, cts.Kit.Rid)
+	}
+
+	cloudIDs := result.SuccessCloudIDs
 
 	_, err = syncdisk.SyncTCloudDisk(
 		cts.Kit,
 		&syncdisk.SyncTCloudDiskOption{
 			AccountID: req.AccountID,
 			Region:    req.Region,
-			CloudIDs:  converter.PtrToSlice(cloudIDs),
+			CloudIDs:  cloudIDs,
 		},
 		svc.Adaptor,
 		svc.DataCli,
@@ -115,7 +120,7 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		}, Page: &core.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},
 	)
 
-	diskIDs := make([]string, len(cloudIDs))
+	diskIDs := make([]string, len(result.SuccessCloudIDs))
 	for idx, diskData := range resp.Details {
 		diskIDs[idx] = diskData.ID
 	}

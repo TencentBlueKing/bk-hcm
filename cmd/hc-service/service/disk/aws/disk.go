@@ -25,12 +25,16 @@ import (
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
 	"hcm/pkg/adaptor/types/disk"
+	"hcm/pkg/api/core"
+	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // DiskSvc ...
@@ -49,23 +53,67 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := svc.Adaptor.Aws(cts.Kit, req.Base.AccountID)
+	client, err := svc.Adaptor.Aws(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	diskSize := int64(req.Base.DiskSize)
+	diskSize := int64(req.DiskSize)
 	opt := &disk.AwsDiskCreateOption{
-		Region:   req.Base.Region,
-		Zone:     req.Base.Zone,
-		DiskType: &req.Base.DiskType,
+		Region:   req.Region,
+		Zone:     req.Zone,
+		DiskType: &req.DiskType,
 		DiskSize: diskSize,
 	}
-	client.CreateDisk(cts.Kit, opt)
+	result, err := client.CreateDisk(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
 
-	// TODO save to data-service
+	if len(result.UnknownCloudIDs) > 0 {
+		logs.Errorf("disk(%v) is unknown, rid: %s", result.UnknownCloudIDs, cts.Kit.Rid)
+	}
 
-	return nil, nil
+	cloudIDs := result.SuccessCloudIDs
+
+	_, err = syncdisk.SyncAwsDisk(
+		cts.Kit,
+		&syncdisk.SyncAwsDiskOption{
+			AccountID: req.AccountID,
+			Region:    req.Region,
+			CloudIDs:  cloudIDs,
+		},
+		svc.Adaptor,
+		svc.DataCli,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := svc.DataCli.Global.ListDisk(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&dataproto.DiskListReq{Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.In.Factory(),
+					Value: cloudIDs,
+				}, &filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: string(enumor.Aws),
+				},
+			},
+		}, Page: &core.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},
+	)
+
+	diskIDs := make([]string, len(cloudIDs))
+	for idx, diskData := range resp.Details {
+		diskIDs[idx] = diskData.ID
+	}
+	return &core.BatchCreateResult{IDs: diskIDs}, nil
 }
 
 // DeleteDisk ...

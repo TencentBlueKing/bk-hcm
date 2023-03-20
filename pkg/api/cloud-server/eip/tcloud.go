@@ -39,7 +39,6 @@ func (req *TCloudEipAssociateReq) Validate() error {
 // TCloudEipDisassociateReq ...
 type TCloudEipDisassociateReq struct {
 	EipID string `json:"eip_id" validate:"required"`
-	CvmID string `json:"cvm_id" validate:"required"`
 }
 
 // Validate ...

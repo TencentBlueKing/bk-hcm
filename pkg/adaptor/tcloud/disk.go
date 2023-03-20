@@ -36,7 +36,7 @@ import (
 
 // CreateDisk 创建云硬盘
 // reference: https://cloud.tencent.com/document/api/362/16312
-func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) ([]*string, error) {
+func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "tcloud disk create option is required")
 	}
@@ -49,12 +49,7 @@ func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) ([]*s
 	respPoller := poller.Poller[*TCloud, []*cbs.Disk, poller.BaseDoneResult]{
 		Handler: &createDiskPollingHandler{region: opt.Region},
 	}
-	_, err = respPoller.PollUntilDone(t, kt, resp.Response.DiskIdSet, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Response.DiskIdSet, nil
+	return respPoller.PollUntilDone(t, kt, resp.Response.DiskIdSet, nil)
 }
 
 func (t *TCloud) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs.CreateDisksResponse, error) {
@@ -202,13 +197,26 @@ type createDiskPollingHandler struct {
 }
 
 func (h *createDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
+	successCloudIDs := make([]string, 0)
+	unknownCloudIDs := make([]string, 0)
+
 	for _, r := range pollResult {
-		if r.DiskState == nil || *r.DiskState == "UNATTACHED" {
-			return false, nil
+		if r.DiskState == nil {
+			unknownCloudIDs = append(unknownCloudIDs, *r.DiskId)
+		} else {
+			successCloudIDs = append(successCloudIDs, *r.DiskId)
 		}
 	}
 
-	return true, nil
+	isDone := false
+	if len(unknownCloudIDs) == 0 {
+		isDone = true
+	}
+
+	return isDone, &poller.BaseDoneResult{
+		SuccessCloudIDs: successCloudIDs,
+		UnknownCloudIDs: unknownCloudIDs,
+	}
 }
 
 func (h *createDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
@@ -223,16 +231,18 @@ type attachDiskPollingHandler struct {
 }
 
 func (h *attachDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
-	for _, r := range pollResult {
-		if *r.DiskState != "ATTACHED" {
-			return false, nil
-		}
+	r := pollResult[0]
+	if *r.DiskState != "ATTACHED" {
+		return false, nil
 	}
-
 	return true, nil
 }
 
 func (h *attachDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
+	if len(cloudIDs) != 1 {
+		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
+	}
+
 	cIDs := converter.PtrToSlice(cloudIDs)
 	return client.ListDisk(kt, &disk.TCloudDiskListOption{Region: h.region, CloudIDs: cIDs})
 }
@@ -242,16 +252,18 @@ type detachDiskPollingHandler struct {
 }
 
 func (h *detachDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
-	for _, r := range pollResult {
-		if *r.DiskState != "UNATTACHED" {
-			return false, nil
-		}
+	r := pollResult[0]
+	if *r.DiskState != "UNATTACHED" {
+		return false, nil
 	}
-
 	return true, nil
 }
 
 func (h *detachDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
+	if len(cloudIDs) != 1 {
+		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
+	}
+
 	cIDs := converter.PtrToSlice(cloudIDs)
 	return client.ListDisk(kt, &disk.TCloudDiskListOption{Region: h.region, CloudIDs: cIDs})
 }

@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	"fmt"
 	"strings"
 
 	"hcm/pkg/adaptor/poller"
@@ -185,7 +186,7 @@ func (h *HuaWei) DisassociateEip(kt *kit.Kit, opt *eip.HuaWeiEipDisassociateOpti
 // CreateEip ...
 // reference: https://support.huaweicloud.com/api-eip/eip_api_0001.html
 // https://support.huaweicloud.com/api-eip/eip_api_0006.html
-func (h *HuaWei) CreateEip(kt *kit.Kit, opt *eip.HuaWeiEipCreateOption) (*string, error) {
+func (h *HuaWei) CreateEip(kt *kit.Kit, opt *eip.HuaWeiEipCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "huawei eip create option is required")
 	}
@@ -206,8 +207,10 @@ func (h *HuaWei) CreateEip(kt *kit.Kit, opt *eip.HuaWeiEipCreateOption) (*string
 			return nil, err
 		}
 
-		response, err := client.CreatePrePaidPublicip(req)
-		return response.Publicip.Id, err
+		resp, err := client.CreatePrePaidPublicip(req)
+		respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip,
+			poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
+		return respPoller.PollUntilDone(h, kt, []*string{resp.Publicip.Id}, nil)
 	}
 	// 按需计费
 	req, err := opt.ToCreatePublicipRequest()
@@ -216,15 +219,9 @@ func (h *HuaWei) CreateEip(kt *kit.Kit, opt *eip.HuaWeiEipCreateOption) (*string
 	}
 
 	resp, err := client.CreatePublicip(req)
-
 	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip,
 		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
-	_, err = respPoller.PollUntilDone(h, kt, []*string{resp.Publicip.Id}, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Publicip.Id, err
+	return respPoller.PollUntilDone(h, kt, []*string{resp.Publicip.Id}, nil)
 }
 
 type createEipPollingHandler struct {
@@ -233,13 +230,26 @@ type createEipPollingHandler struct {
 
 // Done ...
 func (h *createEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poller.BaseDoneResult) {
+	successCloudIDs := make([]string, 0)
+	unknownCloudIDs := make([]string, 0)
+
 	for _, r := range pollResult {
 		if r.Status == nil || *r.Status == "PENDING_CREATE" || *r.Status == "NOTIFYING" {
-			return false, nil
+			unknownCloudIDs = append(unknownCloudIDs, r.CloudID)
+		} else {
+			successCloudIDs = append(successCloudIDs, r.CloudID)
 		}
 	}
 
-	return true, nil
+	isDone := false
+	if len(unknownCloudIDs) == 0 {
+		isDone = true
+	}
+
+	return isDone, &poller.BaseDoneResult{
+		SuccessCloudIDs: successCloudIDs,
+		UnknownCloudIDs: unknownCloudIDs,
+	}
 }
 
 // Poll ...
@@ -261,17 +271,20 @@ type associateEipPollingHandler struct {
 
 // Done ...
 func (h *associateEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poller.BaseDoneResult) {
-	for _, r := range pollResult {
-		if *r.Status != "ACTIVE" {
-			return false, nil
-		}
-	}
+	r := pollResult[0]
 
+	if *r.Status != "ACTIVE" {
+		return false, nil
+	}
 	return true, nil
 }
 
 // Poll ...
 func (h *associateEipPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]*eip.HuaWeiEip, error) {
+	if len(cloudIDs) != 1 {
+		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
+	}
+
 	cIDs := converter.PtrToSlice(cloudIDs)
 	result, err := client.ListEip(kt, &eip.HuaWeiEipListOption{Region: h.region, CloudIDs: cIDs})
 	if err != nil {
@@ -287,10 +300,10 @@ type disassociateEipPollingHandler struct {
 
 // Done ...
 func (h *disassociateEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poller.BaseDoneResult) {
-	for _, r := range pollResult {
-		if *r.Status != "DOWN" {
-			return false, nil
-		}
+	r := pollResult[0]
+
+	if *r.Status != "DOWN" {
+		return false, nil
 	}
 	return true, nil
 }
@@ -301,6 +314,10 @@ func (h *disassociateEipPollingHandler) Poll(
 	kt *kit.Kit,
 	cloudIDs []*string,
 ) ([]*eip.HuaWeiEip, error) {
+	if len(cloudIDs) != 1 {
+		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
+	}
+
 	cIDs := converter.PtrToSlice(cloudIDs)
 	result, err := client.ListEip(kt, &eip.HuaWeiEipListOption{Region: h.region, CloudIDs: cIDs})
 	if err != nil {

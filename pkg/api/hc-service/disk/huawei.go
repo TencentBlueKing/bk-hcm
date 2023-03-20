@@ -25,8 +25,8 @@ import (
 
 // HuaWeiDiskCreateReq ...
 type HuaWeiDiskCreateReq struct {
-	Base      *DiskBaseCreateReq            `json:"base" validate:"required"`
-	Extension *HuaWeiDiskExtensionCreateReq `json:"extension" validate:"required"`
+	*DiskBaseCreateReq `json:",inline" validate:"required"`
+	Extension          *HuaWeiDiskExtensionCreateReq `json:"extension" validate:"required"`
 }
 
 // Validate ...

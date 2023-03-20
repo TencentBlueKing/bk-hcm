@@ -54,6 +54,7 @@ type AwsEip struct {
 	PrivateIp      *string
 	PublicIpv4Pool *string
 	Domain         *string
+	AssociationId  *string
 }
 
 // AwsEipDeleteOption ...
@@ -116,7 +117,7 @@ func (opt *AwsEipDisassociateOption) ToDisassociateAddressInput() (*ec2.Disassoc
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
-	return &ec2.DisassociateAddressInput{PublicIp: aws.String(opt.PublicIp)}, nil
+	return &ec2.DisassociateAddressInput{}, nil
 }
 
 // AwsEipCreateOption ...

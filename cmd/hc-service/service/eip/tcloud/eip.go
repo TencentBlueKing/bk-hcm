@@ -35,7 +35,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/converter"
 )
 
 // EipSvc ...
@@ -196,12 +195,16 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	eipCloudIDs, err := client.CreateEip(cts.Kit, opt)
+	result, err := client.CreateEip(cts.Kit, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	cloudIDs := converter.PtrToSlice(eipCloudIDs)
+	if len(result.UnknownCloudIDs) > 0 {
+		logs.Errorf("eip(%v) is unknown, rid: %s", result.UnknownCloudIDs, cts.Kit.Rid)
+	}
+
+	cloudIDs := result.SuccessCloudIDs
 	_, err = synceip.SyncTCloudEip(
 		cts.Kit,
 		&synceip.SyncTCloudEipOption{AccountID: req.AccountID, Region: req.Region, CloudIDs: cloudIDs},

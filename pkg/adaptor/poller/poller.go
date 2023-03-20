@@ -20,7 +20,6 @@
 package poller
 
 import (
-	"errors"
 	"time"
 
 	"hcm/pkg/criteria/validator"
@@ -83,10 +82,13 @@ func (opt PollUntilDoneOption) Validate() error {
 
 // PollUntilDone ...
 func (poller *Poller[T, R, Result]) PollUntilDone(client T, kt *kit.Kit, ids []*string,
-	opt *PollUntilDoneOption) (*Result, error) {
-
+	opt *PollUntilDoneOption,
+) (*Result, error) {
 	if opt == nil {
-		return nil, errors.New("option is required")
+		opt = &PollUntilDoneOption{
+			TimeoutTimeSecond: 30 * 60,
+			Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
+		}
 	}
 
 	opt.TrySetDefaultValue()

@@ -130,3 +130,29 @@ func (cli *DiskClient) DeleteDisk(ctx context.Context, h http.Header, req *disk.
 
 	return nil
 }
+
+// CreateDisk ...
+func (cli *DiskClient) CreateDisk(
+	ctx context.Context,
+	h http.Header,
+	req *disk.HuaWeiDiskCreateReq,
+) (*core.BatchCreateResult, error) {
+	resp := new(core.BatchCreateResp)
+
+	err := cli.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/disks/create").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

@@ -243,7 +243,7 @@ func (t *TCloud) DetermineIPv6Type(kt *kit.Kit, region string, ipv6Addresses []*
 
 // CreateEip ...
 // reference: https://cloud.tencent.com/document/api/215/16699
-func (t *TCloud) CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) ([]*string, error) {
+func (t *TCloud) CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "tcloud eip create option is required")
 	}
@@ -265,12 +265,7 @@ func (t *TCloud) CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) ([]*stri
 
 	respPoller := poller.Poller[*TCloud, []*eip.TCloudEip,
 		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
-	_, err = respPoller.PollUntilDone(t, kt, resp.Response.AddressSet, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Response.AddressSet, nil
+	return respPoller.PollUntilDone(t, kt, resp.Response.AddressSet, nil)
 }
 
 type createEipPollingHandler struct {
@@ -279,13 +274,26 @@ type createEipPollingHandler struct {
 
 // Done ...
 func (h *createEipPollingHandler) Done(pollResult []*eip.TCloudEip) (bool, *poller.BaseDoneResult) {
+	successCloudIDs := make([]string, 0)
+	unknownCloudIDs := make([]string, 0)
+
 	for _, r := range pollResult {
 		if r.Status == nil || *r.Status == "CREATING" {
-			return false, nil
+			unknownCloudIDs = append(unknownCloudIDs, r.CloudID)
+		} else {
+			successCloudIDs = append(successCloudIDs, r.CloudID)
 		}
 	}
 
-	return true, nil
+	isDone := false
+	if len(unknownCloudIDs) == 0 {
+		isDone = true
+	}
+
+	return isDone, &poller.BaseDoneResult{
+		SuccessCloudIDs: successCloudIDs,
+		UnknownCloudIDs: unknownCloudIDs,
+	}
 }
 
 // Poll ...
@@ -307,6 +315,10 @@ type associateEipPollingHandler struct {
 
 // Poll ...
 func (h *associateEipPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*eip.TCloudEip, error) {
+	if len(cloudIDs) != 1 {
+		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
+	}
+
 	cIDs := converter.PtrToSlice(cloudIDs)
 	result, err := client.ListEip(kt, &eip.TCloudEipListOption{Region: h.region, CloudIDs: cIDs})
 	if err != nil {
@@ -318,12 +330,11 @@ func (h *associateEipPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs 
 
 // Done ...
 func (h *associateEipPollingHandler) Done(pollResult []*eip.TCloudEip) (bool, *poller.BaseDoneResult) {
-	for _, r := range pollResult {
-		if *r.Status != "BIND" {
-			return false, nil
-		}
-	}
+	r := pollResult[0]
 
+	if *r.Status != "BIND" || r.InstanceId == nil {
+		return false, nil
+	}
 	return true, nil
 }
 
@@ -337,6 +348,10 @@ func (h *disassociateEipPollingHandler) Poll(
 	kt *kit.Kit,
 	cloudIDs []*string,
 ) ([]*eip.TCloudEip, error) {
+	if len(cloudIDs) != 1 {
+		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
+	}
+
 	cIDs := converter.PtrToSlice(cloudIDs)
 	result, err := client.ListEip(kt, &eip.TCloudEipListOption{Region: h.region, CloudIDs: cIDs})
 	if err != nil {
@@ -348,11 +363,10 @@ func (h *disassociateEipPollingHandler) Poll(
 
 // Done ...
 func (h *disassociateEipPollingHandler) Done(pollResult []*eip.TCloudEip) (bool, *poller.BaseDoneResult) {
-	for _, r := range pollResult {
-		if *r.Status != "UNBIND" {
-			return false, nil
-		}
-	}
+	r := pollResult[0]
 
+	if *r.Status != "UNBIND" {
+		return false, nil
+	}
 	return true, nil
 }

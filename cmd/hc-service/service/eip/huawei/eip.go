@@ -243,12 +243,16 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	eipPtr, err := client.CreateEip(cts.Kit, opt)
+	result, err := client.CreateEip(cts.Kit, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	cloudIDs := []string{*eipPtr}
+	if len(result.UnknownCloudIDs) > 0 {
+		logs.Errorf("eip(%v) is unknown, rid: %s", result.UnknownCloudIDs, cts.Kit.Rid)
+	}
+
+	cloudIDs := result.SuccessCloudIDs
 
 	_, err = synceip.SyncHuaWeiEip(
 		cts.Kit,

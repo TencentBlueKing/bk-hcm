@@ -110,7 +110,6 @@ func (ad Audit) diskOperationAuditBuild(kt *kit.Kit, ops []protoaudit.CloudResou
 		}
 		audits = append(audits, audit...)
 	}
-
 	return audits, nil
 }
 
@@ -135,7 +134,7 @@ func (ad Audit) diskAssCvmOperationAuditBuild(
 		return nil, err
 	}
 
-	audits := make([]*tableaudit.AuditTable, len(ops))
+	audits := make([]*tableaudit.AuditTable, 0)
 	for _, one := range ops {
 
 		diskData, exist := diskIDMap[one.ResID]
@@ -192,7 +191,7 @@ func (ad Audit) diskDeleteAuditBuild(
 		return nil, err
 	}
 
-	audits := make([]*tableaudit.AuditTable, 0, len(deletes))
+	audits := make([]*tableaudit.AuditTable, 0)
 	for _, one := range deletes {
 		diskData, exist := diskIDMap[one.ResID]
 		if !exist {

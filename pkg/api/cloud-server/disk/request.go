@@ -51,7 +51,6 @@ func (req *DiskAssignReq) Validate() error {
 // DiskDetachReq ...
 type DiskDetachReq struct {
 	DiskID string `json:"disk_id" validate:"required"`
-	CvmID  string `json:"cvm_id" validate:"required"`
 }
 
 // Validate ...

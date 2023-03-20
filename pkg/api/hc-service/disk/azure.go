@@ -25,8 +25,8 @@ import (
 
 // AzureDiskCreateReq ...
 type AzureDiskCreateReq struct {
-	Base      *DiskBaseCreateReq           `json:"base" validate:"required"`
-	Extension *AzureDiskExtensionCreateReq `json:"extension" validate:"required"`
+	*DiskBaseCreateReq `json:"base" validate:"required"`
+	Extension          *AzureDiskExtensionCreateReq `json:"extension" validate:"required"`
 }
 
 // Validate ...
