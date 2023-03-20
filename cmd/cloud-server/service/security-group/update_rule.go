@@ -196,21 +196,19 @@ func (svc *securityGroupSvc) updateAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 	}
 
 	updateReq := &hcproto.AzureSGRuleUpdateReq{
-		Name:                             req.Name,
-		Memo:                             req.Memo,
-		DestinationAddressPrefix:         req.DestinationAddressPrefix,
-		DestinationAddressPrefixes:       req.DestinationAddressPrefixes,
-		CloudDestinationSecurityGroupIDs: req.CloudDestinationSecurityGroupIDs,
-		DestinationPortRange:             req.DestinationPortRange,
-		DestinationPortRanges:            req.DestinationPortRanges,
-		Protocol:                         req.Protocol,
-		SourceAddressPrefix:              req.SourceAddressPrefix,
-		SourceAddressPrefixes:            req.SourceAddressPrefixes,
-		CloudSourceSecurityGroupIDs:      req.CloudSourceSecurityGroupIDs,
-		SourcePortRange:                  req.SourcePortRange,
-		SourcePortRanges:                 req.SourcePortRanges,
-		Priority:                         req.Priority,
-		Access:                           req.Access,
+		Name:                       req.Name,
+		Memo:                       req.Memo,
+		DestinationAddressPrefix:   req.DestinationAddressPrefix,
+		DestinationAddressPrefixes: req.DestinationAddressPrefixes,
+		DestinationPortRange:       req.DestinationPortRange,
+		DestinationPortRanges:      req.DestinationPortRanges,
+		Protocol:                   req.Protocol,
+		SourceAddressPrefix:        req.SourceAddressPrefix,
+		SourceAddressPrefixes:      req.SourceAddressPrefixes,
+		SourcePortRange:            req.SourcePortRange,
+		SourcePortRanges:           req.SourcePortRanges,
+		Priority:                   req.Priority,
+		Access:                     req.Access,
 	}
 
 	if err := svc.checkUpdateAzureSGRuleParams(updateReq); err != nil {
@@ -229,14 +227,6 @@ func (svc *securityGroupSvc) updateAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 func (svc *securityGroupSvc) checkUpdateAzureSGRuleParams(req *hcproto.AzureSGRuleUpdateReq) error {
 	if !assert.IsSameCaseString(req.Name) {
 		return errf.New(errf.InvalidParameter, "name can only be lowercase")
-	}
-
-	if !assert.IsSameCasePtrStringSlice(req.CloudDestinationSecurityGroupIDs) {
-		return errf.New(errf.InvalidParameter, "cloud_destination_security_group_ids can only be lowercase")
-	}
-
-	if !assert.IsSameCasePtrStringSlice(req.CloudSourceSecurityGroupIDs) {
-		return errf.New(errf.InvalidParameter, "cloud_source_security_group_ids can only be lowercase")
 	}
 
 	return nil

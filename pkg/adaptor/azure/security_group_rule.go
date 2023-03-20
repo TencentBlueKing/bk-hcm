@@ -121,11 +121,11 @@ func convSecurityGroupRule(direction armnetwork.SecurityRuleDirection, rules []s
 		protocol := armnetwork.SecurityRuleProtocol(one.Protocol)
 		rule.Properties.Protocol = &protocol
 
-		if len(one.CloudDestinationSecurityGroupIDs) != 0 {
+		if len(one.CloudDestinationAppSecurityGroupIDs) != 0 {
 			rule.Properties.DestinationApplicationSecurityGroups = make([]*armnetwork.ApplicationSecurityGroup, 0,
-				len(one.CloudDestinationSecurityGroupIDs))
+				len(one.CloudDestinationAppSecurityGroupIDs))
 
-			for _, id := range one.CloudDestinationSecurityGroupIDs {
+			for _, id := range one.CloudDestinationAppSecurityGroupIDs {
 				rule.Properties.DestinationApplicationSecurityGroups = append(rule.Properties.
 					DestinationApplicationSecurityGroups, &armnetwork.ApplicationSecurityGroup{
 					ID: id,
@@ -133,11 +133,11 @@ func convSecurityGroupRule(direction armnetwork.SecurityRuleDirection, rules []s
 			}
 		}
 
-		if len(one.CloudSourceSecurityGroupIDs) != 0 {
+		if len(one.CloudSourceAppSecurityGroupIDs) != 0 {
 			rule.Properties.SourceApplicationSecurityGroups = make([]*armnetwork.ApplicationSecurityGroup, 0,
-				len(one.CloudSourceSecurityGroupIDs))
+				len(one.CloudSourceAppSecurityGroupIDs))
 
-			for _, id := range one.CloudSourceSecurityGroupIDs {
+			for _, id := range one.CloudSourceAppSecurityGroupIDs {
 				rule.Properties.SourceApplicationSecurityGroups = append(rule.Properties.
 					SourceApplicationSecurityGroups, &armnetwork.ApplicationSecurityGroup{
 					ID: id,
@@ -188,11 +188,11 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 			rule.Properties.SourcePortRange = opt.Rule.SourcePortRange
 			rule.Properties.SourcePortRanges = opt.Rule.SourcePortRanges
 
-			if len(opt.Rule.CloudDestinationSecurityGroupIDs) != 0 {
+			if len(opt.Rule.CloudDestinationAppSecurityGroupIDs) != 0 {
 				rule.Properties.DestinationApplicationSecurityGroups = make([]*armnetwork.ApplicationSecurityGroup, 0,
-					len(opt.Rule.CloudDestinationSecurityGroupIDs))
+					len(opt.Rule.CloudDestinationAppSecurityGroupIDs))
 
-				for _, id := range opt.Rule.CloudDestinationSecurityGroupIDs {
+				for _, id := range opt.Rule.CloudDestinationAppSecurityGroupIDs {
 					rule.Properties.DestinationApplicationSecurityGroups = append(rule.Properties.
 						DestinationApplicationSecurityGroups, &armnetwork.ApplicationSecurityGroup{
 						ID: id,
@@ -200,11 +200,11 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 				}
 			}
 
-			if len(opt.Rule.CloudSourceSecurityGroupIDs) != 0 {
+			if len(opt.Rule.CloudSourceAppSecurityGroupIDs) != 0 {
 				rule.Properties.SourceApplicationSecurityGroups = make([]*armnetwork.ApplicationSecurityGroup, 0,
-					len(opt.Rule.CloudSourceSecurityGroupIDs))
+					len(opt.Rule.CloudSourceAppSecurityGroupIDs))
 
-				for _, id := range opt.Rule.CloudSourceSecurityGroupIDs {
+				for _, id := range opt.Rule.CloudSourceAppSecurityGroupIDs {
 					rule.Properties.SourceApplicationSecurityGroups = append(rule.Properties.
 						SourceApplicationSecurityGroups, &armnetwork.ApplicationSecurityGroup{
 						ID: id,

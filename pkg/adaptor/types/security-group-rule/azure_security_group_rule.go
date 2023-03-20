@@ -58,22 +58,22 @@ func (opt AzureCreateOption) Validate() error {
 
 // AzureCreate azure security group rule.
 type AzureCreate struct {
-	Name                             string                       `json:"name"`
-	Description                      *string                      `json:"description"`
-	DestinationAddressPrefix         *string                      `json:"destination_address_prefix"`
-	DestinationAddressPrefixes       []*string                    `json:"destination_address_prefixes"`
-	CloudDestinationSecurityGroupIDs []*string                    `json:"cloud_destination_security_group_ids"`
-	DestinationPortRange             *string                      `json:"destination_port_range"`
-	DestinationPortRanges            []*string                    `json:"destination_port_ranges"`
-	Protocol                         string                       `json:"protocol"`
-	SourceAddressPrefix              *string                      `json:"source_address_prefix"`
-	SourceAddressPrefixes            []*string                    `json:"source_address_prefixes"`
-	CloudSourceSecurityGroupIDs      []*string                    `json:"cloud_source_security_group_ids"`
-	SourcePortRange                  *string                      `json:"source_port_range"`
-	SourcePortRanges                 []*string                    `json:"source_port_ranges"`
-	Priority                         int32                        `json:"priority"`
-	Type                             enumor.SecurityGroupRuleType `json:"type"`
-	Access                           string                       `json:"access"`
+	Name                                string                       `json:"name"`
+	Description                         *string                      `json:"description"`
+	DestinationAddressPrefix            *string                      `json:"destination_address_prefix"`
+	DestinationAddressPrefixes          []*string                    `json:"destination_address_prefixes"`
+	CloudDestinationAppSecurityGroupIDs []*string                    `json:"cloud_destination_app_security_group_ids"`
+	DestinationPortRange                *string                      `json:"destination_port_range"`
+	DestinationPortRanges               []*string                    `json:"destination_port_ranges"`
+	Protocol                            string                       `json:"protocol"`
+	SourceAddressPrefix                 *string                      `json:"source_address_prefix"`
+	SourceAddressPrefixes               []*string                    `json:"source_address_prefixes"`
+	CloudSourceAppSecurityGroupIDs      []*string                    `json:"cloud_source_app_security_group_ids"`
+	SourcePortRange                     *string                      `json:"source_port_range"`
+	SourcePortRanges                    []*string                    `json:"source_port_ranges"`
+	Priority                            int32                        `json:"priority"`
+	Type                                enumor.SecurityGroupRuleType `json:"type"`
+	Access                              string                       `json:"access"`
 }
 
 // -------------------------- Update --------------------------
@@ -93,22 +93,22 @@ func (opt AzureUpdateOption) Validate() error {
 
 // AzureUpdate azure security group rule when update.
 type AzureUpdate struct {
-	CloudID                          string    `json:"cloud_id"`
-	Name                             string    `json:"name"`
-	Description                      *string   `json:"description"`
-	DestinationAddressPrefix         *string   `json:"destination_address_prefix"`
-	DestinationAddressPrefixes       []*string `json:"destination_address_prefixes"`
-	CloudDestinationSecurityGroupIDs []*string `json:"cloud_destination_security_group_ids"`
-	DestinationPortRange             *string   `json:"destination_port_range"`
-	DestinationPortRanges            []*string `json:"destination_port_ranges"`
-	Protocol                         string    `json:"protocol"`
-	SourceAddressPrefix              *string   `json:"source_address_prefix"`
-	SourceAddressPrefixes            []*string `json:"source_address_prefixes"`
-	CloudSourceSecurityGroupIDs      []*string `json:"cloud_source_security_group_ids"`
-	SourcePortRange                  *string   `json:"source_port_range"`
-	SourcePortRanges                 []*string `json:"source_port_ranges"`
-	Priority                         int32     `json:"priority"`
-	Access                           string    `json:"access"`
+	CloudID                             string    `json:"cloud_id"`
+	Name                                string    `json:"name"`
+	Description                         *string   `json:"description"`
+	DestinationAddressPrefix            *string   `json:"destination_address_prefix"`
+	DestinationAddressPrefixes          []*string `json:"destination_address_prefixes"`
+	CloudDestinationAppSecurityGroupIDs []*string `json:"cloud_destination_app_security_group_ids"`
+	DestinationPortRange                *string   `json:"destination_port_range"`
+	DestinationPortRanges               []*string `json:"destination_port_ranges"`
+	Protocol                            string    `json:"protocol"`
+	SourceAddressPrefix                 *string   `json:"source_address_prefix"`
+	SourceAddressPrefixes               []*string `json:"source_address_prefixes"`
+	CloudSourceAppSecurityGroupIDs      []*string `json:"cloud_source_app_security_group_ids"`
+	SourcePortRange                     *string   `json:"source_port_range"`
+	SourcePortRanges                    []*string `json:"source_port_ranges"`
+	Priority                            int32     `json:"priority"`
+	Access                              string    `json:"access"`
 }
 
 // -------------------------- Delete --------------------------

@@ -148,7 +148,7 @@
         "cloud_group_owner_id": "123456789",
         "cloud_target_security_group_id": "",
         "account_id": "1",
-        "security_group_id": "1"
+        "security_group_id": "1",
         "creator": "tom",
         "reviser": "tom",
         "created_at": "2019-07-29 11:57:20",

@@ -79,22 +79,22 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 
 		for _, rule := range req.EgressRuleSet {
 			opt.EgressRuleSet = append(opt.EgressRuleSet, securitygrouprule.AzureCreate{
-				Name:                             rule.Name,
-				Description:                      rule.Memo,
-				DestinationAddressPrefix:         rule.DestinationAddressPrefix,
-				DestinationAddressPrefixes:       rule.DestinationAddressPrefixes,
-				CloudDestinationSecurityGroupIDs: rule.CloudDestinationSecurityGroupIDs,
-				DestinationPortRange:             rule.DestinationPortRange,
-				DestinationPortRanges:            rule.DestinationPortRanges,
-				Protocol:                         rule.Protocol,
-				SourceAddressPrefix:              rule.SourceAddressPrefix,
-				SourceAddressPrefixes:            rule.SourceAddressPrefixes,
-				CloudSourceSecurityGroupIDs:      rule.CloudSourceSecurityGroupIDs,
-				SourcePortRange:                  rule.SourcePortRange,
-				SourcePortRanges:                 rule.SourcePortRanges,
-				Priority:                         rule.Priority,
-				Type:                             rule.Type,
-				Access:                           rule.Access,
+				Name:                                rule.Name,
+				Description:                         rule.Memo,
+				DestinationAddressPrefix:            rule.DestinationAddressPrefix,
+				DestinationAddressPrefixes:          rule.DestinationAddressPrefixes,
+				CloudDestinationAppSecurityGroupIDs: nil,
+				DestinationPortRange:                rule.DestinationPortRange,
+				DestinationPortRanges:               rule.DestinationPortRanges,
+				Protocol:                            rule.Protocol,
+				SourceAddressPrefix:                 rule.SourceAddressPrefix,
+				SourceAddressPrefixes:               rule.SourceAddressPrefixes,
+				CloudSourceAppSecurityGroupIDs:      nil,
+				SourcePortRange:                     rule.SourcePortRange,
+				SourcePortRanges:                    rule.SourcePortRanges,
+				Priority:                            rule.Priority,
+				Type:                                rule.Type,
+				Access:                              rule.Access,
 			})
 		}
 	}
@@ -104,22 +104,22 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 
 		for _, rule := range req.IngressRuleSet {
 			opt.IngressRuleSet = append(opt.IngressRuleSet, securitygrouprule.AzureCreate{
-				Name:                             rule.Name,
-				Description:                      rule.Memo,
-				DestinationAddressPrefix:         rule.DestinationAddressPrefix,
-				DestinationAddressPrefixes:       rule.DestinationAddressPrefixes,
-				CloudDestinationSecurityGroupIDs: rule.CloudDestinationSecurityGroupIDs,
-				DestinationPortRange:             rule.DestinationPortRange,
-				DestinationPortRanges:            rule.DestinationPortRanges,
-				Protocol:                         rule.Protocol,
-				SourceAddressPrefix:              rule.SourceAddressPrefix,
-				SourceAddressPrefixes:            rule.SourceAddressPrefixes,
-				CloudSourceSecurityGroupIDs:      rule.CloudSourceSecurityGroupIDs,
-				SourcePortRange:                  rule.SourcePortRange,
-				SourcePortRanges:                 rule.SourcePortRanges,
-				Priority:                         rule.Priority,
-				Type:                             rule.Type,
-				Access:                           rule.Access,
+				Name:                                rule.Name,
+				Description:                         rule.Memo,
+				DestinationAddressPrefix:            rule.DestinationAddressPrefix,
+				DestinationAddressPrefixes:          rule.DestinationAddressPrefixes,
+				CloudDestinationAppSecurityGroupIDs: nil,
+				DestinationPortRange:                rule.DestinationPortRange,
+				DestinationPortRanges:               rule.DestinationPortRanges,
+				Protocol:                            rule.Protocol,
+				SourceAddressPrefix:                 rule.SourceAddressPrefix,
+				SourceAddressPrefixes:               rule.SourceAddressPrefixes,
+				CloudSourceAppSecurityGroupIDs:      nil,
+				SourcePortRange:                     rule.SourcePortRange,
+				SourcePortRanges:                    rule.SourcePortRanges,
+				Priority:                            rule.Priority,
+				Type:                                rule.Type,
+				Access:                              rule.Access,
 			})
 		}
 	}
@@ -132,26 +132,28 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 	list := make([]protocloud.AzureSGRuleBatchCreate, 0, len(rules))
 	for _, rule := range rules {
 		spec := protocloud.AzureSGRuleBatchCreate{
-			CloudID:                    *rule.ID,
-			Etag:                       rule.Etag,
-			Name:                       *rule.Name,
-			Memo:                       rule.Properties.Description,
-			DestinationAddressPrefix:   rule.Properties.DestinationAddressPrefix,
-			DestinationAddressPrefixes: rule.Properties.DestinationAddressPrefixes,
-			DestinationPortRange:       rule.Properties.DestinationPortRange,
-			DestinationPortRanges:      rule.Properties.DestinationPortRanges,
-			Protocol:                   string(*rule.Properties.Protocol),
-			ProvisioningState:          string(*rule.Properties.ProvisioningState),
-			SourceAddressPrefix:        rule.Properties.SourceAddressPrefix,
-			SourceAddressPrefixes:      rule.Properties.SourceAddressPrefixes,
-			SourcePortRange:            rule.Properties.SourcePortRange,
-			SourcePortRanges:           rule.Properties.SourcePortRanges,
-			Priority:                   *rule.Properties.Priority,
-			Access:                     string(*rule.Properties.Access),
-			CloudSecurityGroupID:       sg.CloudID,
-			AccountID:                  req.AccountID,
-			Region:                     sg.Region,
-			SecurityGroupID:            sg.ID,
+			CloudID:                             *rule.ID,
+			Etag:                                rule.Etag,
+			Name:                                *rule.Name,
+			Memo:                                rule.Properties.Description,
+			DestinationAddressPrefix:            rule.Properties.DestinationAddressPrefix,
+			DestinationAddressPrefixes:          rule.Properties.DestinationAddressPrefixes,
+			DestinationPortRange:                rule.Properties.DestinationPortRange,
+			CloudDestinationAppSecurityGroupIDs: nil,
+			CloudSourceAppSecurityGroupIDs:      nil,
+			DestinationPortRanges:               rule.Properties.DestinationPortRanges,
+			Protocol:                            string(*rule.Properties.Protocol),
+			ProvisioningState:                   string(*rule.Properties.ProvisioningState),
+			SourceAddressPrefix:                 rule.Properties.SourceAddressPrefix,
+			SourceAddressPrefixes:               rule.Properties.SourceAddressPrefixes,
+			SourcePortRange:                     rule.Properties.SourcePortRange,
+			SourcePortRanges:                    rule.Properties.SourcePortRanges,
+			Priority:                            *rule.Properties.Priority,
+			Access:                              string(*rule.Properties.Access),
+			CloudSecurityGroupID:                sg.CloudID,
+			AccountID:                           req.AccountID,
+			Region:                              sg.Region,
+			SecurityGroupID:                     sg.ID,
 		}
 
 		switch *rule.Properties.Direction {
@@ -168,7 +170,7 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 			for _, one := range rule.Properties.DestinationApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
-			spec.CloudDestinationSecurityGroupIDs = ids
+			spec.CloudDestinationAppSecurityGroupIDs = ids
 		}
 
 		if len(rule.Properties.SourceApplicationSecurityGroups) != 0 {
@@ -176,7 +178,7 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 			for _, one := range rule.Properties.SourceApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
-			spec.CloudSourceSecurityGroupIDs = ids
+			spec.CloudSourceAppSecurityGroupIDs = ids
 		}
 
 		list = append(list, spec)
@@ -237,22 +239,22 @@ func (g *securityGroup) UpdateAzureSGRule(cts *rest.Contexts) (interface{}, erro
 		CloudSecurityGroupID: rule.CloudSecurityGroupID,
 		ResourceGroupName:    sg.Extension.ResourceGroupName,
 		Rule: &securitygrouprule.AzureUpdate{
-			CloudID:                          rule.CloudID,
-			Name:                             req.Name,
-			Description:                      req.Memo,
-			DestinationAddressPrefix:         req.DestinationAddressPrefix,
-			DestinationAddressPrefixes:       req.DestinationAddressPrefixes,
-			CloudDestinationSecurityGroupIDs: req.CloudDestinationSecurityGroupIDs,
-			DestinationPortRange:             req.DestinationPortRange,
-			DestinationPortRanges:            req.DestinationPortRanges,
-			Protocol:                         req.Protocol,
-			SourceAddressPrefix:              req.SourceAddressPrefix,
-			SourceAddressPrefixes:            req.SourceAddressPrefixes,
-			CloudSourceSecurityGroupIDs:      req.CloudSourceSecurityGroupIDs,
-			SourcePortRange:                  req.SourcePortRange,
-			SourcePortRanges:                 req.SourcePortRanges,
-			Priority:                         req.Priority,
-			Access:                           req.Access,
+			CloudID:                             rule.CloudID,
+			Name:                                req.Name,
+			Description:                         req.Memo,
+			DestinationAddressPrefix:            req.DestinationAddressPrefix,
+			DestinationAddressPrefixes:          req.DestinationAddressPrefixes,
+			CloudDestinationAppSecurityGroupIDs: nil,
+			DestinationPortRange:                req.DestinationPortRange,
+			DestinationPortRanges:               req.DestinationPortRanges,
+			Protocol:                            req.Protocol,
+			SourceAddressPrefix:                 req.SourceAddressPrefix,
+			SourceAddressPrefixes:               req.SourceAddressPrefixes,
+			CloudSourceAppSecurityGroupIDs:      nil,
+			SourcePortRange:                     req.SourcePortRange,
+			SourcePortRanges:                    req.SourcePortRanges,
+			Priority:                            req.Priority,
+			Access:                              req.Access,
 		},
 	}
 	if err := client.UpdateSecurityGroupRule(cts.Kit, opt); err != nil {
@@ -266,25 +268,27 @@ func (g *securityGroup) UpdateAzureSGRule(cts *rest.Contexts) (interface{}, erro
 	updateReq := &protocloud.AzureSGRuleBatchUpdateReq{
 		Rules: []protocloud.AzureSGRuleUpdate{
 			{
-				ID:                         id,
-				CloudID:                    cloudID,
-				Name:                       req.Name,
-				Memo:                       req.Memo,
-				DestinationAddressPrefix:   req.DestinationAddressPrefix,
-				DestinationAddressPrefixes: req.DestinationAddressPrefixes,
-				DestinationPortRange:       req.DestinationPortRange,
-				DestinationPortRanges:      req.DestinationPortRanges,
-				Protocol:                   req.Protocol,
-				SourceAddressPrefix:        req.SourceAddressPrefix,
-				SourceAddressPrefixes:      req.SourceAddressPrefixes,
-				SourcePortRange:            req.SourcePortRange,
-				SourcePortRanges:           req.SourcePortRanges,
-				Priority:                   req.Priority,
-				Access:                     req.Access,
-				CloudSecurityGroupID:       sg.CloudID,
-				AccountID:                  sg.AccountID,
-				Region:                     sg.Region,
-				SecurityGroupID:            sg.ID,
+				ID:                                  id,
+				CloudID:                             cloudID,
+				Name:                                req.Name,
+				Memo:                                req.Memo,
+				DestinationAddressPrefix:            req.DestinationAddressPrefix,
+				DestinationAddressPrefixes:          req.DestinationAddressPrefixes,
+				DestinationPortRange:                req.DestinationPortRange,
+				DestinationPortRanges:               req.DestinationPortRanges,
+				CloudSourceAppSecurityGroupIDs:      nil,
+				CloudDestinationAppSecurityGroupIDs: nil,
+				Protocol:                            req.Protocol,
+				SourceAddressPrefix:                 req.SourceAddressPrefix,
+				SourceAddressPrefixes:               req.SourceAddressPrefixes,
+				SourcePortRange:                     req.SourcePortRange,
+				SourcePortRanges:                    req.SourcePortRanges,
+				Priority:                            req.Priority,
+				Access:                              req.Access,
+				CloudSecurityGroupID:                sg.CloudID,
+				AccountID:                           sg.AccountID,
+				Region:                              sg.Region,
+				SecurityGroupID:                     sg.ID,
 			},
 		},
 	}
@@ -297,7 +301,7 @@ func (g *securityGroup) UpdateAzureSGRule(cts *rest.Contexts) (interface{}, erro
 }
 
 func (g *securityGroup) getAzureSGRuleByID(cts *rest.Contexts, id string, sgID string) (*corecloud.
-	AzureSecurityGroupRule, error) {
+AzureSecurityGroupRule, error) {
 
 	listReq := &protocloud.AzureSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),

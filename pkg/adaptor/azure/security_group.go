@@ -221,33 +221,28 @@ func (az *Azure) getSecurityGroupByCloudID(kt *kit.Kit, resGroupName, cloudID st
 		return nil, fmt.Errorf("new security group client failed, err: %v", err)
 	}
 
-	pager := client.NewListPager(resGroupName, nil)
-	for pager.More() {
-		nextResult, err := pager.NextPage(kt.Ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to advance page: %v", err)
-		}
-		for _, one := range nextResult.Value {
-			if SPtrToLowerStr(one.ID) == cloudID {
-				tmp := &securitygroup.AzureSecurityGroup{
-					ID:              SPtrToLowerSPtr(one.ID),
-					Location:        SPtrToLowerNoSpaceSPtr(one.Location),
-					Name:            SPtrToLowerSPtr(one.Name),
-					Etag:            one.Etag,
-					FlushConnection: nil,
-					ResourceGUID:    nil,
-				}
-				if one.Properties != nil {
-					tmp.FlushConnection = one.Properties.FlushConnection
-					tmp.ResourceGUID = one.Properties.ResourceGUID
-					tmp.SecurityRules = one.Properties.SecurityRules
-				}
-				return tmp, nil
-			}
-		}
+	resp, err := client.Get(kt.Ctx, resGroupName, parseIDToName(cloudID), new(armnetwork.SecurityGroupsClientGetOptions))
+	if err != nil {
+		logs.Errorf("get security group failed, err: %v, resGroupName: %s, cloudID: %s, rid: %s",
+			err, resGroupName, cloudID, kt.Rid)
+		return nil, err
 	}
 
-	return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", cloudID)
+	sg := &securitygroup.AzureSecurityGroup{
+		ID:              SPtrToLowerSPtr(resp.SecurityGroup.ID),
+		Location:        SPtrToLowerNoSpaceSPtr(resp.SecurityGroup.Location),
+		Name:            SPtrToLowerSPtr(resp.SecurityGroup.Name),
+		Etag:            resp.SecurityGroup.Etag,
+		FlushConnection: nil,
+		ResourceGUID:    nil,
+	}
+	if resp.SecurityGroup.Properties != nil {
+		sg.FlushConnection = resp.SecurityGroup.Properties.FlushConnection
+		sg.ResourceGUID = resp.SecurityGroup.Properties.ResourceGUID
+		sg.SecurityRules = resp.SecurityGroup.Properties.SecurityRules
+	}
+
+	return sg, nil
 }
 
 // SecurityGroupSubnetAssociate associate subnet.

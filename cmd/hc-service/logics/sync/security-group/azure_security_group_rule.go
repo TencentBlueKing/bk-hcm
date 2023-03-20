@@ -419,7 +419,7 @@ func isAzureSGRuleChange(db *corecloud.AzureSecurityGroupRule, cloud *securitygr
 		}
 	}
 
-	if !assert.IsPtrStringSliceEqual(db.CloudDestinationSecurityGroupIDs, destinationIDs) {
+	if !assert.IsPtrStringSliceEqual(db.CloudDestinationAppSecurityGroupIDs, destinationIDs) {
 		return true
 	}
 
@@ -430,7 +430,7 @@ func isAzureSGRuleChange(db *corecloud.AzureSecurityGroupRule, cloud *securitygr
 		}
 	}
 
-	if !assert.IsPtrStringSliceEqual(db.CloudSourceSecurityGroupIDs, sourceIDs) {
+	if !assert.IsPtrStringSliceEqual(db.CloudSourceAppSecurityGroupIDs, sourceIDs) {
 		return true
 	}
 
@@ -488,14 +488,14 @@ func genAzureUpdateRulesList(kt *kit.Kit, rules []*securitygrouprule.AzureSecuri
 			for _, one := range rule.DestinationApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
-			spec.CloudDestinationSecurityGroupIDs = ids
+			spec.CloudDestinationAppSecurityGroupIDs = ids
 		}
 		if len(rule.SourceApplicationSecurityGroups) != 0 {
 			ids := make([]*string, 0, len(rule.SourceApplicationSecurityGroups))
 			for _, one := range rule.SourceApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
-			spec.CloudSourceSecurityGroupIDs = ids
+			spec.CloudSourceAppSecurityGroupIDs = ids
 		}
 		list = append(list, spec)
 	}
@@ -563,14 +563,14 @@ func genAzureAddRulesList(rules []*securitygrouprule.AzureSecurityRule, sgCloudI
 			for _, one := range rule.DestinationApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
-			spec.CloudDestinationSecurityGroupIDs = ids
+			spec.CloudDestinationAppSecurityGroupIDs = ids
 		}
 		if len(rule.SourceApplicationSecurityGroups) != 0 {
 			ids := make([]*string, 0, len(rule.SourceApplicationSecurityGroups))
 			for _, one := range rule.SourceApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
-			spec.CloudSourceSecurityGroupIDs = ids
+			spec.CloudSourceAppSecurityGroupIDs = ids
 		}
 
 		list = append(list, spec)

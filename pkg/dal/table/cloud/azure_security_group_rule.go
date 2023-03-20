@@ -47,13 +47,14 @@ var AzureSGRuleColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "destination_address_prefix", NamedC: "destination_address_prefix", Type: enumor.String},
 	{Column: "destination_address_prefixes", NamedC: "destination_address_prefixes", Type: enumor.Json},
-	{Column: "cloud_destination_security_group_ids", NamedC: "cloud_destination_security_group_ids", Type: enumor.Json},
+	{Column: "cloud_destination_app_security_group_ids", NamedC: "cloud_destination_app_security_group_ids",
+		Type: enumor.Json},
 	{Column: "destination_port_range", NamedC: "destination_port_range", Type: enumor.String},
 	{Column: "destination_port_ranges", NamedC: "destination_port_ranges", Type: enumor.Json},
 	{Column: "protocol", NamedC: "protocol", Type: enumor.String},
 	{Column: "source_address_prefix", NamedC: "source_address_prefix", Type: enumor.String},
 	{Column: "source_address_prefixes", NamedC: "source_address_prefixes", Type: enumor.Json},
-	{Column: "cloud_source_security_group_ids", NamedC: "cloud_source_security_group_ids", Type: enumor.Json},
+	{Column: "cloud_source_app_security_group_ids", NamedC: "cloud_source_app_security_group_ids", Type: enumor.Json},
 	{Column: "source_port_range", NamedC: "source_port_range", Type: enumor.String},
 	{Column: "source_port_ranges", NamedC: "source_port_ranges", Type: enumor.Json},
 	{Column: "priority", NamedC: "priority", Type: enumor.Numeric},
@@ -67,34 +68,34 @@ var AzureSGRuleColumnDescriptor = utils.ColumnDescriptors{
 
 // AzureSecurityGroupRuleTable define azure security group rule table.
 type AzureSecurityGroupRuleTable struct {
-	ID                               string            `db:"id" validate:"lte=64" json:"id"`
-	CloudID                          string            `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
-	CloudSecurityGroupID             string            `db:"cloud_security_group_id" validate:"lte=255" json:"cloud_security_group_id"`
-	AccountID                        string            `db:"account_id" validate:"lte=64" json:"account_id"`
-	SecurityGroupID                  string            `db:"security_group_id" validate:"lte=64" json:"security_group_id"`
-	Type                             string            `db:"type" validate:"lte=20" json:"type"`
-	ProvisioningState                string            `db:"provisioning_state" validate:"lte=20" json:"provisioning_state"`
-	Etag                             *string           `db:"etag" validate:"omitempty,lte=255" json:"etag"`
-	Name                             string            `db:"name" validate:"lte=255" json:"name"`
-	Memo                             *string           `db:"memo" validate:"omitempty,lte=140" json:"memo"`
-	Region                           string            `db:"region" validate:"lte=20" json:"region"`
-	DestinationAddressPrefix         *string           `db:"destination_address_prefix" validate:"omitempty,lte=255" json:"destination_address_prefix"`
-	DestinationAddressPrefixes       types.StringArray `db:"destination_address_prefixes" json:"destination_address_prefixes"`
-	CloudDestinationSecurityGroupIDs types.StringArray `db:"cloud_destination_security_group_ids" json:"cloud_destination_security_group_i_ds"`
-	DestinationPortRange             *string           `db:"destination_port_range" validate:"omitempty,lte=255" json:"destination_port_range"`
-	DestinationPortRanges            types.StringArray `db:"destination_port_ranges" json:"destination_port_ranges"`
-	Protocol                         string            `db:"protocol" validate:"lte=10" json:"protocol"`
-	SourceAddressPrefix              *string           `db:"source_address_prefix" validate:"omitempty,lte=255" json:"source_address_prefix"`
-	SourceAddressPrefixes            types.StringArray `db:"source_address_prefixes" json:"source_address_prefixes"`
-	CloudSourceSecurityGroupIDs      types.StringArray `db:"cloud_source_security_group_ids" json:"cloud_source_security_group_i_ds"`
-	SourcePortRange                  *string           `db:"source_port_range" validate:"omitempty,lte=255" json:"source_port_range"`
-	SourcePortRanges                 types.StringArray `db:"source_port_ranges" json:"source_port_ranges"`
-	Priority                         int32             `db:"priority" json:"priority"`
-	Access                           string            `db:"access" validate:"lte=20" json:"access"`
-	Creator                          string            `db:"creator" validate:"lte=64" json:"creator"`
-	Reviser                          string            `db:"reviser" validate:"lte=64" json:"reviser"`
-	CreatedAt                        *time.Time        `db:"created_at" validate:"excluded_unless" json:"created_at"`
-	UpdatedAt                        *time.Time        `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	ID                                  string            `db:"id" validate:"lte=64" json:"id"`
+	CloudID                             string            `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
+	CloudSecurityGroupID                string            `db:"cloud_security_group_id" validate:"lte=255" json:"cloud_security_group_id"`
+	AccountID                           string            `db:"account_id" validate:"lte=64" json:"account_id"`
+	SecurityGroupID                     string            `db:"security_group_id" validate:"lte=64" json:"security_group_id"`
+	Type                                string            `db:"type" validate:"lte=20" json:"type"`
+	ProvisioningState                   string            `db:"provisioning_state" validate:"lte=20" json:"provisioning_state"`
+	Etag                                *string           `db:"etag" validate:"omitempty,lte=255" json:"etag"`
+	Name                                string            `db:"name" validate:"lte=255" json:"name"`
+	Memo                                *string           `db:"memo" validate:"omitempty,lte=140" json:"memo"`
+	Region                              string            `db:"region" validate:"lte=20" json:"region"`
+	DestinationAddressPrefix            *string           `db:"destination_address_prefix" validate:"omitempty,lte=255" json:"destination_address_prefix"`
+	DestinationAddressPrefixes          types.StringArray `db:"destination_address_prefixes" json:"destination_address_prefixes"`
+	CloudDestinationAppSecurityGroupIDs types.StringArray `db:"cloud_destination_app_security_group_ids" json:"cloud_destination_app_security_group_ids"`
+	DestinationPortRange                *string           `db:"destination_port_range" validate:"omitempty,lte=255" json:"destination_port_range"`
+	DestinationPortRanges               types.StringArray `db:"destination_port_ranges" json:"destination_port_ranges"`
+	Protocol                            string            `db:"protocol" validate:"lte=10" json:"protocol"`
+	SourceAddressPrefix                 *string           `db:"source_address_prefix" validate:"omitempty,lte=255" json:"source_address_prefix"`
+	SourceAddressPrefixes               types.StringArray `db:"source_address_prefixes" json:"source_address_prefixes"`
+	CloudSourceAppSecurityGroupIDs      types.StringArray `db:"cloud_source_app_security_group_ids" json:"cloud_source_app_security_group_ids"`
+	SourcePortRange                     *string           `db:"source_port_range" validate:"omitempty,lte=255" json:"source_port_range"`
+	SourcePortRanges                    types.StringArray `db:"source_port_ranges" json:"source_port_ranges"`
+	Priority                            int32             `db:"priority" json:"priority"`
+	Access                              string            `db:"access" validate:"lte=20" json:"access"`
+	Creator                             string            `db:"creator" validate:"lte=64" json:"creator"`
+	Reviser                             string            `db:"reviser" validate:"lte=64" json:"reviser"`
+	CreatedAt                           *time.Time        `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt                           *time.Time        `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return azure security group rule table name.

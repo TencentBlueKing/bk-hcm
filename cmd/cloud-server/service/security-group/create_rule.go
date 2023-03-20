@@ -282,22 +282,20 @@ func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 		createReq.EgressRuleSet = make([]hcproto.AzureSGRuleCreate, 0, len(req.EgressRuleSet))
 		for _, one := range req.EgressRuleSet {
 			tmpEgressRule := hcproto.AzureSGRuleCreate{
-				Name:                             one.Name,
-				Memo:                             one.Memo,
-				DestinationAddressPrefix:         one.DestinationAddressPrefix,
-				DestinationAddressPrefixes:       one.DestinationAddressPrefixes,
-				CloudDestinationSecurityGroupIDs: one.CloudDestinationSecurityGroupIDs,
-				DestinationPortRange:             one.DestinationPortRange,
-				DestinationPortRanges:            one.DestinationPortRanges,
-				Protocol:                         one.Protocol,
-				SourceAddressPrefix:              one.SourceAddressPrefix,
-				SourceAddressPrefixes:            one.SourceAddressPrefixes,
-				CloudSourceSecurityGroupIDs:      one.CloudSourceSecurityGroupIDs,
-				SourcePortRange:                  one.SourcePortRange,
-				SourcePortRanges:                 one.SourcePortRanges,
-				Priority:                         one.Priority,
-				Type:                             one.Type,
-				Access:                           one.Access,
+				Name:                       one.Name,
+				Memo:                       one.Memo,
+				DestinationAddressPrefix:   one.DestinationAddressPrefix,
+				DestinationAddressPrefixes: one.DestinationAddressPrefixes,
+				DestinationPortRange:       one.DestinationPortRange,
+				DestinationPortRanges:      one.DestinationPortRanges,
+				Protocol:                   one.Protocol,
+				SourceAddressPrefix:        one.SourceAddressPrefix,
+				SourceAddressPrefixes:      one.SourceAddressPrefixes,
+				SourcePortRange:            one.SourcePortRange,
+				SourcePortRanges:           one.SourcePortRanges,
+				Priority:                   one.Priority,
+				Type:                       one.Type,
+				Access:                     one.Access,
 			}
 
 			if err := svc.checkCreateAzureSGRuleParams(tmpEgressRule); err != nil {
@@ -312,22 +310,20 @@ func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 		createReq.IngressRuleSet = make([]hcproto.AzureSGRuleCreate, 0, len(req.IngressRuleSet))
 		for _, one := range req.IngressRuleSet {
 			tmpIngressRule := hcproto.AzureSGRuleCreate{
-				Name:                             one.Name,
-				Memo:                             one.Memo,
-				DestinationAddressPrefix:         one.DestinationAddressPrefix,
-				DestinationAddressPrefixes:       one.DestinationAddressPrefixes,
-				CloudDestinationSecurityGroupIDs: one.CloudDestinationSecurityGroupIDs,
-				DestinationPortRange:             one.DestinationPortRange,
-				DestinationPortRanges:            one.DestinationPortRanges,
-				Protocol:                         one.Protocol,
-				SourceAddressPrefix:              one.SourceAddressPrefix,
-				SourceAddressPrefixes:            one.SourceAddressPrefixes,
-				CloudSourceSecurityGroupIDs:      one.CloudSourceSecurityGroupIDs,
-				SourcePortRange:                  one.SourcePortRange,
-				SourcePortRanges:                 one.SourcePortRanges,
-				Priority:                         one.Priority,
-				Type:                             one.Type,
-				Access:                           one.Access,
+				Name:                       one.Name,
+				Memo:                       one.Memo,
+				DestinationAddressPrefix:   one.DestinationAddressPrefix,
+				DestinationAddressPrefixes: one.DestinationAddressPrefixes,
+				DestinationPortRange:       one.DestinationPortRange,
+				DestinationPortRanges:      one.DestinationPortRanges,
+				Protocol:                   one.Protocol,
+				SourceAddressPrefix:        one.SourceAddressPrefix,
+				SourceAddressPrefixes:      one.SourceAddressPrefixes,
+				SourcePortRange:            one.SourcePortRange,
+				SourcePortRanges:           one.SourcePortRanges,
+				Priority:                   one.Priority,
+				Type:                       one.Type,
+				Access:                     one.Access,
 			}
 
 			if err := svc.checkCreateAzureSGRuleParams(tmpIngressRule); err != nil {
@@ -351,14 +347,6 @@ func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 func (svc *securityGroupSvc) checkCreateAzureSGRuleParams(req hcproto.AzureSGRuleCreate) error {
 	if !assert.IsSameCaseString(req.Name) {
 		return errf.New(errf.InvalidParameter, "name can only be lowercase")
-	}
-
-	if !assert.IsSameCasePtrStringSlice(req.CloudDestinationSecurityGroupIDs) {
-		return errf.New(errf.InvalidParameter, "cloud_destination_security_group_ids can only be lowercase")
-	}
-
-	if !assert.IsSameCasePtrStringSlice(req.CloudSourceSecurityGroupIDs) {
-		return errf.New(errf.InvalidParameter, "cloud_source_security_group_ids can only be lowercase")
 	}
 
 	return nil

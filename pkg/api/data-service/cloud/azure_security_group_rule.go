@@ -41,29 +41,29 @@ type AzureSGRuleCreateReq struct {
 
 // AzureSGRuleBatchCreate define azure security group rule when create.
 type AzureSGRuleBatchCreate struct {
-	CloudID                          string                       `json:"cloud_id"`
-	Etag                             *string                      `json:"etag"`
-	Name                             string                       `json:"name"`
-	Memo                             *string                      `json:"memo"`
-	DestinationAddressPrefix         *string                      `json:"destination_address_prefix"`
-	DestinationAddressPrefixes       []*string                    `json:"destination_address_prefixes"`
-	CloudDestinationSecurityGroupIDs []*string                    `json:"cloud_destination_security_group_ids"`
-	DestinationPortRange             *string                      `json:"destination_port_range"`
-	DestinationPortRanges            []*string                    `json:"destination_port_ranges"`
-	Protocol                         string                       `json:"protocol"`
-	ProvisioningState                string                       `json:"provisioning_state"`
-	SourceAddressPrefix              *string                      `json:"source_address_prefix"`
-	SourceAddressPrefixes            []*string                    `json:"source_address_prefixes"`
-	CloudSourceSecurityGroupIDs      []*string                    `json:"cloud_source_security_group_ids"`
-	SourcePortRange                  *string                      `json:"source_port_range"`
-	SourcePortRanges                 []*string                    `json:"source_port_ranges"`
-	Priority                         int32                        `json:"priority"`
-	Type                             enumor.SecurityGroupRuleType `json:"type"`
-	Access                           string                       `json:"access"`
-	CloudSecurityGroupID             string                       `json:"cloud_security_group_id"`
-	AccountID                        string                       `json:"account_id"`
-	Region                           string                       `json:"region"`
-	SecurityGroupID                  string                       `json:"security_group_id"`
+	CloudID                             string                       `json:"cloud_id"`
+	Etag                                *string                      `json:"etag"`
+	Name                                string                       `json:"name"`
+	Memo                                *string                      `json:"memo"`
+	DestinationAddressPrefix            *string                      `json:"destination_address_prefix"`
+	DestinationAddressPrefixes          []*string                    `json:"destination_address_prefixes"`
+	CloudDestinationAppSecurityGroupIDs []*string                    `json:"cloud_destination_app_security_group_ids"`
+	DestinationPortRange                *string                      `json:"destination_port_range"`
+	DestinationPortRanges               []*string                    `json:"destination_port_ranges"`
+	Protocol                            string                       `json:"protocol"`
+	ProvisioningState                   string                       `json:"provisioning_state"`
+	SourceAddressPrefix                 *string                      `json:"source_address_prefix"`
+	SourceAddressPrefixes               []*string                    `json:"source_address_prefixes"`
+	CloudSourceAppSecurityGroupIDs      []*string                    `json:"cloud_source_app_security_group_ids"`
+	SourcePortRange                     *string                      `json:"source_port_range"`
+	SourcePortRanges                    []*string                    `json:"source_port_ranges"`
+	Priority                            int32                        `json:"priority"`
+	Type                                enumor.SecurityGroupRuleType `json:"type"`
+	Access                              string                       `json:"access"`
+	CloudSecurityGroupID                string                       `json:"cloud_security_group_id"`
+	AccountID                           string                       `json:"account_id"`
+	Region                              string                       `json:"region"`
+	SecurityGroupID                     string                       `json:"security_group_id"`
 }
 
 // Validate azure security group rule create request.
@@ -88,30 +88,30 @@ type AzureSGRuleBatchUpdateReq struct {
 
 // AzureSGRuleUpdate azure security group batch update option.
 type AzureSGRuleUpdate struct {
-	ID                               string                       `json:"id" validate:"required"`
-	CloudID                          string                       `json:"cloud_id"`
-	Etag                             *string                      `json:"etag"`
-	Name                             string                       `json:"name"`
-	Memo                             *string                      `json:"memo"`
-	DestinationAddressPrefix         *string                      `json:"destination_address_prefix"`
-	DestinationAddressPrefixes       []*string                    `json:"destination_address_prefixes"`
-	CloudDestinationSecurityGroupIDs []*string                    `json:"cloud_destination_security_group_ids"`
-	DestinationPortRange             *string                      `json:"destination_port_range"`
-	DestinationPortRanges            []*string                    `json:"destination_port_ranges"`
-	Protocol                         string                       `json:"protocol"`
-	ProvisioningState                string                       `json:"provisioning_state"`
-	SourceAddressPrefix              *string                      `json:"source_address_prefix"`
-	SourceAddressPrefixes            []*string                    `json:"source_address_prefixes"`
-	CloudSourceSecurityGroupIDs      []*string                    `json:"cloud_source_security_group_ids"`
-	SourcePortRange                  *string                      `json:"source_port_range"`
-	SourcePortRanges                 []*string                    `json:"source_port_ranges"`
-	Priority                         int32                        `json:"priority"`
-	Type                             enumor.SecurityGroupRuleType `json:"type"`
-	Access                           string                       `json:"access"`
-	CloudSecurityGroupID             string                       `json:"cloud_security_group_id"`
-	AccountID                        string                       `json:"account_id"`
-	Region                           string                       `json:"region"`
-	SecurityGroupID                  string                       `json:"security_group_id"`
+	ID                                  string                       `json:"id" validate:"required"`
+	CloudID                             string                       `json:"cloud_id"`
+	Etag                                *string                      `json:"etag"`
+	Name                                string                       `json:"name"`
+	Memo                                *string                      `json:"memo"`
+	DestinationAddressPrefix            *string                      `json:"destination_address_prefix"`
+	DestinationAddressPrefixes          []*string                    `json:"destination_address_prefixes"`
+	CloudDestinationAppSecurityGroupIDs []*string                    `json:"cloud_destination_app_security_group_ids"`
+	DestinationPortRange                *string                      `json:"destination_port_range"`
+	DestinationPortRanges               []*string                    `json:"destination_port_ranges"`
+	Protocol                            string                       `json:"protocol"`
+	ProvisioningState                   string                       `json:"provisioning_state"`
+	SourceAddressPrefix                 *string                      `json:"source_address_prefix"`
+	SourceAddressPrefixes               []*string                    `json:"source_address_prefixes"`
+	CloudSourceAppSecurityGroupIDs      []*string                    `json:"cloud_source_app_security_group_ids"`
+	SourcePortRange                     *string                      `json:"source_port_range"`
+	SourcePortRanges                    []*string                    `json:"source_port_ranges"`
+	Priority                            int32                        `json:"priority"`
+	Type                                enumor.SecurityGroupRuleType `json:"type"`
+	Access                              string                       `json:"access"`
+	CloudSecurityGroupID                string                       `json:"cloud_security_group_id"`
+	AccountID                           string                       `json:"account_id"`
+	Region                              string                       `json:"region"`
+	SecurityGroupID                     string                       `json:"security_group_id"`
 }
 
 // Validate azure security group rule batch update request.
