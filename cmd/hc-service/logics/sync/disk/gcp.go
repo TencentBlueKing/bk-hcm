@@ -126,7 +126,7 @@ func getDatasFromDSForGcpDiskSync(kt *kit.Kit, req *SyncGcpDiskOption,
 
 		resultsHcm = append(resultsHcm, results.Details...)
 		start += len(results.Details)
-		if uint(len(results.Details)) < apicore.DefaultMaxPageLimit {
+		if uint(len(results.Details)) < dataReq.Page.Limit {
 			break
 		}
 	}

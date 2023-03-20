@@ -119,7 +119,7 @@ func getDatasFromDSForTCloudDiskSync(kt *kit.Kit, req *SyncTCloudDiskOption,
 
 		resultsHcm = append(resultsHcm, results.Details...)
 		start += len(results.Details)
-		if uint(len(results.Details)) < apicore.DefaultMaxPageLimit {
+		if uint(len(results.Details)) < dataReq.Page.Limit {
 			break
 		}
 	}

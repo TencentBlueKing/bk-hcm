@@ -123,7 +123,7 @@ func getDatasFromAzureDSForDiskSync(kt *kit.Kit, req *SyncAzureDiskOption,
 
 		resultsHcm = append(resultsHcm, results.Details...)
 		start += len(results.Details)
-		if uint(len(results.Details)) < core.DefaultMaxPageLimit {
+		if uint(len(results.Details)) < dataReq.Page.Limit {
 			break
 		}
 	}

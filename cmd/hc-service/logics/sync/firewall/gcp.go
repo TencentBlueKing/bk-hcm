@@ -135,7 +135,7 @@ func GetDatasFromDSForGcpFireWallSync(kt *kit.Kit, req *GcpFirewallSyncOption,
 		}
 
 		start += len(results.Details)
-		if uint(len(results.Details)) < core.DefaultMaxPageLimit {
+		if uint(len(results.Details)) < listReq.Page.Limit {
 			break
 		}
 	}
