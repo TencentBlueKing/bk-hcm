@@ -54,7 +54,17 @@ const columns = [
   },
   {
     label: t('内网IP'),
-    field: 'private_ip',
+    render({ data }: any) {
+      return [
+        h(
+          'span',
+          {},
+          [
+            data.private_ipv4.join(',') || data.private_ipv6.join(',') || '--',
+          ],
+        ),
+      ];
+    },
   },
   {
     label: t('普通公网IP/EIP'),
@@ -65,7 +75,7 @@ const columns = [
           'span',
           {},
           [
-            data.public_ip || '--',
+            data.public_ipv4.join(',') || data.public_ipv6.join(',') || '--',
           ],
         ),
       ];

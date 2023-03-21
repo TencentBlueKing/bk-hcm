@@ -180,8 +180,8 @@ export default defineComponent({
           );
         },
       },
-      { label: t(props.activeType === 'egress' ? '出站地址' : '源地址'),
-        field: 'id',
+      { label: props.activeType === 'egress' ? t('源地址') : t('目标地址'),
+        field: 'address',
         render: ({ data }: any) => {
           return (
                   <>
@@ -353,6 +353,7 @@ export default defineComponent({
           return;
         }
         columns.value = columnsData;  // 初始化表表格列
+        console.log('props.activeType', props.activeType);
         if (props.vendor === 'tcloud' || props.vendor === 'aws') {    // 腾讯云、aws不需要优先级和类型
           columns.value = columns.value.filter((e: any) => {
             return e.field !== 'priority' && e.field !== 'ethertype';

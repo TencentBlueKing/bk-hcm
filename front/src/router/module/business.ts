@@ -13,6 +13,7 @@ const businesseMenus: RouteRecordRaw[] = [
         children: [
           {
             path: '',
+            name: 'hostBusinessList',
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
               activeKey: 'businessHost',
@@ -33,6 +34,7 @@ const businesseMenus: RouteRecordRaw[] = [
             name: 'hostBusinessRecyclebin ',
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
+              backRouter: 'hostBusinessList',
               activeKey: 'businessHost',
               breadcrumb: ['计算', '主机', '回收站'],
             },
@@ -49,6 +51,7 @@ const businesseMenus: RouteRecordRaw[] = [
         children: [
           {
             path: '',
+            name: 'businessDiskList',
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
               activeKey: 'businessDisk',
@@ -66,9 +69,10 @@ const businesseMenus: RouteRecordRaw[] = [
           },
           {
             path: 'recyclebin/:type',
-            name: 'hostBusinessRecyclebin',
+            name: 'diskBusinessRecyclebin',
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
+              backRouter: 'businessDiskList',
               activeKey: 'businessDisk',
               breadcrumb: ['计算', '硬盘', '回收站'],
             },

@@ -22,7 +22,7 @@ import {
 import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
-import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
+import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 
 const props = defineProps({
@@ -54,6 +54,7 @@ const activeType = ref('ingress');
 const deleteDialogShow = ref(false);
 const deleteId = ref(0);
 const securityRuleLoading = ref(false);
+const fetchUrl = ref<string>(`vendors/${props.vendor}/security_groups/${props.id}/rules/list`);
 
 const state = reactive<any>({
   datas: [],
@@ -65,7 +66,6 @@ const state = reactive<any>({
   isLoading: true,
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
-  handleSort: () => {},
   columns: useColumns('group'),
 });
 
@@ -79,38 +79,22 @@ watch(
 );
 
 // 获取列表数据
-const fetchList = async (fetchType: string) => {
-  const {
-    datas,
-    pagination,
-    isLoading,
-    handlePageChange,
-    handlePageSizeChange,
-    handleSort,
-  } = await useQueryList(props, fetchType);
-  return {
-    datas,
-    pagination,
-    isLoading,
-    handlePageChange,
-    handlePageSizeChange,
-    handleSort,
-  };
-};
+const {
+  datas,
+  pagination,
+  isLoading,
+  handlePageChange,
+  handlePageSizeChange,
+  getList,
+} = useQueryCommonList(props, fetchUrl);
 
 // 切换tab
 const handleSwtichType = async () => {
-  const params = {
-    fetchUrl: `vendors/${props.vendor}/security_groups/${props.id}/rules`,
-  };
-  // eslint-disable-next-line max-len
-  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = await fetchList(params.fetchUrl);
   state.datas = datas;
   state.isLoading = isLoading;
   state.pagination = pagination;
   state.handlePageChange = handlePageChange;
   state.handlePageSizeChange = handlePageSizeChange;
-  state.handleSort = handleSort;
 };
 
 // 确定删除
@@ -123,7 +107,7 @@ const handleDeleteConfirm = () => {
         theme: 'success',
         message: t('删除成功'),
       });
-      handleSwtichType();
+      getList();
     })
     .finally(() => {
       securityRuleLoading.value = false;
@@ -147,7 +131,7 @@ const handleSubmitRule = async (data: any) => {
       message: t(data.id ? '更新成功' : '添加成功'),
       theme: 'success',
     });
-    handleSwtichType();
+    getList();
   } catch (error) {
     console.log(error);
   } finally {
@@ -178,7 +162,7 @@ const inColumns = [
           || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
           || data.source_address_prefix || data.source_address_prefixs || data.cloud_source_security_group_ids
           || data.destination_address_prefix || data.destination_address_prefixes
-          || data.cloud_destination_security_group_ids,
+          || data.cloud_destination_security_group_ids || '--',
         ],
       );
     },
@@ -190,7 +174,7 @@ const inColumns = [
         'span',
         {},
         [
-          `${data.protocol}:${data.port}`,
+          `${data.protocol || '--'}:${data.port || data.to_port || '--'}`,
         ],
       );
     },
@@ -284,7 +268,7 @@ const outColumns = [
         'span',
         {},
         [
-          `${data.protocol}:${data.port}`,
+          `${data.protocol || '--'}:${data.port || data.to_port || '--'}`,
         ],
       );
     },
@@ -358,6 +342,23 @@ const types = [
   { name: 'egress', label: t('出站规则') },
 ];
 
+if (props.vendor === 'huawei') {
+  inColumns.unshift({
+    label: t('优先级'),
+    field: 'priority',
+  }, {
+    label: t('类型'),
+    field: 'ethertype',
+  });
+  outColumns.unshift({
+    label: t('优先级'),
+    field: 'priority',
+  }, {
+    label: t('类型'),
+    field: 'ethertype',
+  });
+}
+
 </script>
 
 <template>
@@ -393,7 +394,6 @@ const types = [
       :pagination="state.pagination"
       @page-limit-change="state.handlePageSizeChange"
       @page-value-change="state.handlePageChange"
-      @column-sort="state.handleSort"
     />
 
     <bk-table
@@ -406,7 +406,6 @@ const types = [
       :pagination="state.pagination"
       @page-limit-change="state.handlePageSizeChange"
       @page-value-change="state.handlePageChange"
-      @column-sort="state.handleSort"
     />
 
   </bk-loading>

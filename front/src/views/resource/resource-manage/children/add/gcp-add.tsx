@@ -232,7 +232,7 @@ export default defineComponent({
           property: 'disabled',
           component: () => <>
           {
-            state.projectModel.id ? <span>{state.projectModel.disabled ? t('已启用') : t('已停用')}</span>
+            state.projectModel.id ? <span>{state.projectModel.disabled ? t('已停用') : t('已启用')}</span>
               : <Group v-model={state.projectModel.disabled}>
             {GCP_EXECUTION_STATUS.map(e => (
                 <Radio label={e.value}>{t(e.label)}</Radio>

@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import type {
   // PlainObject,
-  DoublePlainObject,
   FilterType,
 } from '@/typings/resource';
 import { GcpTypeEnum, CloudType } from '@/typings';
 import {
   Button,
+  InfoBox,
   Message,
 } from 'bkui-vue';
-
+import {
+  useResourceStore,
+} from '@/store/resource';
 import {
   ref,
   h,
@@ -26,14 +28,8 @@ import {
   useRouter,
   useRoute,
 } from 'vue-router';
-import {
-  useResourceStore,
-} from '@/store';
-import useBusiness from '../../hooks/use-business';
-import useQueryCommonList from '../../hooks/use-query-list-common';
-import useColumns from '../../hooks/use-columns';
-import useDelete from '../../hooks/use-delete';
-import useSelection from '../../hooks/use-selection';
+import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 
 const props = defineProps({
   filter: {
@@ -50,10 +46,9 @@ const router = useRouter();
 
 const route = useRoute();
 
-const resourceStore = useResourceStore();
-
 const activeType = ref('group');
 const fetchUrl = ref<string>('security_groups/list');
+const resourceStore = useResourceStore();
 
 const state = reactive<any>({
   datas: [],
@@ -65,28 +60,12 @@ const state = reactive<any>({
   isLoading: true,
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
-  handleSort: () => {},
   columns: useColumns('group'),
   params: {
     fetchUrl: 'security_groups',
     columns: 'group',
-    dialogName: t('删除安全组'),
   },
 });
-
-let securityHandleShowDelete: any;
-let SecurityDeleteDialog: any;
-
-const {
-  isShowDistribution,
-  handleDistribution,
-  ResourceBusiness,
-} = useBusiness();
-
-const {
-  selections,
-  handleSelectionChange,
-} = useSelection();
 
 const {
   datas,
@@ -94,35 +73,16 @@ const {
   isLoading,
   handlePageChange,
   handlePageSizeChange,
-  handleSort,
   getList,
 } = useQueryCommonList(props, fetchUrl);
-const showDeleteDialog = (fetchType: string, title: string) => {
-  const {
-    handleShowDelete,
-    DeleteDialog,
-  } = useDelete(
-    state.columns,
-    selections,
-    fetchType,
-    t(title),
-    true,
-    () => {
-      getList();
-    },  // 删除成功请求方法
-  );
-  return {
-    handleShowDelete,
-    DeleteDialog,
-  };
-};
 
 // 状态保持
 watch(
   () => activeType.value,
   (v) => {
-    selections.value = [];
     state.isLoading = true;
+    state.pagination.current = 1;
+    state.pagination.limit = 10;
     handleSwtichType(v);
   },
 );
@@ -133,30 +93,22 @@ const handleSwtichType = async (type: string) => {
     fetchUrl.value = 'vendors/gcp/firewalls/rules/list';
     state.params.fetchUrl = 'vendors/gcp/firewalls/rules';
     state.params.columns = 'gcp';
-    state.params.dialogName = t('删除防火墙规则');
   } else {
     fetchUrl.value = 'security_groups/list';
     state.params.fetchUrl = 'security_groups';
     state.params.columns = 'group';
-    state.params.dialogName = t('删除安全组规则');
   }
-  console.log('state.params.fetchUrl', state.params.fetchUrl);
   // eslint-disable-next-line max-len
   state.datas = datas;
   state.isLoading = isLoading;
   state.pagination = pagination;
   state.handlePageChange = handlePageChange;
   state.handlePageSizeChange = handlePageSizeChange;
-  state.handleSort = handleSort;
-  state.columns = useColumns(state.params.columns);
-  const { handleShowDelete, DeleteDialog } = showDeleteDialog(state.params.fetchUrl, state.params.dialogName);
-  securityHandleShowDelete = handleShowDelete;
-  SecurityDeleteDialog = DeleteDialog;
 };
 
 // 抛出请求数据的方法，新增成功使用
 const fetchComponentsData = () => {
-  handleSwtichType(activeType.value);
+  getList();
 };
 
 handleSwtichType(activeType.value);
@@ -164,10 +116,6 @@ handleSwtichType(activeType.value);
 defineExpose({ fetchComponentsData });
 
 const groupColumns = [
-  {
-    type: 'selection',
-    width: 100,
-  },
   {
     label: 'ID',
     field: 'id',
@@ -303,7 +251,7 @@ const groupColumns = [
               text: true,
               theme: 'primary',
               onClick() {
-                securityHandleShowDelete([data.id]);
+                securityHandleShowDelete(data);
               },
             },
             [
@@ -486,7 +434,7 @@ const gcpColumns = [
               disabled: data.bk_biz_id !== -1,
               theme: 'primary',
               onClick() {
-                securityHandleShowDelete([data.id]);
+                securityHandleShowDelete(data);
               },
             },
             [
@@ -503,26 +451,32 @@ const types = [
   { name: 'gcp', label: t('GCP防火墙规则') },
 ];
 
-// 方法
 
-const handleConfirm = (bizId: number) => {
-  const securityGroupIds = selections.value.map(e => e.id);
-  const params = {
-    security_group_ids: securityGroupIds,
-    bk_biz_id: bizId,
-  };
-  return resourceStore
-    .assignBusiness(activeType.value === 'group' ? 'security_groups' : 'vendors/gcp/firewalls/rules', params)
-    .then(() => {
-      Message({
-        theme: 'success',
-        message: t('分配成功'),
-      });
-    });
-};
-
-const isRowSelectEnable = ({ row }: DoublePlainObject) => {
-  return row.bk_biz_id === -1;
+const securityHandleShowDelete = (data: any) => {
+  InfoBox({
+    title: '请确认是否删除',
+    subTitle: `将删除【${data.name}】`,
+    theme: 'danger',
+    headerAlign: 'center',
+    footerAlign: 'center',
+    contentAlign: 'center',
+    async onConfirm() {
+      try {
+        await resourceStore
+          .deleteBatch(
+            activeType.value === 'group' ? 'security_groups' : 'vendors/gcp/firewalls/rules',
+            { ids: [data.id] },
+          );
+        getList();
+        Message({
+          message: t('删除成功'),
+          theme: 'success',
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    },
+  });
 };
 </script>
 
@@ -532,21 +486,7 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
   >
     <section>
       <slot>
-        <!-- <bk-button
-          class="w100"
-          theme="primary"
-          @click="handleDistribution"
-        >
-          {{ t('分配') }}
-        </bk-button> -->
       </slot>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-        @click="securityHandleShowDelete(selections.map(e => e.id))"
-      >
-        {{ t('删除') }}
-      </bk-button>
     </section>
 
     <bk-radio-group
@@ -571,11 +511,9 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
       :pagination="state.pagination"
       :columns="groupColumns"
       :data="state.datas"
-      :is-row-select-enable="isRowSelectEnable"
       @page-limit-change="state.handlePageSizeChange"
       @page-value-change="state.handlePageChange"
       @column-sort="state.handleSort"
-      @selection-change="handleSelectionChange"
     />
 
     <bk-table
@@ -586,29 +524,10 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
       :pagination="state.pagination"
       :columns="gcpColumns"
       :data="state.datas"
-      :is-row-select-enable="isRowSelectEnable"
       @page-limit-change="state.handlePageSizeChange"
       @page-value-change="state.handlePageChange"
       @column-sort="state.handleSort"
-      @selection-change="handleSelectionChange"
     />
-
-    <resource-business
-      v-model:is-show="isShowDistribution"
-      @handle-confirm="handleConfirm"
-      :title="t(activeType === 'group' ? '安全组分配' : 'GCP防火墙分配')"
-    />
-
-    <security-delete-dialog>
-      <h3 class="g-resource-tips" v-if="activeType === 'group'">
-        {{ t('安全组被实例关联或者被其他安全组规则关联时不能直接删除，请删除关联关系后再进行删除') }}
-        <bk-button text theme="primary">{{ t('查看关联实例') }}</bk-button>
-      </h3>
-      <h3 class="g-resource-tips" v-else>
-        {{ t('防火墙规则被实例关联') }}<bk-button text theme="primary">{{ t('查看关联实例') }}</bk-button>
-        {{ t('请注意删除防火墙规则后无法恢复，请谨慎操作') }}
-      </h3>
-    </security-delete-dialog>
   </bk-loading>
 </template>
 

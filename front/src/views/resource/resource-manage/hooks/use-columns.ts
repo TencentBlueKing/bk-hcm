@@ -184,7 +184,7 @@ export default (type: string, isSimpleShow = false) => {
   ];
 
   const subnetColumns = [
-    getLinkField('subnet', 'ID','id', 'id', false),
+    getLinkField('subnet', 'ID', 'id', 'id', false),
     {
       label: '资源 ID',
       field: 'cloud_id',
@@ -754,7 +754,7 @@ export default (type: string, isSimpleShow = false) => {
             || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
             || data.source_address_prefix || data.source_address_prefixs || data.cloud_source_security_group_ids
             || data.destination_address_prefix || data.destination_address_prefixes
-            || data.cloud_destination_security_group_ids,
+            || data.cloud_destination_security_group_ids || '--',
           ],
         );
       },
@@ -766,7 +766,7 @@ export default (type: string, isSimpleShow = false) => {
           'span',
           {},
           [
-            `${data.protocol}:${data.port}`,
+            `${data.protocol}:${data.port || data.to_port}`,
           ],
         );
       },

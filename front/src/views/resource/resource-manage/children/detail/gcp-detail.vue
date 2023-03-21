@@ -165,7 +165,7 @@ const handleDetailData = () => {
   gcpDetail.value.type = GcpTypeEnum[gcpDetail.value.type];
   gcpDetail.value.log_enable = detail?.value?.log_enable ? t('开') : t('关');
   gcpDetail.value.operate = detail.value?.allowed?.length ? t('允许') : t('拒绝');
-  gcpDetail.value.disabled = detail.value?.disabled ? t('已启用') : t('已停用');
+  gcpDetail.value.disabled = detail.value?.disabled ? t('已停用') : t('已启用');
   gcpDetail.value.vendor = t('谷歌云');
   // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
   gcpDetail.value.allowed = detail.value.allowed && detail.value.allowed.reduce((p, e) => {
