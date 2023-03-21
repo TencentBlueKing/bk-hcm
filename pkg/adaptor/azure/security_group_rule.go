@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
@@ -101,14 +102,14 @@ func convSecurityGroupRule(direction armnetwork.SecurityRuleDirection, rules []s
 		nameMap[one.Name] = true
 
 		rule := &armnetwork.SecurityRule{
-			Name: &one.Name,
+			Name: converter.ValToPtr(one.Name),
 			Properties: &armnetwork.SecurityRulePropertiesFormat{
 				Description:                one.Description,
 				DestinationAddressPrefix:   one.DestinationAddressPrefix,
 				DestinationAddressPrefixes: one.DestinationAddressPrefixes,
 				DestinationPortRange:       one.DestinationPortRange,
 				DestinationPortRanges:      one.DestinationPortRanges,
-				Priority:                   &one.Priority,
+				Priority:                   converter.ValToPtr(one.Priority),
 				SourceAddressPrefix:        one.SourceAddressPrefix,
 				SourceAddressPrefixes:      one.SourceAddressPrefixes,
 				SourcePortRange:            one.SourcePortRange,
@@ -116,10 +117,10 @@ func convSecurityGroupRule(direction armnetwork.SecurityRuleDirection, rules []s
 			},
 		}
 		access := armnetwork.SecurityRuleAccess(one.Access)
-		rule.Properties.Access = &access
-		rule.Properties.Direction = &direction
+		rule.Properties.Access = converter.ValToPtr(access)
+		rule.Properties.Direction = converter.ValToPtr(direction)
 		protocol := armnetwork.SecurityRuleProtocol(one.Protocol)
-		rule.Properties.Protocol = &protocol
+		rule.Properties.Protocol = converter.ValToPtr(protocol)
 
 		if len(one.CloudDestinationAppSecurityGroupIDs) != 0 {
 			rule.Properties.DestinationApplicationSecurityGroups = make([]*armnetwork.ApplicationSecurityGroup, 0,
