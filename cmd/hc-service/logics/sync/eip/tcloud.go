@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
 	apicore "hcm/pkg/api/core"
@@ -37,6 +38,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncTCloudEipOption define sync tcloud eip option.
@@ -73,72 +75,18 @@ func SyncTCloudEip(kt *kit.Kit, req *SyncTCloudEipOption,
 	}
 
 	cloudAllIDs := make(map[string]bool)
-	offset := 0
-	for {
-		opt := &eip.TCloudEipListOption{
-			Region: req.Region,
-			Page:   &core.TCloudPage{Offset: uint64(offset), Limit: uint64(filter.DefaultMaxInLimit)},
-		}
-		if len(req.CloudIDs) > 0 {
-			opt.Page = nil
-			opt.CloudIDs = req.CloudIDs
-		}
 
-		datas, err := client.ListEip(kt, opt)
+	if len(req.CloudIDs) <= 0 {
+		err := syncTCloudEipAll(kt, req, dataCli, client, cloudAllIDs)
 		if err != nil {
-			logs.Errorf("request adaptor to list tcloud eip failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("request syncTCloudEipAll failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
-
-		cloudMap := make(map[string]*TCloudEipSync)
-		cloudIDs := make([]string, 0, len(datas.Details))
-		for _, data := range datas.Details {
-			eipSync := new(TCloudEipSync)
-			eipSync.IsUpdate = false
-			eipSync.Eip = data
-			cloudMap[data.CloudID] = eipSync
-			cloudIDs = append(cloudIDs, data.CloudID)
-			cloudAllIDs[data.CloudID] = true
-		}
-
-		updateIDs, dsMap, err := getTCloudEipDSSync(kt, cloudIDs, req, dataCli)
+	} else {
+		err := syncTCloudEipByIDs(kt, req, dataCli, client, cloudAllIDs)
 		if err != nil {
-			logs.Errorf("request getTCloudEipDSSync failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("request syncTCloudEipByIDs failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
-		}
-
-		if len(updateIDs) > 0 {
-			err := syncTCloudEipUpdate(kt, updateIDs, cloudMap, dsMap, dataCli)
-			if err != nil {
-				logs.Errorf("request syncTCloudEipUpdate failed, err: %v, rid: %s", err, kt.Rid)
-				return nil, err
-			}
-		}
-
-		addIDs := make([]string, 0)
-		for _, id := range updateIDs {
-			if _, ok := cloudMap[id]; ok {
-				cloudMap[id].IsUpdate = true
-			}
-		}
-
-		for k, v := range cloudMap {
-			if !v.IsUpdate {
-				addIDs = append(addIDs, k)
-			}
-		}
-
-		if len(addIDs) > 0 {
-			err := syncTCloudEipAdd(kt, addIDs, req, cloudMap, dataCli)
-			if err != nil {
-				logs.Errorf("request syncTCloudEipAdd failed, err: %v, rid: %s", err, kt.Rid)
-				return nil, err
-			}
-		}
-
-		offset += len(datas.Details)
-		if uint(len(datas.Details)) < filter.DefaultMaxInLimit {
-			break
 		}
 	}
 
@@ -204,6 +152,111 @@ func SyncTCloudEip(kt *kit.Kit, req *SyncTCloudEipOption,
 	}
 
 	return nil, nil
+}
+
+func syncTCloudEipAll(kt *kit.Kit, req *SyncTCloudEipOption, dataCli *dataservice.Client,
+	client *tcloud.TCloud, cloudAllIDs map[string]bool) error {
+	offset := 0
+	for {
+		opt := &eip.TCloudEipListOption{
+			Region: req.Region,
+			Page:   &core.TCloudPage{Offset: uint64(offset), Limit: uint64(filter.DefaultMaxInLimit)},
+		}
+
+		datas, err := client.ListEip(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list tcloud eip failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+		err = syncTCloudEipAddAndUpdate(kt, req, dataCli, datas, cloudAllIDs)
+		if err != nil {
+			logs.Errorf("request syncTCloudEipAddAndUpdate failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+		offset += len(datas.Details)
+		if uint(len(datas.Details)) < filter.DefaultMaxInLimit {
+			break
+		}
+	}
+
+	return nil
+}
+
+func syncTCloudEipByIDs(kt *kit.Kit, req *SyncTCloudEipOption, dataCli *dataservice.Client,
+	client *tcloud.TCloud, cloudAllIDs map[string]bool) error {
+	elems := slice.Split(req.CloudIDs, core.TCloudQueryLimit)
+	for _, partIDs := range elems {
+		opt := &eip.TCloudEipListOption{
+			Region:   req.Region,
+			CloudIDs: partIDs,
+		}
+		datas, err := client.ListEip(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list tcloud eip failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+		err = syncTCloudEipAddAndUpdate(kt, req, dataCli, datas, cloudAllIDs)
+		if err != nil {
+			logs.Errorf("request syncTCloudEipAddAndUpdate failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func syncTCloudEipAddAndUpdate(kt *kit.Kit, req *SyncTCloudEipOption, dataCli *dataservice.Client,
+	datas *eip.TCloudEipListResult, cloudAllIDs map[string]bool) error {
+	cloudMap := make(map[string]*TCloudEipSync)
+	cloudIDs := make([]string, 0, len(datas.Details))
+	for _, data := range datas.Details {
+		eipSync := new(TCloudEipSync)
+		eipSync.IsUpdate = false
+		eipSync.Eip = data
+		cloudMap[data.CloudID] = eipSync
+		cloudIDs = append(cloudIDs, data.CloudID)
+		cloudAllIDs[data.CloudID] = true
+	}
+
+	updateIDs, dsMap, err := getTCloudEipDSSync(kt, cloudIDs, req, dataCli)
+	if err != nil {
+		logs.Errorf("request getTCloudEipDSSync failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	if len(updateIDs) > 0 {
+		err := syncTCloudEipUpdate(kt, updateIDs, cloudMap, dsMap, dataCli)
+		if err != nil {
+			logs.Errorf("request syncTCloudEipUpdate failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+	}
+
+	addIDs := make([]string, 0)
+	for _, id := range updateIDs {
+		if _, ok := cloudMap[id]; ok {
+			cloudMap[id].IsUpdate = true
+		}
+	}
+
+	for k, v := range cloudMap {
+		if !v.IsUpdate {
+			addIDs = append(addIDs, k)
+		}
+	}
+
+	if len(addIDs) > 0 {
+		err := syncTCloudEipAdd(kt, addIDs, req, cloudMap, dataCli)
+		if err != nil {
+			logs.Errorf("request syncTCloudEipAdd failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
 }
 
 func syncTCloudEipAdd(kt *kit.Kit, addIDs []string, req *SyncTCloudEipOption,

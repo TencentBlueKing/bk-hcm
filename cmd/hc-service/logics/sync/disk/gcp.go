@@ -133,10 +133,10 @@ func getDatasFromDSForGcpDiskSync(kt *kit.Kit, req *SyncGcpDiskOption,
 
 	dsMap := make(map[string]*GcpDiskSyncDS)
 	for _, result := range resultsHcm {
-		sg := new(GcpDiskSyncDS)
-		sg.IsUpdated = false
-		sg.HcDisk = result
-		dsMap[result.CloudID] = sg
+		disk := new(GcpDiskSyncDS)
+		disk.IsUpdated = false
+		disk.HcDisk = result
+		dsMap[result.CloudID] = disk
 	}
 
 	return dsMap, nil
@@ -182,9 +182,9 @@ func getDatasFromGcpForDiskSync(kt *kit.Kit, req *SyncGcpDiskOption,
 		}
 
 		for _, data := range datas {
-			sg := new(GcpDiskSyncDiff)
-			sg.Disk = data
-			cloudMap[fmt.Sprint(data.Id)] = sg
+			disk := new(GcpDiskSyncDiff)
+			disk.Disk = data
+			cloudMap[fmt.Sprint(data.Id)] = disk
 		}
 
 		if len(token) == 0 {

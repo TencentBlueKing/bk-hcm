@@ -122,10 +122,10 @@ func getDatasFromDSForAwsDiskSync(kt *kit.Kit, req *SyncAwsDiskOption,
 
 	dsMap := make(map[string]*AwsDiskSyncDS)
 	for _, result := range resultsHcm {
-		sg := new(AwsDiskSyncDS)
-		sg.IsUpdated = false
-		sg.HcDisk = result
-		dsMap[result.CloudID] = sg
+		disk := new(AwsDiskSyncDS)
+		disk.IsUpdated = false
+		disk.HcDisk = result
+		dsMap[result.CloudID] = disk
 	}
 
 	return dsMap, nil

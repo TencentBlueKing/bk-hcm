@@ -45,6 +45,7 @@ var GcpFirewallRuleTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "priority", NamedC: "priority", Type: enumor.Numeric},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "cloud_vpc_id", NamedC: "cloud_vpc_id", Type: enumor.String},
+	{Column: "vpc_self_link", NamedC: "vpc_self_link", Type: enumor.String},
 	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 	{Column: "vpc_id", NamedC: "vpc_id", Type: enumor.String},
 	{Column: "source_ranges", NamedC: "source_ranges", Type: enumor.Json},
@@ -75,6 +76,7 @@ type GcpFirewallRuleTable struct {
 	Priority              int64             `db:"priority" json:"priority"`
 	Memo                  string            `db:"memo" validate:"lte=2048" json:"memo"`
 	CloudVpcID            string            `db:"cloud_vpc_id" validate:"lte=255" json:"cloud_vpc_id"`
+	VpcSelfLink           string            `db:"vpc_self_link" validate:"lte=255" json:"cloud_vpc_self_link"`
 	VpcID                 string            `db:"vpc_id" validate:"lte=64" json:"vpc_id"`
 	SourceRanges          types.StringArray `db:"source_ranges" json:"source_ranges"`
 	DestinationRanges     types.StringArray `db:"destination_ranges" json:"destination_ranges"`
@@ -129,6 +131,10 @@ func (t GcpFirewallRuleTable) InsertValidate() error {
 
 	if len(t.CloudVpcID) == 0 {
 		return errors.New("cloud vpc id is required")
+	}
+
+	if len(t.VpcSelfLink) == 0 {
+		return errors.New("cloud vpc self link is required")
 	}
 
 	if len(t.VpcID) == 0 {

@@ -22,7 +22,9 @@ package huawei
 import (
 	"time"
 
+	"hcm/pkg/adaptor/huawei"
 	routetable "hcm/pkg/api/hc-service/route-table"
+	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -30,7 +32,7 @@ import (
 )
 
 // SyncRouteTable 同步路由表
-func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
 	start := time.Now()
 	logs.V(3).Infof("cloud-server-sync-%s account[%s] sync route table start, time: %v, rid: %s",
 		enumor.HuaWei, accountID, start, kt.Rid)
@@ -39,6 +41,12 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, re
 		logs.V(3).Infof("cloud-server-sync-%s account[%s] sync route table end, cost: %v, rid: %s",
 			enumor.HuaWei, accountID, time.Since(start), kt.Rid)
 	}()
+
+	regions, err := ListRegionByService(kt, dataCli, huawei.Vpc)
+	if err != nil {
+		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 
 	for _, region := range regions {
 		req := &routetable.HuaWeiRouteTableSyncReq{

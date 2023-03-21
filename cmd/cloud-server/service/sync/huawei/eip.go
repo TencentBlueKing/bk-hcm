@@ -22,14 +22,16 @@ package huawei
 import (
 	"time"
 
+	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/api/hc-service/eip"
+	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncEip ...
-func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+func SyncEip(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync eip start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -37,6 +39,12 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, regions [
 	defer func() {
 		logs.V(3).Infof("huawei account[%s] sync eip end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
+
+	regions, err := ListRegionByService(kt, dataCli, huawei.Eip)
+	if err != nil {
+		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 
 	for _, region := range regions {
 		req := &eip.EipSyncReq{

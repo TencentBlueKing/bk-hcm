@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 )
@@ -126,10 +127,10 @@ func getDatasFromDSForTCloudDiskSync(kt *kit.Kit, req *SyncTCloudDiskOption,
 
 	dsMap := make(map[string]*TCloudDiskSyncDS)
 	for _, result := range resultsHcm {
-		sg := new(TCloudDiskSyncDS)
-		sg.IsUpdated = false
-		sg.HcDisk = result
-		dsMap[result.CloudID] = sg
+		disk := new(TCloudDiskSyncDS)
+		disk.IsUpdated = false
+		disk.HcDisk = result
+		dsMap[result.CloudID] = disk
 	}
 
 	return dsMap, nil
@@ -188,9 +189,9 @@ func getTCloudDiskAllSync(kt *kit.Kit, client *tcloud.TCloud,
 
 	cloudMap := make(map[string]*TCloudDiskSyncDiff)
 	for _, data := range datasCloud {
-		sg := new(TCloudDiskSyncDiff)
-		sg.Disk = data
-		cloudMap[*data.DiskId] = sg
+		disk := new(TCloudDiskSyncDiff)
+		disk.Disk = data
+		cloudMap[*data.DiskId] = disk
 	}
 
 	return cloudMap, nil
@@ -199,22 +200,24 @@ func getTCloudDiskAllSync(kt *kit.Kit, client *tcloud.TCloud,
 func getTCloudDiskByCloudIDsSync(kt *kit.Kit, client *tcloud.TCloud,
 	req *SyncTCloudDiskOption) (map[string]*TCloudDiskSyncDiff, error) {
 
-	opt := &disk.TCloudDiskListOption{
-		Region:   req.Region,
-		CloudIDs: req.CloudIDs,
-	}
-
-	datas, err := client.ListDisk(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to list tcloud disk failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
-		return nil, err
-	}
-
 	cloudMap := make(map[string]*TCloudDiskSyncDiff)
-	for _, data := range datas {
-		sg := new(TCloudDiskSyncDiff)
-		sg.Disk = data
-		cloudMap[*data.DiskId] = sg
+	elems := slice.Split(req.CloudIDs, core.TCloudQueryLimit)
+	for _, partIDs := range elems {
+		opt := &disk.TCloudDiskListOption{
+			Region:   req.Region,
+			CloudIDs: partIDs,
+		}
+		datas, err := client.ListDisk(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list tcloud disk failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+			return nil, err
+		}
+
+		for _, data := range datas {
+			disk := new(TCloudDiskSyncDiff)
+			disk.Disk = data
+			cloudMap[*data.DiskId] = disk
+		}
 	}
 
 	return cloudMap, nil

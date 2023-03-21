@@ -190,8 +190,24 @@ func getDatasFromGcpForFireWallSync(kt *kit.Kit, ad *cloudclient.CloudAdaptorCli
 func diffGcpFireWallSync(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, dsMap map[string]*FireWallSyncDS,
 	req *GcpFirewallSyncOption, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
 
-	addCloudIDs := getAddCloudIDs(cloudMap, dsMap)
-	deleteCloudIDs, updateCloudIDs := getDeleteAndUpdateCloudIDs(dsMap)
+	addCloudIDs := make([]string, 0)
+	for id := range cloudMap {
+		if _, ok := dsMap[id]; !ok {
+			addCloudIDs = append(addCloudIDs, id)
+		} else {
+			dsMap[id].IsUpdated = true
+		}
+	}
+
+	deleteCloudIDs := make([]string, 0)
+	updateCloudIDs := make([]string, 0)
+	for id, one := range dsMap {
+		if !one.IsUpdated {
+			deleteCloudIDs = append(deleteCloudIDs, id)
+		} else {
+			updateCloudIDs = append(updateCloudIDs, id)
+		}
+	}
 
 	if len(deleteCloudIDs) > 0 {
 		err := DiffFireWallSyncDelete(kt, deleteCloudIDs, dataCli)
@@ -204,7 +220,7 @@ func diffGcpFireWallSync(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, dsMa
 	if len(updateCloudIDs) > 0 {
 		err := diffFireWallSyncUpdate(kt, cloudMap, req, dsMap, updateCloudIDs, dataCli, adaptor)
 		if err != nil {
-			logs.Errorf("request diffGcpSyncUpdate failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("request diffFireWallSyncUpdate failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
 	}
@@ -212,7 +228,7 @@ func diffGcpFireWallSync(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, dsMa
 	if len(addCloudIDs) > 0 {
 		_, err := diffFireWallSyncAdd(kt, cloudMap, req, addCloudIDs, dataCli, adaptor)
 		if err != nil {
-			logs.Errorf("request diffGcpDiskSyncAdd failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("request diffFireWallSyncAdd failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
 	}
@@ -290,39 +306,14 @@ func isGcpChange(db *FireWallSyncDS, cloud *FireWallGcpDiff, vpcID string) bool 
 }
 
 func diffFireWallSyncUpdate(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *GcpFirewallSyncOption,
-	dsMap map[string]*FireWallSyncDS, updateCloudIDs []string, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
+	dsMap map[string]*FireWallSyncDS, updateCloudIDs []string,
+	dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) error {
 
 	rulesUpdate := make([]apicloud.GcpFirewallRuleBatchUpdate, 0)
 
 	for _, id := range updateCloudIDs {
 
-		vpcID := ""
-		vpcHCID, _, err := queryVpcIDBySelfLink(kt, dataCli, cloudMap[id].FireWall.Network)
-		if err != nil {
-			logs.Errorf("request queryVpcIDBySelfLink failed, err: %v, rid: %s", err, kt.Rid)
-		} else {
-			vpcID = vpcHCID
-		}
-
-		if vpcID == "" {
-			req := &vpc.SyncGcpOption{
-				AccountID: req.AccountID,
-				SelfLinks: []string{cloudMap[id].FireWall.Network},
-			}
-			_, err := vpc.GcpVpcSync(kt, req, adaptor, dataCli)
-			if err != nil {
-				logs.Errorf("request to sync gcp vpc logic failed, err: %v, rid: %s", err, kt.Rid)
-				return err
-			}
-
-			vpcHCID, _, err := queryVpcIDBySelfLink(kt, dataCli, cloudMap[id].FireWall.Network)
-			if err != nil {
-				logs.Errorf("request queryVpcIDBySelfLink failed, err: %v, rid: %s", err, kt.Rid)
-				return err
-			} else {
-				vpcID = vpcHCID
-			}
-		}
+		vpcID, vpcCloudID := getVpcIDs(kt, dataCli, adaptor, cloudMap, id, req)
 
 		if !isGcpChange(dsMap[id], cloudMap[id], vpcID) {
 			continue
@@ -335,7 +326,8 @@ func diffFireWallSyncUpdate(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, r
 			Name:                  cloudMap[id].FireWall.Name,
 			Priority:              cloudMap[id].FireWall.Priority,
 			Memo:                  cloudMap[id].FireWall.Description,
-			CloudVpcID:            cloudMap[id].FireWall.Network,
+			VpcSelfLink:           cloudMap[id].FireWall.Network,
+			CloudVpcID:            vpcCloudID,
 			VpcId:                 vpcID,
 			SourceRanges:          cloudMap[id].FireWall.SourceRanges,
 			BkBizID:               constant.UnassignedBiz,
@@ -386,40 +378,14 @@ func diffFireWallSyncUpdate(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, r
 	return nil
 }
 
-func diffFireWallSyncAdd(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *GcpFirewallSyncOption, addCloudIDs []string,
-	dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) ([]string, error) {
+func diffFireWallSyncAdd(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req *GcpFirewallSyncOption,
+	addCloudIDs []string, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient) ([]string, error) {
 
 	rulesCreate := make([]apicloud.GcpFirewallRuleBatchCreate, 0)
 
 	for _, id := range addCloudIDs {
 
-		vpcID := ""
-		vpcHCID, _, err := queryVpcIDBySelfLink(kt, dataCli, cloudMap[id].FireWall.Network)
-		if err != nil {
-			logs.Errorf("request queryVpcIDBySelfLink failed, err: %v, rid: %s", err, kt.Rid)
-		} else {
-			vpcID = vpcHCID
-		}
-
-		if vpcID == "" {
-			req := &vpc.SyncGcpOption{
-				AccountID: req.AccountID,
-				SelfLinks: []string{cloudMap[id].FireWall.Network},
-			}
-			_, err := vpc.GcpVpcSync(kt, req, adaptor, dataCli)
-			if err != nil {
-				logs.Errorf("request to sync gcp vpc logic failed, err: %v, rid: %s", err, kt.Rid)
-				return nil, err
-			}
-
-			vpcHCID, _, err := queryVpcIDBySelfLink(kt, dataCli, cloudMap[id].FireWall.Network)
-			if err != nil {
-				logs.Errorf("request queryVpcIDBySelfLink failed, err: %v, rid: %s", err, kt.Rid)
-				return nil, err
-			} else {
-				vpcID = vpcHCID
-			}
-		}
+		vpcID, vpcCloudID := getVpcIDs(kt, dataCli, adaptor, cloudMap, id, req)
 
 		rule := apicloud.GcpFirewallRuleBatchCreate{
 			CloudID:               fmt.Sprint(cloudMap[id].FireWall.Id),
@@ -427,7 +393,8 @@ func diffFireWallSyncAdd(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req 
 			Name:                  cloudMap[id].FireWall.Name,
 			Priority:              cloudMap[id].FireWall.Priority,
 			Memo:                  cloudMap[id].FireWall.Description,
-			CloudVpcID:            cloudMap[id].FireWall.Network,
+			CloudVpcID:            vpcCloudID,
+			VpcSelfLink:           cloudMap[id].FireWall.Network,
 			VpcId:                 vpcID,
 			SourceRanges:          cloudMap[id].FireWall.SourceRanges,
 			BkBizID:               constant.UnassignedBiz,
@@ -483,35 +450,37 @@ func diffFireWallSyncAdd(kt *kit.Kit, cloudMap map[string]*FireWallGcpDiff, req 
 	return result.IDs, nil
 }
 
-func getAddCloudIDs[T any](cloudMap map[string]T, dsMap map[string]*FireWallSyncDS) []string {
-	addCloudIDs := make([]string, 0)
-	for id := range cloudMap {
-		if _, ok := dsMap[id]; !ok {
-			addCloudIDs = append(addCloudIDs, id)
-		} else {
-			dsMap[id].IsUpdated = true
+func getVpcIDs(kt *kit.Kit, dataCli *dataservice.Client, adaptor *cloudclient.CloudAdaptorClient,
+	cloudMap map[string]*FireWallGcpDiff, id string, req *GcpFirewallSyncOption) (string, string) {
+
+	vpcID, vpcCloudID, _, err := queryVpcIDBySelfLink(kt, dataCli, cloudMap[id].FireWall.Network)
+	if err != nil {
+		logs.Errorf("request queryVpcIDBySelfLink failed, err: %v, rid: %s", err, kt.Rid)
+	}
+
+	if vpcID == "" {
+		req := &vpc.SyncGcpOption{
+			AccountID: req.AccountID,
+			SelfLinks: []string{cloudMap[id].FireWall.Network},
+		}
+		_, err := vpc.GcpVpcSync(kt, req, adaptor, dataCli)
+		if err != nil {
+			logs.Errorf("request to sync gcp vpc logic failed, err: %v, rid: %s", err, kt.Rid)
+			return "", ""
+		}
+
+		vpcID, vpcCloudID, _, err = queryVpcIDBySelfLink(kt, dataCli, cloudMap[id].FireWall.Network)
+		if err != nil {
+			logs.Errorf("request queryVpcIDBySelfLink failed, err: %v, rid: %s", err, kt.Rid)
+			return "", ""
 		}
 	}
 
-	return addCloudIDs
-}
-
-func getDeleteAndUpdateCloudIDs(dsMap map[string]*FireWallSyncDS) ([]string, []string) {
-	deleteCloudIDs := make([]string, 0)
-	updateCloudIDs := make([]string, 0)
-	for id, one := range dsMap {
-		if !one.IsUpdated {
-			deleteCloudIDs = append(deleteCloudIDs, id)
-		} else {
-			updateCloudIDs = append(updateCloudIDs, id)
-		}
-	}
-
-	return deleteCloudIDs, updateCloudIDs
+	return vpcID, vpcCloudID
 }
 
 func queryVpcIDBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLink string) (
-	string, int64, error) {
+	string, string, int64, error) {
 
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -525,17 +494,17 @@ func queryVpcIDBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLink str
 			},
 		},
 		Page:   core.DefaultBasePage,
-		Fields: []string{"id"},
+		Fields: []string{"id", "cloud_id"},
 	}
 	vpcResult, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), req)
 	if err != nil {
 		logs.Errorf("list vpc failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-		return "", 0, err
+		return "", "", 0, err
 	}
 
 	if len(vpcResult.Details) != 1 {
-		return "", 0, errf.Newf(errf.RecordNotFound, "vpc: %s not found", selfLink)
+		return "", "", 0, errf.Newf(errf.RecordNotFound, "vpc: %s not found", selfLink)
 	}
 
-	return vpcResult.Details[0].ID, vpcResult.Details[0].BkCloudID, nil
+	return vpcResult.Details[0].ID, vpcResult.Details[0].CloudID, vpcResult.Details[0].BkCloudID, nil
 }

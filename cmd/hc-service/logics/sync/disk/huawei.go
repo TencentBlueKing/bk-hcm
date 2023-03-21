@@ -124,10 +124,10 @@ func getDatasFromDSForHuaWeiDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 
 	dsMap := make(map[string]*HuaWeiDiskSyncDS)
 	for _, result := range resultsHcm {
-		sg := new(HuaWeiDiskSyncDS)
-		sg.IsUpdated = false
-		sg.HcDisk = result
-		dsMap[result.CloudID] = sg
+		disk := new(HuaWeiDiskSyncDS)
+		disk.IsUpdated = false
+		disk.HcDisk = result
+		dsMap[result.CloudID] = disk
 	}
 
 	return dsMap, nil
@@ -160,9 +160,9 @@ func getDatasFromHuaWeiForDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 
 	cloudMap := make(map[string]*HuaWeiDiskSyncDiff)
 	for _, data := range datas {
-		sg := new(HuaWeiDiskSyncDiff)
-		sg.Disk = data
-		cloudMap[data.Id] = sg
+		disk := new(HuaWeiDiskSyncDiff)
+		disk.Disk = data
+		cloudMap[data.Id] = disk
 	}
 
 	return cloudMap, nil

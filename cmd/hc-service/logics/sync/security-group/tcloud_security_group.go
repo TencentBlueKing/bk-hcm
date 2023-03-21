@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
@@ -170,23 +171,24 @@ func getDatasFromTCloudForSecurityGroupSync(kt *kit.Kit, req *SyncTCloudSecurity
 
 func getTCloudSGByCloudIDsSync(kt *kit.Kit, client *tcloud.TCloud,
 	req *SyncTCloudSecurityGroupOption) (map[string]*SecurityGroupSyncTCloudDiff, error) {
-
-	opt := &securitygroup.TCloudListOption{
-		Region:   req.Region,
-		CloudIDs: req.CloudIDs,
-	}
-
-	datas, err := client.ListSecurityGroup(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to list tcloud security group failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
-		return nil, err
-	}
-
 	cloudMap := make(map[string]*SecurityGroupSyncTCloudDiff)
-	for _, data := range datas {
-		sg := new(SecurityGroupSyncTCloudDiff)
-		sg.SecurityGroup = data
-		cloudMap[*data.SecurityGroupId] = sg
+	elems := slice.Split(req.CloudIDs, typcore.TCloudQueryLimit)
+	for _, partIDs := range elems {
+		opt := &securitygroup.TCloudListOption{
+			Region:   req.Region,
+			CloudIDs: partIDs,
+		}
+		datas, err := client.ListSecurityGroup(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list tcloud security group failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+			return nil, err
+		}
+
+		for _, data := range datas {
+			sg := new(SecurityGroupSyncTCloudDiff)
+			sg.SecurityGroup = data
+			cloudMap[*data.SecurityGroupId] = sg
+		}
 	}
 
 	return cloudMap, nil

@@ -20,19 +20,12 @@
 package huawei
 
 import (
-	"errors"
 	"time"
 
-	"hcm/pkg/api/core"
-	protocloud "hcm/pkg/api/data-service/cloud/zone"
 	"hcm/pkg/api/hc-service/zone"
-	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
-	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/converter"
 )
 
 // SyncZone sync zone
@@ -50,41 +43,11 @@ func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []
 			AccountID: accountID,
 			Region:    region,
 		}
-		if err := hcCli.HuaWei.Zone.SyncZone(kt.Ctx, kt.Header(), syncReq); Error(err) != nil {
+		if err := hcCli.HuaWei.Zone.SyncZone(kt.Ctx, kt.Header(), syncReq); err != nil {
 			logs.Errorf("sync huawei zone failed, err: %v, req: %v, rid: %s", err, syncReq, kt.Rid)
 			return err
 		}
 	}
 
 	return nil
-}
-
-// GetRegionsAndRegionZoneMap ...
-func GetRegionsAndRegionZoneMap(kt *kit.Kit, dataCli *dataservice.Client) ([]string, map[string][]string, error) {
-	listReq := &protocloud.ZoneListReq{
-		Filter: tools.EqualExpression("vendor", enumor.HuaWei),
-		Page:   core.DefaultBasePage,
-	}
-	result, err := dataCli.Global.Zone.ListZone(kt.Ctx, kt.Header(), listReq)
-	if err != nil {
-		logs.Errorf("list huawei zone failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, nil, err
-	}
-
-	if len(result.Details) == 0 {
-		return nil, nil, errors.New("huawei zone is empty")
-	}
-
-	regionZoneMap := make(map[string][]string)
-	regionMap := make(map[string]struct{})
-	for _, one := range result.Details {
-		if _, exist := regionZoneMap[one.Region]; !exist {
-			regionMap[one.Region] = struct{}{}
-			regionZoneMap[one.Region] = make([]string, 0)
-		}
-
-		regionZoneMap[one.Region] = append(regionZoneMap[one.Region], one.Name)
-	}
-
-	return converter.MapKeyToStringSlice(regionMap), regionZoneMap, nil
 }

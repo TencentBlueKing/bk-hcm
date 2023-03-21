@@ -43,7 +43,7 @@ func SyncHuaWeiImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, reg
 			AccountID: accountID,
 			Region:    region,
 		}
-		if err := hcCli.HuaWei.Image.SyncImage(kt.Ctx, kt.Header(), req); Error(err) != nil {
+		if err := hcCli.HuaWei.Image.SyncImage(kt.Ctx, kt.Header(), req); err != nil {
 			logs.Errorf("sync huawei public image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 			return err
 		}

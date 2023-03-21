@@ -130,10 +130,10 @@ func getDatasFromAzureDSForDiskSync(kt *kit.Kit, req *SyncAzureDiskOption,
 
 	dsMap := make(map[string]*AzureDiskSyncDS)
 	for _, result := range resultsHcm {
-		sg := new(AzureDiskSyncDS)
-		sg.IsUpdated = false
-		sg.HcDisk = result
-		dsMap[result.CloudID] = sg
+		disk := new(AzureDiskSyncDS)
+		disk.IsUpdated = false
+		disk.HcDisk = result
+		dsMap[result.CloudID] = disk
 	}
 
 	return dsMap, nil
@@ -162,9 +162,9 @@ func getDatasFromAzureForDiskSync(kt *kit.Kit, req *SyncAzureDiskOption,
 
 	cloudMap := make(map[string]*AzureDiskSyncDiff)
 	for _, data := range datas {
-		sg := new(AzureDiskSyncDiff)
-		sg.Disk = data
-		cloudMap[*data.ID] = sg
+		disk := new(AzureDiskSyncDiff)
+		disk.Disk = data
+		cloudMap[*data.ID] = disk
 	}
 
 	return cloudMap, nil

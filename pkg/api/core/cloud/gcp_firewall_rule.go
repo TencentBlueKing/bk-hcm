@@ -31,6 +31,7 @@ type GcpFirewallRule struct {
 	Priority              int64            `json:"priority"`
 	Memo                  string           `json:"memo"`
 	CloudVpcID            string           `json:"cloud_vpc_id"`
+	VpcSelfLink           string           `json:"vpc_self_link"`
 	SourceRanges          []string         `json:"source_ranges"`
 	BkBizID               int64            `json:"bk_biz_id"`
 	VpcId                 string           `json:"vpc_id"`

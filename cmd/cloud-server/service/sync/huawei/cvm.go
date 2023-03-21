@@ -22,14 +22,16 @@ package huawei
 import (
 	"time"
 
+	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/api/hc-service/sync"
+	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncCvm ...
-func SyncCvm(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+func SyncCvm(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync cvm start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -38,12 +40,18 @@ func SyncCvm(kt *kit.Kit, service *hcservice.Client, accountID string, regions [
 		logs.V(3).Infof("huawei account[%s] sync cvm end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
+	regions, err := ListRegionByService(kt, dataCli, huawei.Ecs)
+	if err != nil {
+		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
 	for _, region := range regions {
 		req := &sync.HuaWeiSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		}
-		if err := service.HuaWei.Cvm.SyncCvmWithRelResource(kt.Ctx, kt.Header(), req); Error(err) != nil {
+		if err := service.HuaWei.Cvm.SyncCvmWithRelResource(kt.Ctx, kt.Header(), req); err != nil {
 			logs.Errorf("sync huawei cvm failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 			return err
 		}

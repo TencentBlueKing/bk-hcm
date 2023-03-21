@@ -27,5 +27,7 @@ alter table azure_security_group_rule
 alter table azure_security_group_rule
     change column `cloud_destination_security_group_ids` `cloud_destination_app_security_group_ids` json default null;
 
+alter table gcp_firewall_rule add vpc_self_link varchar(255) default '';
+
 alter table network_interface
     add `vpc_self_link` varchar(255) default '' after `cloud_vpc_id`;

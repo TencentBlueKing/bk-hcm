@@ -24,6 +24,17 @@ import (
 	"hcm/pkg/criteria/errf"
 )
 
+const (
+	// cvm disk networkinterface
+	Ecs = "ecs"
+	// vpc subnet sg sgRule routetable
+	Vpc = "vpc"
+	// eip
+	Eip = "eip"
+	// publicimage
+	Ims = "ims"
+)
+
 // NewHuaWei new huawei.
 func NewHuaWei(s *types.BaseSecret) (*HuaWei, error) {
 	if err := validateSecret(s); err != nil {

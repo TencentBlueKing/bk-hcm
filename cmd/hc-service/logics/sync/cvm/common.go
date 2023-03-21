@@ -201,6 +201,10 @@ func querySubnetIDsByCloudID(kt *kit.Kit, dataCli *dataservice.Client, subnetClo
 		return nil, err
 	}
 
+	if len(subnetResult.Details) <= 0 {
+		return make([]string, 0), nil
+	}
+
 	if len(subnetResult.Details) != len(unique) {
 		logs.Errorf("list subnet but some subnet not found, cloudIDs: %v, count: %d, rid: %s", unique,
 			len(subnetResult.Details), kt.Rid)

@@ -22,14 +22,16 @@ package huawei
 import (
 	"time"
 
+	"hcm/pkg/adaptor/huawei"
 	proto "hcm/pkg/api/hc-service"
+	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncSG ...
-func SyncSG(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
+func SyncSG(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync sg start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -37,6 +39,12 @@ func SyncSG(kt *kit.Kit, service *hcservice.Client, accountID string, regions []
 	defer func() {
 		logs.V(3).Infof("huawei account[%s] sync sg end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
+
+	regions, err := ListRegionByService(kt, dataCli, huawei.Vpc)
+	if err != nil {
+		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 
 	for _, region := range regions {
 		req := &proto.SecurityGroupSyncReq{

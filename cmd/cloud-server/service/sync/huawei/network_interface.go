@@ -22,6 +22,7 @@ package huawei
 import (
 	"time"
 
+	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcapiproto "hcm/pkg/api/hc-service"
@@ -34,8 +35,7 @@ import (
 )
 
 // SyncNetworkInterface 网络接口同步
-func SyncNetworkInterface(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Client, accountID string,
-	regions []string) error {
+func SyncNetworkInterface(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("cloud-server-sync-%s account[%s] sync network interface start, time: %v, rid: %s",
@@ -45,6 +45,12 @@ func SyncNetworkInterface(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataser
 		logs.V(3).Infof("cloud-server-sync-%s account[%s] sync network interface end, cost: %v, rid: %s",
 			enumor.HuaWei, accountID, time.Since(start), kt.Rid)
 	}()
+
+	regions, err := ListRegionByService(kt, dataCli, huawei.Ecs)
+	if err != nil {
+		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 
 	for _, region := range regions {
 		cvmCloudIDs, err := getCvmListAll(kt, dataCli, accountID, region)

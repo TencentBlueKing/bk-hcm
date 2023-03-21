@@ -22,6 +22,7 @@ package huawei
 import (
 	"time"
 
+	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
@@ -32,8 +33,7 @@ import (
 )
 
 // SyncSubnet ...
-func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Client, accountID string,
-	regions []string) error {
+func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync subnet start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -41,6 +41,12 @@ func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Clien
 	defer func() {
 		logs.V(3).Infof("huawei account[%s] sync subnet end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
+
+	regions, err := ListRegionByService(kt, dataCli, huawei.Vpc)
+	if err != nil {
+		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 
 	for _, region := range regions {
 		listReq := &core.ListReq{
@@ -81,7 +87,7 @@ func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Clien
 					Region:     region,
 					CloudVpcID: vpc.CloudID,
 				}
-				if err = hcCli.HuaWei.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req); Error(err) != nil {
+				if err = hcCli.HuaWei.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req); err != nil {
 					logs.Errorf("sync huawei subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 					return err
 				}

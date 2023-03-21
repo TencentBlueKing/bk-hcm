@@ -75,41 +75,35 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		}
 	}
 
-	// TODO: regionZoneMap 还没有用到暂时忽略了
-	regions, _, hitErr := GetRegionsAndRegionZoneMap(kt, cliSet.DataService())
-	if hitErr != nil {
+	if hitErr = SyncDisk(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); hitErr != nil {
 		return hitErr
 	}
 
-	if hitErr = SyncDisk(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncVpc(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); hitErr != nil {
 		return hitErr
 	}
 
-	if hitErr = SyncVpc(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncSubnet(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); hitErr != nil {
 		return hitErr
 	}
 
-	if hitErr = SyncSubnet(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncEip(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); hitErr != nil {
 		return hitErr
 	}
 
-	if hitErr = SyncEip(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncSG(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); hitErr != nil {
 		return hitErr
 	}
 
-	if hitErr = SyncSG(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncCvm(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); hitErr != nil {
 		return hitErr
 	}
 
-	if hitErr = SyncCvm(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncRouteTable(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); hitErr != nil {
 		return hitErr
 	}
 
-	if hitErr = SyncRouteTable(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
-		return hitErr
-	}
-
-	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID, regions); hitErr != nil {
+	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); hitErr != nil {
 		return hitErr
 	}
 

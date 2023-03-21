@@ -47,6 +47,7 @@ type GcpFirewallRuleBatchCreate struct {
 	Priority              int64                      `json:"priority"`
 	Memo                  string                     `json:"memo"`
 	CloudVpcID            string                     `json:"cloud_vpc_id" validate:"required"`
+	VpcSelfLink           string                     `json:"vpc_self_link" validate:"required"`
 	VpcId                 string                     `json:"vpc_id" validate:"required"`
 	SourceRanges          []string                   `json:"source_ranges"`
 	BkBizID               int64                      `json:"bk_biz_id" validate:"required"`
@@ -84,6 +85,7 @@ type GcpFirewallRuleBatchUpdate struct {
 	Priority              int64                      `json:"priority"`
 	Memo                  string                     `json:"memo"`
 	CloudVpcID            string                     `json:"cloud_vpc_id"`
+	VpcSelfLink           string                     `json:"vpc_self_link"`
 	VpcId                 string                     `json:"vpc_id"`
 	SourceRanges          []string                   `json:"source_ranges"`
 	BkBizID               int64                      `json:"bk_biz_id"`
