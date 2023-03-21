@@ -80,7 +80,7 @@ func (a *Aws) ListEip(kt *kit.Kit, opt *eip.AwsEipListOption) (*eip.AwsEipListRe
 			CloudID:        *address.AllocationId,
 			InstanceId:     address.InstanceId,
 			Region:         opt.Region,
-			Status:         converter.ValToPtr("unknown"),
+			Status:         converter.ValToPtr("--"),
 			PublicIp:       address.PublicIp,
 			PrivateIp:      address.PrivateIpAddress,
 			PublicIpv4Pool: address.PublicIpv4Pool,

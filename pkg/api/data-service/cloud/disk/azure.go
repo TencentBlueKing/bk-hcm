@@ -23,12 +23,14 @@ package disk
 type AzureDiskExtensionCreateReq struct {
 	ResourceGroupName string `json:"resource_group_name" validate:"required"`
 	Encrypted         *bool  `json:"encrypted,omitempty"`
+	OSType            string `json:"os_type"`
 }
 
 // AzureDiskExtensionResult ...
 type AzureDiskExtensionResult struct {
 	ResourceGroupName string `json:"resource_group_name"`
 	Encrypted         *bool  `json:"encrypted,omitempty"`
+	OSType            string `json:"os_type,omitempty"`
 }
 
 // AzureDiskExtensionUpdateReq ...

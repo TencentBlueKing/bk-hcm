@@ -39,6 +39,7 @@ type TCloudDiskExtResult struct {
 	*dataproto.DiskExtResult[dataproto.TCloudDiskExtensionResult] `json:",inline"`
 	InstanceType                                                  string `json:"instance_type,omitempty"`
 	InstanceID                                                    string `json:"instance_id,omitempty"`
+	InstanceName                                                  string `json:"instance_name,omitempty"`
 }
 
 // AwsDiskExtResult ...
@@ -46,6 +47,7 @@ type AwsDiskExtResult struct {
 	*dataproto.DiskExtResult[dataproto.AwsDiskExtensionResult] `json:",inline"`
 	InstanceType                                               string `json:"instance_type,omitempty"`
 	InstanceID                                                 string `json:"instance_id,omitempty"`
+	InstanceName                                               string `json:"instance_name,omitempty"`
 }
 
 // AzureDiskExtResult ...
@@ -53,6 +55,7 @@ type AzureDiskExtResult struct {
 	*dataproto.DiskExtResult[dataproto.AzureDiskExtensionResult] `json:",inline"`
 	InstanceType                                                 string `json:"instance_type,omitempty"`
 	InstanceID                                                   string `json:"instance_id,omitempty"`
+	InstanceName                                                 string `json:"instance_name,omitempty"`
 }
 
 // HuaWeiDiskExtResult ...
@@ -60,6 +63,7 @@ type HuaWeiDiskExtResult struct {
 	*dataproto.DiskExtResult[dataproto.HuaWeiDiskExtensionResult] `json:",inline"`
 	InstanceType                                                  string `json:"instance_type,omitempty"`
 	InstanceID                                                    string `json:"instance_id,omitempty"`
+	InstanceName                                                  string `json:"instance_name,omitempty"`
 }
 
 // GcpDiskExtResult ...
@@ -67,4 +71,5 @@ type GcpDiskExtResult struct {
 	*dataproto.DiskExtResult[dataproto.GcpDiskExtensionResult] `json:",inline"`
 	InstanceType                                               string `json:"instance_type,omitempty"`
 	InstanceID                                                 string `json:"instance_id,omitempty"`
+	InstanceName                                               string `json:"instance_name,omitempty"`
 }

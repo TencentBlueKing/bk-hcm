@@ -33,6 +33,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	hcproto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/client"
+	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -242,39 +243,79 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 		instanceID = rels.Details[0].CvmID
 	}
 
-	switch basicInfo.Vendor {
+	instanceName, err := getCvmName(cts, svc.client.DataService(), instanceID)
+	if err != nil {
+		return nil, err
+	}
+
+	return svc.retrieveDiskByVendor(cts, basicInfo.Vendor, diskID, instanceID, instanceName)
+}
+
+func (svc *diskSvc) retrieveDiskByVendor(
+	cts *rest.Contexts,
+	vendor enumor.Vendor,
+	diskID string,
+	instID string,
+	instName string,
+) (interface{}, error) {
+	switch vendor {
 	case enumor.TCloud:
 		resp, err := svc.client.DataService().TCloud.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
 		if err != nil {
 			return nil, err
 		}
-		return cloudproto.TCloudDiskExtResult{DiskExtResult: resp, InstanceType: "cvm", InstanceID: instanceID}, nil
+		return cloudproto.TCloudDiskExtResult{
+			DiskExtResult: resp,
+			InstanceType:  "CVM",
+			InstanceID:    instID,
+			InstanceName:  instName,
+		}, nil
 	case enumor.Aws:
 		resp, err := svc.client.DataService().Aws.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
 		if err != nil {
 			return nil, err
 		}
-		return cloudproto.AwsDiskExtResult{DiskExtResult: resp, InstanceType: "cvm", InstanceID: instanceID}, nil
+		return cloudproto.AwsDiskExtResult{
+			DiskExtResult: resp,
+			InstanceType:  "CVM",
+			InstanceID:    instID,
+			InstanceName:  instName,
+		}, nil
 	case enumor.HuaWei:
 		resp, err := svc.client.DataService().HuaWei.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
 		if err != nil {
 			return nil, err
 		}
-		return cloudproto.HuaWeiDiskExtResult{DiskExtResult: resp, InstanceType: "cvm", InstanceID: instanceID}, nil
+		return cloudproto.HuaWeiDiskExtResult{
+			DiskExtResult: resp,
+			InstanceType:  "CVM",
+			InstanceID:    instID,
+			InstanceName:  instName,
+		}, nil
 	case enumor.Gcp:
 		resp, err := svc.client.DataService().Gcp.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
 		if err != nil {
 			return nil, err
 		}
-		return cloudproto.GcpDiskExtResult{DiskExtResult: resp, InstanceType: "cvm", InstanceID: instanceID}, nil
+		return cloudproto.GcpDiskExtResult{
+			DiskExtResult: resp,
+			InstanceType:  "CVM",
+			InstanceID:    instID,
+			InstanceName:  instName,
+		}, nil
 	case enumor.Azure:
 		resp, err := svc.client.DataService().Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
 		if err != nil {
 			return nil, err
 		}
-		return cloudproto.AzureDiskExtResult{DiskExtResult: resp, InstanceType: "cvm", InstanceID: instanceID}, nil
+		return cloudproto.AzureDiskExtResult{
+			DiskExtResult: resp,
+			InstanceType:  "CVM",
+			InstanceID:    instID,
+			InstanceName:  instName,
+		}, nil
 	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
 	}
 }
 
@@ -516,4 +557,25 @@ func extractDiskID(cts *rest.Contexts) (string, error) {
 	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
 
 	return req.DiskID, nil
+}
+
+func getCvmName(cts *rest.Contexts, cli *dataservice.Client, cvmID string) (string, error) {
+	cvms, err := cli.Global.Cvm.ListCvm(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&cloud.CvmListReq{
+			Filter: tools.ContainersExpression("id", []string{cvmID}),
+			Page: &core.BasePage{
+				Limit: core.DefaultMaxPageLimit,
+			},
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+
+	if len(cvms.Details) > 0 {
+		return cvms.Details[0].Name, nil
+	}
+	return "", fmt.Errorf("cvm(%s) does not exist", cvmID)
 }

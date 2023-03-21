@@ -67,6 +67,7 @@ type AzureEip struct {
 	Name              *string
 	Region            string
 	InstanceId        *string
+	InstanceType      string
 	Status            *string
 	PublicIp          *string
 	PrivateIp         *string
