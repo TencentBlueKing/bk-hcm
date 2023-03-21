@@ -109,11 +109,8 @@ func SyncGcpNetworkInterfaceListAll(kt *kit.Kit, req *hcservice.GcpNetworkInterf
 		cloudIDs := make([]string, 0)
 		for _, item := range details {
 			tmpID := converter.PtrToVal(item.CloudID)
-			cloudIDs = append(cloudIDs, tmpID)
-			allCloudIDMap[tmpID] = true
-
 			// get gcp vpc info by vpc selflink
-			vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, item.CloudVpcID, dataCli)
+			vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, item.VpcSelfLink, dataCli)
 			if err != nil {
 				return err
 			}
@@ -127,10 +124,17 @@ func SyncGcpNetworkInterfaceListAll(kt *kit.Kit, req *hcservice.GcpNetworkInterf
 			}
 			item.CloudSubnetID = converter.ValToPtr(subnetDetail.CloudID)
 			item.SubnetID = converter.ValToPtr(subnetDetail.ID)
+
+			cloudIDs = append(cloudIDs, tmpID)
+			allCloudIDMap[tmpID] = true
 			niDetails = append(niDetails, item)
 		}
-		list.Details = niDetails
 
+		if len(niDetails) == 0 {
+			return nil
+		}
+
+		list.Details = niDetails
 		// get network interface info from db.
 		resourceDBMap, err := BatchGcpGetNetworkInterfaceMapFromDB(kt, enumor.Gcp, cloudIDs, dataCli)
 		if err != nil {
@@ -194,7 +198,7 @@ func SyncGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetwor
 			allCloudIDMap[tmpID] = true
 
 			// get gcp vpc info by vpc-selflink
-			vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, niItem.CloudVpcID, dataCli)
+			vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, niItem.VpcSelfLink, dataCli)
 			if err != nil {
 				return nil, err
 			}
@@ -340,6 +344,7 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 				CloudID:       converter.PtrToVal(item.CloudID),
 				VpcID:         converter.PtrToVal(item.VpcID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
+				VpcSelfLink:   item.VpcSelfLink,
 				SubnetID:      converter.PtrToVal(item.SubnetID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
 				PrivateIPv4:   item.PrivateIPv4,
@@ -379,6 +384,7 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 				CloudID:       converter.PtrToVal(item.CloudID),
 				VpcID:         converter.PtrToVal(item.VpcID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
+				VpcSelfLink:   item.VpcSelfLink,
 				SubnetID:      converter.PtrToVal(item.SubnetID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
 				PrivateIPv4:   item.PrivateIPv4,
@@ -418,7 +424,7 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 func isGcpChange(item typesniproto.GcpNI, dbInfo coreni.NetworkInterface[coreni.GcpNIExtension]) bool {
 	if dbInfo.Name != converter.PtrToVal(item.Name) || dbInfo.Region != converter.PtrToVal(item.Region) ||
 		dbInfo.Zone != converter.PtrToVal(item.Zone) || dbInfo.CloudID != converter.PtrToVal(item.CloudID) ||
-		dbInfo.CloudVpcID != converter.PtrToVal(item.CloudVpcID) ||
+		dbInfo.VpcSelfLink != item.VpcSelfLink ||
 		dbInfo.CloudSubnetID != converter.PtrToVal(item.CloudSubnetID) ||
 		dbInfo.InstanceID != converter.PtrToVal(item.InstanceID) {
 		return true
@@ -453,12 +459,6 @@ func checkGcpExt(item typesniproto.GcpNI, dbInfo coreni.NetworkInterface[coreni.
 		return true
 	}
 	if item.Extension.StackType != dbInfo.Extension.StackType {
-		return true
-	}
-	if !assert.IsStringSliceEqual(item.PublicIPv4, dbInfo.PublicIPv4) {
-		return true
-	}
-	if !assert.IsStringSliceEqual(item.PublicIPv6, dbInfo.PublicIPv6) {
 		return true
 	}
 
@@ -568,7 +568,7 @@ func GetNeedDeleteGcpNetworkInterfaceList(_ *kit.Kit, _ *hcservice.GcpNetworkInt
 
 // GetCloudVpcInfoBySelfLink get vpc info by selflink
 func GetCloudVpcInfoBySelfLink(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq, vendor enumor.Vendor,
-	selfLink *string, dataCli *dataclient.Client) (*cloud.BaseVpc, error) {
+	selfLink string, dataCli *dataclient.Client) (*cloud.BaseVpc, error) {
 
 	expr := &filter.Expression{
 		Op: filter.And,
@@ -586,7 +586,7 @@ func GetCloudVpcInfoBySelfLink(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSy
 			&filter.AtomRule{
 				Field: "extension.self_link",
 				Op:    filter.JSONIn.Factory(),
-				Value: []*string{selfLink},
+				Value: []string{selfLink},
 			},
 		},
 	}
@@ -597,13 +597,13 @@ func GetCloudVpcInfoBySelfLink(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSy
 	}
 	dbList, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), dbQueryReq)
 	if err != nil {
-		logs.Errorf("get gcp vpc list from db failed, accountID: %s, vendor: %s, err: %v",
+		logs.Errorf("gcp network interface get vpc list from db failed, accountID: %s, vendor: %s, err: %v",
 			req.AccountID, vendor, err)
 		return nil, err
 	}
 	if len(dbList.Details) == 0 {
-		logs.Errorf("get gcp vpc info is not found, accountID: %s, vendor: %s, selfLink: %s",
-			req.AccountID, vendor, converter.PtrToVal(selfLink))
+		logs.Errorf("gcp network interface get vpc info is not found, accountID: %s, vendor: %s, selfLink: %s",
+			req.AccountID, vendor, selfLink)
 		return nil, errf.New(errf.RecordNotFound, "get gcp vpc info is not found.")
 	}
 

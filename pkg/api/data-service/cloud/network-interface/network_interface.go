@@ -48,6 +48,7 @@ type NetworkInterfaceReq[T NetworkInterfaceCreateExtension] struct {
 	CloudID       string   `json:"cloud_id" validate:"omitempty"`
 	VpcID         string   `json:"vpc_id" validate:"omitempty"`
 	CloudVpcID    string   `json:"cloud_vpc_id" validate:"omitempty"`
+	VpcSelfLink   string   `json:"vpc_self_link" validate:"omitempty"`
 	SubnetID      string   `json:"subnet_id" validate:"omitempty"`
 	CloudSubnetID string   `json:"cloud_subnet_id" validate:"omitempty"`
 	PrivateIPv4   []string `json:"private_ipv4,omitempty" validate:"omitempty"`
@@ -242,6 +243,7 @@ type NetworkInterfaceUpdateReq[T NetworkInterfaceCreateExtension] struct {
 	CloudID       string   `json:"cloud_id" validate:"omitempty"`
 	VpcID         string   `json:"vpc_id" validate:"omitempty"`
 	CloudVpcID    string   `json:"cloud_vpc_id" validate:"omitempty"`
+	VpcSelfLink   string   `json:"vpc_self_link" validate:"omitempty"`
 	SubnetID      string   `json:"subnet_id" validate:"omitempty"`
 	CloudSubnetID string   `json:"cloud_subnet_id" validate:"omitempty"`
 	PrivateIPv4   []string `json:"private_ipv4,omitempty" validate:"omitempty"`

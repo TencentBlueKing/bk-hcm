@@ -123,6 +123,7 @@ func batchCreateNI[T datacloudniproto.NetworkInterfaceCreateExtension](cts *rest
 				CloudID:       createReq.CloudID,
 				VpcID:         createReq.VpcID,
 				CloudVpcID:    createReq.CloudVpcID,
+				VpcSelfLink:   createReq.VpcSelfLink,
 				SubnetID:      createReq.SubnetID,
 				CloudSubnetID: createReq.CloudSubnetID,
 				PrivateIPv4:   createReq.PrivateIPv4,
@@ -223,6 +224,7 @@ func batchUpdateNI[T datacloudniproto.NetworkInterfaceCreateExtension](cts *rest
 		ni.CloudID = updateReq.CloudID
 		ni.VpcID = updateReq.VpcID
 		ni.CloudVpcID = updateReq.CloudVpcID
+		ni.VpcSelfLink = updateReq.VpcSelfLink
 		ni.SubnetID = updateReq.SubnetID
 		ni.CloudSubnetID = updateReq.CloudSubnetID
 		ni.PrivateIPv4 = updateReq.PrivateIPv4
@@ -485,6 +487,7 @@ func convertBaseNetworkInterface(dbDetail *tableni.NetworkInterfaceTable) *coren
 		CloudID:       dbDetail.CloudID,
 		VpcID:         dbDetail.VpcID,
 		CloudVpcID:    dbDetail.CloudVpcID,
+		VpcSelfLink:   dbDetail.VpcSelfLink,
 		SubnetID:      dbDetail.SubnetID,
 		CloudSubnetID: dbDetail.CloudSubnetID,
 		PrivateIPv4:   dbDetail.PrivateIPv4,

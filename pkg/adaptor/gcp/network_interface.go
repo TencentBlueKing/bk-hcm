@@ -146,7 +146,7 @@ func (g *Gcp) ConvertNetworkInterface(data *compute.Instance, niItem *compute.Ne
 		Zone:          converter.ValToPtr(zone),
 		CloudID:       converter.ValToPtr(fmt.Sprintf("%d_%s", data.Id, niItem.Name)),
 		InstanceID:    converter.ValToPtr(strconv.FormatUint(data.Id, 10)),
-		CloudVpcID:    converter.ValToPtr(niItem.Network),
+		VpcSelfLink:   niItem.Network,
 		CloudSubnetID: converter.ValToPtr(niItem.Subnetwork),
 	}
 	if len(niItem.NetworkIP) > 0 {

@@ -53,6 +53,7 @@ var NetworkInterfaceTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "instance_id", NamedC: "instance_id", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
+	{Column: "vpc_self_link", NamedC: "vpc_self_link", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -97,6 +98,8 @@ type NetworkInterfaceTable struct {
 	InstanceID string `db:"instance_id" json:"public_ip"`
 	// Extension 云厂商差异扩展字段
 	Extension types.JsonField `db:"extension" json:"extension"`
+	// VpcSelfLink Vpc的self_link
+	VpcSelfLink string `db:"vpc_self_link" validate:"lte=255" json:"vpc_self_link"`
 	// Creator 创建者
 	Creator string `db:"creator" json:"creator"`
 	// Reviser 更新者
@@ -128,6 +131,10 @@ func (n NetworkInterfaceTable) InsertValidate() error {
 
 	if len(n.AccountID) == 0 {
 		return errors.New("account_id is required")
+	}
+
+	if len(n.VpcSelfLink) == 0 {
+		return errors.New("vpc_self_link is required")
 	}
 
 	if len(n.Creator) == 0 {

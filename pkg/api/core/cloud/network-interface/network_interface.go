@@ -41,6 +41,7 @@ type BaseNetworkInterface struct {
 	CloudID        string        `json:"cloud_id"`
 	VpcID          string        `json:"vpc_id"`
 	CloudVpcID     string        `json:"cloud_vpc_id"`
+	VpcSelfLink    string        `json:"vpc_self_link"`
 	SubnetID       string        `json:"subnet_id"`
 	CloudSubnetID  string        `json:"cloud_subnet_id"`
 	PrivateIPv4    []string      `json:"private_ipv4"`
