@@ -29,19 +29,15 @@ import (
 type ApplicationOfCreateGcpVpc struct {
 	handlers.BaseApplicationHandler
 
-	vendor           enumor.Vendor
-	req              *proto.GcpVpcCreateReq
-	platformManagers []string
+	req *proto.GcpVpcCreateReq
 }
 
 // NewApplicationOfCreateGcpVpc ...
 func NewApplicationOfCreateGcpVpc(
-	opt *handlers.HandlerOption, req *proto.GcpVpcCreateReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.GcpVpcCreateReq,
 ) *ApplicationOfCreateGcpVpc {
 	return &ApplicationOfCreateGcpVpc{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc),
-		vendor:                 enumor.Gcp,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.Gcp),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

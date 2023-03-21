@@ -38,7 +38,7 @@ func (a *ApplicationOfCreateTCloudVpc) GenerateApplicationContent() interface{} 
 		Vendor                    enumor.Vendor `json:"vendor"`
 	}{
 		TCloudVpcCreateReq: a.req,
-		Vendor:             a.vendor,
+		Vendor:             a.Vendor(),
 	}
 }
 

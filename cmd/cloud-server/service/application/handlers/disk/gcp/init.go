@@ -28,24 +28,16 @@ import (
 // ApplicationOfCreateGcpDisk ...
 type ApplicationOfCreateGcpDisk struct {
 	handlers.BaseApplicationHandler
-	req              *proto.GcpDiskCreateReq
-	platformManagers []string
-}
-
-// Vendor ...
-func (a *ApplicationOfCreateGcpDisk) Vendor() enumor.Vendor {
-	return enumor.Gcp
+	req *proto.GcpDiskCreateReq
 }
 
 // NewApplicationOfCreateGcpDisk ...
 func NewApplicationOfCreateGcpDisk(
 	opt *handlers.HandlerOption,
 	req *proto.GcpDiskCreateReq,
-	platformManagers []string,
 ) *ApplicationOfCreateGcpDisk {
 	return &ApplicationOfCreateGcpDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.Gcp),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

@@ -44,7 +44,7 @@ func (a *ApplicationOfCreateAzureCvm) GenerateApplicationContent() interface{} {
 		Vendor                   enumor.Vendor `json:"vendor"`
 	}{
 		AzureCvmCreateReq: a.req,
-		Vendor:            a.vendor,
+		Vendor:            a.Vendor(),
 	}
 }
 

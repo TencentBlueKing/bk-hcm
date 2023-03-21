@@ -29,19 +29,15 @@ import (
 type ApplicationOfCreateHuaWeiVpc struct {
 	handlers.BaseApplicationHandler
 
-	vendor           enumor.Vendor
-	req              *proto.HuaWeiVpcCreateReq
-	platformManagers []string
+	req *proto.HuaWeiVpcCreateReq
 }
 
 // NewApplicationOfCreateHuaWeiVpc ...
 func NewApplicationOfCreateHuaWeiVpc(
-	opt *handlers.HandlerOption, req *proto.HuaWeiVpcCreateReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.HuaWeiVpcCreateReq,
 ) *ApplicationOfCreateHuaWeiVpc {
 	return &ApplicationOfCreateHuaWeiVpc{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc),
-		vendor:                 enumor.HuaWei,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.HuaWei),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

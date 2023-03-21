@@ -38,7 +38,7 @@ func (a *ApplicationOfCreateGcpVpc) GenerateApplicationContent() interface{} {
 		Vendor                 enumor.Vendor `json:"vendor"`
 	}{
 		GcpVpcCreateReq: a.req,
-		Vendor:          a.vendor,
+		Vendor:          a.Vendor(),
 	}
 }
 

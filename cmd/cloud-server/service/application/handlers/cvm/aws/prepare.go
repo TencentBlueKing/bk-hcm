@@ -44,7 +44,7 @@ func (a *ApplicationOfCreateAwsCvm) GenerateApplicationContent() interface{} {
 		Vendor                 enumor.Vendor `json:"vendor"`
 	}{
 		AwsCvmCreateReq: a.req,
-		Vendor:          a.vendor,
+		Vendor:          a.Vendor(),
 	}
 }
 

@@ -28,17 +28,15 @@ import (
 type ApplicationOfAddAccount struct {
 	handlers.BaseApplicationHandler
 
-	req              *proto.AccountAddReq
-	platformManagers []string
+	req *proto.AccountAddReq
 }
 
 // NewApplicationOfAddAccount ...
 func NewApplicationOfAddAccount(
-	opt *handlers.HandlerOption, req *proto.AccountAddReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.AccountAddReq,
 ) *ApplicationOfAddAccount {
 	return &ApplicationOfAddAccount{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.AddAccount),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.AddAccount, req.Vendor),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

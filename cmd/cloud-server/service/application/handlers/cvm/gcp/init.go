@@ -31,20 +31,16 @@ import (
 type ApplicationOfCreateGcpCvm struct {
 	handlers.BaseApplicationHandler
 
-	vendor           enumor.Vendor
-	req              *proto.GcpCvmCreateReq
-	platformManagers []string
+	req *proto.GcpCvmCreateReq
 }
 
 // NewApplicationOfCreateGcpCvm ...
 func NewApplicationOfCreateGcpCvm(
-	opt *handlers.HandlerOption, req *proto.GcpCvmCreateReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.GcpCvmCreateReq,
 ) *ApplicationOfCreateGcpCvm {
 	return &ApplicationOfCreateGcpCvm{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm),
-		vendor:                 enumor.Gcp,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.Gcp),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }
 

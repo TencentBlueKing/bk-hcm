@@ -26,47 +26,21 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/thirdparty/esb/itsm"
 )
 
-// CreateITSMTicket 使用请求数据创建申请d
-func (a *ApplicationOfAddAccount) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
-	// 渲染ITSM表单内容
-	contentDisplay, err := a.renderITSMForm()
-	if err != nil {
-		return "", fmt.Errorf("render itsm application form error: %w", err)
-	}
-
-	params := &itsm.CreateTicketParams{
-		ServiceID:      serviceID,
-		Creator:        a.Cts.Kit.User,
-		CallbackURL:    callbackUrl,
-		Title:          fmt.Sprintf("申请新增账号[%s]", a.req.Name),
-		ContentDisplay: contentDisplay,
-		// ITSM流程里使用变量引用的方式设置各个节点审批人
-		VariableApprovers: []itsm.VariableApprover{
-			{
-				Variable:  "platform_manager",
-				Approvers: a.platformManagers,
-			},
-		},
-	}
-
-	sn, err := a.EsbClient.Itsm().CreateTicket(a.Cts.Kit.Ctx, params)
-	if err != nil {
-		return "", fmt.Errorf("call itsm create ticket api failed, err: %v", err)
-	}
-
-	return sn, nil
+type formItem struct {
+	Label string
+	Value string
 }
 
-func (a *ApplicationOfAddAccount) renderITSMForm() (string, error) {
-	req := a.req
+// RenderItsmTitle 渲染ITSM单据标题
+func (a *ApplicationOfAddAccount) RenderItsmTitle() (string, error) {
+	return fmt.Sprintf("申请新增[%s]账号(%s)", handlers.VendorNameMap[a.Vendor()], a.req.Name), nil
+}
 
-	type formItem struct {
-		Label string
-		Value string
-	}
+// RenderItsmForm 渲染ITSM表单
+func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
+	req := a.req
 
 	// 公共基础信息
 	formItems := []formItem{

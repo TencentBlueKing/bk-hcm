@@ -74,7 +74,9 @@ func (a *applicationSvc) getCallbackUrl() string {
 }
 
 func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerOption {
-	return &handlers.HandlerOption{Cts: cts, Client: a.client, EsbClient: a.esbClient, Cipher: a.cipher}
+	return &handlers.HandlerOption{
+		Cts: cts, Client: a.client, EsbClient: a.esbClient, Cipher: a.cipher, PlatformManagers: a.platformManagers,
+	}
 }
 
 func (a *applicationSvc) getApprovalProcessServiceID(

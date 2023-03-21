@@ -33,20 +33,16 @@ import (
 type ApplicationOfCreateAzureCvm struct {
 	handlers.BaseApplicationHandler
 
-	vendor           enumor.Vendor
-	req              *proto.AzureCvmCreateReq
-	platformManagers []string
+	req *proto.AzureCvmCreateReq
 }
 
 // NewApplicationOfCreateAzureCvm ...
 func NewApplicationOfCreateAzureCvm(
-	opt *handlers.HandlerOption, req *proto.AzureCvmCreateReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.AzureCvmCreateReq,
 ) *ApplicationOfCreateAzureCvm {
 	return &ApplicationOfCreateAzureCvm{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm),
-		vendor:                 enumor.Azure,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.Azure),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }
 

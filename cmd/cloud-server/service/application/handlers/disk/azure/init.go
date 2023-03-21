@@ -28,24 +28,16 @@ import (
 // ApplicationOfCreateAzureDisk ...
 type ApplicationOfCreateAzureDisk struct {
 	handlers.BaseApplicationHandler
-	req              *proto.AzureDiskCreateReq
-	platformManagers []string
-}
-
-// Vendor ...
-func (a *ApplicationOfCreateAzureDisk) Vendor() enumor.Vendor {
-	return enumor.Azure
+	req *proto.AzureDiskCreateReq
 }
 
 // NewApplicationOfCreateAzureDisk ...
 func NewApplicationOfCreateAzureDisk(
 	opt *handlers.HandlerOption,
 	req *proto.AzureDiskCreateReq,
-	platformManagers []string,
 ) *ApplicationOfCreateAzureDisk {
 	return &ApplicationOfCreateAzureDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.Azure),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

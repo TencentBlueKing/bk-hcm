@@ -31,20 +31,16 @@ import (
 type ApplicationOfCreateAwsCvm struct {
 	handlers.BaseApplicationHandler
 
-	vendor           enumor.Vendor
-	req              *proto.AwsCvmCreateReq
-	platformManagers []string
+	req *proto.AwsCvmCreateReq
 }
 
 // NewApplicationOfCreateAwsCvm ...
 func NewApplicationOfCreateAwsCvm(
-	opt *handlers.HandlerOption, req *proto.AwsCvmCreateReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.AwsCvmCreateReq,
 ) *ApplicationOfCreateAwsCvm {
 	return &ApplicationOfCreateAwsCvm{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm),
-		vendor:                 enumor.Aws,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.Aws),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }
 

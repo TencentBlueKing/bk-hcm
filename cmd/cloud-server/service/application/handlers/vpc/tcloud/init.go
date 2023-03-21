@@ -29,19 +29,15 @@ import (
 type ApplicationOfCreateTCloudVpc struct {
 	handlers.BaseApplicationHandler
 
-	vendor           enumor.Vendor
-	req              *proto.TCloudVpcCreateReq
-	platformManagers []string
+	req *proto.TCloudVpcCreateReq
 }
 
 // NewApplicationOfCreateTCloudVpc ...
 func NewApplicationOfCreateTCloudVpc(
-	opt *handlers.HandlerOption, req *proto.TCloudVpcCreateReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.TCloudVpcCreateReq,
 ) *ApplicationOfCreateTCloudVpc {
 	return &ApplicationOfCreateTCloudVpc{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc),
-		vendor:                 enumor.TCloud,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.TCloud),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

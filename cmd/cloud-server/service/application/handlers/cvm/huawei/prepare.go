@@ -44,7 +44,7 @@ func (a *ApplicationOfCreateHuaWeiCvm) GenerateApplicationContent() interface{} 
 		Vendor                    enumor.Vendor `json:"vendor"`
 	}{
 		HuaWeiCvmCreateReq: a.req,
-		Vendor:             a.vendor,
+		Vendor:             a.Vendor(),
 	}
 }
 

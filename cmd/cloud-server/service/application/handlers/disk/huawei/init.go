@@ -28,24 +28,16 @@ import (
 // ApplicationOfCreateHuaWeiDisk ...
 type ApplicationOfCreateHuaWeiDisk struct {
 	handlers.BaseApplicationHandler
-	req              *proto.HuaWeiDiskCreateReq
-	platformManagers []string
-}
-
-// Vendor ...
-func (a *ApplicationOfCreateHuaWeiDisk) Vendor() enumor.Vendor {
-	return enumor.HuaWei
+	req *proto.HuaWeiDiskCreateReq
 }
 
 // NewApplicationOfCreateHuaWeiDisk ...
 func NewApplicationOfCreateHuaWeiDisk(
 	opt *handlers.HandlerOption,
 	req *proto.HuaWeiDiskCreateReq,
-	platformManagers []string,
 ) *ApplicationOfCreateHuaWeiDisk {
 	return &ApplicationOfCreateHuaWeiDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.HuaWei),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

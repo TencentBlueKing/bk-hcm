@@ -29,19 +29,15 @@ import (
 type ApplicationOfCreateAwsVpc struct {
 	handlers.BaseApplicationHandler
 
-	vendor           enumor.Vendor
-	req              *proto.AwsVpcCreateReq
-	platformManagers []string
+	req *proto.AwsVpcCreateReq
 }
 
 // NewApplicationOfCreateAwsVpc ...
 func NewApplicationOfCreateAwsVpc(
-	opt *handlers.HandlerOption, req *proto.AwsVpcCreateReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.AwsVpcCreateReq,
 ) *ApplicationOfCreateAwsVpc {
 	return &ApplicationOfCreateAwsVpc{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc),
-		vendor:                 enumor.Aws,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.Aws),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

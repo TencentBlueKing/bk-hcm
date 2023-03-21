@@ -29,19 +29,15 @@ import (
 type ApplicationOfCreateAzureVpc struct {
 	handlers.BaseApplicationHandler
 
-	vendor           enumor.Vendor
-	req              *proto.AzureVpcCreateReq
-	platformManagers []string
+	req *proto.AzureVpcCreateReq
 }
 
 // NewApplicationOfCreateAzureVpc ...
 func NewApplicationOfCreateAzureVpc(
-	opt *handlers.HandlerOption, req *proto.AzureVpcCreateReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.AzureVpcCreateReq,
 ) *ApplicationOfCreateAzureVpc {
 	return &ApplicationOfCreateAzureVpc{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc),
-		vendor:                 enumor.Azure,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.Azure),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

@@ -24,43 +24,56 @@ import (
 	"strings"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
-	"hcm/pkg/thirdparty/esb/itsm"
 )
-
-// CreateITSMTicket 使用请求数据创建申请
-func (a *ApplicationOfCreateTCloudVpc) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
-	// 渲染ITSM表单内容
-	contentDisplay, err := a.renderITSMForm()
-	if err != nil {
-		return "", fmt.Errorf("render itsm application form error: %w", err)
-	}
-
-	params := &itsm.CreateTicketParams{
-		ServiceID:      serviceID,
-		Creator:        a.Cts.Kit.User,
-		CallbackURL:    callbackUrl,
-		Title:          fmt.Sprintf("申请新增VPC[%s]", a.req.Name),
-		ContentDisplay: contentDisplay,
-		// ITSM流程里使用变量引用的方式设置各个节点审批人
-		VariableApprovers: []itsm.VariableApprover{
-			{
-				Variable:  "platform_manager",
-				Approvers: a.platformManagers,
-			},
-		},
-	}
-
-	sn, err := a.EsbClient.Itsm().CreateTicket(a.Cts.Kit.Ctx, params)
-	if err != nil {
-		return "", fmt.Errorf("call itsm create ticket api failed, err: %v", err)
-	}
-
-	return sn, nil
-}
 
 type formItem struct {
 	Label string
 	Value string
+}
+
+// RenderItsmTitle 渲染ITSM单据标题
+func (a *ApplicationOfCreateTCloudVpc) RenderItsmTitle() (string, error) {
+	return fmt.Sprintf("申请新增[%s]VPC[%s]", handlers.VendorNameMap[a.Vendor()], a.req.Name), nil
+}
+
+// RenderItsmForm 渲染ITSM表单
+func (a *ApplicationOfCreateTCloudVpc) RenderItsmForm() (string, error) {
+	req := a.req
+
+	formItems := make([]formItem, 0)
+
+	// 基本通用信息
+	baseInfoFormItems, err := a.renderBaseInfo()
+	if err != nil {
+		return "", err
+	}
+	formItems = append(formItems, baseInfoFormItems...)
+
+	// VPC
+	vpcFormItems, err := a.renderVpc()
+	if err != nil {
+		return "", err
+	}
+	formItems = append(formItems, vpcFormItems...)
+
+	// 子网
+	subnetFormItems, err := a.renderSubnet()
+	if err != nil {
+		return "", err
+	}
+	formItems = append(formItems, subnetFormItems...)
+
+	// 备注
+	if req.Memo != nil && *req.Memo != "" {
+		formItems = append(formItems, formItem{Label: "备注", Value: *req.Memo})
+	}
+
+	// 转换为ITSM表单内容数据
+	content := make([]string, 0, len(formItems))
+	for _, i := range formItems {
+		content = append(content, fmt.Sprintf("%s: %s", i.Label, i.Value))
+	}
+	return strings.Join(content, "\n"), nil
 }
 
 func (a *ApplicationOfCreateTCloudVpc) renderBaseInfo() ([]formItem, error) {
@@ -82,7 +95,7 @@ func (a *ApplicationOfCreateTCloudVpc) renderBaseInfo() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "云账号", Value: accountInfo.Name})
 
 	// 云厂商
-	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.vendor]})
+	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.Vendor()]})
 
 	// 云地域
 	regionInfo, err := a.GetTCloudRegion(req.Region)
@@ -125,50 +138,11 @@ func (a *ApplicationOfCreateTCloudVpc) renderSubnet() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "子网IPv4 CIDR", Value: req.Subnet.IPv4Cidr})
 
 	// 可用区
-	zoneInfo, err := a.GetZone(a.vendor, req.Region, req.Subnet.Zone)
+	zoneInfo, err := a.GetZone(a.Vendor(), req.Region, req.Subnet.Zone)
 	if err != nil {
 		return formItems, err
 	}
 	formItems = append(formItems, formItem{Label: "子网可用区", Value: zoneInfo.Name})
 
 	return formItems, nil
-}
-
-func (a *ApplicationOfCreateTCloudVpc) renderITSMForm() (string, error) {
-	req := a.req
-
-	formItems := make([]formItem, 0)
-
-	// 基本通用信息
-	baseInfoFormItems, err := a.renderBaseInfo()
-	if err != nil {
-		return "", err
-	}
-	formItems = append(formItems, baseInfoFormItems...)
-
-	// VPC
-	vpcFormItems, err := a.renderVpc()
-	if err != nil {
-		return "", err
-	}
-	formItems = append(formItems, vpcFormItems...)
-
-	// 子网
-	subnetFormItems, err := a.renderSubnet()
-	if err != nil {
-		return "", err
-	}
-	formItems = append(formItems, subnetFormItems...)
-
-	// 备注
-	if req.Memo != nil && *req.Memo != "" {
-		formItems = append(formItems, formItem{Label: "备注", Value: *req.Memo})
-	}
-
-	// 转换为ITSM表单内容数据
-	content := make([]string, 0, len(formItems))
-	for _, i := range formItems {
-		content = append(content, fmt.Sprintf("%s: %s", i.Label, i.Value))
-	}
-	return strings.Join(content, "\n"), nil
 }

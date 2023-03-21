@@ -31,20 +31,16 @@ import (
 type ApplicationOfCreateHuaWeiCvm struct {
 	handlers.BaseApplicationHandler
 
-	vendor           enumor.Vendor
-	req              *proto.HuaWeiCvmCreateReq
-	platformManagers []string
+	req *proto.HuaWeiCvmCreateReq
 }
 
 // NewApplicationOfCreateHuaWeiCvm ...
 func NewApplicationOfCreateHuaWeiCvm(
-	opt *handlers.HandlerOption, req *proto.HuaWeiCvmCreateReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.HuaWeiCvmCreateReq,
 ) *ApplicationOfCreateHuaWeiCvm {
 	return &ApplicationOfCreateHuaWeiCvm{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm),
-		vendor:                 enumor.HuaWei,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.HuaWei),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }
 

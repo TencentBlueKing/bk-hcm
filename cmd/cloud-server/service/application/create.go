@@ -44,6 +44,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/esb/itsm"
 	"hcm/pkg/tools/json"
 )
 
@@ -67,12 +68,41 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 	}
 
 	// 生成ITSM的回调地址
-	callback := a.getCallbackUrl()
+	callbackUrl := a.getCallbackUrl()
 
-	// 调用ITSM
-	sn, err := handler.CreateITSMTicket(serviceID, callback)
+	// 渲染ITSM单据标题
+	itsmTitle, err := handler.RenderItsmTitle()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("render itsm ticket title error: %w", err)
+	}
+
+	// 渲染ITSM单据申请内容
+	itsmForm, err := handler.RenderItsmForm()
+	if err != nil {
+		return nil, fmt.Errorf("render itsm ticket form error: %w", err)
+	}
+
+	// 获取ITSM单据涉及到的各个节点审批人
+	approvers, err := handler.ListItsmVariableApprovers()
+	if err != nil {
+		return nil, fmt.Errorf("list itsm variable approvers error: %w", err)
+	}
+
+	// 调用ITSM创建单据
+	sn, err := a.esbClient.Itsm().CreateTicket(
+		cts.Kit.Ctx,
+		&itsm.CreateTicketParams{
+			ServiceID:      serviceID,
+			Creator:        cts.Kit.User,
+			CallbackURL:    callbackUrl,
+			Title:          itsmTitle,
+			ContentDisplay: itsmForm,
+			// ITSM流程里使用变量引用的方式设置各个节点审批人
+			VariableApprovers: approvers,
+		},
+	)
+	if err != nil {
+		return "", fmt.Errorf("call itsm create ticket api failed, err: %w", err)
 	}
 
 	// 调用DB创建单据
@@ -117,7 +147,7 @@ func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, e
 	if err != nil {
 		return nil, err
 	}
-	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), req, a.platformManagers)
+	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), req)
 
 	return a.create(cts, handler)
 }
@@ -137,35 +167,35 @@ func (a *applicationSvc) CreateForCreateCvm(cts *rest.Contexts) (interface{}, er
 		if err != nil {
 			return nil, err
 		}
-		handler := tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req, a.platformManagers)
+		handler := tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req)
 		return a.create(cts, handler)
 	case enumor.Aws:
 		req, err := parseReqFromRequestBody[proto.AwsCvmCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
-		handler := awscvmhandler.NewApplicationOfCreateAwsCvm(opt, req, a.platformManagers)
+		handler := awscvmhandler.NewApplicationOfCreateAwsCvm(opt, req)
 		return a.create(cts, handler)
 	case enumor.HuaWei:
 		req, err := parseReqFromRequestBody[proto.HuaWeiCvmCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
-		handler := huaweicvmhandler.NewApplicationOfCreateHuaWeiCvm(opt, req, a.platformManagers)
+		handler := huaweicvmhandler.NewApplicationOfCreateHuaWeiCvm(opt, req)
 		return a.create(cts, handler)
 	case enumor.Gcp:
 		req, err := parseReqFromRequestBody[proto.GcpCvmCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
-		handler := gcpcvmhandler.NewApplicationOfCreateGcpCvm(opt, req, a.platformManagers)
+		handler := gcpcvmhandler.NewApplicationOfCreateGcpCvm(opt, req)
 		return a.create(cts, handler)
 	case enumor.Azure:
 		req, err := parseReqFromRequestBody[proto.AzureCvmCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
-		handler := azurecvmhandler.NewApplicationOfCreateAzureCvm(opt, req, a.platformManagers)
+		handler := azurecvmhandler.NewApplicationOfCreateAzureCvm(opt, req)
 		return a.create(cts, handler)
 	}
 
@@ -188,35 +218,35 @@ func (a *applicationSvc) CreateForCreateVpc(cts *rest.Contexts) (interface{}, er
 		if err != nil {
 			return nil, err
 		}
-		handler := tcloudvpchandler.NewApplicationOfCreateTCloudVpc(opt, req, a.platformManagers)
+		handler := tcloudvpchandler.NewApplicationOfCreateTCloudVpc(opt, req)
 		return a.create(cts, handler)
 	case enumor.Aws:
 		req, err := parseReqFromRequestBody[proto.AwsVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
-		handler := awsvpchandler.NewApplicationOfCreateAwsVpc(opt, req, a.platformManagers)
+		handler := awsvpchandler.NewApplicationOfCreateAwsVpc(opt, req)
 		return a.create(cts, handler)
 	case enumor.HuaWei:
 		req, err := parseReqFromRequestBody[proto.HuaWeiVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
-		handler := huaweivpchandler.NewApplicationOfCreateHuaWeiVpc(opt, req, a.platformManagers)
+		handler := huaweivpchandler.NewApplicationOfCreateHuaWeiVpc(opt, req)
 		return a.create(cts, handler)
 	case enumor.Gcp:
 		req, err := parseReqFromRequestBody[proto.GcpVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
-		handler := gcpvpchandler.NewApplicationOfCreateGcpVpc(opt, req, a.platformManagers)
+		handler := gcpvpchandler.NewApplicationOfCreateGcpVpc(opt, req)
 		return a.create(cts, handler)
 	case enumor.Azure:
 		req, err := parseReqFromRequestBody[proto.AzureVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
-		handler := azurevpchandler.NewApplicationOfCreateAzureVpc(opt, req, a.platformManagers)
+		handler := azurevpchandler.NewApplicationOfCreateAzureVpc(opt, req)
 		return a.create(cts, handler)
 	}
 
@@ -238,35 +268,35 @@ func (a *applicationSvc) CreateForCreateDisk(cts *rest.Contexts) (interface{}, e
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
-		handler := tclouddiskhandler.NewApplicationOfCreateTCloudDisk(opt, req, a.platformManagers)
+		handler := tclouddiskhandler.NewApplicationOfCreateTCloudDisk(opt, req)
 		return a.create(cts, handler)
 	case enumor.Gcp:
 		req, err := parseReqFromRequestBody[proto.GcpDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
-		handler := gcpdiskhandler.NewApplicationOfCreateGcpDisk(opt, req, a.platformManagers)
+		handler := gcpdiskhandler.NewApplicationOfCreateGcpDisk(opt, req)
 		return a.create(cts, handler)
 	case enumor.Aws:
 		req, err := parseReqFromRequestBody[proto.AwsDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
-		handler := awsdiskhandler.NewApplicationOfCreateAwsDisk(opt, req, a.platformManagers)
+		handler := awsdiskhandler.NewApplicationOfCreateAwsDisk(opt, req)
 		return a.create(cts, handler)
 	case enumor.HuaWei:
 		req, err := parseReqFromRequestBody[proto.HuaWeiDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
-		handler := huaweidiskhandler.NewApplicationOfCreateHuaWeiDisk(opt, req, a.platformManagers)
+		handler := huaweidiskhandler.NewApplicationOfCreateHuaWeiDisk(opt, req)
 		return a.create(cts, handler)
 	case enumor.Azure:
 		req, err := parseReqFromRequestBody[proto.AzureDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
-		handler := azurediskhandler.NewApplicationOfCreateAzureDisk(opt, req, a.platformManagers)
+		handler := azurediskhandler.NewApplicationOfCreateAzureDisk(opt, req)
 		return a.create(cts, handler)
 	}
 

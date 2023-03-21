@@ -146,31 +146,31 @@ func (a *applicationSvc) getHandlerOfCreateCvm(
 		if err != nil {
 			return nil, err
 		}
-		return tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req, []string{}), nil
+		return tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req), nil
 	case enumor.Aws:
 		req, err := parseReqFromApplicationContent[proto.AwsCvmCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return awscvmhandler.NewApplicationOfCreateAwsCvm(opt, req, []string{}), nil
+		return awscvmhandler.NewApplicationOfCreateAwsCvm(opt, req), nil
 	case enumor.HuaWei:
 		req, err := parseReqFromApplicationContent[proto.HuaWeiCvmCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return huaweicvmhandler.NewApplicationOfCreateHuaWeiCvm(opt, req, []string{}), nil
+		return huaweicvmhandler.NewApplicationOfCreateHuaWeiCvm(opt, req), nil
 	case enumor.Gcp:
 		req, err := parseReqFromApplicationContent[proto.GcpCvmCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return gcpcvmhandler.NewApplicationOfCreateGcpCvm(opt, req, []string{}), nil
+		return gcpcvmhandler.NewApplicationOfCreateGcpCvm(opt, req), nil
 	case enumor.Azure:
 		req, err := parseReqFromApplicationContent[proto.AzureCvmCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return azurecvmhandler.NewApplicationOfCreateAzureCvm(opt, req, []string{}), nil
+		return azurecvmhandler.NewApplicationOfCreateAzureCvm(opt, req), nil
 	}
 
 	return nil, fmt.Errorf("not support handler of create %s cvm", vendor)
@@ -185,31 +185,31 @@ func (a *applicationSvc) getHandlerOfCreateVpc(
 		if err != nil {
 			return nil, err
 		}
-		return tcloudvpchandler.NewApplicationOfCreateTCloudVpc(opt, req, []string{}), nil
+		return tcloudvpchandler.NewApplicationOfCreateTCloudVpc(opt, req), nil
 	case enumor.Aws:
 		req, err := parseReqFromApplicationContent[proto.AwsVpcCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return awsvpchandler.NewApplicationOfCreateAwsVpc(opt, req, []string{}), nil
+		return awsvpchandler.NewApplicationOfCreateAwsVpc(opt, req), nil
 	case enumor.HuaWei:
 		req, err := parseReqFromApplicationContent[proto.HuaWeiVpcCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return huaweivpchandler.NewApplicationOfCreateHuaWeiVpc(opt, req, []string{}), nil
+		return huaweivpchandler.NewApplicationOfCreateHuaWeiVpc(opt, req), nil
 	case enumor.Gcp:
 		req, err := parseReqFromApplicationContent[proto.GcpVpcCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return gcpvpchandler.NewApplicationOfCreateGcpVpc(opt, req, []string{}), nil
+		return gcpvpchandler.NewApplicationOfCreateGcpVpc(opt, req), nil
 	case enumor.Azure:
 		req, err := parseReqFromApplicationContent[proto.AzureVpcCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return azurevpchandler.NewApplicationOfCreateAzureVpc(opt, req, []string{}), nil
+		return azurevpchandler.NewApplicationOfCreateAzureVpc(opt, req), nil
 	}
 
 	return nil, fmt.Errorf("not support handler of create %s vpc", vendor)
@@ -224,31 +224,31 @@ func (a *applicationSvc) getHandlerOfCreateDisk(
 		if err != nil {
 			return nil, err
 		}
-		return tclouddiskhandler.NewApplicationOfCreateTCloudDisk(opt, req, []string{}), nil
+		return tclouddiskhandler.NewApplicationOfCreateTCloudDisk(opt, req), nil
 	case enumor.Gcp:
 		req, err := parseReqFromApplicationContent[proto.GcpDiskCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return gcpdiskhandler.NewApplicationOfCreateGcpDisk(opt, req, []string{}), nil
+		return gcpdiskhandler.NewApplicationOfCreateGcpDisk(opt, req), nil
 	case enumor.Aws:
 		req, err := parseReqFromApplicationContent[proto.AwsDiskCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return awsdiskhandler.NewApplicationOfCreateAwsDisk(opt, req, []string{}), nil
+		return awsdiskhandler.NewApplicationOfCreateAwsDisk(opt, req), nil
 	case enumor.HuaWei:
 		req, err := parseReqFromApplicationContent[proto.HuaWeiDiskCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return huaweidiskhandler.NewApplicationOfCreateHuaWeiDisk(opt, req, []string{}), nil
+		return huaweidiskhandler.NewApplicationOfCreateHuaWeiDisk(opt, req), nil
 	case enumor.Azure:
 		req, err := parseReqFromApplicationContent[proto.AzureDiskCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
-		return azurediskhandler.NewApplicationOfCreateAzureDisk(opt, req, []string{}), nil
+		return azurediskhandler.NewApplicationOfCreateAzureDisk(opt, req), nil
 	default:
 		return nil, fmt.Errorf("not support handler of create %s disk", vendor)
 	}
@@ -275,7 +275,7 @@ func (a *applicationSvc) getHandlerByApplication(
 		if err != nil {
 			return nil, err
 		}
-		return accounthandler.NewApplicationOfAddAccount(opt, req, []string{}), nil
+		return accounthandler.NewApplicationOfAddAccount(opt, req), nil
 	case enumor.CreateCvm:
 		return a.getHandlerOfCreateCvm(opt, vendor, application)
 	case enumor.CreateVpc:

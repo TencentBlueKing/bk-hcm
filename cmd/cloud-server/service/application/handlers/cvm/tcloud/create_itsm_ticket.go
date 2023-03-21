@@ -24,43 +24,58 @@ import (
 	"strings"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
-	"hcm/pkg/thirdparty/esb/itsm"
 )
-
-// CreateITSMTicket 使用请求数据创建申请
-func (a *ApplicationOfCreateTCloudCvm) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
-	// 渲染ITSM表单内容
-	contentDisplay, err := a.renderITSMForm()
-	if err != nil {
-		return "", fmt.Errorf("render itsm application form error: %w", err)
-	}
-
-	params := &itsm.CreateTicketParams{
-		ServiceID:      serviceID,
-		Creator:        a.Cts.Kit.User,
-		CallbackURL:    callbackUrl,
-		Title:          fmt.Sprintf("申请新增虚拟机[%s]", a.req.Name),
-		ContentDisplay: contentDisplay,
-		// ITSM流程里使用变量引用的方式设置各个节点审批人
-		VariableApprovers: []itsm.VariableApprover{
-			{
-				Variable:  "platform_manager",
-				Approvers: a.platformManagers,
-			},
-		},
-	}
-
-	sn, err := a.EsbClient.Itsm().CreateTicket(a.Cts.Kit.Ctx, params)
-	if err != nil {
-		return "", fmt.Errorf("call itsm create ticket api failed, err: %v", err)
-	}
-
-	return sn, nil
-}
 
 type formItem struct {
 	Label string
 	Value string
+}
+
+// RenderItsmTitle 渲染ITSM单据标题
+func (a *ApplicationOfCreateTCloudCvm) RenderItsmTitle() (string, error) {
+	return fmt.Sprintf("申请新增[%s]虚拟机(%s)", handlers.VendorNameMap[a.Vendor()], a.req.Name), nil
+}
+
+// RenderItsmForm 渲染ITSM表单
+func (a *ApplicationOfCreateTCloudCvm) RenderItsmForm() (string, error) {
+	req := a.req
+
+	formItems := make([]formItem, 0)
+
+	// 基本通用信息
+	baseInfoFormItems, err := a.renderBaseInfo()
+	if err != nil {
+		return "", err
+	}
+	formItems = append(formItems, baseInfoFormItems...)
+
+	// 网络
+	networkFormItems, err := a.renderNetwork()
+	if err != nil {
+		return "", err
+	}
+	formItems = append(formItems, networkFormItems...)
+
+	// 硬盘
+	formItems = append(formItems, a.renderDiskForm()...)
+
+	// 计费
+	formItems = append(formItems, a.renderInstanceChargeForm()...)
+
+	// 购买数量
+	formItems = append(formItems, formItem{Label: "购买数量", Value: fmt.Sprintf("%d", req.RequiredCount)})
+
+	// 备注
+	if req.Memo != nil && *req.Memo != "" {
+		formItems = append(formItems, formItem{Label: "备注", Value: *req.Memo})
+	}
+
+	// 转换为ITSM表单内容数据
+	content := make([]string, 0, len(formItems))
+	for _, i := range formItems {
+		content = append(content, fmt.Sprintf("%s: %s", i.Label, i.Value))
+	}
+	return strings.Join(content, "\n"), nil
 }
 
 func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
@@ -82,7 +97,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "云账号", Value: accountInfo.Name})
 
 	// 云厂商
-	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.vendor]})
+	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.Vendor()]})
 
 	// 云地域
 	regionInfo, err := a.GetTCloudRegion(req.Region)
@@ -92,7 +107,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "云地域", Value: regionInfo.RegionName})
 
 	// 可用区
-	zoneInfo, err := a.GetZone(a.vendor, req.Region, req.Zone)
+	zoneInfo, err := a.GetZone(a.Vendor(), req.Region, req.Zone)
 	if err != nil {
 		return formItems, err
 	}
@@ -113,7 +128,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	})
 
 	// 镜像
-	imageInfo, err := a.GetImage(a.vendor, req.CloudImageID)
+	imageInfo, err := a.GetImage(a.Vendor(), req.CloudImageID)
 	if err != nil {
 		return formItems, err
 	}
@@ -127,14 +142,14 @@ func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
 	formItems := make([]formItem, 0)
 
 	// VPC
-	vpcInfo, err := a.GetVpc(a.vendor, req.AccountID, req.CloudVpcID)
+	vpcInfo, err := a.GetVpc(a.Vendor(), req.AccountID, req.CloudVpcID)
 	if err != nil {
 		return formItems, err
 	}
 	formItems = append(formItems, formItem{Label: "VPC", Value: vpcInfo.Name})
 
 	// 子网
-	subnetInfo, err := a.GetSubnet(a.vendor, req.AccountID, req.CloudVpcID, req.CloudSubnetID)
+	subnetInfo, err := a.GetSubnet(a.Vendor(), req.AccountID, req.CloudVpcID, req.CloudSubnetID)
 	if err != nil {
 		return formItems, err
 	}
@@ -155,7 +170,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "所属的蓝鲸云区域", Value: bkCloudAreaName})
 
 	// 安全组
-	securityGroups, err := a.ListSecurityGroup(a.vendor, req.AccountID, req.CloudSecurityGroupIDs)
+	securityGroups, err := a.ListSecurityGroup(a.Vendor(), req.AccountID, req.CloudSecurityGroupIDs)
 	securityGroupNames := make([]string, 0, len(req.CloudSecurityGroupIDs))
 	for _, s := range securityGroups {
 		securityGroupNames = append(securityGroupNames, s.Name)
@@ -209,45 +224,4 @@ func (a *ApplicationOfCreateTCloudCvm) renderInstanceChargeForm() []formItem {
 	}
 
 	return formItems
-}
-
-func (a *ApplicationOfCreateTCloudCvm) renderITSMForm() (string, error) {
-	req := a.req
-
-	formItems := make([]formItem, 0)
-
-	// 基本通用信息
-	baseInfoFormItems, err := a.renderBaseInfo()
-	if err != nil {
-		return "", err
-	}
-	formItems = append(formItems, baseInfoFormItems...)
-
-	// 网络
-	networkFormItems, err := a.renderNetwork()
-	if err != nil {
-		return "", err
-	}
-	formItems = append(formItems, networkFormItems...)
-
-	// 硬盘
-	formItems = append(formItems, a.renderDiskForm()...)
-
-	// 计费
-	formItems = append(formItems, a.renderInstanceChargeForm()...)
-
-	// 购买数量
-	formItems = append(formItems, formItem{Label: "购买数量", Value: fmt.Sprintf("%d", req.RequiredCount)})
-
-	// 备注
-	if req.Memo != nil && *req.Memo != "" {
-		formItems = append(formItems, formItem{Label: "备注", Value: *req.Memo})
-	}
-
-	// 转换为ITSM表单内容数据
-	content := make([]string, 0, len(formItems))
-	for _, i := range formItems {
-		content = append(content, fmt.Sprintf("%s: %s", i.Label, i.Value))
-	}
-	return strings.Join(content, "\n"), nil
 }

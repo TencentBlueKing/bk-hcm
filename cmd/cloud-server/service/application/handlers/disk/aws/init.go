@@ -28,24 +28,16 @@ import (
 // ApplicationOfCreateAwsDisk ...
 type ApplicationOfCreateAwsDisk struct {
 	handlers.BaseApplicationHandler
-	req              *proto.AwsDiskCreateReq
-	platformManagers []string
-}
-
-// Vendor ...
-func (a *ApplicationOfCreateAwsDisk) Vendor() enumor.Vendor {
-	return enumor.Aws
+	req *proto.AwsDiskCreateReq
 }
 
 // NewApplicationOfCreateAwsDisk ...
 func NewApplicationOfCreateAwsDisk(
 	opt *handlers.HandlerOption,
 	req *proto.AwsDiskCreateReq,
-	platformManagers []string,
 ) *ApplicationOfCreateAwsDisk {
 	return &ApplicationOfCreateAwsDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.Aws),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

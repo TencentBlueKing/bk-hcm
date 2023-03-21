@@ -31,20 +31,16 @@ import (
 type ApplicationOfCreateTCloudCvm struct {
 	handlers.BaseApplicationHandler
 
-	vendor           enumor.Vendor
-	req              *proto.TCloudCvmCreateReq
-	platformManagers []string
+	req *proto.TCloudCvmCreateReq
 }
 
 // NewApplicationOfCreateTCloudCvm ...
 func NewApplicationOfCreateTCloudCvm(
-	opt *handlers.HandlerOption, req *proto.TCloudCvmCreateReq, platformManagers []string,
+	opt *handlers.HandlerOption, req *proto.TCloudCvmCreateReq,
 ) *ApplicationOfCreateTCloudCvm {
 	return &ApplicationOfCreateTCloudCvm{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm),
-		vendor:                 enumor.TCloud,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.TCloud),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }
 

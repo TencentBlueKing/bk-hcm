@@ -25,7 +25,6 @@ import (
 	"strings"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
-	"hcm/pkg/thirdparty/esb/itsm"
 )
 
 type formItem struct {
@@ -33,38 +32,17 @@ type formItem struct {
 	Value string
 }
 
-// CreateITSMTicket ...
-func (a *ApplicationOfCreateHuaWeiDisk) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
-	// 渲染ITSM表单内容
-	contentDisplay, err := a.renderITSMForm()
-	if err != nil {
-		return "", fmt.Errorf("render itsm application form error: %w", err)
+// RenderItsmTitle 渲染ITSM单据标题
+func (a *ApplicationOfCreateHuaWeiDisk) RenderItsmTitle() (string, error) {
+	name := "未命名"
+	if a.req.DiskName != nil && *a.req.DiskName != "" {
+		name = *a.req.DiskName
 	}
-
-	params := &itsm.CreateTicketParams{
-		ServiceID:      serviceID,
-		Creator:        a.Cts.Kit.User,
-		CallbackURL:    callbackUrl,
-		Title:          fmt.Sprintf("申请新增%s云盘[%s]", a.Vendor(), a.req.DiskName),
-		ContentDisplay: contentDisplay,
-		// ITSM流程里使用变量引用的方式设置各个节点审批人
-		VariableApprovers: []itsm.VariableApprover{
-			{
-				Variable:  "platform_manager",
-				Approvers: a.platformManagers,
-			},
-		},
-	}
-
-	sn, err := a.EsbClient.Itsm().CreateTicket(a.Cts.Kit.Ctx, params)
-	if err != nil {
-		return "", fmt.Errorf("call itsm create ticket api failed, err: %v", err)
-	}
-
-	return sn, nil
+	return fmt.Sprintf("申请新增[%s]云盘(%s)", handlers.VendorNameMap[a.Vendor()], name), nil
 }
 
-func (a *ApplicationOfCreateHuaWeiDisk) renderITSMForm() (string, error) {
+// RenderItsmForm 渲染ITSM表单
+func (a *ApplicationOfCreateHuaWeiDisk) RenderItsmForm() (string, error) {
 	req := a.req
 	formItems := make([]formItem, 0)
 

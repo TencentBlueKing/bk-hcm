@@ -38,7 +38,7 @@ func (a *ApplicationOfCreateAwsVpc) GenerateApplicationContent() interface{} {
 		Vendor                 enumor.Vendor `json:"vendor"`
 	}{
 		AwsVpcCreateReq: a.req,
-		Vendor:          a.vendor,
+		Vendor:          a.Vendor(),
 	}
 }
 

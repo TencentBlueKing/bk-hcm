@@ -28,24 +28,16 @@ import (
 // ApplicationOfCreateTCloudDisk ...
 type ApplicationOfCreateTCloudDisk struct {
 	handlers.BaseApplicationHandler
-	req              *proto.TCloudDiskCreateReq
-	platformManagers []string
-}
-
-// Vendor ...
-func (a *ApplicationOfCreateTCloudDisk) Vendor() enumor.Vendor {
-	return enumor.TCloud
+	req *proto.TCloudDiskCreateReq
 }
 
 // NewApplicationOfCreateTCloudDisk ...
 func NewApplicationOfCreateTCloudDisk(
 	opt *handlers.HandlerOption,
 	req *proto.TCloudDiskCreateReq,
-	platformManagers []string,
 ) *ApplicationOfCreateTCloudDisk {
 	return &ApplicationOfCreateTCloudDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.TCloud),
 		req:                    req,
-		platformManagers:       platformManagers,
 	}
 }

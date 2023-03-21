@@ -38,7 +38,7 @@ func (a *ApplicationOfCreateAzureVpc) GenerateApplicationContent() interface{} {
 		Vendor                   enumor.Vendor `json:"vendor"`
 	}{
 		AzureVpcCreateReq: a.req,
-		Vendor:            a.vendor,
+		Vendor:            a.Vendor(),
 	}
 }
 

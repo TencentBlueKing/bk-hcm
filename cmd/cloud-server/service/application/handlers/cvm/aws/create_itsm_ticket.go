@@ -24,168 +24,20 @@ import (
 	"strings"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
-	"hcm/pkg/thirdparty/esb/itsm"
 )
-
-// CreateITSMTicket 使用请求数据创建申请
-func (a *ApplicationOfCreateAwsCvm) CreateITSMTicket(serviceID int64, callbackUrl string) (string, error) {
-	// 渲染ITSM表单内容
-	contentDisplay, err := a.renderITSMForm()
-	if err != nil {
-		return "", fmt.Errorf("render itsm application form error: %w", err)
-	}
-
-	params := &itsm.CreateTicketParams{
-		ServiceID:      serviceID,
-		Creator:        a.Cts.Kit.User,
-		CallbackURL:    callbackUrl,
-		Title:          fmt.Sprintf("申请新增虚拟机[%s]", a.req.Name),
-		ContentDisplay: contentDisplay,
-		// ITSM流程里使用变量引用的方式设置各个节点审批人
-		VariableApprovers: []itsm.VariableApprover{
-			{
-				Variable:  "platform_manager",
-				Approvers: a.platformManagers,
-			},
-		},
-	}
-
-	sn, err := a.EsbClient.Itsm().CreateTicket(a.Cts.Kit.Ctx, params)
-	if err != nil {
-		return "", fmt.Errorf("call itsm create ticket api failed, err: %v", err)
-	}
-
-	return sn, nil
-}
 
 type formItem struct {
 	Label string
 	Value string
 }
 
-func (a *ApplicationOfCreateAwsCvm) renderBaseInfo() ([]formItem, error) {
-	req := a.req
-	formItems := make([]formItem, 0)
-
-	// 业务
-	bizName, err := a.GetBizName(req.BkBizID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "业务", Value: bizName})
-
-	// 云账号
-	accountInfo, err := a.GetAccount(req.AccountID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "云账号", Value: accountInfo.Name})
-
-	// 云厂商
-	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.vendor]})
-
-	// 云地域
-	regionInfo, err := a.GetAwsRegion(req.Region)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "云地域", Value: regionInfo.RegionName})
-
-	// 可用区
-	zoneInfo, err := a.GetZone(a.vendor, req.Region, req.Zone)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "可用区", Value: zoneInfo.Name})
-
-	// 名称
-	formItems = append(formItems, formItem{Label: "名称", Value: req.Name})
-
-	// 机型
-	instanceTypeInfo, err := a.GetAwsInstanceType(req.AccountID, req.Region, req.InstanceType)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{
-		Label: "机型",
-		Value: fmt.Sprintf("%s (%d核%sG)",
-			req.InstanceType, instanceTypeInfo.CPU, a.ConvertMemoryMBToGB(instanceTypeInfo.Memory)),
-	})
-
-	// 镜像
-	imageInfo, err := a.GetImage(a.vendor, req.CloudImageID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "镜像", Value: imageInfo.Name})
-
-	return formItems, nil
+// RenderItsmTitle 渲染ITSM单据标题
+func (a *ApplicationOfCreateAwsCvm) RenderItsmTitle() (string, error) {
+	return fmt.Sprintf("申请新增[%s]虚拟机(%s)", handlers.VendorNameMap[a.Vendor()], a.req.Name), nil
 }
 
-func (a *ApplicationOfCreateAwsCvm) renderNetwork() ([]formItem, error) {
-	req := a.req
-	formItems := make([]formItem, 0)
-
-	// VPC
-	vpcInfo, err := a.GetVpc(a.vendor, req.AccountID, req.CloudVpcID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "VPC", Value: vpcInfo.Name})
-
-	// 子网
-	subnetInfo, err := a.GetSubnet(a.vendor, req.AccountID, req.CloudVpcID, req.CloudSubnetID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "子网", Value: subnetInfo.Name})
-
-	// 是否自动分配公网IP
-	if req.PublicIPAssigned {
-		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "是"})
-	} else {
-		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "否"})
-	}
-
-	// 所属的蓝鲸云区域
-	bkCloudAreaName, err := a.GetCloudAreaName(vpcInfo.BkCloudID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "所属的蓝鲸云区域", Value: bkCloudAreaName})
-
-	// 安全组
-	securityGroups, err := a.ListSecurityGroup(a.vendor, req.AccountID, req.CloudSecurityGroupIDs)
-	securityGroupNames := make([]string, 0, len(req.CloudSecurityGroupIDs))
-	for _, s := range securityGroups {
-		securityGroupNames = append(securityGroupNames, s.Name)
-	}
-	formItems = append(formItems, formItem{Label: "安全组", Value: strings.Join(securityGroupNames, ",")})
-
-	return formItems, nil
-}
-
-func (a *ApplicationOfCreateAwsCvm) renderDiskForm() []formItem {
-	req := a.req
-	formItems := make([]formItem, 0)
-
-	// 系统盘
-	formItems = append(formItems, formItem{
-		Label: "系统盘",
-		Value: fmt.Sprintf("%s, %dGB", DiskTypeNameMap[req.SystemDisk.DiskType], req.SystemDisk.DiskSizeGB),
-	})
-
-	// 数据盘
-	disks := make([]string, 0, len(req.DataDisk))
-	for _, d := range req.DataDisk {
-		disks = append(disks, fmt.Sprintf("%s(%dGB,%d个)", DiskTypeNameMap[d.DiskType], d.DiskSizeGB, d.DiskCount))
-	}
-	formItems = append(formItems, formItem{Label: "数据盘", Value: strings.Join(disks, ",")})
-
-	return formItems
-}
-
-func (a *ApplicationOfCreateAwsCvm) renderITSMForm() (string, error) {
+// RenderItsmForm 渲染ITSM表单
+func (a *ApplicationOfCreateAwsCvm) RenderItsmForm() (string, error) {
 	req := a.req
 
 	formItems := make([]formItem, 0)
@@ -221,4 +73,126 @@ func (a *ApplicationOfCreateAwsCvm) renderITSMForm() (string, error) {
 		content = append(content, fmt.Sprintf("%s: %s", i.Label, i.Value))
 	}
 	return strings.Join(content, "\n"), nil
+}
+
+func (a *ApplicationOfCreateAwsCvm) renderBaseInfo() ([]formItem, error) {
+	req := a.req
+	formItems := make([]formItem, 0)
+
+	// 业务
+	bizName, err := a.GetBizName(req.BkBizID)
+	if err != nil {
+		return formItems, err
+	}
+	formItems = append(formItems, formItem{Label: "业务", Value: bizName})
+
+	// 云账号
+	accountInfo, err := a.GetAccount(req.AccountID)
+	if err != nil {
+		return formItems, err
+	}
+	formItems = append(formItems, formItem{Label: "云账号", Value: accountInfo.Name})
+
+	// 云厂商
+	formItems = append(formItems, formItem{Label: "云厂商", Value: handlers.VendorNameMap[a.Vendor()]})
+
+	// 云地域
+	regionInfo, err := a.GetAwsRegion(req.Region)
+	if err != nil {
+		return formItems, err
+	}
+	formItems = append(formItems, formItem{Label: "云地域", Value: regionInfo.RegionName})
+
+	// 可用区
+	zoneInfo, err := a.GetZone(a.Vendor(), req.Region, req.Zone)
+	if err != nil {
+		return formItems, err
+	}
+	formItems = append(formItems, formItem{Label: "可用区", Value: zoneInfo.Name})
+
+	// 名称
+	formItems = append(formItems, formItem{Label: "名称", Value: req.Name})
+
+	// 机型
+	instanceTypeInfo, err := a.GetAwsInstanceType(req.AccountID, req.Region, req.InstanceType)
+	if err != nil {
+		return formItems, err
+	}
+	formItems = append(formItems, formItem{
+		Label: "机型",
+		Value: fmt.Sprintf("%s (%d核%sG)",
+			req.InstanceType, instanceTypeInfo.CPU, a.ConvertMemoryMBToGB(instanceTypeInfo.Memory)),
+	})
+
+	// 镜像
+	imageInfo, err := a.GetImage(a.Vendor(), req.CloudImageID)
+	if err != nil {
+		return formItems, err
+	}
+	formItems = append(formItems, formItem{Label: "镜像", Value: imageInfo.Name})
+
+	return formItems, nil
+}
+
+func (a *ApplicationOfCreateAwsCvm) renderNetwork() ([]formItem, error) {
+	req := a.req
+	formItems := make([]formItem, 0)
+
+	// VPC
+	vpcInfo, err := a.GetVpc(a.Vendor(), req.AccountID, req.CloudVpcID)
+	if err != nil {
+		return formItems, err
+	}
+	formItems = append(formItems, formItem{Label: "VPC", Value: vpcInfo.Name})
+
+	// 子网
+	subnetInfo, err := a.GetSubnet(a.Vendor(), req.AccountID, req.CloudVpcID, req.CloudSubnetID)
+	if err != nil {
+		return formItems, err
+	}
+	formItems = append(formItems, formItem{Label: "子网", Value: subnetInfo.Name})
+
+	// 是否自动分配公网IP
+	if req.PublicIPAssigned {
+		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "是"})
+	} else {
+		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "否"})
+	}
+
+	// 所属的蓝鲸云区域
+	bkCloudAreaName, err := a.GetCloudAreaName(vpcInfo.BkCloudID)
+	if err != nil {
+		return formItems, err
+	}
+	formItems = append(formItems, formItem{Label: "所属的蓝鲸云区域", Value: bkCloudAreaName})
+
+	// 安全组
+	securityGroups, err := a.ListSecurityGroup(a.Vendor(), req.AccountID, req.CloudSecurityGroupIDs)
+	securityGroupNames := make([]string, 0, len(req.CloudSecurityGroupIDs))
+	for _, s := range securityGroups {
+		securityGroupNames = append(securityGroupNames, s.Name)
+	}
+	formItems = append(formItems, formItem{Label: "安全组", Value: strings.Join(securityGroupNames, ",")})
+
+	return formItems, nil
+}
+
+func (a *ApplicationOfCreateAwsCvm) renderDiskForm() []formItem {
+	req := a.req
+	formItems := make([]formItem, 0)
+
+	// 系统盘
+	formItems = append(formItems, formItem{
+		Label: "系统盘",
+		Value: fmt.Sprintf("%s, %dGB", DiskTypeNameMap[req.SystemDisk.DiskType], req.SystemDisk.DiskSizeGB),
+	})
+
+	// 数据盘
+	disks := make([]string, 0, len(req.DataDisk))
+	for _, d := range req.DataDisk {
+		disks = append(disks, fmt.Sprintf("%s(%dGB,%d个)", DiskTypeNameMap[d.DiskType], d.DiskSizeGB, d.DiskCount))
+	}
+	formItems = append(formItems, formItem{Label: "数据盘", Value: strings.Join(disks, ",")})
+
+	return formItems
 }

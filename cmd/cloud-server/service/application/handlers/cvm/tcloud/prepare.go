@@ -44,7 +44,7 @@ func (a *ApplicationOfCreateTCloudCvm) GenerateApplicationContent() interface{} 
 		Vendor                    enumor.Vendor `json:"vendor"`
 	}{
 		TCloudCvmCreateReq: a.req,
-		Vendor:             a.vendor,
+		Vendor:             a.Vendor(),
 	}
 }
 

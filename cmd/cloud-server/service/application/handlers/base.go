@@ -28,40 +28,64 @@ import (
 	"hcm/pkg/cryptography"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/esb/itsm"
 )
 
 // HandlerOption 这里是为了方便调用传参构造Handler,避免参数太多
 type HandlerOption struct {
-	Cts       *rest.Contexts
-	Client    *client.ClientSet
-	EsbClient esb.Client
-	Cipher    cryptography.Crypto
+	Cts              *rest.Contexts
+	Client           *client.ClientSet
+	EsbClient        esb.Client
+	Cipher           cryptography.Crypto
+	PlatformManagers []string
 }
 
 // BaseApplicationHandler 基础的Handler 一些公共函数和属性处理，可以给到其他具体Handler组合
 type BaseApplicationHandler struct {
-	ApplicationType enumor.ApplicationType
+	applicationType enumor.ApplicationType
+	vendor          enumor.Vendor
 
-	Cts       *rest.Contexts
-	Client    *client.ClientSet
-	EsbClient esb.Client
-	Cipher    cryptography.Crypto
+	Cts              *rest.Contexts
+	Client           *client.ClientSet
+	EsbClient        esb.Client
+	Cipher           cryptography.Crypto
+	PlatformManagers []string
 }
 
 // NewBaseApplicationHandler ...
-func NewBaseApplicationHandler(opt *HandlerOption, applicationType enumor.ApplicationType) BaseApplicationHandler {
+func NewBaseApplicationHandler(
+	opt *HandlerOption, applicationType enumor.ApplicationType, vendor enumor.Vendor,
+) BaseApplicationHandler {
 	return BaseApplicationHandler{
-		ApplicationType: applicationType,
-		Cts:             opt.Cts,
-		Client:          opt.Client,
-		EsbClient:       opt.EsbClient,
-		Cipher:          opt.Cipher,
+		applicationType:  applicationType,
+		vendor:           vendor,
+		Cts:              opt.Cts,
+		Client:           opt.Client,
+		EsbClient:        opt.EsbClient,
+		Cipher:           opt.Cipher,
+		PlatformManagers: opt.PlatformManagers,
 	}
 }
 
 // GetType 申请单类型
 func (a *BaseApplicationHandler) GetType() enumor.ApplicationType {
-	return a.ApplicationType
+	return a.applicationType
+}
+
+// Vendor ...
+func (a *BaseApplicationHandler) Vendor() enumor.Vendor {
+	return a.vendor
+}
+
+// ListItsmVariableApprovers 查询ITSM单据审批人
+//  Note: 现阶段所有申请单的审批流程一样，所以在BaseApplicationHandler里实现
+func (a *BaseApplicationHandler) ListItsmVariableApprovers() ([]itsm.VariableApprover, error) {
+	return []itsm.VariableApprover{
+		{
+			Variable:  "platform_manager",
+			Approvers: a.PlatformManagers,
+		},
+	}, nil
 }
 
 // ConvertMemoryMBToGB 将内存的MB转换为可用于展示的GB, 特殊展示，不适合其他通用的转换
