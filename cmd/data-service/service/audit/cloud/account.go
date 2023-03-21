@@ -27,8 +27,10 @@ import (
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
 	tablecloud "hcm/pkg/dal/table/cloud"
+	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/json"
 )
 
 func (ad Audit) accountUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
@@ -48,6 +50,22 @@ func (ad Audit) accountUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudR
 		account, exist := idAccountMap[one.ResID]
 		if !exist {
 			continue
+		}
+
+		// remove secret key from account info & update fields
+		extension := tools.AccountExtensionRemoveSecretKey(string(account.Extension))
+		account.Extension = tabletype.JsonField(extension)
+
+		updateExt, exists := one.UpdateFields["extension"]
+		if exists {
+			updateExtJson, err := json.Marshal(updateExt)
+			if err != nil {
+				logs.Errorf("marshal update account extension failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+
+			updateExtension := tools.AccountExtensionRemoveSecretKey(string(updateExtJson))
+			one.UpdateFields["extension"] = updateExtension
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{

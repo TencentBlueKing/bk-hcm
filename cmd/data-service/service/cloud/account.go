@@ -449,11 +449,7 @@ func (a *accountSvc) ListAccountWithBiz(kt *kit.Kit, ids []string) ([]types.Acco
 			bizIDs = list
 		}
 
-		extension, err := tools.AccountExtensionRemoveSecretKey(string(one.Extension))
-		if err != nil {
-			logs.Errorf("account extension remove secret key failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
+		extension := tools.AccountExtensionRemoveSecretKey(string(one.Extension))
 
 		accounts = append(accounts, types.Account{
 			AccountTable: tablecloud.AccountTable{
@@ -533,8 +529,12 @@ func (a *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 			return nil, err
 		}
 
+		// create audit
 		audits := make([]*tableaudit.AuditTable, 0, len(accounts))
 		for _, one := range accounts {
+			extension := tools.AccountExtensionRemoveSecretKey(string(one.Extension))
+			one.Extension = tabletype.JsonField(extension)
+
 			audits = append(audits, &tableaudit.AuditTable{
 				ResID:      one.ID,
 				CloudResID: "",

@@ -363,6 +363,9 @@ func isGcpSubnetChange(info cloudcore.Subnet[cloudcore.GcpSubnetExtension], item
 	return false
 }
 
+// BatchCreateGcpSubnet ...
+// TODO right now this method is used by create subnet api to get created result, because sync method do not return it.
+// TODO modify sync logics to return crud infos, then change this method to 'batchCreateGcpSubnet'.
 func BatchCreateGcpSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt],
 	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncGcpOption) (
 	*core.BatchCreateResult, error) {

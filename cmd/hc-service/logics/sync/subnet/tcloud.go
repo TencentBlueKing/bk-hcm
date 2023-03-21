@@ -335,6 +335,8 @@ func isTCloudSubnetChange(info cloudcore.Subnet[cloudcore.TCloudSubnetExtension]
 }
 
 // BatchCreateTCloudSubnet ...
+// TODO right now this method is used by create subnet api to get created result, because sync method do not return it.
+// TODO modify sync logics to return crud infos, then change this method to 'batchCreateTCloudSubnet'.
 func BatchCreateTCloudSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt],
 	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncTCloudOption) (
 	*core.BatchCreateResult, error) {

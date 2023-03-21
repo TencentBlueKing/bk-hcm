@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/dal/table"
 	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/dal/table/cloud"
+	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -140,6 +141,9 @@ func (a AccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *cloud.AccountT
 	}
 
 	// create audit.
+	extension := tools.AccountExtensionRemoveSecretKey(string(model.Extension))
+	model.Extension = tabletype.JsonField(extension)
+
 	auditInfo := &tableaudit.AuditTable{
 		ResID:     model.ID,
 		ResName:   model.Name,

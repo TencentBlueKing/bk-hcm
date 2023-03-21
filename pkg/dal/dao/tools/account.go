@@ -20,22 +20,29 @@
 package tools
 
 import (
+	"bytes"
+	"fmt"
 	"strings"
-
-	"hcm/pkg/tools/json"
 
 	"github.com/tidwall/gjson"
 )
 
 // AccountExtensionRemoveSecretKey ...
-func AccountExtensionRemoveSecretKey(extension string) (string, error) {
-	m := gjson.Parse(extension).Map()
+func AccountExtensionRemoveSecretKey(extension string) string {
+	buffer := bytes.Buffer{}
 
-	for key := range m {
+	m := gjson.Parse(extension).Map()
+	for key, value := range m {
 		if strings.Contains(key, "secret_key") {
-			delete(m, key)
+			continue
 		}
+		buffer.WriteString(fmt.Sprintf(`"%s":%s,`, key, value.Raw))
 	}
 
-	return json.MarshalToString(m)
+	ext := buffer.String()
+	if len(ext) == 0 {
+		return "{}"
+	}
+
+	return fmt.Sprintf("{%s}", ext[:len(ext)-1])
 }

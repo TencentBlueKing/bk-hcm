@@ -370,6 +370,8 @@ func isAzureSubnetChange(info cloudcore.Subnet[cloudcore.AzureSubnetExtension], 
 }
 
 // BatchCreateAzureSubnet ...
+// TODO right now this method is used by create subnet api to get created result, because sync method do not return it.
+// TODO modify sync logics to return crud infos, then change this method to 'batchCreateAzureSubnet'.
 func BatchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt],
 	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *hcservice.AzureResourceSyncReq) (
 	*core.BatchCreateResult, error) {
