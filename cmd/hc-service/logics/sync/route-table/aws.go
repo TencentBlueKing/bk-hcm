@@ -662,6 +662,16 @@ func compareDeleteAwsRouteTableList(kt *kit.Kit, req *hcroutetable.AwsRouteTable
 					Op:    filter.Equal.Factory(),
 					Value: string(enumor.Aws),
 				},
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: req.AccountID,
+				},
+				&filter.AtomRule{
+					Field: "region",
+					Op:    filter.Equal.Factory(),
+					Value: req.Region,
+				},
 			},
 		}
 		dbQueryReq := &core.ListReq{

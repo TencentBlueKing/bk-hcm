@@ -507,7 +507,7 @@ func (svc *routeTableSvc) ListRouteTableWithExtension(cts *rest.Contexts) (inter
 	}
 	data, err := svc.dao.RouteTable().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list route table extension failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("list route table extension failed, vendor: %s, err: %v, rid: %s", vendor, err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list route table extension failed, err: %v", err)
 	}
 

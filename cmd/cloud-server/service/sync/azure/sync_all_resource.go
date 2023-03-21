@@ -59,8 +59,8 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 			return
 		}
 
-		logs.V(3).Infof("azure account[%s] sync all resource end, cost: %v, opt: %v, rid: %s", opt.AccountID,
-			time.Since(start), opt, kt.Rid)
+		logs.V(3).Infof("azure account[%s] sync all resource end, cost: %v, opt: %v, rid: %s",
+			opt.AccountID, time.Since(start), opt, kt.Rid)
 	}()
 
 	// TODO: 修改账号表中同步状态字段和同步时间字段
@@ -80,7 +80,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 			ResourceGroupNames: resourceGroupNames,
 		}
 		if hitErr = SyncPublicResource(kt, cliSet, syncOpt); hitErr != nil {
-			logs.Errorf("sync public resource failed, err: %v, opt: %v, rid: %s", hitErr, opt, kt.Rid)
+			logs.Errorf("azure sync public resource failed, err: %v, opt: %v, rid: %s", hitErr, opt, kt.Rid)
 			return hitErr
 		}
 	}
@@ -90,31 +90,45 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 	}
 
 	if hitErr = SyncVpc(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		logs.Errorf("azure sync vpc resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
+			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncSubnet(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID,
 		resourceGroupNames); hitErr != nil {
+		logs.Errorf("azure sync subnet resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
+			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncEip(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		logs.Errorf("azure sync eip resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
+			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncSG(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		logs.Errorf("azure sync security group resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
+			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncCvm(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		logs.Errorf("azure sync cvm resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
+			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncRouteTable(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		logs.Errorf("azure sync route table resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
+			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		logs.Errorf("azure sync network interface resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
+			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 

@@ -489,7 +489,22 @@ func compareDeleteGcpNetworkInterfaceList(kt *kit.Kit, req *hcservice.GcpNetwork
 					Op:    filter.Equal.Factory(),
 					Value: enumor.Gcp,
 				},
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: req.AccountID,
+				},
+				&filter.AtomRule{
+					Field: "zone",
+					Op:    filter.Equal.Factory(),
+					Value: req.Zone,
+				},
 			},
+		}
+		if len(req.CloudCvmIDs) > 0 {
+			expr.Rules = append(expr.Rules, &filter.AtomRule{
+				Field: "instance_id", Op: filter.In.Factory(), Value: req.CloudCvmIDs,
+			})
 		}
 		dbQueryReq := &core.ListReq{
 			Filter: expr,

@@ -94,7 +94,7 @@ func SyncAzureNetworkInterfaceAll(kt *kit.Kit, req *hcservice.AzureNetworkInterf
 
 	pager, err := cli.ListNetworkInterfacePage()
 	if err != nil {
-		logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, resGroupName: %s, err: %v",
+		logs.Errorf("%s-networkinterface batch get cloudapi failed. accountID: %s, resGroupName: %s, err: %v",
 			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func SyncAzureNetworkInterfaceAll(kt *kit.Kit, req *hcservice.AzureNetworkInterf
 	for pager.More() {
 		page, err := pager.NextPage(kt.Ctx)
 		if err != nil {
-			return nil, fmt.Errorf("list azure route table but get next page failed, err: %v", err)
+			return nil, fmt.Errorf("list azure network interface but get next page failed, err: %v", err)
 		}
 
 		tmpList := &typesniproto.AzureInterfaceListResult{}
@@ -144,7 +144,7 @@ func SyncAzureNetworkInterfaceByID(kt *kit.Kit, req *hcservice.AzureNetworkInter
 	}
 	pager, err := cli.ListNetworkInterfaceByIDPage(opt)
 	if err != nil {
-		logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, resGroupName: %s, err: %v",
+		logs.Errorf("%s-networkinterface batch get cloudapi failed. accountID: %s, resGroupName: %s, err: %v",
 			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func SyncAzureNetworkInterfaceByID(kt *kit.Kit, req *hcservice.AzureNetworkInter
 	for pager.More() {
 		page, err := pager.NextPage(kt.Ctx)
 		if err != nil {
-			return nil, fmt.Errorf("list azure route table but get next page failed, err: %v", err)
+			return nil, fmt.Errorf("list azure network interface but get next page failed, err: %v", err)
 		}
 
 		tmpList := &typesniproto.AzureInterfaceListResult{}
@@ -189,14 +189,14 @@ func processCompareAzureNetworkInterface(kt *kit.Kit, req *hcservice.AzureNetwor
 	niDetails := make([]typesniproto.AzureNI, 0, len(tmpList.Details))
 	for _, item := range tmpList.Details {
 		tmpID := converter.PtrToVal(item.CloudID)
-		cloudIDs = append(cloudIDs, tmpID)
-		allCloudIDMap[tmpID] = true
-
 		// get subnet info by cloud_subnet_id
 		subnetDetail, err := GetAzureCloudSubnetInfoByID(kt, adaptor, dataCli, req.AccountID,
 			converter.PtrToVal(item.CloudSubnetID), converter.PtrToVal(item.CloudVpcID), req.ResourceGroupName)
 		if err != nil {
-			return nil, err
+			logs.Errorf("%s-networkinterface query subnet_ids and sync failed. accountID: %s, "+
+				"resGroupName: %s, networkInterfaceID: %s, err: %v, rid: %s",
+				enumor.Azure, req.AccountID, req.ResourceGroupName, tmpID, err, kt.Rid)
+			continue
 		}
 		item.SubnetID = converter.ValToPtr(subnetDetail.ID)
 		item.VpcID = converter.ValToPtr(subnetDetail.VpcID)
@@ -216,14 +216,16 @@ func processCompareAzureNetworkInterface(kt *kit.Kit, req *hcservice.AzureNetwor
 		securityGroupMap, err := securitygrouplogics.QuerySecurityGroupIDsAndSync(kt, adaptor, dataCli, opt)
 		if err != nil {
 			logs.Errorf("%s-networkinterface query security_group_ids and sync failed. accountID: %s, "+
-				"resGroupName: %s, opt: %+v, err: %v, rid: %s",
-				enumor.Azure, req.AccountID, req.ResourceGroupName, opt, err, kt.Rid)
-			return nil, err
+				"resGroupName: %s, networkInterfaceID: %s, opt: %+v, err: %v, rid: %s",
+				enumor.Azure, req.AccountID, req.ResourceGroupName, tmpID, opt, err, kt.Rid)
+			continue
 		}
 		if tmpSGID, ok := securityGroupMap[tmpSGCloudID]; ok {
 			item.Extension.SecurityGroupID = converter.ValToPtr(tmpSGID)
 		}
 
+		cloudIDs = append(cloudIDs, tmpID)
+		allCloudIDMap[tmpID] = true
 		niDetails = append(niDetails, item)
 	}
 	tmpList.Details = niDetails
@@ -231,15 +233,15 @@ func processCompareAzureNetworkInterface(kt *kit.Kit, req *hcservice.AzureNetwor
 	// get network interface info from db.
 	resourceDBMap, err := BatchAzureGetNetworkInterfaceMapFromDB(kt, enumor.Azure, cloudIDs, dataCli)
 	if err != nil {
-		logs.Errorf("%s-networkinterface get routetabledblist failed. accountID: %s, resGroupName: %s, err: %v",
-			enumor.Azure, req.AccountID, req.ResourceGroupName, err)
+		logs.Errorf("%s-networkinterface get networkinterfacedblist failed. accountID: %s, resGroupName: %s, "+
+			"err: %v", enumor.Azure, req.AccountID, req.ResourceGroupName, err)
 		return nil, err
 	}
 
 	// compare and update network interface list.
 	err = compareUpdateAzureNetworkInterfaceList(kt, req, tmpList, resourceDBMap, dataCli)
 	if err != nil {
-		logs.Errorf("%s-networkinterface compare and update routetabledblist failed. accountID: %s, "+
+		logs.Errorf("%s-networkinterface compare and update networkinterfacedblist failed. accountID: %s, "+
 			"resGroupName: %s, err: %v", enumor.Azure, req.AccountID, req.ResourceGroupName, err)
 		return nil, err
 	}
@@ -593,7 +595,17 @@ func compareDeleteAzureNetworkInterfaceList(kt *kit.Kit, req *hcservice.AzureNet
 					Op:    filter.Equal.Factory(),
 					Value: enumor.Azure,
 				},
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: req.AccountID,
+				},
 			},
+		}
+		if len(req.ResourceGroupName) > 0 {
+			expr.Rules = append(expr.Rules, &filter.AtomRule{
+				Field: "name", Op: filter.Equal.Factory(), Value: req.ResourceGroupName,
+			})
 		}
 		dbQueryReq := &core.ListReq{
 			Filter: expr,

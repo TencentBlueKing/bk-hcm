@@ -90,7 +90,7 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				CloudVpcIDs:          one.CloudVpcIDs,
 				VpcIDs:               one.VpcIDs,
 				CloudSubnetIDs:       one.CloudSubnetIDs,
-				SubnetIDs:            one.VpcIDs,
+				SubnetIDs:            one.SubnetIDs,
 				CloudImageID:         one.CloudImageID,
 				ImageID:              "",
 				OsName:               one.OsName,

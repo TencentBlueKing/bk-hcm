@@ -51,7 +51,7 @@ func (r *GcpNetworkInterfaceSyncReq) Validate() error {
 // HuaWeiNetworkInterfaceSyncReq defines sync resource request.
 type HuaWeiNetworkInterfaceSyncReq struct {
 	AccountID   string   `json:"account_id" validate:"required"`
-	Region      string   `json:"region" validate:"omitempty"`
+	Region      string   `json:"region" validate:"required"`
 	CloudCvmIDs []string `json:"cloud_cvm_ids" validate:"required"`
 }
 

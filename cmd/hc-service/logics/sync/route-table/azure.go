@@ -124,6 +124,9 @@ func SyncAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyncR
 				}
 			}
 		}
+		if len(tmpList.Details) == 0 {
+			continue
+		}
 
 		cloudIDs := make([]string, 0)
 		for _, item := range tmpList.Details {
@@ -558,7 +561,17 @@ func compareDeleteAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteT
 				&filter.AtomRule{
 					Field: "vendor",
 					Op:    filter.Equal.Factory(),
-					Value: string(enumor.Azure),
+					Value: enumor.Azure,
+				},
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: req.AccountID,
+				},
+				&filter.AtomRule{
+					Field: "name",
+					Op:    filter.Equal.Factory(),
+					Value: req.ResourceGroupName,
 				},
 			},
 		}

@@ -449,6 +449,16 @@ func compareDeleteTCloudRouteTableList(kt *kit.Kit, req *hcroutetable.TCloudRout
 					Op:    filter.Equal.Factory(),
 					Value: string(enumor.TCloud),
 				},
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: req.AccountID,
+				},
+				&filter.AtomRule{
+					Field: "region",
+					Op:    filter.Equal.Factory(),
+					Value: req.Region,
+				},
 			},
 		}
 		dbQueryReq := &core.ListReq{

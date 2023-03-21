@@ -116,10 +116,6 @@ func QuerySecurityGroupIDsAndSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptor
 		return nil, err
 	}
 
-	if len(notExistResult.Details) != len(cloudIDs) {
-		return nil, fmt.Errorf("some security group can not sync, notExistCloudIDs: %v", notExistCloudIDs)
-	}
-
 	for cloudID, id := range convSecurityGroupCloudIDMap(notExistResult) {
 		existMap[cloudID] = id
 	}

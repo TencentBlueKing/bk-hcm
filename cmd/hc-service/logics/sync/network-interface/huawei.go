@@ -491,6 +491,21 @@ func compareDeleteHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiN
 					Op:    filter.Equal.Factory(),
 					Value: enumor.HuaWei,
 				},
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: req.AccountID,
+				},
+				&filter.AtomRule{
+					Field: "region",
+					Op:    filter.Equal.Factory(),
+					Value: req.Region,
+				},
+				&filter.AtomRule{
+					Field: "instance_id",
+					Op:    filter.In.Factory(),
+					Value: req.CloudCvmIDs,
+				},
 			},
 		}
 		dbQueryReq := &core.ListReq{

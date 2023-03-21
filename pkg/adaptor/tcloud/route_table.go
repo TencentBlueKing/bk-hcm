@@ -34,7 +34,7 @@ import (
 
 // UpdateRouteTable update route table.
 // TODO right now only memo is supported to update, add other update operations later.
-func (t *TCloud) UpdateRouteTable(kt *kit.Kit, opt *routetable.TCloudRouteTableUpdateOption) error {
+func (t *TCloud) UpdateRouteTable(_ *kit.Kit, _ *routetable.TCloudRouteTableUpdateOption) error {
 	return nil
 }
 
@@ -90,7 +90,7 @@ func (t *TCloud) ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*route
 	// **NOTICE** this api will not return default route
 	resp, err := vpcClient.DescribeRouteTablesWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("list tencent cloud route table failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("list tencent cloud route table failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return nil, fmt.Errorf("list tencent cloud route table failed, err: %v", err)
 	}
 

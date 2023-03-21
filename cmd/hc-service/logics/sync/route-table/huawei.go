@@ -35,7 +35,6 @@ import (
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -89,7 +88,7 @@ func SyncHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRouteTableSyn
 			return nil, err
 		}
 		if len(tmpIDs) == 0 {
-			return nil, errf.New(errf.RecordNotFound, "huawei cloud route table is empty")
+			break
 		}
 
 		cloudIDs := make([]string, 0)
@@ -415,8 +414,8 @@ func GetNeedDeleteHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRout
 
 		tmpList, tmpErr := cli.ListRouteTableIDs(kt, opt)
 		if tmpErr != nil || len(tmpList) == 0 {
-			logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, region: %s, err: %v",
-				enumor.HuaWei, req.AccountID, req.Region, tmpErr)
+			logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, region: %s, cloudID: %s, "+
+				"err: %v", enumor.HuaWei, req.AccountID, req.Region, tmpCloudID, tmpErr)
 			deleteIDs = append(deleteIDs, tmpID)
 			continue
 		}
@@ -632,7 +631,17 @@ func compareDeleteHuaWeiRouteTableList(kt *kit.Kit, req *hcroutetable.HuaWeiRout
 				&filter.AtomRule{
 					Field: "vendor",
 					Op:    filter.Equal.Factory(),
-					Value: string(enumor.HuaWei),
+					Value: enumor.HuaWei,
+				},
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: req.AccountID,
+				},
+				&filter.AtomRule{
+					Field: "region",
+					Op:    filter.Equal.Factory(),
+					Value: req.Region,
 				},
 			},
 		}
