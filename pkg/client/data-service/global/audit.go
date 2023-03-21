@@ -138,6 +138,30 @@ func (a *AuditClient) CloudResourceOperationAudit(ctx context.Context, h http.He
 	return nil
 }
 
+// CloudResourceRecycleAudit create cloud resource recycle/recover audit.
+func (a *AuditClient) CloudResourceRecycleAudit(ctx context.Context, h http.Header,
+	req *protoaudit.CloudResourceRecycleAuditReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/cloud/resources/recycle_audits/create").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
 // ListAudit list audit.
 func (a *AuditClient) ListAudit(ctx context.Context, h http.Header, request *core.ListReq) (
 	*protoaudit.ListResult, error) {

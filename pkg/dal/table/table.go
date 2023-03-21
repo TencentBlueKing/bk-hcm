@@ -37,6 +37,8 @@ const (
 	IDGenerator Name = "id_generator"
 	// AuditTable is audit table's name
 	AuditTable Name = "audit"
+	// RecycleRecordTable is recycle record table name
+	RecycleRecordTable Name = "recycle_record"
 	// AccountTable is account table's name.
 	AccountTable Name = "account"
 	// AccountBizRelTable is account and biz relation table's name.
@@ -167,6 +169,7 @@ var TableMap = map[Name]struct{}{
 	ApprovalProcessTable:         {},
 	NetworkInterfaceTable:        {},
 	NetworkInterfaceCvmRelTable:  {},
+	RecycleRecordTable:           {},
 }
 
 // Register 注册表名

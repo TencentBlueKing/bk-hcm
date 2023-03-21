@@ -21,6 +21,7 @@ package disk
 
 import (
 	"hcm/pkg/api/core"
+	rr "hcm/pkg/api/core/recycle-record"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
@@ -79,3 +80,33 @@ func (req *DiskReq) Validate() error {
 }
 
 type DiskCvmRelListReq = datarelproto.DiskCvmRelListReq
+
+// -------------------------- Recycle ------------------------
+
+// DiskRecycleReq recycle disk request.
+type DiskRecycleReq struct {
+	Infos []DiskRecycleInfo `json:"infos" validate:"min=1,max=100"`
+}
+
+// DiskRecycleInfo defines recycle one disk info.
+type DiskRecycleInfo struct {
+	ID                     string `json:"id" validate:"required"`
+	*rr.DiskRecycleOptions `json:",inline" validate:"omitempty"`
+}
+
+// Validate DiskRecycleReq
+func (req DiskRecycleReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Recover ------------------------
+
+// DiskRecoverReq recover disk request.
+type DiskRecoverReq struct {
+	IDs []string `json:"ids" validate:"min=1,max=100"`
+}
+
+// Validate DiskRecoverReq
+func (req DiskRecoverReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

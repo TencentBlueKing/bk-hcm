@@ -174,6 +174,46 @@ func (req *CloudResourceOperationAuditReq) Validate() error {
 	return nil
 }
 
+// -------------------------- Recycle Audit --------------------------
+
+// CloudResourceRecycleAuditReq defines create cloud resource recycle audit request.
+type CloudResourceRecycleAuditReq struct {
+	ResType enumor.AuditResourceType   `json:"res_type" validate:"required"`
+	Action  RecycleAction              `json:"action" validate:"required"`
+	Infos   []CloudResRecycleAuditInfo `json:"infos" validate:"min=1,max=100"`
+}
+
+// CloudResRecycleAuditInfo defines create cloud resource recycle audit info.
+type CloudResRecycleAuditInfo struct {
+	ResID string      `json:"res_id" validate:"required"`
+	Data  interface{} `json:"data" validate:"required"`
+}
+
+// Validate CloudResourceRecycleAuditReq.
+func (r *CloudResourceRecycleAuditReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// RecycleAction define recycle action.
+type RecycleAction string
+
+// ConvAuditAction conv audit action from recycle action.
+func (r *RecycleAction) ConvAuditAction() (enumor.AuditAction, error) {
+	switch *r {
+	case Recycle:
+		return enumor.Recycle, nil
+	case Recover:
+		return enumor.Recover, nil
+	default:
+		return "", fmt.Errorf("action has no corresponding audit action")
+	}
+}
+
+const (
+	Recycle RecycleAction = "recycle"
+	Recover RecycleAction = "recover"
+)
+
 // -------------------------- List --------------------------
 
 // ListResp defines list audit response.

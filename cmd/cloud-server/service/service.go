@@ -28,6 +28,7 @@ import (
 	"strings"
 	"time"
 
+	"hcm/cmd/cloud-server/logics"
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
 	"hcm/cmd/cloud-server/service/application"
@@ -41,6 +42,7 @@ import (
 	"hcm/cmd/cloud-server/service/image"
 	instancetype "hcm/cmd/cloud-server/service/instance-type"
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
+	"hcm/cmd/cloud-server/service/recycle"
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
 	routetable "hcm/cmd/cloud-server/service/route-table"
@@ -131,6 +133,8 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		go sync.CloudResourceSync(interval, sd, apiClientSet)
 	}
 
+	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle)
+
 	return svr, nil
 }
 
@@ -210,6 +214,7 @@ func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Cont
 		Audit:      s.audit,
 		Cipher:     s.cipher,
 		EsbClient:  s.esbClient,
+		Logics:     logics.NewLogics(s.client),
 	}
 
 	account.InitAccountService(c)
@@ -226,10 +231,12 @@ func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Cont
 	region.InitRegionService(c)
 	eip.InitEipService(c)
 	instancetype.InitInstanceTypeService(c)
+	networkinterface.InitNetworkInterfaceService(c)
+
 	application.InitApplicationService(c, bkHcmUrl, strings.Split(platformManagers, ","))
 	audit.InitService(c)
-	networkinterface.InitNetworkInterfaceService(c)
 	assign.InitService(c)
+	recycle.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

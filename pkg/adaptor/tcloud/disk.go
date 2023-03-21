@@ -118,14 +118,9 @@ func (t *TCloud) DeleteDisk(kt *kit.Kit, opt *disk.TCloudDiskDeleteOption) error
 		return fmt.Errorf("new tcloud cbs client failed, err: %v", err)
 	}
 
-	resp, err := client.TerminateDisksWithContext(kt.Ctx, req)
+	_, err = client.TerminateDisksWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf(
-			"tcloud delete disk failed, err: %v, rid: %s, resp rid: %s",
-			err,
-			kt.Rid,
-			resp.Response.RequestId,
-		)
+		logs.Errorf("tcloud delete disk failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 

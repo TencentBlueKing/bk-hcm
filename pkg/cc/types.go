@@ -576,3 +576,16 @@ func (c CloudResourceSync) validate() error {
 
 	return nil
 }
+
+// Recycle configuration.
+type Recycle struct {
+	AutoDeleteTime uint `yaml:"autoDeleteTimeHour"`
+}
+
+func (a Recycle) validate() error {
+	if a.AutoDeleteTime == 0 {
+		return errors.New("autoDeleteTimeHour must > 0")
+	}
+
+	return nil
+}

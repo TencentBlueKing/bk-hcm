@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -66,7 +67,13 @@ func (svc *cvmSvc) listCvm(cts *rest.Contexts, authHandler handler.ListAuthResHa
 	if noPermFlag {
 		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
 	}
-	req.Filter = expr
+
+	// filter out cvm in recycle bin
+	req.Filter, err = tools.And(expr, &filter.AtomRule{Field: "recycle_status", Op: filter.NotEqual.Factory(),
+		Value: enumor.RecycleStatus})
+	if err != nil {
+		return nil, err
+	}
 
 	listReq := &dataproto.CvmListReq{
 		Filter: req.Filter,
@@ -83,6 +90,11 @@ func (svc *cvmSvc) GetCvm(cts *rest.Contexts) (interface{}, error) {
 // GetBizCvm get biz cvm.
 func (svc *cvmSvc) GetBizCvm(cts *rest.Contexts) (interface{}, error) {
 	return svc.getCvm(cts, handler.BizValidWithAuth)
+}
+
+// GetRecycledCvm get recycled cvm.
+func (svc *cvmSvc) GetRecycledCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.getCvm(cts, handler.RecycleValidWithAuth)
 }
 
 func (svc *cvmSvc) getCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {

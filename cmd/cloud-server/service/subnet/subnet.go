@@ -521,11 +521,11 @@ func (svc *subnetSvc) batchDeleteSubnet(cts *rest.Contexts, validHandler handler
 		}
 
 		if err != nil {
-			return core.BatchDeleteResp{
+			return core.BatchOperateResult{
 				Succeeded: succeeded,
 				Failed: &core.FailedInfo{
 					ID:    id,
-					Error: err.Error(),
+					Error: err,
 				},
 			}, errf.NewFromErr(errf.PartialFailed, err)
 		}
@@ -533,7 +533,7 @@ func (svc *subnetSvc) batchDeleteSubnet(cts *rest.Contexts, validHandler handler
 		succeeded = append(succeeded, id)
 	}
 
-	return core.BatchDeleteResp{Succeeded: succeeded}, nil
+	return core.BatchOperateResult{Succeeded: succeeded}, nil
 }
 
 // AssignSubnetToBiz assign subnets to biz.

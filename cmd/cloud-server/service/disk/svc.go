@@ -25,9 +25,9 @@ import (
 	"io/ioutil"
 
 	"hcm/cmd/cloud-server/logics/audit"
+	disklgc "hcm/cmd/cloud-server/logics/disk"
 	cloudproto "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/api/core"
-	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/api/data-service/cloud"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
@@ -52,6 +52,7 @@ type diskSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
+	diskLgc    disklgc.Interface
 }
 
 // ListDisk list disk.
@@ -87,11 +88,18 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 		return &cloudproto.DiskListResult{Details: make([]*cloudproto.DiskResult, 0)}, nil
 	}
 
+	// filter out disk in recycle bin
+	req.Filter, err = tools.And(expr, &filter.AtomRule{Field: "recycle_status", Op: filter.NotEqual.Factory(),
+		Value: enumor.RecycleStatus})
+	if err != nil {
+		return nil, err
+	}
+
 	resp, err := svc.client.DataService().Global.ListDisk(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.DiskListReq{
-			Filter: expr,
+			Filter: req.Filter,
 			Page:   req.Page,
 		},
 	)
@@ -169,10 +177,8 @@ func (svc *diskSvc) deleteDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		return nil, err
 	}
 
-	// create delete audit.
-	err = svc.audit.ResDeleteAudit(cts.Kit, enumor.DiskAuditResType, []string{diskID})
+	err = svc.diskLgc.DeleteDisk(cts.Kit, basicInfo.Vendor, basicInfo.ID, basicInfo.AccountID)
 	if err != nil {
-		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -202,6 +208,11 @@ func (svc *diskSvc) RetrieveDisk(cts *rest.Contexts) (interface{}, error) {
 // RetrieveBizDisk 查询业务下的云盘详情.
 func (svc *diskSvc) RetrieveBizDisk(cts *rest.Contexts) (interface{}, error) {
 	return svc.retrieveDisk(cts, handler.BizValidWithAuth)
+}
+
+// RetrieveRecycledDisk get recycled disk.
+func (svc *diskSvc) RetrieveRecycledDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.retrieveDisk(cts, handler.RecycleValidWithAuth)
 }
 
 func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
@@ -436,11 +447,12 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		return nil, err
 	}
 
+	// get cvm id
 	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&datarelproto.DiskCvmRelListReq{
-			Filter: tools.ContainersExpression("disk_id", []string{req.DiskID}),
+			Filter: tools.EqualExpression("disk_id", req.DiskID),
 			Page:   core.DefaultBasePage,
 		},
 	)
@@ -450,40 +462,12 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 
 	cvmID := rels.Details[0].CvmID
 
-	operationInfo := protoaudit.CloudResourceOperationInfo{
-		ResType:           enumor.DiskAuditResType,
-		ResID:             req.DiskID,
-		Action:            protoaudit.Disassociate,
-		AssociatedResType: enumor.CvmAuditResType,
-		AssociatedResID:   cvmID,
-	}
-
-	err = svc.audit.ResOperationAudit(cts.Kit, operationInfo)
+	err = svc.diskLgc.DetachDisk(cts.Kit, basicInfo.Vendor, cvmID, req.DiskID, basicInfo.AccountID)
 	if err != nil {
-		logs.Errorf("create detach disk audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("detach disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
-	detachReq := &hcproto.DiskDetachReq{
-		AccountID: basicInfo.AccountID,
-		CvmID:     cvmID,
-		DiskID:    req.DiskID,
-	}
-
-	switch basicInfo.Vendor {
-	case enumor.TCloud:
-		return nil, svc.client.HCService().TCloud.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
-	case enumor.Aws:
-		return nil, svc.client.HCService().Aws.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
-	case enumor.HuaWei:
-		return nil, svc.client.HCService().HuaWei.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
-	case enumor.Gcp:
-		return nil, svc.client.HCService().Gcp.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
-	case enumor.Azure:
-		return nil, svc.client.HCService().Gcp.Disk.DetachDisk(cts.Kit.Ctx, cts.Kit.Header(), detachReq)
-	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
-	}
+	return nil, nil
 }
 
 func (svc *diskSvc) authorizeDiskAssignOp(kt *kit.Kit, ids []string) error {

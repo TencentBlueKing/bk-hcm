@@ -48,6 +48,8 @@ type Interface interface {
 		ids []string) error
 	// ResOperationAudit 资源操作审计，如绑定、解绑、挂载、卸载等。
 	ResOperationAudit(kt *kit.Kit, info protoaudit.CloudResourceOperationInfo) error
+	// ResRecycleAudit 资源回收/恢复审计
+	ResRecycleAudit(kt *kit.Kit, req *protoaudit.CloudResourceRecycleAuditReq) error
 }
 
 var _ Interface = new(audit)
@@ -235,6 +237,16 @@ func (a audit) ResOperationAudit(kt *kit.Kit, info protoaudit.CloudResourceOpera
 	if err := a.dataCli.Global.Audit.CloudResourceOperationAudit(kt.Ctx, kt.Header(), req); err != nil {
 		logs.Errorf("request dataservice CloudResourceOperationAudit failed, err: %v, req: %v, rid: %s", err,
 			req, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// ResRecycleAudit create cloud resource recycle/recover audit.
+func (a audit) ResRecycleAudit(kt *kit.Kit, req *protoaudit.CloudResourceRecycleAuditReq) error {
+	if err := a.dataCli.Global.Audit.CloudResourceRecycleAudit(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("create cloud resource recycle audit failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 		return err
 	}
 

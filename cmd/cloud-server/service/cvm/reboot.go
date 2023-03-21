@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -73,7 +74,7 @@ func (svc *cvmSvc) batchRebootCvmSvc(cts *rest.Contexts, validHandler handler.Va
 		return nil, err
 	}
 
-	cvmVendorMap := cvmClassificationByVendor(basicInfoMap)
+	cvmVendorMap := classifier.ClassifyBasicInfoByVendor(basicInfoMap)
 	successIDs := make([]string, 0)
 	for vendor, infos := range cvmVendorMap {
 		switch vendor {
@@ -81,10 +82,10 @@ func (svc *cvmSvc) batchRebootCvmSvc(cts *rest.Contexts, validHandler handler.Va
 			ids, err := svc.batchRebootCvm(cts.Kit, vendor, infos)
 			successIDs = append(successIDs, ids...)
 			if err != nil {
-				return core.BatchDeleteResp{
+				return core.BatchOperateResult{
 					Succeeded: successIDs,
 					Failed: &core.FailedInfo{
-						Error: err.Error(),
+						Error: err,
 					},
 				}, errf.NewFromErr(errf.PartialFailed, err)
 			}
@@ -93,21 +94,21 @@ func (svc *cvmSvc) batchRebootCvmSvc(cts *rest.Contexts, validHandler handler.Va
 			ids, failedID, err := svc.rebootCvm(cts.Kit, vendor, infos)
 			successIDs = append(successIDs, ids...)
 			if err != nil {
-				return core.BatchDeleteResp{
+				return core.BatchOperateResult{
 					Succeeded: successIDs,
 					Failed: &core.FailedInfo{
 						ID:    failedID,
-						Error: err.Error(),
+						Error: err,
 					},
 				}, errf.NewFromErr(errf.PartialFailed, err)
 			}
 
 		default:
-			return core.BatchDeleteResp{
+			return core.BatchOperateResult{
 				Succeeded: successIDs,
 				Failed: &core.FailedInfo{
 					ID:    infos[0].ID,
-					Error: errf.Newf(errf.Unknown, "vendor: %s not support", vendor).Error(),
+					Error: errf.Newf(errf.Unknown, "vendor: %s not support", vendor),
 				},
 			}, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 		}
@@ -145,7 +146,7 @@ func (svc *cvmSvc) rebootCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.
 func (svc *cvmSvc) batchRebootCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudResourceBasicInfo) (
 	[]string, error) {
 
-	cvmMap := cvmClassification(infoMap)
+	cvmMap := classifier.ClassifyBasicInfoByAccount(infoMap)
 	successIDs := make([]string, 0)
 	for accountID, reginMap := range cvmMap {
 		for region, ids := range reginMap {

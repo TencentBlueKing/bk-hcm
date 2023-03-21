@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud/disk"
 	tabletype "hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/json"
@@ -250,8 +251,42 @@ func (dSvc *diskSvc) BatchDeleteDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	_, err := dSvc.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		return nil, dSvc.objectDao.DeleteWithTx(cts.Kit, txn, req.Filter)
+	opt := &types.ListOption{
+		Fields: []string{"id"},
+		Filter: req.Filter,
+		Page:   core.DefaultBasePage,
+	}
+	listResp, err := dSvc.objectDao.List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list disk failed, err: %v", err)
+	}
+
+	if len(listResp.Details) == 0 {
+		return nil, nil
+	}
+
+	delIDs := make([]string, len(listResp.Details))
+	for index, one := range listResp.Details {
+		delIDs[index] = one.ID
+	}
+
+	_, err = dSvc.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		delFilter := tools.ContainersExpression("id", delIDs)
+		if err := dSvc.objectDao.DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+			return nil, err
+		}
+
+		// delete disk related recycle records
+		delRecycleRecordFilter, err := tools.And(tools.ContainersExpression("res_id", delIDs),
+			tools.EqualExpression("res_type", enumor.DiskCloudResType))
+		if err != nil {
+			return nil, err
+		}
+		if err := dSvc.RecycleRecord().BatchDeleteWithTx(cts.Kit, txn, delRecycleRecordFilter); err != nil {
+			return nil, err
+		}
+		return nil, nil
 	})
 	if err != nil {
 		return nil, err

@@ -20,6 +20,7 @@
 package handler
 
 import (
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
@@ -33,7 +34,7 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 		return err
 	}
 
-	if opt.BasicInfo.BkBizID <= 0 {
+	if bizID <= 0 {
 		return errf.New(errf.InvalidParameter, "resource is not in biz")
 	}
 
@@ -43,6 +44,10 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 			return errf.New(errf.InvalidParameter, "resource biz not matches url biz")
 		}
 
+		if opt.BasicInfo.RecycleStatus == enumor.RecycleStatus {
+			return errf.New(errf.InvalidParameter, "resource is in recycle bin")
+		}
+
 		authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action},
 			BizID: opt.BasicInfo.BkBizID}
 		return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes)
@@ -50,10 +55,14 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 
 	// batch authorize resource
 	authRes := make([]meta.ResourceAttribute, 0, len(opt.BasicInfos))
-	notMatchedIDs := make([]string, 0)
+	notMatchedIDs, recycledIDs := make([]string, 0), make([]string, 0)
 	for id, info := range opt.BasicInfos {
 		if info.BkBizID != bizID {
 			notMatchedIDs = append(notMatchedIDs, id)
+		}
+
+		if info.RecycleStatus == enumor.RecycleStatus {
+			recycledIDs = append(recycledIDs, id)
 		}
 
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action},
@@ -62,6 +71,10 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 
 	if len(notMatchedIDs) > 0 {
 		return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) not matches url biz", notMatchedIDs)
+	}
+
+	if len(recycledIDs) > 0 {
+		return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) is in recycle bin", recycledIDs)
 	}
 
 	return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes...)

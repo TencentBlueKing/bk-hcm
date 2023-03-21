@@ -85,7 +85,7 @@ type AwsBatchStopReq struct {
 	Region    string   `json:"region" validate:"required"`
 	IDs       []string `json:"ids" validate:"required"`
 	Force     bool     `json:"force" validate:"required"`
-	Hibernate bool     `json:"hibernate" validate:"required"`
+	Hibernate bool     `json:"hibernate" validate:"omitempty"`
 }
 
 // Validate request.

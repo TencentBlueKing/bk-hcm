@@ -45,6 +45,7 @@ import (
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
 	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/zone"
+	recyclerecord "hcm/cmd/data-service/service/recycle-record"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/cryptography"
@@ -198,6 +199,7 @@ func (s *Service) apiSet() *restful.Container {
 	eipcvmrel.InitService(capability)
 	networkinterface.InitNetInterfaceService(capability)
 	networkcvmrel.InitService(capability)
+	recyclerecord.InitRecycleRecordService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 
+	rr "hcm/pkg/api/core/recycle-record"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
@@ -93,5 +94,35 @@ func (req *BatchRebootCvmReq) Validate() error {
 		return fmt.Errorf("cvm ids should <= %d", constant.BatchOperationMaxLimit)
 	}
 
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Recycle ------------------------
+
+// CvmRecycleReq recycle cvm request.
+type CvmRecycleReq struct {
+	Infos []CvmRecycleInfo `json:"infos" validate:"min=1,max=100"`
+}
+
+// CvmRecycleInfo defines recycle one cvm info.
+type CvmRecycleInfo struct {
+	ID                    string `json:"id" validate:"required"`
+	*rr.CvmRecycleOptions `json:",inline" validate:"required"`
+}
+
+// Validate CvmRecycleReq
+func (req CvmRecycleReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Recover ------------------------
+
+// CvmRecoverReq recover cvm request.
+type CvmRecoverReq struct {
+	IDs []string `json:"ids" validate:"min=1,max=100"`
+}
+
+// Validate CvmRecoverReq
+func (req CvmRecoverReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

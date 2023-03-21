@@ -42,7 +42,7 @@ func (svc *cvmSvc) initAwsCvmService(cap *capability.Capability) {
 	h.Add("BatchStartAwsCvm", http.MethodPost, "/vendors/aws/cvms/batch/start", svc.BatchStartAwsCvm)
 	h.Add("BatchStopAwsCvm", http.MethodPost, "/vendors/aws/cvms/batch/stop", svc.BatchStopAwsCvm)
 	h.Add("BatchRebootAwsCvm", http.MethodPost, "/vendors/aws/cvms/batch/reboot", svc.BatchRebootAwsCvm)
-	h.Add("BatchDeleteAwsCvm", http.MethodDelete, "/vendors/aws/cvms/batch/delete", svc.BatchDeleteAwsCvm)
+	h.Add("BatchDeleteAwsCvm", http.MethodDelete, "/vendors/aws/cvms/batch", svc.BatchDeleteAwsCvm)
 
 	h.Load(cap.WebService)
 }

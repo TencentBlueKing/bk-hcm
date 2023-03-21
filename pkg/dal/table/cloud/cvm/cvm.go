@@ -53,6 +53,7 @@ var TableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "os_name", NamedC: "os_name", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
+	{Column: "recycle_status", NamedC: "recycle_status", Type: enumor.String},
 	{Column: "private_ipv4_addresses", NamedC: "private_ipv4_addresses", Type: enumor.Json},
 	{Column: "private_ipv6_addresses", NamedC: "private_ipv6_addresses", Type: enumor.Json},
 	{Column: "public_ipv4_addresses", NamedC: "public_ipv4_addresses", Type: enumor.Json},
@@ -88,6 +89,7 @@ type Table struct {
 	OsName               string            `db:"os_name" json:"os_name"`
 	Memo                 *string           `db:"memo" json:"memo"`
 	Status               string            `db:"status" validate:"lte=50" json:"status"`
+	RecycleStatus        string            `db:"recycle_status" validate:"lte=32" json:"recycle_status"`
 	PrivateIPv4Addresses types.StringArray `db:"private_ipv4_addresses" json:"private_ipv4_addresses"`
 	PrivateIPv6Addresses types.StringArray `db:"private_ipv6_addresses" json:"private_ipv6_addresses"`
 	PublicIPv4Addresses  types.StringArray `db:"public_ipv4_addresses" json:"public_ipv4_addresses"`

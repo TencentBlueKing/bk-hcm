@@ -76,6 +76,8 @@ const (
 	Assign AuditAction = "assign"
 	// Recycle 回收
 	Recycle AuditAction = "recycle"
+	// Recover 恢复
+	Recover AuditAction = "recover"
 	// Reboot 重启
 	Reboot AuditAction = "reboot"
 	// Start 开机
@@ -99,6 +101,7 @@ var AuditActionEnums = map[AuditAction]struct{}{
 	Delete:       {},
 	Assign:       {},
 	Recycle:      {},
+	Recover:      {},
 	Reboot:       {},
 	Start:        {},
 	Stop:         {},

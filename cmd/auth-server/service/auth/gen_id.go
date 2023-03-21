@@ -208,15 +208,18 @@ func genRecycleBinResource(a *meta.ResourceAttribute) (client.ActionID, []client
 		ID:     a.ResourceID,
 	}
 
+	bizRes := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.ResourceFind, []client.Resource{res}, nil
-	case meta.Recycle, meta.Recover:
-		bizRes := client.Resource{
-			System: sys.SystemIDCMDB,
-			Type:   sys.Biz,
-			ID:     strconv.FormatInt(a.BizID, 10),
+		if a.BizID > 0 {
+			return sys.BizAccess, []client.Resource{bizRes}, nil
 		}
+		return sys.RecycleBinFind, []client.Resource{res}, nil
+	case meta.Recycle, meta.Recover:
 		return sys.RecycleBinManage, []client.Resource{res, bizRes}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)

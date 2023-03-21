@@ -30,6 +30,7 @@ func InitDiskService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
+		diskLgc:    c.Logics.Disk,
 	}
 
 	h := rest.NewHandler()
@@ -54,6 +55,13 @@ func InitDiskService(c *capability.Capability) {
 	h.Add("DeleteBizDisk", http.MethodDelete, "/bizs/{bk_biz_id}/disks/{id}", svc.DeleteBizDisk)
 	h.Add("AttachBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/attach", svc.AttachBizDisk)
 	h.Add("DetachBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/detach", svc.DetachBizDisk)
+
+	// recycle operation related apis
+	h.Add("RecycleDisk", http.MethodPost, "/disks/recycle", svc.RecycleDisk)
+	h.Add("RecycleBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/recycle", svc.RecycleBizDisk)
+	h.Add("RecoverDisk", http.MethodPost, "/disks/recover", svc.RecoverDisk)
+	h.Add("RetrieveRecycledDisk", http.MethodGet, "/recycled/disks/{id}", svc.RetrieveRecycledDisk)
+	h.Add("BatchDeleteRecycledDisk", http.MethodDelete, "/recycled/disks/batch", svc.BatchDeleteRecycledDisk)
 
 	h.Load(c.WebService)
 }

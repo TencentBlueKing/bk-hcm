@@ -94,7 +94,7 @@ type AwsStopOption struct {
 	// in the Amazon EC2 User Guide.
 	//
 	// Default: false
-	Hibernate bool `json:"hibernate" validate:"required"`
+	Hibernate bool `json:"hibernate" validate:"omitempty"`
 }
 
 // Validate aws cvm operation option.

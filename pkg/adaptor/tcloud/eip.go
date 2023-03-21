@@ -116,14 +116,9 @@ func (t *TCloud) DeleteEip(kt *kit.Kit, opt *eip.TCloudEipDeleteOption) error {
 		return err
 	}
 
-	resp, err := client.ReleaseAddressesWithContext(kt.Ctx, req)
+	_, err = client.ReleaseAddressesWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf(
-			"tcloud release eip failed, err: %v, rid: %s, resp rid: %s",
-			err,
-			kt.Rid,
-			resp.Response.RequestId,
-		)
+		logs.Errorf("tcloud release eip failed, err: %v, rid: %s, resp rid: %s", err, kt.Rid)
 		return err
 	}
 

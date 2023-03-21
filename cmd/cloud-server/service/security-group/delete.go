@@ -81,11 +81,11 @@ func (svc *securityGroupSvc) batchDeleteSecurityGroup(cts *rest.Contexts, validH
 		baseInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 			enumor.SecurityGroupCloudResType, id)
 		if err != nil {
-			return core.BatchDeleteResp{
+			return core.BatchOperateResult{
 				Succeeded: successIDs,
 				Failed: &core.FailedInfo{
 					ID:    id,
-					Error: err.Error(),
+					Error: err,
 				},
 			}, errf.NewFromErr(errf.PartialFailed, err)
 		}
@@ -103,11 +103,11 @@ func (svc *securityGroupSvc) batchDeleteSecurityGroup(cts *rest.Contexts, validH
 			return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, baseInfo.Vendor)
 		}
 		if err != nil {
-			return core.BatchDeleteResp{
+			return core.BatchOperateResult{
 				Succeeded: successIDs,
 				Failed: &core.FailedInfo{
 					ID:    id,
-					Error: err.Error(),
+					Error: err,
 				},
 			}, errf.NewFromErr(errf.PartialFailed, err)
 		}

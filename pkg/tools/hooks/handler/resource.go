@@ -21,6 +21,7 @@ package handler
 
 import (
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
@@ -36,6 +37,10 @@ func ResValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 			return errf.Newf(errf.InvalidParameter, "resource %s is already assigned", opt.BasicInfo.ID)
 		}
 
+		if opt.BasicInfo.RecycleStatus == enumor.RecycleStatus {
+			return errf.New(errf.InvalidParameter, "resource is in recycle bin")
+		}
+
 		authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action,
 			ResourceID: opt.BasicInfo.AccountID}}
 		return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes)
@@ -43,11 +48,15 @@ func ResValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 
 	// batch authorize resource
 	authRes := make([]meta.ResourceAttribute, 0, len(opt.BasicInfos))
-	assignedIDs := make([]string, 0)
+	assignedIDs, recycledIDs := make([]string, 0), make([]string, 0)
 	for id, info := range opt.BasicInfos {
 		// validate if resource is not in biz for write operation
 		if opt.Action != meta.Find && info.BkBizID != constant.UnassignedBiz && info.BkBizID != 0 {
 			assignedIDs = append(assignedIDs, id)
+		}
+
+		if info.RecycleStatus == enumor.RecycleStatus {
+			recycledIDs = append(recycledIDs, id)
 		}
 
 		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action,
@@ -56,6 +65,10 @@ func ResValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 
 	if len(assignedIDs) > 0 {
 		return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) are already assigned", assignedIDs)
+	}
+
+	if len(recycledIDs) > 0 {
+		return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) is in recycle bin", recycledIDs)
 	}
 
 	return opt.Authorizer.AuthorizeWithPerm(cts.Kit, authRes...)

@@ -21,7 +21,6 @@ package cvm
 
 import (
 	proto "hcm/pkg/api/cloud-server"
-	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/enumor"
@@ -29,8 +28,8 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -73,50 +72,9 @@ func (svc *cvmSvc) batchDeleteCvmSvc(cts *rest.Contexts, validHandler handler.Va
 		return nil, err
 	}
 
-	if err = svc.audit.ResDeleteAudit(cts.Kit, enumor.CvmAuditResType, req.IDs); err != nil {
-		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	cvmVendorMap := cvmClassificationByVendor(basicInfoMap)
-	successIDs := make([]string, 0)
-	for vendor, infos := range cvmVendorMap {
-		switch vendor {
-		case enumor.TCloud, enumor.Aws, enumor.HuaWei:
-			ids, err := svc.batchDeleteCvm(cts.Kit, vendor, infos)
-			successIDs = append(successIDs, ids...)
-			if err != nil {
-				return core.BatchDeleteResp{
-					Succeeded: successIDs,
-					Failed: &core.FailedInfo{
-						Error: err.Error(),
-					},
-				}, errf.NewFromErr(errf.PartialFailed, err)
-			}
-
-		case enumor.Azure, enumor.Gcp:
-			ids, failedID, err := svc.deleteCvm(cts.Kit, vendor, infos)
-			successIDs = append(successIDs, ids...)
-			if err != nil {
-				return core.BatchDeleteResp{
-					Succeeded: successIDs,
-					Failed: &core.FailedInfo{
-						ID:    failedID,
-						Error: err.Error(),
-					},
-				}, errf.NewFromErr(errf.PartialFailed, err)
-			}
-
-		default:
-			return core.BatchDeleteResp{
-				Succeeded: successIDs,
-				Failed: &core.FailedInfo{
-					ID:    infos[0].ID,
-					Error: errf.Newf(errf.Unknown, "vendor: %s not support", vendor).Error(),
-				},
-			}, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
-		}
-
+	delRes, err := svc.cvmLgc.BatchDeleteCvm(cts.Kit, basicInfoMap)
+	if err != nil {
+		return delRes, err
 	}
 
 	return nil, nil
@@ -153,7 +111,7 @@ func (svc *cvmSvc) deleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.
 func (svc *cvmSvc) batchDeleteCvm(kt *kit.Kit, vendor enumor.Vendor, infoMap []types.CloudResourceBasicInfo) (
 	[]string, error) {
 
-	cvmMap := cvmClassification(infoMap)
+	cvmMap := classifier.ClassifyBasicInfoByAccount(infoMap)
 	successIDs := make([]string, 0)
 	for accountID, reginMap := range cvmMap {
 		for region, ids := range reginMap {

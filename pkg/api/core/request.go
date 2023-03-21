@@ -57,8 +57,8 @@ func (d *BatchDeleteReq) Validate() error {
 	return nil
 }
 
-// BatchDeleteResp is a standard batch delete operation http response.
-type BatchDeleteResp struct {
+// BatchOperateResult is a standard batch operation result.
+type BatchOperateResult struct {
 	Succeeded []string    `json:"succeeded,omitempty"`
 	Failed    *FailedInfo `json:"failed,omitempty"`
 }
@@ -66,7 +66,13 @@ type BatchDeleteResp struct {
 // FailedInfo is a standard operation failed info.
 type FailedInfo struct {
 	ID    string `json:"id"`
-	Error string `json:"error"`
+	Error error  `json:"error"`
+}
+
+// BatchOperateAllResult is a standard batch operate all operation result.
+type BatchOperateAllResult struct {
+	Succeeded []string     `json:"succeeded,omitempty"`
+	Failed    []FailedInfo `json:"failed,omitempty"`
 }
 
 // UpdateResp ...

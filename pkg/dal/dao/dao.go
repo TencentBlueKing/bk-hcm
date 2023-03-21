@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/dal/dao/cloud/zone"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
+	recyclerecord "hcm/pkg/dal/dao/recycle-record"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/kit"
 	"hcm/pkg/metrics"
@@ -114,6 +115,7 @@ type Set interface {
 	Application() application.Application
 	ApprovalProcess() application.ApprovalProcess
 	NetworkInterface() networkinterface.NetworkInterface
+	RecycleRecord() recyclerecord.RecycleRecord
 
 	Txn() *Txn
 }
@@ -408,4 +410,9 @@ func (s *set) NetworkInterface() networkinterface.NetworkInterface {
 		IDGen: s.idGen,
 		Audit: s.audit,
 	}
+}
+
+// RecycleRecord return recycle record dao.
+func (s *set) RecycleRecord() recyclerecord.RecycleRecord {
+	return recyclerecord.NewRecycleRecordDao(s.orm, s.idGen, s.audit)
 }

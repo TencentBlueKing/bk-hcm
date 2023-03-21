@@ -73,11 +73,11 @@ func (svc *firewallSvc) batchDeleteGcpFirewallRule(cts *rest.Contexts, validHand
 	successIDs := make([]string, 0)
 	for _, id := range req.IDs {
 		if err := svc.client.HCService().Gcp.Firewall.DeleteFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), id); err != nil {
-			return core.BatchDeleteResp{
+			return core.BatchOperateResult{
 				Succeeded: successIDs,
 				Failed: &core.FailedInfo{
 					ID:    id,
-					Error: err.Error(),
+					Error: err,
 				},
 			}, errf.NewFromErr(errf.PartialFailed, err)
 		}

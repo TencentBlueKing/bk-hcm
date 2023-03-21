@@ -23,10 +23,11 @@ import (
 	"net/http"
 
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/cmd/cloud-server/logics/cvm"
+	"hcm/cmd/cloud-server/logics/disk"
+	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
@@ -37,6 +38,8 @@ func InitCvmService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
+		diskLgc:    c.Logics.Disk,
+		cvmLgc:     c.Logics.Cvm,
 	}
 
 	h := rest.NewHandler()
@@ -57,6 +60,13 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchStopBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/stop", svc.BatchStopBizCvm)
 	h.Add("BatchRebootBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/reboot", svc.BatchRebootBizCvm)
 
+	// recycle operation related apis
+	h.Add("RecycleCvm", http.MethodPost, "/cvms/recycle", svc.RecycleCvm)
+	h.Add("RecycleBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recycle", svc.RecycleBizCvm)
+	h.Add("RecoverCvm", http.MethodPost, "/cvms/recover", svc.RecoverCvm)
+	h.Add("GetRecycledCvm", http.MethodGet, "/recycled/cvms/{id}", svc.GetRecycledCvm)
+	h.Add("BatchDeleteRecycledCvm", http.MethodDelete, "/recycled/cvms/batch", svc.BatchDeleteRecycledCvm)
+
 	h.Load(c.WebService)
 }
 
@@ -64,45 +74,7 @@ type cvmSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
-}
-
-func cvmClassificationByVendor(infoMap map[string]types.CloudResourceBasicInfo) map[enumor.Vendor][]types.
-	CloudResourceBasicInfo {
-
-	cvmVendorMap := make(map[enumor.Vendor][]types.CloudResourceBasicInfo, 0)
-	for _, info := range infoMap {
-		if _, exist := cvmVendorMap[info.Vendor]; !exist {
-			cvmVendorMap[info.Vendor] = []types.CloudResourceBasicInfo{info}
-			continue
-		}
-
-		cvmVendorMap[info.Vendor] = append(cvmVendorMap[info.Vendor], info)
-	}
-
-	return cvmVendorMap
-}
-
-func cvmClassification(infoMap []types.CloudResourceBasicInfo,
-) map[string] /*account_id*/ map[string] /*regin*/ []string {
-
-	cvmMap := make(map[string]map[string][]string, 0)
-	for _, one := range infoMap {
-		if _, exist := cvmMap[one.AccountID]; !exist {
-			cvmMap[one.AccountID] = map[string][]string{
-				one.Region: {one.ID},
-			}
-
-			continue
-		}
-
-		if _, exist := cvmMap[one.AccountID][one.Region]; !exist {
-			cvmMap[one.AccountID][one.Region] = []string{one.ID}
-
-			continue
-		}
-
-		cvmMap[one.AccountID][one.Region] = append(cvmMap[one.AccountID][one.Region], one.ID)
-	}
-
-	return cvmMap
+	diskLgc    disk.Interface
+	cvmLgc     cvm.Interface
+	eipLgc     eip.Interface
 }

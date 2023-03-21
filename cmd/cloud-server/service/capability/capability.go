@@ -20,6 +20,7 @@
 package capability
 
 import (
+	"hcm/cmd/cloud-server/logics"
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/client"
 	"hcm/pkg/cryptography"
@@ -37,4 +38,5 @@ type Capability struct {
 	Audit      audit.Interface
 	Cipher     cryptography.Crypto
 	EsbClient  esb.Client
+	Logics     *logics.Logics
 }

@@ -114,6 +114,7 @@ type CloudServerSetting struct {
 	BkHcmUrl         string        `yaml:"bkHcmUrl"`
 	PlatformManagers string        `yaml:"platformManagers"`
 	CloudResource    CloudResource `yaml:"cloudResource"`
+	Recycle          Recycle       `yaml:"recycle"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -156,6 +157,10 @@ func (s CloudServerSetting) Validate() error {
 	}
 
 	if err := s.CloudResource.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Recycle.validate(); err != nil {
 		return err
 	}
 
