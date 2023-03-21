@@ -254,6 +254,7 @@ func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff,
 				ServiceType: cloudMap[id].Disk.ServiceType,
 				Encrypted:   cloudMap[id].Disk.Encrypted,
 				Attachment:  attachments,
+				Bootable:    cloudMap[id].Disk.Bootable,
 			},
 		}
 		createReq = append(createReq, disk)
@@ -287,6 +288,10 @@ func isHuaWeiDiskChange(db *HuaWeiDiskSyncDS, cloud *HuaWeiDiskSyncDiff) bool {
 	}
 
 	if !assert.IsPtrBoolEqual(cloud.Disk.Encrypted, db.HcDisk.Extension.Encrypted) {
+		return true
+	}
+
+	if cloud.Disk.Bootable != db.HcDisk.Extension.Bootable {
 		return true
 	}
 
@@ -344,6 +349,7 @@ func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, 
 				ServiceType: cloudMap[id].Disk.ServiceType,
 				Encrypted:   cloudMap[id].Disk.Encrypted,
 				Attachment:  attachments,
+				Bootable:    cloudMap[id].Disk.Bootable,
 			},
 		}
 		updateReq = append(updateReq, disk)

@@ -38,4 +38,5 @@ type AzureDiskExtensionResult struct {
 type AzureDiskExtensionUpdateReq struct {
 	ResourceGroupName string `json:"resource_group_name"`
 	Encrypted         *bool  `json:"encrypted,omitempty"`
+	OSType            string `json:"os_type,omitempty"`
 }

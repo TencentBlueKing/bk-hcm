@@ -238,6 +238,7 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 			Memo: nil,
 			Extension: &dataproto.AzureDiskExtensionCreateReq{
 				ResourceGroupName: req.ResourceGroupName,
+				OSType:            converter.PtrToVal(cloudMap[id].Disk.OSType),
 			},
 		}
 		if len(cloudMap[id].Disk.Zones) > 0 {
@@ -265,6 +266,10 @@ func isAzureDiskChange(db *AzureDiskSyncDS, cloud *AzureDiskSyncDiff) bool {
 		return true
 	}
 
+	if converter.PtrToVal(cloud.Disk.OSType) != db.HcDisk.Extension.OSType {
+		return true
+	}
+
 	return false
 }
 
@@ -283,6 +288,7 @@ func diffAzureSyncUpdate(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, ds
 			Status: string(*cloudMap[id].Disk.Status),
 			Extension: &dataproto.AzureDiskExtensionUpdateReq{
 				ResourceGroupName: req.ResourceGroupName,
+				OSType:            converter.PtrToVal(cloudMap[id].Disk.OSType),
 			},
 		}
 		updateReq = append(updateReq, disk)

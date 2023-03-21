@@ -294,11 +294,13 @@ func diffTCloudDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
 					RenewFlag: cloudMap[id].Disk.RenewFlag,
 					Period:    cloudMap[id].Disk.DifferDaysOfDeadline,
 				},
-				Encrypted:    cloudMap[id].Disk.Encrypt,
-				Attached:     cloudMap[id].Disk.Attached,
-				DiskUsage:    cloudMap[id].Disk.DiskUsage,
-				InstanceId:   cloudMap[id].Disk.InstanceId,
-				InstanceType: cloudMap[id].Disk.InstanceType,
+				Encrypted:          cloudMap[id].Disk.Encrypt,
+				Attached:           cloudMap[id].Disk.Attached,
+				DiskUsage:          cloudMap[id].Disk.DiskUsage,
+				InstanceId:         cloudMap[id].Disk.InstanceId,
+				InstanceType:       cloudMap[id].Disk.InstanceType,
+				DeleteWithInstance: cloudMap[id].Disk.DeleteWithInstance,
+				DeadlineTime:       cloudMap[id].Disk.DeadlineTime,
 			},
 		}
 		createReq = append(createReq, disk)
@@ -355,6 +357,14 @@ func isTCloudDiskChange(db *TCloudDiskSyncDS, cloud *TCloudDiskSyncDiff) bool {
 		return true
 	}
 
+	if !assert.IsPtrStringEqual(cloud.Disk.DeadlineTime, db.HcDisk.Extension.DeadlineTime) {
+		return true
+	}
+
+	if !assert.IsPtrBoolEqual(cloud.Disk.DeleteWithInstance, db.HcDisk.Extension.DeleteWithInstance) {
+		return true
+	}
+
 	return false
 }
 
@@ -377,11 +387,13 @@ func diffTCloudDiskSyncUpdate(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDi
 					RenewFlag: cloudMap[id].Disk.RenewFlag,
 					Period:    cloudMap[id].Disk.DifferDaysOfDeadline,
 				},
-				Encrypted:    cloudMap[id].Disk.Encrypt,
-				Attached:     cloudMap[id].Disk.Attached,
-				DiskUsage:    cloudMap[id].Disk.DiskUsage,
-				InstanceId:   cloudMap[id].Disk.InstanceId,
-				InstanceType: cloudMap[id].Disk.InstanceType,
+				Encrypted:          cloudMap[id].Disk.Encrypt,
+				Attached:           cloudMap[id].Disk.Attached,
+				DiskUsage:          cloudMap[id].Disk.DiskUsage,
+				InstanceId:         cloudMap[id].Disk.InstanceId,
+				InstanceType:       cloudMap[id].Disk.InstanceType,
+				DeleteWithInstance: cloudMap[id].Disk.DeleteWithInstance,
+				DeadlineTime:       cloudMap[id].Disk.DeadlineTime,
 			},
 		}
 		updateReq = append(updateReq, disk)

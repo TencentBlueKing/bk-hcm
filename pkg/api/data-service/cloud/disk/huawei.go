@@ -78,4 +78,5 @@ type HuaWeiDiskExtensionUpdateReq struct {
 	// 当前云硬盘服务不支持该字段
 	Encrypted  *bool                   `json:"encrypted,omitempty"`
 	Attachment []*HuaWeiDiskAttachment `json:"attachment,omitempty"`
+	Bootable   string                  `json:"bootable,omitempty"`
 }

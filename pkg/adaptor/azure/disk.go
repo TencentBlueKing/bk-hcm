@@ -209,6 +209,7 @@ func converterDisk(disks []*armcompute.Disk) []*typedisk.AzureDisk {
 			Status:   (*string)(v.Properties.DiskState),
 			DiskSize: v.Properties.DiskSizeBytes,
 			Zones:    v.Zones,
+			OSType:   (*string)(v.Properties.OSType),
 		}
 		typesDisk = append(typesDisk, tmp)
 	}

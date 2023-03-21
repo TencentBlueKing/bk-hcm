@@ -54,11 +54,13 @@ type TCloudDiskChargePrepaid struct {
 // TCloudDiskExtensionUpdateReq ...
 // 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
 type TCloudDiskExtensionUpdateReq struct {
-	DiskChargeType    string                   `json:"disk_charge_type" validate:"required"`
-	DiskChargePrepaid *TCloudDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
-	Encrypted         *bool                    `json:"encrypted,omitempty"`
-	Attached          *bool                    `json:"attached,omitempty"`
-	DiskUsage         *string                  `json:"disk_usage,omitempty"`
-	InstanceId        *string                  `json:"InstanceId,omitempty"`
-	InstanceType      *string                  `json:"InstanceType,omitempty"`
+	DiskChargeType     string                   `json:"disk_charge_type" validate:"required"`
+	DiskChargePrepaid  *TCloudDiskChargePrepaid `json:"disk_charge_prepaid,omitempty"`
+	Encrypted          *bool                    `json:"encrypted,omitempty"`
+	Attached           *bool                    `json:"attached,omitempty"`
+	DiskUsage          *string                  `json:"disk_usage,omitempty"`
+	InstanceId         *string                  `json:"InstanceId,omitempty"`
+	InstanceType       *string                  `json:"InstanceType,omitempty"`
+	DeleteWithInstance *bool                    `json:"delete_with_instance,omitempty"`
+	DeadlineTime       *string                  `json:"deadline_time,omitempty"`
 }
