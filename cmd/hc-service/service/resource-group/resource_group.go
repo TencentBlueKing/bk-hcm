@@ -17,25 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package region
+package resourcegroup
 
 import (
-	typesregion "hcm/pkg/adaptor/types/region"
-	apicloudregion "hcm/pkg/api/core/cloud/region"
+	"hcm/cmd/hc-service/service/capability"
+	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
+	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/rest"
 )
 
-// HuaWeiDSRegionSync ...
-type HuaWeiDSRegionSync struct {
-	Region apicloudregion.HuaWeiRegion
+// InitResourceGroupService initial the resource group service
+func InitResourceGroupService(cap *capability.Capability) {
+	r := &resourcegroup{
+		ad:      cap.CloudAdaptor,
+		dataCli: cap.ClientSet.DataService(),
+	}
+
+	h := rest.NewHandler()
+
+	h.Add("SyncAzureRG", "POST", "/vendors/azure/resource_groups/sync", r.SyncAzureRG)
+
+	h.Load(cap.WebService)
 }
 
-// AzureRegionSync ...
-type AzureRegionSync struct {
-	IsUpdate bool
-	Region   *typesregion.AzureRegion
-}
-
-// AzureDSRegionSync ...
-type AzureDSRegionSync struct {
-	Region apicloudregion.AzureRegion
+type resourcegroup struct {
+	ad      *cloudadaptor.CloudAdaptorClient
+	dataCli *dataservice.Client
 }

@@ -86,14 +86,6 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 		return nil, err
 	}
 
-	if len(updateIDs) > 0 {
-		err := syncAzureSGRuleUpdate(kt, updateIDs, cloudMap, sgID, req, dataCli)
-		if err != nil {
-			logs.Errorf("request syncAzureSGRuleUpdate failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-	}
-
 	addIDs := make([]string, 0)
 	for _, id := range updateIDs {
 		if _, ok := cloudMap[id]; ok {
@@ -104,14 +96,6 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 	for k, v := range cloudMap {
 		if !v.IsUpdate {
 			addIDs = append(addIDs, k)
-		}
-	}
-
-	if len(addIDs) > 0 {
-		err := syncAzureSGRuleAdd(kt, addIDs, req, cloudMap, sgID, dataCli)
-		if err != nil {
-			logs.Errorf("request syncAzureSGRuleAdd failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
 		}
 	}
 
@@ -156,6 +140,22 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 				logs.Errorf("request syncAzureSGRuleDelete failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+		}
+	}
+
+	if len(updateIDs) > 0 {
+		err := syncAzureSGRuleUpdate(kt, updateIDs, cloudMap, sgID, req, dataCli)
+		if err != nil {
+			logs.Errorf("request syncAzureSGRuleUpdate failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if len(addIDs) > 0 {
+		err := syncAzureSGRuleAdd(kt, addIDs, req, cloudMap, sgID, dataCli)
+		if err != nil {
+			logs.Errorf("request syncAzureSGRuleAdd failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 	}
 

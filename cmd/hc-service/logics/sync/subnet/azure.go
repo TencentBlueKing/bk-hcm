@@ -214,24 +214,6 @@ func diffAzureSubnetAndSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, li
 		return err
 	}
 
-	// update resource data
-	if len(updateResources) > 0 {
-		updateReq := &cloud.SubnetBatchUpdateReq[cloud.AzureSubnetUpdateExt]{
-			Subnets: updateResources,
-		}
-		if err = dataCli.Azure.Subnet.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-			return err
-		}
-	}
-
-	// add resource data
-	if len(createResources) > 0 {
-		_, err = BatchCreateAzureSubnet(kt, createResources, dataCli, adaptor, req)
-		if err != nil {
-			return err
-		}
-	}
-
 	// delete resource data
 	deleteIDs := make([]string, 0)
 	for _, resItem := range resourceDBMap {
@@ -258,6 +240,24 @@ func diffAzureSubnetAndSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, li
 		}
 
 		if err = batchDeleteSubnetByIDs(kt, deleteIDs, dataCli); err != nil {
+			return err
+		}
+	}
+
+	// update resource data
+	if len(updateResources) > 0 {
+		updateReq := &cloud.SubnetBatchUpdateReq[cloud.AzureSubnetUpdateExt]{
+			Subnets: updateResources,
+		}
+		if err = dataCli.Azure.Subnet.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
+			return err
+		}
+	}
+
+	// add resource data
+	if len(createResources) > 0 {
+		_, err = BatchCreateAzureSubnet(kt, createResources, dataCli, adaptor, req)
+		if err != nil {
 			return err
 		}
 	}

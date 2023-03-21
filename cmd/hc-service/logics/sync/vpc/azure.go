@@ -77,26 +77,6 @@ func AzureVpcSync(kt *kit.Kit, opt *hcservice.AzureResourceSyncReq,
 		return nil, err
 	}
 
-	if len(updateResources) > 0 {
-		updateReq := &cloud.VpcBatchUpdateReq[cloud.AzureVpcUpdateExt]{
-			Vpcs: updateResources,
-		}
-		if err = dataCli.Azure.Vpc.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-			logs.Errorf("batch update db vpc failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-	}
-
-	if len(createResources) > 0 {
-		createReq := &cloud.VpcBatchCreateReq[cloud.AzureVpcCreateExt]{
-			Vpcs: createResources,
-		}
-		if _, err = dataCli.Azure.Vpc.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-			logs.Errorf("batch create db vpc failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-	}
-
 	if len(delCloudIDs) > 0 {
 		delListOpt := &hcservice.AzureResourceSyncReq{
 			AccountID:         opt.AccountID,
@@ -119,6 +99,26 @@ func AzureVpcSync(kt *kit.Kit, opt *hcservice.AzureResourceSyncReq,
 		}
 		if err = dataCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
 			logs.Errorf("batch delete db vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if len(updateResources) > 0 {
+		updateReq := &cloud.VpcBatchUpdateReq[cloud.AzureVpcUpdateExt]{
+			Vpcs: updateResources,
+		}
+		if err = dataCli.Azure.Vpc.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
+			logs.Errorf("batch update db vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if len(createResources) > 0 {
+		createReq := &cloud.VpcBatchCreateReq[cloud.AzureVpcCreateExt]{
+			Vpcs: createResources,
+		}
+		if _, err = dataCli.Azure.Vpc.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
+			logs.Errorf("batch create db vpc failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 	}
@@ -480,6 +480,23 @@ func BatchSyncAzureSubnetList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, 
 		return err
 	}
 
+	// delete resource data
+	deleteIDs := make([]string, 0)
+	for _, resItem := range resourceDBMap {
+		if _, ok := existIDMap[resItem.ID]; !ok {
+			deleteIDs = append(deleteIDs, resItem.ID)
+		}
+	}
+
+	if len(deleteIDs) > 0 {
+		err = BatchDeleteVpcByIDs(kt, deleteIDs, dataCli)
+		if err != nil {
+			logs.Errorf("%s-vpc-subnet batch compare db delete failed. accountID: %s, rgName: %s, delIDs: %v, "+
+				"err: %v", enumor.Azure, req.AccountID, req.ResourceGroupName, deleteIDs, err)
+			return err
+		}
+	}
+
 	// update resource data
 	if len(updateResources) > 0 {
 		updateReq := &cloud.SubnetBatchUpdateReq[cloud.AzureSubnetUpdateExt]{
@@ -502,22 +519,6 @@ func BatchSyncAzureSubnetList(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, 
 		}
 	}
 
-	// delete resource data
-	deleteIDs := make([]string, 0)
-	for _, resItem := range resourceDBMap {
-		if _, ok := existIDMap[resItem.ID]; !ok {
-			deleteIDs = append(deleteIDs, resItem.ID)
-		}
-	}
-
-	if len(deleteIDs) > 0 {
-		err = BatchDeleteVpcByIDs(kt, deleteIDs, dataCli)
-		if err != nil {
-			logs.Errorf("%s-vpc-subnet batch compare db delete failed. accountID: %s, rgName: %s, delIDs: %v, "+
-				"err: %v", enumor.Azure, req.AccountID, req.ResourceGroupName, deleteIDs, err)
-			return err
-		}
-	}
 	return nil
 }
 

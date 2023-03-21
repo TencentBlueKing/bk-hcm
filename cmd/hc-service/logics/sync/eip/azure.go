@@ -130,14 +130,6 @@ func SyncAzureEip(kt *kit.Kit, req *SyncAzureEipOption,
 		}
 	}
 
-	if len(updateIDs) > 0 {
-		err := syncAzureEipUpdate(kt, updateIDs, cloudMap, dsMap, dataCli, req)
-		if err != nil {
-			logs.Errorf("request syncAzureEipUpdate failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-	}
-
 	addIDs := make([]string, 0)
 	for _, id := range updateIDs {
 		if _, ok := cloudMap[id]; ok {
@@ -148,14 +140,6 @@ func SyncAzureEip(kt *kit.Kit, req *SyncAzureEipOption,
 	for k, v := range cloudMap {
 		if !v.IsUpdate {
 			addIDs = append(addIDs, k)
-		}
-	}
-
-	if len(addIDs) > 0 {
-		err := syncAzureEipAdd(kt, addIDs, req, cloudMap, dataCli)
-		if err != nil {
-			logs.Errorf("request syncAzureEipAdd failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
 		}
 	}
 
@@ -200,6 +184,22 @@ func SyncAzureEip(kt *kit.Kit, req *SyncAzureEipOption,
 				logs.Errorf("request syncEipDelete failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+		}
+	}
+
+	if len(updateIDs) > 0 {
+		err := syncAzureEipUpdate(kt, updateIDs, cloudMap, dsMap, dataCli, req)
+		if err != nil {
+			logs.Errorf("request syncAzureEipUpdate failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if len(addIDs) > 0 {
+		err := syncAzureEipAdd(kt, addIDs, req, cloudMap, dataCli)
+		if err != nil {
+			logs.Errorf("request syncAzureEipAdd failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 	}
 

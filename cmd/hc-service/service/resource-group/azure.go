@@ -17,10 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package region
+package resourcegroup
 
 import (
+	typesresourcegroup "hcm/pkg/adaptor/types/resource-group"
 	"hcm/pkg/api/core"
+	apicloudregion "hcm/pkg/api/core/cloud/region"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
 	apiregion "hcm/pkg/api/hc-service/region"
 	"hcm/pkg/criteria/constant"
@@ -31,9 +33,19 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// TODO: 资源组抽离
+// AzureRGSync ...
+type AzureRGSync struct {
+	IsUpdate      bool
+	ResourceGroup *typesresourcegroup.AzureResourceGroup
+}
+
+// AzureDSRGSync ...
+type AzureDSRGSync struct {
+	ResourceGroup apicloudregion.AzureRG
+}
+
 // SyncAzureRG sync all resource group
-func (r *region) SyncAzureRG(cts *rest.Contexts) (interface{}, error) {
+func (r *resourcegroup) SyncAzureRG(cts *rest.Contexts) (interface{}, error) {
 
 	req := new(apiregion.AzureRGSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -62,7 +74,7 @@ func (r *region) SyncAzureRG(cts *rest.Contexts) (interface{}, error) {
 	for _, data := range regions {
 		regionSync := new(AzureRGSync)
 		regionSync.IsUpdate = false
-		regionSync.Region = data
+		regionSync.ResourceGroup = data
 		cloudMap[*data.Name] = regionSync
 		cloudIDs = append(cloudIDs, *data.Name)
 		cloudAllIDs[*data.Name] = true
@@ -125,17 +137,17 @@ func (r *region) SyncAzureRG(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-func (r *region) syncAzureRGUpdate(updateIDs []string, cloudMap map[string]*AzureRGSync,
+func (r *resourcegroup) syncAzureRGUpdate(updateIDs []string, cloudMap map[string]*AzureRGSync,
 	dsMap map[string]*AzureDSRGSync, cts *rest.Contexts) error {
 
 	list := make([]protoregion.AzureRGBatchUpdate, 0, len(updateIDs))
 	for _, id := range updateIDs {
-		if *cloudMap[id].Region.Location == dsMap[id].Region.Location {
+		if *cloudMap[id].ResourceGroup.Location == dsMap[id].ResourceGroup.Location {
 			continue
 		}
 		one := protoregion.AzureRGBatchUpdate{
-			ID:       dsMap[id].Region.ID,
-			Location: *cloudMap[id].Region.Location,
+			ID:       dsMap[id].ResourceGroup.ID,
+			Location: *cloudMap[id].ResourceGroup.Location,
 		}
 		list = append(list, one)
 	}
@@ -153,15 +165,15 @@ func (r *region) syncAzureRGUpdate(updateIDs []string, cloudMap map[string]*Azur
 	return nil
 }
 
-func (r *region) syncAzureRGAdd(addIDs []string, cts *rest.Contexts, req *apiregion.AzureRGSyncReq,
+func (r *resourcegroup) syncAzureRGAdd(addIDs []string, cts *rest.Contexts, req *apiregion.AzureRGSyncReq,
 	cloudMap map[string]*AzureRGSync) error {
 
 	list := make([]protoregion.AzureRGBatchCreate, 0, len(addIDs))
 	for _, id := range addIDs {
 		one := protoregion.AzureRGBatchCreate{
-			Name:      *cloudMap[id].Region.Name,
-			Type:      string(*cloudMap[id].Region.Type),
-			Location:  *cloudMap[id].Region.Location,
+			Name:      *cloudMap[id].ResourceGroup.Name,
+			Type:      string(*cloudMap[id].ResourceGroup.Type),
+			Location:  *cloudMap[id].ResourceGroup.Location,
 			AccountID: req.AccountID,
 		}
 		list = append(list, one)
@@ -179,7 +191,7 @@ func (r *region) syncAzureRGAdd(addIDs []string, cts *rest.Contexts, req *apireg
 	return nil
 }
 
-func (r *region) syncAzureRGDelete(cts *rest.Contexts, deleteCloudIDs []string) error {
+func (r *resourcegroup) syncAzureRGDelete(cts *rest.Contexts, deleteCloudIDs []string) error {
 
 	deleteReq := &protoregion.AzureRGBatchDeleteReq{
 		Filter: tools.ContainersExpression("name", deleteCloudIDs),
@@ -193,7 +205,7 @@ func (r *region) syncAzureRGDelete(cts *rest.Contexts, deleteCloudIDs []string) 
 	return nil
 }
 
-func (r *region) getAzureRGDSSync(cloudIDs []string, req *apiregion.AzureRGSyncReq,
+func (r *resourcegroup) getAzureRGDSSync(cloudIDs []string, req *apiregion.AzureRGSyncReq,
 	cts *rest.Contexts) ([]string, map[string]*AzureDSRGSync, error) {
 
 	updateIDs := make([]string, 0)
@@ -235,7 +247,7 @@ func (r *region) getAzureRGDSSync(cloudIDs []string, req *apiregion.AzureRGSyncR
 			for _, detail := range results.Details {
 				updateIDs = append(updateIDs, detail.Name)
 				dsRegionSync := new(AzureDSRGSync)
-				dsRegionSync.Region = detail
+				dsRegionSync.ResourceGroup = detail
 				dsMap[detail.Name] = dsRegionSync
 			}
 		}
@@ -249,7 +261,7 @@ func (r *region) getAzureRGDSSync(cloudIDs []string, req *apiregion.AzureRGSyncR
 	return updateIDs, dsMap, nil
 }
 
-func (r *region) getAzureRGAllDS(req *apiregion.AzureRGSyncReq, cts *rest.Contexts) ([]string, error) {
+func (r *resourcegroup) getAzureRGAllDS(req *apiregion.AzureRGSyncReq, cts *rest.Contexts) ([]string, error) {
 
 	start := 0
 	dsIDs := make([]string, 0)

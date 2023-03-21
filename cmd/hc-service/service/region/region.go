@@ -39,8 +39,6 @@ func InitRegionService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("SyncAzureRG", "POST", "/vendors/azure/resource_groups/sync", r.SyncAzureRG)
-
 	h.Add("SyncAzureRegion", "POST", "/vendors/azure/regions/sync", r.SyncAzureRegion)
 
 	h.Add("SyncHuaWeiRegion", "POST", "/vendors/huawei/regions/sync", r.SyncHuaWeiRegion)

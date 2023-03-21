@@ -398,6 +398,26 @@ func BatchSyncAzureRoute(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyncReq, 
 		return err
 	}
 
+	// delete resource data
+	deleteIDs := make([]string, 0)
+	for _, resItem := range resourceDBMap {
+		if _, ok := existIDMap[resItem.ID]; !ok {
+			deleteIDs = append(deleteIDs, resItem.ID)
+		}
+	}
+
+	if len(deleteIDs) > 0 {
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("id", deleteIDs),
+		}
+		if err = dataCli.Azure.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), routeTableID, deleteReq); err != nil {
+			logs.Errorf("%s-routetable-route batch compare db delete failed. accountID: %s, routeTableID: %s, "+
+				"delIDs: %v, err: %v", enumor.Azure, req.AccountID, routeTableID,
+				deleteIDs, err)
+			return err
+		}
+	}
+
 	// update resource data
 	if len(updateResources) > 0 {
 		updateReq := &dataproto.AzureRouteBatchUpdateReq{
@@ -419,26 +439,6 @@ func BatchSyncAzureRoute(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyncReq, 
 		if _, err = dataCli.Azure.RouteTable.BatchCreateRoute(kt.Ctx, kt.Header(), routeTableID, createReq); err != nil {
 			logs.Errorf("%s-routetable-route batch compare db create failed. accountID: %s, routeTableID: %s, err: %v",
 				enumor.Azure, req.AccountID, routeTableID, err)
-			return err
-		}
-	}
-
-	// delete resource data
-	deleteIDs := make([]string, 0)
-	for _, resItem := range resourceDBMap {
-		if _, ok := existIDMap[resItem.ID]; !ok {
-			deleteIDs = append(deleteIDs, resItem.ID)
-		}
-	}
-
-	if len(deleteIDs) > 0 {
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", deleteIDs),
-		}
-		if err = dataCli.Azure.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), routeTableID, deleteReq); err != nil {
-			logs.Errorf("%s-routetable-route batch compare db delete failed. accountID: %s, routeTableID: %s, "+
-				"delIDs: %v, err: %v", enumor.Azure, req.AccountID, routeTableID,
-				deleteIDs, err)
 			return err
 		}
 	}

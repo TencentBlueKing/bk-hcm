@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	imageproto "hcm/pkg/api/data-service/cloud/image"
 	hcservice "hcm/pkg/api/hc-service"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	dataservice "hcm/pkg/client/data-service"
@@ -46,8 +45,6 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
-
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
 
 // SyncAzureCvmOption ...
@@ -143,14 +140,6 @@ func SyncAzureCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *data
 		}
 	}
 
-	if len(updateIDs) > 0 {
-		err := syncAzureCvmUpdate(kt, updateIDs, cloudMap, dsMap, dataCli, req, client)
-		if err != nil {
-			logs.Errorf("request syncAzureCvmUpdate failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-	}
-
 	addIDs := make([]string, 0)
 	for _, id := range updateIDs {
 		if _, ok := cloudMap[id]; ok {
@@ -161,14 +150,6 @@ func SyncAzureCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *data
 	for k, v := range cloudMap {
 		if !v.IsUpdate {
 			addIDs = append(addIDs, k)
-		}
-	}
-
-	if len(addIDs) > 0 {
-		err := syncAzureCvmAdd(kt, addIDs, req, cloudMap, dataCli, client)
-		if err != nil {
-			logs.Errorf("request syncAzureCvmAdd failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
 		}
 	}
 
@@ -214,6 +195,22 @@ func SyncAzureCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *data
 				logs.Errorf("request syncCvmDelete failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+		}
+	}
+
+	if len(updateIDs) > 0 {
+		err := syncAzureCvmUpdate(kt, updateIDs, cloudMap, dsMap, dataCli, req, client)
+		if err != nil {
+			logs.Errorf("request syncAzureCvmUpdate failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if len(addIDs) > 0 {
+		err := syncAzureCvmAdd(kt, addIDs, req, cloudMap, dataCli, client)
+		if err != nil {
+			logs.Errorf("request syncAzureCvmAdd failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 	}
 
@@ -625,48 +622,6 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 	}
 
 	return nil
-}
-
-func queryGcpCloudImageID(kt *kit.Kit, dataCli *dataservice.Client, image *armcompute.ImageReference) (string, error) {
-	req := &imageproto.ImageListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "name",
-					Op:    filter.Equal.Factory(),
-					Value: image.ExactVersion,
-				},
-				&filter.AtomRule{
-					Field: "extension.sku",
-					Op:    filter.JSONEqual.Factory(),
-					Value: image.SKU,
-				},
-				&filter.AtomRule{
-					Field: "extension.offer",
-					Op:    filter.JSONEqual.Factory(),
-					Value: image.Offer,
-				},
-				&filter.AtomRule{
-					Field: "extension.publisher",
-					Op:    filter.JSONEqual.Factory(),
-					Value: image.Publisher,
-				},
-			},
-		},
-		Page:   core.DefaultBasePage,
-		Fields: []string{"cloud_id"},
-	}
-	result, err := dataCli.Gcp.ListImage(kt.Ctx, kt.Header(), req)
-	if err != nil {
-		return "", err
-	}
-
-	if len(result.Details) == 0 {
-		return "", nil
-	}
-
-	return result.Details[0].CloudID, nil
 }
 
 func getAzureCvmDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAzureCvmOption,

@@ -41,6 +41,7 @@ import (
 	networkinterface "hcm/cmd/data-service/service/cloud/network-interface"
 	networkcvmrel "hcm/cmd/data-service/service/cloud/network-interface-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/region"
+	resourcegroup "hcm/cmd/data-service/service/cloud/resource-group"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
 	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/zone"
@@ -182,7 +183,7 @@ func (s *Service) apiSet() *restful.Container {
 	disk.InitService(capability)
 	region.InitRegionService(capability)
 	region.InitHuaWeiRegionService(capability)
-	region.InitAzureResourceGroupService(capability)
+	resourcegroup.InitAzureResourceGroupService(capability)
 	region.InitAzureRegionService(capability)
 	audit.InitAuditService(capability)
 	eip.InitEipService(capability)

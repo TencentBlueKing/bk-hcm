@@ -36,6 +36,7 @@ import (
 	"hcm/cmd/hc-service/service/image"
 	instancetype "hcm/cmd/hc-service/service/instance-type"
 	"hcm/cmd/hc-service/service/region"
+	resourcegroup "hcm/cmd/hc-service/service/resource-group"
 	routetable "hcm/cmd/hc-service/service/route-table"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
@@ -182,6 +183,7 @@ func (s *Service) apiSet() *restful.Container {
 	syncsubnet.InitSyncSubnetService(c)
 	syncnetworkinterface.InitSyncNetworkInterfaceService(c)
 	syncroutetable.InitRouteTableService(c)
+	resourcegroup.InitResourceGroupService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

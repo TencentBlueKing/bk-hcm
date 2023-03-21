@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/cloud/cvm"
 	networkinterface "hcm/pkg/dal/dao/cloud/network-interface"
 	"hcm/pkg/dal/dao/cloud/region"
+	resourcegroup "hcm/pkg/dal/dao/cloud/resource-group"
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
 	sgcvmrel "hcm/pkg/dal/dao/cloud/security-group-cvm-rel"
@@ -101,7 +102,7 @@ type Set interface {
 	Vpc() cloud.Vpc
 	Subnet() cloud.Subnet
 	HuaWeiRegion() region.HuaWeiRegion
-	AzureRG() region.AzureRG
+	AzureRG() resourcegroup.AzureRG
 	AzureRegion() region.AzureRegion
 	Zone() zone.Zone
 	TCloudRegion() region.TCloudRegion
@@ -195,8 +196,8 @@ func (s *set) AzureRegion() region.AzureRegion {
 }
 
 // AzureRG return AzureRG dao.
-func (s *set) AzureRG() region.AzureRG {
-	return &region.AzureRGDao{
+func (s *set) AzureRG() resourcegroup.AzureRG {
+	return &resourcegroup.AzureRGDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

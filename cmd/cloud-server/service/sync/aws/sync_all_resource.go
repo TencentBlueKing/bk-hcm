@@ -96,6 +96,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 	if hitErr = SyncEip(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
 		return hitErr
 	}
+
 	if hitErr = SyncSG(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
 		return hitErr
 	}
