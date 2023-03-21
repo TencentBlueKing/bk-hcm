@@ -38,9 +38,8 @@
     "reviser": "jim",
     "created_at": "2022-12-26T15:49:40Z",
     "updated_at": "2023-01-11T19:01:15Z",
-    "vpc_ids": null,
     "network_interface_count": 0,
-    "subnet_id_count": 0,
+    "subnet_count": 0,
     "cvm_count": 0,
     "extension": {
       "cloud_project_id": "0"
@@ -87,9 +86,10 @@
 
 #### extension[aws]
 
-| 参数名称           | 参数类型   | 描述                 |
-|----------------|--------|--------------------|
-| cloud_vpc_id   | string | vpc云主键ID。          |
+| 参数名称           | 参数类型   | 描述                |
+|----------------|--------|-------------------|
+| vpc_id         | string | vpc主键ID。          |
+| cloud_vpc_id   | string | vpc云主键ID。         |
 | cloud_owner_id | string | 拥有该安全组的Amazon账号ID。 |
 
 #### extension[azure]

@@ -152,7 +152,7 @@ func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{},
 	for _, one := range result.Details {
 		details = append(details, corecloud.BaseSecurityGroup{
 			ID:        one.ID,
-			Vendor:    enumor.Vendor(one.Vendor),
+			Vendor:    one.Vendor,
 			CloudID:   one.CloudID,
 			BkBizID:   one.BkBizID,
 			Region:    one.Region,
@@ -206,11 +206,6 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 			return nil, err
 		}
 
-		delFilter = tools.ContainersExpression("security_group_id", delIDs)
-		if err = svc.dao.SGCvmRel().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			return nil, err
-		}
-
 		return nil, nil
 	})
 	if err != nil {
@@ -237,8 +232,6 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: 添加查询关联信息逻辑
 
 	base := convTableToBaseSG(sgTable)
 	switch sgTable.Vendor {

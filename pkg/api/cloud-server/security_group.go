@@ -180,3 +180,14 @@ type SecurityGroupAssociateNIReq struct {
 func (req *SecurityGroupAssociateNIReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// -------------------------- Get --------------------------
+
+// SecurityGroup define security group
+type SecurityGroup[Extension cloud.SecurityGroupExtension] struct {
+	cloud.BaseSecurityGroup `json:",inline"`
+	CvmCount                uint64     `json:"cvm_count"`
+	NetworkInterfaceCount   uint64     `json:"network_interface_count"`
+	SubnetCount             uint64     `json:"subnet_count"`
+	Extension               *Extension `json:"extension"`
+}

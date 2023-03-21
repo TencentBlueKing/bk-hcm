@@ -71,31 +71,6 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 			return nil, err
 		}
 
-		delFilter = tools.ContainersExpression("cvm_id", delIDs)
-		if err = svc.dao.SGCvmRel().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			return nil, err
-		}
-
-		delFilter = tools.ContainersExpression("cvm_id", delIDs)
-		if err = svc.diskCvmRelDao.DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			return nil, err
-		}
-
-		delFilter = tools.ContainersExpression("cvm_id", delIDs)
-		if err = svc.eipCvmRelDao.DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			return nil, err
-		}
-
-		delFilter = tools.ContainersExpression("cvm_id", delIDs)
-		if err = svc.eipCvmRelDao.DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			return nil, err
-		}
-
-		delFilter = tools.ContainersExpression("cvm_id", delIDs)
-		if err = svc.niCvmRelDao.DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			return nil, err
-		}
-
 		// delete cmdb cloud hosts
 		if err = deleteCmdbHosts(svc, cts.Kit, listResp.Details); err != nil {
 			return nil, err

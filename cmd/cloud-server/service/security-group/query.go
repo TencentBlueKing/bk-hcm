@@ -24,10 +24,12 @@ import (
 
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
+	corecloud "hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -68,22 +70,113 @@ func (svc *securityGroupSvc) getSecurityGroup(cts *rest.Contexts, validHandler h
 		return nil, err
 	}
 
+	cvmCount := uint64(0)
+
+	if baseInfo.Vendor != enumor.Azure {
+		cvmCount, err = svc.queryAssociateCvmCount(cts.Kit, id)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.client.DataService().TCloud.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+		sg, err := svc.client.DataService().TCloud.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+
+		return &proto.SecurityGroup[corecloud.TCloudSecurityGroupExtension]{
+			BaseSecurityGroup: sg.BaseSecurityGroup,
+			CvmCount:          cvmCount,
+			Extension:         sg.Extension,
+		}, nil
 
 	case enumor.Aws:
-		return svc.client.DataService().Aws.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+		sg, err := svc.client.DataService().Aws.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+
+		return &proto.SecurityGroup[corecloud.AwsSecurityGroupExtension]{
+			BaseSecurityGroup: sg.BaseSecurityGroup,
+			CvmCount:          cvmCount,
+			Extension:         sg.Extension,
+		}, nil
 
 	case enumor.HuaWei:
-		return svc.client.DataService().HuaWei.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+		sg, err := svc.client.DataService().HuaWei.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+
+		return &proto.SecurityGroup[corecloud.HuaWeiSecurityGroupExtension]{
+			BaseSecurityGroup: sg.BaseSecurityGroup,
+			CvmCount:          cvmCount,
+			Extension:         sg.Extension,
+		}, nil
 
 	case enumor.Azure:
-		return svc.client.DataService().Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+		sg, err := svc.client.DataService().Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+
+		subnetCount, niCount, err := svc.queryAssociateSubnetAndNICount(cts.Kit, id)
+		if err != nil {
+			return nil, err
+		}
+
+		return &proto.SecurityGroup[corecloud.AzureSecurityGroupExtension]{
+			BaseSecurityGroup:     sg.BaseSecurityGroup,
+			NetworkInterfaceCount: niCount,
+			SubnetCount:           subnetCount,
+			Extension:             sg.Extension,
+		}, nil
 
 	default:
 		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, baseInfo.Vendor)
 	}
+}
+
+func (svc *securityGroupSvc) queryAssociateCvmCount(kt *kit.Kit, id string) (uint64, error) {
+	cvmRelOpt := &core.ListReq{
+		Filter: tools.EqualExpression("security_group_id", id),
+		Page:   core.CountPage,
+	}
+	cvmRelResult, err := svc.client.DataService().Global.SGCvmRel.List(kt.Ctx, kt.Header(), cvmRelOpt)
+	if err != nil {
+		return 0, err
+	}
+
+	return cvmRelResult.Count, nil
+}
+
+func (svc *securityGroupSvc) queryAssociateSubnetAndNICount(kt *kit.Kit, id string) (uint64, uint64, error) {
+	listOpt := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "extension.security_group_id",
+					Op:    filter.JSONEqual.Factory(),
+					Value: id,
+				},
+			},
+		},
+		Page: core.CountPage,
+	}
+	subnetResult, err := svc.client.DataService().Global.Subnet.List(kt.Ctx, kt.Header(), listOpt)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	niResult, err := svc.client.DataService().Global.Subnet.List(kt.Ctx, kt.Header(), listOpt)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return subnetResult.Count, niResult.Count, nil
 }
 
 // ListSecurityGroup list security group.

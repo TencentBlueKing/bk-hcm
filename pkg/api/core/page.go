@@ -58,6 +58,11 @@ var DefaultBasePage = &BasePage{
 	Limit: DefaultMaxPageLimit,
 }
 
+// CountPage define count page.
+var CountPage = &BasePage{
+	Count: true,
+}
+
 // DefaultPageOption is the default BasePage's option.
 var DefaultPageOption = &PageOption{
 	EnableUnlimitedLimit: false,

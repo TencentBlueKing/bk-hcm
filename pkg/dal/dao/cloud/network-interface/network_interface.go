@@ -174,6 +174,7 @@ func (n NetworkInterfaceDao) List(kt *kit.Kit, opt *types.ListOption) (*typesni.
 
 	columnTypes := tableni.NetworkInterfaceColumns.ColumnTypes()
 	columnTypes["extension.self_link"] = enumor.String
+	columnTypes["extension.security_group_id"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err

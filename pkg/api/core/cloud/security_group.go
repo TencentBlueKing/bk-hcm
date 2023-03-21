@@ -43,12 +43,8 @@ type BaseSecurityGroup struct {
 
 // SecurityGroup define security group
 type SecurityGroup[Extension SecurityGroupExtension] struct {
-	BaseSecurityGroup     `json:",inline"`
-	VpcIDs                []string   `json:"vpc_ids"`
-	NetworkInterfaceCount uint64     `json:"network_interface_count"`
-	SubnetCount           uint64     `json:"subnet_id_count"`
-	CvmCount              uint64     `json:"cvm_count"`
-	Extension             *Extension `json:"extension"`
+	BaseSecurityGroup `json:",inline"`
+	Extension         *Extension `json:"extension"`
 }
 
 // SecurityGroupExtension define security group extension.
