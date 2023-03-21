@@ -110,20 +110,25 @@ func SyncGcpNetworkInterfaceListAll(kt *kit.Kit, req *hcservice.GcpNetworkInterf
 		for _, item := range details {
 			tmpID := converter.PtrToVal(item.CloudID)
 			// get gcp vpc info by vpc selflink
-			vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, item.VpcSelfLink, dataCli)
-			if err != nil {
-				return err
+			if item.Extension != nil && len(item.Extension.VpcSelfLink) > 0 {
+				vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, item.Extension.VpcSelfLink, dataCli)
+				if err != nil {
+					return err
+				}
+				item.CloudVpcID = converter.ValToPtr(vpcDetail.CloudID)
+				item.VpcID = converter.ValToPtr(vpcDetail.ID)
 			}
-			item.CloudVpcID = converter.ValToPtr(vpcDetail.CloudID)
-			item.VpcID = converter.ValToPtr(vpcDetail.ID)
 
 			// get gcp subnet info by subnet selflink
-			subnetDetail, err := GetCloudSubnetInfoBySelfLink(kt, req, enumor.Gcp, item.CloudSubnetID, dataCli)
-			if err != nil {
-				return err
+			if item.Extension != nil && len(item.Extension.SubnetSelfLink) > 0 {
+				subnetDetail, err := GetCloudSubnetInfoBySelfLink(kt, req, enumor.Gcp,
+					item.Extension.SubnetSelfLink, dataCli)
+				if err != nil {
+					return err
+				}
+				item.CloudSubnetID = converter.ValToPtr(subnetDetail.CloudID)
+				item.SubnetID = converter.ValToPtr(subnetDetail.ID)
 			}
-			item.CloudSubnetID = converter.ValToPtr(subnetDetail.CloudID)
-			item.SubnetID = converter.ValToPtr(subnetDetail.ID)
 
 			cloudIDs = append(cloudIDs, tmpID)
 			allCloudIDMap[tmpID] = true
@@ -198,20 +203,26 @@ func SyncGcpNetworkInterfaceListByCloudIDs(kt *kit.Kit, req *hcservice.GcpNetwor
 			allCloudIDMap[tmpID] = true
 
 			// get gcp vpc info by vpc-selflink
-			vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, niItem.VpcSelfLink, dataCli)
-			if err != nil {
-				return nil, err
+			if niItem.Extension != nil && len(niItem.Extension.VpcSelfLink) > 0 {
+				vpcDetail, err := GetCloudVpcInfoBySelfLink(kt, req, enumor.Gcp, niItem.Extension.VpcSelfLink, dataCli)
+				if err != nil {
+					return nil, err
+				}
+				niItem.CloudVpcID = converter.ValToPtr(vpcDetail.CloudID)
+				niItem.VpcID = converter.ValToPtr(vpcDetail.ID)
 			}
-			niItem.CloudVpcID = converter.ValToPtr(vpcDetail.CloudID)
-			niItem.VpcID = converter.ValToPtr(vpcDetail.ID)
 
 			// get gcp subnet info by subnet-selflink
-			subnetDetail, err := GetCloudSubnetInfoBySelfLink(kt, req, enumor.Gcp, niItem.CloudSubnetID, dataCli)
-			if err != nil {
-				return nil, err
+			if niItem.Extension != nil && len(niItem.Extension.SubnetSelfLink) > 0 {
+				subnetDetail, err := GetCloudSubnetInfoBySelfLink(kt, req, enumor.Gcp,
+					niItem.Extension.SubnetSelfLink, dataCli)
+				if err != nil {
+					return nil, err
+				}
+				niItem.CloudSubnetID = converter.ValToPtr(subnetDetail.CloudID)
+				niItem.SubnetID = converter.ValToPtr(subnetDetail.ID)
 			}
-			niItem.CloudSubnetID = converter.ValToPtr(subnetDetail.CloudID)
-			niItem.SubnetID = converter.ValToPtr(subnetDetail.ID)
+
 			list.Details = append(list.Details, niItem)
 		}
 
@@ -344,7 +355,6 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 				CloudID:       converter.PtrToVal(item.CloudID),
 				VpcID:         converter.PtrToVal(item.VpcID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
-				VpcSelfLink:   item.VpcSelfLink,
 				SubnetID:      converter.PtrToVal(item.SubnetID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
 				PrivateIPv4:   item.PrivateIPv4,
@@ -355,9 +365,11 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 			}
 			if item.Extension != nil {
 				tmpRes.Extension = &dataproto.GcpNICreateExt{
-					CanIpForward: item.Extension.CanIpForward,
-					Status:       item.Extension.Status,
-					StackType:    item.Extension.StackType,
+					CanIpForward:   item.Extension.CanIpForward,
+					Status:         item.Extension.Status,
+					StackType:      item.Extension.StackType,
+					VpcSelfLink:    item.Extension.VpcSelfLink,
+					SubnetSelfLink: item.Extension.SubnetSelfLink,
 				}
 				// 网卡私网IP信息列表
 				var tmpAccConfigs []*dataproto.AccessConfig
@@ -384,7 +396,6 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 				CloudID:       converter.PtrToVal(item.CloudID),
 				VpcID:         converter.PtrToVal(item.VpcID),
 				CloudVpcID:    converter.PtrToVal(item.CloudVpcID),
-				VpcSelfLink:   item.VpcSelfLink,
 				SubnetID:      converter.PtrToVal(item.SubnetID),
 				CloudSubnetID: converter.PtrToVal(item.CloudSubnetID),
 				PrivateIPv4:   item.PrivateIPv4,
@@ -396,9 +407,11 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 			if item.Extension != nil {
 				if item.Extension != nil {
 					tmpRes.Extension = &dataproto.GcpNICreateExt{
-						CanIpForward: item.Extension.CanIpForward,
-						Status:       item.Extension.Status,
-						StackType:    item.Extension.StackType,
+						CanIpForward:   item.Extension.CanIpForward,
+						Status:         item.Extension.Status,
+						StackType:      item.Extension.StackType,
+						VpcSelfLink:    item.Extension.VpcSelfLink,
+						SubnetSelfLink: item.Extension.SubnetSelfLink,
 					}
 					// 网卡私网IP信息列表
 					var tmpAccConfigs []*dataproto.AccessConfig
@@ -424,7 +437,6 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 func isGcpChange(item typesniproto.GcpNI, dbInfo coreni.NetworkInterface[coreni.GcpNIExtension]) bool {
 	if dbInfo.Name != converter.PtrToVal(item.Name) || dbInfo.Region != converter.PtrToVal(item.Region) ||
 		dbInfo.Zone != converter.PtrToVal(item.Zone) || dbInfo.CloudID != converter.PtrToVal(item.CloudID) ||
-		dbInfo.VpcSelfLink != item.VpcSelfLink ||
 		dbInfo.CloudSubnetID != converter.PtrToVal(item.CloudSubnetID) ||
 		dbInfo.InstanceID != converter.PtrToVal(item.InstanceID) {
 		return true
@@ -452,6 +464,12 @@ func isGcpChange(item typesniproto.GcpNI, dbInfo coreni.NetworkInterface[coreni.
 }
 
 func checkGcpExt(item typesniproto.GcpNI, dbInfo coreni.NetworkInterface[coreni.GcpNIExtension]) bool {
+	if item.Extension.VpcSelfLink != dbInfo.Extension.VpcSelfLink {
+		return true
+	}
+	if item.Extension.SubnetSelfLink != dbInfo.Extension.SubnetSelfLink {
+		return true
+	}
 	if item.Extension.CanIpForward != dbInfo.Extension.CanIpForward {
 		return true
 	}
@@ -612,7 +630,7 @@ func GetCloudVpcInfoBySelfLink(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSy
 
 // GetCloudSubnetInfoBySelfLink get subnet info by selflink
 func GetCloudSubnetInfoBySelfLink(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq, vendor enumor.Vendor,
-	selfLink *string, dataCli *dataclient.Client) (*cloud.BaseSubnet, error) {
+	selfLink string, dataCli *dataclient.Client) (*cloud.BaseSubnet, error) {
 
 	expr := &filter.Expression{
 		Op: filter.And,
@@ -629,8 +647,8 @@ func GetCloudSubnetInfoBySelfLink(kt *kit.Kit, req *hcservice.GcpNetworkInterfac
 			},
 			&filter.AtomRule{
 				Field: "extension.self_link",
-				Op:    filter.JSONIn.Factory(),
-				Value: []*string{selfLink},
+				Op:    filter.JSONEqual.Factory(),
+				Value: selfLink,
 			},
 		},
 	}
@@ -647,7 +665,7 @@ func GetCloudSubnetInfoBySelfLink(kt *kit.Kit, req *hcservice.GcpNetworkInterfac
 	}
 	if len(dbList.Details) == 0 {
 		logs.Errorf("get gcp subnet info is not found, accountID: %s, vendor: %s, selfLink: %s",
-			req.AccountID, vendor, converter.PtrToVal(selfLink))
+			req.AccountID, vendor, selfLink)
 		return nil, errf.New(errf.RecordNotFound, "get gcp subnet info is not found.")
 	}
 

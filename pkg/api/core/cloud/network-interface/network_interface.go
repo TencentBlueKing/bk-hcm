@@ -41,7 +41,6 @@ type BaseNetworkInterface struct {
 	CloudID        string        `json:"cloud_id"`
 	VpcID          string        `json:"vpc_id"`
 	CloudVpcID     string        `json:"cloud_vpc_id"`
-	VpcSelfLink    string        `json:"vpc_self_link"`
 	SubnetID       string        `json:"subnet_id"`
 	CloudSubnetID  string        `json:"cloud_subnet_id"`
 	PrivateIPv4    []string      `json:"private_ipv4"`
@@ -788,6 +787,8 @@ type GcpNIExtension struct {
 	StackType         string          `json:"stack_type,omitempty"`
 	AccessConfigs     []*AccessConfig `json:"access_configs,omitempty"`
 	Ipv6AccessConfigs []*AccessConfig `json:"ipv6_access_configs,omitempty"`
+	VpcSelfLink       string          `json:"vpc_self_link,omitempty"`
+	SubnetSelfLink    string          `json:"subnet_self_link,omitempty"`
 }
 
 // AccessConfig: An access configuration attached to an instance's

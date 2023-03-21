@@ -20,6 +20,11 @@ alter table security_group_cvm_rel
 alter table security_group_cvm_rel
     add constraint security_group_cvm_rel_cvm_id foreign key (cvm_id) REFERENCES cvm (id) ON DELETE CASCADE;
 
+alter table network_interface_cvm_rel
+    add constraint network_interface_cvm_rel_network_id foreign key (network_interface_id) REFERENCES network_interface (id) ON DELETE CASCADE;
+alter table network_interface_cvm_rel
+    add constraint network_interface_cvm_rel_cvm_id foreign key (cvm_id) REFERENCES cvm (id) ON DELETE CASCADE;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 alter table azure_security_group_rule
@@ -29,8 +34,6 @@ alter table azure_security_group_rule
 
 alter table gcp_firewall_rule add vpc_self_link varchar(255) default '';
 
-alter table network_interface
-    add `vpc_self_link` varchar(255) default '' after `cloud_vpc_id`;
 
 # recycle record related table structure
 create table if not exists `recycle_record`

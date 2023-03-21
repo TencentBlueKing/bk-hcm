@@ -48,7 +48,6 @@ type NetworkInterfaceReq[T NetworkInterfaceCreateExtension] struct {
 	CloudID       string   `json:"cloud_id" validate:"omitempty"`
 	VpcID         string   `json:"vpc_id" validate:"omitempty"`
 	CloudVpcID    string   `json:"cloud_vpc_id" validate:"omitempty"`
-	VpcSelfLink   string   `json:"vpc_self_link" validate:"omitempty"`
 	SubnetID      string   `json:"subnet_id" validate:"omitempty"`
 	CloudSubnetID string   `json:"cloud_subnet_id" validate:"omitempty"`
 	PrivateIPv4   []string `json:"private_ipv4,omitempty" validate:"omitempty"`
@@ -87,11 +86,12 @@ type AzureNICreateExt struct {
 
 // GcpNICreateExt defines gcp network interface extensional info.
 type GcpNICreateExt struct {
-	SelfLink      string          `json:"self_link,omitempty"`
-	CanIpForward  bool            `json:"can_ip_forward,omitempty"`
-	Status        string          `json:"status,omitempty"`
-	StackType     string          `json:"stack_type,omitempty"`
-	AccessConfigs []*AccessConfig `json:"access_configs,omitempty"`
+	VpcSelfLink    string          `json:"vpc_self_link,omitempty"`
+	SubnetSelfLink string          `json:"subnet_self_link,omitempty"`
+	CanIpForward   bool            `json:"can_ip_forward,omitempty"`
+	Status         string          `json:"status,omitempty"`
+	StackType      string          `json:"stack_type,omitempty"`
+	AccessConfigs  []*AccessConfig `json:"access_configs,omitempty"`
 }
 
 // AccessConfig An access configuration attached to an instance's
@@ -243,7 +243,6 @@ type NetworkInterfaceUpdateReq[T NetworkInterfaceCreateExtension] struct {
 	CloudID       string   `json:"cloud_id" validate:"omitempty"`
 	VpcID         string   `json:"vpc_id" validate:"omitempty"`
 	CloudVpcID    string   `json:"cloud_vpc_id" validate:"omitempty"`
-	VpcSelfLink   string   `json:"vpc_self_link" validate:"omitempty"`
 	SubnetID      string   `json:"subnet_id" validate:"omitempty"`
 	CloudSubnetID string   `json:"cloud_subnet_id" validate:"omitempty"`
 	PrivateIPv4   []string `json:"private_ipv4,omitempty" validate:"omitempty"`

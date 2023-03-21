@@ -141,13 +141,11 @@ func (g *Gcp) ConvertNetworkInterface(data *compute.Instance, niItem *compute.Ne
 	zone := data.Zone[(strings.LastIndex(data.Zone, "/") + 1):]
 	region := zone[:strings.LastIndex(zone, "-")]
 	v := &typesniproto.GcpNI{
-		Name:          converter.ValToPtr(niItem.Name),
-		Region:        converter.ValToPtr(region),
-		Zone:          converter.ValToPtr(zone),
-		CloudID:       converter.ValToPtr(fmt.Sprintf("%d_%s", data.Id, niItem.Name)),
-		InstanceID:    converter.ValToPtr(strconv.FormatUint(data.Id, 10)),
-		VpcSelfLink:   niItem.Network,
-		CloudSubnetID: converter.ValToPtr(niItem.Subnetwork),
+		Name:       converter.ValToPtr(niItem.Name),
+		Region:     converter.ValToPtr(region),
+		Zone:       converter.ValToPtr(zone),
+		CloudID:    converter.ValToPtr(fmt.Sprintf("%d_%s", data.Id, niItem.Name)),
+		InstanceID: converter.ValToPtr(strconv.FormatUint(data.Id, 10)),
 	}
 	if len(niItem.NetworkIP) > 0 {
 		v.PrivateIPv4 = append(v.PrivateIPv4, niItem.NetworkIP)
@@ -161,10 +159,12 @@ func (g *Gcp) ConvertNetworkInterface(data *compute.Instance, niItem *compute.Ne
 	}
 
 	v.Extension = &coreni.GcpNIExtension{
-		CanIpForward:  data.CanIpForward,
-		Status:        data.Status,
-		StackType:     niItem.StackType,
-		AccessConfigs: []*coreni.AccessConfig{},
+		CanIpForward:   data.CanIpForward,
+		Status:         data.Status,
+		StackType:      niItem.StackType,
+		AccessConfigs:  []*coreni.AccessConfig{},
+		VpcSelfLink:    niItem.Network,
+		SubnetSelfLink: niItem.Subnetwork,
 	}
 
 	if len(niItem.AccessConfigs) != 0 {
