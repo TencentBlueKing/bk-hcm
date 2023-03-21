@@ -168,7 +168,7 @@ const groupColumns = [
     sort: true,
   },
   {
-    label: t('云账号 ID'),
+    label: t('资源 ID'),
     field: 'cloud_id',
     sort: true,
   },

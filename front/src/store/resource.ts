@@ -123,5 +123,10 @@ export const useResourceStore = defineStore({
     recoverRecycledData(type: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/recover`, data);
     },
+
+    // 虚拟机回收
+    recycledCvmsData(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/recycle`, data);
+    },
   },
 });

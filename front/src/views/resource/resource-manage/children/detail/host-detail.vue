@@ -115,7 +115,7 @@ const modifyCvmStatus = async (type: string) => {
     });
     cvmInfo.value[type].loading = true;
     if (type === 'destroy') {
-      await resourceStore.deleteRecycledData('cvms', { ids: [hostId.value] });
+      await resourceStore.recycledCvmsData({ infos: [{ id: hostId.value, with_disk: true }] });
     } else {
       await resourceStore.cvmOperate(type, { ids: [hostId.value] });
     }
