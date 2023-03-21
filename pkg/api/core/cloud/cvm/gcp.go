@@ -21,6 +21,9 @@ package cvm
 
 // GcpCvmExtension cvm extension.
 type GcpCvmExtension struct {
+	VpcSelfLinks    []string `json:"vpc_self_links,omitempty"`
+	SubnetSelfLinks []string `json:"subnet_self_links,omitempty"`
+
 	// DeletionProtection: Whether the instance created from this machine
 	// image should be protected against deletion.
 	DeletionProtection bool `json:"deletion_protection,omitempty"`
@@ -72,6 +75,8 @@ type GcpAttachedDisk struct {
 	// reserved for the boot disk. If you have many disks attached to an
 	// instance, each disk would have a unique index number.
 	Index int64 `json:"index,omitempty"`
+
+	SelfLink string `json:"self_link,omitempty"`
 
 	CloudID string `json:"cloud_id,omitempty"`
 

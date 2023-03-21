@@ -73,6 +73,7 @@ type AwsSubnetExtension struct {
 
 // GcpSubnetExtension defines gcp subnet extensional info.
 type GcpSubnetExtension struct {
+	VpcSelfLink           string `json:"vpc_self_link"`
 	SelfLink              string `json:"self_link"`
 	StackType             string `json:"stack_type"`
 	Ipv6AccessType        string `json:"ipv6_access_type"`

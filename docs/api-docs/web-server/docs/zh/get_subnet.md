@@ -258,6 +258,7 @@
 
 | 参数名称                     | 参数类型    | 描述                              |
 |--------------------------|---------|---------------------------------|
+| vpc_self_link            | string  | Vpc资源URL                        |
 | self_link                | string  | 资源URL                           |
 | stack_type               | string  | IP栈类型（枚举值：IPV4_IPV6、IPV4_ONLY）  |
 | ipv6_access_type         | string  | IPv6权限类型（枚举值：EXTERNAL、INTERNAL） |

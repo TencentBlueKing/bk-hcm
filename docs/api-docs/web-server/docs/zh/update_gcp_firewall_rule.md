@@ -17,6 +17,7 @@
 | target_tags        | string array       | 否 | 目标标记列表                                  |
 | denied             | protocol_set array | 是 | 防火墙指定的拒绝规则列表。每个规则都指定描述拒绝连接的协议和端口范围元组。   |
 | allowed            | protocol_set array | 是 | 防火墙指定的允许规则列表。每个规则都指定了描述允许的连接的协议和端口范围元组。 |
+| disabled           | boolean            | 是 | 是否已禁用。                 |
 
 #### protocol_set
 

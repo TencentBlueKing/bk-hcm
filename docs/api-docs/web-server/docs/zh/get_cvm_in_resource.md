@@ -308,6 +308,8 @@
 
 | 参数名称                        | 参数类型                       | 描述                       |
 |-----------------------------|----------------------------|--------------------------|
+| vpc_self_links              | string array               | Vpc资源URL。                |
+| subnet_self_links           | string array               | Subnet资源URL。             |
 | deletion_protection         | bool                       | 是否应保护从此机器映像创建的实例不被删除。    |
 | can_ip_forward              | bool                       | 是否开启IP转发。                |
 | cloud_network_interface_ids | string                     | 云网络接口ID。                 |
@@ -320,15 +322,16 @@
 | resource_policies           | string array               | 应用于此实例的资源策略。             |
 | reservation_affinity        | GcpReservationAffinity     | 实例可以使用的预留。               |
 | fingerprint                 | string                     | 指纹。                      |
-| advanced_machine_features   | GcpAdvancedMachineFeatures | 高级计算机功能的选项。                |
+| advanced_machine_features   | GcpAdvancedMachineFeatures | 高级计算机功能的选项。              |
 
 #### GcpAttachedDisk
 
-| 参数名称          | 参数类型   | 描述                                                        |
-|---------------|--------|-----------------------------------------------------------|
-| boot          | bool   | 是否是启动盘。                                                   |
-| index         | int64  | 此磁盘的从零开始的索引，其中 0 保留用于启动磁盘。如果您将多个磁盘附加到一个实例，则每个磁盘都有一个唯一的索引号。。 |
-| cloud_id      | string | 云硬盘ID。                                                    |
+| 参数名称      | 参数类型   | 描述                                                          |
+|-----------|--------|-------------------------------------------------------------|
+| boot      | bool   | 是否是启动盘。                                                     |
+| index     | int64  | 此磁盘的从零开始的索引，其中 0 保留用于启动磁盘。如果您将多个磁盘附加到一个实例，则每个磁盘都有一个唯一的索引号。。 |
+| cloud_id  | string | 云硬盘ID。                                                      |
+| self_link | string | 云硬盘URL。                                                     |
 
 #### GcpReservationAffinity
 

@@ -77,6 +77,7 @@ type AwsSubnetCreateExt struct {
 
 // GcpSubnetCreateExt defines create gcp subnet extensional info.
 type GcpSubnetCreateExt struct {
+	VpcSelfLink           string `json:"vpc_self_link" validate:"required"`
 	SelfLink              string `json:"self_link" validate:"required"`
 	StackType             string `json:"stack_type" validate:"required"`
 	Ipv6AccessType        string `json:"ipv6_access_type" validate:"required"`

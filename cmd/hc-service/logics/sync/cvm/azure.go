@@ -298,7 +298,7 @@ func isChangeAzure(kt *kit.Kit, cloud *AzureCvmSync, db *AzureDSCvmSync,
 		return true
 	}
 
-	if db.Cvm.MachineType != *cloud.Cvm.Type {
+	if db.Cvm.MachineType != string(*cloud.Cvm.VMSize) {
 		return true
 	}
 
@@ -572,7 +572,7 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 			PrivateIPv6Addresses: privateIPv6Addresses,
 			PublicIPv4Addresses:  publicIPv4Addresses,
 			PublicIPv6Addresses:  publicIPv6Addresses,
-			MachineType:          converter.PtrToVal(cloudMap[id].Cvm.Type),
+			MachineType:          string(converter.PtrToVal(cloudMap[id].Cvm.VMSize)),
 			CloudCreatedTime:     cloudMap[id].Cvm.TimeCreated.String(),
 			// 云上不支持该字段
 			CloudLaunchedTime: "",

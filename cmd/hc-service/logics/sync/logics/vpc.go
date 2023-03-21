@@ -69,6 +69,10 @@ func (opt *QueryVpcIDsAndSyncOption) Validate() error {
 func QueryVpcIDsAndSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
 	dataCli *dataclient.Client, opt *QueryVpcIDsAndSyncOption) (map[string]string, error) {
 
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
 	cloudVpcIDs := slice.Unique(opt.CloudVpcIDs)
 	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cloud_id", cloudVpcIDs),
@@ -180,6 +184,10 @@ type vpcMeta struct {
 // QueryVpcIDsAndSyncForGcp 查询vpc，如果不存在则同步完再进行查询.
 func QueryVpcIDsAndSyncForGcp(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
 	dataCli *dataclient.Client, accountID string, selfLinks []string) (map[string]vpcMeta, error) {
+
+	if len(selfLinks) == 0 {
+		return nil, errors.New("self_links is required")
+	}
 
 	sls := slice.Unique(selfLinks)
 	listReq := &core.ListReq{

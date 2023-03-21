@@ -280,7 +280,7 @@ func diffGcpSubnet(req *SyncGcpOption, list *types.GcpSubnetListResult,
 			// need add subnet data
 			tmpRes := cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt]{
 				AccountID:  req.AccountID,
-				CloudVpcID: item.CloudVpcID,
+				CloudVpcID: "",
 				VpcID:      "",
 				BkBizID:    constant.UnassignedBiz,
 				// 不支持此字段
@@ -294,6 +294,7 @@ func diffGcpSubnet(req *SyncGcpOption, list *types.GcpSubnetListResult,
 				Ipv6Cidr:          item.Ipv6Cidr,
 				Memo:              item.Memo,
 				Extension: &cloud.GcpSubnetCreateExt{
+					VpcSelfLink:           item.CloudVpcID,
 					SelfLink:              item.Extension.SelfLink,
 					StackType:             item.Extension.StackType,
 					Ipv6AccessType:        item.Extension.Ipv6AccessType,
@@ -316,7 +317,7 @@ func diffGcpSubnet(req *SyncGcpOption, list *types.GcpSubnetListResult,
 }
 
 func isGcpSubnetChange(info cloudcore.Subnet[cloudcore.GcpSubnetExtension], item types.GcpSubnet) bool {
-	if info.CloudVpcID != item.CloudVpcID {
+	if info.Extension.VpcSelfLink != item.CloudVpcID {
 		return true
 	}
 
@@ -372,7 +373,7 @@ func BatchCreateGcpSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[c
 
 	selfLinks := make([]string, 0, len(createResources))
 	for _, one := range createResources {
-		selfLinks = append(selfLinks, one.CloudVpcID)
+		selfLinks = append(selfLinks, one.Extension.VpcSelfLink)
 	}
 
 	vpcMap, err := logics.QueryVpcIDsAndSyncForGcp(kt, adaptor, dataCli, req.AccountID, selfLinks)
@@ -382,7 +383,7 @@ func BatchCreateGcpSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[c
 	}
 
 	for index, resource := range createResources {
-		one, exist := vpcMap[resource.CloudVpcID]
+		one, exist := vpcMap[resource.Extension.VpcSelfLink]
 		if !exist {
 			return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
 		}

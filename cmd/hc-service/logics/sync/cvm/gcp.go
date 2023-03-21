@@ -250,26 +250,27 @@ func isChangeGcp(cloud *GcpCvmSync, db *GcpDSCvmSync) bool {
 		return true
 	}
 
-	cloudVpcIDs := make([]string, 0)
-	cloudSubnetIDs := make([]string, 0)
+	vpcSelfLinks := make([]string, 0)
+	subnetSelfLinks := make([]string, 0)
 	cloudNetWorkInterfaceIDs := make([]string, 0)
 	if len(cloud.Cvm.NetworkInterfaces) > 0 {
 		for _, networkInterface := range cloud.Cvm.NetworkInterfaces {
 			if networkInterface != nil {
 				cloudNetInterfaceID := fmt.Sprintf("%d", cloud.Cvm.Id) + "_" + networkInterface.Name
 				cloudNetWorkInterfaceIDs = append(cloudNetWorkInterfaceIDs, cloudNetInterfaceID)
-				cloudVpcIDs = append(cloudVpcIDs, networkInterface.Network)
-				cloudSubnetIDs = append(cloudSubnetIDs, networkInterface.Subnetwork)
+				vpcSelfLinks = append(vpcSelfLinks, networkInterface.Network)
+				subnetSelfLinks = append(subnetSelfLinks, networkInterface.Subnetwork)
 			}
 		}
 	}
 
-	if len(db.Cvm.CloudVpcIDs) == 0 || len(cloudVpcIDs) == 0 || (db.Cvm.CloudVpcIDs[0] != cloudVpcIDs[0]) {
+	if len(db.Cvm.Extension.VpcSelfLinks) == 0 || len(vpcSelfLinks) == 0 ||
+		(db.Cvm.Extension.VpcSelfLinks[0] != vpcSelfLinks[0]) {
 		return true
 	}
 
-	if len(db.Cvm.CloudSubnetIDs) == 0 || len(cloudSubnetIDs) == 0 ||
-		!assert.IsStringSliceEqual(db.Cvm.CloudSubnetIDs, cloudSubnetIDs) {
+	if len(db.Cvm.Extension.SubnetSelfLinks) == 0 || len(subnetSelfLinks) == 0 ||
+		!assert.IsStringSliceEqual(db.Cvm.Extension.SubnetSelfLinks, subnetSelfLinks) {
 		return true
 	}
 
@@ -304,10 +305,6 @@ func isChangeGcp(cloud *GcpCvmSync, db *GcpDSCvmSync) bool {
 	}
 
 	if db.Cvm.CloudCreatedTime != cloud.Cvm.CreationTimestamp {
-		return true
-	}
-
-	if db.Cvm.CloudExpiredTime != cloud.Cvm.LastStopTimestamp {
 		return true
 	}
 
@@ -390,7 +387,7 @@ func isChangeGcp(cloud *GcpCvmSync, db *GcpDSCvmSync) bool {
 		isEqual := false
 		for _, cloudValue := range cloud.Cvm.Disks {
 			if dbValue.Boot == cloudValue.Boot && dbValue.Index == cloudValue.Index &&
-				dbValue.CloudID == cloudValue.Source && dbValue.DeviceName == cloudValue.DeviceName {
+				dbValue.SelfLink == cloudValue.Source && dbValue.DeviceName == cloudValue.DeviceName {
 				isEqual = true
 				break
 			}
@@ -413,34 +410,34 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 			continue
 		}
 
-		cloudVpcIDs := make([]string, 0)
-		cloudSubnetIDs := make([]string, 0)
+		vpcSelfLinks := make([]string, 0)
+		subnetSelfLinks := make([]string, 0)
 		cloudNetWorkInterfaceIDs := make([]string, 0)
 		if len(cloudMap[id].Cvm.NetworkInterfaces) > 0 {
 			for _, networkInterface := range cloudMap[id].Cvm.NetworkInterfaces {
 				if networkInterface != nil {
 					cloudNetInterfaceID := fmt.Sprintf("%d", cloudMap[id].Cvm.Id) + "_" + networkInterface.Name
 					cloudNetWorkInterfaceIDs = append(cloudNetWorkInterfaceIDs, cloudNetInterfaceID)
-					cloudVpcIDs = append(cloudVpcIDs, networkInterface.Network)
-					cloudSubnetIDs = append(cloudSubnetIDs, networkInterface.Subnetwork)
+					vpcSelfLinks = append(vpcSelfLinks, networkInterface.Network)
+					subnetSelfLinks = append(subnetSelfLinks, networkInterface.Subnetwork)
 				}
 			}
 		}
 
-		if len(cloudVpcIDs) <= 0 {
+		if len(vpcSelfLinks) == 0 {
 			return fmt.Errorf("gcp cvm: %s no vpc", fmt.Sprintf("%d", cloudMap[id].Cvm.Id))
 		}
 
-		if len(cloudVpcIDs) > 1 {
+		if len(vpcSelfLinks) > 1 {
 			logs.Errorf("gcp cvm: %s more than one vpc", fmt.Sprintf("%d", cloudMap[id].Cvm.Id))
 		}
 
-		vpcID, cloudVpcID, bkCloudID, err := queryVpcIDBySelfLink(kt, dataCli, cloudVpcIDs[0])
+		vpcID, cloudVpcID, bkCloudID, err := queryVpcIDBySelfLink(kt, dataCli, vpcSelfLinks[0])
 		if err != nil {
 			return err
 		}
 
-		subnetIDs, cloudSubIDs, err := querySubnetIDsBySelfLink(kt, dataCli, cloudSubnetIDs)
+		subnetIDs, cloudSubIDs, err := querySubnetIDsBySelfLink(kt, dataCli, subnetSelfLinks)
 		if err != nil {
 			return err
 		}
@@ -463,6 +460,7 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 			}
 
 			tmp := corecvm.GcpAttachedDisk{
+				SelfLink:   v.Source,
 				Boot:       v.Boot,
 				Index:      v.Index,
 				CloudID:    cloudID,
@@ -489,12 +487,14 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 			CloudLaunchedTime:    cloudMap[id].Cvm.LastStartTimestamp,
 			CloudExpiredTime:     cloudMap[id].Cvm.LastStopTimestamp,
 			Extension: &corecvm.GcpCvmExtension{
+				VpcSelfLinks:             vpcSelfLinks,
+				SubnetSelfLinks:          subnetSelfLinks,
 				DeletionProtection:       cloudMap[id].Cvm.DeletionProtection,
-				CpuPlatform:              cloudMap[id].Cvm.CpuPlatform,
 				CanIpForward:             cloudMap[id].Cvm.CanIpForward,
 				CloudNetworkInterfaceIDs: cloudNetWorkInterfaceIDs,
 				Disks:                    disks,
 				SelfLink:                 cloudMap[id].Cvm.SelfLink,
+				CpuPlatform:              cloudMap[id].Cvm.CpuPlatform,
 				Labels:                   cloudMap[id].Cvm.Labels,
 				MinCpuPlatform:           cloudMap[id].Cvm.MinCpuPlatform,
 				StartRestricted:          cloudMap[id].Cvm.StartRestricted,
@@ -632,6 +632,7 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 			}
 
 			tmp := corecvm.GcpAttachedDisk{
+				SelfLink:   v.Source,
 				Boot:       v.Boot,
 				Index:      v.Index,
 				CloudID:    cloudID,
@@ -667,12 +668,14 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 			CloudLaunchedTime:    cloudMap[id].Cvm.LastStartTimestamp,
 			CloudExpiredTime:     cloudMap[id].Cvm.LastStopTimestamp,
 			Extension: &corecvm.GcpCvmExtension{
+				VpcSelfLinks:             vpcSelfLinks,
+				SubnetSelfLinks:          subnetSelfLinks,
 				DeletionProtection:       cloudMap[id].Cvm.DeletionProtection,
-				CpuPlatform:              cloudMap[id].Cvm.CpuPlatform,
 				CanIpForward:             cloudMap[id].Cvm.CanIpForward,
 				CloudNetworkInterfaceIDs: cloudNetWorkInterfaceIDs,
 				Disks:                    disks,
 				SelfLink:                 cloudMap[id].Cvm.SelfLink,
+				CpuPlatform:              cloudMap[id].Cvm.CpuPlatform,
 				Labels:                   cloudMap[id].Cvm.Labels,
 				MinCpuPlatform:           cloudMap[id].Cvm.MinCpuPlatform,
 				StartRestricted:          cloudMap[id].Cvm.StartRestricted,

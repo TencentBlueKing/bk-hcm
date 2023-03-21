@@ -246,10 +246,7 @@ func diffAzureSubnetAndSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, li
 
 	// update resource data
 	if len(updateResources) > 0 {
-		updateReq := &cloud.SubnetBatchUpdateReq[cloud.AzureSubnetUpdateExt]{
-			Subnets: updateResources,
-		}
-		if err = dataCli.Azure.Subnet.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
+		if err := batchUpdateAzureSubnet(kt, updateResources, dataCli, adaptor, req); err != nil {
 			return err
 		}
 	}
@@ -260,6 +257,48 @@ func diffAzureSubnetAndSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, li
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func batchUpdateAzureSubnet(kt *kit.Kit, updateResources []cloud.SubnetUpdateReq[cloud.AzureSubnetUpdateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *hcservice.AzureResourceSyncReq) error {
+
+	cloudSGIDs := make([]string, 0)
+	for _, one := range updateResources {
+		if len(converter.PtrToVal(one.Extension.CloudSecurityGroupID)) != 0 {
+			cloudSGIDs = append(cloudSGIDs, *one.Extension.CloudSecurityGroupID)
+		}
+	}
+
+	listSGOpt := &securitygrouplogics.QuerySecurityGroupIDsAndSyncOption{
+		Vendor:                enumor.Azure,
+		AccountID:             req.AccountID,
+		ResourceGroupName:     req.ResourceGroupName,
+		CloudSecurityGroupIDs: cloudSGIDs,
+	}
+	securityGroupMap, err := securitygrouplogics.QuerySecurityGroupIDsAndSync(kt, adaptor, dataCli, listSGOpt)
+	if err != nil {
+		return err
+	}
+
+	for index, resource := range updateResources {
+		if len(converter.PtrToVal(resource.Extension.CloudSecurityGroupID)) != 0 {
+			sgID, exist := securityGroupMap[*resource.Extension.CloudSecurityGroupID]
+			if !exist {
+				return fmt.Errorf("security group: %s not sync from cloud", *resource.Extension.CloudSecurityGroupID)
+			}
+
+			updateResources[index].Extension.SecurityGroupID = converter.ValToPtr(sgID)
+		}
+	}
+
+	updateReq := &cloud.SubnetBatchUpdateReq[cloud.AzureSubnetUpdateExt]{
+		Subnets: updateResources,
+	}
+	if err := dataCli.Azure.Subnet.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
+		return err
 	}
 
 	return nil
