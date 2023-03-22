@@ -63,8 +63,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 			time.Since(start), opt, kt.Rid)
 	}()
 
-	// TODO: 修改账号表中同步状态字段和同步时间字段
-
 	if opt.SyncPublicResource {
 		syncOpt := &SyncPublicResourceOption{
 			AccountID: opt.AccountID,
@@ -75,8 +73,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		}
 	}
 
-	// TODO: regionZoneMap 还没有用到暂时忽略了
-	regions, _, hitErr := GetRegionsAndRegionZoneMap(kt, cliSet.DataService())
+	regions, hitErr := ListRegion(kt, cliSet.DataService())
 	if hitErr != nil {
 		return hitErr
 	}
@@ -108,8 +105,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 	if hitErr = SyncRouteTable(kt, cliSet.HCService(), opt.AccountID, regions); hitErr != nil {
 		return hitErr
 	}
-
-	// TODO: 更新同步状态字段为同步结束，更新结束时间
 
 	return nil
 }

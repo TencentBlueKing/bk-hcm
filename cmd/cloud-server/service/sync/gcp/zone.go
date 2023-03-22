@@ -32,7 +32,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/converter"
 )
 
 // SyncZone sync zone
@@ -56,8 +55,8 @@ func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 	return nil
 }
 
-// GetRegionsAndRegionZoneMap ...
-func GetRegionsAndRegionZoneMap(kt *kit.Kit, dataCli *dataservice.Client) ([]string, map[string][]string, error) {
+// GetRegionZoneMap ...
+func GetRegionZoneMap(kt *kit.Kit, dataCli *dataservice.Client) (map[string][]string, error) {
 	listReq := &protocloud.ZoneListReq{
 		Filter: tools.EqualExpression("vendor", enumor.Gcp),
 		Page:   core.DefaultBasePage,
@@ -65,23 +64,21 @@ func GetRegionsAndRegionZoneMap(kt *kit.Kit, dataCli *dataservice.Client) ([]str
 	result, err := dataCli.Global.Zone.ListZone(kt.Ctx, kt.Header(), listReq)
 	if err != nil {
 		logs.Errorf("list gcp zone failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, nil, err
+		return nil, err
 	}
 
 	if len(result.Details) == 0 {
-		return nil, nil, errors.New("gcp zone is empty")
+		return nil, errors.New("gcp zone is empty")
 	}
 
 	regionZoneMap := make(map[string][]string)
-	regionMap := make(map[string]struct{})
 	for _, one := range result.Details {
 		if _, exist := regionZoneMap[one.Region]; !exist {
-			regionMap[one.Region] = struct{}{}
 			regionZoneMap[one.Region] = make([]string, 0)
 		}
 
 		regionZoneMap[one.Region] = append(regionZoneMap[one.Region], one.Name)
 	}
 
-	return converter.MapKeyToStringSlice(regionMap), regionZoneMap, nil
+	return regionZoneMap, nil
 }

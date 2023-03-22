@@ -63,8 +63,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 			opt.AccountID, time.Since(start), opt, kt.Rid)
 	}()
 
-	// TODO: 修改账号表中同步状态字段和同步时间字段
-
 	if err := SyncResourceGroup(kt, cliSet.HCService(), opt.AccountID); err != nil {
 		return err
 	}
@@ -131,8 +129,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
-
-	// TODO: 更新同步状态字段为同步结束，更新结束时间
 
 	return nil
 }
