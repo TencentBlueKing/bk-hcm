@@ -38,11 +38,11 @@ import (
 
 const (
 	// DefaultMaxInLimit defines the default max in limit
-	DefaultMaxInLimit = uint(100)
+	DefaultMaxInLimit = uint(500)
 	// DefaultMaxNotInLimit defines the default max nin limit
-	DefaultMaxNotInLimit = uint(100)
+	DefaultMaxNotInLimit = uint(500)
 	// DefaultMaxRuleLimit defines the default max number of rules limit
-	DefaultMaxRuleLimit = uint(5)
+	DefaultMaxRuleLimit = uint(10)
 )
 
 // ExprOption defines how to validate an

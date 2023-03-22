@@ -344,16 +344,23 @@ func isChangeGcp(cloud *GcpCvmSync, db *GcpDSCvmSync) bool {
 		return true
 	}
 
-	if db.Cvm.Extension.ReservationAffinity.ConsumeReservationType != cloud.Cvm.ReservationAffinity.ConsumeReservationType {
+	if (db.Cvm.Extension.ReservationAffinity == nil && cloud.Cvm.ReservationAffinity != nil) ||
+		(db.Cvm.Extension.ReservationAffinity != nil && cloud.Cvm.ReservationAffinity == nil) {
 		return true
 	}
 
-	if db.Cvm.Extension.ReservationAffinity.Key != cloud.Cvm.ReservationAffinity.Key {
-		return true
-	}
+	if db.Cvm.Extension.ReservationAffinity != nil && cloud.Cvm.ReservationAffinity != nil {
+		if db.Cvm.Extension.ReservationAffinity.ConsumeReservationType != cloud.Cvm.ReservationAffinity.ConsumeReservationType {
+			return true
+		}
 
-	if !assert.IsStringSliceEqual(db.Cvm.Extension.ReservationAffinity.Values, cloud.Cvm.ReservationAffinity.Values) {
-		return true
+		if db.Cvm.Extension.ReservationAffinity.Key != cloud.Cvm.ReservationAffinity.Key {
+			return true
+		}
+
+		if !assert.IsStringSliceEqual(db.Cvm.Extension.ReservationAffinity.Values, cloud.Cvm.ReservationAffinity.Values) {
+			return true
+		}
 	}
 
 	if (db.Cvm.Extension.AdvancedMachineFeatures != nil && cloud.Cvm.AdvancedMachineFeatures == nil) ||
