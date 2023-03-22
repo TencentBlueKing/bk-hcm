@@ -24,7 +24,6 @@ import (
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/tcloud"
-	typcore "hcm/pkg/adaptor/types/core"
 	typescore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
@@ -106,7 +105,7 @@ func getDatasFromDSForTCloudSGSync(kt *kit.Kit, req *SyncTCloudSecurityGroupOpti
 			},
 			Page: &core.BasePage{
 				Start: uint32(start),
-				Limit: core.DefaultMaxPageLimit,
+				Limit: typescore.TCloudQueryLimit,
 			},
 		}
 
@@ -173,7 +172,7 @@ func getDatasFromTCloudForSecurityGroupSync(kt *kit.Kit, req *SyncTCloudSecurity
 func getTCloudSGByCloudIDsSync(kt *kit.Kit, client *tcloud.TCloud,
 	req *SyncTCloudSecurityGroupOption) (map[string]*SecurityGroupSyncTCloudDiff, error) {
 	cloudMap := make(map[string]*SecurityGroupSyncTCloudDiff)
-	elems := slice.Split(req.CloudIDs, typcore.TCloudQueryLimit)
+	elems := slice.Split(req.CloudIDs, typescore.TCloudQueryLimit)
 	for _, partIDs := range elems {
 		opt := &securitygroup.TCloudListOption{
 			Region:   req.Region,
@@ -203,7 +202,7 @@ func getTCloudSGAllSync(kt *kit.Kit, client *tcloud.TCloud,
 	for {
 		opt := &securitygroup.TCloudListOption{
 			Region: req.Region,
-			Page:   &typcore.TCloudPage{Offset: uint64(offset), Limit: uint64(typcore.TCloudQueryLimit)},
+			Page:   &typescore.TCloudPage{Offset: uint64(offset), Limit: uint64(typescore.TCloudQueryLimit)},
 		}
 		datas, err := client.ListSecurityGroup(kt, opt)
 		if err != nil {
@@ -213,7 +212,7 @@ func getTCloudSGAllSync(kt *kit.Kit, client *tcloud.TCloud,
 		datasCloud = append(datasCloud, datas...)
 
 		offset += len(datas)
-		if uint(len(datas)) < typcore.TCloudQueryLimit {
+		if uint(len(datas)) < typescore.TCloudQueryLimit {
 			break
 		}
 	}

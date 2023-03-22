@@ -20,6 +20,7 @@
 package zone
 
 import (
+	typescore "hcm/pkg/adaptor/types/core"
 	typeszone "hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud/zone"
@@ -199,7 +200,7 @@ func (z *zoneHC) getTCloudZoneAllDS(cts *rest.Contexts, req *apizone.TCloudZoneS
 					},
 				},
 			},
-			Page: &core.BasePage{Start: uint32(start), Limit: filter.DefaultMaxInLimit},
+			Page: &core.BasePage{Start: uint32(start), Limit: typescore.TCloudQueryLimit},
 		}
 
 		results, err := z.dataCli.Global.Zone.ListZone(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
@@ -279,7 +280,7 @@ func (z *zoneHC) getTCloudZoneDSSync(cts *rest.Contexts, cloudIDs []string,
 					},
 				},
 			},
-			Page: &core.BasePage{Start: uint32(start), Limit: filter.DefaultMaxInLimit},
+			Page: &core.BasePage{Start: uint32(start), Limit: typescore.TCloudQueryLimit},
 		}
 
 		results, err := z.dataCli.Global.Zone.ListZone(cts.Kit.Ctx, cts.Kit.Header(), dataReq)

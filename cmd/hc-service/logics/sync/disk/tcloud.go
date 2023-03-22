@@ -106,7 +106,7 @@ func getDatasFromDSForTCloudDiskSync(kt *kit.Kit, req *SyncTCloudDiskOption,
 					filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: req.Region},
 				},
 			},
-			Page: &apicore.BasePage{Start: uint32(start), Limit: filter.DefaultMaxInLimit},
+			Page: &apicore.BasePage{Start: uint32(start), Limit: core.TCloudQueryLimit},
 		}
 
 		if len(req.CloudIDs) > 0 {

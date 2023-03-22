@@ -109,7 +109,7 @@ func SyncTCloudEip(kt *kit.Kit, req *SyncTCloudEipOption,
 		for {
 			opt := &eip.TCloudEipListOption{
 				Region: req.Region,
-				Page:   &core.TCloudPage{Offset: uint64(offset), Limit: uint64(filter.DefaultMaxInLimit)},
+				Page:   &core.TCloudPage{Offset: uint64(offset), Limit: uint64(core.TCloudQueryLimit)},
 			}
 			if len(req.CloudIDs) > 0 {
 				opt.Page = nil
@@ -137,7 +137,7 @@ func SyncTCloudEip(kt *kit.Kit, req *SyncTCloudEipOption,
 			}
 
 			offset += len(datas.Details)
-			if uint(len(datas.Details)) < filter.DefaultMaxInLimit {
+			if uint(len(datas.Details)) < core.TCloudQueryLimit {
 				break
 			}
 		}
@@ -160,7 +160,7 @@ func syncTCloudEipAll(kt *kit.Kit, req *SyncTCloudEipOption, dataCli *dataservic
 	for {
 		opt := &eip.TCloudEipListOption{
 			Region: req.Region,
-			Page:   &core.TCloudPage{Offset: uint64(offset), Limit: uint64(filter.DefaultMaxInLimit)},
+			Page:   &core.TCloudPage{Offset: uint64(offset), Limit: uint64(core.TCloudQueryLimit)},
 		}
 
 		datas, err := client.ListEip(kt, opt)
@@ -176,7 +176,7 @@ func syncTCloudEipAll(kt *kit.Kit, req *SyncTCloudEipOption, dataCli *dataservic
 		}
 
 		offset += len(datas.Details)
-		if uint(len(datas.Details)) < filter.DefaultMaxInLimit {
+		if uint(len(datas.Details)) < core.TCloudQueryLimit {
 			break
 		}
 	}
@@ -388,7 +388,7 @@ func getTCloudEipDSSync(kt *kit.Kit, cloudIDs []string, req *SyncTCloudEipOption
 			},
 			Page: &apicore.BasePage{
 				Start: uint32(start),
-				Limit: apicore.DefaultMaxPageLimit,
+				Limit: core.TCloudQueryLimit,
 			},
 		}
 
@@ -445,7 +445,7 @@ func getTCloudEipAllDS(kt *kit.Kit, req *SyncTCloudEipOption,
 			},
 			Page: &apicore.BasePage{
 				Start: uint32(start),
-				Limit: apicore.DefaultMaxPageLimit,
+				Limit: core.TCloudQueryLimit,
 			},
 		}
 
