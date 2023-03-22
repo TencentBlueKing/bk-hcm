@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"hcm/cmd/cloud-server/logics/audit"
 	disklgc "hcm/cmd/cloud-server/logics/disk"
@@ -90,8 +91,10 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 	}
 
 	// filter out disk in recycle bin
-	req.Filter, err = tools.And(expr, &filter.AtomRule{Field: "recycle_status", Op: filter.NotEqual.Factory(),
-		Value: enumor.RecycleStatus})
+	req.Filter, err = tools.And(expr, &filter.AtomRule{
+		Field: "recycle_status", Op: filter.NotEqual.Factory(),
+		Value: enumor.RecycleStatus,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +139,12 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 
 	details := make([]*cloudproto.DiskResult, len(resp.Details))
 	for idx, diskData := range resp.Details {
+		// Gcp disk type 截取类型展示
+		if diskData.Vendor == string(enumor.Gcp) {
+			lastIdx := strings.LastIndex(diskData.DiskType, "/")
+			diskData.DiskType = diskData.DiskType[lastIdx+1:]
+		}
+
 		details[idx] = &cloudproto.DiskResult{
 			InstanceID:   diskIDToCvmID[diskData.ID],
 			InstanceType: "cvm",
