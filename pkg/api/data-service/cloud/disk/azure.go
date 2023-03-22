@@ -21,22 +21,28 @@ package disk
 
 // AzureDiskExtensionCreateReq ...
 type AzureDiskExtensionCreateReq struct {
-	ResourceGroupName string `json:"resource_group_name" validate:"required"`
-	Encrypted         *bool  `json:"encrypted,omitempty"`
-	OSType            string `json:"os_type"`
+	ResourceGroupName string  `json:"resource_group_name" validate:"required"`
+	Encrypted         *bool   `json:"encrypted,omitempty"`
+	OSType            string  `json:"os_type"`
+	SKUName           *string `json:"sku_name,omitempty"`
+	SKUTier           *string `json:"sku_tier,omitempty"`
 }
 
 // AzureDiskExtensionResult ...
 type AzureDiskExtensionResult struct {
-	ResourceGroupName string `json:"resource_group_name"`
-	Encrypted         *bool  `json:"encrypted,omitempty"`
-	OSType            string `json:"os_type,omitempty"`
+	ResourceGroupName string  `json:"resource_group_name"`
+	Encrypted         *bool   `json:"encrypted,omitempty"`
+	OSType            string  `json:"os_type,omitempty"`
+	SKUName           *string `json:"sku_name,omitempty"`
+	SKUTier           *string `json:"sku_tier,omitempty"`
 }
 
 // AzureDiskExtensionUpdateReq ...
 // 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
 type AzureDiskExtensionUpdateReq struct {
-	ResourceGroupName string `json:"resource_group_name"`
-	Encrypted         *bool  `json:"encrypted,omitempty"`
-	OSType            string `json:"os_type,omitempty"`
+	ResourceGroupName string  `json:"resource_group_name"`
+	Encrypted         *bool   `json:"encrypted,omitempty"`
+	OSType            string  `json:"os_type,omitempty"`
+	SKUName           *string `json:"sku_name,omitempty"`
+	SKUTier           *string `json:"sku_tier,omitempty"`
 }

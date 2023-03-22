@@ -135,4 +135,6 @@ type AzureDisk struct {
 	DiskSize *int64    `json:"disk_size"`
 	OSType   *string   `json:"os_type"`
 	Zones    []*string `json:"zone"`
+	SKUName  *string   `json:"sku_name"`
+	SKUTier  *string   `json:"sku_tier"`
 }
