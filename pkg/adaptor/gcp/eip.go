@@ -287,6 +287,7 @@ func convert(resp *compute.AddressList, region string) []*eip.GcpEip {
 			Network:      item.Network,
 			Subnetwork:   item.Subnetwork,
 			SelfLink:     item.SelfLink,
+			Users:        item.Users,
 		}
 		switch item.AddressType {
 		case "EXTERNAL":

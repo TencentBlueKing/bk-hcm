@@ -79,6 +79,7 @@ type GcpEip struct {
 	Network      string
 	Subnetwork   string
 	SelfLink     string
+	Users        []string
 }
 
 // GcpEipDeleteOption ...
