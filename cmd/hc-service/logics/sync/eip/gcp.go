@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 )
 
@@ -244,6 +245,7 @@ func syncGcpEipAdd(kt *kit.Kit, addIDs []string, req *SyncGcpEipOption,
 				Network:      cloudMap[id].Eip.Network,
 				Subnetwork:   cloudMap[id].Eip.Subnetwork,
 				SelfLink:     cloudMap[id].Eip.SelfLink,
+				Users:        cloudMap[id].Eip.Users,
 			},
 		}
 		createReq = append(createReq, eip)
@@ -302,6 +304,10 @@ func isGcpEipChange(db *GcpDSEipSync, cloud *GcpEipSync) bool {
 		return true
 	}
 
+	if !assert.IsStringSliceEqual(db.Eip.Extension.Users, cloud.Eip.Users) {
+		return true
+	}
+
 	return false
 }
 
@@ -329,6 +335,7 @@ func syncGcpEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpE
 				Network:      cloudMap[id].Eip.Network,
 				Subnetwork:   cloudMap[id].Eip.Subnetwork,
 				SelfLink:     cloudMap[id].Eip.SelfLink,
+				Users:        cloudMap[id].Eip.Users,
 			},
 		}
 
