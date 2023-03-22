@@ -24,11 +24,13 @@ import "time"
 // AwsDiskExtensionCreateReq ...
 type AwsDiskExtensionCreateReq struct {
 	Attachment []*AwsDiskAttachment `json:"attachment,omitempty"`
+	Encrypted  *bool                `json:"encrypted,omitempty"`
 }
 
 // AwsDiskExtensionResult ...
 type AwsDiskExtensionResult struct {
 	Attachment []*AwsDiskAttachment `json:"attachment,omitempty"`
+	Encrypted  *bool                `json:"encrypted,omitempty"`
 }
 
 // AwsDiskAttachment ...
@@ -51,4 +53,5 @@ type AwsDiskAttachment struct {
 // 根据情况增加 omitempty tag, 因为会调用 json.UpdateMerge 完成字段合并
 type AwsDiskExtensionUpdateReq struct {
 	Attachment []*AwsDiskAttachment `json:"attachment,omitempty"`
+	Encrypted  *bool                `json:"encrypted,omitempty"`
 }
