@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncAzureSecurityGroupOption define sync azure sg and sg rule option.
@@ -309,9 +310,7 @@ func isAzureSGChange(db *AzureSecurityGroupSyncDS, cloud *SecurityGroupSyncAzure
 func diffAzureSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncAzureDiff, dsMap map[string]*AzureSecurityGroupSyncDS,
 	updateCloudIDs []string, dataCli *dataservice.Client, req *SyncAzureSecurityGroupOption) error {
 
-	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.AzureSecurityGroupExtension]{
-		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.AzureSecurityGroupExtension]{},
-	}
+	securityGroups := make([]protocloud.SecurityGroupBatchUpdate[corecloud.AzureSecurityGroupExtension], 0)
 
 	for _, id := range updateCloudIDs {
 		if !isAzureSGChange(dsMap[id], cloudMap[id]) {
@@ -328,14 +327,21 @@ func diffAzureSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*Security
 				ResourceGUID:      cloudMap[id].SecurityGroup.ResourceGUID,
 			},
 		}
-		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
+
+		securityGroups = append(securityGroups, securityGroup)
 	}
 
-	if len(updateReq.SecurityGroups) > 0 {
-		if err := dataCli.Azure.SecurityGroup.BatchUpdateSecurityGroup(kt.Ctx, kt.Header(),
-			updateReq); err != nil {
-			logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+	if len(securityGroups) > 0 {
+		elems := slice.Split(securityGroups, typescore.TCloudQueryLimit)
+		for _, partSecurityGroups := range elems {
+			updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.AzureSecurityGroupExtension]{
+				SecurityGroups: partSecurityGroups,
+			}
+			if err := dataCli.Azure.SecurityGroup.BatchUpdateSecurityGroup(kt.Ctx, kt.Header(),
+				updateReq); err != nil {
+				logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 		}
 	}
 

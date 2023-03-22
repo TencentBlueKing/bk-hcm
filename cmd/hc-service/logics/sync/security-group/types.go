@@ -20,6 +20,7 @@
 package securitygroup
 
 import (
+	typescore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
@@ -34,6 +35,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
@@ -182,12 +184,18 @@ func GetDatasFromDSForSecurityGroupSync(kt *kit.Kit, req *proto.SecurityGroupSyn
 func DiffSecurityGroupSyncDelete(kt *kit.Kit, deleteCloudIDs []string,
 	dataCli *dataservice.Client) error {
 
-	batchDeleteReq := &protocloud.SecurityGroupBatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", deleteCloudIDs),
-	}
-	if err := dataCli.Global.SecurityGroup.BatchDeleteSecurityGroup(kt.Ctx, kt.Header(), batchDeleteReq); err != nil {
-		logs.Errorf("request dataservice delete tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+	elems := slice.Split(deleteCloudIDs, typescore.TCloudQueryLimit)
+
+	for _, partDeleteCloudIDs := range elems {
+
+		batchDeleteReq := &protocloud.SecurityGroupBatchDeleteReq{
+			Filter: tools.ContainersExpression("cloud_id", partDeleteCloudIDs),
+		}
+
+		if err := dataCli.Global.SecurityGroup.BatchDeleteSecurityGroup(kt.Ctx, kt.Header(), batchDeleteReq); err != nil {
+			logs.Errorf("request dataservice delete tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
 	}
 
 	return nil

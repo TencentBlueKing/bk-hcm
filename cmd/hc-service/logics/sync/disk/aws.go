@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	typescore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
 	apicore "hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
@@ -36,6 +37,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncAwsDiskOption define sync aws disk option.
@@ -238,16 +240,24 @@ func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 			}
 		}
 
+		name := ""
+		for _, tag := range cloudMap[id].Disk.Tags {
+			if tag != nil {
+				if converter.PtrToVal(tag.Key) == "Name" {
+					name = converter.PtrToVal(tag.Value)
+				}
+			}
+		}
+
 		disk := &dataproto.DiskExtCreateReq[dataproto.AwsDiskExtensionCreateReq]{
 			AccountID: req.AccountID,
-			// 该云没有此字段
-			Name:     "",
-			CloudID:  id,
-			Region:   req.Region,
-			Zone:     converter.PtrToVal(cloudMap[id].Disk.AvailabilityZone),
-			DiskSize: uint64(converter.PtrToVal(cloudMap[id].Disk.Size)),
-			DiskType: converter.PtrToVal(cloudMap[id].Disk.VolumeType),
-			Status:   converter.PtrToVal(cloudMap[id].Disk.State),
+			Name:      name,
+			CloudID:   id,
+			Region:    req.Region,
+			Zone:      converter.PtrToVal(cloudMap[id].Disk.AvailabilityZone),
+			DiskSize:  uint64(converter.PtrToVal(cloudMap[id].Disk.Size)),
+			DiskType:  converter.PtrToVal(cloudMap[id].Disk.VolumeType),
+			Status:    converter.PtrToVal(cloudMap[id].Disk.State),
 			// 该云没有此字段
 			Memo: nil,
 			Extension: &dataproto.AwsDiskExtensionCreateReq{
@@ -271,9 +281,13 @@ func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 	return results.IDs, nil
 }
 
-func isAwsDiskChange(db *AwsDiskSyncDS, cloud *AwsDiskSyncDiff) bool {
+func isAwsDiskChange(db *AwsDiskSyncDS, cloud *AwsDiskSyncDiff, cloudName string) bool {
 
 	if converter.PtrToVal(cloud.Disk.State) != db.HcDisk.Status {
+		return true
+	}
+
+	if cloudName != db.HcDisk.Name {
 		return true
 	}
 
@@ -305,10 +319,19 @@ func isAwsDiskChange(db *AwsDiskSyncDS, cloud *AwsDiskSyncDiff) bool {
 func diffAwsSyncUpdate(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 	dsMap map[string]*AwsDiskSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
 
-	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.AwsDiskExtensionUpdateReq]
+	disks := make([]*dataproto.DiskExtUpdateReq[dataproto.AwsDiskExtensionUpdateReq], 0)
 
 	for _, id := range updateCloudIDs {
-		if !isAwsDiskChange(dsMap[id], cloudMap[id]) {
+		name := ""
+		for _, tag := range cloudMap[id].Disk.Tags {
+			if tag != nil {
+				if converter.PtrToVal(tag.Key) == "Name" {
+					name = converter.PtrToVal(tag.Value)
+				}
+			}
+		}
+
+		if !isAwsDiskChange(dsMap[id], cloudMap[id], name) {
 			continue
 		}
 
@@ -332,18 +355,27 @@ func diffAwsSyncUpdate(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 		disk := &dataproto.DiskExtUpdateReq[dataproto.AwsDiskExtensionUpdateReq]{
 			ID:     dsMap[id].HcDisk.ID,
 			Status: *cloudMap[id].Disk.State,
+			Name:   name,
 			Extension: &dataproto.AwsDiskExtensionUpdateReq{
 				Attachment: attachments,
 				Encrypted:  cloudMap[id].Disk.Encrypted,
 			},
 		}
-		updateReq = append(updateReq, disk)
+
+		disks = append(disks, disk)
 	}
 
-	if len(updateReq) > 0 {
-		if _, err := dataCli.Aws.BatchUpdateDisk(kt.Ctx, kt.Header(), &updateReq); err != nil {
-			logs.Errorf("request dataservice aws BatchUpdateDisk failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+	if len(disks) > 0 {
+		elems := slice.Split(disks, typescore.TCloudQueryLimit)
+		for _, partDisks := range elems {
+			var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.AwsDiskExtensionUpdateReq]
+			for _, disk := range partDisks {
+				updateReq = append(updateReq, disk)
+			}
+			if _, err := dataCli.Aws.BatchUpdateDisk(kt.Ctx, kt.Header(), &updateReq); err != nil {
+				logs.Errorf("request dataservice aws BatchUpdateDisk failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 		}
 	}
 

@@ -20,6 +20,7 @@
 package disk
 
 import (
+	typescore "hcm/pkg/adaptor/types/core"
 	typedisk "hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
@@ -30,6 +31,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
@@ -313,12 +315,17 @@ func GetSelfLinkMapFromDSForDiskSync(kt *kit.Kit, req *protodisk.DiskSyncReq,
 // DiffDiskSyncDelete ...
 func DiffDiskSyncDelete(kt *kit.Kit, deleteCloudIDs []string,
 	dataCli *dataservice.Client) error {
-	batchDeleteReq := &datadisk.DiskDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", deleteCloudIDs),
-	}
-	if _, err := dataCli.Global.DeleteDisk(kt.Ctx, kt.Header(), batchDeleteReq); err != nil {
-		logs.Errorf("request dataservice delete tcloud disk failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+
+	elems := slice.Split(deleteCloudIDs, typescore.TCloudQueryLimit)
+
+	for _, partDeleteCloudIDs := range elems {
+		batchDeleteReq := &datadisk.DiskDeleteReq{
+			Filter: tools.ContainersExpression("cloud_id", partDeleteCloudIDs),
+		}
+		if _, err := dataCli.Global.DeleteDisk(kt.Ctx, kt.Header(), batchDeleteReq); err != nil {
+			logs.Errorf("request dataservice delete tcloud disk failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
 	}
 
 	return nil

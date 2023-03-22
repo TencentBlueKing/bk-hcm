@@ -25,6 +25,7 @@ import (
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	typecore "hcm/pkg/adaptor/types/core"
+	typescore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/api/core"
 	apicore "hcm/pkg/api/core"
@@ -40,6 +41,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncGcpDiskOption define sync gcp disk option.
@@ -360,7 +362,7 @@ func isGcpDiskChange(db *GcpDiskSyncDS, cloud *GcpDiskSyncDiff) bool {
 func diffGcpSyncUpdate(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff, req *SyncGcpDiskOption,
 	dsMap map[string]*GcpDiskSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
 
-	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.GcpDiskExtensionUpdateReq]
+	disks := make([]*dataproto.DiskExtUpdateReq[dataproto.GcpDiskExtensionUpdateReq], 0)
 
 	for _, id := range updateCloudIDs {
 		if cloudMap[id].Disk.Region == "" {
@@ -390,13 +392,20 @@ func diffGcpSyncUpdate(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff, req *S
 			},
 		}
 
-		updateReq = append(updateReq, disk)
+		disks = append(disks, disk)
 	}
 
-	if len(updateReq) > 0 {
-		if _, err := dataCli.Gcp.BatchUpdateDisk(kt.Ctx, kt.Header(), &updateReq); err != nil {
-			logs.Errorf("request dataservice gcp BatchUpdateDisk failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+	if len(disks) > 0 {
+		elems := slice.Split(disks, typescore.TCloudQueryLimit)
+		for _, partDisks := range elems {
+			var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.GcpDiskExtensionUpdateReq]
+			for _, disk := range partDisks {
+				updateReq = append(updateReq, disk)
+			}
+			if _, err := dataCli.Gcp.BatchUpdateDisk(kt.Ctx, kt.Header(), &updateReq); err != nil {
+				logs.Errorf("request dataservice gcp BatchUpdateDisk failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 		}
 	}
 

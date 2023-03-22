@@ -25,6 +25,7 @@ import (
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types/core"
+	typescore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
 	apicore "hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
@@ -374,7 +375,8 @@ func isTCloudDiskChange(db *TCloudDiskSyncDS, cloud *TCloudDiskSyncDiff) bool {
 
 func diffTCloudDiskSyncUpdate(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
 	dsMap map[string]*TCloudDiskSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
-	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.TCloudDiskExtensionUpdateReq]
+
+	disks := make([]*dataproto.DiskExtUpdateReq[dataproto.TCloudDiskExtensionUpdateReq], 0)
 
 	for _, id := range updateCloudIDs {
 
@@ -400,13 +402,21 @@ func diffTCloudDiskSyncUpdate(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDi
 				DeadlineTime:       cloudMap[id].Disk.DeadlineTime,
 			},
 		}
-		updateReq = append(updateReq, disk)
+
+		disks = append(disks, disk)
 	}
 
-	if len(updateReq) > 0 {
-		if _, err := dataCli.TCloud.BatchUpdateDisk(kt.Ctx, kt.Header(), &updateReq); err != nil {
-			logs.Errorf("request dataservice BatchUpdateDisk failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+	if len(disks) > 0 {
+		elems := slice.Split(disks, typescore.TCloudQueryLimit)
+		for _, partDisks := range elems {
+			var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.TCloudDiskExtensionUpdateReq]
+			for _, disk := range partDisks {
+				updateReq = append(updateReq, disk)
+			}
+			if _, err := dataCli.TCloud.BatchUpdateDisk(kt.Ctx, kt.Header(), &updateReq); err != nil {
+				logs.Errorf("request dataservice BatchUpdateDisk failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 		}
 	}
 

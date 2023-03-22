@@ -25,6 +25,7 @@ import (
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/tcloud"
 	typcore "hcm/pkg/adaptor/types/core"
+	typescore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -318,9 +319,7 @@ func isTCloudSGChange(db *TCloudSecurityGroupSyncDS, cloud *SecurityGroupSyncTCl
 func diffTCloudSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncTCloudDiff,
 	dsMap map[string]*TCloudSecurityGroupSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
 
-	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.TCloudSecurityGroupExtension]{
-		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.TCloudSecurityGroupExtension]{},
-	}
+	securityGroups := make([]protocloud.SecurityGroupBatchUpdate[corecloud.TCloudSecurityGroupExtension], 0)
 
 	for _, id := range updateCloudIDs {
 
@@ -336,14 +335,21 @@ func diffTCloudSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*Securit
 				CloudProjectID: cloudMap[id].SecurityGroup.ProjectId,
 			},
 		}
-		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
+
+		securityGroups = append(securityGroups, securityGroup)
 	}
 
-	if len(updateReq.SecurityGroups) > 0 {
-		if err := dataCli.TCloud.SecurityGroup.BatchUpdateSecurityGroup(kt.Ctx, kt.Header(),
-			updateReq); err != nil {
-			logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+	if len(securityGroups) > 0 {
+		elems := slice.Split(securityGroups, typescore.TCloudQueryLimit)
+		for _, partSecurityGroups := range elems {
+			updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.TCloudSecurityGroupExtension]{
+				SecurityGroups: partSecurityGroups,
+			}
+			if err := dataCli.TCloud.SecurityGroup.BatchUpdateSecurityGroup(kt.Ctx, kt.Header(),
+				updateReq); err != nil {
+				logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 		}
 	}
 

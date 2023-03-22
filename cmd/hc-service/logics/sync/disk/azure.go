@@ -34,7 +34,9 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncAzureDiskOption define sync azure disk option.
@@ -243,6 +245,8 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 			Extension: &dataproto.AzureDiskExtensionCreateReq{
 				ResourceGroupName: req.ResourceGroupName,
 				OSType:            converter.PtrToVal(cloudMap[id].Disk.OSType),
+				SKUName:           cloudMap[id].Disk.SKUName,
+				SKUTier:           cloudMap[id].Disk.SKUTier,
 			},
 		}
 		if len(cloudMap[id].Disk.Zones) > 0 {
@@ -270,6 +274,14 @@ func isAzureDiskChange(db *AzureDiskSyncDS, cloud *AzureDiskSyncDiff) bool {
 		return true
 	}
 
+	if !assert.IsPtrStringEqual(cloud.Disk.SKUName, db.HcDisk.Extension.SKUName) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Disk.SKUTier, db.HcDisk.Extension.SKUTier) {
+		return true
+	}
+
 	if converter.PtrToVal(cloud.Disk.OSType) != db.HcDisk.Extension.OSType {
 		return true
 	}
@@ -280,7 +292,7 @@ func isAzureDiskChange(db *AzureDiskSyncDS, cloud *AzureDiskSyncDiff) bool {
 func diffAzureSyncUpdate(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, dsMap map[string]*AzureDiskSyncDS,
 	updateCloudIDs []string, dataCli *dataservice.Client, req *SyncAzureDiskOption) error {
 
-	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.AzureDiskExtensionUpdateReq]
+	disks := make([]*dataproto.DiskExtUpdateReq[dataproto.AzureDiskExtensionUpdateReq], 0)
 
 	for _, id := range updateCloudIDs {
 		if !isAzureDiskChange(dsMap[id], cloudMap[id]) {
@@ -293,15 +305,24 @@ func diffAzureSyncUpdate(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, ds
 			Extension: &dataproto.AzureDiskExtensionUpdateReq{
 				ResourceGroupName: req.ResourceGroupName,
 				OSType:            converter.PtrToVal(cloudMap[id].Disk.OSType),
+				SKUName:           cloudMap[id].Disk.SKUName,
+				SKUTier:           cloudMap[id].Disk.SKUTier,
 			},
 		}
-		updateReq = append(updateReq, disk)
+		disks = append(disks, disk)
 	}
 
-	if len(updateReq) > 0 {
-		if _, err := dataCli.Azure.BatchUpdateDisk(kt.Ctx, kt.Header(), &updateReq); err != nil {
-			logs.Errorf("request dataservice azure BatchUpdateDisk failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+	if len(disks) > 0 {
+		elems := slice.Split(disks, typescore.TCloudQueryLimit)
+		for _, partDisks := range elems {
+			var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.AzureDiskExtensionUpdateReq]
+			for _, disk := range partDisks {
+				updateReq = append(updateReq, disk)
+			}
+			if _, err := dataCli.Azure.BatchUpdateDisk(kt.Ctx, kt.Header(), &updateReq); err != nil {
+				logs.Errorf("request dataservice azure BatchUpdateDisk failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 		}
 	}
 

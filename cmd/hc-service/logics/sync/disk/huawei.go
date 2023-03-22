@@ -24,6 +24,7 @@ import (
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types/core"
+	typescore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
 	apicore "hcm/pkg/api/core"
 	datadisk "hcm/pkg/api/data-service/cloud/disk"
@@ -37,6 +38,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncHuaWeiDiskOption define sync huawei disk option.
@@ -321,7 +323,7 @@ func isHuaWeiDiskChange(db *HuaWeiDiskSyncDS, cloud *HuaWeiDiskSyncDiff) bool {
 func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, dsMap map[string]*HuaWeiDiskSyncDS,
 	updateCloudIDs []string, dataCli *dataservice.Client) error {
 
-	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.HuaWeiDiskExtensionUpdateReq]
+	disks := make([]*dataproto.DiskExtUpdateReq[dataproto.HuaWeiDiskExtensionUpdateReq], 0)
 
 	for _, id := range updateCloudIDs {
 
@@ -356,13 +358,21 @@ func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, 
 				Bootable:    cloudMap[id].Disk.Bootable,
 			},
 		}
-		updateReq = append(updateReq, disk)
+
+		disks = append(disks, disk)
 	}
 
-	if len(updateReq) > 0 {
-		if _, err := dataCli.HuaWei.BatchUpdateDisk(kt.Ctx, kt.Header(), &updateReq); err != nil {
-			logs.Errorf("request dataservice huawei BatchUpdateDisk failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+	if len(disks) > 0 {
+		elems := slice.Split(disks, typescore.TCloudQueryLimit)
+		for _, partDisks := range elems {
+			var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.HuaWeiDiskExtensionUpdateReq]
+			for _, disk := range partDisks {
+				updateReq = append(updateReq, disk)
+			}
+			if _, err := dataCli.HuaWei.BatchUpdateDisk(kt.Ctx, kt.Header(), &updateReq); err != nil {
+				logs.Errorf("request dataservice huawei BatchUpdateDisk failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 		}
 	}
 

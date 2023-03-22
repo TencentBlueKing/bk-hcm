@@ -25,6 +25,7 @@ import (
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/huawei"
 	typcore "hcm/pkg/adaptor/types/core"
+	typescore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -37,6 +38,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
@@ -357,9 +359,7 @@ func isHuaWeiSGChange(db *HuaWeiSecurityGroupSyncDS, cloud *SecurityGroupSyncHua
 func diffHWSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncHuaWeiDiff,
 	dsMap map[string]*HuaWeiSecurityGroupSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
 
-	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.HuaWeiSecurityGroupExtension]{
-		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.HuaWeiSecurityGroupExtension]{},
-	}
+	securityGroups := make([]protocloud.SecurityGroupBatchUpdate[corecloud.HuaWeiSecurityGroupExtension], 0)
 
 	for _, id := range updateCloudIDs {
 		if !isHuaWeiSGChange(dsMap[id], cloudMap[id]) {
@@ -375,14 +375,21 @@ func diffHWSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*SecurityGro
 				CloudEnterpriseProjectID: cloudMap[id].SecurityGroup.EnterpriseProjectId,
 			},
 		}
-		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
+
+		securityGroups = append(securityGroups, securityGroup)
 	}
 
-	if len(updateReq.SecurityGroups) > 0 {
-		if err := dataCli.HuaWei.SecurityGroup.BatchUpdateSecurityGroup(kt.Ctx, kt.Header(),
-			updateReq); err != nil {
-			logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+	if len(securityGroups) > 0 {
+		elems := slice.Split(securityGroups, typescore.TCloudQueryLimit)
+		for _, partSecurityGroups := range elems {
+			updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.HuaWeiSecurityGroupExtension]{
+				SecurityGroups: partSecurityGroups,
+			}
+			if err := dataCli.HuaWei.SecurityGroup.BatchUpdateSecurityGroup(kt.Ctx, kt.Header(),
+				updateReq); err != nil {
+				logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 		}
 	}
 

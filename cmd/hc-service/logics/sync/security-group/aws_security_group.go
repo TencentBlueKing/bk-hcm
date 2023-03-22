@@ -24,6 +24,7 @@ import (
 
 	"hcm/cmd/hc-service/logics/sync/logics"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	typescore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -38,6 +39,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncAwsSecurityGroupOption define sync aws sg and sg rule option.
@@ -326,9 +328,7 @@ func isAwsSGChange(db *AwsSecurityGroupSyncDS, cloud *SecurityGroupSyncAwsDiff, 
 func diffAwsSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*SecurityGroupSyncAwsDiff, dsMap map[string]*AwsSecurityGroupSyncDS,
 	updateCloudIDs []string, dataCli *dataservice.Client, req *SyncAwsSecurityGroupOption, ad *cloudclient.CloudAdaptorClient) error {
 
-	updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.AwsSecurityGroupExtension]{
-		SecurityGroups: []protocloud.SecurityGroupBatchUpdate[corecloud.AwsSecurityGroupExtension]{},
-	}
+	securityGroups := make([]protocloud.SecurityGroupBatchUpdate[corecloud.AwsSecurityGroupExtension], 0)
 
 	for _, id := range updateCloudIDs {
 
@@ -364,14 +364,21 @@ func diffAwsSecurityGroupSyncUpdate(kt *kit.Kit, cloudMap map[string]*SecurityGr
 				CloudOwnerID: cloudMap[id].SecurityGroup.OwnerId,
 			},
 		}
-		updateReq.SecurityGroups = append(updateReq.SecurityGroups, securityGroup)
+
+		securityGroups = append(securityGroups, securityGroup)
 	}
 
-	if len(updateReq.SecurityGroups) > 0 {
-		if err := dataCli.Aws.SecurityGroup.BatchUpdateSecurityGroup(kt.Ctx, kt.Header(),
-			updateReq); err != nil {
-			logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+	if len(securityGroups) > 0 {
+		elems := slice.Split(securityGroups, typescore.TCloudQueryLimit)
+		for _, partSecurityGroups := range elems {
+			updateReq := &protocloud.SecurityGroupBatchUpdateReq[corecloud.AwsSecurityGroupExtension]{
+				SecurityGroups: partSecurityGroups,
+			}
+			if err := dataCli.Aws.SecurityGroup.BatchUpdateSecurityGroup(kt.Ctx, kt.Header(),
+				updateReq); err != nil {
+				logs.Errorf("request dataservice BatchUpdateSecurityGroup failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 		}
 	}
 
