@@ -57,7 +57,8 @@ values ('account', '0'),
        ('gcp_route', '0'),
        ('application', '0'),
        ('approval_process', '0'),
-       ('network_interface', '0');
+       ('network_interface', '0'),
+       ('recycle_record', '0');
 
 create table if not exists `audit`
 (
@@ -86,7 +87,6 @@ create table if not exists `account`
     `vendor`         varchar(16) not null,
     `name`           varchar(64) not null,
     `managers`       json        not null,
-    `department_ids` json        not null,
     `type`           varchar(32) not null,
     `site`           varchar(32) not null,
     `sync_status`    varchar(32) not null,
@@ -144,7 +144,9 @@ create table if not exists `security_group_cvm_rel`
     `creator`           varchar(64)        not null,
     `created_at`        timestamp          not null default current_timestamp,
     primary key (`id`),
-    unique key `idx_uk_security_group_id_cvm_id` (`security_group_id`, `cvm_id`)
+    unique key `idx_uk_security_group_id_cvm_id` (`security_group_id`, `cvm_id`),
+    constraint security_group_cvm_rel_security_group_id foreign key (security_group_id) REFERENCES security_group (id) ON DELETE CASCADE,
+    constraint security_group_cvm_rel_cvm_id foreign key (cvm_id) REFERENCES cvm (id) ON DELETE CASCADE
 ) engine = innodb
   default charset = utf8mb4;
 
@@ -235,34 +237,34 @@ create table if not exists `huawei_security_group_rule`
 
 create table if not exists `azure_security_group_rule`
 (
-    `id`                                   varchar(64)  not null,
-    `cloud_id`                             varchar(255) not null,
-    `cloud_security_group_id`              varchar(255) not null,
-    `account_id`                           varchar(64)  not null,
-    `security_group_id`                    varchar(64)  not null,
-    `type`                                 varchar(20)  not null,
-    `region`                               varchar(20)  not null,
-    `provisioning_state`                   varchar(20)  not null,
-    `etag`                                 varchar(255)          default '',
-    `name`                                 varchar(255)          default '',
-    `memo`                                 varchar(140)          default '',
-    `destination_address_prefix`           varchar(255)          default '',
-    `destination_address_prefixes`         json                  default null,
-    `cloud_destination_security_group_ids` json                  default null,
-    `destination_port_range`               varchar(255)          default '',
-    `destination_port_ranges`              json                  default null,
-    `protocol`                             varchar(10)           default '',
-    `source_address_prefix`                varchar(255)          default '',
-    `source_address_prefixes`              json                  default null,
-    `cloud_source_security_group_ids`      json                  default null,
-    `source_port_range`                    varchar(255)          default '',
-    `source_port_ranges`                   json                  default null,
-    `priority`                             bigint(1)             default 0,
-    `access`                               varchar(20)           default '',
-    `creator`                              varchar(64)  not null,
-    `reviser`                              varchar(64)  not null,
-    `created_at`                           timestamp    not null default current_timestamp,
-    `updated_at`                           timestamp    not null default current_timestamp on update current_timestamp,
+    `id`                                       varchar(64)  not null,
+    `cloud_id`                                 varchar(255) not null,
+    `cloud_security_group_id`                  varchar(255) not null,
+    `account_id`                               varchar(64)  not null,
+    `security_group_id`                        varchar(64)  not null,
+    `type`                                     varchar(20)  not null,
+    `region`                                   varchar(20)  not null,
+    `provisioning_state`                       varchar(20)  not null,
+    `etag`                                     varchar(255)          default '',
+    `name`                                     varchar(255)          default '',
+    `memo`                                     varchar(140)          default '',
+    `destination_address_prefix`               varchar(255)          default '',
+    `destination_address_prefixes`             json                  default null,
+    `cloud_destination_app_security_group_ids` json                  default null,
+    `destination_port_range`                   varchar(255)          default '',
+    `destination_port_ranges`                  json                  default null,
+    `protocol`                                 varchar(10)           default '',
+    `source_address_prefix`                    varchar(255)          default '',
+    `source_address_prefixes`                  json                  default null,
+    `cloud_source_app_security_group_ids`      json                  default null,
+    `source_port_range`                        varchar(255)          default '',
+    `source_port_ranges`                       json                  default null,
+    `priority`                                 bigint(1)             default 0,
+    `access`                                   varchar(20)           default '',
+    `creator`                                  varchar(64)  not null,
+    `reviser`                                  varchar(64)  not null,
+    `created_at`                               timestamp    not null default current_timestamp,
+    `updated_at`                               timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
     unique key `idx_uk_cloud_id` (`cloud_id`),
     unique key `idx_uk_name` (`name`)
@@ -278,6 +280,7 @@ create table if not exists `gcp_firewall_rule`
     `memo`                    varchar(2048)         default '',
     `cloud_vpc_id`            varchar(255)          default '',
     `vpc_id`                  varchar(64)           default '',
+    `vpc_self_link`           varchar(255)          default '',
     `account_id`              varchar(64)           default '',
     `source_ranges`           json                  default null,
     `destination_ranges`      json                  default null,
@@ -360,6 +363,7 @@ create table if not exists `huawei_region`
     `id`            varchar(64) not null,
     `region_id`     varchar(64) not null,
     `type`          varchar(20) not null,
+    `service`       varchar(20) not null,
     `locales_pt_br` varchar(20)          default '',
     `locales_zh_cn` varchar(20)          default '',
     `locales_en_us` varchar(20)          default '',
@@ -390,23 +394,24 @@ create table if not exists `azure_resource_group`
 
 create table if not exists `disk`
 (
-    `id`          varchar(64)        not null,
-    `vendor`      varchar(16)        not null,
-    `name`        varchar(128)       not null,
-    `account_id`  varchar(64)        not null,
-    `cloud_id`    varchar(255)       not null,
-    `bk_biz_id`   bigint(1)          not null default -1,
-    `region`      varchar(128)       not null,
-    `zone`        varchar(128)       not null,
-    `disk_size`   bigint(1) unsigned not null,
-    `disk_type`   varchar(128)       not null,
-    `status`      varchar(128)       not null,
-    `memo`        varchar(255)                default '',
-    `extension`   json               not null,
-    `creator`     varchar(64)        not null,
-    `reviser`     varchar(64)        not null,
-    `created_at`  timestamp          not null default current_timestamp,
-    `updated_at`  timestamp          not null default current_timestamp on update current_timestamp,
+    `id`             varchar(64)        not null,
+    `vendor`         varchar(16)        not null,
+    `name`           varchar(128)       not null,
+    `account_id`     varchar(64)        not null,
+    `cloud_id`       varchar(255)       not null,
+    `bk_biz_id`      bigint(1)          not null default -1,
+    `region`         varchar(128)       not null,
+    `zone`           varchar(128)       not null,
+    `disk_size`      bigint(1) unsigned not null,
+    `disk_type`      varchar(128)       not null,
+    `status`         varchar(128)       not null,
+    `recycle_status` varchar(32)                 default '',
+    `memo`           varchar(255)                default '',
+    `extension`      json               not null,
+    `creator`        varchar(64)        not null,
+    `reviser`        varchar(64)        not null,
+    `created_at`     timestamp          not null default current_timestamp,
+    `updated_at`     timestamp          not null default current_timestamp on update current_timestamp,
     primary key (`id`)
 ) engine = innodb
   default charset = utf8mb4;
@@ -724,6 +729,7 @@ create table if not exists `cvm`
     `os_name`                varchar(255) not null,
     `memo`                   varchar(255)          default '',
     `status`                 varchar(50)  not null,
+    `recycle_status`         varchar(32)           default '',
     `private_ipv4_addresses` json                  default null,
     `private_ipv6_addresses` json                  default null,
     `public_ipv4_addresses`  json                  default null,
@@ -783,7 +789,9 @@ create table if not exists `disk_cvm_rel`
     `creator`    varchar(64)        not null,
     `created_at` timestamp          not null default current_timestamp,
     primary key (`id`),
-    unique key `idx_uk_disk_id_cvm_id` (`disk_id`, `cvm_id`)
+    unique key `idx_uk_disk_id_cvm_id` (`disk_id`, `cvm_id`),
+    constraint disk_cvm_rel_cvm_id foreign key (disk_id) REFERENCES disk (id) ON DELETE CASCADE,
+    constraint disk_cvm_rel_disk_id foreign key (cvm_id) REFERENCES cvm (id) ON DELETE CASCADE
 ) engine = innodb
   default charset = utf8mb4;
 
@@ -795,7 +803,9 @@ create table if not exists `eip_cvm_rel`
     `creator`    varchar(64)        not null,
     `created_at` timestamp          not null default current_timestamp,
     primary key (`id`),
-    unique key `idx_uk_eip_id_cvm_id` (`eip_id`, `cvm_id`)
+    unique key `idx_uk_eip_id_cvm_id` (`eip_id`, `cvm_id`),
+    constraint eip_cvm_rel_eip_id foreign key (eip_id) REFERENCES eip (id) ON DELETE CASCADE,
+    constraint eip_cvm_rel_cvm_id foreign key (cvm_id) REFERENCES cvm (id) ON DELETE CASCADE
 ) engine = innodb
   default charset = utf8mb4;
 
@@ -836,6 +846,33 @@ create table if not exists `network_interface_cvm_rel`
     `creator`              varchar(64)          default '',
     `created_at`           timestamp       null default current_timestamp,
     primary key (`id`),
-    unique key `idx_uk_cvm_id_network_interface_id` (`cvm_id`, `network_interface_id`)
+    unique key `idx_uk_cvm_id_network_interface_id` (`cvm_id`, `network_interface_id`),
+    constraint network_interface_cvm_rel_network_id foreign key (network_interface_id) REFERENCES network_interface (id) ON DELETE CASCADE,
+    constraint network_interface_cvm_rel_cvm_id foreign key (cvm_id) REFERENCES cvm (id) ON DELETE CASCADE
+) engine = innodb
+  default charset = utf8mb4;
+
+# recycle record related table structure
+create table if not exists `recycle_record`
+(
+    `id`           bigint(1) unsigned not null auto_increment,
+    `task_id`      varchar(64)        not null,
+    `vendor`       varchar(32)        not null,
+    `res_type`     varchar(64)        not null,
+    `res_id`       varchar(64)        not null,
+    `cloud_res_id` varchar(255)       not null,
+    `res_name`     varchar(255)                default '',
+    `bk_biz_id`    bigint(1)          not null,
+    `account_id`   varchar(64)        not null,
+    `region`       varchar(255)       not null,
+    `detail`       json               not null,
+    `status`       varchar(32)        not null,
+    `creator`      varchar(64)        not null,
+    `reviser`      varchar(64)        not null,
+    `created_at`   timestamp          not null default current_timestamp,
+    `updated_at`   timestamp          not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_res_type_res_id` (`res_type`, `res_id`),
+    unique key `idx_res_type_vendor_cloud_res_id` (`res_type`, `vendor`, `cloud_res_id`)
 ) engine = innodb
   default charset = utf8mb4;
