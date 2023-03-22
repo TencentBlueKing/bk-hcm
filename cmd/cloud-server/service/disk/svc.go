@@ -252,14 +252,13 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 		return nil, err
 	}
 
-	var instanceID string
+	var instanceID, instanceName string
 	if len(rels.Details) > 0 {
 		instanceID = rels.Details[0].CvmID
-	}
-
-	instanceName, err := getCvmName(cts, svc.client.DataService(), instanceID)
-	if err != nil {
-		return nil, err
+		instanceName, err = getCvmName(cts, svc.client.DataService(), instanceID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return svc.retrieveDiskByVendor(cts, basicInfo.Vendor, diskID, instanceID, instanceName)

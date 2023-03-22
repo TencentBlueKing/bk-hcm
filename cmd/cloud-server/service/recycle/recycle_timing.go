@@ -90,7 +90,7 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		}
 		recordRes, err := r.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt.Ctx, kt.Header(), listReq)
 		if err != nil {
-			logs.Errorf("list %s resource recycle record failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("list %s resource recycle record failed, err: %v, rid: %s", resType, err, kt.Rid)
 			time.Sleep(time.Minute)
 			continue
 		}
@@ -164,7 +164,7 @@ func (r *recycle) execWorker(kt *kit.Kit, worker recycleWorker, record recyclere
 
 		err = worker(kt, &basicInfo)
 		if err != nil {
-			logs.Errorf("recycle %s res(id: %s) failed, err: %v, rid: %s", record.ResType, record.ResID, err, kt.Rid)
+			logs.Errorf("recycle %d res(id: %s) failed, err: %v, rid: %s", record.ID, record.ResID, err, kt.Rid)
 			rty.Sleep()
 			continue
 		}
