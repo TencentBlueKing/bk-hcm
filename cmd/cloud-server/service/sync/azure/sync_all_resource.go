@@ -87,6 +87,12 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		return hitErr
 	}
 
+	if hitErr = SyncSG(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		logs.Errorf("azure sync security group resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
+			opt, resourceGroupNames, hitErr)
+		return hitErr
+	}
+
 	if hitErr = SyncVpc(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
 		logs.Errorf("azure sync vpc resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
 			opt, resourceGroupNames, hitErr)
@@ -102,12 +108,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 
 	if hitErr = SyncEip(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
 		logs.Errorf("azure sync eip resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
-			opt, resourceGroupNames, hitErr)
-		return hitErr
-	}
-
-	if hitErr = SyncSG(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
-		logs.Errorf("azure sync security group resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
 			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}

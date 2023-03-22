@@ -270,9 +270,13 @@ func (g *Gcp) getEip(kt *kit.Kit, region string, eipName string) (*compute.Addre
 }
 
 func convert(resp *compute.AddressList, region string) []*eip.GcpEip {
-	eips := make([]*eip.GcpEip, len(resp.Items))
+	eips := make([]*eip.GcpEip, 0)
 
-	for idx, item := range resp.Items {
+	for _, item := range resp.Items {
+		if item.AddressType == "INTERNAL" {
+			continue
+		}
+
 		eIp := &eip.GcpEip{
 			CloudID:      strconv.FormatUint(item.Id, 10),
 			Name:         &item.Name,
@@ -296,7 +300,7 @@ func convert(resp *compute.AddressList, region string) []*eip.GcpEip {
 			eIp.PrivateIp = &item.Address
 		}
 
-		eips[idx] = eIp
+		eips = append(eips, eIp)
 	}
 	return eips
 }
