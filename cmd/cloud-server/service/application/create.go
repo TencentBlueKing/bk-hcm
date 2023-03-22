@@ -64,7 +64,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 	applicationType := handler.GetType()
 	serviceID, err := a.getApprovalProcessServiceID(cts, applicationType)
 	if err != nil {
-		return "", fmt.Errorf("get approval process service id failed, err: %v", err)
+		return nil, fmt.Errorf("get approval process service id failed, err: %v", err)
 	}
 
 	// 生成ITSM的回调地址
@@ -102,7 +102,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("call itsm create ticket api failed, err: %w", err)
+		return nil, fmt.Errorf("call itsm create ticket api failed, err: %w", err)
 	}
 
 	// 调用DB创建单据

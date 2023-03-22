@@ -35,7 +35,7 @@ func (a *BaseApplicationHandler) GetZone(vendor enumor.Vendor, region, zone stri
 		Rules: []filter.RuleFactory{
 			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
 			filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region},
-			filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: zone},
+			filter.AtomRule{Field: "name", Op: filter.Equal.Factory(), Value: zone},
 		},
 	}
 	// 查询
