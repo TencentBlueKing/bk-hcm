@@ -53,7 +53,7 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice
 			AccountID: accountID,
 			Region:    region,
 		}
-		if err := service.HuaWei.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req); err != nil {
+		if err := service.HuaWei.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req); Error(err) != nil {
 			logs.Errorf("cloud-server-sync-%s account[%s] sync route table failed, req: %v, err: %v, rid: %s",
 				enumor.HuaWei, accountID, req, err, kt.Rid)
 			return err

@@ -124,6 +124,10 @@ func getDatasFromDSForGcpDiskSync(kt *kit.Kit, req *SyncGcpDiskOption,
 			logs.Errorf("from data-service list disk failed, err: %v, rid: %s", err, kt.Rid)
 		}
 
+		if results == nil {
+			break
+		}
+
 		resultsHcm = append(resultsHcm, results.Details...)
 		start += len(results.Details)
 		if uint(len(results.Details)) < dataReq.Page.Limit {
@@ -227,7 +231,7 @@ func diffGcpDiskSync(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 	}
 
 	if len(updateCloudIDs) > 0 {
-		err := diffGcpSyncUpdate(kt, cloudMap, dsMap, updateCloudIDs, dataCli)
+		err := diffGcpSyncUpdate(kt, cloudMap, req, dsMap, updateCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("request diffGcpSyncUpdate failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -331,6 +335,10 @@ func isGcpDiskChange(db *GcpDiskSyncDS, cloud *GcpDiskSyncDiff) bool {
 		return true
 	}
 
+	if cloud.Disk.Region != db.HcDisk.Region {
+		return true
+	}
+
 	if cloud.Disk.Description != converter.PtrToVal(db.HcDisk.Memo) {
 		return true
 	}
@@ -349,18 +357,28 @@ func isGcpDiskChange(db *GcpDiskSyncDS, cloud *GcpDiskSyncDiff) bool {
 	return false
 }
 
-func diffGcpSyncUpdate(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
+func diffGcpSyncUpdate(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff, req *SyncGcpDiskOption,
 	dsMap map[string]*GcpDiskSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
 
 	var updateReq dataproto.DiskExtBatchUpdateReq[dataproto.GcpDiskExtensionUpdateReq]
 
 	for _, id := range updateCloudIDs {
+		if cloudMap[id].Disk.Region == "" {
+			region, err := getRegion(kt, dataCli, req.Zone)
+			if err != nil {
+				logs.Errorf("request gcp disk to get region failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			cloudMap[id].Disk.Region = region
+		}
+
 		if !isGcpDiskChange(dsMap[id], cloudMap[id]) {
 			continue
 		}
 
 		disk := &dataproto.DiskExtUpdateReq[dataproto.GcpDiskExtensionUpdateReq]{
 			ID:     dsMap[id].HcDisk.ID,
+			Region: cloudMap[id].Disk.Region,
 			Status: cloudMap[id].Disk.Status,
 			Memo:   &cloudMap[id].Disk.Description,
 			Extension: &dataproto.GcpDiskExtensionUpdateReq{
@@ -371,6 +389,7 @@ func diffGcpSyncUpdate(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 				Encrypted: nil,
 			},
 		}
+
 		updateReq = append(updateReq, disk)
 	}
 

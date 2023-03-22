@@ -51,7 +51,7 @@ func SyncDisk(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Clien
 			AccountID: accountID,
 			Region:    region,
 		}
-		if err := service.HuaWei.Disk.SyncDisk(kt.Ctx, kt.Header(), req); err != nil {
+		if err := service.HuaWei.Disk.SyncDisk(kt.Ctx, kt.Header(), req); Error(err) != nil {
 			logs.Errorf("sync huawei disk failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 			return err
 		}

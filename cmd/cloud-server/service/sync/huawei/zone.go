@@ -22,14 +22,16 @@ package huawei
 import (
 	"time"
 
+	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/api/hc-service/zone"
+	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // SyncZone sync zone
-func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []string) error {
+func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("huawei account[%s] sync zone start, time: %v, rid: %s", accountID, start, kt.Rid)
@@ -38,12 +40,18 @@ func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []
 		logs.V(3).Infof("huawei account[%s] sync zone end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
+	regions, err := ListRegionByService(kt, dataCli, huawei.Dcs)
+	if err != nil {
+		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
 	for _, region := range regions {
 		syncReq := &zone.HuaWeiZoneSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		}
-		if err := hcCli.HuaWei.Zone.SyncZone(kt.Ctx, kt.Header(), syncReq); err != nil {
+		if err := hcCli.HuaWei.Zone.SyncZone(kt.Ctx, kt.Header(), syncReq); Error(err) != nil {
 			logs.Errorf("sync huawei zone failed, err: %v, req: %v, rid: %s", err, syncReq, kt.Rid)
 			return err
 		}

@@ -46,16 +46,11 @@ func SyncPublicResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncPublicRe
 		return err
 	}
 
-	regions, err := ListRegion(kt, cliSet.DataService())
-	if err != nil {
+	if err := SyncZone(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); err != nil {
 		return err
 	}
 
-	if err = SyncZone(kt, cliSet.HCService(), opt.AccountID, regions); err != nil {
-		return err
-	}
-
-	if err = SyncHuaWeiImage(kt, cliSet.HCService(), opt.AccountID, regions); err != nil {
+	if err := SyncHuaWeiImage(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); err != nil {
 		return err
 	}
 

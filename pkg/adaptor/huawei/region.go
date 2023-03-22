@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/adaptor/types/region"
 	"hcm/pkg/kit"
 
+	dcsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2/region"
 	ecsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/region"
 	eipregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2/region"
 	imsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2/region"
@@ -114,6 +115,26 @@ func (h *HuaWei) ListRegion(kt *kit.Kit) ([]*region.HuaWeiRegionModel, error) {
 	regions = append(regions, getHuaWeiModelRegion(Ims, imsregion.LA_NORTH_2.Id))
 	regions = append(regions, getHuaWeiModelRegion(Ims, imsregion.NA_MEXICO_1.Id))
 	regions = append(regions, getHuaWeiModelRegion(Ims, imsregion.AP_SOUTHEAST_4.Id))
+
+	// dcs: zone
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.AF_SOUTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.CN_NORTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.CN_NORTH_4.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.CN_NORTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.CN_EAST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.CN_EAST_3.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.CN_SOUTH_1.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.CN_SOUTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.CN_SOUTHWEST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.AP_SOUTHEAST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.AP_SOUTHEAST_1.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.AP_SOUTHEAST_3.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.RU_NORTHWEST_2.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.SA_BRAZIL_1.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.LA_NORTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.LA_SOUTH_2.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.CN_NORTH_9.Id))
+	regions = append(regions, getHuaWeiModelRegion(Dcs, dcsregion.NA_MEXICO_1.Id))
 
 	return regions, nil
 }

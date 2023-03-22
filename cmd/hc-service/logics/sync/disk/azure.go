@@ -121,6 +121,10 @@ func getDatasFromAzureDSForDiskSync(kt *kit.Kit, req *SyncAzureDiskOption,
 			logs.Errorf("from data-service list disk failed, err: %v, rid: %s", err, kt.Rid)
 		}
 
+		if results == nil {
+			break
+		}
+
 		resultsHcm = append(resultsHcm, results.Details...)
 		start += len(results.Details)
 		if uint(len(results.Details)) < dataReq.Page.Limit {

@@ -77,6 +77,7 @@ type DiskExtensionCreateReq interface {
 // DiskExtUpdateReq ...
 type DiskExtUpdateReq[T DiskExtensionUpdateReq] struct {
 	ID        string  `json:"id" validate:"required"`
+	Region    string  `json:"region"`
 	BkBizID   uint64  `json:"bk_biz_id"`
 	Status    string  `json:"status"`
 	Memo      *string `json:"memo"`

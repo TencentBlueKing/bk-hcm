@@ -19,54 +19,17 @@
 
 package huawei
 
-import (
-	"hcm/pkg/adaptor/types"
-	"hcm/pkg/criteria/errf"
-)
+import "strings"
 
-const (
-	// cvm disk networkinterface
-	Ecs = "ecs"
-	// vpc subnet sg sgRule routetable
-	Vpc = "vpc"
-	// eip
-	Eip = "eip"
-	// publicimage
-	Ims = "ims"
-	// zone
-	Dcs = "dcs"
-)
-
-// NewHuaWei new huawei.
-func NewHuaWei(s *types.BaseSecret) (*HuaWei, error) {
-	if err := validateSecret(s); err != nil {
-		return nil, err
-	}
-	return &HuaWei{clientSet: newClientSet(s)}, nil
-}
-
-// HuaWei is huawei operator.
-type HuaWei struct {
-	clientSet *clientSet
-}
-
-func validateSecret(s *types.BaseSecret) error {
-	if s == nil {
-		return errf.New(errf.InvalidParameter, "secret is required")
+// Error huawei 有部分地域无法new出客户端，需要将这部分错误信息过滤掉
+func Error(err error) error {
+	if err == nil {
+		return nil
 	}
 
-	if err := s.Validate(); err != nil {
-		return err
+	if strings.Contains(err.Error(), "failed to get project id, No project id found") {
+		return nil
 	}
 
 	return nil
-}
-
-// sliceToPtr convert slice to pointer.
-func sliceToPtr[T any](slice []T) *[]T {
-	ptrArr := make([]T, len(slice))
-	for idx, val := range slice {
-		ptrArr[idx] = val
-	}
-	return &ptrArr
 }

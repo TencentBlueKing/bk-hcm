@@ -87,7 +87,7 @@ func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Clien
 					Region:     region,
 					CloudVpcID: vpc.CloudID,
 				}
-				if err = hcCli.HuaWei.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req); err != nil {
+				if err = hcCli.HuaWei.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req); Error(err) != nil {
 					logs.Errorf("sync huawei subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 					return err
 				}

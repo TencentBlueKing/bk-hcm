@@ -63,7 +63,7 @@ func SyncNetworkInterface(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataser
 			Region:      region,
 			CloudCvmIDs: cvmCloudIDs,
 		}
-		if err = hcCli.HuaWei.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req); err != nil {
+		if err = hcCli.HuaWei.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req); Error(err) != nil {
 			logs.Errorf("cloud-server-sync-%s network interface failed, req: %v, err: %v, rid: %s",
 				enumor.HuaWei, req, err, kt.Rid)
 			return err

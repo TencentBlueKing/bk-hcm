@@ -46,36 +46,12 @@ func SyncRegion(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 	req := &protohcregion.HuaWeiRegionSyncReq{
 		AccountID: accountID,
 	}
-	if err := hcCli.HuaWei.Region.SyncRegion(kt.Ctx, kt.Header(), req); err != nil {
+	if err := hcCli.HuaWei.Region.SyncRegion(kt.Ctx, kt.Header(), req); Error(err) != nil {
 		logs.Errorf("sync huawei region failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 		return err
 	}
 
 	return nil
-}
-
-// ListRegion ...
-func ListRegion(kt *kit.Kit, dataCli *dataservice.Client) ([]string, error) {
-	listReq := &protoregion.HuaWeiRegionListReq{
-		Filter: tools.AllExpression(),
-		Page:   core.DefaultBasePage,
-	}
-	result, err := dataCli.HuaWei.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
-	if err != nil {
-		logs.Errorf("list huawei region failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	if len(result.Details) == 0 {
-		return nil, errors.New("huawei region is empty")
-	}
-
-	regions := make([]string, 0, len(result.Details))
-	for _, one := range result.Details {
-		regions = append(regions, one.RegionID)
-	}
-
-	return regions, nil
 }
 
 // ListRegionByService ...

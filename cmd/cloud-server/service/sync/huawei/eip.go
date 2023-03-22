@@ -51,7 +51,7 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client
 			AccountID: accountID,
 			Region:    region,
 		}
-		if err := service.HuaWei.Eip.SyncEip(kt.Ctx, kt.Header(), req); err != nil {
+		if err := service.HuaWei.Eip.SyncEip(kt.Ctx, kt.Header(), req); Error(err) != nil {
 			logs.Errorf("sync huawei eip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 			return err
 		}

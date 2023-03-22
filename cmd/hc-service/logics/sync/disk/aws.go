@@ -113,6 +113,10 @@ func getDatasFromDSForAwsDiskSync(kt *kit.Kit, req *SyncAwsDiskOption,
 			logs.Errorf("from data-service list disk failed, err: %v, rid: %s", err, kt.Rid)
 		}
 
+		if results == nil {
+			break
+		}
+
 		resultsHcm = append(resultsHcm, results.Details...)
 		start += len(results.Details)
 		if uint(len(results.Details)) < dataReq.Page.Limit {
@@ -154,9 +158,9 @@ func getDatasFromAwsForDiskSync(kt *kit.Kit, req *SyncAwsDiskOption,
 
 	cloudMap := make(map[string]*AwsDiskSyncDiff)
 	for _, data := range datas {
-		sg := new(AwsDiskSyncDiff)
-		sg.Disk = data
-		cloudMap[*data.VolumeId] = sg
+		disk := new(AwsDiskSyncDiff)
+		disk.Disk = data
+		cloudMap[*data.VolumeId] = disk
 	}
 
 	return cloudMap, nil

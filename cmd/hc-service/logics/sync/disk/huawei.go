@@ -115,6 +115,10 @@ func getDatasFromDSForHuaWeiDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 			return nil, err
 		}
 
+		if results == nil {
+			break
+		}
+
 		resultsHcm = append(resultsHcm, results.Details...)
 		start += len(results.Details)
 		if uint(len(results.Details)) < dataReq.Page.Limit {
