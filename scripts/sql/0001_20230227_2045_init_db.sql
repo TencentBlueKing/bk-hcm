@@ -136,20 +136,6 @@ create table if not exists `security_group`
 ) engine = innodb
   default charset = utf8mb4;
 
-create table if not exists `security_group_cvm_rel`
-(
-    `id`                bigint(1) unsigned not null auto_increment,
-    `security_group_id` varchar(64)        not null,
-    `cvm_id`            varchar(64)        not null,
-    `creator`           varchar(64)        not null,
-    `created_at`        timestamp          not null default current_timestamp,
-    primary key (`id`),
-    unique key `idx_uk_security_group_id_cvm_id` (`security_group_id`, `cvm_id`),
-    constraint security_group_cvm_rel_security_group_id foreign key (security_group_id) REFERENCES security_group (id) ON DELETE CASCADE,
-    constraint security_group_cvm_rel_cvm_id foreign key (cvm_id) REFERENCES cvm (id) ON DELETE CASCADE
-) engine = innodb
-  default charset = utf8mb4;
-
 create table if not exists `tcloud_security_group_rule`
 (
     `id`                             varchar(64)  not null,
@@ -792,6 +778,20 @@ create table if not exists `disk_cvm_rel`
     unique key `idx_uk_disk_id_cvm_id` (`disk_id`, `cvm_id`),
     constraint disk_cvm_rel_cvm_id foreign key (disk_id) REFERENCES disk (id) ON DELETE CASCADE,
     constraint disk_cvm_rel_disk_id foreign key (cvm_id) REFERENCES cvm (id) ON DELETE CASCADE
+) engine = innodb
+  default charset = utf8mb4;
+
+create table if not exists `security_group_cvm_rel`
+(
+    `id`                bigint(1) unsigned not null auto_increment,
+    `security_group_id` varchar(64)        not null,
+    `cvm_id`            varchar(64)        not null,
+    `creator`           varchar(64)        not null,
+    `created_at`        timestamp          not null default current_timestamp,
+    primary key (`id`),
+    unique key `idx_uk_security_group_id_cvm_id` (`security_group_id`, `cvm_id`),
+    constraint security_group_cvm_rel_security_group_id foreign key (security_group_id) REFERENCES security_group (id) ON DELETE CASCADE,
+    constraint security_group_cvm_rel_cvm_id foreign key (cvm_id) REFERENCES cvm (id) ON DELETE CASCADE
 ) engine = innodb
   default charset = utf8mb4;
 
