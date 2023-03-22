@@ -252,6 +252,7 @@ func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 			Memo: nil,
 			Extension: &dataproto.AwsDiskExtensionCreateReq{
 				Attachment: attachments,
+				Encrypted:  cloudMap[id].Disk.Encrypted,
 			},
 		}
 		createReq = append(createReq, disk)
@@ -273,6 +274,10 @@ func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 func isAwsDiskChange(db *AwsDiskSyncDS, cloud *AwsDiskSyncDiff) bool {
 
 	if converter.PtrToVal(cloud.Disk.State) != db.HcDisk.Status {
+		return true
+	}
+
+	if !assert.IsPtrBoolEqual(cloud.Disk.Encrypted, db.HcDisk.Extension.Encrypted) {
 		return true
 	}
 
@@ -329,6 +334,7 @@ func diffAwsSyncUpdate(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 			Status: *cloudMap[id].Disk.State,
 			Extension: &dataproto.AwsDiskExtensionUpdateReq{
 				Attachment: attachments,
+				Encrypted:  cloudMap[id].Disk.Encrypted,
 			},
 		}
 		updateReq = append(updateReq, disk)
