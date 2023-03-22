@@ -213,15 +213,11 @@ func (t *TCloud) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		&hcproto.TCloudEipCreateReq{
 			AccountID: req.AccountID,
 			TCloudEipCreateOption: &eip.TCloudEipCreateOption{
-				Region:                req.Region,
-				EipName:               req.EipName,
-				EipCount:              req.EipCount,
-				ServiceProvider:       req.ServiceProvider,
-				AddressType:           req.AddressType,
-				InternetChargeType:    req.InternetChargeType,
-				InternetChargePrepaid: req.InternetChargePrepaid,
-				MaxBandwidthOut:       req.MaxBandwidthOut,
-				Egress:                req.Egress,
+				Region:          req.Region,
+				EipName:         req.EipName,
+				EipCount:        req.EipCount,
+				ServiceProvider: req.ServiceProvider,
+				AddressType:     req.AddressType,
 			},
 		},
 	)

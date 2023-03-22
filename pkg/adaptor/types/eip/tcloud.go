@@ -145,15 +145,11 @@ func (opt *TCloudEipDisassociateOption) ToDisassociateAddressRequest() (*vpc.Dis
 
 // TCloudEipCreateOption ...
 type TCloudEipCreateOption struct {
-	Region                string                      `json:"region" validate:"required"`
-	EipName               *string                     `json:"eip_name"`
-	EipCount              int64                       `json:"eip_count"  validate:"required"`
-	ServiceProvider       string                      `json:"service_provider" validate:"required,eq=BGP|eq=CMCC|eq=CTCC|eq=CUCC"`
-	AddressType           string                      `json:"address_type" validate:"required,eq=EIP|eq=AnycastEIP|eq=HighQualityEIP"`
-	InternetChargeType    string                      `json:"internet_charge_type" validate:"required,eq=BANDWIDTH_PACKAGE|eq=BANDWIDTH_POSTPAID_BY_HOUR|eq=BANDWIDTH_PREPAID_BY_MONTH|eq=TRAFFIC_POSTPAID_BY_HOUR"`
-	InternetChargePrepaid *TCloudAddressChargePrepaid `json:"internet_charge_prepaid"`
-	MaxBandwidthOut       int64                       `json:"max_bandwidth_out" validate:"required,eq=BANDWIDTH_PACKAGE|eq=BANDWIDTH_POSTPAID_BY_HOUR|eq=BANDWIDTH_PREPAID_BY_MONTH|eq=TRAFFIC_POSTPAID_BY_HOUR"`
-	Egress                *string                     `json:"egress"`
+	Region          string  `json:"region" validate:"required"`
+	EipName         *string `json:"eip_name"`
+	EipCount        int64   `json:"eip_count"  validate:"required"`
+	ServiceProvider string  `json:"service_provider" validate:"required,eq=BGP"`
+	AddressType     string  `json:"address_type" validate:"required,eq=EIP"`
 }
 
 // Validate ...
@@ -171,18 +167,7 @@ func (opt *TCloudEipCreateOption) ToAllocateAddressesRequest() (*vpc.AllocateAdd
 	req.AddressCount = common.Int64Ptr(opt.EipCount)
 	req.InternetServiceProvider = common.StringPtr(opt.ServiceProvider)
 	req.AddressName = opt.EipName
-	req.InternetChargeType = common.StringPtr(opt.InternetChargeType)
-	req.InternetMaxBandwidthOut = common.Int64Ptr(opt.MaxBandwidthOut)
 	req.AddressType = common.StringPtr(opt.AddressType)
-
-	if opt.InternetChargeType == "BANDWIDTH_PREPAID_BY_MONTH" {
-		req.AddressChargePrepaid = &vpc.AddressChargePrepaid{
-			Period:        common.Int64Ptr(opt.InternetChargePrepaid.Period),
-			AutoRenewFlag: common.Int64Ptr(opt.InternetChargePrepaid.AutoRenewFlag),
-		}
-	}
-
-	req.Egress = opt.Egress
 
 	return req, nil
 }

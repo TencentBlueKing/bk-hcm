@@ -290,14 +290,10 @@ func (svc *EipSvc) makeEipDisassociateOption(
 
 func (svc *EipSvc) makeEipCreateOption(req *proto.TCloudEipCreateReq) (*eip.TCloudEipCreateOption, error) {
 	return &eip.TCloudEipCreateOption{
-		Region:                req.Region,
-		EipName:               req.EipName,
-		EipCount:              req.EipCount,
-		ServiceProvider:       req.ServiceProvider,
-		AddressType:           req.AddressType,
-		InternetChargeType:    req.InternetChargeType,
-		InternetChargePrepaid: req.InternetChargePrepaid,
-		MaxBandwidthOut:       req.MaxBandwidthOut,
-		Egress:                req.Egress,
+		Region:          req.Region,
+		EipName:         req.EipName,
+		EipCount:        req.EipCount,
+		ServiceProvider: req.ServiceProvider,
+		AddressType:     req.AddressType,
 	}, nil
 }

@@ -201,6 +201,7 @@ func (g *Gcp) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		&hcproto.GcpEipCreateReq{
 			AccountID: req.AccountID,
 			GcpEipCreateOption: &eip.GcpEipCreateOption{
+				EipName:     req.EipName,
 				Region:      req.Region,
 				NetworkTier: req.NetworkTier,
 				IpVersion:   req.IpVersion,
