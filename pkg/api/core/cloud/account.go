@@ -46,7 +46,7 @@ type TCloudAccountExtension struct {
 	CloudMainAccountID string `json:"cloud_main_account_id"`
 	CloudSubAccountID  string `json:"cloud_sub_account_id"`
 	CloudSecretID      string `json:"cloud_secret_id"`
-	CloudSecretKey     string `json:"cloud_secret_key"`
+	CloudSecretKey     string `json:"cloud_secret_key,omitempty"`
 }
 
 // DecryptSecretKey ...
@@ -67,7 +67,7 @@ type AwsAccountExtension struct {
 	CloudAccountID   string `json:"cloud_account_id"`
 	CloudIamUsername string `json:"cloud_iam_username"`
 	CloudSecretID    string `json:"cloud_secret_id"`
-	CloudSecretKey   string `json:"cloud_secret_key"`
+	CloudSecretKey   string `json:"cloud_secret_key,omitempty"`
 }
 
 // DecryptSecretKey ...
@@ -89,7 +89,7 @@ type HuaWeiAccountExtension struct {
 	CloudSubAccountID    string `json:"cloud_sub_account_id"`
 	CloudSubAccountName  string `json:"cloud_sub_account_name"`
 	CloudSecretID        string `json:"cloud_secret_id"`
-	CloudSecretKey       string `json:"cloud_secret_key"`
+	CloudSecretKey       string `json:"cloud_secret_key,omitempty"`
 	CloudIamUserID       string `json:"cloud_iam_user_id" `
 	CloudIamUsername     string `json:"cloud_iam_username"`
 }
@@ -114,7 +114,7 @@ type GcpAccountExtension struct {
 	CloudServiceAccountID   string `json:"cloud_service_account_id"`
 	CloudServiceAccountName string `json:"cloud_service_account_name"`
 	CloudServiceSecretID    string `json:"cloud_service_secret_id"`
-	CloudServiceSecretKey   string `json:"cloud_service_secret_key"`
+	CloudServiceSecretKey   string `json:"cloud_service_secret_key,omitempty"`
 }
 
 // DecryptSecretKey ...
@@ -138,7 +138,7 @@ type AzureAccountExtension struct {
 	CloudApplicationID    string `json:"cloud_application_id"`
 	CloudApplicationName  string `json:"cloud_application_name"`
 	CloudClientSecretID   string `json:"cloud_client_secret_id"`
-	CloudClientSecretKey  string `json:"cloud_client_secret_key"`
+	CloudClientSecretKey  string `json:"cloud_client_secret_key,omitempty"`
 }
 
 // DecryptSecretKey ...

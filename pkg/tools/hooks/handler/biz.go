@@ -22,6 +22,7 @@ package handler
 import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -101,10 +102,10 @@ func ListBizAuthRes(cts *rest.Contexts, opt *ListAuthResOption) (*filter.Express
 		return nil, true, nil
 	}
 
-	bizFilter := &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: bizID},
-			opt.Filter},
+	bizFilter, err := tools.And(filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: bizID},
+		opt.Filter)
+	if err != nil {
+		return nil, false, err
 	}
 
 	return bizFilter, false, err

@@ -192,7 +192,7 @@ func genRecycleBinActions() []client.ResourceAction {
 		Name:                 ActionIDNameMap[RecycleBinFind],
 		NameEn:               "Find Resource In Recycle Bin",
 		Type:                 View,
-		RelatedResourceTypes: accountResource,
+		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
 	}, {
@@ -200,7 +200,7 @@ func genRecycleBinActions() []client.ResourceAction {
 		Name:                 ActionIDNameMap[RecycleBinManage],
 		NameEn:               "Manage Resource In Recycle Bin",
 		Type:                 Edit,
-		RelatedResourceTypes: append(accountResource, bizResource...),
+		RelatedResourceTypes: nil,
 		RelatedActions:       []client.ActionID{RecycleBinFind},
 		Version:              1,
 	}}

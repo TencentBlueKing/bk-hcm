@@ -242,7 +242,7 @@ func (svc *diskSvc) RecoverDisk(cts *rest.Contexts) (interface{}, error) {
 	authRes := make([]meta.ResourceAttribute, 0, len(records.Details))
 	auditInfos := make([]protoaudit.CloudResRecycleAuditInfo, 0, len(records.Details))
 	for _, record := range records.Details {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Disk, Action: meta.Recover,
+		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RecycleBin, Action: meta.Recover,
 			ResourceID: record.AccountID}, BizID: record.BkBizID})
 		auditInfos = append(auditInfos, protoaudit.CloudResRecycleAuditInfo{ResID: record.ResID, Data: record.Detail})
 	}

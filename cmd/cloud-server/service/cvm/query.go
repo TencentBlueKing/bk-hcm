@@ -98,6 +98,11 @@ func (svc *cvmSvc) GetRecycledCvm(cts *rest.Contexts) (interface{}, error) {
 	return svc.getCvm(cts, handler.RecycleValidWithAuth)
 }
 
+// GetBizRecycledCvm get recycled cvm that is previously in biz.
+func (svc *cvmSvc) GetBizRecycledCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.getCvm(cts, handler.BizRecycleValidWithAuth)
+}
+
 func (svc *cvmSvc) getCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
