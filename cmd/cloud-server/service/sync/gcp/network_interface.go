@@ -30,7 +30,8 @@ import (
 )
 
 // SyncNetworkInterface 网络接口同步
-func SyncNetworkInterface(kt *kit.Kit, service *hcservice.Client, accountID string, zones []string) error {
+func SyncNetworkInterface(kt *kit.Kit, service *hcservice.Client, accountID string,
+	regionZoneMap map[string][]string) error {
 
 	start := time.Now()
 	logs.V(3).Infof("cloud-server-sync-%s account[%s] sync network interface start, time: %v, rid: %s",
@@ -41,15 +42,17 @@ func SyncNetworkInterface(kt *kit.Kit, service *hcservice.Client, accountID stri
 			enumor.Gcp, accountID, time.Since(start), kt.Rid)
 	}()
 
-	for _, zone := range zones {
-		req := &hcapiproto.GcpNetworkInterfaceSyncReq{
-			AccountID: accountID,
-			Zone:      zone,
-		}
-		if err := service.Gcp.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req); err != nil {
-			logs.Errorf("cloud-server-sync-%s network interface failed, req: %v, err: %v, rid: %s",
-				enumor.Gcp, req, err, kt.Rid)
-			return err
+	for _, zones := range regionZoneMap {
+		for _, zone := range zones {
+			req := &hcapiproto.GcpNetworkInterfaceSyncReq{
+				AccountID: accountID,
+				Zone:      zone,
+			}
+			if err := service.Gcp.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req); err != nil {
+				logs.Errorf("cloud-server-sync-%s network interface failed, req: %v, err: %v, rid: %s",
+					enumor.Gcp, req, err, kt.Rid)
+				return err
+			}
 		}
 	}
 
