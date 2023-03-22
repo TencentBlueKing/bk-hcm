@@ -60,6 +60,7 @@ func (svc *cvmSvc) batchRebootCvmSvc(cts *rest.Contexts, validHandler handler.Va
 	basicInfoReq := dataproto.ListResourceBasicInfoReq{
 		ResourceType: enumor.CvmCloudResType,
 		IDs:          req.IDs,
+		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		basicInfoReq)

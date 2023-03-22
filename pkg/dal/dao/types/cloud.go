@@ -22,12 +22,15 @@ package types
 import "hcm/pkg/criteria/enumor"
 
 // CloudResourceBasicInfo define cloud resource basic info.
-// TODO confirm if some fields needs to be specified explicitly
 type CloudResourceBasicInfo struct {
-	ID            string        `json:"id" db:"id"`
-	Vendor        enumor.Vendor `json:"vendor" db:"vendor"`
-	AccountID     string        `json:"account_id" db:"account_id"`
-	BkBizID       int64         `json:"bk_biz_id" db:"bk_biz_id"`
-	Region        string        `json:"region" db:"region"`
-	RecycleStatus string        `json:"recycle_status" db:"recycle_status"`
+	ID        string        `json:"id" db:"id"`
+	Vendor    enumor.Vendor `json:"vendor" db:"vendor"`
+	AccountID string        `json:"account_id" db:"account_id"`
+	BkBizID   int64         `json:"bk_biz_id" db:"bk_biz_id"`
+	// these fields are basic info for some resource, needs to be specified explicitly.
+	Region        string `json:"region" db:"region"`
+	RecycleStatus string `json:"recycle_status" db:"recycle_status"`
 }
+
+// CommonBasicInfoFields defines common cloud resource basic info fields.
+var CommonBasicInfoFields = []string{"id", "vendor", "account_id", "bk_biz_id"}

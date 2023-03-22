@@ -52,7 +52,7 @@ func InitCloudService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("GetResourceBasicInfo", http.MethodGet, "/cloud/resources/bases/{type}/id/{id}", svc.GetResourceBasicInfo)
+	h.Add("GetResourceBasicInfo", http.MethodPost, "/cloud/resources/bases/{type}/id/{id}", svc.GetResourceBasicInfo)
 	h.Add("ListResourceBasicInfo", http.MethodPost, "/cloud/resources/bases/list", svc.ListResourceBasicInfo)
 	h.Add("AssignResourceToBiz", http.MethodPost, "/cloud/resources/assign/bizs", svc.AssignResourceToBiz)
 
@@ -76,7 +76,17 @@ func (svc cloudSvc) GetResourceBasicInfo(cts *rest.Contexts) (interface{}, error
 		return nil, errf.New(errf.InvalidParameter, "resource id is required")
 	}
 
-	list, err := svc.dao.Cloud().ListResourceBasicInfo(cts.Kit, enumor.CloudResourceType(resourceType), []string{id})
+	req := new(protocloud.GetResourceBasicInfoReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	list, err := svc.dao.Cloud().ListResourceBasicInfo(cts.Kit, enumor.CloudResourceType(resourceType), []string{id},
+		req.Fields...)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +115,7 @@ func (svc cloudSvc) ListResourceBasicInfo(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	list, err := svc.dao.Cloud().ListResourceBasicInfo(cts.Kit, req.ResourceType, req.IDs)
+	list, err := svc.dao.Cloud().ListResourceBasicInfo(cts.Kit, req.ResourceType, req.IDs, req.Fields...)
 	if err != nil {
 		return nil, err
 	}

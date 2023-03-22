@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -104,7 +105,7 @@ func (svc *cvmSvc) getCvm(cts *rest.Contexts, validHandler handler.ValidWithAuth
 	}
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		enumor.CvmCloudResType, id)
+		enumor.CvmCloudResType, id, append(types.CommonBasicInfoFields, "recycle_status")...)
 	if err != nil {
 		return nil, err
 	}

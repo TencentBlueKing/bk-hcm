@@ -66,6 +66,7 @@ func (svc *diskSvc) recycleDiskSvc(cts *rest.Contexts, validHandler handler.Vali
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.DiskCloudResType,
 		IDs:          ids,
+		Fields:       append(types.CommonBasicInfoFields, "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		basicInfoReq)
@@ -287,6 +288,7 @@ func (svc *diskSvc) BatchDeleteRecycledDisk(cts *rest.Contexts) (interface{}, er
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.DiskCloudResType,
 		IDs:          req.IDs,
+		Fields:       append(types.CommonBasicInfoFields, "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		basicInfoReq)

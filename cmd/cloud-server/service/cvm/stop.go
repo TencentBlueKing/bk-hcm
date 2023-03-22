@@ -24,6 +24,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
@@ -54,6 +55,7 @@ func (svc *cvmSvc) batchStopCvmSvc(cts *rest.Contexts, validHandler handler.Vali
 	basicInfoReq := dataproto.ListResourceBasicInfoReq{
 		ResourceType: enumor.CvmCloudResType,
 		IDs:          req.IDs,
+		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		basicInfoReq)

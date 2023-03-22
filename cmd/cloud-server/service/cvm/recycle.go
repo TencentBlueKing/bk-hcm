@@ -67,6 +67,7 @@ func (svc *cvmSvc) recycleCvmSvc(cts *rest.Contexts, validHandler handler.ValidW
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.CvmCloudResType,
 		IDs:          ids,
+		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		basicInfoReq)
@@ -298,6 +299,7 @@ func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, erro
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.CvmCloudResType,
 		IDs:          req.IDs,
+		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		basicInfoReq)

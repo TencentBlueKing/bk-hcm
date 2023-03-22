@@ -44,12 +44,14 @@ func NewCloudClient(client rest.ClientInterface) *CloudClient {
 
 // GetResourceBasicInfo get cloud resource basic info.
 func (cli *CloudClient) GetResourceBasicInfo(ctx context.Context, h http.Header, resType enumor.CloudResourceType,
-	resID string,
-) (*types.CloudResourceBasicInfo, error) {
+	resID string, fields ...string) (*types.CloudResourceBasicInfo, error) {
+
+	req := &protocloud.GetResourceBasicInfoReq{Fields: fields}
 	resp := new(protocloud.GetResourceBasicInfoResp)
 
-	err := cli.client.Get().
+	err := cli.client.Post().
 		WithContext(ctx).
+		Body(req).
 		SubResourcef("/cloud/resources/bases/%s/id/%s", resType, resID).
 		WithHeaders(h).
 		Do().

@@ -28,6 +28,16 @@ import (
 
 // -------------------------- Get --------------------------
 
+// GetResourceBasicInfoReq define get resource basic info req.
+type GetResourceBasicInfoReq struct {
+	Fields []string `json:"fields" validate:"omitempty"`
+}
+
+// Validate get resource basic info req.
+func (req *GetResourceBasicInfoReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // GetResourceBasicInfoResp define get resource basic info resp.
 type GetResourceBasicInfoResp struct {
 	rest.BaseResp `json:",inline"`
@@ -40,6 +50,7 @@ type GetResourceBasicInfoResp struct {
 type ListResourceBasicInfoReq struct {
 	ResourceType enumor.CloudResourceType `json:"resource_type" validate:"required"`
 	IDs          []string                 `json:"ids" validate:"required"`
+	Fields       []string                 `json:"fields" validate:"omitempty"`
 }
 
 // Validate list resource vendor req.

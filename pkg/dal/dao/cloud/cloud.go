@@ -21,6 +21,7 @@ package cloud
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -37,7 +38,7 @@ import (
 
 // Cloud only used for cloud common operation.
 type Cloud interface {
-	ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResourceType, ids []string) (
+	ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResourceType, ids []string, fields ...string) (
 		[]types.CloudResourceBasicInfo, error)
 	ListResourceIDs(kt *kit.Kit, resType enumor.CloudResourceType, expr *filter.Expression) ([]string, error)
 	AssignResourceToBiz(kt *kit.Kit, tx *sqlx.Tx, resType enumor.CloudResourceType, expr *filter.Expression,
@@ -52,8 +53,8 @@ type CloudDao struct {
 }
 
 // ListResourceBasicInfo list cloud resource basic info.
-func (dao CloudDao) ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResourceType, ids []string) (
-	[]types.CloudResourceBasicInfo, error) {
+func (dao CloudDao) ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResourceType, ids []string,
+	fields ...string) ([]types.CloudResourceBasicInfo, error) {
 
 	tableName, err := resType.ConvTableName()
 	if err != nil {
@@ -64,8 +65,13 @@ func (dao CloudDao) ListResourceBasicInfo(kt *kit.Kit, resType enumor.CloudResou
 		return nil, errf.New(errf.InvalidParameter, "ids is required")
 	}
 
-	sql := fmt.Sprintf("select id, vendor, account_id, region, bk_biz_id, recycle_status from %s where id in (:ids)",
-		tableName)
+	// if fields are not set, select common fields.
+	if len(fields) == 0 {
+		fields = types.CommonBasicInfoFields
+	}
+
+	// select cloud resource basic infos.
+	sql := fmt.Sprintf("select %s from %s where id in (:ids)", strings.Join(fields, ", "), tableName)
 	if tableName == table.AccountTable {
 		sql = fmt.Sprintf("select id, vendor, id as account_id from %s where id in (:ids)", tableName)
 	}

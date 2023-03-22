@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table/cloud/disk"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
@@ -163,6 +164,7 @@ func (svc *diskSvc) deleteDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		cts.Kit.Header(),
 		enumor.CloudResourceType(disk.TableName),
 		diskID,
+		append(types.CommonBasicInfoFields, "recycle_status")...,
 	)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -223,6 +225,7 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 		cts.Kit.Header(),
 		enumor.CloudResourceType(disk.TableName),
 		diskID,
+		append(types.CommonBasicInfoFields, "recycle_status")...,
 	)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -387,6 +390,7 @@ func (svc *diskSvc) attachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		cts.Kit.Header(),
 		enumor.DiskCloudResType,
 		diskID,
+		append(types.CommonBasicInfoFields, "recycle_status")...,
 	)
 	if err != nil {
 		return nil, err
@@ -433,6 +437,7 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		cts.Kit.Header(),
 		enumor.DiskCloudResType,
 		req.DiskID,
+		append(types.CommonBasicInfoFields, "recycle_status")...,
 	)
 	if err != nil {
 		return nil, err
@@ -474,6 +479,7 @@ func (svc *diskSvc) authorizeDiskAssignOp(kt *kit.Kit, ids []string) error {
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.DiskCloudResType,
 		IDs:          ids,
+		Fields:       append(types.CommonBasicInfoFields, "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(
 		kt.Ctx,

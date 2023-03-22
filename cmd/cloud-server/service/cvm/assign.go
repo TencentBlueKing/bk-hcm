@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -49,6 +50,7 @@ func (svc *cvmSvc) AssignCvmToBiz(cts *rest.Contexts) (interface{}, error) {
 	basicInfoReq := dataproto.ListResourceBasicInfoReq{
 		ResourceType: enumor.CvmCloudResType,
 		IDs:          req.CvmIDs,
+		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
 		basicInfoReq)
