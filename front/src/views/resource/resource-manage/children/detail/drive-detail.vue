@@ -79,7 +79,7 @@ const settingFields = ref<any[]>([
   },
   {
     name: '是否加密',
-    prop: '',
+    prop: 'exencrypted',
   },
   {
     name: '地域',
@@ -102,7 +102,7 @@ const settingFields = ref<any[]>([
   },
   {
     name: '挂载主机名称',
-    prop: '',
+    prop: 'instance_name',
   },
   {
     name: '快照',
@@ -161,7 +161,10 @@ const {
         settingFields.value.push(...[
           {
             name: '是否随实例销毁',
-            prop: '',
+            prop: 'delete_with_instance',
+            render(delete_with_instance: string) {
+              return delete_with_instance ? '是' : '否';
+            },
           },
           {
             name: '磁盘属性',
@@ -177,7 +180,7 @@ const {
           },
           {
             name: '到期时间',
-            prop: '',
+            prop: 'deadline_time',
           },
         ]);
         break;
@@ -256,6 +259,7 @@ const handleToPage = () => {
           v-else
           class="w100 ml10"
           theme="primary"
+          :disabled="detail.is_system_disk"
           @click="handleUninstallDrive(detail)"
         >
           {{ t('卸载') }}
@@ -263,6 +267,7 @@ const handleToPage = () => {
         <bk-button
           class="w100 ml10"
           theme="primary"
+          :disabled="detail.instance_id"
           @click="handleShowDelete"
         >
           {{ t('删除') }}

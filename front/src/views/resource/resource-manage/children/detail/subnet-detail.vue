@@ -292,7 +292,7 @@ const handleDeleteSubnet = (data: any) => {
         }
         Message({
           theme: 'error',
-          message: `该子网关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`
+          message: `该子网（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`
         })
       } else {
         InfoBox({
@@ -304,9 +304,11 @@ const handleDeleteSubnet = (data: any) => {
           contentAlign: 'center',
           onConfirm() {
             resourceStore
-              .delete(
+              .deleteBatch(
                 'subnets',
-                data.id,
+                {
+                  ids: [data.id],
+                },
               );
           },
         });

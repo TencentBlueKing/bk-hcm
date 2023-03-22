@@ -5,11 +5,18 @@ import type {
 
 import {
   PropType,
+  h,
 } from 'vue';
 import {
   useI18n,
 } from 'vue-i18n';
-import useBusiness from '../../hooks/use-business';
+import {
+  Button,
+  InfoBox
+} from 'bkui-vue';
+import {
+  useResourceStore,
+} from '@/store/resource';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
@@ -27,12 +34,46 @@ const {
 
 const columns = useColumns('drive');
 const simpleColumns = useColumns('drive', true);
+const resourceStore = useResourceStore();
 
-const {
-  isShowDistribution,
-  handleDistribution,
-  ResourceBusiness,
-} = useBusiness();
+const renderColumns = [
+  ...columns,
+  {
+    label: '操作',
+    render({ data }: any) {
+      return h(
+        Button,
+        {
+          text: true,
+          theme: 'primary',
+          disabled: data.instance_id,
+          onClick() {
+            InfoBox({
+              title: '请确认是否删除',
+              subTitle: `将删除【${data.name}】`,
+              theme: 'danger',
+              headerAlign: 'center',
+              footerAlign: 'center',
+              contentAlign: 'center',
+              onConfirm() {
+                resourceStore
+                  .recyclBatch(
+                    'disks',
+                    {
+                      ids: [data.id],
+                    },
+                  );
+              },
+            });
+          },
+        },
+        [
+          t('删除'),
+        ],
+      );
+    },
+  }
+]
 
 const {
   selections,
@@ -66,14 +107,6 @@ const {
   >
     <section>
       <slot>
-        <bk-button
-          class="w100"
-          theme="primary"
-          :disabled="selections.length <= 0"
-          @click="handleDistribution"
-        >
-          {{ t('分配') }}
-        </bk-button>
       </slot>
       <bk-button
         class="w100 ml10"
@@ -90,7 +123,7 @@ const {
       row-hover="auto"
       remote-pagination
       :pagination="pagination"
-      :columns="columns"
+      :columns="renderColumns"
       :data="datas"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
@@ -98,13 +131,6 @@ const {
       @selection-change="handleSelectionChange"
     />
   </bk-loading>
-
-  <resource-business
-    v-model:is-show="isShowDistribution"
-    type="disks"
-    :title="t('云硬盘分配')"
-    :list="selections"
-  />
 
   <delete-dialog />
 </template>

@@ -28,7 +28,7 @@ const pagination = ref({
 });
 
 const handleGetData = () => {
-  if (props.detail.id) {
+  if (props.detail.route_table_id) {
     isLoading.value = true
     const filter = {
       op: 'and',

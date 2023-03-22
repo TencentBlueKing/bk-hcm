@@ -280,7 +280,7 @@ const handleDeleteVpc = (data: any) => {
         }
         Message({
           theme: 'error',
-          message: `该VPC关联${getMessage(cvmsResult, 'CVM')}${getMessage(subnetsResult, '子网')}${getMessage(routeResult, '路由表')}${getMessage(networkResult, '网络接口')}不能删除`
+          message: `该VPC（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(subnetsResult, '子网')}${getMessage(routeResult, '路由表')}${getMessage(networkResult, '网络接口')}不能删除`
         })
       } else {
         InfoBox({

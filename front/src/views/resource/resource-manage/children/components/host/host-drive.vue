@@ -53,7 +53,7 @@ const {
 
 const columns = ref([
   {
-    label: '硬盘用途',
+    label: '类型',
     field: '',
   },
   {
@@ -91,12 +91,12 @@ const columns = ref([
     field: '',
   },
   {
-    label: '容量',
+    label: '容量(GB)',
     field: 'disk_size',
   },
   {
     label: '已加密',
-    field: '',
+    field: 'exencrypted',
   },
   {
     label: '删除实例时',
@@ -110,6 +110,7 @@ const columns = ref([
         {
           text: true,
           theme: 'primary',
+          disabled: data.is_system_disk,
           onClick() {
             handleUninstallDrive(data);
           },
@@ -132,7 +133,7 @@ watch(
           field: 'disk_type',
         },
         {
-          label: '容量',
+          label: '容量(GB)',
           field: 'disk_size',
         },
         {
@@ -156,7 +157,7 @@ watch(
           field: '',
         },
         {
-          label: '容量',
+          label: '容量(GB)',
           field: 'disk_size',
         },
         {

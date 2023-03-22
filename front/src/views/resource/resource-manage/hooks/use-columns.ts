@@ -3,7 +3,6 @@ import i18n from '@/language/i18n';
 import { CloudType, HostCloudEnum, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import {
   Button,
-  InfoBox,
 } from 'bkui-vue';
 import {
   h,
@@ -12,53 +11,11 @@ import {
   useRoute,
   useRouter,
 } from 'vue-router';
-import {
-  useResourceStore,
-} from '@/store/resource';
 
-export default (type: string, isSimpleShow = false) => {
-  const resourceStore = useResourceStore();
+export default (type: string, isSimpleShow: boolean = false) => {
   const router = useRouter();
   const route = useRoute();
   const { t } = i18n.global;
-
-  const getDeleteField = (type: string) => {
-    return {
-      label: '操作',
-      onlyShowOnList: true,
-      render({ data }: any) {
-        return h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            onClick() {
-              InfoBox({
-                title: '请确认是否删除',
-                subTitle: `将删除【${data.name}】`,
-                theme: 'danger',
-                headerAlign: 'center',
-                footerAlign: 'center',
-                contentAlign: 'center',
-                onConfirm() {
-                  resourceStore
-                    .deleteBatch(
-                      type,
-                      {
-                        ids: [data.id],
-                      },
-                    );
-                },
-              });
-            },
-          },
-          [
-            t('删除'),
-          ],
-        );
-      },
-    };
-  };
 
   const getLinkField = (type: string, label = 'ID', field = 'id', idFiled = 'id', onlyShowOnList = true) => {
     return {
@@ -190,10 +147,12 @@ export default (type: string, isSimpleShow = false) => {
       field: 'cloud_id',
       sort: true,
       render({ cell }: { cell: string }) {
+        const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1
+        const value = cell.slice(index)
         return h(
           'span',
           [
-            cell || '--',
+            value || '--',
           ],
         );
       },
@@ -419,12 +378,11 @@ export default (type: string, isSimpleShow = false) => {
         );
       },
     },
-    getLinkField('host', '挂载实例', 'instance_id', 'cvm_id'),
+    getLinkField('host', '挂载实例', 'instance_id', 'instance_id'),
     {
       label: '创建时间',
       field: 'created_at',
     },
-    getDeleteField('disks'),
   ];
 
   const imageColumns = [
