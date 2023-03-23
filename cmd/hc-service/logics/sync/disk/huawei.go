@@ -62,8 +62,8 @@ func (opt SyncHuaWeiDiskOption) Validate() error {
 }
 
 // SyncHuaWeiDisk sync disk self
-func SyncHuaWeiDisk(kt *kit.Kit, req *SyncHuaWeiDiskOption,
-	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+func SyncHuaWeiDisk(kt *kit.Kit, req *SyncHuaWeiDiskOption, ad *cloudclient.CloudAdaptorClient,
+	dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -263,6 +263,11 @@ func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff,
 				Bootable:    cloudMap[id].Disk.Bootable,
 			},
 		}
+
+		if cloudMap[id].Disk.Bootable == "true" {
+			disk.IsSystemDisk = true
+		}
+
 		createReq = append(createReq, disk)
 	}
 
@@ -357,6 +362,10 @@ func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, 
 				Attachment:  attachments,
 				Bootable:    cloudMap[id].Disk.Bootable,
 			},
+		}
+
+		if cloudMap[id].Disk.Bootable == "true" {
+			disk.IsSystemDisk = true
 		}
 
 		disks = append(disks, disk)

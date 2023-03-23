@@ -47,6 +47,7 @@ var DiskColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "disk_type", NamedC: "disk_type", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
 	{Column: "recycle_status", NamedC: "recycle_status", Type: enumor.String},
+	{Column: "is_system_disk", NamedC: "is_system_disk", Type: enumor.Boolean},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
@@ -86,6 +87,8 @@ type DiskModel struct {
 	Status string `db:"status" json:"status"`
 	// 云盘回收状态
 	RecycleStatus string `db:"recycle_status" json:"recycle_status"`
+	// 是否是系统盘
+	IsSystemDisk bool `db:"is_system_disk" json:"is_system_disk"`
 	// Memo 备注
 	Memo *string `db:"memo" json:"memo"`
 	// Extension 云厂商差异扩展字段

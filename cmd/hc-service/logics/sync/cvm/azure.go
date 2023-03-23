@@ -757,8 +757,8 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 		return nil, err
 	}
 
-	cloudNetInterMap, cloudVpcMap, cloudSubnetMap, cloudEipMap, cloudDiskMap, err := getAzureCVMRelResourcesIDs(kt,
-		req, client)
+	cloudNetInterMap, cloudVpcMap, cloudSubnetMap, cloudEipMap, cloudDiskMap, osDiskMap, err :=
+		getAzureCVMRelResourcesIDs(kt, req, client)
 	if err != nil {
 		logs.Errorf("request get azure cvm rel resource ids failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -837,7 +837,7 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 			ResourceGroupName: req.ResourceGroupName,
 			CloudIDs:          diskCloudIDs,
 		}
-		_, err := disk.SyncAzureDisk(kt, req, ad, dataCli)
+		_, err := disk.SyncAzureDiskWithOs(kt, req, osDiskMap, ad, dataCli)
 		if err != nil {
 			logs.Errorf("sync azure cvm rel disk failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -909,13 +909,14 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 
 func getAzureCVMRelResourcesIDs(kt *kit.Kit, req *SyncAzureCvmOption,
 	client *azure.Azure) (map[string]*CVMOperateSync, map[string]struct{}, map[string]map[string]struct{},
-	map[string]*CVMOperateSync, map[string]*CVMOperateSync, error) {
+	map[string]*CVMOperateSync, map[string]*CVMOperateSync, map[string]struct{}, error) {
 
 	netInterMap := make(map[string]*CVMOperateSync)
 	vpcMap := make(map[string]struct{}, 0)
 	subnetMap := make(map[string]map[string]struct{})
 	eipMap := make(map[string]*CVMOperateSync)
 	diskMap := make(map[string]*CVMOperateSync)
+	osDiskMap := make(map[string]struct{}, 0)
 	netInterIDs := make([]string, 0)
 
 	opt := &typescore.AzureListByIDOption{
@@ -925,7 +926,7 @@ func getAzureCVMRelResourcesIDs(kt *kit.Kit, req *SyncAzureCvmOption,
 	datas, err := client.ListCvmByID(kt, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to list azure cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	for _, data := range datas {
@@ -941,6 +942,7 @@ func getAzureCVMRelResourcesIDs(kt *kit.Kit, req *SyncAzureCvmOption,
 
 		osDiskId := getCVMRelID(data.CloudOsDiskID, *data.ID)
 		diskMap[osDiskId] = &CVMOperateSync{RelID: data.CloudOsDiskID, InstanceID: *data.ID}
+		osDiskMap[data.CloudOsDiskID] = struct{}{}
 
 		for _, one := range data.CloudDataDiskIDs {
 			id := getCVMRelID(one, *data.ID)
@@ -956,7 +958,7 @@ func getAzureCVMRelResourcesIDs(kt *kit.Kit, req *SyncAzureCvmOption,
 	netInterDatas, err := client.ListNetworkInterfaceByID(kt, netInterOpt)
 	if err != nil {
 		logs.Errorf("request adaptor to list azure net interface failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	for _, netInter := range netInterDatas.Details {
@@ -979,5 +981,5 @@ func getAzureCVMRelResourcesIDs(kt *kit.Kit, req *SyncAzureCvmOption,
 		}
 	}
 
-	return netInterMap, vpcMap, subnetMap, eipMap, diskMap, nil
+	return netInterMap, vpcMap, subnetMap, eipMap, diskMap, osDiskMap, nil
 }

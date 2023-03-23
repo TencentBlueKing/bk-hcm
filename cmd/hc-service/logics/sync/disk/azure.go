@@ -60,7 +60,14 @@ func (opt SyncAzureDiskOption) Validate() error {
 }
 
 // SyncAzureDisk sync disk self
-func SyncAzureDisk(kt *kit.Kit, req *SyncAzureDiskOption,
+func SyncAzureDisk(kt *kit.Kit, req *SyncAzureDiskOption, ad *cloudclient.CloudAdaptorClient,
+	dataCli *dataservice.Client) (interface{}, error) {
+
+	return SyncAzureDiskWithOs(kt, req, nil, ad, dataCli)
+}
+
+// SyncAzureDiskWithOs sync disk with cvm os device info
+func SyncAzureDiskWithOs(kt *kit.Kit, req *SyncAzureDiskOption, osMap map[string]struct{},
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -79,7 +86,7 @@ func SyncAzureDisk(kt *kit.Kit, req *SyncAzureDiskOption,
 		return nil, err
 	}
 
-	err = diffAzureDiskSync(kt, cloudMap, dsMap, req, dataCli)
+	err = diffAzureDiskSync(kt, cloudMap, dsMap, req, osMap, dataCli)
 	if err != nil {
 		logs.Errorf("request diffAzureDiskSync failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -176,8 +183,8 @@ func getDatasFromAzureForDiskSync(kt *kit.Kit, req *SyncAzureDiskOption,
 	return cloudMap, nil
 }
 
-func diffAzureDiskSync(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff,
-	dsMap map[string]*AzureDiskSyncDS, req *SyncAzureDiskOption, dataCli *dataservice.Client) error {
+func diffAzureDiskSync(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, dsMap map[string]*AzureDiskSyncDS,
+	req *SyncAzureDiskOption, osMap map[string]struct{}, dataCli *dataservice.Client) error {
 
 	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
@@ -207,7 +214,7 @@ func diffAzureDiskSync(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff,
 	}
 
 	if len(updateCloudIDs) > 0 {
-		err := diffAzureSyncUpdate(kt, cloudMap, dsMap, updateCloudIDs, dataCli, req)
+		err := diffAzureSyncUpdate(kt, cloudMap, dsMap, updateCloudIDs, dataCli, req, osMap)
 		if err != nil {
 			logs.Errorf("request diffAzureSyncUpdate failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -215,7 +222,7 @@ func diffAzureDiskSync(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff,
 	}
 
 	if len(addCloudIDs) > 0 {
-		_, err := diffAzureDiskSyncAdd(kt, cloudMap, req, addCloudIDs, dataCli)
+		_, err := diffAzureDiskSyncAdd(kt, cloudMap, req, addCloudIDs, dataCli, osMap)
 		if err != nil {
 			logs.Errorf("request diffAzureDiskSyncAdd failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -226,7 +233,7 @@ func diffAzureDiskSync(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff,
 }
 
 func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, req *SyncAzureDiskOption,
-	addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+	addCloudIDs []string, dataCli *dataservice.Client, osMap map[string]struct{}) ([]string, error) {
 
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.AzureDiskExtensionCreateReq]
 
@@ -252,6 +259,11 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 		if len(cloudMap[id].Disk.Zones) > 0 {
 			disk.Zone = converter.PtrToVal(cloudMap[id].Disk.Zones[0])
 		}
+
+		if _, exists := osMap[id]; exists {
+			disk.IsSystemDisk = true
+		}
+
 		createReq = append(createReq, disk)
 	}
 
@@ -268,7 +280,7 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 	return results.IDs, nil
 }
 
-func isAzureDiskChange(db *AzureDiskSyncDS, cloud *AzureDiskSyncDiff) bool {
+func isAzureDiskChange(db *AzureDiskSyncDS, cloud *AzureDiskSyncDiff, isSystemDisk bool) bool {
 
 	if converter.PtrToVal(cloud.Disk.Status) != db.HcDisk.Status {
 		return true
@@ -286,22 +298,29 @@ func isAzureDiskChange(db *AzureDiskSyncDS, cloud *AzureDiskSyncDiff) bool {
 		return true
 	}
 
+	if isSystemDisk != db.HcDisk.IsSystemDisk {
+		return true
+	}
+
 	return false
 }
 
 func diffAzureSyncUpdate(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, dsMap map[string]*AzureDiskSyncDS,
-	updateCloudIDs []string, dataCli *dataservice.Client, req *SyncAzureDiskOption) error {
+	updateCloudIDs []string, dataCli *dataservice.Client, req *SyncAzureDiskOption, osMap map[string]struct{}) error {
 
 	disks := make([]*dataproto.DiskExtUpdateReq[dataproto.AzureDiskExtensionUpdateReq], 0)
 
 	for _, id := range updateCloudIDs {
-		if !isAzureDiskChange(dsMap[id], cloudMap[id]) {
+		_, isSystemDisk := osMap[id]
+
+		if !isAzureDiskChange(dsMap[id], cloudMap[id], isSystemDisk) {
 			continue
 		}
 
 		disk := &dataproto.DiskExtUpdateReq[dataproto.AzureDiskExtensionUpdateReq]{
-			ID:     dsMap[id].HcDisk.ID,
-			Status: string(*cloudMap[id].Disk.Status),
+			ID:           dsMap[id].HcDisk.ID,
+			Status:       *cloudMap[id].Disk.Status,
+			IsSystemDisk: isSystemDisk,
 			Extension: &dataproto.AzureDiskExtensionUpdateReq{
 				ResourceGroupName: req.ResourceGroupName,
 				OSType:            converter.PtrToVal(cloudMap[id].Disk.OSType),

@@ -875,7 +875,8 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		return nil, err
 	}
 
-	niCloudIDMap, vpcSLMap, subnetSLMap, eipCloudIDMap, diskSLMap, err := getGcpCVMRelResourcesIDs(kt, req, client)
+	niCloudIDMap, vpcSLMap, subnetSLMap, eipCloudIDMap, diskSLMap, bootMap, err :=
+		getGcpCVMRelResourcesIDs(kt, req, client)
 	if err != nil {
 		logs.Errorf("request get gcp cvm rel resource ids failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -958,7 +959,7 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 			Zone:      req.Zone,
 			SelfLinks: diskSelfLinks,
 		}
-		_, err := disk.SyncGcpDisk(kt, req, ad, dataCli)
+		_, err := disk.SyncGcpDiskWithBoot(kt, req, bootMap, ad, dataCli)
 		if err != nil {
 			logs.Errorf("sync gcp cvm rel disk failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -1027,15 +1028,16 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 	return nil, nil
 }
 
-func getGcpCVMRelResourcesIDs(kt *kit.Kit, req *SyncGcpCvmOption,
-	client *gcp.Gcp) (map[string]*CVMOperateSync, map[string]*CVMOperateSync,
-	map[string]*CVMOperateSync, map[string]*CVMOperateSync, map[string]*CVMOperateSync, error) {
+func getGcpCVMRelResourcesIDs(kt *kit.Kit, req *SyncGcpCvmOption, client *gcp.Gcp) (map[string]*CVMOperateSync,
+	map[string]*CVMOperateSync, map[string]*CVMOperateSync, map[string]*CVMOperateSync, map[string]*CVMOperateSync,
+	map[string]struct{}, error) {
 
 	netInterMap := make(map[string]*CVMOperateSync)
 	vpcMap := make(map[string]*CVMOperateSync)
 	subnetMap := make(map[string]*CVMOperateSync)
 	eipMap := make(map[string]*CVMOperateSync)
 	diskMap := make(map[string]*CVMOperateSync)
+	bootMap := make(map[string]struct{})
 
 	opt := &typecvm.GcpListOption{
 		Region:   req.Region,
@@ -1046,7 +1048,7 @@ func getGcpCVMRelResourcesIDs(kt *kit.Kit, req *SyncGcpCvmOption,
 	datas, _, err := client.ListCvm(kt, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to list gcp cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	for _, data := range datas {
@@ -1076,7 +1078,7 @@ func getGcpCVMRelResourcesIDs(kt *kit.Kit, req *SyncGcpCvmOption,
 						if err != nil {
 							logs.Errorf("request adaptor to aggregate list gcp eip by ip failed, err: %v, rid: %s",
 								err, kt.Rid)
-							return nil, nil, nil, nil, nil, err
+							return nil, nil, nil, nil, nil, nil, err
 						}
 
 						for _, one := range eips {
@@ -1094,10 +1096,13 @@ func getGcpCVMRelResourcesIDs(kt *kit.Kit, req *SyncGcpCvmOption,
 				if disk != nil {
 					id := getCVMRelID(disk.Source, fmt.Sprintf("%d", data.Id))
 					diskMap[id] = &CVMOperateSync{RelID: disk.Source, InstanceID: fmt.Sprintf("%d", data.Id)}
+					if disk.Boot {
+						bootMap[disk.Source] = struct{}{}
+					}
 				}
 			}
 		}
 	}
 
-	return netInterMap, vpcMap, subnetMap, eipMap, diskMap, nil
+	return netInterMap, vpcMap, subnetMap, eipMap, diskMap, bootMap, nil
 }

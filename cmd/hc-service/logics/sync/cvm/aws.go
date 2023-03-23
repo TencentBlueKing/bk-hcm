@@ -821,7 +821,8 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 		return nil, err
 	}
 
-	cloudVpcMap, cloudSubnetMap, cloudEipMap, cloudSGMap, cloudDiskMap, err := getAwsCVMRelResourcesIDs(kt, req, client)
+	cloudVpcMap, cloudSubnetMap, cloudEipMap, cloudSGMap, cloudDiskMap, rootDeviceMap, err :=
+		getAwsCVMRelResourcesIDs(kt, req, client)
 	if err != nil {
 		logs.Errorf("request get aws cvm rel resource ids failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -905,7 +906,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 			Region:    req.Region,
 			CloudIDs:  diskCloudIDs,
 		}
-		_, err := disk.SyncAwsDisk(kt, req, ad, dataCli)
+		_, err := disk.SyncAwsDiskWithRoot(kt, req, rootDeviceMap, ad, dataCli)
 		if err != nil {
 			logs.Errorf("sync aws cvm rel disk failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -974,15 +975,16 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 	return nil, nil
 }
 
-func getAwsCVMRelResourcesIDs(kt *kit.Kit, req *SyncAwsCvmOption,
-	client *aws.Aws) (map[string]*CVMOperateSync, map[string]*CVMOperateSync,
-	map[string]*CVMOperateSync, map[string]*CVMOperateSync, map[string]*CVMOperateSync, error) {
+func getAwsCVMRelResourcesIDs(kt *kit.Kit, req *SyncAwsCvmOption, client *aws.Aws) (map[string]*CVMOperateSync,
+	map[string]*CVMOperateSync, map[string]*CVMOperateSync, map[string]*CVMOperateSync, map[string]*CVMOperateSync,
+	map[string]struct{}, error) {
 
 	vpcMap := make(map[string]*CVMOperateSync)
 	subnetMap := make(map[string]*CVMOperateSync)
 	eipMap := make(map[string]*CVMOperateSync)
 	sGMap := make(map[string]*CVMOperateSync)
 	diskMap := make(map[string]*CVMOperateSync)
+	rootDeviceMap := make(map[string]struct{}, 0)
 	eipIps := make([]string, 0)
 
 	opt := &typecvm.AwsListOption{
@@ -993,7 +995,7 @@ func getAwsCVMRelResourcesIDs(kt *kit.Kit, req *SyncAwsCvmOption,
 	datas, err := client.ListCvm(kt, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to list aws cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return vpcMap, subnetMap, eipMap, sGMap, diskMap, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	for _, reservation := range datas.Reservations {
@@ -1017,11 +1019,23 @@ func getAwsCVMRelResourcesIDs(kt *kit.Kit, req *SyncAwsCvmOption,
 				subnetMap[id] = &CVMOperateSync{RelID: *instance.SubnetId, InstanceID: *instance.InstanceId}
 			}
 
+			var rootDiskName string
+			if converter.PtrToVal(instance.RootDeviceType) == "ebs" && instance.RootDeviceName != nil &&
+				*instance.RootDeviceName != "" {
+				rootDiskName = *instance.RootDeviceName
+			}
+
 			if len(instance.BlockDeviceMappings) > 0 {
 				for _, disk := range instance.BlockDeviceMappings {
-					if disk.Ebs != nil {
-						id := getCVMRelID(*disk.Ebs.VolumeId, *instance.InstanceId)
-						diskMap[id] = &CVMOperateSync{RelID: *disk.Ebs.VolumeId, InstanceID: *instance.InstanceId}
+					if disk.Ebs == nil {
+						continue
+					}
+
+					id := getCVMRelID(*disk.Ebs.VolumeId, *instance.InstanceId)
+					diskMap[id] = &CVMOperateSync{RelID: *disk.Ebs.VolumeId, InstanceID: *instance.InstanceId}
+
+					if disk.DeviceName != nil && *disk.DeviceName != "" && *disk.DeviceName == rootDiskName {
+						rootDeviceMap[*disk.Ebs.VolumeId] = struct{}{}
 					}
 				}
 			}
@@ -1049,5 +1063,5 @@ func getAwsCVMRelResourcesIDs(kt *kit.Kit, req *SyncAwsCvmOption,
 		}
 	}
 
-	return vpcMap, subnetMap, eipMap, sGMap, diskMap, err
+	return vpcMap, subnetMap, eipMap, sGMap, diskMap, rootDeviceMap, err
 }

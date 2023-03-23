@@ -29,17 +29,18 @@ import (
 
 // DiskExtCreateReq ...
 type DiskExtCreateReq[T DiskExtensionCreateReq] struct {
-	AccountID string  `json:"account_id" validate:"required"`
-	Name      string  `json:"name" validate:"required"`
-	BkBizID   int64   `json:"bk_biz_id"`
-	CloudID   string  `json:"cloud_id" validate:"required"`
-	Region    string  `json:"region" validate:"required"`
-	Zone      string  `json:"zone" validate:"omitempty"`
-	DiskSize  uint64  `json:"disk_size" validate:"required"`
-	DiskType  string  `json:"disk_type" validate:"required"`
-	Status    string  `json:"status" validate:"required"`
-	Memo      *string `json:"memo"`
-	Extension *T      `json:"extension"`
+	AccountID    string  `json:"account_id" validate:"required"`
+	Name         string  `json:"name" validate:"required"`
+	BkBizID      int64   `json:"bk_biz_id"`
+	CloudID      string  `json:"cloud_id" validate:"required"`
+	Region       string  `json:"region" validate:"required"`
+	Zone         string  `json:"zone" validate:"omitempty"`
+	DiskSize     uint64  `json:"disk_size" validate:"required"`
+	DiskType     string  `json:"disk_type" validate:"required"`
+	IsSystemDisk bool    `json:"is_system_disk" validate:"omitempty"`
+	Status       string  `json:"status" validate:"required"`
+	Memo         *string `json:"memo"`
+	Extension    *T      `json:"extension"`
 }
 
 // Validate ...
@@ -81,6 +82,7 @@ type DiskExtUpdateReq[T DiskExtensionUpdateReq] struct {
 	Name      string  `json:"name"`
 	BkBizID   uint64  `json:"bk_biz_id"`
 	Status    string  `json:"status"`
+	IsSystemDisk bool    `json:"is_system_disk" validate:"omitempty"`
 	Memo      *string `json:"memo"`
 	Extension *T      `json:"extension"`
 }

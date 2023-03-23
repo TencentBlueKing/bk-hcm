@@ -61,7 +61,13 @@ func (opt SyncAwsDiskOption) Validate() error {
 }
 
 // SyncAwsDisk sync disk self
-func SyncAwsDisk(kt *kit.Kit, req *SyncAwsDiskOption,
+func SyncAwsDisk(kt *kit.Kit, req *SyncAwsDiskOption, ad *cloudclient.CloudAdaptorClient,
+	dataCli *dataservice.Client) (interface{}, error) {
+	return SyncAwsDiskWithRoot(kt, req, nil, ad, dataCli)
+}
+
+// SyncAwsDiskWithRoot sync disk with cvm root device info
+func SyncAwsDiskWithRoot(kt *kit.Kit, req *SyncAwsDiskOption, rootMap map[string]struct{},
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -80,7 +86,7 @@ func SyncAwsDisk(kt *kit.Kit, req *SyncAwsDiskOption,
 		return nil, err
 	}
 
-	err = diffAwsDiskSync(kt, cloudMap, dsMap, req, dataCli)
+	err = diffAwsDiskSync(kt, cloudMap, dsMap, req, rootMap, dataCli)
 	if err != nil {
 		logs.Errorf("request diffAwsDiskSync failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -169,7 +175,11 @@ func getDatasFromAwsForDiskSync(kt *kit.Kit, req *SyncAwsDiskOption,
 }
 
 func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap map[string]*AwsDiskSyncDS,
-	req *SyncAwsDiskOption, dataCli *dataservice.Client) error {
+	req *SyncAwsDiskOption, rootMap map[string]struct{}, dataCli *dataservice.Client) error {
+
+	if rootMap == nil {
+		rootMap = make(map[string]struct{})
+	}
 
 	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
@@ -199,7 +209,7 @@ func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap ma
 	}
 
 	if len(updateCloudIDs) > 0 {
-		err := diffAwsSyncUpdate(kt, cloudMap, dsMap, updateCloudIDs, dataCli)
+		err := diffAwsSyncUpdate(kt, cloudMap, dsMap, updateCloudIDs, rootMap, dataCli)
 		if err != nil {
 			logs.Errorf("request diffAwsSyncUpdate failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -207,7 +217,7 @@ func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap ma
 	}
 
 	if len(addCloudIDs) > 0 {
-		_, err := diffAwsDiskSyncAdd(kt, cloudMap, req, addCloudIDs, dataCli)
+		_, err := diffAwsDiskSyncAdd(kt, cloudMap, req, addCloudIDs, rootMap, dataCli)
 		if err != nil {
 			logs.Errorf("request diffAwsDiskSyncAdd failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -217,8 +227,8 @@ func diffAwsDiskSync(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap ma
 	return nil
 }
 
-func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
-	req *SyncAwsDiskOption, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, req *SyncAwsDiskOption,
+	addCloudIDs []string, rootMap map[string]struct{}, dataCli *dataservice.Client) ([]string, error) {
 
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.AwsDiskExtensionCreateReq]
 
@@ -265,6 +275,11 @@ func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 				Encrypted:  cloudMap[id].Disk.Encrypted,
 			},
 		}
+
+		if _, exists := rootMap[id]; exists {
+			disk.IsSystemDisk = true
+		}
+
 		createReq = append(createReq, disk)
 	}
 
@@ -281,7 +296,7 @@ func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 	return results.IDs, nil
 }
 
-func isAwsDiskChange(db *AwsDiskSyncDS, cloud *AwsDiskSyncDiff, cloudName string) bool {
+func isAwsDiskChange(db *AwsDiskSyncDS, cloud *AwsDiskSyncDiff, cloudName string, isSystemDisk bool) bool {
 
 	if converter.PtrToVal(cloud.Disk.State) != db.HcDisk.Status {
 		return true
@@ -313,11 +328,15 @@ func isAwsDiskChange(db *AwsDiskSyncDS, cloud *AwsDiskSyncDiff, cloudName string
 		}
 	}
 
+	if isSystemDisk != db.HcDisk.IsSystemDisk {
+		return true
+	}
+
 	return false
 }
 
-func diffAwsSyncUpdate(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
-	dsMap map[string]*AwsDiskSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
+func diffAwsSyncUpdate(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap map[string]*AwsDiskSyncDS,
+	updateCloudIDs []string, rootMap map[string]struct{}, dataCli *dataservice.Client) error {
 
 	disks := make([]*dataproto.DiskExtUpdateReq[dataproto.AwsDiskExtensionUpdateReq], 0)
 
@@ -331,7 +350,9 @@ func diffAwsSyncUpdate(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 			}
 		}
 
-		if !isAwsDiskChange(dsMap[id], cloudMap[id], name) {
+		_, isSystemDisk := rootMap[id]
+
+		if !isAwsDiskChange(dsMap[id], cloudMap[id], name, isSystemDisk) {
 			continue
 		}
 
@@ -353,9 +374,10 @@ func diffAwsSyncUpdate(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff,
 		}
 
 		disk := &dataproto.DiskExtUpdateReq[dataproto.AwsDiskExtensionUpdateReq]{
-			ID:     dsMap[id].HcDisk.ID,
-			Status: *cloudMap[id].Disk.State,
-			Name:   name,
+			ID:           dsMap[id].HcDisk.ID,
+			Status:       *cloudMap[id].Disk.State,
+			Name:         name,
+			IsSystemDisk: isSystemDisk,
 			Extension: &dataproto.AwsDiskExtensionUpdateReq{
 				Attachment: attachments,
 				Encrypted:  cloudMap[id].Disk.Encrypted,

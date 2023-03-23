@@ -420,6 +420,7 @@ func batchUpdateDiskExt[T dataproto.DiskExtensionUpdateReq](cts *rest.Contexts,
 				Region:  diskReq.Region,
 				BkBizID: int64(diskReq.BkBizID),
 				Status:  diskReq.Status,
+				IsSystemDisk: diskReq.IsSystemDisk,
 				Memo:    diskReq.Memo,
 			}
 

@@ -392,6 +392,7 @@ create table if not exists `disk`
     `disk_type`      varchar(128)       not null,
     `status`         varchar(128)       not null,
     `recycle_status` varchar(32)                 default '',
+    `is_system_disk` boolean                     default false,
     `memo`           varchar(255)                default '',
     `extension`      json               not null,
     `creator`        varchar(64)        not null,

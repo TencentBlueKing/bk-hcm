@@ -66,7 +66,14 @@ func (opt SyncGcpDiskOption) Validate() error {
 }
 
 // SyncGcpDisk sync disk self
-func SyncGcpDisk(kt *kit.Kit, req *SyncGcpDiskOption,
+func SyncGcpDisk(kt *kit.Kit, req *SyncGcpDiskOption, ad *cloudclient.CloudAdaptorClient,
+	dataCli *dataservice.Client) (interface{}, error) {
+
+	return SyncGcpDiskWithBoot(kt, req, nil, ad, dataCli)
+}
+
+// SyncGcpDiskWithBoot sync disk with cvm boot device info
+func SyncGcpDiskWithBoot(kt *kit.Kit, req *SyncGcpDiskOption, bootMap map[string]struct{},
 	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
@@ -85,7 +92,7 @@ func SyncGcpDisk(kt *kit.Kit, req *SyncGcpDiskOption,
 		return nil, err
 	}
 
-	err = diffGcpDiskSync(kt, cloudMap, dsMap, req, dataCli)
+	err = diffGcpDiskSync(kt, cloudMap, dsMap, req, bootMap, dataCli)
 	if err != nil {
 		logs.Errorf("request diffGcpDiskSync failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -202,8 +209,12 @@ func getDatasFromGcpForDiskSync(kt *kit.Kit, req *SyncGcpDiskOption,
 	return cloudMap, nil
 }
 
-func diffGcpDiskSync(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
-	dsMap map[string]*GcpDiskSyncDS, req *SyncGcpDiskOption, dataCli *dataservice.Client) error {
+func diffGcpDiskSync(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff, dsMap map[string]*GcpDiskSyncDS,
+	req *SyncGcpDiskOption, bootMap map[string]struct{}, dataCli *dataservice.Client) error {
+
+	if bootMap == nil {
+		bootMap = make(map[string]struct{})
+	}
 
 	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
@@ -233,7 +244,7 @@ func diffGcpDiskSync(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 	}
 
 	if len(updateCloudIDs) > 0 {
-		err := diffGcpSyncUpdate(kt, cloudMap, req, dsMap, updateCloudIDs, dataCli)
+		err := diffGcpSyncUpdate(kt, cloudMap, req, dsMap, updateCloudIDs, bootMap, dataCli)
 		if err != nil {
 			logs.Errorf("request diffGcpSyncUpdate failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -241,7 +252,7 @@ func diffGcpDiskSync(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 	}
 
 	if len(addCloudIDs) > 0 {
-		_, err := diffGcpDiskSyncAdd(kt, cloudMap, req, addCloudIDs, dataCli)
+		_, err := diffGcpDiskSyncAdd(kt, cloudMap, req, addCloudIDs, bootMap, dataCli)
 		if err != nil {
 			logs.Errorf("request diffGcpDiskSyncAdd failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -251,8 +262,8 @@ func diffGcpDiskSync(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 	return nil
 }
 
-func diffGcpDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
-	req *SyncGcpDiskOption, addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+func diffGcpDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff, req *SyncGcpDiskOption,
+	addCloudIDs []string, bootMap map[string]struct{}, dataCli *dataservice.Client) ([]string, error) {
 
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.GcpDiskExtensionCreateReq]
 
@@ -282,6 +293,9 @@ func diffGcpDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff,
 				return nil, err
 			}
 			disk.Region = region
+		}
+		if _, exists := bootMap[id]; exists {
+			disk.IsSystemDisk = true
 		}
 		createReq = append(createReq, disk)
 	}
@@ -331,7 +345,7 @@ func getRegion(kt *kit.Kit, dataCli *dataservice.Client, gcpZone string) (string
 	return result.Details[0].Region, nil
 }
 
-func isGcpDiskChange(db *GcpDiskSyncDS, cloud *GcpDiskSyncDiff) bool {
+func isGcpDiskChange(db *GcpDiskSyncDS, cloud *GcpDiskSyncDiff, isSystemDisk bool) bool {
 
 	if cloud.Disk.Status != db.HcDisk.Status {
 		return true
@@ -356,11 +370,17 @@ func isGcpDiskChange(db *GcpDiskSyncDS, cloud *GcpDiskSyncDiff) bool {
 	if cloud.Disk.Description != db.HcDisk.Extension.Description {
 		return true
 	}
+
+	if isSystemDisk != db.HcDisk.IsSystemDisk {
+		return true
+	}
+
 	return false
 }
 
 func diffGcpSyncUpdate(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff, req *SyncGcpDiskOption,
-	dsMap map[string]*GcpDiskSyncDS, updateCloudIDs []string, dataCli *dataservice.Client) error {
+	dsMap map[string]*GcpDiskSyncDS, updateCloudIDs []string, bootMap map[string]struct{},
+	dataCli *dataservice.Client) error {
 
 	disks := make([]*dataproto.DiskExtUpdateReq[dataproto.GcpDiskExtensionUpdateReq], 0)
 
@@ -374,15 +394,18 @@ func diffGcpSyncUpdate(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff, req *S
 			cloudMap[id].Disk.Region = region
 		}
 
-		if !isGcpDiskChange(dsMap[id], cloudMap[id]) {
+		_, isSystemDisk := bootMap[cloudMap[id].Disk.SelfLink]
+
+		if !isGcpDiskChange(dsMap[id], cloudMap[id], isSystemDisk) {
 			continue
 		}
 
 		disk := &dataproto.DiskExtUpdateReq[dataproto.GcpDiskExtensionUpdateReq]{
-			ID:     dsMap[id].HcDisk.ID,
-			Region: cloudMap[id].Disk.Region,
-			Status: cloudMap[id].Disk.Status,
-			Memo:   &cloudMap[id].Disk.Description,
+			ID:           dsMap[id].HcDisk.ID,
+			Region:       cloudMap[id].Disk.Region,
+			Status:       cloudMap[id].Disk.Status,
+			IsSystemDisk: isSystemDisk,
+			Memo:         &cloudMap[id].Disk.Description,
 			Extension: &dataproto.GcpDiskExtensionUpdateReq{
 				SelfLink:    cloudMap[id].Disk.SelfLink,
 				SourceImage: cloudMap[id].Disk.SourceImage,

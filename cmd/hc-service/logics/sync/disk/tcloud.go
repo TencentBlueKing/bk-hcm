@@ -65,8 +65,8 @@ func (opt SyncTCloudDiskOption) Validate() error {
 }
 
 // SyncTCloudDisk sync disk self
-func SyncTCloudDisk(kt *kit.Kit, req *SyncTCloudDiskOption,
-	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+func SyncTCloudDisk(kt *kit.Kit, req *SyncTCloudDiskOption, ad *cloudclient.CloudAdaptorClient,
+	dataCli *dataservice.Client) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -308,6 +308,11 @@ func diffTCloudDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
 				DeadlineTime:       cloudMap[id].Disk.DeadlineTime,
 			},
 		}
+
+		if cloudMap[id].Disk.DiskUsage != nil && *cloudMap[id].Disk.DiskUsage == "SYSTEM_DISK" {
+			disk.IsSystemDisk = true
+		}
+
 		createReq = append(createReq, disk)
 	}
 
@@ -401,6 +406,10 @@ func diffTCloudDiskSyncUpdate(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDi
 				DeleteWithInstance: cloudMap[id].Disk.DeleteWithInstance,
 				DeadlineTime:       cloudMap[id].Disk.DeadlineTime,
 			},
+		}
+
+		if cloudMap[id].Disk.DiskUsage != nil && *cloudMap[id].Disk.DiskUsage == "SYSTEM_DISK" {
+			disk.IsSystemDisk = true
 		}
 
 		disks = append(disks, disk)
