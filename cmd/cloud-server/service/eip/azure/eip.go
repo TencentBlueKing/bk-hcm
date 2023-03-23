@@ -270,8 +270,11 @@ func (a *Azure) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cl
 		cts.Kit.Header(),
 		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", []string{cvmID})},
 	)
+	if err != nil {
+		return nil, err
+	}
 
-	if len(rels.Details) == 0 {
+	if rels == nil || rels.Details == nil || len(rels.Details) == 0 {
 		return nil, fmt.Errorf("cvm(%s) has no networkinterface", cvmID)
 	}
 
@@ -308,7 +311,7 @@ func (a *Azure) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cl
 		return nil, err
 	}
 
-	if len(nis.Details) == 0 {
+	if nis == nil || nis.Details == nil || len(nis.Details) == 0 {
 		return nil, fmt.Errorf("eip(%s) not associated with cvm(%s)", eipResp.PublicIp, cvmID)
 	}
 
