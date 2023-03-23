@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -54,16 +55,14 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 	var hitErr error
 	defer func() {
 		if hitErr != nil {
-			// TODO: 更新账号同步状态为同步异常
-
+			logs.Errorf("%s: sync all resource failed, err: %v, account: %s, rid: %s", constant.AccountSyncFailed,
+				hitErr, opt.AccountID, kt.Rid)
 			return
 		}
 
 		logs.V(3).Infof("huawei account[%s] sync all resource end, cost: %v, opt: %v, rid: %s", opt.AccountID,
 			time.Since(start), opt, kt.Rid)
 	}()
-
-	// TODO: 修改账号表中同步状态字段和同步时间字段
 
 	if opt.SyncPublicResource {
 		syncOpt := &SyncPublicResourceOption{
@@ -106,8 +105,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); hitErr != nil {
 		return hitErr
 	}
-
-	// TODO: 更新同步状态字段为同步结束，更新结束时间
 
 	return nil
 }

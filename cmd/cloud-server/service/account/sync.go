@@ -21,6 +21,7 @@ package account
 
 import (
 	"errors"
+	"fmt"
 
 	"hcm/cmd/cloud-server/service/sync/aws"
 	"hcm/cmd/cloud-server/service/sync/azure"
@@ -28,12 +29,20 @@ import (
 	"hcm/cmd/cloud-server/service/sync/huawei"
 	"hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/cmd/cloud-server/service/sync/tcloud"
+	"hcm/pkg/api/core"
+	imagecloud "hcm/pkg/api/data-service/cloud/image"
+	protoregion "hcm/pkg/api/data-service/cloud/region"
+	protocloud "hcm/pkg/api/data-service/cloud/zone"
+	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 
 	etcd3 "go.etcd.io/etcd/client/v3"
 )
@@ -58,6 +67,13 @@ func (a *accountSvc) Sync(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	isNeedSyncPublicResFlag, err := isNeedSyncPublicResource(cts.Kit, a.client.DataService(), baseInfo.Vendor)
+	if err != nil {
+		logs.Errorf("is need sync public resource failed, err: %v, vendor: %s, rid: %s", err,
+			baseInfo.Vendor, cts.Kit.Rid)
+		return nil, err
+	}
+
 	leaseID, err := lock.Manager.TryLock(lock.Key(accountID))
 	if err != nil {
 		if err == lock.ErrLockFailed {
@@ -79,35 +95,35 @@ func (a *accountSvc) Sync(cts *rest.Contexts) (interface{}, error) {
 		case enumor.TCloud:
 			opt := &tcloud.SyncAllResourceOption{
 				AccountID:          accountID,
-				SyncPublicResource: true,
+				SyncPublicResource: isNeedSyncPublicResFlag,
 			}
 			tcloud.SyncAllResource(cts.Kit, a.client, opt)
 
 		case enumor.Aws:
 			opt := &aws.SyncAllResourceOption{
 				AccountID:          accountID,
-				SyncPublicResource: true,
+				SyncPublicResource: isNeedSyncPublicResFlag,
 			}
 			aws.SyncAllResource(cts.Kit, a.client, opt)
 
 		case enumor.HuaWei:
 			opt := &huawei.SyncAllResourceOption{
 				AccountID:          accountID,
-				SyncPublicResource: true,
+				SyncPublicResource: isNeedSyncPublicResFlag,
 			}
 			huawei.SyncAllResource(cts.Kit, a.client, opt)
 
 		case enumor.Gcp:
 			opt := &gcp.SyncAllResourceOption{
 				AccountID:          accountID,
-				SyncPublicResource: true,
+				SyncPublicResource: isNeedSyncPublicResFlag,
 			}
 			gcp.SyncAllResource(cts.Kit, a.client, opt)
 
 		case enumor.Azure:
 			opt := &azure.SyncAllResourceOption{
 				AccountID:          accountID,
-				SyncPublicResource: true,
+				SyncPublicResource: isNeedSyncPublicResFlag,
 			}
 			azure.SyncAllResource(cts.Kit, a.client, opt)
 
@@ -117,4 +133,128 @@ func (a *accountSvc) Sync(cts *rest.Contexts) (interface{}, error) {
 	}(leaseID)
 
 	return nil, nil
+}
+
+func isNeedSyncPublicResource(kt *kit.Kit, dataCli *dataservice.Client, vendor enumor.Vendor) (
+	bool, error) {
+
+	need, err := isNeedSyncRegion(kt, dataCli, vendor)
+	if err != nil {
+		return false, err
+	}
+
+	if need {
+		return true, nil
+	}
+
+	switch vendor {
+	case enumor.Aws, enumor.TCloud, enumor.HuaWei, enumor.Gcp:
+		listZoneReq := &protocloud.ZoneListReq{
+			Filter: tools.EqualExpression("vendor", vendor),
+			Page:   core.CountPage,
+		}
+		result, err := dataCli.Global.Zone.ListZone(kt.Ctx, kt.Header(), listZoneReq)
+		if err != nil {
+			return false, err
+		}
+
+		if result.Count == 0 {
+			return true, nil
+		}
+
+	case enumor.Azure:
+		// azure没有可用区
+	default:
+		return false, fmt.Errorf("vendor: %s not support", vendor)
+	}
+
+	switch vendor {
+	case enumor.Aws, enumor.TCloud, enumor.HuaWei, enumor.Gcp, enumor.Azure:
+		listZoneReq := &imagecloud.ImageListReq{
+			Filter: tools.EqualExpression("vendor", vendor),
+			Page:   core.CountPage,
+		}
+		result, err := dataCli.Global.ListImage(kt.Ctx, kt.Header(), listZoneReq)
+		if err != nil {
+			return false, err
+		}
+
+		if converter.PtrToVal(result.Count) == 0 {
+			return true, nil
+		}
+
+	default:
+		return false, fmt.Errorf("vendor: %s not support", vendor)
+	}
+
+	return false, nil
+}
+
+func isNeedSyncRegion(kt *kit.Kit, dataCli *dataservice.Client, vendor enumor.Vendor) (bool, error) {
+	regionCount := uint64(0)
+	switch vendor {
+	case enumor.TCloud:
+		listReq := &protoregion.TCloudRegionListReq{
+			Filter: tools.AllExpression(),
+			Page:   core.CountPage,
+		}
+		result, err := dataCli.TCloud.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			return false, err
+		}
+		regionCount = result.Count
+
+	case enumor.Aws:
+		listReq := &protoregion.AwsRegionListReq{
+			Filter: tools.AllExpression(),
+			Page:   core.CountPage,
+		}
+		result, err := dataCli.Aws.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			return false, err
+		}
+		regionCount = result.Count
+
+	case enumor.HuaWei:
+		listReq := &protoregion.HuaWeiRegionListReq{
+			Filter: tools.AllExpression(),
+			Page:   core.CountPage,
+		}
+		result, err := dataCli.HuaWei.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			return false, err
+		}
+		regionCount = result.Count
+
+	case enumor.Gcp:
+		listReq := &protoregion.GcpRegionListReq{
+			Filter: tools.AllExpression(),
+			Page:   core.CountPage,
+		}
+		result, err := dataCli.Gcp.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			return false, err
+		}
+		regionCount = result.Count
+
+	case enumor.Azure:
+		listReq := &protoregion.AzureRegionListReq{
+			Filter: tools.AllExpression(),
+			Page:   core.CountPage,
+		}
+		result, err := dataCli.Azure.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			return false, err
+		}
+		regionCount = result.Count
+
+	default:
+		return false, fmt.Errorf("vendor: %s not support", vendor)
+	}
+
+	if regionCount == 0 {
+		return true, nil
+	}
+
+	return false, nil
 }
