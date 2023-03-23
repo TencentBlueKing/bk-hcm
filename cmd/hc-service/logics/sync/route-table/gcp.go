@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/uuid"
 )
 
@@ -281,15 +282,18 @@ func compareDeleteGcpRouteTableList(kt *kit.Kit, req *hcroutetable.GcpRouteTable
 			return nil
 		}
 
-		deleteCloudIDMap := make(map[string]string, 0)
+		deleteCloudIDMap := make(map[string]hcroutetable.RouteDeleteReq, 0)
 		for _, item := range dbList.Details {
 			if _, ok := allCloudIDMap[item.CloudID]; !ok {
-				deleteCloudIDMap[item.CloudID] = item.ID
+				deleteCloudIDMap[item.CloudID] = hcroutetable.RouteDeleteReq{
+					RouteID:      item.ID,
+					RouteTableID: item.RouteTableID,
+				}
 			}
 		}
 
 		// batch query need delete route table list
-		deleteIDs := GetNeedDeleteGcpRouteTableList(kt, req, deleteCloudIDMap, adaptor)
+		deleteIDs, deleteIDMap := GetNeedDeleteGcpRouteTableList(kt, req, deleteCloudIDMap, adaptor)
 		if len(deleteIDs) > 0 {
 			err = cancelRouteTableSubnetRel(kt, dataCli, enumor.Gcp, deleteIDs)
 			if err != nil {
@@ -298,7 +302,7 @@ func compareDeleteGcpRouteTableList(kt *kit.Kit, req *hcroutetable.GcpRouteTable
 				return err
 			}
 
-			err = BatchDeleteGcpRouteByIDs(kt, deleteIDs, dataCli)
+			err = BatchDeleteGcpRouteByIDs(kt, deleteIDMap, dataCli)
 			if err != nil {
 				logs.Errorf("%s-routetable batch compare db delete failed. deleteIDs: %v, err: %v",
 					enumor.Gcp, deleteIDs, err)
@@ -319,25 +323,29 @@ func compareDeleteGcpRouteTableList(kt *kit.Kit, req *hcroutetable.GcpRouteTable
 
 // GetNeedDeleteGcpRouteTableList get need delete gcp route table list
 func GetNeedDeleteGcpRouteTableList(kt *kit.Kit, req *hcroutetable.GcpRouteTableSyncReq,
-	deleteCloudIDMap map[string]string, adaptor *cloudclient.CloudAdaptorClient) []string {
+	deleteCloudIDMap map[string]hcroutetable.RouteDeleteReq,
+	adaptor *cloudclient.CloudAdaptorClient) ([]string, map[string][]string) {
 
-	deleteIDs := make([]string, 0, len(deleteCloudIDMap))
+	deleteRouteTableIDs := make([]string, 0, len(deleteCloudIDMap))
+	deleteIDMap := make(map[string][]string, len(deleteCloudIDMap))
 	if len(deleteCloudIDMap) == 0 {
-		return deleteIDs
+		return deleteRouteTableIDs, deleteIDMap
 	}
 
 	cli, err := adaptor.Gcp(kt, req.AccountID)
 	if err != nil {
 		logs.Errorf("%s-routetable get account failed. accountID: %s, cloudIDs: %v, err: %v",
 			enumor.Gcp, req.AccountID, req.CloudIDs, err)
-		return deleteIDs
+		return deleteRouteTableIDs, deleteIDMap
 	}
 
 	var tmpResourceIDs []string
-	for tmpCloudID, tmpID := range deleteCloudIDMap {
+	for tmpCloudID, tmpItem := range deleteCloudIDMap {
 		tmpResourceIDs = append(tmpResourceIDs, tmpCloudID)
-		deleteIDs = append(deleteIDs, tmpID)
+		deleteIDMap[tmpItem.RouteTableID] = append(deleteIDMap[tmpItem.RouteTableID], tmpItem.RouteID)
+		deleteRouteTableIDs = append(deleteRouteTableIDs, tmpItem.RouteTableID)
 	}
+	deleteRouteTableIDs = slice.Unique(deleteRouteTableIDs)
 
 	opt := &adcore.GcpListOption{
 		CloudIDs: tmpResourceIDs,
@@ -346,11 +354,11 @@ func GetNeedDeleteGcpRouteTableList(kt *kit.Kit, req *hcroutetable.GcpRouteTable
 	if tmpErr != nil {
 		logs.Errorf("%s-routetable batch get cloudapi failed. accountID: %s, cloudIDs: %v, err: %v",
 			enumor.Gcp, req.AccountID, req.CloudIDs, tmpErr)
-		return deleteIDs
+		return deleteRouteTableIDs, deleteIDMap
 	}
 
 	if len(tmpList.Details) == 0 {
-		return deleteIDs
+		return deleteRouteTableIDs, deleteIDMap
 	}
 
 	for _, item := range tmpList.Details {
@@ -359,35 +367,44 @@ func GetNeedDeleteGcpRouteTableList(kt *kit.Kit, req *hcroutetable.GcpRouteTable
 		}
 	}
 
-	deleteIDs = make([]string, 0, len(deleteCloudIDMap))
-	for _, tmpID := range deleteCloudIDMap {
-		deleteIDs = append(deleteIDs, tmpID)
+	deleteRouteTableIDs = make([]string, 0, len(deleteCloudIDMap))
+	deleteIDMap = make(map[string][]string, len(deleteCloudIDMap))
+	for _, tmpItem := range deleteCloudIDMap {
+		deleteIDMap[tmpItem.RouteTableID] = append(deleteIDMap[tmpItem.RouteTableID], tmpItem.RouteID)
+		deleteRouteTableIDs = append(deleteRouteTableIDs, tmpItem.RouteTableID)
 	}
+	deleteRouteTableIDs = slice.Unique(deleteRouteTableIDs)
 
-	return deleteIDs
+	return deleteRouteTableIDs, deleteIDMap
 }
 
 // BatchDeleteGcpRouteByIDs batch delete route table ids
-func BatchDeleteGcpRouteByIDs(kt *kit.Kit, deleteIDs []string, dataCli *dataclient.Client) error {
-	querySize := int(filter.DefaultMaxInLimit)
-	times := len(deleteIDs) / querySize
-	if len(deleteIDs)%querySize != 0 {
-		times++
+func BatchDeleteGcpRouteByIDs(kt *kit.Kit, deleteIDMap map[string][]string, dataCli *dataclient.Client) error {
+	if len(deleteIDMap) == 0 {
+		return nil
 	}
 
-	for i := 0; i < times; i++ {
-		var newDeleteIDs []string
-		if i == times-1 {
-			newDeleteIDs = append(newDeleteIDs, deleteIDs[i*querySize:]...)
-		} else {
-			newDeleteIDs = append(newDeleteIDs, deleteIDs[i*querySize:(i+1)*querySize]...)
+	for tmpRouteTableID, deleteIDs := range deleteIDMap {
+		querySize := int(filter.DefaultMaxInLimit)
+		times := len(deleteIDs) / querySize
+		if len(deleteIDs)%querySize != 0 {
+			times++
 		}
 
-		deleteReq := &dataservice.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", newDeleteIDs),
-		}
-		if err := dataCli.Gcp.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), deleteReq); err != nil {
-			return err
+		for i := 0; i < times; i++ {
+			var newDeleteIDs []string
+			if i == times-1 {
+				newDeleteIDs = append(newDeleteIDs, deleteIDs[i*querySize:]...)
+			} else {
+				newDeleteIDs = append(newDeleteIDs, deleteIDs[i*querySize:(i+1)*querySize]...)
+			}
+
+			deleteReq := &dataservice.BatchDeleteReq{
+				Filter: tools.ContainersExpression("id", newDeleteIDs),
+			}
+			if err := dataCli.Gcp.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), tmpRouteTableID, deleteReq); err != nil {
+				return err
+			}
 		}
 	}
 

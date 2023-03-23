@@ -115,13 +115,15 @@ func (r *RouteTableClient) ListAllRoute(ctx context.Context, h http.Header, req 
 }
 
 // BatchDeleteRoute batch delete gcp route.
-func (r *RouteTableClient) BatchDeleteRoute(ctx context.Context, h http.Header, req *dataservice.BatchDeleteReq) error {
+func (r *RouteTableClient) BatchDeleteRoute(ctx context.Context, h http.Header, routeTableID string,
+	req *dataservice.BatchDeleteReq) error {
+
 	resp := new(rest.BaseResp)
 
 	err := r.client.Delete().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/routes/batch").
+		SubResourcef("/route_tables/%s/routes/batch", routeTableID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

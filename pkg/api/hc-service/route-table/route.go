@@ -30,3 +30,9 @@ type RouteUpdateReq struct {
 func (u *RouteUpdateReq) Validate() error {
 	return validator.Validate.Struct(u)
 }
+
+// RouteDeleteReq delete route request.
+type RouteDeleteReq struct {
+	RouteID      string `json:"route_id" validate:"required"`
+	RouteTableID string `json:"route_table_id" validate:"required"`
+}

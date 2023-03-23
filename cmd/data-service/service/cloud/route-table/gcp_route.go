@@ -50,11 +50,12 @@ import (
 func initGcpRouteService(svc *routeTableSvc, cap *capability.Capability) {
 	h := rest.NewHandler()
 
-	h.Path("/vendors/gcp/routes")
+	h.Path("/vendors/gcp")
 
-	h.Add("BatchCreateGcpRoute", "POST", "/batch/create", svc.BatchCreateGcpRoute)
-	h.Add("ListGcpRoute", "POST", "/list", svc.ListGcpRoute)
-	h.Add("BatchDeleteGcpRoute", "DELETE", "/batch", svc.BatchDeleteGcpRoute)
+	h.Add("BatchCreateGcpRoute", "POST", "/routes/batch/create", svc.BatchCreateGcpRoute)
+	h.Add("ListGcpRoute", "POST", "/routes/list", svc.ListGcpRoute)
+	h.Add("BatchDeleteGcpRoute", "DELETE", "/route_tables/{route_table_id}/routes/batch",
+		svc.BatchDeleteGcpRoute)
 
 	h.Load(cap.WebService)
 }
