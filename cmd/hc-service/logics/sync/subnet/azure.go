@@ -318,12 +318,10 @@ func diffAzureSubnet(req *hcservice.AzureResourceSyncReq, list *types.AzureSubne
 				tmpRes := cloud.SubnetUpdateReq[cloud.AzureSubnetUpdateExt]{
 					ID: resourceInfo.ID,
 					SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
-						Name:              converter.ValToPtr(item.Name),
-						Ipv4Cidr:          item.Ipv4Cidr,
-						Ipv6Cidr:          item.Ipv6Cidr,
-						Memo:              item.Memo,
-						CloudRouteTableID: item.Extension.CloudRouteTableID,
-						RouteTableID:      nil,
+						Name:     converter.ValToPtr(item.Name),
+						Ipv4Cidr: item.Ipv4Cidr,
+						Ipv6Cidr: item.Ipv6Cidr,
+						Memo:     item.Memo,
 					},
 					Extension: &cloud.AzureSubnetUpdateExt{
 						NatGateway:           converter.ValToPtr(item.Extension.NatGateway),
@@ -340,19 +338,17 @@ func diffAzureSubnet(req *hcservice.AzureResourceSyncReq, list *types.AzureSubne
 		} else {
 			// need add subnet data
 			tmpRes := cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt]{
-				AccountID:         req.AccountID,
-				CloudVpcID:        item.CloudVpcID,
-				VpcID:             "",
-				BkBizID:           constant.UnassignedBiz,
-				CloudRouteTableID: converter.PtrToVal(item.Extension.CloudRouteTableID),
-				RouteTableID:      "",
-				CloudID:           item.CloudID,
-				Name:              converter.ValToPtr(item.Name),
-				Region:            "",
-				Zone:              "",
-				Ipv4Cidr:          item.Ipv4Cidr,
-				Ipv6Cidr:          item.Ipv6Cidr,
-				Memo:              item.Memo,
+				AccountID:  req.AccountID,
+				CloudVpcID: item.CloudVpcID,
+				VpcID:      "",
+				BkBizID:    constant.UnassignedBiz,
+				CloudID:    item.CloudID,
+				Name:       converter.ValToPtr(item.Name),
+				Region:     "",
+				Zone:       "",
+				Ipv4Cidr:   item.Ipv4Cidr,
+				Ipv6Cidr:   item.Ipv6Cidr,
+				Memo:       item.Memo,
 				Extension: &cloud.AzureSubnetCreateExt{
 					ResourceGroupName:    item.Extension.ResourceGroupName,
 					NatGateway:           item.Extension.NatGateway,
@@ -394,10 +390,6 @@ func isAzureSubnetChange(info cloudcore.Subnet[cloudcore.AzureSubnetExtension], 
 	}
 
 	if info.Extension.NatGateway != item.Extension.NatGateway {
-		return true
-	}
-
-	if info.CloudRouteTableID != converter.PtrToVal(item.Extension.CloudRouteTableID) {
 		return true
 	}
 

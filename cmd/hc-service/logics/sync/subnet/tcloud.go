@@ -245,12 +245,10 @@ func diffTCloudSubnet(req *SyncTCloudOption, list *types.TCloudSubnetListResult,
 				tmpRes := cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt]{
 					ID: resourceInfo.ID,
 					SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
-						Name:              converter.ValToPtr(item.Name),
-						Ipv4Cidr:          item.Ipv4Cidr,
-						Ipv6Cidr:          item.Ipv6Cidr,
-						Memo:              item.Memo,
-						CloudRouteTableID: item.Extension.CloudRouteTableID,
-						RouteTableID:      nil,
+						Name:     converter.ValToPtr(item.Name),
+						Ipv4Cidr: item.Ipv4Cidr,
+						Ipv6Cidr: item.Ipv6Cidr,
+						Memo:     item.Memo,
 					},
 					Extension: &cloud.TCloudSubnetUpdateExt{
 						IsDefault:         item.Extension.IsDefault,
@@ -271,16 +269,13 @@ func diffTCloudSubnet(req *SyncTCloudOption, list *types.TCloudSubnetListResult,
 				CloudVpcID: item.CloudVpcID,
 				VpcID:      "",
 				BkBizID:    constant.UnbindBkCloudID,
-				// 该字段不支持
-				CloudRouteTableID: converter.PtrToVal(item.Extension.CloudRouteTableID),
-				RouteTableID:      "",
-				CloudID:           item.CloudID,
-				Name:              converter.ValToPtr(item.Name),
-				Region:            item.Extension.Region,
-				Zone:              item.Extension.Zone,
-				Ipv4Cidr:          item.Ipv4Cidr,
-				Ipv6Cidr:          item.Ipv6Cidr,
-				Memo:              item.Memo,
+				CloudID:    item.CloudID,
+				Name:       converter.ValToPtr(item.Name),
+				Region:     item.Extension.Region,
+				Zone:       item.Extension.Zone,
+				Ipv4Cidr:   item.Ipv4Cidr,
+				Ipv6Cidr:   item.Ipv6Cidr,
+				Memo:       item.Memo,
 				Extension: &cloud.TCloudSubnetCreateExt{
 					IsDefault:         item.Extension.IsDefault,
 					CloudNetworkAclID: item.Extension.CloudNetworkAclID,
@@ -320,10 +315,6 @@ func isTCloudSubnetChange(info cloudcore.Subnet[cloudcore.TCloudSubnetExtension]
 	}
 
 	if info.Extension.IsDefault != item.Extension.IsDefault {
-		return true
-	}
-
-	if info.CloudRouteTableID != converter.PtrToVal(item.Extension.CloudRouteTableID) {
 		return true
 	}
 

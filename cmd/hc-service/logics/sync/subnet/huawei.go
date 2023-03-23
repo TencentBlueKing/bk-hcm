@@ -239,12 +239,10 @@ func filterHuaWeiSubnetList(req *SyncHuaWeiOption, list *types.HuaWeiSubnetListR
 				tmpRes := cloud.SubnetUpdateReq[cloud.HuaWeiSubnetUpdateExt]{
 					ID: resourceInfo.ID,
 					SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
-						Name:              converter.ValToPtr(item.Name),
-						Ipv4Cidr:          item.Ipv4Cidr,
-						Ipv6Cidr:          item.Ipv6Cidr,
-						Memo:              item.Memo,
-						CloudRouteTableID: nil,
-						RouteTableID:      nil,
+						Name:     converter.ValToPtr(item.Name),
+						Ipv4Cidr: item.Ipv4Cidr,
+						Ipv6Cidr: item.Ipv6Cidr,
+						Memo:     item.Memo,
 					},
 					Extension: &cloud.HuaWeiSubnetUpdateExt{
 						Status:       item.Extension.Status,
@@ -262,19 +260,17 @@ func filterHuaWeiSubnetList(req *SyncHuaWeiOption, list *types.HuaWeiSubnetListR
 		} else {
 			// need add subnet data
 			tmpRes := cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]{
-				AccountID:         req.AccountID,
-				CloudVpcID:        item.CloudVpcID,
-				VpcID:             "",
-				BkBizID:           constant.UnassignedBiz,
-				CloudRouteTableID: "",
-				RouteTableID:      "",
-				CloudID:           item.CloudID,
-				Name:              converter.ValToPtr(item.Name),
-				Region:            item.Extension.Region,
-				Zone:              "",
-				Ipv4Cidr:          item.Ipv4Cidr,
-				Ipv6Cidr:          item.Ipv6Cidr,
-				Memo:              item.Memo,
+				AccountID:  req.AccountID,
+				CloudVpcID: item.CloudVpcID,
+				VpcID:      "",
+				BkBizID:    constant.UnassignedBiz,
+				CloudID:    item.CloudID,
+				Name:       converter.ValToPtr(item.Name),
+				Region:     item.Extension.Region,
+				Zone:       "",
+				Ipv4Cidr:   item.Ipv4Cidr,
+				Ipv6Cidr:   item.Ipv6Cidr,
+				Memo:       item.Memo,
 				Extension: &cloud.HuaWeiSubnetCreateExt{
 					Status:       item.Extension.Status,
 					DhcpEnable:   item.Extension.DhcpEnable,

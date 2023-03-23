@@ -232,11 +232,10 @@ func diffAwsSubnet(req *SyncAwsOption, list *types.AwsSubnetListResult,
 				tmpRes := cloud.SubnetUpdateReq[cloud.AwsSubnetUpdateExt]{
 					ID: resourceInfo.ID,
 					SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
-						Name:              converter.ValToPtr(item.Name),
-						Ipv4Cidr:          item.Ipv4Cidr,
-						Ipv6Cidr:          item.Ipv6Cidr,
-						Memo:              item.Memo,
-						CloudRouteTableID: nil,
+						Name:     converter.ValToPtr(item.Name),
+						Ipv4Cidr: item.Ipv4Cidr,
+						Ipv6Cidr: item.Ipv6Cidr,
+						Memo:     item.Memo,
 					},
 					Extension: &cloud.AwsSubnetUpdateExt{
 						State:                       item.Extension.State,
