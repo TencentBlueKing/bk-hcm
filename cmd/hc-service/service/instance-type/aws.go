@@ -26,7 +26,6 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 )
 
@@ -52,7 +51,7 @@ func (i *instanceTypeAdaptor) ListForAws(cts *rest.Contexts) (interface{}, error
 	for {
 		opt := &typesinstancetype.AwsInstanceTypeListOption{
 			Region: req.Region,
-			Page:   &core.AwsPage{MaxResults: converter.ValToPtr(int64(filter.DefaultMaxInLimit))},
+			Page:   &core.AwsPage{MaxResults: converter.ValToPtr(int64(100))},
 		}
 		if nextToken != "" {
 			opt.Page.NextToken = converter.ValToPtr(nextToken)
