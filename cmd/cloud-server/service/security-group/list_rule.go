@@ -21,7 +21,6 @@ package securitygroup
 
 import (
 	proto "hcm/pkg/api/cloud-server"
-	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -80,11 +79,7 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 	case enumor.TCloud:
 		listReq := &dataproto.TCloudSGRuleListReq{
 			Filter: req.Filter,
-			Page: &core.BasePage{
-				Count: req.Page.Count,
-				Start: req.Page.Start,
-				Limit: req.Page.Limit,
-			},
+			Page:   req.Page,
 		}
 		return svc.client.DataService().TCloud.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx,
 			cts.Kit.Header(), listReq, sgID)
@@ -92,11 +87,7 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 	case enumor.Aws:
 		listReq := &dataproto.AwsSGRuleListReq{
 			Filter: req.Filter,
-			Page: &core.BasePage{
-				Count: req.Page.Count,
-				Start: req.Page.Start,
-				Limit: req.Page.Limit,
-			},
+			Page:   req.Page,
 		}
 		return svc.client.DataService().Aws.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
 			listReq, sgID)
@@ -104,11 +95,7 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 	case enumor.HuaWei:
 		listReq := &dataproto.HuaWeiSGRuleListReq{
 			Filter: req.Filter,
-			Page: &core.BasePage{
-				Count: req.Page.Count,
-				Start: req.Page.Start,
-				Limit: req.Page.Limit,
-			},
+			Page:   req.Page,
 		}
 		return svc.client.DataService().HuaWei.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
 			listReq, sgID)
@@ -116,11 +103,7 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 	case enumor.Azure:
 		listReq := &dataproto.AzureSGRuleListReq{
 			Filter: req.Filter,
-			Page: &core.BasePage{
-				Count: req.Page.Count,
-				Start: req.Page.Start,
-				Limit: req.Page.Limit,
-			},
+			Page:   req.Page,
 		}
 		return svc.client.DataService().Azure.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(),
 			listReq, sgID)
