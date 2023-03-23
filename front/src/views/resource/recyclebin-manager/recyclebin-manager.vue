@@ -10,7 +10,7 @@
         class="ml10 mb20"
         theme="primary"
         @click="handleOperate('recover')"
-      >{{ t('撤销恢复') }}
+      >{{ t('立即恢复') }}
       </bk-button>
     </section>
     <div class="flex-row operate-warp justify-content-between align-items-center mb20" v-if="isResourcePage">
@@ -85,7 +85,7 @@
           <template #default="{ data }">
             <bk-button
               text theme="primary" @click="() => {
-                handleToPage(data?.res_type, data?.res_id, data?.vendor)
+                handleShowDialog(data?.res_type, data?.res_id, data?.vendor)
               }">
               {{data?.res_id}}
             </bk-button>
@@ -120,7 +120,7 @@
             <bk-button
               text theme="primary" @click="handleOperate('recover', [data.res_id])"
             >
-              {{t('撤销恢复')}}
+              {{t('立即恢复')}}
             </bk-button>
           </template>
         </bk-table-column>
@@ -137,6 +137,14 @@
         <div v-else>{{t('将恢复账户信息')}}</div>
       </bk-dialog>
     </bk-loading>
+
+    <bk-dialog
+      :is-show="showResourceInfo"
+      :title="selectedType === 'cvm' ? '主机详情' : '硬盘详情'"
+      theme="primary">
+      <HostInfo v-if="selectedType === 'cvm'" :data="detail" :type="vendor"></HostInfo>
+      <HostDrive v-else :data="detail" :type="vendor"></HostDrive>
+    </bk-dialog>
   </div>
 </template>
 
@@ -150,10 +158,14 @@ import { useResourceStore, useAccountStore } from '@/store';
 import { CloudType } from '@/typings';
 import { VENDORS } from '@/common/constant';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
+import HostInfo from '@/views/resource/resource-manage/children/components/host/host-info/index.vue';
+import HostDrive from '@/views/resource/resource-manage/children/components/host/host-drive.vue';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
   components: {
+    HostInfo,
+    HostDrive,
   },
   setup() {
     const { t } = useI18n();
@@ -189,6 +201,9 @@ export default defineComponent({
       selectedType: 'cvm',
       type: '',
       selectedIds: [],
+      showResourceInfo: false,
+      vendor: '',
+      detail: {},
     });
 
 
@@ -290,19 +305,15 @@ export default defineComponent({
       state.showDeleteBox = true;
     };
 
-    // 跳转到具体的资源详情
-    const handleToPage = (type: string, id: string, vendor: string) => {
-      type = type === 'cvm' ? 'host' : 'drive';
-      router.push({
-        name: isResourcePage.value ? 'resourceDetail' : `${type}BusinessDetail`,
-        query: {
-          id,
-          type: vendor,
-        },
-        params: {
-          type,
-        },
-      });
+    // 资源详情
+    const handleShowDialog = async (type: string, id: string, vendor: string) => {
+      try {
+        state.detail = await resourceStore.recycledResourceDetail(type, id);
+        state.vendor = vendor;
+        state.showResourceInfo = true;
+      } catch (error) {
+        console.log(error);
+      }
     };
 
     return {
@@ -319,7 +330,7 @@ export default defineComponent({
       handleSelectionChange,
       selections,
       isResourcePage,
-      handleToPage,
+      handleShowDialog,
       t,
     };
   },

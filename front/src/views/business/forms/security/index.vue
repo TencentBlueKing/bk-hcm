@@ -43,7 +43,7 @@ const submit = async () => {
   }
   try {
     submitLoading.value = true;
-    await useBusiness.addSecurity('2', params);
+    await useBusiness.addSecurity(params);
     Message({
       theme: 'success',
       message: t('新增成功'),

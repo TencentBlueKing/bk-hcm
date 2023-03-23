@@ -128,5 +128,10 @@ export const useResourceStore = defineStore({
     recycledCvmsData(data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/recycle`, data);
     },
+
+    // 回收资源详情
+    recycledResourceDetail(type: string, id: string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}recycled/${type}/${id}`);
+    },
   },
 });

@@ -56,7 +56,7 @@ const tabs = [
     :active="activeTab"
   >
     <template #default="type">
-      <security-info :id="securityId" v-if="type === 'detail'" />
+      <security-info :id="securityId" :vendor="vendor" v-if="type === 'detail'" />
       <security-relate v-if="type === 'relate'" />
       <security-rule :filter="filter" :id="securityId" :vendor="vendor" v-if="type === 'rule'" />
     </template>

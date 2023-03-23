@@ -18,7 +18,6 @@ import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 
 import {
   RESOURCE_TYPES,
-  VENDORS,
 } from '@/common/constant';
 
 import {
@@ -137,10 +136,10 @@ watch(
 watch(
   () => status.value,
   (val) => {
-    if (val) {
-      filterData('bk_biz_id', val);
-    } else {
+    if (val === 'all' || !val) {
       filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'bk_biz_id');
+    } else {
+      filterData('bk_biz_id', val);
     }
   },
 );

@@ -153,8 +153,8 @@ handleCloudChange();
         <bk-option
           v-for="(item, index) in cloudRegionsList"
           :key="index"
-          :value="item.region_id"
-          :label="item.region_name || item.region_id"
+          :value="item.region_id || item.id"
+          :label="item.region_name || item.region_id || item.name"
         />
       </bk-select>
     </bk-form-item>

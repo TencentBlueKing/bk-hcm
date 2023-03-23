@@ -203,14 +203,14 @@ export default defineComponent({
       },
       { label: t('操作'),
         field: 'operate',
-        render: ({ data, row }: any) => {
+        render: ({ data, index }: any) => {
           return (
                 <div class="mt20">
                 <Button text theme="primary" onClick={() => {
                   hanlerCopy(data);
                 }}>{t('复制')}</Button>
                 <Button text theme="primary" class="ml20" onClick={() => {
-                  handlerDelete(data, row);
+                  handlerDelete(data, index);
                 }}>{t('删除')}</Button>
                 </div>
           );
@@ -298,14 +298,14 @@ export default defineComponent({
       },
       { label: t('操作'),
         field: 'operate',
-        render: ({ data, row }: any) => {
+        render: ({ data, index }: any) => {
           return (
                 <div class="mt20">
                 <Button text theme="primary" onClick={() => {
                   hanlerCopy(data);
                 }}>{t('复制')}</Button>
                 <Button text theme="primary" class="ml20" onClick={() => {
-                  handlerDelete(data, row);
+                  handlerDelete(data, index);
                 }}>{t('删除')}</Button>
                 </div>
           );
@@ -424,8 +424,7 @@ export default defineComponent({
     };
 
     // 删除
-    const handlerDelete = (data: any, row: any) => {
-      const index = row.__$table_row_index;
+    const handlerDelete = (data: any, index: any) => {
       Confirm('确定删除', '删除之后不可恢复', () => {
         tableData.value.splice(index, 1);
       });

@@ -178,15 +178,15 @@ export const HUAWEI_TYPE_LIST = [
 ];
 export const DISTRIBUTE_STATUS_LIST = [
   {
+    label: '全部',
+    value: 'all',
+  },
+  {
     label: '未分配',
     value: -1,
   },
   {
     label: '已分配',
     value: 1,
-  },
-  {
-    label: '全部',
-    value: 0,
   },
 ];

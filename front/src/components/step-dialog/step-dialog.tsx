@@ -126,6 +126,14 @@ export default defineComponent({
                 this.steps[this.curStep - 1].footer?.()
               }
               {
+                this.curStep > 1
+                  ? <bk-button
+                      class="mr10 dialog-button"
+                      onClick={this.handlePreviousStep}
+                    >{this.t('上一步')}</bk-button>
+                  : ''
+              }
+              {
                 this.curStep < this.steps.length
                   ? <bk-button
                       class="mr10 dialog-button"
@@ -133,14 +141,6 @@ export default defineComponent({
                       disabled={this.steps[this.curStep - 1].disableNext || (this.curStep > 1 ? !this.business : false)}
                       onClick={this.handleNextStep}
                     >{this.t('下一步')}</bk-button>
-                  : ''
-              }
-              {
-                this.curStep > 1
-                  ? <bk-button
-                      class="mr10 dialog-button"
-                      onClick={this.handlePreviousStep}
-                    >{this.t('上一步')}</bk-button>
                   : ''
               }
               {

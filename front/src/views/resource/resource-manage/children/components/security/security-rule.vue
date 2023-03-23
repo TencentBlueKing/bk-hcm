@@ -116,8 +116,22 @@ const handleDeleteConfirm = () => {
 
 // 提交规则
 const handleSubmitRule = async (data: any) => {
-  console.log('data', data.id, activeType.value);
+  console.log('data', data, activeType.value);
   securityRuleLoading.value = true;
+  if (props.vendor === 'aws') {   // aws 需要from_port 、to_port
+    data.forEach((e: any) => {
+      if (e?.port.includes('-')) {
+        // eslint-disable-next-line prefer-destructuring
+        e.from_port = e.port.split('-')[0];
+        // eslint-disable-next-line prefer-destructuring
+        e.to_port = e.port.split('-')[1];
+      } else {
+        e.from_port = e.port;
+        e.to_port = e.port;
+      }
+      delete e.port;
+    });
+  }
   const params = {
     [`${activeType.value}_rule_set`]: data,
   };
@@ -132,10 +146,10 @@ const handleSubmitRule = async (data: any) => {
       theme: 'success',
     });
     getList();
+    isShowSecurityRule.value = false;
   } catch (error) {
     console.log(error);
   } finally {
-    isShowSecurityRule.value = false;
     securityRuleLoading.value = false;
   }
 };
@@ -188,7 +202,7 @@ const inColumns = [
         [
           // eslint-disable-next-line no-nested-ternary
           props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : props.vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
-            : SecurityRuleEnum[data.action],
+            : (SecurityRuleEnum[data.action] || '--'),
         ],
       );
     },

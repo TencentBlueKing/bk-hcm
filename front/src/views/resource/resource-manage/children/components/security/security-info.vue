@@ -16,13 +16,16 @@ const props = defineProps({
   id: {
     type: String as PropType<any>,
   },
+  vendor: {
+    type: String as PropType<any>,
+  },
 });
 
 const {
   t,
 } = useI18n();
 
-const settingInfo = [
+const settingInfo: any[] = [
   {
     name: 'ID',
     prop: 'id',
@@ -48,16 +51,8 @@ const settingInfo = [
     prop: 'bk_biz_id',
   },
   {
-    name: t('地域 ID'),
-    prop: 'region',
-  },
-  {
     name: t('地域'),
     prop: 'region',
-  },
-  {
-    name: t('关联CVM实例数'),
-    prop: 'cvm_count',
   },
   {
     name: t('创建时间'),
@@ -80,6 +75,23 @@ const {
   'security_groups',
   props.id,
 );
+if (props.vendor === 'tcloud' || props.vendor === 'aws' || props.vendor === 'huawei') {
+  settingInfo.splice(8, 0, {
+    name: t('关联CVM实例数'),
+    prop: 'cvm_count',
+    render(val: any) {
+      return val;
+    },
+  });
+} else if (props.vendor === 'azure') {
+  settingInfo.splice(8, 0, {
+    name: t('关联网络接口数'),
+    prop: 'network_interface_count',
+  }, {
+    name: t('关联子网数'),
+    prop: 'subnet_count',
+  });
+}
 </script>
 
 <template>

@@ -23,8 +23,8 @@ export const useBusinessStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    addSecurity(id: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${id}/security_groups/create`, data);
+    addSecurity(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/create`, data);
     },
     addEip(id: number, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${id}/eips/create`, data);

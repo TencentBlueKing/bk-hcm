@@ -11,12 +11,12 @@ import {
 import {
   useResourceStore,
 } from '@/store/resource';
-import useQueryList from '../../../hooks/use-query-list'
+import useQueryList from '../../../hooks/use-query-list';
 
 const props = defineProps({
   data: {
     type: Object,
-  }
+  },
 });
 
 const resourceStore = useResourceStore();
@@ -95,7 +95,7 @@ const columns = ref([
             '解绑',
           ],
         ),
-      ]
+      ];
     },
   },
 ]);
@@ -108,8 +108,8 @@ const {
   {},
   'eip',
   () => {
-    return Promise.all([resourceStore.getEipListByCvmId(props.data.vendor, props.data.id)])
-  }
+    return Promise.all([resourceStore.getEipListByCvmId(props.data.vendor, props.data.id)]);
+  },
 );
 
 // 当前 vender 下的eip资源
@@ -130,71 +130,69 @@ const {
       }],
     },
   },
-  'eips'
+  'eips',
 );
 
 const handleToggleShowAdjustNetwork = () => {
-  showAdjustNetwork.value = !showAdjustNetwork.value
-}
+  showAdjustNetwork.value = !showAdjustNetwork.value;
+};
 
 const handleConfirmAdjustNetwork = () => {
-  handleToggleShowAdjustNetwork()
-}
+  handleToggleShowAdjustNetwork();
+};
 
 const handleToggleShowChangeIP = () => {
-  showChangeIP.value = !showChangeIP.value
-}
+  showChangeIP.value = !showChangeIP.value;
+};
 
 const handleConfirmChangeIP = () => {
-  handleToggleShowChangeIP()
-}
+  handleToggleShowChangeIP();
+};
 
 const handleToggleShowUnbind = (data?: any) => {
-  unbindData.value = data
-  showUnbind.value = !showUnbind.value
-}
+  unbindData.value = data;
+  showUnbind.value = !showUnbind.value;
+};
 
 const handleConfirmUnbind = () => {
-  resourceStore.disassociateEip(
-    {
-      eip_id: unbindData.value.id
-    }
-  ).then(() => {
-    handleToggleShowUnbind()
-  }).catch((err: any) => {
-    Message({
-      theme: 'error',
-      message: err.message || err
-    })
+  resourceStore.disassociateEip({
+    eip_id: unbindData.value.id,
+  }).then(() => {
+    handleToggleShowUnbind();
   })
-}
+    .catch((err: any) => {
+      Message({
+        theme: 'error',
+        message: err.message || err,
+      });
+    });
+};
 
 const handleToggleShowBind = () => {
-  showBind.value = !showBind.value
-}
+  showBind.value = !showBind.value;
+};
 
 const handleConfirmBind = () => {
-  resourceStore.associateEip(
-    {
-      eip_id: selection.value.id,
-      cvm_id: props.data.id,
-      network_interface_id: props.data.network_interface_id,
-    }
-  ).then(() => {
-    handleToggleShowBind()
-  }).catch((err: any) => {
-    Message({
-      theme: 'error',
-      message: err.message || err
-    })
+  resourceStore.associateEip({
+    eip_id: selection.value.id,
+    cvm_id: props.data.id,
+    network_interface_id: props.data.network_interface_id,
+  }).then(() => {
+    handleToggleShowBind();
   })
-}
+    .catch((err: any) => {
+      Message({
+        theme: 'error',
+        message: err.message || err,
+      });
+    });
+};
 
 watch(
   () => props.data,
   () => {
     if (props.data.vendor === 'tcloud') {
-      columns.value.splice(4, 0 , ...[
+      columns.value.splice(4, 0, ...[
         {
           label: '计费模式',
           field: 'internet_charge_type',
@@ -202,15 +200,15 @@ watch(
         {
           label: '带宽上限',
           field: 'bandwidth',
-        }
-      ])
+        },
+      ]);
     }
   },
   {
     deep: true,
-    immediate: true
-  }
-)
+    immediate: true,
+  },
+);
 </script>
 
 <template>
@@ -236,6 +234,7 @@ watch(
     title="调整网络"
     theme="primary"
     quick-close
+    dialog-type="show"
     @closed="handleToggleShowAdjustNetwork"
     @confirm="handleConfirmAdjustNetwork"
   >

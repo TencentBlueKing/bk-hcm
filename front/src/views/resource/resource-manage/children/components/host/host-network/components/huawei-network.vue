@@ -154,7 +154,7 @@ getNetWorkList();
 
 <template>
   <section v-for="item in tableData" :key="item.id">
-    <bk-button
+    <!-- <bk-button
       class="mt20"
       theme="primary"
       @click="() => {
@@ -162,9 +162,9 @@ getNetWorkList();
       }"
     >
       添加网络接口
-    </bk-button>
+    </bk-button> -->
     <div class="main-network table-warp mt20">
-      <div class="table-flex">
+      <!-- <div class="table-flex">
         <div>主网卡</div>
         <div>
           <bk-button
@@ -200,7 +200,7 @@ getNetWorkList();
             删除
           </bk-button>
         </div>
-      </div>
+      </div> -->
       <div class="warp-info">
         <detail-info class="mt20" :fields="formInfo" :detail="item"></detail-info>
       </div>

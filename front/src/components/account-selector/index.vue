@@ -49,7 +49,7 @@ const getAccoutList = async () => {
 
 getAccoutList();
 
-watch(() => props.bizId, (bizId, old) => {
+watch(() => props.bizId, (bizId) => {
   if (bizId > 0) {
     accountList.value = [];
     getAccoutList();
