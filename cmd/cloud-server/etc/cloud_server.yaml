@@ -108,6 +108,8 @@ cloudResource:
     enable: true
     # syncIntervalMin cloud resource sync interval, unit: min.
     syncIntervalMin: 360
+    # syncTimeoutMin 限频时间
+    syncFrequencyLimitingTimeMin: 20
 
 # recycle is recycle bin related settings.
 recycle:

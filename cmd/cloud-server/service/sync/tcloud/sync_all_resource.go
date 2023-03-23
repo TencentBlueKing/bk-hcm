@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -54,8 +55,8 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 	var hitErr error
 	defer func() {
 		if hitErr != nil {
-			// TODO: 更新账号同步状态为同步异常
-
+			logs.Errorf("%s: sync all resource failed, err: %v, account: %s, rid: %s", constant.AccountSyncFailed,
+				hitErr, opt.AccountID, kt.Rid)
 			return
 		}
 

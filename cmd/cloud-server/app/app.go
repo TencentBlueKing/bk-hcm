@@ -26,6 +26,7 @@ import (
 
 	"hcm/cmd/cloud-server/options"
 	"hcm/cmd/cloud-server/service"
+	"hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
@@ -112,6 +113,8 @@ func (ds *cloudServer) register() error {
 }
 
 func (ds *cloudServer) finalizer() {
+	lock.Manager.Close()
+
 	if err := ds.sd.Deregister(); err != nil {
 		logs.Errorf("process service shutdown, but deregister failed, err: %v", err)
 		return

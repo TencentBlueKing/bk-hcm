@@ -564,14 +564,16 @@ func (c CloudResource) validate() error {
 
 // CloudResourceSync 云资源同步配置
 type CloudResourceSync struct {
-	Enable          bool   `yaml:"enable"`
-	SyncIntervalMin uint64 `yaml:"syncIntervalMin"`
+	Enable                       bool   `yaml:"enable"`
+	SyncIntervalMin              uint64 `yaml:"syncIntervalMin"`
+	SyncFrequencyLimitingTimeMin uint64 `yaml:"syncFrequencyLimitingTimeMin"`
 }
 
 func (c CloudResourceSync) validate() error {
-	// TODO: 确认最新同步时间是多长
-	if c.SyncIntervalMin < 3 {
-		return errors.New("syncIntervalMin should >= 3")
+	if c.Enable {
+		if c.SyncFrequencyLimitingTimeMin < 10 {
+			return errors.New("syncFrequencyLimitingTimeMin must > 10")
+		}
 	}
 
 	return nil

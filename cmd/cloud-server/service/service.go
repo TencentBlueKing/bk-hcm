@@ -49,6 +49,7 @@ import (
 	securitygroup "hcm/cmd/cloud-server/service/security-group"
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
+	"hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/cmd/cloud-server/service/vpc"
 	"hcm/cmd/cloud-server/service/zone"
 	"hcm/pkg/cc"
@@ -126,6 +127,15 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
 		cipher:     cipher,
 		esbClient:  esbClient,
+	}
+
+	etcdCfg, err := cc.CloudServer().Service.Etcd.ToConfig()
+	if err != nil {
+		return nil, err
+	}
+	err = lock.InitManger(etcdCfg, int64(cc.CloudServer().CloudResource.Sync.SyncFrequencyLimitingTimeMin)*60)
+	if err != nil {
+		return nil, err
 	}
 
 	if cc.CloudServer().CloudResource.Sync.Enable {

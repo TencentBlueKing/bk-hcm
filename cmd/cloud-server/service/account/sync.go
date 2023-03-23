@@ -20,18 +20,22 @@
 package account
 
 import (
-	"fmt"
+	"errors"
 
 	"hcm/cmd/cloud-server/service/sync/aws"
 	"hcm/cmd/cloud-server/service/sync/azure"
 	"hcm/cmd/cloud-server/service/sync/gcp"
 	"hcm/cmd/cloud-server/service/sync/huawei"
+	"hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/cmd/cloud-server/service/sync/tcloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	etcd3 "go.etcd.io/etcd/client/v3"
 )
 
 // Sync ...
@@ -54,51 +58,63 @@ func (a *accountSvc) Sync(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// TODO：添加审计
-
-	switch baseInfo.Vendor {
-	case enumor.TCloud:
-		opt := &tcloud.SyncAllResourceOption{
-			AccountID:          accountID,
-			SyncPublicResource: true,
-		}
-		err = tcloud.SyncAllResource(cts.Kit, a.client, opt)
-
-	case enumor.Aws:
-		opt := &aws.SyncAllResourceOption{
-			AccountID:          accountID,
-			SyncPublicResource: true,
-		}
-		err = aws.SyncAllResource(cts.Kit, a.client, opt)
-
-	case enumor.HuaWei:
-		opt := &huawei.SyncAllResourceOption{
-			AccountID:          accountID,
-			SyncPublicResource: true,
-		}
-		err = huawei.SyncAllResource(cts.Kit, a.client, opt)
-
-	case enumor.Gcp:
-		opt := &gcp.SyncAllResourceOption{
-			AccountID:          accountID,
-			SyncPublicResource: true,
-		}
-		err = gcp.SyncAllResource(cts.Kit, a.client, opt)
-
-	case enumor.Azure:
-		opt := &azure.SyncAllResourceOption{
-			AccountID:          accountID,
-			SyncPublicResource: true,
-		}
-		err = azure.SyncAllResource(cts.Kit, a.client, opt)
-
-	default:
-		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
-	}
+	leaseID, err := lock.Manager.TryLock(lock.Key(accountID))
 	if err != nil {
-		logs.Errorf("sync all resource failed, err: %v, vendor: %s, rid: %s", err, baseInfo.Vendor, cts.Kit.Rid)
+		if err == lock.ErrLockFailed {
+			return nil, errors.New("synchronization is in progress")
+		}
+
 		return nil, err
 	}
+
+	go func(leaseID etcd3.LeaseID) {
+		defer func() {
+			if err := lock.Manager.UnLock(leaseID); err != nil {
+				logs.Errorf("%s: unlock account sync lock failed, err: %v, accountID: %s, leaseID: %d, rid: %s",
+					constant.AccountSyncFailed, err, accountID, leaseID, cts.Kit.Rid)
+			}
+		}()
+
+		switch baseInfo.Vendor {
+		case enumor.TCloud:
+			opt := &tcloud.SyncAllResourceOption{
+				AccountID:          accountID,
+				SyncPublicResource: true,
+			}
+			tcloud.SyncAllResource(cts.Kit, a.client, opt)
+
+		case enumor.Aws:
+			opt := &aws.SyncAllResourceOption{
+				AccountID:          accountID,
+				SyncPublicResource: true,
+			}
+			aws.SyncAllResource(cts.Kit, a.client, opt)
+
+		case enumor.HuaWei:
+			opt := &huawei.SyncAllResourceOption{
+				AccountID:          accountID,
+				SyncPublicResource: true,
+			}
+			huawei.SyncAllResource(cts.Kit, a.client, opt)
+
+		case enumor.Gcp:
+			opt := &gcp.SyncAllResourceOption{
+				AccountID:          accountID,
+				SyncPublicResource: true,
+			}
+			gcp.SyncAllResource(cts.Kit, a.client, opt)
+
+		case enumor.Azure:
+			opt := &azure.SyncAllResourceOption{
+				AccountID:          accountID,
+				SyncPublicResource: true,
+			}
+			azure.SyncAllResource(cts.Kit, a.client, opt)
+
+		default:
+			logs.Errorf("account: %s's vendor not support, vendor: %s", accountID, baseInfo.Vendor)
+		}
+	}(leaseID)
 
 	return nil, nil
 }
