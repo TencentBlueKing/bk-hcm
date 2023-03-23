@@ -20,11 +20,13 @@
 package azure
 
 import (
+	gosync "sync"
+	"time"
+
 	"hcm/pkg/api/hc-service/eip"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"time"
 )
 
 // SyncEip ...
@@ -37,15 +39,36 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, resourceG
 		logs.V(3).Infof("azure account[%s] sync eip end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, name := range resourceGroupNames {
-		req := &eip.EipSyncReq{
-			AccountID:         accountID,
-			ResourceGroupName: name,
-		}
-		if err := service.Azure.Eip.SyncEip(kt.Ctx, kt.Header(), req); err != nil {
-			logs.Errorf("sync azure eip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-			return err
-		}
+		pipeline <- true
+		wg.Add(1)
+
+		go func(name string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			req := &eip.EipSyncReq{
+				AccountID:         accountID,
+				ResourceGroupName: name,
+			}
+			err := service.Azure.Eip.SyncEip(kt.Ctx, kt.Header(), req)
+			if firstErr == nil && err != nil {
+				logs.Errorf("sync azure eip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(name)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

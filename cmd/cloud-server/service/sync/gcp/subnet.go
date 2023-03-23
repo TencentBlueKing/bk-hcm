@@ -20,6 +20,7 @@
 package gcp
 
 import (
+	gosync "sync"
 	"time"
 
 	"hcm/pkg/api/hc-service/sync"
@@ -38,15 +39,36 @@ func SyncSubnet(kt *kit.Kit, service *hcservice.Client, accountID string, region
 		logs.V(3).Infof("gcp account[%s] sync subnet end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, region := range regions {
-		req := &sync.GcpSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		}
-		if err := service.Gcp.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req); err != nil {
-			logs.Errorf("sync gcp subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-			return err
-		}
+		pipeline <- true
+		wg.Add(1)
+
+		go func(region string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			req := &sync.GcpSyncReq{
+				AccountID: accountID,
+				Region:    region,
+			}
+			err := service.Gcp.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req)
+			if firstErr == nil && err != nil {
+				logs.Errorf("sync gcp subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(region)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

@@ -53,6 +53,8 @@ func SyncAzureImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regi
 
 			break
 		}
+		
+		break
 	}
 
 	return nil

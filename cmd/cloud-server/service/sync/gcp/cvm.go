@@ -20,6 +20,7 @@
 package gcp
 
 import (
+	gosync "sync"
 	"time"
 
 	"hcm/pkg/api/hc-service/sync"
@@ -38,18 +39,39 @@ func SyncCvm(kt *kit.Kit, service *hcservice.Client, accountID string, regionZon
 		logs.V(3).Infof("gcp account[%s] sync cvm end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for region, zones := range regionZoneMap {
 		for _, zone := range zones {
-			req := &sync.GcpCvmSyncReq{
-				AccountID: accountID,
-				Region:    region,
-				Zone:      zone,
-			}
-			if err := service.Gcp.Cvm.SyncCvmWithRelResource(kt.Ctx, kt.Header(), req); err != nil {
-				logs.Errorf("sync gcp cvm failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-				return err
-			}
+			pipeline <- true
+			wg.Add(1)
+
+			go func(region, zone string) {
+				defer func() {
+					wg.Done()
+					<-pipeline
+				}()
+
+				req := &sync.GcpCvmSyncReq{
+					AccountID: accountID,
+					Region:    region,
+					Zone:      zone,
+				}
+				err := service.Gcp.Cvm.SyncCvmWithRelResource(kt.Ctx, kt.Header(), req)
+				if firstErr == nil && err != nil {
+					logs.Errorf("sync gcp cvm failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+					firstErr = err
+					return
+				}
+			}(region, zone)
 		}
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

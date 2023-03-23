@@ -29,6 +29,8 @@ import (
 	"hcm/pkg/logs"
 )
 
+var syncConcurrencyCount = 10
+
 // SyncAllResourceOption ...
 type SyncAllResourceOption struct {
 	AccountID string `json:"account_id" validate:"required"`
@@ -110,10 +112,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 	}
 
 	if hitErr = SyncRouteTable(kt, cliSet.HCService(), opt.AccountID); hitErr != nil {
-		return hitErr
-	}
-
-	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), opt.AccountID, regionZoneMap); hitErr != nil {
 		return hitErr
 	}
 

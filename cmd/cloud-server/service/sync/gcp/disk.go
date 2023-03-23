@@ -20,11 +20,13 @@
 package gcp
 
 import (
+	gosync "sync"
+	"time"
+
 	"hcm/pkg/api/hc-service/disk"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"time"
 )
 
 // SyncDisk ...
@@ -37,17 +39,39 @@ func SyncDisk(kt *kit.Kit, service *hcservice.Client, accountID string, regionZo
 		logs.V(3).Infof("gcp account[%s] sync disk end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, zones := range regionZoneMap {
 		for _, zone := range zones {
-			req := &disk.DiskSyncReq{
-				AccountID: accountID,
-				Zone:      zone,
-			}
-			if err := service.Gcp.Disk.SyncDisk(kt.Ctx, kt.Header(), req); err != nil {
-				logs.Errorf("sync gcp disk failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-				return err
-			}
+			pipeline <- true
+			wg.Add(1)
+
+			go func(zone string) {
+				defer func() {
+					wg.Done()
+					<-pipeline
+				}()
+
+				req := &disk.DiskSyncReq{
+					AccountID: accountID,
+					Zone:      zone,
+				}
+
+				err := service.Gcp.Disk.SyncDisk(kt.Ctx, kt.Header(), req)
+				if firstErr == nil && err != nil {
+					logs.Errorf("sync gcp disk failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+					firstErr = err
+					return
+				}
+			}(zone)
 		}
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

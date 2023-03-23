@@ -22,6 +22,7 @@ package account
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"hcm/cmd/cloud-server/service/sync/aws"
 	"hcm/cmd/cloud-server/service/sync/azure"
@@ -86,6 +87,11 @@ func (a *accountSvc) Sync(cts *rest.Contexts) (interface{}, error) {
 	go func(leaseID etcd3.LeaseID) {
 		defer func() {
 			if err := lock.Manager.UnLock(leaseID); err != nil {
+				// 锁已经超时释放了
+				if strings.Contains(err.Error(), "requested lease not found") {
+					return
+				}
+
 				logs.Errorf("%s: unlock account sync lock failed, err: %v, accountID: %s, leaseID: %d, rid: %s",
 					constant.AccountSyncFailed, err, accountID, leaseID, cts.Kit.Rid)
 			}

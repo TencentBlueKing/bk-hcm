@@ -20,6 +20,7 @@
 package azure
 
 import (
+	gosync "sync"
 	"time"
 
 	routetable "hcm/pkg/api/hc-service/route-table"
@@ -40,16 +41,36 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, re
 			enumor.Azure, accountID, time.Since(start), kt.Rid)
 	}()
 
-	for _, rgName := range resourceGroupNames {
-		req := &routetable.AzureRouteTableSyncReq{
-			AccountID:         accountID,
-			ResourceGroupName: rgName,
-		}
-		if err := service.Azure.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req); err != nil {
-			logs.Errorf("cloud-server-sync-%s account[%s] sync route table failed, req: %v, err: %v, rid: %s",
-				enumor.Azure, accountID, req, err, kt.Rid)
-			return err
-		}
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
+	for _, name := range resourceGroupNames {
+		pipeline <- true
+		wg.Add(1)
+
+		go func(name string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			req := &routetable.AzureRouteTableSyncReq{
+				AccountID:         accountID,
+				ResourceGroupName: name,
+			}
+			err := service.Azure.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req)
+			if firstErr == nil && err != nil {
+				logs.Errorf("sync azure route table failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(name)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

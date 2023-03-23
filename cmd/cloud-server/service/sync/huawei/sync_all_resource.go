@@ -102,9 +102,5 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		return hitErr
 	}
 
-	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID); hitErr != nil {
-		return hitErr
-	}
-
 	return nil
 }

@@ -29,6 +29,8 @@ import (
 	"hcm/pkg/logs"
 )
 
+var syncConcurrencyCount = 10
+
 // SyncAllResourceOption ...
 type SyncAllResourceOption struct {
 	AccountID string `json:"account_id" validate:"required"`
@@ -122,12 +124,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 
 	if hitErr = SyncRouteTable(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
 		logs.Errorf("azure sync route table resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
-			opt, resourceGroupNames, hitErr)
-		return hitErr
-	}
-
-	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
-		logs.Errorf("azure sync network interface resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
 			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
