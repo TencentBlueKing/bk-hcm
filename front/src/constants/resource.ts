@@ -103,6 +103,10 @@ export const GCP_SOURCE_LIST = [
 
 export const GCP_PROTOCOL_LIST = [
   {
+    id: 'ALL',
+    name: 'ALL',
+  },
+  {
     id: 'tcp',
     name: 'TCP',
   },

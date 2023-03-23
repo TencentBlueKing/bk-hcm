@@ -87,9 +87,15 @@ if (props.vendor === 'tcloud' || props.vendor === 'aws' || props.vendor === 'hua
   settingInfo.splice(8, 0, {
     name: t('关联网络接口数'),
     prop: 'network_interface_count',
+    render(val: any) {
+      return val;
+    },
   }, {
     name: t('关联子网数'),
     prop: 'subnet_count',
+    render(val: any) {
+      return val;
+    },
   });
 }
 </script>

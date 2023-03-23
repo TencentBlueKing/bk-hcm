@@ -6,6 +6,7 @@ import http from './http';
 import router from './router';
 import App from './app';
 import i18n from './language/i18n';
+import directive from './directive/index';
 import './style/index.scss';
 // 全量引入自定义图标
 import './assets/iconfont/style.css';
@@ -23,6 +24,7 @@ app.config.globalProperties.$bus = bus;
 app.config.globalProperties.$http = http;
 
 app.use(i18n)
+  .use(directive)
   .use(router)
   .use(pinia)
   .use(bkui);

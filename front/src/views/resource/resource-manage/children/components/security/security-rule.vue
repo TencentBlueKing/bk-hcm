@@ -120,7 +120,7 @@ const handleSubmitRule = async (data: any) => {
   securityRuleLoading.value = true;
   if (props.vendor === 'aws') {   // aws 需要from_port 、to_port
     data.forEach((e: any) => {
-      if (e?.port.includes('-')) {
+      if (e?.port?.includes('-')) {
         // eslint-disable-next-line prefer-destructuring
         e.from_port = e.port.split('-')[0];
         // eslint-disable-next-line prefer-destructuring
@@ -427,7 +427,7 @@ if (props.vendor === 'huawei') {
   <security-rule
     v-model:isShow="isShowSecurityRule"
     :loading="securityRuleLoading"
-    dialog-width="1200"
+    dialog-width="1500"
     :active-type="activeType"
     :title="t(activeType === 'egress' ? '添加出站规则' : '添加入站规则')"
     :vendor="vendor"
