@@ -65,10 +65,10 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 		vendors := []enumor.Vendor{enumor.TCloud, enumor.Aws, enumor.HuaWei, enumor.Azure, enumor.Gcp}
 		waitGroup.Add(len(vendors))
 		for _, vendor := range vendors {
-			go func() {
+			go func(vendor enumor.Vendor) {
 				allAccountSync(kt, cliSet, vendor)
 				waitGroup.Done()
-			}()
+			}(vendor)
 		}
 
 		waitGroup.Wait()
