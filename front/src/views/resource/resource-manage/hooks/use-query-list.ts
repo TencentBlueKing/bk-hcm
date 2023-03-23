@@ -79,6 +79,7 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
           ...item.attachment,
           ...item.revision,
           ...item.extension,
+          ...item?.extension?.attachment
         };
       });
       pagination.value.count = countResult?.data?.count || 0;

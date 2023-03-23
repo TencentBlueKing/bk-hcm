@@ -123,10 +123,6 @@ const {
             prop: 'domain_name',
           },
           {
-            name: 'Domain Name',
-            prop: 'domain_name',
-          },
-          {
             name: '组播',
             prop: 'enable_multicast',
             render(val: boolean) {

@@ -5,6 +5,9 @@ import {
   Message,
 } from 'bkui-vue';
 import {
+  InfoLine,
+} from 'bkui-vue/lib/icon';
+import {
   defineComponent,
   h,
   ref,
@@ -23,6 +26,7 @@ import {
 export default defineComponent({
   components: {
     StepDialog,
+    InfoLine,
   },
 
   props: {
@@ -78,8 +82,8 @@ export default defineComponent({
 
     if (props.detail.vendor === 'azure') {
       rules.push({
-        field: 'resource_group_name',
-        op: 'eq',
+        field: 'extension.resource_group_name',
+        op: 'json_eq',
         value: props.detail.resource_group_name
       })
     }
@@ -199,6 +203,9 @@ export default defineComponent({
   },
 
   render() {
+    const tooltipSlot = {
+      content: () => <>Linux设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/device_naming.html<br />windows设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/WindowsGuide/device_naming.html</>
+    }
     const steps = [
       {
         isConfirmLoading: this.isConfirmLoading,
@@ -208,7 +215,13 @@ export default defineComponent({
               this.detail.vendor === 'aws'
               ? <>
                 <span class="mr10">设备名称:</span>
-                <bk-input v-model={this.deviceName} style="width: 200px;"></bk-input>
+                <bk-input v-model={this.deviceName} style="width: 200px;margin-right: 5px"></bk-input>
+                <bk-popover
+                  placement="top"
+                  v-slots={tooltipSlot}
+                >
+                  <InfoLine />
+                </bk-popover>
                 </>
               : ''
             }

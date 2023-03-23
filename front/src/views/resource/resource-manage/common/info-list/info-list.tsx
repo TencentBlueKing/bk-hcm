@@ -28,6 +28,7 @@ type Field = {
   copy?: boolean;
   edit?: boolean;
   type?: string;
+  txtBtn?: (cell: string) => void;
   render?: (cell: string) => void;
 };
 
@@ -113,6 +114,11 @@ export default defineComponent({
     // 渲染链接
     const renderLink = (field: Field) => <bk-link theme="primary" target="_blank" href={typeof field.link === 'function' ? field.link(field.value) : field.link}>{ field.value }</bk-link>;
 
+    // 渲染跳转
+    const renderTxtBtn = (field: Field) => {
+      return <bk-button text theme="primary" onClick={() => field.txtBtn(field.value)}>{ field.value }</bk-button>
+    }
+
     // 渲染方法
     const renderField = (field: Field) => {
       if (field.render) {
@@ -121,6 +127,8 @@ export default defineComponent({
         return renderLink(field);
       } if (field.edit) {
         return renderEditTxt(field);
+      } if (field.txtBtn) {
+        return renderTxtBtn(field);
       }
       return renderTxt(field);
     };

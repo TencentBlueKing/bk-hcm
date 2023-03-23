@@ -90,27 +90,41 @@ const settingFields = ref<any[]>([
     prop: 'zone',
   },
   {
-    name: '是否已挂载',
-    prop: 'instance_id',
-    render(instance_id: string) {
-      return instance_id ? '已挂载' : '未挂载';
-    },
-  },
-  {
     name: '挂载主机',
     prop: 'instance_id',
+    txtBtn(id: string) {
+      const type = 'host'
+      const routeInfo: any = {
+        query: {
+          id,
+          type: detail.value.vendor,
+        },
+      };
+      // 业务下
+      if (route.path.includes('business')) {
+        Object.assign(
+          routeInfo,
+          {
+            name: `${type}BusinessDetail`,
+          },
+        );
+      } else {
+        Object.assign(
+          routeInfo,
+          {
+            name: 'resourceDetail',
+            params: {
+              type,
+            },
+          },
+        );
+      }
+      router.push(routeInfo);
+    },
   },
   {
     name: '挂载主机名称',
     prop: 'instance_name',
-  },
-  {
-    name: '快照',
-    prop: '',
-  },
-  {
-    name: '标签',
-    prop: '',
   },
   {
     name: '创建时间',
@@ -167,12 +181,18 @@ const {
             },
           },
           {
-            name: '磁盘属性',
+            name: '硬盘用途',
             prop: '',
+            render() {
+              return detail.is_system_disk ? '系统盘' : '数据盘';
+            },
           },
           {
             name: '到期欠费保护',
-            prop: '',
+            prop: 'backup_disk',
+            render(backup_disk: boolean) {
+              return backup_disk ? '是' : '否';
+            },
           },
           {
             name: '计费模式',
@@ -195,8 +215,11 @@ const {
       case 'huawei':
         settingFields.value.push(...[
           {
-            name: '磁盘属性',
+            name: '硬盘用途',
             prop: '',
+            render() {
+              return detail.is_system_disk ? '系统盘' : '数据盘';
+            },
           },
           {
             name: '计费模式',

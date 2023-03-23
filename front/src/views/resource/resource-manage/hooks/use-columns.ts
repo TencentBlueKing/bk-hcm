@@ -600,6 +600,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
     },
     {
       label: '云厂商',
+      onlyShowOnList: true,
       render({ data }: any) {
         return h(
           'span',
@@ -612,6 +613,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
     },
     {
       label: '地域',
+      onlyShowOnList: true,
       field: 'region',
     },
     {

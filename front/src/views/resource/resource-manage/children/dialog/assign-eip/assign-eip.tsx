@@ -2,7 +2,6 @@ import {
   Table,
   Loading,
   Radio,
-  Message,
 } from 'bkui-vue';
 import {
   defineComponent,
@@ -34,7 +33,7 @@ export default defineComponent({
     },
   },
 
-  emits: ['update:isShow'],
+  emits: ['update:isShow', 'success-assign'],
 
   setup(props, { emit }) {
     const {
@@ -65,8 +64,8 @@ export default defineComponent({
     if (props.detail.vendor === 'azure') {
       rules.push(...[
         {
-          field: 'resource_group_name',
-          op: 'eq',
+          field: 'extension.resource_group_name',
+          op: 'json_eq',
           value: props.detail.resource_group_name
         },
         {
@@ -140,12 +139,7 @@ export default defineComponent({
         .associateEip(postData)
         .then(() => {
           handleClose();
-        })
-        .catch((err: any) => {
-          Message({
-            theme: 'error',
-            message: err.message || err
-          })
+          emit('success-assign')
         })
         .finally(() => {
           isConfirmLoading.value = false;
@@ -153,6 +147,7 @@ export default defineComponent({
     };
 
     return {
+      type,
       datas,
       pagination,
       isLoading,
@@ -190,7 +185,7 @@ export default defineComponent({
 
     return <>
       <step-dialog
-        title="绑定EIP"
+        title={this.type === 'cvms' ? '绑定EIP' : '绑定网络接口'}
         isShow={this.isShow}
         steps={steps}
         onConfirm={this.handleConfirm}

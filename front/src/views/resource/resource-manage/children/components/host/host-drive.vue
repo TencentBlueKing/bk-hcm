@@ -53,8 +53,11 @@ const {
 
 const columns = ref([
   {
-    label: '类型',
+    label: '硬盘用途',
     field: '',
+    render({ data }: any) {
+      return data.is_system_disk ? '系统盘' : '数据盘';
+    },
   },
   {
     label: '名称',
@@ -87,19 +90,27 @@ const columns = ref([
     },
   },
   {
-    label: '连接状态',
-    field: '',
+    label: '状态',
+    field: 'status',
   },
   {
     label: '容量(GB)',
     field: 'disk_size',
   },
   {
-    label: '已加密',
+    label: '是否加密',
     field: 'exencrypted',
+    render({ data }: any) {
+      return h(
+        'span',
+        [
+          data.exencrypted ? '是' : '否'
+        ],
+      );
+    },
   },
   {
-    label: '删除实例时',
+    label: '随主机销毁',
     field: '',
   },
   {
@@ -127,7 +138,7 @@ watch(
   () => props.data,
   () => {
     if (props.data.vendor === 'tcloud') {
-      columns.value.splice(2, 4 , ...[
+      columns.value.splice(2, 4, ...[
         {
           label: '硬盘类型',
           field: 'disk_type',
@@ -147,39 +158,23 @@ watch(
       ])
     }
     if (props.data.vendor === 'aws') {
-      columns.value.splice(2, 4 , ...[
+      columns.value.splice(2, 1, ...[
         {
           label: '硬盘类型',
           field: 'disk_type',
         },
         {
-          label: '接口类型',
-          field: '',
+          label: '设备名',
+          field: 'device_name',
         },
         {
           label: '容量(GB)',
           field: 'disk_size',
         },
         {
-          label: '加密类型',
-          field: '',
-        },
-        {
-          label: '模式',
-          field: '',
-        },
-        {
-          label: '删除实例时',
-          field: '',
+          label: '是否加密',
+          field: 'exencrypted',
         }
-      ])
-    }
-    if (props.data.vendor === 'azure') {
-      columns.value.splice(5, 1 , ...[
-        {
-          label: '终止时删除',
-          field: '',
-        },
       ])
     }
   },

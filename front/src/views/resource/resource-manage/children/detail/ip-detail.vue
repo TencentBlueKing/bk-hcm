@@ -28,6 +28,7 @@ const showDelete = ref(false);
 const {
   loading,
   detail,
+  getDetail,
 } = useDetail(
   'eips',
   route.query.id as string,
@@ -52,6 +53,7 @@ const handleDeleteEip = () => {
     })
     .then(() => {
       handleCloseDeleteEip()
+      getDetail()
     })
 }
 </script>
@@ -88,6 +90,7 @@ const handleDeleteEip = () => {
       v-if="detail.id"
       v-model:is-show="isShowAssignEip"
       :detail="detail"
+      @success-assign="getDetail"
     />
 
     <bk-dialog
