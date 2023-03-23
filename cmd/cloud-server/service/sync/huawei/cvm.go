@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	gosync "sync"
 	"time"
 
 	"hcm/pkg/adaptor/huawei"
@@ -46,15 +47,36 @@ func SyncCvm(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client
 		return err
 	}
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, region := range regions {
-		req := &sync.HuaWeiSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		}
-		if err := service.HuaWei.Cvm.SyncCvmWithRelResource(kt.Ctx, kt.Header(), req); Error(err) != nil {
-			logs.Errorf("sync huawei cvm failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-			return err
-		}
+		pipeline <- true
+		wg.Add(1)
+
+		go func(region string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			req := &sync.HuaWeiSyncReq{
+				AccountID: accountID,
+				Region:    region,
+			}
+			err := service.HuaWei.Cvm.SyncCvmWithRelResource(kt.Ctx, kt.Header(), req)
+			if firstErr == nil && Error(err) != nil {
+				logs.Errorf("sync huawei cvm failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(region)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

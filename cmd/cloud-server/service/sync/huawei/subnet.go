@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	gosync "sync"
 	"time"
 
 	"hcm/pkg/adaptor/huawei"
@@ -47,6 +48,10 @@ func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Clien
 		logs.Errorf("sync huawei list region failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
+
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 
 	for _, region := range regions {
 		listReq := &core.ListReq{
@@ -82,15 +87,28 @@ func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Clien
 			}
 
 			for _, vpc := range vpcResult.Details {
-				req := &sync.HuaWeiSubnetSyncReq{
-					AccountID:  accountID,
-					Region:     region,
-					CloudVpcID: vpc.CloudID,
-				}
-				if err = hcCli.HuaWei.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req); Error(err) != nil {
-					logs.Errorf("sync huawei subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-					return err
-				}
+				pipeline <- true
+				wg.Add(1)
+
+				go func(region, cloudVpcID string) {
+					defer func() {
+						wg.Done()
+						<-pipeline
+					}()
+
+					req := &sync.HuaWeiSubnetSyncReq{
+						AccountID:  accountID,
+						Region:     region,
+						CloudVpcID: cloudVpcID,
+					}
+					err = hcCli.HuaWei.Subnet.SyncSubnet(kt.Ctx, kt.Header(), req)
+					if firstErr == nil && Error(err) != nil {
+						logs.Errorf("sync huawei subnet failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+						firstErr = err
+						return
+					}
+				}(region, vpc.CloudID)
+
 			}
 
 			if len(vpcResult.Details) < int(core.DefaultMaxPageLimit) {
@@ -99,6 +117,12 @@ func SyncSubnet(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Clien
 
 			startIndex += uint32(core.DefaultMaxPageLimit)
 		}
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

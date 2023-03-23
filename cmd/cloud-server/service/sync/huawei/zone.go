@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	gosync "sync"
 	"time"
 
 	"hcm/pkg/adaptor/huawei"
@@ -46,15 +47,36 @@ func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Client,
 		return err
 	}
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, region := range regions {
-		syncReq := &zone.HuaWeiZoneSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		}
-		if err := hcCli.HuaWei.Zone.SyncZone(kt.Ctx, kt.Header(), syncReq); Error(err) != nil {
-			logs.Errorf("sync huawei zone failed, err: %v, req: %v, rid: %s", err, syncReq, kt.Rid)
-			return err
-		}
+		pipeline <- true
+		wg.Add(1)
+
+		go func(region string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			syncReq := &zone.HuaWeiZoneSyncReq{
+				AccountID: accountID,
+				Region:    region,
+			}
+			err = hcCli.HuaWei.Zone.SyncZone(kt.Ctx, kt.Header(), syncReq)
+			if firstErr == nil && Error(err) != nil {
+				logs.Errorf("sync huawei zone failed, err: %v, req: %v, rid: %s", err, syncReq, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(region)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

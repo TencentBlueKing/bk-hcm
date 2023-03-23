@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	gosync "sync"
 	"time"
 
 	"hcm/pkg/adaptor/huawei"
@@ -48,16 +49,36 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice
 		return err
 	}
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, region := range regions {
-		req := &routetable.HuaWeiRouteTableSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		}
-		if err := service.HuaWei.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req); Error(err) != nil {
-			logs.Errorf("cloud-server-sync-%s account[%s] sync route table failed, req: %v, err: %v, rid: %s",
-				enumor.HuaWei, accountID, req, err, kt.Rid)
-			return err
-		}
+		pipeline <- true
+		wg.Add(1)
+
+		go func(region string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			req := &routetable.HuaWeiRouteTableSyncReq{
+				AccountID: accountID,
+				Region:    region,
+			}
+			err = service.HuaWei.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req)
+			if firstErr == nil && Error(err) != nil {
+				logs.Errorf("sync huawei route table failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(region)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil
