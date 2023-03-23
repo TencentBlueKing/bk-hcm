@@ -53,6 +53,9 @@ func (t *TCloud) ListZone(kt *kit.Kit, opt *typeszone.TCloudZoneListOption) ([]*
 		logs.Errorf("list tcloud zone failed, err: %v, rid: %s", err, kt.Rid)
 	}
 
-	return resp.Response.ZoneSet, nil
+	if resp == nil || resp.Response == nil {
+		return make([]*cvm.ZoneInfo, 0), nil
+	}
 
+	return resp.Response.ZoneSet, nil
 }

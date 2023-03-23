@@ -31,5 +31,14 @@ func Error(err error) error {
 		return nil
 	}
 
-	return nil
+	if strings.Contains(err.Error(),
+		"The IAM user is forbidden in the currently selected region") {
+		return nil
+	}
+
+	if strings.Contains(err.Error(), "unexpected regionId") {
+		return nil
+	}
+
+	return err
 }

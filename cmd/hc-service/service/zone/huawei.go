@@ -258,6 +258,10 @@ func (z *zoneHC) getHuaWeiZoneDSSync(cts *rest.Contexts, cloudIDs []string,
 	updateIDs := make([]string, 0)
 	dsMap := make(map[string]*DSZoneSync)
 
+	if len(cloudIDs) <= 0 {
+		return updateIDs, dsMap, nil
+	}
+
 	start := 0
 	for {
 		dataReq := &protozone.ZoneListReq{

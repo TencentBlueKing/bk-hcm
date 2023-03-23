@@ -48,5 +48,9 @@ func (a *Aws) ListZone(kit *kit.Kit, opt *typeszone.AwsZoneListOption) ([]*ec2.A
 		logs.Errorf("failed to list zone, err: %v, rid: %s", err, kit.Rid)
 	}
 
+	if resp == nil {
+		return make([]*ec2.AvailabilityZone, 0), nil
+	}
+
 	return resp.AvailabilityZones, nil
 }

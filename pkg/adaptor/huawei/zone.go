@@ -53,5 +53,9 @@ func (h *HuaWei) ListZone(kt *kit.Kit, opt *typeszone.HuaWeiZoneListOption) ([]m
 		logs.Errorf("list huawei zone failed, err: %v, rid: %s", err, kt.Rid)
 	}
 
+	if resp == nil {
+		return make([]model.AvailableZones, 0), nil
+	}
+
 	return *resp.AvailableZones, nil
 }

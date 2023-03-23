@@ -48,6 +48,10 @@ import (
 func HuaWeiNetworkInterfaceSync(kt *kit.Kit, req *hcservice.HuaWeiNetworkInterfaceSyncReq,
 	adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client) (interface{}, error) {
 
+	if len(req.CloudCvmIDs) == 0 {
+		return nil, nil
+	}
+
 	// syncs network interface list from cloudapi.
 	allCloudIDMap, err := SyncHuaWeiNetworkInterfaceList(kt, req, adaptor, dataCli)
 	if err != nil {
