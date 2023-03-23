@@ -30,6 +30,7 @@ type TCloudDiskExtensionCreateReq struct {
 	InstanceType       *string                  `json:"instance_type,omitempty"`
 	DeleteWithInstance *bool                    `json:"delete_with_instance,omitempty"`
 	DeadlineTime       *string                  `json:"deadline_time,omitempty"`
+	BackupDisk         *bool                    `json:"backup_disk,omitempty"`
 }
 
 // TCloudDiskExtensionResult ...
@@ -43,6 +44,7 @@ type TCloudDiskExtensionResult struct {
 	InstanceType       *string                  `json:"instance_type,omitempty"`
 	DeleteWithInstance *bool                    `json:"delete_with_instance,omitempty"`
 	DeadlineTime       *string                  `json:"deadline_time,omitempty"`
+	BackupDisk         *bool                    `json:"backup_disk,omitempty"`
 }
 
 // TCloudDiskChargePrepaid ...
@@ -63,4 +65,5 @@ type TCloudDiskExtensionUpdateReq struct {
 	InstanceType       *string                  `json:"InstanceType,omitempty"`
 	DeleteWithInstance *bool                    `json:"delete_with_instance,omitempty"`
 	DeadlineTime       *string                  `json:"deadline_time,omitempty"`
+	BackupDisk         *bool                    `json:"backup_disk,omitempty"`
 }

@@ -141,8 +141,7 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 	for idx, diskData := range resp.Details {
 		// Gcp disk type 截取类型展示
 		if diskData.Vendor == string(enumor.Gcp) {
-			lastIdx := strings.LastIndex(diskData.DiskType, "/")
-			diskData.DiskType = diskData.DiskType[lastIdx+1:]
+			diskData.DiskType = extractGcpDiskType(diskData.DiskType)
 		}
 
 		details[idx] = &cloudproto.DiskResult{
@@ -319,6 +318,8 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		if err != nil {
 			return nil, err
 		}
+
+		resp.DiskType = extractGcpDiskType(resp.DiskType)
 		return cloudproto.GcpDiskExtResult{
 			DiskExtResult: resp,
 			InstanceType:  "CVM",
@@ -576,4 +577,9 @@ func getCvmName(cts *rest.Contexts, cli *dataservice.Client, cvmID string) (stri
 		return cvms.Details[0].Name, nil
 	}
 	return "", fmt.Errorf("cvm(%s) does not exist", cvmID)
+}
+
+func extractGcpDiskType(rawDiskType string) string {
+	lastIdx := strings.LastIndex(rawDiskType, "/")
+	return rawDiskType[lastIdx+1:]
 }
