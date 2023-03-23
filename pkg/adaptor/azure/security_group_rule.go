@@ -171,7 +171,7 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 
 	exist := false
 	for _, rule := range sg.SecurityRules {
-		if *rule.ID == opt.Rule.CloudID {
+		if SPtrToLowerNoSpaceStr(rule.ID) == opt.Rule.CloudID {
 			exist = true
 			access := armnetwork.SecurityRuleAccess(opt.Rule.Access)
 			rule.Properties.Access = &access
@@ -265,7 +265,7 @@ func (az *Azure) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 	exist := false
 	rules := make([]*armnetwork.SecurityRule, 0)
 	for _, rule := range sg.SecurityRules {
-		if *rule.ID == opt.CloudRuleID {
+		if SPtrToLowerNoSpaceStr(rule.ID) == opt.CloudRuleID {
 			exist = true
 			continue
 		}
