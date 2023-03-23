@@ -199,35 +199,15 @@ func (svc *eipSvc) retrieveEip(cts *rest.Contexts, validHandler handler.ValidWit
 
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		resp, err := svc.client.DataService().TCloud.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
-		if err != nil {
-			return nil, err
-		}
-		return cloudproto.TCloudEipExtResult{EipExtResult: resp, CvmID: cvmID}, nil
+		return svc.tcloud.RetrieveEip(cts, eipID, cvmID)
 	case enumor.Aws:
-		resp, err := svc.client.DataService().Aws.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
-		if err != nil {
-			return nil, err
-		}
-		return cloudproto.AwsEipExtResult{EipExtResult: resp, CvmID: cvmID}, nil
+		return svc.aws.RetrieveEip(cts, eipID, cvmID)
 	case enumor.HuaWei:
-		resp, err := svc.client.DataService().HuaWei.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
-		if err != nil {
-			return nil, err
-		}
-		return cloudproto.HuaWeiEipExtResult{EipExtResult: resp, CvmID: cvmID}, nil
+		return svc.huawei.RetrieveEip(cts, eipID, cvmID)
 	case enumor.Gcp:
-		resp, err := svc.client.DataService().Gcp.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
-		if err != nil {
-			return nil, err
-		}
-		return cloudproto.GcpEipExtResult{EipExtResult: resp, CvmID: cvmID}, nil
+		return svc.gcp.RetrieveEip(cts, eipID, cvmID)
 	case enumor.Azure:
-		resp, err := svc.client.DataService().Azure.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
-		if err != nil {
-			return nil, err
-		}
-		return cloudproto.AzureEipExtResult{EipExtResult: resp, CvmID: cvmID}, nil
+		return svc.azure.RetrieveEip(cts, eipID, cvmID)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
 	}

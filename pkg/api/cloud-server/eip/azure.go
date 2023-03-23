@@ -27,7 +27,6 @@ import (
 // AzureEipAssociateReq ...
 type AzureEipAssociateReq struct {
 	EipID              string `json:"eip_id" validate:"required"`
-	CvmID              string `json:"cvm_id" validate:"required"`
 	NetworkInterfaceID string `json:"network_interface_id" validate:"required"`
 }
 

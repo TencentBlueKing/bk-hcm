@@ -238,3 +238,22 @@ func (t *TCloud) CreateEip(cts *rest.Contexts) (interface{}, error) {
 
 	return resp, nil
 }
+
+// RetrieveEip ...
+func (t *TCloud) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cloudproto.TCloudEipExtResult, error) {
+	eipResp, err := t.client.DataService().TCloud.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+	if err != nil {
+		return nil, err
+	}
+
+	eipResult := &cloudproto.TCloudEipExtResult{EipExtResult: eipResp, CvmID: cvmID}
+	// 表示没有关联
+	if cvmID == "" {
+		return eipResult, nil
+	}
+
+	eipResult.InstanceType = "CVM"
+	eipResult.InstanceId = cvmID
+
+	return eipResult, nil
+}

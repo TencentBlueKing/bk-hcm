@@ -222,3 +222,22 @@ func (a *Aws) CreateEip(cts *rest.Contexts) (interface{}, error) {
 
 	return resp, nil
 }
+
+// RetrieveEip ...
+func (a *Aws) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cloudproto.AwsEipExtResult, error) {
+	eipResp, err := a.client.DataService().Aws.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+	if err != nil {
+		return nil, err
+	}
+
+	eipResult := &cloudproto.AwsEipExtResult{EipExtResult: eipResp, CvmID: cvmID}
+	// 表示没有关联
+	if cvmID == "" {
+		return eipResult, nil
+	}
+
+	eipResult.InstanceType = "CVM"
+	eipResult.InstanceId = cvmID
+
+	return eipResult, nil
+}

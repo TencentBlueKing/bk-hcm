@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -97,12 +98,28 @@ func (g *Gcp) AssociateEip(
 		return nil, err
 	}
 
+	rels, err := g.client.DataService().Global.NetworkInterfaceCvmRel.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&core.ListReq{
+			Filter: tools.ContainersExpression("network_interface_id", req.NetworkInterfaceID),
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rels.Details) == 0 {
+		return nil, fmt.Errorf("network interface %s not found", req.NetworkInterfaceID)
+	}
+
 	return nil, g.client.HCService().Gcp.Eip.AssociateEip(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.GcpEipAssociateReq{
 			AccountID:          basicInfo.AccountID,
-			CvmID:              req.CvmID,
+			CvmID:              rels.Details[0].CvmID,
 			EipID:              req.EipID,
 			NetworkInterfaceID: req.NetworkInterfaceID,
 		},
@@ -224,4 +241,70 @@ func (g *Gcp) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return resp, nil
+}
+
+// RetrieveEip ...
+func (g *Gcp) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cloudproto.GcpEipExtResult, error) {
+	eipResp, err := g.client.DataService().Gcp.RetrieveEip(cts.Kit.Ctx, cts.Kit.Header(), eipID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 表示没有关联
+	if cvmID == "" {
+		return &cloudproto.GcpEipExtResult{EipExtResult: eipResp, CvmID: cvmID}, nil
+	}
+
+	rels, err := g.client.DataService().Global.NetworkInterfaceCvmRel.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", []string{cvmID})},
+	)
+
+	if len(rels.Details) == 0 {
+		return nil, fmt.Errorf("cvm(%s) has no networkinterface", cvmID)
+	}
+
+	niIDs := make([]string, len(rels.Details))
+	for idx, rel := range rels.Details {
+		niIDs[idx] = rel.NetworkInterfaceID
+	}
+
+	nis, err := g.client.DataService().Global.NetworkInterface.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&core.ListReq{Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{
+					Field: "id",
+					Op:    filter.In.Factory(),
+					Value: niIDs,
+				}, &filter.Expression{Op: filter.Or, Rules: []filter.RuleFactory{
+					filter.AtomRule{
+						Field: "public_ipv4",
+						Op:    filter.JSONContains.Factory(),
+						Value: eipResp.PublicIp,
+					},
+					filter.AtomRule{
+						Field: "public_ipv6",
+						Op:    filter.JSONContains.Factory(),
+						Value: eipResp.PublicIp,
+					},
+				}},
+			},
+		}, Page: core.DefaultBasePage})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(nis.Details) == 0 {
+		return nil, fmt.Errorf("eip(%s) not associated with cvm(%s)", eipResp.PublicIp, cvmID)
+	}
+
+	eipResult := &cloudproto.GcpEipExtResult{EipExtResult: eipResp, CvmID: cvmID}
+	eipResult.InstanceType = "NI"
+	eipResult.InstanceId = nis.Details[0].ID
+
+	return eipResult, nil
 }
