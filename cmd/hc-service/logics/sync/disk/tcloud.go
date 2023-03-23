@@ -306,6 +306,7 @@ func diffTCloudDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDiff,
 				InstanceType:       cloudMap[id].Disk.InstanceType,
 				DeleteWithInstance: cloudMap[id].Disk.DeleteWithInstance,
 				DeadlineTime:       cloudMap[id].Disk.DeadlineTime,
+				BackupDisk:         cloudMap[id].Disk.BackupDisk,
 			},
 		}
 
@@ -375,6 +376,10 @@ func isTCloudDiskChange(db *TCloudDiskSyncDS, cloud *TCloudDiskSyncDiff) bool {
 		return true
 	}
 
+	if !assert.IsPtrBoolEqual(cloud.Disk.BackupDisk, db.HcDisk.Extension.BackupDisk) {
+		return true
+	}
+
 	return false
 }
 
@@ -405,6 +410,7 @@ func diffTCloudDiskSyncUpdate(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDi
 				InstanceType:       cloudMap[id].Disk.InstanceType,
 				DeleteWithInstance: cloudMap[id].Disk.DeleteWithInstance,
 				DeadlineTime:       cloudMap[id].Disk.DeadlineTime,
+				BackupDisk:         cloudMap[id].Disk.BackupDisk,
 			},
 		}
 
