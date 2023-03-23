@@ -53,7 +53,7 @@ func (a *ApplicationOfCreateTCloudCvm) toHcProtoTCloudBatchCreateReq(dryRun bool
 		// 默认通知但不自动续费
 		RenewFlag: typecvm.NotifyAndManualRenew,
 	}
-	if req.AutoRenew {
+	if req.AutoRenew != nil && *req.AutoRenew {
 		instanceChargePrepaid.RenewFlag = typecvm.NotifyAndAutoRenew
 	}
 
@@ -90,6 +90,6 @@ func (a *ApplicationOfCreateTCloudCvm) toHcProtoTCloudBatchCreateReq(dryRun bool
 			DiskSizeGB: &req.SystemDisk.DiskSizeGB,
 		},
 		DataDisk:         dataDisk,
-		PublicIPAssigned: req.PublicIPAssigned,
+		PublicIPAssigned: *req.PublicIPAssigned,
 	}
 }

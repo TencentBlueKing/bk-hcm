@@ -50,7 +50,7 @@ type TCloudCvmCreateReq struct {
 	CloudImageID          string   `json:"cloud_image_id" validate:"required"`
 	CloudVpcID            string   `json:"cloud_vpc_id" validate:"required"`
 	CloudSubnetID         string   `json:"cloud_subnet_id" validate:"required"`
-	PublicIPAssigned      bool     `json:"public_ip_assigned" validate:"required"`
+	PublicIPAssigned      *bool    `json:"public_ip_assigned" validate:"required"`
 	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required,min=1"`
 
 	SystemDisk struct {
@@ -62,7 +62,7 @@ type TCloudCvmCreateReq struct {
 		DiskType   typecvm.TCloudDataDiskType `json:"disk_type" validate:"required"`
 		DiskSizeGB int64                      `json:"disk_size_gb" validate:"required,min=20,max=32000"`
 		DiskCount  int64                      `json:"disk_count" validate:"required,min=1"`
-	} `json:"data_disk" validate:"required,max=20"`
+	} `json:"data_disk" validate:"omitempty,max=20"`
 
 	Password          string `json:"password" validate:"required"`
 	ConfirmedPassword string `json:"confirmed_password" validate:"eqfield=Password"`
@@ -70,7 +70,7 @@ type TCloudCvmCreateReq struct {
 	InstanceChargeType typecvm.TCloudInstanceChargeType `json:"instance_charge_type" validate:"required"`
 
 	InstanceChargePaidPeriod int64 `json:"instance_charge_paid_period" validate:"required,min=1"`
-	AutoRenew                bool  `json:"auto_renew" validate:"required"`
+	AutoRenew                *bool `json:"auto_renew" validate:"required"`
 	RequiredCount            int64 `json:"required_count" validate:"required,min=1,max=500"`
 
 	Memo *string `json:"memo" validate:"omitempty"`
