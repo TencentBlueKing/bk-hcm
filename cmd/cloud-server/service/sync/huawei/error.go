@@ -40,5 +40,9 @@ func Error(err error) error {
 		return nil
 	}
 
+	if strings.Contains(err.Error(), "failed to get project id") {
+		return nil
+	}
+
 	return err
 }
