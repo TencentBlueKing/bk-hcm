@@ -258,7 +258,7 @@ func (g *Gcp) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*clou
 	rels, err := g.client.DataService().Global.NetworkInterfaceCvmRel.List(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
-		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", []string{cvmID})},
+		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", []string{cvmID}), Page: core.DefaultBasePage},
 	)
 	if err != nil {
 		return nil, err

@@ -268,7 +268,7 @@ func (a *Azure) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cl
 	rels, err := a.client.DataService().Global.NetworkInterfaceCvmRel.List(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
-		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", []string{cvmID})},
+		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", []string{cvmID}), Page: core.DefaultBasePage},
 	)
 	if err != nil {
 		return nil, err
