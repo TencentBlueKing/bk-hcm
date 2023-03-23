@@ -318,7 +318,6 @@ func (svc *cvmSvc) BatchRebootTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncTCloudCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,

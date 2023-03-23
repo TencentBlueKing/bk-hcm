@@ -22,6 +22,7 @@ package tcloud
 import (
 	"fmt"
 
+	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
@@ -184,7 +185,74 @@ func (t *TCloud) RebootCvm(kt *kit.Kit, opt *typecvm.TCloudRebootOption) error {
 		return err
 	}
 
+	// wait until all cvm are rebooted
+	sync.SleepBeforeSync()
+
+	handler := &rebootCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchRebootCvmPollerOpt())
+	if err != nil {
+		logs.Errorf("poll reboot cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
+		return err
+	}
+
 	return nil
+}
+
+type rebootCvmPollingHandler struct {
+	region string
+}
+
+func (h *rebootCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
+	result := new(poller.BaseDoneResult)
+
+	flag := true
+	for _, instance := range cvms {
+		// reboot not done
+		if converter.PtrToVal(instance.InstanceState) == "REBOOTING" {
+			flag = false
+			continue
+		}
+
+		// reboot succeed
+		if converter.PtrToVal(instance.InstanceState) == "RUNNING" {
+			result.SuccessCloudIDs = append(result.SuccessCloudIDs, *instance.InstanceId)
+			continue
+		}
+
+		// reboot failed
+		result.FailedCloudIDs = append(result.FailedCloudIDs, *instance.InstanceId)
+		result.FailedMessage = converter.PtrToVal(instance.LatestOperationErrorMsg)
+	}
+
+	return flag, result
+}
+
+func (h *rebootCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
+
+	cvms := make([]*cvm.Instance, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := cvm.NewDescribeInstancesRequest()
+		req.InstanceIds = partIDs
+		req.Limit = converter.ValToPtr(int64(core.TCloudQueryLimit))
+
+		cvmCli, err := client.clientSet.cvmClient(h.region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := cvmCli.DescribeInstancesWithContext(kt.Ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		cvms = append(cvms, resp.Response.InstanceSet...)
+	}
+
+	return cvms, nil
 }
 
 // ResetCvmPwd reference: https://cloud.tencent.com/document/api/213/15736
