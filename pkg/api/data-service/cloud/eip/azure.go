@@ -24,6 +24,7 @@ type AzureEipExtensionCreateReq struct {
 	IpConfigurationID *string `json:"ip_configuration_id"`
 	SKU               *string `json:"sku"`
 	ResourceGroupName string  `json:"resource_group_name"`
+	Zone              string  `json:"zone"`
 }
 
 // AzureEipExtensionResult ...
@@ -31,6 +32,7 @@ type AzureEipExtensionResult struct {
 	IpConfigurationID *string `json:"ip_configuration_id"`
 	SKU               *string `json:"sku"`
 	ResourceGroupName string  `json:"resource_group_name"`
+	Zone              string  `json:"zone"`
 }
 
 // AzureEipExtensionUpdateReq ...
@@ -38,4 +40,5 @@ type AzureEipExtensionUpdateReq struct {
 	IpConfigurationID *string `json:"ip_configuration_id"`
 	SKU               *string `json:"sku"`
 	ResourceGroupName string  `json:"resource_group_name"`
+	Zone              string  `json:"zone"`
 }

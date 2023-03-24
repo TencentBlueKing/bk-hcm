@@ -57,6 +57,11 @@ func (a *Azure) ListEip(kt *kit.Kit, opt *eip.AzureEipListOption) (*eip.AzureEip
 				Status:   &state,
 				PublicIp: v.Properties.IPAddress,
 				SKU:      &sku,
+				Zone:     "",
+			}
+
+			if len(v.Zones) > 0 {
+				eIp.Zone = converter.PtrToVal(v.Zones[0])
 			}
 
 			if v.Properties.IPConfiguration != nil {
@@ -99,6 +104,11 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 				Status:   &state,
 				PublicIp: one.Properties.IPAddress,
 				SKU:      &sku,
+				Zone:     "",
+			}
+
+			if len(one.Zones) > 0 {
+				eIp.Zone = converter.PtrToVal(one.Zones[0])
 			}
 
 			if one.Properties.IPConfiguration != nil {

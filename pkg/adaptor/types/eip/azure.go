@@ -73,6 +73,7 @@ type AzureEip struct {
 	PrivateIp         *string
 	IpConfigurationID *string
 	SKU               *string
+	Zone              string
 }
 
 // AzureEipDeleteOption ...
