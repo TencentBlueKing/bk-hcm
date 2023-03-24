@@ -162,11 +162,11 @@ watch(
           },
           {
             name: '内网IP',
-            prop: '',
+            prop: 'private_ip_address',
           },
           {
             name: '网络接口',
-            prop: '',
+            prop: 'network_interface_id',
           },
           {
             name: 'NAT网关ID',
@@ -186,15 +186,15 @@ watch(
         otherInfo.value = [
           {
             name: '权限类型',
-            prop: '',
-          },
-          {
-            name: '类型',
             prop: 'address_type',
           },
           {
+            name: '类型',
+            value: '静态'
+          },
+          {
             name: '网络层',
-            prop: '',
+            prop: 'network_tier',
           },
         ];
         break;
@@ -226,7 +226,7 @@ watch(
         otherInfo.value = [
           {
             name: '企业项目',
-            prop: '',
+            prop: 'enterprise_project_id',
           },
           {
             name: '所属VPC',
@@ -242,15 +242,7 @@ watch(
           },
           {
             name: '类型',
-            prop: '',
-          },
-          {
-            name: '公网DNS',
-            prop: '',
-          },
-          {
-            name: '反向DNS解析',
-            prop: '',
+            prop: 'type',
           },
         ];
         break;

@@ -128,7 +128,7 @@ export default defineComponent({
           );
         },
       },
-      ...columns
+      ...columns.filter((column: any) => ['资源 ID', '名称', '类型', '容量(GB)', '状态'].includes(column.label))
     ]
 
     const renderList = computed(() => {

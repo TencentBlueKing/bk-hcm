@@ -174,7 +174,7 @@ export default defineComponent({
               remote-pagination
               pagination={this.pagination}
               columns={this.renderColumns}
-              data={this.datas}
+              data={this.datas.filter(data => !data.public_ipv4_addresses)}
               onPageLimitChange={this.handlePageSizeChange}
               onPageValueChange={this.handlePageChange}
               onColumnSort={this.handleSort}

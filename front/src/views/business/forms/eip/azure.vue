@@ -23,7 +23,7 @@ defineProps({
 const formData = ref({
   eip_name: '',
   eip_count: 1,
-  ip_version: 'IPV4',
+  ip_version: 'ipv4',
   sku_name: 'Standard', // Standard|Basic
   sku_tier: 'Regional', // Regional|Global
   allocation_method: 'Dynamic', // Dynamic|Static
@@ -107,13 +107,13 @@ defineExpose([validate]);
     >
       <bk-radio
         v-model="formData.ip_version"
-        label="IPV4"
+        label="ipv4"
       >
         IPv4
       </bk-radio>
       <bk-radio
         v-model="formData.ip_version"
-        label="IPV6"
+        label="ipv6"
       >
         IPv6
       </bk-radio>
@@ -136,7 +136,7 @@ defineExpose([validate]);
       </bk-radio>
     </bk-form-item>
     <bk-form-item
-      v-if="formData.ip_version === 'IPV4' && formData.sku_name === 'Standard'"
+      v-if="formData.ip_version === 'ipv4' && formData.sku_name === 'Standard'"
       label="网络服务层级"
       property="sku_tier"
       required
@@ -177,7 +177,7 @@ defineExpose([validate]);
       required
     >
       <bk-input
-        v-if="formData.ip_version === 'IPV4'"
+        v-if="formData.ip_version === 'ipv4'"
         v-model="formData.idle_timeout_in_minutes"
         type="number"
         placeholder="请输入空闲超时，最小值4，最大值30"

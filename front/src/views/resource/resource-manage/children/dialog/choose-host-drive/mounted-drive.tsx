@@ -215,7 +215,7 @@ export default defineComponent({
               this.detail.vendor === 'aws'
               ? <>
                 <span class="mr10">设备名称:</span>
-                <bk-input v-model={this.deviceName} style="width: 200px;margin-right: 5px"></bk-input>
+                <bk-input v-model={this.deviceName} placeholder="/dev/sdb" style="width: 200px;margin-right: 5px"></bk-input>
                 <bk-popover
                   placement="top"
                   v-slots={tooltipSlot}

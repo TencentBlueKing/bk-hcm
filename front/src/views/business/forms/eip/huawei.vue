@@ -17,27 +17,32 @@ const props = defineProps({
   }
 });
 
-const formData = ref({
+const formData = ref<any>({
   eip_name: "", // eip名称
   eip_type: "5_bgp", // 线路类型. 5_bgp（全动态BGP） |5_sbgp（静态BGP）
   internet_charge_type: "prePaid", // 计费模式，取值 prePaid(包年/包月) | postPaid(按需计费)
   eip_count: 1,
-  internet_charge_prepaid: {
-    period_num: 1,
-    period_type: "month", // 取值 month(按月)| year(按年)
-    is_auto_renew: 1 // 是否自动续费。0表示手动续费，1表示自动续费
-  },
   bandwidth_option: {
       share_type: "PER", // 带宽类型， 取值范围：PER，WHOLE（PER为独占带宽，WHOLE是共享带宽）
       charge_mode: "bandwidth", // 带宽模式。 bandwidth（按照带宽）|traffic（按照流量）
       size: 1, // 带宽大小
   }
 });
+const internet_charge_prepaid = ref({
+  period_num: 1,
+  period_type: "month", // 取值 month(按月)| year(按年)
+  is_auto_renew: true // 是否自动续费。0表示手动续费，1表示自动续费
+});
 const formRef = ref(null);
 const rules = {};
 
 
 const handleChange = () => {
+  if (formData.value.internet_charge_type === 'prePaid') {
+    formData.value.internet_charge_prepaid = internet_charge_prepaid.value
+  } else {
+    delete formData.value.internet_charge_prepaid
+  }
   emit('change', formData.value)
 }
 
@@ -145,12 +150,12 @@ defineExpose([validate]);
     >
       <bk-compose-form-item>
         <bk-input
-          v-model="formData.internet_charge_prepaid.period_num"
+          v-model="internet_charge_prepaid.period_num"
           placeholder="请输入时间"
           type="number"
         />
         <bk-select
-          v-model="formData.internet_charge_prepaid.period_type"
+          v-model="internet_charge_prepaid.period_type"
           :clearable="false"
         >
           <bk-option
@@ -169,9 +174,9 @@ defineExpose([validate]);
       label="自动续费"
     >
       <bk-checkbox
-        v-model="formData.internet_charge_prepaid.is_auto_renew"
-        :true-label="1"
-        :false-label="0"
+        v-model="internet_charge_prepaid.is_auto_renew"
+        :true-label="true"
+        :false-label="false"
       >
       </bk-checkbox>
     </bk-form-item>

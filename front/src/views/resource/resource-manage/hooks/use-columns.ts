@@ -24,6 +24,9 @@ export default (type: string, isSimpleShow: boolean = false) => {
       sort: true,
       onlyShowOnList,
       render({ data }: { cell: string, data: any }) {
+        if (data[idFiled] < 0) {
+          return '--'
+        }
         return h(
           Button,
           {
@@ -194,9 +197,10 @@ export default (type: string, isSimpleShow: boolean = false) => {
         );
       },
     },
+    getLinkField('vpc', '所属 VPC', 'vpc_id', 'vpc_id', false),
     {
-      label: '所属 VPC',
-      field: 'vpc_id',
+      label: 'IPv4 CIDR',
+      field: 'ipv4_cidr',
       render({ cell }: { cell: string }) {
         return h(
           'span',
@@ -354,7 +358,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
       },
     },
     {
-      label: '运行状态',
+      label: '状态',
       field: 'status',
       render({ cell }: { cell: string }) {
         return h(
@@ -832,7 +836,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
         );
       },
     },
-    getLinkField('host', '绑定资源的实例', 'instance_id', 'cvm_id'),
+    getLinkField('host', '绑定资源的实例', 'cvm_id', 'cvm_id'),
     {
       label: '绑定资源的类型',
       field: 'instance_type',

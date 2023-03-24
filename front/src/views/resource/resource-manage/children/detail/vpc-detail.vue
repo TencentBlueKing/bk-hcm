@@ -34,6 +34,11 @@ const VPCFields = ref([
   {
     name: '云资源 ID',
     prop: 'cloud_id',
+    render(cell: string = '') {
+      const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1
+      const value = cell.slice(index)
+      return value;
+    },
   },
   {
     name: '资源名称',
@@ -190,6 +195,7 @@ const {
             }
           },
         ]);
+        VPCTabs.value.pop();
         break;
       case 'gcp':
         VPCFields.value.push(...[
@@ -223,10 +229,6 @@ const {
           {
             name: '状态',
             prop: 'status',
-          },
-          {
-            name: '企业项目',
-            prop: 'enterprise_project_id',
           },
           {
             name: '地域',
