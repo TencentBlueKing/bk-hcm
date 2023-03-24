@@ -77,15 +77,18 @@ func (a *Aws) ListEip(kt *kit.Kit, opt *eip.AwsEipListOption) (*eip.AwsEipListRe
 	eips := make([]*eip.AwsEip, len(resp.Addresses))
 	for idx, address := range resp.Addresses {
 		eips[idx] = &eip.AwsEip{
-			CloudID:        *address.AllocationId,
-			InstanceId:     address.InstanceId,
-			Region:         opt.Region,
-			Status:         converter.ValToPtr("--"),
-			PublicIp:       address.PublicIp,
-			PrivateIp:      address.PrivateIpAddress,
-			PublicIpv4Pool: address.PublicIpv4Pool,
-			Domain:         address.Domain,
-			AssociationId:  address.AssociationId,
+			CloudID:            *address.AllocationId,
+			InstanceId:         address.InstanceId,
+			Region:             opt.Region,
+			Status:             converter.ValToPtr("--"),
+			PublicIp:           address.PublicIp,
+			PrivateIp:          address.PrivateIpAddress,
+			PublicIpv4Pool:     address.PublicIpv4Pool,
+			Domain:             address.Domain,
+			AssociationId:      address.AssociationId,
+			PrivateIpAddress:   address.PrivateIpAddress,
+			NetworkBorderGroup: address.NetworkBorderGroup,
+			NetworkInterfaceId: address.NetworkInterfaceId,
 		}
 	}
 

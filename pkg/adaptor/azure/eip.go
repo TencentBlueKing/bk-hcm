@@ -31,50 +31,6 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// ListEip ...
-// reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/list-all?tabs=HTTP
-func (a *Azure) ListEip(kt *kit.Kit, opt *eip.AzureEipListOption) (*eip.AzureEipListResult, error) {
-	client, err := a.clientSet.publicIPAddressesClient()
-	if err != nil {
-		return nil, err
-	}
-
-	eips := make([]*eip.AzureEip, 0)
-	pager := client.NewListAllPager(nil)
-	for pager.More() {
-		nextResult, err := pager.NextPage(kt.Ctx)
-		if err != nil {
-			logs.Errorf("list azure eip failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, fmt.Errorf("list azure eip failed, err: %v", err)
-		}
-		for _, v := range nextResult.Value {
-			state := string(*v.Properties.ProvisioningState)
-			sku := string(*v.SKU.Name)
-			eIp := &eip.AzureEip{
-				CloudID:  strings.ToLower(*v.ID),
-				Name:     SPtrToLowerSPtr(v.Name),
-				Region:   SPtrToLowerNoSpaceStr(v.Location),
-				Status:   &state,
-				PublicIp: v.Properties.IPAddress,
-				SKU:      &sku,
-				Zone:     "",
-			}
-
-			if len(v.Zones) > 0 {
-				eIp.Zone = converter.PtrToVal(v.Zones[0])
-			}
-
-			if v.Properties.IPConfiguration != nil {
-				eIp.IpConfigurationID = SPtrToLowerSPtr(v.Properties.IPConfiguration.ID)
-			}
-
-			eips = append(eips, eIp)
-		}
-	}
-
-	return &eip.AzureEipListResult{Details: eips}, nil
-}
-
 // ListEipByID ...
 // reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/list-all?tabs=HTTP
 func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.AzureEipListResult, error) {
@@ -98,15 +54,20 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 			state := string(*one.Properties.ProvisioningState)
 			sku := string(*one.SKU.Name)
 			eIp := &eip.AzureEip{
-				CloudID:  strings.ToLower(*one.ID),
-				Name:     SPtrToLowerSPtr(one.Name),
-				Region:   StrToLowerNoSpaceStr(*one.Location),
-				Status:   &state,
-				PublicIp: one.Properties.IPAddress,
-				SKU:      &sku,
-				Zone:     "",
+				CloudID:           strings.ToLower(*one.ID),
+				Name:              SPtrToLowerSPtr(one.Name),
+				Region:            StrToLowerNoSpaceStr(*one.Location),
+				Status:            &state,
+				PublicIp:          one.Properties.IPAddress,
+				SKU:               &sku,
+				Zone:              "",
+				ResourceGroupName: strings.ToLower(opt.ResourceGroupName),
+				Location:          one.Location,
 			}
 
+			if one.Properties.DNSSettings != nil {
+				eIp.Fqdn = one.Properties.DNSSettings.Fqdn
+			}
 			if len(one.Zones) > 0 {
 				eIp.Zone = converter.PtrToVal(one.Zones[0])
 			}

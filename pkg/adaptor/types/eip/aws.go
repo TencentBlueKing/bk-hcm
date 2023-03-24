@@ -45,16 +45,20 @@ type AwsEipListResult struct {
 
 // AwsEip ...
 type AwsEip struct {
-	CloudID        string
-	Name           *string
-	Region         string
-	InstanceId     *string
-	Status         *string
-	PublicIp       *string
-	PrivateIp      *string
-	PublicIpv4Pool *string
-	Domain         *string
-	AssociationId  *string
+	CloudID                 string
+	Name                    *string
+	Region                  string
+	InstanceId              *string
+	Status                  *string
+	PublicIp                *string
+	PrivateIp               *string
+	PublicIpv4Pool          *string
+	Domain                  *string
+	AssociationId           *string
+	PrivateIpAddress        *string
+	NetworkBorderGroup      *string
+	NetworkInterfaceId      *string
+	NetworkInterfaceOwnerId *string
 }
 
 // AwsEipDeleteOption ...

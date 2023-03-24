@@ -73,6 +73,9 @@ type AzureEip struct {
 	PrivateIp         *string
 	IpConfigurationID *string
 	SKU               *string
+	ResourceGroupName string
+	Location          *string
+	Fqdn              *string
 	Zone              string
 }
 
