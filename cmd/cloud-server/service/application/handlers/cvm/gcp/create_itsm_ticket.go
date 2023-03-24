@@ -183,7 +183,7 @@ func (a *ApplicationOfCreateGcpCvm) renderDiskForm() []formItem {
 			fmt.Sprintf(
 				"%s(%dGB,%d个,%s,%s)",
 				DiskTypeNameMap[d.DiskType], d.DiskSizeGB, d.DiskCount,
-				modeNameMap[d.Mode], autoDeleteNameMap[d.AutoDelete],
+				modeNameMap[d.Mode], autoDeleteNameMap[*d.AutoDelete],
 			),
 		)
 	}

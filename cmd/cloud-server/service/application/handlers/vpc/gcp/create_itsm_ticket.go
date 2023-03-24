@@ -142,14 +142,14 @@ func (a *ApplicationOfCreateGcpVpc) renderSubnet() ([]formItem, error) {
 	PrivateIPGoogleAccessNameMap := map[bool]string{true: "启用", false: "禁用"}
 	formItems = append(formItems, formItem{
 		Label: "子网专用 Google 访问通道",
-		Value: PrivateIPGoogleAccessNameMap[req.Subnet.PrivateIPGoogleAccess],
+		Value: PrivateIPGoogleAccessNameMap[*req.Subnet.PrivateIPGoogleAccess],
 	})
 
 	// 流日志
 	EnableFlowLogsNameMap := map[bool]string{true: "启用", false: "禁用"}
 	formItems = append(formItems, formItem{
 		Label: "子网流日志",
-		Value: EnableFlowLogsNameMap[req.Subnet.EnableFlowLogs],
+		Value: EnableFlowLogsNameMap[*req.Subnet.EnableFlowLogs],
 	})
 
 	return formItems, nil

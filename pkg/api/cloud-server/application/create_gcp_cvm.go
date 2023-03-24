@@ -49,8 +49,8 @@ type GcpCvmCreateReq struct {
 		DiskCount  int64               `json:"disk_count" validate:"required,min=1"`
 		DiskName   string              `json:"disk_name" validate:"required"`
 		Mode       typecvm.GcpDiskMode `json:"mode" validate:"required"`
-		AutoDelete bool                `json:"auto_delete" validate:"required"`
-	} `json:"data_disk" validate:"required"`
+		AutoDelete *bool               `json:"auto_delete" validate:"required"`
+	} `json:"data_disk" validate:"omitempty"`
 
 	// 访问主机的ssh公钥
 	Password string `json:"password" validate:"required"`

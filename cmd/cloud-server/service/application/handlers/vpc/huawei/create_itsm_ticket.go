@@ -139,7 +139,7 @@ func (a *ApplicationOfCreateHuaWeiVpc) renderSubnet() ([]formItem, error) {
 
 	// 是否开启IPv6
 	ipv6EnableNameMap := map[bool]string{true: "是", false: "否"}
-	formItems = append(formItems, formItem{Label: "子网IPv6网段是否开启", Value: ipv6EnableNameMap[req.Subnet.IPv6Enable]})
+	formItems = append(formItems, formItem{Label: "子网IPv6网段是否开启", Value: ipv6EnableNameMap[*req.Subnet.IPv6Enable]})
 
 	return formItems, nil
 }

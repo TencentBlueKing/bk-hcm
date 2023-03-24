@@ -56,7 +56,7 @@ func (a *ApplicationOfCreateGcpCvm) toHcProtoGcpBatchCreateReq() *hcproto.GcpBat
 				DiskType:   d.DiskType,
 				SizeGb:     d.DiskSizeGB,
 				Mode:       d.Mode,
-				AutoDelete: d.AutoDelete,
+				AutoDelete: *d.AutoDelete,
 			})
 		}
 	}

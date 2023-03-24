@@ -90,7 +90,7 @@ func (a *ApplicationOfCreateHuaWeiCvm) toHcProtoHuaWeiBatchCreateReq(dryRun bool
 			ChargingMode: req.InstanceChargeType,
 			PeriodType:   &periodType,
 			PeriodNum:    &periodNum,
-			IsAutoRenew:  &req.AutoRenew,
+			IsAutoRenew:  req.AutoRenew,
 		},
 	}
 }

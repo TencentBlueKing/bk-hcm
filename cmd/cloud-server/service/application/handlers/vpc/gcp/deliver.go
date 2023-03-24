@@ -64,8 +64,8 @@ func (a *ApplicationOfCreateGcpVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreateRe
 					Extension: &hcproto.GcpSubnetCreateExt{
 						Region:                req.Region,
 						IPv4Cidr:              req.Subnet.IPv4Cidr,
-						PrivateIpGoogleAccess: req.Subnet.PrivateIPGoogleAccess,
-						EnableFlowLogs:        req.Subnet.EnableFlowLogs,
+						PrivateIpGoogleAccess: *req.Subnet.PrivateIPGoogleAccess,
+						EnableFlowLogs:        *req.Subnet.EnableFlowLogs,
 					},
 				},
 			},

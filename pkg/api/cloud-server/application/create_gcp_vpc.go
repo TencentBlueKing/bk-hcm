@@ -35,8 +35,8 @@ type GcpVpcCreateReq struct {
 	Subnet struct {
 		Name                  string `json:"name" validate:"required,min=1,max=60"`
 		IPv4Cidr              string `json:"ipv4_cidr" validate:"required,cidrv4"`
-		PrivateIPGoogleAccess bool   `json:"private_ip_google_access"  validate:"required"`
-		EnableFlowLogs        bool   `json:"enable_flow_logs"  validate:"required"`
+		PrivateIPGoogleAccess *bool  `json:"private_ip_google_access"  validate:"required"`
+		EnableFlowLogs        *bool  `json:"enable_flow_logs"  validate:"required"`
 	} `json:"subnet" validate:"required"`
 
 	Memo *string `json:"memo" validate:"omitempty"`

@@ -153,7 +153,7 @@ func (a *ApplicationOfCreateAwsCvm) renderNetwork() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "子网", Value: subnetInfo.Name})
 
 	// 是否自动分配公网IP
-	if req.PublicIPAssigned {
+	if *req.PublicIPAssigned {
 		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "是"})
 	} else {
 		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "否"})

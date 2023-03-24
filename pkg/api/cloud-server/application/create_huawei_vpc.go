@@ -35,7 +35,7 @@ type HuaWeiVpcCreateReq struct {
 	Subnet struct {
 		Name       string `json:"name" validate:"required,min=1,max=60"`
 		IPv4Cidr   string `json:"ipv4_cidr" validate:"required,cidrv4"`
-		IPv6Enable bool   `json:"ipv6_enable" validate:"required"`
+		IPv6Enable *bool  `json:"ipv6_enable" validate:"required"`
 	} `json:"subnet" validate:"required"`
 
 	Memo *string `json:"memo" validate:"omitempty"`

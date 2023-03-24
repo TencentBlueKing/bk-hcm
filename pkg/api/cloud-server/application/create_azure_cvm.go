@@ -64,7 +64,7 @@ type AzureCvmCreateReq struct {
 		DiskType   typecvm.AzureDiskType `json:"disk_type" validate:"required"`
 		DiskSizeGB int64                 `json:"disk_size_gb" validate:"required,min=20,max=36767"`
 		DiskCount  int64                 `json:"disk_count" validate:"required,min=1"`
-	} `json:"data_disk" validate:"required"`
+	} `json:"data_disk" validate:"omitempty"`
 
 	// Note: 不同系统对用户名和密码要求不一样，这里暂时以Linux为主
 	// https://learn.microsoft.com/en-us/azure/virtual-machines/linux/faq

@@ -37,7 +37,7 @@ type AwsCvmCreateReq struct {
 	CloudImageID          string   `json:"cloud_image_id" validate:"required"`
 	CloudVpcID            string   `json:"cloud_vpc_id" validate:"required"`
 	CloudSubnetID         string   `json:"cloud_subnet_id" validate:"required"`
-	PublicIPAssigned      bool     `json:"public_ip_assigned" validate:"required"`
+	PublicIPAssigned      *bool    `json:"public_ip_assigned" validate:"required"`
 	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required,min=1"`
 
 	SystemDisk struct {
@@ -49,7 +49,7 @@ type AwsCvmCreateReq struct {
 		DiskType   typecvm.AwsVolumeType `json:"disk_type" validate:"required"`
 		DiskSizeGB int64                 `json:"disk_size_gb" validate:"required,min=1,max=16384"`
 		DiskCount  int64                 `json:"disk_count" validate:"required,min=1"`
-	} `json:"data_disk" validate:"required"`
+	} `json:"data_disk" validate:"omitempty"`
 
 	// Note: aws是通过执行用户脚本添加密码的，可能有特殊字符会导致脚本执行失败，而且这是无法通过DryRun测试出来的
 	Password          string `json:"password" validate:"required"`
