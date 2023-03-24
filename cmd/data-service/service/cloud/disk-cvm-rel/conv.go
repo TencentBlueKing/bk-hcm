@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	reltypes "hcm/pkg/dal/dao/types/cloud"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -63,7 +64,7 @@ func toProtoDiskExtWithCvmID[T dataproto.DiskExtensionResult](
 			DiskSize:     d.DiskSize,
 			DiskType:     d.DiskType,
 			Status:       d.Status,
-			IsSystemDisk: d.IsSystemDisk,
+			IsSystemDisk: converter.PtrToVal(d.IsSystemDisk),
 			Memo:         d.Memo,
 			Creator:      d.Creator,
 			Reviser:      d.Reviser,
@@ -91,7 +92,7 @@ func toProtoDiskWithCvmID(d *reltypes.DiskWithCvmID) *cloud.DiskWithCvmID {
 			DiskSize:     d.DiskSize,
 			DiskType:     d.DiskType,
 			Status:       d.Status,
-			IsSystemDisk: d.IsSystemDisk,
+			IsSystemDisk: converter.PtrToVal(d.IsSystemDisk),
 			Memo:         d.Memo,
 			Creator:      d.Creator,
 			Reviser:      d.Reviser,

@@ -306,6 +306,10 @@ func isHuaWeiDiskChange(db *HuaWeiDiskSyncDS, cloud *HuaWeiDiskSyncDiff) bool {
 		return true
 	}
 
+	if cloud.Disk.Bootable == "true" && !db.HcDisk.IsSystemDisk {
+		return true
+	}
+
 	for _, dbValue := range db.HcDisk.Extension.Attachment {
 		isEqual := false
 		for _, cloudValue := range cloud.Disk.Attachments {
@@ -365,7 +369,7 @@ func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, 
 		}
 
 		if cloudMap[id].Disk.Bootable == "true" {
-			disk.IsSystemDisk = true
+			disk.IsSystemDisk = converter.ValToPtr(true)
 		}
 
 		disks = append(disks, disk)

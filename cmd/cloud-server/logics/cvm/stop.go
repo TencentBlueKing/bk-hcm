@@ -36,6 +36,10 @@ import (
 func (c *cvm) BatchStopCvm(kt *kit.Kit, basicInfoMap map[string]types.CloudResourceBasicInfo) (*core.BatchOperateResult,
 	error) {
 
+	if len(basicInfoMap) == 0 {
+		return nil, nil
+	}
+
 	ids := make([]string, 0, len(basicInfoMap))
 	for id := range basicInfoMap {
 		ids = append(ids, id)

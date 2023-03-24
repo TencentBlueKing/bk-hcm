@@ -25,6 +25,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/dal/dao/types/cloud"
 	tablecloud "hcm/pkg/dal/table/cloud/disk"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -63,7 +64,7 @@ func toProtoDiskExtResult[T dataproto.DiskExtensionResult](
 		DiskSize:     m.DiskSize,
 		DiskType:     m.DiskType,
 		Status:       m.Status,
-		IsSystemDisk: m.IsSystemDisk,
+		IsSystemDisk: converter.PtrToVal(m.IsSystemDisk),
 		Memo:         m.Memo,
 		Creator:      m.Creator,
 		Reviser:      m.Reviser,
@@ -86,7 +87,7 @@ func toProtoDiskResult(m *tablecloud.DiskModel) *dataproto.DiskResult {
 		DiskSize:     m.DiskSize,
 		DiskType:     m.DiskType,
 		Status:       m.Status,
-		IsSystemDisk: m.IsSystemDisk,
+		IsSystemDisk: converter.PtrToVal(m.IsSystemDisk),
 		Memo:         m.Memo,
 		Creator:      m.Creator,
 		Reviser:      m.Reviser,

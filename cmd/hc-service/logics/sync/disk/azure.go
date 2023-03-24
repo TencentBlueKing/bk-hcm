@@ -320,7 +320,7 @@ func diffAzureSyncUpdate(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, ds
 		disk := &dataproto.DiskExtUpdateReq[dataproto.AzureDiskExtensionUpdateReq]{
 			ID:           dsMap[id].HcDisk.ID,
 			Status:       *cloudMap[id].Disk.Status,
-			IsSystemDisk: isSystemDisk,
+			IsSystemDisk: &isSystemDisk,
 			Extension: &dataproto.AzureDiskExtensionUpdateReq{
 				ResourceGroupName: req.ResourceGroupName,
 				OSType:            converter.PtrToVal(cloudMap[id].Disk.OSType),

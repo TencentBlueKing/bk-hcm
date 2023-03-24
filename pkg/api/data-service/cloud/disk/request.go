@@ -77,14 +77,14 @@ type DiskExtensionCreateReq interface {
 
 // DiskExtUpdateReq ...
 type DiskExtUpdateReq[T DiskExtensionUpdateReq] struct {
-	ID        string  `json:"id" validate:"required"`
-	Region    string  `json:"region"`
-	Name      string  `json:"name"`
-	BkBizID   uint64  `json:"bk_biz_id"`
-	Status    string  `json:"status"`
-	IsSystemDisk bool    `json:"is_system_disk" validate:"omitempty"`
-	Memo      *string `json:"memo"`
-	Extension *T      `json:"extension"`
+	ID           string  `json:"id" validate:"required"`
+	Region       string  `json:"region"`
+	Name         string  `json:"name"`
+	BkBizID      uint64  `json:"bk_biz_id"`
+	Status       string  `json:"status"`
+	IsSystemDisk *bool   `json:"is_system_disk" validate:"omitempty"`
+	Memo         *string `json:"memo"`
+	Extension    *T      `json:"extension"`
 }
 
 // Validate ...

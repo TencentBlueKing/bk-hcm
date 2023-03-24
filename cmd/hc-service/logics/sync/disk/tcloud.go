@@ -352,6 +352,10 @@ func isTCloudDiskChange(db *TCloudDiskSyncDS, cloud *TCloudDiskSyncDiff) bool {
 		return true
 	}
 
+	if converter.PtrToVal(cloud.Disk.DiskUsage) == "SYSTEM_DISK" && !db.HcDisk.IsSystemDisk {
+		return true
+	}
+
 	if !assert.IsPtrStringEqual(cloud.Disk.InstanceId, db.HcDisk.Extension.InstanceId) {
 		return true
 	}
@@ -415,7 +419,7 @@ func diffTCloudDiskSyncUpdate(kt *kit.Kit, cloudMap map[string]*TCloudDiskSyncDi
 		}
 
 		if cloudMap[id].Disk.DiskUsage != nil && *cloudMap[id].Disk.DiskUsage == "SYSTEM_DISK" {
-			disk.IsSystemDisk = true
+			disk.IsSystemDisk = converter.ValToPtr(true)
 		}
 
 		disks = append(disks, disk)

@@ -377,7 +377,7 @@ func diffAwsSyncUpdate(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap 
 			ID:           dsMap[id].HcDisk.ID,
 			Status:       *cloudMap[id].Disk.State,
 			Name:         name,
-			IsSystemDisk: isSystemDisk,
+			IsSystemDisk: &isSystemDisk,
 			Extension: &dataproto.AwsDiskExtensionUpdateReq{
 				Attachment: attachments,
 				Encrypted:  cloudMap[id].Disk.Encrypted,

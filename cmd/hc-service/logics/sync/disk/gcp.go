@@ -404,7 +404,7 @@ func diffGcpSyncUpdate(kt *kit.Kit, cloudMap map[string]*GcpDiskSyncDiff, req *S
 			ID:           dsMap[id].HcDisk.ID,
 			Region:       cloudMap[id].Disk.Region,
 			Status:       cloudMap[id].Disk.Status,
-			IsSystemDisk: isSystemDisk,
+			IsSystemDisk: &isSystemDisk,
 			Memo:         &cloudMap[id].Disk.Description,
 			Extension: &dataproto.GcpDiskExtensionUpdateReq{
 				SelfLink:    cloudMap[id].Disk.SelfLink,

@@ -88,7 +88,7 @@ type DiskModel struct {
 	// 云盘回收状态
 	RecycleStatus string `db:"recycle_status" json:"recycle_status"`
 	// 是否是系统盘
-	IsSystemDisk bool `db:"is_system_disk" json:"is_system_disk"`
+	IsSystemDisk *bool `db:"is_system_disk" json:"is_system_disk"`
 	// Memo 备注
 	Memo *string `db:"memo" json:"memo"`
 	// Extension 云厂商差异扩展字段

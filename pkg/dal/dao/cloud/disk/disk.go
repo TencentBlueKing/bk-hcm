@@ -119,7 +119,8 @@ func (diskDao *DiskDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updat
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddBlankedFields("is_system_disk", "memo").
+		AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(updateData, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
@@ -150,7 +151,8 @@ func (diskDao *DiskDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updat
 
 // UpdateByIDWithTx 根据 ID 更新单条数据
 func (diskDao *DiskDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, diskID string, updateData *disk.DiskModel) error {
-	opts := utils.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddBlankedFields("is_system_disk", "memo").
+		AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(updateData, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)

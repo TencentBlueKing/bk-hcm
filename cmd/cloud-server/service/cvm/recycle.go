@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -99,10 +100,37 @@ func (svc *cvmSvc) recycleCvmSvc(cts *rest.Contexts, validHandler handler.ValidW
 func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map[string]types.CloudResourceBasicInfo) (
 	interface{}, error) {
 
-	// stop cvm
-	stopRes, err := svc.cvmLgc.BatchStopCvm(kt, infoMap)
+	// filter out stopped cvm
+	ids := make([]string, 0, len(infoMap))
+	for id := range infoMap {
+		ids = append(ids, id)
+	}
+
+	notStoppedRule := filter.AtomRule{Field: "status", Op: filter.NotIn.Factory(), Value: []string{"STOPPING",
+		"STOPPED", "stopping", "stopped", "SUSPENDING", "SUSPENDED", "PowerState/stopped", "SHUTOFF"}}
+	notStoppedFilter, err := tools.And(tools.ContainersExpression("id", ids), notStoppedRule)
 	if err != nil {
-		logs.Errorf("stop cvm failed, err: %v, resp: %+v, infos: %+v, rid: %s", err, stopRes, infoMap, kt.Rid)
+		return nil, err
+	}
+	notStoppedReq := &cloud.CvmListReq{
+		Field:  []string{"id"},
+		Filter: notStoppedFilter,
+		Page:   core.DefaultBasePage,
+	}
+	startCvmRes, err := svc.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), notStoppedReq)
+	if err != nil {
+		return nil, err
+	}
+
+	notStoppedMap := make(map[string]types.CloudResourceBasicInfo)
+	for _, cvm := range startCvmRes.Details {
+		notStoppedMap[cvm.ID] = infoMap[cvm.ID]
+	}
+
+	// stop cvm
+	stopRes, err := svc.cvmLgc.BatchStopCvm(kt, notStoppedMap)
+	if err != nil {
+		logs.Errorf("stop cvm failed, err: %v, resp: %+v, infos: %+v, rid: %s", err, stopRes, notStoppedMap, kt.Rid)
 		return nil, err
 	}
 
