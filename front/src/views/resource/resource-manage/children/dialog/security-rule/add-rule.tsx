@@ -3,7 +3,7 @@ import {
   ref,
   watch,
 } from 'vue';
-import { Table, Input, Select, Button } from 'bkui-vue'; // TagInput
+import { Input, Select, Button, Form } from 'bkui-vue'; // TagInput
 import { Info } from 'bkui-vue/lib/icon';
 import { ACTION_STATUS, GCP_PROTOCOL_LIST, IP_TYPE_LIST, HUAWEI_ACTION_STATUS, HUAWEI_TYPE_LIST, AZURE_PROTOCOL_LIST } from '@/constants';
 import Confirm from '@/components/confirm';
@@ -16,6 +16,7 @@ import {
 } from '@/store/resource';
 import './add-rule.scss';
 const { Option } = Select;
+const { FormItem } = Form;
 
 
 export default defineComponent({
@@ -53,7 +54,6 @@ export default defineComponent({
 
     const resourceStore = useResourceStore();
 
-    // const cloudTargetSecurityGroup = ;
 
     const securityGroupSource = ref([   // 华为源
       {
@@ -171,245 +171,230 @@ export default defineComponent({
         }}
       </Input>;
     };
-    const columnsData = [
-      { label: () => {
-        return (
-          <>
-          <span >{t('优先级')}</span>
-          <Info v-BkTooltips={{ content: '必须是 1-100的整数' }}></Info>
-          </>
-        );
-      },
-      field: 'priority',
-      render: ({ data }: any) => <Input class="mt20" type='number' v-model={ data.priority }></Input>,
-      },
-      { label: t('策略'),
-        field: 'action',
-        render: ({ data }: any) => {
-          return (
-            <Select class="mt15 mb15" v-model={data.action}>
-                {(props.vendor === 'huawei' ? HUAWEI_ACTION_STATUS : ACTION_STATUS).map((ele: any) => (
-                <Option value={ele.id} label={ele.name} key={ele.id} />
-                ))}
-          </Select>
-          );
-        },
-      },
-      {
-        label: () => {
-          return (
-          <>
-          <span >{t('协议端口')}</span>
-          <Info v-BkTooltips={{ content: '请输入0-65535之间数字或者ALL' }}></Info>
-          </>
-          );
-        },
-        field: 'port',
-        render: ({ data }: any) => {
-          return (
-              <>
-                <Input disabled={data.protocol === 'ALL'}
-                placeholder="请输入0-65535之间数字、ALL"
-                class="mt20 mb10 input-select-warp" v-model={ data.port }>
-                {{
-                  prefix: () => (
-                    <Select v-model={data.protocol} clearable={false} class="input-prefix-select" onChange={handleChange}>
-                    {GCP_PROTOCOL_LIST.map(ele => (
-                    <Option value={ele.id} label={ele.name} key={ele.id} />
-                    ))}
-                    </Select>
-                  ),
-                }}
-                </Input>
-                </>
-          );
-        },
-      },
-      { label: t('类型'),
-        field: 'ethertype',
-        render: ({ data }: any) => {
-          return (
-                <>
-                <Select v-model={data.ethertype} class="mt15">
-                    {HUAWEI_TYPE_LIST.map(ele => (
-                    <Option value={ele.id} label={ele.name} key={ele.id} />
-                    ))}
-                </Select>
-                </>
-          );
-        },
-      },
-      {
-        label: () => {
-          return (
-              <>
-              <span >{props.activeType === 'egress' ? t('源地址') : t('目标地址')}</span>
-              <Info v-BkTooltips={{ content: '必须指定 CIDR 数据块 或者 安全组 ID' }}></Info>
-              </>
-          );
-        },
-        field: 'address',
-        render: ({ data }: any) => {
-          return (renderSourceAddressSlot(data, data.sourceAddress));
-        },
-      },
-      {
-        label: () => {
-          return (
-            <>
-            <span >{t('描述')}</span>
-            <Info v-BkTooltips={{ content: '请输入英文描述, 最大不超过256字节' }}></Info>
-            </>
-          );
-        },
-        field: 'memo',
-        render: ({ data }: any) => <Input placeholder="请输入描述" class="mt20 mb10" v-model={ data.memo }></Input>,
-      },
-      { label: t('操作'),
-        field: 'operate',
-        width: 100,
-        render: ({ data, index }: any) => {
-          return (
-                <div class="mt15">
-                <Button text theme="primary" onClick={() => {
-                  hanlerCopy(data);
-                }}>{t('复制')}</Button>
-                <Button text theme="primary" class="ml20" onClick={() => {
-                  handlerDelete(data, index);
-                }}>{t('删除')}</Button>
-                </div>
-          );
-        },
-      },
-    ];
 
-    const azureColumnsData = [
-      { label: t('名称'),
-        field: 'name',
-        render: ({ data }: any) => <Input class="mt20" v-model={ data.name }></Input>,
-      },
-      { label: () => {
-        return (
-          <>
-          <span >{t('优先级')}</span>
-          <Info v-BkTooltips={{ content: '跟据优先级顺序处理规则；数字越小，优先级越高。我们建议在规则之间留出间隙 - 100、200、300 等 - 这样一来便可在无需编辑现有规则的情况下添加新规，同时注意不能和当前已有规则的优先级重复' }}></Info>
-          </>
-        );
-      },
-      field: 'priority',
-      render: ({ data }: any) => <Input class="mt20" type='number' placeholder="优先级" v-model={ data.priority }></Input>,
-      },
-      { label: t('策略'),
-        field: 'access',
-        render: ({ data }: any) => {
-          return (
-            <Select class="mt15 mb15" v-model={data.access}>
-                {HUAWEI_ACTION_STATUS.map((ele: any) => (
-                <Option value={ele.id} label={ele.name} key={ele.id} />
-                ))}
-          </Select>
-          );
-        },
-      },
-      { label: () => {
-        return (
-          <>
-          <span>{t('源')}</span>
-          <Info v-BkTooltips={{ content: '源过滤器可为“任意”、一个 IP 地址范围、一个应用程序安全组或一个默认标记。它指定此规则将允许或拒绝的特定源 IP 地址范围的传入流量' }}></Info>
-          </>
-        );
-      },
-      field: 'source',
-      width: 240,
-      render: ({ data }: any) => {
-        return (renderSourceAddressSlot(data, data.sourceAddress));
-      },
-      },
-      { label: () => {
-        return (
-          <>
-          <span>{t('源端口')}</span>
-          <Info v-BkTooltips={{ content: '提供单个端口(如 80)、端口范围(如 1024-65535)，或单个端口和/或端口范围的以逗号分隔的列表(如 80,1024-65535)。这指定了根据此规则将允许或拒绝哪些端口的流量。提供星号(*)可允许任何端口的流量' }}></Info>
-          </>
-        );
-      },
-      field: 'source_port_range',
-      width: 180,
-      render: ({ data }: any) => <Input class="mt20" placeholder="单个(80)、范围(1024-65535)" v-model={ data.source_port_range }></Input>,
-      },
-      { label: () => {
-        return (
-          <>
-          <span>{t('目标')}</span>
-          <Info v-BkTooltips={{ content: '提供采用 CIDR 表示法的地址范围(例如 192.168.99.0/24 或 2001:1234::/64)或提供 IP 地址(例如 192.168.99.0 或 2001:1234::)。还可提供一个由采用 IPv4 或 IPv6 的 IP 地址或地址范围构成的列表(以逗号分隔)' }}></Info>
-          </>
-        );
-      },
-      field: 'target',
-      width: 240,
-      render: ({ data }: any) => {
-        return (renderTargetAddressSlot(data, data.targetAddress));
-      },
-      },
-      { label: t('目标协议端口'),
-        field: 'destination_port_range',
-        width: 240,
-        render: ({ data }: any) => {
-          return (
-                <>
-                <Input class="mt20 mb10 input-select-warp" v-model={ data.destination_port_range }>
-                  {{
-                    prefix: () => (
-                      <Select class="input-prefix-select" v-model={data.protocol}>
-                          {AZURE_PROTOCOL_LIST.map(ele => (
-                          <Option value={ele.id} label={ele.name} key={ele.id} />
-                          ))}
-                      </Select>
-                    ),
-                  }}
-                </Input>
-                </>
-          );
-        },
-      },
-      { label: () => {
-        return (
-          <>
-          <span >{t('描述')}</span>
-          <Info v-BkTooltips={{ content: '请输入英文描述, 最大不超过256字节' }}></Info>
-          </>
-        );
-      },
-      field: 'memo',
-      render: ({ data }: any) => <Input placeholder="请输入描述" class="mt20" v-model={ data.memo }></Input>,
-      },
-      { label: t('操作'),
-        field: 'operate',
-        render: ({ data, index }: any) => {
-          return (
-                <div class="mt20">
-                <Button text theme="primary" onClick={() => {
-                  hanlerCopy(data);
-                }}>{t('复制')}</Button>
-                <Button text theme="primary" class="ml20" onClick={() => {
-                  handlerDelete(data, index);
-                }}>{t('删除')}</Button>
-                </div>
-          );
-        },
-      },
-    ];
-    const tableData = ref<any>([{}]);
-    const columns = ref<any>(columnsData);
+    const renderLabelToolTips = (lable: string, tipscontent: string) => {
+      return (
+        <>
+        <span >{t(lable)}</span>
+        <Info v-BkTooltips={{ content: tipscontent }}></Info>
+        </>
+      );
+    };
+
+    const tableData = ref<any>([]);
     const steps = [
       {
         component: () => <>
-            <Table
+              {/* columns={columns.value} */}
+            <bk-table
               class="mt20"
               row-hover="auto"
-              columns={columns.value}
               data={tableData.value}
-            />
+            >
+              <Form>
+                {
+                  props.vendor === 'azure'
+                    ? <FormItem>
+                    <bk-table-column
+                        label={t('名称')}
+                      >
+                        {{
+                          default: ({ data }: any) => (
+                            data && <Input class="mt20" v-model={ data.name }></Input>
+                          ),
+                        }}
+                      </bk-table-column>
+                      </FormItem> : ''
+                  }
+                  {
+                    (props.vendor !== 'tcloud' && props.vendor !== 'aws')
+                      ? <>
+                      <FormItem>
+                      <bk-table-column
+                          label={renderLabelToolTips(t('优先级'), t('必须是 1-100的整数'))}
+                        >
+                          {{
+                            default: ({ data }: any) => (
+                              data && <Input class="mt20" type='number' v-model={ data.priority }></Input>
+                            ),
+                          }}
+                        </bk-table-column>
+                        </FormItem>
+                      </> : ''
+                  }
+                  {
+                    props.vendor === 'huawei'
+                      ? <FormItem>
+                    <bk-table-column
+                      label={t('类型')}
+                    >
+                      {{
+                        default: ({ data }: any) => (
+                          data && <Select v-model={data.ethertype} class="mt15">
+                              {HUAWEI_TYPE_LIST.map(ele => (
+                              <Option value={ele.id} label={ele.name} key={ele.id} />
+                              ))}
+                          </Select>
+                        ),
+                      }}
+                    </bk-table-column>
+                    </FormItem> : ''
+                  }
+                  {
+                    props.vendor === 'azure'
+                      ? <>
+                      <FormItem>
+                      <bk-table-column
+                          label={renderLabelToolTips(t('源'), t('源过滤器可为“任意”、一个 IP 地址范围、一个应用程序安全组或一个默认标记。它指定此规则将允许或拒绝的特定源 IP 地址范围的传入流量'))}
+                        >
+                          {{
+                            default: ({ data }: any) => (
+                              data && renderSourceAddressSlot(data, data.sourceAddress)
+                            ),
+                          }}
+                        </bk-table-column>
+                        </FormItem>
+                        <FormItem>
+                        <bk-table-column
+                            label={renderLabelToolTips(t('源端口'), t('提供单个端口(如 80)、端口范围(如 1024-65535)，或单个端口和/或端口范围的以逗号分隔的列表(如 80,1024-65535)。这指定了根据此规则将允许或拒绝哪些端口的流量。提供星号(*)可允许任何端口的流量'))}
+                          >
+                            {{
+                              default: ({ data }: any) => (
+                                data && <Input class="mt20" placeholder="单个(80)、范围(1024-65535)" v-model={ data.source_port_range }></Input>
+                              ),
+                            }}
+                          </bk-table-column>
+                          </FormItem>
+                          <FormItem>
+                            <bk-table-column
+                                label={renderLabelToolTips(t('目标'), t('提供采用 CIDR 表示法的地址范围(例如 192.168.99.0/24 或 2001:1234::/64)或提供 IP 地址(例如 192.168.99.0 或 2001:1234::)。还可提供一个由采用 IPv4 或 IPv6 的 IP 地址或地址范围构成的列表(以逗号分隔)'))}
+                              >
+                                {{
+                                  default: ({ data }: any) => (
+                                    data && renderTargetAddressSlot(data, data.targetAddress)
+                                  ),
+                                }}
+                              </bk-table-column>
+                            </FormItem>
+                          <FormItem>
+                            <bk-table-column
+                                label={t('目标协议端口')}
+                              >
+                                {{
+                                  default: ({ data }: any) => (
+                                    data && <Input class="mt20 mb10 input-select-warp" v-model={ data.destination_port_range }>
+                                    {{
+                                      prefix: () => (
+                                        <Select class="input-prefix-select" v-model={data.protocol}>
+                                            {AZURE_PROTOCOL_LIST.map(ele => (
+                                            <Option value={ele.id} label={ele.name} key={ele.id} />
+                                            ))}
+                                        </Select>
+                                      ),
+                                    }}
+                                  </Input>
+                                  ),
+                                }}
+                              </bk-table-column>
+                            </FormItem>
+                      </> : ''
+                  }
+                  {
+                    props.vendor !== 'aws'   // aws没有策略
+                      ? <FormItem><bk-table-column
+                      label={t('策略')}
+                    >
+                      {{
+                        default: ({ data }: any) => (
+                          props.vendor === 'azure'
+                            ? data
+                            && <Select class="mt15 mb15" v-model={data.access}>
+                                  {HUAWEI_ACTION_STATUS.map((ele: any) => (
+                                  <Option value={ele.id} label={ele.name} key={ele.id} />
+                                  ))}
+                            </Select>
+                            : data
+                            && <Select class="mt15 mb15" v-model={data.action}>
+                                {(props.vendor === 'huawei' ? HUAWEI_ACTION_STATUS : ACTION_STATUS).map((ele: any) => (
+                                <Option value={ele.id} label={ele.name} key={ele.id} />
+                                ))}
+                          </Select>
+                        ),
+                      }}
+                    </bk-table-column></FormItem> : ''
+                  }
+                  {
+                    props.vendor !== 'azure'
+                      ? <>
+                    <FormItem>
+                      <bk-table-column label={renderLabelToolTips(t('协议端口'), t('请输入0-65535之间数字或者ALL'))}>
+                        {{
+                          default: ({ data }: any) => (
+                            data
+                              ? <Input disabled={data?.protocol === 'ALL'}
+                                      placeholder="请输入0-65535之间数字、ALL"
+                                      class="mt20 mb10 input-select-warp" v-model={ data.port }>
+                                      {{
+                                        prefix: () => (
+                                          <Select v-model={data.protocol} clearable={false} class="input-prefix-select" onChange={handleChange}>
+                                          {GCP_PROTOCOL_LIST.map(ele => (
+                                          <Option value={ele.id} label={ele.name} key={ele.id} />
+                                          ))}
+                                          </Select>
+                                        ),
+                                      }}
+                                    </Input>
+                              : ''
+                          ),
+                        }}
+                      </bk-table-column>
+                    </FormItem>
+                    <FormItem>
+                      <bk-table-column label={renderLabelToolTips(t('源地址'), t('必须指定 CIDR 数据块 或者 安全组 ID'))}>
+                        {{
+                          default: ({ data }: any) => (
+                            data
+                              ? renderSourceAddressSlot(data, data.sourceAddress)
+                              : ''
+                          ),
+                        }}
+                      </bk-table-column>
+                    </FormItem>
+                    </> : ''
+                  }
+                    <FormItem>
+                      <bk-table-column label={renderLabelToolTips(t('描述'), t('请输入英文描述, 最大不超过256字节'))}>
+                        {{
+                          default: ({ data }: any) => (
+                            data
+                              ? <Input placeholder="请输入描述" class="mt20 mb10" v-model={ data.memo }></Input>
+                              : ''
+                          ),
+                        }}
+                      </bk-table-column>
+                    </FormItem>
+                    {
+                      !securityRuleId.value
+                        ? <FormItem>
+                      <bk-table-column label={t('操作')}>
+                        {{
+                          default: ({ data, index }: any) => (
+                            <div class="mt15">
+                              <Button text theme="primary" onClick={() => {
+                                hanlerCopy(data);
+                              }}>{t('复制')}</Button>
+                              <Button text theme="primary" class="ml20" onClick={() => {
+                                handlerDelete(data, index);
+                              }}>{t('删除')}</Button>
+                              </div>
+                          ),
+                        }}
+                      </bk-table-column>
+                    </FormItem> : ''
+                    }
+                  </Form>
+
+            </bk-table>
             {securityRuleId.value ? '' : <Button text theme="primary" class="ml20 mt20" onClick={handlerAdd}>{t('新增一条规则')}</Button>}
           </>,
       },
@@ -422,14 +407,9 @@ export default defineComponent({
           tableData.value = [{}];
           return;
         }
-        columns.value = columnsData;  // 初始化表表格列
-        console.log('props.activeType', props.activeType);
         let sourceAddressData: any[] = [];
         let targetAddressData: any[] = [];
         if (props.vendor === 'tcloud' || props.vendor === 'aws') {    // 腾讯云、aws不需要优先级和类型
-          columns.value = columns.value.filter((e: any) => {
-            return e.field !== 'priority' && e.field !== 'ethertype';
-          });
           securityGroupSource.value = [...IP_TYPE_LIST, ...[{ // 腾讯云、aws源地址特殊处理
             id: 'cloud_target_security_group_id',
             name: t('安全组'),
@@ -437,7 +417,6 @@ export default defineComponent({
           sourceAddressData = securityGroupSource.value
             .filter((e: any) => resourceStore.securityRuleDetail[e.id]);
         } else if (props.vendor === 'azure') {
-          columns.value = azureColumnsData;
           sourceAddressData = azureSecurityGroupSource.value
             .filter((e: any) => resourceStore.securityRuleDetail[e.id]);
           targetAddressData = azureSecurityGroupTarget.value
@@ -447,11 +426,15 @@ export default defineComponent({
         // @ts-ignore
         securityRuleId.value = resourceStore.securityRuleDetail?.id;
         if (securityRuleId.value) { // 如果是编辑 则需要将详细数据展示成列表数据
-          tableData.value = [{ ...resourceStore.securityRuleDetail, ...{ sourceAddress: sourceAddressData[0].id },
-            ...{ targetAddress: targetAddressData[0].id } }];
-          columns.value = columns.value.filter((e: any) => {    // 编辑不能进行复制和删除操作
-            return e.field !== 'operate';
-          });
+          tableData.value = [{ ...resourceStore.securityRuleDetail, ...{ sourceAddress: sourceAddressData[0]?.id },
+            ...{ targetAddress: targetAddressData[0]?.id } }];
+          if (props.vendor === 'aws') {   // aws处理
+            tableData.value.forEach((e: any) => {
+              if (e.from_port && e.to_port && (e.from_port === e.to_port)) {
+                e.port = e.from_port;
+              }
+            });
+          }
         }
       },
       {
@@ -465,7 +448,6 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      console.log('tableData.value', tableData.value);
       tableData.value.forEach((e: any) => {
         e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id;
         if (e.sourceAddress !== 'ipv4_cidr') {
@@ -492,7 +474,7 @@ export default defineComponent({
       // }
       // @ts-ignore
       if (securityRuleId.value) {  // 更新
-        emit('submit', tableData.value[0]);
+        emit('submit', tableData.value);
       } else {
         emit('submit', tableData.value);  // 新增
       }
@@ -500,7 +482,7 @@ export default defineComponent({
 
     // 新增
     const handlerAdd = () => {
-      tableData.value.push({});
+      tableData.value.push();
     };
 
     // 删除

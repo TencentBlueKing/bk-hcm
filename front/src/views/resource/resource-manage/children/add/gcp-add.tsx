@@ -279,6 +279,8 @@ export default defineComponent({
         state.operate = state.projectModel.allowed.length ? 'allowed' : 'denied';
         // eslint-disable-next-line max-len
         gcpPorts.value = state.projectModel[state.operate].find((e: any) => e.protocol === state.protocol)?.port || [];
+        state.target = GCP_TARGET_LIST.find((e: any) => state.projectModel[e.id].length)?.id;
+        state.source = GCP_SOURCE_LIST.find((e: any) => state.projectModel[e.id].length)?.id;
       }
     });
 
@@ -342,6 +344,8 @@ export default defineComponent({
         destination_ranges: state.projectModel.destination_ranges,
         source_tags: state.projectModel.source_tags,
         target_tags: state.projectModel.target_tags,
+        target_service_accounts: state.projectModel.target_service_accounts,
+        source_service_accounts: state.projectModel.source_service_accounts,
         denied: state.projectModel.denied,
         allowed: state.projectModel.allowed,
       };

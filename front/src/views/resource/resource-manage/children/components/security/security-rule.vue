@@ -116,18 +116,17 @@ const handleDeleteConfirm = () => {
 
 // 提交规则
 const handleSubmitRule = async (data: any) => {
-  console.log('data', data, activeType.value);
   securityRuleLoading.value = true;
   if (props.vendor === 'aws') {   // aws 需要from_port 、to_port
     data.forEach((e: any) => {
       if (e?.port?.includes('-')) {
         // eslint-disable-next-line prefer-destructuring
-        e.from_port = e.port.split('-')[0];
+        e.from_port = Number(e.port.split('-')[0]);
         // eslint-disable-next-line prefer-destructuring
-        e.to_port = e.port.split('-')[1];
+        e.to_port = Number(e.port.split('-')[1]);
       } else {
-        e.from_port = e.port;
-        e.to_port = e.port;
+        e.from_port = e.port === 'ALL' ? e.port : Number(e.port);
+        e.to_port = e.port === 'ALL' ? e.port : Number(e.port);
       }
       delete e.port;
     });
