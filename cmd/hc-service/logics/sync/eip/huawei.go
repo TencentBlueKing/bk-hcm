@@ -225,10 +225,14 @@ func syncHuaWeiEipAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiEipOption,
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
 			Extension: &dataproto.HuaWeiEipExtensionCreateReq{
-				PortID:        cloudMap[id].Eip.PortID,
-				BandwidthId:   cloudMap[id].Eip.BandwidthId,
-				BandwidthName: cloudMap[id].Eip.BandwidthName,
-				BandwidthSize: cloudMap[id].Eip.BandwidthSize,
+				PortID:              cloudMap[id].Eip.PortID,
+				BandwidthId:         cloudMap[id].Eip.BandwidthId,
+				BandwidthName:       cloudMap[id].Eip.BandwidthName,
+				BandwidthSize:       cloudMap[id].Eip.BandwidthSize,
+				EnterpriseProjectId: cloudMap[id].Eip.EnterpriseProjectId,
+				Type:                cloudMap[id].Eip.Type,
+				BandwidthShareType:  cloudMap[id].Eip.BandwidthShareType,
+				ChargeMode:          cloudMap[id].Eip.ChargeMode,
 			},
 		}
 		createReq = append(createReq, eip)
@@ -271,6 +275,22 @@ func isHuaWeiEipChange(db *HuaWeiDSEipSync, cloud *HuaWeiEipSync) bool {
 		return true
 	}
 
+	if !assert.IsPtrStringEqual(cloud.Eip.EnterpriseProjectId, db.Eip.Extension.EnterpriseProjectId) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Eip.Type, db.Eip.Extension.Type) {
+		return true
+	}
+
+	if cloud.Eip.BandwidthShareType != db.Eip.Extension.BandwidthShareType {
+		return true
+	}
+
+	if cloud.Eip.ChargeMode != db.Eip.Extension.ChargeMode {
+		return true
+	}
+
 	return false
 }
 
@@ -290,10 +310,14 @@ func syncHuaWeiEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*H
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
 			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
 			Extension: &dataproto.HuaWeiEipExtensionUpdateReq{
-				PortID:        cloudMap[id].Eip.PortID,
-				BandwidthId:   cloudMap[id].Eip.BandwidthId,
-				BandwidthName: cloudMap[id].Eip.BandwidthName,
-				BandwidthSize: cloudMap[id].Eip.BandwidthSize,
+				PortID:              cloudMap[id].Eip.PortID,
+				BandwidthId:         cloudMap[id].Eip.BandwidthId,
+				BandwidthName:       cloudMap[id].Eip.BandwidthName,
+				BandwidthSize:       cloudMap[id].Eip.BandwidthSize,
+				EnterpriseProjectId: cloudMap[id].Eip.EnterpriseProjectId,
+				Type:                cloudMap[id].Eip.Type,
+				BandwidthShareType:  cloudMap[id].Eip.BandwidthShareType,
+				ChargeMode:          cloudMap[id].Eip.ChargeMode,
 			},
 		}
 

@@ -70,17 +70,21 @@ type HuaWeiEipListResult struct {
 
 // HuaWeiEip ...
 type HuaWeiEip struct {
-	CloudID       string
-	Name          *string
-	Region        string
-	InstanceId    *string
-	Status        *string
-	PublicIp      *string
-	PrivateIp     *string
-	PortID        *string
-	BandwidthId   *string
-	BandwidthName *string
-	BandwidthSize *int32
+	CloudID             string
+	Name                *string
+	Region              string
+	InstanceId          *string
+	Status              *string
+	PublicIp            *string
+	PrivateIp           *string
+	PortID              *string
+	BandwidthId         *string
+	BandwidthName       *string
+	BandwidthSize       *int32
+	EnterpriseProjectId *string
+	Type                *string
+	BandwidthShareType  string
+	ChargeMode          string
 }
 
 // HuaWeiEipDeleteOption ...

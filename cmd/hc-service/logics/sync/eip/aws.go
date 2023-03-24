@@ -222,8 +222,12 @@ func syncAwsEipAdd(kt *kit.Kit, addIDs []string, req *SyncAwsEipOption,
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
 			Extension: &dataproto.AwsEipExtensionCreateReq{
-				PublicIpv4Pool: cloudMap[id].Eip.PublicIpv4Pool,
-				Domain:         cloudMap[id].Eip.Domain,
+				PublicIpv4Pool:          cloudMap[id].Eip.PublicIpv4Pool,
+				Domain:                  cloudMap[id].Eip.Domain,
+				PrivateIpAddress:        cloudMap[id].Eip.PrivateIpAddress,
+				NetworkBorderGroup:      cloudMap[id].Eip.NetworkBorderGroup,
+				NetworkInterfaceId:      cloudMap[id].Eip.NetworkInterfaceId,
+				NetworkInterfaceOwnerId: cloudMap[id].Eip.NetworkInterfaceOwnerId,
 			},
 		}
 		*createReq = append(*createReq, eip)
@@ -258,6 +262,22 @@ func isAwsEipChange(db *AwsDSEipSync, cloud *AwsEipSync) bool {
 		return true
 	}
 
+	if !assert.IsPtrStringEqual(cloud.Eip.PrivateIpAddress, db.Eip.Extension.PrivateIpAddress) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Eip.NetworkBorderGroup, db.Eip.Extension.NetworkBorderGroup) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Eip.NetworkInterfaceId, db.Eip.Extension.NetworkInterfaceId) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Eip.NetworkInterfaceOwnerId, db.Eip.Extension.NetworkInterfaceOwnerId) {
+		return true
+	}
+
 	return false
 }
 
@@ -276,8 +296,12 @@ func syncAwsEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsE
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
 			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
 			Extension: &dataproto.AwsEipExtensionUpdateReq{
-				PublicIpv4Pool: cloudMap[id].Eip.PublicIpv4Pool,
-				Domain:         cloudMap[id].Eip.Domain,
+				PublicIpv4Pool:          cloudMap[id].Eip.PublicIpv4Pool,
+				Domain:                  cloudMap[id].Eip.Domain,
+				PrivateIpAddress:        cloudMap[id].Eip.PrivateIpAddress,
+				NetworkBorderGroup:      cloudMap[id].Eip.NetworkBorderGroup,
+				NetworkInterfaceId:      cloudMap[id].Eip.NetworkInterfaceId,
+				NetworkInterfaceOwnerId: cloudMap[id].Eip.NetworkInterfaceOwnerId,
 			},
 		}
 

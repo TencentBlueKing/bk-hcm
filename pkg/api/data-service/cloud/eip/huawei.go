@@ -21,24 +21,36 @@ package eip
 
 // HuaWeiEipExtensionCreateReq ...
 type HuaWeiEipExtensionCreateReq struct {
-	PortID        *string `json:"port_id"`
-	BandwidthId   *string `json:"bandwidth_id"`
-	BandwidthName *string `json:"bandwidth_name"`
-	BandwidthSize *int32  `json:"bandwidth_size"`
+	PortID              *string `json:"port_id"`
+	BandwidthId         *string `json:"bandwidth_id"`
+	BandwidthName       *string `json:"bandwidth_name"`
+	BandwidthSize       *int32  `json:"bandwidth_size"`
+	EnterpriseProjectId *string `json:"enterprise_project_id"`
+	Type                *string `json:"type"`
+	BandwidthShareType  string  `json:"bandwidth_share_type"`
+	ChargeMode          string  `json:"charge_mode"`
 }
 
 // HuaWeiEipExtensionResult ...
 type HuaWeiEipExtensionResult struct {
-	PortID        *string `json:"port_id"`
-	BandwidthId   *string `json:"bandwidth_id"`
-	BandwidthName *string `json:"bandwidth_name"`
-	BandwidthSize *int32  `json:"bandwidth_size"`
+	PortID              *string `json:"port_id"`
+	BandwidthId         *string `json:"bandwidth_id"`
+	BandwidthName       *string `json:"bandwidth_name"`
+	BandwidthSize       *int32  `json:"bandwidth_size"`
+	EnterpriseProjectId *string `json:"enterprise_project_id"`
+	Type                *string `json:"type"`
+	BandwidthShareType  string  `json:"bandwidth_share_type"`
+	ChargeMode          string  `json:"charge_mode"`
 }
 
 // HuaWeiEipExtensionUpdateReq ...
 type HuaWeiEipExtensionUpdateReq struct {
-	PortID        *string `json:"port_id"`
-	BandwidthId   *string `json:"bandwidth_id"`
-	BandwidthName *string `json:"bandwidth_name"`
-	BandwidthSize *int32  `json:"bandwidth_size"`
+	PortID              *string `json:"port_id"`
+	BandwidthId         *string `json:"bandwidth_id"`
+	BandwidthName       *string `json:"bandwidth_name"`
+	BandwidthSize       *int32  `json:"bandwidth_size"`
+	EnterpriseProjectId *string `json:"enterprise_project_id"`
+	Type                *string `json:"type"`
+	BandwidthShareType  string  `json:"bandwidth_share_type"`
+	ChargeMode          string  `json:"charge_mode"`
 }

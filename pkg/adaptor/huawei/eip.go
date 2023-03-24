@@ -76,15 +76,32 @@ func (h *HuaWei) ListEip(kt *kit.Kit, opt *eip.HuaWeiEipListOption) (*eip.HuaWei
 	for idx, publicIp := range *resp.Publicips {
 		status := publicIp.Status.Value()
 		eips[idx] = &eip.HuaWeiEip{
-			CloudID:       *publicIp.Id,
-			Region:        opt.Region,
-			Status:        &status,
-			PublicIp:      publicIp.PublicIpAddress,
-			PrivateIp:     publicIp.PrivateIpAddress,
-			PortID:        publicIp.PortId,
-			BandwidthId:   publicIp.BandwidthId,
-			BandwidthName: publicIp.BandwidthName,
-			BandwidthSize: publicIp.BandwidthSize,
+			CloudID:             *publicIp.Id,
+			Region:              opt.Region,
+			Status:              &status,
+			PublicIp:            publicIp.PublicIpAddress,
+			PrivateIp:           publicIp.PrivateIpAddress,
+			PortID:              publicIp.PortId,
+			BandwidthId:         publicIp.BandwidthId,
+			BandwidthName:       publicIp.BandwidthName,
+			BandwidthSize:       publicIp.BandwidthSize,
+			EnterpriseProjectId: publicIp.EnterpriseProjectId,
+			Type:                publicIp.Type,
+			BandwidthShareType:  "",
+			ChargeMode:          "",
+		}
+		if publicIp.BandwidthShareType != nil {
+			eips[idx].BandwidthShareType = publicIp.BandwidthShareType.Value()
+		}
+		if publicIp.BandwidthId != nil {
+			request := &model.ShowBandwidthRequest{}
+			request.BandwidthId = converter.PtrToVal(publicIp.BandwidthId)
+			response, _ := client.ShowBandwidth(request)
+			if response.Bandwidth != nil {
+				if response.Bandwidth.ChargeMode != nil {
+					eips[idx].ChargeMode = response.Bandwidth.ChargeMode.Value()
+				}
+			}
 		}
 	}
 
