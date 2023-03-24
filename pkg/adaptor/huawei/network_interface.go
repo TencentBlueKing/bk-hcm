@@ -89,7 +89,7 @@ func (h *HuaWei) replenishEipInfo(kt *kit.Kit, opt *typesniproto.HuaWeiNIListOpt
 			continue
 		}
 
-		tmpPortID := converter.PtrToVal(item.Extension.PortId)
+		tmpPortID := converter.PtrToVal(item.CloudID)
 		if eipInfo, ok := eipMap[tmpPortID]; ok {
 			item.Extension.Addresses = eipInfo
 		}

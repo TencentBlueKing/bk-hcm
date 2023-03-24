@@ -62,3 +62,12 @@ func (req *AssignNetworkInterfaceToBizReq) Validate() error {
 
 	return nil
 }
+
+// -------------------------- Get --------------------------
+
+// NetworkInterfaceDetail define network interface detail
+type NetworkInterfaceDetail[Extension coreni.NetworkInterfaceExtension] struct {
+	coreni.BaseNetworkInterface `json:",inline"`
+	CvmID                       string     `json:"cvm_id"`
+	Extension                   *Extension `json:"extension"`
+}

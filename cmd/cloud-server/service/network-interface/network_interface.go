@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
@@ -145,14 +146,51 @@ func (svc *netSvc) getNetworkInterface(cts *rest.Contexts, validHandler handler.
 		return nil, err
 	}
 
+	var cvmID string
+	niRelReq := &core.ListReq{
+		Filter: tools.EqualExpression("network_interface_id", id),
+		Page:   core.DefaultBasePage,
+	}
+	rels, err := svc.client.DataService().Global.NetworkInterfaceCvmRel.List(cts.Kit.Ctx, cts.Kit.Header(), niRelReq)
+	if err == nil && len(rels.Details) > 0 {
+		cvmID = rels.Details[0].CvmID
+	}
+
 	// get detail info
 	switch basicInfo.Vendor {
 	case enumor.Azure:
-		return svc.client.DataService().Azure.NetworkInterface.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+		ni, err := svc.client.DataService().Azure.NetworkInterface.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+
+		return &cloudserver.NetworkInterfaceDetail[coreni.AzureNIExtension]{
+			BaseNetworkInterface: ni.BaseNetworkInterface,
+			CvmID:                cvmID,
+			Extension:            ni.Extension,
+		}, nil
 	case enumor.Gcp:
-		return svc.client.DataService().Gcp.NetworkInterface.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+		ni, err := svc.client.DataService().Gcp.NetworkInterface.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+
+		return &cloudserver.NetworkInterfaceDetail[coreni.GcpNIExtension]{
+			BaseNetworkInterface: ni.BaseNetworkInterface,
+			CvmID:                cvmID,
+			Extension:            ni.Extension,
+		}, nil
 	case enumor.HuaWei:
-		return svc.client.DataService().HuaWei.NetworkInterface.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+		ni, err := svc.client.DataService().HuaWei.NetworkInterface.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+		if err != nil {
+			return nil, err
+		}
+
+		return &cloudserver.NetworkInterfaceDetail[coreni.HuaWeiNIExtension]{
+			BaseNetworkInterface: ni.BaseNetworkInterface,
+			CvmID:                cvmID,
+			Extension:            ni.Extension,
+		}, nil
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", basicInfo.Vendor)
 	}

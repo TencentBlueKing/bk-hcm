@@ -235,7 +235,7 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 					Name:     SPtrToLowerSPtr(tmpPublicIPAddress.Name),
 					Type:     tmpPublicIPAddress.Type,
 				}
-				if tmpPublicIPAddress.Properties != nil {
+				if tmpPublicIPAddress.Properties != nil && tmpPublicIPAddress.Properties.IPAddress != nil {
 					if tmpPublicIPAddress.Properties.PublicIPAddressVersion ==
 						converter.ValToPtr(armnetwork.IPVersionIPv4) {
 						v.PublicIPv4 = append(v.PublicIPv4, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
