@@ -242,7 +242,7 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 				}, &filter.AtomRule{
 					Field: "vendor",
 					Op:    filter.Equal.Factory(),
-					Value: string(enumor.TCloud),
+					Value: string(enumor.Aws),
 				},
 			},
 		}, Page: &apicore.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},

@@ -26,14 +26,15 @@ import (
 
 // ListCloudAreaOption is list cmdb cloud area option.
 type ListCloudAreaOption struct {
-	Page *ListCloudAreaPage `json:"page"`
+	Page *ListCloudAreaPage `json:"page,omitempty"`
+	ID   int64              `json:"id,omitempty"`
 	Name string             `json:"name,omitempty"`
 }
 
 // Validate ListCloudAreaOption.
 func (l *ListCloudAreaOption) Validate() error {
 	if l.Page == nil {
-		return errf.New(errf.InvalidParameter, "page is required")
+		l.Page = &ListCloudAreaPage{Limit: ListCloudAreaLimit}
 	}
 
 	if err := l.Page.Validate(); err != nil {

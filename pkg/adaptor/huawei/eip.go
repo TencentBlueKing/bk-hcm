@@ -208,9 +208,13 @@ func (h *HuaWei) CreateEip(kt *kit.Kit, opt *eip.HuaWeiEipCreateOption) (*poller
 		}
 
 		resp, err := client.CreatePrePaidPublicip(req)
+		if err != nil {
+			return nil, err
+		}
+
 		respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip,
 			poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
-		return respPoller.PollUntilDone(h, kt, []*string{resp.Publicip.Id}, nil)
+		return respPoller.PollUntilDone(h, kt, []*string{resp.PublicipId}, nil)
 	}
 	// 按需计费
 	req, err := opt.ToCreatePublicipRequest()
@@ -219,6 +223,9 @@ func (h *HuaWei) CreateEip(kt *kit.Kit, opt *eip.HuaWeiEipCreateOption) (*poller
 	}
 
 	resp, err := client.CreatePublicip(req)
+	if err != nil {
+		return nil, err
+	}
 	respPoller := poller.Poller[*HuaWei, []*eip.HuaWeiEip,
 		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
 	return respPoller.PollUntilDone(h, kt, []*string{resp.Publicip.Id}, nil)
@@ -230,6 +237,10 @@ type createEipPollingHandler struct {
 
 // Done ...
 func (h *createEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poller.BaseDoneResult) {
+	if len(pollResult) == 0 {
+		return false, nil
+	}
+
 	successCloudIDs := make([]string, 0)
 	unknownCloudIDs := make([]string, 0)
 

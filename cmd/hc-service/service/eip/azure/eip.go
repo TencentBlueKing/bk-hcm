@@ -20,6 +20,8 @@
 package azure
 
 import (
+	"strings"
+
 	"hcm/cmd/hc-service/logics/sync/cvm"
 	synceip "hcm/cmd/hc-service/logics/sync/eip"
 	syncnetworkinterface "hcm/cmd/hc-service/logics/sync/network-interface"
@@ -39,6 +41,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // EipSvc ...
@@ -284,7 +287,7 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cloudIDs := []string{*eipPtr}
+	cloudIDs := []string{strings.ToLower(converter.PtrToVal(eipPtr))}
 
 	_, err = synceip.SyncAzureEip(
 		cts.Kit,
@@ -314,7 +317,7 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 				}, &filter.AtomRule{
 					Field: "vendor",
 					Op:    filter.Equal.Factory(),
-					Value: string(enumor.TCloud),
+					Value: string(enumor.Azure),
 				},
 			},
 		}, Page: &apicore.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},

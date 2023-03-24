@@ -147,7 +147,7 @@ type AzureEipCreateOption struct {
 	ResourceGroupName    string `json:"resource_group_name" validate:"required"`
 	EipName              string `json:"eip_name" validate:"required"`
 	Region               string `json:"region" validate:"required"`
-	Zone                 string `json:"zone" validate:"required"`
+	Zone                 string `json:"zone" validate:"omitempty"`
 	SKUName              string `json:"sku_name" validate:"required,eq=Standard|eq=Basic"`
 	SKUTier              string `json:"sku_tier" validate:"required,eq=Regional|eq=Global"`
 	AllocationMethod     string `json:"allocation_method" validate:"required,eq=Dynamic|eq=Static"`
@@ -179,7 +179,10 @@ func (opt *AzureEipCreateOption) ToPublicIPAddress() (*armnetwork.PublicIPAddres
 		Name: to.Ptr(PublicIPAddressSKUEnum[opt.SKUName]),
 		Tier: to.Ptr(PublicIPAddressSKUTierEnum[opt.SKUTier]),
 	}
-	req.Zones = to.SliceOfPtrs[string](opt.Zone)
+
+	if opt.Zone != "" {
+		req.Zones = to.SliceOfPtrs[string](opt.Zone)
+	}
 
 	return req, nil
 }

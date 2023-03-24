@@ -129,6 +129,10 @@ func (c *cmdbSvc) ListCloudArea(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
 	params := &cmdb.SearchCloudAreaParams{
 		Fields: []string{"bk_cloud_id", "bk_cloud_name"},
 		Page: cmdb.BasePage{
@@ -141,6 +145,10 @@ func (c *cmdbSvc) ListCloudArea(cts *rest.Contexts) (interface{}, error) {
 
 	if req.Name != "" {
 		params.Condition["bk_cloud_name"] = map[string]interface{}{"$regex": req.Name}
+	}
+
+	if req.ID != 0 {
+		params.Condition["bk_cloud_id"] = req.ID
 	}
 
 	res, err := c.esbClient.Cmdb().SearchCloudArea(cts.Kit.Ctx, params)

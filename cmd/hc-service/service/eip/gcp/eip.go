@@ -298,7 +298,7 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 				}, &filter.AtomRule{
 					Field: "vendor",
 					Op:    filter.Equal.Factory(),
-					Value: string(enumor.TCloud),
+					Value: string(enumor.Gcp),
 				},
 			},
 		}, Page: &core.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},
@@ -374,5 +374,10 @@ func (svc *EipSvc) makeEipDisassociateOption(
 }
 
 func (svc *EipSvc) makeEipCreateOption(req *proto.GcpEipCreateReq) (*eip.GcpEipCreateOption, error) {
-	return &eip.GcpEipCreateOption{Region: req.Region, NetworkTier: req.NetworkTier, IpVersion: req.IpVersion}, nil
+	return &eip.GcpEipCreateOption{
+		EipName:     req.EipName,
+		Region:      req.Region,
+		NetworkTier: req.NetworkTier,
+		IpVersion:   req.IpVersion,
+	}, nil
 }

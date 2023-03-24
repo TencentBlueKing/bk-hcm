@@ -33,8 +33,8 @@ var HuaWeiBandwidthShareTypeEnum = map[string]model.CreatePublicipBandwidthOptio
 
 // HuaWeiBandwidthChargeModeTypeEnum ...
 var HuaWeiBandwidthChargeModeTypeEnum = map[string]model.CreatePublicipBandwidthOptionChargeMode{
-	"BANDWIDTH": model.GetCreatePublicipBandwidthOptionChargeModeEnum().BANDWIDTH,
-	"TRAFFIC":   model.GetCreatePublicipBandwidthOptionChargeModeEnum().TRAFFIC,
+	"bandwidth": model.GetCreatePublicipBandwidthOptionChargeModeEnum().BANDWIDTH,
+	"traffic":   model.GetCreatePublicipBandwidthOptionChargeModeEnum().TRAFFIC,
 }
 
 // HuaWeiBandwidthChargeModeTypeEnum ...
