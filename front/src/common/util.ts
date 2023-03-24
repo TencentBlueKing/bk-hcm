@@ -134,3 +134,16 @@ export function getWindowHeight() {
 
   return windowHeight;
 }
+
+/**
+ * 将字节大小转换为更易读的的MB/GB等单位大小
+ * @param value 原大小，byte
+ * @param digits 保留小数位数
+ * @returns 转换后的大小，如 4026531840 -> 4GB
+ */
+export function formatStorageSize(value: number, digits = 0) {
+  const uints = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const index = Math.floor(Math.log(value) / Math.log(1024));
+  const size = value / (1024 ** index);
+  return `${size.toFixed(digits)}${uints[index]}`;
+}

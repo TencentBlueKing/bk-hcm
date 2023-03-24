@@ -1,3 +1,17 @@
+export enum VendorEnum {
+  TCLOUD = 'tcloud',
+  AWS = 'aws',
+  AZURE = 'azure',
+  GCP = 'gcp',
+  HUAWEI = 'huawei',
+}
+
+export enum ResourceTypeEnum {
+  CVM = 'cvm',
+  VPC = 'vpc',
+  DISK = 'disk',
+}
+
 // 资源类型
 export const RESOURCE_TYPES = [
   {

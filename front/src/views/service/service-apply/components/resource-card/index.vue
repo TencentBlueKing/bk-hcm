@@ -7,7 +7,7 @@
       </div>
       <div class="sub-resource-title">申请 {{ item.name }}</div>
       <div class="bottom-btn">
-        <bk-button theme="primary" outline size="small" @click="handleApply('applyAccount')">
+        <bk-button theme="primary" outline size="small" @click="handleApply(item.routeName)">
           {{ item.btnText }}
         </bk-button>
       </div>

@@ -47,7 +47,12 @@ export default defineComponent({
   },
   setup() {
     const accountStore = useAccountStore();
-    const COM_MAP = Object.freeze(new Map([[['add_account', 'service_apply'], 'ApplyDetail']]));
+    const COM_MAP = Object.freeze(new Map([
+      [
+        ['add_account', 'service_apply', 'create_cvm', 'create_disk', 'create_vpc'],
+        'ApplyDetail'
+      ]
+    ]));
 
     const currCom = computed(() => {
       let com = '';
