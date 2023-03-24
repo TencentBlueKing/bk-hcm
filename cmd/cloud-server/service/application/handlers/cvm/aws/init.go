@@ -49,7 +49,9 @@ func (a *ApplicationOfCreateAwsCvm) toHcProtoAwsBatchCreateReq(dryRun bool) *hcp
 
 	blockDeviceMapping := make([]typecvm.AwsBlockDeviceMapping, 0)
 	// 系统盘
+	deviceName := "/dev/sdh"
 	blockDeviceMapping = append(blockDeviceMapping, typecvm.AwsBlockDeviceMapping{
+		DeviceName: &deviceName,
 		Ebs: &typecvm.AwsEbs{
 			VolumeSizeGB: req.SystemDisk.DiskSizeGB,
 			VolumeType:   req.SystemDisk.DiskType,
