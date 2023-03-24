@@ -28,18 +28,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// commonImages aws common image names. NOTICE: only for compatible use, need changing later.
-var commonImages = []string{
-	"Windows_Server-2022-English-Core-Base-2022.08.10",
-	"amzn2-ami-hvm-2.0.20220805.0-arm64-gp2",
-	"Windows_Server-2019-English-Core-Base-2022.08.10",
-	"amzn2-ami-kernel-5.10-hvm-2.0.20220805.0-x86_64-gp2",
-	"amzn2-ami-hvm-2.0.20220805.0-x86_64-gp2",
-	"Windows_Server-2022-English-Full-Base-2022.08.10",
-	"Windows_Server-2019-English-Full-Base-2022.08.10",
-	"amzn2-ami-kernel-5.10-hvm-2.0.20220805.0-arm64-gp2",
-}
-
 // ListImage ...
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeImages.html
 func (a *Aws) ListImage(
@@ -53,7 +41,6 @@ func (a *Aws) ListImage(
 
 	req := &ec2.DescribeImagesInput{MaxResults: opt.Page.MaxResults, NextToken: opt.Page.NextToken}
 	req.Filters = []*ec2.Filter{
-		{Name: aws.String("name"), Values: aws.StringSlice(commonImages)},
 		{Name: aws.String("is-public"), Values: []*string{aws.String("true")}},
 	}
 
