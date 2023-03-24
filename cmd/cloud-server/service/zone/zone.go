@@ -24,12 +24,20 @@ import (
 
 	"hcm/cmd/cloud-server/service/capability"
 	cloudproto "hcm/pkg/api/cloud-server/zone"
+	"hcm/pkg/api/core/cloud/zone"
 	dataproto "hcm/pkg/api/data-service/cloud/zone"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+)
+
+const (
+	Azure = "azure"
+	Zone1 = "1"
+	Zone2 = "2"
+	Zone3 = "3"
 )
 
 // InitZoneService initialize the zone service.
@@ -62,6 +70,36 @@ func (dSvc *ZoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
 	region := cts.PathParameter("region").String()
 	if len(region) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "region is required")
+	}
+
+	if vendor == Azure {
+		resp := new(dataproto.ZoneListResult)
+		resp.Count = 3
+		resp.Details = []zone.BaseZone{
+			{
+				ID:      "",
+				Vendor:  Azure,
+				CloudID: "",
+				Name:    Zone1,
+				Region:  region,
+			},
+			{
+				ID:      "",
+				Vendor:  Azure,
+				CloudID: "",
+				Name:    Zone2,
+				Region:  region,
+			},
+			{
+				ID:      "",
+				Vendor:  Azure,
+				CloudID: "",
+				Name:    Zone3,
+				Region:  region,
+			},
+		}
+
+		return resp, nil
 	}
 
 	req := new(cloudproto.ZoneListReq)
