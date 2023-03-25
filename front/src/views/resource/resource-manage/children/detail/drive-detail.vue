@@ -282,7 +282,7 @@ const handleToPage = () => {
           v-else
           class="w100 ml10"
           theme="primary"
-          :disabled="detail.is_system_disk"
+          :disabled="!!detail.is_system_disk"
           @click="handleUninstallDrive(detail)"
         >
           {{ t('卸载') }}
@@ -290,7 +290,7 @@ const handleToPage = () => {
         <bk-button
           class="w100 ml10"
           theme="primary"
-          :disabled="detail.instance_id"
+          :disabled="!!detail.instance_id"
           @click="handleShowDelete"
         >
           {{ t('删除') }}
