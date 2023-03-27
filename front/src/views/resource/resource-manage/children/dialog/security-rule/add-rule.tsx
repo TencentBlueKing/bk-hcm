@@ -157,7 +157,9 @@ export default defineComponent({
           }}
         </Input>;
       }
-      return <Input class="mt20 mb10 input-select-warp" v-model={ data.destination_address_prefix }>
+      return <Input class="mt20 mb10 input-select-warp"
+       v-model={ data.destination_address_prefix }
+       placeholder="10.0.0.1/24、 10.0.0.1">
         {{
           prefix: () => (
               <>
@@ -246,6 +248,7 @@ export default defineComponent({
                       <FormItem>
                       <bk-table-column
                           label={renderLabelToolTips(t('源'), t('源过滤器可为“任意”、一个 IP 地址范围、一个应用程序安全组或一个默认标记。它指定此规则将允许或拒绝的特定源 IP 地址范围的传入流量'))}
+                          width={260}
                         >
                           {{
                             default: ({ data }: any) => (
@@ -268,6 +271,7 @@ export default defineComponent({
                           <FormItem>
                             <bk-table-column
                                 label={renderLabelToolTips(t('目标'), t('提供采用 CIDR 表示法的地址范围(例如 192.168.99.0/24 或 2001:1234::/64)或提供 IP 地址(例如 192.168.99.0 或 2001:1234::)。还可提供一个由采用 IPv4 或 IPv6 的 IP 地址或地址范围构成的列表(以逗号分隔)'))}
+                                width={260}
                               >
                                 {{
                                   default: ({ data }: any) => (
@@ -279,6 +283,7 @@ export default defineComponent({
                           <FormItem>
                             <bk-table-column
                                 label={t('目标协议端口')}
+                                width={200}
                               >
                                 {{
                                   default: ({ data }: any) => (
@@ -376,7 +381,7 @@ export default defineComponent({
                     {
                       !securityRuleId.value
                         ? <FormItem>
-                      <bk-table-column label={t('操作')}>
+                      <bk-table-column label={t('操作')} width={120}>
                         {{
                           default: ({ data, index }: any) => (
                             <div class="mt15">

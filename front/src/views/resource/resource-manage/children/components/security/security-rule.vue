@@ -435,7 +435,7 @@ if (props.vendor === 'huawei') {
 
 
   <bk-dialog
-    :is-show="deleteDialogShow"
+    v-model:is-show="deleteDialogShow"
     :title="'确定删除要该条规则?'"
     :theme="'primary'"
     @closed="() => deleteDialogShow = false"

@@ -11,7 +11,8 @@ import {
 } from 'bkui-vue';
 import {
   useResourceStore,
-} from '@/store/resource';
+  useAccountStore,
+} from '@/store';
 import {
   ref,
   h,
@@ -19,6 +20,7 @@ import {
   watch,
   reactive,
   defineExpose,
+  computed,
 } from 'vue';
 
 import {
@@ -49,6 +51,7 @@ const route = useRoute();
 const activeType = ref('group');
 const fetchUrl = ref<string>('security_groups/list');
 const resourceStore = useResourceStore();
+const accountStore = useAccountStore();
 
 const state = reactive<any>({
   datas: [],
@@ -86,6 +89,10 @@ watch(
     handleSwtichType(v);
   },
 );
+
+const isResourcePage = computed(() => {   // 资源下没有业务ID
+  return !accountStore.bizs;
+});
 
 
 const handleSwtichType = async (type: string) => {
@@ -126,7 +133,7 @@ const groupColumns = [
         {
           text: true,
           theme: 'primary',
-          disabled: data.bk_biz_id !== -1,
+          disabled: (data.bk_biz_id !== -1 && isResourcePage.value),
           onClick() {
             const routeInfo: any = {
               query: {
@@ -223,20 +230,36 @@ const groupColumns = [
             Button,
             {
               text: true,
-              disabled: data.bk_biz_id !== -1,
+              disabled: (data.bk_biz_id !== -1 && isResourcePage.value),
               theme: 'primary',
               onClick() {
-                router.push({
-                  name: 'resourceDetail',
-                  params: {
-                    type: 'security',
-                  },
+                const routeInfo: any = {
                   query: {
                     activeTab: 'rule',
                     id: data.id,
                     vendor: data.vendor,
                   },
-                });
+                };
+                // 业务下
+                if (route.path.includes('business')) {
+                  Object.assign(
+                    routeInfo,
+                    {
+                      name: 'securityBusinessDetail',
+                    },
+                  );
+                } else {
+                  Object.assign(
+                    routeInfo,
+                    {
+                      name: 'resourceDetail',
+                      params: {
+                        type: 'security',
+                      },
+                    },
+                  );
+                }
+                router.push(routeInfo);
               },
             },
             [
