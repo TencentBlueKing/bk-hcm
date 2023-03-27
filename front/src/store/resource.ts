@@ -104,34 +104,34 @@ export const useResourceStore = defineStore({
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/disks/attach`, data);
     },
     detachDisk(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/disks/detach`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('disks')}disks/detach`, data);
     },
     associateEip(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/eips/associate`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('eips')}eips/associate`, data);
     },
     disassociateEip(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/eips/disassociate`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('eips')}eips/disassociate`, data);
     },
     getCloudRegion(type: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${type}/regions/list`, data);
     },
     // 销毁
     deleteRecycledData(type: string, data: any) {
-      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/recycled/${type}/batch`, { data });
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}recycled/${type}/batch`, { data });
     },
     // 回收
     recoverRecycledData(type: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${type}/recover`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/recover`, data);
     },
 
     // 虚拟机回收
     recycledCvmsData(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/recycle`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('cvms')}cvms/recycle`, data);
     },
 
     // 回收资源详情
     recycledResourceDetail(type: string, id: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}recycled/${type}/${id}`);
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}recycled/${type}/${id}`);
     },
   },
 });
