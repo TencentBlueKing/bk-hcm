@@ -109,7 +109,7 @@ func SyncAzureNetworkInterfaceAll(kt *kit.Kit, req *hcservice.AzureNetworkInterf
 		tmpList := &typesniproto.AzureInterfaceListResult{}
 		details := make([]typesniproto.AzureNI, 0, len(page.Value))
 		for _, niItem := range page.Value {
-			details = append(details, converter.PtrToVal(cli.ConvertCloudNetworkInterface(niItem)))
+			details = append(details, converter.PtrToVal(cli.ConvertCloudNetworkInterface(kt, niItem)))
 		}
 		tmpList.Details = details
 
@@ -165,7 +165,7 @@ func SyncAzureNetworkInterfaceByID(kt *kit.Kit, req *hcservice.AzureNetworkInter
 				continue
 			}
 
-			details = append(details, converter.PtrToVal(cli.ConvertCloudNetworkInterface(niItem)))
+			details = append(details, converter.PtrToVal(cli.ConvertCloudNetworkInterface(kt, niItem)))
 			delete(idMap, id)
 			if len(idMap) == 0 {
 				tmpList.Details = details
@@ -491,21 +491,24 @@ func isAzureChange(item typesniproto.AzureNI, dbInfo coreni.NetworkInterface[cor
 	if ipExtRet {
 		return true
 	}
-	return true
+	return false
 }
 
 func checkAzureExt(item typesniproto.AzureNI, dbInfo coreni.NetworkInterface[coreni.AzureNIExtension]) bool {
 	if item.Extension.ResourceGroupName != dbInfo.Extension.ResourceGroupName {
 		return true
 	}
-	if !assert.IsPtrStringEqual(item.Extension.MacAddress, dbInfo.Extension.MacAddress) {
+	if item.Extension.MacAddress != nil &&
+		!assert.IsPtrStringEqual(item.Extension.MacAddress, dbInfo.Extension.MacAddress) {
 		return true
 	}
-	if !assert.IsPtrBoolEqual(item.Extension.EnableAcceleratedNetworking,
-		dbInfo.Extension.EnableAcceleratedNetworking) {
+	if item.Extension.EnableAcceleratedNetworking != nil &&
+		!assert.IsPtrBoolEqual(item.Extension.EnableAcceleratedNetworking,
+			dbInfo.Extension.EnableAcceleratedNetworking) {
 		return true
 	}
-	if !assert.IsPtrBoolEqual(item.Extension.EnableIPForwarding, dbInfo.Extension.EnableIPForwarding) {
+	if item.Extension.EnableIPForwarding != nil &&
+		!assert.IsPtrBoolEqual(item.Extension.EnableIPForwarding, dbInfo.Extension.EnableIPForwarding) {
 		return true
 	}
 	if item.Extension.DNSSettings != nil {
@@ -514,11 +517,13 @@ func checkAzureExt(item typesniproto.AzureNI, dbInfo coreni.NetworkInterface[cor
 			return true
 		}
 	}
-	if !assert.IsPtrStringEqual(item.Extension.CloudGatewayLoadBalancerID,
-		dbInfo.Extension.CloudGatewayLoadBalancerID) {
+	if item.Extension.CloudGatewayLoadBalancerID != nil &&
+		!assert.IsPtrStringEqual(item.Extension.CloudGatewayLoadBalancerID,
+			dbInfo.Extension.CloudGatewayLoadBalancerID) {
 		return true
 	}
-	if !assert.IsPtrStringEqual(item.Extension.CloudSecurityGroupID, dbInfo.Extension.CloudSecurityGroupID) {
+	if item.Extension.CloudSecurityGroupID != nil &&
+		!assert.IsPtrStringEqual(item.Extension.CloudSecurityGroupID, dbInfo.Extension.CloudSecurityGroupID) {
 		return true
 	}
 	return false

@@ -78,6 +78,7 @@ type AzureEip struct {
 	Location          *string
 	Fqdn              *string
 	Zone              string
+	PublicIPAddressVersion *string
 }
 
 // AzureEipDeleteOption ...

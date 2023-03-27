@@ -61,6 +61,7 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 				Zone:              "",
 				ResourceGroupName: strings.ToLower(opt.ResourceGroupName),
 				Location:          one.Location,
+				PublicIPAddressVersion: (*string)(one.Properties.PublicIPAddressVersion),
 			}
 
 			if one.Properties.DNSSettings != nil {

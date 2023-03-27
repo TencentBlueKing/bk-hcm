@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/eip"
 	typesniproto "hcm/pkg/adaptor/types/network-interface"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
 	"hcm/pkg/criteria/errf"
@@ -53,7 +54,7 @@ func (a *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceL
 		}
 
 		for _, item := range nextResult.Value {
-			details = append(details, converter.PtrToVal(a.ConvertCloudNetworkInterface(item)))
+			details = append(details, converter.PtrToVal(a.ConvertCloudNetworkInterface(kt, item)))
 		}
 	}
 
@@ -91,7 +92,7 @@ func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOpt
 		for _, one := range nextResult.Value {
 			id := SPtrToLowerSPtr(one.ID)
 			if _, exist := idMap[*id]; exist {
-				details = append(details, converter.PtrToVal(a.ConvertCloudNetworkInterface(one)))
+				details = append(details, converter.PtrToVal(a.ConvertCloudNetworkInterface(kt, one)))
 				delete(idMap, *id)
 
 				if len(idMap) == 0 {
@@ -138,7 +139,7 @@ func (a *Azure) ListRawNetworkInterfaceByIDs(kt *kit.Kit, opt *core.AzureListByI
 }
 
 // ConvertCloudNetworkInterface ...
-func (a *Azure) ConvertCloudNetworkInterface(data *armnetwork.Interface) *typesniproto.AzureNI {
+func (a *Azure) ConvertCloudNetworkInterface(kt *kit.Kit, data *armnetwork.Interface) *typesniproto.AzureNI {
 	if data == nil {
 		return nil
 	}
@@ -176,15 +177,15 @@ func (a *Azure) ConvertCloudNetworkInterface(data *armnetwork.Interface) *typesn
 	if data.Properties.VirtualMachine != nil {
 		v.InstanceID = SPtrToLowerSPtr(data.Properties.VirtualMachine.ID)
 	}
-	getExtensionData(data, v)
+	a.getExtensionData(kt, data, v)
 	return v
 }
 
-func getExtensionData(data *armnetwork.Interface, v *typesniproto.AzureNI) {
+func (a *Azure) getExtensionData(kt *kit.Kit, data *armnetwork.Interface, v *typesniproto.AzureNI) {
 	if data.Properties.NetworkSecurityGroup != nil {
 		v.Extension.CloudSecurityGroupID = SPtrToLowerSPtr(data.Properties.NetworkSecurityGroup.ID)
 	}
-	getIpConfigExtensionData(data, v)
+	a.getIpConfigExtensionData(kt, data, v)
 
 	if data.Properties.DNSSettings != nil {
 		v.Extension.DNSSettings = &coreni.InterfaceDNSSettings{
@@ -195,7 +196,7 @@ func getExtensionData(data *armnetwork.Interface, v *typesniproto.AzureNI) {
 }
 
 // getIpConfigExtensionData get ipconfig extension data
-func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureNI) {
+func (a *Azure) getIpConfigExtensionData(kt *kit.Kit, data *armnetwork.Interface, v *typesniproto.AzureNI) {
 	if data == nil || data.Properties == nil || data.Properties.IPConfigurations == nil {
 		return
 	}
@@ -235,9 +236,20 @@ func getIpConfigExtensionData(data *armnetwork.Interface, v *typesniproto.AzureN
 					Name:     SPtrToLowerSPtr(tmpPublicIPAddress.Name),
 					Type:     tmpPublicIPAddress.Type,
 				}
+				if len(v.Extension.ResourceGroupName) != 0 && tmpIP.Properties.PublicIPAddress.CloudID != nil {
+					eipInfo, _ := a.GetEipByCloudID(kt, v.Extension.ResourceGroupName,
+						converter.PtrToVal(tmpIP.Properties.PublicIPAddress.CloudID))
+					if eipInfo != nil {
+						tmpIP.Properties.PublicIPAddress.Name = eipInfo.Name
+						tmpPublicIPAddress.Properties = &armnetwork.PublicIPAddressPropertiesFormat{
+							IPAddress:              eipInfo.PublicIp,
+							PublicIPAddressVersion: (*armnetwork.IPVersion)(eipInfo.PublicIPAddressVersion),
+						}
+					}
+				}
 				if tmpPublicIPAddress.Properties != nil && tmpPublicIPAddress.Properties.IPAddress != nil {
-					if tmpPublicIPAddress.Properties.PublicIPAddressVersion ==
-						converter.ValToPtr(armnetwork.IPVersionIPv4) {
+					if converter.PtrToVal(tmpPublicIPAddress.Properties.PublicIPAddressVersion) ==
+						armnetwork.IPVersionIPv4 {
 						v.PublicIPv4 = append(v.PublicIPv4, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
 					} else {
 						v.PublicIPv6 = append(v.PublicIPv6, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
@@ -298,7 +310,7 @@ func (a *Azure) GetNetworkInterface(kt *kit.Kit, opt *core.AzureListOption) (*ty
 		Location:   res.Location,
 		Properties: res.Properties,
 	}
-	return a.ConvertCloudNetworkInterface(niDetail), nil
+	return a.ConvertCloudNetworkInterface(kt, niDetail), nil
 }
 
 // ListNetworkSecurityGroup list network security group.
@@ -422,4 +434,23 @@ func (a *Azure) ListNetworkInterfaceByIDPage(opt *core.AzureListByIDOption) (
 
 	pager := client.NewListPager(opt.ResourceGroupName, nil)
 	return pager, nil
+}
+
+// GetEipByCloudID get eip info by cloudid
+func (a *Azure) GetEipByCloudID(kt *kit.Kit, resourceGroupName, cloudPublicIP string) (*eip.AzureEip, error) {
+	opt := &core.AzureListByIDOption{
+		ResourceGroupName: resourceGroupName,
+		CloudIDs:          []string{cloudPublicIP},
+	}
+	datas, err := a.ListEipByID(kt, opt)
+	if err != nil {
+		logs.Errorf("request adaptor to list azure eip failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	if len(datas.Details) == 0 {
+		return &eip.AzureEip{}, nil
+	}
+
+	return datas.Details[0], nil
 }

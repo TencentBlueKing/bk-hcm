@@ -84,18 +84,27 @@ func (h *HuaWei) replenishEipInfo(kt *kit.Kit, opt *typesniproto.HuaWeiNIListOpt
 			opt.Region, vnicPortIDs, err, kt.Rid)
 	}
 
+	var list = make([]typesniproto.HuaWeiNI, 0, len(details))
 	for _, item := range details {
 		if item.Extension == nil {
+			list = append(list, item)
 			continue
 		}
 
 		tmpPortID := converter.PtrToVal(item.CloudID)
 		if eipInfo, ok := eipMap[tmpPortID]; ok {
 			item.Extension.Addresses = eipInfo
+			if len(eipInfo.PublicIPAddress) > 0 {
+				item.PublicIPv4 = append(item.PublicIPv4, eipInfo.PublicIPAddress)
+			}
+			if len(eipInfo.PublicIPV6Address) > 0 {
+				item.PublicIPv6 = append(item.PublicIPv6, eipInfo.PublicIPV6Address)
+			}
 		}
+		list = append(list, item)
 	}
 
-	return details
+	return list
 }
 
 func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.HuaWeiNIListOption,
