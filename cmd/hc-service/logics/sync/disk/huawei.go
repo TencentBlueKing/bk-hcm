@@ -65,6 +65,13 @@ func (opt SyncHuaWeiDiskOption) Validate() error {
 func SyncHuaWeiDisk(kt *kit.Kit, req *SyncHuaWeiDiskOption, ad *cloudclient.CloudAdaptorClient,
 	dataCli *dataservice.Client) (interface{}, error) {
 
+	return SyncHuaWeiDiskWithBoot(kt, req, nil, ad, dataCli)
+}
+
+// SyncHuaWeiDiskWithBoot sync disk with cvm boot disk info
+func SyncHuaWeiDiskWithBoot(kt *kit.Kit, req *SyncHuaWeiDiskOption, bootMap map[string]struct{},
+	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client) (interface{}, error) {
+
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -81,7 +88,7 @@ func SyncHuaWeiDisk(kt *kit.Kit, req *SyncHuaWeiDiskOption, ad *cloudclient.Clou
 		return nil, err
 	}
 
-	err = diffHuaWeiDiskSync(kt, cloudMap, dsMap, req, dataCli)
+	err = diffHuaWeiDiskSync(kt, cloudMap, dsMap, req, bootMap, dataCli)
 	if err != nil {
 		logs.Errorf("request diffHuaWeiDiskSync failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -175,7 +182,7 @@ func getDatasFromHuaWeiForDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 }
 
 func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, dsMap map[string]*HuaWeiDiskSyncDS,
-	req *SyncHuaWeiDiskOption, dataCli *dataservice.Client) error {
+	req *SyncHuaWeiDiskOption, bootMap map[string]struct{}, dataCli *dataservice.Client) error {
 
 	addCloudIDs := make([]string, 0)
 	for id := range cloudMap {
@@ -205,7 +212,7 @@ func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, ds
 	}
 
 	if len(updateCloudIDs) > 0 {
-		err := diffHuaWeiSyncUpdate(kt, cloudMap, dsMap, updateCloudIDs, dataCli)
+		err := diffHuaWeiSyncUpdate(kt, cloudMap, dsMap, updateCloudIDs, bootMap, dataCli)
 		if err != nil {
 			logs.Errorf("request diffHuaWeiSyncUpdate failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -213,7 +220,7 @@ func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, ds
 	}
 
 	if len(addCloudIDs) > 0 {
-		_, err := diffHuaWeiDiskSyncAdd(kt, cloudMap, req, addCloudIDs, dataCli)
+		_, err := diffHuaWeiDiskSyncAdd(kt, cloudMap, req, addCloudIDs, bootMap, dataCli)
 		if err != nil {
 			logs.Errorf("request diffHuaWeiDiskSyncAdd failed, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -224,7 +231,7 @@ func diffHuaWeiDiskSync(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, ds
 }
 
 func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, req *SyncHuaWeiDiskOption,
-	addCloudIDs []string, dataCli *dataservice.Client) ([]string, error) {
+	addCloudIDs []string, bootMap map[string]struct{}, dataCli *dataservice.Client) ([]string, error) {
 
 	var createReq dataproto.DiskExtBatchCreateReq[dataproto.HuaWeiDiskExtensionCreateReq]
 
@@ -264,7 +271,7 @@ func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff,
 			},
 		}
 
-		if cloudMap[id].Disk.Bootable == "true" {
+		if _, exists := bootMap[id]; exists {
 			disk.IsSystemDisk = true
 		}
 
@@ -284,7 +291,7 @@ func diffHuaWeiDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff,
 	return results.IDs, nil
 }
 
-func isHuaWeiDiskChange(db *HuaWeiDiskSyncDS, cloud *HuaWeiDiskSyncDiff) bool {
+func isHuaWeiDiskChange(db *HuaWeiDiskSyncDS, cloud *HuaWeiDiskSyncDiff, isSystemDisk bool) bool {
 
 	if cloud.Disk.Status != db.HcDisk.Status {
 		return true
@@ -306,7 +313,7 @@ func isHuaWeiDiskChange(db *HuaWeiDiskSyncDS, cloud *HuaWeiDiskSyncDiff) bool {
 		return true
 	}
 
-	if cloud.Disk.Bootable == "true" && !db.HcDisk.IsSystemDisk {
+	if db.HcDisk.IsSystemDisk != isSystemDisk {
 		return true
 	}
 
@@ -330,13 +337,15 @@ func isHuaWeiDiskChange(db *HuaWeiDiskSyncDS, cloud *HuaWeiDiskSyncDiff) bool {
 }
 
 func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, dsMap map[string]*HuaWeiDiskSyncDS,
-	updateCloudIDs []string, dataCli *dataservice.Client) error {
+	updateCloudIDs []string, bootMap map[string]struct{}, dataCli *dataservice.Client) error {
 
 	disks := make([]*dataproto.DiskExtUpdateReq[dataproto.HuaWeiDiskExtensionUpdateReq], 0)
 
 	for _, id := range updateCloudIDs {
 
-		if !isHuaWeiDiskChange(dsMap[id], cloudMap[id]) {
+		_, isSystemDisk := bootMap[id]
+
+		if !isHuaWeiDiskChange(dsMap[id], cloudMap[id], isSystemDisk) {
 			continue
 		}
 
@@ -357,19 +366,16 @@ func diffHuaWeiSyncUpdate(kt *kit.Kit, cloudMap map[string]*HuaWeiDiskSyncDiff, 
 		}
 
 		disk := &dataproto.DiskExtUpdateReq[dataproto.HuaWeiDiskExtensionUpdateReq]{
-			ID:     dsMap[id].HcDisk.ID,
-			Memo:   &cloudMap[id].Disk.Description,
-			Status: cloudMap[id].Disk.Status,
+			ID:           dsMap[id].HcDisk.ID,
+			Memo:         &cloudMap[id].Disk.Description,
+			Status:       cloudMap[id].Disk.Status,
+			IsSystemDisk: converter.ValToPtr(isSystemDisk),
 			Extension: &dataproto.HuaWeiDiskExtensionUpdateReq{
 				ServiceType: cloudMap[id].Disk.ServiceType,
 				Encrypted:   cloudMap[id].Disk.Encrypted,
 				Attachment:  attachments,
 				Bootable:    cloudMap[id].Disk.Bootable,
 			},
-		}
-
-		if cloudMap[id].Disk.Bootable == "true" {
-			disk.IsSystemDisk = converter.ValToPtr(true)
 		}
 
 		disks = append(disks, disk)

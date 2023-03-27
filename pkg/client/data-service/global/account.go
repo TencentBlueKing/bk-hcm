@@ -183,3 +183,27 @@ func (a *AccountClient) ListAccountBizRelWithAccount(ctx context.Context, h http
 
 	return resp.Data, nil
 }
+
+// ListAccountBizRel list account biz relation.
+func (a *AccountClient) ListAccountBizRel(ctx context.Context, h http.Header, req *core.ListReq) (
+	*protocloud.AccountBizRelListResult, error) {
+
+	resp := new(protocloud.AccountBizRelListResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/account_biz_rels/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

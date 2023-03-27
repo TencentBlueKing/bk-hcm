@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -74,6 +75,46 @@ func (a *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, error
 	}
 
 	return nil, err
+}
+
+// ListAccountBizRel list account biz relation.
+func (a *accountSvc) ListAccountBizRel(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+
+	data, err := a.dao.AccountBizRel().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list account biz relations failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if req.Page.Count {
+		return &protocloud.AccountBizRelListResult{Count: data.Count}, nil
+	}
+
+	details := make([]corecloud.AccountBizRel, len(data.Details))
+	for idx, table := range data.Details {
+		details[idx] = corecloud.AccountBizRel{
+			BkBizID:   table.BkBizID,
+			AccountID: table.AccountID,
+			Creator:   table.Creator,
+			CreatedAt: table.CreatedAt,
+		}
+	}
+
+	return &protocloud.AccountBizRelListResult{Details: details}, nil
 }
 
 // ListWithAccount ...

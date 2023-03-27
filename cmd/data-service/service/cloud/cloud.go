@@ -193,6 +193,10 @@ func (svc cloudSvc) AssignResourceToBiz(cts *rest.Contexts) (interface{}, error)
 		}
 
 		// create audit
+		if len(auditOpts) == 0 {
+			return nil, nil
+		}
+
 		auditAssignOpts := slice.Split(auditOpts, constant.BatchOperationMaxLimit)
 		allAudits := make([]*audittable.AuditTable, 0, len(auditOpts))
 		for _, opts := range auditAssignOpts {

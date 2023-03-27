@@ -25,14 +25,18 @@ import (
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	proto "hcm/pkg/api/cloud-server/assign"
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 )
 
 // InitService initialize the assign service.
@@ -75,12 +79,51 @@ func (svc *svc) AssignResourceToBiz(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// check if account is related to assigned biz
+	accountBizReq := &core.ListReq{
+		Filter: tools.EqualExpression("account_id", req.AccountID),
+		Page:   core.DefaultBasePage,
+		Fields: []string{"bk_biz_id"},
+	}
+	accountBizRes, err := svc.client.DataService().Global.Account.ListAccountBizRel(cts.Kit.Ctx, cts.Kit.Header(),
+		accountBizReq)
+	if err != nil {
+		logs.Errorf("get account biz relation failed, err: %v, req: %+v, rid: %s", err, accountBizReq, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(accountBizRes.Details) == 0 || accountBizRes.Details[0].BkBizID != req.BkBizID {
+		return nil, errf.Newf(errf.InvalidParameter, "account(%s) and biz(%d) not matches", req.AccountID, req.BkBizID)
+	}
+
 	// compatible for assign all resource scenario
 	if req.IsAllResType {
 		req.ResTypes = []enumor.CloudResourceType{enumor.CvmCloudResType, enumor.DiskCloudResType,
 			enumor.EipCloudResType, enumor.NetworkInterfaceCloudResType, enumor.SecurityGroupCloudResType,
 			enumor.GcpFirewallRuleCloudResType, enumor.VpcCloudResType, enumor.SubnetCloudResType,
 			enumor.RouteTableCloudResType}
+	}
+
+	// check if all vpc has cloud area id
+	if slice.IsItemInSlice(req.ResTypes, enumor.VpcCloudResType) {
+		vpcReq := &core.ListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{tools.EqualExpression("account_id", req.AccountID), &filter.AtomRule{
+					Field: "bk_cloud_id", Op: filter.LessThanEqual.Factory(), Value: 0}},
+			},
+			Page: &core.BasePage{Count: true},
+		}
+
+		vpcRes, err := svc.client.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), vpcReq)
+		if err != nil {
+			logs.Errorf("count not bind cloud area vpc failed, err: %v, req: %+v, rid: %s", err, vpcReq, cts.Kit.Rid)
+			return nil, err
+		}
+
+		if vpcRes.Count > 0 {
+			return nil, errf.Newf(errf.InvalidParameter, "%d vpcs are not bind with cloud area", vpcRes.Count)
+		}
 	}
 
 	assignReq := &cloud.AssignResourceToBizReq{

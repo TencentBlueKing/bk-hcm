@@ -928,8 +928,8 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 		return nil, err
 	}
 
-	cloudSGMap, cloudVpcMap, cloudNetInterMap, cloudDiskMap, cloudEipMap,
-		cloudSubnetMap, err := getHuaWeiCVMRelResourcesCloudIDs(kt, req, client)
+	cloudSGMap, cloudVpcMap, cloudNetInterMap, cloudDiskMap, cloudEipMap, cloudSubnetMap, bootMap, err :=
+		getHuaWeiCVMRelResourcesCloudIDs(kt, req, client)
 	if err != nil {
 		logs.Errorf("request get huawei cvm rel resource ids failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -1022,7 +1022,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 			Region:    req.Region,
 			CloudIDs:  diskCloudIDs,
 		}
-		_, err := disk.SyncHuaWeiDisk(kt, req, ad, dataCli)
+		_, err := disk.SyncHuaWeiDiskWithBoot(kt, req, bootMap, ad, dataCli)
 		if err != nil {
 			logs.Errorf("sync huawei cvm rel disk failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -1105,9 +1105,9 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	return nil, nil
 }
 
-func getHuaWeiCVMRelResourcesCloudIDs(kt *kit.Kit, req *SyncHuaWeiCvmOption,
-	client *huawei.HuaWei) (map[string]*CVMOperateSync, map[string]struct{}, map[string]*CVMOperateSync,
-	map[string]*CVMOperateSync, map[string]*CVMOperateSync, map[string]map[string]struct{}, error) {
+func getHuaWeiCVMRelResourcesCloudIDs(kt *kit.Kit, req *SyncHuaWeiCvmOption, client *huawei.HuaWei) (
+	map[string]*CVMOperateSync, map[string]struct{}, map[string]*CVMOperateSync, map[string]*CVMOperateSync,
+	map[string]*CVMOperateSync, map[string]map[string]struct{}, map[string]struct{}, error) {
 
 	sGMap := make(map[string]*CVMOperateSync)
 	netInterMap := make(map[string]*CVMOperateSync)
@@ -1116,6 +1116,7 @@ func getHuaWeiCVMRelResourcesCloudIDs(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	subnetMap := make(map[string]map[string]struct{}, 0)
 	eipIpMap := make(map[string]string)
 	vpcIDMap := make(map[string]struct{}, 0)
+	bootMap := make(map[string]struct{})
 
 	opt := &typecvm.HuaWeiListOption{
 		Region:   req.Region,
@@ -1125,7 +1126,7 @@ func getHuaWeiCVMRelResourcesCloudIDs(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	datas, err := client.ListCvm(kt, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to list huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, nil, err
 	}
 
 	for _, data := range *datas {
@@ -1140,6 +1141,9 @@ func getHuaWeiCVMRelResourcesCloudIDs(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 			for _, v := range data.OsExtendedVolumesvolumesAttached {
 				id := getCVMRelID(v.Id, data.Id)
 				diskMap[id] = &CVMOperateSync{RelID: v.Id, InstanceID: data.Id}
+				if v.BootIndex != nil && *v.BootIndex == "0" {
+					bootMap[v.Id] = struct{}{}
+				}
 			}
 		}
 
@@ -1204,5 +1208,5 @@ func getHuaWeiCVMRelResourcesCloudIDs(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 		}
 	}
 
-	return sGMap, vpcIDMap, netInterMap, diskMap, eipMap, subnetMap, err
+	return sGMap, vpcIDMap, netInterMap, diskMap, eipMap, subnetMap, bootMap, err
 }

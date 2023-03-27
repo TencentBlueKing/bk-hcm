@@ -27,7 +27,7 @@ import (
 type AccountBizRel struct {
 	ID        uint64
 	BkBizID   int64
-	AccountID uint64
+	AccountID string
 	Creator   string
 	CreatedAt *time.Time
 }

@@ -64,6 +64,7 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("DeleteValidate", "POST", "/accounts/{account_id}/delete/validate", svc.DeleteValidate)
 
 	h.Add("UpdateAccountBizRel", "PUT", "/account_biz_rels/accounts/{account_id}", svc.UpdateAccountBizRel)
+	h.Add("ListAccountBizRel", "POST", "/account_biz_rels/list", svc.ListAccountBizRel)
 	h.Add("ListWithAccount", "POST", "/account_biz_rels/with/accounts/list", svc.ListWithAccount)
 
 	h.Load(cap.WebService)

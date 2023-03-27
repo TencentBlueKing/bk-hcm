@@ -74,3 +74,15 @@ type AccountBizRelWithAccount struct {
 	RelCreator            string     `db:"rel_creator" json:"rel_creator"`
 	RelCreatedAt          *time.Time `db:"rel_created_at" json:"rel_created_at"`
 }
+
+// AccountBizRelListResp list account biz relation response
+type AccountBizRelListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *AccountBizRelListResult `json:"data"`
+}
+
+// AccountBizRelListResult list account biz relation result
+type AccountBizRelListResult struct {
+	Count   uint64                    `json:"count,omitempty"`
+	Details []corecloud.AccountBizRel `json:"details,omitempty"`
+}

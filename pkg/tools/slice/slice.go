@@ -29,10 +29,10 @@ func Remove[T comparable](l []T, item T) []T {
 	return l
 }
 
-// StringInSlice 判断字符串是否存在 Slice 中
-func StringInSlice(str string, list []string) bool {
-	for _, item := range list {
-		if item == str {
+// IsItemInSlice 判断item是否在slice中
+func IsItemInSlice[T comparable](l []T, item T) bool {
+	for _, i := range l {
+		if i == item {
 			return true
 		}
 	}
