@@ -3,7 +3,7 @@ import {
   ref,
   watch,
 } from 'vue';
-import { Input, Select, Button, Form } from 'bkui-vue'; // TagInput
+import { Input, Select, Button, Form, TagInput } from 'bkui-vue'; // TagInput
 import { Info } from 'bkui-vue/lib/icon';
 import { ACTION_STATUS, GCP_PROTOCOL_LIST, IP_TYPE_LIST, HUAWEI_ACTION_STATUS, HUAWEI_TYPE_LIST, AZURE_PROTOCOL_LIST } from '@/constants';
 import Confirm from '@/components/confirm';
@@ -71,10 +71,10 @@ export default defineComponent({
         id: 'source_address_prefix',
         name: t('IP地址'),
       },
-      {
-        id: 'source_address_prefixs',
-        name: t('IP地址组'),
-      },
+      // {
+      //   id: 'source_address_prefixes',
+      //   name: t('IP地址组'),
+      // },
       {
         id: 'cloud_source_security_group_ids',
         name: t('安全组'),
@@ -86,10 +86,10 @@ export default defineComponent({
         id: 'destination_address_prefix',
         name: t('IP地址'),
       },
-      {
-        id: 'destination_address_prefixes',
-        name: t('IP地址组'),
-      },
+      // {
+      //   id: 'destination_address_prefixes',
+      //   name: t('IP地址组'),
+      // },
       {
         id: 'cloud_destination_security_group_ids',
         name: t('安全组'),
@@ -99,6 +99,7 @@ export default defineComponent({
     const securityRuleId = ref('');
 
     const renderSourceAddressSlot = (data: any, key: string) => {
+      console.log('data[key]', data, key);
       if (data[key]) {
         return <Input class="mt20 mb10 input-select-warp"
         placeholder="请输入"
@@ -143,7 +144,7 @@ export default defineComponent({
 
     const renderTargetAddressSlot = (data: any, key: string) => {
       if (data[key]) {
-        return <Input class="mt20 mb10 input-select-warp" v-model={ data[key] }>
+        return (data.targetAddress === 'destination_address_prefix' ? <Input class="mt20 mb10 input-select-warp" v-model={ data[key] }>
           {{
             prefix: () => (
               <>
@@ -155,7 +156,19 @@ export default defineComponent({
               </>
             ),
           }}
-        </Input>;
+        </Input>
+          : <>
+          <div class="flex-row align-items-center mt15">
+            <Select class="tag-input-prefix-select" v-model={data.targetAddress}>
+            {azureSecurityGroupTarget.value.map(ele => (
+            <Option value={ele.id} label={ele.name} key={ele.id} />
+            ))}
+            </Select>
+            <TagInput class="tag-input-select-warp" allow-create list={[]} v-model={ data[key] }></TagInput>
+          </div>
+            </>
+
+        );
       }
       return <Input class="mt20 mb10 input-select-warp"
        v-model={ data.destination_address_prefix }
@@ -214,6 +227,7 @@ export default defineComponent({
                       <FormItem>
                       <bk-table-column
                           label={renderLabelToolTips(t('优先级'), t('必须是 1-100的整数'))}
+                          width={120}
                         >
                           {{
                             default: ({ data }: any) => (
@@ -260,6 +274,7 @@ export default defineComponent({
                         <FormItem>
                         <bk-table-column
                             label={renderLabelToolTips(t('源端口'), t('提供单个端口(如 80)、端口范围(如 1024-65535)，或单个端口和/或端口范围的以逗号分隔的列表(如 80,1024-65535)。这指定了根据此规则将允许或拒绝哪些端口的流量。提供星号(*)可允许任何端口的流量'))}
+                            width={100}
                           >
                             {{
                               default: ({ data }: any) => (
@@ -454,29 +469,13 @@ export default defineComponent({
 
     const handleConfirm = () => {
       tableData.value.forEach((e: any) => {
-        e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id;
+        e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id || e[e.sourceAddress];
         if (e.sourceAddress !== 'ipv4_cidr') {
           delete e.ipv4_cidr;
         }
-        delete e.sourceAddress;
-        delete e.targetAddress;
+        // delete e.sourceAddress;
+        // delete e.targetAddress;
       });
-      // let params: any = {
-      //   id: tableData.value[0].id,
-      //   // protocol: tableData.value[0].protocol,
-      //   // port: tableData.value[0].port,
-      //   // ipv4_cidr: tableData.value[0].ipv4_cidr,
-      //   // action: tableData.value[0].action,
-      //   // memo: tableData.value[0].memo,
-      // };
-      // if (props.vendor === 'huawei') {
-      //   // params = {
-
-      //   // };
-      // }
-      // if (props.vendor === 'azure') {
-      //   params = { ...params, ...tableData.value[0] };
-      // }
       // @ts-ignore
       if (securityRuleId.value) {  // 更新
         emit('submit', tableData.value);

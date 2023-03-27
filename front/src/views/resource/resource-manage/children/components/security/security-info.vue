@@ -83,6 +83,21 @@ if (props.vendor === 'tcloud' || props.vendor === 'aws' || props.vendor === 'hua
       return val;
     },
   });
+  if (props.vendor === 'aws') {
+    settingInfo.splice(9, 0, {
+      name: t('所属VPC'),
+      prop: 'vpc_id',
+      render(val: any) {
+        return val;
+      },
+    }, {
+      name: t('所属云VPC'),
+      prop: 'cloud_vpc_id',
+      render(val: any) {
+        return val;
+      },
+    });
+  }
 } else if (props.vendor === 'azure') {
   settingInfo.splice(8, 0, {
     name: t('关联网络接口数'),

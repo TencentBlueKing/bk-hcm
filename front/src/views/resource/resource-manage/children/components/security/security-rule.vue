@@ -55,6 +55,7 @@ const deleteDialogShow = ref(false);
 const deleteId = ref(0);
 const securityRuleLoading = ref(false);
 const fetchUrl = ref<string>(`vendors/${props.vendor}/security_groups/${props.id}/rules/list`);
+const dataId = ref('');
 
 const state = reactive<any>({
   datas: [],
@@ -86,7 +87,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   getList,
-} = useQueryCommonList(props, fetchUrl);
+} = useQueryCommonList(props, fetchUrl, props.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '');
 
 // 切换tab
 const handleSwtichType = async () => {
@@ -118,8 +119,9 @@ const handleDeleteConfirm = () => {
 const handleSubmitRule = async (data: any) => {
   securityRuleLoading.value = true;
   if (props.vendor === 'aws') {   // aws 需要from_port 、to_port
+    console.log('data', data);
     data.forEach((e: any) => {
-      if (e?.port?.includes('-')) {
+      if (typeof e.port === 'string' && e?.port.includes('-')) {
         // eslint-disable-next-line prefer-destructuring
         e.from_port = Number(e.port.split('-')[0]);
         // eslint-disable-next-line prefer-destructuring
@@ -135,13 +137,13 @@ const handleSubmitRule = async (data: any) => {
     [`${activeType.value}_rule_set`]: data,
   };
   try {
-    if (data.id) {
-      await resourceStore.update(`vendors/${props.vendor}/security_groups/${props.id}/rules`, data, data.id);
+    if (data[0].id) {
+      await resourceStore.update(`vendors/${props.vendor}/security_groups/${props.id}/rules`, data[0], data[0].id);
     } else {
       await resourceStore.add(`vendors/${props.vendor}/security_groups/${props.id}/rules/create`, params);
     }
     Message({
-      message: t(data.id ? '更新成功' : '添加成功'),
+      message: t(data[0].id ? t('更新成功') : t('添加成功')),
       theme: 'success',
     });
     getList();
@@ -155,6 +157,7 @@ const handleSubmitRule = async (data: any) => {
 
 const handleSecurityRuleDialog = (data: any) => {
   console.log('data', data);
+  dataId.value = data?.id;
   resourceStore.setSecurityRuleDetail(data);
   handleSecurityRule();
 };
@@ -187,7 +190,7 @@ const inColumns = [
         'span',
         {},
         [
-          `${data.protocol || '--'}:${data.port || data.to_port || '--'}`,
+          !data.protocol && !(data.port || data.to_port) ? t('全部') : `${data.protocol}:${data.port || data.to_port || '--'}`,
         ],
       );
     },
@@ -281,7 +284,7 @@ const outColumns = [
         'span',
         {},
         [
-          `${data.protocol || '--'}:${data.port || data.to_port || '--'}`,
+          !data.protocol && !(data.port || data.to_port) ? t('全部') : `${data.protocol}:${data.port || data.to_port || '--'}`,
         ],
       );
     },
@@ -370,6 +373,21 @@ if (props.vendor === 'huawei') {
     label: t('类型'),
     field: 'ethertype',
   });
+} else if (props.vendor === 'azure')  {
+  inColumns.unshift({
+    label: t('名称'),
+    field: 'name',
+  }, {
+    label: t('优先级'),
+    field: 'priority',
+  });
+  outColumns.unshift({
+    label: t('名称'),
+    field: 'name',
+  }, {
+    label: t('优先级'),
+    field: 'priority',
+  });
 }
 
 </script>
@@ -428,7 +446,7 @@ if (props.vendor === 'huawei') {
     :loading="securityRuleLoading"
     dialog-width="1500"
     :active-type="activeType"
-    :title="t(activeType === 'egress' ? '添加出站规则' : '添加入站规则')"
+    :title="t(activeType === 'egress' ? `${dataId ? '编辑' : '添加'}出站规则` : `${dataId ? '编辑' : '添加'}入站规则`)"
     :vendor="vendor"
     @submit="handleSubmitRule"
   />

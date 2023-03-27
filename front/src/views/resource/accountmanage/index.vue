@@ -94,7 +94,9 @@
         >
           <template #default="props">
             <div class="operate-button">
-              <bk-button text theme="primary" @click="handleOperate(props?.data.id, 'sync')">
+              <bk-button
+                text theme="primary" @click="handleOperate(props?.data.id, 'sync')"
+                v-if="props?.data?.type === 'resource'">
                 {{t('同步')}}
               </bk-button>
               <div @click="handleAuth('account_edit')">

@@ -22,7 +22,7 @@ type PropsType = {
   filter?: FilterType
 };
 
-export default (props: PropsType, url: Ref<string>) => {
+export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
   // 接口
   const resourceStore = useResourceStore();
 
@@ -49,8 +49,8 @@ export default (props: PropsType, url: Ref<string>) => {
               count: false,
               start: (pagination.value.current - 1) * pagination.value.limit,
               limit: pagination.value.limit,
-              sort: sort.value,
-              order: order.value,
+              sort: extraConfig?.sort ? extraConfig.sort : sort.value,
+              order: extraConfig?.order ? extraConfig.order : order.value,
             },
             filter: props.filter,
           },

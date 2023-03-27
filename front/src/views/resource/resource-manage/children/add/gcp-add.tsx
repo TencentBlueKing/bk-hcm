@@ -279,7 +279,7 @@ export default defineComponent({
         state.operate = state.projectModel.allowed.length ? 'allowed' : 'denied';
         // eslint-disable-next-line max-len
         gcpPorts.value = state.projectModel[state.operate].find((e: any) => e.protocol === state.protocol)?.port || [];
-        state.target = GCP_TARGET_LIST.find((e: any) => state.projectModel[e.id].length)?.id;
+        state.target = GCP_TARGET_LIST.find((e: any) => state.projectModel[e.id].length)?.id || 'destination_ranges';
         state.source = GCP_SOURCE_LIST.find((e: any) => state.projectModel[e.id].length)?.id;
       }
     });
