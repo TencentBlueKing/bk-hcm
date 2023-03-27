@@ -178,7 +178,7 @@ const inColumns = [
           || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
           || data.source_address_prefix || data.source_address_prefixs || data.cloud_source_security_group_ids
           || data.destination_address_prefix || data.destination_address_prefixes
-          || data.cloud_destination_security_group_ids || '--',
+          || data.cloud_destination_security_group_ids || (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
         ],
       );
     },
@@ -272,7 +272,7 @@ const outColumns = [
           || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
           || data.source_address_prefix || data.source_address_prefixs || data.cloud_source_security_group_ids
           || data.destination_address_prefix || data.destination_address_prefixes
-          || data.cloud_destination_security_group_ids,
+          || data.cloud_destination_security_group_ids || (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
         ],
       );
     },

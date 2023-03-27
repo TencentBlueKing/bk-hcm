@@ -54,6 +54,8 @@ export default defineComponent({
 
     const resourceStore = useResourceStore();
 
+    const protocolList = ref(GCP_PROTOCOL_LIST);
+
 
     const securityGroupSource = ref([   // 华为源
       {
@@ -97,6 +99,21 @@ export default defineComponent({
     ]);
 
     const securityRuleId = ref('');
+
+    protocolList.value = protocolList.value.filter(e => e.name !== 'ALL');
+    console.log(protocolList.value);
+    if (props.vendor === 'aws') {
+      protocolList.value.unshift({
+        // @ts-ignore
+        id: '-1',
+        name: 'ALL',
+      });
+    } else if (props.vendor === 'tcloud') {
+      protocolList.value.unshift({
+        id: 'ALL',
+        name: 'ALL',
+      });
+    }
 
     const renderSourceAddressSlot = (data: any, key: string) => {
       console.log('data[key]', data, key);
@@ -226,7 +243,7 @@ export default defineComponent({
                       ? <>
                       <FormItem>
                       <bk-table-column
-                          label={renderLabelToolTips(t('优先级'), t('必须是 1-100的整数'))}
+                          label={renderLabelToolTips(t('优先级'), t(props.vendor === 'azure' ? '跟据优先级顺序处理规则；数字越小，优先级越高。我们建议在规则之间留出间隙 「 100、200、300 」 等 这样一来便可在无需编辑现有规则的情况下添加新规，同时注意不能和当前已有规则的优先级重复. 取值范围为100-4096' : '必须是 1-100的整数'))}
                           width={120}
                         >
                           {{
@@ -347,7 +364,7 @@ export default defineComponent({
                     props.vendor !== 'azure'
                       ? <>
                     <FormItem>
-                      <bk-table-column label={renderLabelToolTips(t('协议端口'), t('请输入0-65535之间数字或者ALL'))}>
+                      <bk-table-column label={renderLabelToolTips(t('协议端口'), t(props.vendor === 'aws' ? '对于 TCP、UDP 协议，允许的端口范围。您可以指定单个端口号（例如 22）或端口号范围（例如7000-8000）' : '请输入0-65535之间数字或者ALL'))}>
                         {{
                           default: ({ data }: any) => (
                             data
@@ -357,7 +374,7 @@ export default defineComponent({
                                       {{
                                         prefix: () => (
                                           <Select v-model={data.protocol} clearable={false} class="input-prefix-select" onChange={handleChange}>
-                                          {GCP_PROTOCOL_LIST.map(ele => (
+                                          {protocolList.value.map(ele => (
                                           <Option value={ele.id} label={ele.name} key={ele.id} />
                                           ))}
                                           </Select>
@@ -486,7 +503,7 @@ export default defineComponent({
 
     // 新增
     const handlerAdd = () => {
-      tableData.value.push();
+      tableData.value.push({});
     };
 
     // 删除

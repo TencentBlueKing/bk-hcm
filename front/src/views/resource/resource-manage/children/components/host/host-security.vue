@@ -12,7 +12,7 @@ import {
 import {
   useI18n,
 } from 'vue-i18n';
-import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
+import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import {
   useResourceStore,
@@ -28,7 +28,9 @@ const activeType = ref('ingress');
 const tableData = ref([]);
 const isShow = ref(false);
 const securityId = ref(0);
-const isLoading = ref(false);
+const fetchUrl = ref<string>(`vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`);
+const fetchFilter = ref<any>();
+const isListLoading = ref(false);
 
 const state = reactive<any>({
   datas: [],
@@ -37,7 +39,7 @@ const state = reactive<any>({
     limit: 10,
     count: 0,
   },
-  isLoading: true,
+  isLoading: false,
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
   handleSort: () => {},
@@ -50,48 +52,16 @@ const {
 } = useI18n();
 const resourceStore = useResourceStore();
 
-// 获取列表数据
-const fetchList = (fetchType: string) => {
-  console.log(111234);
-  const {
-    datas,
-    pagination,
-    isLoading,
-    handlePageChange,
-    handlePageSizeChange,
-    handleSort,
-  } = useQueryList({ filter: { op: 'and', rules: [{ field: 'type', op: 'eq', value: activeType.value }] } }, fetchType);
-  console.log('datas', datas);
-  return {
-    datas,
-    pagination,
-    isLoading,
-    handlePageChange,
-    handlePageSizeChange,
-    handleSort,
-  };
-};
 
-// 切换tab
-const handleSwtichType = async () => {
-  const params = {
-    fetchUrl: `vendors/${props.data.vendor}/security_groups/${securityId.value}/rules`,
-  };
-  console.log('params', params);
-  // eslint-disable-next-line max-len
-  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = fetchList(params.fetchUrl);
-  state.datas = datas;
-  state.isLoading = isLoading;
-  state.pagination = pagination;
-  state.handlePageChange = handlePageChange;
-  state.handlePageSizeChange = handlePageSizeChange;
-  state.handleSort = handleSort;
-};
+watch(() => activeType.value, (val) => {
+  fetchFilter.value.filter.rules[0].value = val;
+  state.columns.forEach((e: any) => {
+    if (e.field === 'resource') {
+      e.label = val === 'ingress' ? t('来源') : t('目标');
+    }
+  });
+});
 
-watch(
-  () => activeType.value,
-  handleSwtichType,
-);
 
 const columns = [
   {
@@ -128,20 +98,51 @@ const types = [
 ];
 
 const getSecurityGroupsList = async () => {
-  isLoading.value = true;
+  isListLoading.value = true;
   try {
     const res = await resourceStore.getSecurityGroupsListByCvmId(props.data.id);
     tableData.value = res.data;
   } catch (error) {
     console.log(error);
   } finally {
-    isLoading.value = false;
+    isListLoading.value = false;
   }
 };
 
 const showRuleDialog = async () => {
-  handleSwtichType();
   isShow.value = true;
+  // 获取列表数据
+  fetchUrl.value = `vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`;
+  fetchFilter.value = { filter: { op: 'and', rules: [{ field: 'type', op: 'eq', value: activeType.value }] } };
+  const {
+    datas,
+    pagination,
+    isLoading,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSort,
+    getList,
+  } = useQueryCommonList(fetchFilter.value, fetchUrl);
+
+  state.datas = datas;
+  state.isLoading = isLoading;
+  state.pagination = pagination;
+  state.handlePageChange = handlePageChange;
+  state.handlePageSizeChange = handlePageSizeChange;
+  state.handleSort = handleSort;
+  state.getList = getList;
+  state.columns = useColumns('securityCommon');
+
+  if (props.data.vendor === 'huawei') {
+    const huaweiColummns = [{
+      label: t('优先级'),
+      field: 'priority',
+    }, {
+      label: t('类型'),
+      field: 'ethertype',
+    }];
+    state.columns.unshift(...huaweiColummns);
+  }
 };
 
 getSecurityGroupsList();
@@ -149,7 +150,7 @@ getSecurityGroupsList();
 
 <template>
   <bk-loading
-    :loading="isLoading"
+    :loading="isListLoading"
   >
     <bk-table
       class="mt20"

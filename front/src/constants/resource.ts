@@ -103,10 +103,6 @@ export const GCP_SOURCE_LIST = [
 
 export const GCP_PROTOCOL_LIST = [
   {
-    id: 'ALL',
-    name: 'ALL',
-  },
-  {
     id: 'tcp',
     name: 'TCP',
   },
@@ -137,6 +133,10 @@ export const GCP_PROTOCOL_LIST = [
 ];
 
 export const AZURE_PROTOCOL_LIST = [
+  {
+    id: '*',
+    name: 'ALL',
+  },
   {
     id: 'Ah',
     name: 'Ah',

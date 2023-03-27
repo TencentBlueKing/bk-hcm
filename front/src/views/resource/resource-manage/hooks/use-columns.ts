@@ -12,7 +12,7 @@ import {
   useRouter,
 } from 'vue-router';
 
-export default (type: string, isSimpleShow: boolean = false) => {
+export default (type: string, isSimpleShow = false) => {
   const router = useRouter();
   const route = useRoute();
   const { t } = i18n.global;
@@ -25,7 +25,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
       onlyShowOnList,
       render({ data }: { cell: string, data: any }) {
         if (data[idFiled] < 0) {
-          return '--'
+          return '--';
         }
         return h(
           Button,
@@ -150,8 +150,8 @@ export default (type: string, isSimpleShow: boolean = false) => {
       field: 'cloud_id',
       sort: true,
       render({ cell }: { cell: string }) {
-        const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1
-        const value = cell.slice(index)
+        const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;
+        const value = cell.slice(index);
         return h(
           'span',
           [
@@ -707,7 +707,8 @@ export default (type: string, isSimpleShow: boolean = false) => {
 
   const securityCommonColumns = [
     {
-      label: '来源',
+      label: t('来源'),
+      field: 'resource',
       render({ data }: any) {
         return h(
           'span',
@@ -730,7 +731,7 @@ export default (type: string, isSimpleShow: boolean = false) => {
           'span',
           {},
           [
-            `${data.protocol}:${data.port || data.to_port}`,
+            !data.protocol && !data.port ? t('全部') : `${data.protocol}:${data.port || data.to_port || '--'}`,
           ],
         );
       },
@@ -743,8 +744,8 @@ export default (type: string, isSimpleShow: boolean = false) => {
           {},
           [
             // eslint-disable-next-line no-nested-ternary
-            data.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : data.vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
-              : SecurityRuleEnum[data.action],
+            HuaweiSecurityRuleEnum[data.action] || AzureSecurityRuleEnum[data.access]
+              || SecurityRuleEnum[data.action],
           ],
         );
       },
