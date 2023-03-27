@@ -113,7 +113,7 @@ func (col Columns) FieldsNamedExprWithout(fields []string) string {
 	}
 
 	namedExpr := make([]string, 0)
-	for field, _ := range col.fieldsNamedExpr {
+	for field := range col.fieldsNamedExpr {
 		if _, exist := withoutMap[field]; !exist {
 			namedExpr = append(namedExpr, field)
 		}

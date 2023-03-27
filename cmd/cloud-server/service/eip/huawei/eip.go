@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -308,7 +309,7 @@ func (h *HuaWei) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*c
 
 	eipResult := &cloudproto.HuaWeiEipExtResult{EipExtResult: eipResp, CvmID: cvmID}
 	eipResult.InstanceType = "NI"
-	eipResult.InstanceId = nis.Details[0].ID
+	eipResult.InstanceId = converter.ValToPtr(nis.Details[0].ID)
 
 	return eipResult, nil
 }

@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -237,7 +238,7 @@ func (a *Aws) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*clou
 	}
 
 	eipResult.InstanceType = "CVM"
-	eipResult.InstanceId = cvmID
+	eipResult.InstanceId = converter.ValToPtr(cvmID)
 
 	return eipResult, nil
 }

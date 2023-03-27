@@ -270,13 +270,14 @@ func syncTCloudEipAdd(kt *kit.Kit, addIDs []string, req *SyncTCloudEipOption,
 			Region:     req.Region,
 			AccountID:  req.AccountID,
 			Name:       cloudMap[id].Eip.Name,
-			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
+			InstanceId: cloudMap[id].Eip.InstanceId,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
 			Extension: &dataproto.TCloudEipExtensionCreateReq{
-				Bandwidth:          cloudMap[id].Eip.Bandwidth,
-				InternetChargeType: cloudMap[id].Eip.InternetChargeType,
+				Bandwidth:               cloudMap[id].Eip.Bandwidth,
+				InternetChargeType:      cloudMap[id].Eip.InternetChargeType,
+				InternetServiceProvider: cloudMap[id].Eip.InternetServiceProvider,
 			},
 		}
 		createReq = append(createReq, eip)
@@ -299,7 +300,7 @@ func isTCloudEipChange(db *TCloudDSEipSync, cloud *TCloudEipSync) bool {
 		return true
 	}
 
-	if converter.PtrToVal(cloud.Eip.InstanceId) != db.Eip.InstanceId {
+	if !assert.IsPtrStringEqual(cloud.Eip.InstanceId, db.Eip.InstanceId) {
 		return true
 	}
 
@@ -308,6 +309,10 @@ func isTCloudEipChange(db *TCloudDSEipSync, cloud *TCloudEipSync) bool {
 	}
 
 	if !assert.IsPtrStringEqual(cloud.Eip.InternetChargeType, db.Eip.Extension.InternetChargeType) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Eip.InternetServiceProvider, db.Eip.Extension.InternetServiceProvider) {
 		return true
 	}
 
@@ -328,11 +333,17 @@ func syncTCloudEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*T
 		eip := &dataproto.EipExtUpdateReq[dataproto.TCloudEipExtensionUpdateReq]{
 			ID:         dsMap[id].Eip.ID,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
-			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
+			InstanceId: cloudMap[id].Eip.InstanceId,
 			Extension: &dataproto.TCloudEipExtensionUpdateReq{
-				Bandwidth:          cloudMap[id].Eip.Bandwidth,
-				InternetChargeType: cloudMap[id].Eip.InternetChargeType,
+				Bandwidth:               cloudMap[id].Eip.Bandwidth,
+				InternetChargeType:      cloudMap[id].Eip.InternetChargeType,
+				InternetServiceProvider: cloudMap[id].Eip.InternetServiceProvider,
 			},
+		}
+
+		nilStr := ""
+		if cloudMap[id].Eip.InstanceId == nil {
+			eip.InstanceId = converter.ValToPtr(nilStr)
 		}
 
 		updateReq = append(updateReq, eip)

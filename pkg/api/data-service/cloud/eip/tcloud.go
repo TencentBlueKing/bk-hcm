@@ -21,18 +21,21 @@ package eip
 
 // TCloudEipExtensionCreateReq ...
 type TCloudEipExtensionCreateReq struct {
-	Bandwidth          *uint64 `json:"bandwidth"`
-	InternetChargeType *string `json:"internet_charge_type"`
+	Bandwidth               *uint64 `json:"bandwidth"`
+	InternetChargeType      *string `json:"internet_charge_type"`
+	InternetServiceProvider *string `json:"internet_service_provider"`
 }
 
 // TCloudEipExtensionResult ...
 type TCloudEipExtensionResult struct {
-	Bandwidth          *uint64 `json:"bandwidth"`
-	InternetChargeType *string `json:"internet_charge_type"`
+	Bandwidth               *uint64 `json:"bandwidth"`
+	InternetChargeType      *string `json:"internet_charge_type"`
+	InternetServiceProvider *string `json:"internet_service_provider"`
 }
 
 // TCloudEipExtensionUpdateReq ...
 type TCloudEipExtensionUpdateReq struct {
-	Bandwidth          *uint64 `json:"bandwidth"`
-	InternetChargeType *string `json:"internet_charge_type"`
+	Bandwidth               *uint64 `json:"bandwidth"`
+	InternetChargeType      *string `json:"internet_charge_type"`
+	InternetServiceProvider *string `json:"internet_service_provider"`
 }

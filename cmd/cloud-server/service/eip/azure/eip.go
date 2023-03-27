@@ -41,6 +41,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -317,7 +318,7 @@ func (a *Azure) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cl
 
 	eipResult := &cloudproto.AzureEipExtResult{EipExtResult: eipResp, CvmID: cvmID}
 	eipResult.InstanceType = "NI"
-	eipResult.InstanceId = nis.Details[0].ID
+	eipResult.InstanceId = converter.ValToPtr(nis.Details[0].ID)
 
 	return eipResult, nil
 }

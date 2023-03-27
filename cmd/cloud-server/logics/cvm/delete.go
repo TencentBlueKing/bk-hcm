@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/classifier"
+	"hcm/pkg/tools/converter"
 )
 
 // BatchDeleteCvm batch delete cvm.
@@ -205,7 +206,7 @@ func (c *cvm) DeleteRecycledCvm(kt *kit.Kit, basicInfoMap map[string]types.Cloud
 		var nicID string
 		switch vendor {
 		case enumor.Azure, enumor.Gcp, enumor.HuaWei:
-			nicID = eip.InstanceId
+			nicID = converter.PtrToVal(eip.InstanceId)
 		}
 
 		err = c.eip.DisassociateEip(kt, vendor, id, cvmID, nicID, eip.AccountID)
@@ -227,7 +228,7 @@ func (c *cvm) DeleteRecycledCvm(kt *kit.Kit, basicInfoMap map[string]types.Cloud
 			var nicID string
 			switch vendor {
 			case enumor.Azure, enumor.Gcp, enumor.HuaWei:
-				nicID = eip.InstanceId
+				nicID = converter.PtrToVal(eip.InstanceId)
 			}
 
 			err = c.eip.AssociateEip(kt, vendor, id, cvmID, nicID, eip.AccountID)

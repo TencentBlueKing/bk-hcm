@@ -83,15 +83,16 @@ func (t *TCloud) ListEip(kt *kit.Kit, opt *eip.TCloudEipListOption) (*eip.TCloud
 	eips := make([]*eip.TCloudEip, len(resp.Response.AddressSet))
 	for idx, address := range resp.Response.AddressSet {
 		eips[idx] = &eip.TCloudEip{
-			CloudID:            *address.AddressId,
-			Name:               address.AddressName,
-			Region:             opt.Region,
-			InstanceId:         address.InstanceId,
-			Status:             address.AddressStatus,
-			PublicIp:           address.AddressIp,
-			PrivateIp:          address.PrivateAddressIp,
-			Bandwidth:          address.Bandwidth,
-			InternetChargeType: address.InternetChargeType,
+			CloudID:                 *address.AddressId,
+			Name:                    address.AddressName,
+			Region:                  opt.Region,
+			InstanceId:              address.InstanceId,
+			Status:                  address.AddressStatus,
+			PublicIp:                address.AddressIp,
+			PrivateIp:               address.PrivateAddressIp,
+			Bandwidth:               address.Bandwidth,
+			InternetChargeType:      address.InternetChargeType,
+			InternetServiceProvider: address.InternetServiceProvider,
 		}
 	}
 

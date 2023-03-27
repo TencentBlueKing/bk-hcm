@@ -44,7 +44,7 @@ type EipExtCreateReq[T EipExtensionCreateReq] struct {
 	Name         *string `json:"name"`
 	CloudID      string  `json:"cloud_id" validate:"required"`
 	Region       string  `json:"region" validate:"required"`
-	InstanceId   string  `json:"instance_id"`
+	InstanceId   *string `json:"instance_id"`
 	InstanceType string  `json:"instance_type"`
 	Status       string  `json:"status"`
 	PublicIp     string  `json:"public_ip"`
@@ -94,12 +94,12 @@ func (req *EipExtBatchUpdateReq[T]) Validate() error {
 
 // EipExtUpdateReq ...
 type EipExtUpdateReq[T EipExtensionUpdateReq] struct {
-	ID           string `json:"id" validate:"required"`
-	BkBizID      uint64 `json:"bk_biz_id"`
-	Status       string `json:"status"`
-	InstanceId   string `json:"instance_id"`
-	InstanceType string `json:"instance_type"`
-	Extension    *T     `json:"extension"`
+	ID           string  `json:"id" validate:"required"`
+	BkBizID      uint64  `json:"bk_biz_id"`
+	Status       string  `json:"status"`
+	InstanceId   *string `json:"instance_id"`
+	InstanceType string  `json:"instance_type"`
+	Extension    *T      `json:"extension"`
 }
 
 // Validate ...
@@ -112,7 +112,7 @@ type EipBatchUpdateReq struct {
 	IDs          []string `json:"ids" validate:"required"`
 	BkBizID      uint64   `json:"bk_biz_id"`
 	Status       string   `json:"status"`
-	InstanceId   string   `json:"instance_id"`
+	InstanceId   *string  `json:"instance_id"`
 	InstanceType string   `json:"instance_type"`
 }
 

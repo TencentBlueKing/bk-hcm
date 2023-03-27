@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -253,7 +254,7 @@ func (t *TCloud) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*c
 	}
 
 	eipResult.InstanceType = "CVM"
-	eipResult.InstanceId = cvmID
+	eipResult.InstanceId = converter.ValToPtr(cvmID)
 
 	return eipResult, nil
 }

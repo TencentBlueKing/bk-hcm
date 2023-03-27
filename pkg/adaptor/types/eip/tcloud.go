@@ -56,15 +56,16 @@ type TCloudEipListResult struct {
 
 // TCloudEip ...
 type TCloudEip struct {
-	CloudID            string
-	Name               *string
-	Region             string
-	InstanceId         *string
-	Status             *string
-	PublicIp           *string
-	PrivateIp          *string
-	Bandwidth          *uint64
-	InternetChargeType *string
+	CloudID                 string
+	Name                    *string
+	Region                  string
+	InstanceId              *string
+	Status                  *string
+	PublicIp                *string
+	PrivateIp               *string
+	Bandwidth               *uint64
+	InternetChargeType      *string
+	InternetServiceProvider *string
 }
 
 // TCloudEipDeleteOption ...

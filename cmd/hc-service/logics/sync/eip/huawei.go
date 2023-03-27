@@ -220,7 +220,7 @@ func syncHuaWeiEipAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiEipOption,
 			Region:     req.Region,
 			AccountID:  req.AccountID,
 			Name:       cloudMap[id].Eip.Name,
-			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
+			InstanceId: cloudMap[id].Eip.InstanceId,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
@@ -255,7 +255,7 @@ func isHuaWeiEipChange(db *HuaWeiDSEipSync, cloud *HuaWeiEipSync) bool {
 		return true
 	}
 
-	if converter.PtrToVal(cloud.Eip.InstanceId) != db.Eip.InstanceId {
+	if !assert.IsPtrStringEqual(cloud.Eip.InstanceId, db.Eip.InstanceId) {
 		return true
 	}
 
@@ -308,7 +308,7 @@ func syncHuaWeiEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*H
 		eip := &dataproto.EipExtUpdateReq[dataproto.HuaWeiEipExtensionUpdateReq]{
 			ID:         dsMap[id].Eip.ID,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
-			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
+			InstanceId: cloudMap[id].Eip.InstanceId,
 			Extension: &dataproto.HuaWeiEipExtensionUpdateReq{
 				PortID:              cloudMap[id].Eip.PortID,
 				BandwidthId:         cloudMap[id].Eip.BandwidthId,
@@ -319,6 +319,11 @@ func syncHuaWeiEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*H
 				BandwidthShareType:  cloudMap[id].Eip.BandwidthShareType,
 				ChargeMode:          cloudMap[id].Eip.ChargeMode,
 			},
+		}
+
+		nilStr := ""
+		if cloudMap[id].Eip.InstanceId == nil {
+			eip.InstanceId = converter.ValToPtr(nilStr)
 		}
 
 		updateReq = append(updateReq, eip)

@@ -217,7 +217,7 @@ func syncAwsEipAdd(kt *kit.Kit, addIDs []string, req *SyncAwsEipOption,
 			Region:     req.Region,
 			AccountID:  req.AccountID,
 			Name:       cloudMap[id].Eip.Name,
-			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
+			InstanceId: cloudMap[id].Eip.InstanceId,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
@@ -250,7 +250,7 @@ func isAwsEipChange(db *AwsDSEipSync, cloud *AwsEipSync) bool {
 		return true
 	}
 
-	if converter.PtrToVal(cloud.Eip.InstanceId) != db.Eip.InstanceId {
+	if !assert.IsPtrStringEqual(cloud.Eip.InstanceId, db.Eip.InstanceId) {
 		return true
 	}
 
@@ -294,7 +294,7 @@ func syncAwsEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsE
 		eip := &dataproto.EipExtUpdateReq[dataproto.AwsEipExtensionUpdateReq]{
 			ID:         dsMap[id].Eip.ID,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
-			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
+			InstanceId: cloudMap[id].Eip.InstanceId,
 			Extension: &dataproto.AwsEipExtensionUpdateReq{
 				PublicIpv4Pool:          cloudMap[id].Eip.PublicIpv4Pool,
 				Domain:                  cloudMap[id].Eip.Domain,
@@ -303,6 +303,11 @@ func syncAwsEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsE
 				NetworkInterfaceId:      cloudMap[id].Eip.NetworkInterfaceId,
 				NetworkInterfaceOwnerId: cloudMap[id].Eip.NetworkInterfaceOwnerId,
 			},
+		}
+
+		nilStr := ""
+		if cloudMap[id].Eip.InstanceId == nil {
+			eip.InstanceId = converter.ValToPtr(nilStr)
 		}
 
 		updateReq = append(updateReq, eip)

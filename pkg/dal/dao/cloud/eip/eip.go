@@ -21,7 +21,7 @@ package eip
 
 import (
 	"fmt"
-	
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -171,7 +171,7 @@ func (eipDao *EipDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, eipID string, u
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddBlankedFields("instance_id").AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(updateData, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
@@ -204,7 +204,7 @@ func (eipDao *EipDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updateD
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddBlankedFields("instance_id").AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(updateData, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)

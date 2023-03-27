@@ -217,7 +217,7 @@ func syncAzureEipAdd(kt *kit.Kit, addIDs []string, req *SyncAzureEipOption,
 			Region:     cloudMap[id].Eip.Region,
 			AccountID:  req.AccountID,
 			Name:       cloudMap[id].Eip.Name,
-			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
+			InstanceId: cloudMap[id].Eip.InstanceId,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
@@ -251,7 +251,7 @@ func isAzureEipChange(db *AzureDSEipSync, cloud *AzureEipSync) bool {
 		return true
 	}
 
-	if converter.PtrToVal(cloud.Eip.InstanceId) != db.Eip.InstanceId {
+	if !assert.IsPtrStringEqual(cloud.Eip.InstanceId, db.Eip.InstanceId) {
 		return true
 	}
 
@@ -296,7 +296,7 @@ func syncAzureEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 		eip := &dataproto.EipExtUpdateReq[dataproto.AzureEipExtensionUpdateReq]{
 			ID:         dsMap[id].Eip.ID,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
-			InstanceId: converter.PtrToVal(cloudMap[id].Eip.InstanceId),
+			InstanceId: cloudMap[id].Eip.InstanceId,
 			Extension: &dataproto.AzureEipExtensionUpdateReq{
 				ResourceGroupName: req.ResourceGroupName,
 				IpConfigurationID: cloudMap[id].Eip.IpConfigurationID,
@@ -306,6 +306,11 @@ func syncAzureEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 				Location:          cloudMap[id].Eip.Location,
 				Fqdn:              cloudMap[id].Eip.Fqdn,
 			},
+		}
+
+		nilStr := ""
+		if cloudMap[id].Eip.InstanceId == nil {
+			eip.InstanceId = converter.ValToPtr(nilStr)
 		}
 
 		updateReq = append(updateReq, eip)
