@@ -75,7 +75,7 @@ func (a *ApplicationOfCreateTCloudDisk) RenderItsmForm() (string, error) {
 
 	diskItems := []formItem{
 		{Label: "云硬盘类型", Value: DiskTypeValue[req.DiskType]},
-		{Label: "大小", Value: strconv.FormatInt(int64(req.DiskCount), 10)},
+		{Label: "大小", Value: strconv.FormatInt(int64(req.DiskSize), 10)},
 		{Label: "购买数量", Value: strconv.FormatInt(int64(req.DiskCount), 10)},
 		{Label: "计费模式", Value: ChargeTypeValue[req.DiskChargeType]},
 	}

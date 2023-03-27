@@ -82,6 +82,10 @@ func (req *TCloudCvmCreateReq) Validate() error {
 		return err
 	}
 
+	if req.RequiredCount > requiredCountMaxLimit {
+		return fmt.Errorf("required count should <= %d", requiredCountMaxLimit)
+	}
+
 	// 校验系统硬盘
 	if !req.isMultipleOfTen(req.SystemDisk.DiskSizeGB) {
 		return fmt.Errorf("disk size[%d] should be not multiple of 10GB", req.SystemDisk.DiskSizeGB)

@@ -20,7 +20,8 @@
 package application
 
 const (
-	asciiLowercase = "abcdefghijklmnopqrstuvwxyz"
-	asciiUppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	digits         = "0123456789"
+	asciiLowercase        = "abcdefghijklmnopqrstuvwxyz"
+	asciiUppercase        = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	digits                = "0123456789"
+	requiredCountMaxLimit = 100
 )

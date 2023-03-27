@@ -89,6 +89,10 @@ func (req *AzureCvmCreateReq) Validate() error {
 		return err
 	}
 
+	if req.RequiredCount > requiredCountMaxLimit {
+		return fmt.Errorf("required count should <= %d", requiredCountMaxLimit)
+	}
+
 	// region can be no space lowercase
 	if !assert.IsSameCaseNoSpaceString(req.Region) {
 		return errf.New(errf.InvalidParameter, "region can only be lowercase")

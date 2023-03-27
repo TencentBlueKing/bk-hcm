@@ -66,6 +66,10 @@ func (req *AwsCvmCreateReq) Validate() error {
 		return err
 	}
 
+	if req.RequiredCount > requiredCountMaxLimit {
+		return fmt.Errorf("required count should <= %d", requiredCountMaxLimit)
+	}
+
 	// 校验系统盘
 	if err := req.validateDiskSize(req.SystemDisk.DiskType, req.SystemDisk.DiskSizeGB); err != nil {
 		return err

@@ -66,6 +66,10 @@ func (req *GcpCvmCreateReq) Validate() error {
 		return err
 	}
 
+	if req.RequiredCount > requiredCountMaxLimit {
+		return fmt.Errorf("required count should <= %d", requiredCountMaxLimit)
+	}
+
 	// 校验系统硬盘
 	if !req.isMultipleOfTwo(req.SystemDisk.DiskSizeGB) {
 		return fmt.Errorf("disk size[%d] should be not multiple of 2GB", req.SystemDisk.DiskSizeGB)

@@ -82,6 +82,10 @@ func (req *HuaWeiCvmCreateReq) Validate() error {
 		return err
 	}
 
+	if req.RequiredCount > requiredCountMaxLimit {
+		return fmt.Errorf("required count should <= %d", requiredCountMaxLimit)
+	}
+
 	// 校验购买时长
 	periods := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 24, 36}
 	periodSet := set.NewInt64SetWithValues(periods)

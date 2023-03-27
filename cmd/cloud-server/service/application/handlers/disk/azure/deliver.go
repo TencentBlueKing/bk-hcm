@@ -65,7 +65,7 @@ func (a *ApplicationOfCreateAzureDisk) toHcProtoCreateReq() *hcproto.AzureDiskCr
 			Zone:      req.Zone,
 			DiskSize:  uint64(req.DiskSize),
 			DiskType:  req.DiskType,
-			DiskCount: uint32(*req.DiskCount),
+			DiskCount: uint32(req.DiskCount),
 			Memo:      req.Memo,
 		},
 		Extension: &hcproto.AzureDiskExtensionCreateReq{ResourceGroupName: req.ResourceGroupName},

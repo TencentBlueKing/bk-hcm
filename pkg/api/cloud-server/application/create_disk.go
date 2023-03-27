@@ -20,6 +20,8 @@
 package application
 
 import (
+	"errors"
+
 	hcproto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -43,6 +45,10 @@ type TCloudDiskCreateReq struct {
 
 // Validate ...
 func (req *TCloudDiskCreateReq) Validate() error {
+	if req.DiskCount > requiredCountMaxLimit {
+		return errors.New("disk count should <= 100")
+	}
+
 	return validator.Validate.Struct(req)
 }
 
@@ -55,7 +61,7 @@ type HuaWeiDiskCreateReq struct {
 	Zone              string                           `json:"zone" validate:"required"`
 	DiskType          string                           `json:"disk_type" validate:"required"`
 	DiskSize          int32                            `json:"disk_size" validate:"required"`
-	DiskCount         *int32                           `json:"disk_count" validate:"required"`
+	DiskCount         int32                            `json:"disk_count" validate:"required"`
 	DiskChargeType    *string                          `json:"disk_charge_type" validate:"required"`
 	DiskChargePrepaid *hcproto.HuaWeiDiskChargePrepaid `json:"disk_charge_prepaid"`
 	Memo              *string                          `json:"memo"`
@@ -63,6 +69,10 @@ type HuaWeiDiskCreateReq struct {
 
 // Validate ...
 func (req *HuaWeiDiskCreateReq) Validate() error {
+	if req.DiskCount > requiredCountMaxLimit {
+		return errors.New("disk count should <= 100")
+	}
+
 	return validator.Validate.Struct(req)
 }
 
@@ -75,12 +85,16 @@ type GcpDiskCreateReq struct {
 	Zone      string  `json:"zone" validate:"required"`
 	DiskType  string  `json:"disk_type" validate:"required"`
 	DiskSize  int32   `json:"disk_size" validate:"required"`
-	DiskCount *int32  `json:"disk_count" validate:"required"`
+	DiskCount int32   `json:"disk_count" validate:"required"`
 	Memo      *string `json:"memo"`
 }
 
 // Validate ...
 func (req *GcpDiskCreateReq) Validate() error {
+	if req.DiskCount > requiredCountMaxLimit {
+		return errors.New("disk count should <= 100")
+	}
+
 	return validator.Validate.Struct(req)
 }
 
@@ -94,7 +108,7 @@ type AzureDiskCreateReq struct {
 	Zone              string  `json:"zone" validate:"required,lowercase"`
 	DiskType          string  `json:"disk_type" validate:"required"`
 	DiskSize          int32   `json:"disk_size" validate:"required"`
-	DiskCount         *int32  `json:"disk_count" validate:"required"`
+	DiskCount         int32   `json:"disk_count" validate:"required"`
 	Memo              *string `json:"memo"`
 }
 
@@ -102,6 +116,10 @@ type AzureDiskCreateReq struct {
 func (req *AzureDiskCreateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
+	}
+
+	if req.DiskCount > requiredCountMaxLimit {
+		return errors.New("disk count should <= 100")
 	}
 
 	// region can be no space lowercase
@@ -126,11 +144,15 @@ type AwsDiskCreateReq struct {
 	Zone      string  `json:"zone" validate:"required"`
 	DiskType  string  `json:"disk_type" validate:"required"`
 	DiskSize  int32   `json:"disk_size" validate:"required"`
-	DiskCount *int32  `json:"disk_count" validate:"required"`
+	DiskCount int32   `json:"disk_count" validate:"required"`
 	Memo      *string `json:"memo"`
 }
 
 // Validate ...
 func (req *AwsDiskCreateReq) Validate() error {
+	if req.DiskCount > requiredCountMaxLimit {
+		return errors.New("disk count should <= 100")
+	}
+
 	return validator.Validate.Struct(req)
 }
