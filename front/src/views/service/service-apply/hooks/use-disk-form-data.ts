@@ -1,5 +1,5 @@
 import http from '@/http';
-import { reactive, watch, ref } from 'vue';
+import { reactive, watch, ref, nextTick } from 'vue';
 import { VendorEnum } from '@/common/constant';
 import type { Cond } from './use-condtion';
 import { Message } from 'bkui-vue';
@@ -113,6 +113,10 @@ export default (cond: Cond) => {
 
   watch(cond, () => {
     resetFormData();
+
+    nextTick(() => {
+      formRef.value.clearValidate();
+    });
   });
 
   const getSaveData = () => {

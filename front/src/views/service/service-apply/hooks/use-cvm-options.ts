@@ -4,8 +4,6 @@ import type { Cond } from './use-condtion';
 import type { ICvmFormData } from './use-cvm-form-data';
 
 export default (cond: Cond, formData: ICvmFormData) => {
-  console.log(cond, formData);
-
   const sysDiskTypes = ref([]);
 
   const billingModes = ref([]);

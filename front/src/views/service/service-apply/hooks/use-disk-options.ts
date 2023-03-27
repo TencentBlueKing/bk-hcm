@@ -4,8 +4,6 @@ import type { Cond } from './use-condtion';
 import type { IDiskFormData } from './use-disk-form-data';
 
 export default (cond: Cond, formData: IDiskFormData) => {
-  console.log(formData, 'options type formdata');
-
   const diskTypes = ref([]);
 
   const billingModes = ref([]);

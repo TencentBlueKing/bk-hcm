@@ -46,7 +46,7 @@ export default defineComponent({
       activeTab: '',
       panels: [
         { name: 'BasicResource', label: t('基础'), count: 10 },
-        { name: 'SeniorResource', label: t('高级'), count: 20 },
+        // { name: 'SeniorResource', label: t('高级'), count: 20 },
       ],
     });
 

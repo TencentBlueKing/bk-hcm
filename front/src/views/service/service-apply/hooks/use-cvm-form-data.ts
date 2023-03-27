@@ -1,6 +1,6 @@
 
 import http from '@/http';
-import { reactive, ref, watch } from 'vue';
+import { nextTick, reactive, ref, watch } from 'vue';
 import { VendorEnum } from '@/common/constant';
 import type { Cond } from './use-condtion';
 import { Message } from 'bkui-vue';
@@ -140,6 +140,8 @@ export default (cond: Cond) => {
       'instance_type',
       'cloud_image_id',
       'cloud_vpc_id',
+      'cloud_subnet_id',
+      'cloud_security_group_ids',
       'data_disk',
       'public_ip_assigned',
       'instance_charge_type',
@@ -155,6 +157,10 @@ export default (cond: Cond) => {
 
   watch(cond, (cond) => {
     resetFormData();
+
+    nextTick(() => {
+      formRef.value.clearValidate();
+    });
   });
 
   const getSaveData = () => {

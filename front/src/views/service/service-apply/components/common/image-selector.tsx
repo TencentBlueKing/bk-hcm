@@ -46,11 +46,11 @@ export default defineComponent({
               op: QueryRuleOPEnum.EQ,
               value: vendor,
             },
-            {
-              field: 'extension.region',
-              op: QueryRuleOPEnum.JSON_EQ,
-              value: region,
-            },
+            // {
+            //   field: 'extension.region',
+            //   op: QueryRuleOPEnum.JSON_EQ,
+            //   value: region,
+            // },
             {
               field: 'type',
               op: QueryRuleOPEnum.EQ,

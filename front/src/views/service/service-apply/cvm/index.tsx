@@ -419,6 +419,17 @@ export default defineComponent({
           message: '不符合校验规则',
           trigger: 'change',
         },
+        {
+          validator: (value: string) => {
+            formRef.value.clearValidate('confirmed_password');
+            if (formData.confirmed_password.length) {
+              return value === formData.confirmed_password
+            }
+            return true
+          },
+          message: '两次输入的密码不一致',
+          trigger: 'change',
+        },
       ],
       confirmed_password: [
         {
@@ -427,7 +438,10 @@ export default defineComponent({
           trigger: 'change',
         },
         {
-          validator: (value: string) => value === formData.password,
+          validator: (value: string) => {
+            formRef.value.clearValidate('password');
+            return formData.password.length && value === formData.password;
+          },
           message: '两次输入的密码不一致',
           trigger: 'change',
         },
