@@ -123,7 +123,12 @@ func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return result, nil
+	return &protocvm.BatchCreateResult{
+		UnknownCloudIDs: result.UnknownCloudIDs,
+		SuccessCloudIDs: result.SuccessCloudIDs,
+		FailedCloudIDs:  result.FailedCloudIDs,
+		FailedMessage:   result.FailedMessage,
+	}, nil
 }
 
 func (svc *cvmSvc) getImageByCloudID(kt *kit.Kit, cloudID string) (

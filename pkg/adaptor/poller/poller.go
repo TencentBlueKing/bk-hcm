@@ -31,10 +31,10 @@ import (
 
 // BaseDoneResult ...
 type BaseDoneResult struct {
-	SuccessCloudIDs []string
-	FailedCloudIDs  []string
-	UnknownCloudIDs []string
-	FailedMessage   string
+	SuccessCloudIDs []string `json:"success_cloud_ids"`
+	FailedCloudIDs  []string `json:"failed_cloud_ids"`
+	UnknownCloudIDs []string `json:"unknown_cloud_ids"`
+	FailedMessage   string   `json:"failed_message"`
 }
 
 // PollingHandler polling handler.

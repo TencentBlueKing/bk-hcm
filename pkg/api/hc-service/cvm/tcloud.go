@@ -143,6 +143,7 @@ func (req *TCloudBatchCreateReq) Validate() error {
 
 // BatchCreateResult ...
 type BatchCreateResult struct {
+	UnknownCloudIDs []string `json:"unknown_cloud_ids"`
 	SuccessCloudIDs []string `json:"success_cloud_ids"`
 	FailedCloudIDs  []string `json:"failed_cloud_ids"`
 	FailedMessage   string   `json:"failed_message"`

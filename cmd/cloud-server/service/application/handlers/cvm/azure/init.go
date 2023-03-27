@@ -37,9 +37,9 @@ type ApplicationOfCreateAzureCvm struct {
 }
 
 // NewApplicationOfCreateAzureCvm ...
-func NewApplicationOfCreateAzureCvm(
-	opt *handlers.HandlerOption, req *proto.AzureCvmCreateReq,
+func NewApplicationOfCreateAzureCvm(opt *handlers.HandlerOption, req *proto.AzureCvmCreateReq,
 ) *ApplicationOfCreateAzureCvm {
+
 	return &ApplicationOfCreateAzureCvm{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.Azure),
 		req:                    req,

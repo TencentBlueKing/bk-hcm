@@ -141,7 +141,7 @@ func (a *BaseApplicationHandler) GetAzureRegion(region string) (*corecloudregion
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: region},
+			filter.AtomRule{Field: "name", Op: filter.Equal.Factory(), Value: region},
 		},
 	}
 	// 查询
@@ -157,7 +157,7 @@ func (a *BaseApplicationHandler) GetAzureRegion(region string) (*corecloudregion
 		return nil, err
 	}
 	if resp == nil || len(resp.Details) == 0 {
-		return nil, fmt.Errorf("not found azure region by region_id(%s)", region)
+		return nil, fmt.Errorf("not found azure region by name(%s)", region)
 	}
 
 	return &resp.Details[0], nil
