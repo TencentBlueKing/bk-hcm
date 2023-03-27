@@ -26,11 +26,13 @@ import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablecvm "hcm/pkg/dal/table/cloud/cvm"
 	tabletype "hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
 
@@ -118,7 +120,8 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		// create cmdb cloud hosts
 		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models)
 		if err != nil {
-			return nil, err
+			logs.Errorf("[%s] upsert cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
+			return nil, nil
 		}
 
 		return ids, nil

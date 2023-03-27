@@ -25,4 +25,6 @@ type WarnSign string
 const (
 	// AccountSyncFailed account sync failed.
 	AccountSyncFailed WarnSign = "account_sync_failed"
+	// CmdbSyncFailed cmdb sync failed.
+	CmdbSyncFailed WarnSign = "cmdb_sync_failed"
 )

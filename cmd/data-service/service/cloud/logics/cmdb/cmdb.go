@@ -58,10 +58,15 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 			host.Vendor = req.Vendor
 		}
 
+		status, exists := vendorCmdbHostStatusMap[host.Status]
+		if !exists {
+			status = "1"
+		}
+
 		hosts = append(hosts, cmdb.Host{
 			BkCloudVendor:     cmdb.HcmCmdbVendorMap[req.Vendor],
 			BkCloudInstID:     host.CloudID,
-			BkCloudHostStatus: vendorCmdbHostStatusMap[host.Status],
+			BkCloudHostStatus: status,
 			BkCloudID:         host.BkCloudID,
 			BkHostInnerIP:     strings.Join(host.PrivateIPv4Addresses, ","),
 			BkHostOuterIP:     strings.Join(host.PublicIPv4Addresses, ","),
@@ -96,10 +101,15 @@ func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBi
 			return err
 		}
 
+		status, exists := cmdb.HcmCmdbHostStatusMap[host.Vendor][host.Status]
+		if !exists {
+			status = "1"
+		}
+
 		hosts = append(hosts, cmdb.Host{
 			BkCloudVendor:     cmdb.HcmCmdbVendorMap[host.Vendor],
 			BkCloudInstID:     host.CloudID,
-			BkCloudHostStatus: cmdb.HcmCmdbHostStatusMap[host.Vendor][host.Status],
+			BkCloudHostStatus: status,
 			BkCloudID:         host.BkCloudID,
 			BkHostInnerIP:     strings.Join(host.PrivateIPv4Addresses, ","),
 			BkHostOuterIP:     strings.Join(host.PublicIPv4Addresses, ","),

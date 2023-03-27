@@ -249,40 +249,45 @@ func (svc *eipSvc) AssignEip(cts *rest.Contexts) (interface{}, error) {
 	)
 }
 
-// DeleteEip delete eip.
-func (svc *eipSvc) DeleteEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.deleteEip(cts, handler.ResValidWithAuth)
+// BatchDeleteEip batch delete eip.
+func (svc *eipSvc) BatchDeleteEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteEip(cts, handler.ResValidWithAuth)
 }
 
-// DeleteBizEip delete biz eip.
-func (svc *eipSvc) DeleteBizEip(cts *rest.Contexts) (interface{}, error) {
-	return svc.deleteEip(cts, handler.BizValidWithAuth)
+// BatchDeleteBizEip batch delete biz eip.
+func (svc *eipSvc) BatchDeleteBizEip(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteEip(cts, handler.BizValidWithAuth)
 }
 
-func (svc *eipSvc) deleteEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	eipID := cts.PathParameter("id").String()
+func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+	req := new(core.BatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
 
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		enumor.EipCloudResType,
-		eipID,
-	)
-	if err != nil {
+	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	basicInfoReq := cloud.ListResourceBasicInfoReq{
+		ResourceType: enumor.SubnetCloudResType,
+		IDs:          req.IDs,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		basicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+
 	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{
-		Authorizer: svc.authorizer, ResType: meta.Eip,
-		Action: meta.Delete, BasicInfo: basicInfo,
-	})
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Subnet,
+		Action: meta.Delete, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}
 
 	// create delete audit.
-	err = svc.audit.ResDeleteAudit(cts.Kit, enumor.EipAuditResType, []string{eipID})
+	err = svc.audit.ResDeleteAudit(cts.Kit, enumor.EipAuditResType, req.IDs)
 	if err != nil {
 		logs.Errorf("create delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -290,22 +295,44 @@ func (svc *eipSvc) deleteEip(cts *rest.Contexts, validHandler handler.ValidWithA
 
 	// TODO 判断 Eip 是否可删除
 
-	deleteReq := &hcproto.EipDeleteReq{EipID: eipID, AccountID: basicInfo.AccountID}
+	succeeded := make([]string, 0)
+	for _, eipID := range req.IDs {
+		basicInfo, exists := basicInfoMap[eipID]
+		if !exists {
+			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s has no corresponding vendor", eipID))
+		}
 
-	switch basicInfo.Vendor {
-	case enumor.TCloud:
-		return nil, svc.client.HCService().TCloud.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	case enumor.Aws:
-		return nil, svc.client.HCService().Aws.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	case enumor.HuaWei:
-		return nil, svc.client.HCService().HuaWei.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	case enumor.Gcp:
-		return nil, svc.client.HCService().Gcp.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	case enumor.Azure:
-		return nil, svc.client.HCService().Azure.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
+		deleteReq := &hcproto.EipDeleteReq{EipID: eipID, AccountID: basicInfo.AccountID}
+
+		switch basicInfo.Vendor {
+		case enumor.TCloud:
+			err = svc.client.HCService().TCloud.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		case enumor.Aws:
+			err = svc.client.HCService().Aws.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		case enumor.HuaWei:
+			err = svc.client.HCService().HuaWei.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		case enumor.Gcp:
+			err = svc.client.HCService().Gcp.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		case enumor.Azure:
+			err = svc.client.HCService().Azure.Eip.DeleteEip(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		default:
+			err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
+		}
+
+		if err != nil {
+			return core.BatchOperateResult{
+				Succeeded: succeeded,
+				Failed: &core.FailedInfo{
+					ID:    eipID,
+					Error: err,
+				},
+			}, errf.NewFromErr(errf.PartialFailed, err)
+		}
+
+		succeeded = append(succeeded, eipID)
 	}
+
+	return core.BatchOperateResult{Succeeded: succeeded}, nil
 }
 
 // AssociateEip associate eip.

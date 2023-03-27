@@ -81,10 +81,11 @@ eip 列表
 
 #### EipExtension[azure]
 
-| 参数名称                           | 参数类型 | 描述                                                         |
-|--------------------------------| -------- | ------------------------------------------------------------ |
-| ip_configuration_id | string |  Resource ID (The IP configuration associated with the public IP address) |
-| sku | string | sku |
+| 参数名称                | 参数类型   | 描述                                                                       |
+|---------------------|--------|--------------------------------------------------------------------------|
+| ip_configuration_id | string | Resource ID (The IP configuration associated with the public IP address) |
+| sku                 | string | sku                                                                      |
+| sku_tier            | string | 层                                                                        |
 
 #### EipExtension[huawei]
 | 参数名称                           | 参数类型 | 描述                                                         |

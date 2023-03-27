@@ -1303,3 +1303,28 @@ paths:
           userVerifiedRequired: true
         disabledStages: [ ]
         descriptionEn:
+  /api/v1/cloud/eips/batch:
+    delete:
+      operationId: batch_delete_eip
+      description: 批量删除弹性IP
+      tags:
+        - Eip
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v1/cloud/eips/batch
+          matchSubpath: false
+          timeout: 0
+          upstreams: { }
+          transformHeaders: { }
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: [ ]
+        descriptionEn:

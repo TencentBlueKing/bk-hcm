@@ -23,6 +23,7 @@ package eip
 type AzureEipExtensionCreateReq struct {
 	IpConfigurationID *string `json:"ip_configuration_id"`
 	SKU               *string `json:"sku"`
+	SKUTier           *string `json:"sku_tier"`
 	ResourceGroupName string  `json:"resource_group_name"`
 	Location          *string `json:"location"`
 	Fqdn              *string `json:"fqdn"`
@@ -33,6 +34,7 @@ type AzureEipExtensionCreateReq struct {
 type AzureEipExtensionResult struct {
 	IpConfigurationID *string `json:"ip_configuration_id"`
 	SKU               *string `json:"sku"`
+	SKUTier           *string `json:"sku_tier"`
 	ResourceGroupName string  `json:"resource_group_name"`
 	Location          *string `json:"location"`
 	Fqdn              *string `json:"fqdn"`
@@ -43,6 +45,7 @@ type AzureEipExtensionResult struct {
 type AzureEipExtensionUpdateReq struct {
 	IpConfigurationID *string `json:"ip_configuration_id"`
 	SKU               *string `json:"sku"`
+	SKUTier           *string `json:"sku_tier"`
 	ResourceGroupName string  `json:"resource_group_name"`
 	Location          *string `json:"location"`
 	Fqdn              *string `json:"fqdn"`

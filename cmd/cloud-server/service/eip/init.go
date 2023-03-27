@@ -49,7 +49,7 @@ func InitEipService(c *capability.Capability) {
 	h.Add("ListEip", http.MethodPost, "/eips/list", svc.ListEip)
 	h.Add("RetrieveEip", http.MethodGet, "/eips/{id}", svc.RetrieveEip)
 	h.Add("AssignEip", http.MethodPost, "/eips/assign/bizs", svc.AssignEip)
-	h.Add("DeleteEip", http.MethodDelete, "/eips/{id}", svc.DeleteEip)
+	h.Add("BatchDeleteEip", http.MethodDelete, "/eips/batch", svc.BatchDeleteEip)
 
 	h.Add("ListEipExtByCvmID", http.MethodGet, "/vendors/{vendor}/eips/cvms/{cvm_id}", svc.ListEipExtByCvmID)
 
@@ -61,7 +61,7 @@ func InitEipService(c *capability.Capability) {
 	h.Add("ListBizEipExtByCvmID", http.MethodGet, "/bizs/{bk_biz_id}/vendors/{vendor}/eips/cvms/{cvm_id}",
 		svc.ListBizEipExtByCvmID)
 	h.Add("RetrieveBizEip", http.MethodGet, "/bizs/{bk_biz_id}/eips/{id}", svc.RetrieveBizEip)
-	h.Add("DeleteBizEip", http.MethodDelete, "/bizs/{bk_biz_id}/eips/{id}", svc.DeleteBizEip)
+	h.Add("BatchDeleteBizEip", http.MethodDelete, "/bizs/{bk_biz_id}/eips/{id}", svc.BatchDeleteBizEip)
 	h.Add("AssociateBizEip", http.MethodPost, "/bizs/{bk_biz_id}/eips/associate", svc.AssociateBizEip)
 	h.Add("DisassociateBizEip", http.MethodPost, "/bizs/{bk_biz_id}/eips/disassociate", svc.DisassociateBizEip)
 	h.Add("CreateBizEip", http.MethodPost, "/bizs/{bk_biz_id}/eips/create", svc.CreateBizEip)

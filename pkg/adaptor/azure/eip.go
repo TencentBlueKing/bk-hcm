@@ -52,14 +52,12 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 
 		for _, one := range nextResult.Value {
 			state := string(*one.Properties.ProvisioningState)
-			sku := string(*one.SKU.Name)
 			eIp := &eip.AzureEip{
 				CloudID:           strings.ToLower(*one.ID),
 				Name:              SPtrToLowerSPtr(one.Name),
 				Region:            StrToLowerNoSpaceStr(*one.Location),
 				Status:            &state,
 				PublicIp:          one.Properties.IPAddress,
-				SKU:               &sku,
 				Zone:              "",
 				ResourceGroupName: strings.ToLower(opt.ResourceGroupName),
 				Location:          one.Location,
@@ -74,6 +72,15 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 
 			if one.Properties.IPConfiguration != nil {
 				eIp.IpConfigurationID = SPtrToLowerSPtr(one.Properties.IPConfiguration.ID)
+			}
+
+			if one.SKU != nil {
+				if one.SKU.Name != nil {
+					eIp.SKU = converter.ValToPtr(string(*one.SKU.Name))
+				}
+				if one.SKU.Tier != nil {
+					eIp.SKUTier = converter.ValToPtr(string(*one.SKU.Tier))
+				}
 			}
 
 			if len(opt.CloudIDs) > 0 {

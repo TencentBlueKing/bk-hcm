@@ -225,6 +225,7 @@ func syncAzureEipAdd(kt *kit.Kit, addIDs []string, req *SyncAzureEipOption,
 				ResourceGroupName: req.ResourceGroupName,
 				IpConfigurationID: cloudMap[id].Eip.IpConfigurationID,
 				SKU:               cloudMap[id].Eip.SKU,
+				SKUTier:           cloudMap[id].Eip.SKUTier,
 				Zone:              cloudMap[id].Eip.Zone,
 				Location:          cloudMap[id].Eip.Location,
 				Fqdn:              cloudMap[id].Eip.Fqdn,
@@ -262,6 +263,10 @@ func isAzureEipChange(db *AzureDSEipSync, cloud *AzureEipSync) bool {
 		return true
 	}
 
+	if !assert.IsPtrStringEqual(cloud.Eip.SKUTier, db.Eip.Extension.SKUTier) {
+		return true
+	}
+
 	if cloud.Eip.Zone != db.Eip.Extension.Zone {
 		return true
 	}
@@ -296,6 +301,7 @@ func syncAzureEipUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 				ResourceGroupName: req.ResourceGroupName,
 				IpConfigurationID: cloudMap[id].Eip.IpConfigurationID,
 				SKU:               cloudMap[id].Eip.SKU,
+				SKUTier:           cloudMap[id].Eip.SKUTier,
 				Zone:              cloudMap[id].Eip.Zone,
 				Location:          cloudMap[id].Eip.Location,
 				Fqdn:              cloudMap[id].Eip.Fqdn,
