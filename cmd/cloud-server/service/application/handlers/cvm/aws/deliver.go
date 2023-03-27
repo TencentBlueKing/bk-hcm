@@ -25,6 +25,7 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	protodisk "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/logs"
 )
 
 // Deliver 执行资源交付
@@ -41,18 +42,22 @@ func (a *ApplicationOfCreateAwsCvm) Deliver() (enumor.ApplicationStatus, map[str
 
 	deliverDetail := map[string]interface{}{"result": result}
 	// 全部失败
-	if len(result.FailedCloudIDs) == int(a.req.RequiredCount) {
+	if len(result.SuccessCloudIDs) == 0 {
 		err = fmt.Errorf("all cvm create failed, message: %s", result.FailedMessage)
 		deliverDetail["error"] = err
 		return enumor.DeliverError, deliverDetail, err
 	}
 
+	// 如果部分成功，需要日志打印
+	if len(result.SuccessCloudIDs) != int(a.req.RequiredCount) {
+		logs.Warnf("request hc service to batch create cvm partial failed, result: %v, rid: %s", result, a.Cts.Kit.Rid)
+	}
+
 	// 将创建成功的主机进行业务分配
 	cvmIDs, err := a.assignToBiz(result.SuccessCloudIDs)
-	deliverDetail["error"] = err
 	deliverDetail["cvm_ids"] = cvmIDs
 	if err != nil {
-
+		deliverDetail["error"] = err
 		return enumor.DeliverError, deliverDetail, err
 	}
 

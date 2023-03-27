@@ -30,7 +30,7 @@ func (a *BaseApplicationHandler) ListDiskIDByCvm(cvmIDs []string) ([]string, err
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: "cmv_id", Op: filter.In.Factory(), Value: cvmIDs},
+			filter.AtomRule{Field: "cvm_id", Op: filter.In.Factory(), Value: cvmIDs},
 		},
 	}
 	// 查询

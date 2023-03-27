@@ -33,9 +33,9 @@ export default defineComponent({
     watchEffect(async () => {
       if (props.vendor === VendorEnum.AZURE) {
         list.value = [
-          { name: 'zone1', display_name: 'Zone1' },
-          { name: 'zone2', display_name: 'Zone2' },
-          { name: 'zone3', display_name: 'Zone3' },
+          { name: '1', display_name: 'Zone1' },
+          { name: '2', display_name: 'Zone2' },
+          { name: '3', display_name: 'Zone3' },
         ];
         return;
       }

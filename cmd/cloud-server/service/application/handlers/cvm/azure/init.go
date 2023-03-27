@@ -75,7 +75,7 @@ func (a *ApplicationOfCreateAzureCvm) toHcProtoAzureBatchCreateReq() *hcproto.Az
 		CloudSubnetID:        req.CloudSubnetID,
 		CloudSecurityGroupID: req.CloudSecurityGroupIDs[0],
 		OSDisk: &typecvm.AzureOSDisk{
-			Name:   "os1",
+			Name:   req.Name + "-disk",
 			SizeGB: int32(req.SystemDisk.DiskSizeGB),
 			Type:   req.SystemDisk.DiskType,
 		},
