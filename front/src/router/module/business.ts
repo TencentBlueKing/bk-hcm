@@ -184,7 +184,7 @@ const businesseMenus: RouteRecordRaw[] = [
           },
           {
             path: 'detail',
-            name: 'ipBusinessDetail',
+            name: 'eipsBusinessDetail',
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: 'businessElasticIP',
