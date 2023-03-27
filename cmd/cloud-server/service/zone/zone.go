@@ -73,33 +73,7 @@ func (dSvc *ZoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	if vendor == Azure {
-		resp := new(dataproto.ZoneListResult)
-		resp.Count = 3
-		resp.Details = []zone.BaseZone{
-			{
-				ID:      "",
-				Vendor:  Azure,
-				CloudID: "",
-				Name:    Zone1,
-				Region:  region,
-			},
-			{
-				ID:      "",
-				Vendor:  Azure,
-				CloudID: "",
-				Name:    Zone2,
-				Region:  region,
-			},
-			{
-				ID:      "",
-				Vendor:  Azure,
-				CloudID: "",
-				Name:    Zone3,
-				Region:  region,
-			},
-		}
-
-		return resp, nil
+		return makeAzureZones(region)
 	}
 
 	req := new(cloudproto.ZoneListReq)
@@ -111,26 +85,57 @@ func (dSvc *ZoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	zoneReq := &dataproto.ZoneListReq{
+		Page: req.Page,
+	}
+
+	if req.Filter != nil {
+		zoneReq.Filter = req.Filter
+	} else {
+		zoneReq.Filter = &filter.Expression{
+			Op:    filter.And,
+			Rules: []filter.RuleFactory{},
+		}
+	}
+
+	vendorFilter := filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor}
+	regionFilter := filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region}
+	zoneReq.Filter.Rules = append(zoneReq.Filter.Rules, vendorFilter)
+	zoneReq.Filter.Rules = append(zoneReq.Filter.Rules, regionFilter)
+
 	return dSvc.client.DataService().Global.Zone.ListZone(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
-		&dataproto.ZoneListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					&filter.AtomRule{
-						Field: "vendor",
-						Op:    filter.Equal.Factory(),
-						Value: vendor,
-					},
-					&filter.AtomRule{
-						Field: "region",
-						Op:    filter.Equal.Factory(),
-						Value: region,
-					},
-				},
-			},
-			Page: req.Page,
-		},
+		zoneReq,
 	)
+}
+
+func makeAzureZones(region string) (*dataproto.ZoneListResult, error) {
+	resp := new(dataproto.ZoneListResult)
+	resp.Count = 3
+	resp.Details = []zone.BaseZone{
+		{
+			ID:      "",
+			Vendor:  Azure,
+			CloudID: "",
+			Name:    Zone1,
+			Region:  region,
+		},
+		{
+			ID:      "",
+			Vendor:  Azure,
+			CloudID: "",
+			Name:    Zone2,
+			Region:  region,
+		},
+		{
+			ID:      "",
+			Vendor:  Azure,
+			CloudID: "",
+			Name:    Zone3,
+			Region:  region,
+		},
+	}
+
+	return resp, nil
 }
