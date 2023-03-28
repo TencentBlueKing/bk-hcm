@@ -97,9 +97,7 @@ func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume,
 
 	if len(opt.CloudIDs) > 0 {
 		req.VolumeIds = converter.SliceToPtr(opt.CloudIDs)
-	}
-
-	if opt.Page != nil {
+	} else if opt.Page != nil {
 		req.MaxResults = opt.Page.MaxResults
 		req.NextToken = opt.Page.NextToken
 	}
@@ -109,7 +107,7 @@ func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume,
 		if strings.Contains(err.Error(), ErrDataNotFound) {
 			return make([]*ec2.Volume, 0), nil, nil
 		}
-		logs.Errorf("list aws security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("list aws disk failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, nil, err
 	}
 
@@ -260,7 +258,6 @@ func (h *attachDiskPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*st
 		&disk.AwsDiskListOption{
 			Region:   h.region,
 			CloudIDs: cIDs,
-			Page:     &core.AwsPage{MaxResults: converter.ValToPtr(int64(filter.DefaultMaxInLimit))},
 		},
 	)
 	return result, err
@@ -285,7 +282,6 @@ func (h *detachDiskPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*st
 		&disk.AwsDiskListOption{
 			Region:   h.region,
 			CloudIDs: cIDs,
-			Page:     &core.AwsPage{MaxResults: converter.ValToPtr(int64(filter.DefaultMaxInLimit))},
 		},
 	)
 	return result, err

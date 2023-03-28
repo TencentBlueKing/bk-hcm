@@ -270,7 +270,7 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 	}
 
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
-		ResourceType: enumor.SubnetCloudResType,
+		ResourceType: enumor.EipCloudResType,
 		IDs:          req.IDs,
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
@@ -280,7 +280,7 @@ func (svc *eipSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.Valid
 	}
 
 	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Subnet,
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Eip,
 		Action: meta.Delete, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
