@@ -40,6 +40,20 @@ const (
 	Zone3 = "3"
 )
 
+var AzureNoZonesMap map[string]struct{} = map[string]struct{}{
+	"australiacentral":   {},
+	"australiasoutheast": {},
+	"japanwest":          {},
+	"koreasouth":         {},
+	"southindia":         {},
+	"westindia":          {},
+	"canadaeast":         {},
+	"ukwest":             {},
+	"northcentralus":     {},
+	"westcentralus":      {},
+	"westus":             {},
+}
+
 // InitZoneService initialize the zone service.
 func InitZoneService(c *capability.Capability) {
 	svc := &ZoneSvc{
@@ -112,29 +126,33 @@ func (dSvc *ZoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
 
 func makeAzureZones(region string) (*dataproto.ZoneListResult, error) {
 	resp := new(dataproto.ZoneListResult)
-	resp.Count = 3
-	resp.Details = []zone.BaseZone{
-		{
+	resp.Details = []zone.BaseZone{}
+
+	if _, ok := AzureNoZonesMap[region]; ok {
+		resp.Count = 0
+	} else {
+		resp.Count = 3
+		resp.Details = append(resp.Details, zone.BaseZone{
 			ID:      "",
 			Vendor:  Azure,
 			CloudID: "",
 			Name:    Zone1,
 			Region:  region,
-		},
-		{
+		})
+		resp.Details = append(resp.Details, zone.BaseZone{
 			ID:      "",
 			Vendor:  Azure,
 			CloudID: "",
 			Name:    Zone2,
 			Region:  region,
-		},
-		{
+		})
+		resp.Details = append(resp.Details, zone.BaseZone{
 			ID:      "",
 			Vendor:  Azure,
 			CloudID: "",
 			Name:    Zone3,
 			Region:  region,
-		},
+		})
 	}
 
 	return resp, nil

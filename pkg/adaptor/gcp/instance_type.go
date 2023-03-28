@@ -51,7 +51,10 @@ func (g *Gcp) ListInstanceType(
 	its := make([]*typesinstancetype.GcpInstanceType, 0, len(resp.Items))
 	for _, machineType := range resp.Items {
 		if machineType != nil {
-			its = append(its, toGcpInstanceType(machineType))
+			gcpInstanceType := toGcpInstanceType(machineType)
+			if gcpInstanceType != nil {
+				its = append(its, gcpInstanceType)
+			}
 		}
 	}
 
@@ -59,6 +62,10 @@ func (g *Gcp) ListInstanceType(
 }
 
 func toGcpInstanceType(machineType *compute.MachineType) *typesinstancetype.GcpInstanceType {
+	if machineType.Deprecated != nil {
+		return nil
+	}
+
 	return &typesinstancetype.GcpInstanceType{
 		InstanceType: machineType.Name,
 		Memory:       machineType.MemoryMb,
