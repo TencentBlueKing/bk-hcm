@@ -61,7 +61,7 @@ type TCloudDiskExtensionUpdateReq struct {
 	Encrypted          *bool                    `json:"encrypted,omitempty"`
 	Attached           *bool                    `json:"attached,omitempty"`
 	DiskUsage          *string                  `json:"disk_usage,omitempty"`
-	InstanceId         *string                  `json:"InstanceId,omitempty"`
+	InstanceId         *string                  `json:"InstanceID,omitempty"`
 	InstanceType       *string                  `json:"InstanceType,omitempty"`
 	DeleteWithInstance *bool                    `json:"delete_with_instance,omitempty"`
 	DeadlineTime       *string                  `json:"deadline_time,omitempty"`

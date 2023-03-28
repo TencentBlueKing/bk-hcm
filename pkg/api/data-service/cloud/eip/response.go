@@ -21,7 +21,7 @@ type EipExtResult[T EipExtensionResult] struct {
 	CloudID      string     `json:"cloud_id,omitempty"`
 	BkBizID      int64      `json:"bk_biz_id,omitempty"`
 	Region       string     `json:"region,omitempty"`
-	InstanceId   *string    `json:"instance_id,omitempty"`
+	InstanceID   *string    `json:"instance_id,omitempty"`
 	InstanceType string     `json:"instance_type,omitempty"`
 	Status       string     `json:"status,omitempty"`
 	PublicIp     string     `json:"public_ip,omitempty"`
@@ -59,7 +59,7 @@ type EipResult struct {
 	CloudID      string     `json:"cloud_id,omitempty"`
 	BkBizID      int64      `json:"bk_biz_id,omitempty"`
 	Region       string     `json:"region,omitempty"`
-	InstanceId   *string    `json:"instance_id,omitempty"`
+	InstanceID   *string    `json:"instance_id,omitempty"`
 	InstanceType string     `json:"instance_type,omitempty"`
 	Status       string     `json:"status,omitempty"`
 	PublicIp     string     `json:"public_ip,omitempty"`

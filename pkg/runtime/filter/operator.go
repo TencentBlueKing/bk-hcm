@@ -52,6 +52,8 @@ func init() {
 	opFactory[JSONIn.Factory()] = JSONInOp(JSONIn)
 	opFactory[JSONContains.Factory()] = JSONContainsOp(JSONContains)
 	opFactory[JSONOverlaps.Factory()] = JSONOverlapsOp(JSONOverlaps)
+	opFactory[JSONContainsPath.Factory()] = JSONContainsPathOp(JSONContainsPath)
+	opFactory[JSONNotContainsPath.Factory()] = JSONNotContainsPathOp(JSONNotContainsPath)
 }
 
 const (
@@ -135,6 +137,10 @@ const (
 	JSONContains OpType = "json_contains"
 	// JSONOverlaps 函数检测两个 JSON 文档是否拥有任何一个相同键值对或数组元素。
 	JSONOverlaps OpType = "json_overlaps"
+	// JSONContainsPath 检测 JSON 文档是否有某个键值。
+	JSONContainsPath OpType = "json_contains_path"
+	// JSONNotContainsPath 检测 JSON 文档不包含某个键值。
+	JSONNotContainsPath OpType = "json_not_contains_path"
 )
 
 // OpType defines the operators supported by mysql.
@@ -147,8 +153,11 @@ func (op OpType) Validate() error {
 		GreaterThan, GreaterThanEqual,
 		LessThan, LessThanEqual,
 		In, NotIn,
-		ContainsSensitive, ContainsInsensitive,
-		JSONEqual, JSONIn, JSONContains, JSONOverlaps:
+		ContainsSensitive, ContainsInsensitive:
+
+	case JSONEqual, JSONIn, JSONContains, JSONOverlaps,
+		JSONContainsPath, JSONNotContainsPath:
+
 	default:
 		return fmt.Errorf("unsupported operator: %s", op)
 	}
@@ -752,7 +761,7 @@ func (op JSONOverlapsOp) ValidateValue(v interface{}, opt *ExprOption) error {
 	case reflect.Array:
 	case reflect.Slice:
 	default:
-		return errors.New("json in operator's value should be an array")
+		return errors.New("json overlaps operator's value should be an array")
 	}
 
 	value := reflect.ValueOf(v)
@@ -814,4 +823,66 @@ func (op JSONOverlapsOp) SQLExprAndValue(field string, value interface{}) (strin
 	}
 
 	return fmt.Sprintf("JSON_OVERLAPS(%s, %s)", jsonFiledSqlFormat(field), arrayFunc), valueMap, nil
+}
+
+// JSONContainsPathOp is json field json contain path operator
+type JSONContainsPathOp OpType
+
+// Name is json field json contain path operator
+func (op JSONContainsPathOp) Name() OpType {
+	return JSONContainsPath
+}
+
+// ValidateValue validate json field equal's value
+func (op JSONContainsPathOp) ValidateValue(v interface{}, opt *ExprOption) error {
+	if reflect.ValueOf(v).Kind() != reflect.String {
+		return errors.New("invalid value field")
+	}
+
+	return nil
+}
+
+// SQLExprAndValue convert this operator's field and value to a mysql's sub query expression.
+func (op JSONContainsPathOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{}, error) {
+	if len(field) == 0 {
+		return "", nil, errors.New("field is empty")
+	}
+
+	if reflect.ValueOf(value).Kind() != reflect.String {
+		return "", nil, errors.New("invalid value field")
+	}
+
+	return fmt.Sprintf(`JSON_CONTAINS_PATH(%s, 'one', '$.%s')`, field, value), map[string]interface{}{}, nil
+}
+
+// JSONNotContainsPathOp is json field json contain path operator
+type JSONNotContainsPathOp OpType
+
+// Name is json field json contain path operator
+func (op JSONNotContainsPathOp) Name() OpType {
+	return JSONNotContainsPath
+}
+
+// ValidateValue validate json field equal's value
+func (op JSONNotContainsPathOp) ValidateValue(v interface{}, opt *ExprOption) error {
+	if reflect.ValueOf(v).Kind() != reflect.String {
+		return errors.New("invalid value field")
+	}
+
+	return nil
+}
+
+// SQLExprAndValue convert this operator's field and value to a mysql's sub query expression.
+func (op JSONNotContainsPathOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{},
+	error) {
+
+	if len(field) == 0 {
+		return "", nil, errors.New("field is empty")
+	}
+
+	if reflect.ValueOf(value).Kind() != reflect.String {
+		return "", nil, errors.New("invalid value field")
+	}
+
+	return fmt.Sprintf(`!JSON_CONTAINS_PATH(%s, 'one', '$.%s')`, field, value), map[string]interface{}{}, nil
 }

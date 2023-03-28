@@ -308,7 +308,7 @@ func (g *Gcp) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*clou
 
 	eipResult := &cloudproto.GcpEipExtResult{EipExtResult: eipResp, CvmID: cvmID}
 	eipResult.InstanceType = "NI"
-	eipResult.InstanceId = converter.ValToPtr(nis.Details[0].ID)
+	eipResult.InstanceID = converter.ValToPtr(nis.Details[0].ID)
 
 	return eipResult, nil
 }

@@ -122,6 +122,7 @@ func (eipDao *EipDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipListRe
 	columnTypes := eip.EipColumns.ColumnTypes()
 	columnTypes["extension.self_link"] = enumor.String
 	columnTypes["extension.resource_group_name"] = enumor.String
+	columnTypes["extension.zones"] = enumor.Json
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err

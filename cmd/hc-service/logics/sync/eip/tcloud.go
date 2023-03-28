@@ -300,7 +300,7 @@ func isTCloudEipChange(db *TCloudDSEipSync, cloud *TCloudEipSync) bool {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(cloud.Eip.InstanceId, db.Eip.InstanceId) {
+	if !assert.IsPtrStringEqual(cloud.Eip.InstanceId, db.Eip.InstanceID) {
 		return true
 	}
 

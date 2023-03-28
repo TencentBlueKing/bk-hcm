@@ -309,7 +309,7 @@ func (h *HuaWei) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*c
 
 	eipResult := &cloudproto.HuaWeiEipExtResult{EipExtResult: eipResp, CvmID: cvmID}
 	eipResult.InstanceType = "NI"
-	eipResult.InstanceId = converter.ValToPtr(nis.Details[0].ID)
+	eipResult.InstanceID = converter.ValToPtr(nis.Details[0].ID)
 
 	return eipResult, nil
 }

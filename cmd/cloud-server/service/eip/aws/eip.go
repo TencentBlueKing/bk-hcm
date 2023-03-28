@@ -238,7 +238,7 @@ func (a *Aws) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*clou
 	}
 
 	eipResult.InstanceType = "CVM"
-	eipResult.InstanceId = converter.ValToPtr(cvmID)
+	eipResult.InstanceID = converter.ValToPtr(cvmID)
 
 	return eipResult, nil
 }

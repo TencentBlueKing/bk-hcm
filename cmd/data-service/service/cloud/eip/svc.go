@@ -230,7 +230,7 @@ func (svc *eipSvc) BatchUpdateEip(cts *rest.Contexts) (interface{}, error) {
 	updateData := &tablecloud.EipModel{
 		BkBizID:      int64(req.BkBizID),
 		Status:       req.Status,
-		InstanceId:   req.InstanceId,
+		InstanceID:   req.InstanceId,
 		InstanceType: req.InstanceType,
 	}
 	if err := svc.objectDao.Update(cts.Kit, tools.ContainersExpression("id", req.IDs), updateData); err != nil {
@@ -313,7 +313,7 @@ func batchCreateEipExt[T dataproto.EipExtensionCreateReq](
 				Status:       eipReq.Status,
 				PublicIp:     eipReq.PublicIp,
 				PrivateIp:    eipReq.PrivateIp,
-				InstanceId:   eipReq.InstanceId,
+				InstanceID:   eipReq.InstanceId,
 				InstanceType: eipReq.InstanceType,
 				Extension:    tabletype.JsonField(extensionJson),
 				Creator:      cts.Kit.User,
@@ -353,7 +353,7 @@ func batchUpdateEipExt[T dataproto.EipExtensionUpdateReq](cts *rest.Contexts, sv
 			updateData := &tablecloud.EipModel{
 				BkBizID:      int64(eipReq.BkBizID),
 				Status:       eipReq.Status,
-				InstanceId:   eipReq.InstanceId,
+				InstanceID:   eipReq.InstanceId,
 				InstanceType: eipReq.InstanceType,
 			}
 

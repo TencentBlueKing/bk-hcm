@@ -250,7 +250,7 @@ func isAwsEipChange(db *AwsDSEipSync, cloud *AwsEipSync) bool {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(cloud.Eip.InstanceId, db.Eip.InstanceId) {
+	if !assert.IsPtrStringEqual(cloud.Eip.InstanceId, db.Eip.InstanceID) {
 		return true
 	}
 

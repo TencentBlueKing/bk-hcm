@@ -179,6 +179,7 @@ func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskLis
 	columnTypes := disk.DiskColumns.ColumnTypes()
 	columnTypes["extension.resource_group_name"] = enumor.String
 	columnTypes["extension.self_link"] = enumor.String
+	columnTypes["extension.zones"] = enumor.Json
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err

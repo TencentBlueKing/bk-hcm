@@ -79,7 +79,7 @@ type EipModel struct {
 	Status       string          `db:"status" json:"status"`
 	PublicIp     string          `db:"public_ip" json:"public_ip"`
 	PrivateIp    string          `db:"private_ip" json:"private_ip"`
-	InstanceId   *string         `db:"instance_id" json:"instance_id"`
+	InstanceID   *string         `db:"instance_id" json:"instance_id"`
 	InstanceType string          `db:"instance_type" json:"instance_type"`
 	Extension    types.JsonField `db:"extension" json:"extension" validate:"-"`
 	Creator      string          `db:"creator" json:"creator"`

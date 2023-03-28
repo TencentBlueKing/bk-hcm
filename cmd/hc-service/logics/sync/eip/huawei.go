@@ -255,7 +255,7 @@ func isHuaWeiEipChange(db *HuaWeiDSEipSync, cloud *HuaWeiEipSync) bool {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(cloud.Eip.InstanceId, db.Eip.InstanceId) {
+	if !assert.IsPtrStringEqual(cloud.Eip.InstanceId, db.Eip.InstanceID) {
 		return true
 	}
 

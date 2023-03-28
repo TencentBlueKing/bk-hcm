@@ -254,7 +254,7 @@ func (t *TCloud) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*c
 	}
 
 	eipResult.InstanceType = "CVM"
-	eipResult.InstanceId = converter.ValToPtr(cvmID)
+	eipResult.InstanceID = converter.ValToPtr(cvmID)
 
 	return eipResult, nil
 }

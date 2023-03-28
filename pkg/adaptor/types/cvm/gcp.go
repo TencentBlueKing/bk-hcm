@@ -195,11 +195,10 @@ net user administrator %s
 </script>`, passwd), nil
 	case Linux:
 		return fmt.Sprintf(`#!/bin/bash
-echo root:%s|chpasswd
+echo key:%s|chpasswd
 sed -i 's/PasswordAuthentication/\# PasswordAuthentication/g' /etc/ssh/sshd_config
-sed -i 's/PermitRootLogin/\# PermitRootLogin/g' /etc/ssh/sshd_config
+sudo sed -i 's/PermitRootLogin no/PermitRootLogin prohibit-password/g' /etc/ssh/sshd_config
 sed -i '20 a PasswordAuthentication yes' /etc/ssh/sshd_config
-sed -i '20 a PermitRootLogin yes' /etc/ssh/sshd_config
 systemctl restart sshd`, passwd), nil
 	default:
 		return "", fmt.Errorf("unknown %s image project type", &typ)
