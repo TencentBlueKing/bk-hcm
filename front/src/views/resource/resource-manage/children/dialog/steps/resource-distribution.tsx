@@ -150,6 +150,7 @@ export default defineComponent({
               list: cloudAreas.value,
               modelValue: data.temp_bk_cloud_id,
               scrollLoading: isLoadingCloudAreas.value,
+              filterable: true,
               onScrollEnd() {
                 getCloudAreas();
               },

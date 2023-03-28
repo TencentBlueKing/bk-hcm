@@ -5,12 +5,19 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 
 import {
+  useResourceStore,
+} from '@/store';
+
+import {
   useI18n,
 } from 'vue-i18n';
 
 import {
   PropType,
 } from 'vue';
+
+import {
+  Message } from 'bkui-vue';
 
 const props = defineProps({
   id: {
@@ -24,6 +31,8 @@ const props = defineProps({
 const {
   t,
 } = useI18n();
+
+const resourceStore = useResourceStore();
 
 const settingInfo: any[] = [
   {
@@ -65,12 +74,14 @@ const settingInfo: any[] = [
   {
     name: t('备注'),
     prop: 'memo',
+    edit: true,
   },
 ];
 
 const {
   loading,
   detail,
+  getDetail,
 } = useDetail(
   'security_groups',
   props.id,
@@ -113,12 +124,26 @@ if (props.vendor === 'tcloud' || props.vendor === 'aws' || props.vendor === 'hua
     },
   });
 }
+
+const handleChange = async (val: any) => {
+  console.log(val);
+  try {
+    await resourceStore.updateSecurityInfo(props.id, val);
+    Message({
+      theme: 'success',
+      message: t('更新成功'),
+    });
+    getDetail();
+  } catch (error) {
+
+  }
+};
 </script>
 
 <template>
   <bk-loading
     :loading="loading"
   >
-    <detail-info class="mt20" :fields="settingInfo" :detail="detail"></detail-info>
+    <detail-info class="mt20" :fields="settingInfo" :detail="detail" @change="handleChange"></detail-info>
   </bk-loading>
 </template>

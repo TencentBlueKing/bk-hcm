@@ -43,7 +43,7 @@ const state = reactive<any>({
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
   handleSort: () => {},
-  columns: useColumns('securityCommon'),
+  columns: useColumns('securityCommon', false, props.data.vendor),
 });
 
 // use hook
@@ -131,7 +131,7 @@ const showRuleDialog = async () => {
   state.handlePageSizeChange = handlePageSizeChange;
   state.handleSort = handleSort;
   state.getList = getList;
-  state.columns = useColumns('securityCommon');
+  state.columns = useColumns('securityCommon', false, props.data.vendor);
 
   if (props.data.vendor === 'huawei') {
     const huaweiColummns = [{
@@ -142,7 +142,17 @@ const showRuleDialog = async () => {
       field: 'ethertype',
     }];
     state.columns.unshift(...huaweiColummns);
+  } else if (props.data.vendor === 'azure') {
+    const awsColummns = [{
+      label: t('优先级'),
+      field: 'priority',
+    }, {
+      label: t('名称'),
+      field: 'name',
+    }];
+    state.columns.unshift(...awsColummns);
   }
+  console.log('state.columns', state.columns);
 };
 
 getSecurityGroupsList();

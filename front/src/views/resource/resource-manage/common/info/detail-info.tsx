@@ -28,6 +28,16 @@ export default defineComponent({
     detail: Object,
   },
 
+  emits: ['change'],
+  setup(_, { emit }) {
+    const handleChange = (val: any) => {
+      emit('change', val);
+    };
+    return {
+      handleChange,
+    };
+  },
+
   computed: {
     renderFields() {
       return this.fields.map((field) => {
@@ -39,11 +49,13 @@ export default defineComponent({
     },
   },
 
+
   render() {
     return <>
       <info-list
         class="detail-info-main g-scroller"
         fields={ this.renderFields }
+        onChange={this.handleChange}
       />
     </>;
   },

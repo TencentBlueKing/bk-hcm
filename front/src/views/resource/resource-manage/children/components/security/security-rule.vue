@@ -56,6 +56,7 @@ const deleteId = ref(0);
 const securityRuleLoading = ref(false);
 const fetchUrl = ref<string>(`vendors/${props.vendor}/security_groups/${props.id}/rules/list`);
 const dataId = ref('');
+const azureDefaultList = ref([]);
 
 const state = reactive<any>({
   datas: [],
@@ -76,8 +77,21 @@ watch(
     state.isLoading = true;
     // eslint-disable-next-line vue/no-mutating-props
     props.filter.rules[0].value = v;
+    getDefaultList(v);
   },
 );
+watch(
+  () => state.datas,
+  (v) => {
+    console.log('state.datas', v);
+  },
+);
+
+
+const getDefaultList = async (type: string) => {
+  const list = await resourceStore.getAzureDefaultList(type);
+  azureDefaultList.value = list?.data;
+};
 
 // 获取列表数据
 const {
@@ -96,6 +110,7 @@ const handleSwtichType = async () => {
   state.pagination = pagination;
   state.handlePageChange = handlePageChange;
   state.handlePageSizeChange = handlePageSizeChange;
+  getDefaultList(activeType.value);
 };
 
 // 确定删除
@@ -216,7 +231,7 @@ const inColumns = [
         [
           // eslint-disable-next-line no-nested-ternary
           props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : props.vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
-            : (SecurityRuleEnum[data.action] || '--'),
+            : props.vendor === 'aws' ? t('允许') : (SecurityRuleEnum[data.action] || '--'),
         ],
       );
     },
@@ -314,7 +329,7 @@ const outColumns = [
         [
           // eslint-disable-next-line no-nested-ternary
           props.vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : props.vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
-            : SecurityRuleEnum[data.action],
+            : props.vendor === 'aws' ? t('允许') : (SecurityRuleEnum[data.action] || '--'),
         ],
       );
     },
@@ -441,6 +456,17 @@ if (props.vendor === 'huawei') {
       </bk-button>
     </section>
 
+    <div v-if="props.vendor === 'azure'" class="mb20">
+      <h4 class="mt10">Azure默认{{activeType === 'ingress' ? t('入站') : t('出站')}}规则</h4>
+      <bk-table
+        class="mt10"
+        row-hover="auto"
+        :columns="outColumns"
+        :data="azureDefaultList"
+      />
+    </div>
+
+    <h4 v-if="props.vendor === 'azure'" class="mt10">Azure{{activeType === 'ingress' ? t('入站') : t('出站')}}规则</h4>
     <bk-table
       v-if="activeType === 'ingress'"
       class="mt20"

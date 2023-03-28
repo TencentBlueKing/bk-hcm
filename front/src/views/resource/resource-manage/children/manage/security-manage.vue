@@ -171,6 +171,18 @@ const groupColumns = [
     },
   },
   {
+    label: t('业务'),
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          data.bk_biz_id === -1 ? t('--') : data.bk_biz_id,
+        ],
+      );
+    },
+  },
+  {
     label: t('账号 ID'),
     field: 'account_id',
     sort: true,

@@ -13,7 +13,7 @@ import {
   useRouter,
 } from 'vue-router';
 
-export default (type: string, isSimpleShow = false) => {
+export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
   const route = useRoute();
   const accountStore = useAccountStore();
@@ -720,8 +720,8 @@ export default (type: string, isSimpleShow = false) => {
             data.cloud_address_group_id || data.cloud_address_id
             || data.cloud_service_group_id || data.cloud_service_id || data.cloud_target_security_group_id
             || data.ipv4_cidr || data.ipv6_cidr || data.cloud_remote_group_id || data.remote_ip_prefix
-            || data.source_address_prefix || data.source_address_prefixs || data.cloud_source_security_group_ids
-            || data.destination_address_prefix || data.destination_address_prefixes
+            || (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) || data.source_address_prefixes || data.cloud_source_security_group_ids
+            || (data.destination_address_prefix === '*' ? t('任何') : data.destination_address_prefix) || data.destination_address_prefixes
             || data.cloud_destination_security_group_ids || '--',
           ],
         );
@@ -734,7 +734,11 @@ export default (type: string, isSimpleShow = false) => {
           'span',
           {},
           [
-            !data.protocol && !data.port ? t('全部') : `${data.protocol}:${data.port || data.to_port || '--'}`,
+            // eslint-disable-next-line no-nested-ternary
+            vendor === 'aws' && (data.protocol === '-1' && data.to_port === -1) ? t('全部')
+            // eslint-disable-next-line no-nested-ternary
+              : vendor === 'huawei' && (!data.protocol && !data.port) ? t('全部')
+                : vendor === 'azure' && (data.protocol === '*' && data.destination_port_range === '*') ? t('全部') :  `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`,
           ],
         );
       },
@@ -747,8 +751,8 @@ export default (type: string, isSimpleShow = false) => {
           {},
           [
             // eslint-disable-next-line no-nested-ternary
-            HuaweiSecurityRuleEnum[data.action] || AzureSecurityRuleEnum[data.access]
-              || SecurityRuleEnum[data.action],
+            vendor === 'huawei' ? HuaweiSecurityRuleEnum[data.action] : vendor === 'azure' ? AzureSecurityRuleEnum[data.access]
+              : vendor === 'aws' ? t('允许') : (SecurityRuleEnum[data.action] || '--'),
           ],
         );
       },

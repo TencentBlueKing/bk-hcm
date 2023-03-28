@@ -75,9 +75,8 @@ export default defineComponent({
       }
     };
 
-    const handleblur = async (val: string) => {
-      console.log('val', val);
-      emit('change', { val });
+    const handleblur = async (val: any) => {
+      emit('change', { memo: val });
     };
 
     return {
@@ -116,8 +115,8 @@ export default defineComponent({
 
     // 渲染跳转
     const renderTxtBtn = (field: Field) => {
-      return <bk-button text theme="primary" onClick={() => field.txtBtn(field.value)}>{ field.value }</bk-button>
-    }
+      return <bk-button text theme="primary" onClick={() => field.txtBtn(field.value)}>{ field.value }</bk-button>;
+    };
 
     // 渲染方法
     const renderField = (field: Field) => {
@@ -138,7 +137,7 @@ export default defineComponent({
         this.fields.map((field) => {
           return <>
             <li class="info-list-item">
-              { field.name }：<span class={["item-value", typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>{ renderField(field) }</span>
+              { field.name }：<span class={['item-value', typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>{ renderField(field) }</span>
               {
                 field.copy ? <copy class="info-item-copy ml5" onClick={() => this.handleCopy(field.value)}></copy> : ''
               }

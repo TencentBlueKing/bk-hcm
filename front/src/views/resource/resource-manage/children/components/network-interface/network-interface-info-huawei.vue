@@ -69,7 +69,7 @@ const fields = ref([
     name: '安全组',
     prop: 'security_groups',
     render(val: { id: string }[]) {
-      if (!val.length) {
+      if (!val?.length) {
         return '--';
       }
       return h('div', { class: 'cell-content-list' }, val.map(item => h('p', { class: 'cell-content-item' }, item?.id)));
