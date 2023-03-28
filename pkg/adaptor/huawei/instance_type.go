@@ -20,12 +20,20 @@
 package huawei
 
 import (
+	"strings"
+
 	typesinstancetype "hcm/pkg/adaptor/types/instance-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/TencentBlueKing/gopkg/conv"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
+)
+
+const (
+	HuaWeiInstanceNormal = "(normal)"
+	HuaWeiInstanceTag    = "cond:operation:az"
 )
 
 // ListInstanceType ...
@@ -51,17 +59,36 @@ func (h *HuaWei) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.HuaWeiInst
 
 	its := make([]*typesinstancetype.HuaWeiInstanceType, 0, len(*resp.Flavors))
 	for _, flavor := range *resp.Flavors {
-		its = append(its, toHuaweiInstanceType(flavor))
+		huaweiInstanceType, err := toHuaweiInstanceType(flavor, opt.Zone)
+		if err != nil {
+			logs.Errorf("change to huawei instancetype failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		if huaweiInstanceType != nil {
+			its = append(its, huaweiInstanceType)
+		}
 	}
 
 	return its, nil
 }
 
-func toHuaweiInstanceType(flavor model.Flavor) *typesinstancetype.HuaWeiInstanceType {
+func toHuaweiInstanceType(flavor model.Flavor, zone string) (*typesinstancetype.HuaWeiInstanceType, error) {
+	if flavor.OsExtraSpecs != nil {
+		tmp, err := converter.StructToMap(flavor.OsExtraSpecs)
+		if err != nil {
+			return nil, err
+		}
+		tmpArray := strings.Split(tmp[HuaWeiInstanceTag].(string), ",")
+		tmpMap := converter.StringSliceToMap(tmpArray)
+		if _, ok := tmpMap[zone+HuaWeiInstanceNormal]; !ok {
+			return nil, nil
+		}
+	}
+
 	cpu, _ := conv.ToInt64(flavor.Vcpus)
 	return &typesinstancetype.HuaWeiInstanceType{
 		InstanceType: flavor.Id,
 		CPU:          cpu,
 		Memory:       int64(flavor.Ram),
-	}
+	}, nil
 }
