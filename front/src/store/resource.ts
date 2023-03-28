@@ -47,6 +47,9 @@ export const useResourceStore = defineStore({
     recyclBatch(type: string, data: any) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/recycled/${getBusinessApiPath(type)}${type}/batch`, { data });
     },
+    recycled(type: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/recycle`, data);
+    },
     bindVPCWithCloudArea(data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vpcs/bind/cloud_areas`, data);
     },

@@ -81,16 +81,12 @@ watch(
             field: 'name',
           },
           {
-            label: 'IPv4网段',
+            label: 'IPv4 CIDR',
             field: 'ipv4_cidr',
           },
           {
-            label: 'ipv6_cidr',
-            field: 'ipv4_cidr',
-          },
-          {
-            label: '状态',
-            field: '',
+            label: 'IPv6 CIDR',
+            field: 'ipv6_cidr',
           },
         ]);
         break;

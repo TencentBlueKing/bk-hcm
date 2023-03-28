@@ -215,13 +215,13 @@ watch(
   <bk-loading
     :loading="isLoading"
   >
-    <!-- <bk-button
+    <bk-button
       class="mt20"
       theme="primary"
       @click="handleToggleShowBind"
     >
       绑定
-    </bk-button> -->
+    </bk-button>
     <bk-table
       class="mt20"
       row-hover="auto"
@@ -288,15 +288,15 @@ watch(
   >
     <span class="adjust-title">主机（{{ data.id }}）要解除绑定的弹性IP：</span>
     <section class="adjust-info">
-      <span class="adjust-name">网络接口ID</span>
-      <span class="adjust-value">{{ unbindData.network_interface_id }}</span>
-    </section>
-    <section class="adjust-info">
-      <span class="adjust-name">内部IP</span>
+      <span class="adjust-name">EIP地址公网地址</span>
       <span class="adjust-value">{{ unbindData.public_ip }}</span>
     </section>
     <section class="adjust-info">
-      <span class="adjust-name">公网IP地址</span>
+      <span class="adjust-name">已绑定的实例</span>
+      <span class="adjust-value">{{ unbindData.cvm_id }}</span>
+    </section>
+    <section class="adjust-info" v-if="['azure', 'aws', 'huawei'].includes(unbindData.vendor)">
+      <span class="adjust-name">已绑定的接口名称</span>
       <span class="adjust-value">{{ unbindData.public_ip }}</span>
     </section>
   </bk-dialog>

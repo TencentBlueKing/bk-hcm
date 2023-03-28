@@ -9,6 +9,8 @@ import { useAccountStore } from '@/store';
 import {
   ref,
   computed,
+  h,
+  withDirectives,
 } from 'vue';
 import {
   useRoute,
@@ -16,6 +18,7 @@ import {
 } from 'vue-router';
 import {
   InfoBox,
+  bkTooltips,
 } from 'bkui-vue';
 import {
   useI18n,
@@ -42,6 +45,21 @@ const settingFields = ref<any[]>([
   {
     name: '资源 ID',
     prop: 'cloud_id',
+    render(cell: string = '') {
+      const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;
+      const value = cell.slice(index);
+      return withDirectives(
+        h(
+          'span',
+          [
+            value || '--'
+          ]
+        ), 
+        [
+          [bkTooltips, cell],
+        ]
+      )
+    },
   },
   {
     name: '资源名称',
@@ -70,24 +88,24 @@ const settingFields = ref<any[]>([
     },
   },
   {
-    name: '磁盘类型',
-    prop: 'disk_type',
-  },
-  {
-    name: '磁盘容量',
-    prop: 'disk_size',
-  },
-  {
-    name: '是否加密',
-    prop: 'exencrypted',
-  },
-  {
     name: '地域',
     prop: 'region',
   },
   {
     name: '可用区',
     prop: 'zone',
+  },
+  {
+    name: '磁盘类型',
+    prop: 'disk_type',
+  },
+  {
+    name: '磁盘容量(GB)',
+    prop: 'disk_size',
+  },
+  {
+    name: '是否加密',
+    prop: 'exencrypted',
   },
   {
     name: '挂载主机',
@@ -123,8 +141,11 @@ const settingFields = ref<any[]>([
     },
   },
   {
-    name: '挂载主机名称',
-    prop: 'instance_name',
+    name: '是否挂载',
+    prop: 'instance_id',
+    render(cell: string) {
+      return cell ? '是' : '否';
+    },
   },
   {
     name: '创建时间',
@@ -137,7 +158,6 @@ const settingFields = ref<any[]>([
     // edit: true,
   },
 ]);
-
 const resourceStore = useResourceStore();
 const route = useRoute();
 const router =  useRouter();
@@ -166,6 +186,7 @@ const {
 const {
   loading,
   detail,
+  getDetail,
 } = useDetail(
   'disks',
   route.query.id as string,
@@ -237,30 +258,34 @@ const {
 
 const handleShowDelete = () => {
   InfoBox({
-    title: '请确认是否删除',
-    subTitle: `将删除【${detail.value.name}】`,
+    title: '请确认是否回收',
+    subTitle: `将回收【${detail.value.name}】`,
     theme: 'danger',
     headerAlign: 'center',
     footerAlign: 'center',
     contentAlign: 'center',
     onConfirm() {
       return resourceStore
-        .deleteBatch(
+        .recycled(
           'disks',
           {
-            ids: [detail.value.id],
+            infos: [{ id: detail.value.id }],
           },
         );
     },
   });
 };
 
-
 const handleToPage = () => {
   router.push({
     path: '/business/drive/recyclebin/disk',
   });
 };
+
+
+const disableOperation = computed(() => {
+  return !location.href.includes('business') && detail.value.bk_biz_id !== -1
+})
 </script>
 
 <template>
@@ -274,6 +299,7 @@ const handleToPage = () => {
           v-if="!detail.instance_id"
           class="w100 ml10"
           theme="primary"
+          :disabled="disableOperation"
           @click="handleMountedDrive"
         >
           {{ t('挂载') }}
@@ -282,7 +308,7 @@ const handleToPage = () => {
           v-else
           class="w100 ml10"
           theme="primary"
-          :disabled="!!detail.is_system_disk"
+          :disabled="!!detail.is_system_disk || disableOperation"
           @click="handleUninstallDrive(detail)"
         >
           {{ t('卸载') }}
@@ -290,10 +316,10 @@ const handleToPage = () => {
         <bk-button
           class="w100 ml10"
           theme="primary"
-          :disabled="!!detail.instance_id"
+          :disabled="!!detail.instance_id || disableOperation"
           @click="handleShowDelete"
         >
-          {{ t('删除') }}
+          {{ t('回收') }}
         </bk-button>
       </template>
     </detail-header>
@@ -321,10 +347,12 @@ const handleToPage = () => {
     v-if="detail.id"
     v-model:is-show="isShowMountedDrive"
     :detail="detail"
+    @success-attach="getDetail"
   />
 
   <uninstall-drive
     v-model:is-show="isShowUninstallDrive"
+    @success="getDetail"
   />
 </template>
 

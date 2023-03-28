@@ -20,12 +20,15 @@ export default () => {
   return {
     isShowUninstallDrive,
     handleUninstallDrive,
-    UninstallDrive: (props: any, { slots }: any) => {
+    UninstallDrive: (props: any, { slots, emit }: any) => {
       return h(
         UninstallDrive,
         {
           ...props,
-          data: disk.value
+          data: disk.value,
+          onSuccess() {
+            emit('success')
+          }
         },
       );
     },

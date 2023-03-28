@@ -15,6 +15,9 @@ import {
 import {
   useI18n,
 } from 'vue-i18n';
+import {
+  useAccountStore,
+} from '@/store';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import useQueryList  from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
@@ -41,12 +44,13 @@ export default defineComponent({
     }
   },
 
-  emits: ['update:isShow'],
+  emits: ['update:isShow', 'success-attach'],
 
   setup(props, { emit }) {
     const {
       t,
     } = useI18n();
+    const accountStore = useAccountStore();
 
     const deviceName = ref();
     const cachingType = ref();
@@ -57,7 +61,7 @@ export default defineComponent({
       'ReadWrite'
     ]
 
-    const rules = [
+    const rules: any[] = [
       {
         field: 'vendor',
         op: 'eq',
@@ -80,12 +84,51 @@ export default defineComponent({
       }
     ]
 
+    if (location.href.includes('business')) {
+      rules.push({
+        field: "bk_biz_id",
+        op: "eq",
+        value: accountStore.bizs
+      })
+    } else {
+      rules.push({
+        field: "bk_biz_id",
+        op: "eq",
+        value: -1
+      })
+    }
+
     if (props.detail.vendor === 'azure') {
       rules.push({
         field: 'extension.resource_group_name',
         op: 'json_eq',
         value: props.detail.resource_group_name
       })
+      rules.splice(2, 1)
+      if (!props.detail.zones) {
+        rules.push({
+          field: 'extension',
+          op: 'json_not_contains_path',
+          value: 'zones'
+        })
+      }
+      if (Array.isArray(props.detail.zones) && props.detail.zones.length > 0) {
+        rules.push({
+          op: 'or',
+          rules: [
+            {
+              field: 'extension',
+              op: 'json_not_contains_path',
+              value: 'zones'
+            },
+            {
+              field: 'extension.zones',
+              op: 'json_overlaps',
+              value: props.detail.zones
+            }
+          ]
+        })
+      }
     }
 
     const {
@@ -172,16 +215,19 @@ export default defineComponent({
         }
         postData.caching_type = cachingType.value
       }
-      resourceStore.attachDisk(postData).then(() => {
-        handleClose();
-      }).catch((err: any) => {
-        Message({
-          theme: 'error',
-          message: err.message || err
+      resourceStore
+        .attachDisk(postData)
+        .then(() => {
+          emit('success-attach');
+          handleClose();
+        }).catch((err: any) => {
+          Message({
+            theme: 'error',
+            message: err.message || err
+          })
+        }).finally(() => {
+          isConfirmLoading.value = false;
         })
-      }).finally(() => {
-        isConfirmLoading.value = false;
-      })
     };
 
     return {

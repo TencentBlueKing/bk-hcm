@@ -7,6 +7,10 @@ import DetailInfo from '../../../common/info/detail-info';
 import {
   useResourceStore,
 } from '@/store/resource';
+import {
+  useRouter,
+  useRoute
+} from 'vue-router';
 
 const props = defineProps({
   detail: {
@@ -15,6 +19,8 @@ const props = defineProps({
 });
 
 const resourceStore = useResourceStore();
+const router = useRouter();
+const route = useRoute();
 
 // 基本信息字段配置
 const fileds = ref<any[]>([
@@ -25,6 +31,10 @@ const fileds = ref<any[]>([
   {
     name: '路由表 ID',
     prop: 'id',
+  },
+  {
+    name: '云资源 ID',
+    prop: 'cloud_id',
   },
   {
     name: '账号',
@@ -94,23 +104,47 @@ const handleGetData = () => {
   }
 }
 
+const vpcField = {
+  name: '所属网络',
+  prop: 'vpc_id',
+  txtBtn(id: string) {
+    const type = 'vpc'
+    const routeInfo: any = {
+      query: {
+        id,
+        type: props.detail.vendor,
+      },
+    };
+    // 业务下
+    if (route.path.includes('business')) {
+      Object.assign(
+        routeInfo,
+        {
+          name: `${type}BusinessDetail`,
+        },
+      );
+    } else {
+      Object.assign(
+        routeInfo,
+        {
+          name: 'resourceDetail',
+          params: {
+            type,
+          },
+        },
+      );
+    }
+    router.push(routeInfo);
+  },
+}
+
 watch(
   () => props.detail,
   () => {
     switch (props.detail.vendor) {
       case 'tcloud':
         fileds.value.push(...[
-          {
-            name: '所属网络',
-            prop: 'vpc_id',
-            render (val: string) {
-              return `VPC-${val}`
-            }
-          },
-          {
-            name: '地域',
-            prop: '',
-          },
+          vpcField,
           {
             name: '地域ID',
             prop: 'region',
@@ -161,20 +195,8 @@ watch(
             value: 'resource_group'
           },
           {
-            name: '地域',
-            prop: '',
-          },
-          {
             name: '地域ID',
             prop: 'region',
-          },
-          {
-            name: '订阅',
-            value: '默认路由表'
-          },
-          {
-            name: '订阅ID',
-            prop: 'memo',
           },
           {
             name: '备注',
@@ -206,17 +228,7 @@ watch(
         break;
       case 'aws':
         fileds.value.push(...[
-          {
-            name: '所属网络',
-            prop: 'vpc_id',
-            render (val: string) {
-              return `VPC-${val}`
-            }
-          },
-          {
-            name: '地域',
-            prop: '',
-          },
+          vpcField,
           {
             name: '地域ID',
             prop: 'region',
@@ -265,13 +277,7 @@ watch(
         break;
       case 'gcp':
         fileds.value.push(...[
-          {
-            name: '所属网络',
-            prop: 'vpc_id',
-            render (val: string) {
-              return `VPC-${val}`
-            }
-          },
+          vpcField,
           {
             name: '创建时间',
             prop: 'created_at',
@@ -306,17 +312,7 @@ watch(
         break;
       case 'huawei':
         fileds.value.push(...[
-          {
-            name: '所属网络',
-            prop: 'vpc_id',
-            render (val: string) {
-              return `VPC-${val}`
-            }
-          },
-          {
-            name: '地域',
-            prop: '',
-          },
+          vpcField,
           {
             name: '地域ID',
             prop: 'region',

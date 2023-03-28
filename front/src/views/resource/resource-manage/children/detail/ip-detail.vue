@@ -27,6 +27,7 @@ const {
 
 const isShowAssignEip = ref(false);
 const showDelete = ref(false);
+const isDeleteing = ref(false);
 
 const {
   loading,
@@ -50,13 +51,19 @@ const handleCloseDeleteEip = () => {
 }
 
 const handleDeleteEip = () => {
+  isDeleteing.value = true;
   resourceStore
     .disassociateEip({
       eip_id: route.query.id
     })
     .then(() => {
-      handleCloseDeleteEip()
       getDetail()
+        .then(() => {
+          handleCloseDeleteEip()
+        })
+    })
+    .finally(() =>  {
+      isDeleteing.value = false;
     })
 }
 
@@ -128,6 +135,7 @@ const handleShowDelete = () => {
       title="解绑EIP"
       theme="danger"
       :is-show="showDelete"
+      :loadng="isDeleteing"
       :quick-close="false"
       @closed="handleCloseDeleteEip"
       @confirm="handleDeleteEip"
