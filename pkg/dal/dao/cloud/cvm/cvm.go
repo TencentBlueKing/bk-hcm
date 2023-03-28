@@ -191,6 +191,7 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListCvmDetails, 
 
 	columnTypes := tablecvm.TableColumns.ColumnTypes()
 	columnTypes["extension.resource_group_name"] = enumor.String
+	columnTypes["extension.zones"] = enumor.Json
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err

@@ -53,20 +53,20 @@
 
 #### data[n]
 
-| 参数名称           | 参数类型         | 描述              |
-|----------------|--------------|-----------------|
-| id             | string | 安全组ID           |
-| vendor         | string | 云厂商             |
-| cloud_id       | string | 安全组云ID          |
-| bk_biz_id      | int64  | 业务ID, -1代表未分配业务 |
-| region         | string | 地域              |
-| name           | string | 安全组名称           |
-| memo           | string | 安全组备注           |
-| account_id     | string | 安全组账号ID         |
-| creator        | string | 安全组创建者          |
-| reviser        | string | 安全组最后一次修改的修改者   |
-| created_at     | string | 安全组创建时间         |
-| updated_at     | string | 安全组最后一次修改时间     |
-| cvm_id         | string | 主机ID            |
-| rel_creator    | string | 主机和安全组绑定操作人     |
-| rel_created_at | string | 主机和安全组绑定时间      |
+| 参数名称           | 参数类型         | 描述                      |
+|----------------|--------------|-------------------------|
+| id             | string | 安全组ID                   |
+| vendor         | string | 云厂商                     |
+| cloud_id       | string | 安全组云ID                  |
+| bk_biz_id      | int64  | 业务ID, -1代表未分配业务         |
+| region         | string | 地域                      |
+| name           | string | 安全组名称                   |
+| memo           | string | 安全组备注                   |
+| account_id     | string | 安全组账号ID                 |
+| creator        | string | 安全组创建者                  |
+| reviser        | string | 安全组最后一次修改的修改者           |
+| created_at     | string | 安全组创建时间                 |
+| updated_at     | string | 安全组最后一次修改时间             |
+| cvm_id         | string | 主机ID                    |
+| rel_creator    | string | 主机和安全组绑定操作人（azure该字段为空） |
+| rel_created_at | string | 主机和安全组绑定时间（azure该字段为空）   |

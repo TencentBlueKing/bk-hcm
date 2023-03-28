@@ -86,7 +86,8 @@ type GcpSubnetExtension struct {
 type AzureSubnetExtension struct {
 	ResourceGroupName    string `json:"resource_group_name"`
 	NatGateway           string `json:"nat_gateway,omitempty"`
-	NetworkSecurityGroup string `json:"network_security_group,omitempty"`
+	SecurityGroupID      string `json:"security_group_id,omitempty"`
+	CloudSecurityGroupID string `json:"cloud_security_group_id,omitempty"`
 }
 
 // HuaWeiSubnetExtension defines huawei subnet extensional info.

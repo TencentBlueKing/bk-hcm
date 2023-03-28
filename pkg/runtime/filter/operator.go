@@ -132,7 +132,6 @@ const (
 	// JSONIn is json field in operator.
 	JSONIn OpType = "json_in"
 	// JSONContains json array field contain operator.
-	// TODO: 目前仅支持JSON数组，不支持JSON中的数组字段。
 	JSONContains OpType = "json_contains"
 	// JSONOverlaps 函数检测两个 JSON 文档是否拥有任何一个相同键值对或数组元素。
 	JSONOverlaps OpType = "json_overlaps"
@@ -628,13 +627,8 @@ func (op JSONEqualOp) SQLExprAndValue(field string, value interface{}) (string, 
 		return "", nil, errors.New("invalid value field")
 	}
 
-	jsonField, err := jsonFiledSqlFormat(field)
-	if err != nil {
-		return "", nil, err
-	}
-
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
-	return fmt.Sprintf(`%s = %s%s`, jsonField, SqlPlaceholder, placeholder),
+	return fmt.Sprintf(`%s = %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
 
@@ -696,24 +690,21 @@ func (op JSONInOp) SQLExprAndValue(field string, value interface{}) (string, map
 		return "", nil, errors.New("in operator's value should be an array")
 	}
 
-	jsonField, err := jsonFiledSqlFormat(field)
-	if err != nil {
-		return "", nil, err
-	}
-
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
-	return fmt.Sprintf(`%s IN (%s%s)`, jsonField, SqlPlaceholder, placeholder),
+	return fmt.Sprintf(`%s IN (%s%s)`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
 
-// jsonFiledSqlFormat 会将用户传入的 json 字段名由 "extension.vpc_id" 转为 `extension->>"$.vpc_id"`
-func jsonFiledSqlFormat(field string) (string, error) {
+// jsonFiledSqlFormat
+// 1. 会将用户传入的 json 字段名由 "extension.vpc_id" 转为 `extension->>"$.vpc_id"`。
+// 2. 如果规则中不存在'.'，则不进行转换。
+func jsonFiledSqlFormat(field string) string {
 	if !strings.ContainsAny(field, ".") {
-		return "", fmt.Errorf("feild: %s not json field format", field)
+		return field
 	}
 
 	index := strings.Index(field, ".")
-	return fmt.Sprintf(`%s->>"$%s"`, field[0:index], field[index:]), nil
+	return fmt.Sprintf(`%s->>"$%s"`, field[0:index], field[index:])
 }
 
 // JSONContainsOp is json array field contain operator
@@ -743,7 +734,7 @@ func (op JSONContainsOp) SQLExprAndValue(field string, value interface{}) (strin
 	}
 
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
-	return fmt.Sprintf("JSON_CONTAINS(%s, JSON_ARRAY(%s%s))", field, SqlPlaceholder, placeholder),
+	return fmt.Sprintf("JSON_CONTAINS(%s, JSON_ARRAY(%s%s))", jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
 
@@ -822,5 +813,5 @@ func (op JSONOverlapsOp) SQLExprAndValue(field string, value interface{}) (strin
 		valueMap[oneFieldName] = valueOf.Index(i).Interface()
 	}
 
-	return fmt.Sprintf("JSON_OVERLAPS(%s, %s)", field, arrayFunc), valueMap, nil
+	return fmt.Sprintf("JSON_OVERLAPS(%s, %s)", jsonFiledSqlFormat(field), arrayFunc), valueMap, nil
 }

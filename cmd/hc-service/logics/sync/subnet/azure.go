@@ -393,7 +393,7 @@ func isAzureSubnetChange(info cloudcore.Subnet[cloudcore.AzureSubnetExtension], 
 		return true
 	}
 
-	if info.Extension.NetworkSecurityGroup != item.Extension.NetworkSecurityGroup {
+	if info.Extension.SecurityGroupID != item.Extension.NetworkSecurityGroup {
 		return true
 	}
 
