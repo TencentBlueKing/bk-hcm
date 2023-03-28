@@ -8,6 +8,9 @@ const props = defineProps({
   modelValue: {
     type: String,
   },
+  vendor: {
+    type: String,
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -58,7 +61,7 @@ defineExpose({
     <bk-option
       v-for="(item, index) in resourceGroupList"
       :key="index"
-      :value="item.id"
+      :value="props.vendor === 'azure' ? item.name : item.id"
       :label="item.name"
     />
   </bk-select>

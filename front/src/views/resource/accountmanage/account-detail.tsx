@@ -615,12 +615,12 @@ export default defineComponent({
       }
     };
 
-    const handleBizChange = async () => {
-      handleEditStatus(true, 'bizIds');     // 未通过检验前状态为编辑态
-      await formRef.value?.validate();
-      handleEditStatus(false, 'bizIds');   // 通过检验则把状态改为不可编辑态
-      updateFormData('bizIds');    // 更新数据
-    };
+    // const handleBizChange = async () => {
+    //   handleEditStatus(true, 'bizIds');     // 未通过检验前状态为编辑态
+    //   await formRef.value?.validate();
+    //   handleEditStatus(false, 'bizIds');   // 通过检验则把状态改为不可编辑态
+    //   updateFormData('bizIds');    // 更新数据
+    // };
 
     let formBaseInfo = reactive([
       {
@@ -713,24 +713,24 @@ export default defineComponent({
           },
         ],
       },
-      {
-        name: t('业务信息'),
-        data: [
-          {
-            label: t('使用业务'),
-            required: false,
-            property: 'bizIds',
-            isEdit: false,
-            component() {
-              // eslint-disable-next-line max-len
-              // onBlur={handleblur}
-              // onChange={handleBizChange}
-              return (<RenderDetailEdit v-model={projectModel.bizIds} fromKey={this.property}
-                selectData={businessList.list} fromType="select" isEdit={this.isEdit} onChange={handleBizChange} />);
-            },
-          },
-        ],
-      },
+      // {
+      //   name: t('业务信息'),
+      //   data: [
+      //     {
+      //       label: t('使用业务'),
+      //       required: false,
+      //       property: 'bizIds',
+      //       isEdit: false,
+      //       component() {
+      //         // eslint-disable-next-line max-len
+      //         // onBlur={handleblur}
+      //         // onChange={handleBizChange}
+      //         return (<RenderDetailEdit v-model={projectModel.bizIds} fromKey={this.property}
+      //           selectData={businessList.list} fromType="select" isEdit={this.isEdit} onChange={handleBizChange} />);
+      //       },
+      //     },
+      //   ],
+      // },
 
     ]);
 

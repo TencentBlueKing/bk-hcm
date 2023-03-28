@@ -1,6 +1,7 @@
 // table 字段相关信息
 import i18n from '@/language/i18n';
 import { CloudType, HostCloudEnum, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
+import { useAccountStore } from '@/store';
 import {
   Button,
 } from 'bkui-vue';
@@ -15,6 +16,7 @@ import {
 export default (type: string, isSimpleShow = false) => {
   const router = useRouter();
   const route = useRoute();
+  const accountStore = useAccountStore();
   const { t } = i18n.global;
 
   const getLinkField = (type: string, label = 'ID', field = 'id', idFiled = 'id', onlyShowOnList = true) => {
@@ -41,6 +43,7 @@ export default (type: string, isSimpleShow = false) => {
               };
               // 业务下
               if (route.path.includes('business')) {
+                routeInfo.query.bizs = accountStore.bizs;
                 Object.assign(
                   routeInfo,
                   {

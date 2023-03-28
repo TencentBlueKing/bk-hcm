@@ -10,13 +10,15 @@ import {
   ref,
 } from 'vue';
 import FormSelect from '@/views/business/components/form-select.vue';
+import ResourceGroup from '@/components/resource-group/index.vue';
 import { BusinessFormFilter } from '@/typings';
 import { useBusinessStore } from '@/store';
 import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
 
 const { t } = useI18n();
+const formRef = ref(null);
 const type = ref('tcloud');
-const formFilter = ref({});
+const formFilter = ref<any>({});
 const cloudVpcId = ref('');
 const submitLoading = ref(false);
 const useBusiness = useBusinessStore();
@@ -26,13 +28,25 @@ const handleFormFilter = (value: BusinessFormFilter) => {
   formFilter.value = { ...value };
   type.value = value.vendor;
 };
-const formData = ref({ name: '', memo: '' });
+const formData = ref({ name: '', memo: '', resource_group_name: '' });
+
+const rules = {
+  resource_group_name: [
+    {
+      validator: (value: string) => value.length > 0,
+      message: '资源组必填',
+      trigger: 'blur',
+    },
+  ],
+};
 
 // 方法
 const cancel = async () => {
   emit('cancel');
 };
 const submit = async () => {
+  const validate =  await formRef.value.validate();
+  console.log(validate);
   const params: any = { ...formData.value, ...formFilter.value };
   if (type.value === 'aws') {
     console.log('cloudVpcId.value', cloudVpcId.value, params.extension);
@@ -40,7 +54,12 @@ const submit = async () => {
       cloud_vpc_id: cloudVpcId.value,
     };
     params.extension.cloud_vpc_id = cloudVpcId.value;
+  } else if (type.value === 'azure') {
+    params.extension = {
+      resource_group_name: formData.value.resource_group_name,
+    };
   }
+  delete params.resource_group_name;
   try {
     submitLoading.value = true;
     await useBusiness.addSecurity(params);
@@ -65,7 +84,7 @@ const {
 <template>
   <div class="business-dialog-warp">
     <form-select @change="handleFormFilter"></form-select>
-    <bk-form class="form-subnet">
+    <bk-form class="form-subnet" :model="formData" :rules="rules" ref="formRef">
       <bk-form-item
         :label="t('名称')"
         class="item-warp"
@@ -97,6 +116,18 @@ const {
             :label="item.name"
           />
         </bk-select>
+      </bk-form-item>
+      <bk-form-item
+        v-if="type === 'azure'"
+        label="资源组"
+        property="resource_group_name"
+        required
+      >
+        <resource-group
+          :vendor="formFilter.vendor"
+          :region="formFilter.region"
+          v-model="formData.resource_group_name"
+        />
       </bk-form-item>
       <bk-form-item
         label-width="50"

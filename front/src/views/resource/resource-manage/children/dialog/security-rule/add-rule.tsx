@@ -54,7 +54,7 @@ export default defineComponent({
 
     const resourceStore = useResourceStore();
 
-    const protocolList = ref(GCP_PROTOCOL_LIST);
+    const protocolList = ref<any>(GCP_PROTOCOL_LIST);
 
 
     const securityGroupSource = ref([   // 华为源
@@ -100,7 +100,7 @@ export default defineComponent({
 
     const securityRuleId = ref('');
 
-    protocolList.value = protocolList.value.filter(e => e.name !== 'ALL');
+    protocolList.value = protocolList.value.filter((e: any) => e.name !== 'ALL');
     console.log(protocolList.value);
     if (props.vendor === 'aws') {
       protocolList.value.unshift({
@@ -111,6 +111,11 @@ export default defineComponent({
     } else if (props.vendor === 'tcloud') {
       protocolList.value.unshift({
         id: 'ALL',
+        name: 'ALL',
+      });
+    } else if (props.vendor === 'huawei') {
+      protocolList.value.unshift({
+        id: 'huaweiAll',
         name: 'ALL',
       });
     }
@@ -229,6 +234,7 @@ export default defineComponent({
                     ? <FormItem>
                     <bk-table-column
                         label={t('名称')}
+                        placeholder="请输入名称"
                       >
                         {{
                           default: ({ data }: any) => (
@@ -368,13 +374,14 @@ export default defineComponent({
                         {{
                           default: ({ data }: any) => (
                             data
-                              ? <Input disabled={data?.protocol === 'ALL'}
+                              ? <Input disabled={data?.protocol === 'ALL' || data?.protocol === 'huaweiAll' || data?.protocol === '-1'}
                                       placeholder="请输入0-65535之间数字、ALL"
+                                      clearable
                                       class="mt20 mb10 input-select-warp" v-model={ data.port }>
                                       {{
                                         prefix: () => (
                                           <Select v-model={data.protocol} clearable={false} class="input-prefix-select" onChange={handleChange}>
-                                          {protocolList.value.map(ele => (
+                                          {protocolList.value.map((ele: any) => (
                                           <Option value={ele.id} label={ele.name} key={ele.id} />
                                           ))}
                                           </Select>
@@ -485,6 +492,7 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
+      console.log('tableData.value', tableData.value);
       tableData.value.forEach((e: any) => {
         e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id || e[e.sourceAddress];
         if (e.sourceAddress !== 'ipv4_cidr') {
@@ -493,6 +501,10 @@ export default defineComponent({
         // delete e.sourceAddress;
         // delete e.targetAddress;
       });
+      // for (let index = 0; index < tableData.value.length; index++) {
+      //   const element = tableData.value[index];
+      //   if(element)
+      // }
       // @ts-ignore
       if (securityRuleId.value) {  // 更新
         emit('submit', tableData.value);
@@ -524,6 +536,8 @@ export default defineComponent({
       tableData.value.forEach((e: any) => {
         if (e.protocol === 'ALL') {
           e.port = 'ALL';
+        } else if (e.protocol === '-1') {
+          e.port = -1;
         }
       });
     };

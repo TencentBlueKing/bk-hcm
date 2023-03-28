@@ -153,7 +153,7 @@ handleCloudChange();
         <bk-option
           v-for="(item, index) in cloudRegionsList"
           :key="index"
-          :value="item.region_id || item.id"
+          :value="state.filter.vendor === 'azure' ? item.name : (item.region_id || item.id)"
           :label="item.region_name || item.region_id || item.name"
         />
       </bk-select>

@@ -46,15 +46,11 @@ export default defineComponent({
     // 获取业务列表
     const getBusinessList = async () => {
       try {
-        if (accountStore.bizs) {
-          businessId.value = accountStore.bizs;
-          return;
-        }
         loading.value = true;
         const res = await accountStore.getBizListWithAuth();
         loading.value = false;
         businessList.value = res?.data;
-        businessId.value = res?.data[0].id;   // 默认取第一个业务
+        businessId.value = accountStore.bizs || res?.data[0].id;   // 默认取第一个业务
         accountStore.updateBizsId(businessId.value); // 设置全局业务id
       } catch (error) {
         console.log(error);
@@ -101,6 +97,11 @@ export default defineComponent({
     watch(
       () => route,
       (val) => {
+        const { bizs } = val.query;
+        if (bizs) {
+          businessId.value = Number(bizs);   // 取地址栏的业务id
+          accountStore.updateBizsId(businessId.value); // 设置全局业务id
+        }
         curPath.value = route.path;
         const pathArr = val.path.slice(1, val.path.length).split('/');
         changeMenus(pathArr.shift(), ...pathArr);
@@ -124,17 +125,21 @@ export default defineComponent({
       deleteCookie('bk_token');
       deleteCookie('bk_ticket');
       window.location.href = `${window.PROJECT_CONFIG.BK_LOGIN_URL}/?is_from_logout=1&c_url=${window.location.href}`;
-      // if (window.PROJECT_CONFIG.LOGIN_FULL) {
-      //   window.location.href = `${window.LOGIN_FULL}?c_url=${cUrl}`;
-      // } else {
-      //   window.location.href = `${window.PROJECT_CONFIG.BK_COMPONENT_API_URL || ''}/console/accounts/logout/`;
-      // }
     };
 
     // 选择业务
     const handleChange = async () => {
       accountStore.updateBizsId(businessId.value);    // 设置全局业务id
-      reload();
+      // @ts-ignore
+      const isbusinessDetail = route.name?.includes('BusinessDetail');
+      if (isbusinessDetail) {
+        const businessListPath = route.path.split('/detail')[0];
+        router.push({
+          path: businessListPath,
+        });
+      } else {
+        reload();
+      }
     };
 
     const reload = () => {

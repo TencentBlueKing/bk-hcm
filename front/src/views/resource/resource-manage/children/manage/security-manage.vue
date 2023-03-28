@@ -143,6 +143,7 @@ const groupColumns = [
             };
             // 业务下
             if (route.path.includes('business')) {
+              routeInfo.query.bizs = accountStore.bizs;
               Object.assign(
                 routeInfo,
                 {
