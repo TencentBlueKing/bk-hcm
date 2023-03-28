@@ -148,7 +148,9 @@ func (opt *HuaWeiEipDisassociateOption) ToUpdatePublicipRequest() (*model.Update
 		return nil, err
 	}
 
-	req := &model.UpdatePublicipRequest{PublicipId: opt.CloudEipID, Body: &model.UpdatePublicipsRequestBody{}}
+	req := &model.UpdatePublicipRequest{PublicipId: opt.CloudEipID, Body: &model.UpdatePublicipsRequestBody{
+		Publicip: &model.UpdatePublicipOption{PortId: nil},
+	}}
 	return req, nil
 }
 

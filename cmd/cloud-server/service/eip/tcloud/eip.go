@@ -151,7 +151,7 @@ func (t *TCloud) DisassociateEip(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&datarelproto.EipCvmRelListReq{
-			Filter: tools.ContainersExpression("eip_id", []string{req.EipID}),
+			Filter: tools.EqualExpression("eip_id", req.EipID),
 			Page:   core.DefaultBasePage,
 		},
 	)

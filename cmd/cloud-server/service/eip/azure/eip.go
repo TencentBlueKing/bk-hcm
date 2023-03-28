@@ -104,7 +104,7 @@ func (a *Azure) AssociateEip(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&core.ListReq{
-			Filter: tools.ContainersExpression("network_interface_id", req.NetworkInterfaceID),
+			Filter: tools.EqualExpression("network_interface_id", req.NetworkInterfaceID),
 			Page:   core.DefaultBasePage,
 		},
 	)
