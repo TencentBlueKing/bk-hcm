@@ -5,6 +5,9 @@ import IpInfo from '../components/ip/ip-info.vue';
 import AssignEip from '../dialog/assign-eip/assign-eip';
 
 import {
+  InfoBox,
+} from 'bkui-vue';
+import {
   useRoute,
 } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
@@ -56,6 +59,26 @@ const handleDeleteEip = () => {
       getDetail()
     })
 }
+
+const handleShowDelete = () => {
+  InfoBox({
+    title: '请确认是否删除',
+    subTitle: `将删除【${detail.value.id}】`,
+    theme: 'danger',
+    headerAlign: 'center',
+    footerAlign: 'center',
+    contentAlign: 'center',
+    onConfirm() {
+      return resourceStore
+        .deleteBatch(
+          'eips',
+          {
+            ids: [detail.value.id],
+          },
+        );
+    },
+  });
+};
 </script>
 
 <template>
@@ -80,6 +103,14 @@ const handleDeleteEip = () => {
           @click="handleShowDeleteDialog"
         >
           {{ t('解绑') }}
+        </bk-button>
+        <bk-button
+          class="w100 ml10"
+          theme="primary"
+          :disabled="!!detail.cvm_id"
+          @click="handleShowDelete"
+        >
+          {{ t('删除') }}
         </bk-button>
       </template>
     </detail-header>

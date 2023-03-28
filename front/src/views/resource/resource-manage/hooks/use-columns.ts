@@ -770,6 +770,10 @@ export default (type: string, isSimpleShow = false) => {
   ];
 
   const eipColumns = [
+    {
+      type: 'selection',
+      onlyShowOnList: true,
+    },
     getLinkField('eips'),
     {
       label: '实例 ID',

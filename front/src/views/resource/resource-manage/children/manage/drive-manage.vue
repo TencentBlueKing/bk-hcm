@@ -112,7 +112,7 @@ const {
         class="w100 ml10"
         theme="primary"
         :disabled="selections.length <= 0"
-        @click="handleShowDelete"
+        @click="handleShowDelete(selections.map(selection => selection.id))"
       >
         {{ t('删除') }}
       </bk-button>
