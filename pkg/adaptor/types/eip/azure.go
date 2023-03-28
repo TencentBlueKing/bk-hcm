@@ -63,21 +63,21 @@ type AzureEipListResult struct {
 
 // AzureEip ...
 type AzureEip struct {
-	CloudID           string
-	Name              *string
-	Region            string
-	InstanceId        *string
-	InstanceType      string
-	Status            *string
-	PublicIp          *string
-	PrivateIp         *string
-	IpConfigurationID *string
-	SKU               *string
-	SKUTier           *string
-	ResourceGroupName string
-	Location          *string
-	Fqdn              *string
-	Zone              string
+	CloudID                string
+	Name                   *string
+	Region                 string
+	InstanceId             *string
+	InstanceType           string
+	Status                 *string
+	PublicIp               *string
+	PrivateIp              *string
+	IpConfigurationID      *string
+	SKU                    *string
+	SKUTier                *string
+	ResourceGroupName      string
+	Location               *string
+	Fqdn                   *string
+	Zones                  []*string
 	PublicIPAddressVersion *string
 }
 

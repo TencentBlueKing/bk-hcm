@@ -254,10 +254,8 @@ func diffAzureDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, r
 				OSType:            converter.PtrToVal(cloudMap[id].Disk.OSType),
 				SKUName:           cloudMap[id].Disk.SKUName,
 				SKUTier:           cloudMap[id].Disk.SKUTier,
+				Zones:             cloudMap[id].Disk.Zones,
 			},
-		}
-		if len(cloudMap[id].Disk.Zones) > 0 {
-			disk.Zone = converter.PtrToVal(cloudMap[id].Disk.Zones[0])
 		}
 
 		if _, exists := osMap[id]; exists {
@@ -298,6 +296,10 @@ func isAzureDiskChange(db *AzureDiskSyncDS, cloud *AzureDiskSyncDiff, isSystemDi
 		return true
 	}
 
+	if !assert.IsPtrStringSliceEqual(cloud.Disk.Zones, db.HcDisk.Extension.Zones) {
+		return true
+	}
+
 	if isSystemDisk != db.HcDisk.IsSystemDisk {
 		return true
 	}
@@ -326,6 +328,7 @@ func diffAzureSyncUpdate(kt *kit.Kit, cloudMap map[string]*AzureDiskSyncDiff, ds
 				OSType:            converter.PtrToVal(cloudMap[id].Disk.OSType),
 				SKUName:           cloudMap[id].Disk.SKUName,
 				SKUTier:           cloudMap[id].Disk.SKUTier,
+				Zones:             cloudMap[id].Disk.Zones,
 			},
 		}
 		disks = append(disks, disk)

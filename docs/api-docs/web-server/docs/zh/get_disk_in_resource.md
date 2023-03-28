@@ -86,7 +86,12 @@
 
 | 参数名称                           | 参数类型 | 描述                                                         |
 |--------------------------------| -------- | ------------------------------------------------------------ |
-| resource_group_name | string | 资源组名 |
+| resource_group_name      | string | 资源组名 |
+| encrypted | boolean      | 是否加密 |
+| os_type   | string       | 系统类型 |
+| sku_name  | string       | sku |
+| sku_tier  | string       | 层 |
+| zones     | string array |  可用区数组 |
 
 #### DiskExtension[huawei]
 | 参数名称                           | 参数类型 | 描述                                                         |

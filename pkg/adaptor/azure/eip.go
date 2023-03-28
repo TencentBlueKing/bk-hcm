@@ -53,22 +53,19 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 		for _, one := range nextResult.Value {
 			state := string(*one.Properties.ProvisioningState)
 			eIp := &eip.AzureEip{
-				CloudID:           strings.ToLower(*one.ID),
-				Name:              SPtrToLowerSPtr(one.Name),
-				Region:            StrToLowerNoSpaceStr(*one.Location),
-				Status:            &state,
-				PublicIp:          one.Properties.IPAddress,
-				Zone:              "",
-				ResourceGroupName: strings.ToLower(opt.ResourceGroupName),
-				Location:          one.Location,
+				CloudID:                strings.ToLower(*one.ID),
+				Name:                   SPtrToLowerSPtr(one.Name),
+				Region:                 StrToLowerNoSpaceStr(*one.Location),
+				Status:                 &state,
+				PublicIp:               one.Properties.IPAddress,
+				Zones:                  one.Zones,
+				ResourceGroupName:      strings.ToLower(opt.ResourceGroupName),
+				Location:               one.Location,
 				PublicIPAddressVersion: (*string)(one.Properties.PublicIPAddressVersion),
 			}
 
 			if one.Properties.DNSSettings != nil {
 				eIp.Fqdn = one.Properties.DNSSettings.Fqdn
-			}
-			if len(one.Zones) > 0 {
-				eIp.Zone = converter.PtrToVal(one.Zones[0])
 			}
 
 			if one.Properties.IPConfiguration != nil {

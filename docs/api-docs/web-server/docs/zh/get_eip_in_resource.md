@@ -78,6 +78,10 @@
 | ip_configuration_id | string | Resource ID (The IP configuration associated with the public IP address) |
 | sku                 | string | sku                                                                      |
 | sku_tier            | string | 层                                                                        |
+| resource_group_name | string | 资源组名称                                                                       |
+| location            | string | 地域                                                                        |
+| fqdn                | string | 域名相关                                                                        |
+| zones               | string array| 可用区集合                                                                        |
 
 #### EipExtension[huawei]
 | 参数名称                           | 参数类型 | 描述                                                         |

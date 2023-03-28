@@ -21,33 +21,33 @@ package eip
 
 // AzureEipExtensionCreateReq ...
 type AzureEipExtensionCreateReq struct {
-	IpConfigurationID *string `json:"ip_configuration_id"`
-	SKU               *string `json:"sku"`
-	SKUTier           *string `json:"sku_tier"`
-	ResourceGroupName string  `json:"resource_group_name"`
-	Location          *string `json:"location"`
-	Fqdn              *string `json:"fqdn"`
-	Zone              string  `json:"zone"`
+	IpConfigurationID *string   `json:"ip_configuration_id"`
+	SKU               *string   `json:"sku"`
+	SKUTier           *string   `json:"sku_tier"`
+	ResourceGroupName string    `json:"resource_group_name"`
+	Location          *string   `json:"location"`
+	Fqdn              *string   `json:"fqdn"`
+	Zones             []*string `json:"zones"`
 }
 
 // AzureEipExtensionResult ...
 type AzureEipExtensionResult struct {
-	IpConfigurationID *string `json:"ip_configuration_id"`
-	SKU               *string `json:"sku"`
-	SKUTier           *string `json:"sku_tier"`
-	ResourceGroupName string  `json:"resource_group_name"`
-	Location          *string `json:"location"`
-	Fqdn              *string `json:"fqdn"`
-	Zone              string  `json:"zone"`
+	IpConfigurationID *string   `json:"ip_configuration_id"`
+	SKU               *string   `json:"sku"`
+	SKUTier           *string   `json:"sku_tier"`
+	ResourceGroupName string    `json:"resource_group_name"`
+	Location          *string   `json:"location"`
+	Fqdn              *string   `json:"fqdn"`
+	Zones             []*string `json:"zones"`
 }
 
 // AzureEipExtensionUpdateReq ...
 type AzureEipExtensionUpdateReq struct {
-	IpConfigurationID *string `json:"ip_configuration_id"`
-	SKU               *string `json:"sku"`
-	SKUTier           *string `json:"sku_tier"`
-	ResourceGroupName string  `json:"resource_group_name"`
-	Location          *string `json:"location"`
-	Fqdn              *string `json:"fqdn"`
-	Zone              string  `json:"zone"`
+	IpConfigurationID *string   `json:"ip_configuration_id"`
+	SKU               *string   `json:"sku"`
+	SKUTier           *string   `json:"sku_tier"`
+	ResourceGroupName string    `json:"resource_group_name"`
+	Location          *string   `json:"location"`
+	Fqdn              *string   `json:"fqdn"`
+	Zones             []*string `json:"zones"`
 }
