@@ -58,8 +58,8 @@ type AwsCreate struct {
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
 	IPv6Cidr                   *string `json:"ipv6_cidr"`
 	Description                *string `json:"description"`
-	FromPort                   int64   `json:"from_port"`
-	ToPort                     int64   `json:"to_port"`
+	FromPort                   *int64  `json:"from_port"`
+	ToPort                     *int64  `json:"to_port"`
 	Protocol                   *string `json:"protocol"`
 	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
 }
@@ -135,8 +135,8 @@ type AwsSGRuleUpdate struct {
 	IPv4Cidr                   *string `json:"ipv4_cidr"`
 	IPv6Cidr                   *string `json:"ipv6_cidr"`
 	Description                *string `json:"description"`
-	FromPort                   int64   `json:"from_port"`
-	ToPort                     int64   `json:"to_port"`
+	FromPort                   *int64  `json:"from_port"`
+	ToPort                     *int64  `json:"to_port"`
 	Protocol                   *string `json:"protocol"`
 	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
 }

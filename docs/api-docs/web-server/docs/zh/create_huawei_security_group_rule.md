@@ -16,7 +16,7 @@
 
 | 参数名称                  | 参数类型   | 描述  | 描述                                                                                                                       |
 |-----------------------|--------|-----|--------------------------------------------------------------------------------------------------------------------------|
-| protocol              | string | 否   | 协议类型取值范围：icmp、tcp、udp、icmpv6或IP协议号约束：为空表示支持所有协议协议为icmpv6时，网络类型应该为IPv6协议为icmp时，网络类型应该为IPv4。                               |
+| protocol              | string | 否   | 协议类型取值范围：icmp、tcp、udp、icmpv6或IP协议号约束：为空表示支持所有协议协议，为icmpv6时，网络类型应该为IPv6协议为icmp时，网络类型应该为IPv4。                              |
 | ethertype             | string | 否   | IP地址协议类型取值范围。（枚举值：IPv4、IPv6）                                                                                             |
 | cloud_remote_group_id | string | 否   | 远端安全组ID，表示该安全组内的流量允许或拒绝取值范围：与remote_ip_prefix，remote_address_group_id功能互斥。                                               |
 | remote_ip_prefix      | string | 否   | 远端IP地址，当type是egress时，为虚拟机访问端的地址。当type是ingress时，为访问虚拟机的地址取值范围：IP地址，或者cidr格式约束：与remote_group_id、remote_address_group_id互斥。 |
@@ -24,6 +24,7 @@
 | priority              | uint32 | 是   | 功能说明：优先级取值范围：1~100，1代表最高优先级。                                                                                             |
 | action                | string | 是   | 安全组规则生效策略。取值范围：allow表示允许，deny表示拒绝。                                                                                       |
 | memo                  | string | 否   | 备注。                                                                                                                      |
+注：为空是不要传递该字段，对字段为""铭感。
 
 ### 调用示例
 

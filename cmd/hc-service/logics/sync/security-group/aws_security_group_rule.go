@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -370,11 +371,11 @@ func isAwsSGRuleChange(db *corecloud.AwsSecurityGroupRule, cloud *ec2.SecurityGr
 		return true
 	}
 
-	if db.FromPort != *cloud.FromPort {
+	if !assert.IsPtrInt64Equal(db.FromPort, cloud.FromPort) {
 		return true
 	}
 
-	if db.ToPort != *cloud.ToPort {
+	if !assert.IsPtrInt64Equal(db.ToPort, cloud.ToPort) {
 		return true
 	}
 
@@ -425,8 +426,8 @@ func genAwsUpdateRulesList(kt *kit.Kit, rules []*ec2.SecurityGroupRule, req *Syn
 			IPv4Cidr:             rule.CidrIpv4,
 			IPv6Cidr:             rule.CidrIpv6,
 			Memo:                 rule.Description,
-			FromPort:             *rule.FromPort,
-			ToPort:               *rule.ToPort,
+			FromPort:             rule.FromPort,
+			ToPort:               rule.ToPort,
 			Protocol:             rule.IpProtocol,
 			CloudPrefixListID:    rule.PrefixListId,
 			CloudSecurityGroupID: *rule.GroupId,
@@ -483,8 +484,8 @@ func genAwsAddRulesList(rules []*ec2.SecurityGroupRule, req *SyncAwsSecurityGrou
 			IPv4Cidr:             rule.CidrIpv4,
 			IPv6Cidr:             rule.CidrIpv6,
 			Memo:                 rule.Description,
-			FromPort:             *rule.FromPort,
-			ToPort:               *rule.ToPort,
+			FromPort:             rule.FromPort,
+			ToPort:               rule.ToPort,
 			Protocol:             rule.IpProtocol,
 			CloudPrefixListID:    rule.PrefixListId,
 			CloudSecurityGroupID: *rule.GroupId,

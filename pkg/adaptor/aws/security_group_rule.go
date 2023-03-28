@@ -69,9 +69,9 @@ func (a *Aws) createEgressSGRule(kt *kit.Kit, opt *securitygrouprule.AwsCreateOp
 	ips := make([]*ec2.IpPermission, 0, len(opt.EgressRuleSet))
 	for _, rule := range opt.EgressRuleSet {
 		ip := &ec2.IpPermission{
-			FromPort:   aws.Int64(rule.FromPort),
+			FromPort:   rule.FromPort,
 			IpProtocol: rule.Protocol,
-			ToPort:     aws.Int64(rule.ToPort),
+			ToPort:     rule.ToPort,
 		}
 
 		if rule.IPv4Cidr != nil && len(*rule.IPv4Cidr) != 0 {
@@ -131,9 +131,9 @@ func (a *Aws) createIngressSGRule(kt *kit.Kit, opt *securitygrouprule.AwsCreateO
 	ips := make([]*ec2.IpPermission, 0, len(opt.IngressRuleSet))
 	for _, rule := range opt.IngressRuleSet {
 		ip := &ec2.IpPermission{
-			FromPort:   aws.Int64(rule.FromPort),
+			FromPort:   rule.FromPort,
 			IpProtocol: rule.Protocol,
-			ToPort:     aws.Int64(rule.ToPort),
+			ToPort:     rule.ToPort,
 		}
 
 		if rule.IPv4Cidr != nil && len(*rule.IPv4Cidr) != 0 {
@@ -297,10 +297,10 @@ func (a *Aws) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AwsUpd
 				CidrIpv4:          rule.IPv4Cidr,
 				CidrIpv6:          rule.IPv6Cidr,
 				Description:       rule.Description,
-				FromPort:          aws.Int64(rule.FromPort),
+				FromPort:          rule.FromPort,
 				IpProtocol:        rule.Protocol,
 				ReferencedGroupId: rule.CloudTargetSecurityGroupID,
-				ToPort:            aws.Int64(rule.ToPort),
+				ToPort:            rule.ToPort,
 			},
 		})
 	}

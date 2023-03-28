@@ -17,6 +17,7 @@
 | cloud_target_security_group_id | string | 是   | 下一跳安全组实例云ID，例如：sg-ohuuioma。                                 |
 | action                         | string | 是   | ACCEPT 或 DROP。                                              |
 | memo                           | string | 是   | 备注。                                                         |
+注：为空是不要传递该字段，对字段为""铭感。
 
 ### 调用示例
 

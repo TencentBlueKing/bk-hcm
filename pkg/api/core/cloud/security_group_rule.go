@@ -64,8 +64,8 @@ type AwsSecurityGroupRule struct {
 	IPv4Cidr                   *string                      `json:"ipv4_cidr"`
 	IPv6Cidr                   *string                      `json:"ipv6_cidr"`
 	Memo                       *string                      `json:"memo"`
-	FromPort                   int64                        `json:"from_port"`
-	ToPort                     int64                        `json:"to_port"`
+	FromPort                   *int64                       `json:"from_port"`
+	ToPort                     *int64                       `json:"to_port"`
 	Type                       enumor.SecurityGroupRuleType `json:"type"`
 	Protocol                   *string                      `json:"protocol"`
 	CloudPrefixListID          *string                      `json:"cloud_prefix_list_id"`

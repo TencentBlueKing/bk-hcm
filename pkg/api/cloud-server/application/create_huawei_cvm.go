@@ -86,6 +86,20 @@ func (req *HuaWeiCvmCreateReq) Validate() error {
 		return fmt.Errorf("required count should <= %d", requiredCountMaxLimit)
 	}
 
+	if req.SystemDisk.DiskSizeGB < 40 || req.SystemDisk.DiskSizeGB > 1024 {
+		return errors.New("system disk size should 20-1024GB")
+	}
+
+	if len(req.DataDisk) > 23 {
+		return errors.New("data disk should <= 23")
+	}
+
+	for _, d := range req.DataDisk {
+		if d.DiskSizeGB < 10 || d.DiskSizeGB > 32768 {
+			return errors.New("data disk size should 10-32768GB")
+		}
+	}
+
 	// 校验购买时长
 	periods := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 24, 36}
 	periodSet := set.NewInt64SetWithValues(periods)

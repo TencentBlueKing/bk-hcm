@@ -64,8 +64,8 @@ type AwsSecurityGroupRuleTable struct {
 	IPv6Cidr                   *string    `db:"ipv6_cidr" json:"ipv6_cidr" validate:"omitempty,lte=255"`
 	Memo                       *string    `db:"memo" json:"memo" validate:"omitempty,lte=60"`
 	Type                       string     `db:"type" json:"type" validate:"lte=20"`
-	FromPort                   int64      `db:"from_port" json:"from_port"`
-	ToPort                     int64      `db:"to_port" json:"to_port"`
+	FromPort                   *int64     `db:"from_port" json:"from_port"`
+	ToPort                     *int64     `db:"to_port" json:"to_port"`
 	Protocol                   *string    `db:"protocol" json:"protocol" validate:"omitempty,lte=10"`
 	CloudPrefixListID          *string    `db:"cloud_prefix_list_id" json:"cloud_prefix_list_id" validate:"omitempty,lte=255"`
 	CloudTargetSecurityGroupID *string    `db:"cloud_target_security_group_id" json:"cloud_target_security_group_id" validate:"omitempty,lte=255"`

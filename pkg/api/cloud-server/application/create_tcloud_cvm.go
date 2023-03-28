@@ -91,10 +91,22 @@ func (req *TCloudCvmCreateReq) Validate() error {
 		return fmt.Errorf("disk size[%d] should be not multiple of 10GB", req.SystemDisk.DiskSizeGB)
 	}
 
+	if req.SystemDisk.DiskSizeGB < 20 || req.SystemDisk.DiskSizeGB > 1024 {
+		return errors.New("system disk size should 20-1024GB")
+	}
+
+	if len(req.DataDisk) > 20 {
+		return errors.New("data disk should <= 20")
+	}
+
 	// 校验数据盘
 	for _, d := range req.DataDisk {
 		if !req.isMultipleOfTen(d.DiskSizeGB) {
-			return fmt.Errorf("disk size[%d] should be not multiple of 10GB", d.DiskSizeGB)
+			return fmt.Errorf("data disk size[%d] should be not multiple of 10GB", d.DiskSizeGB)
+		}
+
+		if d.DiskSizeGB < 20 || d.DiskSizeGB > 32000 {
+			return errors.New("data disk size should 20-32000GB")
 		}
 	}
 
