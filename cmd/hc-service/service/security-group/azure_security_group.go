@@ -72,8 +72,8 @@ func (g *securityGroup) CreateAzureSecurityGroup(cts *rest.Contexts) (interface{
 				AccountID: req.AccountID,
 				Extension: &corecloud.AzureSecurityGroupExtension{
 					Etag:            sg.Etag,
-					FlushConnection: sg.Properties.FlushConnection,
-					ResourceGUID:    sg.Properties.ResourceGUID,
+					FlushConnection: sg.FlushConnection,
+					ResourceGUID:    sg.ResourceGUID,
 				},
 			},
 		},

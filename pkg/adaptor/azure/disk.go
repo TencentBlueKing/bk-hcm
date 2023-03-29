@@ -58,7 +58,7 @@ func (a *Azure) CreateDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption) ([]stri
 			if err != nil {
 				return nil, err
 			}
-			diskCloudIDs = append(diskCloudIDs, *resp.ID)
+			diskCloudIDs = append(diskCloudIDs, SPtrToLowerStr(resp.ID))
 		}
 	}
 

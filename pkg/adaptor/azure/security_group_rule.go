@@ -34,7 +34,7 @@ import (
 // CreateSecurityGroupRule create security group rule.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
 func (az *Azure) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AzureCreateOption) (
-	[]*armnetwork.SecurityRule, error) {
+	[]*securitygrouprule.AzureSecurityRule, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule create option is required")
@@ -83,10 +83,10 @@ func (az *Azure) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 		return nil, err
 	}
 
-	result := make([]*armnetwork.SecurityRule, 0)
-	for _, rule := range resp.SecurityGroup.Properties.SecurityRules {
-		if nameMap[*rule.Name] {
-			result = append(result, rule)
+	result := make([]*securitygrouprule.AzureSecurityRule, 0)
+	for _, v := range resp.SecurityGroup.Properties.SecurityRules {
+		if nameMap[converter.PtrToVal(v.Name)] {
+			result = append(result, az.converCloudToSecurityRule(v))
 		}
 	}
 
@@ -129,7 +129,7 @@ func convSecurityGroupRule(direction armnetwork.SecurityRuleDirection, rules []s
 			for _, id := range one.CloudDestinationAppSecurityGroupIDs {
 				rule.Properties.DestinationApplicationSecurityGroups = append(rule.Properties.
 					DestinationApplicationSecurityGroups, &armnetwork.ApplicationSecurityGroup{
-					ID: id,
+					ID: SPtrToLowerSPtr(id),
 				})
 			}
 		}
@@ -141,7 +141,7 @@ func convSecurityGroupRule(direction armnetwork.SecurityRuleDirection, rules []s
 			for _, id := range one.CloudSourceAppSecurityGroupIDs {
 				rule.Properties.SourceApplicationSecurityGroups = append(rule.Properties.
 					SourceApplicationSecurityGroups, &armnetwork.ApplicationSecurityGroup{
-					ID: id,
+					ID: SPtrToLowerSPtr(id),
 				})
 			}
 		}
@@ -196,7 +196,7 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 				for _, id := range opt.Rule.CloudDestinationAppSecurityGroupIDs {
 					rule.Properties.DestinationApplicationSecurityGroups = append(rule.Properties.
 						DestinationApplicationSecurityGroups, &armnetwork.ApplicationSecurityGroup{
-						ID: id,
+						ID: SPtrToLowerSPtr(id),
 					})
 				}
 			}
@@ -208,7 +208,7 @@ func (az *Azure) UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 				for _, id := range opt.Rule.CloudSourceAppSecurityGroupIDs {
 					rule.Properties.SourceApplicationSecurityGroups = append(rule.Properties.
 						SourceApplicationSecurityGroups, &armnetwork.ApplicationSecurityGroup{
-						ID: id,
+						ID: SPtrToLowerSPtr(id),
 					})
 				}
 			}
@@ -323,28 +323,32 @@ func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azure
 
 	securityRules := make([]*securitygrouprule.AzureSecurityRule, 0)
 	for _, v := range sg.SecurityRules {
-		tmp := &securitygrouprule.AzureSecurityRule{
-			ID:                                   SPtrToLowerSPtr(v.ID),
-			Etag:                                 v.Etag,
-			Name:                                 SPtrToLowerSPtr(v.Name),
-			Description:                          v.Properties.Description,
-			DestinationAddressPrefix:             v.Properties.DestinationAddressPrefix,
-			DestinationAddressPrefixes:           v.Properties.DestinationAddressPrefixes,
-			DestinationPortRange:                 v.Properties.DestinationPortRange,
-			DestinationPortRanges:                v.Properties.DestinationPortRanges,
-			Protocol:                             v.Properties.Protocol,
-			ProvisioningState:                    v.Properties.ProvisioningState,
-			SourceAddressPrefix:                  v.Properties.SourceAddressPrefix,
-			SourceAddressPrefixes:                v.Properties.SourceAddressPrefixes,
-			SourcePortRange:                      v.Properties.SourcePortRange,
-			SourcePortRanges:                     v.Properties.SourcePortRanges,
-			Priority:                             v.Properties.Priority,
-			Access:                               v.Properties.Access,
-			Direction:                            v.Properties.Direction,
-			DestinationApplicationSecurityGroups: v.Properties.DestinationApplicationSecurityGroups,
-			SourceApplicationSecurityGroups:      v.Properties.SourceApplicationSecurityGroups,
-		}
-		securityRules = append(securityRules, tmp)
+		securityRules = append(securityRules, az.converCloudToSecurityRule(v))
 	}
+
 	return securityRules, nil
+}
+
+func (az *Azure) converCloudToSecurityRule(cloud *armnetwork.SecurityRule) *securitygrouprule.AzureSecurityRule {
+	return &securitygrouprule.AzureSecurityRule{
+		ID:                                   SPtrToLowerSPtr(cloud.ID),
+		Etag:                                 cloud.Etag,
+		Name:                                 SPtrToLowerSPtr(cloud.Name),
+		Description:                          cloud.Properties.Description,
+		DestinationAddressPrefix:             cloud.Properties.DestinationAddressPrefix,
+		DestinationAddressPrefixes:           cloud.Properties.DestinationAddressPrefixes,
+		DestinationPortRange:                 cloud.Properties.DestinationPortRange,
+		DestinationPortRanges:                cloud.Properties.DestinationPortRanges,
+		Protocol:                             cloud.Properties.Protocol,
+		ProvisioningState:                    cloud.Properties.ProvisioningState,
+		SourceAddressPrefix:                  cloud.Properties.SourceAddressPrefix,
+		SourceAddressPrefixes:                cloud.Properties.SourceAddressPrefixes,
+		SourcePortRange:                      cloud.Properties.SourcePortRange,
+		SourcePortRanges:                     cloud.Properties.SourcePortRanges,
+		Priority:                             cloud.Properties.Priority,
+		Access:                               cloud.Properties.Access,
+		Direction:                            cloud.Properties.Direction,
+		DestinationApplicationSecurityGroups: cloud.Properties.DestinationApplicationSecurityGroups,
+		SourceApplicationSecurityGroups:      cloud.Properties.SourceApplicationSecurityGroups,
+	}
 }

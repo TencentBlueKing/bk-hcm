@@ -34,7 +34,7 @@ import (
 
 // CreateSecurityGroup create security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
-func (az *Azure) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureOption) (*armnetwork.SecurityGroup,
+func (az *Azure) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureOption) (*securitygroup.AzureSecurityGroup,
 	error) {
 
 	if opt == nil {
@@ -65,7 +65,7 @@ func (az *Azure) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureOption
 		return nil, err
 	}
 
-	return &resp.SecurityGroup, nil
+	return az.converCloudToSecurityGroup(&resp.SecurityGroup), nil
 }
 
 // DeleteSecurityGroup delete security group.
@@ -130,19 +130,7 @@ func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureListOpti
 
 	typesSecurityGroups := make([]*securitygroup.AzureSecurityGroup, 0)
 	for _, v := range securityGroups {
-		tmp := &securitygroup.AzureSecurityGroup{
-			ID:              SPtrToLowerSPtr(v.ID),
-			Location:        SPtrToLowerNoSpaceSPtr(v.Location),
-			Name:            SPtrToLowerSPtr(v.Name),
-			Etag:            v.Etag,
-			FlushConnection: nil,
-			ResourceGUID:    nil,
-		}
-		if v.Properties != nil {
-			tmp.FlushConnection = v.Properties.FlushConnection
-			tmp.ResourceGUID = v.Properties.ResourceGUID
-		}
-		typesSecurityGroups = append(typesSecurityGroups, tmp)
+		typesSecurityGroups = append(typesSecurityGroups, az.converCloudToSecurityGroup(v))
 	}
 
 	return typesSecurityGroups, nil
@@ -195,22 +183,27 @@ func (az *Azure) ListSecurityGroupByID(kt *kit.Kit, opt *core.AzureListByIDOptio
 	}
 
 	for _, v := range securityGroups {
-		tmp := &securitygroup.AzureSecurityGroup{
-			ID:              SPtrToLowerSPtr(v.ID),
-			Location:        SPtrToLowerNoSpaceSPtr(v.Location),
-			Name:            SPtrToLowerSPtr(v.Name),
-			Etag:            v.Etag,
-			FlushConnection: nil,
-			ResourceGUID:    nil,
-		}
-		if v.Properties != nil {
-			tmp.FlushConnection = v.Properties.FlushConnection
-			tmp.ResourceGUID = v.Properties.ResourceGUID
-		}
-		typesSecurityGroups = append(typesSecurityGroups, tmp)
+		typesSecurityGroups = append(typesSecurityGroups, az.converCloudToSecurityGroup(v))
 	}
 
 	return typesSecurityGroups, nil
+}
+
+func (az *Azure) converCloudToSecurityGroup(cloud *armnetwork.SecurityGroup) *securitygroup.AzureSecurityGroup {
+	respSecurityGroup := &securitygroup.AzureSecurityGroup{
+		ID:              SPtrToLowerSPtr(cloud.ID),
+		Location:        SPtrToLowerNoSpaceSPtr(cloud.Location),
+		Name:            SPtrToLowerSPtr(cloud.Name),
+		Etag:            cloud.Etag,
+		FlushConnection: nil,
+		ResourceGUID:    nil,
+	}
+	if cloud.Properties != nil {
+		respSecurityGroup.FlushConnection = cloud.Properties.FlushConnection
+		respSecurityGroup.ResourceGUID = cloud.Properties.ResourceGUID
+	}
+
+	return respSecurityGroup
 }
 
 func (az *Azure) getSecurityGroupByCloudID(kt *kit.Kit, resGroupName, cloudID string) (*securitygroup.AzureSecurityGroup,

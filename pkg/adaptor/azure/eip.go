@@ -210,5 +210,5 @@ func (a *Azure) CreateEip(kt *kit.Kit, opt *eip.AzureEipCreateOption) (*string, 
 	}
 	resp, err := pollerResp.PollUntilDone(kt.Ctx, nil)
 
-	return resp.ID, err
+	return SPtrToLowerSPtr(resp.ID), err
 }

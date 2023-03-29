@@ -135,47 +135,47 @@ func (g *securityGroup) BatchCreateAzureSGRule(cts *rest.Contexts) (interface{},
 			CloudID:                             *rule.ID,
 			Etag:                                rule.Etag,
 			Name:                                *rule.Name,
-			Memo:                                rule.Properties.Description,
-			DestinationAddressPrefix:            rule.Properties.DestinationAddressPrefix,
-			DestinationAddressPrefixes:          rule.Properties.DestinationAddressPrefixes,
-			DestinationPortRange:                rule.Properties.DestinationPortRange,
+			Memo:                                rule.Description,
+			DestinationAddressPrefix:            rule.DestinationAddressPrefix,
+			DestinationAddressPrefixes:          rule.DestinationAddressPrefixes,
+			DestinationPortRange:                rule.DestinationPortRange,
 			CloudDestinationAppSecurityGroupIDs: nil,
 			CloudSourceAppSecurityGroupIDs:      nil,
-			DestinationPortRanges:               rule.Properties.DestinationPortRanges,
-			Protocol:                            string(*rule.Properties.Protocol),
-			ProvisioningState:                   string(*rule.Properties.ProvisioningState),
-			SourceAddressPrefix:                 rule.Properties.SourceAddressPrefix,
-			SourceAddressPrefixes:               rule.Properties.SourceAddressPrefixes,
-			SourcePortRange:                     rule.Properties.SourcePortRange,
-			SourcePortRanges:                    rule.Properties.SourcePortRanges,
-			Priority:                            *rule.Properties.Priority,
-			Access:                              string(*rule.Properties.Access),
+			DestinationPortRanges:               rule.DestinationPortRanges,
+			Protocol:                            string(*rule.Protocol),
+			ProvisioningState:                   string(*rule.ProvisioningState),
+			SourceAddressPrefix:                 rule.SourceAddressPrefix,
+			SourceAddressPrefixes:               rule.SourceAddressPrefixes,
+			SourcePortRange:                     rule.SourcePortRange,
+			SourcePortRanges:                    rule.SourcePortRanges,
+			Priority:                            *rule.Priority,
+			Access:                              string(*rule.Access),
 			CloudSecurityGroupID:                sg.CloudID,
 			AccountID:                           req.AccountID,
 			Region:                              sg.Region,
 			SecurityGroupID:                     sg.ID,
 		}
 
-		switch *rule.Properties.Direction {
+		switch *rule.Direction {
 		case armnetwork.SecurityRuleDirectionInbound:
 			spec.Type = enumor.Ingress
 		case armnetwork.SecurityRuleDirectionOutbound:
 			spec.Type = enumor.Egress
 		default:
-			return nil, fmt.Errorf("unknown security group rule direction: %s", *rule.Properties.Direction)
+			return nil, fmt.Errorf("unknown security group rule direction: %s", *rule.Direction)
 		}
 
-		if len(rule.Properties.DestinationApplicationSecurityGroups) != 0 {
-			ids := make([]*string, 0, len(rule.Properties.DestinationApplicationSecurityGroups))
-			for _, one := range rule.Properties.DestinationApplicationSecurityGroups {
+		if len(rule.DestinationApplicationSecurityGroups) != 0 {
+			ids := make([]*string, 0, len(rule.DestinationApplicationSecurityGroups))
+			for _, one := range rule.DestinationApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
 			spec.CloudDestinationAppSecurityGroupIDs = ids
 		}
 
-		if len(rule.Properties.SourceApplicationSecurityGroups) != 0 {
-			ids := make([]*string, 0, len(rule.Properties.SourceApplicationSecurityGroups))
-			for _, one := range rule.Properties.SourceApplicationSecurityGroups {
+		if len(rule.SourceApplicationSecurityGroups) != 0 {
+			ids := make([]*string, 0, len(rule.SourceApplicationSecurityGroups))
+			for _, one := range rule.SourceApplicationSecurityGroups {
 				ids = append(ids, one.ID)
 			}
 			spec.CloudSourceAppSecurityGroupIDs = ids
@@ -301,7 +301,7 @@ func (g *securityGroup) UpdateAzureSGRule(cts *rest.Contexts) (interface{}, erro
 }
 
 func (g *securityGroup) getAzureSGRuleByID(cts *rest.Contexts, id string, sgID string) (*corecloud.
-AzureSecurityGroupRule, error) {
+	AzureSecurityGroupRule, error) {
 
 	listReq := &protocloud.AzureSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),

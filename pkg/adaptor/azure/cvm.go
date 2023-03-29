@@ -417,7 +417,7 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 		return "", err
 	}
 
-	return *resp.ID, nil
+	return SPtrToLowerStr(resp.ID), nil
 }
 
 // GetCvm 查询单个 cvm
