@@ -57,7 +57,8 @@
         ]
       },
       "cloud_gateway_load_balancer_id": "clb_001",
-      "cloud_network_security_group_id": "/subscriptions/1001-0000-0000-0000-xxxxxxxxxxx/resourceGroups/rsg1001/providers/Microsoft.Network/networkSecurityGroups/test-nsg",
+      "cloud_security_group_id": "/subscriptions/1001-0000-0000-0000-xxxxxxxxxxx/resourceGroups/rsg1001/providers/Microsoft.Network/networkSecurityGroups/test-nsg",
+      "security_group_id": "000000xx",
       "ip_configurations": [
       {
         "cloud_id": "ip-001",
@@ -233,7 +234,8 @@
 | enable_accelerated_networking | bool | 是否启用加速网络(0:否1:是) |
 | dns_settings   | object array | DNS设置                    |
 | cloud_gateway_load_balancer_id    | string | 网关负载均衡ID |
-| cloud_network_security_group_id   | string | 网络安全组     |
+| cloud_security_group_id   | string | 云厂商网络安全组ID        |
+| security_group_id | string | 网络安全组ID                 |
 | ip_configurations | list array    | IP配置                 |
 | cloud_virtual_machine_id | string | 虚拟机ID               |
 

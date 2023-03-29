@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
+	datacloudniproto "hcm/pkg/api/data-service/cloud/network-interface"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -51,6 +52,8 @@ func InitNetworkInterfaceService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("ListNetworkInterface", "POST", "/network_interfaces/list", svc.ListNetworkInterface)
+	h.Add("ListNetworkInterfaceExt", "POST", "/vendors/{vendor}/network_interfaces/list",
+		svc.ListNetworkInterfaceExt)
 	h.Add("GetNetworkInterface", "GET", "/network_interfaces/{id}", svc.GetNetworkInterface)
 	h.Add("ListNetworkInterfaceExtByCvmID", "GET", "/vendors/{vendor}/network_interfaces/cvms/{cvm_id}",
 		svc.ListNetworkInterfaceExtByCvmID)
@@ -113,6 +116,58 @@ func (svc *netSvc) listNetworkInterface(cts *rest.Contexts, authHandler handler.
 	}
 
 	return &cloudserver.NetworkInterfaceListResult{Count: res.Count, Details: res.Details}, nil
+}
+
+// ListNetworkInterfaceExt list network interface extension.
+func (svc *netSvc) ListNetworkInterfaceExt(cts *rest.Contexts) (interface{}, error) {
+	return svc.listNetworkInterfaceExt(cts, handler.ListResourceAuthRes)
+}
+
+func (svc *netSvc) listNetworkInterfaceExt(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (
+	interface{}, error) {
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.NetworkInterface, Action: meta.Find, Filter: req.Filter})
+	if err != nil {
+		return nil, err
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if noPermFlag {
+		switch vendor {
+		case enumor.HuaWei:
+			return &datacloudniproto.NetworkInterfaceExtListResult[coreni.HuaWeiNIExtension]{}, nil
+		case enumor.Gcp:
+			return &datacloudniproto.NetworkInterfaceExtListResult[coreni.GcpNIExtension]{}, nil
+		case enumor.Azure:
+			return &datacloudniproto.NetworkInterfaceExtListResult[coreni.AzureNIExtension]{}, nil
+		}
+	}
+
+	req.Filter = expr
+	switch vendor {
+	case enumor.HuaWei:
+		return svc.client.DataService().HuaWei.NetworkInterface.ListNetworkInterfaceExt(
+			cts.Kit.Ctx, cts.Kit.Header(), req)
+	case enumor.Gcp:
+		return svc.client.DataService().Gcp.NetworkInterface.ListNetworkInterfaceExt(
+			cts.Kit.Ctx, cts.Kit.Header(), req)
+	case enumor.Azure:
+		return svc.client.DataService().Azure.NetworkInterface.ListNetworkInterfaceExt(
+			cts.Kit.Ctx, cts.Kit.Header(), req)
+	default:
+		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
+	}
 }
 
 // GetNetworkInterface get network interface details.
