@@ -194,7 +194,7 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = cvm.SyncHuaWeiCvm(
+	_, err = cvm.SyncHuaWeiCvmWithRelResource(
 		cts.Kit,
 		&cvm.SyncHuaWeiCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{cvmData.CloudID}},
 		svc.Adaptor,

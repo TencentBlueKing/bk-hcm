@@ -123,11 +123,11 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return cvm.SyncAwsCvm(
+	return cvm.SyncAwsCvmWithRelResource(
 		cts.Kit,
+		&cvm.SyncAwsCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
 		svc.Adaptor,
 		svc.DataCli,
-		&cvm.SyncAwsCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
 	)
 }
 
