@@ -37,6 +37,8 @@ const securityFetchFilter = ref<any>({ filter: { op: 'and', rules: [{ field: 'bk
 const isListLoading = ref(false);
 const showSecurityDialog = ref(false);
 const securityBindLoading = ref(false);
+const unBindShow = ref(false);
+const unBindLoading = ref(false);
 
 const state = reactive<any>({
   datas: [],
@@ -84,7 +86,6 @@ const columns = [
           text: true,
           theme: 'primary',
           onClick() {
-            console.log(233);
             securityId.value = data.id;
             showRuleDialog();
           },
@@ -98,6 +99,25 @@ const columns = [
   {
     label: '名称',
     field: 'name',
+  },
+  {
+    label: t('操作'),
+    render({ data }: any) {
+      return h(
+        Button,
+        {
+          text: true,
+          theme: 'primary',
+          onClick() {
+            securityId.value = data.id;
+            unBind();
+          },
+        },
+        [
+          '解绑',
+        ],
+      );
+    },
   },
 ];
 
@@ -149,7 +169,6 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-  getList,
 } = useQueryCommonList(fetchFilter.value, fetchUrl);
 
 state.datas = datas;
@@ -160,6 +179,20 @@ state.handlePageSizeChange = handlePageSizeChange;
 state.handleSort = handleSort;
 state.columns = useColumns('securityCommon', false, props.data.vendor);
 
+
+// watch(() => state.datas, (val) => {
+//   setTimeout(() => {
+//     console.log('111', state.datas, val);
+//   }, 1000);
+//   console.log('1', val);
+// }, { deep: true, immediate: true });
+
+if (props.data.vendor === 'aws') {
+  securityFetchFilter.value.filter.rules.push({ field: 'extension.vpc_id', op: 'json_eq', value: props.data.vpc_ids });
+}
+
+//   // { field: 'id', op: 'not_in', value: ['000000cx'] }
+// }
 
 const {
   datas: securityDatas,
@@ -202,21 +235,41 @@ const handleSecurityDialog = () => {
   getSecurityList();
 };
 
+// 安全组绑定主机
 const handleSecurityConfirm = async () => {
   const ids = selections.value.map((e: any) => e.id);
   securityBindLoading.value = true;
   try {
-    await resourceStore.bindSecurityInfo({ security_group_id: ids, cvm_id: props.data.id });
+    await resourceStore.bindSecurityInfo({ security_group_id: ids[0], cvm_id: props.data.id });
     showSecurityDialog.value = false;
     Message({
       message: t('绑定成功'),
       theme: 'success',
     });
-    getList();
+    getSecurityGroupsList();
   } catch (error) {
-
   } finally {
     securityBindLoading.value = false;
+  }
+};
+
+const unBind = async () => {
+  unBindShow.value = true;
+};
+
+const handleConfirmUnBind = async () => {
+  unBindLoading.value = true;
+  try {
+    await resourceStore.unBindSecurityInfo({ security_group_id: securityId.value, cvm_id: props.data.id });
+    unBindShow.value = false;
+    Message({
+      message: t('解绑成功'),
+      theme: 'success',
+    });
+    getSecurityGroupsList();
+  } catch (error) {
+  } finally {
+    unBindLoading.value = false;
   }
 };
 
@@ -300,6 +353,17 @@ getSecurityGroupsList();
         @page-value-change="securityHandlePageSizeChange"
       />
     </bk-loading>
+  </bk-dialog>
+
+
+  <bk-dialog
+    :is-show="unBindShow"
+    :title="'确定解绑'"
+    :theme="'primary'"
+    :is-loading="unBindLoading"
+    @confirm="handleConfirmUnBind"
+  >
+    <!-- <div>{{ t('确定解绑') }}</div> -->
   </bk-dialog>
 </template>
 

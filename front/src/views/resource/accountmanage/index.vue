@@ -124,7 +124,7 @@
         </div>
         <div v-else>
           <div v-if="btnLoading">{{t('同步中...')}}</div>
-          <div v-else>{{t('确认同步该账号')}}</div>
+          <div v-else>{{t('同步该账号下的资源，点击确定后，立即触发同步任务')}}</div>
         </div>
 
         <div class="flex-row btn-warp">
@@ -329,7 +329,7 @@ export default defineComponent({
           await accountStore.accountSync(state.dataId);
         }
         Message({
-          message: t(diaType === 'del' ? '删除成功' : '同步成功'),
+          message: t(diaType === 'del' ? '删除成功' : t('本次同步任务触发成功。如需再次同步，请在20分钟后重试')),
           theme: 'success',
         });
         state.btnLoading = false;
@@ -338,6 +338,7 @@ export default defineComponent({
       } catch (error) {
         console.log(error);
       } finally {
+        state.btnLoading = false;
         state.showDeleteBox = false;
       }
     };
