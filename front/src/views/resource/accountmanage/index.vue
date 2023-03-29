@@ -94,9 +94,9 @@
         >
           <template #default="props">
             <div class="operate-button">
-              <bk-button text theme="primary" @click="handleOperate(props?.data.id, 'sync')">
+              <!-- <bk-button text theme="primary" @click="handleOperate(props?.data.id, 'sync')">
                 {{t('同步')}}
-              </bk-button>
+              </bk-button> -->
               <div @click="handleAuth('account_edit')">
                 <bk-button
                   text theme="primary" @click="handleJump('accountDetail', props?.data.id)"

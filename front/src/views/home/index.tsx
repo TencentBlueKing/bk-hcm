@@ -86,7 +86,7 @@ export default defineComponent({
         case 'workbench':
           topMenuActiveItem = 'workbench';
           menus = reactive(workbench);
-          path = '/workbench/auto';
+          path = '/workbench/audit';
           accountStore.updateBizsId(0); // 初始化业务ID
           break;
         default:

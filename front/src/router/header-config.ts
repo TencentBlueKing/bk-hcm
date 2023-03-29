@@ -3,11 +3,11 @@
  */
 
 export const headRouteConfig = [
-  {
-    id: 'business',
-    name: '业务',
-    route: 'business',
-  },
+  // {
+  //   id: 'business',
+  //   name: '业务',
+  //   route: 'business',
+  // },
   {
     id: 'resource',
     name: '资源',
