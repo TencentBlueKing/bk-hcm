@@ -21,6 +21,7 @@ package application
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
@@ -40,6 +41,8 @@ var (
 		"user3", "user4", "user5", "video",
 	})
 )
+
+var azureCvmNameRegexp = regexp.MustCompile(`^([A-Za-z0-9][A-Za-z0-9-.]*)[A-Za-z0-9]$`)
 
 // AzureCvmCreateReq ...
 type AzureCvmCreateReq struct {
@@ -82,6 +85,11 @@ type AzureCvmCreateReq struct {
 func (req *AzureCvmCreateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
+	}
+
+	if !azureCvmNameRegexp.MatchString(req.Name) {
+		return fmt.Errorf("invalid name: %s, only allows to include english、numbers、underscore "+
+			"、hyphen (-)、point (，), and must start and end with an english、numbers", req.Name)
 	}
 
 	// 校验用户名
