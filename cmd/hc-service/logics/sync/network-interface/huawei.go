@@ -29,7 +29,9 @@ import (
 	typesniproto "hcm/pkg/adaptor/types/network-interface"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
+	datacloudproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/network-interface"
 	hcservice "hcm/pkg/api/hc-service"
 	dataclient "hcm/pkg/client/data-service"
@@ -115,6 +117,12 @@ func GetHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiNetworkInte
 			core.DefaultMaxPageLimit))
 	}
 
+	// get cvm map by cloud_cvm_id
+	cvmMapInfo, err := GetCvmMapByCloudIDs(kt, dataCli, enumor.HuaWei, req.CloudCvmIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
 	cli, err := adaptor.HuaWei(kt, req.AccountID)
 	if err != nil {
 		return nil, nil, nil, err
@@ -131,6 +139,10 @@ func GetHuaWeiNetworkInterfaceList(kt *kit.Kit, req *hcservice.HuaWeiNetworkInte
 			ServerID: cvmID,
 			Region:   req.Region,
 		}
+		if cvmItem, ok := cvmMapInfo[cvmID]; ok {
+			opt.Zone = cvmItem.Zone
+		}
+
 		tmpList, err := cli.ListNetworkInterface(kt, opt)
 		if err != nil {
 			logs.Errorf("%s-networkinterface batch get cloudapi failed. accountID: %s, cvmIDs: %s, region: %s, "+
@@ -613,4 +625,36 @@ func GetHuaWeiCloudSubnetInfoByID(kt *kit.Kit, adaptor *cloudclient.CloudAdaptor
 	}
 
 	return &subnetDetail, nil
+}
+
+// GetCvmMapByCloudIDs get cvm map by cloud_cvm_id
+func GetCvmMapByCloudIDs(kt *kit.Kit, dataCli *dataclient.Client, vendor enumor.Vendor, cvmCloudIDs []string) (
+	map[string]corecvm.BaseCvm, error) {
+
+	listReq := &datacloudproto.CvmListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+				&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cvmCloudIDs},
+			},
+		},
+		Page: &core.BasePage{
+			Start: 0,
+			Limit: core.DefaultMaxPageLimit,
+		},
+	}
+	result, err := dataCli.Global.Cvm.ListCvm(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("get network interface list cvm from db failed, vendor: %s, cvmIDs: %v, err: %v, rid: %s",
+			vendor, cvmCloudIDs, err, kt.Rid)
+		return nil, err
+	}
+
+	var cloudCvmMap = make(map[string]corecvm.BaseCvm, len(result.Details))
+	for _, item := range result.Details {
+		cloudCvmMap[item.CloudID] = item
+	}
+
+	return cloudCvmMap, nil
 }

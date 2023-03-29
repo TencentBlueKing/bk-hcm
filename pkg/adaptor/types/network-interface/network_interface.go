@@ -102,6 +102,7 @@ func (opt AzureNetworkInterfaceListOption) Validate() error {
 type HuaWeiNIListOption struct {
 	ServerID string `json:"server_id" validate:"required"`
 	Region   string `json:"region" validate:"required"`
+	Zone     string `json:"zone" validate:"omitempty"`
 }
 
 // Validate huawei network interface list option.

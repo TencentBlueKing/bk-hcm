@@ -20,7 +20,6 @@
 package huawei
 
 import (
-	"fmt"
 	"strings"
 
 	typesniproto "hcm/pkg/adaptor/types/network-interface"
@@ -118,6 +117,7 @@ func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.Hua
 		CloudID:    data.PortId,                      // 网卡端口ID
 		InstanceID: converter.ValToPtr(opt.ServerID), // 关联的实例ID
 		Region:     converter.ValToPtr(opt.Region),   // 区域
+		Zone:       converter.ValToPtr(opt.Zone),     // 可用区
 		Extension: &coreni.HuaWeiNIExtension{
 			// FixedIps 网卡私网IP信息列表。
 			FixedIps: []coreni.ServerInterfaceFixedIp{},
@@ -157,7 +157,7 @@ func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.Hua
 		}
 	}
 	v.CloudSubnetID = data.NetId
-	v.Name = converter.ValToPtr(fmt.Sprintf("name:%s", converter.PtrToVal(data.PortId)))
+	v.Name = data.PortId
 
 	// get security groups by port id
 	tmpNetID := converter.PtrToVal(data.NetId)
