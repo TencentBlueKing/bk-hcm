@@ -55,8 +55,6 @@ func SyncHuaWeiImage(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.
 			logs.Errorf("sync huawei public image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 			return err
 		}
-
-		break
 	}
 
 	return nil

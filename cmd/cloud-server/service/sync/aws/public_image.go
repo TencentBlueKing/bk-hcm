@@ -47,8 +47,6 @@ func SyncAwsImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, region
 			logs.Errorf("sync aws public image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 			return err
 		}
-
-		break
 	}
 
 	return nil
