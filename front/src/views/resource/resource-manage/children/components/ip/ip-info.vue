@@ -202,11 +202,11 @@ watch(
         otherInfo.value = [
           {
             name: '资源组',
-            prop: '',
+            prop: 'resource_group_name',
           },
           {
             name: '位置',
-            prop: '',
+            prop: 'location',
           },
           {
             name: 'SKU',
@@ -214,7 +214,7 @@ watch(
           },
           {
             name: '层',
-            prop: '',
+            prop: 'sku_tier',
           },
           {
             name: 'DNS 名称',

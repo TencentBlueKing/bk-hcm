@@ -31,7 +31,7 @@ const businesseMenus: RouteRecordRaw[] = [
           },
           {
             path: 'recyclebin/:type',
-            name: 'hostBusinessRecyclebin ',
+            name: 'hostBusinessRecyclebin',
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
               backRouter: 'hostBusinessList',

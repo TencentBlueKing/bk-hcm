@@ -21,6 +21,7 @@ import securityForm from './forms/security/index.vue';
 
 import {
   useRoute,
+  useRouter,
 } from 'vue-router';
 
 import { useAccountStore } from '@/store/account';
@@ -30,6 +31,7 @@ const componentRef = ref();
 
 // use hooks
 const route = useRoute();
+const router = useRouter();
 const accountStore = useAccountStore();
 
 // 组件map
@@ -68,7 +70,13 @@ const renderForm = computed(() => {
 });
 
 const handleAdd = () => {
-  isShowSideSlider.value = true;
+  if (renderComponent.value === DriveManage) {
+    router.push({
+      path: '/service/service-apply/disk'
+    })
+  } else {
+    isShowSideSlider.value = true;
+  }
 };
 
 const handleCancel = () => {

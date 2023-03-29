@@ -9,7 +9,8 @@ import {
 } from 'bkui-vue';
 
 import {
-  useRouter
+  useRouter,
+  useRoute
 } from 'vue-router';
 import useMountedDrive from '../../../hooks/use-mounted-drive';
 import useUninstallDrive from '../../../hooks/use-uninstall-drive';
@@ -17,6 +18,9 @@ import useQueryList from '../../../hooks/use-query-list'
 import {
   useResourceStore,
 } from '@/store/resource';
+import {
+  useAccountStore,
+} from '@/store/account';
 
 const props = defineProps({
   data: {
@@ -25,7 +29,9 @@ const props = defineProps({
 });
 
 const resourceStore = useResourceStore();
+const accountStore = useAccountStore();
 const router = useRouter()
+const route = useRoute()
 
 const {
   datas,
@@ -74,13 +80,34 @@ const columns = ref([
           text: true,
           theme: 'primary',
           onClick() {
-            router.push({
-              name: 'resourceDetail',
-              params: { type: 'drive' },
+            const type = 'drive'
+            const routeInfo: any = {
               query: {
                 id: cell,
+                type: props.data.vendor,
               },
-            });
+            };
+            // 业务下
+            if (route.path.includes('business')) {
+              routeInfo.query.bizs = accountStore.bizs;
+              Object.assign(
+                routeInfo,
+                {
+                  name: `${type}BusinessDetail`,
+                },
+              );
+            } else {
+              Object.assign(
+                routeInfo,
+                {
+                  name: 'resourceDetail',
+                  params: {
+                    type,
+                  },
+                },
+              );
+            }
+            router.push(routeInfo);
           },
         },
         [
@@ -112,6 +139,11 @@ const columns = ref([
   {
     label: '随主机销毁',
     field: '',
+    render({ data }: any) {
+      const attachment = data?.extension?.attachment
+      const host = attachment?.find((x: any) => x.instance_id === props.data.cloud_id)
+      return host ? (host.delete_on_termination ?'是' : '否') : '--';
+    },
   },
   {
     label: '操作',
@@ -158,7 +190,7 @@ watch(
       ])
     }
     if (props.data.vendor === 'aws') {
-      columns.value.splice(2, 1, ...[
+      columns.value.splice(2, 0, ...[
         {
           label: '硬盘类型',
           field: 'disk_type',
@@ -166,16 +198,20 @@ watch(
         {
           label: '设备名',
           field: 'device_name',
+          render({ data }: any) {
+            const attachment = data?.extension?.attachment
+            const host = attachment.find((x: any) => x.instance_id === props.data.cloud_id)
+            return host.device_name;
+          },
         },
         {
           label: '容量(GB)',
           field: 'disk_size',
         },
-        {
-          label: '是否加密',
-          field: 'exencrypted',
-        }
       ])
+    }
+    if (props.data.vendor === 'azure') {
+      columns.value.splice(6, 1)
     }
   },
   {
@@ -194,7 +230,6 @@ watch(
       theme="primary"
       @click="handleMountedDrive"
     >挂载</bk-button>
-
     <bk-table
       class="mt20"
       row-hover="auto"

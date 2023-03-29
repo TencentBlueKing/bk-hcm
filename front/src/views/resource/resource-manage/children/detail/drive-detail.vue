@@ -226,10 +226,14 @@ const {
         ]);
         break;
       case 'azure':
-        settingFields.value.push(...[
+        settingFields.value.splice(9, 1, ...[
           {
             name: '资源组',
             prop: 'resource_group_name',
+          },
+          {
+            name: '磁盘类型',
+            prop: 'sku_name',
           },
         ]);
         break;
@@ -271,7 +275,11 @@ const handleShowDelete = () => {
           {
             infos: [{ id: detail.value.id }],
           },
-        );
+        ).then(() => {
+          router.replace({
+            path: location.href.includes('business') ? 'recyclebin/disk' : '/resource/recyclebin',
+          })
+        });
     },
   });
 };

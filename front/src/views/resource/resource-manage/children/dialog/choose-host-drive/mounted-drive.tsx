@@ -183,7 +183,6 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      isConfirmLoading.value = true;
       const postData: any = {
         disk_id: props.detail.id,
         cvm_id: selection.value.id
@@ -215,6 +214,7 @@ export default defineComponent({
         }
         postData.caching_type = cachingType.value
       }
+      isConfirmLoading.value = true;
       resourceStore
         .attachDisk(postData)
         .then(() => {
