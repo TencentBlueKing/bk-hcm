@@ -191,7 +191,9 @@ func (dao *AwsSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.AwsSGRuleColumns.ColumnTypes())),
+	columnTypes := cloud.AwsSGRuleColumns.ColumnTypes()
+	columnTypes["extension.vpc_id"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err
 	}

@@ -115,26 +115,6 @@ func (req *HuaWeiCvmCreateReq) Validate() error {
 		return err
 	}
 
-	// 不同付费模式，数量限制不同
-	if err := req.validateRequiredCount(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (req *HuaWeiCvmCreateReq) validateRequiredCount() error {
-	switch req.InstanceChargeType {
-	case typecvm.PrePaid:
-		if req.RequiredCount < 1 || req.RequiredCount > 100 {
-			return fmt.Errorf("required count should be 1-100 when charge type is prePaid")
-		}
-	case typecvm.PostPaid:
-		if req.RequiredCount < 1 || req.RequiredCount > 500 {
-			return fmt.Errorf("required count should be 1-500 when charge type is postPaid")
-		}
-	}
-
 	return nil
 }
 
