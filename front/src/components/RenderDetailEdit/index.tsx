@@ -34,6 +34,10 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    hideEdit: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['update:modelValue', 'change', 'input', 'blur'],
   setup(props, ctx) {
@@ -63,7 +67,7 @@ export default defineComponent({
     );
 
     const handleChange = (val: any) => {
-      ctx.emit('change', val);
+      ctx.emit('change', val, props.fromKey);
       ctx.emit('input', val);
       ctx.emit('update:modelValue', val);
     };
@@ -150,7 +154,7 @@ export default defineComponent({
             {renderEdit.value ? (
               renderComponentsContent(props.fromType)
             ) : renderTextContent(props.fromType)}
-            {renderEdit.value ? '' : <i onClick={handleEdit} class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>}
+            {renderEdit.value || props.hideEdit ? '' : <i onClick={handleEdit} class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}/>}
         </div>
     );
   },

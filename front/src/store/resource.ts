@@ -139,7 +139,7 @@ export const useResourceStore = defineStore({
 
     // 获取azure默认数据
     getAzureDefaultList(type: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}vendors/azure/default/security_groups/rules/${type}`);
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/azure/default/security_groups/rules/${type}`);
     },
 
     // 更新安全组信息

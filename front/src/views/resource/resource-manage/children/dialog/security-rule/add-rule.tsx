@@ -325,7 +325,7 @@ export default defineComponent({
                               >
                                 {{
                                   default: ({ data }: any) => (
-                                    data && <Input class="mt20 mb10 input-select-warp" v-model={ data.destination_port_range }>
+                                    data && <Input disabled={data?.protocol === '*'} class="mt20 mb10 input-select-warp" v-model={ data.destination_port_range }>
                                     {{
                                       prefix: () => (
                                         <Select class="input-prefix-select" v-model={data.protocol}>
@@ -477,6 +477,15 @@ export default defineComponent({
               if (e.from_port && e.to_port && (e.from_port === e.to_port)) {
                 e.port = e.from_port;
               }
+              if (e.protocol === '-1') {
+                e.port = 'ALL';
+              }
+            });
+          } else if (props.vendor === 'azure') {
+            tableData.value.forEach((e: any) => {
+              if (e?.destination_port_ranges?.length) {
+                e.destination_port_range = e.destination_port_ranges.join(',');
+              }
             });
           }
         }
@@ -542,7 +551,7 @@ export default defineComponent({
     // 处理selectChange
     const handleChange = () => {
       tableData.value.forEach((e: any) => {
-        if (e.protocol === 'ALL') {
+        if (e.protocol === 'ALL' || e.protocol === '-1' || e.protocol === '*' || e.protocol === 'huaweiAll') { // 依次为tcloud AWS AZURE HUAWEI
           e.port = 'ALL';
         } else if (e.protocol === '-1') {
           e.port = -1;
@@ -560,7 +569,7 @@ export default defineComponent({
   render() {
     return <>
         <step-dialog
-        dialogWidth={this.dialogWidth}
+          dialogWidth={this.dialogWidth}
           title={this.title}
           loading={this.loading}
           isShow={this.isShow}

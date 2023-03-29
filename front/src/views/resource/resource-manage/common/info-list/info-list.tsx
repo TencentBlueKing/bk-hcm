@@ -75,8 +75,8 @@ export default defineComponent({
       }
     };
 
-    const handleblur = async (val: any) => {
-      emit('change', { memo: val });
+    const handleblur = async (val: any, key: string) => {
+      emit('change', { [key]: val });
     };
 
     return {
@@ -104,11 +104,11 @@ export default defineComponent({
 
     // 渲染可编辑文本
     const renderEditTxt = (field: Field) => <RenderDetailEdit
-      modelValue={field.value}
-      fromType={field.type}
-      needValidate={false}
-      onChange={this.handleblur}
-    ></RenderDetailEdit>;
+    modelValue={field.value}
+    needValidate={false}
+    fromKey={field.prop}
+    onChange={this.handleblur}
+  ></RenderDetailEdit>;
 
     // 渲染链接
     const renderLink = (field: Field) => <bk-link theme="primary" target="_blank" href={typeof field.link === 'function' ? field.link(field.value) : field.link}>{ field.value }</bk-link>;

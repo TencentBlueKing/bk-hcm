@@ -57,6 +57,7 @@ const securityRuleLoading = ref(false);
 const fetchUrl = ref<string>(`vendors/${props.vendor}/security_groups/${props.id}/rules/list`);
 const dataId = ref('');
 const azureDefaultList = ref([]);
+const AllData = ref({ ALL: 'ALL', '-1': '-1', '*': '*' });
 
 const state = reactive<any>({
   datas: [],
@@ -131,10 +132,10 @@ const handleDeleteConfirm = () => {
 };
 
 // 提交规则
-const handleSubmitRule = async (data: any) => {
+const handleSubmitRule = async (tableData: any) => {
+  const data = JSON.parse(JSON.stringify(tableData));
   securityRuleLoading.value = true;
   if (props.vendor === 'aws') {   // aws 需要from_port 、to_port
-    console.log('data', data);
     data.forEach((e: any) => {
       if (typeof e.port === 'string' && e?.port.includes('-')) {
         // eslint-disable-next-line prefer-destructuring
@@ -142,16 +143,29 @@ const handleSubmitRule = async (data: any) => {
         // eslint-disable-next-line prefer-destructuring
         e.to_port = Number(e.port.split('-')[1]);
       } else {
-        e.from_port = e.port === 'ALL' ? e.port : Number(e.port);
-        e.to_port = e.port === 'ALL' ? e.port : Number(e.port);
+        console.log('-1', e.port);
+        e.from_port = e.port === 'ALL' ? -1 : Number(e.port);
+        e.to_port = e.port === 'ALL' ? -1 : Number(e.port);
       }
       delete e.port;
     });
   }
   // 过滤没有值的字段
   data.forEach((e: any) => {
-    Object.keys(e).forEach((item: any) => {
+    if (e?.source_port_range?.includes(',')) {
+      e.source_port_ranges = e.source_port_range.split(',');
+      e.source_port_range = '';
+    }
+    if (e?.destination_port_range?.includes(',')) {
+      e.destination_port_ranges = e.destination_port_range.split(',');
+      e.destination_port_range = '';
+    }
+    e.port = AllData.value[e.protocol] ? AllData.value[e.protocol] : e.port;
+    Object.keys(e).forEach((item: any) => { // 删除没有val的key
       if (!e[item] || e[item] === 'huaweiAll') {
+        if (e[item] === 'huaweiAll') {
+          delete e.port;
+        }
         delete e[item];
       }
     });
@@ -217,7 +231,7 @@ const inColumns = [
           props.vendor === 'aws' && (data.protocol === '-1' && data.to_port === -1) ? t('全部')
             // eslint-disable-next-line no-nested-ternary
             : props.vendor === 'huawei' && (!data.protocol && !data.port) ? t('全部')
-              : props.vendor === 'azure' && (data.protocol === '*' && data.destination_port_range === '*') ? t('全部') :  `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`,
+              : props.vendor === 'azure' && (data.protocol === '*' && data.destination_port_range === '*') ? t('全部') :  `${data.protocol}:${data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'}`,
         ],
       );
     },
