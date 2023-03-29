@@ -131,14 +131,14 @@ type GcpCreateOption struct {
 	Password           string `json:"password" validate:"required"`
 	RequiredCount      int64  `json:"required_count" validate:"required"`
 	// RequestID 唯一标识支持生产请求
-	RequestID           string `json:"request_id" validate:"required"`
+	RequestID           string `json:"request_id" validate:"omitempty"`
 	CloudVpcSelfLink    string `json:"cloud_vpc_self_link" validate:"required"`
 	CloudSubnetSelfLink string `json:"cloud_subnet_self_link" validate:"required"`
 	Description         string `json:"description" validate:"omitempty"`
 	// ImageProjectType 用于判断是 linux 还是 windows 机器。
 	ImageProjectType GcpImageProjectType `json:"image_project_type" validate:"required"`
 	SystemDisk       *GcpOsDisk          `json:"system_disk" validate:"required"`
-	DataDisk         []GcpDataDisk       `json:"data_volume" validate:"omitempty"`
+	DataDisk         []GcpDataDisk       `json:"data_disk" validate:"omitempty"`
 }
 
 // Validate gcp cvm operation option.
@@ -154,7 +154,6 @@ type GcpOsDisk struct {
 
 // GcpDataDisk gcp disk.
 type GcpDataDisk struct {
-	DiskName   string      `json:"disk_name" validate:"required"`
 	DiskType   GcpDiskType `json:"disk_type" validate:"required"`
 	SizeGb     int64       `json:"size_gb" validate:"required"`
 	Mode       GcpDiskMode `json:"mode" validate:"required"`

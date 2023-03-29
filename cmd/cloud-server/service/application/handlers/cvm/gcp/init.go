@@ -52,7 +52,6 @@ func (a *ApplicationOfCreateGcpCvm) toHcProtoGcpBatchCreateReq() *hcproto.GcpBat
 	for _, d := range req.DataDisk {
 		for i := int64(0); i < d.DiskCount; i++ {
 			dataDisk = append(dataDisk, typecvm.GcpDataDisk{
-				DiskName:   d.DiskName,
 				DiskType:   d.DiskType,
 				SizeGb:     d.DiskSizeGB,
 				Mode:       d.Mode,
@@ -74,7 +73,8 @@ func (a *ApplicationOfCreateGcpCvm) toHcProtoGcpBatchCreateReq() *hcproto.GcpBat
 		CloudImageID:  req.CloudImageID,
 		Password:      req.Password,
 		RequiredCount: req.RequiredCount,
-		RequestID:     a.Cts.Kit.Rid,
+		// 暂不使用
+		RequestID:     "",
 		CloudVpcID:    req.CloudVpcID,
 		CloudSubnetID: req.CloudSubnetID,
 		Description:   description,

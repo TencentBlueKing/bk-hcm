@@ -268,7 +268,6 @@ func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) (*poller.Base
 				InitializeParams: &compute.AttachedDiskInitializeParams{
 					DiskSizeGb: disk.SizeGb,
 					DiskType:   string(disk.DiskType),
-					DiskName:   disk.DiskName,
 				},
 				Mode:       string(disk.Mode),
 				AutoDelete: disk.AutoDelete,
@@ -276,8 +275,13 @@ func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) (*poller.Base
 		}
 	}
 
-	resp, err := client.Instances.BulkInsert(g.CloudProjectID(), opt.Zone, req).
-		RequestId(opt.RequestID).Context(kt.Ctx).Do()
+	resp := new(compute.Operation)
+	if len(opt.RequestID) != 0 {
+		resp, err = client.Instances.BulkInsert(g.CloudProjectID(), opt.Zone, req).
+			RequestId(opt.RequestID).Context(kt.Ctx).Do()
+	} else {
+		resp, err = client.Instances.BulkInsert(g.CloudProjectID(), opt.Zone, req).Context(kt.Ctx).Do()
+	}
 	if err != nil {
 		logs.Errorf("create instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 		return nil, err
