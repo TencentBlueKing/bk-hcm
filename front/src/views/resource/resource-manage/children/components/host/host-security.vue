@@ -39,6 +39,7 @@ const showSecurityDialog = ref(false);
 const securityBindLoading = ref(false);
 const unBindShow = ref(false);
 const unBindLoading = ref(false);
+const ids = ref([]);
 
 const state = reactive<any>({
   datas: [],
@@ -180,12 +181,11 @@ state.handleSort = handleSort;
 state.columns = useColumns('securityCommon', false, props.data.vendor);
 
 
-// watch(() => state.datas, (val) => {
-//   setTimeout(() => {
-//     console.log('111', state.datas, val);
-//   }, 1000);
-//   console.log('1', val);
-// }, { deep: true, immediate: true });
+watch(() => tableData.value, (val) => {     // 修改filterrules
+  ids.value = val.map((e: any) => e.id);
+  securityFetchFilter.value.filter.rules = securityFetchFilter.value.filter.rules.filter(e => e.field !== 'id');
+  securityFetchFilter.value.filter.rules.push({ field: 'id', op: 'not_in', value: ids.value });
+}, { deep: true, immediate: true });
 
 if (props.data.vendor === 'aws') {
   securityFetchFilter.value.filter.rules.push({ field: 'extension.vpc_id', op: 'json_eq', value: props.data.vpc_ids });
