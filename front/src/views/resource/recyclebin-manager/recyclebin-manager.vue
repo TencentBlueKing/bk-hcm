@@ -229,7 +229,6 @@ export default defineComponent({
         op: 'eq',
         value: v,
       }];
-      getList();
       state.selectedType = v;
     };
 
@@ -315,6 +314,8 @@ export default defineComponent({
         console.log(error);
       }
     };
+
+    getList();
 
     return {
       ...toRefs(state),

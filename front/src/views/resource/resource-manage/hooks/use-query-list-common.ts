@@ -108,7 +108,6 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
     triggerApi,
     {
       deep: true,
-      immediate: true,
     },
   );
 

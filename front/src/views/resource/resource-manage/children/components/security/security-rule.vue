@@ -56,8 +56,9 @@ const deleteId = ref(0);
 const securityRuleLoading = ref(false);
 const fetchUrl = ref<string>(`vendors/${props.vendor}/security_groups/${props.id}/rules/list`);
 const dataId = ref('');
-const azureDefaultList = ref([]);
 const AllData = ref({ ALL: 'ALL', '-1': '-1', '*': '*' });
+const azureDefaultList = ref([]);
+const azureDefaultColumns = ref([]);
 
 const state = reactive<any>({
   datas: [],
@@ -78,7 +79,9 @@ watch(
     state.isLoading = true;
     // eslint-disable-next-line vue/no-mutating-props
     props.filter.rules[0].value = v;
-    getDefaultList(v);
+    if (props.vendor === 'azure') {
+      getDefaultList(v);
+    }
   },
 );
 watch(
@@ -104,14 +107,17 @@ const {
   getList,
 } = useQueryCommonList(props, fetchUrl, props.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '');
 
+state.datas = datas;
+state.isLoading = isLoading;
+state.pagination = pagination;
+state.handlePageChange = handlePageChange;
+state.handlePageSizeChange = handlePageSizeChange;
+
 // 切换tab
 const handleSwtichType = async () => {
-  state.datas = datas;
-  state.isLoading = isLoading;
-  state.pagination = pagination;
-  state.handlePageChange = handlePageChange;
-  state.handlePageSizeChange = handlePageSizeChange;
-  getDefaultList(activeType.value);
+  if (props.vendor === 'azure') {
+    getDefaultList(activeType.value);
+  }
 };
 
 // 确定删除
@@ -201,6 +207,7 @@ const handleSecurityRuleDialog = (data: any) => {
 
 // 初始化
 handleSwtichType();
+getList();
 
 const inColumns = [
   {
@@ -260,7 +267,7 @@ const inColumns = [
   },
   {
     label: t('操作'),
-    field: '',
+    field: 'operate',
     render({ data }: any) {
       return h(
         'span',
@@ -358,7 +365,7 @@ const outColumns = [
   },
   {
     label: t('操作'),
-    field: '',
+    field: 'operate',
     render({ data }: any) {
       return h(
         'span',
@@ -443,6 +450,8 @@ if (props.vendor === 'huawei') {
       return (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) || data.source_address_prefixes || data.cloud_source_security_group_ids;
     },
   });
+  const defaultColumns = activeType.value === 'ingress' ? inColumns : outColumns;
+  azureDefaultColumns.value = defaultColumns.filter((item: any) => item.field !== 'operate' && item.field !== 'updated_at');   // azure默认规则没有操作和修改时间
 }
 
 </script>
@@ -475,7 +484,7 @@ if (props.vendor === 'huawei') {
       <bk-table
         class="mt10"
         row-hover="auto"
-        :columns="outColumns"
+        :columns="azureDefaultColumns"
         :data="azureDefaultList"
       />
     </div>

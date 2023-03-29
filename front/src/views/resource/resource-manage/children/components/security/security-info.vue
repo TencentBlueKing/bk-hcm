@@ -46,7 +46,7 @@ const settingInfo: any[] = [
   {
     name: t('资源名称'),
     prop: 'name',
-    edit: props.vendor !== 'azure',
+    edit: props.vendor !== 'azure' && props.vendor !== 'aws',
   },
   {
     name: t('云资源ID'),
@@ -75,7 +75,7 @@ const settingInfo: any[] = [
   {
     name: t('备注'),
     prop: 'memo',
-    edit: true,
+    edit: props.vendor !== 'aws',
   },
 ];
 

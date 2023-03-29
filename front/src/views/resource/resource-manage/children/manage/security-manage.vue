@@ -60,7 +60,7 @@ const state = reactive<any>({
     limit: 10,
     count: 0,
   },
-  isLoading: true,
+  isLoading: false,
   handlePageChange: () => {},
   handlePageSizeChange: () => {},
   columns: useColumns('group'),
@@ -79,10 +79,18 @@ const {
   getList,
 } = useQueryCommonList(props, fetchUrl);
 
+// eslint-disable-next-line max-len
+state.datas = datas;
+state.isLoading = isLoading;
+state.pagination = pagination;
+state.handlePageChange = handlePageChange;
+state.handlePageSizeChange = handlePageSizeChange;
+
 // 状态保持
 watch(
   () => activeType.value,
   (v) => {
+    console.log(1);
     state.isLoading = true;
     state.pagination.current = 1;
     state.pagination.limit = 10;
@@ -105,12 +113,6 @@ const handleSwtichType = async (type: string) => {
     state.params.fetchUrl = 'security_groups';
     state.params.columns = 'group';
   }
-  // eslint-disable-next-line max-len
-  state.datas = datas;
-  state.isLoading = isLoading;
-  state.pagination = pagination;
-  state.handlePageChange = handlePageChange;
-  state.handlePageSizeChange = handlePageSizeChange;
 };
 
 // 抛出请求数据的方法，新增成功使用
@@ -118,7 +120,8 @@ const fetchComponentsData = () => {
   getList();
 };
 
-handleSwtichType(activeType.value);
+// 初始化
+getList();
 
 defineExpose({ fetchComponentsData });
 

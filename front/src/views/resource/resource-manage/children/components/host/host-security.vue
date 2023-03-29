@@ -8,12 +8,14 @@ import {
 } from 'vue';
 import {
   Button,
+  Message,
 } from 'bkui-vue';
 import {
   useI18n,
 } from 'vue-i18n';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import {
   useResourceStore,
 } from '@/store/resource';
@@ -29,8 +31,12 @@ const tableData = ref([]);
 const isShow = ref(false);
 const securityId = ref(0);
 const fetchUrl = ref<string>(`vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`);
-const fetchFilter = ref<any>();
+const fetchFilter = ref<any>({ filter: { op: 'and', rules: [{ field: 'type', op: 'eq', value: activeType.value }] } });
+const securityFetchUrl = ref<any>('security_groups/list');
+const securityFetchFilter = ref<any>({ filter: { op: 'and', rules: [{ field: 'bk_biz_id', op: 'eq', value: -1 }, { field: 'account_id', op: 'eq', value: props.data.account_id }, { field: 'region', op: 'eq', value: props.data.region }] } });
 const isListLoading = ref(false);
+const showSecurityDialog = ref(false);
+const securityBindLoading = ref(false);
 
 const state = reactive<any>({
   datas: [],
@@ -52,6 +58,10 @@ const {
 } = useI18n();
 const resourceStore = useResourceStore();
 
+const {
+  selections,
+  handleSelectionChange,
+} = useSelection();
 
 watch(() => activeType.value, (val) => {
   fetchFilter.value.filter.rules[0].value = val;
@@ -91,6 +101,29 @@ const columns = [
   },
 ];
 
+
+const securityColumns = [
+  {
+    type: 'selection',
+  },
+  {
+    label: 'ID',
+    field: 'id',
+  },
+  {
+    label: '资源id',
+    field: 'cloud_id',
+  },
+  {
+    label: '名称',
+    field: 'name',
+  },
+  {
+    label: '备注',
+    field: 'memo',
+  },
+];
+
 // tab 信息
 const types = [
   { name: 'ingress', label: t('入站规则') },
@@ -109,30 +142,39 @@ const getSecurityGroupsList = async () => {
   }
 };
 
+const {
+  datas,
+  pagination,
+  isLoading,
+  handlePageChange,
+  handlePageSizeChange,
+  handleSort,
+  getList,
+} = useQueryCommonList(fetchFilter.value, fetchUrl);
+
+state.datas = datas;
+state.isLoading = isLoading;
+state.pagination = pagination;
+state.handlePageChange = handlePageChange;
+state.handlePageSizeChange = handlePageSizeChange;
+state.handleSort = handleSort;
+state.columns = useColumns('securityCommon', false, props.data.vendor);
+
+
+const {
+  datas: securityDatas,
+  pagination: securityPagination,
+  isLoading: securityLoading,
+  handlePageChange: securityHandlePageChange,
+  handlePageSizeChange: securityHandlePageSizeChange,
+  getList: getSecurityList,
+} = useQueryCommonList(securityFetchFilter.value, securityFetchUrl);
+
 const showRuleDialog = async () => {
   isShow.value = true;
   // 获取列表数据
   fetchUrl.value = `vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`;
   fetchFilter.value = { filter: { op: 'and', rules: [{ field: 'type', op: 'eq', value: activeType.value }] } };
-  const {
-    datas,
-    pagination,
-    isLoading,
-    handlePageChange,
-    handlePageSizeChange,
-    handleSort,
-    getList,
-  } = useQueryCommonList(fetchFilter.value, fetchUrl);
-
-  state.datas = datas;
-  state.isLoading = isLoading;
-  state.pagination = pagination;
-  state.handlePageChange = handlePageChange;
-  state.handlePageSizeChange = handlePageSizeChange;
-  state.handleSort = handleSort;
-  state.getList = getList;
-  state.columns = useColumns('securityCommon', false, props.data.vendor);
-
   if (props.data.vendor === 'huawei') {
     const huaweiColummns = [{
       label: t('优先级'),
@@ -155,10 +197,39 @@ const showRuleDialog = async () => {
   console.log('state.columns', state.columns);
 };
 
+const handleSecurityDialog = () => {
+  showSecurityDialog.value = true;
+  getSecurityList();
+};
+
+const handleSecurityConfirm = async () => {
+  const ids = selections.value.map((e: any) => e.id);
+  securityBindLoading.value = true;
+  try {
+    await resourceStore.bindSecurityInfo({ security_group_id: ids, cvm_id: props.data.id });
+    showSecurityDialog.value = false;
+    Message({
+      message: t('绑定成功'),
+      theme: 'success',
+    });
+    getList();
+  } catch (error) {
+
+  } finally {
+    securityBindLoading.value = false;
+  }
+};
+
 getSecurityGroupsList();
 </script>
 
 <template>
+
+  <bk-button
+    class="mt20" theme="primary" @click="handleSecurityDialog" v-if="props.data.vendor === 'tcloud'
+      || props.data.vendor === 'aws' || props.data.vendor === 'huawei'">
+    {{t('绑定')}}
+  </bk-button>
   <bk-loading
     :loading="isListLoading"
   >
@@ -174,7 +245,6 @@ getSecurityGroupsList();
     :title="activeType === 'ingress' ? '入站规则' : '出站规则'"
     width="1200"
     :theme="'primary'"
-    :quick-close="false"
     :dialog-type="'show'">
 
     <bk-loading
@@ -204,6 +274,30 @@ getSecurityGroupsList();
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"
+      />
+    </bk-loading>
+  </bk-dialog>
+
+  <bk-dialog
+    v-model:is-show="showSecurityDialog"
+    :title="t('绑定安全组')"
+    width="1200"
+    :theme="'primary'"
+    :is-loading="securityBindLoading"
+    @confirm="handleSecurityConfirm">
+    <bk-loading
+      :loading="securityLoading"
+    >
+      <bk-table
+        class="mt20"
+        row-hover="auto"
+        remote-pagination
+        :columns="securityColumns"
+        :data="securityDatas"
+        :pagination="securityPagination"
+        @selection-change="handleSelectionChange"
+        @page-limit-change="securityHandlePageChange"
+        @page-value-change="securityHandlePageSizeChange"
       />
     </bk-loading>
   </bk-dialog>

@@ -146,5 +146,10 @@ export const useResourceStore = defineStore({
     updateSecurityInfo(id: string, data: any) {
       return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/${id}`, data);
     },
+
+    // 绑定安全组信息
+    bindSecurityInfo(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/associate/cvms`, data);
+    },
   },
 });
