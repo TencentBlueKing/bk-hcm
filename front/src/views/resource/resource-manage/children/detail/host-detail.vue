@@ -85,6 +85,10 @@ if (cloudType.value === 'tcloud' || cloudType.value === 'aws') {    // 腾讯云
   hostTabs.splice(1, 1);
 }
 
+if (cloudType.value === 'gcp') {    // 腾讯云和Aws没有网络接口
+  hostTabs.splice(4, 1);
+}
+
 const componentMap = {
   detail: HostInfo,
   network: HostNetwork,

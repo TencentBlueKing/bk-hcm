@@ -129,7 +129,7 @@ const columns: any = [
               text: true,
               theme: 'primary',
               class: 'mr10',
-              disabled: data.vendor === 'azure' && data.extension?.security_group_id,  // 如果有安全组id 就不可以绑定
+              disabled: data.vendor === 'azure' && data.extension?.cloud_security_group_id,  // 如果有安全组id 就不可以绑定
               onClick() {
                 if (data.vendor === 'azure') {
                   securityId.value = data.extension.security_group_id;
@@ -149,7 +149,7 @@ const columns: any = [
             {
               text: true,
               theme: 'primary',
-              disabled: data.vendor === 'azure' && !data.extension?.security_group_id,  // 如果没有安全组id 就不可以解绑
+              disabled: data.vendor === 'azure' && !data.extension?.cloud_security_group_id,  // 如果没有安全组id 就不可以解绑
               onClick() {
                 if (data.vendor === 'azure') {
                   securityId.value = data.extension.security_group_id;
@@ -250,7 +250,10 @@ watch(() => tableData.value, (val) => {     // 修改filterrules
 }, { deep: true, immediate: true });
 
 if (props.data.vendor === 'aws') {
-  securityFetchFilter.value.filter.rules.push({ field: 'extension.vpc_id', op: 'json_eq', value: props.data.vpc_ids });
+  securityFetchFilter.value.filter.rules.push({ field: 'extension.vpc_id', op: 'json_eq', value: props.data.vpc_ids[0] });
+}
+if (isResourcePage.value) {
+  securityFetchFilter.value.filter.rules.push({ field: 'bk_biz_id', op: 'eq', value: -1 });   // 资源下才需要查未绑定的数据
 }
 if (isResourcePage.value) {
   securityFetchFilter.value.filter.rules.push({ field: 'bk_biz_id', op: 'eq', value: -1 });   // 资源下才需要查未绑定的数据
@@ -355,6 +358,11 @@ const handleConfirmUnBind = async () => {
   }
 };
 
+const handleClose = () => {
+  unBindShow.value = false;
+  showSecurityDialog.value = false;
+};
+
 getSecurityGroupsList();
 </script>
 
@@ -419,6 +427,7 @@ getSecurityGroupsList();
     width="1200"
     :theme="'primary'"
     :is-loading="securityBindLoading"
+    @closed="handleClose"
     @confirm="handleSecurityConfirm">
     <bk-loading
       :loading="securityLoading"
@@ -443,6 +452,7 @@ getSecurityGroupsList();
     :title="'确定解绑'"
     :theme="'primary'"
     :is-loading="unBindLoading"
+    @closed="handleClose"
     @confirm="handleConfirmUnBind"
   >
     <!-- <div>{{ t('确定解绑') }}</div> -->
