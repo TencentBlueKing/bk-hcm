@@ -178,12 +178,12 @@ func (a *Aws) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.AwsAssoc
 		return fmt.Errorf("associate security group to query cvm detail failed, err: %v", err)
 	}
 
-	if len(instance.Reservations) == 0 {
+	if len(instance.Reservations) == 0 || len(instance.Reservations[0].Instances) == 0 {
 		return fmt.Errorf("cvm(cloud_id=%s) not found", opt.CloudCvmID)
 	}
 
 	sgIDs := make([]*string, 0)
-	for _, sg := range instance.Reservations[0].Groups {
+	for _, sg := range instance.Reservations[0].Instances[0].SecurityGroups {
 		if *sg.GroupId == opt.CloudSecurityGroupID {
 			return fmt.Errorf("cvm: %s already associated security group: %s", opt.CloudCvmID, opt.CloudSecurityGroupID)
 		}
@@ -229,13 +229,13 @@ func (a *Aws) SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.AwsAs
 		return fmt.Errorf("disassociate security group to query cvm detail failed, err: %v", err)
 	}
 
-	if len(instance.Reservations) == 0 {
+	if len(instance.Reservations) == 0 || len(instance.Reservations[0].Instances) == 0 {
 		return fmt.Errorf("cvm(cloud_id=%s) not found", opt.CloudCvmID)
 	}
 
 	sgIDs := make([]*string, 0)
 	hit := false
-	for _, sg := range instance.Reservations[0].Groups {
+	for _, sg := range instance.Reservations[0].Instances[0].SecurityGroups {
 		if sg.GroupId != nil && *sg.GroupId == opt.CloudSecurityGroupID {
 			hit = true
 			continue
