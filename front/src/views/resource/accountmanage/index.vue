@@ -161,14 +161,9 @@ import { Message } from 'bkui-vue';
 import { CloudType, AccountType } from '@/typings';
 import { VENDORS } from '@/common/constant';
 import { useVerify } from '@/hooks';
-import permissionDialog from '@/components/permission-dialog';
-
 
 export default defineComponent({
   name: 'AccountManageList',
-  components: {
-    permissionDialog,
-  },
   setup() {
     const { t } = useI18n();
     const router = useRouter();

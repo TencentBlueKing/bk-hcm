@@ -14,6 +14,7 @@ import RoutingManage from '@/views/resource/resource-manage/children/manage/rout
 import ImageManage from '@/views/resource/resource-manage/children/manage/image-manage.vue';
 import NetworkInterfaceManage from '@/views/resource/resource-manage/children/manage/network-interface-manage.vue';
 import recyclebinManage from '@/views/resource/recyclebin-manager/recyclebin-manager.vue';
+import { useVerify } from '@/hooks';
 // forms
 import EipForm from './forms/eip/index.vue';
 import subnetForm from './forms/subnet/index.vue';
@@ -28,6 +29,8 @@ import { useAccountStore } from '@/store/account';
 
 const isShowSideSlider = ref(false);
 const componentRef = ref();
+
+const showPermissionDialog = ref(false);    // 无权限弹窗
 
 // use hooks
 const route = useRoute();
@@ -72,8 +75,8 @@ const renderForm = computed(() => {
 const handleAdd = () => {
   if (renderComponent.value === DriveManage) {
     router.push({
-      path: '/service/service-apply/disk'
-    })
+      path: '/service/service-apply/disk',
+    });
   } else {
     isShowSideSlider.value = true;
   }
@@ -88,6 +91,16 @@ const handleSuccess = () => {
   handleCancel();
   componentRef.value.fetchComponentsData();
 };
+
+
+// 权限hook
+const {
+  handlePermissionConfirm,
+  handlePermissionDialog,
+  handleAuth,
+  permissionParams,
+  authVerifyData,
+} = useVerify(showPermissionDialog);
 </script>
 
 <template>

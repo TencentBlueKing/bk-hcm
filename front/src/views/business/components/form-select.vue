@@ -140,12 +140,13 @@ handleCloudChange();
       </bk-select>
     </bk-form-item>
     <bk-form-item
-      :label="t('云区域')"
+      :label="t('云地域')"
       class="item-warp"
       v-if="!props.hidden.includes('region')"
     >
       <bk-select
         class="item-warp-component"
+        filterable
         :disabled="!state.filter.vendor"
         :loading="cloudRegionsLoading"
         v-model="state.filter.region"

@@ -12,9 +12,13 @@ export const useCommonStore = defineStore({
     authVerifyData: null,
     authVerifyParams: null,
     pageAuthData: [
-      { type: 'account', action: 'find', id: 'account_find', path: '/resource/account' }, // 如果是列表 需要加上path
+      { type: 'account', action: 'find', id: 'account_find', path: '/resource/account' }, // 如果是列表查看权限 需要加上path
       { type: 'account', action: 'import', id: 'account_import' },
       { type: 'account', action: 'update', id: 'account_edit' },
+
+      // 安全组
+      { type: 'security_group', action: 'find', bk_biz_id: '2005000002', id: 'resource_find_security_group', path: '/business/security' },
+      { type: 'security_group', action: 'create', id: 'iaas_resource_operate_security_group' },
     ],
   }),
   actions: {

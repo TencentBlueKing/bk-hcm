@@ -16,7 +16,12 @@ export default defineComponent({
     const urlLoading = ref<boolean>(false);
 
     onMounted(async () => {
-      const urlKey: any = route.params.id;
+      let urlKey: any = route.params.id;
+      if (urlKey?.includes('iaas_resource_operate')) {
+        urlKey = 'iaas_resource_operate';
+      } else if (urlKey?.includes('resource_find')) {
+        urlKey = 'resource_find';
+      }
       const { authVerifyData } = commonStore;
       if (authVerifyData) {       // 权限矩阵数据
         const params = authVerifyData.urlParams[urlKey];    // 获取权限链接需要的参数
