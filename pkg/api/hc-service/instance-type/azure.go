@@ -42,6 +42,7 @@ type AzureInstanceTypeResp struct {
 	CPU          int64  `json:"cpu"`
 	Memory       int64  `json:"memory"`
 	FPGA         int64  `json:"fpga"`
+	Architecture string `json:"architecture"`
 }
 
 // AzureInstanceTypeListResp ...

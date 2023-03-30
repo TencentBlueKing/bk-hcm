@@ -60,6 +60,7 @@ func (i *instanceTypeAdaptor) ListForAzure(cts *rest.Contexts) (interface{}, err
 			CPU:          one.CPU,
 			Memory:       one.Memory,
 			FPGA:         one.FPGA,
+			Architecture: one.Architecture,
 		})
 	}
 

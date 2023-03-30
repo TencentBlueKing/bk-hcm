@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types/image"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
@@ -64,7 +65,7 @@ func (t *TCloud) ListImage(
 			Name:         *pImage.ImageName,
 			State:        *pImage.ImageState,
 			Platform:     *pImage.Platform,
-			Architecture: *pImage.Architecture,
+			Architecture: changeArchitecture(pImage.Architecture),
 			Type:         "public",
 			ImageSize:    *pImage.ImageSize,
 			ImageSource:  *pImage.ImageSource,
@@ -72,4 +73,16 @@ func (t *TCloud) ListImage(
 	}
 
 	return &image.TCloudImageListResult{Details: images}, nil
+}
+
+func changeArchitecture(architecture *string) string {
+	if architecture == nil {
+		return constant.X86
+	}
+
+	if *architecture == "arm" {
+		return constant.Arm64
+	}
+
+	return *architecture
 }

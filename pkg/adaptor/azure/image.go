@@ -20,7 +20,10 @@
 package azure
 
 import (
+	"strings"
+
 	"hcm/pkg/adaptor/types/image"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -56,15 +59,28 @@ func (a *Azure) ListImage(
 
 		for _, pImage := range res.VirtualMachineImageResourceArray {
 			images = append(images, image.AzureImage{
-				CloudID:  SPtrToLowerStr(pImage.ID),
-				Name:     converter.PtrToVal(pImage.Name),
-				Platform: opt.Offer,
-				Sku:      converter.PtrToVal(sku.Name),
-				State:    "available",
-				Type:     "public",
+				CloudID:      SPtrToLowerStr(pImage.ID),
+				Name:         converter.PtrToVal(pImage.Name),
+				Architecture: changeArchitecture(sku.Name),
+				Platform:     opt.Offer,
+				Sku:          converter.PtrToVal(sku.Name),
+				State:        "available",
+				Type:         "public",
 			})
 		}
 	}
 
 	return &image.AzureImageListResult{Details: images}, nil
+}
+
+func changeArchitecture(sku *string) string {
+	if sku == nil {
+		return constant.X86
+	}
+
+	if strings.Contains(*sku, "arm64") {
+		return constant.Arm64
+	}
+
+	return constant.X86
 }

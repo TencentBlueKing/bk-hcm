@@ -21,6 +21,7 @@ package huawei
 
 import (
 	"hcm/pkg/adaptor/types/image"
+	"hcm/pkg/criteria/constant"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2/region"
@@ -55,11 +56,23 @@ func (h *HuaWei) ListImage(opt *image.HuaWeiImageListOption) (*image.HuaWeiImage
 		images = append(images, image.HuaWeiImage{
 			CloudID:      pImage.Id,
 			Name:         pImage.Name,
-			Architecture: pImage.OsBit.Value(),
+			Architecture: changeArchitecture(pImage.OsBit),
 			Platform:     pImage.Platform.Value(),
 			State:        model.GetListImagesRequestStatusEnum().ACTIVE.Value(),
 			Type:         "public",
 		})
 	}
 	return &image.HuaWeiImageListResult{Details: images}, nil
+}
+
+func changeArchitecture(osBit *model.ImageInfoOsBit) string {
+	if osBit == nil {
+		return constant.X86
+	}
+
+	if osBit.Value() == "64" {
+		return constant.X86
+	}
+
+	return osBit.Value()
 }

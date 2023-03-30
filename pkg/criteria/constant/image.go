@@ -17,21 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package instancetype
+package constant
 
-// -------------------------- List --------------------------
+const (
+	// cpu architecture is x86_64
+	X86 = "x86_64"
 
-// AzureInstanceTypeListOption ...
-type AzureInstanceTypeListOption struct {
-	Region string
-}
-
-// AzureInstanceType ...
-type AzureInstanceType struct {
-	InstanceType string
-	GPU          int64
-	CPU          int64
-	Memory       int64
-	FPGA         int64
-	Architecture string
-}
+	// cpu architecture is arm64
+	Arm64 = "arm64"
+)
