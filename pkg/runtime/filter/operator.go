@@ -54,6 +54,7 @@ func init() {
 	opFactory[JSONOverlaps.Factory()] = JSONOverlapsOp(JSONOverlaps)
 	opFactory[JSONContainsPath.Factory()] = JSONContainsPathOp(JSONContainsPath)
 	opFactory[JSONNotContainsPath.Factory()] = JSONNotContainsPathOp(JSONNotContainsPath)
+	opFactory[JSONLength.Factory()] = JSONLengthOp(JSONLength)
 }
 
 const (
@@ -141,6 +142,8 @@ const (
 	JSONContainsPath OpType = "json_contains_path"
 	// JSONNotContainsPath 检测 JSON 文档不包含某个键值。
 	JSONNotContainsPath OpType = "json_not_contains_path"
+	// JSONLength 获取 json 数组长度
+	JSONLength OpType = "json_length"
 )
 
 // OpType defines the operators supported by mysql.
@@ -156,7 +159,7 @@ func (op OpType) Validate() error {
 		ContainsSensitive, ContainsInsensitive:
 
 	case JSONEqual, JSONIn, JSONContains, JSONOverlaps,
-		JSONContainsPath, JSONNotContainsPath:
+		JSONContainsPath, JSONNotContainsPath, JSONLength:
 
 	default:
 		return fmt.Errorf("unsupported operator: %s", op)
@@ -885,4 +888,41 @@ func (op JSONNotContainsPathOp) SQLExprAndValue(field string, value interface{})
 	}
 
 	return fmt.Sprintf(`!JSON_CONTAINS_PATH(%s, 'one', '$.%s')`, field, value), map[string]interface{}{}, nil
+}
+
+// JSONLengthOp is json field json length operator
+type JSONLengthOp OpType
+
+// Name is json field json contain path operator
+func (op JSONLengthOp) Name() OpType {
+	return JSONLength
+}
+
+// ValidateValue validate json field equal's value
+func (op JSONLengthOp) ValidateValue(v interface{}, opt *ExprOption) error {
+
+	if !assert.IsNumeric(v) {
+		return errors.New("invalid value field, value should number")
+	}
+
+	return nil
+}
+
+// SQLExprAndValue convert this operator's field and value to a mysql's sub query expression.
+func (op JSONLengthOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{},
+	error) {
+
+	if len(field) == 0 {
+		return "", nil, errors.New("field is empty")
+	}
+
+	if !assert.IsNumeric(value) {
+		return "", nil, errors.New("invalid value field, value should number")
+	}
+
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	return fmt.Sprintf(`JSON_LENGTH(%s) = %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
+		map[string]interface{}{
+			placeholder: value,
+		}, nil
 }
