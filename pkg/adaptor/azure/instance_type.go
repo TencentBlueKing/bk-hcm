@@ -29,6 +29,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
 
+// ArmInstanceMap azure instance type is arm64
 var ArmInstanceMap map[string]struct{} = map[string]struct{}{
 	"Standard_D2ps_v5":    {},
 	"Standard_D4ps_v5":    {},

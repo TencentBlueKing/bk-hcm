@@ -549,6 +549,10 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 func queryCloudDiskIDMapBySelfLink(kt *kit.Kit, dataCli *dataservice.Client, selfLinks []string) (
 	map[string]string, error) {
 
+	if len(selfLinks) <= 0 {
+		return make(map[string]string), nil
+	}
+
 	unique := slice.Unique(selfLinks)
 	req := &diskproto.DiskListReq{
 		Filter: &filter.Expression{
