@@ -167,7 +167,7 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return nil, cvm.SyncTCloudCvm(
+	return cvm.SyncTCloudCvmWithRelResource(
 		cts.Kit,
 		svc.Adaptor,
 		svc.DataCli,

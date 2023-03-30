@@ -130,7 +130,7 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = cvm.SyncGcpCvm(
+	_, err = cvm.SyncGcpCvmWithRelResource(
 		cts.Kit,
 		svc.Adaptor,
 		svc.DataCli,
