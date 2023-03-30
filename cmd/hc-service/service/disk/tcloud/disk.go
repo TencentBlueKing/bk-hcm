@@ -231,12 +231,6 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	err = manager.Delete(cts.Kit)
-	if err != nil {
-		return nil, err
-	}
-
 	_, err = syncdisk.SyncTCloudDisk(
 		cts.Kit,
 		&syncdisk.SyncTCloudDiskOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: opt.CloudDiskIDs},
@@ -247,7 +241,7 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return nil, cvm.SyncTCloudCvm(
+	return cvm.SyncTCloudCvmWithRelResource(
 		cts.Kit,
 		svc.Adaptor,
 		svc.DataCli,

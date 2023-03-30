@@ -21,6 +21,7 @@ package eip
 
 import (
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/eip/v2/model"
 )
@@ -222,6 +223,8 @@ func (opt *HuaWeiEipCreateOption) ToCreatePrePaidPublicipRequest() (*model.Creat
 		PeriodNum:   &opt.InternetChargePrepaid.PeriodNum,
 		PeriodType:  &periodType,
 		ChargeMode:  &prePaidChargeMode,
+		// **注意：现在默认设置为自动提交订单，后续形态需要支持订单的话需要调整此处**
+		IsAutoPay: converter.ValToPtr(true),
 	}
 
 	return req, nil

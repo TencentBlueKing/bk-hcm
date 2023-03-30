@@ -252,7 +252,7 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&datarelproto.DiskCvmRelListReq{
-			Filter: tools.ContainersExpression("disk_id", []string{diskID}),
+			Filter: tools.EqualExpression("disk_id", diskID),
 			Page:   core.DefaultBasePage,
 		},
 	)

@@ -232,12 +232,6 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	err = manager.Delete(cts.Kit)
-	if err != nil {
-		return nil, err
-	}
-
 	diskData, err := svc.DataCli.Azure.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), req.DiskID)
 	if err != nil {
 		return nil, err
@@ -261,7 +255,7 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cvm.SyncAzureCvm(
+	return cvm.SyncAzureCvmWithRelResource(
 		cts.Kit,
 		svc.Adaptor,
 		svc.DataCli,

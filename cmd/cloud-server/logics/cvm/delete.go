@@ -21,6 +21,7 @@ package cvm
 
 import (
 	"hcm/pkg/api/core"
+	networkinterface "hcm/pkg/api/core/cloud/network-interface"
 	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/api/data-service/cloud/eip"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
@@ -31,8 +32,10 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // BatchDeleteCvm batch delete cvm.
@@ -244,6 +247,7 @@ func (c *cvm) DeleteRecycledCvm(kt *kit.Kit, basicInfoMap map[string]types.Cloud
 }
 
 func (c *cvm) getEipByCvm(kt *kit.Kit, ids []string) (map[string]string, map[string]*eip.EipResult, error) {
+	// list eip and cvm relation
 	relReq := &cloud.EipCvmRelListReq{
 		Filter: tools.ContainersExpression("cvm_id", ids),
 		Page:   core.DefaultBasePage,
@@ -264,6 +268,7 @@ func (c *cvm) getEipByCvm(kt *kit.Kit, ids []string) (map[string]string, map[str
 		eipIDs = append(eipIDs, detail.EipID)
 	}
 
+	// list eip
 	eipReq := &eip.EipListReq{
 		Filter: tools.ContainersExpression("id", eipIDs),
 		Page:   core.DefaultBasePage,
@@ -273,10 +278,69 @@ func (c *cvm) getEipByCvm(kt *kit.Kit, ids []string) (map[string]string, map[str
 		return nil, nil, err
 	}
 
+	// list network interface attached with eip
 	eipMap := make(map[string]*eip.EipResult)
+	publicIPs := make([]string, 0, len(eipRes.Details))
 	for _, detail := range eipRes.Details {
 		eipMap[detail.ID] = detail
+		publicIPs = append(publicIPs, detail.PublicIp)
+	}
+
+	nicMap, err := c.listNicByCvmAndEip(kt, ids, publicIPs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for eipID, cvmID := range eipCvmMap {
+		ip := eipMap[eipID].PublicIp
+		for _, nic := range nicMap[cvmID] {
+			if slice.IsItemInSlice(nic.PublicIPv4, ip) || slice.IsItemInSlice(nic.PublicIPv6, ip) {
+				eipMap[eipID].InstanceID = converter.ValToPtr(nic.ID)
+			}
+		}
 	}
 
 	return eipCvmMap, eipMap, nil
+}
+
+// TODO save eip and nic relation in db
+func (c *cvm) listNicByCvmAndEip(kt *kit.Kit, ids []string, publicIPs []string) (
+	map[string][]networkinterface.BaseNetworkInterface, error) {
+
+	nicRelRes, err := c.client.DataService().Global.NetworkInterfaceCvmRel.List(kt.Ctx, kt.Header(),
+		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", ids), Page: core.DefaultBasePage})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(nicRelRes.Details) == 0 {
+		return make(map[string][]networkinterface.BaseNetworkInterface), nil
+	}
+
+	nicIDs := make([]string, len(nicRelRes.Details))
+	nicCvmMap := make(map[string]string)
+	for idx, rel := range nicRelRes.Details {
+		nicIDs[idx] = rel.NetworkInterfaceID
+		nicCvmMap[rel.NetworkInterfaceID] = rel.CvmID
+	}
+
+	nicRes, err := c.client.DataService().Global.NetworkInterface.List(kt.Ctx, kt.Header(),
+		&core.ListReq{Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{tools.ContainersExpression("id", nicIDs),
+				&filter.Expression{Op: filter.Or, Rules: []filter.RuleFactory{
+					filter.AtomRule{Field: "public_ipv4", Op: filter.JSONOverlaps.Factory(), Value: publicIPs},
+					filter.AtomRule{Field: "public_ipv6", Op: filter.JSONOverlaps.Factory(), Value: publicIPs},
+				}},
+			},
+		}, Page: core.DefaultBasePage})
+	if err != nil {
+		return nil, err
+	}
+
+	nicMap := make(map[string][]networkinterface.BaseNetworkInterface)
+	for _, nic := range nicRes.Details {
+		nicMap[nicCvmMap[nic.ID]] = append(nicMap[nicCvmMap[nic.ID]], nic)
+	}
+	return nicMap, nil
 }

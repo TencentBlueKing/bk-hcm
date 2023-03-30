@@ -36,7 +36,7 @@ func InitEipService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
 	// 删除 Eip
-	h.Add("DeleteEip", http.MethodDelete, "/vendors/{vendor}/eips/{id}", e.DeleteEip)
+	h.Add("DeleteEip", http.MethodDelete, "/vendors/{vendor}/eips", e.DeleteEip)
 	// 关联 Eip
 	h.Add("AssociateEip", http.MethodPost, "/vendors/{vendor}/eips/associate", e.AssociateEip)
 	// 解关联 Eip

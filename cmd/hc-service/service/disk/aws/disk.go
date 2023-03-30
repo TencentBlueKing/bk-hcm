@@ -170,12 +170,6 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	manager := datasvc.DiskCvmRelManager{CvmID: req.CvmID, DiskID: req.DiskID, DataCli: svc.DataCli}
-	err = manager.Create(cts.Kit)
-	if err != nil {
-		return nil, err
-	}
-
 	_, err = syncdisk.SyncAwsDisk(
 		cts.Kit,
 		&syncdisk.SyncAwsDiskOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudDiskID}},
@@ -191,7 +185,6 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 		&cvm.SyncAwsCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
 		svc.Adaptor,
 		svc.DataCli,
-
 	)
 }
 

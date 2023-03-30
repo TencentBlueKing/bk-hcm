@@ -22,7 +22,6 @@ package handler
 import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -103,12 +102,7 @@ func ListResourceRecycleAuthRes(cts *rest.Contexts, opt *ListAuthResOption) (*fi
 		return nil, true, nil
 	}
 
-	recycleFilter, err := tools.And(filter.AtomRule{Field: "recycle_status", Op: filter.Equal.Factory(),
-		Value: enumor.RecycleStatus}, opt.Filter)
-	if err != nil {
-		return nil, false, err
-	}
-	return recycleFilter, false, err
+	return opt.Filter, false, err
 }
 
 // ListBizRecycleAuthRes list authorized recycled biz resource for resource manager.

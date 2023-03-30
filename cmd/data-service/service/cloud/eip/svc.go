@@ -228,10 +228,8 @@ func (svc *eipSvc) BatchUpdateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	updateData := &tablecloud.EipModel{
-		BkBizID:      int64(req.BkBizID),
-		Status:       req.Status,
-		InstanceID:   req.InstanceId,
-		InstanceType: req.InstanceType,
+		BkBizID: int64(req.BkBizID),
+		Status:  req.Status,
 	}
 	if err := svc.objectDao.Update(cts.Kit, tools.ContainersExpression("id", req.IDs), updateData); err != nil {
 		return nil, err
@@ -304,20 +302,18 @@ func batchCreateEipExt[T dataproto.EipExtensionCreateReq](
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
 			eips[idx] = &tablecloud.EipModel{
-				Vendor:       string(vendor),
-				AccountID:    eipReq.AccountID,
-				CloudID:      eipReq.CloudID,
-				BkBizID:      constant.UnassignedBiz,
-				Name:         eipReq.Name,
-				Region:       eipReq.Region,
-				Status:       eipReq.Status,
-				PublicIp:     eipReq.PublicIp,
-				PrivateIp:    eipReq.PrivateIp,
-				InstanceID:   eipReq.InstanceId,
-				InstanceType: eipReq.InstanceType,
-				Extension:    tabletype.JsonField(extensionJson),
-				Creator:      cts.Kit.User,
-				Reviser:      cts.Kit.User,
+				Vendor:    string(vendor),
+				AccountID: eipReq.AccountID,
+				CloudID:   eipReq.CloudID,
+				BkBizID:   constant.UnassignedBiz,
+				Name:      eipReq.Name,
+				Region:    eipReq.Region,
+				Status:    eipReq.Status,
+				PublicIp:  eipReq.PublicIp,
+				PrivateIp: eipReq.PrivateIp,
+				Extension: tabletype.JsonField(extensionJson),
+				Creator:   cts.Kit.User,
+				Reviser:   cts.Kit.User,
 			}
 		}
 		return svc.objectDao.BatchCreateWithTx(cts.Kit, txn, eips)
@@ -351,10 +347,8 @@ func batchUpdateEipExt[T dataproto.EipExtensionUpdateReq](cts *rest.Contexts, sv
 	_, err = svc.Set.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, eipReq := range *req {
 			updateData := &tablecloud.EipModel{
-				BkBizID:      int64(eipReq.BkBizID),
-				Status:       eipReq.Status,
-				InstanceID:   eipReq.InstanceId,
-				InstanceType: eipReq.InstanceType,
+				BkBizID: int64(eipReq.BkBizID),
+				Status:  eipReq.Status,
 			}
 
 			if eipReq.Extension != nil {

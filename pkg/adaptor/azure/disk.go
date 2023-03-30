@@ -271,7 +271,7 @@ func (a *Azure) AttachDisk(kt *kit.Kit, opt *disk.AzureDiskAttachOption) error {
 		return err
 	}
 
-	return a.attachDisk(kt, opt, cvmData.StorageProfile, diskData)
+	return a.attachDisk(kt, opt, cvmData, diskData)
 }
 
 // DetachDisk 卸载云盘
@@ -308,7 +308,7 @@ func (a *Azure) DetachDisk(kt *kit.Kit, opt *disk.AzureDiskDetachOption) error {
 func (a *Azure) attachDisk(
 	kt *kit.Kit,
 	opt *disk.AzureDiskAttachOption,
-	storageProfile *armcompute.StorageProfile,
+	cvmData *typecvm.AzureCvm,
 	diskData *typedisk.AzureDisk,
 ) error {
 	client, err := a.clientSet.virtualMachineClient()
@@ -316,7 +316,7 @@ func (a *Azure) attachDisk(
 		return fmt.Errorf("new cvm client failed, err: %v", err)
 	}
 
-	dataDisks := storageProfile.DataDisks
+	dataDisks := cvmData.StorageProfile.DataDisks
 	lun, err := genLun(dataDisks)
 	if err != nil {
 		return err
@@ -336,11 +336,12 @@ func (a *Azure) attachDisk(
 	)
 
 	sp := &armcompute.StorageProfile{
-		OSDisk:         storageProfile.OSDisk,
-		ImageReference: storageProfile.ImageReference,
+		OSDisk:         cvmData.StorageProfile.OSDisk,
+		ImageReference: cvmData.StorageProfile.ImageReference,
 		DataDisks:      dataDisks,
 	}
-	vm := armcompute.VirtualMachine{Properties: &armcompute.VirtualMachineProperties{StorageProfile: sp}}
+	vm := armcompute.VirtualMachine{Location: cvmData.Location, Properties: &armcompute.VirtualMachineProperties{
+		StorageProfile: sp}}
 	_, err = client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.CvmName, vm, nil)
 	return err
 }
