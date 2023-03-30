@@ -148,13 +148,13 @@ export const useResourceStore = defineStore({
     },
 
     // 绑定主机安全组信息
-    bindSecurityInfo(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/associate/cvms`, data);
+    bindSecurityInfo(type: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/associate/${type}`, data);
     },
 
-    // 绑定主机安全组信息
-    unBindSecurityInfo(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/disassociate/cvms`, data);
+    // 解绑主机安全组信息
+    unBindSecurityInfo(type: string, data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/disassociate/${type}`, data);
     },
   },
 });

@@ -5,6 +5,7 @@ import {
   reactive,
   h,
   watch,
+  computed,
 } from 'vue';
 import {
   Button,
@@ -18,7 +19,8 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import {
   useResourceStore,
-} from '@/store/resource';
+  useAccountStore,
+} from '@/store';
 
 const props = defineProps({
   data: {
@@ -33,13 +35,14 @@ const securityId = ref(0);
 const fetchUrl = ref<string>(`vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`);
 const fetchFilter = ref<any>({ filter: { op: 'and', rules: [{ field: 'type', op: 'eq', value: activeType.value }] } });
 const securityFetchUrl = ref<any>('security_groups/list');
-const securityFetchFilter = ref<any>({ filter: { op: 'and', rules: [{ field: 'bk_biz_id', op: 'eq', value: -1 }, { field: 'account_id', op: 'eq', value: props.data.account_id }, { field: 'region', op: 'eq', value: props.data.region }] } });
+const securityFetchFilter = ref<any>({ filter: { op: 'and', rules: [{ field: 'account_id', op: 'eq', value: props.data.account_id }, { field: 'region', op: 'eq', value: props.data.region }] } });
 const isListLoading = ref(false);
 const showSecurityDialog = ref(false);
 const securityBindLoading = ref(false);
 const unBindShow = ref(false);
 const unBindLoading = ref(false);
 const ids = ref([]);
+const curreClickId = ref();    // 当前点击的id
 
 const state = reactive<any>({
   datas: [],
@@ -60,6 +63,11 @@ const {
   t,
 } = useI18n();
 const resourceStore = useResourceStore();
+const accountStore = useAccountStore();
+
+const isResourcePage = computed(() => {   // 资源下没有业务ID
+  return !accountStore.bizs;
+});
 
 const {
   selections,
@@ -76,10 +84,9 @@ watch(() => activeType.value, (val) => {
 });
 
 
-const columns = [
+const columns: any = [
   {
     label: 'ID',
-    field: 'id',
     render({ data }: any) {
       return h(
         Button,
@@ -87,41 +94,88 @@ const columns = [
           text: true,
           theme: 'primary',
           onClick() {
-            securityId.value = data.id;
+            securityId.value = data.vendor === 'azure' ? data.extension.security_group_id : data.id;
             showRuleDialog();
           },
         },
         [
-          data.id || '--',
+          data.vendor === 'azure' ? data.extension.security_group_id : data.id || '--',
         ],
       );
     },
   },
   {
-    label: '名称',
-    field: 'name',
+    label: '安全组名称',
+    render({ data }: any) {
+      return h(
+        'span',
+        {},
+        [
+          data.vendor === 'azure' ? data.extension.resource_group_name : data.name || '--',
+        ],
+      );
+    },
   },
   {
     label: t('操作'),
     render({ data }: any) {
       return h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          onClick() {
-            securityId.value = data.id;
-            unBind();
-          },
-        },
+        'span',
+        {},
         [
-          '解绑',
+          data.vendor === 'azure' && h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              class: 'mr10',
+              disabled: data.vendor === 'azure' && data.extension?.security_group_id,  // 如果有安全组id 就不可以绑定
+              onClick() {
+                if (data.vendor === 'azure') {
+                  securityId.value = data.extension.security_group_id;
+                  curreClickId.value = data.id;
+                } else {
+                  securityId.value = data.id;
+                }
+                handleSecurityDialog();
+              },
+            },
+            [
+              '绑定',
+            ],
+          ),
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: data.vendor === 'azure' && !data.extension?.security_group_id,  // 如果没有安全组id 就不可以解绑
+              onClick() {
+                if (data.vendor === 'azure') {
+                  securityId.value = data.extension.security_group_id;
+                  curreClickId.value = data.id;
+                } else {
+                  securityId.value = data.id;
+                }
+                unBind();
+              },
+            },
+            [
+              '解绑',
+            ],
+          ),
         ],
       );
     },
   },
 ];
 
+if (props.data.vendor === 'azure') {
+  columns.unshift({
+    label: t('网络接口名称'),
+    field: 'name',
+  });
+}
 
 const securityColumns = [
   {
@@ -151,10 +205,16 @@ const types = [
   { name: 'egress', label: t('出站规则') },
 ];
 
+// 主机中安全组的列表
 const getSecurityGroupsList = async () => {
   isListLoading.value = true;
   try {
-    const res = await resourceStore.getSecurityGroupsListByCvmId(props.data.id);
+    let res: any = {};
+    if (props.data.vendor === 'azure') {
+      res = await resourceStore.getNetworkList(props.data.vendor, props.data.id);
+    } else {
+      res = await resourceStore.getSecurityGroupsListByCvmId(props.data.id);
+    }
     tableData.value = res.data;
   } catch (error) {
     console.log(error);
@@ -182,13 +242,18 @@ state.columns = useColumns('securityCommon', false, props.data.vendor);
 
 
 watch(() => tableData.value, (val) => {     // 修改filterrules
-  ids.value = val.map((e: any) => e.id);
-  securityFetchFilter.value.filter.rules = securityFetchFilter.value.filter.rules.filter(e => e.field !== 'id');
-  securityFetchFilter.value.filter.rules.push({ field: 'id', op: 'not_in', value: ids.value });
+  if (props.data.vendor === 'aws' || props.data.vendor === 'tcloud' || props.data.vendor === 'huawei') {
+    ids.value = val.map((e: any) => e.id);
+    securityFetchFilter.value.filter.rules = securityFetchFilter.value.filter.rules.filter(e => e.field !== 'id');
+    securityFetchFilter.value.filter.rules.push({ field: 'id', op: 'nin', value: ids.value });
+  }
 }, { deep: true, immediate: true });
 
 if (props.data.vendor === 'aws') {
   securityFetchFilter.value.filter.rules.push({ field: 'extension.vpc_id', op: 'json_eq', value: props.data.vpc_ids });
+}
+if (isResourcePage.value) {
+  securityFetchFilter.value.filter.rules.push({ field: 'bk_biz_id', op: 'eq', value: -1 });   // 资源下才需要查未绑定的数据
 }
 
 //   // { field: 'id', op: 'not_in', value: ['000000cx'] }
@@ -232,15 +297,23 @@ const showRuleDialog = async () => {
 
 const handleSecurityDialog = () => {
   showSecurityDialog.value = true;
+  console.log(showSecurityDialog.value);
   getSecurityList();
 };
 
 // 安全组绑定主机
 const handleSecurityConfirm = async () => {
-  const ids = selections.value.map((e: any) => e.id);
+  const ids = selections.value.map((e: any) => e.id) || [];
   securityBindLoading.value = true;
   try {
-    await resourceStore.bindSecurityInfo({ security_group_id: ids[0], cvm_id: props.data.id });
+    // 暂时只支持一个一个绑定 后期会修改成绑定多个
+    let type = 'cvms';
+    let params: any = { security_group_id: ids[0], cvm_id: props.data.id };
+    if (props.data.vendor === 'azure') {
+      type = 'network_interfaces';
+      params = { security_group_id: securityId.value, network_interface_id: curreClickId.value };
+    }
+    await resourceStore.bindSecurityInfo(type, params);
     showSecurityDialog.value = false;
     Message({
       message: t('绑定成功'),
@@ -259,8 +332,17 @@ const unBind = async () => {
 
 const handleConfirmUnBind = async () => {
   unBindLoading.value = true;
+  let type = 'cvms';
+  let params: any = { security_group_id: securityId.value, cvm_id: props.data.id };
+  if (props.data.vendor === 'azure') {
+    type = 'network_interfaces';
+    params = { security_group_id: securityId.value, network_interface_id: curreClickId.value };
+  }
   try {
-    await resourceStore.unBindSecurityInfo({ security_group_id: securityId.value, cvm_id: props.data.id });
+    await resourceStore.unBindSecurityInfo(
+      type,
+      params,
+    );
     unBindShow.value = false;
     Message({
       message: t('解绑成功'),
@@ -332,7 +414,7 @@ getSecurityGroupsList();
   </bk-dialog>
 
   <bk-dialog
-    v-model:is-show="showSecurityDialog"
+    :is-show="showSecurityDialog"
     :title="t('绑定安全组')"
     width="1200"
     :theme="'primary'"

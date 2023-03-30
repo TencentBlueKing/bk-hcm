@@ -18,6 +18,7 @@ import {
   };
 
 export default defineComponent({
+  name: 'PermissionDialog',
   props: {
     title: {
       type: String,
@@ -77,7 +78,7 @@ export default defineComponent({
 
     // hook
     const { getActionPermission } = useVerify();
-    // 是否精确
+
     watch(
       () => _.isShow,
       async (val) => {
