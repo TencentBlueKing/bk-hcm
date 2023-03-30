@@ -92,7 +92,7 @@ func (d *disk) DetachDisk(kt *kit.Kit, vendor enumor.Vendor, cvmID, diskID, acco
 	case enumor.Gcp:
 		return d.client.HCService().Gcp.Disk.DetachDisk(kt.Ctx, kt.Header(), detachReq)
 	case enumor.Azure:
-		return d.client.HCService().Gcp.Disk.DetachDisk(kt.Ctx, kt.Header(), detachReq)
+		return d.client.HCService().Azure.Disk.DetachDisk(kt.Ctx, kt.Header(), detachReq)
 	default:
 		return errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
 	}

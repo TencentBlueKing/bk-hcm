@@ -301,7 +301,7 @@ func (a *Azure) DetachDisk(kt *kit.Kit, opt *disk.AzureDiskDetachOption) error {
 		return err
 	}
 
-	return a.detachDisk(kt, opt, cvmData.StorageProfile, diskData)
+	return a.detachDisk(kt, opt, cvmData, diskData)
 }
 
 // attachDisk 通过 vm 的 BeginCreateOrUpdate 接口完成云盘挂载
@@ -350,7 +350,7 @@ func (a *Azure) attachDisk(
 func (a *Azure) detachDisk(
 	kt *kit.Kit,
 	opt *disk.AzureDiskDetachOption,
-	storageProfile *armcompute.StorageProfile,
+	cvmData *typecvm.AzureCvm,
 	diskData *typedisk.AzureDisk,
 ) error {
 	client, err := a.clientSet.virtualMachineClient()
@@ -359,21 +359,30 @@ func (a *Azure) detachDisk(
 	}
 
 	var dataDisks []*armcompute.DataDisk
-	for idx, d := range storageProfile.DataDisks {
-		if d.Name == diskData.Name && d.ManagedDisk.ID == diskData.ID {
-			dataDisks = append(storageProfile.DataDisks[:idx], storageProfile.DataDisks[idx+1:]...)
+	for idx, d := range cvmData.StorageProfile.DataDisks {
+		if d.Name != diskData.Name && d.ManagedDisk.ID != diskData.ID {
+			dataDisks = append(cvmData.StorageProfile.DataDisks[:idx], cvmData.StorageProfile.DataDisks[idx+1:]...)
 			break
 		}
 	}
 
 	sp := &armcompute.StorageProfile{
-		OSDisk:         storageProfile.OSDisk,
-		ImageReference: storageProfile.ImageReference,
+		OSDisk:         cvmData.StorageProfile.OSDisk,
+		ImageReference: cvmData.StorageProfile.ImageReference,
 		DataDisks:      dataDisks,
 	}
-	vm := armcompute.VirtualMachine{Properties: &armcompute.VirtualMachineProperties{StorageProfile: sp}}
-	_, err = client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.CvmName, vm, nil)
-	return err
+	vm := armcompute.VirtualMachine{Location: cvmData.Location, Properties: &armcompute.VirtualMachineProperties{
+		StorageProfile: sp}}
+	pollerResp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.CvmName, vm, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = pollerResp.PollUntilDone(kt.Ctx, nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // genLun 根据已有的 Lun 自动生成一个未被占用的
