@@ -68,11 +68,11 @@ export default defineComponent({
           op: 'json_eq',
           value: props.detail.resource_group_name
         },
-        {
-          field: 'zone',
-          op: 'eq',
-          value: props.detail.zone
-        }
+        // {
+        //   field: 'zone',
+        //   op: 'eq',
+        //   value: props.detail.zone
+        // }
       ])
     }
 

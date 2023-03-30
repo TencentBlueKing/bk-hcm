@@ -15,9 +15,6 @@ import {
 import {
   useI18n,
 } from 'vue-i18n';
-import {
-  useAccountStore,
-} from '@/store';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import useQueryList  from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
@@ -50,7 +47,6 @@ export default defineComponent({
     const {
       t,
     } = useI18n();
-    const accountStore = useAccountStore();
 
     const deviceName = ref();
     const cachingType = ref();
@@ -84,13 +80,7 @@ export default defineComponent({
       }
     ]
 
-    if (location.href.includes('business')) {
-      rules.push({
-        field: "bk_biz_id",
-        op: "eq",
-        value: accountStore.bizs
-      })
-    } else {
+    if (!location.href.includes('business')) {
       rules.push({
         field: "bk_biz_id",
         op: "eq",

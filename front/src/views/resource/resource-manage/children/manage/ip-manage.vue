@@ -65,7 +65,7 @@ const renderColumns = [
         {
           text: true,
           theme: 'primary',
-          disabled: data.cvm_id,
+          disabled: data.cvm_id || data.bk_biz_id !== -1,
           onClick() {
             InfoBox({
               title: '请确认是否删除',

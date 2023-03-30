@@ -9,17 +9,21 @@ import {
 } from 'bkui-vue';
 import {
   useRoute,
+  useRouter
 } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
 import {
   useResourceStore
 } from '@/store/resource';
-
+import {
+  computed,
+} from 'vue';
 import {
   useI18n,
 } from 'vue-i18n';
 
 const route = useRoute();
+const router = useRouter();
 const resourceStore = useResourceStore();
 const {
   t,
@@ -51,11 +55,15 @@ const handleCloseDeleteEip = () => {
 }
 
 const handleDeleteEip = () => {
+  const postData: any = {
+    eip_id: route.query.id,
+  }
+  if (['gcp', 'azure'].includes(detail.value.vendor)) {
+    postData.network_interface_id = detail.value.instance_id
+  }
   isDeleteing.value = true;
   resourceStore
-    .disassociateEip({
-      eip_id: route.query.id
-    })
+    .disassociateEip(postData)
     .then(() => {
       getDetail()
         .then(() => {
@@ -82,10 +90,16 @@ const handleShowDelete = () => {
           {
             ids: [detail.value.id],
           },
-        );
+        ).then(() => {
+          router.back();
+        });
     },
   });
 };
+
+const disableOperation = computed(() => {
+  return !location.href.includes('business') && detail.value.bk_biz_id !== -1
+})
 </script>
 
 <template>
@@ -99,6 +113,7 @@ const handleShowDelete = () => {
           v-if="!detail.instance_id"
           class="w100 ml10"
           theme="primary"
+          :disabled="disableOperation"
           @click="handleShowAssignEip"
         >
           {{ t('绑定') }}
@@ -107,6 +122,7 @@ const handleShowDelete = () => {
           v-else
           class="w100 ml10"
           theme="primary"
+          :disabled="disableOperation"
           @click="handleShowDeleteDialog"
         >
           {{ t('解绑') }}
@@ -114,7 +130,7 @@ const handleShowDelete = () => {
         <bk-button
           class="w100 ml10"
           theme="primary"
-          :disabled="!!detail.cvm_id"
+          :disabled="!!detail.cvm_id || disableOperation"
           @click="handleShowDelete"
         >
           {{ t('删除') }}

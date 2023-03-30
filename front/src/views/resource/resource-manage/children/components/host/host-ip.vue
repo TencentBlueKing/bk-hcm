@@ -27,7 +27,10 @@ const showChangeIP = ref(false);
 const showUnbind = ref(false);
 const showBind = ref(false);
 const unbindData = ref();
-const selection = ref();
+const isBinding = ref(false);
+const networklist = ref([]);
+const bindData = ref<any>({});
+const needNetwork = ref(false);
 
 const columns = ref([
   {
@@ -112,22 +115,30 @@ const {
   },
 );
 
-// 当前 vender 下的eip资源
+// 当前 vendor 下的eip资源
 const {
   datas: eipList,
   pagination,
   handlePageChange,
   handlePageSizeChange,
   handleSort,
+  triggerApi,
 } = useQueryList(
   {
     filter: {
       op: 'and',
-      rules: [{
-        field: 'vendor',
-        op: 'eq',
-        value: props.data.vendor,
-      }],
+      rules: [
+        {
+          field: 'vendor',
+          op: 'eq',
+          value: props.data.vendor,
+        },
+        {
+          field: 'region',
+          op: 'eq',
+          value: props.data.region,
+        }
+      ],
     },
   },
   'eips',
@@ -155,11 +166,17 @@ const handleToggleShowUnbind = (data?: any) => {
 };
 
 const handleConfirmUnbind = () => {
-  resourceStore.disassociateEip({
+  const postData: any = {
     eip_id: unbindData.value.id,
-  }).then(() => {
-    handleToggleShowUnbind();
-  })
+  }
+  if (['gcp', 'azure'].includes(unbindData.value.vendor)) {
+    postData.network_interface_id = unbindData.value.instance_id
+  }
+  resourceStore
+    .disassociateEip(postData)
+    .then(() => {
+      handleToggleShowUnbind();
+    })
     .catch((err: any) => {
       Message({
         theme: 'error',
@@ -168,24 +185,54 @@ const handleConfirmUnbind = () => {
     });
 };
 
-const handleToggleShowBind = () => {
-  showBind.value = !showBind.value;
+const handleToggleShowBind = (value: boolean) => {
+  bindData.value = {};
+  showBind.value = value;
 };
 
 const handleConfirmBind = () => {
-  resourceStore.associateEip({
-    eip_id: selection.value.id,
+  if (!bindData.value.eip_id) {
+    Message({
+      theme: 'error',
+      message: '请先选择 EIP',
+    })
+    return
+  }
+  const postData: any = {
+    eip_id: bindData.value.eip_id,
     cvm_id: props.data.id,
-    network_interface_id: props.data.network_interface_id,
-  }).then(() => {
-    handleToggleShowBind();
-  })
-    .catch((err: any) => {
+  }
+  if (needNetwork.value) {
+    if (!bindData.value.network_interface_id) {
       Message({
         theme: 'error',
-        message: err.message || err,
-      });
+        message: '请先选择网络接口',
+      })
+      return
+    }
+    postData.network_interface_id = bindData.value.network_interface_id
+  }
+  isBinding.value = true;
+  resourceStore
+    .associateEip(postData)
+    .then(() => {
+      handleToggleShowBind(false);
+      triggerApi()
+    })
+    .finally(() => {
+      isBinding.value = false;
     });
+};
+
+const getNetWorkList = async () => {
+  resourceStore
+    .getNetworkList(
+      props.data.vendor,
+      props.data.id
+    )
+    .then((res: any) => {
+      networklist.value = res.data;
+    })
 };
 
 watch(
@@ -203,6 +250,8 @@ watch(
         },
       ]);
     }
+    needNetwork.value = !['tcloud', 'aws'].includes(props.data.vendor)
+    getNetWorkList();
   },
   {
     deep: true,
@@ -218,7 +267,7 @@ watch(
     <bk-button
       class="mt20"
       theme="primary"
-      @click="handleToggleShowBind"
+      @click="handleToggleShowBind(true)"
     >
       绑定
     </bk-button>
@@ -297,30 +346,39 @@ watch(
     </section>
     <section class="adjust-info" v-if="['azure', 'aws', 'huawei'].includes(unbindData.vendor)">
       <span class="adjust-name">已绑定的接口名称</span>
-      <span class="adjust-value">{{ unbindData.public_ip }}</span>
+      <span class="adjust-value">{{ unbindData.network_interface_id }}</span>
     </section>
   </bk-dialog>
 
   <bk-dialog
-    :is-show="showBind"
     width="620"
-    title="绑定弹性IP"
     theme="primary"
     quick-close
-    @closed="handleToggleShowBind"
+    :title="`主机（${ data.id }）绑定弹性IP`"
+    :is-show="showBind"
+    :is-loadng="isBinding"
+    @closed="handleToggleShowBind(false)"
     @confirm="handleConfirmBind"
   >
-    <span class="adjust-title">主机（{{ data.id }}）要绑定的弹性IP：</span>
-    <bk-radio-group
-      value="xxx"
-    >
-      <bk-radio label="主网卡(192.168.0.169)" />
-      <bk-radio label="扩展网卡(192.168.0.169)" />
-    </bk-radio-group>
+    <template v-if="needNetwork">
+      <span class="bind-title">选择网络接口</span>
+      <bk-select
+        v-model="bindData.network_interface_id"
+        class="mb20"
+      >
+        <bk-option
+          v-for="(item, index) in networklist"
+          :key="index"
+          :value="item.id"
+          :label="item.name"
+        />
+      </bk-select>
+    </template>
+    <span class="bind-title">选择 EIP</span>
     <bk-table
       :data="eipList"
       :outer-border="false"
-      class="mt20"
+      class="mb20"
       row-hover="auto"
       remote-pagination
       :pagination="pagination"
@@ -330,20 +388,25 @@ watch(
       @column-sort="handleSort"
     >
       <bk-table-column
+        label="ID"
+        prop="public_ip"
+      >
+        <template #default="{ data }">
+          <bk-radio
+            :model-value="bindData.eip_id"
+            :label="data?.id"
+            :key="data?.id"
+            @change="bindData.eip_id = data?.id"
+          ></bk-radio>
+        </template>
+      </bk-table-column>
+      <bk-table-column
+        label="名称"
+        prop="name"
+      />
+      <bk-table-column
         label="弹性公网IP"
         prop="public_ip"
-      />
-      <bk-table-column
-        label="类型"
-        prop="address_type"
-      />
-      <bk-table-column
-        label="带宽大小"
-        prop="ip"
-      />
-      <bk-table-column
-        label="带宽类型"
-        prop="ip"
       />
     </bk-table>
   </bk-dialog>
@@ -361,5 +424,9 @@ watch(
       width: 120px;
       color: #979BA5;
     }
+  }
+  .bind-title {
+    display: inline-block;
+    margin: 10px 0;
   }
 </style>

@@ -108,21 +108,21 @@ const bandInfo = [
     name: '带宽ID',
     prop: 'bandwidth_id',
   },
-  {
-    name: '计费模式',
-    prop: '',
-  },
-  {
-    name: '计费方式',
-    prop: '',
-  },
+  // {
+  //   name: '计费模式',
+  //   prop: '',
+  // },
+  // {
+  //   name: '计费方式',
+  //   prop: '',
+  // },
   {
     name: '带宽大小 (Mbit/s)',
     prop: 'bandwidth_size',
   },
   {
     name: '带宽类型',
-    prop: '',
+    prop: 'bandwidth_share_type',
   }
 ]
 
@@ -134,7 +134,7 @@ watch(
         otherInfo.value = [
           {
             name: '线路类型',
-            prop: '',
+            prop: 'internet_service_provider',
           },
           {
             name: '带宽上限',
@@ -149,6 +149,7 @@ watch(
             prop: 'internet_charge_type',
           },
         ];
+        baseInfo.splice(7, 1);
         break;
       case 'aws':
         otherInfo.value = [
@@ -227,10 +228,6 @@ watch(
           {
             name: '企业项目',
             prop: 'enterprise_project_id',
-          },
-          {
-            name: '所属VPC',
-            prop: '',
           },
           {
             name: '子网',

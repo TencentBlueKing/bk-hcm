@@ -12,13 +12,13 @@ const props = defineProps({
   region: {
     type: String
   },
-  vender: {
+  vendor: {
     type: String
   }
 });
 
 const formData = ref<any>({
-  eip_name: "", // eip名称
+  eip_name: `bandwidth-${Math.floor(Math.random()*(9999-1000))+1000}`, // eip名称
   eip_type: "5_bgp", // 线路类型. 5_bgp（全动态BGP） |5_sbgp（静态BGP）
   internet_charge_type: "prePaid", // 计费模式，取值 prePaid(包年/包月) | postPaid(按需计费)
   eip_count: 1,

@@ -13,6 +13,9 @@ import {
 import {
   useI18n,
 } from 'vue-i18n';
+import {
+  InfoLine,
+} from 'bkui-vue/lib/icon';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import useQueryList  from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
@@ -24,6 +27,7 @@ import {
 export default defineComponent({
   components: {
     StepDialog,
+    InfoLine,
   },
 
   props: {
@@ -205,6 +209,9 @@ export default defineComponent({
   },
 
   render() {
+    const tooltipSlot = {
+      content: () => <>Linux设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/device_naming.html<br />windows设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/WindowsGuide/device_naming.html</>
+    }
     const steps = [
       {
         isConfirmLoading: this.isConfirmLoading,
@@ -215,6 +222,12 @@ export default defineComponent({
               ? <>
                 <span class="mr10">设备名称:</span>
                 <bk-input v-model={this.deviceName} style="width: 200px;"></bk-input>
+                <bk-popover
+                  placement="top"
+                  v-slots={tooltipSlot}
+                >
+                  <InfoLine />
+                </bk-popover>
                 </>
               : ''
             }
