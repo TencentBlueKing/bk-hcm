@@ -29,7 +29,7 @@ type InstanceTypeListReq struct {
 	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
 	AccountID string        `json:"account_id" validate:"required"`
 	Region    string        `json:"region" validate:"required"`
-	Zone      string        `json:"zone" validate:"required"`
+	Zone      string        `json:"zone" validate:"omitempty"`
 }
 
 // Validate ...
