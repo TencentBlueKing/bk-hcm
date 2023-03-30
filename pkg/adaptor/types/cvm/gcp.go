@@ -193,14 +193,13 @@ func (typ *GcpImageProjectType) StartupScript(passwd string) (string, error) {
 net user administrator %s
 </script>`, passwd), nil
 	case Linux:
-		return fmt.Sprintf(`#!/bin/bash
-echo key:%s|chpasswd
-sed -i 's/PasswordAuthentication/\# PasswordAuthentication/g' /etc/ssh/sshd_config
-sudo sed -i 's/PermitRootLogin no/PermitRootLogin prohibit-password/g' /etc/ssh/sshd_config
-sed -i '20 a PasswordAuthentication yes' /etc/ssh/sshd_config
-systemctl restart sshd`, passwd), nil
+		return fmt.Sprintf(`#! /bin/bash
+echo root:%s|chpasswd
+sed -i 's/PermitRootLogin no/PermitRootLogin yes/g' /etc/ssh/sshd_config
+sed -i 's/PasswordAuthentication no/PasswordAuthentication  yes/g' /etc/ssh/sshd_config
+service sshd restart`, passwd), nil
 	default:
-		return "", fmt.Errorf("unknown %s image project type", &typ)
+		return "", fmt.Errorf("unknown %s image project type", *typ)
 	}
 }
 

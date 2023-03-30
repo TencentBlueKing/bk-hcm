@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -206,7 +207,7 @@ func (g *Gcp) ResetCvm(kt *kit.Kit, opt *typecvm.GcpResetOption) error {
 	return nil
 }
 
-// CreateCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/insert
+// CreateCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/bulkInsert
 func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) (*poller.BaseDoneResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "reset option is required")
@@ -297,7 +298,35 @@ func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) (*poller.Base
 		return nil, err
 	}
 
+	g.deleteCvmMetadataStartScript(kt, client, opt.Zone, result.SuccessCloudIDs)
+
 	return result, nil
+}
+
+func (g *Gcp) deleteCvmMetadataStartScript(kt *kit.Kit, client *compute.Service, zone string, ids []string) {
+
+	resp, err := client.Instances.List(g.CloudProjectID(), zone).Context(kt.Ctx).
+		Filter(generateResourceIDsFilter(ids)).Do()
+	if err != nil {
+		logs.Errorf("%s: delete cvm metadata start script to list cvm failed, err: %v, ids: %v, rid: %s",
+			constant.DeleteCvmStartScriptFailed, err, ids, kt.Rid)
+		return
+	}
+
+	for _, one := range resp.Items {
+		one.Metadata = &compute.Metadata{
+			Items: []*compute.MetadataItems{},
+		}
+
+		_, err := client.Instances.Update(g.CloudProjectID(), zone, one.Name, one).Do()
+		if err != nil {
+			logs.Errorf("%s: delete cvm metadata start script to update cvm failed, err: %v, name: %s, rid: %s",
+				constant.DeleteCvmStartScriptFailed, err, one.Name, kt.Rid)
+			continue
+		}
+	}
+
+	return
 }
 
 type createCvmPollingHandler struct {

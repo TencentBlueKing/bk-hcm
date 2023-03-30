@@ -268,7 +268,7 @@ func (svc *securityGroupSvc) listSGByCvmID(cts *rest.Contexts, validHandler hand
 	}
 
 	if baseInfo.Vendor == enumor.Gcp {
-		return errors.New("gcp not support security group"), nil
+		return nil, errors.New("gcp not support security group")
 	}
 
 	listReq := &dataproto.SGCvmRelWithSecurityGroupListReq{
@@ -325,6 +325,10 @@ func (svc *securityGroupSvc) listSGByCvmIDForAzure(kt *kit.Kit, cvmID string) (i
 		if len(converter.PtrToVal(one.Extension.SecurityGroupID)) != 0 {
 			sgIDs = append(sgIDs, *one.Extension.SecurityGroupID)
 		}
+	}
+
+	if len(sgIDs) == 0 {
+		return make([]corecloud.SGCvmRelWithBaseSecurityGroup, 0), nil
 	}
 
 	listSGReq := &dataproto.SecurityGroupListReq{
