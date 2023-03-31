@@ -29,6 +29,10 @@ import {
 } from 'vue-router';
 import useSteps from './hooks/use-steps';
 
+import type {
+  FilterType,
+} from '@/typings/resource';
+
 // use hooks
 const {
   t,
@@ -46,6 +50,7 @@ const filter = ref({ op: 'and', rules: [] });
 const accountId = ref('');
 const status = ref('');
 const op = ref('eq');
+const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'resource' }] });
 // const searchData = ref([
 //   {
 //     name: t('名称'),
@@ -165,6 +170,7 @@ watch(
       <div class="mr10">{{t('云账号')}}</div>
       <div class="mr20">
         <account-selector
+          :filter="accountFilter"
           v-model="accountId"
         />
       </div>

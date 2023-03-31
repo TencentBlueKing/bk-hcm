@@ -57,14 +57,11 @@ const getAccountList = async () => {
   try {
     accountLoading.value = true;
     const res = await accountStore.getAccountList({
-      filter: { op: 'and', rules: rulesData },
-      page: {
-        count: false,
-        start: 0,
-        limit: 500,
+      params: {
+        account_type: 'resource',
       },
-    });
-    accountList.value = res?.data?.details;
+    }, accountStore.bizs);
+    accountList.value = res?.data;
   } catch (error) {
     console.log(error);
   } finally {
@@ -97,7 +94,6 @@ const getCloudRegionList = () => {
 const handleCloudChange = () => {
   cloudRegionsList.value = [];
   getCloudRegionList();
-  getAccountList();
 };
 
 getAccountList();

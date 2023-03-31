@@ -22,10 +22,12 @@ import {
 } from 'vue-i18n';
 import {
   useResourceStore,
-} from '@/store/resource';
-import {
   useAccountStore,
 } from '@/store';
+
+import type {
+  FilterType,
+} from '@/typings/resource';
 
 export default defineComponent({
   components: {
@@ -76,6 +78,7 @@ export default defineComponent({
     const hasBindVPC = ref(false);
     const disableNext = ref(true);
     const vpcFilter: any = ref({ filter: { op: 'and', rules: [] } });
+    const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'resource' }] });
     const vpcTableData = ref<any>([]);
     const resourceTypes = ref([
       'host',
@@ -254,6 +257,15 @@ export default defineComponent({
       }
     };
 
+    const getAccountBusinessID = async () => {
+      try {
+        const res = await accountStore.getBizIdWithAccountId(accountId.value);
+        business.value = res?.data?.bk_biz_ids[0];
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
 
     const validateCloudArea = () => {
       let hasError = false;
@@ -353,6 +365,8 @@ export default defineComponent({
             op: 'eq',
             value,
           }] } });
+
+        getAccountBusinessID();
       },
     );
 
@@ -411,6 +425,7 @@ export default defineComponent({
       isLoading,
       vpcTableData,
       datas,
+      accountFilter,
     };
   },
 
@@ -425,12 +440,13 @@ export default defineComponent({
           ? <bk-loading loading={this.isLoading}>
         <div class="flex-row align-items-center mr20">
           <span class="pr10">{this.t('云账号')}</span>
-          <AccountSelector v-model={this.accountId}></AccountSelector>
+          <AccountSelector filter={this.accountFilter} v-model={this.accountId}></AccountSelector>
           <div class="flex-row align-items-center">
           <section class="resource-head ml20">
             { this.t('目标业务') }
             <bk-select
               v-model={this.business}
+              disabled
               filterable
               class={{
                 ml10: true,

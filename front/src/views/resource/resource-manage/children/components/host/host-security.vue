@@ -43,6 +43,7 @@ const unBindShow = ref(false);
 const unBindLoading = ref(false);
 const ids = ref([]);
 const curreClickId = ref();    // 当前点击的id
+const curreSelectId = ref(); // 当前选择的安全组id
 
 const state = reactive<any>({
   datas: [],
@@ -82,6 +83,12 @@ watch(() => activeType.value, (val) => {
     }
   });
 });
+
+
+watch(() => selections.value, (val) => {
+  const [id] = val.map((e: any) => e.id);
+  curreSelectId.value = id;
+}, { deep: true });
 
 
 const columns: any = [
@@ -242,7 +249,7 @@ state.columns = useColumns('securityCommon', false, props.data.vendor);
 
 
 watch(() => tableData.value, (val) => {     // 修改filterrules
-  if (props.data.vendor === 'aws' || props.data.vendor === 'tcloud' || props.data.vendor === 'huawei') {
+  if ((props.data.vendor === 'aws' || props.data.vendor === 'tcloud' || props.data.vendor === 'huawei') && val?.length) {
     ids.value = val.map((e: any) => e.id);
     securityFetchFilter.value.filter.rules = securityFetchFilter.value.filter.rules.filter(e => e.field !== 'id');
     securityFetchFilter.value.filter.rules.push({ field: 'id', op: 'nin', value: ids.value });
@@ -295,23 +302,27 @@ const showRuleDialog = async () => {
     }];
     state.columns.unshift(...awsColummns);
   }
-  console.log('state.columns', state.columns);
 };
 
 const handleSecurityDialog = () => {
   showSecurityDialog.value = true;
-  console.log(showSecurityDialog.value);
   getSecurityList();
 };
 
 // 安全组绑定主机
 const handleSecurityConfirm = async () => {
-  const ids = selections.value.map((e: any) => e.id) || [];
+  if (!curreSelectId.value) {
+    Message({
+      message: t('请选择需要绑定的安全组'),
+      theme: 'error',
+    });
+    return;
+  }
   securityBindLoading.value = true;
   try {
     // 暂时只支持一个一个绑定 后期会修改成绑定多个
     let type = 'cvms';
-    let params: any = { security_group_id: ids[0], cvm_id: props.data.id };
+    let params: any = { security_group_id: curreSelectId.value, cvm_id: props.data.id };
     if (props.data.vendor === 'azure') {
       type = 'network_interfaces';
       params = { security_group_id: securityId.value, network_interface_id: curreClickId.value };
@@ -329,10 +340,12 @@ const handleSecurityConfirm = async () => {
   }
 };
 
+// 解绑弹窗
 const unBind = async () => {
   unBindShow.value = true;
 };
 
+// 确认解绑
 const handleConfirmUnBind = async () => {
   unBindLoading.value = true;
   let type = 'cvms';
@@ -358,9 +371,18 @@ const handleConfirmUnBind = async () => {
   }
 };
 
+// 关闭弹窗
 const handleClose = () => {
   unBindShow.value = false;
   showSecurityDialog.value = false;
+};
+
+const isRowSelectEnable = ({ index }: any) => { // 单选
+  if (!curreSelectId.value) {
+    return true;
+  }
+  const { id } = securityDatas.value[index];
+  return id === curreSelectId.value;
 };
 
 getSecurityGroupsList();
@@ -439,6 +461,7 @@ getSecurityGroupsList();
         :columns="securityColumns"
         :data="securityDatas"
         :pagination="securityPagination"
+        :is-row-select-enable="isRowSelectEnable"
         @selection-change="handleSelectionChange"
         @page-limit-change="securityHandlePageChange"
         @page-value-change="securityHandlePageSizeChange"

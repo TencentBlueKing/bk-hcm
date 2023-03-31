@@ -29,7 +29,7 @@ export const useAccountStore = defineStore({
      */
     async getAccountList(params: any, bizId?: number) {
       if (bizId > 0) {
-        return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/bizs/${bizId}`);
+        return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/bizs/${bizId}`, params);
       }
       return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/list`, params);
     },
@@ -76,6 +76,14 @@ export const useAccountStore = defineStore({
      */
     async getBizList() {
       return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bk_bizs/list`);
+    },
+    /**
+     * @description: 根据账号id获取业务id
+     * @param {any}
+     * @return {*}
+     */
+    async getBizIdWithAccountId(id: string) {
+      return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`);
     },
     /**
      * @description: 获取有权限的业务列表

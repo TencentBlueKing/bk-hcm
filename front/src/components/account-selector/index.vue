@@ -4,8 +4,19 @@ import {
   useAccountStore,
 } from '@/store';
 
+import type {
+  // PlainObject,
+  FilterType,
+} from '@/typings/resource';
+
 const props = defineProps({
   bizId: Number as PropType<number>,
+  filter: {
+    type: Object as PropType<FilterType>,
+    default() {
+      return { op: 'and', rules: [] };
+    },
+  },
 });
 const emit = defineEmits(['input']);
 
@@ -32,7 +43,7 @@ const getAccoutList = async () => {
 
   loading.value = true;
   const res = await accountStore.getAccountList({
-    filter: { op: 'and', rules: [] },
+    filter: props.filter,
     page: {
       start: accountPage.value,
       limit: 100,
