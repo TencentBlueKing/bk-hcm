@@ -24,8 +24,10 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/pkg/api/core"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -326,6 +328,18 @@ type NetworkInterfaceListResult struct {
 	Details []coreni.BaseNetworkInterface `json:"details"`
 }
 
+// NetworkInterfaceAssociateListResp defines list network interface associate response.
+type NetworkInterfaceAssociateListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *NetworkInterfaceAssociateListResult `json:"data"`
+}
+
+// NetworkInterfaceAssociateListResult defines list network interface associate result.
+type NetworkInterfaceAssociateListResult struct {
+	Count   uint64                             `json:"count"`
+	Details []coreni.NetworkInterfaceAssociate `json:"details"`
+}
+
 // NetworkInterfaceExtListResult define network interface with extension list result.
 type NetworkInterfaceExtListResult[T coreni.NetworkInterfaceExtension] struct {
 	Count   uint64                       `json:"count,omitempty"`
@@ -336,4 +350,23 @@ type NetworkInterfaceExtListResult[T coreni.NetworkInterfaceExtension] struct {
 type NetworkInterfaceExtListResp[T coreni.NetworkInterfaceExtension] struct {
 	rest.BaseResp `json:",inline"`
 	Data          *NetworkInterfaceExtListResult[T] `json:"data"`
+}
+
+// NetworkInterfaceListReq is network interface list operation http request.
+type NetworkInterfaceListReq struct {
+	core.ListReq `json:",inline"`
+	IsAssociate  bool `json:"is_associate"` // true:获取已关联的列表 false:获取未关联的列表，默认不传
+}
+
+// Validate ListReq.
+func (l *NetworkInterfaceListReq) Validate() error {
+	if l.Filter == nil {
+		return errf.New(errf.InvalidParameter, "filter is required")
+	}
+
+	if l.Page == nil {
+		return errf.New(errf.InvalidParameter, "page is required")
+	}
+
+	return nil
 }

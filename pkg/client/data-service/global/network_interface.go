@@ -43,12 +43,12 @@ func NewNetworkInterfaceClient(client rest.ClientInterface) *NetworkInterfaceCli
 }
 
 // List network interface.
-func (v *NetworkInterfaceClient) List(ctx context.Context, h http.Header, req *core.ListReq) (
+func (n *NetworkInterfaceClient) List(ctx context.Context, h http.Header, req *core.ListReq) (
 	*datacloudniproto.NetworkInterfaceListResult, error) {
 
 	resp := new(datacloudniproto.NetworkInterfaceListResp)
 
-	err := v.client.Post().
+	err := n.client.Post().
 		WithContext(ctx).
 		Body(req).
 		SubResourcef("/network_interfaces/list").
@@ -66,13 +66,37 @@ func (v *NetworkInterfaceClient) List(ctx context.Context, h http.Header, req *c
 	return resp.Data, nil
 }
 
+// ListAssociate list network interface associate.
+func (n *NetworkInterfaceClient) ListAssociate(ctx context.Context, h http.Header,
+	req *datacloudniproto.NetworkInterfaceListReq) (*datacloudniproto.NetworkInterfaceAssociateListResult, error) {
+
+	resp := new(datacloudniproto.NetworkInterfaceAssociateListResp)
+
+	err := n.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/network_interfaces/associate/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // BatchDelete batch delete network interface.
-func (v *NetworkInterfaceClient) BatchDelete(ctx context.Context, h http.Header,
+func (n *NetworkInterfaceClient) BatchDelete(ctx context.Context, h http.Header,
 	req *dataservice.BatchDeleteReq) error {
 
 	resp := new(rest.BaseResp)
 
-	err := v.client.Delete().
+	err := n.client.Delete().
 		WithContext(ctx).
 		Body(req).
 		SubResourcef("/network_interfaces/batch").
@@ -91,12 +115,12 @@ func (v *NetworkInterfaceClient) BatchDelete(ctx context.Context, h http.Header,
 }
 
 // BatchUpdateNetworkInterfaceCommonInfo batch update network interface common info.
-func (cli *NetworkInterfaceClient) BatchUpdateNetworkInterfaceCommonInfo(ctx context.Context, h http.Header,
+func (n *NetworkInterfaceClient) BatchUpdateNetworkInterfaceCommonInfo(ctx context.Context, h http.Header,
 	request *datacloudniproto.NetworkInterfaceCommonInfoBatchUpdateReq) error {
 
 	resp := new(rest.BaseResp)
 
-	err := cli.client.Patch().
+	err := n.client.Patch().
 		WithContext(ctx).
 		Body(request).
 		SubResourcef("/network_interfaces/common/info/batch/update").

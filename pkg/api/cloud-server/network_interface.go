@@ -36,6 +36,12 @@ type NetworkInterfaceListResult struct {
 	Details []coreni.BaseNetworkInterface `json:"details"`
 }
 
+// NetworkInterfaceAssociateListResult defines list network interface associate result.
+type NetworkInterfaceAssociateListResult struct {
+	Count   uint64                             `json:"count"`
+	Details []coreni.NetworkInterfaceAssociate `json:"details"`
+}
+
 // AssignNetworkInterfaceToBizReq define assign network interface to biz req.
 type AssignNetworkInterfaceToBizReq struct {
 	BkBizID             int64    `json:"bk_biz_id" validate:"required"`

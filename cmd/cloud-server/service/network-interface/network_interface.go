@@ -52,6 +52,8 @@ func InitNetworkInterfaceService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("ListNetworkInterface", "POST", "/network_interfaces/list", svc.ListNetworkInterface)
+	h.Add("ListNetworkInterfaceAssociate", "POST", "/network_interfaces/associate/list",
+		svc.ListNetworkInterfaceAssociate)
 	h.Add("ListNetworkInterfaceExt", "POST", "/vendors/{vendor}/network_interfaces/list",
 		svc.ListNetworkInterfaceExt)
 	h.Add("GetNetworkInterface", "GET", "/network_interfaces/{id}", svc.GetNetworkInterface)
@@ -116,6 +118,46 @@ func (svc *netSvc) listNetworkInterface(cts *rest.Contexts, authHandler handler.
 	}
 
 	return &cloudserver.NetworkInterfaceListResult{Count: res.Count, Details: res.Details}, nil
+}
+
+// ListNetworkInterfaceAssociate list network interface associate.
+func (svc *netSvc) ListNetworkInterfaceAssociate(cts *rest.Contexts) (interface{}, error) {
+	return svc.networkInterfaceAssociateList(cts, handler.ListResourceAuthRes)
+}
+
+// networkInterfaceAssociateList network interface associate list.
+func (svc *netSvc) networkInterfaceAssociateList(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (
+	interface{}, error) {
+
+	req := new(datacloudniproto.NetworkInterfaceListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.NetworkInterface, Action: meta.Find, Filter: req.Filter})
+	if err != nil {
+		return nil, err
+	}
+
+	if noPermFlag {
+		return &cloudserver.NetworkInterfaceAssociateListResult{
+			Details: make([]coreni.NetworkInterfaceAssociate, 0)}, nil
+	}
+	req.Filter = expr
+
+	// list network interface
+	res, err := svc.client.DataService().Global.NetworkInterface.ListAssociate(cts.Kit.Ctx, cts.Kit.Header(), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cloudserver.NetworkInterfaceAssociateListResult{Count: res.Count, Details: res.Details}, nil
 }
 
 // ListNetworkInterfaceExt list network interface extension.

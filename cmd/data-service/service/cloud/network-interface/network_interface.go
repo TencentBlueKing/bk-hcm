@@ -62,6 +62,8 @@ func InitNetInterfaceService(cap *capability.Capability) {
 	h.Add("BatchDeleteNetworkInterface", "DELETE", "/network_interfaces/batch",
 		svc.BatchDeleteNetworkInterface)
 	h.Add("ListNetworkInterface", "POST", "/network_interfaces/list", svc.ListNetworkInterface)
+	h.Add("ListNetworkInterfaceAssociate", "POST", "/network_interfaces/associate/list",
+		svc.ListNetworkInterfaceAssociate)
 	h.Add("ListNetworkInterfaceExt", "POST", "/vendors/{vendor}/network_interfaces/list",
 		svc.ListNetworkInterfaceExt)
 	h.Add("GetNetworkInterface", "GET", "/vendors/{vendor}/network_interfaces/{id}",
@@ -364,6 +366,40 @@ func (svc *NetworkInterfaceSvc) ListNetworkInterface(cts *rest.Contexts) (interf
 	return &datacloudniproto.NetworkInterfaceListResult{Details: details}, nil
 }
 
+// ListNetworkInterfaceAssociate list network interface associate.
+func (svc *NetworkInterfaceSvc) ListNetworkInterfaceAssociate(cts *rest.Contexts) (interface{}, error) {
+	req := new(datacloudniproto.NetworkInterfaceListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+		Fields: req.Fields,
+	}
+	daoResp, err := svc.dao.NetworkInterface().ListAssociate(cts.Kit, opt, req.IsAssociate)
+	if err != nil {
+		logs.Errorf("list network interface failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list network interface failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &datacloudniproto.NetworkInterfaceAssociateListResult{Count: converter.PtrToVal(daoResp.Count)}, nil
+	}
+
+	details := make([]coreni.NetworkInterfaceAssociate, 0, len(daoResp.Details))
+	for _, item := range daoResp.Details {
+		details = append(details, convertBaseNetworkInterfaceAssociate(item))
+	}
+
+	return &datacloudniproto.NetworkInterfaceAssociateListResult{Details: details}, nil
+}
+
 // ListNetworkInterfaceExt list network interface with extension.
 func (svc *NetworkInterfaceSvc) ListNetworkInterfaceExt(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
@@ -500,6 +536,43 @@ func convertBaseNetworkInterface(dbDetail *tableni.NetworkInterfaceTable) *coren
 			CreatedAt: dbDetail.CreatedAt,
 			UpdatedAt: dbDetail.UpdatedAt,
 		},
+	}
+}
+
+func convertBaseNetworkInterfaceAssociate(dbDetail *types.NetworkInterfaceWithCvmID) coreni.NetworkInterfaceAssociate {
+	if dbDetail == nil {
+		return coreni.NetworkInterfaceAssociate{}
+	}
+
+	return coreni.NetworkInterfaceAssociate{
+		BaseNetworkInterface: coreni.BaseNetworkInterface{
+			ID:            dbDetail.ID,
+			Vendor:        dbDetail.Vendor,
+			Name:          dbDetail.Name,
+			AccountID:     dbDetail.AccountID,
+			Region:        dbDetail.Region,
+			Zone:          dbDetail.Zone,
+			CloudID:       dbDetail.CloudID,
+			VpcID:         dbDetail.VpcID,
+			CloudVpcID:    dbDetail.CloudVpcID,
+			SubnetID:      dbDetail.SubnetID,
+			CloudSubnetID: dbDetail.CloudSubnetID,
+			PrivateIPv4:   dbDetail.PrivateIPv4,
+			PrivateIPv6:   dbDetail.PrivateIPv6,
+			PublicIPv4:    dbDetail.PublicIPv4,
+			PublicIPv6:    dbDetail.PublicIPv6,
+			BkBizID:       dbDetail.BkBizID,
+			InstanceID:    dbDetail.InstanceID,
+			Revision: &core.Revision{
+				Creator:   dbDetail.Creator,
+				Reviser:   dbDetail.Reviser,
+				CreatedAt: dbDetail.CreatedAt,
+				UpdatedAt: dbDetail.UpdatedAt,
+			},
+		},
+		CvmID:        dbDetail.CvmID,
+		RelCreator:   dbDetail.RelCreator,
+		RelCreatedAt: dbDetail.RelCreatedAt,
 	}
 }
 

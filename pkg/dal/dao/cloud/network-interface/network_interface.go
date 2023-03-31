@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -47,6 +48,8 @@ type NetworkInterface interface {
 	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []tableni.NetworkInterfaceTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tableni.NetworkInterfaceTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesni.ListNetworkInterfaceDetails, error)
+	ListAssociate(kt *kit.Kit, opt *types.ListOption, isAssociate bool) (
+		*types.ListCvmRelsJoinNetworkInterfaceDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
@@ -211,6 +214,78 @@ func (n NetworkInterfaceDao) List(kt *kit.Kit, opt *types.ListOption) (*typesni.
 		return nil, err
 	}
 	return &typesni.ListNetworkInterfaceDetails{Details: details}, nil
+}
+
+// ListAssociate get network interface associate list.
+func (n NetworkInterfaceDao) ListAssociate(kt *kit.Kit, opt *types.ListOption, isAssociate bool) (
+	*types.ListCvmRelsJoinNetworkInterfaceDetails, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list network interface associate options is nil")
+	}
+
+	columnTypes := tableni.NetworkInterfaceColumns.ColumnTypes()
+	columnTypes["extension.self_link"] = enumor.String
+	columnTypes["extension.security_group_id"] = enumor.String
+	columnTypes["extension.resource_group_name"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
+		core.DefaultPageOption); err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	// 查询未关联主机的网络接口
+	joinDirection := "LEFT JOIN"
+	if isAssociate == false {
+		whereExpr += " AND rel.cvm_id IS NULL"
+	} else {
+		joinDirection = "INNER JOIN"
+	}
+
+	if opt.Page.Count {
+		sql := fmt.Sprintf(
+			`SELECT COUNT(*) FROM %s AS ni %s %s AS rel ON rel.network_interface_id = ni.id %s`,
+			table.NetworkInterfaceTable,
+			joinDirection,
+			table.NetworkInterfaceCvmRelTable,
+			whereExpr,
+		)
+		count, err := n.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.ErrorJson("count network interface failed, err: %v, filter: %s, rid: %s",
+				err, opt.Filter, kt.Rid)
+			return nil, err
+		}
+
+		return &types.ListCvmRelsJoinNetworkInterfaceDetails{Count: converter.ValToPtr(count)}, nil
+	}
+
+	pageExpr, err := types.PageSQLExpr(opt.Page, &types.PageSQLOption{
+		Sort: types.SortOption{Sort: "ni.id", IfNotPresent: true}})
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(
+		`SELECT %s,%s FROM %s AS ni %s %s AS rel ON rel.network_interface_id = ni.id %s %s`,
+		tableni.NetworkInterfaceColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
+		tools.BaseRelJoinSqlBuild("rel", "ni", "id", "cvm_id"),
+		table.NetworkInterfaceTable,
+		joinDirection,
+		table.NetworkInterfaceCvmRelTable,
+		whereExpr, pageExpr,
+	)
+
+	details := make([]*types.NetworkInterfaceWithCvmID, 0)
+	if err = n.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		return nil, err
+	}
+
+	return &types.ListCvmRelsJoinNetworkInterfaceDetails{Details: details}, nil
 }
 
 // DeleteWithTx network interface with tx.
