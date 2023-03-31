@@ -110,6 +110,7 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		infoReq := dataproto.ListResourceBasicInfoReq{
 			ResourceType: resType,
 			IDs:          ids,
+			Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
 		}
 		basicInfoMap, err := r.client.DataService().Global.Cloud.ListResourceBasicInfo(kt.Ctx, kt.Header(), infoReq)
 		if err != nil {

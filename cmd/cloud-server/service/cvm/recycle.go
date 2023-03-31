@@ -265,7 +265,6 @@ func (svc *cvmSvc) RecoverCvm(cts *rest.Contexts) (interface{}, error) {
 	listReq := &core.ListReq{
 		Filter: expr,
 		Page:   &core.BasePage{Limit: constant.BatchOperationMaxLimit},
-		Fields: []string{"id", "account_id", "bk_biz_id"},
 	}
 	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
 		listReq)
@@ -336,7 +335,7 @@ func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, erro
 	}
 
 	// validate biz and authorize
-	err = handler.RecycleValidWithAuth(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Vpc,
+	err = handler.RecycleValidWithAuth(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
 		Action: meta.Recycle, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
