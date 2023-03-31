@@ -151,3 +151,27 @@ func (rc *restClient) ListDiskCvmRelWithCvm(ctx context.Context, h http.Header, 
 
 	return resp.Data, nil
 }
+
+// ListDiskWithoutCvm ...
+func (rc *restClient) ListDiskWithoutCvm(ctx context.Context, h http.Header, request *dataproto.ListDiskWithoutCvmReq,
+) (*dataproto.ListDiskWithoutCvmResult, error) {
+
+	resp := new(dataproto.ListDiskWithoutCvmResp)
+
+	err := rc.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/disk_cvm_rels/with/disks/without/cvm/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

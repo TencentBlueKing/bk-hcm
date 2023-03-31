@@ -127,3 +127,27 @@ func (rc *restClient) DeleteEipCvmRel(
 
 	return nil
 }
+
+// ListEipWithoutCvm ...
+func (rc *restClient) ListEipWithoutCvm(ctx context.Context, h http.Header, request *dataproto.ListEipWithoutCvmReq,
+) (*dataproto.ListEipWithoutCvmResult, error) {
+
+	resp := new(dataproto.ListEipWithoutCvmResp)
+
+	err := rc.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/eip_cvm_rels/with/eips/without/cvm/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

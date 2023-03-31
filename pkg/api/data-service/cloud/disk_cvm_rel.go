@@ -173,3 +173,27 @@ type ListWithCvmResult struct {
 	Count   uint64                  `json:"count"`
 	Details []diskcvmrel.RelWithCvm `json:"details"`
 }
+
+// ListDiskWithoutCvmReq ...
+type ListDiskWithoutCvmReq struct {
+	Fields []string           `json:"fields" validate:"omitempty"`
+	Filter *filter.Expression `json:"filter" validate:"omitempty"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
+}
+
+// Validate ...
+func (req *ListDiskWithoutCvmReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ListDiskWithoutCvmResult ...
+type ListDiskWithoutCvmResult struct {
+	Count   uint64                   `json:"count"`
+	Details []diskcvmrel.RelWithDisk `json:"details"`
+}
+
+// ListDiskWithoutCvmResp ...
+type ListDiskWithoutCvmResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListDiskWithoutCvmResult `json:"data"`
+}

@@ -17,26 +17,22 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package diskcvmrel
+package cloudserver
 
 import (
-	"time"
-
-	"hcm/pkg/api/core/cloud/cvm"
-	"hcm/pkg/dal/table/cloud/disk"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/runtime/filter"
 )
 
-// RelWithCvm ...
-type RelWithCvm struct {
-	cvm.BaseCvm  `json:",inline"`
-	DiskID       *string    `json:"disk_id"`
-	RelCreator   *string    `json:"rel_creator"`
-	RelCreatedAt *time.Time `json:"rel_created_at"`
+// ListEipWithoutCvmReq ...
+type ListEipWithoutCvmReq struct {
+	Fields []string           `json:"fields" validate:"omitempty"`
+	Filter *filter.Expression `json:"filter" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
-// RelWithDisk ...
-type RelWithDisk struct {
-	Disk         disk.DiskModel `json:",inline"`
-	RelCreator   *string        `json:"rel_creator"`
-	RelCreatedAt *time.Time     `json:"rel_created_at"`
+// Validate ...
+func (req *ListEipWithoutCvmReq) Validate() error {
+	return validator.Validate.Struct(req)
 }

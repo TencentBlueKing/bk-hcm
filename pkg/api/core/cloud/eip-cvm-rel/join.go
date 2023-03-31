@@ -17,26 +17,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package diskcvmrel
+package eipcvmrel
 
 import (
 	"time"
 
-	"hcm/pkg/api/core/cloud/cvm"
-	"hcm/pkg/dal/table/cloud/disk"
+	"hcm/pkg/dal/table/cloud/eip"
 )
 
-// RelWithCvm ...
-type RelWithCvm struct {
-	cvm.BaseCvm  `json:",inline"`
-	DiskID       *string    `json:"disk_id"`
-	RelCreator   *string    `json:"rel_creator"`
-	RelCreatedAt *time.Time `json:"rel_created_at"`
-}
-
-// RelWithDisk ...
-type RelWithDisk struct {
-	Disk         disk.DiskModel `json:",inline"`
-	RelCreator   *string        `json:"rel_creator"`
-	RelCreatedAt *time.Time     `json:"rel_created_at"`
+// RelWithEip ...
+type RelWithEip struct {
+	Eip          eip.EipModel `json:",inline"`
+	RelCreator   *string      `json:"rel_creator"`
+	RelCreatedAt *time.Time   `json:"rel_created_at"`
 }

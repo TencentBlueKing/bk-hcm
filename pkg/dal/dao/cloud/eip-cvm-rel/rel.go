@@ -213,3 +213,67 @@ func (relDao *EipCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.EipCv
 
 	return nil
 }
+
+// ListEipLeftJoinRel ...
+func (relDao *EipCvmRelDao) ListEipLeftJoinRel(kt *kit.Kit, opt *types.ListOption) (
+	*cloud.EipLeftJoinEipCvmRelResult, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list eip cvm rel options is nil")
+	}
+
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tableeip.EipColumns.ColumnTypes())),
+		core.DefaultPageOption); err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		logs.Errorf(
+			"gen where expr for list eip cvm rels failed, err: %v, filter: %s, rid: %s",
+			err,
+			opt.Filter,
+			kt.Rid,
+		)
+		return nil, err
+	}
+
+	whereExpr += " and rel.cvm_id is NULL"
+
+	if opt.Page.Count {
+		sql := fmt.Sprintf(
+			`SELECT count(*) FROM %s as eip left join %s as rel on eip.id = rel.eip_id %s`,
+			table.EipTable, tablecloud.EipCvmRelTableName, whereExpr)
+
+		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.ErrorJson("count eip left join eip_cvm_rel failed, err: %v, filter: %s, rid: %s", err,
+				opt.Filter, kt.Rid)
+			return nil, err
+		}
+		return &cloud.EipLeftJoinEipCvmRelResult{Count: count}, nil
+	}
+
+	sql := fmt.Sprintf(
+		`SELECT %s, %s FROM %s as eip left join %s as rel on eip.id = rel.eip_id %s`,
+		tableeip.EipColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
+		tools.BaseRelJoinSqlBuild(
+			"rel",
+			"eip",
+			"id",
+			"eip_id",
+		),
+		table.EipTable,
+		tablecloud.EipCvmRelTableName,
+		whereExpr,
+	)
+
+	details := make([]cloud.EipLeftJoinEipCvmRel, 0)
+	if err := relDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		logs.ErrorJson("select eip left join eip_cvm_rel failed, err: %v, filter: %s, rid: %s", err,
+			opt.Filter, kt.Rid)
+		return nil, err
+	}
+
+	return &cloud.EipLeftJoinEipCvmRelResult{Details: details}, nil
+}

@@ -59,3 +59,17 @@ type CvmLeftJoinDiskCvmRelResult struct {
 	Count   uint64                  `json:"count"`
 	Details []CvmLeftJoinDiskCvmRel `json:"details"`
 }
+
+// DiskLeftJoinDiskCvmRel define disk left join disk cvm rel result.
+type DiskLeftJoinDiskCvmRel struct {
+	disk.DiskModel `db:",inline" json:",inline"`
+	DiskID         *string    `db:"disk_id" json:"disk_id"`
+	RelCreator     *string    `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt   *time.Time `db:"rel_created_at" json:"rel_created_at"`
+}
+
+// DiskLeftJoinDiskCvmRelResult define disk left join disk cvm rel result.
+type DiskLeftJoinDiskCvmRelResult struct {
+	Count   uint64                   `json:"count"`
+	Details []DiskLeftJoinDiskCvmRel `json:"details"`
+}

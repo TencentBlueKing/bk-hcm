@@ -28,6 +28,7 @@ import (
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/dal/table/cloud/disk"
 	"hcm/pkg/rest"
 )
 
@@ -100,4 +101,47 @@ func (svc *relSvc) ListWithCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &datarelproto.ListWithCvmResult{Details: details}, nil
+}
+
+// ListWithCvm ...
+func (svc *relSvc) ListDiskWithoutCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(datarelproto.ListDiskWithoutCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.objectDao.ListDiskLeftJoinRel(cts.Kit, opt)
+	if err != nil {
+		return nil, fmt.Errorf("list cvm left join disk_cvm_rel failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &datarelproto.ListDiskWithoutCvmResult{Count: result.Count}, nil
+	}
+
+	details := make([]diskcvmrel.RelWithDisk, len(result.Details))
+	for index, one := range result.Details {
+		details[index] = diskcvmrel.RelWithDisk{
+			Disk: disk.DiskModel{
+				ID:       one.ID,
+				CloudID:  one.CloudID,
+				Name:     one.Name,
+				DiskType: one.DiskType,
+				DiskSize: one.DiskSize,
+			},
+			RelCreator:   one.RelCreator,
+			RelCreatedAt: one.RelCreatedAt,
+		}
+	}
+
+	return &datarelproto.ListDiskWithoutCvmResult{Details: details}, nil
 }

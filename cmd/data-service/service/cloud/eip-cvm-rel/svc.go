@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	eipcvmrel "hcm/pkg/api/core/cloud/eip-cvm-rel"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	"hcm/pkg/criteria/enumor"
@@ -33,6 +34,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
+	"hcm/pkg/dal/table/cloud/eip"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -217,4 +219,46 @@ func (svc *relSvc) ListWithEipExt(cts *rest.Contexts) (interface{}, error) {
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
+}
+
+// ListEipWithoutCvm ...
+func (svc *relSvc) ListEipWithoutCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(datarelproto.ListEipWithoutCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.objectDao.ListEipLeftJoinRel(cts.Kit, opt)
+	if err != nil {
+		return nil, fmt.Errorf("list eip left join eip_cvm_rel failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &datarelproto.ListEipWithoutCvmResult{Count: result.Count}, nil
+	}
+
+	details := make([]eipcvmrel.RelWithEip, len(result.Details))
+	for index, one := range result.Details {
+		details[index] = eipcvmrel.RelWithEip{
+			Eip: eip.EipModel{
+				ID:       one.ID,
+				CloudID:  one.CloudID,
+				Name:     one.Name,
+				PublicIp: one.PublicIp,
+			},
+			RelCreator:   one.RelCreator,
+			RelCreatedAt: one.RelCreatedAt,
+		}
+	}
+
+	return &datarelproto.ListEipWithoutCvmResult{Details: details}, nil
 }

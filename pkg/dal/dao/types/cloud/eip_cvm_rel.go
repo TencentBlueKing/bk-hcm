@@ -44,3 +44,17 @@ type EipWithCvmID struct {
 	RelCreator   string     `db:"rel_creator" json:"rel_creator"`
 	RelCreatedAt *time.Time `db:"rel_created_at" json:"rel_created_at"`
 }
+
+// EipLeftJoinEipCvmRel define eip left join eip cvm rel result.
+type EipLeftJoinEipCvmRel struct {
+	eip.EipModel `db:",inline" json:",inline"`
+	EipID        *string    `db:"eip_id" json:"disk_id"`
+	RelCreator   *string    `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt *time.Time `db:"rel_created_at" json:"rel_created_at"`
+}
+
+// EipLeftJoinEipCvmRelResult define eip left join eip cvm rel result.
+type EipLeftJoinEipCvmRelResult struct {
+	Count   uint64                 `json:"count"`
+	Details []EipLeftJoinEipCvmRel `json:"details"`
+}

@@ -38,3 +38,15 @@ type ListWithCvmReq struct {
 func (req *ListWithCvmReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// ListDiskWithoutCvmReq ...
+type ListDiskWithoutCvmReq struct {
+	Fields []string           `json:"fields" validate:"omitempty"`
+	Filter *filter.Expression `json:"filter" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
+}
+
+// Validate ...
+func (req *ListDiskWithoutCvmReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

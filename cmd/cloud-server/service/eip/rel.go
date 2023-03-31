@@ -20,6 +20,8 @@ package eip
 import (
 	"fmt"
 
+	proto "hcm/pkg/api/cloud-server"
+	"hcm/pkg/api/core"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -87,4 +89,45 @@ func (svc *eipSvc) listEipExtByCvmID(cts *rest.Contexts, validHandler handler.Va
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
 	}
+}
+
+// ListRelEipWithoutCvm list eip not bind cvm
+func (svc *eipSvc) ListRelEipWithoutCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.listRelEipWithoutCvm(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizRelEipWithoutCvm list biz eip not bind cvm
+func (svc *eipSvc) ListBizRelEipWithoutCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.listRelEipWithoutCvm(cts, handler.ListBizAuthRes)
+}
+
+func (svc *eipSvc) listRelEipWithoutCvm(cts *rest.Contexts,
+	authHandler handler.ListAuthResHandler) (interface{}, error) {
+	req := new(proto.ListEipWithoutCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Eip, Action: meta.Find, Filter: req.Filter})
+	if err != nil {
+		return nil, err
+	}
+
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
+	req.Filter = expr
+
+	listReq := &datarelproto.ListEipWithoutCvmReq{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	return svc.client.DataService().Global.ListEipWithoutCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 }

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"hcm/pkg/api/core"
+	eipcvmrel "hcm/pkg/api/core/cloud/eip-cvm-rel"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
@@ -140,4 +141,28 @@ type EipExtWithCvmID[T dataproto.EipExtensionResult] struct {
 	CvmID                     string     `json:"cvm_id"`
 	RelCreator                string     `json:"rel_creator"`
 	RelCreatedAt              *time.Time `json:"rel_created_at"`
+}
+
+// ListEipWithoutCvmReq ...
+type ListEipWithoutCvmReq struct {
+	Fields []string           `json:"fields" validate:"omitempty"`
+	Filter *filter.Expression `json:"filter" validate:"omitempty"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
+}
+
+// Validate ...
+func (req *ListEipWithoutCvmReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ListEipWithoutCvmResult ...
+type ListEipWithoutCvmResult struct {
+	Count   uint64                 `json:"count"`
+	Details []eipcvmrel.RelWithEip `json:"details"`
+}
+
+// ListEipWithoutCvmResp ...
+type ListEipWithoutCvmResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListEipWithoutCvmResult `json:"data"`
 }

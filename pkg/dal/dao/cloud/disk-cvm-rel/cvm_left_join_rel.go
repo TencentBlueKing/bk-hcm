@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/dal/table"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/dal/table/cloud/cvm"
+	"hcm/pkg/dal/table/cloud/disk"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -100,4 +101,68 @@ func (relDao *DiskCvmRelDao) ListCvmLeftJoinRel(kt *kit.Kit, opt *types.ListOpti
 	}
 
 	return &cloud.CvmLeftJoinDiskCvmRelResult{Details: details}, nil
+}
+
+// ListDiskLeftJoinRel ...
+func (relDao *DiskCvmRelDao) ListDiskLeftJoinRel(kt *kit.Kit, opt *types.ListOption) (
+	*cloud.DiskLeftJoinDiskCvmRelResult, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list disk cvm rel options is nil")
+	}
+
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(disk.DiskColumns.ColumnTypes())),
+		core.DefaultPageOption); err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		logs.Errorf(
+			"gen where expr for list disk cvm rels failed, err: %v, filter: %s, rid: %s",
+			err,
+			opt.Filter,
+			kt.Rid,
+		)
+		return nil, err
+	}
+
+	whereExpr += " and rel.cvm_id is NULL"
+
+	if opt.Page.Count {
+		sql := fmt.Sprintf(
+			`SELECT count(*) FROM %s as disk left join %s as rel on disk.id = rel.disk_id %s`,
+			table.DiskTable, tablecloud.DiskCvmRelTableName, whereExpr)
+
+		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.ErrorJson("count cvm left join disk_cvm_rel failed, err: %v, filter: %s, rid: %s", err,
+				opt.Filter, kt.Rid)
+			return nil, err
+		}
+		return &cloud.DiskLeftJoinDiskCvmRelResult{Count: count}, nil
+	}
+
+	sql := fmt.Sprintf(
+		`SELECT %s, %s FROM %s as disk left join %s as rel on disk.id = rel.disk_id %s`,
+		disk.DiskColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
+		tools.BaseRelJoinSqlBuild(
+			"rel",
+			"disk",
+			"id",
+			"disk_id",
+		),
+		table.DiskTable,
+		tablecloud.DiskCvmRelTableName,
+		whereExpr,
+	)
+
+	details := make([]cloud.DiskLeftJoinDiskCvmRel, 0)
+	if err := relDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		logs.ErrorJson("select disk left join disk_cvm_rel failed, err: %v, filter: %s, rid: %s", err,
+			opt.Filter, kt.Rid)
+		return nil, err
+	}
+
+	return &cloud.DiskLeftJoinDiskCvmRelResult{Details: details}, nil
 }

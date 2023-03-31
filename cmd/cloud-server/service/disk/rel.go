@@ -149,3 +149,44 @@ func (svc *diskSvc) listRelWithCvm(cts *rest.Contexts, authHandler handler.ListA
 	}
 	return svc.client.DataService().Global.ListDiskCvmRelWithCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 }
+
+// ListRelDiskWithoutCvm list disk not bind cvm
+func (svc *diskSvc) ListRelDiskWithoutCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.listRelDiskWithoutCvm(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizRelDiskWithoutCvm list biz disk not bind cvm
+func (svc *diskSvc) ListBizRelDiskWithoutCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.listRelDiskWithoutCvm(cts, handler.ListBizAuthRes)
+}
+
+func (svc *diskSvc) listRelDiskWithoutCvm(cts *rest.Contexts,
+	authHandler handler.ListAuthResHandler) (interface{}, error) {
+	req := new(proto.ListDiskWithoutCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Disk, Action: meta.Find, Filter: req.Filter})
+	if err != nil {
+		return nil, err
+	}
+
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
+	req.Filter = expr
+
+	listReq := &datarelproto.ListDiskWithoutCvmReq{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	return svc.client.DataService().Global.ListDiskWithoutCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+}
