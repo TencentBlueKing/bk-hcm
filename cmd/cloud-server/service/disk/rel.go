@@ -20,7 +20,9 @@ package disk
 import (
 	"fmt"
 
-	cloudproto "hcm/pkg/api/cloud-server/disk"
+	proto "hcm/pkg/api/cloud-server"
+	diskproto "hcm/pkg/api/cloud-server/disk"
+	"hcm/pkg/api/core"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -95,7 +97,7 @@ func (svc *diskSvc) listDiskExtByCvmID(cts *rest.Contexts, validHandler handler.
 
 // ListDiskCvmRel ...
 func (svc *diskSvc) ListDiskCvmRel(cts *rest.Contexts) (interface{}, error) {
-	req := new(cloudproto.DiskCvmRelListReq)
+	req := new(diskproto.DiskCvmRelListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -105,4 +107,45 @@ func (svc *diskSvc) ListDiskCvmRel(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return svc.client.DataService().Global.ListDiskCvmRel(cts.Kit.Ctx, cts.Kit.Header(), req)
+}
+
+// ListRelWithCvm list disk with extension by cvm_id.
+func (svc *diskSvc) ListRelWithCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.listRelWithCvm(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizRelWithCvm list biz disk with extension by cvm_id.
+func (svc *diskSvc) ListBizRelWithCvm(cts *rest.Contexts) (interface{}, error) {
+	return svc.listRelWithCvm(cts, handler.ListBizAuthRes)
+}
+
+func (svc *diskSvc) listRelWithCvm(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
+	req := new(proto.ListWithCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Cvm, Action: meta.Find, Filter: req.Filter})
+	if err != nil {
+		return nil, err
+	}
+
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
+	req.Filter = expr
+
+	listReq := &datarelproto.ListWithCvmReq{
+		Fields:         req.Fields,
+		Filter:         req.Filter,
+		Page:           req.Page,
+		NotEqualDiskID: req.NotEqualDiskID,
+	}
+	return svc.client.DataService().Global.ListDiskCvmRelWithCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 }

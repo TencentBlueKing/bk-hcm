@@ -144,7 +144,7 @@ func (relDao *DiskCvmRelDao) ListJoinDisk(kt *kit.Kit, cvmIDs []string) (*cloud.
 		tools.BaseRelJoinSqlBuild(
 			"rel",
 			"disk",
-			"disk_id",
+			"id",
 			"cvm_id",
 		),
 		tablecloud.DiskCvmRelTableName,

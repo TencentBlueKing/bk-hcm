@@ -31,6 +31,6 @@ import "fmt"
 // rel.creator as rel_creator, rel.created_at as rel_created_at
 func BaseRelJoinSqlBuild(relTableAlias, resTableAlias, asIDFieldName, saveIDFieldName string) string {
 	return fmt.Sprintf(`%s.%s as id, %s.%s as %s, %s.creator as creator, %s.created_at as created_at, 
-%s.creator as rel_creator, %s.created_at as rel_created_at`, relTableAlias, asIDFieldName, relTableAlias,
+%s.creator as rel_creator, %s.created_at as rel_created_at`, resTableAlias, asIDFieldName, relTableAlias,
 		saveIDFieldName, saveIDFieldName, resTableAlias, resTableAlias, relTableAlias, relTableAlias)
 }

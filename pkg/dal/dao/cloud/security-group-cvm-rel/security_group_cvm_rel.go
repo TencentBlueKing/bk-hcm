@@ -63,7 +63,7 @@ func (dao Dao) ListJoinSecurityGroup(kt *kit.Kit, cvmIDs []string) (*types.ListS
 	sql := fmt.Sprintf(`SELECT %s, %s FROM %s as rel left join %s as sg on rel.security_group_id = sg.id 
         where cvm_id in (:cvm_ids)`,
 		cloud.SecurityGroupColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
-		tools.BaseRelJoinSqlBuild("rel", "sg", "security_group_id", "cvm_id"),
+		tools.BaseRelJoinSqlBuild("rel", "sg", "id", "cvm_id"),
 		table.SecurityGroupCvmTable, table.SecurityGroupTable)
 
 	details := make([]types.SecurityGroupWithCvmID, 0)

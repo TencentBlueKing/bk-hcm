@@ -17,29 +17,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package diskcvmrel
+package cloudserver
 
 import (
-	"net/http"
-
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/rest"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/runtime/filter"
 )
 
-// InitService ...
-func InitService(cap *capability.Capability) {
-	svc := &relSvc{
-		Set: cap.Dao,
-	}
-	svc.Init()
+// ListWithCvmReq ...
+type ListWithCvmReq struct {
+	Fields []string           `json:"fields" validate:"omitempty"`
+	Filter *filter.Expression `json:"filter" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
+	// NotEqualDiskID 关联关系表中 disk_id 不等于该值的查询条件。
+	NotEqualDiskID string `json:"not_equal_disk_id" validate:"omitempty"`
+}
 
-	h := rest.NewHandler()
-	h.Add("BatchCreate", http.MethodPost, "/disk_cvm_rels/batch/create", svc.BatchCreate)
-	h.Add("List", http.MethodPost, "/disk_cvm_rels/list", svc.List)
-	h.Add("ListWithDisk", http.MethodPost, "/disk_cvm_rels/with/disks/list", svc.ListWithDisk)
-	h.Add("ListWithCvm", http.MethodPost, "/disk_cvm_rels/with/cvms/list", svc.ListWithCvm)
-	h.Add("ListWithDiskExt", http.MethodPost, "/vendors/{vendor}/disk_cvm_rels/with/disks/list", svc.ListWithDiskExt)
-	h.Add("BatchDelete", http.MethodDelete, "/disk_cvm_rels/batch", svc.BatchDelete)
-
-	h.Load(cap.WebService)
+// Validate ...
+func (req *ListWithCvmReq) Validate() error {
+	return validator.Validate.Struct(req)
 }

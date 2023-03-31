@@ -144,7 +144,7 @@ func (relDao *EipCvmRelDao) ListJoinEip(kt *kit.Kit, cvmIDs []string) (*cloud.Ei
 		tools.BaseRelJoinSqlBuild(
 			"rel",
 			"eip",
-			"eip_id",
+			"id",
 			"cvm_id",
 		),
 		tablecloud.EipCvmRelTableName,

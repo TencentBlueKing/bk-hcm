@@ -76,7 +76,7 @@ func (dao NetworkCvmRelDao) ListJoinNetworkInterface(kt *kit.Kit, cvmIDs []strin
 		tools.BaseRelJoinSqlBuild(
 			"rel",
 			"ni",
-			"network_interface_id",
+			"id",
 			"cvm_id",
 		),
 		table.NetworkInterfaceCvmRelTable,

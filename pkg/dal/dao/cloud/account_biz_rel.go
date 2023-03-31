@@ -145,7 +145,7 @@ func (a AccountBizRelDao) ListJoinAccount(kt *kit.Kit, bkBizIDs []int64) (
 	sql := fmt.Sprintf(`SELECT %s, %s FROM %s AS rel LEFT JOIN %s AS account ON rel.account_id = account.id 
     WHERE rel.bk_biz_id in (:bk_biz_ids)`,
 		cloud.AccountColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
-		tools.BaseRelJoinSqlBuild("rel", "account", "account_id", "bk_biz_id"),
+		tools.BaseRelJoinSqlBuild("rel", "account", "id", "bk_biz_id"),
 		table.AccountBizRelTable, table.AccountTable,
 	)
 

@@ -45,10 +45,12 @@ func InitDiskService(c *capability.Capability) {
 	h.Add("DeleteDisk", http.MethodDelete, "/disks/{id}", svc.DeleteDisk)
 
 	h.Add("ListDiskExtByCvmID", http.MethodGet, "/vendors/{vendor}/disks/cvms/{cvm_id}", svc.ListDiskExtByCvmID)
+	h.Add("ListRelWithCvm", http.MethodPost, "/disk_cvm_rels/with/cvms/list", svc.ListRelWithCvm)
 	h.Add("ListDiskCvmRel", http.MethodPost, "/disk_cvm_rels/list", svc.ListDiskCvmRel)
 
 	// disk apis in biz
 	h.Add("ListBizDisk", http.MethodPost, "/bizs/{bk_biz_id}/disks/list", svc.ListBizDisk)
+	h.Add("ListBizRelWithCvm", http.MethodPost, "/bizs/{bk_biz_id}/disk_cvm_rels/with/cvms/list", svc.ListBizRelWithCvm)
 	h.Add("ListBizDiskExtByCvmID", http.MethodGet, "/bizs/{bk_biz_id}/vendors/{vendor}/disks/cvms/{cvm_id}",
 		svc.ListBizDiskExtByCvmID)
 	h.Add("RetrieveBizDisk", http.MethodGet, "/bizs/{bk_biz_id}/disks/{id}", svc.RetrieveBizDisk)

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"hcm/pkg/api/core"
+	diskcvmrel "hcm/pkg/api/core/cloud/disk-cvm-rel"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
@@ -145,4 +146,30 @@ type DiskExtWithCvmID[T dataproto.DiskExtensionResult] struct {
 	CvmID                      string     `json:"cvm_id"`
 	RelCreator                 string     `json:"rel_creator"`
 	RelCreatedAt               *time.Time `json:"rel_created_at"`
+}
+
+// ListWithCvmReq ...
+type ListWithCvmReq struct {
+	Fields []string           `json:"fields" validate:"omitempty"`
+	Filter *filter.Expression `json:"filter" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
+	// NotEqualDiskID 关联关系表中 disk_id 不等于该值的查询条件。
+	NotEqualDiskID string `json:"not_equal_disk_id" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *ListWithCvmReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ListWithCvmResp ...
+type ListWithCvmResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ListWithCvmResult `json:"data"`
+}
+
+// ListWithCvmResult ...
+type ListWithCvmResult struct {
+	Count   uint64                  `json:"count"`
+	Details []diskcvmrel.RelWithCvm `json:"details"`
 }

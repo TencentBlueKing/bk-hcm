@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"hcm/pkg/dal/table/cloud"
+	"hcm/pkg/dal/table/cloud/cvm"
 	"hcm/pkg/dal/table/cloud/disk"
 )
 
@@ -43,4 +44,18 @@ type DiskWithCvmID struct {
 	CvmID          string     `db:"cvm_id" json:"cvm_id"`
 	RelCreator     string     `db:"rel_creator" json:"rel_creator"`
 	RelCreatedAt   *time.Time `db:"rel_created_at" json:"rel_created_at"`
+}
+
+// CvmLeftJoinDiskCvmRel define cvm left join disk cvm rel result.
+type CvmLeftJoinDiskCvmRel struct {
+	cvm.Table    `db:",inline" json:",inline"`
+	DiskID       *string    `db:"disk_id" json:"disk_id"`
+	RelCreator   *string    `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt *time.Time `db:"rel_created_at" json:"rel_created_at"`
+}
+
+// CvmLeftJoinDiskCvmRelResult define cvm left join disk cvm rel result.
+type CvmLeftJoinDiskCvmRelResult struct {
+	Count   uint64                  `json:"count"`
+	Details []CvmLeftJoinDiskCvmRel `json:"details"`
 }

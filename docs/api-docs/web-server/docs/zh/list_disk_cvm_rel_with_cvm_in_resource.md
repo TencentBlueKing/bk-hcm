@@ -2,14 +2,15 @@
 
 - 该接口提供版本：v1.0.0+。
 - 该接口所需权限：资源查看。
-- 该接口功能描述：查询虚拟机列表。
+- 该接口功能描述：查询硬盘与主机的关联关系，且带cvm信息。
 
 ### 输入参数
 
-| 参数名称   | 参数类型   | 必选  | 描述     |
-|--------|--------|-----|--------|
-| filter | object | 是   | 查询过滤条件 |
-| page   | object | 是   | 分页设置   |
+| 参数名称              | 参数类型   | 必选  | 描述            |
+|-------------------|--------|-----|---------------|
+| filter            | object | 是   | 查询过滤条件        |
+| page              | object | 是   | 分页设置          |
+| not_equal_disk_id | string | 否   | 排除与该硬盘ID绑定的主机 |
 
 #### filter
 
@@ -90,29 +91,29 @@
 
 #### 查询参数介绍：
 
-| 参数名称                   | 参数类型   | 描述                                   |
-|------------------------|--------|--------------------------------------|
-| id                     | string | 资源ID                                 |
-| cloud_id               | string | 云资源ID                                |
-| name                   | string | 名称                                   |
-| vendor                 | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| bk_biz_id              | int64  | 业务ID                                 |
-| bk_cloud_id            | int64  | 云区域ID                                |
-| account_id             | string | 账号ID                                 |
-| region                 | string | 地域                                   |
-| zone                   | string | 可用区                                  |
-| cloud_image_id         | string | 云镜像ID                                |
-| os_name                | string | 操作系统名称                               |
-| memo                   | string | 备注                                   |
-| status                 | string | 状态                                   |
-| machine_type           | string | 设备类型                                 |
-| cloud_created_time     | string | Cvm在云上创建时间                           |
-| cloud_launched_time    | string | Cvm启动时间                              |
-| cloud_expired_time     | string | Cvm过期时间                              |
-| creator                | string | 创建者                                  |
-| reviser                | string | 修改者                                  |
-| created_at             | string | 创建时间                                 |
-| updated_at             | string | 修改时间                                 |
+| 参数名称                | 参数类型   | 描述                                   |
+|---------------------|--------|--------------------------------------|
+| cvm_id              | string | 云主机ID                                |
+| cloud_id            | string | 云资源ID                                |
+| name                | string | 名称                                   |
+| vendor              | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
+| bk_biz_id           | int64  | 业务ID                                 |
+| bk_cloud_id         | int64  | 云区域ID                                |
+| account_id          | string | 账号ID                                 |
+| region              | string | 地域                                   |
+| zone                | string | 可用区                                  |
+| cloud_image_id      | string | 云镜像ID                                |
+| os_name             | string | 操作系统名称                               |
+| memo                | string | 备注                                   |
+| status              | string | 状态                                   |
+| machine_type        | string | 设备类型                                 |
+| cloud_created_time  | string | Cvm在云上创建时间                           |
+| cloud_launched_time | string | Cvm启动时间                              |
+| cloud_expired_time  | string | Cvm过期时间                              |
+| creator             | string | 创建者                                  |
+| reviser             | string | 修改者                                  |
+| created_at          | string | 创建时间                                 |
+| updated_at          | string | 修改时间                                 |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -120,7 +121,7 @@
 
 #### 获取详细信息请求参数示例
 
-查询创建者是Jim的Cvm列表。
+查询创建者是Jim，且与硬盘 '00000001' 没有绑定关系的关联关系列表且带有Cvm信息。
 
 ```json
 {
@@ -138,7 +139,8 @@
     "count": false,
     "start": 0,
     "limit": 500
-  }
+  },
+  "not_equal_disk_id": "00000001"
 }
 ```
 
@@ -209,7 +211,10 @@
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2023-02-12T14:47:39Z",
-        "updated_at": "2023-02-12T14:55:40Z"
+        "updated_at": "2023-02-12T14:55:40Z",
+        "disk_id": "000000e9",
+        "rel_creator": "guohuliu",
+        "rel_created_at": "2023-03-23T17:01:24Z"
       }
     ]
   }
@@ -245,32 +250,35 @@
 
 #### data.details[n]
 
-| 参数名称                   | 参数类型         | 描述                                   |
-|------------------------|--------------|--------------------------------------|
-| id                     | string       | 资源ID                                 |
-| cloud_id               | string       | 云资源ID                                |
-| name                   | string       | 名称                                   |
-| vendor                 | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| bk_biz_id              | int64        | 业务ID                                 |
-| bk_cloud_id            | int64        | 云区域ID                                |
-| account_id             | string       | 账号ID                                 |
-| region                 | string       | 地域                                   |
-| zone                   | string       | 可用区                                  |
-| cloud_vpc_ids          | string array | 云VpcID列表                             |
-| cloud_subnet_ids       | string array | 云子网ID列表                              |
-| cloud_image_id         | string       | 云镜像ID                                |
-| os_name                | string       | 操作系统名称                               |
-| memo                   | string       | 备注                                   |
-| status                 | string       | 状态                                   |
-| private_ipv4_addresses | string array | 内网IPv4地址                             |
-| private_ipv6_addresses | string array | 内网IPv6地址                             |
-| public_ipv4_addresses  | string array | 公网IPv4地址                             |
-| public_ipv6_addresses  | string array | 公网IPv6地址                             |
-| machine_type           | string       | 设备类型                                 |
-| cloud_created_time     | string       | Cvm在云上创建时间                           |
-| cloud_launched_time    | string       | Cvm启动时间                              |
-| cloud_expired_time     | string       | Cvm过期时间                              |
-| creator                | string       | 创建者                                  |
-| reviser                | string       | 修改者                                  |
-| created_at             | string       | 创建时间                                 |
-| updated_at             | string       | 修改时间                                 |
+| 参数名称                      | 参数类型         | 描述                                   |
+|---------------------------|--------------|--------------------------------------|
+| id                        | string       | 主机ID                                 |
+| cloud_id                  | string       | 云资源ID                                |
+| name                      | string       | 名称                                   |
+| vendor                    | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
+| bk_biz_id                 | int64        | 业务ID                                 |
+| bk_cloud_id               | int64        | 云区域ID                                |
+| account_id                | string       | 账号ID                                 |
+| region                    | string       | 地域                                   |
+| zone                      | string       | 可用区                                  |
+| cloud_vpc_ids             | string array | 云VpcID列表                             |
+| cloud_subnet_ids          | string array | 云子网ID列表                              |
+| cloud_image_id            | string       | 云镜像ID                                |
+| os_name                   | string       | 操作系统名称                               |
+| memo                      | string       | 备注                                   |
+| status                    | string       | 状态                                   |
+| private_ipv4_addresses    | string array | 内网IPv4地址                             |
+| private_ipv6_addresses    | string array | 内网IPv6地址                             |
+| public_ipv4_addresses     | string array | 公网IPv4地址                             |
+| public_ipv6_addresses     | string array | 公网IPv6地址                             |
+| machine_type              | string       | 设备类型                                 |
+| cloud_created_time        | string       | Cvm在云上创建时间                           |
+| cloud_launched_time       | string       | Cvm启动时间                              |
+| cloud_expired_time        | string       | Cvm过期时间                              |
+| creator                   | string       | 创建者                                  |
+| reviser                   | string       | 修改者                                  |
+| created_at                | string       | 创建时间                                 |
+| updated_at                | string       | 修改时间                                 |
+| disk_id                   | string       | 硬盘ID，可能为null                         |
+| rel_creator               | string       | 关联关系创建者，可能为null                      |
+| rel_created_at            | string       | 关联关系创建时间，可能为null                     |
