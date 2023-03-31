@@ -128,13 +128,11 @@ defineExpose([validate]);
     </bk-form-item>
     <bk-form-item
       label="带宽名称"
+      property="bandwidth_option.name"
     >
-      <bk-checkbox
+      <bk-input
         v-model="formData.bandwidth_option.name"
-        :true-label="true"
-        :false-label="false"
-      >
-      </bk-checkbox>
+      />
     </bk-form-item>
     <bk-form-item
       label="带宽大小"
