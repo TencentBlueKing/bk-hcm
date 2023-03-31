@@ -74,7 +74,7 @@ type AzureBatchCreateReq struct {
 	ResourceGroupName    string                  `json:"resource_group_name" validate:"required"`
 	Region               string                  `json:"region" validate:"required"`
 	Name                 string                  `json:"name" validate:"required"`
-	Zones                []string                `json:"zones" validate:"required"`
+	Zones                []string                `json:"zones" validate:"omitempty"`
 	InstanceType         string                  `json:"instance_type" validate:"required"`
 	CloudImageID         string                  `json:"cloud_image_id" validate:"required"`
 	Username             string                  `json:"username" validate:"required"`

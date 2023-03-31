@@ -50,7 +50,7 @@ type AzureCvmCreateReq struct {
 	AccountID             string   `json:"account_id" validate:"required"`
 	ResourceGroupName     string   `json:"resource_group_name" validate:"required,lowercase"`
 	Region                string   `json:"region" validate:"required,lowercase"`
-	Zone                  string   `json:"zone" validate:"required,lowercase"`
+	Zone                  string   `json:"zone" validate:"omitempty,lowercase"`
 	Name                  string   `json:"name" validate:"required,min=1,max=60,lowercase"`
 	InstanceType          string   `json:"instance_type" validate:"required"`
 	CloudImageID          string   `json:"cloud_image_id" validate:"required,lowercase"`

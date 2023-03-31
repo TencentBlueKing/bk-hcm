@@ -62,12 +62,17 @@ func (a *ApplicationOfCreateAzureCvm) toHcProtoAzureBatchCreateReq() *hcproto.Az
 		}
 	}
 
+	zones := make([]string, 0)
+	if len(req.Zone) != 0 {
+		zones = append(zones, req.Zone)
+	}
+
 	return &hcproto.AzureBatchCreateReq{
 		AccountID:            req.AccountID,
 		ResourceGroupName:    req.ResourceGroupName,
 		Region:               req.Region,
 		Name:                 req.Name,
-		Zones:                []string{req.Zone},
+		Zones:                zones,
 		InstanceType:         req.InstanceType,
 		CloudImageID:         req.CloudImageID,
 		Username:             req.Username,
