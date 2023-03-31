@@ -83,12 +83,13 @@
           prop="res_id"
         >
           <template #default="{ data }">
-            <bk-button
+            <!-- <bk-button
               text theme="primary" @click="() => {
                 handleShowDialog(data?.res_type, data?.res_id, data?.vendor)
               }">
               {{data?.res_id}}
-            </bk-button>
+            </bk-button> -->
+            {{data?.res_id}}
           </template>
         </bk-table-column>
         <bk-table-column
@@ -307,7 +308,7 @@ export default defineComponent({
     // 资源详情
     const handleShowDialog = async (type: string, id: string, vendor: string) => {
       try {
-        state.detail = await resourceStore.recycledResourceDetail(type, id);
+        state.detail = await resourceStore.recycledResourceDetail(`${type}s`, id);
         state.vendor = vendor;
         state.showResourceInfo = true;
       } catch (error) {

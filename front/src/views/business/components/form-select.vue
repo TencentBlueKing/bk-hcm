@@ -27,7 +27,7 @@ const cloudRegionsLoading = ref(false);
 const cloudAreaPage = ref(0);
 const state = reactive<{filter: BusinessFormFilter}>({
   filter: {
-    vendor: 'tcloud',
+    vendor: '',
     account_id: '',
     region: '',
   },
@@ -45,14 +45,26 @@ watch(
   () => state.filter.vendor,
   () => {
     state.filter.region = '';
-    state.filter.account_id = '';
+    cloudRegionsList.value = [];
+    getCloudRegionList();
+  },
+);
+
+watch(
+  () => state.filter.account_id,
+  (val) => {
+    if (val) {
+      state.filter.vendor =  accountList.value.find((e: any) => {
+        return e.id === val;
+      }).vendor;
+    }
   },
 );
 
 const getAccountList = async () => {
   const rulesData = [];
   if (state.filter.vendor) {
-    rulesData.push({ field: 'vendor', op: 'cs', value: state.filter.vendor });
+    rulesData.push({ field: 'vendor', op: 'eq', value: state.filter.vendor });
   }
   try {
     accountLoading.value = true;
@@ -70,7 +82,7 @@ const getAccountList = async () => {
 };
 
 const getCloudRegionList = () => {
-  if (cloudRegionsLoading.value) return;
+  if (cloudRegionsLoading.value || !state.filter.vendor) return;
   cloudRegionsLoading.value = true;
   resourceStore
     .getCloudRegion(state.filter.vendor, {
@@ -90,34 +102,10 @@ const getCloudRegionList = () => {
     });
 };
 
-// 选择云厂商
-const handleCloudChange = () => {
-  cloudRegionsList.value = [];
-  getCloudRegionList();
-};
-
 getAccountList();
-handleCloudChange();
 </script>
 <template>
   <bk-form class="mt20 pt20 bussine-form">
-    <bk-form-item
-      :label="t('云厂商')"
-      class="item-warp"
-    >
-      <bk-select
-        class="item-warp-component"
-        v-model="state.filter.vendor"
-        @change="handleCloudChange"
-      >
-        <bk-option
-          v-for="(item, index) in CLOUD_TYPE"
-          :key="index"
-          :value="item.id"
-          :label="item.name"
-        />
-      </bk-select>
-    </bk-form-item>
     <bk-form-item
       :label="t('云账号')"
       class="item-warp"
@@ -129,6 +117,23 @@ handleCloudChange();
       >
         <bk-option
           v-for="(item, index) in accountList"
+          :key="index"
+          :value="item.id"
+          :label="item.name"
+        />
+      </bk-select>
+    </bk-form-item>
+    <bk-form-item
+      :label="t('云厂商')"
+      class="item-warp"
+    >
+      <bk-select
+        disabled
+        class="item-warp-component"
+        v-model="state.filter.vendor"
+      >
+        <bk-option
+          v-for="(item, index) in CLOUD_TYPE"
           :key="index"
           :value="item.id"
           :label="item.name"
