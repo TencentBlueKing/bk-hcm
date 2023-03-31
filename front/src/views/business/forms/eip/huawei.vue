@@ -18,7 +18,7 @@ const props = defineProps({
 });
 
 const formData = ref<any>({
-  eip_name: `bandwidth-${Math.floor(Math.random()*(9999-1000))+1000}`, // eip名称
+  eip_name: '', // eip名称
   eip_type: "5_bgp", // 线路类型. 5_bgp（全动态BGP） |5_sbgp（静态BGP）
   internet_charge_type: "postPaid", // 计费模式，取值 prePaid(包年/包月) | postPaid(按需计费)
   eip_count: 1,
@@ -26,6 +26,7 @@ const formData = ref<any>({
       share_type: "PER", // 带宽类型， 取值范围：PER，WHOLE（PER为独占带宽，WHOLE是共享带宽）
       charge_mode: "bandwidth", // 带宽模式。 bandwidth（按照带宽）|traffic（按照流量）
       size: 1, // 带宽大小
+      name: `bandwidth-${Math.floor(Math.random()*(9999-1000))+1000}`
   }
 });
 const internet_charge_prepaid = ref({
@@ -71,7 +72,7 @@ defineExpose([validate]);
     :rules="rules"
   >
     <bk-form-item
-      label="名称"
+      label="弹性公网IP名称"
     >
       <bk-input v-model="formData.eip_name" placeholder="请输入名称" />
     </bk-form-item>
@@ -124,6 +125,16 @@ defineExpose([validate]);
       >
         按流量计费
       </bk-radio>
+    </bk-form-item>
+    <bk-form-item
+      label="带宽名称"
+    >
+      <bk-checkbox
+        v-model="formData.bandwidth_option.name"
+        :true-label="true"
+        :false-label="false"
+      >
+      </bk-checkbox>
     </bk-form-item>
     <bk-form-item
       label="带宽大小"
