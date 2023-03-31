@@ -153,9 +153,8 @@ func (g *Gcp) DeleteEip(kt *kit.Kit, opt *eip.GcpEipDeleteOption) error {
 	return nil
 }
 
-// AssociateEip ...
-// reference:
-// https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address?hl=zh-cn#assign_new_instance
+// AssociateEip associate eip.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/addAccessConfig
 func (g *Gcp) AssociateEip(kt *kit.Kit, opt *eip.GcpEipAssociateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "gcp eip associate option is required")
@@ -181,8 +180,8 @@ func (g *Gcp) AssociateEip(kt *kit.Kit, opt *eip.GcpEipAssociateOption) error {
 	return nil
 }
 
-// DisassociateEip ...
-// reference: https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address?hl=zh-cn#api_6
+// DisassociateEip disassociate eip.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/deleteAccessConfig
 func (g *Gcp) DisassociateEip(kt *kit.Kit, opt *eip.GcpEipDisassociateOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "gcp eip disassociate option is required")
@@ -197,7 +196,7 @@ func (g *Gcp) DisassociateEip(kt *kit.Kit, opt *eip.GcpEipDisassociateOption) er
 		g.CloudProjectID(),
 		opt.Zone,
 		opt.CvmName,
-		eip.DefaultExternalNatName,
+		opt.AccessConfigName,
 		opt.NetworkInterfaceName,
 	).Context(kt.Ctx).RequestId(kt.Rid).Do()
 	if err != nil {

@@ -134,7 +134,8 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		cts.Kit,
 		svc.Adaptor,
 		svc.DataCli,
-		&cvm.SyncGcpCvmOption{AccountID: req.AccountID, Region: eipData.Region, CloudIDs: []string{cvmData.CloudID}},
+		&cvm.SyncGcpCvmOption{AccountID: req.AccountID, Region: eipData.Region, Zone: cvmData.Zone,
+			CloudIDs: []string{cvmData.CloudID}},
 	)
 	if err != nil {
 		logs.Errorf("SyncGcpCvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -219,7 +220,8 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		cts.Kit,
 		svc.Adaptor,
 		svc.DataCli,
-		&cvm.SyncGcpCvmOption{AccountID: req.AccountID, Region: eipData.Region, CloudIDs: []string{cvmData.CloudID}},
+		&cvm.SyncGcpCvmOption{AccountID: req.AccountID, Region: eipData.Region, Zone: cvmData.Zone,
+			CloudIDs: []string{cvmData.CloudID}},
 	)
 	if err != nil {
 		logs.Errorf("SyncGcpCvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -366,10 +368,24 @@ func (svc *EipSvc) makeEipDisassociateOption(
 		return nil, err
 	}
 
+	eipData, err := dataCli.RetrieveEip(kt.Ctx, kt.Header(), req.EipID)
+	if err != nil {
+		return nil, err
+	}
+
+	accessConfigName := eip.DefaultExternalNatName
+	for _, config := range networkInterface.Extension.AccessConfigs {
+		if config.NatIP == eipData.PublicIp {
+			accessConfigName = config.Name
+			break
+		}
+	}
+
 	return &eip.GcpEipDisassociateOption{
 		Zone:                 cvmData.Zone,
 		CvmName:              cvmData.Name,
 		NetworkInterfaceName: networkInterface.Name,
+		AccessConfigName:     accessConfigName,
 	}, nil
 }
 

@@ -111,6 +111,7 @@ type GcpEipDisassociateOption struct {
 	Zone                 string `json:"zone" validate:"required"`
 	CvmName              string `json:"cvm_name" validate:"required"`
 	NetworkInterfaceName string `json:"network_interface_name" validate:"required"`
+	AccessConfigName     string `json:"access_config_name" validate:"required"`
 }
 
 // Validate ...
