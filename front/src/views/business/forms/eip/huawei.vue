@@ -20,7 +20,7 @@ const props = defineProps({
 const formData = ref<any>({
   eip_name: `bandwidth-${Math.floor(Math.random()*(9999-1000))+1000}`, // eip名称
   eip_type: "5_bgp", // 线路类型. 5_bgp（全动态BGP） |5_sbgp（静态BGP）
-  internet_charge_type: "prePaid", // 计费模式，取值 prePaid(包年/包月) | postPaid(按需计费)
+  internet_charge_type: "postPaid", // 计费模式，取值 prePaid(包年/包月) | postPaid(按需计费)
   eip_count: 1,
   bandwidth_option: {
       share_type: "PER", // 带宽类型， 取值范围：PER，WHOLE（PER为独占带宽，WHOLE是共享带宽）
@@ -78,12 +78,12 @@ defineExpose([validate]);
     <bk-form-item
       label="计费模式"
     >
-      <bk-radio
+      <!-- <bk-radio
         v-model="formData.internet_charge_type"
         label="prePaid"
       >
         包年包月
-      </bk-radio>
+      </bk-radio> -->
       <bk-radio
         v-model="formData.internet_charge_type"
         label="postPaid"

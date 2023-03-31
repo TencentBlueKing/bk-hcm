@@ -81,13 +81,13 @@ export default defineComponent({
       }
     ]
 
-    if (props.detail.vendor === 'azure') {
-      rules.push({
-        field: 'extension.resource_group_name',
-        op: 'json_eq',
-        value: props.detail.resource_group_name
-      })
-    }
+    // if (props.detail.vendor === 'azure') {
+    //   rules.push({
+    //     field: 'extension.resource_group_name',
+    //     op: 'json_eq',
+    //     value: props.detail.resource_group_name
+    //   })
+    // }
 
     const {
       datas,

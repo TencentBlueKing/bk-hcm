@@ -42,8 +42,12 @@ const baseInfo = [
     prop: 'name',
   },
   {
-    name: 'EIP ID',
+    name: 'ID',
     prop: 'id',
+  },
+  {
+    name: '云资源ID',
+    prop: 'cloud_id',
   },
   {
     name: 'IP地址',
@@ -63,10 +67,6 @@ const baseInfo = [
   {
     name: '地域',
     prop: 'region',
-  },
-  {
-    name: '地域ID',
-    prop: '',
   },
   {
     name: '可用区域',
