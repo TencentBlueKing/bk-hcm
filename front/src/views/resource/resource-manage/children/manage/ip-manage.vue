@@ -35,6 +35,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
+  triggerApi,
 } = useQueryList(props, 'eips');
 
 const columns = useColumns('eips');
@@ -55,6 +56,11 @@ const {
   true,
 );
 
+// 抛出请求数据的方法，新增成功使用
+const fetchComponentsData = () => {
+  handlePageChange(1);
+};
+
 const renderColumns = [
   ...columns,
   {
@@ -65,7 +71,7 @@ const renderColumns = [
         {
           text: true,
           theme: 'primary',
-          disabled: data.cvm_id || data.bk_biz_id !== -1,
+          disabled: data.cvm_id || (data.bk_biz_id !== -1 && !location.href.includes('business')),
           onClick() {
             InfoBox({
               title: '请确认是否删除',
@@ -81,7 +87,10 @@ const renderColumns = [
                     {
                       ids: [data.id],
                     },
-                  );
+                  )
+                  .then(() => {
+                    triggerApi();
+                  });
               },
             });
           },
@@ -93,6 +102,8 @@ const renderColumns = [
     },
   }
 ]
+
+defineExpose({ fetchComponentsData });
 </script>
 
 <template>

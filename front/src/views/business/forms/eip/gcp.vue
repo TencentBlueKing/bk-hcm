@@ -31,6 +31,13 @@ const rules = {
       trigger: 'blur',
     },
   ],
+  eip_name: [
+  {
+      validator: (value: string) => /(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)/.test(value),
+      message: '名称需要符合如下正则表达式: /(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)/',
+      trigger: 'blur',
+    },
+  ]
 };
 
 
@@ -69,6 +76,7 @@ defineExpose([validate]);
   >
     <bk-form-item
       label="名称"
+      property="eip_name"
     >
       <bk-input v-model="formData.eip_name" placeholder="请输入名称" />
     </bk-form-item>

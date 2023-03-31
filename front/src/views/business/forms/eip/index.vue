@@ -17,7 +17,7 @@ import {
 } from '@/store/account';
 
 // define emits
-const emits = defineEmits(['cancel']);
+const emits = defineEmits(['cancel', 'success']);
 
 // use hooks
 const businessStore = useBusinessStore();
@@ -63,6 +63,7 @@ const handleSubmit = () => {
         formData.value
       )
       .then(() => {
+        emits('success')
         handleCancel();
       });
     })

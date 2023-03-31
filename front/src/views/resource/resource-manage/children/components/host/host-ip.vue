@@ -22,7 +22,6 @@ const props = defineProps({
 const resourceStore = useResourceStore();
 
 // 状态
-const showAdjustNetwork = ref(false);
 const showChangeIP = ref(false);
 const showUnbind = ref(false);
 const showBind = ref(false);
@@ -55,7 +54,7 @@ const columns = ref([
   },
   {
     label: '操作',
-    render(data: any) {
+    render({ data }: any) {
       return [
         // h(
         //   Button,
@@ -107,6 +106,7 @@ const columns = ref([
 const {
   datas,
   isLoading,
+  triggerApi: triggerCvmEipApi
 } = useQueryList(
   {},
   'eip',
@@ -122,7 +122,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-  triggerApi,
+  triggerApi: triggerEipApi,
 } = useQueryList(
   {
     filter: {
@@ -144,13 +144,13 @@ const {
   'eips',
 );
 
-const handleToggleShowAdjustNetwork = () => {
-  showAdjustNetwork.value = !showAdjustNetwork.value;
-};
-
-const handleConfirmAdjustNetwork = () => {
-  handleToggleShowAdjustNetwork();
-};
+const updateList = () => {
+  return Promise.all([
+    triggerCvmEipApi(),
+    triggerEipApi(),
+    needNetwork.value ? getNetWorkList() : Promise.resolve()
+  ])
+}
 
 const handleToggleShowChangeIP = () => {
   showChangeIP.value = !showChangeIP.value;
@@ -176,12 +176,7 @@ const handleConfirmUnbind = () => {
     .disassociateEip(postData)
     .then(() => {
       handleToggleShowUnbind();
-    })
-    .catch((err: any) => {
-      Message({
-        theme: 'error',
-        message: err.message || err,
-      });
+      return updateList()
     });
 };
 
@@ -217,7 +212,7 @@ const handleConfirmBind = () => {
     .associateEip(postData)
     .then(() => {
       handleToggleShowBind(false);
-      triggerApi()
+      return updateList()
     })
     .finally(() => {
       isBinding.value = false;
@@ -251,7 +246,9 @@ watch(
       ]);
     }
     needNetwork.value = !['tcloud', 'aws'].includes(props.data.vendor)
-    getNetWorkList();
+    if (needNetwork.value) {
+      getNetWorkList();
+    }
   },
   {
     deep: true,
@@ -278,7 +275,7 @@ watch(
       :data="datas"
     />
   </bk-loading>
-  <bk-dialog
+  <!-- <bk-dialog
     :is-show="showAdjustNetwork"
     title="调整网络"
     theme="primary"
@@ -314,7 +311,7 @@ watch(
         </bk-radio-group>
       </span>
     </section>
-  </bk-dialog>
+  </bk-dialog> -->
 
   <bk-dialog
     :is-show="showChangeIP"

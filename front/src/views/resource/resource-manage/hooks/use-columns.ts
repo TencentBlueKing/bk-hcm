@@ -26,7 +26,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
       onlyShowOnList,
       render({ data }: { cell: string, data: any }) {
-        if (data[idFiled] < 0) {
+        if (data[idFiled] < 0 || !data[idFiled]) {
           return '--';
         }
         return h(
