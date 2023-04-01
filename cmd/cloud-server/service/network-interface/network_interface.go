@@ -63,10 +63,14 @@ func InitNetworkInterfaceService(c *capability.Capability) {
 		svc.AssignNetworkInterfaceToBiz)
 
 	// network interface biz apis
-	h.Add("ListBizNetworkInterface", "POST", "/bizs/{bk_biz_id}/network_interfaces/list", svc.ListBizNetworkInterface)
-	h.Add("GetBizNetworkInterface", "GET", "/bizs/{bk_biz_id}/network_interfaces/{id}", svc.GetBizNetworkInterface)
-	h.Add("ListBizNICExtByCvmID", "GET", "/bizs/{bk_biz_id}/vendors/{vendor}/network_interfaces/cvms/{cvm_id}",
-		svc.ListBizNICExtByCvmID)
+	h.Add("ListBizNetworkInterface", "POST", "/bizs/{bk_biz_id}/network_interfaces/list",
+		svc.ListBizNetworkInterface)
+	h.Add("ListBizNetworkInterfaceAssociate", "POST",
+		"/bizs/{bk_biz_id}/network_interfaces/associate/list", svc.ListBizNetworkInterfaceAssociate)
+	h.Add("GetBizNetworkInterface", "GET", "/bizs/{bk_biz_id}/network_interfaces/{id}",
+		svc.GetBizNetworkInterface)
+	h.Add("ListBizNICExtByCvmID", "GET",
+		"/bizs/{bk_biz_id}/vendors/{vendor}/network_interfaces/cvms/{cvm_id}", svc.ListBizNICExtByCvmID)
 
 	h.Load(c.WebService)
 }
@@ -123,6 +127,11 @@ func (svc *netSvc) listNetworkInterface(cts *rest.Contexts, authHandler handler.
 // ListNetworkInterfaceAssociate list network interface associate.
 func (svc *netSvc) ListNetworkInterfaceAssociate(cts *rest.Contexts) (interface{}, error) {
 	return svc.networkInterfaceAssociateList(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizNetworkInterfaceAssociate list biz network interface associate.
+func (svc *netSvc) ListBizNetworkInterfaceAssociate(cts *rest.Contexts) (interface{}, error) {
+	return svc.networkInterfaceAssociateList(cts, handler.ListBizAuthRes)
 }
 
 // networkInterfaceAssociateList network interface associate list.
