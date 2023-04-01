@@ -103,7 +103,9 @@ export default defineComponent({
           rules,
         },
       },
-      'disks'
+      'disks',
+      null,
+      'getUnbindCvmDisks'
     );
 
     const columns = useColumns('drive', true);
@@ -135,11 +137,7 @@ export default defineComponent({
       ...columns.filter((column: any) => ['资源 ID', '名称', '类型', '容量(GB)', '状态'].includes(column.label))
     ]
 
-    const renderList = computed(() => {
-      return datas.value.filter((data) => !data.instance_id)
-    })
-
-    // 方法
+   // 方法
     const handleClose = () => {
       emit('update:isShow', false);
     };
@@ -194,7 +192,7 @@ export default defineComponent({
       deviceName,
       cachingType,
       cacheTypes,
-      renderList,
+      datas,
       pagination,
       isLoading,
       renderColumns,
@@ -253,7 +251,7 @@ export default defineComponent({
               remote-pagination
               pagination={this.pagination}
               columns={this.renderColumns}
-              data={this.renderList}
+              data={this.datas}
               onPageLimitChange={this.handlePageSizeChange}
               onPageValueChange={this.handlePageChange}
               onColumnSort={this.handleSort}

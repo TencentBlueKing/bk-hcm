@@ -32,7 +32,7 @@ const rules = {
     },
   ],
   eip_name: [
-  {
+    {
       validator: (value: string) => /(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)/.test(value),
       message: '名称需要符合如下正则表达式: /(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)/',
       trigger: 'blur',

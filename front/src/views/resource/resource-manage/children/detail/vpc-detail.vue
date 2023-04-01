@@ -56,10 +56,6 @@ const VPCFields = ref([
     prop: 'bk_biz_id',
   },
   {
-    name: 'VPC类别',
-    prop: 'category',
-  },
-  {
     name: '云厂商',
     prop: 'vendor',
     render(cell: string) {
@@ -69,6 +65,9 @@ const VPCFields = ref([
   {
     name: '云区域',
     prop: 'bk_cloud_id',
+    render(cell: number) {
+      return cell <= 0 ? '暂未绑定' : cell;
+    },
   },
   {
     name: '创建时间',

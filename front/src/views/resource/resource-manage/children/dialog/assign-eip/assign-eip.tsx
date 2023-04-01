@@ -40,8 +40,8 @@ export default defineComponent({
       t,
     } = useI18n();
 
-    const type = ['tcloud', 'aws'].includes(props.detail.vendor) ? 'cvms' : 'network_interfaces'
-    const columnType = ['tcloud', 'aws'].includes(props.detail.vendor) ? 'cvms' : 'networkInterface'
+    const type = ['tcloud', 'aws'].includes(props.detail.vendor) ? 'cvms' : 'network_interfaces';
+    const columnType = ['tcloud', 'aws'].includes(props.detail.vendor) ? 'cvms' : 'networkInterface';
 
     const rules = [
       {
@@ -59,22 +59,35 @@ export default defineComponent({
         op: 'eq',
         value: props.detail.region,
       },
-    ]
+    ];
 
-    // if (props.detail.vendor === 'azure') {
-    //   rules.push(...[
-    //     // {
-    //     //   field: 'extension.resource_group_name',
-    //     //   op: 'json_eq',
-    //     //   value: props.detail.resource_group_name
-    //     // },
-    //     // {
-    //     //   field: 'zone',
-    //     //   op: 'eq',
-    //     //   value: props.detail.zone
-    //     // }
-    //   ])
-    // }
+    if (type === 'network_interfaces') {
+      rules.push(...[
+        {
+          field: 'public_ipv4',
+          op: 'json_length',
+          value: 0
+        },
+        {
+          field: 'public_ipv6',
+          op: 'json_length',
+          value: 0
+        }
+      ]);
+    } else {
+      rules.push(...[
+        {
+          field: 'public_ipv6_addresses',
+          op: 'json_length',
+          value: 0
+        },
+        {
+          field: 'public_ipv4_addresses',
+          op: 'json_length',
+          value: 0
+        }
+      ]);
+    }
 
     const {
       datas,
@@ -90,7 +103,9 @@ export default defineComponent({
           rules
         },
       },
-      type
+      type,
+      null,
+      type === 'cvms' ? 'list' : 'getUnbindEipNetworkList'
     );
 
     const columns = useColumns(columnType, true);
@@ -116,7 +131,7 @@ export default defineComponent({
         },
       },
       ...columns
-    ]
+    ];
 
     // 方法
     const handleClose = () => {
@@ -174,7 +189,7 @@ export default defineComponent({
               remote-pagination
               pagination={this.pagination}
               columns={this.renderColumns}
-              data={this.datas.filter(data => !data.public_ipv4_addresses)}
+              data={this.datas}
               onPageLimitChange={this.handlePageSizeChange}
               onPageValueChange={this.handlePageChange}
               onColumnSort={this.handleSort}

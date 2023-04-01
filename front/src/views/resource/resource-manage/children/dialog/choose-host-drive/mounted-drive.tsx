@@ -135,7 +135,12 @@ export default defineComponent({
           rules,
         },
       },
-      'cvms'
+      'cvms',
+      null,
+      'getUnbindDiskCvms',
+      {
+        not_equal_disk_id: props.detail.id,
+      }
     );
 
     const columns = useColumns('cvms', true);

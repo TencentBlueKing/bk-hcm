@@ -36,7 +36,7 @@ const huaweiTabs = [
   },
 ];
 
-const baseInfo = [
+const baseInfo = ref([
   {
     name: 'EIP名称',
     prop: 'name',
@@ -80,7 +80,7 @@ const baseInfo = [
     name: '创建时间',
     prop: 'created_at',
   },
-];
+]);
 
 const bindInfo = ref([
   {
@@ -149,7 +149,7 @@ watch(
             prop: 'internet_charge_type',
           },
         ];
-        baseInfo.splice(7, 1);
+        baseInfo.value.splice(7, 1);
         break;
       case 'aws':
         otherInfo.value = [
@@ -169,19 +169,9 @@ watch(
             name: '网络接口',
             prop: 'network_interface_id',
           },
-          {
-            name: 'NAT网关ID',
-            prop: '',
-          },
-          {
-            name: '公网DNS',
-            prop: '',
-          },
-          {
-            name: '反向DNS解析',
-            prop: '',
-          },
         ];
+        baseInfo.value.splice(7, 1);
+        bindInfo.value.splice(2, 1);
         break;
       case 'gcp':
         otherInfo.value = [
@@ -230,18 +220,20 @@ watch(
             prop: 'enterprise_project_id',
           },
           {
-            name: '子网',
-            prop: '',
-          },
-          {
-            name: '已绑定网卡',
-            prop: '',
-          },
-          {
             name: '类型',
             prop: 'type',
           },
         ];
+        bindInfo.value.splice(1, 1, ...[
+          {
+            name: '绑定资源实例',
+            prop: 'cvm_id',
+          },
+          {
+            name: '已绑定网卡',
+            prop: 'instance_id',
+          }
+        ])
         break;
     }
   }

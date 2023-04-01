@@ -27,6 +27,7 @@ const showUnbind = ref(false);
 const showBind = ref(false);
 const unbindData = ref();
 const isBinding = ref(false);
+const inUnbinding = ref(false);
 const networklist = ref([]);
 const bindData = ref<any>({});
 const needNetwork = ref(false);
@@ -142,6 +143,8 @@ const {
     },
   },
   'eips',
+  null,
+  'getUnbindCvmEips'
 );
 
 const updateList = () => {
@@ -162,7 +165,16 @@ const handleConfirmChangeIP = () => {
 
 const handleToggleShowUnbind = (data?: any) => {
   unbindData.value = data;
-  showUnbind.value = !showUnbind.value;
+  if (!showUnbind.value) {
+    resourceStore
+      .detail('eips', unbindData.value.id)
+      .then(({ data }: any) => {
+        unbindData.value.instance_id = data.instance_id
+      })
+    showUnbind.value = true
+  } else {
+    showUnbind.value = false
+  }
 };
 
 const handleConfirmUnbind = () => {
@@ -172,11 +184,15 @@ const handleConfirmUnbind = () => {
   if (['gcp', 'azure'].includes(unbindData.value.vendor)) {
     postData.network_interface_id = unbindData.value.instance_id
   }
+  inUnbinding.value = true
   resourceStore
     .disassociateEip(postData)
     .then(() => {
       handleToggleShowUnbind();
       return updateList()
+    })
+    .finally(() => {
+      inUnbinding.value = false
     });
 };
 
@@ -325,10 +341,11 @@ watch(
   </bk-dialog>
 
   <bk-dialog
-    :is-show="showUnbind"
     title="解绑弹性IP"
     theme="primary"
     quick-close
+    :is-show="showUnbind"
+    :is-loading="inUnbinding"
     @closed="handleToggleShowUnbind"
     @confirm="handleConfirmUnbind"
   >
@@ -343,7 +360,7 @@ watch(
     </section>
     <section class="adjust-info" v-if="['azure', 'aws', 'huawei'].includes(unbindData.vendor)">
       <span class="adjust-name">已绑定的接口名称</span>
-      <span class="adjust-value">{{ unbindData.network_interface_id }}</span>
+      <span class="adjust-value">{{ unbindData.instance_id }}</span>
     </section>
   </bk-dialog>
 

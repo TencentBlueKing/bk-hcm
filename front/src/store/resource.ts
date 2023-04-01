@@ -156,5 +156,25 @@ export const useResourceStore = defineStore({
     unBindSecurityInfo(type: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/disassociate/${type}`, data);
     },
+
+    // 获取未绑定eip的网络接口列表
+    getUnbindEipNetworkList(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}network_interfaces/associate/list`, data)
+    },
+
+    // 获取未绑定disk的主机列表
+    getUnbindDiskCvms(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}disk_cvm_rels/with/cvms/list`, data)
+    },
+
+    // 获取未绑定主机的disk列表
+    getUnbindCvmDisks(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}disk_cvm_rels/with/disks/without/cvm/list`, data)
+    },
+
+    // 获取未绑定主机的disk列表
+    getUnbindCvmEips(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}eip_cvm_rels/with/eips/without/cvm/list`, data)
+    }
   },
 });

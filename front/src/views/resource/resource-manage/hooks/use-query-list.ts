@@ -22,7 +22,13 @@ type PropsType = {
   filter?: FilterType
 };
 
-export default (props: PropsType, type: string, apiMethod?: Function) => {
+export default (
+  props: PropsType,
+  type: string,
+  apiMethod?: Function,
+  apiName: string = 'list',
+  args: any = {}
+) => {
   // 接口
   const resourceStore = useResourceStore();
 
@@ -45,7 +51,7 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
     // 默认拉取方法
     const getDefaultList = () => Promise
       .all([
-        resourceStore.list(
+        resourceStore[apiName](
           {
             page: {
               count: false,
@@ -55,15 +61,17 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
               order: order.value,
             },
             filter: props.filter,
+            ...args
           },
           type,
         ),
-        resourceStore.list(
+        resourceStore[apiName](
           {
             page: {
               count: true,
             },
             filter: props.filter,
+            ...args
           },
           type,
         ),
@@ -71,19 +79,20 @@ export default (props: PropsType, type: string, apiMethod?: Function) => {
     // 用户如果传了，就用传入的获取数据的方法
     const method = apiMethod || getDefaultList;
     // 执行获取数据的逻辑
-    method().then(([listResult, countResult]: [any, any]) => {
-      datas.value = (listResult?.data?.details || listResult?.data || []).map((item: any) => {
-        return {
-          ...item,
-          ...item.spec,
-          ...item.attachment,
-          ...item.revision,
-          ...item.extension,
-          ...item?.extension?.attachment
-        };
-      });
-      pagination.value.count = countResult?.data?.count || 0;
-    })
+    method()
+      .then(([listResult, countResult]: [any, any]) => {
+        datas.value = (listResult?.data?.details || listResult?.data || []).map((item: any) => {
+          return {
+            ...item,
+            ...item.spec,
+            ...item.attachment,
+            ...item.revision,
+            ...item.extension,
+            ...item?.extension?.attachment
+          };
+        });
+        pagination.value.count = countResult?.data?.count || 0;
+      })
       .finally(() => {
         isLoading.value = false;
         isFilter.value = false;

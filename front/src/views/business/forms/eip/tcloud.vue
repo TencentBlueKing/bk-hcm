@@ -23,6 +23,13 @@ const rules = {
       trigger: 'blur',
     },
   ],
+  eip_name: [
+    {
+      validator: (value: string) => value.length > 0,
+      message: '名称必填',
+      trigger: 'blur',
+    },
+  ]
 };
 
 
@@ -54,6 +61,8 @@ defineExpose([validate]);
   >
     <bk-form-item
       label="名称"
+      property="eip_name"
+      required
     >
       <bk-input v-model="formData.eip_name" placeholder="请输入名称" />
     </bk-form-item>

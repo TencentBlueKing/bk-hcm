@@ -35,7 +35,22 @@ const internet_charge_prepaid = ref({
   is_auto_renew: true // 是否自动续费。0表示手动续费，1表示自动续费
 });
 const formRef = ref(null);
-const rules = {};
+const rules = {
+  eip_name: [
+    {
+      validator: (value: string) => value.length > 0,
+      message: '弹性公网IP名称必填',
+      trigger: 'blur',
+    },
+  ],
+  'bandwidth_option.name': [
+    {
+      validator: (value: string) => value.length > 0,
+      message: '带宽名称必填',
+      trigger: 'blur',
+    },
+  ]
+};
 
 
 const handleChange = () => {
@@ -73,6 +88,8 @@ defineExpose([validate]);
   >
     <bk-form-item
       label="弹性公网IP名称"
+      property="eip_name"
+      required
     >
       <bk-input v-model="formData.eip_name" placeholder="请输入名称" />
     </bk-form-item>
@@ -129,6 +146,7 @@ defineExpose([validate]);
     <bk-form-item
       label="带宽名称"
       property="bandwidth_option.name"
+      required
     >
       <bk-input
         v-model="formData.bandwidth_option.name"
