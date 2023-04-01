@@ -21,6 +21,7 @@ package disk
 
 import (
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
@@ -57,7 +58,12 @@ func (opt *AzureDiskCreateOption) ToCreateDiskRequest() (*armcompute.Disk, error
 
 	skuName := armcompute.DiskStorageAccountTypes(opt.DiskType)
 	sku := &armcompute.DiskSKU{Name: to.Ptr(skuName)}
-	prop := &armcompute.DiskProperties{DiskSizeGB: to.Ptr(opt.DiskSize)}
+	prop := &armcompute.DiskProperties{
+		DiskSizeGB: to.Ptr(opt.DiskSize),
+		CreationData: &armcompute.CreationData{
+			CreateOption: converter.ValToPtr(armcompute.DiskCreateOptionEmpty),
+		},
+	}
 
 	return &armcompute.Disk{
 		Zones:      to.SliceOfPtrs[string](opt.Zone),

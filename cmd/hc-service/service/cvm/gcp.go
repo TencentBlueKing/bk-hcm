@@ -108,8 +108,15 @@ func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	respData := &protocvm.BatchCreateResult{
+		UnknownCloudIDs: result.UnknownCloudIDs,
+		SuccessCloudIDs: result.SuccessCloudIDs,
+		FailedCloudIDs:  result.FailedCloudIDs,
+		FailedMessage:   result.FailedMessage,
+	}
+
 	if len(result.SuccessCloudIDs) == 0 {
-		return new(protocvm.BatchCreateResult), nil
+		return respData, nil
 	}
 
 	syncOpt := &cvm.SyncGcpCvmOption{
@@ -123,12 +130,7 @@ func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return &protocvm.BatchCreateResult{
-		UnknownCloudIDs: result.UnknownCloudIDs,
-		SuccessCloudIDs: result.SuccessCloudIDs,
-		FailedCloudIDs:  result.FailedCloudIDs,
-		FailedMessage:   result.FailedMessage,
-	}, nil
+	return respData, nil
 }
 
 func (svc *cvmSvc) getImageByCloudID(kt *kit.Kit, cloudID string) (

@@ -83,8 +83,15 @@ func (svc *cvmSvc) BatchCreateAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	respData := &protocvm.BatchCreateResult{
+		UnknownCloudIDs: result.UnknownCloudIDs,
+		SuccessCloudIDs: result.SuccessCloudIDs,
+		FailedCloudIDs:  result.FailedCloudIDs,
+		FailedMessage:   result.FailedMessage,
+	}
+
 	if len(result.SuccessCloudIDs) == 0 {
-		return result, nil
+		return respData, nil
 	}
 
 	syncOpt := &cvm.SyncAwsCvmOption{
@@ -97,12 +104,7 @@ func (svc *cvmSvc) BatchCreateAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return &protocvm.BatchCreateResult{
-		UnknownCloudIDs: result.UnknownCloudIDs,
-		SuccessCloudIDs: result.SuccessCloudIDs,
-		FailedCloudIDs:  result.FailedCloudIDs,
-		FailedMessage:   result.FailedMessage,
-	}, nil
+	return respData, nil
 }
 
 // BatchStartAwsCvm ...

@@ -136,8 +136,8 @@ func (cli *DiskClient) CreateDisk(
 	ctx context.Context,
 	h http.Header,
 	req *disk.AwsDiskCreateReq,
-) (*core.BatchCreateResult, error) {
-	resp := new(core.BatchCreateResp)
+) (*disk.BatchCreateResult, error) {
+	resp := new(disk.BatchCreateResp)
 
 	err := cli.client.Post().
 		WithContext(ctx).

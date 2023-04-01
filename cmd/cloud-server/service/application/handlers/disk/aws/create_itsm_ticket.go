@@ -34,7 +34,7 @@ type formItem struct {
 
 // RenderItsmTitle 渲染ITSM单据标题
 func (a *ApplicationOfCreateAwsDisk) RenderItsmTitle() (string, error) {
-	return fmt.Sprintf("申请新增[%s]云盘(%s)", handlers.VendorNameMap[a.Vendor()], a.req.DiskName), nil
+	return fmt.Sprintf("申请新增[%s]云盘", handlers.VendorNameMap[a.Vendor()]), nil
 }
 
 // RenderItsmForm 渲染ITSM表单

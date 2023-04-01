@@ -23,9 +23,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"hcm/pkg/adaptor/poller"
-	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -62,7 +62,7 @@ func (g *Gcp) CreateDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*poller.Ba
 	} else {
 		diskName := opt.DiskName
 		for i := uint64(1); i <= *opt.DiskCount; i++ {
-			opt.DiskName = fmt.Sprintf("%s-%s", diskName, i)
+			opt.DiskName = fmt.Sprintf("%s-%d", diskName, i)
 			_, err := g.createDisk(kt, opt)
 			if err != nil {
 				return nil, err
@@ -227,7 +227,12 @@ func (g *Gcp) getDiskCloudID(kt *kit.Kit, zone string, diskName string) (*string
 		return nil, err
 	}
 
+	endTime := time.Now().Add(time.Duration(1) * time.Minute)
 	for {
+		if time.Now().After(endTime) {
+			return nil, fmt.Errorf("disk not found, zone: %s, diskName: %s", zone, diskName)
+		}
+
 		resp, err := client.Disks.Get(g.CloudProjectID(), zone, diskName).Context(kt.Ctx).Do()
 		if err != nil {
 			return nil, err
@@ -235,7 +240,7 @@ func (g *Gcp) getDiskCloudID(kt *kit.Kit, zone string, diskName string) (*string
 
 		if resp != nil && resp.Name == diskName {
 			cloudID := strconv.FormatUint(resp.Id, 10)
-			return &cloudID, err
+			return &cloudID, nil
 		}
 	}
 }
@@ -271,7 +276,7 @@ func (h *createDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*st
 	cIDs := converter.PtrToSlice(cloudIDs)
 	result, _, err := client.ListDisk(
 		kt,
-		&disk.GcpDiskListOption{Zone: h.Zone, CloudIDs: cIDs, Page: &core.GcpPage{PageSize: core.GcpQueryLimit}},
+		&disk.GcpDiskListOption{Zone: h.Zone, CloudIDs: cIDs},
 	)
 	return result, err
 }

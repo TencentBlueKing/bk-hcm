@@ -89,8 +89,15 @@ func (svc *cvmSvc) BatchCreateTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
+	respData := &protocvm.BatchCreateResult{
+		UnknownCloudIDs: result.UnknownCloudIDs,
+		SuccessCloudIDs: result.SuccessCloudIDs,
+		FailedCloudIDs:  result.FailedCloudIDs,
+		FailedMessage:   result.FailedMessage,
+	}
+
 	if len(result.SuccessCloudIDs) == 0 {
-		return result, nil
+		return respData, nil
 	}
 
 	syncOpt := &cvm.SyncTCloudCvmOption{
@@ -100,15 +107,10 @@ func (svc *cvmSvc) BatchCreateTCloudCvm(cts *rest.Contexts) (interface{}, error)
 	}
 	if _, err = cvm.SyncTCloudCvmWithRelResource(cts.Kit, svc.ad, svc.dataCli, syncOpt); err != nil {
 		logs.Errorf("sync tcloud cvm with rel resource failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
-		return nil, err
+		return respData, err
 	}
 
-	return &protocvm.BatchCreateResult{
-		UnknownCloudIDs: result.UnknownCloudIDs,
-		SuccessCloudIDs: result.SuccessCloudIDs,
-		FailedCloudIDs:  result.FailedCloudIDs,
-		FailedMessage:   result.FailedMessage,
-	}, nil
+	return respData, nil
 }
 
 // BatchResetTCloudCvmPwd ...

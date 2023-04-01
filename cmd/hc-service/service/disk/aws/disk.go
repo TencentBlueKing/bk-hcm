@@ -25,16 +25,13 @@ import (
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
 	"hcm/pkg/adaptor/types/disk"
-	"hcm/pkg/api/core"
-	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	proto "hcm/pkg/api/hc-service/disk"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // DiskSvc ...
@@ -60,60 +57,40 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 
 	diskSize := int64(req.DiskSize)
 	opt := &disk.AwsDiskCreateOption{
-		Region:   req.Region,
-		Zone:     req.Zone,
-		DiskType: &req.DiskType,
-		DiskSize: diskSize,
+		Region:    req.Region,
+		Zone:      req.Zone,
+		DiskType:  &req.DiskType,
+		DiskSize:  diskSize,
+		DiskCount: converter.ValToPtr(uint64(req.DiskCount)),
 	}
 	result, err := client.CreateDisk(cts.Kit, opt)
 	if err != nil {
+		logs.Errorf("create aws cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	if len(result.UnknownCloudIDs) > 0 {
-		logs.Errorf("disk(%v) is unknown, rid: %s", result.UnknownCloudIDs, cts.Kit.Rid)
+	respData := &proto.BatchCreateResult{
+		UnknownCloudIDs: result.UnknownCloudIDs,
+		SuccessCloudIDs: result.SuccessCloudIDs,
+		FailedCloudIDs:  result.FailedCloudIDs,
+		FailedMessage:   result.FailedMessage,
 	}
 
-	cloudIDs := result.SuccessCloudIDs
+	if len(result.SuccessCloudIDs) == 0 {
+		return respData, nil
+	}
 
-	_, err = syncdisk.SyncAwsDisk(
-		cts.Kit,
-		&syncdisk.SyncAwsDiskOption{
-			AccountID: req.AccountID,
-			Region:    req.Region,
-			CloudIDs:  cloudIDs,
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	syncOpt := &syncdisk.SyncAwsDiskOption{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  result.SuccessCloudIDs,
+	}
+	_, err = syncdisk.SyncAwsDisk(cts.Kit, syncOpt, svc.Adaptor, svc.DataCli)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := svc.DataCli.Global.ListDisk(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.DiskListReq{Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "cloud_id",
-					Op:    filter.In.Factory(),
-					Value: cloudIDs,
-				}, &filter.AtomRule{
-					Field: "vendor",
-					Op:    filter.Equal.Factory(),
-					Value: string(enumor.Aws),
-				},
-			},
-		}, Page: &core.BasePage{Limit: uint(len(cloudIDs))}, Fields: []string{"id"}},
-	)
-
-	diskIDs := make([]string, len(cloudIDs))
-	for idx, diskData := range resp.Details {
-		diskIDs[idx] = diskData.ID
-	}
-	return &core.BatchCreateResult{IDs: diskIDs}, nil
+	return respData, nil
 }
 
 // DeleteDisk ...

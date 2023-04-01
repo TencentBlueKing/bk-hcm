@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
 )
 
 // DiskBaseCreateReq 云盘基础请求数据
@@ -78,4 +79,18 @@ type DiskDetachReq struct {
 // Validate ...
 func (req *DiskDetachReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// BatchCreateResult ...
+type BatchCreateResult struct {
+	UnknownCloudIDs []string `json:"unknown_cloud_ids"`
+	SuccessCloudIDs []string `json:"success_cloud_ids"`
+	FailedCloudIDs  []string `json:"failed_cloud_ids"`
+	FailedMessage   string   `json:"failed_message"`
+}
+
+// BatchCreateResp ...
+type BatchCreateResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *BatchCreateResult `json:"data"`
 }

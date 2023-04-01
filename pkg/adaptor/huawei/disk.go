@@ -46,6 +46,10 @@ func (h *HuaWei) CreateDisk(kt *kit.Kit, opt *disk.HuaWeiDiskCreateOption) (*pol
 		return nil, err
 	}
 
+	if resp.VolumeIds == nil || len(*resp.VolumeIds) == 0 {
+		return nil, fmt.Errorf("create disk return volume_ids is empty, orderID: %v", converter.ValToPtr(resp.OrderId))
+	}
+
 	respPoller := poller.Poller[*HuaWei, []model.VolumeDetail, poller.BaseDoneResult]{
 		Handler: &createDiskPollingHandler{region: opt.Region},
 	}
@@ -230,6 +234,10 @@ func (h *createDiskPollingHandler) Poll(
 	result, err := client.ListDisk(kt, &disk.HuaWeiDiskListOption{Region: h.region, CloudIDs: cIDs})
 	if err != nil {
 		return nil, err
+	}
+
+	if len(result) != len(cloudIDs) {
+		return nil, fmt.Errorf("query cloudID count: %d, but return %d", len(cloudIDs), len(result))
 	}
 
 	return result, nil

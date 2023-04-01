@@ -139,7 +139,6 @@ func (req *AzureDiskCreateReq) Validate() error {
 type AwsDiskCreateReq struct {
 	AccountID string  `json:"account_id" validate:"required"`
 	BkBizID   int64   `json:"bk_biz_id" validate:"required,min=1"`
-	DiskName  string  `json:"disk_name" validate:"required"`
 	Region    string  `json:"region" validate:"required"`
 	Zone      string  `json:"zone" validate:"required"`
 	DiskType  string  `json:"disk_type" validate:"required"`

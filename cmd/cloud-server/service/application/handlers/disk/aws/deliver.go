@@ -20,38 +20,22 @@
 package aws
 
 import (
-	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	"hcm/cmd/cloud-server/service/application/handlers/disk/logics"
 	hcproto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/enumor"
 )
 
 // Deliver ...
-func (a *ApplicationOfCreateAwsDisk) Deliver() (
-	status enumor.ApplicationStatus,
-	deliverDetail map[string]interface{},
-	err error,
-) {
-	resp, err := a.Client.HCService().Aws.Disk.CreateDisk(a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(), a.toHcProtoCreateReq())
+func (a *ApplicationOfCreateAwsDisk) Deliver() (status enumor.ApplicationStatus,
+	deliverDetail map[string]interface{}, err error) {
+
+	result, err := a.Client.HCService().Aws.Disk.CreateDisk(a.Cts.Kit.Ctx, a.Cts.Kit.Header(), a.toHcProtoCreateReq())
 	if err != nil {
-		status = enumor.DeliverError
-		deliverDetail["error"] = err
-		return
+		return enumor.DeliverError, map[string]interface{}{"error": err}, err
 	}
 
-	deliverDetail["disk_ids"] = resp.IDs
-
-	status = enumor.Completed
-	_, err = a.Client.DataService().Global.BatchUpdateDisk(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		&dataproto.DiskBatchUpdateReq{IDs: resp.IDs, BkBizID: uint64(a.req.BkBizID)},
-	)
-	if err != nil {
-		status = enumor.DeliverError
-		deliverDetail["error"] = err
-	}
-	return
+	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, uint32(a.req.DiskCount),
+		a.req.BkBizID)
 }
 
 // toHcProtoCreateReq ...
@@ -60,7 +44,6 @@ func (a *ApplicationOfCreateAwsDisk) toHcProtoCreateReq() *hcproto.AwsDiskCreate
 	return &hcproto.AwsDiskCreateReq{
 		DiskBaseCreateReq: &hcproto.DiskBaseCreateReq{
 			AccountID: req.AccountID,
-			DiskName:  &req.DiskName,
 			Region:    req.Region,
 			Zone:      req.Zone,
 			DiskSize:  uint64(req.DiskSize),

@@ -70,11 +70,7 @@ func (a *ApplicationOfCreateAzureDisk) RenderItsmForm() (string, error) {
 	formItems = append(formItems, formItem{Label: "云地域", Value: regionInfo.Name})
 
 	// 可用区
-	zoneInfo, err := a.GetZone(a.Vendor(), req.Region, req.Zone)
-	if err != nil {
-		return "", err
-	}
-	formItems = append(formItems, formItem{Label: "可用区", Value: zoneInfo.Name})
+	formItems = append(formItems, formItem{Label: "可用区", Value: req.Zone})
 
 	diskItems := []formItem{
 		{Label: "云硬盘类型", Value: DiskTypeValue[req.DiskType]},
