@@ -529,6 +529,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '内网IP地址',
       field: 'internal_ip',
+      render({ data }: any) {
+        return data.private_ipv4 || data.private_ipv6 || '--';
+      },
     },
     {
       label: '关联的公网IP地址',

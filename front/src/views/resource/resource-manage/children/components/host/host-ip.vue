@@ -370,9 +370,7 @@ watch(
     quick-close
     :title="`主机（${ data.id }）绑定弹性IP`"
     :is-show="showBind"
-    :is-loadng="isBinding"
     @closed="handleToggleShowBind(false)"
-    @confirm="handleConfirmBind"
   >
     <template v-if="needNetwork">
       <span class="bind-title">选择网络接口</span>
@@ -423,6 +421,12 @@ watch(
         prop="public_ip"
       />
     </bk-table>
+    <template #footer>
+      <section class="bk-dialog-footer">
+        <bk-button theme="primary" :loading="isBinding" @click="handleConfirmBind">确定</bk-button>
+        <bk-button class="bk-dialog-cancel" :disabled="isBinding" @click="handleToggleShowBind(false)">取消</bk-button>
+      </section>
+    </template>
   </bk-dialog>
 </template>
 
