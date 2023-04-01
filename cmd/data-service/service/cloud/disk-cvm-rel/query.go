@@ -131,12 +131,25 @@ func (svc *relSvc) ListDiskWithoutCvm(cts *rest.Contexts) (interface{}, error) {
 	details := make([]diskcvmrel.RelWithDisk, len(result.Details))
 	for index, one := range result.Details {
 		details[index] = diskcvmrel.RelWithDisk{
-			Disk: disk.DiskModel{
-				ID:       one.ID,
-				CloudID:  one.CloudID,
-				Name:     one.Name,
-				DiskType: one.DiskType,
-				DiskSize: one.DiskSize,
+			DiskModel: disk.DiskModel{
+				ID:            one.ID,
+				Vendor:        one.Vendor,
+				AccountID:     one.AccountID,
+				CloudID:       one.CloudID,
+				BkBizID:       one.BkBizID,
+				Name:          one.Name,
+				Region:        one.Region,
+				Zone:          one.Zone,
+				DiskSize:      one.DiskSize,
+				DiskType:      one.DiskType,
+				Status:        one.Status,
+				RecycleStatus: one.RecycleStatus,
+				IsSystemDisk:  one.IsSystemDisk,
+				Memo:          one.Memo,
+				Creator:       one.Creator,
+				Reviser:       one.Reviser,
+				CreatedAt:     one.CreatedAt,
+				UpdatedAt:     one.UpdatedAt,
 			},
 			RelCreator:   one.RelCreator,
 			RelCreatedAt: one.RelCreatedAt,

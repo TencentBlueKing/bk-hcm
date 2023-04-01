@@ -249,11 +249,21 @@ func (svc *relSvc) ListEipWithoutCvm(cts *rest.Contexts) (interface{}, error) {
 	details := make([]eipcvmrel.RelWithEip, len(result.Details))
 	for index, one := range result.Details {
 		details[index] = eipcvmrel.RelWithEip{
-			Eip: eip.EipModel{
-				ID:       one.ID,
-				CloudID:  one.CloudID,
-				Name:     one.Name,
-				PublicIp: one.PublicIp,
+			EipModel: eip.EipModel{
+				ID:        one.ID,
+				Vendor:    one.Vendor,
+				AccountID: one.AccountID,
+				CloudID:   one.CloudID,
+				BkBizID:   one.BkBizID,
+				Name:      one.Name,
+				Region:    one.Region,
+				Status:    one.Status,
+				PublicIp:  one.PublicIp,
+				PrivateIp: one.PrivateIp,
+				Creator:   one.Creator,
+				Reviser:   one.Reviser,
+				CreatedAt: one.CreatedAt,
+				UpdatedAt: one.UpdatedAt,
 			},
 			RelCreator:   one.RelCreator,
 			RelCreatedAt: one.RelCreatedAt,

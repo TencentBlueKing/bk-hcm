@@ -36,7 +36,7 @@ type RelWithCvm struct {
 
 // RelWithDisk ...
 type RelWithDisk struct {
-	Disk         disk.DiskModel `json:",inline"`
-	RelCreator   *string        `json:"rel_creator"`
-	RelCreatedAt *time.Time     `json:"rel_created_at"`
+	disk.DiskModel `json:",inline"`
+	RelCreator     *string    `json:"rel_creator"`
+	RelCreatedAt   *time.Time `json:"rel_created_at"`
 }

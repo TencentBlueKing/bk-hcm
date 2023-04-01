@@ -27,7 +27,7 @@ import (
 
 // RelWithEip ...
 type RelWithEip struct {
-	Eip          eip.EipModel `json:",inline"`
-	RelCreator   *string      `json:"rel_creator"`
-	RelCreatedAt *time.Time   `json:"rel_created_at"`
+	eip.EipModel `json:",inline"`
+	RelCreator   *string    `json:"rel_creator"`
+	RelCreatedAt *time.Time `json:"rel_created_at"`
 }
