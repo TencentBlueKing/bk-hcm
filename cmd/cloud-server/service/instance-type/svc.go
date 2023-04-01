@@ -20,6 +20,9 @@
 package instancetype
 
 import (
+	"fmt"
+	"strings"
+
 	proto "hcm/pkg/api/cloud-server/instance-type"
 	hcproto "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/enumor"
@@ -83,11 +86,20 @@ func (svc *instanceTypeSvc) ListForHuaWei(cts *rest.Contexts, req *proto.Instanc
 
 // ListForAzure ...
 func (svc *instanceTypeSvc) ListForAzure(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
-	return svc.client.HCService().Azure.InstanceType.List(
+	resp, err := svc.client.HCService().Azure.InstanceType.List(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&hcproto.AzureInstanceTypeListReq{AccountID: req.AccountID, Region: req.Region},
 	)
+	if err != nil {
+		if strings.Contains(err.Error(), "No registered resource provider found for location") {
+			return nil, fmt.Errorf("no instance type found for %s region", req.Region)
+		}
+
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 // ListForGcp ...
