@@ -104,11 +104,6 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	manager := datasvc.EipCvmRelManager{CvmID: req.CvmID, EipID: req.EipID, DataCli: svc.DataCli}
-	if err = manager.Create(cts.Kit); err != nil {
-		return nil, err
-	}
-
 	_, err = synceip.SyncAzureEip(
 		cts.Kit,
 		&synceip.SyncAzureEipOption{
@@ -198,13 +193,6 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 				opt.ResourceGroupName, opt.CloudEipID, err)
 			return nil, err
 		}
-	}
-
-	manager := datasvc.EipCvmRelManager{CvmID: req.CvmID, EipID: req.EipID, DataCli: svc.DataCli}
-	if err = manager.Delete(cts.Kit); err != nil {
-		logs.Errorf("update azure eip cvm rel db failed, eipID: %s, cvmID: %s, err: %+v",
-			req.EipID, req.CvmID, err)
-		return nil, err
 	}
 
 	_, err = synceip.SyncAzureEip(cts.Kit,

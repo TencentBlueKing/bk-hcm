@@ -99,12 +99,6 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	manager := datasvc.EipCvmRelManager{CvmID: req.CvmID, EipID: req.EipID, DataCli: svc.DataCli}
-	err = manager.Create(cts.Kit)
-	if err != nil {
-		return nil, err
-	}
-
 	_, err = synceip.SyncHuaWeiEip(
 		cts.Kit,
 		&synceip.SyncHuaWeiEipOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudEipID}},
