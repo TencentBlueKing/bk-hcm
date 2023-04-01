@@ -4,12 +4,48 @@ import {
   ref,
   watch,
 } from 'vue';
+import {
+  useRoute,
+  useRouter
+} from 'vue-router';
 import DetailList from '../../../common/info/detail-info';
 import DetailTab from '../../../common/tab/detail-tab';
 
 const props = defineProps({
   detail: Object
 });
+
+const route = useRoute();
+const router = useRouter();
+
+const txtBtn = (id: string, type: string) => {
+  const routeInfo: any = {
+    query: {
+      id,
+      type: props.detail.vendor,
+    },
+  };
+  // 业务下
+  if (route.path.includes('business')) {
+    Object.assign(
+      routeInfo,
+      {
+        name: `${type}BusinessDetail`,
+      },
+    );
+  } else {
+    Object.assign(
+      routeInfo,
+      {
+        name: 'resourceDetail',
+        params: {
+          type,
+        },
+      },
+    );
+  }
+  router.push(routeInfo);
+}
 
 const baseTabs = [
   {
@@ -35,7 +71,6 @@ const huaweiTabs = [
     value: 'detail',
   },
 ];
-
 const baseInfo = ref([
   {
     name: 'EIP名称',
@@ -81,8 +116,7 @@ const baseInfo = ref([
     prop: 'created_at',
   },
 ]);
-
-const bindInfo = ref([
+const bindInfo = ref<any>([
   {
     name: '绑定的资源类型',
     prop: 'instance_type',
@@ -96,9 +130,7 @@ const bindInfo = ref([
     prop: 'status',
   },
 ]);
-
 const otherInfo = ref([]);
-
 const bandInfo = [
   {
     name: '带宽名称',
@@ -228,10 +260,16 @@ watch(
           {
             name: '绑定资源实例',
             prop: 'cvm_id',
+            txtBtn (id: string) {
+              return txtBtn(id, 'host');
+            }
           },
           {
             name: '已绑定网卡',
             prop: 'instance_id',
+            txtBtn (id: string) {
+              return txtBtn(id, 'network-interface');
+            }
           }
         ])
         break;

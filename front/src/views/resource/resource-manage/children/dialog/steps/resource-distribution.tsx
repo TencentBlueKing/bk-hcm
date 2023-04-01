@@ -296,8 +296,7 @@ export default defineComponent({
       resourceStore
         .bindVPCWithCloudArea(bindCloudAreaData)
         .then(() => {
-          props
-            .data
+          dataList
             .filter((item: any) => item.bk_cloud_id <= -1 || !item.bk_cloud_id)
             .forEach((item: any) => {
               item.bk_cloud_id = item.temp_bk_cloud_id;
