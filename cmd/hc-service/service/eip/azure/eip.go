@@ -191,40 +191,42 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	err = client.DisassociateEip(cts.Kit, opt)
-	if err != nil {
-		return nil, err
+	if opt.NetworkInterface != nil {
+		err = client.DisassociateEip(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("azure cloud disassociate eip failed, rgName: %s, cloudEipID: %s, err: %+v",
+				opt.ResourceGroupName, opt.CloudEipID, err)
+			return nil, err
+		}
 	}
 
 	manager := datasvc.EipCvmRelManager{CvmID: req.CvmID, EipID: req.EipID, DataCli: svc.DataCli}
 	if err = manager.Delete(cts.Kit); err != nil {
+		logs.Errorf("update azure eip cvm rel db failed, eipID: %s, cvmID: %s, err: %+v",
+			req.EipID, req.CvmID, err)
 		return nil, err
 	}
 
-	_, err = synceip.SyncAzureEip(
-		cts.Kit,
+	_, err = synceip.SyncAzureEip(cts.Kit,
 		&synceip.SyncAzureEipOption{
 			AccountID:         req.AccountID,
 			ResourceGroupName: opt.ResourceGroupName,
 			CloudIDs:          []string{opt.CloudEipID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
+		}, svc.Adaptor, svc.DataCli,
 	)
 	if err != nil {
-		logs.Errorf("SyncAzureEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("azure disassociate eip sync eip failed, cloudEipID: %s, rgName: %s, err: %v, rid: %s",
+			opt.CloudEipID, opt.ResourceGroupName, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	cvmData, err := svc.DataCli.Gcp.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), req.CvmID)
 	if err != nil {
+		logs.Errorf("azure disassociate eip get cvm failed, cvmID: %s, err: %+v", req.CvmID, err)
 		return nil, err
 	}
 
-	_, err = cvm.SyncAzureCvmWithRelResource(
-		cts.Kit,
-		svc.Adaptor,
-		svc.DataCli,
+	_, err = cvm.SyncAzureCvmWithRelResource(cts.Kit, svc.Adaptor, svc.DataCli,
 		&cvm.SyncAzureCvmOption{
 			AccountID:         req.AccountID,
 			ResourceGroupName: opt.ResourceGroupName,
@@ -232,16 +234,8 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		},
 	)
 	if err != nil {
-		logs.Errorf("SyncAzureCvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	networkInterface, err := svc.DataCli.Azure.NetworkInterface.Get(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		req.NetworkInterfaceID,
-	)
-	if err != nil {
+		logs.Errorf("azure disassociate eip sync azure cvm rel failed, cloudCvmID: %s, rgName: %s, err: %v, "+
+			"rid: %s", cvmData.CloudID, opt.ResourceGroupName, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -250,13 +244,12 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		&hcservice.AzureNetworkInterfaceSyncReq{
 			AccountID:         req.AccountID,
 			ResourceGroupName: opt.ResourceGroupName,
-			CloudIDs:          []string{networkInterface.CloudID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
+			CloudIDs:          []string{opt.CloudNetworkInterfaceID},
+		}, svc.Adaptor, svc.DataCli,
 	)
 	if err != nil {
-		logs.Errorf("AzureNetworkInterfaceSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("azure disassociate eip sync networkinterface failed, cloudNetworkID: %s, rgName: %s, "+
+			"err: %v, rid: %s", opt.CloudNetworkInterfaceID, opt.ResourceGroupName, err, cts.Kit.Rid)
 		return nil, err
 	}
 	return nil, nil
@@ -361,19 +354,24 @@ func (svc *EipSvc) makeEipAssociateOption(
 	if err != nil {
 		return nil, err
 	}
-	networkInterfaces, err := cli.ListRawNetworkInterfaceByIDs(
-		kt,
-		&core.AzureListByIDOption{CloudIDs: []string{networkInterface.CloudID}},
-	)
+
+	listNIReq := &core.AzureListByIDOption{
+		CloudIDs:          []string{networkInterface.CloudID},
+		ResourceGroupName: eipData.Extension.ResourceGroupName,
+	}
+	networkInterfaces, err := cli.ListRawNetworkInterfaceByIDs(kt, listNIReq)
 	if err != nil {
 		return nil, err
 	}
 
-	return &eip.AzureEipAssociateOption{
+	eipOpt := &eip.AzureEipAssociateOption{
 		ResourceGroupName: eipData.Extension.ResourceGroupName,
 		CloudEipID:        eipData.CloudID,
-		NetworkInterface:  networkInterfaces[0],
-	}, nil
+	}
+	if len(networkInterfaces) > 0 {
+		eipOpt.NetworkInterface = networkInterfaces[0]
+	}
+	return eipOpt, nil
 }
 
 func (svc *EipSvc) makeEipDisassociateOption(
@@ -385,26 +383,38 @@ func (svc *EipSvc) makeEipDisassociateOption(
 
 	eipData, err := dataCli.RetrieveEip(kt.Ctx, kt.Header(), req.EipID)
 	if err != nil {
+		logs.Errorf("azure eip make disassociate option get eip info failed, eipID: %s, err: %+v",
+			req.EipID, err)
 		return nil, err
 	}
 
 	networkInterface, err := dataCli.NetworkInterface.Get(kt.Ctx, kt.Header(), req.NetworkInterfaceID)
 	if err != nil {
-		return nil, err
-	}
-	networkInterfaces, err := cli.ListRawNetworkInterfaceByIDs(
-		kt,
-		&core.AzureListByIDOption{CloudIDs: []string{networkInterface.CloudID}},
-	)
-	if err != nil {
+		logs.Errorf("azure eip make disassociate option get networkinterface failed, req: %+v, err: %+v",
+			req, err)
 		return nil, err
 	}
 
-	return &eip.AzureEipDisassociateOption{
+	listNIReq := &core.AzureListByIDOption{
+		CloudIDs:          []string{networkInterface.CloudID},
 		ResourceGroupName: eipData.Extension.ResourceGroupName,
-		CloudEipID:        eipData.CloudID,
-		NetworkInterface:  networkInterfaces[0],
-	}, nil
+	}
+	networkInterfaces, err := cli.ListRawNetworkInterfaceByIDs(kt, listNIReq)
+	if err != nil {
+		logs.Errorf("azure eip make disassociate option get networkinterface cloud failed, req: %+v, "+
+			"listNIReq: %+v, err: %+v", req, listNIReq, err)
+		return nil, err
+	}
+
+	eipOpt := &eip.AzureEipDisassociateOption{
+		ResourceGroupName:       eipData.Extension.ResourceGroupName,
+		CloudEipID:              eipData.CloudID,
+		CloudNetworkInterfaceID: networkInterface.CloudID,
+	}
+	if len(networkInterfaces) > 0 {
+		eipOpt.NetworkInterface = networkInterfaces[0]
+	}
+	return eipOpt, nil
 }
 
 func (svc *EipSvc) makeEipCreateOption(req *proto.AzureEipCreateReq) (*eip.AzureEipCreateOption, error) {

@@ -166,6 +166,9 @@ func (a *Azure) DisassociateEip(kt *kit.Kit, opt *eip.AzureEipDisassociateOption
 	if err != nil {
 		return err
 	}
+	if params == nil {
+		return nil
+	}
 
 	client, err := a.clientSet.networkInterfaceClient()
 	if err != nil {
@@ -180,7 +183,8 @@ func (a *Azure) DisassociateEip(kt *kit.Kit, opt *eip.AzureEipDisassociateOption
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to finish the request:  %v", err)
+		return fmt.Errorf("azure disassociate eip failed to finish the request, eipID: %s, err: %v",
+			opt.CloudEipID, err)
 	}
 	_, err = pollerResp.PollUntilDone(kt.Ctx, nil)
 

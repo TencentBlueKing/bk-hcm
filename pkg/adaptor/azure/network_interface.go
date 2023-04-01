@@ -122,16 +122,21 @@ func (a *Azure) ListRawNetworkInterfaceByIDs(kt *kit.Kit, opt *core.AzureListByI
 		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
 	}
 
+	tmpCloudIDMap := converter.StringSliceToMap(opt.CloudIDs)
 	networks := make([]*armnetwork.Interface, 0)
 	pager := client.NewListPager(opt.ResourceGroupName, nil)
 	for pager.More() {
 		nextResult, err := pager.NextPage(kt.Ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to advance page: %v", err)
+			return nil, fmt.Errorf("list raw network interface failed to advance page: %v", err)
 		}
 
 		for _, one := range nextResult.Value {
-			networks = append(networks, one)
+			one.ID = converter.ValToPtr(converter.StrToLowerNoSpaceStr(*one.ID))
+			if _, exist := tmpCloudIDMap[*one.ID]; exist {
+				networks = append(networks, one)
+				delete(tmpCloudIDMap, *one.ID)
+			}
 		}
 	}
 
@@ -201,6 +206,7 @@ func (a *Azure) getIpConfigExtensionData(kt *kit.Kit, data *armnetwork.Interface
 		return
 	}
 
+	isIPv4, isIPv6 := false, false
 	tmpArr := make([]*coreni.InterfaceIPConfiguration, 0)
 	for _, item := range data.Properties.IPConfigurations {
 		tmpIP := &coreni.InterfaceIPConfiguration{
@@ -251,13 +257,21 @@ func (a *Azure) getIpConfigExtensionData(kt *kit.Kit, data *armnetwork.Interface
 					if converter.PtrToVal(tmpPublicIPAddress.Properties.PublicIPAddressVersion) ==
 						armnetwork.IPVersionIPv4 {
 						v.PublicIPv4 = append(v.PublicIPv4, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
+						isIPv4 = true
 					} else {
 						v.PublicIPv6 = append(v.PublicIPv6, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
+						isIPv6 = true
 					}
 				}
 			}
 		}
 		tmpArr = append(tmpArr, tmpIP)
+	}
+	if !isIPv4 {
+		v.PublicIPv4 = []string{}
+	}
+	if !isIPv6 {
+		v.PublicIPv6 = []string{}
 	}
 	v.Extension.IPConfigurations = tmpArr
 }

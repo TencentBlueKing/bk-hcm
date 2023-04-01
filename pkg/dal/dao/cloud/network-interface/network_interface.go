@@ -156,7 +156,6 @@ func (n NetworkInterfaceDao) Update(kt *kit.Kit, filterExpr *filter.Expression,
 		if effected == 0 {
 			logs.ErrorJson("update network interface, but record not found, filter: %v, rid: %v",
 				filterExpr, kt.Rid)
-			return nil, errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
 		}
 
 		return nil, nil

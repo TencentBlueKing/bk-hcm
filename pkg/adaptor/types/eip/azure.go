@@ -120,9 +120,10 @@ func (opt *AzureEipAssociateOption) ToInterfaceParams() (*armnetwork.Interface, 
 
 // AzureEipDisassociateOption ...
 type AzureEipDisassociateOption struct {
-	ResourceGroupName string                `json:"resource_group_name" validate:"required"`
-	CloudEipID        string                `json:"cloud_eip_id" validate:"required"`
-	NetworkInterface  *armnetwork.Interface `json:",inline"  validate:"required"`
+	ResourceGroupName       string                `json:"resource_group_name" validate:"required"`
+	CloudEipID              string                `json:"cloud_eip_id" validate:"required"`
+	NetworkInterface        *armnetwork.Interface `json:",inline"  validate:"required"`
+	CloudNetworkInterfaceID string                `json:"cloud_network_interface_id" validate:"required"`
 }
 
 // Validate ...
@@ -138,8 +139,18 @@ func (opt *AzureEipDisassociateOption) ToInterfaceParams() (*armnetwork.Interfac
 
 	params := opt.NetworkInterface
 
-	firstIpConfig := params.Properties.IPConfigurations[0]
-	firstIpConfig.Properties.PublicIPAddress = nil
+	ipUpdate := false
+	if params.Properties != nil {
+		for _, item := range params.Properties.IPConfigurations {
+			if item.Properties != nil && item.Properties.PublicIPAddress != nil {
+				item.Properties.PublicIPAddress = nil
+				ipUpdate = true
+			}
+		}
+	}
+	if !ipUpdate {
+		return nil, nil
+	}
 
 	return params, nil
 }
