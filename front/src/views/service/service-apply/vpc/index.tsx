@@ -69,9 +69,9 @@ export default defineComponent({
             property: 'ipv4_cidr',
             content: () => <ComposeFormItem>
               <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.ipv4_cidr[0]} class="w110" suffix="." />
-              <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.ipv4_cidr[1]} class="w110" suffix="." />
-              <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.ipv4_cidr[2]} class="w110" suffix="." />
-              <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.ipv4_cidr[3]} class="w110" suffix="/" />
+              <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.ipv4_cidr[1]} class="w110" suffix="." />
+              <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.ipv4_cidr[2]} class="w110" suffix="." />
+              <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.ipv4_cidr[3]} class="w110" suffix="/" />
               <Input type='number' placeholder='1-32' min={1} max={32} v-model={formData.ipv4_cidr[4]} class="w110" />
             </ComposeFormItem>,
           },
@@ -152,9 +152,9 @@ export default defineComponent({
             required: true,
             content: () => <ComposeFormItem>
               <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.subnet.ipv4_cidr[0]} class="w110" suffix="." />
-              <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.subnet.ipv4_cidr[1]} class="w110" suffix="." />
-              <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.subnet.ipv4_cidr[2]} class="w110" suffix="." />
-              <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.subnet.ipv4_cidr[3]} class="w110" suffix="/" />
+              <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[1]} class="w110" suffix="." />
+              <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[2]} class="w110" suffix="." />
+              <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[3]} class="w110" suffix="/" />
               <Input type='number' placeholder='1-32' min={1} max={32} v-model={formData.subnet.ipv4_cidr[4]} class="w110" />
             </ComposeFormItem>,
           },
@@ -164,7 +164,10 @@ export default defineComponent({
             required: true,
             property: 'subnet.zone',
             description: '同一私有网络下可以有不同可用区的子网，同一私有网络下不同可用区的子网默认可以内网互通',
-            content: () => <ZoneSelector v-model={formData.subnet.zone} vendor={cond.vendor} region={cond.region}  />,
+            content: () => <ZoneSelector
+              v-model={formData.subnet.zone}
+              vendor={cond.vendor}
+              region={cond.region} />,
           },
           {
             label: '子网IPv6网段',

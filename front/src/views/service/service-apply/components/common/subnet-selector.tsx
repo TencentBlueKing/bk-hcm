@@ -14,6 +14,7 @@ export default defineComponent({
     modelValue: String as PropType<string>,
     bizId: Number as PropType<number>,
     vpcId: String as PropType<string>,
+    vendor: String as PropType<string>,
     region: String as PropType<string>,
   },
   emits: ['update:modelValue'],
@@ -30,7 +31,12 @@ export default defineComponent({
       },
     });
 
-    watch([() => props.bizId, () => props.region, () => props.vpcId], async ([bizId, region, vpcId]) => {
+    watch([
+      () => props.bizId,
+      () => props.region,
+      () => props.vendor,
+      () => props.vpcId
+    ], async ([bizId, region, vendor, vpcId]) => {
       if (!bizId || !vpcId) {
         list.value = [];
         return;
@@ -49,7 +55,7 @@ export default defineComponent({
         ],
       };
 
-      if (region === VendorEnum.GCP) {
+      if (vendor === VendorEnum.GCP) {
         filter.rules.push({
           field: 'region',
           op: QueryRuleOPEnum.EQ,
@@ -57,8 +63,8 @@ export default defineComponent({
         })
       }
 
-      // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizId}/subnets/list`, {
-      const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/list`, {
+      const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizId}/subnets/list`, {
+      // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/list`, {
         filter,
         page: {
           count: false,

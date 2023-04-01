@@ -4,6 +4,7 @@ import { Tag, Loading } from 'bkui-vue';
 import { VendorEnum } from '@/common/constant';
 
 import './zone-selector.scss';
+import { QueryFilterType, QueryRuleOPEnum } from '@/typings';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -15,7 +16,7 @@ export default defineComponent({
     multiple: Boolean as PropType<boolean>,
   },
   emits: ['update:modelValue', 'change'],
-  setup(props, { emit }) {
+  setup(props, { emit, expose }) {
     const list = ref([]);
     const loading = ref(false);
 
@@ -28,21 +29,58 @@ export default defineComponent({
       },
     });
 
-    const isEmptyCond = computed(() => !props.vendor.length || !props.region.length);
+    const isEmptyCond = computed<boolean>(() => !props.vendor.length || !props.region.length);
 
     watchEffect(async () => {
-      if (props.vendor === VendorEnum.AZURE) {
-        list.value = [
-          { name: '1', display_name: 'Zone1' },
-          { name: '2', display_name: 'Zone2' },
-          { name: '3', display_name: 'Zone3' },
-        ];
-        return;
+      const filter: QueryFilterType = {
+        op: 'and',
+        rules: [],
+      };
+
+      switch (props.vendor) {
+        case VendorEnum.TCLOUD:
+          filter.rules = [
+            {
+              field: 'vendor',
+              op: QueryRuleOPEnum.EQ,
+              value: props.vendor,
+            },
+            {
+              field: 'state',
+              op: QueryRuleOPEnum.EQ,
+              value: 'AVAILABLE',
+            },
+          ];
+          break;
+        case VendorEnum.AWS:
+          filter.rules = [
+            {
+              field: 'vendor',
+              op: QueryRuleOPEnum.EQ,
+              value: props.vendor,
+            },
+            {
+              field: 'state',
+              op: QueryRuleOPEnum.EQ,
+              value: 'available',
+            },
+          ];
+          break;
+        case VendorEnum.GCP:
+          filter.rules = [
+            {
+              field: 'state',
+              op: QueryRuleOPEnum.EQ,
+              value: 'UP',
+            },
+          ]
+          break;
       }
 
       if (!isEmptyCond.value) {
         loading.value = true;
         const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/regions/${props.region}/zones/list`, {
+          filter,
           page: {
             count: false,
             start: 0,
@@ -69,6 +107,10 @@ export default defineComponent({
       emit('change', name, selected.value);
     };
 
+    expose({
+      list
+    })
+
     return () => <>
       {
         !loading.value
@@ -86,7 +128,7 @@ export default defineComponent({
                 {display_name ?? name}
               </Tag>
             )),
-            !list.value.length && <span>暂无可用区</span>,
+            !list.value.length && <span>该云地域无可用区可选择</span>,
           ]
           : <span style={{ color: '#63656e' }}>请先选择云厂商及云地域</span>
         )

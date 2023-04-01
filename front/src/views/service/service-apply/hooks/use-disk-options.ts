@@ -58,7 +58,7 @@ export default (cond: Cond, formData: IDiskFormData) => {
         },
         {
           id: 'io1',
-          name: 'Provisioned IOPS SSD(预置 IOPS SSD io1):',
+          name: 'Provisioned IOPS SSD(预置 IOPS SSD io1',
         },
         {
           id: 'io2',
@@ -66,7 +66,7 @@ export default (cond: Cond, formData: IDiskFormData) => {
         },
         {
           id: 'st1',
-          name: 'Throughput Optimized HDD(吞吐优化型 HDD):',
+          name: 'Throughput Optimized HDD(吞吐优化型 HDD)',
         },
         {
           id: 'sc1',

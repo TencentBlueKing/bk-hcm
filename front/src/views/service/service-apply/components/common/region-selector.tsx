@@ -73,14 +73,47 @@ export default defineComponent({
           dataNameKey = 'region_id';
           break;
         }
-        case VendorEnum.TCLOUD:
-        case VendorEnum.AWS:
+        case VendorEnum.TCLOUD: {
+          filter.rules = [
+            {
+              field: 'vendor',
+              op: QueryRuleOPEnum.EQ,
+              value: vendor,
+            },
+            {
+              field: 'status',
+              op: QueryRuleOPEnum.EQ,
+              value: 'AVAILABLE',
+            },
+          ];
+          break;
+        }
+        case VendorEnum.AWS: {
+          filter.rules = [
+            {
+              field: 'vendor',
+              op: QueryRuleOPEnum.EQ,
+              value: vendor,
+            },
+            {
+              field: 'status',
+              op: QueryRuleOPEnum.EQ,
+              value: 'opt-in-not-required',
+            },
+          ];
+          break;
+        }
         case VendorEnum.GCP:
           filter.rules = [
             {
               field: 'vendor',
               op: QueryRuleOPEnum.EQ,
               value: vendor,
+            },
+            {
+              field: 'status',
+              op: QueryRuleOPEnum.EQ,
+              value: 'UP',
             },
           ];
           break;
@@ -98,12 +131,6 @@ export default defineComponent({
 
       const details = result?.data?.details ?? [];
       list.value = details
-        .filter((_item: any) => {
-          // if (item?.status) {
-          //   return item.status === 'AVAILABLE';
-          // }
-          return true;
-        })
         .map((item: any) => ({
           id: item[dataIdKey],
           name: item[dataNameKey],

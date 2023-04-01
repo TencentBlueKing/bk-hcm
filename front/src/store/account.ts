@@ -27,11 +27,11 @@ export const useAccountStore = defineStore({
      * @param {number} bizId
      * @return {*}
      */
-    async getAccountList(params: any, bizId?: number) {
+    async getAccountList(data: any, bizId?: number) {
       if (bizId > 0) {
-        return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/bizs/${bizId}`, params);
+        return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/bizs/${bizId}`, { params: data.params });
       }
-      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/list`, params);
+      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/list`, data);
     },
     /**
      * @description: 获取账号详情

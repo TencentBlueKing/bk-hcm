@@ -8,6 +8,7 @@ import type {
   // PlainObject,
   FilterType,
 } from '@/typings/resource';
+import { QueryFilterType } from '@/typings';
 
 const props = defineProps({
   bizId: Number as PropType<number>,
@@ -17,8 +18,10 @@ const props = defineProps({
       return { op: 'and', rules: [] };
     },
   },
+  type: String as PropType<string>,
+  mustBiz: Boolean as PropType<boolean>,
 });
-const emit = defineEmits(['input']);
+const emit = defineEmits(['input', 'change']);
 
 const attrs = useAttrs();
 
@@ -37,23 +40,33 @@ const selectedValue = computed({
 });
 
 const getAccoutList = async () => {
+  if (props.mustBiz && !props.bizId) {
+    return;
+  }
+
   if (loading.value === true) {
     return;
   }
 
   loading.value = true;
-  const res = await accountStore.getAccountList({
+  const data = {
     filter: props.filter,
     page: {
       start: accountPage.value,
       limit: 100,
-    },
-  }, props.bizId);
+    }
+  }
+  if (props.type) {
+    data.params = { account_type: props.type }
+  }
+  const res = await accountStore.getAccountList(data, props.bizId);
+
   accountPage.value += 1;
+
   if (props.bizId > 0) {
-    accountList.value.push(...res?.data || []);
+    accountList.value.push(...(res?.data || []));
   } else {
-    accountList.value.push(...res?.data?.details || []);
+    accountList.value.push(...(res?.data?.details || []));
   }
   loading.value = false;
 };
@@ -67,6 +80,11 @@ watch(() => props.bizId, (bizId) => {
   }
 });
 
+const handleChange = (val: string) => {
+  const data = accountList.value.find(item => item.id === val);
+  emit('change', data);
+};
+
 defineExpose({
   accountList,
 });
@@ -78,6 +96,7 @@ defineExpose({
     filterable
     @scroll-end="getAccoutList"
     :loading="loading"
+    @change="handleChange"
     v-bind="attrs"
   >
     <bk-option

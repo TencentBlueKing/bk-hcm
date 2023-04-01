@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import BusinessSelector from '@/components/business-selector/index.vue';
-// import BusinessSelector from './business-selector';
-// import AccountSelector from '@/components/account-selector/index.vue';
-import AccountSelector from './account-selector';
+import AccountSelector from '@/components/account-selector/index.vue';
 import RegionSelector from './region-selector';
 import ResourceGroupSelector from './resource-group-selector';
 import { CloudType } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { ref, PropType, computed } from 'vue';
+import { useAccountStore } from '@/store';
 
+const accountStore = useAccountStore();
 
 const props = defineProps({
   type: String as PropType<string>,
@@ -31,7 +31,8 @@ const vendorList = ref([]);
 
 const selectedBizId = computed({
   get() {
-    return props.bizId;
+    // 目前accountStore中的业务id会被置为0
+    return props.bizId || accountStore.bizs;
   },
   set(val) {
     emit('update:bizId', val);
@@ -102,7 +103,11 @@ const handleChangeAccount = (account: any) => {
     <div class="cond-item">
       <div class="cond-label">业务</div>
       <div class="cond-content">
-        <business-selector v-model="selectedBizId"></business-selector>
+        <business-selector
+          v-model="selectedBizId"
+          :authed="true"
+          :auto-select="true">
+        </business-selector>
       </div>
     </div>
     <div class="cond-item">
@@ -110,7 +115,9 @@ const handleChangeAccount = (account: any) => {
       <div class="cond-content">
         <account-selector
           v-model="selectedCloudAccountId"
+          :must-biz="true"
           :biz-id="selectedBizId"
+          :type="'resource'"
           @change="handleChangeAccount">
         </account-selector>
       </div>

@@ -12,6 +12,7 @@ import SecurityGroupSelector from '../components/common/security-group-selector'
 import CloudAreaName from '../components/common/cloud-area-name';
 import { Plus as PlusIcon, CloseLine as CloseLineIcon, EditLine as EditIcon } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
+import './index.scss';
 
 import type { IOption } from '@/typings/common';
 import type { IDiskOption } from '../hooks/use-cvm-form-data';
@@ -44,8 +45,14 @@ export default defineComponent({
       },
     });
 
+    const zoneSelectorRef = ref(null);
     const cloudId = ref(null);
     const vpcId = ref('');
+    const machineType = ref(null);
+
+    watch(cond, () => {
+      console.log(zoneSelectorRef.value);
+    })
 
     const handleCreateDataDisk = () => {
       const newRow: IDiskOption = getDataDiskDefaults();
@@ -87,6 +94,79 @@ export default defineComponent({
       vpcId.value = vpc.id
       resetFormItemData('cloud_subnet_id');
     };
+    const handleMachineTypeChange = (machine: any) => {
+      console.log(machine, 'machineType change');
+      machineType.value = machine
+      resetFormItemData('cloud_image_id');
+    };
+
+    const sysDiskSizeRules = computed(() => {
+      const rules = {
+        [VendorEnum.TCLOUD]: {
+          validator: (value: number) => {
+            return value >= 20 && value <= 1024 && value % 10 === 0
+          },
+          message: '20-1024GB且为10的倍数',
+          trigger: 'change',
+        },
+        [VendorEnum.HUAWEI]: {
+          validator: (value: number) => {
+            return value >= 40 && value <= 1024
+          },
+          message: '40-1024GB',
+          trigger: 'change',
+        },
+      };
+
+      return rules[cond.vendor] || {
+        validator: () => true,
+        message: ''
+      };
+    });
+
+    const dataDiskSizeRules = computed(() => {
+      const rules = {
+        [VendorEnum.TCLOUD]: {
+          validator: (value: number) => {
+            return value >= 20 && value <= 32000 && value % 10 === 0
+          },
+          message: '20-32,000GB且为10的倍数',
+          trigger: 'change',
+        },
+        [VendorEnum.HUAWEI]: {
+          validator: (value: number) => {
+            return value >= 40 && value <= 32768
+          },
+          message: '40-32,768GB',
+          trigger: 'change',
+        },
+      };
+
+      return rules[cond.vendor] || {
+        validator: () => true,
+        message: ''
+      };
+    });
+
+    const dataDiskCountRules = computed(() => {
+      const rules = {
+        [VendorEnum.TCLOUD]: {
+          min: 1,
+          max: 20,
+          trigger: 'change',
+        },
+        [VendorEnum.HUAWEI]: {
+          min: 1,
+          max: 23,
+          trigger: 'change',
+        },
+      };
+
+      return rules[cond.vendor] || {
+        min: 1,
+        max: Infinity,
+      };
+    });
 
     const submitDisabled = computed(() => isEmptyCond.value);
 
@@ -134,12 +214,13 @@ export default defineComponent({
         children: [
           {
             label: '可用区',
-            required: true,
+            required: cond.vendor === VendorEnum.AZURE ? zoneSelectorRef.value.list?.length > 0 : true,
             property: 'zone',
             rules: [{
               trigger: 'change',
             }],
             content: () => <ZoneSelector
+              ref={zoneSelectorRef}
               v-model={formData.zone}
               vendor={cond.vendor}
               region={cond.region}
@@ -170,14 +251,20 @@ export default defineComponent({
               accountId={cond.cloudAccountId}
               zone={formData.zone?.[0]}
               region={cond.region}
-              clearable={false} />,
+              clearable={false}
+              onChange={handleMachineTypeChange} />,
           },
           {
             label: '镜像',
             required: true,
             description: '',
             property: 'cloud_image_id',
-            content: () => <Imagelector v-model={formData.cloud_image_id} vendor={cond.vendor} region={cond.region} clearable={false} />,
+            content: () => <Imagelector
+              v-model={formData.cloud_image_id}
+              vendor={cond.vendor}
+              region={cond.region}
+              machineType={machineType.value}
+              clearable={false} />,
           },
         ],
       },
@@ -208,6 +295,7 @@ export default defineComponent({
               v-model={formData.cloud_subnet_id}
               bizId={cond.bizId}
               vpcId={vpcId.value}
+              vendor={cond.vendor}
               region={cond.region}
               clearable={false} />,
           },
@@ -263,14 +351,15 @@ export default defineComponent({
                 label: '大小',
                 required: true,
                 property: 'system_disk.disk_size_gb',
-                description: '容量大小限制：40-1024GB',
+                rules: [sysDiskSizeRules.value],
+                description: sysDiskSizeRules.value.message,
                 content: () => <Input type='number' v-model={formData.system_disk.disk_size_gb} suffix="GB"></Input>,
               },
             ],
           },
           {
             label: '数据盘',
-            description: '容量大小限制：10-32768GB',
+            tips: () => cond.vendor === VendorEnum.TCLOUD ? '增强型SSD云硬盘仅在部分可用区开放售卖，后续将逐步增加售卖可用区' : '',
             content: () => <div class="form-content-list">
               {
                 formData.data_disk.map((item: IDiskOption, index: number) => (
@@ -283,11 +372,18 @@ export default defineComponent({
                         }
                       </Select>
                     </FormItem>
-                    <FormItem label='大小' property={`data_disk[${index}].disk_size_gb`} min={10} max={32768}>
-                      <Input type='number' v-model={item.disk_size_gb} suffix="GB"></Input>
+                    <FormItem
+                      label='大小'
+                      property={`data_disk[${index}].disk_size_gb`}
+                      rules={[dataDiskSizeRules.value]}
+                      description={dataDiskSizeRules.value.message}
+                    >
+                      <Input type='number' style={{ width: '160px' }} v-model={item.disk_size_gb} suffix="GB"></Input>
                     </FormItem>
-                    <FormItem label='数量' property={`data_disk[${index}].disk_count`} min={1} max={20}>
-                      <Input style={{ width: '65px' }} type='number' v-model={item.disk_count}></Input>
+                    <FormItem label='数量' property={`data_disk[${index}].disk_count`}
+                      min={dataDiskCountRules.value.min}
+                      max={dataDiskCountRules.value.max}>
+                      <Input style={{ width: '90px' }} type='number' v-model={item.disk_count}></Input>
                     </FormItem>
                     <div class="btns">
                       <Button class="btn" outline size="small" onClick={() => handleRemoveDataDisk(index)}><CloseLineIcon /></Button>
@@ -383,8 +479,8 @@ export default defineComponent({
             label: '购买数量',
             required: true,
             property: 'required_count',
-            description: '大于0的整数，最大不能超过500',
-            content: () => <Input type='number' v-model={formData.required_count}></Input>,
+            description: '大于0的整数，最大不能超过100',
+            content: () => <Input type='number' max={100} v-model={formData.required_count}></Input>,
           },
           {
             label: '备注',
@@ -460,6 +556,13 @@ export default defineComponent({
             return !sensitives.includes(value)
           },
           message: '不允许使用的用户名',
+          trigger: 'change',
+        }
+      ],
+      required_count: [
+        {
+          max: 100,
+          message: '最大不能超过100',
           trigger: 'change',
         }
       ]

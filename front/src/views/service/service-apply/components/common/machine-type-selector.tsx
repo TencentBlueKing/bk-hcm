@@ -3,6 +3,7 @@ import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { Select } from 'bkui-vue';
 
 import { formatStorageSize } from '@/common/util';
+import { VendorEnum } from '@/common/constant';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const { Option } = Select;
@@ -15,7 +16,7 @@ export default defineComponent({
     region: String as PropType<string>,
     zone: String as PropType<string>,
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'change'],
   setup(props, { emit, attrs }) {
     const list = ref([]);
     const loading = ref(false);
@@ -34,10 +35,15 @@ export default defineComponent({
       () => props.accountId,
       () => props.region,
       () => props.zone,
-    ], async ([vendor, accountId, region, zone]) => {
-      if (!vendor || !accountId || !region || !zone) {
+    ], async ([vendor, accountId, region, zone], [,,,oldZone]) => {
+      if (!vendor || !accountId || !region || (vendor !== VendorEnum.AZURE && !zone)) {
         list.value = [];
         return;
+      }
+
+      // AZURE时与zone无关，只需要满足其它条件时请求一次
+      if (vendor === VendorEnum.AZURE && zone !== oldZone) {
+        return
       }
 
       loading.value = true;
@@ -52,12 +58,18 @@ export default defineComponent({
       loading.value = false;
     });
 
+    const handleChange = (val: string) => {
+      const data = list.value.find(item => item.instance_type === val);
+      emit('change', data);
+    };
+
     return () => (
       <Select
         filterable={true}
         modelValue={selected.value}
         onUpdate:modelValue={val => selected.value = val}
         loading={loading.value}
+        onChange={handleChange}
         {...{ attrs }}
       >
         {
