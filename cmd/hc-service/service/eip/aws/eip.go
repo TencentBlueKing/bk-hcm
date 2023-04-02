@@ -153,6 +153,7 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 
 	err = client.DisassociateEip(cts.Kit, opt)
 	if err != nil {
+		logs.Errorf("aws cloud disassociate eip failed, req: %+v, opt: %+v, err: %+v", req, opt, err)
 		return nil, err
 	}
 

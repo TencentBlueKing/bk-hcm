@@ -22,6 +22,7 @@ package networkcvmrel
 import (
 	"fmt"
 
+	datanetworkinterface "hcm/cmd/data-service/service/cloud/network-interface"
 	"hcm/pkg/api/core"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
 	"hcm/pkg/api/data-service/cloud"
@@ -52,6 +53,9 @@ func toProtoNetworkInterfaceExtWithCvmID[T coreni.NetworkInterfaceExtension](d *
 		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
 	}
 
+	tmpPrivateIPv4, tmpPrivateIPv6, tmpPublicIPv4, tmpPublicIPv6 := datanetworkinterface.ConvertIPJSONToArr(
+		d.PrivateIPv4, d.PrivateIPv6, d.PublicIPv4, d.PublicIPv6)
+
 	return &cloud.NetworkInterfaceExtWithCvmID[T]{
 		NetworkInterface: coreni.NetworkInterface[T]{
 			BaseNetworkInterface: coreni.BaseNetworkInterface{
@@ -66,10 +70,10 @@ func toProtoNetworkInterfaceExtWithCvmID[T coreni.NetworkInterfaceExtension](d *
 				CloudVpcID:    d.CloudVpcID,
 				SubnetID:      d.SubnetID,
 				CloudSubnetID: d.CloudSubnetID,
-				PrivateIPv4:   d.PrivateIPv4,
-				PrivateIPv6:   d.PrivateIPv6,
-				PublicIPv4:    d.PublicIPv4,
-				PublicIPv6:    d.PublicIPv6,
+				PrivateIPv4:   tmpPrivateIPv4,
+				PrivateIPv6:   tmpPrivateIPv6,
+				PublicIPv4:    tmpPublicIPv4,
+				PublicIPv6:    tmpPublicIPv6,
 				BkBizID:       d.BkBizID,
 				InstanceID:    d.InstanceID,
 				Revision: &core.Revision{

@@ -148,7 +148,8 @@ func (a *Azure) AssociateEip(kt *kit.Kit, opt *eip.AzureEipAssociateOption) erro
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to finish the request:  %v", err)
+		return fmt.Errorf("azure associate eip failed to finish the request, eipID: %s, err: %v",
+			opt.CloudEipID, err)
 	}
 	_, err = pollerResp.PollUntilDone(kt.Ctx, nil)
 

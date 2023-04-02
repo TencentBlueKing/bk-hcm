@@ -274,7 +274,7 @@ func (ad Audit) eipAssNetworkOperationAuditBuild(
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      eipData.ID,
 			CloudResID: eipData.CloudID,
-			ResName:    *eipData.Name,
+			ResName:    converter.PtrToVal(eipData.Name),
 			ResType:    enumor.EipAuditResType,
 			Action:     action,
 			BkBizID:    eipData.BkBizID,

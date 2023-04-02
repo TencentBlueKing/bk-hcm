@@ -175,14 +175,17 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
+	if len(opt.AccessConfigName) > 0 {
+		client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
+		if err != nil {
+			return nil, err
+		}
 
-	err = client.DisassociateEip(cts.Kit, opt)
-	if err != nil {
-		return nil, err
+		err = client.DisassociateEip(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("gcp cloud disassociate eip failed, req: %+v, opt: %+v, err: %+v", req, opt, err)
+			return nil, err
+		}
 	}
 
 	manager := datasvc.EipCvmRelManager{CvmID: req.CvmID, EipID: req.EipID, DataCli: svc.DataCli}
@@ -373,7 +376,7 @@ func (svc *EipSvc) makeEipDisassociateOption(
 		return nil, err
 	}
 
-	accessConfigName := eip.DefaultExternalNatName
+	var accessConfigName string
 	for _, config := range networkInterface.Extension.AccessConfigs {
 		if config.NatIP == eipData.PublicIp {
 			accessConfigName = config.Name

@@ -206,7 +206,6 @@ func (a *Azure) getIpConfigExtensionData(kt *kit.Kit, data *armnetwork.Interface
 		return
 	}
 
-	isIPv4, isIPv6 := false, false
 	tmpArr := make([]*coreni.InterfaceIPConfiguration, 0)
 	for _, item := range data.Properties.IPConfigurations {
 		tmpIP := &coreni.InterfaceIPConfiguration{
@@ -257,21 +256,13 @@ func (a *Azure) getIpConfigExtensionData(kt *kit.Kit, data *armnetwork.Interface
 					if converter.PtrToVal(tmpPublicIPAddress.Properties.PublicIPAddressVersion) ==
 						armnetwork.IPVersionIPv4 {
 						v.PublicIPv4 = append(v.PublicIPv4, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
-						isIPv4 = true
 					} else {
 						v.PublicIPv6 = append(v.PublicIPv6, converter.PtrToVal(tmpPublicIPAddress.Properties.IPAddress))
-						isIPv6 = true
 					}
 				}
 			}
 		}
 		tmpArr = append(tmpArr, tmpIP)
-	}
-	if !isIPv4 {
-		v.PublicIPv4 = []string{}
-	}
-	if !isIPv6 {
-		v.PublicIPv6 = []string{}
 	}
 	v.Extension.IPConfigurations = tmpArr
 }

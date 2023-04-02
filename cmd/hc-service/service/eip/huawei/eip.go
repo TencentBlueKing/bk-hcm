@@ -96,6 +96,7 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 
 	err = client.AssociateEip(cts.Kit, opt)
 	if err != nil {
+		logs.Errorf("huawei eip make associate cloud failed, req: %+v, opt: %+v, err: %+v", req, opt, err)
 		return nil, err
 	}
 
@@ -164,6 +165,7 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 
 	err = client.DisassociateEip(cts.Kit, opt)
 	if err != nil {
+		logs.Errorf("huawei cloud disassociate eip failed, req: %+v, opt: %+v, err: %+v", req, opt, err)
 		return nil, err
 	}
 
@@ -179,7 +181,7 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		svc.Adaptor, svc.DataCli,
 	)
 	if err != nil {
-		logs.Errorf("SyncHuaWeiEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("SyncHuaWeiEip failed, opt: %+v, err: %v, rid: %s", opt, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -195,7 +197,7 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		svc.DataCli,
 	)
 	if err != nil {
-		logs.Errorf("SyncHuaWeiCvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("SyncHuaWeiCvm failed, opt: %+v, err: %v, rid: %s", opt, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -210,7 +212,8 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		svc.DataCli,
 	)
 	if err != nil {
-		logs.Errorf("HuaWeiNetworkInterfaceSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("HuaWeiNetworkInterfaceSync failed, cloudCvmID: %s, region: %s, err: %v, rid: %s",
+			cvmData.CloudID, opt.Region, err, cts.Kit.Rid)
 		return nil, err
 	}
 

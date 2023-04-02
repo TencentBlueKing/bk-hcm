@@ -163,8 +163,6 @@ func (h *HuaWei) DisassociateEip(
 		return nil, fmt.Errorf("eip(%s) not associated", req.EipID)
 	}
 
-	cvmID := rels.Details[0].CvmID
-
 	operationInfo := protoaudit.CloudResourceOperationInfo{
 		ResType:           enumor.EipAuditResType,
 		ResID:             req.EipID,
@@ -177,15 +175,18 @@ func (h *HuaWei) DisassociateEip(
 		return nil, err
 	}
 
-	return nil, h.client.HCService().HuaWei.Eip.DisassociateEip(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.HuaWeiEipDisassociateReq{
-			AccountID: basicInfo.AccountID,
-			CvmID:     cvmID,
-			EipID:     req.EipID,
-		},
-	)
+	for _, item := range rels.Details {
+		err = h.client.HCService().HuaWei.Eip.DisassociateEip(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.HuaWeiEipDisassociateReq{
+				AccountID: basicInfo.AccountID,
+				CvmID:     item.CvmID,
+				EipID:     req.EipID,
+			},
+		)
+	}
+	return nil, err
 }
 
 // CreateEip ...
@@ -303,13 +304,16 @@ func (h *HuaWei) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*c
 		return nil, err
 	}
 
-	if nis == nil || nis.Details == nil || len(nis.Details) == 0 {
+	if nis == nil || nis.Details == nil {
 		return nil, fmt.Errorf("eip(%s) not associated with cvm(%s)", eipResp.PublicIp, cvmID)
 	}
 
-	eipResult := &cloudproto.HuaWeiEipExtResult{EipExtResult: eipResp, CvmID: cvmID}
-	eipResult.InstanceType = "NI"
-	eipResult.InstanceID = converter.ValToPtr(nis.Details[0].ID)
+	eipResult := &cloudproto.HuaWeiEipExtResult{EipExtResult: eipResp}
+	if len(nis.Details) > 0 {
+		eipResult.CvmID = cvmID
+		eipResult.InstanceType = "NI"
+		eipResult.InstanceID = converter.ValToPtr(nis.Details[0].ID)
+	}
 
 	return eipResult, nil
 }

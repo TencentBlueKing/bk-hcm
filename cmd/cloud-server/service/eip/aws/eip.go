@@ -145,30 +145,32 @@ func (a *Aws) DisassociateEip(
 		return nil, fmt.Errorf("eip(%s) not associated", req.EipID)
 	}
 
-	cvmID := rels.Details[0].CvmID
+	for _, item := range rels.Details {
+		operationInfo := protoaudit.CloudResourceOperationInfo{
+			ResType:           enumor.EipAuditResType,
+			ResID:             req.EipID,
+			Action:            protoaudit.Disassociate,
+			AssociatedResType: enumor.CvmAuditResType,
+			AssociatedResID:   item.CvmID,
+		}
+		err = a.audit.ResOperationAudit(cts.Kit, operationInfo)
+		if err != nil {
+			logs.Errorf("create disassociate eip audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
 
-	operationInfo := protoaudit.CloudResourceOperationInfo{
-		ResType:           enumor.EipAuditResType,
-		ResID:             req.EipID,
-		Action:            protoaudit.Disassociate,
-		AssociatedResType: enumor.CvmAuditResType,
-		AssociatedResID:   cvmID,
-	}
-	err = a.audit.ResOperationAudit(cts.Kit, operationInfo)
-	if err != nil {
-		logs.Errorf("create disassociate eip audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+		err = a.client.HCService().Aws.Eip.DisassociateEip(
+			cts.Kit.Ctx,
+			cts.Kit.Header(),
+			&hcproto.AwsEipDisassociateReq{
+				AccountID: basicInfo.AccountID,
+				CvmID:     item.CvmID,
+				EipID:     req.EipID,
+			},
+		)
 	}
 
-	return nil, a.client.HCService().Aws.Eip.DisassociateEip(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.AwsEipDisassociateReq{
-			AccountID: basicInfo.AccountID,
-			CvmID:     cvmID,
-			EipID:     req.EipID,
-		},
-	)
+	return nil, err
 }
 
 // CreateEip ...

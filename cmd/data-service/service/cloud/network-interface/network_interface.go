@@ -127,16 +127,14 @@ func batchCreateNI[T datacloudniproto.NetworkInterfaceCreateExtension](cts *rest
 				CloudVpcID:    createReq.CloudVpcID,
 				SubnetID:      createReq.SubnetID,
 				CloudSubnetID: createReq.CloudSubnetID,
-				PrivateIPv4:   createReq.PrivateIPv4,
-				PrivateIPv6:   createReq.PrivateIPv6,
-				PublicIPv4:    createReq.PublicIPv4,
-				PublicIPv6:    createReq.PublicIPv6,
 				BkBizID:       createReq.BkBizID,
 				InstanceID:    createReq.InstanceID,
 				Extension:     ext,
 				Creator:       cts.Kit.User,
 				Reviser:       cts.Kit.User,
 			}
+			convertNetworkInterfaceIPInfo(&ni, createReq.PrivateIPv4, createReq.PrivateIPv6,
+				createReq.PublicIPv4, createReq.PublicIPv6)
 
 			nis = append(nis, ni)
 		}
@@ -227,12 +225,11 @@ func batchUpdateNI[T datacloudniproto.NetworkInterfaceCreateExtension](cts *rest
 		ni.CloudVpcID = updateReq.CloudVpcID
 		ni.SubnetID = updateReq.SubnetID
 		ni.CloudSubnetID = updateReq.CloudSubnetID
-		ni.PrivateIPv4 = updateReq.PrivateIPv4
-		ni.PrivateIPv6 = updateReq.PrivateIPv6
-		ni.PublicIPv4 = updateReq.PublicIPv4
-		ni.PublicIPv6 = updateReq.PublicIPv6
 		ni.BkBizID = updateReq.BkBizID
 		ni.InstanceID = updateReq.InstanceID
+
+		convertNetworkInterfaceIPInfo(ni, updateReq.PrivateIPv4, updateReq.PrivateIPv6,
+			updateReq.PublicIPv4, updateReq.PublicIPv6)
 
 		// update extension
 		if updateReq.Extension != nil {
@@ -258,6 +255,49 @@ func batchUpdateNI[T datacloudniproto.NetworkInterfaceCreateExtension](cts *rest
 	}
 
 	return nil, nil
+}
+
+// convertNetworkInterfaceIPInfo convert network interface ip info to table.
+func convertNetworkInterfaceIPInfo(dbDetail *tableni.NetworkInterfaceTable, privateIPv4, privateIPv6,
+	publicIPv4, publicIPv6 []string) {
+
+	tmpIPStr, err := convertArrToTableJSON(privateIPv4)
+	if err != nil {
+		return
+	}
+	dbDetail.PrivateIPv4 = tmpIPStr
+
+	tmpIPStr, err = convertArrToTableJSON(privateIPv6)
+	if err != nil {
+		return
+	}
+	dbDetail.PrivateIPv6 = tmpIPStr
+
+	tmpIPStr, err = convertArrToTableJSON(publicIPv4)
+	if err != nil {
+		return
+	}
+	dbDetail.PublicIPv4 = tmpIPStr
+
+	tmpIPStr, err = convertArrToTableJSON(publicIPv6)
+	if err != nil {
+		return
+	}
+	dbDetail.PublicIPv6 = tmpIPStr
+}
+
+func convertArrToTableJSON(arr []string) (tabletype.JsonField, error) {
+	if len(arr) == 0 {
+		return "[]", nil
+	}
+
+	str, err := json.Marshal(arr)
+	if err != nil {
+		logs.Errorf("convert arr to table json, json.Marshal failed, arr: %v, err: %v", arr, err)
+		return "[]", err
+	}
+
+	return tabletype.JsonField(str), nil
 }
 
 // BatchUpdateNetworkInterfaceCommonInfo batch update network interface common info.
@@ -511,6 +551,9 @@ func convertBaseNetworkInterface(dbDetail *tableni.NetworkInterfaceTable) *coren
 		return nil
 	}
 
+	tmpPrivateIPv4, tmpPrivateIPv6, tmpPublicIPv4, tmpPublicIPv6 := ConvertIPJSONToArr(dbDetail.PrivateIPv4,
+		dbDetail.PrivateIPv6, dbDetail.PublicIPv4, dbDetail.PublicIPv6)
+
 	return &coreni.BaseNetworkInterface{
 		ID:            dbDetail.ID,
 		Vendor:        dbDetail.Vendor,
@@ -523,10 +566,10 @@ func convertBaseNetworkInterface(dbDetail *tableni.NetworkInterfaceTable) *coren
 		CloudVpcID:    dbDetail.CloudVpcID,
 		SubnetID:      dbDetail.SubnetID,
 		CloudSubnetID: dbDetail.CloudSubnetID,
-		PrivateIPv4:   dbDetail.PrivateIPv4,
-		PrivateIPv6:   dbDetail.PrivateIPv6,
-		PublicIPv4:    dbDetail.PublicIPv4,
-		PublicIPv6:    dbDetail.PublicIPv6,
+		PrivateIPv4:   tmpPrivateIPv4,
+		PrivateIPv6:   tmpPrivateIPv6,
+		PublicIPv4:    tmpPublicIPv4,
+		PublicIPv6:    tmpPublicIPv6,
 		BkBizID:       dbDetail.BkBizID,
 		InstanceID:    dbDetail.InstanceID,
 
@@ -544,6 +587,9 @@ func convertBaseNetworkInterfaceAssociate(dbDetail *types.NetworkInterfaceWithCv
 		return coreni.NetworkInterfaceAssociate{}
 	}
 
+	tmpPrivateIPv4, tmpPrivateIPv6, tmpPublicIPv4, tmpPublicIPv6 := ConvertIPJSONToArr(dbDetail.PrivateIPv4,
+		dbDetail.PrivateIPv6, dbDetail.PublicIPv4, dbDetail.PublicIPv6)
+
 	return coreni.NetworkInterfaceAssociate{
 		BaseNetworkInterface: coreni.BaseNetworkInterface{
 			ID:            dbDetail.ID,
@@ -557,10 +603,10 @@ func convertBaseNetworkInterfaceAssociate(dbDetail *types.NetworkInterfaceWithCv
 			CloudVpcID:    dbDetail.CloudVpcID,
 			SubnetID:      dbDetail.SubnetID,
 			CloudSubnetID: dbDetail.CloudSubnetID,
-			PrivateIPv4:   dbDetail.PrivateIPv4,
-			PrivateIPv6:   dbDetail.PrivateIPv6,
-			PublicIPv4:    dbDetail.PublicIPv4,
-			PublicIPv6:    dbDetail.PublicIPv6,
+			PrivateIPv4:   tmpPrivateIPv4,
+			PrivateIPv6:   tmpPrivateIPv6,
+			PublicIPv4:    tmpPublicIPv4,
+			PublicIPv6:    tmpPublicIPv6,
 			BkBizID:       dbDetail.BkBizID,
 			InstanceID:    dbDetail.InstanceID,
 			Revision: &core.Revision{
@@ -574,6 +620,22 @@ func convertBaseNetworkInterfaceAssociate(dbDetail *types.NetworkInterfaceWithCv
 		RelCreator:   dbDetail.RelCreator,
 		RelCreatedAt: dbDetail.RelCreatedAt,
 	}
+}
+
+// ConvertIPJSONToArr convert ip json to array
+func ConvertIPJSONToArr(privateIPv4, privateIPv6, publicIPv4, publicIPv6 tabletype.JsonField) ([]string, []string,
+	[]string, []string) {
+
+	var tmpPrivateIPv4 []string
+	json.UnmarshalFromString(string(privateIPv4), &tmpPrivateIPv4)
+	var tmpPrivateIPv6 []string
+	json.UnmarshalFromString(string(privateIPv6), &tmpPrivateIPv6)
+	var tmpPublicIPv4 []string
+	json.UnmarshalFromString(string(publicIPv4), &tmpPublicIPv4)
+	var tmpPublicIPv6 []string
+	json.UnmarshalFromString(string(publicIPv6), &tmpPublicIPv6)
+
+	return tmpPrivateIPv4, tmpPrivateIPv6, tmpPublicIPv4, tmpPublicIPv6
 }
 
 func convertToNIResult[T coreni.NetworkInterfaceExtension](baseNI *coreni.BaseNetworkInterface,

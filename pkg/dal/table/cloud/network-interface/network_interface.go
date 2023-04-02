@@ -84,13 +84,13 @@ type NetworkInterfaceTable struct {
 	// CloudSubnetID 云子网ID
 	CloudSubnetID string `db:"cloud_subnet_id" validate:"-" json:"cloud_subnet_id"`
 	// PrivateIPv4 内网IPv4
-	PrivateIPv4 types.StringArray `db:"private_ipv4" validate:"-" json:"private_ipv4"`
+	PrivateIPv4 types.JsonField `db:"private_ipv4" validate:"-" json:"private_ipv4"`
 	// PrivateIPv6 内网IPv6
-	PrivateIPv6 types.StringArray `db:"private_ipv6" validate:"-" json:"private_ipv6"`
+	PrivateIPv6 types.JsonField `db:"private_ipv6" validate:"-" json:"private_ipv6"`
 	// PublicIPv4 公网IPv4
-	PublicIPv4 types.StringArray `db:"public_ipv4" json:"public_ipv4"`
+	PublicIPv4 types.JsonField `db:"public_ipv4" json:"public_ipv4"`
 	// PublicIPv6 公网IPv6
-	PublicIPv6 types.StringArray `db:"public_ipv6" json:"public_ipv6"`
+	PublicIPv6 types.JsonField `db:"public_ipv6" json:"public_ipv6"`
 	// BkBizID 业务ID
 	BkBizID int64 `db:"bk_biz_id" json:"bk_biz_id"`
 	// InstanceID 关联的实例ID
