@@ -14,7 +14,6 @@ export default defineComponent({
   setup() {
     const { t } = useI18n();
     const accountStore = useAccountStore();
-    const useUser = useUserStore();
     const router = useRouter();
 
     const initProjectModel: ProjectModel = {
@@ -22,8 +21,8 @@ export default defineComponent({
       type: 'resource',   // 账号类型
       name: '', // 名称
       vendor: '', // 云厂商
-      managers: [useUser.username], // 责任人
-      bizIds: '',   // 使用业务
+      managers: [], // 责任人
+      bizIds: [],   // 使用业务
       memo: '',     // 备注
       mainAccount: '',    // 主账号
       subAccount: '',    // 子账号

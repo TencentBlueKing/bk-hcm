@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { h, ref, watchEffect } from 'vue';
+import { CloudType } from '@/typings';
 
 const props = defineProps({
   detail: {
@@ -9,6 +10,13 @@ const props = defineProps({
 });
 
 const fields = ref([
+  {
+    name: '云厂商',
+    prop: 'vendor',
+    render(cell: string) {
+      return CloudType[cell] || '--';
+    },
+  },
   {
     name: '网络接口名称',
     prop: 'name',
@@ -27,10 +35,6 @@ const fields = ref([
   {
     name: '地域',
     prop: 'region',
-  },
-  {
-    name: '可用区域',
-    prop: 'zone',
   },
   {
     name: '业务',
@@ -66,18 +70,15 @@ const fields = ref([
     },
   },
   {
-    name: '安全组',
-    prop: 'security_groups',
-    render(val: { id: string }[]) {
-      if (!val?.length) {
-        return '--';
-      }
-      return h('div', { class: 'cell-content-list' }, val.map(item => h('p', { class: 'cell-content-item' }, item?.id)));
-    },
+    name: '已关联到主机ID',
+    prop: 'instance_id',
   },
   {
-    name: '已关联到',
-    prop: 'instance_id',
+    name: '安全组ID',
+    prop: 'cloud_security_group_ids', // cloud_security_group_ids
+    render(cell: string) {
+      return cell || '--';
+    },
   },
   {
     name: 'MAC地址',

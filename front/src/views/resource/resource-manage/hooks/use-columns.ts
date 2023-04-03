@@ -539,22 +539,32 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       },
     },
     {
-      label: '内网IP地址',
-      field: 'internal_ip',
+      label: '内网IP',
       render({ data }: any) {
-        return data.private_ipv4 || data.private_ipv6 || '--';
+        return [
+          h(
+            'span',
+            {},
+            [
+              data?.private_ipv4.join(',') || data?.private_ipv6.join(',') || '--',
+            ],
+          ),
+        ];
       },
     },
     {
       label: '关联的公网IP地址',
       field: 'public_ip',
-      render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            cell || '--',
-          ],
-        );
+      render({ data }: any) {
+        return [
+          h(
+            'span',
+            {},
+            [
+              data?.public_ipv4.join(',') || data?.public_ipv6.join(',') || '--',
+            ],
+          ),
+        ];
       },
     },
     {

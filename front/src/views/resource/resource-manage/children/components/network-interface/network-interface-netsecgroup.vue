@@ -11,16 +11,16 @@ const props = defineProps({
 const fields = ref([
   {
     name: '网络安全组',
-    prop: 'networkSecurityGroup',
+    prop: 'cloud_security_group_id',
   },
 ]);
 
 const data = reactive({
-  networkSecurityGroup: '',
+  cloud_security_group_id: '',
 });
 
 watchEffect(() => {
-  data.networkSecurityGroup = props.detail?.network_security_group?.name;
+  data.cloud_security_group_id = props.detail?.cloud_security_group_id;
 });
 
 </script>

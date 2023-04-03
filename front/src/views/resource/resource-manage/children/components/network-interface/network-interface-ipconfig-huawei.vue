@@ -28,17 +28,13 @@ watchEffect(() => {
   ipConfigData.value = [
     {
       type: '私有IP地址',
-      internalIp: props.detail?.internal_ip,
-      publicIp: props.detail?.addresses ? ([
-        props.detail?.addresses?.public_ip_address || props.detail?.addresses?.public_ipv6_address,
-        props.detail?.addresses?.bandwidth_type,
-        `${props.detail?.addresses?.bandwidth_size} M/s`,
-      ]).join(' | ') : '--',
+      internalIp: props.detail?.private_ipv4?.join(',') || '--',
+      publicIp: props.detail?.public_ipv4?.join(',') || '--',
     },
     {
       type: 'IPv6地址',
-      internalIp: props.detail?.ipv6 || '--',
-      publicIp: '--',
+      internalIp: props.detail?.private_ipv6?.join(',') || '--',
+      publicIp: props.detail?.public_ipv6?.join(',') || '--',
     },
   ];
 

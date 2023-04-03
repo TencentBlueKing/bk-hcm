@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import { Button } from 'bkui-vue';
-import { h, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
+import { CloudType } from '@/typings';
 
 const props = defineProps({
   detail: {
@@ -10,6 +10,13 @@ const props = defineProps({
 });
 
 const fields = ref([
+  {
+    name: '云厂商',
+    prop: 'vendor',
+    render(cell: string) {
+      return CloudType[cell] || '--';
+    },
+  },
   {
     name: '网络接口名称',
     prop: 'name',
@@ -38,36 +45,37 @@ const fields = ref([
 watch(
   () => props.detail,
   (detail) => {
+    console.log('detail', detail);
     switch (detail.vendor) {
       case 'azure':
         fields.value.push(...[
           {
-            name: '订阅',
-            prop: 'subscribe_name',
-          },
-          {
-            name: '订阅ID',
-            prop: 'subscribe_id',
-          },
-          {
-            name: '类型',
-            prop: 'type',
-          },
-          {
             name: '内网IPv4地址',
-            prop: 'internal_ip',
+            prop: 'private_ipv4',
+            render(cell: string[]) {
+              return cell.length ? cell.join(',') : '--';
+            },
           },
           {
             name: '公网IPv4地址',
-            prop: 'public_ip',
+            prop: 'public_ipv4',
+            render(cell: string[]) {
+              return cell.length ? cell.join(',') : '--';
+            },
           },
           {
             name: '专用IP地址(IPv6)',
             prop: 'private_ipv6',
+            render(cell: string[]) {
+              return cell.length ? cell.join(',') : '--';
+            },
           },
           {
             name: '公用IP地址(IPv6)',
             prop: 'public_ipv6',
+            render(cell: string[]) {
+              return cell.length ? cell.join(',') : '--';
+            },
           },
           {
             name: '更快的网络连接',
@@ -77,17 +85,17 @@ watch(
             },
           },
           {
-            name: '已关联到',
-            prop: 'associated',
-            render(val: [{ id: string, name: string, label: string }]) {
-              if (!val?.length) {
-                return '--';
-              }
-              return h('div', { style: { 'line-height': 'normal' } }, val?.map(({ name, label }) => h('p', h(
-                Button,
-                { text: true, theme: 'primary' },
-                `${name}(${label})`,
-              ))));
+            name: '已关联到主机ID',
+            prop: 'instance_id',
+            render(cell: string) {
+              return cell || '--';
+            },
+          },
+          {
+            name: '已关联到安全组ID',
+            prop: 'cloud_security_group_id',
+            render(cell: string) {
+              return cell || '--';
             },
           },
           {
@@ -97,10 +105,6 @@ watch(
           {
             name: 'MAC地址',
             prop: 'mac_address',
-          },
-          {
-            name: '负载均衡器',
-            prop: 'gatewayLoadBalancerId',
           },
         ]);
         break;

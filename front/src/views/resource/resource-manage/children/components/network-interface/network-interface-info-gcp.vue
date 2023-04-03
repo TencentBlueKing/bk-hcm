@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { h, ref, watchEffect } from 'vue';
+import { CloudType } from '@/typings';
 
 const props = defineProps({
   detail: {
@@ -9,6 +10,13 @@ const props = defineProps({
 });
 
 const fields = ref([
+  {
+    name: '云厂商',
+    prop: 'vendor',
+    render(cell: string) {
+      return CloudType[cell] || '--';
+    },
+  },
   {
     name: '网络接口名称',
     prop: 'name',
@@ -40,12 +48,32 @@ const fields = ref([
     },
   },
   {
-    name: '内网IP',
-    prop: 'internal_ip',
+    name: '内网IPv4地址',
+    prop: 'private_ipv4',
+    render(cell: string[]) {
+      return cell.length ? cell.join(',') : '--';
+    },
   },
   {
-    name: '公网IP',
-    prop: 'internal_ip',
+    name: '公网IPv4地址',
+    prop: 'public_ipv4',
+    render(cell: string[]) {
+      return cell.length ? cell.join(',') : '--';
+    },
+  },
+  {
+    name: '专用IP地址(IPv6)',
+    prop: 'private_ipv6',
+    render(cell: string[]) {
+      return cell.length ? cell.join(',') : '--';
+    },
+  },
+  {
+    name: '公用IP地址(IPv6)',
+    prop: 'public_ipv6',
+    render(cell: string[]) {
+      return cell.length ? cell.join(',') : '--';
+    },
   },
   {
     name: '所属网络(VPC)',
@@ -71,7 +99,10 @@ const fields = ref([
   },
   {
     name: '已关联到',
-    prop: 'instance_id',
+    prop: 'cvm_id',
+    link(val: string) {
+      return  val ? `/#/resource/detail/host?id=${val}&type=gcp` : '--';
+    },
   },
   {
     name: '网络层级',

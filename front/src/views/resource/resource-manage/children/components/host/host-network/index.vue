@@ -4,9 +4,6 @@ import HuaweiNetwork from './components/huawei-network.vue';
 import AzureNetwork from './components/azure-network.vue';
 import GcpNetwork from './components/gcp-network.vue';
 import AwsNetwork from './components/aws-network.vue';
-import {
-  useI18n,
-} from 'vue-i18n';
 
 import {
   PropType,
@@ -22,13 +19,6 @@ const props = defineProps({
   },
 });
 
-const showSecurityDialog = ref(false);
-// const securityBindLoading = ref(false);
-
-const {
-  t,
-} = useI18n();
-
 const componentMap = {
   tcloud: TcloudNetwork,
   huawei: HuaweiNetwork,
@@ -42,20 +32,10 @@ const renderComponent = componentMap[props.type];
 const filter = ref({ op: 'and', rules: [] });
 
 
-const handleSecurityDialog = () => {
-  showSecurityDialog.value = true;
-  // getSecurityList();
-};
-
-
 </script>
 
 <template>
   <div>
-    <bk-button
-      class="mt20" theme="primary" @click="handleSecurityDialog">
-      {{t('绑定')}}
-    </bk-button>
     <component :is="renderComponent" :data="props.data" :filter="filter"></component>
 
     <!-- <bk-dialog
