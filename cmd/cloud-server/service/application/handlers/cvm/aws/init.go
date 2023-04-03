@@ -25,6 +25,7 @@ import (
 	proto "hcm/pkg/api/cloud-server/application"
 	hcproto "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/converter"
 )
 
 // ApplicationOfCreateAwsCvm ...
@@ -49,7 +50,7 @@ func (a *ApplicationOfCreateAwsCvm) toHcProtoAwsBatchCreateReq(dryRun bool) *hcp
 
 	blockDeviceMapping := make([]typecvm.AwsBlockDeviceMapping, 0)
 	// 系统盘
-	deviceName := "/dev/sdh"
+	deviceName := "/dev/sda1"
 	blockDeviceMapping = append(blockDeviceMapping, typecvm.AwsBlockDeviceMapping{
 		DeviceName: &deviceName,
 		Ebs: &typecvm.AwsEbs{
@@ -57,10 +58,13 @@ func (a *ApplicationOfCreateAwsCvm) toHcProtoAwsBatchCreateReq(dryRun bool) *hcp
 			VolumeType:   req.SystemDisk.DiskType,
 		},
 	})
+
+	diskStartIndex := 'a'
 	// 数据盘
 	for _, d := range req.DataDisk {
 		for i := int64(0); i < d.DiskCount; i++ {
 			blockDeviceMapping = append(blockDeviceMapping, typecvm.AwsBlockDeviceMapping{
+				DeviceName: converter.ValToPtr("/dev/sd" + string(diskStartIndex+1)),
 				Ebs: &typecvm.AwsEbs{
 					VolumeSizeGB: d.DiskSizeGB,
 					VolumeType:   d.DiskType,

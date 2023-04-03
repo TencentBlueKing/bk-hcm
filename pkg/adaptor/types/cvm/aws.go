@@ -137,7 +137,7 @@ type AwsCreateOption struct {
 // AwsBlockDeviceMapping ...
 type AwsBlockDeviceMapping struct {
 	// DeviceName 设备名称，如 /dev/sdh 或 xvdh。
-	DeviceName *string `json:"device_name" validate:"omitempty"`
+	DeviceName *string `json:"device_name" validate:"required"`
 	Ebs        *AwsEbs `json:"ebs" validate:"required"`
 }
 

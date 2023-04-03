@@ -20,6 +20,7 @@
 package application
 
 import (
+	"errors"
 	"fmt"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
@@ -74,11 +75,18 @@ func (req *AwsCvmCreateReq) Validate() error {
 	if err := req.validateDiskSize(req.SystemDisk.DiskType, req.SystemDisk.DiskSizeGB); err != nil {
 		return err
 	}
+
+	dataDiskTotal := 0
 	// 校验数据盘
 	for _, d := range req.DataDisk {
+		dataDiskTotal += int(d.DiskCount)
 		if err := req.validateDiskSize(d.DiskType, d.DiskSizeGB); err != nil {
 			return err
 		}
+	}
+
+	if dataDiskTotal > 23 {
+		return errors.New("data disk count should <= 23")
 	}
 
 	return nil
