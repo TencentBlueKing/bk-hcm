@@ -200,6 +200,18 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         );
       },
     },
+    {
+      label: '可用区',
+      field: 'zone',
+      render({ cell }: { cell: string }) {
+        return h(
+          'span',
+          [
+            cell || '--',
+          ],
+        );
+      },
+    },
     getLinkField('vpc', '所属 VPC', 'vpc_id', 'vpc_id', false),
     {
       label: 'IPv4 CIDR',

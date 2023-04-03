@@ -151,12 +151,16 @@ const disableOperation = computed(() => {
       title="解绑EIP"
       theme="danger"
       :is-show="showDelete"
-      :loadng="isDeleteing"
       :quick-close="false"
       @closed="handleCloseDeleteEip"
-      @confirm="handleDeleteEip"
     >
       <div>确定解绑EIP【{{ detail.id }}】吗</div>
+      <template #footer>
+        <section class="bk-dialog-footer">
+          <bk-button theme="danger" :loading="isDeleteing" @click="handleDeleteEip">确定</bk-button>
+          <bk-button class="bk-dialog-cancel" :disabled="isDeleteing" @click="handleCloseDeleteEip">取消</bk-button>
+        </section>
+      </template>
     </bk-dialog>
   </bk-loading>
 </template>
