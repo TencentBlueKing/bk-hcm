@@ -195,6 +195,13 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
+	manager := datasvc.EipCvmRelManager{CvmID: req.CvmID, EipID: req.EipID, DataCli: svc.DataCli}
+	if err = manager.Delete(cts.Kit); err != nil {
+		logs.Errorf("delete azure eip cvm rel db failed, eipID: %s, cvmID: %s, err: %+v",
+			req.EipID, req.CvmID, err)
+		return nil, err
+	}
+
 	_, err = synceip.SyncAzureEip(cts.Kit,
 		&synceip.SyncAzureEipOption{
 			AccountID:         req.AccountID,
@@ -320,6 +327,13 @@ func (svc *EipSvc) makeEipDeleteOption(
 	if err != nil {
 		return nil, err
 	}
+	// 该eip已绑定了安全组、NAT网关，不能删除
+	if eipData.Extension != nil && eipData.Extension.IpConfigurationID != nil {
+		logs.Errorf("azure eip delete error, eip %s is associated with ip configuration(%s)", req.EipID,
+			converter.PtrToVal(eipData.Extension.IpConfigurationID))
+		return nil, errf.Newf(errf.InvalidParameter, "eip %s is associated with ip configuration", req.EipID)
+	}
+
 	return &eip.AzureEipDeleteOption{
 		ResourceGroupName: eipData.Extension.ResourceGroupName,
 		EipName:           *eipData.Name,

@@ -264,7 +264,13 @@ func (a *Azure) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cl
 
 	// 表示没有关联
 	if cvmID == "" {
-		return &cloudproto.AzureEipExtResult{EipExtResult: eipResp, CvmID: cvmID}, nil
+		// 该eip没有绑定主机，但是绑定了安全组、NAT网关、网络接口，此时不能解绑、删除
+		eipResult := &cloudproto.AzureEipExtResult{EipExtResult: eipResp, CvmID: cvmID}
+		if eipResp.Extension != nil && eipResp.Extension.IpConfigurationID != nil {
+			eipResult.InstanceType = "OTHER"
+			eipResult.InstanceID = eipResp.Extension.IpConfigurationID
+		}
+		return eipResult, nil
 	}
 
 	rels, err := a.client.DataService().Global.NetworkInterfaceCvmRel.List(
