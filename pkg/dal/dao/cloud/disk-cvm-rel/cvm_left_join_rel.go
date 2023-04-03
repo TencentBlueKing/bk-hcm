@@ -67,7 +67,7 @@ func (relDao *DiskCvmRelDao) ListCvmIDLeftJoinRel(kt *kit.Kit, opt *types.ListOp
 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(
-			`SELECT count(*) FROM %s as cvm left join %s as rel on cvm.id = rel.cvm_id %s group by cvm.id`,
+			`SELECT count(distinct(cvm.id)) FROM %s as cvm left join %s as rel on cvm.id = rel.cvm_id %s`,
 			table.CvmTable, tablecloud.DiskCvmRelTableName, whereExpr)
 
 		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
