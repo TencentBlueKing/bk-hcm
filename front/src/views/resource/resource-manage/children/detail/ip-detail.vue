@@ -122,7 +122,7 @@ const disableOperation = computed(() => {
           v-else
           class="w100 ml10"
           theme="primary"
-          :disabled="disableOperation"
+          :disabled="disableOperation || detail.instance_type === 'OTHER'"
           @click="handleShowDeleteDialog"
         >
           {{ t('解绑') }}
@@ -130,7 +130,7 @@ const disableOperation = computed(() => {
         <bk-button
           class="w100 ml10"
           theme="primary"
-          :disabled="!!detail.cvm_id || disableOperation"
+          :disabled="!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'"
           @click="handleShowDelete"
         >
           {{ t('删除') }}

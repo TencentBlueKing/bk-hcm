@@ -220,6 +220,10 @@ const {
             name: '最大传输单元',
             prop: 'mtu',
           },
+          {
+            name: '地域',
+            prop: 'region',
+          },
         ]);
         VPCTabs.value.shift();
         break;

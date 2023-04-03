@@ -138,7 +138,12 @@ const {
           field: 'region',
           op: 'eq',
           value: props.data.region,
-        }
+        },
+        {
+          field: 'account_id',
+          op: 'eq',
+          value: props.data.account_id,
+        },
       ],
     },
   },
@@ -383,6 +388,7 @@ watch(
           :key="index"
           :value="item.id"
           :label="item.name"
+          :disabled="(item.public_ipv4 && item.public_ipv4.length) || (item.public_ipv6 && item.public_ipv6.length)"
         />
       </bk-select>
     </template>

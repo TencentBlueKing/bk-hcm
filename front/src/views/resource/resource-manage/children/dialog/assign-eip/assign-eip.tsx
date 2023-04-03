@@ -85,6 +85,11 @@ export default defineComponent({
           field: 'public_ipv4_addresses',
           op: 'json_length',
           value: 0
+        },
+        {
+          field: 'recycle_status',
+          op: 'neq',
+          value: 'recycling'
         }
       ]);
     }
