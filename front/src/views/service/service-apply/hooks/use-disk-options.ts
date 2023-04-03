@@ -22,10 +22,10 @@ export default (cond: Cond, formData: IDiskFormData) => {
   watch(() => cond.vendor, (vendor) => {
     const diskTypeValues = {
       [VendorEnum.TCLOUD]: [
-        {
-          id: 'CLOUD_BASIC',
-          name: '普通云硬盘',
-        },
+        // {
+        //   id: 'CLOUD_BASIC',
+        //   name: '普通云硬盘',
+        // },
         {
           id: 'CLOUD_PREMIUM',
           name: '高性能云硬盘',
@@ -38,14 +38,14 @@ export default (cond: Cond, formData: IDiskFormData) => {
           id: 'CLOUD_SSD',
           name: 'SSD云硬盘',
         },
-        {
-          id: 'CLOUD_HSSD',
-          name: '增强型SSD云硬盘',
-        },
-        {
-          id: 'CLOUD_TSSD',
-          name: '极速型SSD云硬盘',
-        },
+        // {
+        //   id: 'CLOUD_HSSD',
+        //   name: '增强型SSD云硬盘',
+        // },
+        // {
+        //   id: 'CLOUD_TSSD',
+        //   name: '极速型SSD云硬盘',
+        // },
       ],
       [VendorEnum.AWS]: [
         {

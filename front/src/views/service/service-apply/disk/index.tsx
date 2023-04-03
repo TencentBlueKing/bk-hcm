@@ -67,6 +67,7 @@ export default defineComponent({
         children: [
           {
             label: '名称',
+            display: ![VendorEnum.AWS].includes(cond.vendor),
             required: true,
             property: 'disk_name',
             rules: [nameRules.value],

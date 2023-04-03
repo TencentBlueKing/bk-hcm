@@ -93,7 +93,8 @@ const handleChangeAccount = (account: any) => {
     },
   ];
 
-  selectedVendor.value = '';
+  // 默认选中第1个
+  selectedVendor.value = vendorList.value?.[0]?.id ?? '';
   selectedRegion.value = '';
 };
 </script>

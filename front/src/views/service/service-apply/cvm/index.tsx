@@ -50,10 +50,6 @@ export default defineComponent({
     const vpcId = ref('');
     const machineType = ref(null);
 
-    watch(cond, () => {
-      console.log(zoneSelectorRef.value);
-    })
-
     const handleCreateDataDisk = () => {
       const newRow: IDiskOption = getDataDiskDefaults();
       formData.data_disk.push(newRow);
@@ -95,9 +91,13 @@ export default defineComponent({
       resetFormItemData('cloud_subnet_id');
     };
     const handleMachineTypeChange = (machine: any) => {
-      console.log(machine, 'machineType change');
       machineType.value = machine
       resetFormItemData('cloud_image_id');
+
+      if (cond.vendor === VendorEnum.AZURE) {
+        resetFormItemData('system_disk');
+        resetFormItemData('data_disk');
+      }
     };
 
     const sysDiskSizeRules = computed(() => {
@@ -173,7 +173,6 @@ export default defineComponent({
     const formConfigDataDiskDiff = computed(() => {
       const diffs = {
         [VendorEnum.GCP]: {
-          tips: () => <div>添加磁盘后，需要登录机器挂载和格式化，<Button text theme='primary'>参考文档</Button></div>,
           content: () => <div class="form-content-list details">
               {
                 formData.data_disk.map((item: IDiskOption, index: number) => (
