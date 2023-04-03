@@ -2,18 +2,19 @@ import { useCommonStore } from '@/store';
 // import { Verify } from '@/typings';
 import {
   ref,
-  Ref,
 } from 'vue';
 
+const showPermissionDialog = ref(false);
 const authVerifyData = ref<any>({ permissionAction: {}, urlParams: {} });
 const permissionParams = ref({ system_id: '', actions: [] });
 
 // 权限hook
-export function useVerify(showPermissionDialog?: Ref<boolean>) {
+export function useVerify() {
   const commonStore = useCommonStore();
 
   // 根据参数获取权限
   const getAuthVerifyData = async (authData: any[]) => {
+    console.log('authData', authData);
     if (!authData) return;
     // 格式化参数
     const params = authData?.reduce((p, v) => {
@@ -81,5 +82,6 @@ export function useVerify(showPermissionDialog?: Ref<boolean>) {
     handleAuth,
     authVerifyData,
     permissionParams,
+    showPermissionDialog,
   };
 }

@@ -82,7 +82,8 @@ const toCurrentPage = (authVerifyData: any, currentFindAuthData: any, next: Navi
 router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   const commonStore = useCommonStore();
   const { pageAuthData, authVerifyData } = commonStore;      // 所有需要检验的查看权限数据
-  const currentFindAuthData = pageAuthData.find((e: any) => e.path === to.path);
+  console.log('to.path', to, pageAuthData);
+  const currentFindAuthData = pageAuthData.find((e: any) => e.path === to.path || e?.path?.includes(to.path));
 
   if (from.path === '/') { // 刷新或者首次进入请求权限接口
     const { getAuthVerifyData } = useVerify();    // 权限中心权限

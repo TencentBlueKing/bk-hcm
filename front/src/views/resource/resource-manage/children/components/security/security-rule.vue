@@ -24,6 +24,7 @@ import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import { useVerify } from '@/hooks';
 
 const props = defineProps({
   filter: {
@@ -50,6 +51,7 @@ const {
 
 const resourceStore = useResourceStore();
 
+
 const activeType = ref('ingress');
 const deleteDialogShow = ref(false);
 const deleteId = ref(0);
@@ -59,6 +61,18 @@ const dataId = ref('');
 const AllData = ref({ ALL: 'ALL', '-1': '-1', '*': '*' });
 const azureDefaultList = ref([]);
 const azureDefaultColumns = ref([]);
+
+// 权限hook
+const {
+  showPermissionDialog,
+  handlePermissionConfirm,
+  handlePermissionDialog,
+  handleAuth,
+  permissionParams,
+  authVerifyData,
+} = useVerify();
+
+console.log('authVerifyData', authVerifyData?.permissionAction?.iaas_resource_delete);
 
 const state = reactive<any>({
   datas: [],
@@ -287,18 +301,30 @@ const inColumns = [
             ],
           ),
           h(
-            Button,
+            'span',
             {
-              class: 'ml10',
-              text: true,
-              theme: 'primary',
               onClick() {
-                deleteDialogShow.value = true;
-                deleteId.value = data.id;
+                handleAuth('iaas_resource_delete');
               },
             },
             [
-              t('删除'),
+              h(
+                Button,
+                {
+                  class: 'ml10',
+                  text: true,
+                  theme: 'primary',
+                  disabled: !authVerifyData?.permissionAction?.iaas_resource_delete,
+                  onClick() {
+                    deleteDialogShow.value = true;
+                    deleteId.value = data.id;
+                  },
+                },
+                [
+                  t('删除'),
+                ],
+              ),
+
             ],
           ),
         ],
@@ -537,6 +563,14 @@ if (props.vendor === 'huawei') {
   >
     <span>删除后不可恢复</span>
   </bk-dialog>
+
+
+  <permission-dialog
+    v-model:is-show="showPermissionDialog"
+    :params="permissionParams"
+    @cancel="handlePermissionDialog"
+    @confirm="handlePermissionConfirm"
+  ></permission-dialog>
 </template>
 
 <style lang="scss" scoped>

@@ -204,8 +204,6 @@ export default defineComponent({
       btnLoading: false,
     });
 
-    const showPermissionDialog = ref(false);    // 无权限弹窗
-
     onMounted(async () => {
       /* 获取账号列表接口 */
       // getListCount(); // 数量
@@ -214,12 +212,13 @@ export default defineComponent({
 
     // 权限hook
     const {
+      showPermissionDialog,
       handlePermissionConfirm,
       handlePermissionDialog,
       handleAuth,
       permissionParams,
       authVerifyData,
-    } = useVerify(showPermissionDialog);
+    } = useVerify();
 
     console.log('authVerifyData', authVerifyData);
 

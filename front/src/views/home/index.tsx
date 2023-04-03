@@ -11,7 +11,7 @@ import business from '@/router/module/business';
 import { classes, deleteCookie } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
-import { useUserStore, useAccountStore } from '@/store';
+import { useUserStore, useAccountStore, useCommonStore } from '@/store';
 import { useI18n } from 'vue-i18n';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
@@ -30,6 +30,7 @@ export default defineComponent({
     const router = useRouter();
     const userStore = useUserStore();
     const accountStore = useAccountStore();
+    const commonStore = useCommonStore();
     const { Option } = Select;
 
     let topMenuActiveItem = '';
@@ -50,6 +51,16 @@ export default defineComponent({
         const res = await accountStore.getBizListWithAuth();
         loading.value = false;
         businessList.value = res?.data;
+        if (!businessList.value.length) {      // 没有权限
+          router.push({
+            name: '403',
+            params: {
+              id: 'biz_access',
+            },
+          });
+          return;
+        }
+        console.log('businessList.value', businessList.value.length);
         businessId.value = accountStore.bizs || res?.data[0].id;   // 默认取第一个业务
         accountStore.updateBizsId(businessId.value); // 设置全局业务id
       } catch (error) {
@@ -112,6 +123,13 @@ export default defineComponent({
         deep: true,
       },
     );
+
+    watch(() => businessId.value, (val) => {
+      console.log('val', val, commonStore.pageAuthData);
+    }, {
+      immediate: true,
+      deep: true,
+    });
 
     const handleHeaderMenuClick = (id: string, routeName: string): void => {
       if (route.name !== routeName) {

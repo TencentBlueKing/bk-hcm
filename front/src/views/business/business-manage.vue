@@ -100,6 +100,8 @@ const handleSuccess = () => {
   componentRef.value.fetchComponentsData();
 };
 
+console.log(1111);
+
 
 // 权限hook
 const {
