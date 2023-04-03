@@ -29,6 +29,8 @@ import (
 	"hcm/pkg/logs"
 )
 
+var syncConcurrencyCount = 10
+
 // SyncAllResourceOption ...
 type SyncAllResourceOption struct {
 	AccountID string `json:"account_id" validate:"required"`

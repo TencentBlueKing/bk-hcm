@@ -32,7 +32,7 @@ import (
 func SyncTCloudImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []string) error {
 
 	start := time.Now()
-	logs.V(3).Infof("tcloud account[%s] sync public image start, time: %v, rid: %s", accountID, start, kt.Rid)
+	logs.V(3).Infof("tcloud account[%s] sync image start, time: %v, rid: %s", accountID, start, kt.Rid)
 
 	defer func() {
 		logs.V(3).Infof("tcloud account[%s] sync image end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
@@ -44,7 +44,7 @@ func SyncTCloudImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, reg
 			Region:    region,
 		}
 		if err := hcCli.TCloud.Image.SyncImage(kt.Ctx, kt.Header(), req); err != nil {
-			logs.Errorf("sync tcloud public image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+			logs.Errorf("sync tcloud image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 			return err
 		}
 

@@ -20,6 +20,7 @@
 package aws
 
 import (
+	gosync "sync"
 	"time"
 
 	protoimage "hcm/pkg/api/hc-service/image"
@@ -32,21 +33,43 @@ import (
 func SyncAwsImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []string) error {
 
 	start := time.Now()
-	logs.V(3).Infof("aws account[%s] sync public image start, time: %v, rid: %s", accountID, start, kt.Rid)
+	logs.V(3).Infof("aws account[%s] sync image start, time: %v, rid: %s", accountID, start, kt.Rid)
 
 	defer func() {
-		logs.V(3).Infof("aws account[%s] sync image end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
+		logs.V(3).Infof("aws account[%s] sync image end, cost: %v, rid: %s", accountID, time.Since(start),
+			kt.Rid)
 	}()
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, region := range regions {
-		req := &protoimage.AwsImageSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		}
-		if err := hcCli.Aws.Image.SyncImage(kt.Ctx, kt.Header(), req); err != nil {
-			logs.Errorf("sync aws public image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-			return err
-		}
+		pipeline <- true
+		wg.Add(1)
+
+		go func(region string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			req := &protoimage.AwsImageSyncReq{
+				AccountID: accountID,
+				Region:    region,
+			}
+			err := hcCli.Aws.Image.SyncImage(kt.Ctx, kt.Header(), req)
+			if firstErr == nil {
+				logs.Errorf("sync aws image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(region)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

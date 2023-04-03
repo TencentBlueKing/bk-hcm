@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	gosync "sync"
 	"time"
 
 	"hcm/pkg/adaptor/huawei"
@@ -34,7 +35,7 @@ import (
 func SyncHuaWeiImage(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
 
 	start := time.Now()
-	logs.V(3).Infof("huawei account[%s] sync public image start, time: %v, rid: %s", accountID, start, kt.Rid)
+	logs.V(3).Infof("huawei account[%s] sync image start, time: %v, rid: %s", accountID, start, kt.Rid)
 
 	defer func() {
 		logs.V(3).Infof("huawei account[%s] sync image end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
@@ -46,15 +47,36 @@ func SyncHuaWeiImage(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataservice.
 		return err
 	}
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, region := range regions {
-		req := &protoimage.HuaWeiImageSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		}
-		if err := hcCli.HuaWei.Image.SyncImage(kt.Ctx, kt.Header(), req); Error(err) != nil {
-			logs.Errorf("sync huawei public image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-			return err
-		}
+		pipeline <- true
+		wg.Add(1)
+
+		go func(region string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			req := &protoimage.HuaWeiImageSyncReq{
+				AccountID: accountID,
+				Region:    region,
+			}
+			err = hcCli.HuaWei.Image.SyncImage(kt.Ctx, kt.Header(), req)
+			if firstErr == nil && Error(err) != nil {
+				logs.Errorf("sync huawei image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(region)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

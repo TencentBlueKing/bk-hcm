@@ -20,6 +20,8 @@
 package image
 
 import (
+	"fmt"
+
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/image"
 	apicore "hcm/pkg/api/core"
@@ -247,59 +249,50 @@ func (da *imageAdaptor) syncAwsImageUpdate(updateIDs []string, cloudMap map[stri
 func (da *imageAdaptor) getAwsImageDSSync(cloudIDs []string, req *protoimage.AwsImageSyncReq,
 	cts *rest.Contexts) ([]string, map[string]*AwsDSImageSync, error) {
 
+	if len(cloudIDs) > int(apicore.DefaultMaxPageLimit) {
+		return nil, nil, fmt.Errorf("list aws image cloudIDs should <= %d", apicore.DefaultMaxPageLimit)
+	}
+
 	updateIDs := make([]string, 0)
 	dsMap := make(map[string]*AwsDSImageSync)
 
-	start := 0
-	for {
-
-		dataReq := &dataproto.ImageListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					&filter.AtomRule{
-						Field: "vendor",
-						Op:    filter.Equal.Factory(),
-						Value: enumor.Aws,
-					},
-					&filter.AtomRule{
-						Field: "cloud_id",
-						Op:    filter.In.Factory(),
-						Value: cloudIDs,
-					},
-					&filter.AtomRule{
-						Field: "extension.region",
-						Op:    filter.JSONEqual.Factory(),
-						Value: req.Region,
-					},
+	dataReq := &dataproto.ImageListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: enumor.Aws,
+				},
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.In.Factory(),
+					Value: cloudIDs,
+				},
+				&filter.AtomRule{
+					Field: "extension.region",
+					Op:    filter.JSONEqual.Factory(),
+					Value: req.Region,
 				},
 			},
-			Page: &apicore.BasePage{
-				Start: uint32(start),
-				Limit: apicore.DefaultMaxPageLimit,
-			},
-		}
+		},
+		Page: apicore.DefaultBasePage,
+	}
 
-		results, err := da.dataCli.Aws.ListImage(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
-		if err != nil {
-			logs.Errorf("from data-service list image failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return updateIDs, dsMap, err
-		}
+	results, err := da.dataCli.Aws.ListImage(cts.Kit.Ctx, cts.Kit.Header(), dataReq)
+	if err != nil {
+		logs.Errorf("from data-service list image failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return updateIDs, dsMap, err
+	}
 
-		if len(results.Details) > 0 {
-			for _, detail := range results.Details {
-				updateIDs = append(updateIDs, detail.CloudID)
-				dsImageSync := new(AwsDSImageSync)
-				dsImageSync.Image = detail
-				dsMap[detail.CloudID] = dsImageSync
-			}
+	if len(results.Details) > 0 {
+		for _, detail := range results.Details {
+			updateIDs = append(updateIDs, detail.CloudID)
+			dsImageSync := new(AwsDSImageSync)
+			dsImageSync.Image = detail
+			dsMap[detail.CloudID] = dsImageSync
 		}
-
-		start += len(results.Details)
-		if uint(len(results.Details)) < dataReq.Page.Limit {
-			break
-		}
-
 	}
 
 	return updateIDs, dsMap, nil

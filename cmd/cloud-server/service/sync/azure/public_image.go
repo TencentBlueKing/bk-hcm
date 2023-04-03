@@ -33,7 +33,7 @@ func SyncAzureImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regi
 	resGroupNames []string) error {
 
 	start := time.Now()
-	logs.V(3).Infof("azure account[%s] sync public image start, time: %v, rid: %s", accountID, start, kt.Rid)
+	logs.V(3).Infof("azure account[%s] sync image start, time: %v, rid: %s", accountID, start, kt.Rid)
 
 	defer func() {
 		logs.V(3).Infof("azure account[%s] sync image end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
@@ -47,7 +47,7 @@ func SyncAzureImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regi
 				ResourceGroupName: name,
 			}
 			if err := hcCli.Azure.Image.SyncImage(kt.Ctx, kt.Header(), req); err != nil {
-				logs.Errorf("sync azure public image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				logs.Errorf("sync azure image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 				return err
 			}
 

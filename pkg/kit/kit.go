@@ -139,6 +139,10 @@ func FromHeader(ctx context.Context, header http.Header) (*Kit, error) {
 		RequestSource: enumor.RequestSourceType(header.Get(constant.RequestSourceKey)),
 	}
 
+	if kt.Ctx.Value(constant.RidKey) == nil {
+		kt.Ctx = context.WithValue(kt.Ctx, constant.RidKey, kt.Rid)
+	}
+
 	if err := kt.Validate(); err != nil {
 		return nil, err
 	}

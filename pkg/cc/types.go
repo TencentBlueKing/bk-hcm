@@ -233,7 +233,7 @@ func (ds *ResourceDB) trySetDefault() {
 	}
 
 	if ds.ReadTimeoutSec == 0 {
-		ds.ReadTimeoutSec = 5
+		ds.ReadTimeoutSec = 10
 	}
 
 	if ds.WriteTimeoutSec == 0 {

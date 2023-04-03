@@ -135,6 +135,7 @@ func (pImageDao *ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Imag
 	)
 	details := make([]*image.ImageModel, 0)
 	if err = pImageDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		logs.Errorf("select image failed, err: %v, sql: %s, values: %v, rid: %s", err, sql, whereValue, kt.Rid)
 		return nil, err
 	}
 
