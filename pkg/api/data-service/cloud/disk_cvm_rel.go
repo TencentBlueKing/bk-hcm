@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud/cvm"
 	diskcvmrel "hcm/pkg/api/core/cloud/disk-cvm-rel"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	"hcm/pkg/criteria/constant"
@@ -165,13 +166,13 @@ func (req *ListWithCvmReq) Validate() error {
 // ListWithCvmResp ...
 type ListWithCvmResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          *ListWithCvmResult `json:"data"`
+	Data          *ListCvmResult `json:"data"`
 }
 
-// ListWithCvmResult ...
-type ListWithCvmResult struct {
-	Count   uint64                  `json:"count"`
-	Details []diskcvmrel.RelWithCvm `json:"details"`
+// ListCvmResult ...
+type ListCvmResult struct {
+	Count   uint64        `json:"count"`
+	Details []cvm.BaseCvm `json:"details"`
 }
 
 // ListDiskWithoutCvmReq ...

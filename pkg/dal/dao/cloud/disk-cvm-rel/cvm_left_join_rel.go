@@ -36,8 +36,8 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// ListCvmLeftJoinRel ...
-func (relDao *DiskCvmRelDao) ListCvmLeftJoinRel(kt *kit.Kit, opt *types.ListOption, notEqualDiskID string) (
+// ListCvmIDLeftJoinRel ...
+func (relDao *DiskCvmRelDao) ListCvmIDLeftJoinRel(kt *kit.Kit, opt *types.ListOption, notEqualDiskID string) (
 	*cloud.CvmLeftJoinDiskCvmRelResult, error) {
 
 	if opt == nil {
@@ -67,7 +67,7 @@ func (relDao *DiskCvmRelDao) ListCvmLeftJoinRel(kt *kit.Kit, opt *types.ListOpti
 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(
-			`SELECT count(*) FROM %s as cvm left join %s as rel on cvm.id = rel.cvm_id %s`,
+			`SELECT count(*) FROM %s as cvm left join %s as rel on cvm.id = rel.cvm_id %s group by cvm.id`,
 			table.CvmTable, tablecloud.DiskCvmRelTableName, whereExpr)
 
 		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
@@ -79,21 +79,27 @@ func (relDao *DiskCvmRelDao) ListCvmLeftJoinRel(kt *kit.Kit, opt *types.ListOpti
 		return &cloud.CvmLeftJoinDiskCvmRelResult{Count: count}, nil
 	}
 
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		logs.Errorf(
+			"gen page expr for list disk cvm rels failed, err: %v, filter: %s, rid: %s",
+			err,
+			opt.Filter,
+			kt.Rid,
+		)
+		return nil, err
+	}
+
 	sql := fmt.Sprintf(
-		`SELECT %s, %s FROM %s as cvm left join %s as rel on cvm.id = rel.cvm_id %s`,
+		`SELECT cvm.id as id, %s FROM %s as cvm left join %s as rel on cvm.id = rel.cvm_id %s group by cvm.id %s`,
 		cvm.TableColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
-		tools.BaseRelJoinSqlBuild(
-			"rel",
-			"cvm",
-			"id",
-			"disk_id",
-		),
 		table.CvmTable,
 		tablecloud.DiskCvmRelTableName,
 		whereExpr,
+		pageExpr,
 	)
 
-	details := make([]cloud.CvmLeftJoinDiskCvmRel, 0)
+	details := make([]cvm.Table, 0)
 	if err := relDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		logs.ErrorJson("select cvm left join disk_cvm_rel failed, err: %v, filter: %s, diskID: %s, rid: %s", err,
 			opt.Filter, notEqualDiskID, kt.Rid)

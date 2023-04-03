@@ -129,9 +129,9 @@
     "op": "and",
     "rules": [
       {
-        "field": "created_at",
+        "field": "vendor",
         "op": "eq",
-        "value": "Jim"
+        "value": "tcloud"
       }
     ]
   },
@@ -279,6 +279,3 @@
 | reviser                   | string       | 修改者                                  |
 | created_at                | string       | 创建时间                                 |
 | updated_at                | string       | 修改时间                                 |
-| disk_id                   | string       | 硬盘ID，可能为null                         |
-| rel_creator               | string       | 关联关系创建者，可能为null                      |
-| rel_created_at            | string       | 关联关系创建时间，可能为null                     |

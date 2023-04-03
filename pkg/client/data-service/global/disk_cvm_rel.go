@@ -130,7 +130,7 @@ func (rc *restClient) DeleteDiskCvmRel(
 
 // ListDiskCvmRelWithCvm ...
 func (rc *restClient) ListDiskCvmRelWithCvm(ctx context.Context, h http.Header, request *dataproto.ListWithCvmReq,
-) (*dataproto.ListWithCvmResult, error) {
+) (*dataproto.ListCvmResult, error) {
 
 	resp := new(dataproto.ListWithCvmResp)
 

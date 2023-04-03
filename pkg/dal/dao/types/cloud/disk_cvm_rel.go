@@ -56,8 +56,8 @@ type CvmLeftJoinDiskCvmRel struct {
 
 // CvmLeftJoinDiskCvmRelResult define cvm left join disk cvm rel result.
 type CvmLeftJoinDiskCvmRelResult struct {
-	Count   uint64                  `json:"count"`
-	Details []CvmLeftJoinDiskCvmRel `json:"details"`
+	Count   uint64      `json:"count"`
+	Details []cvm.Table `json:"details"`
 }
 
 // DiskLeftJoinDiskCvmRel define disk left join disk cvm rel result.
