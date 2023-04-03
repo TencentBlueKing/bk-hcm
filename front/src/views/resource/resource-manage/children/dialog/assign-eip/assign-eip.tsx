@@ -105,7 +105,8 @@ export default defineComponent({
       },
       type,
       null,
-      type === 'cvms' ? 'list' : 'getUnbindEipNetworkList'
+      type === 'cvms' ? 'list' : 'getUnbindEipNetworkList',
+      type === 'cvms' ? {} : { is_associate: true }
     );
 
     const columns = useColumns(columnType, true);

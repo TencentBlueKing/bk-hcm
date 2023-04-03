@@ -24,6 +24,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label,
       field,
       sort: true,
+      width: label === 'ID' ? '120' : 'auto',
       onlyShowOnList,
       render({ data }: { cell: string, data: any }) {
         if (data[idFiled] < 0 || !data[idFiled]) {

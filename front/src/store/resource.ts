@@ -172,7 +172,7 @@ export const useResourceStore = defineStore({
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}disk_cvm_rels/with/disks/without/cvm/list`, data)
     },
 
-    // 获取未绑定主机的disk列表
+    // 获取未绑定主机的eips列表
     getUnbindCvmEips(data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}eip_cvm_rels/with/eips/without/cvm/list`, data)
     }
