@@ -77,6 +77,14 @@ const handleAdd = () => {
     router.push({
       path: '/service/service-apply/disk',
     });
+  } else if (renderComponent.value === HostManage) {
+    router.push({
+      path: '/service/service-apply/cvm',
+    });
+  } else if (renderComponent.value === VpcManage) {
+    router.push({
+      path: '/service/service-apply/vpc',
+    });
   } else {
     isShowSideSlider.value = true;
   }
@@ -112,7 +120,11 @@ const {
         :is="renderComponent"
         :filter="filter"
       >
-        <bk-button theme="primary" class="new-button" @click="handleAdd">新增</bk-button>
+        <bk-button theme="primary" class="new-button" @click="handleAdd">
+          {{renderComponent === DriveManage ||
+            renderComponent === HostManage ||
+            renderComponent === VpcManage ? '申请' : '新增'}}
+        </bk-button>
       </component>
     </bk-loading>
   </section>

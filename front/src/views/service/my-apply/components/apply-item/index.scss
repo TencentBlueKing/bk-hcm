@@ -59,6 +59,9 @@ $borderColor:  #f5f6fa;
             &.deliver_error {
                 background-color: #ea3636;
             }
+            &.delivering {
+              background: #367FF9;
+          }
         }
     }
     .bottom-info {
