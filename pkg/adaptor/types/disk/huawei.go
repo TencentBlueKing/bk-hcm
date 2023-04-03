@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
 
 	ecsmodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/evs/v2/model"
@@ -101,8 +102,16 @@ func (opt *HuaWeiDiskCreateOption) ToCreateVolumeRequest() (*model.CreateVolumeR
 	// 预付费时, 需要设置订购周期等参数
 	if chargingMode.Value() == HuaWeiDiskChargeTypeEnum.PRE_PAID {
 		req.Body.BssParam.PeriodNum = opt.DiskChargePrepaid.PeriodNum
-		req.Body.BssParam.PeriodType, _ = getCreateVolumePeriodType(*opt.DiskChargePrepaid.PeriodType)
-		req.Body.BssParam.IsAutoRenew, _ = getCreateVolumeIsAutoRenew(*opt.DiskChargePrepaid.IsAutoRenew)
+		req.Body.BssParam.PeriodType, err = getCreateVolumePeriodType(*opt.DiskChargePrepaid.PeriodType)
+		if err != nil {
+			return nil, err
+		}
+
+		if opt.DiskChargePrepaid.IsAutoRenew != nil && *opt.DiskChargePrepaid.IsAutoRenew == "true" {
+			req.Body.BssParam.IsAutoRenew = converter.ValToPtr(model.GetBssParamForCreateVolumeIsAutoRenewEnum().TRUE)
+		}
+
+		req.Body.BssParam.IsAutoPay = converter.ValToPtr(model.GetBssParamForCreateVolumeIsAutoPayEnum().TRUE)
 	}
 
 	return req, nil
@@ -218,9 +227,9 @@ type HuaWeiDiskAttachOption struct {
 	CloudDiskID string `json:"cloud_disk_id" validate:"required"`
 	// 磁盘挂载点。  > 说明：  - 新增加的磁盘挂载点不能和已有的磁盘挂载点相同。
 	// - 对于采用XEN虚拟化类型的弹性云服务器，device为必选参数；系统盘挂载点请指定/dev/sda；
-	//数据盘挂载点请按英文字母顺序依次指定，如/dev/sdb，/dev/sdc，如果指定了以“/dev/vd”开头的挂载点，系统默认改为“/dev/sd”。
-	//- 对于采用KVM虚拟化类型的弹性云服务器，系统盘挂载点请指定/dev/vda；数据盘挂载点可不用指定，也可按英文字母顺序依次指定，
-	//如/dev/vdb，/dev/vdc，如果指定了以“/dev/sd”开头的挂载点，系统默认改为“/dev/vd”。
+	// 数据盘挂载点请按英文字母顺序依次指定，如/dev/sdb，/dev/sdc，如果指定了以“/dev/vd”开头的挂载点，系统默认改为“/dev/sd”。
+	// - 对于采用KVM虚拟化类型的弹性云服务器，系统盘挂载点请指定/dev/vda；数据盘挂载点可不用指定，也可按英文字母顺序依次指定，
+	// 如/dev/vdb，/dev/vdc，如果指定了以“/dev/sd”开头的挂载点，系统默认改为“/dev/vd”。
 	DeviceName *string `json:"device_name"`
 }
 
