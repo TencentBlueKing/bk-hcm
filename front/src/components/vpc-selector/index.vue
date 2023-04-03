@@ -11,6 +11,12 @@ const props = defineProps({
       return 'tcloud';
     },
   },
+  region: {
+    type: String,
+    default() {
+      return '';
+    },
+  },
   modelValue: {
     type: String,
   },
@@ -30,7 +36,7 @@ const getVpcList = async () => {
   loading.value = true;
   const rulesData = [];
   if (props.vendor) {
-    rulesData.push({ field: 'vendor', op: 'eq', value: props.vendor });
+    rulesData.push({ field: 'vendor', op: 'eq', value: props.vendor }, { field: 'region', op: 'eq', value: props.region });
   }
   const res = await resourceStore.list({
     filter: { op: 'and', rules: rulesData },
@@ -54,6 +60,14 @@ watch(() => selectedValue.value, (val) => {
 });
 
 watch(() => props.vendor, () => {
+  vpcPage.value = 0;
+  hasMoreData.value = true;
+  vpcList.value = [];
+  selectedValue.value = '';
+  getVpcList();
+});
+
+watch(() => props.region, () => {
   vpcPage.value = 0;
   hasMoreData.value = true;
   vpcList.value = [];

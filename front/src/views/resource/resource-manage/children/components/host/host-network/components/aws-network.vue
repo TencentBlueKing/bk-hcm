@@ -2,10 +2,8 @@
 import { useI18n } from 'vue-i18n';
 import {
   ref,
-  h,
 } from 'vue';
 import {
-  Button,
   InfoBox,
 } from 'bkui-vue';
 
@@ -36,27 +34,27 @@ const columns = [
     label: '备注',
     field: 'id',
   },
-  {
-    label: '操作',
-    render() {
-      return [
-        h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            class: 'mr10',
-            onClick() {
-              handleFreedIp();
-            },
-          },
-          [
-            '解绑',
-          ],
-        ),
-      ];
-    },
-  },
+  // {
+  //   label: '操作',
+  //   render() {
+  //     return [
+  //       h(
+  //         Button,
+  //         {
+  //           text: true,
+  //           theme: 'primary',
+  //           class: 'mr10',
+  //           onClick() {
+  //             handleFreedIp();
+  //           },
+  //         },
+  //         [
+  //           '解绑',
+  //         ],
+  //       ),
+  //     ];
+  //   },
+  // },
 ];
 const tableData = [
   {
@@ -94,13 +92,13 @@ const handleRadio = (item: any) => {
 </script>
 
 <template>
-  <bk-button
+  <!-- <bk-button
     class="mt20"
     theme="primary"
     @click="handleToggleShow"
   >
     {{ t('绑定已有网络接口') }}
-  </bk-button>
+  </bk-button> -->
   <bk-table
     class="mt20"
     row-hover="auto"

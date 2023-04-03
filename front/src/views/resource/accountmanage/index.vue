@@ -37,12 +37,9 @@
           prop="name"
         >
           <template #default="{ data }">
-            <div @click="handleAuth('account_edit')">
-              <bk-button
-                text theme="primary"
-                @click="handleJump('accountDetail', data.id)"
-                :disabled="!authVerifyData.permissionAction?.account_edit">{{data?.name}}</bk-button>
-            </div>
+            <bk-button
+              text theme="primary"
+              @click="handleJump('accountDetail', data.id, true)">{{data?.name}}</bk-button>
           </template>
         </bk-table-column>
         <bk-table-column
@@ -94,11 +91,6 @@
         >
           <template #default="props">
             <div class="operate-button">
-              <bk-button
-                text theme="primary" @click="handleOperate(props?.data.id, 'sync')"
-                v-if="props?.data?.type === 'resource'">
-                {{t('同步')}}
-              </bk-button>
               <div @click="handleAuth('account_edit')">
                 <bk-button
                   text theme="primary" @click="handleJump('accountDetail', props?.data.id)"
@@ -108,6 +100,11 @@
               </div>
               <bk-button class="ml15" text theme="primary" @click="handleOperate(props?.data.id, 'del')">
                 {{t('删除')}}
+              </bk-button>
+              <bk-button
+                text theme="primary" @click="handleOperate(props?.data.id, 'sync')"
+                v-if="props?.data?.type === 'resource'">
+                {{t('同步')}}
               </bk-button>
             </div>
           </template>
@@ -219,8 +216,6 @@ export default defineComponent({
       permissionParams,
       authVerifyData,
     } = useVerify();
-
-    console.log('authVerifyData', authVerifyData);
 
     // 请求获取列表的总条数
     const getListCount = async () => {
@@ -342,7 +337,7 @@ export default defineComponent({
       state.btnLoading = false;
     };
     // 跳转页面
-    const handleJump = (routerName: string, id?: string) => {
+    const handleJump = (routerName: string, id?: string, isDetail?: boolean) => {
       const routerConfig = {
         query: {},
         name: routerName,
@@ -350,6 +345,7 @@ export default defineComponent({
       if (id) {
         routerConfig.query = {
           id,
+          isDetail,
         };
       }
       router.push(routerConfig);

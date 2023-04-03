@@ -20,8 +20,8 @@ export const useCommonStore = defineStore({
       { type: 'biz', action: 'access', id: 'biz_access' },
 
       // 目前主机、vpc、子网、安全组、云硬盘、网络接口、弹性IP、路由表、镜像等都当作iaas统一鉴权，为了方便，使用cvm当作整个iaas鉴权
-      { type: 'cvm', action: 'find',  id: 'resource_find_cvm', path: ['/business/host', '/resource/resource'] },    // 业务 资源对应的路径
-      { type: 'cvm', action: 'create', id: 'iaas_resource_operate_cvm' },    // iaas操作
+      { type: 'cvm', action: 'find',  id: 'resource_find', path: ['/business/host', '/resource/resource'] },    // 业务 资源对应的路径
+      { type: 'cvm', action: 'create', id: 'iaas_resource_operate' },    // iaas操作
       { type: 'cvm', action: 'delete', id: 'iaas_resource_delete' },    // iaas删除
 
       // // 安全组

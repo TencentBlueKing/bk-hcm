@@ -288,17 +288,29 @@ const inColumns = [
         {},
         [
           props.vendor !== 'huawei' && h(
-            Button,
+            'span',
             {
-              text: true,
-              theme: 'primary',
               onClick() {
-                handleSecurityRuleDialog(data);
+                handleAuth('iaas_resource_operate');
               },
             },
             [
-              t('编辑'),
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled: !authVerifyData?.permissionAction?.iaas_resource_operate,
+                  onClick() {
+                    handleSecurityRuleDialog(data);
+                  },
+                },
+                [
+                  t('编辑'),
+                ],
+              ),
             ],
+
           ),
           h(
             'span',

@@ -18,6 +18,8 @@ export default defineComponent({
     const route = useRoute();
     const formDiaRef = ref(null);
     const requestQueue = ref(['detail', 'bizsList']);
+    const isDetail = ref(route.query.isDetail);
+    console.log('type', isDetail.value);
 
     const initProjectModel: ProjectModel = {
       id: 1,
@@ -653,7 +655,10 @@ export default defineComponent({
             isEdit: false,
             component() {
               // eslint-disable-next-line max-len
-              return (<RenderDetailEdit v-model={projectModel.name} fromPlaceholder={t('请输入名称')} fromKey={this.property} isEdit={this.isEdit} onBlur={handleblur}/>);
+              return (<RenderDetailEdit v-model={projectModel.name}
+                fromPlaceholder={t('请输入名称')} fromKey={this.property}
+                hideEdit={!!isDetail.value}
+               isEdit={this.isEdit} onBlur={handleblur}/>);
             },
           },
           {
@@ -662,7 +667,8 @@ export default defineComponent({
             property: 'managers',
             isEdit: false,
             component() {
-              return (<RenderDetailEdit v-model={projectModel.managers} fromKey={this.property} fromType="member" isEdit={this.isEdit} onBlur={handleblur}/>);
+              return (<RenderDetailEdit v-model={projectModel.managers} fromKey={this.property} fromType="member"
+              hideEdit={!!isDetail.value} isEdit={this.isEdit} onBlur={handleblur}/>);
             },
           },
           {
@@ -708,7 +714,8 @@ export default defineComponent({
             isEdit: false,
             component() {
               // eslint-disable-next-line max-len
-              return (<RenderDetailEdit v-model={projectModel.memo} fromKey={this.property} fromType="textarea" isEdit={this.isEdit} onBlur={handleblur}/>);
+              return (<RenderDetailEdit v-model={projectModel.memo} fromKey={this.property} fromType="textarea"
+              hideEdit={!!isDetail.value} isEdit={this.isEdit} onBlur={handleblur}/>);
             },
           },
         ],
@@ -764,10 +771,10 @@ export default defineComponent({
                 <div>
                     <div class="font-bold pb10">
                       {baseItem.name}
-                      {index === 2
+                      {index === 2 && !isDetail.value
                         ? <span>
                             {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
-                            <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'} onClick={handleModifyScret}/>
+                            <i class={'icon hcm-icon bkhcm-icon-edit pl15 account-edit-icon'}  onClick={handleModifyScret}/>
                           </span> : ''}
                     </div>
                     <Form model={projectModel} labelWidth={140} rules={formRules} ref={formRef}>

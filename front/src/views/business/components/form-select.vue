@@ -4,8 +4,9 @@ import {
   useI18n,
 } from 'vue-i18n';
 import { useAccountStore, useResourceStore } from '@/store';
-import { BusinessFormFilter } from '@/typings';
+import { BusinessFormFilter, QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import { CLOUD_TYPE } from '@/constants';
+import { VendorEnum } from '@/common/constant';
 
 const props = defineProps({
   hidden: {
@@ -33,6 +34,11 @@ const state = reactive<{filter: BusinessFormFilter}>({
   },
 });
 
+const filter  = ref<QueryFilterType>({
+  op: 'and',
+  rules: [],
+});
+
 watch(
   () => state.filter,
   (value) => {
@@ -43,9 +49,48 @@ watch(
 
 watch(
   () => state.filter.vendor,
-  () => {
+  (val) => {
     state.filter.region = '';
     cloudRegionsList.value = [];
+    switch (val) {
+      case VendorEnum.TCLOUD:
+        filter.value.rules = [
+          {
+            field: 'vendor',
+            op: QueryRuleOPEnum.EQ,
+            value: val,
+          },
+          {
+            field: 'status',
+            op: QueryRuleOPEnum.EQ,
+            value: 'AVAILABLE',
+          },
+        ];
+        break;
+      case VendorEnum.AWS:
+        filter.value.rules = [
+          {
+            field: 'vendor',
+            op: QueryRuleOPEnum.EQ,
+            value: val,
+          },
+          {
+            field: 'status',
+            op: QueryRuleOPEnum.EQ,
+            value: 'opt-in-not-required',
+          },
+        ];
+        break;
+      case VendorEnum.GCP:
+        filter.value.rules = [
+          {
+            field: 'status',
+            op: QueryRuleOPEnum.EQ,
+            value: 'UP',
+          },
+        ];
+        break;
+    }
     getCloudRegionList();
   },
 );
@@ -86,7 +131,7 @@ const getCloudRegionList = () => {
   cloudRegionsLoading.value = true;
   resourceStore
     .getCloudRegion(state.filter.vendor, {
-      filter: { op: 'and', rules: [] },
+      filter: filter.value,
       page: {
         count: false,
         start: cloudAreaPage.value,

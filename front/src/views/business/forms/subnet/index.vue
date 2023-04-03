@@ -83,12 +83,14 @@ watch(() => formData.vendor, (val) => {
         :label="t('所属的VPC')"
         class="item-warp"
       >
-        <vpc-selector :vendor="formData.vendor" v-model="formData.cloud_vpc_id"></vpc-selector>
+        <vpc-selector
+          :vendor="formData.vendor"
+          :region="formData.region" v-model="formData.cloud_vpc_id"></vpc-selector>
       </bk-form-item>
       <bk-form-item
         :label="t('可用区')"
         class="item-warp"
-        v-if="formData.vendor === 'tcloud' || formData.vendor === 'aws' || formData.vendor === 'huawei'"
+        v-if="formData.vendor === 'tcloud' || formData.vendor === 'aws'"
       >
         <zone-selector
           :vendor="formData.vendor"

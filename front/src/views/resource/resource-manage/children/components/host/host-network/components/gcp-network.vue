@@ -122,27 +122,27 @@ const columns = [
       ];
     },
   },
-  {
-    label: '操作',
-    render() {
-      return [
-        h(
-          Button,
-          {
-            text: true,
-            theme: 'primary',
-            class: 'mr10',
-            onClick() {
-              handleFreedIp();
-            },
-          },
-          [
-            '解绑',
-          ],
-        ),
-      ];
-    },
-  },
+  // {
+  //   label: '操作',
+  //   render() {
+  //     return [
+  //       h(
+  //         Button,
+  //         {
+  //           text: true,
+  //           theme: 'primary',
+  //           class: 'mr10',
+  //           onClick() {
+  //             handleFreedIp();
+  //           },
+  //         },
+  //         [
+  //           '解绑',
+  //         ],
+  //       ),
+  //     ];
+  //   },
+  // },
 ];
 
 
@@ -195,13 +195,13 @@ getNetWorkList();
   <bk-loading
     :loading="isLoading"
   >
-    <bk-button
+    <!-- <bk-button
       class="mt20"
       theme="primary"
       @click="handleToggleShow"
     >
       {{ t('绑定已有网络接口') }}
-    </bk-button>
+    </bk-button> -->
     <bk-table
       class="mt20"
       row-hover="auto"
