@@ -137,7 +137,7 @@ func (relDao *DiskCvmRelDao) ListDiskLeftJoinRel(kt *kit.Kit, opt *types.ListOpt
 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(
-			`SELECT count(*) FROM %s as disk left join %s as rel on disk.id = rel.disk_id %s`,
+			`SELECT count(distinct(disk.id)) FROM %s as disk left join %s as rel on disk.id = rel.disk_id %s`,
 			table.DiskTable, tablecloud.DiskCvmRelTableName, whereExpr)
 
 		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
@@ -149,18 +149,24 @@ func (relDao *DiskCvmRelDao) ListDiskLeftJoinRel(kt *kit.Kit, opt *types.ListOpt
 		return &cloud.DiskLeftJoinDiskCvmRelResult{Count: count}, nil
 	}
 
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		logs.Errorf(
+			"gen page expr for list disk cvm rels failed, err: %v, filter: %s, rid: %s",
+			err,
+			opt.Filter,
+			kt.Rid,
+		)
+		return nil, err
+	}
+
 	sql := fmt.Sprintf(
-		`SELECT %s, %s FROM %s as disk left join %s as rel on disk.id = rel.disk_id %s`,
+		`SELECT disk.id as id, %s FROM %s as disk left join %s as rel on disk.id = rel.disk_id %s group by disk.id %s`,
 		disk.DiskColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
-		tools.BaseRelJoinSqlBuild(
-			"rel",
-			"disk",
-			"id",
-			"disk_id",
-		),
 		table.DiskTable,
 		tablecloud.DiskCvmRelTableName,
 		whereExpr,
+		pageExpr,
 	)
 
 	details := make([]cloud.DiskLeftJoinDiskCvmRel, 0)

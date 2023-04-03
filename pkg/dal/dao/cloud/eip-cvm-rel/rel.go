@@ -242,7 +242,7 @@ func (relDao *EipCvmRelDao) ListEipLeftJoinRel(kt *kit.Kit, opt *types.ListOptio
 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(
-			`SELECT count(*) FROM %s as eip left join %s as rel on eip.id = rel.eip_id %s`,
+			`SELECT count(distinct(eip.id)) FROM %s as eip left join %s as rel on eip.id = rel.eip_id %s`,
 			table.EipTable, tablecloud.EipCvmRelTableName, whereExpr)
 
 		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
@@ -254,18 +254,24 @@ func (relDao *EipCvmRelDao) ListEipLeftJoinRel(kt *kit.Kit, opt *types.ListOptio
 		return &cloud.EipLeftJoinEipCvmRelResult{Count: count}, nil
 	}
 
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		logs.Errorf(
+			"gen page expr for list disk cvm rels failed, err: %v, filter: %s, rid: %s",
+			err,
+			opt.Filter,
+			kt.Rid,
+		)
+		return nil, err
+	}
+
 	sql := fmt.Sprintf(
-		`SELECT %s, %s FROM %s as eip left join %s as rel on eip.id = rel.eip_id %s`,
+		`SELECT eip.id as id, %s FROM %s as eip left join %s as rel on eip.id = rel.eip_id %s group by eip.id %s`,
 		tableeip.EipColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
-		tools.BaseRelJoinSqlBuild(
-			"rel",
-			"eip",
-			"id",
-			"eip_id",
-		),
 		table.EipTable,
 		tablecloud.EipCvmRelTableName,
 		whereExpr,
+		pageExpr,
 	)
 
 	details := make([]cloud.EipLeftJoinEipCvmRel, 0)
