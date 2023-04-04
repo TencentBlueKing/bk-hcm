@@ -25,6 +25,8 @@ import (
 	"strings"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 
 	"github.com/TencentBlueKing/gopkg/collection/set"
@@ -84,6 +86,10 @@ func (req *TCloudCvmCreateReq) Validate() error {
 
 	if req.RequiredCount > requiredCountMaxLimit {
 		return fmt.Errorf("required count should <= %d", requiredCountMaxLimit)
+	}
+
+	if err := validator.ValidateCvmName(enumor.TCloud, req.Name); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 校验系统硬盘

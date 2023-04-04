@@ -23,6 +23,8 @@ import (
 	"fmt"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -63,6 +65,10 @@ type GcpCvmCreateReq struct {
 func (req *GcpCvmCreateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
+	}
+
+	if err := validator.ValidateCvmName(enumor.Gcp, req.Name); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	if req.RequiredCount > requiredCountMaxLimit {

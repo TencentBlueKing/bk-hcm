@@ -21,10 +21,10 @@ package application
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/assert"
@@ -41,8 +41,6 @@ var (
 		"user3", "user4", "user5", "video",
 	})
 )
-
-var azureCvmNameRegexp = regexp.MustCompile(`^([A-Za-z0-9][A-Za-z0-9-.]*)[A-Za-z0-9]$`)
 
 // AzureCvmCreateReq ...
 type AzureCvmCreateReq struct {
@@ -87,9 +85,8 @@ func (req *AzureCvmCreateReq) Validate() error {
 		return err
 	}
 
-	if !azureCvmNameRegexp.MatchString(req.Name) {
-		return fmt.Errorf("invalid name: %s, only allows to include english、numbers、underscore "+
-			"、hyphen (-)、point (，), and must start and end with an english、numbers", req.Name)
+	if err := validator.ValidateCvmName(enumor.Azure, req.Name); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 校验用户名
