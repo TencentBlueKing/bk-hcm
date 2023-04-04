@@ -186,7 +186,7 @@ type AzureCvm struct {
 	Type                *string                                       `json:"type"`
 	CloudImageID        *string                                       `json:"cloud_image_id"`
 	ComputerName        *string                                       `json:"computer_name"`
-	ProvisioningState   *string                                       `json:"provisioning_state"`
+	Status              *string                                       `json:"status"`
 	EvictionPolicy      *armcompute.VirtualMachineEvictionPolicyTypes `json:"eviction_policy"`
 	VMSize              *armcompute.VirtualMachineSizeTypes           `json:"vm_size"`
 	LicenseType         *string                                       `json:"license_type"`

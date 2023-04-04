@@ -21,6 +21,7 @@ package azure
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
@@ -34,6 +35,7 @@ import (
 )
 
 // ListCvm reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP
+// https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/instance-view
 func (az *Azure) ListCvm(kt *kit.Kit, opt *typecvm.AzureListOption) ([]*typecvm.AzureCvm, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
@@ -58,10 +60,21 @@ func (az *Azure) ListCvm(kt *kit.Kit, opt *typecvm.AzureListOption) ([]*typecvm.
 		vms = append(vms, nextResult.Value...)
 	}
 
-	return converterToAzureCvm(vms), nil
+	cvms := converterToAzureCvm(vms)
+	for _, cvm := range cvms {
+		status, err := az.GetCvmStatus(kt, opt.ResourceGroupName, converter.PtrToVal(cvm.Name))
+		if err != nil {
+			return nil, err
+		}
+
+		cvm.Status = converter.ValToPtr(status)
+	}
+
+	return cvms, nil
 }
 
 // ListCvmByID reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP
+// https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/instance-view
 func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*typecvm.AzureCvm, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
@@ -94,7 +107,17 @@ func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*typ
 					delete(idMap, *id)
 
 					if len(idMap) == 0 {
-						return converterToAzureCvm(vms), nil
+						cvms := converterToAzureCvm(vms)
+						for _, cvm := range cvms {
+							status, err := az.GetCvmStatus(kt, opt.ResourceGroupName, converter.PtrToVal(cvm.Name))
+							if err != nil {
+								return nil, err
+							}
+
+							cvm.Status = converter.ValToPtr(status)
+						}
+
+						return cvms, nil
 					}
 				}
 			} else {
@@ -103,7 +126,17 @@ func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*typ
 		}
 	}
 
-	return converterToAzureCvm(vms), nil
+	cvms := converterToAzureCvm(vms)
+	for _, cvm := range cvms {
+		status, err := az.GetCvmStatus(kt, opt.ResourceGroupName, converter.PtrToVal(cvm.Name))
+		if err != nil {
+			return nil, err
+		}
+
+		cvm.Status = converter.ValToPtr(status)
+	}
+
+	return cvms, nil
 }
 
 func converterToAzureCvm(vms []*armcompute.VirtualMachine) []*typecvm.AzureCvm {
@@ -152,8 +185,6 @@ func converterToAzureCvm(vms []*armcompute.VirtualMachine) []*typecvm.AzureCvm {
 		if v.Properties.OSProfile != nil {
 			tmp.ComputerName = v.Properties.OSProfile.ComputerName
 		}
-
-		tmp.ProvisioningState = v.Properties.ProvisioningState
 
 		tmp.EvictionPolicy = v.Properties.EvictionPolicy
 
@@ -455,4 +486,33 @@ func (az *Azure) GetCvm(kt *kit.Kit, opt *typecvm.AzureGetOption) (*typecvm.Azur
 	}
 
 	return new(typecvm.AzureCvm), nil
+}
+
+// GetCvmStatus https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/instance-view?tabs=HTTP#code-try-0
+func (az *Azure) GetCvmStatus(kt *kit.Kit, resGroupName, cvmName string) (string, error) {
+
+	client, err := az.clientSet.virtualMachineClient()
+	if err != nil {
+		return "", fmt.Errorf("new cvm client failed, err: %v", err)
+	}
+
+	resp, err := client.InstanceView(kt.Ctx, resGroupName, cvmName, nil)
+	if err != nil {
+		logs.Errorf("get instance view failed, err: %v, resGroupName: %s, cvmName: %s, rid: %s", err,
+			resGroupName, cvmName, kt.Rid)
+		return "", err
+	}
+
+	status := ""
+	for _, one := range resp.Statuses {
+		if strings.Contains(converter.PtrToVal(one.DisplayStatus), "VM") {
+			status = converter.PtrToVal(one.Code)
+		}
+	}
+
+	if len(status) == 0 {
+		return "", fmt.Errorf("get cvm status failed")
+	}
+
+	return status, nil
 }

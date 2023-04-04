@@ -278,7 +278,7 @@ func isChangeAzure(kt *kit.Kit, cloud *AzureCvmSync, db *AzureDSCvmSync,
 		return true
 	}
 
-	if db.Cvm.Status != *cloud.Cvm.ProvisioningState {
+	if db.Cvm.Status != *cloud.Cvm.Status {
 		return true
 	}
 
@@ -440,7 +440,7 @@ func syncAzureCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*Az
 			SubnetIDs:      subnetIDs,
 			// 云上不支持该字段
 			Memo:                 nil,
-			Status:               converter.PtrToVal(cloudMap[id].Cvm.ProvisioningState),
+			Status:               converter.PtrToVal(cloudMap[id].Cvm.Status),
 			PrivateIPv4Addresses: privateIPv4Addresses,
 			PrivateIPv6Addresses: privateIPv6Addresses,
 			PublicIPv4Addresses:  publicIPv4Addresses,
@@ -567,7 +567,7 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 			OsName:         converter.PtrToVal(cloudMap[id].Cvm.ComputerName),
 			// 云上不支持该字段
 			Memo:                 nil,
-			Status:               converter.PtrToVal(cloudMap[id].Cvm.ProvisioningState),
+			Status:               converter.PtrToVal(cloudMap[id].Cvm.Status),
 			PrivateIPv4Addresses: privateIPv4Addresses,
 			PrivateIPv6Addresses: privateIPv6Addresses,
 			PublicIPv4Addresses:  publicIPv4Addresses,
