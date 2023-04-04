@@ -32,6 +32,7 @@ import (
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/cvm"
 	"hcm/cmd/hc-service/service/disk"
+	"hcm/cmd/hc-service/service/eip"
 	"hcm/cmd/hc-service/service/firewall"
 	"hcm/cmd/hc-service/service/image"
 	instancetype "hcm/cmd/hc-service/service/instance-type"
@@ -61,8 +62,6 @@ import (
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/ssl"
-
-	"hcm/cmd/hc-service/service/eip"
 
 	"github.com/emicklei/go-restful/v3"
 )

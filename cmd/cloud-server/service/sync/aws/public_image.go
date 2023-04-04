@@ -58,7 +58,7 @@ func SyncAwsImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, region
 				Region:    region,
 			}
 			err := hcCli.Aws.Image.SyncImage(kt.Ctx, kt.Header(), req)
-			if firstErr == nil {
+			if firstErr == nil && err != nil {
 				logs.Errorf("sync aws image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 				firstErr = err
 				return

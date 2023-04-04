@@ -20,6 +20,7 @@
 package aws
 
 import (
+	gosync "sync"
 	"time"
 
 	"hcm/pkg/api/hc-service/zone"
@@ -38,15 +39,36 @@ func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []
 		logs.V(3).Infof("aws account[%s] sync zone end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, region := range regions {
-		syncReq := &zone.AwsZoneSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		}
-		if err := hcCli.Aws.Zone.SyncZone(kt.Ctx, kt.Header(), syncReq); err != nil {
-			logs.Errorf("sync aws zone failed, err: %v, req: %v, rid: %s", err, syncReq, kt.Rid)
-			return err
-		}
+		pipeline <- true
+		wg.Add(1)
+
+		go func(region string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			syncReq := &zone.AwsZoneSyncReq{
+				AccountID: accountID,
+				Region:    region,
+			}
+			err := hcCli.Aws.Zone.SyncZone(kt.Ctx, kt.Header(), syncReq)
+			if firstErr == nil && err != nil {
+				logs.Errorf("sync aws zone failed, err: %v, req: %v, rid: %s", err, syncReq, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(region)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil
