@@ -43,6 +43,7 @@ type SyncAwsEipOption struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Region    string   `json:"region" validate:"required"`
 	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	BkBizID   int64    `json:"bk_biz_id" validate:"omitempty"`
 }
 
 // Validate SyncAwsEipOption
@@ -221,6 +222,7 @@ func syncAwsEipAdd(kt *kit.Kit, addIDs []string, req *SyncAwsEipOption,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
+			BkBizID:    req.BkBizID,
 			Extension: &dataproto.AwsEipExtensionCreateReq{
 				PublicIpv4Pool:          cloudMap[id].Eip.PublicIpv4Pool,
 				Domain:                  cloudMap[id].Eip.Domain,

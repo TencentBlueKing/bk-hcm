@@ -52,6 +52,7 @@ func (req *TCloudEipDisassociateReq) Validate() error {
 // TCloudEipCreateReq ...
 type TCloudEipCreateReq struct {
 	AccountID string `json:"account_id" validate:"required"`
+	BkBizID   int64  `json:"bk_biz_id" validate:"required"`
 	*eip.TCloudEipCreateOption
 }
 

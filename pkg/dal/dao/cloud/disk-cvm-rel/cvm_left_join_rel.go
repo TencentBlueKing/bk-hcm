@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -44,8 +45,9 @@ func (relDao *DiskCvmRelDao) ListCvmIDLeftJoinRel(kt *kit.Kit, opt *types.ListOp
 		return nil, errf.New(errf.InvalidParameter, "list disk cvm rel options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cvm.TableColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+	columnTypes := cvm.TableColumns.ColumnTypes()
+	columnTypes["extension.zones"] = enumor.Json
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)), core.DefaultPageOption); err != nil {
 		return nil, err
 	}
 

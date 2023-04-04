@@ -51,6 +51,7 @@ func (req *AwsEipDisassociateReq) Validate() error {
 // AwsEipCreateReq ...
 type AwsEipCreateReq struct {
 	AccountID string `json:"account_id" validate:"required"`
+	BkBizID   int64  `json:"bk_biz_id" validate:"required"`
 	*eip.AwsEipCreateOption
 }
 

@@ -222,7 +222,8 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 
 	_, err = synceip.SyncAwsEip(
 		cts.Kit,
-		&synceip.SyncAwsEipOption{AccountID: req.AccountID, Region: req.Region, CloudIDs: cloudIDs},
+		&synceip.SyncAwsEipOption{AccountID: req.AccountID, Region: req.Region, CloudIDs: cloudIDs,
+			BkBizID: req.BkBizID},
 		svc.Adaptor, svc.DataCli,
 	)
 	if err != nil {

@@ -43,6 +43,7 @@ type SyncAzureEipOption struct {
 	AccountID         string   `json:"account_id" validate:"required"`
 	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
 	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+	BkBizID           int64    `json:"bk_biz_id" validate:"omitempty"`
 }
 
 // Validate SyncAzureEipOption
@@ -221,6 +222,7 @@ func syncAzureEipAdd(kt *kit.Kit, addIDs []string, req *SyncAzureEipOption,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
+			BkBizID:    req.BkBizID,
 			Extension: &dataproto.AzureEipExtensionCreateReq{
 				ResourceGroupName: req.ResourceGroupName,
 				IpConfigurationID: cloudMap[id].Eip.IpConfigurationID,

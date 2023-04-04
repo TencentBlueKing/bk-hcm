@@ -49,6 +49,7 @@ type EipExtCreateReq[T EipExtensionCreateReq] struct {
 	Status       string  `json:"status"`
 	PublicIp     string  `json:"public_ip"`
 	PrivateIp    string  `json:"private_ip"`
+	BkBizID      int64   `json:"bk_biz_id"`
 	Extension    *T      `json:"extension"`
 }
 

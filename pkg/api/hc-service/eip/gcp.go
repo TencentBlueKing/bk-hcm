@@ -53,6 +53,7 @@ func (req *GcpEipDisassociateReq) Validate() error {
 // GcpEipCreateReq ...
 type GcpEipCreateReq struct {
 	AccountID string `json:"account_id" validate:"required"`
+	BkBizID   int64  `json:"bk_biz_id" validate:"required"`
 	*eip.GcpEipCreateOption
 }
 

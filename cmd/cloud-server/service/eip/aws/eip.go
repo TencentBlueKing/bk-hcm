@@ -28,7 +28,6 @@ import (
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	datarelproto "hcm/pkg/api/data-service/cloud"
-	dataproto "hcm/pkg/api/data-service/cloud/eip"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -184,13 +183,13 @@ func (a *Aws) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	bkBizID, err := cts.PathParameter("bk_biz_id").Uint64()
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	// validate biz and authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Eip, Action: meta.Create}, BizID: int64(bkBizID)}
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Eip, Action: meta.Create}, BizID: bkBizID}
 	err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
 	if err != nil {
 		return nil, err
@@ -201,6 +200,7 @@ func (a *Aws) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		cts.Kit.Header(),
 		&hcproto.AwsEipCreateReq{
 			AccountID: req.AccountID,
+			BkBizID:   bkBizID,
 			AwsEipCreateOption: &eip.AwsEipCreateOption{
 				Region:             req.Region,
 				PublicIpv4Pool:     req.PublicIpv4Pool,
@@ -208,17 +208,6 @@ func (a *Aws) CreateEip(cts *rest.Contexts) (interface{}, error) {
 			},
 		},
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	// 分配业务
-	_, err = a.client.DataService().Global.BatchUpdateEip(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.EipBatchUpdateReq{IDs: resp.IDs, BkBizID: bkBizID},
-	)
-
 	if err != nil {
 		return nil, err
 	}

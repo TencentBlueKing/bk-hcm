@@ -301,11 +301,16 @@ func batchCreateEipExt[T dataproto.EipExtensionCreateReq](
 			if err != nil {
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
+
+			bkBizID := int64(constant.UnassignedBiz)
+			if eipReq.BkBizID > 0 {
+				bkBizID = eipReq.BkBizID
+			}
 			eips[idx] = &tablecloud.EipModel{
 				Vendor:    string(vendor),
 				AccountID: eipReq.AccountID,
 				CloudID:   eipReq.CloudID,
-				BkBizID:   constant.UnassignedBiz,
+				BkBizID:   bkBizID,
 				Name:      eipReq.Name,
 				Region:    eipReq.Region,
 				Status:    eipReq.Status,

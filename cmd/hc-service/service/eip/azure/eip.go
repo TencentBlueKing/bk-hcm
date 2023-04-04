@@ -277,15 +277,13 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 
 	cloudIDs := []string{strings.ToLower(converter.PtrToVal(eipPtr))}
 
-	_, err = synceip.SyncAzureEip(
-		cts.Kit,
+	_, err = synceip.SyncAzureEip(cts.Kit,
 		&synceip.SyncAzureEipOption{
 			AccountID:         req.AccountID,
 			CloudIDs:          cloudIDs,
 			ResourceGroupName: req.ResourceGroupName,
-		},
-		svc.Adaptor,
-		svc.DataCli,
+			BkBizID:           req.BkBizID,
+		}, svc.Adaptor, svc.DataCli,
 	)
 	if err != nil {
 		logs.Errorf("SyncAzureEip failed, err: %v, rid: %s", err, cts.Kit.Rid)

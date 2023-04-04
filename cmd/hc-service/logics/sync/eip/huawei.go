@@ -43,6 +43,7 @@ type SyncHuaWeiEipOption struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Region    string   `json:"region" validate:"required"`
 	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	BkBizID   int64    `json:"bk_biz_id" validate:"omitempty"`
 }
 
 // Validate SyncHuaWeiEipOption
@@ -224,6 +225,7 @@ func syncHuaWeiEipAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiEipOption,
 			Status:     converter.PtrToVal(cloudMap[id].Eip.Status),
 			PublicIp:   converter.PtrToVal(cloudMap[id].Eip.PublicIp),
 			PrivateIp:  converter.PtrToVal(cloudMap[id].Eip.PrivateIp),
+			BkBizID:    req.BkBizID,
 			Extension: &dataproto.HuaWeiEipExtensionCreateReq{
 				PortID:              cloudMap[id].Eip.PortID,
 				BandwidthId:         cloudMap[id].Eip.BandwidthId,
