@@ -16,6 +16,9 @@ export default defineComponent({
     vpcId: String as PropType<string>,
     vendor: String as PropType<string>,
     region: String as PropType<string>,
+    accountId: String as PropType<string>,
+    zone: String as PropType<string>,
+    resourceGroup: String as PropType<string>,
   },
   emits: ['update:modelValue'],
   setup(props, { emit, attrs }) {
@@ -35,8 +38,11 @@ export default defineComponent({
       () => props.bizId,
       () => props.region,
       () => props.vendor,
-      () => props.vpcId
-    ], async ([bizId, region, vendor, vpcId]) => {
+      () => props.vpcId,
+      () => props.accountId,
+      () => props.zone,
+      () => props.resourceGroup,
+    ], async ([bizId, region, vendor, vpcId, accountId, zone, resourceGroup]) => {
       if (!bizId || !vpcId) {
         list.value = [];
         return;
@@ -52,19 +58,37 @@ export default defineComponent({
             op: QueryRuleOPEnum.EQ,
             value: vpcId,
           },
+          {
+            field: 'accountId',
+            op: QueryRuleOPEnum.EQ,
+            value: accountId,
+          },
+          {
+            field: 'region',
+            op: QueryRuleOPEnum.EQ,
+            value: region,
+          }
         ],
       };
 
-      if (vendor === VendorEnum.GCP) {
+      if ([VendorEnum.TCLOUD, VendorEnum.AWS].includes(vendor)) {
         filter.rules.push({
-          field: 'region',
+          field: 'zone',
           op: QueryRuleOPEnum.EQ,
-          value: region,
+          value: zone,
+        })
+      }
+
+      if (vendor === VendorEnum.AZURE) {
+        filter.rules.push({
+          field: 'extension.resource_group_name',
+          op: QueryRuleOPEnum.JSON_EQ,
+          value: resourceGroup
         })
       }
 
       const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizId}/subnets/list`, {
-      // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/list`, {
+        // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/list`, {
         filter,
         page: {
           count: false,

@@ -116,6 +116,32 @@ const {
   },
 );
 
+const rules = [
+  {
+    field: 'vendor',
+    op: 'eq',
+    value: props.data.vendor,
+  },
+  {
+    field: 'region',
+    op: 'eq',
+    value: props.data.region,
+  },
+  {
+    field: 'account_id',
+    op: 'eq',
+    value: props.data.account_id,
+  },
+]
+
+if (props.data.vendor === 'azure') {
+  rules.push({
+    field: 'extension.resource_group_name',
+    op: 'json_eq',
+    value: props.data.resource_group_name,
+  })
+}
+
 // 当前 vendor 下的eip资源
 const {
   datas: eipList,
@@ -128,23 +154,7 @@ const {
   {
     filter: {
       op: 'and',
-      rules: [
-        {
-          field: 'vendor',
-          op: 'eq',
-          value: props.data.vendor,
-        },
-        {
-          field: 'region',
-          op: 'eq',
-          value: props.data.region,
-        },
-        {
-          field: 'account_id',
-          op: 'eq',
-          value: props.data.account_id,
-        },
-      ],
+      rules,
     },
   },
   'eips',

@@ -235,8 +235,8 @@ export default defineComponent({
             label: '名称',
             required: true,
             property: 'name',
-            maxlength: 32,
-            description: '1.以小写字母开头，支持短横线，下划线。 2.最长32个字符。3.不能以连字符结尾',
+            maxlength: 60,
+            description: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾',
             content: () => <Input placeholder='填写主机的名称' v-model={formData.name} />,
           },
           {
@@ -296,6 +296,9 @@ export default defineComponent({
               vpcId={vpcId.value}
               vendor={cond.vendor}
               region={cond.region}
+              accountId={cond.cloudAccountId}
+              zone={formData.zone}
+              resourceGroup={cond.resourceGroup}
               clearable={false} />,
           },
           {
@@ -493,8 +496,8 @@ export default defineComponent({
     const formRules = {
       name: [
         {
-          pattern: /^[a-z][\w-]{0,31}(?<!-)$/,
-          message: '以小写字母开头，支持短横线，下划线，不能以连字符结尾，最长32个字符',
+          pattern: /^[a-zA-Z0-9][a-zA-Z0-9-]{0,58}[a-zA-Z0-9]$/,
+          message: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾',
           trigger: 'change',
         },
       ],

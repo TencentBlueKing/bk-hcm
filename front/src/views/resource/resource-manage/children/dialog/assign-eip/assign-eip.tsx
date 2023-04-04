@@ -90,6 +90,11 @@ export default defineComponent({
           field: 'recycle_status',
           op: 'neq',
           value: 'recycling'
+        },
+        {
+          field: 'status',
+          op: 'in',
+          value: ['RUNNING', 'STOPPED', 'STARTING', 'STOPPING', 'REBOOTING', 'REBOOT', 'HARD_REBOOT', 'ACTIVE', 'SHUTOFF', 'running', 'stopping', 'stopped', 'Succeeded']
         }
       ]);
     }
