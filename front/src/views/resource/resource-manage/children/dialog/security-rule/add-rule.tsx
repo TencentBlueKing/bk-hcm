@@ -507,11 +507,11 @@ export default defineComponent({
         if (e.sourceAddress !== 'ipv4_cidr') {
           delete e.ipv4_cidr;
         }
-        if (e.source_port_range.includes(',')) {
+        if (e.source_port_range?.includes(',')) {
           e.source_port_ranges = e.source_port_range.split(',');
           delete e.source_port_range;
         }
-        if (e.destination_port_range.includes(',')) {
+        if (e.destination_port_range?.includes(',')) {
           e.destination_port_ranges = e.destination_port_range.split(',');
           delete e.destination_port_range;
         }
