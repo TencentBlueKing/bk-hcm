@@ -21,7 +21,9 @@
 package vpc
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 
 	"hcm/cmd/hc-service/logics/subnet"
 	"hcm/cmd/hc-service/service/sync"
@@ -33,7 +35,10 @@ import (
 	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/retry"
 )
 
 // GcpVpcCreate create gcp vpc.
@@ -104,21 +109,50 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		regionSubnetMap[s.Extension.Region] = append(regionSubnetMap[s.Extension.Region], s)
 	}
 
+	cloudVpcID := listRes.Details[0].CloudID
 	for region, subnets := range regionSubnetMap {
-		subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.GcpSubnetCreateExt]{
-			BkBizID:    req.BkBizID,
-			AccountID:  req.AccountID,
-			Region:     region,
-			CloudVpcID: listRes.Details[0].CloudID,
-			CreateReqs: subnets,
-		}
-		_, err = v.subnet.GcpSubnetCreate(cts.Kit, subnetCreateOpt)
+		err = v.createGcpSubnetWithRetry(cts.Kit, req.BkBizID, req.AccountID, cloudVpcID, region, subnets)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return core.CreateResult{ID: result.IDs[0]}, nil
+}
+
+const maxRetryCount = 10
+
+// createGcpSubnetWithRetry create gcp subnet, retry when vpc is not ready.
+func (v vpc) createGcpSubnetWithRetry(kt *kit.Kit, bizID int64, accountID, cloudVpcID, region string,
+	subnets []hcservice.SubnetCreateReq[hcservice.GcpSubnetCreateExt]) error {
+
+	rty := retry.NewRetryPolicy(maxRetryCount, [2]uint{5000, 10000})
+
+	for {
+		if rty.RetryCount() == maxRetryCount {
+			return fmt.Errorf("create subnet failed count exceeds %d", maxRetryCount)
+		}
+
+		subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.GcpSubnetCreateExt]{
+			BkBizID:    bizID,
+			AccountID:  accountID,
+			Region:     region,
+			CloudVpcID: cloudVpcID,
+			CreateReqs: subnets,
+		}
+		_, err := v.subnet.GcpSubnetCreate(kt, subnetCreateOpt)
+		if err != nil {
+			if strings.Contains(err.Error(), "resourceNotReady") {
+				rty.Sleep()
+				continue
+			}
+
+			logs.Errorf("create subnet failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+		return nil
+	}
 }
 
 func convertGcpVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.GcpVpcCreateExt],

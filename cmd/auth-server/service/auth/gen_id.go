@@ -85,7 +85,10 @@ func genIaaSResourceResource(a *meta.ResourceAttribute) (client.ActionID, []clie
 	case meta.Find, meta.Assign:
 		// find & assign action use generic cloud resource auth.
 		return genCloudResResource(a)
-	case meta.Update, meta.Create:
+	case meta.Create:
+		// create resource is related to hcm account resource
+		return sys.IaaSResourceCreate, []client.Resource{res}, nil
+	case meta.Update:
 		// update resource is related to hcm account resource
 		return sys.IaaSResourceOperate, []client.Resource{res}, nil
 	case meta.Delete, meta.Recycle:

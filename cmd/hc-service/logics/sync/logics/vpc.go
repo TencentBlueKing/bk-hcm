@@ -220,6 +220,10 @@ func QueryVpcIDsAndSyncForGcp(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClie
 		}
 	}
 
+	if len(notExistSelfLink) == 0 {
+		return existVpcMap, nil
+	}
+
 	syncOpt := &vpc.SyncGcpOption{
 		AccountID: accountID,
 		SelfLinks: notExistSelfLink,

@@ -104,7 +104,8 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 
 	createReqs := make([]cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt], 0, len(subnetRes.Details))
 	for _, subnet := range subnetRes.Details {
-		createReqs = append(createReqs, convertGcpSubnetCreateReq(&subnet, opt.AccountID, vpcRes.Details[0].Extension.SelfLink, opt.BkBizID))
+		createReqs = append(createReqs, convertGcpSubnetCreateReq(&subnet, opt.AccountID, opt.CloudVpcID,
+			opt.BkBizID))
 	}
 
 	// create hcm subnets
@@ -137,6 +138,7 @@ func convertGcpSubnetCreateReq(data *types.GcpSubnet, accountID, cloudVpcID stri
 		Memo:       data.Memo,
 		BkBizID:    bizID,
 		Extension: &cloud.GcpSubnetCreateExt{
+			VpcSelfLink:           data.CloudVpcID,
 			SelfLink:              data.Extension.SelfLink,
 			StackType:             data.Extension.StackType,
 			Ipv6AccessType:        data.Extension.Ipv6AccessType,
