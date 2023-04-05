@@ -17,7 +17,7 @@ import {
 
 import {
   useResourceStore,
-} from '@/store/resource';
+} from '@/store';
 
 import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 
@@ -51,7 +51,6 @@ const {
 
 const resourceStore = useResourceStore();
 
-
 const activeType = ref('ingress');
 const deleteDialogShow = ref(false);
 const deleteId = ref(0);
@@ -71,8 +70,6 @@ const {
   permissionParams,
   authVerifyData,
 } = useVerify();
-
-console.log('authVerifyData', authVerifyData?.permissionAction?.iaas_resource_delete);
 
 const state = reactive<any>({
   datas: [],
@@ -300,13 +297,13 @@ const inColumns = [
                 {
                   text: true,
                   theme: 'primary',
-                  disabled: !authVerifyData?.permissionAction?.iaas_resource_operate,
+                  disabled: !authVerifyData.value?.permissionAction?.iaas_resource_operate,
                   onClick() {
                     handleSecurityRuleDialog(data);
                   },
                 },
                 [
-                  t('编辑'),
+                  t('编辑'), !authVerifyData.value?.permissionAction?.iaas_resource_operate,
                 ],
               ),
             ],
@@ -316,7 +313,7 @@ const inColumns = [
             'span',
             {
               onClick() {
-                handleAuth('iaas_resource_delete');
+                handleAuth('iaas_resource_operate');
               },
             },
             [
@@ -326,7 +323,7 @@ const inColumns = [
                   class: 'ml10',
                   text: true,
                   theme: 'primary',
-                  disabled: !authVerifyData?.permissionAction?.iaas_resource_delete,
+                  disabled: !authVerifyData.value?.permissionAction?.iaas_resource_operate,
                   onClick() {
                     deleteDialogShow.value = true;
                     deleteId.value = data.id;
@@ -512,9 +509,13 @@ if (props.vendor === 'huawei') {
         </bk-radio-button>
       </bk-radio-group>
 
-      <bk-button theme="primary" @click="handleSecurityRuleDialog({})">
-        {{t('新增规则')}}
-      </bk-button>
+      <div @click="handleAuth('iaas_resource_operate')">
+        <bk-button
+          :disabled="!authVerifyData?.permissionAction?.iaas_resource_operate"
+          theme="primary" @click="handleSecurityRuleDialog({})">
+          {{t('新增规则')}}
+        </bk-button>
+      </div>
     </section>
 
     <div v-if="props.vendor === 'azure'" class="mb20">

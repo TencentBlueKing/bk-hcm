@@ -30,8 +30,6 @@ import { useAccountStore } from '@/store/account';
 const isShowSideSlider = ref(false);
 const componentRef = ref();
 
-const showPermissionDialog = ref(false);    // 无权限弹窗
-
 // use hooks
 const route = useRoute();
 const router = useRouter();
@@ -72,6 +70,10 @@ const renderForm = computed(() => {
   }, {});
 });
 
+const isResourcePage = computed(() => {   // 资源下没有业务ID
+  return !accountStore.bizs;
+});
+
 const handleAdd = () => {
   if (renderComponent.value === DriveManage) {
     router.push({
@@ -105,41 +107,59 @@ console.log(1111);
 
 // 权限hook
 const {
+  showPermissionDialog,
   handlePermissionConfirm,
   handlePermissionDialog,
   handleAuth,
   permissionParams,
   authVerifyData,
-} = useVerify(showPermissionDialog);
+} = useVerify();
 </script>
 
 <template>
-  <section class="business-manage-wrapper">
-    <bk-loading :loading="!accountStore.bizs">
-      <component
-        v-if="accountStore.bizs"
-        ref="componentRef"
-        :is="renderComponent"
-        :filter="filter"
-      >
-        <bk-button theme="primary" class="new-button" @click="handleAdd">
-          {{renderComponent === DriveManage ||
-            renderComponent === HostManage ||
-            renderComponent === VpcManage ? '申请' : '新增'}}
-        </bk-button>
-      </component>
-    </bk-loading>
-  </section>
-  <bk-sideslider
-    v-model:isShow="isShowSideSlider"
-    width="800"
-    title="新增"
-    quick-close
-  >
-    <template #default>
-      <component :is="renderForm" :filter="filter" @cancel="handleCancel" @success="handleSuccess"></component>
-    </template>
-  </bk-sideslider>
+  <div>
+    <section class="business-manage-wrapper">
+      <bk-loading :loading="!accountStore.bizs">
+        <component
+          v-if="accountStore.bizs"
+          ref="componentRef"
+          :is="renderComponent"
+          :filter="filter"
+          :is-resource-page="isResourcePage"
+          :auth-verify-data="authVerifyData"
+          @auth="(val: string) => {
+            handleAuth(val)
+          }"
+        >
+          <span @click="handleAuth('biz_iaas_resource_create')">
+            <bk-button
+              theme="primary" class="new-button"
+              :disabled="!authVerifyData?.value?.permissionAction?.biz_iaas_resource_create" @click="handleAdd">
+              {{renderComponent === DriveManage ||
+                renderComponent === HostManage ||
+                renderComponent === VpcManage ? '申请' : '新增'}}
+            </bk-button>
+          </span>
+        </component>
+      </bk-loading>
+    </section>
+    <bk-sideslider
+      v-model:isShow="isShowSideSlider"
+      width="800"
+      title="新增"
+      quick-close
+    >
+      <template #default>
+        <component :is="renderForm" :filter="filter" @cancel="handleCancel" @success="handleSuccess"></component>
+      </template>
+    </bk-sideslider>
+    <permission-dialog
+      v-model:is-show="showPermissionDialog"
+      :params="permissionParams"
+      @cancel="handlePermissionDialog"
+      @confirm="handlePermissionConfirm"
+    ></permission-dialog>
+  </div>
 </template>
 
 <style lang="scss" scoped>

@@ -10,7 +10,7 @@ export const useAccountStore = defineStore({
   state: () => ({
     fetching: false,
     list: shallowRef([]),
-    bizs: 0,
+    bizs: 0 as string | number,
   }),
   actions: {
     /**
@@ -162,7 +162,7 @@ export const useAccountStore = defineStore({
      * @param {number} id
      * @return {*}
      */
-    async updateBizsId(id: number) {
+    async updateBizsId(id: number | string) {
       this.bizs = id;
     },
   },

@@ -20,7 +20,6 @@ import {
   watch,
   reactive,
   defineExpose,
-  computed,
 } from 'vue';
 
 import {
@@ -37,12 +36,19 @@ const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
+  isResourcePage: {
+    type: Boolean,
+  },
+  authVerifyData: {
+    type: Object as PropType<any>,
+  },
 });
 
 // use hooks
 const {
   t,
 } = useI18n();
+
 
 const router = useRouter();
 
@@ -52,6 +58,8 @@ const activeType = ref('group');
 const fetchUrl = ref<string>('security_groups/list');
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
+
+const emit = defineEmits(['auth']);
 
 const state = reactive<any>({
   datas: [],
@@ -98,10 +106,6 @@ watch(
   },
 );
 
-const isResourcePage = computed(() => {   // 资源下没有业务ID
-  return !accountStore.bizs;
-});
-
 
 const handleSwtichType = async (type: string) => {
   if (type === 'gcp') {
@@ -136,7 +140,7 @@ const groupColumns = [
         {
           text: true,
           theme: 'primary',
-          disabled: (data.bk_biz_id !== -1 && isResourcePage.value),
+          disabled: (data.bk_biz_id !== -1 && props.isResourcePage),
           onClick() {
             const routeInfo: any = {
               query: {
@@ -243,58 +247,80 @@ const groupColumns = [
         {},
         [
           h(
-            Button,
+            'span',
             {
-              text: true,
-              disabled: (data.bk_biz_id !== -1 && isResourcePage.value),
-              theme: 'primary',
               onClick() {
-                const routeInfo: any = {
-                  query: {
-                    activeTab: 'rule',
-                    id: data.id,
-                    vendor: data.vendor,
-                  },
-                };
-                // 业务下
-                if (route.path.includes('business')) {
-                  Object.assign(
-                    routeInfo,
-                    {
-                      name: 'securityBusinessDetail',
-                    },
-                  );
-                } else {
-                  Object.assign(
-                    routeInfo,
-                    {
-                      name: 'resourceDetail',
-                      params: {
-                        type: 'security',
-                      },
-                    },
-                  );
-                }
-                router.push(routeInfo);
+                emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
               },
             },
             [
-              t('配置规则'),
+              h(
+                Button,
+                {
+                  text: true,
+                  disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
+                  || (data.bk_biz_id !== -1 && props.isResourcePage),
+                  theme: 'primary',
+                  onClick() {
+                    const routeInfo: any = {
+                      query: {
+                        activeTab: 'rule',
+                        id: data.id,
+                        vendor: data.vendor,
+                      },
+                    };
+                      // 业务下
+                    if (route.path.includes('business')) {
+                      Object.assign(
+                        routeInfo,
+                        {
+                          name: 'securityBusinessDetail',
+                        },
+                      );
+                    } else {
+                      Object.assign(
+                        routeInfo,
+                        {
+                          name: 'resourceDetail',
+                          params: {
+                            type: 'security',
+                          },
+                        },
+                      );
+                    }
+                    router.push(routeInfo);
+                  },
+                },
+                [
+                  t('配置规则'),
+                ],
+              ),
             ],
           ),
           h(
-            Button,
+            'span',
             {
-              class: 'ml10',
-              disabled: data.bk_biz_id !== -1,
-              text: true,
-              theme: 'primary',
               onClick() {
-                securityHandleShowDelete(data);
+                emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
               },
             },
             [
-              t('删除'),
+              h(
+                Button,
+                {
+                  class: 'ml10',
+                  disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
+                  || data.bk_biz_id !== -1,
+                  text: true,
+                  theme: 'primary',
+                  onClick() {
+                    securityHandleShowDelete(data);
+                  },
+                },
+                [
+                  t('删除'),
+                ],
+              ),
             ],
           ),
         ],
@@ -303,9 +329,6 @@ const groupColumns = [
   },
 ];
 const gcpColumns = [
-  {
-    type: 'selection',
-  },
   {
     label: 'ID',
     field: 'id',
@@ -444,40 +467,62 @@ const gcpColumns = [
         {},
         [
           h(
-            Button,
+            'span',
             {
-              text: true,
-              theme: 'primary',
-              disabled: data.bk_biz_id !== -1,
               onClick() {
-                router.push({
-                  name: 'resourceDetail',
-                  params: {
-                    type: 'gcp',
-                  },
-                  query: {
-                    id: data.id,
-                  },
-                });
+                emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
               },
             },
             [
-              t('编辑'),
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
+                  || data.bk_biz_id !== -1,
+                  onClick() {
+                    router.push({
+                      name: 'resourceDetail',
+                      params: {
+                        type: 'gcp',
+                      },
+                      query: {
+                        id: data.id,
+                      },
+                    });
+                  },
+                },
+                [
+                  t('编辑'),
+                ],
+              ),
             ],
           ),
           h(
-            Button,
+            'span',
             {
-              class: 'ml10',
-              text: true,
-              disabled: data.bk_biz_id !== -1,
-              theme: 'primary',
               onClick() {
-                securityHandleShowDelete(data);
+                emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
               },
             },
             [
-              t('删除'),
+              h(
+                Button,
+                {
+                  class: 'ml10',
+                  text: true,
+                  disabled: !props.authVerifyData?.value?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
+                  || data.bk_biz_id !== -1,
+                  theme: 'primary',
+                  onClick() {
+                    securityHandleShowDelete(data);
+                  },
+                },
+                [
+                  t('删除'),
+                ],
+              ),
             ],
           ),
         ],
@@ -520,54 +565,56 @@ const securityHandleShowDelete = (data: any) => {
 </script>
 
 <template>
-  <bk-loading
-    :loading="state.isLoading"
-  >
-    <section>
-      <slot>
-      </slot>
-    </section>
-
-    <bk-radio-group
-      class="mt20"
-      v-model="activeType"
-      :disabled="state.isLoading"
+  <div>
+    <bk-loading
+      :loading="state.isLoading"
     >
-      <bk-radio-button
-        v-for="item in types"
-        :key="item.name"
-        :label="item.name"
+      <section>
+        <slot>
+        </slot>
+      </section>
+
+      <bk-radio-group
+        class="mt20"
+        v-model="activeType"
+        :disabled="state.isLoading"
       >
-        {{ item.label }}
-      </bk-radio-button>
-    </bk-radio-group>
+        <bk-radio-button
+          v-for="item in types"
+          :key="item.name"
+          :label="item.name"
+        >
+          {{ item.label }}
+        </bk-radio-button>
+      </bk-radio-group>
 
-    <bk-table
-      v-if="activeType === 'group'"
-      class="mt20"
-      row-hover="auto"
-      remote-pagination
-      :pagination="state.pagination"
-      :columns="groupColumns"
-      :data="state.datas"
-      @page-limit-change="state.handlePageSizeChange"
-      @page-value-change="state.handlePageChange"
-      @column-sort="state.handleSort"
-    />
+      <bk-table
+        v-if="activeType === 'group'"
+        class="mt20"
+        row-hover="auto"
+        remote-pagination
+        :pagination="state.pagination"
+        :columns="groupColumns"
+        :data="state.datas"
+        @page-limit-change="state.handlePageSizeChange"
+        @page-value-change="state.handlePageChange"
+        @column-sort="state.handleSort"
+      />
 
-    <bk-table
-      v-if="activeType === 'gcp'"
-      class="mt20"
-      row-hover="auto"
-      remote-pagination
-      :pagination="state.pagination"
-      :columns="gcpColumns"
-      :data="state.datas"
-      @page-limit-change="state.handlePageSizeChange"
-      @page-value-change="state.handlePageChange"
-      @column-sort="state.handleSort"
-    />
-  </bk-loading>
+      <bk-table
+        v-if="activeType === 'gcp'"
+        class="mt20"
+        row-hover="auto"
+        remote-pagination
+        :pagination="state.pagination"
+        :columns="gcpColumns"
+        :data="state.datas"
+        @page-limit-change="state.handlePageSizeChange"
+        @page-value-change="state.handlePageChange"
+        @column-sort="state.handleSort"
+      />
+    </bk-loading>
+  </div>
 </template>
 
 <style lang="scss" scoped>

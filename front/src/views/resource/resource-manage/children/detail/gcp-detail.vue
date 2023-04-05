@@ -8,6 +8,7 @@ import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
 import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 import { GcpTypeEnum, CloudType } from '@/typings';
+import { useVerify } from '@/hooks';
 
 import {
   useRoute,
@@ -41,6 +42,16 @@ const {
   'vendors/gcp/firewalls/rules',
   id,
 );
+
+// 权限hook
+const {
+  showPermissionDialog,
+  handlePermissionConfirm,
+  handlePermissionDialog,
+  handleAuth,
+  permissionParams,
+  authVerifyData,
+} = useVerify();
 
 const fetchDetail = async () => {
   gcpLoading.value = true;
@@ -231,49 +242,61 @@ const submit = async (data: any) => {
 </script>
 
 <template>
-  <detail-header>
-    {{t('GCP防火墙')}}：ID（{{`${id}`}}）
-    <template #right>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-        @click="handleGcpAdd(false)"
-      >
-        {{ t('修改') }}
-      </bk-button>
+  <div>
+    <detail-header>
+      {{t('GCP防火墙')}}：ID（{{`${id}`}}）
+      <template #right>
+        <div @click="handleAuth('iaas_resource_operate')">
+          <bk-button
+            :disabled="!authVerifyData?.permissionAction?.iaas_resource_operate"
+            class="w100 ml10"
+            theme="primary"
+            @click="handleGcpAdd(false)"
+          >
+            {{ t('修改') }}
+          </bk-button>
+        </div>
       <!-- <bk-button
         class="w100 ml10"
         theme="primary"
       >
         {{ t('删除') }}
       </bk-button> -->
-    </template>
-  </detail-header>
-  <!-- <detail-info
+      </template>
+    </detail-header>
+    <!-- <detail-info
     :fields="gcpFields"
     :detail="gcpDetail"
   /> -->
-  <bk-loading
-    :loading="gcpLoading"
-  >
-    <detail-info
-      :fields="gcpFields"
-      :detail="gcpDetail"
-    />
-  </bk-loading>
+    <bk-loading
+      :loading="gcpLoading"
+    >
+      <detail-info
+        :fields="gcpFields"
+        :detail="gcpDetail"
+      />
+    </bk-loading>
 
-  <!-- <detail-tab
+    <!-- <detail-tab
     :tabs="tabs"
   >
     <gcp-relate></gcp-relate>
   </detail-tab> -->
-  <gcp-add
-    v-model:is-show="isShowGcpAdd"
-    :gcp-title="gcpTitle"
-    :is-add="isAdd"
-    :loading="isLoading"
-    :detail="detail"
-    @submit="submit"></gcp-add>
+    <gcp-add
+      v-model:is-show="isShowGcpAdd"
+      :gcp-title="gcpTitle"
+      :is-add="isAdd"
+      :loading="isLoading"
+      :detail="detail"
+      @submit="submit"></gcp-add>
+
+    <permission-dialog
+      v-model:is-show="showPermissionDialog"
+      :params="permissionParams"
+      @cancel="handlePermissionDialog"
+      @confirm="handlePermissionConfirm"
+    ></permission-dialog>
+  </div>
 </template>
 
 <style lang="scss" scoped>

@@ -6,7 +6,8 @@
 import axios, { AxiosInstance } from 'axios';
 import cookie from 'cookie';
 import { Message } from 'bkui-vue';
-import { uuid } from 'vue-uuid';
+// import { uuid } from 'vue-uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 import bus from '@/common/bus';
 import CachedPromise from './cached-promise';
@@ -25,7 +26,7 @@ type HttpMethodType = 'delete' | 'get' | 'head' | 'options' | 'post' | 'put' | '
 // axios 实例
 const axiosInstance: AxiosInstance = axios.create({
   withCredentials: true,
-  headers: { 'X-REQUESTED-WITH': 'XMLHttpRequest', 'X-Bkapi-Request-Id': uuid.v4() },
+  headers: { 'X-REQUESTED-WITH': 'XMLHttpRequest', 'X-Bkapi-Request-Id': uuidv4() },
 });
 
 /**
@@ -47,6 +48,9 @@ axiosInstance.interceptors.request.use((config: any) => {
   //     config.url = `${LOCAL_DEV_URL}${urlObj.pathname}${urlObj.query}`;
   //   }
   // }
+  // 设置uuid
+  const uuid = uuidv4();
+  axiosInstance.defaults.headers['X-Bkapi-Request-Id'] = uuid;
   // 在发起请求前，注入CSRFToken，解决跨域
   injectCSRFTokenToHeaders();
   return config;

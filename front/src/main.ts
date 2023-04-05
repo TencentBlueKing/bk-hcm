@@ -31,7 +31,6 @@ app.use(i18n)
   .use(pinia)
   .use(bkui);
 
-console.log(1234344342314);
 router.isReady().then(() => {
   app.mount('#app');
 });

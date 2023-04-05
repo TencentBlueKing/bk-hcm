@@ -12,6 +12,7 @@ import { classes, deleteCookie } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
 import { useUserStore, useAccountStore, useCommonStore } from '@/store';
+import { useVerify } from '@/hooks';
 import { useI18n } from 'vue-i18n';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
@@ -30,7 +31,6 @@ export default defineComponent({
     const router = useRouter();
     const userStore = useUserStore();
     const accountStore = useAccountStore();
-    const commonStore = useCommonStore();
     const { Option } = Select;
 
     let topMenuActiveItem = '';
@@ -38,7 +38,7 @@ export default defineComponent({
     const openedKeys: string[] = [];
     let path = '';
     const curPath = ref('');
-    const businessId = ref<number>(0);
+    const businessId = ref<number | string>('');
     const businessList = ref<any[]>([]);
     const loading = ref<Boolean>(false);
     const isRouterAlive = ref<Boolean>(true);
@@ -98,10 +98,16 @@ export default defineComponent({
           accountStore.updateBizsId(0); // 初始化业务ID
           break;
         default:
-          topMenuActiveItem = 'resource';
-          menus = reactive(resource);
-          path = '/resource/account';
-          accountStore.updateBizsId(0); // 初始化业务ID
+          if (subPath[0] === 'biz_access') {
+            topMenuActiveItem = 'business';
+            menus = reactive(business);
+            path = '/business/host';
+          } else {
+            topMenuActiveItem = 'resource';
+            menus = reactive(resource);
+            path = '/resource/account';
+          }
+          accountStore.updateBizsId(''); // 初始化业务ID
           break;
       }
     };
@@ -124,12 +130,21 @@ export default defineComponent({
       },
     );
 
-    watch(() => businessId.value, (val) => {
-      console.log('val', val, commonStore.pageAuthData);
-    }, {
-      immediate: true,
-      deep: true,
-    });
+    watch(() => accountStore.bizs, async (bizs) => {
+      if (!bizs) return;
+      const commonStore = useCommonStore();
+      const { pageAuthData } = commonStore;      // 所有需要检验的查看权限数据
+      const bizsPageAuthData = pageAuthData.map((e: any) => {
+        // eslint-disable-next-line no-prototype-builtins
+        if (e.hasOwnProperty('bk_biz_id')) {
+          e.bk_biz_id = bizs;
+        }
+        return e;
+      });
+      commonStore.updatePageAuthData(bizsPageAuthData);
+      const { getAuthVerifyData } = useVerify();    // 权限中心权限
+      await getAuthVerifyData(bizsPageAuthData);
+    }, { immediate: true });
 
     const handleHeaderMenuClick = (id: string, routeName: string): void => {
       if (route.name !== routeName) {

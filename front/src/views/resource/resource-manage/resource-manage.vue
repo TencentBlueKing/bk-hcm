@@ -2,6 +2,7 @@
 import {
   ref,
   watch,
+  computed,
 } from 'vue';
 
 import HostManage from './children/manage/host-manage.vue';
@@ -33,17 +34,38 @@ import type {
   FilterType,
 } from '@/typings/resource';
 
+import {
+  useAccountStore,
+} from '@/store';
+
+import { useVerify } from '@/hooks';
+
 // use hooks
 const {
   t,
 } = useI18n();
 const router = useRouter();
 const route = useRoute();
+const accountStore = useAccountStore();
 const {
   isShowDistribution,
   handleDistribution,
   ResourceDistribution,
 } = useSteps();
+
+const isResourcePage = computed(() => {   // 资源下没有业务ID
+  return !accountStore.bizs;
+});
+
+// 权限hook
+const {
+  showPermissionDialog,
+  handlePermissionConfirm,
+  handlePermissionDialog,
+  handleAuth,
+  permissionParams,
+  authVerifyData,
+} = useVerify();
 
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
@@ -165,40 +187,41 @@ watch(
 </script>
 
 <template>
-  <section class="flex-center resource-header">
-    <section class="flex-center">
-      <div class="mr10">{{t('云账号')}}</div>
-      <div class="mr20">
-        <account-selector
-          :filter="accountFilter"
-          v-model="accountId"
-        />
-      </div>
-    </section>
-    <section class="flex-center">
-      <div class="mr10">{{t('分配状态')}}</div>
-      <div class="mr20">
-        <bk-select
-          v-model="status"
-        >
-          <bk-option
-            v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
-            :key="index"
-            :value="item.value"
-            :label="item.label"
+  <div>
+    <section class="flex-center resource-header">
+      <section class="flex-center">
+        <div class="mr10">{{t('云账号')}}</div>
+        <div class="mr20">
+          <account-selector
+            :filter="accountFilter"
+            v-model="accountId"
           />
-        </bk-select>
-      </div>
-    </section>
-    <section class="flex-center">
-      <bk-button
-        theme="primary"
-        class="ml10"
-        @click="handleDistribution"
-      >
-        {{ t('快速分配') }}
-      </bk-button>
-    </section>
+        </div>
+      </section>
+      <section class="flex-center">
+        <div class="mr10">{{t('分配状态')}}</div>
+        <div class="mr20">
+          <bk-select
+            v-model="status"
+          >
+            <bk-option
+              v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
+              :key="index"
+              :value="item.value"
+              :label="item.label"
+            />
+          </bk-select>
+        </div>
+      </section>
+      <section class="flex-center">
+        <bk-button
+          theme="primary"
+          class="ml10"
+          @click="handleDistribution"
+        >
+          {{ t('快速分配') }}
+        </bk-button>
+      </section>
     <!-- <section class="flex-center">
       <bk-checkbox
         v-model="isAccurate"
@@ -212,32 +235,45 @@ watch(
         v-model="searchValue"
       />
     </section> -->
-  </section>
-  <bk-tab
-    v-model:active="activeTab"
-    type="card"
-    class="resource-main g-scroller"
-  >
-    <bk-tab-panel
-      v-for="item in tabs"
-      :key="item.name"
-      :name="item.name"
-      :label="item.type"
+    </section>
+    <bk-tab
+      v-model:active="activeTab"
+      type="card"
+      class="resource-main g-scroller"
     >
-      <component
-        v-if="(item.name === activeTab)"
-        :is="item.component"
-        :filter="filter"
-      />
-    </bk-tab-panel>
-  </bk-tab>
+      <bk-tab-panel
+        v-for="item in tabs"
+        :key="item.name"
+        :name="item.name"
+        :label="item.type"
+      >
+        <component
+          v-if="(item.name === activeTab)"
+          :is="item.component"
+          :filter="filter"
+          :is-resource-page="isResourcePage"
+          :auth-verify-data="authVerifyData"
+          @auth="(val: string) => {
+            handleAuth(val)
+          }"
+        />
+      </bk-tab-panel>
+    </bk-tab>
 
-  <resource-distribution
-    v-model:is-show="isShowDistribution"
-    :choose-resource-type="true"
-    :title="t('快速分配')"
-    :data="[]"
-  />
+    <resource-distribution
+      v-model:is-show="isShowDistribution"
+      :choose-resource-type="true"
+      :title="t('快速分配')"
+      :data="[]"
+    />
+
+    <permission-dialog
+      v-model:is-show="showPermissionDialog"
+      :params="permissionParams"
+      @cancel="handlePermissionDialog"
+      @confirm="handlePermissionConfirm"
+    ></permission-dialog>
+  </div>
 </template>
 
 <style lang="scss" scoped>

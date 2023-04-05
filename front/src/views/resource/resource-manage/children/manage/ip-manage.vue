@@ -9,7 +9,7 @@ import {
 } from 'vue';
 import {
   Button,
-  InfoBox
+  InfoBox,
 } from 'bkui-vue';
 import {
   useResourceStore,
@@ -100,8 +100,8 @@ const renderColumns = [
         ],
       );
     },
-  }
-]
+  },
+];
 
 defineExpose({ fetchComponentsData });
 </script>

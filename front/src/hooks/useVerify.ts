@@ -4,6 +4,11 @@ import {
   ref,
 } from 'vue';
 
+type paramsType = {
+  action: string
+  resource_type: string
+  bk_biz_id?: number
+};
 const showPermissionDialog = ref(false);
 const authVerifyData = ref<any>({ permissionAction: {}, urlParams: {} });
 const permissionParams = ref({ system_id: '', actions: [] });
@@ -18,10 +23,14 @@ export function useVerify() {
     if (!authData) return;
     // 格式化参数
     const params = authData?.reduce((p, v) => {
-      p.resources.push({
+      const resourceData: paramsType = {
         action: v.action,
         resource_type: v.type,
-      });
+      };
+      if (v.bk_biz_id) {  // 业务需要传业务id
+        resourceData.bk_biz_id = v.bk_biz_id;
+      }
+      p.resources.push(resourceData);
       return p;
     }, { resources: [] });
     const res = await commonStore.authVerify(params);
@@ -67,6 +76,7 @@ export function useVerify() {
 
   // 处理鉴权 actionName根据接口返回值传入
   const handleAuth = (actionName: string) => {
+    console.log('!authVerifyData.value?.permissionAction', !authVerifyData.value?.permissionAction);
     if (!authVerifyData.value?.permissionAction) return;
     const actionItem = authVerifyData.value?.urlParams[actionName];
     if (!actionItem) return;

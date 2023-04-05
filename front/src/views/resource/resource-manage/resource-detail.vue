@@ -9,6 +9,7 @@ import IpDetail from './children/detail/ip-detail.vue';
 import RoutingDetail from './children/detail/routing-detail.vue';
 import ImageDetail from './children/detail/image-detail.vue';
 import NetworkInterfaceDetail from './children/detail/network-interface-detail.vue';
+import { useVerify } from '@/hooks';
 
 import {
   computed,
@@ -18,6 +19,16 @@ import {
 } from 'vue-router';
 
 const route = useRoute();
+
+// 权限hook
+const {
+  showPermissionDialog,
+  handlePermissionConfirm,
+  handlePermissionDialog,
+  handleAuth,
+  permissionParams,
+  authVerifyData,
+} = useVerify();
 
 const componentMap = {
   host: HostDetail,
@@ -33,10 +44,18 @@ const componentMap = {
 };
 
 const renderComponent = computed(() => {
-  return componentMap[route.params.type as string]
+  return componentMap[route.params.type as string];
 });
 </script>
 
 <template>
-  <component :is="renderComponent"></component>
+  <div>
+    <component :is="renderComponent"></component>
+    <permission-dialog
+      v-model:is-show="showPermissionDialog"
+      :params="permissionParams"
+      @cancel="handlePermissionDialog"
+      @confirm="handlePermissionConfirm"
+    ></permission-dialog>
+  </div>
 </template>
