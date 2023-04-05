@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {
-  computed
+  provide,
+  computed,
 } from 'vue';
 import {
   useRoute,
@@ -16,8 +17,25 @@ import IpDetail from '@/views/resource/resource-manage/children/detail/ip-detail
 import RoutingDetail from '@/views/resource/resource-manage/children/detail/routing-detail.vue';
 import ImageDetail from '@/views/resource/resource-manage/children/detail/image-detail.vue';
 import NetworkInterfaceDetail from '@/views/resource/resource-manage/children/detail/network-interface-detail.vue';
+import { useVerify } from '@/hooks';
+import bus from '@/common/bus';
+
+import {
+  useAccountStore,
+} from '@/store';
 
 const route = useRoute();
+const accountStore = useAccountStore();
+
+// 权限hook
+const {
+  showPermissionDialog,
+  handlePermissionConfirm,
+  handlePermissionDialog,
+  handleAuth,
+  permissionParams,
+  authVerifyData,
+} = useVerify();
 
 const componentMap = {
   host: HostDetail,
@@ -34,12 +52,31 @@ const componentMap = {
 
 const renderComponent = computed(() => {
   return Object.keys(componentMap).reduce((acc, cur) => {
-    if (route.path.includes(cur)) acc = componentMap[cur]
-    return acc
-  }, {})
-})
+    if (route.path.includes(cur)) acc = componentMap[cur];
+    return acc;
+  }, {});
+});
+
+const isResourcePage = computed(() => {   // 资源下没有业务ID
+  return !accountStore.bizs;
+});
+
+provide('authVerifyData', authVerifyData);    // 将数据传入孙组件
+provide('isResourcePage', isResourcePage);
+
+bus.$on('auth', (authActionName: string) => {   // bus监听
+  handleAuth(authActionName);
+});
 </script>
 
 <template>
-  <component :is="renderComponent"></component>
+  <div>
+    <component :is="renderComponent"></component>
+    <permission-dialog
+      v-model:is-show="showPermissionDialog"
+      :params="permissionParams"
+      @cancel="handlePermissionDialog"
+      @confirm="handlePermissionConfirm"
+    ></permission-dialog>
+  </div>
 </template>

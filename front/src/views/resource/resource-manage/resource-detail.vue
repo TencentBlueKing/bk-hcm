@@ -10,15 +10,23 @@ import RoutingDetail from './children/detail/routing-detail.vue';
 import ImageDetail from './children/detail/image-detail.vue';
 import NetworkInterfaceDetail from './children/detail/network-interface-detail.vue';
 import { useVerify } from '@/hooks';
+import bus from '@/common/bus';
 
 import {
+  provide,
   computed,
 } from 'vue';
+
 import {
   useRoute,
 } from 'vue-router';
 
+import {
+  useAccountStore,
+} from '@/store';
+
 const route = useRoute();
+const accountStore = useAccountStore();
 
 // 权限hook
 const {
@@ -45,6 +53,17 @@ const componentMap = {
 
 const renderComponent = computed(() => {
   return componentMap[route.params.type as string];
+});
+
+const isResourcePage = computed(() => {   // 资源下没有业务ID
+  return !accountStore.bizs;
+});
+
+provide('authVerifyData', authVerifyData);    // 将数据传入孙组件
+provide('isResourcePage', isResourcePage);
+
+bus.$on('auth', (authActionName: string) => {   // bus监听
+  handleAuth(authActionName);
 });
 </script>
 

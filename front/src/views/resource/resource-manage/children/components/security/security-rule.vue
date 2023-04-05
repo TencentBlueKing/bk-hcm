@@ -5,6 +5,8 @@ import {
   h,
   reactive,
   PropType,
+  inject,
+  computed,
 } from 'vue';
 import {
   useI18n,
@@ -24,8 +26,7 @@ import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import { useVerify } from '@/hooks';
-
+import bus from '@/common/bus';
 const props = defineProps({
   filter: {
     type: Object as PropType<any>,
@@ -60,16 +61,24 @@ const dataId = ref('');
 const AllData = ref({ ALL: 'ALL', '-1': '-1', '*': '*' });
 const azureDefaultList = ref([]);
 const azureDefaultColumns = ref([]);
+const authVerifyData: any = inject('authVerifyData');
+const isResourcePage: any = inject('isResourcePage');
+
+console.log('isResourcePage', isResourcePage.value);
+
+const actionName = computed(() => {   // 资源下没有业务ID
+  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+});
 
 // 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
+// const {
+//   showPermissionDialog,
+//   handlePermissionConfirm,
+//   handlePermissionDialog,
+//   handleAuth,
+//   permissionParams,
+//   authVerifyData,
+// } = useVerify();
 
 const state = reactive<any>({
   datas: [],
@@ -93,12 +102,6 @@ watch(
     if (props.vendor === 'azure') {
       getDefaultList(v);
     }
-  },
-);
-watch(
-  () => state.datas,
-  (v) => {
-    console.log('state.datas', v);
   },
 );
 
@@ -216,6 +219,11 @@ const handleSecurityRuleDialog = (data: any) => {
   handleSecurityRule();
 };
 
+// 权限弹窗 bus通知最外层弹出
+const showAuthDialog = (authActionName: string) => {
+  bus.$emit('auth', authActionName);
+};
+
 // 初始化
 handleSwtichType();
 getList();
@@ -288,7 +296,7 @@ const inColumns = [
             'span',
             {
               onClick() {
-                handleAuth('iaas_resource_operate');
+                showAuthDialog(actionName.value);
               },
             },
             [
@@ -297,13 +305,13 @@ const inColumns = [
                 {
                   text: true,
                   theme: 'primary',
-                  disabled: !authVerifyData.value?.permissionAction?.iaas_resource_operate,
+                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
                   onClick() {
                     handleSecurityRuleDialog(data);
                   },
                 },
                 [
-                  t('编辑'), !authVerifyData.value?.permissionAction?.iaas_resource_operate,
+                  t('编辑'),
                 ],
               ),
             ],
@@ -313,7 +321,7 @@ const inColumns = [
             'span',
             {
               onClick() {
-                handleAuth('iaas_resource_operate');
+                showAuthDialog(actionName.value);
               },
             },
             [
@@ -323,7 +331,7 @@ const inColumns = [
                   class: 'ml10',
                   text: true,
                   theme: 'primary',
-                  disabled: !authVerifyData.value?.permissionAction?.iaas_resource_operate,
+                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
                   onClick() {
                     deleteDialogShow.value = true;
                     deleteId.value = data.id;
@@ -492,98 +500,93 @@ if (props.vendor === 'huawei') {
 </script>
 
 <template>
-  <bk-loading
-    :loading="state.isLoading"
-  >
-    <section class="mt20 rule-main">
-      <bk-radio-group
-        v-model="activeType"
-        :disabled="state.isLoading"
-      >
-        <bk-radio-button
-          v-for="item in types"
-          :key="item.name"
-          :label="item.name"
+  <div>
+    <bk-loading
+      :loading="state.isLoading"
+    >
+      <section class="mt20 rule-main">
+        <bk-radio-group
+          v-model="activeType"
+          :disabled="state.isLoading"
         >
-          {{ item.label }}
-        </bk-radio-button>
-      </bk-radio-group>
+          <bk-radio-button
+            v-for="item in types"
+            :key="item.name"
+            :label="item.name"
+          >
+            {{ item.label }}
+          </bk-radio-button>
+        </bk-radio-group>
 
-      <div @click="handleAuth('iaas_resource_operate')">
-        <bk-button
-          :disabled="!authVerifyData?.permissionAction?.iaas_resource_operate"
-          theme="primary" @click="handleSecurityRuleDialog({})">
-          {{t('新增规则')}}
-        </bk-button>
+        <div @click="showAuthDialog(actionName)">
+          <bk-button
+            :disabled="!authVerifyData?.
+              permissionAction[actionName]"
+            theme="primary" @click="handleSecurityRuleDialog({})">
+            {{t('新增规则')}}
+          </bk-button>
+        </div>
+      </section>
+
+      <div v-if="props.vendor === 'azure'" class="mb20">
+        <h4 class="mt10">Azure默认{{activeType === 'ingress' ? t('入站') : t('出站')}}规则</h4>
+        <bk-table
+          class="mt10"
+          row-hover="auto"
+          :columns="azureDefaultColumns"
+          :data="azureDefaultList"
+        />
       </div>
-    </section>
 
-    <div v-if="props.vendor === 'azure'" class="mb20">
-      <h4 class="mt10">Azure默认{{activeType === 'ingress' ? t('入站') : t('出站')}}规则</h4>
+      <h4 v-if="props.vendor === 'azure'" class="mt10">Azure{{activeType === 'ingress' ? t('入站') : t('出站')}}规则</h4>
       <bk-table
-        class="mt10"
+        v-if="activeType === 'ingress'"
+        class="mt20"
         row-hover="auto"
-        :columns="azureDefaultColumns"
-        :data="azureDefaultList"
+        remote-pagination
+        :columns="inColumns"
+        :data="state.datas"
+        :pagination="state.pagination"
+        @page-limit-change="state.handlePageSizeChange"
+        @page-value-change="state.handlePageChange"
       />
-    </div>
 
-    <h4 v-if="props.vendor === 'azure'" class="mt10">Azure{{activeType === 'ingress' ? t('入站') : t('出站')}}规则</h4>
-    <bk-table
-      v-if="activeType === 'ingress'"
-      class="mt20"
-      row-hover="auto"
-      remote-pagination
-      :columns="inColumns"
-      :data="state.datas"
-      :pagination="state.pagination"
-      @page-limit-change="state.handlePageSizeChange"
-      @page-value-change="state.handlePageChange"
+      <bk-table
+        v-if="activeType === 'egress'"
+        class="mt20"
+        row-hover="auto"
+        remote-pagination
+        :columns="outColumns"
+        :data="state.datas"
+        :pagination="state.pagination"
+        @page-limit-change="state.handlePageSizeChange"
+        @page-value-change="state.handlePageChange"
+      />
+
+    </bk-loading>
+
+    <security-rule
+      v-model:isShow="isShowSecurityRule"
+      :loading="securityRuleLoading"
+      dialog-width="1500"
+      :active-type="activeType"
+      :title="t(activeType === 'egress' ? `${dataId ? '编辑' : '添加'}出站规则` : `${dataId ? '编辑' : '添加'}入站规则`)"
+      :vendor="vendor"
+      @submit="handleSubmitRule"
     />
 
-    <bk-table
-      v-if="activeType === 'egress'"
-      class="mt20"
-      row-hover="auto"
-      remote-pagination
-      :columns="outColumns"
-      :data="state.datas"
-      :pagination="state.pagination"
-      @page-limit-change="state.handlePageSizeChange"
-      @page-value-change="state.handlePageChange"
-    />
 
-  </bk-loading>
-
-  <security-rule
-    v-model:isShow="isShowSecurityRule"
-    :loading="securityRuleLoading"
-    dialog-width="1500"
-    :active-type="activeType"
-    :title="t(activeType === 'egress' ? `${dataId ? '编辑' : '添加'}出站规则` : `${dataId ? '编辑' : '添加'}入站规则`)"
-    :vendor="vendor"
-    @submit="handleSubmitRule"
-  />
-
-
-  <bk-dialog
-    v-model:is-show="deleteDialogShow"
-    :title="'确定删除要该条规则?'"
-    :theme="'primary'"
-    @closed="() => deleteDialogShow = false"
-    :is-loading="securityRuleLoading"
-    @confirm="handleDeleteConfirm()"
-  >
-    <span>删除后不可恢复</span>
-  </bk-dialog>
-
-
-  <permission-dialog
-    v-model:is-show="showPermissionDialog"
-    :params="permissionParams"
-    @cancel="handlePermissionDialog"
-    @confirm="handlePermissionConfirm"
-  ></permission-dialog>
+    <bk-dialog
+      v-model:is-show="deleteDialogShow"
+      :title="'确定删除要该条规则?'"
+      :theme="'primary'"
+      @closed="() => deleteDialogShow = false"
+      :is-loading="securityRuleLoading"
+      @confirm="handleDeleteConfirm()"
+    >
+      <span>删除后不可恢复</span>
+    </bk-dialog>
+  </div>
 </template>
 
 <style lang="scss" scoped>
