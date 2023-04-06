@@ -6,6 +6,9 @@ import HostNetwork from '../components/host/host-network/index.vue';
 import HostIp from '../components/host/host-ip.vue';
 import HostDrive from '../components/host/host-drive.vue';
 import HostSecurity from '../components/host/host-security.vue';
+import { useRouter,
+  useRoute,
+} from 'vue-router';
 import {
   useResourceStore,
 } from '@/store/resource';
@@ -24,10 +27,7 @@ import {
 } from 'vue';
 
 
-import {
-  useRoute,
-} from 'vue-router';
-
+const router = useRouter();
 const {
   t,
 } = useI18n();
@@ -127,7 +127,13 @@ const modifyCvmStatus = async (type: string) => {
       message: t('操作成功'),
       theme: 'success',
     });
-    getDetail();
+    if (type === 'destroy') {  // 回收成功跳转回收记录
+      router.push({
+        path: '/business/host/recyclebin/cvm',
+      });
+    } else {
+      getDetail();
+    }
   } catch (error) {
     console.log(error);
   } finally {

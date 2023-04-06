@@ -209,10 +209,10 @@ const handleDistributionConfirm = () => {
   distributionCvm();
 };
 
-const handleDistribution = () => {
-  isShowDistribution.value = true;
-  console.log(111);
-};
+// const handleDistribution = () => {
+//   isShowDistribution.value = true;
+//   console.log(111);
+// };
 
 const isRowSelectEnable = ({ row }: DoublePlainObject) => {
   if (row.id) {

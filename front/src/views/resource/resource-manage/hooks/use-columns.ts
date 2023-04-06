@@ -685,7 +685,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           'span',
           {},
           [
-            data.bk_cloud_id === -1 ? '未分配' : data.bk_cloud_id,
+            data.bk_cloud_id === -1 ? '未绑定' : data.bk_cloud_id,
           ],
         );
       },
