@@ -101,7 +101,7 @@ export default defineComponent({
           selected.value.splice(index, 1);
         }
       } else {
-        selected.value = checked ? name : '';
+        selected.value = checked ? [name] : [];
       }
 
       emit('change', name, selected.value);
