@@ -68,8 +68,7 @@ func (g *Gcp) CreateVpc(kt *kit.Kit, opt *types.GcpVpcCreateOption) (uint64, err
 		}
 	}
 
-	cloudProjectID := g.clientSet.credential.CloudProjectID
-	resp, err := client.Networks.Insert(cloudProjectID, req).Context(kt.Ctx).Do()
+	resp, err := client.Networks.Insert(g.CloudProjectID(), req).Context(kt.Ctx).Do()
 	if err != nil {
 		logs.Errorf("create vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return 0, err

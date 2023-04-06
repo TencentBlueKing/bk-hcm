@@ -126,7 +126,7 @@ const maxRetryCount = 10
 func (v vpc) createGcpSubnetWithRetry(kt *kit.Kit, bizID int64, accountID, cloudVpcID, region string,
 	subnets []hcservice.SubnetCreateReq[hcservice.GcpSubnetCreateExt]) error {
 
-	rty := retry.NewRetryPolicy(maxRetryCount, [2]uint{5000, 10000})
+	rty := retry.NewRetryPolicy(maxRetryCount, [2]uint{10000, 15000})
 
 	for {
 		if rty.RetryCount() == maxRetryCount {
