@@ -20,8 +20,6 @@
 package huawei
 
 import (
-	"net"
-
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 )
@@ -43,9 +41,6 @@ func (a *ApplicationOfCreateHuaWeiVpc) Deliver() (enumor.ApplicationStatus, map[
 
 func (a *ApplicationOfCreateHuaWeiVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreateReq[hcproto.HuaWeiVpcCreateExt] {
 	req := a.req
-
-	// 从CIDR里获取第一个IP作为GatewayIP
-	gatewayIP, _, _ := net.ParseCIDR(req.Subnet.IPv4Cidr)
 
 	return &hcproto.VpcCreateReq[hcproto.HuaWeiVpcCreateExt]{
 		BaseVpcCreateReq: &hcproto.BaseVpcCreateReq{
@@ -71,7 +66,7 @@ func (a *ApplicationOfCreateHuaWeiVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreat
 						Region:     req.Region,
 						IPv4Cidr:   req.Subnet.IPv4Cidr,
 						Ipv6Enable: *req.Subnet.IPv6Enable,
-						GatewayIp:  gatewayIP.String(),
+						GatewayIp:  req.Subnet.GatewayIP,
 					},
 				},
 			},
