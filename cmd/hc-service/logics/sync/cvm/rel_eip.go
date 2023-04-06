@@ -31,17 +31,18 @@ import (
 
 // SyncCvmEipRel sync cvm eip rel
 func SyncCvmEipRel(kt *kit.Kit, cloudEipMap map[string]*CVMOperateSync,
-	dataCli *dataservice.Client) error {
+	dataCli *dataservice.Client, account_id string, hcCloudIDs []string) error {
 
 	// change map key use hc id
 	hcEipMap := changCloudMapToHcMap(cloudEipMap)
 
-	hcInstanceIDs := make([]string, 0)
-	for _, id := range hcEipMap {
-		hcInstanceIDs = append(hcInstanceIDs, id.HCInstanceID)
+	hcIDs, err := getCvmHCIDs(kt, account_id, hcCloudIDs, dataCli)
+	if err != nil {
+		logs.Errorf("request getCvmHCIDs to get cvm from hc failed, err: %v, rid: %s", err, kt.Rid)
+		return err
 	}
 
-	results, err := listCvmEipRelSync(kt, hcInstanceIDs, dataCli)
+	results, err := listCvmEipRelSync(kt, hcIDs, dataCli)
 	if err != nil {
 		logs.Errorf("sync list eip cvm rel failed, err: %v, rid: %s", err, kt.Rid)
 		return err

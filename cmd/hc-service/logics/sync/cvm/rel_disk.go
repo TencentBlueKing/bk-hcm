@@ -31,17 +31,18 @@ import (
 
 // SyncCvmDiskRel sync cvm disk rel
 func SyncCvmDiskRel(kt *kit.Kit, cloudDiskMap map[string]*CVMOperateSync,
-	dataCli *dataservice.Client) error {
+	dataCli *dataservice.Client, account_id string, hcCloudIDs []string) error {
 
 	// change map key use hc id
 	hcDiskMap := changCloudMapToHcMap(cloudDiskMap)
 
-	hcInstanceIDs := make([]string, 0)
-	for _, id := range hcDiskMap {
-		hcInstanceIDs = append(hcInstanceIDs, id.HCInstanceID)
+	hcIDs, err := getCvmHCIDs(kt, account_id, hcCloudIDs, dataCli)
+	if err != nil {
+		logs.Errorf("request getCvmHCIDs to get cvm from hc failed, err: %v, rid: %s", err, kt.Rid)
+		return err
 	}
 
-	results, err := listCvmDiskRelSync(kt, hcInstanceIDs, dataCli)
+	results, err := listCvmDiskRelSync(kt, hcIDs, dataCli)
 	if err != nil {
 		logs.Errorf("sync list disk cvm rel failed, err: %v, rid: %s", err, kt.Rid)
 		return err

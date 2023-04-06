@@ -495,3 +495,25 @@ func changCloudMapToHcMap(cloudMap map[string]*CVMOperateSync) map[string]*CVMOp
 	}
 	return hcMap
 }
+
+func getCvmHCIDs(kt *kit.Kit, account_id string, hcCloudIDs []string,
+	dataCli *dataservice.Client) ([]string, error) {
+
+	cvmReq := &protocvm.CvmSyncReq{
+		AccountID: account_id,
+		CloudIDs:  hcCloudIDs,
+	}
+
+	cvmDatas, err := GetHcCvmDatas(kt, cvmReq, dataCli)
+	if err != nil {
+		logs.Errorf("request get cvm from hc failed, err: %v, rid: %s", err, kt.Rid)
+		return make([]string, 0), err
+	}
+
+	hcIDs := make([]string, 0)
+	for _, v := range cvmDatas {
+		hcIDs = append(hcIDs, v.ID)
+	}
+
+	return hcIDs, nil
+}

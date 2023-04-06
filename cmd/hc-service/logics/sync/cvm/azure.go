@@ -879,17 +879,15 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 	}
 
 	if len(cloudNetInterMap) > 0 {
-		if len(cloudNetInterMap) > 0 {
-			err := SyncCvmNetworkInterfaceRel(kt, cloudNetInterMap, dataCli)
-			if err != nil {
-				logs.Errorf("sync azure cvm networkinterface rel failed, err: %v, rid: %s", err, kt.Rid)
-				return nil, err
-			}
+		err := SyncCvmNetworkInterfaceRel(kt, cloudNetInterMap, dataCli, req.AccountID, req.CloudIDs)
+		if err != nil {
+			logs.Errorf("sync azure cvm networkinterface rel failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
 		}
 	}
 
 	if len(cloudEipMap) > 0 {
-		err := SyncCvmEipRel(kt, cloudEipMap, dataCli)
+		err := SyncCvmEipRel(kt, cloudEipMap, dataCli, req.AccountID, req.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync azure cvm eip rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -897,7 +895,7 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 	}
 
 	if len(cloudDiskMap) > 0 {
-		err := SyncCvmDiskRel(kt, cloudDiskMap, dataCli)
+		err := SyncCvmDiskRel(kt, cloudDiskMap, dataCli, req.AccountID, req.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync azure cvm disk rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

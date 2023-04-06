@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/cloud/cvm"
@@ -222,7 +223,9 @@ func (relDao *EipCvmRelDao) ListEipLeftJoinRel(kt *kit.Kit, opt *types.ListOptio
 		return nil, errf.New(errf.InvalidParameter, "list eip cvm rel options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tableeip.EipColumns.ColumnTypes())),
+	columnTypes := tableeip.EipColumns.ColumnTypes()
+	columnTypes["extension.resource_group_name"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err
 	}

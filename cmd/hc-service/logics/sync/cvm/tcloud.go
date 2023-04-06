@@ -729,7 +729,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 	}
 
 	if len(cloudSGMap) > 0 {
-		err := SyncCvmSGRel(kt, cloudSGMap, dataCli)
+		err := SyncCvmSGRel(kt, cloudSGMap, dataCli, option.AccountID, option.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync tcloud cvm sg rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -737,7 +737,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 	}
 
 	if len(cloudDiskMap) > 0 {
-		err := SyncCvmDiskRel(kt, cloudDiskMap, dataCli)
+		err := SyncCvmDiskRel(kt, cloudDiskMap, dataCli, option.AccountID, option.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync tcloud cvm disk rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -745,7 +745,7 @@ func SyncTCloudCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClien
 	}
 
 	if len(cloudEipMap) > 0 {
-		err := SyncCvmEipRel(kt, cloudEipMap, dataCli)
+		err := SyncCvmEipRel(kt, cloudEipMap, dataCli, option.AccountID, option.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync tcloud cvm eip rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

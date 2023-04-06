@@ -1071,7 +1071,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	}
 
 	if len(cloudNetInterMap) > 0 {
-		err := SyncCvmNetworkInterfaceRel(kt, cloudNetInterMap, dataCli)
+		err := SyncCvmNetworkInterfaceRel(kt, cloudNetInterMap, dataCli, req.AccountID, req.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync huawei cvm networkinterface rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -1079,7 +1079,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	}
 
 	if len(cloudSGMap) > 0 {
-		err := SyncCvmSGRel(kt, cloudSGMap, dataCli)
+		err := SyncCvmSGRel(kt, cloudSGMap, dataCli, req.AccountID, req.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync huawei cvm sg rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -1087,7 +1087,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	}
 
 	if len(cloudDiskMap) > 0 {
-		err := SyncCvmDiskRel(kt, cloudDiskMap, dataCli)
+		err := SyncCvmDiskRel(kt, cloudDiskMap, dataCli, req.AccountID, req.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync huawei cvm disk rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -1095,7 +1095,7 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	}
 
 	if len(cloudEipMap) > 0 {
-		err := SyncCvmEipRel(kt, cloudEipMap, dataCli)
+		err := SyncCvmEipRel(kt, cloudEipMap, dataCli, req.AccountID, req.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync huawei cvm eip rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

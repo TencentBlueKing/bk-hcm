@@ -949,7 +949,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 	}
 
 	if len(cloudEipMap) > 0 {
-		err := SyncCvmEipRel(kt, cloudEipMap, dataCli)
+		err := SyncCvmEipRel(kt, cloudEipMap, dataCli, req.AccountID, req.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync aws cvm eip rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -957,7 +957,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 	}
 
 	if len(cloudSGMap) > 0 {
-		err := SyncCvmSGRel(kt, cloudSGMap, dataCli)
+		err := SyncCvmSGRel(kt, cloudSGMap, dataCli, req.AccountID, req.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync aws cvm sg rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -965,7 +965,7 @@ func SyncAwsCvmWithRelResource(kt *kit.Kit, req *SyncAwsCvmOption,
 	}
 
 	if len(cloudDiskMap) > 0 {
-		err := SyncCvmDiskRel(kt, cloudDiskMap, dataCli)
+		err := SyncCvmDiskRel(kt, cloudDiskMap, dataCli, req.AccountID, req.CloudIDs)
 		if err != nil {
 			logs.Errorf("sync aws cvm disk rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
