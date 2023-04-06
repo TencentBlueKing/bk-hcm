@@ -327,6 +327,8 @@ export default defineComponent({
               accountId={cond.cloudAccountId}
               region={cond.region}
               multiple={cond.vendor !== VendorEnum.AZURE}
+              vendor={cond.vendor}
+              vpcId={vpcId.value}
               clearable={false} />,
           },
         ],

@@ -1,6 +1,7 @@
 import http from '@/http';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { Select } from 'bkui-vue';
+import { VendorEnum } from '@/common/constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -13,6 +14,8 @@ export default defineComponent({
     accountId: String as PropType<string>,
     region: String as PropType<string>,
     multiple: Boolean as PropType<boolean>,
+    vendor: String as PropType<string>,
+    vpcId: String as PropType<string>,
   },
   emits: ['update:modelValue'],
   setup(props, { emit, attrs }) {
@@ -32,28 +35,37 @@ export default defineComponent({
       () => props.bizId,
       () => props.accountId,
       () => props.region,
-    ], async ([bizId, accountId, region]) => {
+      () => props.vpcId,
+    ], async ([bizId, accountId, region, vpcId]) => {
       if (!bizId || !accountId || !region) {
         list.value = [];
         return;
       }
       loading.value = true;
       // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizId}/security_groups/list`, {
+      const rules = [
+        {
+          field: 'account_id',
+          op: 'eq',
+          value: accountId,
+        },
+        {
+          field: 'region',
+          op: 'eq',
+          value: region,
+        },
+      ]
+      if (props.vendor === VendorEnum.AWS) {
+        rules.push({
+          field: 'extension.vpc_id',
+          op: 'json_eq',
+          value: vpcId,
+        })
+      }
       const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/security_groups/list`, {
         filter: {
           op: 'and',
-          rules: [
-            {
-              field: 'account_id',
-              op: 'eq',
-              value: accountId,
-            },
-            {
-              field: 'region',
-              op: 'eq',
-              value: region,
-            },
-          ],
+          rules,
         },
         page: {
           count: false,
