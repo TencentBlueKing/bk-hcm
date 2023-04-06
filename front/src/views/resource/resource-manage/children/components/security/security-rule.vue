@@ -64,8 +64,6 @@ const azureDefaultColumns = ref([]);
 const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 
-console.log('isResourcePage', isResourcePage.value);
-
 const actionName = computed(() => {   // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
@@ -415,31 +413,55 @@ const outColumns = [
         {},
         [
           props.vendor !== 'huawei' && h(
-            Button,
+            'span',
             {
-              text: true,
-              theme: 'primary',
               onClick() {
-                handleSecurityRuleDialog(data);
+                showAuthDialog(actionName.value);
               },
             },
             [
-              t('编辑'),
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
+                  onClick() {
+                    handleSecurityRuleDialog(data);
+                  },
+                },
+                [
+                  t('编辑'),
+                ],
+              ),
             ],
+
           ),
           h(
-            Button,
+            'span',
             {
-              class: 'ml10',
-              text: true,
-              theme: 'primary',
               onClick() {
-                deleteDialogShow.value = true;
-                deleteId.value = data.id;
+                showAuthDialog(actionName.value);
               },
             },
             [
-              t('删除'),
+              h(
+                Button,
+                {
+                  class: 'ml10',
+                  text: true,
+                  theme: 'primary',
+                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
+                  onClick() {
+                    deleteDialogShow.value = true;
+                    deleteId.value = data.id;
+                  },
+                },
+                [
+                  t('删除'),
+                ],
+              ),
+
             ],
           ),
         ],

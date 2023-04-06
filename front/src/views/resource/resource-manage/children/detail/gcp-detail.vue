@@ -8,7 +8,7 @@ import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
 import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 import { GcpTypeEnum, CloudType } from '@/typings';
-import { useVerify } from '@/hooks';
+import bus from '@/common/bus';
 
 import {
   useRoute,
@@ -22,7 +22,7 @@ import {
   useI18n,
 } from 'vue-i18n';
 
-import { ref, watch } from 'vue';
+import { ref, watch, inject, computed } from 'vue';
 
 const route = useRoute();
 const resourceStore = useResourceStore();
@@ -35,6 +35,14 @@ const id = route.query?.id;
 const gcpDetail = ref({});
 const gcpLoading = ref(true);
 
+const authVerifyData: any = inject('authVerifyData');
+const isResourcePage: any = inject('isResourcePage');
+
+const actionName = computed(() => {   // 资源下没有业务ID
+  console.log('isResourcePage.value', isResourcePage.value);
+  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+});
+
 const {
   loading,
   detail,
@@ -42,16 +50,6 @@ const {
   'vendors/gcp/firewalls/rules',
   id,
 );
-
-// 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
 
 const fetchDetail = async () => {
   gcpLoading.value = true;
@@ -93,7 +91,6 @@ const gcpFields = [
   },
   {
     name: t('资源名称'),
-    link: 'http://www.baidu.com',
     prop: 'name',
   },
   {
@@ -235,9 +232,14 @@ const submit = async (data: any) => {
     await updateData();
     fetchDetail();
   }
-  console.log('isShowGcpAdd.value1111111', isShowGcpAdd.value);
   isLoading.value = loading;
   isShowGcpAdd.value = false;
+};
+
+
+// 权限弹窗 bus通知最外层弹出
+const showAuthDialog = (authActionName: string) => {
+  bus.$emit('auth', authActionName);
 };
 </script>
 
@@ -246,9 +248,9 @@ const submit = async (data: any) => {
     <detail-header>
       {{t('GCP防火墙')}}：ID（{{`${id}`}}）
       <template #right>
-        <div @click="handleAuth('iaas_resource_operate')">
+        <div @click="showAuthDialog(actionName)">
           <bk-button
-            :disabled="!authVerifyData?.permissionAction?.iaas_resource_operate"
+            :disabled="!authVerifyData?.permissionAction[actionName]"
             class="w100 ml10"
             theme="primary"
             @click="handleGcpAdd(false)"
@@ -289,13 +291,6 @@ const submit = async (data: any) => {
       :loading="isLoading"
       :detail="detail"
       @submit="submit"></gcp-add>
-
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
   </div>
 </template>
 
