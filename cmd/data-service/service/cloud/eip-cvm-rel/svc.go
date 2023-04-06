@@ -262,6 +262,7 @@ func (svc *relSvc) ListEipWithoutCvm(cts *rest.Contexts) (interface{}, error) {
 				PrivateIp: one.PrivateIp,
 				Creator:   one.Creator,
 				Reviser:   one.Reviser,
+				Extension: one.Extension,
 				CreatedAt: one.CreatedAt,
 				UpdatedAt: one.UpdatedAt,
 			},

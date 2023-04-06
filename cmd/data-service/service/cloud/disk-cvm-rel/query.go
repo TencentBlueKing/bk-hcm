@@ -141,6 +141,7 @@ func (svc *relSvc) ListDiskWithoutCvm(cts *rest.Contexts) (interface{}, error) {
 				RecycleStatus: one.RecycleStatus,
 				IsSystemDisk:  one.IsSystemDisk,
 				Memo:          one.Memo,
+				Extension:     one.Extension,
 				Creator:       one.Creator,
 				Reviser:       one.Reviser,
 				CreatedAt:     one.CreatedAt,
