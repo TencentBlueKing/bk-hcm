@@ -72,7 +72,7 @@ defineExpose({
     <bk-option
       v-for="(item, index) in tableList"
       :key="index"
-      :value="item.id"
+      :value="item.cloud_id"
       :label="item.name"
     />
   </bk-select>

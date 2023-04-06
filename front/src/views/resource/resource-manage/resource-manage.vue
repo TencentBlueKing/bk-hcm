@@ -189,7 +189,7 @@ watch(
 <template>
   <div>
     <section class="flex-center resource-header">
-      <section class="flex-center">
+      <section class="flex-center" v-if="activeTab !== 'image'">
         <div class="mr10">{{t('云账号')}}</div>
         <div class="mr20">
           <account-selector

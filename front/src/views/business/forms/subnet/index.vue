@@ -14,6 +14,7 @@ import {
 import {
   useBusinessStore,
   useAccountStore,
+  useResourceStore,
 } from '@/store';
 import FormSelect from '@/views/business/components/form-select.vue';
 import { BusinessFormFilter } from '@/typings';
@@ -27,9 +28,11 @@ const { t } = useI18n();
 const formData = reactive<any>({ ipv4_cidr: '' });
 const businessStore = useBusinessStore();
 const accountStore = useAccountStore();
+const resourceStore = useResourceStore();
 const submitLoading = ref(false);
+const ipv4Cidr = ref('');
+
 const handleFormFilter = (data: BusinessFormFilter) => {
-  console.log(data);
   formData.vendor = data.vendor;
   formData.region = data.region;
   formData.account_id = data.account_id;
@@ -52,6 +55,14 @@ const submit = async () => {
   } finally {
     submitLoading.value = false;
   }
+};
+
+const getVpcDetail = async (vpcId: string) => {
+  console.log('vpcId', vpcId);
+  if (!vpcId) return;
+  const res = await resourceStore.detail('vpcs', vpcId);
+  ipv4Cidr.value = res?.data?.extension?.cidr?.filter((e: any) => e.type === 'ipv4')?.map((item: any) => item.cidr)
+    ?.join('｜');
 };
 
 // 方法
@@ -85,7 +96,9 @@ watch(() => formData.vendor, (val) => {
       >
         <vpc-selector
           :vendor="formData.vendor"
-          :region="formData.region" v-model="formData.cloud_vpc_id"></vpc-selector>
+          :region="formData.region"
+          v-model="formData.cloud_vpc_id"
+          @handleVpcDetail="getVpcDetail"></vpc-selector>
       </bk-form-item>
       <bk-form-item
         :label="t('可用区')"
@@ -106,12 +119,13 @@ watch(() => formData.vendor, (val) => {
       <bk-form-item
         :label="t('IPv4 CIDR')"
         class="item-warp"
+        :description="ipv4Cidr ? `请输入在${ipv4Cidr}中的CIDR` : '' "
       >
         <bk-tag-input
           v-if="formData.vendor === 'azure'" v-model="formData.ipv4_cidr"
           allow-create allow-auto-match
           :list="[]" :placeholder="t('请输入IPV4')" />
-        <bk-input v-else class="item-warp-component" v-model="formData.ipv4_cidr" :placeholder="t('请输入IPV4')" />
+        <bk-input v-else class="item-warp-component" v-model="formData.ipv4_cidr" :placeholder="t('请输入IPV4 CIDR')" />
       </bk-form-item>
       <bk-form-item
         v-if="formData.vendor === 'aws'"

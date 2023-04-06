@@ -22,7 +22,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'handleVpcDetail']);
 
 const resourceStore = useResourceStore();
 const vpcList = ref([]);
@@ -56,6 +56,8 @@ watchEffect(void (async () => {
 })());
 
 watch(() => selectedValue.value, (val) => {
+  const vpcId = val && vpcList.value.find((e: any) => e.cloud_id === val)?.id;
+  emit('handleVpcDetail', vpcId);
   emit('update:modelValue', val);
 });
 
