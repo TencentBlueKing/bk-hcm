@@ -125,7 +125,9 @@ watch(() => formData.vendor, (val) => {
         :label="t('关联路由表')"
         class="item-warp"
       >
-        <route-table-selector v-model="formData.cloud_route_table_id"></route-table-selector>
+        <route-table-selector
+          :cloud-vpc-id="formData.cloud_vpc_id"
+          v-model="formData.cloud_route_table_id"></route-table-selector>
       </bk-form-item>
       <bk-form-item
         v-if="formData.vendor === 'huawei'"

@@ -102,8 +102,6 @@ const handleSuccess = () => {
   componentRef.value.fetchComponentsData();
 };
 
-console.log(1111);
-
 
 // 权限hook
 const {
@@ -134,7 +132,7 @@ const {
           <span @click="handleAuth('biz_iaas_resource_create')">
             <bk-button
               theme="primary" class="new-button"
-              :disabled="!authVerifyData?.value?.permissionAction?.biz_iaas_resource_create" @click="handleAdd">
+              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create" @click="handleAdd">
               {{renderComponent === DriveManage ||
                 renderComponent === HostManage ||
                 renderComponent === VpcManage ? '申请' : '新增'}}

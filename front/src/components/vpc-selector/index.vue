@@ -91,7 +91,7 @@ defineExpose({
       v-for="(item, index) in vpcList"
       :key="index"
       :value="item.cloud_id"
-      :label="item.name"
+      :label="`${item.cloud_id}（${item.name || '--'}）`"
     />
   </bk-select>
 </template>

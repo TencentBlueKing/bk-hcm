@@ -34,8 +34,8 @@ export const useBusinessStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    getZonesList({ vendor, region, page }: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/regions/${region}/zones/list`, { page });
+    getZonesList({ vendor, region, data }: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/regions/${region}/zones/list`, data);
     },
     /**
      * @description: 获取资源组列表
@@ -58,7 +58,7 @@ export const useBusinessStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    createSubnet(bizs: number, data: any) {
+    createSubnet(bizs: number | string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizs}/subnets/create`, data);
     },
   },

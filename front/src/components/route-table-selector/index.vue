@@ -9,6 +9,9 @@ const props = defineProps({
   modelValue: {
     type: String,
   },
+  cloudVpcId: {
+    type: String,
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -23,12 +26,10 @@ const hasMoreData = ref(true);
 
 console.log(accountStore.bizs);
 const getSelectData = async () => {
-  if (!hasMoreData.value) return;
+  if (!hasMoreData.value || !props.cloudVpcId) return;
   loading.value = true;
   const res = await businessStore.getRouteTableList({ // { field: 'bk_biz_id', op: 'eq', value: accountStore.bizs },
-    filter: { op: 'and', rules: [
-
-    ] },
+    filter: { op: 'and', rules: [{ field: 'cloud_vpc_id', op: 'eq', value: props.cloudVpcId }] },
     page: {
       start: page.value * 100,
       limit: 100,
@@ -47,6 +48,14 @@ watchEffect(void (async () => {
 watch(() => selectedValue.value, (val) => {
   emit('update:modelValue', val);
 });
+
+watch(() => props.cloudVpcId, () => {
+  page.value = 0;
+  hasMoreData.value = true;
+  selectedValue.value = '';
+  tableList.value = [];
+  getSelectData();
+}, { deep: true });
 
 defineExpose({
   tableList,

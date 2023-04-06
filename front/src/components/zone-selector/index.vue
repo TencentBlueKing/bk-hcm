@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import {  ref, watchEffect, defineExpose, watch } from 'vue';
+import { QueryFilterType, QueryRuleOPEnum } from '@/typings';
+import { VendorEnum } from '@/common/constant';
 import {
   useBusinessStore,
 } from '@/store';
@@ -25,15 +27,23 @@ const zonePage = ref(0);
 const selectedValue = ref(props.modelValue);
 const hasMoreData = ref(true);
 
+const filter  = ref<QueryFilterType>({
+  op: 'and',
+  rules: [],
+});
+
 const getZonesData = async () => {
   if (!hasMoreData.value || !props.vendor || !props.region) return;
   loading.value = true;
   const res = await businessStore.getZonesList({
     vendor: props.vendor,
     region: props.region,
-    page: {
-      start: zonePage.value * 100,
-      limit: 100,
+    data: {
+      filter: filter.value,
+      page: {
+        start: zonePage.value * 100,
+        limit: 100,
+      },
     },
   });
   zonePage.value += 1;
@@ -42,14 +52,60 @@ const getZonesData = async () => {
   loading.value = false;
 };
 
+const resetData = () => {
+  zonePage.value = 0;
+  hasMoreData.value = true;
+  zonesList.value = [];
+  selectedValue.value = '';
+};
+
 watchEffect(void (async () => {
   getZonesData();
 })());
 
-watch(() => props.vendor, () => {
+watch(() => props.vendor, (val) => {
+  switch (val) {
+    case VendorEnum.TCLOUD:
+      filter.value.rules = [
+        {
+          field: 'vendor',
+          op: QueryRuleOPEnum.EQ,
+          value: val,
+        },
+        {
+          field: 'state',
+          op: QueryRuleOPEnum.EQ,
+          value: 'AVAILABLE',
+        },
+      ];
+      break;
+    case VendorEnum.AWS:
+      filter.value.rules = [
+        {
+          field: 'state',
+          op: QueryRuleOPEnum.EQ,
+          value: val,
+        },
+        {
+          field: 'state',
+          op: QueryRuleOPEnum.EQ,
+          value: 'opt-in-not-required',
+        },
+      ];
+      break;
+    case VendorEnum.GCP:
+      filter.value.rules = [
+        {
+          field: 'state',
+          op: QueryRuleOPEnum.EQ,
+          value: 'UP',
+        },
+      ];
+      break;
+  }
   resetData();
   getZonesData();
-});
+}, { immediate: true });
 
 watch(() => props.region, () => {
   resetData();
@@ -59,13 +115,6 @@ watch(() => props.region, () => {
 watch(() => selectedValue.value, (val) => {
   emit('update:modelValue', val);
 });
-
-const resetData = () => {
-  zonePage.value = 0;
-  hasMoreData.value = true;
-  zonesList.value = [];
-  selectedValue.value = '';
-};
 
 defineExpose({
   zonesList,
