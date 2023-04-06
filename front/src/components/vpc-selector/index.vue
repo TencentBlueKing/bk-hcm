@@ -36,7 +36,11 @@ const getVpcList = async () => {
   loading.value = true;
   const rulesData = [];
   if (props.vendor) {
-    rulesData.push({ field: 'vendor', op: 'eq', value: props.vendor }, { field: 'region', op: 'eq', value: props.region });
+    if (props.vendor === 'gcp') {
+      rulesData.push({ field: 'vendor', op: 'eq', value: props.vendor });
+    } else {
+      rulesData.push({ field: 'vendor', op: 'eq', value: props.vendor }, { field: 'region', op: 'eq', value: props.region });
+    }
   }
   const res = await resourceStore.list({
     filter: { op: 'and', rules: rulesData },
