@@ -49,7 +49,7 @@ export default defineComponent({
     const accountList = ref([{
       name: '云账号录入',
       id: 1,
-      btnText: '立即申请',
+      btnText: '立即录入',
       routeName: 'applyAccount',
     }]);
 

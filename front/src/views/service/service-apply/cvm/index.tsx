@@ -505,7 +505,7 @@ export default defineComponent({
         {
           validator: (value: string) => value.length >= 8 && value.length <= 30,
           message: '长度在8-30个字符之间',
-          trigger: 'change',
+          trigger: 'blur',
         },
         {
           validator: (value: string) => {
@@ -515,33 +515,33 @@ export default defineComponent({
             return pattern.test(value)
           },
           message: '不符合校验规则',
-          trigger: 'change',
+          trigger: 'blur',
         },
         {
           validator: (value: string) => {
-            formRef.value.clearValidate('confirmed_password');
+            // formRef.value.clearValidate('confirmed_password');
             if (formData.confirmed_password.length) {
               return value === formData.confirmed_password
             }
             return true
           },
           message: '两次输入的密码不一致',
-          trigger: 'change',
+          trigger: 'blur',
         },
       ],
       confirmed_password: [
         {
           validator: (value: string) => value.length >= 8 && value.length <= 30,
           message: '长度在8-30个字符之间',
-          trigger: 'change',
+          trigger: 'blur',
         },
         {
           validator: (value: string) => {
-            formRef.value.clearValidate('password');
+            // formRef.value.clearValidate('password');
             return formData.password.length && value === formData.password;
           },
           message: '两次输入的密码不一致',
-          trigger: 'change',
+          trigger: 'blur',
         },
       ],
       username: [

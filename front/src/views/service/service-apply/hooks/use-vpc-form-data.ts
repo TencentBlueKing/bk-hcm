@@ -1,5 +1,5 @@
 import http from '@/http';
-import { reactive, watch, ref, nextTick } from 'vue';
+import { reactive, watch, ref, nextTick, computed } from 'vue';
 import { VendorEnum } from '@/common/constant';
 import type { Cond } from './use-condtion';
 import { Message } from 'bkui-vue';
@@ -83,6 +83,7 @@ export default (cond: Cond) => {
         ip_source_type: 0,
         subnet: {
           name: '',
+          gateway_ip: '',
           ipv4_cidr: [] as string[],
           ipv6_enable: false,
         },
@@ -178,6 +179,7 @@ export default (cond: Cond) => {
       saveData.ipv4_cidr = `${ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`
       saveData.subnet = {
         name: subnet.name,
+        gateway_ip: `${(subnet.ipv4_cidr.slice(0, 3) as number[]).join('.')}.1`,
         ipv4_cidr: `${(subnet.ipv4_cidr.slice(0, 4) as number[]).join('.')}/${subnet.ipv4_cidr.slice(-1)}`,
         ipv6_enable: subnet.ipv6_enable,
       }

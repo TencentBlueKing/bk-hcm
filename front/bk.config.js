@@ -31,6 +31,7 @@ module.exports = {
         host: env.DEV_HOST,
         port: 5000,
         historyApiFallback: true,
+        disableHostCheck: true,
         before(app) {
           apiMocker(app, {
                 // watch: [

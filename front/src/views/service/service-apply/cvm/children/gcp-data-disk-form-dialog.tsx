@@ -60,9 +60,6 @@ export default defineComponent({
       onClosed={() => emit('close')}
     >
       <Form ref={formRef} model={localFormData} labelWidth={90}>
-        <FormItem label='名称' property="disk_name" required>
-          <Input placeholder='请输入' v-model={localFormData.disk_name}></Input>
-        </FormItem>
         <FormItem label='磁盘来源' required={false}>空白磁盘</FormItem>
         <FormItem label='磁盘类型' property="disk_type" required>
           <Select v-model={localFormData.disk_type}>{

@@ -75,7 +75,7 @@ export default defineComponent({
         filter.rules.push({
           field: 'zone',
           op: QueryRuleOPEnum.EQ,
-          value: zone,
+          value: zone[0],
         })
       }
 
