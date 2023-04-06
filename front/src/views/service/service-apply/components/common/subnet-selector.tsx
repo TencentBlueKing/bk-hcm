@@ -59,7 +59,7 @@ export default defineComponent({
             value: vpcId,
           },
           {
-            field: 'accountId',
+            field: 'account_id',
             op: QueryRuleOPEnum.EQ,
             value: accountId,
           },
