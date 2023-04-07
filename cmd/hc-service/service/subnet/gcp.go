@@ -44,6 +44,7 @@ func (s subnet) GcpSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	gcpCreateOpt := &subnetlogics.SubnetCreateOptions[hcservice.GcpSubnetCreateExt]{
+		BkBizID:    req.BkBizID,
 		AccountID:  req.AccountID,
 		Region:     req.Extension.Region,
 		CloudVpcID: req.CloudVpcID,
