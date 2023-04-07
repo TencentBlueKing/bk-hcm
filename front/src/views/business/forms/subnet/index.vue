@@ -82,7 +82,7 @@ watch(() => formData.vendor, (val) => {
 
 <template>
   <div class="business-dialog-warp">
-    <form-select :hidden="formData.vendor === 'gcp' ? ['region'] : []" @change="handleFormFilter"></form-select>
+    <form-select @change="handleFormFilter"></form-select>
     <bk-form class="form-subnet">
       <bk-form-item
         :label="t('名称')"
