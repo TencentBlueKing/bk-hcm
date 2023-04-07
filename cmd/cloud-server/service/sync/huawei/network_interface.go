@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	gosync "sync"
 	"time"
 
 	"hcm/pkg/adaptor/huawei"
@@ -52,22 +53,46 @@ func SyncNetworkInterface(kt *kit.Kit, hcCli *hcservice.Client, dataCli *dataser
 		return err
 	}
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, region := range regions {
-		cvmCloudIDs, err := getCvmListAll(kt, dataCli, accountID, region)
-		if err != nil {
-			continue
-		}
+		pipeline <- true
+		wg.Add(1)
 
-		req := &hcapiproto.HuaWeiNetworkInterfaceSyncReq{
-			AccountID:   accountID,
-			Region:      region,
-			CloudCvmIDs: cvmCloudIDs,
-		}
-		if err = hcCli.HuaWei.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req); Error(err) != nil {
-			logs.Errorf("cloud-server-sync-%s network interface failed, req: %v, err: %v, rid: %s",
-				enumor.HuaWei, req, err, kt.Rid)
-			return err
-		}
+		go func(region string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			cvmCloudIDs, err := getCvmListAll(kt, dataCli, accountID, region)
+			if err != nil {
+				logs.Errorf("cloud-server-sync-%s network interface get cvms failed, err: %v, rid: %s",
+					enumor.HuaWei, err, kt.Rid)
+				firstErr = err
+				return
+			}
+
+			req := &hcapiproto.HuaWeiNetworkInterfaceSyncReq{
+				AccountID:   accountID,
+				Region:      region,
+				CloudCvmIDs: cvmCloudIDs,
+			}
+			err = hcCli.HuaWei.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req)
+			if firstErr == nil && Error(err) != nil {
+				logs.Errorf("cloud-server-sync-%s network interface failed, req: %v, err: %v, rid: %s",
+					enumor.HuaWei, req, err, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(region)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

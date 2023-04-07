@@ -20,6 +20,7 @@
 package gcp
 
 import (
+	gosync "sync"
 	"time"
 
 	hcapiproto "hcm/pkg/api/hc-service"
@@ -42,18 +43,39 @@ func SyncNetworkInterface(kt *kit.Kit, service *hcservice.Client, accountID stri
 			enumor.Gcp, accountID, time.Since(start), kt.Rid)
 	}()
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, zones := range regionZoneMap {
 		for _, zone := range zones {
-			req := &hcapiproto.GcpNetworkInterfaceSyncReq{
-				AccountID: accountID,
-				Zone:      zone,
-			}
-			if err := service.Gcp.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req); err != nil {
-				logs.Errorf("cloud-server-sync-%s network interface failed, req: %v, err: %v, rid: %s",
-					enumor.Gcp, req, err, kt.Rid)
-				return err
-			}
+			pipeline <- true
+			wg.Add(1)
+
+			go func(zone string) {
+				defer func() {
+					wg.Done()
+					<-pipeline
+				}()
+
+				req := &hcapiproto.GcpNetworkInterfaceSyncReq{
+					AccountID: accountID,
+					Zone:      zone,
+				}
+				err := service.Gcp.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req)
+				if firstErr == nil && err != nil {
+					logs.Errorf("cloud-server-sync-%s network interface failed, req: %v, err: %v, rid: %s",
+						enumor.Gcp, req, err, kt.Rid)
+					firstErr = err
+					return
+				}
+			}(zone)
 		}
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

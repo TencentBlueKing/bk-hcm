@@ -128,5 +128,11 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		return hitErr
 	}
 
+	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
+		logs.Errorf("azure sync network interface resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
+			opt, resourceGroupNames, hitErr)
+		return hitErr
+	}
+
 	return nil
 }

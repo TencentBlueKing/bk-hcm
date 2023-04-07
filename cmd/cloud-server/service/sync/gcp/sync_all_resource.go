@@ -115,5 +115,9 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		return hitErr
 	}
 
+	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), opt.AccountID, regionZoneMap); hitErr != nil {
+		return hitErr
+	}
+
 	return nil
 }
