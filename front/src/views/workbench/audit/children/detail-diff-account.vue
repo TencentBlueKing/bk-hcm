@@ -16,14 +16,15 @@ const properties = computed(() => {
   const values = [
     { id: 'name', name: t('名称') },
     { id: 'managers', name: t('负责人') },
+    { id: 'bk_biz_ids', name: t('业务') },
     { id: 'cloud_sub_account_id', name: t('子账号ID') },
     { id: 'cloud_secret_key', name: t('子账号secretID') },
     { id: 'memo', name: t('备注') },
   ];
 
-  if (props.auditType === 'biz') {
-    values.splice(1, 0, { id: 'bk_biz_ids', name: t('使用业务') });
-  }
+  // if (props.auditType === 'biz') {
+  //   values.splice(1, 0, { id: 'bk_biz_ids', name: t('使用业务') });
+  // }
 
   return values;
 });

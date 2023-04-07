@@ -11,6 +11,7 @@ export enum AuditActionEnum {
   STOP = 'stop',
   RESET_PWD = 'reset_pwd',
   RECYCLE = 'recycle',
+  BIND = 'bind',
 }
 
 export enum AuditActionNameEnum {
@@ -27,6 +28,7 @@ export enum AuditActionNameEnum {
   STOP = '关机',
   RESET_PWD = '重置密码',
   RECYCLE = '回收',
+  BIND = '绑定',
 }
 
 export enum AuditSourceEnum {

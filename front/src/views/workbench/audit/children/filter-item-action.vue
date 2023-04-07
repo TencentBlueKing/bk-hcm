@@ -30,6 +30,7 @@ const typeActions = {
     { id: AuditActionEnum.ASSIGN, name: AuditActionNameEnum.ASSIGN },
     { id: AuditActionEnum.UPDATE, name: AuditActionNameEnum.UPDATE },
     { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
+    { id: AuditActionEnum.BIND, name: AuditActionNameEnum.BIND },
   ],
   security_group: [
     { id: AuditActionEnum.CREATE, name: AuditActionNameEnum.CREATE },
