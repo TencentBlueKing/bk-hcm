@@ -84,12 +84,7 @@ watch(() => props.vendor, (val) => {
         {
           field: 'state',
           op: QueryRuleOPEnum.EQ,
-          value: val,
-        },
-        {
-          field: 'state',
-          op: QueryRuleOPEnum.EQ,
-          value: 'opt-in-not-required',
+          value: 'available',
         },
       ];
       break;
