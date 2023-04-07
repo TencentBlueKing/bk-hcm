@@ -6,6 +6,7 @@
     <div class="iam-apply-detail-wrapper">
       <template v-if="isShowPage">
         <BasicInfo :data="basicInfo" />
+        <ProcessStatus :data="basicInfo" />
         <ApplyProcess :link="basicInfo.ticket_url" />
         <div class="action">
           <bk-button
@@ -34,11 +35,13 @@ import { useI18n } from 'vue-i18n';
 import emptyChart from '@/assets/image/empty-chart.png';
 import BasicInfo from '@/views/service/my-apply/components/basic-info/index.vue';
 import ApplyProcess from '@/views/service/my-apply/components/apply-process/index.vue';
+import ProcessStatus from '@/views/service/my-apply/components/process-status/index.vue';
 export default defineComponent({
   name: 'ApplyDetail',
   components: {
     BasicInfo,
     ApplyProcess,
+    ProcessStatus,
   },
   props: {
     params: {
@@ -99,6 +102,7 @@ export default defineComponent({
       isCloneDisabled,
       emptyChart,
       handleCancel,
+      ProcessStatus,
     };
   },
 });

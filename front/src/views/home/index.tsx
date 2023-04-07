@@ -60,7 +60,6 @@ export default defineComponent({
           });
           return;
         }
-        console.log('businessList.value', businessList.value.length);
         businessId.value = accountStore.bizs || res?.data[0].id;   // 默认取第一个业务
         accountStore.updateBizsId(businessId.value); // 设置全局业务id
       } catch (error) {

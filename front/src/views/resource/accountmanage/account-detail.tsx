@@ -255,7 +255,7 @@ export default defineComponent({
             name: t('密钥信息'),
             data: [
               {
-                label: t('应用程序(客户端) ID'),
+                label: t('应用(客户端) ID'),
                 required: false,
                 property: 'cloud_application_id',
                 component: () => <span>{projectModel.extension.cloud_application_id || '--'}</span>,
@@ -450,16 +450,16 @@ export default defineComponent({
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
             },
             {
-              label: 'Secret Key',
-              required: projectModel.type !== 'registration',
-              property: 'secretKey',
-              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-            },
-            {
               label: t('子账号ID'),
               required: true,
               property: 'subAccountId',
               component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.subAccountId} />,
+            },
+            {
+              label: 'Secret Key',
+              required: projectModel.type !== 'registration',
+              property: 'secretKey',
+              component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
             },
           ];
           break;
@@ -509,15 +509,16 @@ export default defineComponent({
 
     // 显示弹窗
     const handleModifyScret = () => {
-      secretModel.secretId = '';
+      secretModel.secretId = projectModel.extension.cloud_secret_id
+      || projectModel.extension.cloud_client_secret_id || projectModel.extension.cloud_service_secret_id || '';
       secretModel.secretKey = '';
-      secretModel.subAccountId = '';
-      secretModel.iamUserName = '';
-      secretModel.iamUserId = '';
-      secretModel.accountId = '';
-      secretModel.accountName = '';
-      secretModel.applicationId = '';
-      secretModel.applicationName = '';
+      secretModel.subAccountId = projectModel.extension.cloud_sub_account_id || '';
+      secretModel.iamUserName = projectModel.extension.cloud_iam_username || '';
+      secretModel.iamUserId = projectModel.extension.cloud_iam_user_id || '';
+      secretModel.accountId = projectModel.extension.cloud_service_account_id || '';
+      secretModel.accountName = projectModel.extension.cloud_service_account_name || '';
+      secretModel.applicationId = projectModel.extension.cloud_application_id || '';
+      secretModel.applicationName = projectModel.extension.cloud_application_name || '';
       isShowModifyScretDialog.value = true;
     };
 
@@ -798,7 +799,7 @@ export default defineComponent({
             dialogType={'show'}
             onClosed={onClosed}
           >
-            <Form labelWidth={100} model={secretModel} ref={formDiaRef}>
+            <Form labelWidth={130} model={secretModel} ref={formDiaRef}>
             {dialogForm.list.map(formItem => (
                 <FormItem label={formItem.label} required={formItem.required} property={formItem.property}>
                     {formItem.component()}
