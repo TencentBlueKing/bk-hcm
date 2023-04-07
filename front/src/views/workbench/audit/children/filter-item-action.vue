@@ -15,7 +15,7 @@ const typeActions = {
     { id: AuditActionEnum.DELETE, name: AuditActionNameEnum.DELETE },
   ],
   cvm: [
-    { id: AuditActionEnum.APPLY, name: AuditActionNameEnum.APPLY },
+    { id: AuditActionEnum.CREATE, name: AuditActionNameEnum.CREATE },
     { id: AuditActionEnum.ASSIGN, name: AuditActionNameEnum.ASSIGN },
     { id: AuditActionEnum.UPDATE, name: AuditActionNameEnum.UPDATE },
     { id: AuditActionEnum.REBOOT, name: AuditActionNameEnum.REBOOT },

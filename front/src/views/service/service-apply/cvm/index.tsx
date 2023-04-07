@@ -124,7 +124,25 @@ export default defineComponent({
       };
     });
 
-    const dataDiskSizeRules = computed(() => {
+    const dataDiskSizeRules = (item: any) => {
+      const awsMinMap = {
+        gp3: 1,
+        gp2: 1,
+        io1: 4,
+        io2: 4,
+        st1: 125,
+        sc1: 125,
+        standard: 1
+      }
+      const awsMaxMap = {
+        gp3: 16384,
+        gp2: 16384,
+        io1: 16384,
+        io2: 16384,
+        st1: 16384,
+        sc1: 16384,
+        standard: 1024
+      }
       const rules = {
         [VendorEnum.TCLOUD]: {
           validator: (value: number) => {
@@ -140,13 +158,20 @@ export default defineComponent({
           message: '40-32,768GB',
           trigger: 'change',
         },
+        [VendorEnum.AWS]: {
+          validator: (value: number) => {
+            return value >= awsMinMap[item.disk_type] && value <= awsMaxMap[item.disk_type]
+          },
+          message: `${awsMinMap[item.disk_type]}-${awsMaxMap[item.disk_type]}GB`,
+          trigger: 'change',
+        },
       };
 
       return rules[cond.vendor] || {
         validator: () => true,
         message: ''
       };
-    });
+    };
 
     const dataDiskCountRules = computed(() => {
       const rules = {
@@ -156,6 +181,11 @@ export default defineComponent({
           trigger: 'change',
         },
         [VendorEnum.HUAWEI]: {
+          min: 1,
+          max: 23,
+          trigger: 'change',
+        },
+        [VendorEnum.AWS]: {
           min: 1,
           max: 23,
           trigger: 'change',
@@ -379,12 +409,14 @@ export default defineComponent({
                     <FormItem
                       label='大小'
                       property={`data_disk[${index}].disk_size_gb`}
-                      rules={[dataDiskSizeRules.value]}
-                      description={dataDiskSizeRules.value.message}
+                      rules={[dataDiskSizeRules(item)]}
+                      description={dataDiskSizeRules(item).message}
                     >
                       <Input type='number' style={{ width: '160px' }} v-model={item.disk_size_gb} suffix="GB"></Input>
                     </FormItem>
-                    <FormItem label='数量' property={`data_disk[${index}].disk_count`}
+                    <FormItem
+                      label='数量'
+                      property={`data_disk[${index}].disk_count`}
                       min={dataDiskCountRules.value.min}
                       max={dataDiskCountRules.value.max}>
                       <Input style={{ width: '90px' }} type='number' v-model={item.disk_count}></Input>
