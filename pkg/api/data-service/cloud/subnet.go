@@ -124,6 +124,7 @@ type SubnetUpdateReq[T SubnetUpdateExtension] struct {
 
 // SubnetUpdateBaseInfo defines update subnet request base info.
 type SubnetUpdateBaseInfo struct {
+	Region            string   `json:"region,omitempty" validate:"omitempty"`
 	Name              *string  `json:"name,omitempty" validate:"omitempty"`
 	Ipv4Cidr          []string `json:"ipv4_cidr,omitempty" validate:"omitempty"`
 	Ipv6Cidr          []string `json:"ipv6_cidr,omitempty" validate:"omitempty"`

@@ -232,6 +232,7 @@ func diffAwsSubnet(req *SyncAwsOption, list *types.AwsSubnetListResult,
 				tmpRes := cloud.SubnetUpdateReq[cloud.AwsSubnetUpdateExt]{
 					ID: resourceInfo.ID,
 					SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
+						Region:   item.Extension.Region,
 						Name:     converter.ValToPtr(item.Name),
 						Ipv4Cidr: item.Ipv4Cidr,
 						Ipv6Cidr: item.Ipv6Cidr,
@@ -288,6 +289,10 @@ func diffAwsSubnet(req *SyncAwsOption, list *types.AwsSubnetListResult,
 }
 
 func isAwsSubnetChange(info cloudcore.Subnet[cloudcore.AwsSubnetExtension], item types.AwsSubnet) bool {
+	if info.Region != item.Extension.Region {
+		return true
+	}
+
 	if info.CloudVpcID != item.CloudVpcID {
 		return true
 	}

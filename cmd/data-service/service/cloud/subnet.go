@@ -227,6 +227,7 @@ func batchUpdateSubnet[T protocloud.SubnetUpdateExtension](cts *rest.Contexts, s
 	}
 
 	for _, updateReq := range req.Subnets {
+		subnet.Region = updateReq.Region
 		subnet.Name = updateReq.Name
 		subnet.Ipv4Cidr = updateReq.Ipv4Cidr
 		subnet.Ipv6Cidr = updateReq.Ipv6Cidr

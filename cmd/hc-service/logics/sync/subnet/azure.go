@@ -209,7 +209,7 @@ func diffAzureSubnetAndSync(kt *kit.Kit, req *hcservice.AzureResourceSyncReq, li
 	resourceDBMap map[string]cloudcore.Subnet[cloudcore.AzureSubnetExtension], dataCli *dataclient.Client,
 	adaptor *cloudclient.CloudAdaptorClient) error {
 
-	createResources, updateResources, existIDMap, err := diffAzureSubnet(req, list, resourceDBMap)
+	createResources, updateResources, existIDMap, err := diffAzureSubnet(kt, dataCli, req, list, resourceDBMap)
 	if err != nil {
 		return err
 	}
@@ -305,19 +305,24 @@ func batchUpdateAzureSubnet(kt *kit.Kit, updateResources []cloud.SubnetUpdateReq
 }
 
 // diffAzureSubnet filter azure subnet list
-func diffAzureSubnet(req *hcservice.AzureResourceSyncReq, list *types.AzureSubnetListResult,
-	resourceDBMap map[string]cloudcore.Subnet[cloudcore.AzureSubnetExtension]) (
+func diffAzureSubnet(kt *kit.Kit, dataCli *dataclient.Client, req *hcservice.AzureResourceSyncReq,
+	list *types.AzureSubnetListResult, resourceDBMap map[string]cloudcore.Subnet[cloudcore.AzureSubnetExtension]) (
 	createResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt],
 	updateResources []cloud.SubnetUpdateReq[cloud.AzureSubnetUpdateExt], existIDMap map[string]bool, err error) {
 
 	existIDMap = make(map[string]bool, 0)
 	for _, item := range list.Details {
+		vpcData, err := getAzureVpcDataFromDB(kt, dataCli, req, item.CloudVpcID)
+		if err != nil {
+			continue
+		}
 		// need compare and update subnet data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
-			if isAzureSubnetChange(resourceInfo, item) {
+			if isAzureSubnetChange(resourceInfo, item, vpcData.Region) {
 				tmpRes := cloud.SubnetUpdateReq[cloud.AzureSubnetUpdateExt]{
 					ID: resourceInfo.ID,
 					SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
+						Region:   vpcData.Region,
 						Name:     converter.ValToPtr(item.Name),
 						Ipv4Cidr: item.Ipv4Cidr,
 						Ipv6Cidr: item.Ipv6Cidr,
@@ -340,11 +345,11 @@ func diffAzureSubnet(req *hcservice.AzureResourceSyncReq, list *types.AzureSubne
 			tmpRes := cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt]{
 				AccountID:  req.AccountID,
 				CloudVpcID: item.CloudVpcID,
-				VpcID:      "",
+				VpcID:      vpcData.ID,
 				BkBizID:    constant.UnassignedBiz,
 				CloudID:    item.CloudID,
 				Name:       converter.ValToPtr(item.Name),
-				Region:     "",
+				Region:     vpcData.Region,
 				Zone:       "",
 				Ipv4Cidr:   item.Ipv4Cidr,
 				Ipv6Cidr:   item.Ipv6Cidr,
@@ -364,7 +369,12 @@ func diffAzureSubnet(req *hcservice.AzureResourceSyncReq, list *types.AzureSubne
 	return createResources, updateResources, existIDMap, nil
 }
 
-func isAzureSubnetChange(info cloudcore.Subnet[cloudcore.AzureSubnetExtension], item types.AzureSubnet) bool {
+func isAzureSubnetChange(info cloudcore.Subnet[cloudcore.AzureSubnetExtension], item types.AzureSubnet,
+	region string) bool {
+	if info.Region != region {
+		return true
+	}
+
 	if info.CloudVpcID != item.CloudVpcID {
 		return true
 	}
@@ -479,4 +489,39 @@ func BatchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq
 	}
 
 	return createRes, nil
+}
+
+func getAzureVpcDataFromDB(kt *kit.Kit, dataCli *dataclient.Client, req *hcservice.AzureResourceSyncReq,
+	cloudVpcID string) (cloudcore.Vpc[cloudcore.AzureVpcExtension], error) {
+
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "account_id",
+				Op:    filter.Equal.Factory(),
+				Value: req.AccountID,
+			},
+			&filter.AtomRule{
+				Field: "cloud_id",
+				Op:    filter.Equal.Factory(),
+				Value: cloudVpcID,
+			},
+		},
+	}
+
+	dbQueryReq := &core.ListReq{
+		Filter: expr,
+		Page:   core.DefaultBasePage,
+	}
+	dbList, err := dataCli.Azure.Vpc.ListVpcExt(kt.Ctx, kt.Header(), dbQueryReq)
+	if err != nil {
+		return cloudcore.Vpc[cloudcore.AzureVpcExtension]{}, err
+	}
+
+	if len(dbList.Details) <= 0 {
+		return cloudcore.Vpc[cloudcore.AzureVpcExtension]{}, fmt.Errorf("get vpc data from db is <= 0")
+	}
+
+	return dbList.Details[0], nil
 }

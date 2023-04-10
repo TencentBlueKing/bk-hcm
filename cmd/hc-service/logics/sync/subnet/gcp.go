@@ -257,6 +257,7 @@ func diffGcpSubnet(req *SyncGcpOption, list *types.GcpSubnetListResult,
 				tmpRes := cloud.SubnetUpdateReq[cloud.GcpSubnetUpdateExt]{
 					ID: resourceInfo.ID,
 					SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
+						Region:   item.Extension.Region,
 						Name:     converter.ValToPtr(item.Name),
 						Ipv4Cidr: item.Ipv4Cidr,
 						Ipv6Cidr: item.Ipv6Cidr,
@@ -313,6 +314,10 @@ func diffGcpSubnet(req *SyncGcpOption, list *types.GcpSubnetListResult,
 }
 
 func isGcpSubnetChange(info cloudcore.Subnet[cloudcore.GcpSubnetExtension], item types.GcpSubnet) bool {
+	if info.Region != item.Extension.Region {
+		return true
+	}
+
 	if info.Extension.VpcSelfLink != item.CloudVpcID {
 		return true
 	}

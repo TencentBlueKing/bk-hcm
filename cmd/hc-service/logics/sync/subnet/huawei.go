@@ -239,6 +239,7 @@ func filterHuaWeiSubnetList(req *SyncHuaWeiOption, list *types.HuaWeiSubnetListR
 				tmpRes := cloud.SubnetUpdateReq[cloud.HuaWeiSubnetUpdateExt]{
 					ID: resourceInfo.ID,
 					SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
+						Region:   item.Extension.Region,
 						Name:     converter.ValToPtr(item.Name),
 						Ipv4Cidr: item.Ipv4Cidr,
 						Ipv6Cidr: item.Ipv6Cidr,
@@ -293,6 +294,10 @@ func filterHuaWeiSubnetList(req *SyncHuaWeiOption, list *types.HuaWeiSubnetListR
 }
 
 func isHuaWeiSubnetChange(info cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension], item types.HuaWeiSubnet) bool {
+	if info.Region != item.Extension.Region {
+		return true
+	}
+
 	if info.CloudVpcID != item.CloudVpcID {
 		return true
 	}

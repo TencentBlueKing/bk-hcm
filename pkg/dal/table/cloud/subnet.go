@@ -150,10 +150,6 @@ func (s SubnetTable) UpdateValidate() error {
 		return errors.New("cloud id can not update")
 	}
 
-	if len(s.Region) != 0 {
-		return errors.New("region can not update")
-	}
-
 	if len(s.Zone) != 0 {
 		return errors.New("zone can not update")
 	}

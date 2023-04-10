@@ -245,6 +245,7 @@ func diffTCloudSubnet(req *SyncTCloudOption, list *types.TCloudSubnetListResult,
 				tmpRes := cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt]{
 					ID: resourceInfo.ID,
 					SubnetUpdateBaseInfo: cloud.SubnetUpdateBaseInfo{
+						Region:   item.Extension.Region,
 						Name:     converter.ValToPtr(item.Name),
 						Ipv4Cidr: item.Ipv4Cidr,
 						Ipv6Cidr: item.Ipv6Cidr,
@@ -294,6 +295,10 @@ func diffTCloudSubnet(req *SyncTCloudOption, list *types.TCloudSubnetListResult,
 }
 
 func isTCloudSubnetChange(info cloudcore.Subnet[cloudcore.TCloudSubnetExtension], item types.TCloudSubnet) bool {
+	if info.Region != item.Extension.Region {
+		return true
+	}
+
 	if info.CloudVpcID != item.CloudVpcID {
 		return true
 	}
