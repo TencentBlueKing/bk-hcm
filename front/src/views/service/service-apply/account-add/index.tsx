@@ -23,7 +23,7 @@ export default defineComponent({
       name: '', // 名称
       vendor: '', // 云厂商
       managers: [useUser.username], // 责任人
-      bizIds: '',   // 使用业务
+      bizIds: [],   // 使用业务
       memo: '',     // 备注
       mainAccount: '',    // 主账号
       subAccount: '',    // 子账号
@@ -62,7 +62,7 @@ export default defineComponent({
     });    // 业务列表
     const getBusinessList = async () => {
       try {
-        const res = await accountStore.getBizListWithAuth();
+        const res = await accountStore.getBizList();
         businessList.list = res?.data || BUSINESS_TYPE;
       } catch (error: any) {
         Message({ theme: 'error', message: error?.message || '系统异常' });
