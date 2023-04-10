@@ -12,7 +12,6 @@ import {
   PropType,
   h,
   ref,
-  watch,
 } from 'vue';
 import {
   useI18n,
@@ -28,12 +27,10 @@ import {
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { HostCloudEnum, CloudType } from '@/typings';
-import { FILTER_DATA } from '@/common/constant';
 import {
   useResourceStore,
-} from '@/store/resource';
-import {
   useAccountStore,
 } from '@/store';
 
@@ -45,6 +42,9 @@ const {
 const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
+  },
+  isResourcePage: {
+    type: Boolean,
   },
 });
 
@@ -65,11 +65,11 @@ const {
   handleSelectionChange,
 } = useSelection();
 
+const {
+  searchData,
+  searchValue,
+} = useFilter(props);
 
-const searchData = ref(FILTER_DATA);
-const searchValue = ref([]);
-const filter = ref<any>([]);
-const isAccurate = ref(false);
 
 // const {
 //   isShowShutdown,
@@ -116,41 +116,6 @@ const isAccurate = ref(false);
 //     handler: handleRefund,
 //   },
 // ];
-
-watch(
-  () => props.filter,
-  (val) => {
-    filter.value = val;
-  },
-  {
-    deep: true,
-    immediate: true,
-  },
-);
-
-
-// 搜索数据
-watch(
-  () => searchValue.value,
-  (val) => {
-    filter.value.rules = val.reduce((p, v) => {
-      if (v.type === 'condition') {
-        filter.value.op = v.id || 'and';
-      } else {
-        p.push({
-          field: v.id,
-          op: isAccurate.value ? 'eq' : 'cs',
-          value: v.values[0].id,
-        });
-      }
-      return p;
-    }, []);
-  },
-  {
-    deep: true,
-    immediate: true,
-  },
-);
 
 
 const isShowDistribution = ref(false);
@@ -272,7 +237,9 @@ getBusinessList();
   <bk-loading
     :loading="isLoading"
   >
-    <section class="flex-row justify-content-between align-items-center">
+    <section
+      class="flex-row align-items-center"
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <!-- <bk-button
         class="w100"
         theme="primary"
@@ -325,7 +292,7 @@ getBusinessList();
       <slot>
       </slot>
       <bk-search-select
-        class="search-filter ml10"
+        class="w500 ml10"
         clearable
         :data="searchData"
         v-model="searchValue"
@@ -416,8 +383,5 @@ getBusinessList();
 .distribution-cls{
   display: flex;
   align-items: center;
-}
-.search-filter {
-  width: 500px;
 }
 </style>

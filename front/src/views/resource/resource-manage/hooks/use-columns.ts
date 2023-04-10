@@ -408,7 +408,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const imageColumns = [
     getLinkField('image'),
     {
-      label: '实例 ID',
+      label: '资源 ID',
       field: 'cloud_id',
       sort: true,
     },
@@ -628,7 +628,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     getLinkField('host'),
     {
-      label: '实例 ID',
+      label: '资源 ID',
       field: 'cloud_id',
     },
     {
@@ -809,7 +809,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     getLinkField('eips'),
     {
-      label: '实例 ID',
+      label: '资源 ID',
       field: 'cloud_id',
       sort: true,
     },

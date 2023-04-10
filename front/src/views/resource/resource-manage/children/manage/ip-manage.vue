@@ -18,6 +18,7 @@ import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
 import useSelection from '../../hooks/use-selection';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 
 const props = defineProps({
   filter: {
@@ -62,6 +63,11 @@ const {
   '删除 EIP',
   true,
 );
+
+const {
+  searchData,
+  searchValue,
+} = useFilter(props);
 
 // 抛出请求数据的方法，新增成功使用
 const fetchComponentsData = () => {
@@ -127,7 +133,9 @@ defineExpose({ fetchComponentsData });
   <bk-loading
     :loading="isLoading"
   >
-    <section>
+    <section
+      class="flex-row align-items-center mb20"
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot></slot>
       <!-- <bk-button
         class="w100 ml10"
@@ -137,6 +145,12 @@ defineExpose({ fetchComponentsData });
       >
         删除
       </bk-button> -->
+      <bk-search-select
+        class="w500 ml10"
+        clearable
+        :data="searchData"
+        v-model="searchValue"
+      />
     </section>
 
     <bk-table

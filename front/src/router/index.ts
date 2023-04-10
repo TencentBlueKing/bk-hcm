@@ -15,6 +15,7 @@ import business from './module/business';
 import i18n from '@/language/i18n';
 import { useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
+const { BK_ITSM_URL } = window.PROJECT_CONFIG;
 
 const { t } = i18n.global;
 
@@ -83,6 +84,11 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
   const commonStore = useCommonStore();
   const { pageAuthData, authVerifyData } = commonStore;      // 所有需要检验的查看权限数据
   const currentFindAuthData = pageAuthData.find((e: any) => e.path === to.path || e?.path?.includes(to.path));
+
+  if (to.path === '/service/my-approval') {
+    window.open(`${BK_ITSM_URL}/#/workbench/ticket/approval`);
+    window.location.reload();
+  }
 
   if (from.path === '/') { // 刷新或者首次进入请求权限接口
     const { getAuthVerifyData } = useVerify();    // 权限中心权限

@@ -21,6 +21,7 @@ import {
 } from '@/store/resource';
 import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 
 const props = defineProps({
   filter: {
@@ -57,6 +58,11 @@ defineExpose({ fetchComponentsData });
 
 const emit = defineEmits(['auth']);
 
+const {
+  searchData,
+  searchValue,
+} = useFilter(props);
+
 const handleDeleteVpc = (data: any) => {
   const vpcIds = [data.id];
   const getRelateNum = (type: string, field = 'vpc_id', op = 'in') => {
@@ -86,6 +92,7 @@ const handleDeleteVpc = (data: any) => {
       getRelateNum('network_interfaces'),
     ])
     .then(([cvmsResult, subnetsResult, routeResult, networkResult]: any) => {
+      // eslint-disable-next-line max-len
       if (cvmsResult?.data?.count || subnetsResult?.data?.count || routeResult?.data?.count || networkResult?.data?.count) {
         const getMessage = (result: any, name: string) => {
           if (result?.data?.count) {
@@ -155,9 +162,17 @@ const renderColumns = [
   <bk-loading
     :loading="isLoading"
   >
-    <section>
+    <section
+      class="flex-row align-items-center"
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot>
       </slot>
+      <bk-search-select
+        class="w500 ml10"
+        clearable
+        :data="searchData"
+        v-model="searchValue"
+      />
     </section>
 
     <bk-table

@@ -21,6 +21,7 @@ import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 
 const props = defineProps({
   filter: {
@@ -41,6 +42,11 @@ const {
 const columns = useColumns('drive');
 const simpleColumns = useColumns('drive', true);
 const resourceStore = useResourceStore();
+
+const {
+  searchData,
+  searchValue,
+} = useFilter(props);
 
 const emit = defineEmits(['auth']);
 
@@ -99,7 +105,7 @@ const {
 } = useSelection();
 
 const {
-  handleShowDelete,
+  // handleShowDelete,
   DeleteDialog,
 } = useDelete(
   simpleColumns,
@@ -123,7 +129,9 @@ const {
   <bk-loading
     :loading="isLoading"
   >
-    <section>
+    <section
+      class="flex-row align-items-center"
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot>
       </slot>
       <!-- <bk-button
@@ -134,6 +142,12 @@ const {
       >
         {{ t('删除') }}
       </bk-button> -->
+      <bk-search-select
+        class="w500 ml10"
+        clearable
+        :data="searchData"
+        v-model="searchValue"
+      />
     </section>
 
     <bk-table

@@ -11,6 +11,7 @@ import {
 
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 
 const props = defineProps({
   filter: {
@@ -32,12 +33,26 @@ const {
 } = useQueryList(props, 'route_tables');
 
 const columns = useColumns('route');
+
+const {
+  searchData,
+  searchValue,
+} = useFilter(props);
 </script>
 
 <template>
   <bk-loading
     :loading="isLoading"
   >
+    <section
+      class="flex-row align-items-center mb20 justify-content-end">
+      <bk-search-select
+        class="w500 ml10"
+        clearable
+        :data="searchData"
+        v-model="searchValue"
+      />
+    </section>
     <bk-table
       class="mt20"
       row-hover="auto"

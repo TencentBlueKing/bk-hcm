@@ -5,12 +5,14 @@ import type {
 
 import {
   PropType,
-  watchEffect,
+  watch,
   reactive,
+  onBeforeUnmount,
 } from 'vue';
-import { cloneDeep } from 'lodash';
+// import { cloneDeep } from 'lodash';
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 
 const props = defineProps({
   filter: {
@@ -18,16 +20,17 @@ const props = defineProps({
   },
 });
 
-let params = reactive(cloneDeep(props));
-watchEffect(() => {
-  params = cloneDeep(props);
-  params.filter.rules = params.filter.rules.filter(e => e.field !== 'account_id');
-  params.filter.rules.push({
-    field: 'type',
-    op: 'eq',
-    value: 'public',
-  });
-});
+const params = reactive(props);
+// watchEffect(() => {
+//   params = props;
+//   params.filter.rules = params.filter.rules.filter(e => e.field !== 'account_id');
+//   params.filter.rules.push({
+//     field: 'type',
+//     op: 'eq',
+//     value: 'public',
+//   });
+// });
+
 
 const columns = useColumns('image');
 
@@ -39,10 +42,69 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList(params, 'images');
+
+const {
+  searchData,
+  searchValue,
+  isAccurate,
+} = useFilter(props);
+
+onBeforeUnmount(() => {
+  params.filter.rules = [];
+});
+
+
+// 搜索数据
+watch(
+  () => searchValue.value,
+  (val) => {
+    if (val.length) {
+      params.filter.rules = val.reduce((p, v) => {
+        if (v.type === 'condition') {
+          params.filter.op = v.id || 'and';
+        } else {
+          p.push({
+            field: v.id,
+            op: isAccurate.value ? 'eq' : 'cs',
+            value: v.values[0].id,
+          });
+        }
+        return p;
+      }, [
+        {
+          field: 'type',
+          op: 'eq',
+          value: 'public',
+        },
+      ]);
+    } else {
+      params.filter.rules = [
+        {
+          field: 'type',
+          op: 'eq',
+          value: 'public',
+        },
+      ];
+    }
+    params.filter.rules = params.filter.rules.filter(e => e.field !== 'account_id');
+  },
+  {
+    deep: true,
+  },
+);
 </script>
 
 <template>
   <bk-loading :loading="isLoading">
+    <section
+      class="flex-row align-items-center mb20 justify-content-end">
+      <bk-search-select
+        class="w500 ml10"
+        clearable
+        :data="searchData"
+        v-model="searchValue"
+      />
+    </section>
     <bk-table
       row-hover="auto"
       remote-pagination

@@ -31,6 +31,7 @@ import {
 } from 'vue-router';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 
 const props = defineProps({
   filter: {
@@ -86,6 +87,11 @@ const {
   handlePageSizeChange,
   getList,
 } = useQueryCommonList(props, fetchUrl);
+
+const {
+  searchData,
+  searchValue,
+} = useFilter(props);
 
 // eslint-disable-next-line max-len
 state.datas = datas;
@@ -572,21 +578,29 @@ const securityHandleShowDelete = (data: any) => {
       <section>
         <slot>
         </slot>
-      </section>
 
-      <bk-radio-group
-        class="mt20"
-        v-model="activeType"
-        :disabled="state.isLoading"
-      >
-        <bk-radio-button
-          v-for="item in types"
-          :key="item.name"
-          :label="item.name"
-        >
-          {{ item.label }}
-        </bk-radio-button>
-      </bk-radio-group>
+        <section
+          class="flex-row align-items-center justify-content-between mt20">
+          <bk-radio-group
+            v-model="activeType"
+            :disabled="state.isLoading"
+          >
+            <bk-radio-button
+              v-for="item in types"
+              :key="item.name"
+              :label="item.name"
+            >
+              {{ item.label }}
+            </bk-radio-button>
+          </bk-radio-group>
+          <bk-search-select
+            class="search-filter ml10"
+            clearable
+            :data="searchData"
+            v-model="searchValue"
+          />
+        </section>
+      </section>
 
       <bk-table
         v-if="activeType === 'group'"
@@ -626,5 +640,8 @@ const securityHandleShowDelete = (data: any) => {
 }
 .mt20 {
   margin-top: 20px;
+}
+.search-filter {
+  width: 500px;
 }
 </style>

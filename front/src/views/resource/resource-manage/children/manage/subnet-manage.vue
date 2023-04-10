@@ -18,6 +18,7 @@ import {
 
 import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 
 const props = defineProps({
   filter: {
@@ -41,6 +42,11 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList(props, 'subnets');
+
+const {
+  searchData,
+  searchValue,
+} = useFilter(props);
 
 const emit = defineEmits(['auth']);
 
@@ -149,9 +155,17 @@ defineExpose({ fetchComponentsData });
   <bk-loading
     :loading="isLoading"
   >
-    <section>
+    <section
+      class="flex-row align-items-center"
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot>
       </slot>
+      <bk-search-select
+        class="w500 ml10"
+        clearable
+        :data="searchData"
+        v-model="searchValue"
+      />
     </section>
 
     <bk-table
