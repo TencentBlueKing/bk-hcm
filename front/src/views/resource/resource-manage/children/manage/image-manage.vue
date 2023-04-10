@@ -21,6 +21,7 @@ const props = defineProps({
 let params = reactive(cloneDeep(props));
 watchEffect(() => {
   params = cloneDeep(props);
+  params.filter.rules = params.filter.rules.filter(e => e.field !== 'account_id');
   params.filter.rules.push({
     field: 'type',
     op: 'eq',

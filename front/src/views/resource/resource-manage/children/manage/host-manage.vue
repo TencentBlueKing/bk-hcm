@@ -12,6 +12,7 @@ import {
   PropType,
   h,
   ref,
+  watch,
 } from 'vue';
 import {
   useI18n,
@@ -28,6 +29,7 @@ import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import { HostCloudEnum, CloudType } from '@/typings';
+import { FILTER_DATA } from '@/common/constant';
 import {
   useResourceStore,
 } from '@/store/resource';
@@ -62,6 +64,12 @@ const {
   selections,
   handleSelectionChange,
 } = useSelection();
+
+
+const searchData = ref(FILTER_DATA);
+const searchValue = ref([]);
+const filter = ref<any>([]);
+const isAccurate = ref(false);
 
 // const {
 //   isShowShutdown,
@@ -108,6 +116,43 @@ const {
 //     handler: handleRefund,
 //   },
 // ];
+
+watch(
+  () => props.filter,
+  (val) => {
+    filter.value = val;
+  },
+  {
+    deep: true,
+    immediate: true,
+  },
+);
+
+
+// 搜索数据
+watch(
+  () => searchValue.value,
+  (val) => {
+    filter.value.rules = val.reduce((p, v) => {
+      if (v.type === 'condition') {
+        filter.value.op = v.id || 'and';
+      } else {
+        p.push({
+          field: v.id,
+          op: isAccurate.value ? 'eq' : 'cs',
+          value: v.values[0].id,
+        });
+      }
+      return p;
+    }, []);
+  },
+  {
+    deep: true,
+    immediate: true,
+  },
+);
+
+
 const isShowDistribution = ref(false);
 const businessId = ref('');
 const businessList = ref([]);
@@ -227,7 +272,7 @@ getBusinessList();
   <bk-loading
     :loading="isLoading"
   >
-    <section>
+    <section class="flex-row justify-content-between align-items-center">
       <!-- <bk-button
         class="w100"
         theme="primary"
@@ -279,6 +324,12 @@ getBusinessList();
       </bk-dropdown> -->
       <slot>
       </slot>
+      <bk-search-select
+        class="search-filter ml10"
+        clearable
+        :data="searchData"
+        v-model="searchValue"
+      />
     </section>
 
     <bk-table
@@ -365,5 +416,8 @@ getBusinessList();
 .distribution-cls{
   display: flex;
   align-items: center;
+}
+.search-filter {
+  width: 500px;
 }
 </style>

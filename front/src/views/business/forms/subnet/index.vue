@@ -185,7 +185,7 @@ watch(() => formData.vendor, (val) => {
         class="item-warp"
       >
         <resource-group-selector
-          v-model="formData.resource_group"></resource-group-selector>
+          v-model="formData.resource_group" :vendor="formData.vendor"></resource-group-selector>
       </bk-form-item>
       <bk-form-item
         :label="t('备注')"

@@ -23,6 +23,12 @@ const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
+  isResourcePage: {
+    type: Boolean,
+  },
+  authVerifyData: {
+    type: Object as PropType<any>,
+  },
 });
 
 const resourceStore = useResourceStore();
@@ -35,6 +41,8 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList(props, 'subnets');
+
+const emit = defineEmits(['auth']);
 
 // 抛出请求数据的方法，新增成功使用
 const fetchComponentsData = () => {
@@ -60,8 +68,8 @@ const handleDeleteSubnet = (data: any) => {
           },
         },
         type,
-      )
-  }
+      );
+  };
   Promise
     .all([
       getRelateNum('cvms', 'subnet_ids', 'json_overlaps'),
@@ -71,14 +79,14 @@ const handleDeleteSubnet = (data: any) => {
       if (cvmsResult?.data?.count || networkResult?.data?.count) {
         const getMessage = (result: any, name: string) => {
           if (result?.data?.count) {
-            return `${result?.data?.count}个${name}，`
+            return `${result?.data?.count}个${name}，`;
           }
-          return ''
-        }
+          return '';
+        };
         Message({
           theme: 'error',
-          message: `该子网（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`
-        })
+          message: `该子网（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`,
+        });
       } else {
         InfoBox({
           title: '请确认是否删除',
@@ -99,29 +107,40 @@ const handleDeleteSubnet = (data: any) => {
         });
       }
     });
-}
+};
 
 const renderColumns = [
   ...columns,
   {
     label: '操作',
     render({ data }: any) {
-      return h(
-        Button,
+      return h(h(
+        'span',
         {
-          text: true,
-          theme: 'primary',
           onClick() {
-            handleDeleteSubnet(data)
+            emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
           },
         },
         [
-          '删除',
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
+              onClick() {
+                handleDeleteSubnet(data);
+              },
+            },
+            [
+              '删除',
+            ],
+          ),
         ],
-      );
+      ));
     },
-  }
-]
+  },
+];
 
 defineExpose({ fetchComponentsData });
 </script>

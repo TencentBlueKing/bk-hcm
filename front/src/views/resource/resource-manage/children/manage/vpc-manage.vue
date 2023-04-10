@@ -26,6 +26,12 @@ const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
+  isResourcePage: {
+    type: Boolean,
+  },
+  authVerifyData: {
+    type: Object as PropType<any>,
+  },
 });
 
 // use hooks
@@ -49,6 +55,8 @@ const fetchComponentsData = () => {
 };
 defineExpose({ fetchComponentsData });
 
+const emit = defineEmits(['auth']);
+
 const handleDeleteVpc = (data: any) => {
   const vpcIds = [data.id];
   const getRelateNum = (type: string, field = 'vpc_id', op = 'in') => {
@@ -68,8 +76,8 @@ const handleDeleteVpc = (data: any) => {
           },
         },
         type,
-      )
-  }
+      );
+  };
   Promise
     .all([
       getRelateNum('cvms', 'vpc_ids', 'json_overlaps'),
@@ -81,14 +89,14 @@ const handleDeleteVpc = (data: any) => {
       if (cvmsResult?.data?.count || subnetsResult?.data?.count || routeResult?.data?.count || networkResult?.data?.count) {
         const getMessage = (result: any, name: string) => {
           if (result?.data?.count) {
-            return `${result?.data?.count}个${name}，`
+            return `${result?.data?.count}个${name}，`;
           }
-          return ''
-        }
+          return '';
+        };
         Message({
           theme: 'error',
-          message: `该VPC（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(subnetsResult, '子网')}${getMessage(routeResult, '路由表')}${getMessage(networkResult, '网络接口')}不能删除`
-        })
+          message: `该VPC（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(subnetsResult, '子网')}${getMessage(routeResult, '路由表')}${getMessage(networkResult, '网络接口')}不能删除`,
+        });
       } else {
         InfoBox({
           title: '请确认是否删除',
@@ -114,22 +122,33 @@ const renderColumns = [
   {
     label: '操作',
     render({ data }: any) {
-      return h(
-        Button,
+      return h(h(
+        'span',
         {
-          text: true,
-          theme: 'primary',
           onClick() {
-            handleDeleteVpc(data)
+            emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
           },
         },
         [
-          t('删除'),
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'],
+              onClick() {
+                handleDeleteVpc(data);
+              },
+            },
+            [
+              t('删除'),
+            ],
+          ),
         ],
-      );
+      ));
     },
-  }
-]
+  },
+];
 </script>
 
 <template>

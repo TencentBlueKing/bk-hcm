@@ -12,7 +12,7 @@ import {
 } from 'vue-i18n';
 import {
   Button,
-  InfoBox
+  InfoBox,
 } from 'bkui-vue';
 import {
   useResourceStore,
@@ -26,6 +26,12 @@ const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
+  isResourcePage: {
+    type: Boolean,
+  },
+  authVerifyData: {
+    type: Object as PropType<any>,
+  },
 });
 
 const {
@@ -36,44 +42,56 @@ const columns = useColumns('drive');
 const simpleColumns = useColumns('drive', true);
 const resourceStore = useResourceStore();
 
+const emit = defineEmits(['auth']);
+
 const renderColumns = [
   ...columns,
   {
     label: '操作',
     render({ data }: any) {
-      return h(
-        Button,
+      return h(h(
+        'span',
         {
-          text: true,
-          theme: 'primary',
-          disabled: data.instance_id,
           onClick() {
-            InfoBox({
-              title: '请确认是否删除',
-              subTitle: `将删除【${data.name}】`,
-              theme: 'danger',
-              headerAlign: 'center',
-              footerAlign: 'center',
-              contentAlign: 'center',
-              onConfirm() {
-                resourceStore
-                  .recyclBatch(
-                    'disks',
-                    {
-                      ids: [data.id],
-                    },
-                  );
-              },
-            });
+            emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
           },
         },
         [
-          t('删除'),
-        ],
-      );
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
+                  || data.instance_id,
+              onClick() {
+                InfoBox({
+                  title: '请确认是否删除',
+                  subTitle: `将删除【${data.name}】`,
+                  theme: 'danger',
+                  headerAlign: 'center',
+                  footerAlign: 'center',
+                  contentAlign: 'center',
+                  onConfirm() {
+                    resourceStore
+                      .recyclBatch(
+                        'disks',
+                        {
+                          ids: [data.id],
+                        },
+                      );
+                  },
+                });
+              },
+            },
+            [
+              t('删除'),
+            ],
+          )],
+      ));
     },
-  }
-]
+  },
+];
 
 const {
   selections,
@@ -108,14 +126,14 @@ const {
     <section>
       <slot>
       </slot>
-      <bk-button
+      <!-- <bk-button
         class="w100 ml10"
         theme="primary"
         :disabled="selections.length <= 0"
         @click="handleShowDelete(selections.map(selection => selection.id))"
       >
         {{ t('删除') }}
-      </bk-button>
+      </bk-button> -->
     </section>
 
     <bk-table

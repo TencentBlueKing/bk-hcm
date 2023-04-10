@@ -123,3 +123,32 @@ export const AUDIT_RESOURCE_TYPES = [
     type: 'subnet',
   },
 ];
+
+
+export const FILTER_DATA = [
+  {
+    name: 'ID',
+    id: 'id',
+  },
+  {
+    name: '资源ID',
+    id: 'cloud_id',
+  },
+  {
+    name: '名称',
+    id: 'name',
+  },
+  {
+    name: '云厂商',
+    id: 'vendor',
+    children: VENDORS,
+  },
+  {
+    name: '云账号',
+    id: 'account_id',
+  },
+  {
+    name: '状态',
+    id: 'status',
+  },
+];

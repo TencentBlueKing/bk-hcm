@@ -23,6 +23,12 @@ const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
+  isResourcePage: {
+    type: Boolean,
+  },
+  authVerifyData: {
+    type: Object as PropType<any>,
+  },
 });
 
 // use hooks
@@ -39,6 +45,7 @@ const {
 } = useQueryList(props, 'eips');
 
 const columns = useColumns('eips');
+const emit = defineEmits(['auth']);
 
 const {
   selections,
@@ -46,7 +53,7 @@ const {
 } = useSelection();
 
 const {
-  handleShowDelete,
+  // handleShowDelete,
   DeleteDialog,
 } = useDelete(
   columns,
@@ -66,39 +73,49 @@ const renderColumns = [
   {
     label: '操作',
     render({ data }: any) {
-      return h(
-        Button,
+      return h(h(
+        'span',
         {
-          text: true,
-          theme: 'primary',
-          disabled: data.cvm_id || (data.bk_biz_id !== -1 && !location.href.includes('business')),
           onClick() {
-            InfoBox({
-              title: '请确认是否删除',
-              subTitle: `将删除【${data.id}】`,
-              theme: 'danger',
-              headerAlign: 'center',
-              footerAlign: 'center',
-              contentAlign: 'center',
-              onConfirm() {
-                resourceStore
-                  .deleteBatch(
-                    'eips',
-                    {
-                      ids: [data.id],
-                    },
-                  )
-                  .then(() => {
-                    triggerApi();
-                  });
-              },
-            });
+            emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
           },
         },
         [
-          '删除',
-        ],
-      );
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
+            || data.cvm_id || (data.bk_biz_id !== -1 && !location.href.includes('business')),
+              onClick() {
+                InfoBox({
+                  title: '请确认是否删除',
+                  subTitle: `将删除【${data.id}】`,
+                  theme: 'danger',
+                  headerAlign: 'center',
+                  footerAlign: 'center',
+                  contentAlign: 'center',
+                  onConfirm() {
+                    resourceStore
+                      .deleteBatch(
+                        'eips',
+                        {
+                          ids: [data.id],
+                        },
+                      )
+                      .then(() => {
+                        triggerApi();
+                      });
+                  },
+                });
+              },
+            },
+            [
+              '删除',
+            ],
+          )],
+      ));
     },
   },
 ];
@@ -112,14 +129,14 @@ defineExpose({ fetchComponentsData });
   >
     <section>
       <slot></slot>
-      <bk-button
+      <!-- <bk-button
         class="w100 ml10"
         theme="primary"
         :disabled="selections.length <= 0"
         @click="handleShowDelete(selections.map(selection => selection.id))"
       >
         删除
-      </bk-button>
+      </bk-button> -->
     </section>
 
     <bk-table
