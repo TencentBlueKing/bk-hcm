@@ -470,6 +470,7 @@ type Web struct {
 	BkLoginCookieName string `yaml:"bkLoginCookieName"`
 	BkLoginUrl        string `yaml:"bkLoginUrl"`
 	BkComponentApiUrl string `yaml:"bkComponentApiUrl"`
+	BkItsmUrl         string `yaml:"bkItsmUrl"`
 }
 
 func (s Web) validate() error {
@@ -479,6 +480,10 @@ func (s Web) validate() error {
 
 	if len(s.BkComponentApiUrl) == 0 {
 		return errors.New("bk_component_api_url is not set")
+	}
+
+	if len(s.BkItsmUrl) == 0 {
+		return errors.New("bk_itsm_url is not set")
 	}
 
 	return nil

@@ -69,6 +69,8 @@ web:
   bkLoginUrl: http://paas.bk.com/login
   # ESB API
   bkComponentApiUrl: http://paas.bk.com
+  # ITSM 地址
+  bkItsmUrl: http://itsm.bk.com
 
 # defines esb related settings.
 esb:
