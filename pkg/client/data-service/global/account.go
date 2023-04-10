@@ -74,7 +74,7 @@ func (a *AccountClient) Delete(ctx context.Context, h http.Header, request *prot
 	err := a.client.Delete().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/accounts/delete").
+		SubResourcef("/accounts").
 		WithHeaders(h).
 		Do().
 		Into(resp)
