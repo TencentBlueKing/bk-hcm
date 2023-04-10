@@ -116,6 +116,13 @@ export default defineComponent({
           message: '40-1024GB',
           trigger: 'change',
         },
+        [VendorEnum.AWS]: {
+          validator: (value: number) => {
+            return value >= 1 && value <= 16384
+          },
+          message: '1-16384GB',
+          trigger: 'change',
+        },
       };
 
       return rules[cond.vendor] || {
@@ -394,6 +401,7 @@ export default defineComponent({
           {
             label: '数据盘',
             tips: () => cond.vendor === VendorEnum.TCLOUD ? '增强型SSD云硬盘仅在部分可用区开放售卖，后续将逐步增加售卖可用区' : '',
+            property: 'data_disk',
             content: () => <div class="form-content-list">
               {
                 formData.data_disk.map((item: IDiskOption, index: number) => (
@@ -599,6 +607,19 @@ export default defineComponent({
         {
           max: 100,
           message: '最大不能超过100',
+          trigger: 'change',
+        }
+      ],
+      data_disk: [
+        {
+          validator: (disks: []) => {
+            const diskNum = disks.reduce((acc: number, cur: any) => {
+              acc += cur.disk_count
+              return acc
+            }, 0)
+            return cond.vendor !== VendorEnum.AWS || diskNum <= 23
+          },
+          message: '数据盘总数不能超过23个',
           trigger: 'change',
         }
       ]
