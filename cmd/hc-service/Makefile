@@ -15,6 +15,7 @@ default:
 package:
 	@echo -e "\e[34;1mPackaging $(SERVER)...\033[0m"
 	go build -ldflags ${LDVersionFLAG} -o $(PKGBIN) hc_service.go
+	@cp -f etc/hc_service.yaml $(PKGETC)/
 	@echo -e "\e[34;1mPackage $(SERVER) success!\n\033[0m"
 
 clean:

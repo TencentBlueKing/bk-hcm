@@ -36,27 +36,41 @@ server: pre
 	@cd ${PRO_DIR}/cmd && make
 	@echo -e "\e[34;1mBuild Server Success!\n\033[0m"
 
+package: pre ui api ver
+	@echo -e "\e[34;1mPackaging...\n\033[0m"
+	@mkdir -p ${OUTPUT_DIR}/bin
+	@mkdir -p ${OUTPUT_DIR}/etc
+	@mkdir -p ${OUTPUT_DIR}/install
+	@mkdir -p ${OUTPUT_DIR}/install/sql
+	@cp -rf ${PRO_DIR}/scripts/sql/* ${OUTPUT_DIR}/install/sql/
+	@cd ${PRO_DIR}/cmd && make package
+	@echo -e "\e[34;1mPackage All Success!\n\033[0m"
+
 ui: pre
 	@echo -e "\e[34;1mBuilding Front...\033[0m"
 	@cd ${PRO_DIR}/front && npm i && npm run build
 	@mv ${PRO_DIR}/front/dist ${OUTPUT_DIR}/front
 	@echo -e "\e[34;1mBuild Front Success!\n\033[0m"
 
+api: pre
+	@echo -e "\e[34;1mPackaging API Docs...\033[0m"
+	@mkdir -p ${OUTPUT_DIR}/api/
+	@mkdir -p ${OUTPUT_DIR}/api/api-server
+	@cp -f docs/api-docs/api-server/api/bk_apigw_resources_bk-hcm.yaml ${OUTPUT_DIR}/api/api-server
+	@tar -czf ${OUTPUT_DIR}/api/api-server/zh.tgz -C docs/api-docs/api-server/docs zh
+	@echo -e "\e[34;1mPackaging API Docs Done\n\033[0m"
+
+ver: pre
+	@echo ${VERSION} > ${OUTPUT_DIR}/VERSION
+	@cp -rf ${PRO_DIR}/CHANGELOG.md ${OUTPUT_DIR}
+
 clean:
 	@cd ${PRO_DIR}/cmd && make clean
 	@rm -rf ${PRO_DIR}/build
 
 init-tools:
-	# for gofumpt
-	go install mvdan.cc/gofumpt@latest
-	# for golines
-	go install github.com/segmentio/golines@latest
 	# for golangci-lint
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-fmt:
-	golines ./ -m 120 -w --base-formatter gofmt --no-reformat-tags
-	gofumpt -l -w .
 
 lint:
 	golangci-lint run
