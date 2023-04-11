@@ -20,24 +20,8 @@
 package version
 
 import (
-	"errors"
 	"fmt"
-	"os"
-	"regexp"
-	"strconv"
-	"strings"
 )
-
-func init() {
-	// validate if the VERSION is valid
-	_, err := parseVersion()
-	if err != nil {
-		msg := fmt.Sprintf("invalid build version, the version(%s) format should be like like v1.0.0 or "+
-			"v1.0.0-alpha1, err: %v", VERSION, err)
-		fmt.Fprintf(os.Stderr, msg)
-		panic(msg)
-	}
-}
 
 const (
 	// LOGO is bk hcm inner logo.
@@ -98,45 +82,6 @@ func Version() *SysVersion {
 		Hash:    GITHASH,
 		Time:    BUILDTIME,
 	}
-}
-
-// SemanticVersion return the current process's version with semantic version format.
-func SemanticVersion() [3]uint32 {
-	ver, _ := parseVersion()
-	return ver
-}
-
-var versionRegex = regexp.MustCompile(`^v1\.\d?(\.\d?){1,2}(-[a-z]+\d+)?$`)
-
-func parseVersion() ([3]uint32, error) {
-	if !versionRegex.MatchString(VERSION) {
-		return [3]uint32{}, errors.New("the version should be suffixed with format like v1.0.0")
-	}
-
-	ver := strings.Split(VERSION, "-")[0]
-	ver = strings.Trim(ver, " ")
-	ver = strings.TrimPrefix(ver, "v")
-	ele := strings.Split(ver, ".")
-	if len(ele) < 3 {
-		return [3]uint32{}, errors.New("version should be like v1.0.0")
-	}
-
-	major, err := strconv.Atoi(ele[0])
-	if err != nil {
-		return [3]uint32{}, fmt.Errorf("invalid major version: %s", ele[0])
-	}
-
-	minor, err := strconv.Atoi(ele[1])
-	if err != nil {
-		return [3]uint32{}, fmt.Errorf("invalid minor version: %s", ele[0])
-	}
-
-	patch, err := strconv.Atoi(ele[2])
-	if err != nil {
-		return [3]uint32{}, fmt.Errorf("invalid patch version: %s", ele[0])
-	}
-
-	return [3]uint32{uint32(major), uint32(minor), uint32(patch)}, nil
 }
 
 // SysVersion describe a binary version
