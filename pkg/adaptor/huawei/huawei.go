@@ -25,15 +25,15 @@ import (
 )
 
 const (
-	// cvm disk networkinterface
+	// Ecs cvm disk network interface
 	Ecs = "ecs"
-	// vpc subnet sg sgRule routetable
+	// Vpc vpc subnet sg sgRule route table
 	Vpc = "vpc"
-	// eip
+	// Eip eip
 	Eip = "eip"
-	// publicimage
+	// Ims public image
 	Ims = "ims"
-	// zone
+	// Dcs zone
 	Dcs = "dcs"
 )
 

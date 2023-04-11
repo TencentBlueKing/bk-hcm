@@ -1,8 +1,8 @@
 # version
 PRO_DIR   = $(shell pwd)
 BUILDTIME = $(shell date +%Y-%m-%dT%T%z)
-VERSION   = $(shell echo ${ENV_BK_hcm_VERSION})
-DEBUG     = $(shell echo ${ENV_BK_hcm_ENABLE_DEBUG})
+VERSION   = $(shell echo ${ENV_BK_HCM_VERSION})
+DEBUG     = $(shell echo ${ENV_BK_HCM_ENABLE_DEBUG})
 
 # output directory for release package and version for command line
 ifeq ("$(VERSION)", "")

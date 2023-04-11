@@ -20,6 +20,9 @@
 package securitygroup
 
 import (
+	"errors"
+
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -153,6 +156,24 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateCvm(cts *rest.Contexts) (
 	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
 	if err != nil {
 		return nil, err
+	}
+
+	listCvmOpt := &typecvm.TCloudListOption{
+		Region:   sg.Region,
+		CloudIDs: []string{cvm.CloudID},
+	}
+	cvms, err := client.ListCvm(cts.Kit, listCvmOpt)
+	if err != nil {
+		logs.Errorf("request adaptor to list cvm failed, err: %v, opt: %v, rid: %s", err, listCvmOpt, cts.Kit)
+		return nil, err
+	}
+
+	if len(cvms) == 0 {
+		return nil, errf.New(errf.RecordNotFound, "cvm not found from cloud")
+	}
+
+	if len(cvms[0].SecurityGroupIds) <= 1 {
+		return nil, errors.New("the last security group of the cvm is not allowed to disassociate")
 	}
 
 	opt := &securitygroup.TCloudAssociateCvmOption{
