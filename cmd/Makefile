@@ -6,6 +6,14 @@ all:
 	@cd cloud-server && make
 	@cd web-server && make
 
+package:
+	@cd data-service && make package
+	@cd hc-service && make package
+	@cd api-server && make package
+	@cd auth-server && make package
+	@cd cloud-server && make package
+	@cd web-server && make package
+
 clean:
 	@cd data-service && make clean
 	@cd hc-service && make clean
