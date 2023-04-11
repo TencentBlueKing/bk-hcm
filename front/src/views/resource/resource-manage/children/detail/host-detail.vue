@@ -44,8 +44,8 @@ const filter = ref({ op: 'and', rules: [] });
 
 // 操作的相关信息
 const cvmInfo = ref({
-  start: { op: '关机', loading: false, status: ['RUNNING', 'running'] },
-  stop: { op: '开机', loading: false, status: ['STOPPED', 'SHUTOFF', 'STOPPING', 'shutting-down', 'PowerState', 'stopped'] },
+  start: { op: '开机', loading: false, status: ['RUNNING', 'running'] },
+  stop: { op: '关机', loading: false, status: ['STOPPED', 'SHUTOFF', 'STOPPING', 'shutting-down', 'PowerState', 'stopped'] },
   reboot: { op: '重启', loading: false },
   destroy: { op: '回收', loading: false },
 });
@@ -228,6 +228,6 @@ const modifyCvmStatus = async (type: string) => {
   width: 60px;
 }
 :deep(.detail-tab-main) .bk-tab-content {
-  height: calc(100vh - 300px);
+  height: calc(100vh - 322px);
 }
 </style>

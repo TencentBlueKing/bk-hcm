@@ -111,11 +111,15 @@ const settingInfo = [
   },
   {
     name: 'CPU',
-    prop: 'cpu',
+    render() {
+      return `${props?.data?.cpu}核`;
+    },
   },
   {
     name: '内存',
-    prop: 'memory',
+    render() {
+      return `${props?.data?.memory}G`;
+    },
   },
   {
     name: '操作系统',

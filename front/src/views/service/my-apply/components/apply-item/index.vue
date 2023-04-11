@@ -15,10 +15,10 @@
       </section>
     </div>
     <div class="bottom-info">
-      <section>
+      <!-- <section>
         <label class="label">备注：</label>
         <span class="value" :title="data.memo">{{ data.memo || '--' }}</span>
-      </section>
+      </section> -->
       <section>
         {{ data.created_time }}
       </section>

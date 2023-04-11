@@ -44,6 +44,7 @@ const unBindLoading = ref(false);
 const ids = ref([]);
 const curreClickId = ref();    // 当前点击的id
 const curreSelectId = ref(); // 当前选择的安全组id
+const tableItem = ref();
 
 const state = reactive<any>({
   datas: [],
@@ -164,7 +165,7 @@ const columns: any = [
                 } else {
                   securityId.value = data.id;
                 }
-                unBind();
+                unBind(data);
               },
             },
             [
@@ -341,12 +342,18 @@ const handleSecurityConfirm = async () => {
 };
 
 // 解绑弹窗
-const unBind = async () => {
+const unBind = async (dataItem: any) => {
   unBindShow.value = true;
+  tableItem.value = dataItem;
+  console.log('tableItem.value', tableItem.value);
 };
 
 // 确认解绑
 const handleConfirmUnBind = async () => {
+  if (tableData.value.length === 1) { // 只有一条主机时不能解绑
+    unBindShow.value = false;
+    return;
+  }
   unBindLoading.value = true;
   let type = 'cvms';
   let params: any = { security_group_id: securityId.value, cvm_id: props.data.id };
@@ -389,102 +396,125 @@ getSecurityGroupsList();
 </script>
 
 <template>
-
-  <bk-button
-    class="mt20" theme="primary" @click="handleSecurityDialog" v-if="props.data.vendor === 'tcloud'
-      || props.data.vendor === 'aws' || props.data.vendor === 'huawei'">
-    {{t('绑定')}}
-  </bk-button>
-  <bk-loading
-    :loading="isListLoading"
-  >
-    <bk-table
-      class="mt20"
-      row-hover="auto"
-      :columns="columns"
-      :data="tableData"
-    />
-  </bk-loading>
-  <bk-dialog
-    v-model:isShow="isShow"
-    :title="activeType === 'ingress' ? '入站规则' : '出站规则'"
-    width="1200"
-    :theme="'primary'"
-    :dialog-type="'show'">
-
+  <div>
+    <bk-button
+      class="mt20" theme="primary" @click="handleSecurityDialog" v-if="props.data.vendor === 'tcloud'
+        || props.data.vendor === 'aws' || props.data.vendor === 'huawei'">
+      {{t('绑定')}}
+    </bk-button>
     <bk-loading
-      :loading="state.isLoading"
+      :loading="isListLoading"
     >
-      <section class="mt20">
-        <bk-radio-group
-          v-model="activeType"
-        >
-          <bk-radio-button
-            v-for="item in types"
-            :key="item.name"
-            :label="item.name"
+      <bk-table
+        class="mt20"
+        row-hover="auto"
+        :columns="columns"
+        :data="tableData"
+      />
+    </bk-loading>
+    <bk-dialog
+      v-model:isShow="isShow"
+      :title="activeType === 'ingress' ? '入站规则' : '出站规则'"
+      width="1200"
+      :theme="'primary'"
+      :dialog-type="'show'">
+
+      <bk-loading
+        :loading="state.isLoading"
+      >
+        <section class="mt20">
+          <bk-radio-group
+            v-model="activeType"
           >
-            {{ item.label }}
-          </bk-radio-button>
-        </bk-radio-group>
+            <bk-radio-button
+              v-for="item in types"
+              :key="item.name"
+              :label="item.name"
+            >
+              {{ item.label }}
+            </bk-radio-button>
+          </bk-radio-group>
 
-      </section>
-      <bk-table
-        class="mt20"
-        row-hover="auto"
-        :columns="state.columns"
-        :data="state.datas"
-        remote-pagination
-        :pagination="state.pagination"
-        @page-limit-change="state.handlePageSizeChange"
-        @page-value-change="state.handlePageChange"
-        @column-sort="state.handleSort"
-      />
-    </bk-loading>
-  </bk-dialog>
+        </section>
+        <bk-table
+          class="mt20"
+          row-hover="auto"
+          :columns="state.columns"
+          :data="state.datas"
+          remote-pagination
+          :pagination="state.pagination"
+          @page-limit-change="state.handlePageSizeChange"
+          @page-value-change="state.handlePageChange"
+          @column-sort="state.handleSort"
+        />
+      </bk-loading>
+    </bk-dialog>
 
-  <bk-dialog
-    :is-show="showSecurityDialog"
-    :title="t('绑定安全组')"
-    width="1200"
-    :theme="'primary'"
-    :is-loading="securityBindLoading"
-    @closed="handleClose"
-    @confirm="handleSecurityConfirm">
-    <bk-loading
-      :loading="securityLoading"
+    <bk-dialog
+      :is-show="showSecurityDialog"
+      :title="t('绑定安全组')"
+      width="1200"
+      :theme="'primary'"
+      :is-loading="securityBindLoading"
+      @closed="handleClose"
+      @confirm="handleSecurityConfirm">
+      <bk-loading
+        :loading="securityLoading"
+      >
+        <bk-table
+          class="mt20"
+          row-hover="auto"
+          remote-pagination
+          :columns="securityColumns"
+          :data="securityDatas"
+          :pagination="securityPagination"
+          :is-row-select-enable="isRowSelectEnable"
+          @selection-change="handleSelectionChange"
+          @page-limit-change="securityHandlePageChange"
+          @page-value-change="securityHandlePageSizeChange"
+        />
+      </bk-loading>
+    </bk-dialog>
+
+
+    <bk-dialog
+      :is-show="unBindShow"
+      :title="'确定解绑'"
+      :theme="'primary'"
+      :is-loading="unBindLoading"
+      @closed="handleClose"
+      @confirm="handleConfirmUnBind"
     >
-      <bk-table
-        class="mt20"
-        row-hover="auto"
-        remote-pagination
-        :columns="securityColumns"
-        :data="securityDatas"
-        :pagination="securityPagination"
-        :is-row-select-enable="isRowSelectEnable"
-        @selection-change="handleSelectionChange"
-        @page-limit-change="securityHandlePageChange"
-        @page-value-change="securityHandlePageSizeChange"
-      />
-    </bk-loading>
-  </bk-dialog>
-
-
-  <bk-dialog
-    :is-show="unBindShow"
-    :title="'确定解绑'"
-    :theme="'primary'"
-    :is-loading="unBindLoading"
-    @closed="handleClose"
-    @confirm="handleConfirmUnBind"
-  >
-    <!-- <div>{{ t('确定解绑') }}</div> -->
-  </bk-dialog>
+      <!-- <div>{{ t('确定解绑') }}</div> -->
+      <span v-if="tableData.length === 1">
+        <span class="error-text">
+          解绑被限制,
+        </span>
+        <span>
+          您的主机当前只绑定了1个安全组，为了确保您的主机安全，
+        </span>
+        <span class="error-text">
+          请至少保留1个以上的安全组，并确保安全组规则有效
+        </span>
+      </span>
+      <span v-else>
+        <span>
+          安全组 {{tableItem.vendor === 'azure' ? tableItem.extension.resource_group_name : tableItem.name }} 将从主机上解绑
+        </span>
+        <span class="error-text">
+          请确保主机上绑定的其他安全组是有效的，避免出现主机安全风险
+        </span>
+      </span>
+    </bk-dialog>
+  </div>
 </template>
 
 <style lang="scss" scoped>
   .security-head {
     display: flex;
     align-items: center;
+  }
+  .error-text{
+    color: #ea3636
   }
 </style>

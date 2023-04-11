@@ -537,7 +537,7 @@ export default defineComponent({
       },
       {
         label: t('责任人'),
-        required: true,
+        required: false,
         property: 'managers',
         content: () => (
           <section>

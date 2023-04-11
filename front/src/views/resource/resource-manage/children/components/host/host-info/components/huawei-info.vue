@@ -125,13 +125,13 @@ const settingInfo = [
   {
     name: 'CPU',
     render() {
-      return props.data?.flavor?.vcpus;
+      return `${props.data?.flavor?.vcpus}核`;
     },
   },
   {
     name: '内存',
     render() {
-      return props.data?.flavor?.ram;
+      return `${props.data?.flavor?.ram}G`;
     },
   },
   {

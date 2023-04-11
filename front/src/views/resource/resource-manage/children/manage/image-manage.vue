@@ -20,7 +20,11 @@ const props = defineProps({
   },
 });
 
-const params = reactive(props);
+const params: any = reactive({ filter: { op: 'and', rules: [{
+  field: 'type',
+  op: 'eq',
+  value: 'public',
+}] } });
 // watchEffect(() => {
 //   params = props;
 //   params.filter.rules = params.filter.rules.filter(e => e.field !== 'account_id');
@@ -86,7 +90,7 @@ watch(
         },
       ];
     }
-    params.filter.rules = params.filter.rules.filter(e => e.field !== 'account_id');
+    params.filter.rules = params.filter.rules.filter(e => e.field !== 'account_id' && e.field !== 'bk_biz_id');
   },
   {
     deep: true,

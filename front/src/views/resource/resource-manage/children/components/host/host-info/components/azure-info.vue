@@ -94,14 +94,6 @@ const settingInfo = [
     prop: 'machine_type',
   },
   {
-    name: 'CPU',
-    prop: 'cpu',
-  },
-  {
-    name: '内存',
-    prop: 'memory',
-  },
-  {
     name: '操作系统',
     prop: 'os_name',
   },

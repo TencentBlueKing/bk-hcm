@@ -198,7 +198,7 @@ watch(
           />
         </div>
       </section>
-      <section class="flex-center">
+      <section class="flex-center" v-if="activeTab !== 'image'">
         <div class="mr10">{{t('分配状态')}}</div>
         <div class="mr20">
           <bk-select
@@ -290,7 +290,7 @@ watch(
   margin-top: 20px;
   background: #fff;
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
-  height: calc(100vh - 236px);
+  height: calc(100vh - 270px);
   :deep(.bk-tab-content) {
     border-left: 1px solid #dcdee5;;
     border-right: 1px solid #dcdee5;;

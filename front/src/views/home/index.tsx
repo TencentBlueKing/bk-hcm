@@ -42,6 +42,8 @@ export default defineComponent({
     const businessList = ref<any[]>([]);
     const loading = ref<Boolean>(false);
     const isRouterAlive = ref<Boolean>(true);
+    const curYear = ref((new Date()).getFullYear());
+    const isMenuOpen = ref<boolean>(true);
 
 
     // 获取业务列表
@@ -175,11 +177,17 @@ export default defineComponent({
       }
     };
 
+    // 切换路由
     const reload = () => {
       isRouterAlive.value = false;
       nextTick(() => {
         isRouterAlive.value = true;
       });
+    };
+
+    // 点击
+    const handleToggle = (val: any) => {
+      isMenuOpen.value = val;
     };
 
     return () => (
@@ -190,7 +198,8 @@ export default defineComponent({
                 <Navigation
                   navigationType={NAV_TYPE}
                   hoverWidth={NAV_WIDTH}
-                  defaultOpen={true}
+                  defaultOpen={isMenuOpen.value}
+                  onToggle={handleToggle}
                 >
                   {{
                     'side-header': () => (
@@ -241,7 +250,7 @@ export default defineComponent({
                     ),
                     menu: () => (
                       <>
-                      {topMenuActiveItem === 'business'
+                      {topMenuActiveItem === 'business' && isMenuOpen.value
                         ? <Select class="biz-select-warp"
                       v-model={businessId.value}
                       placeholder="请选择业务"
@@ -304,6 +313,11 @@ export default defineComponent({
                           {isRouterAlive.value ? <RouterView></RouterView> : ''}
                         </div>
                       </>
+                    ),
+
+                    footer: () => (
+                      // eslint-disable-next-line max-len
+                      <div class="mt20">Copyright © 2012-{ curYear.value } BlueKing - Hybrid Cloud Management System. All Rights Reserved.</div>
                     ),
                   }}
                 </Navigation>

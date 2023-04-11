@@ -1,18 +1,5 @@
 <template>
   <div class="template-warp">
-    <section v-if="isResourcePage">
-      <bk-button
-        theme="primary"
-        @click="handleOperate('destroy')"
-      >{{ t('立即销毁') }}
-      </bk-button>
-      <bk-button
-        class="ml10 mb20"
-        theme="primary"
-        @click="handleOperate('recover')"
-      >{{ t('立即恢复') }}
-      </bk-button>
-    </section>
     <div class="flex-row operate-warp justify-content-between align-items-center mb20" v-if="isResourcePage">
       <div>
         <bk-button-group>
@@ -33,6 +20,19 @@
         <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
       </div> -->
     </div>
+    <section v-if="isResourcePage">
+      <bk-button
+        theme="primary"
+        @click="handleOperate('destroy')"
+      >{{ t('立即销毁') }}
+      </bk-button>
+      <bk-button
+        class="ml10 mb20"
+        theme="primary"
+        @click="handleOperate('recover')"
+      >{{ t('立即恢复') }}
+      </bk-button>
+    </section>
     <bk-loading
       :loading="isLoading"
     >
@@ -134,8 +134,8 @@
         @closed="showDeleteBox = false"
         @confirm="handleDialogConfirm"
       >
-        <div v-if="type === 'destroy'">{{t('销毁之后无法恢复账户信息')}}</div>
-        <div v-else>{{t('将恢复账户信息')}}</div>
+        <div v-if="type === 'destroy'">{{t('销毁之后无法恢复硬盘信息')}}</div>
+        <div v-else>{{t('将恢复硬盘信息')}}</div>
       </bk-dialog>
     </bk-loading>
 
@@ -268,7 +268,7 @@ export default defineComponent({
           await resourceStore.recoverRecycledData(`${state.selectedType}s`, params);
         }
 
-        const operate = state.type === 'destroy' ? t('销毁') : t('回收');
+        const operate = state.type === 'destroy' ? t('销毁') : t('恢复');
         const resourceName = state.selectedType === 'cvm' ? t('主机') : t('硬盘');
         Message({
           message: `${operate}${resourceName}成功`,

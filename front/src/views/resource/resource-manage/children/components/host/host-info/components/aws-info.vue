@@ -120,7 +120,7 @@ const settingInfo = [
   {
     name: 'CPU',
     render() {
-      return props?.data?.cpu_options?.core_count;
+      return `${props?.data?.cpu_options?.core_count}核`;
     },
   },
   {
