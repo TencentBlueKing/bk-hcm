@@ -48,6 +48,7 @@ import (
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
+	"hcm/pkg/version"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -292,6 +293,7 @@ func (s *Service) indexHandleFunc(req *restful.Request, resp *restful.Response) 
 		"BK_LOGIN_URL":           cc.WebServer().Web.BkLoginUrl,
 		"BK_COMPONENT_API_URL":   cc.WebServer().Web.BkComponentApiUrl,
 		"BK_ITSM_URL":            cc.WebServer().Web.BkItsmUrl,
+		"VERSION":                version.VERSION,
 	}
 	err = tmpl.Execute(resp.ResponseWriter, content)
 	if err != nil {

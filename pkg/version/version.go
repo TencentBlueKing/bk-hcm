@@ -54,7 +54,7 @@ const (
 
 var (
 	// VERSION is version info.
-	VERSION = "v1.0.0"
+	VERSION = "debug"
 
 	// BUILDTIME  build time.
 	BUILDTIME = "unknown"
