@@ -91,7 +91,7 @@ const renderColumns = [
               },
             },
             [
-              t('删除'),
+              t('回收'),
             ],
           )],
       ));

@@ -381,7 +381,7 @@ export default defineComponent({
               {
                 property: 'system_disk.disk_type',
                 required: true,
-                content: () => <Select v-model={formData.system_disk.disk_type} clearable={false}>{
+                content: () => <Select v-model={formData.system_disk.disk_type} style={{ width: '200px' }} clearable={false}>{
                     sysDiskTypes.value.map(({ id, name }: IOption) => (
                       <Option key={id} value={id} label={name}></Option>
                     ))
@@ -407,7 +407,7 @@ export default defineComponent({
                 formData.data_disk.map((item: IDiskOption, index: number) => (
                   <div class="flex-row">
                     <FormItem property={`data_disk[${index}].disk_type`} rules={[]}>
-                      <Select v-model={item.disk_type} clearable={false}>{
+                      <Select v-model={item.disk_type} style={{ width: '200px' }} clearable={false}>{
                           dataDiskTypes.value.map(({ id, name }: IOption) => (
                             <Option key={id} value={id} label={name}></Option>
                           ))

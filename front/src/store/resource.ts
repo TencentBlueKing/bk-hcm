@@ -45,7 +45,7 @@ export const useResourceStore = defineStore({
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/batch`, { data });
     },
     recyclBatch(type: string, data: any) {
-      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/recycled/${getBusinessApiPath(type)}${type}/batch`, { data });
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/recycled/${type}/batch`, { data });
     },
     recycled(type: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/recycle`, data);
