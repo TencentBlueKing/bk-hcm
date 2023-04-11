@@ -92,7 +92,7 @@ type AzureStopOption struct {
 	// SkipShutdown The parameter to request non-graceful VM shutdown. True value for this flag
 	// indicates non-graceful shutdown whereas false indicates otherwise.
 	// Default value for this flag is false if not specified
-	SkipShutdown bool `json:"skip_shutdown" validate:"required"`
+	SkipShutdown bool `json:"skip_shutdown" validate:"omitempty"`
 }
 
 // Validate cvm operation option.

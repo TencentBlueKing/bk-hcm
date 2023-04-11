@@ -24,7 +24,7 @@ import (
 
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/api/cloud-server"
+	cloudserver "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/data-service/cloud"
@@ -271,7 +271,7 @@ func (svc *vpcSvc) deleteVpc(cts *rest.Contexts, validHandler handler.ValidWithA
 
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Vpc,
-		Action: meta.Find, BasicInfo: basicInfo})
+		Action: meta.Delete, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

@@ -60,7 +60,7 @@ func (req *AzureDeleteReq) Validate() error {
 
 // AzureStopReq azure stop req.
 type AzureStopReq struct {
-	SkipShutdown bool `json:"skip_shutdown" validate:"required"`
+	SkipShutdown bool `json:"skip_shutdown" validate:"omitempty"`
 }
 
 // Validate request.
