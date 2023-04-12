@@ -6,17 +6,39 @@ import {
 import type { FilterType } from '@/typings/resource';
 import { FILTER_DATA } from '@/common/constant';
 
+import {
+  useAccountStore,
+} from '@/store';
+
 type PropsType = {
   filter?: FilterType
 };
 
+const accountStore = useAccountStore();
+
 
 export default (props: PropsType) => {
-  const searchData = ref(FILTER_DATA);
+  const searchData = ref([]);
   const searchValue = ref([]);
   const filter = ref<any>([]);
   const isAccurate = ref(false);
 
+  watch(
+    () => accountStore.accountList,   // 设置云账号筛选所需数据
+    (val) => {
+      val.length && FILTER_DATA.forEach((e) => {
+        if (e.id === 'account_id') {
+          e.children = val;
+        }
+      });
+      searchData.value = FILTER_DATA;
+      console.log('searchData.value', searchData.value);
+    },
+    {
+      deep: true,
+      immediate: true,
+    },
+  );
 
   watch(
     () => props.filter,

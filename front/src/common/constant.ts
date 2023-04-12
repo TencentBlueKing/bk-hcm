@@ -146,9 +146,10 @@ export const FILTER_DATA = [
   {
     name: '云账号ID',
     id: 'account_id',
+    children: [],
   },
-  {
-    name: '状态',
-    id: 'status',
-  },
+  // {
+  //   name: '状态',
+  //   id: 'status',
+  // },
 ];

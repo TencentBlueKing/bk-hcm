@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref, watchEffect, defineExpose, PropType } from 'vue';
+import { computed, ref, watchEffect, defineExpose, PropType, watch } from 'vue';
 import {
   useAccountStore,
 } from '@/store';

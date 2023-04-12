@@ -4,6 +4,7 @@ import AccountSelector from '@/components/account-selector/index.vue';
 import MemberSelect from '@/components/MemberSelect';
 import FilterItemAction from './children/filter-item-action.vue';
 import AuditDetail from './detail.vue';
+import ErrorPages from '@/views/error-pages/403.tsx';
 
 import { computed, reactive, ref, watch, h } from 'vue';
 import dayjs from 'dayjs';
@@ -16,6 +17,8 @@ import { AUDIT_RESOURCE_TYPES } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
 import { AUDIT_SOURCE_MAP, AUDIT_ACTION_MAP } from './constants';
 import { Button } from 'bkui-vue';
+
+import { useVerify } from '@/hooks';
 
 const {
   t,
@@ -77,6 +80,7 @@ const {
 } = useList({ filter, filterOptions });
 
 const isBizType = computed(() => filterOptions.auditType === 'biz');
+const hasBizAuth = ref(true);
 
 const getBizName = (id: number) => {
   return businessSelectorComp?.value?.businessList?.find(item => item.id === id)?.name ?? '--';
@@ -204,10 +208,11 @@ const handleShowDetailSlider = (row: any) => {
 };
 
 watch(() => filter.bk_biz_id, (bizId, oldBizId) => {
+  console.log(bizId);
   if (oldBizId === null && bizId !== oldBizId) {
     query();
   }
-});
+}, { immediate: true });
 
 watch(isBizType, (isBizType) => {
   if (!isBizType) {
@@ -215,154 +220,162 @@ watch(isBizType, (isBizType) => {
   }
   datas.value = [];
 });
+
+const {
+  authVerifyData,
+} = useVerify();
 </script>
 
 <template>
-  <bk-tab
-    v-model:active="filterOptions.auditType"
-    type="unborder-card"
-    class="resource-main g-scroller"
-  >
-    <bk-tab-panel
-      v-for="item in tabs"
-      :key="item.type"
-      :name="item.type"
-      :label="item.label"
-      render-directive="if"
+  <div>
+    <bk-tab
+      v-model:active="filterOptions.auditType"
+      type="unborder-card"
+      class="resource-main g-scroller"
     >
-    </bk-tab-panel>
-  </bk-tab>
-
-  <div class="audit-filter">
-    <div class="filter-item" v-if="isBizType">
-      <div class="filter-item-label">业务</div>
-      <div class="filter-item-content">
-        <business-selector
-          v-model="filter.bk_biz_id"
-          :authed="isBizType"
-          :auto-select="true"
-          :clearable="false"
-          ref="businessSelectorComp"
-        />
-      </div>
-    </div>
-    <div class="filter-item">
-      <div class="filter-item-label">云账号</div>
-      <div class="filter-item-content">
-        <account-selector
-          v-model="filter.account_id"
-          :biz-id="filter.bk_biz_id"
-          multiple-mode="tag"
-          filterable
-          multiple
-          allow-create />
-      </div>
-    </div>
-    <div class="filter-item">
-      <div class="filter-item-label">资源类型</div>
-      <div class="filter-item-content">
-        <bk-select
-          v-model="filter.res_type"
-          filterable
-          :multiple="false"
-          @change="filter.action = ''"
-        >
-          <bk-option
-            v-for="(item, index) in resourceTypeOptions"
-            :key="index"
-            :value="item.type"
-            :label="item.name"
-          />
-        </bk-select>
-      </div>
-    </div>
-    <div class="filter-item">
-      <div class="filter-item-label">动作</div>
-      <div class="filter-item-content">
-        <filter-item-action :type="filter.res_type" v-model="filter.action"></filter-item-action>
-      </div>
-    </div>
-    <div class="filter-item">
-      <div class="filter-item-label">时间</div>
-      <div class="filter-item-content">
-        <bk-date-picker
-          class="audit-date-picker"
-          v-model="filter.created_at"
-          :clearable="false"
-          type="daterange"
-        />
-      </div>
-    </div>
-    <div class="filter-item">
-      <div class="filter-item-label">操作者</div>
-      <div class="filter-item-content">
-        <member-select v-model="filter.operator" :allow-create="true" />
-      </div>
-    </div>
-    <div class="filter-item">
-      <div class="filter-item-label">实例</div>
-      <div class="filter-item-content">
-        <bk-input v-model="filterOptions.instValue" placeholder="请输入">
-          <template #prefix>
-            <bk-select v-model="filterOptions.instType" :clearable="false" class="input-prefix-select">
-              <bk-option value="name" label="名称" />
-              <bk-option value="id" label="ID" />
+      <bk-tab-panel
+        v-for="item in tabs"
+        :key="item.type"
+        :name="item.type"
+        :label="item.label"
+        render-directive="if"
+      >
+      </bk-tab-panel>
+    </bk-tab>
+    <div v-if="authVerifyData?.permissionAction?.resource_audit_find">
+      <div class="audit-filter">
+        <div class="filter-item" v-if="isBizType">
+          <div class="filter-item-label">业务</div>
+          <div class="filter-item-content">
+            <business-selector
+              v-model="filter.bk_biz_id"
+              :authed="isBizType"
+              :auto-select="true"
+              :clearable="false"
+              ref="businessSelectorComp"
+            />
+          </div>
+        </div>
+        <div class="filter-item">
+          <div class="filter-item-label">云账号</div>
+          <div class="filter-item-content">
+            <account-selector
+              v-model="filter.account_id"
+              :biz-id="filter.bk_biz_id"
+              multiple-mode="tag"
+              filterable
+              multiple
+              allow-create />
+          </div>
+        </div>
+        <div class="filter-item">
+          <div class="filter-item-label">资源类型</div>
+          <div class="filter-item-content">
+            <bk-select
+              v-model="filter.res_type"
+              filterable
+              :multiple="false"
+              @change="filter.action = ''"
+            >
+              <bk-option
+                v-for="(item, index) in resourceTypeOptions"
+                :key="index"
+                :value="item.type"
+                :label="item.name"
+              />
             </bk-select>
-          </template>
-          <template #suffix>
-            <bk-checkbox v-model="filterOptions.instFuzzy" size="small" class="input-suffix-checkbox">
-              模糊
-            </bk-checkbox>
-          </template>
-        </bk-input>
+          </div>
+        </div>
+        <div class="filter-item">
+          <div class="filter-item-label">动作</div>
+          <div class="filter-item-content">
+            <filter-item-action :type="filter.res_type" v-model="filter.action"></filter-item-action>
+          </div>
+        </div>
+        <div class="filter-item">
+          <div class="filter-item-label">时间</div>
+          <div class="filter-item-content">
+            <bk-date-picker
+              class="audit-date-picker"
+              v-model="filter.created_at"
+              :clearable="false"
+              type="daterange"
+            />
+          </div>
+        </div>
+        <div class="filter-item">
+          <div class="filter-item-label">操作者</div>
+          <div class="filter-item-content">
+            <member-select v-model="filter.operator" :allow-create="true" />
+          </div>
+        </div>
+        <div class="filter-item">
+          <div class="filter-item-label">实例</div>
+          <div class="filter-item-content">
+            <bk-input v-model="filterOptions.instValue" placeholder="请输入">
+              <template #prefix>
+                <bk-select v-model="filterOptions.instType" :clearable="false" class="input-prefix-select">
+                  <bk-option value="name" label="名称" />
+                  <bk-option value="id" label="ID" />
+                </bk-select>
+              </template>
+              <template #suffix>
+                <bk-checkbox v-model="filterOptions.instFuzzy" size="small" class="input-suffix-checkbox">
+                  模糊
+                </bk-checkbox>
+              </template>
+            </bk-input>
+          </div>
+        </div>
+        <div class="filter-item">
+          <div class="filter-item-label">来源</div>
+          <div class="filter-item-content">
+            <bk-select v-model="filter.source">
+              <bk-option
+                v-for="(item, index) in sourceOptions"
+                :key="index"
+                :value="item[0]"
+                :label="item[1]"
+              />
+            </bk-select>
+          </div>
+        </div>
+        <div class="filter-item actions">
+          <bk-button theme="primary" class="action-button" @click="handleSearch">查询</bk-button>
+          <bk-button class="action-button" @click="handleReset">清空</bk-button>
+        </div>
       </div>
+
+      <bk-loading
+        :loading="isLoading"
+      >
+        <bk-table
+          class="audit-list-table"
+          row-hover="auto"
+          remote-pagination
+          :border="['outer']"
+          :columns="columns"
+          :data="datas"
+          :pagination="pagination"
+          @page-limit-change="handlePageSizeChange"
+          @page-value-change="handlePageChange"
+          @column-sort="handleSort"
+        />
+      </bk-loading>
+
+      <bk-sideslider
+        v-model:isShow="details.show"
+        title="审计详情"
+        width="670"
+        quick-close
+      >
+        <template #default>
+          <audit-detail :id="details.id" :biz-id="details.bizId" :type="filterOptions.auditType"></audit-detail>
+        </template>
+      </bk-sideslider>
     </div>
-    <div class="filter-item">
-      <div class="filter-item-label">来源</div>
-      <div class="filter-item-content">
-        <bk-select v-model="filter.source">
-          <bk-option
-            v-for="(item, index) in sourceOptions"
-            :key="index"
-            :value="item[0]"
-            :label="item[1]"
-          />
-        </bk-select>
-      </div>
-    </div>
-    <div class="filter-item actions">
-      <bk-button theme="primary" class="action-button" @click="handleSearch">查询</bk-button>
-      <bk-button class="action-button" @click="handleReset">清空</bk-button>
-    </div>
+    <ErrorPages v-else url-key-id="resource_audit_find"></ErrorPages>
   </div>
-
-  <bk-loading
-    :loading="isLoading"
-  >
-    <bk-table
-      class="audit-list-table"
-      row-hover="auto"
-      remote-pagination
-      :border="['outer']"
-      :columns="columns"
-      :data="datas"
-      :pagination="pagination"
-      @page-limit-change="handlePageSizeChange"
-      @page-value-change="handlePageChange"
-      @column-sort="handleSort"
-    />
-  </bk-loading>
-
-  <bk-sideslider
-    v-model:isShow="details.show"
-    title="审计详情"
-    width="670"
-    quick-close
-  >
-    <template #default>
-      <audit-detail :id="details.id" :biz-id="details.bizId" :type="filterOptions.auditType"></audit-detail>
-    </template>
-  </bk-sideslider>
 </template>
 
 <style lang="scss" scoped>

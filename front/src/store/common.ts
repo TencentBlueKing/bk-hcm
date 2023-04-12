@@ -36,6 +36,8 @@ export const useCommonStore = defineStore({
       { type: 'cvm', action: 'create', id: 'biz_iaas_resource_create',  bk_biz_id: 0 },    // 业务iaas创建
       { type: 'cvm', action: 'update', id: 'biz_iaas_resource_operate',  bk_biz_id: 0 },    // 业务iaas编辑更新
       { type: 'cvm', action: 'delete', id: 'biz_iaas_resource_delete',  bk_biz_id: 0 },    // 业务iaas删除
+
+      { type: 'biz_audit', action: 'find',  id: 'resource_audit_find' },    // 审计查看权限
     ],
   }),
   actions: {

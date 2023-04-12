@@ -8,7 +8,6 @@ import type {
   // PlainObject,
   FilterType,
 } from '@/typings/resource';
-import { QueryFilterType } from '@/typings';
 
 const props = defineProps({
   bizId: Number as PropType<number>,
@@ -20,6 +19,7 @@ const props = defineProps({
   },
   type: String as PropType<string>,
   mustBiz: Boolean as PropType<boolean>,
+  isResourcePage: Boolean as PropType<boolean>,
 });
 const emit = defineEmits(['input', 'change']);
 
@@ -54,12 +54,12 @@ const getAccoutList = async () => {
     page: {
       start: accountPage.value,
       limit: 100,
-    }
-  }
+    },
+  };
   if (props.type) {
-    data.params = { account_type: props.type }
+    data.params = { account_type: props.type };
   }
-  const res = await accountStore.getAccountList(data, props.bizId);
+  const res = await accountStore.getAccountList(data, props.bizId, props.isResourcePage);
 
   accountPage.value += 1;
 

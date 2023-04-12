@@ -11,6 +11,7 @@ export const useAccountStore = defineStore({
     fetching: false,
     list: shallowRef([]),
     bizs: 0 as string | number,
+    accountList: shallowRef([]),
   }),
   actions: {
     /**
@@ -27,9 +28,12 @@ export const useAccountStore = defineStore({
      * @param {number} bizId
      * @return {*}
      */
-    async getAccountList(data: any, bizId?: number | string) {
+    async getAccountList(data: any, bizId?: number | string, isRes?: boolean) {
       if (bizId > 0) {
         return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/bizs/${bizId}`, { params: data.params });
+      }
+      if (isRes) {
+        return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/resources/accounts/list`, data);
       }
       return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/list`, data);
     },
@@ -164,6 +168,14 @@ export const useAccountStore = defineStore({
      */
     async updateBizsId(id: number | string) {
       this.bizs = id;
+    },
+
+    async updateAccountList(data: any) {
+      console.log('data', data);
+      this.accountList = data?.map(({ id, name }: {id: string, name: string}) => ({
+        id, name,
+      }));
+      console.log('this.accountList', this.accountList);
     },
   },
 });

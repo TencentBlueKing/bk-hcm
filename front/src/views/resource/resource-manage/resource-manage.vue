@@ -3,6 +3,7 @@ import {
   ref,
   watch,
   computed,
+  onMounted,
 } from 'vue';
 
 import HostManage from './children/manage/host-manage.vue';
@@ -73,16 +74,6 @@ const accountId = ref('');
 const status = ref('');
 const op = ref('eq');
 const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'resource' }] });
-// const searchData = ref([
-//   {
-//     name: t('名称'),
-//     id: 'name',
-//   }, {
-//     name: t('云厂商'),
-//     id: 'vendor',
-//     children: VENDORS,
-//   },
-// ]);
 
 // 组件map
 const componentMap = {
@@ -183,6 +174,24 @@ watch(
   },
 );
 
+const getResourceAccountList = async () => {
+  try {
+    const params = {
+      filter: accountFilter.value,
+      page: {
+        start: 0,
+        limit: 100,
+      },
+    };
+    const res = await accountStore.getAccountList(params);
+    accountStore.updateAccountList(res?.data?.details); // 账号数据   用于筛选
+  } catch (error) {
+
+  }
+};
+
+getResourceAccountList();
+
 
 </script>
 
@@ -193,6 +202,7 @@ watch(
         <div class="mr10">{{t('云账号')}}</div>
         <div class="mr20">
           <account-selector
+            :is-resource-page="isResourcePage"
             :filter="accountFilter"
             v-model="accountId"
           />
@@ -248,7 +258,7 @@ watch(
         :label="item.type"
       >
         <component
-          v-if="(item.name === activeTab)"
+          v-if="(item.name === activeTab) && accountStore.accountList.length"
           :is="item.component"
           :filter="filter"
           :is-resource-page="isResourcePage"

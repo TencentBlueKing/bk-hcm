@@ -2,6 +2,7 @@
 import {
   ref,
   computed,
+  watch,
 } from 'vue';
 
 import HostManage from '@/views/resource/resource-manage/children/manage/host-manage.vue';
@@ -29,6 +30,8 @@ import { useAccountStore } from '@/store/account';
 
 const isShowSideSlider = ref(false);
 const componentRef = ref();
+const accountListLoading = ref(true);
+console.log('accountListLoading', accountListLoading.value);
 
 // use hooks
 const route = useRoute();
@@ -112,14 +115,39 @@ const {
   permissionParams,
   authVerifyData,
 } = useVerify();
+
+const getBizsAccountList = async (biz: string | number) => {
+  accountListLoading.value = true;
+  try {
+    const params = {
+      account_type: 'resource',
+    };
+    const res = await accountStore.getAccountList({ params }, biz);
+    accountStore.updateAccountList(res?.data); // 账号数据   用于筛选
+    accountListLoading.value = false;
+  } catch (error) {
+
+  }
+};
+
+watch(
+  () => accountStore.bizs,
+  (val) => {
+    if (val) {
+      getBizsAccountList(val);
+    }
+  },
+  { immediate: true },
+);
+
 </script>
 
 <template>
   <div>
     <section class="business-manage-wrapper">
-      <bk-loading :loading="!accountStore.bizs">
+      <bk-loading :loading="!accountStore.bizs && accountListLoading">
         <component
-          v-if="accountStore.bizs"
+          v-if="accountStore.bizs && !accountListLoading"
           ref="componentRef"
           :is="renderComponent"
           :filter="filter"

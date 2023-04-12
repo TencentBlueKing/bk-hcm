@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch  } from 'vue';
+import { defineComponent, ref, watch, PropType  } from 'vue';
 import { Button } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import { useCommonStore } from '@/store';
@@ -8,7 +8,10 @@ import permissions from '@/assets/image/403.png';
 import './403.scss';
 
 export default defineComponent({
-  setup() {
+  props: {
+    urlKeyId: String as PropType<string>,
+  },
+  setup(props) {
     const { t } = useI18n();
     const route = useRoute();
     const commonStore = useCommonStore();
@@ -19,6 +22,7 @@ export default defineComponent({
     // 根据urlKey获取权限链接
     const getAuthActionUrl = async () => {
       const { authVerifyData } = commonStore;
+      console.log(authVerifyData.urlParams, urlKey.value);
       if (authVerifyData) {       // 权限矩阵数据
         const params = authVerifyData.urlParams[urlKey.value];    // 获取权限链接需要的参数
         if (params) {
@@ -31,6 +35,13 @@ export default defineComponent({
     };
 
     watch(() => route.params.id, (key: any, oldKey: any) => {
+      if (key === oldKey) return;
+      urlKey.value = key;
+      getAuthActionUrl();
+    }, { immediate: true });
+
+    watch(() => props.urlKeyId, (key: any, oldKey: any) => {
+      console.log(key, oldKey);
       if (key === oldKey) return;
       urlKey.value = key;
       getAuthActionUrl();
@@ -83,6 +94,14 @@ export default defineComponent({
               </>
             )
            }
+           {
+            this.urlKey === 'resource_audit_find' && (   // 审计列表权限说明
+              <>
+              <p class="mt5 sub-describe">{this.t('如果您是业务运维、SRE等角色，业务下管理了多个云账号，可申请「业务审计查看」权限，查看业务下多个账号的审计信息。')}</p>
+              <p class="mt5 sub-describe">{this.t('如果您的账号属于某个业务，您负责其中一个账号，可申请「资源审计查看」权限，单独查看该账号的审计信息')}</p>
+              </>
+            )
+           }
 
           <h2 class="mt20">
           功能说明：
@@ -108,6 +127,11 @@ export default defineComponent({
             <p class="mt5 sub-describe">{this.t('资源账号：用于从云上同步、更新、操作、购买资源的账号，需要API密钥')}</p>
             <p class="mt5 sub-describe">{this.t('登记账号：云上的普通登录用户，用于被安全审计的账号对象')}</p>
             <p class="mt5 sub-describe">{this.t('安全审计账号：用于对云上资源进行安全审计的账号，需要API密钥，权限比资源账号低')}</p>
+          </>
+          )}
+          {this.urlKey === 'resource_audit_find' && (   // 审计列表功能说明
+          <>
+            <p class="mt5 sub-describe">{this.t('审计信息包括包括账号信息，IaaS资源想增删改查等。有2种区别：业务操作审计，业务下的审计信息；资源操作审计，以账号为粒度的审计信息。')}</p>
           </>
           )}
         </div>

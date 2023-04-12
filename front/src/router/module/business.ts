@@ -238,7 +238,7 @@ const businesseMenus: RouteRecordRaw[] = [
           },
           {
             path: 'detail',
-            name: 'routingBusinessDetail',
+            name: 'routeBusinessDetail',
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: 'businessRoutingTable',

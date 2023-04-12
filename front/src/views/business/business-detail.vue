@@ -44,7 +44,7 @@ const componentMap = {
   security: SecurityDetail,
   drive: DriveDetail,
   ip: IpDetail,
-  route: RoutingDetail,
+  routing: RoutingDetail,
   gcp: GcpDetail,
   image: ImageDetail,
   'network-interface': NetworkInterfaceDetail,
