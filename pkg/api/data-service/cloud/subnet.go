@@ -223,8 +223,8 @@ type SubnetListResult struct {
 
 // SubnetExtListResult define subnet with extension list result.
 type SubnetExtListResult[T cloud.SubnetExtension] struct {
-	Count   uint64            `json:"count,omitempty"`
-	Details []cloud.Subnet[T] `json:"details,omitempty"`
+	Count   uint64            `json:"count"`
+	Details []cloud.Subnet[T] `json:"details"`
 }
 
 // SubnetExtListResp define list resp.

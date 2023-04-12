@@ -151,8 +151,8 @@ func (req *CvmListReq) Validate() error {
 
 // CvmListResult define cvm list result.
 type CvmListResult struct {
-	Count   uint64            `json:"count,omitempty"`
-	Details []corecvm.BaseCvm `json:"details,omitempty"`
+	Count   uint64            `json:"count"`
+	Details []corecvm.BaseCvm `json:"details"`
 }
 
 // CvmListResp define list resp.

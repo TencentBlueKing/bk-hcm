@@ -107,8 +107,8 @@ func (req *GcpRegionListReq) Validate() error {
 
 // GcpRegionListResult define gcp region list result.
 type GcpRegionListResult struct {
-	Count   uint64            `json:"count,omitempty"`
-	Details []cloud.GcpRegion `json:"details,omitempty"`
+	Count   uint64            `json:"count"`
+	Details []cloud.GcpRegion `json:"details"`
 }
 
 // GcpRegionListResp define gcp region list resp.

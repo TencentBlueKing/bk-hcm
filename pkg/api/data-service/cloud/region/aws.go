@@ -107,8 +107,8 @@ func (req *AwsRegionListReq) Validate() error {
 
 // AwsRegionListResult define aws region list result.
 type AwsRegionListResult struct {
-	Count   uint64            `json:"count,omitempty"`
-	Details []cloud.AwsRegion `json:"details,omitempty"`
+	Count   uint64            `json:"count"`
+	Details []cloud.AwsRegion `json:"details"`
 }
 
 // AwsRegionListResp define aws region list resp.
