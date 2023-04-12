@@ -40,6 +40,7 @@ type RouteTableCreateReq[T RouteTableCreateExtension] struct {
 	Region     string  `json:"region" validate:"required"`
 	CloudVpcID string  `json:"cloud_vpc_id" validate:"omitempty"`
 	Memo       *string `json:"memo,omitempty" validate:"omitempty"`
+	BkBizID    int64   `json:"bk_biz_id,omitempty" validate:"omitempty"`
 	Extension  *T      `json:"extension" validate:"required"`
 }
 

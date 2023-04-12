@@ -276,6 +276,12 @@ func filterAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyn
 
 	subnetMap = make(map[string]dataproto.RouteTableSubnetReq, 0)
 	for _, item := range list.Details {
+		// when sync add, if vpc is set bk_biz_id ,route_table set the same bk_biz_id
+		bkBizID, err := getVpcBkBizIDFromDB(kt, dataCli, req.AccountID, item.CloudVpcID)
+		if err != nil {
+			logs.Errorf("%s-routetable get vpc bk_biz_id from db failed. err: %v", enumor.Azure, err)
+			return nil, nil, nil, err
+		}
 		// need compare and update resource data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
 			if !checkAzureIsUpdate(item, resourceInfo) {
@@ -316,6 +322,7 @@ func filterAzureRouteTableList(kt *kit.Kit, req *hcroutetable.AzureRouteTableSyn
 				Region:     item.Region,
 				CloudVpcID: item.CloudVpcID,
 				Memo:       item.Memo,
+				BkBizID:    bkBizID,
 			}
 			if item.Extension != nil {
 				tmpRes.Extension = &dataproto.AzureRouteTableCreateExt{

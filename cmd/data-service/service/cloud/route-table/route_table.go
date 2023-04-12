@@ -149,7 +149,7 @@ func batchCreateRouteTable[T protocloud.RouteTableCreateExtension](cts *rest.Con
 				Name:       createReq.Name,
 				Region:     createReq.Region,
 				Memo:       createReq.Memo,
-				BkBizID:    constant.UnassignedBiz,
+				BkBizID:    createReq.BkBizID,
 				Extension:  ext,
 				Creator:    cts.Kit.User,
 				Reviser:    cts.Kit.User,

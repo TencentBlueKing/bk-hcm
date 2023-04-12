@@ -312,7 +312,7 @@ func diffAzureSubnet(kt *kit.Kit, dataCli *dataclient.Client, req *hcservice.Azu
 
 	existIDMap = make(map[string]bool, 0)
 	for _, item := range list.Details {
-		vpcData, err := getAzureVpcDataFromDB(kt, dataCli, req, item.CloudVpcID)
+		vpcData, err := getAzureVpcDataFromDB(kt, dataCli, req.AccountID, item.CloudVpcID)
 		if err != nil {
 			continue
 		}
@@ -491,7 +491,7 @@ func BatchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq
 	return createRes, nil
 }
 
-func getAzureVpcDataFromDB(kt *kit.Kit, dataCli *dataclient.Client, req *hcservice.AzureResourceSyncReq,
+func getAzureVpcDataFromDB(kt *kit.Kit, dataCli *dataclient.Client, accountID string,
 	cloudVpcID string) (cloudcore.Vpc[cloudcore.AzureVpcExtension], error) {
 
 	expr := &filter.Expression{
@@ -500,7 +500,7 @@ func getAzureVpcDataFromDB(kt *kit.Kit, dataCli *dataclient.Client, req *hcservi
 			&filter.AtomRule{
 				Field: "account_id",
 				Op:    filter.Equal.Factory(),
-				Value: req.AccountID,
+				Value: accountID,
 			},
 			&filter.AtomRule{
 				Field: "cloud_id",

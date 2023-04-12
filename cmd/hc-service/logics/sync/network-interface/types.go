@@ -24,8 +24,10 @@ import (
 
 	"hcm/pkg/api/core"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -82,4 +84,40 @@ func GetHcNetworkInterfaceDatas(kt *kit.Kit, req *protocvm.OperateSyncReq,
 	}
 
 	return dsMap, nil
+}
+
+func getCvmBkBizIDFromDB(kt *kit.Kit, accountId string, cvmID string,
+	dataCli *dataservice.Client) (int64, error) {
+
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "account_id",
+				Op:    filter.Equal.Factory(),
+				Value: accountId,
+			},
+			&filter.AtomRule{
+				Field: "cloud_id",
+				Op:    filter.Equal.Factory(),
+				Value: cvmID,
+			},
+		},
+	}
+
+	dataReq := &dataproto.CvmListReq{
+		Filter: expr,
+		Page:   core.DefaultBasePage,
+	}
+
+	results, err := dataCli.Global.Cvm.ListCvm(kt.Ctx, kt.Header(), dataReq)
+	if err != nil {
+		return constant.UnassignedBiz, err
+	}
+
+	if len(results.Details) <= 0 {
+		return constant.UnassignedBiz, nil
+	}
+
+	return results.Details[0].BkBizID, nil
 }

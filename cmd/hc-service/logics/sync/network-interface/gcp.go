@@ -293,7 +293,7 @@ func compareUpdateGcpNetworkInterfaceList(kt *kit.Kit, req *hcservice.GcpNetwork
 	list *typesniproto.GcpInterfaceListResult, resourceDBMap map[string]coreni.NetworkInterface[coreni.GcpNIExtension],
 	dataCli *dataclient.Client) error {
 
-	createResources, updateResources, err := filterGcpNetworkInterfaceList(kt, req, list, resourceDBMap)
+	createResources, updateResources, err := filterGcpNetworkInterfaceList(kt, req, list, resourceDBMap, dataCli)
 	if err != nil {
 		return err
 	}
@@ -326,9 +326,10 @@ func compareUpdateGcpNetworkInterfaceList(kt *kit.Kit, req *hcservice.GcpNetwork
 }
 
 // filterGcpNetworkInterfaceList filter gcp network interface list
-func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
+func filterGcpNetworkInterfaceList(kt *kit.Kit, req *hcservice.GcpNetworkInterfaceSyncReq,
 	list *typesniproto.GcpInterfaceListResult,
-	resourceDBMap map[string]coreni.NetworkInterface[coreni.GcpNIExtension]) (
+	resourceDBMap map[string]coreni.NetworkInterface[coreni.GcpNIExtension],
+	dataCli *dataclient.Client) (
 	createResources []dataproto.NetworkInterfaceReq[dataproto.GcpNICreateExt],
 	updateResources []dataproto.NetworkInterfaceUpdateReq[dataproto.GcpNICreateExt], err error) {
 
@@ -339,6 +340,12 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 	}
 
 	for _, item := range list.Details {
+		// when sync add, if cvm is set bk_biz_id ,ni set the same bk_biz_id
+		bkBizID, err := getCvmBkBizIDFromDB(kt, req.AccountID, converter.PtrToVal(item.InstanceID), dataCli)
+		if err != nil {
+			logs.Errorf("%s-networkinterface get cvm data from db error, err: %v", enumor.Gcp, err)
+			return nil, nil, err
+		}
 		// need compare and update resource data
 		tmpCloudID := converter.PtrToVal(item.CloudID)
 		if resourceInfo, ok := resourceDBMap[tmpCloudID]; ok {
@@ -403,6 +410,7 @@ func filterGcpNetworkInterfaceList(_ *kit.Kit, req *hcservice.GcpNetworkInterfac
 				PublicIPv4:    item.PublicIPv4,
 				PublicIPv6:    item.PublicIPv6,
 				InstanceID:    converter.PtrToVal(item.InstanceID),
+				BkBizID:       bkBizID,
 			}
 			if item.Extension != nil {
 				if item.Extension != nil {

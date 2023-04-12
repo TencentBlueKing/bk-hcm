@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"hcm/cmd/hc-service/logics/subnet"
+	syncroutetable "hcm/cmd/hc-service/logics/sync/route-table"
 	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
@@ -33,6 +34,7 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
+	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -115,6 +117,16 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// sync route table
+	sync.SleepBeforeSync()
+
+	rtReq := &hcroutetable.GcpRouteTableSyncReq{
+		AccountID: req.AccountID,
+	}
+	if _, err = syncroutetable.GcpRouteTableSync(cts.Kit, rtReq, v.ad, v.cs.DataService()); err != nil {
+		return nil, err
 	}
 
 	return core.CreateResult{ID: result.IDs[0]}, nil

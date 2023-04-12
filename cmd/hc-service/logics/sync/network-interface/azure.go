@@ -313,7 +313,8 @@ func compareUpdateAzureNetworkInterfaceList(kt *kit.Kit, req *hcservice.AzureNet
 	list *typesniproto.AzureInterfaceListResult,
 	resourceDBMap map[string]coreni.NetworkInterface[coreni.AzureNIExtension], dataCli *dataclient.Client) error {
 
-	createResources, updateResources, err := filterAzureNetworkInterfaceList(kt, req, list, resourceDBMap)
+	createResources, updateResources, err := filterAzureNetworkInterfaceList(kt, req, list, resourceDBMap,
+		dataCli)
 	if err != nil {
 		return err
 	}
@@ -346,9 +347,10 @@ func compareUpdateAzureNetworkInterfaceList(kt *kit.Kit, req *hcservice.AzureNet
 }
 
 // filterAzureNetworkInterfaceList filter azure network interface list
-func filterAzureNetworkInterfaceList(_ *kit.Kit, req *hcservice.AzureNetworkInterfaceSyncReq,
+func filterAzureNetworkInterfaceList(kt *kit.Kit, req *hcservice.AzureNetworkInterfaceSyncReq,
 	list *typesniproto.AzureInterfaceListResult,
-	resourceDBMap map[string]coreni.NetworkInterface[coreni.AzureNIExtension]) (
+	resourceDBMap map[string]coreni.NetworkInterface[coreni.AzureNIExtension],
+	dataCli *dataclient.Client) (
 	createResources []dataproto.NetworkInterfaceReq[dataproto.AzureNICreateExt],
 	updateResources []dataproto.NetworkInterfaceUpdateReq[dataproto.AzureNICreateExt], err error) {
 
@@ -359,6 +361,12 @@ func filterAzureNetworkInterfaceList(_ *kit.Kit, req *hcservice.AzureNetworkInte
 	}
 
 	for _, item := range list.Details {
+		// when sync add, if cvm is set bk_biz_id ,ni set the same bk_biz_id
+		bkBizID, err := getCvmBkBizIDFromDB(kt, req.AccountID, converter.PtrToVal(item.InstanceID), dataCli)
+		if err != nil {
+			logs.Errorf("%s-networkinterface get cvm data from db error, err: %v", enumor.Azure, err)
+			return nil, nil, err
+		}
 		// need compare and update resource data
 		tmpCloudID := converter.PtrToVal(item.CloudID)
 		if resourceInfo, ok := resourceDBMap[tmpCloudID]; ok {
@@ -426,6 +434,7 @@ func filterAzureNetworkInterfaceList(_ *kit.Kit, req *hcservice.AzureNetworkInte
 				PublicIPv4:    item.PublicIPv4,
 				PublicIPv6:    item.PublicIPv6,
 				InstanceID:    converter.PtrToVal(item.InstanceID),
+				BkBizID:       bkBizID,
 			}
 			if item.Extension != nil {
 				tmpRes.Extension = &dataproto.AzureNICreateExt{
