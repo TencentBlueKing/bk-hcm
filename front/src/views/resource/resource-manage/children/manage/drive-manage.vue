@@ -80,10 +80,10 @@ const renderColumns = [
                   contentAlign: 'center',
                   onConfirm() {
                     resourceStore
-                      .recyclBatch(
+                      .recycled(
                         'disks',
                         {
-                          ids: [data.id],
+                          infos: [{ id: data.id }],
                         },
                       );
                   },
