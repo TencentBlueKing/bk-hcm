@@ -62,7 +62,7 @@ func (s subnet) AzureSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 	subnetSyncOpt := &subnetlogics.AzureSubnetSyncOptions{
 		BkBizID:       req.BkBizID,
 		AccountID:     req.AccountID,
-		CloudVpcID:    azureCreateRes.CloudID,
+		CloudVpcID:    azureCreateRes.CloudVpcID,
 		ResourceGroup: azureCreateRes.Extension.ResourceGroupName,
 		Subnets:       []types.AzureSubnet{*azureCreateRes},
 	}
