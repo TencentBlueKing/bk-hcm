@@ -34,6 +34,7 @@ import (
 )
 
 // Create ...
+// TODO：管理员使用的账号新增接口，不走审批单据，但因为权限没有确定，暂时弃用
 func (a *accountSvc) Create(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AccountCreateReq)
 	if err := cts.DecodeInto(req); err != nil {

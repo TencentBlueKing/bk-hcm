@@ -43,6 +43,7 @@ import (
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/esb/itsm"
 	"hcm/pkg/tools/json"
@@ -149,6 +150,13 @@ func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, e
 	}
 	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), req)
 
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Account, Action: meta.Import}}
+	err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
 	return a.create(cts, handler)
 }
 
@@ -157,6 +165,10 @@ func (a *applicationSvc) CreateForCreateCvm(cts *rest.Contexts) (interface{}, er
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if err := a.checkApplyResPermission(cts, meta.Cvm); err != nil {
+		return nil, err
 	}
 
 	opt := a.getHandlerOption(cts)
@@ -210,6 +222,10 @@ func (a *applicationSvc) CreateForCreateVpc(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	if err := a.checkApplyResPermission(cts, meta.Vpc); err != nil {
+		return nil, err
+	}
+
 	opt := a.getHandlerOption(cts)
 
 	switch vendor {
@@ -258,6 +274,10 @@ func (a *applicationSvc) CreateForCreateDisk(cts *rest.Contexts) (interface{}, e
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if err := a.checkApplyResPermission(cts, meta.Disk); err != nil {
+		return nil, err
 	}
 
 	opt := a.getHandlerOption(cts)

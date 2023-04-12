@@ -20,8 +20,11 @@
 package application
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/tidwall/gjson"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/cmd/cloud-server/service/capability"
@@ -31,6 +34,8 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/cryptography"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/esb"
@@ -157,4 +162,25 @@ func (a *applicationSvc) getApplicationBySN(cts *rest.Contexts, sn string) (*dat
 	}
 
 	return resp.Details[0], nil
+}
+
+func (a *applicationSvc) checkApplyResPermission(cts *rest.Contexts, resType meta.ResourceType) error {
+	body, err := cts.RequestBody()
+	if err != nil {
+		logs.Errorf("get request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err
+	}
+
+	bizID := gjson.GetBytes(body, "bk_biz_id").Int()
+	if bizID == 0 {
+		return errors.New("bk_biz_id is required")
+	}
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: resType, Action: meta.Apply}, BizID: bizID}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return err
+	}
+
+	return nil
 }

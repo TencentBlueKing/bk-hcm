@@ -63,4 +63,6 @@ const (
 	Disassociate Action = "disassociate"
 	// Access operation's hcm auth action type
 	Access Action = "access"
+	// Apply 资源申请权限
+	Apply Action = "apply"
 )

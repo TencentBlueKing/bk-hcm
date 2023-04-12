@@ -20,7 +20,9 @@
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"strconv"
 
 	"hcm/pkg/criteria/constant"
@@ -41,6 +43,18 @@ type Contexts struct {
 	// request meta info
 	bizID string
 	appID string
+}
+
+// RequestBody 返回拷贝的body内容
+func (c *Contexts) RequestBody() ([]byte, error) {
+	byt, err := ioutil.ReadAll(c.Request.Request.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	c.Request.Request.Body = ioutil.NopCloser(bytes.NewBuffer(byt))
+
+	return byt, nil
 }
 
 // DecodeInto decode request body to a struct, if failed, then return the
