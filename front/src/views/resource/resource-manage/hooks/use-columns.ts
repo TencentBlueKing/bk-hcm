@@ -126,7 +126,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       },
     },
     {
-      label: '云区域',
+      label: '蓝鲸云区域',
       field: 'bk_cloud_id',
       render({ cell }: { cell: number }) {
         if (cell > -1) {

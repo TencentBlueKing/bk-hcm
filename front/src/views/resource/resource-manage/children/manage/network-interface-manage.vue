@@ -5,6 +5,7 @@ import type {
 
 import {
   PropType,
+  computed,
 } from 'vue';
 
 import useQueryList from '../../hooks/use-query-list';
@@ -28,6 +29,19 @@ const {
   handleSort,
 } = useQueryList(props, 'network_interfaces');
 
+const selectSearchData = computed(() => {
+  return [
+    ...searchData.value,
+    ...[{
+      name: '公网ipv4',
+      id: 'public_ipv4',
+    }, {
+      name: '内网ipv4',
+      id: 'private_ipv4',
+    }],
+  ];
+});
+
 const {
   searchData,
   searchValue,
@@ -42,7 +56,7 @@ const {
       <bk-search-select
         class="w500 ml10"
         clearable
-        :data="searchData"
+        :data="selectSearchData"
         v-model="searchValue"
       />
     </section>

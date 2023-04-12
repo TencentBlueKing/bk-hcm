@@ -20,6 +20,7 @@ import {
   watch,
   reactive,
   defineExpose,
+  computed,
 } from 'vue';
 
 import {
@@ -87,6 +88,16 @@ const {
   handlePageSizeChange,
   getList,
 } = useQueryCommonList(props, fetchUrl);
+
+const selectSearchData = computed(() => {
+  return [
+    ...searchData.value,
+    ...[{
+      name: '云地域',
+      id: 'region',
+    }],
+  ];
+});
 
 const {
   searchData,
@@ -596,7 +607,7 @@ const securityHandleShowDelete = (data: any) => {
           <bk-search-select
             class="search-filter ml10"
             clearable
-            :data="searchData"
+            :data="selectSearchData"
             v-model="searchValue"
           />
         </section>

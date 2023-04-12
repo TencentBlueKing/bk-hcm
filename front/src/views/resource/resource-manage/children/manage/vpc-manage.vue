@@ -7,6 +7,7 @@ import {
   PropType,
   defineExpose,
   h,
+  computed,
 } from 'vue';
 import {
   useI18n,
@@ -57,6 +58,20 @@ const fetchComponentsData = () => {
 defineExpose({ fetchComponentsData });
 
 const emit = defineEmits(['auth']);
+
+
+const hostSearchData = computed(() => {
+  return [
+    ...searchData.value,
+    ...[{
+      name: '蓝鲸云区域',
+      id: 'bk_cloud_id',
+    }, {
+      name: '云地域',
+      id: 'region',
+    }],
+  ];
+});
 
 const {
   searchData,
@@ -120,8 +135,8 @@ const handleDeleteVpc = (data: any) => {
               ).then(() => {
                 Message({
                   theme: 'success',
-                  message: '删除成功'
-                })
+                  message: '删除成功',
+                });
               });
           },
         });
@@ -175,7 +190,7 @@ const renderColumns = [
       <bk-search-select
         class="w500 ml10"
         clearable
-        :data="searchData"
+        :data="hostSearchData"
         v-model="searchValue"
       />
     </section>

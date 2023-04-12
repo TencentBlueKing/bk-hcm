@@ -21,7 +21,7 @@ export default defineComponent({
         });
         name.value = result?.data?.info?.[0]?.name;
       } else {
-        name.value = '未绑定云区域';
+        name.value = '未绑定蓝鲸云区域';
       }
     });
 

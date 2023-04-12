@@ -6,6 +6,7 @@ import type {
 import {
   PropType,
   h,
+  computed,
 } from 'vue';
 import {
   useI18n,
@@ -13,7 +14,7 @@ import {
 import {
   Button,
   InfoBox,
-  Message
+  Message,
 } from 'bkui-vue';
 import {
   useResourceStore,
@@ -43,6 +44,16 @@ const {
 const columns = useColumns('drive');
 const simpleColumns = useColumns('drive', true);
 const resourceStore = useResourceStore();
+
+const selectSearchData = computed(() => {
+  return [
+    ...searchData.value,
+    ...[{
+      name: '云地域',
+      id: 'region',
+    }],
+  ];
+});
 
 const {
   searchData,
@@ -89,8 +100,8 @@ const renderColumns = [
                       ).then(() => {
                         Message({
                           theme: 'success',
-                          message: '回收成功'
-                        })
+                          message: '回收成功',
+                        });
                       });
                   },
                 });
@@ -151,7 +162,7 @@ const {
       <bk-search-select
         class="w500 ml10"
         clearable
-        :data="searchData"
+        :data="selectSearchData"
         v-model="searchValue"
       />
     </section>

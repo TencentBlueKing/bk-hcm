@@ -6,6 +6,7 @@ import {
   PropType,
   defineExpose,
   h,
+  computed,
 } from 'vue';
 import {
   Button,
@@ -42,6 +43,19 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList(props, 'subnets');
+
+const hostSearchData = computed(() => {
+  return [
+    ...searchData.value,
+    ...[{
+      name: '所属vpc',
+      id: 'vpc_id',
+    }, {
+      name: '云地域',
+      id: 'region',
+    }],
+  ];
+});
 
 const {
   searchData,
@@ -111,8 +125,8 @@ const handleDeleteSubnet = (data: any) => {
               ).then(() => {
                 Message({
                   theme: 'success',
-                  message: '删除成功'
-                })
+                  message: '删除成功',
+                });
               });
           },
         });
@@ -168,7 +182,7 @@ defineExpose({ fetchComponentsData });
       <bk-search-select
         class="w500 ml10"
         clearable
-        :data="searchData"
+        :data="hostSearchData"
         v-model="searchValue"
       />
     </section>

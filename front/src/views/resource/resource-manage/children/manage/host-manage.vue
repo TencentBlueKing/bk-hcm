@@ -12,6 +12,7 @@ import {
   PropType,
   h,
   ref,
+  computed,
 } from 'vue';
 import {
   useI18n,
@@ -50,6 +51,10 @@ const props = defineProps({
 
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
+
+const isLoadingCloudAreas = ref(false);
+const cloudAreaPage = ref(0);
+const cloudAreas = ref([]);
 
 const {
   datas,
@@ -122,6 +127,22 @@ const isShowDistribution = ref(false);
 const businessId = ref('');
 const businessList = ref([]);
 const columns = useColumns('cvms');
+
+const hostSearchData = computed(() => {
+  return [
+    ...searchData.value,
+    ...[{
+      name: '蓝鲸云区域',
+      id: 'bk_cloud_id',
+    }, {
+      name: '操作系统',
+      id: 'os_name',
+    }, {
+      name: '云地域',
+      id: 'region',
+    }],
+  ];
+});
 
 const distribColumns = [
   {
@@ -230,7 +251,28 @@ const isRowSelectEnable = ({ row }: DoublePlainObject) => {
   }
 };
 
+const getCloudAreas = () => {
+  if (isLoadingCloudAreas.value) return;
+  isLoadingCloudAreas.value = true;
+  resourceStore
+    .getCloudAreas({
+      page: {
+        start: cloudAreaPage.value,
+        limit: 100,
+      },
+    })
+    .then((res: any) => {
+      cloudAreaPage.value += 1;
+      cloudAreas.value.push(...res?.data?.info || []);
+    })
+    .finally(() => {
+      isLoadingCloudAreas.value = false;
+    });
+};
+
 getBusinessList();
+getCloudAreas();
+
 </script>
 
 <template>
@@ -294,7 +336,7 @@ getBusinessList();
       <bk-search-select
         class="w500 ml10"
         clearable
-        :data="searchData"
+        :data="hostSearchData"
         v-model="searchValue"
       />
     </section>

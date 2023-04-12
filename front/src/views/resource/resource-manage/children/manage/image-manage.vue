@@ -8,6 +8,7 @@ import {
   watch,
   reactive,
   onBeforeUnmount,
+  computed,
 } from 'vue';
 // import { cloneDeep } from 'lodash';
 import useQueryList from '../../hooks/use-query-list';
@@ -46,6 +47,19 @@ const {
   handlePageSizeChange,
   handleSort,
 } = useQueryList(params, 'images');
+
+const selectSearchData = computed(() => {
+  return [
+    ...searchData.value,
+    ...[{
+      name: '公网ipv4',
+      id: 'public_ipv4',
+    }, {
+      name: '内网ipv4',
+      id: 'private_ipv4',
+    }],
+  ];
+});
 
 const {
   searchData,
@@ -105,7 +119,7 @@ watch(
       <bk-search-select
         class="w500 ml10"
         clearable
-        :data="searchData"
+        :data="selectSearchData"
         v-model="searchValue"
       />
     </section>

@@ -258,7 +258,7 @@ getResourceAccountList();
         :label="item.type"
       >
         <component
-          v-if="(item.name === activeTab) && accountStore.accountList.length"
+          v-if="item.name === activeTab"
           :is="item.component"
           :filter="filter"
           :is-resource-page="isResourcePage"
