@@ -309,7 +309,13 @@ const handleDeleteSubnet = (data: any) => {
                 {
                   ids: [data.id],
                 },
-              );
+              )
+              .then(() => {
+                Message({
+                  theme: 'success',
+                  message: '删除成功'
+                })
+              });
           },
         });
       }
