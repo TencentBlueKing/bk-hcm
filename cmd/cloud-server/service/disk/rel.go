@@ -67,12 +67,8 @@ func (svc *diskSvc) listDiskExtByCvmID(cts *rest.Contexts, validHandler handler.
 		)
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
-		Type: meta.Disk, Action: meta.Find,
-		ResourceID: basicInfo.AccountID,
-	}}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer,
+		ResType: meta.Disk, Action: meta.Find})
 	if err != nil {
 		return nil, err
 	}

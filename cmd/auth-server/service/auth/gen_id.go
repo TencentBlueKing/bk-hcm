@@ -125,6 +125,54 @@ func genBizIaaSResResource(a *meta.ResourceAttribute) (client.ActionID, []client
 	}
 }
 
+func genIaaSResourceSecurityGroupRule(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a.Basic.Action != meta.Assign && a.BizID > 0 {
+		return genBizIaaSResSecurityGroupRule(a)
+	}
+
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	switch a.Basic.Action {
+	case meta.Find, meta.Assign:
+		// find & assign action use generic cloud resource auth.
+		return genCloudResResource(a)
+	case meta.Create, meta.Update, meta.Delete:
+		// create update delete resource is related to hcm operate
+		return sys.IaaSResourceOperate, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+func genBizIaaSResSecurityGroupRule(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+	}
+
+	// compatible for authorize any
+	if a.BizID > 0 {
+		res.ID = strconv.FormatInt(a.BizID, 10)
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.BizAccess, []client.Resource{res}, nil
+	case meta.Create, meta.Update, meta.Delete:
+		return sys.BizIaaSResOperate, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
 // genVpcResource generate vpc related iam resource.
 func genVpcResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return genIaaSResourceResource(a)
@@ -195,7 +243,7 @@ func genSecurityGroupResource(a *meta.ResourceAttribute) (client.ActionID, []cli
 
 // genSecurityGroupRuleResource generate security group rule related iam resource.
 func genSecurityGroupRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	return genIaaSResourceResource(a)
+	return genIaaSResourceSecurityGroupRule(a)
 }
 
 // genGcpFirewallRuleResource generate gcp firewall rule related iam resource.
