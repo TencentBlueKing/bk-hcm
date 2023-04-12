@@ -56,7 +56,6 @@ const router = createRouter({
 // 进入目标页面
 // eslint-disable-next-line max-len
 const toCurrentPage = (authVerifyData: any, currentFindAuthData: any, next: NavigationGuardNext, to?: RouteLocationNormalized) => {
-  console.log('currentFindAuthData', currentFindAuthData);
   if (currentFindAuthData) {   // 当前页面需要鉴权
     if (authVerifyData && !authVerifyData?.permissionAction[currentFindAuthData.id]) { // 当前页面没有权限
       next({

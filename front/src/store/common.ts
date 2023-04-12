@@ -20,7 +20,7 @@ export const useCommonStore = defineStore({
       { type: 'biz', action: 'access', id: 'biz_access' },
 
       // 目前资源下主机、vpc、子网、安全组、云硬盘、网络接口、弹性IP、路由表、镜像等都当作iaas统一鉴权，为了方便，使用cvm当作整个iaas鉴权
-      { type: 'cvm', action: 'find',  id: 'resource_find', path: ['/business/host', '/resource/resource'] },    // 业务 资源对应的路径
+      { type: 'cvm', action: 'find',  id: 'resource_find', path: ['/resource/resource'] },    // 业务 资源对应的路径
       { type: 'cvm', action: 'create', id: 'iaas_resource_create' },    // iaas创建
       { type: 'cvm', action: 'update', id: 'iaas_resource_operate' },    // iaas编辑更新
       { type: 'cvm', action: 'delete', id: 'iaas_resource_delete' },    // iaas删除
@@ -32,7 +32,7 @@ export const useCommonStore = defineStore({
 
 
       // 目前业务下主机、vpc、子网、安全组、云硬盘、网络接口、弹性IP、路由表、镜像等都当作iaas统一鉴权，为了方便，使用cvm当作整个业务iaas鉴权
-      { type: 'cvm', action: 'find',  id: 'resource_find', bk_biz_id: 0,  path: ['/business/host', '/resource/resource'] },    // 业务 资源对应的路径
+      { type: 'cvm', action: 'find',  id: 'resource_find', bk_biz_id: 0 },    // 业务 资源对应的路径
       { type: 'cvm', action: 'create', id: 'biz_iaas_resource_create',  bk_biz_id: 0 },    // 业务iaas创建
       { type: 'cvm', action: 'update', id: 'biz_iaas_resource_operate',  bk_biz_id: 0 },    // 业务iaas编辑更新
       { type: 'cvm', action: 'delete', id: 'biz_iaas_resource_delete',  bk_biz_id: 0 },    // 业务iaas删除

@@ -1,3 +1,4 @@
+const CopyWebpackPlugin = require('copy-webpack-plugin')
 const { resolve } = require('path');
 const replaceStaticUrlPlugin = require('./replace-static-url-plugin')
 const isModeProduction = process.env.NODE_ENV === 'production';
@@ -54,6 +55,15 @@ module.exports = {
     webpackConfig.plugins.push(
       new replaceStaticUrlPlugin(),
     )
+    webpackConfig.plugins.push(
+      new CopyWebpackPlugin({
+        patterns: [{
+            from: resolve('static/image'),
+            to: resolve('dist/static/images'),
+        }]
+      })
+    )
+    
     // webpackConfig.externals = {
     //   'axios':'axios',
     //   'dayjs':'dayjs',

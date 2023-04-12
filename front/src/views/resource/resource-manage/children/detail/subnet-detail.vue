@@ -5,10 +5,13 @@ import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import DetailInfo from '../../common/info/detail-info';
 import SubnetRoute from '../../children/components/subnet/subnet-route.vue';
+import bus from '@/common/bus';
 
 import {
   ref,
-  onBeforeMount
+  inject,
+  computed,
+  onBeforeMount,
 } from 'vue';
 import {
   useRoute,
@@ -99,8 +102,20 @@ const {
   t,
 } = useI18n();
 
+const authVerifyData: any = inject('authVerifyData');
+const isResourcePage: any = inject('isResourcePage');
+
+const actionName = computed(() => {   // 资源下没有业务ID
+  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+});
+
 const resourceStore = useResourceStore();
 const route = useRoute();
+
+// 权限弹窗 bus通知最外层弹出
+const showAuthDialog = (authActionName: string) => {
+  bus.$emit('auth', authActionName);
+};
 
 const {
   loading,
@@ -275,8 +290,8 @@ const handleDeleteSubnet = (data: any) => {
           },
         },
         type,
-      )
-  }
+      );
+  };
   Promise
     .all([
       getRelateNum('cvms', 'subnet_ids', 'json_overlaps'),
@@ -286,14 +301,14 @@ const handleDeleteSubnet = (data: any) => {
       if (cvmsResult?.data?.count || networkResult?.data?.count) {
         const getMessage = (result: any, name: string) => {
           if (result?.data?.count) {
-            return `${result?.data?.count}个${name}，`
+            return `${result?.data?.count}个${name}，`;
           }
-          return ''
-        }
+          return '';
+        };
         Message({
           theme: 'error',
-          message: `该子网（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`
-        })
+          message: `该子网（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`,
+        });
       } else {
         InfoBox({
           title: '请确认是否删除',
@@ -320,15 +335,16 @@ const handleDeleteSubnet = (data: any) => {
         });
       }
     });
-}
+};
 
 onBeforeMount(() => {
+  if (route.query.type === 'gcp') return;
   resourceStore
     .countSubnetIps(route.query.id as string)
     .then((res: any) => {
-      detail.value.ipv4_nums = res?.data?.available_ipv4_count || 0
-    })
-})
+      detail.value.ipv4_nums = res?.data?.available_ipv4_count || 0;
+    });
+});
 </script>
 
 <template>
@@ -338,13 +354,17 @@ onBeforeMount(() => {
     <detail-header>
       子网：ID（{{ detail.id }}）
       <template #right>
-        <bk-button
-          class="w100 ml10"
-          theme="primary"
-          @click="handleDeleteSubnet(detail)"
-        >
-          {{ t('删除') }}
-        </bk-button>
+        <div @click="showAuthDialog(actionName)">
+          <bk-button
+            class="w100 ml10"
+            theme="primary"
+            :disabled="authVerifyData?.
+              permissionAction[actionName]"
+            @click="handleDeleteSubnet(detail)"
+          >
+            {{ t('删除') }}
+          </bk-button>
+        </div>
       </template>
     </detail-header>
 

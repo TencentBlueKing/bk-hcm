@@ -316,7 +316,7 @@ const groupColumns = [
                 {
                   class: 'ml10',
                   disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
-                  || data.bk_biz_id !== -1,
+                  || (data.bk_biz_id !== -1 && props.isResourcePage),
                   text: true,
                   theme: 'primary',
                   onClick() {
@@ -519,7 +519,7 @@ const gcpColumns = [
                   class: 'ml10',
                   text: true,
                   disabled: !props.authVerifyData?.value?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
-                  || data.bk_biz_id !== -1,
+                  || (data.bk_biz_id !== -1 && props.isResourcePage),
                   theme: 'primary',
                   onClick() {
                     securityHandleShowDelete(data);

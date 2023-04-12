@@ -7,9 +7,12 @@ import DetailTab from '../../common/tab/detail-tab';
 import VPCCidr from '../components/vpc/vpc-cidr.vue';
 import VPCRoute from '../components/vpc/vpc-route.vue';
 import VPCSubnet from '../components/vpc/vpc-subnet.vue';
+import bus from '@/common/bus';
 
 import {
   ref,
+  inject,
+  computed,
 } from 'vue';
 import {
   InfoBox,
@@ -34,9 +37,9 @@ const VPCFields = ref([
   {
     name: '云资源 ID',
     prop: 'cloud_id',
-    render(cell: string = '') {
-      const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1
-      const value = cell.slice(index)
+    render(cell = '') {
+      const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;
+      const value = cell.slice(index);
       return value;
     },
   },
@@ -95,11 +98,23 @@ const VPCTabs = ref([
   },
 ]);
 
+const authVerifyData: any = inject('authVerifyData');
+const isResourcePage: any = inject('isResourcePage');
+
+const actionName = computed(() => {   // 资源下没有业务ID
+  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+});
+
 const resourceStore = useResourceStore();
 const route = useRoute();
 const {
   t,
 } = useI18n();
+
+// 权限弹窗 bus通知最外层弹出
+const showAuthDialog = (authActionName: string) => {
+  bus.$emit('auth', authActionName);
+};
 
 const {
   loading,
@@ -189,9 +204,9 @@ const {
           {
             name: 'DNS服务器',
             prop: 'dns_servers',
-            render (val: any) {
-              return val ? val : 'Azure提供的DNS服务'
-            }
+            render(val: any) {
+              return val ? val : 'Azure提供的DNS服务';
+            },
           },
         ]);
         VPCTabs.value.pop();
@@ -262,8 +277,8 @@ const handleDeleteVpc = (data: any) => {
           },
         },
         type,
-      )
-  }
+      );
+  };
   Promise
     .all([
       getRelateNum('cvms', 'vpc_ids', 'json_overlaps'),
@@ -275,14 +290,14 @@ const handleDeleteVpc = (data: any) => {
       if (cvmsResult?.data?.count || subnetsResult?.data?.count || routeResult?.data?.count || networkResult?.data?.count) {
         const getMessage = (result: any, name: string) => {
           if (result?.data?.count) {
-            return `${result?.data?.count}个${name}，`
+            return `${result?.data?.count}个${name}，`;
           }
-          return ''
-        }
+          return '';
+        };
         Message({
           theme: 'error',
-          message: `该VPC（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(subnetsResult, '子网')}${getMessage(routeResult, '路由表')}${getMessage(networkResult, '网络接口')}不能删除`
-        })
+          message: `该VPC（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(subnetsResult, '子网')}${getMessage(routeResult, '路由表')}${getMessage(networkResult, '网络接口')}不能删除`,
+        });
       } else {
         InfoBox({
           title: '请确认是否删除',
@@ -315,15 +330,19 @@ const handleDeleteVpc = (data: any) => {
     :loading="loading"
   >
     <detail-header>
-      VPC：（{{ detail.name }}）
+      VPC：（{{ detail.id }}）
       <template #right>
-        <bk-button
-          class="w100 ml10"
-          theme="primary"
-          @click="handleDeleteVpc(detail)"
-        >
-          {{ t('删除') }}
-        </bk-button>
+        <div @click="showAuthDialog(actionName)">
+          <bk-button
+            class="w100 ml10"
+            theme="primary"
+            :disabled="!authVerifyData?.
+              permissionAction[actionName]"
+            @click="handleDeleteVpc(detail)"
+          >
+            {{ t('删除') }}
+          </bk-button>
+        </div>
       </template>
     </detail-header>
 

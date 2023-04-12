@@ -605,7 +605,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'name',
       sort: true,
     },
-    getLinkField('vpc', '所属网络(VPC)', 'vpc_id'),
+    getLinkField('vpc', '所属网络(VPC)', 'vpc_id', 'vpc_id'),
     {
       label: '关联子网',
       field: '',
