@@ -68,7 +68,7 @@ func (a *accountSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) 
 	}
 
 	// 校验用户是否有查看权限，有权限的ID列表
-	accountIDs, isAny, err := a.listAuthorized(cts, meta.Find)
+	accountIDs, isAny, err := a.listAuthorized(cts, meta.Find, meta.Account)
 	if err != nil {
 		return nil, err
 	}

@@ -44,6 +44,7 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("Check", "POST", "/accounts/check", svc.Check)
 	h.Add("CheckByID", "POST", "/accounts/{account_id}/check", svc.CheckByID)
 	h.Add("List", "POST", "/accounts/list", svc.List)
+	h.Add("ResourceList", "POST", "/accounts/resources/accounts/list", svc.ResourceList)
 	h.Add("Get", "GET", "/accounts/{account_id}", svc.Get)
 	h.Add("Update", "PATCH", "/accounts/{account_id}", svc.Update)
 	h.Add("Sync", "POST", "/accounts/{account_id}/sync", svc.Sync)
@@ -108,8 +109,9 @@ func (a *accountSvc) checkPermissions(cts *rest.Contexts, action meta.Action, ac
 	return nil
 }
 
-func (a *accountSvc) listAuthorized(cts *rest.Contexts, action meta.Action) ([]string, bool, error) {
-	resources, err := a.authorizer.ListAuthorizedInstances(cts.Kit, &meta.ListAuthResInput{Type: meta.Account,
+func (a *accountSvc) listAuthorized(cts *rest.Contexts, action meta.Action,
+	typ meta.ResourceType) ([]string, bool, error) {
+	resources, err := a.authorizer.ListAuthorizedInstances(cts.Kit, &meta.ListAuthResInput{Type: typ,
 		Action: action})
 	if err != nil {
 		return []string{}, false, errf.NewFromErr(

@@ -30,6 +30,15 @@ import (
 
 // List ...
 func (a *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
+	return a.list(cts, meta.Account)
+}
+
+// ResourceList ...
+func (a *accountSvc) ResourceList(cts *rest.Contexts) (interface{}, error) {
+	return a.list(cts, meta.CloudResource)
+}
+
+func (a *accountSvc) list(cts *rest.Contexts, typ meta.ResourceType) (interface{}, error) {
 	req := new(proto.AccountListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -40,7 +49,7 @@ func (a *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 校验用户是否有查看权限，有权限的ID列表
-	accountIDs, isAny, err := a.listAuthorized(cts, meta.Find)
+	accountIDs, isAny, err := a.listAuthorized(cts, meta.Find, typ)
 	if err != nil {
 		return nil, err
 	}
