@@ -82,7 +82,7 @@ func (a *ApplicationOfCreateAwsCvm) toHcProtoAwsBatchCreateReq(dryRun bool) *hcp
 		InstanceType:          req.InstanceType,
 		CloudImageID:          req.CloudImageID,
 		CloudSubnetID:         req.CloudSubnetID,
-		PublicIPAssigned:      *req.PublicIPAssigned,
+		PublicIPAssigned:      req.PublicIPAssigned,
 		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
 		BlockDeviceMapping:    blockDeviceMapping,
 		Password:              req.Password,

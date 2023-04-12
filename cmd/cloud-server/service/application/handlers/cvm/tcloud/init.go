@@ -90,6 +90,6 @@ func (a *ApplicationOfCreateTCloudCvm) toHcProtoTCloudBatchCreateReq(dryRun bool
 			DiskSizeGB: &req.SystemDisk.DiskSizeGB,
 		},
 		DataDisk:         dataDisk,
-		PublicIPAssigned: *req.PublicIPAssigned,
+		PublicIPAssigned: req.PublicIPAssigned,
 	}
 }

@@ -52,7 +52,7 @@ type TCloudCvmCreateReq struct {
 	CloudImageID          string   `json:"cloud_image_id" validate:"required"`
 	CloudVpcID            string   `json:"cloud_vpc_id" validate:"required"`
 	CloudSubnetID         string   `json:"cloud_subnet_id" validate:"required"`
-	PublicIPAssigned      *bool    `json:"public_ip_assigned" validate:"required"`
+	PublicIPAssigned      bool     `json:"public_ip_assigned" validate:"omitempty"`
 	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required,min=1"`
 
 	SystemDisk struct {
