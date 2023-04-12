@@ -13,6 +13,7 @@ import {
 import {
   Button,
   InfoBox,
+  Message
 } from 'bkui-vue';
 import {
   useResourceStore,
@@ -85,7 +86,12 @@ const renderColumns = [
                         {
                           infos: [{ id: data.id }],
                         },
-                      );
+                      ).then(() => {
+                        Message({
+                          theme: 'success',
+                          message: '回收成功'
+                        })
+                      });
                   },
                 });
               },
