@@ -44,6 +44,7 @@ func InitCmdbService(c *capability.Capability) {
 	h := rest.NewHandler()
 	h.Add("ListBiz", "POST", "/bk_bizs/list", svr.ListBiz)
 	h.Add("ListAuthorizedBiz", "POST", "/authorized/bizs/list", svr.ListAuthorizedBiz)
+	h.Add("ListAuthorizedBizAudit", "POST", "/authorized/audit/bizs/list", svr.ListAuthorizedBizAudit)
 	h.Add("ListCloudArea", "POST", "/cloud_areas/list", svr.ListCloudArea)
 
 	h.Load(c.WebService)
@@ -61,7 +62,17 @@ func (c *cmdbSvc) ListBiz(cts *rest.Contexts) (interface{}, error) {
 
 // ListAuthorizedBiz list authorized biz with biz access permission from cmdb
 func (c *cmdbSvc) ListAuthorizedBiz(cts *rest.Contexts) (interface{}, error) {
-	authInstReq := &meta.ListAuthResInput{Type: meta.Biz, Action: meta.Access}
+	return c.listAuthorizedBiz(cts, meta.Biz)
+}
+
+// ListAuthorizedBizAudit list authorized biz audit with biz access permission from cmdb
+func (c *cmdbSvc) ListAuthorizedBizAudit(cts *rest.Contexts) (interface{}, error) {
+	return c.listAuthorizedBiz(cts, meta.Audit)
+}
+
+// ListAuthorizedBiz list authorized biz with biz access permission from cmdb
+func (c *cmdbSvc) listAuthorizedBiz(cts *rest.Contexts, typ meta.ResourceType) (interface{}, error) {
+	authInstReq := &meta.ListAuthResInput{Type: typ, Action: meta.Access}
 	authInstRes, err := c.authorizer.ListAuthorizedInstances(cts.Kit, authInstReq)
 	if err != nil {
 		return nil, err
