@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}-cloudserver-config
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+data:
+  config.yaml: |-
+    network:
+      bindIP:
+      port: {{ .Values.cloudserver.port}}
+      tls:
+        insecureSkipVerify:
+        certFile:
+        keyFile:
+        caFile:
+        password:
+    service:
+      etcd:
+        {{- include "common.tplvalues.render" (dict "value" (include "bk-hcm.etcdConfig" .) "context" $) | nindent 8 }}
+    log:
+      {{- toYaml .Values.cloudserver.log | nindent 6 }}
+    esb:
+      endpoints:
+        - {{ .Values.bkComponentApiUrl }}
+      appCode: {{ .Values.appCode }}
+      appSecret: {{ .Values.appSecret }}
+      user: admin
+      tls:
+        insecureSkipVerify:
+        certFile:
+        keyFile:
+        caFile:
+        password:
+    crypto:
+      aesGcm:
+        key: {{ .Values.crypto.aesGcm.key }}
+        nonce: {{ .Values.crypto.aesGcm.nonce }}
+    bkHcmUrl: {{ template "bk-hcm.bkHcmUrl" . }}
+    platformManagers: {{ .Values.cloudserver.platformManagers }}
+    cloudResource:
+      {{- toYaml .Values.cloudserver.cloudResource | nindent 6 }}
+    recycle:
+      {{- toYaml .Values.cloudserver.recycle | nindent 6 }}

@@ -18,5 +18,10 @@ package:
 	@cp -f etc/web_server.yaml $(PKGETC)/
 	@echo -e "\e[34;1mPackage $(SERVER) success!\n\033[0m"
 
+docker:
+	@echo -e "\e[34;1mBuilding $(SERVER)...\033[0m"
+	go build -ldflags ${LDVersionFLAG} -o $(BIN) web_server.go
+	@echo -e "\e[34;1mBuild $(SERVER) success!\n\033[0m"
+
 clean:
 	@rm -rf $(BINDIR) $(LOCALBUILD)

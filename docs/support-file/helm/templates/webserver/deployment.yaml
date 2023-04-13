@@ -1,0 +1,87 @@
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}-webserver
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.webserver.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: webserver
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/webserver/configmap.yaml") . | sha256sum }}
+      {{- if .Values.webserver.podAnnotations }}
+        {{ toYaml .Values.webserver.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ template "bk-hcm.serviceAccountName" . }}
+      {{- with .Values.webserver.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.webserver.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.webserver.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      initContainers:
+        {{- include "bk-hcm.wait-for-pod-init-container" (list . (printf "%s-cloudserver" (include "bk-hcm.fullname" .)) "-lcomponent=cloudserver") | nindent 8 }}
+      containers:
+        - name: webserver
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.webserver.image.repository }}:v{{ default .Chart.AppVersion .Values.webserver.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          command:
+            - /data/hcm/bk-hcm-webserver
+            - --bind-ip=$(POD_IP)
+            - --config-file=/data/hcm/etc/config.yaml
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.webserver.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.webserver.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          {{- if .Values.webserver.resources }}
+          resources: {{ toYaml .Values.webserver.resources | nindent 12 }}
+          {{- end }}
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          {{- if .Values.webserver.env -}}
+            {{ toYaml .Values.webserver.env | indent 10 }}
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.webserver.port }}
+          volumeMounts:
+            - mountPath: /data/hcm/etc
+              name: config
+            {{- if not .Values.etcd.enabled }}
+            - mountPath: /data/hcm/etc/certs
+              name:  etcd-certs
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "bk-hcm.fullname" . }}-webserver-config
+      {{- if not .Values.etcd.enabled }}
+        - name: etcd-certs
+          secret:
+            secretName: {{ template "bk-hcm.etcdSecretName" . }}
+      {{- end }}
