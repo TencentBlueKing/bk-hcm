@@ -33,10 +33,10 @@ const routes: RouteRecordRaw[] = [
     // name: 'index',
     // component: () => import('@/views/resource/demo'),
     path: '/',
-    redirect: '/resource/account',
+    redirect: '/business/host',
     meta: {
-      activeKey: 'resourceAccount',
-      breadcrumb: [t('云管'), t('账号')],
+      activeKey: 'businessHost',
+      breadcrumb: [t('计算'), t('主机')],
     },
   },
   {

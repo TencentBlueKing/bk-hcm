@@ -15,6 +15,12 @@ const props = defineProps({
       return [];
     },
   },
+  type: {
+    type: String,
+    default() {
+      return '';
+    },
+  },
 });
 
 const { t } = useI18n();
@@ -123,10 +129,12 @@ const getAccountList = async () => {
       },
     }, accountStore.bizs);
     accountList.value = res?.data;
-    if (securityType.value && securityType.value === 'gcp') {
-      accountList.value = accountList.value.filter(e => e.vendor === 'gcp');
-    } else {
-      accountList.value = accountList.value.filter(e => e.vendor !== 'gcp');
+    if (props.type === 'security') {    // 安全组需要区分
+      if (securityType.value && securityType.value === 'gcp') {
+        accountList.value = accountList.value.filter(e => e.vendor === 'gcp');
+      } else {
+        accountList.value = accountList.value.filter(e => e.vendor !== 'gcp');
+      }
     }
   } catch (error) {
     console.log(error);

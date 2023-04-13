@@ -92,7 +92,7 @@ const {
 
 <template>
   <div class="business-dialog-warp">
-    <form-select @change="handleFormFilter"></form-select>
+    <form-select @change="handleFormFilter" type="security"></form-select>
     <bk-form class="form-subnet" :model="formData" :rules="rules" ref="formRef">
       <bk-form-item
         :label="t('名称')"
