@@ -133,7 +133,7 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 			logs.Errorf("invalid request for %s, err: %v, rid: %s", action.Alias, err, rid)
 			cts.WithStatusCode(http.StatusBadRequest)
 			cts.respError(err)
-			restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID, "app": cts.appID}).Inc()
+			restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).Inc()
 			return
 		}
 
@@ -156,7 +156,7 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 
 				cts.WithStatusCode(http.StatusBadRequest)
 				cts.respError(errf.NewFromErr(errf.InvalidParameter, err))
-				restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID, "app": cts.appID}).Inc()
+				restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).Inc()
 				return
 			}
 
@@ -183,13 +183,13 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 				cts.respError(err)
 			}
 
-			restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID, "app": cts.appID}).Inc()
+			restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).Inc()
 			return
 		}
 
 		cts.respEntity(reply)
 
-		restMetric.lagMS.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID, "app": cts.appID}).
+		restMetric.lagMS.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).
 			Observe(float64(time.Since(start).Milliseconds()))
 	}
 }

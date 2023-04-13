@@ -42,7 +42,6 @@ type Contexts struct {
 
 	// request meta info
 	bizID string
-	appID string
 }
 
 // RequestBody 返回拷贝的body内容
