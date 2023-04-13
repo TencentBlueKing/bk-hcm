@@ -67,13 +67,20 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 			opt.AccountID, time.Since(start), opt, kt.Rid)
 	}()
 
-	if err := SyncResourceGroup(kt, cliSet.HCService(), opt.AccountID); err != nil {
-		return err
+	if opt.SyncPublicResource {
+		if hitErr = SyncRegion(kt, cliSet.HCService(), opt.AccountID); hitErr != nil {
+			return hitErr
+		}
 	}
 
-	resourceGroupNames, err := ListResourceGroup(kt, cliSet.DataService(), opt.AccountID)
-	if err != nil {
-		return err
+	if hitErr = SyncResourceGroup(kt, cliSet.HCService(), opt.AccountID); hitErr != nil {
+		return hitErr
+	}
+
+	resourceGroupNames := make([]string, 0)
+	resourceGroupNames, hitErr = ListResourceGroup(kt, cliSet.DataService(), opt.AccountID)
+	if hitErr != nil {
+		return hitErr
 	}
 
 	if opt.SyncPublicResource {
@@ -82,7 +89,6 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 			ResourceGroupNames: resourceGroupNames,
 		}
 		if hitErr = SyncPublicResource(kt, cliSet, syncOpt); hitErr != nil {
-			logs.Errorf("azure sync public resource failed, err: %v, opt: %v, rid: %s", hitErr, opt, kt.Rid)
 			return hitErr
 		}
 	}
@@ -92,45 +98,31 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 	}
 
 	if hitErr = SyncSG(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
-		logs.Errorf("azure sync security group resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
-			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncVpc(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
-		logs.Errorf("azure sync vpc resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
-			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncSubnet(kt, cliSet.HCService(), cliSet.DataService(), opt.AccountID,
 		resourceGroupNames); hitErr != nil {
-		logs.Errorf("azure sync subnet resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
-			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncEip(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
-		logs.Errorf("azure sync eip resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
-			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncCvm(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
-		logs.Errorf("azure sync cvm resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
-			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncRouteTable(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
-		logs.Errorf("azure sync route table resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
-			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
 	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), opt.AccountID, resourceGroupNames); hitErr != nil {
-		logs.Errorf("azure sync network interface resource failed, opt: %+v, resourceGroupNames: %v, err: %+v",
-			opt, resourceGroupNames, hitErr)
 		return hitErr
 	}
 
