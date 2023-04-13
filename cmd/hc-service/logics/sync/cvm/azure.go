@@ -810,23 +810,6 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 		}
 	}
 
-	if len(cloudNetInterMap) > 0 {
-		netInterCloudIDs := make([]string, 0)
-		for _, id := range cloudNetInterMap {
-			netInterCloudIDs = append(netInterCloudIDs, id.RelID)
-		}
-		req := &hcservice.AzureNetworkInterfaceSyncReq{
-			AccountID:         req.AccountID,
-			ResourceGroupName: req.ResourceGroupName,
-			CloudIDs:          netInterCloudIDs,
-		}
-		_, err := syncnetworkinterface.AzureNetworkInterfaceSync(kt, req, ad, dataCli)
-		if err != nil {
-			logs.Errorf("request to sync azure networkinterface logic failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-	}
-
 	if len(cloudDiskMap) > 0 {
 		diskCloudIDs := make([]string, 0)
 		for _, id := range cloudDiskMap {
@@ -853,6 +836,23 @@ func SyncAzureCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient
 	if err != nil {
 		logs.Errorf("sync azure cvm self failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
+	}
+
+	if len(cloudNetInterMap) > 0 {
+		netInterCloudIDs := make([]string, 0)
+		for _, id := range cloudNetInterMap {
+			netInterCloudIDs = append(netInterCloudIDs, id.RelID)
+		}
+		req := &hcservice.AzureNetworkInterfaceSyncReq{
+			AccountID:         req.AccountID,
+			ResourceGroupName: req.ResourceGroupName,
+			CloudIDs:          netInterCloudIDs,
+		}
+		_, err := syncnetworkinterface.AzureNetworkInterfaceSync(kt, req, ad, dataCli)
+		if err != nil {
+			logs.Errorf("request to sync azure networkinterface logic failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
 	}
 
 	hcReq := &protocvm.OperateSyncReq{

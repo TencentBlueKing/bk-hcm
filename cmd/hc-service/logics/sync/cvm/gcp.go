@@ -936,23 +936,6 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 		}
 	}
 
-	if len(niCloudIDMap) > 0 {
-		netInterCloudIDs := make([]string, 0)
-		for _, id := range niCloudIDMap {
-			netInterCloudIDs = append(netInterCloudIDs, id.RelID)
-		}
-		req := &hcservice.GcpNetworkInterfaceSyncReq{
-			AccountID:   req.AccountID,
-			Zone:        req.Zone,
-			CloudCvmIDs: req.CloudIDs,
-		}
-		_, err := syncnetworkinterface.GcpNetworkInterfaceSync(kt, req, ad, dataCli)
-		if err != nil {
-			logs.Errorf("request to sync gcp networkinterface logic failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-	}
-
 	if len(diskSLMap) > 0 {
 		diskSelfLinks := make([]string, 0)
 		for _, id := range diskSLMap {
@@ -980,6 +963,23 @@ func SyncGcpCvmWithRelResource(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, 
 	if err != nil {
 		logs.Errorf("sync gcp cvm self failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
+	}
+
+	if len(niCloudIDMap) > 0 {
+		netInterCloudIDs := make([]string, 0)
+		for _, id := range niCloudIDMap {
+			netInterCloudIDs = append(netInterCloudIDs, id.RelID)
+		}
+		req := &hcservice.GcpNetworkInterfaceSyncReq{
+			AccountID:   req.AccountID,
+			Zone:        req.Zone,
+			CloudCvmIDs: req.CloudIDs,
+		}
+		_, err := syncnetworkinterface.GcpNetworkInterfaceSync(kt, req, ad, dataCli)
+		if err != nil {
+			logs.Errorf("request to sync gcp networkinterface logic failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
 	}
 
 	hcReq := &protocvm.OperateSyncReq{

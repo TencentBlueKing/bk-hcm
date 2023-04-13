@@ -982,19 +982,6 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 		}
 	}
 
-	if len(cloudNetInterMap) > 0 {
-		niSyncReq := &hcservice.HuaWeiNetworkInterfaceSyncReq{
-			AccountID:   req.AccountID,
-			Region:      req.Region,
-			CloudCvmIDs: req.CloudIDs,
-		}
-		_, err = syncnetworkinterface.HuaWeiNetworkInterfaceSync(kt, niSyncReq, ad, dataCli)
-		if err != nil {
-			logs.Errorf("request to sync huawei networkinterface logic failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-	}
-
 	if len(cloudSGMap) > 0 {
 		sGCloudIDs := make([]string, 0)
 		for _, id := range cloudSGMap {
@@ -1038,6 +1025,19 @@ func SyncHuaWeiCvmWithRelResource(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	if err != nil {
 		logs.Errorf("sync huawei cvm self failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
+	}
+
+	if len(cloudNetInterMap) > 0 {
+		niSyncReq := &hcservice.HuaWeiNetworkInterfaceSyncReq{
+			AccountID:   req.AccountID,
+			Region:      req.Region,
+			CloudCvmIDs: req.CloudIDs,
+		}
+		_, err = syncnetworkinterface.HuaWeiNetworkInterfaceSync(kt, niSyncReq, ad, dataCli)
+		if err != nil {
+			logs.Errorf("request to sync huawei networkinterface logic failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
 	}
 
 	hcReq := &protocvm.OperateSyncReq{
