@@ -62,17 +62,18 @@ func (c *cmdbSvc) ListBiz(cts *rest.Contexts) (interface{}, error) {
 
 // ListAuthorizedBiz list authorized biz with biz access permission from cmdb
 func (c *cmdbSvc) ListAuthorizedBiz(cts *rest.Contexts) (interface{}, error) {
-	return c.listAuthorizedBiz(cts, meta.Biz)
+	return c.listAuthorizedBiz(cts, meta.Biz, meta.Access)
 }
 
 // ListAuthorizedBizAudit list authorized biz audit with biz access permission from cmdb
 func (c *cmdbSvc) ListAuthorizedBizAudit(cts *rest.Contexts) (interface{}, error) {
-	return c.listAuthorizedBiz(cts, meta.Audit)
+	return c.listAuthorizedBiz(cts, meta.Audit, meta.Find)
 }
 
 // ListAuthorizedBiz list authorized biz with biz access permission from cmdb
-func (c *cmdbSvc) listAuthorizedBiz(cts *rest.Contexts, typ meta.ResourceType) (interface{}, error) {
-	authInstReq := &meta.ListAuthResInput{Type: typ, Action: meta.Access}
+func (c *cmdbSvc) listAuthorizedBiz(cts *rest.Contexts, typ meta.ResourceType,
+	action meta.Action) (interface{}, error) {
+	authInstReq := &meta.ListAuthResInput{Type: typ, Action: action}
 	authInstRes, err := c.authorizer.ListAuthorizedInstances(cts.Kit, authInstReq)
 	if err != nil {
 		return nil, err
