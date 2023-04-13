@@ -366,8 +366,8 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 		return "", fmt.Errorf("new cvm client failed, err: %v", err)
 	}
 
+	dataDisk := make([]*armcompute.DataDisk, len(opt.DataDisk))
 	if len(opt.DataDisk) != 0 {
-		dataDisk := make([]*armcompute.DataDisk, len(opt.DataDisk))
 		for index, disk := range opt.DataDisk {
 			dataDisk[index] = &armcompute.DataDisk{
 				Name:         to.Ptr(disk.Name),
@@ -418,6 +418,7 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 				ComputerName:  to.Ptr(opt.Name),
 			},
 			StorageProfile: &armcompute.StorageProfile{
+				DataDisks: dataDisk,
 				ImageReference: &armcompute.ImageReference{
 					Offer:     to.Ptr(opt.Image.Offer),
 					Publisher: to.Ptr(opt.Image.Publisher),
