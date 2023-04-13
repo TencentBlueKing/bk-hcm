@@ -39,7 +39,7 @@ func initMetric() {
 		Help:        "the lags(milliseconds) to request the restful API",
 		ConstLabels: labels,
 		Buckets:     []float64{0.01, 0.05, 0.1, 0.5, 1, 2, 3, 4, 5, 10, 30, 50, 100},
-	}, []string{"alias", "biz", "app"})
+	}, []string{"alias", "biz"})
 	metrics.Register().MustRegister(m.lagMS)
 
 	m.errCounter = prometheus.NewCounterVec(
@@ -49,7 +49,7 @@ func initMetric() {
 			Name:        "total_err_count",
 			Help:        "the total error count to request the restful API",
 			ConstLabels: labels,
-		}, []string{"alias", "biz", "app"})
+		}, []string{"alias", "biz"})
 	metrics.Register().MustRegister(m.errCounter)
 
 	restMetric = m
