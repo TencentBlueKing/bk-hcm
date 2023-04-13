@@ -211,6 +211,10 @@ func (r *resourcegroup) getAzureRGDSSync(cloudIDs []string, req *apiregion.Azure
 	updateIDs := make([]string, 0)
 	dsMap := make(map[string]*AzureDSRGSync)
 
+	if len(cloudIDs) <= 0 {
+		return updateIDs, dsMap, nil
+	}
+
 	start := 0
 	for {
 		dataReq := &protoregion.AzureRGListReq{
