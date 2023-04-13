@@ -1,0 +1,56 @@
+{{- if .Values.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "common.names.fullname" . }}-migrate-{{ .Release.Revision }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+spec:
+  backoffLimit: 10
+  parallelism: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: check-database
+          image: {{ printf "%s/%s:%s" .Values.global.imageRegistry .Values.busyBox.repository (default .Chart.AppVersion .Values.busyBox.tag)}}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          resources: {{- toYaml .Values.busyBox.resources | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - "until telnet {{ template "bk-hcm.database.host" . }} {{ template "bk-hcm.database.port" . }}; do echo waiting for db {{ template "bk-hcm.database.host" . }}; sleep 2; done;"
+      containers:
+        - name: migrate-db
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.dataservice.image.repository }}:v{{ default .Chart.AppVersion .Values.dataservice.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          command:
+            - /data/hcm/sql-migrate
+            - up
+            - -config=/data/hcm/etc/dbconfig.yaml
+            - -env=production
+          env:
+            - name: MYSQL_HOST
+              value: {{ template "bk-hcm.database.host" . }}
+            - name: MYSQL_PORT
+              value: "{{ template "bk-hcm.database.port" . }}"
+            - name: MYSQL_NAME
+              value: {{ template "bk-hcm.database.database" . }}
+            - name: MYSQL_USER
+              value: {{ template "bk-hcm.database.user" . }}
+            - name: MYSQL_PASSWORD
+              value: {{ template "bk-hcm.database.password" . }}
+          resources: {{ toYaml .Values.dataservice.resources | nindent 12 }}
+          volumeMounts:
+            - name: sql-migrate-dbconfig
+              mountPath: /data/hcm/etc
+      volumes:
+        - name: sql-migrate-dbconfig
+          configMap:
+            name: {{ template "bk-hcm.fullname" . }}-migrate-dbconfig
+{{- end }}

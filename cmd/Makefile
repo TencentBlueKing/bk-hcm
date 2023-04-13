@@ -14,6 +14,14 @@ package:
 	@cd cloud-server && make package
 	@cd web-server && make package
 
+docker:
+	@cd data-service && make docker
+	@cd hc-service && make docker
+	@cd api-server && make docker
+	@cd auth-server && make docker
+	@cd cloud-server && make docker
+	@cd web-server && make docker
+
 clean:
 	@cd data-service && make clean
 	@cd hc-service && make clean

@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}-webserver-config
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+data:
+  config.yaml: |-
+    network:
+      bindIP:
+      port: {{ .Values.webserver.port}}
+      tls:
+        insecureSkipVerify:
+        certFile:
+        keyFile:
+        caFile:
+        password:
+    service:
+      etcd:
+        {{- include "common.tplvalues.render" (dict "value" (include "bk-hcm.etcdConfig" .) "context" $) | nindent 8 }}
+    log:
+      {{- toYaml .Values.webserver.log | nindent 6 }}
+    esb:
+      endpoints:
+        - {{ .Values.bkComponentApiUrl }}
+      appCode: {{ .Values.appCode }}
+      appSecret: {{ .Values.appSecret }}
+      user: admin
+      tls:
+        insecureSkipVerify:
+        certFile:
+        keyFile:
+        caFile:
+        password:
+    web:
+      # Web服务静态文件目录
+      staticFileDirPath: /data/hcm/front
+      # 蓝鲸统一登录
+      bkLoginUrl: {{ .Values.bkLoginUrl }}
+      bkLoginCookieName: {{ .Values.bkLoginCookieName }}
+      # ESB API
+      bkComponentApiUrl: {{ .Values.bkComponentApiUrl }}
+      # ITSM 地址
+      bkItsmUrl: {{ .Values.bkItsmUrl }}

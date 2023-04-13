@@ -19,5 +19,10 @@ package:
 	@cp -f etc/api_gw_public.key $(PKGETC)/apiserver_api_gw_public.key
 	@echo -e "\e[34;1mPackage $(SERVER) success!\n\033[0m"
 
+docker:
+	@echo -e "\e[34;1mBuilding $(SERVER)...\033[0m"
+	go build -ldflags ${LDVersionFLAG} -o $(BIN) api_server.go
+	@echo -e "\e[34;1mBuild $(SERVER) success!\n\033[0m"
+
 clean:
 	@rm -rf $(BINDIR) $(LOCALBUILD)

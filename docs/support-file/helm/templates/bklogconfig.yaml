@@ -1,0 +1,39 @@
+{{- if .Values.bkLogConfig.file.enabled }}
+apiVersion: bk.tencent.com/v1alpha1
+kind: BkLogConfig
+metadata:
+  name: {{ .Release.Name }}-file-log-config
+spec:
+  dataId: {{ .Values.bkLogConfig.file.dataId }}
+  extMeta:
+    logSourceType: "file"
+  logConfigType: container_log_config
+  namespace: {{ .Release.Namespace }}
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}
+  encoding: 'utf-8'
+  path:
+    - {{ .Values.apiserver.log.logDir }}/*
+    - {{ .Values.authserver.log.logDir }}/*
+    - {{ .Values.webserver.log.logDir }}/*
+    - {{ .Values.dataservice.log.logDir }}/*
+    - {{ .Values.hcservice.log.logDir }}/*
+    - {{ .Values.cloudserver.log.logDir }}/*
+{{- end }}
+{{- if .Values.bkLogConfig.std.enabled }}
+---
+apiVersion: bk.tencent.com/v1alpha1
+kind: BkLogConfig
+metadata:
+  name: {{ .Release.Name }}-std-log-config
+spec:
+  dataId: {{ .Values.bkLogConfig.std.dataId }}
+  extMeta:
+    logSourceType: "std"
+  logConfigType: std_log_config
+  namespace: {{ .Release.Namespace }}
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}
+{{- end }}

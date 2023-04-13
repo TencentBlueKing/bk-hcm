@@ -1,0 +1,32 @@
+*******************************************************************
+*** PLEASE BE PATIENT: bk-hcm may take a few minutes to install   ***
+*******************************************************************
+
+{{- if .Values.ingress.enabled }}
+
+1. Get the bk-hcm URL indicated on the Ingress Rule and associate it to your cluster external IP:
+
+   export CLUSTER_IP=$(minikube ip) # On Minikube. Use: `kubectl cluster-info` on others K8s clusters
+   export HOSTNAME=$(kubectl get ingress --namespace {{ .Release.Namespace }} {{ template "bk-hcm.fullname" . }} -o jsonpath='{.spec.rules[0].host}')
+   echo "bk-hcm URL: http://$HOSTNAME/"
+   echo "$CLUSTER_IP  $HOSTNAME" | sudo tee -a /etc/hosts
+
+{{- else }}
+
+1. Get the bk-hcm URL by running:
+
+{{- if eq .Values.webserver.service.type "NodePort" }}
+
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ printf "%s-webserver" (include "bk-hcm.fullname" .) . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "bk-hcm URL: http://$NODE_IP:$NODE_PORT/"
+
+{{- else if eq .Values.webserver.service.type "LoadBalancer" }}
+
+** Please ensure an external IP is associated to the {{ printf "%s-webserver" (include "bk-hcm.fullname" .) . }} service before proceeding **
+** Watch the status using: kubectl get svc --namespace {{ .Release.Namespace }} -w {{ printf "%s-webserver" (include "bk-hcm.fullname" .) . }} **
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ printf "%s-webserver" (include "bk-hcm.fullname" .) . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+
+{{- end }}
+{{- end }}

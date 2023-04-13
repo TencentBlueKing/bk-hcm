@@ -1,0 +1,99 @@
+apiVersion: {{ template "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}-dataservice
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.dataservice.replicas }}
+  selector:
+    matchLabels:
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        component: dataservice
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/dataservice/configmap.yaml") . | sha256sum }}
+      {{- if .Values.dataservice.podAnnotations }}
+        {{ toYaml .Values.dataservice.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ template "bk-hcm.serviceAccountName" . }}
+      {{- with .Values.dataservice.nodeSelector }}
+      nodeSelector:
+      {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.dataservice.affinity }}
+      affinity:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      {{- with .Values.dataservice.tolerations }}
+      tolerations:
+        {{ toYaml . | indent 8 }}
+      {{- end }}
+      initContainers:
+        {{- if .Values.migration.enabled }}
+        - name: check-migrate-job
+          image: {{ printf "%s/%s:%s" .Values.global.imageRegistry .Values.k8sWaitFor.repository (default .Chart.AppVersion .Values.k8sWaitFor.tag)}}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          resources: {{- toYaml .Values.k8sWaitFor.resources | nindent 12 }}
+          args:
+            - "job"
+            - "{{ include "common.names.fullname" . }}-migrate-{{ .Release.Revision }}"
+        {{- end }}
+        {{- if .Values.etcd.enabled }}
+        {{- include "bk-hcm.wait-for-pod-init-container" (list . (printf "%s-0" (include "bk-hcm.etcdName" .))) | nindent 8 }}
+        {{- end }}
+      containers:
+        - name: dataservice
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.dataservice.image.repository }}:v{{ default .Chart.AppVersion .Values.dataservice.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          command:
+            - /data/hcm/bk-hcm-dataservice
+            - --bind-ip=$(POD_IP)
+            - --config-file=/data/hcm/etc/config.yaml
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          {{- if .Values.dataservice.resources }}
+          resources: {{ toYaml .Values.dataservice.resources | nindent 12 }}
+          {{- end }}
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          {{- if .Values.dataservice.env -}}
+            {{ toYaml .Values.dataservice.env | indent 10 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.dataservice.port }}
+          volumeMounts:
+            - mountPath: /data/hcm/etc
+              name: config
+            {{- if not .Values.etcd.enabled }}
+            - mountPath: /data/hcm/etc/certs
+              name:  etcd-certs
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "bk-hcm.fullname" . }}-dataservice-config
+      {{- if not .Values.etcd.enabled }}
+        - name: etcd-certs
+          secret:
+            secretName: {{ template "bk-hcm.etcdSecretName" . }}
+      {{- end }}

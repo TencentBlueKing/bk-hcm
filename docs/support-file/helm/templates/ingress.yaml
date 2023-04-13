@@ -1,0 +1,102 @@
+{{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.shareDomainEnable }}
+apiVersion: {{ include "common.capabilities.ingress.apiVersion" . }}
+kind: Ingress
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+  annotations:
+    {{- if .Values.ingress.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.ingress.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    {{- if .Values.ingress.webserver.enabled }}
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      rewrite ^/static/(.*)$ /web/static/$1 last;
+      rewrite ^/api/(.*)$ /web/api/$1 last;
+    {{- end }}
+spec:
+  defaultBackend:
+    {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-webserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.webserver.service.ports )) | int) "context" $) | nindent 4 }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          {{- if .Values.ingress.webserver.enabled }}
+          - path: "/web(/|$)(.*)"
+            {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
+            pathType: ImplementationSpecific
+            {{- end }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-webserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.webserver.service.ports )) | int) "context" $) | nindent 14 }}
+          {{- end }}
+          {{- if .Values.ingress.authserver.enabled }}
+          - path: "/auth(/|$)(.*)"
+            {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
+            pathType: ImplementationSpecific
+            {{- end }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-authserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.authserver.service.ports )) | int) "context" $) | nindent 14 }}
+          {{- end }}
+          {{- if .Values.ingress.apiserver.enabled }}
+          - path: "/apigw(/|$)(.*)"
+            {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
+            pathType: ImplementationSpecific
+            {{- end }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-apiserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.apiserver.service.ports )) | int) "context" $) | nindent 14 }}
+          {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{ toYaml .Values.ingress.tls | indent 4 }}
+  {{- end -}}
+{{- else }}
+---
+apiVersion: {{ include "common.capabilities.ingress.apiVersion" . }}
+kind: Ingress
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+  annotations:
+     {{- include "common.tplvalues.render" ( dict "value" .Values.ingress.annotations "context" $ ) | nindent 4 }}
+spec:
+  rules:
+  {{- if .Values.ingress.webserver.enabled }}
+    - host: {{ .Values.ingress.webserver.host }}
+      http:
+        paths:
+          - backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-webserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.webserver.service.ports )) | int) "context" $) | nindent 14 }}
+            path: /
+            {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
+            pathType: ImplementationSpecific
+            {{- end }}
+  {{- end }}
+  {{- if .Values.ingress.authserver.enabled }}
+    - host: {{ .Values.ingress.authserver.host }}
+      http:
+        paths:
+          - backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-authserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.authserver.service.ports )) | int) "context" $) | nindent 14 }}
+            path: /
+            {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
+            pathType: ImplementationSpecific
+            {{- end }}
+  {{- end }}
+  {{- if .Values.ingress.apiserver.enabled }}
+    - host: {{ .Values.ingress.apiserver.host }}
+      http:
+        paths:
+          - backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-apiserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.apiserver.service.ports )) | int) "context" $) | nindent 14 }}
+            path: /
+            {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
+            pathType: ImplementationSpecific
+            {{- end }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{ toYaml .Values.ingress.tls | indent 4 }}
+  {{- end -}}
+{{- end }}
+{{- end }}
+
+
+

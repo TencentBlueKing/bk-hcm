@@ -1,0 +1,14 @@
+{{- if .Values.migration.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}-migrate-dbconfig
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+data:
+  dbconfig.yaml: |
+    production:
+        dialect: mysql
+        datasource: ${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:${MYSQL_PORT})/${MYSQL_NAME}?parseTime=true
+        dir: /data/hcm/sql
+{{- end }}

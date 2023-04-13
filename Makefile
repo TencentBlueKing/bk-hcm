@@ -46,6 +46,14 @@ package: pre ui api ver
 	@cd ${PRO_DIR}/cmd && make package
 	@echo -e "\e[34;1mPackage All Success!\n\033[0m"
 
+docker: pre ui ver
+	@echo -e "\e[34;1mMake Dockering...\n\033[0m"
+	@cp -rf ${PRO_DIR}/docs/support-file/docker/* ${OUTPUT_DIR}/
+	@mv ${OUTPUT_DIR}/front ${OUTPUT_DIR}/bk-hcm-webserver/
+	@cp -rf ${PRO_DIR}/scripts/sql ${OUTPUT_DIR}/bk-hcm-dataservice/
+	@cd ${PRO_DIR}/cmd && make docker
+	@echo -e "\e[34;1mMake Docker All Success!\n\033[0m"
+
 ui: pre
 	@echo -e "\e[34;1mBuilding Front...\033[0m"
 	@cd ${PRO_DIR}/front && npm i && npm run build

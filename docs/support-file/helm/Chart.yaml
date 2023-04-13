@@ -1,0 +1,19 @@
+name: bk-hcm
+apiVersion: v2
+description: A full stack chart for HCM Enterprise products.
+type: application
+version: 1.0.4
+appVersion: 1.0.3
+
+dependencies:
+  - name: common
+    repository: https://charts.bitnami.com/bitnami
+    version: 1.x.x
+  - name: mariadb
+    repository: https://charts.bitnami.com/bitnami
+    version: 11.0.x
+    condition: mariadb.enabled
+  - name: etcd
+    repository: https://charts.bitnami.com/bitnami
+    version: 8.4.x
+    condition: etcd.enabled

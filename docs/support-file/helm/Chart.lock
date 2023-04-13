@@ -1,0 +1,12 @@
+dependencies:
+- name: common
+  repository: https://charts.bitnami.com/bitnami
+  version: 1.17.1
+- name: mariadb
+  repository: https://charts.bitnami.com/bitnami
+  version: 11.0.14
+- name: etcd
+  repository: https://charts.bitnami.com/bitnami
+  version: 8.4.5
+digest: sha256:44988e0e01bcae0cbd2250e0d6f7632f93dcd3e4ff5ed9e39a41466b2ed87708
+generated: "2023-03-01T22:29:52.625104247+08:00"
