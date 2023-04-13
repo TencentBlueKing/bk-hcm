@@ -24,6 +24,7 @@ import (
 
 	protocloud "hcm/pkg/api/data-service/cloud"
 	protodisk "hcm/pkg/api/data-service/cloud/disk"
+	protoni "hcm/pkg/api/data-service/cloud/network-interface"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
 )
@@ -92,13 +93,12 @@ func (a *ApplicationOfCreateAzureCvm) assignToBiz(cloudCvmIDs []string) ([]strin
 		return cvmIDs, err
 	}
 
-	// 主机关联资源分配给业务，目前只有硬盘是一同创建出来的
+	// 主机关联资源硬盘分配给业务
 	diskIDs, err := a.ListDiskIDByCvm(cvmIDs)
 	if err != nil {
 		return cvmIDs, err
 	}
 	if len(diskIDs) > 0 {
-		// 硬盘分配给业务
 		_, err = a.Client.DataService().Global.BatchUpdateDisk(
 			a.Cts.Kit.Ctx,
 			a.Cts.Kit.Header(),
@@ -111,5 +111,25 @@ func (a *ApplicationOfCreateAzureCvm) assignToBiz(cloudCvmIDs []string) ([]strin
 			return cvmIDs, err
 		}
 	}
+
+	// 主机关联资源网络接口分配给业务
+	niIDs, err := a.ListNIIDByCvm(cvmIDs)
+	if err != nil {
+		return cvmIDs, err
+	}
+	if len(niIDs) > 0 {
+		err = a.Client.DataService().Global.NetworkInterface.BatchUpdateNetworkInterfaceCommonInfo(
+			a.Cts.Kit.Ctx,
+			a.Cts.Kit.Header(),
+			&protoni.NetworkInterfaceCommonInfoBatchUpdateReq{
+				IDs:     niIDs,
+				BkBizID: int64(req.BkBizID),
+			},
+		)
+		if err != nil {
+			return cvmIDs, err
+		}
+	}
+
 	return cvmIDs, nil
 }
