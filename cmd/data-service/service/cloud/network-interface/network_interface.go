@@ -314,6 +314,7 @@ func (svc *NetworkInterfaceSvc) BatchUpdateNetworkInterfaceCommonInfo(cts *rest.
 	updateFilter := tools.ContainersExpression("id", req.IDs)
 	updateFiled := &tableni.NetworkInterfaceTable{
 		BkBizID: req.BkBizID,
+		Reviser: cts.Kit.User,
 	}
 	if err := svc.dao.NetworkInterface().Update(cts.Kit, updateFilter, updateFiled); err != nil {
 		logs.Errorf("batch update network interface common info failed, req: %+v, err: %v, rid: %s",
