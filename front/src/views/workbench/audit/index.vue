@@ -41,7 +41,7 @@ const todayStart = dayjs(new Date()).format('YYYY-MM-DD 00:00:00');
 const todayEnd = dayjs(new Date()).format('YYYY-MM-DD 23:59:59');
 const defaultFilter = () => ({
   bk_biz_id: null as number,
-  account_id: '',
+  account_id: [] as any,
   res_type: 'account',
   action: '',
   created_at: [todayStart, todayEnd],
@@ -80,7 +80,6 @@ const {
 } = useList({ filter, filterOptions });
 
 const isBizType = computed(() => filterOptions.auditType === 'biz');
-const hasBizAuth = ref(true);
 
 const getBizName = (id: number) => {
   return businessSelectorComp?.value?.businessList?.find(item => item.id === id)?.name ?? '--';
@@ -251,6 +250,7 @@ const {
               v-model="filter.bk_biz_id"
               :authed="isBizType"
               :auto-select="true"
+              :is-audit="true"
               :clearable="false"
               ref="businessSelectorComp"
             />
@@ -263,6 +263,7 @@ const {
               v-model="filter.account_id"
               :biz-id="filter.bk_biz_id"
               multiple-mode="tag"
+              :type="'resource'"
               filterable
               multiple
               allow-create />

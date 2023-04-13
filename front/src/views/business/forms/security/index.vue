@@ -8,6 +8,7 @@ import {
 } from 'bkui-vue';
 import {
   ref,
+  watch,
 } from 'vue';
 import FormSelect from '@/views/business/components/form-select.vue';
 import ResourceGroup from '@/components/resource-group/index.vue';
@@ -21,10 +22,11 @@ const type = ref('tcloud');
 const formFilter = ref<any>({});
 const cloudVpcId = ref('');
 const submitLoading = ref(false);
+const filter = ref<any>({ filter: { op: 'and', rules: [{ field: 'vendor', op: 'eq', value: 'aws' }] } });
+
 const useBusiness = useBusinessStore();
 const emit = defineEmits(['cancel', 'success']);
 const handleFormFilter = (value: BusinessFormFilter) => {
-  console.log('value', value);
   formFilter.value = { ...value };
   type.value = value.vendor;
 };
@@ -75,10 +77,17 @@ const submit = async () => {
   }
 };
 
+watch(() => formFilter.value.region, (val) => {
+  console.log('val', val);
+  if (val) {
+    filter.value.filter.rules = [{ field: 'vendor', op: 'eq', value: 'aws' }, { field: 'region', op: 'eq', value: val }];
+  }
+});
+
 const {
   datas,
   isLoading,
-} = useQueryList({ filter: { op: 'and', rules: [{ field: 'vendor', op: 'eq', value: 'aws' }] } }, 'vpcs');  // 只查aws的vpcs
+} = useQueryList(filter.value, 'vpcs');  // 只查aws的vpcs
 </script>
 
 <template>
@@ -113,7 +122,7 @@ const {
             v-for="(item, index) in datas"
             :key="index"
             :value="item.cloud_id"
-            :label="item.name"
+            :label="`${item.cloud_id}（${item.name || '--'}）`"
           />
         </bk-select>
       </bk-form-item>

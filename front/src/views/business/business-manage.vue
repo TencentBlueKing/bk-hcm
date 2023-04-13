@@ -2,7 +2,7 @@
 import {
   ref,
   computed,
-  watch,
+  provide,
 } from 'vue';
 
 import HostManage from '@/views/resource/resource-manage/children/manage/host-manage.vue';
@@ -16,6 +16,8 @@ import ImageManage from '@/views/resource/resource-manage/children/manage/image-
 import NetworkInterfaceManage from '@/views/resource/resource-manage/children/manage/network-interface-manage.vue';
 import recyclebinManage from '@/views/resource/recyclebin-manager/recyclebin-manager.vue';
 import { useVerify } from '@/hooks';
+import useAdd from '@/views/resource/resource-manage/hooks/use-add';
+import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 // forms
 import EipForm from './forms/eip/index.vue';
 import subnetForm from './forms/subnet/index.vue';
@@ -29,14 +31,20 @@ import {
 import { useAccountStore } from '@/store/account';
 
 const isShowSideSlider = ref(false);
+const isShowGcpAdd = ref(false);
 const componentRef = ref();
-const accountListLoading = ref(true);
-console.log('accountListLoading', accountListLoading.value);
+const securityType = ref('group');
 
 // use hooks
 const route = useRoute();
 const router = useRouter();
 const accountStore = useAccountStore();
+
+const gcpTitle = ref<string>('新增');
+const isAdd = ref(true);
+const isLoading = ref(false);
+
+provide('securityType', securityType);    // 将数据传入孙组件
 
 // 组件map
 const componentMap = {
@@ -91,7 +99,12 @@ const handleAdd = () => {
       path: '/service/service-apply/vpc',
     });
   } else {
-    isShowSideSlider.value = true;
+    if (securityType.value === 'gcp') {
+      isShowGcpAdd.value = true;
+      console.log('isShowGcpAdd.value', isShowGcpAdd.value);
+    } else {
+      isShowSideSlider.value = true;
+    }
   }
 };
 
@@ -105,6 +118,30 @@ const handleSuccess = () => {
   componentRef.value.fetchComponentsData();
 };
 
+const handleSecrityType = (val: string) => {
+  securityType.value = val;
+  console.log(' securityType.value', securityType.value);
+};
+
+// 新增修改防火墙规则
+const submit = async (data: any) => {
+  const fetchType = 'vendors/gcp/firewalls/rules/create';
+  const {
+    addData,
+    updateData,
+  } = useAdd(
+    fetchType,
+    data,
+    data?.id,
+  );
+  if (isAdd.value) {   // 新增
+    addData();
+  } else {
+    await updateData();
+  }
+  isLoading.value = false;
+};
+
 
 // 权限hook
 const {
@@ -115,39 +152,14 @@ const {
   permissionParams,
   authVerifyData,
 } = useVerify();
-
-const getBizsAccountList = async (biz: string | number) => {
-  accountListLoading.value = true;
-  try {
-    const params = {
-      account_type: 'resource',
-    };
-    const res = await accountStore.getAccountList({ params }, biz);
-    accountStore.updateAccountList(res?.data); // 账号数据   用于筛选
-    accountListLoading.value = false;
-  } catch (error) {
-
-  }
-};
-
-watch(
-  () => accountStore.bizs,
-  (val) => {
-    if (val) {
-      getBizsAccountList(val);
-    }
-  },
-  { immediate: true },
-);
-
 </script>
 
 <template>
   <div>
     <section class="business-manage-wrapper">
-      <bk-loading :loading="!accountStore.bizs && accountListLoading">
+      <bk-loading :loading="!accountStore.bizs">
         <component
-          v-if="accountStore.bizs && !accountListLoading"
+          v-if="accountStore.bizs"
           ref="componentRef"
           :is="renderComponent"
           :filter="filter"
@@ -156,11 +168,13 @@ watch(
           @auth="(val: string) => {
             handleAuth(val)
           }"
+          @handleSecrityType="handleSecrityType"
         >
           <span @click="handleAuth('biz_iaas_resource_create')">
             <bk-button
               theme="primary" class="new-button"
-              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create" @click="handleAdd">
+              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create
+                || securityType === 'gcp'" @click="handleAdd">
               {{renderComponent === DriveManage ||
                 renderComponent === HostManage ||
                 renderComponent === VpcManage ? '申请' : '新增'}}
@@ -176,7 +190,9 @@ watch(
       quick-close
     >
       <template #default>
-        <component :is="renderForm" :filter="filter" @cancel="handleCancel" @success="handleSuccess"></component>
+        <component
+          :is="renderForm" :filter="filter"
+          @cancel="handleCancel" @success="handleSuccess"></component>
       </template>
     </bk-sideslider>
     <permission-dialog
@@ -185,6 +201,14 @@ watch(
       @cancel="handlePermissionDialog"
       @confirm="handlePermissionConfirm"
     ></permission-dialog>
+
+    <gcp-add
+      v-model:is-show="isShowGcpAdd"
+      :gcp-title="gcpTitle"
+      :is-add="isAdd"
+      :loading="isLoading"
+      :detail="{}"
+      @submit="submit"></gcp-add>
   </div>
 </template>
 

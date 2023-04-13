@@ -98,6 +98,14 @@ export const useAccountStore = defineStore({
       return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/authorized/bizs/list`);
     },
     /**
+     * @description: 获取审计下有权限的业务列表
+     * @param {any}
+     * @return {*}
+     */
+    async getBizAuditListWithAuth() {
+      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/authorized/audit/bizs/list`);
+    },
+    /**
      * @description: 获取部门信息
      * @param {any}
      * @return {*}

@@ -61,7 +61,7 @@ const fetchUrl = ref<string>('security_groups/list');
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
 
-const emit = defineEmits(['auth']);
+const emit = defineEmits(['auth', 'handleSecrityType']);
 
 const state = reactive<any>({
   datas: [],
@@ -134,6 +134,7 @@ const handleSwtichType = async (type: string) => {
     state.params.fetchUrl = 'security_groups';
     state.params.columns = 'group';
   }
+  emit('handleSecrityType', type);
 };
 
 // 抛出请求数据的方法，新增成功使用

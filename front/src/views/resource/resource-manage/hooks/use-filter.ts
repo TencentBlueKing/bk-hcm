@@ -63,7 +63,7 @@ export default (props: PropsType) => {
           p.push({
             field: v.id,
             op: isAccurate.value ? 'eq' : 'cs',
-            value: v.values[0].id,
+            value: v.id === 'bk_cloud_id' ? Number(v.values[0].id) : v.values[0].id,
           });
         }
         return p;

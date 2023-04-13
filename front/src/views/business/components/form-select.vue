@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { reactive, watch, ref } from 'vue';
+import { reactive, watch, ref, inject } from 'vue';
 import {
   useI18n,
 } from 'vue-i18n';
@@ -26,6 +26,10 @@ const cloudRegionsList = ref([]);
 const accountLoading = ref(false);
 const cloudRegionsLoading = ref(false);
 const cloudAreaPage = ref(0);
+
+const securityType: any = inject('securityType');
+
+
 const state = reactive<{filter: BusinessFormFilter}>({
   filter: {
     vendor: '',
@@ -119,6 +123,11 @@ const getAccountList = async () => {
       },
     }, accountStore.bizs);
     accountList.value = res?.data;
+    if (securityType.value && securityType.value === 'gcp') {
+      accountList.value = accountList.value.filter(e => e.vendor === 'gcp');
+    } else {
+      accountList.value = accountList.value.filter(e => e.vendor !== 'gcp');
+    }
   } catch (error) {
     console.log(error);
   } finally {

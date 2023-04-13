@@ -8,6 +8,7 @@ const props = defineProps(({
   modelValue: Number as PropType<number>,
   authed: Boolean  as PropType<boolean>,
   autoSelect: Boolean as PropType<boolean>,
+  isAudit: Boolean as PropType<boolean>,
 }));
 const emit = defineEmits(['update:modelValue']);
 
@@ -17,10 +18,12 @@ const loading = ref(null);
 
 watchEffect(async () => {
   loading.value = true;
+  let req = props.authed ? accountStore.getBizListWithAuth : accountStore.getBizList;
+  if (props.isAudit) {
+    req = accountStore.getBizAuditListWithAuth;
+  }
 
-  const req = props.authed ? accountStore.getBizListWithAuth : accountStore.getBizList;
   const res = await req();
-
   loading.value = false;
   businessList.value = res?.data;
 });

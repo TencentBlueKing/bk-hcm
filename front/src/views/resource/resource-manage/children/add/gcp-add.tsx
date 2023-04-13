@@ -276,11 +276,11 @@ export default defineComponent({
         state.projectModel.target_service_accounts = state.projectModel.target_service_accounts || [];
         state.projectModel.target_tags = state.projectModel.target_tags || [];
         // console.log('state.projectModel', state.projectModel);
-        state.operate = state.projectModel.allowed.length ? 'allowed' : 'denied';
+        state.operate = state?.projectModel?.allowed?.length ? 'allowed' : 'denied';
         // eslint-disable-next-line max-len
         gcpPorts.value = state.projectModel[state.operate].find((e: any) => e.protocol === state.protocol)?.port || [];
-        state.target = GCP_TARGET_LIST.find((e: any) => state.projectModel[e.id].length)?.id || 'destination_ranges';
-        state.source = GCP_SOURCE_LIST.find((e: any) => state.projectModel[e.id].length)?.id;
+        state.target = GCP_TARGET_LIST.find((e: any) => state.projectModel[e.id]?.length)?.id || 'destination_ranges';
+        state.source = GCP_SOURCE_LIST.find((e: any) => state.projectModel[e.id]?.length)?.id;
       }
     });
 
@@ -301,7 +301,7 @@ export default defineComponent({
     });
 
     watch(() => state.operate, (newValue, oldValue) => {
-      if (state.projectModel[oldValue].length) {
+      if (state.projectModel[oldValue]?.length) {
         state.projectModel[newValue] = state.projectModel[oldValue];
         state.projectModel[oldValue] = [];
       }
