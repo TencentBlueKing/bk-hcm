@@ -249,8 +249,8 @@ func (svc *routeTableSvc) ListHuaWeiRoute(cts *rest.Contexts) (interface{}, erro
 			Revision: &core.Revision{
 				Creator:   route.Creator,
 				Reviser:   route.Reviser,
-				CreatedAt: route.CreatedAt,
-				UpdatedAt: route.UpdatedAt,
+				CreatedAt: route.CreatedAt.String(),
+				UpdatedAt: route.UpdatedAt.String(),
 			},
 		})
 	}
@@ -307,8 +307,8 @@ func (svc *routeTableSvc) ListAllHuaWeiRoute(cts *rest.Contexts) (interface{}, e
 			Revision: &core.Revision{
 				Creator:   route.Creator,
 				Reviser:   route.Reviser,
-				CreatedAt: route.CreatedAt,
-				UpdatedAt: route.UpdatedAt,
+				CreatedAt: route.CreatedAt.String(),
+				UpdatedAt: route.UpdatedAt.String(),
 			},
 		})
 	}

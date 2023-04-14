@@ -19,10 +19,6 @@
 
 package cloud
 
-import (
-	"time"
-)
-
 // GcpFirewallRule define gcp firewall rule.
 type GcpFirewallRule struct {
 	ID                    string           `json:"id"`
@@ -49,8 +45,8 @@ type GcpFirewallRule struct {
 	SelfLink              string           `json:"self_link"`
 	Creator               string           `json:"creator"`
 	Reviser               string           `json:"reviser"`
-	CreatedAt             *time.Time       `json:"created_at"`
-	UpdatedAt             *time.Time       `json:"updated_at"`
+	CreatedAt             string           `json:"created_at"`
+	UpdatedAt             string           `json:"updated_at"`
 }
 
 // GcpProtocolSet define gcp protocol set.

@@ -277,7 +277,7 @@ func (g *securityGroup) deleteSecurityGroupRule(kt *kit.Kit, sgID string, delIDs
 }
 
 func (g *securityGroup) createSecurityGroupRule(kt *kit.Kit, sgID string, rules []corecloud.
-TCloudSecurityGroupRule) ([]string, error) {
+	TCloudSecurityGroupRule) ([]string, error) {
 
 	ruleCreates := make([]protocloud.TCloudSGRuleBatchCreate, 0, len(rules))
 	for _, rule := range rules {
@@ -315,7 +315,7 @@ TCloudSecurityGroupRule) ([]string, error) {
 }
 
 func (g *securityGroup) updateSecurityGroupRule(kt *kit.Kit, sgID string, updateRules map[string]*corecloud.
-TCloudSecurityGroupRule) error {
+	TCloudSecurityGroupRule) error {
 
 	rules := make([]protocloud.TCloudSGRuleBatchUpdate, 0, len(updateRules))
 	for id, rule := range updateRules {
@@ -354,7 +354,7 @@ TCloudSecurityGroupRule) error {
 }
 
 func convTCloudRule(policy *vpc.SecurityGroupPolicy, version string, opt *syncSecurityGroupRuleOption) *corecloud.
-TCloudSecurityGroupRule {
+	TCloudSecurityGroupRule {
 
 	spec := &corecloud.TCloudSecurityGroupRule{
 		CloudPolicyIndex:           *policy.PolicyIndex,
@@ -479,7 +479,7 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 }
 
 func (g *securityGroup) getTCloudSGRuleByID(cts *rest.Contexts, id string, sgID string) (*corecloud.
-TCloudSecurityGroupRule, error) {
+	TCloudSecurityGroupRule, error) {
 
 	listReq := &protocloud.TCloudSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),

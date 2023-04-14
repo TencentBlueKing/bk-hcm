@@ -114,7 +114,7 @@ func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
 			DiskID:    r.DiskID,
 			CvmID:     r.CvmID,
 			Creator:   r.Creator,
-			CreatedAt: r.CreatedAt,
+			CreatedAt: r.CreatedAt.String(),
 		}
 	}
 

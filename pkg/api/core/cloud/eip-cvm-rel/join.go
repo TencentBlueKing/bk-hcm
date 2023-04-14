@@ -20,14 +20,12 @@
 package eipcvmrel
 
 import (
-	"time"
-
 	"hcm/pkg/dal/table/cloud/eip"
 )
 
 // RelWithEip ...
 type RelWithEip struct {
 	eip.EipModel `json:",inline"`
-	RelCreator   *string    `json:"rel_creator"`
-	RelCreatedAt *time.Time `json:"rel_created_at"`
+	RelCreator   *string `json:"rel_creator"`
+	RelCreatedAt string  `json:"rel_created_at"`
 }

@@ -64,7 +64,7 @@ func (svc *sgCvmRelSvc) List(cts *rest.Contexts) (interface{}, error) {
 			CvmID:           one.CvmID,
 			SecurityGroupID: one.SecurityGroupID,
 			Creator:         one.Creator,
-			CreatedAt:       one.CreatedAt,
+			CreatedAt:       one.CreatedAt.String(),
 		})
 	}
 

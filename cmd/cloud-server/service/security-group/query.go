@@ -346,8 +346,6 @@ func (svc *securityGroupSvc) listSGByCvmIDForAzure(kt *kit.Kit, cvmID string) (i
 		sgs = append(sgs, corecloud.SGCvmRelWithBaseSecurityGroup{
 			BaseSecurityGroup: one,
 			CvmID:             cvmID,
-			RelCreator:        "",
-			RelCreatedAt:      nil,
 		})
 	}
 

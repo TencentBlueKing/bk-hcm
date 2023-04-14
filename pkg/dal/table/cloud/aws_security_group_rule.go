@@ -21,11 +21,11 @@ package cloud
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
 
@@ -76,8 +76,8 @@ type AwsSecurityGroupRuleTable struct {
 	Region                     string     `db:"region" json:"region" validate:"lte=20"`
 	Creator                    string     `db:"creator" json:"creator" validate:"lte=64"`
 	Reviser                    string     `db:"reviser" json:"reviser" validate:"lte=64"`
-	CreatedAt                  *time.Time `db:"created_at" json:"created_at" validate:"excluded_unless"`
-	UpdatedAt                  *time.Time `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
+	CreatedAt                  types.Time `db:"created_at" json:"created_at" validate:"excluded_unless"`
+	UpdatedAt                  types.Time `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return aws security group rule table name.

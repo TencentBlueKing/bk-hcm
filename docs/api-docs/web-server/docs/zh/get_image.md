@@ -53,8 +53,8 @@
 | type | string | 镜像类型 | 
 | creator | string | 创建者 |
 | reviser | string | 更新者 |
-| created_at | string | 创建时间 |
-| updated_at | string | 更新时间 | 
+| created_at | string | 创建时间，标准格式：2006-01-02T15:04:05Z |
+| updated_at | string | 更新时间，标准格式：2006-01-02T15:04:05Z | 
 | extension | PublicImageExtension[vendor] | 各云厂商的差异化字段| 
 
 #### PublicImageExtension[tcloud]

@@ -65,12 +65,12 @@ eip 列表
 | instance_type | string | 绑定实例的类型. 如果未返回该字段，表示未查询到绑定实例类型 |
 | creator | string | 创建者 |
 | reviser | string | 更新者 |
-| created_at | string | 创建时间 |
-| updated_at | string | 更新时间 |
+| created_at | string | 创建时间，标准格式：2006-01-02T15:04:05Z |
+| updated_at | string | 更新时间，标准格式：2006-01-02T15:04:05Z |
 | extension | EipExtension[vendor] | 各云厂商的差异化字段|
 | cvm_id | string | 主机 ID |
 | rel_creator | string | 绑定者 |
-| rel_created_at | string | 绑定时间 |
+| rel_created_at | string | 绑定时间，标准格式：2006-01-02T15:04:05Z |
 
 #### EipExtension[tcloud]
 

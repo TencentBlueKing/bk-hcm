@@ -21,7 +21,6 @@ package cloud
 
 import (
 	"fmt"
-	"time"
 
 	"hcm/pkg/api/core"
 	eipcvmrel "hcm/pkg/api/core/cloud/eip-cvm-rel"
@@ -82,11 +81,11 @@ type EipCvmRelListResult struct {
 
 // EipCvmRelResult ...
 type EipCvmRelResult struct {
-	ID        uint64     `json:"id,omitempty"`
-	EipID     string     `json:"eip_id,omitempty"`
-	CvmID     string     `json:"cvm_id,omitempty"`
-	Creator   string     `json:"creator,omitempty"`
-	CreatedAt *time.Time `json:"created_at,omitempty"`
+	ID        uint64 `json:"id,omitempty"`
+	EipID     string `json:"eip_id,omitempty"`
+	CvmID     string `json:"cvm_id,omitempty"`
+	Creator   string `json:"creator,omitempty"`
+	CreatedAt string `json:"created_at,omitempty"`
 }
 
 // EipCvmRelListResp ...
@@ -114,9 +113,9 @@ type EipCvmRelWithEipListResp struct {
 // EipWithCvmID ...
 type EipWithCvmID struct {
 	dataproto.EipResult `json:",inline"`
-	CvmID               string     `json:"cvm_id"`
-	RelCreator          string     `json:"rel_creator"`
-	RelCreatedAt        *time.Time `json:"rel_created_at"`
+	CvmID               string `json:"cvm_id"`
+	RelCreator          string `json:"rel_creator"`
+	RelCreatedAt        string `json:"rel_created_at"`
 }
 
 // EipCvmRelWithEipExtListReq ...
@@ -138,9 +137,9 @@ type EipCvmRelWithEipExtListResp[T dataproto.EipExtensionResult] struct {
 // EipExtWithCvmID ...
 type EipExtWithCvmID[T dataproto.EipExtensionResult] struct {
 	dataproto.EipExtResult[T] `json:",inline"`
-	CvmID                     string     `json:"cvm_id"`
-	RelCreator                string     `json:"rel_creator"`
-	RelCreatedAt              *time.Time `json:"rel_created_at"`
+	CvmID                     string `json:"cvm_id"`
+	RelCreator                string `json:"rel_creator"`
+	RelCreatedAt              string `json:"rel_created_at"`
 }
 
 // ListEipWithoutCvmReq ...

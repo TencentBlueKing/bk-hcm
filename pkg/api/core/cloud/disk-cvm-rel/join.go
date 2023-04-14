@@ -20,8 +20,6 @@
 package diskcvmrel
 
 import (
-	"time"
-
 	"hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/dal/table/cloud/disk"
 )
@@ -29,14 +27,14 @@ import (
 // RelWithCvm ...
 type RelWithCvm struct {
 	cvm.BaseCvm  `json:",inline"`
-	DiskID       *string    `json:"disk_id"`
-	RelCreator   *string    `json:"rel_creator"`
-	RelCreatedAt *time.Time `json:"rel_created_at"`
+	DiskID       *string `json:"disk_id"`
+	RelCreator   *string `json:"rel_creator"`
+	RelCreatedAt string  `json:"rel_created_at"`
 }
 
 // RelWithDisk ...
 type RelWithDisk struct {
 	disk.DiskModel `json:",inline"`
-	RelCreator     *string    `json:"rel_creator"`
-	RelCreatedAt   *time.Time `json:"rel_created_at"`
+	RelCreator     *string `json:"rel_creator"`
+	RelCreatedAt   string  `json:"rel_created_at"`
 }

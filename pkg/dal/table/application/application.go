@@ -21,7 +21,6 @@ package application
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -76,9 +75,9 @@ type ApplicationTable struct {
 	// Reviser 更新者
 	Reviser string `db:"reviser" json:"reviser" validate:"max=64"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at" json:"created_at" validate:"excluded_unless"`
+	CreatedAt types.Time `db:"created_at" json:"created_at" validate:"excluded_unless"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
+	UpdatedAt types.Time `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return application table name.

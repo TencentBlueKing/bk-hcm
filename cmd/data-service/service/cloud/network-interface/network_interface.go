@@ -577,8 +577,8 @@ func convertBaseNetworkInterface(dbDetail *tableni.NetworkInterfaceTable) *coren
 		Revision: &core.Revision{
 			Creator:   dbDetail.Creator,
 			Reviser:   dbDetail.Reviser,
-			CreatedAt: dbDetail.CreatedAt,
-			UpdatedAt: dbDetail.UpdatedAt,
+			CreatedAt: dbDetail.CreatedAt.String(),
+			UpdatedAt: dbDetail.UpdatedAt.String(),
 		},
 	}
 }
@@ -613,13 +613,13 @@ func convertBaseNetworkInterfaceAssociate(dbDetail *types.NetworkInterfaceWithCv
 			Revision: &core.Revision{
 				Creator:   dbDetail.Creator,
 				Reviser:   dbDetail.Reviser,
-				CreatedAt: dbDetail.CreatedAt,
-				UpdatedAt: dbDetail.UpdatedAt,
+				CreatedAt: dbDetail.CreatedAt.String(),
+				UpdatedAt: dbDetail.UpdatedAt.String(),
 			},
 		},
 		CvmID:        dbDetail.CvmID,
 		RelCreator:   dbDetail.RelCreator,
-		RelCreatedAt: dbDetail.RelCreatedAt,
+		RelCreatedAt: dbDetail.RelCreatedAt.String(),
 	}
 }
 

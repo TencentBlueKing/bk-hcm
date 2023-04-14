@@ -416,12 +416,12 @@ func batchUpdateDiskExt[T dataproto.DiskExtensionUpdateReq](cts *rest.Contexts,
 	_, err = dSvc.Set.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, diskReq := range *req {
 			updateData := &tablecloud.DiskModel{
-				Name:    diskReq.Name,
-				Region:  diskReq.Region,
-				BkBizID: int64(diskReq.BkBizID),
-				Status:  diskReq.Status,
+				Name:         diskReq.Name,
+				Region:       diskReq.Region,
+				BkBizID:      int64(diskReq.BkBizID),
+				Status:       diskReq.Status,
 				IsSystemDisk: diskReq.IsSystemDisk,
-				Memo:    diskReq.Memo,
+				Memo:         diskReq.Memo,
 			}
 
 			if diskReq.Extension != nil {

@@ -59,12 +59,12 @@ func (svc *sgCvmRelSvc) ListWithSecurityGroup(cts *rest.Contexts) (interface{}, 
 				BkBizID:   one.BkBizID,
 				Creator:   one.Creator,
 				Reviser:   one.Reviser,
-				CreatedAt: one.CreatedAt,
-				UpdatedAt: one.UpdatedAt,
+				CreatedAt: one.CreatedAt.String(),
+				UpdatedAt: one.UpdatedAt.String(),
 			},
 			CvmID:        one.CvmID,
 			RelCreator:   one.RelCreator,
-			RelCreatedAt: one.RelCreatedAt,
+			RelCreatedAt: one.RelCreatedAt.String(),
 		})
 	}
 

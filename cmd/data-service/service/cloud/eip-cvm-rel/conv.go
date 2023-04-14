@@ -64,13 +64,13 @@ func toProtoEipExtWithCvmID[T dataproto.EipExtensionResult](
 			PrivateIp: d.PrivateIp,
 			Creator:   d.Creator,
 			Reviser:   d.Reviser,
-			CreatedAt: d.CreatedAt,
-			UpdatedAt: d.UpdatedAt,
+			CreatedAt: d.CreatedAt.String(),
+			UpdatedAt: d.UpdatedAt.String(),
 			Extension: extension,
 		},
 		CvmID:        d.CvmID,
 		RelCreator:   d.RelCreator,
-		RelCreatedAt: d.RelCreatedAt,
+		RelCreatedAt: d.RelCreatedAt.String(),
 	}, nil
 }
 
@@ -89,11 +89,11 @@ func toProtoEipWithCvmID(d *reltypes.EipWithCvmID) *cloud.EipWithCvmID {
 			PrivateIp: d.PrivateIp,
 			Creator:   d.Creator,
 			Reviser:   d.Reviser,
-			CreatedAt: d.CreatedAt,
-			UpdatedAt: d.UpdatedAt,
+			CreatedAt: d.CreatedAt.String(),
+			UpdatedAt: d.UpdatedAt.String(),
 		},
 		CvmID:        d.CvmID,
 		RelCreator:   d.RelCreator,
-		RelCreatedAt: d.RelCreatedAt,
+		RelCreatedAt: d.RelCreatedAt.String(),
 	}
 }

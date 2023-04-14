@@ -21,11 +21,11 @@ package networkinterfacecvmrel
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
 
@@ -52,7 +52,7 @@ type NetworkInterfaceCvmRelTable struct {
 	// Creator 创建者
 	Creator string `db:"creator" validate:"required,lte=64" json:"creator"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
 }
 
 // TableName return azure network interface and cvm rel table name.

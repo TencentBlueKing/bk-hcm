@@ -26,14 +26,14 @@ import (
 // Client is a azure api client
 type Client struct {
 	*restClient
-	Account       *AccountClient
-	SecurityGroup *SecurityGroupClient
-	Vpc           *VpcClient
-	Subnet        *SubnetClient
-	ResourceGroup *ResourceGroupClient
-	Region        *RegionClient
-	Cvm           *CvmClient
-	RouteTable    *RouteTableClient
+	Account          *AccountClient
+	SecurityGroup    *SecurityGroupClient
+	Vpc              *VpcClient
+	Subnet           *SubnetClient
+	ResourceGroup    *ResourceGroupClient
+	Region           *RegionClient
+	Cvm              *CvmClient
+	RouteTable       *RouteTableClient
 	NetworkInterface *NetworkInterfaceClient
 }
 
@@ -44,15 +44,15 @@ type restClient struct {
 // NewClient create a new azure api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		restClient:    &restClient{client: client},
-		Account:       NewAccountClient(client),
-		SecurityGroup: NewCloudSecurityGroupClient(client),
-		Vpc:           NewVpcClient(client),
-		Subnet:        NewSubnetClient(client),
-		ResourceGroup: NewResourceGroupClient(client),
-		Region:        NewRegionClient(client),
-		Cvm:           NewCloudCvmClient(client),
-		RouteTable:    NewRouteTableClient(client),
+		restClient:       &restClient{client: client},
+		Account:          NewAccountClient(client),
+		SecurityGroup:    NewCloudSecurityGroupClient(client),
+		Vpc:              NewVpcClient(client),
+		Subnet:           NewSubnetClient(client),
+		ResourceGroup:    NewResourceGroupClient(client),
+		Region:           NewRegionClient(client),
+		Cvm:              NewCloudCvmClient(client),
+		RouteTable:       NewRouteTableClient(client),
 		NetworkInterface: NewNetworkInterfaceClient(client),
 	}
 }

@@ -19,8 +19,6 @@
 
 package disk
 
-import "time"
-
 // AwsDiskExtensionCreateReq ...
 type AwsDiskExtensionCreateReq struct {
 	Attachment []*AwsDiskAttachment `json:"attachment,omitempty"`
@@ -36,7 +34,7 @@ type AwsDiskExtensionResult struct {
 // AwsDiskAttachment ...
 type AwsDiskAttachment struct {
 	// The time stamp when the attachment initiated.
-	AttachTime *time.Time `json:"attach_time"`
+	AttachTime string `json:"attach_time"`
 	// Indicates whether the EBS volume is deleted on instance termination.
 	DeleteOnTermination *bool `json:"delete_on_termination,omitempty"`
 	// The device name.

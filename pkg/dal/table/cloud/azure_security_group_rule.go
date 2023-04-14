@@ -21,7 +21,6 @@ package cloud
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -94,8 +93,8 @@ type AzureSecurityGroupRuleTable struct {
 	Access                              string            `db:"access" validate:"lte=20" json:"access"`
 	Creator                             string            `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser                             string            `db:"reviser" validate:"lte=64" json:"reviser"`
-	CreatedAt                           *time.Time        `db:"created_at" validate:"excluded_unless" json:"created_at"`
-	UpdatedAt                           *time.Time        `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	CreatedAt                           types.Time        `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt                           types.Time        `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return azure security group rule table name.

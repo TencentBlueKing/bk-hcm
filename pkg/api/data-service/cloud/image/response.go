@@ -20,8 +20,6 @@
 package image
 
 import (
-	"time"
-
 	"hcm/pkg/rest"
 )
 
@@ -39,19 +37,19 @@ type ImageExtListResult[T ImageExtensionResult] struct {
 
 // ImageExtResult ...
 type ImageExtResult[T ImageExtensionResult] struct {
-	ID           string     `json:"id,omitempty"`
-	Vendor       string     `json:"vendor,omitempty"`
-	CloudID      string     `json:"cloud_id,omitempty"`
-	Name         string     `json:"name,omitempty"`
-	Architecture string     `json:"architecture,omitempty"`
-	Platform     string     `json:"platform,omitempty"`
-	State        string     `json:"state,omitempty"`
-	Type         string     `json:"type,omitempty"`
-	Extension    *T         `json:"extension,omitempty"`
-	Creator      string     `json:"creator,omitempty"`
-	Reviser      string     `json:"reviser,omitempty"`
-	CreatedAt    *time.Time `json:"created_at,omitempty"`
-	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
+	ID           string `json:"id,omitempty"`
+	Vendor       string `json:"vendor,omitempty"`
+	CloudID      string `json:"cloud_id,omitempty"`
+	Name         string `json:"name,omitempty"`
+	Architecture string `json:"architecture,omitempty"`
+	Platform     string `json:"platform,omitempty"`
+	State        string `json:"state,omitempty"`
+	Type         string `json:"type,omitempty"`
+	Extension    *T     `json:"extension,omitempty"`
+	Creator      string `json:"creator,omitempty"`
+	Reviser      string `json:"reviser,omitempty"`
+	CreatedAt    string `json:"created_at,omitempty"`
+	UpdatedAt    string `json:"updated_at,omitempty"`
 }
 
 // ImageExtensionResult ...
@@ -67,18 +65,18 @@ type ImageListResp struct {
 
 // ImageResult 查询公共镜像列表时的单个公共镜像数据
 type ImageResult struct {
-	ID           string     `json:"id,omitempty"`
-	Vendor       string     `json:"vendor,omitempty"`
-	CloudID      string     `json:"cloud_id,omitempty"`
-	Name         string     `json:"name,omitempty"`
-	Architecture string     `json:"architecture,omitempty"`
-	Platform     string     `json:"platform,omitempty"`
-	State        string     `json:"state,omitempty"`
-	Type         string     `json:"type,omitempty"`
-	Creator      string     `json:"creator,omitempty"`
-	Reviser      string     `json:"reviser,omitempty"`
-	CreatedAt    *time.Time `json:"created_at,omitempty"`
-	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
+	ID           string `json:"id,omitempty"`
+	Vendor       string `json:"vendor,omitempty"`
+	CloudID      string `json:"cloud_id,omitempty"`
+	Name         string `json:"name,omitempty"`
+	Architecture string `json:"architecture,omitempty"`
+	Platform     string `json:"platform,omitempty"`
+	State        string `json:"state,omitempty"`
+	Type         string `json:"type,omitempty"`
+	Creator      string `json:"creator,omitempty"`
+	Reviser      string `json:"reviser,omitempty"`
+	CreatedAt    string `json:"created_at,omitempty"`
+	UpdatedAt    string `json:"updated_at,omitempty"`
 }
 
 // ImageListResult ...

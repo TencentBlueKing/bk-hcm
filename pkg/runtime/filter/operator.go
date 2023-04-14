@@ -24,9 +24,17 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/tools/assert"
 )
+
+// timeFields 因为mysql在8.0.19之后才支持了带时区的时间字符串查询能力，所以，需要将带时区的时间字符串转成时UTC时间去查询。
+var timeFields = map[string]struct{}{
+	"created_at": {},
+	"updated_at": {},
+}
 
 var opFactory map[OpFactory]Operator
 
@@ -230,9 +238,35 @@ func (eo EqualOp) SQLExprAndValue(field string, value interface{}) (string, map[
 		return "", nil, errors.New("invalid value field")
 	}
 
+	var err error
+	value, err = judgeAndParseTime(field, value)
+	if err != nil {
+		return "", nil, err
+	}
+
 	placeholder := fieldPlaceholderName(field)
 	return fmt.Sprintf(`%s = %s%s`, field, SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
+}
+
+func judgeAndParseTime(field string, value interface{}) (interface{}, error) {
+	// 如果不是时间字段，不需要处理
+	if _, ok := timeFields[field]; !ok {
+		return value, nil
+	}
+
+	timeStr, ok := value.(string)
+	if !ok {
+		return nil, fmt.Errorf("%s's value not is string", timeFields[field])
+	}
+
+	location, err := time.ParseInLocation(constant.TimeStdFormat, timeStr, time.Local)
+	if err != nil {
+		return nil, fmt.Errorf("parse %s to location time failed, err: %v", timeStr, err)
+	}
+	value = location
+
+	return value, nil
 }
 
 // NotEqualOp is not equal operator type
@@ -260,6 +294,12 @@ func (ne NotEqualOp) SQLExprAndValue(field string, value interface{}) (string, m
 
 	if !assert.IsBasicValue(value) {
 		return "", nil, errors.New("invalid ne operator's value field")
+	}
+
+	var err error
+	value, err = judgeAndParseTime(field, value)
+	if err != nil {
+		return "", nil, err
 	}
 
 	placeholder := fieldPlaceholderName(field)
@@ -290,6 +330,12 @@ func (gt GreaterThanOp) SQLExprAndValue(field string, value interface{}) (string
 		return "", nil, errors.New("field is empty")
 	}
 
+	var err error
+	value, err = judgeAndParseTime(field, value)
+	if err != nil {
+		return "", nil, err
+	}
+
 	placeholder := fieldPlaceholderName(field)
 	return fmt.Sprintf(`%s > %s%s`, field, SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
@@ -316,6 +362,12 @@ func (gte GreaterThanEqualOp) ValidateValue(v interface{}, opt *ExprOption) erro
 func (gte GreaterThanEqualOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{}, error) {
 	if len(field) == 0 {
 		return "", nil, errors.New("field is empty")
+	}
+
+	var err error
+	value, err = judgeAndParseTime(field, value)
+	if err != nil {
+		return "", nil, err
 	}
 
 	placeholder := fieldPlaceholderName(field)
@@ -346,6 +398,12 @@ func (lt LessThanOp) SQLExprAndValue(field string, value interface{}) (string, m
 		return "", nil, errors.New("field is empty")
 	}
 
+	var err error
+	value, err = judgeAndParseTime(field, value)
+	if err != nil {
+		return "", nil, err
+	}
+
 	placeholder := fieldPlaceholderName(field)
 	return fmt.Sprintf(`%s < %s%s`, field, SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
@@ -372,6 +430,12 @@ func (lte LessThanEqualOp) ValidateValue(v interface{}, opt *ExprOption) error {
 func (lte LessThanEqualOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{}, error) {
 	if len(field) == 0 {
 		return "", nil, errors.New("field is empty")
+	}
+
+	var err error
+	value, err = judgeAndParseTime(field, value)
+	if err != nil {
+		return "", nil, err
 	}
 
 	placeholder := fieldPlaceholderName(field)

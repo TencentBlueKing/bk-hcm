@@ -161,8 +161,8 @@ func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{},
 			AccountID: one.AccountID,
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
-			CreatedAt: one.CreatedAt,
-			UpdatedAt: one.UpdatedAt,
+			CreatedAt: one.CreatedAt.String(),
+			UpdatedAt: one.UpdatedAt.String(),
 		})
 	}
 
@@ -260,8 +260,8 @@ func convTableToBaseSG(sgTable *tablecloud.SecurityGroupTable) *corecloud.BaseSe
 		AccountID: sgTable.AccountID,
 		Creator:   sgTable.Creator,
 		Reviser:   sgTable.Reviser,
-		CreatedAt: sgTable.CreatedAt,
-		UpdatedAt: sgTable.UpdatedAt,
+		CreatedAt: sgTable.CreatedAt.String(),
+		UpdatedAt: sgTable.UpdatedAt.String(),
 	}
 }
 

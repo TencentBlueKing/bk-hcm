@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -93,8 +92,8 @@ type GcpFirewallRuleTable struct {
 	SelfLink              string            `db:"self_link" validate:"lte=255" json:"self_link"`
 	Creator               string            `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser               string            `db:"reviser" validate:"lte=64" json:"reviser"`
-	CreatedAt             *time.Time        `db:"created_at" validate:"excluded_unless" json:"created_at"`
-	UpdatedAt             *time.Time        `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	CreatedAt             types.Time        `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt             types.Time        `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return gcp firewall rule table name.

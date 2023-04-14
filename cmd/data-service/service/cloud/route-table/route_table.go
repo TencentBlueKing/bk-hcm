@@ -354,8 +354,8 @@ func convertBaseRouteTable(dbRouteTable *tablecloud.RouteTableTable) *protocore.
 		Revision: &core.Revision{
 			Creator:   dbRouteTable.Creator,
 			Reviser:   dbRouteTable.Reviser,
-			CreatedAt: dbRouteTable.CreatedAt,
-			UpdatedAt: dbRouteTable.UpdatedAt,
+			CreatedAt: dbRouteTable.CreatedAt.String(),
+			UpdatedAt: dbRouteTable.UpdatedAt.String(),
 		},
 	}
 }

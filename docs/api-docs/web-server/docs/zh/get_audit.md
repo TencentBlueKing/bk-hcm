@@ -90,7 +90,7 @@
 | rid                     | string | 请求ID                                            |
 | app_code                | string | 应用代码                                            |
 | detail                  | object | 审计详情                                            |
-| created_at              | string | 创建时间                                            |
+| created_at              | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                            |
 
 #### detail
 

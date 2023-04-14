@@ -155,8 +155,8 @@ func convTableToBaseCvm(one *tablecvm.Table) *corecvm.BaseCvm {
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
-			CreatedAt: one.CreatedAt,
-			UpdatedAt: one.UpdatedAt,
+			CreatedAt: one.CreatedAt.String(),
+			UpdatedAt: one.UpdatedAt.String(),
 		},
 	}
 

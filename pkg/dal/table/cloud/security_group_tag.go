@@ -21,11 +21,11 @@ package cloud
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
 
@@ -52,8 +52,8 @@ type SecurityGroupTagTable struct {
 	Value           string     `db:"value" validate:"lte=255" json:"value"`
 	Creator         string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser         string     `db:"reviser" validate:"lte=64" json:"reviser"`
-	CreatedAt       *time.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
-	UpdatedAt       *time.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	CreatedAt       types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt       types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return security group tag table name.
@@ -92,11 +92,11 @@ func (t SecurityGroupTagTable) InsertValidate() error {
 		return errors.New("reviser is required")
 	}
 
-	if t.CreatedAt != nil {
+	if len(t.CreatedAt) != 0 {
 		return errors.New("created_at can not set")
 	}
 
-	if t.UpdatedAt != nil {
+	if len(t.UpdatedAt) != 0 {
 		return errors.New("updated_at can not set")
 	}
 

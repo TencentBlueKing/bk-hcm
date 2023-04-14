@@ -60,7 +60,7 @@ type TCloudSGRuleDao struct {
 
 // BatchCreateOrUpdateWithTx rule.
 func (dao *TCloudSGRuleDao) BatchCreateOrUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.
-TCloudSecurityGroupRuleTable) ([]string, error) {
+	TCloudSecurityGroupRuleTable) ([]string, error) {
 
 	// generate account id
 	ids, err := dao.IDGen.Batch(kt, table.TCloudSecurityGroupRuleTable, len(rules))
@@ -150,7 +150,7 @@ func (dao *TCloudSGRuleDao) batchCreateAudit(kt *kit.Kit, tx *sqlx.Tx,
 
 // Update rule.
 func (dao *TCloudSGRuleDao) Update(kt *kit.Kit, expr *filter.Expression, rule *cloud.
-TCloudSecurityGroupRuleTable) error {
+	TCloudSecurityGroupRuleTable) error {
 
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
@@ -196,7 +196,7 @@ TCloudSecurityGroupRuleTable) error {
 
 // UpdateWithTx rule.
 func (dao *TCloudSGRuleDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.
-TCloudSecurityGroupRuleTable) error {
+	TCloudSecurityGroupRuleTable) error {
 
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")

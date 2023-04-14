@@ -129,8 +129,8 @@ func (svc *approvalProcessSvc) convertToApprovalProcessResp(
 		Revision: core.Revision{
 			Creator:   approvalProcess.Creator,
 			Reviser:   approvalProcess.Reviser,
-			CreatedAt: approvalProcess.CreatedAt,
-			UpdatedAt: approvalProcess.UpdatedAt,
+			CreatedAt: approvalProcess.CreatedAt.String(),
+			UpdatedAt: approvalProcess.UpdatedAt.String(),
 		},
 	}
 }

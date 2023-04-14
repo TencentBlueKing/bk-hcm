@@ -63,8 +63,8 @@ func toProtoImageExtResult[T dataproto.ImageExtensionResult](
 		Extension:    extension,
 		Creator:      m.Creator,
 		Reviser:      m.Reviser,
-		CreatedAt:    m.CreatedAt,
-		UpdatedAt:    m.UpdatedAt,
+		CreatedAt:    m.CreatedAt.String(),
+		UpdatedAt:    m.UpdatedAt.String(),
 	}, nil
 }
 
@@ -80,7 +80,7 @@ func toProtoImageResult(m *tablecloud.ImageModel) *dataproto.ImageResult {
 		Type:         m.Type,
 		Creator:      m.Creator,
 		Reviser:      m.Reviser,
-		CreatedAt:    m.CreatedAt,
-		UpdatedAt:    m.UpdatedAt,
+		CreatedAt:    m.CreatedAt.String(),
+		UpdatedAt:    m.UpdatedAt.String(),
 	}
 }

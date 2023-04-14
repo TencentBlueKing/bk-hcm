@@ -65,8 +65,8 @@
 | account_id     | string | 安全组账号ID                 |
 | creator        | string | 安全组创建者                  |
 | reviser        | string | 安全组最后一次修改的修改者           |
-| created_at     | string | 安全组创建时间                 |
-| updated_at     | string | 安全组最后一次修改时间             |
+| created_at     | string | 安全组创建时间，标准格式：2006-01-02T15:04:05Z                 |
+| updated_at     | string | 安全组最后一次修改时间，标准格式：2006-01-02T15:04:05Z             |
 | cvm_id         | string | 主机ID                    |
 | rel_creator    | string | 主机和安全组绑定操作人（azure该字段为空） |
-| rel_created_at | string | 主机和安全组绑定时间（azure该字段为空）   |
+| rel_created_at | string | 主机和安全组绑定时间（azure该字段为空，标准格式：2006-01-02T15:04:05Z）   |

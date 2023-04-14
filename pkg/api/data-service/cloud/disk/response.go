@@ -20,8 +20,6 @@
 package disk
 
 import (
-	"time"
-
 	"hcm/pkg/rest"
 )
 
@@ -39,23 +37,23 @@ type DiskListResult struct {
 
 // DiskResult 查询云盘列表时的单条云盘数据
 type DiskResult struct {
-	ID           string     `json:"id,omitempty"`
-	Vendor       string     `json:"vendor,omitempty"`
-	AccountID    string     `json:"account_id,omitempty"`
-	Name         string     `json:"name,omitempty"`
-	BkBizID      int64      `json:"bk_biz_id,omitempty'"`
-	CloudID      string     `json:"cloud_id,omitempty"`
-	Region       string     `json:"region,omitempty"`
-	Zone         string     `json:"zone,omitempty"`
-	DiskSize     uint64     `json:"disk_size,omitempty"`
-	DiskType     string     `json:"disk_type,omitempty"`
-	Status       string     `json:"status,omitempty"`
-	IsSystemDisk bool       `json:"is_system_disk"`
-	Memo         *string    `json:"memo,omitempty"`
-	Creator      string     `json:"creator,omitempty"`
-	Reviser      string     `json:"reviser,omitempty"`
-	CreatedAt    *time.Time `json:"created_at,omitempty"`
-	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
+	ID           string  `json:"id,omitempty"`
+	Vendor       string  `json:"vendor,omitempty"`
+	AccountID    string  `json:"account_id,omitempty"`
+	Name         string  `json:"name,omitempty"`
+	BkBizID      int64   `json:"bk_biz_id,omitempty'"`
+	CloudID      string  `json:"cloud_id,omitempty"`
+	Region       string  `json:"region,omitempty"`
+	Zone         string  `json:"zone,omitempty"`
+	DiskSize     uint64  `json:"disk_size,omitempty"`
+	DiskType     string  `json:"disk_type,omitempty"`
+	Status       string  `json:"status,omitempty"`
+	IsSystemDisk bool    `json:"is_system_disk"`
+	Memo         *string `json:"memo,omitempty"`
+	Creator      string  `json:"creator,omitempty"`
+	Reviser      string  `json:"reviser,omitempty"`
+	CreatedAt    string  `json:"created_at,omitempty"`
+	UpdatedAt    string  `json:"updated_at,omitempty"`
 }
 
 // DiskExtListResp ...
@@ -79,24 +77,24 @@ type DiskExtRetrieveResp[T DiskExtensionResult] struct {
 // DiskExtResult 单个云盘时的详情数据
 // TODO move to core
 type DiskExtResult[T DiskExtensionResult] struct {
-	ID           string     `json:"id,omitempty"`
-	Vendor       string     `json:"vendor,omitempty"`
-	AccountID    string     `json:"account_id,omitempty"`
-	Name         string     `json:"name,omitempty"`
-	BkBizID      int64      `json:"bk_biz_id,omitempty'"`
-	CloudID      string     `json:"cloud_id,omitempty"`
-	Region       string     `json:"region,omitempty"`
-	Zone         string     `json:"zone,omitempty"`
-	DiskSize     uint64     `json:"disk_size,omitempty"`
-	DiskType     string     `json:"disk_type,omitempty"`
-	Status       string     `json:"status,omitempty"`
-	IsSystemDisk bool       `json:"is_system_disk"`
-	Memo         *string    `json:"memo,omitempty"`
-	Creator      string     `json:"creator,omitempty"`
-	Reviser      string     `json:"reviser,omitempty"`
-	CreatedAt    *time.Time `json:"created_at,omitempty"`
-	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
-	Extension    *T         `json:"extension,omitempty"`
+	ID           string  `json:"id,omitempty"`
+	Vendor       string  `json:"vendor,omitempty"`
+	AccountID    string  `json:"account_id,omitempty"`
+	Name         string  `json:"name,omitempty"`
+	BkBizID      int64   `json:"bk_biz_id,omitempty'"`
+	CloudID      string  `json:"cloud_id,omitempty"`
+	Region       string  `json:"region,omitempty"`
+	Zone         string  `json:"zone,omitempty"`
+	DiskSize     uint64  `json:"disk_size,omitempty"`
+	DiskType     string  `json:"disk_type,omitempty"`
+	Status       string  `json:"status,omitempty"`
+	IsSystemDisk bool    `json:"is_system_disk"`
+	Memo         *string `json:"memo,omitempty"`
+	Creator      string  `json:"creator,omitempty"`
+	Reviser      string  `json:"reviser,omitempty"`
+	CreatedAt    string  `json:"created_at,omitempty"`
+	UpdatedAt    string  `json:"updated_at,omitempty"`
+	Extension    *T      `json:"extension,omitempty"`
 }
 
 // DiskCountResp ...

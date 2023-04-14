@@ -22,7 +22,8 @@ package constant
 import "regexp"
 
 // TimeStdFormat is the system's standard time format to store or to query.
-const TimeStdFormat = "2006-01-02 15:04:05"
+const TimeStdFormat = "2006-01-02T15:04:05Z07:00"
 
 // TimeStdRegexp is a regular expression to match the TimeStdFormat
-var TimeStdRegexp = regexp.MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$`)
+var TimeStdRegexp = regexp.
+	MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[Z+]([0-9]{2}:[0-9]{2})*$`)

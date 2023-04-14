@@ -218,8 +218,8 @@ func convertTCloudBaseRegion(dbRegion *tableregion.TCloudRegionTable) *protocore
 		Status:     dbRegion.Status,
 		Creator:    dbRegion.Creator,
 		Reviser:    dbRegion.Reviser,
-		CreatedAt:  dbRegion.CreatedAt,
-		UpdatedAt:  dbRegion.UpdatedAt,
+		CreatedAt:  dbRegion.CreatedAt.String(),
+		UpdatedAt:  dbRegion.UpdatedAt.String(),
 	}
 }
 

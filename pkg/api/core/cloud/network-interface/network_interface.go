@@ -20,8 +20,6 @@
 package networkinterface
 
 import (
-	"time"
-
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 )
@@ -35,9 +33,9 @@ type NetworkInterface[T NetworkInterfaceExtension] struct {
 // NetworkInterfaceAssociate defines network interface associate info.
 type NetworkInterfaceAssociate struct {
 	BaseNetworkInterface `json:",inline"`
-	CvmID                string     `json:"cvm_id"`
-	RelCreator           string     `json:"rel_creator"`
-	RelCreatedAt         *time.Time `json:"rel_created_at"`
+	CvmID                string `json:"cvm_id"`
+	RelCreator           string `json:"rel_creator"`
+	RelCreatedAt         string `json:"rel_created_at"`
 }
 
 // BaseNetworkInterface define network interface.

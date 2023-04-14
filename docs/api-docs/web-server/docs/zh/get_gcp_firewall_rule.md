@@ -95,8 +95,8 @@
 | account_id              | string             | 账号ID                                    |
 | creator                 | string             | 创建者                                     |
 | reviser                 | string             | 最后一次修改的修改者                              |
-| create_at               | string             | 创建时间                                    |
-| update_at               | string             | 最后一次修改时间                                |
+| create_at               | string             | 创建时间，标准格式：2006-01-02T15:04:05Z                                    |
+| update_at               | string             | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z                                |
 
 #### protocol_set
 

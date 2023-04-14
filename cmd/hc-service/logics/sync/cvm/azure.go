@@ -45,6 +45,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/times"
 )
 
 // SyncAzureCvmOption ...
@@ -573,7 +574,7 @@ func syncAzureCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAzureCvmOption,
 			PublicIPv4Addresses:  publicIPv4Addresses,
 			PublicIPv6Addresses:  publicIPv6Addresses,
 			MachineType:          string(converter.PtrToVal(cloudMap[id].Cvm.VMSize)),
-			CloudCreatedTime:     cloudMap[id].Cvm.TimeCreated.String(),
+			CloudCreatedTime:     times.ConvStdTimeFormat(*cloudMap[id].Cvm.TimeCreated),
 			// 云上不支持该字段
 			CloudLaunchedTime: "",
 			// 云上不支持该字段

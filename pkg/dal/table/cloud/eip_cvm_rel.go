@@ -20,11 +20,10 @@
 package cloud
 
 import (
-	"time"
-
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
 
@@ -59,7 +58,7 @@ type EipCvmRelModel struct {
 	EipID     string     `db:"eip_id" validate:"required,lte=64" json:"eip_id"`
 	CvmID     string     `db:"cvm_id" validate:"required,lte=64" json:"cvm_id"`
 	Creator   string     `db:"creator" validate:"required,lte=64" json:"creator"`
-	CreatedAt *time.Time `db:"created_at" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" json:"created_at"`
 }
 
 // InsertValidate ...

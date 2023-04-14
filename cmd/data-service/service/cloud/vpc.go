@@ -442,8 +442,8 @@ func convertBaseVpc(dbVpc *tablecloud.VpcTable) *protocore.BaseVpc {
 		Revision: &core.Revision{
 			Creator:   dbVpc.Creator,
 			Reviser:   dbVpc.Reviser,
-			CreatedAt: dbVpc.CreatedAt,
-			UpdatedAt: dbVpc.UpdatedAt,
+			CreatedAt: dbVpc.CreatedAt.String(),
+			UpdatedAt: dbVpc.UpdatedAt.String(),
 		},
 	}
 }

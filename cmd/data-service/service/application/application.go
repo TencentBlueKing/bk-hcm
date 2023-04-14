@@ -144,8 +144,8 @@ func (svc *applicationSvc) convertToApplicationResp(
 		Revision: core.Revision{
 			Creator:   application.Creator,
 			Reviser:   application.Reviser,
-			CreatedAt: application.CreatedAt,
-			UpdatedAt: application.UpdatedAt,
+			CreatedAt: application.CreatedAt.String(),
+			UpdatedAt: application.UpdatedAt.String(),
 		},
 	}
 }

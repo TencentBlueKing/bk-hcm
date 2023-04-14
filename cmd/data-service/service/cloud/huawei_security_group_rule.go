@@ -242,8 +242,8 @@ func (svc *huaweiSGRuleSvc) ListHuaWeiRule(cts *rest.Contexts) (interface{}, err
 			SecurityGroupID:           one.SecurityGroupID,
 			Creator:                   one.Creator,
 			Reviser:                   one.Reviser,
-			CreatedAt:                 one.CreatedAt,
-			UpdatedAt:                 one.UpdatedAt,
+			CreatedAt:                 one.CreatedAt.String(),
+			UpdatedAt:                 one.UpdatedAt.String(),
 		})
 	}
 

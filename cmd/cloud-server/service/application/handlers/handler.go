@@ -28,7 +28,7 @@ import (
 // 创建申请单：CheckReq -> PrepareReq -> CreateITSMTicket -> GenerateApplicationContent -> "SaveToDB"
 // 审批通过交付："LoadApplicationFromDB" -> PrepareReqForContent-> CheckReq -> Deliver -> "UpdateStatusToDB"
 // Note: 这里创建申请单的请求数据和交付资源的请求数据结构是一样的，这是一种"偷懒"行为，
-//  更好的方式是Handler拆分成两种抽象：申请单创建者Creator、申请单交付者Deliverer，然后定义各自的数据结构
+// 更好的方式是Handler拆分成两种抽象：申请单创建者Creator、申请单交付者Deliverer，然后定义各自的数据结构
 type ApplicationHandler interface {
 	GetType() enumor.ApplicationType
 

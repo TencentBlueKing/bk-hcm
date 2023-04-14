@@ -46,6 +46,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/times"
 )
 
 // SyncAwsCvmOption define sync aws cvm option.
@@ -305,7 +306,7 @@ func isChangeAws(cloud *AwsCvmSync, db *AwsDSCvmSync) bool {
 		return true
 	}
 
-	if db.Cvm.CloudLaunchedTime != cloud.Cvm.LaunchTime.String() {
+	if db.Cvm.CloudLaunchedTime != times.ConvStdTimeFormat(*cloud.Cvm.LaunchTime) {
 		return true
 	}
 
@@ -491,7 +492,7 @@ func syncAwsCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsC
 			PrivateIPv6Addresses: nil,
 			PublicIPv4Addresses:  publicIPv4Addresses,
 			PublicIPv6Addresses:  publicIPv6Addresses,
-			CloudLaunchedTime:    cloudMap[id].Cvm.LaunchTime.String(),
+			CloudLaunchedTime:    times.ConvStdTimeFormat(*cloudMap[id].Cvm.LaunchTime),
 			// 云上不支持该字段
 			CloudExpiredTime: "",
 			Extension: &corecvm.AwsCvmExtension{
@@ -634,7 +635,7 @@ func syncAwsCvmAdd(kt *kit.Kit, addIDs []string, req *SyncAwsCvmOption,
 			MachineType:          converter.PtrToVal(cloudMap[id].Cvm.InstanceType),
 			// 云上不支持该字段
 			CloudCreatedTime:  "",
-			CloudLaunchedTime: cloudMap[id].Cvm.LaunchTime.String(),
+			CloudLaunchedTime: times.ConvStdTimeFormat(*cloudMap[id].Cvm.LaunchTime),
 			// 云上不支持该字段
 			CloudExpiredTime: "",
 			Extension: &corecvm.AwsCvmExtension{

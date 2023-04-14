@@ -21,7 +21,6 @@ package eip
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -80,8 +79,8 @@ type EipModel struct {
 	Extension types.JsonField `db:"extension" json:"extension" validate:"-"`
 	Creator   string          `db:"creator" json:"creator"`
 	Reviser   string          `db:"reviser" json:"reviser"`
-	CreatedAt *time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt *time.Time      `db:"updated_at" json:"updated_at"`
+	CreatedAt types.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt types.Time      `db:"updated_at" json:"updated_at"`
 }
 
 // InsertValidate ...

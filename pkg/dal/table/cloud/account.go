@@ -22,7 +22,6 @@ package cloud
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table"
@@ -88,9 +87,9 @@ type AccountTable struct {
 	// Reviser 更新者
 	Reviser string `db:"reviser" json:"reviser"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at" json:"updated_at"`
+	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 	// Memo 账号信息备注
 	Memo *string `db:"memo" json:"memo"`
 }
@@ -106,11 +105,11 @@ func (a AccountTable) InsertValidate() error {
 		return errors.New("id can not set")
 	}
 
-	if a.CreatedAt != nil {
+	if len(a.CreatedAt) != 0 {
 		return errors.New("created_at can not set")
 	}
 
-	if a.UpdatedAt != nil {
+	if len(a.UpdatedAt) != 0 {
 		return errors.New("updated_at can not set")
 	}
 
@@ -121,7 +120,7 @@ func (a AccountTable) InsertValidate() error {
 
 // UpdateValidate validate account table on update.
 func (a AccountTable) UpdateValidate() error {
-	if a.UpdatedAt != nil {
+	if len(a.UpdatedAt) != 0 {
 		return errors.New("updated_at can not update")
 	}
 

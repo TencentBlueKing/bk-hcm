@@ -21,11 +21,11 @@ package region
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
 
@@ -70,8 +70,8 @@ type AzureRegionTable struct {
 	PairedRegionId    string     `db:"paired_region_id"`
 	Creator           string     `db:"creator"`
 	Reviser           string     `db:"reviser"`
-	CreatedAt         *time.Time `db:"created_at"`
-	UpdatedAt         *time.Time `db:"updated_at"`
+	CreatedAt         types.Time `db:"created_at"`
+	UpdatedAt         types.Time `db:"updated_at"`
 }
 
 // TableName return azure region table name.

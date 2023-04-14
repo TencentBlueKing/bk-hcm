@@ -21,11 +21,11 @@ package cloud
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
 
@@ -78,8 +78,8 @@ type HuaWeiSecurityGroupRuleTable struct {
 	Priority                  int64      `db:"priority" json:"priority"`
 	Creator                   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser                   string     `db:"reviser" validate:"lte=64" json:"reviser"`
-	CreatedAt                 *time.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
-	UpdatedAt                 *time.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	CreatedAt                 types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt                 types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return huawei security group rule table name.

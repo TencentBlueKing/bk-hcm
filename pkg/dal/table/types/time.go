@@ -17,21 +17,45 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package types
 
-// SecurityGroupCvmRel define security group cvm rel.
-type SecurityGroupCvmRel struct {
-	ID              uint64 `json:"id"`
-	CvmID           string `json:"cvm_id"`
-	SecurityGroupID string `json:"security_group_id"`
-	Creator         string `json:"creator"`
-	CreatedAt       string `json:"created_at"`
+import (
+	"database/sql/driver"
+	"fmt"
+	"time"
+
+	"hcm/pkg/tools/json"
+)
+
+// Time ISO 8610时间格式的时间
+type Time string
+
+// String ...
+func (t *Time) String() string {
+	return string(*t)
 }
 
-// SGCvmRelWithBaseSecurityGroup define security group with cvm id.
-type SGCvmRelWithBaseSecurityGroup struct {
-	BaseSecurityGroup `json:",inline"`
-	CvmID             string `json:"cvm_id"`
-	RelCreator        string `db:"rel_creator" json:"rel_creator"`
-	RelCreatedAt      string `db:"rel_created_at" json:"rel_created_at"`
+// Scan is used to decode raw message which is read from db into Time.
+func (t *Time) Scan(raw interface{}) error {
+	if raw == nil {
+		return nil
+	}
+
+	switch v := raw.(type) {
+	case time.Time:
+		*t = Time(v.In(time.Local).Format("2006-01-02T15:04:05Z07:00"))
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported Time raw type: %T", v)
+	}
+}
+
+// Value encode the Time to a json raw, so that it can be stored to db with json raw.
+func (t Time) Value() (driver.Value, error) {
+	if len(t) == 0 {
+		return "", nil
+	}
+
+	return json.Marshal(t)
 }

@@ -20,8 +20,6 @@
 package cloud
 
 import (
-	"time"
-
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -37,8 +35,8 @@ type BaseSecurityGroup struct {
 	BkBizID   int64         `json:"bk_biz_id"`
 	Creator   string        `json:"creator"`
 	Reviser   string        `json:"reviser"`
-	CreatedAt *time.Time    `json:"created_at"`
-	UpdatedAt *time.Time    `json:"updated_at"`
+	CreatedAt string        `json:"created_at"`
+	UpdatedAt string        `json:"updated_at"`
 }
 
 // SecurityGroup define security group

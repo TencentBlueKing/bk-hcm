@@ -19,21 +19,19 @@
 
 package region
 
-import "time"
-
 // HuaWeiRegion define huawei region.
 type HuaWeiRegion struct {
-	ID          string     `json:"id"`
-	Service     string     `json:"service"`
-	RegionID    string     `json:"region_id"`
-	Type        string     `json:"type"`
-	LocalesPtBr string     `json:"locales_pt_br"`
-	LocalesZhCn string     `json:"locales_zh_cn"`
-	LocalesEnUs string     `json:"locales_en_us"`
-	LocalesEsUs string     `json:"locales_es_us"`
-	LocalesEsEs string     `json:"locales_es_es"`
-	Creator     string     `json:"creator"`
-	Reviser     string     `json:"reviser"`
-	CreatedAt   *time.Time `json:"created_at"`
-	UpdatedAt   *time.Time `json:"updated_at"`
+	ID          string `json:"id"`
+	Service     string `json:"service"`
+	RegionID    string `json:"region_id"`
+	Type        string `json:"type"`
+	LocalesPtBr string `json:"locales_pt_br"`
+	LocalesZhCn string `json:"locales_zh_cn"`
+	LocalesEnUs string `json:"locales_en_us"`
+	LocalesEsUs string `json:"locales_es_us"`
+	LocalesEsEs string `json:"locales_es_es"`
+	Creator     string `json:"creator"`
+	Reviser     string `json:"reviser"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
 }

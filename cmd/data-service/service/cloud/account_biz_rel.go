@@ -110,7 +110,7 @@ func (a *accountSvc) ListAccountBizRel(cts *rest.Contexts) (interface{}, error) 
 			BkBizID:   table.BkBizID,
 			AccountID: table.AccountID,
 			Creator:   table.Creator,
-			CreatedAt: table.CreatedAt,
+			CreatedAt: table.CreatedAt.String(),
 		}
 	}
 
@@ -156,13 +156,13 @@ func (a *accountSvc) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 				Revision: core.Revision{
 					Creator:   one.Creator,
 					Reviser:   one.Reviser,
-					CreatedAt: one.CreatedAt,
-					UpdatedAt: one.UpdatedAt,
+					CreatedAt: one.CreatedAt.String(),
+					UpdatedAt: one.UpdatedAt.String(),
 				},
 			},
 			BkBizID:      one.BkBizID,
 			RelCreator:   one.RelCreator,
-			RelCreatedAt: one.RelCreatedAt,
+			RelCreatedAt: one.RelCreatedAt.String(),
 		})
 	}
 

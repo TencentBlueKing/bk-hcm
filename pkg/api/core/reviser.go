@@ -19,18 +19,16 @@
 
 package core
 
-import "time"
-
 // Revision is a resource's status information
 type Revision struct {
-	Creator   string     `json:"creator"`
-	Reviser   string     `json:"reviser"`
-	CreatedAt *time.Time `json:"created_at"`
-	UpdatedAt *time.Time `json:"updated_at"`
+	Creator   string `json:"creator"`
+	Reviser   string `json:"reviser"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 // CreatedRevision is a resource's reversion information being created.
 type CreatedRevision struct {
-	Creator   string     `json:"creator"`
-	CreatedAt *time.Time `json:"created_at"`
+	Creator   string `json:"creator"`
+	CreatedAt string `json:"created_at"`
 }

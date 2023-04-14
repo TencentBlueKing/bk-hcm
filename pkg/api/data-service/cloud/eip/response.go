@@ -1,8 +1,6 @@
 package eip
 
 import (
-	"time"
-
 	"hcm/pkg/rest"
 )
 
@@ -14,23 +12,23 @@ type EipExtRetrieveResp[T EipExtensionResult] struct {
 
 // EipExtResult ...
 type EipExtResult[T EipExtensionResult] struct {
-	ID           string     `json:"id,omitempty"`
-	AccountID    string     `json:"account_id,omitempty"`
-	Vendor       string     `json:"vendor,omitempty"`
-	Name         *string    `json:"name,omitempty"`
-	CloudID      string     `json:"cloud_id,omitempty"`
-	BkBizID      int64      `json:"bk_biz_id,omitempty"`
-	Region       string     `json:"region,omitempty"`
-	InstanceID   *string    `json:"instance_id,omitempty"`
-	InstanceType string     `json:"instance_type,omitempty"`
-	Status       string     `json:"status,omitempty"`
-	PublicIp     string     `json:"public_ip,omitempty"`
-	PrivateIp    string     `json:"private_ip,omitempty"`
-	Extension    *T         `json:"extension,omitempty"`
-	Creator      string     `json:"creator,omitempty"`
-	Reviser      string     `json:"reviser,omitempty"`
-	CreatedAt    *time.Time `json:"created_at,omitempty"`
-	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
+	ID           string  `json:"id,omitempty"`
+	AccountID    string  `json:"account_id,omitempty"`
+	Vendor       string  `json:"vendor,omitempty"`
+	Name         *string `json:"name,omitempty"`
+	CloudID      string  `json:"cloud_id,omitempty"`
+	BkBizID      int64   `json:"bk_biz_id,omitempty"`
+	Region       string  `json:"region,omitempty"`
+	InstanceID   *string `json:"instance_id,omitempty"`
+	InstanceType string  `json:"instance_type,omitempty"`
+	Status       string  `json:"status,omitempty"`
+	PublicIp     string  `json:"public_ip,omitempty"`
+	PrivateIp    string  `json:"private_ip,omitempty"`
+	Extension    *T      `json:"extension,omitempty"`
+	Creator      string  `json:"creator,omitempty"`
+	Reviser      string  `json:"reviser,omitempty"`
+	CreatedAt    string  `json:"created_at,omitempty"`
+	UpdatedAt    string  `json:"updated_at,omitempty"`
 }
 
 // EipExtensionResult ...
@@ -52,22 +50,22 @@ type EipListResult struct {
 
 // EipResult ...
 type EipResult struct {
-	ID           string     `json:"id,omitempty"`
-	Vendor       string     `json:"vendor,omitempty"`
-	AccountID    string     `json:"account_id,omitempty"`
-	Name         *string    `json:"name,omitempty"`
-	CloudID      string     `json:"cloud_id,omitempty"`
-	BkBizID      int64      `json:"bk_biz_id,omitempty"`
-	Region       string     `json:"region,omitempty"`
-	InstanceID   *string    `json:"instance_id,omitempty"`
-	InstanceType string     `json:"instance_type,omitempty"`
-	Status       string     `json:"status,omitempty"`
-	PublicIp     string     `json:"public_ip,omitempty"`
-	PrivateIp    string     `json:"private_ip,omitempty"`
-	Creator      string     `json:"creator,omitempty"`
-	Reviser      string     `json:"reviser,omitempty"`
-	CreatedAt    *time.Time `json:"created_at,omitempty"`
-	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
+	ID           string  `json:"id,omitempty"`
+	Vendor       string  `json:"vendor,omitempty"`
+	AccountID    string  `json:"account_id,omitempty"`
+	Name         *string `json:"name,omitempty"`
+	CloudID      string  `json:"cloud_id,omitempty"`
+	BkBizID      int64   `json:"bk_biz_id,omitempty"`
+	Region       string  `json:"region,omitempty"`
+	InstanceID   *string `json:"instance_id,omitempty"`
+	InstanceType string  `json:"instance_type,omitempty"`
+	Status       string  `json:"status,omitempty"`
+	PublicIp     string  `json:"public_ip,omitempty"`
+	PrivateIp    string  `json:"private_ip,omitempty"`
+	Creator      string  `json:"creator,omitempty"`
+	Reviser      string  `json:"reviser,omitempty"`
+	CreatedAt    string  `json:"created_at,omitempty"`
+	UpdatedAt    string  `json:"updated_at,omitempty"`
 }
 
 // EipExtListResult ...

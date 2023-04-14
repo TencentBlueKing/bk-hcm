@@ -253,8 +253,8 @@ func (svc *routeTableSvc) ListAzureRoute(cts *rest.Contexts) (interface{}, error
 			Revision: &core.Revision{
 				Creator:   route.Creator,
 				Reviser:   route.Reviser,
-				CreatedAt: route.CreatedAt,
-				UpdatedAt: route.UpdatedAt,
+				CreatedAt: route.CreatedAt.String(),
+				UpdatedAt: route.UpdatedAt.String(),
 			},
 		})
 	}
@@ -313,8 +313,8 @@ func (svc *routeTableSvc) ListAllAzureRoute(cts *rest.Contexts) (interface{}, er
 			Revision: &core.Revision{
 				Creator:   route.Creator,
 				Reviser:   route.Reviser,
-				CreatedAt: route.CreatedAt,
-				UpdatedAt: route.UpdatedAt,
+				CreatedAt: route.CreatedAt.String(),
+				UpdatedAt: route.UpdatedAt.String(),
 			},
 		})
 	}

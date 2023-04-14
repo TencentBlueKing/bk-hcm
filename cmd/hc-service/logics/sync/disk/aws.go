@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 )
 
 // SyncAwsDiskOption define sync aws disk option.
@@ -238,7 +239,7 @@ func diffAwsDiskSyncAdd(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, req *
 			for _, v := range cloudMap[id].Disk.Attachments {
 				if v != nil {
 					tmp := &dataproto.AwsDiskAttachment{
-						AttachTime:          v.AttachTime,
+						AttachTime:          times.ConvStdTimeFormat(*v.AttachTime),
 						DeleteOnTermination: v.DeleteOnTermination,
 						DeviceName:          v.Device,
 						InstanceId:          v.InstanceId,
@@ -313,7 +314,7 @@ func isAwsDiskChange(db *AwsDiskSyncDS, cloud *AwsDiskSyncDiff, cloudName string
 	for _, dbValue := range db.HcDisk.Extension.Attachment {
 		isEqual := false
 		for _, cloudValue := range cloud.Disk.Attachments {
-			if dbValue.AttachTime.String() == cloudValue.AttachTime.String() &&
+			if dbValue.AttachTime == cloudValue.AttachTime.String() &&
 				assert.IsPtrBoolEqual(dbValue.DeleteOnTermination, cloudValue.DeleteOnTermination) &&
 				assert.IsPtrStringEqual(dbValue.DeviceName, cloudValue.Device) &&
 				assert.IsPtrStringEqual(dbValue.InstanceId, cloudValue.InstanceId) &&
@@ -361,7 +362,7 @@ func diffAwsSyncUpdate(kt *kit.Kit, cloudMap map[string]*AwsDiskSyncDiff, dsMap 
 			for _, v := range cloudMap[id].Disk.Attachments {
 				if v != nil {
 					tmp := &dataproto.AwsDiskAttachment{
-						AttachTime:          v.AttachTime,
+						AttachTime:          times.ConvStdTimeFormat(*v.AttachTime),
 						DeleteOnTermination: v.DeleteOnTermination,
 						DeviceName:          v.Device,
 						InstanceId:          v.InstanceId,

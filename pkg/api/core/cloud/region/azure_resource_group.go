@@ -19,17 +19,15 @@
 
 package region
 
-import "time"
-
 // AzureRG define azure resourceGroup.
 type AzureRG struct {
-	ID        string     `json:"id"`
-	Name      string     `json:"name"`
-	Type      string     `json:"type"`
-	Location  string     `json:"location"`
-	AccountID string     `json:"account_id"`
-	Creator   string     `json:"creator"`
-	Reviser   string     `json:"reviser"`
-	CreatedAt *time.Time `json:"created_at"`
-	UpdatedAt *time.Time `json:"updated_at"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Location  string `json:"location"`
+	AccountID string `json:"account_id"`
+	Creator   string `json:"creator"`
+	Reviser   string `json:"reviser"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }

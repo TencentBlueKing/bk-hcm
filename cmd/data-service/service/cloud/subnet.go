@@ -440,8 +440,8 @@ func convertBaseSubnet(dbSubnet *tablecloud.SubnetTable) *protocore.BaseSubnet {
 		Revision: &core.Revision{
 			Creator:   dbSubnet.Creator,
 			Reviser:   dbSubnet.Reviser,
-			CreatedAt: dbSubnet.CreatedAt,
-			UpdatedAt: dbSubnet.UpdatedAt,
+			CreatedAt: dbSubnet.CreatedAt.String(),
+			UpdatedAt: dbSubnet.UpdatedAt.String(),
 		},
 	}
 }

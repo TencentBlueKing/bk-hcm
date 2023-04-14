@@ -19,25 +19,23 @@
 
 package region
 
-import "time"
-
 // AzureRegion define azure region.
 type AzureRegion struct {
-	ID                string     `json:"id"`
-	Cloud_ID          string     `json:"cloud_id"`
-	Name              string     `json:"name"`
-	Type              string     `json:"type"`
-	DisplayName       string     `json:"display_name"`
-	RegionDisplayName string     `json:"region_display_name"`
-	GeographyGroup    string     `json:"geography_group"`
-	Latitude          string     `json:"latitude"`
-	Longitude         string     `json:"longitude"`
-	PhysicalLocation  string     `json:"physical_location"`
-	RegionType        string     `json:"region_type"`
-	PairedRegionName  string     `json:"paired_region_name"`
-	PairedRegionId    string     `json:"paired_region_id"`
-	Creator           string     `json:"creator"`
-	Reviser           string     `json:"reviser"`
-	CreatedAt         *time.Time `json:"created_at"`
-	UpdatedAt         *time.Time `json:"updated_at"`
+	ID                string `json:"id"`
+	Cloud_ID          string `json:"cloud_id"`
+	Name              string `json:"name"`
+	Type              string `json:"type"`
+	DisplayName       string `json:"display_name"`
+	RegionDisplayName string `json:"region_display_name"`
+	GeographyGroup    string `json:"geography_group"`
+	Latitude          string `json:"latitude"`
+	Longitude         string `json:"longitude"`
+	PhysicalLocation  string `json:"physical_location"`
+	RegionType        string `json:"region_type"`
+	PairedRegionName  string `json:"paired_region_name"`
+	PairedRegionId    string `json:"paired_region_id"`
+	Creator           string `json:"creator"`
+	Reviser           string `json:"reviser"`
+	CreatedAt         string `json:"created_at"`
+	UpdatedAt         string `json:"updated_at"`
 }

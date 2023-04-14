@@ -21,7 +21,6 @@ package cvm
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -101,8 +100,8 @@ type Table struct {
 	CloudExpiredTime     string            `db:"cloud_expired_time" json:"cloud_expired_time"`
 	Creator              string            `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser              string            `db:"reviser" validate:"lte=64" json:"reviser"`
-	CreatedAt            *time.Time        `db:"created_at" validate:"excluded_unless" json:"created_at"`
-	UpdatedAt            *time.Time        `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	CreatedAt            types.Time        `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	UpdatedAt            types.Time        `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 }
 
 // TableName return cvm table name.

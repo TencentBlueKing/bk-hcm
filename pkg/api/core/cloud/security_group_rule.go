@@ -20,8 +20,6 @@
 package cloud
 
 import (
-	"time"
-
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -53,8 +51,8 @@ type TCloudSecurityGroupRule struct {
 	AccountID                  string                       `json:"account_id"`
 	Creator                    string                       `json:"creator"`
 	Reviser                    string                       `json:"reviser"`
-	CreatedAt                  *time.Time                   `json:"created_at"`
-	UpdatedAt                  *time.Time                   `json:"updated_at"`
+	CreatedAt                  string                       `json:"created_at"`
+	UpdatedAt                  string                       `json:"updated_at"`
 }
 
 // AwsSecurityGroupRule define aws security group rule.
@@ -77,8 +75,8 @@ type AwsSecurityGroupRule struct {
 	SecurityGroupID            string                       `json:"security_group_id"`
 	Creator                    string                       `json:"creator"`
 	Reviser                    string                       `json:"reviser"`
-	CreatedAt                  *time.Time                   `json:"created_at"`
-	UpdatedAt                  *time.Time                   `json:"updated_at"`
+	CreatedAt                  string                       `json:"created_at"`
+	UpdatedAt                  string                       `json:"updated_at"`
 }
 
 // HuaWeiSecurityGroupRule define huawei security group rule.
@@ -102,8 +100,8 @@ type HuaWeiSecurityGroupRule struct {
 	SecurityGroupID           string                       `json:"security_group_id"`
 	Creator                   string                       `json:"creator"`
 	Reviser                   string                       `json:"reviser"`
-	CreatedAt                 *time.Time                   `json:"created_at"`
-	UpdatedAt                 *time.Time                   `json:"updated_at"`
+	CreatedAt                 string                       `json:"created_at"`
+	UpdatedAt                 string                       `json:"updated_at"`
 }
 
 // AzureSecurityGroupRule define azure security group rule.
@@ -134,6 +132,6 @@ type AzureSecurityGroupRule struct {
 	SecurityGroupID                     string                       `json:"security_group_id"`
 	Creator                             string                       `json:"creator"`
 	Reviser                             string                       `json:"reviser"`
-	CreatedAt                           *time.Time                   `json:"created_at"`
-	UpdatedAt                           *time.Time                   `json:"updated_at"`
+	CreatedAt                           string                       `json:"created_at"`
+	UpdatedAt                           string                       `json:"updated_at"`
 }

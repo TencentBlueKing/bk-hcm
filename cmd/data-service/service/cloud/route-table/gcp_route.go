@@ -332,8 +332,8 @@ func (svc *routeTableSvc) ListGcpRoute(cts *rest.Contexts) (interface{}, error) 
 			Revision: &core.Revision{
 				Creator:   route.Creator,
 				Reviser:   route.Reviser,
-				CreatedAt: route.CreatedAt,
-				UpdatedAt: route.UpdatedAt,
+				CreatedAt: route.CreatedAt.String(),
+				UpdatedAt: route.UpdatedAt.String(),
 			},
 		})
 	}

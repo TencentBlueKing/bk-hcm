@@ -21,7 +21,6 @@ package cloud
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -96,9 +95,9 @@ type SubnetTable struct {
 	// Reviser 更新者
 	Reviser string `db:"reviser" validate:"max=64" json:"reviser"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at" validate:"isdefault" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" validate:"isdefault" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at" validate:"isdefault" json:"updated_at"`
+	UpdatedAt types.Time `db:"updated_at" validate:"isdefault" json:"updated_at"`
 }
 
 // TableName return subnet table name.

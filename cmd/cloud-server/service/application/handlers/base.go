@@ -78,7 +78,7 @@ func (a *BaseApplicationHandler) Vendor() enumor.Vendor {
 }
 
 // ListItsmVariableApprovers 查询ITSM单据审批人
-//  Note: 现阶段所有申请单的审批流程一样，所以在BaseApplicationHandler里实现
+// Note: 现阶段所有申请单的审批流程一样，所以在BaseApplicationHandler里实现
 func (a *BaseApplicationHandler) ListItsmVariableApprovers() ([]itsm.VariableApprover, error) {
 	return []itsm.VariableApprover{
 		{

@@ -68,8 +68,8 @@ func toProtoDiskExtResult[T dataproto.DiskExtensionResult](
 		Memo:         m.Memo,
 		Creator:      m.Creator,
 		Reviser:      m.Reviser,
-		CreatedAt:    m.CreatedAt,
-		UpdatedAt:    m.UpdatedAt,
+		CreatedAt:    m.CreatedAt.String(),
+		UpdatedAt:    m.UpdatedAt.String(),
 		Extension:    extension,
 	}, nil
 }
@@ -91,7 +91,7 @@ func toProtoDiskResult(m *tablecloud.DiskModel) *dataproto.DiskResult {
 		Memo:         m.Memo,
 		Creator:      m.Creator,
 		Reviser:      m.Reviser,
-		CreatedAt:    m.CreatedAt,
-		UpdatedAt:    m.UpdatedAt,
+		CreatedAt:    m.CreatedAt.String(),
+		UpdatedAt:    m.UpdatedAt.String(),
 	}
 }

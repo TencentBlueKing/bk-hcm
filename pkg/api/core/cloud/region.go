@@ -20,8 +20,6 @@
 package cloud
 
 import (
-	"time"
-
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -39,8 +37,8 @@ type TCloudRegion struct {
 	Status     string        `json:"status"`
 	Creator    string        `json:"creator"`
 	Reviser    string        `json:"reviser"`
-	CreatedAt  *time.Time    `json:"created_at"`
-	UpdatedAt  *time.Time    `json:"updated_at"`
+	CreatedAt  string        `json:"created_at"`
+	UpdatedAt  string        `json:"updated_at"`
 }
 
 // AwsRegion define aws region.
@@ -53,8 +51,8 @@ type AwsRegion struct {
 	Endpoint   string        `json:"endpoint"`
 	Creator    string        `json:"creator"`
 	Reviser    string        `json:"reviser"`
-	CreatedAt  *time.Time    `json:"created_at"`
-	UpdatedAt  *time.Time    `json:"updated_at"`
+	CreatedAt  string        `json:"created_at"`
+	UpdatedAt  string        `json:"updated_at"`
 }
 
 // GcpRegion define gcp region.
@@ -66,6 +64,6 @@ type GcpRegion struct {
 	Status     string        `json:"status"`
 	Creator    string        `json:"creator"`
 	Reviser    string        `json:"reviser"`
-	CreatedAt  *time.Time    `json:"created_at"`
-	UpdatedAt  *time.Time    `json:"updated_at"`
+	CreatedAt  string        `json:"created_at"`
+	UpdatedAt  string        `json:"updated_at"`
 }

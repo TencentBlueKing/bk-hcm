@@ -20,11 +20,10 @@
 package cloud
 
 import (
-	"time"
-
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
 
@@ -46,7 +45,7 @@ type SecurityGroupCvmRelTable struct {
 	CvmID           string     `db:"cvm_id" validate:"required,lte=64" json:"cvm_id"`
 	SecurityGroupID string     `db:"security_group_id" validate:"required,lte=64" json:"security_group_id"`
 	Creator         string     `db:"creator" validate:"required,lte=64" json:"creator"`
-	CreatedAt       *time.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	CreatedAt       types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
 }
 
 // TableName return cvm and security group rel table name.

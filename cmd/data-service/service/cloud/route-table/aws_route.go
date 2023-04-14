@@ -287,8 +287,8 @@ func (svc *routeTableSvc) ListAwsRoute(cts *rest.Contexts) (interface{}, error) 
 			Revision: &core.Revision{
 				Creator:   route.Creator,
 				Reviser:   route.Reviser,
-				CreatedAt: route.CreatedAt,
-				UpdatedAt: route.UpdatedAt,
+				CreatedAt: route.CreatedAt.String(),
+				UpdatedAt: route.UpdatedAt.String(),
 			},
 		})
 	}
@@ -357,8 +357,8 @@ func (svc *routeTableSvc) ListAllAwsRoute(cts *rest.Contexts) (interface{}, erro
 			Revision: &core.Revision{
 				Creator:   route.Creator,
 				Reviser:   route.Reviser,
-				CreatedAt: route.CreatedAt,
-				UpdatedAt: route.UpdatedAt,
+				CreatedAt: route.CreatedAt.String(),
+				UpdatedAt: route.UpdatedAt.String(),
 			},
 		})
 	}

@@ -17,21 +17,11 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package tools
 
-// SecurityGroupCvmRel define security group cvm rel.
-type SecurityGroupCvmRel struct {
-	ID              uint64 `json:"id"`
-	CvmID           string `json:"cvm_id"`
-	SecurityGroupID string `json:"security_group_id"`
-	Creator         string `json:"creator"`
-	CreatedAt       string `json:"created_at"`
-}
+import "time"
 
-// SGCvmRelWithBaseSecurityGroup define security group with cvm id.
-type SGCvmRelWithBaseSecurityGroup struct {
-	BaseSecurityGroup `json:",inline"`
-	CvmID             string `json:"cvm_id"`
-	RelCreator        string `db:"rel_creator" json:"rel_creator"`
-	RelCreatedAt      string `db:"rel_created_at" json:"rel_created_at"`
+// ConvTime 转换 time.Time 为 hcm 时间格式.
+func ConvTime(source *time.Time) string {
+	return source.In(time.Local).Format("2006-01-02T15:04:05Z07:00")
 }

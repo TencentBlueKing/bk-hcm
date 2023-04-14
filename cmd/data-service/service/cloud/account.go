@@ -327,8 +327,8 @@ func (a *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 		Revision: core.Revision{
 			Creator:   dbAccount.Creator,
 			Reviser:   dbAccount.Reviser,
-			CreatedAt: dbAccount.CreatedAt,
-			UpdatedAt: dbAccount.UpdatedAt,
+			CreatedAt: dbAccount.CreatedAt.String(),
+			UpdatedAt: dbAccount.UpdatedAt.String(),
 		},
 	}
 
@@ -393,8 +393,8 @@ func (a *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 			Revision: core.Revision{
 				Creator:   account.Creator,
 				Reviser:   account.Reviser,
-				CreatedAt: account.CreatedAt,
-				UpdatedAt: account.UpdatedAt,
+				CreatedAt: account.CreatedAt.String(),
+				UpdatedAt: account.UpdatedAt.String(),
 			},
 		})
 
@@ -640,8 +640,8 @@ func (a *accountSvc) ListAccountWithExtension(cts *rest.Contexts) (interface{}, 
 				Revision: core.Revision{
 					Creator:   account.Creator,
 					Reviser:   account.Reviser,
-					CreatedAt: account.CreatedAt,
-					UpdatedAt: account.UpdatedAt,
+					CreatedAt: account.CreatedAt.String(),
+					UpdatedAt: account.UpdatedAt.String(),
 				},
 			},
 			Extension: extension,

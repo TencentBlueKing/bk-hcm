@@ -21,6 +21,7 @@ package cvm
 
 import (
 	"fmt"
+	"time"
 
 	"hcm/cmd/hc-service/logics/sync/disk"
 	synceip "hcm/cmd/hc-service/logics/sync/eip"
@@ -48,6 +49,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 )
 
 // SyncGcpCvmOption ...
@@ -304,7 +306,23 @@ func isChangeGcp(cloud *GcpCvmSync, db *GcpDSCvmSync) bool {
 		return true
 	}
 
-	if db.Cvm.CloudCreatedTime != cloud.Cvm.CreationTimestamp {
+	createTime, err := times.ParseToStdTime(time.RFC3339Nano, cloud.Cvm.CreationTimestamp)
+	if err != nil {
+		logs.Errorf("conv CreationTimestamp to std time failed, err: %v", err)
+		return true
+	}
+
+	if db.Cvm.CloudCreatedTime != createTime {
+		return true
+	}
+
+	startTime, err := times.ParseToStdTime(time.RFC3339Nano, cloud.Cvm.LastStartTimestamp)
+	if err != nil {
+		logs.Errorf("conv LastStartTimestamp to std time failed, err: %v", err)
+		return true
+	}
+
+	if db.Cvm.CloudLaunchedTime != startTime {
 		return true
 	}
 
@@ -476,6 +494,11 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 			disks = append(disks, tmp)
 		}
 
+		startTime, err := times.ParseToStdTime(time.RFC3339Nano, cloudMap[id].Cvm.LastStartTimestamp)
+		if err != nil {
+			return fmt.Errorf("conv start time failed, err: %v", err)
+		}
+
 		priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(cloudMap[id].Cvm.NetworkInterfaces)
 		cvm := dataproto.CvmBatchUpdate[corecvm.GcpCvmExtension]{
 			ID:                   dsMap[id].Cvm.ID,
@@ -491,8 +514,8 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 			PrivateIPv6Addresses: priIPv6,
 			PublicIPv4Addresses:  pubIPv4,
 			PublicIPv6Addresses:  pubIPv6,
-			CloudLaunchedTime:    cloudMap[id].Cvm.LastStartTimestamp,
-			CloudExpiredTime:     cloudMap[id].Cvm.LastStopTimestamp,
+			CloudLaunchedTime:    startTime,
+			CloudExpiredTime:     "",
 			Extension: &corecvm.GcpCvmExtension{
 				VpcSelfLinks:             vpcSelfLinks,
 				SubnetSelfLinks:          subnetSelfLinks,
@@ -652,6 +675,16 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 			disks = append(disks, tmp)
 		}
 
+		startTime, err := times.ParseToStdTime(time.RFC3339Nano, cloudMap[id].Cvm.LastStartTimestamp)
+		if err != nil {
+			return fmt.Errorf("conv start time failed, err: %v", err)
+		}
+
+		createTime, err := times.ParseToStdTime(time.RFC3339Nano, cloudMap[id].Cvm.CreationTimestamp)
+		if err != nil {
+			return fmt.Errorf("conv create time failed, err: %v", err)
+		}
+
 		priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(cloudMap[id].Cvm.NetworkInterfaces)
 		cvm := dataproto.CvmBatchCreate[corecvm.GcpCvmExtension]{
 			CloudID:        fmt.Sprintf("%d", cloudMap[id].Cvm.Id),
@@ -675,9 +708,9 @@ func syncGcpCvmAdd(kt *kit.Kit, addIDs []string, req *SyncGcpCvmOption,
 			PublicIPv4Addresses:  pubIPv4,
 			PublicIPv6Addresses:  pubIPv6,
 			MachineType:          gcp.GetMachineType(cloudMap[id].Cvm.MachineType),
-			CloudCreatedTime:     cloudMap[id].Cvm.CreationTimestamp,
-			CloudLaunchedTime:    cloudMap[id].Cvm.LastStartTimestamp,
-			CloudExpiredTime:     cloudMap[id].Cvm.LastStopTimestamp,
+			CloudCreatedTime:     createTime,
+			CloudLaunchedTime:    startTime,
+			CloudExpiredTime:     "",
 			Extension: &corecvm.GcpCvmExtension{
 				VpcSelfLinks:             vpcSelfLinks,
 				SubnetSelfLinks:          subnetSelfLinks,

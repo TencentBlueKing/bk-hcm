@@ -62,8 +62,8 @@ func toProtoEipExtResult[T dataproto.EipExtensionResult](m *tablecloud.EipModel)
 		PrivateIp: m.PrivateIp,
 		Creator:   m.Creator,
 		Reviser:   m.Reviser,
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
+		CreatedAt: m.CreatedAt.String(),
+		UpdatedAt: m.UpdatedAt.String(),
 		Extension: extension,
 	}, nil
 }
@@ -82,7 +82,7 @@ func toProtoEipResult(m *tablecloud.EipModel) *dataproto.EipResult {
 		PrivateIp: m.PrivateIp,
 		Creator:   m.Creator,
 		Reviser:   m.Reviser,
-		CreatedAt: m.CreatedAt,
-		UpdatedAt: m.UpdatedAt,
+		CreatedAt: m.CreatedAt.String(),
+		UpdatedAt: m.UpdatedAt.String(),
 	}
 }

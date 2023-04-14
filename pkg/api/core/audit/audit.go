@@ -20,8 +20,6 @@
 package audit
 
 import (
-	"time"
-
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -45,5 +43,5 @@ type Audit struct {
 	Rid                  string                   `json:"rid"`
 	AppCode              string                   `json:"app_code"`
 	Detail               interface{}              `json:"detail,omitempty"` // Detail list接口该字段默认不返回
-	CreatedAt            *time.Time               `json:"created_at"`
+	CreatedAt            string                   `json:"created_at"`
 }

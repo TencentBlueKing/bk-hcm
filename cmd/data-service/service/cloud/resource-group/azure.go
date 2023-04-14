@@ -195,8 +195,8 @@ func (svc *azureRGSvc) ListAzureResourceGroup(cts *rest.Contexts) (interface{}, 
 			AccountID: one.AccountID,
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
-			CreatedAt: one.CreatedAt,
-			UpdatedAt: one.UpdatedAt,
+			CreatedAt: one.CreatedAt.String(),
+			UpdatedAt: one.UpdatedAt.String(),
 		})
 	}
 

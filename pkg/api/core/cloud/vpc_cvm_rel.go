@@ -19,21 +19,19 @@
 
 package cloud
 
-import "time"
-
 // VpcCvmRel define vpc and cvm relation.
 type VpcCvmRel struct {
-	ID        uint64     `json:"id"`
-	CvmID     string     `json:"cvm_id"`
-	VpcID     string     `json:"vpc_id"`
-	Creator   string     `json:"creator"`
-	CreatedAt *time.Time `json:"created_at"`
+	ID        uint64 `json:"id"`
+	CvmID     string `json:"cvm_id"`
+	VpcID     string `json:"vpc_id"`
+	Creator   string `json:"creator"`
+	CreatedAt string `json:"created_at"`
 }
 
 // VpcCvmRelWithBaseVpc define vpc detail with cvm id.
 type VpcCvmRelWithBaseVpc struct {
 	BaseVpc      `json:",inline"`
-	CvmID        string     `json:"cvm_id"`
-	RelCreator   string     `db:"rel_creator" json:"rel_creator"`
-	RelCreatedAt *time.Time `db:"rel_created_at" json:"rel_created_at"`
+	CvmID        string `json:"cvm_id"`
+	RelCreator   string `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt string `db:"rel_created_at" json:"rel_created_at"`
 }

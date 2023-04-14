@@ -21,6 +21,7 @@ package zone
 
 import (
 	"fmt"
+	"net/http"
 	"reflect"
 
 	"hcm/cmd/data-service/service/capability"
@@ -37,7 +38,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
-	"net/http"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -165,8 +165,8 @@ func (svc *zoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
 			State:     one.State,
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
-			CreatedAt: one.CreatedAt,
-			UpdatedAt: one.UpdatedAt,
+			CreatedAt: one.CreatedAt.String(),
+			UpdatedAt: one.UpdatedAt.String(),
 		})
 	}
 

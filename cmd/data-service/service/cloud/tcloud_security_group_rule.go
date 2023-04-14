@@ -254,8 +254,8 @@ func (svc *tcloudSGRuleSvc) ListTCloudRule(cts *rest.Contexts) (interface{}, err
 			AccountID:                  one.AccountID,
 			Creator:                    one.Creator,
 			Reviser:                    one.Reviser,
-			CreatedAt:                  one.CreatedAt,
-			UpdatedAt:                  one.UpdatedAt,
+			CreatedAt:                  one.CreatedAt.String(),
+			UpdatedAt:                  one.UpdatedAt.String(),
 		})
 	}
 

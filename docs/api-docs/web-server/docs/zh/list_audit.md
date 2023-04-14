@@ -34,10 +34,10 @@
 |-----|-------------------------------------------|----------------------------------------------|
 | eq  | 等于。不能为空字符串                                | boolean, numeric, string                     |
 | neq | 不等。不能为空字符串                                | boolean, numeric, string                     |
-| gt  | 大于                                        | numeric，时间类型为字符串（标准格式："2006-01-02 15:04:05"） |
-| gte | 大于等于                                      | numeric，时间类型为字符串（标准格式："2006-01-02 15:04:05"） |
-| lt  | 小于                                        | numeric，时间类型为字符串（标准格式："2006-01-02 15:04:05"） |
-| lte | 小于等于                                      | numeric，时间类型为字符串（标准格式："2006-01-02 15:04:05"） |
+| gt  | 大于                                        | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
+| gte | 大于等于                                      | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
+| lt  | 小于                                        | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
+| lte | 小于等于                                      | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
 | in  | 在给定的数组范围中。value数组中的元素最多设置100个，数组中至少有一个元素  | boolean, numeric, string                     |
 | nin | 不在给定的数组范围中。value数组中的元素最多设置100个，数组中至少有一个元素 | boolean, numeric, string                     |
 | cs  | 模糊查询，区分大小写                                | string                                       |
@@ -109,7 +109,7 @@
 | source                  | string | 请求来源（枚举值：api_call[API调用]、background_sync[后台同步]） |
 | rid                     | string | 请求ID                                            |
 | app_code                | string | 应用代码                                            |
-| created_at              | string | 创建时间                                            |
+| created_at              | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                            |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -245,7 +245,7 @@
 | source                  | string | 请求来源（枚举值：api_call[API调用]、background_sync[后台同步]）                                                                |
 | rid                     | string | 请求ID                                                                                                           |
 | app_code                | string | 应用代码                                                                                                           |
-| created_at              | string | 创建时间                                                                                                           |
+| created_at              | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                                                                                           |
 
 #### detail
 

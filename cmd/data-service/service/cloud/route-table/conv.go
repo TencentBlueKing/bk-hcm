@@ -68,8 +68,8 @@ func toProtoRouteTableExtWithID[T protocore.RouteTableExtension](d routetable.Ro
 			Revision: &core.Revision{
 				Creator:   d.Creator,
 				Reviser:   d.Reviser,
-				CreatedAt: d.CreatedAt,
-				UpdatedAt: d.UpdatedAt,
+				CreatedAt: d.CreatedAt.String(),
+				UpdatedAt: d.UpdatedAt.String(),
 			},
 		},
 		Extension: extension,

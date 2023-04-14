@@ -163,8 +163,8 @@ func (svc *azureRegionSvc) ListAzureRegion(cts *rest.Contexts) (interface{}, err
 			RegionType:        one.RegionType,
 			Creator:           one.Creator,
 			Reviser:           one.Reviser,
-			CreatedAt:         one.CreatedAt,
-			UpdatedAt:         one.UpdatedAt,
+			CreatedAt:         one.CreatedAt.String(),
+			UpdatedAt:         one.UpdatedAt.String(),
 		})
 	}
 

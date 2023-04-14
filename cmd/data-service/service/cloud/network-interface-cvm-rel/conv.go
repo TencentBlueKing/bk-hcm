@@ -79,14 +79,14 @@ func toProtoNetworkInterfaceExtWithCvmID[T coreni.NetworkInterfaceExtension](d *
 				Revision: &core.Revision{
 					Creator:   d.Creator,
 					Reviser:   d.Reviser,
-					CreatedAt: d.CreatedAt,
-					UpdatedAt: d.UpdatedAt,
+					CreatedAt: d.CreatedAt.String(),
+					UpdatedAt: d.UpdatedAt.String(),
 				},
 			},
 			Extension: extension,
 		},
 		CvmID:        d.CvmID,
 		RelCreator:   d.RelCreator,
-		RelCreatedAt: d.RelCreatedAt,
+		RelCreatedAt: d.RelCreatedAt.String(),
 	}, nil
 }

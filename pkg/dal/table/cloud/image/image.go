@@ -20,8 +20,6 @@
 package image
 
 import (
-	"time"
-
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
@@ -74,8 +72,8 @@ type ImageModel struct {
 	Extension    types.JsonField `db:"extension" validate:"-"`
 	Creator      string          `db:"creator"`
 	Reviser      string          `db:"reviser"`
-	CreatedAt    *time.Time      `db:"created_at"`
-	UpdatedAt    *time.Time      `db:"updated_at"`
+	CreatedAt    types.Time      `db:"created_at"`
+	UpdatedAt    types.Time      `db:"updated_at"`
 }
 
 // InsertValidate ...

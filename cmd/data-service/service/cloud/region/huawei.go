@@ -197,8 +197,8 @@ func (svc *huaweiRegionSvc) ListHuaWeiRegion(cts *rest.Contexts) (interface{}, e
 			LocalesEsEs: one.LocalesEsEs,
 			Creator:     one.Creator,
 			Reviser:     one.Reviser,
-			CreatedAt:   one.CreatedAt,
-			UpdatedAt:   one.UpdatedAt,
+			CreatedAt:   one.CreatedAt.String(),
+			UpdatedAt:   one.UpdatedAt.String(),
 		})
 	}
 

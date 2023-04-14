@@ -97,14 +97,14 @@
 | public_ipv4_addresses  | string array   | 公网IPv4地址                             |
 | public_ipv6_addresses  | string array   | 公网IPv6地址                             |
 | machine_type           | string         | 设备类型                                 |
-| cloud_created_time     | string         | Cvm在云上创建时间                           |
-| cloud_launched_time    | string         | Cvm启动时间                              |
-| cloud_expired_time     | string         | Cvm过期时间                              |
+| cloud_created_time     | string         | Cvm在云上创建时间，标准格式：2006-01-02T15:04:05Z                           |
+| cloud_launched_time    | string         | Cvm启动时间，标准格式：2006-01-02T15:04:05Z                              |
+| cloud_expired_time     | string         | Cvm过期时间，标准格式：2006-01-02T15:04:05Z                              |
 | extension              | object[vendor] | 混合云差异字段                       |
 | creator                | string         | 创建者                                  |
 | reviser                | string         | 修改者                                  |
-| created_at             | string         | 创建时间                                 |
-| updated_at             | string         | 修改时间                                 |
+| created_at             | string         | 创建时间，标准格式：2006-01-02T15:04:05Z                                 |
+| updated_at             | string         | 修改时间，标准格式：2006-01-02T15:04:05Z                                 |
 
 #### extension[tcloud]
 

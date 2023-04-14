@@ -20,8 +20,6 @@
 package disk
 
 import (
-	"time"
-
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
@@ -98,9 +96,9 @@ type DiskModel struct {
 	// Reviser 更新者
 	Reviser string `db:"reviser" json:"reviser"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at" json:"updated_at"`
+	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 }
 
 // TableName return disk table name.

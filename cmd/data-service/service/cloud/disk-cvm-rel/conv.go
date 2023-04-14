@@ -68,13 +68,13 @@ func toProtoDiskExtWithCvmID[T dataproto.DiskExtensionResult](
 			Memo:         d.Memo,
 			Creator:      d.Creator,
 			Reviser:      d.Reviser,
-			CreatedAt:    d.CreatedAt,
-			UpdatedAt:    d.UpdatedAt,
+			CreatedAt:    d.CreatedAt.String(),
+			UpdatedAt:    d.UpdatedAt.String(),
 			Extension:    extension,
 		},
 		CvmID:        d.CvmID,
 		RelCreator:   d.RelCreator,
-		RelCreatedAt: d.RelCreatedAt,
+		RelCreatedAt: d.RelCreatedAt.String(),
 	}, nil
 }
 
@@ -96,11 +96,11 @@ func toProtoDiskWithCvmID(d *reltypes.DiskWithCvmID) *cloud.DiskWithCvmID {
 			Memo:         d.Memo,
 			Creator:      d.Creator,
 			Reviser:      d.Reviser,
-			CreatedAt:    d.CreatedAt,
-			UpdatedAt:    d.UpdatedAt,
+			CreatedAt:    d.CreatedAt.String(),
+			UpdatedAt:    d.UpdatedAt.String(),
 		},
 		CvmID:        d.CvmID,
 		RelCreator:   d.RelCreator,
-		RelCreatedAt: d.RelCreatedAt,
+		RelCreatedAt: d.RelCreatedAt.String(),
 	}
 }

@@ -114,7 +114,7 @@ func (svc *svc) ListAudit(cts *rest.Contexts) (interface{}, error) {
 			Source:     one.Source,
 			Rid:        one.Rid,
 			AppCode:    one.AppCode,
-			CreatedAt:  one.CreatedAt,
+			CreatedAt:  one.CreatedAt.String(),
 		})
 	}
 
@@ -157,7 +157,7 @@ func (svc *svc) GetAudit(cts *rest.Contexts) (interface{}, error) {
 		Rid:        result.Details[0].Rid,
 		AppCode:    result.Details[0].AppCode,
 		Detail:     result.Details[0].Detail,
-		CreatedAt:  result.Details[0].CreatedAt,
+		CreatedAt:  result.Details[0].CreatedAt.String(),
 	}
 
 	return audit, nil

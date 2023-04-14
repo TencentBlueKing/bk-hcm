@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 )
 
 var (
@@ -35,6 +36,7 @@ var (
 // InitService set the initial service.
 func InitService(sn Name) {
 	initOnce.Do(func() {
+		time.Local = time.FixedZone("UTC", 0)
 		serviceName = sn
 	})
 }

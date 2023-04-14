@@ -21,7 +21,6 @@ package cloud
 
 import (
 	"fmt"
-	"time"
 
 	"hcm/pkg/api/core"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
@@ -81,11 +80,11 @@ type NetworkInterfaceCvmRelListResult struct {
 
 // NetworkInterfaceCvmRelResult ...
 type NetworkInterfaceCvmRelResult struct {
-	ID                 uint64     `json:"id,omitempty"`
-	NetworkInterfaceID string     `json:"network_interface_id"`
-	CvmID              string     `json:"cvm_id,omitempty"`
-	Creator            string     `json:"creator,omitempty"`
-	CreatedAt          *time.Time `json:"created_at,omitempty"`
+	ID                 uint64 `json:"id,omitempty"`
+	NetworkInterfaceID string `json:"network_interface_id"`
+	CvmID              string `json:"cvm_id,omitempty"`
+	Creator            string `json:"creator,omitempty"`
+	CreatedAt          string `json:"created_at,omitempty"`
 }
 
 // NetworkInterfaceCvmRelListResp ...
@@ -113,9 +112,9 @@ type NetworkInterfaceCvmRelWithListResp struct {
 // NetworkInterfaceWithCvmID ...
 type NetworkInterfaceWithCvmID struct {
 	coreni.BaseNetworkInterface `json:",inline"`
-	CvmID                       string     `json:"cvm_id"`
-	RelCreator                  string     `json:"rel_creator"`
-	RelCreatedAt                *time.Time `json:"rel_created_at"`
+	CvmID                       string `json:"cvm_id"`
+	RelCreator                  string `json:"rel_creator"`
+	RelCreatedAt                string `json:"rel_created_at"`
 }
 
 // NetworkInterfaceCvmRelWithExtListReq ...
@@ -137,7 +136,7 @@ type NetworkInterfaceCvmRelWithExtListResp[T coreni.NetworkInterfaceExtension] s
 // NetworkInterfaceExtWithCvmID ...
 type NetworkInterfaceExtWithCvmID[T coreni.NetworkInterfaceExtension] struct {
 	coreni.NetworkInterface[T] `json:",inline"`
-	CvmID                      string     `json:"cvm_id"`
-	RelCreator                 string     `json:"rel_creator"`
-	RelCreatedAt               *time.Time `json:"rel_created_at"`
+	CvmID                      string `json:"cvm_id"`
+	RelCreator                 string `json:"rel_creator"`
+	RelCreatedAt               string `json:"rel_created_at"`
 }

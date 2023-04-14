@@ -17,21 +17,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package times
 
-// SecurityGroupCvmRel define security group cvm rel.
-type SecurityGroupCvmRel struct {
-	ID              uint64 `json:"id"`
-	CvmID           string `json:"cvm_id"`
-	SecurityGroupID string `json:"security_group_id"`
-	Creator         string `json:"creator"`
-	CreatedAt       string `json:"created_at"`
+import (
+	"time"
+
+	"hcm/pkg/criteria/constant"
+)
+
+// ConvStdTimeFormat 转为HCM标准时间格式
+func ConvStdTimeFormat(t time.Time) string {
+	return t.In(time.Local).Format(constant.TimeStdFormat)
 }
 
-// SGCvmRelWithBaseSecurityGroup define security group with cvm id.
-type SGCvmRelWithBaseSecurityGroup struct {
-	BaseSecurityGroup `json:",inline"`
-	CvmID             string `json:"cvm_id"`
-	RelCreator        string `db:"rel_creator" json:"rel_creator"`
-	RelCreatedAt      string `db:"rel_created_at" json:"rel_created_at"`
+// ParseToStdTime parse layout format time to std time.
+func ParseToStdTime(layout, t string) (string, error) {
+	tm, err := time.Parse(layout, t)
+	if err != nil {
+		return "", err
+	}
+
+	return tm.In(time.Local).Format(constant.TimeStdFormat), nil
 }

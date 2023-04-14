@@ -21,11 +21,11 @@ package region
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
 
@@ -74,9 +74,9 @@ type HuaWeiRegionTable struct {
 	// Reviser 更新者
 	Reviser string `db:"reviser"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at"`
+	CreatedAt types.Time `db:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt *time.Time `db:"updated_at"`
+	UpdatedAt types.Time `db:"updated_at"`
 }
 
 // TableName return huawei region table name.

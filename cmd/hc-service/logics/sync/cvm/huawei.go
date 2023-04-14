@@ -50,6 +50,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/times"
 )
 
 // SyncHuaWeiCvmOption define sync huawei cvm option.
@@ -295,6 +296,16 @@ func isChangeHuaWei(cloud *HuaWeiCvmSync, db *HuaWeiDSCvmSync, kt *kit.Kit,
 		}
 	}
 
+	startTime, err := times.ParseToStdTime("2006-01-02T15:04:05.000000", cloud.Cvm.OSSRVUSGlaunchedAt)
+	if err != nil {
+		logs.Errorf("conv LastStartTimestamp to std time failed, err: %v", err)
+		return true
+	}
+
+	if db.Cvm.CloudLaunchedTime != startTime {
+		return true
+	}
+
 	if !assert.IsStringSliceEqual(privateIPv4Addresses, db.Cvm.PrivateIPv4Addresses) {
 		return true
 	}
@@ -527,6 +538,11 @@ func syncHuaWeiCvmUpdate(kt *kit.Kit, req *SyncHuaWeiCvmOption, updateIDs []stri
 			}
 		}
 
+		startTime, err := times.ParseToStdTime("2006-01-02T15:04:05.000000", cloudMap[id].Cvm.OSSRVUSGlaunchedAt)
+		if err != nil {
+			return fmt.Errorf("conv OSSRVUSGlaunchedAt failed, err: %v", err)
+		}
+
 		cvm := dataproto.CvmBatchUpdate[corecvm.HuaWeiCvmExtension]{
 			ID:                   dsMap[id].Cvm.ID,
 			Name:                 cloudMap[id].Cvm.Name,
@@ -541,7 +557,7 @@ func syncHuaWeiCvmUpdate(kt *kit.Kit, req *SyncHuaWeiCvmOption, updateIDs []stri
 			PrivateIPv6Addresses: privateIPv6Addresses,
 			PublicIPv4Addresses:  publicIPv4Addresses,
 			PublicIPv6Addresses:  publicIPv6Addresses,
-			CloudLaunchedTime:    cloudMap[id].Cvm.OSSRVUSGlaunchedAt,
+			CloudLaunchedTime:    startTime,
 			CloudExpiredTime:     cloudMap[id].Cvm.AutoTerminateTime,
 			Extension: &corecvm.HuaWeiCvmExtension{
 				AliasName:             cloudMap[id].Cvm.OSEXTSRVATTRinstanceName,
@@ -696,6 +712,11 @@ func syncHuaWeiCvmAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiCvmOption,
 			}
 		}
 
+		startTime, err := times.ParseToStdTime("2006-01-02T15:04:05.000000", cloudMap[id].Cvm.OSSRVUSGlaunchedAt)
+		if err != nil {
+			return fmt.Errorf("conv OSSRVUSGlaunchedAt failed, err: %v", err)
+		}
+
 		cvm := dataproto.CvmBatchCreate[corecvm.HuaWeiCvmExtension]{
 			CloudID:              cloudMap[id].Cvm.Id,
 			Name:                 cloudMap[id].Cvm.Name,
@@ -718,7 +739,7 @@ func syncHuaWeiCvmAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiCvmOption,
 			PublicIPv6Addresses:  publicIPv6Addresses,
 			MachineType:          cloudMap[id].Cvm.Flavor.Id,
 			CloudCreatedTime:     cloudMap[id].Cvm.Created,
-			CloudLaunchedTime:    cloudMap[id].Cvm.OSSRVUSGlaunchedAt,
+			CloudLaunchedTime:    startTime,
 			CloudExpiredTime:     cloudMap[id].Cvm.AutoTerminateTime,
 			Extension: &corecvm.HuaWeiCvmExtension{
 				AliasName:             cloudMap[id].Cvm.OSEXTSRVATTRinstanceName,

@@ -114,7 +114,7 @@ func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
 			NetworkInterfaceID: r.NetworkInterfaceID,
 			CvmID:              r.CvmID,
 			Creator:            r.Creator,
-			CreatedAt:          r.CreatedAt,
+			CreatedAt:          r.CreatedAt.String(),
 		}
 	}
 

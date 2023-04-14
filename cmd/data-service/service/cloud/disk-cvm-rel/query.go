@@ -89,8 +89,8 @@ func (svc *relSvc) ListWithCvm(cts *rest.Contexts) (interface{}, error) {
 			Revision: &core.Revision{
 				Creator:   one.Creator,
 				Reviser:   one.Reviser,
-				CreatedAt: one.CreatedAt,
-				UpdatedAt: one.UpdatedAt,
+				CreatedAt: one.CreatedAt.String(),
+				UpdatedAt: one.UpdatedAt.String(),
 			},
 		}
 	}
@@ -148,7 +148,7 @@ func (svc *relSvc) ListDiskWithoutCvm(cts *rest.Contexts) (interface{}, error) {
 				UpdatedAt:     one.UpdatedAt,
 			},
 			RelCreator:   one.RelCreator,
-			RelCreatedAt: one.RelCreatedAt,
+			RelCreatedAt: one.RelCreatedAt.String(),
 		}
 	}
 

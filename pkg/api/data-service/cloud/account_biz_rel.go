@@ -20,8 +20,6 @@
 package cloud
 
 import (
-	"time"
-
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -70,9 +68,9 @@ type AccountBizRelWithAccountListResp struct {
 
 type AccountBizRelWithAccount struct {
 	corecloud.BaseAccount `json:",inline"`
-	BkBizID               int64      `json:"bk_biz_id"`
-	RelCreator            string     `db:"rel_creator" json:"rel_creator"`
-	RelCreatedAt          *time.Time `db:"rel_created_at" json:"rel_created_at"`
+	BkBizID               int64  `json:"bk_biz_id"`
+	RelCreator            string `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt          string `db:"rel_created_at" json:"rel_created_at"`
 }
 
 // AccountBizRelListResp list account biz relation response

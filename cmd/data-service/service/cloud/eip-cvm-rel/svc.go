@@ -116,7 +116,7 @@ func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
 			EipID:     r.EipID,
 			CvmID:     r.CvmID,
 			Creator:   r.Creator,
-			CreatedAt: r.CreatedAt,
+			CreatedAt: r.CreatedAt.String(),
 		}
 	}
 
@@ -267,7 +267,7 @@ func (svc *relSvc) ListEipWithoutCvm(cts *rest.Contexts) (interface{}, error) {
 				UpdatedAt: one.UpdatedAt,
 			},
 			RelCreator:   one.RelCreator,
-			RelCreatedAt: one.RelCreatedAt,
+			RelCreatedAt: one.RelCreatedAt.String(),
 		}
 	}
 

@@ -21,10 +21,10 @@ package cloud
 
 import (
 	"errors"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
 
@@ -48,7 +48,7 @@ type AccountBizRelTable struct {
 	// Creator 创建者
 	Creator string `db:"creator" json:"creator"`
 	// CreatedAt 创建时间
-	CreatedAt *time.Time `db:"created_at" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" json:"created_at"`
 }
 
 // TableName return account table name.
@@ -58,7 +58,7 @@ func (a AccountBizRelTable) TableName() table.Name {
 
 // InsertValidate account table when insert.
 func (a AccountBizRelTable) InsertValidate() error {
-	if a.CreatedAt != nil {
+	if len(a.CreatedAt) != 0 {
 		return errors.New("created_at can not set")
 	}
 

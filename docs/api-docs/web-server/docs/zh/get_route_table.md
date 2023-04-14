@@ -178,8 +178,8 @@
 | bk_biz_id    | int64  | 业务ID，-1表示没有分配到业务              |
 | creator      | string | 创建者                           |
 | reviser      | string | 更新者                           |
-| created_at   | string | 创建时间，标准格式：2006-01-02 15:04:05 |
-| updated_at   | string | 更新时间，标准格式：2006-01-02 15:04:05 |
+| created_at   | string | 创建时间，标准格式：2006-01-02T15:04:05Z |
+| updated_at   | string | 更新时间，标准格式：2006-01-02T15:04:05Z |
 | extension    | object | 云厂商私有结构，gcp没有该字段              |
 
 #### data.extension(tcloud)

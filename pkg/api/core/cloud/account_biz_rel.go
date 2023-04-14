@@ -19,15 +19,11 @@
 
 package cloud
 
-import (
-	"time"
-)
-
 // AccountBizRel 云账号与业务关联关系
 type AccountBizRel struct {
 	ID        uint64
 	BkBizID   int64
 	AccountID string
 	Creator   string
-	CreatedAt *time.Time
+	CreatedAt string
 }

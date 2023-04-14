@@ -24,11 +24,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
 
@@ -70,7 +70,7 @@ type AuditTable struct {
 	Rid        string                   `db:"rid" json:"rid" validate:"lte=64"`
 	AppCode    string                   `db:"app_code" json:"app_code" validate:"lte=64"`
 	Detail     *BasicDetail             `db:"detail" json:"detail" validate:"-"`
-	CreatedAt  *time.Time               `db:"created_at" json:"created_at"`
+	CreatedAt  types.Time               `db:"created_at" json:"created_at"`
 }
 
 // CreateValidate audit when created
