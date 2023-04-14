@@ -19,9 +19,15 @@
 
 package gcp
 
+import logicsaccount "hcm/cmd/cloud-server/logics/account"
+
 // CheckReq 检查申请单的数据是否正确
 func (a *ApplicationOfCreateGcpCvm) CheckReq() error {
 	if err := a.req.Validate(); err != nil {
+		return err
+	}
+
+	if err := logicsaccount.IsResourceAccount(a.Cts.Kit, a.Client.DataService(), a.req.AccountID); err != nil {
 		return err
 	}
 

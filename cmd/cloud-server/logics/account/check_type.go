@@ -17,18 +17,41 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package huawei
+package account
 
-import logicsaccount "hcm/cmd/cloud-server/logics/account"
+import (
+	"fmt"
 
-// CheckReq 检查申请单的数据是否正确
-func (a *ApplicationOfCreateHuaWeiVpc) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
+	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
+	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
+)
+
+// IsResourceAccount judge account type if resource account.
+func IsResourceAccount(kt *kit.Kit, cli *dataservice.Client, accountID string) error {
+	if len(accountID) == 0 {
+		return errf.New(errf.InvalidParameter, "account id is required")
+	}
+
+	listReq := &protocloud.AccountListReq{
+		Filter: tools.EqualExpression("id", accountID),
+		Page:   core.DefaultBasePage,
+	}
+	result, err := cli.Global.Account.List(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
 		return err
 	}
 
-	if err := logicsaccount.IsResourceAccount(a.Cts.Kit, a.Client.DataService(), a.req.AccountID); err != nil {
-		return err
+	if len(result.Details) == 0 {
+		return errf.Newf(errf.RecordNotFound, "account: %s not found", accountID)
+	}
+
+	if result.Details[0].Type != enumor.ResourceAccount {
+		return fmt.Errorf("account: %s not resource account", accountID)
 	}
 
 	return nil

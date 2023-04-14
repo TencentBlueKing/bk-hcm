@@ -19,7 +19,17 @@
 
 package aws
 
+import logicsaccount "hcm/cmd/cloud-server/logics/account"
+
 // CheckReq ...
 func (a *ApplicationOfCreateAwsDisk) CheckReq() error {
-	return a.req.Validate()
+	if err := a.req.Validate(); err != nil {
+		return err
+	}
+
+	if err := logicsaccount.IsResourceAccount(a.Cts.Kit, a.Client.DataService(), a.req.AccountID); err != nil {
+		return err
+	}
+
+	return nil
 }
