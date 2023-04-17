@@ -31,7 +31,7 @@ func (a *ApplicationOfCreateAwsDisk) Deliver() (status enumor.ApplicationStatus,
 
 	result, err := a.Client.HCService().Aws.Disk.CreateDisk(a.Cts.Kit.Ctx, a.Cts.Kit.Header(), a.toHcProtoCreateReq())
 	if err != nil {
-		return enumor.DeliverError, map[string]interface{}{"error": err}, err
+		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, uint32(a.req.DiskCount),

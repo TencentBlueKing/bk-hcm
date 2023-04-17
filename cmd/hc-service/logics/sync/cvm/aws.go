@@ -305,7 +305,7 @@ func isChangeAws(cloud *AwsCvmSync, db *AwsDSCvmSync) bool {
 		return true
 	}
 
-	if db.Cvm.CloudExpiredTime != cloud.Cvm.LaunchTime.String() {
+	if db.Cvm.CloudLaunchedTime != cloud.Cvm.LaunchTime.String() {
 		return true
 	}
 

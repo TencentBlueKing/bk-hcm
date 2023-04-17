@@ -45,7 +45,7 @@ func (a *ApplicationOfAddAccount) Deliver() (enumor.ApplicationStatus, map[strin
 	}
 	// 交付失败
 	if err != nil {
-		return enumor.DeliverError, map[string]interface{}{"error": err}, err
+		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	// 交付成功，记录交付的账号ID

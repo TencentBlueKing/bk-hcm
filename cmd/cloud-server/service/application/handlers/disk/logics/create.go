@@ -40,7 +40,7 @@ func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.
 	// 全部失败
 	if len(result.SuccessCloudIDs) == 0 {
 		err := fmt.Errorf("all disk create failed, message: %s", result.FailedMessage)
-		deliverDetail["error"] = err
+		deliverDetail["error"] = err.Error()
 		return enumor.DeliverError, deliverDetail, err
 	}
 
@@ -56,7 +56,7 @@ func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.
 	}
 	listResult, err := cli.Global.ListDisk(kt.Ctx, kt.Header(), listReq)
 	if err != nil {
-		deliverDetail["error"] = err
+		deliverDetail["error"] = err.Error()
 		return enumor.DeliverError, deliverDetail, err
 	}
 
@@ -71,7 +71,7 @@ func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.
 		&dataproto.DiskBatchUpdateReq{IDs: ids, BkBizID: uint64(bkBizID)},
 	)
 	if err != nil {
-		deliverDetail["error"] = err
+		deliverDetail["error"] = err.Error()
 		return enumor.DeliverError, deliverDetail, err
 	}
 

@@ -31,7 +31,7 @@ func (a *ApplicationOfCreateTCloudDisk) Deliver() (enumor.ApplicationStatus, map
 	result, err := a.Client.HCService().TCloud.Disk.CreateDisk(a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(), a.toHcProtoCreateReq())
 	if err != nil {
-		return enumor.DeliverError, map[string]interface{}{"error": err}, err
+		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, a.req.DiskCount, a.req.BkBizID)

@@ -324,19 +324,25 @@ func (a *applicationSvc) deliver(cts *rest.Contexts, application *dataproto.Appl
 	deliverStatus, deliveryDetail, err := handler.Deliver()
 	// Note: 排查需要，这里无论失败还是成功，都记录日志，因为没有异步框架可以记录这些信息
 	logs.Infof(
-		"execute application[id=%s] delivery of %s, Deliver result: %s, detail: %s, err: %s, rid: %s",
-		application.ID, application.Type, deliverStatus, deliveryDetail, err, cts.Kit.Rid,
+		"execute application[id=%s] delivery of %s, deliver status: %s, detail: %+v, rid: %s",
+		application.ID, application.Type, deliverStatus, deliveryDetail, cts.Kit.Rid,
 	)
 	if err != nil {
 		logs.Errorf(
-			"execute application[id=%s] delivery of %s failed, Deliver err: %s, rid: %s",
+			"execute application[id=%s] delivery of %s failed, err: %s, rid: %s",
 			application.ID, application.Type, err, cts.Kit.Rid,
 		)
 		deliverStatus = enumor.DeliverError
 	}
 
 	// 更新DB里单据的交付状态和详情
-	deliveryDetailStr, _ := json.MarshalToString(deliveryDetail)
+	deliveryDetailStr, err := json.MarshalToString(deliveryDetail)
+	if err != nil {
+		logs.Errorf("marshal deliver detail failed, err: %v, detail: %+v, rid: %s", err, deliveryDetail, cts.Kit.Rid)
+		deliverStatus = enumor.DeliverError
+		deliveryDetailStr = `{"error": "marshal deliver detail failed"}`
+	}
+
 	err = a.updateStatusWithDetail(cts, application.ID, deliverStatus, deliveryDetailStr)
 	if err != nil {
 		logs.Errorf(

@@ -28,6 +28,7 @@ import (
 	typedisk "hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
@@ -78,7 +79,8 @@ func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption, diskNam
 
 	pollerResp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, diskName, *diskReq, nil)
 	if err != nil {
-		return nil, err
+		logs.Errorf("create azure disk failed, err: %v, kt: %s", err, kt.Rid)
+		return nil, errorf(err)
 	}
 
 	resp, err := pollerResp.PollUntilDone(kt.Ctx, nil)

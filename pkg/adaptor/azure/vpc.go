@@ -70,7 +70,8 @@ func (a *Azure) CreateVpc(kt *kit.Kit, opt *types.AzureVpcCreateOption) (*types.
 	}
 	resp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.Extension.ResourceGroup, opt.Name, req, nil)
 	if err != nil {
-		return nil, err
+		logs.Errorf("create azure vpc failed, err: %v, kt: %s", err, kt.Rid)
+		return nil, errorf(err)
 	}
 
 	res, err := resp.PollUntilDone(kt.Ctx, new(runtime.PollUntilDoneOptions))

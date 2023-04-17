@@ -443,7 +443,7 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.Name, instance, nil)
 	if err != nil {
 		logs.Errorf("begin create cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
+		return "", errorf(err)
 	}
 
 	resp, err := poller.PollUntilDone(kt.Ctx, nil)

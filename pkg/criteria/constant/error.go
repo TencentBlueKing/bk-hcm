@@ -28,5 +28,5 @@ const (
 	// CmdbSyncFailed cmdb sync failed.
 	CmdbSyncFailed WarnSign = "cmdb_sync_failed"
 	// DeleteCvmStartScriptFailed delete cvm start script failed.
-	DeleteCvmStartScriptFailed = "delete_cvm_start_script_failed"
+	DeleteCvmStartScriptFailed WarnSign = "delete_cvm_start_script_failed"
 )

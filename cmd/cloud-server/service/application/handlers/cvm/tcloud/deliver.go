@@ -37,14 +37,14 @@ func (a *ApplicationOfCreateTCloudCvm) Deliver() (enumor.ApplicationStatus, map[
 		a.toHcProtoTCloudBatchCreateReq(false),
 	)
 	if err != nil {
-		return enumor.DeliverError, map[string]interface{}{"error": err}, err
+		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	deliverDetail := map[string]interface{}{"result": result}
 	// 全部失败
 	if len(result.SuccessCloudIDs) == 0 {
 		err = fmt.Errorf("all cvm create failed, message: %s", result.FailedMessage)
-		deliverDetail["error"] = err
+		deliverDetail["error"] = err.Error()
 		return enumor.DeliverError, deliverDetail, err
 	}
 
@@ -57,7 +57,7 @@ func (a *ApplicationOfCreateTCloudCvm) Deliver() (enumor.ApplicationStatus, map[
 	cvmIDs, err := a.assignToBiz(result.SuccessCloudIDs)
 	deliverDetail["cvm_ids"] = cvmIDs
 	if err != nil {
-		deliverDetail["error"] = err
+		deliverDetail["error"] = err.Error()
 		return enumor.DeliverError, deliverDetail, err
 	}
 

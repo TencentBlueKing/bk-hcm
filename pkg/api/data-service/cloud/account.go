@@ -220,13 +220,12 @@ func (req *AzureAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.
 
 // AccountUpdateReq ...
 type AccountUpdateReq[T AccountExtensionUpdateReq] struct {
-	Name       string   `json:"name" validate:"omitempty"`
-	Managers   []string `json:"managers" validate:"omitempty"`
-	SyncStatus string   `json:"sync_status" validate:"omitempty"`
-	Price      string   `json:"price" validate:"omitempty"`
-	PriceUnit  string   `json:"price_unit" validate:"omitempty"`
-	Memo       *string  `json:"memo" validate:"omitempty"`
-	Extension  *T       `json:"extension" validate:"omitempty"`
+	Name      string   `json:"name" validate:"omitempty"`
+	Managers  []string `json:"managers" validate:"omitempty"`
+	Price     string   `json:"price" validate:"omitempty"`
+	PriceUnit string   `json:"price_unit" validate:"omitempty"`
+	Memo      *string  `json:"memo" validate:"omitempty"`
+	Extension *T       `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...
@@ -265,16 +264,15 @@ func (l *AccountListReq) Validate() error {
 
 // BaseAccountListResp ...
 type BaseAccountListResp struct {
-	ID            string                   `json:"id"`
-	Vendor        enumor.Vendor            `json:"vendor"`
-	Name          string                   `json:"name"`
-	Managers      []string                 `json:"managers"`
-	Type          enumor.AccountType       `json:"type"`
-	Site          enumor.AccountSiteType   `json:"site"`
-	SyncStatus    enumor.AccountSyncStatus `json:"sync_status"`
-	Price         string                   `json:"price"`
-	PriceUnit     string                   `json:"price_unit"`
-	Memo          *string                  `json:"memo"`
+	ID            string                 `json:"id"`
+	Vendor        enumor.Vendor          `json:"vendor"`
+	Name          string                 `json:"name"`
+	Managers      []string               `json:"managers"`
+	Type          enumor.AccountType     `json:"type"`
+	Site          enumor.AccountSiteType `json:"site"`
+	Price         string                 `json:"price"`
+	PriceUnit     string                 `json:"price_unit"`
+	Memo          *string                `json:"memo"`
 	core.Revision `json:",inline"`
 }
 

@@ -27,17 +27,16 @@ import (
 
 // BaseAccount 云账号
 type BaseAccount struct {
-	ID            string                   `json:"id"`
-	Vendor        enumor.Vendor            `json:"vendor"`
-	Name          string                   `json:"name"`
-	Managers      []string                 `json:"managers"`
-	Type          enumor.AccountType       `json:"type"`
-	Site          enumor.AccountSiteType   `json:"site"`
-	SyncStatus    enumor.AccountSyncStatus `json:"sync_status"`
-	Price         string                   `json:"price"`
-	PriceUnit     string                   `json:"price_unit"`
-	Memo          *string                  `json:"memo"`
-	BkBizIDs      []int64                  `json:"bk_biz_ids"`
+	ID            string                 `json:"id"`
+	Vendor        enumor.Vendor          `json:"vendor"`
+	Name          string                 `json:"name"`
+	Managers      []string               `json:"managers"`
+	Type          enumor.AccountType     `json:"type"`
+	Site          enumor.AccountSiteType `json:"site"`
+	Price         string                 `json:"price"`
+	PriceUnit     string                 `json:"price_unit"`
+	Memo          *string                `json:"memo"`
+	BkBizIDs      []int64                `json:"bk_biz_ids"`
 	core.Revision `json:",inline"`
 }
 

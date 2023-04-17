@@ -33,7 +33,7 @@ func (a *ApplicationOfCreateTCloudVpc) Deliver() (enumor.ApplicationStatus, map[
 		a.toHcProtoVpcCreateReq(),
 	)
 	if err != nil || result == nil {
-		return enumor.DeliverError, map[string]interface{}{"error": err}, err
+		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	return enumor.Completed, map[string]interface{}{"vpc_id": result.ID}, nil

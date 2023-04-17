@@ -51,7 +51,6 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "managers", NamedC: "managers", Type: enumor.Json},
 	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "site", NamedC: "site", Type: enumor.String},
-	{Column: "sync_status", NamedC: "sync_status", Type: enumor.String},
 	{Column: "price", NamedC: "price", Type: enumor.String},
 	{Column: "price_unit", NamedC: "price_unit", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
@@ -76,8 +75,6 @@ type AccountTable struct {
 	Type string `db:"type" json:"type"`
 	// Site 站点(中国站｜国际站)
 	Site string `db:"site"`
-	// SyncStatus 账号资源同步状态
-	SyncStatus string `db:"sync_status" json:"sync_status"`
 	// Price 账号余额数值
 	Price string `db:"price" json:"price"`
 	// PriceUnit 账号余额单位

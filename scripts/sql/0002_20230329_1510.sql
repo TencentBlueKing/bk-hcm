@@ -4,3 +4,4 @@ alter table azure_security_group_rule add unique key `idx_uk_name` (`name`, `clo
 
 alter table `eip` drop column `instance_id`;
 alter table `eip` drop column `instance_type`;
+alter table `account` drop column  `sync_status`;
