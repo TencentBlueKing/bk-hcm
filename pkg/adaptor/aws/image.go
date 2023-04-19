@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -931,6 +932,7 @@ func (a *Aws) ListImage(kt *kit.Kit, opt *image.AwsImageListOption) (*image.AwsI
 			Name:         *pImage.Name,
 			State:        *pImage.State,
 			Architecture: *pImage.Architecture,
+			Platform:     converter.PtrToVal(pImage.PlatformDetails),
 			Type:         "public",
 		})
 	}

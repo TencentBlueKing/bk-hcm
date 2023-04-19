@@ -22,6 +22,7 @@ package gcp
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/image"
@@ -70,10 +71,25 @@ func (g *Gcp) ListImage(
 		return nil, "", err
 	}
 	for _, pImage := range resp.Items {
+		platform := ""
+		// Gcp的操作系统是传统意义的操作系统，需要进行二次转换。
+		if strings.Contains(strings.ToLower(pImage.Name), "centos") {
+			platform = "Linux"
+		}
+
+		if strings.Contains(strings.ToLower(pImage.Name), "windows") {
+			platform = "Windows"
+		}
+
+		if len(platform) == 0 {
+			platform = pImage.Family
+		}
+
 		images = append(images, image.GcpImage{
 			SelfLink:     pImage.SelfLink,
 			CloudID:      strconv.FormatUint(pImage.Id, 10),
 			Name:         pImage.Name,
+			Platform:     platform,
 			Architecture: pImage.Architecture,
 			State:        pImage.Status,
 			Type:         "public",

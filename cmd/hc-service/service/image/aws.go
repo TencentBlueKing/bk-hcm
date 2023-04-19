@@ -226,9 +226,11 @@ func (da *imageAdaptor) syncAwsImageUpdate(updateIDs []string, cloudMap map[stri
 	var updateReq dataproto.ImageExtBatchUpdateReq[dataproto.AwsImageExtensionUpdateReq]
 
 	for _, id := range updateIDs {
-		if cloudMap[id].Image.State == dsMap[id].Image.State {
+		if !isAwsImageChange(cloudMap[id].Image, dsMap[id].Image) {
 			continue
 		}
+
+		// TODO: 添加其他字段更新能力
 		image := &dataproto.ImageExtUpdateReq[dataproto.AwsImageExtensionUpdateReq]{
 			ID:    dsMap[id].Image.ID,
 			State: cloudMap[id].Image.State,
@@ -244,6 +246,15 @@ func (da *imageAdaptor) syncAwsImageUpdate(updateIDs []string, cloudMap map[stri
 	}
 
 	return nil
+}
+
+// isAwsImageChange ...
+func isAwsImageChange(cloud image.AwsImage, db *dataproto.ImageExtResult[dataproto.AwsImageExtensionResult]) bool {
+	if cloud.State != db.State {
+		return true
+	}
+
+	return false
 }
 
 func (da *imageAdaptor) getAwsImageDSSync(cloudIDs []string, req *protoimage.AwsImageSyncReq,
