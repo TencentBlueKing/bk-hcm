@@ -71,15 +71,9 @@ func (g *Gcp) ListImage(
 		return nil, "", err
 	}
 	for _, pImage := range resp.Items {
-		platform := ""
-		// Gcp的操作系统是传统意义的操作系统，需要进行二次转换。
-		if strings.Contains(strings.ToLower(pImage.Name), "centos") {
-			platform = "Linux"
-		}
-
-		if strings.Contains(strings.ToLower(pImage.Name), "windows") {
-			platform = "Windows"
-		}
+		lowName := strings.ToLower(pImage.Name)
+		platform := lowName[:strings.Index(lowName, "-")]
+		platform = strings.ToUpper(string(platform[0])) + platform[1:]
 
 		if len(platform) == 0 {
 			platform = pImage.Family
