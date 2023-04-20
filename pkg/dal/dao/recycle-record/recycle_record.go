@@ -44,7 +44,7 @@ import (
 // RecycleRecord defines recycle record dao operations.
 type RecycleRecord interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, records []rr.RecycleRecordTable) (string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, record *rr.RecycleRecordTable) error
+	Update(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, record *rr.RecycleRecordTable) error
 	List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (
 		*rrtypes.RecycleRecordListResult, error)
 	BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
@@ -72,17 +72,23 @@ func NewRecycleRecordDao(orm orm.Interface, idGen idgenerator.IDGenInterface, au
 
 // BatchCreateWithTx create recycle record with transaction.
 func (r *Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, records []rr.RecycleRecordTable) (string, error) {
-	// generate task id
-	taskID, err := r.idGen.One(kt, table.RecycleRecordTable)
-	if err != nil {
-		return "", err
-	}
-
 	if len(records) == 0 {
 		return "", errf.New(errf.InvalidParameter, "records to create cannot be empty")
 	}
 
+	// generate task id
+	taskID, err := r.idGen.One(kt, table.RecycleRecordTableTaskID)
+	if err != nil {
+		return "", err
+	}
+
+	ids, err := r.idGen.Batch(kt, table.RecycleRecordTable, len(records))
+	if err != nil {
+		return "", err
+	}
+
 	for idx := range records {
+		records[idx].ID = ids[idx]
 		records[idx].TaskID = taskID
 		if err = records[idx].InsertValidate(); err != nil {
 			return "", err
@@ -101,7 +107,7 @@ func (r *Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, records []rr.RecycleRe
 }
 
 // Update recycle records.
-func (r *Dao) Update(kt *kit.Kit, filterExpr *filter.Expression, record *rr.RecycleRecordTable) error {
+func (r *Dao) Update(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression, record *rr.RecycleRecordTable) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -123,22 +129,15 @@ func (r *Dao) Update(kt *kit.Kit, filterExpr *filter.Expression, record *rr.Recy
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, record.TableName(), setExpr, whereExpr)
 
-	_, err = r.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := r.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
-		if err != nil {
-			logs.ErrorJson("update recycle record failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
-			return nil, err
-		}
-
-		if effected == 0 {
-			logs.ErrorJson("update recycle record, but record not found, filter: %v, rid: %v", filterExpr, kt.Rid)
-			return nil, errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
-		}
-
-		return nil, nil
-	})
+	effected, err := r.orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 	if err != nil {
+		logs.ErrorJson("update recycle record failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 		return err
+	}
+
+	if effected == 0 {
+		logs.ErrorJson("update recycle record, but record not found, filter: %v, rid: %v", filterExpr, kt.Rid)
+		return errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
 	}
 
 	return nil

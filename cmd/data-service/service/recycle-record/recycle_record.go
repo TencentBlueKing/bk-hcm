@@ -148,12 +148,8 @@ func (svc *recycleRecordSvc) BatchRecoverCloudResource(cts *rest.Contexts) (inte
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	expr, err := tools.And(tools.ContainersExpression("res_id", req.IDs), tools.EqualExpression("res_type", req.ResType))
-	if err != nil {
-		return nil, err
-	}
 	opt := &types.ListOption{
-		Filter: expr,
+		Filter: tools.ContainersExpression("id", req.RecordIDs),
 		Page: &core.BasePage{
 			Limit: core.DefaultMaxPageLimit,
 		},
@@ -161,7 +157,7 @@ func (svc *recycleRecordSvc) BatchRecoverCloudResource(cts *rest.Contexts) (inte
 	}
 	listResp, err := svc.dao.RecycleRecord().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list recycle record failed, err: %v, ids: %+v, rid: %s", err, req.IDs, cts.Kit.Rid)
+		logs.Errorf("list recycle record failed, err: %v, ids: %+v, rid: %s", err, req.RecordIDs, cts.Kit.Rid)
 		return nil, fmt.Errorf("list recycle record failed, err: %v", err)
 	}
 
@@ -169,16 +165,16 @@ func (svc *recycleRecordSvc) BatchRecoverCloudResource(cts *rest.Contexts) (inte
 		return nil, nil
 	}
 
-	delIDs := make([]uint64, len(listResp.Details))
-	bizDelIDMap := make(map[int64][]string)
+	recordIDs := make([]string, len(listResp.Details))
+	bizCvmIDMap := make(map[int64][]string)
 	for index, one := range listResp.Details {
-		delIDs[index] = one.ID
-		bizDelIDMap[one.BkBizID] = append(bizDelIDMap[one.BkBizID], one.ResID)
+		recordIDs[index] = one.ID
+		bizCvmIDMap[one.BkBizID] = append(bizCvmIDMap[one.BkBizID], one.ResID)
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		// recover resource
-		for bizID, ids := range bizDelIDMap {
+		for bizID, ids := range bizCvmIDMap {
 			updateResOpt := &protodao.ResourceUpdateOptions{ResType: req.ResType, IDs: ids,
 				Status: enumor.RecoverStatus, BkBizID: bizID}
 			err := svc.dao.RecycleRecord().UpdateResource(cts.Kit, txn, updateResOpt)
@@ -188,8 +184,12 @@ func (svc *recycleRecordSvc) BatchRecoverCloudResource(cts *rest.Contexts) (inte
 		}
 
 		// delete recycle records
-		delFilter := tools.ContainersExpression("id", delIDs)
-		if err := svc.dao.RecycleRecord().BatchDeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+		updateFilter := tools.ContainersExpression("id", recordIDs)
+		updateData := &prototable.RecycleRecordTable{
+			Status:  enumor.RecoverRecycleRecordStatus,
+			Reviser: cts.Kit.User,
+		}
+		if err := svc.dao.RecycleRecord().Update(cts.Kit, txn, updateFilter, updateData); err != nil {
 			return nil, err
 		}
 
@@ -268,7 +268,7 @@ func (svc *recycleRecordSvc) BatchUpdateRecycleRecord(cts *rest.Contexts) (inter
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	ids := make([]uint64, 0, len(req.Data))
+	ids := make([]string, 0, len(req.Data))
 	for _, data := range req.Data {
 		ids = append(ids, data.ID)
 	}
@@ -288,7 +288,7 @@ func (svc *recycleRecordSvc) BatchUpdateRecycleRecord(cts *rest.Contexts) (inter
 		return nil, fmt.Errorf("list recycle record failed, some recycle record(ids=%+v) doesn't exist", ids)
 	}
 
-	detailMap := make(map[uint64]tabletype.JsonField)
+	detailMap := make(map[string]tabletype.JsonField)
 	for _, recycleRecord := range res.Details {
 		detailMap[recycleRecord.ID] = recycleRecord.Detail
 	}
@@ -296,21 +296,28 @@ func (svc *recycleRecordSvc) BatchUpdateRecycleRecord(cts *rest.Contexts) (inter
 	record := &prototable.RecycleRecordTable{
 		Reviser: cts.Kit.User,
 	}
-	for _, updateReq := range req.Data {
-		record.Status = string(updateReq.Status)
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		for _, updateReq := range req.Data {
+			record.Status = string(updateReq.Status)
 
-		updatedDetail, err := json.UpdateMerge(updateReq.Detail, string(detailMap[updateReq.ID]))
-		if err != nil {
-			return nil, fmt.Errorf("extension update merge failed, err: %v", err)
+			if updateReq.Detail != nil {
+				updatedDetail, err := json.UpdateMerge(updateReq.Detail, string(detailMap[updateReq.ID]))
+				if err != nil {
+					return nil, fmt.Errorf("extension update merge failed, err: %v", err)
+				}
+
+				record.Detail = tabletype.JsonField(updatedDetail)
+			}
+
+			err = svc.dao.RecycleRecord().Update(cts.Kit, txn, tools.EqualExpression("id", updateReq.ID), record)
+			if err != nil {
+				logs.Errorf("update recycle record failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return nil, fmt.Errorf("update subnet failed, err: %v", err)
+			}
 		}
 
-		record.Detail = tabletype.JsonField(updatedDetail)
+		return nil, nil
+	})
 
-		err = svc.dao.RecycleRecord().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), record)
-		if err != nil {
-			logs.Errorf("update subnet failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("update subnet failed, err: %v", err)
-		}
-	}
 	return nil, nil
 }

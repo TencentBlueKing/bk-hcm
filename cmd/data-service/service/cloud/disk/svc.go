@@ -277,15 +277,6 @@ func (dSvc *diskSvc) BatchDeleteDisk(cts *rest.Contexts) (interface{}, error) {
 			return nil, err
 		}
 
-		// delete disk related recycle records
-		delRecycleRecordFilter, err := tools.And(tools.ContainersExpression("res_id", delIDs),
-			tools.EqualExpression("res_type", enumor.DiskCloudResType))
-		if err != nil {
-			return nil, err
-		}
-		if err := dSvc.RecycleRecord().BatchDeleteWithTx(cts.Kit, txn, delRecycleRecordFilter); err != nil {
-			return nil, err
-		}
 		return nil, nil
 	})
 	if err != nil {

@@ -31,9 +31,11 @@ type RecycleRecordStatus string
 
 const (
 	// WaitingRecycleRecordStatus is a status indicating that resource is waiting to be recycled.
-	WaitingRecycleRecordStatus = "waiting"
-	// RecyclingRecycleRecordStatus is a status indicating that resource is recycling.
-	RecyclingRecycleRecordStatus = "recycling"
+	WaitingRecycleRecordStatus = "wait_recycle"
+	// RecycledRecycleRecordStatus is a status indicating that resource is recycled.
+	RecycledRecycleRecordStatus = "recycled"
+	// RecoverRecycleRecordStatus is a status indicating that resource is recovered.
+	RecoverRecycleRecordStatus = "recovered"
 	// FailedRecycleRecordStatus is a status indicating that resource recycle failed.
 	FailedRecycleRecordStatus = "failed"
 )

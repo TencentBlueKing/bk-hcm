@@ -18,6 +18,8 @@
 package cvm
 
 import (
+	"fmt"
+
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
@@ -176,9 +178,6 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 	}
 	taskID, err := svc.client.DataService().Global.RecycleRecord.BatchRecycleCloudRes(kt.Ctx, kt.Header(), opt)
 	if err != nil {
-		for _, id := range detachRes.Succeeded {
-			res.Failed = append(res.Failed, core.FailedInfo{ID: id, Error: err})
-		}
 		return nil, err
 	}
 
@@ -260,10 +259,8 @@ func (svc *cvmSvc) RecoverCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	expr, err := tools.And(tools.ContainersExpression("res_id", req.IDs),
-		tools.EqualExpression("res_type", enumor.CvmCloudResType))
 	listReq := &core.ListReq{
-		Filter: expr,
+		Filter: tools.ContainersExpression("id", req.RecordIDs),
 		Page:   &core.BasePage{Limit: constant.BatchOperationMaxLimit},
 	}
 	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
@@ -272,8 +269,12 @@ func (svc *cvmSvc) RecoverCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	if len(records.Details) != len(req.IDs) {
-		return nil, errf.New(errf.InvalidParameter, "some cvms are not in recycle bin")
+	if len(records.Details) != len(req.RecordIDs) {
+		return nil, errf.New(errf.InvalidParameter, "some record_ids are not in recycle bin")
+	}
+
+	if err = svc.validateRecycleRecord(records); err != nil {
+		return nil, err
 	}
 
 	// authorize
@@ -301,8 +302,8 @@ func (svc *cvmSvc) RecoverCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	opt := &recyclerecord.BatchRecoverReq{
-		ResType: enumor.CvmCloudResType,
-		IDs:     req.IDs,
+		ResType:   enumor.CvmCloudResType,
+		RecordIDs: req.RecordIDs,
 	}
 	err = svc.client.DataService().Global.RecycleRecord.BatchRecoverCloudResource(cts.Kit.Ctx, cts.Kit.Header(), opt)
 	if err != nil {
@@ -312,9 +313,31 @@ func (svc *cvmSvc) RecoverCvm(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
+// validateRecycleRecord 只能批量处理处于同一个回收任务的且是等待回收的记录。
+func (svc *cvmSvc) validateRecycleRecord(records *recyclerecord.ListResult) error {
+	taskID := ""
+	for _, one := range records.Details {
+		if len(taskID) == 0 {
+			taskID = one.TaskID
+		} else if taskID != one.TaskID {
+			return fmt.Errorf("only cvms in one task can be reclaimed at the same time")
+		}
+
+		if one.Status != enumor.WaitingRecycleRecordStatus {
+			return fmt.Errorf("record: %d not is wait_recycle status", one.ID)
+		}
+
+		if one.ResType != enumor.CvmCloudResType {
+			return fmt.Errorf("record: %d not is cvm recycle record", one.ID)
+		}
+	}
+
+	return nil
+}
+
 // BatchDeleteRecycledCvm batch delete recycled cvm.
 func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.BatchDeleteReq)
+	req := new(proto.CvmDeleteRecycledReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -323,9 +346,32 @@ func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	listReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", req.RecordIDs),
+		Page:   &core.BasePage{Limit: constant.BatchOperationMaxLimit},
+	}
+	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
+		listReq)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(records.Details) != len(req.RecordIDs) {
+		return nil, errf.New(errf.InvalidParameter, "some record_ids are not in recycle bin")
+	}
+
+	if err = svc.validateRecycleRecord(records); err != nil {
+		return nil, err
+	}
+
+	cvmIDs := make([]string, 0, len(records.Details))
+	for _, one := range records.Details {
+		cvmIDs = append(cvmIDs, one.ResID)
+	}
+
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.CvmCloudResType,
-		IDs:          req.IDs,
+		IDs:          cvmIDs,
 		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
@@ -344,6 +390,23 @@ func (svc *cvmSvc) BatchDeleteRecycledCvm(cts *rest.Contexts) (interface{}, erro
 	delRes, err := svc.cvmLgc.DeleteRecycledCvm(cts.Kit, basicInfoMap)
 	if err != nil {
 		return delRes, err
+	}
+
+	updateReq := &recyclerecord.BatchUpdateReq{
+		Data: make([]recyclerecord.UpdateReq, 0, len(req.RecordIDs)),
+	}
+	for _, id := range req.RecordIDs {
+		updateReq.Data = append(updateReq.Data, recyclerecord.UpdateReq{
+			ID:     id,
+			Status: enumor.RecycledRecycleRecordStatus,
+		})
+	}
+	err = svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
+		updateReq)
+	if err != nil {
+		logs.Errorf("update recycle record status to recycled failed, err: %v, ids: %v, rid: %s", err, req.RecordIDs,
+			cts.Kit.Rid)
+		return nil, err
 	}
 
 	return nil, nil

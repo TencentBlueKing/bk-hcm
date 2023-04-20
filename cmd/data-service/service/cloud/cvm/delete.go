@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -70,16 +69,6 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		delFilter := tools.ContainersExpression("id", delIDs)
 		if err := svc.dao.Cvm().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			return nil, err
-		}
-
-		// delete cvm related recycle records
-		delRecycleRecordFilter, err := tools.And(tools.ContainersExpression("res_id", delIDs),
-			tools.EqualExpression("res_type", enumor.CvmCloudResType))
-		if err != nil {
-			return nil, err
-		}
-		if err := svc.dao.RecycleRecord().BatchDeleteWithTx(cts.Kit, txn, delRecycleRecordFilter); err != nil {
 			return nil, err
 		}
 

@@ -119,10 +119,22 @@ func (req CvmRecycleReq) Validate() error {
 
 // CvmRecoverReq recover cvm request.
 type CvmRecoverReq struct {
-	IDs []string `json:"ids" validate:"min=1,max=100"`
+	RecordIDs []string `json:"record_ids" validate:"min=1,max=100"`
 }
 
 // Validate CvmRecoverReq
 func (req CvmRecoverReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Recover ------------------------
+
+// CvmDeleteRecycledReq delete recycled cvm request.
+type CvmDeleteRecycledReq struct {
+	RecordIDs []string `json:"record_ids" validate:"min=1,max=100"`
+}
+
+// Validate CvmDeleteRecycledReq
+func (req CvmDeleteRecycledReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

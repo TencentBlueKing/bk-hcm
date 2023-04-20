@@ -18,6 +18,8 @@
 package disk
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
@@ -210,6 +212,28 @@ func (svc *diskSvc) detachDiskByIDs(kt *kit.Kit, ids []string, basicInfoMap map[
 	return res, nil
 }
 
+// validateRecycleRecord 只能批量处理处于同一个回收任务的且是等待回收的记录。
+func (svc *diskSvc) validateRecycleRecord(records *recyclerecord.ListResult) error {
+	taskID := ""
+	for _, one := range records.Details {
+		if len(taskID) == 0 {
+			taskID = one.TaskID
+		} else if taskID != one.TaskID {
+			return fmt.Errorf("only disks in one task can be reclaimed at the same time")
+		}
+
+		if one.Status != enumor.WaitingRecycleRecordStatus {
+			return fmt.Errorf("record: %d not is wait_recycle status", one.ID)
+		}
+
+		if one.ResType != enumor.DiskCloudResType {
+			return fmt.Errorf("record: %d not is disk recycle record", one.ID)
+		}
+	}
+
+	return nil
+}
+
 // RecoverDisk recover disk.
 func (svc *diskSvc) RecoverDisk(cts *rest.Contexts) (interface{}, error) {
 	req := new(disk.DiskRecoverReq)
@@ -221,12 +245,9 @@ func (svc *diskSvc) RecoverDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	expr, err := tools.And(tools.ContainersExpression("res_id", req.IDs),
-		tools.EqualExpression("res_type", enumor.DiskCloudResType))
 	listReq := &core.ListReq{
-		Filter: expr,
+		Filter: tools.ContainersExpression("id", req.RecordIDs),
 		Page:   &core.BasePage{Limit: constant.BatchOperationMaxLimit},
-		Fields: []string{"id", "account_id", "bk_biz_id", "res_id", "detail"},
 	}
 	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
 		listReq)
@@ -234,8 +255,12 @@ func (svc *diskSvc) RecoverDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	if len(records.Details) != len(req.IDs) {
-		return nil, errf.New(errf.InvalidParameter, "some disks are not in recycle bin")
+	if len(records.Details) != len(req.RecordIDs) {
+		return nil, errf.New(errf.InvalidParameter, "some record_ids are not in recycle bin")
+	}
+
+	if err = svc.validateRecycleRecord(records); err != nil {
+		return nil, err
 	}
 
 	// authorize
@@ -263,8 +288,8 @@ func (svc *diskSvc) RecoverDisk(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	opt := &recyclerecord.BatchRecoverReq{
-		ResType: enumor.DiskCloudResType,
-		IDs:     req.IDs,
+		ResType:   enumor.DiskCloudResType,
+		RecordIDs: req.RecordIDs,
 	}
 	err = svc.client.DataService().Global.RecycleRecord.BatchRecoverCloudResource(cts.Kit.Ctx, cts.Kit.Header(), opt)
 	if err != nil {
@@ -276,7 +301,7 @@ func (svc *diskSvc) RecoverDisk(cts *rest.Contexts) (interface{}, error) {
 
 // BatchDeleteRecycledDisk batch delete recycled disks.
 func (svc *diskSvc) BatchDeleteRecycledDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.BatchDeleteReq)
+	req := new(disk.DiskDeleteRecycleReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -285,9 +310,32 @@ func (svc *diskSvc) BatchDeleteRecycledDisk(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	listReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", req.RecordIDs),
+		Page:   &core.BasePage{Limit: constant.BatchOperationMaxLimit},
+	}
+	records, err := svc.client.DataService().Global.RecycleRecord.ListRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
+		listReq)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(records.Details) != len(req.RecordIDs) {
+		return nil, errf.New(errf.InvalidParameter, "some record_ids are not in recycle bin")
+	}
+
+	if err = svc.validateRecycleRecord(records); err != nil {
+		return nil, err
+	}
+
+	diskIDs := make([]string, 0, len(records.Details))
+	for _, one := range records.Details {
+		diskIDs = append(diskIDs, one.ResID)
+	}
+
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.DiskCloudResType,
-		IDs:          req.IDs,
+		IDs:          diskIDs,
 		Fields:       append(types.CommonBasicInfoFields, "recycle_status"),
 	}
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
@@ -307,5 +355,23 @@ func (svc *diskSvc) BatchDeleteRecycledDisk(cts *rest.Contexts) (interface{}, er
 	if err != nil {
 		return delRes, err
 	}
+
+	updateReq := &recyclerecord.BatchUpdateReq{
+		Data: make([]recyclerecord.UpdateReq, 0, len(req.RecordIDs)),
+	}
+	for _, id := range req.RecordIDs {
+		updateReq.Data = append(updateReq.Data, recyclerecord.UpdateReq{
+			ID:     id,
+			Status: enumor.RecycledRecycleRecordStatus,
+		})
+	}
+	err = svc.client.DataService().Global.RecycleRecord.BatchUpdateRecycleRecord(cts.Kit.Ctx, cts.Kit.Header(),
+		updateReq)
+	if err != nil {
+		logs.Errorf("update recycle record status to recycled failed, err: %v, ids: %v, rid: %s", err, req.RecordIDs,
+			cts.Kit.Rid)
+		return nil, err
+	}
+
 	return nil, nil
 }

@@ -52,6 +52,12 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchStopCvm", http.MethodPost, "/cvms/batch/stop", svc.BatchStopCvm)
 	h.Add("BatchRebootCvm", http.MethodPost, "/cvms/batch/reboot", svc.BatchRebootCvm)
 
+	// 资源下回收相关接口
+	h.Add("RecycleCvm", http.MethodPost, "/cvms/recycle", svc.RecycleCvm)
+	h.Add("RecoverCvm", http.MethodPost, "/cvms/recover", svc.RecoverCvm)
+	h.Add("GetRecycledCvm", http.MethodGet, "/recycled/cvms/{id}", svc.GetRecycledCvm)
+	h.Add("BatchDeleteRecycledCvm", http.MethodDelete, "/recycled/cvms/batch", svc.BatchDeleteRecycledCvm)
+
 	// cvm apis in biz
 	h.Add("GetBizCvm", http.MethodGet, "/bizs/{bk_biz_id}/cvms/{id}", svc.GetBizCvm)
 	h.Add("ListBizCvmExt", http.MethodPost, "/bizs/{bk_biz_id}/cvms/list", svc.ListBizCvm)
@@ -60,13 +66,9 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchStopBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/stop", svc.BatchStopBizCvm)
 	h.Add("BatchRebootBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/reboot", svc.BatchRebootBizCvm)
 
-	// recycle operation related apis
-	h.Add("RecycleCvm", http.MethodPost, "/cvms/recycle", svc.RecycleCvm)
+	// 业务下回收接口
 	h.Add("RecycleBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recycle", svc.RecycleBizCvm)
-	h.Add("RecoverCvm", http.MethodPost, "/cvms/recover", svc.RecoverCvm)
-	h.Add("GetRecycledCvm", http.MethodGet, "/recycled/cvms/{id}", svc.GetRecycledCvm)
 	h.Add("GetBizRecycledCvm", http.MethodGet, "/bizs/{bk_biz_id}/recycled/cvms/{id}", svc.GetBizRecycledCvm)
-	h.Add("BatchDeleteRecycledCvm", http.MethodDelete, "/recycled/cvms/batch", svc.BatchDeleteRecycledCvm)
 
 	h.Load(c.WebService)
 }

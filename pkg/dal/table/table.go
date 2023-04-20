@@ -69,12 +69,8 @@ const (
 	GcpFirewallRuleTable = "gcp_firewall_rule"
 	// VpcTable is vpc table's name.
 	VpcTable Name = "vpc"
-	// VpcCvmRelTable is vpc & cvm relation table's name.
-	VpcCvmRelTable Name = "vpc_cvm_rel"
 	// SubnetTable is subnet table's name.
 	SubnetTable Name = "subnet"
-	// SubnetCvmRelTable is vpc & cvm relation table's name.
-	SubnetCvmRelTable Name = "subnet_cvm_rel"
 	// HuaWeiRegionTable is huawei region table's name.
 	HuaWeiRegionTable Name = "huawei_region"
 	// AzureRGTable is azure resource group table's name.
@@ -116,6 +112,10 @@ const (
 	NetworkInterfaceTable Name = "network_interface"
 	// NetworkInterfaceCvmRelTable is network interface and cvm rel table's name.
 	NetworkInterfaceCvmRelTable Name = "network_interface_cvm_rel"
+
+	// TODO: 之后考虑非表id的id_generator如何更优雅的使用
+	// RecycleRecordTableTaskID is recycle record table's task id.
+	RecycleRecordTableTaskID Name = "recycle_record_task_id"
 )
 
 // Validate whether the table name is valid or not.
@@ -170,6 +170,9 @@ var TableMap = map[Name]struct{}{
 	NetworkInterfaceTable:        {},
 	NetworkInterfaceCvmRelTable:  {},
 	RecycleRecordTable:           {},
+
+	// TODO: 临时方案
+	RecycleRecordTableTaskID: {},
 }
 
 // Register 注册表名

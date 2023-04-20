@@ -30,11 +30,11 @@ import (
 )
 
 // RecycleRecordColumns defines all the recycle record table's columns.
-var RecycleRecordColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, RecycleRecordColumnDescriptor)
+var RecycleRecordColumns = utils.MergeColumns(nil, RecycleRecordColumnDescriptor)
 
 // RecycleRecordColumnDescriptor is RecycleRecordTable's column descriptors.
 var RecycleRecordColumnDescriptor = utils.ColumnDescriptors{
-	{Column: "id", NamedC: "id", Type: enumor.Numeric},
+	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "task_id", NamedC: "task_id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "res_type", NamedC: "res_type", Type: enumor.String},
@@ -55,7 +55,7 @@ var RecycleRecordColumnDescriptor = utils.ColumnDescriptors{
 // RecycleRecordTable is used to save resource's recycle record information.
 type RecycleRecordTable struct {
 	// ID 自增ID
-	ID uint64 `db:"id" json:"id" validate:"isdefault"`
+	ID string `db:"id" json:"id" validate:"lte=64"`
 	// TaskID 单次回收一批资源的任务ID
 	TaskID string `db:"task_id" json:"task_id" validate:"lte=64"`
 	// Vendor 云厂商
@@ -75,7 +75,7 @@ type RecycleRecordTable struct {
 	// Region 地域
 	Region string `db:"region" json:"region" validate:"lte=255"`
 	// Detail 回收详情
-	Detail types.JsonField `db:"detail" json:"detail" validate:"required"`
+	Detail types.JsonField `db:"detail" json:"detail" validate:"omitempty"`
 	// Detail 回收状态
 	Status string `db:"status" validate:"lte=32" json:"status"`
 	// Creator 创建者
@@ -92,6 +92,10 @@ type RecycleRecordTable struct {
 func (r RecycleRecordTable) InsertValidate() error {
 	if err := validator.Validate.Struct(r); err != nil {
 		return err
+	}
+
+	if len(r.ID) == 0 {
+		return errors.New("id can not be empty")
 	}
 
 	if len(r.TaskID) == 0 {

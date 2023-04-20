@@ -32,7 +32,7 @@ type RecycleRecord struct {
 
 // BaseRecycleRecord defines recycle record basic info.
 type BaseRecycleRecord struct {
-	ID            uint64                     `json:"id"`
+	ID            string                     `json:"id"`
 	TaskID        string                     `json:"task_id"`
 	Vendor        enumor.Vendor              `json:"vendor"`
 	ResType       enumor.CloudResourceType   `json:"res_type"`

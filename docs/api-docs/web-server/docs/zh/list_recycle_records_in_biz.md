@@ -226,20 +226,20 @@
 
 #### data.detail[n]
 
-| 参数名称         | 参数类型   | 描述                                    |
-|--------------|--------|---------------------------------------|
-| id           | uint64 | 自增的回收记录ID                             |
-| task_id      | string | 同一批回收的资源的任务ID                         |
-| vendor       | enum   | 云供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| res_type     | enum   | 回收的资源类型（枚举值：cvm、disk）                 |
-| res_id       | string | 回收的资源ID                               |
-| cloud_res_id | string | 回收的资源的云上ID                            |
-| res_name     | string | 回收的资源名称                               |
-| bk_biz_id    | int64  | 业务ID                                  |
-| account_id   | string | 账号ID                                  |
-| region       | string | 地域                                    |
-| status       | enum   | 资源的回收状态（枚举值：waiting、recycling、failed） |
-| creator      | string | 创建者                                   |
-| reviser      | string | 更新者                                   |
-| created_at   | string | 创建时间，标准格式：2006-01-02T15:04:05Z         |
-| updated_at   | string | 更新时间，标准格式：2006-01-02T15:04:05Z         |
+| 参数名称         | 参数类型   | 描述                                                                      |
+|--------------|--------|-------------------------------------------------------------------------|
+| id           | uint64 | 自增的回收记录ID                                                               |
+| task_id      | string | 同一批回收的资源的任务ID                                                           |
+| vendor       | enum   | 云供应商（枚举值：tcloud、aws、azure、gcp、huawei）                                   |
+| res_type     | enum   | 回收的资源类型（枚举值：cvm、disk）                                                   |
+| res_id       | string | 回收的资源ID                                                                 |
+| cloud_res_id | string | 回收的资源的云上ID                                                              |
+| res_name     | string | 回收的资源名称                                                                 |
+| bk_biz_id    | int64  | 业务ID                                                                    |
+| account_id   | string | 账号ID                                                                    |
+| region       | string | 地域                                                                      |
+| status       | enum   | 资源的回收状态 (枚举值：wait_recycle:等待回收、recycled:已回收、recovered:已恢复、failed:回收失败)  |
+| creator      | string | 创建者                                                                     |
+| reviser      | string | 更新者                                                                     |
+| created_at   | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                          |
+| updated_at   | string | 更新时间，标准格式：2006-01-02T15:04:05Z                                          |

@@ -237,7 +237,7 @@
 | bk_biz_id    | int64  | 业务ID                                  |
 | account_id   | string | 账号ID                                  |
 | region       | string | 地域                                    |
-| status       | enum   | 资源的回收状态（枚举值：waiting、recycling、failed） |
+| status       | enum   | 资源的回收状态 (枚举值：wait_recycle:等待回收、recycled:已回收、recovered:已恢复、failed:回收失败) |
 | creator      | string | 创建者                                   |
 | reviser      | string | 更新者                                   |
 | created_at   | string | 创建时间，标准格式：2006-01-02T15:04:05Z         |

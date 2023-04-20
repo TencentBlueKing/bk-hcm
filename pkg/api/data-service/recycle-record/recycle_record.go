@@ -55,8 +55,8 @@ type RecycleResp struct {
 
 // BatchRecoverReq defines batch recover cloud resource request.
 type BatchRecoverReq struct {
-	ResType enumor.CloudResourceType `json:"resource_type" validate:"required"`
-	IDs     []string                 `json:"ids" validate:"min=1,max=100"`
+	ResType   enumor.CloudResourceType `json:"res_type" validate:"required"`
+	RecordIDs []string                 `json:"record_ids" validate:"min=1,max=100"`
 }
 
 // Validate BatchRecoverReq.
@@ -87,9 +87,9 @@ type BatchUpdateReq struct {
 
 // UpdateReq defines update recycle record request.
 type UpdateReq struct {
-	ID     uint64                     `json:"id" validate:"required"`
+	ID     string                     `json:"id" validate:"required"`
 	Status enumor.RecycleRecordStatus `json:"status" validate:"omitempty"`
-	Detail interface{}                `json:"detail" validate:"required"`
+	Detail interface{}                `json:"detail" validate:"omitempty"`
 }
 
 // Validate BatchUpdateReq.

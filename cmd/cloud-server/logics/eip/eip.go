@@ -152,7 +152,7 @@ func (e *eip) DisassociateEip(kt *kit.Kit, vendor enumor.Vendor, eipID, cvmID, n
 
 	switch vendor {
 	case enumor.TCloud:
-		err := e.disassociateEipAudit(kt, enumor.CvmAuditResType, eipID, nicID)
+		err := e.disassociateEipAudit(kt, enumor.CvmAuditResType, eipID, cvmID)
 		if err != nil {
 			return err
 		}
@@ -163,7 +163,7 @@ func (e *eip) DisassociateEip(kt *kit.Kit, vendor enumor.Vendor, eipID, cvmID, n
 			EipID:     eipID,
 		})
 	case enumor.Aws:
-		err := e.disassociateEipAudit(kt, enumor.CvmAuditResType, eipID, nicID)
+		err := e.disassociateEipAudit(kt, enumor.CvmAuditResType, eipID, cvmID)
 		if err != nil {
 			return err
 		}

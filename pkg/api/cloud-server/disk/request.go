@@ -103,10 +103,22 @@ func (req DiskRecycleReq) Validate() error {
 
 // DiskRecoverReq recover disk request.
 type DiskRecoverReq struct {
-	IDs []string `json:"ids" validate:"min=1,max=100"`
+	RecordIDs []string `json:"record_ids" validate:"min=1,max=100"`
 }
 
 // Validate DiskRecoverReq
 func (req DiskRecoverReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// -------------------------- Recycle ------------------------
+
+// DiskDeleteRecycleReq delete recycle disk request.
+type DiskDeleteRecycleReq struct {
+	RecordIDs []string `json:"record_ids" validate:"min=1,max=100"`
+}
+
+// Validate DiskDeleteRecycleReq
+func (req DiskDeleteRecycleReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
