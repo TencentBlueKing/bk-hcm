@@ -150,8 +150,14 @@ func (n *NetworkInterface) NetworkInterfaceAssignAuditBuild(kt *kit.Kit, assigns
 			continue
 		}
 
-		if one.AssignedResType != enumor.BizAuditAssignedResType {
-			return nil, errf.New(errf.InvalidParameter, "assigned network_interface resource type is invalid")
+		var action enumor.AuditAction
+		switch one.AssignedResType {
+		case enumor.BizAuditAssignedResType:
+			action = enumor.Assign
+		case enumor.DeliverAssignedResType:
+			action = enumor.Deliver
+		default:
+			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
 		}
 
 		audits = append(audits, &tableaudit.AuditTable{
@@ -159,7 +165,7 @@ func (n *NetworkInterface) NetworkInterfaceAssignAuditBuild(kt *kit.Kit, assigns
 			CloudResID: networkInterface.CloudID,
 			ResName:    networkInterface.Name,
 			ResType:    enumor.NetworkInterfaceAuditResType,
-			Action:     enumor.Assign,
+			Action:     action,
 			BkBizID:    networkInterface.BkBizID,
 			Vendor:     networkInterface.Vendor,
 			AccountID:  networkInterface.AccountID,

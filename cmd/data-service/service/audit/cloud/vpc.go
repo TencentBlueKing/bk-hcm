@@ -157,6 +157,9 @@ func (ad Audit) vpcAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResou
 		case enumor.CloudAreaAuditAssignedResType:
 			changed["bk_cloud_id"] = one.AssignedResID
 			audit.Action = enumor.Bind
+		case enumor.DeliverAssignedResType:
+			changed["bk_biz_id"] = one.AssignedResID
+			audit.Action = enumor.Deliver
 		default:
 			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
 		}

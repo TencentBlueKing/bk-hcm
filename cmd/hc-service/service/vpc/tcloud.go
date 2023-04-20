@@ -21,7 +21,6 @@
 package vpc
 
 import (
-	syncroutetable "hcm/cmd/hc-service/logics/sync/route-table"
 	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
@@ -29,7 +28,7 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
-	hcroutetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
@@ -86,7 +85,7 @@ func (v vpc) TCloudVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	subnetCreateOpt := &hcservice.TCloudSubnetBatchCreateReq{
-		BkBizID:    req.BkBizID,
+		BkBizID:    constant.UnassignedBiz,
 		AccountID:  req.AccountID,
 		Region:     data.Region,
 		CloudVpcID: data.CloudID,
@@ -106,17 +105,6 @@ func (v vpc) TCloudVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// sync route table
-	sync.SleepBeforeSync()
-
-	rtReq := &hcroutetable.TCloudRouteTableSyncReq{
-		AccountID: req.AccountID,
-		Region:    req.Extension.Region,
-	}
-	if _, err = syncroutetable.TCloudRouteTableSync(cts.Kit, rtReq, v.ad, v.cs.DataService()); err != nil {
-		return nil, err
-	}
-
 	return core.CreateResult{ID: result.IDs[0]}, nil
 }
 
@@ -126,7 +114,7 @@ func convertTCloudVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.TCloudVpcCr
 	vpcReq := cloud.VpcCreateReq[cloud.TCloudVpcCreateExt]{
 		AccountID: req.AccountID,
 		CloudID:   data.CloudID,
-		BkBizID:   req.BkBizID,
+		BkBizID:   constant.UnassignedBiz,
 		BkCloudID: req.BkCloudID,
 		Name:      &data.Name,
 		Region:    data.Region,

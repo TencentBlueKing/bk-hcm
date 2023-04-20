@@ -22,6 +22,7 @@ package handlers
 import (
 	"fmt"
 
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/api/core"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -38,6 +39,7 @@ type HandlerOption struct {
 	EsbClient        esb.Client
 	Cipher           cryptography.Crypto
 	PlatformManagers []string
+	Audit            audit.Interface
 }
 
 // BaseApplicationHandler 基础的Handler 一些公共函数和属性处理，可以给到其他具体Handler组合
@@ -50,6 +52,7 @@ type BaseApplicationHandler struct {
 	EsbClient        esb.Client
 	Cipher           cryptography.Crypto
 	PlatformManagers []string
+	Audit            audit.Interface
 }
 
 // NewBaseApplicationHandler ...
@@ -64,6 +67,7 @@ func NewBaseApplicationHandler(
 		EsbClient:        opt.EsbClient,
 		Cipher:           opt.Cipher,
 		PlatformManagers: opt.PlatformManagers,
+		Audit:            opt.Audit,
 	}
 }
 

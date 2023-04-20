@@ -17,48 +17,38 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package routetable defines route table service.
-package routetable
+package handlers
 
 import (
 	"hcm/pkg/api/core"
-	dataclient "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/kit"
+	corecloud "hcm/pkg/api/core/cloud/route-table"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/runtime/filter"
 )
 
-func getVpcBkBizIDFromDB(kt *kit.Kit, dataCli *dataclient.Client, accountID string,
-	cloudVpcID string) (int64, error) {
-
-	expr := &filter.Expression{
+// GetSubnet 查询路由表
+func (a *BaseApplicationHandler) GetRouteTables(vendor enumor.Vendor,
+	accountID, cloudVpcID string) ([]corecloud.BaseRouteTable, error) {
+	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
-			&filter.AtomRule{
-				Field: "account_id",
-				Op:    filter.Equal.Factory(),
-				Value: accountID,
-			},
-			&filter.AtomRule{
-				Field: "cloud_id",
-				Op:    filter.Equal.Factory(),
-				Value: cloudVpcID,
-			},
+			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+			filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
+			filter.AtomRule{Field: "cloud_vpc_id", Op: filter.Equal.Factory(), Value: cloudVpcID},
 		},
 	}
-
-	dbQueryReq := &core.ListReq{
-		Filter: expr,
-		Page:   core.DefaultBasePage,
-	}
-	dbList, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), dbQueryReq)
+	// 查询
+	resp, err := a.Client.DataService().Global.RouteTable.List(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&core.ListReq{
+			Filter: reqFilter,
+			Page:   core.DefaultBasePage,
+		},
+	)
 	if err != nil {
-		return constant.UnassignedBiz, err
+		return nil, err
 	}
 
-	if len(dbList.Details) <= 0 {
-		return constant.UnassignedBiz, nil
-	}
-
-	return dbList.Details[0].BkBizID, nil
+	return resp.Details, nil
 }

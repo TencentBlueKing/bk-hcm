@@ -92,6 +92,8 @@ const (
 	Disassociate AuditAction = "disassociate"
 	// Bind 绑定
 	Bind AuditAction = "bind"
+	// deliver 交付
+	Deliver AuditAction = "deliver"
 )
 
 // AuditActionEnums op type map.
@@ -109,6 +111,7 @@ var AuditActionEnums = map[AuditAction]struct{}{
 	Associate:    {},
 	Disassociate: {},
 	Bind:         {},
+	Deliver:      {},
 }
 
 // Exist judge enum value exist.
@@ -123,12 +126,14 @@ type AuditAssignedResType string
 const (
 	BizAuditAssignedResType       AuditAssignedResType = "biz"
 	CloudAreaAuditAssignedResType AuditAssignedResType = "cloud_area"
+	DeliverAssignedResType        AuditAssignedResType = "deliver"
 )
 
 // AuditAssignedResTypeEnums audit assigned resource type map.
 var AuditAssignedResTypeEnums = map[AuditAssignedResType]struct{}{
 	BizAuditAssignedResType:       {},
 	CloudAreaAuditAssignedResType: {},
+	DeliverAssignedResType:        {},
 }
 
 // Exist judge enum value exist.

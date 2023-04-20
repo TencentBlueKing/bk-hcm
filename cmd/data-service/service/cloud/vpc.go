@@ -179,7 +179,6 @@ func (svc *vpcSvc) BatchUpdateVpc(cts *rest.Contexts) (interface{}, error) {
 // batchUpdateVpc batch update vpc.
 func batchUpdateVpc[T protocloud.VpcUpdateExtension](cts *rest.Contexts, svc *vpcSvc) (
 	interface{}, error) {
-
 	req := new(protocloud.VpcBatchUpdateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

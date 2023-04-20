@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -149,7 +150,7 @@ func (c *Cvm) CvmAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourc
 			continue
 		}
 
-		audits = append(audits, &tableaudit.AuditTable{
+		audit := &tableaudit.AuditTable{
 			ResID:      one.ResID,
 			CloudResID: cvm.CloudID,
 			ResName:    cvm.Name,
@@ -167,7 +168,18 @@ func (c *Cvm) CvmAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourc
 					"bk_biz_id": one.ResID,
 				},
 			},
-		})
+		}
+
+		switch one.AssignedResType {
+		case enumor.BizAuditAssignedResType:
+			audit.Action = enumor.Assign
+		case enumor.DeliverAssignedResType:
+			audit.Action = enumor.Deliver
+		default:
+			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
+		}
+
+		audits = append(audits, audit)
 	}
 
 	return audits, nil

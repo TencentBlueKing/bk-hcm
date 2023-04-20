@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
@@ -104,7 +105,7 @@ func (v vpc) HuaWeiVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.HuaWeiSubnetCreateExt]{
-		BkBizID:    req.BkBizID,
+		BkBizID:    constant.UnassignedBiz,
 		AccountID:  req.AccountID,
 		Region:     listRes.Details[0].Region,
 		CloudVpcID: listRes.Details[0].CloudID,
@@ -135,7 +136,7 @@ func convertHuaWeiVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.HuaWeiVpcCr
 	vpcReq := cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt]{
 		AccountID: req.AccountID,
 		CloudID:   data.CloudID,
-		BkBizID:   req.BkBizID,
+		BkBizID:   constant.UnassignedBiz,
 		BkCloudID: req.BkCloudID,
 		Name:      &data.Name,
 		Region:    data.Region,

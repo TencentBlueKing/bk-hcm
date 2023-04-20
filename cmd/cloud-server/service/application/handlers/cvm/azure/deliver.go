@@ -93,6 +93,13 @@ func (a *ApplicationOfCreateAzureCvm) assignToBiz(cloudCvmIDs []string) ([]strin
 		return cvmIDs, err
 	}
 
+	// create deliver audit
+	err = a.Audit.ResDeliverAudit(a.Cts.Kit, enumor.CvmAuditResType, cvmIDs, int64(req.BkBizID))
+	if err != nil {
+		logs.Errorf("create deliver cvm audit failed, err: %v, rid: %s", err, a.Cts.Kit)
+		return nil, err
+	}
+
 	// 主机关联资源硬盘分配给业务
 	diskIDs, err := a.ListDiskIDByCvm(cvmIDs)
 	if err != nil {
@@ -109,6 +116,13 @@ func (a *ApplicationOfCreateAzureCvm) assignToBiz(cloudCvmIDs []string) ([]strin
 		)
 		if err != nil {
 			return cvmIDs, err
+		}
+
+		// create deliver audit
+		err = a.Audit.ResDeliverAudit(a.Cts.Kit, enumor.DiskAuditResType, diskIDs, int64(req.BkBizID))
+		if err != nil {
+			logs.Errorf("create deliver disk audit failed, err: %v, rid: %s", err, a.Cts.Kit)
+			return nil, err
 		}
 	}
 
@@ -128,6 +142,13 @@ func (a *ApplicationOfCreateAzureCvm) assignToBiz(cloudCvmIDs []string) ([]strin
 		)
 		if err != nil {
 			return cvmIDs, err
+		}
+
+		// create deliver audit
+		err = a.Audit.ResDeliverAudit(a.Cts.Kit, enumor.NetworkInterfaceAuditResType, niIDs, int64(req.BkBizID))
+		if err != nil {
+			logs.Errorf("create deliver ni audit failed, err: %v, rid: %s", err, a.Cts.Kit)
+			return nil, err
 		}
 	}
 

@@ -34,7 +34,8 @@ func (a *ApplicationOfCreateTCloudDisk) Deliver() (enumor.ApplicationStatus, map
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
-	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, a.req.DiskCount, a.req.BkBizID)
+	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, a.req.DiskCount,
+		a.req.BkBizID, a.Audit)
 }
 
 // toHcProtoCreateReq ...

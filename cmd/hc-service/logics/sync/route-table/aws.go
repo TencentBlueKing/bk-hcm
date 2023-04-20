@@ -34,6 +34,7 @@ import (
 	hcproto "hcm/pkg/api/hc-service/route-table"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	dataclient "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -318,12 +319,6 @@ func filterAwsRouteTableList(kt *kit.Kit, req *hcproto.AwsRouteTableSyncReq,
 
 	subnetMap = make(map[string]dataproto.RouteTableSubnetReq, 0)
 	for _, item := range list.Details {
-		// when sync add, if vpc is set bk_biz_id ,route_table set the same bk_biz_id
-		bkBizID, err := getVpcBkBizIDFromDB(kt, dataCli, req.AccountID, item.CloudVpcID)
-		if err != nil {
-			logs.Errorf("%s-routetable get vpc bk_biz_id from db failed. err: %v", enumor.Azure, err)
-			return nil, nil, nil, err
-		}
 		// need compare and update resource data
 		if resourceInfo, ok := resourceDBMap[item.CloudID]; ok {
 			if !checkAwsIsUpdate(item, resourceInfo) {
@@ -363,7 +358,7 @@ func filterAwsRouteTableList(kt *kit.Kit, req *hcproto.AwsRouteTableSyncReq,
 				Region:     item.Region,
 				CloudVpcID: item.CloudVpcID,
 				Memo:       item.Memo,
-				BkBizID:    bkBizID,
+				BkBizID:    constant.UnassignedBiz,
 			}
 			if item.Extension != nil {
 				tmpRes.Extension = &dataproto.AwsRouteTableCreateExt{

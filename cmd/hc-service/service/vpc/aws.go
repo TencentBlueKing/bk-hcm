@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
@@ -89,7 +90,7 @@ func (v vpc) AwsVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.AwsSubnetCreateExt]{
-		BkBizID:    req.BkBizID,
+		BkBizID:    constant.UnassignedBiz,
 		AccountID:  req.AccountID,
 		Region:     data.Region,
 		CloudVpcID: data.CloudID,
@@ -120,7 +121,7 @@ func convertAwsVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.AwsVpcCreateEx
 	vpcReq := cloud.VpcCreateReq[cloud.AwsVpcCreateExt]{
 		AccountID: req.AccountID,
 		CloudID:   data.CloudID,
-		BkBizID:   req.BkBizID,
+		BkBizID:   constant.UnassignedBiz,
 		BkCloudID: req.BkCloudID,
 		Name:      &data.Name,
 		Region:    data.Region,

@@ -59,3 +59,31 @@ func (a *BaseApplicationHandler) GetSubnet(
 
 	return &resp.Details[0], nil
 }
+
+// GetSubnetsByCloudVpcID 通过vpc id查询子网
+func (a *BaseApplicationHandler) GetSubnetsByCloudVpcID(
+	vendor enumor.Vendor, accountID, cloudVpcID string,
+) ([]corecloud.BaseSubnet, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+			filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
+			filter.AtomRule{Field: "cloud_vpc_id", Op: filter.Equal.Factory(), Value: cloudVpcID},
+		},
+	}
+	// 查询
+	resp, err := a.Client.DataService().Global.Subnet.List(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&core.ListReq{
+			Filter: reqFilter,
+			Page:   core.DefaultBasePage,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Details, nil
+}

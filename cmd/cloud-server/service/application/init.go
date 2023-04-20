@@ -24,8 +24,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tidwall/gjson"
-
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/api/core"
@@ -39,12 +38,15 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/esb"
+
+	"github.com/tidwall/gjson"
 )
 
 // InitApplicationService ...
 func InitApplicationService(c *capability.Capability, bkHcmUrl string, platformManagers []string) {
 	svc := &applicationSvc{
 		client:           c.ApiClient,
+		audit:            c.Audit,
 		authorizer:       c.Authorizer,
 		cipher:           c.Cipher,
 		esbClient:        c.EsbClient,
@@ -67,6 +69,7 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string, platformM
 
 type applicationSvc struct {
 	client           *client.ClientSet
+	audit            audit.Interface
 	authorizer       auth.Authorizer
 	cipher           cryptography.Crypto
 	esbClient        esb.Client
@@ -80,7 +83,12 @@ func (a *applicationSvc) getCallbackUrl() string {
 
 func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerOption {
 	return &handlers.HandlerOption{
-		Cts: cts, Client: a.client, EsbClient: a.esbClient, Cipher: a.cipher, PlatformManagers: a.platformManagers,
+		Cts:              cts,
+		Client:           a.client,
+		EsbClient:        a.esbClient,
+		Cipher:           a.cipher,
+		PlatformManagers: a.platformManagers,
+		Audit:            a.audit,
 	}
 }
 

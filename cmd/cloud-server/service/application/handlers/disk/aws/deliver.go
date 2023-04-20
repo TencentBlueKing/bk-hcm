@@ -35,7 +35,7 @@ func (a *ApplicationOfCreateAwsDisk) Deliver() (status enumor.ApplicationStatus,
 	}
 
 	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, uint32(a.req.DiskCount),
-		a.req.BkBizID)
+		a.req.BkBizID, a.Audit)
 }
 
 // toHcProtoCreateReq ...

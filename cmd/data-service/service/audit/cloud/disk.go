@@ -56,9 +56,16 @@ func (ad Audit) diskAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudReso
 			continue
 		}
 
-		if one.AssignedResType != enumor.BizAuditAssignedResType {
+		var action enumor.AuditAction
+		switch one.AssignedResType {
+		case enumor.BizAuditAssignedResType:
+			action = enumor.Assign
+		case enumor.DeliverAssignedResType:
+			action = enumor.Deliver
+		default:
 			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
 		}
+
 		changed := map[string]int64{"bk_biz_id": one.AssignedResID}
 
 		audits = append(audits, &tableaudit.AuditTable{
@@ -66,7 +73,7 @@ func (ad Audit) diskAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudReso
 			CloudResID: diskData.CloudID,
 			ResName:    converter.PtrToVal(&diskData.Name),
 			ResType:    enumor.DiskAuditResType,
-			Action:     enumor.Assign,
+			Action:     action,
 			BkBizID:    diskData.BkBizID,
 			Vendor:     enumor.Vendor(diskData.Vendor),
 			AccountID:  diskData.AccountID,

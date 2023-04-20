@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -61,7 +62,7 @@ func (s *Subnet) AzureSubnetSync(kt *kit.Kit, req *AzureSubnetSyncOptions) (*cor
 
 	routeTableIDs := make([]string, 0, len(req.Subnets))
 	for _, subnet := range req.Subnets {
-		createReqs = append(createReqs, convertAzureSubnetCreateReq(&subnet, req.AccountID, req.BkBizID))
+		createReqs = append(createReqs, convertAzureSubnetCreateReq(&subnet, req.AccountID, constant.UnassignedBiz))
 		if subnet.Extension.CloudRouteTableID != nil {
 			routeTableIDs = append(routeTableIDs, *subnet.Extension.CloudRouteTableID)
 		}

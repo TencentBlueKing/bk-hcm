@@ -92,6 +92,13 @@ func (a *ApplicationOfCreateAwsCvm) assignToBiz(cloudCvmIDs []string) ([]string,
 		return cvmIDs, err
 	}
 
+	// create deliver audit
+	err = a.Audit.ResDeliverAudit(a.Cts.Kit, enumor.CvmAuditResType, cvmIDs, int64(req.BkBizID))
+	if err != nil {
+		logs.Errorf("create deliver cvm audit failed, err: %v, rid: %s", err, a.Cts.Kit)
+		return nil, err
+	}
+
 	// 主机关联资源分配给业务，目前只有硬盘是一同创建出来的
 	diskIDs, err := a.ListDiskIDByCvm(cvmIDs)
 	if err != nil {
@@ -110,6 +117,14 @@ func (a *ApplicationOfCreateAwsCvm) assignToBiz(cloudCvmIDs []string) ([]string,
 		if err != nil {
 			return cvmIDs, err
 		}
+
+		// create deliver audit
+		err = a.Audit.ResDeliverAudit(a.Cts.Kit, enumor.DiskAuditResType, diskIDs, int64(req.BkBizID))
+		if err != nil {
+			logs.Errorf("create deliver disk audit failed, err: %v, rid: %s", err, a.Cts.Kit)
+			return nil, err
+		}
 	}
+
 	return cvmIDs, nil
 }

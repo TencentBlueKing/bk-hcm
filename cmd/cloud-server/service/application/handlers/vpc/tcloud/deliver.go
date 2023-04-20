@@ -20,13 +20,14 @@
 package tcloud
 
 import (
+	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 )
 
 // Deliver 执行资源交付
 func (a *ApplicationOfCreateTCloudVpc) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
-	// 创建主机
+	// 创建vpc
 	result, err := a.Client.HCService().TCloud.Vpc.Create(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
@@ -34,6 +35,57 @@ func (a *ApplicationOfCreateTCloudVpc) Deliver() (enumor.ApplicationStatus, map[
 	)
 	if err != nil || result == nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
+	}
+
+	// 交付vpc到业务下
+	deliverVpcResult, err := logics.DeliverVpc(a.Cts.Kit, a.req.BkBizID,
+		a.Client.DataService(), a.Audit, result.ID)
+	if err != nil {
+		return enumor.DeliverError, deliverVpcResult, err
+	}
+
+	// 查询vpc
+	vpcInfo, err := a.GetVpcByID(a.Vendor(), result.ID)
+	if err != nil {
+		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
+	}
+
+	// 查询子网
+	subnetsInfo, err := a.GetSubnetsByCloudVpcID(a.Vendor(), a.req.AccountID, vpcInfo.CloudID)
+	if err != nil {
+		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
+	}
+
+	if len(subnetsInfo) > 0 {
+		// 交付子网到业务下
+		subnetIDs := make([]string, 0, len(subnetsInfo))
+		for _, one := range subnetsInfo {
+			subnetIDs = append(subnetIDs, one.ID)
+		}
+		deliverSubnetResult, err := logics.DeliverSubnet(a.Cts.Kit, a.req.BkBizID,
+			a.Client.DataService(), a.Audit, subnetIDs)
+		if err != nil {
+			return enumor.DeliverError, deliverSubnetResult, err
+		}
+	}
+
+	// 查询路由表
+	routetableInfo, err := a.GetRouteTables(a.Vendor(), a.req.AccountID, vpcInfo.CloudID)
+	if err != nil {
+		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
+	}
+
+	if len(routetableInfo) > 0 {
+		// 交付路由表到业务下
+		routetableIDs := make([]string, 0, len(routetableInfo))
+		for _, one := range routetableInfo {
+			routetableIDs = append(routetableIDs, one.ID)
+		}
+		deliverRouteTableResult, err := logics.DeliverRouteTable(a.Cts.Kit, a.req.BkBizID,
+			a.Client.DataService(), a.Audit, routetableIDs)
+		if err != nil {
+			return enumor.DeliverError, deliverRouteTableResult, err
+		}
 	}
 
 	return enumor.Completed, map[string]interface{}{"vpc_id": result.ID}, nil

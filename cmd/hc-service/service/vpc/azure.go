@@ -22,7 +22,6 @@ package vpc
 
 import (
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
-	syncroutetable "hcm/cmd/hc-service/logics/sync/route-table"
 	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
@@ -30,7 +29,7 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
-	hcroutetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
@@ -103,17 +102,6 @@ func (v vpc) AzureVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// sync route table
-	sync.SleepBeforeSync()
-
-	rtReq := &hcroutetable.AzureRouteTableSyncReq{
-		AccountID:         req.AccountID,
-		ResourceGroupName: req.Extension.ResourceGroup,
-	}
-	if _, err = syncroutetable.AzureRouteTableSync(cts.Kit, rtReq, v.ad, v.cs.DataService()); err != nil {
-		return nil, err
-	}
-
 	return core.CreateResult{ID: result.IDs[0]}, nil
 }
 
@@ -123,7 +111,7 @@ func convertVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.AzureVpcCreateExt
 	vpcReq := cloud.VpcCreateReq[cloud.AzureVpcCreateExt]{
 		AccountID: req.AccountID,
 		CloudID:   data.CloudID,
-		BkBizID:   req.BkBizID,
+		BkBizID:   constant.UnassignedBiz,
 		BkCloudID: req.BkCloudID,
 		Name:      &data.Name,
 		Region:    data.Region,

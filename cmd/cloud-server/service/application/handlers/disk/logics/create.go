@@ -22,6 +22,7 @@ package logics
 import (
 	"fmt"
 
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/disk"
 	hcproto "hcm/pkg/api/hc-service/disk"
@@ -34,7 +35,8 @@ import (
 
 // CheckResultAndAssign ...
 func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.BatchCreateResult,
-	diskCount uint32, bkBizID int64) (enumor.ApplicationStatus, map[string]interface{}, error) {
+	diskCount uint32, bkBizID int64,
+	audit audit.Interface) (enumor.ApplicationStatus, map[string]interface{}, error) {
 
 	deliverDetail := map[string]interface{}{"result": result}
 	// 全部失败
@@ -70,6 +72,13 @@ func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.
 		kt.Header(),
 		&dataproto.DiskBatchUpdateReq{IDs: ids, BkBizID: uint64(bkBizID)},
 	)
+	if err != nil {
+		deliverDetail["error"] = err.Error()
+		return enumor.DeliverError, deliverDetail, err
+	}
+
+	// create deliver audit
+	err = audit.ResDeliverAudit(kt, enumor.DiskAuditResType, ids, bkBizID)
 	if err != nil {
 		deliverDetail["error"] = err.Error()
 		return enumor.DeliverError, deliverDetail, err

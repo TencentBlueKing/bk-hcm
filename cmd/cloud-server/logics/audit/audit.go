@@ -41,6 +41,8 @@ type Interface interface {
 		updateFields map[string]interface{}) error
 	// ResBizAssignAudit 资源分配到业务审计
 	ResBizAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, resIDs []string, bizID int64) error
+	// ResDeliverAudit 资源交付到业务审计
+	ResDeliverAudit(kt *kit.Kit, resType enumor.AuditResourceType, resIDs []string, bizID int64) error
 	// ResCloudAreaBindAudit 资源绑定云区域审计
 	ResCloudAreaBindAudit(kt *kit.Kit, resType enumor.AuditResourceType, opt []ResCloudAreaBindOption) error
 	// ResBaseOperationAudit 资源基础操作审计，开机，关机等。
@@ -76,6 +78,28 @@ func (a audit) ResBizAssignAudit(kt *kit.Kit, resType enumor.AuditResourceType, 
 			ResType:         resType,
 			ResID:           resID,
 			AssignedResType: enumor.BizAuditAssignedResType,
+			AssignedResID:   bizID,
+		})
+	}
+	if err := a.dataCli.Global.Audit.CloudResourceAssignAudit(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("request dataservice CloudResourceAssignAudit failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// ResDeliverAudit resource deliver to biz audit.
+func (a audit) ResDeliverAudit(kt *kit.Kit, resType enumor.AuditResourceType, resIDs []string, bizID int64) error {
+	req := &protoaudit.CloudResourceAssignAuditReq{
+		Assigns: make([]protoaudit.CloudResourceAssignInfo, 0, len(resIDs)),
+	}
+
+	for _, resID := range resIDs {
+		req.Assigns = append(req.Assigns, protoaudit.CloudResourceAssignInfo{
+			ResType:         resType,
+			ResID:           resID,
+			AssignedResType: enumor.DeliverAssignedResType,
 			AssignedResID:   bizID,
 		})
 	}

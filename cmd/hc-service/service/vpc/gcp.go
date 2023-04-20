@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -113,7 +114,7 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 
 	cloudVpcID := listRes.Details[0].CloudID
 	for region, subnets := range regionSubnetMap {
-		err = v.createGcpSubnetWithRetry(cts.Kit, req.BkBizID, req.AccountID, cloudVpcID, region, subnets)
+		err = v.createGcpSubnetWithRetry(cts.Kit, constant.UnassignedBiz, req.AccountID, cloudVpcID, region, subnets)
 		if err != nil {
 			return nil, err
 		}
@@ -173,7 +174,7 @@ func convertGcpVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.GcpVpcCreateEx
 	vpcReq := cloud.VpcCreateReq[cloud.GcpVpcCreateExt]{
 		AccountID: req.AccountID,
 		CloudID:   data.CloudID,
-		BkBizID:   req.BkBizID,
+		BkBizID:   constant.UnassignedBiz,
 		BkCloudID: req.BkCloudID,
 		Name:      &data.Name,
 		Region:    data.Region,

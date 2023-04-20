@@ -66,7 +66,13 @@ func (ad *RouteTable) RouteTableAssignAuditBuild(kt *kit.Kit, assigns []protoaud
 			continue
 		}
 
-		if one.AssignedResType != enumor.BizAuditAssignedResType {
+		var action enumor.AuditAction
+		switch one.AssignedResType {
+		case enumor.BizAuditAssignedResType:
+			action = enumor.Assign
+		case enumor.DeliverAssignedResType:
+			action = enumor.Deliver
+		default:
 			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
 		}
 
@@ -75,7 +81,7 @@ func (ad *RouteTable) RouteTableAssignAuditBuild(kt *kit.Kit, assigns []protoaud
 			CloudResID: routeTable.CloudID,
 			ResName:    converter.PtrToVal(routeTable.Name),
 			ResType:    enumor.RouteTableAuditResType,
-			Action:     enumor.Assign,
+			Action:     action,
 			BkBizID:    routeTable.BkBizID,
 			Vendor:     routeTable.Vendor,
 			AccountID:  routeTable.AccountID,

@@ -151,7 +151,13 @@ func (ad *Subnet) SubnetAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.Cloud
 			continue
 		}
 
-		if one.AssignedResType != enumor.BizAuditAssignedResType {
+		var action enumor.AuditAction
+		switch one.AssignedResType {
+		case enumor.BizAuditAssignedResType:
+			action = enumor.Assign
+		case enumor.DeliverAssignedResType:
+			action = enumor.Deliver
+		default:
 			return nil, errf.New(errf.InvalidParameter, "assigned resource type is invalid")
 		}
 
@@ -160,7 +166,7 @@ func (ad *Subnet) SubnetAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.Cloud
 			CloudResID: subnet.CloudID,
 			ResName:    converter.PtrToVal(subnet.Name),
 			ResType:    enumor.SubnetAuditResType,
-			Action:     enumor.Assign,
+			Action:     action,
 			BkBizID:    subnet.BkBizID,
 			Vendor:     subnet.Vendor,
 			AccountID:  subnet.AccountID,

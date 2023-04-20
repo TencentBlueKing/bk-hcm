@@ -58,3 +58,63 @@ func (a *BaseApplicationHandler) GetVpc(
 
 	return &resp.Details[0], nil
 }
+
+// GetVpcByID 通过id查询VPC
+func (a *BaseApplicationHandler) GetVpcByID(
+	vendor enumor.Vendor, id string,
+) (*corecloud.BaseVpc, error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id},
+		},
+	}
+	// 查询
+	resp, err := a.Client.DataService().Global.Vpc.List(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&core.ListReq{
+			Filter: reqFilter,
+			Page:   a.getPageOfOneLimit(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found %s vpc by id(%s)", vendor, id)
+	}
+
+	return &resp.Details[0], nil
+}
+
+// GetGcpVpcWithExtension 查询gcp并带有扩展信息
+func (a *BaseApplicationHandler) GetGcpVpcWithExtension(
+	vendor enumor.Vendor, accountID, cloudVpcID string,
+) (*corecloud.Vpc[corecloud.GcpVpcExtension], error) {
+	reqFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+			filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
+			filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: cloudVpcID},
+		},
+	}
+	// 查询
+	resp, err := a.Client.DataService().Gcp.Vpc.ListVpcExt(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&core.ListReq{
+			Filter: reqFilter,
+			Page:   a.getPageOfOneLimit(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found %s vpc by cloud_id(%s)", vendor, cloudVpcID)
+	}
+
+	return &resp.Details[0], nil
+}
