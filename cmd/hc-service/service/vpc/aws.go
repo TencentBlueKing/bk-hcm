@@ -82,20 +82,18 @@ func (v vpc) AwsVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// create aws subnets
-	if len(req.Extension.Subnets) == 0 {
-		return core.CreateResult{ID: result.IDs[0]}, nil
-	}
-
-	subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.AwsSubnetCreateExt]{
-		BkBizID:    constant.UnassignedBiz,
-		AccountID:  req.AccountID,
-		Region:     data.Region,
-		CloudVpcID: data.CloudID,
-		CreateReqs: req.Extension.Subnets,
-	}
-	_, err = v.subnet.AwsSubnetCreate(cts.Kit, subnetCreateOpt)
-	if err != nil {
-		return nil, err
+	if len(req.Extension.Subnets) > 0 {
+		subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.AwsSubnetCreateExt]{
+			BkBizID:    constant.UnassignedBiz,
+			AccountID:  req.AccountID,
+			Region:     data.Region,
+			CloudVpcID: data.CloudID,
+			CreateReqs: req.Extension.Subnets,
+		}
+		_, err = v.subnet.AwsSubnetCreate(cts.Kit, subnetCreateOpt)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// sync route table
