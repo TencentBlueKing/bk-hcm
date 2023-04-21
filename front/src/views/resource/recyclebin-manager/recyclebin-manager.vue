@@ -299,7 +299,7 @@ export default defineComponent({
     // 销毁恢复
     const handleOperate = (type: string, ids?: string[]) => {
       console.log('selections', ids, selections.value);
-      state.selectedIds = ids ? ids : selections.value.map(e => e.res_id);
+      state.selectedIds = ids ? ids : selections.value.map(e => e.id);
       state.type = type;
       state.deleteBoxTitle = `确认要 ${type === 'destroy' ? t('销毁') : t('恢复')}`;
       state.showDeleteBox = true;
