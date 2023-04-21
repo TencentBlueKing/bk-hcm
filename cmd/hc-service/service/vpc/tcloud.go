@@ -21,7 +21,6 @@
 package vpc
 
 import (
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
@@ -65,8 +64,6 @@ func (v vpc) TCloudVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// create hcm vpc
-	sync.SleepBeforeSync()
-
 	createReq := &cloud.VpcBatchCreateReq[cloud.TCloudVpcCreateExt]{
 		Vpcs: []cloud.VpcCreateReq[cloud.TCloudVpcCreateExt]{convertTCloudVpcCreateReq(req, data)},
 	}

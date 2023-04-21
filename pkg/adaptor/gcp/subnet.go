@@ -20,15 +20,18 @@
 package gcp
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
-	"strings"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"google.golang.org/api/compute/v1"
 )
 
@@ -71,7 +74,21 @@ func (g *Gcp) CreateSubnet(kt *kit.Kit, opt *types.GcpSubnetCreateOption) (uint6
 		return 0, err
 	}
 
-	return resp.TargetId, nil
+	handler := &createSubnetPollingHandler{
+		parseSelfLinkToName(resp.Zone),
+	}
+	respPoller := poller.Poller[*Gcp, []*compute.Operation, []uint64]{Handler: handler}
+	results, err := respPoller.PollUntilDone(g, kt, []*string{to.Ptr(resp.OperationGroupId)},
+		types.NewBatchCreateSubnetPollerOption())
+	if err != nil {
+		return 0, err
+	}
+
+	if len(converter.PtrToVal(results)) <= 0 {
+		return 0, fmt.Errorf("create subnet failed")
+	}
+
+	return (converter.PtrToVal(results))[0], nil
 }
 
 // UpdateSubnet update subnet.
@@ -154,10 +171,7 @@ func convertSubnet(data *compute.Subnetwork) *types.GcpSubnet {
 	// @see https://www.googleapis.com/compute/v1/projects/xxxx/regions/us-centrall
 	region := ""
 	if len(data.Region) > 0 {
-		regionArr := strings.Split(data.Region, "/")
-		if len(regionArr) >= 9 && regionArr[7] == "regions" {
-			region = regionArr[8]
-		}
+		region = parseSelfLinkToName(data.Region)
 	}
 
 	subnet := &types.GcpSubnet{
@@ -185,4 +199,58 @@ func convertSubnet(data *compute.Subnetwork) *types.GcpSubnet {
 	}
 
 	return subnet
+}
+
+type createSubnetPollingHandler struct {
+	zone string
+}
+
+// Done ...
+func (h *createSubnetPollingHandler) Done(items []*compute.Operation) (bool, *[]uint64) {
+	results := make([]uint64, 0)
+
+	flag := true
+	for _, item := range items {
+		if item.OperationType == "insert" && item.Status == "DONE" {
+			results = append(results, item.TargetId)
+			continue
+		}
+
+		if item.OperationType == "insert" && item.Status == "PENDING" {
+			flag = false
+			continue
+		}
+
+		if item.OperationType == "insert" && item.Status == "RUNNING" {
+			flag = false
+			continue
+		}
+	}
+
+	return flag, converter.ValToPtr(results)
+}
+
+// Poll ...
+func (h *createSubnetPollingHandler) Poll(client *Gcp, kt *kit.Kit, operGroupIDs []*string) ([]*compute.Operation, error) {
+	if len(operGroupIDs) == 0 {
+		return nil, errors.New("operation group id is required")
+	}
+
+	computeClient, err := client.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	operResp, err := computeClient.ZoneOperations.List(client.CloudProjectID(), h.zone).Context(kt.Ctx).
+		Filter(fmt.Sprintf(`operationGroupId="%s"`, *operGroupIDs[0])).Do()
+	if err != nil {
+		logs.Errorf("list zone operations failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	if len(operResp.Items) <= 1 {
+		return nil, errors.New("operation has not been created yet, need to wait")
+	}
+
+	return operResp.Items, nil
 }

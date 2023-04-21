@@ -25,7 +25,6 @@ import (
 
 	"hcm/cmd/hc-service/logics/sync/cvm"
 	"hcm/cmd/hc-service/service/capability"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/gcp"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
@@ -217,7 +216,6 @@ func (svc *cvmSvc) StartGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncGcpCvmOption{
 		AccountID: cvmFromDB.AccountID,
 		Region:    cvmFromDB.Region,
@@ -261,7 +259,6 @@ func (svc *cvmSvc) StopGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncGcpCvmOption{
 		AccountID: cvmFromDB.AccountID,
 		Region:    cvmFromDB.Region,
@@ -305,7 +302,6 @@ func (svc *cvmSvc) RebootGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncGcpCvmOption{
 		AccountID: cvmFromDB.AccountID,
 		Region:    cvmFromDB.Region,

@@ -32,8 +32,24 @@ func NewBatchCreateCvmPollerOption() *poller.PollUntilDoneOption {
 	}
 }
 
-// NewBatchRebootCvmPollerOpt 超时时间5分钟，10次之内重试间隔时间1s，10次之后重试间隔时间1-5s之间
-func NewBatchRebootCvmPollerOpt() *poller.PollUntilDoneOption {
+// NewBatchCreateVpcPollerOption 超时时间10分钟，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
+func NewBatchCreateVpcPollerOption() *poller.PollUntilDoneOption {
+	return &poller.PollUntilDoneOption{
+		TimeoutTimeSecond: 30 * 60,
+		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
+	}
+}
+
+// NewBatchCreateSubnetPollerOption 超时时间10分钟，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
+func NewBatchCreateSubnetPollerOption() *poller.PollUntilDoneOption {
+	return &poller.PollUntilDoneOption{
+		TimeoutTimeSecond: 30 * 60,
+		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
+	}
+}
+
+// NewBatchOperateCvmPollerOpt 超时时间10分钟，10次之内重试间隔时间1s，10次之后重试间隔时间1-5s之间
+func NewBatchOperateCvmPollerOpt() *poller.PollUntilDoneOption {
 	return &poller.PollUntilDoneOption{
 		TimeoutTimeSecond: 10 * 60,
 		Retry:             retry.NewRetryPolicy(10, [2]uint{1000, 5000}),

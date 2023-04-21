@@ -20,13 +20,16 @@
 package aws
 
 import (
+	"fmt"
 	"strings"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -62,7 +65,21 @@ func (a *Aws) CreateSubnet(kt *kit.Kit, opt *types.AwsSubnetCreateOption) (*type
 		return nil, err
 	}
 
-	return convertSubnet(resp.Subnet, opt.Extension.Region), nil
+	handler := &createSubnetPollingHandler{
+		opt.Extension.Region,
+	}
+	respPoller := poller.Poller[*Aws, []*ec2.Subnet, []*types.AwsSubnet]{Handler: handler}
+	results, err := respPoller.PollUntilDone(a, kt, []*string{resp.Subnet.SubnetId},
+		types.NewBatchCreateSubnetPollerOption())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(converter.PtrToVal(results)) <= 0 {
+		return nil, fmt.Errorf("create subnet failed")
+	}
+
+	return (converter.PtrToVal(results))[0], nil
 }
 
 // CreateDefaultSubnet create default subnet.
@@ -196,4 +213,54 @@ func convertSubnet(data *ec2.Subnet, region string) *types.AwsSubnet {
 	}
 
 	return s
+}
+
+type createSubnetPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *createSubnetPollingHandler) Done(subnets []*ec2.Subnet) (bool, *[]*types.AwsSubnet) {
+	results := make([]*types.AwsSubnet, 0)
+	flag := true
+	for _, subnet := range subnets {
+		if converter.PtrToVal(subnet.State) == "pending" {
+			flag = false
+			continue
+		}
+
+		results = append(results, convertSubnet(subnet, h.region))
+	}
+
+	return flag, converter.ValToPtr(results)
+}
+
+// Poll ...
+func (h *createSubnetPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Subnet, error) {
+
+	cloudIDSplit := slice.Split(cloudIDs, core.AwsQueryLimit)
+
+	subnets := make([]*ec2.Subnet, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := new(ec2.DescribeSubnetsInput)
+		req.SubnetIds = aws.StringSlice(converter.PtrToSlice(partIDs))
+
+		client, err := client.clientSet.ec2Client(h.region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := client.DescribeSubnetsWithContext(kt.Ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		subnets = append(subnets, resp.Subnets...)
+	}
+
+	if len(subnets) != len(cloudIDs) {
+		return nil, fmt.Errorf("query subnet count: %d not equal return count: %d", len(cloudIDs), len(subnets))
+	}
+
+	return subnets, nil
 }

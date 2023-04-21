@@ -23,7 +23,6 @@ package vpc
 import (
 	"hcm/cmd/hc-service/logics/subnet"
 	syncroutetable "hcm/cmd/hc-service/logics/sync/route-table"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
@@ -70,8 +69,6 @@ func (v vpc) AwsVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// create hcm vpc
-	sync.SleepBeforeSync()
-
 	createReq := &cloud.VpcBatchCreateReq[cloud.AwsVpcCreateExt]{
 		Vpcs: []cloud.VpcCreateReq[cloud.AwsVpcCreateExt]{convertAwsVpcCreateReq(req, data)},
 	}
@@ -102,8 +99,6 @@ func (v vpc) AwsVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// sync route table
-	sync.SleepBeforeSync()
-
 	rtReq := &hcroutetable.AwsRouteTableSyncReq{
 		AccountID: req.AccountID,
 		Region:    req.Extension.Region,

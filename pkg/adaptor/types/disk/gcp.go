@@ -63,6 +63,7 @@ type GcpDiskListOption struct {
 	Zone      string        `json:"zone" validate:"required"`
 	CloudIDs  []string      `json:"cloud_ids" validate:"omitempty"`
 	SelfLinks []string      `json:"self_links" validate:"omitempty"`
+	Names     []string      `json:"names" validate:"omitempty"`
 	Page      *core.GcpPage `json:"page" validate:"omitempty"`
 }
 

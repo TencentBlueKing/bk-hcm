@@ -26,7 +26,6 @@ import (
 	"hcm/cmd/hc-service/logics/sync/disk"
 	"hcm/cmd/hc-service/logics/sync/eip"
 	"hcm/cmd/hc-service/service/capability"
-	"hcm/cmd/hc-service/service/sync"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -159,7 +158,6 @@ func (svc *cvmSvc) BatchResetHuaWeiCvmPwd(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncHuaWeiCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
@@ -215,7 +213,6 @@ func (svc *cvmSvc) BatchStartHuaWeiCvm(cts *rest.Contexts) (interface{}, error) 
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncHuaWeiCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
@@ -272,7 +269,6 @@ func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncHuaWeiCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
@@ -329,7 +325,6 @@ func (svc *cvmSvc) BatchRebootHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncHuaWeiCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,

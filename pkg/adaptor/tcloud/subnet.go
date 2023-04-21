@@ -23,11 +23,13 @@ import (
 	"fmt"
 	"strconv"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
@@ -93,16 +95,21 @@ func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *types.TCloudSubnetsCreateOption
 		return nil, err
 	}
 
-	results := make([]types.TCloudSubnet, 0)
-	for _, subnet := range resp.Response.SubnetSet {
-		if subnet == nil {
-			continue
-		}
-
-		results = append(results, converter.PtrToVal(convertSubnet(subnet, opt.Region)))
+	subnetIds := make([]*string, 0)
+	for _, v := range resp.Response.SubnetSet {
+		subnetIds = append(subnetIds, v.SubnetId)
 	}
 
-	return results, nil
+	handler := &createSubnetPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*TCloud, []*vpc.Subnet, []types.TCloudSubnet]{Handler: handler}
+	results, err := respPoller.PollUntilDone(t, kt, subnetIds, types.NewBatchCreateSubnetPollerOption())
+	if err != nil {
+		return nil, err
+	}
+
+	return converter.PtrToVal(results), nil
 }
 
 // UpdateSubnet update subnet.
@@ -201,4 +208,53 @@ func convertSubnet(data *vpc.Subnet, region string) *types.TCloudSubnet {
 	}
 
 	return s
+}
+
+type createSubnetPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *createSubnetPollingHandler) Done(subnets []*vpc.Subnet) (bool, *[]types.TCloudSubnet) {
+	results := make([]types.TCloudSubnet, 0)
+	flag := true
+	for _, subnet := range subnets {
+		if converter.PtrToVal(subnet.SubnetId) == "" {
+			flag = false
+			continue
+		}
+		results = append(results, converter.PtrToVal(convertSubnet(subnet, h.region)))
+	}
+
+	return flag, converter.ValToPtr(results)
+}
+
+// Poll ...
+func (h *createSubnetPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*vpc.Subnet, error) {
+	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
+
+	subnets := make([]*vpc.Subnet, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := vpc.NewDescribeSubnetsRequest()
+		req.SubnetIds = partIDs
+		req.Limit = converter.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
+
+		vpcClient, err := client.clientSet.vpcClient(h.region)
+		if err != nil {
+			return nil, fmt.Errorf("new subnet client failed, err: %v", err)
+		}
+
+		resp, err := vpcClient.DescribeSubnetsWithContext(kt.Ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		subnets = append(subnets, resp.Response.SubnetSet...)
+	}
+
+	if len(subnets) != len(cloudIDs) {
+		return nil, fmt.Errorf("query subnet count: %d not equal return count: %d", len(cloudIDs), len(subnets))
+	}
+
+	return subnets, nil
 }

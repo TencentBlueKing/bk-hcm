@@ -156,6 +156,16 @@ func (g *Gcp) StopCvm(kt *kit.Kit, opt *typecvm.GcpStopOption) error {
 		return err
 	}
 
+	handler := &stopCvmPollingHandler{
+		opt.Zone,
+	}
+	respPoller := poller.Poller[*Gcp, []*compute.Instance, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(g, kt, []*string{to.Ptr(opt.Name)},
+		types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -180,6 +190,16 @@ func (g *Gcp) StartCvm(kt *kit.Kit, opt *typecvm.GcpStartOption) error {
 		return err
 	}
 
+	handler := &startCvmPollingHandler{
+		opt.Zone,
+	}
+	respPoller := poller.Poller[*Gcp, []*compute.Instance, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(g, kt, []*string{to.Ptr(opt.Name)},
+		types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -201,6 +221,16 @@ func (g *Gcp) ResetCvm(kt *kit.Kit, opt *typecvm.GcpResetOption) error {
 	_, err = client.Instances.Start(g.CloudProjectID(), opt.Zone, opt.Name).Context(kt.Ctx).Do()
 	if err != nil {
 		logs.Errorf("reset instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return err
+	}
+
+	handler := &resetCvmPollingHandler{
+		opt.Zone,
+	}
+	respPoller := poller.Poller[*Gcp, []*compute.Instance, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(g, kt, []*string{to.Ptr(opt.Name)},
+		types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
 		return err
 	}
 
@@ -327,6 +357,84 @@ func (g *Gcp) deleteCvmMetadataStartScript(kt *kit.Kit, client *compute.Service,
 	}
 
 	return
+}
+
+type startCvmPollingHandler struct {
+	zone string
+}
+
+// Done ...
+func (h *startCvmPollingHandler) Done(instances []*compute.Instance) (bool, *poller.BaseDoneResult) {
+	return done(instances, "RUNNING")
+}
+
+// Poll ...
+func (h *startCvmPollingHandler) Poll(client *Gcp, kt *kit.Kit, names []*string) ([]*compute.Instance, error) {
+	return poll(client, kt, h.zone, names)
+}
+
+type stopCvmPollingHandler struct {
+	zone string
+}
+
+// Done ...
+func (h *stopCvmPollingHandler) Done(instances []*compute.Instance) (bool, *poller.BaseDoneResult) {
+	return done(instances, "STOPPED")
+}
+
+// Poll ...
+func (h *stopCvmPollingHandler) Poll(client *Gcp, kt *kit.Kit, names []*string) ([]*compute.Instance, error) {
+	return poll(client, kt, h.zone, names)
+}
+
+type resetCvmPollingHandler struct {
+	zone string
+}
+
+// Done ...
+func (h *resetCvmPollingHandler) Done(instances []*compute.Instance) (bool, *poller.BaseDoneResult) {
+	return done(instances, "RUNNING")
+}
+
+// Poll ...
+func (h *resetCvmPollingHandler) Poll(client *Gcp, kt *kit.Kit, names []*string) ([]*compute.Instance, error) {
+	return poll(client, kt, h.zone, names)
+}
+
+func done(instances []*compute.Instance, succeed string) (bool, *poller.BaseDoneResult) {
+	result := new(poller.BaseDoneResult)
+
+	flag := true
+	for _, instance := range instances {
+		// not done
+		if instance.Status != succeed {
+			flag = false
+			continue
+		}
+
+		result.SuccessCloudIDs = append(result.SuccessCloudIDs, strconv.FormatUint(instance.Id, 10))
+	}
+
+	return flag, result
+}
+
+func poll(client *Gcp, kt *kit.Kit, zone string, names []*string) ([]*compute.Instance, error) {
+	cli, err := client.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	request := cli.Instances.List(client.CloudProjectID(), zone).Context(kt.Ctx)
+	listNames := converter.PtrToSlice(names)
+	request.Filter(generateResourceFilter("name", listNames))
+
+	resp, err := request.Do()
+	if err != nil {
+		logs.Errorf("list instance failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return resp.Items, nil
 }
 
 type createCvmPollingHandler struct {

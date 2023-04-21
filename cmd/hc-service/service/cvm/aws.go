@@ -24,7 +24,6 @@ import (
 
 	"hcm/cmd/hc-service/logics/sync/cvm"
 	"hcm/cmd/hc-service/service/capability"
-	"hcm/cmd/hc-service/service/sync"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -148,7 +147,6 @@ func (svc *cvmSvc) BatchStartAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncAwsCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
@@ -206,7 +204,6 @@ func (svc *cvmSvc) BatchStopAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncAwsCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
@@ -262,7 +259,6 @@ func (svc *cvmSvc) BatchRebootAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncAwsCvmOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,

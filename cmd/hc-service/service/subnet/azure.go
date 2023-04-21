@@ -22,7 +22,6 @@ package subnet
 
 import (
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
@@ -57,8 +56,6 @@ func (s subnet) AzureSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// sync hcm subnets and related route tables
-	sync.SleepBeforeSync()
-
 	subnetSyncOpt := &subnetlogics.AzureSubnetSyncOptions{
 		BkBizID:       req.BkBizID,
 		AccountID:     req.AccountID,

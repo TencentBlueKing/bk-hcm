@@ -24,7 +24,6 @@ import (
 	"strconv"
 
 	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
@@ -109,8 +108,6 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	}
 
 	// create hcm subnets
-	sync.SleepBeforeSync()
-
 	syncOpt := &syncsubnet.SyncGcpOption{
 		AccountID: opt.AccountID,
 		Region:    opt.Region,

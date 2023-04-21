@@ -227,7 +227,7 @@ type attachDiskPollingHandler struct {
 
 func (h *attachDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
-	if *r.DiskState != "ATTACHED" {
+	if converter.PtrToVal(r.DiskState) != "ATTACHED" {
 		return false, nil
 	}
 	return true, nil
@@ -248,7 +248,7 @@ type detachDiskPollingHandler struct {
 
 func (h *detachDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
-	if *r.DiskState != "UNATTACHED" {
+	if converter.PtrToVal(r.DiskState) != "UNATTACHED" {
 		return false, nil
 	}
 	return true, nil

@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"google.golang.org/api/compute/v1"
 )
 
@@ -177,6 +178,15 @@ func (g *Gcp) AssociateEip(kt *kit.Kit, opt *eip.GcpEipAssociateOption) error {
 		return err
 	}
 
+	handler := &associateEipPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*Gcp, []*eip.GcpEip, []string]{Handler: handler}
+	_, err = respPoller.PollUntilDone(g, kt, []*string{to.Ptr(opt.CloudID)}, nil)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -201,6 +211,15 @@ func (g *Gcp) DisassociateEip(kt *kit.Kit, opt *eip.GcpEipDisassociateOption) er
 	).Context(kt.Ctx).RequestId(kt.Rid).Do()
 	if err != nil {
 		logs.Errorf("disassociate gcp address failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return err
+	}
+
+	handler := &disassociateEipPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*Gcp, []*eip.GcpEip, []string]{Handler: handler}
+	_, err = respPoller.PollUntilDone(g, kt, []*string{to.Ptr(opt.CloudID)}, nil)
+	if err != nil {
 		return err
 	}
 
@@ -304,6 +323,59 @@ func convert(resp *compute.AddressList, region string) []*eip.GcpEip {
 	return eips
 }
 
+type associateEipPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *associateEipPollingHandler) Done(eips []*eip.GcpEip) (bool, *[]string) {
+	return eipDone(eips, "IN_USE")
+}
+
+// Poll ...
+func (h *associateEipPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]*eip.GcpEip, error) {
+	return eipPoll(client, kt, h.region, cloudIDs)
+}
+
+type disassociateEipPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *disassociateEipPollingHandler) Done(eips []*eip.GcpEip) (bool, *[]string) {
+	return eipDone(eips, "RESERVED")
+}
+
+// Poll ...
+func (h *disassociateEipPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]*eip.GcpEip, error) {
+	return eipPoll(client, kt, h.region, cloudIDs)
+}
+
+func eipDone(eips []*eip.GcpEip, succeed string) (bool, *[]string) {
+	results := make([]string, 0)
+	flag := true
+	for _, eip := range eips {
+		if converter.PtrToVal(eip.Status) != succeed {
+			flag = false
+			continue
+		}
+
+		results = append(results, eip.CloudID)
+	}
+
+	return flag, converter.ValToPtr(results)
+}
+
+func eipPoll(client *Gcp, kt *kit.Kit, region string, cloudIDs []*string) ([]*eip.GcpEip, error) {
+	cIDs := converter.PtrToSlice(cloudIDs)
+	result, err := client.ListEip(kt, &eip.GcpEipListOption{Region: region, CloudIDs: cIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Details, nil
+}
+
 type createEipPollingHandler struct {
 	region string
 }
@@ -314,7 +386,7 @@ func (h *createEipPollingHandler) Done(pollResult []*eip.GcpEip) (bool, *poller.
 	unknownCloudIDs := make([]string, 0)
 
 	for _, r := range pollResult {
-		if r.Status == nil || *r.Status == "RESERVING" {
+		if converter.PtrToVal(r.Status) == "RESERVING" {
 			unknownCloudIDs = append(unknownCloudIDs, r.CloudID)
 		} else {
 			successCloudIDs = append(successCloudIDs, r.CloudID)

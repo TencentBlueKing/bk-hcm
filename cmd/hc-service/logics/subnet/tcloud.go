@@ -23,7 +23,6 @@ package subnet
 import (
 	routetable "hcm/cmd/hc-service/logics/sync/route-table"
 	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
@@ -72,8 +71,6 @@ func (s *Subnet) TCloudSubnetCreate(kt *kit.Kit, req *hcservice.TCloudSubnetBatc
 	}
 
 	// sync hcm subnets and related route tables
-	sync.SleepBeforeSync()
-
 	createReqs := make([]cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt], 0, len(createdSubnets))
 	cloudRTIDs := make([]string, 0, len(req.Subnets))
 	for _, subnet := range createdSubnets {

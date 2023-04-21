@@ -20,8 +20,10 @@
 package aws
 
 import (
+	"fmt"
 	"strings"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
@@ -30,6 +32,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -68,7 +71,21 @@ func (a *Aws) CreateVpc(kt *kit.Kit, opt *types.AwsVpcCreateOption) (*types.AwsV
 		return nil, err
 	}
 
-	return convertVpc(resp.Vpc, opt.Extension.Region), nil
+	handler := &createVpcPollingHandler{
+		opt.Extension.Region,
+	}
+	respPoller := poller.Poller[*Aws, []*ec2.Vpc, []*types.AwsVpc]{Handler: handler}
+	results, err := respPoller.PollUntilDone(a, kt, []*string{resp.Vpc.VpcId},
+		types.NewBatchCreateVpcPollerOption())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(converter.PtrToVal(results)) <= 0 {
+		return nil, fmt.Errorf("create vpc failed")
+	}
+
+	return (converter.PtrToVal(results))[0], nil
 }
 
 // UpdateVpc update vpc.
@@ -249,4 +266,56 @@ func convertVpc(data *ec2.Vpc, region string) *types.AwsVpc {
 	}
 
 	return v
+}
+
+type createVpcPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *createVpcPollingHandler) Done(vpcs []*ec2.Vpc) (bool, *[]*types.AwsVpc) {
+	results := make([]*types.AwsVpc, 0)
+	flag := true
+	for _, vpc := range vpcs {
+		if converter.PtrToVal(vpc.State) == "pending" {
+			flag = false
+			continue
+		}
+
+		results = append(results, convertVpc(vpc, h.region))
+	}
+
+	return flag, converter.ValToPtr(results)
+}
+
+// Poll ...
+func (h *createVpcPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Vpc, error) {
+	cloudIDSplit := slice.Split(cloudIDs, core.AwsQueryLimit)
+
+	vpcs := make([]*ec2.Vpc, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := new(ec2.DescribeVpcsInput)
+		req.VpcIds = partIDs
+
+		client, err := client.clientSet.ec2Client(h.region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := client.DescribeVpcsWithContext(kt.Ctx, req)
+		if err != nil {
+			if strings.Contains(err.Error(), ErrDataNotFound) {
+				return make([]*ec2.Vpc, 0), nil
+			}
+			return nil, err
+		}
+
+		vpcs = append(vpcs, resp.Vpcs...)
+	}
+
+	if len(vpcs) != len(cloudIDs) {
+		return nil, fmt.Errorf("query vpc count: %d not equal return count: %d", len(cloudIDs), len(vpcs))
+	}
+
+	return vpcs, nil
 }

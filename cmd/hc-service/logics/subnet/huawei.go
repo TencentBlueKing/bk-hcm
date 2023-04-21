@@ -22,7 +22,6 @@ package subnet
 
 import (
 	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
@@ -69,8 +68,6 @@ func (s *Subnet) HuaWeiSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcserv
 	}
 
 	// create hcm subnets
-	sync.SleepBeforeSync()
-
 	syncOpt := &syncsubnet.SyncHuaWeiOption{
 		AccountID:  opt.AccountID,
 		Region:     opt.Region,

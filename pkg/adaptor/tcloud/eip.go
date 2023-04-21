@@ -274,7 +274,7 @@ func (h *createEipPollingHandler) Done(pollResult []*eip.TCloudEip) (bool, *poll
 	unknownCloudIDs := make([]string, 0)
 
 	for _, r := range pollResult {
-		if r.Status == nil || *r.Status == "CREATING" {
+		if converter.PtrToVal(r.Status) == "CREATING" {
 			unknownCloudIDs = append(unknownCloudIDs, r.CloudID)
 		} else {
 			successCloudIDs = append(successCloudIDs, r.CloudID)
@@ -328,7 +328,7 @@ func (h *associateEipPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs 
 func (h *associateEipPollingHandler) Done(pollResult []*eip.TCloudEip) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
 
-	if *r.Status != "BIND" || r.InstanceId == nil {
+	if converter.PtrToVal(r.Status) != "BIND" || r.InstanceId == nil {
 		return false, nil
 	}
 	return true, nil
@@ -361,7 +361,7 @@ func (h *disassociateEipPollingHandler) Poll(
 func (h *disassociateEipPollingHandler) Done(pollResult []*eip.TCloudEip) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
 
-	if *r.Status != "UNBIND" {
+	if converter.PtrToVal(r.Status) != "UNBIND" {
 		return false, nil
 	}
 	return true, nil

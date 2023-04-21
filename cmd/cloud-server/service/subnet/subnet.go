@@ -25,7 +25,7 @@ import (
 
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/api/cloud-server"
+	cloudserver "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/data-service/cloud"
@@ -55,7 +55,6 @@ func InitSubnetService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("CreateSubnet", "POST", "/bizs/{bk_biz_id}/subnets/create", svc.CreateSubnet)
 	h.Add("GetSubnet", "GET", "/subnets/{id}", svc.GetSubnet)
 	h.Add("ListSubnet", "POST", "/subnets/list", svc.ListSubnet)
 	h.Add("UpdateSubnet", "PATCH", "/subnets/{id}", svc.UpdateSubnet)
@@ -64,6 +63,7 @@ func InitSubnetService(c *capability.Capability) {
 	h.Add("CountSubnetAvailableIPs", "POST", "/subnets/{id}/ips/count", svc.CountSubnetAvailableIPs)
 
 	// subnet apis in biz
+	h.Add("CreateSubnet", "POST", "/bizs/{bk_biz_id}/subnets/create", svc.CreateSubnet)
 	h.Add("GetBizSubnet", "GET", "/bizs/{bk_biz_id}/subnets/{id}", svc.GetBizSubnet)
 	h.Add("ListBizSubnet", "POST", "/bizs/{bk_biz_id}/subnets/list", svc.ListBizSubnet)
 	h.Add("UpdateBizSubnet", "PATCH", "/bizs/{bk_biz_id}/subnets/{id}", svc.UpdateBizSubnet)

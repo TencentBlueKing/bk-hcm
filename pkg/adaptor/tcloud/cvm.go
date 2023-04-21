@@ -22,7 +22,6 @@ package tcloud
 import (
 	"fmt"
 
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
@@ -126,6 +125,17 @@ func (t *TCloud) StartCvm(kt *kit.Kit, opt *typecvm.TCloudStartOption) error {
 		return err
 	}
 
+	// wait until all cvm done
+	handler := &startCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		logs.Errorf("poll start cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
+		return err
+	}
+
 	return nil
 }
 
@@ -153,6 +163,17 @@ func (t *TCloud) StopCvm(kt *kit.Kit, opt *typecvm.TCloudStopOption) error {
 	_, err = client.StopInstancesWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("stop cvm failed, err: %v, ids: %v, rid: %s", err, opt.CloudIDs, kt.Rid)
+		return err
+	}
+
+	// wait until all cvm done
+	handler := &stopCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		logs.Errorf("poll stop cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
 		return err
 	}
 
@@ -186,73 +207,17 @@ func (t *TCloud) RebootCvm(kt *kit.Kit, opt *typecvm.TCloudRebootOption) error {
 	}
 
 	// wait until all cvm are rebooted
-	sync.SleepBeforeSync()
-
 	handler := &rebootCvmPollingHandler{
 		opt.Region,
 	}
 	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
-	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchRebootCvmPollerOpt())
+	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		logs.Errorf("poll reboot cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
 		return err
 	}
 
 	return nil
-}
-
-type rebootCvmPollingHandler struct {
-	region string
-}
-
-func (h *rebootCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
-	result := new(poller.BaseDoneResult)
-
-	flag := true
-	for _, instance := range cvms {
-		// reboot not done
-		if converter.PtrToVal(instance.InstanceState) == "REBOOTING" {
-			flag = false
-			continue
-		}
-
-		// reboot succeed
-		if converter.PtrToVal(instance.InstanceState) == "RUNNING" {
-			result.SuccessCloudIDs = append(result.SuccessCloudIDs, *instance.InstanceId)
-			continue
-		}
-
-		// reboot failed
-		result.FailedCloudIDs = append(result.FailedCloudIDs, *instance.InstanceId)
-		result.FailedMessage = converter.PtrToVal(instance.LatestOperationErrorMsg)
-	}
-
-	return flag, result
-}
-
-func (h *rebootCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
-	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
-
-	cvms := make([]*cvm.Instance, 0, len(cloudIDs))
-	for _, partIDs := range cloudIDSplit {
-		req := cvm.NewDescribeInstancesRequest()
-		req.InstanceIds = partIDs
-		req.Limit = converter.ValToPtr(int64(core.TCloudQueryLimit))
-
-		cvmCli, err := client.clientSet.cvmClient(h.region)
-		if err != nil {
-			return nil, err
-		}
-
-		resp, err := cvmCli.DescribeInstancesWithContext(kt.Ctx, req)
-		if err != nil {
-			return nil, err
-		}
-
-		cvms = append(cvms, resp.Response.InstanceSet...)
-	}
-
-	return cvms, nil
 }
 
 // ResetCvmPwd reference: https://cloud.tencent.com/document/api/213/15736
@@ -280,6 +245,17 @@ func (t *TCloud) ResetCvmPwd(kt *kit.Kit, opt *typecvm.TCloudResetPwdOption) err
 	_, err = client.ResetInstancesPasswordWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("reset cvm instance's password failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	// wait until all cvm done
+	handler := &resetpwdCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*TCloud, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		logs.Errorf("poll reset pwd cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
 		return err
 	}
 
@@ -380,6 +356,104 @@ func (t *TCloud) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*polle
 	}
 
 	return result, nil
+}
+
+type startCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *startCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
+	return done(cvms, "RUNNING")
+}
+
+// Poll ...
+func (h *startCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+type stopCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *stopCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
+	return done(cvms, "STOPPED")
+}
+
+// Poll ...
+func (h *stopCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+type resetpwdCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *resetpwdCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
+	return done(cvms, "RUNNING")
+}
+
+// Poll ...
+func (h *resetpwdCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+type rebootCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *rebootCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
+	return done(cvms, "RUNNING")
+}
+
+// Poll ...
+func (h *rebootCvmPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cvm.Instance, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+func done(cvms []*cvm.Instance, succeed string) (bool, *poller.BaseDoneResult) {
+	result := new(poller.BaseDoneResult)
+
+	flag := true
+	for _, instance := range cvms {
+		// not done
+		if converter.PtrToVal(instance.InstanceState) != succeed {
+			flag = false
+			continue
+		}
+
+		result.SuccessCloudIDs = append(result.SuccessCloudIDs, *instance.InstanceId)
+	}
+
+	return flag, result
+}
+
+func poll(client *TCloud, kt *kit.Kit, region string, cloudIDs []*string) ([]*cvm.Instance, error) {
+	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
+
+	cvms := make([]*cvm.Instance, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := cvm.NewDescribeInstancesRequest()
+		req.InstanceIds = partIDs
+		req.Limit = converter.ValToPtr(int64(core.TCloudQueryLimit))
+
+		cvmCli, err := client.clientSet.cvmClient(region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := cvmCli.DescribeInstancesWithContext(kt.Ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		cvms = append(cvms, resp.Response.InstanceSet...)
+	}
+
+	return cvms, nil
 }
 
 type createCvmPollingHandler struct {

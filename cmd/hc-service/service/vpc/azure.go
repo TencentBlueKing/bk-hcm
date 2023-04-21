@@ -22,7 +22,6 @@ package vpc
 
 import (
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
@@ -72,8 +71,6 @@ func (v vpc) AzureVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// create hcm vpc & subnets
-	sync.SleepBeforeSync()
-
 	createReq := &cloud.VpcBatchCreateReq[cloud.AzureVpcCreateExt]{
 		Vpcs: []cloud.VpcCreateReq[cloud.AzureVpcCreateExt]{convertVpcCreateReq(req, data)},
 	}

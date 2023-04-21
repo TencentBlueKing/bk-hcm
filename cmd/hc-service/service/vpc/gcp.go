@@ -27,7 +27,6 @@ import (
 
 	"hcm/cmd/hc-service/logics/subnet"
 	syncroutetable "hcm/cmd/hc-service/logics/sync/route-table"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
@@ -77,8 +76,6 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// get created vpc info
-	sync.SleepBeforeSync()
-
 	listOpt := &types.GcpListOption{CloudIDs: []string{strconv.FormatUint(vpcID, 10)}}
 	listRes, err := cli.ListVpc(cts.Kit, listOpt)
 	if err != nil {
@@ -121,8 +118,6 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// sync route table
-	sync.SleepBeforeSync()
-
 	rtReq := &hcroutetable.GcpRouteTableSyncReq{
 		AccountID: req.AccountID,
 	}

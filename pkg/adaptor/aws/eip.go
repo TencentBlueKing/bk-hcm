@@ -29,8 +29,9 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"hcm/pkg/adaptor/poller"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // ListEip ...
@@ -212,8 +213,45 @@ func (a *Aws) CreateEip(kt *kit.Kit, opt *eip.AwsEipCreateOption) (*string, erro
 	}
 
 	resp, err := client.AllocateAddressWithContext(kt.Ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	respPoller := poller.Poller[*Aws, []*eip.AwsEip,
+		poller.BaseDoneResult]{Handler: &createEipPollingHandler{region: opt.Region}}
+	_, err = respPoller.PollUntilDone(a, kt, []*string{resp.PublicIp}, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return resp.AllocationId, err
+}
+
+type createEipPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *createEipPollingHandler) Done(pollResult []*eip.AwsEip) (bool, *poller.BaseDoneResult) {
+	r := pollResult[0]
+	if converter.PtrToVal(r.AssociationId) == "" {
+		return false, nil
+	}
+	return true, nil
+}
+
+// Poll ...
+func (h *createEipPollingHandler) Poll(client *Aws, kt *kit.Kit, Ips []*string) ([]*eip.AwsEip, error) {
+	if len(Ips) != 1 {
+		return nil, fmt.Errorf("poll only support one ip param, but get %v. rid: %s", Ips, kt.Rid)
+	}
+
+	result, err := client.ListEip(kt, &eip.AwsEipListOption{Region: h.region, Ips: converter.PtrToSlice(Ips)})
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Details, nil
 }
 
 type associateEipPollingHandler struct {
@@ -223,7 +261,7 @@ type associateEipPollingHandler struct {
 // Done ...
 func (h *associateEipPollingHandler) Done(pollResult []*eip.AwsEip) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
-	if r.InstanceId == nil || *r.InstanceId == "" {
+	if converter.PtrToVal(r.InstanceId) == "" {
 		return false, nil
 	}
 	return true, nil
@@ -250,7 +288,7 @@ type disassociateEipPollingHandler struct {
 // Done ...
 func (h *disassociateEipPollingHandler) Done(pollResult []*eip.AwsEip) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
-	if r.InstanceId != nil && *r.InstanceId != "" {
+	if converter.PtrToVal(r.InstanceId) != "" {
 		return false, nil
 	}
 	return true, nil

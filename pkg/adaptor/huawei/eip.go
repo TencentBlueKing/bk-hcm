@@ -262,7 +262,8 @@ func (h *createEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poll
 	unknownCloudIDs := make([]string, 0)
 
 	for _, r := range pollResult {
-		if r.Status == nil || *r.Status == "PENDING_CREATE" || *r.Status == "NOTIFYING" {
+		if converter.PtrToVal(r.Status) == "PENDING_CREATE" ||
+			converter.PtrToVal(r.Status) == "NOTIFYING" {
 			unknownCloudIDs = append(unknownCloudIDs, r.CloudID)
 		} else {
 			successCloudIDs = append(successCloudIDs, r.CloudID)
@@ -301,7 +302,7 @@ type associateEipPollingHandler struct {
 func (h *associateEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
 
-	if *r.Status != "ACTIVE" {
+	if converter.PtrToVal(r.Status) != "ACTIVE" {
 		return false, nil
 	}
 	return true, nil
@@ -330,7 +331,7 @@ type disassociateEipPollingHandler struct {
 func (h *disassociateEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
 
-	if *r.Status != "DOWN" {
+	if converter.PtrToVal(r.Status) != "DOWN" {
 		return false, nil
 	}
 	return true, nil

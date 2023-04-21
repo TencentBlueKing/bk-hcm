@@ -23,11 +23,13 @@ import (
 	"fmt"
 	"strings"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2/model"
 )
@@ -69,7 +71,22 @@ func (h *HuaWei) CreateSubnet(kt *kit.Kit, opt *types.HuaWeiSubnetCreateOption) 
 		return nil, err
 	}
 
-	return convertSubnet(resp.Subnet, opt.Extension.Region), nil
+	handler := &createSubnetPollingHandler{
+		opt.Extension.Region,
+		converter.ValToPtr(resp.Subnet.VpcId),
+	}
+	respPoller := poller.Poller[*HuaWei, []model.Subnet, []*types.HuaWeiSubnet]{Handler: handler}
+	results, err := respPoller.PollUntilDone(h, kt, []*string{converter.ValToPtr(resp.Subnet.Id)},
+		types.NewBatchCreateSubnetPollerOption())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(converter.PtrToVal(results)) <= 0 {
+		return nil, fmt.Errorf("create subnet failed")
+	}
+
+	return (converter.PtrToVal(results))[0], nil
 }
 
 // UpdateSubnet update subnet.
@@ -298,4 +315,63 @@ func (h *HuaWei) GetSubnetIPAvailabilities(kt *kit.Kit, opt *types.HuaWeiVpcIPAv
 	}
 
 	return resp.NetworkIpAvailability, nil
+}
+
+type createSubnetPollingHandler struct {
+	region string
+	vpcID  *string
+}
+
+// Done ...
+func (h *createSubnetPollingHandler) Done(subnets []model.Subnet) (bool, *[]*types.HuaWeiSubnet) {
+	results := make([]*types.HuaWeiSubnet, 0)
+	flag := true
+	for _, subnet := range subnets {
+		if subnet.Status.Value() != "ACTIVE" {
+			flag = false
+			continue
+		}
+		results = append(results, convertSubnet(converter.ValToPtr(subnet), h.region))
+	}
+
+	return flag, converter.ValToPtr(results)
+}
+
+// Poll ...
+func (h *createSubnetPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.Subnet, error) {
+	cloudIDSplit := slice.Split(cloudIDs, core.HuaWeiQueryLimit)
+
+	subnets := make([]model.Subnet, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		vpcClient, err := client.clientSet.vpcClientV2(h.region)
+		if err != nil {
+			return nil, fmt.Errorf("new subnet client failed, err: %v", err)
+		}
+
+		req := new(model.ListSubnetsRequest)
+		req.VpcId = h.vpcID
+
+		resp, err := vpcClient.ListSubnets(req)
+		if err != nil {
+			if strings.Contains(err.Error(), ErrDataNotFound) {
+				return make([]model.Subnet, 0), nil
+			}
+			return nil, err
+		}
+
+		for _, subnet := range *resp.Subnets {
+			for _, id := range partIDs {
+				if subnet.Id == converter.PtrToVal(id) {
+					subnets = append(subnets, subnet)
+					break
+				}
+			}
+		}
+	}
+
+	if len(subnets) != len(cloudIDs) {
+		return nil, fmt.Errorf("query subnet count: %d not equal return count: %d", len(cloudIDs), len(subnets))
+	}
+
+	return subnets, nil
 }

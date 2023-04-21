@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
@@ -31,6 +32,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/cidr"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
@@ -57,7 +59,20 @@ func (t *TCloud) CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*type
 		return nil, err
 	}
 
-	return convertVpc(resp.Response.Vpc, opt.Extension.Region), nil
+	handler := &createVpcPollingHandler{
+		opt.Extension.Region,
+	}
+	respPoller := poller.Poller[*TCloud, []*vpc.Vpc, []*types.TCloudVpc]{Handler: handler}
+	results, err := respPoller.PollUntilDone(t, kt, []*string{resp.Response.Vpc.VpcId}, types.NewBatchCreateVpcPollerOption())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(converter.PtrToVal(results)) <= 0 {
+		return nil, fmt.Errorf("create vpc failed")
+	}
+
+	return (converter.PtrToVal(results))[0], nil
 }
 
 // UpdateVpc update vpc.
@@ -188,4 +203,53 @@ func convertVpc(data *vpc.Vpc, region string) *types.TCloudVpc {
 	}
 
 	return v
+}
+
+type createVpcPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *createVpcPollingHandler) Done(vpcs []*vpc.Vpc) (bool, *[]*types.TCloudVpc) {
+	results := make([]*types.TCloudVpc, 0)
+	flag := true
+	for _, vpc := range vpcs {
+		if converter.PtrToVal(vpc.VpcId) == "" {
+			flag = false
+			continue
+		}
+		results = append(results, convertVpc(vpc, h.region))
+	}
+
+	return flag, converter.ValToPtr(results)
+}
+
+// Poll ...
+func (h *createVpcPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*vpc.Vpc, error) {
+	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
+
+	vpcs := make([]*vpc.Vpc, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := vpc.NewDescribeVpcsRequest()
+		req.VpcIds = partIDs
+		req.Limit = converter.ValToPtr(strconv.FormatUint(uint64(core.TCloudQueryLimit), 10))
+
+		vpcClient, err := client.clientSet.vpcClient(h.region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := vpcClient.DescribeVpcsWithContext(kt.Ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		vpcs = append(vpcs, resp.Response.VpcSet...)
+	}
+
+	if len(vpcs) != len(cloudIDs) {
+		return nil, fmt.Errorf("query vpc count: %d not equal return count: %d", len(cloudIDs), len(vpcs))
+	}
+
+	return vpcs, nil
 }

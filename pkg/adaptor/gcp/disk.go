@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"google.golang.org/api/compute/v1"
 )
 
@@ -126,6 +127,10 @@ func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Dis
 		request.Filter(generateResourceFilter("selfLink", opt.SelfLinks))
 	}
 
+	if len(opt.Names) > 0 {
+		request.Filter(generateResourceFilter("name", opt.Names))
+	}
+
 	if opt.Page != nil {
 		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
 	}
@@ -186,12 +191,20 @@ func (g *Gcp) AttachDisk(kt *kit.Kit, opt *disk.GcpDiskAttachOption) error {
 	_, err = client.Instances.AttachDisk(g.CloudProjectID(), opt.Zone, opt.CvmName, req).
 		Context(kt.Ctx).
 		Do()
-
 	if err != nil {
 		logs.Errorf("attach disk failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 	}
 
-	return err
+	handler := &attachDiskPollingHandler{
+		opt.Zone,
+	}
+	respPoller := poller.Poller[*Gcp, []*compute.Disk, []uint64]{Handler: handler}
+	_, err = respPoller.PollUntilDone(g, kt, []*string{to.Ptr(opt.DiskName)}, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DetachDisk 卸载云盘
@@ -213,12 +226,20 @@ func (g *Gcp) DetachDisk(kt *kit.Kit, opt *disk.GcpDiskDetachOption) error {
 	_, err = client.Instances.DetachDisk(g.CloudProjectID(), opt.Zone, opt.CvmName, opt.DeviceName).
 		Context(kt.Ctx).
 		Do()
-
 	if err != nil {
 		logs.Errorf("detach disk failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
 	}
 
-	return err
+	handler := &detachDiskPollingHandler{
+		opt.Zone,
+	}
+	respPoller := poller.Poller[*Gcp, []*compute.Disk, []uint64]{Handler: handler}
+	_, err = respPoller.PollUntilDone(g, kt, []*string{to.Ptr(opt.DiskName)}, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (g *Gcp) getDiskCloudID(kt *kit.Kit, zone string, diskName string) (*string, error) {
@@ -249,6 +270,7 @@ type createDiskPollingHandler struct {
 	Zone string
 }
 
+// Done ...
 func (h *createDiskPollingHandler) Done(pollResult []*compute.Disk) (bool, *poller.BaseDoneResult) {
 	successCloudIDs := make([]string, 0)
 	unknownCloudIDs := make([]string, 0)
@@ -272,6 +294,7 @@ func (h *createDiskPollingHandler) Done(pollResult []*compute.Disk) (bool, *poll
 	}
 }
 
+// Poll ...
 func (h *createDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]*compute.Disk, error) {
 	cIDs := converter.PtrToSlice(cloudIDs)
 	result, _, err := client.ListDisk(
@@ -282,3 +305,55 @@ func (h *createDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*st
 }
 
 var _ poller.PollingHandler[*Gcp, []*compute.Disk, poller.BaseDoneResult] = new(createDiskPollingHandler)
+
+type attachDiskPollingHandler struct {
+	zone string
+}
+
+// Done ...
+func (h *attachDiskPollingHandler) Done(items []*compute.Disk) (bool, *[]uint64) {
+	return diskDone(items)
+}
+
+// Poll ...
+func (h *attachDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, names []*string) ([]*compute.Disk, error) {
+	return diskPoll(client, kt, h.zone, names)
+}
+
+type detachDiskPollingHandler struct {
+	zone string
+}
+
+// Done ...
+func (h *detachDiskPollingHandler) Done(items []*compute.Disk) (bool, *[]uint64) {
+	return diskDone(items)
+}
+
+// Poll ...
+func (h *detachDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, names []*string) ([]*compute.Disk, error) {
+	return diskPoll(client, kt, h.zone, names)
+}
+
+func diskDone(disks []*compute.Disk) (bool, *[]uint64) {
+	results := make([]uint64, 0)
+	flag := true
+	for _, disk := range disks {
+		if disk.Status != "READY" {
+			flag = false
+			continue
+		}
+
+		results = append(results, disk.Id)
+	}
+
+	return flag, converter.ValToPtr(results)
+}
+
+func diskPoll(client *Gcp, kt *kit.Kit, zone string, names []*string) ([]*compute.Disk, error) {
+	listNames := converter.PtrToSlice(names)
+	result, _, err := client.ListDisk(
+		kt,
+		&disk.GcpDiskListOption{Zone: zone, Names: listNames},
+	)
+	return result, err
+}

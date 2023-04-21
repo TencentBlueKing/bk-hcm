@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
-	typedisk "hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -93,7 +92,7 @@ func (a *Azure) createDisk(kt *kit.Kit, opt *disk.AzureDiskCreateOption, diskNam
 
 // GetDisk 查询单个云盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/get?tabs=Go
-func (a *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*typedisk.AzureDisk, error) {
+func (a *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*disk.AzureDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure disk get option is required")
 	}
@@ -112,7 +111,7 @@ func (a *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*typedisk.Az
 		return nil, fmt.Errorf("failed to get disk: %v", err)
 	}
 
-	converterResp := &typedisk.AzureDisk{
+	converterResp := &disk.AzureDisk{
 		ID:       SPtrToLowerSPtr(resp.Disk.ID),
 		Name:     SPtrToLowerSPtr(resp.Disk.Name),
 		Location: SPtrToLowerNoSpaceSPtr(resp.Disk.Location),
@@ -127,7 +126,7 @@ func (a *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*typedisk.Az
 
 // ListDisk 查看云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*typedisk.AzureDisk, error) {
+func (a *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*disk.AzureDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure disk list option is required")
 	}
@@ -156,7 +155,7 @@ func (a *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*typedis
 
 // ListDiskByID 查看云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
-func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*typedisk.AzureDisk, error) {
+func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*disk.AzureDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "azure disk list option is required")
 	}
@@ -199,11 +198,11 @@ func (a *Azure) ListDiskByID(kit *kit.Kit, opt *core.AzureListByIDOption) ([]*ty
 	return converterDisk(disks), nil
 }
 
-func converterDisk(disks []*armcompute.Disk) []*typedisk.AzureDisk {
-	typesDisk := make([]*typedisk.AzureDisk, 0)
+func converterDisk(disks []*armcompute.Disk) []*disk.AzureDisk {
+	typesDisk := make([]*disk.AzureDisk, 0)
 
 	for _, v := range disks {
-		tmp := &typedisk.AzureDisk{
+		tmp := &disk.AzureDisk{
 			ID:       SPtrToLowerSPtr(v.ID),
 			Name:     SPtrToLowerSPtr(v.Name),
 			Location: SPtrToLowerNoSpaceSPtr(v.Location),
@@ -311,7 +310,7 @@ func (a *Azure) attachDisk(
 	kt *kit.Kit,
 	opt *disk.AzureDiskAttachOption,
 	cvmData *typecvm.AzureCvm,
-	diskData *typedisk.AzureDisk,
+	diskData *disk.AzureDisk,
 ) error {
 	client, err := a.clientSet.virtualMachineClient()
 	if err != nil {
@@ -344,7 +343,16 @@ func (a *Azure) attachDisk(
 	}
 	vm := armcompute.VirtualMachine{Location: cvmData.Location, Properties: &armcompute.VirtualMachineProperties{
 		StorageProfile: sp}}
-	_, err = client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.CvmName, vm, nil)
+	pollerResp, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.CvmName, vm, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = pollerResp.PollUntilDone(kt.Ctx, nil)
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 
@@ -353,7 +361,7 @@ func (a *Azure) detachDisk(
 	kt *kit.Kit,
 	opt *disk.AzureDiskDetachOption,
 	cvmData *typecvm.AzureCvm,
-	diskData *typedisk.AzureDisk,
+	diskData *disk.AzureDisk,
 ) error {
 	client, err := a.clientSet.virtualMachineClient()
 	if err != nil {

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strings"
 
+	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
@@ -30,6 +31,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	v2 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
@@ -59,9 +61,19 @@ func (h *HuaWei) CreateVpc(kt *kit.Kit, opt *types.HuaWeiVpcCreateOption) error 
 		},
 	}
 
-	_, err = vpcClient.CreateVpc(req)
+	resp, err := vpcClient.CreateVpc(req)
 	if err != nil {
 		logs.Errorf("create huawei vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	handler := &createVpcPollingHandler{
+		opt.Extension.Region,
+	}
+	respPoller := poller.Poller[*HuaWei, []model.Vpc, []model.Vpc]{Handler: handler}
+	_, err = respPoller.PollUntilDone(h, kt, []*string{converter.ValToPtr(resp.Vpc.Id)},
+		types.NewBatchCreateVpcPollerOption())
+	if err != nil {
 		return err
 	}
 
@@ -201,4 +213,59 @@ func convertVpc(data *model.Vpc, region string) *types.HuaWeiVpc {
 	}
 
 	return v
+}
+
+type createVpcPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *createVpcPollingHandler) Done(vpcs []model.Vpc) (bool, *[]model.Vpc) {
+	results := make([]model.Vpc, 0)
+
+	flag := true
+	for _, vpc := range vpcs {
+		if vpc.Status == "PENDING" {
+			flag = false
+			continue
+		}
+
+		results = append(results, vpc)
+	}
+
+	return flag, converter.ValToPtr(results)
+}
+
+// Poll ...
+func (h *createVpcPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.Vpc, error) {
+	cloudIDSplit := slice.Split(cloudIDs, core.HuaWeiQueryLimit)
+
+	vpcs := make([]model.Vpc, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := new(model.ListVpcsRequest)
+		tmpCloudIDs := converter.PtrToSlice(partIDs)
+		req.Id = &tmpCloudIDs
+		req.Limit = converter.ValToPtr(int32(core.HuaWeiQueryLimit))
+
+		vpcClient, err := client.clientSet.vpcClient(h.region)
+		if err != nil {
+			return nil, fmt.Errorf("new vpc client failed, err: %v", err)
+		}
+
+		resp, err := vpcClient.ListVpcs(req)
+		if err != nil {
+			if strings.Contains(err.Error(), ErrDataNotFound) {
+				return make([]model.Vpc, 0), nil
+			}
+			return nil, err
+		}
+
+		vpcs = append(vpcs, *resp.Vpcs...)
+	}
+
+	if len(vpcs) != len(cloudIDs) {
+		return nil, fmt.Errorf("query vpc count: %d not equal return count: %d", len(cloudIDs), len(vpcs))
+	}
+
+	return vpcs, nil
 }

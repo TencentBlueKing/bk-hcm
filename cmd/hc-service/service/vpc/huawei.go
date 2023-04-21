@@ -23,7 +23,6 @@ package vpc
 import (
 	"hcm/cmd/hc-service/logics/subnet"
 	syncroutetable "hcm/cmd/hc-service/logics/sync/route-table"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
@@ -69,8 +68,6 @@ func (v vpc) HuaWeiVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// get created vpc info
-	sync.SleepBeforeSync()
-
 	listOpt := &types.HuaWeiVpcListOption{
 		HuaWeiListOption: adcore.HuaWeiListOption{
 			Region: req.Extension.Region,
@@ -117,8 +114,6 @@ func (v vpc) HuaWeiVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// sync route table
-	sync.SleepBeforeSync()
-
 	rtReq := &hcroutetable.HuaWeiRouteTableSyncReq{
 		AccountID: req.AccountID,
 		Region:    req.Extension.Region,
@@ -126,7 +121,6 @@ func (v vpc) HuaWeiVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	if _, err = syncroutetable.HuaWeiRouteTableSync(cts.Kit, rtReq, v.ad, v.cs.DataService()); err != nil {
 		return nil, err
 	}
-
 	return core.CreateResult{ID: result.IDs[0]}, nil
 }
 

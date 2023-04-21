@@ -153,6 +153,16 @@ func (h *HuaWei) StartCvm(kt *kit.Kit, opt *typecvm.HuaWeiStartOption) error {
 		return err
 	}
 
+	handler := &startCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(h, kt, converter.SliceToPtr(opt.CloudIDs),
+		types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 
@@ -198,6 +208,16 @@ func (h *HuaWei) StopCvm(kt *kit.Kit, opt *typecvm.HuaWeiStopOption) error {
 	_, err = client.BatchStopServers(req)
 	if err != nil {
 		logs.Errorf("batch stop huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	handler := &stopCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(h, kt, converter.SliceToPtr(opt.CloudIDs),
+		types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
 		return err
 	}
 
@@ -249,6 +269,16 @@ func (h *HuaWei) RebootCvm(kt *kit.Kit, opt *typecvm.HuaWeiRebootOption) error {
 		return err
 	}
 
+	handler := &rebootCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(h, kt, converter.SliceToPtr(opt.CloudIDs),
+		types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 
@@ -285,6 +315,16 @@ func (h *HuaWei) ResetCvmPwd(kt *kit.Kit, opt *typecvm.HuaWeiResetPwdOption) err
 	_, err = client.BatchResetServersPassword(req)
 	if err != nil {
 		logs.Errorf("batch reset pwd huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	handler := &resetpwdCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(h, kt, converter.SliceToPtr(opt.CloudIDs),
+		types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
 		return err
 	}
 
@@ -412,10 +452,109 @@ func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) (*polle
 	return result, err
 }
 
+type startCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *startCvmPollingHandler) Done(cvms []model.ServerDetail) (bool, *poller.BaseDoneResult) {
+	return done(cvms, "ACTIVE")
+}
+
+// Poll ...
+func (h *startCvmPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.ServerDetail, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+type stopCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *stopCvmPollingHandler) Done(cvms []model.ServerDetail) (bool, *poller.BaseDoneResult) {
+	return done(cvms, "SHUTOFF")
+}
+
+// Poll ...
+func (h *stopCvmPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.ServerDetail, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+type resetpwdCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *resetpwdCvmPollingHandler) Done(cvms []model.ServerDetail) (bool, *poller.BaseDoneResult) {
+	return done(cvms, "ACTIVE")
+}
+
+// Poll ...
+func (h *resetpwdCvmPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.ServerDetail, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+type rebootCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *rebootCvmPollingHandler) Done(cvms []model.ServerDetail) (bool, *poller.BaseDoneResult) {
+	return done(cvms, "ACTIVE")
+}
+
+// Poll ...
+func (h *rebootCvmPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.ServerDetail, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+func done(cvms []model.ServerDetail, succeed string) (bool, *poller.BaseDoneResult) {
+	result := new(poller.BaseDoneResult)
+
+	flag := true
+	for _, instance := range cvms {
+		// not done
+		if instance.Status != succeed {
+			flag = false
+			continue
+		}
+
+		result.SuccessCloudIDs = append(result.SuccessCloudIDs, instance.Id)
+	}
+
+	return flag, result
+}
+
+func poll(client *HuaWei, kt *kit.Kit, region string, cloudIDs []*string) ([]model.ServerDetail, error) {
+	cloudIDSplit := slice.Split(cloudIDs, core.HuaWeiQueryLimit)
+
+	cvms := make([]model.ServerDetail, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := new(model.ListServersDetailsRequest)
+		req.ServerId = converter.ValToPtr(strings.Join(converter.PtrToSlice(partIDs), ","))
+		req.Limit = converter.ValToPtr(int32(core.HuaWeiQueryLimit))
+
+		cvmCli, err := client.clientSet.ecsClient(region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := cvmCli.ListServersDetails(req)
+		if err != nil {
+			return nil, err
+		}
+
+		cvms = append(cvms, *resp.Servers...)
+	}
+
+	return cvms, nil
+}
+
 type createCvmPollingHandler struct {
 	region string
 }
 
+// Done ...
 func (h *createCvmPollingHandler) Done(cvms []model.ServerDetail) (bool, *poller.BaseDoneResult) {
 
 	result := &poller.BaseDoneResult{
@@ -444,6 +583,7 @@ func (h *createCvmPollingHandler) Done(cvms []model.ServerDetail) (bool, *poller
 	return flag, result
 }
 
+// Poll ...
 func (h *createCvmPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.ServerDetail, error) {
 
 	cloudIDSplit := slice.Split(cloudIDs, core.HuaWeiQueryLimit)

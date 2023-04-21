@@ -142,6 +142,16 @@ func (a *Aws) StartCvm(kt *kit.Kit, opt *typecvm.AwsStartOption) error {
 		return err
 	}
 
+	handler := &startAwsCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*Aws, []*ec2.Instance, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(a, kt, converter.SliceToPtr(opt.CloudIDs),
+		types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -171,6 +181,16 @@ func (a *Aws) StopCvm(kt *kit.Kit, opt *typecvm.AwsStopOption) error {
 		return err
 	}
 
+	handler := &stopAwsCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*Aws, []*ec2.Instance, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(a, kt, converter.SliceToPtr(opt.CloudIDs),
+		types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -195,6 +215,16 @@ func (a *Aws) RebootCvm(kt *kit.Kit, opt *typecvm.AwsRebootOption) error {
 	_, err = client.RebootInstancesWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("reboot cvm failed, err: %v, ids: %v, rid: %s", err, opt.CloudIDs, kt.Rid)
+		return err
+	}
+
+	handler := &rebootAwsCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*Aws, []*ec2.Instance, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(a, kt, converter.SliceToPtr(opt.CloudIDs),
+		types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
 		return err
 	}
 
@@ -290,7 +320,7 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 	}
 
 	// 等待生产成功
-	handler := &createAwsCvmPollingHandler{
+	handler := &createCvmPollingHandler{
 		opt.Region,
 	}
 	respPoller := poller.Poller[*Aws, []*ec2.Instance, poller.BaseDoneResult]{Handler: handler}
@@ -302,11 +332,97 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 	return result, nil
 }
 
-type createAwsCvmPollingHandler struct {
+type startAwsCvmPollingHandler struct {
 	region string
 }
 
-func (h *createAwsCvmPollingHandler) Done(cvms []*ec2.Instance) (bool, *poller.BaseDoneResult) {
+// Done ...
+func (h *startAwsCvmPollingHandler) Done(cvms []*ec2.Instance) (bool, *poller.BaseDoneResult) {
+	return done(cvms, 16)
+}
+
+// Poll ...
+func (h *startAwsCvmPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Instance, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+type stopAwsCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *stopAwsCvmPollingHandler) Done(cvms []*ec2.Instance) (bool, *poller.BaseDoneResult) {
+	return done(cvms, 80)
+}
+
+// Poll ...
+func (h *stopAwsCvmPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Instance, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+type rebootAwsCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *rebootAwsCvmPollingHandler) Done(cvms []*ec2.Instance) (bool, *poller.BaseDoneResult) {
+	return done(cvms, 16)
+}
+
+// Poll ...
+func (h *rebootAwsCvmPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Instance, error) {
+	return poll(client, kt, h.region, cloudIDs)
+}
+
+func done(cvms []*ec2.Instance, succeed int64) (bool, *poller.BaseDoneResult) {
+	result := new(poller.BaseDoneResult)
+
+	flag := true
+	for _, instance := range cvms {
+		// not done
+		if converter.PtrToVal(instance.State.Code) != succeed {
+			flag = false
+			continue
+		}
+
+		result.SuccessCloudIDs = append(result.SuccessCloudIDs, converter.PtrToVal(instance.InstanceId))
+	}
+
+	return flag, result
+}
+
+func poll(client *Aws, kt *kit.Kit, region string, cloudIDs []*string) ([]*ec2.Instance, error) {
+	cloudIDSplit := slice.Split(cloudIDs, core.AwsQueryLimit)
+
+	cvms := make([]*ec2.Instance, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := new(ec2.DescribeInstancesInput)
+		req.InstanceIds = partIDs
+
+		cvmCli, err := client.clientSet.ec2Client(region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := cvmCli.DescribeInstancesWithContext(kt.Ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, reservation := range resp.Reservations {
+			cvms = append(cvms, reservation.Instances...)
+		}
+	}
+
+	return cvms, nil
+}
+
+type createCvmPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *createCvmPollingHandler) Done(cvms []*ec2.Instance) (bool, *poller.BaseDoneResult) {
 
 	result := &poller.BaseDoneResult{
 		SuccessCloudIDs: make([]string, 0),
@@ -334,7 +450,8 @@ func (h *createAwsCvmPollingHandler) Done(cvms []*ec2.Instance) (bool, *poller.B
 	return flag, result
 }
 
-func (h *createAwsCvmPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Instance, error) {
+// Poll ...
+func (h *createCvmPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*string) ([]*ec2.Instance, error) {
 
 	cloudIDSplit := slice.Split(cloudIDs, core.AwsQueryLimit)
 
@@ -365,7 +482,7 @@ func (h *createAwsCvmPollingHandler) Poll(client *Aws, kt *kit.Kit, cloudIDs []*
 	return cvms, nil
 }
 
-var _ poller.PollingHandler[*Aws, []*ec2.Instance, poller.BaseDoneResult] = new(createAwsCvmPollingHandler)
+var _ poller.PollingHandler[*Aws, []*ec2.Instance, poller.BaseDoneResult] = new(createCvmPollingHandler)
 
 func genCvmBase64UserData(kt *kit.Kit, ec2Client *ec2.EC2, imageID string, passwd string) (string, error) {
 	req := new(ec2.DescribeImagesInput)

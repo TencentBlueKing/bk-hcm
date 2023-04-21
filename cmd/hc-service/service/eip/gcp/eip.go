@@ -353,6 +353,8 @@ func (svc *EipSvc) makeEipAssociateOption(
 		CvmName:              cvmData.Name,
 		NetworkInterfaceName: networkInterface.Name,
 		PublicIp:             eipData.PublicIp,
+		CloudID:              eipData.CloudID,
+		Region:               eipData.Region,
 	}, nil
 }
 
@@ -390,6 +392,8 @@ func (svc *EipSvc) makeEipDisassociateOption(
 		CvmName:              cvmData.Name,
 		NetworkInterfaceName: networkInterface.Name,
 		AccessConfigName:     accessConfigName,
+		CloudID:              eipData.CloudID,
+		Region:               eipData.Region,
 	}, nil
 }
 

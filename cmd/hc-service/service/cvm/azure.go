@@ -26,7 +26,6 @@ import (
 
 	"hcm/cmd/hc-service/logics/sync/cvm"
 	"hcm/cmd/hc-service/service/capability"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/azure"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
@@ -218,7 +217,6 @@ func (svc *cvmSvc) StartAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncAzureCvmOption{
 		AccountID:         cvmFromDB.AccountID,
 		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
@@ -271,7 +269,6 @@ func (svc *cvmSvc) StopAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncAzureCvmOption{
 		AccountID:         cvmFromDB.AccountID,
 		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
@@ -314,7 +311,6 @@ func (svc *cvmSvc) RebootAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	sync.SleepBeforeSync()
 	syncOpt := &cvm.SyncAzureCvmOption{
 		AccountID:         cvmFromDB.AccountID,
 		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,

@@ -99,6 +99,8 @@ type GcpEipAssociateOption struct {
 	CvmName              string `json:"cvm_name" validate:"required"`
 	NetworkInterfaceName string `json:"network_interface_name" validate:"required"`
 	PublicIp             string `json:"public_ip" validate:"required"`
+	CloudID              string `json:"cloud_id" validate:"omitempty"`
+	Region               string `json:"region" validate:"omitempty"`
 }
 
 // Validate ...
@@ -112,6 +114,8 @@ type GcpEipDisassociateOption struct {
 	CvmName              string `json:"cvm_name" validate:"required"`
 	NetworkInterfaceName string `json:"network_interface_name" validate:"required"`
 	AccessConfigName     string `json:"access_config_name" validate:"required"`
+	CloudID              string `json:"cloud_id" validate:"omitempty"`
+	Region               string `json:"region" validate:"omitempty"`
 }
 
 // Validate ...

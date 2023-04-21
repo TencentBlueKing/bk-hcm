@@ -22,7 +22,6 @@ package subnet
 
 import (
 	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
-	"hcm/cmd/hc-service/service/sync"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
@@ -68,8 +67,6 @@ func (s *Subnet) AwsSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	}
 
 	// create hcm subnets
-	sync.SleepBeforeSync()
-
 	syncOpt := &syncsubnet.SyncAwsOption{
 		AccountID: opt.AccountID,
 		Region:    opt.Region,
