@@ -259,7 +259,7 @@ export default defineComponent({
     // 弹窗确认
     const handleDialogConfirm = async () => {
       const params: any = {
-        ids: state.selectedIds,
+        record_ids: state.selectedIds,
       };
       try {
         if (state.type === 'destroy') {
