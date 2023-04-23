@@ -115,11 +115,11 @@
           :label="t('操作')"
         >
           <template #default="{ data }">
-            <bk-button text theme="primary" class="mr10" @click="handleOperate('destroy', [data.res_id])">
+            <bk-button text theme="primary" class="mr10" @click="handleOperate('destroy', [data.id])">
               {{t('立即销毁')}}
             </bk-button>
             <bk-button
-              text theme="primary" @click="handleOperate('recover', [data.res_id])"
+              text theme="primary" @click="handleOperate('recover', [data.id])"
             >
               {{t('立即恢复')}}
             </bk-button>
@@ -300,6 +300,7 @@ export default defineComponent({
     const handleOperate = (type: string, ids?: string[]) => {
       console.log('selections', ids, selections.value);
       state.selectedIds = ids ? ids : selections.value.map(e => e.id);
+      console.log('state.selectedIds', state.selectedIds);
       state.type = type;
       state.deleteBoxTitle = `确认要 ${type === 'destroy' ? t('销毁') : t('恢复')}`;
       state.showDeleteBox = true;
