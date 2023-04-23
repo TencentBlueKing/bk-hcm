@@ -675,8 +675,10 @@ func (a *accountSvc) ListAccountWithExtension(cts *rest.Contexts) (interface{}, 
 		return &protocloud.AccountWithExtensionListResult{Count: daoAccountResp.Count}, nil
 	}
 
+	ids := make([]string, 0, len(daoAccountResp.Details))
 	details := make([]*protocloud.BaseAccountWithExtensionListResp, 0, len(daoAccountResp.Details))
 	for _, account := range daoAccountResp.Details {
+		ids = append(ids, account.ID)
 		var extension map[string]interface{}
 		switch enumor.Vendor(account.Vendor) {
 		case enumor.TCloud:
@@ -695,7 +697,7 @@ func (a *accountSvc) ListAccountWithExtension(cts *rest.Contexts) (interface{}, 
 		}
 
 		details = append(details, &protocloud.BaseAccountWithExtensionListResp{
-			BaseAccountListResp: protocloud.BaseAccountListResp{
+			BaseAccount: protocore.BaseAccount{
 				ID:         account.ID,
 				Vendor:     enumor.Vendor(account.Vendor),
 				Name:       account.Name,
@@ -715,6 +717,15 @@ func (a *accountSvc) ListAccountWithExtension(cts *rest.Contexts) (interface{}, 
 			},
 			Extension: extension,
 		})
+	}
+
+	accountBizMap, err := a.getAccountBizMap(cts.Kit, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, one := range details {
+		one.BkBizIDs = accountBizMap[one.ID]
 	}
 
 	return &protocloud.AccountWithExtensionListResult{Details: details}, nil
