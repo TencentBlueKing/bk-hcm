@@ -45,7 +45,7 @@ func InitInstanceTypeService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("List", http.MethodPost, "/instance_types/list", svc.List)
+	h.Add("List", http.MethodPost, "bizs/{bk_biz_id}/instance_types/list", svc.List)
 
 	h.Load(c.WebService)
 }

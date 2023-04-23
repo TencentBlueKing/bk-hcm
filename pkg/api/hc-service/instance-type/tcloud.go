@@ -38,13 +38,13 @@ func (req *TCloudInstanceTypeListReq) Validate() error {
 
 // TCloudInstanceTypeResp ...
 type TCloudInstanceTypeResp struct {
-	Zone           string `json:"zone"`
 	InstanceType   string `json:"instance_type"`
 	InstanceFamily string `json:"instance_family"`
 	GPU            int64  `json:"gpu"`
 	CPU            int64  `json:"cpu"`
 	Memory         int64  `json:"memory"`
 	FPGA           int64  `json:"fpga"`
+	Status         string `json:"status"`
 }
 
 // TCloudInstanceTypeListResp ...

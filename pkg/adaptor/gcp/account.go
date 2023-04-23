@@ -20,7 +20,12 @@
 package gcp
 
 import (
+	"fmt"
+
+	typeaccount "hcm/pkg/adaptor/types/account"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 )
 
 // AccountCheck check account authentication information and permissions.
@@ -31,4 +36,42 @@ func (g *Gcp) AccountCheck(kt *kit.Kit) error {
 	}
 
 	return nil
+}
+
+// GetProjectRegionQuota 获取项目地域配额
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/regions/get
+func (g *Gcp) GetProjectRegionQuota(kt *kit.Kit, opt *typeaccount.GcpProjectRegionQuotaOption) (
+	*typeaccount.GcpProjectQuota, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Regions.Get(g.CloudProjectID(), opt.Region).Do()
+	if err != nil {
+		logs.Errorf("get gcp region failed, err: %v, region: %s, rid: %s", err, opt.Region, kt.Rid)
+		return nil, err
+	}
+
+	for _, quota := range resp.Quotas {
+		if quota.Metric == "INSTANCES" {
+			return &typeaccount.GcpProjectQuota{
+				Instance: &typeaccount.GcpResourceQuota{
+					Limit: quota.Limit,
+					Usage: quota.Usage,
+				},
+			}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("query project region: %s quota not match data", opt.Region)
 }

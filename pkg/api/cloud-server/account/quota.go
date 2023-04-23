@@ -17,23 +17,27 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package instancetype
+package account
 
-// -------------------------- List --------------------------
+import "hcm/pkg/criteria/validator"
 
-// TCloudInstanceTypeListOption ...
-type TCloudInstanceTypeListOption struct {
-	Region string
-	Zone   string
+// GetAccountZoneQuotaReq ...
+type GetAccountZoneQuotaReq struct {
+	Region string `json:"region" validate:"required"`
+	Zone   string `json:"zone" validate:"required"`
 }
 
-// TCloudInstanceType ...
-type TCloudInstanceType struct {
-	InstanceType   string
-	InstanceFamily string
-	GPU            int64
-	CPU            int64
-	Memory         int64
-	FPGA           int64
-	Status         string
+// Validate ...
+func (opt *GetAccountZoneQuotaReq) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// GetAccountRegionQuotaReq ...
+type GetAccountRegionQuotaReq struct {
+	Region string `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (opt *GetAccountRegionQuotaReq) Validate() error {
+	return validator.Validate.Struct(opt)
 }

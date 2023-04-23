@@ -23,7 +23,9 @@ import (
 	"context"
 	"net/http"
 
+	typeaccount "hcm/pkg/adaptor/types/account"
 	"hcm/pkg/api/hc-service"
+	protoaccount "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -62,4 +64,28 @@ func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcser
 	}
 
 	return nil
+}
+
+// GetZoneQuota get account zone quota.
+func (a *AccountClient) GetZoneQuota(ctx context.Context, h http.Header,
+	request *protoaccount.GetTCloudAccountZoneQuotaReq) (*typeaccount.TCloudAccountQuota, error) {
+
+	resp := new(protoaccount.GetTCloudAccountZoneQuotaResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/accounts/zones/quotas").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }

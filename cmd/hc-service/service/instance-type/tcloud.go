@@ -58,13 +58,13 @@ func (i *instanceTypeAdaptor) ListForTCloud(cts *rest.Contexts) (interface{}, er
 	data := make([]*proto.TCloudInstanceTypeResp, 0, len(its))
 	for _, one := range its {
 		data = append(data, &proto.TCloudInstanceTypeResp{
-			Zone:           one.Zone,
 			InstanceType:   one.InstanceType,
 			InstanceFamily: one.InstanceFamily,
 			GPU:            one.GPU,
 			CPU:            one.CPU,
 			Memory:         one.Memory,
 			FPGA:           one.FPGA,
+			Status:         one.Status,
 		})
 	}
 

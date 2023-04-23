@@ -428,3 +428,23 @@ func genCloudResResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+// genProxyResourceFind 代理资源访问权限.
+func genProxyResourceFind(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a.BizID != 0 {
+		bizRes := client.Resource{
+			System: sys.SystemIDCMDB,
+			Type:   sys.Biz,
+			ID:     strconv.FormatInt(a.BizID, 10),
+		}
+
+		return sys.BizAccess, []client.Resource{bizRes}, nil
+	}
+
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+		ID:     a.ResourceID,
+	}
+	return sys.ResourceFind, []client.Resource{res}, nil
+}

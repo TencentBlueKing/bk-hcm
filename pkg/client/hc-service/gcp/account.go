@@ -23,7 +23,9 @@ import (
 	"context"
 	"net/http"
 
+	typeaccount "hcm/pkg/adaptor/types/account"
 	"hcm/pkg/api/hc-service"
+	protoaccount "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -62,4 +64,28 @@ func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hcser
 	}
 
 	return nil
+}
+
+// GetRegionQuota get account region quota.
+func (a *AccountClient) GetRegionQuota(ctx context.Context, h http.Header,
+	request *protoaccount.GetGcpAccountRegionQuotaReq) (*typeaccount.GcpProjectQuota, error) {
+
+	resp := new(protoaccount.GetGcpAccountQuotaResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/accounts/regions/quotas").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }

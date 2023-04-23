@@ -61,4 +61,8 @@ const (
 	Biz ResourceType = "biz"
 	// CloudResource is a special resource type that contains all cloud resource.
 	CloudResource ResourceType = "cloud_resource"
+	// Quota 配额
+	Quota ResourceType = "quota"
+	// InstanceType 机型
+	InstanceType ResourceType = "instance_type"
 )

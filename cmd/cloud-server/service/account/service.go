@@ -21,6 +21,7 @@ package account
 
 import (
 	"fmt"
+	"net/http"
 
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
@@ -40,23 +41,31 @@ func InitAccountService(c *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("Create", "POST", "/accounts/create", svc.Create)
-	h.Add("Check", "POST", "/accounts/check", svc.Check)
-	h.Add("CheckByID", "POST", "/accounts/{account_id}/check", svc.CheckByID)
-	h.Add("List", "POST", "/accounts/list", svc.List)
-	h.Add("ResourceList", "POST", "/accounts/resources/accounts/list", svc.ResourceList)
-	h.Add("Get", "GET", "/accounts/{account_id}", svc.Get)
-	h.Add("Update", "PATCH", "/accounts/{account_id}", svc.Update)
-	h.Add("Sync", "POST", "/accounts/{account_id}/sync", svc.Sync)
-	h.Add("Delete", "DELETE", "/accounts/{account_id}", svc.Delete)
-	h.Add("DeleteValidate", "POST", "/accounts/{account_id}/delete/validate", svc.DeleteValidate)
+	h.Add("Create", http.MethodPost, "/accounts/create", svc.Create)
+	h.Add("Check", http.MethodPost, "/accounts/check", svc.Check)
+	h.Add("CheckByID", http.MethodPost, "/accounts/{account_id}/check", svc.CheckByID)
+	h.Add("List", http.MethodPost, "/accounts/list", svc.List)
+	h.Add("ResourceList", http.MethodPost, "/accounts/resources/accounts/list", svc.ResourceList)
+	h.Add("Get", http.MethodGet, "/accounts/{account_id}", svc.Get)
+	h.Add("Update", http.MethodPatch, "/accounts/{account_id}", svc.Update)
+	h.Add("Sync", http.MethodPost, "/accounts/{account_id}/sync", svc.Sync)
+	h.Add("Delete", http.MethodDelete, "/accounts/{account_id}", svc.Delete)
+	h.Add("DeleteValidate", http.MethodPost, "/accounts/{account_id}/delete/validate", svc.DeleteValidate)
+
+	// 获取账号配额
+	h.Add("GetTCloudZoneQuota", http.MethodPost, "/bizs/{bk_biz_id}/vendors/tcloud/accounts/{account_id}/zones/quotas",
+		svc.GetAccountZoneQuota)
+	h.Add("GetHuaWeiRegionQuota", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/huawei/accounts/{account_id}/regions/quotas", svc.GetHuaWeiRegionQuota)
+	h.Add("GetGcpRegionQuota", http.MethodPost, "/bizs/{bk_biz_id}/vendors/gcp/accounts/{account_id}/regions/quotas",
+		svc.GetGcpRegionQuota)
 
 	// Rel
-	h.Add("ListByBkBizID", "GET", "/accounts/bizs/{bk_biz_id}", svc.ListByBkBizID)
+	h.Add("ListByBkBizID", http.MethodGet, "/accounts/bizs/{bk_biz_id}", svc.ListByBkBizID)
 
 	// 安全所需OpenAPI
-	h.Add("ListWithExtension", "POST", "/accounts/extensions/list", svc.ListWithExtension)
-	h.Add("ListSecretKey", "POST", "/accounts/secrets/list", svc.ListSecretKey)
+	h.Add("ListWithExtension", http.MethodPost, "/accounts/extensions/list", svc.ListWithExtension)
+	h.Add("ListSecretKey", http.MethodPost, "/accounts/secrets/list", svc.ListSecretKey)
 
 	h.Load(c.WebService)
 }

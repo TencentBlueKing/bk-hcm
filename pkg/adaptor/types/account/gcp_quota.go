@@ -17,23 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package instancetype
+package account
 
-// -------------------------- List --------------------------
+import "hcm/pkg/criteria/validator"
 
-// TCloudInstanceTypeListOption ...
-type TCloudInstanceTypeListOption struct {
-	Region string
-	Zone   string
+// GcpProjectRegionQuotaOption define
+type GcpProjectRegionQuotaOption struct {
+	Region string `json:"region" validate:"required"`
 }
 
-// TCloudInstanceType ...
-type TCloudInstanceType struct {
-	InstanceType   string
-	InstanceFamily string
-	GPU            int64
-	CPU            int64
-	Memory         int64
-	FPGA           int64
-	Status         string
+// Validate ...
+func (opt *GcpProjectRegionQuotaOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// GcpProjectQuota gcp项目配额
+type GcpProjectQuota struct {
+	// Instance 对应 "INSTANCES" 配额指标
+	Instance *GcpResourceQuota `json:"instance"`
+}
+
+// GcpResourceQuota ...
+type GcpResourceQuota struct {
+	// Limit 总额
+	Limit float64 `json:"limit"`
+	// Usage 已使用数量
+	Usage float64 `json:"usage"`
 }

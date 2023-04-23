@@ -23,6 +23,7 @@ import (
 	"errors"
 
 	"hcm/pkg/adaptor/types"
+	typeaccount "hcm/pkg/adaptor/types/account"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
@@ -57,4 +58,42 @@ func (h *HuaWei) AccountCheck(kt *kit.Kit, opt *types.HuaWeiAccountInfo) error {
 	}
 
 	return errors.New("SubAccount does not match SecretId/SecretKey")
+}
+
+// GetAccountQuota get account quota.
+// KeystoneListAuthDomains: https://support.huaweicloud.com/intl/zh-cn/api-ecs/ecs_02_0801.html
+func (h *HuaWei) GetAccountQuota(kt *kit.Kit, opt *typeaccount.GetHuaWeiAccountZoneQuotaOption) (
+	*typeaccount.HuaWeiAccountQuota, error) {
+
+	client, err := h.clientSet.ecsClient(opt.Region)
+	if err != nil {
+		logs.Errorf("init huawei client failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	resp, err := client.ShowServerLimits(nil)
+	if err != nil {
+		logs.Errorf("show huawei server limit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	quota := &typeaccount.HuaWeiAccountQuota{
+		MaxImageMeta:          resp.Absolute.MaxImageMeta,
+		MaxPersonality:        resp.Absolute.MaxPersonality,
+		MaxPersonalitySize:    resp.Absolute.MaxPersonalitySize,
+		MaxSecurityGroupRules: resp.Absolute.MaxSecurityGroupRules,
+		MaxSecurityGroups:     resp.Absolute.MaxSecurityGroups,
+		MaxServerGroupMembers: resp.Absolute.MaxServerGroupMembers,
+		MaxServerGroups:       resp.Absolute.MaxServerGroups,
+		MaxServerMeta:         resp.Absolute.MaxServerMeta,
+		MaxTotalCores:         resp.Absolute.MaxTotalCores,
+		MaxTotalFloatingIps:   resp.Absolute.MaxTotalFloatingIps,
+		MaxTotalInstances:     resp.Absolute.MaxTotalInstances,
+		MaxTotalKeypairs:      resp.Absolute.MaxTotalKeypairs,
+		MaxTotalRAMSize:       resp.Absolute.MaxTotalRAMSize,
+		MaxTotalSpotInstances: resp.Absolute.MaxTotalSpotInstances,
+		MaxTotalSpotCores:     resp.Absolute.MaxTotalSpotCores,
+		MaxTotalSpotRAMSize:   resp.Absolute.MaxTotalSpotRAMSize,
+	}
+	return quota, nil
 }

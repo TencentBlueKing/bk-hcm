@@ -27,11 +27,22 @@ import (
 	hcproto "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
 // List ...
 func (svc *instanceTypeSvc) List(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.InstanceType, Action: meta.Find}, BizID: bizID}
+	if err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
 	req := new(proto.InstanceTypeListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

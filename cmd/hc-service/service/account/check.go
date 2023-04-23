@@ -17,40 +17,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package account defines account service.
 package account
 
 import (
-	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// InitAccountService initial the account service
-func InitAccountService(cap *capability.Capability) {
-	a := &account{
-		ad: cap.CloudAdaptor,
-	}
-
-	h := rest.NewHandler()
-	h.Add("TCloudAccountCheck", "POST", "/vendors/tcloud/accounts/check", a.TCloudAccountCheck)
-	h.Add("AwsAccountCheck", "POST", "/vendors/aws/accounts/check", a.AwsAccountCheck)
-	h.Add("HuaWeiAccountCheck", "POST", "/vendors/huawei/accounts/check", a.HuaWeiAccountCheck)
-	h.Add("GcpAccountCheck", "POST", "/vendors/gcp/accounts/check", a.GcpAccountCheck)
-	h.Add("AzureAccountCheck", "POST", "/vendors/azure/accounts/check", a.AzureAccountCheck)
-
-	h.Load(cap.WebService)
-}
-
-type account struct {
-	ad *cloudadaptor.CloudAdaptorClient
-}
-
 // TCloudAccountCheck authentication information and permissions.
-func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
+func (svc *service) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.TCloudAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -59,7 +36,7 @@ func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := a.ad.Adaptor().TCloud(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+	client, err := svc.ad.Adaptor().TCloud(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
 		CloudSecretKey: req.CloudSecretKey})
 	if err != nil {
 		return nil, err
@@ -74,7 +51,7 @@ func (a account) TCloudAccountCheck(cts *rest.Contexts) (interface{}, error) {
 }
 
 // AwsAccountCheck authentication information and permissions.
-func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
+func (svc *service) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -84,7 +61,7 @@ func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := a.ad.Adaptor().Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+	client, err := svc.ad.Adaptor().Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
 		CloudSecretKey: req.CloudSecretKey})
 	if err != nil {
 		return nil, err
@@ -99,7 +76,7 @@ func (a account) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 }
 
 // HuaWeiAccountCheck authentication information and permissions.
-func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
+func (svc *service) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.HuaWeiAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -108,7 +85,7 @@ func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := a.ad.Adaptor().HuaWei(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
+	client, err := svc.ad.Adaptor().HuaWei(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
 		CloudSecretKey: req.CloudSecretKey})
 	if err != nil {
 		return nil, err
@@ -125,7 +102,7 @@ func (a account) HuaWeiAccountCheck(cts *rest.Contexts) (interface{}, error) {
 }
 
 // GcpAccountCheck ...
-func (a account) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
+func (svc *service) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.GcpAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
@@ -134,7 +111,7 @@ func (a account) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	client, err := a.ad.Adaptor().Gcp(&types.GcpCredential{CloudProjectID: req.CloudProjectID,
+	client, err := svc.ad.Adaptor().Gcp(&types.GcpCredential{CloudProjectID: req.CloudProjectID,
 		Json: []byte(req.CloudServiceSecretKey)})
 	if err != nil {
 		return nil, err
@@ -146,7 +123,7 @@ func (a account) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 }
 
 // AzureAccountCheck ...
-func (a account) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
+func (svc *service) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AzureAccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.New(errf.DecodeRequestFailed, err.Error())
@@ -155,7 +132,7 @@ func (a account) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.InvalidParameter, err.Error())
 	}
 
-	client, err := a.ad.Adaptor().Azure(&types.AzureCredential{
+	client, err := svc.ad.Adaptor().Azure(&types.AzureCredential{
 		CloudTenantID: req.CloudTenantID, CloudSubscriptionID: req.CloudSubscriptionID,
 		CloudApplicationID: req.CloudApplicationID, CloudClientSecretKey: req.CloudClientSecretKey,
 	})

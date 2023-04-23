@@ -25,10 +25,13 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
 // ListInstanceType ...
-// reference: https://cloud.tencent.com/document/api/213/15749
+// reference: https://cloud.tencent.com/document/api/213/17378
 func (t *TCloud) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloudInstanceTypeListOption) (
 	[]typesinstancetype.TCloudInstanceType, error,
 ) {
@@ -41,24 +44,30 @@ func (t *TCloud) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloudInst
 		return nil, err
 	}
 
-	req := opt.ToListRequest()
-	resp, err := client.DescribeInstanceTypeConfigsWithContext(kt.Ctx, req)
+	req := cvm.NewDescribeZoneInstanceConfigInfosRequest()
+	req.Filters = []*cvm.Filter{
+		{
+			Name:   common.StringPtr("zone"),
+			Values: []*string{&opt.Zone},
+		},
+	}
+
+	resp, err := client.DescribeZoneInstanceConfigInfosWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list tcloud instance type failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	its := make([]typesinstancetype.TCloudInstanceType, 0, len(resp.Response.InstanceTypeConfigSet))
-	for _, it := range resp.Response.InstanceTypeConfigSet {
+	its := make([]typesinstancetype.TCloudInstanceType, 0, len(resp.Response.InstanceTypeQuotaSet))
+	for _, it := range resp.Response.InstanceTypeQuotaSet {
 		its = append(its, typesinstancetype.TCloudInstanceType{
-			Zone:           converter.PtrToVal(it.Zone),
 			InstanceType:   converter.PtrToVal(it.InstanceType),
 			InstanceFamily: converter.PtrToVal(it.InstanceFamily),
-			GPU:            converter.PtrToVal(it.GPU),
-			CPU:            converter.PtrToVal(it.CPU),
-			// Note: 为保持与其他云一致，内存单位调整为MB
-			Memory: converter.PtrToVal(it.Memory) * 1024,
-			FPGA:   converter.PtrToVal(it.FPGA),
+			GPU:            converter.PtrToVal(it.Gpu),
+			CPU:            converter.PtrToVal(it.Cpu),
+			Memory:         converter.PtrToVal(it.Memory) * 1024, // Note: 为保持与其他云一致，内存单位调整为MB
+			FPGA:           converter.PtrToVal(it.Fpga),
+			Status:         converter.PtrToVal(it.Status),
 		})
 	}
 
