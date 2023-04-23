@@ -282,7 +282,7 @@ type BaseAccountListResp struct {
 type AccountListResult struct {
 	Count uint64 `json:"count"`
 	// 对于List接口，只会返回公共数据，不会返回Extension
-	Details []*BaseAccountListResp `json:"details"`
+	Details []*cloud.BaseAccount `json:"details"`
 }
 
 // AccountListResp ...

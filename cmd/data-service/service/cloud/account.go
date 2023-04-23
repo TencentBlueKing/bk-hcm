@@ -20,6 +20,7 @@
 package cloud
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -40,6 +41,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
@@ -380,9 +382,11 @@ func (a *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 		return &protocloud.AccountListResult{Count: daoAccountResp.Count}, nil
 	}
 
-	details := make([]*protocloud.BaseAccountListResp, 0, len(daoAccountResp.Details))
+	ids := make([]string, 0, len(daoAccountResp.Details))
+	details := make([]*protocore.BaseAccount, 0, len(daoAccountResp.Details))
 	for _, account := range daoAccountResp.Details {
-		details = append(details, &protocloud.BaseAccountListResp{
+		ids = append(ids, account.ID)
+		details = append(details, &protocore.BaseAccount{
 			ID:         account.ID,
 			Vendor:     enumor.Vendor(account.Vendor),
 			Name:       account.Name,
@@ -403,7 +407,67 @@ func (a *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 
 	}
 
+	accountBizMap, err := a.getAccountBizMap(cts.Kit, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, one := range details {
+		one.BkBizIDs = accountBizMap[one.ID]
+	}
+
 	return &protocloud.AccountListResult{Details: details}, nil
+}
+
+// getAccountBizMap 获取账号和业务的映射关系
+func (a *accountSvc) getAccountBizMap(kt *kit.Kit, accountIDs []string) (map[string][]int64, error) {
+	if len(accountIDs) == 0 {
+		return nil, errors.New("accountIDs is required")
+	}
+
+	result := make(map[string][]int64)
+	start := uint32(0)
+	listOpt := &types.ListOption{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.In.Factory(),
+					Value: accountIDs,
+				},
+			},
+		},
+		Page: &core.BasePage{
+			Start: 0,
+			Limit: core.DefaultMaxPageLimit,
+		},
+	}
+	for {
+		listOpt.Page.Start = start
+
+		list, err := a.dao.AccountBizRel().List(kt, listOpt)
+		if err != nil {
+			logs.Errorf("list account biz rel failed, err: %v, ids: %v, rid: %s", err, accountIDs, kt.Rid)
+			return nil, err
+		}
+
+		for _, one := range list.Details {
+			if _, exist := result[one.AccountID]; !exist {
+				result[one.AccountID] = make([]int64, 0)
+			}
+
+			result[one.AccountID] = append(result[one.AccountID], one.BkBizID)
+		}
+
+		if len(list.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+
+		start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	return result, nil
 }
 
 // ListAccountWithBiz 查询账号列表带业务ID列表，但extension中没有密钥相关信息。

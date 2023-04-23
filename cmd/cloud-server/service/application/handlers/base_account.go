@@ -22,12 +22,13 @@ package handlers
 import (
 	"fmt"
 
+	corecloud "hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/runtime/filter"
 )
 
 // GetAccount 查询账号信息
-func (a *BaseApplicationHandler) GetAccount(accountID string) (*dataproto.BaseAccountListResp, error) {
+func (a *BaseApplicationHandler) GetAccount(accountID string) (*corecloud.BaseAccount, error) {
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
