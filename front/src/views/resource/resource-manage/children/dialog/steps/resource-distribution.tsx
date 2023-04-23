@@ -123,7 +123,7 @@ export default defineComponent({
         },
       },
       {
-        label: '蓝鲸云区域',
+        label: '管控区域',
         render({ data }: any) {
           if (data.bk_cloud_id > -1) {
             return data.bk_cloud_id;

@@ -87,11 +87,11 @@ export default defineComponent({
     };
     const handleVpcChange = (vpc: any) => {
       cloudId.value = vpc.bk_cloud_id;
-      vpcId.value = vpc.id
+      vpcId.value = vpc.id;
       resetFormItemData('cloud_subnet_id');
     };
     const handleMachineTypeChange = (machine: any) => {
-      machineType.value = machine
+      machineType.value = machine;
       resetFormItemData('cloud_image_id');
 
       if (cond.vendor === VendorEnum.AZURE) {
@@ -104,21 +104,21 @@ export default defineComponent({
       const rules = {
         [VendorEnum.TCLOUD]: {
           validator: (value: number) => {
-            return value >= 20 && value <= 1024 && value % 10 === 0
+            return value >= 20 && value <= 1024 && value % 10 === 0;
           },
           message: '20-1024GB且为10的倍数',
           trigger: 'change',
         },
         [VendorEnum.HUAWEI]: {
           validator: (value: number) => {
-            return value >= 40 && value <= 1024
+            return value >= 40 && value <= 1024;
           },
           message: '40-1024GB',
           trigger: 'change',
         },
         [VendorEnum.AWS]: {
           validator: (value: number) => {
-            return value >= 1 && value <= 16384
+            return value >= 1 && value <= 16384;
           },
           message: '1-16384GB',
           trigger: 'change',
@@ -127,7 +127,7 @@ export default defineComponent({
 
       return rules[cond.vendor] || {
         validator: () => true,
-        message: ''
+        message: '',
       };
     });
 
@@ -139,8 +139,8 @@ export default defineComponent({
         io2: 4,
         st1: 125,
         sc1: 125,
-        standard: 1
-      }
+        standard: 1,
+      };
       const awsMaxMap = {
         gp3: 16384,
         gp2: 16384,
@@ -148,26 +148,26 @@ export default defineComponent({
         io2: 16384,
         st1: 16384,
         sc1: 16384,
-        standard: 1024
-      }
+        standard: 1024,
+      };
       const rules = {
         [VendorEnum.TCLOUD]: {
           validator: (value: number) => {
-            return value >= 20 && value <= 32000 && value % 10 === 0
+            return value >= 20 && value <= 32000 && value % 10 === 0;
           },
           message: '20-32,000GB且为10的倍数',
           trigger: 'change',
         },
         [VendorEnum.HUAWEI]: {
           validator: (value: number) => {
-            return value >= 40 && value <= 32768
+            return value >= 40 && value <= 32768;
           },
           message: '40-32,768GB',
           trigger: 'change',
         },
         [VendorEnum.AWS]: {
           validator: (value: number) => {
-            return value >= awsMinMap[item.disk_type] && value <= awsMaxMap[item.disk_type]
+            return value >= awsMinMap[item.disk_type] && value <= awsMaxMap[item.disk_type];
           },
           message: `${awsMinMap[item.disk_type]}-${awsMaxMap[item.disk_type]}GB`,
           trigger: 'change',
@@ -176,7 +176,7 @@ export default defineComponent({
 
       return rules[cond.vendor] || {
         validator: () => true,
-        message: ''
+        message: '',
       };
     };
 
@@ -348,7 +348,7 @@ export default defineComponent({
             ...formConfigPublicIpAssignedDiff.value,
           },
           {
-            label: '所属的蓝鲸云区域',
+            label: '管控区域',
             description: '',
             content: () => <CloudAreaName id={cloudId.value} />,
           },
@@ -400,7 +400,7 @@ export default defineComponent({
           },
           {
             label: '数据盘',
-            tips: () => cond.vendor === VendorEnum.TCLOUD ? '增强型SSD云硬盘仅在部分可用区开放售卖，后续将逐步增加售卖可用区' : '',
+            tips: () => (cond.vendor === VendorEnum.TCLOUD ? '增强型SSD云硬盘仅在部分可用区开放售卖，后续将逐步增加售卖可用区' : ''),
             property: 'data_disk',
             content: () => <div class="form-content-list">
               {
@@ -553,8 +553,8 @@ export default defineComponent({
           validator: (value: string) => {
             const pattern = cond.vendor === VendorEnum.HUAWEI
               ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*-+=|{}\[\]:;',.?/]+$/
-              : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*-+=|{}\[\]:;',.?/]+$/
-            return pattern.test(value)
+              : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*-+=|{}\[\]:;',.?/]+$/;
+            return pattern.test(value);
           },
           message: '不符合校验规则',
           trigger: 'blur',
@@ -563,9 +563,9 @@ export default defineComponent({
           validator: (value: string) => {
             // formRef.value.clearValidate('confirmed_password');
             if (formData.confirmed_password.length) {
-              return value === formData.confirmed_password
+              return value === formData.confirmed_password;
             }
-            return true
+            return true;
           },
           message: '两次输入的密码不一致',
           trigger: 'blur',
@@ -595,34 +595,34 @@ export default defineComponent({
               'test', 'user4', 'david', 'root', 'support_388945a0',
               'user', 'user2', '1', 'support', 'video', 'a', 'admin',
               'sys', 'test2', 'admin2', 'aspnet', 'sql', 'user3',
-              'actuser', 'adm', 'backup', 'server'
-            ]
-            return !sensitives.includes(value)
+              'actuser', 'adm', 'backup', 'server',
+            ];
+            return !sensitives.includes(value);
           },
           message: '不允许使用的用户名',
           trigger: 'change',
-        }
+        },
       ],
       required_count: [
         {
           max: 100,
           message: '最大不能超过100',
           trigger: 'change',
-        }
+        },
       ],
       data_disk: [
         {
           validator: (disks: []) => {
             const diskNum = disks.reduce((acc: number, cur: any) => {
-              acc += cur.disk_count
-              return acc
-            }, 0)
-            return cond.vendor !== VendorEnum.AWS || diskNum <= 23
+              acc += cur.disk_count;
+              return acc;
+            }, 0);
+            return cond.vendor !== VendorEnum.AWS || diskNum <= 23;
           },
           message: '数据盘总数不能超过23个',
           trigger: 'change',
-        }
-      ]
+        },
+      ],
     };
 
     return () => <ContentContainer>

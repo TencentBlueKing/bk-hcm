@@ -29,7 +29,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 
-const VPCFields = ref([
+const VPCFields: any = ref([
   {
     name: '资源 ID',
     prop: 'id',
@@ -134,12 +134,14 @@ const {
             },
           },
           {
-            name: 'DNS',
+            name: 'DNS服务器',
             prop: 'dns_server_set',
+            tipsContent: '腾讯云默认DNS为：183.60.83.19，183.60.82.98，如果不使用腾讯云默认DNS，将无法使用内部服务，如windows激活、NTP、YUM等',
           },
           {
-            name: 'Domain Name',
+            name: '本地域名',
             prop: 'domain_name',
+            tipsContent: '本地域名(Domain Name), 即VPC内主机的域名后缀',
           },
           {
             name: '组播',
@@ -315,8 +317,8 @@ const handleDeleteVpc = (data: any) => {
               .then(() => {
                 Message({
                   theme: 'success',
-                  message: '删除成功'
-                })
+                  message: '删除成功',
+                });
               });
           },
         });

@@ -67,7 +67,7 @@ export default defineComponent({
         <div class="forbid-layout">
           <img src={permissions} alt="403" />
           <h2>{this.t('抱歉，您暂无该功能的权限')}</h2>
-          <p class="mt10">{this.t('您还没有该功能的权限，可以点击下方的"申请功能权限"获得权限')}</p>
+          <p class="mt10">{this.t('您还没有该功能的权限，可以点击下方的"申请权限"获得权限')}</p>
         </div>
         <div class="describe">
           <h2 class="mt20">
@@ -76,7 +76,7 @@ export default defineComponent({
           {this.urlKey === 'resource_find' && (   // 资源列表权限说明
             <>
               <p class="mt5 sub-describe">{this.t('该功能由平台资源的管理员维护，属于管理员的权限。')}</p>
-              <p class="mt5 sub-describe">{this.t('如果您是业务方用户，无需申请该权限，请在「业务」菜单下直接使用。')}</p>
+              <p class="mt5 sub-describe">{this.t('如果您是业务方用户，无需申请该权限，请在"业务"菜单下直接使用。')}</p>
             </>
           )}
            {this.urlKey === 'biz_access' && ( // 业务列表权限说明
@@ -89,7 +89,7 @@ export default defineComponent({
             this.urlKey === 'account_find' && (   // 账号列表权限说明
               <>
               <p class="mt5 sub-describe">{this.t('该功能用于管理云账号，如业务运维对云账号进行管理，可以对录入海垒的账号进行查看')}</p>
-              <p class="mt5 sub-describe">{this.t('如果您是业务下云账号的资源使用者，无需申请该权限。对账号的数据查看，可以申请对应账号的「账号查看」权限，无需申请账号「录入权限」')}</p>
+              <p class="mt5 sub-describe">{this.t('如果您是业务下云账号的资源使用者，无需申请该权限。对账号的数据查看，可以申请对应账号的"账号查看"权限，无需申请账号"录入权限"')}</p>
               <p class="mt5 sub-describe">{this.t('如果您只需要录入账号，请在业务-服务申请-云账号录入')}</p>
               </>
             )
@@ -97,8 +97,8 @@ export default defineComponent({
            {
             this.urlKey === 'resource_audit_find' && (   // 审计列表权限说明
               <>
-              <p class="mt5 sub-describe">{this.t('如果您是业务运维、SRE等角色，业务下管理了多个云账号，可申请「业务审计查看」权限，查看业务下多个账号的审计信息。')}</p>
-              <p class="mt5 sub-describe">{this.t('如果您的账号属于某个业务，您负责其中一个账号，可申请「资源审计查看」权限，单独查看该账号的审计信息')}</p>
+              <p class="mt5 sub-describe">{this.t('如果您是业务运维、SRE等角色，业务下管理了多个云账号，可申请"业务审计查看"权限，查看业务下多个账号的审计信息。')}</p>
+              <p class="mt5 sub-describe">{this.t('如果您的账号属于某个业务，您负责其中一个账号，可申请"资源审计查看"权限，单独查看该账号的审计信息')}</p>
               </>
             )
            }
@@ -118,7 +118,7 @@ export default defineComponent({
           <>
             <p class="mt5 sub-describe">{this.t('具备同时管理多云多账号的云资源，支持多种不同资源的操作')}</p>
             <p class="mt5 sub-describe">{this.t('提供资源的生命周期管理，如资源的创建，回收，销毁等')}</p>
-            <p class="mt5 sub-describe">{this.t('主机、硬盘、VPC的新建，需要走申请流程，请到「服务」菜单操作')}</p>
+            <p class="mt5 sub-describe">{this.t('主机、硬盘、VPC的新建，需要走申请流程，请到"服务"菜单操作')}</p>
             <p class="mt5 sub-describe">{this.t('其他资源，可以直接在业务下进行操作')}</p>
           </>
           )}

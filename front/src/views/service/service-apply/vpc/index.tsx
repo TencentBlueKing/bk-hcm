@@ -33,16 +33,16 @@ export default defineComponent({
         [VendorEnum.AWS]: 'CIDR范围的有效范围为:\t\n10.0.0.0 - 10.255.255.255（10/8 前缀）\t\n172.16.0.0 - 172.31.255.255（172.16/12 前缀）\t\n192.168.0.0 - 192.168.255.255（192.168/16 前缀）\t\n更多信息请参考官方说明https://docs.aws.amazon.com/zh_cn/vpc/latest/userguide/configure-your-vpc.html#add-cidr-block-restrictions',
         [VendorEnum.AZURE]: 'CIDR范围的有效范围为:\t\n10.0.0.0 - 10.255.255.255（10/8 前缀）\t\n172.16.0.0 - 172.31.255.255（172.16/12 前缀）\t\n192.168.0.0 - 192.168.255.255（192.168/16 前缀）\t\n更多信息请参考官方说明https://learn.microsoft.com/zh-cn/azure/virtual-network/virtual-networks-faq#what-address-ranges-can-i-use-in-my-vnets',
         [VendorEnum.GCP]: 'CIDR范围的有效范围为:\t\n10.0.0.0/8\t\n172.16.0.0/12\t\n192.168.0.0/16\t\n更多信息请参考官方说明https://cloud.google.com/vpc/docs/subnets?hl=zh-cn',
-        [VendorEnum.HUAWEI]: 'CIDR范围的有效范围为:\t\n10.0.0.0/8~24\t\n172.16.0.0/12~24\t\n192.168.0.0/16~24\t\n更多信息请参考官方说明https://support.huaweicloud.com/intl/zh-cn/usermanual-vpc/zh-cn_topic_0013935842.html'
-      }
-      return map[cond.vendor]
-    })
+        [VendorEnum.HUAWEI]: 'CIDR范围的有效范围为:\t\n10.0.0.0/8~24\t\n172.16.0.0/12~24\t\n192.168.0.0/16~24\t\n更多信息请参考官方说明https://support.huaweicloud.com/intl/zh-cn/usermanual-vpc/zh-cn_topic_0013935842.html',
+      };
+      return map[cond.vendor];
+    });
 
     const subnetTips = computed(() => {
       const map = {
-        [VendorEnum.GCP]: 'CIDR范围的有效范围为:\t\n10.0.0.0/8\t\n172.16.0.0/12\t\n192.168.0.0/16\t\n更多信息请参考官方说明https://cloud.google.com/vpc/docs/subnets?hl=zh-cn',      }
-      return map[cond.vendor] || '请确保所填写的子网CIDR在VPC CIDR中'
-    })
+        [VendorEnum.GCP]: 'CIDR范围的有效范围为:\t\n10.0.0.0/8\t\n172.16.0.0/12\t\n192.168.0.0/16\t\n更多信息请参考官方说明https://cloud.google.com/vpc/docs/subnets?hl=zh-cn'      };
+      return map[cond.vendor] || '请确保所填写的子网CIDR在VPC CIDR中';
+    });
 
     const formConfig = computed(() => [
       {
@@ -86,6 +86,7 @@ export default defineComponent({
             required: true,
             property: 'ipv4_cidr',
             content: () => <>
+            <div class="flex-row align-items-center">
               <ComposeFormItem class="mr5">
                 <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.ipv4_cidr[0]} class="w110" suffix="." />
                 <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.ipv4_cidr[1]} class="w110" suffix="." />
@@ -93,11 +94,12 @@ export default defineComponent({
                 <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.ipv4_cidr[3]} class="w110" suffix="/" />
                 <Input type='number' placeholder='1-32' min={1} max={32} v-model={formData.ipv4_cidr[4]} class="w110" />
               </ComposeFormItem>
-              <Info v-BkTooltips={{ content: networkTips.value, disabled: !networkTips.value }}></Info>
+              <Info v-BkTooltips={{ content: networkTips.value ? networkTips.value : '请先选择云厂商' }}></Info>
+            </div>
             </>,
           },
           {
-            label: '所属的蓝鲸云区域',
+            label: '管控区域',
             required: true,
             property: 'bk_cloud_id',
             content: () => <CloudAreaSelector v-model={formData.bk_cloud_id} />,
@@ -172,6 +174,7 @@ export default defineComponent({
             label: 'IPv4 CIDR',
             required: true,
             content: () => <>
+            <div class="flex-row align-items-center">
               <ComposeFormItem class="mr5">
                 <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.subnet.ipv4_cidr[0]} class="w110" suffix="." />
                 <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[1]} class="w110" suffix="." />
@@ -180,6 +183,7 @@ export default defineComponent({
                 <Input type='number' placeholder='1-32' min={1} max={32} v-model={formData.subnet.ipv4_cidr[4]} class="w110" />
               </ComposeFormItem>
               <Info v-BkTooltips={{ content: subnetTips.value }}></Info>
+            </div>
             </>,
           },
           {

@@ -65,7 +65,6 @@ const defalutWidth = computed(() => props.width);
     .btns {
       display: flex;
       align-items: center;
-      margin-left: auto;
       .btn {
 
         & + .btn {

@@ -15,6 +15,7 @@ type Field = {
   copy?: string | boolean;
   edit?: boolean;
   prop?: string;
+  tipsContent?: string;
   render?: (cell: string | boolean) => void;
 };
 

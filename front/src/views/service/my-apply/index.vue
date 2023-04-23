@@ -50,8 +50,8 @@ export default defineComponent({
     const COM_MAP = Object.freeze(new Map([
       [
         ['add_account', 'service_apply', 'create_cvm', 'create_disk', 'create_vpc'],
-        'ApplyDetail'
-      ]
+        'ApplyDetail',
+      ],
     ]));
 
     const currCom = computed(() => {
@@ -79,7 +79,7 @@ export default defineComponent({
           {
             field: 'created_at',
             op: 'gt',
-            value: '2020-01-02 00:00:00',
+            value: '2006-01-02T15:04:05Z',
           },
         ],
       },
@@ -136,8 +136,7 @@ export default defineComponent({
       if (payload.value === '*') {
         filterParams.value.filter = { op: 'and', rules: [] };
       } else {
-        const value = moment().add(-payload.value, 'd')
-          .format('YYYY-MM-DD HH:mm:ss');
+        const value = moment().add(-payload.value, 'd');
         filterParams.value.filter.rules[0].value = value;
       }
       getMyApplyList();

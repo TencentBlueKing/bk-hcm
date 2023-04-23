@@ -117,6 +117,33 @@ const businesseMenus: RouteRecordRaw[] = [
     name: '网络',
     children: [
       {
+        path: '/business/security',
+        name: '安全组',
+        children: [
+          {
+            path: '',
+            component: () => import('@/views/business/business-manage.vue'),
+            meta: {
+              activeKey: 'businessSecurityGroup',
+              breadcrumb: ['网络', '安全组'],
+            },
+          },
+          {
+            path: 'detail',
+            name: 'securityBusinessDetail',
+            component: () => import('@/views/business/business-detail.vue'),
+            meta: {
+              activeKey: 'businessSecurityGroup',
+              breadcrumb: ['计算', '安全组', '详情'],
+            },
+          },
+        ],
+        meta: {
+          activeKey: 'businessSecurityGroup',
+          breadcrumb: ['网络', '安全组'],
+        },
+      },
+      {
         path: '/business/vpc',
         name: 'VPC',
         children: [
@@ -249,33 +276,6 @@ const businesseMenus: RouteRecordRaw[] = [
         meta: {
           activeKey: 'businessRoutingTable',
           breadcrumb: ['网络', '路由表'],
-        },
-      },
-      {
-        path: '/business/security',
-        name: '安全组',
-        children: [
-          {
-            path: '',
-            component: () => import('@/views/business/business-manage.vue'),
-            meta: {
-              activeKey: 'businessSecurityGroup',
-              breadcrumb: ['网络', '安全组'],
-            },
-          },
-          {
-            path: 'detail',
-            name: 'securityBusinessDetail',
-            component: () => import('@/views/business/business-detail.vue'),
-            meta: {
-              activeKey: 'businessSecurityGroup',
-              breadcrumb: ['计算', '安全组', '详情'],
-            },
-          },
-        ],
-        meta: {
-          activeKey: 'businessSecurityGroup',
-          breadcrumb: ['网络', '安全组'],
         },
       },
     ],

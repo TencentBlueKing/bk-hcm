@@ -23,7 +23,7 @@ export default (type: string, id: string, cb?: Function, vendor?: string) => {
           ...data,
           ...data.extension,
           vendorName: CloudType[data.vendor],
-          bk_biz_id: data.bk_biz_id === -1 ? '未分配' : data.bk_biz_id,
+          bk_biz_id_label: data.bk_biz_id === -1 ? '未分配' : data.bk_biz_id,
         };
         cb?.(detail.value);
       })

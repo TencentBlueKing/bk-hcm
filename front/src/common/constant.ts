@@ -83,7 +83,7 @@ export const AUDIT_RESOURCE_TYPES = [
     type: 'account',
   },
   {
-    name: 'CVM',
+    name: '主机',
     type: 'cvm',
   },
   {
@@ -95,7 +95,7 @@ export const AUDIT_RESOURCE_TYPES = [
     type: 'security_group',
   },
   {
-    name: 'EIP',
+    name: '弹性IP',
     type: 'eip',
   },
   {
@@ -107,7 +107,7 @@ export const AUDIT_RESOURCE_TYPES = [
     type: 'gcp_firewall_rule',
   },
   {
-    name: '路由',
+    name: '路由表',
     type: 'route_table',
   },
   {

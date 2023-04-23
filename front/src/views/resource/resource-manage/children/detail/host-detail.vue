@@ -24,6 +24,7 @@ import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 
 import {
   ref,
+  inject,
 } from 'vue';
 
 
@@ -41,6 +42,9 @@ const cloudType = ref<any>(route.query?.type);
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
 
+const isResourcePage: any = inject('isResourcePage');
+
+console.log('isResourcePage', isResourcePage.value);
 
 // 操作的相关信息
 const cvmInfo = ref({
@@ -146,11 +150,14 @@ const modifyCvmStatus = async (type: string) => {
 <template>
   <detail-header>
     主机：ID（{{`${hostId}`}}）
+    <span class="status-stopped" v-if="(detail.bk_biz_id !== -1 && isResourcePage.value)">
+      【已绑定】
+    </span>
     <template #right>
       <bk-button
         class="w100 ml10"
         theme="primary"
-        :disabled="cvmInfo.start.status.includes(detail.status)"
+        :disabled="cvmInfo.start.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage.value)"
         :loading="cvmInfo.start.loading"
         @click="() => {
           handleCvmOperate('start')
@@ -161,7 +168,7 @@ const modifyCvmStatus = async (type: string) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        :disabled="cvmInfo.stop.status.includes(detail.status)"
+        :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage.value)"
         :loading="cvmInfo.stop.loading"
         @click="() => {
           handleCvmOperate('stop')
@@ -172,6 +179,7 @@ const modifyCvmStatus = async (type: string) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
+        :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage.value)"
         :loading="cvmInfo.reboot.loading"
         @click="() => {
           handleCvmOperate('reboot')
@@ -189,6 +197,7 @@ const modifyCvmStatus = async (type: string) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
+        :disabled="(detail.bk_biz_id !== -1 && isResourcePage.value)"
         :loading="cvmInfo.destroy.loading"
         @click="() => {
           handleCvmOperate('destroy')

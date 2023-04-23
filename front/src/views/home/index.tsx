@@ -213,16 +213,18 @@ export default defineComponent({
                     header: () => (
                       <header class="bk-hcm-header">
                         <section class="flex-row justify-content-between header-width">
-                          {headRouteConfig.map(({ id, route, name }) => (
-                            <div
+                          {headRouteConfig.map(({ id, route, name, href }) => (
+                            <a
                               class={classes({
                                 active: topMenuActiveItem === id,
                               }, 'header-title')}
                               key={id}
+                              aria-current="page"
+                              href={href}
                               onClick={() => handleHeaderMenuClick(id, route)}
                             >
                               {t(name)}
-                            </div>
+                            </a>
                           ))}
                         </section>
                         <aside class="header-user">
@@ -253,6 +255,7 @@ export default defineComponent({
                       {topMenuActiveItem === 'business' && isMenuOpen.value
                         ? <Select class="biz-select-warp"
                       v-model={businessId.value}
+                      filterable
                       placeholder="请选择业务"
                       onChange={handleChange}>
                         {businessList.value.map(item => (

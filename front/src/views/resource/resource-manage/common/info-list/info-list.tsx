@@ -6,7 +6,7 @@ import {
 import {
   Share,
   Copy,
-} from 'bkui-vue/lib/icon';
+  Info } from 'bkui-vue/lib/icon';
 
 import {
   Message,
@@ -28,6 +28,7 @@ type Field = {
   copy?: boolean;
   edit?: boolean;
   type?: string;
+  tipsContent?: string;
   txtBtn?: (cell: string) => void;
   render?: (cell: string) => void;
 };
@@ -137,7 +138,9 @@ export default defineComponent({
         this.fields.map((field) => {
           return <>
             <li class="info-list-item">
-              { field.name }：<span class={['item-value', typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>{ renderField(field) }</span>
+              { field.name }
+              {field.tipsContent && <Info v-BkTooltips={{ content: field.tipsContent }}></Info>}
+              ：<span class={['item-value', typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>{ renderField(field) }</span>
               {
                 field.copy ? <copy class="info-item-copy ml5" onClick={() => this.handleCopy(field.value)}></copy> : ''
               }

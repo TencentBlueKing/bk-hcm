@@ -31,7 +31,7 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
   const datas = ref([]);
   const pagination = ref({
     current: 1,
-    limit: 10,
+    limit: 20,
     count: 0,
   });
   const sort = ref();

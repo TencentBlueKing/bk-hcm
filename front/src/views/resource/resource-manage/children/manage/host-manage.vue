@@ -132,7 +132,7 @@ const hostSearchData = computed(() => {
   return [
     ...searchData.value,
     ...[{
-      name: '蓝鲸云区域',
+      name: '管控区域',
       id: 'bk_cloud_id',
     }, {
       name: '操作系统',

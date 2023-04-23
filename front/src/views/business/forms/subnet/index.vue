@@ -91,6 +91,14 @@ watch(() => formData.vendor, (val) => {
         <bk-input class="item-warp-component" v-model="formData.name" :placeholder="t('请输入子网名称')" />
       </bk-form-item>
       <bk-form-item
+        v-if="formData.vendor === 'azure'"
+        :label="t('资源组')"
+        class="item-warp"
+      >
+        <resource-group-selector
+          v-model="formData.resource_group" :vendor="formData.vendor"></resource-group-selector>
+      </bk-form-item>
+      <bk-form-item
         :label="t('所属的VPC')"
         class="item-warp"
       >
@@ -178,14 +186,6 @@ watch(() => formData.vendor, (val) => {
           disabled
           v-model="formData.enable_flow_logs"
         />
-      </bk-form-item>
-      <bk-form-item
-        v-if="formData.vendor === 'azure'"
-        :label="t('资源组')"
-        class="item-warp"
-      >
-        <resource-group-selector
-          v-model="formData.resource_group" :vendor="formData.vendor"></resource-group-selector>
       </bk-form-item>
       <bk-form-item
         :label="t('备注')"

@@ -26,8 +26,8 @@ export default (
   props: PropsType,
   type: string,
   apiMethod?: Function,
-  apiName: string = 'list',
-  args: any = {}
+  apiName = 'list',
+  args: any = {},
 ) => {
   // 接口
   const resourceStore = useResourceStore();
@@ -37,7 +37,7 @@ export default (
   const datas = ref([]);
   const pagination = ref({
     current: 1,
-    limit: 10,
+    limit: 20,
     count: 0,
   });
   const sort = ref();
@@ -61,7 +61,7 @@ export default (
               order: order.value,
             },
             filter: props.filter,
-            ...args
+            ...args,
           },
           type,
         ),
@@ -71,7 +71,7 @@ export default (
               count: true,
             },
             filter: props.filter,
-            ...args
+            ...args,
           },
           type,
         ),
@@ -88,7 +88,7 @@ export default (
             ...item.attachment,
             ...item.revision,
             ...item.extension,
-            ...item?.extension?.attachment
+            ...item?.extension?.attachment,
           };
         });
         pagination.value.count = countResult?.data?.count || 0;
