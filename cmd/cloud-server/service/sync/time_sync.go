@@ -30,6 +30,7 @@ import (
 	"hcm/cmd/cloud-server/service/sync/huawei"
 	"hcm/cmd/cloud-server/service/sync/tcloud"
 	"hcm/pkg/api/core"
+	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
@@ -165,7 +166,7 @@ const maxRetryCount = 3
 
 // listAccountWithRetry 查询账号列表，最多重试3次，每次等待
 func listAccountWithRetry(kt *kit.Kit, cli *dataservice.Client, req *protocloud.AccountListReq) (
-	[]*protocloud.BaseAccountListResp, error) {
+	[]*corecloud.BaseAccount, error) {
 	rty := retry.NewRetryPolicy(maxRetryCount, [2]uint{500, 15000})
 
 	for {

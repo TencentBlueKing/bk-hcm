@@ -17,39 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package handlers
+package accountbizrel
 
 import (
-	"fmt"
-
-	corecloud "hcm/pkg/api/core/cloud"
-	dataproto "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/runtime/filter"
+	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/dal/dao"
+	"hcm/pkg/rest"
 )
 
-// GetAccount 查询账号信息
-func (a *BaseApplicationHandler) GetAccount(accountID string) (*corecloud.BaseAccount, error) {
-	reqFilter := &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: accountID},
-		},
-	}
-	// 查询
-	resp, err := a.Client.DataService().Global.Account.List(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		&dataproto.AccountListReq{
-			Filter: reqFilter,
-			Page:   a.getPageOfOneLimit(),
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	if resp == nil || len(resp.Details) == 0 {
-		return nil, fmt.Errorf("not found account by id(%s)", accountID)
+// InitService initial the account service
+func InitService(cap *capability.Capability) {
+	svc := &service{
+		dao: cap.Dao,
 	}
 
-	return resp.Details[0], nil
+	h := rest.NewHandler()
+
+	h.Add("UpdateAccountBizRel", "PUT", "/account_biz_rels/accounts/{account_id}", svc.UpdateAccountBizRel)
+	h.Add("ListAccountBizRel", "POST", "/account_biz_rels/list", svc.ListAccountBizRel)
+	h.Add("ListWithAccount", "POST", "/account_biz_rels/with/accounts/list", svc.ListWithAccount)
+
+	h.Load(cap.WebService)
+}
+
+type service struct {
+	dao dao.Set
 }

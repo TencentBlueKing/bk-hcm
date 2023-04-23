@@ -17,68 +17,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloud
+package accountbizrel
 
 import (
-	"fmt"
-
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/orm"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-
-	"github.com/jmoiron/sqlx"
 )
 
-// UpdateAccountBizRel update account biz rel.
-func (a *accountSvc) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, error) {
-	accountID := cts.PathParameter("account_id").String()
-
-	req := new(protocloud.AccountBizRelUpdateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	_, err := a.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		ftr := tools.EqualExpression("account_id", accountID)
-		if err := a.dao.AccountBizRel().DeleteWithTx(cts.Kit, txn, ftr); err != nil {
-			return nil, fmt.Errorf("delete account_biz_rels failed, err: %v", err)
-		}
-
-		rels := make([]*tablecloud.AccountBizRelTable, len(req.BkBizIDs))
-		for index, bizID := range req.BkBizIDs {
-			rels[index] = &tablecloud.AccountBizRelTable{
-				BkBizID:   bizID,
-				AccountID: accountID,
-				Creator:   cts.Kit.User,
-			}
-		}
-		if err := a.dao.AccountBizRel().BatchCreateWithTx(cts.Kit, txn, rels); err != nil {
-			return nil, fmt.Errorf("batch create account_biz_rels failed, err: %v", err)
-		}
-
-		return nil, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, err
-}
-
 // ListAccountBizRel list account biz relation.
-func (a *accountSvc) ListAccountBizRel(cts *rest.Contexts) (interface{}, error) {
+func (a *service) ListAccountBizRel(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -118,7 +71,7 @@ func (a *accountSvc) ListAccountBizRel(cts *rest.Contexts) (interface{}, error) 
 }
 
 // ListWithAccount ...
-func (a *accountSvc) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
+func (a *service) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.AccountBizRelWithAccountListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

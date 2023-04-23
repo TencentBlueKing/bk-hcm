@@ -146,6 +146,7 @@ func (a *accountSvc) ListSecretKey(cts *rest.Contexts) (interface{}, error) {
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
 			filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs},
+			filter.AtomRule{Field: "type", Op: filter.NotEqual.Factory(), Value: enumor.ResourceAccount},
 		},
 	}
 

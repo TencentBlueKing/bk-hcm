@@ -280,7 +280,7 @@ type BaseAccountListResp struct {
 type AccountListResult struct {
 	Count uint64 `json:"count"`
 	// 对于List接口，只会返回公共数据，不会返回Extension
-	Details []*BaseAccountListResp `json:"details"`
+	Details []*cloud.BaseAccount `json:"details"`
 }
 
 // AccountListResp ...
@@ -311,8 +311,8 @@ type AccountDeleteValidateResp struct {
 
 // BaseAccountWithExtensionListResp ...
 type BaseAccountWithExtensionListResp struct {
-	BaseAccountListResp `json:",inline"`
-	Extension           map[string]interface{} `json:"extension"`
+	cloud.BaseAccount `json:",inline"`
+	Extension         map[string]interface{} `json:"extension"`
 }
 
 // AccountWithExtensionListResult defines list instances for iam pull resource callback result.

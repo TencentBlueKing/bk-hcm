@@ -32,6 +32,8 @@ import (
 	"hcm/cmd/data-service/service/auth"
 	"hcm/cmd/data-service/service/capability"
 	"hcm/cmd/data-service/service/cloud"
+	"hcm/cmd/data-service/service/cloud/account"
+	accountbizrel "hcm/cmd/data-service/service/cloud/account-biz-rel"
 	"hcm/cmd/data-service/service/cloud/cvm"
 	"hcm/cmd/data-service/service/cloud/disk"
 	diskcvmrel "hcm/cmd/data-service/service/cloud/disk-cvm-rel"
@@ -174,7 +176,8 @@ func (s *Service) apiSet() *restful.Container {
 		EsbClient:  s.esbClient,
 	}
 
-	cloud.InitAccountService(capability)
+	account.InitService(capability)
+	accountbizrel.InitService(capability)
 	cloud.InitSecurityGroupService(capability)
 	cloud.InitGcpFirewallRuleService(capability)
 	cloud.InitVpcService(capability)
