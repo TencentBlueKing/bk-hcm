@@ -7,6 +7,9 @@ const props = defineProps({
   detail: {
     type: Object,
   },
+  isResourcePage: {
+    type: Boolean,
+  },
 });
 
 const fields = ref([
@@ -101,7 +104,10 @@ const fields = ref([
     name: '已关联到',
     prop: 'cvm_id',
     link(val: string) {
-      return  val ? `/#/resource/detail/host?id=${val}&type=gcp` : '--';
+      if (props.isResourcePage) {
+        return val ? `/#/resource/detail/host?id=${val}&type=gcp` : '--';
+      }
+      return  val ? `/#/business/host/detail?id=${val}&type=gcp&bizs=${props.detail.bk_biz_id}` : '--';
     },
   },
   {

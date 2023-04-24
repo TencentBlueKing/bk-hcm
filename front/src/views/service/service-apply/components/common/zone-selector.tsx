@@ -73,7 +73,7 @@ export default defineComponent({
               op: QueryRuleOPEnum.EQ,
               value: 'UP',
             },
-          ]
+          ];
           break;
       }
 
@@ -108,8 +108,8 @@ export default defineComponent({
     };
 
     expose({
-      list
-    })
+      list,
+    });
 
     return () => <>
       {

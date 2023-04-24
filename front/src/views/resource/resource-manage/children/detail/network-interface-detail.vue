@@ -18,10 +18,18 @@ import {
 import useDetail from '../../hooks/use-detail';
 import { computed } from '@vue/runtime-core';
 
+import {
+  inject,
+} from 'vue';
+
 const route = useRoute();
 const {
   t,
 } = useI18n();
+
+const isResourcePage: any = inject('isResourcePage');
+
+console.log('isResourcePage', isResourcePage.value);
 
 const {
   loading,
@@ -103,7 +111,9 @@ const tabs = computed(() => {
           <network-interface-netsecgroup :detail="detail" v-if="type === 'netsecgroup'"></network-interface-netsecgroup>
         </template>
         <template v-else-if="detail.vendor === 'gcp'">
-          <network-interface-info-gcp :detail="detail" v-if="type === 'basic'"></network-interface-info-gcp>
+          <network-interface-info-gcp
+            :detail="detail" :is-resource-page="isResourcePage"
+            v-if="type === 'basic'"></network-interface-info-gcp>
         </template>
         <template v-else-if="detail.vendor === 'huawei'">
           <network-interface-info-huawei

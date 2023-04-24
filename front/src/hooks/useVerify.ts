@@ -19,7 +19,6 @@ export function useVerify() {
 
   // 根据参数获取权限
   const getAuthVerifyData = async (authData: any[]) => {
-    console.log('authData', authData);
     if (!authData) return;
     // 格式化参数
     const params = authData?.reduce((p, v) => {

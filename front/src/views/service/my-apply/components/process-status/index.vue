@@ -35,7 +35,7 @@ export default defineComponent({
       default: false,
     },
   },
-  setup() {
+  setup(props) {
     const  { t } = useI18n();
     const curLanguageIsCn = computed(() => {
       return true;
@@ -75,7 +75,7 @@ export default defineComponent({
       deliver_error: {
         label: t('交付异常'),
         value: 'deliver_error',
-        desc: t('您的资源交付异常'),
+        desc: JSON.parse(props.data.delivery_detail)?.error,
       },
     });
     const getApplyTypeDisplay = (payload: string) => {

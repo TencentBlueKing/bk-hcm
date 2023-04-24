@@ -226,10 +226,10 @@ const {
 </script>
 
 <template>
-  <div>
+  <div class="audit-container">
     <bk-tab
       v-model:active="filterOptions.auditType"
-      type="unborder-card"
+      type="card"
       class="resource-main g-scroller"
     >
       <bk-tab-panel
@@ -384,6 +384,7 @@ const {
   background: #fff;
 }
 .audit-filter {
+  padding: 0 20px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 12px 48px;

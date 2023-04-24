@@ -29,6 +29,7 @@
       >
         <bk-table-column
           label="ID"
+          width="120"
           prop="id"
           sort
         />

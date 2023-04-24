@@ -150,14 +150,14 @@ const modifyCvmStatus = async (type: string) => {
 <template>
   <detail-header>
     主机：ID（{{`${hostId}`}}）
-    <span class="status-stopped" v-if="(detail.bk_biz_id !== -1 && isResourcePage.value)">
+    <span class="status-stopped" v-if="(detail.bk_biz_id !== -1 && isResourcePage)">
       【已绑定】
     </span>
     <template #right>
       <bk-button
         class="w100 ml10"
         theme="primary"
-        :disabled="cvmInfo.start.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage.value)"
+        :disabled="cvmInfo.start.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)"
         :loading="cvmInfo.start.loading"
         @click="() => {
           handleCvmOperate('start')
@@ -168,7 +168,7 @@ const modifyCvmStatus = async (type: string) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage.value)"
+        :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)"
         :loading="cvmInfo.stop.loading"
         @click="() => {
           handleCvmOperate('stop')
@@ -179,7 +179,7 @@ const modifyCvmStatus = async (type: string) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage.value)"
+        :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)"
         :loading="cvmInfo.reboot.loading"
         @click="() => {
           handleCvmOperate('reboot')
@@ -197,7 +197,7 @@ const modifyCvmStatus = async (type: string) => {
       <bk-button
         class="w100 ml10"
         theme="primary"
-        :disabled="(detail.bk_biz_id !== -1 && isResourcePage.value)"
+        :disabled="(detail.bk_biz_id !== -1 && isResourcePage)"
         :loading="cvmInfo.destroy.loading"
         @click="() => {
           handleCvmOperate('destroy')

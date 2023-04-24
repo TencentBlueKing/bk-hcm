@@ -242,6 +242,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const groupColumns = [
     {
       type: 'selection',
+      width: '100',
       onlyShowOnList: true,
     },
     getLinkField('subnet'),
@@ -280,6 +281,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const gcpColumns = [
     {
       type: 'selection',
+      width: '100',
       onlyShowOnList: true,
     },
     getLinkField('subnet'),
@@ -624,6 +626,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const cvmsColumns = [
     {
       type: 'selection',
+      width: '100',
       onlyShowOnList: true,
     },
     getLinkField('host'),
@@ -805,6 +808,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const eipColumns = [
     {
       type: 'selection',
+      width: '100',
       onlyShowOnList: true,
     },
     getLinkField('eips'),

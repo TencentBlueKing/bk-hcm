@@ -54,11 +54,13 @@
       >
         <bk-table-column
           v-if="isResourcePage"
+          width="100"
           type="selection"
         />
         <bk-table-column
           label="ID"
           prop="id"
+          width="120"
           sort
         />
         <bk-table-column

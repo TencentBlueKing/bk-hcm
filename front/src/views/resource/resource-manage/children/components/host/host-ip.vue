@@ -107,7 +107,7 @@ const columns = ref([
 const {
   datas,
   isLoading,
-  triggerApi: triggerCvmEipApi
+  triggerApi: triggerCvmEipApi,
 } = useQueryList(
   {},
   'eip',
@@ -132,14 +132,14 @@ const rules = [
     op: 'eq',
     value: props.data.account_id,
   },
-]
+];
 
 if (props.data.vendor === 'azure') {
   rules.push({
     field: 'extension.resource_group_name',
     op: 'json_eq',
     value: props.data.resource_group_name,
-  })
+  });
 }
 
 // 当前 vendor 下的eip资源
@@ -159,16 +159,16 @@ const {
   },
   'eips',
   null,
-  'getUnbindCvmEips'
+  'getUnbindCvmEips',
 );
 
 const updateList = () => {
   return Promise.all([
     triggerCvmEipApi(),
     triggerEipApi(),
-    needNetwork.value ? getNetWorkList() : Promise.resolve()
-  ])
-}
+    needNetwork.value ? getNetWorkList() : Promise.resolve(),
+  ]);
+};
 
 const handleToggleShowChangeIP = () => {
   showChangeIP.value = !showChangeIP.value;
@@ -184,30 +184,30 @@ const handleToggleShowUnbind = (data?: any) => {
     resourceStore
       .detail('eips', unbindData.value.id)
       .then(({ data }: any) => {
-        unbindData.value.instance_id = data.instance_id
-      })
-    showUnbind.value = true
+        unbindData.value.instance_id = data.instance_id;
+      });
+    showUnbind.value = true;
   } else {
-    showUnbind.value = false
+    showUnbind.value = false;
   }
 };
 
 const handleConfirmUnbind = () => {
   const postData: any = {
     eip_id: unbindData.value.id,
-  }
+  };
   if (['gcp', 'azure'].includes(unbindData.value.vendor)) {
-    postData.network_interface_id = unbindData.value.instance_id
+    postData.network_interface_id = unbindData.value.instance_id;
   }
-  inUnbinding.value = true
+  inUnbinding.value = true;
   resourceStore
     .disassociateEip(postData)
     .then(() => {
       handleToggleShowUnbind();
-      return updateList()
+      return updateList();
     })
     .finally(() => {
-      inUnbinding.value = false
+      inUnbinding.value = false;
     });
 };
 
@@ -221,29 +221,29 @@ const handleConfirmBind = () => {
     Message({
       theme: 'error',
       message: '请先选择 EIP',
-    })
-    return
+    });
+    return;
   }
   const postData: any = {
     eip_id: bindData.value.eip_id,
     cvm_id: props.data.id,
-  }
+  };
   if (needNetwork.value) {
     if (!bindData.value.network_interface_id) {
       Message({
         theme: 'error',
         message: '请先选择网络接口',
-      })
-      return
+      });
+      return;
     }
-    postData.network_interface_id = bindData.value.network_interface_id
+    postData.network_interface_id = bindData.value.network_interface_id;
   }
   isBinding.value = true;
   resourceStore
     .associateEip(postData)
     .then(() => {
       handleToggleShowBind(false);
-      return updateList()
+      return updateList();
     })
     .finally(() => {
       isBinding.value = false;
@@ -254,11 +254,11 @@ const getNetWorkList = async () => {
   resourceStore
     .getNetworkList(
       props.data.vendor,
-      props.data.id
+      props.data.id,
     )
     .then((res: any) => {
       networklist.value = res.data;
-    })
+    });
 };
 
 watch(
@@ -276,7 +276,7 @@ watch(
         },
       ]);
     }
-    needNetwork.value = !['tcloud', 'aws'].includes(props.data.vendor)
+    needNetwork.value = !['tcloud', 'aws'].includes(props.data.vendor);
     if (needNetwork.value) {
       getNetWorkList();
     }
@@ -372,10 +372,6 @@ watch(
     <section class="adjust-info">
       <span class="adjust-name">已绑定的实例</span>
       <span class="adjust-value">{{ unbindData.cvm_id }}</span>
-    </section>
-    <section class="adjust-info" v-if="['azure', 'aws', 'huawei'].includes(unbindData.vendor)">
-      <span class="adjust-name">已绑定的接口名称</span>
-      <span class="adjust-value">{{ unbindData.instance_id }}</span>
     </section>
   </bk-dialog>
 
