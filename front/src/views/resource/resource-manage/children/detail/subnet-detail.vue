@@ -354,7 +354,8 @@ onBeforeMount(() => {
     <detail-header>
       子网：ID（{{ detail.id }}）
       <template #right>
-        <div @click="showAuthDialog(actionName)">
+        <div @click="showAuthDialog(actionName)" v-bk-tooltips="{ content: '资源已分配到业务，只可以在业务中进行操作', disabled: !authVerifyData?.
+              permissionAction[actionName]  }">
           <bk-button
             class="w100 ml10"
             theme="primary"

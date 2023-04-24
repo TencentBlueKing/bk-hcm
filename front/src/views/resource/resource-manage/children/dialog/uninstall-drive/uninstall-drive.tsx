@@ -66,10 +66,7 @@ export default defineComponent({
         emit('success')
         handleClose();
       }).catch((err: any) => {
-        Message({
-          theme: 'error',
-          message: err.message || err
-        })
+        console.error(err.message || err)
       }).finally(() => {
         isLoading.value = false
       })

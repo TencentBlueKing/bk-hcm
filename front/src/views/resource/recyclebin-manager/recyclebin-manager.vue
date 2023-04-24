@@ -21,17 +21,23 @@
       </div> -->
     </div>
     <section v-if="isResourcePage">
-      <bk-button
-        theme="primary"
-        @click="handleOperate('destroy')"
-      >{{ t('立即销毁') }}
-      </bk-button>
-      <bk-button
-        class="ml10 mb20"
-        theme="primary"
-        @click="handleOperate('recover')"
-      >{{ t('立即恢复') }}
-      </bk-button>
+      <span v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }">
+        <bk-button
+          theme="primary"
+          :disabled="!selections.length"
+          @click="handleOperate('destroy')"
+        >{{ t('立即销毁') }}
+        </bk-button>
+      </span>
+      <span v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }">
+        <bk-button
+          class="ml10 mb20"
+          theme="primary"
+          :disabled="!selections.length"
+          @click="handleOperate('recover')"
+        >{{ t('立即恢复') }}
+        </bk-button>
+      </span>
     </section>
     <bk-loading
       :loading="isLoading"
@@ -113,6 +119,7 @@
         <bk-table-column
           v-if="isResourcePage"
           :label="t('操作')"
+          :min-width="150"
         >
           <template #default="{ data }">
             <bk-button text theme="primary" class="mr10" @click="handleOperate('destroy', [data.id])">

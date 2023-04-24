@@ -524,7 +524,7 @@ export default defineComponent({
         title: this.t('资源类型'),
         component: () => <>
           <section>
-            <span>{this.t('分配资源类型')}</span>
+            <span class="resource-types-label">{this.t('分配资源类型')}</span>
             <bk-checkbox-group
               class="resource-types"
               v-model={this.resourceTypes}
