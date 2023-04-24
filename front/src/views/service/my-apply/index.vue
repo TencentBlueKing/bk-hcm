@@ -136,8 +136,16 @@ export default defineComponent({
       if (payload.value === '*') {
         filterParams.value.filter = { op: 'and', rules: [] };
       } else {
-        const value = moment().add(-payload.value, 'd');
-        filterParams.value.filter.rules[0].value = value;
+        filterParams.value.filter = { op: 'and', rules: [{
+          field: 'created_at',
+          op: 'gt',
+          value: '',
+        }] };
+        const value = moment().add(-payload.value, 'd')
+          .format('YYYY-MM-DD HH:mm:ss');
+        const time = new Date(value).toISOString()
+          .replace('.000Z', 'Z');
+        filterParams.value.filter.rules[0].value = time;
       }
       getMyApplyList();
     };

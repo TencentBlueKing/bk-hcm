@@ -37,25 +37,33 @@ export default defineComponent({
 
     const handleSelect = (payload: Record<string, number | string>) => {
       state.selectValue = payload.value;
-      isDropdownShow.value = false;
       emit('on-select', payload);
+      const DropdownPopover = document.getElementsByClassName('bk-dropdown-popover');
+      DropdownPopover[DropdownPopover.length - 1].style.display = 'none';
+      isDropdownShow.value = false;
     };
 
     const handleShow = () => {
-      console.log('打开');
+      const DropdownPopover = document.getElementsByClassName('bk-dropdown-popover');
+      DropdownPopover[DropdownPopover.length - 1].style.display = 'block';
       isDropdownShow.value = true;
     };
 
     const handleHide = () => {
-      console.log('隐藏');
-      isDropdownShow.value = false;
+      const DropdownPopover = document.getElementsByClassName('bk-dropdown-popover');
+      if (isDropdownShow.value) {
+        isDropdownShow.value = false;
+        DropdownPopover[DropdownPopover.length - 1].style.display = 'none';
+      } else {
+        DropdownPopover[DropdownPopover.length - 1].style.display = 'block';
+      }
     };
 
     return () => (
       <div>
         <div class="apply-select">
           <div class="title">{state.title}</div>
-          <Dropdown trigger="click" onShow={ handleShow } onHide={ handleHide }>
+          <Dropdown ext-cls="drop-container" trigger="click" onShow={ handleShow } onHide={ handleHide }>
             {{
               default: () => (
                 <span class="cursor-pointer flex-row align-items-center ">
@@ -73,7 +81,7 @@ export default defineComponent({
                 </span>
               ),
               content: () => (
-                <DropdownMenu ext-cls={[!isDropdownShow.value ? 'hide-dropdown-menu' : '']}>
+                <DropdownMenu>
                   <div>
                     {state.dataDisplay.map((item: Record<string, number | string>) => (
                       <DropdownItem onClick={() => handleSelect(item)}>{
