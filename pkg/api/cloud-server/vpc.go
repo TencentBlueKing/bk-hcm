@@ -23,6 +23,7 @@ import (
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
 )
 
 // -------------------------- Update --------------------------
@@ -43,6 +44,12 @@ func (u VpcUpdateReq) Validate() error {
 type VpcListResult struct {
 	Count   uint64          `json:"count"`
 	Details []cloud.BaseVpc `json:"details"`
+}
+
+// VpcListResp defines list vpc response.
+type VpcListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *VpcListResult `json:"data"`
 }
 
 // -------------------------- Relation ------------------------

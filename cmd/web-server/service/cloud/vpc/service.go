@@ -17,20 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cloudserver
+package vpc
 
 import (
+	"net/http"
+
+	"hcm/cmd/web-server/service/capability"
+	"hcm/pkg/client"
+	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
 
-// AccountClient is cloud account api client.
-type AccountClient struct {
-	client rest.ClientInterface
+// InitVpcService initialize the vpc service.
+func InitVpcService(c *capability.Capability) {
+	svc := &service{
+		client:     c.ApiClient,
+		authorizer: c.Authorizer,
+	}
+
+	h := rest.NewHandler()
+
+	h.Add("ListVpcWithSubnetCount", http.MethodPost, "/bizs/{bk_biz_id}/vpcs/with/subnets/count/list",
+		svc.ListVpcWithSubnetCount)
+
+	h.Load(c.WebService)
 }
 
-// NewAccountClient create a new cloud account api client.
-func NewAccountClient(client rest.ClientInterface) *AccountClient {
-	return &AccountClient{
-		client: client,
-	}
+type service struct {
+	client     *client.ClientSet
+	authorizer auth.Authorizer
 }

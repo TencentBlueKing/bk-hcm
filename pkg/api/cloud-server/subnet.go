@@ -24,6 +24,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
 )
 
 // -------------------------- Create --------------------------
@@ -128,6 +129,12 @@ func (u SubnetUpdateReq) Validate() error {
 type SubnetListResult struct {
 	Count   uint64             `json:"count"`
 	Details []cloud.BaseSubnet `json:"details"`
+}
+
+// SubnetListResp defines list subnet response.
+type SubnetListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *SubnetListResult `json:"data"`
 }
 
 // -------------------------- Relation ------------------------

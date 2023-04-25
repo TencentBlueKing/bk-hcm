@@ -165,7 +165,7 @@ func (c *Cvm) CvmAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourc
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
 				Changed: map[string]interface{}{
-					"bk_biz_id": one.ResID,
+					"bk_biz_id": one.AssignedResID,
 				},
 			},
 		}

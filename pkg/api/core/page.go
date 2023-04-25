@@ -49,6 +49,8 @@ type PageWithoutSort struct {
 const (
 	// DefaultMaxPageLimit is the default value of the max page limitation.
 	DefaultMaxPageLimit = uint(500)
+	// AggregationQueryMaxPageLimit 聚合查询最大数量限制
+	AggregationQueryMaxPageLimit = uint(50)
 )
 
 // DefaultBasePage define default base page.

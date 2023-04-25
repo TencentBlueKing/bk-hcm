@@ -23,42 +23,42 @@ import (
 	"context"
 	"net/http"
 
+	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// CvmClient is cvm api client.
-type CvmClient struct {
+// VpcClient is data service vpc api client.
+type VpcClient struct {
 	client rest.ClientInterface
 }
 
-// NewCvmClient create a new cvm api client.
-func NewCvmClient(client rest.ClientInterface) *CvmClient {
-	return &CvmClient{
+// NewVpcClient create a new vpc api client.
+func NewVpcClient(client rest.ClientInterface) *VpcClient {
+	return &VpcClient{
 		client: client,
 	}
 }
 
-// BatchDelete cvm.
-func (a *CvmClient) BatchDelete(ctx context.Context, h http.Header, request *core.BatchDeleteReq) error {
-	resp := new(rest.BaseResp)
+// List vpcs.
+func (v *VpcClient) List(ctx context.Context, h http.Header, req *core.ListReq) (*proto.VpcListResult, error) {
+	resp := new(proto.VpcListResp)
 
-	err := a.client.Post().
+	err := v.client.Post().
 		WithContext(ctx).
-		Body(request).
-		SubResourcef("/delete/batch/cvm/cvm").
+		Body(req).
+		SubResourcef("/vpcs/list").
 		WithHeaders(h).
 		Do().
 		Into(resp)
-
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
+		return nil, errf.New(resp.Code, resp.Message)
 	}
 
-	return nil
+	return resp.Data, nil
 }

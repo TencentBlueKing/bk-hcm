@@ -164,7 +164,7 @@ func (f *Firewall) FirewallRuleAssignAuditBuild(kt *kit.Kit, assigns []protoaudi
 			AppCode:    kt.AppCode,
 			Detail: &tableaudit.BasicDetail{
 				Changed: map[string]interface{}{
-					"bk_biz_id": one.ResID,
+					"bk_biz_id": one.AssignedResID,
 				},
 			},
 		})
