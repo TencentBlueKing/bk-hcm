@@ -56,6 +56,7 @@ const {
       <bk-search-select
         class="w500 ml10"
         clearable
+        :conditions="[]"
         :data="selectSearchData"
         v-model="searchValue"
       />

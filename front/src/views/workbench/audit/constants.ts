@@ -12,6 +12,9 @@ export enum AuditActionEnum {
   RESET_PWD = 'reset_pwd',
   RECYCLE = 'recycle',
   BIND = 'bind',
+  RECPVER = 'recover',
+  DELIVER = 'deliver',
+  EDIT = 'edit'
 }
 
 export enum AuditActionNameEnum {
@@ -29,6 +32,8 @@ export enum AuditActionNameEnum {
   RESET_PWD = '重置密码',
   RECYCLE = '回收',
   BIND = '绑定',
+  RECPVER = '绑定',
+  DELIVER = '交付'
 }
 
 export enum AuditSourceEnum {
@@ -53,4 +58,9 @@ export const AUDIT_ACTION_MAP = {
   [AuditActionEnum.START]: AuditActionNameEnum.START,
   [AuditActionEnum.STOP]: AuditActionNameEnum.STOP,
   [AuditActionEnum.RESET_PWD]: AuditActionNameEnum.RESET_PWD,
+  [AuditActionEnum.RECYCLE]: AuditActionNameEnum.RECYCLE,
+  [AuditActionEnum.RECPVER]: AuditActionNameEnum.RECPVER,
+  [AuditActionEnum.DELIVER]: AuditActionNameEnum.DELIVER,
+  [AuditActionEnum.BIND]: AuditActionNameEnum.BIND,
+  [AuditActionEnum.EDIT]: AuditActionNameEnum.EDIT,
 };

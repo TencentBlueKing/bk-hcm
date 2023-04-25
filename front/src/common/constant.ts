@@ -95,16 +95,16 @@ export const AUDIT_RESOURCE_TYPES = [
     type: 'security_group',
   },
   {
+    name: 'GCP防火墙',
+    type: 'gcp_firewall_rule',
+  },
+  {
     name: '弹性IP',
     type: 'eip',
   },
   {
     name: '硬盘',
     type: 'disk',
-  },
-  {
-    name: 'GCP防火墙',
-    type: 'gcp_firewall_rule',
   },
   {
     name: '路由表',

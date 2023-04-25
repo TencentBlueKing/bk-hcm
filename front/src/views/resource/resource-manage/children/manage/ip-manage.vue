@@ -148,6 +148,7 @@ defineExpose({ fetchComponentsData });
       <bk-search-select
         class="w500 ml10"
         clearable
+        :conditions="[]"
         :data="searchData"
         v-model="searchValue"
       />

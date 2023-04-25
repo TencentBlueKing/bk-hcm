@@ -180,6 +180,7 @@ const columns = computed(() => {
           Button,
           {
             theme: 'primary',
+            text: true,
             onClick() {
               handleShowDetailSlider(data);
             },

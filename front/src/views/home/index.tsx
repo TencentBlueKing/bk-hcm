@@ -89,7 +89,6 @@ export default defineComponent({
           topMenuActiveItem = 'service';
           menus = reactive(service);
           path = '/service/service-apply';
-          accountStore.updateBizsId(0); // 初始化业务ID
           break;
         case 'workbench':
           topMenuActiveItem = 'workbench';

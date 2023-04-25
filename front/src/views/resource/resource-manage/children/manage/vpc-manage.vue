@@ -190,6 +190,7 @@ const renderColumns = [
       <bk-search-select
         class="w500 ml10"
         clearable
+        :conditions="[]"
         :data="hostSearchData"
         v-model="searchValue"
       />

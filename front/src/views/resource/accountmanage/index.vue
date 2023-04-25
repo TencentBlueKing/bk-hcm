@@ -12,7 +12,7 @@
         <bk-checkbox v-model="isAccurate" class="pr20">
           {{t('精确')}}
         </bk-checkbox>
-        <bk-search-select class="bg-white w280" v-model="searchValue" :data="searchData"></bk-search-select>
+        <bk-search-select class="bg-white w280" :conditions="[]" v-model="searchValue" :data="searchData"></bk-search-select>
       </div>
     </div>
     <bk-loading

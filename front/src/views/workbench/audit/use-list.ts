@@ -1,6 +1,5 @@
 import type { QueryFilterType } from '@/typings';
 import { QueryRuleOPEnum } from '@/typings';
-import { timeFormatter } from '@/common/util';
 import {
   useAuditStore,
 } from '@/store/audit';
@@ -63,11 +62,13 @@ export default (options: { filter: any, filterOptions: any }) => {
         queryFilter.rules.push({
           field: key,
           op: QueryRuleOPEnum.GTE,
-          value: timeFormatter(value[0]),
+          value: new Date(value[0]).toISOString()
+            .replace('.000Z', 'Z'),
         }, {
           field: key,
           op: QueryRuleOPEnum.LTE,
-          value: timeFormatter(value[1]),
+          value: new Date(value[1]).toISOString()
+            .replace('.000Z', 'Z'),
         });
         continue;
       }

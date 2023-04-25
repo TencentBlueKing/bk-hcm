@@ -151,6 +151,7 @@ const groupColumns = [
   {
     label: 'ID',
     field: 'id',
+    width: '120',
     sort: true,
     render({ data }: any) {
       return h(
@@ -350,6 +351,7 @@ const gcpColumns = [
   {
     label: 'ID',
     field: 'id',
+    width: '120',
     sort: true,
     render({ data }: any) {
       return h(
@@ -608,6 +610,7 @@ const securityHandleShowDelete = (data: any) => {
           <bk-search-select
             class="search-filter ml10"
             clearable
+            :conditions="[]"
             :data="selectSearchData"
             v-model="searchValue"
           />
