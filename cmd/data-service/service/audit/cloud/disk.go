@@ -27,7 +27,6 @@ import (
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	diskdao "hcm/pkg/dal/dao/cloud/disk"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
@@ -232,7 +231,7 @@ func (ad Audit) listDisk(kt *kit.Kit, ids []string) (map[string]*disk.DiskModel,
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.DefaultBasePage,
 	}
-	list, err := ad.dao.GetObjectDao(disk.TableName).(*diskdao.DiskDao).List(kt, opt)
+	list, err := ad.dao.Disk().List(kt, opt)
 	if err != nil {
 		logs.Errorf("list disk failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
 		return nil, err

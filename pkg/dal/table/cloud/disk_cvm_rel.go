@@ -22,13 +22,9 @@ package cloud
 import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
-
-// DiskCvmRelTableName 表名
-var DiskCvmRelTableName table.Name = "disk_cvm_rel"
 
 // DiskCvmRelColumns ...
 var DiskCvmRelColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, DiskCvmRelColumnDescriptor)
@@ -40,16 +36,6 @@ var DiskCvmRelColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "cvm_id", NamedC: "cvm_id", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
-}
-
-// DiskCvmRelTable 云盘主机关联表
-type DiskCvmRelTable struct {
-	model *DiskCvmRelModel
-}
-
-// TableName ...
-func (t *DiskCvmRelTable) TableName() table.Name {
-	return DiskCvmRelTableName
 }
 
 // DiskCvmRelModel 云盘主机关联数据模型

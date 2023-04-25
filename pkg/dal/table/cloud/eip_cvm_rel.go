@@ -22,13 +22,9 @@ package cloud
 import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
-
-// EipCvmRelTableName 表名
-var EipCvmRelTableName table.Name = "eip_cvm_rel"
 
 // EipCvmRelColumns ...
 var EipCvmRelColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, EipCvmRelColumnDescriptor)
@@ -40,16 +36,6 @@ var EipCvmRelColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "cvm_id", NamedC: "cvm_id", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
-}
-
-// EipCvmRelTable Eip 主机关联表
-type EipCvmRelTable struct {
-	model *EipCvmRelModel
-}
-
-// TableName ...
-func (t *EipCvmRelTable) TableName() table.Name {
-	return EipCvmRelTableName
 }
 
 // EipCvmRelModel Eip 主机关联数据模型

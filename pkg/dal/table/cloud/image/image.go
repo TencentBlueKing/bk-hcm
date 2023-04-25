@@ -22,12 +22,9 @@ package image
 import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
-
-var ImageTableName table.Name = "image"
 
 // ImageColumns ...
 var ImageColumns = utils.MergeColumns(nil, ImageColumnDescriptor)
@@ -47,16 +44,6 @@ var ImageColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
-}
-
-// ImageTable 公共镜像表
-type ImageTable struct {
-	model *ImageModel
-}
-
-// TableName ...
-func (t *ImageTable) TableName() table.Name {
-	return ImageTableName
 }
 
 // ImageModel ...

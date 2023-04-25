@@ -17,39 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cvm
+package networkcvmrel
 
 import (
 	"net/http"
 
 	"hcm/cmd/data-service/service/capability"
-	"hcm/cmd/data-service/service/cloud/logics/cmdb"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/rest"
 )
 
-// InitService initial the security group service
+// InitService ...
 func InitService(cap *capability.Capability) {
-	svc := &cvmSvc{
+	svc := &relSvc{
 		dao: cap.Dao,
 	}
 
-	svc.cmdbLogics = cmdb.NewCmdbLogics(cap.EsbClient.Cmdb())
-
 	h := rest.NewHandler()
-
-	h.Add("BatchCreateCvm", http.MethodPost, "/vendors/{vendor}/cvms/batch/create", svc.BatchCreateCvm)
-	h.Add("BatchUpdateCvm", http.MethodPatch, "/vendors/{vendor}/cvms/batch/update", svc.BatchUpdateCvm)
-	h.Add("GetCvm", http.MethodGet, "/vendors/{vendor}/cvms/{id}", svc.GetCvm)
-	h.Add("ListCvm", http.MethodPost, "/cvms/list", svc.ListCvm)
-	h.Add("ListCvmExt", http.MethodPost, "/vendors/{vendor}/cvms/list", svc.ListCvmExt)
-	h.Add("BatchDeleteCvm", http.MethodDelete, "/cvms/batch", svc.BatchDeleteCvm)
-	h.Add("BatchUpdateCvmCommonInfo", http.MethodPatch, "/cvms/common/info/batch/update", svc.BatchUpdateCvmCommonInfo)
+	h.Add("BatchCreate", http.MethodPost, "/network_cvm_rels/batch/create", svc.BatchCreate)
+	h.Add("List", http.MethodPost, "/network_cvm_rels/list", svc.List)
+	h.Add("ListWithExtension", http.MethodPost, "/vendors/{vendor}/network_cvm_rels/with/interfaces/list",
+		svc.ListWithExtension)
+	h.Add("BatchDelete", http.MethodDelete, "/network_cvm_rels/batch", svc.BatchDelete)
 
 	h.Load(cap.WebService)
 }
 
-type cvmSvc struct {
-	dao        dao.Set
-	cmdbLogics *cmdb.CmdbLogics
+type relSvc struct {
+	dao dao.Set
 }

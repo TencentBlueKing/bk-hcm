@@ -30,6 +30,7 @@ import (
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -253,13 +254,7 @@ func (a *Azure) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cl
 
 	// 表示没有关联
 	if cvmID == "" {
-		// 该eip没有绑定主机，但是绑定了安全组、NAT网关、网络接口，此时不能解绑、删除
-		eipResult := &cloudproto.AzureEipExtResult{EipExtResult: eipResp, CvmID: cvmID}
-		if eipResp.Extension != nil && eipResp.Extension.IpConfigurationID != nil {
-			eipResult.InstanceType = "OTHER"
-			eipResult.InstanceID = eipResp.Extension.IpConfigurationID
-		}
-		return eipResult, nil
+		return &cloudproto.AzureEipExtResult{EipExtResult: eipResp, CvmID: cvmID}, nil
 	}
 
 	rels, err := a.client.DataService().Global.NetworkInterfaceCvmRel.List(
@@ -315,7 +310,7 @@ func (a *Azure) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cl
 	eipResult := &cloudproto.AzureEipExtResult{EipExtResult: eipResp}
 	if len(nis.Details) > 0 {
 		eipResult.CvmID = cvmID
-		eipResult.InstanceType = "NI"
+		eipResult.InstanceType = constant.EipBindCvm
 		eipResult.InstanceID = converter.ValToPtr(nis.Details[0].ID)
 	}
 

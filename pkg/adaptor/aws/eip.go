@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -77,11 +78,16 @@ func (a *Aws) ListEip(kt *kit.Kit, opt *eip.AwsEipListOption) (*eip.AwsEipListRe
 
 	eips := make([]*eip.AwsEip, len(resp.Addresses))
 	for idx, address := range resp.Addresses {
+		// aws的eip没有状态信息，通过判断构造状态值
+		status := enumor.EipUnBind
+		if address.InstanceId != nil || address.NetworkInterfaceId != nil {
+			status = enumor.EipBind
+		}
 		eips[idx] = &eip.AwsEip{
 			CloudID:            *address.AllocationId,
 			InstanceId:         address.InstanceId,
 			Region:             opt.Region,
-			Status:             converter.ValToPtr("--"),
+			Status:             converter.ValToPtr(string(status)),
 			PublicIp:           address.PublicIp,
 			PrivateIp:          address.PrivateIpAddress,
 			PublicIpv4Pool:     address.PublicIpv4Pool,

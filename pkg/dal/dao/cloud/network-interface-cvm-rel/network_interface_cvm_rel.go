@@ -25,9 +25,11 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
+	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	networkinterfacedao "hcm/pkg/dal/dao/cloud/network-interface"
+	idgenerator "hcm/pkg/dal/dao/id-generator"
+	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
@@ -40,8 +42,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// Interface only used for network interface and cvm relation.
-type Interface interface {
+// NiCvmRel only used for network interface and cvm relation.
+type NiCvmRel interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []nicvmreltable.NetworkInterfaceCvmRelTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListNetworkInterfaceCvmRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
@@ -49,20 +51,18 @@ type Interface interface {
 		*types.ListCvmRelsJoinNetworkInterfaceDetails, error)
 }
 
-// NetworkCvmRelDao define network interface and cvm relation dao.
-type NetworkCvmRelDao struct {
-	*dao.ObjectDaoManager
-}
+// NiCvmRel ...
+var _ NiCvmRel = new(NiCvmRelDao)
 
-var _ Interface = new(NetworkCvmRelDao)
-
-// Name 返回 NetworkCvmRelDao 描述对象的表名
-func (dao *NetworkCvmRelDao) Name() table.Name {
-	return table.NetworkInterfaceTable
+// NiCvmRelDao ni_cvm_rel dao.
+type NiCvmRelDao struct {
+	Orm   orm.Interface
+	IDGen idgenerator.IDGenInterface
+	Audit audit.Interface
 }
 
 // ListJoinNetworkInterface list cvm rel with network interface detail.
-func (dao NetworkCvmRelDao) ListJoinNetworkInterface(kt *kit.Kit, cvmIDs []string, vendor enumor.Vendor) (
+func (dao NiCvmRelDao) ListJoinNetworkInterface(kt *kit.Kit, cvmIDs []string, vendor enumor.Vendor) (
 	*types.ListCvmRelsJoinNetworkInterfaceDetails, error) {
 
 	if len(cvmIDs) == 0 {
@@ -84,7 +84,7 @@ func (dao NetworkCvmRelDao) ListJoinNetworkInterface(kt *kit.Kit, cvmIDs []strin
 	)
 
 	details := make([]*types.NetworkInterfaceWithCvmID, 0)
-	if err := dao.Orm().Do().Select(kt.Ctx, &details, sql,
+	if err := dao.Orm.Do().Select(kt.Ctx, &details, sql,
 		map[string]interface{}{"cvm_ids": cvmIDs, "vendor": vendor}); err != nil {
 		logs.ErrorJson("select network interface cvm rels join network failed, err: %v, sql: (%s), rid: %s",
 			err, sql, kt.Rid)
@@ -95,7 +95,7 @@ func (dao NetworkCvmRelDao) ListJoinNetworkInterface(kt *kit.Kit, cvmIDs []strin
 }
 
 // BatchCreateWithTx batch create network interface cvm rel with transaction.
-func (dao NetworkCvmRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
+func (dao NiCvmRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 	rels []nicvmreltable.NetworkInterfaceCvmRelTable) error {
 
 	// 校验关联资源是否存在
@@ -112,7 +112,7 @@ func (dao NetworkCvmRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 		cvmIDMap[rel.CvmID] = true
 	}
 
-	netMap, err := networkinterfacedao.ListNetworkInterface(kt, dao.Orm(), networkInterfaceIDs)
+	netMap, err := networkinterfacedao.ListNetworkInterface(kt, dao.Orm, networkInterfaceIDs)
 	if err != nil {
 		logs.Errorf("list create network interface failed, err: %v, ids: %v, rid: %s",
 			err, networkInterfaceIDs, kt.Rid)
@@ -125,7 +125,7 @@ func (dao NetworkCvmRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 		return fmt.Errorf("get network interface count not right")
 	}
 
-	cvmMap, err := cvm.ListCvm(kt, dao.Orm(), cvmIDs)
+	cvmMap, err := cvm.ListCvm(kt, dao.Orm, cvmIDs)
 	if err != nil {
 		logs.Errorf("list network interface cvm failed, err: %v, ids: %v, rid: %s",
 			err, networkInterfaceIDs, kt.Rid)
@@ -142,7 +142,7 @@ func (dao NetworkCvmRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 		nicvmreltable.NetworkInterfaceCvmRelColumns.ColumnExpr(),
 		nicvmreltable.NetworkInterfaceCvmRelColumns.ColonNameExpr())
 
-	if err := dao.Orm().Txn(tx).BulkInsert(kt.Ctx, sql, rels); err != nil {
+	if err := dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.NetworkInterfaceCvmRelTable, err, kt.Rid)
 		return fmt.Errorf("insert %s failed, err: %v", table.NetworkInterfaceCvmRelTable, err)
 	}
@@ -151,7 +151,7 @@ func (dao NetworkCvmRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 }
 
 // List network interface cvm rel.
-func (dao NetworkCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListNetworkInterfaceCvmRelDetails, error) {
+func (dao NiCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListNetworkInterfaceCvmRelDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
@@ -169,7 +169,7 @@ func (dao NetworkCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.Lis
 	if opt.Page.Count {
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.NetworkInterfaceCvmRelTable, whereExpr)
 
-		count, err := dao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count network interface cvm rels failed, err: %v, filter: %s, rid: %s", err,
 				opt.Filter, kt.Rid)
@@ -189,7 +189,7 @@ func (dao NetworkCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.Lis
 		table.NetworkInterfaceCvmRelTable, whereExpr, pageExpr)
 
 	details := make([]*nicvmreltable.NetworkInterfaceCvmRelTable, 0)
-	if err = dao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		logs.ErrorJson("select network cvm rels failed, filter: %s, err: %v, rid: %s", opt.Filter, err, kt.Rid)
 		return nil, err
 	}
@@ -198,7 +198,7 @@ func (dao NetworkCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.Lis
 }
 
 // DeleteWithTx delete network interface cvm rel with transaction.
-func (dao NetworkCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+func (dao NiCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -209,7 +209,7 @@ func (dao NetworkCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.NetworkInterfaceCvmRelTable, whereExpr)
-	if _, err = dao.Orm().Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete network cvm rels failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}

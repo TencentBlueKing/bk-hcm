@@ -24,13 +24,9 @@ import (
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
-
-// TableName ...
-var TableName table.Name = "eip"
 
 // EipColumns ...
 var EipColumns = utils.MergeColumns(nil, EipColumnDescriptor)
@@ -52,16 +48,6 @@ var EipColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
-}
-
-// EipTable ...
-type EipTable struct {
-	model *EipModel
-}
-
-// TableName ...
-func (t *EipTable) TableName() table.Name {
-	return TableName
 }
 
 // EipModel ...

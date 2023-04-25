@@ -25,8 +25,8 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/audit"
+	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -42,30 +42,36 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// DiskDao ...
+// Disk only used for disk.
+type Disk interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, disks []*disk.DiskModel) ([]string, error)
+	Update(kt *kit.Kit, filterExpr *filter.Expression, updateData *disk.DiskModel) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, diskID string, updateData *disk.DiskModel) error
+	List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskListResult, error)
+	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
+	Count(kt *kit.Kit, opt *types.CountOption) (*cloud.DiskCountResult, error)
+}
+
+var _ Disk = new(DiskDao)
+
+// DiskDao disk dao.
 type DiskDao struct {
-	*dao.ObjectDaoManager
+	Orm   orm.Interface
+	IDGen idgenerator.IDGenInterface
 	Audit audit.Interface
 }
 
-var _ dao.ObjectDao = new(DiskDao)
-
-// Name 返回 Dao 描述对象的表名
-func (diskDao *DiskDao) Name() table.Name {
-	return disk.TableName
-}
-
 // BatchCreateWithTx 批量创建云盘数据
-func (diskDao *DiskDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, disks []*disk.DiskModel) ([]string, error) {
+func (diskDao DiskDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, disks []*disk.DiskModel) ([]string, error) {
 	if len(disks) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "disk model data is required")
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, diskDao.Name(), disk.DiskColumns.ColumnExpr(),
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.DiskTable, disk.DiskColumns.ColumnExpr(),
 		disk.DiskColumns.ColonNameExpr(),
 	)
 
-	ids, err := diskDao.IDGen().Batch(kt, disk.TableName, len(disks))
+	ids, err := diskDao.IDGen.Batch(kt, table.DiskTable, len(disks))
 	if err != nil {
 		return nil, err
 	}
@@ -74,9 +80,9 @@ func (diskDao *DiskDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, disks []*dis
 		d.ID = ids[idx]
 	}
 
-	err = diskDao.Orm().Txn(tx).BulkInsert(kt.Ctx, sql, disks)
+	err = diskDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, disks)
 	if err != nil {
-		return nil, fmt.Errorf("insert %s failed, err: %v", disk.TableName, err)
+		return nil, fmt.Errorf("insert %s failed, err: %v", table.DiskTable, err)
 	}
 
 	// create audit.
@@ -109,7 +115,7 @@ func (diskDao *DiskDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, disks []*dis
 }
 
 // Update 更新云盘信息
-func (diskDao *DiskDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updateData *disk.DiskModel) error {
+func (diskDao DiskDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updateData *disk.DiskModel) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -126,10 +132,10 @@ func (diskDao *DiskDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updat
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s %s`, diskDao.Name(), setExpr, whereExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s %s`, table.DiskTable, setExpr, whereExpr)
 
-	_, err = diskDao.Orm().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := diskDao.Orm().Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+	_, err = diskDao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		effected, err := diskDao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update disk failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -150,7 +156,7 @@ func (diskDao *DiskDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updat
 }
 
 // UpdateByIDWithTx 根据 ID 更新单条数据
-func (diskDao *DiskDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, diskID string, updateData *disk.DiskModel) error {
+func (diskDao DiskDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, diskID string, updateData *disk.DiskModel) error {
 	opts := utils.NewFieldOptions().AddBlankedFields("is_system_disk", "memo").
 		AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(updateData, opts)
@@ -158,10 +164,10 @@ func (diskDao *DiskDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, diskID string
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, diskDao.Name(), setExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.DiskTable, setExpr)
 
 	toUpdate["id"] = diskID
-	_, err = diskDao.Orm().Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = diskDao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update disk failed, err: %v, id: %s, rid: %v", err, diskID, kt.Rid)
 		return err
@@ -171,7 +177,7 @@ func (diskDao *DiskDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, diskID string
 }
 
 // List 根据条件查询云盘列表
-func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskListResult, error) {
+func (diskDao DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskListResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list disk options is nil")
 	}
@@ -193,8 +199,8 @@ func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskLis
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, diskDao.Name(), whereExpr)
-		count, err := diskDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.DiskTable, whereExpr)
+		count, err := diskDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count disk failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -206,11 +212,11 @@ func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskLis
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, disk.DiskColumns.FieldsNamedExpr(opt.Fields), diskDao.Name(),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, disk.DiskColumns.FieldsNamedExpr(opt.Fields), table.DiskTable,
 		whereExpr, pageExpr)
 
 	details := make([]*disk.DiskModel, 0)
-	if err = diskDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = diskDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -220,7 +226,7 @@ func (diskDao *DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskLis
 }
 
 // DeleteWithTx 删除云盘
-func (diskDao *DiskDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
+func (diskDao DiskDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -230,8 +236,8 @@ func (diskDao *DiskDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filte
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, diskDao.Name(), whereExpr)
-	if _, err = diskDao.Orm().Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.DiskTable, whereExpr)
+	if _, err = diskDao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete disk failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -240,7 +246,7 @@ func (diskDao *DiskDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filte
 }
 
 // Count 根据条件统计云盘数量
-func (diskDao *DiskDao) Count(kt *kit.Kit, opt *types.CountOption) (*cloud.DiskCountResult, error) {
+func (diskDao DiskDao) Count(kt *kit.Kit, opt *types.CountOption) (*cloud.DiskCountResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "count disk options is nil")
 	}
@@ -255,8 +261,8 @@ func (diskDao *DiskDao) Count(kt *kit.Kit, opt *types.CountOption) (*cloud.DiskC
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, diskDao.Name(), whereExpr)
-	count, err := diskDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+	sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.DiskTable, whereExpr)
+	count, err := diskDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +271,7 @@ func (diskDao *DiskDao) Count(kt *kit.Kit, opt *types.CountOption) (*cloud.DiskC
 
 // ListByIDs ...
 func ListByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]disk.DiskModel, error) {
-	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, disk.DiskColumns.FieldsNamedExpr(nil), disk.TableName)
+	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, disk.DiskColumns.FieldsNamedExpr(nil), table.DiskTable)
 	disks := make([]disk.DiskModel, 0)
 	if err := orm.Do().Select(kt.Ctx, &disks, sql, map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err

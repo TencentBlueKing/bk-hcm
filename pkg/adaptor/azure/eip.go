@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -51,12 +52,11 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 		}
 
 		for _, one := range nextResult.Value {
-			state := string(*one.Properties.ProvisioningState)
 			eIp := &eip.AzureEip{
 				CloudID:                strings.ToLower(*one.ID),
 				Name:                   SPtrToLowerSPtr(one.Name),
 				Region:                 StrToLowerNoSpaceStr(*one.Location),
-				Status:                 &state,
+				Status:                 converter.ValToPtr(string(enumor.EipUnBind)),
 				PublicIp:               one.Properties.IPAddress,
 				Zones:                  one.Zones,
 				ResourceGroupName:      strings.ToLower(opt.ResourceGroupName),
@@ -69,7 +69,10 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 			}
 
 			if one.Properties.IPConfiguration != nil {
-				eIp.IpConfigurationID = SPtrToLowerSPtr(one.Properties.IPConfiguration.ID)
+				if one.Properties.IPConfiguration.ID != nil {
+					eIp.IpConfigurationID = SPtrToLowerSPtr(one.Properties.IPConfiguration.ID)
+					eIp.Status = converter.ValToPtr(string(enumor.EipBind))
+				}
 			}
 
 			if one.SKU != nil {

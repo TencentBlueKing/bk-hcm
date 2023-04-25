@@ -25,9 +25,11 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
+	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/eip"
+	idgenerator "hcm/pkg/dal/dao/id-generator"
+	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/dao/types/cloud"
@@ -42,40 +44,48 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// EipCvmRelDao ...
-type EipCvmRelDao struct {
-	*dao.ObjectDaoManager
+// EipCvmRel only used for EipCvmRel.
+type EipCvmRel interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*tablecloud.EipCvmRelModel) error
+	List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipCvmRelListResult, error)
+	ListJoinEip(kt *kit.Kit, cvmIDs []string) (*cloud.EipCvmRelJoinEipListResult, error)
+	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
+	ListEipLeftJoinRel(kt *kit.Kit, opt *types.ListOption) (
+		*cloud.EipLeftJoinEipCvmRelResult, error)
+	insertValidate(kt *kit.Kit, rels []*tablecloud.EipCvmRelModel) error
 }
 
-var _ dao.ObjectDao = new(EipCvmRelDao)
+var _ EipCvmRel = new(EipCvmRelDao)
 
-// Name 返回 Dao 描述对象的表名
-func (relDao *EipCvmRelDao) Name() table.Name {
-	return tablecloud.EipCvmRelTableName
+// EipCvmRelDao EipCvmRelDao dao.
+type EipCvmRelDao struct {
+	Orm   orm.Interface
+	IDGen idgenerator.IDGenInterface
+	Audit audit.Interface
 }
 
 // BatchCreateWithTx ...
-func (relDao *EipCvmRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*tablecloud.EipCvmRelModel) error {
+func (relDao EipCvmRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*tablecloud.EipCvmRelModel) error {
 	if err := relDao.insertValidate(kt, rels); err != nil {
 		return err
 	}
 
 	sql := fmt.Sprintf(
-		`INSERT INTO %s (%s)	VALUES(%s)`,
-		relDao.Name(),
+		`INSERT INTO %s (%s) VALUES(%s)`,
+		table.EipCvmRelTableName,
 		tablecloud.EipCvmRelColumns.ColumnExpr(),
 		tablecloud.EipCvmRelColumns.ColonNameExpr(),
 	)
-	if err := relDao.Orm().Txn(tx).BulkInsert(kt.Ctx, sql, rels); err != nil {
+	if err := relDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels); err != nil {
 		logs.Errorf("batch create eip cvm rels failed, err: %v, rels: %v, rid: %s", err, rels, kt.Rid)
-		return fmt.Errorf("insert %s failed, err: %v", relDao.Name(), err)
+		return fmt.Errorf("insert %s failed, err: %v", table.EipCvmRelTableName, err)
 	}
 
 	return nil
 }
 
 // List ...
-func (relDao *EipCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipCvmRelListResult, error) {
+func (relDao EipCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipCvmRelListResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list eip cvm rel options is nil")
 	}
@@ -97,8 +107,8 @@ func (relDao *EipCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Eip
 	}
 
 	if opt.Page.Count {
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, relDao.Name(), whereExpr)
-		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.EipCvmRelTableName, whereExpr)
+		count, err := relDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.Errorf("count eip cvm rels failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -120,13 +130,13 @@ func (relDao *EipCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Eip
 	sql := fmt.Sprintf(
 		`SELECT %s FROM %s %s %s`,
 		tablecloud.EipCvmRelColumns.FieldsNamedExpr(opt.Fields),
-		relDao.Name(),
+		table.EipCvmRelTableName,
 		whereExpr,
 		pageExpr,
 	)
 
 	details := make([]*tablecloud.EipCvmRelModel, 0)
-	if err = relDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = relDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		logs.Errorf("list eip cvm rels failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 		return nil, err
 	}
@@ -134,7 +144,7 @@ func (relDao *EipCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Eip
 }
 
 // ListJoinEip ...
-func (relDao *EipCvmRelDao) ListJoinEip(kt *kit.Kit, cvmIDs []string) (*cloud.EipCvmRelJoinEipListResult, error) {
+func (relDao EipCvmRelDao) ListJoinEip(kt *kit.Kit, cvmIDs []string) (*cloud.EipCvmRelJoinEipListResult, error) {
 	if len(cvmIDs) == 0 {
 		return nil, errf.Newf(errf.InvalidParameter, "cvm ids is required")
 	}
@@ -148,12 +158,12 @@ func (relDao *EipCvmRelDao) ListJoinEip(kt *kit.Kit, cvmIDs []string) (*cloud.Ei
 			"id",
 			"cvm_id",
 		),
-		tablecloud.EipCvmRelTableName,
-		tableeip.TableName,
+		table.EipCvmRelTableName,
+		table.EipTable,
 	)
 
 	details := make([]*cloud.EipWithCvmID, 0)
-	if err := relDao.Orm().Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"cvm_ids": cvmIDs}); err != nil {
+	if err := relDao.Orm.Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"cvm_ids": cvmIDs}); err != nil {
 		logs.ErrorJson("select eip cvm rels join eip failed, err: %v, sql: (%s), rid: %s", err, sql, kt.Rid)
 		return nil, err
 	}
@@ -162,7 +172,7 @@ func (relDao *EipCvmRelDao) ListJoinEip(kt *kit.Kit, cvmIDs []string) (*cloud.Ei
 }
 
 // DeleteWithTx ...
-func (relDao *EipCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
+func (relDao EipCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -172,8 +182,8 @@ func (relDao *EipCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *f
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, relDao.Name(), whereExpr)
-	if _, err = relDao.Orm().Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.EipCvmRelTableName, whereExpr)
+	if _, err = relDao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.Errorf("delete eip cvm rels failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -182,7 +192,7 @@ func (relDao *EipCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *f
 }
 
 // insertValidate 校验待创建的关联关系表中, 对应的 Eip 和 CVM 是否存在
-func (relDao *EipCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.EipCvmRelModel) error {
+func (relDao EipCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.EipCvmRelModel) error {
 	relCount := len(rels)
 
 	eipIDs := make([]string, relCount)
@@ -192,7 +202,7 @@ func (relDao *EipCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.EipCv
 		cvmIDs[idx] = rel.CvmID
 	}
 
-	idToEipMap, err := eip.ListByIDs(kt, relDao.Orm(), eipIDs)
+	idToEipMap, err := eip.ListByIDs(kt, relDao.Orm, eipIDs)
 	if err != nil {
 		logs.Errorf("list eip by ids failed, err: %v, ids: %v, rid: %s", err, eipIDs, kt.Rid)
 		return err
@@ -202,7 +212,7 @@ func (relDao *EipCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.EipCv
 		return fmt.Errorf("some eip does not exists")
 	}
 
-	idToCvmMap, err := cvm.ListCvm(kt, relDao.Orm(), cvmIDs)
+	idToCvmMap, err := cvm.ListCvm(kt, relDao.Orm, cvmIDs)
 	if err != nil {
 		logs.Errorf("list cvm by ids failed, err: %v, ids: %v, rid: %s", err, cvmIDs, kt.Rid)
 		return err
@@ -216,7 +226,7 @@ func (relDao *EipCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.EipCv
 }
 
 // ListEipLeftJoinRel ...
-func (relDao *EipCvmRelDao) ListEipLeftJoinRel(kt *kit.Kit, opt *types.ListOption) (
+func (relDao EipCvmRelDao) ListEipLeftJoinRel(kt *kit.Kit, opt *types.ListOption) (
 	*cloud.EipLeftJoinEipCvmRelResult, error) {
 
 	if opt == nil {
@@ -246,9 +256,9 @@ func (relDao *EipCvmRelDao) ListEipLeftJoinRel(kt *kit.Kit, opt *types.ListOptio
 	if opt.Page.Count {
 		sql := fmt.Sprintf(
 			`SELECT count(distinct(eip.id)) FROM %s as eip left join %s as rel on eip.id = rel.eip_id %s`,
-			table.EipTable, tablecloud.EipCvmRelTableName, whereExpr)
+			table.EipTable, table.EipCvmRelTableName, whereExpr)
 
-		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		count, err := relDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count eip left join eip_cvm_rel failed, err: %v, filter: %s, rid: %s", err,
 				opt.Filter, kt.Rid)
@@ -272,13 +282,13 @@ func (relDao *EipCvmRelDao) ListEipLeftJoinRel(kt *kit.Kit, opt *types.ListOptio
 		`SELECT eip.id as id, %s FROM %s as eip left join %s as rel on eip.id = rel.eip_id %s group by eip.id %s`,
 		tableeip.EipColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
 		table.EipTable,
-		tablecloud.EipCvmRelTableName,
+		table.EipCvmRelTableName,
 		whereExpr,
 		pageExpr,
 	)
 
 	details := make([]cloud.EipLeftJoinEipCvmRel, 0)
-	if err := relDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err := relDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		logs.ErrorJson("select eip left join eip_cvm_rel failed, err: %v, filter: %s, rid: %s", err,
 			opt.Filter, kt.Rid)
 		return nil, err

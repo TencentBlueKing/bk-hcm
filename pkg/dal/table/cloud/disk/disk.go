@@ -21,12 +21,9 @@ package disk
 
 import (
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 )
-
-var TableName table.Name = "disk"
 
 // DiskColumns ...
 var DiskColumns = utils.MergeColumns(nil, DiskColumnDescriptor)
@@ -52,11 +49,6 @@ var DiskColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
-}
-
-// DiskTable 云盘表
-type DiskTable struct {
-	model *DiskModel
 }
 
 // DiskModel ...
@@ -99,9 +91,4 @@ type DiskModel struct {
 	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
 	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
-}
-
-// TableName return disk table name.
-func (t *DiskTable) TableName() table.Name {
-	return TableName
 }

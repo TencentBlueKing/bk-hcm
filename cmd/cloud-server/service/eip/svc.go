@@ -47,6 +47,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -139,6 +140,8 @@ func (svc *eipSvc) listEip(cts *rest.Contexts, authHandler handler.ListAuthResHa
 
 	details := make([]*cloudproto.EipResult, len(resp.Details))
 	for idx, eipData := range resp.Details {
+		eipData.InstanceID = converter.ValToPtr(eipIDToCvmID[eipData.ID])
+		eipData.InstanceType = constant.EipBindCvm
 		details[idx] = &cloudproto.EipResult{
 			CvmID:     eipIDToCvmID[eipData.ID],
 			EipResult: eipData,

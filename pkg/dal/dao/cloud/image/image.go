@@ -25,7 +25,9 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
+	"hcm/pkg/dal/dao/audit"
+	idgenerator "hcm/pkg/dal/dao/id-generator"
+	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/dao/types/cloud"
@@ -39,20 +41,25 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// ImageDao ...
-type ImageDao struct {
-	*dao.ObjectDaoManager
+// Image only used for image.
+type Image interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, images []*image.ImageModel) ([]string, error)
+	List(kt *kit.Kit, opt *types.ListOption) (*cloud.ImageListResult, error)
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, imageID string, updateData *image.ImageModel) error
+	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 
-var _ dao.ObjectDao = new(ImageDao)
+var _ Image = new(ImageDao)
 
-// Name 返回 Dao 描述对象的表名
-func (pImageDao *ImageDao) Name() table.Name {
-	return image.ImageTableName
+// ImageDao image dao.
+type ImageDao struct {
+	Orm   orm.Interface
+	IDGen idgenerator.IDGenInterface
+	Audit audit.Interface
 }
 
 // BatchCreateWithTx ...
-func (pImageDao *ImageDao) BatchCreateWithTx(
+func (pImageDao ImageDao) BatchCreateWithTx(
 	kt *kit.Kit,
 	tx *sqlx.Tx,
 	images []*image.ImageModel,
@@ -66,11 +73,11 @@ func (pImageDao *ImageDao) BatchCreateWithTx(
 		}
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, pImageDao.Name(), image.ImageColumns.ColumnExpr(),
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.ImageTable, image.ImageColumns.ColumnExpr(),
 		image.ImageColumns.ColonNameExpr(),
 	)
 
-	ids, err := pImageDao.IDGen().Batch(kt, image.ImageTableName, len(images))
+	ids, err := pImageDao.IDGen.Batch(kt, table.ImageTable, len(images))
 	if err != nil {
 		return nil, err
 	}
@@ -79,16 +86,16 @@ func (pImageDao *ImageDao) BatchCreateWithTx(
 		d.ID = ids[idx]
 	}
 
-	err = pImageDao.Orm().Txn(tx).BulkInsert(kt.Ctx, sql, images)
+	err = pImageDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, images)
 	if err != nil {
-		return nil, fmt.Errorf("insert %s failed, err: %v", image.ImageTableName, err)
+		return nil, fmt.Errorf("insert %s failed, err: %v", table.ImageTable, err)
 	}
 
 	return ids, nil
 }
 
 // List ...
-func (pImageDao *ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.ImageListResult, error) {
+func (pImageDao ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.ImageListResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list image options is nil")
 	}
@@ -112,8 +119,8 @@ func (pImageDao *ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Imag
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, pImageDao.Name(), whereExpr)
-		count, err := pImageDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.ImageTable, whereExpr)
+		count, err := pImageDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count image failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -129,12 +136,12 @@ func (pImageDao *ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Imag
 	sql := fmt.Sprintf(
 		`SELECT %s FROM %s %s %s`,
 		image.ImageColumns.FieldsNamedExpr(opt.Fields),
-		pImageDao.Name(),
+		table.ImageTable,
 		whereExpr,
 		pageExpr,
 	)
 	details := make([]*image.ImageModel, 0)
-	if err = pImageDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = pImageDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		logs.Errorf("select image failed, err: %v, sql: %s, values: %v, rid: %s", err, sql, whereValue, kt.Rid)
 		return nil, err
 	}
@@ -144,7 +151,7 @@ func (pImageDao *ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Imag
 }
 
 // UpdateByIDWithTx ...
-func (pImageDao *ImageDao) UpdateByIDWithTx(
+func (pImageDao ImageDao) UpdateByIDWithTx(
 	kt *kit.Kit,
 	tx *sqlx.Tx,
 	imageID string,
@@ -160,10 +167,10 @@ func (pImageDao *ImageDao) UpdateByIDWithTx(
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, pImageDao.Name(), setExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.ImageTable, setExpr)
 
 	toUpdate["id"] = imageID
-	_, err = pImageDao.Orm().Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = pImageDao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update image failed, err: %v, id: %s, rid: %v", err, imageID, kt.Rid)
 		return err
@@ -173,7 +180,7 @@ func (pImageDao *ImageDao) UpdateByIDWithTx(
 }
 
 // DeleteWithTx ...
-func (pImageDao *ImageDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
+func (pImageDao ImageDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -183,8 +190,8 @@ func (pImageDao *ImageDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *fi
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, pImageDao.Name(), whereExpr)
-	if _, err = pImageDao.Orm().Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.ImageTable, whereExpr)
+	if _, err = pImageDao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete image failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

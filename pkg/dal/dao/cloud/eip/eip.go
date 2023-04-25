@@ -25,8 +25,8 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/audit"
+	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -43,21 +43,26 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// EipDao ...
+// Eip only used for eip.
+type Eip interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, eips []*eip.EipModel) ([]string, error)
+	List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipListResult, error)
+	Update(kt *kit.Kit, filterExpr *filter.Expression, updateData *eip.EipModel) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, eipID string, updateData *eip.EipModel) error
+	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
+}
+
+var _ Eip = new(EipDao)
+
+// EipDao eip dao.
 type EipDao struct {
-	*dao.ObjectDaoManager
+	Orm   orm.Interface
+	IDGen idgenerator.IDGenInterface
 	Audit audit.Interface
 }
 
-var _ dao.ObjectDao = new(EipDao)
-
-// Name 返回 Dao 描述对象的表名
-func (eipDao *EipDao) Name() table.Name {
-	return eip.TableName
-}
-
 // BatchCreateWithTx ...
-func (eipDao *EipDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, eips []*eip.EipModel) ([]string, error) {
+func (eipDao EipDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, eips []*eip.EipModel) ([]string, error) {
 	if len(eips) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "eip model data is required")
 	}
@@ -67,11 +72,11 @@ func (eipDao *EipDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, eips []*eip.Ei
 		}
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, eipDao.Name(), eip.EipColumns.ColumnExpr(),
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.EipTable, eip.EipColumns.ColumnExpr(),
 		eip.EipColumns.ColonNameExpr(),
 	)
 
-	ids, err := eipDao.IDGen().Batch(kt, eipDao.Name(), len(eips))
+	ids, err := eipDao.IDGen.Batch(kt, table.EipTable, len(eips))
 	if err != nil {
 		return nil, err
 	}
@@ -80,9 +85,9 @@ func (eipDao *EipDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, eips []*eip.Ei
 		d.ID = ids[idx]
 	}
 
-	err = eipDao.Orm().Txn(tx).BulkInsert(kt.Ctx, sql, eips)
+	err = eipDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, eips)
 	if err != nil {
-		return nil, fmt.Errorf("insert %s failed, err: %v", eipDao.Name(), err)
+		return nil, fmt.Errorf("insert %s failed, err: %v", table.EipTable, err)
 	}
 
 	// create audit.
@@ -114,7 +119,7 @@ func (eipDao *EipDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, eips []*eip.Ei
 }
 
 // List ...
-func (eipDao *EipDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipListResult, error) {
+func (eipDao EipDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipListResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list eip options is nil")
 	}
@@ -136,8 +141,8 @@ func (eipDao *EipDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipListRe
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, eipDao.Name(), whereExpr)
-		count, err := eipDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.EipTable, whereExpr)
+		count, err := eipDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count eip failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -153,12 +158,12 @@ func (eipDao *EipDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipListRe
 	sql := fmt.Sprintf(
 		`SELECT %s FROM %s %s %s`,
 		eip.EipColumns.FieldsNamedExpr(opt.Fields),
-		eipDao.Name(),
+		table.EipTable,
 		whereExpr,
 		pageExpr,
 	)
 	details := make([]*eip.EipModel, 0)
-	if err = eipDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = eipDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -167,7 +172,7 @@ func (eipDao *EipDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipListRe
 }
 
 // UpdateByIDWithTx ...
-func (eipDao *EipDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, eipID string, updateData *eip.EipModel) error {
+func (eipDao EipDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, eipID string, updateData *eip.EipModel) error {
 	if err := updateData.UpdateValidate(); err != nil {
 		return err
 	}
@@ -178,10 +183,10 @@ func (eipDao *EipDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, eipID string, u
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, eipDao.Name(), setExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.EipTable, setExpr)
 
 	toUpdate["id"] = eipID
-	_, err = eipDao.Orm().Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = eipDao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update eip failed, err: %v, id: %s, rid: %v", err, eipID, kt.Rid)
 		return err
@@ -191,7 +196,7 @@ func (eipDao *EipDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, eipID string, u
 }
 
 // Update ...
-func (eipDao *EipDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updateData *eip.EipModel) error {
+func (eipDao EipDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updateData *eip.EipModel) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
@@ -211,10 +216,10 @@ func (eipDao *EipDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updateD
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s %s`, eipDao.Name(), setExpr, whereExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s %s`, table.EipTable, setExpr, whereExpr)
 
-	_, err = eipDao.Orm().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := eipDao.Orm().Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+	_, err = eipDao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		effected, err := eipDao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update eip failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -235,7 +240,7 @@ func (eipDao *EipDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updateD
 }
 
 // DeleteWithTx ...
-func (eipDao *EipDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
+func (eipDao EipDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -245,8 +250,8 @@ func (eipDao *EipDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, eipDao.Name(), whereExpr)
-	if _, err = eipDao.Orm().Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.EipTable, whereExpr)
+	if _, err = eipDao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete eip failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -256,7 +261,7 @@ func (eipDao *EipDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.
 
 // ListByIDs ...
 func ListByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]eip.EipModel, error) {
-	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, eip.EipColumns.FieldsNamedExpr(nil), eip.TableName)
+	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, eip.EipColumns.FieldsNamedExpr(nil), table.EipTable)
 	eips := make([]eip.EipModel, 0)
 	if err := orm.Do().Select(kt.Ctx, &eips, sql, map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err

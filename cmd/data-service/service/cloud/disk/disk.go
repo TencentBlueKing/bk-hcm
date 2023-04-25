@@ -17,39 +17,42 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package cvm
+package disk
 
 import (
 	"net/http"
 
 	"hcm/cmd/data-service/service/capability"
-	"hcm/cmd/data-service/service/cloud/logics/cmdb"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/rest"
 )
 
-// InitService initial the security group service
+// InitService ...
 func InitService(cap *capability.Capability) {
-	svc := &cvmSvc{
+	svc := &diskSvc{
 		dao: cap.Dao,
 	}
 
-	svc.cmdbLogics = cmdb.NewCmdbLogics(cap.EsbClient.Cmdb())
-
 	h := rest.NewHandler()
 
-	h.Add("BatchCreateCvm", http.MethodPost, "/vendors/{vendor}/cvms/batch/create", svc.BatchCreateCvm)
-	h.Add("BatchUpdateCvm", http.MethodPatch, "/vendors/{vendor}/cvms/batch/update", svc.BatchUpdateCvm)
-	h.Add("GetCvm", http.MethodGet, "/vendors/{vendor}/cvms/{id}", svc.GetCvm)
-	h.Add("ListCvm", http.MethodPost, "/cvms/list", svc.ListCvm)
-	h.Add("ListCvmExt", http.MethodPost, "/vendors/{vendor}/cvms/list", svc.ListCvmExt)
-	h.Add("BatchDeleteCvm", http.MethodDelete, "/cvms/batch", svc.BatchDeleteCvm)
-	h.Add("BatchUpdateCvmCommonInfo", http.MethodPatch, "/cvms/common/info/batch/update", svc.BatchUpdateCvmCommonInfo)
+	// 批量创建云盘(支持 extension 字段)
+	h.Add("BatchCreateDiskExt", http.MethodPost, "/vendors/{vendor}/disks/batch/create", svc.BatchCreateDiskExt)
+	// 获取单个云盘
+	h.Add("RetrieveDiskExt", http.MethodGet, "/vendors/{vendor}/disks/{id}", svc.RetrieveDiskExt)
+	// 查询云盘列表 (不带 extension 字段)
+	h.Add("ListDisk", http.MethodPost, "/disks/list", svc.ListDisk)
+	// 查询云盘列表 (带 extension 字段)
+	h.Add("ListDiskExt", http.MethodPost, "/vendors/{vendor}/disks/list", svc.ListDiskExt)
+	// 批量更新云盘数据(支持 extension 字段)
+	h.Add("BatchUpdateDiskExt", http.MethodPatch, "/vendors/{vendor}/disks", svc.BatchUpdateDiskExt)
+	// 批量更新云盘基础数据
+	h.Add("BatchUpdateDisk", http.MethodPatch, "/disks", svc.BatchUpdateDisk)
+	h.Add("BatchDeleteDisk", http.MethodDelete, "/disks/batch", svc.BatchDeleteDisk)
+	h.Add("CountDisk", http.MethodPost, "/disks/count", svc.CountDisk)
 
 	h.Load(cap.WebService)
 }
 
-type cvmSvc struct {
-	dao        dao.Set
-	cmdbLogics *cmdb.CmdbLogics
+type diskSvc struct {
+	dao dao.Set
 }

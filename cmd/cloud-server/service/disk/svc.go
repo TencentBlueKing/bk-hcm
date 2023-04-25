@@ -40,7 +40,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	"hcm/pkg/dal/table/cloud/disk"
+	"hcm/pkg/dal/table"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
@@ -170,7 +170,7 @@ func (svc *diskSvc) deleteDisk(cts *rest.Contexts, validHandler handler.ValidWit
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
-		enumor.CloudResourceType(disk.TableName),
+		enumor.CloudResourceType(table.DiskTable),
 		diskID,
 		append(types.CommonBasicInfoFields, "recycle_status")...,
 	)
@@ -231,7 +231,7 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
-		enumor.CloudResourceType(disk.TableName),
+		enumor.CloudResourceType(table.DiskTable),
 		diskID,
 		append(types.CommonBasicInfoFields, "recycle_status")...,
 	)
@@ -287,7 +287,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		}
 		return cloudproto.TCloudDiskExtResult{
 			DiskExtResult: resp,
-			InstanceType:  "CVM",
+			InstanceType:  constant.DiskBindCvm,
 			InstanceID:    instID,
 			InstanceName:  instName,
 		}, nil
@@ -298,7 +298,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		}
 		return cloudproto.AwsDiskExtResult{
 			DiskExtResult: resp,
-			InstanceType:  "CVM",
+			InstanceType:  constant.DiskBindCvm,
 			InstanceID:    instID,
 			InstanceName:  instName,
 		}, nil
@@ -309,7 +309,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		}
 		return cloudproto.HuaWeiDiskExtResult{
 			DiskExtResult: resp,
-			InstanceType:  "CVM",
+			InstanceType:  constant.DiskBindCvm,
 			InstanceID:    instID,
 			InstanceName:  instName,
 		}, nil
@@ -322,7 +322,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		resp.DiskType = extractGcpDiskType(resp.DiskType)
 		return cloudproto.GcpDiskExtResult{
 			DiskExtResult: resp,
-			InstanceType:  "CVM",
+			InstanceType:  constant.DiskBindCvm,
 			InstanceID:    instID,
 			InstanceName:  instName,
 		}, nil
@@ -333,7 +333,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		}
 		return cloudproto.AzureDiskExtResult{
 			DiskExtResult: resp,
-			InstanceType:  "CVM",
+			InstanceType:  constant.DiskBindCvm,
 			InstanceID:    instID,
 			InstanceName:  instName,
 		}, nil

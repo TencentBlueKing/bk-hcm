@@ -28,7 +28,6 @@ import (
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	eipdao "hcm/pkg/dal/dao/cloud/eip"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
@@ -136,7 +135,7 @@ func (ad Audit) listEip(kt *kit.Kit, ids []string) (map[string]*eip.EipModel, er
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.DefaultBasePage,
 	}
-	list, err := ad.dao.GetObjectDao(eip.TableName).(*eipdao.EipDao).List(kt, opt)
+	list, err := ad.dao.Eip().List(kt, opt)
 	if err != nil {
 		logs.Errorf("list eip failed, err: %v, ids: %v, rid: %ad", err, ids, kt.Rid)
 		return nil, err

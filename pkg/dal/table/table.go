@@ -87,6 +87,8 @@ const (
 	GcpRegionTable Name = "gcp_region"
 	// EipTable is eip table's name
 	EipTable Name = "eip"
+	// ImageTable is image table's name
+	ImageTable Name = "image"
 	// ZoneTable is zone table's name.
 	ZoneTable Name = "zone"
 	// CvmTable is cvm table's name.
@@ -103,6 +105,10 @@ const (
 	HuaWeiRouteTable Name = "huawei_route"
 	// GcpRouteTable is gcp route's table name.
 	GcpRouteTable Name = "gcp_route"
+	// DiskCvmRelTableName is disk_cvm_rel's table name.
+	DiskCvmRelTableName Name = "disk_cvm_rel"
+	// EipCvmRelTableName is eip_cvm_rel's table name.
+	EipCvmRelTableName Name = "eip_cvm_rel"
 
 	// ApplicationTable is application table name
 	ApplicationTable Name = "application"
@@ -170,6 +176,11 @@ var TableMap = map[Name]struct{}{
 	NetworkInterfaceTable:        {},
 	NetworkInterfaceCvmRelTable:  {},
 	RecycleRecordTable:           {},
+	EipTable:                     {},
+	DiskTable:                    {},
+	ImageTable:                   {},
+	DiskCvmRelTableName:          {},
+	EipCvmRelTableName:           {},
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},

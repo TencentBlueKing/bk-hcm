@@ -17,30 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package diskcvmrel
+package eipcvmrel
 
 import (
 	"net/http"
 
 	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/rest"
 )
 
 // InitService ...
 func InitService(cap *capability.Capability) {
 	svc := &relSvc{
-		Set: cap.Dao,
+		dao: cap.Dao,
 	}
-	svc.Init()
 
 	h := rest.NewHandler()
-	h.Add("BatchCreate", http.MethodPost, "/disk_cvm_rels/batch/create", svc.BatchCreate)
-	h.Add("List", http.MethodPost, "/disk_cvm_rels/list", svc.List)
-	h.Add("ListDiskWithoutCvm", http.MethodPost, "/disk_cvm_rels/with/disks/without/cvm/list", svc.ListDiskWithoutCvm)
-	h.Add("ListWithDisk", http.MethodPost, "/disk_cvm_rels/with/disks/list", svc.ListWithDisk)
-	h.Add("ListWithCvm", http.MethodPost, "/disk_cvm_rels/with/cvms/list", svc.ListWithCvm)
-	h.Add("ListWithDiskExt", http.MethodPost, "/vendors/{vendor}/disk_cvm_rels/with/disks/list", svc.ListWithDiskExt)
-	h.Add("BatchDelete", http.MethodDelete, "/disk_cvm_rels/batch", svc.BatchDelete)
+	h.Add("BatchCreate", http.MethodPost, "/eip_cvm_rels/batch/create", svc.BatchCreate)
+	h.Add("List", http.MethodPost, "/eip_cvm_rels/list", svc.List)
+	h.Add("ListEipWithoutCvm", http.MethodPost, "/eip_cvm_rels/with/eips/without/cvm/list", svc.ListEipWithoutCvm)
+	h.Add("ListWithEip", http.MethodPost, "/eip_cvm_rels/with/eips/list", svc.ListWithEip)
+	h.Add("ListWithEipExt", http.MethodPost, "/vendors/{vendor}/eip_cvm_rels/with/eips/list", svc.ListWithEipExt)
+	h.Add("BatchDelete", http.MethodDelete, "/eip_cvm_rels/batch", svc.BatchDelete)
 
 	h.Load(cap.WebService)
+}
+
+type relSvc struct {
+	dao dao.Set
 }

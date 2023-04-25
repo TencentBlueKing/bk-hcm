@@ -24,9 +24,11 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
+	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
+	idgenerator "hcm/pkg/dal/dao/id-generator"
+	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/dao/types/cloud"
@@ -41,40 +43,50 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// DiskCvmRelDao ...
-type DiskCvmRelDao struct {
-	*dao.ObjectDaoManager
+// DiskCvmRel only used for DiskCvmRel.
+type DiskCvmRel interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*tablecloud.DiskCvmRelModel) error
+	List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskCvmRelListResult, error)
+	ListJoinDisk(kt *kit.Kit, cvmIDs []string) (*cloud.DiskCvmRelJoinDiskListResult, error)
+	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
+	ListCvmIDLeftJoinRel(kt *kit.Kit, opt *types.ListOption, notEqualDiskID string) (
+		*cloud.CvmLeftJoinDiskCvmRelResult, error)
+	ListDiskLeftJoinRel(kt *kit.Kit, opt *types.ListOption) (
+		*cloud.DiskLeftJoinDiskCvmRelResult, error)
+	insertValidate(kt *kit.Kit, rels []*tablecloud.DiskCvmRelModel) error
 }
 
-var _ dao.ObjectDao = new(DiskCvmRelDao)
+var _ DiskCvmRel = new(DiskCvmRelDao)
 
-// Name 返回 Dao 描述对象的表名
-func (relDao *DiskCvmRelDao) Name() table.Name {
-	return tablecloud.DiskCvmRelTableName
+// DiskCvmRelDao DiskCvmRelDao dao.
+type DiskCvmRelDao struct {
+	Orm   orm.Interface
+	IDGen idgenerator.IDGenInterface
+	Audit audit.Interface
 }
 
 // BatchCreateWithTx ...
-func (relDao *DiskCvmRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*tablecloud.DiskCvmRelModel) error {
+func (relDao DiskCvmRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*tablecloud.DiskCvmRelModel) error {
 	if err := relDao.insertValidate(kt, rels); err != nil {
 		return err
 	}
 
 	sql := fmt.Sprintf(
-		`INSERT INTO %s (%s)	VALUES(%s)`,
-		relDao.Name(),
+		`INSERT INTO %s (%s) VALUES(%s)`,
+		table.DiskCvmRelTableName,
 		tablecloud.DiskCvmRelColumns.ColumnExpr(),
 		tablecloud.DiskCvmRelColumns.ColonNameExpr(),
 	)
-	if err := relDao.Orm().Txn(tx).BulkInsert(kt.Ctx, sql, rels); err != nil {
+	if err := relDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels); err != nil {
 		logs.Errorf("batch create disk cvm rels failed, err: %v, rels: %v, rid: %s", err, rels, kt.Rid)
-		return fmt.Errorf("insert %s failed, err: %v", relDao.Name(), err)
+		return fmt.Errorf("insert %s failed, err: %v", table.DiskCvmRelTableName, err)
 	}
 
 	return nil
 }
 
 // List ...
-func (relDao *DiskCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskCvmRelListResult, error) {
+func (relDao DiskCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskCvmRelListResult, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list disk cvm rel options is nil")
 	}
@@ -96,8 +108,8 @@ func (relDao *DiskCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Di
 	}
 
 	if opt.Page.Count {
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, relDao.Name(), whereExpr)
-		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.DiskCvmRelTableName, whereExpr)
+		count, err := relDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.Errorf("count disk cvm rels failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -119,13 +131,13 @@ func (relDao *DiskCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Di
 	sql := fmt.Sprintf(
 		`SELECT %s FROM %s %s %s`,
 		tablecloud.DiskCvmRelColumns.FieldsNamedExpr(opt.Fields),
-		relDao.Name(),
+		table.DiskCvmRelTableName,
 		whereExpr,
 		pageExpr,
 	)
 
 	details := make([]*tablecloud.DiskCvmRelModel, 0)
-	if err = relDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = relDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		logs.Errorf("list disk cvm rels failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 		return nil, err
 	}
@@ -133,7 +145,7 @@ func (relDao *DiskCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Di
 }
 
 // ListJoinDisk ...
-func (relDao *DiskCvmRelDao) ListJoinDisk(kt *kit.Kit, cvmIDs []string) (*cloud.DiskCvmRelJoinDiskListResult, error) {
+func (relDao DiskCvmRelDao) ListJoinDisk(kt *kit.Kit, cvmIDs []string) (*cloud.DiskCvmRelJoinDiskListResult, error) {
 	if len(cvmIDs) == 0 {
 		return nil, errf.Newf(errf.InvalidParameter, "cvm ids is required")
 	}
@@ -147,12 +159,12 @@ func (relDao *DiskCvmRelDao) ListJoinDisk(kt *kit.Kit, cvmIDs []string) (*cloud.
 			"id",
 			"cvm_id",
 		),
-		tablecloud.DiskCvmRelTableName,
-		tabledisk.TableName,
+		table.DiskCvmRelTableName,
+		table.DiskTable,
 	)
 
 	details := make([]*cloud.DiskWithCvmID, 0)
-	if err := relDao.Orm().Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"cvm_ids": cvmIDs}); err != nil {
+	if err := relDao.Orm.Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"cvm_ids": cvmIDs}); err != nil {
 		logs.ErrorJson("select disk cvm rels join disk failed, err: %v, sql: (%s), rid: %s", err, sql, kt.Rid)
 		return nil, err
 	}
@@ -161,7 +173,7 @@ func (relDao *DiskCvmRelDao) ListJoinDisk(kt *kit.Kit, cvmIDs []string) (*cloud.
 }
 
 // DeleteWithTx ...
-func (relDao *DiskCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
+func (relDao DiskCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -171,8 +183,8 @@ func (relDao *DiskCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, relDao.Name(), whereExpr)
-	if _, err = relDao.Orm().Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.DiskCvmRelTableName, whereExpr)
+	if _, err = relDao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.Errorf("delete disk cvm rels failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -181,7 +193,7 @@ func (relDao *DiskCvmRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *
 }
 
 // insertValidate 校验待创建的关联关系表中, 对应的云盘和 CVM 是否存在
-func (relDao *DiskCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.DiskCvmRelModel) error {
+func (relDao DiskCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.DiskCvmRelModel) error {
 	relCount := len(rels)
 
 	diskIDs := make([]string, relCount)
@@ -191,7 +203,7 @@ func (relDao *DiskCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.Disk
 		cvmIDs[idx] = rel.CvmID
 	}
 
-	idToDiskMap, err := disk.ListByIDs(kt, relDao.Orm(), diskIDs)
+	idToDiskMap, err := disk.ListByIDs(kt, relDao.Orm, diskIDs)
 	if err != nil {
 		logs.Errorf("list disk by ids failed, err: %v, ids: %v, rid: %s", err, diskIDs, kt.Rid)
 		return err
@@ -202,7 +214,7 @@ func (relDao *DiskCvmRelDao) insertValidate(kt *kit.Kit, rels []*tablecloud.Disk
 		return fmt.Errorf("some disk does not exists")
 	}
 
-	idToCvmMap, err := cvm.ListCvm(kt, relDao.Orm(), cvmIDs)
+	idToCvmMap, err := cvm.ListCvm(kt, relDao.Orm, cvmIDs)
 	if err != nil {
 		logs.Errorf("list cvm by ids failed, err: %v, ids: %v, rid: %s", err, cvmIDs, kt.Rid)
 		return err

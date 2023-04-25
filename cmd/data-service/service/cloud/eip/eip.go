@@ -17,29 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package eipcvmrel
+package eip
 
 import (
 	"net/http"
 
 	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/rest"
 )
 
-// InitService ...
-func InitService(cap *capability.Capability) {
-	svc := &relSvc{
-		Set: cap.Dao,
-	}
-	svc.Init()
+// InitEipService ...
+func InitEipService(cap *capability.Capability) {
+	svc := &eipSvc{dao: cap.Dao}
 
 	h := rest.NewHandler()
-	h.Add("BatchCreate", http.MethodPost, "/eip_cvm_rels/batch/create", svc.BatchCreate)
-	h.Add("List", http.MethodPost, "/eip_cvm_rels/list", svc.List)
-	h.Add("ListEipWithoutCvm", http.MethodPost, "/eip_cvm_rels/with/eips/without/cvm/list", svc.ListEipWithoutCvm)
-	h.Add("ListWithEip", http.MethodPost, "/eip_cvm_rels/with/eips/list", svc.ListWithEip)
-	h.Add("ListWithEipExt", http.MethodPost, "/vendors/{vendor}/eip_cvm_rels/with/eips/list", svc.ListWithEipExt)
-	h.Add("BatchDelete", http.MethodDelete, "/eip_cvm_rels/batch", svc.BatchDelete)
+
+	h.Add("BatchCreateEipExt", http.MethodPost, "/vendors/{vendor}/eips/batch/create", svc.BatchCreateEipExt)
+	h.Add("RetrieveEipExt", http.MethodGet, "/vendors/{vendor}/eips/{id}", svc.RetrieveEipExt)
+	h.Add("ListEip", http.MethodPost, "/eips/list", svc.ListEip)
+	h.Add("ListEipExt", http.MethodPost, "/vendors/{vendor}/eips/list", svc.ListEipExt)
+	h.Add("BatchUpdateEipExt", http.MethodPatch, "/vendors/{vendor}/eips", svc.BatchUpdateEipExt)
+	h.Add("BatchUpdateEip", http.MethodPatch, "/eips", svc.BatchUpdateEip)
+	h.Add("BatchDeleteEip", http.MethodDelete, "/eips/batch", svc.BatchDeleteEip)
 
 	h.Load(cap.WebService)
+}
+
+type eipSvc struct {
+	dao dao.Set
 }

@@ -29,7 +29,6 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/dao/types/cloud"
 	"hcm/pkg/dal/table"
-	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/dal/table/cloud/cvm"
 	"hcm/pkg/dal/table/cloud/disk"
 	"hcm/pkg/kit"
@@ -38,7 +37,7 @@ import (
 )
 
 // ListCvmIDLeftJoinRel ...
-func (relDao *DiskCvmRelDao) ListCvmIDLeftJoinRel(kt *kit.Kit, opt *types.ListOption, notEqualDiskID string) (
+func (relDao DiskCvmRelDao) ListCvmIDLeftJoinRel(kt *kit.Kit, opt *types.ListOption, notEqualDiskID string) (
 	*cloud.CvmLeftJoinDiskCvmRelResult, error) {
 
 	if opt == nil {
@@ -70,9 +69,9 @@ func (relDao *DiskCvmRelDao) ListCvmIDLeftJoinRel(kt *kit.Kit, opt *types.ListOp
 	if opt.Page.Count {
 		sql := fmt.Sprintf(
 			`SELECT count(distinct(cvm.id)) FROM %s as cvm left join %s as rel on cvm.id = rel.cvm_id %s`,
-			table.CvmTable, tablecloud.DiskCvmRelTableName, whereExpr)
+			table.CvmTable, table.DiskCvmRelTableName, whereExpr)
 
-		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		count, err := relDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count cvm left join disk_cvm_rel failed, err: %v, filter: %s, diskID: %s, rid: %s", err,
 				opt.Filter, notEqualDiskID, kt.Rid)
@@ -96,13 +95,13 @@ func (relDao *DiskCvmRelDao) ListCvmIDLeftJoinRel(kt *kit.Kit, opt *types.ListOp
 		`SELECT cvm.id as id, %s FROM %s as cvm left join %s as rel on cvm.id = rel.cvm_id %s group by cvm.id %s`,
 		cvm.TableColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
 		table.CvmTable,
-		tablecloud.DiskCvmRelTableName,
+		table.DiskCvmRelTableName,
 		whereExpr,
 		pageExpr,
 	)
 
 	details := make([]cvm.Table, 0)
-	if err := relDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err := relDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		logs.ErrorJson("select cvm left join disk_cvm_rel failed, err: %v, filter: %s, diskID: %s, rid: %s", err,
 			opt.Filter, notEqualDiskID, kt.Rid)
 		return nil, err
@@ -142,9 +141,9 @@ func (relDao *DiskCvmRelDao) ListDiskLeftJoinRel(kt *kit.Kit, opt *types.ListOpt
 	if opt.Page.Count {
 		sql := fmt.Sprintf(
 			`SELECT count(distinct(disk.id)) FROM %s as disk left join %s as rel on disk.id = rel.disk_id %s`,
-			table.DiskTable, tablecloud.DiskCvmRelTableName, whereExpr)
+			table.DiskTable, table.DiskCvmRelTableName, whereExpr)
 
-		count, err := relDao.Orm().Do().Count(kt.Ctx, sql, whereValue)
+		count, err := relDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count cvm left join disk_cvm_rel failed, err: %v, filter: %s, rid: %s", err,
 				opt.Filter, kt.Rid)
@@ -168,13 +167,13 @@ func (relDao *DiskCvmRelDao) ListDiskLeftJoinRel(kt *kit.Kit, opt *types.ListOpt
 		`SELECT disk.id as id, %s FROM %s as disk left join %s as rel on disk.id = rel.disk_id %s group by disk.id %s`,
 		disk.DiskColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
 		table.DiskTable,
-		tablecloud.DiskCvmRelTableName,
+		table.DiskCvmRelTableName,
 		whereExpr,
 		pageExpr,
 	)
 
 	details := make([]cloud.DiskLeftJoinDiskCvmRel, 0)
-	if err := relDao.Orm().Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err := relDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		logs.ErrorJson("select disk left join disk_cvm_rel failed, err: %v, filter: %s, rid: %s", err,
 			opt.Filter, kt.Rid)
 		return nil, err

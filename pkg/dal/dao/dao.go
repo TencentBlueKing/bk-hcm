@@ -30,7 +30,13 @@ import (
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
 	"hcm/pkg/dal/dao/cloud/cvm"
+	"hcm/pkg/dal/dao/cloud/disk"
+	diskcvmrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
+	"hcm/pkg/dal/dao/cloud/eip"
+	eipcvmrel "hcm/pkg/dal/dao/cloud/eip-cvm-rel"
+	cimage "hcm/pkg/dal/dao/cloud/image"
 	networkinterface "hcm/pkg/dal/dao/cloud/network-interface"
+	nicvmrel "hcm/pkg/dal/dao/cloud/network-interface-cvm-rel"
 	"hcm/pkg/dal/dao/cloud/region"
 	resourcegroup "hcm/pkg/dal/dao/cloud/resource-group"
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
@@ -40,7 +46,6 @@ import (
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	recyclerecord "hcm/pkg/dal/dao/recycle-record"
-	"hcm/pkg/dal/table"
 	"hcm/pkg/kit"
 	"hcm/pkg/metrics"
 
@@ -48,46 +53,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// ObjectDao 对象 Dao 接口
-type ObjectDao interface {
-	Name() table.Name
-	SetOrm(o orm.Interface)
-	SetIDGen(g idgenerator.IDGenInterface)
-	Orm() orm.Interface
-	IDGen() idgenerator.IDGenInterface
-}
-
-// ObjectDaoManager ...
-type ObjectDaoManager struct {
-	idGen idgenerator.IDGenInterface
-	orm   orm.Interface
-}
-
-// SetOrm ...
-func (m *ObjectDaoManager) SetOrm(o orm.Interface) {
-	m.orm = o
-}
-
-// SetIDGen ...
-func (m *ObjectDaoManager) SetIDGen(g idgenerator.IDGenInterface) {
-	m.idGen = g
-}
-
-// Orm ...
-func (m *ObjectDaoManager) Orm() orm.Interface {
-	return m.orm
-}
-
-// IDGen ...
-func (m *ObjectDaoManager) IDGen() idgenerator.IDGenInterface {
-	return m.idGen
-}
-
 // Set defines all the DAO to be operated.
 type Set interface {
-	RegisterObjectDao(dao ObjectDao)
-	GetObjectDao(name table.Name) ObjectDao
-
 	Audit() audit.Interface
 	Auth() auth.Auth
 	Account() cloud.Account
@@ -116,6 +83,12 @@ type Set interface {
 	ApprovalProcess() application.ApprovalProcess
 	NetworkInterface() networkinterface.NetworkInterface
 	RecycleRecord() recyclerecord.RecycleRecord
+	Eip() eip.Eip
+	Disk() disk.Disk
+	NiCvmRel() nicvmrel.NiCvmRel
+	Image() cimage.Image
+	DiskCvmRel() diskcvmrel.DiskCvmRel
+	EipCvmRel() eipcvmrel.EipCvmRel
 
 	Txn() *Txn
 }
@@ -133,11 +106,10 @@ func NewDaoSet(opt cc.DataBase) (Set, error) {
 	idGen := idgenerator.New(db, idgenerator.DefaultMaxRetryCount)
 
 	s := &set{
-		idGen:      idGen,
-		orm:        ormInst,
-		db:         db,
-		audit:      audit.NewAudit(ormInst),
-		objectDaos: make(map[table.Name]ObjectDao),
+		idGen: idGen,
+		orm:   ormInst,
+		db:    db,
+		audit: audit.NewAudit(ormInst),
 	}
 
 	return s, nil
@@ -177,8 +149,60 @@ type set struct {
 	orm   orm.Interface
 	db    *sqlx.DB
 	audit audit.Interface
+}
 
-	objectDaos map[table.Name]ObjectDao
+// EipCvmRel return EipCvmRel dao.
+func (s *set) EipCvmRel() eipcvmrel.EipCvmRel {
+	return &eipcvmrel.EipCvmRelDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// DiskCvmRel return DiskCvmRel dao.
+func (s *set) DiskCvmRel() diskcvmrel.DiskCvmRel {
+	return &diskcvmrel.DiskCvmRelDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// Image return Image dao.
+func (s *set) Image() cimage.Image {
+	return &cimage.ImageDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// NiCvmRel return NiCvmRel dao.
+func (s *set) NiCvmRel() nicvmrel.NiCvmRel {
+	return &nicvmrel.NiCvmRelDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// Disk return Disk dao.
+func (s *set) Disk() disk.Disk {
+	return &disk.DiskDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// Eip return Eip dao.
+func (s *set) Eip() eip.Eip {
+	return &eip.EipDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
 }
 
 // Zone return Zone dao.
@@ -250,40 +274,6 @@ func (s *set) Auth() auth.Auth {
 func (s *set) Cloud() cloud.Cloud {
 	return &cloud.CloudDao{
 		Orm: s.orm,
-	}
-}
-
-// RegisterObjectDao 注册 ObjectDao
-func (s *set) RegisterObjectDao(dao ObjectDao) {
-	dao.SetOrm(s.orm)
-	dao.SetIDGen(s.idGen)
-
-	tableName := dao.Name()
-	s.objectDaos[tableName] = dao
-
-	// 注册自己的表名
-	tableName.Register()
-}
-
-// GetObjectDao 根据名称获取对应的 ObjectDao
-func (s *set) GetObjectDao(name table.Name) ObjectDao {
-	return s.objectDaos[name]
-}
-
-// Txn define dao set Txn.
-type Txn struct {
-	orm orm.Interface
-}
-
-// AutoTxn auto Txn.
-func (t *Txn) AutoTxn(kt *kit.Kit, run orm.TxnFunc) (interface{}, error) {
-	return t.orm.AutoTxn(kt, run)
-}
-
-// Txn return Txn.
-func (s *set) Txn() *Txn {
-	return &Txn{
-		orm: s.orm,
 	}
 }
 
@@ -415,4 +405,21 @@ func (s *set) NetworkInterface() networkinterface.NetworkInterface {
 // RecycleRecord return recycle record dao.
 func (s *set) RecycleRecord() recyclerecord.RecycleRecord {
 	return recyclerecord.NewRecycleRecordDao(s.orm, s.idGen, s.audit)
+}
+
+// Txn define dao set Txn.
+type Txn struct {
+	orm orm.Interface
+}
+
+// AutoTxn auto Txn.
+func (t *Txn) AutoTxn(kt *kit.Kit, run orm.TxnFunc) (interface{}, error) {
+	return t.orm.AutoTxn(kt, run)
+}
+
+// Txn return Txn.
+func (s *set) Txn() *Txn {
+	return &Txn{
+		orm: s.orm,
+	}
 }

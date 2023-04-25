@@ -17,28 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package networkcvmrel
+package image
 
 import (
-	"net/http"
-
-	"hcm/cmd/data-service/service/capability"
+	dataproto "hcm/pkg/api/data-service/cloud/image"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/rest"
+
+	"github.com/jmoiron/sqlx"
 )
 
-// InitService ...
-func InitService(cap *capability.Capability) {
-	svc := &relSvc{
-		Set: cap.Dao,
+// BatchDeleteImage ...
+func (svc *imageSvc) BatchDeleteImage(cts *rest.Contexts) (interface{}, error) {
+	req := new(dataproto.ImageDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
 	}
-	svc.Init()
 
-	h := rest.NewHandler()
-	h.Add("BatchCreate", http.MethodPost, "/network_cvm_rels/batch/create", svc.BatchCreate)
-	h.Add("List", http.MethodPost, "/network_cvm_rels/list", svc.List)
-	h.Add("ListWithExtension", http.MethodPost, "/vendors/{vendor}/network_cvm_rels/with/interfaces/list",
-		svc.ListWithExtension)
-	h.Add("BatchDelete", http.MethodDelete, "/network_cvm_rels/batch", svc.BatchDelete)
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
-	h.Load(cap.WebService)
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		return nil, svc.dao.Image().DeleteWithTx(cts.Kit, txn, req.Filter)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
 }

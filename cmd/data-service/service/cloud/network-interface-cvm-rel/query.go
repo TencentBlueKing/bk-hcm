@@ -21,66 +21,13 @@ package networkcvmrel
 
 import (
 	"fmt"
-
-	"hcm/pkg/api/core"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao"
-	reldao "hcm/pkg/dal/dao/cloud/network-interface-cvm-rel"
-	"hcm/pkg/dal/dao/orm"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	nicvmreltable "hcm/pkg/dal/table/cloud/network-interface-cvm-rel"
 	"hcm/pkg/rest"
-
-	"github.com/jmoiron/sqlx"
 )
-
-type relSvc struct {
-	dao.Set
-	objectDao *reldao.NetworkCvmRelDao
-}
-
-// Init ...
-func (svc *relSvc) Init() {
-	d := &reldao.NetworkCvmRelDao{}
-	registeredDao := svc.GetObjectDao(d.Name())
-	if registeredDao == nil {
-		d.ObjectDaoManager = new(dao.ObjectDaoManager)
-		svc.RegisterObjectDao(d)
-	}
-
-	svc.objectDao = svc.GetObjectDao(d.Name()).(*reldao.NetworkCvmRelDao)
-}
-
-// BatchCreate ...
-func (svc *relSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
-	req := new(datarelproto.NetworkInterfaceCvmRelBatchCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	_, err := svc.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		rels := make([]nicvmreltable.NetworkInterfaceCvmRelTable, len(req.Rels))
-		for idx, relReq := range req.Rels {
-			rels[idx] = nicvmreltable.NetworkInterfaceCvmRelTable{
-				CvmID:              relReq.CvmID,
-				NetworkInterfaceID: relReq.NetworkInterfaceID,
-				Creator:            cts.Kit.User,
-			}
-		}
-
-		return nil, svc.objectDao.BatchCreateWithTx(cts.Kit, txn, rels)
-	})
-
-	return nil, err
-}
 
 // List ...
 func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
@@ -98,7 +45,7 @@ func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	data, err := svc.objectDao.List(cts.Kit, opt)
+	data, err := svc.dao.NiCvmRel().List(cts.Kit, opt)
 	if err != nil {
 		return nil, fmt.Errorf("list network interface cvm rels failed, err: %v", err)
 	}
@@ -121,43 +68,6 @@ func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
 	return &datarelproto.NetworkInterfaceCvmRelListResult{Details: details}, nil
 }
 
-// BatchDelete ...
-func (svc *relSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
-	req := new(datarelproto.NetworkInterfaceCvmRelDeleteReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	opt := &types.ListOption{
-		Fields: []string{"id"},
-		Filter: req.Filter,
-		Page:   core.DefaultBasePage,
-	}
-
-	relResult, err := svc.objectDao.List(cts.Kit, opt)
-	if err != nil {
-		return nil, fmt.Errorf("list network interface cvm rels failed, err: %v", err)
-	}
-
-	if len(relResult.Details) == 0 {
-		return nil, nil
-	}
-
-	delIDs := make([]uint64, len(relResult.Details))
-	for idx, rel := range relResult.Details {
-		delIDs[idx] = rel.ID
-	}
-
-	_, err = svc.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		return nil, svc.objectDao.DeleteWithTx(cts.Kit, txn, tools.ContainersExpression("id", delIDs))
-	})
-	return nil, err
-}
-
 // ListWithExtension ...
 func (svc *relSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
@@ -174,7 +84,7 @@ func (svc *relSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	data, err := svc.objectDao.ListJoinNetworkInterface(cts.Kit, req.CvmIDs, vendor)
+	data, err := svc.dao.NiCvmRel().ListJoinNetworkInterface(cts.Kit, req.CvmIDs, vendor)
 	if err != nil {
 		return nil, err
 	}

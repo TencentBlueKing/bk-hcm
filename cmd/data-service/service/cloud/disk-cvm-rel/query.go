@@ -26,11 +26,52 @@ import (
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	diskcvmrel "hcm/pkg/api/core/cloud/disk-cvm-rel"
 	datarelproto "hcm/pkg/api/data-service/cloud"
+	dataproto "hcm/pkg/api/data-service/cloud/disk"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table/cloud/disk"
 	"hcm/pkg/rest"
 )
+
+// List ...
+func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
+	req := new(datarelproto.DiskCvmRelListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	data, err := svc.dao.DiskCvmRel().List(cts.Kit, opt)
+	if err != nil {
+		return nil, fmt.Errorf("list disk cvm rels failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &datarelproto.DiskCvmRelListResult{Count: data.Count}, nil
+	}
+
+	details := make([]*datarelproto.DiskCvmRelResult, len(data.Details))
+	for idx, r := range data.Details {
+		details[idx] = &datarelproto.DiskCvmRelResult{
+			ID:        r.ID,
+			DiskID:    r.DiskID,
+			CvmID:     r.CvmID,
+			Creator:   r.Creator,
+			CreatedAt: r.CreatedAt.String(),
+		}
+	}
+
+	return &datarelproto.DiskCvmRelListResult{Details: details}, nil
+}
 
 // ListWithCvm ...
 func (svc *relSvc) ListWithCvm(cts *rest.Contexts) (interface{}, error) {
@@ -48,7 +89,7 @@ func (svc *relSvc) ListWithCvm(cts *rest.Contexts) (interface{}, error) {
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	result, err := svc.objectDao.ListCvmIDLeftJoinRel(cts.Kit, opt, req.NotEqualDiskID)
+	result, err := svc.dao.DiskCvmRel().ListCvmIDLeftJoinRel(cts.Kit, opt, req.NotEqualDiskID)
 	if err != nil {
 		return nil, fmt.Errorf("list cvm left join disk_cvm_rel failed, err: %v", err)
 	}
@@ -114,7 +155,7 @@ func (svc *relSvc) ListDiskWithoutCvm(cts *rest.Contexts) (interface{}, error) {
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	result, err := svc.objectDao.ListDiskLeftJoinRel(cts.Kit, opt)
+	result, err := svc.dao.DiskCvmRel().ListDiskLeftJoinRel(cts.Kit, opt)
 	if err != nil {
 		return nil, fmt.Errorf("list cvm left join disk_cvm_rel failed, err: %v", err)
 	}
@@ -153,4 +194,64 @@ func (svc *relSvc) ListDiskWithoutCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &datarelproto.ListDiskWithoutCvmResult{Details: details}, nil
+}
+
+// ListWithDisk ...
+func (svc *relSvc) ListWithDisk(cts *rest.Contexts) (interface{}, error) {
+	req := new(datarelproto.DiskCvmRelWithDiskListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	data, err := svc.dao.DiskCvmRel().ListJoinDisk(cts.Kit, req.CvmIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	disks := make([]*datarelproto.DiskWithCvmID, len(data.Details))
+	for idx, d := range data.Details {
+		disks[idx] = toProtoDiskWithCvmID(d)
+	}
+	return disks, nil
+}
+
+// ListWithDiskExt ...
+func (svc *relSvc) ListWithDiskExt(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(datarelproto.DiskCvmRelWithDiskExtListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	data, err := svc.dao.DiskCvmRel().ListJoinDisk(cts.Kit, req.CvmIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return toProtoDiskExtWithCvmIDs[dataproto.TCloudDiskExtensionResult](data)
+	case enumor.Aws:
+		return toProtoDiskExtWithCvmIDs[dataproto.AwsDiskExtensionResult](data)
+	case enumor.Gcp:
+		return toProtoDiskExtWithCvmIDs[dataproto.GcpDiskExtensionResult](data)
+	case enumor.Azure:
+		return toProtoDiskExtWithCvmIDs[dataproto.AzureDiskExtensionResult](data)
+	case enumor.HuaWei:
+		return toProtoDiskExtWithCvmIDs[dataproto.HuaWeiDiskExtensionResult](data)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+	}
 }

@@ -17,29 +17,41 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package eip
+package diskcvmrel
 
 import (
-	"net/http"
-
-	"hcm/cmd/data-service/service/capability"
+	datarelproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/orm"
+	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/rest"
+
+	"github.com/jmoiron/sqlx"
 )
 
-// InitEipService ...
-func InitEipService(cap *capability.Capability) {
-	svc := &eipSvc{Set: cap.Dao}
-	svc.Init()
+// BatchCreate ...
+func (svc *relSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
+	req := new(datarelproto.DiskCvmRelBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
 
-	h := rest.NewHandler()
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
-	h.Add("BatchCreateEipExt", http.MethodPost, "/vendors/{vendor}/eips/batch/create", svc.BatchCreateEipExt)
-	h.Add("RetrieveEipExt", http.MethodGet, "/vendors/{vendor}/eips/{id}", svc.RetrieveEipExt)
-	h.Add("ListEip", http.MethodPost, "/eips/list", svc.ListEip)
-	h.Add("ListEipExt", http.MethodPost, "/vendors/{vendor}/eips/list", svc.ListEipExt)
-	h.Add("BatchUpdateEipExt", http.MethodPatch, "/vendors/{vendor}/eips", svc.BatchUpdateEipExt)
-	h.Add("BatchUpdateEip", http.MethodPatch, "/eips", svc.BatchUpdateEip)
-	h.Add("BatchDeleteEip", http.MethodDelete, "/eips/batch", svc.BatchDeleteEip)
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		rels := make([]*tablecloud.DiskCvmRelModel, len(req.Rels))
+		for idx, relReq := range req.Rels {
+			rels[idx] = &tablecloud.DiskCvmRelModel{
+				CvmID:   relReq.CvmID,
+				DiskID:  relReq.DiskID,
+				Creator: cts.Kit.User,
+			}
+		}
 
-	h.Load(cap.WebService)
+		return nil, svc.dao.DiskCvmRel().BatchCreateWithTx(cts.Kit, txn, rels)
+	})
+
+	return nil, err
 }
