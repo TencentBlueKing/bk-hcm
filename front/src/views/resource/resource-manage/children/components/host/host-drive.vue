@@ -235,6 +235,7 @@ watch(
       row-hover="auto"
       :columns="columns"
       :data="datas"
+      show-overflow-tooltip
     />
   </bk-loading>
 

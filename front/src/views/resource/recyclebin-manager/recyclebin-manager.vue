@@ -47,6 +47,7 @@
         :data="datas"
         remote-pagination
         :pagination="pagination"
+        show-overflow-tooltip
         @page-value-change="handlePageChange"
         @page-limit-change="handlePageSizeChange"
         @selection-change="handleSelectionChange"

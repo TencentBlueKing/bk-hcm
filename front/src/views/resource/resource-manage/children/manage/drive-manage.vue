@@ -171,6 +171,7 @@ const {
       class="mt20"
       row-hover="auto"
       remote-pagination
+      show-overflow-tooltip
       :pagination="pagination"
       :columns="renderColumns"
       :data="datas"

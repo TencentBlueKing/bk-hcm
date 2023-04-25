@@ -130,6 +130,7 @@ const {
       :pagination="pagination"
       :columns="columns"
       :data="datas"
+      show-overflow-tooltip
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
     />

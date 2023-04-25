@@ -271,6 +271,7 @@ getNetWorkList();
       dark-header
       :data="[{ ip: 'testetstt' }]"
       :outer-border="false"
+      show-overflow-tooltip
     >
       <bk-table-column
         label="内网IP"
@@ -417,6 +418,7 @@ getNetWorkList();
       dark-header
       :data="[{ ip: 'testetstt' }]"
       :outer-border="false"
+      show-overflow-tooltip
     >
       <bk-table-column
         label="安全组名称"
@@ -477,6 +479,7 @@ getNetWorkList();
           dark-header
           :data="[{ ip: 'testetstt' }]"
           :outer-border="false"
+          show-overflow-tooltip
         >
           <bk-table-column
             label="安全组名称"

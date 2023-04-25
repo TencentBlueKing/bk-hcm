@@ -59,6 +59,7 @@ export default defineComponent({
             row-hover="auto"
             columns={columns}
             data={tableData.value}
+            show-overflow-tooltip
           />
           <span>{ t('{count}个云硬盘', { count: 4 }) }</span>
           <bk-table
@@ -66,6 +67,7 @@ export default defineComponent({
             row-hover="auto"
             columns={columns}
             data={tableData.value}
+            show-overflow-tooltip
           />
           <span>{ t('{count}个弹性IP', { count: 4 }) }</span>
           <bk-table
@@ -73,6 +75,7 @@ export default defineComponent({
             row-hover="auto"
             columns={columns}
             data={tableData.value}
+            show-overflow-tooltip
           />
           <h3 class="refund-head">{ t('本次将保留资源如下') }：</h3>
           <span>{ t('{count}个块存储', { count: 4 }) }</span>
@@ -81,6 +84,7 @@ export default defineComponent({
             row-hover="auto"
             columns={columns}
             data={tableData.value}
+            show-overflow-tooltip
           />
         </>,
       },

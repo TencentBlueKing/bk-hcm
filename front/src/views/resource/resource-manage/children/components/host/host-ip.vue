@@ -304,6 +304,7 @@ watch(
       row-hover="auto"
       :columns="columns"
       :data="datas"
+      show-overflow-tooltip
     />
   </bk-loading>
   <!-- <bk-dialog
@@ -407,6 +408,7 @@ watch(
       remote-pagination
       :pagination="pagination"
       :columns="columns"
+      show-overflow-tooltip
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"

@@ -30,5 +30,6 @@ const tableData = [
     row-hover="auto"
     :columns="columns"
     :data="tableData"
+    show-overflow-tooltip
   />
 </template>

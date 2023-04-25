@@ -23,6 +23,7 @@
         :data="tableData"
         remote-pagination
         :pagination="pagination"
+        show-overflow-tooltip
         @page-value-change="handlePageValueChange"
         @page-limit-change="handlePageLimitChange"
         row-hover="auto"

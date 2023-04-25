@@ -207,6 +207,7 @@ getNetWorkList();
       row-hover="auto"
       :columns="columns"
       :data="tableData"
+      show-overflow-tooltip
     />
 
 
@@ -221,6 +222,7 @@ getNetWorkList();
       <bk-table
         class="mt20"
         :columns="columns"
+        show-overflow-tooltip
       >
         <bk-table-column
           label="内网IP"

@@ -557,6 +557,7 @@ if (props.vendor === 'huawei') {
           row-hover="auto"
           :columns="azureDefaultColumns"
           :data="azureDefaultList"
+          show-overflow-tooltip
         />
       </div>
 
@@ -569,6 +570,7 @@ if (props.vendor === 'huawei') {
         :columns="inColumns"
         :data="state.datas"
         :pagination="state.pagination"
+        show-overflow-tooltip
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
       />
@@ -581,6 +583,7 @@ if (props.vendor === 'huawei') {
         :columns="outColumns"
         :data="state.datas"
         :pagination="state.pagination"
+        show-overflow-tooltip
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
       />

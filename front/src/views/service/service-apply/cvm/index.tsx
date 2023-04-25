@@ -104,9 +104,9 @@ export default defineComponent({
       const rules = {
         [VendorEnum.TCLOUD]: {
           validator: (value: number) => {
-            return value >= 20 && value <= 1024 && value % 10 === 0;
+            return value >= 20 && value <= 1024
           },
-          message: '20-1024GB且为10的倍数',
+          message: '20-1024GB',
           trigger: 'change',
         },
         [VendorEnum.HUAWEI]: {

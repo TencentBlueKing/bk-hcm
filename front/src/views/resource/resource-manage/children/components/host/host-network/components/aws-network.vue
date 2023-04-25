@@ -104,6 +104,7 @@ const handleRadio = (item: any) => {
     row-hover="auto"
     :columns="columns"
     :data="tableData"
+    show-overflow-tooltip
   />
 
 
@@ -120,6 +121,7 @@ const handleRadio = (item: any) => {
       dark-header
       :data="[{ ip: 'testetstt' }]"
       :outer-border="false"
+      show-overflow-tooltip
     >
       <bk-table-column
         label="内网IP"

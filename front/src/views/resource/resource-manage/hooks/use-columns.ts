@@ -433,6 +433,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       },
     },
     {
+      label: '操作系统类型',
+      field: 'platform',
+      sort: true,
+    },
+    {
       label: '架构',
       field: 'architecture',
       sort: true,
@@ -444,11 +449,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '类型',
       field: 'type',
-      sort: true,
-    },
-    {
-      label: '平台',
-      field: 'platform',
       sort: true,
     },
     {

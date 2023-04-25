@@ -63,6 +63,7 @@ const {
     <bk-table
       row-hover="auto"
       remote-pagination
+      show-overflow-tooltip
       :pagination="pagination"
       :columns="columns"
       :data="datas"

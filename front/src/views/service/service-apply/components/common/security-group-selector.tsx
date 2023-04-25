@@ -31,6 +31,13 @@ export default defineComponent({
       },
     });
 
+    const isSelected = computed(() => {
+      if (selected.value) {
+        return !!(Object.keys(selected.value).length);
+      }
+      return false;
+    })
+
     watch([
       () => props.bizId,
       () => props.accountId,
@@ -84,6 +91,7 @@ export default defineComponent({
         onUpdate:modelValue={val => selected.value = val}
         multiple={props.multiple}
         loading={loading.value}
+        class={isSelected.value && 'security-group-cls'}
         {...{ attrs }}
       >
         {

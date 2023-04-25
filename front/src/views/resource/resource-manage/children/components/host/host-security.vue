@@ -410,6 +410,7 @@ getSecurityGroupsList();
         row-hover="auto"
         :columns="columns"
         :data="tableData"
+        show-overflow-tooltip
       />
     </bk-loading>
     <bk-dialog
@@ -442,6 +443,7 @@ getSecurityGroupsList();
           :columns="state.columns"
           :data="state.datas"
           remote-pagination
+          show-overflow-tooltip
           :pagination="state.pagination"
           @page-limit-change="state.handlePageSizeChange"
           @page-value-change="state.handlePageChange"
@@ -465,6 +467,7 @@ getSecurityGroupsList();
           class="mt20"
           row-hover="auto"
           remote-pagination
+          show-overflow-tooltip
           :columns="securityColumns"
           :data="securityDatas"
           :pagination="securityPagination"

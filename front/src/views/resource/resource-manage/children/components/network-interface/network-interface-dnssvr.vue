@@ -28,5 +28,6 @@ watchEffect(() => {
     row-hover="auto"
     :columns="columns"
     :data="data"
+    show-overflow-tooltip
   />
 </template>

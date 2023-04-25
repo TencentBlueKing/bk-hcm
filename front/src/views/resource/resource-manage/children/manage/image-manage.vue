@@ -110,6 +110,21 @@ watch(
     deep: true,
   },
 );
+
+// 字段列表
+const fieldList: string[] = columns.map(item => item.field);
+let dataList: any = datas;
+// 接口缺失字段填充默认值
+watch(datas, (list) => {
+  dataList = list.map(item => {
+    fieldList.forEach(field => {
+      if (!Object.hasOwnProperty.call(item, field)) {
+        item[field] = '--';
+      }
+    })
+    return item;
+  })
+});
 </script>
 
 <template>
@@ -128,7 +143,8 @@ watch(
       remote-pagination
       :pagination="pagination"
       :columns="columns"
-      :data="datas"
+      :data="dataList"
+      show-overflow-tooltip
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"

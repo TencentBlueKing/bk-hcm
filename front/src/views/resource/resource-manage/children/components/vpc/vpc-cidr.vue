@@ -80,5 +80,6 @@ watch(
     row-hover="auto"
     :columns="columns"
     :data="props.detail.cidr"
+    show-overflow-tooltip
   />
 </template>

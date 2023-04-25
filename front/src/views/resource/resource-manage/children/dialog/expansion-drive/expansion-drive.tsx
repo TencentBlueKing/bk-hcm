@@ -38,6 +38,7 @@ export default defineComponent({
             data={[]}
             outer-border={false}
             dark-header
+            show-overflow-tooltip
           >
             <bk-table-column
               type="selection"
@@ -70,6 +71,7 @@ export default defineComponent({
             outer-border={false}
             dark-header
             key="size"
+            show-overflow-tooltip
           >
             <bk-table-column
               label="云硬盘名称"

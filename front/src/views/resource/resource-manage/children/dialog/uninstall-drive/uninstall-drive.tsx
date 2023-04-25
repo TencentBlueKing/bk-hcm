@@ -92,6 +92,7 @@ export default defineComponent({
             row-hover="auto"
             columns={this.renderColumns}
             data={[this.data]}
+            show-overflow-tooltip
           />
           <h3 class="g-resource-tips mt20">
             { this.t('win实例：强烈建议您在卸载之前，对该硬盘执行脱机操作') }<br />

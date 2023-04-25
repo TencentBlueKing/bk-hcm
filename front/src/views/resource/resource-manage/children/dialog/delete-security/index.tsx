@@ -125,6 +125,7 @@ export default defineComponent({
               row-hover="auto"
               columns={this.columns}
               data={this.tableData}
+              show-overflow-tooltip
             />
             <h3 class="g-resource-tips">
               { this.t('安全组被实例关联或者被其他安全组规则关联时不能直接删除，请删除关联关系后再进行删除') }：

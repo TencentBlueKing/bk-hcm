@@ -160,6 +160,7 @@ defineExpose({ fetchComponentsData });
       :pagination="pagination"
       :columns="renderColumns"
       :data="datas"
+      show-overflow-tooltip
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
       @column-sort="handleSort"

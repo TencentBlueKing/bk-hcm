@@ -40,6 +40,7 @@ export default defineComponent({
             row-hover="auto"
             columns={columns}
             data={tableData.value}
+            show-overflow-tooltip
           />
         </>,
       },

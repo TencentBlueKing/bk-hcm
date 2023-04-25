@@ -472,6 +472,7 @@ export default defineComponent({
           onPageValueChange={this.handlePageChange}
           columns={this.VPCColumns}
           data={this.vpcTableData.length ? this.vpcTableData : this.datas}
+          show-overflow-tooltip
         />
         </bk-loading>
           : <bk-table
@@ -479,6 +480,7 @@ export default defineComponent({
               row-hover="auto"
               columns={this.VPCColumns}
               data={this.data}
+              show-overflow-tooltip
             />
         }
           {
@@ -513,6 +515,7 @@ export default defineComponent({
             row-hover="auto"
             columns={this.businessColumns}
             data={this.computedCloudData}
+            show-overflow-tooltip
           />
         </>,
       },

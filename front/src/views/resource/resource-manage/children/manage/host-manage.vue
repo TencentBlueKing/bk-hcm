@@ -348,6 +348,7 @@ getCloudAreas();
       :data="datas"
       :pagination="pagination"
       remote-pagination
+      show-overflow-tooltip
       :is-row-select-enable="isRowSelectEnable"
       @page-limit-change="handlePageSizeChange"
       @page-value-change="handlePageChange"
@@ -382,6 +383,7 @@ getCloudAreas();
         row-hover="auto"
         :columns="distribColumns"
         :data="selections"
+        show-overflow-tooltip
       />
     </bk-dialog>
 

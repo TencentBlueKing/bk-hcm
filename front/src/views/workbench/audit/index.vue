@@ -358,6 +358,7 @@ const {
           :columns="columns"
           :data="datas"
           :pagination="pagination"
+          show-overflow-tooltip
           @page-limit-change="handlePageSizeChange"
           @page-value-change="handlePageChange"
           @column-sort="handleSort"

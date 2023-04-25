@@ -56,6 +56,7 @@ export default defineComponent({
             row-hover="auto"
             columns={this.columns.filter(column => !column.onlyShowOnList)}
             data={this.data}
+            show-overflow-tooltip
           />
           <h3 class="g-resource-tips">
             {

@@ -622,6 +622,7 @@ const securityHandleShowDelete = (data: any) => {
         :pagination="state.pagination"
         :columns="groupColumns"
         :data="state.datas"
+        show-overflow-tooltip
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"
@@ -635,6 +636,7 @@ const securityHandleShowDelete = (data: any) => {
         :pagination="state.pagination"
         :columns="gcpColumns"
         :data="state.datas"
+        show-overflow-tooltip
         @page-limit-change="state.handlePageSizeChange"
         @page-value-change="state.handlePageChange"
         @column-sort="state.handleSort"

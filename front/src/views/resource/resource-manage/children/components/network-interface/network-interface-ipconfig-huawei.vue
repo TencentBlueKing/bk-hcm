@@ -54,5 +54,6 @@ watchEffect(() => {
     row-hover="auto"
     :columns="columns"
     :data="ipConfigData"
+    show-overflow-tooltip
   />
 </template>

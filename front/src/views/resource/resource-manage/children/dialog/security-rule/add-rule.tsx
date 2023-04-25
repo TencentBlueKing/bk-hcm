@@ -227,6 +227,7 @@ export default defineComponent({
               class="mt20"
               row-hover="auto"
               data={tableData.value}
+              show-overflow-tooltip
             >
               <Form>
                 {

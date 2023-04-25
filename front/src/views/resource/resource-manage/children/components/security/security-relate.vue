@@ -133,6 +133,7 @@ watch(
     row-hover="auto"
     :columns="cvmColumns"
     :data="cvmData.value"
+    show-overflow-tooltip
   />
 
   <bk-table
@@ -141,6 +142,7 @@ watch(
     row-hover="auto"
     :columns="networkColumns"
     :data="networkData.value"
+    show-overflow-tooltip
   />
 </template>
 

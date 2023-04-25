@@ -116,11 +116,12 @@ export default defineComponent({
                 <img class="no-permission-img" src={permissions} alt="403"></img>
                 <div class="no-permission-text">{this.t('没有权限访问或操作此资源')}</div>
                 <bk-table
-              class="mt20 no-permission-table"
-              row-hover="auto"
-              columns={this.columns}
-              data={this.tableData}
-            />
+                  class="mt20 no-permission-table"
+                  row-hover="auto"
+                  columns={this.columns}
+                  data={this.tableData}
+                  show-overflow-tooltip
+                />
               </>;
             },
             footer: () => {

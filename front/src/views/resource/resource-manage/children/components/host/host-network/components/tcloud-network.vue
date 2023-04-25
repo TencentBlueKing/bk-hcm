@@ -208,6 +208,7 @@ const handleRadio = (item: any) => {
       row-hover="auto"
       :columns="columns"
       :data="tableData"
+      show-overflow-tooltip
     />
   </div>
 
@@ -238,6 +239,7 @@ const handleRadio = (item: any) => {
       row-hover="auto"
       :columns="columns"
       :data="tableData"
+      show-overflow-tooltip
     />
   </div>
 
@@ -269,6 +271,7 @@ const handleRadio = (item: any) => {
       :data="[{ ip: 'testetstt' }]"
       :outer-border="false"
       v-if="false"
+      show-overflow-tooltip
     >
       <bk-table-column
         label="名称"
@@ -441,6 +444,7 @@ const handleRadio = (item: any) => {
       dark-header
       :data="[{ ip: 'testetstt' }]"
       :outer-border="false"
+      show-overflow-tooltip
     >
       <bk-table-column
         label="ID/名称"
