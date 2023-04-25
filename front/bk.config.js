@@ -59,7 +59,7 @@ module.exports = {
       new CopyWebpackPlugin({
         patterns: [{
             from: resolve('static/image'),
-            to: resolve('dist/static/images'),
+            to: resolve('dist'),
         }]
       })
     )
