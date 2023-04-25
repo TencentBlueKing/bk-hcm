@@ -92,7 +92,7 @@ const (
 	Disassociate AuditAction = "disassociate"
 	// Bind 绑定
 	Bind AuditAction = "bind"
-	// deliver 交付
+	// Deliver 交付
 	Deliver AuditAction = "deliver"
 )
 

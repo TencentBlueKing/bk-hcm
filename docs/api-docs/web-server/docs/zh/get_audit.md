@@ -81,7 +81,7 @@
 | associated_cloud_res_id | string | 关联云资源ID                                         |
 | associated_res_name     | string | 关联资源名称                                          |
 | associated_res_type     | string | 关联资源类型                                          |
-| action                  | string | 动作（枚举值：create、update、delete）                    |
+| action                  | string | 动作（枚举值：create、update、delete、assign、recycle、recover、reboot、start、stop、reset_pwd、associate、disassociate、bind、deliver）                    |
 | bk_biz_id               | string | 业务ID                                            |
 | vendor                  | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）            |
 | account_id              | string | 账号ID                                            |

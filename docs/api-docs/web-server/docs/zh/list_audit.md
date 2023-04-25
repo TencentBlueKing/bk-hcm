@@ -237,7 +237,7 @@
 | associated_cloud_res_id | string | 关联云资源ID                                                                                                        |
 | associated_res_name     | string | 关联资源名称                                                                                                         |
 | associated_res_type     | string | 关联资源类型                                                                                                         |
-| action                  | string | 动作（枚举值：create、update、delete、assign、recycle、reboot、reload、start、stop、reset_pwd）                                 |
+| action                  | string | 动作（枚举值：create、update、delete、assign、recycle、recover、reboot、start、stop、reset_pwd、associate、disassociate、bind、deliver）   |
 | bk_biz_id               | string | 业务ID                                                                                                           |
 | vendor                  | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                                                                           |
 | account_id              | string | 账号ID                                                                                                           |
@@ -245,7 +245,7 @@
 | source                  | string | 请求来源（枚举值：api_call[API调用]、background_sync[后台同步]）                                                                |
 | rid                     | string | 请求ID                                                                                                           |
 | app_code                | string | 应用代码                                                                                                           |
-| created_at              | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                                                                                           |
+| created_at              | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                                                                 |
 
 #### detail
 
