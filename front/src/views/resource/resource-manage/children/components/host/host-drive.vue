@@ -26,6 +26,9 @@ const props = defineProps({
   data: {
     type: Object,
   },
+  isBindBusiness: {
+    type: [Boolean, String],
+  },
 });
 
 const resourceStore = useResourceStore();
@@ -228,6 +231,7 @@ watch(
     <bk-button
       class="mt20 mr20 w100"
       theme="primary"
+      :disabled="isBindBusiness"
       @click="handleMountedDrive"
     >挂载</bk-button>
     <bk-table

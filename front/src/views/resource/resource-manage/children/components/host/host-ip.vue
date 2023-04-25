@@ -17,6 +17,9 @@ const props = defineProps({
   data: {
     type: Object,
   },
+  isBindBusiness: {
+    type: [Boolean, String],
+  },
 });
 
 const resourceStore = useResourceStore();
@@ -295,6 +298,7 @@ watch(
     <bk-button
       class="mt20"
       theme="primary"
+      :disabled="isBindBusiness"
       @click="handleToggleShowBind(true)"
     >
       绑定

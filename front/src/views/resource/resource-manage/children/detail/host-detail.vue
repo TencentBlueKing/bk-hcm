@@ -25,6 +25,7 @@ import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 import {
   ref,
   inject,
+  computed
 } from 'vue';
 
 
@@ -43,8 +44,6 @@ const cloudType = ref<any>(route.query?.type);
 const filter = ref({ op: 'and', rules: [] });
 
 const isResourcePage: any = inject('isResourcePage');
-
-console.log('isResourcePage', isResourcePage.value);
 
 // 操作的相关信息
 const cvmInfo = ref({
@@ -100,6 +99,10 @@ const componentMap = {
   drive: HostDrive,
   security: HostSecurity,
 };
+
+const isBindBusiness = computed(() => {
+  return detail.value.bk_biz_id !== -1 && isResourcePage.value;
+});
 
 const handleCvmOperate = (type: string) => {
   const title = cvmInfo.value[type].op;
@@ -222,6 +225,7 @@ const modifyCvmStatus = async (type: string) => {
             :data="detail"
             :type="cloudType"
             :filter="filter"
+            :is-bind-business="isBindBusiness"
           ></component>
         </bk-loading>
       </template>

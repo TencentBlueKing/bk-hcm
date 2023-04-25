@@ -546,7 +546,7 @@ export default defineComponent({
       password: [
         {
           validator: (value: string) => value.length >= 8 && value.length <= 30,
-          message: '长度在8-30个字符之间',
+          message: '密码长度需要在8-30个字符之间',
           trigger: 'blur',
         },
         {
@@ -556,7 +556,7 @@ export default defineComponent({
               : /^(?=.*[A-Za-z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\[\]:;',.?/])[A-Za-z\d()`~!@#$%^&*-+=|{}\[\]:;',.?/]+$/;
             return pattern.test(value);
           },
-          message: '不符合校验规则',
+          message: '密码复杂度不符合要求',
           trigger: 'blur',
         },
         {
@@ -574,7 +574,7 @@ export default defineComponent({
       confirmed_password: [
         {
           validator: (value: string) => value.length >= 8 && value.length <= 30,
-          message: '长度在8-30个字符之间',
+          message: '密码长度需要在8-30个字符之间',
           trigger: 'blur',
         },
         {

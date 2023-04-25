@@ -260,6 +260,10 @@ const {
   },
 );
 
+const isBindBusiness = computed(() => {
+  return detail.value.bk_biz_id !== -1 && isResourcePage.value;
+});
+
 const handleDeleteVpc = (data: any) => {
   const vpcIds = [data.id];
   const getRelateNum = (type: string, field = 'vpc_id', op = 'in') => {
@@ -338,8 +342,7 @@ const handleDeleteVpc = (data: any) => {
           <bk-button
             class="w100 ml10"
             theme="primary"
-            :disabled="!authVerifyData?.
-              permissionAction[actionName]"
+            :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
             @click="handleDeleteVpc(detail)"
           >
             {{ t('删除') }}

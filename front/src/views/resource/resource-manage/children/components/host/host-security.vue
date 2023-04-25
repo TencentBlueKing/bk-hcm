@@ -26,6 +26,9 @@ const props = defineProps({
   data: {
     type: Object as PropType<any>,
   },
+  isBindBusiness: {
+    type: [Boolean, String],
+  },
 });
 
 const activeType = ref('ingress');
@@ -398,8 +401,10 @@ getSecurityGroupsList();
 <template>
   <div>
     <bk-button
-      class="mt20" theme="primary" @click="handleSecurityDialog" v-if="props.data.vendor === 'tcloud'
-        || props.data.vendor === 'aws' || props.data.vendor === 'huawei'">
+      v-if="props.data.vendor === 'tcloud' || props.data.vendor === 'aws' || props.data.vendor === 'huawei'"
+      class="mt20" theme="primary"
+      :disabled="isBindBusiness"
+      @click="handleSecurityDialog">
       {{t('绑定')}}
     </bk-button>
     <bk-loading

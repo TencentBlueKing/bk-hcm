@@ -236,6 +236,9 @@ const submit = async (data: any) => {
   isShowGcpAdd.value = false;
 };
 
+const isBindBusiness = computed(() => {
+  return detail.value.bk_biz_id !== -1 && isResourcePage.value;
+});
 
 // 权限弹窗 bus通知最外层弹出
 const showAuthDialog = (authActionName: string) => {
@@ -250,7 +253,7 @@ const showAuthDialog = (authActionName: string) => {
       <template #right>
         <div @click="showAuthDialog(actionName)">
           <bk-button
-            :disabled="!authVerifyData?.permissionAction[actionName]"
+            :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
             class="w100 ml10"
             theme="primary"
             @click="handleGcpAdd(false)"

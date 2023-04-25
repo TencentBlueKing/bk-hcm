@@ -723,18 +723,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
     },
-    {
-      label: '启动时间',
-      render({ data }: any) {
-        return h(
-          'span',
-          {},
-          [
-            data.cloud_launched_time || '--',
-          ],
-        );
-      },
-    },
   ];
 
   const securityCommonColumns = [
