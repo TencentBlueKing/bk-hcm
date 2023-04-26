@@ -21,9 +21,11 @@ export default defineComponent({
     resourceGroup: String as PropType<string>,
   },
   emits: ['update:modelValue'],
-  setup(props, { emit, attrs }) {
+  setup(props, { emit, attrs, expose }) {
     const list = ref([]);
     const loading = ref(false);
+
+    expose({ subnetList: list.value });
 
     const selected = computed({
       get() {
@@ -110,7 +112,7 @@ export default defineComponent({
       >
         {
           list.value.map(({ cloud_id, name }) => (
-            <Option key={cloud_id} value={cloud_id} label={`${cloud_id}${name ? `(${name})` : ''}`}></Option>
+            <Option key={cloud_id} value={cloud_id} label={name}></Option>
           ))
         }
       </Select>

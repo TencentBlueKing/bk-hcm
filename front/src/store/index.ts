@@ -8,6 +8,7 @@ export * from './departments';
 export * from './business';
 export * from './resource';
 export * from './common';
+export * from './host';
 
 
 // @ts-ignore

@@ -20,6 +20,7 @@ import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import useCvmOptions from '../hooks/use-cvm-options';
 import useCondtion from '../hooks/use-condtion';
 import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../hooks/use-cvm-form-data';
+import { useHostStore } from '@/store/host';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -44,12 +45,14 @@ export default defineComponent({
         formData: getGcpDataDiskDefaults(),
       },
     });
+    const hostStore = useHostStore()
 
     const zoneSelectorRef = ref(null);
     const cloudId = ref(null);
     const vpcId = ref('');
     const machineType = ref(null);
-
+    const subnetSelectorRef = ref(null);
+    
     const handleCreateDataDisk = () => {
       const newRow: IDiskOption = getDataDiskDefaults();
       formData.data_disk.push(newRow);
@@ -243,6 +246,16 @@ export default defineComponent({
       return diffs[cond.vendor] || {};
     });
 
+    // 当前 vpc下是否有子网列表
+    let subnetLength = ref(0)
+    watch(() => formData.cloud_vpc_id, () => {
+      subnetLength.value = subnetSelectorRef.value.subnetList?.length || 0;
+    })
+
+    const curRegionName = computed(() => {
+      return hostStore.regionList?.find(region => region.region_id === cond.region) || {};
+    })
+
     const formConfig = computed(() => [
       {
         id: 'region',
@@ -325,6 +338,7 @@ export default defineComponent({
           {
             label: '子网',
             required: true,
+            tips: () => (formData.cloud_vpc_id && subnetLength.value === 0 ? `所选的VPC，在${curRegionName.value?.region_name || '当前地域'}无可用的子网，可新建子网后重新选择` : ''),
             description: '',
             property: 'cloud_subnet_id',
             content: () => <SubnetSelector
@@ -336,6 +350,7 @@ export default defineComponent({
               accountId={cond.cloudAccountId}
               zone={formData.zone}
               resourceGroup={cond.resourceGroup}
+              ref={subnetSelectorRef}
               clearable={false} />,
           },
           {
@@ -494,6 +509,8 @@ export default defineComponent({
           {
             label: '购买时长',
             required: true,
+            // PREPAID：包年包月
+            display: ['PREPAID'].includes(formData.instance_charge_type),
             content: [
               {
                 property: 'purchase_duration.count',

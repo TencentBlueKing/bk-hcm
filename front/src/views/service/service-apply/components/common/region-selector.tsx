@@ -7,6 +7,7 @@ import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const { Option } = Select;
+import { useHostStore } from '@/store/host';
 
 export default defineComponent({
   props: {
@@ -18,6 +19,7 @@ export default defineComponent({
   setup(props, { emit, attrs }) {
     const list = ref([]);
     const loading = ref(false);
+    const hostStore = useHostStore()
 
     const selected = computed({
       get() {
@@ -135,7 +137,8 @@ export default defineComponent({
           id: item[dataIdKey],
           name: item[dataNameKey],
         }));
-
+      hostStore.regionList = details;
+      
       loading.value = false;
     });
 

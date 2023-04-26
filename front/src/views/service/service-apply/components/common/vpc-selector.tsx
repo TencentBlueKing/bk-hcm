@@ -92,7 +92,7 @@ export default defineComponent({
       >
         {
           list.value.map(({ cloud_id, name }) => (
-            <Option key={cloud_id} value={cloud_id} label={`${cloud_id}${name ? `(${name})` : ''}`}></Option>
+            <Option key={cloud_id} value={cloud_id} label={name}></Option>
           ))
         }
       </Select>
