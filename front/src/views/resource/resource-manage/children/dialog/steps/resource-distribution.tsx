@@ -342,11 +342,9 @@ export default defineComponent({
           getCloudAreas();
           getBusinessList();
           // 判断是否需要绑定云区域
-          if (!props.chooseResourceType) {
-            if (props.data.every((item: any) => item.bk_cloud_id > -1)) {
-              disableNext.value = false;
-              hasBindVPC.value = true;
-            }
+          if (props.data.every((item: any) => item.bk_cloud_id > -1)) {
+            disableNext.value = false;
+            hasBindVPC.value = true;
           }
         }
       },
@@ -367,6 +365,7 @@ export default defineComponent({
 
         getAccountBusinessID();
       },
+      { deep: true },
     );
 
 
@@ -391,6 +390,7 @@ export default defineComponent({
           errorList.value = [];
           // 判断是否需要绑定云区域
           if (vpcTableData.value.every((item: any) => item.bk_cloud_id > -1)) {
+            console.log(1111, vpcTableData.value);
             disableNext.value = false;
             hasBindVPC.value = true;
           }

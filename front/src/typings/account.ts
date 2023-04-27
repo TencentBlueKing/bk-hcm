@@ -67,6 +67,9 @@ export interface FormItems {
   property?: string,
   content?: Function,
   component?: Function,
+  formName?: string,
+  noBorBottom?: boolean,
+  type?: string
 }
 
 export interface SecretModel {

@@ -1,0 +1,40 @@
+.form-container{
+    background: #fff;
+    .form-warp {
+        padding: 10px 0 0 50px;
+        width: 65%;
+        .form-item-warp{
+            padding: 20px 10px 10px 10px;
+            border: 1px solid #dcdee5;
+            .account-form-item{
+                margin-bottom: 0px !important;
+                padding-bottom: 10px;
+            }
+        }
+        .no-border-top{
+            border-top: none;
+        }
+        .no-border-bottom{
+            border-bottom: none;
+        }
+        .no-border{
+            border: none;
+        }
+      }
+      .desc-container{
+        margin: 50px 20px;
+        padding: 20px;
+        border: 1px solid #dcdee5;
+        overflow-wrap: break-word;
+        .title{
+            font-weight: bold;
+        }
+        .desc p{
+            font-size: 13px;
+            padding-top: 2px;
+        }
+        .desc a{
+            color: #3a84ff;
+        }
+      }
+}

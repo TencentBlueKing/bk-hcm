@@ -83,7 +83,7 @@ export default defineComponent({
       (list) => {
         if (list.length) {
           nextTick(() => {
-            tagInputRef.value?.focusInputTrigger(); // 获取到数据聚焦
+            // tagInputRef.value?.focusInputTrigger(); // 获取到数据聚焦
           });
         }
       },
