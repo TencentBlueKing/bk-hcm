@@ -267,7 +267,7 @@ func TestCrownSQLWhereExpr(t *testing.T) {
 				&AtomRule{
 					Field: "created_at",
 					Op:    GreaterThan.Factory(),
-					Value: "2021-01-01 08:09:10",
+					Value: "2023-01-02T07:04:05+08:00",
 				},
 			},
 		},

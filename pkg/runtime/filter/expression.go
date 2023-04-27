@@ -121,6 +121,10 @@ func (exp Expression) Validate(opt *ExprOption) (hitErr error) {
 		}
 	}()
 
+	if exp.IsEmpty() {
+		return nil
+	}
+
 	if err := exp.Op.Validate(); err != nil {
 		return err
 	}
@@ -182,8 +186,8 @@ func (exp Expression) Validate(opt *ExprOption) (hitErr error) {
 }
 
 // IsEmpty when rules is empty or filter is null
-func (exp Expression) IsEmpty() bool {
-	return len(exp.Rules) == 0
+func (exp *Expression) IsEmpty() bool {
+	return exp == nil || len(exp.Rules) == 0
 }
 
 // WithType return this expression rule's tye.
@@ -315,12 +319,22 @@ func (exp *Expression) SQLWhereExpr(opt *SQLWhereOption) (where string, value ma
 func (exp *Expression) UnmarshalJSON(raw []byte) error {
 	parsed := gjson.GetManyBytes(raw, "op", "rules")
 	op := LogicOperator(parsed[0].String())
+	rules := parsed[1]
+	rules.Raw = strings.TrimSpace(rules.Raw)
+
+	if len(op) == 0 {
+		// both op and raw is empty, then it's an empty expression json.
+		if len(rules.Raw) == 0 {
+			return nil
+		}
+
+		return errors.New("invalid expression, operator field is empty, but have none empty rules")
+	}
+
+	exp.Op = op
 	if err := op.Validate(); err != nil {
 		return err
 	}
-	exp.Op = op
-
-	rules := parsed[1]
 
 	if rules.Raw == "null" {
 		return nil
@@ -328,6 +342,10 @@ func (exp *Expression) UnmarshalJSON(raw []byte) error {
 
 	if !rules.IsArray() {
 		return errors.New("rules should be an array")
+	}
+
+	if rules.Raw == "[]" {
+		return nil
 	}
 
 	if strings.TrimSpace(rules.Raw) == "[]" {
