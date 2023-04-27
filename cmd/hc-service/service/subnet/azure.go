@@ -181,7 +181,9 @@ func (s subnet) AzureSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
 	for _, usage := range usages {
 		if converter.PtrToVal(usage.ID) == getRes.CloudID {
 			return &hcservice.SubnetCountIPResult{
-				AvailableIPv4Count: uint64(converter.PtrToVal(usage.Limit) - converter.PtrToVal(usage.CurrentValue)),
+				AvailableIPv4Count:  uint64(converter.PtrToVal(usage.Limit) - converter.PtrToVal(usage.CurrentValue)),
+				TotalIpAddressCount: uint64(converter.PtrToVal(usage.Limit)),
+				UsedIpAddressCount:  uint64(converter.PtrToVal(usage.CurrentValue)),
 			}, nil
 		}
 	}

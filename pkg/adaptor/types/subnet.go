@@ -441,6 +441,8 @@ type TCloudSubnetExtension struct {
 	CloudRouteTableID       *string `json:"cloud_route_table_id,omitempty"`
 	CloudNetworkAclID       *string `json:"cloud_network_acl_id,omitempty"`
 	AvailableIPAddressCount uint64  `json:"available_ip_address_count,omitempty"`
+	TotalIpAddressCount     uint64  `json:"total_ip_address_count,omitempty"`
+	UsedIpAddressCount      uint64  `json:"used_ip_address_count,omitempty"`
 }
 
 // AwsSubnetExtension defines aws subnet extensional info.
@@ -453,6 +455,8 @@ type AwsSubnetExtension struct {
 	AssignIpv6AddressOnCreation bool   `json:"assign_ipv6_address_on_creation"`
 	HostnameType                string `json:"hostname_type"`
 	AvailableIPAddressCount     int64  `json:"available_ip_address_count"`
+	TotalIpAddressCount         int64  `json:"total_ip_address_count"`
+	UsedIpAddressCount          int64  `json:"used_ip_address_count"`
 }
 
 // GcpSubnetExtension defines gcp subnet extensional info.

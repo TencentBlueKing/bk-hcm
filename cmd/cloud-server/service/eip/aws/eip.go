@@ -30,7 +30,6 @@ import (
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -229,7 +228,7 @@ func (a *Aws) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*clou
 		return eipResult, nil
 	}
 
-	eipResult.InstanceType = constant.EipBindCvm
+	eipResult.InstanceType = string(enumor.EipBindCvm)
 	eipResult.InstanceID = converter.ValToPtr(cvmID)
 
 	return eipResult, nil

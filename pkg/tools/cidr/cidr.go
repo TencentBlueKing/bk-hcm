@@ -43,3 +43,17 @@ func CidrIPAddressType(cidr string) (enumor.IPAddressType, error) {
 
 	return "", fmt.Errorf("%s ip address type is invalid", ip)
 }
+
+// CidrIPCounts get ip counts by cidr
+func CidrIPCounts(cidr string) (int, error) {
+	_, ipv4Net, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return 0, err
+	}
+
+	ones, bits := ipv4Net.Mask.Size()
+	hostBits := bits - ones
+	totalIPs := 1 << uint(hostBits)
+
+	return totalIPs - 2, nil
+}

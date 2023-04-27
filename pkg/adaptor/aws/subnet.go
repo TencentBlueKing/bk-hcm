@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	cidrtools "hcm/pkg/tools/cidr"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
@@ -199,8 +200,14 @@ func convertSubnet(data *ec2.Subnet, region string) *types.AwsSubnet {
 	name, _ := parseTags(data.Tags)
 	s.Name = name
 
-	if data.CidrBlock != nil && *data.CidrBlock != "" {
-		s.Ipv4Cidr = []string{*data.CidrBlock}
+	if data.CidrBlock != nil && converter.PtrToVal(data.CidrBlock) != "" {
+		cidr := converter.PtrToVal(data.CidrBlock)
+		s.Ipv4Cidr = []string{cidr}
+		ips, err := cidrtools.CidrIPCounts(cidr)
+		if err == nil {
+			s.Extension.TotalIpAddressCount = int64(ips)
+			s.Extension.UsedIpAddressCount = int64(ips) - converter.PtrToVal(data.AvailableIpAddressCount)
+		}
 	}
 
 	for _, association := range data.Ipv6CidrBlockAssociationSet {

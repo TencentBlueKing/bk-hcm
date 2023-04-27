@@ -224,6 +224,8 @@ func (s subnet) HuaWeiSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &hcservice.SubnetCountIPResult{
-		AvailableIPv4Count: uint64(availabilities.TotalIps - availabilities.UsedIps),
+		AvailableIPv4Count:  uint64(availabilities.TotalIps - availabilities.UsedIps),
+		TotalIpAddressCount: uint64(availabilities.TotalIps),
+		UsedIpAddressCount:  uint64(availabilities.UsedIps),
 	}, nil
 }

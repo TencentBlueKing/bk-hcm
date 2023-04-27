@@ -287,7 +287,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		}
 		return cloudproto.TCloudDiskExtResult{
 			DiskExtResult: resp,
-			InstanceType:  constant.DiskBindCvm,
+			InstanceType:  string(enumor.DiskBindCvm),
 			InstanceID:    instID,
 			InstanceName:  instName,
 		}, nil
@@ -298,7 +298,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		}
 		return cloudproto.AwsDiskExtResult{
 			DiskExtResult: resp,
-			InstanceType:  constant.DiskBindCvm,
+			InstanceType:  string(enumor.DiskBindCvm),
 			InstanceID:    instID,
 			InstanceName:  instName,
 		}, nil
@@ -309,7 +309,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		}
 		return cloudproto.HuaWeiDiskExtResult{
 			DiskExtResult: resp,
-			InstanceType:  constant.DiskBindCvm,
+			InstanceType:  string(enumor.DiskBindCvm),
 			InstanceID:    instID,
 			InstanceName:  instName,
 		}, nil
@@ -322,7 +322,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		resp.DiskType = extractGcpDiskType(resp.DiskType)
 		return cloudproto.GcpDiskExtResult{
 			DiskExtResult: resp,
-			InstanceType:  constant.DiskBindCvm,
+			InstanceType:  string(enumor.DiskBindCvm),
 			InstanceID:    instID,
 			InstanceName:  instName,
 		}, nil
@@ -333,7 +333,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 		}
 		return cloudproto.AzureDiskExtResult{
 			DiskExtResult: resp,
-			InstanceType:  constant.DiskBindCvm,
+			InstanceType:  string(enumor.DiskBindCvm),
 			InstanceID:    instID,
 			InstanceName:  instName,
 		}, nil

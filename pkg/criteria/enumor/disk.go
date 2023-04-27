@@ -17,8 +17,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package enumor
+
+import "fmt"
+
+// DiskBindType is diskBindType.
+type DiskBindType string
+
+// Validate DiskBindType.
+func (v DiskBindType) Validate() error {
+	switch v {
+	case DiskBindCvm:
+	default:
+		return fmt.Errorf("unsupported disk bind type: %s", v)
+	}
+
+	return nil
+}
 
 const (
-	EipBindCvm = "CVM"
+	// DiskBindCvm disk bind cvm
+	DiskBindCvm DiskBindType = "CVM"
 )

@@ -39,4 +39,6 @@
 
 | 参数名称                 | 参数类型   | 描述             |
 |----------------------|--------|----------------|
-| available_ipv4_count | uint64 | 子网里的可用IPv4地址数量 |
+| available_ipv4_count | uint64 | 子网里可用的IPv4地址数量 |
+| total_ip_address_count | uint64 | 子网里IPv4地址总量 |
+| used_ip_address_count | uint64 | 子网里已经被使用的IPv4地址数量 |

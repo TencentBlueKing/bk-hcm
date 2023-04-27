@@ -30,7 +30,6 @@ import (
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/eip"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -300,7 +299,7 @@ func (g *Gcp) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*clou
 	eipResult := &cloudproto.GcpEipExtResult{EipExtResult: eipResp}
 	if len(nis.Details) > 0 {
 		eipResult.CvmID = cvmID
-		eipResult.InstanceType = constant.EipBindCvm
+		eipResult.InstanceType = string(enumor.EipBindCvm)
 		eipResult.InstanceID = converter.ValToPtr(nis.Details[0].ID)
 	}
 

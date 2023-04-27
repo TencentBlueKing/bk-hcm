@@ -21,10 +21,10 @@ package enumor
 
 import "fmt"
 
-// EipBindStatus is vpc eipBindStatus.
+// EipBindStatus is eipBindStatus.
 type EipBindStatus string
 
-// Validate VpcCategory.
+// Validate EipBindStatus.
 func (v EipBindStatus) Validate() error {
 	switch v {
 	case EipBind:
@@ -41,4 +41,23 @@ const (
 	EipBind EipBindStatus = "BIND"
 	// EipUnBind status
 	EipUnBind EipBindStatus = "UNBIND"
+)
+
+// EipBindType is eipBindType.
+type EipBindType string
+
+// Validate EipBindType.
+func (v EipBindType) Validate() error {
+	switch v {
+	case EipBindCvm:
+	default:
+		return fmt.Errorf("unsupported eip bind type: %s", v)
+	}
+
+	return nil
+}
+
+const (
+	// EipBindCvm eip bind cvm
+	EipBindCvm EipBindType = "CVM"
 )

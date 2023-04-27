@@ -128,5 +128,7 @@ type SubnetCountIPResp struct {
 
 // SubnetCountIPResult count subnet available ips result.
 type SubnetCountIPResult struct {
-	AvailableIPv4Count uint64 `json:"available_ipv4_count"`
+	AvailableIPv4Count  uint64 `json:"available_ipv4_count"`
+	TotalIpAddressCount uint64 `json:"total_ip_address_count"`
+	UsedIpAddressCount  uint64 `json:"used_ip_address_count"`
 }

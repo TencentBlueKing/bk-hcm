@@ -141,10 +141,12 @@ func (svc *eipSvc) listEip(cts *rest.Contexts, authHandler handler.ListAuthResHa
 	details := make([]*cloudproto.EipResult, len(resp.Details))
 	for idx, eipData := range resp.Details {
 		eipData.InstanceID = converter.ValToPtr(eipIDToCvmID[eipData.ID])
-		eipData.InstanceType = constant.EipBindCvm
 		details[idx] = &cloudproto.EipResult{
 			CvmID:     eipIDToCvmID[eipData.ID],
 			EipResult: eipData,
+		}
+		if eipIDToCvmID[eipData.ID] != "" {
+			eipData.InstanceType = string(enumor.EipBindCvm)
 		}
 	}
 

@@ -171,6 +171,8 @@ func (s subnet) AwsSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &hcservice.SubnetCountIPResult{
-		AvailableIPv4Count: uint64(subnetRes.Details[0].Extension.AvailableIPAddressCount),
+		AvailableIPv4Count:  uint64(subnetRes.Details[0].Extension.AvailableIPAddressCount),
+		TotalIpAddressCount: uint64(subnetRes.Details[0].Extension.TotalIpAddressCount),
+		UsedIpAddressCount:  uint64(subnetRes.Details[0].Extension.UsedIpAddressCount),
 	}, nil
 }

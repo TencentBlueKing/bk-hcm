@@ -196,7 +196,13 @@ func convertSubnet(data *vpc.Subnet, region string) *types.TCloudSubnet {
 			CloudRouteTableID:       data.RouteTableId,
 			CloudNetworkAclID:       data.NetworkAclId,
 			AvailableIPAddressCount: converter.PtrToVal(data.AvailableIpAddressCount),
+			TotalIpAddressCount:     converter.PtrToVal(data.TotalIpAddressCount),
 		},
+	}
+
+	if converter.PtrToVal(data.TotalIpAddressCount) > converter.PtrToVal(data.AvailableIpAddressCount) {
+		s.Extension.UsedIpAddressCount = converter.PtrToVal(data.TotalIpAddressCount) -
+			converter.PtrToVal(data.AvailableIpAddressCount)
 	}
 
 	if data.CidrBlock != nil && *data.CidrBlock != "" {

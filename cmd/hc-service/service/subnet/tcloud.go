@@ -159,6 +159,8 @@ func (s subnet) TCloudSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &hcservice.SubnetCountIPResult{
-		AvailableIPv4Count: subnetRes.Details[0].Extension.AvailableIPAddressCount,
+		AvailableIPv4Count:  subnetRes.Details[0].Extension.AvailableIPAddressCount,
+		TotalIpAddressCount: subnetRes.Details[0].Extension.TotalIpAddressCount,
+		UsedIpAddressCount:  subnetRes.Details[0].Extension.UsedIpAddressCount,
 	}, nil
 }
