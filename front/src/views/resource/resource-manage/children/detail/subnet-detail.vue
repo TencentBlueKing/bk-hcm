@@ -112,13 +112,6 @@ const actionName = computed(() => {   // 资源下没有业务ID
 const resourceStore = useResourceStore();
 const route = useRoute();
 
-const subnetDisabledMsg = computed(() => {
-  if (isResourcePage.value) {
-    return '资源已分配到业务，只可以在业务中进行操作'
-  }
-  return '该子网正在使用中，不能删除。'
-});
-
 const isBindBusiness = computed(() => {
   return detail.value.bk_biz_id !== -1 && isResourcePage.value;
 });
@@ -366,12 +359,27 @@ onBeforeMount(() => {
       子网：ID（{{ detail.id }}）
       <template #right>
         <div
-          v-bk-tooltips="{ content: subnetDisabledMsg, disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName] }"
+          v-if="isResourcePage"
+          v-bk-tooltips="{ content: '资源已分配到业务，只可以在业务中进行操作', disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName] }"
           @click="showAuthDialog(actionName)">
           <bk-button
             class="w100 ml10"
             theme="primary"
             :disabled="isBindBusiness || authVerifyData?.permissionAction[actionName]"
+            @click="handleDeleteSubnet(detail)"
+          >
+            {{ t('删除') }}
+          </bk-button>
+        </div>
+        <div
+          v-else
+          @click="showAuthDialog(actionName)"
+          v-bk-tooltips="{ content: '该子网正在使用中，不能删除', disabled: !authVerifyData?.permissionAction[actionName]  }">
+          <bk-button
+            class="w100 ml10"
+            theme="primary"
+            :disabled="authVerifyData?.
+              permissionAction[actionName]"
             @click="handleDeleteSubnet(detail)"
           >
             {{ t('删除') }}
