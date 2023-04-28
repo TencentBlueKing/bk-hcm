@@ -153,3 +153,23 @@ export const FILTER_DATA = [
   //   id: 'status',
   // },
 ];
+export const CIDRLIST = [
+  {
+    name: '10',
+    id: '10',
+  },
+  {
+    name: '172',
+    id: '172',
+  },
+  {
+    name: '192',
+    id: '192',
+  },
+];
+
+export const CIDRDATARANGE  = {
+  10: { min: 0, max: 255 },
+  172: { min: 16, max: 31 },
+  192: { min: 168, max: 168 },
+};

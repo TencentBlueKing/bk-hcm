@@ -1,5 +1,5 @@
 import http from '@/http';
-import { reactive, watch, ref, nextTick, computed } from 'vue';
+import { reactive, watch, ref, nextTick } from 'vue';
 import { VendorEnum } from '@/common/constant';
 import type { Cond } from './use-condtion';
 import { Message } from 'bkui-vue';
@@ -52,7 +52,7 @@ export default (cond: Cond) => {
         ip_source_type: 0,
         subnet: {
           name: '',
-          ipv4_cidr: [] as string[],
+          ipv4_cidr: ['10', '0', '0', '0'] as string[],
           zone: '',
         },
       },
@@ -67,14 +67,14 @@ export default (cond: Cond) => {
         firewall_enable: false,
         subnet: {
           name: '',
-          ipv4_cidr: [] as string[],
+          ipv4_cidr: ['10', '0', '0', '0'] as string[],
         },
       },
       [VendorEnum.GCP]: {
         routing_mode: 'REGIONAL',
         subnet: {
           name: '',
-          ipv4_cidr: [] as string[],
+          ipv4_cidr: ['10', '0', '0', '0'] as string[],
           private_ip_google_access: false,
           enable_flow_logs: false,
         },
@@ -84,7 +84,7 @@ export default (cond: Cond) => {
         subnet: {
           name: '',
           gateway_ip: '',
-          ipv4_cidr: [] as string[],
+          ipv4_cidr: ['10', '0', '0', '0'] as string[],
           ipv6_enable: false,
         },
       },
@@ -94,11 +94,11 @@ export default (cond: Cond) => {
   const defaultFormData = (vendor: string) => {
     const base: IVpcFormData = {
       name: '',
-      ipv4_cidr: [],
+      ipv4_cidr: [10, 0, 0, 0],
       bk_cloud_id: null,
       subnet: {
         name: '',
-        ipv4_cidr: [],
+        ipv4_cidr: [10, 0, 0, 0],
       },
       memo: '',
     };
@@ -141,7 +141,7 @@ export default (cond: Cond) => {
   });
 
   const getSaveData = () => {
-    console.log(formData, '---formData')
+    console.log(formData, '---formData');
     const {
       type,
       subnet,
@@ -153,7 +153,7 @@ export default (cond: Cond) => {
       firewall_enable,
       routing_mode,
       ...saveFormData
-    } = formData
+    } = formData;
     const saveData: IVpcSaveData = {
       ...saveFormData,
       bk_biz_id: cond.bizId,
@@ -162,36 +162,36 @@ export default (cond: Cond) => {
     };
 
     if (cond.vendor === VendorEnum.TCLOUD) {
-      saveData.ipv4_cidr = `${ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`
+      saveData.ipv4_cidr = `${ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`;
       saveData.subnet = {
         name: subnet.name,
         ipv4_cidr: `${(subnet.ipv4_cidr.slice(0, 4) as number[]).join('.')}/${subnet.ipv4_cidr.slice(-1)}`,
         zone: subnet.zone?.[0],
-      }
+      };
     }
 
     if (cond.vendor === VendorEnum.AWS) {
-      saveData.ipv4_cidr = `${formData.ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`
-      saveData.instance_tenancy = instance_tenancy
+      saveData.ipv4_cidr = `${formData.ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`;
+      saveData.instance_tenancy = instance_tenancy;
     }
 
     if (cond.vendor === VendorEnum.HUAWEI) {
-      saveData.ipv4_cidr = `${ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`
+      saveData.ipv4_cidr = `${ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`;
       saveData.subnet = {
         name: subnet.name,
         gateway_ip: `${(subnet.ipv4_cidr.slice(0, 3) as number[]).join('.')}.1`,
         ipv4_cidr: `${(subnet.ipv4_cidr.slice(0, 4) as number[]).join('.')}/${subnet.ipv4_cidr.slice(-1)}`,
         ipv6_enable: subnet.ipv6_enable,
-      }
+      };
     }
 
     if (cond.vendor === VendorEnum.AZURE) {
       saveData.resource_group_name = cond.resourceGroup;
-      saveData.ipv4_cidr = `${formData.ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`
+      saveData.ipv4_cidr = `${formData.ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`;
       saveData.subnet = {
         name: subnet.name,
         ipv4_cidr: `${(subnet.ipv4_cidr.slice(0, 4) as number[]).join('.')}/${subnet.ipv4_cidr.slice(-1)}`,
-      }
+      };
     }
 
     if (cond.vendor === VendorEnum.GCP) {
@@ -201,7 +201,7 @@ export default (cond: Cond) => {
         ipv4_cidr: `${(subnet.ipv4_cidr.slice(0, 4) as number[]).join('.')}/${subnet.ipv4_cidr.slice(-1)}`,
         private_ip_google_access: subnet.private_ip_google_access,
         enable_flow_logs: subnet.enable_flow_logs,
-      }
+      };
     }
 
     return saveData;

@@ -1,23 +1,25 @@
-import { computed, defineComponent } from 'vue';
+import { computed, defineComponent, watch, ref } from 'vue';
 import ContentContainer from '../components/common/content-container.vue';
 import ConditionOptions from '../components/common/condition-options.vue';
 import FormGroup from '../components/common/form-group.vue';
 import CloudAreaSelector from '../components/common/cloud-area-selector';
 import ZoneSelector from '../components/common/zone-selector';
-import { Form, Input, Checkbox, Button, Radio  } from 'bkui-vue';
+import { Form, Input, Checkbox, Button, Radio, Select  } from 'bkui-vue';
 import { Info } from 'bkui-vue/lib/icon';
 
-import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
+import { ResourceTypeEnum, VendorEnum, CIDRLIST, CIDRDATARANGE } from '@/common/constant';
 import useVpcOptions from '../hooks/use-vpc-options';
 import useCondtion from '../hooks/use-condtion';
 import useVpcFormData from '../hooks/use-vpc-form-data';
 
 const { FormItem, ComposeFormItem } = Form;
 const { Group: RadioGroup } = Radio;
+const { Option } = Select;
+const ipv4CidrFir: any = ref('10');
 
 export default defineComponent({
   props: {},
-  setup(props, ctx) {
+  setup() {
     const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.VPC);
     const { formData, formRef, handleFormSubmit, submitting } = useVpcFormData(cond);
     const __ = useVpcOptions(cond, formData);
@@ -88,11 +90,28 @@ export default defineComponent({
             content: () => <>
             <div class="flex-row align-items-center">
               <ComposeFormItem class="mr5">
-                <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.ipv4_cidr[0]} class="w110" suffix="." />
-                <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.ipv4_cidr[1]} class="w110" suffix="." />
-                <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.ipv4_cidr[2]} class="w110" suffix="." />
-                <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.ipv4_cidr[3]} class="w110" suffix="/" />
+                <div class="flex-row">
+                <Select class="w110" clearable={false} v-model={formData.ipv4_cidr[0]}>
+                    {CIDRLIST.map(item => (
+                        <Option
+                          key={item.id}
+                          value={item.id}
+                          label={item.name}
+                        >
+                          {item.name}
+                        </Option>
+                    ))
+                  }</Select>
+                <div>.</div>
+                <Input type='number' disabled={ipv4CidrFir.value === '192'} placeholder={`${CIDRDATARANGE[ipv4CidrFir.value].min}-${CIDRDATARANGE[ipv4CidrFir.value].max}`}
+                min={CIDRDATARANGE[ipv4CidrFir.value].min} max={CIDRDATARANGE[ipv4CidrFir.value].max} v-model={formData.ipv4_cidr[1]} class="w110" />
+                <div>.</div>
+                <Input type='number' disabled v-model={formData.ipv4_cidr[2]} class="w110" />
+                <div>.</div>
+                <Input type='number' disabled v-model={formData.ipv4_cidr[3]} class="w110" />
+                <div>/</div>
                 <Input type='number' placeholder='1-32' min={1} max={32} v-model={formData.ipv4_cidr[4]} class="w110" />
+                </div>
               </ComposeFormItem>
               <Info v-BkTooltips={{ content: networkTips.value ? networkTips.value : '请先选择云厂商' }}></Info>
             </div>
@@ -176,11 +195,17 @@ export default defineComponent({
             content: () => <>
             <div class="flex-row align-items-center">
               <ComposeFormItem class="mr5">
-                <Input type='number' placeholder='1-255' min={1} max={255} v-model={formData.subnet.ipv4_cidr[0]} class="w110" suffix="." />
-                <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[1]} class="w110" suffix="." />
-                <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[2]} class="w110" suffix="." />
-                <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[3]} class="w110" suffix="/" />
+              <div class="flex-row">
+                <Input type='number' disabled placeholder='1-255' min={1} max={255} v-model={formData.subnet.ipv4_cidr[0]} class="w110" />
+                <div>.</div>
+                <Input type='number' disabled placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[1]} class="w110" />
+                <div>.</div>
+                <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[2]} class="w110" />
+                <div>.</div>
+                <Input type='number' disabled placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[3]} class="w110" />
+                <div>/</div>
                 <Input type='number' placeholder='1-32' min={1} max={32} v-model={formData.subnet.ipv4_cidr[4]} class="w110" />
+                </div>
               </ComposeFormItem>
               <Info v-BkTooltips={{ content: subnetTips.value }}></Info>
             </div>
@@ -248,6 +273,27 @@ export default defineComponent({
         },
       ],
     };
+
+    watch(() => formData.ipv4_cidr[0], (val) => {
+      ipv4CidrFir.value = val;
+      if (ipv4CidrFir.value === '192') {
+        formData.ipv4_cidr[1] = '168';
+      } else {
+        console.log(formData.ipv4_cidr[1], CIDRDATARANGE[ipv4CidrFir.value].max);
+        if (formData.ipv4_cidr[1] > CIDRDATARANGE[ipv4CidrFir.value].max) {
+          formData.ipv4_cidr[1] = CIDRDATARANGE[ipv4CidrFir.value].max;
+        }
+        if (formData.ipv4_cidr[1] < CIDRDATARANGE[ipv4CidrFir.value].min) {
+          formData.ipv4_cidr[1] = CIDRDATARANGE[ipv4CidrFir.value].min;
+        }
+      }
+      formData.subnet.ipv4_cidr[0] = val;
+      formData.subnet.ipv4_cidr[1] = formData.ipv4_cidr[1];
+    }, { immediate: true });
+
+    watch(() => formData.ipv4_cidr[1], (val) => {
+      formData.subnet.ipv4_cidr[1] = formData.ipv4_cidr[1];
+    });
 
     return () => <ContentContainer>
       <ConditionOptions
