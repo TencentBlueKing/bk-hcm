@@ -7,7 +7,7 @@ import ZoneSelector from '../components/common/zone-selector';
 import { Form, Input, Checkbox, Button, Radio, Select  } from 'bkui-vue';
 import { Info } from 'bkui-vue/lib/icon';
 
-import { ResourceTypeEnum, VendorEnum, CIDRLIST, CIDRDATARANGE, CIDRMASKRANGE } from '@/common/constant';
+import { ResourceTypeEnum, VendorEnum, CIDRLIST, CIDRDATARANGE, CIDRMASKRANGE, TCLOUDCIDRMASKRANGE } from '@/common/constant';
 import useVpcOptions from '../hooks/use-vpc-options';
 import useCondtion from '../hooks/use-condtion';
 import useVpcFormData from '../hooks/use-vpc-form-data';
@@ -35,7 +35,7 @@ export default defineComponent({
         [VendorEnum.AWS]: 'CIDR范围的有效范围为:\t\n10.0.0.0 - 10.255.255.255（10/8 前缀）\t\n172.16.0.0 - 172.31.255.255（172.16/12 前缀）\t\n192.168.0.0 - 192.168.255.255（192.168/16 前缀）\t\n更多信息请参考官方说明https://docs.aws.amazon.com/zh_cn/vpc/latest/userguide/configure-your-vpc.html#add-cidr-block-restrictions',
         [VendorEnum.AZURE]: 'CIDR范围的有效范围为:\t\n10.0.0.0 - 10.255.255.255（10/8 前缀）\t\n172.16.0.0 - 172.31.255.255（172.16/12 前缀）\t\n192.168.0.0 - 192.168.255.255（192.168/16 前缀）\t\n更多信息请参考官方说明https://learn.microsoft.com/zh-cn/azure/virtual-network/virtual-networks-faq#what-address-ranges-can-i-use-in-my-vnets',
         [VendorEnum.GCP]: 'CIDR范围的有效范围为:\t\n10.0.0.0/8\t\n172.16.0.0/12\t\n192.168.0.0/16\t\n更多信息请参考官方说明https://cloud.google.com/vpc/docs/subnets?hl=zh-cn',
-        [VendorEnum.HUAWEI]: 'CIDR范围的有效范围为:\t\n10.0.0.0/8~24\t\n172.16.0.0/12~24\t\n192.168.0.0/16~24\t\n更多信息请参考官方说明https://support.huaweicloud.com/intl/zh-cn/usermanual-vpc/zh-cn_topic_0013935842.html',
+        [VendorEnum.HUAWEI]: 'CIDR范围的有效范围为:\t\n10.0.0.0/8~28\t\n172.16.0.0/12~28\t\n192.168.0.0/16~28\t\n更多信息请参考官方说明https://support.huaweicloud.com/intl/zh-cn/usermanual-vpc/zh-cn_topic_0013935842.html',
       };
       return map[cond.vendor];
     });
@@ -111,8 +111,9 @@ export default defineComponent({
                 <Input type='number' v-model={formData.ipv4_cidr[3]} class="w110" />
                 <div>/</div>
                 <Input type='number'
-                placeholder={`${CIDRMASKRANGE[ipv4CidrFir.value].min}-${CIDRMASKRANGE[ipv4CidrFir.value].max}`}
-                min={CIDRMASKRANGE[ipv4CidrFir.value].min} max={CIDRMASKRANGE[ipv4CidrFir.value].max} v-model={formData.ipv4_cidr[4]} class="w110" />
+                placeholder={`${cond.vendor === 'tcloud' ? TCLOUDCIDRMASKRANGE[ipv4CidrFir.value].min : CIDRMASKRANGE[ipv4CidrFir.value].min}-${CIDRMASKRANGE[ipv4CidrFir.value].max}`}
+                min={cond.vendor === 'tcloud' ? TCLOUDCIDRMASKRANGE[ipv4CidrFir.value].min : CIDRMASKRANGE[ipv4CidrFir.value].min}
+                max={CIDRMASKRANGE[ipv4CidrFir.value].max} v-model={formData.ipv4_cidr[4]} class="w110" />
                 </div>
               </ComposeFormItem>
               <Info v-BkTooltips={{ content: networkTips.value ? networkTips.value : '请先选择云厂商' }}></Info>
@@ -278,25 +279,29 @@ export default defineComponent({
 
     watch(() => formData.ipv4_cidr[0], (val) => {
       ipv4CidrFir.value = val;
-      if (ipv4CidrFir.value === '192') {
+      const maskrang: any = cond.vendor === 'tcloud' ? TCLOUDCIDRMASKRANGE : CIDRMASKRANGE;
+      if (val === '192') {
         formData.ipv4_cidr[1] = '168';
-        if (formData.ipv4_cidr[4] < CIDRMASKRANGE[ipv4CidrFir.value].min) {
-          formData.ipv4_cidr[4] = CIDRMASKRANGE[ipv4CidrFir.value].min;
+        if (formData.ipv4_cidr[4] < maskrang[val].min) {
+          formData.ipv4_cidr[4] = maskrang[val].min;
+        }
+      } else if (val === '172') {
+        if (formData.ipv4_cidr[4] < maskrang[val].min) {
+          formData.ipv4_cidr[4] = maskrang[val].min;
         }
       } else {
-        console.log(formData.ipv4_cidr[1], CIDRDATARANGE[ipv4CidrFir.value].max);
-        if (formData.ipv4_cidr[1] > CIDRDATARANGE[ipv4CidrFir.value].max) {
-          formData.ipv4_cidr[1] = CIDRDATARANGE[ipv4CidrFir.value].max;
+        if (formData.ipv4_cidr[1] > CIDRDATARANGE[val].max) {
+          formData.ipv4_cidr[1] = CIDRDATARANGE[val].max;
         }
-        if (formData.ipv4_cidr[1] < CIDRDATARANGE[ipv4CidrFir.value].min) {
-          formData.ipv4_cidr[1] = CIDRDATARANGE[ipv4CidrFir.value].min;
+        if (formData.ipv4_cidr[1] < CIDRDATARANGE[val].min) {
+          formData.ipv4_cidr[1] = CIDRDATARANGE[val].min;
         }
       }
       formData.subnet.ipv4_cidr[0] = val;
       formData.subnet.ipv4_cidr[1] = formData.ipv4_cidr[1];
     }, { immediate: true });
 
-    watch(() => formData.ipv4_cidr[1], (val) => {
+    watch(() => formData.ipv4_cidr[1], () => {
       formData.subnet.ipv4_cidr[1] = formData.ipv4_cidr[1];
     });
 

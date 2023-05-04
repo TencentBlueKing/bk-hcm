@@ -105,8 +105,8 @@ export default defineComponent({
            {
             this.urlKey === 'recycle_bin_find' && (   // 回收站列表权限说明
               <>
-              <p class="mt5 sub-describe">{this.t('如果您是业务运维、SRE等角色，业务下管理了多个云账号，可申请"业务审计查看"权限，查看业务下多个账号的审计信息。')}</p>
-              <p class="mt5 sub-describe">{this.t('如果您的账号属于某个业务，您负责其中一个账号，可申请"资源审计查看"权限，单独查看该账号的审计信息')}</p>
+              <p class="mt5 sub-describe">{this.t('该功能由平台资源的管理员维护，属于管理员的权限')}</p>
+              <p class="mt5 sub-describe">{this.t('如果您是业务方用户，无需申请该权限，请在业务菜单主机、硬盘回收记录中查看回收信息')}</p>
               </>
             )
            }
@@ -144,7 +144,9 @@ export default defineComponent({
           )}
           {this.urlKey === 'recycle_bin_find' && (   // 回收站列表功能说明
           <>
-            <p class="mt5 sub-describe">{this.t('审计信息包括包括账号信息，IaaS资源想增删改查等。有2种区别：业务操作审计，业务下的审计信息；资源操作审计，以账号为粒度的审计信息。')}</p>
+            <p class="mt5 sub-describe">{this.t('资源回收的管理功能，对业务回收的主机、硬盘资源进行管理，如对销毁、恢复操作')}</p>
+            <p class="mt5 sub-describe">{this.t('资源恢复后，将恢复到从原回收的业务。')}</p>
+            <p class="mt5 sub-describe">{this.t('资源立即销毁，将从云上直接删除资源，销毁属于不可逆操作，请谨慎操作。')}</p>
           </>
           )}
         </div>

@@ -174,8 +174,14 @@ export const CIDRDATARANGE  = {
   192: { min: 168, max: 168 },
 };
 
-export const CIDRMASKRANGE  = {
+export const TCLOUDCIDRMASKRANGE  = {
   10: { min: 12, max: 28 },
+  172: { min: 12, max: 28 },
+  192: { min: 16, max: 28 },
+};
+
+export const CIDRMASKRANGE  = {
+  10: { min: 8, max: 28 },
   172: { min: 12, max: 28 },
   192: { min: 16, max: 28 },
 };
