@@ -38,6 +38,9 @@ export const useCommonStore = defineStore({
       { type: 'cvm', action: 'delete', id: 'biz_iaas_resource_delete',  bk_biz_id: 0 },    // 业务iaas删除
 
       { type: 'biz_audit', action: 'find',  id: 'resource_audit_find' },    // 审计查看权限
+
+      { type: 'recycle_bin', action: 'find',  id: 'recycle_bin_find', path: '/resource/recyclebin' },    // 回收站查看权限
+      { type: 'recycle_bin', action: 'recycle',  id: 'recycle_bin_manage' },    // 回收站管理
     ],
   }),
   actions: {

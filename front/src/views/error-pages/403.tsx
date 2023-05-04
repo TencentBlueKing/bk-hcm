@@ -102,6 +102,14 @@ export default defineComponent({
               </>
             )
            }
+           {
+            this.urlKey === 'recycle_bin_find' && (   // 回收站列表权限说明
+              <>
+              <p class="mt5 sub-describe">{this.t('如果您是业务运维、SRE等角色，业务下管理了多个云账号，可申请"业务审计查看"权限，查看业务下多个账号的审计信息。')}</p>
+              <p class="mt5 sub-describe">{this.t('如果您的账号属于某个业务，您负责其中一个账号，可申请"资源审计查看"权限，单独查看该账号的审计信息')}</p>
+              </>
+            )
+           }
 
           <h2 class="mt20">
           功能说明：
@@ -130,6 +138,11 @@ export default defineComponent({
           </>
           )}
           {this.urlKey === 'resource_audit_find' && (   // 审计列表功能说明
+          <>
+            <p class="mt5 sub-describe">{this.t('审计信息包括包括账号信息，IaaS资源想增删改查等。有2种区别：业务操作审计，业务下的审计信息；资源操作审计，以账号为粒度的审计信息。')}</p>
+          </>
+          )}
+          {this.urlKey === 'recycle_bin_find' && (   // 回收站列表功能说明
           <>
             <p class="mt5 sub-describe">{this.t('审计信息包括包括账号信息，IaaS资源想增删改查等。有2种区别：业务操作审计，业务下的审计信息；资源操作审计，以账号为粒度的审计信息。')}</p>
           </>

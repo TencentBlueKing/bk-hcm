@@ -7,7 +7,7 @@ import ZoneSelector from '../components/common/zone-selector';
 import { Form, Input, Checkbox, Button, Radio, Select  } from 'bkui-vue';
 import { Info } from 'bkui-vue/lib/icon';
 
-import { ResourceTypeEnum, VendorEnum, CIDRLIST, CIDRDATARANGE } from '@/common/constant';
+import { ResourceTypeEnum, VendorEnum, CIDRLIST, CIDRDATARANGE, CIDRMASKRANGE } from '@/common/constant';
 import useVpcOptions from '../hooks/use-vpc-options';
 import useCondtion from '../hooks/use-condtion';
 import useVpcFormData from '../hooks/use-vpc-form-data';
@@ -106,11 +106,13 @@ export default defineComponent({
                 <Input type='number' disabled={ipv4CidrFir.value === '192'} placeholder={`${CIDRDATARANGE[ipv4CidrFir.value].min}-${CIDRDATARANGE[ipv4CidrFir.value].max}`}
                 min={CIDRDATARANGE[ipv4CidrFir.value].min} max={CIDRDATARANGE[ipv4CidrFir.value].max} v-model={formData.ipv4_cidr[1]} class="w110" />
                 <div>.</div>
-                <Input type='number' disabled v-model={formData.ipv4_cidr[2]} class="w110" />
+                <Input type='number' v-model={formData.ipv4_cidr[2]} class="w110" />
                 <div>.</div>
-                <Input type='number' disabled v-model={formData.ipv4_cidr[3]} class="w110" />
+                <Input type='number' v-model={formData.ipv4_cidr[3]} class="w110" />
                 <div>/</div>
-                <Input type='number' placeholder='1-32' min={1} max={32} v-model={formData.ipv4_cidr[4]} class="w110" />
+                <Input type='number'
+                placeholder={`${CIDRMASKRANGE[ipv4CidrFir.value].min}-${CIDRMASKRANGE[ipv4CidrFir.value].max}`}
+                min={CIDRMASKRANGE[ipv4CidrFir.value].min} max={CIDRMASKRANGE[ipv4CidrFir.value].max} v-model={formData.ipv4_cidr[4]} class="w110" />
                 </div>
               </ComposeFormItem>
               <Info v-BkTooltips={{ content: networkTips.value ? networkTips.value : '请先选择云厂商' }}></Info>
@@ -202,7 +204,7 @@ export default defineComponent({
                 <div>.</div>
                 <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[2]} class="w110" />
                 <div>.</div>
-                <Input type='number' disabled placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[3]} class="w110" />
+                <Input type='number' placeholder='0-255' min={0} max={255} v-model={formData.subnet.ipv4_cidr[3]} class="w110" />
                 <div>/</div>
                 <Input type='number' placeholder='1-32' min={1} max={32} v-model={formData.subnet.ipv4_cidr[4]} class="w110" />
                 </div>
@@ -278,6 +280,9 @@ export default defineComponent({
       ipv4CidrFir.value = val;
       if (ipv4CidrFir.value === '192') {
         formData.ipv4_cidr[1] = '168';
+        if (formData.ipv4_cidr[4] < CIDRMASKRANGE[ipv4CidrFir.value].min) {
+          formData.ipv4_cidr[4] = CIDRMASKRANGE[ipv4CidrFir.value].min;
+        }
       } else {
         console.log(formData.ipv4_cidr[1], CIDRDATARANGE[ipv4CidrFir.value].max);
         if (formData.ipv4_cidr[1] > CIDRDATARANGE[ipv4CidrFir.value].max) {

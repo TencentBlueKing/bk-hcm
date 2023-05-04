@@ -21,19 +21,23 @@
       </div> -->
     </div>
     <section v-if="isResourcePage">
-      <span v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }">
+      <span
+        v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }"
+        @click="handleAuth('recycle_bin_manage')">
         <bk-button
           theme="primary"
-          :disabled="!selections.length"
+          :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
           @click="handleOperate('destroy')"
         >{{ t('立即销毁') }}
         </bk-button>
       </span>
-      <span v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }">
+      <span
+        v-bk-tooltips="{ content: '请勾选主机信息', disabled: selections.length }"
+        @click="handleAuth('recycle_bin_manage')">
         <bk-button
           class="ml10 mb20"
           theme="primary"
-          :disabled="!selections.length"
+          :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
           @click="handleOperate('recover')"
         >{{ t('立即恢复') }}
         </bk-button>
@@ -125,14 +129,22 @@
           :min-width="150"
         >
           <template #default="{ data }">
-            <bk-button text theme="primary" class="mr10" @click="handleOperate('destroy', [data.id])">
-              {{t('立即销毁')}}
-            </bk-button>
-            <bk-button
-              text theme="primary" @click="handleOperate('recover', [data.id])"
-            >
-              {{t('立即恢复')}}
-            </bk-button>
+            <span @click="handleAuth('recycle_bin_manage')">
+              <bk-button
+                text theme="primary"
+                :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage"
+                class="mr10" @click="handleOperate('destroy', [data.id])">
+                {{t('立即销毁')}}
+              </bk-button>
+            </span>
+            <span @click="handleAuth('recycle_bin_manage')">
+              <bk-button
+                text theme="primary" @click="handleOperate('recover', [data.id])"
+                :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage"
+              >
+                {{t('立即恢复')}}
+              </bk-button>
+            </span>
           </template>
         </bk-table-column>
       </bk-table>
@@ -156,6 +168,13 @@
       <HostInfo v-if="selectedType === 'cvm'" :data="detail" :type="vendor"></HostInfo>
       <HostDrive v-else :data="detail" :type="vendor"></HostDrive>
     </bk-dialog>
+
+    <permission-dialog
+      v-model:is-show="showPermissionDialog"
+      :params="permissionParams"
+      @cancel="handlePermissionDialog"
+      @confirm="handlePermissionConfirm"
+    ></permission-dialog>
   </div>
 </template>
 
@@ -171,6 +190,7 @@ import { VENDORS } from '@/common/constant';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import HostInfo from '@/views/resource/resource-manage/children/components/host/host-info/index.vue';
 import HostDrive from '@/views/resource/resource-manage/children/components/host/host-drive.vue';
+import { useVerify } from '@/hooks';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -329,6 +349,16 @@ export default defineComponent({
 
     getList();
 
+    // 权限hook
+    const {
+      showPermissionDialog,
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      handleAuth,
+      permissionParams,
+      authVerifyData,
+    } = useVerify();
+
     return {
       ...toRefs(state),
       handleDialogConfirm,
@@ -345,6 +375,12 @@ export default defineComponent({
       isResourcePage,
       handleShowDialog,
       t,
+      showPermissionDialog,
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      handleAuth,
+      permissionParams,
+      authVerifyData,
     };
   },
 });

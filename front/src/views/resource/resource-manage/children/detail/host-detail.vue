@@ -6,6 +6,7 @@ import HostNetwork from '../components/host/host-network/index.vue';
 import HostIp from '../components/host/host-ip.vue';
 import HostDrive from '../components/host/host-drive.vue';
 import HostSecurity from '../components/host/host-security.vue';
+import bus from '@/common/bus';
 import { useRouter,
   useRoute,
 } from 'vue-router';
@@ -25,7 +26,7 @@ import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 import {
   ref,
   inject,
-  computed
+  computed,
 } from 'vue';
 
 
@@ -51,6 +52,12 @@ const cvmInfo = ref({
   stop: { op: '关机', loading: false, status: ['STOPPED', 'SHUTOFF', 'STOPPING', 'shutting-down', 'PowerState', 'stopped'] },
   reboot: { op: '重启', loading: false },
   destroy: { op: '回收', loading: false },
+});
+
+
+const actionName = computed(() => {   // 资源下没有业务ID
+  console.log('isResourcePage.value', isResourcePage.value);
+  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
 
 const {
@@ -148,6 +155,11 @@ const modifyCvmStatus = async (type: string) => {
   }
 };
 
+// 权限弹窗 bus通知最外层弹出
+const showAuthDialog = (authActionName: string) => {
+  bus.$emit('auth', authActionName);
+};
+
 </script>
 
 <template>
@@ -157,39 +169,48 @@ const modifyCvmStatus = async (type: string) => {
       【已绑定】
     </span>
     <template #right>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-        :disabled="cvmInfo.start.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)"
-        :loading="cvmInfo.start.loading"
-        @click="() => {
-          handleCvmOperate('start')
-        }"
-      >
-        {{ t('开机') }}
-      </bk-button>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-        :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)"
-        :loading="cvmInfo.stop.loading"
-        @click="() => {
-          handleCvmOperate('stop')
-        }"
-      >
-        {{ t('关机') }}
-      </bk-button>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-        :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)"
-        :loading="cvmInfo.reboot.loading"
-        @click="() => {
-          handleCvmOperate('reboot')
-        }"
-      >
-        {{ t('重启') }}
-      </bk-button>
+      <span @click="showAuthDialog(actionName)">
+        <bk-button
+          class="w100 ml10"
+          theme="primary"
+          :disabled="cvmInfo.start.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)
+            || !authVerifyData?.permissionAction[actionName]"
+          :loading="cvmInfo.start.loading"
+          @click="() => {
+            handleCvmOperate('start')
+          }"
+        >
+          {{ t('开机') }}
+        </bk-button>
+      </span>
+      <span @click="showAuthDialog(actionName)">
+        <bk-button
+          class="w100 ml10"
+          theme="primary"
+          :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)
+            || !authVerifyData?.permissionAction[actionName]"
+          :loading="cvmInfo.stop.loading"
+          @click="() => {
+            handleCvmOperate('stop')
+          }"
+        >
+          {{ t('关机') }}
+        </bk-button>
+      </span>
+      <span @click="showAuthDialog(actionName)">
+        <bk-button
+          class="w100 ml10"
+          theme="primary"
+          :disabled="cvmInfo.stop.status.includes(detail.status) || (detail.bk_biz_id !== -1 && isResourcePage)
+            || !authVerifyData?.permissionAction[actionName]"
+          :loading="cvmInfo.reboot.loading"
+          @click="() => {
+            handleCvmOperate('reboot')
+          }"
+        >
+          {{ t('重启') }}
+        </bk-button>
+      </span>
       <!-- <bk-button
         class="w100 ml10"
         theme="primary"
@@ -197,17 +218,20 @@ const modifyCvmStatus = async (type: string) => {
       >
         {{ t('重置密码') }}
       </bk-button> -->
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-        :disabled="(detail.bk_biz_id !== -1 && isResourcePage)"
-        :loading="cvmInfo.destroy.loading"
-        @click="() => {
-          handleCvmOperate('destroy')
-        }"
-      >
-        {{ t('回收') }}
-      </bk-button>
+      <span @click="showAuthDialog(actionName)">
+        <bk-button
+          class="w100 ml10"
+          theme="primary"
+          :disabled="(detail.bk_biz_id !== -1 && isResourcePage)
+            || !authVerifyData?.permissionAction[actionName]"
+          :loading="cvmInfo.destroy.loading"
+          @click="() => {
+            handleCvmOperate('destroy')
+          }"
+        >
+          {{ t('回收') }}
+        </bk-button>
+      </span>
     </template>
   </detail-header>
 
