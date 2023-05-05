@@ -107,6 +107,25 @@ func (l *ListReq) Validate() error {
 	return nil
 }
 
+// ListWithoutFieldReq list request without field filter.
+type ListWithoutFieldReq struct {
+	Filter *filter.Expression `json:"filter"`
+	Page   *BasePage          `json:"page"`
+}
+
+// Validate ListWithoutFieldReq.
+func (l *ListWithoutFieldReq) Validate() error {
+	if l.Filter == nil {
+		return errf.New(errf.InvalidParameter, "filter is required")
+	}
+
+	if l.Page == nil {
+		return errf.New(errf.InvalidParameter, "page is required")
+	}
+
+	return nil
+}
+
 // CountReq count request group by ids.
 type CountReq struct {
 	IDs []string `json:"ids"`

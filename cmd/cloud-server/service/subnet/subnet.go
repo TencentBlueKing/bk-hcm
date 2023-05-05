@@ -29,7 +29,7 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
+	hcservice "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -69,6 +69,8 @@ func InitSubnetService(c *capability.Capability) {
 	h.Add("UpdateBizSubnet", "PATCH", "/bizs/{bk_biz_id}/subnets/{id}", svc.UpdateBizSubnet)
 	h.Add("BatchDeleteBizSubnet", "DELETE", "/bizs/{bk_biz_id}/subnets/batch", svc.BatchDeleteBizSubnet)
 	h.Add("CountBizSubnetAvailIPs", "POST", "/bizs/{bk_biz_id}/subnets/{id}/ips/count", svc.CountBizSubnetAvailIPs)
+	h.Add("ListCountBizSubnetAvailIPs", "POST", "/bizs/{bk_biz_id}/subnets/ips/count/list",
+		svc.ListCountBizSubnetAvailIPs)
 
 	h.Load(c.WebService)
 }
@@ -598,68 +600,6 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 	}
 
 	return nil, nil
-}
-
-// CountSubnetAvailableIPs count subnet available ips. **NOTICE** only for ui.
-func (svc *subnetSvc) CountSubnetAvailableIPs(cts *rest.Contexts) (interface{}, error) {
-	return svc.countSubnetAvailableIPs(cts, handler.ResValidWithAuth)
-}
-
-// CountBizSubnetAvailIPs count biz subnet available ips. **NOTICE** only for ui.
-func (svc *subnetSvc) CountBizSubnetAvailIPs(cts *rest.Contexts) (interface{}, error) {
-	return svc.countSubnetAvailableIPs(cts, handler.BizValidWithAuth)
-}
-
-func (svc *subnetSvc) countSubnetAvailableIPs(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
-	interface{}, error) {
-
-	id := cts.PathParameter("id").String()
-	if len(id) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "id is required")
-	}
-
-	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		enumor.SubnetCloudResType, id)
-	if err != nil {
-		return nil, err
-	}
-
-	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Subnet,
-		Action: meta.Find, BasicInfo: basicInfo})
-	if err != nil {
-		return nil, err
-	}
-
-	// get subnet detail info
-	switch basicInfo.Vendor {
-	case enumor.TCloud:
-		ipInfo, err := svc.client.HCService().TCloud.Subnet.CountIP(cts.Kit.Ctx, cts.Kit.Header(), id)
-		if err != nil {
-			return nil, err
-		}
-		return ipInfo, err
-	case enumor.Aws:
-		ipInfo, err := svc.client.HCService().Aws.Subnet.CountIP(cts.Kit.Ctx, cts.Kit.Header(), id)
-		if err != nil {
-			return nil, err
-		}
-		return ipInfo, err
-	case enumor.HuaWei:
-		ipInfo, err := svc.client.HCService().HuaWei.Subnet.CountIP(cts.Kit.Ctx, cts.Kit.Header(), id)
-		if err != nil {
-			return nil, err
-		}
-		return ipInfo, err
-	case enumor.Azure:
-		ipInfo, err := svc.client.HCService().Azure.Subnet.CountIP(cts.Kit.Ctx, cts.Kit.Header(), id)
-		if err != nil {
-			return nil, err
-		}
-		return ipInfo, err
-	default:
-		return nil, errf.New(errf.InvalidParameter, "vendor is invalid")
-	}
 }
 
 // CheckSubnetsInBiz check if subnets are in the specified biz.

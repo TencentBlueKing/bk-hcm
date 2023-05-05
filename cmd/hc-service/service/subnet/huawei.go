@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
+	proto "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
@@ -36,7 +36,7 @@ import (
 
 // HuaWeiSubnetCreate create huawei subnet.
 func (s subnet) HuaWeiSubnetCreate(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcservice.SubnetCreateReq[hcservice.HuaWeiSubnetCreateExt])
+	req := new(proto.SubnetCreateReq[proto.HuaWeiSubnetCreateExt])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -112,7 +112,7 @@ func convertHuaWeiSubnetCreateReq(data *types.HuaWeiSubnet, accountID string,
 func (s subnet) HuaWeiSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
-	req := new(hcservice.SubnetUpdateReq)
+	req := new(proto.SubnetUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -223,9 +223,9 @@ func (s subnet) HuaWeiSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return &hcservice.SubnetCountIPResult{
-		AvailableIPv4Count:  uint64(availabilities.TotalIps - availabilities.UsedIps),
-		TotalIpAddressCount: uint64(availabilities.TotalIps),
-		UsedIpAddressCount:  uint64(availabilities.UsedIps),
+	return &proto.AvailIPResult{
+		AvailableIPCount: uint64(availabilities.TotalIps - availabilities.UsedIps),
+		TotalIPCount:     uint64(availabilities.TotalIps),
+		UsedIPCount:      uint64(availabilities.UsedIps),
 	}, nil
 }

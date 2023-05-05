@@ -25,7 +25,7 @@ import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
+	hcservice "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"

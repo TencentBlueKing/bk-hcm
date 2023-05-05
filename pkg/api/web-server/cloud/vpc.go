@@ -59,7 +59,7 @@ type ListVpcWithSubnetCountResult struct {
 
 // VpcWithSubnetCount ...
 type VpcWithSubnetCount struct {
-	cloud.BaseVpc
+	cloud.BaseVpc          `json:",inline"`
 	SubnetCount            uint64 `json:"subnet_count"`
 	CurrentZoneSubnetCount uint64 `json:"current_zone_subnet_count"`
 }

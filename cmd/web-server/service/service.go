@@ -33,6 +33,7 @@ import (
 
 	authsvc "hcm/cmd/web-server/service/auth"
 	"hcm/cmd/web-server/service/capability"
+	"hcm/cmd/web-server/service/cloud/subnet"
 	"hcm/cmd/web-server/service/cloud/vpc"
 	"hcm/cmd/web-server/service/cmdb"
 	"hcm/cmd/web-server/service/user"
@@ -221,6 +222,7 @@ func (s *Service) apiSet() *restful.WebService {
 	cmdb.InitCmdbService(c)
 	authsvc.InitAuthService(c)
 	vpc.InitVpcService(c)
+	subnet.InitService(c)
 
 	return ws
 }

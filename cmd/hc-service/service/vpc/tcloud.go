@@ -27,6 +27,7 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -81,16 +82,16 @@ func (v vpc) TCloudVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		return core.CreateResult{ID: result.IDs[0]}, nil
 	}
 
-	subnetCreateOpt := &hcservice.TCloudSubnetBatchCreateReq{
+	subnetCreateOpt := &subnet.TCloudSubnetBatchCreateReq{
 		BkBizID:    constant.UnassignedBiz,
 		AccountID:  req.AccountID,
 		Region:     data.Region,
 		CloudVpcID: data.CloudID,
-		Subnets:    make([]hcservice.TCloudOneSubnetCreateReq, 0, len(req.Extension.Subnets)),
+		Subnets:    make([]subnet.TCloudOneSubnetCreateReq, 0, len(req.Extension.Subnets)),
 	}
 
 	for _, subnetCreateReq := range req.Extension.Subnets {
-		subnetCreateOpt.Subnets = append(subnetCreateOpt.Subnets, hcservice.TCloudOneSubnetCreateReq{
+		subnetCreateOpt.Subnets = append(subnetCreateOpt.Subnets, subnet.TCloudOneSubnetCreateReq{
 			IPv4Cidr:          subnetCreateReq.IPv4Cidr,
 			Name:              subnetCreateReq.Name,
 			Zone:              subnetCreateReq.Zone,

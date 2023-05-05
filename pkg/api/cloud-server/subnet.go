@@ -137,6 +137,29 @@ type SubnetListResp struct {
 	Data          *SubnetListResult `json:"data"`
 }
 
+// SubnetCountIPResult count subnet available ips result.
+type SubnetCountIPResult struct {
+	AvailableIPCount uint64 `json:"available_ip_count"`
+	TotalIPCount     uint64 `json:"total_ip_count"`
+	UsedIPCount      uint64 `json:"used_ip_count"`
+}
+
+// ListSubnetCountIPReq ...
+type ListSubnetCountIPReq struct {
+	IDs []string `json:"ids" validate:"required,min=1,max=50"`
+}
+
+// Validate ListSubnetCountIPReq.
+func (u ListSubnetCountIPReq) Validate() error {
+	return validator.Validate.Struct(u)
+}
+
+// ListSubnetCountIPResp ...
+type ListSubnetCountIPResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          map[string]SubnetCountIPResult `json:"data"`
+}
+
 // -------------------------- Relation ------------------------
 
 // AssignSubnetToBizReq assign subnets to biz request.

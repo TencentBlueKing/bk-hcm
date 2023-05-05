@@ -21,22 +21,25 @@
 package subnet
 
 import (
+	"fmt"
+
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
+	proto "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 )
 
 // AzureSubnetCreate create azure subnet.
 func (s subnet) AzureSubnetCreate(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcservice.SubnetCreateReq[hcservice.AzureSubnetCreateExt])
+	req := new(proto.SubnetCreateReq[proto.AzureSubnetCreateExt])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -75,7 +78,7 @@ func (s subnet) AzureSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 func (s subnet) AzureSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
-	req := new(hcservice.SubnetUpdateReq)
+	req := new(proto.SubnetUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -152,41 +155,77 @@ func (s subnet) AzureSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// AzureSubnetCountIP count azure subnets' available ips.
-func (s subnet) AzureSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
-	id := cts.PathParameter("id").String()
-	if len(id) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "id is required")
+// AzureListSubnetCountIP count azure subnets' available ips.
+func (s subnet) AzureListSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.ListAzureCountIPReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	getRes, err := s.cs.DataService().Azure.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listReq := &core.ListReq{
+		Page: core.DefaultBasePage,
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "extension.resource_group_name", Op: filter.JSONEqual.Factory(),
+					Value: req.ResourceGroupName},
+				&filter.AtomRule{Field: "vpc_id", Op: filter.Equal.Factory(), Value: req.VpcID},
+				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: req.AccountID},
+				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs},
+			},
+		},
+	}
+	listResult, err := s.cs.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
 		return nil, err
 	}
 
-	cli, err := s.ad.Azure(cts.Kit, getRes.AccountID)
+	if len(listResult.Details) != len(req.IDs) {
+		return nil, fmt.Errorf("list subnet return count not right, query id count: %d, but return %d",
+			len(req.IDs), len(listResult.Details))
+	}
+
+	cloudIDs := make([]string, 0, len(listResult.Details))
+	for _, one := range listResult.Details {
+		cloudIDs = append(cloudIDs, one.CloudID)
+	}
+
+	cli, err := s.ad.Azure(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	usageOpt := &types.AzureVpcListUsageOption{
-		ResourceGroupName: getRes.Extension.ResourceGroupName,
-		VpcID:             getRes.CloudVpcID,
+		ResourceGroupName: req.ResourceGroupName,
+		VpcID:             req.VpcID,
 	}
 	usages, err := cli.ListVpcUsage(cts.Kit, usageOpt)
 	if err != nil {
 		return nil, err
 	}
 
+	cloudIDIPCountMap := make(map[string]proto.AvailIPResult)
 	for _, usage := range usages {
-		if converter.PtrToVal(usage.ID) == getRes.CloudID {
-			return &hcservice.SubnetCountIPResult{
-				AvailableIPv4Count:  uint64(converter.PtrToVal(usage.Limit) - converter.PtrToVal(usage.CurrentValue)),
-				TotalIpAddressCount: uint64(converter.PtrToVal(usage.Limit)),
-				UsedIpAddressCount:  uint64(converter.PtrToVal(usage.CurrentValue)),
-			}, nil
+		cloudIDIPCountMap[converter.PtrToVal(usage.ID)] = proto.AvailIPResult{
+			AvailableIPCount: uint64(converter.PtrToVal(usage.Limit) - converter.PtrToVal(usage.CurrentValue)),
+			TotalIPCount:     uint64(converter.PtrToVal(usage.Limit)),
+			UsedIPCount:      uint64(converter.PtrToVal(usage.CurrentValue)),
 		}
 	}
 
-	return nil, errf.New(errf.InvalidParameter, "subnet ip count is not found")
+	result := make(map[string]proto.AvailIPResult)
+	for _, one := range listResult.Details {
+		count, exist := cloudIDIPCountMap[one.CloudID]
+		if !exist {
+			return nil, fmt.Errorf("subnet: %s not found", one.CloudID)
+		}
+
+		result[one.ID] = count
+	}
+
+	return result, nil
 }

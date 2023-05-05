@@ -22,6 +22,7 @@ package azure
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
 	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -107,15 +108,15 @@ func (a *ApplicationOfCreateAzureVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreate
 			Region:        req.Region,
 			ResourceGroup: req.ResourceGroupName,
 			IPv4Cidr:      []string{req.IPv4Cidr},
-			Subnets: []hcproto.SubnetCreateReq[hcproto.AzureSubnetCreateExt]{
+			Subnets: []subnet.SubnetCreateReq[subnet.AzureSubnetCreateExt]{
 				{
-					BaseSubnetCreateReq: &hcproto.BaseSubnetCreateReq{
+					BaseSubnetCreateReq: &subnet.BaseSubnetCreateReq{
 						AccountID: req.AccountID,
 						Name:      req.Subnet.Name,
 						Memo:      req.Memo,
 						BkBizID:   req.BkBizID,
 					},
-					Extension: &hcproto.AzureSubnetCreateExt{
+					Extension: &subnet.AzureSubnetCreateExt{
 						ResourceGroup: req.ResourceGroupName,
 						IPv4Cidr:      []string{req.Subnet.IPv4Cidr},
 					},

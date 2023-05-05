@@ -23,7 +23,6 @@ import (
 	"hcm/pkg/api/core"
 	proto "hcm/pkg/api/web-server/cloud"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -37,11 +36,6 @@ func (svc *service) ListVpcWithSubnetCount(cts *rest.Contexts) (interface{}, err
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Find}, BizID: bizID}
-	if err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
-		return nil, err
-	}
-
 	req := new(proto.ListVpcWithSubnetCountReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -52,20 +46,10 @@ func (svc *service) ListVpcWithSubnetCount(cts *rest.Contexts) (interface{}, err
 	}
 
 	listVpcReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "bk_biz_id",
-					Op:    filter.Equal.Factory(),
-					Value: bizID,
-				},
-				req.Filter,
-			},
-		},
-		Page: req.Page,
+		Filter: req.Filter,
+		Page:   req.Page,
 	}
-	vpcResult, err := svc.client.CloudServer().Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), listVpcReq)
+	vpcResult, err := svc.client.CloudServer().Vpc.ListInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
 	if err != nil {
 		logs.Errorf("list vpc failed, err: %v, rid: %svc", err, cts.Kit.Rid)
 		return nil, err
@@ -102,16 +86,11 @@ func (svc *service) getVpcSubnetCount(kt *kit.Kit, vpcID, zone string, bizID int
 					Op:    filter.Equal.Factory(),
 					Value: vpcID,
 				},
-				&filter.AtomRule{
-					Field: "bk_biz_id",
-					Op:    filter.Equal.Factory(),
-					Value: bizID,
-				},
 			},
 		},
 		Page: core.CountPage,
 	}
-	vpcResult, err := svc.client.CloudServer().Subnet.List(kt.Ctx, kt.Header(), req)
+	vpcResult, err := svc.client.CloudServer().Subnet.ListInBiz(kt.Ctx, kt.Header(), bizID, req)
 	if err != nil {
 		logs.Errorf("list vpc failed, err: %v, rid: %svc", err, kt.Rid)
 		return 0, 0, err
@@ -131,16 +110,11 @@ func (svc *service) getVpcSubnetCount(kt *kit.Kit, vpcID, zone string, bizID int
 					Op:    filter.Equal.Factory(),
 					Value: zone,
 				},
-				&filter.AtomRule{
-					Field: "bk_biz_id",
-					Op:    filter.Equal.Factory(),
-					Value: bizID,
-				},
 			},
 		},
 		Page: core.CountPage,
 	}
-	zoneResult, err := svc.client.CloudServer().Subnet.List(kt.Ctx, kt.Header(), req)
+	zoneResult, err := svc.client.CloudServer().Subnet.ListInBiz(kt.Ctx, kt.Header(), bizID, req)
 	if err != nil {
 		logs.Errorf("list vpc failed, err: %v, rid: %svc", err, kt.Rid)
 		return 0, 0, err

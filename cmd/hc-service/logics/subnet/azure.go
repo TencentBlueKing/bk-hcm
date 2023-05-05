@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -36,7 +37,7 @@ import (
 )
 
 // ConvAzureCreateReq convert hc-service azure subnet create request to adaption options.
-func ConvAzureCreateReq(req *hcservice.SubnetCreateReq[hcservice.AzureSubnetCreateExt]) *types.AzureSubnetCreateOption {
+func ConvAzureCreateReq(req *subnet.SubnetCreateReq[subnet.AzureSubnetCreateExt]) *types.AzureSubnetCreateOption {
 	return &types.AzureSubnetCreateOption{
 		Name:       req.Name,
 		Memo:       req.Memo,

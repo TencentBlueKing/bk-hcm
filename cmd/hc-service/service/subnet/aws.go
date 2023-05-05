@@ -21,21 +21,24 @@
 package subnet
 
 import (
+	"fmt"
+
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
+	proto "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // AwsSubnetCreate create aws subnet.
 func (s subnet) AwsSubnetCreate(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcservice.SubnetCreateReq[hcservice.AwsSubnetCreateExt])
+	req := new(proto.SubnetCreateReq[proto.AwsSubnetCreateExt])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -43,12 +46,12 @@ func (s subnet) AwsSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	awsCreateOpt := &subnetlogics.SubnetCreateOptions[hcservice.AwsSubnetCreateExt]{
+	awsCreateOpt := &subnetlogics.SubnetCreateOptions[proto.AwsSubnetCreateExt]{
 		BkBizID:    req.BkBizID,
 		AccountID:  req.AccountID,
 		Region:     req.Extension.Region,
 		CloudVpcID: req.CloudVpcID,
-		CreateReqs: []hcservice.SubnetCreateReq[hcservice.AwsSubnetCreateExt]{*req},
+		CreateReqs: []proto.SubnetCreateReq[proto.AwsSubnetCreateExt]{*req},
 	}
 	res, err := s.subnet.AwsSubnetCreate(cts.Kit, awsCreateOpt)
 	if err != nil {
@@ -62,7 +65,7 @@ func (s subnet) AwsSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 func (s subnet) AwsSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 
-	req := new(hcservice.SubnetUpdateReq)
+	req := new(proto.SubnetUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -136,43 +139,80 @@ func (s subnet) AwsSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// AwsSubnetCountIP count aws subnets' available ips.
-func (s subnet) AwsSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
-	id := cts.PathParameter("id").String()
-	if len(id) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "id is required")
+// AwsListSubnetCountIP count aws subnets' available ips.
+func (s subnet) AwsListSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.ListCountIPReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	getRes, err := s.cs.DataService().Aws.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), id)
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listReq := &core.ListReq{
+		Page: core.DefaultBasePage,
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: req.Region},
+				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: req.AccountID},
+				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.IDs},
+			},
+		},
+	}
+	listResult, err := s.cs.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
 		return nil, err
 	}
 
-	cli, err := s.ad.Aws(cts.Kit, getRes.AccountID)
+	if len(listResult.Details) != len(req.IDs) {
+		return nil, fmt.Errorf("list subnet return count not right, query id count: %d, but return %d",
+			len(req.IDs), len(listResult.Details))
+	}
+
+	cloudIDs := make([]string, 0, len(listResult.Details))
+	for _, one := range listResult.Details {
+		cloudIDs = append(cloudIDs, one.CloudID)
+	}
+
+	cli, err := s.ad.Aws(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	listOpt := &adcore.AwsListOption{
-		Region:   getRes.Region,
-		CloudIDs: []string{getRes.CloudID},
+		Region:   req.Region,
+		CloudIDs: cloudIDs,
 	}
 	subnetRes, err := cli.ListSubnet(cts.Kit, listOpt)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(subnetRes.Details) != 1 {
-		return nil, errf.New(errf.InvalidParameter, "subnet details count is invalid")
+	if len(subnetRes.Details) != len(cloudIDs) {
+		return nil, fmt.Errorf("list tcloud subnet return count not right, query id count: %d, but return %d",
+			len(cloudIDs), len(subnetRes.Details))
 	}
 
-	if subnetRes.Details[0].Extension == nil {
-		return nil, errf.Newf(errf.InvalidParameter, "get aws subnet by cloud id %s failed", getRes.CloudID)
+	cloudIDMap := make(map[string]string)
+	for _, one := range listResult.Details {
+		cloudIDMap[one.CloudID] = one.ID
 	}
 
-	return &hcservice.SubnetCountIPResult{
-		AvailableIPv4Count:  uint64(subnetRes.Details[0].Extension.AvailableIPAddressCount),
-		TotalIpAddressCount: uint64(subnetRes.Details[0].Extension.TotalIpAddressCount),
-		UsedIpAddressCount:  uint64(subnetRes.Details[0].Extension.UsedIpAddressCount),
-	}, nil
+	result := make(map[string]proto.AvailIPResult)
+	for _, one := range subnetRes.Details {
+		id, exist := cloudIDMap[one.CloudID]
+		if !exist {
+			return nil, fmt.Errorf("subnet: %s not found", one.CloudID)
+		}
+
+		result[id] = proto.AvailIPResult{
+			AvailableIPCount: uint64(one.Extension.AvailableIPAddressCount),
+			TotalIPCount:     uint64(one.Extension.TotalIpAddressCount),
+			UsedIPCount:      uint64(one.Extension.UsedIpAddressCount),
+		}
+	}
+
+	return result, nil
 }

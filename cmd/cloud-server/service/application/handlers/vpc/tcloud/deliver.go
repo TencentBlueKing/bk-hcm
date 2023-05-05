@@ -22,6 +22,7 @@ package tcloud
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
 	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -105,7 +106,7 @@ func (a *ApplicationOfCreateTCloudVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreat
 		Extension: &hcproto.TCloudVpcCreateExt{
 			Region:   req.Region,
 			IPv4Cidr: req.IPv4Cidr,
-			Subnets: []hcproto.TCloudOneSubnetCreateReq{
+			Subnets: []subnet.TCloudOneSubnetCreateReq{
 				{
 					IPv4Cidr: req.Subnet.IPv4Cidr,
 					Name:     req.Subnet.Name,

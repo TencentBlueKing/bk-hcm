@@ -22,6 +22,7 @@ package gcp
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
 	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -105,15 +106,15 @@ func (a *ApplicationOfCreateGcpVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreateRe
 		},
 		Extension: &hcproto.GcpVpcCreateExt{
 			RoutingMode: req.RoutingMode,
-			Subnets: []hcproto.SubnetCreateReq[hcproto.GcpSubnetCreateExt]{
+			Subnets: []subnet.SubnetCreateReq[subnet.GcpSubnetCreateExt]{
 				{
-					BaseSubnetCreateReq: &hcproto.BaseSubnetCreateReq{
+					BaseSubnetCreateReq: &subnet.BaseSubnetCreateReq{
 						AccountID: req.AccountID,
 						Name:      req.Subnet.Name,
 						Memo:      req.Memo,
 						BkBizID:   req.BkBizID,
 					},
-					Extension: &hcproto.GcpSubnetCreateExt{
+					Extension: &subnet.GcpSubnetCreateExt{
 						Region:                req.Region,
 						IPv4Cidr:              req.Subnet.IPv4Cidr,
 						PrivateIpGoogleAccess: *req.Subnet.PrivateIPGoogleAccess,

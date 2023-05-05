@@ -41,16 +41,40 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 	}
 }
 
-// List subnets.
-func (v *SubnetClient) List(ctx context.Context, h http.Header, req *core.ListReq) (*proto.SubnetListResult,
-	error) {
+// ListInBiz subnets.
+func (v *SubnetClient) ListInBiz(ctx context.Context, h http.Header, bizID int64, req *core.ListReq) (
+	*proto.SubnetListResult, error) {
 
 	resp := new(proto.SubnetListResp)
 
 	err := v.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/subnets/list").
+		SubResourcef("/bizs/%d/subnets/list", bizID).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ListCountIP 获取子网可用IP.
+func (v *SubnetClient) ListCountIP(ctx context.Context, h http.Header, bizID int64, req *proto.ListSubnetCountIPReq) (
+	map[string]proto.SubnetCountIPResult, error) {
+
+	resp := new(proto.ListSubnetCountIPResp)
+
+	err := v.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/bizs/%d/subnets/ips/count/list", bizID).
 		WithHeaders(h).
 		Do().
 		Into(resp)

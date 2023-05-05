@@ -57,9 +57,9 @@ func InitSubnetService(cap *capability.Capability) {
 	h.Add("AzureSubnetDelete", "DELETE", "/vendors/azure/subnets/{id}", s.AzureSubnetDelete)
 
 	// count subnet available ips
-	h.Add("TCloudSubnetCountIP", "POST", "/vendors/tcloud/subnets/{id}/ips/count", s.TCloudSubnetCountIP)
-	h.Add("AwsSubnetCountIP", "POST", "/vendors/aws/subnets/{id}/ips/count", s.AwsSubnetCountIP)
-	h.Add("AzureSubnetCountIP", "POST", "/vendors/azure/subnets/{id}/ips/count", s.AzureSubnetCountIP)
+	h.Add("TCloudListSubnetCountIP", "POST", "/vendors/tcloud/subnets/ips/count/list", s.TCloudListSubnetCountIP)
+	h.Add("AwsListSubnetCountIP", "POST", "/vendors/aws/subnets/ips/count/list", s.AwsListSubnetCountIP)
+	h.Add("AzureListSubnetCountIP", "POST", "/vendors/azure/subnets/ips/count/list", s.AzureListSubnetCountIP)
 	h.Add("HuaWeiSubnetCountIP", "POST", "/vendors/huawei/subnets/{id}/ips/count", s.HuaWeiSubnetCountIP)
 
 	h.Load(cap.WebService)

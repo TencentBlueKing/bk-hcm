@@ -23,7 +23,7 @@ package subnet
 import (
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
-	hcservice "hcm/pkg/api/hc-service"
+	hcservice "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/validator"
 )

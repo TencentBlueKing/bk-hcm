@@ -22,6 +22,7 @@ package aws
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
 	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -105,7 +106,7 @@ func (a *ApplicationOfCreateAwsVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreateRe
 			Region:          req.Region,
 			IPv4Cidr:        req.IPv4Cidr,
 			InstanceTenancy: req.InstanceTenancy,
-			Subnets:         []hcproto.SubnetCreateReq[hcproto.AwsSubnetCreateExt]{},
+			Subnets:         []subnet.SubnetCreateReq[subnet.AwsSubnetCreateExt]{},
 		},
 	}
 }

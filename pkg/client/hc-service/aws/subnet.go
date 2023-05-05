@@ -24,7 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
-	hcservice "hcm/pkg/api/hc-service"
+	proto "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -44,7 +44,7 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 
 // Create subnet.
 func (s *SubnetClient) Create(ctx context.Context, h http.Header,
-	req *hcservice.SubnetCreateReq[hcservice.AwsSubnetCreateExt]) (*core.CreateResult, error) {
+	req *proto.SubnetCreateReq[proto.AwsSubnetCreateExt]) (*core.CreateResult, error) {
 
 	resp := new(core.CreateResp)
 
@@ -67,7 +67,7 @@ func (s *SubnetClient) Create(ctx context.Context, h http.Header,
 }
 
 // Update subnet.
-func (s *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *hcservice.SubnetUpdateReq) error {
+func (s *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *proto.SubnetUpdateReq) error {
 	resp := new(rest.BaseResp)
 
 	err := s.client.Patch().
@@ -132,14 +132,15 @@ func (s *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *sync.
 	return nil
 }
 
-// CountIP count aws subnet available ips.
-func (s *SubnetClient) CountIP(ctx context.Context, h http.Header, id string) (*hcservice.SubnetCountIPResult, error) {
-	resp := new(hcservice.SubnetCountIPResp)
+// ListCountIP count tcloud subnet available ips.
+func (s *SubnetClient) ListCountIP(ctx context.Context, h http.Header, req *proto.ListCountIPReq) (
+	map[string]proto.AvailIPResult, error) {
 
+	resp := new(proto.ListAvailIPResp)
 	err := s.client.Post().
 		WithContext(ctx).
-		Body(nil).
-		SubResourcef("/subnets/%s/ips/count", id).
+		Body(req).
+		SubResourcef("/subnets/ips/count/list").
 		WithHeaders(h).
 		Do().
 		Into(resp)

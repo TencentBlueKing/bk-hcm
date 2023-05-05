@@ -22,6 +22,7 @@ package huawei
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
 	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -106,15 +107,15 @@ func (a *ApplicationOfCreateHuaWeiVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreat
 		Extension: &hcproto.HuaWeiVpcCreateExt{
 			Region:   req.Region,
 			IPv4Cidr: req.IPv4Cidr,
-			Subnets: []hcproto.SubnetCreateReq[hcproto.HuaWeiSubnetCreateExt]{
+			Subnets: []subnet.SubnetCreateReq[subnet.HuaWeiSubnetCreateExt]{
 				{
-					BaseSubnetCreateReq: &hcproto.BaseSubnetCreateReq{
+					BaseSubnetCreateReq: &subnet.BaseSubnetCreateReq{
 						AccountID: req.AccountID,
 						Name:      req.Subnet.Name,
 						Memo:      req.Memo,
 						BkBizID:   req.BkBizID,
 					},
-					Extension: &hcproto.HuaWeiSubnetCreateExt{
+					Extension: &subnet.HuaWeiSubnetCreateExt{
 						Region:     req.Region,
 						IPv4Cidr:   req.Subnet.IPv4Cidr,
 						Ipv6Enable: *req.Subnet.IPv6Enable,

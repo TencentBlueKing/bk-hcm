@@ -20,6 +20,7 @@
 package hcservice
 
 import (
+	"hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
@@ -57,7 +58,7 @@ type TCloudVpcCreateExt struct {
 	Region   string `json:"region" validate:"required"`
 	IPv4Cidr string `json:"ipv4_cidr" validate:"required"`
 	// Subnets defines subnets that should be created in vpc. **not supported in cloud, only for product demand**
-	Subnets []TCloudOneSubnetCreateReq `json:"subnets" validate:"omitempty,max=100"`
+	Subnets []subnet.TCloudOneSubnetCreateReq `json:"subnets" validate:"omitempty,max=100"`
 }
 
 // AwsVpcCreateExt defines aws vpc extensional info.
@@ -68,7 +69,7 @@ type AwsVpcCreateExt struct {
 	InstanceTenancy             string `json:"instance_tenancy" validate:"required"`
 	// TODO dns选项，用ModifyVpcAttribute操作的
 	// Subnets defines subnets that should be created in vpc. **not supported in cloud, only for product demand**
-	Subnets []SubnetCreateReq[AwsSubnetCreateExt] `json:"subnets" validate:"omitempty,max=100"`
+	Subnets []subnet.SubnetCreateReq[subnet.AwsSubnetCreateExt] `json:"subnets" validate:"omitempty,max=100"`
 }
 
 // GcpVpcCreateExt defines gcp vpc extensional info.
@@ -78,7 +79,7 @@ type GcpVpcCreateExt struct {
 	InternalIpv6Range     string `json:"internal_ipv6_range" validate:"-"`
 	RoutingMode           string `json:"routing_mode,omitempty" validate:"omitempty"`
 	// Subnets defines subnets that should be created in vpc. **not supported in cloud, only for product demand**
-	Subnets []SubnetCreateReq[GcpSubnetCreateExt] `json:"subnets" validate:"omitempty,max=100"`
+	Subnets []subnet.SubnetCreateReq[subnet.GcpSubnetCreateExt] `json:"subnets" validate:"omitempty,max=100"`
 }
 
 // AzureVpcCreateExt defines azure vpc extensional info.
@@ -89,7 +90,7 @@ type AzureVpcCreateExt struct {
 	IPv6Cidr      []string `json:"ipv6_cidr" validate:"omitempty"`
 	// TODO BastionHost 等选项，暂时不支持启用，先不支持
 	// Subnets defines subnets that should be created in vpc. **required**
-	Subnets []SubnetCreateReq[AzureSubnetCreateExt] `json:"subnets" validate:"min=1,max=100"`
+	Subnets []subnet.SubnetCreateReq[subnet.AzureSubnetCreateExt] `json:"subnets" validate:"min=1,max=100"`
 }
 
 // HuaWeiVpcCreateExt defines huawei vpc extensional info.
@@ -98,7 +99,7 @@ type HuaWeiVpcCreateExt struct {
 	IPv4Cidr            string  `json:"ipv4_cidr"`
 	EnterpriseProjectID *string `json:"enterprise_project_id" validate:"omitempty"`
 	// Subnets defines subnets that should be created in vpc. **not supported in cloud, only for product demand**
-	Subnets []SubnetCreateReq[HuaWeiSubnetCreateExt] `json:"subnets" validate:"omitempty,max=100"`
+	Subnets []subnet.SubnetCreateReq[subnet.HuaWeiSubnetCreateExt] `json:"subnets" validate:"omitempty,max=100"`
 }
 
 // ------------------------- Update -------------------------

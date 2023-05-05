@@ -28,7 +28,7 @@ import (
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
-	hcservice "hcm/pkg/api/hc-service"
+	hcservice "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"

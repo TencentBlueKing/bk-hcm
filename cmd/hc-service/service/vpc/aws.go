@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
+	subnetproto "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -83,7 +84,7 @@ func (v vpc) AwsVpcCreate(cts *rest.Contexts) (interface{}, error) {
 
 	// create aws subnets
 	if len(req.Extension.Subnets) > 0 {
-		subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.AwsSubnetCreateExt]{
+		subnetCreateOpt := &subnet.SubnetCreateOptions[subnetproto.AwsSubnetCreateExt]{
 			BkBizID:    constant.UnassignedBiz,
 			AccountID:  req.AccountID,
 			Region:     data.Region,

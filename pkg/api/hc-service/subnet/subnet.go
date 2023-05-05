@@ -17,11 +17,10 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package hcservice
+package subnet
 
 import (
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/rest"
 )
 
 // -------------------------- Create --------------------------
@@ -118,17 +117,4 @@ type SubnetUpdateReq struct {
 // Validate SubnetUpdateReq.
 func (u *SubnetUpdateReq) Validate() error {
 	return validator.Validate.Struct(u)
-}
-
-// SubnetCountIPResp count subnet available ips response.
-type SubnetCountIPResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *SubnetCountIPResult
-}
-
-// SubnetCountIPResult count subnet available ips result.
-type SubnetCountIPResult struct {
-	AvailableIPv4Count  uint64 `json:"available_ipv4_count"`
-	TotalIpAddressCount uint64 `json:"total_ip_address_count"`
-	UsedIpAddressCount  uint64 `json:"used_ip_address_count"`
 }

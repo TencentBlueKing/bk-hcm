@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
+	subnetproto "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -104,7 +105,7 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		return core.CreateResult{ID: result.IDs[0]}, nil
 	}
 
-	regionSubnetMap := make(map[string][]hcservice.SubnetCreateReq[hcservice.GcpSubnetCreateExt])
+	regionSubnetMap := make(map[string][]subnetproto.SubnetCreateReq[subnetproto.GcpSubnetCreateExt])
 	for _, s := range req.Extension.Subnets {
 		regionSubnetMap[s.Extension.Region] = append(regionSubnetMap[s.Extension.Region], s)
 	}
@@ -132,7 +133,7 @@ const maxRetryCount = 10
 
 // createGcpSubnetWithRetry create gcp subnet, retry when vpc is not ready.
 func (v vpc) createGcpSubnetWithRetry(kt *kit.Kit, bizID int64, accountID, cloudVpcID, region string,
-	subnets []hcservice.SubnetCreateReq[hcservice.GcpSubnetCreateExt]) error {
+	subnets []subnetproto.SubnetCreateReq[subnetproto.GcpSubnetCreateExt]) error {
 
 	rty := retry.NewRetryPolicy(maxRetryCount, [2]uint{10000, 15000})
 
@@ -141,7 +142,7 @@ func (v vpc) createGcpSubnetWithRetry(kt *kit.Kit, bizID int64, accountID, cloud
 			return fmt.Errorf("create subnet failed count exceeds %d", maxRetryCount)
 		}
 
-		subnetCreateOpt := &subnet.SubnetCreateOptions[hcservice.GcpSubnetCreateExt]{
+		subnetCreateOpt := &subnet.SubnetCreateOptions[subnetproto.GcpSubnetCreateExt]{
 			BkBizID:    bizID,
 			AccountID:  accountID,
 			Region:     region,

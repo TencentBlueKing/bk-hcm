@@ -24,7 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
-	hcservice "hcm/pkg/api/hc-service"
+	proto "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -44,7 +44,7 @@ func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
 
 // Create subnet.
 func (s *SubnetClient) Create(ctx context.Context, h http.Header,
-	req *hcservice.SubnetCreateReq[hcservice.HuaWeiSubnetCreateExt]) (*core.CreateResult, error) {
+	req *proto.SubnetCreateReq[proto.HuaWeiSubnetCreateExt]) (*core.CreateResult, error) {
 
 	resp := new(core.CreateResp)
 
@@ -67,7 +67,7 @@ func (s *SubnetClient) Create(ctx context.Context, h http.Header,
 }
 
 // Update subnet.
-func (s *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *hcservice.SubnetUpdateReq) error {
+func (s *SubnetClient) Update(ctx context.Context, h http.Header, id string, req *proto.SubnetUpdateReq) error {
 	resp := new(rest.BaseResp)
 
 	err := s.client.Patch().
@@ -133,8 +133,8 @@ func (s *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *sync.
 }
 
 // CountIP count huawei subnet available ips.
-func (s *SubnetClient) CountIP(ctx context.Context, h http.Header, id string) (*hcservice.SubnetCountIPResult, error) {
-	resp := new(hcservice.SubnetCountIPResp)
+func (s *SubnetClient) CountIP(ctx context.Context, h http.Header, id string) (*proto.AvailIPResult, error) {
+	resp := new(proto.GetAvailIPResp)
 
 	err := s.client.Post().
 		WithContext(ctx).
