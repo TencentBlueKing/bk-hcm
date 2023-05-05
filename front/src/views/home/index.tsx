@@ -20,6 +20,7 @@ import { useI18n } from 'vue-i18n';
 // import AddProjectDialog from '@/components/AddProjectDialog';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
+const { VERSION } = window.PROJECT_CONFIG;
 
 export default defineComponent({
   setup() {
@@ -319,7 +320,7 @@ export default defineComponent({
 
                     footer: () => (
                       // eslint-disable-next-line max-len
-                      <div class="mt20">Copyright © 2012-{ curYear.value } BlueKing - Hybrid Cloud Management System. All Rights Reserved.</div>
+                      <div class="mt20">Copyright © 2012-{ curYear.value } BlueKing - Hybrid Cloud Management System. All Rights Reserved.{ VERSION }</div>
                     ),
                   }}
                 </Navigation>

@@ -83,7 +83,7 @@ const renderColumns = [
         'span',
         {
           onClick() {
-            emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
+            emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
           },
         },
         [
@@ -92,7 +92,7 @@ const renderColumns = [
             {
               text: true,
               theme: 'primary',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
+              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
             || data.cvm_id || (data.bk_biz_id !== -1 && !location.href.includes('business')),
               onClick() {
                 InfoBox({

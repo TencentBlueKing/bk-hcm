@@ -533,7 +533,7 @@ export default defineComponent({
               v-model={this.resourceTypes}
             >
               {
-                RESOURCE_TYPES.map((type) => {
+                RESOURCE_TYPES.filter(item => item.type !== 'image').map((type) => {
                   return <bk-checkbox disabled={true} label={type.type}>{ this.t(type.name) }</bk-checkbox>;
                 })
               }

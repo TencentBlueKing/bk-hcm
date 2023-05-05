@@ -6,6 +6,7 @@ import {
   h,
   watch,
   computed,
+  inject,
 } from 'vue';
 import {
   Button,
@@ -17,6 +18,7 @@ import {
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
+import bus from '@/common/bus';
 import {
   useResourceStore,
   useAccountStore,
@@ -69,6 +71,18 @@ const {
 } = useI18n();
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
+const authVerifyData: any = inject('authVerifyData');
+
+
+const actionName = computed(() => {   // 资源下没有业务ID
+  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+});
+
+
+// 权限弹窗 bus通知最外层弹出
+const showAuthDialog = (authActionName: string) => {
+  bus.$emit('auth', authActionName);
+};
 
 const isResourcePage = computed(() => {   // 资源下没有业务ID
   return !accountStore.bizs;
@@ -156,26 +170,35 @@ const columns: any = [
             ],
           ),
           h(
-            Button,
+            'span',
             {
-              text: true,
-              theme: 'primary',
-              disabled: data.vendor === 'azure' && !data.extension?.cloud_security_group_id,  // 如果没有安全组id 就不可以解绑
               onClick() {
-                if (data.vendor === 'azure') {
-                  securityId.value = data.extension.security_group_id;
-                  curreClickId.value = data.id;
-                } else {
-                  securityId.value = data.id;
-                }
-                unBind(data);
+                showAuthDialog(actionName.value);
               },
             },
             [
-              '解绑',
-            ],
-          ),
-        ],
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled: (data.vendor === 'azure' && !data.extension?.cloud_security_group_id)
+              || !authVerifyData.value?.permissionAction[actionName.value],  // 如果没有安全组id 就不可以解绑
+                  onClick() {
+                    if (data.vendor === 'azure') {
+                      securityId.value = data.extension.security_group_id;
+                      curreClickId.value = data.id;
+                    } else {
+                      securityId.value = data.id;
+                    }
+                    unBind(data);
+                  },
+                },
+                [
+                  '解绑',
+                ],
+              )],
+          )],
       );
     },
   },
@@ -400,13 +423,16 @@ getSecurityGroupsList();
 
 <template>
   <div>
-    <bk-button
+    <span
       v-if="props.data.vendor === 'tcloud' || props.data.vendor === 'aws' || props.data.vendor === 'huawei'"
-      class="mt20" theme="primary"
-      :disabled="isBindBusiness"
-      @click="handleSecurityDialog">
-      {{t('绑定')}}
-    </bk-button>
+      @click="showAuthDialog(actionName)">
+      <bk-button
+        class="mt20" theme="primary"
+        :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
+        @click="handleSecurityDialog">
+        {{t('绑定')}}
+      </bk-button>
+    </span>
     <bk-loading
       :loading="isListLoading"
     >

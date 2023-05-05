@@ -3,6 +3,8 @@ import {
   h,
   watch,
   ref,
+  inject,
+  computed,
 } from 'vue';
 import {
   Button,
@@ -10,17 +12,18 @@ import {
 
 import {
   useRouter,
-  useRoute
+  useRoute,
 } from 'vue-router';
 import useMountedDrive from '../../../hooks/use-mounted-drive';
 import useUninstallDrive from '../../../hooks/use-uninstall-drive';
-import useQueryList from '../../../hooks/use-query-list'
+import useQueryList from '../../../hooks/use-query-list';
+import bus from '@/common/bus';
 import {
   useResourceStore,
 } from '@/store/resource';
 import {
   useAccountStore,
-} from '@/store/account';
+} from '@/store/account';3;
 
 const props = defineProps({
   data: {
@@ -33,8 +36,23 @@ const props = defineProps({
 
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
+
+
+const isResourcePage: any = inject('isResourcePage');
+const authVerifyData: any = inject('authVerifyData');
+
+
+const actionName = computed(() => {   // 资源下没有业务ID
+  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+});
+
+
+// 权限弹窗 bus通知最外层弹出
+const showAuthDialog = (authActionName: string) => {
+  bus.$emit('auth', authActionName);
+};
 
 const {
   datas,
@@ -44,8 +62,8 @@ const {
   {},
   'disk',
   () => {
-    return Promise.all([resourceStore.getDiskListByCvmId(props.data.vendor, props.data.id)])
-  }
+    return Promise.all([resourceStore.getDiskListByCvmId(props.data.vendor, props.data.id)]);
+  },
 );
 
 const {
@@ -83,7 +101,7 @@ const columns = ref([
           text: true,
           theme: 'primary',
           onClick() {
-            const type = 'drive'
+            const type = 'drive';
             const routeInfo: any = {
               query: {
                 id: cell,
@@ -134,7 +152,7 @@ const columns = ref([
       return h(
         'span',
         [
-          data.exencrypted ? '是' : '否'
+          data.exencrypted ? '是' : '否',
         ],
       );
     },
@@ -143,27 +161,36 @@ const columns = ref([
     label: '随主机销毁',
     field: '',
     render({ data }: any) {
-      const attachment = data?.extension?.attachment
-      const host = attachment?.find((x: any) => x.instance_id === props.data.cloud_id)
-      return host ? (host.delete_on_termination ?'是' : '否') : '--';
+      const attachment = data?.extension?.attachment;
+      const host = attachment?.find((x: any) => x.instance_id === props.data.cloud_id);
+      return host ? (host.delete_on_termination ? '是' : '否') : '--';
     },
   },
   {
     label: '操作',
     render({ data }: any) {
       return h(
-        Button,
+        'span',
         {
-          text: true,
-          theme: 'primary',
-          disabled: data.is_system_disk,
           onClick() {
-            handleUninstallDrive(data);
+            showAuthDialog(actionName.value);
           },
         },
         [
-          '卸载',
-        ],
+          h(
+            Button,
+            {
+              text: true,
+              theme: 'primary',
+              disabled: data.is_system_disk || !authVerifyData.value?.permissionAction[actionName.value],
+              onClick() {
+                handleUninstallDrive(data);
+              },
+            },
+            [
+              '卸载',
+            ],
+          )],
       );
     },
   },
@@ -189,8 +216,8 @@ watch(
         {
           label: '到期时间',
           field: '',
-        }
-      ])
+        },
+      ]);
     }
     if (props.data.vendor === 'aws') {
       columns.value.splice(2, 0, ...[
@@ -202,8 +229,8 @@ watch(
           label: '设备名',
           field: 'device_name',
           render({ data }: any) {
-            const attachment = data?.extension?.attachment
-            const host = attachment.find((x: any) => x.instance_id === props.data.cloud_id)
+            const attachment = data?.extension?.attachment;
+            const host = attachment.find((x: any) => x.instance_id === props.data.cloud_id);
             return host.device_name;
           },
         },
@@ -211,29 +238,31 @@ watch(
           label: '容量(GB)',
           field: 'disk_size',
         },
-      ])
+      ]);
     }
     if (props.data.vendor === 'azure') {
-      columns.value.splice(6, 1)
+      columns.value.splice(6, 1);
     }
   },
   {
     deep: true,
-    immediate: true
-  }
-)
+    immediate: true,
+  },
+);
 </script>
 
 <template>
   <bk-loading
     :loading="isLoading"
   >
-    <bk-button
-      class="mt20 mr20 w100"
-      theme="primary"
-      :disabled="isBindBusiness"
-      @click="handleMountedDrive"
-    >挂载</bk-button>
+    <span @click="showAuthDialog(actionName)">
+      <bk-button
+        class="mt20 mr20 w100"
+        theme="primary"
+        :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
+        @click="handleMountedDrive"
+      >挂载</bk-button>
+    </span>
     <bk-table
       class="mt20"
       row-hover="auto"

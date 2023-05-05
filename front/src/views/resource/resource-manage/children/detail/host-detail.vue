@@ -45,6 +45,7 @@ const cloudType = ref<any>(route.query?.type);
 const filter = ref({ op: 'and', rules: [] });
 
 const isResourcePage: any = inject('isResourcePage');
+const authVerifyData: any = inject('authVerifyData');
 
 // 操作的相关信息
 const cvmInfo = ref({

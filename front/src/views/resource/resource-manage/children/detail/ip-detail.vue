@@ -1,5 +1,7 @@
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { ref, inject,
+  computed,
+} from 'vue';
 import DetailHeader from '../../common/header/detail-header';
 import IpInfo from '../components/ip/ip-info.vue';
 import AssignEip from '../dialog/assign-eip/assign-eip';
@@ -9,15 +11,13 @@ import {
 } from 'bkui-vue';
 import {
   useRoute,
-  useRouter
+  useRouter,
 } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
 import {
-  useResourceStore
+  useResourceStore,
 } from '@/store/resource';
-import {
-  computed,
-} from 'vue';
+import bus from '@/common/bus';
 import {
   useI18n,
 } from 'vue-i18n';
@@ -44,22 +44,22 @@ const {
 
 const handleShowAssignEip = () => {
   isShowAssignEip.value = true;
-}
+};
 
 const handleShowDeleteDialog = () => {
   showDelete.value = true;
-}
+};
 
 const handleCloseDeleteEip = () => {
   showDelete.value = false;
-}
+};
 
 const handleDeleteEip = () => {
   const postData: any = {
     eip_id: route.query.id,
-  }
+  };
   if (['gcp', 'azure'].includes(detail.value.vendor)) {
-    postData.network_interface_id = detail.value.instance_id
+    postData.network_interface_id = detail.value.instance_id;
   }
   isDeleteing.value = true;
   resourceStore
@@ -67,13 +67,13 @@ const handleDeleteEip = () => {
     .then(() => {
       getDetail()
         .then(() => {
-          handleCloseDeleteEip()
-        })
+          handleCloseDeleteEip();
+        });
     })
     .finally(() =>  {
       isDeleteing.value = false;
-    })
-}
+    });
+};
 
 const handleShowDelete = () => {
   InfoBox({
@@ -98,8 +98,26 @@ const handleShowDelete = () => {
 };
 
 const disableOperation = computed(() => {
-  return !location.href.includes('business') && detail.value.bk_biz_id !== -1
-})
+  return !location.href.includes('business') && detail.value.bk_biz_id !== -1;
+});
+
+const isResourcePage: any = inject('isResourcePage');
+const authVerifyData: any = inject('authVerifyData');
+
+
+const actionName = computed(() => {   // 资源下没有业务ID
+  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+});
+
+const actionDeleteName = computed(() => {   // 资源下没有业务ID
+  return isResourcePage.value ? 'iaas_resource_delete' : 'biz_iaas_resource_delete';
+});
+
+
+// 权限弹窗 bus通知最外层弹出
+const showAuthDialog = (authActionName: string) => {
+  bus.$emit('auth', authActionName);
+};
 </script>
 
 <template>
@@ -109,36 +127,42 @@ const disableOperation = computed(() => {
     <detail-header>
       弹性IP：ID（{{ detail.id }}）
       <template #right>
-        <bk-button
-          v-if="!detail.instance_id"
-          class="w100 ml10"
-          theme="primary"
-          :disabled="disableOperation"
-          @click="handleShowAssignEip"
-        >
-          {{ t('绑定') }}
-        </bk-button>
-        <bk-button
-          v-else
-          class="w100 ml10"
-          theme="primary"
-          :disabled="disableOperation || detail.instance_type === 'OTHER'"
-          @click="handleShowDeleteDialog"
-        >
-          {{ t('解绑') }}
-        </bk-button>
-        <bk-button
-          class="w100 ml10"
-          theme="primary"
-          :disabled="!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'"
-          @click="handleShowDelete"
-        >
-          {{ t('删除') }}
-        </bk-button>
+        <span v-if="!detail.instance_id" @click="showAuthDialog(actionName)">
+          <bk-button
+            class="w100 ml10"
+            theme="primary"
+            :disabled="disableOperation || !authVerifyData?.permissionAction[actionName]"
+            @click="handleShowAssignEip"
+          >
+            {{ t('绑定') }}
+          </bk-button>
+        </span>
+        <span v-else @click="showAuthDialog(actionName)">
+          <bk-button
+            class="w100 ml10"
+            theme="primary"
+            :disabled="disableOperation || detail.instance_type === 'OTHER'
+              || !authVerifyData?.permissionAction[actionName]"
+            @click="handleShowDeleteDialog"
+          >
+            {{ t('解绑') }}
+          </bk-button>
+        </span>
+        <span @click="showAuthDialog(actionDeleteName)">
+          <bk-button
+            class="w100 ml10"
+            theme="primary"
+            :disabled="!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
+              || !authVerifyData?.permissionAction[actionDeleteName]"
+            @click="handleShowDelete"
+          >
+            {{ t('删除') }}
+          </bk-button>
+        </span>
       </template>
     </detail-header>
 
-    <ip-info :detail="detail"/>
+    <ip-info :detail="detail" />
 
     <assign-eip
       v-if="detail.id"

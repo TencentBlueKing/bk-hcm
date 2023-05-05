@@ -153,7 +153,7 @@ const renderColumns = [
         'span',
         {
           onClick() {
-            emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
+            emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
           },
         },
         [

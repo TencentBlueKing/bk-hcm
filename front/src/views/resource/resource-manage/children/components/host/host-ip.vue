@@ -3,6 +3,8 @@ import {
   ref,
   h,
   watch,
+  inject,
+  computed,
 } from 'vue';
 import {
   Button,
@@ -12,6 +14,7 @@ import {
   useResourceStore,
 } from '@/store/resource';
 import useQueryList from '../../../hooks/use-query-list';
+import bus from '@/common/bus';
 
 const props = defineProps({
   data: {
@@ -23,6 +26,19 @@ const props = defineProps({
 });
 
 const resourceStore = useResourceStore();
+const isResourcePage: any = inject('isResourcePage');
+const authVerifyData: any = inject('authVerifyData');
+
+
+const actionName = computed(() => {   // 资源下没有业务ID
+  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+});
+
+
+// 权限弹窗 bus通知最外层弹出
+const showAuthDialog = (authActionName: string) => {
+  bus.$emit('auth', authActionName);
+};
 
 // 状态
 const showChangeIP = ref(false);
@@ -89,16 +105,27 @@ const columns = ref([
         //   ],
         // ),
         h(
-          Button,
+          'span',
           {
-            text: true,
-            theme: 'primary',
             onClick() {
-              handleToggleShowUnbind(data);
+              showAuthDialog(actionName.value);
             },
           },
           [
-            '解绑',
+            h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                disabled: !authVerifyData.value?.permissionAction[actionName.value],
+                onClick() {
+                  handleToggleShowUnbind(data);
+                },
+              },
+              [
+                '解绑',
+              ],
+            ),
           ],
         ),
       ];
@@ -295,14 +322,16 @@ watch(
   <bk-loading
     :loading="isLoading"
   >
-    <bk-button
-      class="mt20"
-      theme="primary"
-      :disabled="isBindBusiness"
-      @click="handleToggleShowBind(true)"
-    >
-      绑定
-    </bk-button>
+    <span @click="showAuthDialog(actionName)">
+      <bk-button
+        class="mt20"
+        theme="primary"
+        :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
+        @click="handleToggleShowBind(true)"
+      >
+        绑定
+      </bk-button>
+    </span>
     <bk-table
       class="mt20"
       row-hover="auto"
