@@ -20,8 +20,29 @@
 // Package discovery defines server discovery operations.
 package discovery
 
+import (
+	"fmt"
+
+	"hcm/pkg/cc"
+)
+
 // Interface discovery interface.
 type Interface interface {
 	// GetServers 获取服务节点信息
 	GetServers() ([]string, error)
+}
+
+// DeniedServers are virtual servers instance which is used to deny
+// access to illegal services.
+func DeniedServers(nm cc.Name) Interface {
+	return &deniedServers{name: nm}
+}
+
+type deniedServers struct {
+	name cc.Name
+}
+
+// GetServers is used to return denied errors.
+func (ud deniedServers) GetServers() ([]string, error) {
+	return nil, fmt.Errorf("access to %s server is not allowed", ud.name)
 }

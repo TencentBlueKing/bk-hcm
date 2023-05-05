@@ -87,7 +87,7 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 	// 使用基本Http Client生成调用依赖其他微服务的Client集合
-	apiClientSet := apiclient.NewClientSet(httpClient, dis, []cc.Name{cc.CloudServerName})
+	apiClientSet := apiclient.NewClientSet(httpClient, dis)
 
 	// 创建ESB Client
 	esbConfig := cc.WebServer().Esb

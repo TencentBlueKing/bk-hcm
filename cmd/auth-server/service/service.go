@@ -109,7 +109,7 @@ func newClientSet(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, 
 	if err != nil {
 		return nil, err
 	}
-	apiClientSet := apicli.NewAuthServerClientSet(restCli, sd)
+	apiClientSet := apicli.NewClientSet(restCli, sd)
 
 	logs.Infof("initialize system api client set success.")
 

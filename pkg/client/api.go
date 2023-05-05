@@ -29,6 +29,7 @@ import (
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/client/healthz"
 	"hcm/pkg/rest/client"
+	rdisc "hcm/pkg/rest/discovery"
 	"hcm/pkg/serviced"
 )
 
@@ -41,42 +42,33 @@ type ClientSet struct {
 }
 
 // NewClientSet create a new empty client set.
-func NewClientSet(client client.HTTPClient, discover serviced.Discover, discoverServices []cc.Name) *ClientSet {
+func NewClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
 	cs := &ClientSet{
 		version:      "v1",
 		client:       client,
 		apiDiscovery: make(map[cc.Name]*discovery.APIDiscovery),
 	}
 
-	for _, service := range discoverServices {
+	for _, service := range discover.Services() {
 		cs.apiDiscovery[service] = discovery.NewAPIDiscovery(service, discover)
 	}
 	return cs
 }
 
-// NewHCServiceClientSet create a new hc-service used client set.
-func NewHCServiceClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
-	discoverServices := []cc.Name{cc.DataServiceName}
-	return NewClientSet(client, discover, discoverServices)
-}
-
-// NewAuthServerClientSet create a new auth-server used client set.
-func NewAuthServerClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
-	discoverServices := []cc.Name{cc.DataServiceName}
-	return NewClientSet(client, discover, discoverServices)
-}
-
-// NewCloudServerClientSet create a new cloud-server used client set.
-func NewCloudServerClientSet(client client.HTTPClient, discover serviced.Discover) *ClientSet {
-	discoverServices := []cc.Name{cc.DataServiceName, cc.HCServiceName}
-	return NewClientSet(client, discover, discoverServices)
+func (cs *ClientSet) discovery(nm cc.Name) rdisc.Interface {
+	sd, exist := cs.apiDiscovery[nm]
+	if exist {
+		return sd
+	} else {
+		return rdisc.DeniedServers(nm)
+	}
 }
 
 // CloudServer get cloud-server client.
 func (cs *ClientSet) CloudServer() *cloudserver.Client {
 	c := &client.Capability{
 		Client:   cs.client,
-		Discover: cs.apiDiscovery[cc.CloudServerName],
+		Discover: cs.discovery(cc.CloudServerName),
 	}
 	return cloudserver.NewClient(c, cs.version)
 }
@@ -85,8 +77,9 @@ func (cs *ClientSet) CloudServer() *cloudserver.Client {
 func (cs *ClientSet) DataService() *dataservice.Client {
 	c := &client.Capability{
 		Client:   cs.client,
-		Discover: cs.apiDiscovery[cc.DataServiceName],
+		Discover: cs.discovery(cc.DataServiceName),
 	}
+
 	return dataservice.NewClient(c, cs.version)
 }
 
@@ -94,7 +87,7 @@ func (cs *ClientSet) DataService() *dataservice.Client {
 func (cs *ClientSet) HCService() *hcservice.Client {
 	c := &client.Capability{
 		Client:   cs.client,
-		Discover: cs.apiDiscovery[cc.HCServiceName],
+		Discover: cs.discovery(cc.HCServiceName),
 	}
 	return hcservice.NewClient(c, cs.version)
 }
@@ -103,7 +96,7 @@ func (cs *ClientSet) HCService() *hcservice.Client {
 func (cs *ClientSet) AuthServer() *authserver.Client {
 	c := &client.Capability{
 		Client:   cs.client,
-		Discover: cs.apiDiscovery[cc.AuthServerName],
+		Discover: cs.discovery(cc.AuthServerName),
 	}
 	return authserver.NewClient(c, cs.version)
 }

@@ -80,7 +80,7 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
-	cliSet := client.NewHCServiceClientSet(cli, dis)
+	cliSet := client.NewClientSet(cli, dis)
 
 	cloudAdaptor := cloudadaptor.NewCloudAdaptorClient(cliSet.DataService())
 

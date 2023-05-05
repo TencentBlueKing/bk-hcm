@@ -101,7 +101,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	apiClientSet := client.NewCloudServerClientSet(restCli, sd)
+	apiClientSet := client.NewClientSet(restCli, sd)
 
 	authorizer, err := auth.NewAuthorizer(sd, tls)
 	if err != nil {

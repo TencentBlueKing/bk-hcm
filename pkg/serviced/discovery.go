@@ -34,6 +34,7 @@ import (
 // Discover defines service discovery related operations.
 type Discover interface {
 	Discover(cc.Name) ([]string, error)
+	Services() []cc.Name
 }
 
 // NewDiscovery create a service discovery instance.
@@ -76,6 +77,11 @@ type discovery struct {
 
 	ctx    context.Context
 	cancel context.CancelFunc
+}
+
+// Services returns the being discovered services
+func (d *discovery) Services() []cc.Name {
+	return d.discOpt.Services
 }
 
 // Discover service addresses by service name.
