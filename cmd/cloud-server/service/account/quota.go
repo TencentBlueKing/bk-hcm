@@ -27,8 +27,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// GetAccountZoneQuota 获取腾讯云账号配额.
-func (a *accountSvc) GetAccountZoneQuota(cts *rest.Contexts) (interface{}, error) {
+// GetTCloudZoneQuota 获取腾讯云账号配额.
+func (a *accountSvc) GetTCloudZoneQuota(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 	if len(accountID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "account_id is required")

@@ -20,7 +20,6 @@
 package account
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -198,7 +197,7 @@ func (svc *service) ListAccount(cts *rest.Contexts) (interface{}, error) {
 // getAccountBizMap 获取账号和业务的映射关系
 func (svc *service) getAccountBizMap(kt *kit.Kit, accountIDs []string) (map[string][]int64, error) {
 	if len(accountIDs) == 0 {
-		return nil, errors.New("accountIDs is required")
+		return make(map[string][]int64), nil
 	}
 
 	result := make(map[string][]int64)

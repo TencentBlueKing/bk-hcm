@@ -2,12 +2,13 @@
 
 - 该接口提供版本：v1.0.0+
 - 该接口所需权限：业务访问
-- 该接口功能描述：获取账号配额
+- 该接口功能描述：获取腾讯云账号配额
 
 ### 请求参数
 
 | 参数名称       | 参数类型   | 必选  | 描述   |
 |------------|--------|-----|------|
+| bk_biz_id  | int64  | 是   | 业务ID |
 | account_id | string | 是   | 账号ID |
 | vendor     | string | 是   | 供应商  |
 | region     | string | 是   | 地域   |
@@ -32,38 +33,35 @@
 {
   "code": 0,
   "message": "",
-  "data": [
-    {
-      "zone": "ap-guangzhou-4",
-      "instance_type": "S4.MEDIUM2",
-      "instance_family": "S4",
-      "gpu": 0,
-      "cpu": 2,
-      "memory": 2048,
-      "fpga": 0,
-      "status": "SELL"
+  "data": {
+    "post_paid_quota_set": {
+      "used_quota": 3,
+      "remaining_quota": 497,
+      "total_quota": 500
     },
-    {
-      "zone": "ap-guangzhou-4",
-      "instance_type": "S4.MEDIUM2",
-      "instance_family": "S4",
-      "gpu": 0,
-      "cpu": 2,
-      "memory": 2048,
-      "fpga": 0,
-      "status": "SELL"
+    "pre_paid_quota": {
+      "used_quota": 1,
+      "once_quota": 500,
+      "remaining_quota": 499,
+      "total_quota": 500
     },
-    {
-      "zone": "ap-guangzhou-4",
-      "instance_type": "S4.MEDIUM2",
-      "instance_family": "S4",
-      "gpu": 0,
-      "cpu": 2,
-      "memory": 2048,
-      "fpga": 0,
-      "status": "SELL"
+    "spot_paid_quota": {
+      "used_quota": 0,
+      "remaining_quota": 100,
+      "total_quota": 100
+    },
+    "image_quota": {
+      "used_quota": 8,
+      "total_quota": 10
+    },
+    "disaster_recover_group_quota": {
+      "group_quota": 1000,
+      "current_num": 0,
+      "cvm_in_host_group_quota": 30,
+      "cvm_in_switch_group_quota": 50,
+      "cvm_in_rack_group_quota": 20
     }
-  ]
+  }
 }
 ```
 

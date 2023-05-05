@@ -54,7 +54,7 @@ func InitAccountService(c *capability.Capability) {
 
 	// 获取账号配额
 	h.Add("GetTCloudZoneQuota", http.MethodPost, "/bizs/{bk_biz_id}/vendors/tcloud/accounts/{account_id}/zones/quotas",
-		svc.GetAccountZoneQuota)
+		svc.GetTCloudZoneQuota)
 	h.Add("GetHuaWeiRegionQuota", http.MethodPost,
 		"/bizs/{bk_biz_id}/vendors/huawei/accounts/{account_id}/regions/quotas", svc.GetHuaWeiRegionQuota)
 	h.Add("GetGcpRegionQuota", http.MethodPost, "/bizs/{bk_biz_id}/vendors/gcp/accounts/{account_id}/regions/quotas",
