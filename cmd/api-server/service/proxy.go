@@ -78,16 +78,20 @@ func (p *proxy) apiSet() *restful.Container {
 func (p *proxy) Do(req *restful.Request, resp *restful.Response) {
 	r, w := req.Request, resp.ResponseWriter
 
-	p.proxyRequest(req, w)
-
 	rid := r.Header.Get(constant.RidKey)
 	start := time.Now()
+
+	if err := p.prepareRequest(req); err != nil {
+		_, _ = fmt.Fprintf(w, errf.NewFromErr(http.StatusNotFound, err).Error())
+		logs.Errorf("prepare request to proxy failed, err: %v, rid: %s", err, rid)
+		return
+	}
 
 	url := r.URL.Scheme + "://" + r.URL.Host + r.RequestURI
 	proxyReq, err := http.NewRequestWithContext(r.Context(), r.Method, url, r.Body)
 	if err != nil {
+		_, _ = fmt.Fprintf(w, err.Error())
 		logs.Errorf("new proxy request[%s] failed, err: %v, rid: %s", url, err, rid)
-		fmt.Fprintf(w, err.Error())
 		return
 	}
 
@@ -99,8 +103,8 @@ func (p *proxy) Do(req *restful.Request, resp *restful.Response) {
 
 	response, err := p.cli.Do(proxyReq)
 	if err != nil {
+		_, _ = fmt.Fprintf(w, err.Error())
 		logs.Errorf("do request[%s url: %s] failed, err: %v, rid: %s", r.Method, url, err, rid)
-		fmt.Fprintf(w, err.Error())
 		return
 	}
 	defer response.Body.Close()
@@ -114,46 +118,46 @@ func (p *proxy) Do(req *restful.Request, resp *restful.Response) {
 	resp.ResponseWriter.WriteHeader(response.StatusCode)
 
 	if _, err := io.Copy(resp, response.Body); err != nil {
+		_, _ = fmt.Fprintf(w, err.Error())
 		logs.Errorf("response request[url: %s] failed, err: %v, rid: %s", r.RequestURI, err, rid)
 		return
 	}
 
-	logs.V(4).Infof("cost: %dms, action: %s, status code: %d, user: %s, app code: %s, url: %s, rid: %s",
-		time.Since(start).Nanoseconds()/int64(time.Millisecond), r.Method, response.StatusCode,
-		r.Header.Get(constant.UserKey), r.Header.Get(constant.AppCodeKey), url, rid)
+	if logs.V(4) {
+		logs.Infof("cost: %dms, action: %s, status code: %d, user: %s, app code: %s, url: %s, rid: %s",
+			time.Since(start).Nanoseconds()/int64(time.Millisecond), r.Method, response.StatusCode,
+			r.Header.Get(constant.UserKey), r.Header.Get(constant.AppCodeKey), url, rid)
+	}
+
 	return
 }
 
-// proxyRequest get request service by url, discover service and proxy request to target server
-func (p *proxy) proxyRequest(req *restful.Request, w http.ResponseWriter) {
+// prepareRequest get request service by url, discover service and proxy request to target server
+func (p *proxy) prepareRequest(req *restful.Request) error {
 	var service cc.Name
 
 	// path format: /api/{api_version}/{service}/other
 	paths := strings.Split(req.Request.URL.Path, "/")
-	if len(paths) > 3 {
-		servicePath := paths[3]
-		switch servicePath {
-		case "cloud":
-			service = cc.CloudServerName
-		}
-	} else {
-		logs.Errorf("received url path length not conform to the regulations, path: %s", req.Request.URL.Path)
-		fmt.Fprintf(w, errf.New(http.StatusNotFound, "Not Found").Error())
-		return
+	if len(paths) <= 3 {
+		return fmt.Errorf("received invalid url path: %s", req.Request.URL.Path)
 	}
 
-	discovery, exists := p.discovery[service]
+	servicePath := paths[3]
+	switch servicePath {
+	case "cloud":
+		service = cc.CloudServerName
+	default:
+		return fmt.Errorf("received unknown url path: %s", req.Request.URL.Path)
+	}
+
+	ds, exists := p.discovery[service]
 	if !exists {
-		logs.Errorf("received request service %s is not supported, path: %s", service, req.Request.URL.Path)
-		fmt.Fprintf(w, errf.New(http.StatusNotFound, "Service Not Supported").Error())
-		return
+		return fmt.Errorf("received request service %s is not supported, path: %s", service, req.Request.URL.Path)
 	}
 
-	servers, err := discovery.GetServers()
+	servers, err := ds.GetServers()
 	if err != nil {
-		logs.Errorf("received request service %s has no servers, path: %s", service, req.Request.URL.Path)
-		fmt.Fprintf(w, errf.New(http.StatusNotFound, "Servers Not Found").Error())
-		return
+		return fmt.Errorf("received request to service %s has no servers, path: %s", service, req.Request.URL.Path)
 	}
 
 	if strings.HasPrefix(servers[0], "https://") {
@@ -163,4 +167,6 @@ func (p *proxy) proxyRequest(req *restful.Request, w http.ResponseWriter) {
 		req.Request.URL.Host = servers[0][7:]
 		req.Request.URL.Scheme = "http"
 	}
+
+	return nil
 }
