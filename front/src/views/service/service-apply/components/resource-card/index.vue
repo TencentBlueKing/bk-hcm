@@ -6,8 +6,10 @@
         <span class="resource-name pl20">{{ item.name }}</span>
       </div>
       <div class="sub-resource-title">申请 {{ item.name }}</div>
-      <div class="bottom-btn">
-        <bk-button theme="primary" outline size="small" @click="handleApply(item.routeName)">
+      <div class="bottom-btn" @click="handleAuthClick('biz_iaas_resource_create')">
+        <bk-button
+          theme="primary" :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create"
+          outline size="small" @click="handleApply(item.routeName)">
           {{ item.btnText }}
         </bk-button>
       </div>
@@ -25,8 +27,12 @@ export default defineComponent({
     list: {
       type: Array as PropType<any[]>,
     },
+    authVerifyData: {
+      type: Object,
+    },
   },
-  setup() {
+  emits: ['handleAuthClick'],
+  setup(props, { emit }) {
     const router = useRouter();
 
     // 跳转页面
@@ -44,8 +50,13 @@ export default defineComponent({
       router.push(routerConfig);
     };
 
+    const handleAuthClick = (action: string) => {
+      emit('handleAuthClick', action);
+    };
+
     return {
       handleApply,
+      handleAuthClick,
     };
   },
 });

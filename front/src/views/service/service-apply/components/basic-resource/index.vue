@@ -5,6 +5,8 @@
       <div class="group-content">
         <ResourceCard
           :list="appList"
+          :auth-verify-data="authVerifyData"
+          @handle-auth-click="handleClick"
         />
       </div>
     </section>
@@ -13,15 +15,24 @@
       <div class="group-content">
         <ResourceCard
           :list="accountList"
+          :auth-verify-data="authVerifyData"
+          @handle-auth-click="handleClick"
         />
       </div>
     </section>
+    <permission-dialog
+      v-model:is-show="showPermissionDialog"
+      :params="permissionParams"
+      @cancel="handlePermissionDialog"
+      @confirm="handlePermissionConfirm"
+    ></permission-dialog>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import ResourceCard from '../resource-card/index.vue';
+import { useVerify } from '@/hooks';
 
 export default defineComponent({
   name: 'BasicResource',
@@ -53,9 +64,31 @@ export default defineComponent({
       routeName: 'applyAccount',
     }]);
 
+    const handleClick = (value: string) => {
+      console.log('1111', value);
+      handleAuth(value);
+    };
+
+    // 权限hook
+    const {
+      showPermissionDialog,
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      handleAuth,
+      permissionParams,
+      authVerifyData,
+    } = useVerify();
+
     return {
       appList,
       accountList,
+      showPermissionDialog,
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      handleAuth,
+      permissionParams,
+      authVerifyData,
+      handleClick,
     };
   },
 });
