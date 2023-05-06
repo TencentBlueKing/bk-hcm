@@ -79,7 +79,7 @@ func (s *iamDiscovery) GetServers() ([]string, error) {
 
 	num := len(s.servers)
 	if num == 0 {
-		return []string{}, errors.New("oops, there is no server can be used")
+		return []string{}, errors.New("there is no server can be used for iam")
 	}
 
 	if s.index < num-1 {

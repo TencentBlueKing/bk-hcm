@@ -21,7 +21,7 @@
 package discovery
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 
 	"hcm/pkg/cc"
@@ -58,7 +58,7 @@ func (d *APIDiscovery) GetServers() ([]string, error) {
 
 	num := len(servers)
 	if num == 0 {
-		return []string{}, errors.New("there is no server can be used")
+		return []string{}, fmt.Errorf("there is no server can be used for %s", d.service)
 	}
 
 	// move the servers in a round-robin way, e.g. last servers are [A, B, C], next server sequence is [B, C, A].

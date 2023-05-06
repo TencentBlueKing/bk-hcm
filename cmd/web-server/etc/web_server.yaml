@@ -71,6 +71,8 @@ web:
   bkComponentApiUrl: http://paas.bk.com
   # ITSM 地址
   bkItsmUrl: http://itsm.bk.com
+  # 蓝鲸登录Cookie获取名称(bk_token/bk_ticket)，国内和海外不同。
+  bkLoginCookieName: "bk_token"
 
 # defines esb related settings.
 esb:
