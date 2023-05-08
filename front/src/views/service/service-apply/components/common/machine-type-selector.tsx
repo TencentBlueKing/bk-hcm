@@ -78,6 +78,7 @@ export default defineComponent({
             <Option
               key={index}
               value={instance_type}
+              disabled={status === 'SOLD_OUT'}
               label={`${instance_type} (${cpu}核CPU，${formatStorageSize(memory * 1024 ** 2)}内存)${status === 'SELL' ? '可购买' : '已售罄'}`}
             >
             </Option>

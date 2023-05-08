@@ -88,6 +88,8 @@ export default defineComponent({
 
     const handleZoneChange = () => {
       resetFormItemData('instance_type');
+      resetFormItemData('cloud_vpc_id');
+      vpcId.value = '';
     };
     const handleVpcChange = (vpc: any) => {
       cloudId.value = vpc.bk_cloud_id;
@@ -249,10 +251,6 @@ export default defineComponent({
 
     // 当前 vpc下是否有子网列表
     const subnetLength = ref(0);
-    watch(() => formData.cloud_subnet_id, () => {
-      console.log('subnetSelectorRef.value', subnetSelectorRef.value.subnetList);
-      subnetLength.value = subnetSelectorRef.value.subnetList?.length || 0;
-    });
     watch(() => formData.cloud_vpc_id, () => {
       console.log('subnetSelectorRef.value', subnetSelectorRef.value.subnetList);
       subnetLength.value = subnetSelectorRef.value.subnetList?.length || 0;
