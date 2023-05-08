@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, PropType } from 'vue';
-const props = defineProps({
-  width: {
-    type: [Number, String] as PropType<number | string>,
-    default: '70%',
-  },
-});
-const defalutWidth = computed(() => props.width);
+// import { computed, PropType } from 'vue';
+// const props = defineProps({
+//   width: {
+//     type: [Number, String] as PropType<number | string>,
+//     default: '70%',
+//   },
+// });
+// const defalutWidth = computed(() => props.width);
 </script>
 <template>
   <div class="content-container">
@@ -16,7 +16,8 @@ const defalutWidth = computed(() => props.width);
 
 <style lang="scss" scoped>
 .content-container {
-  width: v-bind(defalutWidth);
+  background: #fff;
+  padding: 20px;
   padding-bottom: 52px;
   :deep(.action-bar) {
     padding-left: 150px;

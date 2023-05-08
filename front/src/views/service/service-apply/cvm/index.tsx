@@ -1,5 +1,5 @@
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
-import { Form, Input, Select, Checkbox, Button } from 'bkui-vue';
+import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
 import ContentContainer from '../components/common/content-container.vue';
 import ConditionOptions from '../components/common/condition-options.vue';
 import FormGroup from '../components/common/form-group.vue';
@@ -24,6 +24,7 @@ import { useHostStore } from '@/store/host';
 
 const { FormItem } = Form;
 const { Option } = Select;
+const { Group: RadioGroup, Button: RadioButton } = Radio;
 
 export default defineComponent({
   props: {},
@@ -45,14 +46,14 @@ export default defineComponent({
         formData: getGcpDataDiskDefaults(),
       },
     });
-    const hostStore = useHostStore()
+    const hostStore = useHostStore();
 
     const zoneSelectorRef = ref(null);
     const cloudId = ref(null);
     const vpcId = ref('');
     const machineType = ref(null);
     const subnetSelectorRef = ref(null);
-    
+
     const handleCreateDataDisk = () => {
       const newRow: IDiskOption = getDataDiskDefaults();
       formData.data_disk.push(newRow);
@@ -107,7 +108,7 @@ export default defineComponent({
       const rules = {
         [VendorEnum.TCLOUD]: {
           validator: (value: number) => {
-            return value >= 20 && value <= 1024
+            return value >= 20 && value <= 1024;
           },
           message: '20-1024GB',
           trigger: 'change',
@@ -247,14 +248,19 @@ export default defineComponent({
     });
 
     // 当前 vpc下是否有子网列表
-    let subnetLength = ref(0)
-    watch(() => formData.cloud_vpc_id, () => {
+    const subnetLength = ref(0);
+    watch(() => formData.cloud_subnet_id, () => {
+      console.log('subnetSelectorRef.value', subnetSelectorRef.value.subnetList);
       subnetLength.value = subnetSelectorRef.value.subnetList?.length || 0;
-    })
+    });
+    watch(() => formData.cloud_vpc_id, () => {
+      console.log('subnetSelectorRef.value', subnetSelectorRef.value.subnetList);
+      subnetLength.value = subnetSelectorRef.value.subnetList?.length || 0;
+    });
 
-    const curRegionName = computed(() => {
-      return hostStore.regionList?.find(region => region.region_id === cond.region) || {};
-    })
+    // const curRegionName = computed(() => {
+    //   return hostStore.regionList?.find(region => region.region_id === cond.region) || {};
+    // });
 
     const formConfig = computed(() => [
       {
@@ -278,46 +284,6 @@ export default defineComponent({
         ],
       },
       {
-        id: 'config',
-        title: '配置',
-        children: [
-          {
-            label: '名称',
-            required: true,
-            property: 'name',
-            maxlength: 60,
-            description: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾',
-            content: () => <Input placeholder='填写主机的名称' v-model={formData.name} />,
-          },
-          {
-            label: '机型',
-            required: true,
-            description: '',
-            property: 'instance_type',
-            content: () => <MachineTypeSelector
-              v-model={formData.instance_type}
-              vendor={cond.vendor}
-              accountId={cond.cloudAccountId}
-              zone={formData.zone?.[0]}
-              region={cond.region}
-              clearable={false}
-              onChange={handleMachineTypeChange} />,
-          },
-          {
-            label: '镜像',
-            required: true,
-            description: '',
-            property: 'cloud_image_id',
-            content: () => <Imagelector
-              v-model={formData.cloud_image_id}
-              vendor={cond.vendor}
-              region={cond.region}
-              machineType={machineType.value}
-              clearable={false} />,
-          },
-        ],
-      },
-      {
         id: 'network',
         title: '网络',
         children: [
@@ -332,13 +298,13 @@ export default defineComponent({
               accountId={cond.cloudAccountId}
               vendor={cond.vendor}
               region={cond.region}
+              zone={formData.zone}
               onChange={handleVpcChange}
               clearable={false} />,
           },
           {
             label: '子网',
             required: true,
-            tips: () => (formData.cloud_vpc_id && subnetLength.value === 0 ? `所选的VPC，在${curRegionName.value?.region_name || '当前地域'}无可用的子网，可新建子网后重新选择` : ''),
             description: '',
             property: 'cloud_subnet_id',
             content: () => <SubnetSelector
@@ -381,6 +347,94 @@ export default defineComponent({
               multiple={cond.vendor !== VendorEnum.AZURE}
               vendor={cond.vendor}
               vpcId={vpcId.value}
+              clearable={false} />,
+          },
+        ],
+      },
+      {
+        id: 'billing',
+        title: '计费',
+        display: [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor),
+        children: [
+          {
+            label: '计费模式',
+            required: true,
+            property: 'instance_charge_type',
+            content: () =>
+            // <Select v-model={formData.instance_charge_type} clearable={false}>{
+            //     billingModes.value.map(({ id, name }: IOption) => (
+            //       <Option key={id} value={id} label={name}></Option>
+            //     ))
+            //   }
+            // </Select>,
+            <RadioGroup v-model={formData.instance_charge_type}>
+                    {billingModes.value.map(item => (<RadioButton label={item.id} >{item.name}
+                  </RadioButton>))}
+            </RadioGroup>,
+          },
+          {
+            label: '购买时长',
+            required: true,
+            // PREPAID：包年包月
+            display: ['PREPAID'].includes(formData.instance_charge_type),
+            content: [
+              {
+                property: 'purchase_duration.count',
+                content: () => <Input type='number' v-model={formData.purchase_duration.count}></Input>,
+              },
+              {
+                property: 'purchase_duration.unit',
+                content: () => <Select v-model={formData.purchase_duration.unit} clearable={false}>{
+                  purchaseDurationUnits.map(({ id, name }: IOption) => (
+                    <Option key={id} value={id} label={name}></Option>
+                  ))}
+                </Select>,
+              },
+              {
+                property: 'auto_renew',
+                content: () => <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'config',
+        title: '配置',
+        children: [
+          {
+            label: '名称',
+            required: true,
+            property: 'name',
+            maxlength: 60,
+            description: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾',
+            content: () => <Input placeholder='填写主机的名称' v-model={formData.name} />,
+          },
+          {
+            label: '机型',
+            required: true,
+            description: '',
+            property: 'instance_type',
+            content: () => <MachineTypeSelector
+              v-model={formData.instance_type}
+              vendor={cond.vendor}
+              accountId={cond.cloudAccountId}
+              zone={formData.zone?.[0]}
+              region={cond.region}
+              bizId={cond.bizId}
+              clearable={false}
+              onChange={handleMachineTypeChange} />,
+          },
+          {
+            label: '镜像',
+            required: true,
+            description: '',
+            property: 'cloud_image_id',
+            content: () => <Imagelector
+              v-model={formData.cloud_image_id}
+              vendor={cond.vendor}
+              region={cond.region}
+              machineType={machineType.value}
               clearable={false} />,
           },
         ],
@@ -485,48 +539,6 @@ export default defineComponent({
               {
                 property: 'confirmed_password',
                 content: () => <Input type='password' placeholder='确认密码' v-model={formData.confirmed_password}></Input>,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: 'billing',
-        title: '计费',
-        display: [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor),
-        children: [
-          {
-            label: '计费模式',
-            required: true,
-            property: 'instance_charge_type',
-            content: () => <Select v-model={formData.instance_charge_type} clearable={false}>{
-                billingModes.value.map(({ id, name }: IOption) => (
-                  <Option key={id} value={id} label={name}></Option>
-                ))
-              }
-            </Select>,
-          },
-          {
-            label: '购买时长',
-            required: true,
-            // PREPAID：包年包月
-            display: ['PREPAID'].includes(formData.instance_charge_type),
-            content: [
-              {
-                property: 'purchase_duration.count',
-                content: () => <Input type='number' v-model={formData.purchase_duration.count}></Input>,
-              },
-              {
-                property: 'purchase_duration.unit',
-                content: () => <Select v-model={formData.purchase_duration.unit} clearable={false}>{
-                  purchaseDurationUnits.map(({ id, name }: IOption) => (
-                    <Option key={id} value={id} label={name}></Option>
-                  ))}
-                </Select>,
-              },
-              {
-                property: 'auto_renew',
-                content: () => <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>,
               },
             ],
           },

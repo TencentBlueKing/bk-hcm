@@ -16,6 +16,7 @@ export default defineComponent({
     accountId: String as PropType<string>,
     vendor: String as PropType<string>,
     region: String as PropType<string>,
+    zone: Array as PropType<string[]>,
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit, attrs }) {
@@ -36,8 +37,9 @@ export default defineComponent({
       () => props.accountId,
       () => props.vendor,
       () => props.region,
-    ], async ([bizId, accountId, vendor, region]) => {
-      if (!bizId || !accountId || !region) {
+      () => props.zone,
+    ], async ([bizId, accountId, vendor, region, zone]) => {
+      if (!bizId || !accountId || !region || !zone.length) {
         list.value = [];
         return;
       }
@@ -53,7 +55,7 @@ export default defineComponent({
               value: accountId,
             },
           ],
-        }
+        };
         if (vendor !== VendorEnum.GCP) {
           filter.rules.push({
             field: 'region',
@@ -61,13 +63,14 @@ export default defineComponent({
             value: region,
           });
         }
-        const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizId}/vpcs/list`, {
+        const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/vpcs/with/subnets/count/list`, {
         // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`, {
+          zone: props.zone.join(','),
           filter,
           page: {
             count: false,
             start: 0,
-            limit: 500,
+            limit: 50,
           },
         });
         list.value = result?.data?.details ?? [];
@@ -91,8 +94,10 @@ export default defineComponent({
         {...{ attrs }}
       >
         {
-          list.value.map(({ cloud_id, name }) => (
-            <Option key={cloud_id} value={cloud_id} label={name}></Option>
+          list.value.map(({ cloud_id, name, current_zone_subnet_count, subnet_count }) => (
+            <Option key={cloud_id} value={cloud_id}
+            disabled={current_zone_subnet_count === 0}
+            label={`${name} 该可用区共${current_zone_subnet_count}个子网,共${subnet_count}个子网 ${current_zone_subnet_count === 0 ? '不可用' : '可用'}`}></Option>
           ))
         }
       </Select>

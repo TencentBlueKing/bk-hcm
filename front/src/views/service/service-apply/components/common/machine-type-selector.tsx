@@ -15,6 +15,7 @@ export default defineComponent({
     accountId: String as PropType<string>,
     region: String as PropType<string>,
     zone: String as PropType<string>,
+    bizId: Number as PropType<number>,
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit, attrs }) {
@@ -43,11 +44,11 @@ export default defineComponent({
 
       // AZURE时与zone无关，只需要满足其它条件时请求一次
       if (vendor === VendorEnum.AZURE && zone !== oldZone) {
-        return
+        return;
       }
 
       loading.value = true;
-      const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/instance_types/list`, {
+      const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${props.bizId}/instance_types/list`, {
         account_id: accountId,
         vendor,
         region,
@@ -73,11 +74,11 @@ export default defineComponent({
         {...{ attrs }}
       >
         {
-          list.value.map(({ instance_type, cpu, memory }, index) => (
+          list.value.map(({ instance_type, cpu, memory, status }, index) => (
             <Option
               key={index}
               value={instance_type}
-              label={`${instance_type} (${cpu}核CPU，${formatStorageSize(memory * 1024 ** 2)}内存)`}
+              label={`${instance_type} (${cpu}核CPU，${formatStorageSize(memory * 1024 ** 2)}内存)${status === 'SELL' ? '可购买' : '已售罄'}`}
             >
             </Option>
           ))

@@ -17,7 +17,7 @@ export default defineComponent({
     vendor: String as PropType<string>,
     region: String as PropType<string>,
     accountId: String as PropType<string>,
-    zone: String as PropType<string>,
+    zone: Array as PropType<string[]>,
     resourceGroup: String as PropType<string>,
   },
   emits: ['update:modelValue'],
@@ -25,7 +25,7 @@ export default defineComponent({
     const list = ref([]);
     const loading = ref(false);
 
-    expose({ subnetList: list.value });
+    expose({ subnetList: list });
 
     const selected = computed({
       get() {
@@ -69,7 +69,7 @@ export default defineComponent({
             field: 'region',
             op: QueryRuleOPEnum.EQ,
             value: region,
-          }
+          },
         ],
       };
 
@@ -78,27 +78,27 @@ export default defineComponent({
           field: 'zone',
           op: QueryRuleOPEnum.EQ,
           value: zone[0] || '',
-        })
+        });
       }
 
       if (vendor === VendorEnum.AZURE) {
         filter.rules.push({
           field: 'extension.resource_group_name',
           op: QueryRuleOPEnum.JSON_EQ,
-          value: resourceGroup
-        })
+          value: resourceGroup,
+        });
       }
 
-      const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizId}/subnets/list`, {
+      const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/subnet/with/ip_count/list`, {
         // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/list`, {
         filter,
         page: {
           count: false,
           start: 0,
-          limit: 500,
+          limit: 50,
         },
       });
-      list.value = result?.data?.details ?? [];
+      list.value = result?.data ?? [];
       loading.value = false;
     });
 
