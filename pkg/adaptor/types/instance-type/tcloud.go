@@ -19,12 +19,20 @@
 
 package instancetype
 
+import "hcm/pkg/criteria/validator"
+
 // -------------------------- List --------------------------
 
 // TCloudInstanceTypeListOption ...
 type TCloudInstanceTypeListOption struct {
-	Region string
-	Zone   string
+	Region             string `json:"region" validate:"required"`
+	Zone               string `json:"zone" validate:"required"`
+	InstanceChargeType string `json:"instance_charge_type" validate:"required"`
+}
+
+// Validate operation option.
+func (opt TCloudInstanceTypeListOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }
 
 // TCloudInstanceType ...

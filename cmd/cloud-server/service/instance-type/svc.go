@@ -71,10 +71,8 @@ func (svc *instanceTypeSvc) List(cts *rest.Contexts) (interface{}, error) {
 // ListForTCloud ...
 func (svc *instanceTypeSvc) ListForTCloud(cts *rest.Contexts, req *proto.InstanceTypeListReq) (interface{}, error) {
 	return svc.client.HCService().TCloud.InstanceType.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&hcproto.TCloudInstanceTypeListReq{AccountID: req.AccountID, Region: req.Region, Zone: req.Zone},
-	)
+		cts.Kit.Ctx, cts.Kit.Header(), &hcproto.TCloudInstanceTypeListReq{AccountID: req.AccountID,
+			Region: req.Region, Zone: req.Zone, InstanceChargeType: req.InstanceChargeType})
 }
 
 // ListForAws ...

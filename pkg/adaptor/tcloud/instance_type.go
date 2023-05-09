@@ -50,6 +50,10 @@ func (t *TCloud) ListInstanceType(kt *kit.Kit, opt *typesinstancetype.TCloudInst
 			Name:   common.StringPtr("zone"),
 			Values: []*string{&opt.Zone},
 		},
+		{
+			Name:   common.StringPtr("instance-charge-type"),
+			Values: []*string{&opt.InstanceChargeType},
+		},
 	}
 
 	resp, err := client.DescribeZoneInstanceConfigInfosWithContext(kt.Ctx, req)

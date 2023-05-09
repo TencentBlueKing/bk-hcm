@@ -26,9 +26,10 @@ import (
 
 // TCloudInstanceTypeListReq ...
 type TCloudInstanceTypeListReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	Region    string `json:"region" validate:"required"`
-	Zone      string `json:"zone" validate:"required"`
+	AccountID          string `json:"account_id" validate:"required"`
+	Region             string `json:"region" validate:"required"`
+	Zone               string `json:"zone" validate:"required"`
+	InstanceChargeType string `json:"instance_charge_type" validate:"required"`
 }
 
 // Validate ...

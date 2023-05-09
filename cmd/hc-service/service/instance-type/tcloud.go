@@ -44,8 +44,9 @@ func (i *instanceTypeAdaptor) ListForTCloud(cts *rest.Contexts) (interface{}, er
 	}
 
 	opt := &typesinstancetype.TCloudInstanceTypeListOption{
-		Region: req.Region,
-		Zone:   req.Zone,
+		Region:             req.Region,
+		Zone:               req.Zone,
+		InstanceChargeType: req.InstanceChargeType,
 	}
 
 	its, err := client.ListInstanceType(cts.Kit, opt)

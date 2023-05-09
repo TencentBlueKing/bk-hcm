@@ -26,10 +26,11 @@ import (
 
 // InstanceTypeListReq ...
 type InstanceTypeListReq struct {
-	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
-	AccountID string        `json:"account_id" validate:"required"`
-	Region    string        `json:"region" validate:"required"`
-	Zone      string        `json:"zone" validate:"omitempty"`
+	Vendor             enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID          string        `json:"account_id" validate:"required"`
+	Region             string        `json:"region" validate:"required"`
+	Zone               string        `json:"zone" validate:"omitempty"`
+	InstanceChargeType string        `json:"instance_charge_type" validate:"omitempty"`
 }
 
 // Validate ...
