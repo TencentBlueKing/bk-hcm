@@ -16,6 +16,7 @@ export default defineComponent({
     region: String as PropType<string>,
     zone: String as PropType<string>,
     bizId: Number as PropType<number>,
+    instanceChargeType: String as PropType<string>,
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit, attrs }) {
@@ -36,8 +37,9 @@ export default defineComponent({
       () => props.accountId,
       () => props.region,
       () => props.zone,
-    ], async ([vendor, accountId, region, zone], [,,,oldZone]) => {
-      if (!vendor || !accountId || !region || (vendor !== VendorEnum.AZURE && !zone)) {
+      () => props.instanceChargeType,
+    ], async ([vendor, accountId, region, zone, instanceChargeType], [,,,oldZone]) => {
+      if (!vendor || !accountId || !region || (vendor !== VendorEnum.AZURE && !zone) || !instanceChargeType) {
         list.value = [];
         return;
       }
@@ -53,6 +55,7 @@ export default defineComponent({
         vendor,
         region,
         zone,
+        instance_charge_type: instanceChargeType,
       });
       list.value = result?.data ?? [];
 

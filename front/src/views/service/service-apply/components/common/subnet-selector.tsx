@@ -89,7 +89,7 @@ export default defineComponent({
         });
       }
 
-      const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/subnet/with/ip_count/list`, {
+      const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/subnets/with/ip_count/list`, {
         // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/list`, {
         filter,
         page: {
@@ -98,7 +98,7 @@ export default defineComponent({
           limit: 50,
         },
       });
-      list.value = result?.data ?? [];
+      list.value = result?.data?.details ?? [];
       loading.value = false;
     });
 
@@ -111,8 +111,8 @@ export default defineComponent({
         {...{ attrs }}
       >
         {
-          list.value.map(({ cloud_id, name }) => (
-            <Option key={cloud_id} value={cloud_id} label={name}></Option>
+          list.value.map(({ cloud_id, name, ipv4_cidr, available_ip_count }) => (
+            <Option key={cloud_id} value={cloud_id} label={`${name} ${ipv4_cidr} 剩余IP ${available_ip_count}`}></Option>
           ))
         }
       </Select>

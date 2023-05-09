@@ -1,5 +1,6 @@
 import http from '@/http';
 import { defineComponent, PropType, ref, watchEffect } from 'vue';
+import { Input } from 'bkui-vue';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
@@ -25,6 +26,6 @@ export default defineComponent({
       }
     });
 
-    return () => <span>{name.value}</span>;
+    return () => <Input disabled v-model={name.value}></Input>;
   },
 });

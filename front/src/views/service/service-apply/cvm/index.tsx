@@ -370,44 +370,12 @@ export default defineComponent({
                   </RadioButton>))}
             </RadioGroup>,
           },
-          {
-            label: '购买时长',
-            required: true,
-            // PREPAID：包年包月
-            display: ['PREPAID'].includes(formData.instance_charge_type),
-            content: [
-              {
-                property: 'purchase_duration.count',
-                content: () => <Input type='number' v-model={formData.purchase_duration.count}></Input>,
-              },
-              {
-                property: 'purchase_duration.unit',
-                content: () => <Select v-model={formData.purchase_duration.unit} clearable={false}>{
-                  purchaseDurationUnits.map(({ id, name }: IOption) => (
-                    <Option key={id} value={id} label={name}></Option>
-                  ))}
-                </Select>,
-              },
-              {
-                property: 'auto_renew',
-                content: () => <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>,
-              },
-            ],
-          },
         ],
       },
       {
         id: 'config',
         title: '配置',
         children: [
-          {
-            label: '名称',
-            required: true,
-            property: 'name',
-            maxlength: 60,
-            description: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾',
-            content: () => <Input placeholder='填写主机的名称' v-model={formData.name} />,
-          },
           {
             label: '机型',
             required: true,
@@ -420,6 +388,7 @@ export default defineComponent({
               zone={formData.zone?.[0]}
               region={cond.region}
               bizId={cond.bizId}
+              instanceChargeType={formData.instance_charge_type}
               clearable={false}
               onChange={handleMachineTypeChange} />,
           },
@@ -554,9 +523,47 @@ export default defineComponent({
             content: () => <Input type='number' max={100} v-model={formData.required_count}></Input>,
           },
           {
-            label: '备注',
+            label: '购买时长',
+            required: true,
+            // PREPAID：包年包月
+            display: ['PREPAID'].includes(formData.instance_charge_type),
+            content: [
+              {
+                property: 'purchase_duration.count',
+                content: () => <Input type='number' v-model={formData.purchase_duration.count}></Input>,
+              },
+              {
+                property: 'purchase_duration.unit',
+                content: () => <Select v-model={formData.purchase_duration.unit} clearable={false}>{
+                  purchaseDurationUnits.map(({ id, name }: IOption) => (
+                    <Option key={id} value={id} label={name}></Option>
+                  ))}
+                </Select>,
+              },
+              {
+                property: 'auto_renew',
+                content: () => <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'describe',
+        title: '主机描述',
+        children: [
+          {
+            label: '实例名称',
+            required: true,
+            property: 'name',
+            maxlength: 60,
+            description: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾',
+            content: () => <Input placeholder='填写实例名称' v-model={formData.name} />,
+          },
+          {
+            label: '实例备注',
             property: 'memo',
-            content: () => <Input type='textarea' rows={3} maxlength={255} v-model={formData.memo}></Input>,
+            content: () => <Input type='textarea' placeholder='填写实例备注' rows={3} maxlength={255} v-model={formData.memo}></Input>,
           },
         ],
       },

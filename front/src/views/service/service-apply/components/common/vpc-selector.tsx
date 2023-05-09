@@ -2,7 +2,7 @@ import http from '@/http';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { Select } from 'bkui-vue';
 
-import { IOption, QueryRuleOPEnum } from '@/typings/common';
+import { QueryRuleOPEnum } from '@/typings/common';
 import { VendorEnum } from '@/common/constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -63,7 +63,7 @@ export default defineComponent({
             value: region,
           });
         }
-        const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/vpcs/with/subnets/count/list`, {
+        const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/vendors/${props.vendor}/vpcs/with/subnet_count/list`, {
         // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`, {
           zone: props.zone.join(','),
           filter,
@@ -94,10 +94,10 @@ export default defineComponent({
         {...{ attrs }}
       >
         {
-          list.value.map(({ cloud_id, name, current_zone_subnet_count, subnet_count }) => (
+          list.value.map(({ cloud_id, name, current_zone_subnet_count, subnet_count, extension }) => (
             <Option key={cloud_id} value={cloud_id}
             disabled={current_zone_subnet_count === 0}
-            label={`${name} 该可用区共${current_zone_subnet_count}个子网,共${subnet_count}个子网 ${current_zone_subnet_count === 0 ? '不可用' : '可用'}`}></Option>
+            label={`${name} ${extension?.cidr[0]?.cidr} 该VPC共${current_zone_subnet_count}个子网, 该可用区有${subnet_count}个子网 ${current_zone_subnet_count === 0 ? '不可用' : '可用'}`}></Option>
           ))
         }
       </Select>
