@@ -61,8 +61,8 @@ func (opt SyncAzureCvmOption) Validate() error {
 		return err
 	}
 
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil
@@ -191,11 +191,12 @@ func SyncAzureCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *data
 		}
 
 		if len(realDeleteIDs) > 0 {
-			err := syncCvmDelete(kt, realDeleteIDs, dataCli)
-			if err != nil {
+			if err = syncCvmDelete(kt, realDeleteIDs, dataCli); err != nil {
 				logs.Errorf("request syncCvmDelete failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+			logs.Infof("[%s] account[%s] sync cvm to delete cvm success, count: %d, ids: %v, rid: %s", enumor.Azure,
+				req.AccountID, len(realDeleteIDs), realDeleteIDs, kt.Rid)
 		}
 	}
 
@@ -205,6 +206,8 @@ func SyncAzureCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *data
 			logs.Errorf("request syncAzureCvmUpdate failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
+		logs.Infof("[%s] account[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s", enumor.Azure,
+			req.AccountID, len(updateIDs), updateIDs, kt.Rid)
 	}
 
 	if len(addIDs) > 0 {
@@ -213,6 +216,8 @@ func SyncAzureCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *data
 			logs.Errorf("request syncAzureCvmAdd failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
+		logs.Infof("[%s] account[%s] sync cvm to add cvm success, count: %d, ids: %v, rid: %s", enumor.Azure,
+			req.AccountID, len(addIDs), addIDs, kt.Rid)
 	}
 
 	return nil, nil

@@ -66,8 +66,8 @@ func (opt SyncGcpCvmOption) Validate() error {
 		return err
 	}
 
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil
@@ -161,6 +161,8 @@ func SyncGcpCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *datase
 				logs.Errorf("request syncGcpCvmAdd failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+			logs.Infof("[%s] account[%s] sync cvm to add cvm success, count: %d, ids: %v, rid: %s", enumor.Gcp,
+				req.AccountID, len(addIDs), addIDs, kt.Rid)
 		}
 
 		if len(token) == 0 {
@@ -236,6 +238,8 @@ func SyncGcpCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *datase
 				logs.Errorf("request syncCvmDelete failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+			logs.Infof("[%s] account[%s] sync cvm to delete cvm success, count: %d, ids: %v, rid: %s", enumor.Gcp,
+				req.AccountID, len(realDeleteIDs), realDeleteIDs, kt.Rid)
 		}
 	}
 
@@ -429,11 +433,12 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 	dsMap map[string]*GcpDSCvmSync, dataCli *dataservice.Client) error {
 
 	lists := make([]dataproto.CvmBatchUpdate[corecvm.GcpCvmExtension], 0)
-
+	updateCloudIDs := make([]string, 0)
 	for _, id := range updateIDs {
 		if !isChangeGcp(cloudMap[id], dsMap[id]) {
 			continue
 		}
+		updateCloudIDs = append(updateCloudIDs, id)
 
 		vpcSelfLinks := make([]string, 0)
 		subnetSelfLinks := make([]string, 0)
@@ -564,6 +569,8 @@ func syncGcpCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*GcpC
 			logs.Errorf("request dataservice BatchUpdateCvm failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
+		logs.Infof("[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s", enumor.Gcp,
+			len(updateCloudIDs), updateCloudIDs, kt.Rid)
 	}
 
 	return nil

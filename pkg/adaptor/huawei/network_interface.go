@@ -268,7 +268,7 @@ func (h *HuaWei) GetSecurityGroupsByNetID(kt *kit.Kit, opt *typesniproto.HuaWeiP
 	req.NetworkId = converter.ValToPtr(opt.NetID)
 	resp, err := client.ListPorts(req)
 	if err != nil {
-		logs.Errorf("list huawei security group failed, region: %s, netID: %s, err: %v, rid: %s",
+		logs.Errorf("list huawei ports failed, region: %s, netID: %s, err: %v, rid: %s",
 			opt.Region, opt.NetID, err, kt.Rid)
 		return nil, []coreni.NetVirtualIP{}, err
 	}

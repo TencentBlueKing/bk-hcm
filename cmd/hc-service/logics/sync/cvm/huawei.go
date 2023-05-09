@@ -66,8 +66,8 @@ func (opt SyncHuaWeiCvmOption) Validate() error {
 		return err
 	}
 
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil
@@ -91,7 +91,7 @@ func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 	listOpt := &typecvm.HuaWeiListOption{
 		Region: req.Region,
 		Page: &typecore.HuaWeiCvmOffsetPage{
-			Offset: int32(0),
+			Offset: int32(1),
 			Limit:  int32(constant.BatchOperationMaxLimit),
 		},
 	}
@@ -148,17 +148,23 @@ func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 		}
 
 		if len(addIDs) > 0 {
-			err := syncHuaWeiCvmAdd(kt, addIDs, req, cloudMap, client, dataCli)
-			if err != nil {
+			if err = syncHuaWeiCvmAdd(kt, addIDs, req, cloudMap, client, dataCli); err != nil {
 				logs.Errorf("request syncHuaWeiCvmAdd failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+			logs.Infof("[%s] account[%s] sync cvm to add cvm success, count: %d, ids: %v, rid: %s", enumor.HuaWei,
+				req.AccountID, len(addIDs), addIDs, kt.Rid)
 		}
 
-		if datas == nil || len(*datas) < typecore.TCloudQueryLimit {
+		if datas == nil || len(*datas) < constant.BatchOperationMaxLimit {
 			break
 		}
-		listOpt.Page.Offset += typecore.TCloudQueryLimit
+
+		if len(req.CloudIDs) != 0 {
+			break
+		}
+
+		listOpt.Page.Offset += 1
 	}
 
 	dsIDs, err := getHuaWeiCvmAllDSByVendor(kt, req, enumor.HuaWei, dataCli)
@@ -204,10 +210,10 @@ func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 				}
 			}
 
-			if datas == nil || len(*datas) < typecore.TCloudQueryLimit {
+			if datas == nil || len(*datas) < constant.BatchOperationMaxLimit {
 				break
 			}
-			listOpt.Page.Offset += typecore.TCloudQueryLimit
+			listOpt.Page.Offset += 1
 		}
 
 		if len(realDeleteIDs) > 0 {
@@ -216,6 +222,8 @@ func SyncHuaWeiCvm(kt *kit.Kit, req *SyncHuaWeiCvmOption,
 				logs.Errorf("request syncCvmDelete failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+			logs.Infof("[%s] account[%s] sync cvm to delete cvm success, count: %d, ids: %v, rid: %s", enumor.HuaWei,
+				req.AccountID, len(realDeleteIDs), realDeleteIDs, kt.Rid)
 		}
 	}
 
@@ -236,7 +244,7 @@ func isChangeHuaWei(cloud *HuaWeiCvmSync, db *HuaWeiDSCvmSync, kt *kit.Kit,
 		return true
 	}
 
-	if db.Cvm.OsName != cloud.Cvm.OSEXTSRVATTRhost {
+	if db.Cvm.OsName != cloud.Cvm.Metadata["os_type"] {
 		return true
 	}
 
@@ -322,7 +330,7 @@ func isChangeHuaWei(cloud *HuaWeiCvmSync, db *HuaWeiDSCvmSync, kt *kit.Kit,
 		return true
 	}
 
-	if db.Cvm.MachineType != cloud.Cvm.OSEXTSTSvmState {
+	if db.Cvm.MachineType != cloud.Cvm.Flavor.Id {
 		return true
 	}
 
@@ -369,7 +377,7 @@ func isChangeHuaWei(cloud *HuaWeiCvmSync, db *HuaWeiDSCvmSync, kt *kit.Kit,
 	osDiskId := ""
 	dataDiskIds := make([]string, 0)
 	for _, v := range cloud.Cvm.OsExtendedVolumesvolumesAttached {
-		if *v.BootIndex == "0" {
+		if v.BootIndex != nil && *v.BootIndex == "0" {
 			osDiskId = v.Id
 		} else {
 			dataDiskIds = append(dataDiskIds, v.Id)
@@ -410,7 +418,13 @@ func isChangeHuaWei(cloud *HuaWeiCvmSync, db *HuaWeiDSCvmSync, kt *kit.Kit,
 		return true
 	}
 
-	if db.Cvm.Extension.Flavor.Ram != cloud.Cvm.Flavor.Ram {
+	ramInt, err := strconv.Atoi(cloud.Cvm.Flavor.Ram)
+	if err != nil {
+		logs.Errorf("huawei cvm ram conver int failed, err: %v, rid: %s", err, kt.Rid)
+		return true
+	}
+	ram := strconv.Itoa(ramInt / 1024)
+	if db.Cvm.Extension.Flavor.Ram != ram {
 		return true
 	}
 
@@ -469,11 +483,13 @@ func syncHuaWeiCvmUpdate(kt *kit.Kit, req *SyncHuaWeiCvmOption, updateIDs []stri
 	dsMap map[string]*HuaWeiDSCvmSync, client *huawei.HuaWei, dataCli *dataservice.Client) error {
 
 	lists := make([]dataproto.CvmBatchUpdate[corecvm.HuaWeiCvmExtension], 0)
+	updateCloudIDs := make([]string, 0)
 
 	for _, id := range updateIDs {
 		if !isChangeHuaWei(cloudMap[id], dsMap[id], kt, req, client) {
 			continue
 		}
+		updateCloudIDs = append(updateCloudIDs, id)
 
 		opt := &networkinterface.HuaWeiNIListOption{
 			Region:   req.Region,
@@ -591,6 +607,7 @@ func syncHuaWeiCvmUpdate(kt *kit.Kit, req *SyncHuaWeiCvmOption, updateIDs []stri
 		}
 
 		if cloudMap[id].Cvm.Flavor != nil {
+			// TODO: 收归到adaptor中去做统一的转换，不然每个用到的地方都需要转一次
 			ramInt, err := strconv.Atoi(cloudMap[id].Cvm.Flavor.Ram)
 			if err != nil {
 				logs.Errorf("request huawei cvm ram strconv atoi, err: %v, rid: %s", err, kt.Rid)
@@ -624,6 +641,8 @@ func syncHuaWeiCvmUpdate(kt *kit.Kit, req *SyncHuaWeiCvmOption, updateIDs []stri
 			logs.Errorf("request dataservice BatchUpdateCvm failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
+		logs.Infof("[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s", enumor.HuaWei,
+			len(updateCloudIDs), updateCloudIDs, kt.Rid)
 	}
 
 	return nil

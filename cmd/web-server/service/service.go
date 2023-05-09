@@ -293,11 +293,10 @@ func (s *Service) indexHandleFunc(req *restful.Request, resp *restful.Response) 
 
 	// 渲染模板
 	content := map[string]interface{}{
-		"BK_HCM_AJAX_URL_PREFIX": "",
-		"BK_LOGIN_URL":           cc.WebServer().Web.BkLoginUrl,
-		"BK_COMPONENT_API_URL":   cc.WebServer().Web.BkComponentApiUrl,
-		"BK_ITSM_URL":            cc.WebServer().Web.BkItsmUrl,
-		"VERSION":                version.VERSION,
+		"BK_LOGIN_URL":         cc.WebServer().Web.BkLoginUrl,
+		"BK_COMPONENT_API_URL": cc.WebServer().Web.BkComponentApiUrl,
+		"BK_ITSM_URL":          cc.WebServer().Web.BkItsmUrl,
+		"VERSION":              version.VERSION,
 	}
 	err = tmpl.Execute(resp.ResponseWriter, content)
 	if err != nil {

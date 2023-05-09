@@ -62,8 +62,8 @@ func (opt SyncAwsCvmOption) Validate() error {
 		return err
 	}
 
-	if len(opt.CloudIDs) > constant.RelResourceOperationMaxLimit {
-		return fmt.Errorf("cloudIDs should <= %d", constant.RelResourceOperationMaxLimit)
+	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil
@@ -156,11 +156,12 @@ func SyncAwsCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *datase
 		}
 
 		if len(addIDs) > 0 {
-			err := syncAwsCvmAdd(kt, addIDs, req, cloudMap, dataCli)
-			if err != nil {
+			if err = syncAwsCvmAdd(kt, addIDs, req, cloudMap, dataCli); err != nil {
 				logs.Errorf("request syncAwsCvmAdd failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+			logs.Infof("[%s] account[%s] sync cvm to add cvm success, count: %d, ids: %v, rid: %s", enumor.Aws,
+				req.AccountID, len(addIDs), addIDs, kt.Rid)
 		}
 
 		if datas == nil || datas.NextToken == nil {
@@ -236,11 +237,12 @@ func SyncAwsCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *datase
 		}
 
 		if len(realDeleteIDs) > 0 {
-			err := syncCvmDelete(kt, realDeleteIDs, dataCli)
-			if err != nil {
+			if err = syncCvmDelete(kt, realDeleteIDs, dataCli); err != nil {
 				logs.Errorf("request syncCvmDelete failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
+			logs.Infof("[%s] account[%s] sync cvm to delete cvm success, count: %d, ids: %v, rid: %s", enumor.Aws,
+				req.AccountID, len(realDeleteIDs), realDeleteIDs, kt.Rid)
 		}
 	}
 
@@ -407,11 +409,13 @@ func syncAwsCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsC
 	dsMap map[string]*AwsDSCvmSync, dataCli *dataservice.Client) error {
 
 	lists := make([]dataproto.CvmBatchUpdate[corecvm.AwsCvmExtension], 0)
+	updateCloudIDs := make([]string, 0)
 
 	for _, id := range updateIDs {
 		if !isChangeAws(cloudMap[id], dsMap[id]) {
 			continue
 		}
+		updateCloudIDs = append(updateCloudIDs, id)
 
 		cloudVpcIDs := make([]string, 0)
 		if cloudMap[id].Cvm.VpcId != nil {
@@ -536,6 +540,8 @@ func syncAwsCvmUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]*AwsC
 			logs.Errorf("request dataservice BatchUpdateCvm failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
+		logs.Infof("[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s", enumor.Aws,
+			len(updateCloudIDs), updateCloudIDs, kt.Rid)
 	}
 
 	return nil

@@ -78,11 +78,11 @@ func (svc *syncDiskSvc) SyncHuaWeiDisk(cts *rest.Contexts) (interface{}, error) 
 
 		if len(cloudIDs) > 0 {
 			req.CloudIDs = cloudIDs
-		}
-		_, err = disk.SyncHuaWeiDisk(cts.Kit, req, svc.adaptor, svc.dataCli)
-		if err != nil {
-			logs.Errorf("request to sync huawei disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
+			_, err = disk.SyncHuaWeiDisk(cts.Kit, req, svc.adaptor, svc.dataCli)
+			if err != nil {
+				logs.Errorf("request to sync huawei disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return nil, err
+			}
 		}
 
 		if int32(len(datas)) < limit {

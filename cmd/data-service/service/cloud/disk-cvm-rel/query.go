@@ -188,8 +188,7 @@ func (svc *relSvc) ListDiskWithoutCvm(cts *rest.Contexts) (interface{}, error) {
 				CreatedAt:     one.CreatedAt,
 				UpdatedAt:     one.UpdatedAt,
 			},
-			RelCreator:   one.RelCreator,
-			RelCreatedAt: one.RelCreatedAt.String(),
+			RelCreator: one.RelCreator,
 		}
 	}
 

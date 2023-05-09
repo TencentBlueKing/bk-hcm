@@ -252,7 +252,6 @@ func diffHWSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSync
 	}
 
 	if len(deleteCloudIDs) > 0 {
-		logs.Infof("do sync huawei SecurityGroup delete operate, rid: %s", kt.Rid)
 		err := DiffSecurityGroupSyncDelete(kt, deleteCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("sync delete huawei security group failed, err: %v, rid: %s", err, kt.Rid)
@@ -267,7 +266,6 @@ func diffHWSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSync
 	}
 
 	if len(updateCloudIDs) > 0 {
-		logs.Infof("do sync huawei SecurityGroup update operate, rid: %s", kt.Rid)
 		err := diffHWSecurityGroupSyncUpdate(kt, cloudMap, dsMap, updateCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("sync update huawei security group failed, err: %v, rid: %s", err, kt.Rid)
@@ -282,7 +280,6 @@ func diffHWSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupSync
 	}
 
 	if len(addCloudIDs) > 0 {
-		logs.Infof("do sync huawei SecurityGroup add operate, rid: %s", kt.Rid)
 		ids, err := diffHWSecurityGroupSyncAdd(kt, cloudMap, req, addCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("sync add huawei security group failed, err: %v, rid: %s", err, kt.Rid)

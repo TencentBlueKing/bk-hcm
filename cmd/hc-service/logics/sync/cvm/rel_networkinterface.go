@@ -32,12 +32,12 @@ import (
 
 // SyncCvmNetworkInterfaceRel sync cvm networkinterface rel
 func SyncCvmNetworkInterfaceRel(kt *kit.Kit, cloudSGMap map[string]*CVMOperateSync,
-	dataCli *dataservice.Client, account_id string, hcCloudIDs []string) error {
+	dataCli *dataservice.Client, accountID string, hcCloudIDs []string) error {
 
 	// change map key use hc id
 	hcSGMap := changCloudMapToHcMap(cloudSGMap)
 
-	hcIDs, err := getCvmHCIDs(kt, account_id, hcCloudIDs, dataCli)
+	hcIDs, err := getCvmHCIDs(kt, accountID, hcCloudIDs, dataCli)
 	if err != nil {
 		logs.Errorf("request getCvmHCIDs to get cvm from hc failed, err: %v, rid: %s", err, kt.Rid)
 		return err

@@ -20,6 +20,7 @@
 package disk
 
 import (
+	"errors"
 	"fmt"
 
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
@@ -149,33 +150,37 @@ func getDatasFromDSForHuaWeiDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 func getDatasFromHuaWeiForDiskSync(kt *kit.Kit, req *SyncHuaWeiDiskOption,
 	ad *cloudclient.CloudAdaptorClient) (map[string]*HuaWeiDiskSyncDiff, error) {
 
+	if len(req.CloudIDs) == 0 {
+		return nil, errors.New("cloudIDs is required")
+	}
+
+	split := slice.Split(req.CloudIDs, 60)
+
 	client, err := ad.HuaWei(kt, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	var marker *string = nil
-	limit := int32(core.HuaWeiQueryLimit)
-
+	cloudMap := make(map[string]*HuaWeiDiskSyncDiff)
 	opt := &disk.HuaWeiDiskListOption{
 		Region: req.Region,
-		Page:   &core.HuaWeiPage{Limit: &limit, Marker: marker},
+		Page:   &core.HuaWeiPage{Limit: converter.ValToPtr(int32(core.HuaWeiQueryLimit))},
 	}
-	if len(req.CloudIDs) > 0 {
-		opt.CloudIDs = req.CloudIDs
-	}
+	for _, partIDs := range split {
+		opt.CloudIDs = partIDs
 
-	datas, err := client.ListDisk(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to list huawei disk failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
+		datas, err := client.ListDisk(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to list huawei disk failed, err: %v, cloudIDs: %v, rid: %s",
+				err, partIDs, kt.Rid)
+			return nil, err
+		}
 
-	cloudMap := make(map[string]*HuaWeiDiskSyncDiff)
-	for _, data := range datas {
-		disk := new(HuaWeiDiskSyncDiff)
-		disk.Disk = data
-		cloudMap[data.Id] = disk
+		for _, data := range datas {
+			disk := new(HuaWeiDiskSyncDiff)
+			disk.Disk = data
+			cloudMap[data.Id] = disk
+		}
 	}
 
 	return cloudMap, nil

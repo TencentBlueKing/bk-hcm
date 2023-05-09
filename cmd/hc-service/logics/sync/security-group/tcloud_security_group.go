@@ -251,7 +251,6 @@ func diffTCloudSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroup
 	}
 
 	if len(deleteCloudIDs) > 0 {
-		logs.Infof("do sync tcloud SecurityGroup delete operate, rid: %s", kt.Rid)
 		err := DiffSecurityGroupSyncDelete(kt, deleteCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("sync delete tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
@@ -266,7 +265,6 @@ func diffTCloudSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroup
 	}
 
 	if len(updateCloudIDs) > 0 {
-		logs.Infof("do sync tcloud SecurityGroup update operate, rid: %s", kt.Rid)
 		err := diffTCloudSecurityGroupSyncUpdate(kt, cloudMap, dsMap, updateCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("sync update tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
@@ -281,7 +279,6 @@ func diffTCloudSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroup
 	}
 
 	if len(addCloudIDs) > 0 {
-		logs.Infof("do sync tcloud SecurityGroup add operate, rid: %s", kt.Rid)
 		ids, err := diffTCloudSecurityGroupSyncAdd(kt, cloudMap, req, addCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("sync add tcloud security group failed, err: %v, rid: %s", err, kt.Rid)

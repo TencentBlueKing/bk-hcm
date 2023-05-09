@@ -39,6 +39,7 @@ import (
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -77,6 +78,10 @@ func (opt SyncTCloudCvmOption) Validate() error {
 // SyncTCloudCvm ...
 func SyncTCloudCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client,
 	opt *SyncTCloudCvmOption) error {
+
+	if err := opt.Validate(); err != nil {
+		return err
+	}
 
 	client, err := ad.TCloud(kt, opt.AccountID)
 	if err != nil {
@@ -121,9 +126,9 @@ func SyncTCloudCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *dat
 			delCloudIDs = append(delCloudIDs, cloudID)
 		}
 
+		delete(cloudIDCvmMapFromCloudTmp, cloudID)
 		if isTCloudCvmChange(cvmFromCloud, cvmFromDB) {
 			updateCloudIDs = append(updateCloudIDs, cloudID)
-			delete(cloudIDCvmMapFromCloudTmp, cloudID)
 		}
 	}
 
@@ -139,6 +144,8 @@ func SyncTCloudCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *dat
 			logs.Errorf("request updateTCloudCvm failed, err: %v, cloudIDs: %v, rid: %s", err, updateCloudIDs, kt.Rid)
 			return err
 		}
+		logs.Infof("[%s] account[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s", enumor.TCloud,
+			opt.AccountID, len(updateCloudIDs), updateCloudIDs, kt.Rid)
 	}
 
 	if len(addCloudIDs) > 0 {
@@ -146,6 +153,8 @@ func SyncTCloudCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *dat
 			logs.Errorf("request addTCloudCvm failed, err: %v, cloudIDs: %v, rid: %s", err, addCloudIDs, kt.Rid)
 			return err
 		}
+		logs.Infof("[%s] account[%s] sync cvm to add cvm success, count: %d, ids: %v, rid: %s", enumor.TCloud,
+			opt.AccountID, len(addCloudIDs), addCloudIDs, kt.Rid)
 	}
 
 	if len(delCloudIDs) > 0 {
@@ -153,6 +162,8 @@ func SyncTCloudCvm(kt *kit.Kit, ad *cloudclient.CloudAdaptorClient, dataCli *dat
 			logs.Errorf("request deleteTCloudCvm failed, err: %v, cloudIDs: %v, rid: %s", err, delCloudIDs, kt.Rid)
 			return err
 		}
+		logs.Infof("[%s] account[%s] sync cvm to delete cvm success, count: %d, ids: %v, rid: %s", enumor.TCloud,
+			opt.AccountID, len(delCloudIDs), delCloudIDs, kt.Rid)
 	}
 
 	return nil
@@ -232,7 +243,7 @@ func isTCloudCvmChange(cloud *cvm.Instance, db corecvm.Cvm[corecvm.TCloudCvmExte
 		return true
 	}
 
-	if db.Extension.Placement.CloudProjectID != cloud.Placement.ProjectId {
+	if !assert.IsPtrInt64Equal(db.Extension.Placement.CloudProjectID, cloud.Placement.ProjectId) {
 		return true
 	}
 
@@ -308,7 +319,7 @@ func isTCloudCvmChange(cloud *cvm.Instance, db corecvm.Cvm[corecvm.TCloudCvmExte
 		return true
 	}
 
-	return true
+	return false
 }
 
 func deleteTCloudCvm(kt *kit.Kit, dataCli *dataservice.Client, tcloudCli *tcloud.TCloud,
@@ -347,6 +358,10 @@ func deleteTCloudCvm(kt *kit.Kit, dataCli *dataservice.Client, tcloudCli *tcloud
 func updateTCloudCvm(kt *kit.Kit, dataCli *dataservice.Client, tcloud *tcloud.TCloud, updateCloudID []string,
 	cloudIDCvmMapFromCloud map[string]*cvm.Instance,
 	cloudIDCvmMapFromDB map[string]corecvm.Cvm[corecvm.TCloudCvmExtension]) error {
+
+	if len(updateCloudID) == 0 {
+		return errf.New(errf.InvalidParameter, "update cloud ids is required")
+	}
 
 	lists := make([]dataproto.CvmBatchUpdate[corecvm.TCloudCvmExtension], 0, len(updateCloudID))
 	for _, cloudID := range updateCloudID {
@@ -434,11 +449,9 @@ func updateTCloudCvm(kt *kit.Kit, dataCli *dataservice.Client, tcloud *tcloud.TC
 	updateReq := dataproto.CvmBatchUpdateReq[corecvm.TCloudCvmExtension]{
 		Cvms: lists,
 	}
-	if len(updateReq.Cvms) > 0 {
-		if err := dataCli.TCloud.Cvm.BatchUpdateCvm(kt.Ctx, kt.Header(), &updateReq); err != nil {
-			logs.Errorf("request tcloud dataservice BatchUpdateCvm failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+	if err := dataCli.TCloud.Cvm.BatchUpdateCvm(kt.Ctx, kt.Header(), &updateReq); err != nil {
+		logs.Errorf("request tcloud dataservice BatchUpdateCvm failed, err: %v, rid: %s", err, kt.Rid)
+		return err
 	}
 
 	return nil

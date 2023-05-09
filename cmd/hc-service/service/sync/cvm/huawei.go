@@ -71,10 +71,9 @@ func (svc *syncCvmSvc) SyncHuaWeiCvmWithRelResource(cts *rest.Contexts) (interfa
 	}
 
 	listOpt := &typecvm.HuaWeiListOption{
-		Region:   req.Region,
-		CloudIDs: nil,
+		Region: req.Region,
 		Page: &typecore.HuaWeiCvmOffsetPage{
-			Offset: int32(0),
+			Offset: int32(1),
 			Limit:  int32(constant.BatchOperationMaxLimit),
 		},
 	}
@@ -99,18 +98,16 @@ func (svc *syncCvmSvc) SyncHuaWeiCvmWithRelResource(cts *rest.Contexts) (interfa
 			Region:    req.Region,
 			CloudIDs:  cloudIDs,
 		}
-
-		_, err = cvm.SyncHuaWeiCvmWithRelResource(cts.Kit, syncOpt, svc.adaptor, svc.dataCli)
-		if err != nil {
+		if _, err = cvm.SyncHuaWeiCvmWithRelResource(cts.Kit, syncOpt, svc.adaptor, svc.dataCli); err != nil {
 			logs.Errorf("request to sync huawei cvm all rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 
-		if len(*cvms) < typecore.TCloudQueryLimit {
+		if len(*cvms) < constant.BatchOperationMaxLimit {
 			break
 		}
 
-		listOpt.Page.Offset += typecore.TCloudQueryLimit
+		listOpt.Page.Offset += 1
 	}
 
 	return nil, nil

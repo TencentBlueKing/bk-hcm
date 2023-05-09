@@ -200,7 +200,6 @@ func diffAzureSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupS
 	}
 
 	if len(deleteCloudIDs) > 0 {
-		logs.Infof("do sync azure SecurityGroup delete operate rid: %s", kt.Rid)
 		err := DiffSecurityGroupSyncDelete(kt, deleteCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("sync delete azure security group failed, err: %v, rid: %s", err, kt.Rid)
@@ -215,7 +214,6 @@ func diffAzureSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupS
 	}
 
 	if len(updateCloudIDs) > 0 {
-		logs.Infof("do sync azure SecurityGroup update operate rid: %s", kt.Rid)
 		err := diffAzureSecurityGroupSyncUpdate(kt, cloudMap, dsMap, updateCloudIDs, dataCli, req)
 		if err != nil {
 			logs.Errorf("sync update azure security group failed, err: %v, rid: %s", err, kt.Rid)
@@ -230,7 +228,6 @@ func diffAzureSecurityGroupSync(kt *kit.Kit, cloudMap map[string]*SecurityGroupS
 	}
 
 	if len(addCloudIDs) > 0 {
-		logs.Infof("do sync azure SecurityGroup add operate rid: %s", kt.Rid)
 		ids, err := diffAzureSecurityGroupSyncAdd(kt, cloudMap, req, addCloudIDs, dataCli)
 		if err != nil {
 			logs.Errorf("sync add azure security group failed, err: %v, rid: %s", err, kt.Rid)
