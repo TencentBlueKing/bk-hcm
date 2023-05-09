@@ -21,7 +21,9 @@ package vpc
 
 import (
 	"hcm/pkg/api/core"
+	corecloud "hcm/pkg/api/core/cloud"
 	proto "hcm/pkg/api/web-server/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -36,6 +38,8 @@ func (svc *service) ListVpcWithSubnetCount(cts *rest.Contexts) (interface{}, err
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+
 	req := new(proto.ListVpcWithSubnetCountReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -49,31 +53,126 @@ func (svc *service) ListVpcWithSubnetCount(cts *rest.Contexts) (interface{}, err
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	vpcResult, err := svc.client.CloudServer().Vpc.ListInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
-	if err != nil {
-		logs.Errorf("list vpc failed, err: %v, rid: %svc", err, cts.Kit.Rid)
-		return nil, err
-	}
-
 	if req.Page.Count {
-		return &proto.ListVpcWithSubnetCountResult{Count: vpcResult.Count}, nil
-	}
-
-	details := make([]proto.VpcWithSubnetCount, 0, len(vpcResult.Details))
-	for _, one := range vpcResult.Details {
-		vpcSubnetCount, zoneSubnetCount, err := svc.getVpcSubnetCount(cts.Kit, one.ID, req.Zone, bizID)
+		vpcResult, err := svc.client.CloudServer().Vpc.ListInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
 		if err != nil {
+			logs.Errorf("list vpc failed, err: %v, rid: %svc", err, cts.Kit.Rid)
 			return nil, err
 		}
 
-		details = append(details, proto.VpcWithSubnetCount{
-			BaseVpc:                one,
-			SubnetCount:            vpcSubnetCount,
-			CurrentZoneSubnetCount: zoneSubnetCount,
-		})
+		return &core.ListResult{Count: vpcResult.Count}, nil
 	}
 
-	return &proto.ListVpcWithSubnetCountResult{Details: details}, nil
+	switch vendor {
+	case enumor.TCloud:
+		vpcResult, err := svc.client.CloudServer().Vpc.TCloudListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
+		if err != nil {
+			logs.Errorf("list vpc failed, err: %v, rid: %svc", err, cts.Kit.Rid)
+			return nil, err
+		}
+		details := make([]proto.VpcWithSubnetCount[corecloud.TCloudVpcExtension], 0, len(vpcResult.Details))
+		for _, one := range vpcResult.Details {
+			vpcSubnetCount, zoneSubnetCount, err := svc.getVpcSubnetCount(cts.Kit, one.ID, req.Zone, bizID)
+			if err != nil {
+				return nil, err
+			}
+
+			details = append(details, proto.VpcWithSubnetCount[corecloud.TCloudVpcExtension]{
+				Vpc:                    one,
+				SubnetCount:            vpcSubnetCount,
+				CurrentZoneSubnetCount: zoneSubnetCount,
+			})
+		}
+
+		return &proto.ListVpcWithSubnetCountResult[corecloud.TCloudVpcExtension]{Details: details}, nil
+
+	case enumor.Aws:
+		vpcResult, err := svc.client.CloudServer().Vpc.AwsListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
+		if err != nil {
+			logs.Errorf("list vpc failed, err: %v, rid: %svc", err, cts.Kit.Rid)
+			return nil, err
+		}
+		details := make([]proto.VpcWithSubnetCount[corecloud.AwsVpcExtension], 0, len(vpcResult.Details))
+		for _, one := range vpcResult.Details {
+			vpcSubnetCount, zoneSubnetCount, err := svc.getVpcSubnetCount(cts.Kit, one.ID, req.Zone, bizID)
+			if err != nil {
+				return nil, err
+			}
+
+			details = append(details, proto.VpcWithSubnetCount[corecloud.AwsVpcExtension]{
+				Vpc:                    one,
+				SubnetCount:            vpcSubnetCount,
+				CurrentZoneSubnetCount: zoneSubnetCount,
+			})
+		}
+
+		return &proto.ListVpcWithSubnetCountResult[corecloud.AwsVpcExtension]{Details: details}, nil
+	case enumor.Gcp:
+		vpcResult, err := svc.client.CloudServer().Vpc.GcpListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
+		if err != nil {
+			logs.Errorf("list vpc failed, err: %v, rid: %svc", err, cts.Kit.Rid)
+			return nil, err
+		}
+		details := make([]proto.VpcWithSubnetCount[corecloud.GcpVpcExtension], 0, len(vpcResult.Details))
+		for _, one := range vpcResult.Details {
+			vpcSubnetCount, zoneSubnetCount, err := svc.getVpcSubnetCount(cts.Kit, one.ID, req.Zone, bizID)
+			if err != nil {
+				return nil, err
+			}
+
+			details = append(details, proto.VpcWithSubnetCount[corecloud.GcpVpcExtension]{
+				Vpc:                    one,
+				SubnetCount:            vpcSubnetCount,
+				CurrentZoneSubnetCount: zoneSubnetCount,
+			})
+		}
+
+		return &proto.ListVpcWithSubnetCountResult[corecloud.GcpVpcExtension]{Details: details}, nil
+	case enumor.Azure:
+		vpcResult, err := svc.client.CloudServer().Vpc.AzureListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
+		if err != nil {
+			logs.Errorf("list vpc failed, err: %v, rid: %svc", err, cts.Kit.Rid)
+			return nil, err
+		}
+		details := make([]proto.VpcWithSubnetCount[corecloud.AzureVpcExtension], 0, len(vpcResult.Details))
+		for _, one := range vpcResult.Details {
+			vpcSubnetCount, zoneSubnetCount, err := svc.getVpcSubnetCount(cts.Kit, one.ID, req.Zone, bizID)
+			if err != nil {
+				return nil, err
+			}
+
+			details = append(details, proto.VpcWithSubnetCount[corecloud.AzureVpcExtension]{
+				Vpc:                    one,
+				SubnetCount:            vpcSubnetCount,
+				CurrentZoneSubnetCount: zoneSubnetCount,
+			})
+		}
+
+		return &proto.ListVpcWithSubnetCountResult[corecloud.AzureVpcExtension]{Details: details}, nil
+	case enumor.HuaWei:
+		vpcResult, err := svc.client.CloudServer().Vpc.HuaWeiListExtInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, listVpcReq)
+		if err != nil {
+			logs.Errorf("list vpc failed, err: %v, rid: %svc", err, cts.Kit.Rid)
+			return nil, err
+		}
+		details := make([]proto.VpcWithSubnetCount[corecloud.HuaWeiVpcExtension], 0, len(vpcResult.Details))
+		for _, one := range vpcResult.Details {
+			vpcSubnetCount, zoneSubnetCount, err := svc.getVpcSubnetCount(cts.Kit, one.ID, req.Zone, bizID)
+			if err != nil {
+				return nil, err
+			}
+
+			details = append(details, proto.VpcWithSubnetCount[corecloud.HuaWeiVpcExtension]{
+				Vpc:                    one,
+				SubnetCount:            vpcSubnetCount,
+				CurrentZoneSubnetCount: zoneSubnetCount,
+			})
+		}
+
+		return &proto.ListVpcWithSubnetCountResult[corecloud.HuaWeiVpcExtension]{Details: details}, nil
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "vendor: %s not support", vendor)
+	}
 }
 
 func (svc *service) getVpcSubnetCount(kt *kit.Kit, vpcID, zone string, bizID int64) (uint64, uint64, error) {

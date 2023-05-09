@@ -25,6 +25,9 @@ import (
 
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
+	corecloud "hcm/pkg/api/core/cloud"
+	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -54,6 +57,61 @@ func (v *VpcClient) ListInBiz(ctx context.Context, h http.Header, bizID int64, r
 		WithHeaders(h).
 		Do().
 		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// TCloudListExtInBiz ...
+func (v *VpcClient) TCloudListExtInBiz(ctx context.Context, h http.Header, bizID int64, req *core.ListReq) (
+	*protocloud.VpcExtListResult[corecloud.TCloudVpcExtension], error) {
+	return listVpcExt[corecloud.TCloudVpcExtension](ctx, h, v.client, bizID, enumor.TCloud, req)
+}
+
+// AwsListExtInBiz ...
+func (v *VpcClient) AwsListExtInBiz(ctx context.Context, h http.Header, bizID int64, req *core.ListReq) (
+	*protocloud.VpcExtListResult[corecloud.AwsVpcExtension], error) {
+	return listVpcExt[corecloud.AwsVpcExtension](ctx, h, v.client, bizID, enumor.Aws, req)
+}
+
+// HuaWeiListExtInBiz ...
+func (v *VpcClient) HuaWeiListExtInBiz(ctx context.Context, h http.Header, bizID int64, req *core.ListReq) (
+	*protocloud.VpcExtListResult[corecloud.HuaWeiVpcExtension], error) {
+	return listVpcExt[corecloud.HuaWeiVpcExtension](ctx, h, v.client, bizID, enumor.HuaWei, req)
+}
+
+// GcpListExtInBiz ...
+func (v *VpcClient) GcpListExtInBiz(ctx context.Context, h http.Header, bizID int64, req *core.ListReq) (
+	*protocloud.VpcExtListResult[corecloud.GcpVpcExtension], error) {
+	return listVpcExt[corecloud.GcpVpcExtension](ctx, h, v.client, bizID, enumor.Gcp, req)
+}
+
+// AzureListExtInBiz ...
+func (v *VpcClient) AzureListExtInBiz(ctx context.Context, h http.Header, bizID int64, req *core.ListReq) (
+	*protocloud.VpcExtListResult[corecloud.AzureVpcExtension], error) {
+	return listVpcExt[corecloud.AzureVpcExtension](ctx, h, v.client, bizID, enumor.Azure, req)
+}
+
+// listVpcExt list vpc with extension.
+func listVpcExt[T corecloud.VpcExtension](ctx context.Context, h http.Header, cli rest.ClientInterface, bizID int64,
+	vendor enumor.Vendor, req *core.ListReq) (*protocloud.VpcExtListResult[T], error) {
+
+	resp := new(protocloud.VpcExtListResp[T])
+
+	err := cli.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/bizs/%d/vendors/%s/vpcs/list", bizID, vendor).
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
 	if err != nil {
 		return nil, err
 	}

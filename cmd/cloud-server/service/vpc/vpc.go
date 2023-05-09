@@ -63,6 +63,7 @@ func InitVpcService(c *capability.Capability) {
 	// vpc apis in biz
 	h.Add("GetBizVpc", "GET", "/bizs/{bk_biz_id}/vpcs/{id}", svc.GetBizVpc)
 	h.Add("ListBizVpc", "POST", "/bizs/{bk_biz_id}/vpcs/list", svc.ListBizVpc)
+	h.Add("ListBizVpcExt", "POST", "/bizs/{bk_biz_id}/vendors/{vendor}/vpcs/list", svc.ListBizVpcExt)
 	h.Add("UpdateBizVpc", "PATCH", "/bizs/{bk_biz_id}/vpcs/{id}", svc.UpdateBizVpc)
 	h.Add("DeleteBizVpc", "DELETE", "/bizs/{bk_biz_id}/vpcs/{id}", svc.DeleteBizVpc)
 
@@ -233,9 +234,14 @@ func (svc *vpcSvc) listVpc(cts *rest.Contexts, authHandler handler.ListAuthResHa
 	// list authorized instances
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer, ResType: meta.Vpc,
 		Action: meta.Find, Filter: req.Filter})
+	if err != nil {
+		return nil, err
+	}
+
 	if noPermFlag {
 		return &cloudserver.VpcListResult{Count: 0, Details: make([]corecloud.BaseVpc, 0)}, nil
 	}
+
 	req.Filter = expr
 
 	// list vpcs
@@ -245,6 +251,51 @@ func (svc *vpcSvc) listVpc(cts *rest.Contexts, authHandler handler.ListAuthResHa
 	}
 
 	return &cloudserver.VpcListResult{Count: res.Count, Details: res.Details}, nil
+}
+
+// ListBizVpcExt list biz vpc with extension.
+func (svc *vpcSvc) ListBizVpcExt(cts *rest.Contexts) (interface{}, error) {
+	return svc.listVpcExt(cts, handler.ListBizAuthRes)
+}
+
+func (svc *vpcSvc) listVpcExt(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer, ResType: meta.Vpc,
+		Action: meta.Find, Filter: req.Filter})
+	if err != nil {
+		return nil, err
+	}
+
+	if noPermFlag {
+		return &cloudserver.VpcListResult{Count: 0, Details: make([]corecloud.BaseVpc, 0)}, nil
+	}
+	req.Filter = expr
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.client.DataService().TCloud.Vpc.ListVpcExt(cts.Kit.Ctx, cts.Kit.Header(), req)
+	case enumor.Aws:
+		return svc.client.DataService().Aws.Vpc.ListVpcExt(cts.Kit.Ctx, cts.Kit.Header(), req)
+	case enumor.Gcp:
+		return svc.client.DataService().Gcp.Vpc.ListVpcExt(cts.Kit.Ctx, cts.Kit.Header(), req)
+	case enumor.Azure:
+		return svc.client.DataService().Azure.Vpc.ListVpcExt(cts.Kit.Ctx, cts.Kit.Header(), req)
+	case enumor.HuaWei:
+		return svc.client.DataService().HuaWei.Vpc.ListVpcExt(cts.Kit.Ctx, cts.Kit.Header(), req)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "vendor: %s not support", vendor)
+	}
 }
 
 // DeleteVpc delete vpc.

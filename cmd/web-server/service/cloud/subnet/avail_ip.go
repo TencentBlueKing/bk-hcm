@@ -67,6 +67,10 @@ func (svc *service) ListSubnetWithIPCount(cts *rest.Contexts) (interface{}, erro
 		return &core.ListResult{Count: listResult.Count}, nil
 	}
 
+	if len(listResult.Details) == 0 {
+		return &proto.ListSubnetWithAvailIPCountResp{Details: make([]proto.ListSubnetWithAvailIPCountResult, 0)}, nil
+	}
+
 	ids := make([]string, 0, len(listResult.Details))
 	for _, one := range listResult.Details {
 		ids = append(ids, one.ID)
@@ -81,7 +85,7 @@ func (svc *service) ListSubnetWithIPCount(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	result := make([]proto.ListSubnetWithAvailIPCountResult, 0, len(listResult.Details))
+	details := make([]proto.ListSubnetWithAvailIPCountResult, 0, len(listResult.Details))
 	for _, one := range listResult.Details {
 		subnet := proto.ListSubnetWithAvailIPCountResult{
 			BaseSubnet: one,
@@ -94,8 +98,8 @@ func (svc *service) ListSubnetWithIPCount(cts *rest.Contexts) (interface{}, erro
 			subnet.UsedIPCount = tmp.UsedIPCount
 		}
 
-		result = append(result, subnet)
+		details = append(details, subnet)
 	}
 
-	return result, nil
+	return &proto.ListSubnetWithAvailIPCountResp{Details: details}, nil
 }

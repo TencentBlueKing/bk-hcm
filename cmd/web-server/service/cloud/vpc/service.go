@@ -37,7 +37,7 @@ func InitVpcService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("ListVpcWithSubnetCount", http.MethodPost, "/bizs/{bk_biz_id}/vpcs/with/subnets/count/list",
+	h.Add("ListVpcWithSubnetCount", http.MethodPost, "/bizs/{bk_biz_id}/vendors/{vendor}/vpcs/with/subnet_count/list",
 		svc.ListVpcWithSubnetCount)
 
 	h.Load(c.WebService)

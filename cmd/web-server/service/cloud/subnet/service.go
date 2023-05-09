@@ -37,7 +37,7 @@ func InitService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("ListSubnetWithIPCount", http.MethodPost, "/bizs/{bk_biz_id}/subnet/with/ip_count/list",
+	h.Add("ListSubnetWithIPCount", http.MethodPost, "/bizs/{bk_biz_id}/subnets/with/ip_count/list",
 		svc.ListSubnetWithIPCount)
 
 	h.Load(c.WebService)
