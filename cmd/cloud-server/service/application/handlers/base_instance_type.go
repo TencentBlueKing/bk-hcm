@@ -27,12 +27,18 @@ import (
 
 // GetTCloudInstanceType 查询机型
 func (a *BaseApplicationHandler) GetTCloudInstanceType(
-	accountID, region, zone, instanceType string,
+	accountID, region, zone, instanceType, chargeType string,
 ) (*hcprotoinstancetype.TCloudInstanceTypeResp, error) {
+	req := &hcprotoinstancetype.TCloudInstanceTypeListReq{
+		AccountID:          accountID,
+		Region:             region,
+		Zone:               zone,
+		InstanceChargeType: chargeType,
+	}
 	resp, err := a.Client.HCService().TCloud.InstanceType.List(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		&hcprotoinstancetype.TCloudInstanceTypeListReq{AccountID: accountID, Region: region, Zone: zone},
+		req,
 	)
 	if err != nil {
 		return nil, err

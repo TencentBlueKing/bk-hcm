@@ -117,7 +117,8 @@ func (a *ApplicationOfCreateTCloudCvm) renderBaseInfo() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "名称", Value: req.Name})
 
 	// 机型
-	instanceTypeInfo, err := a.GetTCloudInstanceType(req.AccountID, req.Region, req.Zone, req.InstanceType)
+	instanceTypeInfo, err := a.GetTCloudInstanceType(req.AccountID, req.Region, req.Zone, req.InstanceType,
+		string(req.InstanceChargeType))
 	if err != nil {
 		return formItems, err
 	}
