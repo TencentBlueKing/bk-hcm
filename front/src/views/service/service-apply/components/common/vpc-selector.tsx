@@ -97,7 +97,7 @@ export default defineComponent({
           list.value.map(({ cloud_id, name, current_zone_subnet_count, subnet_count, extension }) => (
             <Option key={cloud_id} value={cloud_id}
             disabled={current_zone_subnet_count === 0}
-            label={`${name} ${extension?.cidr[0]?.cidr} 该VPC共${current_zone_subnet_count}个子网, 该可用区有${subnet_count}个子网 ${current_zone_subnet_count === 0 ? '不可用' : '可用'}`}></Option>
+            label={`${name} ${extension?.cidr[0]?.cidr} 该VPC共${subnet_count}个子网, 该可用区有${current_zone_subnet_count}个子网 ${current_zone_subnet_count === 0 ? '不可用' : '可用'}`}></Option>
           ))
         }
       </Select>
