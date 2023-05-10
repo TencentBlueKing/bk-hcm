@@ -22,6 +22,10 @@ import useCondtion from '../hooks/use-condtion';
 import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../hooks/use-cvm-form-data';
 // import { useHostStore } from '@/store/host';
 
+import { useAccountStore } from '@/store';
+
+const accountStore = useAccountStore();
+
 const { FormItem } = Form;
 const { Option } = Select;
 const { Group: RadioGroup, Button: RadioButton } = Radio;
@@ -297,7 +301,7 @@ export default defineComponent({
             description: '',
             content: () => <VpcSelector
               v-model={formData.cloud_vpc_id}
-              bizId={cond.bizId}
+              bizId={cond.bizId ? cond.bizId : accountStore.bizs}
               accountId={cond.cloudAccountId}
               vendor={cond.vendor}
               region={cond.region}
@@ -312,7 +316,7 @@ export default defineComponent({
             property: 'cloud_subnet_id',
             content: () => <SubnetSelector
               v-model={formData.cloud_subnet_id}
-              bizId={cond.bizId}
+              bizId={cond.bizId ? cond.bizId : accountStore.bizs}
               vpcId={vpcId.value}
               vendor={cond.vendor}
               region={cond.region}
@@ -344,7 +348,7 @@ export default defineComponent({
             property: 'cloud_security_group_ids',
             content: () => <SecurityGroupSelector
               v-model={formData.cloud_security_group_ids}
-              bizId={cond.bizId}
+              bizId={cond.bizId ? cond.bizId : accountStore.bizs}
               accountId={cond.cloudAccountId}
               region={cond.region}
               multiple={cond.vendor !== VendorEnum.AZURE}
@@ -392,7 +396,7 @@ export default defineComponent({
               accountId={cond.cloudAccountId}
               zone={formData.zone?.[0]}
               region={cond.region}
-              bizId={cond.bizId}
+              bizId={cond.bizId ? cond.bizId : accountStore.bizs}
               instanceChargeType={formData.instance_charge_type}
               clearable={false}
               onChange={handleMachineTypeChange} />,

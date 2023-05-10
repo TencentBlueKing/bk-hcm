@@ -10,7 +10,7 @@ const { Option } = Select;
 export default defineComponent({
   props: {
     modelValue: String as PropType<string>,
-    bizId: Number as PropType<number>,
+    bizId: Number as PropType<number | string>,
     accountId: String as PropType<string>,
     region: String as PropType<string>,
     multiple: Boolean as PropType<boolean>,
@@ -36,7 +36,7 @@ export default defineComponent({
         return !!(Object.keys(selected.value).length);
       }
       return false;
-    })
+    });
 
     watch([
       () => props.bizId,
@@ -61,13 +61,13 @@ export default defineComponent({
           op: 'eq',
           value: region,
         },
-      ]
+      ];
       if (props.vendor === VendorEnum.AWS) {
         rules.push({
           field: 'extension.vpc_id',
           op: 'json_eq',
           value: vpcId,
-        })
+        });
       }
       const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/security_groups/list`, {
         filter: {

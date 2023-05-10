@@ -12,7 +12,7 @@ const { Option } = Select;
 export default defineComponent({
   props: {
     modelValue: String as PropType<string>,
-    bizId: Number as PropType<number>,
+    bizId: Number as PropType<number | string>,
     vpcId: String as PropType<string>,
     vendor: String as PropType<string>,
     region: String as PropType<string>,

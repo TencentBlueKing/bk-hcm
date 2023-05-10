@@ -15,7 +15,7 @@ export default defineComponent({
     accountId: String as PropType<string>,
     region: String as PropType<string>,
     zone: String as PropType<string>,
-    bizId: Number as PropType<number>,
+    bizId: Number as PropType<number | string>,
     instanceChargeType: String as PropType<string>,
   },
   emits: ['update:modelValue', 'change'],
