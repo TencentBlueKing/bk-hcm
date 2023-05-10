@@ -23,7 +23,7 @@ import {
 } from '@/store/resource';
 import {
   useAccountStore,
-} from '@/store/account';3;
+} from '@/store/account';
 
 const props = defineProps({
   data: {

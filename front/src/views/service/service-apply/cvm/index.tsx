@@ -20,7 +20,7 @@ import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import useCvmOptions from '../hooks/use-cvm-options';
 import useCondtion from '../hooks/use-condtion';
 import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../hooks/use-cvm-form-data';
-import { useHostStore } from '@/store/host';
+// import { useHostStore } from '@/store/host';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -46,7 +46,7 @@ export default defineComponent({
         formData: getGcpDataDiskDefaults(),
       },
     });
-    const hostStore = useHostStore();
+    // const hostStore = useHostStore();
 
     const zoneSelectorRef = ref(null);
     const cloudId = ref(null);
@@ -89,6 +89,7 @@ export default defineComponent({
     const handleZoneChange = () => {
       resetFormItemData('instance_type');
       resetFormItemData('cloud_vpc_id');
+      resetFormItemData('cloud_subnet_id');
       vpcId.value = '';
     };
     const handleVpcChange = (vpc: any) => {
@@ -254,6 +255,10 @@ export default defineComponent({
     watch(() => formData.cloud_vpc_id, () => {
       console.log('subnetSelectorRef.value', subnetSelectorRef.value.subnetList);
       subnetLength.value = subnetSelectorRef.value.subnetList?.length || 0;
+    });
+
+    watch(() => cond.vendor, () => {
+      formData.system_disk.disk_type = '';
     });
 
     // const curRegionName = computed(() => {
@@ -520,7 +525,7 @@ export default defineComponent({
             required: true,
             property: 'required_count',
             description: '大于0的整数，最大不能超过100',
-            content: () => <Input type='number' max={100} v-model={formData.required_count}></Input>,
+            content: () => <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>,
           },
           {
             label: '购买时长',
