@@ -39,7 +39,8 @@ export default defineComponent({
       () => props.zone,
       () => props.instanceChargeType,
     ], async ([vendor, accountId, region, zone, instanceChargeType], [,,,oldZone]) => {
-      if (!vendor || !accountId || !region || (vendor !== VendorEnum.AZURE && !zone) || !instanceChargeType) {
+      if (!vendor || !accountId || !region || (vendor !== VendorEnum.AZURE && !zone)
+      || (vendor === VendorEnum.TCLOUD && !instanceChargeType)) {
         list.value = [];
         return;
       }
