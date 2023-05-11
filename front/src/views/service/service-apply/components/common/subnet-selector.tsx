@@ -112,7 +112,7 @@ export default defineComponent({
       >
         {
           list.value.map(({ cloud_id, name, ipv4_cidr, available_ip_count }) => (
-            <Option key={cloud_id} value={cloud_id} label={`${name} ${ipv4_cidr} 剩余IP ${available_ip_count}`}></Option>
+            <Option key={cloud_id} value={cloud_id} label={`${name} ${ipv4_cidr} ${props.vendor !== VendorEnum.GCP ? `剩余IP ${available_ip_count}` : ''}`}></Option>
           ))
         }
       </Select>
