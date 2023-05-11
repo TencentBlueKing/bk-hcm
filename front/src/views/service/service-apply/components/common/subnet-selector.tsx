@@ -81,13 +81,13 @@ export default defineComponent({
         });
       }
 
-      if (vendor === VendorEnum.AZURE) {
-        filter.rules.push({
-          field: 'extension.resource_group_name',
-          op: QueryRuleOPEnum.JSON_EQ,
-          value: resourceGroup,
-        });
-      }
+      // if (vendor === VendorEnum.AZURE) {
+      //   filter.rules.push({
+      //     field: 'extension.resource_group_name',
+      //     op: QueryRuleOPEnum.JSON_EQ,
+      //     value: resourceGroup,
+      //   });
+      // }
 
       const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/subnets/with/ip_count/list`, {
         // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/list`, {
