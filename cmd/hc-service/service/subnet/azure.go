@@ -201,7 +201,7 @@ func (s subnet) AzureListSubnetCountIP(cts *rest.Contexts) (interface{}, error) 
 
 	usageOpt := &types.AzureVpcListUsageOption{
 		ResourceGroupName: req.ResourceGroupName,
-		VpcID:             req.VpcID,
+		VpcID:             listResult.Details[0].CloudVpcID,
 	}
 	usages, err := cli.ListVpcUsage(cts.Kit, usageOpt)
 	if err != nil {
