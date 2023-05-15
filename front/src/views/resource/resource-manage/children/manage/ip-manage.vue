@@ -19,6 +19,42 @@ import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
 import useSelection from '../../hooks/use-selection';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import { CloudType } from '@/typings';
+
+enum EipStatus {
+  BIND = 'BIND',
+  ACTIVE = 'ACTIVE',
+  ELB = 'ELB',
+  VPN = 'VPN',
+  IN_USE = 'IN_USE',
+  UNBIND = 'UNBIND'
+}
+
+interface IEip {
+  account_id: string,
+  bk_biz_id: number,
+  cloud_id: string,
+  created_at: string,
+  creator: string,
+  id: string,
+  instance_id: string,
+  name: string,
+  public_ip: string,
+  region: string,
+  reviser: string,
+  status: EipStatus,
+  updated_at: string,
+  vendor: string,
+  cvm_id?: string
+}
+
+const CLOUD_VENDOR = {
+  tcloud: 'tcloud',  // 腾讯云
+  aws: 'aws',        // 亚马逊云
+  huawei: 'huawei',  // 华为云
+  azure: 'azure',    // 微软云
+  gcp: 'gcp'         // 谷歌云
+}
 
 const props = defineProps({
   filter: {
@@ -74,6 +110,33 @@ const fetchComponentsData = () => {
   handlePageChange(1);
 };
 
+const canDelete = (data: IEip): boolean => {
+  let res = true;
+  // 分配到业务下面后不可删除
+  const isInBusiness = !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
+    || data.cvm_id || (data.bk_biz_id !== -1 && !location.href.includes('business'));
+  const { status, vendor} = data;
+
+  switch(vendor) {
+    case CLOUD_VENDOR.tcloud:
+      if(status === EipStatus.BIND) res = false;
+      break;
+    case CLOUD_VENDOR.huawei:
+      if([EipStatus.ACTIVE, EipStatus.ELB, EipStatus.VPN].includes(status)) res = false;
+      break;
+    case CLOUD_VENDOR.aws:
+      if(status === EipStatus.BIND) res = false;
+      break;
+    case CLOUD_VENDOR.gcp:
+      if(status === EipStatus.IN_USE) res = false;
+      break;
+    case CLOUD_VENDOR.azure:
+      if(status === EipStatus.BIND) res = false;
+      break;
+  }
+  return res && !isInBusiness;
+}
+
 const renderColumns = [
   ...columns,
   {
@@ -92,8 +155,7 @@ const renderColumns = [
             {
               text: true,
               theme: 'primary',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
-            || data.cvm_id || (data.bk_biz_id !== -1 && !location.href.includes('business')),
+              disabled: !canDelete(data),
               onClick() {
                 InfoBox({
                   title: '请确认是否删除',
@@ -130,43 +192,24 @@ defineExpose({ fetchComponentsData });
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
-    <section
-      class="flex-row align-items-center mb20"
+  <bk-loading :loading="isLoading">
+    <section class="flex-row align-items-center mb20"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot></slot>
       <!-- <bk-button
-        class="w100 ml10"
-        theme="primary"
-        :disabled="selections.length <= 0"
-        @click="handleShowDelete(selections.map(selection => selection.id))"
-      >
-        删除
-      </bk-button> -->
-      <bk-search-select
-        class="w500 ml10"
-        clearable
-        :conditions="[]"
-        :data="searchData"
-        v-model="searchValue"
-      />
+          class="w100 ml10"
+          theme="primary"
+          :disabled="selections.length <= 0"
+          @click="handleShowDelete(selections.map(selection => selection.id))"
+        >
+          删除
+        </bk-button> -->
+      <bk-search-select class="w500 ml10" clearable :conditions="[]" :data="searchData" v-model="searchValue" />
     </section>
 
-    <bk-table
-      class="mt20"
-      row-hover="auto"
-      remote-pagination
-      :pagination="pagination"
-      :columns="renderColumns"
-      :data="datas"
-      show-overflow-tooltip
-      @page-limit-change="handlePageSizeChange"
-      @page-value-change="handlePageChange"
-      @column-sort="handleSort"
-      @selection-change="handleSelectionChange"
-    />
+    <bk-table class="mt20" row-hover="auto" remote-pagination :pagination="pagination" :columns="renderColumns"
+      :data="datas" show-overflow-tooltip @page-limit-change="handlePageSizeChange" @page-value-change="handlePageChange"
+      @column-sort="handleSort" @selection-change="handleSelectionChange" />
   </bk-loading>
   <delete-dialog />
 </template>
