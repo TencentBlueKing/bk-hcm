@@ -57,6 +57,14 @@ const (
 	HEAD   VerbType = http.MethodHead
 )
 
+// ContentType http request content type
+type ContentType string
+
+const (
+	FormDataContent ContentType = "application/x-www-form-urlencoded"
+	JsonContent     ContentType = "application/json"
+)
+
 // Request http request.
 type Request struct {
 	// http client.
@@ -83,6 +91,9 @@ type Request struct {
 
 	// request timeout value
 	timeout time.Duration
+
+	// contentType http content type
+	contentType ContentType
 
 	err error
 }
@@ -163,6 +174,12 @@ func (r *Request) SubResourcef(subPath string, args ...interface{}) *Request {
 func (r *Request) subResource(subPath string) *Request {
 	subPath = strings.TrimLeft(subPath, "/")
 	r.subPath = subPath
+	return r
+}
+
+// WithContentType add content type to request.
+func (r *Request) WithContentType(contentType ContentType) *Request {
+	r.contentType = contentType
 	return r
 }
 
@@ -358,6 +375,16 @@ func (r *Request) Do() *Result {
 
 // doWithHost http request do with specific host.
 func (r *Request) doWithHost(client client.HTTPClient, host string, retries int, rid string) (*Result, bool) {
+	contentType := r.contentType
+
+	switch r.contentType {
+	case FormDataContent:
+		r.body = []byte(r.params.Encode())
+		r.params = url.Values{}
+	default:
+		contentType = JsonContent
+	}
+
 	url := host + r.WrapURL().String()
 	req, err := http.NewRequest(string(r.verb), url, bytes.NewReader(r.body))
 	if err != nil {
@@ -374,7 +401,7 @@ func (r *Request) doWithHost(client client.HTTPClient, host string, retries int,
 	}
 
 	req.Header.Del("Accept-Encoding")
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", string(contentType))
 	req.Header.Set("Accept", "application/json")
 
 	if retries > 0 {
