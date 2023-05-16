@@ -346,7 +346,7 @@ onBeforeMount(() => {
   resourceStore
     .countSubnetIps(route.query.id as string)
     .then((res: any) => {
-      detail.value.ipv4_nums = res?.data?.available_ipv4_count || 0;
+      detail.value.ipv4_nums = res?.data?.available_ip_count || 0;
     });
 });
 </script>
