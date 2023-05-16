@@ -25,6 +25,7 @@ import (
 
 	"hcm/cmd/data-service/service/audit/cloud"
 	"hcm/cmd/data-service/service/capability"
+	"hcm/cmd/data-service/service/cloud/cvm"
 	"hcm/pkg/api/data-service/audit"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
@@ -158,7 +159,12 @@ func (svc cloudSvc) AssignResourceToBiz(cts *rest.Contexts) (interface{}, error)
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		auditOpts := make([]audit.CloudResourceAssignInfo, 0)
 
+		hasCvmAssign := false
 		for _, resType := range req.ResTypes {
+			if resType == enumor.CvmCloudResType {
+				hasCvmAssign = true
+			}
+
 			auditType, exists := assignResAuditTypeMap[resType]
 			if !exists {
 				return nil, errf.Newf(errf.InvalidParameter, "resource type %s cannot be assigned", resType)
@@ -210,6 +216,14 @@ func (svc cloudSvc) AssignResourceToBiz(cts *rest.Contexts) (interface{}, error)
 		err := svc.dao.Audit().BatchCreateWithTx(cts.Kit, txn, allAudits)
 		if err != nil {
 			return nil, err
+		}
+
+		if hasCvmAssign {
+			if err := cvm.SyncCvmToCmdb(cts.Kit, req.AccountID, req.BkBizID); err != nil {
+				logs.Errorf("sync cvm to cmdb failed, err: %v, accountID: %s, bkBizID: %d, rid: %s", err,
+					req.AccountID, req.BkBizID, cts.Kit.Rid)
+				return nil, err
+			}
 		}
 
 		return nil, nil

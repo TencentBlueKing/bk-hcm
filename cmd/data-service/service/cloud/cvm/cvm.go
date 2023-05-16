@@ -28,9 +28,11 @@ import (
 	"hcm/pkg/rest"
 )
 
+var svc *cvmSvc
+
 // InitService initial the security group service
 func InitService(cap *capability.Capability) {
-	svc := &cvmSvc{
+	svc = &cvmSvc{
 		dao: cap.Dao,
 	}
 

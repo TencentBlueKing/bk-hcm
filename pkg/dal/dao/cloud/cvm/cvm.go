@@ -47,6 +47,7 @@ type Interface interface {
 	Update(kt *kit.Kit, expr *filter.Expression, model *tablecvm.Table) error
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablecvm.Table) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListCvmDetails, error)
+	ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*types.ListCvmDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
@@ -225,6 +226,54 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListCvmDetails, 
 
 	details := make([]tablecvm.Table, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		return nil, err
+	}
+
+	return &types.ListCvmDetails{Details: details}, nil
+}
+
+// ListWithTx cvm with tx.
+func (dao Dao) ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*types.ListCvmDetails, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list options is nil")
+	}
+
+	columnTypes := tablecvm.TableColumns.ColumnTypes()
+	columnTypes["extension.resource_group_name"] = enumor.String
+	columnTypes["extension.zones"] = enumor.Json
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
+		core.DefaultPageOption); err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	if opt.Page.Count {
+		// this is a count request, then do count operation only.
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.CvmTable, whereExpr)
+
+		count, err := dao.Orm.Txn(tx).Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.ErrorJson("count cvm failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
+			return nil, err
+		}
+
+		return &types.ListCvmDetails{Count: count}, nil
+	}
+
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablecvm.TableColumns.FieldsNamedExpr(opt.Fields),
+		table.CvmTable, whereExpr, pageExpr)
+
+	details := make([]tablecvm.Table, 0)
+	if err = dao.Orm.Txn(tx).Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 

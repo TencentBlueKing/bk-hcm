@@ -311,6 +311,46 @@ type doTxn struct {
 	ro *runtimeOrm
 }
 
+// Count the number of the filtered resource.
+func (do *doTxn) Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error) {
+	if err := do.ro.tryAccept(); err != nil {
+		return 0, err
+	}
+
+	start := time.Now()
+
+	query, args, err := sqlx.Named(expr, arg)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
+		return 0, err
+	}
+
+	query, args, err = sqlx.In(query, args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
+		return 0, err
+	}
+
+	rows, err := do.tx.QueryContext(ctx, do.tx.Rebind(query), args...)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
+		return 0, err
+	}
+
+	count := uint64(0)
+	for rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
+			return 0, err
+		}
+	}
+
+	do.ro.logSlowCmd(ctx, expr, time.Since(start))
+	do.ro.mc.cmdLagMS.With(prm.Labels{"cmd": "count"}).Observe(float64(time.Since(start).Milliseconds()))
+
+	return count, nil
+}
+
 // Select a collection of data, and decode into dest *[]struct{}.
 func (do *doTxn) Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error {
 	if err := do.ro.tryAccept(); err != nil {
