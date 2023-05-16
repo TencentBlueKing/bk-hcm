@@ -57,7 +57,7 @@ func (svc *subnetSvc) countSubnetAvailableIPs(cts *rest.Contexts, validHandler h
 	}
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
-		enumor.SubnetCloudResType, id)
+		enumor.SubnetCloudResType, id, "region", "vendor", "account_id", "bk_biz_id")
 	if err != nil {
 		return nil, err
 	}
