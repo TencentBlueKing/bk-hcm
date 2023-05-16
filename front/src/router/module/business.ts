@@ -36,7 +36,7 @@ const businesseMenus: RouteRecordRaw[] = [
             meta: {
               backRouter: 'hostBusinessList',
               activeKey: 'businessHost',
-              breadcrumb: ['计算', '主机', '回收站'],
+              breadcrumb: ['计算', '主机', '回收记录'],
             },
           },
         ],
@@ -74,7 +74,7 @@ const businesseMenus: RouteRecordRaw[] = [
             meta: {
               backRouter: 'businessDiskList',
               activeKey: 'businessDisk',
-              breadcrumb: ['计算', '硬盘', '回收站'],
+              breadcrumb: ['计算', '硬盘', '回收记录'],
             },
           },
         ],

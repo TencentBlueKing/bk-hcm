@@ -49,22 +49,10 @@ const isResourcePage = computed(() => {   // 资源下没有业务ID
   return !accountStore.bizs;
 });
 
-const handleToPage = () => {
-  router.push({
-    path: '/business/host/recyclebin/cvm',
-  });
-};
 </script>
 
 <template>
   <div>
-    <bk-button
-      v-if="!isResourcePage"
-      class="f-right"
-      theme="primary"
-      @click="handleToPage">
-      {{ '回收记录' }}
-    </bk-button>
     <component :is="renderComponent" :data="props.data"></component>
   </div>
 </template>

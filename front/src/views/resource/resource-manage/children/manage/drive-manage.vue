@@ -159,13 +159,17 @@ const {
       >
         {{ t('删除') }}
       </bk-button> -->
-      <bk-search-select
-        class="w500 ml10"
-        clearable
-        :conditions="[]"
-        :data="selectSearchData"
-        v-model="searchValue"
-      />
+      <div class="flex-row align-items-center justify-content-arround">
+        <bk-search-select
+          class="w500 ml10 mr15"
+          clearable
+          :conditions="[]"
+          :data="selectSearchData"
+          v-model="searchValue"
+        />
+        <slot name="recycleHistory"></slot>
+      </div>
+
     </section>
 
     <bk-table
@@ -195,5 +199,8 @@ const {
 }
 .mt20 {
   margin-top: 20px;
+}
+.mr15 {
+  margin-right: 15px;
 }
 </style>

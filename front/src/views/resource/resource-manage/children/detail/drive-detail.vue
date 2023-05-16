@@ -284,13 +284,6 @@ const handleShowDelete = () => {
   });
 };
 
-const handleToPage = () => {
-  router.push({
-    path: '/business/drive/recyclebin/disk',
-  });
-};
-
-
 const disableOperation = computed(() => {
   return !location.href.includes('business') && detail.value.bk_biz_id !== -1
 })
@@ -336,13 +329,6 @@ const disableOperation = computed(() => {
       :tabs="hostTabs"
     >
       <template #default>
-        <bk-button
-          v-if="!isResourcePage"
-          class="f-right mt10"
-          theme="primary"
-          @click="handleToPage">
-          {{ '回收记录' }}
-        </bk-button>
         <detail-info
           :fields="settingFields"
           :detail="detail"

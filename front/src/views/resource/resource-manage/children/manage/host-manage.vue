@@ -331,15 +331,18 @@ getCloudAreas();
           </bk-dropdown-menu>
         </template>
       </bk-dropdown> -->
-      <slot>
-      </slot>
-      <bk-search-select
-        class="w500 ml10"
-        clearable
-        :conditions="[]"
-        :data="hostSearchData"
-        v-model="searchValue"
-      />
+      <slot></slot>
+      <div class="flex-row align-items-center justify-content-arround">
+        <bk-search-select
+          class="w500 ml10 mr15"
+          clearable
+          :conditions="[]"
+          :data="hostSearchData"
+          v-model="searchValue"
+        />
+        <slot name="recycleHistory"></slot>
+      </div>
+
     </section>
 
     <bk-table
@@ -428,5 +431,8 @@ getCloudAreas();
 .distribution-cls{
   display: flex;
   align-items: center;
+}
+.mr15 {
+  margin-right: 15px;
 }
 </style>

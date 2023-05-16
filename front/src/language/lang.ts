@@ -2754,6 +2754,10 @@ const lang: ILANG = {
   '概况': ['Overview'],
   '规划': ['Planning'],
   '回收': ['Recycle'],
+  '等待回收': ['Wait Recycle'],
+  '已回收': ['Recycled'],
+  '已恢复': ['Recovered'],
+  '回收失败': ['Failed To Recycle']
   //   '111': ['111'],
   //   '111': ['111'],
   //   '111': ['111'],

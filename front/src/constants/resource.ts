@@ -194,3 +194,10 @@ export const DISTRIBUTE_STATUS_LIST = [
     value: 1,
   },
 ];
+
+export const RECYCLE_BIN_ITEM_STATUS = {
+  wait_recycle: '等待回收',
+  recycled: '已回收',
+  recovered: '已恢复',
+  failed: '回收失败'
+}

@@ -124,6 +124,16 @@
           </template>
         </bk-table-column>
         <bk-table-column
+          :label="t('状态')"
+          prop="status"
+        >
+          <template #default="{ data }">
+            {{
+              t(`${RECYCLE_BIN_ITEM_STATUS[data?.status]}`) || data?.status || '--'
+            }}
+          </template>
+        </bk-table-column>
+        <bk-table-column
           v-if="isResourcePage"
           :label="t('操作')"
           :min-width="150"
@@ -191,6 +201,7 @@ import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import HostInfo from '@/views/resource/resource-manage/children/components/host/host-info/index.vue';
 import HostDrive from '@/views/resource/resource-manage/children/components/host/host-drive.vue';
 import { useVerify } from '@/hooks';
+import { RECYCLE_BIN_ITEM_STATUS } from '@/constants/resource';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -381,6 +392,7 @@ export default defineComponent({
       handleAuth,
       permissionParams,
       authVerifyData,
+      RECYCLE_BIN_ITEM_STATUS
     };
   },
 });
