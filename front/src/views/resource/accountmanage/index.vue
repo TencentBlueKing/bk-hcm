@@ -79,6 +79,7 @@
         <bk-table-column
           :label="t('创建时间')"
           prop="created_at"
+          sort
         >
           <template #default="{ data }">
             {{data?.created_at}}
@@ -240,6 +241,8 @@ export default defineComponent({
             count: false,
             limit: state.pagination.limit,
             start: state.pagination.limit * (state.pagination.current - 1),
+            sort: 'created_at',
+            order: 'DESC',
           },
         };
         const res = await accountStore.getAccountList(params);

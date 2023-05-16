@@ -70,68 +70,87 @@ const fetchComponentsData = () => {
 };
 
 const handleDeleteSubnet = (data: any) => {
-  const subnetIds = [data.id];
-  const getRelateNum = (type: string, field = 'subnet_id', op = 'in') => {
-    return resourceStore
-      .list(
-        {
-          page: {
-            count: true,
+  if (data.vendor === 'gcp') {
+    const subnetIds = [data.id];
+    const getRelateNum = (type: string, field = 'subnet_id', op = 'in') => {
+      return resourceStore
+        .list(
+          {
+            page: {
+              count: true,
+            },
+            filter: {
+              op: 'and',
+              rules: [{
+                field,
+                op,
+                value: subnetIds,
+              }],
+            },
           },
-          filter: {
-            op: 'and',
-            rules: [{
-              field,
-              op,
-              value: subnetIds,
-            }],
+          type,
+        );
+    };
+    Promise
+      .all([
+        getRelateNum('cvms', 'subnet_ids', 'json_overlaps'),
+        getRelateNum('network_interfaces'),
+      ])
+      .then(([cvmsResult, networkResult]: any) => {
+        if (cvmsResult?.data?.count || networkResult?.data?.count) {
+          const getMessage = (result: any, name: string) => {
+            if (result?.data?.count) {
+              return `${result?.data?.count}个${name}，`;
+            }
+            return '';
+          };
+          Message({
+            theme: 'error',
+            message: `该子网（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`,
+          });
+        } else {
+          handledelete(data);
+        }
+      });
+  } else {
+    resourceStore
+      .countSubnetIps(data.id as string)
+      .then((res: any) => {
+        if (res?.data?.used_ip_count) {
+          Message({
+            theme: 'error',
+            message: `该子网（name：${data.name}，id：${data.id} IPv4已经被使用${res?.data?.used_ip_count}不能删除`,
+          });
+        } else {
+          handledelete(data);
+        }
+      });
+  }
+};
+
+const handledelete = (data: any) => {
+  InfoBox({
+    title: '请确认是否删除',
+    subTitle: `将删除【${data.name || '--'}】`,
+    theme: 'danger',
+    headerAlign: 'center',
+    footerAlign: 'center',
+    contentAlign: 'center',
+    onConfirm() {
+      resourceStore
+        .deleteBatch(
+          'subnets',
+          {
+            ids: [data.id],
           },
-        },
-        type,
-      );
-  };
-  Promise
-    .all([
-      getRelateNum('cvms', 'subnet_ids', 'json_overlaps'),
-      getRelateNum('network_interfaces'),
-    ])
-    .then(([cvmsResult, networkResult]: any) => {
-      if (cvmsResult?.data?.count || networkResult?.data?.count) {
-        const getMessage = (result: any, name: string) => {
-          if (result?.data?.count) {
-            return `${result?.data?.count}个${name}，`;
-          }
-          return '';
-        };
-        Message({
-          theme: 'error',
-          message: `该子网（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(networkResult, '网络接口')}不能删除`,
+        ).then(() => {
+          Message({
+            theme: 'success',
+            message: '删除成功',
+          });
         });
-      } else {
-        InfoBox({
-          title: '请确认是否删除',
-          subTitle: `将删除【${data.name}】`,
-          theme: 'danger',
-          headerAlign: 'center',
-          footerAlign: 'center',
-          contentAlign: 'center',
-          onConfirm() {
-            resourceStore
-              .deleteBatch(
-                'subnets',
-                {
-                  ids: [data.id],
-                },
-              ).then(() => {
-                Message({
-                  theme: 'success',
-                  message: '删除成功',
-                });
-              });
-          },
-        });
-      }
-    });
+    },
+  });
 };
 
 const renderColumns = [

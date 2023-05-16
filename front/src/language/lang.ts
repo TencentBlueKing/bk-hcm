@@ -2749,7 +2749,6 @@ const lang: ILANG = {
   '实施': ['Implement'],
   '协议和端口': ['protocol and port'],
   '云管': ['Cloud Management'],
-  '账号': ['Account'],
   '回收站': ['Recycle'],
   '概况': ['Overview'],
   '规划': ['Planning'],
@@ -2757,7 +2756,7 @@ const lang: ILANG = {
   '等待回收': ['Wait Recycle'],
   '已回收': ['Recycled'],
   '已恢复': ['Recovered'],
-  '回收失败': ['Failed To Recycle']
+  '回收失败': ['Failed To Recycle'],
   //   '111': ['111'],
   //   '111': ['111'],
   //   '111': ['111'],

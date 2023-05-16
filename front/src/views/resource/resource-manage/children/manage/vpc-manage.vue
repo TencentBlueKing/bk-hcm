@@ -101,14 +101,11 @@ const handleDeleteVpc = (data: any) => {
   };
   Promise
     .all([
-      getRelateNum('cvms', 'vpc_ids', 'json_overlaps'),
       getRelateNum('subnets'),
-      getRelateNum('route_tables'),
-      getRelateNum('network_interfaces'),
     ])
-    .then(([cvmsResult, subnetsResult, routeResult, networkResult]: any) => {
+    .then(([subnetsResult]) => {
       // eslint-disable-next-line max-len
-      if (cvmsResult?.data?.count || subnetsResult?.data?.count || routeResult?.data?.count || networkResult?.data?.count) {
+      if (subnetsResult?.data?.count) {
         const getMessage = (result: any, name: string) => {
           if (result?.data?.count) {
             return `${result?.data?.count}个${name}，`;
@@ -117,7 +114,7 @@ const handleDeleteVpc = (data: any) => {
         };
         Message({
           theme: 'error',
-          message: `该VPC（name：${data.name}，id：${data.id}）关联${getMessage(cvmsResult, 'CVM')}${getMessage(subnetsResult, '子网')}${getMessage(routeResult, '路由表')}${getMessage(networkResult, '网络接口')}不能删除`,
+          message: `该VPC（id：${data.id}）关联${getMessage(subnetsResult, '子网')}不能删除`,
         });
       } else {
         InfoBox({
