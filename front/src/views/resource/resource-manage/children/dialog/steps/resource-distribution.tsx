@@ -28,6 +28,7 @@ import {
 import type {
   FilterType,
 } from '@/typings/resource';
+import { useDistributionStore } from '@/store/distribution';
 
 export default defineComponent({
   components: {
@@ -63,11 +64,12 @@ export default defineComponent({
 
     const resourceStore = useResourceStore();
     const accountStore = useAccountStore();
+    const distributionStore = useDistributionStore();
 
     // 状态
     const validateMap = ref({});
     const business = ref('');
-    const accountId = ref('');
+    const accountId = ref(distributionStore.computedCloudAccountId);
     const businessList = ref([]);
     const isBusinessError = ref(false);
     const cloudAreas = ref([]);

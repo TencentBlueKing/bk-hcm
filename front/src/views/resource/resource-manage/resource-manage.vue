@@ -3,7 +3,6 @@ import {
   ref,
   watch,
   computed,
-  onMounted,
 } from 'vue';
 
 import HostManage from './children/manage/host-manage.vue';
@@ -17,6 +16,7 @@ import ImageManage from './children/manage/image-manage.vue';
 import NetworkInterfaceManage from './children/manage/network-interface-manage.vue';
 import AccountSelector from '@/components/account-selector/index.vue';
 import { DISTRIBUTE_STATUS_LIST } from '@/constants';
+import { useDistributionStore } from '@/store/distribution';
 
 import {
   RESOURCE_TYPES,
@@ -148,6 +148,7 @@ watch(
     } else {
       filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'account_id');
     }
+    useDistributionStore().setCloudAccountId(val);
   },
 );
 
