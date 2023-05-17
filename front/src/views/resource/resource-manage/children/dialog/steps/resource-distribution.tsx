@@ -191,6 +191,12 @@ export default defineComponent({
       },
     ];
 
+    const handleNext = (val: number) => {
+      if (val === 2) {
+        getAccountBusinessID();
+      }
+    };
+
     // 方法
     const handleClose = () => {
       emit('update:isShow', false);
@@ -417,6 +423,7 @@ export default defineComponent({
       isConfirmLoading,
       isBusinessError,
       t,
+      handleNext,
       handleClose,
       handleConfirm,
       handleBindVPC,
@@ -554,6 +561,7 @@ export default defineComponent({
         steps={steps}
         onConfirm={this.handleConfirm}
         onCancel={this.handleClose}
+        onNext={this.handleNext}
       >
       </step-dialog>
     </>;

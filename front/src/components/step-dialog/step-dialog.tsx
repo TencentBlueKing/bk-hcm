@@ -53,7 +53,7 @@ export default defineComponent({
     },
   },
 
-  emits: ['confirm', 'cancel'],
+  emits: ['confirm', 'cancel', 'next'],
 
   setup(_, { emit }) {
     const {
@@ -64,6 +64,7 @@ export default defineComponent({
 
     const handleNextStep = () => {
       curStep.value += 1;
+      emit('next', curStep.value);
     };
 
     const handlePreviousStep = () => {

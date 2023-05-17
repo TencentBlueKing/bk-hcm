@@ -37,35 +37,39 @@
         <bk-table-column
           :label="t('名称')"
           prop="name"
+          sort
         >
-          <template #default="{ data }">
+          <template #default="props">
             <bk-button
               text theme="primary"
-              @click="handleJump('accountDetail', data.id, true)">{{data?.name}}</bk-button>
+              @click="handleJump('accountDetail', props?.row.id, true)">{{props?.row.name}}</bk-button>
           </template>
         </bk-table-column>
         <bk-table-column
           :label="t('云厂商')"
           prop="vendor"
+          sort
         >
           <template #default="props">
-            {{CloudType[props?.data?.vendor]}}
+            {{CloudType[props?.row?.vendor]}}
           </template>
         </bk-table-column>
         <bk-table-column
           :label="t('类型')"
           prop="type"
+          sort
         >
-          <template #default="{ data }">
-            {{AccountType[data?.type]}}
+          <template #default="props">
+            {{AccountType[props?.row.type]}}
           </template>
         </bk-table-column>
         <bk-table-column
           :label="t('负责人')"
           prop="managers"
+          sort
         >
-          <template #default="{ data }">
-            {{data?.managers?.join(',')}}
+          <template #default="props">
+            {{props?.row.managers?.join(',')}}
           </template>
         </bk-table-column>
         <bk-table-column
@@ -81,8 +85,8 @@
           prop="created_at"
           sort
         >
-          <template #default="{ data }">
-            {{data?.created_at}}
+          <template #default="props">
+            {{props?.row.created_at}}
           </template>
         </bk-table-column>
         <bk-table-column
@@ -96,17 +100,17 @@
             <div class="operate-button">
               <div @click="handleAuth('account_edit')">
                 <bk-button
-                  text theme="primary" @click="handleJump('accountDetail', props?.data.id)"
+                  text theme="primary" @click="handleJump('accountDetail', props?.row.id)"
                   :disabled="!authVerifyData.permissionAction.account_edit">
                   {{t('编辑')}}
                 </bk-button>
               </div>
-              <bk-button class="ml15" text theme="primary" @click="handleOperate(props?.data.id, 'del')">
+              <bk-button class="ml15" text theme="primary" @click="handleOperate(props?.row.id, 'del')">
                 {{t('删除')}}
               </bk-button>
               <bk-button
-                text theme="primary" @click="handleOperate(props?.data.id, 'sync')"
-                v-if="props?.data?.type === 'resource'">
+                text theme="primary" @click="handleOperate(props?.row.id, 'sync')"
+                v-if="props?.row?.type === 'resource'">
                 {{t('同步')}}
               </bk-button>
             </div>
@@ -152,7 +156,7 @@
 </template>
 
 <script lang="ts">
-import { reactive, watch, toRefs, defineComponent, onMounted, ref } from 'vue';
+import { reactive, watch, toRefs, defineComponent, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
