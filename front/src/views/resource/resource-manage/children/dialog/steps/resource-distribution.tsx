@@ -267,6 +267,7 @@ export default defineComponent({
 
     const getAccountBusinessID = async () => {
       try {
+        if(!accountId.value) return;
         const res = await accountStore.getBizIdWithAccountId(accountId.value);
         business.value = res?.data?.bk_biz_ids[0];
       } catch (error) {
