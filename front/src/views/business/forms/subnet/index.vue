@@ -31,6 +31,8 @@ const accountStore = useAccountStore();
 const resourceStore = useResourceStore();
 const submitLoading = ref(false);
 const ipv4Cidr = ref('');
+const isVPCSupportedIpv6 = ref(false);
+const isNeedIPV6 = ref(false);
 
 const handleFormFilter = (data: BusinessFormFilter) => {
   formData.vendor = data.vendor;
@@ -63,6 +65,7 @@ const getVpcDetail = async (vpcId: string) => {
   const res = await resourceStore.detail('vpcs', vpcId);
   ipv4Cidr.value = res?.data?.extension?.cidr?.filter((e: any) => e.type === 'ipv4')?.map((item: any) => item.cidr)
     ?.join('｜');
+  isVPCSupportedIpv6.value = res?.data?.extension?.cidr?.some((e: any) => e.type === 'ipv6');
 };
 
 // 方法
@@ -135,8 +138,15 @@ watch(() => formData.vendor, (val) => {
           :list="[]" :placeholder="t('请输入IPV4')" />
         <bk-input v-else class="item-warp-component" v-model="formData.ipv4_cidr" :placeholder="t('请输入IPV4 CIDR')" />
       </bk-form-item>
+      <bk-form-item 
+        v-if="isVPCSupportedIpv6"
+        label="是否开启 IPV6"
+        class="item-wrap"
+      >
+        <bk-switcher v-model="isNeedIPV6"/>
+      </bk-form-item>
       <bk-form-item
-        v-if="formData.vendor === 'aws'"
+        v-if="formData.vendor === 'aws' && isVPCSupportedIpv6 && isNeedIPV6"
         :label="t('IPv6 CIDR')"
         class="item-warp"
       >
