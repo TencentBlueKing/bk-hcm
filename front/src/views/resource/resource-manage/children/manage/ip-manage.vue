@@ -19,7 +19,6 @@ import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
 import useSelection from '../../hooks/use-selection';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
-import { CloudType } from '@/typings';
 
 enum EipStatus {
   BIND = 'BIND',
@@ -27,7 +26,11 @@ enum EipStatus {
   ELB = 'ELB',
   VPN = 'VPN',
   IN_USE = 'IN_USE',
-  UNBIND = 'UNBIND'
+  UNBIND = 'UNBIND',
+  BIND_ERROR = 'BIND_ERROR',
+  DOWN = 'DOWN',
+  RESERVED = 'RESERVED',
+  ERROR = 'ERROR',
 }
 
 interface IEip {
@@ -111,7 +114,7 @@ const fetchComponentsData = () => {
 };
 
 const canDelete = (data: IEip): boolean => {
-  let res = true;
+  let res = false;
   // 分配到业务下面后不可删除
   const isInBusiness = !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
     || data.cvm_id || (data.bk_biz_id !== -1 && !location.href.includes('business'));
@@ -119,19 +122,19 @@ const canDelete = (data: IEip): boolean => {
 
   switch(vendor) {
     case CLOUD_VENDOR.tcloud:
-      if(status === EipStatus.BIND) res = false;
+      if(status === EipStatus.UNBIND) res = true;
       break;
     case CLOUD_VENDOR.huawei:
-      if([EipStatus.ACTIVE, EipStatus.ELB, EipStatus.VPN].includes(status)) res = false;
+      if([EipStatus.BIND_ERROR, EipStatus.DOWN, EipStatus.ERROR].includes(status)) res = true;
       break;
     case CLOUD_VENDOR.aws:
-      if(status === EipStatus.BIND) res = false;
+      if(status === EipStatus.UNBIND) res = true;
       break;
     case CLOUD_VENDOR.gcp:
-      if(status === EipStatus.IN_USE) res = false;
+      if(status === EipStatus.RESERVED) res = true;
       break;
     case CLOUD_VENDOR.azure:
-      if(status === EipStatus.BIND) res = false;
+      if(status === EipStatus.UNBIND) res = true;
       break;
   }
   return res && !isInBusiness;
