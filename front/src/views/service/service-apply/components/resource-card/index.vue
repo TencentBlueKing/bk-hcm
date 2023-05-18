@@ -6,9 +6,12 @@
         <span class="resource-name pl20">{{ item.name }}</span>
       </div>
       <div class="sub-resource-title">申请 {{ item.name }}</div>
-      <div class="bottom-btn" @click="handleAuthClick('biz_iaas_resource_create')">
+      <div
+        class="bottom-btn"
+        @click="handleAuthClick(item.routeName === 'applyAccount' ? 'account_import' : 'biz_iaas_resource_create')">
         <bk-button
-          theme="primary" :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create"
+          theme="primary" :disabled="!authVerifyData?.
+            permissionAction[item.routeName === 'applyAccount' ? 'account_import' : 'biz_iaas_resource_create']"
           outline size="small" @click="handleApply(item.routeName)">
           {{ item.btnText }}
         </bk-button>
