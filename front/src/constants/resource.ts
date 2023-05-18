@@ -201,3 +201,11 @@ export const RECYCLE_BIN_ITEM_STATUS = {
   recovered: '已恢复',
   failed: '回收失败'
 }
+
+export const CLOUD_VENDOR = {
+  tcloud: 'tcloud',  // 腾讯云
+  aws: 'aws',        // 亚马逊云
+  huawei: 'huawei',  // 华为云
+  azure: 'azure',    // 微软云
+  gcp: 'gcp'         // 谷歌云
+}

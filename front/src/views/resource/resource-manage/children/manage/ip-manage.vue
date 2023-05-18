@@ -19,45 +19,8 @@ import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
 import useSelection from '../../hooks/use-selection';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
-
-enum EipStatus {
-  BIND = 'BIND',
-  ACTIVE = 'ACTIVE',
-  ELB = 'ELB',
-  VPN = 'VPN',
-  IN_USE = 'IN_USE',
-  UNBIND = 'UNBIND',
-  BIND_ERROR = 'BIND_ERROR',
-  DOWN = 'DOWN',
-  RESERVED = 'RESERVED',
-  ERROR = 'ERROR',
-}
-
-interface IEip {
-  account_id: string,
-  bk_biz_id: number,
-  cloud_id: string,
-  created_at: string,
-  creator: string,
-  id: string,
-  instance_id: string,
-  name: string,
-  public_ip: string,
-  region: string,
-  reviser: string,
-  status: EipStatus,
-  updated_at: string,
-  vendor: string,
-  cvm_id?: string
-}
-
-const CLOUD_VENDOR = {
-  tcloud: 'tcloud',  // 腾讯云
-  aws: 'aws',        // 亚马逊云
-  huawei: 'huawei',  // 华为云
-  azure: 'azure',    // 微软云
-  gcp: 'gcp'         // 谷歌云
-}
+import { EipStatus, IEip } from '@/typings/business';
+import { CLOUD_VENDOR } from '@/constants/resource';
 
 const props = defineProps({
   filter: {

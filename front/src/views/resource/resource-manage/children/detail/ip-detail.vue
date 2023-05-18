@@ -21,6 +21,8 @@ import bus from '@/common/bus';
 import {
   useI18n,
 } from 'vue-i18n';
+import { IEip, EipStatus } from '@/typings';
+import { CLOUD_VENDOR } from '@/constants/resource';
 
 const route = useRoute();
 const router = useRouter();
@@ -118,6 +120,30 @@ const actionDeleteName = computed(() => {   // 资源下没有业务ID
 const showAuthDialog = (authActionName: string) => {
   bus.$emit('auth', authActionName);
 };
+
+const canDelete = (data: IEip): boolean => {
+  let res = false;
+  const { status, vendor} = data;
+
+  switch(vendor) {
+    case CLOUD_VENDOR.tcloud:
+      if(status === EipStatus.UNBIND) res = true;
+      break;
+    case CLOUD_VENDOR.huawei:
+      if([EipStatus.BIND_ERROR, EipStatus.DOWN, EipStatus.ERROR].includes(status)) res = true;
+      break;
+    case CLOUD_VENDOR.aws:
+      if(status === EipStatus.UNBIND) res = true;
+      break;
+    case CLOUD_VENDOR.gcp:
+      if(status === EipStatus.RESERVED) res = true;
+      break;
+    case CLOUD_VENDOR.azure:
+      if(status === EipStatus.UNBIND) res = true;
+      break;
+  }
+  return res;
+}
 </script>
 
 <template>
@@ -152,8 +178,8 @@ const showAuthDialog = (authActionName: string) => {
           <bk-button
             class="w100 ml10"
             theme="primary"
-            :disabled="!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
-              || !authVerifyData?.permissionAction[actionDeleteName]"
+            :disabled="!canDelete(detail) && (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
+              || !authVerifyData?.permissionAction[actionDeleteName])"
             @click="handleShowDelete"
           >
             {{ t('删除') }}
