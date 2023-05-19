@@ -6,6 +6,7 @@ import { ImageTypeEnum } from '@/typings';
 import {
   PropType,
 } from 'vue';
+import { useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
 
 const props = defineProps({
   data: {
@@ -66,6 +67,15 @@ const cvmInfo = [
 ];
 
 const netInfo = [
+  {
+    name: '所属网络',
+    prop: 'cloud_vpc_ids',
+    render: () =>  useRouteLinkBtn(props.data, { 
+      id: 'vpc_ids',
+      name: 'cloud_vpc_ids',
+      type: 'vpc'
+    })
+  },
   {
     name: '接口名称',
     prop: 'cloud_network_interface_ids',
