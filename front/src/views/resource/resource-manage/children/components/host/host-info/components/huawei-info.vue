@@ -6,7 +6,7 @@ import { ImageTypeEnum } from '@/typings';
 import {
   PropType,
 } from 'vue';
-import { useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
+import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
 
 const props = defineProps({
   data: {
@@ -26,6 +26,11 @@ const cvmInfo = [
   {
     name: '账号',
     prop: 'account_id',
+    render: () =>  useRouteLinkBtn(props.data, { 
+      id: 'account_id',
+      name: 'account_id',
+      type: TypeEnum.ACCOUNT
+    })
   },
   {
     name: '云厂商',
@@ -79,12 +84,17 @@ const netInfo = [
     render: () =>  useRouteLinkBtn(props.data, { 
       id: 'vpc_ids',
       name: 'cloud_vpc_ids',
-      type: 'vpc'
+      type: TypeEnum.HOST
     })
   },
   {
     name: '所属子网',
     prop: 'cloud_subnet_ids',
+    render: () =>  useRouteLinkBtn(props.data, { 
+      id: 'subnet_ids',
+      name: 'cloud_subnet_ids',
+      type: TypeEnum.SUBNET
+    })
   },
   {
     name: '私有 IPv4 地址',
@@ -108,10 +118,21 @@ const expandNetInfo = [
   {
     name: '所属网络',
     prop: 'cloud_vpc_ids',
+    render: () =>  useRouteLinkBtn(props.data, { 
+      id: 'vpc_ids',
+      name: 'cloud_vpc_ids',
+      type: TypeEnum.HOST
+    })
   },
   {
     name: '所属子网',
     prop: 'cloud_subnet_ids',
+    render: () =>  useRouteLinkBtn(props.data, { 
+      id: 'subnet_ids',
+      name: 'cloud_subnet_ids',
+      type: TypeEnum.SUBNET,
+      isExpand: true
+    })
   },
   {
     name: '拓展IPv4内网IP',

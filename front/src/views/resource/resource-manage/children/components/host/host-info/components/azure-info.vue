@@ -6,7 +6,7 @@ import { ImageTypeEnum } from '@/typings';
 import {
   PropType,
 } from 'vue';
-import { useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
+import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
 
 const props = defineProps({
   data: {
@@ -26,6 +26,11 @@ const cvmInfo = [
   {
     name: '账号',
     prop: 'account_id',
+    render: () =>  useRouteLinkBtn(props.data, { 
+      id: 'account_id',
+      name: 'account_id',
+      type: TypeEnum.ACCOUNT
+    })
   },
   {
     name: '云厂商',
@@ -73,7 +78,7 @@ const netInfo = [
     render: () =>  useRouteLinkBtn(props.data, { 
       id: 'vpc_ids',
       name: 'cloud_vpc_ids',
-      type: 'vpc'
+      type: TypeEnum.HOST
     })
   },
   {
