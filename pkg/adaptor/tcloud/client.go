@@ -22,6 +22,7 @@ package tcloud
 import (
 	"hcm/pkg/adaptor/types"
 
+	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -71,6 +72,15 @@ func (c *clientSet) cbsClient(region string) (*cbs.Client, error) {
 
 func (c *clientSet) vpcClient(region string) (*vpc.Client, error) {
 	client, err := vpc.NewClient(c.credential, region, c.profile)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func (c *clientSet) billClient() (*billing.Client, error) {
+	client, err := billing.NewClient(c.credential, "", c.profile)
 	if err != nil {
 		return nil, err
 	}

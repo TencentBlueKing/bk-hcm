@@ -67,18 +67,18 @@ func (cli *SecretClient) TCloudSecret(kt *kit.Kit, accountID string) (*types.Bas
 }
 
 // AwsSecret get aws secret and validate secret.
-func (cli *SecretClient) AwsSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, error) {
+func (cli *SecretClient) AwsSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, string, error) {
 	account, err := cli.data.Aws.Account.Get(kt.Ctx, kt.Header(), accountID)
 	if err != nil {
-		return nil, fmt.Errorf("get aws account failed, err: %v", err)
+		return nil, "", fmt.Errorf("get aws account failed, err: %v", err)
 	}
 
 	if account.Type != enumor.ResourceAccount {
-		return nil, fmt.Errorf("account: %s not resource account type", accountID)
+		return nil, "", fmt.Errorf("account: %s not resource account type", accountID)
 	}
 
 	if account.Extension == nil {
-		return nil, errors.New("aws account extension is nil")
+		return nil, "", errors.New("aws account extension is nil")
 	}
 
 	secret := &types.BaseSecret{
@@ -87,10 +87,10 @@ func (cli *SecretClient) AwsSecret(kt *kit.Kit, accountID string) (*types.BaseSe
 	}
 
 	if err := secret.Validate(); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return secret, nil
+	return secret, account.Extension.CloudAccountID, nil
 }
 
 // HuaWeiSecret get huawei secret and validate secret.

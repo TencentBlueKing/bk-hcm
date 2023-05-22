@@ -25,7 +25,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/athena"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
+	curservice "github.com/aws/aws-sdk-go/service/costandusagereportservice"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
@@ -84,4 +88,100 @@ func (c *clientSet) stsClient() (*sts.STS, error) {
 	}
 
 	return sts.New(sess), nil
+}
+
+func (c *clientSet) athenaClient(region string) (*athena.Athena, error) {
+	cfg := &aws.Config{
+		Credentials: c.credentials,
+		DisableSSL:  nil,
+		HTTPClient:  nil,
+		LogLevel:    nil,
+		Logger:      nil,
+		MaxRetries:  nil,
+		Retryer:     nil,
+		SleepDelay:  nil,
+	}
+
+	if len(region) != 0 {
+		cfg.Region = aws.String(region)
+	}
+
+	sess, err := session.NewSession(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return athena.New(sess, aws.NewConfig().WithRegion(region)), nil
+}
+
+func (c *clientSet) s3Client(region string) (*s3.S3, error) {
+	cfg := &aws.Config{
+		Credentials: c.credentials,
+		DisableSSL:  nil,
+		HTTPClient:  nil,
+		LogLevel:    nil,
+		Logger:      nil,
+		MaxRetries:  nil,
+		Retryer:     nil,
+		SleepDelay:  nil,
+	}
+
+	if len(region) != 0 {
+		cfg.Region = aws.String(region)
+	}
+
+	sess, err := session.NewSession(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return s3.New(sess, aws.NewConfig().WithRegion(region)), nil
+}
+
+func (c *clientSet) costAndUsageReportClient(region string) (*curservice.CostandUsageReportService, error) {
+	cfg := &aws.Config{
+		Credentials: c.credentials,
+		DisableSSL:  nil,
+		HTTPClient:  nil,
+		LogLevel:    nil,
+		Logger:      nil,
+		MaxRetries:  nil,
+		Retryer:     nil,
+		SleepDelay:  nil,
+	}
+
+	if len(region) != 0 {
+		cfg.Region = aws.String(region)
+	}
+
+	sess, err := session.NewSession(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return curservice.New(sess, aws.NewConfig().WithRegion(region)), nil
+}
+
+func (c *clientSet) cloudFormationClient(region string) (*cloudformation.CloudFormation, error) {
+	cfg := &aws.Config{
+		Credentials: c.credentials,
+		DisableSSL:  nil,
+		HTTPClient:  nil,
+		LogLevel:    nil,
+		Logger:      nil,
+		MaxRetries:  nil,
+		Retryer:     nil,
+		SleepDelay:  nil,
+	}
+
+	if len(region) != 0 {
+		cfg.Region = aws.String(region)
+	}
+
+	sess, err := session.NewSession(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return cloudformation.New(sess, aws.NewConfig().WithRegion(region)), nil
 }

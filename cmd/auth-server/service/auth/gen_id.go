@@ -448,3 +448,13 @@ func genProxyResourceFind(a *meta.ResourceAttribute) (client.ActionID, []client.
 	}
 	return sys.ResourceFind, []client.Resource{res}, nil
 }
+
+// genCostManageResource generate cost manage related iam resource.
+func genCostManageResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.CostManage, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}

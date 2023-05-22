@@ -32,7 +32,7 @@ func GenerateStaticActionGroups() []client.ActionGroup {
 }
 
 func genBusinessManagementActionGroups() []client.ActionGroup {
-	return []client.ActionGroup{
+	actionGroups := []client.ActionGroup{
 		{
 			Name:   "业务",
 			NameEn: "Biz Management",
@@ -59,46 +59,65 @@ func genBusinessManagementActionGroups() []client.ActionGroup {
 				{ID: AccountImport},
 				{ID: AccountEdit},
 				{ID: AccountDelete},
-				{ID: AccountKeyAccess},
 			},
 		},
-		{
-			Name:   "资源",
-			NameEn: "Resource Management",
-			SubGroups: []client.ActionGroup{
-				{
-					Name:   "公共",
-					NameEn: "Public Resource Management",
-					Actions: []client.ActionWithID{
-						{ID: ResourceFind},
-						{ID: ResourceAssign},
-					},
-				},
-				{
-					Name:   "IaaS资源",
-					NameEn: "IaaS Resource Management",
-					Actions: []client.ActionWithID{
-						{ID: IaaSResourceCreate},
-						{ID: IaaSResourceOperate},
-						{ID: IaaSResourceDelete},
-					},
-				},
-				{
-					Name:   "回收站",
-					NameEn: "Recycle Bin",
-					Actions: []client.ActionWithID{
-						{ID: RecycleBinFind},
-						{ID: RecycleBinManage},
-					},
+	}
+	actionGroups = append(actionGroups, genBusinessResourceActionGroups())
+	actionGroups = append(actionGroups, client.ActionGroup{
+		Name:   "工作台",
+		NameEn: "Workspace",
+		Actions: []client.ActionWithID{
+			{ID: BizAuditFind},
+			{ID: ResourceAuditFind},
+		},
+	})
+	actionGroups = append(actionGroups, client.ActionGroup{
+		Name:   "管理",
+		NameEn: "Management",
+		SubGroups: []client.ActionGroup{
+			{
+				Name:   "平台权限",
+				NameEn: "Platform Permission Management",
+				Actions: []client.ActionWithID{
+					{ID: CostManage},
+					{ID: AccountKeyAccess},
 				},
 			},
 		},
-		{
-			Name:   "工作台",
-			NameEn: "Workspace",
-			Actions: []client.ActionWithID{
-				{ID: BizAuditFind},
-				{ID: ResourceAuditFind},
+	})
+
+	return actionGroups
+}
+
+func genBusinessResourceActionGroups() client.ActionGroup {
+	return client.ActionGroup{
+		Name:   "资源",
+		NameEn: "Resource Management",
+		SubGroups: []client.ActionGroup{
+			{
+				Name:   "公共",
+				NameEn: "Public Resource Management",
+				Actions: []client.ActionWithID{
+					{ID: ResourceFind},
+					{ID: ResourceAssign},
+				},
+			},
+			{
+				Name:   "IaaS资源",
+				NameEn: "IaaS Resource Management",
+				Actions: []client.ActionWithID{
+					{ID: IaaSResourceCreate},
+					{ID: IaaSResourceOperate},
+					{ID: IaaSResourceDelete},
+				},
+			},
+			{
+				Name:   "回收站",
+				NameEn: "Recycle Bin",
+				Actions: []client.ActionWithID{
+					{ID: RecycleBinFind},
+					{ID: RecycleBinManage},
+				},
 			},
 		},
 	}

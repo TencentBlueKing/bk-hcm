@@ -29,4 +29,6 @@ const (
 	CmdbSyncFailed WarnSign = "cmdb_sync_failed"
 	// DeleteCvmStartScriptFailed delete cvm start script failed.
 	DeleteCvmStartScriptFailed WarnSign = "delete_cvm_start_script_failed"
+	// AccountBillConfigFailed account bill config failed.
+	AccountBillConfigFailed WarnSign = "account_bill_config_failed"
 )

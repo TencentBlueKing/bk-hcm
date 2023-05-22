@@ -115,3 +115,10 @@ cloudResource:
 recycle:
   # autoDeleteTimeHour auto delete recycle bin resource time, unit: hour.
   autoDeleteTimeHour: 48
+
+# billConfig bill config settings.
+billConfig:
+    # enable if enable bill config.
+    enable: true
+    # syncIntervalMin bill config interval, unit: min.
+    syncIntervalMin: 30

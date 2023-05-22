@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"hcm/cmd/hc-service/service/account"
+	"hcm/cmd/hc-service/service/bill"
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/cvm"
@@ -183,6 +184,7 @@ func (s *Service) apiSet() *restful.Container {
 	syncnetworkinterface.InitSyncNetworkInterfaceService(c)
 	syncroutetable.InitRouteTableService(c)
 	resourcegroup.InitResourceGroupService(c)
+	bill.InitBillService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

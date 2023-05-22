@@ -34,6 +34,7 @@ import (
 	"hcm/cmd/data-service/service/cloud"
 	"hcm/cmd/data-service/service/cloud/account"
 	accountbizrel "hcm/cmd/data-service/service/cloud/account-biz-rel"
+	"hcm/cmd/data-service/service/cloud/bill"
 	"hcm/cmd/data-service/service/cloud/cvm"
 	"hcm/cmd/data-service/service/cloud/disk"
 	diskcvmrel "hcm/cmd/data-service/service/cloud/disk-cvm-rel"
@@ -203,6 +204,7 @@ func (s *Service) apiSet() *restful.Container {
 	networkinterface.InitNetInterfaceService(capability)
 	networkcvmrel.InitService(capability)
 	recyclerecord.InitRecycleRecordService(capability)
+	bill.InitBillConfigService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

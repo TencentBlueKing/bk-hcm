@@ -73,6 +73,8 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genProxyResourceFind(a)
 	case meta.InstanceType:
 		return genProxyResourceFind(a)
+	case meta.CostManage:
+		return genCostManageResource(a)
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm auth type: %s", a.Basic.Type)
 	}

@@ -58,6 +58,7 @@ func GenerateStaticActions() []client.ResourceAction {
 	resourceActionList = append(resourceActionList, genResourceActions()...)
 	resourceActionList = append(resourceActionList, genRecycleBinActions()...)
 	resourceActionList = append(resourceActionList, genAuditActions()...)
+	resourceActionList = append(resourceActionList, genSystemManageActions()...)
 
 	return resourceActionList
 }
@@ -103,14 +104,6 @@ func genAccountActions() []client.ResourceAction {
 		ID:                   AccountFind,
 		Name:                 ActionIDNameMap[AccountFind],
 		NameEn:               "Find Account",
-		Type:                 View,
-		RelatedResourceTypes: accountResource,
-		RelatedActions:       nil,
-		Version:              1,
-	}, {
-		ID:                   AccountKeyAccess,
-		Name:                 ActionIDNameMap[AccountKeyAccess],
-		NameEn:               "Access Account Key",
 		Type:                 View,
 		RelatedResourceTypes: accountResource,
 		RelatedActions:       nil,
@@ -219,6 +212,26 @@ func genAuditActions() []client.ResourceAction {
 		ID:                   ResourceAuditFind,
 		Name:                 ActionIDNameMap[ResourceAuditFind],
 		NameEn:               "Find Resource Audit Log",
+		Type:                 View,
+		RelatedResourceTypes: accountResource,
+		RelatedActions:       nil,
+		Version:              1,
+	}}
+}
+
+func genSystemManageActions() []client.ResourceAction {
+	return []client.ResourceAction{{
+		ID:                   CostManage,
+		Name:                 ActionIDNameMap[CostManage],
+		NameEn:               "Cost Manage",
+		Type:                 View,
+		RelatedResourceTypes: accountResource,
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   AccountKeyAccess,
+		Name:                 ActionIDNameMap[AccountKeyAccess],
+		NameEn:               "Access Account Key",
 		Type:                 View,
 		RelatedResourceTypes: accountResource,
 		RelatedActions:       nil,

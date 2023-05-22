@@ -20,9 +20,12 @@
 package gcp
 
 import (
+	"fmt"
+
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/kit"
 
+	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 )
@@ -41,6 +44,18 @@ func (c *clientSet) computeClient(kt *kit.Kit) (*compute.Service, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return service, nil
+}
+
+func (c *clientSet) bigQueryClient(kt *kit.Kit) (*bigquery.Client, error) {
+	opt := option.WithCredentialsJSON(c.credential.Json)
+	service, err := bigquery.NewClient(kt.Ctx, c.credential.CloudProjectID, opt)
+	if err != nil {
+		return nil, fmt.Errorf("gcp.bigquery.NewClient, projectID: %s, err: %+v",
+			c.credential.CloudProjectID, err)
+	}
+	defer service.Close()
 
 	return service, nil
 }

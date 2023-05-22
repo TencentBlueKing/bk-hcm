@@ -34,6 +34,7 @@ import (
 	"hcm/cmd/cloud-server/service/application"
 	"hcm/cmd/cloud-server/service/assign"
 	"hcm/cmd/cloud-server/service/audit"
+	"hcm/cmd/cloud-server/service/bill"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/cvm"
 	"hcm/cmd/cloud-server/service/disk"
@@ -143,6 +144,11 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		go sync.CloudResourceSync(interval, sd, apiClientSet)
 	}
 
+	if cc.CloudServer().BillConfig.Enable {
+		interval := time.Duration(cc.CloudServer().BillConfig.SyncIntervalMin) * time.Minute
+		go bill.CloudBillConfigCreate(interval, sd, apiClientSet)
+	}
+
 	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle)
 
 	return svr, nil
@@ -247,6 +253,7 @@ func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Cont
 	audit.InitService(c)
 	assign.InitService(c)
 	recycle.InitService(c)
+	bill.InitBillService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

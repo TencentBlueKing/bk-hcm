@@ -20,9 +20,13 @@
 package account
 
 import (
+	"fmt"
+
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -49,8 +53,41 @@ func (a *accountSvc) Delete(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// 查询账号基本信息
+	resp, err := a.client.DataService().Global.Account.List(cts.Kit.Ctx, cts.Kit.Header(), &protocloud.AccountListReq{
+		Filter: tools.EqualExpression("id", accountID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("accountID: %s is not found", accountID)
+	}
+
 	req := &protocloud.AccountDeleteReq{
 		Filter: tools.EqualExpression("id", accountID),
 	}
-	return a.client.DataService().Global.Account.Delete(cts.Kit.Ctx, cts.Kit.Header(), req)
+	accountResp, err := a.client.DataService().Global.Account.Delete(cts.Kit.Ctx, cts.Kit.Header(), req)
+	if err != nil {
+		return accountResp, err
+	}
+
+	retryNum := 3
+	vendor := resp.Details[0].Vendor
+	switch vendor {
+	case enumor.Aws:
+		for retryNum > 0 {
+			// 删除云账单配置信息
+			billErr := a.client.HCService().Aws.Bill.Delete(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+			if billErr != nil {
+				logs.Errorf("aws account db delete success and bill config delete failed, accountID: %s, err: %+v",
+					accountID, billErr)
+				retryNum--
+			}
+			break
+		}
+	}
+
+	return accountResp, nil
 }

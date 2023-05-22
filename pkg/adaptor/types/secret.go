@@ -30,6 +30,8 @@ type BaseSecret struct {
 	CloudSecretID string `json:"cloud_secret_id"`
 	// CloudSecretKey is the secret key to do credential.
 	CloudSecretKey string `json:"cloud_secret_key"`
+	// CloudAccountID is the account id to do credential.
+	CloudAccountID string `json:"cloud_account_id"`
 }
 
 // Validate BaseSecret.

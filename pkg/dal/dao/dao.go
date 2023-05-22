@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/auth"
 	"hcm/pkg/dal/dao/cloud"
+	"hcm/pkg/dal/dao/cloud/bill"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
 	diskcvmrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
@@ -89,6 +90,7 @@ type Set interface {
 	Image() cimage.Image
 	DiskCvmRel() diskcvmrel.DiskCvmRel
 	EipCvmRel() eipcvmrel.EipCvmRel
+	AccountBillConfig() bill.Interface
 
 	Txn() *Txn
 }
@@ -421,5 +423,14 @@ func (t *Txn) AutoTxn(kt *kit.Kit, run orm.TxnFunc) (interface{}, error) {
 func (s *set) Txn() *Txn {
 	return &Txn{
 		orm: s.orm,
+	}
+}
+
+// AccountBillConfig returns account bill config dao.
+func (s *set) AccountBillConfig() bill.Interface {
+	return &bill.AccountBillConfigDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }

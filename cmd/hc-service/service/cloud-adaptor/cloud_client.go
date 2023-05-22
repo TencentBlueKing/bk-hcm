@@ -61,12 +61,12 @@ func (cli *CloudAdaptorClient) TCloud(kt *kit.Kit, accountID string) (*tcloud.TC
 
 // Aws return aws client.
 func (cli *CloudAdaptorClient) Aws(kt *kit.Kit, accountID string) (*aws.Aws, error) {
-	secret, err := cli.secretCli.AwsSecret(kt, accountID)
+	secret, cloudAccountID, err := cli.secretCli.AwsSecret(kt, accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	return cli.adaptor.Aws(secret)
+	return cli.adaptor.Aws(secret, cloudAccountID)
 }
 
 // HuaWei return huawei client.

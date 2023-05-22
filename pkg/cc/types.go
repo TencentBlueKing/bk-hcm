@@ -596,3 +596,17 @@ func (a Recycle) validate() error {
 
 	return nil
 }
+
+// BillConfig 账号账单配置
+type BillConfig struct {
+	Enable          bool   `yaml:"enable"`
+	SyncIntervalMin uint64 `yaml:"syncIntervalMin"`
+}
+
+func (c BillConfig) validate() error {
+	if c.Enable && c.SyncIntervalMin < 1 {
+		return errors.New("BillConfig.SyncIntervalMin must >= 1")
+	}
+
+	return nil
+}

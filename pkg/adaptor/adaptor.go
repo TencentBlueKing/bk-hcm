@@ -42,8 +42,8 @@ func (a *Adaptor) TCloud(s *types.BaseSecret) (*tcloud.TCloud, error) {
 }
 
 // Aws returns Aws operations.
-func (a *Adaptor) Aws(s *types.BaseSecret) (*aws.Aws, error) {
-	return aws.NewAws(s)
+func (a *Adaptor) Aws(s *types.BaseSecret, cloudAccountID string) (*aws.Aws, error) {
+	return aws.NewAws(s, cloudAccountID)
 }
 
 // Gcp returns Gcp operations.

@@ -65,4 +65,6 @@ const (
 	Quota ResourceType = "quota"
 	// InstanceType 机型
 	InstanceType ResourceType = "instance_type"
+	// CostManage defines cost manage's hcm auth resource type
+	CostManage ResourceType = "cost_manage"
 )

@@ -38,6 +38,7 @@ type Client struct {
 	RouteTable       *RouteTableClient
 	InstanceType     *InstanceTypeClient
 	NetworkInterface *NetworkInterfaceClient
+	Bill             *BillClient
 }
 
 // NewClient create a new huawei api client.
@@ -56,5 +57,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Image:            NewCloudPublicClient(client),
 		InstanceType:     NewInstanceTypeClient(client),
 		NetworkInterface: NewNetworkInterfaceClient(client),
+		Bill:             NewBillClient(client),
 	}
 }

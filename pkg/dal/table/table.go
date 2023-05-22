@@ -118,6 +118,8 @@ const (
 	NetworkInterfaceTable Name = "network_interface"
 	// NetworkInterfaceCvmRelTable is network interface and cvm rel table's name.
 	NetworkInterfaceCvmRelTable Name = "network_interface_cvm_rel"
+	// AccountBillConfigTable is account bill config table's name.
+	AccountBillConfigTable Name = "account_bill_config"
 
 	// TODO: 之后考虑非表id的id_generator如何更优雅的使用
 	// RecycleRecordTableTaskID is recycle record table's task id.
@@ -181,6 +183,7 @@ var TableMap = map[Name]struct{}{
 	ImageTable:                   {},
 	DiskCvmRelTableName:          {},
 	EipCvmRelTableName:           {},
+	AccountBillConfigTable:       {},
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},

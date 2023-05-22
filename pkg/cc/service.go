@@ -117,6 +117,7 @@ type CloudServerSetting struct {
 	PlatformManagers string        `yaml:"platformManagers"`
 	CloudResource    CloudResource `yaml:"cloudResource"`
 	Recycle          Recycle       `yaml:"recycle"`
+	BillConfig       BillConfig    `yaml:"billConfig"`
 }
 
 // trySetFlagBindIP try set flag bind ip.

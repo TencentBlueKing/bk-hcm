@@ -91,6 +91,9 @@ const (
 	// ResourceAuditFind account audit find action id to register iam.
 	ResourceAuditFind client.ActionID = "resource_audit_find"
 
+	// CostManage bill manage action id to register iam.
+	CostManage client.ActionID = "cost_manage"
+
 	// Skip is an action that no need to auth
 	Skip client.ActionID = "skip"
 )
@@ -115,6 +118,7 @@ var ActionIDNameMap = map[client.ActionID]string{
 	RecycleBinManage:    "回收站管理",
 	BizAuditFind:        "业务审计查看",
 	ResourceAuditFind:   "资源审计查看",
+	CostManage:          "成本管理",
 }
 
 const (

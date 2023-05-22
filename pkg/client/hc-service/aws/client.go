@@ -37,6 +37,7 @@ type Client struct {
 	Image         *ImageClient
 	RouteTable    *RouteTableClient
 	InstanceType  *InstanceTypeClient
+	Bill          *BillClient
 }
 
 // NewClient create a new aws api client.
@@ -54,5 +55,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Image:         NewCloudPublicClient(client),
 		RouteTable:    NewRouteTableClient(client),
 		InstanceType:  NewInstanceTypeClient(client),
+		Bill:          NewBillClient(client),
 	}
 }

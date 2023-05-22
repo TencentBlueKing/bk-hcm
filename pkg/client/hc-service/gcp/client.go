@@ -38,6 +38,7 @@ type Client struct {
 	Eip              *EipClient
 	InstanceType     *InstanceTypeClient
 	NetworkInterface *NetworkInterfaceClient
+	Bill             *BillClient
 }
 
 // NewClient create a new gcp api client.
@@ -56,5 +57,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		Eip:              NewEipClient(client),
 		InstanceType:     NewInstanceTypeClient(client),
 		NetworkInterface: NewNetworkInterfaceClient(client),
+		Bill:             NewBillClient(client),
 	}
 }

@@ -23,6 +23,8 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
@@ -267,6 +269,16 @@ func (c *clientSet) networkInterfaceIPConfigClient() (*armnetwork.InterfaceIPCon
 	}
 
 	return client, nil
+}
+
+func (c *clientSet) usageDetailClient(kt *kit.Kit) (*billClient, error) {
+	token, err := getToken(kt, c.credential)
+	if err != nil {
+		logs.Errorf("usage detail get token failed, err: %v", err)
+		return nil, err
+	}
+
+	return newBillClient(ManageServerURL, token)
 }
 
 // GenResourceName 生产azure批量创建资源名称

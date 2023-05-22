@@ -62,7 +62,7 @@ func (svc *service) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	client, err := svc.ad.Adaptor().Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
-		CloudSecretKey: req.CloudSecretKey})
+		CloudSecretKey: req.CloudSecretKey}, req.CloudAccountID)
 	if err != nil {
 		return nil, err
 	}

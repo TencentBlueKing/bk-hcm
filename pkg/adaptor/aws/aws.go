@@ -25,17 +25,18 @@ import (
 )
 
 // NewAws new aws.
-func NewAws(s *types.BaseSecret) (*Aws, error) {
+func NewAws(s *types.BaseSecret, cloudAccountID string) (*Aws, error) {
 	if err := validateSecret(s); err != nil {
 		return nil, err
 	}
 
-	return &Aws{clientSet: newClientSet(s)}, nil
+	return &Aws{clientSet: newClientSet(s), cloudAccountID: cloudAccountID}, nil
 }
 
 // Aws is aws operator.
 type Aws struct {
-	clientSet *clientSet
+	clientSet      *clientSet
+	cloudAccountID string
 }
 
 func validateSecret(s *types.BaseSecret) error {
@@ -48,4 +49,9 @@ func validateSecret(s *types.BaseSecret) error {
 	}
 
 	return nil
+}
+
+// CloudAccountID return cloud account id.
+func (a *Aws) CloudAccountID() string {
+	return a.cloudAccountID
 }

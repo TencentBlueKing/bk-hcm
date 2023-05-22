@@ -25,8 +25,11 @@ import (
 	"hcm/pkg/adaptor/types"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/global"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/config"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/region"
+	bssintl "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2"
+	bssintlv2region "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/region"
 	dcs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2"
 	dcsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2/region"
 	ecs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2"
@@ -50,12 +53,17 @@ const (
 )
 
 type clientSet struct {
-	credentials *basic.Credentials
+	credentials       *basic.Credentials
+	globalCredentials *global.Credentials
 }
 
 func newClientSet(secret *types.BaseSecret) *clientSet {
 	return &clientSet{
 		credentials: basic.NewCredentialsBuilder().
+			WithAk(secret.CloudSecretID).
+			WithSk(secret.CloudSecretKey).
+			Build(),
+		globalCredentials: global.NewCredentialsBuilder().
 			WithAk(secret.CloudSecretID).
 			WithSk(secret.CloudSecretKey).
 			Build(),
@@ -228,4 +236,20 @@ func (c *clientSet) eipV3Client(regionID string) (cli *eipv3.EipClient, err erro
 			Build())
 
 	return cli, nil
+}
+
+func (c *clientSet) bssintlClient() (cli *bssintl.BssintlClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("panic recovered, err: %v", p)
+		}
+	}()
+
+	client := bssintl.NewBssintlClient(
+		bssintl.BssintlClientBuilder().
+			WithRegion(bssintlv2region.ValueOf(bssintlv2region.AP_SOUTHEAST_1.Id)).
+			WithCredential(c.globalCredentials).
+			Build())
+
+	return client, nil
 }
