@@ -148,7 +148,7 @@ func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, e
 	if err != nil {
 		return nil, err
 	}
-	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), req)
+	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), a.authorizer, req)
 
 	// authorize
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Account, Action: meta.Import}}

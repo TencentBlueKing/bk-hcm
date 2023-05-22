@@ -180,7 +180,7 @@ func (c *Client) RegisterResourceCreatorAction(ctx context.Context, h http.Heade
 	err := c.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/auth/list/authorized_resource").
+		SubResourcef("/auth/register/resource_create_action").
 		WithHeaders(h).
 		Do().
 		Into(resp)

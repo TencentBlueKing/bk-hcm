@@ -32,15 +32,7 @@ func GenerateResourceCreatorActions() client.ResourceCreatorActions {
 					IsRequired: false,
 				},
 				{
-					ID:         AccountKeyAccess,
-					IsRequired: false,
-				},
-				{
 					ID:         AccountEdit,
-					IsRequired: false,
-				},
-				{
-					ID:         AccountDelete,
 					IsRequired: false,
 				},
 			},

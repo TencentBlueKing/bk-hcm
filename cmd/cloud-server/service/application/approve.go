@@ -275,7 +275,7 @@ func (a *applicationSvc) getHandlerByApplication(
 		if err != nil {
 			return nil, err
 		}
-		return accounthandler.NewApplicationOfAddAccount(opt, req), nil
+		return accounthandler.NewApplicationOfAddAccount(opt, a.authorizer, req), nil
 	case enumor.CreateCvm:
 		return a.getHandlerOfCreateCvm(opt, vendor, application)
 	case enumor.CreateVpc:

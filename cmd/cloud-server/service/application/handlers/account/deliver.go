@@ -20,8 +20,12 @@
 package account
 
 import (
+	"fmt"
+
 	dataprotocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/iam/sys"
 )
 
 // Deliver 执行资源交付
@@ -47,6 +51,19 @@ func (a *ApplicationOfAddAccount) Deliver() (enumor.ApplicationStatus, map[strin
 	if err != nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
+
+	// 授予创建者创建资源默认附加权限
+	req := &meta.RegisterResCreatorActionInst{
+		Type: string(sys.Account),
+		ID:   accountID,
+		Name: a.req.Name,
+	}
+	if err = a.authorizer.RegisterResourceCreatorAction(a.Cts.Kit, req); err != nil {
+		return enumor.DeliverError, map[string]interface{}{"error": fmt.Sprintf("create account success, "+
+			"but add create action associate permissions failed, err: %v", err)}, err
+	}
+
+	// TODO: 之后考虑如果添加权限失败，账号回滚
 
 	// 交付成功，记录交付的账号ID
 	return enumor.Completed, map[string]interface{}{"account_id": accountID}, nil

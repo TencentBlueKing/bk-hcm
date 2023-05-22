@@ -23,19 +23,22 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/iam/auth"
 )
 
 type ApplicationOfAddAccount struct {
 	handlers.BaseApplicationHandler
 
-	req *proto.AccountAddReq
+	req        *proto.AccountAddReq
+	authorizer auth.Authorizer
 }
 
 // NewApplicationOfAddAccount ...
-func NewApplicationOfAddAccount(
-	opt *handlers.HandlerOption, req *proto.AccountAddReq,
-) *ApplicationOfAddAccount {
+func NewApplicationOfAddAccount(opt *handlers.HandlerOption, authorizer auth.Authorizer,
+	req *proto.AccountAddReq) *ApplicationOfAddAccount {
+
 	return &ApplicationOfAddAccount{
+		authorizer:             authorizer,
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.AddAccount, req.Vendor),
 		req:                    req,
 	}
