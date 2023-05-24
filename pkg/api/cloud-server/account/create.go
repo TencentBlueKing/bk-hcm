@@ -192,7 +192,7 @@ type AccountCommonInfoCreateReq struct {
 	Memo     *string                `json:"memo" validate:"omitempty"`
 	// Note: 第一期只支持关联一个业务，且不能关联全部业务
 	// BkBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
-	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required,len=1,dive,min=1"`
+	BkBizIDs []int64 `json:"bk_biz_ids" validate:"omitempty"`
 }
 
 // Validate ...

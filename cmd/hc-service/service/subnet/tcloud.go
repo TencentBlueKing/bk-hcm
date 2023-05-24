@@ -174,6 +174,10 @@ func (s subnet) TCloudListSubnetCountIP(cts *rest.Contexts) (interface{}, error)
 	listOpt := &adcore.TCloudListOption{
 		Region:   req.Region,
 		CloudIDs: cloudIDs,
+		Page: &adcore.TCloudPage{
+			Offset: 0,
+			Limit:  adcore.TCloudQueryLimit,
+		},
 	}
 	subnetRes, err := cli.ListSubnet(cts.Kit, listOpt)
 	if err != nil {

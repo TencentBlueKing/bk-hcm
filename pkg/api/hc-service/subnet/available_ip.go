@@ -63,7 +63,7 @@ func (req *ListAzureCountIPReq) Validate() error {
 
 // AvailIPResult count subnet available ips result.
 type AvailIPResult struct {
-	AvailableIPCount uint64 `json:"available_ipv4_count"`
-	TotalIPCount     uint64 `json:"total_ip_address_count"`
-	UsedIPCount      uint64 `json:"used_ip_address_count"`
+	AvailableIPCount uint64 `json:"available_ip_count"`
+	TotalIPCount     uint64 `json:"total_ip_count"`
+	UsedIPCount      uint64 `json:"used_ip_count"`
 }
