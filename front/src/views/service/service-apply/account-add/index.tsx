@@ -146,7 +146,7 @@ export default defineComponent({
           vendor: params.vendor,
           type: projectModel.type,
           extension: params.extension });
-        await accountStore.addAccount(params);
+        await accountStore.applyAccount(params);
         Message({
           message: t('新增成功'),
           theme: 'success',
