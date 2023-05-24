@@ -36,6 +36,48 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 )
 
+// TODO: sync-todo  改好后统一删除ListDisk函数
+// ListCvmNew list cvm.
+// reference: https://support.huaweicloud.com/api-ecs/zh-cn_topic_0094148850.html
+func (h *HuaWei) ListCvmNew(kt *kit.Kit, opt *typecvm.HuaWeiListOption) ([]typecvm.HuaWeiCvm, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := h.clientSet.ecsClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new ecs client failed, err: %v", err)
+	}
+
+	req := new(model.ListServersDetailsRequest)
+
+	if len(opt.CloudIDs) != 0 {
+		req.ServerId = converter.ValToPtr(strings.Join(opt.CloudIDs, ","))
+	}
+
+	if opt.Page != nil {
+		req.Limit = converter.ValToPtr(opt.Page.Limit)
+		req.Offset = converter.ValToPtr(opt.Page.Offset)
+	}
+
+	resp, err := client.ListServersDetails(req)
+	if err != nil {
+		return nil, err
+	}
+
+	cvms := make([]typecvm.HuaWeiCvm, 0, len(converter.PtrToVal(resp.Servers)))
+	for _, one := range converter.PtrToVal(resp.Servers) {
+		cvms = append(cvms, typecvm.HuaWeiCvm{one})
+	}
+
+	return cvms, err
+}
+
 // ListCvm list cvm.
 // reference: https://support.huaweicloud.com/api-ecs/zh-cn_topic_0094148850.html
 func (h *HuaWei) ListCvm(kt *kit.Kit, opt *typecvm.HuaWeiListOption) (*[]model.ServerDetail, error) {

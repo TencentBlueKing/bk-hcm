@@ -24,7 +24,7 @@ import (
 	"net/http"
 	gosync "sync"
 
-	"hcm/cmd/hc-service/logics/sync/cvm"
+	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/adaptor/azure"
 	typecvm "hcm/pkg/adaptor/types/cvm"
@@ -97,13 +97,22 @@ func (svc *cvmSvc) BatchCreateAzureCvm(cts *rest.Contexts) (interface{}, error) 
 		return result, nil
 	}
 
-	syncOpt := &cvm.SyncAzureCvmOption{
+	azureCli, err := svc.ad.Azure(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	syncClient := syncazure.NewClient(svc.dataCli, azureCli)
+
+	params := &syncazure.SyncBaseParams{
 		AccountID:         req.AccountID,
 		ResourceGroupName: req.ResourceGroupName,
 		CloudIDs:          result.SuccessCloudIDs,
 	}
-	if _, err = cvm.SyncAzureCvmWithRelResource(cts.Kit, svc.ad, svc.dataCli, syncOpt); err != nil {
-		logs.Errorf("sync azure cvm with rel resource failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncazure.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync azure cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -217,14 +226,17 @@ func (svc *cvmSvc) StartAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncAzureCvmOption{
+	syncClient := syncazure.NewClient(svc.dataCli, client)
+
+	params := &syncazure.SyncBaseParams{
 		AccountID:         cvmFromDB.AccountID,
 		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
 		CloudIDs:          []string{cvmFromDB.CloudID},
 	}
-	_, err = cvm.SyncAzureCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &syncazure.SyncCvmOption{})
 	if err != nil {
-		logs.Errorf("sync azure cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync azure cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -269,14 +281,17 @@ func (svc *cvmSvc) StopAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncAzureCvmOption{
+	syncClient := syncazure.NewClient(svc.dataCli, client)
+
+	params := &syncazure.SyncBaseParams{
 		AccountID:         cvmFromDB.AccountID,
 		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
 		CloudIDs:          []string{cvmFromDB.CloudID},
 	}
-	_, err = cvm.SyncAzureCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &syncazure.SyncCvmOption{})
 	if err != nil {
-		logs.Errorf("sync azure cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync azure cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -311,14 +326,17 @@ func (svc *cvmSvc) RebootAzureCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncAzureCvmOption{
+	syncClient := syncazure.NewClient(svc.dataCli, client)
+
+	params := &syncazure.SyncBaseParams{
 		AccountID:         cvmFromDB.AccountID,
 		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
 		CloudIDs:          []string{cvmFromDB.CloudID},
 	}
-	_, err = cvm.SyncAzureCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &syncazure.SyncCvmOption{})
 	if err != nil {
-		logs.Errorf("sync azure cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync azure cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

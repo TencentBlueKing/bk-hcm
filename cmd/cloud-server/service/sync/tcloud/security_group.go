@@ -22,7 +22,7 @@ package tcloud
 import (
 	"time"
 
-	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -39,7 +39,7 @@ func SyncSG(kt *kit.Kit, service *hcservice.Client, accountID string, regions []
 	}()
 
 	for _, region := range regions {
-		req := &proto.SecurityGroupSyncReq{
+		req := &sync.TCloudSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		}

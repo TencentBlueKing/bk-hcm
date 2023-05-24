@@ -25,7 +25,9 @@ import (
 	accountsvc "hcm/cmd/cloud-server/service/account"
 	"hcm/pkg/api/core"
 	dataprotocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/json"
 
@@ -68,11 +70,63 @@ func (a *ApplicationOfAddAccount) CheckReq() error {
 
 	// 检查资源账号的主账号是否重复
 	mainAccountIDField := vendorMainAccountIDFieldMap[a.req.Vendor]
-	err = accountsvc.IsDuplicateMainAccount(
+	err = isDuplicateMainAccount(
 		a.Cts, a.Client, a.req.Vendor, a.req.Type, mainAccountIDField, conv.ToString(a.req.Extension[mainAccountIDField]),
 	)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func isDuplicateMainAccount(
+	cts *rest.Contexts, client *client.ClientSet,
+	vendor enumor.Vendor, accountType enumor.AccountType,
+	mainAccountIDFieldName string, mainAccountIDFieldValue string,
+) error {
+	// 只需要检查资源账号或安全审计账号的主账号是否重复，其他类型账号不检查
+	if accountType != enumor.ResourceAccount && accountType != enumor.SecurityAuditAccount {
+		return nil
+	}
+
+	// TODO: 后续需要解决并发问题
+	// 后台查询是否主账号重复
+	result, err := client.DataService().Global.Account.List(
+		cts.Kit.Ctx,
+		cts.Kit.Header(),
+		&dataprotocloud.AccountListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{
+						Field: "vendor",
+						Op:    filter.Equal.Factory(),
+						Value: string(vendor),
+					},
+					filter.AtomRule{
+						Field: "type",
+						Op:    filter.Equal.Factory(),
+						Value: string(accountType),
+					},
+					filter.AtomRule{
+						Field: fmt.Sprintf("extension.%s", mainAccountIDFieldName),
+						Op:    filter.JSONEqual.Factory(),
+						Value: mainAccountIDFieldValue,
+					},
+				},
+			},
+			Page: &core.BasePage{
+				Count: true,
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	if result.Count > 0 {
+		return fmt.Errorf("%s[%s] should be not duplicate", mainAccountIDFieldName, mainAccountIDFieldValue)
 	}
 
 	return nil

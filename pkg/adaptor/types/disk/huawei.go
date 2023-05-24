@@ -271,3 +271,13 @@ func (opt *HuaWeiDiskDetachOption) ToDetachServerVolumeRequest() (*ecsmodel.Deta
 	}
 	return &ecsmodel.DetachServerVolumeRequest{ServerId: opt.CloudCvmID, VolumeId: opt.CloudDiskID}, nil
 }
+
+// HuaWeiDisk for model VolumeDetail
+type HuaWeiDisk struct {
+	model.VolumeDetail
+}
+
+// GetCloudID ...
+func (disk HuaWeiDisk) GetCloudID() string {
+	return disk.Id
+}

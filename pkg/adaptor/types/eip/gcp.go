@@ -82,6 +82,11 @@ type GcpEip struct {
 	Users        []string
 }
 
+// GetCloudID ...
+func (eip *GcpEip) GetCloudID() string {
+	return eip.CloudID
+}
+
 // GcpEipDeleteOption ...
 type GcpEipDeleteOption struct {
 	Region  string `json:"region" validate:"required"`

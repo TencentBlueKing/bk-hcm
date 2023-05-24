@@ -74,7 +74,6 @@ type AwsRouteTableAsst struct {
 
 // AzureRouteTableExtension defines azure route table extensional info.
 type AzureRouteTableExtension struct {
-	//ResourceGroup       string `json:"resource_group"`
 	ResourceGroupName   string `json:"resource_group_name"`
 	CloudSubscriptionID string `json:"cloud_subscription_id"`
 }
@@ -88,8 +87,28 @@ type HuaWeiRouteTableExtension struct {
 // TCloudRouteTable defines tencent cloud route table.
 type TCloudRouteTable RouteTable[TCloudRouteTableExtension]
 
+// GetID ...
+func (routeTable TCloudRouteTable) GetID() string {
+	return routeTable.BaseRouteTable.ID
+}
+
+// GetCloudID ...
+func (routeTable TCloudRouteTable) GetCloudID() string {
+	return routeTable.BaseRouteTable.CloudID
+}
+
 // AwsRouteTable defines aws route table.
 type AwsRouteTable RouteTable[AwsRouteTableExtension]
+
+// GetID ...
+func (routeTable AwsRouteTable) GetID() string {
+	return routeTable.BaseRouteTable.ID
+}
+
+// GetCloudID ...
+func (routeTable AwsRouteTable) GetCloudID() string {
+	return routeTable.BaseRouteTable.CloudID
+}
 
 // GcpRouteTable defines gcp route table.
 type GcpRouteTable BaseRouteTable
@@ -97,5 +116,25 @@ type GcpRouteTable BaseRouteTable
 // AzureRouteTable defines azure route table.
 type AzureRouteTable RouteTable[AzureRouteTableExtension]
 
+// GetID ...
+func (routeTable AzureRouteTable) GetID() string {
+	return routeTable.BaseRouteTable.ID
+}
+
+// GetCloudID ...
+func (routeTable AzureRouteTable) GetCloudID() string {
+	return routeTable.BaseRouteTable.CloudID
+}
+
 // HuaWeiRouteTable defines huawei route table.
 type HuaWeiRouteTable RouteTable[HuaWeiRouteTableExtension]
+
+// GetID ...
+func (routeTable HuaWeiRouteTable) GetID() string {
+	return routeTable.BaseRouteTable.ID
+}
+
+// GetCloudID ...
+func (routeTable HuaWeiRouteTable) GetCloudID() string {
+	return routeTable.BaseRouteTable.CloudID
+}

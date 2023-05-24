@@ -266,3 +266,13 @@ type HuaWeiNetworkInterface struct {
 	IPAddress  *string `json:"ip_address" validate:"omitempty"`
 	IPv6Enable *bool   `json:"i_pv_6_enable" validate:"omitempty"`
 }
+
+// HuaWeiCvm for model ServerDetail
+type HuaWeiCvm struct {
+	model.ServerDetail
+}
+
+// GetCloudID ...
+func (cvm HuaWeiCvm) GetCloudID() string {
+	return cvm.Id
+}

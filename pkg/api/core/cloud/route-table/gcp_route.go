@@ -47,3 +47,13 @@ type GcpRoute struct {
 	Memo             *string  `json:"memo,omitempty"`
 	*core.Revision   `json:",inline"`
 }
+
+// GetID ...
+func (route GcpRoute) GetID() string {
+	return route.ID
+}
+
+// GetCloudID ...
+func (route GcpRoute) GetCloudID() string {
+	return route.CloudID
+}

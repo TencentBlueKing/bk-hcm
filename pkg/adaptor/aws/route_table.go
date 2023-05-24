@@ -96,10 +96,10 @@ func (a *Aws) ListRouteTable(kt *kit.Kit, opt *routetable.AwsRouteTableListOptio
 
 	resp, err := client.DescribeRouteTablesWithContext(kt.Ctx, req)
 	if err != nil {
-		if strings.Contains(err.Error(), ErrDataNotFound) {
-			return new(routetable.AwsRouteTableListResult), nil
+		if !strings.Contains(err.Error(), ErrRouteTableNotFound) {
+			logs.Errorf("list aws route table failed, err: %v, rid: %s", err, kt.Rid)
 		}
-		logs.Errorf("list aws route table failed, err: %v, rid: %s", err, kt.Rid)
+
 		return nil, err
 	}
 

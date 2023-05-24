@@ -110,7 +110,7 @@ func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error 
 	return nil
 }
 
-// SyncVpc sync aws vpc.
+// SyncVpc aws vpc.
 func (v *VpcClient) SyncVpc(ctx context.Context, h http.Header, req *sync.AwsSyncReq) error {
 	resp := new(rest.BaseResp)
 

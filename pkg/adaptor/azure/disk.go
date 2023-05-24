@@ -124,6 +124,44 @@ func (a *Azure) GetDisk(kt *kit.Kit, opt *disk.AzureDiskGetOption) (*disk.AzureD
 	return converterResp, nil
 }
 
+type diskResultHandler struct {
+	resGroupName string
+}
+
+// BuildResult ...
+func (handler *diskResultHandler) BuildResult(resp armcompute.DisksClientListByResourceGroupResponse) []disk.AzureDisk {
+	ori := converterDisk(resp.Value)
+
+	disks := make([]disk.AzureDisk, 0, len(resp.Value))
+	for _, one := range ori {
+		disks = append(disks, converter.PtrToVal(one))
+	}
+
+	return disks
+}
+
+// ListDiskByPage ...
+// reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
+func (a *Azure) ListDiskByPage(kt *kit.Kit, opt *disk.AzureDiskListOption) (
+	*Pager[armcompute.DisksClientListByResourceGroupResponse, disk.AzureDisk], error) {
+
+	client, err := a.clientSet.diskClient()
+	if err != nil {
+		return nil, err
+	}
+
+	azurePager := client.NewListByResourceGroupPager(opt.ResourceGroupName, nil)
+
+	pager := &Pager[armcompute.DisksClientListByResourceGroupResponse, disk.AzureDisk]{
+		pager: azurePager,
+		resultHandler: &diskResultHandler{
+			resGroupName: opt.ResourceGroupName,
+		},
+	}
+
+	return pager, nil
+}
+
 // ListDisk 查看云硬盘
 // reference: https://learn.microsoft.com/en-us/rest/api/compute/disks/list?source=recommendations&tabs=Go#disklist
 func (a *Azure) ListDisk(kt *kit.Kit, opt *disk.AzureDiskListOption) ([]*disk.AzureDisk, error) {

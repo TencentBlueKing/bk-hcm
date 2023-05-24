@@ -131,6 +131,49 @@ func (t *TCloud) UpdateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudUpdat
 	return nil
 }
 
+// TODO: sync-todo 改好后统一删除ListSecurityGroup函数
+// ListSecurityGroupNew list security group.
+// reference: https://cloud.tencent.com/document/api/215/15808
+func (t *TCloud) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloudListOption) ([]securitygroup.TCloudSG,
+	error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "tcloud security group list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.vpcClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewDescribeSecurityGroupsRequest()
+	if len(opt.CloudIDs) != 0 {
+		req.SecurityGroupIds = common.StringPtrs(opt.CloudIDs)
+		req.Limit = converter.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
+	}
+
+	if opt.Page != nil {
+		req.Offset = common.StringPtr(strconv.FormatInt(int64(opt.Page.Offset), 10))
+		req.Limit = common.StringPtr(strconv.FormatInt(int64(opt.Page.Limit), 10))
+	}
+
+	resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	sgs := make([]securitygroup.TCloudSG, 0, len(resp.Response.SecurityGroupSet))
+	for _, one := range resp.Response.SecurityGroupSet {
+		sgs = append(sgs, securitygroup.TCloudSG{one})
+	}
+	return sgs, nil
+}
+
 // ListSecurityGroup list security group.
 // reference: https://cloud.tencent.com/document/api/215/15808
 func (t *TCloud) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudListOption) ([]*vpc.SecurityGroup,

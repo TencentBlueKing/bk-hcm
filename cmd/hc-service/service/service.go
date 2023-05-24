@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"time"
 
+	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/service/account"
 	"hcm/cmd/hc-service/service/bill"
 	"hcm/cmd/hc-service/service/capability"
@@ -42,15 +43,7 @@ import (
 	routetable "hcm/cmd/hc-service/service/route-table"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
-	synccvm "hcm/cmd/hc-service/service/sync/cvm"
-	syncdisk "hcm/cmd/hc-service/service/sync/disk"
-	synceip "hcm/cmd/hc-service/service/sync/eip"
-	syncfirewall "hcm/cmd/hc-service/service/sync/firewall"
-	syncnetworkinterface "hcm/cmd/hc-service/service/sync/network-interface"
-	syncroutetable "hcm/cmd/hc-service/service/sync/route-table"
-	syncsecuritygroup "hcm/cmd/hc-service/service/sync/security-group"
-	syncsubnet "hcm/cmd/hc-service/service/sync/subnet"
-	syncvpc "hcm/cmd/hc-service/service/sync/vpc"
+	"hcm/cmd/hc-service/service/sync"
 	"hcm/cmd/hc-service/service/vpc"
 	"hcm/cmd/hc-service/service/zone"
 	"hcm/pkg/cc"
@@ -159,6 +152,7 @@ func (s *Service) apiSet() *restful.Container {
 		WebService:   ws,
 		ClientSet:    s.clientSet,
 		CloudAdaptor: s.cloudAdaptor,
+		ResSyncCli:   ressync.NewClient(s.cloudAdaptor, s.clientSet.DataService()),
 	}
 
 	account.InitAccountService(c)
@@ -174,16 +168,8 @@ func (s *Service) apiSet() *restful.Container {
 	routetable.InitRouteTableService(c)
 	eip.InitEipService(c)
 	instancetype.InitInstanceTypeService(c)
-	syncsecuritygroup.InitSyncSecurityGroupService(c)
-	synccvm.InitSyncCvmService(c)
-	syncdisk.InitSyncDiskService(c)
-	synceip.InitSyncEipService(c)
-	syncfirewall.InitFireWallService(c)
-	syncvpc.InitSyncVpcService(c)
-	syncsubnet.InitSyncSubnetService(c)
-	syncnetworkinterface.InitSyncNetworkInterfaceService(c)
-	syncroutetable.InitRouteTableService(c)
 	resourcegroup.InitResourceGroupService(c)
+	sync.InitService(c)
 	bill.InitBillService(c)
 
 	return restful.NewContainer().Add(c.WebService)

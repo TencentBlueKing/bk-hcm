@@ -82,6 +82,16 @@ type Cvm[Ext Extension] struct {
 	Extension *Ext `json:"extension"`
 }
 
+// GetID ...
+func (cvm Cvm[T]) GetID() string {
+	return cvm.BaseCvm.ID
+}
+
+// GetCloudID ...
+func (cvm Cvm[T]) GetCloudID() string {
+	return cvm.BaseCvm.CloudID
+}
+
 // Extension cvm extension.
 type Extension interface {
 	TCloudCvmExtension | AwsCvmExtension | HuaWeiCvmExtension | AzureCvmExtension | GcpCvmExtension

@@ -22,7 +22,7 @@ package cvm
 import (
 	"net/http"
 
-	"hcm/cmd/hc-service/logics/sync/cvm"
+	syncaws "hcm/cmd/hc-service/logics/res-sync/aws"
 	"hcm/cmd/hc-service/service/capability"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
@@ -93,13 +93,17 @@ func (svc *cvmSvc) BatchCreateAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return respData, nil
 	}
 
-	syncOpt := &cvm.SyncAwsCvmOption{
+	syncClient := syncaws.NewClient(svc.dataCli, awsCli)
+
+	params := &syncaws.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  result.SuccessCloudIDs,
 	}
-	if _, err = cvm.SyncAwsCvmWithRelResource(cts.Kit, syncOpt, svc.ad, svc.dataCli); err != nil {
-		logs.Errorf("sync aws cvm with rel resource failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncaws.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync aws cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -147,14 +151,17 @@ func (svc *cvmSvc) BatchStartAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncAwsCvmOption{
+	syncClient := syncaws.NewClient(svc.dataCli, client)
+
+	params := &syncaws.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-	_, err = cvm.SyncAwsCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &syncaws.SyncCvmOption{})
 	if err != nil {
-		logs.Errorf("sync aws cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync aws cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -204,14 +211,17 @@ func (svc *cvmSvc) BatchStopAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncAwsCvmOption{
+	syncClient := syncaws.NewClient(svc.dataCli, client)
+
+	params := &syncaws.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-	_, err = cvm.SyncAwsCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &syncaws.SyncCvmOption{})
 	if err != nil {
-		logs.Errorf("sync aws cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync aws cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -259,14 +269,17 @@ func (svc *cvmSvc) BatchRebootAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncAwsCvmOption{
+	syncClient := syncaws.NewClient(svc.dataCli, client)
+
+	params := &syncaws.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-	_, err = cvm.SyncAwsCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &syncaws.SyncCvmOption{})
 	if err != nil {
-		logs.Errorf("sync aws cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync aws cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

@@ -42,8 +42,8 @@ func (a *accountSvc) DeleteValidate(cts *rest.Contexts) (interface{}, error) {
 	return a.client.DataService().Global.Account.DeleteValidate(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 }
 
-// Delete ...
-func (a *accountSvc) Delete(cts *rest.Contexts) (interface{}, error) {
+// DeleteAccount ...
+func (a *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 
 	// TODO 添加审计，最终是在dao去记录，因为账号删除有校验，存在删除不了的情况，且账号不需要在云上删除。

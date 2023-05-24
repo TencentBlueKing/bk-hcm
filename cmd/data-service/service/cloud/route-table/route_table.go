@@ -413,6 +413,7 @@ func (svc *routeTableSvc) BatchDeleteRouteTable(cts *rest.Contexts) (interface{}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for vendor, ids := range delRouteTableIDMap {
+
 			delRouteFilter := tools.ContainersExpression("route_table_id", ids)
 
 			switch vendor {
@@ -435,6 +436,7 @@ func (svc *routeTableSvc) BatchDeleteRouteTable(cts *rest.Contexts) (interface{}
 			default:
 				return nil, errf.Newf(errf.InvalidParameter, "vendor %s is invalid", vendor)
 			}
+
 		}
 
 		delRouteTableFilter := tools.ContainersExpression("id", delRouteTableIDs)

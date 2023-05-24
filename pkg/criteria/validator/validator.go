@@ -20,7 +20,33 @@
 package validator
 
 import (
+	"errors"
+
 	gvalidator "github.com/go-playground/validator/v10"
 )
 
 var Validate = gvalidator.New()
+
+// Interface ...
+type Interface interface {
+	Validate() error
+}
+
+// ValidateTool validate tool.
+func ValidateTool(opts ...Interface) error {
+	if len(opts) == 0 {
+		return nil
+	}
+
+	for _, opt := range opts {
+		if opt == nil {
+			return errors.New("option can not nil")
+		}
+
+		if err := opt.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

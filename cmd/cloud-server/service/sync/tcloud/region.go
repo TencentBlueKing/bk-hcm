@@ -46,7 +46,7 @@ func SyncRegion(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 	req := &protohcregion.TCloudRegionSyncReq{
 		AccountID: accountID,
 	}
-	if err := hcCli.TCloud.Region.SyncRegion(kt.Ctx, kt.Header(), req); err != nil {
+	if err := hcCli.TCloud.Region.Sync(kt.Ctx, kt.Header(), req); err != nil {
 		logs.Errorf("sync tcloud region failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 		return err
 	}

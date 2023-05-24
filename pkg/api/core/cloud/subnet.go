@@ -30,6 +30,16 @@ type Subnet[T SubnetExtension] struct {
 	Extension  *T `json:"extension"`
 }
 
+// GetID ...
+func (subnet Subnet[T]) GetID() string {
+	return subnet.BaseSubnet.ID
+}
+
+// GetCloudID ...
+func (subnet Subnet[T]) GetCloudID() string {
+	return subnet.BaseSubnet.CloudID
+}
+
 // BaseSubnet defines base subnet info.
 type BaseSubnet struct {
 	ID                string        `json:"id"`

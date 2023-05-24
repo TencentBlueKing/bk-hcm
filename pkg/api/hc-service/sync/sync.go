@@ -89,13 +89,45 @@ func (req *GcpSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// GcpVpcSyncReq gcp vpc sync request
-type GcpVpcSyncReq struct {
+// GcpGlobalRegionResSyncReq gcp vpc sync request
+type GcpGlobalRegionResSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 }
 
 // Validate gcp vpc sync request.
-func (req *GcpVpcSyncReq) Validate() error {
+func (req *GcpGlobalRegionResSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// GcpDiskSyncReq gcp disk sync request
+type GcpDiskSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Zone      string `json:"zone" validate:"required"`
+}
+
+// Validate gcp disk sync request.
+func (req *GcpDiskSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// GcpRouteSyncReq gcp route sync request
+type GcpRouteSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Zone      string `json:"zone" validate:"required"`
+}
+
+// Validate gcp route sync request.
+func (req *GcpRouteSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// GcpFireWallSyncReq gcp firewall sync request
+type GcpFireWallSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+}
+
+// Validate gcp firewall sync request.
+func (req *GcpFireWallSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
@@ -107,5 +139,17 @@ type AzureSyncReq struct {
 
 // Validate azure sync request.
 func (req *AzureSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AzureSubnetSyncReq azure sync request
+type AzureSubnetSyncReq struct {
+	AccountID         string `json:"account_id" validate:"required"`
+	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	CloudVpcID        string `json:"cloud_vpc_id" validate:"required"`
+}
+
+// Validate azure sync request.
+func (req *AzureSubnetSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

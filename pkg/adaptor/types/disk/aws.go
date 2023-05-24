@@ -22,6 +22,7 @@ package disk
 import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -141,4 +142,14 @@ func (opt *AwsDiskDetachOption) ToDetachVolumeInput() (*ec2.DetachVolumeInput, e
 	}
 
 	return &ec2.DetachVolumeInput{InstanceId: aws.String(opt.CloudCvmID), VolumeId: aws.String(opt.CloudDiskID)}, nil
+}
+
+// AwsDisk for ec2 Volume
+type AwsDisk struct {
+	*ec2.Volume
+}
+
+// GetCloudID ...
+func (disk AwsDisk) GetCloudID() string {
+	return converter.PtrToVal(disk.VolumeId)
 }

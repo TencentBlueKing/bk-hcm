@@ -20,15 +20,19 @@
 package securitygroup
 
 import (
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	"fmt"
+
+	"hcm/pkg/adaptor/azure"
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -38,18 +42,34 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
 
+// SyncAzureSecurityGroupOption define sync azure sg and sg rule option.
+type SyncAzureSecurityGroupOption struct {
+	AccountID         string   `json:"account_id" validate:"required"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"required"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncAzureSecurityGroupOption
+func (opt SyncAzureSecurityGroupOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncAzureSGRule sync azure security group rules.
 func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
-	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client, sgID string) (interface{}, error) {
-
-	client, err := ad.Azure(kt, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
+	client *azure.Azure, dataCli *dataservice.Client, sgID string) (interface{}, error) {
 
 	sg, err := dataCli.Azure.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get azure security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get azure security group failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return err, err
 	}
 
@@ -61,7 +81,8 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 
 	rules, err := client.ListSecurityGroupRule(kt, opt)
 	if err != nil {
-		logs.Errorf("request adaptor to list azure security group rule failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request adaptor to list azure security group rule failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return nil, err
 	}
 
@@ -82,7 +103,8 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 
 	updateIDs, err := getAzureSGRuleDSSync(kt, cloudIDs, req, sgID, dataCli)
 	if err != nil {
-		logs.Errorf("request getAzureSGRuleDSSync failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request getAzureSGRuleDSSync failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return nil, err
 	}
 
@@ -101,7 +123,8 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 
 	dsIDs, err := getAzureSGRuleAllDS(kt, req, sgID, dataCli)
 	if err != nil {
-		logs.Errorf("request getAzureSGRuleAllDS failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request getAzureSGRuleAllDS failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return nil, err
 	}
 
@@ -116,7 +139,8 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 		realDeleteIDs := make([]string, 0)
 		rules, err := client.ListSecurityGroupRule(kt, opt)
 		if err != nil {
-			logs.Errorf("request adaptor to list aws security group rule failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] request adaptor to list aws security group rule failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return nil, err
 		}
 
@@ -137,7 +161,8 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 		if len(realDeleteIDs) > 0 {
 			err := syncAzureSGRuleDelete(kt, realDeleteIDs, sgID, dataCli)
 			if err != nil {
-				logs.Errorf("request syncAzureSGRuleDelete failed, err: %v, rid: %s", err, kt.Rid)
+				logs.Errorf("[%s] request syncAzureSGRuleDelete failed, err: %v, rid: %s", enumor.Azure,
+					err, kt.Rid)
 				return nil, err
 			}
 		}
@@ -146,7 +171,8 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 	if len(updateIDs) > 0 {
 		err := syncAzureSGRuleUpdate(kt, updateIDs, cloudMap, sgID, req, dataCli)
 		if err != nil {
-			logs.Errorf("request syncAzureSGRuleUpdate failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] request syncAzureSGRuleUpdate failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return nil, err
 		}
 	}
@@ -154,7 +180,8 @@ func SyncAzureSGRule(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 	if len(addIDs) > 0 {
 		err := syncAzureSGRuleAdd(kt, addIDs, req, cloudMap, sgID, dataCli)
 		if err != nil {
-			logs.Errorf("request syncAzureSGRuleAdd failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] request syncAzureSGRuleAdd failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return nil, err
 		}
 	}
@@ -174,7 +201,8 @@ func syncAzureSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string]
 
 	sg, err := dataCli.Azure.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get azure security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get azure security group failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return err
 	}
 
@@ -208,7 +236,8 @@ func syncAzureSGRuleAdd(kt *kit.Kit, addIDs []string, req *SyncAzureSecurityGrou
 
 	sg, err := dataCli.Azure.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get azure security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get azure security group failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return err
 	}
 
@@ -236,7 +265,8 @@ func syncAzureSGRuleDelete(kt *kit.Kit, deleteCloudIDs []string,
 		}
 		err := dataCli.Azure.SecurityGroup.BatchDeleteSecurityGroupRule(kt.Ctx, kt.Header(), deleteReq, sgID)
 		if err != nil {
-			logs.Errorf("dataservice delete azure security group rules failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] dataservice delete azure security group rules failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return err
 		}
 	}
@@ -275,7 +305,8 @@ func getAzureSGRuleAllDS(kt *kit.Kit, req *SyncAzureSecurityGroupOption,
 
 		results, err := dataCli.Azure.SecurityGroup.ListSecurityGroupRule(kt.Ctx, kt.Header(), dataReq, sgID)
 		if err != nil {
-			logs.Errorf("from data-service list sg rule failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] from data-service list sg rule failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return dsIDs, err
 		}
 
@@ -331,7 +362,8 @@ func getAzureSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAzureSecurity
 
 		results, err := dataCli.Azure.SecurityGroup.ListSecurityGroupRule(kt.Ctx, kt.Header(), dataReq, sgID)
 		if err != nil {
-			logs.Errorf("from data-service list sg rule failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] from data-service list sg rule failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return updateIDs, err
 		}
 
@@ -445,7 +477,8 @@ func genAzureUpdateRulesList(kt *kit.Kit, rules []*securitygrouprule.AzureSecuri
 	for _, rule := range rules {
 		one, err := getAzureSGRuleByCid(kt, *rule.ID, sgID, dataCli)
 		if err != nil || one == nil {
-			logs.Errorf("azure gen update RulesList getAzureSGRuleByCid failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] gen update RulesList getAzureSGRuleByCid failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			continue
 		}
 
@@ -512,7 +545,8 @@ func getAzureSGRuleByCid(kt *kit.Kit, cID string, sgID string,
 	}
 	listResp, err := dataCli.Azure.SecurityGroup.ListSecurityGroupRule(kt.Ctx, kt.Header(), listReq, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get azure security group failed, id: %s, err: %v, rid: %s", cID, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get azure security group failed, id: %s, err: %v, rid: %s", enumor.Azure,
+			cID, err, kt.Rid)
 		return nil, err
 	}
 

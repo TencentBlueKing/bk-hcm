@@ -20,15 +20,19 @@
 package securitygroup
 
 import (
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	"fmt"
+
+	"hcm/pkg/adaptor/huawei"
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -37,18 +41,34 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
 
+// SyncHuaWeiSecurityGroupOption define sync huawei sg and sg rule option.
+type SyncHuaWeiSecurityGroupOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncHuaWeiSecurityGroupOption
+func (opt SyncHuaWeiSecurityGroupOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncHuaWeiSGRule sync huawei security group rules.
 func SyncHuaWeiSGRule(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
-	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client, sgID string) (interface{}, error) {
-
-	client, err := ad.HuaWei(kt, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
+	client *huawei.HuaWei, dataCli *dataservice.Client, sgID string) (interface{}, error) {
 
 	sg, err := dataCli.HuaWei.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get huawei security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get huawei security group failed, err: %v, rid: %s", enumor.HuaWei,
+			err, kt.Rid)
 		return err, err
 	}
 
@@ -60,7 +80,8 @@ func SyncHuaWeiSGRule(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
 
 	rules, err := client.ListSecurityGroupRule(kt, opt)
 	if err != nil {
-		logs.Errorf("request adaptor to list huawei security group rule failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request adaptor to list huawei security group rule failed, err: %v, rid: %s", enumor.HuaWei,
+			err, kt.Rid)
 		return nil, err
 	}
 
@@ -81,14 +102,16 @@ func SyncHuaWeiSGRule(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
 
 	updateIDs, err := getHuaWeiSGRuleDSSync(kt, cloudIDs, req, sgID, dataCli)
 	if err != nil {
-		logs.Errorf("request getHuaWeiSGRuleDSSync failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request getHuaWeiSGRuleDSSync failed, err: %v, rid: %s", enumor.HuaWei,
+			err, kt.Rid)
 		return nil, err
 	}
 
 	if len(updateIDs) > 0 {
 		err := syncHuaWeiSGRuleUpdate(kt, updateIDs, cloudMap, sgID, req, dataCli)
 		if err != nil {
-			logs.Errorf("request syncHuaWeiSGRuleUpdate failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] request syncHuaWeiSGRuleUpdate failed, err: %v, rid: %s", enumor.HuaWei,
+				err, kt.Rid)
 			return nil, err
 		}
 	}
@@ -109,14 +132,15 @@ func SyncHuaWeiSGRule(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
 	if len(addIDs) > 0 {
 		err := syncHuaWeiSGRuleAdd(kt, addIDs, req, cloudMap, sgID, dataCli)
 		if err != nil {
-			logs.Errorf("request syncHuaWeiSGRuleAdd failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] request syncHuaWeiSGRuleAdd failed, err: %v, rid: %s", enumor.HuaWei,
+				err, kt.Rid)
 			return nil, err
 		}
 	}
 
 	dsIDs, err := getHuaWeiSGRuleAllDS(kt, req, sgID, dataCli)
 	if err != nil {
-		logs.Errorf("request getHuaWeiSGRuleAllDS failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request getHuaWeiSGRuleAllDS failed, err: %v, rid: %s", enumor.HuaWei, err, kt.Rid)
 		return nil, err
 	}
 
@@ -131,7 +155,8 @@ func SyncHuaWeiSGRule(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
 		realDeleteIDs := make([]string, 0)
 		rules, err := client.ListSecurityGroupRule(kt, opt)
 		if err != nil {
-			logs.Errorf("request adaptor to list aws security group rule failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] request adaptor to list aws security group rule failed, err: %v, rid: %s", enumor.HuaWei,
+				err, kt.Rid)
 			return nil, err
 		}
 
@@ -152,7 +177,8 @@ func SyncHuaWeiSGRule(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption,
 		if len(realDeleteIDs) > 0 {
 			err := syncHuaWeiSGRuleDelete(kt, realDeleteIDs, sgID, dataCli)
 			if err != nil {
-				logs.Errorf("request syncHuaWeiSGRuleDelete failed, err: %v, rid: %s", err, kt.Rid)
+				logs.Errorf("[%s] request syncHuaWeiSGRuleDelete failed, err: %v, rid: %s", enumor.HuaWei,
+					err, kt.Rid)
 				return nil, err
 			}
 		}
@@ -175,7 +201,8 @@ func syncHuaWeiSGRuleUpdate(kt *kit.Kit, updateIDs []string, cloudMap map[string
 
 	sg, err := dataCli.HuaWei.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get huawei security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get huawei security group failed, err: %v, rid: %s", enumor.HuaWei,
+			err, kt.Rid)
 		return err
 	}
 
@@ -211,7 +238,8 @@ func syncHuaWeiSGRuleAdd(kt *kit.Kit, addIDs []string, req *SyncHuaWeiSecurityGr
 
 	sg, err := dataCli.HuaWei.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get huawei security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get huawei security group failed, err: %v, rid: %s", enumor.HuaWei,
+			err, kt.Rid)
 		return err
 	}
 
@@ -239,7 +267,8 @@ func syncHuaWeiSGRuleDelete(kt *kit.Kit, deleteCloudIDs []string, sgID string,
 		}
 		err := dataCli.HuaWei.SecurityGroup.BatchDeleteSecurityGroupRule(kt.Ctx, kt.Header(), deleteReq, sgID)
 		if err != nil {
-			logs.Errorf("dataservice delete huawei security group rules failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] dataservice delete huawei security group rules failed, err: %v, rid: %s", enumor.HuaWei,
+				err, kt.Rid)
 			return err
 		}
 	}
@@ -283,7 +312,8 @@ func getHuaWeiSGRuleAllDS(kt *kit.Kit, req *SyncHuaWeiSecurityGroupOption, sgID 
 
 		results, err := dataCli.HuaWei.SecurityGroup.ListSecurityGroupRule(kt.Ctx, kt.Header(), dataReq, sgID)
 		if err != nil {
-			logs.Errorf("from data-service list sg rule failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] from data-service list sg rule failed, err: %v, rid: %s", enumor.HuaWei,
+				err, kt.Rid)
 			return dsIDs, err
 		}
 
@@ -343,7 +373,8 @@ func getHuaWeiSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *SyncHuaWeiSecuri
 
 		results, err := dataCli.HuaWei.SecurityGroup.ListSecurityGroupRule(kt.Ctx, kt.Header(), dataReq, sgID)
 		if err != nil {
-			logs.Errorf("from data-service list sg rule failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] from data-service list sg rule failed, err: %v, rid: %s", enumor.HuaWei,
+				err, kt.Rid)
 			return updateIDs, err
 		}
 
@@ -449,7 +480,8 @@ func genHuaWeiUpdateRulesList(kt *kit.Kit, rules *model.ListSecurityGroupRulesRe
 	for _, sgRule := range *rules.SecurityGroupRules {
 		one, err := getHuaWeiSGRuleByCid(kt, sgRule.Id, sgID, dataCli)
 		if err != nil || one == nil {
-			logs.Errorf("huawei gen update RulesList getHuaWeiSGRuleByCid failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] gen update RulesList getHuaWeiSGRuleByCid failed, err: %v, rid: %s", enumor.HuaWei,
+				err, kt.Rid)
 			continue
 		}
 
@@ -491,7 +523,8 @@ func getHuaWeiSGRuleByCid(kt *kit.Kit, cID string, sgID string,
 	}
 	listResp, err := dataCli.HuaWei.SecurityGroup.ListSecurityGroupRule(kt.Ctx, kt.Header(), listReq, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get huawei security group failed, id: %s, err: %v, rid: %s", cID, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get huawei security group failed, id: %s, err: %v, rid: %s", enumor.HuaWei,
+			cID, err, kt.Rid)
 		return nil, err
 	}
 

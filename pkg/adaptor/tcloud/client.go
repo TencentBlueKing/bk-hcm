@@ -31,6 +31,10 @@ import (
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
+const (
+	ErrNotFound = "Code=ResourceNotFound"
+)
+
 type clientSet struct {
 	credential *common.Credential
 	profile    *profile.ClientProfile

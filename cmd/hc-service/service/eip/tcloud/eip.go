@@ -20,8 +20,7 @@
 package tcloud
 
 import (
-	"hcm/cmd/hc-service/logics/sync/cvm"
-	synceip "hcm/cmd/hc-service/logics/sync/eip"
+	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/types/eip"
@@ -103,22 +102,28 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = synceip.SyncTCloudEip(
-		cts.Kit,
-		&synceip.SyncTCloudEipOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudEipID}},
-		svc.Adaptor, svc.DataCli,
-	)
+	syncClient := synctcloud.NewClient(svc.DataCli, client)
+
+	params := &synctcloud.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  []string{opt.CloudEipID},
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &synctcloud.SyncEipOption{})
 	if err != nil {
-		logs.Errorf("SyncTCloudEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync tcloud eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return cvm.SyncTCloudCvmWithRelResource(
-		cts.Kit,
-		svc.Adaptor,
-		svc.DataCli,
-		&cvm.SyncTCloudCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
-	)
+	params.CloudIDs = []string{opt.CloudCvmID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &synctcloud.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync tcloud cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 // DisassociateEip ...
@@ -153,13 +158,17 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = synceip.SyncTCloudEip(
-		cts.Kit,
-		&synceip.SyncTCloudEipOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudEipID}},
-		svc.Adaptor, svc.DataCli,
-	)
+	syncClient := synctcloud.NewClient(svc.DataCli, client)
+
+	params := &synctcloud.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  []string{opt.CloudEipID},
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &synctcloud.SyncEipOption{})
 	if err != nil {
-		logs.Errorf("SyncTCloudEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync tcloud eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -168,12 +177,14 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return cvm.SyncTCloudCvmWithRelResource(
-		cts.Kit,
-		svc.Adaptor,
-		svc.DataCli,
-		&cvm.SyncTCloudCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{cvmData.CloudID}},
-	)
+	params.CloudIDs = []string{cvmData.CloudID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &synctcloud.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync tcloud cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 // CreateEip ...
@@ -206,14 +217,18 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	cloudIDs := result.SuccessCloudIDs
-	_, err = synceip.SyncTCloudEip(
-		cts.Kit,
-		&synceip.SyncTCloudEipOption{AccountID: req.AccountID, Region: req.Region, CloudIDs: cloudIDs,
-			BkBizID: req.BkBizID},
-		svc.Adaptor, svc.DataCli,
-	)
+
+	syncClient := synctcloud.NewClient(svc.DataCli, client)
+
+	params := &synctcloud.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  cloudIDs,
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &synctcloud.SyncEipOption{})
 	if err != nil {
-		logs.Errorf("SyncTCloudEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync tcloud eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

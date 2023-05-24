@@ -72,5 +72,6 @@ const (
 	CvmCloudResType              CloudResourceType = "cvm"
 	DiskCloudResType             CloudResourceType = "disk"
 	RouteTableCloudResType       CloudResourceType = "route_table"
+	RouteCloudResType            CloudResourceType = "route"
 	NetworkInterfaceCloudResType CloudResourceType = "network_interface"
 )

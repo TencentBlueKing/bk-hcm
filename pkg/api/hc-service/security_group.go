@@ -21,6 +21,7 @@ package hcservice
 
 import (
 	"fmt"
+
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )

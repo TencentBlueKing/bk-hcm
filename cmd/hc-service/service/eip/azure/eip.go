@@ -22,9 +22,7 @@ package azure
 import (
 	"strings"
 
-	"hcm/cmd/hc-service/logics/sync/cvm"
-	synceip "hcm/cmd/hc-service/logics/sync/eip"
-	syncnetworkinterface "hcm/cmd/hc-service/logics/sync/network-interface"
+	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/azure"
@@ -32,7 +30,6 @@ import (
 	"hcm/pkg/adaptor/types/eip"
 	apicore "hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
-	hcservice "hcm/pkg/api/hc-service"
 	proto "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -104,18 +101,17 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = synceip.SyncAzureEip(
-		cts.Kit,
-		&synceip.SyncAzureEipOption{
-			AccountID:         req.AccountID,
-			ResourceGroupName: opt.ResourceGroupName,
-			CloudIDs:          []string{opt.CloudEipID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	syncClient := syncazure.NewClient(svc.DataCli, client)
+
+	params := &syncazure.SyncBaseParams{
+		AccountID:         req.AccountID,
+		ResourceGroupName: opt.ResourceGroupName,
+		CloudIDs:          []string{opt.CloudEipID},
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &syncazure.SyncEipOption{})
 	if err != nil {
-		logs.Errorf("SyncAzureEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync azure eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -124,18 +120,10 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = cvm.SyncAzureCvmWithRelResource(
-		cts.Kit,
-		svc.Adaptor,
-		svc.DataCli,
-		&cvm.SyncAzureCvmOption{
-			AccountID:         req.AccountID,
-			ResourceGroupName: opt.ResourceGroupName,
-			CloudIDs:          []string{cvmData.CloudID},
-		},
-	)
+	params.CloudIDs = []string{cvmData.CloudID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncazure.SyncCvmWithRelResOption{})
 	if err != nil {
-		logs.Errorf("SyncAzureCvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync azure cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -148,18 +136,10 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = syncnetworkinterface.AzureNetworkInterfaceSync(
-		cts.Kit,
-		&hcservice.AzureNetworkInterfaceSyncReq{
-			AccountID:         req.AccountID,
-			ResourceGroupName: opt.ResourceGroupName,
-			CloudIDs:          []string{networkInterface.CloudID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	params.CloudIDs = []string{networkInterface.CloudID}
+	_, err = syncClient.NetworkInterface(cts.Kit, params, &syncazure.SyncNIOption{})
 	if err != nil {
-		logs.Errorf("AzureNetworkInterfaceSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync azure ni failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -202,16 +182,17 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = synceip.SyncAzureEip(cts.Kit,
-		&synceip.SyncAzureEipOption{
-			AccountID:         req.AccountID,
-			ResourceGroupName: opt.ResourceGroupName,
-			CloudIDs:          []string{opt.CloudEipID},
-		}, svc.Adaptor, svc.DataCli,
-	)
+	syncClient := syncazure.NewClient(svc.DataCli, client)
+
+	params := &syncazure.SyncBaseParams{
+		AccountID:         req.AccountID,
+		ResourceGroupName: opt.ResourceGroupName,
+		CloudIDs:          []string{opt.CloudEipID},
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &syncazure.SyncEipOption{})
 	if err != nil {
-		logs.Errorf("azure disassociate eip sync eip failed, cloudEipID: %s, rgName: %s, err: %v, rid: %s",
-			opt.CloudEipID, opt.ResourceGroupName, err, cts.Kit.Rid)
+		logs.Errorf("sync azure eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -221,32 +202,20 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = cvm.SyncAzureCvmWithRelResource(cts.Kit, svc.Adaptor, svc.DataCli,
-		&cvm.SyncAzureCvmOption{
-			AccountID:         req.AccountID,
-			ResourceGroupName: opt.ResourceGroupName,
-			CloudIDs:          []string{cvmData.CloudID},
-		},
-	)
+	params.CloudIDs = []string{cvmData.CloudID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncazure.SyncCvmWithRelResOption{})
 	if err != nil {
-		logs.Errorf("azure disassociate eip sync azure cvm rel failed, cloudCvmID: %s, rgName: %s, err: %v, "+
-			"rid: %s", cvmData.CloudID, opt.ResourceGroupName, err, cts.Kit.Rid)
+		logs.Errorf("sync azure cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	_, err = syncnetworkinterface.AzureNetworkInterfaceSync(
-		cts.Kit,
-		&hcservice.AzureNetworkInterfaceSyncReq{
-			AccountID:         req.AccountID,
-			ResourceGroupName: opt.ResourceGroupName,
-			CloudIDs:          []string{opt.CloudNetworkInterfaceID},
-		}, svc.Adaptor, svc.DataCli,
-	)
+	params.CloudIDs = []string{opt.CloudNetworkInterfaceID}
+	_, err = syncClient.NetworkInterface(cts.Kit, params, &syncazure.SyncNIOption{})
 	if err != nil {
-		logs.Errorf("azure disassociate eip sync networkinterface failed, cloudNetworkID: %s, rgName: %s, "+
-			"err: %v, rid: %s", opt.CloudNetworkInterfaceID, opt.ResourceGroupName, err, cts.Kit.Rid)
+		logs.Errorf("sync azure ni failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+
 	return nil, nil
 }
 
@@ -277,16 +246,17 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 
 	cloudIDs := []string{strings.ToLower(converter.PtrToVal(eipPtr))}
 
-	_, err = synceip.SyncAzureEip(cts.Kit,
-		&synceip.SyncAzureEipOption{
-			AccountID:         req.AccountID,
-			CloudIDs:          cloudIDs,
-			ResourceGroupName: req.ResourceGroupName,
-			BkBizID:           req.BkBizID,
-		}, svc.Adaptor, svc.DataCli,
-	)
+	syncClient := syncazure.NewClient(svc.DataCli, client)
+
+	params := &syncazure.SyncBaseParams{
+		AccountID:         req.AccountID,
+		ResourceGroupName: opt.ResourceGroupName,
+		CloudIDs:          cloudIDs,
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &syncazure.SyncEipOption{BkBizID: req.BkBizID})
 	if err != nil {
-		logs.Errorf("SyncAzureEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync azure eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

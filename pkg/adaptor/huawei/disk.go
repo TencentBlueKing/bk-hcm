@@ -70,6 +70,49 @@ func (h *HuaWei) createDisk(opt *disk.HuaWeiDiskCreateOption) (*model.CreateVolu
 	return client.CreateVolume(req)
 }
 
+// TODO: sync-todo 改好后统一删除ListDisk函数
+// ListDisk 查看云硬盘
+// reference: https://support.huaweicloud.com/api-evs/evs_04_2006.html
+func (h *HuaWei) ListDiskNew(kt *kit.Kit, opt *disk.HuaWeiDiskListOption) ([]disk.HuaWeiDisk, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "huawei disk list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := h.clientSet.evsClient(opt.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(model.ListVolumesRequest)
+	if opt.Page != nil {
+		req.Marker = opt.Page.Marker
+		req.Limit = opt.Page.Limit
+	}
+	if len(opt.CloudIDs) > 0 {
+		req.Ids = converter.StringSliceToSliceStringPtr(opt.CloudIDs)
+	}
+
+	resp, err := client.ListVolumes(req)
+	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return make([]disk.HuaWeiDisk, 0), nil
+		}
+		logs.Errorf("list huawei disk failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	disks := make([]disk.HuaWeiDisk, 0, len(*resp.Volumes))
+	for _, one := range *resp.Volumes {
+		disks = append(disks, disk.HuaWeiDisk{one})
+	}
+
+	return disks, nil
+}
+
 // ListDisk 查看云硬盘
 // reference: https://support.huaweicloud.com/api-evs/evs_04_2006.html
 func (h *HuaWei) ListDisk(kt *kit.Kit, opt *disk.HuaWeiDiskListOption) ([]model.VolumeDetail, error) {

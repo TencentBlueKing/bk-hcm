@@ -20,15 +20,12 @@
 package huawei
 
 import (
-	"hcm/cmd/hc-service/logics/sync/cvm"
-	synceip "hcm/cmd/hc-service/logics/sync/eip"
-	syncnetworkinterface "hcm/cmd/hc-service/logics/sync/network-interface"
+	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
-	hcservice "hcm/pkg/api/hc-service"
 	proto "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -100,13 +97,17 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = synceip.SyncHuaWeiEip(
-		cts.Kit,
-		&synceip.SyncHuaWeiEipOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudEipID}},
-		svc.Adaptor, svc.DataCli,
-	)
+	syncClient := synchuawei.NewClient(svc.DataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  []string{opt.CloudEipID},
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &synchuawei.SyncEipOption{})
 	if err != nil {
-		logs.Errorf("SyncHuaWeiEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync huawei eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -115,31 +116,19 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = cvm.SyncHuaWeiCvmWithRelResource(
-		cts.Kit,
-		&cvm.SyncHuaWeiCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{cvmData.CloudID}},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	params.CloudIDs = []string{cvmData.CloudID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &synchuawei.SyncCvmWithRelResOption{})
 	if err != nil {
-		logs.Errorf("SyncHuaWeiCvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	_, err = syncnetworkinterface.HuaWeiNetworkInterfaceSync(
-		cts.Kit,
-		&hcservice.HuaWeiNetworkInterfaceSyncReq{
-			AccountID:   req.AccountID,
-			Region:      opt.Region,
-			CloudCvmIDs: []string{cvmData.CloudID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	_, err = syncClient.NetworkInterface(cts.Kit, params, &synchuawei.SyncNIOption{})
 	if err != nil {
-		logs.Errorf("HuaWeiNetworkInterfaceSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync huawei nil failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+
 	return nil, nil
 }
 
@@ -175,13 +164,17 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = synceip.SyncHuaWeiEip(
-		cts.Kit,
-		&synceip.SyncHuaWeiEipOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudEipID}},
-		svc.Adaptor, svc.DataCli,
-	)
+	syncClient := synchuawei.NewClient(svc.DataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  []string{opt.CloudEipID},
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &synchuawei.SyncEipOption{})
 	if err != nil {
-		logs.Errorf("SyncHuaWeiEip failed, opt: %+v, err: %v, rid: %s", opt, err, cts.Kit.Rid)
+		logs.Errorf("sync huawei eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -190,30 +183,16 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = cvm.SyncHuaWeiCvmWithRelResource(
-		cts.Kit,
-		&cvm.SyncHuaWeiCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{cvmData.CloudID}},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	params.CloudIDs = []string{cvmData.CloudID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &synchuawei.SyncCvmWithRelResOption{})
 	if err != nil {
-		logs.Errorf("SyncHuaWeiCvm failed, opt: %+v, err: %v, rid: %s", opt, err, cts.Kit.Rid)
+		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	_, err = syncnetworkinterface.HuaWeiNetworkInterfaceSync(
-		cts.Kit,
-		&hcservice.HuaWeiNetworkInterfaceSyncReq{
-			AccountID:   req.AccountID,
-			Region:      opt.Region,
-			CloudCvmIDs: []string{cvmData.CloudID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	_, err = syncClient.NetworkInterface(cts.Kit, params, &synchuawei.SyncNIOption{})
 	if err != nil {
-		logs.Errorf("HuaWeiNetworkInterfaceSync failed, cloudCvmID: %s, region: %s, err: %v, rid: %s",
-			cvmData.CloudID, opt.Region, err, cts.Kit.Rid)
+		logs.Errorf("sync huawei nil failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -251,14 +230,17 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 
 	cloudIDs := result.SuccessCloudIDs
 
-	_, err = synceip.SyncHuaWeiEip(
-		cts.Kit,
-		&synceip.SyncHuaWeiEipOption{AccountID: req.AccountID, Region: req.Region, CloudIDs: cloudIDs,
-			BkBizID: req.BkBizID},
-		svc.Adaptor, svc.DataCli,
-	)
+	syncClient := synchuawei.NewClient(svc.DataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  cloudIDs,
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &synchuawei.SyncEipOption{})
 	if err != nil {
-		logs.Errorf("SyncHuaWeiEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync huawei eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

@@ -22,9 +22,7 @@ package cvm
 import (
 	"net/http"
 
-	"hcm/cmd/hc-service/logics/sync/cvm"
-	"hcm/cmd/hc-service/logics/sync/disk"
-	"hcm/cmd/hc-service/logics/sync/eip"
+	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
 	"hcm/cmd/hc-service/service/capability"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
@@ -103,13 +101,17 @@ func (svc *cvmSvc) BatchCreateHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		return respData, nil
 	}
 
-	syncOpt := &cvm.SyncHuaWeiCvmOption{
+	syncClient := synchuawei.NewClient(svc.dataCli, huawei)
+
+	params := &synchuawei.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  result.SuccessCloudIDs,
 	}
-	if _, err = cvm.SyncHuaWeiCvmWithRelResource(cts.Kit, syncOpt, svc.ad, svc.dataCli); err != nil {
-		logs.Errorf("sync huawei cvm with rel resource failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &synchuawei.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -158,14 +160,17 @@ func (svc *cvmSvc) BatchResetHuaWeiCvmPwd(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncHuaWeiCvmOption{
+	syncClient := synchuawei.NewClient(svc.dataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-	_, err = cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.ad, svc.dataCli)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &synchuawei.SyncCvmOption{})
 	if err != nil {
-		logs.Errorf("sync huawei cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -213,14 +218,17 @@ func (svc *cvmSvc) BatchStartHuaWeiCvm(cts *rest.Contexts) (interface{}, error) 
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncHuaWeiCvmOption{
+	syncClient := synchuawei.NewClient(svc.dataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-	_, err = cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.ad, svc.dataCli)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &synchuawei.SyncCvmOption{})
 	if err != nil {
-		logs.Errorf("sync huawei cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -269,14 +277,17 @@ func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncHuaWeiCvmOption{
+	syncClient := synchuawei.NewClient(svc.dataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-	_, err = cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.ad, svc.dataCli)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &synchuawei.SyncCvmOption{})
 	if err != nil {
-		logs.Errorf("sync huawei cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -325,14 +336,17 @@ func (svc *cvmSvc) BatchRebootHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncHuaWeiCvmOption{
+	syncClient := synchuawei.NewClient(svc.dataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-	_, err = cvm.SyncHuaWeiCvm(cts.Kit, syncOpt, svc.ad, svc.dataCli)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &synchuawei.SyncCvmOption{})
 	if err != nil {
-		logs.Errorf("sync huawei cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -442,14 +456,22 @@ func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []
 		cloudIDs = append(cloudIDs, one.CloudID)
 	}
 
-	req := &eip.SyncHuaWeiEipOption{
+	client, err := svc.ad.HuaWei(kt, accountID)
+	if err != nil {
+		return err
+	}
+
+	syncClient := synchuawei.NewClient(svc.dataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
 		CloudIDs:  cloudIDs,
 	}
-	_, err = eip.SyncHuaWeiEip(kt, req, svc.ad, svc.dataCli)
+
+	_, err = syncClient.Eip(kt, params, &synchuawei.SyncEipOption{})
 	if err != nil {
-		logs.Errorf("sync huawei eip failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		logs.Errorf("sync huawei eip failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
@@ -488,14 +510,22 @@ func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs [
 		cloudIDs = append(cloudIDs, one.CloudID)
 	}
 
-	req := &disk.SyncHuaWeiDiskOption{
+	client, err := svc.ad.HuaWei(kt, accountID)
+	if err != nil {
+		return err
+	}
+
+	syncClient := synchuawei.NewClient(svc.dataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
 		CloudIDs:  cloudIDs,
 	}
-	_, err = disk.SyncHuaWeiDisk(kt, req, svc.ad, svc.dataCli)
+
+	_, err = syncClient.Disk(kt, params, &synchuawei.SyncDiskOption{BootMap: nil})
 	if err != nil {
-		logs.Errorf("sync huawei disk failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		logs.Errorf("sync huawei disk failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 

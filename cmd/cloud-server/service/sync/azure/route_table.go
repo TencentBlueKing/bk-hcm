@@ -23,7 +23,7 @@ import (
 	gosync "sync"
 	"time"
 
-	routetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -33,11 +33,11 @@ import (
 // SyncRouteTable 同步路由表
 func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, resourceGroupNames []string) error {
 	start := time.Now()
-	logs.V(3).Infof("cloud-server-sync-%s account[%s] sync route table start, time: %v, rid: %s",
+	logs.V(3).Infof("[%s] account[%s] sync route table start, time: %v, rid: %s",
 		enumor.Azure, accountID, start, kt.Rid)
 
 	defer func() {
-		logs.V(3).Infof("cloud-server-sync-%s account[%s] sync route table end, cost: %v, rid: %s",
+		logs.V(3).Infof("[%s] account[%s] sync route table end, cost: %v, rid: %s",
 			enumor.Azure, accountID, time.Since(start), kt.Rid)
 	}()
 
@@ -54,7 +54,7 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, re
 				<-pipeline
 			}()
 
-			req := &routetable.AzureRouteTableSyncReq{
+			req := &sync.AzureSyncReq{
 				AccountID:         accountID,
 				ResourceGroupName: name,
 			}

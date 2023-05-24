@@ -41,15 +41,14 @@ func InitAccountService(c *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("Create", http.MethodPost, "/accounts/create", svc.Create)
 	h.Add("Check", http.MethodPost, "/accounts/check", svc.Check)
 	h.Add("CheckByID", http.MethodPost, "/accounts/{account_id}/check", svc.CheckByID)
 	h.Add("List", http.MethodPost, "/accounts/list", svc.List)
 	h.Add("ResourceList", http.MethodPost, "/accounts/resources/accounts/list", svc.ResourceList)
 	h.Add("Get", http.MethodGet, "/accounts/{account_id}", svc.Get)
 	h.Add("Update", http.MethodPatch, "/accounts/{account_id}", svc.Update)
-	h.Add("Sync", http.MethodPost, "/accounts/{account_id}/sync", svc.Sync)
-	h.Add("Delete", http.MethodDelete, "/accounts/{account_id}", svc.Delete)
+	h.Add("SyncCloudResource", http.MethodPost, "/accounts/{account_id}/sync", svc.SyncCloudResource)
+	h.Add("DeleteAccount", http.MethodDelete, "/accounts/{account_id}", svc.DeleteAccount)
 	h.Add("DeleteValidate", http.MethodPost, "/accounts/{account_id}/delete/validate", svc.DeleteValidate)
 
 	// 获取账号配额

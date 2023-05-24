@@ -22,7 +22,6 @@ package core
 import (
 	"fmt"
 
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 )
@@ -81,34 +80,22 @@ func (a AzureDeleteOption) Validate() error {
 
 // TCloudListOption defines basic tencent cloud list options.
 type TCloudListOption struct {
-	Region   string      `json:"region"`
-	CloudIDs []string    `json:"cloud_ids,omitempty"`
-	Page     *TCloudPage `json:"page,omitempty"`
+	Region   string      `json:"region" validate:"required"`
+	CloudIDs []string    `json:"cloud_ids" validate:"omitempty"`
+	Page     *TCloudPage `json:"page" validate:"required"`
 }
 
 // Validate tcloud list option.
-func (t TCloudListOption) Validate() error {
-	if len(t.Region) == 0 {
-		return errf.New(errf.InvalidParameter, "region is required")
+func (opt TCloudListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
 	}
 
-	if len(t.CloudIDs) != 0 {
-		if t.Page != nil {
-			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
-		}
-
-		if len(t.CloudIDs) > TCloudQueryLimit {
-			return errf.New(errf.InvalidParameter, "tcloud resource ids length should <= 100")
-		}
-
-		return nil
+	if len(opt.CloudIDs) > TCloudQueryLimit {
+		return errf.New(errf.InvalidParameter, "tcloud resource ids length should <= 100")
 	}
 
-	if t.Page == nil {
-		return errf.New(errf.InvalidParameter, "one of tcloud resource ids and page is required")
-	}
-
-	if err := t.Page.Validate(); err != nil {
+	if err := opt.Page.Validate(); err != nil {
 		return err
 	}
 
@@ -117,15 +104,15 @@ func (t TCloudListOption) Validate() error {
 
 // AwsListOption defines basic aws list options.
 type AwsListOption struct {
-	Region   string   `json:"region"`
-	CloudIDs []string `json:"cloud_ids,omitempty"`
-	Page     *AwsPage `json:"page,omitempty"`
+	Region   string   `json:"region" validate:"required"`
+	CloudIDs []string `json:"cloud_ids" validate:"omitempty"`
+	Page     *AwsPage `json:"page" validate:"omitempty"`
 }
 
 // Validate aws list option.
 func (a AwsListOption) Validate() error {
-	if len(a.Region) == 0 {
-		return errf.New(errf.InvalidParameter, "region is required")
+	if err := validator.Validate.Struct(a); err != nil {
+		return err
 	}
 
 	if len(a.CloudIDs) != 0 {
@@ -151,42 +138,29 @@ func (a AwsListOption) Validate() error {
 
 // GcpListOption defines basic gcp list options.
 type GcpListOption struct {
-	Page      *GcpPage `json:"page,omitempty"`
-	Zone      string   `json:"zone,omitempty"`
-	CloudIDs  []string `json:"cloud_ids,omitempty"`
+	Page      *GcpPage `json:"page" validate:"required"`
+	Zone      string   `json:"zone" validate:"omitempty"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
 	SelfLinks []string `json:"self_links" validate:"omitempty"`
 }
 
 // Validate gcp list option.
 func (a GcpListOption) Validate() error {
-	if len(a.CloudIDs) != 0 {
-		if a.Page != nil {
-			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
-		}
 
-		if len(a.CloudIDs) > GcpQueryLimit {
-			return errf.New(errf.InvalidParameter, "gcp resource ids length should <= 500")
-		}
-
-		return nil
+	if err := validator.Validate.Struct(a); err != nil {
+		return err
 	}
 
-	if len(a.SelfLinks) != 0 {
-		if a.Page != nil {
-			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
-		}
-
-		if len(a.SelfLinks) > GcpQueryLimit {
-			return errf.New(errf.InvalidParameter, "gcp resource self link length should <= 500")
-		}
-
-		return nil
+	if len(a.CloudIDs) > GcpQueryLimit {
+		return errf.Newf(errf.InvalidParameter, "gcp resource ids length should <= %d", GcpQueryLimit)
 	}
 
-	if a.Page != nil {
-		if err := a.Page.Validate(); err != nil {
-			return err
-		}
+	if len(a.SelfLinks) > GcpQueryLimit {
+		return errf.Newf(errf.InvalidParameter, "gcp resource self link length should <= %d", GcpQueryLimit)
+	}
+
+	if err := a.Page.Validate(); err != nil {
+		return err
 	}
 
 	return nil
@@ -195,6 +169,7 @@ func (a GcpListOption) Validate() error {
 // AzureListOption defines basic azure list options.
 // TODO confirm resource group product form
 type AzureListOption struct {
+	// TODO 这是一个基础的option，不要随意添加个性化参数到这里，之后把  NetworkInterfaceName 去掉。
 	ResourceGroupName    string   `json:"resource_group_name"`
 	NetworkInterfaceName string   `json:"network_interface_name"`
 	CloudIDs             []string `json:"cloud_ids" validate:"omitempty"`
@@ -212,46 +187,23 @@ func (a AzureListOption) Validate() error {
 
 // HuaWeiListOption defines basic huawei list options.
 type HuaWeiListOption struct {
-	Region    string      `json:"region"`
-	CloudIDs  []string    `json:"cloud_ids,omitempty"`
-	SelfLinks []string    `json:"self_links,omitempty"`
-	Page      *HuaWeiPage `json:"page,omitempty"`
+	Region   string      `json:"region" validate:"required"`
+	CloudIDs []string    `json:"cloud_i_ds" validate:"omitempty"`
+	Page     *HuaWeiPage `json:"page" validate:"required"`
 }
 
 // Validate huawei list option.
 func (a HuaWeiListOption) Validate() error {
-	if len(a.Region) == 0 {
-		return errf.New(errf.InvalidParameter, "region is required")
-	}
-
-	if len(a.CloudIDs) != 0 {
-		if a.Page != nil {
-			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
-		}
-
-		if len(a.CloudIDs) > HuaWeiQueryLimit {
-			return errf.New(errf.InvalidParameter, "huawei resource ids length should <= 2000")
-		}
-
+	if err := validator.Validate.Struct(a); err != nil {
 		return nil
 	}
 
-	if len(a.SelfLinks) != 0 {
-		if a.Page != nil {
-			return errf.New(errf.InvalidParameter, "only one of resource ids and page can be set")
-		}
-
-		if len(a.SelfLinks) > GcpQueryLimit {
-			return errf.New(errf.InvalidParameter, "gcp resource self link length should <= 500")
-		}
-
-		return nil
+	if len(a.CloudIDs) > HuaWeiQueryLimit {
+		return errf.New(errf.InvalidParameter, "huawei resource ids length should <= 2000")
 	}
 
-	if a.Page != nil {
-		if err := a.Page.Validate(); err != nil {
-			return err
-		}
+	if err := a.Page.Validate(); err != nil {
+		return err
 	}
 
 	return nil
@@ -267,10 +219,6 @@ type AzureListByIDOption struct {
 func (opt AzureListByIDOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return nil
-	}
-
-	if len(opt.CloudIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("cloud_ids should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	if len(opt.CloudIDs) == 0 {

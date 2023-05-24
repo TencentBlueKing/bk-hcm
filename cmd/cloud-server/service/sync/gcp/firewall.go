@@ -22,7 +22,7 @@ package gcp
 import (
 	"time"
 
-	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -38,7 +38,7 @@ func SyncFireWall(kt *kit.Kit, service *hcservice.Client, accountID string) erro
 		logs.V(3).Infof("gcp account[%s] sync firewall end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
 	}()
 
-	req := &proto.SecurityGroupSyncReq{
+	req := &sync.GcpGlobalRegionResSyncReq{
 		AccountID: accountID,
 	}
 	if err := service.Gcp.Firewall.SyncFirewall(kt.Ctx, kt.Header(), req); err != nil {

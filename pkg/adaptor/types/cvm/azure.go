@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
@@ -202,4 +203,9 @@ type AzureCvm struct {
 	VCPUsPerCore        *int32                                        `json:"vcpus_per_core"`
 	TimeCreated         *time.Time                                    `json:"time_created"`
 	StorageProfile      *armcompute.StorageProfile                    `json:"storage_profile"`
+}
+
+// GetCloudID ...
+func (cvm AzureCvm) GetCloudID() string {
+	return converter.PtrToVal(cvm.ID)
 }

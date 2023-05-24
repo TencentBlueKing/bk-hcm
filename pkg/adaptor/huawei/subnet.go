@@ -212,7 +212,7 @@ func (h *HuaWei) ListSubnetByID(kt *kit.Kit, opt *types.HuaWeiSubnetListByIDOpti
 	req := &model.ListSubnetsRequest{
 		Limit:  converter.ValToPtr(int32(core.HuaWeiQueryLimit)),
 		Marker: nil,
-		VpcId:  &opt.VpcID,
+		VpcId:  &opt.CloudVpcID,
 	}
 	for {
 		resp, err := vpcClient.ListSubnets(req)

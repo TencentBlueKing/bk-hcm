@@ -21,11 +21,28 @@
 package subnet
 
 import (
+	"errors"
+	"fmt"
+
+	syncaws "hcm/cmd/hc-service/logics/res-sync/aws"
+	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
+	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
+	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
+	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
+	dataclient "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/slice"
 )
 
 // InitSubnetService initial the subnet service
@@ -69,4 +86,197 @@ type subnet struct {
 	ad     *cloudadaptor.CloudAdaptorClient
 	cs     *client.ClientSet
 	subnet *subnetlogics.Subnet
+}
+
+// QueryVpcIDsAndSyncOption ...
+type QueryVpcIDsAndSyncOption struct {
+	Vendor            enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID         string        `json:"account_id" validate:"required"`
+	CloudVpcIDs       []string      `json:"cloud_vpc_ids" validate:"required"`
+	ResourceGroupName string        `json:"resource_group_name" validate:"omitempty"`
+	Region            string        `json:"region" validate:"omitempty"`
+}
+
+// Validate QueryVpcIDsAndSyncOption
+func (opt *QueryVpcIDsAndSyncOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudVpcIDs) == 0 {
+		return errors.New("CloudVpcIDs is required")
+	}
+
+	if len(opt.CloudVpcIDs) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("cloudIDs should <= %d", core.DefaultMaxPageLimit)
+	}
+
+	return nil
+}
+
+// QueryVpcIDsAndSync 查询vpc，如果不存在则同步完再进行查询.
+func QueryVpcIDsAndSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
+	dataCli *dataclient.Client, opt *QueryVpcIDsAndSyncOption) (map[string]string, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	cloudVpcIDs := slice.Unique(opt.CloudVpcIDs)
+	result, err := getVpcsFromDB(kt, dataCli, cloudVpcIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	existVpcMap := convVpcCloudIDMap(result)
+
+	// 如果相等，则Vpc全部同步到了db
+	if len(result.Details) == len(cloudVpcIDs) {
+		return existVpcMap, nil
+	}
+
+	notExistCloudID := make([]string, 0)
+	for _, cloudID := range cloudVpcIDs {
+		if _, exist := existVpcMap[cloudID]; !exist {
+			notExistCloudID = append(notExistCloudID, cloudID)
+		}
+	}
+
+	// 如果有部分vpc不存在，则触发vpc同步
+	err = syncVpc(kt, adaptor, dataCli, opt, notExistCloudID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 同步完，二次查询
+	notExistResult, err := getVpcsFromDB(kt, dataCli, notExistCloudID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(notExistResult.Details) != len(cloudVpcIDs) {
+		return nil, fmt.Errorf("some vpc can not sync, cloudIDs: %v", notExistCloudID)
+	}
+
+	for cloudID, id := range convVpcCloudIDMap(notExistResult) {
+		existVpcMap[cloudID] = id
+	}
+
+	return existVpcMap, nil
+}
+
+func syncVpc(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
+	dataCli *dataclient.Client, opt *QueryVpcIDsAndSyncOption, notExistCloudID []string) error {
+
+	switch opt.Vendor {
+	case enumor.Aws:
+		aws, err := adaptor.Aws(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := syncaws.NewClient(dataCli, aws)
+
+		params := &syncaws.SyncBaseParams{
+			AccountID: opt.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  notExistCloudID,
+		}
+
+		_, err = syncClient.CvmWithRelRes(kt, params, &syncaws.SyncCvmWithRelResOption{})
+		if err != nil {
+			logs.Errorf("sync aws vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case enumor.TCloud:
+		tcloud, err := adaptor.TCloud(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := synctcloud.NewClient(dataCli, tcloud)
+
+		params := &synctcloud.SyncBaseParams{
+			AccountID: opt.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  notExistCloudID,
+		}
+
+		_, err = syncClient.Vpc(kt, params, &synctcloud.SyncVpcOption{})
+		if err != nil {
+			logs.Errorf("sync tcloud vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case enumor.HuaWei:
+		huawei, err := adaptor.HuaWei(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := synchuawei.NewClient(dataCli, huawei)
+
+		params := &synchuawei.SyncBaseParams{
+			AccountID: opt.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  notExistCloudID,
+		}
+
+		_, err = syncClient.Vpc(kt, params, &synchuawei.SyncVpcOption{})
+		if err != nil {
+			logs.Errorf("sync huawei vpc with res failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case enumor.Azure:
+		azure, err := adaptor.Azure(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := syncazure.NewClient(dataCli, azure)
+
+		params := &syncazure.SyncBaseParams{
+			AccountID:         opt.AccountID,
+			ResourceGroupName: opt.ResourceGroupName,
+			CloudIDs:          notExistCloudID,
+		}
+
+		_, err = syncClient.Vpc(kt, params, &syncazure.SyncVpcOption{})
+		if err != nil {
+			logs.Errorf("sync azure vpc with res failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	default:
+		return fmt.Errorf("unknown %s vendor", opt.Vendor)
+	}
+
+	return nil
+}
+
+func getVpcsFromDB(kt *kit.Kit, dataCli *dataclient.Client,
+	cloudVpcIDs []string) (*protocloud.VpcListResult, error) {
+
+	listReq := &core.ListReq{
+		Filter: tools.ContainersExpression("cloud_id", cloudVpcIDs),
+		Page:   core.DefaultBasePage,
+		Fields: []string{"id", "cloud_id"},
+	}
+	result, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list vpc from db failed, err: %v, cloudIDs: %v, rid: %s", err, cloudVpcIDs, kt.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func convVpcCloudIDMap(result *protocloud.VpcListResult) map[string]string {
+	m := make(map[string]string, len(result.Details))
+	for _, one := range result.Details {
+		m[one.CloudID] = one.ID
+	}
+	return m
 }

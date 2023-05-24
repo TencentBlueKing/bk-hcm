@@ -22,7 +22,7 @@ package aws
 import (
 	"time"
 
-	routetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -32,21 +32,21 @@ import (
 // SyncRouteTable 同步路由表
 func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, accountID string, regions []string) error {
 	start := time.Now()
-	logs.V(3).Infof("cloud-server-sync-%s account[%s] sync route table start, time: %v, rid: %s",
+	logs.V(3).Infof("[%s] account[%s] sync route table start, time: %v, rid: %s",
 		enumor.Aws, accountID, start, kt.Rid)
 
 	defer func() {
-		logs.V(3).Infof("cloud-server-sync-%s account[%s] sync route table end, cost: %v, rid: %s",
+		logs.V(3).Infof("[%s] account[%s] sync route table end, cost: %v, rid: %s",
 			enumor.Aws, accountID, time.Since(start), kt.Rid)
 	}()
 
 	for _, region := range regions {
-		req := &routetable.AwsRouteTableSyncReq{
+		req := &sync.AwsSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		}
 		if err := service.Aws.RouteTable.SyncRouteTable(kt.Ctx, kt.Header(), req); err != nil {
-			logs.Errorf("cloud-server-sync-%s account[%s] sync route table failed, req: %v, err: %v, rid: %s",
+			logs.Errorf("[%s] account[%s] sync route table failed, req: %v, err: %v, rid: %s",
 				enumor.Aws, accountID, req, err, kt.Rid)
 			return err
 		}

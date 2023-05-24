@@ -118,7 +118,10 @@ func (a *Aws) DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error {
 	return nil
 }
 
-// ListVpc list vpc.
+// ErrVpcNotFound vpc not found err.
+var ErrVpcNotFound = "InvalidVpcID.NotFound"
+
+// ListVpc list vpc. 如果查询的ID不存在，会报错：InvalidVpcID.NotFound
 // reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_DescribeVpcs.html
 func (a *Aws) ListVpc(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsVpcListResult, error) {
 	if err := opt.Validate(); err != nil {
@@ -140,10 +143,10 @@ func (a *Aws) ListVpc(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsVpcListRe
 	}
 	resp, err := client.DescribeVpcsWithContext(kt.Ctx, req)
 	if err != nil {
-		if strings.Contains(err.Error(), ErrDataNotFound) {
-			return new(types.AwsVpcListResult), nil
+		if !strings.Contains(err.Error(), ErrVpcNotFound) {
+			logs.Errorf("list aws vpc failed, err: %v, rid: %s", err, kt.Rid)
 		}
-		logs.Errorf("list aws vpc failed, err: %v, rid: %s", err, kt.Rid)
+
 		return nil, err
 	}
 

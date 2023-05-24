@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"hcm/pkg/adaptor/huawei"
-	"hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
@@ -60,7 +60,7 @@ func SyncDisk(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Clien
 				<-pipeline
 			}()
 
-			req := &disk.DiskSyncReq{
+			req := &sync.HuaWeiSyncReq{
 				AccountID: accountID,
 				Region:    region,
 			}

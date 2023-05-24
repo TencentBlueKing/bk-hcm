@@ -66,6 +66,46 @@ func (t *TCloud) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs
 	return client.CreateDisksWithContext(kt.Ctx, req)
 }
 
+// TODO: sync-todo 改好后统一删除ListDisk函数
+// ListDiskNew 查询云硬盘列表
+// reference: https://cloud.tencent.com/document/api/362/16315
+func (t *TCloud) ListDiskNew(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.TCloudDisk, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "tcloud disk list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.cbsClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new tcloud cbs client failed, err: %v", err)
+	}
+
+	req := cbs.NewDescribeDisksRequest()
+	if len(opt.CloudIDs) != 0 {
+		req.DiskIds = common.StringPtrs(opt.CloudIDs)
+		req.Limit = common.Uint64Ptr(uint64(core.TCloudQueryLimit))
+	}
+	if opt.Page != nil {
+		req.Offset = &opt.Page.Offset
+		req.Limit = &opt.Page.Limit
+	}
+
+	resp, err := client.DescribeDisksWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list tcloud disk failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	disks := make([]disk.TCloudDisk, 0, len(resp.Response.DiskSet))
+	for _, one := range resp.Response.DiskSet {
+		disks = append(disks, disk.TCloudDisk{one})
+	}
+	return disks, nil
+}
+
 // ListDisk 查询云硬盘列表
 // reference: https://cloud.tencent.com/document/api/362/16315
 func (t *TCloud) ListDisk(kt *kit.Kit, opt *disk.TCloudDiskListOption) ([]*cbs.Disk, error) {

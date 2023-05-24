@@ -61,6 +61,45 @@ func (a *Azure) ListNetworkInterface(kt *kit.Kit) (*typesniproto.AzureInterfaceL
 	return &typesniproto.AzureInterfaceListResult{Details: details}, nil
 }
 
+// ListNetworkInterfaceByPage list all network interface.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
+func (a *Azure) ListNetworkInterfaceByPage(kt *kit.Kit) (
+	*Pager[armnetwork.InterfacesClientListAllResponse, typesniproto.AzureNI], error) {
+
+	client, err := a.clientSet.networkInterfaceClient()
+	if err != nil {
+		return nil, fmt.Errorf("new network interface client failed, err: %v", err)
+	}
+
+	azurePager := client.NewListAllPager(nil)
+
+	pager := &Pager[armnetwork.InterfacesClientListAllResponse, typesniproto.AzureNI]{
+		pager: azurePager,
+		resultHandler: &niResultHandler{
+			kt:  kt,
+			cli: a,
+		},
+	}
+
+	return pager, nil
+}
+
+type niResultHandler struct {
+	kt  *kit.Kit
+	cli *Azure
+}
+
+// BuildResult ...
+func (handler *niResultHandler) BuildResult(resp armnetwork.InterfacesClientListAllResponse) []typesniproto.AzureNI {
+	details := make([]typesniproto.AzureNI, 0, len(resp.Value))
+	for _, one := range resp.Value {
+		details = append(details, converter.PtrToVal(handler.cli.ConvertCloudNetworkInterface(handler.kt, one)))
+
+	}
+
+	return details
+}
+
 // ListNetworkInterfaceByID list all network interface by id.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-interfaces/list-all
 func (a *Azure) ListNetworkInterfaceByID(kt *kit.Kit, opt *core.AzureListByIDOption) (

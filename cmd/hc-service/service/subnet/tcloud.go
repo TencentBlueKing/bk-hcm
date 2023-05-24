@@ -42,6 +42,7 @@ func (s subnet) TCloudSubnetBatchCreate(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
+	// TODO: 子网创建待梳理、优化；未直接复用同步逻辑
 	res, err := s.subnet.TCloudSubnetCreate(cts.Kit, req)
 	if err != nil {
 		return nil, err

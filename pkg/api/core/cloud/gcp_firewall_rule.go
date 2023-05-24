@@ -49,6 +49,16 @@ type GcpFirewallRule struct {
 	UpdatedAt             string           `json:"updated_at"`
 }
 
+// GetID ...
+func (firewall GcpFirewallRule) GetID() string {
+	return firewall.ID
+}
+
+// GetCloudID ...
+func (firewall GcpFirewallRule) GetCloudID() string {
+	return firewall.CloudID
+}
+
 // GcpProtocolSet define gcp protocol set.
 type GcpProtocolSet struct {
 	Protocol string   `json:"protocol"`

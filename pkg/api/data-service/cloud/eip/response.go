@@ -12,13 +12,14 @@ type EipExtRetrieveResp[T EipExtensionResult] struct {
 
 // EipExtResult ...
 type EipExtResult[T EipExtensionResult] struct {
-	ID           string  `json:"id,omitempty"`
-	AccountID    string  `json:"account_id,omitempty"`
-	Vendor       string  `json:"vendor,omitempty"`
-	Name         *string `json:"name,omitempty"`
-	CloudID      string  `json:"cloud_id,omitempty"`
-	BkBizID      int64   `json:"bk_biz_id,omitempty"`
-	Region       string  `json:"region,omitempty"`
+	ID        string  `json:"id,omitempty"`
+	AccountID string  `json:"account_id,omitempty"`
+	Vendor    string  `json:"vendor,omitempty"`
+	Name      *string `json:"name,omitempty"`
+	CloudID   string  `json:"cloud_id,omitempty"`
+	BkBizID   int64   `json:"bk_biz_id,omitempty"`
+	Region    string  `json:"region,omitempty"`
+	// InstanceID db并不返回该字段
 	InstanceID   *string `json:"instance_id,omitempty"`
 	InstanceType string  `json:"instance_type,omitempty"`
 	Status       string  `json:"status,omitempty"`
@@ -29,6 +30,16 @@ type EipExtResult[T EipExtensionResult] struct {
 	Reviser      string  `json:"reviser,omitempty"`
 	CreatedAt    string  `json:"created_at,omitempty"`
 	UpdatedAt    string  `json:"updated_at,omitempty"`
+}
+
+// GetID ...
+func (eip *EipExtResult[T]) GetID() string {
+	return eip.ID
+}
+
+// GetCloudID ...
+func (eip *EipExtResult[T]) GetCloudID() string {
+	return eip.CloudID
 }
 
 // EipExtensionResult ...

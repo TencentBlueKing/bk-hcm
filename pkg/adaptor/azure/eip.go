@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
+
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/criteria/enumor"
@@ -52,54 +54,94 @@ func (a *Azure) ListEipByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*eip.Az
 		}
 
 		for _, one := range nextResult.Value {
-			eIp := &eip.AzureEip{
-				CloudID:                strings.ToLower(*one.ID),
-				Name:                   SPtrToLowerSPtr(one.Name),
-				Region:                 StrToLowerNoSpaceStr(*one.Location),
-				Status:                 converter.ValToPtr(string(enumor.EipUnBind)),
-				PublicIp:               one.Properties.IPAddress,
-				Zones:                  one.Zones,
-				ResourceGroupName:      strings.ToLower(opt.ResourceGroupName),
-				Location:               one.Location,
-				PublicIPAddressVersion: (*string)(one.Properties.PublicIPAddressVersion),
-			}
-
-			if one.Properties.DNSSettings != nil {
-				eIp.Fqdn = one.Properties.DNSSettings.Fqdn
-			}
-
-			if one.Properties.IPConfiguration != nil {
-				if one.Properties.IPConfiguration.ID != nil {
-					eIp.IpConfigurationID = SPtrToLowerSPtr(one.Properties.IPConfiguration.ID)
-					eIp.Status = converter.ValToPtr(string(enumor.EipBind))
-				}
-			}
-
-			if one.SKU != nil {
-				if one.SKU.Name != nil {
-					eIp.SKU = converter.ValToPtr(string(*one.SKU.Name))
-				}
-				if one.SKU.Tier != nil {
-					eIp.SKUTier = converter.ValToPtr(string(*one.SKU.Tier))
-				}
-			}
+			eipTmp := convertEip(one, opt.ResourceGroupName)
 
 			if len(opt.CloudIDs) > 0 {
 				id := SPtrToLowerSPtr(one.ID)
 				if _, exist := idMap[*id]; exist {
-					eips = append(eips, eIp)
+					eips = append(eips, eipTmp)
 					delete(idMap, *id)
 					if len(idMap) == 0 {
 						return &eip.AzureEipListResult{Details: eips}, nil
 					}
 				}
 			} else {
-				eips = append(eips, eIp)
+				eips = append(eips, eipTmp)
 			}
 		}
 	}
 
 	return &eip.AzureEipListResult{Details: eips}, nil
+}
+
+// ListEipByPage ...
+// reference: https://learn.microsoft.com/zh-cn/rest/api/virtualnetwork/public-ip-addresses/list-all?tabs=HTTP
+func (a *Azure) ListEipByPage(kt *kit.Kit, opt *core.AzureListOption) (
+	*Pager[armnetwork.PublicIPAddressesClientListResponse, eip.AzureEip], error) {
+
+	client, err := a.clientSet.publicIPAddressesClient()
+	if err != nil {
+		return nil, err
+	}
+
+	azurePager := client.NewListPager(opt.ResourceGroupName, nil)
+
+	pager := &Pager[armnetwork.PublicIPAddressesClientListResponse, eip.AzureEip]{
+		pager: azurePager,
+		resultHandler: &eipResultHandler{
+			resGroupName: opt.ResourceGroupName,
+		},
+	}
+
+	return pager, nil
+}
+
+func convertEip(one *armnetwork.PublicIPAddress, resGroupName string) *eip.AzureEip {
+	eipTmp := &eip.AzureEip{
+		CloudID:                strings.ToLower(*one.ID),
+		Name:                   SPtrToLowerSPtr(one.Name),
+		Region:                 StrToLowerNoSpaceStr(*one.Location),
+		Status:                 converter.ValToPtr(string(enumor.EipUnBind)),
+		PublicIp:               one.Properties.IPAddress,
+		Zones:                  one.Zones,
+		ResourceGroupName:      strings.ToLower(resGroupName),
+		Location:               one.Location,
+		PublicIPAddressVersion: (*string)(one.Properties.PublicIPAddressVersion),
+	}
+
+	if one.Properties.DNSSettings != nil {
+		eipTmp.Fqdn = one.Properties.DNSSettings.Fqdn
+	}
+
+	if one.Properties.IPConfiguration != nil {
+		if one.Properties.IPConfiguration.ID != nil {
+			eipTmp.IpConfigurationID = SPtrToLowerSPtr(one.Properties.IPConfiguration.ID)
+			eipTmp.Status = converter.ValToPtr(string(enumor.EipBind))
+		}
+	}
+
+	if one.SKU != nil {
+		if one.SKU.Name != nil {
+			eipTmp.SKU = converter.ValToPtr(string(*one.SKU.Name))
+		}
+		if one.SKU.Tier != nil {
+			eipTmp.SKUTier = converter.ValToPtr(string(*one.SKU.Tier))
+		}
+	}
+	return eipTmp
+}
+
+type eipResultHandler struct {
+	resGroupName string
+}
+
+func (handler *eipResultHandler) BuildResult(resp armnetwork.PublicIPAddressesClientListResponse) []eip.AzureEip {
+	details := make([]eip.AzureEip, 0, len(resp.Value))
+	for _, eip := range resp.Value {
+		details = append(details, converter.PtrToVal(convertEip(eip, handler.resGroupName)))
+	}
+
+	return details
 }
 
 // DeleteEip ...

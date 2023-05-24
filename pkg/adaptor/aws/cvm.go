@@ -38,6 +38,53 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
+// TODO: sync-todo 改好后统一删除ListDisk函数
+// ListCvmNew list cvm.
+// reference: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
+func (a *Aws) ListCvmNew(kt *kit.Kit, opt *typecvm.AwsListOption) ([]typecvm.AwsCvm, *string, error) {
+	if opt == nil {
+		return nil, nil, errf.New(errf.InvalidParameter, "list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req := new(ec2.DescribeInstancesInput)
+
+	if len(opt.CloudIDs) > 0 {
+		req.InstanceIds = aws.StringSlice(opt.CloudIDs)
+	}
+
+	if opt.Page != nil {
+		req.MaxResults = opt.Page.MaxResults
+		req.NextToken = opt.Page.NextToken
+	}
+
+	resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
+	if err != nil {
+		if !strings.Contains(err.Error(), ErrVpcNotFound) {
+			logs.Errorf("list aws cvm failed, err: %v, rid: %s", err, kt.Rid)
+		}
+
+		return nil, nil, fmt.Errorf("list aws cvm instances failed, err: %v", err)
+	}
+
+	cvms := make([]typecvm.AwsCvm, 0)
+	for _, reservation := range resp.Reservations {
+		for _, instance := range reservation.Instances {
+			cvms = append(cvms, typecvm.AwsCvm{instance})
+		}
+	}
+
+	return cvms, resp.NextToken, nil
+}
+
 // ListCvm list cvm.
 // reference: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
 func (a *Aws) ListCvm(kt *kit.Kit, opt *typecvm.AwsListOption) (*ec2.DescribeInstancesOutput, error) {

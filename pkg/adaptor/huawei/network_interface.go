@@ -59,7 +59,12 @@ func (h *HuaWei) ListNetworkInterface(kt *kit.Kit, opt *typesniproto.HuaWeiNILis
 	for _, item := range *resp.InterfaceAttachments {
 		tmpPortID := converter.PtrToVal(item.PortId)
 		vnicPortIDs = append(vnicPortIDs, tmpPortID)
-		details = append(details, converter.PtrToVal(h.convertCloudNetworkInterface(kt, opt, &item)))
+
+		networkInterface, err := h.convertCloudNetworkInterface(kt, opt, &item)
+		if err != nil {
+			return nil, err
+		}
+		details = append(details, converter.PtrToVal(networkInterface))
 	}
 
 	details = h.replenishEipInfo(kt, opt, vnicPortIDs, details)
@@ -107,17 +112,16 @@ func (h *HuaWei) replenishEipInfo(kt *kit.Kit, opt *typesniproto.HuaWeiNIListOpt
 }
 
 func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.HuaWeiNIListOption,
-	data *ecsmodel.InterfaceAttachment) *typesniproto.HuaWeiNI {
+	data *ecsmodel.InterfaceAttachment) (*typesniproto.HuaWeiNI, error) {
 
 	if data == nil {
-		return nil
+		return nil, nil
 	}
 
 	v := &typesniproto.HuaWeiNI{
 		CloudID:    data.PortId,                      // 网卡端口ID
 		InstanceID: converter.ValToPtr(opt.ServerID), // 关联的实例ID
 		Region:     converter.ValToPtr(opt.Region),   // 区域
-		Zone:       converter.ValToPtr(opt.Zone),     // 可用区
 		Extension: &coreni.HuaWeiNIExtension{
 			// FixedIps 网卡私网IP信息列表。
 			FixedIps: []coreni.ServerInterfaceFixedIp{},
@@ -170,13 +174,14 @@ func (h *HuaWei) convertCloudNetworkInterface(kt *kit.Kit, opt *typesniproto.Hua
 	if err != nil {
 		logs.Errorf("list huawei security group map failed, region: %s, tmpNetID: %s, err: %v, rid: %s",
 			opt.Region, tmpNetID, err, kt.Rid)
+		return nil, err
 	}
 	if sgList, ok := securityGroupMap[tmpNetID]; ok {
 		v.Extension.CloudSecurityGroupIDs = sgList
 	}
 	v.Extension.VirtualIPList = virtualIPs
 
-	return v
+	return v, nil
 }
 
 // GetPublicIpsMapByPortIDs get public ips map

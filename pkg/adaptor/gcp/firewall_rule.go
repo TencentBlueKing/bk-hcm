@@ -29,6 +29,47 @@ import (
 	"google.golang.org/api/compute/v1"
 )
 
+// TODO: sync-todo 改好后统一删除ListFirewallRule函数
+// ListFirewallRuleNew list firewall rule.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/list
+func (g *Gcp) ListFirewallRuleNew(kt *kit.Kit, opt *firewallrule.ListOption) ([]firewallrule.GcpFirewall, string, error) {
+	if opt == nil {
+		return nil, "", errf.New(errf.InvalidParameter, "list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, "", errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, "", err
+	}
+
+	request := client.Firewalls.List(g.CloudProjectID()).Context(kt.Ctx)
+
+	if len(opt.CloudIDs) > 0 {
+		request.Filter(generateResourceIDsFilter(converter.Uint64SliceToStringSlice(opt.CloudIDs)))
+	}
+
+	if opt.Page != nil {
+		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+	}
+
+	resp, err := request.Do()
+	if err != nil {
+		logs.Errorf("list firewall rule failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, "", err
+	}
+
+	firewalls := make([]firewallrule.GcpFirewall, 0, len(resp.Items))
+	for _, one := range resp.Items {
+		firewalls = append(firewalls, firewallrule.GcpFirewall{one})
+	}
+
+	return firewalls, resp.NextPageToken, nil
+}
+
 // ListFirewallRule list firewall rule.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/firewalls/list
 func (g *Gcp) ListFirewallRule(kt *kit.Kit, opt *firewallrule.ListOption) ([]*compute.Firewall, string, error) {

@@ -22,6 +22,9 @@ package securitygroup
 import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // -------------------------- Create --------------------------
@@ -88,4 +91,14 @@ type AwsAssociateCvmOption struct {
 // Validate security group cvm bind option.
 func (opt AwsAssociateCvmOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// AwsSG for ec2 SecurityGroup
+type AwsSG struct {
+	*ec2.SecurityGroup
+}
+
+// GetCloudID ...
+func (sg AwsSG) GetCloudID() string {
+	return converter.PtrToVal(sg.GroupId)
 }

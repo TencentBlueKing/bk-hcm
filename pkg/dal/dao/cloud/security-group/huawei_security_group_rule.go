@@ -47,6 +47,7 @@ type HuaWeiSGRule interface {
 	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.HuaWeiSecurityGroupRuleTable) error
 	List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListHuaWeiSGRuleDetails, error)
 	Delete(kt *kit.Kit, expr *filter.Expression) error
+	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
 var _ HuaWeiSGRule = new(HuaWeiSGRuleDao)
@@ -268,6 +269,27 @@ func (dao *HuaWeiSGRuleDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
 		return nil, nil
 	})
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteWithTx rule with tx.
+func (dao *HuaWeiSGRuleDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+	if expr == nil {
+		return errf.New(errf.InvalidParameter, "filter expr is required")
+	}
+
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return err
+	}
+
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.HuaWeiSecurityGroupRuleTable, whereExpr)
+
+	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+		logs.ErrorJson("delete huawei security group rule failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
 

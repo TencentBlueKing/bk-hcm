@@ -21,11 +21,29 @@
 package subnet
 
 import (
+	"errors"
+	"fmt"
+
+	syncaws "hcm/cmd/hc-service/logics/res-sync/aws"
+	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
+	syncgcp "hcm/cmd/hc-service/logics/res-sync/gcp"
+	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
+	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/api/core"
+	cloudcore "hcm/pkg/api/core/cloud"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
 	"hcm/pkg/client"
+	dataclient "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 )
 
 // Subnet logics.
@@ -68,4 +86,463 @@ type AzureSubnetSyncOptions struct {
 // Validate AzureSubnetSyncOptions.
 func (c AzureSubnetSyncOptions) Validate() error {
 	return validator.Validate.Struct(c)
+}
+
+// QueryVpcIDsAndSyncOption ...
+type QueryVpcIDsAndSyncOption struct {
+	Vendor            enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID         string        `json:"account_id" validate:"required"`
+	CloudVpcIDs       []string      `json:"cloud_vpc_ids" validate:"required"`
+	ResourceGroupName string        `json:"resource_group_name" validate:"omitempty"`
+	Region            string        `json:"region" validate:"omitempty"`
+}
+
+// Validate QueryVpcIDsAndSyncOption
+func (opt *QueryVpcIDsAndSyncOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudVpcIDs) == 0 {
+		return errors.New("CloudVpcIDs is required")
+	}
+
+	if len(opt.CloudVpcIDs) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("cloudIDs should <= %d", core.DefaultMaxPageLimit)
+	}
+
+	return nil
+}
+
+// QueryVpcIDsAndSync 查询vpc，如果不存在则同步完再进行查询.
+func QueryVpcIDsAndSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
+	dataCli *dataclient.Client, opt *QueryVpcIDsAndSyncOption) (map[string]string, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	cloudVpcIDs := slice.Unique(opt.CloudVpcIDs)
+	result, err := getVpcsFromDB(kt, dataCli, cloudVpcIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	existVpcMap := convVpcCloudIDMap(result)
+
+	// 如果相等，则Vpc全部同步到了db
+	if len(result.Details) == len(cloudVpcIDs) {
+		return existVpcMap, nil
+	}
+
+	notExistCloudID := make([]string, 0)
+	for _, cloudID := range cloudVpcIDs {
+		if _, exist := existVpcMap[cloudID]; !exist {
+			notExistCloudID = append(notExistCloudID, cloudID)
+		}
+	}
+
+	// 如果有部分vpc不存在，则触发vpc同步
+	err = syncVpc(kt, adaptor, dataCli, opt, notExistCloudID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 同步完，二次查询
+	notExistResult, err := getVpcsFromDB(kt, dataCli, notExistCloudID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(notExistResult.Details) != len(cloudVpcIDs) {
+		return nil, fmt.Errorf("some vpc can not sync, cloudIDs: %v", notExistCloudID)
+	}
+
+	for cloudID, id := range convVpcCloudIDMap(notExistResult) {
+		existVpcMap[cloudID] = id
+	}
+
+	return existVpcMap, nil
+}
+
+func convVpcCloudIDMap(result *protocloud.VpcListResult) map[string]string {
+	m := make(map[string]string, len(result.Details))
+	for _, one := range result.Details {
+		m[one.CloudID] = one.ID
+	}
+	return m
+}
+
+type vpcMeta struct {
+	CloudID string
+	ID      string
+}
+
+// QueryVpcIDsAndSyncForGcp 查询vpc，如果不存在则同步完再进行查询.
+func QueryVpcIDsAndSyncForGcp(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
+	dataCli *dataclient.Client, accountID string, selfLinks []string) (map[string]vpcMeta, error) {
+
+	if len(selfLinks) == 0 {
+		return nil, errors.New("self_links is required")
+	}
+
+	sls := slice.Unique(selfLinks)
+	listReq := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "extension.self_link", Op: filter.JSONIn.Factory(), Value: sls},
+			},
+		},
+		Page:   core.DefaultBasePage,
+		Fields: []string{"id", "cloud_id", "extension"},
+	}
+	result, err := dataCli.Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list vpc from db failed, err: %v, selfLinks: %v, rid: %s", err, sls, kt.Rid)
+		return nil, err
+	}
+
+	existVpcMap := convVpcSelfLinkMap(result)
+
+	// 如果相等，则Vpc全部同步到了db
+	if len(result.Details) == len(sls) {
+		return existVpcMap, nil
+	}
+
+	notExistSelfLink := make([]string, 0)
+	notExistCloudIDs := make([]string, 0)
+	for _, cloudID := range sls {
+		if vpcData, exist := existVpcMap[cloudID]; !exist {
+			notExistSelfLink = append(notExistSelfLink, cloudID)
+			notExistCloudIDs = append(notExistCloudIDs, vpcData.CloudID)
+		}
+	}
+
+	if len(notExistSelfLink) == 0 {
+		return existVpcMap, nil
+	}
+
+	gcp, err := adaptor.Gcp(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	syncClient := syncgcp.NewClient(dataCli, gcp)
+
+	params := &syncgcp.SyncBaseParams{
+		AccountID: accountID,
+		CloudIDs:  notExistCloudIDs,
+	}
+
+	_, err = syncClient.Vpc(kt, params, &syncgcp.SyncVpcOption{})
+	if err != nil {
+		logs.Errorf("sync gcp vpc failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	// 同步完，二次查询
+	listReq = &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "extension.self_link", Op: filter.JSONIn.Factory(), Value: notExistSelfLink},
+			},
+		},
+		Page:   core.DefaultBasePage,
+		Fields: []string{"id", "cloud_id", "extension"},
+	}
+	notExistResult, err := dataCli.Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list vpc from db failed, err: %v, cloudIDs: %v, rid: %s", err, notExistSelfLink, kt.Rid)
+		return nil, err
+	}
+
+	if len(notExistResult.Details) != len(sls) {
+		return nil, fmt.Errorf("some vpc can not sync, selfLinks: %v", notExistSelfLink)
+	}
+
+	for cloudID, id := range convVpcSelfLinkMap(notExistResult) {
+		existVpcMap[cloudID] = id
+	}
+
+	return existVpcMap, nil
+}
+
+func convVpcSelfLinkMap(result *protocloud.VpcExtListResult[cloudcore.GcpVpcExtension]) map[string]vpcMeta {
+	m := make(map[string]vpcMeta, len(result.Details))
+	for _, one := range result.Details {
+		m[one.Extension.SelfLink] = vpcMeta{
+			CloudID: one.CloudID,
+			ID:      one.ID,
+		}
+	}
+	return m
+}
+
+// QuerySecurityGroupIDsAndSync 查询安全组，如果不存在则同步完再进行查询.
+func QuerySecurityGroupIDsAndSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
+	dataCli *dataclient.Client, opt *QuerySecurityGroupIDsAndSyncOption) (map[string]string, error) {
+	if len(opt.CloudSecurityGroupIDs) <= 0 {
+		return make(map[string]string), nil
+	}
+
+	cloudIDs := slice.Unique(opt.CloudSecurityGroupIDs)
+
+	listReq := &protocloud.SecurityGroupListReq{
+		Filter: tools.ContainersExpression("cloud_id", cloudIDs),
+		Page:   core.DefaultBasePage,
+		Field:  []string{"id", "cloud_id"},
+	}
+	result, err := dataCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("logics list security group from db failed, err: %v, cloudIDs: %v, rid: %s",
+			err, cloudIDs, kt.Rid)
+		return nil, err
+	}
+
+	existMap := convSecurityGroupCloudIDMap(result)
+
+	// 如果相等，则全部同步到了db
+	if len(result.Details) == len(cloudIDs) {
+		return existMap, nil
+	}
+
+	notExistCloudIDs := make([]string, 0)
+	for _, cloudID := range cloudIDs {
+		if _, exist := existMap[cloudID]; !exist {
+			notExistCloudIDs = append(notExistCloudIDs, cloudID)
+		}
+	}
+
+	// 如果有部分不存在，则触发同步
+	err = batchSecurityGroupSync(kt, adaptor, dataCli, opt, notExistCloudIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 同步完，二次查询
+	listReq = &protocloud.SecurityGroupListReq{
+		Filter: tools.ContainersExpression("cloud_id", notExistCloudIDs),
+		Page:   core.DefaultBasePage,
+		Field:  []string{"id", "cloud_id"},
+	}
+	notExistResult, err := dataCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("logics list security group from db failed, err: %v, notExistCloudIDs: %v, rid: %s",
+			err, notExistCloudIDs, kt.Rid)
+		return nil, err
+	}
+
+	for cloudID, id := range convSecurityGroupCloudIDMap(notExistResult) {
+		existMap[cloudID] = id
+	}
+
+	return existMap, nil
+}
+
+func batchSecurityGroupSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient, dataCli *dataclient.Client,
+	opt *QuerySecurityGroupIDsAndSyncOption, cloudIDs []string) error {
+
+	switch opt.Vendor {
+	case enumor.Aws:
+		aws, err := adaptor.Aws(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := syncaws.NewClient(dataCli, aws)
+
+		params := &syncaws.SyncBaseParams{
+			AccountID: opt.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  cloudIDs,
+		}
+
+		_, err = syncClient.SecurityGroup(kt, params, &syncaws.SyncSGOption{})
+		if err != nil {
+			logs.Errorf("sync aws sg failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case enumor.TCloud:
+		tcloud, err := adaptor.TCloud(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := synctcloud.NewClient(dataCli, tcloud)
+
+		params := &synctcloud.SyncBaseParams{
+			AccountID: opt.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  cloudIDs,
+		}
+
+		_, err = syncClient.SecurityGroup(kt, params, &synctcloud.SyncSGOption{})
+		if err != nil {
+			logs.Errorf("sync tcloud sg failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case enumor.HuaWei:
+		huawei, err := adaptor.HuaWei(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := synchuawei.NewClient(dataCli, huawei)
+
+		params := &synchuawei.SyncBaseParams{
+			AccountID: opt.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  cloudIDs,
+		}
+
+		_, err = syncClient.SecurityGroup(kt, params, &synchuawei.SyncSGOption{})
+		if err != nil {
+			logs.Errorf("sync huawei sg failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case enumor.Azure:
+		azure, err := adaptor.Azure(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := syncazure.NewClient(dataCli, azure)
+
+		params := &syncazure.SyncBaseParams{
+			AccountID:         opt.AccountID,
+			ResourceGroupName: opt.ResourceGroupName,
+			CloudIDs:          cloudIDs,
+		}
+
+		_, err = syncClient.SecurityGroup(kt, params, &syncazure.SyncSGOption{})
+		if err != nil {
+			logs.Errorf("sync azure sg failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	default:
+		return fmt.Errorf("unknown %s vendor", opt.Vendor)
+	}
+	return nil
+}
+
+func convSecurityGroupCloudIDMap(result *protocloud.SecurityGroupListResult) map[string]string {
+	m := make(map[string]string, len(result.Details))
+	for _, one := range result.Details {
+		m[one.CloudID] = one.ID
+	}
+	return m
+}
+
+func syncVpc(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClient,
+	dataCli *dataclient.Client, opt *QueryVpcIDsAndSyncOption, notExistCloudID []string) error {
+
+	switch opt.Vendor {
+	case enumor.Aws:
+		aws, err := adaptor.Aws(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := syncaws.NewClient(dataCli, aws)
+
+		params := &syncaws.SyncBaseParams{
+			AccountID: opt.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  notExistCloudID,
+		}
+
+		_, err = syncClient.Vpc(kt, params, &syncaws.SyncVpcOption{})
+		if err != nil {
+			logs.Errorf("sync aws vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case enumor.TCloud:
+		tcloud, err := adaptor.TCloud(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := synctcloud.NewClient(dataCli, tcloud)
+
+		params := &synctcloud.SyncBaseParams{
+			AccountID: opt.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  notExistCloudID,
+		}
+
+		_, err = syncClient.Vpc(kt, params, &synctcloud.SyncVpcOption{})
+		if err != nil {
+			logs.Errorf("sync tcloud vpc failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case enumor.HuaWei:
+		huawei, err := adaptor.HuaWei(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := synchuawei.NewClient(dataCli, huawei)
+
+		params := &synchuawei.SyncBaseParams{
+			AccountID: opt.AccountID,
+			Region:    opt.Region,
+			CloudIDs:  notExistCloudID,
+		}
+
+		_, err = syncClient.Vpc(kt, params, &synchuawei.SyncVpcOption{})
+		if err != nil {
+			logs.Errorf("sync huawei vpc with res failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case enumor.Azure:
+		azure, err := adaptor.Azure(kt, opt.AccountID)
+		if err != nil {
+			return err
+		}
+
+		syncClient := syncazure.NewClient(dataCli, azure)
+
+		params := &syncazure.SyncBaseParams{
+			AccountID:         opt.AccountID,
+			ResourceGroupName: opt.ResourceGroupName,
+			CloudIDs:          notExistCloudID,
+		}
+
+		_, err = syncClient.Vpc(kt, params, &syncazure.SyncVpcOption{})
+		if err != nil {
+			logs.Errorf("sync azure vpc with res failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	default:
+		return fmt.Errorf("unknown %s vendor", opt.Vendor)
+	}
+
+	return nil
+}
+
+func getVpcsFromDB(kt *kit.Kit, dataCli *dataclient.Client,
+	cloudVpcIDs []string) (*protocloud.VpcListResult, error) {
+
+	listReq := &core.ListReq{
+		Filter: tools.ContainersExpression("cloud_id", cloudVpcIDs),
+		Page:   core.DefaultBasePage,
+		Fields: []string{"id", "cloud_id"},
+	}
+	result, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list vpc from db failed, err: %v, cloudIDs: %v, rid: %s", err, cloudVpcIDs, kt.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }

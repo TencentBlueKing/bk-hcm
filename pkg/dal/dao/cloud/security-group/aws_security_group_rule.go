@@ -47,6 +47,7 @@ type AwsSGRule interface {
 	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rule *cloud.AwsSecurityGroupRuleTable) error
 	List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.ListAwsSGRuleDetails, error)
 	Delete(kt *kit.Kit, expr *filter.Expression) error
+	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
 var _ AwsSGRule = new(AwsSGRuleDao)
@@ -267,6 +268,27 @@ func (dao *AwsSGRuleDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
 		return nil, nil
 	})
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteWithTx rule with tx.
+func (dao *AwsSGRuleDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+	if expr == nil {
+		return errf.New(errf.InvalidParameter, "filter expr is required")
+	}
+
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return err
+	}
+
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AwsSecurityGroupRuleTable, whereExpr)
+
+	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+		logs.ErrorJson("delete aws security group rule failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
 

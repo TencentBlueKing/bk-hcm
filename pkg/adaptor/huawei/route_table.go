@@ -87,6 +87,67 @@ func (h *HuaWei) DeleteRouteTable(kt *kit.Kit, opt *core.BaseRegionalDeleteOptio
 	return nil
 }
 
+// ListRouteTables list route table ids.
+// reference: https://support.huaweicloud.com/api-vpc/vpc_apiroutetab_0001.html
+func (h *HuaWei) ListRouteTables(kt *kit.Kit, opt *routetable.HuaWeiRouteTableListOption) ([]routetable.HuaWeiRouteTable, error) {
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	vpcClient, err := h.clientSet.vpcClientV2(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new route table client failed, err: %v", err)
+	}
+
+	req := new(model.ListRouteTablesRequest)
+
+	if len(opt.ID) != 0 {
+		req.Id = &opt.ID
+	}
+
+	if len(opt.VpcID) != 0 {
+		req.VpcId = &opt.VpcID
+	}
+
+	if len(opt.SubnetID) != 0 {
+		req.SubnetId = &opt.SubnetID
+	}
+
+	if opt.Page != nil {
+		req.Marker = opt.Page.Marker
+		req.Limit = opt.Page.Limit
+	}
+
+	resp, err := vpcClient.ListRouteTables(req)
+	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return nil, nil
+		}
+		logs.Errorf("list huawei route table failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("list huawei route table failed, err: %v", err)
+	}
+
+	routeTables := make([]routetable.HuaWeiRouteTable, 0)
+
+	for _, one := range converter.PtrToVal(resp.Routetables) {
+		tmp := routetable.HuaWeiRouteTable{
+			CloudID:    one.Id,
+			Name:       one.Name,
+			CloudVpcID: one.VpcId,
+			Region:     opt.Region,
+			Memo:       converter.ValToPtr(one.Description),
+			Extension: &routetable.HuaWeiRouteTableExtension{
+				Default:  one.Default,
+				TenantID: one.TenantId,
+			},
+		}
+
+		routeTables = append(routeTables, tmp)
+	}
+
+	return routeTables, nil
+}
+
 // ListRouteTableIDs list route table ids.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiroutetab_0001.html
 func (h *HuaWei) ListRouteTableIDs(kt *kit.Kit, opt *routetable.HuaWeiRouteTableListOption) ([]string, error) {

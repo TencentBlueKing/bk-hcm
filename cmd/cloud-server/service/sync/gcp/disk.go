@@ -23,7 +23,7 @@ import (
 	gosync "sync"
 	"time"
 
-	"hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -53,11 +53,10 @@ func SyncDisk(kt *kit.Kit, service *hcservice.Client, accountID string, regionZo
 					<-pipeline
 				}()
 
-				req := &disk.DiskSyncReq{
+				req := &sync.GcpDiskSyncReq{
 					AccountID: accountID,
 					Zone:      zone,
 				}
-
 				err := service.Gcp.Disk.SyncDisk(kt.Ctx, kt.Header(), req)
 				if firstErr == nil && err != nil {
 					logs.Errorf("sync gcp disk failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)

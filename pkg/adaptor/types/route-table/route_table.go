@@ -276,11 +276,31 @@ type HuaWeiRouteTableExtension struct {
 // TCloudRouteTable defines tencent cloud route table.
 type TCloudRouteTable RouteTable[TCloudRouteTableExtension]
 
+// GetCloudID ...
+func (touteTable TCloudRouteTable) GetCloudID() string {
+	return touteTable.CloudID
+}
+
 // AwsRouteTable defines aws route table.
 type AwsRouteTable RouteTable[AwsRouteTableExtension]
+
+// GetCloudID ...
+func (touteTable AwsRouteTable) GetCloudID() string {
+	return touteTable.CloudID
+}
 
 // AzureRouteTable defines azure route table.
 type AzureRouteTable RouteTable[AzureRouteTableExtension]
 
+// GetCloudID ...
+func (touteTable AzureRouteTable) GetCloudID() string {
+	return touteTable.CloudID
+}
+
 // HuaWeiRouteTable defines huawei route table.
 type HuaWeiRouteTable RouteTable[HuaWeiRouteTableExtension]
+
+// GetCloudID ...
+func (touteTable HuaWeiRouteTable) GetCloudID() string {
+	return touteTable.CloudID
+}

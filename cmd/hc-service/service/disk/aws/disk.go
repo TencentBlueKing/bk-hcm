@@ -20,8 +20,7 @@
 package aws
 
 import (
-	"hcm/cmd/hc-service/logics/sync/cvm"
-	syncdisk "hcm/cmd/hc-service/logics/sync/disk"
+	syncaws "hcm/cmd/hc-service/logics/res-sync/aws"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
 	"hcm/pkg/adaptor/types/disk"
@@ -80,13 +79,17 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		return respData, nil
 	}
 
-	syncOpt := &syncdisk.SyncAwsDiskOption{
+	syncClient := syncaws.NewClient(svc.DataCli, client)
+
+	params := &syncaws.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  result.SuccessCloudIDs,
 	}
-	_, err = syncdisk.SyncAwsDisk(cts.Kit, syncOpt, svc.Adaptor, svc.DataCli)
+
+	_, err = syncClient.Disk(cts.Kit, params, &syncaws.SyncDiskOption{BootMap: nil})
 	if err != nil {
+		logs.Errorf("sync aws disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -147,22 +150,28 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = syncdisk.SyncAwsDisk(
-		cts.Kit,
-		&syncdisk.SyncAwsDiskOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudDiskID}},
-		svc.Adaptor, svc.DataCli,
-	)
+	syncClient := syncaws.NewClient(svc.DataCli, client)
+
+	params := &syncaws.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  []string{opt.CloudDiskID},
+	}
+
+	_, err = syncClient.Disk(cts.Kit, params, &syncaws.SyncDiskOption{BootMap: nil})
 	if err != nil {
-		logs.Errorf("SyncAwsDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync aws disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return cvm.SyncAwsCvmWithRelResource(
-		cts.Kit,
-		&cvm.SyncAwsCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	params.CloudIDs = []string{opt.CloudCvmID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncaws.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync aws cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 // DetachDisk ...
@@ -196,22 +205,28 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = syncdisk.SyncAwsDisk(
-		cts.Kit,
-		&syncdisk.SyncAwsDiskOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudDiskID}},
-		svc.Adaptor, svc.DataCli,
-	)
+	syncClient := syncaws.NewClient(svc.DataCli, client)
+
+	params := &syncaws.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  []string{opt.CloudDiskID},
+	}
+
+	_, err = syncClient.Disk(cts.Kit, params, &syncaws.SyncDiskOption{BootMap: nil})
 	if err != nil {
-		logs.Errorf("SyncAwsDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync aws disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return cvm.SyncAwsCvm(
-		cts.Kit,
-		svc.Adaptor,
-		svc.DataCli,
-		&cvm.SyncAwsCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
-	)
+	params.CloudIDs = []string{opt.CloudCvmID}
+	_, err = syncClient.Cvm(cts.Kit, params, &syncaws.SyncCvmOption{})
+	if err != nil {
+		logs.Errorf("sync aws cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 func (svc *DiskSvc) makeDiskAttachOption(

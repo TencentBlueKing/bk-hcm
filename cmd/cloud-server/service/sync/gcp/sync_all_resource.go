@@ -29,7 +29,8 @@ import (
 	"hcm/pkg/logs"
 )
 
-var syncConcurrencyCount = 10
+// gcp list每分钟限制1500次请求
+var syncConcurrencyCount = 5
 
 // SyncAllResourceOption ...
 type SyncAllResourceOption struct {
@@ -111,11 +112,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncAllResource
 		return hitErr
 	}
 
-	if hitErr = SyncRouteTable(kt, cliSet.HCService(), opt.AccountID); hitErr != nil {
-		return hitErr
-	}
-
-	if hitErr = SyncNetworkInterface(kt, cliSet.HCService(), opt.AccountID, regionZoneMap); hitErr != nil {
+	if hitErr = SyncRoute(kt, cliSet.HCService(), opt.AccountID, regionZoneMap); hitErr != nil {
 		return hitErr
 	}
 

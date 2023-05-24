@@ -330,7 +330,7 @@ type GcpSubnetListResult struct {
 // AzureSubnetListOption defines azure list subnet options.
 type AzureSubnetListOption struct {
 	core.AzureListOption `json:",inline"`
-	VpcID                string `json:"vpc_id"`
+	CloudVpcID           string `json:"cloud_vpc_id"`
 }
 
 // Validate AzureSubnetListOption.
@@ -339,7 +339,7 @@ func (a AzureSubnetListOption) Validate() error {
 		return err
 	}
 
-	if len(a.VpcID) == 0 {
+	if len(a.CloudVpcID) == 0 {
 		return errf.New(errf.InvalidParameter, "vpc id must be set")
 	}
 
@@ -349,7 +349,7 @@ func (a AzureSubnetListOption) Validate() error {
 // AzureSubnetListByIDOption defines azure list subnet options.
 type AzureSubnetListByIDOption struct {
 	core.AzureListByIDOption `json:",inline"`
-	VpcID                    string `json:"vpc_id"`
+	CloudVpcID               string `json:"cloud_vpc_id"`
 }
 
 // Validate AzureSubnetListOption.
@@ -358,8 +358,8 @@ func (a AzureSubnetListByIDOption) Validate() error {
 		return err
 	}
 
-	if len(a.VpcID) == 0 {
-		return errf.New(errf.InvalidParameter, "vpc id must be set")
+	if len(a.CloudVpcID) == 0 {
+		return errf.New(errf.InvalidParameter, "cloud vpc id must be set")
 	}
 
 	return nil
@@ -394,9 +394,9 @@ func (s HuaWeiSubnetListOption) Validate() error {
 
 // HuaWeiSubnetListByIDOption ...
 type HuaWeiSubnetListByIDOption struct {
-	Region   string   `json:"region" validate:"required"`
-	VpcID    string   `json:"vpc_id" validate:"required"`
-	CloudIDs []string `json:"cloud_ids" validate:"required"`
+	Region     string   `json:"region" validate:"required"`
+	CloudVpcID string   `json:"cloud_vpc_id" validate:"required"`
+	CloudIDs   []string `json:"cloud_ids" validate:"required"`
 }
 
 // Validate HuaWeiSubnetListByIDOption.
@@ -419,6 +419,8 @@ type HuaWeiSubnetListResult struct {
 
 // Subnet defines subnet struct.
 type Subnet[T SubnetExtension] struct {
+	// TODO: gcp 添加 vpcSelfLink字段，不要和 CloudVpcID 字段混用
+	// CloudVpcID gcp 该字段为 self_link
 	CloudVpcID string   `json:"cloud_vpc_id"`
 	CloudID    string   `json:"cloud_id"`
 	Name       string   `json:"name"`
@@ -491,14 +493,39 @@ type HuaWeiSubnetExtension struct {
 // TCloudSubnet defines tencent cloud subnet.
 type TCloudSubnet Subnet[TCloudSubnetExtension]
 
+// GetCloudID ...
+func (vpc TCloudSubnet) GetCloudID() string {
+	return vpc.CloudID
+}
+
 // AwsSubnet defines aws subnet.
 type AwsSubnet Subnet[AwsSubnetExtension]
+
+// GetCloudID ...
+func (vpc AwsSubnet) GetCloudID() string {
+	return vpc.CloudID
+}
 
 // GcpSubnet defines gcp subnet.
 type GcpSubnet Subnet[GcpSubnetExtension]
 
+// GetCloudID ...
+func (vpc GcpSubnet) GetCloudID() string {
+	return vpc.CloudID
+}
+
 // AzureSubnet defines azure subnet.
 type AzureSubnet Subnet[AzureSubnetExtension]
 
+// GetCloudID ...
+func (vpc AzureSubnet) GetCloudID() string {
+	return vpc.CloudID
+}
+
 // HuaWeiSubnet defines huawei subnet.
 type HuaWeiSubnet Subnet[HuaWeiSubnetExtension]
+
+// GetCloudID ...
+func (vpc HuaWeiSubnet) GetCloudID() string {
+	return vpc.CloudID
+}

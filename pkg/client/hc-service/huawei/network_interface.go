@@ -20,11 +20,6 @@
 package huawei
 
 import (
-	"context"
-	"net/http"
-
-	hcservice "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
@@ -38,28 +33,4 @@ func NewNetworkInterfaceClient(client rest.ClientInterface) *NetworkInterfaceCli
 	return &NetworkInterfaceClient{
 		client: client,
 	}
-}
-
-// SyncNetworkInterface sync huawei network interface.
-func (v *NetworkInterfaceClient) SyncNetworkInterface(ctx context.Context, h http.Header,
-	req *hcservice.HuaWeiNetworkInterfaceSyncReq) error {
-
-	resp := new(rest.BaseResp)
-
-	err := v.client.Post().
-		WithContext(ctx).
-		Body(req).
-		SubResourcef("/network_interfaces/sync").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
 }

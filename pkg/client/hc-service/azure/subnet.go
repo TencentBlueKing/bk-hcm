@@ -24,8 +24,8 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
-	hcservice "hcm/pkg/api/hc-service"
 	proto "hcm/pkg/api/hc-service/subnet"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -111,7 +111,7 @@ func (s *SubnetClient) Delete(ctx context.Context, h http.Header, id string) err
 }
 
 // SyncSubnet sync azure subnet.
-func (s *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *hcservice.AzureResourceSyncReq) error {
+func (s *SubnetClient) SyncSubnet(ctx context.Context, h http.Header, req *sync.AzureSubnetSyncReq) error {
 	resp := new(rest.BaseResp)
 
 	err := s.client.Post().

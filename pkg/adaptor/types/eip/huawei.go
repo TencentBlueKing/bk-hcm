@@ -88,6 +88,11 @@ type HuaWeiEip struct {
 	ChargeMode          string
 }
 
+// GetCloudID ...
+func (eip *HuaWeiEip) GetCloudID() string {
+	return eip.CloudID
+}
+
 // HuaWeiEipDeleteOption ...
 type HuaWeiEipDeleteOption struct {
 	CloudID string `json:"cloud_id" validate:"required"`

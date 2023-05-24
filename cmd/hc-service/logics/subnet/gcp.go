@@ -21,15 +21,19 @@
 package subnet
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 
-	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
+	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
+	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -108,11 +112,11 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	}
 
 	// create hcm subnets
-	syncOpt := &syncsubnet.SyncGcpOption{
+	syncOpt := &SyncGcpOption{
 		AccountID: opt.AccountID,
 		Region:    opt.Region,
 	}
-	res, err := syncsubnet.BatchCreateGcpSubnet(kt, createReqs, s.client.DataService(), s.adaptor, syncOpt)
+	res, err := BatchCreateGcpSubnet(kt, createReqs, s.client.DataService(), s.adaptor, syncOpt)
 	if err != nil {
 		logs.Errorf("sync gcp subnet failed, err: %v, reqs: %+v, rid: %s", err, createReqs, kt.Rid)
 		return nil, err
@@ -146,4 +150,71 @@ func convertGcpSubnetCreateReq(data *types.GcpSubnet, accountID, cloudVpcID stri
 	}
 
 	return subnetReq
+}
+
+// SyncGcpOption define gcp sync option.
+type SyncGcpOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+	SelfLinks []string `json:"self_links" validate:"omitempty"`
+}
+
+// Validate SyncGcpOption.
+func (opt SyncGcpOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.SelfLinks) == 0 && len(opt.CloudIDs) == 0 {
+		return errors.New("self_links or cloud_ids is required")
+	}
+
+	if len(opt.SelfLinks) != 0 && len(opt.CloudIDs) != 0 {
+		return errors.New("self_links or cloud_ids only one can be set")
+	}
+
+	if len(opt.CloudIDs) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("cloudIDs should <= %d", core.DefaultMaxPageLimit)
+	}
+
+	if len(opt.SelfLinks) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("selfLinks should <= %d", core.DefaultMaxPageLimit)
+	}
+
+	return nil
+}
+
+// BatchCreateGcpSubnet ...
+// TODO right now this method is used by create subnet api to get created result, because sync method do not return it.
+// TODO modify sync logics to return crud infos, then change this method to 'batchCreateGcpSubnet'.
+func BatchCreateGcpSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.GcpSubnetCreateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncGcpOption) (
+	*core.BatchCreateResult, error) {
+
+	selfLinks := make([]string, 0, len(createResources))
+	for _, one := range createResources {
+		selfLinks = append(selfLinks, one.Extension.VpcSelfLink)
+	}
+
+	vpcMap, err := QueryVpcIDsAndSyncForGcp(kt, adaptor, dataCli, req.AccountID, selfLinks)
+	if err != nil {
+		logs.Errorf("query vpcIDs and sync for gcp failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	for index, resource := range createResources {
+		one, exist := vpcMap[resource.Extension.VpcSelfLink]
+		if !exist {
+			return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
+		}
+
+		createResources[index].VpcID = one.ID
+		createResources[index].CloudVpcID = one.CloudID
+	}
+
+	createReq := &cloud.SubnetBatchCreateReq[cloud.GcpSubnetCreateExt]{
+		Subnets: createResources,
+	}
+	return dataCli.Gcp.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
 }

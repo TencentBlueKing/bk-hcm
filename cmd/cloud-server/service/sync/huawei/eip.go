@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"hcm/pkg/adaptor/huawei"
-	"hcm/pkg/api/hc-service/eip"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
@@ -60,7 +60,7 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client
 				<-pipeline
 			}()
 
-			req := &eip.EipSyncReq{
+			req := &sync.HuaWeiSyncReq{
 				AccountID: accountID,
 				Region:    region,
 			}

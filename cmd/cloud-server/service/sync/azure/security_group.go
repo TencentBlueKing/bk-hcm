@@ -23,7 +23,7 @@ import (
 	gosync "sync"
 	"time"
 
-	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -52,7 +52,7 @@ func SyncSG(kt *kit.Kit, service *hcservice.Client, accountID string, resourceGr
 				<-pipeline
 			}()
 
-			req := &proto.SecurityGroupSyncReq{
+			req := &sync.AzureSyncReq{
 				AccountID:         accountID,
 				ResourceGroupName: name,
 			}

@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -41,10 +42,8 @@ type DiskClient struct {
 	client rest.ClientInterface
 }
 
-// SyncDisk sync disk.
-func (cli *DiskClient) SyncDisk(ctx context.Context, h http.Header,
-	request *disk.DiskSyncReq,
-) error {
+// SyncDisk disk.
+func (cli *DiskClient) SyncDisk(ctx context.Context, h http.Header, request *sync.AzureSyncReq) error {
 	resp := new(core.SyncResp)
 
 	err := cli.client.Post().

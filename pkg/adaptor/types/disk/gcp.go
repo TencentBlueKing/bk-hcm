@@ -139,3 +139,13 @@ type GcpDiskDetachOption struct {
 func (opt *GcpDiskDetachOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// GcpDisk for compute Disk
+type GcpDisk struct {
+	*compute.Disk
+}
+
+// GetCloudID ...
+func (disk GcpDisk) GetCloudID() string {
+	return fmt.Sprint(disk.Id)
+}

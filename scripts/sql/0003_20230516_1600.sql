@@ -19,3 +19,7 @@ CREATE TABLE `account_bill_config`
     unique key `idx_uk_vendor_account_id` (`vendor`, `account_id`)
 ) engine = innodb
   default charset = utf8mb4;
+
+alter table azure_security_group_rule drop index `idx_uk_name`;
+
+alter table azure_security_group_rule add unique key `idx_uk_name_cloud_security_group_id` (`name`, `cloud_security_group_id`);

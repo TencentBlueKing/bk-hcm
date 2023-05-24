@@ -20,8 +20,7 @@
 package huawei
 
 import (
-	"hcm/cmd/hc-service/logics/sync/cvm"
-	syncdisk "hcm/cmd/hc-service/logics/sync/disk"
+	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/disk/datasvc"
 	"hcm/pkg/adaptor/types/disk"
@@ -90,14 +89,17 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 		return respData, nil
 	}
 
-	syncOpt := &syncdisk.SyncHuaWeiDiskOption{
+	syncClient := synchuawei.NewClient(svc.DataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  result.SuccessCloudIDs,
 	}
-	_, err = syncdisk.SyncHuaWeiDisk(cts.Kit, syncOpt, svc.Adaptor, svc.DataCli)
+
+	_, err = syncClient.Disk(cts.Kit, params, &synchuawei.SyncDiskOption{})
 	if err != nil {
-		logs.Errorf("sync huawei disk failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync huawei disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -164,27 +166,28 @@ func (svc *DiskSvc) AttachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = syncdisk.SyncHuaWeiDisk(
-		cts.Kit,
-		&syncdisk.SyncHuaWeiDiskOption{
-			AccountID: req.AccountID,
-			Region:    opt.Region,
-			CloudIDs:  []string{opt.CloudDiskID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	syncClient := synchuawei.NewClient(svc.DataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  []string{opt.CloudDiskID},
+	}
+
+	_, err = syncClient.Disk(cts.Kit, params, &synchuawei.SyncDiskOption{BootMap: nil})
 	if err != nil {
-		logs.Errorf("SyncHuaWeiDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync huawei disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return cvm.SyncHuaWeiCvm(
-		cts.Kit,
-		&cvm.SyncHuaWeiCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	params.CloudIDs = []string{opt.CloudCvmID}
+	_, err = syncClient.Cvm(cts.Kit, params, &synchuawei.SyncCvmOption{})
+	if err != nil {
+		logs.Errorf("sync huawei cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 // DetachDisk ...
@@ -212,27 +215,28 @@ func (svc *DiskSvc) DetachDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = syncdisk.SyncHuaWeiDisk(
-		cts.Kit,
-		&syncdisk.SyncHuaWeiDiskOption{
-			AccountID: req.AccountID,
-			Region:    opt.Region,
-			CloudIDs:  []string{opt.CloudDiskID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	syncClient := synchuawei.NewClient(svc.DataCli, client)
+
+	params := &synchuawei.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  []string{opt.CloudDiskID},
+	}
+
+	_, err = syncClient.Disk(cts.Kit, params, &synchuawei.SyncDiskOption{BootMap: nil})
 	if err != nil {
-		logs.Errorf("SyncHuaWeiDisk failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync huawei disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return cvm.SyncHuaWeiCvmWithRelResource(
-		cts.Kit,
-		&cvm.SyncHuaWeiCvmOption{AccountID: req.AccountID, Region: opt.Region, CloudIDs: []string{opt.CloudCvmID}},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	params.CloudIDs = []string{opt.CloudCvmID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &synchuawei.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync huawei cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 func (svc *DiskSvc) makeDiskAttachOption(

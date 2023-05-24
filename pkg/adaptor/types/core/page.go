@@ -34,6 +34,8 @@ const (
 	GcpQueryLimit = 500
 	// HuaWeiQueryLimit is huawei maximum query limit
 	HuaWeiQueryLimit = 2000
+	// GcpSelfLinkMaxQueryLimit gcp selfLink 最大允许查询数量，如果数量过多，导致请求体太大，gcp会报错
+	GcpSelfLinkMaxQueryLimit = 50
 )
 
 // TCloudPage defines tencent cloud page option.

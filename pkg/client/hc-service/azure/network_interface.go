@@ -23,7 +23,7 @@ import (
 	"context"
 	"net/http"
 
-	hcservice "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -40,9 +40,9 @@ func NewNetworkInterfaceClient(client rest.ClientInterface) *NetworkInterfaceCli
 	}
 }
 
-// SyncNetworkInterface sync huawei network interface.
+// SyncNetworkInterface huawei network interface.
 func (v *NetworkInterfaceClient) SyncNetworkInterface(ctx context.Context, h http.Header,
-	req *hcservice.AzureNetworkInterfaceSyncReq) error {
+	req *sync.AzureSyncReq) error {
 
 	resp := new(rest.BaseResp)
 

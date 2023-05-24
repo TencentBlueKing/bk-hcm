@@ -29,8 +29,11 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -66,7 +69,19 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 		delIDs[index] = one.ID
 	}
 
+	niIDs, err := svc.listCvmAssNetworkInterface(cts.Kit, delIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		if len(niIDs) != 0 {
+			delFilter := tools.ContainersExpression("id", niIDs)
+			if err := svc.dao.NetworkInterface().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+				return nil, err
+			}
+		}
+
 		delFilter := tools.ContainersExpression("id", delIDs)
 		if err := svc.dao.Cvm().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
 			return nil, err
@@ -86,4 +101,27 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+func (svc *cvmSvc) listCvmAssNetworkInterface(kt *kit.Kit, cvmIDs []string) ([]string, error) {
+
+	ids := make([]string, 0)
+	split := slice.Split(cvmIDs, int(filter.DefaultMaxInLimit))
+	for _, partID := range split {
+		opt := &types.ListOption{
+			Filter: tools.ContainersExpression("cvm_id", partID),
+			Page:   core.DefaultBasePage,
+		}
+		result, err := svc.dao.NiCvmRel().List(kt, opt)
+		if err != nil {
+			logs.Errorf("list ni_cvm_rel failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		for _, one := range result.Details {
+			ids = append(ids, one.NetworkInterfaceID)
+		}
+	}
+
+	return ids, nil
 }

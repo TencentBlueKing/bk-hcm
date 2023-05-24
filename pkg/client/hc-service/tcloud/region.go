@@ -41,9 +41,8 @@ type RegionClient struct {
 	client rest.ClientInterface
 }
 
-// SyncRegion sync zone.
-func (cli *RegionClient) SyncRegion(ctx context.Context, h http.Header,
-	request *region.TCloudRegionSyncReq) error {
+// Sync sync zone.
+func (cli *RegionClient) Sync(ctx context.Context, h http.Header, request *region.TCloudRegionSyncReq) error {
 
 	resp := new(core.SyncResp)
 

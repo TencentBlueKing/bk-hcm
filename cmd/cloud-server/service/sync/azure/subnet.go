@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"hcm/pkg/api/core"
-	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
@@ -89,7 +89,7 @@ func SyncSubnet(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Cli
 						<-pipeline
 					}()
 
-					req := &hcproto.AzureResourceSyncReq{
+					req := &sync.AzureSubnetSyncReq{
 						AccountID:         accountID,
 						ResourceGroupName: name,
 						CloudVpcID:        vpcID,

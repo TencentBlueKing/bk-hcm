@@ -23,7 +23,7 @@ import (
 	gosync "sync"
 	"time"
 
-	hcapiproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -34,11 +34,11 @@ import (
 func SyncNetworkInterface(kt *kit.Kit, service *hcservice.Client, accountID string, resourceGroupNames []string) error {
 
 	start := time.Now()
-	logs.V(3).Infof("cloud-server-sync-%s account[%s] sync network interface start, time: %v, rid: %s",
+	logs.V(3).Infof("[%s] account[%s] sync network interface start, time: %v, rid: %s",
 		enumor.Azure, accountID, start, kt.Rid)
 
 	defer func() {
-		logs.V(3).Infof("cloud-server-sync-%s account[%s] sync network interface end, cost: %v, rid: %s",
+		logs.V(3).Infof("[%s] account[%s] sync network interface end, cost: %v, rid: %s",
 			enumor.Azure, accountID, time.Since(start), kt.Rid)
 	}()
 
@@ -55,13 +55,13 @@ func SyncNetworkInterface(kt *kit.Kit, service *hcservice.Client, accountID stri
 				<-pipeline
 			}()
 
-			req := &hcapiproto.AzureNetworkInterfaceSyncReq{
+			req := &sync.AzureSyncReq{
 				AccountID:         accountID,
 				ResourceGroupName: name,
 			}
 			err := service.Azure.NetworkInterface.SyncNetworkInterface(kt.Ctx, kt.Header(), req)
 			if firstErr == nil && err != nil {
-				logs.Errorf("cloud-server-sync-%s network interface failed, req: %v, err: %v, rid: %s",
+				logs.Errorf("[%s] sync network interface failed, req: %v, err: %v, rid: %s",
 					enumor.Azure, req, err, kt.Rid)
 				firstErr = err
 				return

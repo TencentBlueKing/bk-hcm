@@ -20,15 +20,19 @@
 package securitygroup
 
 import (
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	"fmt"
+
+	"hcm/pkg/adaptor/aws"
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	apicore "hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -38,18 +42,34 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
+// SyncAwsSecurityGroupOption define sync aws sg and sg rule option.
+type SyncAwsSecurityGroupOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
+}
+
+// Validate SyncAwsSecurityGroupOption
+func (opt SyncAwsSecurityGroupOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) > constant.SGBatchOperationMaxLimit {
+		return fmt.Errorf("cloudIDs should <= %d", constant.SGBatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
 // SyncAwsSGRule sync aws security group rules.
 func SyncAwsSGRule(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
-	ad *cloudclient.CloudAdaptorClient, dataCli *dataservice.Client, sgID string) (interface{}, error) {
-
-	client, err := ad.Aws(kt, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
+	client *aws.Aws, dataCli *dataservice.Client, sgID string) (interface{}, error) {
 
 	sg, err := dataCli.Aws.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get aws security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get aws security group failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return err, err
 	}
 
@@ -61,7 +81,8 @@ func SyncAwsSGRule(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
 
 	rules, err := client.ListSecurityGroupRule(kt, opt)
 	if err != nil {
-		logs.Errorf("request adaptor to list aws security group rule failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request adaptor to list aws security group rule failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return nil, err
 	}
 
@@ -82,14 +103,16 @@ func SyncAwsSGRule(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
 
 	updateIDs, err := getAwsSGRuleDSSync(kt, cloudIDs, req, sgID, dataCli)
 	if err != nil {
-		logs.Errorf("request getAwsSGRuleDSSync failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request getAwsSGRuleDSSync failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return nil, err
 	}
 
 	if len(updateIDs) > 0 {
 		err := syncAwsSGRuleUpdate(kt, updateIDs, cloudMap, sgID, req, dataCli)
 		if err != nil {
-			logs.Errorf("request syncAwsSGRuleUpdate failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] request syncAwsSGRuleUpdate failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return nil, err
 		}
 	}
@@ -110,14 +133,16 @@ func SyncAwsSGRule(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
 	if len(addIDs) > 0 {
 		err := syncAwsSGRuleAdd(kt, addIDs, req, cloudMap, sgID, dataCli)
 		if err != nil {
-			logs.Errorf("request syncAwsSGRuleAdd failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] request syncAwsSGRuleAdd failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return nil, err
 		}
 	}
 
 	dsIDs, err := getAwsSGRuleAllDS(kt, req, sgID, dataCli)
 	if err != nil {
-		logs.Errorf("request getAwsSGRuleAllDS failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request getAwsSGRuleAllDS failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return nil, err
 	}
 
@@ -132,7 +157,8 @@ func SyncAwsSGRule(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
 		realDeleteIDs := make([]string, 0)
 		rules, err := client.ListSecurityGroupRule(kt, opt)
 		if err != nil {
-			logs.Errorf("request adaptor to list aws security group rule failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] request adaptor to list aws security group rule failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return nil, err
 		}
 
@@ -153,7 +179,8 @@ func SyncAwsSGRule(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
 		if len(realDeleteIDs) > 0 {
 			err := syncAwsSGRuleDelete(kt, realDeleteIDs, sgID, dataCli)
 			if err != nil {
-				logs.Errorf("request syncAwsSGRuleDelete failed, err: %v, rid: %s", err, kt.Rid)
+				logs.Errorf("[%s] request syncAwsSGRuleDelete failed, err: %v, rid: %s", enumor.Azure,
+					err, kt.Rid)
 				return nil, err
 			}
 		}
@@ -202,7 +229,8 @@ func syncAwsSGRuleAdd(kt *kit.Kit, addIDs []string, req *SyncAwsSecurityGroupOpt
 
 	sg, err := dataCli.Aws.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get aws security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get aws security group failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
 		return err
 	}
 
@@ -230,7 +258,8 @@ func syncAwsSGRuleDelete(kt *kit.Kit, deleteCloudIDs []string, sgID string,
 		}
 		err := dataCli.Aws.SecurityGroup.BatchDeleteSecurityGroupRule(kt.Ctx, kt.Header(), deleteReq, sgID)
 		if err != nil {
-			logs.Errorf("dataservice delete aws security group rules failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] dataservice delete aws security group rules failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return err
 		}
 	}
@@ -274,7 +303,8 @@ func getAwsSGRuleAllDS(kt *kit.Kit, req *SyncAwsSecurityGroupOption,
 
 		results, err := dataCli.Aws.SecurityGroup.ListSecurityGroupRule(kt.Ctx, kt.Header(), dataReq, sgID)
 		if err != nil {
-			logs.Errorf("from data-service list sg rule failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] from data-service list sg rule failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return dsIDs, err
 		}
 
@@ -334,7 +364,8 @@ func getAwsSGRuleDSSync(kt *kit.Kit, cloudIDs []string, req *SyncAwsSecurityGrou
 
 		results, err := dataCli.Aws.SecurityGroup.ListSecurityGroupRule(kt.Ctx, kt.Header(), dataReq, sgID)
 		if err != nil {
-			logs.Errorf("from data-service list sg rule failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[%s] from data-service list sg rule failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			return updateIDs, err
 		}
 
@@ -412,7 +443,8 @@ func genAwsUpdateRulesList(kt *kit.Kit, rules []*ec2.SecurityGroupRule, req *Syn
 	for _, rule := range rules {
 		cOne, err := getAwsSGRuleByCid(kt, *rule.SecurityGroupRuleId, sgID, dataCli)
 		if err != nil || cOne == nil {
-			logs.Errorf("aws gen update RulesList getAwsSGRuleByCid failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("[] gen update RulesList getAwsSGRuleByCid failed, err: %v, rid: %s", enumor.Azure,
+				err, kt.Rid)
 			continue
 		}
 
@@ -462,7 +494,8 @@ func getAwsSGRuleByCid(kt *kit.Kit, cID string, sgID string,
 	}
 	listResp, err := dataCli.Aws.SecurityGroup.ListSecurityGroupRule(kt.Ctx, kt.Header(), listReq, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get aws security group failed, id: %s, err: %v, rid: %s", cID, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get aws security group failed, id: %s, err: %v, rid: %s", enumor.Azure,
+			cID, err, kt.Rid)
 		return nil, err
 	}
 

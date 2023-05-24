@@ -22,6 +22,7 @@ package disk
 import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
 
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -182,4 +183,14 @@ func (o *TCloudDiskDetachOption) ToDetachDisksRequest() (*cbs.DetachDisksRequest
 	req.InstanceId = common.StringPtr(o.CloudCvmID)
 	req.DiskIds = common.StringPtrs(o.CloudDiskIDs)
 	return req, nil
+}
+
+// TCloudDisk for cbs Disk
+type TCloudDisk struct {
+	*cbs.Disk
+}
+
+// GetCloudID ...
+func (disk TCloudDisk) GetCloudID() string {
+	return converter.PtrToVal(disk.DiskId)
 }

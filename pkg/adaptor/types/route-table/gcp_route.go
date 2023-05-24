@@ -45,3 +45,8 @@ type GcpRoute struct {
 	Tags             []string `json:"tags,omitempty"`
 	Memo             *string  `json:"memo,omitempty"`
 }
+
+// GetCloudID ...
+func (route GcpRoute) GetCloudID() string {
+	return route.CloudID
+}

@@ -22,6 +22,9 @@ package cvm
 import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // -------------------------- List --------------------------
@@ -172,4 +175,14 @@ const (
 // Validate aws cvm operation option.
 func (opt AwsCreateOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// AwsCvm for ec2 Instance
+type AwsCvm struct {
+	*ec2.Instance
+}
+
+// GetCloudID ...
+func (cvm AwsCvm) GetCloudID() string {
+	return converter.PtrToVal(cvm.InstanceId)
 }

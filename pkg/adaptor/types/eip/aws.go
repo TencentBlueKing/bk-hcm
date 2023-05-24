@@ -61,6 +61,11 @@ type AwsEip struct {
 	NetworkInterfaceOwnerId *string
 }
 
+// GetCloudID ...
+func (eip *AwsEip) GetCloudID() string {
+	return eip.CloudID
+}
+
 // AwsEipDeleteOption ...
 type AwsEipDeleteOption struct {
 	Region  string `json:"region" validate:"required"`

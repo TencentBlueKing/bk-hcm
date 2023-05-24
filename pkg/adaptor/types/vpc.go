@@ -216,7 +216,7 @@ func (v HuaWeiVpcUpdateOption) Validate() error {
 type GcpListOption struct {
 	CloudIDs  []string      `json:"cloud_ids" validate:"omitempty"`
 	SelfLinks []string      `json:"self_links" validate:"omitempty"`
-	Page      *core.GcpPage `json:"page" validate:"omitempty"`
+	Page      *core.GcpPage `json:"page" validate:"required"`
 }
 
 // Validate gcp cvm list option.
@@ -294,17 +294,42 @@ type VpcExtension interface {
 // TCloudVpc defines tencent cloud vpc.
 type TCloudVpc Vpc[cloud.TCloudVpcExtension]
 
+// GetCloudID ...
+func (vpc TCloudVpc) GetCloudID() string {
+	return vpc.CloudID
+}
+
 // AwsVpc defines aws vpc.
 type AwsVpc Vpc[cloud.AwsVpcExtension]
+
+// GetCloudID ...
+func (vpc AwsVpc) GetCloudID() string {
+	return vpc.CloudID
+}
 
 // GcpVpc defines gcp vpc.
 type GcpVpc Vpc[cloud.GcpVpcExtension]
 
+// GetCloudID ...
+func (vpc GcpVpc) GetCloudID() string {
+	return vpc.CloudID
+}
+
 // AzureVpc defines azure vpc.
 type AzureVpc Vpc[AzureVpcExtension]
 
+// GetCloudID ...
+func (vpc AzureVpc) GetCloudID() string {
+	return vpc.CloudID
+}
+
 // HuaWeiVpc defines huawei vpc.
 type HuaWeiVpc Vpc[cloud.HuaWeiVpcExtension]
+
+// GetCloudID ...
+func (vpc HuaWeiVpc) GetCloudID() string {
+	return vpc.CloudID
+}
 
 // VpcUsage define vpc usage.
 type VpcUsage struct {

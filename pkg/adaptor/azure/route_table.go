@@ -101,6 +101,44 @@ func (a *Azure) ListRouteTable(kt *kit.Kit, opt *core.AzureListOption) (*routeta
 	return &routetable.AzureRouteTableListResult{Details: details}, nil
 }
 
+type routeTableResultHandler struct {
+	resGroupName string
+	a            *Azure
+}
+
+func (handler *routeTableResultHandler) BuildResult(resp armnetwork.RouteTablesClientListResponse) []routetable.AzureRouteTable {
+	details := make([]routetable.AzureRouteTable, 0, len(resp.Value))
+	for _, routeTable := range resp.Value {
+		details = append(details, converter.PtrToVal(handler.a.ConvertRouteTable(routeTable, handler.resGroupName,
+			handler.a.clientSet.credential.CloudSubscriptionID)))
+	}
+
+	return details
+}
+
+// ListRouteTableByPage ...
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/list?tabs=HTTP
+func (a *Azure) ListRouteTableByPage(kt *kit.Kit, opt *core.AzureListOption) (
+	*Pager[armnetwork.RouteTablesClientListResponse, routetable.AzureRouteTable], error) {
+
+	client, err := a.clientSet.routeTableClient()
+	if err != nil {
+		return nil, err
+	}
+
+	azurePager := client.NewListPager(opt.ResourceGroupName, nil)
+
+	pager := &Pager[armnetwork.RouteTablesClientListResponse, routetable.AzureRouteTable]{
+		pager: azurePager,
+		resultHandler: &routeTableResultHandler{
+			resGroupName: opt.ResourceGroupName,
+			a:            a,
+		},
+	}
+
+	return pager, nil
+}
+
 // ListRouteTablePage list route table page.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/route-tables/list?tabs=HTTP
 func (a *Azure) ListRouteTablePage(opt *core.AzureListByIDOption) (

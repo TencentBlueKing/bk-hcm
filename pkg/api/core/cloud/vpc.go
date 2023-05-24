@@ -30,6 +30,16 @@ type Vpc[T VpcExtension] struct {
 	Extension *T `json:"extension"`
 }
 
+// GetID ...
+func (vpc Vpc[T]) GetID() string {
+	return vpc.BaseVpc.ID
+}
+
+// GetCloudID ...
+func (vpc Vpc[T]) GetCloudID() string {
+	return vpc.BaseVpc.CloudID
+}
+
 // BaseVpc defines base vpc info.
 type BaseVpc struct {
 	ID             string             `json:"id"`

@@ -144,3 +144,8 @@ type AzureDisk struct {
 	SKUName  *string   `json:"sku_name"`
 	SKUTier  *string   `json:"sku_tier"`
 }
+
+// GetCloudID ...
+func (disk AzureDisk) GetCloudID() string {
+	return converter.PtrToVal(disk.ID)
+}

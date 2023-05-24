@@ -23,7 +23,7 @@ import (
 	gosync "sync"
 	"time"
 
-	"hcm/pkg/api/hc-service/eip"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -52,7 +52,7 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, regions [
 				<-pipeline
 			}()
 
-			req := &eip.EipSyncReq{
+			req := &sync.GcpSyncReq{
 				AccountID: accountID,
 				Region:    region,
 			}

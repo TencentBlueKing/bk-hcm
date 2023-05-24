@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
@@ -107,4 +108,9 @@ type AzureSecurityGroup struct {
 	FlushConnection *bool                      `json:"flush_connection"`
 	ResourceGUID    *string                    `json:"resource_guid"`
 	SecurityRules   []*armnetwork.SecurityRule `json:"security_rules"`
+}
+
+// GetCloudID ...
+func (sg AzureSecurityGroup) GetCloudID() string {
+	return converter.PtrToVal(sg.ID)
 }

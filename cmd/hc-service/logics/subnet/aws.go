@@ -21,12 +21,18 @@
 package subnet
 
 import (
-	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
+	"errors"
+	"fmt"
+
+	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
+	dataclient "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
@@ -67,11 +73,11 @@ func (s *Subnet) AwsSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	}
 
 	// create hcm subnets
-	syncOpt := &syncsubnet.SyncAwsOption{
+	syncOpt := &SyncAwsOption{
 		AccountID: opt.AccountID,
 		Region:    opt.Region,
 	}
-	res, err := syncsubnet.BatchCreateAwsSubnet(kt, createReqs, s.client.DataService(), s.adaptor, syncOpt)
+	res, err := BatchCreateAwsSubnet(kt, createReqs, s.client.DataService(), s.adaptor, syncOpt)
 	if err != nil {
 		logs.Errorf("sync aws subnet failed, err: %v, reqs: %+v, rid: %s", err, createReqs, kt.Rid)
 		return nil, err
@@ -104,4 +110,68 @@ func convertAwsSubnetCreateReq(data *types.AwsSubnet, accountID string,
 	}
 
 	return subnetReq
+}
+
+// SyncAwsOption define aws sync option.
+type SyncAwsOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate SyncAwsOption.
+func (opt SyncAwsOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) == 0 {
+		return errors.New("cloudIDs is required")
+	}
+
+	if len(opt.CloudIDs) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("cloudIDs should <= %d", core.DefaultMaxPageLimit)
+	}
+
+	return nil
+}
+
+// BatchCreateAwsSubnet ...
+// TODO right now this method is used by create subnet api to get created result, because sync method do not return it.
+// TODO modify sync logics to return crud infos, then change this method to 'batchCreateAwsSubnet'.
+func BatchCreateAwsSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.AwsSubnetCreateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncAwsOption) (
+	*core.BatchCreateResult, error) {
+
+	cloudVpcIDs := make([]string, 0, len(createResources))
+	for _, one := range createResources {
+		cloudVpcIDs = append(cloudVpcIDs, one.CloudVpcID)
+	}
+
+	opt := &QueryVpcIDsAndSyncOption{
+		Vendor:      enumor.Aws,
+		AccountID:   req.AccountID,
+		CloudVpcIDs: cloudVpcIDs,
+		Region:      req.Region,
+	}
+	vpcMap, err := QueryVpcIDsAndSync(kt, adaptor, dataCli, opt)
+	if err != nil {
+		logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	for index, resource := range createResources {
+		one, exist := vpcMap[resource.CloudVpcID]
+		if !exist {
+			return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
+		}
+
+		createResources[index].VpcID = one
+	}
+
+	createReq := &cloud.SubnetBatchCreateReq[cloud.AwsSubnetCreateExt]{
+		Subnets: createResources,
+	}
+
+	return dataCli.Aws.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
 }

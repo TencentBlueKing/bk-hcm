@@ -22,6 +22,7 @@ package azure
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
@@ -33,6 +34,48 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 )
+
+type cvmResultHandler struct {
+	resGroupName string
+	az           *Azure
+	kt           *kit.Kit
+}
+
+// BuildResult ...
+func (handler *cvmResultHandler) BuildResult(resp armcompute.VirtualMachinesClientListResponse) []typecvm.AzureCvm {
+	ori := converterToAzureCvm(resp.Value)
+
+	cvms := make([]typecvm.AzureCvm, 0, len(resp.Value))
+	for _, one := range ori {
+		cvms = append(cvms, converter.PtrToVal(one))
+	}
+
+	return cvms
+}
+
+// ListCvmByPage ...
+// reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP
+func (az *Azure) ListCvmByPage(kt *kit.Kit, opt *typecvm.AzureListOption) (
+	*Pager[armcompute.VirtualMachinesClientListResponse, typecvm.AzureCvm], error) {
+
+	client, err := az.clientSet.virtualMachineClient()
+	if err != nil {
+		return nil, fmt.Errorf("new cvm client failed, err: %v", err)
+	}
+
+	azurePager := client.NewListPager(opt.ResourceGroupName, nil)
+
+	pager := &Pager[armcompute.VirtualMachinesClientListResponse, typecvm.AzureCvm]{
+		pager: azurePager,
+		resultHandler: &cvmResultHandler{
+			resGroupName: opt.ResourceGroupName,
+			az:           az,
+			kt:           kt,
+		},
+	}
+
+	return pager, nil
+}
 
 // ListCvm reference: https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP
 // https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/instance-view
@@ -126,11 +169,55 @@ func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*typ
 		}
 	}
 
+	cvmNames := make([]string, 0)
 	cvms := converterToAzureCvm(vms)
 	for _, cvm := range cvms {
-		status, err := az.GetCvmStatus(kt, opt.ResourceGroupName, converter.PtrToVal(cvm.Name))
-		if err != nil {
-			return nil, err
+		cvmNames = append(cvmNames, *cvm.Name)
+	}
+
+	lock := new(sync.Mutex)
+	cvmStatusMap := make(map[string]string, 0)
+
+	pipeline := make(chan bool, 30)
+	var firstErr error
+	var wg sync.WaitGroup
+	for _, param := range cvmNames {
+		pipeline <- true
+		wg.Add(1)
+
+		go func(param string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			status, err := az.GetCvmStatus(kt, opt.ResourceGroupName, param)
+			if err != nil {
+				logs.Errorf("get cvm status failed, err: %v, rid: %s", err, kt.Rid)
+			}
+
+			if firstErr == nil && err != nil {
+				firstErr = err
+				return
+			}
+
+			lock.Lock()
+			defer lock.Unlock()
+			cvmStatusMap[param] = status
+
+		}(param)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil, firstErr
+	}
+
+	for _, cvm := range cvms {
+		status, exist := cvmStatusMap[*cvm.Name]
+		if !exist {
+			return nil, fmt.Errorf("cvm: %s not found status", *cvm.Name)
 		}
 
 		cvm.Status = converter.ValToPtr(status)

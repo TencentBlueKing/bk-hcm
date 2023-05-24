@@ -21,19 +21,49 @@
 package subnet
 
 import (
+	"errors"
+	"fmt"
+
 	routetable "hcm/cmd/hc-service/logics/sync/route-table"
-	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
+	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	hcservice "hcm/pkg/api/hc-service/subnet"
+	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 )
+
+// SyncTCloudOption define tcloud sync option.
+type SyncTCloudOption struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate SyncTCloudOption.
+func (opt SyncTCloudOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) == 0 {
+		return errors.New("cloudIDs is required")
+	}
+
+	if len(opt.CloudIDs) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("cloudIDs should <= %d", core.DefaultMaxPageLimit)
+	}
+
+	return nil
+}
 
 // TCloudSubnetCreate create tcloud subnet.
 func (s *Subnet) TCloudSubnetCreate(kt *kit.Kit, req *hcservice.TCloudSubnetBatchCreateReq) (
@@ -79,11 +109,11 @@ func (s *Subnet) TCloudSubnetCreate(kt *kit.Kit, req *hcservice.TCloudSubnetBatc
 		cloudRTIDs = append(cloudRTIDs, createReq.CloudRouteTableID)
 	}
 
-	syncOpt := &syncsubnet.SyncTCloudOption{
+	syncOpt := &SyncTCloudOption{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 	}
-	res, err := syncsubnet.BatchCreateTCloudSubnet(kt, createReqs, s.client.DataService(), s.adaptor, syncOpt)
+	res, err := BatchCreateTCloudSubnet(kt, createReqs, s.client.DataService(), s.adaptor, syncOpt)
 	if err != nil {
 		logs.Errorf("sync tcloud subnet failed, err: %v, reqs: %+v, rid: %s", err, createReqs, kt.Rid)
 		return nil, err
@@ -124,4 +154,46 @@ func convertTCloudSubnetCreateReq(data *types.TCloudSubnet, accountID string,
 	}
 
 	return subnetReq
+}
+
+func BatchCreateTCloudSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncTCloudOption) (
+	*core.BatchCreateResult, error) {
+
+	cloudVpcIDs := make([]string, 0, len(createResources))
+	for _, one := range createResources {
+		cloudVpcIDs = append(cloudVpcIDs, one.CloudVpcID)
+	}
+
+	opt := &QueryVpcIDsAndSyncOption{
+		Vendor:      enumor.TCloud,
+		AccountID:   req.AccountID,
+		CloudVpcIDs: cloudVpcIDs,
+		Region:      req.Region,
+	}
+	vpcMap, err := QueryVpcIDsAndSync(kt, adaptor, dataCli, opt)
+	if err != nil {
+		logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	for index, resource := range createResources {
+		one, exist := vpcMap[resource.CloudVpcID]
+		if !exist {
+			return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
+		}
+
+		createResources[index].VpcID = one
+	}
+
+	createReq := &cloud.SubnetBatchCreateReq[cloud.TCloudSubnetCreateExt]{
+		Subnets: createResources,
+	}
+
+	res, err := dataCli.TCloud.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

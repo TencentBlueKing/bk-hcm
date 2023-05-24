@@ -22,7 +22,7 @@ package aws
 import (
 	"time"
 
-	"hcm/pkg/api/hc-service/eip"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -39,7 +39,7 @@ func SyncEip(kt *kit.Kit, service *hcservice.Client, accountID string, regions [
 	}()
 
 	for _, region := range regions {
-		req := &eip.EipSyncReq{
+		req := &sync.AwsSyncReq{
 			AccountID: accountID,
 			Region:    region,
 		}

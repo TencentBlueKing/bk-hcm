@@ -81,6 +81,11 @@ type AzureEip struct {
 	PublicIPAddressVersion *string
 }
 
+// GetCloudID ...
+func (eip *AzureEip) GetCloudID() string {
+	return eip.CloudID
+}
+
 // AzureEipDeleteOption ...
 type AzureEipDeleteOption struct {
 	ResourceGroupName string `json:"resource_group_name" validate:"required"`

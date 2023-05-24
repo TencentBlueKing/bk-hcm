@@ -24,17 +24,18 @@ import (
 
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+
+	"google.golang.org/api/compute/v1"
 )
 
 // -------------------------- List --------------------------
 
 // GcpListOption defines options to list gcp cvm instances.
 type GcpListOption struct {
-	Region   string        `json:"region" validate:"required"`
 	Zone     string        `json:"zone" validate:"required"`
 	CloudIDs []string      `json:"cloud_ids" validate:"omitempty"`
 	Names    []string      `json:"names" validate:"omitempty"`
-	Page     *core.GcpPage `json:"page" validate:"omitempty"`
+	Page     *core.GcpPage `json:"page" validate:"required"`
 }
 
 // Validate gcp cvm list option.
@@ -43,26 +44,16 @@ func (opt GcpListOption) Validate() error {
 		return nil
 	}
 
-	if len(opt.CloudIDs) != 0 && opt.Page != nil {
-		return fmt.Errorf("list by cloud_ids not support page")
-	}
-
 	if len(opt.CloudIDs) > core.GcpQueryLimit {
 		return fmt.Errorf("cloud_ids should <= %d", core.GcpQueryLimit)
-	}
-
-	if len(opt.Names) != 0 && opt.Page != nil {
-		return fmt.Errorf("list by names not support page")
 	}
 
 	if len(opt.Names) > core.GcpQueryLimit {
 		return fmt.Errorf("nnames should <= %d", core.GcpQueryLimit)
 	}
 
-	if opt.Page != nil {
-		if err := opt.Page.Validate(); err != nil {
-			return err
-		}
+	if err := opt.Page.Validate(); err != nil {
+		return err
 	}
 
 	return nil
@@ -207,3 +198,13 @@ const (
 	Windows GcpImageProjectType = "windows"
 	Linux   GcpImageProjectType = "linux"
 )
+
+// GcpCvm for compute Instance
+type GcpCvm struct {
+	*compute.Instance
+}
+
+// GetCloudID ...
+func (cvm GcpCvm) GetCloudID() string {
+	return fmt.Sprint(cvm.Id)
+}

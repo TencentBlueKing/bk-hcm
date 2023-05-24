@@ -22,6 +22,9 @@ package cvm
 import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
+
+	tcvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
 // -------------------------- List --------------------------
@@ -272,3 +275,13 @@ const (
 	// CloudBssdDataDiskType 通用型SSD云硬盘
 	CloudBssdDataDiskType TCloudDataDiskType = "CLOUD_BSSD"
 )
+
+// TCloudCvm for cvm Instance
+type TCloudCvm struct {
+	*tcvm.Instance
+}
+
+// GetCloudID ...
+func (cvm TCloudCvm) GetCloudID() string {
+	return converter.PtrToVal(cvm.InstanceId)
+}

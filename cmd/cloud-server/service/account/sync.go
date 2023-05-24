@@ -48,8 +48,8 @@ import (
 	etcd3 "go.etcd.io/etcd/client/v3"
 )
 
-// Sync ...
-func (a *accountSvc) Sync(cts *rest.Contexts) (interface{}, error) {
+// SyncCloudResource ...
+func (a *accountSvc) SyncCloudResource(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 
 	// 校验用户有该账号的更新权限

@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -43,7 +44,7 @@ type FirewallClient struct {
 
 // SyncFirewall sync fire wall.
 func (cli *FirewallClient) SyncFirewall(ctx context.Context, h http.Header,
-	request *proto.SecurityGroupSyncReq) error {
+	request *sync.GcpGlobalRegionResSyncReq) error {
 
 	resp := new(core.SyncResp)
 

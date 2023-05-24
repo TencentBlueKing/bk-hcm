@@ -34,8 +34,10 @@ import (
 )
 
 const (
-	ErrDataNotFound  = "InvalidInstanceID.Malformed: Invalid id"
-	ErrDryRunSuccess = "DryRunOperation: Request would have succeeded, but DryRun flag is set"
+	ErrDataNotFound       = "InvalidInstanceID.Malformed: Invalid id"
+	ErrDryRunSuccess      = "DryRunOperation: Request would have succeeded, but DryRun flag is set"
+	ErrSGNotFound         = "InvalidGroup.NotFound"
+	ErrRouteTableNotFound = "InvalidRouteTableID.NotFound"
 )
 
 type clientSet struct {

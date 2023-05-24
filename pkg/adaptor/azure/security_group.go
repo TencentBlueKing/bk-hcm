@@ -100,6 +100,44 @@ func (az *Azure) DeleteSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureOption
 	return nil
 }
 
+type sgResultHandler struct {
+	resGroupName string
+	az           *Azure
+}
+
+// BuildResult ...
+func (handler *sgResultHandler) BuildResult(resp armnetwork.SecurityGroupsClientListResponse) []securitygroup.AzureSecurityGroup {
+	sgs := make([]securitygroup.AzureSecurityGroup, 0, len(resp.Value))
+
+	for _, one := range resp.Value {
+		sgs = append(sgs, converter.PtrToVal(handler.az.converCloudToSecurityGroup(one)))
+	}
+
+	return sgs
+}
+
+// ListSecurityGroupByPage ...
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
+func (az *Azure) ListSecurityGroupByPage(kt *kit.Kit, opt *securitygroup.AzureListOption) (
+	*Pager[armnetwork.SecurityGroupsClientListResponse, securitygroup.AzureSecurityGroup], error) {
+
+	client, err := az.clientSet.securityGroupClient()
+	if err != nil {
+		return nil, fmt.Errorf("new security group client failed, err: %v", err)
+	}
+
+	azurePager := client.NewListPager(opt.ResourceGroupName, nil)
+
+	pager := &Pager[armnetwork.SecurityGroupsClientListResponse, securitygroup.AzureSecurityGroup]{
+		pager: azurePager,
+		resultHandler: &sgResultHandler{
+			resGroupName: opt.ResourceGroupName,
+		},
+	}
+
+	return pager, nil
+}
+
 // ListSecurityGroup list security group.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
 func (az *Azure) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AzureListOption) (
@@ -173,6 +211,9 @@ func (az *Azure) ListSecurityGroupByID(kt *kit.Kit, opt *core.AzureListByIDOptio
 					delete(idMap, *id)
 
 					if len(idMap) == 0 {
+						for _, v := range securityGroups {
+							typesSecurityGroups = append(typesSecurityGroups, az.converCloudToSecurityGroup(v))
+						}
 						return typesSecurityGroups, nil
 					}
 				}

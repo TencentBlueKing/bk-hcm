@@ -21,18 +21,49 @@
 package subnet
 
 import (
-	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
+	"errors"
+	"fmt"
+
+	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service/subnet"
+	dataclient "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
+
+type SyncHuaWeiOption struct {
+	AccountID  string   `json:"account_id" validate:"required"`
+	Region     string   `json:"region" validate:"required"`
+	CloudVpcID string   `json:"vpc_id" validate:"required"`
+	CloudIDs   []string `json:"cloud_ids" validate:"required"`
+}
+
+// Validate SyncHuaWeiOption.
+func (opt SyncHuaWeiOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudIDs) == 0 {
+		return errors.New("cloudIDs is required")
+	}
+
+	if len(opt.CloudIDs) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("cloudIDs should <= %d", core.DefaultMaxPageLimit)
+	}
+
+	return nil
+}
 
 // HuaWeiSubnetCreate create huawei subnet.
 func (s subnet) HuaWeiSubnetCreate(cts *rest.Contexts) (interface{}, error) {
@@ -67,14 +98,14 @@ func (s subnet) HuaWeiSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// create hcm subnet
-	syncOpt := &syncsubnet.SyncHuaWeiOption{
+	syncOpt := &SyncHuaWeiOption{
 		AccountID:  req.AccountID,
 		Region:     req.Extension.Region,
 		CloudVpcID: req.CloudVpcID,
 	}
 	createReqs := []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt]{convertHuaWeiSubnetCreateReq(huaweiCreateRes,
 		req.AccountID, req.BkBizID)}
-	res, err := syncsubnet.BatchCreateHuaWeiSubnet(cts.Kit, createReqs, s.cs.DataService(), s.ad, syncOpt)
+	res, err := BatchCreateHuaWeiSubnet(cts.Kit, createReqs, s.cs.DataService(), s.ad, syncOpt)
 	if err != nil {
 		logs.Errorf("sync huawei subnet failed, err: %v, reqs: %+v, rid: %s", err, createReqs, cts.Kit.Rid)
 		return nil, err
@@ -228,4 +259,38 @@ func (s subnet) HuaWeiSubnetCountIP(cts *rest.Contexts) (interface{}, error) {
 		TotalIPCount:     uint64(availabilities.TotalIps),
 		UsedIPCount:      uint64(availabilities.UsedIps),
 	}, nil
+}
+
+// BatchCreateHuaWeiSubnet ...
+// TODO right now this method is used by create subnet api to get created result, because sync method do not return it.
+// TODO modify sync logics to return crud infos, then change this method to 'batchCreateHuaWeiSubnet'.
+func BatchCreateHuaWeiSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.HuaWeiSubnetCreateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncHuaWeiOption) (
+	*core.BatchCreateResult, error) {
+
+	opt := &QueryVpcIDsAndSyncOption{
+		Vendor:      enumor.HuaWei,
+		AccountID:   req.AccountID,
+		CloudVpcIDs: []string{req.CloudVpcID},
+		Region:      req.Region,
+	}
+	vpcMap, err := QueryVpcIDsAndSync(kt, adaptor, dataCli, opt)
+	if err != nil {
+		logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	for index, resource := range createResources {
+		one, exist := vpcMap[resource.CloudVpcID]
+		if !exist {
+			return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
+		}
+
+		createResources[index].VpcID = one
+	}
+
+	createReq := &cloud.SubnetBatchCreateReq[cloud.HuaWeiSubnetCreateExt]{
+		Subnets: createResources,
+	}
+	return dataCli.HuaWei.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
 }

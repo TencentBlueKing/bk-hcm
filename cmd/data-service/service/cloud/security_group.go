@@ -181,7 +181,7 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 	}
 
 	opt := &types.ListOption{
-		Fields: []string{"id"},
+		Fields: []string{"id", "vendor"},
 		Filter: req.Filter,
 		Page:   core.DefaultBasePage,
 	}
@@ -201,6 +201,10 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		if err := svc.deleteSecurityGroupRule(cts.Kit, txn, listResp.Details); err != nil {
+			return nil, err
+		}
+
 		delFilter := tools.ContainersExpression("id", delIDs)
 		if err := svc.dao.SecurityGroup().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
 			return nil, err
@@ -214,6 +218,40 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 	}
 
 	return nil, nil
+}
+
+func (svc *securityGroupSvc) deleteSecurityGroupRule(kt *kit.Kit, txn *sqlx.Tx,
+	details []tablecloud.SecurityGroupTable) error {
+
+	vendorSGMap := make(map[enumor.Vendor][]string)
+	for _, one := range details {
+		if _, exist := vendorSGMap[one.Vendor]; !exist {
+			vendorSGMap[one.Vendor] = make([]string, 0)
+		}
+
+		vendorSGMap[one.Vendor] = append(vendorSGMap[one.Vendor], one.ID)
+	}
+
+	var err error
+	for vendor, sgIDs := range vendorSGMap {
+		switch vendor {
+		case enumor.TCloud:
+			err = svc.dao.TCloudSGRule().DeleteWithTx(kt, txn, tools.ContainersExpression("security_group_id", sgIDs))
+		case enumor.Aws:
+			err = svc.dao.AwsSGRule().DeleteWithTx(kt, txn, tools.ContainersExpression("security_group_id", sgIDs))
+		case enumor.HuaWei:
+			err = svc.dao.HuaWeiSGRule().DeleteWithTx(kt, txn, tools.ContainersExpression("security_group_id", sgIDs))
+		case enumor.Azure:
+			err = svc.dao.AzureSGRule().DeleteWithTx(kt, txn, tools.ContainersExpression("security_group_id", sgIDs))
+		default:
+			return fmt.Errorf("vendor: %s not support", vendor)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // GetSecurityGroup get security group detail.

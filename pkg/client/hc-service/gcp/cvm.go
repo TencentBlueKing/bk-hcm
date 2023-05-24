@@ -50,7 +50,7 @@ func (cli *CvmClient) SyncCvmWithRelResource(ctx context.Context, h http.Header,
 	err := cli.client.Post().
 		WithContext(ctx).
 		Body(request).
-		SubResourcef("/cvms/with/relation_resource/sync").
+		SubResourcef("/cvms/with/relation_resources/sync").
 		WithHeaders(h).
 		Do().
 		Into(resp)

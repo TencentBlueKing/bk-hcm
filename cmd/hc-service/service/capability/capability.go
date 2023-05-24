@@ -20,6 +20,7 @@
 package capability
 
 import (
+	ressync "hcm/cmd/hc-service/logics/res-sync"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/client"
 
@@ -31,4 +32,5 @@ type Capability struct {
 	WebService   *restful.WebService
 	ClientSet    *client.ClientSet
 	CloudAdaptor *cloudclient.CloudAdaptorClient
+	ResSyncCli   ressync.Interface
 }

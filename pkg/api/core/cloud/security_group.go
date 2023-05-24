@@ -45,6 +45,16 @@ type SecurityGroup[Extension SecurityGroupExtension] struct {
 	Extension         *Extension `json:"extension"`
 }
 
+// GetID ...
+func (sg SecurityGroup[T]) GetID() string {
+	return sg.BaseSecurityGroup.ID
+}
+
+// GetCloudID ...
+func (sg SecurityGroup[T]) GetCloudID() string {
+	return sg.BaseSecurityGroup.CloudID
+}
+
 // SecurityGroupExtension define security group extension.
 type SecurityGroupExtension interface {
 	TCloudSecurityGroupExtension | AwsSecurityGroupExtension | HuaWeiSecurityGroupExtension |

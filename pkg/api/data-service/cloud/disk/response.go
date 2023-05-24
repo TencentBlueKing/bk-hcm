@@ -97,6 +97,16 @@ type DiskExtResult[T DiskExtensionResult] struct {
 	Extension    *T      `json:"extension,omitempty"`
 }
 
+// GetID ...
+func (disk DiskExtResult[T]) GetID() string {
+	return disk.ID
+}
+
+// GetCloudID ...
+func (disk DiskExtResult[T]) GetCloudID() string {
+	return disk.CloudID
+}
+
 // DiskCountResp ...
 type DiskCountResp struct {
 	rest.BaseResp `json:",inline"`

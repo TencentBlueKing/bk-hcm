@@ -20,15 +20,12 @@
 package gcp
 
 import (
-	"hcm/cmd/hc-service/logics/sync/cvm"
-	synceip "hcm/cmd/hc-service/logics/sync/eip"
-	syncnetworkinterface "hcm/cmd/hc-service/logics/sync/network-interface"
+	syncgcp "hcm/cmd/hc-service/logics/res-sync/gcp"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/cmd/hc-service/service/eip/datasvc"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud/eip"
-	hcservice "hcm/pkg/api/hc-service"
 	proto "hcm/pkg/api/hc-service/eip"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -110,18 +107,16 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = synceip.SyncGcpEip(
-		cts.Kit,
-		&synceip.SyncGcpEipOption{
-			AccountID: req.AccountID,
-			Region:    eipData.Region,
-			CloudIDs:  []string{eipData.CloudID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	syncClient := syncgcp.NewClient(svc.DataCli, client)
+
+	params := &syncgcp.SyncBaseParams{
+		AccountID: req.AccountID,
+		CloudIDs:  []string{eipData.CloudID},
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &syncgcp.SyncEipOption{Region: opt.Region})
 	if err != nil {
-		logs.Errorf("SyncGcpEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync gcp eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -130,30 +125,18 @@ func (svc *EipSvc) AssociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = cvm.SyncGcpCvmWithRelResource(
-		cts.Kit,
-		svc.Adaptor,
-		svc.DataCli,
-		&cvm.SyncGcpCvmOption{AccountID: req.AccountID, Region: eipData.Region, Zone: cvmData.Zone,
-			CloudIDs: []string{cvmData.CloudID}},
-	)
+	params.CloudIDs = []string{cvmData.CloudID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncgcp.SyncCvmWithRelResOption{Region: eipData.Region,
+		Zone: opt.Zone})
 	if err != nil {
-		logs.Errorf("SyncGcpCvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync gcp cvm with rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	_, err = syncnetworkinterface.GcpNetworkInterfaceSync(
-		cts.Kit,
-		&hcservice.GcpNetworkInterfaceSyncReq{
-			AccountID:   req.AccountID,
-			Zone:        opt.Zone,
-			CloudCvmIDs: []string{cvmData.CloudID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	_, err = syncClient.NetworkInterface(cts.Kit, params, &syncgcp.SyncNIOption{Region: eipData.Region,
+		Zone: opt.Zone})
 	if err != nil {
-		logs.Errorf("GcpNetworkInterfaceSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync gcp ni failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -175,12 +158,12 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	if len(opt.AccessConfigName) > 0 {
-		client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
-		if err != nil {
-			return nil, err
-		}
+	client, err := svc.Adaptor.Gcp(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
 
+	if len(opt.AccessConfigName) > 0 {
 		err = client.DisassociateEip(cts.Kit, opt)
 		if err != nil {
 			logs.Errorf("gcp cloud disassociate eip failed, req: %+v, opt: %+v, err: %+v", req, opt, err)
@@ -199,18 +182,16 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = synceip.SyncGcpEip(
-		cts.Kit,
-		&synceip.SyncGcpEipOption{
-			AccountID: req.AccountID,
-			Region:    eipData.Region,
-			CloudIDs:  []string{eipData.CloudID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	syncClient := syncgcp.NewClient(svc.DataCli, client)
+
+	params := &syncgcp.SyncBaseParams{
+		AccountID: req.AccountID,
+		CloudIDs:  []string{eipData.CloudID},
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &syncgcp.SyncEipOption{Region: opt.Region})
 	if err != nil {
-		logs.Errorf("SyncGcpEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync gcp eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -219,30 +200,18 @@ func (svc *EipSvc) DisassociateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	_, err = cvm.SyncGcpCvmWithRelResource(
-		cts.Kit,
-		svc.Adaptor,
-		svc.DataCli,
-		&cvm.SyncGcpCvmOption{AccountID: req.AccountID, Region: eipData.Region, Zone: cvmData.Zone,
-			CloudIDs: []string{cvmData.CloudID}},
-	)
+	params.CloudIDs = []string{cvmData.CloudID}
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncgcp.SyncCvmWithRelResOption{Region: eipData.Region,
+		Zone: opt.Zone})
 	if err != nil {
-		logs.Errorf("SyncGcpCvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync gcp cvm with rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	_, err = syncnetworkinterface.GcpNetworkInterfaceSync(
-		cts.Kit,
-		&hcservice.GcpNetworkInterfaceSyncReq{
-			AccountID:   req.AccountID,
-			Zone:        opt.Zone,
-			CloudCvmIDs: []string{cvmData.CloudID},
-		},
-		svc.Adaptor,
-		svc.DataCli,
-	)
+	_, err = syncClient.NetworkInterface(cts.Kit, params, &syncgcp.SyncNIOption{Region: eipData.Region,
+		Zone: opt.Zone})
 	if err != nil {
-		logs.Errorf("GcpNetworkInterfaceSync failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync gcp ni failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -280,14 +249,16 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 
 	cloudIDs := result.SuccessCloudIDs
 
-	_, err = synceip.SyncGcpEip(
-		cts.Kit,
-		&synceip.SyncGcpEipOption{AccountID: req.AccountID, Region: req.Region, CloudIDs: cloudIDs,
-			BkBizID: req.BkBizID},
-		svc.Adaptor, svc.DataCli,
-	)
+	syncClient := syncgcp.NewClient(svc.DataCli, client)
+
+	params := &syncgcp.SyncBaseParams{
+		AccountID: req.AccountID,
+		CloudIDs:  cloudIDs,
+	}
+
+	_, err = syncClient.Eip(cts.Kit, params, &syncgcp.SyncEipOption{Region: opt.Region})
 	if err != nil {
-		logs.Errorf("SyncGcpEip failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync gcp eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

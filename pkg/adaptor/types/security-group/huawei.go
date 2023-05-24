@@ -22,6 +22,8 @@ package securitygroup
 import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
 
 // -------------------------- Create --------------------------
@@ -102,4 +104,14 @@ type HuaWeiAssociateCvmOption struct {
 // Validate security group cvm bind option.
 func (opt HuaWeiAssociateCvmOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// HuaWeiSG for model SecurityGroup
+type HuaWeiSG struct {
+	model.SecurityGroup
+}
+
+// GetCloudID ...
+func (sg HuaWeiSG) GetCloudID() string {
+	return sg.Id
 }

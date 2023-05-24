@@ -30,6 +30,16 @@ type NetworkInterface[T NetworkInterfaceExtension] struct {
 	Extension            *T `json:"extension"`
 }
 
+// GetID ...
+func (ni NetworkInterface[T]) GetID() string {
+	return ni.ID
+}
+
+// GetCloudID ...
+func (ni NetworkInterface[T]) GetCloudID() string {
+	return ni.CloudID
+}
+
 // NetworkInterfaceAssociate defines network interface associate info.
 type NetworkInterfaceAssociate struct {
 	BaseNetworkInterface `json:",inline"`

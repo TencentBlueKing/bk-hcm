@@ -149,6 +149,47 @@ func (a *Azure) ListVpc(kt *kit.Kit, opt *core.AzureListOption) (*types.AzureVpc
 	return &types.AzureVpcListResult{Details: details}, nil
 }
 
+// ListVpcByPage list vpc.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list
+func (a *Azure) ListVpcByPage(kt *kit.Kit, opt *core.AzureListOption) (
+	*Pager[armnetwork.VirtualNetworksClientListResponse, types.AzureVpc], error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	vpcClient, err := a.clientSet.vpcClient()
+	if err != nil {
+		return nil, fmt.Errorf("new vpc client failed, err: %v", err)
+	}
+
+	req := new(armnetwork.VirtualNetworksClientListOptions)
+
+	azurePager := vpcClient.NewListPager(opt.ResourceGroupName, req)
+
+	pager := &Pager[armnetwork.VirtualNetworksClientListResponse, types.AzureVpc]{
+		pager: azurePager,
+		resultHandler: &vpcResultHandler{
+			resGroupName: opt.ResourceGroupName,
+		},
+	}
+
+	return pager, nil
+}
+
+type vpcResultHandler struct {
+	resGroupName string
+}
+
+func (handler *vpcResultHandler) BuildResult(resp armnetwork.VirtualNetworksClientListResponse) []types.AzureVpc {
+	details := make([]types.AzureVpc, 0, len(resp.Value))
+	for _, vpc := range resp.Value {
+		details = append(details, converter.PtrToVal(convertVpc(vpc, handler.resGroupName)))
+	}
+
+	return details
+}
+
 // ListVpcByID list vpc.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/virtual-networks/list
 func (a *Azure) ListVpcByID(kt *kit.Kit, opt *core.AzureListByIDOption) (*types.AzureVpcListResult, error) {

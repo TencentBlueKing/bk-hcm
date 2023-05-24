@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/eip"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -41,10 +42,8 @@ type EipClient struct {
 	client rest.ClientInterface
 }
 
-// SyncEip sync eip.
-func (cli *EipClient) SyncEip(ctx context.Context, h http.Header,
-	request *eip.EipSyncReq,
-) error {
+// SyncEip eip.
+func (cli *EipClient) SyncEip(ctx context.Context, h http.Header, request *sync.AwsSyncReq) error {
 	resp := new(core.SyncResp)
 
 	err := cli.client.Post().

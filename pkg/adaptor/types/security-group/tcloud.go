@@ -22,6 +22,9 @@ package securitygroup
 import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
+
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // -------------------------- Create --------------------------
@@ -102,4 +105,14 @@ type TCloudDeleteOption struct {
 // Validate security group delete option.
 func (opt TCloudDeleteOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// TCloudSG for vpc SecurityGroup
+type TCloudSG struct {
+	*vpc.SecurityGroup
+}
+
+// GetCloudID ...
+func (sg TCloudSG) GetCloudID() string {
+	return converter.PtrToVal(sg.SecurityGroupId)
 }

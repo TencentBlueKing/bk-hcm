@@ -24,6 +24,7 @@ import (
 	"net/http"
 
 	routetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -132,9 +133,8 @@ func (r *RouteTableClient) DeleteRoute(ctx context.Context, h http.Header, id st
 	return nil
 }
 
-// SyncRouteTable sync route table.
-func (r *RouteTableClient) SyncRouteTable(ctx context.Context, h http.Header,
-	req *routetable.TCloudRouteTableSyncReq) error {
+// SyncRouteTable route table.
+func (r *RouteTableClient) SyncRouteTable(ctx context.Context, h http.Header, req *sync.TCloudSyncReq) error {
 
 	resp := new(rest.BaseResp)
 

@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -83,6 +84,52 @@ func (a *Aws) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.AwsCreateOptio
 	}
 
 	return *resp.GroupId, nil
+}
+
+// TODO: sync-todo 改好后统一删除ListSecurityGroup函数
+// ListSecurityGroupNew list security group.
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeSecurityGroups.html
+func (a *Aws) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.AwsListOption) ([]securitygroup.AwsSG,
+	*string, error) {
+
+	if opt == nil {
+		return nil, nil, errf.New(errf.InvalidParameter, "security group list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req := new(ec2.DescribeSecurityGroupsInput)
+
+	if len(opt.CloudIDs) > 0 {
+		req.GroupIds = aws.StringSlice(opt.CloudIDs)
+	}
+
+	if opt.Page != nil {
+		req.MaxResults = opt.Page.MaxResults
+		req.NextToken = opt.Page.NextToken
+	}
+
+	resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
+	if err != nil {
+		if !strings.Contains(err.Error(), ErrSGNotFound) {
+			logs.Errorf("list aws security group failed, err: %v, rid: %s", err, kt.Rid)
+		}
+
+		return nil, nil, err
+	}
+
+	sgs := make([]securitygroup.AwsSG, 0, len(resp.SecurityGroups))
+	for _, one := range resp.SecurityGroups {
+		sgs = append(sgs, securitygroup.AwsSG{one})
+	}
+	return sgs, resp.NextToken, nil
 }
 
 // ListSecurityGroup list security group.
@@ -184,7 +231,7 @@ func (a *Aws) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.AwsAssoc
 
 	sgIDs := make([]*string, 0)
 	for _, sg := range instance.Reservations[0].Instances[0].SecurityGroups {
-		if *sg.GroupId == opt.CloudSecurityGroupID {
+		if converter.PtrToVal(sg.GroupId) == opt.CloudSecurityGroupID {
 			return fmt.Errorf("cvm: %s already associated security group: %s", opt.CloudCvmID, opt.CloudSecurityGroupID)
 		}
 		sgIDs = append(sgIDs, sg.GroupId)
@@ -236,7 +283,7 @@ func (a *Aws) SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.AwsAs
 	sgIDs := make([]*string, 0)
 	hit := false
 	for _, sg := range instance.Reservations[0].Instances[0].SecurityGroups {
-		if sg.GroupId != nil && *sg.GroupId == opt.CloudSecurityGroupID {
+		if sg.GroupId != nil && converter.PtrToVal(sg.GroupId) == opt.CloudSecurityGroupID {
 			hit = true
 			continue
 		}

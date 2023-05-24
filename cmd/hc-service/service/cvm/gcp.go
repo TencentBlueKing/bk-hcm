@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"hcm/cmd/hc-service/logics/sync/cvm"
+	syncgcp "hcm/cmd/hc-service/logics/res-sync/gcp"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/adaptor/gcp"
 	typecvm "hcm/pkg/adaptor/types/cvm"
@@ -118,14 +118,17 @@ func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return respData, nil
 	}
 
-	syncOpt := &cvm.SyncGcpCvmOption{
+	syncClient := syncgcp.NewClient(svc.dataCli, gcpCli)
+
+	params := &syncgcp.SyncBaseParams{
 		AccountID: req.AccountID,
-		Region:    req.Region,
-		Zone:      req.Zone,
 		CloudIDs:  result.SuccessCloudIDs,
 	}
-	if _, err = cvm.SyncGcpCvmWithRelResource(cts.Kit, svc.ad, svc.dataCli, syncOpt); err != nil {
-		logs.Errorf("sync gcp cvm with rel resource failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+
+	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncgcp.SyncCvmWithRelResOption{Region: req.Region,
+		Zone: req.Zone})
+	if err != nil {
+		logs.Errorf("sync gcp cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -216,15 +219,17 @@ func (svc *cvmSvc) StartGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncGcpCvmOption{
+	syncClient := syncgcp.NewClient(svc.dataCli, client)
+
+	params := &syncgcp.SyncBaseParams{
 		AccountID: cvmFromDB.AccountID,
-		Region:    cvmFromDB.Region,
-		Zone:      cvmFromDB.Zone,
 		CloudIDs:  []string{cvmFromDB.CloudID},
 	}
-	_, err = cvm.SyncGcpCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &syncgcp.SyncCvmOption{Region: cvmFromDB.Region,
+		Zone: cvmFromDB.Zone})
 	if err != nil {
-		logs.Errorf("sync gcp cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync gcp cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -259,15 +264,17 @@ func (svc *cvmSvc) StopGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncGcpCvmOption{
+	syncClient := syncgcp.NewClient(svc.dataCli, client)
+
+	params := &syncgcp.SyncBaseParams{
 		AccountID: cvmFromDB.AccountID,
-		Region:    cvmFromDB.Region,
-		Zone:      cvmFromDB.Zone,
 		CloudIDs:  []string{cvmFromDB.CloudID},
 	}
-	_, err = cvm.SyncGcpCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &syncgcp.SyncCvmOption{Region: cvmFromDB.Region,
+		Zone: cvmFromDB.Zone})
 	if err != nil {
-		logs.Errorf("sync gcp cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync gcp cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -302,15 +309,17 @@ func (svc *cvmSvc) RebootGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncOpt := &cvm.SyncGcpCvmOption{
+	syncClient := syncgcp.NewClient(svc.dataCli, client)
+
+	params := &syncgcp.SyncBaseParams{
 		AccountID: cvmFromDB.AccountID,
-		Region:    cvmFromDB.Region,
-		Zone:      cvmFromDB.Zone,
 		CloudIDs:  []string{cvmFromDB.CloudID},
 	}
-	_, err = cvm.SyncGcpCvm(cts.Kit, svc.ad, svc.dataCli, syncOpt)
+
+	_, err = syncClient.Cvm(cts.Kit, params, &syncgcp.SyncCvmOption{Region: cvmFromDB.Region,
+		Zone: cvmFromDB.Zone})
 	if err != nil {
-		logs.Errorf("sync gcp cvm failed, err: %v, opt: %v, rid: %s", err, syncOpt, cts.Kit.Rid)
+		logs.Errorf("sync gcp cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

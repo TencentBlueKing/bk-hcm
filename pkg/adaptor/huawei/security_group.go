@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	ecsmodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
@@ -138,6 +139,52 @@ func (h *HuaWei) UpdateSecurityGroup(kt *kit.Kit, opt *securitygroup.HuaWeiUpdat
 	}
 
 	return nil
+}
+
+// TODO: sync-todo 改好后统一删除ListSecurityGroup函数
+// ListSecurityGroupNew list security group.
+// reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0011.html
+func (h *HuaWei) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.HuaWeiListOption) ([]securitygroup.HuaWeiSG,
+	*model.PageInfo, error) {
+
+	if opt == nil {
+		return nil, nil, errf.New(errf.InvalidParameter, "security group update option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := h.clientSet.vpcClient(opt.Region)
+	if err != nil {
+		return nil, nil, fmt.Errorf("new vpc client failed, err: %v", err)
+	}
+
+	req := new(model.ListSecurityGroupsRequest)
+	if len(opt.CloudIDs) != 0 {
+		req.Id = sliceToPtr[string](opt.CloudIDs)
+	}
+
+	if opt.Page != nil {
+		req.Marker = opt.Page.Marker
+		req.Limit = opt.Page.Limit
+	}
+
+	resp, err := client.ListSecurityGroups(req)
+	if err != nil {
+		if strings.Contains(err.Error(), ErrDataNotFound) {
+			return nil, nil, nil
+		}
+		logs.Errorf("update huawei security group failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, nil, err
+	}
+
+	sgs := make([]securitygroup.HuaWeiSG, 0, len(converter.PtrToVal(resp.SecurityGroups)))
+	for _, one := range converter.PtrToVal(resp.SecurityGroups) {
+		sgs = append(sgs, securitygroup.HuaWeiSG{one})
+	}
+
+	return sgs, resp.PageInfo, err
 }
 
 // ListSecurityGroup list security group.

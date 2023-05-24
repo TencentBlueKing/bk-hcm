@@ -23,7 +23,7 @@ import (
 	gosync "sync"
 	"time"
 
-	"hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/api/hc-service/sync"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -52,7 +52,7 @@ func SyncDisk(kt *kit.Kit, service *hcservice.Client, accountID string, resource
 				<-pipeline
 			}()
 
-			req := &disk.DiskSyncReq{
+			req := &sync.AzureSyncReq{
 				AccountID:         accountID,
 				ResourceGroupName: name,
 			}

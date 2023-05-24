@@ -155,7 +155,7 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*type
 
 	req := new(armnetwork.SubnetsClientListOptions)
 
-	vpcName := parseIDToName(opt.VpcID)
+	vpcName := parseIDToName(opt.CloudVpcID)
 	pager := subnetClient.NewListPager(opt.ResourceGroupName, vpcName, req)
 	if err != nil {
 		logs.Errorf("list azure subnet failed, err: %v, rid: %s", err, kt.Rid)
@@ -170,11 +170,55 @@ func (a *Azure) ListSubnet(kt *kit.Kit, opt *types.AzureSubnetListOption) (*type
 		}
 
 		for _, subnet := range page.Value {
-			details = append(details, converter.PtrToVal(convertSubnet(subnet, opt.ResourceGroupName, opt.VpcID)))
+			details = append(details, converter.PtrToVal(convertSubnet(subnet, opt.ResourceGroupName, opt.CloudVpcID)))
 		}
 	}
 
 	return &types.AzureSubnetListResult{Details: details}, nil
+}
+
+// ListSubnetByPage list subnet by page.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/list?tabs=HTTP
+func (a *Azure) ListSubnetByPage(kt *kit.Kit, opt *types.AzureSubnetListOption) (
+	*Pager[armnetwork.SubnetsClientListResponse, types.AzureSubnet], error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	subnetClient, err := a.clientSet.subnetClient()
+	if err != nil {
+		return nil, fmt.Errorf("new subnet client failed, err: %v", err)
+	}
+
+	req := new(armnetwork.SubnetsClientListOptions)
+
+	vpcName := parseIDToName(opt.CloudVpcID)
+	azurePager := subnetClient.NewListPager(opt.ResourceGroupName, vpcName, req)
+
+	pager := &Pager[armnetwork.SubnetsClientListResponse, types.AzureSubnet]{
+		pager: azurePager,
+		resultHandler: &subnetResultHandler{
+			resGroupName: opt.ResourceGroupName,
+			cloudVpcID:   opt.CloudVpcID,
+		},
+	}
+
+	return pager, nil
+}
+
+type subnetResultHandler struct {
+	resGroupName string
+	cloudVpcID   string
+}
+
+func (handler *subnetResultHandler) BuildResult(resp armnetwork.SubnetsClientListResponse) []types.AzureSubnet {
+	details := make([]types.AzureSubnet, 0, len(resp.Value))
+	for _, subnet := range resp.Value {
+		details = append(details, converter.PtrToVal(convertSubnet(subnet, handler.resGroupName, handler.cloudVpcID)))
+	}
+
+	return details
 }
 
 // ListSubnetByID list subnet.
@@ -194,7 +238,7 @@ func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *types.AzureSubnetListByIDOption
 	idMap := converter.StringSliceToMap(opt.CloudIDs)
 
 	req := new(armnetwork.SubnetsClientListOptions)
-	vpcName := parseIDToName(opt.VpcID)
+	vpcName := parseIDToName(opt.CloudVpcID)
 	pager := subnetClient.NewListPager(opt.ResourceGroupName, vpcName, req)
 	details := make([]types.AzureSubnet, 0, len(idMap))
 	for pager.More() {
@@ -206,7 +250,7 @@ func (a *Azure) ListSubnetByID(kt *kit.Kit, opt *types.AzureSubnetListByIDOption
 		for _, one := range nextResult.Value {
 			id := SPtrToLowerSPtr(one.ID)
 			if _, exist := idMap[*id]; exist {
-				details = append(details, converter.PtrToVal(convertSubnet(one, opt.ResourceGroupName, opt.VpcID)))
+				details = append(details, converter.PtrToVal(convertSubnet(one, opt.ResourceGroupName, opt.CloudVpcID)))
 				delete(idMap, *id)
 
 				if len(idMap) == 0 {

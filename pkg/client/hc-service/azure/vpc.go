@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	hcservice "hcm/pkg/api/hc-service"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -110,7 +111,7 @@ func (v *VpcClient) Delete(ctx context.Context, h http.Header, id string) error 
 }
 
 // SyncVpc sync azure vpc.
-func (v *VpcClient) SyncVpc(ctx context.Context, h http.Header, req *hcservice.AzureResourceSyncReq) error {
+func (v *VpcClient) SyncVpc(ctx context.Context, h http.Header, req *sync.AzureSyncReq) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Post().

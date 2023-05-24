@@ -46,11 +46,26 @@ type GcpInterfaceListResult struct {
 // AzureNI defines azure network interface.
 type AzureNI CloudNetworkInterface[coreni.AzureNIExtension]
 
+// GetCloudID ...
+func (ni AzureNI) GetCloudID() string {
+	return *ni.CloudID
+}
+
 // HuaWeiNI defines huawei network interface.
 type HuaWeiNI CloudNetworkInterface[coreni.HuaWeiNIExtension]
 
+// GetCloudID ...
+func (ni HuaWeiNI) GetCloudID() string {
+	return *ni.CloudID
+}
+
 // GcpNI defines gcp network interface.
 type GcpNI CloudNetworkInterface[coreni.GcpNIExtension]
+
+// GetCloudID ...
+func (ni GcpNI) GetCloudID() string {
+	return *ni.CloudID
+}
 
 // CloudNetworkInterface defines network interface struct.
 type CloudNetworkInterface[T coreni.NetworkInterfaceExtension] struct {
@@ -102,7 +117,6 @@ func (opt AzureNetworkInterfaceListOption) Validate() error {
 type HuaWeiNIListOption struct {
 	ServerID string `json:"server_id" validate:"required"`
 	Region   string `json:"region" validate:"required"`
-	Zone     string `json:"zone" validate:"omitempty"`
 }
 
 // Validate huawei network interface list option.

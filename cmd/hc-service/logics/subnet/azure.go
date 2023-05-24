@@ -21,18 +21,25 @@
 package subnet
 
 import (
+	"errors"
+	"fmt"
+
 	routetable "hcm/cmd/hc-service/logics/sync/route-table"
-	syncsubnet "hcm/cmd/hc-service/logics/sync/subnet"
+	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
 	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	"hcm/pkg/api/hc-service/subnet"
+	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 )
 
@@ -75,7 +82,7 @@ func (s *Subnet) AzureSubnetSync(kt *kit.Kit, req *AzureSubnetSyncOptions) (*cor
 		CloudVpcID:        req.CloudVpcID,
 	}
 
-	res, err := syncsubnet.BatchCreateAzureSubnet(kt, createReqs, s.client.DataService(), s.adaptor, syncOpt)
+	res, err := BatchCreateAzureSubnet(kt, createReqs, s.client.DataService(), s.adaptor, syncOpt)
 	if err != nil {
 		logs.Errorf("sync azure subnet failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return nil, err
@@ -117,4 +124,111 @@ func convertAzureSubnetCreateReq(data *types.AzureSubnet, accountID string,
 	}
 
 	return subnetReq
+}
+
+// QuerySecurityGroupIDsAndSyncOption ...
+type QuerySecurityGroupIDsAndSyncOption struct {
+	Vendor                enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID             string        `json:"account_id" validate:"required"`
+	CloudSecurityGroupIDs []string      `json:"cloud_security_group_ids" validate:"required"`
+	ResourceGroupName     string        `json:"resource_group_name" validate:"omitempty"`
+	Region                string        `json:"region" validate:"omitempty"`
+}
+
+// Validate QuerySecurityGroupIDsAndSyncOption
+func (opt *QuerySecurityGroupIDsAndSyncOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.CloudSecurityGroupIDs) == 0 {
+		return errors.New("cloud_security_group_ids is required")
+	}
+
+	if len(opt.CloudSecurityGroupIDs) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("cloud_security_group_ids should <= %d", core.DefaultMaxPageLimit)
+	}
+
+	return nil
+}
+
+// BatchCreateAzureSubnet ...
+// TODO right now this method is used by create subnet api to get created result, because sync method do not return it.
+// TODO modify sync logics to return crud infos, then change this method to 'batchCreateAzureSubnet'.
+func BatchCreateAzureSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt],
+	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *hcservice.AzureResourceSyncReq) (
+	*core.BatchCreateResult, error) {
+
+	querySize := int(filter.DefaultMaxInLimit)
+	times := len(createResources) / querySize
+	if len(createResources)%querySize != 0 {
+		times++
+	}
+
+	listVpcOpt := &QueryVpcIDsAndSyncOption{
+		Vendor:            enumor.Azure,
+		AccountID:         req.AccountID,
+		CloudVpcIDs:       []string{req.CloudVpcID},
+		ResourceGroupName: req.ResourceGroupName,
+	}
+	vpcMap, err := QueryVpcIDsAndSync(kt, adaptor, dataCli, listVpcOpt)
+	if err != nil {
+		logs.Errorf("query vpcIDs and sync failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	createRes := &core.BatchCreateResult{IDs: make([]string, 0)}
+	for i := 0; i < times; i++ {
+		var newResources []cloud.SubnetCreateReq[cloud.AzureSubnetCreateExt]
+		if i == times-1 {
+			newResources = append(newResources, createResources[i*querySize:]...)
+		} else {
+			newResources = append(newResources, createResources[i*querySize:(i+1)*querySize]...)
+		}
+
+		cloudSGIDs := make([]string, 0)
+		for _, one := range newResources {
+			if len(one.Extension.CloudSecurityGroupID) != 0 {
+				cloudSGIDs = append(cloudSGIDs, one.Extension.CloudSecurityGroupID)
+			}
+		}
+
+		listSGOpt := &QuerySecurityGroupIDsAndSyncOption{
+			Vendor:                enumor.Azure,
+			AccountID:             req.AccountID,
+			ResourceGroupName:     req.ResourceGroupName,
+			CloudSecurityGroupIDs: cloudSGIDs,
+		}
+		securityGroupMap, err := QuerySecurityGroupIDsAndSync(kt, adaptor, dataCli, listSGOpt)
+		if err != nil {
+			return nil, err
+		}
+
+		for index, resource := range newResources {
+			vpcID, exist := vpcMap[resource.CloudVpcID]
+			if !exist {
+				return nil, fmt.Errorf("vpc: %s not sync from cloud", resource.CloudVpcID)
+			}
+			newResources[index].VpcID = vpcID
+
+			if len(resource.Extension.CloudSecurityGroupID) != 0 {
+				sgID, exist := securityGroupMap[resource.Extension.CloudSecurityGroupID]
+				if !exist {
+					return nil, fmt.Errorf("security group: %s not sync from cloud", resource.Extension.CloudSecurityGroupID)
+				}
+				newResources[index].Extension.SecurityGroupID = sgID
+			}
+		}
+
+		createReq := &cloud.SubnetBatchCreateReq[cloud.AzureSubnetCreateExt]{
+			Subnets: newResources,
+		}
+		res, err := dataCli.Azure.Subnet.BatchCreate(kt.Ctx, kt.Header(), createReq)
+		if err != nil {
+			return nil, err
+		}
+		createRes.IDs = append(createRes.IDs, res.IDs...)
+	}
+
+	return createRes, nil
 }

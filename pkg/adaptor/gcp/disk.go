@@ -101,6 +101,60 @@ func (g *Gcp) createDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.O
 	return call.Do()
 }
 
+// TODO: sync-todo 改好后统一删除ListDisk函数
+// ListDisk 查看云硬盘
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/list
+func (g *Gcp) ListDiskNew(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]disk.GcpDisk, string, error) {
+	if opt == nil {
+		return nil, "", errf.New(errf.InvalidParameter, "gcp disk list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, "", errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, "", err
+	}
+
+	request := client.Disks.List(g.clientSet.credential.CloudProjectID, opt.Zone).Context(kt.Ctx)
+
+	if len(opt.CloudIDs) > 0 {
+		request.Filter(generateResourceIDsFilter(opt.CloudIDs))
+	}
+
+	if len(opt.SelfLinks) > 0 {
+		request.Filter(generateResourceFilter("selfLink", opt.SelfLinks))
+	}
+
+	if len(opt.Names) > 0 {
+		request.Filter(generateResourceFilter("name", opt.Names))
+	}
+
+	if opt.Page != nil {
+		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+	}
+
+	resp, err := request.Do()
+	if err != nil {
+		logs.Errorf("list disks failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, "", err
+	}
+
+	for index := range resp.Items {
+		resp.Items[index].Region = resp.Items[index].
+			Zone[strings.LastIndex(resp.Items[index].Zone, "/")+1 : strings.LastIndex(resp.Items[index].Zone, "-")]
+	}
+
+	disks := make([]disk.GcpDisk, 0, len(resp.Items))
+	for _, one := range resp.Items {
+		disks = append(disks, disk.GcpDisk{one})
+	}
+
+	return disks, resp.NextPageToken, nil
+}
+
 // ListDisk 查看云硬盘
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/list
 func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Disk, string, error) {

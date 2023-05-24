@@ -21,10 +21,13 @@ package firewallrule
 
 import (
 	"errors"
+	"fmt"
 
 	"hcm/pkg/adaptor/types/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/validator"
+
+	"google.golang.org/api/compute/v1"
 )
 
 // -------------------------- Create --------------------------
@@ -116,4 +119,14 @@ type DeleteOption struct {
 // Validate gcp firewall rule delete option.
 func (opt DeleteOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// GcpFirewall for compute Firewall
+type GcpFirewall struct {
+	*compute.Firewall
+}
+
+// GetCloudID ...
+func (firewall GcpFirewall) GetCloudID() string {
+	return fmt.Sprint(firewall.Id)
 }

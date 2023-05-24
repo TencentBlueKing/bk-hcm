@@ -29,6 +29,9 @@ const (
 	CmdbSyncFailed WarnSign = "cmdb_sync_failed"
 	// DeleteCvmStartScriptFailed delete cvm start script failed.
 	DeleteCvmStartScriptFailed WarnSign = "delete_cvm_start_script_failed"
+	// CvmHasMultipleVpcs cvm has multiple vpc. 因为蓝鲸体现中一台主机只能属于一个云区域，如果主机有多个Vpv，
+	// 就可能属于多个不同的云区域，蓝鲸概念冲突，这类主机暂不同步进海垒。
+	CvmHasMultipleVpcs WarnSign = "cvm_has_multiple_vpc"
 	// AccountBillConfigFailed account bill config failed.
 	AccountBillConfigFailed WarnSign = "account_bill_config_failed"
 )

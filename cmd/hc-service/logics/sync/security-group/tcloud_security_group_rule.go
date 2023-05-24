@@ -20,7 +20,6 @@
 package securitygroup
 
 import (
-	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/tcloud"
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
@@ -44,17 +43,13 @@ type syncSecurityGroupRuleOption struct {
 }
 
 // SyncTCloudSGRule sync tcloud security group rules.
-func SyncTCloudSGRule(kt *kit.Kit, req *SyncTCloudSecurityGroupOption, ad *cloudclient.CloudAdaptorClient,
-	dataCli *dataservice.Client, sgID string) ([]string, error) {
-
-	client, err := ad.TCloud(kt, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
+func SyncTCloudSGRule(kt *kit.Kit, client *tcloud.TCloud, dataCli *dataservice.Client,
+	sgID string) ([]string, error) {
 
 	sg, err := dataCli.TCloud.SecurityGroup.GetSecurityGroup(kt.Ctx, kt.Header(), sgID)
 	if err != nil {
-		logs.Errorf("request dataservice get TCloud security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice get TCloud security group failed, err: %v, rid: %s", enumor.TCloud,
+			err, kt.Rid)
 		return nil, err
 	}
 
@@ -99,7 +94,8 @@ func SyncTCloudSGRule(kt *kit.Kit, req *SyncTCloudSecurityGroupOption, ad *cloud
 			}
 
 		default:
-			logs.Errorf("unknown security group rule type: %s, skip handle, rid: %s", one.Type, kt.Rid)
+			logs.Errorf("[%s] unknown security group rule type: %s, skip handle, rid: %s", enumor.TCloud,
+				one.Type, kt.Rid)
 		}
 	}
 
@@ -175,7 +171,8 @@ func listRuleFromCloud(kt *kit.Kit, client *tcloud.TCloud, region, cloudSGID str
 	}
 	rules, err := client.ListSecurityGroupRule(kt, listOpt)
 	if err != nil {
-		logs.Errorf("request adaptor to list tcloud security group rule failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request adaptor to list tcloud security group rule failed, err: %v, rid: %s", enumor.TCloud,
+			err, kt.Rid)
 		return "", nil, nil, err
 	}
 
@@ -223,8 +220,8 @@ func updateSecurityGroupRule(kt *kit.Kit, dataCli *dataservice.Client, sgID stri
 		Rules: rules,
 	}
 	if err := dataCli.TCloud.SecurityGroup.BatchUpdateSecurityGroupRule(kt.Ctx, kt.Header(), req, sgID); err != nil {
-		logs.Errorf("request dataservice to batch update tcloud security group rule failed, err: %v, rid: %s", err,
-			kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch update tcloud security group rule failed, err: %v, rid: %s", enumor.TCloud,
+			err, kt.Rid)
 		return err
 	}
 
@@ -270,7 +267,8 @@ func deleteSecurityGroupRule(kt *kit.Kit, dataCli *dataservice.Client, sgID stri
 	}
 	err := dataCli.TCloud.SecurityGroup.BatchDeleteSecurityGroupRule(kt.Ctx, kt.Header(), req, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice to delete tcloud security group rule failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to delete tcloud security group rule failed, err: %v, rid: %s", enumor.TCloud,
+			err, kt.Rid)
 		return err
 	}
 
@@ -308,7 +306,8 @@ func createSecurityGroupRule(kt *kit.Kit, dataCli *dataservice.Client, sgID stri
 	}
 	result, err := dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroupRule(kt.Ctx, kt.Header(), req, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice to create tcloud security group rule failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to create tcloud security group rule failed, err: %v, rid: %s", enumor.TCloud,
+			err, kt.Rid)
 		return nil, err
 	}
 

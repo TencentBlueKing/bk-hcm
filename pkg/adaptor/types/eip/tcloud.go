@@ -68,6 +68,11 @@ type TCloudEip struct {
 	InternetServiceProvider *string
 }
 
+// GetCloudID ...
+func (eip *TCloudEip) GetCloudID() string {
+	return eip.CloudID
+}
+
 // TCloudEipDeleteOption ...
 type TCloudEipDeleteOption struct {
 	CloudIDs []string `json:"cloud_ids" validate:"required"`

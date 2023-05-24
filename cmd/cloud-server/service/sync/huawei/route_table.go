@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"hcm/pkg/adaptor/huawei"
-	routetable "hcm/pkg/api/hc-service/route-table"
+	"hcm/pkg/api/hc-service/sync"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/criteria/enumor"
@@ -35,11 +35,11 @@ import (
 // SyncRouteTable 同步路由表
 func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice.Client, accountID string) error {
 	start := time.Now()
-	logs.V(3).Infof("cloud-server-sync-%s account[%s] sync route table start, time: %v, rid: %s",
+	logs.V(3).Infof("[%s] account[%s] sync route table start, time: %v, rid: %s",
 		enumor.HuaWei, accountID, start, kt.Rid)
 
 	defer func() {
-		logs.V(3).Infof("cloud-server-sync-%s account[%s] sync route table end, cost: %v, rid: %s",
+		logs.V(3).Infof("[%s] account[%s] sync route table end, cost: %v, rid: %s",
 			enumor.HuaWei, accountID, time.Since(start), kt.Rid)
 	}()
 
@@ -62,7 +62,7 @@ func SyncRouteTable(kt *kit.Kit, service *hcservice.Client, dataCli *dataservice
 				<-pipeline
 			}()
 
-			req := &routetable.HuaWeiRouteTableSyncReq{
+			req := &sync.HuaWeiSyncReq{
 				AccountID: accountID,
 				Region:    region,
 			}

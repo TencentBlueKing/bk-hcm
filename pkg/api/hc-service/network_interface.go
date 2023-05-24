@@ -25,10 +25,9 @@ import "hcm/pkg/criteria/validator"
 
 // AzureNetworkInterfaceSyncReq defines sync resource request.
 type AzureNetworkInterfaceSyncReq struct {
-	AccountID            string   `json:"account_id" validate:"required"`
-	ResourceGroupName    string   `json:"resource_group_name" validate:"omitempty"`
-	NetworkInterfaceName string   `json:"network_interface_name" validate:"omitempty"`
-	CloudIDs             []string `json:"cloud_ids" validate:"omitempty"`
+	AccountID         string   `json:"account_id" validate:"required"`
+	ResourceGroupName string   `json:"resource_group_name" validate:"omitempty"`
+	CloudIDs          []string `json:"cloud_ids" validate:"omitempty"`
 }
 
 // Validate validate sync vpc request.

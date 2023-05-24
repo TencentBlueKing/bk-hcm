@@ -77,6 +77,49 @@ func (a *Aws) createDisk(kt *kit.Kit, opt *disk.AwsDiskCreateOption) (*ec2.Volum
 	return client.CreateVolumeWithContext(kt.Ctx, req)
 }
 
+// TODO: sync-todo 改好后统一删除ListDisk函数
+// ListDisk 查看云硬盘
+// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeVolumes.html
+func (a *Aws) ListDiskNew(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]disk.AwsDisk, *string, error) {
+	if opt == nil {
+		return nil, nil, errf.New(errf.InvalidParameter, "aws disk list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := a.clientSet.ec2Client(opt.Region)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req := new(ec2.DescribeVolumesInput)
+
+	if len(opt.CloudIDs) > 0 {
+		req.VolumeIds = converter.SliceToPtr(opt.CloudIDs)
+	} else if opt.Page != nil {
+		req.MaxResults = opt.Page.MaxResults
+		req.NextToken = opt.Page.NextToken
+	}
+
+	resp, err := client.DescribeVolumesWithContext(kt.Ctx, req)
+	if err != nil {
+		if !strings.Contains(err.Error(), ErrVpcNotFound) {
+			logs.Errorf("list aws disk failed, err: %v, rid: %s", err, kt.Rid)
+		}
+
+		return nil, nil, err
+	}
+
+	disks := make([]disk.AwsDisk, 0, len(resp.Volumes))
+	for _, one := range resp.Volumes {
+		disks = append(disks, disk.AwsDisk{one})
+	}
+
+	return disks, resp.NextToken, err
+}
+
 // ListDisk 查看云硬盘
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeVolumes.html
 func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]*ec2.Volume, *string, error) {
