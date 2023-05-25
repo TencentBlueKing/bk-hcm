@@ -319,6 +319,8 @@ bkLoginUrl: http://example.com/login
 bkLoginCookieName: ""
 # ITSM 地址
 bkItsmUrl: http://itsm.bk.com
+# HCM 地址
+bkHCMUrl: http://hcm.bk.com
 ## 加密配置，Note: 首次部署后不可修改，否则数据将无法解密
 ##
 crypto:

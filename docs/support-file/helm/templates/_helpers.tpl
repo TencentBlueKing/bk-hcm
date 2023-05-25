@@ -40,17 +40,6 @@ Return the proper Docker Image Registry Secret Names
 {{- end -}}
 
 {{/*
- Create the url of web server
- */}}
-{{- define "bk-hcm.bkHcmUrl" -}}
-{{- if .Values.ingress.shareDomainEnable -}}
-    {{- printf "%s://%s" .Values.global.bkDomainScheme .Values.ingress.host  -}}
-{{- else -}}
-    {{- printf "%s://%s" .Values.global.bkDomainScheme .Values.ingress.webserver.host  -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Wait for pod
 */}}
 {{- define "bk-hcm.wait-for-pod-init-container" -}}
