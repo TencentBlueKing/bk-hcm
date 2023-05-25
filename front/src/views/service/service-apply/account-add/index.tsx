@@ -54,7 +54,6 @@ export default defineComponent({
     });
 
     const optionalRequired: string[] = ['secretId', 'secretKey', 'accountName', 'accountId', 'applicationId', 'applicationName', 'bizIds'];
-    const resourceOptionalRequired: string[] = ['bizIds'];
     const cloudType = reactive(CLOUD_TYPE);
     const submitLoading = ref(false);
     const isChangeVendor = ref(false);
@@ -493,22 +492,22 @@ export default defineComponent({
       () => projectModel.type,
       (val) => {
         formRef.value?.clearValidate(); // 切换清除表单检验
-        if (val === 'resource') {  // 资源账号
-          formList?.forEach((e) => {
-            if (resourceOptionalRequired.includes(e.property)) {
-              e.required = false;
-            }
-          });
-        } else if (val === 'registration') {  // 登记账号
+        if (val === 'registration') {  // 登记账号
           formList?.forEach((e) => {
             if (optionalRequired.includes(e.property)) {
               e.required = false;
             }
           });
+        } else if (val === 'resource') {  // 资源账号
+          formList?.forEach((e) => {
+            if (e.label && e.property === 'bizIds') {   // 资源账号使用业务必填
+              e.required = true;
+            }
+          });
         } else {
           formList?.forEach((e) => {
-            if (e.label && e.property !== 'memo' && e.property !== 'bizIds') {   // 备注、使用业务不需必填
-              e.required = true;
+            if (e.label && (e.property === 'memo' || e.property === 'bizIds')) {   // 备注、使用业务不需必填
+              e.required = false;
             }
           });
         }
