@@ -2,11 +2,11 @@
   <div class="template-warp">
     <div class="flex-row operate-warp justify-content-between align-items-center mb20">
       <div @click="handleAuth('account_import')">
-        <bk-button
+        <!-- <bk-button
           theme="primary" @click="handleJump('accountAdd')"
           :disabled="!authVerifyData.permissionAction.account_import">
           {{t('新增') }}
-        </bk-button>
+        </bk-button> -->
       </div>
       <div class="flex-row input-warp justify-content-between align-items-center">
         <bk-checkbox v-model="isAccurate" class="pr20">
