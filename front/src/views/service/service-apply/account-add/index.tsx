@@ -87,7 +87,7 @@ export default defineComponent({
           managers: projectModel.managers,
           memo: projectModel.memo,
           site: projectModel.site,
-          bk_biz_ids: projectModel.bizIds ? [projectModel.bizIds] : [-1],
+          bk_biz_ids: projectModel.bizIds.length ? projectModel.bizIds : [-1],
           extension: {},
         };
         switch (projectModel.vendor) {
