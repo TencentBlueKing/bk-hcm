@@ -15,7 +15,7 @@ export interface IMeta {
 }
 
 export enum TypeEnum {
-  HOST = 'host',
+  HOST = 'vpc',
   SUBNET = 'subnet',
   ACCOUNT = 'account',
   IMAGE = 'image'
@@ -44,7 +44,7 @@ export const useRouteLinkBtn = (
       Object.assign(
         routeInfo,
         {
-          name: `${type}BusinessDetail`,
+          name: type === TypeEnum.ACCOUNT ? 'accountDetail' : `${type}BusinessDetail`,
         },
       );
     } else {
