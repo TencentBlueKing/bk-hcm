@@ -128,7 +128,7 @@ export default defineComponent({
         label: '管控区域',
         render({ data }: any) {
           if (data.bk_cloud_id > -1) {
-            return data.bk_cloud_id;
+            return computedCloudAreasMap.value.get(data.bk_cloud_id) || '--';
           }
           // 校验
           const validate = () => {
@@ -333,6 +333,16 @@ export default defineComponent({
         }
         return acc;
       }, []);
+    });
+
+    const computedCloudAreasMap = computed(() => {
+      const cloudAreasMap = new Map<number, string>();
+      for(const area of cloudAreas.value) {
+        const {id, name} = area;
+        if(id === undefined || name === undefined) continue;
+        cloudAreasMap.set(id, name);
+      }
+      return cloudAreasMap;
     });
 
     watch(
