@@ -79,7 +79,7 @@ type TCloudSecurityGroupRuleTable struct {
 	CloudAddressID             *string    `db:"cloud_address_id" validate:"omitempty,lte=255" json:"cloud_address_id"`
 	CloudAddressGroupID        *string    `db:"cloud_address_group_id" validate:"omitempty,lte=255" json:"cloud_address_group_id"`
 	Region                     string     `db:"region" validate:"lte=20" json:"region"`
-	Memo                       *string    `db:"memo" validate:"omitempty,lte=64" json:"memo"`
+	Memo                       *string    `db:"memo" validate:"omitempty,lte=255" json:"memo"`
 	Creator                    string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser                    string     `db:"reviser" validate:"lte=64" json:"reviser"`
 	CreatedAt                  types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
