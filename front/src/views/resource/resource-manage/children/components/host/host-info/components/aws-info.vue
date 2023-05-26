@@ -7,6 +7,7 @@ import {
   PropType,
 } from 'vue';
 import { useRouteLinkBtn, TypeEnum } from '@/hooks/useRouteLinkBtn';
+import { CLOUD_HOST_STATUS } from '@/common/constant';
 
 const props = defineProps({
   data: {
@@ -58,8 +59,8 @@ const cvmInfo = [
     cls(val: string) {
       return `status-${val}`;
     },
-    render(val: string) {
-      return HostCloudEnum[val];
+    render() {
+      return CLOUD_HOST_STATUS[props.data.status];
     },
   },
   {

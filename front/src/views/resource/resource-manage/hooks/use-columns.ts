@@ -12,6 +12,7 @@ import {
   useRoute,
   useRouter,
 } from 'vue-router';
+import { CLOUD_HOST_STATUS } from '@/common/constant';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
@@ -663,7 +664,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           'span',
           {},
           [
-            HostCloudEnum[data.status] || data.status,
+            CLOUD_HOST_STATUS[data.status] || data.status,
           ],
         );
       },
