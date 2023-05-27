@@ -73,7 +73,7 @@ func newClientSet(secret *types.BaseSecret) *clientSet {
 func (c *clientSet) iamClient(region *region.Region) (client *iam.IamClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 
@@ -90,7 +90,7 @@ func (c *clientSet) iamClient(region *region.Region) (client *iam.IamClient, err
 func (c *clientSet) iamRegionClient(region string) (client *iam.IamClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 	client = iam.NewIamClient(
@@ -106,7 +106,7 @@ func (c *clientSet) iamRegionClient(region string) (client *iam.IamClient, err e
 func (c *clientSet) evsClient(region string) (client *evs.EvsClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 	client = evs.NewEvsClient(
@@ -122,7 +122,7 @@ func (c *clientSet) evsClient(region string) (client *evs.EvsClient, err error) 
 func (c *clientSet) vpcClient(regionID string) (cli *vpc.VpcClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 
@@ -139,7 +139,7 @@ func (c *clientSet) vpcClient(regionID string) (cli *vpc.VpcClient, err error) {
 func (c *clientSet) vpcClientV2(regionID string) (cli *vpcv2.VpcClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 
@@ -156,7 +156,7 @@ func (c *clientSet) vpcClientV2(regionID string) (cli *vpcv2.VpcClient, err erro
 func (c *clientSet) imsClientV2(region *region.Region) (cli *ims.ImsClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 
@@ -173,7 +173,7 @@ func (c *clientSet) imsClientV2(region *region.Region) (cli *ims.ImsClient, err 
 func (c *clientSet) ecsClient(regionID string) (cli *ecs.EcsClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 
@@ -190,7 +190,7 @@ func (c *clientSet) ecsClient(regionID string) (cli *ecs.EcsClient, err error) {
 func (c *clientSet) dcsClient(regionID string) (cli *dcs.DcsClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 
@@ -207,7 +207,7 @@ func (c *clientSet) dcsClient(regionID string) (cli *dcs.DcsClient, err error) {
 func (c *clientSet) eipClient(regionID string) (cli *eip.EipClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 
@@ -224,7 +224,7 @@ func (c *clientSet) eipClient(regionID string) (cli *eip.EipClient, err error) {
 func (c *clientSet) eipV3Client(regionID string) (cli *eipv3.EipClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 
@@ -241,7 +241,7 @@ func (c *clientSet) eipV3Client(regionID string) (cli *eipv3.EipClient, err erro
 func (c *clientSet) bssintlClient() (cli *bssintl.BssintlClient, err error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic recovered, err: %v", p)
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
 		}
 	}()
 
