@@ -54,6 +54,7 @@ export default defineComponent({
     });
 
     const optionalRequired: string[] = ['secretId', 'secretKey', 'accountName', 'accountId', 'applicationId', 'applicationName', 'bizIds'];
+    const requiredData: string[] = ['secretId', 'secretKey', 'bizIds'];
     const cloudType = reactive(CLOUD_TYPE);
     const submitLoading = ref(false);
     const isChangeVendor = ref(false);
@@ -87,7 +88,7 @@ export default defineComponent({
           managers: projectModel.managers,
           memo: projectModel.memo,
           site: projectModel.site,
-          bk_biz_ids: projectModel.bizIds.length ? projectModel.bizIds : [-1],
+          bk_biz_ids: Array.isArray(projectModel.bizIds) ? [-1] : [projectModel.bizIds],
           extension: {},
         };
         switch (projectModel.vendor) {
@@ -460,12 +461,12 @@ export default defineComponent({
               component: () => <Input class="w450" placeholder={t('请输入子账号名称')} v-model={projectModel.subAccountName} />,
             },
             {
-              label: t('SecretId/密钥ID'),
+              label: t('SecretId'),
               formName: t('API 密钥'),
               noBorBottom: true,
               required: true,
               property: 'secretId',
-              component: () => <Input class="w450" placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />,
+              component: () => <Input class="w450" placeholder={t('请输入SecretId')} v-model={projectModel.secretId} />,
             },
             {
               label: 'SecretKey',
@@ -500,7 +501,7 @@ export default defineComponent({
           });
         } else if (val === 'resource') {  // 资源账号
           formList?.forEach((e) => {
-            if (e.label && e.property === 'bizIds') {   // 资源账号使用业务必填
+            if (e.label && (requiredData.includes(e.property))) {   // 资源账号必填项
               e.required = true;
             }
           });

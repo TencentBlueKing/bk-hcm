@@ -129,11 +129,11 @@ export default defineComponent({
           {{
             prefix: () => (
               <>
-                {props.vendor === 'azure' ? <Select v-else class="input-prefix-select" v-model={data.sourceAddress}>
+                {props.vendor === 'azure' ? <Select clearable={false} class="input-prefix-select" v-model={data.sourceAddress}>
                 {azureSecurityGroupSource.value.map(ele => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
                 ))}
-                </Select> : <Select class="input-prefix-select" v-model={data.sourceAddress}>
+                </Select> : <Select clearable={false} class="input-prefix-select" v-model={data.sourceAddress}>
                 {securityGroupSource.value.map(ele => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
                 ))}
@@ -149,11 +149,11 @@ export default defineComponent({
         {{
           prefix: () => (
             <>
-                {props.vendor === 'azure' ? <Select v-else class="input-prefix-select" v-model={data.sourceAddress}>
+                {props.vendor === 'azure' ? <Select clearable={false} class="input-prefix-select" v-model={data.sourceAddress}>
                 {azureSecurityGroupSource.value.map(ele => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
                 ))}
-                </Select> : <Select class="input-prefix-select" v-model={data.sourceAddress}>
+                </Select> : <Select clearable={false} class="input-prefix-select" v-model={data.sourceAddress}>
                 {securityGroupSource.value.map(ele => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
                 ))}
@@ -218,7 +218,7 @@ export default defineComponent({
       );
     };
 
-    const tableData = ref<any>([]);
+    const tableData = ref<any>([{}]);
     const steps = [
       {
         component: () => <>
@@ -489,6 +489,8 @@ export default defineComponent({
               }
             });
           }
+        } else {
+          tableData.value = [{ sourceAddress: 'ipv4_cidr' }];
         }
       },
       {
@@ -502,7 +504,6 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      console.log('tableData.value', tableData.value);
       tableData.value.forEach((e: any) => {
         e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id || e[e.sourceAddress];
         if (e.sourceAddress !== 'ipv4_cidr') {
@@ -533,7 +534,7 @@ export default defineComponent({
 
     // 新增
     const handlerAdd = () => {
-      tableData.value.push({});
+      tableData.value.push({ sourceAddress: 'ipv4_cidr' });
     };
 
     // 删除
