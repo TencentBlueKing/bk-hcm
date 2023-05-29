@@ -220,6 +220,13 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 		return err
 	}
 
+	// 资源账号下业务不能为空校验
+	if req.Type == enumor.ResourceAccount {
+		if err := validateResAccountBkBizIDs(req.BkBizIDs); err != nil {
+			return err
+		}
+	}
+
 	// 业务合法性校验
 	if err := validateBkBizIDs(req.BkBizIDs); err != nil {
 		return err

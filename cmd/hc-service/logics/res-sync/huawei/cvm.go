@@ -80,7 +80,7 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 	}
 
 	addSlice, updateMap, delCloudIDs := common.Diff[typescvm.HuaWeiCvm, corecvm.Cvm[cvm.HuaWeiCvmExtension]](
-		cvmFromCloud, cvmFromDB, isCvmChange)
+		cvmFromCloud, cvmFromDB, cli.isCvmChange)
 
 	if len(addSlice) > 0 {
 		if err = cli.createCvm(kt, params.AccountID, params.Region, addSlice); err != nil {
@@ -669,7 +669,7 @@ func (cli *client) listRemoveCvmID(kt *kit.Kit, params *SyncBaseParams) ([]strin
 	return delCloudIDs, nil
 }
 
-func isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaWeiCvmExtension]) bool {
+func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaWeiCvmExtension]) bool {
 	if db.CloudID != cloud.Id {
 		return true
 	}
@@ -687,6 +687,35 @@ func isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaWeiCvmExtension
 	}
 
 	if db.Status != cloud.Status {
+		return true
+	}
+
+	cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kit.New(), cli.accountID, db.Region, db.CloudID,
+		cloud.Metadata["vpc_id"])
+	if err != nil {
+		logs.Errorf("[%s] get subnets failed, err: %v", enumor.HuaWei, err)
+		return true
+	}
+
+	vpcMap, err := cli.getVpcMap(kit.New(), cli.accountID, db.Region, []string{cloud.Metadata["vpc_id"]})
+	if err != nil {
+		logs.Errorf("[%s] get vpc map failed, err: %v", enumor.HuaWei, err)
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.CloudSubnetIDs, cloudSubnetIDs) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.SubnetIDs, subnetIDs) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.CloudVpcIDs, []string{cloud.Metadata["vpc_id"]}) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.VpcIDs, []string{vpcMap[cloud.Metadata["vpc_id"]].VpcID}) {
 		return true
 	}
 
