@@ -144,7 +144,7 @@ export default defineComponent({
           // eslint-disable-next-line no-nested-ternary
           return selectModelValue.length
             ? <span>{selectModelValue.join(',')}</span>
-            : props.modelValue.join(',') === '-1' ? '全部' : '暂无';
+            : props.modelValue.join(',') === '-1' ? '未分配' : '暂无';
         default:
           return <span>{props.modelValue}</span>;
       }

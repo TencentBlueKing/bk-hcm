@@ -3,7 +3,7 @@ import {
   ref,
   watch,
 } from 'vue';
-import { Input, Select, Button, Form, TagInput } from 'bkui-vue'; // TagInput
+import { Input, Select, Button, Form, TagInput, Message } from 'bkui-vue'; // TagInput
 import { Info } from 'bkui-vue/lib/icon';
 import { ACTION_STATUS, GCP_PROTOCOL_LIST, IP_TYPE_LIST, HUAWEI_ACTION_STATUS, HUAWEI_TYPE_LIST, AZURE_PROTOCOL_LIST } from '@/constants';
 import Confirm from '@/components/confirm';
@@ -56,6 +56,8 @@ export default defineComponent({
 
     const protocolList = ref<any>(GCP_PROTOCOL_LIST);
 
+    const ipv4IsEmpty = ref(false);
+
 
     const securityGroupSource = ref([   // 华为源
       {
@@ -101,7 +103,6 @@ export default defineComponent({
     const securityRuleId = ref('');
 
     protocolList.value = protocolList.value.filter((e: any) => e.name !== 'ALL');
-    console.log(protocolList.value);
     if (props.vendor === 'aws') {
       protocolList.value.unshift({
         // @ts-ignore
@@ -121,7 +122,6 @@ export default defineComponent({
     }
 
     const renderSourceAddressSlot = (data: any, key: string) => {
-      console.log('data[key]', data, key);
       if (data[key]) {
         return <Input class="mt20 mb10 input-select-warp"
         placeholder="请输入"
@@ -504,7 +504,18 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      tableData.value.forEach((e: any) => {
+      ipv4IsEmpty.value = false;
+      // eslint-disable-next-line @typescript-eslint/prefer-for-of
+      for (let index = 0; index < tableData.value.length; index++) {
+        const e = tableData.value[index];
+        if (!e.ipv4_cidr) {
+          Message({
+            theme: 'error',
+            message: t('源地址必填'),
+          });
+          ipv4IsEmpty.value = true;
+          break;
+        }
         e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id || e[e.sourceAddress];
         if (e.sourceAddress !== 'ipv4_cidr') {
           delete e.ipv4_cidr;
@@ -519,12 +530,29 @@ export default defineComponent({
         }
         // delete e.sourceAddress;
         // delete e.targetAddress;
-      });
+      }
+      // tableData.value.forEach((e: any) => {
+      //   e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id || e[e.sourceAddress];
+      //   if (e.sourceAddress !== 'ipv4_cidr') {
+      //     delete e.ipv4_cidr;
+      //   }
+      //   if (e.source_port_range?.includes(',')) {
+      //     e.source_port_ranges = e.source_port_range.split(',');
+      //     delete e.source_port_range;
+      //   }
+      //   if (e.destination_port_range?.includes(',')) {
+      //     e.destination_port_ranges = e.destination_port_range.split(',');
+      //     delete e.destination_port_range;
+      //   }
+      //   // delete e.sourceAddress;
+      //   // delete e.targetAddress;
+      // });
       // for (let index = 0; index < tableData.value.length; index++) {
       //   const element = tableData.value[index];
       //   if(element)
       // }
       // @ts-ignore
+      if (ipv4IsEmpty.value) return;
       if (securityRuleId.value) {  // 更新
         emit('submit', tableData.value);
       } else {
