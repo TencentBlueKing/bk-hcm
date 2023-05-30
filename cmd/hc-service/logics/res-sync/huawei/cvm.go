@@ -123,6 +123,10 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	}
 
 	for id, one := range updateMap {
+		if _, exist := vpcMap[one.Id]; !exist {
+			return fmt.Errorf("cvm %s can not find vpc", one.Id)
+		}
+
 		cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kt, accountID, region, one.Id,
 			one.Metadata["vpc_id"])
 		if err != nil {
@@ -261,6 +265,10 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 	}
 
 	for _, one := range addSlice {
+		if _, exist := vpcMap[one.Id]; !exist {
+			return fmt.Errorf("cvm %s can not find vpc", one.Id)
+		}
+
 		cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kt, accountID, region, one.Id,
 			one.Metadata["vpc_id"])
 		if err != nil {
@@ -690,14 +698,14 @@ func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaW
 		return true
 	}
 
-	cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kit.New(), cli.accountID, db.Region, db.CloudID,
+	cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kit.New(), db.AccountID, db.Region, db.CloudID,
 		cloud.Metadata["vpc_id"])
 	if err != nil {
 		logs.Errorf("[%s] get subnets failed, err: %v", enumor.HuaWei, err)
 		return true
 	}
 
-	vpcMap, err := cli.getVpcMap(kit.New(), cli.accountID, db.Region, []string{cloud.Metadata["vpc_id"]})
+	vpcMap, err := cli.getVpcMap(kit.New(), db.AccountID, db.Region, []string{cloud.Metadata["vpc_id"]})
 	if err != nil {
 		logs.Errorf("[%s] get vpc map failed, err: %v", enumor.HuaWei, err)
 		return true

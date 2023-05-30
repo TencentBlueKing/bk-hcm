@@ -310,6 +310,14 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 	}
 
 	for id, one := range updateMap {
+		if _, exsit := vpcMap[converter.PtrToVal(one.ID)]; !exsit {
+			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.ID))
+		}
+
+		if _, exsit := subnetMap[converter.PtrToVal(one.ID)]; !exsit {
+			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.ID))
+		}
+
 		cvm := dataproto.CvmBatchUpdate[corecvm.AzureCvmExtension]{
 			ID:             id,
 			Name:           converter.PtrToVal(one.Name),

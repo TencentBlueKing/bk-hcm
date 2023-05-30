@@ -24,12 +24,11 @@ import (
 	"errors"
 	"fmt"
 
-	routetable "hcm/cmd/hc-service/logics/sync/route-table"
+	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
-	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	hcservice "hcm/pkg/api/hc-service/subnet"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
@@ -119,13 +118,17 @@ func (s *Subnet) TCloudSubnetCreate(kt *kit.Kit, req *hcservice.TCloudSubnetBatc
 		return nil, err
 	}
 
-	rtSyncOpt := &hcroutetable.TCloudRouteTableSyncReq{
+	syncClient := synctcloud.NewClient(s.client.DataService(), cli)
+
+	params := &synctcloud.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  cloudRTIDs,
 	}
-	_, err = routetable.TCloudRouteTableSync(kt, rtSyncOpt, s.adaptor, s.client.DataService())
+
+	_, err = syncClient.RouteTable(kt, params, &synctcloud.SyncRouteTableOption{})
 	if err != nil {
+		logs.Errorf("sync tcloud route-table failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 

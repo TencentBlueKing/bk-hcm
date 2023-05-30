@@ -124,6 +124,14 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 	}
 
 	for _, one := range addSlice {
+		if _, exsit := vpcMap[converter.PtrToVal(one.VpcId)]; !exsit {
+			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
+		}
+
+		if _, exsit := subnetMap[converter.PtrToVal(one.SubnetId)]; !exsit {
+			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
+		}
+
 		privateIPv4Addresses := make([]string, 0)
 		if one.PrivateIpAddress != nil {
 			privateIPv4Addresses = append(privateIPv4Addresses, converter.PtrToVal(one.PrivateIpAddress))
@@ -263,6 +271,14 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	}
 
 	for id, one := range updateMap {
+		if _, exsit := vpcMap[converter.PtrToVal(one.VpcId)]; !exsit {
+			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
+		}
+
+		if _, exsit := subnetMap[converter.PtrToVal(one.SubnetId)]; !exsit {
+			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
+		}
+
 		privateIPv4Addresses := make([]string, 0)
 		if one.PrivateIpAddress != nil {
 			privateIPv4Addresses = append(privateIPv4Addresses, converter.PtrToVal(one.PrivateIpAddress))

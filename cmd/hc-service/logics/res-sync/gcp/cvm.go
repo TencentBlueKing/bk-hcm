@@ -130,6 +130,10 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 			}
 		}
 
+		if _, exsit := vpcMap[inVpcSelfLinks[0]]; !exsit {
+			return fmt.Errorf("cvm %s can not find vpc", fmt.Sprint(one.Id))
+		}
+
 		subnetIDs := make([]string, 0)
 		cloudSubIDs := make([]string, 0)
 		for _, one := range inSubnetSelfLinks {
@@ -281,6 +285,10 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 					inSubnetSelfLinks = append(inSubnetSelfLinks, networkInterface.Subnetwork)
 				}
 			}
+		}
+
+		if _, exsit := vpcMap[inVpcSelfLinks[0]]; !exsit {
+			return fmt.Errorf("cvm %s can not find vpc", fmt.Sprint(one.Id))
 		}
 
 		subnetIDs := make([]string, 0)

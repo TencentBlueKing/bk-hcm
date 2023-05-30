@@ -122,6 +122,14 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	}
 
 	for id, one := range updateMap {
+		if _, exsit := vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)]; !exsit {
+			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
+		}
+
+		if _, exsit := subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]; !exsit {
+			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
+		}
+
 		dataDiskIDs := make([]string, 0)
 		for _, disk := range one.DataDisks {
 			dataDiskIDs = append(dataDiskIDs, *disk.DiskId)
@@ -223,6 +231,14 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 	}
 
 	for _, one := range addSlice {
+		if _, exsit := vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)]; !exsit {
+			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
+		}
+
+		if _, exsit := subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]; !exsit {
+			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
+		}
+
 		dataDiskIDs := make([]string, 0)
 		for _, disk := range one.DataDisks {
 			dataDiskIDs = append(dataDiskIDs, *disk.DiskId)

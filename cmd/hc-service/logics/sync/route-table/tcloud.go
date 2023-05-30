@@ -566,6 +566,10 @@ func GetNeedDeleteTCloudRouteTableList(kt *kit.Kit, req *hcroutetable.TCloudRout
 	opt := &adcore.TCloudListOption{
 		Region:   req.Region,
 		CloudIDs: tmpResourceIDs,
+		Page: &adcore.TCloudPage{
+			Offset: 0,
+			Limit:  adcore.TCloudQueryLimit,
+		},
 	}
 
 	tmpList, tmpErr := cli.ListRouteTable(kt, opt)

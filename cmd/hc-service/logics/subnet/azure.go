@@ -24,13 +24,12 @@ import (
 	"errors"
 	"fmt"
 
-	routetable "hcm/cmd/hc-service/logics/sync/route-table"
+	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service"
-	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	"hcm/pkg/api/hc-service/subnet"
 	dataclient "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
@@ -89,15 +88,25 @@ func (s *Subnet) AzureSubnetSync(kt *kit.Kit, req *AzureSubnetSyncOptions) (*cor
 	}
 
 	if len(routeTableIDs) != 0 {
-		rtSyncOpt := &hcroutetable.AzureRouteTableSyncReq{
+		cli, err := s.adaptor.Azure(kt, req.AccountID)
+		if err != nil {
+			return nil, err
+		}
+
+		syncClient := syncazure.NewClient(s.client.DataService(), cli)
+
+		params := &syncazure.SyncBaseParams{
 			AccountID:         req.AccountID,
 			ResourceGroupName: req.ResourceGroup,
 			CloudIDs:          routeTableIDs,
 		}
-		_, err = routetable.AzureRouteTableSync(kt, rtSyncOpt, s.adaptor, s.client.DataService())
+
+		_, err = syncClient.RouteTable(kt, params, &syncazure.SyncRouteTableOption{})
 		if err != nil {
+			logs.Errorf("sync azure route-table failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
+
 	}
 
 	return res, nil
