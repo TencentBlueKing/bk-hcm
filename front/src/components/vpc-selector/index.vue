@@ -3,6 +3,7 @@ import { watch, ref, watchEffect, defineExpose } from 'vue';
 import {
   useResourceStore,
 } from '@/store';
+import { VendorEnum } from '@/common/constant';
 
 const props = defineProps({
   vendor: {
@@ -97,7 +98,8 @@ defineExpose({
       v-for="(item, index) in vpcList"
       :key="index"
       :value="item.cloud_id"
-      :label="`${item.cloud_id}（${item.name || '--'}）`"
-    />
+      :label="item.vendor === VendorEnum.AZURE ?
+        (item.name || item.cloud_id) :
+        `${item.cloud_id}（${item.name || '--'}）`" />
   </bk-select>
 </template>

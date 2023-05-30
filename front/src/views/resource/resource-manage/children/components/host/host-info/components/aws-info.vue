@@ -48,6 +48,9 @@ const cvmInfo = [
   {
     name: '业务',
     prop: 'bk_biz_id',
+    render() {
+      return `${props.data.bk_biz_id_name} (${props.data.bk_biz_id})`
+    }
   },
   {
     name: '启动时间',

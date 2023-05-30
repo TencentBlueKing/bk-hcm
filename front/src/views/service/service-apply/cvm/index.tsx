@@ -332,7 +332,11 @@ export default defineComponent({
             required: true,
             description: '',
             property: 'public_ip_assigned',
-            content: () => <Checkbox v-model={formData.public_ip_assigned} disabled>自动分配公网IP</Checkbox>,
+            content: () => <Checkbox
+              v-model={formData.public_ip_assigned}
+              disabled={![VendorEnum.AWS, VendorEnum.TCLOUD].includes(cond.vendor)}>
+                自动分配公网IP
+              </Checkbox>,
             ...formConfigPublicIpAssignedDiff.value,
           },
           {

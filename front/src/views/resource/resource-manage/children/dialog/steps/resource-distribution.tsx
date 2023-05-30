@@ -29,6 +29,7 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { useDistributionStore } from '@/store/distribution';
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   components: {
@@ -61,6 +62,8 @@ export default defineComponent({
     const {
       t,
     } = useI18n();
+
+    const router = useRouter();
 
     const resourceStore = useResourceStore();
     const accountStore = useAccountStore();
@@ -103,10 +106,28 @@ export default defineComponent({
       {
         label: '账号 ID',
         field: 'account_id',
+        render({cell, data}) {
+          return (
+            <bk-button text theme="primary" onClick={() => {
+              router.push({
+                query: {
+                  id: cell,
+                  type: data?.vendor,
+                },
+                name: 'accountDetail',
+              });
+            }}>
+              { cell }
+            </bk-button>);
+        }
       },
       {
         label: '资源 ID',
         field: 'cloud_id',
+      },
+      {
+        label: '地域',
+        field: 'region',
       },
       {
         label: '名称',

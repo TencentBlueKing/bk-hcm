@@ -344,30 +344,6 @@ export default defineComponent({
                       </> : ''
                   }
                   {
-                    props.vendor !== 'aws'   // aws没有策略
-                      ? <FormItem><bk-table-column
-                      label={t('策略')}
-                    >
-                      {{
-                        default: ({ data }: any) => (
-                          props.vendor === 'azure'
-                            ? data
-                            && <Select class="mt15 mb15" v-model={data.access}>
-                                  {HUAWEI_ACTION_STATUS.map((ele: any) => (
-                                  <Option value={ele.id} label={ele.name} key={ele.id} />
-                                  ))}
-                            </Select>
-                            : data
-                            && <Select class="mt15 mb15" v-model={data.action}>
-                                {(props.vendor === 'huawei' ? HUAWEI_ACTION_STATUS : ACTION_STATUS).map((ele: any) => (
-                                <Option value={ele.id} label={ele.name} key={ele.id} />
-                                ))}
-                          </Select>
-                        ),
-                      }}
-                    </bk-table-column></FormItem> : ''
-                  }
-                  {
                     props.vendor !== 'azure'
                       ? <>
                     <FormItem>
@@ -406,6 +382,30 @@ export default defineComponent({
                       </bk-table-column>
                     </FormItem>
                     </> : ''
+                  }
+                  {
+                    props.vendor !== 'aws'   // aws没有策略
+                      ? <FormItem><bk-table-column
+                      label={t('策略')}
+                    >
+                      {{
+                        default: ({ data }: any) => (
+                          props.vendor === 'azure'
+                            ? data
+                            && <Select class="mt15 mb15" v-model={data.access}>
+                                  {HUAWEI_ACTION_STATUS.map((ele: any) => (
+                                  <Option value={ele.id} label={ele.name} key={ele.id} />
+                                  ))}
+                            </Select>
+                            : data
+                            && <Select class="mt15 mb15" v-model={data.action}>
+                                {(props.vendor === 'huawei' ? HUAWEI_ACTION_STATUS : ACTION_STATUS).map((ele: any) => (
+                                <Option value={ele.id} label={ele.name} key={ele.id} />
+                                ))}
+                          </Select>
+                        ),
+                      }}
+                    </bk-table-column></FormItem> : ''
                   }
                     <FormItem>
                       <bk-table-column label={renderLabelToolTips(t('描述'), t('请输入英文描述, 最大不超过256字节'))}>
