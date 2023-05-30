@@ -31,7 +31,7 @@ const vendorList = ref([]);
 
 const selectedBizId = computed({
   get() {
-    // 目前accountStore中的业务id会被置为0
+    if(!props.bizId) emit('update:bizId', accountStore.bizs);
     return props.bizId || accountStore.bizs;
   },
   set(val) {
