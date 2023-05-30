@@ -381,6 +381,7 @@ export default defineComponent({
           // 获取数据
           getCloudAreas();
           getBusinessList();
+          triggerApi();
           // 判断是否需要绑定云区域
           if (props.data.every((item: any) => item.bk_cloud_id > -1)) {
             disableNext.value = false;
@@ -415,6 +416,7 @@ export default defineComponent({
       pagination,
       handlePageSizeChange,
       handlePageChange,
+      triggerApi
     } = useQueryList(vpcFilter.value, 'vpcs');
 
 
