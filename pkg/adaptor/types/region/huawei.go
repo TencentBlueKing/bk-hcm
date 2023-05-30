@@ -21,8 +21,9 @@ package region
 
 // HuaWeiRegionModel ...
 type HuaWeiRegionModel struct {
-	ID       string `json:"id"`
-	Service  string `json:"service"`
-	RegionID string `json:"region_id"`
-	Type     string `json:"type"`
+	ID        string `json:"id"`
+	Service   string `json:"service"`
+	ChinaName string `json:"china_name"`
+	RegionID  string `json:"region_id"`
+	Type      string `json:"type"`
 }

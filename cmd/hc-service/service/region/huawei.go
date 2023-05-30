@@ -194,9 +194,14 @@ func (r *region) syncHuaWeiRegionUpdate(cts *rest.Contexts, cloudMap map[string]
 				continue
 			}
 
+			if v.ChinaName == dsMap[k].ChinaName {
+				continue
+			}
+
 			one := protoregion.HuaWeiRegionBatchUpdate{
-				ID:   dsMap[k].ID,
-				Type: cloudMap[k].Type,
+				ID:          dsMap[k].ID,
+				Type:        cloudMap[k].Type,
+				LocalesZhCn: v.ChinaName,
 			}
 			list = append(list, one)
 		}
@@ -220,9 +225,10 @@ func (r *region) syncHuaWeiRegionAdd(cts *rest.Contexts, cloudMap map[string]*ty
 	list := make([]protoregion.HuaWeiRegionBatchCreate, 0)
 	for _, v := range cloudMap {
 		one := protoregion.HuaWeiRegionBatchCreate{
-			RegionID: v.RegionID,
-			Type:     v.Type,
-			Service:  v.Service,
+			RegionID:    v.RegionID,
+			Type:        v.Type,
+			Service:     v.Service,
+			LocalesZhCn: v.ChinaName,
 		}
 		list = append(list, one)
 	}
