@@ -25,7 +25,6 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"hcm/cmd/cloud-server/logics"
@@ -164,7 +163,7 @@ func newCipherFromConfig(cryptoConfig cc.Crypto) (cryptography.Crypto, error) {
 // ListenAndServeRest listen and serve the restful server
 func (s *Service) ListenAndServeRest() error {
 	root := http.NewServeMux()
-	root.HandleFunc("/", s.apiSet(cc.CloudServer().BkHcmUrl, cc.CloudServer().PlatformManagers).ServeHTTP)
+	root.HandleFunc("/", s.apiSet(cc.CloudServer().BkHcmUrl).ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
 	handler.SetCommonHandler(root)
 
@@ -218,7 +217,7 @@ func (s *Service) ListenAndServeRest() error {
 	return nil
 }
 
-func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Container {
+func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	ws := new(restful.WebService)
 	ws.Path("/api/v1/cloud")
 	ws.Produces(restful.MIME_JSON)
@@ -249,7 +248,7 @@ func (s *Service) apiSet(bkHcmUrl string, platformManagers string) *restful.Cont
 	instancetype.InitInstanceTypeService(c)
 	networkinterface.InitNetworkInterfaceService(c)
 
-	application.InitApplicationService(c, bkHcmUrl, strings.Split(platformManagers, ","))
+	application.InitApplicationService(c, bkHcmUrl)
 	audit.InitService(c)
 	assign.InitService(c)
 	recycle.InitService(c)

@@ -37,11 +37,11 @@ var ApprovalProcessColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "application_type", NamedC: "application_type", Type: enumor.String},
 	{Column: "service_id", NamedC: "service_id", Type: enumor.Numeric},
-
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
+	{Column: "managers", NamedC: "managers", Type: enumor.String},
 }
 
 // ApprovalProcessTable 审批流程表
@@ -52,7 +52,6 @@ type ApprovalProcessTable struct {
 	ApplicationType string `db:"application_type" json:"application_type" validate:"max=64"`
 	// ServiceID ITSM流程的服务ID
 	ServiceID int64 `db:"service_id" json:"service_id" validate:"min=1"`
-
 	// Creator 创建者
 	Creator string `db:"creator" json:"creator" validate:"max=64"`
 	// Reviser 更新者
@@ -61,6 +60,8 @@ type ApprovalProcessTable struct {
 	CreatedAt types.Time `db:"created_at" json:"created_at" validate:"excluded_unless"`
 	// UpdatedAt 更新时间
 	UpdatedAt types.Time `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
+	// Managers 审批人
+	Managers string `db:"managers" json:"managers" validate:"max=255"`
 }
 
 // TableName return approval process table name.
@@ -92,6 +93,10 @@ func (a ApprovalProcessTable) InsertValidate() error {
 
 	if len(a.Reviser) == 0 {
 		return errors.New("reviser is required")
+	}
+
+	if len(a.Managers) == 0 {
+		return errors.New("managers is required")
 	}
 
 	return nil

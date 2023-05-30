@@ -21,7 +21,6 @@ package handlers
 
 import (
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/thirdparty/esb/itsm"
 )
 
 // ApplicationHandler 定义了申请单的表单校验，与itsm对接、审批通过后的资源交付函数
@@ -41,8 +40,6 @@ type ApplicationHandler interface {
 	RenderItsmTitle() (string, error)
 	// RenderItsmForm 渲染ITSM表单
 	RenderItsmForm() (string, error)
-	// ListItsmVariableApprovers 查询ITSM单据审批人
-	ListItsmVariableApprovers() ([]itsm.VariableApprover, error)
 
 	// GenerateApplicationContent 生成存储到DB的申请单内容，Interface格式，便于统一处理
 	GenerateApplicationContent() interface{}

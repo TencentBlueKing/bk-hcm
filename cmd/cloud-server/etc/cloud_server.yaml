@@ -97,9 +97,6 @@ esb:
 
 bkHcmUrl: "http://hcm.bk.com"
 
-# use comma ”,“ separated when multiple manager
-platformManagers: "admin"
-
 # cloudResource cloud resource relation settings.
 cloudResource:
   # sync cloud resource sync relation settings.

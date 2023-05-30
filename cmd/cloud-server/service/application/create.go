@@ -63,9 +63,9 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 
 	// 查询审批流程服务ID
 	applicationType := handler.GetType()
-	serviceID, err := a.getApprovalProcessServiceID(cts, applicationType)
+	serviceID, managers, err := a.getApprovalProcessServiceIDAndMangers(cts, applicationType)
 	if err != nil {
-		return nil, fmt.Errorf("get approval process service id failed, err: %v", err)
+		return nil, fmt.Errorf("get approval process service id and managers failed, err: %v", err)
 	}
 
 	// 生成ITSM的回调地址
@@ -84,9 +84,11 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 	}
 
 	// 获取ITSM单据涉及到的各个节点审批人
-	approvers, err := handler.ListItsmVariableApprovers()
-	if err != nil {
-		return nil, fmt.Errorf("list itsm variable approvers error: %w", err)
+	approvers := []itsm.VariableApprover{
+		{
+			Variable:  "platform_manager",
+			Approvers: managers,
+		},
 	}
 
 	// 调用ITSM创建单据

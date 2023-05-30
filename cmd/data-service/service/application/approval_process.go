@@ -126,6 +126,7 @@ func (svc *approvalProcessSvc) convertToApprovalProcessResp(
 		ID:              approvalProcess.ID,
 		ApplicationType: enumor.ApplicationType(approvalProcess.ApplicationType),
 		ServiceID:       approvalProcess.ServiceID,
+		Managers:        approvalProcess.Managers,
 		Revision: core.Revision{
 			Creator:   approvalProcess.Creator,
 			Reviser:   approvalProcess.Reviser,

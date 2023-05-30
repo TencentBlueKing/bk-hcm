@@ -139,8 +139,6 @@ cloudserver:
     toStdErr: false
     alsoToStdErr: false
     verbosity: 0
-  ## use comma ”,“ separated when multiple manager
-  platformManagers: "admin"
   ## cloudResource cloud resource relation settings.
   cloudResource:
     ## sync cloud resource sync relation settings.

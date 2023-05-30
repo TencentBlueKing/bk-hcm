@@ -43,15 +43,14 @@ import (
 )
 
 // InitApplicationService ...
-func InitApplicationService(c *capability.Capability, bkHcmUrl string, platformManagers []string) {
+func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 	svc := &applicationSvc{
-		client:           c.ApiClient,
-		audit:            c.Audit,
-		authorizer:       c.Authorizer,
-		cipher:           c.Cipher,
-		esbClient:        c.EsbClient,
-		bkHcmUrl:         bkHcmUrl,
-		platformManagers: platformManagers,
+		client:     c.ApiClient,
+		audit:      c.Audit,
+		authorizer: c.Authorizer,
+		cipher:     c.Cipher,
+		esbClient:  c.EsbClient,
+		bkHcmUrl:   bkHcmUrl,
 	}
 	h := rest.NewHandler()
 	h.Add("List", "POST", "/applications/list", svc.List)
@@ -68,13 +67,12 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string, platformM
 }
 
 type applicationSvc struct {
-	client           *client.ClientSet
-	audit            audit.Interface
-	authorizer       auth.Authorizer
-	cipher           cryptography.Crypto
-	esbClient        esb.Client
-	bkHcmUrl         string
-	platformManagers []string
+	client     *client.ClientSet
+	audit      audit.Interface
+	authorizer auth.Authorizer
+	cipher     cryptography.Crypto
+	esbClient  esb.Client
+	bkHcmUrl   string
 }
 
 func (a *applicationSvc) getCallbackUrl() string {
@@ -83,18 +81,17 @@ func (a *applicationSvc) getCallbackUrl() string {
 
 func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerOption {
 	return &handlers.HandlerOption{
-		Cts:              cts,
-		Client:           a.client,
-		EsbClient:        a.esbClient,
-		Cipher:           a.cipher,
-		PlatformManagers: a.platformManagers,
-		Audit:            a.audit,
+		Cts:       cts,
+		Client:    a.client,
+		EsbClient: a.esbClient,
+		Cipher:    a.cipher,
+		Audit:     a.audit,
 	}
 }
 
-func (a *applicationSvc) getApprovalProcessServiceID(
+func (a *applicationSvc) getApprovalProcessServiceIDAndMangers(
 	cts *rest.Contexts, applicationType enumor.ApplicationType,
-) (int64, error) {
+) (int64, []string, error) {
 	// DB中添加4条记录，分别对应add_account、create_cvm、create_vpc、create_disk
 	// Note：目前4条记录对应一个itsm流程id，后续如果要使用其它流程可直接修改数据库适配
 	// 新增类型只需要增加对应的tye和DB记录
@@ -120,13 +117,13 @@ func (a *applicationSvc) getApprovalProcessServiceID(
 		},
 	)
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 	if result.Details == nil || len(result.Details) != 1 {
-		return 0, fmt.Errorf("approval process of [%s] not init", applicationType)
+		return 0, nil, fmt.Errorf("approval process of [%s] not init", applicationType)
 	}
 
-	return result.Details[0].ServiceID, nil
+	return result.Details[0].ServiceID, strings.Split(result.Details[0].Managers, ","), nil
 }
 
 func (a *applicationSvc) updateStatusWithDetail(

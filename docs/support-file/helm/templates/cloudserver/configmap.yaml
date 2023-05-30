@@ -36,7 +36,6 @@ data:
         key: {{ .Values.crypto.aesGcm.key }}
         nonce: {{ .Values.crypto.aesGcm.nonce }}
     bkHcmUrl: {{ .Values.bkHCMUrl }}
-    platformManagers: {{ .Values.cloudserver.platformManagers }}
     cloudResource:
       {{- toYaml .Values.cloudserver.cloudResource | nindent 6 }}
     recycle:
