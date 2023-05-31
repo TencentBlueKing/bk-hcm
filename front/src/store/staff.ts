@@ -12,19 +12,15 @@ export const useStaffStore = defineStore({
     list: shallowRef([]),
   }),
   actions: {
-    async fetchStaffs(name?: string) {
+    async fetchStaffs() {
       if (this.fetching) return;
       this.fetching = true;
-      const prefix = `${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fs_list_users`;
+      const prefix = `${BK_COMPONENT_API_URL}/component/compapi/tof3/get_all_staff_info`;
       const params: any = {
-        app_code: 'bk-magicbox',
-        page: 1,
-        page_size: 200,
+        query_type: 'simple_data',
+        app_code: 'workbench',
         callback: 'callbackStaff',
       };
-      if (name) {
-        params.fuzzy_lookups = name;
-      }
       const scriptTag = document.createElement('script');
       scriptTag.setAttribute('type', 'text/javascript');
       scriptTag.setAttribute('src', `${prefix}?${QueryString.stringify(params)}`);
@@ -34,7 +30,7 @@ export const useStaffStore = defineStore({
       window[params.callback] = ({ data, result }: { data: any, result: boolean }) => {
         if (result) {
           this.fetching = false;
-          this.list = data.results;
+          this.list = data;
         }
         headTag.removeChild(scriptTag);
         // @ts-ignore
