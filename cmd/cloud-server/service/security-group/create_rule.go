@@ -294,7 +294,7 @@ func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 				SourcePortRange:            one.SourcePortRange,
 				SourcePortRanges:           one.SourcePortRanges,
 				Priority:                   one.Priority,
-				Type:                       one.Type,
+				Type:                       enumor.Egress,
 				Access:                     one.Access,
 			}
 
@@ -322,7 +322,7 @@ func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *t
 				SourcePortRange:            one.SourcePortRange,
 				SourcePortRanges:           one.SourcePortRanges,
 				Priority:                   one.Priority,
-				Type:                       one.Type,
+				Type:                       enumor.Ingress,
 				Access:                     one.Access,
 			}
 

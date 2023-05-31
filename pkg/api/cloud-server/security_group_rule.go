@@ -21,6 +21,7 @@ package cloudserver
 
 import (
 	"errors"
+	"fmt"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
@@ -122,63 +123,99 @@ func (req *SecurityGroupRuleCreateReq[T]) Validate() error {
 		return errors.New("egress rule or ingress rule only one is allowed")
 	}
 
+	for _, one := range req.EgressRuleSet {
+		return one.ValidateSGRule()
+	}
+
+	for _, one := range req.IngressRuleSet {
+		return one.ValidateSGRule()
+	}
+
 	return nil
 }
 
 // SecurityGroupRule define security group rule when create.
 type SecurityGroupRule interface {
+	ValidateSGRule() error
+
 	TCloudSecurityGroupRule | AwsSecurityGroupRule | HuaWeiSecurityGroupRule | AzureSecurityGroupRule
 }
 
 // TCloudSecurityGroupRule define tcloud security group rule spec.
 type TCloudSecurityGroupRule struct {
-	Protocol                   *string `json:"protocol"`
-	Port                       *string `json:"port"`
-	IPv4Cidr                   *string `json:"ipv4_cidr"`
-	IPv6Cidr                   *string `json:"ipv6_cidr"`
-	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
-	Action                     string  `json:"action"`
-	Memo                       *string `json:"memo"`
+	Protocol                   *string `json:"protocol" validate:"required"`
+	Port                       *string `json:"port" validate:"required"`
+	IPv4Cidr                   *string `json:"ipv4_cidr" validate:"omitempty"`
+	IPv6Cidr                   *string `json:"ipv6_cidr" validate:"omitempty"`
+	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id" validate:"omitempty"`
+	Action                     string  `json:"action" validate:"required"`
+	Memo                       *string `json:"memo" validate:"omitempty"`
+}
+
+// Validate ...
+func (req TCloudSecurityGroupRule) ValidateSGRule() error {
+	if req.IPv4Cidr == nil && req.IPv6Cidr == nil && req.CloudTargetSecurityGroupID == nil {
+		return fmt.Errorf("source address (ipv4_cidr、ipv6_cidr、cloud_target_security_group_id) at least one is required")
+	}
+	return validator.Validate.Struct(req)
 }
 
 // AwsSecurityGroupRule define aws security group rule spec.
 type AwsSecurityGroupRule struct {
-	IPv4Cidr                   *string `json:"ipv4_cidr"`
-	IPv6Cidr                   *string `json:"ipv6_cidr"`
-	Memo                       *string `json:"memo"`
-	FromPort                   *int64  `json:"from_port"`
-	ToPort                     *int64  `json:"to_port"`
-	Protocol                   *string `json:"protocol"`
-	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
+	IPv4Cidr                   *string `json:"ipv4_cidr" validate:"omitempty"`
+	IPv6Cidr                   *string `json:"ipv6_cidr" validate:"omitempty"`
+	Memo                       *string `json:"memo" validate:"omitempty"`
+	FromPort                   *int64  `json:"from_port" validate:"required"`
+	ToPort                     *int64  `json:"to_port" validate:"required"`
+	Protocol                   *string `json:"protocol" validate:"required"`
+	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id" validate:"omitempty"`
+}
+
+// Validate ...
+func (req AwsSecurityGroupRule) ValidateSGRule() error {
+	if req.IPv4Cidr == nil && req.IPv6Cidr == nil && req.CloudTargetSecurityGroupID == nil {
+		return fmt.Errorf("source address (ipv4_cidr、ipv6_cidr、cloud_target_security_group_id) at least one is required")
+	}
+	return validator.Validate.Struct(req)
 }
 
 // HuaWeiSecurityGroupRule define huawei security group rule spec.
 type HuaWeiSecurityGroupRule struct {
-	Memo               *string `json:"memo"`
-	Ethertype          *string `json:"ethertype"`
-	Protocol           *string `json:"protocol"`
-	RemoteIPPrefix     *string `json:"remote_ip_prefix"`
-	CloudRemoteGroupID *string `json:"cloud_remote_group_id"`
-	Port               *string `json:"port"`
-	Action             *string `json:"action"`
-	Priority           int64   `json:"priority"`
+	Memo               *string `json:"memo" validate:"omitempty"`
+	Ethertype          *string `json:"ethertype" validate:"required"`
+	Protocol           *string `json:"protocol" validate:"required"`
+	RemoteIPPrefix     *string `json:"remote_ip_prefix" validate:"omitempty"`
+	CloudRemoteGroupID *string `json:"cloud_remote_group_id" validate:"omitempty"`
+	Port               *string `json:"port" validate:"required"`
+	Action             *string `json:"action" validate:"required"`
+	Priority           int64   `json:"priority" validate:"required"`
+}
+
+// Validate ...
+func (req HuaWeiSecurityGroupRule) ValidateSGRule() error {
+	return validator.Validate.Struct(req)
 }
 
 // AzureSecurityGroupRule define azure security group rule spec.
 type AzureSecurityGroupRule struct {
-	Name                       string    `json:"name"`
-	Memo                       *string   `json:"memo"`
-	DestinationAddressPrefix   *string   `json:"destination_address_prefix"`
-	DestinationAddressPrefixes []*string `json:"destination_address_prefixes"`
-	DestinationPortRange       *string   `json:"destination_port_range"`
-	DestinationPortRanges      []*string `json:"destination_port_ranges"`
-	Protocol                   string    `json:"protocol"`
-	SourceAddressPrefix        *string   `json:"source_address_prefix"`
-	SourceAddressPrefixes      []*string `json:"source_address_prefixes"`
-	SourcePortRange            *string   `json:"source_port_range"`
-	SourcePortRanges           []*string `json:"source_port_ranges"`
-	Priority                   int32     `json:"priority"`
+	Name                       string    `json:"name" validate:"required"`
+	Memo                       *string   `json:"memo" validate:"omitempty"`
+	DestinationAddressPrefix   *string   `json:"destination_address_prefix" validate:"omitempty"`
+	DestinationAddressPrefixes []*string `json:"destination_address_prefixes" validate:"omitempty"`
+	DestinationPortRange       *string   `json:"destination_port_range" validate:"omitempty"`
+	DestinationPortRanges      []*string `json:"destination_port_ranges" validate:"omitempty"`
+	Protocol                   string    `json:"protocol" validate:"required"`
+	SourceAddressPrefix        *string   `json:"source_address_prefix" validate:"omitempty"`
+	SourceAddressPrefixes      []*string `json:"source_address_prefixes" validate:"omitempty"`
+	SourcePortRange            *string   `json:"source_port_range" validate:"omitempty"`
+	SourcePortRanges           []*string `json:"source_port_ranges" validate:"omitempty"`
+	Priority                   int32     `json:"priority" validate:"required"`
 	// Type 更新时该字段无法更新。
-	Type   enumor.SecurityGroupRuleType `json:"type"`
-	Access string                       `json:"access"`
+	Type   enumor.SecurityGroupRuleType `json:"type" validate:"omitempty"`
+	Access string                       `json:"access" validate:"required"`
+}
+
+// Validate ...
+func (req AzureSecurityGroupRule) ValidateSGRule() error {
+	return validator.Validate.Struct(req)
 }
