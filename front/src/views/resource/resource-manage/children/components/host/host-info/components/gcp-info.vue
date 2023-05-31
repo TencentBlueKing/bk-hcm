@@ -103,7 +103,7 @@ const netInfo = [
     render: () =>  useRouteLinkBtn(props.data, { 
       id: 'vpc_ids',
       name: 'cloud_vpc_ids',
-      type: TypeEnum.HOST
+      type: TypeEnum.VPC
     })
   },
   {

@@ -86,7 +86,7 @@ const netInfo = [
     render: () =>  useRouteLinkBtn(props.data, { 
       id: 'vpc_ids',
       name: 'cloud_vpc_ids',
-      type: TypeEnum.HOST
+      type: TypeEnum.VPC
     })
   },
   {
@@ -148,6 +148,11 @@ const settingInfo = [
   {
     name: '镜像id',
     prop: 'cloud_image_id',
+    render: () => useRouteLinkBtn(props.data, {
+      id: 'image_id',
+      type: TypeEnum.IMAGE,
+      name: 'cloud_image_id'
+    })
   },
 ];
 
