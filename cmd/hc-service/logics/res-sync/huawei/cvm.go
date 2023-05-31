@@ -113,8 +113,10 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	lists := make([]dataproto.CvmBatchUpdate[corecvm.HuaWeiCvmExtension], 0)
 
 	cloudVpcIDs := make([]string, 0)
+	cloudImageIDs := make([]string, 0)
 	for _, one := range updateMap {
 		cloudVpcIDs = append(cloudVpcIDs, one.Metadata["vpc_id"])
+		cloudImageIDs = append(cloudImageIDs, one.Image.Id)
 	}
 
 	vpcMap, err := cli.getVpcMap(kt, accountID, region, cloudVpcIDs)
@@ -122,8 +124,13 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		return err
 	}
 
+	imageMap, err := cli.getImageMap(kt, accountID, region, cloudImageIDs)
+	if err != nil {
+		return err
+	}
+
 	for id, one := range updateMap {
-		if _, exist := vpcMap[one.Id]; !exist {
+		if _, exist := vpcMap[one.Metadata["vpc_id"]]; !exist {
 			return fmt.Errorf("cvm %s can not find vpc", one.Id)
 		}
 
@@ -156,14 +163,21 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			return fmt.Errorf("conv OSSRVUSGlaunchedAt failed, err: %v", err)
 		}
 
+		imageID := ""
+		if id, exsit := imageMap[one.Image.Id]; exsit {
+			imageID = id
+		}
+
 		cvm := dataproto.CvmBatchUpdate[corecvm.HuaWeiCvmExtension]{
 			ID:                   id,
 			Name:                 one.Name,
-			BkCloudID:            vpcMap[one.Id].BkCloudID,
+			BkCloudID:            vpcMap[one.Metadata["vpc_id"]].BkCloudID,
 			CloudVpcIDs:          []string{one.Metadata["vpc_id"]},
-			VpcIDs:               []string{vpcMap[one.Id].VpcID},
+			VpcIDs:               []string{vpcMap[one.Metadata["vpc_id"]].VpcID},
 			CloudSubnetIDs:       cloudSubnetIDs,
 			SubnetIDs:            subnetIDs,
+			CloudImageID:         one.Image.Id,
+			ImageID:              imageID,
 			Memo:                 one.Description,
 			Status:               one.Status,
 			PrivateIPv4Addresses: privateIPv4Addresses,
@@ -255,8 +269,10 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 	lists := make([]dataproto.CvmBatchCreate[corecvm.HuaWeiCvmExtension], 0)
 
 	cloudVpcIDs := make([]string, 0)
+	cloudImageIDs := make([]string, 0)
 	for _, one := range addSlice {
 		cloudVpcIDs = append(cloudVpcIDs, one.Metadata["vpc_id"])
+		cloudImageIDs = append(cloudImageIDs, one.Image.Id)
 	}
 
 	vpcMap, err := cli.getVpcMap(kt, accountID, region, cloudVpcIDs)
@@ -264,8 +280,13 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 		return err
 	}
 
+	imageMap, err := cli.getImageMap(kt, accountID, region, cloudImageIDs)
+	if err != nil {
+		return err
+	}
+
 	for _, one := range addSlice {
-		if _, exist := vpcMap[one.Id]; !exist {
+		if _, exist := vpcMap[one.Metadata["vpc_id"]]; !exist {
 			return fmt.Errorf("cvm %s can not find vpc", one.Id)
 		}
 
@@ -298,6 +319,11 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			return fmt.Errorf("conv OSSRVUSGlaunchedAt failed, err: %v", err)
 		}
 
+		imageID := ""
+		if id, exsit := imageMap[one.Image.Id]; exsit {
+			imageID = id
+		}
+
 		cvm := dataproto.CvmBatchCreate[corecvm.HuaWeiCvmExtension]{
 			CloudID:              one.Id,
 			Name:                 one.Name,
@@ -311,6 +337,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			CloudSubnetIDs:       cloudSubnetIDs,
 			SubnetIDs:            subnetIDs,
 			CloudImageID:         one.Image.Id,
+			ImageID:              imageID,
 			OsName:               one.Metadata["os_type"],
 			Memo:                 one.Description,
 			Status:               one.Status,
@@ -449,6 +476,31 @@ func (cli *client) getVpcMap(kt *kit.Kit, accountID string, region string,
 	}
 
 	return vpcMap, nil
+}
+
+func (cli *client) getImageMap(kt *kit.Kit, accountID string, region string,
+	cloudImageIDs []string) (map[string]string, error) {
+
+	imageMap := make(map[string]string)
+
+	elems := slice.Split(cloudImageIDs, constant.CloudResourceSyncMaxLimit)
+	for _, parts := range elems {
+		imageParams := &SyncBaseParams{
+			AccountID: accountID,
+			Region:    region,
+			CloudIDs:  parts,
+		}
+		imageFromDB, err := cli.listImageFromDBForCvm(kt, imageParams)
+		if err != nil {
+			return imageMap, err
+		}
+
+		for _, image := range imageFromDB {
+			imageMap[image.CloudID] = image.ID
+		}
+	}
+
+	return imageMap, nil
 }
 
 func (cli *client) getSubnets(kt *kit.Kit, accountID, region, serverID string,

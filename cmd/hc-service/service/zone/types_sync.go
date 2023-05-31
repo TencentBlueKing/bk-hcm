@@ -62,13 +62,15 @@ type DSZoneSync struct {
 
 func (z *zoneHC) syncZoneDelete(cts *rest.Contexts, deleteCloudIDs []string) error {
 
-	deleteReq := &protozone.ZoneBatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", deleteCloudIDs),
-	}
+	if (len(deleteCloudIDs)) > 0 {
+		deleteReq := &protozone.ZoneBatchDeleteReq{
+			Filter: tools.ContainersExpression("cloud_id", deleteCloudIDs),
+		}
 
-	err := z.dataCli.Global.Zone.BatchDeleteZone(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
-	if err != nil {
-		return err
+		err := z.dataCli.Global.Zone.BatchDeleteZone(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

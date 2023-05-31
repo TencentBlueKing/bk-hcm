@@ -20,8 +20,14 @@
 package huawei
 
 import (
+	"hcm/pkg/api/core"
+	dataproto "hcm/pkg/api/data-service/cloud/image"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 )
 
 // SyncImageOption ...
@@ -42,4 +48,31 @@ func (cli *client) Image(kt *kit.Kit, params *SyncBaseParams, opt *SyncImageOpti
 func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	// TODO implement me
 	panic("implement me")
+}
+
+func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
+	[]*dataproto.ImageResult, error) {
+
+	if err := params.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := &dataproto.ImageListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{Field: "extension.region", Op: filter.JSONEqual.Factory(), Value: params.Region},
+				&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: params.CloudIDs},
+			},
+		},
+		Page: core.DefaultBasePage,
+	}
+	result, err := cli.dbCli.Global.ListImage(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("[%s] list image from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.TCloud, err,
+			params.AccountID, req, kt.Rid)
+		return nil, err
+	}
+
+	return result.Details, nil
 }

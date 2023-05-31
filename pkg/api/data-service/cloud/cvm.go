@@ -52,6 +52,7 @@ type CvmBatchCreate[Extension corecvm.Extension] struct {
 	CloudSubnetIDs       []string   `json:"cloud_subnet_ids"`
 	SubnetIDs            []string   `json:"subnet_ids"`
 	CloudImageID         string     `json:"cloud_image_id" validate:"required"`
+	ImageID              string     `json:"image_id"`
 	OsName               string     `json:"os_name"`
 	Memo                 *string    `json:"memo"`
 	Status               string     `json:"status" validate:"required"`
@@ -92,6 +93,8 @@ type CvmBatchUpdate[Extension corecvm.Extension] struct {
 	VpcIDs               []string   `json:"vpc_ids"`
 	CloudSubnetIDs       []string   `json:"cloud_subnet_ids"`
 	SubnetIDs            []string   `json:"subnet_ids"`
+	CloudImageID         string     `json:"cloud_image_id"`
+	ImageID              string     `json:"image_id"`
 	Memo                 *string    `json:"memo"`
 	Status               string     `json:"status" validate:"required"`
 	PrivateIPv4Addresses []string   `json:"private_ipv4_addresses"`

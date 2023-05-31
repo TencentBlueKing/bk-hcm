@@ -106,9 +106,11 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 
 	cloudVpcIDs := make([]string, 0)
 	cloudSubnetIDs := make([]string, 0)
+	cloudImageIDs := make([]string, 0)
 	for _, one := range updateMap {
 		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(one.VirtualPrivateCloud.VpcId))
 		cloudSubnetIDs = append(cloudSubnetIDs, converter.PtrToVal(one.VirtualPrivateCloud.SubnetId))
+		cloudImageIDs = append(cloudImageIDs, converter.PtrToVal(one.ImageId))
 	}
 
 	vpcMap, err := cli.getVpcMap(kt, accountID, region, cloudVpcIDs)
@@ -121,6 +123,11 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		return err
 	}
 
+	imageMap, err := cli.getImageMap(kt, accountID, region, cloudImageIDs)
+	if err != nil {
+		return err
+	}
+
 	for id, one := range updateMap {
 		if _, exsit := vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)]; !exsit {
 			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
@@ -128,6 +135,11 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 
 		if _, exsit := subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]; !exsit {
 			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
+		}
+
+		imageID := ""
+		if id, exsit := imageMap[converter.PtrToVal(one.ImageId)]; exsit {
+			imageID = id
 		}
 
 		dataDiskIDs := make([]string, 0)
@@ -143,6 +155,8 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].VpcID},
 			CloudSubnetIDs: []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
 			SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]},
+			CloudImageID:   converter.PtrToVal(one.ImageId),
+			ImageID:        imageID,
 			// 备注字段云上没有，仅限hcm内部使用
 			Memo:                 nil,
 			Status:               converter.PtrToVal(one.InstanceState),
@@ -215,9 +229,11 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 
 	cloudVpcIDs := make([]string, 0)
 	cloudSubnetIDs := make([]string, 0)
+	cloudImageIDs := make([]string, 0)
 	for _, one := range addSlice {
 		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(one.VirtualPrivateCloud.VpcId))
 		cloudSubnetIDs = append(cloudSubnetIDs, converter.PtrToVal(one.VirtualPrivateCloud.SubnetId))
+		cloudImageIDs = append(cloudImageIDs, converter.PtrToVal(one.ImageId))
 	}
 
 	vpcMap, err := cli.getVpcMap(kt, accountID, region, cloudVpcIDs)
@@ -230,6 +246,11 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 		return err
 	}
 
+	imageMap, err := cli.getImageMap(kt, accountID, region, cloudImageIDs)
+	if err != nil {
+		return err
+	}
+
 	for _, one := range addSlice {
 		if _, exsit := vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)]; !exsit {
 			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
@@ -237,6 +258,11 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 
 		if _, exsit := subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]; !exsit {
 			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
+		}
+
+		imageID := ""
+		if id, exsit := imageMap[converter.PtrToVal(one.ImageId)]; exsit {
+			imageID = id
 		}
 
 		dataDiskIDs := make([]string, 0)
@@ -257,6 +283,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			CloudSubnetIDs: []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
 			SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]},
 			CloudImageID:   converter.PtrToVal(one.ImageId),
+			ImageID:        imageID,
 			OsName:         converter.PtrToVal(one.OsName),
 			// 备注字段云上没有，仅限hcm内部使用
 			Memo:                 nil,
@@ -374,6 +401,31 @@ func (cli *client) getSubnetMap(kt *kit.Kit, accountID string, region string,
 	}
 
 	return subnetMap, nil
+}
+
+func (cli *client) getImageMap(kt *kit.Kit, accountID string, region string,
+	cloudImageIDs []string) (map[string]string, error) {
+
+	imageMap := make(map[string]string)
+
+	elems := slice.Split(cloudImageIDs, constant.CloudResourceSyncMaxLimit)
+	for _, parts := range elems {
+		imageParams := &SyncBaseParams{
+			AccountID: accountID,
+			Region:    region,
+			CloudIDs:  parts,
+		}
+		imageFromDB, err := cli.listImageFromDBForCvm(kt, imageParams)
+		if err != nil {
+			return imageMap, err
+		}
+
+		for _, image := range imageFromDB {
+			imageMap[image.CloudID] = image.ID
+		}
+	}
+
+	return imageMap, nil
 }
 
 func (cli *client) deleteCvm(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
@@ -542,31 +594,33 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 
 func isCvmChange(cloud typescvm.TCloudCvm, db corecvm.Cvm[cvm.TCloudCvmExtension]) bool {
 
-	if db.CloudID != *cloud.InstanceId {
+	if db.CloudID != converter.PtrToVal(cloud.InstanceId) {
 		return true
 	}
 
-	if db.Name != *cloud.InstanceName {
+	if db.Name != converter.PtrToVal(cloud.InstanceName) {
 		return true
 	}
 
-	if len(db.CloudVpcIDs) == 0 || (db.CloudVpcIDs[0] != *cloud.VirtualPrivateCloud.VpcId) {
+	if len(db.CloudVpcIDs) == 0 || (db.CloudVpcIDs[0] !=
+		converter.PtrToVal(cloud.VirtualPrivateCloud.VpcId)) {
 		return true
 	}
 
-	if len(db.CloudSubnetIDs) == 0 || (db.CloudSubnetIDs[0] != *cloud.VirtualPrivateCloud.SubnetId) {
+	if len(db.CloudSubnetIDs) == 0 || (db.CloudSubnetIDs[0] !=
+		converter.PtrToVal(cloud.VirtualPrivateCloud.SubnetId)) {
 		return true
 	}
 
-	if db.CloudImageID != *cloud.ImageId {
+	if db.CloudImageID != converter.PtrToVal(cloud.ImageId) {
 		return true
 	}
 
-	if db.OsName != *cloud.OsName {
+	if db.OsName != converter.PtrToVal(cloud.OsName) {
 		return true
 	}
 
-	if db.Status != *cloud.InstanceState {
+	if db.Status != converter.PtrToVal(cloud.InstanceState) {
 		return true
 	}
 
@@ -601,11 +655,11 @@ func isCvmChange(cloud typescvm.TCloudCvm, db corecvm.Cvm[cvm.TCloudCvmExtension
 		return true
 	}
 
-	if db.MachineType != *cloud.InstanceType {
+	if db.MachineType != converter.PtrToVal(cloud.InstanceType) {
 		return true
 	}
 
-	if db.CloudCreatedTime != *cloud.CreatedTime {
+	if db.CloudCreatedTime != converter.PtrToVal(cloud.CreatedTime) {
 		return true
 	}
 
@@ -635,7 +689,7 @@ func isCvmChange(cloud typescvm.TCloudCvm, db corecvm.Cvm[cvm.TCloudCvmExtension
 
 	dataDiskIds := make([]string, 0, len(cloud.DataDisks))
 	for _, one := range cloud.DataDisks {
-		dataDiskIds = append(dataDiskIds, *one.DiskId)
+		dataDiskIds = append(dataDiskIds, converter.PtrToVal(one.DiskId))
 	}
 	if !assert.IsStringSliceEqual(dataDiskIds, db.Extension.CloudDataDiskIDs) {
 		return true

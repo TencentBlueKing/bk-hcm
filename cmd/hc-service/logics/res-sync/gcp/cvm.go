@@ -110,7 +110,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 	lists := make([]dataproto.CvmBatchCreate[corecvm.GcpCvmExtension], 0)
 
 	vpcMap, subnetMap, diskMap, vpcSelfLinks,
-		subnetSelfLinks, err := cli.getNIAssResMapBySelfLinkFromNI(kt, accountID, region, zone, addSlice)
+		subnetSelfLinks, imageMap, err := cli.getNIAssResMapBySelfLinkFromNI(kt, accountID, region, zone, addSlice)
 	if err != nil {
 		return err
 	}
@@ -170,6 +170,11 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 			return fmt.Errorf("conv create time failed, err: %v", err)
 		}
 
+		imageID := ""
+		if id, exsit := imageMap[one.SourceMachineImage]; exsit {
+			imageID = id
+		}
+
 		priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(one.NetworkInterfaces)
 		cvm := dataproto.CvmBatchCreate[corecvm.GcpCvmExtension]{
 			CloudID:        fmt.Sprintf("%d", one.Id),
@@ -184,6 +189,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 			CloudSubnetIDs: cloudSubIDs,
 			SubnetIDs:      subnetIDs,
 			CloudImageID:   one.SourceMachineImage,
+			ImageID:        imageID,
 			// gcp镜像是与硬盘绑定的
 			OsName:               "",
 			Memo:                 converter.ValToPtr(one.Description),
@@ -267,7 +273,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 	}
 
 	vpcMap, subnetMap, diskMap, vpcSelfLinks,
-		subnetSelfLinks, err := cli.getNIAssResMapBySelfLinkFromNI(kt, accountID, region, zone, updateSlice)
+		subnetSelfLinks, imageMap, err := cli.getNIAssResMapBySelfLinkFromNI(kt, accountID, region, zone, updateSlice)
 	if err != nil {
 		return err
 	}
@@ -322,6 +328,11 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 			return fmt.Errorf("conv start time failed, err: %v", err)
 		}
 
+		imageID := ""
+		if id, exsit := imageMap[one.SourceMachineImage]; exsit {
+			imageID = id
+		}
+
 		priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(one.NetworkInterfaces)
 		cvm := dataproto.CvmBatchUpdate[corecvm.GcpCvmExtension]{
 			ID:                   id,
@@ -339,6 +350,8 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 			PublicIPv6Addresses:  pubIPv6,
 			CloudLaunchedTime:    startTime,
 			CloudExpiredTime:     "",
+			CloudImageID:         one.SourceMachineImage,
+			ImageID:              imageID,
 			Extension: &corecvm.GcpCvmExtension{
 				VpcSelfLinks:             vpcSelfLinks,
 				SubnetSelfLinks:          subnetSelfLinks,
@@ -395,11 +408,12 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 
 func (cli *client) getNIAssResMapBySelfLinkFromNI(kt *kit.Kit, accountID string, region string, zone string,
 	cvmSlice []typescvm.GcpCvm) (map[string]*common.VpcDB, map[string]*SubnetDB,
-	map[string]string, []string, []string, error) {
+	map[string]string, []string, []string, map[string]string, error) {
 
 	vpcSelfLinks := make([]string, 0)
 	subnetSelfLinks := make([]string, 0)
 	diskSelfLinks := make([]string, 0)
+	imageSelfLinks := make([]string, 0)
 	for _, one := range cvmSlice {
 		if len(one.NetworkInterfaces) > 0 {
 			for _, networkInterface := range one.NetworkInterfaces {
@@ -412,24 +426,54 @@ func (cli *client) getNIAssResMapBySelfLinkFromNI(kt *kit.Kit, accountID string,
 		for _, one := range one.Disks {
 			diskSelfLinks = append(diskSelfLinks, one.Source)
 		}
+		imageSelfLinks = append(imageSelfLinks, one.SourceMachineImage)
 	}
 
 	vpcMap, err := cli.getVpcMap(kt, accountID, vpcSelfLinks)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	subnetMap, err := cli.getSubnetMap(kt, accountID, region, subnetSelfLinks)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	diskMap, err := cli.getDiskMap(kt, accountID, zone, diskSelfLinks)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
-	return vpcMap, subnetMap, diskMap, vpcSelfLinks, subnetSelfLinks, nil
+	imageMap, err := cli.getImageMap(kt, accountID, imageSelfLinks)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	return vpcMap, subnetMap, diskMap, vpcSelfLinks, subnetSelfLinks, imageMap, nil
+}
+
+func (cli *client) getImageMap(kt *kit.Kit, accountID string,
+	cloudImageIDs []string) (map[string]string, error) {
+
+	imageMap := make(map[string]string)
+
+	elems := slice.Split(cloudImageIDs, constant.CloudResourceSyncMaxLimit)
+	for _, parts := range elems {
+		imageParams := &ListBySelfLinkOption{
+			AccountID: accountID,
+			SelfLink:  parts,
+		}
+		imageFromDB, err := cli.listImageFromDBForCvm(kt, imageParams)
+		if err != nil {
+			return imageMap, err
+		}
+
+		for _, image := range imageFromDB {
+			imageMap[image.CloudID] = image.ID
+		}
+	}
+
+	return imageMap, nil
 }
 
 func (cli *client) getVpcMap(kt *kit.Kit, accountID string, selfLink []string) (

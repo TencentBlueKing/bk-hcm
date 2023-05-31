@@ -106,6 +106,7 @@ func (pImageDao ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Image
 	columnTypes["extension.publisher"] = enumor.String
 	columnTypes["extension.offer"] = enumor.String
 	columnTypes["extension.sku"] = enumor.String
+	columnTypes["extension.self_link"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.DefaultPageOption); err != nil {
 		return nil, err

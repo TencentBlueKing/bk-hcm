@@ -95,6 +95,8 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				BkCloudID:            one.BkCloudID,
 				CloudVpcIDs:          one.CloudVpcIDs,
 				CloudSubnetIDs:       one.CloudSubnetIDs,
+				CloudImageID:         one.CloudImageID,
+				ImageID:              one.ImageID,
 				Memo:                 one.Memo,
 				Status:               one.Status,
 				PrivateIPv4Addresses: one.PrivateIPv4Addresses,

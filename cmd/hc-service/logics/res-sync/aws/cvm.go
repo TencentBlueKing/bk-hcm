@@ -106,19 +106,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 
 	lists := make([]dataproto.CvmBatchCreate[corecvm.AwsCvmExtension], 0)
 
-	cloudVpcIDs := make([]string, 0)
-	cloudSubnetIDs := make([]string, 0)
-	for _, one := range addSlice {
-		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(one.VpcId))
-		cloudSubnetIDs = append(cloudSubnetIDs, converter.PtrToVal(one.SubnetId))
-	}
-
-	vpcMap, err := cli.getVpcMap(kt, accountID, region, cloudVpcIDs)
-	if err != nil {
-		return err
-	}
-
-	subnetMap, err := cli.getSubnetMap(kt, accountID, region, cloudSubnetIDs)
+	vpcMap, subnetMap, imageMap, err := cli.getCvmRelResMaps(kt, accountID, region, addSlice)
 	if err != nil {
 		return err
 	}
@@ -167,6 +155,11 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			}
 		}
 
+		imageID := ""
+		if id, exsit := imageMap[converter.PtrToVal(one.ImageId)]; exsit {
+			imageID = id
+		}
+
 		cvm := dataproto.CvmBatchCreate[corecvm.AwsCvmExtension]{
 			CloudID:        converter.PtrToVal(one.InstanceId),
 			Name:           converter.PtrToVal(aws.GetCvmNameFromTags(one.Tags)),
@@ -180,6 +173,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			CloudSubnetIDs: []string{converter.PtrToVal(one.SubnetId)},
 			SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.SubnetId)]},
 			CloudImageID:   converter.PtrToVal(one.ImageId),
+			ImageID:        imageID,
 			OsName:         converter.PtrToVal(one.PlatformDetails),
 			// 云上不支持该字段
 			Memo:                 nil,
@@ -253,19 +247,11 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 
 	lists := make([]dataproto.CvmBatchUpdate[corecvm.AwsCvmExtension], 0)
 
-	cloudVpcIDs := make([]string, 0)
-	cloudSubnetIDs := make([]string, 0)
+	cloudDataSlice := make([]typescvm.AwsCvm, 0, len(updateMap))
 	for _, one := range updateMap {
-		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(one.VpcId))
-		cloudSubnetIDs = append(cloudSubnetIDs, converter.PtrToVal(one.SubnetId))
+		cloudDataSlice = append(cloudDataSlice, one)
 	}
-
-	vpcMap, err := cli.getVpcMap(kt, accountID, region, cloudVpcIDs)
-	if err != nil {
-		return err
-	}
-
-	subnetMap, err := cli.getSubnetMap(kt, accountID, region, cloudSubnetIDs)
+	vpcMap, subnetMap, imageMap, err := cli.getCvmRelResMaps(kt, accountID, region, cloudDataSlice)
 	if err != nil {
 		return err
 	}
@@ -314,6 +300,11 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			}
 		}
 
+		imageID := ""
+		if id, exsit := imageMap[converter.PtrToVal(one.ImageId)]; exsit {
+			imageID = id
+		}
+
 		cvm := dataproto.CvmBatchUpdate[corecvm.AwsCvmExtension]{
 			ID:             id,
 			Name:           converter.PtrToVal(aws.GetCvmNameFromTags(one.Tags)),
@@ -322,6 +313,8 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VpcId)].VpcID},
 			CloudSubnetIDs: []string{converter.PtrToVal(one.SubnetId)},
 			SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.SubnetId)]},
+			CloudImageID:   converter.PtrToVal(one.ImageId),
+			ImageID:        imageID,
 			// 云上不支持该字段
 			Memo:                 nil,
 			Status:               converter.PtrToVal(one.State.Name),
@@ -381,6 +374,36 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
+func (cli *client) getCvmRelResMaps(kt *kit.Kit, accountID string, region string,
+	cloudDataSlice []typescvm.AwsCvm) (map[string]*common.VpcDB, map[string]string, map[string]string, error) {
+
+	cloudVpcIDs := make([]string, 0)
+	cloudSubnetIDs := make([]string, 0)
+	cloudImageIDs := make([]string, 0)
+	for _, one := range cloudDataSlice {
+		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(one.VpcId))
+		cloudSubnetIDs = append(cloudSubnetIDs, converter.PtrToVal(one.SubnetId))
+		cloudImageIDs = append(cloudImageIDs, converter.PtrToVal(one.ImageId))
+	}
+
+	vpcMap, err := cli.getVpcMap(kt, accountID, region, cloudVpcIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	subnetMap, err := cli.getSubnetMap(kt, accountID, region, cloudSubnetIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	imageMap, err := cli.getImageMap(kt, accountID, region, cloudImageIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return vpcMap, subnetMap, imageMap, nil
+}
+
 func (cli *client) getVpcMap(kt *kit.Kit, accountID string, region string,
 	cloudVpcIDs []string) (map[string]*common.VpcDB, error) {
 
@@ -433,6 +456,31 @@ func (cli *client) getSubnetMap(kt *kit.Kit, accountID string, region string,
 	}
 
 	return subnetMap, nil
+}
+
+func (cli *client) getImageMap(kt *kit.Kit, accountID string, region string,
+	cloudImageIDs []string) (map[string]string, error) {
+
+	imageMap := make(map[string]string)
+
+	elems := slice.Split(cloudImageIDs, constant.CloudResourceSyncMaxLimit)
+	for _, parts := range elems {
+		imageParams := &SyncBaseParams{
+			AccountID: accountID,
+			Region:    region,
+			CloudIDs:  parts,
+		}
+		imageFromDB, err := cli.listImageFromDBForCvm(kt, imageParams)
+		if err != nil {
+			return imageMap, err
+		}
+
+		for _, image := range imageFromDB {
+			imageMap[image.CloudID] = image.ID
+		}
+	}
+
+	return imageMap, nil
 }
 
 func (cli *client) deleteCvm(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {

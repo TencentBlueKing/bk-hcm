@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
 )
 
@@ -170,11 +171,13 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, resGroupName string,
 
 	niMap := make(map[string]string)
 	niIDs := make([]string, 0)
+	cloudImageIDs := make([]string, 0)
 	for _, one := range addSlice {
 		niIDs = append(niIDs, one.NetworkInterfaceIDs...)
 		for _, niID := range one.NetworkInterfaceIDs {
 			niMap[niID] = converter.PtrToVal(one.ID)
 		}
+		cloudImageIDs = append(cloudImageIDs, converter.PtrToVal(one.CloudImageID))
 	}
 
 	cloudMap, cloudVpcIDsMap, cloudSubnetIDsMap, err := cli.getNIAssResMapFromNI(kt, niIDs, resGroupName, niMap)
@@ -192,6 +195,11 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, resGroupName string,
 		return err
 	}
 
+	imageMap, err := cli.getImageMap(kt, accountID, resGroupName, cloudImageIDs)
+	if err != nil {
+		return err
+	}
+
 	for _, one := range addSlice {
 		if _, exsit := vpcMap[converter.PtrToVal(one.ID)]; !exsit {
 			return fmt.Errorf("cvm: %s not found vpc", converter.PtrToVal(one.ID))
@@ -199,6 +207,11 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, resGroupName string,
 
 		if _, exsit := subnetMap[converter.PtrToVal(one.ID)]; !exsit {
 			return fmt.Errorf("cvm: %s not found subnets", converter.PtrToVal(one.ID))
+		}
+
+		imageID := ""
+		if id, exsit := imageMap[converter.PtrToVal(one.CloudImageID)]; exsit {
+			imageID = id
 		}
 
 		cvm := dataproto.CvmBatchCreate[corecvm.AzureCvmExtension]{
@@ -215,6 +228,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, resGroupName string,
 			CloudSubnetIDs: cloudMap[converter.PtrToVal(one.ID)].CloudSubnetIDs,
 			SubnetIDs:      subnetMap[converter.PtrToVal(one.ID)],
 			CloudImageID:   converter.PtrToVal(one.CloudImageID),
+			ImageID:        imageID,
 			OsName:         converter.PtrToVal(one.ComputerName),
 			// 云上不支持该字段
 			Memo:                 nil,
@@ -287,11 +301,13 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 
 	niMap := make(map[string]string)
 	niIDs := make([]string, 0)
+	cloudImageIDs := make([]string, 0)
 	for _, one := range updateMap {
 		niIDs = append(niIDs, one.NetworkInterfaceIDs...)
 		for _, niID := range one.NetworkInterfaceIDs {
 			niMap[niID] = converter.PtrToVal(one.ID)
 		}
+		cloudImageIDs = append(cloudImageIDs, converter.PtrToVal(one.CloudImageID))
 	}
 
 	cloudMap, cloudVpcIDsMap, cloudSubnetIDsMap, err := cli.getNIAssResMapFromNI(kt, niIDs, resGroupName, niMap)
@@ -309,6 +325,11 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 		return err
 	}
 
+	imageMap, err := cli.getImageMap(kt, accountID, resGroupName, cloudImageIDs)
+	if err != nil {
+		return err
+	}
+
 	for id, one := range updateMap {
 		if _, exsit := vpcMap[converter.PtrToVal(one.ID)]; !exsit {
 			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.ID))
@@ -316,6 +337,11 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 
 		if _, exsit := subnetMap[converter.PtrToVal(one.ID)]; !exsit {
 			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.ID))
+		}
+
+		imageID := ""
+		if id, exsit := imageMap[converter.PtrToVal(one.CloudImageID)]; exsit {
+			imageID = id
 		}
 
 		cvm := dataproto.CvmBatchUpdate[corecvm.AzureCvmExtension]{
@@ -326,6 +352,8 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.ID)].VpcID},
 			CloudSubnetIDs: cloudMap[converter.PtrToVal(one.ID)].CloudSubnetIDs,
 			SubnetIDs:      subnetMap[converter.PtrToVal(one.ID)],
+			CloudImageID:   converter.PtrToVal(one.CloudImageID),
+			ImageID:        imageID,
 			// 云上不支持该字段
 			Memo:                 nil,
 			Status:               converter.PtrToVal(one.Status),
@@ -494,6 +522,31 @@ func (cli *client) getSubnetMap(kt *kit.Kit, accountID string, resGroupName stri
 	}
 
 	return subnetMap, nil
+}
+
+func (cli *client) getImageMap(kt *kit.Kit, accountID string, resGroupName string,
+	cloudImageIDs []string) (map[string]string, error) {
+
+	imageMap := make(map[string]string)
+
+	elems := slice.Split(cloudImageIDs, constant.CloudResourceSyncMaxLimit)
+	for _, parts := range elems {
+		imageParams := &SyncBaseParams{
+			AccountID:         accountID,
+			ResourceGroupName: resGroupName,
+			CloudIDs:          parts,
+		}
+		imageFromDB, err := cli.listImageFromDBForCvm(kt, imageParams)
+		if err != nil {
+			return imageMap, err
+		}
+
+		for _, image := range imageFromDB {
+			imageMap[image.CloudID] = image.ID
+		}
+	}
+
+	return imageMap, nil
 }
 
 func (cli *client) deleteCvm(kt *kit.Kit, accountID string, resGroupName string, delCloudIDs []string) error {
