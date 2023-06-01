@@ -149,12 +149,12 @@ export default defineComponent({
           extension: params.extension });
         await accountStore.applyAccount(params);
         Message({
-          message: t('新增成功'),
+          message: t('提交申请成功'),
           theme: 'success',
         });
         // router.go(-1);
         router.push({
-          path: '/resource/account', // 返回列表
+          path: '/service/my-apply', // 返回审批列表
         });
       } catch (error: any) {
         console.log(error);
@@ -619,7 +619,7 @@ export default defineComponent({
       {
         required: false,
         type: 'button',
-        component: () => <Button theme="primary" loading={submitLoading.value} onClick={submit}>{t('确认')}</Button>,
+        component: () => <Button theme="primary" loading={submitLoading.value} onClick={submit}>{t('提交审批')}</Button>,
       },
     ]);
 
