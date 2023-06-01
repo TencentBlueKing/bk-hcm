@@ -249,7 +249,7 @@ func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]secur
 			Limit: converter.ValToPtr(int32(adcore.HuaWeiQueryLimit)),
 		},
 	}
-	result, _, err := cli.cloudCli.ListSecurityGroupNew(kt, opt)
+	result, _, err := cli.cloudCli.ListSecurityGroup(kt, opt)
 	if err != nil {
 		logs.Errorf("[%s] list sg from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.HuaWei,
 			err, params.AccountID, opt, kt.Rid)

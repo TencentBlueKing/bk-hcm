@@ -46,3 +46,13 @@ type AwsRoute struct {
 	Propagated                       bool    `json:"propagated"`
 	*core.Revision                   `json:",inline"`
 }
+
+// GetID ...
+func (route AwsRoute) GetID() string {
+	return route.ID
+}
+
+// GetCloudID ...
+func (route AwsRoute) GetCloudID() string {
+	return route.CloudRouteTableID
+}

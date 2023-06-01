@@ -285,7 +285,7 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ada
 		CloudIDs: params.CloudIDs,
 	}
 
-	result, _, err := cli.cloudCli.ListDiskNew(kt, opt)
+	result, _, err := cli.cloudCli.ListDisk(kt, opt)
 	if err != nil {
 		if strings.Contains(err.Error(), aws.ErrVpcNotFound) {
 			return make([]adaptordisk.AwsDisk, 0), nil
@@ -414,7 +414,7 @@ func (cli *client) listRemoveDiskID(kt *kit.Kit, params *SyncBaseParams) ([]stri
 			Region:   params.Region,
 			CloudIDs: params.CloudIDs,
 		}
-		_, _, err := cli.cloudCli.ListDiskNew(kt, opt)
+		_, _, err := cli.cloudCli.ListDisk(kt, opt)
 		if err != nil {
 			if strings.Contains(err.Error(), aws.ErrVpcNotFound) {
 				var delCloudID string

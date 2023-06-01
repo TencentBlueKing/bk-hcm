@@ -273,7 +273,7 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ada
 				Limit: converter.ValToPtr(int32(adcore.HuaWeiQueryLimit)),
 			},
 		}
-		result, err := cli.cloudCli.ListDiskNew(kt, opt)
+		result, err := cli.cloudCli.ListDisk(kt, opt)
 		if err != nil {
 			logs.Errorf("[%s] list disk from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.HuaWei,
 				err, params.AccountID, opt, kt.Rid)

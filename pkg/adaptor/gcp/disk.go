@@ -78,7 +78,7 @@ func (g *Gcp) CreateDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*poller.Ba
 		}
 	}
 
-	respPoller := poller.Poller[*Gcp, []*compute.Disk, poller.BaseDoneResult]{
+	respPoller := poller.Poller[*Gcp, []disk.GcpDisk, poller.BaseDoneResult]{
 		Handler: &createDiskPollingHandler{Zone: opt.Zone},
 	}
 	return respPoller.PollUntilDone(g, kt, converter.SliceToPtr(diskCloudIDs), nil)
@@ -101,10 +101,9 @@ func (g *Gcp) createDisk(kt *kit.Kit, opt *disk.GcpDiskCreateOption) (*compute.O
 	return call.Do()
 }
 
-// TODO: sync-todo 改好后统一删除ListDisk函数
 // ListDisk 查看云硬盘
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/list
-func (g *Gcp) ListDiskNew(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]disk.GcpDisk, string, error) {
+func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]disk.GcpDisk, string, error) {
 	if opt == nil {
 		return nil, "", errf.New(errf.InvalidParameter, "gcp disk list option is required")
 	}
@@ -153,54 +152,6 @@ func (g *Gcp) ListDiskNew(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]disk.GcpD
 	}
 
 	return disks, resp.NextPageToken, nil
-}
-
-// ListDisk 查看云硬盘
-// reference: https://cloud.google.com/compute/docs/reference/rest/v1/disks/list
-func (g *Gcp) ListDisk(kt *kit.Kit, opt *disk.GcpDiskListOption) ([]*compute.Disk, string, error) {
-	if opt == nil {
-		return nil, "", errf.New(errf.InvalidParameter, "gcp disk list option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return nil, "", errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := g.clientSet.computeClient(kt)
-	if err != nil {
-		return nil, "", err
-	}
-
-	request := client.Disks.List(g.clientSet.credential.CloudProjectID, opt.Zone).Context(kt.Ctx)
-
-	if len(opt.CloudIDs) > 0 {
-		request.Filter(generateResourceIDsFilter(opt.CloudIDs))
-	}
-
-	if len(opt.SelfLinks) > 0 {
-		request.Filter(generateResourceFilter("selfLink", opt.SelfLinks))
-	}
-
-	if len(opt.Names) > 0 {
-		request.Filter(generateResourceFilter("name", opt.Names))
-	}
-
-	if opt.Page != nil {
-		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
-	}
-
-	resp, err := request.Do()
-	if err != nil {
-		logs.Errorf("list disks failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
-		return nil, "", err
-	}
-
-	for index := range resp.Items {
-		resp.Items[index].Region = resp.Items[index].
-			Zone[strings.LastIndex(resp.Items[index].Zone, "/")+1 : strings.LastIndex(resp.Items[index].Zone, "-")]
-	}
-
-	return resp.Items, resp.NextPageToken, nil
 }
 
 // DeleteDisk 删除云盘
@@ -252,7 +203,7 @@ func (g *Gcp) AttachDisk(kt *kit.Kit, opt *disk.GcpDiskAttachOption) error {
 	handler := &attachDiskPollingHandler{
 		opt.Zone,
 	}
-	respPoller := poller.Poller[*Gcp, []*compute.Disk, []uint64]{Handler: handler}
+	respPoller := poller.Poller[*Gcp, []disk.GcpDisk, []uint64]{Handler: handler}
 	_, err = respPoller.PollUntilDone(g, kt, []*string{to.Ptr(opt.DiskName)}, nil)
 	if err != nil {
 		return err
@@ -287,7 +238,7 @@ func (g *Gcp) DetachDisk(kt *kit.Kit, opt *disk.GcpDiskDetachOption) error {
 	handler := &detachDiskPollingHandler{
 		opt.Zone,
 	}
-	respPoller := poller.Poller[*Gcp, []*compute.Disk, []uint64]{Handler: handler}
+	respPoller := poller.Poller[*Gcp, []disk.GcpDisk, []uint64]{Handler: handler}
 	_, err = respPoller.PollUntilDone(g, kt, []*string{to.Ptr(opt.DiskName)}, nil)
 	if err != nil {
 		return err
@@ -325,7 +276,7 @@ type createDiskPollingHandler struct {
 }
 
 // Done ...
-func (h *createDiskPollingHandler) Done(pollResult []*compute.Disk) (bool, *poller.BaseDoneResult) {
+func (h *createDiskPollingHandler) Done(pollResult []disk.GcpDisk) (bool, *poller.BaseDoneResult) {
 	successCloudIDs := make([]string, 0)
 	unknownCloudIDs := make([]string, 0)
 
@@ -349,7 +300,7 @@ func (h *createDiskPollingHandler) Done(pollResult []*compute.Disk) (bool, *poll
 }
 
 // Poll ...
-func (h *createDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]*compute.Disk, error) {
+func (h *createDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*string) ([]disk.GcpDisk, error) {
 	cIDs := converter.PtrToSlice(cloudIDs)
 	result, _, err := client.ListDisk(
 		kt,
@@ -358,19 +309,19 @@ func (h *createDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, cloudIDs []*st
 	return result, err
 }
 
-var _ poller.PollingHandler[*Gcp, []*compute.Disk, poller.BaseDoneResult] = new(createDiskPollingHandler)
+var _ poller.PollingHandler[*Gcp, []disk.GcpDisk, poller.BaseDoneResult] = new(createDiskPollingHandler)
 
 type attachDiskPollingHandler struct {
 	zone string
 }
 
 // Done ...
-func (h *attachDiskPollingHandler) Done(items []*compute.Disk) (bool, *[]uint64) {
+func (h *attachDiskPollingHandler) Done(items []disk.GcpDisk) (bool, *[]uint64) {
 	return diskDone(items)
 }
 
 // Poll ...
-func (h *attachDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, names []*string) ([]*compute.Disk, error) {
+func (h *attachDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, names []*string) ([]disk.GcpDisk, error) {
 	return diskPoll(client, kt, h.zone, names)
 }
 
@@ -379,16 +330,16 @@ type detachDiskPollingHandler struct {
 }
 
 // Done ...
-func (h *detachDiskPollingHandler) Done(items []*compute.Disk) (bool, *[]uint64) {
+func (h *detachDiskPollingHandler) Done(items []disk.GcpDisk) (bool, *[]uint64) {
 	return diskDone(items)
 }
 
 // Poll ...
-func (h *detachDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, names []*string) ([]*compute.Disk, error) {
+func (h *detachDiskPollingHandler) Poll(client *Gcp, kt *kit.Kit, names []*string) ([]disk.GcpDisk, error) {
 	return diskPoll(client, kt, h.zone, names)
 }
 
-func diskDone(disks []*compute.Disk) (bool, *[]uint64) {
+func diskDone(disks []disk.GcpDisk) (bool, *[]uint64) {
 	results := make([]uint64, 0)
 	flag := true
 	for _, disk := range disks {
@@ -403,7 +354,7 @@ func diskDone(disks []*compute.Disk) (bool, *[]uint64) {
 	return flag, converter.ValToPtr(results)
 }
 
-func diskPoll(client *Gcp, kt *kit.Kit, zone string, names []*string) ([]*compute.Disk, error) {
+func diskPoll(client *Gcp, kt *kit.Kit, zone string, names []*string) ([]disk.GcpDisk, error) {
 	listNames := converter.PtrToSlice(names)
 	result, _, err := client.ListDisk(
 		kt,

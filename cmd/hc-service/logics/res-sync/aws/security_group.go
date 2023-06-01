@@ -274,7 +274,7 @@ func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]secur
 		Region:   params.Region,
 		CloudIDs: params.CloudIDs,
 	}
-	result, _, err := cli.cloudCli.ListSecurityGroupNew(kt, opt)
+	result, _, err := cli.cloudCli.ListSecurityGroup(kt, opt)
 	if err != nil {
 		if strings.Contains(err.Error(), aws.ErrSGNotFound) {
 			return nil, nil
@@ -407,7 +407,7 @@ func (cli *client) listRemoveSGID(kt *kit.Kit, params *SyncBaseParams) ([]string
 			Region:   params.Region,
 			CloudIDs: []string{one},
 		}
-		_, _, err := cli.cloudCli.ListSecurityGroupNew(kt, opt)
+		_, _, err := cli.cloudCli.ListSecurityGroup(kt, opt)
 		if err != nil {
 			if strings.Contains(err.Error(), aws.ErrSGNotFound) {
 				delCloudIDs = append(delCloudIDs, one)

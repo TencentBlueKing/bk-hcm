@@ -604,7 +604,7 @@ func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams, option 
 			PageSize: adcore.GcpQueryLimit,
 		},
 	}
-	result, _, err := cli.cloudCli.ListCvmNew(kt, opt)
+	result, _, err := cli.cloudCli.ListCvm(kt, opt)
 	if err != nil {
 		logs.Errorf("[%s] list cvm from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Gcp,
 			err, params.AccountID, opt, kt.Rid)

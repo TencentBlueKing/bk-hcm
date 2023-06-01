@@ -103,7 +103,7 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams,
 		Zone:     option.Zone,
 		CloudIDs: params.CloudIDs,
 	}
-	result, _, err := cli.cloudCli.ListDiskNew(kt, opt)
+	result, _, err := cli.cloudCli.ListDisk(kt, opt)
 	if err != nil {
 		logs.Errorf("[%s] list disk from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Gcp,
 			err, params.AccountID, opt, kt.Rid)

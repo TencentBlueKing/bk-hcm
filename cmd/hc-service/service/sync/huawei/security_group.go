@@ -75,7 +75,7 @@ func (hd *sgHandler) Next(kt *kit.Kit) ([]string, error) {
 		},
 	}
 
-	sgResult, _, err := hd.syncCli.CloudCli().ListSecurityGroupNew(kt, listOpt)
+	sgResult, _, err := hd.syncCli.CloudCli().ListSecurityGroup(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor list huawei sg failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
 		return nil, err

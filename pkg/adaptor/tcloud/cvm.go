@@ -36,10 +36,9 @@ import (
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
-// TODO: sync-todo  改好后统一删除ListDisk函数
-// ListCvmNew list cvm.
+// ListCvm list cvm.
 // reference: https://cloud.tencent.com/document/api/213/15728
-func (t *TCloud) ListCvmNew(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]typecvm.TCloudCvm, error) {
+func (t *TCloud) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]typecvm.TCloudCvm, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
@@ -77,43 +76,6 @@ func (t *TCloud) ListCvmNew(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]typec
 	}
 
 	return cvms, nil
-}
-
-// ListCvm list cvm.
-// reference: https://cloud.tencent.com/document/api/213/15728
-func (t *TCloud) ListCvm(kt *kit.Kit, opt *typecvm.TCloudListOption) ([]*cvm.Instance, error) {
-
-	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := t.clientSet.cvmClient(opt.Region)
-	if err != nil {
-		return nil, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
-	}
-
-	req := cvm.NewDescribeInstancesRequest()
-	if len(opt.CloudIDs) != 0 {
-		req.InstanceIds = common.StringPtrs(opt.CloudIDs)
-		req.Limit = common.Int64Ptr(int64(core.TCloudQueryLimit))
-	}
-
-	if opt.Page != nil {
-		req.Offset = common.Int64Ptr(int64(opt.Page.Offset))
-		req.Limit = common.Int64Ptr(int64(opt.Page.Limit))
-	}
-
-	resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
-	if err != nil {
-		logs.Errorf("list tcloud instance failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	return resp.Response.InstanceSet, nil
 }
 
 // DeleteCvm reference: https://cloud.tencent.com/document/api/213/15723

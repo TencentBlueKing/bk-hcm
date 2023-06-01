@@ -84,7 +84,7 @@ func (hd *firewallHandler) Next(kt *kit.Kit) ([]string, error) {
 		},
 	}
 
-	firewallResult, token, err := hd.syncCli.CloudCli().ListFirewallRuleNew(kt, listOpt)
+	firewallResult, token, err := hd.syncCli.CloudCli().ListFirewallRule(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor list gcp firewall failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
 		return nil, err

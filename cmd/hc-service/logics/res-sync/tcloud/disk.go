@@ -250,7 +250,7 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typ
 			Limit:  adcore.TCloudQueryLimit,
 		},
 	}
-	result, err := cli.cloudCli.ListDiskNew(kt, opt)
+	result, err := cli.cloudCli.ListDisk(kt, opt)
 	if err != nil {
 		logs.Errorf("[%s] list disk from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.TCloud,
 			err, params.AccountID, opt, kt.Rid)

@@ -591,7 +591,7 @@ func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 			Limit:  int32(constant.CloudResourceSyncMaxLimit),
 		},
 	}
-	result, err := cli.cloudCli.ListCvmNew(kt, opt)
+	result, err := cli.cloudCli.ListCvm(kt, opt)
 	if err != nil {
 		if strings.Contains(err.Error(), huawei.ErrDataNotFound) {
 			return nil, nil
@@ -718,7 +718,7 @@ func (cli *client) listRemoveCvmID(kt *kit.Kit, params *SyncBaseParams) ([]strin
 			CloudIDs: []string{one},
 		}
 
-		_, err := cli.cloudCli.ListCvmNew(kt, opt)
+		_, err := cli.cloudCli.ListCvm(kt, opt)
 		if err != nil {
 			if strings.Contains(err.Error(), huawei.ErrDataNotFound) {
 				delCloudIDs = append(delCloudIDs, one)

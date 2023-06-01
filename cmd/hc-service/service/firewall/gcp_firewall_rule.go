@@ -37,8 +37,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-
-	"google.golang.org/api/compute/v1"
 )
 
 // InitFirewallService initial the security group service
@@ -280,12 +278,12 @@ func (f *firewall) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, error
 	return result, nil
 }
 
-func (f *firewall) createFirewallRule(cts *rest.Contexts, req *proto.GcpFirewallRuleCreateReq) (*compute.Firewall,
-	error) {
+func (f *firewall) createFirewallRule(cts *rest.Contexts,
+	req *proto.GcpFirewallRuleCreateReq) (firewallrule.GcpFirewall, error) {
 
 	client, err := f.ad.Gcp(cts.Kit, req.AccountID)
 	if err != nil {
-		return nil, err
+		return firewallrule.GcpFirewall{}, err
 	}
 
 	opt := &firewallrule.CreateOption{
@@ -304,18 +302,18 @@ func (f *firewall) createFirewallRule(cts *rest.Contexts, req *proto.GcpFirewall
 	ruleID, err := client.CreateFirewallRule(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("request gcp create firewall rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+		return firewallrule.GcpFirewall{}, err
 	}
 
 	items, _, err := client.ListFirewallRule(cts.Kit, &firewallrule.ListOption{
 		CloudIDs: []uint64{ruleID},
 	})
 	if err != nil {
-		return nil, err
+		return firewallrule.GcpFirewall{}, err
 	}
 
 	if len(items) == 0 {
-		return nil, fmt.Errorf("create firewall rule success, but list failed, ruleID: %d", ruleID)
+		return firewallrule.GcpFirewall{}, fmt.Errorf("create firewall rule success, but list failed, ruleID: %d", ruleID)
 	}
 
 	return items[0], nil

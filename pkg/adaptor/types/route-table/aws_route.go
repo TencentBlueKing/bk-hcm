@@ -39,3 +39,8 @@ type AwsRoute struct {
 	State                            string  `json:"state"`
 	Propagated                       bool    `json:"propagated"`
 }
+
+// GetCloudID ...
+func (route AwsRoute) GetCloudID() string {
+	return route.CloudRouteTableID
+}

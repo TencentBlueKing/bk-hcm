@@ -118,7 +118,7 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
-	// sync route table
+	// TODO: sync-todo change to 3.0 sync route table
 	rtReq := &hcroutetable.GcpRouteTableSyncReq{
 		AccountID: req.AccountID,
 	}

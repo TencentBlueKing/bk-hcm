@@ -39,3 +39,13 @@ type TCloudRoute struct {
 	Memo                     *string `json:"memo,omitempty"`
 	*core.Revision           `json:",inline"`
 }
+
+// GetID ...
+func (route TCloudRoute) GetID() string {
+	return route.ID
+}
+
+// GetCloudID ...
+func (route TCloudRoute) GetCloudID() string {
+	return route.CloudID
+}

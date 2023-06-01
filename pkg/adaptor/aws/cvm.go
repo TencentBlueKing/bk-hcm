@@ -38,10 +38,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-// TODO: sync-todo 改好后统一删除ListDisk函数
-// ListCvmNew list cvm.
+// ListCvm list cvm.
 // reference: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
-func (a *Aws) ListCvmNew(kt *kit.Kit, opt *typecvm.AwsListOption) ([]typecvm.AwsCvm, *string, error) {
+func (a *Aws) ListCvm(kt *kit.Kit, opt *typecvm.AwsListOption) ([]typecvm.AwsCvm, *ec2.DescribeInstancesOutput, error) {
 	if opt == nil {
 		return nil, nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
@@ -82,45 +81,7 @@ func (a *Aws) ListCvmNew(kt *kit.Kit, opt *typecvm.AwsListOption) ([]typecvm.Aws
 		}
 	}
 
-	return cvms, resp.NextToken, nil
-}
-
-// ListCvm list cvm.
-// reference: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeInstances.html
-func (a *Aws) ListCvm(kt *kit.Kit, opt *typecvm.AwsListOption) (*ec2.DescribeInstancesOutput, error) {
-	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := a.clientSet.ec2Client(opt.Region)
-	if err != nil {
-		return nil, err
-	}
-
-	req := new(ec2.DescribeInstancesInput)
-
-	if len(opt.CloudIDs) > 0 {
-		req.InstanceIds = aws.StringSlice(opt.CloudIDs)
-	}
-
-	if opt.Page != nil {
-		req.MaxResults = opt.Page.MaxResults
-		req.NextToken = opt.Page.NextToken
-	}
-
-	resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
-	if err != nil {
-		if strings.Contains(err.Error(), ErrDataNotFound) {
-			return new(ec2.DescribeInstancesOutput), nil
-		}
-		return nil, fmt.Errorf("list aws cvm instances failed, err: %v", err)
-	}
-
-	return resp, nil
+	return cvms, resp, nil
 }
 
 // GetCvmNameFromTags ...

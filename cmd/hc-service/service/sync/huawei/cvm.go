@@ -73,7 +73,7 @@ func (hd *cvmHandler) Next(kt *kit.Kit) ([]string, error) {
 			Limit:  int32(constant.CloudResourceSyncMaxLimit),
 		},
 	}
-	cvmResult, err := hd.syncCli.CloudCli().ListCvmNew(kt, listOpt)
+	cvmResult, err := hd.syncCli.CloudCli().ListCvm(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor list huawei cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
 		return nil, err

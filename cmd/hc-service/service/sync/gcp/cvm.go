@@ -85,7 +85,7 @@ func (hd *cvmHandler) Next(kt *kit.Kit) ([]string, error) {
 		},
 	}
 
-	cvmResult, token, err := hd.syncCli.CloudCli().ListCvmNew(kt, listOpt)
+	cvmResult, token, err := hd.syncCli.CloudCli().ListCvm(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor list gcp cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
 		return nil, err

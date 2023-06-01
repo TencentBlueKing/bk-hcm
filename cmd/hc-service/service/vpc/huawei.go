@@ -114,7 +114,7 @@ func (v vpc) HuaWeiVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// sync route table
+	// TODO: sync-todo change to 3.0 sync route table
 	rtReq := &hcroutetable.HuaWeiRouteTableSyncReq{
 		AccountID: req.AccountID,
 		Region:    req.Extension.Region,
