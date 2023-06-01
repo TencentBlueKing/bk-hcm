@@ -29,3 +29,8 @@ type AzureRoute struct {
 	NextHopIPAddress  *string `json:"next_hop_ip_address,omitempty"`
 	ProvisioningState string  `json:"provisioning_state"`
 }
+
+// GetCloudID ...
+func (route AzureRoute) GetCloudID() string {
+	return route.CloudID
+}

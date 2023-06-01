@@ -528,7 +528,7 @@ func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 		Region:   params.Region,
 		CloudIDs: params.CloudIDs,
 	}
-	result, _, err := cli.cloudCli.ListCvmNew(kt, opt)
+	result, _, err := cli.cloudCli.ListCvm(kt, opt)
 	if err != nil {
 		logs.Errorf("[%s] list cvm from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Aws,
 			err, params.AccountID, opt, kt.Rid)
@@ -652,7 +652,7 @@ func (cli *client) listRemoveCvmID(kt *kit.Kit, params *SyncBaseParams) ([]strin
 			CloudIDs: params.CloudIDs,
 		}
 
-		_, _, err := cli.cloudCli.ListCvmNew(kt, opt)
+		_, _, err := cli.cloudCli.ListCvm(kt, opt)
 		if err != nil {
 			if strings.Contains(err.Error(), aws.ErrVpcNotFound) {
 				var delCloudID string

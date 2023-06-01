@@ -33,3 +33,8 @@ type TCloudRoute struct {
 	PublishedToVbc           bool    `json:"published_to_vbc"`
 	Memo                     *string `json:"memo,omitempty"`
 }
+
+// GetCloudID ...
+func (route TCloudRoute) GetCloudID() string {
+	return route.CloudID
+}

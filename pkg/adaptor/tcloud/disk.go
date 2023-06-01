@@ -46,7 +46,7 @@ func (t *TCloud) CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*pol
 		return nil, err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*cbs.Disk, poller.BaseDoneResult]{
+	respPoller := poller.Poller[*TCloud, []disk.TCloudDisk, poller.BaseDoneResult]{
 		Handler: &createDiskPollingHandler{region: opt.Region},
 	}
 	return respPoller.PollUntilDone(t, kt, resp.Response.DiskIdSet, nil)
@@ -66,10 +66,9 @@ func (t *TCloud) createDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*cbs
 	return client.CreateDisksWithContext(kt.Ctx, req)
 }
 
-// TODO: sync-todo 改好后统一删除ListDisk函数
-// ListDiskNew 查询云硬盘列表
+// ListDisk 查询云硬盘列表
 // reference: https://cloud.tencent.com/document/api/362/16315
-func (t *TCloud) ListDiskNew(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.TCloudDisk, error) {
+func (t *TCloud) ListDisk(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.TCloudDisk, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "tcloud disk list option is required")
 	}
@@ -104,41 +103,6 @@ func (t *TCloud) ListDiskNew(kt *kit.Kit, opt *core.TCloudListOption) ([]disk.TC
 		disks = append(disks, disk.TCloudDisk{one})
 	}
 	return disks, nil
-}
-
-// ListDisk 查询云硬盘列表
-// reference: https://cloud.tencent.com/document/api/362/16315
-func (t *TCloud) ListDisk(kt *kit.Kit, opt *disk.TCloudDiskListOption) ([]*cbs.Disk, error) {
-	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "tcloud disk list option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := t.clientSet.cbsClient(opt.Region)
-	if err != nil {
-		return nil, fmt.Errorf("new tcloud cbs client failed, err: %v", err)
-	}
-
-	req := cbs.NewDescribeDisksRequest()
-	if len(opt.CloudIDs) != 0 {
-		req.DiskIds = common.StringPtrs(opt.CloudIDs)
-		req.Limit = common.Uint64Ptr(uint64(core.TCloudQueryLimit))
-	}
-	if opt.Page != nil {
-		req.Offset = &opt.Page.Offset
-		req.Limit = &opt.Page.Limit
-	}
-
-	resp, err := client.DescribeDisksWithContext(kt.Ctx, req)
-	if err != nil {
-		logs.Errorf("list tcloud disk failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	return resp.Response.DiskSet, nil
 }
 
 // DeleteDisk 删除云盘
@@ -190,7 +154,7 @@ func (t *TCloud) AttachDisk(kt *kit.Kit, opt *disk.TCloudDiskAttachOption) error
 		return err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*cbs.Disk, poller.BaseDoneResult]{
+	respPoller := poller.Poller[*TCloud, []disk.TCloudDisk, poller.BaseDoneResult]{
 		Handler: &attachDiskPollingHandler{region: opt.Region},
 	}
 	_, err = respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudDiskIDs), nil)
@@ -220,7 +184,7 @@ func (t *TCloud) DetachDisk(kt *kit.Kit, opt *disk.TCloudDiskDetachOption) error
 		return err
 	}
 
-	respPoller := poller.Poller[*TCloud, []*cbs.Disk, poller.BaseDoneResult]{
+	respPoller := poller.Poller[*TCloud, []disk.TCloudDisk, poller.BaseDoneResult]{
 		Handler: &detachDiskPollingHandler{region: opt.Region},
 	}
 	_, err = respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudDiskIDs), nil)
@@ -231,7 +195,7 @@ type createDiskPollingHandler struct {
 	region string
 }
 
-func (h *createDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
+func (h *createDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *poller.BaseDoneResult) {
 	successCloudIDs := make([]string, 0)
 	unknownCloudIDs := make([]string, 0)
 
@@ -254,18 +218,18 @@ func (h *createDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.B
 	}
 }
 
-func (h *createDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
+func (h *createDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk, error) {
 	cIDs := converter.PtrToSlice(cloudIDs)
-	return client.ListDisk(kt, &disk.TCloudDiskListOption{Region: h.region, CloudIDs: cIDs})
+	return client.ListDisk(kt, &core.TCloudListOption{Region: h.region, CloudIDs: cIDs})
 }
 
-var _ poller.PollingHandler[*TCloud, []*cbs.Disk, poller.BaseDoneResult] = new(createDiskPollingHandler)
+var _ poller.PollingHandler[*TCloud, []disk.TCloudDisk, poller.BaseDoneResult] = new(createDiskPollingHandler)
 
 type attachDiskPollingHandler struct {
 	region string
 }
 
-func (h *attachDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
+func (h *attachDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
 	if converter.PtrToVal(r.DiskState) != "ATTACHED" {
 		return false, nil
@@ -273,20 +237,20 @@ func (h *attachDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.B
 	return true, nil
 }
 
-func (h *attachDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
+func (h *attachDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk, error) {
 	if len(cloudIDs) != 1 {
 		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
 	}
 
 	cIDs := converter.PtrToSlice(cloudIDs)
-	return client.ListDisk(kt, &disk.TCloudDiskListOption{Region: h.region, CloudIDs: cIDs})
+	return client.ListDisk(kt, &core.TCloudListOption{Region: h.region, CloudIDs: cIDs})
 }
 
 type detachDiskPollingHandler struct {
 	region string
 }
 
-func (h *detachDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.BaseDoneResult) {
+func (h *detachDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *poller.BaseDoneResult) {
 	r := pollResult[0]
 	if converter.PtrToVal(r.DiskState) != "UNATTACHED" {
 		return false, nil
@@ -294,11 +258,11 @@ func (h *detachDiskPollingHandler) Done(pollResult []*cbs.Disk) (bool, *poller.B
 	return true, nil
 }
 
-func (h *detachDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]*cbs.Disk, error) {
+func (h *detachDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk, error) {
 	if len(cloudIDs) != 1 {
 		return nil, fmt.Errorf("poll only support one id param, but get %v. rid: %s", cloudIDs, kt.Rid)
 	}
 
 	cIDs := converter.PtrToSlice(cloudIDs)
-	return client.ListDisk(kt, &disk.TCloudDiskListOption{Region: h.region, CloudIDs: cIDs})
+	return client.ListDisk(kt, &core.TCloudListOption{Region: h.region, CloudIDs: cIDs})
 }

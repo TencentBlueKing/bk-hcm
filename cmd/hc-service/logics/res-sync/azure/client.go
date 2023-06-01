@@ -56,6 +56,8 @@ type Interface interface {
 
 	Vpc(kt *kit.Kit, params *SyncBaseParams, opt *SyncVpcOption) (*SyncResult, error)
 	RemoveVpcDeleteFromCloud(kt *kit.Kit, accountID string, resGroupName string) error
+
+	Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOption) (*SyncResult, error)
 }
 
 var _ Interface = new(client)

@@ -38,9 +38,8 @@ import (
 	"google.golang.org/api/compute/v1"
 )
 
-// TODO: sync-todo 改好后统一删除ListDisk函数
-// ListCvmNew reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
-func (g *Gcp) ListCvmNew(kt *kit.Kit, opt *typecvm.GcpListOption) ([]typecvm.GcpCvm, string, error) {
+// ListCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
+func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) ([]typecvm.GcpCvm, string, error) {
 	if opt == nil {
 		return nil, "", errf.New(errf.InvalidParameter, "list option is required")
 	}
@@ -80,44 +79,6 @@ func (g *Gcp) ListCvmNew(kt *kit.Kit, opt *typecvm.GcpListOption) ([]typecvm.Gcp
 	}
 
 	return cvms, resp.NextPageToken, nil
-}
-
-// ListCvm reference: https://cloud.google.com/compute/docs/reference/rest/v1/instances/list
-func (g *Gcp) ListCvm(kt *kit.Kit, opt *typecvm.GcpListOption) ([]*compute.Instance, string, error) {
-	if opt == nil {
-		return nil, "", errf.New(errf.InvalidParameter, "list option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return nil, "", errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := g.clientSet.computeClient(kt)
-	if err != nil {
-		return nil, "", err
-	}
-
-	request := client.Instances.List(g.CloudProjectID(), opt.Zone).Context(kt.Ctx)
-
-	if len(opt.CloudIDs) > 0 {
-		request.Filter(generateResourceIDsFilter(opt.CloudIDs))
-	}
-
-	if len(opt.Names) > 0 {
-		request.Filter(generateResourceFilter("name", opt.Names))
-	}
-
-	if opt.Page != nil {
-		request.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
-	}
-
-	resp, err := request.Do()
-	if err != nil {
-		logs.Errorf("list instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
-		return nil, "", err
-	}
-
-	return resp.Items, resp.NextPageToken, nil
 }
 
 // GetMachineType gcp设备类型为url，需要截取最后一个单词

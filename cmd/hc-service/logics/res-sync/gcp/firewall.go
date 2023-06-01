@@ -310,7 +310,7 @@ func (cli *client) listFirewallFromCloud(kt *kit.Kit, params *SyncBaseParams) ([
 	opt := &firewallrule.ListOption{
 		CloudIDs: converter.StringSliceToUint64Slice(params.CloudIDs),
 	}
-	result, _, err := cli.cloudCli.ListFirewallRuleNew(kt, opt)
+	result, _, err := cli.cloudCli.ListFirewallRule(kt, opt)
 	if err != nil {
 		logs.Errorf("[%s] list firewall from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Gcp,
 			err, params.AccountID, opt, kt.Rid)

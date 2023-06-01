@@ -477,7 +477,7 @@ func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 			Limit:  adcore.TCloudQueryLimit,
 		},
 	}
-	result, err := cli.cloudCli.ListCvmNew(kt, opt)
+	result, err := cli.cloudCli.ListCvm(kt, opt)
 	if err != nil {
 		logs.Errorf("[%s] list cvm from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.TCloud,
 			err, params.AccountID, opt, kt.Rid)

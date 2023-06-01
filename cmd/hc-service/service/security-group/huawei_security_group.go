@@ -169,11 +169,11 @@ func (g *securityGroup) HuaWeiSecurityGroupDisassociateCvm(cts *rest.Contexts) (
 		return nil, err
 	}
 
-	if cvms == nil || len(*cvms) == 0 {
+	if cvms == nil || len(cvms) == 0 {
 		return nil, errf.New(errf.RecordNotFound, "cvm not found from cloud")
 	}
 
-	cvmCloud := *cvms
+	cvmCloud := cvms
 	if len(cvmCloud[0].SecurityGroups) <= 1 {
 		return nil, errors.New("the last security group of the cvm is not allowed to disassociate")
 	}

@@ -36,3 +36,13 @@ type AzureRoute struct {
 	ProvisioningState string  `json:"provisioning_state"`
 	*core.Revision    `json:",inline"`
 }
+
+// GetID ...
+func (route AzureRoute) GetID() string {
+	return route.ID
+}
+
+// GetCloudID ...
+func (route AzureRoute) GetCloudID() string {
+	return route.CloudID
+}

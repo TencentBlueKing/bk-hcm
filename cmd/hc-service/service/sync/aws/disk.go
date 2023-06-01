@@ -74,7 +74,7 @@ func (hd *diskHandler) Next(kt *kit.Kit) ([]string, error) {
 		},
 	}
 
-	diskResult, token, err := hd.syncCli.CloudCli().ListDiskNew(kt, listOpt)
+	diskResult, token, err := hd.syncCli.CloudCli().ListDisk(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor list aws disk failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
 		return nil, err

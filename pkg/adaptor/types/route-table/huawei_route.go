@@ -27,3 +27,8 @@ type HuaWeiRoute struct {
 	NextHop           string  `json:"nexthop"`
 	Memo              *string `json:"memo,omitempty"`
 }
+
+// GetCloudID ...
+func (route HuaWeiRoute) GetCloudID() string {
+	return route.CloudRouteTableID + route.Destination
+}

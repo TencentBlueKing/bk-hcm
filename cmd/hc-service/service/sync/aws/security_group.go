@@ -74,7 +74,7 @@ func (hd *sgHandler) Next(kt *kit.Kit) ([]string, error) {
 		},
 	}
 
-	sgResult, token, err := hd.syncCli.CloudCli().ListSecurityGroupNew(kt, listOpt)
+	sgResult, resp, err := hd.syncCli.CloudCli().ListSecurityGroup(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor list aws sg failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
 		return nil, err
@@ -89,7 +89,7 @@ func (hd *sgHandler) Next(kt *kit.Kit) ([]string, error) {
 		cloudIDs = append(cloudIDs, converter.PtrToVal(one.GroupId))
 	}
 
-	hd.nextToken = token
+	hd.nextToken = resp.NextToken
 	return cloudIDs, nil
 }
 

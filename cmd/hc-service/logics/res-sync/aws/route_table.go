@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
-	routetablesync "hcm/cmd/hc-service/logics/sync/route-table"
 	"hcm/pkg/adaptor/aws"
 	adcore "hcm/pkg/adaptor/types/core"
 	typesroutetable "hcm/pkg/adaptor/types/route-table"
@@ -32,7 +31,6 @@ import (
 	routetable "hcm/pkg/api/core/cloud/route-table"
 	dataservice "hcm/pkg/api/data-service"
 	dataproto "hcm/pkg/api/data-service/cloud/route-table"
-	hcroutetable "hcm/pkg/api/hc-service/route-table"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -136,24 +134,28 @@ func (cli *client) syncRoute(kt *kit.Kit, params *SyncBaseParams,
 		return err
 	}
 
-	req := &hcroutetable.AwsRouteTableSyncReq{
-		AccountID: params.AccountID,
-		Region:    params.Region,
-	}
+	routeTableIDs := make([]string, 0)
+	routeTableMap := make(map[string]string)
 	for _, one := range routeTableFromDB {
 		for _, cloudOne := range routeTableFromCloud {
 			if one.CloudID == cloudOne.CloudID {
-				// TODO: sync-todo 待优化为版本3
-				err = routetablesync.AwsRouteSync(kt, req, one.ID, converter.ValToPtr(cloudOne), cli.dbCli)
-				if err != nil {
-					logs.Errorf("[%s] routetable sync update route failed. accountID: %s, region: %s, err: %v",
-						enumor.Aws, params.AccountID, params.Region, err)
-					return err
-				}
-
+				routeTableIDs = append(routeTableIDs, one.ID)
 				break
 			}
 		}
+		routeTableMap[one.ID] = one.CloudID
+	}
+
+	routeParams := &SyncBaseParams{
+		AccountID: params.AccountID,
+		Region:    params.Region,
+		CloudIDs:  routeTableIDs,
+	}
+	_, err = cli.Route(kt, routeParams, &SyncRouteOption{RouteTableMap: routeTableMap})
+	if err != nil {
+		logs.Errorf("[%s] routetable sync update route failed. accountID: %s, region: %s, err: %v",
+			enumor.TCloud, params.AccountID, params.Region, err)
+		return err
 	}
 
 	return nil

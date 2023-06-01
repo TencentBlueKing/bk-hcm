@@ -75,7 +75,7 @@ func (hd *diskHandler) Next(kt *kit.Kit) ([]string, error) {
 		},
 	}
 
-	diskResult, err := hd.syncCli.CloudCli().ListDiskNew(kt, listOpt)
+	diskResult, err := hd.syncCli.CloudCli().ListDisk(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor list huawei disk failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
 		return nil, err

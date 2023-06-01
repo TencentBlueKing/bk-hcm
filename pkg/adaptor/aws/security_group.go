@@ -86,11 +86,10 @@ func (a *Aws) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.AwsCreateOptio
 	return *resp.GroupId, nil
 }
 
-// TODO: sync-todo 改好后统一删除ListSecurityGroup函数
-// ListSecurityGroupNew list security group.
+// ListSecurityGroup list security group.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeSecurityGroups.html
-func (a *Aws) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.AwsListOption) ([]securitygroup.AwsSG,
-	*string, error) {
+func (a *Aws) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AwsListOption) ([]securitygroup.AwsSG,
+	*ec2.DescribeSecurityGroupsOutput, error) {
 
 	if opt == nil {
 		return nil, nil, errf.New(errf.InvalidParameter, "security group list option is required")
@@ -129,48 +128,7 @@ func (a *Aws) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.AwsListOption
 	for _, one := range resp.SecurityGroups {
 		sgs = append(sgs, securitygroup.AwsSG{one})
 	}
-	return sgs, resp.NextToken, nil
-}
-
-// ListSecurityGroup list security group.
-// reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeSecurityGroups.html
-func (a *Aws) ListSecurityGroup(kt *kit.Kit, opt *securitygroup.AwsListOption) (*ec2.DescribeSecurityGroupsOutput,
-	error) {
-
-	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "security group list option is required")
-	}
-
-	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := a.clientSet.ec2Client(opt.Region)
-	if err != nil {
-		return nil, err
-	}
-
-	req := new(ec2.DescribeSecurityGroupsInput)
-
-	if len(opt.CloudIDs) > 0 {
-		req.GroupIds = aws.StringSlice(opt.CloudIDs)
-	}
-
-	if opt.Page != nil {
-		req.MaxResults = opt.Page.MaxResults
-		req.NextToken = opt.Page.NextToken
-	}
-
-	resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
-	if err != nil {
-		if strings.Contains(err.Error(), ErrDataNotFound) {
-			return new(ec2.DescribeSecurityGroupsOutput), nil
-		}
-		logs.Errorf("list aws security group failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	return resp, nil
+	return sgs, resp, nil
 }
 
 // DeleteSecurityGroup delete security group.
@@ -220,17 +178,17 @@ func (a *Aws) SecurityGroupCvmAssociate(kt *kit.Kit, opt *securitygroup.AwsAssoc
 		Region:   opt.Region,
 		CloudIDs: []string{opt.CloudCvmID},
 	}
-	instance, err := a.ListCvm(kt, listCvmOpt)
+	_, resp, err := a.ListCvm(kt, listCvmOpt)
 	if err != nil {
 		return fmt.Errorf("associate security group to query cvm detail failed, err: %v", err)
 	}
 
-	if len(instance.Reservations) == 0 || len(instance.Reservations[0].Instances) == 0 {
+	if len(resp.Reservations) == 0 || len(resp.Reservations[0].Instances) == 0 {
 		return fmt.Errorf("cvm(cloud_id=%s) not found", opt.CloudCvmID)
 	}
 
 	sgIDs := make([]*string, 0)
-	for _, sg := range instance.Reservations[0].Instances[0].SecurityGroups {
+	for _, sg := range resp.Reservations[0].Instances[0].SecurityGroups {
 		if converter.PtrToVal(sg.GroupId) == opt.CloudSecurityGroupID {
 			return fmt.Errorf("cvm: %s already associated security group: %s", opt.CloudCvmID, opt.CloudSecurityGroupID)
 		}
@@ -271,18 +229,18 @@ func (a *Aws) SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.AwsAs
 		Region:   opt.Region,
 		CloudIDs: []string{opt.CloudCvmID},
 	}
-	instance, err := a.ListCvm(kt, listCvmOpt)
+	_, resp, err := a.ListCvm(kt, listCvmOpt)
 	if err != nil {
 		return fmt.Errorf("disassociate security group to query cvm detail failed, err: %v", err)
 	}
 
-	if len(instance.Reservations) == 0 || len(instance.Reservations[0].Instances) == 0 {
+	if len(resp.Reservations) == 0 || len(resp.Reservations[0].Instances) == 0 {
 		return fmt.Errorf("cvm(cloud_id=%s) not found", opt.CloudCvmID)
 	}
 
 	sgIDs := make([]*string, 0)
 	hit := false
-	for _, sg := range instance.Reservations[0].Instances[0].SecurityGroups {
+	for _, sg := range resp.Reservations[0].Instances[0].SecurityGroups {
 		if sg.GroupId != nil && converter.PtrToVal(sg.GroupId) == opt.CloudSecurityGroupID {
 			hit = true
 			continue

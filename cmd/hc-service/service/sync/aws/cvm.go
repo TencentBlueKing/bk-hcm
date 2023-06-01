@@ -74,7 +74,7 @@ func (hd *cvmHandler) Next(kt *kit.Kit) ([]string, error) {
 		},
 	}
 
-	cvmResult, token, err := hd.syncCli.CloudCli().ListCvmNew(kt, listOpt)
+	cvmResult, resp, err := hd.syncCli.CloudCli().ListCvm(kt, listOpt)
 	if err != nil {
 		logs.Errorf("request adaptor list aws cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
 		return nil, err
@@ -89,7 +89,7 @@ func (hd *cvmHandler) Next(kt *kit.Kit) ([]string, error) {
 		cloudIDs = append(cloudIDs, converter.PtrToVal(one.InstanceId))
 	}
 
-	hd.nextToken = token
+	hd.nextToken = resp.NextToken
 	return cloudIDs, nil
 }
 

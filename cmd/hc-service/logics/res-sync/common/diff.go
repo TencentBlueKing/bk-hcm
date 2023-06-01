@@ -86,7 +86,11 @@ type CloudResType interface {
 		typesni.GcpNI |
 		typesni.AzureNI |
 
-		typesroutetable.GcpRoute
+		typesroutetable.GcpRoute |
+		typesroutetable.TCloudRoute |
+		typesroutetable.HuaWeiRoute |
+		typesroutetable.AzureRoute |
+		typesroutetable.AwsRoute
 }
 
 type DBResType interface {
@@ -139,7 +143,11 @@ type DBResType interface {
 		corecloudni.NetworkInterface[corecloudni.GcpNIExtension] |
 		corecloudni.NetworkInterface[corecloudni.AzureNIExtension] |
 
-		cloudcoreroutetable.GcpRoute
+		cloudcoreroutetable.GcpRoute |
+		cloudcoreroutetable.TCloudRoute |
+		cloudcoreroutetable.HuaWeiRoute |
+		cloudcoreroutetable.AzureRoute |
+		cloudcoreroutetable.AwsRoute
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

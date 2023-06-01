@@ -34,3 +34,13 @@ type HuaWeiRoute struct {
 	Memo              *string `json:"memo,omitempty"`
 	*core.Revision    `json:",inline"`
 }
+
+// GetID ...
+func (route HuaWeiRoute) GetID() string {
+	return route.ID
+}
+
+// GetCloudID ...
+func (route HuaWeiRoute) GetCloudID() string {
+	return route.CloudRouteTableID + route.Destination
+}
