@@ -14,7 +14,9 @@ export enum QueryRuleOPEnum {
   IN = 'in',
   CS = 'cs',
   CIS = 'cis',
-  JSON_EQ = 'json_eq'
+  JSON_EQ = 'json_eq',
+  OR = 'or',
+  AND = 'and'
 }
 
 export type QueryFilterType = {

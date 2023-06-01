@@ -9,6 +9,7 @@ import { FILTER_DATA } from '@/common/constant';
 import {
   useAccountStore,
 } from '@/store';
+import { QueryFilterType, QueryRuleOPEnum } from '@/typings';
 
 type PropsType = {
   filter?: FilterType
@@ -56,18 +57,34 @@ export default (props: PropsType) => {
   watch(
     () => searchValue.value,
     (val) => {
-      filter.value.rules = val.reduce((p, v) => {
-        if (v.type === 'condition') {
-          filter.value.op = v.id || 'and';
-        } else {
-          p.push({
-            field: v.id,
-            op: isAccurate.value ? 'eq' : 'cs',
-            value: v.id === 'bk_cloud_id' ? Number(v.values[0].id) : v.values[0].id,
-          });
+      const map = new Map<string, number>();
+      const answer = [] as unknown as Array<QueryFilterType>;
+      for (const { id, values } of val) {
+        const rule: QueryFilterType = {
+          op: QueryRuleOPEnum.OR,
+          rules: [],
+        };
+        const field = id;
+
+        const condition = {
+          field,
+          op: isAccurate.value ? QueryRuleOPEnum.EQ : QueryRuleOPEnum.CS,
+          value:
+            field === "bk_cloud_id" ? Number(values[0].id) : values[0].id,
+        };
+
+        if (!map.has(field)) {
+          const idx = answer.length;
+          map.set(field, idx);
         }
-        return p;
-      }, []);
+        const idx = map.get(field);
+        if (!!answer[idx]) answer[idx].rules.push(condition);
+        else {
+          rule.rules.push(condition);
+          answer.push(rule);
+        } 
+      }
+      filter.value.rules = answer;
     },
     {
       deep: true,
