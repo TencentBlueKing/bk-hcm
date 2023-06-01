@@ -1,7 +1,7 @@
 import { useStaffStore } from '@/store';
 import { Staff, StaffType } from '@/typings';
 import { Loading, TagInput } from 'bkui-vue';
-import { computed, defineComponent, onMounted, PropType, ref } from 'vue';
+import { computed, defineComponent, onMounted, PropType, ref, watch, nextTick } from 'vue';
 
 import './member-select.scss';
 import Tpl from './Tpl';
@@ -53,8 +53,8 @@ export default defineComponent({
     function tpl(node: Staff) {
       return (
         <Tpl
-          englishName={node.english_name}
-          chineseName={node.chinese_name}
+          englishName={node.username}
+          chineseName={node.display_name}
         />
       );
     }
@@ -67,27 +67,44 @@ export default defineComponent({
       ctx.emit('blur', val);
     }
 
+    function handleInput(userName: string) {
+      staffStore.fetchStaffs(userName);
+    }
+
     function handleSearch(lowerCaseValue: string, _: string | string[], list: Staff[]) {
       return list.filter((item) => {
-        const username = item.english_name.toLowerCase();
-        return username.includes(lowerCaseValue) || item.chinese_name.includes(lowerCaseValue);
+        const username = item.username.toLowerCase();
+        return username.includes(lowerCaseValue) || item.display_name.includes(lowerCaseValue);
       });
     }
+
+    watch(
+      () => staffStore.list,
+      (list) => {
+        if (list.length) {
+          nextTick(() => {
+            // tagInputRef.value?.focusInputTrigger(); // 获取到数据聚焦
+          });
+        }
+      },
+      { immediate: true },
+    );
 
     return () => (
       <TagInput
         {...ctx.attrs}
         {...maxData.value}
-        disabled={staffStore.fetching}
+        // disabled={props.disabled || staffStore.fetching}
         list={staffStore.list}
         ref={tagInputRef}
-        displayKey="chinese_name"
-        saveKey="english_name"
+        displayKey="display_name"
+        saveKey="username"
         searchKey={searchKey}
         filterCallback={handleSearch}
         modelValue={props.modelValue}
         onChange={handleChange}
         onBlur={handleBlur}
+        onInput={handleInput}
         tpl={tpl}
         tagTpl={tpl}
         clearable={props.clearable}
