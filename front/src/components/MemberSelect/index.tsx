@@ -2,6 +2,7 @@ import { useStaffStore } from '@/store';
 import { Staff, StaffType } from '@/typings';
 import { Loading, TagInput } from 'bkui-vue';
 import { computed, defineComponent, onMounted, PropType, ref, watch, nextTick } from 'vue';
+import _ from 'lodash';
 
 import './member-select.scss';
 import Tpl from './Tpl';
@@ -36,6 +37,7 @@ export default defineComponent({
     const tagInputRef = ref(null);
     const staffStore = useStaffStore();
     const searchKey = ['username'];
+    const userList: any = ref([]);
     const maxData = computed(() => (!props.multiple ? {
       maxData: 1,
     } : {}));
@@ -67,15 +69,13 @@ export default defineComponent({
       ctx.emit('blur', val);
     }
 
-    function handleInput(userName: string) {
+    const getUserList = _.debounce((userName: string) => {
+      if (staffStore.fetching || !userName) return;
       staffStore.fetchStaffs(userName);
-    }
+    }, 500);
 
-    function handleSearch(lowerCaseValue: string, _: string | string[], list: Staff[]) {
-      return list.filter((item) => {
-        const username = item.username.toLowerCase();
-        return username.includes(lowerCaseValue) || item.display_name.includes(lowerCaseValue);
-      });
+    function handleInput(userName: string) {
+      getUserList(userName);
     }
 
     watch(
@@ -83,11 +83,12 @@ export default defineComponent({
       (list) => {
         if (list.length) {
           nextTick(() => {
+            userList.value = _.cloneDeep(list);
             // tagInputRef.value?.focusInputTrigger(); // 获取到数据聚焦
           });
         }
       },
-      { immediate: true },
+      { immediate: true, deep: true },
     );
 
     return () => (
@@ -95,12 +96,12 @@ export default defineComponent({
         {...ctx.attrs}
         {...maxData.value}
         // disabled={props.disabled || staffStore.fetching}
-        list={staffStore.list}
+        list={userList}
         ref={tagInputRef}
         displayKey="display_name"
         saveKey="username"
         searchKey={searchKey}
-        filterCallback={handleSearch}
+        // filterCallback={handleSearch}
         modelValue={props.modelValue}
         onChange={handleChange}
         onBlur={handleBlur}
