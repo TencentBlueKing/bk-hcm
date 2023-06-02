@@ -2,12 +2,13 @@ import http from '@/http';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { Select } from 'bkui-vue';
 import { IOption, QueryFilterType, QueryRuleOPEnum } from '@/typings/common';
-import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
+import { CLOUD_AREA_REGION_AWS, CLOUD_AREA_REGION_GCP, ResourceTypeEnum, VendorEnum } from '@/common/constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const { Option } = Select;
 import { useHostStore } from '@/store/host';
+import { isChinese } from '@/language/i18n';
 
 export default defineComponent({
   props: {
@@ -72,7 +73,7 @@ export default defineComponent({
               value: services[props.type],
             },
           ];
-          dataNameKey = 'region_id';
+          dataNameKey = isChinese? 'locales_zh_cn' : 'region_id';
           break;
         }
         case VendorEnum.TCLOUD: {
@@ -88,6 +89,7 @@ export default defineComponent({
               value: 'AVAILABLE',
             },
           ];
+          dataNameKey = isChinese ? 'region_name' : 'display_name';
           break;
         }
         case VendorEnum.AWS: {
@@ -131,11 +133,27 @@ export default defineComponent({
         },
       });
 
+      const getName = (key: string, name: string) => {
+        switch(vendor) {
+          case VendorEnum.AWS: 
+            return isChinese ? CLOUD_AREA_REGION_AWS[key] : key;
+          case VendorEnum.GCP:
+            return isChinese ? CLOUD_AREA_REGION_GCP[key] : key;
+          case VendorEnum.TCLOUD:
+          case VendorEnum.HUAWEI:
+            return isChinese ? name : key;
+          case VendorEnum.AZURE:
+            return name;
+          default:
+            return '--';
+        }
+      }
+
       const details = result?.data?.details ?? [];
       list.value = details
         .map((item: any) => ({
           id: item[dataIdKey],
-          name: item[dataNameKey],
+          name: getName(item[dataIdKey], item[dataNameKey]) || item[dataIdKey],
         }));
       hostStore.regionList = details;
       
