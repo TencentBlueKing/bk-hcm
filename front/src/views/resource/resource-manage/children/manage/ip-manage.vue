@@ -38,6 +38,12 @@ const props = defineProps({
 const resourceStore = useResourceStore();
 
 const {
+  searchData,
+  searchValue,
+  filter
+} = useFilter(props);
+
+const {
   datas,
   pagination,
   isLoading,
@@ -45,7 +51,7 @@ const {
   handlePageSizeChange,
   handleSort,
   triggerApi,
-} = useQueryList(props, 'eips');
+} = useQueryList({ filter: filter.value }, 'eips');
 
 const columns = useColumns('eips');
 const emit = defineEmits(['auth']);
@@ -66,10 +72,7 @@ const {
   true,
 );
 
-const {
-  searchData,
-  searchValue,
-} = useFilter(props);
+
 
 // 抛出请求数据的方法，新增成功使用
 const fetchComponentsData = () => {

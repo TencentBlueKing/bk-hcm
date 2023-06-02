@@ -80,6 +80,13 @@ const state = reactive<any>({
   },
 });
 
+
+const {
+  searchData,
+  searchValue,
+  filter
+} = useFilter(props);
+
 const {
   datas,
   pagination,
@@ -87,7 +94,10 @@ const {
   handlePageChange,
   handlePageSizeChange,
   getList,
-} = useQueryCommonList(props, fetchUrl);
+} = useQueryCommonList({
+  ...props,
+  filter: filter.value
+}, fetchUrl);
 
 const selectSearchData = computed(() => {
   return [
@@ -99,10 +109,6 @@ const selectSearchData = computed(() => {
   ];
 });
 
-const {
-  searchData,
-  searchValue,
-} = useFilter(props);
 
 // eslint-disable-next-line max-len
 state.datas = datas;

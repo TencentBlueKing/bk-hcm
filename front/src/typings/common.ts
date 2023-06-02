@@ -21,12 +21,14 @@ export enum QueryRuleOPEnum {
 
 export type QueryFilterType = {
   op: 'and' | 'or';
-  rules: {
-    field: string;
-    op: QueryRuleOPEnum;
-    value: string | number | string[];
-  }[]
+  rules: Array<RulesItem>
 };
+
+export type RulesItem = {
+  field: string;
+  op: QueryRuleOPEnum;
+  value: string | number | string[];
+}
 
 export interface IOption {
   id: string;
