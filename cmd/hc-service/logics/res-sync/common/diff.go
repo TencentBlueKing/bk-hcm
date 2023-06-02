@@ -28,6 +28,7 @@ import (
 	typesni "hcm/pkg/adaptor/types/network-interface"
 	typesroutetable "hcm/pkg/adaptor/types/route-table"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
+	typessecuritygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	cloudcore "hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/core/cloud/cvm"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
@@ -40,7 +41,11 @@ import (
 type CloudResType interface {
 	GetCloudID() string
 
-	types.TCloudVpc |
+	typessecuritygrouprule.HuaWeiSGRule |
+		typessecuritygrouprule.AwsSGRule |
+		typessecuritygrouprule.AzureSGRule |
+
+		types.TCloudVpc |
 		types.AwsVpc |
 		types.GcpVpc |
 		types.HuaWeiVpc |
@@ -97,7 +102,11 @@ type DBResType interface {
 	GetID() string
 	GetCloudID() string
 
-	cloudcore.Vpc[cloudcore.TCloudVpcExtension] |
+	cloudcore.HuaWeiSecurityGroupRule |
+		cloudcore.AwsSecurityGroupRule |
+		cloudcore.AzureSecurityGroupRule |
+
+		cloudcore.Vpc[cloudcore.TCloudVpcExtension] |
 		cloudcore.Vpc[cloudcore.AwsVpcExtension] |
 		cloudcore.Vpc[cloudcore.GcpVpcExtension] |
 		cloudcore.Vpc[cloudcore.HuaWeiVpcExtension] |

@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
-	securitygroupsync "hcm/cmd/hc-service/logics/sync/security-group"
 	"hcm/pkg/adaptor/aws"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
@@ -98,19 +97,24 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 	if err != nil {
 		return nil, err
 	}
-	req := &securitygroupsync.SyncAwsSecurityGroupOption{
+
+	cloudSGIDs := make([]string, 0, len(sgFromDB))
+	for _, one := range sgFromDB {
+		cloudSGIDs = append(cloudSGIDs, one.CloudID)
+	}
+
+	sgRuleParams := &SyncBaseParams{
 		AccountID: params.AccountID,
 		Region:    params.Region,
+		CloudIDs:  cloudSGIDs,
 	}
-	for _, one := range sgFromDB {
-		// TODO: sync-todo 安全组规则同步待优化为版本3
-		_, err := securitygroupsync.SyncAwsSGRule(kt, req, cli.cloudCli, cli.dbCli, one.ID)
-		if err != nil {
-			logs.Errorf("[%s] sync security group rule failed, err: %v, rid: %s", enumor.Aws,
-				err, kt.Rid)
-			return nil, err
-		}
+	_, err = cli.SecurityGroupRule(kt, sgRuleParams, &SyncSGRuleOption{})
+	if err != nil {
+		logs.Errorf("[%s] sg sync sgRule failed. err: %v, accountID: %s, region: %s, rid: %s",
+			err, enumor.Aws, params.AccountID, params.Region, kt.Rid)
+		return nil, err
 	}
+
 	return new(SyncResult), nil
 }
 

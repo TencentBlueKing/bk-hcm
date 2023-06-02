@@ -79,6 +79,16 @@ type AwsSecurityGroupRule struct {
 	UpdatedAt                  string                       `json:"updated_at"`
 }
 
+// GetID ...
+func (sgr AwsSecurityGroupRule) GetID() string {
+	return sgr.ID
+}
+
+// GetCloudID ...
+func (sgr AwsSecurityGroupRule) GetCloudID() string {
+	return sgr.CloudID
+}
+
 // HuaWeiSecurityGroupRule define huawei security group rule.
 type HuaWeiSecurityGroupRule struct {
 	ID                        string                       `json:"id"`
@@ -102,6 +112,16 @@ type HuaWeiSecurityGroupRule struct {
 	Reviser                   string                       `json:"reviser"`
 	CreatedAt                 string                       `json:"created_at"`
 	UpdatedAt                 string                       `json:"updated_at"`
+}
+
+// GetID ...
+func (sgr HuaWeiSecurityGroupRule) GetID() string {
+	return sgr.ID
+}
+
+// GetCloudID ...
+func (sgr HuaWeiSecurityGroupRule) GetCloudID() string {
+	return sgr.CloudID
 }
 
 // AzureSecurityGroupRule define azure security group rule.
@@ -134,4 +154,14 @@ type AzureSecurityGroupRule struct {
 	Reviser                             string                       `json:"reviser"`
 	CreatedAt                           string                       `json:"created_at"`
 	UpdatedAt                           string                       `json:"updated_at"`
+}
+
+// GetID ...
+func (sgr AzureSecurityGroupRule) GetID() string {
+	return sgr.ID
+}
+
+// GetCloudID ...
+func (sgr AzureSecurityGroupRule) GetCloudID() string {
+	return sgr.CloudID
 }

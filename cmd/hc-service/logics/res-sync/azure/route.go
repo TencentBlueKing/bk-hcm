@@ -79,10 +79,10 @@ func (cli *client) Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOpti
 }
 
 type syncRouteOption struct {
-	AccountID         string
-	ResourceGroupName string
-	RouteTableID      string
-	RouteTableMap     map[string]string
+	AccountID         string            `json:"account_id" validate:"required"`
+	ResourceGroupName string            `json:"resource_group_name" validate:"required"`
+	RouteTableID      string            `json:"route_table_id" validate:"required"`
+	RouteTableMap     map[string]string `json:"route_table_map" validate:"required"`
 }
 
 // Validate ...

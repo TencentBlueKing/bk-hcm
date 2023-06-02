@@ -23,6 +23,8 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
 
 // -------------------------- Create --------------------------
@@ -87,4 +89,14 @@ func (opt HuaWeiListOption) Validate() error {
 	}
 
 	return nil
+}
+
+// HuaWeiSGRule for model SecurityGroupRule
+type HuaWeiSGRule struct {
+	model.SecurityGroupRule
+}
+
+// GetCloudID ...
+func (sgrule HuaWeiSGRule) GetCloudID() string {
+	return sgrule.Id
 }
