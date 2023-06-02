@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/logs"
 )
 
+// main test
 func main() {
 	cc.InitService(cc.WebServerName)
 
