@@ -31,4 +31,6 @@ const i18n = createI18n({
   },
 });
 
+export const isChinese = localLanguage === 'zh-cn';
+
 export default i18n;
