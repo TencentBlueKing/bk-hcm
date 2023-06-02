@@ -33,8 +33,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-
-	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // BatchCreateAwsSGRule batch create aws security group rule.
@@ -354,7 +352,7 @@ func (g *securityGroup) diffAwsSGRuleSyncAdd(cts *rest.Contexts, ids []string,
 }
 
 // genAwsRules gen aws rule list
-func genAwsRulesList(rules []*ec2.SecurityGroupRule, req *proto.SecurityGroupSyncReq,
+func genAwsRulesList(rules []securitygrouprule.AwsSGRule, req *proto.SecurityGroupSyncReq,
 	id string) []protocloud.AwsSGRuleBatchCreate {
 	list := make([]protocloud.AwsSGRuleBatchCreate, 0, len(rules))
 	for _, rule := range rules {

@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
-	securitygroupsync "hcm/cmd/hc-service/logics/sync/security-group"
 	adcore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
@@ -37,7 +36,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/concurrence"
 	"hcm/pkg/tools/converter"
 )
 
@@ -97,25 +95,23 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 	if err != nil {
 		return nil, err
 	}
-	req := &securitygroupsync.SyncHuaWeiSecurityGroupOption{
+
+	cloudSGIDs := make([]string, 0, len(sgFromDB))
+	sgMap := make(map[string]string)
+	for _, one := range sgFromDB {
+		cloudSGIDs = append(cloudSGIDs, one.CloudID)
+		sgMap[one.CloudID] = one.ID
+	}
+
+	sgRuleParams := &SyncBaseParams{
 		AccountID: params.AccountID,
 		Region:    params.Region,
+		CloudIDs:  cloudSGIDs,
 	}
-	sgIDs := make([]string, 0, len(sgFromDB))
-	for _, one := range sgFromDB {
-		sgIDs = append(sgIDs, one.ID)
-	}
-
-	err = concurrence.BaseExec(30, sgIDs, func(param string) error {
-		if _, err := securitygroupsync.SyncHuaWeiSGRule(kt, req, cli.cloudCli, cli.dbCli, param); err != nil {
-			logs.ErrorDepthf(1, "[%s] sync security group rule failed, err: %v, rid: %s", enumor.HuaWei,
-				err, kt.Rid)
-			return err
-		}
-
-		return nil
-	})
+	_, err = cli.SecurityGroupRule(kt, sgRuleParams, &SyncSGRuleOption{})
 	if err != nil {
+		logs.Errorf("[%s] sg sync sgRule failed. err: %v, accountID: %s, region: %s, rid: %s",
+			err, enumor.HuaWei, params.AccountID, params.Region, kt.Rid)
 		return nil, err
 	}
 

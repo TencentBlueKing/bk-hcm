@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
@@ -139,8 +140,8 @@ func (opt AzureListOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// AzureSecurityRule define azure security rule.
-type AzureSecurityRule struct {
+// AzureSGRule define azure security rule.
+type AzureSGRule struct {
 	ID                                   *string                                `json:"id"`
 	Etag                                 *string                                `json:"etag"`
 	Name                                 *string                                `json:"name"`
@@ -160,4 +161,9 @@ type AzureSecurityRule struct {
 	Direction                            *armnetwork.SecurityRuleDirection      `json:"direction"`
 	DestinationApplicationSecurityGroups []*armnetwork.ApplicationSecurityGroup `json:"destination_application_security_groups"`
 	SourceApplicationSecurityGroups      []*armnetwork.ApplicationSecurityGroup `json:"source_application_security_groups"`
+}
+
+// GetCloudID ...
+func (sgrule AzureSGRule) GetCloudID() string {
+	return converter.PtrToVal(sgrule.ID)
 }

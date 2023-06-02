@@ -20,7 +20,6 @@
 package region
 
 import (
-	"fmt"
 	typesregion "hcm/pkg/adaptor/types/region"
 	"hcm/pkg/api/core"
 	protoregion "hcm/pkg/api/data-service/cloud/region"
@@ -91,7 +90,6 @@ func (r *region) SyncHuaWeiRegion(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
-	fmt.Println(len(updateMap))
 	if len(updateMap) > 0 {
 		err := r.syncHuaWeiRegionUpdate(cts, updateMap, dsMap)
 		if err != nil {

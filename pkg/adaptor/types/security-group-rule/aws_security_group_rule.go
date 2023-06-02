@@ -24,6 +24,9 @@ import (
 
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // -------------------------- Create --------------------------
@@ -139,4 +142,14 @@ type AwsSGRuleUpdate struct {
 	ToPort                     *int64  `json:"to_port"`
 	Protocol                   *string `json:"protocol"`
 	CloudTargetSecurityGroupID *string `json:"cloud_target_security_group_id"`
+}
+
+// AwsSGRule for ec2 SecurityGroupRule
+type AwsSGRule struct {
+	*ec2.SecurityGroupRule
+}
+
+// GetCloudID ...
+func (sgrule AwsSGRule) GetCloudID() string {
+	return converter.PtrToVal(sgrule.SecurityGroupRuleId)
 }

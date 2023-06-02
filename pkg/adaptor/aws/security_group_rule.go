@@ -20,7 +20,7 @@
 package aws
 
 import (
-	"hcm/pkg/adaptor/types/security-group-rule"
+	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -230,7 +230,7 @@ func (a *Aws) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AwsDel
 // ListSecurityGroupRule list security group rule.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_DescribeSecurityGroupRules.html
 func (a *Aws) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AwsListOption) (
-	[]*ec2.SecurityGroupRule, error) {
+	[]securitygrouprule.AwsSGRule, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule list option is required")
@@ -265,7 +265,12 @@ func (a *Aws) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AwsListO
 		return nil, err
 	}
 
-	return resp.SecurityGroupRules, nil
+	results := make([]securitygrouprule.AwsSGRule, 0)
+	for _, one := range resp.SecurityGroupRules {
+		results = append(results, securitygrouprule.AwsSGRule{one})
+	}
+
+	return results, nil
 }
 
 // UpdateSecurityGroupRule update security group rule.

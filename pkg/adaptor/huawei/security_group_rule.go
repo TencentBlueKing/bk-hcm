@@ -22,11 +22,12 @@ package huawei
 import (
 	"fmt"
 
-	"hcm/pkg/adaptor/types/security-group-rule"
+	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3/model"
 )
@@ -115,8 +116,8 @@ func (h *HuaWei) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Hua
 
 // ListSecurityGroupRule list security group rule.
 // reference: https://support.huaweicloud.com/api-vpc/vpc_apiv3_0019.html
-func (h *HuaWei) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.HuaWeiListOption) (*model.
-	ListSecurityGroupRulesResponse, error) {
+func (h *HuaWei) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.HuaWeiListOption) ([]securitygrouprule.
+	HuaWeiSGRule, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule list option is required")
@@ -146,5 +147,10 @@ func (h *HuaWei) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.HuaWe
 		return nil, err
 	}
 
-	return resp, nil
+	results := make([]securitygrouprule.HuaWeiSGRule, 0)
+	for _, one := range converter.PtrToVal(resp.SecurityGroupRules) {
+		results = append(results, securitygrouprule.HuaWeiSGRule{one})
+	}
+
+	return results, nil
 }

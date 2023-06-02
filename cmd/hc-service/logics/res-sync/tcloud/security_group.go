@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
-	securitygroupsync "hcm/cmd/hc-service/logics/sync/security-group"
 	"hcm/pkg/adaptor/tcloud"
 	typecore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
@@ -98,21 +97,29 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 	if err != nil {
 		return nil, err
 	}
+
+	sgIDs := make([]string, 0, len(sgFromDB))
 	for _, one := range sgFromDB {
-		// TODO: sync-todo 安全组规则同步待优化为版本3
-		_, err := securitygroupsync.SyncTCloudSGRule(kt, cli.cloudCli, cli.dbCli, one.ID)
-		if err != nil {
-			logs.Errorf("[%s] sync security group rule failed, err: %v, rid: %s", enumor.TCloud,
-				err, kt.Rid)
-			return nil, err
-		}
+		sgIDs = append(sgIDs, one.ID)
+	}
+
+	sgRuleParams := &SyncBaseParams{
+		AccountID: params.AccountID,
+		Region:    params.Region,
+		CloudIDs:  sgIDs,
+	}
+	_, err = cli.SecurityGroupRule(kt, sgRuleParams, &SyncSGRuleOption{})
+	if err != nil {
+		logs.Errorf("[%s] sg sync sgRule failed. err: %v, accountID: %s, region: %s, rid: %s",
+			err, enumor.TCloud, params.AccountID, params.Region, kt.Rid)
+		return nil, err
 	}
 
 	return new(SyncResult), nil
 }
 
 func (cli *client) updateSG(kt *kit.Kit, accountID string,
-		updateMap map[string]securitygroup.TCloudSG) error {
+	updateMap map[string]securitygroup.TCloudSG) error {
 
 	if len(updateMap) <= 0 {
 		return fmt.Errorf("sg updateMap is <= 0, not update")
@@ -150,7 +157,7 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 }
 
 func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
-		addSlice []securitygroup.TCloudSG) ([]string, error) {
+	addSlice []securitygroup.TCloudSG) ([]string, error) {
 
 	if len(addSlice) <= 0 {
 		return nil, fmt.Errorf("sg addSlice is <= 0, not create")
@@ -252,7 +259,7 @@ func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]secur
 }
 
 func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
-		[]cloudcore.SecurityGroup[cloudcore.TCloudSecurityGroupExtension], error) {
+	[]cloudcore.SecurityGroup[cloudcore.TCloudSecurityGroupExtension], error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -325,7 +332,7 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID str
 		for _, one := range resultFromDB.Details {
 			cloudIDs = append(cloudIDs, one.CloudID)
 		}
-		
+
 		if len(cloudIDs) == 0 {
 			break
 		}

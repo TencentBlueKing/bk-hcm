@@ -34,7 +34,7 @@ import (
 // CreateSecurityGroupRule create security group rule.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/create-or-update
 func (az *Azure) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AzureCreateOption) (
-	[]*securitygrouprule.AzureSecurityRule, error) {
+	[]*securitygrouprule.AzureSGRule, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "security group rule create option is required")
@@ -83,7 +83,7 @@ func (az *Azure) CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 		return nil, err
 	}
 
-	result := make([]*securitygrouprule.AzureSecurityRule, 0)
+	result := make([]*securitygrouprule.AzureSGRule, 0)
 	for _, v := range resp.SecurityGroup.Properties.SecurityRules {
 		if nameMap[converter.PtrToVal(v.Name)] {
 			result = append(result, az.converCloudToSecurityRule(v))
@@ -305,7 +305,7 @@ func (az *Azure) DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azu
 
 // ListSecurityGroupRule list security group rule.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
-func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AzureListOption) ([]*securitygrouprule.AzureSecurityRule,
+func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.AzureListOption) ([]*securitygrouprule.AzureSGRule,
 	error) {
 
 	if opt == nil {
@@ -321,7 +321,7 @@ func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azure
 		return nil, err
 	}
 
-	securityRules := make([]*securitygrouprule.AzureSecurityRule, 0)
+	securityRules := make([]*securitygrouprule.AzureSGRule, 0)
 	for _, v := range sg.SecurityRules {
 		securityRules = append(securityRules, az.converCloudToSecurityRule(v))
 	}
@@ -329,8 +329,8 @@ func (az *Azure) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.Azure
 	return securityRules, nil
 }
 
-func (az *Azure) converCloudToSecurityRule(cloud *armnetwork.SecurityRule) *securitygrouprule.AzureSecurityRule {
-	return &securitygrouprule.AzureSecurityRule{
+func (az *Azure) converCloudToSecurityRule(cloud *armnetwork.SecurityRule) *securitygrouprule.AzureSGRule {
+	return &securitygrouprule.AzureSGRule{
 		ID:                                   SPtrToLowerSPtr(cloud.ID),
 		Etag:                                 cloud.Etag,
 		Name:                                 SPtrToLowerSPtr(cloud.Name),
