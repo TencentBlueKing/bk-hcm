@@ -19,6 +19,12 @@ const props = defineProps({
   },
 });
 
+const {
+  searchData,
+  searchValue,
+  filter
+} = useFilter(props);
+
 // use hooks
 // const {
 //   t,
@@ -30,14 +36,9 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryList(props, 'route_tables');
+} = useQueryList({ filter: filter.value }, 'route_tables');
 
 const columns = useColumns('route');
-
-const {
-  searchData,
-  searchValue,
-} = useFilter(props);
 </script>
 
 <template>

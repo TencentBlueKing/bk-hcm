@@ -43,13 +43,18 @@ const {
 const resourceStore = useResourceStore();
 const columns = useColumns('vpc');
 const {
+  searchData,
+  searchValue,
+  filter
+} = useFilter(props);
+const {
   datas,
   pagination,
   isLoading,
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryList(props, 'vpcs');
+} = useQueryList({ filter: filter.value }, 'vpcs');
 
 // 抛出请求数据的方法，新增成功使用
 const fetchComponentsData = () => {
@@ -73,10 +78,7 @@ const hostSearchData = computed(() => {
   ];
 });
 
-const {
-  searchData,
-  searchValue,
-} = useFilter(props);
+
 
 const handleDeleteVpc = (data: any) => {
   const vpcIds = [data.id];

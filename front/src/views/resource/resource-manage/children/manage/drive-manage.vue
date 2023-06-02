@@ -58,6 +58,7 @@ const selectSearchData = computed(() => {
 const {
   searchData,
   searchValue,
+  filter
 } = useFilter(props);
 
 const emit = defineEmits(['auth']);
@@ -139,7 +140,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryList(props, 'disks');
+} = useQueryList({ filter: filter.value }, 'disks');
 </script>
 
 <template>

@@ -35,6 +35,13 @@ const props = defineProps({
 
 const resourceStore = useResourceStore();
 const columns = useColumns('subnet');
+
+const {
+  searchData,
+  searchValue,
+  filter
+} = useFilter(props);
+
 const {
   datas,
   pagination,
@@ -42,7 +49,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryList(props, 'subnets');
+} = useQueryList({ filter: filter.value }, 'subnets');
 
 const hostSearchData = computed(() => {
   return [
@@ -57,10 +64,7 @@ const hostSearchData = computed(() => {
   ];
 });
 
-const {
-  searchData,
-  searchValue,
-} = useFilter(props);
+
 
 const emit = defineEmits(['auth']);
 

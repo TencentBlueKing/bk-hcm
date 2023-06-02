@@ -57,23 +57,26 @@ const cloudAreaPage = ref(0);
 const cloudAreas = ref([]);
 
 const {
+  searchData,
+  searchValue,
+  filter
+} = useFilter(props);
+
+const {
   datas,
   pagination,
   isLoading,
   handlePageChange,
   handlePageSizeChange,
   handleSort,
-} = useQueryList(props, 'cvms');
+} = useQueryList({ filter: filter.value }, 'cvms');
 
 const {
   selections,
   handleSelectionChange,
 } = useSelection();
 
-const {
-  searchData,
-  searchValue,
-} = useFilter(props);
+
 
 
 // const {
