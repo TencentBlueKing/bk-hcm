@@ -42,10 +42,16 @@ type TCloudImage struct {
 	ImageSource  string `json:"image_source"`
 }
 
+// GetCloudID ...
+func (image TCloudImage) GetCloudID() string {
+	return image.CloudID
+}
+
 // TCloudImageListOption define tcloud image list option.
 type TCloudImageListOption struct {
-	Region string           `json:"region" validate:"required"`
-	Page   *core.TCloudPage `json:"page" validate:"omitempty"`
+	Region   string           `json:"region" validate:"required"`
+	CloudIDs []string         `json:"cloud_ids" validate:"omitempty"`
+	Page     *core.TCloudPage `json:"page" validate:"omitempty"`
 }
 
 // Validate tcloud image option.

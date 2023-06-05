@@ -36,7 +36,6 @@ import (
 	"hcm/cmd/hc-service/service/disk"
 	"hcm/cmd/hc-service/service/eip"
 	"hcm/cmd/hc-service/service/firewall"
-	"hcm/cmd/hc-service/service/image"
 	instancetype "hcm/cmd/hc-service/service/instance-type"
 	"hcm/cmd/hc-service/service/region"
 	resourcegroup "hcm/cmd/hc-service/service/resource-group"
@@ -164,7 +163,6 @@ func (s *Service) apiSet() *restful.Container {
 	disk.InitDiskService(c)
 	zone.InitZoneService(c)
 	cvm.InitCvmService(c)
-	image.InitImageService(c)
 	routetable.InitRouteTableService(c)
 	eip.InitEipService(c)
 	instancetype.InitInstanceTypeService(c)

@@ -28,7 +28,6 @@ import (
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 )
 
 // PublicImagePlatforms 公有镜像平台类型
@@ -50,10 +49,8 @@ func GetSystemPlatformFromImagePlatforms(platform string) (typecvm.GcpImageProje
 
 // ListImage ...
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/images/list
-func (g *Gcp) ListImage(
-	kt *kit.Kit,
-	opt *image.GcpImageListOption,
-) (*image.GcpImageListResult, string, error) {
+func (g *Gcp) ListImage(kt *kit.Kit,
+	opt *image.GcpImageListOption) (*image.GcpImageListResult, string, error) {
 
 	client, err := g.clientSet.computeClient(kt)
 	if err != nil {
@@ -61,11 +58,18 @@ func (g *Gcp) ListImage(
 	}
 
 	req := client.Images.List(opt.ProjectID).Context(kt.Ctx)
-	req.MaxResults(int64(filter.DefaultMaxInLimit))
+
+	if len(opt.CloudIDs) > 0 {
+		req.Filter(generateResourceIDsFilter(opt.CloudIDs))
+	}
+
+	if opt.Page != nil {
+		req.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
+	}
 
 	images := make([]image.GcpImage, 0)
 
-	resp, err := req.PageToken(opt.NextPageToken).Do()
+	resp, err := req.Do()
 	if err != nil {
 		logs.Errorf("list images failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, "", err

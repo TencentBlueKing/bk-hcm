@@ -19,10 +19,31 @@
 
 package image
 
+import (
+	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/validator"
+)
+
 // GcpImageListOption ...
 type GcpImageListOption struct {
-	ProjectID     string
-	NextPageToken string
+	ProjectID string        `json:"project_id" validate:"required"`
+	CloudIDs  []string      `json:"cloud_ids" validate:"omitempty"`
+	Page      *core.GcpPage `json:"page" validate:"required"`
+}
+
+// Validate gcp image option.
+func (opt GcpImageListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if opt.Page != nil {
+		if err := opt.Page.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // GcpImageListResult ...
@@ -39,4 +60,9 @@ type GcpImage struct {
 	Platform     string `json:"platform"`
 	State        string `json:"state"`
 	Type         string `json:"type"`
+}
+
+// GetCloudID ...
+func (image GcpImage) GetCloudID() string {
+	return image.CloudID
 }

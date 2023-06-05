@@ -25,6 +25,7 @@ import (
 	typesdisk "hcm/pkg/adaptor/types/disk"
 	typeseip "hcm/pkg/adaptor/types/eip"
 	firewallrule "hcm/pkg/adaptor/types/firewall-rule"
+	typesimage "hcm/pkg/adaptor/types/image"
 	typesni "hcm/pkg/adaptor/types/network-interface"
 	typesroutetable "hcm/pkg/adaptor/types/route-table"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
@@ -36,12 +37,19 @@ import (
 	cloudcoreroutetable "hcm/pkg/api/core/cloud/route-table"
 	"hcm/pkg/api/data-service/cloud/disk"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
+	dateimage "hcm/pkg/api/data-service/cloud/image"
 )
 
 type CloudResType interface {
 	GetCloudID() string
 
-	typessecuritygrouprule.HuaWeiSGRule |
+	typesimage.TCloudImage |
+		typesimage.HuaWeiImage |
+		typesimage.AwsImage |
+		typesimage.AzureImage |
+		typesimage.GcpImage |
+
+		typessecuritygrouprule.HuaWeiSGRule |
 		typessecuritygrouprule.AwsSGRule |
 		typessecuritygrouprule.AzureSGRule |
 
@@ -102,7 +110,13 @@ type DBResType interface {
 	GetID() string
 	GetCloudID() string
 
-	cloudcore.HuaWeiSecurityGroupRule |
+	dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult] |
+		dateimage.ImageExtResult[dateimage.HuaWeiImageExtensionResult] |
+		dateimage.ImageExtResult[dateimage.AwsImageExtensionResult] |
+		dateimage.ImageExtResult[dateimage.AzureImageExtensionResult] |
+		dateimage.ImageExtResult[dateimage.GcpImageExtensionResult] |
+
+		cloudcore.HuaWeiSecurityGroupRule |
 		cloudcore.AwsSecurityGroupRule |
 		cloudcore.AzureSecurityGroupRule |
 

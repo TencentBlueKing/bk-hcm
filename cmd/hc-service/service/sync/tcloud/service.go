@@ -47,6 +47,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("SyncSecurityGroup", "POST", "/security_groups/sync", v.SyncSecurityGroup)
 	h.Add("SyncEip", "POST", "/eips/sync", v.SyncEip)
 	h.Add("SyncRoute", "POST", "/route_tables/sync", v.SyncRouteTable)
+	h.Add("SyncImage", "POST", "/images/sync", v.SyncImage)
 
 	h.Load(cap.WebService)
 }
