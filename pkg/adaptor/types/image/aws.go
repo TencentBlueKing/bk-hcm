@@ -21,12 +21,29 @@ package image
 
 import (
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/validator"
 )
 
 // AwsImageListOption ...
 type AwsImageListOption struct {
-	Region string
-	Page   *adcore.AwsPage
+	Region   string          `json:"region" validate:"required"`
+	CloudIDs []string        `json:"cloud_ids" validate:"omitempty"`
+	Page     *adcore.AwsPage `json:"page" validate:"omitempty"`
+}
+
+// Validate aws image option.
+func (opt AwsImageListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if opt.Page != nil {
+		if err := opt.Page.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // AwsImageListResult ...
@@ -43,4 +60,9 @@ type AwsImage struct {
 	Platform     string `json:"platform"`
 	State        string `json:"state"`
 	Type         string `json:"type"`
+}
+
+// GetCloudID ...
+func (image AwsImage) GetCloudID() string {
+	return image.CloudID
 }

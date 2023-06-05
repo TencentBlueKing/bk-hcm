@@ -20,15 +20,33 @@
 package image
 
 import (
+	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/validator"
+
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2/model"
 )
 
 // HuaWeiImageListOption ...
 type HuaWeiImageListOption struct {
-	Region   string
-	Limit    *int32
-	Marker   *string
-	Platform model.ListImagesRequestPlatform
+	Region   string                          `json:"region" validate:"required"`
+	Platform model.ListImagesRequestPlatform `json:"platform" validate:"required"`
+	CloudID  string                          `json:"cloud_id" validate:"omitempty"`
+	Page     *core.HuaWeiPage                `json:"page" validate:"omitempty"`
+}
+
+// Validate huawei cvm list option.
+func (opt HuaWeiImageListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return nil
+	}
+
+	if opt.Page != nil {
+		if err := opt.Page.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // HuaWeiImageListResult ...
@@ -44,4 +62,9 @@ type HuaWeiImage struct {
 	Platform     string `json:"platform"`
 	State        string `json:"state"`
 	Type         string `json:"type"`
+}
+
+// GetCloudID ...
+func (image HuaWeiImage) GetCloudID() string {
+	return image.CloudID
 }

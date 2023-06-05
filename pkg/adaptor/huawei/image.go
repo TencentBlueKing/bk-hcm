@@ -22,14 +22,20 @@ package huawei
 import (
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/kit"
+	"hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2/model"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ims/v2/region"
 )
 
+// PublicImagePlatforms 公有镜像平台类型
+var PublicImagePlatforms = []model.ListImagesRequestPlatform{model.GetListImagesRequestPlatformEnum().WINDOWS,
+	model.GetListImagesRequestPlatformEnum().CENT_OS}
+
 // ListImage 查询公共镜像列表
 // reference: https://support.huaweicloud.com/api-ims/ims_03_0602.html
-func (h *HuaWei) ListImage(opt *image.HuaWeiImageListOption) (*image.HuaWeiImageListResult, error) {
+func (h *HuaWei) ListImage(kt *kit.Kit, opt *image.HuaWeiImageListOption) (*image.HuaWeiImageListResult, error) {
 
 	client, err := h.clientSet.imsClientV2(region.ValueOf(opt.Region))
 	if err != nil {
@@ -41,9 +47,16 @@ func (h *HuaWei) ListImage(opt *image.HuaWeiImageListOption) (*image.HuaWeiImage
 	req := &model.ListImagesRequest{
 		Imagetype: &publicType,
 		Platform:  &opt.Platform,
-		Limit:     opt.Limit,
-		Marker:    opt.Marker,
 		Status:    &status,
+	}
+
+	if opt.CloudID != "" {
+		req.Id = converter.ValToPtr(opt.CloudID)
+	}
+
+	if opt.Page != nil {
+		req.Marker = opt.Page.Marker
+		req.Limit = opt.Page.Limit
 	}
 
 	resp, err := client.ListImages(req)

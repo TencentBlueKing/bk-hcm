@@ -52,6 +52,16 @@ type ImageExtResult[T ImageExtensionResult] struct {
 	UpdatedAt    string `json:"updated_at,omitempty"`
 }
 
+// GetID ...
+func (image ImageExtResult[T]) GetID() string {
+	return image.ID
+}
+
+// GetCloudID ...
+func (image ImageExtResult[T]) GetCloudID() string {
+	return image.CloudID
+}
+
 // ImageExtensionResult ...
 type ImageExtensionResult interface {
 	TCloudImageExtensionResult | AwsImageExtensionResult | GcpImageExtensionResult | HuaWeiImageExtensionResult | AzureImageExtensionResult

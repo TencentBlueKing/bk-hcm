@@ -42,6 +42,11 @@ type AzureImage struct {
 	ImageSource  string `json:"image_source"`
 }
 
+// GetCloudID ...
+func (image AzureImage) GetCloudID() string {
+	return image.CloudID
+}
+
 // AzureImageListOption define tcloud image list option.
 type AzureImageListOption struct {
 	Region    string `json:"region" validate:"required"`

@@ -87,10 +87,12 @@ func (h *HuaWei) ListDisk(kt *kit.Kit, opt *disk.HuaWeiDiskListOption) ([]disk.H
 	}
 
 	req := new(model.ListVolumesRequest)
+
 	if opt.Page != nil {
 		req.Marker = opt.Page.Marker
 		req.Limit = opt.Page.Limit
 	}
+
 	if len(opt.CloudIDs) > 0 {
 		req.Ids = converter.StringSliceToSliceStringPtr(opt.CloudIDs)
 	}

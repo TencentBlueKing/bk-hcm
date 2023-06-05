@@ -22,6 +22,7 @@ package tcloud
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
@@ -33,10 +34,9 @@ import (
 
 // ListImage 查询公共镜像列表
 // reference: https://cloud.tencent.com/document/api/213/15715
-func (t *TCloud) ListImage(
-	kt *kit.Kit,
-	opt *image.TCloudImageListOption,
-) (*image.TCloudImageListResult, error) {
+func (t *TCloud) ListImage(kt *kit.Kit,
+	opt *image.TCloudImageListOption) (*image.TCloudImageListResult, error) {
+
 	client, err := t.clientSet.cvmClient(opt.Region)
 	if err != nil {
 		return nil, err
@@ -45,14 +45,23 @@ func (t *TCloud) ListImage(
 	images := make([]image.TCloudImage, 0)
 
 	req := cvm.NewDescribeImagesRequest()
-	req.Offset = common.Uint64Ptr(opt.Page.Offset)
-	req.Limit = common.Uint64Ptr(opt.Page.Limit)
-	req.Filters = []*cvm.Filter{
-		{
-			Name:   common.StringPtr("image-type"),
-			Values: common.StringPtrs([]string{"PUBLIC_IMAGE"}),
-		},
+
+	if len(opt.CloudIDs) != 0 {
+		req.ImageIds = common.StringPtrs(opt.CloudIDs)
+		req.Limit = common.Uint64Ptr(uint64(core.TCloudQueryLimit))
 	}
+
+	if opt.Page != nil {
+		req.Offset = common.Uint64Ptr(opt.Page.Offset)
+		req.Limit = common.Uint64Ptr(opt.Page.Limit)
+		req.Filters = []*cvm.Filter{
+			{
+				Name:   common.StringPtr("image-type"),
+				Values: common.StringPtrs([]string{"PUBLIC_IMAGE"}),
+			},
+		}
+	}
+
 	resp, err := client.DescribeImagesWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list tcloud images failed, err: %v, rid: %s", err, kt.Rid)

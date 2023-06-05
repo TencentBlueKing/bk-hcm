@@ -20,6 +20,8 @@
 package aws
 
 import (
+	"strings"
+
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -909,7 +911,17 @@ func (a *Aws) ListImage(kt *kit.Kit, opt *image.AwsImageListOption) (*image.AwsI
 		}, nil
 	}
 
-	req := &ec2.DescribeImagesInput{MaxResults: opt.Page.MaxResults, NextToken: opt.Page.NextToken}
+	req := &ec2.DescribeImagesInput{}
+
+	if len(opt.CloudIDs) > 0 {
+		req.ImageIds = aws.StringSlice(opt.CloudIDs)
+	}
+
+	if opt.Page != nil {
+		req.MaxResults = opt.Page.MaxResults
+		req.NextToken = opt.Page.NextToken
+	}
+
 	req.Filters = []*ec2.Filter{
 		{Name: aws.String("is-public"), Values: []*string{aws.String("true")}},
 		{Name: aws.String("state"), Values: []*string{aws.String("available")}},
@@ -921,7 +933,10 @@ func (a *Aws) ListImage(kt *kit.Kit, opt *image.AwsImageListOption) (*image.AwsI
 
 	resp, err := client.DescribeImagesWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("describe aws image failed, err: %v, rid: %s", err, kt.Rid)
+		if !strings.Contains(err.Error(), ErrImageNotFound) {
+			logs.Errorf("describe aws image failed, err: %v, rid: %s", err, kt.Rid)
+		}
+
 		return nil, err
 	}
 

@@ -89,12 +89,12 @@ func (req *GcpSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// GcpGlobalRegionResSyncReq gcp vpc sync request
+// GcpGlobalRegionResSyncReq gcp sync request
 type GcpGlobalRegionResSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 }
 
-// Validate gcp vpc sync request.
+// Validate gcp sync request.
 func (req *GcpGlobalRegionResSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
@@ -151,5 +151,16 @@ type AzureSubnetSyncReq struct {
 
 // Validate azure sync request.
 func (req *AzureSubnetSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AzureImageReq azure image sync request
+type AzureImageReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+}
+
+// Validate azure sync request.
+func (req *AzureImageReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
