@@ -208,7 +208,7 @@ func (h *createDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *po
 	}
 
 	isDone := false
-	if len(unknownCloudIDs) == 0 {
+	if len(successCloudIDs) != 0 && len(successCloudIDs) == len(pollResult) {
 		isDone = true
 	}
 
@@ -220,7 +220,21 @@ func (h *createDiskPollingHandler) Done(pollResult []disk.TCloudDisk) (bool, *po
 
 func (h *createDiskPollingHandler) Poll(client *TCloud, kt *kit.Kit, cloudIDs []*string) ([]disk.TCloudDisk, error) {
 	cIDs := converter.PtrToSlice(cloudIDs)
-	return client.ListDisk(kt, &core.TCloudListOption{Region: h.region, CloudIDs: cIDs})
+
+	req := &core.TCloudListOption{
+		Region:   h.region,
+		CloudIDs: cIDs,
+		Page: &core.TCloudPage{
+			Offset: 0,
+			Limit:  core.TCloudQueryLimit,
+		},
+	}
+	disks, err := client.ListDisk(kt, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return disks, nil
 }
 
 var _ poller.PollingHandler[*TCloud, []disk.TCloudDisk, poller.BaseDoneResult] = new(createDiskPollingHandler)

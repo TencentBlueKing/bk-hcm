@@ -271,7 +271,7 @@ func (h *createEipPollingHandler) Done(pollResult []*eip.HuaWeiEip) (bool, *poll
 	}
 
 	isDone := false
-	if len(unknownCloudIDs) == 0 {
+	if len(successCloudIDs) != 0 && len(successCloudIDs) == len(pollResult) {
 		isDone = true
 	}
 

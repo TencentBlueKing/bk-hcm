@@ -30,7 +30,8 @@ import (
 )
 
 // gcp list每分钟限制1500次请求
-var syncConcurrencyCount = 5
+// TODO: 使用限频工具控制请求
+var syncConcurrencyCount = 1
 
 // SyncAllResourceOption ...
 type SyncAllResourceOption struct {

@@ -74,7 +74,7 @@ func (svc *DiskSvc) CreateDisk(cts *rest.Contexts) (interface{}, error) {
 
 	result, err := client.CreateDisk(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("create huawei cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("create huawei disk failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
