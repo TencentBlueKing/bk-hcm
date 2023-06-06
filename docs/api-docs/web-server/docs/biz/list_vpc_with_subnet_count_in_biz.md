@@ -4,6 +4,10 @@
 - 该接口所需权限：业务访问。
 - 该接口功能描述：查询VPC列表且带有子网数量（前端专用）。
 
+### URL
+
+POST /api/v1/web/bizs/{bk_biz_id}/vendors/{vendor}/vpcs/with/subnet_count/list
+
 ### 输入参数
 
 | 参数名称      | 参数类型   | 必选 | 描述                               |
