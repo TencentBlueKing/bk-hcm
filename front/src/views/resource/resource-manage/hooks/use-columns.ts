@@ -122,7 +122,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
     },
     {
-      label: '管控区域',
+      label: '管控区域 ID',
       field: 'bk_cloud_id',
       render({ cell }: { cell: number }) {
         if (cell > -1) {
@@ -666,7 +666,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       },
     },
     {
-      label: '云区域ID',
+      label: '管控区域 ID',
       field: 'bk_cloud_id',
       render({ data }: any) {
         return h(
