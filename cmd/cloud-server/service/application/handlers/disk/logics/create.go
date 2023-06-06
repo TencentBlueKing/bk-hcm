@@ -39,6 +39,7 @@ func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.
 	audit audit.Interface) (enumor.ApplicationStatus, map[string]interface{}, error) {
 
 	deliverDetail := map[string]interface{}{"result": result}
+
 	// 全部失败
 	if len(result.SuccessCloudIDs) == 0 {
 		err := fmt.Errorf("all disk create failed, message: %s", result.FailedMessage)

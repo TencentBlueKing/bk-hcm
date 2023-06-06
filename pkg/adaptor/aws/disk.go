@@ -216,7 +216,7 @@ func (h *createDiskPollingHandler) Done(pollResult []disk.AwsDisk) (bool, *polle
 	}
 
 	isDone := false
-	if len(unknownCloudIDs) == 0 {
+	if len(successCloudIDs) != 0 && len(successCloudIDs) == len(pollResult) {
 		isDone = true
 	}
 
