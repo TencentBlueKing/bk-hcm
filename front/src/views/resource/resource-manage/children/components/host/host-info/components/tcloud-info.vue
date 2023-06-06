@@ -7,7 +7,10 @@ import {
   PropType,
 } from 'vue';
 import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
-import { CLOUD_HOST_STATUS } from '@/common/constant';
+import { CLOUD_HOST_STATUS, INSTANCE_CHARGE_MAP, NET_CHARGE_MAP, VendorEnum } from '@/common/constant';
+import { useRegionsStore } from '@/store/useRegionsStore';
+
+const { getRegionName } = useRegionsStore();
 
 const props = defineProps({
   data: {
@@ -40,6 +43,7 @@ const cvmInfo = [
   {
     name: '地域',
     prop: 'region',
+    render: () => getRegionName(VendorEnum.TCLOUD, props.data.region)
   },
   {
     name: '可用区域',
@@ -160,18 +164,16 @@ const priceInfo = [
   {
     name: '实例计费模式',
     prop: 'instance_charge_type',
+    render: () => INSTANCE_CHARGE_MAP[props?.data?.extension?.instance_charge_type]
   },
   {
     name: '创建时间',
     prop: 'cloud_created_time',
   },
   {
-    name: '过期时间',
-    prop: 'cloud_expired_time',
-  },
-  {
     name: '网络计费模式',
-    prop: 'stop_charging_mode',
+    prop: 'internet_charge_type',
+    render: () => NET_CHARGE_MAP[props?.data?.extension?.internet_accessible?.internet_charge_type]
   },
   {
     name: '到期时间',

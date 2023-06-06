@@ -11,6 +11,7 @@ import {
   useRouter,
   useRoute
 } from 'vue-router';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 const props = defineProps({
   detail: {
@@ -21,6 +22,8 @@ const props = defineProps({
 const resourceStore = useResourceStore();
 const router = useRouter();
 const route = useRoute();
+
+const { getRegionName } = useRegionsStore();
 
 // 基本信息字段配置
 const fileds = ref<any[]>([
@@ -146,8 +149,9 @@ watch(
         fileds.value.push(...[
           vpcField,
           {
-            name: '地域ID',
+            name: '地域',
             prop: 'region',
+            render: () => getRegionName(props.detail.vendor, props.detail.region)
           },
           {
             name: '路由表类型',
@@ -197,6 +201,7 @@ watch(
           {
             name: '地域ID',
             prop: 'region',
+            render: () => getRegionName(props.detail.vendor, props.detail.region)
           },
           {
             name: '备注',
@@ -232,6 +237,7 @@ watch(
           {
             name: '地域ID',
             prop: 'region',
+            render: () => getRegionName(props.detail.vendor, props.detail.region)
           },
           {
             name: '路由表类型',
@@ -316,6 +322,7 @@ watch(
           {
             name: '地域ID',
             prop: 'region',
+            render: () => getRegionName(props.detail.vendor, props.detail.region)
           },
           {
             name: '路由表类型',
@@ -357,7 +364,7 @@ watch(
     handleGetData()
   },
   {
-    deep: true,
+    // deep: true,
     immediate: true
   }
 )

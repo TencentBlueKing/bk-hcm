@@ -18,6 +18,8 @@ import {
 
 import {
   Message } from 'bkui-vue';
+import { VendorEnum } from '@/common/constant';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 const props = defineProps({
   id: {
@@ -25,7 +27,7 @@ const props = defineProps({
   },
   vendor: {
     type: String as PropType<any>,
-  },
+  }
 });
 
 const {
@@ -33,6 +35,16 @@ const {
 } = useI18n();
 
 const resourceStore = useResourceStore();
+const { getRegionName } = useRegionsStore();
+
+const {
+  loading,
+  detail,
+  getDetail,
+} = useDetail(
+  'security_groups',
+  props.id,
+);
 
 const settingInfo: any[] = [
   {
@@ -63,6 +75,7 @@ const settingInfo: any[] = [
   {
     name: t('地域'),
     prop: 'region',
+    render: () => getRegionName(props.vendor, detail?.value?.region)
   },
   {
     name: t('创建时间'),
@@ -79,14 +92,7 @@ const settingInfo: any[] = [
   },
 ];
 
-const {
-  loading,
-  detail,
-  getDetail,
-} = useDetail(
-  'security_groups',
-  props.id,
-);
+
 if (props.vendor === 'tcloud' || props.vendor === 'aws' || props.vendor === 'huawei') {
   settingInfo.splice(8, 0, {
     name: t('关联CVM实例数'),

@@ -27,6 +27,8 @@ import useDetail from '../../hooks/use-detail';
 import {
   useResourceStore,
 } from '@/store/resource';
+import { useRegionsStore } from '@/store/useRegionsStore';
+import { VendorEnum } from '@/common/constant';
 
 const hostTabs = ref<any[]>([
   {
@@ -121,6 +123,8 @@ const showAuthDialog = (authActionName: string) => {
   bus.$emit('auth', authActionName);
 };
 
+const { getRegionName } = useRegionsStore();
+
 const {
   loading,
   detail,
@@ -141,6 +145,7 @@ const {
           {
             name: '地域',
             prop: 'region',
+            render: () => getRegionName(detail.vendor, detail.region)
           },
           {
             name: '可用区',
@@ -161,6 +166,7 @@ const {
           {
             name: '地域',
             prop: 'region',
+            render: () => getRegionName(detail.vendor, detail.region)
           },
           {
             name: '可用区',
@@ -210,6 +216,7 @@ const {
           {
             name: '地域',
             prop: 'region',
+            render: () => getRegionName(detail.vendor, detail.region)
           },
           {
             name: 'IP 栈类型',
@@ -249,6 +256,7 @@ const {
           {
             name: '地域',
             prop: 'region',
+            render: () => getRegionName(detail.vendor, detail.region)
           },
           {
             name: 'DHCP',

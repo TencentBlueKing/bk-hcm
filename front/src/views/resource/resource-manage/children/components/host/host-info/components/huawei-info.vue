@@ -7,7 +7,10 @@ import {
   PropType,
 } from 'vue';
 import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
-import { CLOUD_HOST_STATUS } from '@/common/constant';
+import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
+import { useRegionsStore } from '@/store/useRegionsStore';
+
+const { getRegionName } = useRegionsStore();
 
 const props = defineProps({
   data: {
@@ -40,6 +43,7 @@ const cvmInfo = [
   {
     name: '地域',
     prop: 'region',
+    render: () => getRegionName(VendorEnum.HUAWEI, props.data.region)
   },
   {
     name: '可用区域',

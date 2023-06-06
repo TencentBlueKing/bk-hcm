@@ -2,12 +2,15 @@
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { ref, watch } from 'vue';
 import { CloudType } from '@/typings';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 const props = defineProps({
   detail: {
     type: Object,
   },
 });
+
+const { getRegionName } = useRegionsStore();
 
 const fields = ref([
   {
@@ -39,6 +42,7 @@ const fields = ref([
   {
     name: '位置',
     prop: 'region',
+    render: (val: string) => getRegionName(props?.detail?.vendor, val)
   },
 ]);
 

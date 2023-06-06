@@ -90,6 +90,11 @@
           :label="t('地域')"
           prop="region"
         >
+          <template #default="{ data }">
+            {{ 
+              getRegionName(data?.vendor, data?.region)
+            }}
+          </template>
         </bk-table-column>
         <bk-table-column
           :label="t('资源实例ID')"
@@ -202,6 +207,7 @@ import HostInfo from '@/views/resource/resource-manage/children/components/host/
 import HostDrive from '@/views/resource/resource-manage/children/components/host/host-drive.vue';
 import { useVerify } from '@/hooks';
 import { RECYCLE_BIN_ITEM_STATUS } from '@/constants/resource';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -216,6 +222,7 @@ export default defineComponent({
     const resourceStore = useResourceStore();
     const accountStore = useAccountStore();
     const fetchUrl = ref<string>('recycle_records/list');
+    const { getRegionName } = useRegionsStore();
 
     const state = reactive({
       isAccurate: false,    // 是否精确
@@ -392,7 +399,8 @@ export default defineComponent({
       handleAuth,
       permissionParams,
       authVerifyData,
-      RECYCLE_BIN_ITEM_STATUS
+      RECYCLE_BIN_ITEM_STATUS,
+      getRegionName
     };
   },
 });

@@ -29,6 +29,9 @@ import {
 import useDetail from '../../hooks/use-detail';
 import useMountedDrive from '../../hooks/use-choose-host-drive';
 import useUninstallDrive from '../../hooks/use-uninstall-drive';
+import { useRegionsStore } from '@/store/useRegionsStore';
+
+const { getRegionName } = useRegionsStore();
 
 const hostTabs = [
   {
@@ -90,6 +93,9 @@ const settingFields = ref<any[]>([
   {
     name: '地域',
     prop: 'region',
+    render(cell: string) {
+      return getRegionName(detail.value.vendor, cell);
+    }
   },
   {
     name: '可用区',
