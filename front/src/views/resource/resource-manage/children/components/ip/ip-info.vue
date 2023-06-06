@@ -10,6 +10,7 @@ import {
 } from 'vue-router';
 import DetailList from '../../../common/info/detail-info';
 import DetailTab from '../../../common/tab/detail-tab';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 const props = defineProps({
   detail: Object
@@ -17,6 +18,8 @@ const props = defineProps({
 
 const route = useRoute();
 const router = useRouter();
+
+const { getRegionName } = useRegionsStore();
 
 const txtBtn = (id: string, type: string) => {
   const routeInfo: any = {
@@ -102,6 +105,7 @@ const baseInfo = ref([
   {
     name: '地域',
     prop: 'region',
+    render: (val: string) => getRegionName(props?.detail?.vendor, val)
   },
   {
     name: '可用区域',

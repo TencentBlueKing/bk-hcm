@@ -33,6 +33,8 @@ import {
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import { useRegionsStore } from '@/store/useRegionsStore';
+import { VendorEnum } from '@/common/constant';
 
 const props = defineProps({
   filter: {
@@ -51,7 +53,7 @@ const {
   t,
 } = useI18n();
 
-
+const { getRegionName } = useRegionsStore();
 const router = useRouter();
 
 const route = useRoute();
@@ -244,6 +246,9 @@ const groupColumns = [
   {
     label: t('地域'),
     field: 'region',
+    render: ({ data }: { data: { vendor: VendorEnum; region: string; } }) => {
+      return getRegionName(data.vendor, data.region)
+    }
   },
   {
     label: t('描述'),

@@ -9,6 +9,11 @@ import {
 import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
 import { CLOUD_HOST_STATUS } from '@/common/constant';
 
+const shortCutStr = (str: string) => {
+  if(!str) return str;
+  return str.split('/').reverse()[0];
+};
+
 const props = defineProps({
   data: {
     type: Object as PropType<any>,
@@ -23,6 +28,7 @@ const cvmInfo = [
   {
     name: '实例ID',
     prop: 'cloud_id',
+    render: () => shortCutStr(props.data.cloud_id)
   },
   {
     name: '账号',
@@ -91,6 +97,7 @@ const netInfo = [
   {
     name: '接口名称',
     prop: 'cloud_network_interface_ids',
+    render: () => shortCutStr(props.data.cloud_network_interface_ids[0])
   },
   {
     name: '私有IPv4地址',

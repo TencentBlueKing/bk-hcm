@@ -12,13 +12,15 @@ import {
   useRoute,
   useRouter,
 } from 'vue-router';
-import { CLOUD_HOST_STATUS } from '@/common/constant';
+import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
   const route = useRoute();
   const accountStore = useAccountStore();
   const { t } = i18n.global;
+  const { getRegionName } = useRegionsStore();
 
   const getLinkField = (type: string, label = 'ID', field = 'id', idFiled = 'id', onlyShowOnList = true) => {
     return {
@@ -117,14 +119,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            cell || '--',
-          ],
-        );
-      },
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
     },
     {
       label: '管控区域',
@@ -193,14 +188,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            cell || '--',
-          ],
-        );
-      },
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
     },
     {
       label: '可用区',
@@ -272,6 +260,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
     },
     {
       label: '描述',
@@ -482,14 +471,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            cell || '--',
-          ],
-        );
-      },
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
     },
     {
       label: '可用区域',
@@ -602,6 +584,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '地域',
       field: 'region',
       sort: true,
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
     },
     {
       label: '名称',
@@ -652,6 +635,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '地域',
       onlyShowOnList: true,
       field: 'region',
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
     },
     {
       label: '名称',
@@ -821,14 +805,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render({ cell }: { cell: string }) {
-        return h(
-          'span',
-          [
-            cell || '--',
-          ],
-        );
-      },
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
     },
     {
       label: '名称',

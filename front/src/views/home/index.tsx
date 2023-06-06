@@ -1,4 +1,4 @@
-import { defineComponent, reactive, watch, ref, nextTick } from 'vue';
+import { defineComponent, reactive, watch, ref, nextTick, onMounted } from 'vue';
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
 import { Menu, Navigation, Dropdown, Select } from 'bkui-vue';
@@ -14,6 +14,8 @@ import './index.scss';
 import { useUserStore, useAccountStore, useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
 import { useI18n } from 'vue-i18n';
+import { useRegionsStore } from '@/store/useRegionsStore';
+import { VendorEnum } from '@/common/constant';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -189,6 +191,16 @@ export default defineComponent({
     const handleToggle = (val: any) => {
       isMenuOpen.value = val;
     };
+
+    const { fetchRegions } = useRegionsStore();
+
+    /**
+     * 在这里获取项目公共数据
+     */
+    onMounted(() => {
+      fetchRegions(VendorEnum.TCLOUD);
+      fetchRegions(VendorEnum.HUAWEI);
+    });
 
     return () => (
       <main class="flex-column full-page">

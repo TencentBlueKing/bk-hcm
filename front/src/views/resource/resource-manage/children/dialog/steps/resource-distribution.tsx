@@ -12,7 +12,7 @@ import {
   Message,
 } from 'bkui-vue';
 import {
-  RESOURCE_TYPES,
+  RESOURCE_TYPES, VendorEnum,
 } from '@/common/constant';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import AccountSelector from '@/components/account-selector/index.vue';
@@ -30,6 +30,7 @@ import type {
 } from '@/typings/resource';
 import { useDistributionStore } from '@/store/distribution';
 import { useRouter } from 'vue-router';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 export default defineComponent({
   components: {
@@ -68,6 +69,7 @@ export default defineComponent({
     const resourceStore = useResourceStore();
     const accountStore = useAccountStore();
     const distributionStore = useDistributionStore();
+    const { getRegionName } = useRegionsStore();
 
     // 状态
     const validateMap = ref({});
@@ -106,7 +108,7 @@ export default defineComponent({
       {
         label: '账号 ID',
         field: 'account_id',
-        render({cell, data}) {
+        render({cell, data}: { cell: string, data: { vendor: VendorEnum } }) {
           return (
             <bk-button text theme="primary" onClick={() => {
               router.push({
@@ -128,6 +130,8 @@ export default defineComponent({
       {
         label: '地域',
         field: 'region',
+        width: 180,
+        render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
       },
       {
         label: '名称',
@@ -147,6 +151,7 @@ export default defineComponent({
       },
       {
         label: '管控区域',
+        width: 180,
         render({ data }: any) {
           if (data.bk_cloud_id > -1) {
             return computedCloudAreasMap.value.get(data.bk_cloud_id) || '--';

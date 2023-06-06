@@ -28,6 +28,10 @@ import useDetail from '../../hooks/use-detail';
 import {
   useResourceStore,
 } from '@/store/resource';
+import { useRegionsStore } from '@/store/useRegionsStore';
+import { VendorEnum } from '@/common/constant';
+
+const { getRegionName } = useRegionsStore();
 
 const VPCFields: any = ref([
   {
@@ -153,6 +157,7 @@ const {
           {
             name: '地域',
             prop: 'region',
+            render: (val: string) => getRegionName(VendorEnum.TCLOUD, val)
           },
         ]);
         break;
@@ -190,6 +195,7 @@ const {
           {
             name: '地域',
             prop: 'region',
+            render: (val: string) => getRegionName(VendorEnum.AWS, val)
           },
         ]);
         break;
@@ -202,6 +208,7 @@ const {
           {
             name: '地域',
             prop: 'region',
+            render: (val: string) => getRegionName(VendorEnum.AZURE, val)
           },
           {
             name: 'DNS服务器',
@@ -240,6 +247,7 @@ const {
           {
             name: '地域',
             prop: 'region',
+            render: (val: string) => getRegionName(VendorEnum.GCP, val)
           },
         ]);
         VPCTabs.value.shift();
@@ -253,6 +261,7 @@ const {
           {
             name: '地域',
             prop: 'region',
+            render: (val: string) => getRegionName(VendorEnum.HUAWEI, val)
           },
         ]);
         break;
