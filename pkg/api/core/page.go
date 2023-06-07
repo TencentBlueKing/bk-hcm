@@ -54,10 +54,14 @@ const (
 )
 
 // DefaultBasePage define default base page.
-var DefaultBasePage = &BasePage{
-	Count: false,
-	Start: 0,
-	Limit: DefaultMaxPageLimit,
+var DefaultBasePage = newBasePage()
+
+func newBasePage() *BasePage {
+	return &BasePage{
+		Count: false,
+		Start: 0,
+		Limit: DefaultMaxPageLimit,
+	}
 }
 
 // CountPage define count page.

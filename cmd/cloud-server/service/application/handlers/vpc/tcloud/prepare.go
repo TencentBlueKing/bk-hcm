@@ -22,6 +22,7 @@ package tcloud
 import (
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/thirdparty/esb/itsm"
 )
 
 // PrepareReq 预处理请求参数，比如敏感数据加密
@@ -46,4 +47,9 @@ func (a *ApplicationOfCreateTCloudVpc) GenerateApplicationContent() interface{} 
 func (a *ApplicationOfCreateTCloudVpc) PrepareReqFromContent() error {
 
 	return nil
+}
+
+// GetItsmApprover 获取itsm审批人
+func (a *ApplicationOfCreateTCloudVpc) GetItsmApprover(managers []string) []itsm.VariableApprover {
+	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
 }

@@ -22,6 +22,7 @@ package aws
 import (
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/thirdparty/esb/itsm"
 )
 
 // PrepareReq ...
@@ -44,4 +45,9 @@ func (a *ApplicationOfCreateAwsDisk) GenerateApplicationContent() interface{} {
 // PrepareReqFromContent ...
 func (a *ApplicationOfCreateAwsDisk) PrepareReqFromContent() error {
 	return nil
+}
+
+// GetItsmApprover 获取itsm审批人
+func (a *ApplicationOfCreateAwsDisk) GetItsmApprover(managers []string) []itsm.VariableApprover {
+	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
 }

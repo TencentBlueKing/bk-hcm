@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	accountsvc "hcm/cmd/cloud-server/service/account"
+	"hcm/pkg/thirdparty/esb/itsm"
 
 	"github.com/TencentBlueKing/gopkg/conv"
 )
@@ -52,4 +53,14 @@ func (a *ApplicationOfAddAccount) PrepareReqFromContent() error {
 	a.req.Extension[secretKeyField] = secretKey
 
 	return nil
+}
+
+// GetItsmApprover 获取itsm审批人
+func (a *ApplicationOfAddAccount) GetItsmApprover(managers []string) []itsm.VariableApprover {
+	return []itsm.VariableApprover{
+		{
+			Variable:  "platform_manager",
+			Approvers: managers,
+		},
+	}
 }

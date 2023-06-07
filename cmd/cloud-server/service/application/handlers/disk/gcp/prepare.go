@@ -22,6 +22,7 @@ package gcp
 import (
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/thirdparty/esb/itsm"
 )
 
 // PrepareReq ...
@@ -44,4 +45,9 @@ func (a *ApplicationOfCreateGcpDisk) GenerateApplicationContent() interface{} {
 // PrepareReqFromContent ...
 func (a *ApplicationOfCreateGcpDisk) PrepareReqFromContent() error {
 	return nil
+}
+
+// GetItsmApprover 获取itsm审批人
+func (a *ApplicationOfCreateGcpDisk) GetItsmApprover(managers []string) []itsm.VariableApprover {
+	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
 }
