@@ -1,20 +1,25 @@
 ### 描述
 
 - 该接口提供版本：v1.0.0+。
-- 该接口所需权限：业务访问。
-- 该接口功能描述：查询VPC列表。
+- 该接口所需权限：资源查看。
+- 该接口功能描述：查询可用区列表。
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
+POST /api/v1/cloud/vendors/{vendor}/regions/{region}/zones/list
+
+#### 路径参数说明
+| 参数名称          | 参数类型                           | 必选 | 描述                                                      |
+| ----------------- | ------------------------------- | ---- | -------------------------------------------------------- |
+| vendor | string | 是 | 云厂商 |
+| region | string | 是 | 云地域 |                                             
 
 ### 输入参数
 
-| 参数名称      | 参数类型   | 必选  | 描述     |
-|-----------|--------|-----|--------|
-| bk_biz_id | int64  | 是   | 业务ID   |
-| filter    | object | 是   | 查询过滤条件 |
-| page      | object | 是   | 分页设置   |
+| 参数名称   | 参数类型         | 必选  | 描述                                            |
+|--------|--------------|-----|-----------------------------------------------|
+| filter | object       | 否   | 查询过滤条件                                        |
+| page   | object       | 是   | 分页设置                                          |
 
 #### filter
 
@@ -93,47 +98,18 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 | sort	  | string	 | 否	  | 排序字段，返回数据将按该字段进行排序                                                                                                                               |
 | order	 | string	 | 否	  | 排序顺序（枚举值：ASC、DESC）                                                                                                                               |
 
-#### 查询参数介绍：
+### 调用和响应 示例
 
-| 参数名称        | 参数类型   | 描述                                   |
-|-------------|--------|--------------------------------------|
-| id          | string | VPC的ID                               |
-| vendor      | string | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| account_id  | string | 云账号ID                                |
-| cloud_id    | string | VPC的云ID                              |
-| name        | string | VPC名称                                |
-| region      | string | 地域                                   |
-| category    | string | VPC类别                                |
-| memo        | string | 备注                                   |
-| bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
-| bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
-| creator     | string | 创建者                                  |
-| reviser     | string | 更新者                                  |
-| created_at  | string | 创建时间，标准格式：2006-01-02T15:04:05Z        |
-| updated_at  | string | 更新时间，标准格式：2006-01-02T15:04:05Z        |
-
-接口调用者可以根据以上参数自行根据查询场景设置查询规则。
-
-### 调用示例
-
-#### 获取详细信息请求参数示例
-
-如查询云账号ID为"00000001"的腾讯云VPC列表。
-
-```json
+### tcloud req 
+```json 
 {
   "filter": {
     "op": "and",
     "rules": [
       {
-        "field": "account_id",
+        "field": "state",
         "op": "eq",
-        "value": "00000001"
-      },
-      {
-        "field": "vendor",
-        "op": "eq",
-        "value": "tcloud"
+        "value": "AVAILABLE"
       }
     ]
   },
@@ -145,106 +121,104 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 }
 ```
 
-#### 获取数量请求参数示例
-
-如查询云账号ID为"00000001"的腾讯云VPC数量。
-
-```json
+### tcloud resp
+```json 
 {
-  "filter": {
-    "op": "and",
-    "rules": [
-      {
-        "field": "account_id",
-        "op": "eq",
-        "value": "00000001"
-      },
-      {
-        "field": "vendor",
-        "op": "eq",
-        "value": "tcloud"
-      }
-    ]
-  },
+    "code": 0,
+    "message": "",
+    "data": {
+        "details": [
+            {
+                "id": "000001rn",
+                "vendor": "tcloud",
+                "cloud_id": "100006",
+                "name": "ap-guangzhou-6",
+                "name_cn": "广州六区",
+                "region": "ap-guangzhou",
+                "state": "AVAILABLE",
+                "creator": "guohuliu",
+                "reviser": "guohuliu",
+                "created_at": "2023-03-23T20:18:38Z",
+                "updated_at": "2023-03-23T20:18:38Z"
+            },
+            {
+                "id": "000001ro",
+                "vendor": "tcloud",
+                "cloud_id": "100007",
+                "name": "ap-guangzhou-7",
+                "name_cn": "广州七区",
+                "region": "ap-guangzhou",
+                "state": "AVAILABLE",
+                "creator": "guohuliu",
+                "reviser": "guohuliu",
+                "created_at": "2023-03-23T20:18:38Z",
+                "updated_at": "2023-03-23T20:18:38Z"
+            },
+            {
+                "id": "000001rr",
+                "vendor": "tcloud",
+                "cloud_id": "100003",
+                "name": "ap-guangzhou-3",
+                "name_cn": "广州三区",
+                "region": "ap-guangzhou",
+                "state": "AVAILABLE",
+                "creator": "guohuliu",
+                "reviser": "guohuliu",
+                "created_at": "2023-03-23T20:18:38Z",
+                "updated_at": "2023-03-23T20:18:38Z"
+            },
+            {
+                "id": "000001rs",
+                "vendor": "tcloud",
+                "cloud_id": "100004",
+                "name": "ap-guangzhou-4",
+                "name_cn": "广州四区",
+                "region": "ap-guangzhou",
+                "state": "AVAILABLE",
+                "creator": "guohuliu",
+                "reviser": "guohuliu",
+                "created_at": "2023-03-23T20:18:38Z",
+                "updated_at": "2023-03-23T20:18:38Z"
+            }
+        ]
+    }
+}
+```
+
+### aws req (huawei、gcp类似) filter可以不填
+```json 
+{
   "page": {
-    "count": true
+    "count": false,
+    "start": 0,
+    "limit": 500
   }
 }
 ```
 
-### 响应示例
-
-#### 获取详细信息返回结果示例
-
-```json
+### aws resp (huawei、gcp类似) filter可以不填
+```json 
 {
-  "code": 0,
-  "message": "ok",
-  "data": {
-    "detail": [
-      {
-        "id": "00000001",
-        "vendor": "tcloud",
-        "account_id": "00000001",
-        "cloud_id": "vpc-xxxxxxxx",
-        "name": "vpc-default",
-        "region": "ap-guangzhou",
-        "category": "biz",
-        "memo": "default vpc",
-        "bk_biz_id": 100,
-        "bk_cloud_id": -1,
-        "creator": "tom",
-        "reviser": "tom",
-        "created_at": "2019-07-29 11:57:20",
-        "updated_at": "2019-07-29 11:57:20"
-      }
-    ]
-  }
+    "code": 0,
+    "message": "",
+    "data": {
+        "details": [
+            {
+                "id": "000001rl",
+                "vendor": "aws",
+                "cloud_id": "usw2-az1",
+                "name": "us-west-2b",
+                "name_cn": "",
+                "region": "us-west-2",
+                "state": "available",
+                "creator": "guohuliu",
+                "reviser": "guohuliu",
+                "created_at": "2023-03-23T19:51:00Z",
+                "updated_at": "2023-03-23T19:51:00Z"
+            }
+        ]
+    }
 }
 ```
 
-#### 获取数量返回结果示例
-
-```json
-{
-  "code": 0,
-  "message": "ok",
-  "data": {
-    "count": 0
-  }
-}
-```
-
-### 响应参数说明
-
-| 参数名称    | 参数类型   | 描述   |
-|---------|--------|------|
-| code    | int32  | 状态码  |
-| message | string | 请求信息 |
-| data    | object | 响应数据 |
-
-#### data
-
-| 参数名称   | 参数类型   | 描述                                       |
-|--------|--------|------------------------------------------|
-| count  | uint64 | 当前规则能匹配到的总记录条数，仅在 count 查询参数设置为 true 时返回 |
-| detail | array  | 查询返回的数据，仅在 count 查询参数设置为 false 时返回       |
-
-#### data.detail[n]
-
-| 参数名称        | 参数类型   | 描述                                   |
-|-------------|--------|--------------------------------------|
-| id          | string | VPC的ID                               |
-| vendor      | string | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| account_id  | string | 云账号ID                                |
-| cloud_id    | string | VPC的云ID                              |
-| name        | string | VPC名称                                |
-| region      | string | 地域                                   |
-| category    | string | VPC类别                                |
-| memo        | string | 备注                                   |
-| bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
-| bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
-| creator     | string | 创建者                                  |
-| reviser     | string | 更新者                                  |
-| created_at  | string | 创建时间，标准格式：2006-01-02T15:04:05Z        |
-| updated_at  | string | 更新时间，标准格式：2006-01-02T15:04:05Z        |
+# azure 不可使用filter（所有资源可用区都是固定的三个 "1"、 "2" 、"3"）

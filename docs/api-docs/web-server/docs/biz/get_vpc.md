@@ -12,7 +12,7 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vpcs/{id}
 
 | 参数名称      | 参数类型   | 必选  | 描述     |
 |-----------|--------|-----|--------|
-| bk_biz_id | string | 是   | 业务ID   |
+| bk_biz_id | int64  | 是   | 业务ID   |
 | id        | string | 是   | VPC的ID |
 
 ### 调用示例

@@ -2,7 +2,7 @@
 
 - 该接口提供版本：v1.0.0+。
 - 该接口所需权限：业务访问。
-- 该接口功能描述：查询VPC列表，带有云厂商私有结构。
+- 该接口功能描述：查询VPC列表（带云厂商私有结构）。
 
 ### URL
 
@@ -10,12 +10,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/vpcs/list
 
 ### 输入参数
 
-| 参数名称      | 参数类型          | 必选   | 描述                               |
-|-----------|---------------|------|----------------------------------|
-| bk_biz_id | string        | 是    | 业务ID                             |
-| vendor    | string        | 是    | 供应商（枚举值：tcloud、aws、azure、huawei） |
-| filter    | object        | 是    | 查询过滤条件                           |
-| page      | object        | 是    | 分页设置                             |
+| 参数名称      | 参数类型   | 必选   | 描述                               |
+|-----------|--------|------|----------------------------------|
+| bk_biz_id | int64  | 是    | 业务ID                             |
+| vendor    | string | 是    | 供应商（枚举值：tcloud、aws、azure、huawei） |
+| filter    | object | 是    | 查询过滤条件                           |
+| page      | object | 是    | 分页设置                             |
 
 #### filter
 

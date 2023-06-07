@@ -1,20 +1,19 @@
 ### 描述
 
 - 该接口提供版本：v1.0.0+。
-- 该接口所需权限：业务访问。
-- 该接口功能描述：查询VPC列表。
+- 该接口所需权限：资源查看。
+- 该接口功能描述：查询子网列表。
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
+POST /api/v1/cloud/subnets/list
 
 ### 输入参数
 
-| 参数名称      | 参数类型   | 必选  | 描述     |
-|-----------|--------|-----|--------|
-| bk_biz_id | int64  | 是   | 业务ID   |
-| filter    | object | 是   | 查询过滤条件 |
-| page      | object | 是   | 分页设置   |
+| 参数名称   | 参数类型         | 必选  | 描述                                            |
+|--------|--------------|-----|-----------------------------------------------|
+| filter | object       | 是   | 查询过滤条件                                        |
+| page   | object       | 是   | 分页设置                                          |
 
 #### filter
 
@@ -95,22 +94,25 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### 查询参数介绍：
 
-| 参数名称        | 参数类型   | 描述                                   |
-|-------------|--------|--------------------------------------|
-| id          | string | VPC的ID                               |
-| vendor      | string | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| account_id  | string | 云账号ID                                |
-| cloud_id    | string | VPC的云ID                              |
-| name        | string | VPC名称                                |
-| region      | string | 地域                                   |
-| category    | string | VPC类别                                |
-| memo        | string | 备注                                   |
-| bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
-| bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
-| creator     | string | 创建者                                  |
-| reviser     | string | 更新者                                  |
-| created_at  | string | 创建时间，标准格式：2006-01-02T15:04:05Z        |
-| updated_at  | string | 更新时间，标准格式：2006-01-02T15:04:05Z        |
+| 参数名称                 | 参数类型   | 描述                            |
+|----------------------|--------|-------------------------------|
+| id                   | string | 子网的ID                         |
+| vendor               | string | 云厂商                           |
+| account_id           | string | 账号ID                          |
+| cloud_vpc_id         | string | VPC的云ID                       |
+| cloud_route_table_id | string | 路由表的云ID                       |
+| cloud_id             | string | 子网的云ID                        |
+| name                 | string | 子网名称                          |
+| region               | string | 地域                            |
+| zone                 | string | 可用区                           |
+| memo                 | string | 备注                            |
+| vpc_id               | string | VPC的ID                        |
+| route_table_id       | string | 路由表的ID                        |
+| bk_biz_id            | int64  | 业务ID，-1表示没有分配到业务              |
+| creator              | string | 创建者                           |
+| reviser              | string | 更新者                           |
+| created_at           | string | 创建时间，标准格式：2006-01-02T15:04:05Z |
+| updated_at           | string | 更新时间，标准格式：2006-01-02T15:04:05Z |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -118,7 +120,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### 获取详细信息请求参数示例
 
-如查询云账号ID为"00000001"的腾讯云VPC列表。
+如查询云账号ID为"00000001"的腾讯云子网列表。
 
 ```json
 {
@@ -147,7 +149,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### 获取数量请求参数示例
 
-如查询云账号ID为"00000001"的腾讯云VPC数量。
+如查询云账号ID为"00000001"的腾讯云子网数量。
 
 ```json
 {
@@ -186,13 +188,20 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
         "id": "00000001",
         "vendor": "tcloud",
         "account_id": "00000001",
-        "cloud_id": "vpc-xxxxxxxx",
-        "name": "vpc-default",
+        "cloud_vpc_id": "vpc-xxxxxxxx",
+        "cloud_id": "subnet-xxxxxxxx",
+        "name": "subnet-default",
         "region": "ap-guangzhou",
-        "category": "biz",
-        "memo": "default vpc",
-        "bk_biz_id": 100,
-        "bk_cloud_id": -1,
+        "zone": "ap-guangzhou-6",
+        "ipv4_cidr": [
+          "127.0.0.0/16"
+        ],
+        "ipv6_cidr": [
+          "::/24"
+        ],
+        "memo": "default subnet",
+        "vpc_id": "00000006",
+        "bk_biz_id": 123,
         "creator": "tom",
         "reviser": "tom",
         "created_at": "2019-07-29 11:57:20",
@@ -232,19 +241,24 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### data.detail[n]
 
-| 参数名称        | 参数类型   | 描述                                   |
-|-------------|--------|--------------------------------------|
-| id          | string | VPC的ID                               |
-| vendor      | string | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| account_id  | string | 云账号ID                                |
-| cloud_id    | string | VPC的云ID                              |
-| name        | string | VPC名称                                |
-| region      | string | 地域                                   |
-| category    | string | VPC类别                                |
-| memo        | string | 备注                                   |
-| bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
-| bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
-| creator     | string | 创建者                                  |
-| reviser     | string | 更新者                                  |
-| created_at  | string | 创建时间，标准格式：2006-01-02T15:04:05Z        |
-| updated_at  | string | 更新时间，标准格式：2006-01-02T15:04:05Z        |
+| 参数名称                 | 参数类型         | 描述                            |
+|----------------------|--------------|-------------------------------|
+| id                   | string       | 子网的ID                         |
+| vendor               | string       | 云厂商                           |
+| account_id           | string       | 账号ID                          |
+| cloud_vpc_id         | string       | VPC的云ID                       |
+| cloud_route_table_id | string       | 路由表的云ID                       |
+| cloud_id             | string       | 子网的云ID                        |
+| name                 | string       | 子网名称                          |
+| region               | string       | 地域                            |
+| zone                 | string       | 可用区                           |
+| ipv4_cidr            | string array | IPv4 CIDR                     |
+| ipv6_cidr            | string array | IPv6 CIDR                     |
+| memo                 | string       | 备注                            |
+| vpc_id               | string       | VPC的云ID                       |
+| bk_biz_id            | int64        | 业务ID，-1表示没有分配到业务              |
+| route_table_id       | string       | 路由表的ID                        |
+| creator              | string       | 创建者                           |
+| reviser              | string       | 更新者                           |
+| created_at           | string       | 创建时间，标准格式：2006-01-02T15:04:05Z |
+| updated_at           | string       | 更新时间，标准格式：2006-01-02T15:04:05Z |
