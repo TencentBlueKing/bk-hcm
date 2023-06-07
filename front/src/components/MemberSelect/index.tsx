@@ -100,6 +100,7 @@ export default defineComponent({
         ref={tagInputRef}
         displayKey="display_name"
         saveKey="username"
+        is-async-list
         searchKey={searchKey}
         // filterCallback={handleSearch}
         modelValue={props.modelValue}

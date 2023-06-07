@@ -5,7 +5,9 @@ import {
 } from 'vue';
 import { Input, Select, Button, Form, TagInput, Message } from 'bkui-vue'; // TagInput
 import { Info } from 'bkui-vue/lib/icon';
-import { ACTION_STATUS, GCP_PROTOCOL_LIST, IP_TYPE_LIST, HUAWEI_ACTION_STATUS, HUAWEI_TYPE_LIST, AZURE_PROTOCOL_LIST } from '@/constants';
+import { ACTION_STATUS, GCP_PROTOCOL_LIST, IP_TYPE_LIST,
+  HUAWEI_ACTION_STATUS, HUAWEI_TYPE_LIST, AZURE_PROTOCOL_LIST, CLOUD_VENDOR,
+  TCLOUD_SECURITY_MESSAGE, HUAWEI_SECURITY_MESSAGE, AWS_SECURITY_MESSAGE, AZURE_SECURITY_MESSAGE } from '@/constants';
 import Confirm from '@/components/confirm';
 import {
   useI18n,
@@ -56,7 +58,9 @@ export default defineComponent({
 
     const protocolList = ref<any>(GCP_PROTOCOL_LIST);
 
-    const ipv4IsEmpty = ref(false);
+    const isEmpty = ref(false);
+
+    const securityMessage: any = ref(TCLOUD_SECURITY_MESSAGE);
 
 
     const securityGroupSource = ref([   // 华为源
@@ -489,8 +493,6 @@ export default defineComponent({
               }
             });
           }
-        } else {
-          tableData.value = [{ sourceAddress: 'ipv4_cidr' }];
         }
       },
       {
@@ -498,24 +500,46 @@ export default defineComponent({
       },
     );
 
+    // 每朵云的规则不同 必填项有区别
+    watch(() => props.vendor, (vendor) => {
+      switch (vendor) {
+        case CLOUD_VENDOR.tcloud:
+          securityMessage.value = TCLOUD_SECURITY_MESSAGE;
+          break;
+        case CLOUD_VENDOR.huawei:
+          securityMessage.value = HUAWEI_SECURITY_MESSAGE;
+          break;
+        case CLOUD_VENDOR.aws:
+          securityMessage.value = AWS_SECURITY_MESSAGE;
+          break;
+        case CLOUD_VENDOR.azure:
+          securityMessage.value = AZURE_SECURITY_MESSAGE;
+          break;
+      }
+    }, { immediate: true });
+
     // 方法
     const handleClose = () => {
       emit('update:isShow', false);
     };
 
     const handleConfirm = () => {
-      ipv4IsEmpty.value = false;
+      isEmpty.value = false;
       // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let index = 0; index < tableData.value.length; index++) {
         const e = tableData.value[index];
-        if (!e.ipv4_cidr) {
-          Message({
-            theme: 'error',
-            message: t('源地址必填'),
-          });
-          ipv4IsEmpty.value = true;
-          break;
+        const securityMessageKeys = Object.keys(securityMessage.value);
+        for (const key of securityMessageKeys) {
+          if (!e[key]) {
+            Message({
+              theme: 'error',
+              message: t(`${securityMessage.value[key]}必填`),
+            });
+            isEmpty.value = true;
+            break;
+          }
         }
+        if (isEmpty.value) return;
         e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id || e[e.sourceAddress];
         if (e.sourceAddress !== 'ipv4_cidr') {
           delete e.ipv4_cidr;
@@ -552,7 +576,6 @@ export default defineComponent({
       //   if(element)
       // }
       // @ts-ignore
-      if (ipv4IsEmpty.value) return;
       if (securityRuleId.value) {  // 更新
         emit('submit', tableData.value);
       } else {
@@ -562,7 +585,7 @@ export default defineComponent({
 
     // 新增
     const handlerAdd = () => {
-      tableData.value.push({ sourceAddress: 'ipv4_cidr' });
+      tableData.value.push({});
     };
 
     // 删除
