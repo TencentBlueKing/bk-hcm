@@ -2,17 +2,17 @@
 
 - 该接口提供版本：v1.0.0+。
 - 该接口所需权限：业务访问。
-- 该接口功能描述：查询VPC列表。
+- 该接口功能描述：查看业务回收站中的回收记录。
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
+POST /api/v1/cloud/bizs/{bk_biz_id}/recycle_records/list
 
 ### 输入参数
 
 | 参数名称      | 参数类型   | 必选  | 描述     |
 |-----------|--------|-----|--------|
-| bk_biz_id | int64  | 是   | 业务ID   |
+| bk_biz_id | int64  | 是   | 业务的ID  |
 | filter    | object | 是   | 查询过滤条件 |
 | page      | object | 是   | 分页设置   |
 
@@ -95,22 +95,23 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### 查询参数介绍：
 
-| 参数名称        | 参数类型   | 描述                                   |
-|-------------|--------|--------------------------------------|
-| id          | string | VPC的ID                               |
-| vendor      | string | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| account_id  | string | 云账号ID                                |
-| cloud_id    | string | VPC的云ID                              |
-| name        | string | VPC名称                                |
-| region      | string | 地域                                   |
-| category    | string | VPC类别                                |
-| memo        | string | 备注                                   |
-| bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
-| bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
-| creator     | string | 创建者                                  |
-| reviser     | string | 更新者                                  |
-| created_at  | string | 创建时间，标准格式：2006-01-02T15:04:05Z        |
-| updated_at  | string | 更新时间，标准格式：2006-01-02T15:04:05Z        |
+| 参数名称         | 参数类型   | 描述                                    |
+|--------------|--------|---------------------------------------|
+| id           | uint64 | 自增的回收记录ID                             |
+| task_id      | string | 同一批回收的资源的任务ID                         |
+| vendor       | enum   | 云供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
+| res_type     | enum   | 回收的资源类型（枚举值：cvm、disk）                 |
+| res_id       | string | 回收的资源ID                               |
+| cloud_res_id | string | 回收的资源的云上ID                            |
+| res_name     | string | 回收的资源名称                               |
+| bk_biz_id    | int64  | 业务ID                                  |
+| account_id   | string | 账号ID                                  |
+| region       | string | 地域                                    |
+| status       | enum   | 资源的回收状态（枚举值：waiting、recycling、failed） |
+| creator      | string | 创建者                                   |
+| reviser      | string | 更新者                                   |
+| created_at   | string | 创建时间，标准格式：2006-01-02T15:04:05Z         |
+| updated_at   | string | 更新时间，标准格式：2006-01-02T15:04:05Z         |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -118,7 +119,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### 获取详细信息请求参数示例
 
-如查询云账号ID为"00000001"的腾讯云VPC列表。
+如查询任务ID为"00000001"的腾讯云的回收资源列表。
 
 ```json
 {
@@ -126,7 +127,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
     "op": "and",
     "rules": [
       {
-        "field": "account_id",
+        "field": "task_id",
         "op": "eq",
         "value": "00000001"
       },
@@ -147,7 +148,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### 获取数量请求参数示例
 
-如查询云账号ID为"00000001"的腾讯云VPC数量。
+如查询任务ID为"00000001"的腾讯云的回收资源数量。
 
 ```json
 {
@@ -155,7 +156,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
     "op": "and",
     "rules": [
       {
-        "field": "account_id",
+        "field": "task_id",
         "op": "eq",
         "value": "00000001"
       },
@@ -183,20 +184,17 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
   "data": {
     "detail": [
       {
-        "id": "00000001",
+        "id": 1,
+        "task_id": "00000001",
         "vendor": "tcloud",
-        "account_id": "00000001",
-        "cloud_id": "vpc-xxxxxxxx",
-        "name": "vpc-default",
+        "res_type": "cvm",
+        "res_id": "00000017",
+        "cloud_res_id": "cvm-xxxxxxxx",
+        "res_name": "test",
+        "bk_biz_id": 4,
+        "account_id": "00000003",
         "region": "ap-guangzhou",
-        "category": "biz",
-        "memo": "default vpc",
-        "bk_biz_id": 100,
-        "bk_cloud_id": -1,
-        "creator": "tom",
-        "reviser": "tom",
-        "created_at": "2019-07-29 11:57:20",
-        "updated_at": "2019-07-29 11:57:20"
+        "status": "waiting"
       }
     ]
   }
@@ -232,19 +230,20 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### data.detail[n]
 
-| 参数名称        | 参数类型   | 描述                                   |
-|-------------|--------|--------------------------------------|
-| id          | string | VPC的ID                               |
-| vendor      | string | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| account_id  | string | 云账号ID                                |
-| cloud_id    | string | VPC的云ID                              |
-| name        | string | VPC名称                                |
-| region      | string | 地域                                   |
-| category    | string | VPC类别                                |
-| memo        | string | 备注                                   |
-| bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
-| bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
-| creator     | string | 创建者                                  |
-| reviser     | string | 更新者                                  |
-| created_at  | string | 创建时间，标准格式：2006-01-02T15:04:05Z        |
-| updated_at  | string | 更新时间，标准格式：2006-01-02T15:04:05Z        |
+| 参数名称         | 参数类型   | 描述                                                                      |
+|--------------|--------|-------------------------------------------------------------------------|
+| id           | uint64 | 自增的回收记录ID                                                               |
+| task_id      | string | 同一批回收的资源的任务ID                                                           |
+| vendor       | enum   | 云供应商（枚举值：tcloud、aws、azure、gcp、huawei）                                   |
+| res_type     | enum   | 回收的资源类型（枚举值：cvm、disk）                                                   |
+| res_id       | string | 回收的资源ID                                                                 |
+| cloud_res_id | string | 回收的资源的云上ID                                                              |
+| res_name     | string | 回收的资源名称                                                                 |
+| bk_biz_id    | int64  | 业务ID                                                                    |
+| account_id   | string | 账号ID                                                                    |
+| region       | string | 地域                                                                      |
+| status       | enum   | 资源的回收状态 (枚举值：wait_recycle:等待回收、recycled:已回收、recovered:已恢复、failed:回收失败)  |
+| creator      | string | 创建者                                                                     |
+| reviser      | string | 更新者                                                                     |
+| created_at   | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                          |
+| updated_at   | string | 更新时间，标准格式：2006-01-02T15:04:05Z                                          |

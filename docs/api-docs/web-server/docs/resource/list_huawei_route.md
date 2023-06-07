@@ -1,20 +1,20 @@
 ### 描述
 
 - 该接口提供版本：v1.0.0+。
-- 该接口所需权限：业务访问。
-- 该接口功能描述：查询VPC列表。
+- 该接口所需权限：资源查看。
+- 该接口功能描述：查询华为云路由列表。
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
+POST /api/v1/cloud/vendors/huawei/route_tables/{route_table_id}/routes/list
 
 ### 输入参数
 
-| 参数名称      | 参数类型   | 必选  | 描述     |
-|-----------|--------|-----|--------|
-| bk_biz_id | int64  | 是   | 业务ID   |
-| filter    | object | 是   | 查询过滤条件 |
-| page      | object | 是   | 分页设置   |
+| 参数名称           | 参数类型   | 必选  | 描述     |
+|----------------|--------|-----|--------|
+| route_table_id | string | 是   | 路由表ID  |
+| filter         | object | 是   | 查询过滤条件 |
+| page           | object | 是   | 分页设置   |
 
 #### filter
 
@@ -95,22 +95,19 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### 查询参数介绍：
 
-| 参数名称        | 参数类型   | 描述                                   |
-|-------------|--------|--------------------------------------|
-| id          | string | VPC的ID                               |
-| vendor      | string | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| account_id  | string | 云账号ID                                |
-| cloud_id    | string | VPC的云ID                              |
-| name        | string | VPC名称                                |
-| region      | string | 地域                                   |
-| category    | string | VPC类别                                |
-| memo        | string | 备注                                   |
-| bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
-| bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
-| creator     | string | 创建者                                  |
-| reviser     | string | 更新者                                  |
-| created_at  | string | 创建时间，标准格式：2006-01-02T15:04:05Z        |
-| updated_at  | string | 更新时间，标准格式：2006-01-02T15:04:05Z        |
+| 参数名称                 | 参数类型   | 描述                                                                                                         |
+|----------------------|--------|------------------------------------------------------------------------------------------------------------|
+| id                   | string | 路由ID                                                                                                       |
+| route_table_id       | string | 路由表ID                                                                                                      |
+| cloud_route_table_id | string | 路由表的云上ID                                                                                                   |
+| destination          | string | 目的网段，格式为：CIDR                                                                                              |
+| type                 | string | 路由的类型（枚举值：ecs[弹性云服务器]、eni[网卡]、vip[虚拟IP]、nat[NAT网关]、peering[对等连接]、vpn[虚拟专用网络]、dc[云专线]、cc[云连接]、egw[VPC终端节点]） |
+| nexthop              | string | 下一跳对象的ID                                                                                                   |
+| memo                 | string | 备注                                                                                                         |
+| creator              | string | 创建者                                                                                                        |
+| reviser              | string | 更新者                                                                                                        |
+| created_at           | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                                                              |
+| updated_at           | string | 更新时间，标准格式：2006-01-02T15:04:05Z                                                                              |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -118,7 +115,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### 获取详细信息请求参数示例
 
-如查询云账号ID为"00000001"的腾讯云VPC列表。
+如查询ID为"00000001"的路由列表。
 
 ```json
 {
@@ -126,14 +123,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
     "op": "and",
     "rules": [
       {
-        "field": "account_id",
+        "field": "id",
         "op": "eq",
         "value": "00000001"
-      },
-      {
-        "field": "vendor",
-        "op": "eq",
-        "value": "tcloud"
       }
     ]
   },
@@ -147,7 +139,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### 获取数量请求参数示例
 
-如查询云账号ID为"00000001"的腾讯云VPC数量。
+如查询ID为"00000001"的路由数量。
 
 ```json
 {
@@ -155,14 +147,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
     "op": "and",
     "rules": [
       {
-        "field": "account_id",
+        "field": "id",
         "op": "eq",
         "value": "00000001"
-      },
-      {
-        "field": "vendor",
-        "op": "eq",
-        "value": "tcloud"
       }
     ]
   },
@@ -181,18 +168,15 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
   "code": 0,
   "message": "ok",
   "data": {
-    "detail": [
+    "details": [
       {
-        "id": "00000001",
-        "vendor": "tcloud",
-        "account_id": "00000001",
-        "cloud_id": "vpc-xxxxxxxx",
-        "name": "vpc-default",
-        "region": "ap-guangzhou",
-        "category": "biz",
-        "memo": "default vpc",
-        "bk_biz_id": 100,
-        "bk_cloud_id": -1,
+        "id": "00000018",
+        "route_table_id": "0000006f",
+        "cloud_route_table_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "type": "ecs",
+        "destination": "127.0.0.0/16",
+        "nexthop": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "memo": "test route",
         "creator": "tom",
         "reviser": "tom",
         "created_at": "2019-07-29 11:57:20",
@@ -210,7 +194,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
   "code": 0,
   "message": "ok",
   "data": {
-    "count": 0
+    "count": 1
   }
 }
 ```
@@ -232,19 +216,16 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vpcs/list
 
 #### data.detail[n]
 
-| 参数名称        | 参数类型   | 描述                                   |
-|-------------|--------|--------------------------------------|
-| id          | string | VPC的ID                               |
-| vendor      | string | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| account_id  | string | 云账号ID                                |
-| cloud_id    | string | VPC的云ID                              |
-| name        | string | VPC名称                                |
-| region      | string | 地域                                   |
-| category    | string | VPC类别                                |
-| memo        | string | 备注                                   |
-| bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
-| bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
-| creator     | string | 创建者                                  |
-| reviser     | string | 更新者                                  |
-| created_at  | string | 创建时间，标准格式：2006-01-02T15:04:05Z        |
-| updated_at  | string | 更新时间，标准格式：2006-01-02T15:04:05Z        |
+| 参数名称                 | 参数类型   | 描述                                                                                                         |
+|----------------------|--------|------------------------------------------------------------------------------------------------------------|
+| id                   | string | 路由ID                                                                                                       |
+| route_table_id       | string | 路由表ID                                                                                                      |
+| cloud_route_table_id | string | 路由表的云上ID                                                                                                   |
+| destination          | string | 目的网段，格式为：CIDR                                                                                              |
+| type                 | string | 路由的类型（枚举值：ecs[弹性云服务器]、eni[网卡]、vip[虚拟IP]、nat[NAT网关]、peering[对等连接]、vpn[虚拟专用网络]、dc[云专线]、cc[云连接]、egw[VPC终端节点]） |
+| nexthop              | string | 下一跳对象的ID                                                                                                   |
+| memo                 | string | 备注                                                                                                         |
+| creator              | string | 创建者                                                                                                        |
+| reviser              | string | 更新者                                                                                                        |
+| created_at           | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                                                              |
+| updated_at           | string | 更新时间，标准格式：2006-01-02T15:04:05Z                                                                              |
