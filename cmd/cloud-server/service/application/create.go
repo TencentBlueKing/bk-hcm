@@ -84,12 +84,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, handler handlers.Application
 	}
 
 	// 获取ITSM单据涉及到的各个节点审批人
-	approvers := []itsm.VariableApprover{
-		{
-			Variable:  "platform_manager",
-			Approvers: managers,
-		},
-	}
+	approvers := handler.GetItsmApprover(managers)
 
 	// 调用ITSM创建单据
 	sn, err := a.esbClient.Itsm().CreateTicket(

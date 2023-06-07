@@ -22,6 +22,7 @@ package tcloud
 import (
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/thirdparty/esb/itsm"
 )
 
 // PrepareReq ...
@@ -44,4 +45,9 @@ func (a *ApplicationOfCreateTCloudDisk) GenerateApplicationContent() interface{}
 // PrepareReqFromContent ...
 func (a *ApplicationOfCreateTCloudDisk) PrepareReqFromContent() error {
 	return nil
+}
+
+// GetItsmApprover 获取itsm审批人
+func (a *ApplicationOfCreateTCloudDisk) GetItsmApprover(managers []string) []itsm.VariableApprover {
+	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
 }

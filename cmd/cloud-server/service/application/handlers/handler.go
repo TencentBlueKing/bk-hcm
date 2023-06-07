@@ -21,6 +21,7 @@ package handlers
 
 import (
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/thirdparty/esb/itsm"
 )
 
 // ApplicationHandler 定义了申请单的表单校验，与itsm对接、审批通过后的资源交付函数
@@ -30,6 +31,9 @@ import (
 // 更好的方式是Handler拆分成两种抽象：申请单创建者Creator、申请单交付者Deliverer，然后定义各自的数据结构
 type ApplicationHandler interface {
 	GetType() enumor.ApplicationType
+
+	// GetItsmApprover 获取itsm审批人信息
+	GetItsmApprover(managers []string) []itsm.VariableApprover
 
 	// CheckReq 申请单的表单校验
 	CheckReq() error
