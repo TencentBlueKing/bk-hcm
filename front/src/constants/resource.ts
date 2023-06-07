@@ -199,13 +199,50 @@ export const RECYCLE_BIN_ITEM_STATUS = {
   wait_recycle: '等待回收',
   recycled: '已回收',
   recovered: '已恢复',
-  failed: '回收失败'
-}
+  failed: '回收失败',
+};
 
 export const CLOUD_VENDOR = {
   tcloud: 'tcloud',  // 腾讯云
   aws: 'aws',        // 亚马逊云
   huawei: 'huawei',  // 华为云
   azure: 'azure',    // 微软云
-  gcp: 'gcp'         // 谷歌云
-}
+  gcp: 'gcp',         // 谷歌云
+};
+
+export const TCLOUD_SECURITY_MESSAGE = {
+  protocol: '协议',
+  port: '端口',
+  sourceAddress: '源地址类型',
+  ipv4_cidr: '源地址',
+  action: '策略',
+};
+
+export const HUAWEI_SECURITY_MESSAGE = {
+  priority: '优先级',
+  ethertype: '类型',
+  protocol: '协议',
+  port: '端口',
+  sourceAddress: '源地址类型',
+  ipv4_cidr: '源地址',
+  action: '策略',
+};
+
+export const AWS_SECURITY_MESSAGE = {
+  protocol: '协议',
+  port: '端口',
+  sourceAddress: '源地址类型',
+  ipv4_cidr: '源地址',
+};
+
+export const AZURE_SECURITY_MESSAGE = {
+  name: '名称',
+  priority: '优先级',
+  sourceAddress: '源地址类型',
+  ipv4_cidr: '源地址',
+  source_port_range: '源端口',
+  targetAddress: '目标地址类型',
+  destination_address_prefix: '目标地址',
+  protocol: '目标协议',
+  access: '策略',
+};
