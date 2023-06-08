@@ -15,6 +15,10 @@ GET /api/v1/cloud/audits/{id}
 | id   | uint64 | 是   | 审计ID |
 
 ### 调用示例
+```json
+```
+
+### 响应示例
 
 ```json
 {

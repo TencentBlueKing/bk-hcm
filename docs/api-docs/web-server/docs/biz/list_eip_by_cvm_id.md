@@ -56,6 +56,7 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/eips/cvms/{cvm_id}
 | data    | Data | 响应数据 |
 #### Data
 eip 列表
+
 | 参数名称   | 参数类型   | 描述                                       |
 |--------|--------|------------------------------------------|
 | id | string | Eip ID |

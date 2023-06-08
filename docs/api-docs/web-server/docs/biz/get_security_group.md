@@ -10,10 +10,10 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/security_groups/{id}
 
 ### 输入参数
 
-| 参数名称       | 参数类型   | 描述    |
-|------------|--------|-------|
-| bk_biz_id  | int64  | 业务ID  |
-| id         | string | 安全组ID |
+| 参数名称       | 参数类型    | 必选 | 描述    |
+|------------|---------|----|-------|
+| bk_biz_id  | int64   | 是  | 业务ID  |
+| id         | string  | 是  | 安全组ID |
 
 ### 调用示例
 

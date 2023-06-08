@@ -2,11 +2,11 @@
 
 - 该接口提供版本：v1.0.0+。
 - 该接口所需权限：账号查看。
-- 该接口功能描述：查询账号列表。
+- 该接口功能描述：查询账号列表（带混合云差异字段，不包括SecretKey，只提供给安全使用）。
 
 ### URL
 
-POST /api/v1/cloud/accounts/list
+POST /api/v1/cloud/accounts/extensions/list
 
 ### 输入参数
 
@@ -34,18 +34,18 @@ POST /api/v1/cloud/accounts/list
 
 ##### 1. 操作符
 
-| 操作符 | 描述                                        | 操作符的value支持的数据类型                             |
-|-----|-------------------------------------------|----------------------------------------------|
-| eq  | 等于。不能为空字符串                                | boolean, numeric, string                     |
-| neq | 不等。不能为空字符串                                | boolean, numeric, string                     |
+| 操作符 | 描述                                        | 操作符的value支持的数据类型                              |
+|-----|-------------------------------------------|-----------------------------------------------|
+| eq  | 等于。不能为空字符串                                | boolean, numeric, string                      |
+| neq | 不等。不能为空字符串                                | boolean, numeric, string                      |
 | gt  | 大于                                        | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
 | gte | 大于等于                                      | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
 | lt  | 小于                                        | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
 | lte | 小于等于                                      | numeric，时间类型为字符串（标准格式："2006-01-02T15:04:05Z"） |
-| in  | 在给定的数组范围中。value数组中的元素最多设置100个，数组中至少有一个元素  | boolean, numeric, string                     |
-| nin | 不在给定的数组范围中。value数组中的元素最多设置100个，数组中至少有一个元素 | boolean, numeric, string                     |
-| cs  | 模糊查询，区分大小写                                | string                                       |
-| cis | 模糊查询，不区分大小写                               | string                                       |
+| in  | 在给定的数组范围中。value数组中的元素最多设置100个，数组中至少有一个元素  | boolean, numeric, string                      |
+| nin | 不在给定的数组范围中。value数组中的元素最多设置100个，数组中至少有一个元素 | boolean, numeric, string                      |
+| cs  | 模糊查询，区分大小写                                | string                                        |
+| cis | 模糊查询，不区分大小写                               | string                                        |
 
 ##### 2. 协议示例
 
@@ -94,21 +94,21 @@ POST /api/v1/cloud/accounts/list
 
 #### 查询参数介绍：
 
-| 参数名称                | 参数类型         | 描述                                                               |
-|---------------------|--------------|------------------------------------------------------------------|
-| id                  | string       | 账号ID                                                             |
-| vendor              | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                             |
-| name                | string       | 名称                                                               |
-| managers            | string array | 账号管理者                                                            |
-| type                | string       | 账号类型 (枚举值：resource:资源账号、registration:登记账号、security_audit:安全审计账号) |
-| site                | string       | 站点（枚举值：china:中国站、international:国际站）                              |
-| price               | string       | 余额                                                               |
-| price_unit          | string       | 余额单位                                                             |
-| memo                | string       | 备注                                                               |
-| creator             | string       | 创建者                                                              |
-| reviser             | string       | 更新者                                                              |
-| created_at          | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                   |
-| updated_at          | string       | 更新时间，标准格式：2006-01-02T15:04:05Z                                   |
+| 参数名称            | 参数类型         | 描述                                                               |
+|-----------------|--------------|------------------------------------------------------------------|
+| id              | string       | 账号ID                                                             |
+| vendor          | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                             |
+| name            | string       | 名称                                                               |
+| managers        | string array | 账号管理者                                                            |
+| type            | string       | 账号类型 (枚举值：resource:资源账号、registration:登记账号、security_audit:安全审计账号) |
+| site            | string       | 站点（枚举值：china:中国站、international:国际站）                              |
+| price           | string       | 余额                                                               |
+| price_unit      | string       | 余额单位                                                             |
+| memo            | string       | 备注                                                               |
+| creator         | string       | 创建者                                                              |
+| reviser         | string       | 更新者                                                              |
+| created_at      | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                   |
+| updated_at      | string       | 更新时间，标准格式：2006-01-02T15:04:05Z                                   |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -138,31 +138,7 @@ POST /api/v1/cloud/accounts/list
 }
 ```
 
-#### 获取数量请求参数示例
-
-如创建者为Jim的账号数量。
-
-```json
-{
-  "filter": {
-    "op": "and",
-    "rules": [
-      {
-        "field": "creator",
-        "op": "eq",
-        "value": "Jim"
-      }
-    ]
-  },
-  "page": {
-    "count": true
-  }
-}
-```
-
 ### 响应示例
-
-#### 获取详细信息返回结果示例
 
 ```json
 {
@@ -189,22 +165,16 @@ POST /api/v1/cloud/accounts/list
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2022-12-26T07:42:15Z",
-        "updated_at": "2023-04-19T19:29:15Z"
+        "updated_at": "2023-04-19T19:29:15Z",
+        "extension": {
+          "cloud_project_id": "xxxxx",
+          "cloud_project_name": "xxxxx",
+          "cloud_service_account_id": "xxxxxxxx",
+          "cloud_service_account_name": "hcm-admin",
+          "cloud_service_secret_id": "xxxxxxxxxx"
+        }
       }
     ]
-  }
-}
-```
-
-#### 获取数量返回结果示例
-
-```json
-{
-  "code": 0,
-  "message": "",
-  "data": {
-    "count": 0,
-    "details": null
   }
 }
 ```
@@ -226,19 +196,20 @@ POST /api/v1/cloud/accounts/list
 
 #### data.details[n]
 
-| 参数名称           | 参数类型         | 描述                                                               |
-|----------------|--------------|------------------------------------------------------------------|
-| id             | string       | 账号ID                                                             |
-| vendor         | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                             |
-| name           | string       | 名称                                                               |
-| managers       | string array | 账号管理者                                                            |
-| type           | string       | 账号类型 (枚举值：resource:资源账号、registration:登记账号、security_audit:安全审计账号) |
-| site           | string       | 站点（枚举值：china:中国站、international:国际站）                              |
-| price          | string       | 余额                                                               |
-| price_unit     | string       | 余额单位                                                             |
-| memo           | string       | 备注                                                               |
-| bk_biz_ids     | int64 array  | 账号关联的业务ID列表                                                      |
-| creator        | string       | 创建者                                                              |
-| reviser        | string       | 更新者                                                              |
-| created_at     | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                   |
-| updated_at     | string       | 更新时间，标准格式：2006-01-02T15:04:05Z                                   |
+| 参数名称       | 参数类型         | 描述                                                               |
+|------------|--------------|------------------------------------------------------------------|
+| id         | string       | 账号ID                                                             |
+| vendor     | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                             |
+| name       | string       | 名称                                                               |
+| managers   | string array | 账号管理者                                                            |
+| type       | string       | 账号类型 (枚举值：resource:资源账号、registration:登记账号、security_audit:安全审计账号) |
+| site       | string       | 站点（枚举值：china:中国站、international:国际站）                              |
+| price      | string       | 余额                                                               |
+| price_unit | string       | 余额单位                                                             |
+| memo       | string       | 备注                                                               |
+| bk_biz_ids | int64 array  | 账号关联的业务ID列表                                                      |
+| creator    | string       | 创建者                                                              |
+| reviser    | string       | 更新者                                                              |
+| created_at | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                   |
+| updated_at | string       | 更新时间，标准格式：2006-01-02T15:04:05Z                                   |
+| extension  | object       | 混合云差异字段                                                          |

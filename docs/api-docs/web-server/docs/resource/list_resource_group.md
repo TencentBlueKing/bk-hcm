@@ -90,7 +90,7 @@ POST /api/v1/cloud/vendors/azure/resource_groups/list
 | start | uint32 | 否   | 记录开始位置，start 起始值为0                                                                                                                                  |
 | limit | uint32 | 否   | 每页限制条数，最大500，不能为0                                                                                                                                   |
 | sort  | string | 否   | 排序字段，返回数据将按该字段进行排序                                                                                                                                  |
-| order | string | 否   | 排序顺序（枚举值：ASC、DESC）                                               
+| order | string | 否   | 排序顺序（枚举值：ASC、DESC）                                                                                                                                  |                                        
 
 ### 调用和响应 示例
 
