@@ -195,7 +195,7 @@ func (dao *AzureSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*type
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.AzureSGRuleColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

@@ -181,7 +181,7 @@ func (cli *client) listSGRuleFromDB(kt *kit.Kit, sgID string) (
 
 	listReq := &protocloud.TCloudSGRuleListReq{
 		Filter: tools.EqualExpression("security_group_id", sgID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	start := uint32(0)
 	rules := make([]corecloud.TCloudSecurityGroupRule, 0)

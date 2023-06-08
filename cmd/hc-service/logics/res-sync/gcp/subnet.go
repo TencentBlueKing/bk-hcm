@@ -354,7 +354,7 @@ func (cli *client) listSubnetFromDBBySelfLink(kt *kit.Kit, params *ListSubnetByS
 				&filter.AtomRule{Field: "extension.self_link", Op: filter.JSONIn.Factory(), Value: params.SelfLink},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Gcp.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), req)
 	if err != nil {
@@ -382,7 +382,7 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, region 
 				&filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Gcp.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), req)
 	if err != nil {

@@ -192,7 +192,7 @@ func (svc *cvmSvc) BatchUpdateCvmCommonInfo(cts *rest.Contexts) (interface{}, er
 	opt := &types.ListOption{
 		Fields: []string{"vendor", "cloud_id"},
 		Filter: updateFilter,
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dao.Cvm().List(cts.Kit, opt)
 	if err != nil {

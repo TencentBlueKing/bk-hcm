@@ -24,7 +24,7 @@ import (
 
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/api/cloud-server"
+	cloudserver "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	coreni "hcm/pkg/api/core/cloud/network-interface"
 	datacloudniproto "hcm/pkg/api/data-service/cloud/network-interface"
@@ -255,7 +255,7 @@ func (svc *netSvc) getNetworkInterface(cts *rest.Contexts, validHandler handler.
 	var cvmID string
 	niRelReq := &core.ListReq{
 		Filter: tools.EqualExpression("network_interface_id", id),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	rels, err := svc.client.DataService().Global.NetworkInterfaceCvmRel.List(cts.Kit.Ctx, cts.Kit.Header(), niRelReq)
 	if err == nil && len(rels.Details) > 0 {

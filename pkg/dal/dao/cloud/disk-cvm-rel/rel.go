@@ -92,7 +92,7 @@ func (relDao DiskCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Dis
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablecloud.DiskCvmRelColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

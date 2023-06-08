@@ -112,7 +112,7 @@ func (svc *firewallSvc) getGcpFirewallRule(cts *rest.Contexts, validHandler hand
 
 	listReq := &dataproto.GcpFirewallRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
@@ -157,7 +157,7 @@ func (svc *firewallSvc) listBasicInfo(kt *kit.Kit, ruleIDs []string) (map[string
 	listReq := &dataproto.GcpFirewallRuleListReq{
 		Field:  []string{"account_id", "bk_biz_id"},
 		Filter: tools.ContainersExpression("id", ruleIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(kt.Ctx, kt.Header(), listReq)
 	if err != nil {
@@ -177,7 +177,7 @@ func (svc *firewallSvc) getBasicInfo(kt *kit.Kit, ruleID string) (*types.CloudRe
 	listReq := &dataproto.GcpFirewallRuleListReq{
 		Field:  []string{"account_id", "bk_biz_id"},
 		Filter: tools.EqualExpression("id", ruleID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(kt.Ctx, kt.Header(), listReq)
 	if err != nil {

@@ -117,7 +117,7 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 	notStoppedReq := &cloud.CvmListReq{
 		Field:  []string{"id"},
 		Filter: notStoppedFilter,
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	startCvmRes, err := svc.client.DataService().Global.Cvm.ListCvm(kt.Ctx, kt.Header(), notStoppedReq)
 	if err != nil {
@@ -200,7 +200,7 @@ func (svc *cvmSvc) detachDiskByCvmIDs(kt *kit.Kit, ids []string, basicInfoMap ma
 
 	listReq := &cloud.DiskCvmRelListReq{
 		Filter: tools.ContainersExpression("cvm_id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	relRes, err := svc.client.DataService().Global.ListDiskCvmRel(kt.Ctx, kt.Header(), listReq)
 	if err != nil {

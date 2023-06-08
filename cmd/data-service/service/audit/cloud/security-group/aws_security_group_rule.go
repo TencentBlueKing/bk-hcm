@@ -130,7 +130,7 @@ func (s *SecurityGroup) listAwsSGRule(kt *kit.Kit, sgID string, ids []string) (
 	opt := &types.SGRuleListOption{
 		SecurityGroupID: sgID,
 		Filter:          tools.ContainersExpression("id", ids),
-		Page:            core.DefaultBasePage,
+		Page:            core.NewDefaultBasePage(),
 	}
 	list, err := s.dao.AwsSGRule().List(kt, opt)
 	if err != nil {

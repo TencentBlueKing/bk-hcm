@@ -118,7 +118,7 @@ func (z ZoneDao) List(kt *kit.Kit, opt *types.ListOption) (*typeszone.ListZoneDe
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(zone.ZoneColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

@@ -39,7 +39,7 @@ func IsResourceAccount(kt *kit.Kit, cli *dataservice.Client, accountID string) e
 
 	listReq := &protocloud.AccountListReq{
 		Filter: tools.EqualExpression("id", accountID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := cli.Global.Account.List(kt.Ctx, kt.Header(), listReq)
 	if err != nil {

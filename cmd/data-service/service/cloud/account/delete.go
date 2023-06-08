@@ -50,7 +50,7 @@ func (svc *service) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 
 	opt := &types.ListOption{
 		Filter: req.Filter,
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dao.Account().List(cts.Kit, opt)
 	if err != nil {

@@ -176,7 +176,7 @@ func (ad Audit) vpcAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResou
 func (ad Audit) listVpc(kt *kit.Kit, ids []string) (map[string]tablecloud.VpcTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	list, err := ad.dao.Vpc().List(kt, opt)
 	if err != nil {

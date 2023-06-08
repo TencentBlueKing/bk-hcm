@@ -47,7 +47,7 @@ func (svc *relSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
 	opt := &types.ListOption{
 		Fields: []string{"id"},
 		Filter: req.Filter,
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 
 	relResult, err := svc.dao.DiskCvmRel().List(cts.Kit, opt)

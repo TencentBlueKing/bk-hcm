@@ -103,7 +103,7 @@ func (g *Gcp) AssociateEip(
 		cts.Kit.Header(),
 		&core.ListReq{
 			Filter: tools.EqualExpression("network_interface_id", req.NetworkInterfaceID),
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if err != nil {
@@ -155,7 +155,7 @@ func (g *Gcp) DisassociateEip(
 		cts.Kit.Header(),
 		&datarelproto.EipCvmRelListReq{
 			Filter: tools.ContainersExpression("eip_id", []string{req.EipID}),
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if len(rels.Details) == 0 {
@@ -249,7 +249,7 @@ func (g *Gcp) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*clou
 	rels, err := g.client.DataService().Global.NetworkInterfaceCvmRel.List(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
-		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", []string{cvmID}), Page: core.DefaultBasePage},
+		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", []string{cvmID}), Page: core.NewDefaultBasePage()},
 	)
 	if err != nil {
 		return nil, err
@@ -287,7 +287,7 @@ func (g *Gcp) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*clou
 					},
 				}},
 			},
-		}, Page: core.DefaultBasePage})
+		}, Page: core.NewDefaultBasePage()})
 	if err != nil {
 		return nil, err
 	}

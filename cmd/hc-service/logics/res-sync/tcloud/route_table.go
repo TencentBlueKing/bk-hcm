@@ -346,7 +346,7 @@ func (cli *client) listRouteTableFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	results, err := cli.dbCli.TCloud.RouteTable.ListRouteTableWithExt(kt.Ctx, kt.Header(), req)
 	if err != nil {

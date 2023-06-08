@@ -341,7 +341,7 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, cloudVp
 				&filter.AtomRule{Field: "cloud_vpc_id", Op: filter.Equal.Factory(), Value: cloudVpcID},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.HuaWei.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), req)
 	if err != nil {

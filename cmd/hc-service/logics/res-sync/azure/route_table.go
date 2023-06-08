@@ -206,7 +206,7 @@ func (cli *client) listRouteTableFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	results, err := cli.dbCli.Azure.RouteTable.ListRouteTableWithExt(kt.Ctx, kt.Header(), req)
 	if err != nil {

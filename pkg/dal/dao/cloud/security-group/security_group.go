@@ -194,7 +194,7 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 	columnTypes["extension.resource_group_name"] = enumor.String
 	columnTypes["extension.vpc_id"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

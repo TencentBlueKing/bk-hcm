@@ -142,7 +142,7 @@ func (svc *securityGroupSvc) getSecurityGroup(cts *rest.Contexts, validHandler h
 func (svc *securityGroupSvc) queryAssociateCvmCount(kt *kit.Kit, id string) (uint64, error) {
 	cvmRelOpt := &core.ListReq{
 		Filter: tools.EqualExpression("security_group_id", id),
-		Page:   core.CountPage,
+		Page:   core.NewCountPage(),
 	}
 	cvmRelResult, err := svc.client.DataService().Global.SGCvmRel.List(kt.Ctx, kt.Header(), cvmRelOpt)
 	if err != nil {
@@ -164,7 +164,7 @@ func (svc *securityGroupSvc) queryAssociateSubnetAndNICount(kt *kit.Kit, id stri
 				},
 			},
 		},
-		Page: core.CountPage,
+		Page: core.NewCountPage(),
 	}
 	subnetResult, err := svc.client.DataService().Global.Subnet.List(kt.Ctx, kt.Header(), listOpt)
 	if err != nil {
@@ -294,7 +294,7 @@ func (svc *securityGroupSvc) listSGByCvmIDForAzure(kt *kit.Kit, cvmID string) (i
 
 	listSubnetReq := &core.ListReq{
 		Filter: tools.ContainersExpression("id", cvm.SubnetIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	subnetResult, err := svc.client.DataService().Azure.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), listSubnetReq)
 	if err != nil {
@@ -304,7 +304,7 @@ func (svc *securityGroupSvc) listSGByCvmIDForAzure(kt *kit.Kit, cvmID string) (i
 
 	listNIReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cloud_id", cvm.Extension.CloudNetworkInterfaceIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	niResult, err := svc.client.DataService().Azure.NetworkInterface.ListNetworkInterfaceExt(kt.Ctx, kt.Header(),
 		listNIReq)
@@ -333,7 +333,7 @@ func (svc *securityGroupSvc) listSGByCvmIDForAzure(kt *kit.Kit, cvmID string) (i
 
 	listSGReq := &dataproto.SecurityGroupListReq{
 		Filter: tools.ContainersExpression("id", sgIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	sgResult, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), listSGReq)
 	if err != nil {

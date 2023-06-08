@@ -80,7 +80,7 @@ func (svc *cvmSvc) BatchCreateAzureCvm(cts *rest.Contexts) (interface{}, error) 
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	imageResult, err := svc.dataCli.Azure.ListImage(cts.Kit.Ctx, cts.Kit.Header(), listImageReq)
 	if err != nil {

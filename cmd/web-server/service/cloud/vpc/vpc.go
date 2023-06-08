@@ -187,7 +187,7 @@ func (svc *service) getVpcSubnetCount(kt *kit.Kit, vpcID, zone string, bizID int
 				},
 			},
 		},
-		Page: core.CountPage,
+		Page: core.NewCountPage(),
 	}
 	vpcResult, err := svc.client.CloudServer().Subnet.ListInBiz(kt.Ctx, kt.Header(), bizID, req)
 	if err != nil {
@@ -211,7 +211,7 @@ func (svc *service) getVpcSubnetCount(kt *kit.Kit, vpcID, zone string, bizID int
 				},
 			},
 		},
-		Page: core.CountPage,
+		Page: core.NewCountPage(),
 	}
 	zoneResult, err := svc.client.CloudServer().Subnet.ListInBiz(kt.Ctx, kt.Header(), bizID, req)
 	if err != nil {

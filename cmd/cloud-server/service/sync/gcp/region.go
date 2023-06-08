@@ -58,7 +58,7 @@ func SyncRegion(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 func ListRegion(kt *kit.Kit, dataCli *dataservice.Client) ([]string, error) {
 	listReq := &protoregion.GcpRegionListReq{
 		Filter: tools.AllExpression(),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := dataCli.Gcp.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
 	if err != nil {

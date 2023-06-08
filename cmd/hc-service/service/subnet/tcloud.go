@@ -141,7 +141,7 @@ func (s subnet) TCloudListSubnetCountIP(cts *rest.Contexts) (interface{}, error)
 	}
 
 	listReq := &core.ListReq{
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{

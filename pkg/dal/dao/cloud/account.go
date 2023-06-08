@@ -224,7 +224,7 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 	columnTypes["extension.cloud_project_id"] = enumor.String
 	columnTypes["extension.cloud_tenant_id"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

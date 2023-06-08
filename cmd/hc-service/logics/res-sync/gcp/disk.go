@@ -141,7 +141,7 @@ func (cli *client) listDiskFromDBBySelfLink(kt *kit.Kit, params *ListDiskBySelfL
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Gcp.ListDisk(kt.Ctx, kt.Header(), req)
 	if err != nil {
@@ -181,7 +181,7 @@ func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams, option *S
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Gcp.ListDisk(kt.Ctx, kt.Header(), req)
 	if err != nil {

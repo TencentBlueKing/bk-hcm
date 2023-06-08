@@ -83,7 +83,7 @@ func (svc *securityGroupSvc) AssignSecurityGroupToBiz(cts *rest.Contexts) (inter
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(cts.Kit.Ctx,
 		cts.Kit.Header(), listReq)

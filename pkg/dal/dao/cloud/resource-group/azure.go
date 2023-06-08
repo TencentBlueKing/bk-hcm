@@ -99,7 +99,7 @@ func (a AzureRGDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.ListA
 		return nil, errf.New(errf.InvalidParameter, "list azure resource group options is nil")
 	}
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(region.AzureRGColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

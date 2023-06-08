@@ -215,7 +215,7 @@ func (r *azureRouteDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*f
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(routetable.AzureRouteColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

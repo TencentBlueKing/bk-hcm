@@ -254,7 +254,7 @@ func (svc *service) ListAccountWithBiz(kt *kit.Kit, ids []string) ([]types.Accou
 
 	listOpt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := svc.dao.Account().List(kt, listOpt)
 	if err != nil {

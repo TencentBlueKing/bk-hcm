@@ -156,7 +156,7 @@ func (a *accountSvc) ListSecretKey(cts *rest.Contexts) (interface{}, error) {
 		cts.Kit.Header(),
 		&dataproto.AccountListReq{
 			Filter: reqFilter,
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if err != nil || resp == nil || resp.Details == nil {

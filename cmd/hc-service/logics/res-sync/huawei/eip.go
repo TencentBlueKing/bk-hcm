@@ -326,7 +326,7 @@ func (cli *client) listEipFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.HuaWei.ListEip(kt.Ctx, kt.Header(), req)
 	if err != nil {

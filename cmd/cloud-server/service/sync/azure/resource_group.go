@@ -59,7 +59,7 @@ func SyncResourceGroup(kt *kit.Kit, hcCli *hcservice.Client, accountID string) e
 func ListResourceGroup(kt *kit.Kit, dataCli *dataservice.Client, accountID string) ([]string, error) {
 	listReq := &protoregion.AzureRGListReq{
 		Filter: tools.EqualExpression("account_id", accountID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := dataCli.Azure.ResourceGroup.ListResourceGroup(kt.Ctx, kt.Header(), listReq)
 	if err != nil {

@@ -133,7 +133,7 @@ func (ad Audit) eipOperationAuditBuild(kt *kit.Kit, ops []protoaudit.CloudResour
 func (ad Audit) listEip(kt *kit.Kit, ids []string) (map[string]*eip.EipModel, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	list, err := ad.dao.Eip().List(kt, opt)
 	if err != nil {

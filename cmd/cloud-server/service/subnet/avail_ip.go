@@ -173,7 +173,7 @@ func (svc *subnetSvc) ListCountBizSubnetAvailIPs(cts *rest.Contexts) (interface{
 				},
 			},
 		},
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"vendor", "region", "account_id", "id"},
 	}
 	resp, err := svc.client.DataService().Global.Subnet.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
@@ -312,7 +312,7 @@ func (svc *subnetSvc) listAzureAvailIP(kt *kit.Kit, subnets []cloud.BaseSubnet) 
 
 	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResult, err := svc.client.DataService().Azure.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), listReq)
 	if err != nil {

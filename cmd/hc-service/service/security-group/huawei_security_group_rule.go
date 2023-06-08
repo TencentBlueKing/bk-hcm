@@ -193,7 +193,7 @@ func (g *securityGroup) getHuaWeiSGRuleByID(cts *rest.Contexts, id string, sgID 
 
 	listReq := &protocloud.HuaWeiSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := g.dataCli.HuaWei.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {

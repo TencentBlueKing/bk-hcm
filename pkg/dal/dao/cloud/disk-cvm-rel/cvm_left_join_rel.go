@@ -46,7 +46,7 @@ func (relDao DiskCvmRelDao) ListCvmIDLeftJoinRel(kt *kit.Kit, opt *types.ListOpt
 
 	columnTypes := cvm.TableColumns.ColumnTypes()
 	columnTypes["extension.zones"] = enumor.Json
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)), core.DefaultPageOption); err != nil {
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)), core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 
@@ -121,7 +121,7 @@ func (relDao *DiskCvmRelDao) ListDiskLeftJoinRel(kt *kit.Kit, opt *types.ListOpt
 	columnTypes := disk.DiskColumns.ColumnTypes()
 	columnTypes["extension.resource_group_name"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

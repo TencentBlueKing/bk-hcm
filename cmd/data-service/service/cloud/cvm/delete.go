@@ -52,7 +52,7 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 	opt := &types.ListOption{
 		Fields: []string{"id", "vendor", "cloud_id", "bk_biz_id"},
 		Filter: req.Filter,
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dao.Cvm().List(cts.Kit, opt)
 	if err != nil {
@@ -110,7 +110,7 @@ func (svc *cvmSvc) listCvmAssNetworkInterface(kt *kit.Kit, cvmIDs []string) ([]s
 	for _, partID := range split {
 		opt := &types.ListOption{
 			Filter: tools.ContainersExpression("cvm_id", partID),
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		}
 		result, err := svc.dao.NiCvmRel().List(kt, opt)
 		if err != nil {

@@ -282,7 +282,7 @@ func (svc *tcloudSGRuleSvc) DeleteTCloudRule(cts *rest.Contexts) (interface{}, e
 		SecurityGroupID: sgID,
 		Fields:          []string{"id"},
 		Filter:          req.Filter,
-		Page:            core.DefaultBasePage,
+		Page:            core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dao.TCloudSGRule().List(cts.Kit, opt)
 	if err != nil {

@@ -250,7 +250,7 @@ func (c *cvm) getEipByCvm(kt *kit.Kit, ids []string) (map[string]string, map[str
 	// list eip and cvm relation
 	relReq := &cloud.EipCvmRelListReq{
 		Filter: tools.ContainersExpression("cvm_id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	relRes, err := c.client.DataService().Global.ListEipCvmRel(kt.Ctx, kt.Header(), relReq)
 	if err != nil {
@@ -271,7 +271,7 @@ func (c *cvm) getEipByCvm(kt *kit.Kit, ids []string) (map[string]string, map[str
 	// list eip
 	eipReq := &eip.EipListReq{
 		Filter: tools.ContainersExpression("id", eipIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	eipRes, err := c.client.DataService().Global.ListEip(kt.Ctx, kt.Header(), eipReq)
 	if err != nil {
@@ -308,7 +308,7 @@ func (c *cvm) listNicByCvmAndEip(kt *kit.Kit, ids []string, publicIPs []string) 
 	map[string][]networkinterface.BaseNetworkInterface, error) {
 
 	nicRelRes, err := c.client.DataService().Global.NetworkInterfaceCvmRel.List(kt.Ctx, kt.Header(),
-		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", ids), Page: core.DefaultBasePage})
+		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", ids), Page: core.NewDefaultBasePage()})
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +333,7 @@ func (c *cvm) listNicByCvmAndEip(kt *kit.Kit, ids []string, publicIPs []string) 
 					filter.AtomRule{Field: "public_ipv6", Op: filter.JSONOverlaps.Factory(), Value: publicIPs},
 				}},
 			},
-		}, Page: core.DefaultBasePage})
+		}, Page: core.NewDefaultBasePage()})
 	if err != nil {
 		return nil, err
 	}

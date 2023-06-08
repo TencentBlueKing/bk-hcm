@@ -85,7 +85,7 @@ func (svc *cvmSvc) AssignCvmToBiz(cts *rest.Contexts) (interface{}, error) {
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := svc.client.DataService().Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {

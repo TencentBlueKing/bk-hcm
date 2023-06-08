@@ -85,7 +85,7 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 		}
 		listReq := &core.ListReq{
 			Filter: expr,
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 			Fields: []string{"id", "res_id"},
 		}
 		recordRes, err := r.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt.Ctx, kt.Header(), listReq)

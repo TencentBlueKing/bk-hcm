@@ -92,7 +92,7 @@ func (ad Audit) accountUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudR
 func (ad Audit) listAccount(kt *kit.Kit, ids []string) (map[string]tablecloud.AccountTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	list, err := ad.dao.Account().List(kt, opt)
 	if err != nil {

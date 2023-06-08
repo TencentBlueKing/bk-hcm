@@ -274,7 +274,7 @@ func UpdateSubnetRouteTableByIDs(kt *kit.Kit, vendor enumor.Vendor, subnetMap ma
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	subnetList, err := dataCli.Global.Subnet.List(kt.Ctx, kt.Header(), subnetListReq)
 	if err != nil {
@@ -303,7 +303,7 @@ func UpdateSubnetRouteTableByIDs(kt *kit.Kit, vendor enumor.Vendor, subnetMap ma
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	routeTableList, err := dataCli.Global.RouteTable.List(kt.Ctx, kt.Header(), rtListReq)
 	if err != nil {

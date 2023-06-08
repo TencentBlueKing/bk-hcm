@@ -108,7 +108,7 @@ func (d Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAuditDetails, 
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(audit.AuditColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

@@ -186,7 +186,7 @@ func (s *SecurityGroup) SecurityGroupAssignAuditBuild(kt *kit.Kit, assigns []pro
 func (s *SecurityGroup) listSecurityGroup(kt *kit.Kit, ids []string) (map[string]tablecloud.SecurityGroupTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	list, err := s.dao.SecurityGroup().List(kt, opt)
 	if err != nil {

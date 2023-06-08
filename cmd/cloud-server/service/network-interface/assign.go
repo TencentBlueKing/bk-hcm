@@ -69,7 +69,7 @@ func (svc *netSvc) AssignNetworkInterfaceToBiz(cts *rest.Contexts) (interface{},
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := svc.client.DataService().Global.NetworkInterface.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {

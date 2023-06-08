@@ -57,7 +57,7 @@ func (g *securityGroup) getSecurityGroupAndCvm(kt *kit.Kit, sgID, cvmID string) 
 
 	sgReq := &protocloud.SecurityGroupListReq{
 		Filter: tools.EqualExpression("id", sgID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	sgResult, err := g.dataCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), sgReq)
 	if err != nil {
@@ -72,7 +72,7 @@ func (g *securityGroup) getSecurityGroupAndCvm(kt *kit.Kit, sgID, cvmID string) 
 
 	cvmReq := &protocloud.CvmListReq{
 		Filter: tools.EqualExpression("id", cvmID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	cvmResult, err := g.dataCli.Global.Cvm.ListCvm(kt.Ctx, kt.Header(), cvmReq)
 	if err != nil {

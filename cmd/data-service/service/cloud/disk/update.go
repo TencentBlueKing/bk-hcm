@@ -145,7 +145,7 @@ func (dSvc *diskSvc) rawExtensions(
 ) (map[string]tabletype.JsonField, error) {
 	opt := &types.ListOption{
 		Filter: filterExp,
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id", "extension"},
 	}
 	data, err := dSvc.dao.Disk().List(cts.Kit, opt)

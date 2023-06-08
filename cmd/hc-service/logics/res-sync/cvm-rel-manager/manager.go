@@ -349,7 +349,7 @@ func (mgr *CvmRelManger) getCvmMap(kt *kit.Kit) (map[string]string, error) {
 		req := &dataproto.CvmListReq{
 			Field:  []string{"id", "cloud_id"},
 			Filter: tools.ContainersExpression("cloud_id", partCloudIDs),
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		}
 		result, err := mgr.dataCli.Global.Cvm.ListCvm(kt.Ctx, kt.Header(), req)
 		if err != nil {

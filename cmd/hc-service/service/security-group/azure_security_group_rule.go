@@ -305,7 +305,7 @@ func (g *securityGroup) getAzureSGRuleByID(cts *rest.Contexts, id string, sgID s
 
 	listReq := &protocloud.AzureSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := g.dataCli.Azure.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {

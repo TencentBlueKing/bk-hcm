@@ -238,7 +238,7 @@ func (g *securityGroup) getAwsSGRuleByID(cts *rest.Contexts, id string, sgID str
 
 	listReq := &protocloud.AwsSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := g.dataCli.Aws.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {

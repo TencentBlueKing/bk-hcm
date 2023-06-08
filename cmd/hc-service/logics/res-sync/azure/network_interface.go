@@ -430,7 +430,7 @@ func (cli *client) listNetworkInterfaceFromDB(kt *kit.Kit, params *SyncBaseParam
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Azure.NetworkInterface.ListNetworkInterfaceExt(kt.Ctx, kt.Header(), req)
 	if err != nil {

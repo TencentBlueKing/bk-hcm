@@ -125,7 +125,7 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 		cts.Kit.Header(),
 		&datarelproto.DiskCvmRelListReq{
 			Filter: tools.ContainersExpression("disk_id", diskIDs),
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if err != nil {
@@ -253,7 +253,7 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 		cts.Kit.Header(),
 		&datarelproto.DiskCvmRelListReq{
 			Filter: tools.EqualExpression("disk_id", diskID),
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if err != nil {
@@ -467,7 +467,7 @@ func (svc *diskSvc) detachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		cts.Kit.Header(),
 		&datarelproto.DiskCvmRelListReq{
 			Filter: tools.EqualExpression("disk_id", req.DiskID),
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if len(rels.Details) == 0 {

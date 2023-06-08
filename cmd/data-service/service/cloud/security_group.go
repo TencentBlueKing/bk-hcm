@@ -183,7 +183,7 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 	opt := &types.ListOption{
 		Fields: []string{"id", "vendor"},
 		Filter: req.Filter,
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
 	if err != nil {
@@ -403,7 +403,7 @@ func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids [
 func getSecurityGroupByID(kt *kit.Kit, id string, svc *securityGroupSvc) (*tablecloud.SecurityGroupTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", id),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := svc.dao.SecurityGroup().List(kt, opt)
 	if err != nil {

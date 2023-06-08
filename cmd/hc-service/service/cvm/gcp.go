@@ -140,7 +140,7 @@ func (svc *cvmSvc) getImageByCloudID(kt *kit.Kit, cloudID string) (
 
 	req := &imageproto.ImageListReq{
 		Filter: tools.EqualExpression("cloud_id", cloudID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: nil,
 	}
 	images, err := svc.dataCli.Gcp.ListImage(kt.Ctx, kt.Header(), req)
@@ -158,7 +158,7 @@ func (svc *cvmSvc) getImageByCloudID(kt *kit.Kit, cloudID string) (
 func (svc *cvmSvc) getSubnetSelfLinkByCloudID(kt *kit.Kit, cloudID string) (string, error) {
 	req := &core.ListReq{
 		Filter: tools.EqualExpression("cloud_id", cloudID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"extension"},
 	}
 	subnets, err := svc.dataCli.Gcp.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), req)
@@ -176,7 +176,7 @@ func (svc *cvmSvc) getSubnetSelfLinkByCloudID(kt *kit.Kit, cloudID string) (stri
 func (svc *cvmSvc) getVpcSelfLinkByCloudID(kt *kit.Kit, cloudID string) (string, error) {
 	req := &core.ListReq{
 		Filter: tools.EqualExpression("cloud_id", cloudID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"extension"},
 	}
 	vpcs, err := svc.dataCli.Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), req)
