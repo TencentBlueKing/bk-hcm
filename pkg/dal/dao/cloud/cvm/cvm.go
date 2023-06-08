@@ -194,7 +194,7 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListCvmDetails, 
 	columnTypes["extension.resource_group_name"] = enumor.String
 	columnTypes["extension.zones"] = enumor.Json
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 
@@ -242,7 +242,7 @@ func (dao Dao) ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*typ
 	columnTypes["extension.resource_group_name"] = enumor.String
 	columnTypes["extension.zones"] = enumor.Json
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

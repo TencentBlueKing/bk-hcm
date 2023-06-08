@@ -126,7 +126,7 @@ func (svc *eipSvc) listEip(cts *rest.Contexts, authHandler handler.ListAuthResHa
 		cts.Kit.Header(),
 		&datarelproto.EipCvmRelListReq{
 			Filter: tools.ContainersExpression("eip_id", eipIDs),
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if err != nil {
@@ -190,7 +190,7 @@ func (svc *eipSvc) retrieveEip(cts *rest.Contexts, validHandler handler.ValidWit
 		cts.Kit.Header(),
 		&datarelproto.EipCvmRelListReq{
 			Filter: tools.ContainersExpression("eip_id", []string{eipID}),
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if err != nil {

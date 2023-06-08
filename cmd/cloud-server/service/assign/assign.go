@@ -82,7 +82,7 @@ func (svc *svc) AssignResourceToBiz(cts *rest.Contexts) (interface{}, error) {
 	// check if account is related to assigned biz
 	accountBizReq := &core.ListReq{
 		Filter: tools.EqualExpression("account_id", req.AccountID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"bk_biz_id"},
 	}
 	accountBizRes, err := svc.client.DataService().Global.Account.ListAccountBizRel(cts.Kit.Ctx, cts.Kit.Header(),

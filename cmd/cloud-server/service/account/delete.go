@@ -57,7 +57,7 @@ func (a *accountSvc) DeleteAccount(cts *rest.Contexts) (interface{}, error) {
 	// 查询账号基本信息
 	resp, err := a.client.DataService().Global.Account.List(cts.Kit.Ctx, cts.Kit.Header(), &protocloud.AccountListReq{
 		Filter: tools.EqualExpression("id", accountID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	})
 	if err != nil {
 		return nil, err

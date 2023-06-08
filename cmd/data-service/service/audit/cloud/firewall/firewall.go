@@ -176,7 +176,7 @@ func (f *Firewall) FirewallRuleAssignAuditBuild(kt *kit.Kit, assigns []protoaudi
 func (f *Firewall) listFirewallRule(kt *kit.Kit, ids []string) (map[string]tablecloud.GcpFirewallRuleTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	list, err := f.dao.GcpFirewallRule().List(kt, opt)
 	if err != nil {

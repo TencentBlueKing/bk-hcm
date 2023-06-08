@@ -215,7 +215,7 @@ func (r *tcloudRouteDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(routetable.TCloudRouteColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

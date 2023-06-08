@@ -157,7 +157,7 @@ func (dao NiCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListNetw
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(
-		nicvmreltable.NetworkInterfaceCvmRelColumns.ColumnTypes())), core.DefaultPageOption); err != nil {
+		nicvmreltable.NetworkInterfaceCvmRelColumns.ColumnTypes())), core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

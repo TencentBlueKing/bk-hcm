@@ -195,7 +195,7 @@ func (dao *HuaWeiSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*typ
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.HuaWeiSGRuleColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

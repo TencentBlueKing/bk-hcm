@@ -331,7 +331,7 @@ func (cli *client) listEipFromDB(kt *kit.Kit, params *SyncBaseParams, region str
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Gcp.ListEip(kt.Ctx, kt.Header(), req)
 	if err != nil {

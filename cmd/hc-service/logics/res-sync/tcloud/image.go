@@ -237,7 +237,7 @@ func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	images, err := cli.dbCli.TCloud.ListImage(kt.Ctx, kt.Header(), req)
 	if err != nil {
@@ -268,7 +268,7 @@ func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 				&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: params.CloudIDs},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Global.ListImage(kt.Ctx, kt.Header(), req)
 	if err != nil {

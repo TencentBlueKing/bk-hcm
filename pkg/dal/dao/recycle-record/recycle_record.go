@@ -152,7 +152,7 @@ func (r *Dao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLW
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(rr.RecycleRecordColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

@@ -132,7 +132,7 @@ func (svc *cvmSvc) BatchResetHuaWeiCvmPwd(cts *rest.Contexts) (interface{}, erro
 	listReq := &dataproto.CvmListReq{
 		Field:  []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
@@ -191,7 +191,7 @@ func (svc *cvmSvc) BatchStartHuaWeiCvm(cts *rest.Contexts) (interface{}, error) 
 	listReq := &dataproto.CvmListReq{
 		Field:  []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
@@ -249,7 +249,7 @@ func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 	listReq := &dataproto.CvmListReq{
 		Field:  []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
@@ -308,7 +308,7 @@ func (svc *cvmSvc) BatchRebootHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 	listReq := &dataproto.CvmListReq{
 		Field:  []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
@@ -367,7 +367,7 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 	listReq := &dataproto.CvmListReq{
 		Field:  []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
@@ -427,7 +427,7 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []string) error {
 	listEipRel := &dataproto.EipCvmRelListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	rels, err := svc.dataCli.Global.ListEipCvmRel(kt.Ctx, kt.Header(), listEipRel)
 	if err != nil {
@@ -442,7 +442,7 @@ func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []
 
 	listEip := &dataeip.EipListReq{
 		Filter: tools.ContainersExpression("id", eipIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"cloud_id"},
 	}
 	eips, err := svc.dataCli.Global.ListEip(kt.Ctx, kt.Header(), listEip)
@@ -481,7 +481,7 @@ func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []
 func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs []string) error {
 	listEipRel := &dataproto.DiskCvmRelListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	rels, err := svc.dataCli.Global.ListDiskCvmRel(kt.Ctx, kt.Header(), listEipRel)
 	if err != nil {
@@ -496,7 +496,7 @@ func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs [
 
 	listEip := &datadisk.DiskListReq{
 		Filter: tools.ContainersExpression("id", diskIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"cloud_id"},
 	}
 	disks, err := svc.dataCli.Global.ListDisk(kt.Ctx, kt.Header(), listEip)

@@ -157,7 +157,7 @@ func isNeedSyncPublicResource(kt *kit.Kit, dataCli *dataservice.Client, vendor e
 	case enumor.Aws, enumor.TCloud, enumor.HuaWei, enumor.Gcp:
 		listZoneReq := &protocloud.ZoneListReq{
 			Filter: tools.EqualExpression("vendor", vendor),
-			Page:   core.CountPage,
+			Page:   core.NewCountPage(),
 		}
 		result, err := dataCli.Global.Zone.ListZone(kt.Ctx, kt.Header(), listZoneReq)
 		if err != nil {
@@ -178,7 +178,7 @@ func isNeedSyncPublicResource(kt *kit.Kit, dataCli *dataservice.Client, vendor e
 	case enumor.Aws, enumor.TCloud, enumor.HuaWei, enumor.Gcp, enumor.Azure:
 		listZoneReq := &imagecloud.ImageListReq{
 			Filter: tools.EqualExpression("vendor", vendor),
-			Page:   core.CountPage,
+			Page:   core.NewCountPage(),
 		}
 		result, err := dataCli.Global.ListImage(kt.Ctx, kt.Header(), listZoneReq)
 		if err != nil {
@@ -202,7 +202,7 @@ func isNeedSyncRegion(kt *kit.Kit, dataCli *dataservice.Client, vendor enumor.Ve
 	case enumor.TCloud:
 		listReq := &protoregion.TCloudRegionListReq{
 			Filter: tools.AllExpression(),
-			Page:   core.CountPage,
+			Page:   core.NewCountPage(),
 		}
 		result, err := dataCli.TCloud.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
 		if err != nil {
@@ -213,7 +213,7 @@ func isNeedSyncRegion(kt *kit.Kit, dataCli *dataservice.Client, vendor enumor.Ve
 	case enumor.Aws:
 		listReq := &protoregion.AwsRegionListReq{
 			Filter: tools.AllExpression(),
-			Page:   core.CountPage,
+			Page:   core.NewCountPage(),
 		}
 		result, err := dataCli.Aws.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
 		if err != nil {
@@ -224,7 +224,7 @@ func isNeedSyncRegion(kt *kit.Kit, dataCli *dataservice.Client, vendor enumor.Ve
 	case enumor.HuaWei:
 		listReq := &protoregion.HuaWeiRegionListReq{
 			Filter: tools.AllExpression(),
-			Page:   core.CountPage,
+			Page:   core.NewCountPage(),
 		}
 		result, err := dataCli.HuaWei.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
 		if err != nil {
@@ -235,7 +235,7 @@ func isNeedSyncRegion(kt *kit.Kit, dataCli *dataservice.Client, vendor enumor.Ve
 	case enumor.Gcp:
 		listReq := &protoregion.GcpRegionListReq{
 			Filter: tools.AllExpression(),
-			Page:   core.CountPage,
+			Page:   core.NewCountPage(),
 		}
 		result, err := dataCli.Gcp.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
 		if err != nil {
@@ -246,7 +246,7 @@ func isNeedSyncRegion(kt *kit.Kit, dataCli *dataservice.Client, vendor enumor.Ve
 	case enumor.Azure:
 		listReq := &protoregion.AzureRegionListReq{
 			Filter: tools.AllExpression(),
-			Page:   core.CountPage,
+			Page:   core.NewCountPage(),
 		}
 		result, err := dataCli.Azure.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
 		if err != nil {

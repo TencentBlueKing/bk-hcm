@@ -58,7 +58,7 @@ func SyncRegion(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 func ListRegionByService(kt *kit.Kit, dataCli *dataservice.Client, service string) ([]string, error) {
 	listReq := &protoregion.HuaWeiRegionListReq{
 		Filter: tools.EqualExpression("service", service),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := dataCli.HuaWei.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
 	if err != nil {

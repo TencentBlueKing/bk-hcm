@@ -286,7 +286,7 @@ func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Azure.SecurityGroup.ListSecurityGroupExt(kt.Ctx, kt.Header(), req)
 	if err != nil {

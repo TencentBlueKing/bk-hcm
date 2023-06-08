@@ -261,7 +261,7 @@ func getVpcsFromDB(kt *kit.Kit, dataCli *dataclient.Client,
 
 	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cloud_id", cloudVpcIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id", "cloud_id"},
 	}
 	result, err := dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), listReq)

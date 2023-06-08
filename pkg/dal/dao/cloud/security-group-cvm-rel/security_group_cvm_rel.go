@@ -125,7 +125,7 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListSecurityGrou
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.SecurityGroupCvmRelColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

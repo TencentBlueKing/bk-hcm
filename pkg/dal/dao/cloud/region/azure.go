@@ -60,7 +60,7 @@ func (a AzureRegionDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.L
 		return nil, errf.New(errf.InvalidParameter, "list azure region options is nil")
 	}
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(region.AzureRegionColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

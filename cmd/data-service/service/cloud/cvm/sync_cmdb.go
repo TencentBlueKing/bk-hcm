@@ -39,7 +39,7 @@ func SyncCvmToCmdb(kt *kit.Kit, accountID string, bkBizID int64) error {
 	listAccountOpt := &types.ListOption{
 		Fields: []string{"vendor"},
 		Filter: tools.EqualExpression("id", accountID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	list, err := svc.dao.Account().List(kt, listAccountOpt)
 	if err != nil {

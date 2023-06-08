@@ -55,7 +55,7 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	// get gcp vpc self link by cloud id
 	vpcReq := &core.ListReq{
 		Filter: tools.EqualExpression("cloud_id", opt.CloudVpcID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"extension"},
 	}
 	vpcRes, err := s.client.DataService().Gcp.Vpc.ListVpcExt(kt.Ctx, kt.Header(), vpcReq)

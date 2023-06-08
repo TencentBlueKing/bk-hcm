@@ -59,7 +59,7 @@ func SyncZone(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 func GetRegionZoneMap(kt *kit.Kit, dataCli *dataservice.Client) (map[string][]string, error) {
 	listReq := &protocloud.ZoneListReq{
 		Filter: tools.EqualExpression("vendor", enumor.Gcp),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := dataCli.Global.Zone.ListZone(kt.Ctx, kt.Header(), listReq)
 	if err != nil {

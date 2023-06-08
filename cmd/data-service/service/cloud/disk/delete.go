@@ -48,7 +48,7 @@ func (dSvc *diskSvc) BatchDeleteDisk(cts *rest.Contexts) (interface{}, error) {
 	opt := &types.ListOption{
 		Fields: []string{"id"},
 		Filter: req.Filter,
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := dSvc.dao.Disk().List(cts.Kit, opt)
 	if err != nil {

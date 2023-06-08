@@ -188,7 +188,7 @@ func (n *NetworkInterface) NetworkInterfaceAssignAuditBuild(kt *kit.Kit, assigns
 func ListNetworkInterface(kt *kit.Kit, dao dao.Set, ids []string) (map[string]tableni.NetworkInterfaceTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	list, err := dao.NetworkInterface().List(kt, opt)
 	if err != nil {

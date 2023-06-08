@@ -164,7 +164,7 @@ func (svc *diskSvc) detachDiskByIDs(kt *kit.Kit, ids []string, basicInfoMap map[
 
 	listReq := &cloud.DiskCvmRelListReq{
 		Filter: tools.ContainersExpression("disk_id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	relRes, err := svc.client.DataService().Global.ListDiskCvmRel(kt.Ctx, kt.Header(), listReq)
 	if err != nil {

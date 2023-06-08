@@ -68,7 +68,7 @@ func (svc *firewallSvc) AssignGcpFirewallRuleToBiz(cts *rest.Contexts) (interfac
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(cts.Kit.Ctx,
 		cts.Kit.Header(), listReq)
@@ -117,7 +117,7 @@ func (svc *firewallSvc) assignAuth(kt *kit.Kit, rules []string) error {
 	listReq := &dataproto.GcpFirewallRuleListReq{
 		Field:  []string{"account_id"},
 		Filter: tools.ContainersExpression("id", rules),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := svc.client.DataService().Gcp.Firewall.ListFirewallRule(kt.Ctx, kt.Header(), listReq)
 	if err != nil {

@@ -38,7 +38,7 @@ func (a *BaseApplicationHandler) ListNIIDByCvm(cvmIDs []string) ([]string, error
 		a.Cts.Kit.Header(),
 		&core.ListReq{
 			Filter: reqFilter,
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if err != nil {

@@ -293,7 +293,7 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				&filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: params.Region},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.TCloud.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), req)
 	if err != nil {

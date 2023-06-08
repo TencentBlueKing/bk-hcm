@@ -443,7 +443,7 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Aws.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), req)
 	if err != nil {

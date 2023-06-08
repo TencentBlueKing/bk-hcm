@@ -275,7 +275,7 @@ func (svc *recycleRecordSvc) BatchUpdateRecycleRecord(cts *rest.Contexts) (inter
 
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id", "detail"},
 	}
 	res, err := svc.dao.RecycleRecord().List(cts.Kit, opt)

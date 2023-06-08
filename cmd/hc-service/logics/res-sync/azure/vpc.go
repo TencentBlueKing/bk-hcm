@@ -346,7 +346,7 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Azure.Vpc.ListVpcExt(kt.Ctx, kt.Header(), req)
 	if err != nil {

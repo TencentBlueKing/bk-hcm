@@ -194,7 +194,7 @@ func (dao *AwsSGRuleDao) List(kt *kit.Kit, opt *types.SGRuleListOption) (*types.
 
 	columnTypes := cloud.AwsSGRuleColumns.ColumnTypes()
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

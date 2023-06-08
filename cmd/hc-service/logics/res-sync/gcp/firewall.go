@@ -343,7 +343,7 @@ func (cli *client) listFirewallFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Gcp.Firewall.ListFirewallRule(kt.Ctx, kt.Header(), req)
 	if err != nil {

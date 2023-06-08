@@ -240,7 +240,7 @@ func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams, projectI
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	images, err := cli.dbCli.Gcp.ListImage(kt.Ctx, kt.Header(), req)
 	if err != nil {
@@ -347,7 +347,7 @@ func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *ListBySelfLinkOpti
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Global.ListImage(kt.Ctx, kt.Header(), req)
 	if err != nil {

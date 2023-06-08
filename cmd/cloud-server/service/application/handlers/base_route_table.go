@@ -43,7 +43,7 @@ func (a *BaseApplicationHandler) GetRouteTables(vendor enumor.Vendor,
 		a.Cts.Kit.Header(),
 		&core.ListReq{
 			Filter: reqFilter,
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if err != nil {

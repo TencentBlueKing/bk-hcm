@@ -76,7 +76,7 @@ func (a AccountBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListA
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(cloud.AccountBizRelColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

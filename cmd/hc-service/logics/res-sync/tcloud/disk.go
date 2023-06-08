@@ -288,7 +288,7 @@ func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.TCloud.ListDisk(kt.Ctx, kt.Header(), req)
 	if err != nil {

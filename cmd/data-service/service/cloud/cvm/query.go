@@ -166,7 +166,7 @@ func convTableToBaseCvm(one *tablecvm.Table) *corecvm.BaseCvm {
 func (svc *cvmSvc) getCvmByID(kt *kit.Kit, id string) (*tablecvm.Table, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", id),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := svc.dao.Cvm().List(kt, opt)
 	if err != nil {

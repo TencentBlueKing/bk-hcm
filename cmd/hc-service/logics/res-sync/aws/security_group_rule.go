@@ -375,7 +375,7 @@ func (cli *client) listSGRuleFromDB(kt *kit.Kit, opt *syncSGRuleOption) ([]corec
 
 	listReq := &protocloud.AwsSGRuleListReq{
 		Filter: tools.EqualExpression("security_group_id", opt.SGMap[opt.CloudSGID]),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	start := uint32(0)
 	rules := make([]corecloud.AwsSecurityGroupRule, 0)

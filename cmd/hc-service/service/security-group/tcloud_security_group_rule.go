@@ -168,7 +168,7 @@ func (g *securityGroup) syncSecurityGroupRule(kt *kit.Kit, client *tcloud.TCloud
 
 	listReq := &protocloud.TCloudSGRuleListReq{
 		Filter: tools.EqualExpression("security_group_id", opt.SecurityGroupID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	start := uint32(0)
 	dbRules := make([]corecloud.TCloudSecurityGroupRule, 0)
@@ -483,7 +483,7 @@ func (g *securityGroup) getTCloudSGRuleByID(cts *rest.Contexts, id string, sgID 
 
 	listReq := &protocloud.TCloudSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := g.dataCli.TCloud.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {

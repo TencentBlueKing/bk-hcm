@@ -322,7 +322,7 @@ func (f *firewall) createFirewallRule(cts *rest.Contexts,
 func (f *firewall) getVpcIDByCloudVpcID(kt *kit.Kit, cloudVpcID string) (string, error) {
 	req := &core.ListReq{
 		Filter: tools.EqualExpression("cloud_id", cloudVpcID),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id"},
 	}
 	result, err := f.dataCli.Global.Vpc.List(kt.Ctx, kt.Header(), req)

@@ -124,7 +124,7 @@ func (svc *cvmSvc) BatchStartAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	listReq := &dataproto.CvmListReq{
 		Field:  []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
@@ -182,7 +182,7 @@ func (svc *cvmSvc) BatchStopAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	listReq := &dataproto.CvmListReq{
 		Field:  []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
@@ -242,7 +242,7 @@ func (svc *cvmSvc) BatchRebootAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	listReq := &dataproto.CvmListReq{
 		Field:  []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
@@ -300,7 +300,7 @@ func (svc *cvmSvc) BatchDeleteAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	listReq := &dataproto.CvmListReq{
 		Field:  []string{"cloud_id"},
 		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dataCli.Global.Cvm.ListCvm(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {

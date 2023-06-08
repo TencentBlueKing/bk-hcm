@@ -54,7 +54,7 @@ func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.
 
 	listReq := &dataproto.DiskListReq{
 		Filter: tools.ContainersExpression("cloud_id", result.SuccessCloudIDs),
-		Page:   core.DefaultBasePage,
+		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id"},
 	}
 	listResult, err := cli.Global.ListDisk(kt.Ctx, kt.Header(), listReq)

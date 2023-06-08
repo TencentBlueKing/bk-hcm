@@ -100,7 +100,7 @@ func (h HuaWeiRegionDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.
 		return nil, errf.New(errf.InvalidParameter, "list huawei region options is nil")
 	}
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(region.HuaWeiRegionColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

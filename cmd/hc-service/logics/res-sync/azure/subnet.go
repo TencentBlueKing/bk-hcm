@@ -349,7 +349,7 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, cloudVp
 					Value: params.ResourceGroupName},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Azure.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), req)
 	if err != nil {
@@ -378,7 +378,7 @@ func (cli *client) listSubnetFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 					Value: params.ResourceGroupName},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Azure.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), req)
 	if err != nil {

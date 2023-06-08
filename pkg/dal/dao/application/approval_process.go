@@ -133,7 +133,7 @@ func (a *ApprovalProcessDao) List(kt *kit.Kit, opt *types.ListOption) (*types.Li
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(application.ApprovalProcessColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

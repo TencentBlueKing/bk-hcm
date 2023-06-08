@@ -179,7 +179,7 @@ func (n NetworkInterfaceDao) List(kt *kit.Kit, opt *types.ListOption) (*typesni.
 	columnTypes["extension.security_group_id"] = enumor.String
 	columnTypes["extension.resource_group_name"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 
@@ -228,7 +228,7 @@ func (n NetworkInterfaceDao) ListAssociate(kt *kit.Kit, opt *types.ListOption, i
 	columnTypes["extension.security_group_id"] = enumor.String
 	columnTypes["extension.resource_group_name"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

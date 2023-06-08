@@ -78,7 +78,7 @@ func (a *BaseApplicationHandler) GetSubnetsByCloudVpcID(
 		a.Cts.Kit.Header(),
 		&core.ListReq{
 			Filter: reqFilter,
-			Page:   core.DefaultBasePage,
+			Page:   core.NewDefaultBasePage(),
 		},
 	)
 	if err != nil {

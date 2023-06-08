@@ -91,7 +91,7 @@ func (relDao EipCvmRelDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipC
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablecloud.EipCvmRelColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 
@@ -236,7 +236,7 @@ func (relDao EipCvmRelDao) ListEipLeftJoinRel(kt *kit.Kit, opt *types.ListOption
 	columnTypes := tableeip.EipColumns.ColumnTypes()
 	columnTypes["extension.resource_group_name"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

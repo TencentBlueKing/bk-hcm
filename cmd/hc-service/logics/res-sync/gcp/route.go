@@ -248,7 +248,7 @@ func (cli *client) listRouteFromDB(kt *kit.Kit, params *SyncBaseParams, option *
 					&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: params.CloudIDs},
 				},
 			},
-			Page: core.DefaultBasePage,
+			Page: core.NewDefaultBasePage(),
 		},
 	}
 	result, err := cli.dbCli.Gcp.RouteTable.ListRoute(kt.Ctx, kt.Header(), req)

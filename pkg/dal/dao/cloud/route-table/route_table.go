@@ -184,7 +184,7 @@ func (r *routeTableDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*f
 	columnTypes := routetable.RouteTableColumns.ColumnTypes()
 	columnTypes["extension.resource_group_name"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

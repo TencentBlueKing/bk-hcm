@@ -168,7 +168,7 @@ func (r *gcpRouteDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*fil
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(routetable.GcpRouteColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

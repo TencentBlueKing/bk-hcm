@@ -152,7 +152,7 @@ func (v *gcpRegionDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*fi
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(region.GcpRegionColumns.ColumnTypes())),
-		core.DefaultPageOption); err != nil {
+		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

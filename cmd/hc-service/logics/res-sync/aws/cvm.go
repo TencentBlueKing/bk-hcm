@@ -566,7 +566,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 				},
 			},
 		},
-		Page: core.DefaultBasePage,
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := cli.dbCli.Aws.Cvm.ListCvmExt(kt.Ctx, kt.Header(), req)
 	if err != nil {
