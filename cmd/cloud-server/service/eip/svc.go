@@ -514,7 +514,11 @@ func (svc *eipSvc) checkEipsInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID in
 
 func extractEipID(cts *rest.Contexts) (string, error) {
 	req := new(cloudproto.EipReq)
-	reqData, _ := ioutil.ReadAll(cts.Request.Request.Body)
+	reqData, err := ioutil.ReadAll(cts.Request.Request.Body)
+	if err != nil {
+		logs.Errorf("read request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return "", err
+	}
 
 	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
 	if err := cts.DecodeInto(req); err != nil {
@@ -532,7 +536,11 @@ func extractEipID(cts *rest.Contexts) (string, error) {
 
 func extractAccountID(cts *rest.Contexts) (string, error) {
 	req := new(cloudproto.AccountReq)
-	reqData, _ := ioutil.ReadAll(cts.Request.Request.Body)
+	reqData, err := ioutil.ReadAll(cts.Request.Request.Body)
+	if err != nil {
+		logs.Errorf("read request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return "", err
+	}
 
 	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
 	if err := cts.DecodeInto(req); err != nil {

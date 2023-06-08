@@ -542,7 +542,11 @@ func (svc *diskSvc) checkDisksInBiz(kt *kit.Kit, rule filter.RuleFactory, bizID 
 
 func extractDiskID(cts *rest.Contexts) (string, error) {
 	req := new(cloudproto.DiskReq)
-	reqData, _ := ioutil.ReadAll(cts.Request.Request.Body)
+	reqData, err := ioutil.ReadAll(cts.Request.Request.Body)
+	if err != nil {
+		logs.Errorf("read request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return "", err
+	}
 
 	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
 	if err := cts.DecodeInto(req); err != nil {
