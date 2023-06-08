@@ -313,15 +313,15 @@ export const CLOUD_AREA_REGION_AWS = {
 };
 
 export const INSTANCE_CHARGE_MAP = {
-  PREPAID: '表示预付费，即包年包月',
-  POSTPAID_BY_HOUR: '表示后付费，即按量计费',
-  CDHPAID: '`专用宿主机`付费，即只对`专用宿主机`计费，不对`专用宿主机`上的实例计费。',
-  SPOTPAID: '表示竞价实例付费',
+  PREPAID: '包年包月',
+  POSTPAID_BY_HOUR: '按量计费',
+  CDHPAID: '专用宿主机付费',
+  SPOTPAID: '竞价实例',
 };
 
 export const NET_CHARGE_MAP = {
-  BANDWIDTH_PREPAID: '预付费按带宽结算',
-  TRAFFIC_POSTPAID_BY_HOUR: '流量按小时后付费',
-  BANDWIDTH_POSTPAID_BY_HOUR: '带宽按小时后付费',
-  BANDWIDTH_PACKAGE: '带宽包用户\n\r默认取值：非带宽包用户默认与子机付费类型保持一致',
+  BANDWIDTH_PREPAID: '按带宽包年包月计费',
+  TRAFFIC_POSTPAID_BY_HOUR: '按流量计费',
+  BANDWIDTH_POSTPAID_BY_HOUR: '按带宽使用时长计费',
+  BANDWIDTH_PACKAGE: '按带宽包计费',
 };
