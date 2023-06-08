@@ -28,7 +28,7 @@ import {
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import useFilter, { ResourceManageSenario }  from '@/views/resource/resource-manage/hooks/use-filter';
 import { HostCloudEnum, CloudType } from '@/typings';
 import {
   useResourceStore,
@@ -47,6 +47,9 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
+  whereAmI: {
+    type: String
+  }
 });
 
 const resourceStore = useResourceStore();

@@ -16,7 +16,8 @@ import { QueryFilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
 import { useRoute } from 'vue-router';
 
 type PropsType = {
-  filter?: FilterType
+  filter?: FilterType,
+  whereAmI?: string
 };
 
 export const imageInitialCondition = {
@@ -43,19 +44,6 @@ const useFilter = (props: PropsType) => {
   const filter = ref<any>(cloneDeep(props.filter));
   const isAccurate = ref(false);
   const accountStore = useAccountStore();
-  const route = useRoute();
-  const whereAmI = ref<ResourceManageSenario>(route.query['type'] as ResourceManageSenario);
-
-  watchEffect(() => {
-    whereAmI.value = route.query['type'] as ResourceManageSenario;
-  });
-
-  watch(
-    () => whereAmI.value,
-    (val) => {
-      if(val === ResourceManageSenario.image) filter.value.rules.push(imageInitialCondition);
-    }
-  );
 
   watch(
     () => accountStore.accountList,   // 设置云账号筛选所需数据
@@ -80,7 +68,7 @@ const useFilter = (props: PropsType) => {
     (val) => {
       const map = new Map<string, number>();
       const answer = [] as unknown as Array<QueryFilterType | RulesItem>;
-      if(whereAmI.value === ResourceManageSenario.image) answer.push(imageInitialCondition);
+      if(props.whereAmI === ResourceManageSenario.image) answer.push(imageInitialCondition);
       for (const { id, values } of val) {
         const rule: QueryFilterType = {
           op: QueryRuleOPEnum.OR,
@@ -88,7 +76,7 @@ const useFilter = (props: PropsType) => {
         };
         const field = id;
 
-        if(whereAmI.value === ResourceManageSenario.image && ['account_id', 'bk_biz_id'].includes(field) ) continue;
+        if(props.whereAmI === ResourceManageSenario.image && ['account_id', 'bk_biz_id'].includes(field) ) continue;
 
         const condition = {
           field,
@@ -108,12 +96,25 @@ const useFilter = (props: PropsType) => {
           answer.push(rule);
         } 
       }
-      filter.value.rules = answer;
+      if(props.whereAmI === ResourceManageSenario.image) filter.value.rules = [];
+      else filter.value.rules = props.filter.rules;
+      filter.value.rules = filter.value.rules.concat(answer);
     },
     {
       deep: true,
     },
   );
+
+  watch(
+    () => props.filter,
+    () => {
+      searchValue.value = [];
+    },
+    {
+      deep: true,
+      immediate: true
+    }
+  )
 
   return {
     searchData,

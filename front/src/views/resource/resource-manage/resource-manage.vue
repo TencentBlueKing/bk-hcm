@@ -262,6 +262,7 @@ getResourceAccountList();
           v-if="item.name === activeTab"
           :is="item.component"
           :filter="filter"
+          :where-am-i="activeTab"
           :is-resource-page="isResourcePage"
           :auth-verify-data="authVerifyData"
           @auth="(val: string) => {
