@@ -17,6 +17,9 @@ const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
+  whereAmI: {
+    type: String
+  }
 });
 
 const {

@@ -31,6 +31,9 @@ const props = defineProps({
   authVerifyData: {
     type: Object as PropType<any>,
   },
+  whereAmI: {
+    type: String
+  }
 });
 
 const resourceStore = useResourceStore();
