@@ -2,7 +2,11 @@
 
 - 该接口提供版本：v1.0.0+。
 - 该接口所需权限：业务-IaaS资源创建。
-- 该接口功能描述：在业务下创建子网。
+- 该接口功能描述：创建子网。
+
+### URL
+
+POST /api/v1/cloud/bizs/{bk_biz_id}/subnets/create
 
 ### URL
 

@@ -10,9 +10,9 @@ GET /api/v1/cloud/vendors/azure/default/security_groups/rules/{type}
 
 ### 输入参数
 
-| 参数名称 | 参数类型   | 描述    |
-|------|--------|-------|
-| type | string | 规则类型。（枚举值：egress、ingress） |
+| 参数名称  | 参数类型      | 必选                         | 描述    |
+|-------|-----------|----------------------------|-------|
+| type  | string ｜是 | 规则类型。（枚举值：egress、ingress）  |
 
 ### 调用示例
 
