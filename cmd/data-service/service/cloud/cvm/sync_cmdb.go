@@ -56,7 +56,7 @@ func SyncCvmToCmdb(kt *kit.Kit, accountID string, bkBizID int64) error {
 		Filter: tools.EqualExpression("account_id", accountID),
 		Page: &core.BasePage{
 			Start: 0,
-			Limit: core.DefaultMaxPageLimit,
+			Limit: constant.BatchOperationMaxLimit,
 		},
 	}
 	totalCount := 0
