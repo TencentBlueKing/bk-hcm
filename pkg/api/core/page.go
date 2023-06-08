@@ -65,15 +65,23 @@ func newBasePage() *BasePage {
 }
 
 // CountPage define count page.
-var CountPage = &BasePage{
-	Count: true,
+var CountPage = newCountPage()
+
+func newCountPage() *BasePage {
+	return &BasePage{
+		Count: true,
+	}
 }
 
 // DefaultPageOption is the default BasePage's option.
-var DefaultPageOption = &PageOption{
-	EnableUnlimitedLimit: false,
-	MaxLimit:             DefaultMaxPageLimit,
-	DisabledSort:         false,
+var DefaultPageOption = newDefaultPageOption()
+
+func newDefaultPageOption() *PageOption {
+	return &PageOption{
+		EnableUnlimitedLimit: false,
+		MaxLimit:             DefaultMaxPageLimit,
+		DisabledSort:         false,
+	}
 }
 
 // PageOption defines the options to validate the
