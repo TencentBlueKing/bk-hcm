@@ -6,11 +6,11 @@ import { useRoute } from "vue-router";
 import { useResourceStore } from "@/store";
 
 export enum Operations {
-  None = 'none',
-  Open = 'start',
-  Close = 'stop',
-  Reboot = 'reboot',
-  Recycle = 'destroy',
+  None = "none",
+  Open = "start",
+  Close = "stop",
+  Reboot = "reboot",
+  Recycle = "destroy",
 }
 
 export const OperationsMap = {
@@ -91,7 +91,8 @@ export default defineComponent({
           const status = host.status;
           if (!HOST_RUNNING_STATUS.includes(status)) canRunHosts.push(host);
           if (!HOST_REBOOT_STATUS.includes(status)) canRebootHosts.push(host);
-          if (!HOST_SHUTDOWN_STATUS.includes(status)) canShutDownHosts.push(host);
+          if (!HOST_SHUTDOWN_STATUS.includes(status))
+            canShutDownHosts.push(host);
         }
 
         switch (operationType.value) {
@@ -118,16 +119,30 @@ export default defineComponent({
     const computedContent = computed(() => {
       const allHostsNum = props.selections.length;
       const targetHostsNum = targetHost.value.length;
+      const targetOperationName = OperationsMap[operationType.value];
+      let oppositeOperationName = '';
+      switch(operationType.value) {
+        case Operations.Open: {
+          oppositeOperationName = OperationsMap[Operations.Close];
+          break;
+        }
+        case Operations.Close: 
+        case Operations.Reboot: 
+        case Operations.Recycle: {
+          oppositeOperationName = OperationsMap[Operations.Open];
+          break;
+        }
+      }
       if (targetHostsNum === 0) {
         return (
           <p>
             您已选择了 {allHostsNum} 台主机进行
-            {`${OperationsMap[operationType.value]}`}操作, 其中
+            {targetOperationName}操作, 其中
             <span class={"host_operations_blue_txt"}> {allHostsNum} </span>
             台是已{computedPreviousOperationType.value}的，不支持对其操作。
             <br />
             <span class={"host_operations_red_txt"}>
-              由于所选主机均处于{computedPreviousOperationType.value}
+              由于所选主机均处于{targetOperationName}
               状态,无法进行操作。
             </span>
           </p>
@@ -136,14 +151,14 @@ export default defineComponent({
         return (
           <p>
             您已选择了 {allHostsNum} 台主机进行
-            {`${OperationsMap[operationType.value]}`}操作,本次操作将对
+            {targetOperationName}操作,本次操作将对
             <span class={"host_operations_blue_txt"}> {allHostsNum} </span>
-            台处于未{computedPreviousOperationType.value}
-            状态的进行{`${OperationsMap[operationType.value]}`}操作。
+            台处于{oppositeOperationName}
+            状态的进行{targetOperationName}操作。
             <br />
             <span class={"host_operations_red_txt"}>
-              请确认您所选择的目标是正确的，该操作属于将对主机进行
-              {`${OperationsMap[operationType.value]}`}操作。
+              请确认您所选择的目标是正确的，该操作将对主机进行
+              {targetOperationName}操作。
             </span>
           </p>
         );
@@ -151,20 +166,20 @@ export default defineComponent({
         return (
           <p>
             您已选择了 {allHostsNum} 台主机进行
-            {`${OperationsMap[operationType.value]}`}操作，其中
-            <span class={"host_operations_blue_txt"}> {allHostsNum - targetHostsNum} </span>
-            台是已{computedPreviousOperationType.value}
-            的，不支持对其操作。本次操作，将对
+            {targetOperationName}操作，其中
             <span class={"host_operations_blue_txt"}>
               {" "}
-              {targetHostsNum}{" "}
+              {allHostsNum - targetHostsNum}{" "}
             </span>
-            台处于未{computedPreviousOperationType.value}状态的进行
-            {`${OperationsMap[operationType.value]}`}操作。
+            台是已{computedPreviousOperationType.value}
+            的，不支持对其操作。本次操作，将对
+            <span class={"host_operations_blue_txt"}> {targetHostsNum} </span>
+            台处于{oppositeOperationName}状态的进行
+            {targetOperationName}操作。
             <br />
             <span class={"host_operations_red_txt"}>
-              请确认您所选择的目标是正确的,该操作属于将对主机进行
-              {`${OperationsMap[operationType.value]}`}操作
+              请确认您所选择的目标是正确的,该操作将对主机进行
+              {targetOperationName}操作
             </span>
           </p>
         );
@@ -176,28 +191,27 @@ export default defineComponent({
         isLoading.value = true;
         Message({
           message: `${computedTitle.value}中, 请不要操作`,
-          theme: 'warning',
-          
+          theme: "warning",
         });
         if (operationType.value === Operations.Recycle) {
-          const hostIds = targetHost.value.map(v => ({id: v.id})) as Array<Record<string, string>>;
+          const hostIds = targetHost.value.map((v) => ({ id: v.id })) as Array<
+            Record<string, string>
+          >;
           await resourceStore.recycledCvmsData({ infos: hostIds });
         } else {
-          const hostIds = targetHost.value.map(v => v.id);
+          const hostIds = targetHost.value.map((v) => v.id);
           await resourceStore.cvmOperate(operationType.value, { ids: hostIds });
         }
         Message({
-          message: '操作成功',
-          theme: 'success',
+          message: "操作成功",
+          theme: "success",
         });
-      }
-      catch(err) {
+      } catch (err) {
         Message({
-          message: '操作失败',
-          theme: 'error',
+          message: "操作失败",
+          theme: "error",
         });
-      }
-      finally {
+      } finally {
         isLoading.value = false;
         operationType.value = Operations.None;
       }
@@ -210,7 +224,7 @@ export default defineComponent({
       <>
         {!isUnderBusiness.value ? (
           <>
-            <div>
+            <div class={"host_operations_container"}>
               {Object.entries(OperationsMap).map(([opType, opName]) => (
                 <Button
                   theme={opType === Operations.Open ? "primary" : undefined}
