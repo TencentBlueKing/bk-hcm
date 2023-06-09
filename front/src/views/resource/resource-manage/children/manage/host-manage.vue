@@ -34,6 +34,7 @@ import {
   useResourceStore,
   useAccountStore,
 } from '@/store';
+import HostOperations from '../../common/table/HostOperations'
 
 // use hook
 const {
@@ -78,8 +79,6 @@ const {
   selections,
   handleSelectionChange,
 } = useSelection();
-
-
 
 
 // const {
@@ -288,6 +287,9 @@ getCloudAreas();
     <section
       class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
+
+      <HostOperations :selections="selections"></HostOperations>
+
       <!-- <bk-button
         class="w100"
         theme="primary"
