@@ -19,6 +19,8 @@
 
 package region
 
+import "hcm/pkg/tools/converter"
+
 // AzureRegion define azure location.
 type AzureRegion struct {
 	ID                  *string `json:"id"`
@@ -26,4 +28,9 @@ type AzureRegion struct {
 	Type                string  `json:"type"`
 	DisplayName         *string `json:"display_name"`
 	RegionalDisplayName *string `json:"regional_display_name"`
+}
+
+// GetCloudID ...
+func (region AzureRegion) GetCloudID() string {
+	return converter.PtrToVal(region.ID)
 }

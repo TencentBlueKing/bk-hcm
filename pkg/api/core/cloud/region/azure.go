@@ -22,7 +22,7 @@ package region
 // AzureRegion define azure region.
 type AzureRegion struct {
 	ID                string `json:"id"`
-	Cloud_ID          string `json:"cloud_id"`
+	CloudID           string `json:"cloud_id"`
 	Name              string `json:"name"`
 	Type              string `json:"type"`
 	DisplayName       string `json:"display_name"`
@@ -38,4 +38,14 @@ type AzureRegion struct {
 	Reviser           string `json:"reviser"`
 	CreatedAt         string `json:"created_at"`
 	UpdatedAt         string `json:"updated_at"`
+}
+
+// GetID ...
+func (region AzureRegion) GetID() string {
+	return region.ID
+}
+
+// GetCloudID ...
+func (region AzureRegion) GetCloudID() string {
+	return region.CloudID
 }

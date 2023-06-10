@@ -33,3 +33,8 @@ type TCloudRegion struct {
 	RegionName  string `json:"region_name"`
 	RegionState string `json:"region_state,omitempty"`
 }
+
+// GetCloudID ...
+func (region TCloudRegion) GetCloudID() string {
+	return region.RegionID
+}

@@ -21,6 +21,16 @@ package sync
 
 import "hcm/pkg/criteria/validator"
 
+// TCloudRegionSyncReq tcloud sync request
+type TCloudRegionSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+}
+
+// Validate tcloud sync request.
+func (req *TCloudRegionSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // TCloudSyncReq tcloud sync request
 type TCloudSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
@@ -32,6 +42,16 @@ func (req *TCloudSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// AwsRegionSyncReq aws sync request
+type AwsRegionSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+}
+
+// Validate aws sync request.
+func (req *AwsRegionSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // AwsSyncReq aws sync request
 type AwsSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
@@ -40,6 +60,16 @@ type AwsSyncReq struct {
 
 // Validate aws sync request.
 func (req *AwsSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// HuaWeiRegionSyncReq huawei sync request
+type HuaWeiRegionSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+}
+
+// Validate huawei sync request.
+func (req *HuaWeiRegionSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
@@ -128,6 +158,16 @@ type GcpFireWallSyncReq struct {
 
 // Validate gcp firewall sync request.
 func (req *GcpFireWallSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AzureResourceGroupSyncReq azure sync request
+type AzureResourceGroupSyncReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+}
+
+// Validate azure sync request.
+func (req *AzureResourceGroupSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

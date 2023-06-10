@@ -40,6 +40,11 @@ func (g *Gcp) ListRegion(kt *kit.Kit, opt *core.GcpListOption) (*typesRegion.Gcp
 	}
 
 	listCall := client.Regions.List(g.clientSet.credential.CloudProjectID).Context(kt.Ctx)
+
+	if len(opt.CloudIDs) > 0 {
+		listCall.Filter(generateResourceFilter("description", opt.CloudIDs))
+	}
+
 	if opt.Page != nil {
 		listCall.MaxResults(opt.Page.PageSize).PageToken(opt.Page.PageToken)
 	}

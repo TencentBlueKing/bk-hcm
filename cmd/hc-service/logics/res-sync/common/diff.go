@@ -27,14 +27,19 @@ import (
 	firewallrule "hcm/pkg/adaptor/types/firewall-rule"
 	typesimage "hcm/pkg/adaptor/types/image"
 	typesni "hcm/pkg/adaptor/types/network-interface"
+	typesregion "hcm/pkg/adaptor/types/region"
+	typesresourcegroup "hcm/pkg/adaptor/types/resource-group"
 	typesroutetable "hcm/pkg/adaptor/types/route-table"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	typessecuritygrouprule "hcm/pkg/adaptor/types/security-group-rule"
+	typeszone "hcm/pkg/adaptor/types/zone"
 	cloudcore "hcm/pkg/api/core/cloud"
-	"hcm/pkg/api/core/cloud/cvm"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	corecloudni "hcm/pkg/api/core/cloud/network-interface"
+	coreregion "hcm/pkg/api/core/cloud/region"
+	coreresourcegroup "hcm/pkg/api/core/cloud/resource-group"
 	cloudcoreroutetable "hcm/pkg/api/core/cloud/route-table"
+	corezone "hcm/pkg/api/core/cloud/zone"
 	"hcm/pkg/api/data-service/cloud/disk"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
 	dateimage "hcm/pkg/api/data-service/cloud/image"
@@ -43,7 +48,20 @@ import (
 type CloudResType interface {
 	GetCloudID() string
 
-	typesimage.TCloudImage |
+	typesregion.HuaWeiRegionModel |
+		typesregion.AzureRegion |
+		typesregion.TCloudRegion |
+		typesregion.AwsRegion |
+		typesregion.GcpRegion |
+
+		typesresourcegroup.AzureResourceGroup |
+
+		typeszone.TCloudZone |
+		typeszone.HuaWeiZone |
+		typeszone.GcpZone |
+		typeszone.AwsZone |
+
+		typesimage.TCloudImage |
 		typesimage.HuaWeiImage |
 		typesimage.AwsImage |
 		typesimage.AzureImage |
@@ -110,7 +128,17 @@ type DBResType interface {
 	GetID() string
 	GetCloudID() string
 
-	dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult] |
+	coreregion.HuaWeiRegion |
+		coreregion.AzureRegion |
+		cloudcore.TCloudRegion |
+		cloudcore.AwsRegion |
+		cloudcore.GcpRegion |
+
+		coreresourcegroup.AzureRG |
+
+		corezone.BaseZone |
+
+		dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult] |
 		dateimage.ImageExtResult[dateimage.HuaWeiImageExtensionResult] |
 		dateimage.ImageExtResult[dateimage.AwsImageExtensionResult] |
 		dateimage.ImageExtResult[dateimage.AzureImageExtensionResult] |
@@ -145,11 +173,11 @@ type DBResType interface {
 
 		cloudcore.GcpFirewallRule |
 
-		corecvm.Cvm[cvm.TCloudCvmExtension] |
-		corecvm.Cvm[cvm.HuaWeiCvmExtension] |
-		corecvm.Cvm[cvm.AwsCvmExtension] |
-		corecvm.Cvm[cvm.GcpCvmExtension] |
-		corecvm.Cvm[cvm.AzureCvmExtension] |
+		corecvm.Cvm[corecvm.TCloudCvmExtension] |
+		corecvm.Cvm[corecvm.HuaWeiCvmExtension] |
+		corecvm.Cvm[corecvm.AwsCvmExtension] |
+		corecvm.Cvm[corecvm.GcpCvmExtension] |
+		corecvm.Cvm[corecvm.AzureCvmExtension] |
 
 		*dataeip.EipExtResult[dataeip.TCloudEipExtensionResult] |
 		*dataeip.EipExtResult[dataeip.HuaWeiEipExtensionResult] |

@@ -35,3 +35,8 @@ type GcpRegion struct {
 	RegionState string `json:"region_state,omitempty"`
 	SelfLink    string `json:"self_link,omitempty"`
 }
+
+// GetCloudID ...
+func (region GcpRegion) GetCloudID() string {
+	return region.RegionID
+}

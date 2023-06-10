@@ -19,6 +19,22 @@
 
 package zone
 
+import (
+	"fmt"
+
+	"google.golang.org/api/compute/v1"
+)
+
 // GcpZoneListOption define gcp zone list option.
 type GcpZoneListOption struct {
+}
+
+// GcpZone for compute Zone
+type GcpZone struct {
+	*compute.Zone
+}
+
+// GetCloudID ...
+func (zone GcpZone) GetCloudID() string {
+	return fmt.Sprint(zone.Id)
 }

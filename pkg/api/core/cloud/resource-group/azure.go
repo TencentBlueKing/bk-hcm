@@ -17,25 +17,27 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package region
+package resourcegroup
 
-import (
-	typesregion "hcm/pkg/adaptor/types/region"
-	apicloudregion "hcm/pkg/api/core/cloud/region"
-)
-
-// HuaWeiDSRegionSync ...
-type HuaWeiDSRegionSync struct {
-	Region apicloudregion.HuaWeiRegion
+// AzureRG define azure resourceGroup.
+type AzureRG struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Location  string `json:"location"`
+	AccountID string `json:"account_id"`
+	Creator   string `json:"creator"`
+	Reviser   string `json:"reviser"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
-// AzureRegionSync ...
-type AzureRegionSync struct {
-	IsUpdate bool
-	Region   *typesregion.AzureRegion
+// GetID ...
+func (rg AzureRG) GetID() string {
+	return rg.ID
 }
 
-// AzureDSRegionSync ...
-type AzureDSRegionSync struct {
-	Region apicloudregion.AzureRegion
+// GetCloudID ...
+func (rg AzureRG) GetCloudID() string {
+	return rg.Name
 }

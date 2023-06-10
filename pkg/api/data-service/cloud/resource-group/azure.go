@@ -17,15 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package region 包提供各类云资源的请求与返回序列化器
-package region
+package resourcegroup
 
 import (
 	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud/region"
+	resourcegroup "hcm/pkg/api/core/cloud/resource-group"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
@@ -113,8 +112,8 @@ func (l *AzureRGListReq) Validate() error {
 
 // AzureRGListResult define azure resource group list result.
 type AzureRGListResult struct {
-	Count   uint64           `json:"count,omitempty"`
-	Details []region.AzureRG `json:"details,omitempty"`
+	Count   uint64                  `json:"count,omitempty"`
+	Details []resourcegroup.AzureRG `json:"details,omitempty"`
 }
 
 // AzureRGListResp define azure resource group list resp.

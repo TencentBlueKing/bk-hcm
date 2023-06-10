@@ -17,36 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package zone
+package huawei
 
 import (
-	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
-	dataservice "hcm/pkg/client/data-service"
+	"hcm/cmd/hc-service/logics/res-sync/huawei"
+	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
-// InitZoneService initial the zone service
-func InitZoneService(cap *capability.Capability) {
-	z := &zoneHC{
-		ad:      cap.CloudAdaptor,
-		dataCli: cap.ClientSet.DataService(),
+// SyncZone ....
+func (svc *service) SyncZone(cts *rest.Contexts) (interface{}, error) {
+	req := new(sync.HuaWeiSyncReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	h := rest.NewHandler()
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
-	h.Add("SyncHuaWeiZone", "POST", "/vendors/huawei/zones/sync", z.SyncHuaWeiZone)
+	syncCli, err := svc.syncCli.HuaWei(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
 
-	h.Add("SyncAwsZone", "POST", "/vendors/aws/zones/sync", z.SyncAwsZone)
+	if _, err := syncCli.Zone(cts.Kit, &huawei.SyncZoneOption{AccountID: req.AccountID,
+		Region: req.Region}); err != nil {
+		logs.Errorf("sync huawei zone failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
 
-	h.Add("SyncGcpZone", "POST", "/vendors/gcp/zones/sync", z.SyncGcpZone)
-
-	h.Add("SyncTCloudZone", "POST", "/vendors/tcloud/zones/sync", z.SyncTCloudZone)
-
-	h.Load(cap.WebService)
-}
-
-type zoneHC struct {
-	ad      *cloudadaptor.CloudAdaptorClient
-	dataCli *dataservice.Client
+	return nil, nil
 }

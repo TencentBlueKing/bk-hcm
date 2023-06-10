@@ -19,9 +19,16 @@
 
 package resourcegroup
 
+import "hcm/pkg/tools/converter"
+
 // AzureResourceGroup define azure resource group.
 type AzureResourceGroup struct {
 	Name     *string `json:"name"`
 	Type     *string `json:"type"`
 	Location *string `json:"location"`
+}
+
+// GetCloudID ...
+func (rg AzureResourceGroup) GetCloudID() string {
+	return converter.PtrToVal(rg.Name)
 }

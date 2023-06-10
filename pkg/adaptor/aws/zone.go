@@ -30,7 +30,7 @@ import (
 
 // ListZone list zone
 // reference: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeAvailabilityZones.html
-func (a *Aws) ListZone(kit *kit.Kit, opt *typeszone.AwsZoneListOption) ([]*ec2.AvailabilityZone, error) {
+func (a *Aws) ListZone(kit *kit.Kit, opt *typeszone.AwsZoneListOption) ([]typeszone.AwsZone, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "aws zone list option is required")
@@ -49,8 +49,13 @@ func (a *Aws) ListZone(kit *kit.Kit, opt *typeszone.AwsZoneListOption) ([]*ec2.A
 	}
 
 	if resp == nil {
-		return make([]*ec2.AvailabilityZone, 0), nil
+		return make([]typeszone.AwsZone, 0), nil
 	}
 
-	return resp.AvailabilityZones, nil
+	results := make([]typeszone.AwsZone, 0)
+	for _, one := range resp.AvailabilityZones {
+		results = append(results, typeszone.AwsZone{one})
+	}
+
+	return results, nil
 }

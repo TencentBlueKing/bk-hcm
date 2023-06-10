@@ -19,7 +19,12 @@
 
 package zone
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
+)
 
 // AwsZoneListOption define aws zone list option.
 type AwsZoneListOption struct {
@@ -34,4 +39,14 @@ func (opt AwsZoneListOption) Validate() error {
 	}
 
 	return nil
+}
+
+// AwsZone for ec2 AvailabilityZone
+type AwsZone struct {
+	*ec2.AvailabilityZone
+}
+
+// GetCloudID ...
+func (zone AwsZone) GetCloudID() string {
+	return converter.PtrToVal(zone.ZoneId)
 }

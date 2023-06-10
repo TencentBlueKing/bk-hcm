@@ -20,11 +20,11 @@
 package region
 
 import (
-	tableregion "hcm/pkg/dal/table/cloud/region"
+	tablerg "hcm/pkg/dal/table/cloud/resource-group"
 )
 
 // ListAzureRGDetails list azure resource group details.
 type ListAzureRGDetails struct {
-	Count   uint64                      `json:"count,omitempty"`
-	Details []*tableregion.AzureRGTable `json:"details,omitempty"`
+	Count   uint64                  `json:"count,omitempty"`
+	Details []*tablerg.AzureRGTable `json:"details,omitempty"`
 }

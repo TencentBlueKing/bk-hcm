@@ -17,30 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package resourcegroup
+package azure
 
 import (
-	"hcm/cmd/hc-service/service/capability"
-	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
-	dataservice "hcm/pkg/client/data-service"
+	"hcm/cmd/hc-service/logics/res-sync/azure"
+	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
-// InitResourceGroupService initial the resource group service
-func InitResourceGroupService(cap *capability.Capability) {
-	r := &resourcegroup{
-		ad:      cap.CloudAdaptor,
-		dataCli: cap.ClientSet.DataService(),
+// SyncRegion ....
+func (svc *service) SyncRegion(cts *rest.Contexts) (interface{}, error) {
+	req := new(sync.AzureResourceGroupSyncReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	h := rest.NewHandler()
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
-	h.Add("SyncAzureRG", "POST", "/vendors/azure/resource_groups/sync", r.SyncAzureRG)
+	syncCli, err := svc.syncCli.Azure(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
 
-	h.Load(cap.WebService)
-}
+	if _, err := syncCli.Region(cts.Kit, &azure.SyncRegionOption{AccountID: req.AccountID}); err != nil {
+		logs.Errorf("sync azure region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
 
-type resourcegroup struct {
-	ad      *cloudadaptor.CloudAdaptorClient
-	dataCli *dataservice.Client
+	return nil, nil
 }

@@ -25,14 +25,14 @@ import (
 
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
-	coreregion "hcm/pkg/api/core/cloud/region"
-	protoregion "hcm/pkg/api/data-service/cloud/region"
+	corerg "hcm/pkg/api/core/cloud/resource-group"
+	protorg "hcm/pkg/api/data-service/cloud/resource-group"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	tableregion "hcm/pkg/dal/table/cloud/region"
+	tablerg "hcm/pkg/dal/table/cloud/resource-group"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
@@ -65,7 +65,7 @@ type azureRGSvc struct {
 // UpdateAzureResourceGroup update azure ResourceGroupName.
 func (svc *azureRGSvc) UpdateAzureResourceGroup(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(protoregion.AzureRGBatchUpdateReq)
+	req := new(protorg.AzureRGBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -76,7 +76,7 @@ func (svc *azureRGSvc) UpdateAzureResourceGroup(cts *rest.Contexts) (interface{}
 
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, one := range req.ResourceGroups {
-			rule := &tableregion.AzureRGTable{
+			rule := &tablerg.AzureRGTable{
 				Location: one.Location,
 				Reviser:  cts.Kit.User,
 			}
@@ -99,7 +99,7 @@ func (svc *azureRGSvc) UpdateAzureResourceGroup(cts *rest.Contexts) (interface{}
 
 // CreateAzureResourceGroup create ResourceGroupName.
 func (svc *azureRGSvc) CreateAzureResourceGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoregion.AzureRGBatchCreateReq)
+	req := new(protorg.AzureRGBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -108,9 +108,9 @@ func (svc *azureRGSvc) CreateAzureResourceGroup(cts *rest.Contexts) (interface{}
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	resourceGroups := make([]*tableregion.AzureRGTable, 0, len(req.ResourceGroups))
+	resourceGroups := make([]*tablerg.AzureRGTable, 0, len(req.ResourceGroups))
 	for _, resourceGroup := range req.ResourceGroups {
-		resourceGroups = append(resourceGroups, &tableregion.AzureRGTable{
+		resourceGroups = append(resourceGroups, &tablerg.AzureRGTable{
 			Name:      resourceGroup.Name,
 			Type:      resourceGroup.Type,
 			Location:  resourceGroup.Location,
@@ -143,7 +143,7 @@ func (svc *azureRGSvc) CreateAzureResourceGroup(cts *rest.Contexts) (interface{}
 // DeleteAzureResourceGroup delete azure resource group.
 func (svc *azureRGSvc) DeleteAzureResourceGroup(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(protoregion.AzureRGBatchDeleteReq)
+	req := new(protorg.AzureRGBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (svc *azureRGSvc) DeleteAzureResourceGroup(cts *rest.Contexts) (interface{}
 
 // ListAzureResourceGroup list azure resource group with filter
 func (svc *azureRGSvc) ListAzureResourceGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoregion.AzureRGListReq)
+	req := new(protorg.AzureRGListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -182,12 +182,12 @@ func (svc *azureRGSvc) ListAzureResourceGroup(cts *rest.Contexts) (interface{}, 
 	}
 
 	if req.Page.Count {
-		return &protoregion.AzureRGListResult{Count: result.Count}, nil
+		return &protorg.AzureRGListResult{Count: result.Count}, nil
 	}
 
-	details := make([]coreregion.AzureRG, 0, len(result.Details))
+	details := make([]corerg.AzureRG, 0, len(result.Details))
 	for _, one := range result.Details {
-		details = append(details, coreregion.AzureRG{
+		details = append(details, corerg.AzureRG{
 			ID:        one.ID,
 			Name:      one.Name,
 			Type:      one.Type,
@@ -200,5 +200,5 @@ func (svc *azureRGSvc) ListAzureResourceGroup(cts *rest.Contexts) (interface{}, 
 		})
 	}
 
-	return &protoregion.AzureRGListResult{Details: details}, nil
+	return &protorg.AzureRGListResult{Details: details}, nil
 }
