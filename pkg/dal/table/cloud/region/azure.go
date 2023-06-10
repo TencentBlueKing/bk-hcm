@@ -56,7 +56,7 @@ var AzureRegionTableColumnDescriptor = utils.ColumnDescriptors{
 // AzureRegionTable azure地域表
 type AzureRegionTable struct {
 	ID                string     `db:"id"`
-	Cloud_ID          string     `db:"cloud_id"`
+	CloudID           string     `db:"cloud_id"`
 	Name              string     `db:"name"`
 	Type              string     `db:"type"`
 	DisplayName       string     `db:"display_name"`
@@ -104,6 +104,20 @@ func (t AzureRegionTable) InsertValidate() error {
 
 	if len(t.Reviser) == 0 {
 		return errors.New("reviser is required")
+	}
+
+	return nil
+}
+
+// UpdateValidate azure azure region table when update.
+func (t AzureRegionTable) UpdateValidate() error {
+	// length validate.
+	if err := validator.Validate.Struct(t); err != nil {
+		return err
+	}
+
+	if len(t.Creator) != 0 {
+		return errors.New("creator can not update")
 	}
 
 	return nil

@@ -31,6 +31,7 @@ import (
 	typesregion "hcm/pkg/dal/dao/types/region"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/cloud/region"
+	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -41,7 +42,7 @@ import (
 // AzureRegion only used for Azure region.
 type AzureRegion interface {
 	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []*region.AzureRegionTable) ([]string, error)
-	Update(kt *kit.Kit, expr *filter.Expression, model *region.AzureRegionTable) error
+	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, model *region.AzureRegionTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesregion.ListAzureRegionDetails, error)
 	DeleteWithTx(kt *kit.Kit, expr *filter.Expression) error
 }
@@ -52,6 +53,45 @@ var _ AzureRegion = new(AzureRegionDao)
 type AzureRegionDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
+}
+
+// UpdateWithTx rule.
+func (h AzureRegionDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression,
+	region *region.AzureRegionTable) error {
+
+	if expr == nil {
+		return errf.New(errf.InvalidParameter, "filter expr is nil")
+	}
+
+	if err := region.UpdateValidate(); err != nil {
+		return err
+	}
+
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return err
+	}
+
+	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
+	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(region, opts)
+	if err != nil {
+		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
+	}
+
+	sql := fmt.Sprintf(`UPDATE %s %s %s`, region.TableName(), setExpr, whereExpr)
+
+	effected, err := h.Orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+	if err != nil {
+		logs.ErrorJson("update azure region failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
+		return err
+	}
+
+	if effected == 0 {
+		logs.ErrorJson("update azure region, but record not found, filter: %v, rid: %v", expr, kt.Rid)
+		return errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
+	}
+
+	return nil
 }
 
 // List Azure resource group.

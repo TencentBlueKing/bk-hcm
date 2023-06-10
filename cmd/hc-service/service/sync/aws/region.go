@@ -17,17 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package region
+package aws
 
-// AzureRG define azure resourceGroup.
-type AzureRG struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	Location  string `json:"location"`
-	AccountID string `json:"account_id"`
-	Creator   string `json:"creator"`
-	Reviser   string `json:"reviser"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+import (
+	"hcm/cmd/hc-service/logics/res-sync/aws"
+	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
+	"hcm/pkg/rest"
+)
+
+// SyncRegion ....
+func (svc *service) SyncRegion(cts *rest.Contexts) (interface{}, error) {
+	req := new(sync.AwsRegionSyncReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	syncCli, err := svc.syncCli.Aws(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := syncCli.Region(cts.Kit, &aws.SyncRegionOption{AccountID: req.AccountID}); err != nil {
+		logs.Errorf("sync aws region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }

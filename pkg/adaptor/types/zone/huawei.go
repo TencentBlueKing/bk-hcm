@@ -21,6 +21,9 @@ package zone
 
 import (
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2/model"
 )
 
 // HuaWeiZoneListOption define huawei zone list option.
@@ -36,4 +39,14 @@ func (opt HuaWeiZoneListOption) Validate() error {
 	}
 
 	return nil
+}
+
+// HuaWeiZone for model AvailableZones
+type HuaWeiZone struct {
+	model.AvailableZones
+}
+
+// GetCloudID ...
+func (zone HuaWeiZone) GetCloudID() string {
+	return converter.PtrToVal(zone.Id)
 }

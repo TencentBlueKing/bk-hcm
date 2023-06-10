@@ -17,40 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package huawei
 
 import (
-	typeszone "hcm/pkg/adaptor/types/zone"
+	"hcm/cmd/hc-service/logics/res-sync/huawei"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-
-	"google.golang.org/api/compute/v1"
+	"hcm/pkg/rest"
 )
 
-// ListZone list zone
-// reference: https://cloud.google.com/compute/docs/reference/rest/v1/zones/list
-func (g *Gcp) ListZone(kit *kit.Kit, opt *typeszone.GcpZoneListOption) ([]typeszone.GcpZone, error) {
-
-	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "gcp zone list option is required")
+// SyncRegion ....
+func (svc *service) SyncRegion(cts *rest.Contexts) (interface{}, error) {
+	req := new(sync.HuaWeiRegionSyncReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	client, err := g.clientSet.computeClient(kit)
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	syncCli, err := svc.syncCli.HuaWei(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	zones := make([]typeszone.GcpZone, 0)
-	req := client.Zones.List(g.CloudProjectID())
-	if err := req.Pages(kit.Ctx, func(page *compute.ZoneList) error {
-		for _, item := range page.Items {
-			zones = append(zones, typeszone.GcpZone{item})
-		}
-		return nil
-	}); err != nil {
-		logs.Errorf("failed to list zone, err: %v, rid: %s", err, kit.Rid)
+	if _, err := syncCli.Region(cts.Kit, &huawei.SyncRegionOption{AccountID: req.AccountID}); err != nil {
+		logs.Errorf("sync huawei region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
-	return zones, nil
+	return nil, nil
 }

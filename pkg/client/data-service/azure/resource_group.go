@@ -24,7 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
-	protoregion "hcm/pkg/api/data-service/cloud/region"
+	protorg "hcm/pkg/api/data-service/cloud/resource-group"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -43,9 +43,9 @@ func NewResourceGroupClient(client rest.ClientInterface) *ResourceGroupClient {
 
 // ListResourceGroup list resourceGroup.
 func (cli *ResourceGroupClient) ListResourceGroup(ctx context.Context, h http.Header,
-	request *protoregion.AzureRGListReq) (*protoregion.AzureRGListResult, error) {
+	request *protorg.AzureRGListReq) (*protorg.AzureRGListResult, error) {
 
-	resp := new(protoregion.AzureRGListResp)
+	resp := new(protorg.AzureRGListResp)
 
 	err := cli.client.Post().
 		WithContext(ctx).
@@ -66,7 +66,7 @@ func (cli *ResourceGroupClient) ListResourceGroup(ctx context.Context, h http.He
 }
 
 // BatchDeleteResourceGroup delete ResourceGroupName.
-func (cli *ResourceGroupClient) BatchDeleteResourceGroup(ctx context.Context, h http.Header, request *protoregion.
+func (cli *ResourceGroupClient) BatchDeleteResourceGroup(ctx context.Context, h http.Header, request *protorg.
 	AzureRGBatchDeleteReq) error {
 
 	resp := new(core.DeleteResp)
@@ -90,7 +90,7 @@ func (cli *ResourceGroupClient) BatchDeleteResourceGroup(ctx context.Context, h 
 }
 
 // BatchCreateResourceGroup batch create ResourceGroupName.
-func (cli *ResourceGroupClient) BatchCreateResourceGroup(ctx context.Context, h http.Header, request *protoregion.
+func (cli *ResourceGroupClient) BatchCreateResourceGroup(ctx context.Context, h http.Header, request *protorg.
 	AzureRGBatchCreateReq) (*core.BatchCreateResult, error) {
 
 	resp := new(core.BatchCreateResp)
@@ -114,7 +114,7 @@ func (cli *ResourceGroupClient) BatchCreateResourceGroup(ctx context.Context, h 
 }
 
 // BatchUpdateResourceGroup batch create ResourceGroupName.
-func (cli *ResourceGroupClient) BatchUpdateRG(ctx context.Context, h http.Header, request *protoregion.
+func (cli *ResourceGroupClient) BatchUpdateRG(ctx context.Context, h http.Header, request *protorg.
 	AzureRGBatchUpdateReq) error {
 
 	resp := new(core.UpdateResp)

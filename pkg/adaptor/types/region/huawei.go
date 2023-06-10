@@ -27,3 +27,8 @@ type HuaWeiRegionModel struct {
 	RegionID  string `json:"region_id"`
 	Type      string `json:"type"`
 }
+
+// GetCloudID ...
+func (region HuaWeiRegionModel) GetCloudID() string {
+	return region.RegionID + "|" + region.Service
+}

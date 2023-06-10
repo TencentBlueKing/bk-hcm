@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	typesregion "hcm/pkg/dal/dao/types/region"
 	"hcm/pkg/dal/table"
-	"hcm/pkg/dal/table/cloud/region"
+	resourcegroup "hcm/pkg/dal/table/cloud/resource-group"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -41,8 +41,8 @@ import (
 
 // AzureRG only used for Azure resource group.
 type AzureRG interface {
-	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []*region.AzureRGTable) ([]string, error)
-	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, model *region.AzureRGTable) error
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []*resourcegroup.AzureRGTable) ([]string, error)
+	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, model *resourcegroup.AzureRGTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typesregion.ListAzureRGDetails, error)
 	DeleteWithTx(kt *kit.Kit, expr *filter.Expression) error
 }
@@ -56,7 +56,8 @@ type AzureRGDao struct {
 }
 
 // UpdateWithTx rule.
-func (a AzureRGDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, rg *region.AzureRGTable) error {
+func (a AzureRGDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression,
+	rg *resourcegroup.AzureRGTable) error {
 
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
@@ -71,7 +72,7 @@ func (a AzureRGDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expressi
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(rg, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
@@ -98,7 +99,7 @@ func (a AzureRGDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.ListA
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list azure resource group options is nil")
 	}
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(region.AzureRGColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(resourcegroup.AzureRGColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -122,10 +123,10 @@ func (a AzureRGDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.ListA
 	if err != nil {
 		return nil, err
 	}
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, region.AzureRGColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, resourcegroup.AzureRGColumns.FieldsNamedExpr(opt.Fields),
 		table.AzureRGTable, whereExpr, pageExpr)
 
-	details := make([]*region.AzureRGTable, 0)
+	details := make([]*resourcegroup.AzureRGTable, 0)
 	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, argMap); err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (a AzureRGDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.ListA
 }
 
 // CreateWithTx azure region with tx.
-func (a AzureRGDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []*region.AzureRGTable) ([]string, error) {
+func (a AzureRGDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []*resourcegroup.AzureRGTable) ([]string, error) {
 
 	ids, err := a.IDGen.Batch(kt, table.AzureRGTable, len(regions))
 	if err != nil {
@@ -151,7 +152,7 @@ func (a AzureRGDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []*region.Azu
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AzureRGTable,
-		region.AzureRGColumns.ColumnExpr(), region.AzureRGColumns.ColonNameExpr())
+		resourcegroup.AzureRGColumns.ColumnExpr(), resourcegroup.AzureRGColumns.ColonNameExpr())
 
 	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, regions); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.AzureRGTable, err, kt.Rid)

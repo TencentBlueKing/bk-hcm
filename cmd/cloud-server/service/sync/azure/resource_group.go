@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"hcm/pkg/api/core"
-	protoregion "hcm/pkg/api/data-service/cloud/region"
+	protoregion "hcm/pkg/api/data-service/cloud/resource-group"
 	protohcregion "hcm/pkg/api/hc-service/region"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"

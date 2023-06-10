@@ -35,3 +35,13 @@ type HuaWeiRegion struct {
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
 }
+
+// GetID ...
+func (region HuaWeiRegion) GetID() string {
+	return region.ID
+}
+
+// GetCloudID ...
+func (region HuaWeiRegion) GetCloudID() string {
+	return region.RegionID + "|" + region.Service
+}

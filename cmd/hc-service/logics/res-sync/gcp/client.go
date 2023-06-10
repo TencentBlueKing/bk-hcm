@@ -55,6 +55,11 @@ type Interface interface {
 
 	Vpc(kt *kit.Kit, params *SyncBaseParams, opt *SyncVpcOption) (*SyncResult, error)
 	RemoveVpcDeleteFromCloud(kt *kit.Kit, accountID string) error
+
+	Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error)
+
+	Region(kt *kit.Kit, params *SyncBaseParams, opt *SyncRegionOption) (*SyncResult, error)
+	RemoveRegionDeleteFromCloud(kt *kit.Kit, accountID string) error
 }
 
 var _ Interface = new(client)

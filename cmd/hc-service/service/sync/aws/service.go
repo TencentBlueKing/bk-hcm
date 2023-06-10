@@ -47,6 +47,8 @@ func InitService(cap *capability.Capability) {
 	h.Add("SyncCvmWithRelRes", "POST", "/cvms/with/relation_resources/sync", v.SyncCvmWithRelRes)
 	h.Add("SyncEip", "POST", "/eips/sync", v.SyncEip)
 	h.Add("SyncRoute", "POST", "/route_tables/sync", v.SyncRouteTable)
+	h.Add("SyncZone", "POST", "/zones/sync", v.SyncZone)
+	h.Add("SyncRegion", "POST", "/regions/sync", v.SyncRegion)
 	h.Add("SyncImage", "POST", "/images/sync", v.SyncImage)
 
 	h.Load(cap.WebService)

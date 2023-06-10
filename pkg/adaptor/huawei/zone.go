@@ -26,13 +26,14 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2/model"
 )
 
 // ListZone list zone.
 // reference: https://support.huaweicloud.com/api-dcs/ListAvailableZones.html
-func (h *HuaWei) ListZone(kt *kit.Kit, opt *typeszone.HuaWeiZoneListOption) ([]model.AvailableZones, error) {
+func (h *HuaWei) ListZone(kt *kit.Kit, opt *typeszone.HuaWeiZoneListOption) ([]typeszone.HuaWeiZone, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "huawei zone list option is required")
@@ -54,8 +55,13 @@ func (h *HuaWei) ListZone(kt *kit.Kit, opt *typeszone.HuaWeiZoneListOption) ([]m
 	}
 
 	if resp == nil {
-		return make([]model.AvailableZones, 0), nil
+		return make([]typeszone.HuaWeiZone, 0), nil
 	}
 
-	return *resp.AvailableZones, nil
+	results := make([]typeszone.HuaWeiZone, 0)
+	for _, one := range converter.PtrToVal(resp.AvailableZones) {
+		results = append(results, typeszone.HuaWeiZone{one})
+	}
+
+	return results, nil
 }

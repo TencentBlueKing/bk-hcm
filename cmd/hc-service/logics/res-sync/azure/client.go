@@ -59,6 +59,10 @@ type Interface interface {
 	SecurityGroupRule(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGRuleOption) (*SyncResult, error)
 
 	Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOption) (*SyncResult, error)
+
+	ResourceGroup(kt *kit.Kit, opt *SyncRGOption) (*SyncResult, error)
+
+	Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, error)
 }
 
 var _ Interface = new(client)

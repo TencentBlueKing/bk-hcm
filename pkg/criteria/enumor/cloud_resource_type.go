@@ -74,5 +74,6 @@ const (
 	RouteTableCloudResType       CloudResourceType = "route_table"
 	RouteCloudResType            CloudResourceType = "route"
 	NetworkInterfaceCloudResType CloudResourceType = "network_interface"
+	RegionCloudResType           CloudResourceType = "region"
 	ImageCloudResType            CloudResourceType = "image"
 )

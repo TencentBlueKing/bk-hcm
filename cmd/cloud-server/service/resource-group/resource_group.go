@@ -24,7 +24,7 @@ import (
 
 	"hcm/cmd/cloud-server/service/capability"
 	cloudproto "hcm/pkg/api/cloud-server/resource-group"
-	dataproto "hcm/pkg/api/data-service/cloud/region"
+	dataproto "hcm/pkg/api/data-service/cloud/resource-group"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"

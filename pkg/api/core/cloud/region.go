@@ -41,6 +41,16 @@ type TCloudRegion struct {
 	UpdatedAt  string        `json:"updated_at"`
 }
 
+// GetID ...
+func (region TCloudRegion) GetID() string {
+	return region.ID
+}
+
+// GetCloudID ...
+func (region TCloudRegion) GetCloudID() string {
+	return region.RegionID
+}
+
 // AwsRegion define aws region.
 type AwsRegion struct {
 	ID         string        `json:"id"`
@@ -55,6 +65,16 @@ type AwsRegion struct {
 	UpdatedAt  string        `json:"updated_at"`
 }
 
+// GetID ...
+func (region AwsRegion) GetID() string {
+	return region.ID
+}
+
+// GetCloudID ...
+func (region AwsRegion) GetCloudID() string {
+	return region.RegionID
+}
+
 // GcpRegion define gcp region.
 type GcpRegion struct {
 	ID         string        `json:"id"`
@@ -66,4 +86,14 @@ type GcpRegion struct {
 	Reviser    string        `json:"reviser"`
 	CreatedAt  string        `json:"created_at"`
 	UpdatedAt  string        `json:"updated_at"`
+}
+
+// GetID ...
+func (region GcpRegion) GetID() string {
+	return region.ID
+}
+
+// GetCloudID ...
+func (region GcpRegion) GetCloudID() string {
+	return region.RegionID
 }

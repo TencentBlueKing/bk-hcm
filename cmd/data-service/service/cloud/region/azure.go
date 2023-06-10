@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableregion "hcm/pkg/dal/table/cloud/region"
 	"hcm/pkg/logs"
@@ -52,11 +53,46 @@ func InitAzureRegionService(cap *capability.Capability) {
 
 	h.Add("CreateAzureRegion", "POST", "/vendors/azure/regions/batch/create", svc.CreateAzureRegion)
 
+	h.Add("UpdateAzureRegion", "PUT", "/vendors/azure/regions/batch/update", svc.UpdateAzureRegion)
+
 	h.Load(cap.WebService)
 }
 
 type azureRegionSvc struct {
 	dao dao.Set
+}
+
+// UpdateAzureRegion update azure region.
+func (svc *azureRegionSvc) UpdateAzureRegion(cts *rest.Contexts) (interface{}, error) {
+	req := new(protoregion.HuaWeiRegionBatchUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		for _, one := range req.Regions {
+			rule := &tableregion.AzureRegionTable{
+				Type: one.Type,
+			}
+
+			flt := tools.EqualExpression("id", one.ID)
+			if err := svc.dao.AzureRegion().UpdateWithTx(cts.Kit, txn, flt, rule); err != nil {
+				logs.Errorf("update azure region failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return nil, fmt.Errorf("update azure region failed, err: %v", err)
+			}
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 // CreateAzureRegion create region.
@@ -74,7 +110,7 @@ func (svc *azureRegionSvc) CreateAzureRegion(cts *rest.Contexts) (interface{}, e
 	regions := make([]*tableregion.AzureRegionTable, 0, len(req.Regions))
 	for _, region := range req.Regions {
 		regions = append(regions, &tableregion.AzureRegionTable{
-			Cloud_ID:          region.Cloud_ID,
+			CloudID:           region.CloudID,
 			Name:              region.Name,
 			Type:              region.Type,
 			DisplayName:       region.DisplayName,
@@ -155,7 +191,7 @@ func (svc *azureRegionSvc) ListAzureRegion(cts *rest.Contexts) (interface{}, err
 	for _, one := range result.Details {
 		details = append(details, coreregion.AzureRegion{
 			ID:                one.ID,
-			Cloud_ID:          one.Cloud_ID,
+			CloudID:           one.CloudID,
 			Name:              one.Name,
 			Type:              one.Type,
 			DisplayName:       one.DisplayName,

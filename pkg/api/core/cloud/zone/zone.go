@@ -38,6 +38,16 @@ type BaseZone struct {
 	UpdatedAt string        `json:"updated_at"`
 }
 
+// GetID ...
+func (zone BaseZone) GetID() string {
+	return zone.ID
+}
+
+// GetCloudID ...
+func (zone BaseZone) GetCloudID() string {
+	return zone.CloudID
+}
+
 // Zone define zone
 type Zone[Extension ZoneExtension] struct {
 	BaseZone  `json:",inline"`

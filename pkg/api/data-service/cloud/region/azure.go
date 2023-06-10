@@ -32,6 +32,28 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// -------------------------- Update --------------------------
+
+// AzureRegionBatchUpdateReq define azure region batch update request.
+type AzureRegionBatchUpdateReq struct {
+	Regions []AzureRegionBatchUpdate `json:"rules" validate:"required"`
+}
+
+// AzureRegionBatchUpdate azure region batch update option.
+type AzureRegionBatchUpdate struct {
+	ID   string `json:"id" validate:"required"`
+	Type string `json:"type"`
+}
+
+// Validate azure resource group batch update request.
+func (req *AzureRegionBatchUpdateReq) Validate() error {
+	if len(req.Regions) == 0 {
+		return errors.New("region is required")
+	}
+
+	return nil
+}
+
 // -------------------------- Create --------------------------
 
 // AzureRegionBatchCreateReq define azure region create request.
@@ -41,7 +63,7 @@ type AzureRegionBatchCreateReq struct {
 
 // AzureRegionBatchCreate define azure region when create.
 type AzureRegionBatchCreate struct {
-	Cloud_ID          string `json:"cloud_id"`
+	CloudID           string `json:"cloud_id"`
 	Name              string `json:"name"`
 	Type              string `json:"type"`
 	DisplayName       string `json:"display_name"`

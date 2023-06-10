@@ -34,3 +34,8 @@ type AwsRegion struct {
 	RegionState string `json:"region_state,omitempty"`
 	Endpoint    string `json:"endpoint,omitempty"`
 }
+
+// GetCloudID ...
+func (region AwsRegion) GetCloudID() string {
+	return region.RegionID
+}

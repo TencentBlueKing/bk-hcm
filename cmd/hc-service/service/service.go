@@ -37,14 +37,11 @@ import (
 	"hcm/cmd/hc-service/service/eip"
 	"hcm/cmd/hc-service/service/firewall"
 	instancetype "hcm/cmd/hc-service/service/instance-type"
-	"hcm/cmd/hc-service/service/region"
-	resourcegroup "hcm/cmd/hc-service/service/resource-group"
 	routetable "hcm/cmd/hc-service/service/route-table"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
 	"hcm/cmd/hc-service/service/sync"
 	"hcm/cmd/hc-service/service/vpc"
-	"hcm/cmd/hc-service/service/zone"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
@@ -159,14 +156,11 @@ func (s *Service) apiSet() *restful.Container {
 	firewall.InitFirewallService(c)
 	vpc.InitVpcService(c)
 	subnet.InitSubnetService(c)
-	region.InitRegionService(c)
 	disk.InitDiskService(c)
-	zone.InitZoneService(c)
 	cvm.InitCvmService(c)
 	routetable.InitRouteTableService(c)
 	eip.InitEipService(c)
 	instancetype.InitInstanceTypeService(c)
-	resourcegroup.InitResourceGroupService(c)
 	sync.InitService(c)
 	bill.InitBillService(c)
 

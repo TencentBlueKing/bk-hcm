@@ -32,7 +32,7 @@ import (
 
 // ListZone list zone.
 // reference: https://cloud.tencent.com/document/product/213/15707
-func (t *TCloud) ListZone(kt *kit.Kit, opt *typeszone.TCloudZoneListOption) ([]*cvm.ZoneInfo, error) {
+func (t *TCloud) ListZone(kt *kit.Kit, opt *typeszone.TCloudZoneListOption) ([]typeszone.TCloudZone, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "tcloud zone list option is required")
@@ -54,8 +54,13 @@ func (t *TCloud) ListZone(kt *kit.Kit, opt *typeszone.TCloudZoneListOption) ([]*
 	}
 
 	if resp == nil || resp.Response == nil {
-		return make([]*cvm.ZoneInfo, 0), nil
+		return make([]typeszone.TCloudZone, 0), nil
 	}
 
-	return resp.Response.ZoneSet, nil
+	results := make([]typeszone.TCloudZone, 0)
+	for _, one := range resp.Response.ZoneSet {
+		results = append(results, typeszone.TCloudZone{one})
+	}
+
+	return results, nil
 }

@@ -111,3 +111,27 @@ func (cli *RegionClient) BatchCreateRegion(ctx context.Context, h http.Header, r
 
 	return resp.Data, nil
 }
+
+// BatchUpdateRegion batch update region.
+func (cli *RegionClient) BatchUpdateRegion(ctx context.Context, h http.Header, request *protoregion.
+	AzureRegionBatchUpdateReq) error {
+
+	resp := new(core.UpdateResp)
+
+	err := cli.client.Put().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/regions/batch/update").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
