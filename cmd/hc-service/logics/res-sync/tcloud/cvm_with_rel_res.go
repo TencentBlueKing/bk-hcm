@@ -21,6 +21,7 @@ package tcloud
 
 import (
 	"fmt"
+	"strings"
 
 	cvmrelmgr "hcm/cmd/hc-service/logics/res-sync/cvm-rel-manager"
 	adcore "hcm/pkg/adaptor/types/core"
@@ -250,8 +251,10 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, region string, cvmFromCloud []
 
 		// Disk
 		if cvm.SystemDisk != nil {
-			if cvm.SystemDisk.DiskId != nil {
-				mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.DiskCloudResType, *cvm.SystemDisk.DiskId)
+			if cvm.SystemDisk.DiskId != nil &&
+				strings.HasPrefix(converter.PtrToVal(cvm.SystemDisk.DiskId), "disk-") {
+				mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.DiskCloudResType,
+					converter.PtrToVal(cvm.SystemDisk.DiskId))
 			}
 		}
 
@@ -259,13 +262,14 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, region string, cvmFromCloud []
 			if disk.DiskId == nil {
 				continue
 			}
-			mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.DiskCloudResType, *disk.DiskId)
+			mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.DiskCloudResType,
+				converter.PtrToVal(disk.DiskId))
 		}
 
 		// Eip
 		for _, ip := range cvm.PublicIpAddresses {
 			if ip != nil {
-				eipCloudID, exist := eipMap[*ip]
+				eipCloudID, exist := eipMap[converter.PtrToVal(ip)]
 				if exist {
 					mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.EipCloudResType, eipCloudID)
 				}
