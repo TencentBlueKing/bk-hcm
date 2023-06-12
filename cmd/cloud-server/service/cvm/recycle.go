@@ -139,7 +139,7 @@ func (svc *cvmSvc) recycleCvm(kt *kit.Kit, req *proto.CvmRecycleReq, infoMap map
 	// detach disk if needed
 	detachDiskCvmIDs := make([]string, 0)
 	for _, info := range req.Infos {
-		if !info.CvmRecycleOptions.WithDisk {
+		if info.CvmRecycleOptions != nil && !info.CvmRecycleOptions.WithDisk {
 			detachDiskCvmIDs = append(detachDiskCvmIDs, info.ID)
 		}
 	}
