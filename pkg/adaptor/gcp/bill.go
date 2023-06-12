@@ -113,7 +113,7 @@ func (g *Gcp) GetBigQuery(kt *kit.Kit, query string) ([]map[string]bigquery.Valu
 }
 
 func (g *Gcp) parseCondition(opt *typesBill.GcpBillListOption) string {
-	var condition = []string{fmt.Sprintf("project.id = '%s'", g.CloudProjectID())}
+	var condition = []string{fmt.Sprintf("project.id = '%s'", opt.ProjectID)}
 	if opt.Month != "" {
 		condition = append(condition, fmt.Sprintf("invoice.month = '%s'", opt.Month))
 	} else if opt.BeginDate != "" && opt.EndDate != "" {

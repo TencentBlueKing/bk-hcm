@@ -190,11 +190,12 @@ func (b *billSvc) getGcpListReq(cts *rest.Contexts) (*hcbill.GcpBillListReq, err
 	}
 
 	billReq := &hcbill.GcpBillListReq{
-		AccountID: req.AccountID,
-		Month:     req.Month,
-		BeginDate: req.BeginDate,
-		EndDate:   req.EndDate,
-		Page:      req.Page,
+		BillAccountID: req.BillAccountID,
+		AccountID:     req.AccountID,
+		Month:         req.Month,
+		BeginDate:     req.BeginDate,
+		EndDate:       req.EndDate,
+		Page:          req.Page,
 	}
 	return billReq, nil
 }
