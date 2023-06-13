@@ -89,6 +89,16 @@ func (cli *CloudAdaptorClient) Gcp(kt *kit.Kit, accountID string) (*gcp.Gcp, err
 	return cli.adaptor.Gcp(cred)
 }
 
+// GcpProxy return gcp proxy client.
+func (cli *CloudAdaptorClient) GcpProxy(kt *kit.Kit, accountID string) (*gcp.Gcp, error) {
+	cred, err := cli.secretCli.GcpRegisterCredential(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cli.adaptor.Gcp(cred)
+}
+
 // Azure return azure client.
 func (cli *CloudAdaptorClient) Azure(kt *kit.Kit, accountID string) (*azure.Azure, error) {
 	cred, err := cli.secretCli.AzureCredential(kt, accountID)

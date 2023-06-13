@@ -173,7 +173,9 @@ func (opt AzureBillListReq) Validate() error {
 
 // GcpBillListReq defines gcp bill list req.
 type GcpBillListReq struct {
-	AccountID string `json:"account_id" validate:"required"`
+	// BillAccountID bill账号ID
+	BillAccountID string `json:"bill_account_id" validate:"required"`
+	AccountID     string `json:"account_id" validate:"required"`
 	// 包含费用专列项的账单的年份和月份，格式为YYYYMM 示例:201901，可以使用此字段获取账单上的总费用
 	Month string `json:"month" validate:"omitempty"`
 	// 起始时间戳，时间戳值表示绝对时间点，与任何时区或惯例（如夏令时）无关，可精确到微秒，

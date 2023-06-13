@@ -13,7 +13,8 @@ POST /api/v1/cloud/vendors/{vendor}/bills/list
 | 参数名称        | 参数类型        | 必选  | 描述                                               |
 |-------------|-------------|-----|--------------------------------------------------|
 | vendor      | string      | 是   | 云厂商                                              |
-| account_id  | string      | 是   | 账号ID                                             |
+| bill_account_id | string  | 否   | Gcp的账单账号ID（仅vendor=gcp时为必传参数）             |
+| account_id  | string      | 是   | 资源账号ID                                             |
 | month       | string      | 是   | 查询月份，格式：Y-m                                      |
 | begin_date  | string      | 是   | 开始日期（Aws、Azure格式：Y-m-d，TCloud、Gcp格式：Y-m-d H:i:s） |
 | end_date    | string      | 是   | 截止日期（Aws、Azure格式：Y-m-d，TCloud、Gcp格式：Y-m-d H:i:s） |
