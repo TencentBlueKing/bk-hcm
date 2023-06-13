@@ -175,3 +175,26 @@ func (cli *SecretClient) GcpCredential(kt *kit.Kit, accountID string) (*types.Gc
 
 	return cred, nil
 }
+
+// GcpRegisterCredential get gcp register credential and validate credential.
+func (cli *SecretClient) GcpRegisterCredential(kt *kit.Kit, accountID string) (*types.GcpCredential, error) {
+	account, err := cli.data.Gcp.Account.Get(kt.Ctx, kt.Header(), accountID)
+	if err != nil {
+		return nil, fmt.Errorf("get gcp register account failed, err: %v", err)
+	}
+
+	if account.Extension == nil {
+		return nil, errors.New("gcp account extension is nil")
+	}
+
+	cred := &types.GcpCredential{
+		CloudProjectID: account.Extension.CloudProjectID,
+		Json:           []byte(account.Extension.CloudServiceSecretKey),
+	}
+
+	if err = cred.Validate(); err != nil {
+		return nil, err
+	}
+
+	return cred, nil
+}
