@@ -63,7 +63,7 @@ type GcpFirewallRuleDao struct {
 func (g GcpFirewallRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rules []*cloud.GcpFirewallRuleTable) (
 	[]string, error) {
 
-	ids, err := g.IDGen.Batch(kt, table.SecurityGroupTable, len(rules))
+	ids, err := g.IDGen.Batch(kt, table.GcpFirewallRuleTable, len(rules))
 	if err != nil {
 		return nil, err
 	}

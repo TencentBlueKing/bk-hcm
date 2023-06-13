@@ -364,7 +364,7 @@ func (cli *client) listRemoveVpcID(kt *kit.Kit, params *SyncBaseParams) ([]strin
 
 	delCloudIDs := make([]string, 0)
 	cloudIDs := params.CloudIDs
-	for {
+	for i := 0; i < RemoveDeleteFromCloudRetryNum; i++ {
 		opt := &adcore.AwsListOption{
 			Region:   params.Region,
 			CloudIDs: cloudIDs,

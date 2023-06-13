@@ -67,7 +67,7 @@ func (a *Aws) ListCvm(kt *kit.Kit, opt *typecvm.AwsListOption) ([]typecvm.AwsCvm
 
 	resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
 	if err != nil {
-		if !strings.Contains(err.Error(), ErrVpcNotFound) {
+		if !strings.Contains(err.Error(), ErrCvmNotFound) {
 			logs.Errorf("list aws cvm failed, err: %v, rid: %s", err, kt.Rid)
 		}
 

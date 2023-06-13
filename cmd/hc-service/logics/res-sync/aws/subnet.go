@@ -366,7 +366,7 @@ func (cli *client) listRemoveSubnetID(kt *kit.Kit, params *SyncBaseParams) ([]st
 
 	delCloudIDs := make([]string, 0)
 	cloudIDs := params.CloudIDs
-	for {
+	for i := 0; i < RemoveDeleteFromCloudRetryNum; i++ {
 		opt := &adcore.AwsListOption{
 			Region:   params.Region,
 			CloudIDs: cloudIDs,

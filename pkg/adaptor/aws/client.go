@@ -39,6 +39,10 @@ const (
 	ErrSGNotFound         = "InvalidGroup.NotFound"
 	ErrRouteTableNotFound = "InvalidRouteTableID.NotFound"
 	ErrImageNotFound      = "InvalidAMIID.NotFound"
+	ErrDiskNotFound       = "InvalidVolume.NotFound"
+	ErrCvmNotFound        = "InvalidInstanceID.NotFound"
+	ErrVpcNotFound        = "InvalidVpcID.NotFound"
+	ErrSubnetNotFound     = "InvalidSubnetID.NotFound"
 )
 
 type clientSet struct {

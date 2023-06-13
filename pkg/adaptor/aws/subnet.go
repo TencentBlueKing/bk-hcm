@@ -140,8 +140,6 @@ func (a *Aws) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) erro
 	return nil
 }
 
-var ErrSubnetNotFound = "InvalidSubnetID.NotFound"
-
 // ListSubnet list subnet.
 // reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_DescribeSubnets.html
 func (a *Aws) ListSubnet(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsSubnetListResult, error) {

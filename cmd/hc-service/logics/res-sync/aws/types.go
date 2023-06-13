@@ -26,6 +26,10 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
+const (
+	RemoveDeleteFromCloudRetryNum = 5
+)
+
 // SyncBaseParams ...
 type SyncBaseParams struct {
 	AccountID string   `json:"account_id" validate:"required"`
