@@ -1,33 +1,15 @@
 import './resource-distribution.scss';
 import { CloudType } from '@/typings';
-import {
-  defineComponent,
-  ref,
-  h,
-  watch,
-  computed,
-} from 'vue';
-import {
-  Select,
-  Message,
-} from 'bkui-vue';
-import {
-  RESOURCE_TYPES, VendorEnum,
-} from '@/common/constant';
+import { defineComponent, ref, h, watch, computed } from 'vue';
+import { Select, Message } from 'bkui-vue';
+import { RESOURCE_TYPES, VendorEnum } from '@/common/constant';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import AccountSelector from '@/components/account-selector/index.vue';
 import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
-import {
-  useI18n,
-} from 'vue-i18n';
-import {
-  useResourceStore,
-  useAccountStore,
-} from '@/store';
+import { useI18n } from 'vue-i18n';
+import { useResourceStore, useAccountStore } from '@/store';
 
-import type {
-  FilterType,
-} from '@/typings/resource';
+import type { FilterType } from '@/typings/resource';
 import { useDistributionStore } from '@/store/distribution';
 import { useRouter } from 'vue-router';
 import { useRegionsStore } from '@/store/useRegionsStore';
@@ -60,9 +42,7 @@ export default defineComponent({
 
   setup(props, { emit }) {
     // use hooks
-    const {
-      t,
-    } = useI18n();
+    const { t } = useI18n();
 
     const router = useRouter();
 
@@ -108,20 +88,25 @@ export default defineComponent({
       {
         label: '账号 ID',
         field: 'account_id',
-        render({cell, data}: { cell: string, data: { vendor: VendorEnum } }) {
+        render({ cell, data }: { cell: string; data: { vendor: VendorEnum } }) {
           return (
-            <bk-button text theme="primary" onClick={() => {
-              router.push({
-                query: {
-                  id: cell,
-                  type: data?.vendor,
-                },
-                name: 'accountDetail',
-              });
-            }}>
-              { cell }
-            </bk-button>);
-        }
+            <bk-button
+              text
+              theme='primary'
+              onClick={() => {
+                router.push({
+                  query: {
+                    id: cell,
+                    type: data?.vendor,
+                  },
+                  name: 'accountDetail',
+                });
+              }}
+            >
+              {cell}
+            </bk-button>
+          );
+        },
       },
       {
         label: '资源 ID',
@@ -131,7 +116,7 @@ export default defineComponent({
         label: '地域',
         field: 'region',
         width: 180,
-        render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
+        render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
       },
       {
         label: '名称',
@@ -141,17 +126,12 @@ export default defineComponent({
         label: '云厂商',
         field: 'vendor',
         render({ cell }: { cell: string }) {
-          return h(
-            'span',
-            [
-              CloudType[cell] || '--',
-            ],
-          );
+          return h('span', [CloudType[cell] || '--']);
         },
       },
       {
         label: '管控区域',
-        width: 180,
+        width: 260,
         render({ data }: any) {
           if (data.bk_cloud_id > -1) {
             return computedCloudAreasMap.value.get(data.bk_cloud_id) || '--';
@@ -170,27 +150,24 @@ export default defineComponent({
             validateMap.value[data.id] = validate;
           }
           // 未绑定需要先绑定云区域
-          return () => h(
-            Select,
-            {
-              class: {
-                'resource-is-error': errorList.value.includes(data.id),
-              },
-              displayKey: 'name',
-              idKey: 'id',
-              list: cloudAreas.value,
-              modelValue: data.temp_bk_cloud_id,
-              scrollLoading: isLoadingCloudAreas.value,
-              filterable: true,
-              onScrollEnd() {
-                getCloudAreas();
-              },
-              onChange(val: string) {
-                data.temp_bk_cloud_id = val;
-                validate();
-              },
+          return () => h(Select, {
+            class: {
+              'resource-is-error': errorList.value.includes(data.id),
             },
-          );
+            displayKey: 'name',
+            idKey: 'id',
+            list: cloudAreas.value,
+            modelValue: data.temp_bk_cloud_id,
+            scrollLoading: isLoadingCloudAreas.value,
+            filterable: true,
+            onScrollEnd() {
+              getCloudAreas();
+            },
+            onChange(val: string) {
+              data.temp_bk_cloud_id = val;
+              validate();
+            },
+          });
         },
       },
     ];
@@ -199,12 +176,7 @@ export default defineComponent({
         label: '云厂商',
         field: 'vendor',
         render({ cell }: { cell: string }) {
-          return h(
-            'span',
-            [
-              CloudType[cell] || '--',
-            ],
-          );
+          return h('span', [CloudType[cell] || '--']);
         },
       },
       {
@@ -247,10 +219,7 @@ export default defineComponent({
 
       isConfirmLoading.value = true;
       resourceStore
-        .assignBusiness(
-          type,
-          params,
-        )
+        .assignBusiness(type, params)
         .then(() => {
           Message({
             theme: 'success',
@@ -275,7 +244,7 @@ export default defineComponent({
         })
         .then((res: any) => {
           cloudAreaPage.value += 1;
-          cloudAreas.value.push(...res?.data?.info || []);
+          cloudAreas.value.push(...(res?.data?.info || []));
         })
         .finally(() => {
           isLoadingCloudAreas.value = false;
@@ -293,14 +262,13 @@ export default defineComponent({
 
     const getAccountBusinessID = async () => {
       try {
-        if(!accountId.value) return;
+        if (!accountId.value) return;
         const res = await accountStore.getBizIdWithAccountId(accountId.value);
         business.value = res?.data?.bk_biz_ids[0];
       } catch (error) {
         console.log(error);
       }
     };
-
 
     const validateCloudArea = () => {
       let hasError = false;
@@ -363,9 +331,9 @@ export default defineComponent({
 
     const computedCloudAreasMap = computed(() => {
       const cloudAreasMap = new Map<number, string>();
-      for(const area of cloudAreas.value) {
-        const {id, name} = area;
-        if(id === undefined || name === undefined) continue;
+      for (const area of cloudAreas.value) {
+        const { id, name } = area;
+        if (id === undefined || name === undefined) continue;
         cloudAreasMap.set(id, name);
       }
       return cloudAreasMap;
@@ -396,34 +364,32 @@ export default defineComponent({
       },
     );
 
-
     // 根据选择账号获取vpc列表
     watch(
       accountId,
       (value) => {
-        Object.assign(vpcFilter.value, { filter: {
-          op: 'and',
-          rules: [{
-            field: 'account_id',
-            op: 'eq',
-            value,
-          }] } });
+        Object.assign(vpcFilter.value, {
+          filter: {
+            op: 'and',
+            rules: [
+              {
+                field: 'account_id',
+                op: 'eq',
+                value,
+              },
+            ],
+          },
+        });
 
         getAccountBusinessID();
       },
       { deep: true },
     );
 
-
-    const {
-      datas,
-      isLoading,
-      pagination,
-      handlePageSizeChange,
-      handlePageChange,
-      triggerApi
-    } = useQueryList(vpcFilter.value, 'vpcs');
-
+    const { datas, isLoading, pagination, handlePageSizeChange, handlePageChange, triggerApi } = useQueryList(
+      vpcFilter.value,
+      'vpcs',
+    );
 
     watch(
       // 监听数据
@@ -445,7 +411,6 @@ export default defineComponent({
       },
       { deep: true, immediate: true },
     );
-
 
     return {
       business,
@@ -482,90 +447,96 @@ export default defineComponent({
       {
         title: '前置检查',
         disableNext: this.disableNext,
-        component: () => <>
-        {this.chooseResourceType
-          ? <bk-loading loading={this.isLoading}>
-        <div class="flex-row align-items-center mr20">
-          <span class="pr10">{this.t('云账号')}</span>
-          <AccountSelector filter={this.accountFilter} v-model={this.accountId}></AccountSelector>
-          <div class="flex-row align-items-center">
-          <section class="resource-head ml20">
-            { this.t('目标业务') }
-            <bk-select
-              v-model={this.business}
-              disabled
-              filterable
-              class={{
-                ml10: true,
-                'resource-is-error': this.isBusinessError,
-              }}
-              onChange={(val: any) => this.isBusinessError = !val}
-            >
-              {
-                this.businessList.map(business => <bk-option
-                  value={business.id}
-                  label={business.name}
-                />)
-              }
-            </bk-select>
-          </section>
-          </div>
-        </div>
-        <bk-table
-          class="mt20"
-          row-hover="auto"
-          remote-pagination
-          pagination={this.pagination}
-          onPageLimitChange={this.handlePageSizeChange}
-          onPageValueChange={this.handlePageChange}
-          columns={this.VPCColumns}
-          data={this.vpcTableData.length ? this.vpcTableData : this.datas}
-          show-overflow-tooltip
-        />
-        </bk-loading>
-          : <bk-table
-              class="mt20"
-              row-hover="auto"
-              columns={this.VPCColumns}
-              data={this.data}
-              show-overflow-tooltip
-            />
-        }
-          {
-            !this.hasBindVPC
-              ? <bk-checkbox class="mt10" v-model={this.isBindVPC}>
-                  注：VPC绑定云区域信息无法修改，请提前确认
-                </bk-checkbox>
-              : ''
-          }
-        </>,
-        footer: () => <>{
-          !this.hasBindVPC
-            ? <><bk-button
-                class="mr10"
-                loading={this.isBingdingVPC}
-                disabled={!this.isBindVPC}
-                onClick={this.handleBindVPC}
-              >
-                VPC 绑定云区域
-              </bk-button>
+        component: () => (
+          <>
+            {this.chooseResourceType ? (
+              <bk-loading loading={this.isLoading}>
+                <div class='flex-row align-items-center mr20'>
+                  <span class='pr10'>{this.t('云账号')}</span>
+                  <AccountSelector filter={this.accountFilter} v-model={this.accountId}></AccountSelector>
+                  <div class='flex-row align-items-center'>
+                    <section class='resource-head ml20'>
+                      {this.t('目标业务')}
+                      <bk-select
+                        v-model={this.business}
+                        disabled
+                        filterable
+                        class={{
+                          ml10: true,
+                          'resource-is-error': this.isBusinessError,
+                        }}
+                        onChange={(val: any) => (this.isBusinessError = !val)}
+                      >
+                        {this.businessList.map(business => (
+                          <bk-option value={business.id} label={business.name} />
+                        ))}
+                      </bk-select>
+                    </section>
+                  </div>
+                </div>
+                <bk-table
+                  class='mt20'
+                  row-hover='auto'
+                  remote-pagination
+                  pagination={this.pagination}
+                  onPageLimitChange={this.handlePageSizeChange}
+                  onPageValueChange={this.handlePageChange}
+                  columns={this.VPCColumns}
+                  data={this.vpcTableData.length ? this.vpcTableData : this.datas}
+                  show-overflow-tooltip
+                />
+              </bk-loading>
+            ) : (
+              <bk-table
+                class='mt20'
+                row-hover='auto'
+                columns={this.VPCColumns}
+                data={this.data}
+                show-overflow-tooltip
+              />
+            )}
+            {!this.hasBindVPC ? (
+              <bk-checkbox class='mt10' v-model={this.isBindVPC}>
+                注：VPC绑定云区域信息无法修改，请提前确认
+              </bk-checkbox>
+            ) : (
+              ''
+            )}
+          </>
+        ),
+        footer: () => (
+          <>
+            {!this.hasBindVPC ? (
+              <>
+                <bk-button
+                  class='mr10'
+                  loading={this.isBingdingVPC}
+                  disabled={!this.isBindVPC}
+                  onClick={this.handleBindVPC}
+                >
+                  VPC 绑定云区域
+                </bk-button>
               </>
-            : ''
-        }</>
-        ,
+            ) : (
+              ''
+            )}
+          </>
+        ),
       },
       {
         title: '分配确认',
         isConfirmLoading: this.isConfirmLoading,
-        component: () => <>
-          <bk-table
-            class="mt20"
-            row-hover="auto"
-            columns={this.businessColumns}
-            data={this.computedCloudData}
-            show-overflow-tooltip
-          />
-        </>,
+        component: () => (
+          <>
+            <bk-table
+              class='mt20'
+              row-hover='auto'
+              columns={this.businessColumns}
+              data={this.computedCloudData}
+              show-overflow-tooltip
+            />
+          </>
+        ),
       },
     ];
 
@@ -573,36 +544,39 @@ export default defineComponent({
     if (this.chooseResourceType) {
       steps.unshift({
         title: this.t('资源类型'),
-        component: () => <>
-          <section>
-            <span class="resource-types-label">{this.t('分配资源类型')}</span>
-            <bk-checkbox-group
-              class="resource-types"
-              v-model={this.resourceTypes}
-            >
-              {
-                RESOURCE_TYPES.filter(item => item.type !== 'image').map((type) => {
-                  return <bk-checkbox disabled={true} label={type.type}>{ this.t(type.name) }</bk-checkbox>;
-                })
-              }
-            </bk-checkbox-group>
-          </section>
-        </>,
+        component: () => (
+          <>
+            <section>
+              <span class='resource-types-label'>{this.t('分配资源类型')}</span>
+              <bk-checkbox-group class='resource-types' v-model={this.resourceTypes}>
+                {RESOURCE_TYPES.filter(item => item.type !== 'image').map((type) => {
+                  return (
+                    <bk-checkbox disabled={true} label={type.type}>
+                      {this.t(type.name)}
+                    </bk-checkbox>
+                  );
+                })}
+              </bk-checkbox-group>
+            </section>
+          </>
+        ),
       });
     }
 
-    return <>
-      <step-dialog
-        business={this.business}
-        title={this.title}
-        isShow={this.isShow}
-        dialogHeight={this.chooseResourceType ? '800' : '720'}
-        steps={steps}
-        onConfirm={this.handleConfirm}
-        onCancel={this.handleClose}
-        onNext={this.handleNext}
-      >
-      </step-dialog>
-    </>;
+    return (
+      <>
+        <step-dialog
+          business={this.business}
+          title={this.title}
+          isShow={this.isShow}
+          dialogHeight={this.chooseResourceType ? '800' : '720'}
+          steps={steps}
+          onConfirm={this.handleConfirm}
+          onCancel={this.handleClose}
+          onNext={this.handleNext}
+          dialogWidth={1200}
+        ></step-dialog>
+      </>
+    );
   },
 });
