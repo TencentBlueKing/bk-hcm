@@ -19,7 +19,7 @@ import StepDialog from '@/components/step-dialog/step-dialog';
 import useQueryList  from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
 import {
-  useResourceStore
+  useResourceStore,
 } from '@/store/resource';
 
 // 硬盘选主机挂载
@@ -37,8 +37,8 @@ export default defineComponent({
       type: Boolean,
     },
     detail: {
-      type: Object
-    }
+      type: Object,
+    },
   },
 
   emits: ['update:isShow', 'success-attach'],
@@ -54,8 +54,8 @@ export default defineComponent({
     const cacheTypes = [
       'None',
       'ReadOnly',
-      'ReadWrite'
-    ]
+      'ReadWrite',
+    ];
 
     const rules: any[] = [
       {
@@ -77,15 +77,15 @@ export default defineComponent({
         field: 'region',
         op: 'eq',
         value: props.detail.region,
-      }
-    ]
+      },
+    ];
 
     if (!location.href.includes('business')) {
       rules.push({
-        field: "bk_biz_id",
-        op: "eq",
-        value: -1
-      })
+        field: 'bk_biz_id',
+        op: 'eq',
+        value: -1,
+      });
     }
 
     if (props.detail.vendor === 'azure') {
@@ -94,13 +94,13 @@ export default defineComponent({
       //   op: 'json_eq',
       //   value: props.detail.resource_group_name
       // })
-      rules.splice(2, 1)
+      rules.splice(2, 1);
       if (!props.detail.zones) {
         rules.push({
           field: 'extension',
           op: 'json_not_contains_path',
-          value: 'zones'
-        })
+          value: 'zones',
+        });
       }
       if (Array.isArray(props.detail.zones) && props.detail.zones.length > 0) {
         rules.push({
@@ -109,15 +109,15 @@ export default defineComponent({
             {
               field: 'extension',
               op: 'json_not_contains_path',
-              value: 'zones'
+              value: 'zones',
             },
             {
               field: 'extension.zones',
               op: 'json_overlaps',
-              value: props.detail.zones
-            }
-          ]
-        })
+              value: props.detail.zones,
+            },
+          ],
+        });
       }
     }
 
@@ -140,7 +140,7 @@ export default defineComponent({
       'getUnbindDiskCvms',
       {
         not_equal_disk_id: props.detail.id,
-      }
+      },
     );
 
     const columns = useColumns('cvms', true);
@@ -165,12 +165,12 @@ export default defineComponent({
               onChange() {
                 selection.value = data;
               },
-            }
+            },
           );
         },
       },
-      ...columns
-    ]
+      ...columns,
+    ];
 
     // 方法
     const handleClose = () => {
@@ -180,34 +180,34 @@ export default defineComponent({
     const handleConfirm = () => {
       const postData: any = {
         disk_id: props.detail.id,
-        cvm_id: selection.value.id
-      }
+        cvm_id: selection.value.id,
+      };
       if (!selection.value.id) {
         Message({
           theme: 'error',
-          message: '请先选择主机'
-        })
-        return
+          message: '请先选择主机',
+        });
+        return;
       }
       if (props.detail.vendor === 'aws') {
         if (!deviceName.value) {
           Message({
             theme: 'error',
-            message: '请先输入设备名称'
-          })
-          return
+            message: '请先输入设备名称',
+          });
+          return;
         }
-        postData.device_name = deviceName.value
+        postData.device_name = deviceName.value;
       }
       if (props.detail.vendor === 'azure') {
         if (!cachingType.value) {
           Message({
             theme: 'error',
-            message: '请先选择缓存类型'
-          })
-          return
+            message: '请先选择缓存类型',
+          });
+          return;
         }
-        postData.caching_type = cachingType.value
+        postData.caching_type = cachingType.value;
       }
       isConfirmLoading.value = true;
       resourceStore
@@ -215,14 +215,16 @@ export default defineComponent({
         .then(() => {
           emit('success-attach');
           handleClose();
-        }).catch((err: any) => {
+        })
+        .catch((err: any) => {
           Message({
             theme: 'error',
-            message: err.message || err
-          })
-        }).finally(() => {
-          isConfirmLoading.value = false;
+            message: err.message || err,
+          });
         })
+        .finally(() => {
+          isConfirmLoading.value = false;
+        });
     };
 
     return {
@@ -245,16 +247,15 @@ export default defineComponent({
 
   render() {
     const tooltipSlot = {
-      content: () => <>Linux设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/device_naming.html<br />windows设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/WindowsGuide/device_naming.html</>
-    }
+      content: () => <>Linux设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/device_naming.html<br />windows设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/WindowsGuide/device_naming.html</>,
+    };
     const steps = [
       {
         isConfirmLoading: this.isConfirmLoading,
-        component: () =>
-          <Loading loading={this.isLoading}>
+        component: () => <Loading loading={this.isLoading}>
             {
               this.detail.vendor === 'aws'
-              ? <>
+                ? <>
                 <span class="mr10">设备名称:</span>
                 <bk-input v-model={this.deviceName} placeholder="/dev/sdb" style="width: 200px;margin-right: 5px"></bk-input>
                 <bk-popover
@@ -264,15 +265,15 @@ export default defineComponent({
                   <InfoLine />
                 </bk-popover>
                 </>
-              : ''
+                : ''
             }
             {
               this.detail.vendor === 'azure'
-              ? <>
+                ? <>
                 <span class="mr10">缓存类型:</span>
                 <bk-select v-model={this.cachingType} style="width: 200px;display: inline-block;">
                   {
-                    this.cacheTypes.map((type) => <bk-option
+                    this.cacheTypes.map(type => <bk-option
                       key={type}
                       value={type}
                       label={type}
@@ -280,7 +281,7 @@ export default defineComponent({
                   }
                 </bk-select>
               </>
-              : ''
+                : ''
             }
             <Table
               class="mt20"
@@ -293,7 +294,7 @@ export default defineComponent({
               onPageValueChange={this.handlePageChange}
               onColumnSort={this.handleSort}
             />
-          </Loading>
+          </Loading>,
       },
     ];
 

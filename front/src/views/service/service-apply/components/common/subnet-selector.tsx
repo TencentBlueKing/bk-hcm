@@ -2,7 +2,7 @@ import http from '@/http';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { Select } from 'bkui-vue';
 
-import { IOption, QueryRuleOPEnum } from '@/typings/common';
+import { QueryRuleOPEnum } from '@/typings/common';
 import { VendorEnum } from '@/common/constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -44,7 +44,7 @@ export default defineComponent({
       () => props.accountId,
       () => props.zone,
       () => props.resourceGroup,
-    ], async ([bizId, region, vendor, vpcId, accountId, zone, resourceGroup]) => {
+    ], async ([bizId, region, vendor, vpcId, accountId, zone]) => {
       if (!bizId || !vpcId) {
         list.value = [];
         return;

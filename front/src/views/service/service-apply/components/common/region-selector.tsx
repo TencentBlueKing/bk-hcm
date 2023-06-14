@@ -3,12 +3,12 @@ import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { Select } from 'bkui-vue';
 import { IOption, QueryFilterType, QueryRuleOPEnum } from '@/typings/common';
 import { CLOUD_AREA_REGION_AWS, CLOUD_AREA_REGION_GCP, ResourceTypeEnum, VendorEnum } from '@/common/constant';
+import { useHostStore } from '@/store/host';
+import { isChinese } from '@/language/i18n';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const { Option } = Select;
-import { useHostStore } from '@/store/host';
-import { isChinese } from '@/language/i18n';
 
 export default defineComponent({
   props: {
@@ -20,7 +20,7 @@ export default defineComponent({
   setup(props, { emit, attrs }) {
     const list = ref([]);
     const loading = ref(false);
-    const hostStore = useHostStore()
+    const hostStore = useHostStore();
 
     const selected = computed({
       get() {
@@ -73,7 +73,7 @@ export default defineComponent({
               value: services[props.type],
             },
           ];
-          dataNameKey = isChinese? 'locales_zh_cn' : 'region_id';
+          dataNameKey = isChinese ? 'locales_zh_cn' : 'region_id';
           break;
         }
         case VendorEnum.TCLOUD: {
@@ -134,8 +134,8 @@ export default defineComponent({
       });
 
       const getName = (key: string, name: string) => {
-        switch(vendor) {
-          case VendorEnum.AWS: 
+        switch (vendor) {
+          case VendorEnum.AWS:
             return isChinese ? CLOUD_AREA_REGION_AWS[key] : key;
           case VendorEnum.GCP:
             return isChinese ? CLOUD_AREA_REGION_GCP[key] : key;
@@ -147,7 +147,7 @@ export default defineComponent({
           default:
             return '--';
         }
-      }
+      };
 
       const details = result?.data?.details ?? [];
       list.value = details
@@ -156,7 +156,7 @@ export default defineComponent({
           name: getName(item[dataIdKey], item[dataNameKey]) || item[dataIdKey],
         }));
       hostStore.regionList = details;
-      
+
       loading.value = false;
     });
 

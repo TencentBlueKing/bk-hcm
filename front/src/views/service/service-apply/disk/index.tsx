@@ -17,7 +17,7 @@ const { Group: RadioGroup, Button: RadioButton } = Radio;
 
 export default defineComponent({
   props: {},
-  setup(props, ctx) {
+  setup() {
     const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.DISK);
     const { formData, formRef, handleFormSubmit, submitting } = useDiskFormData(cond);
     const {

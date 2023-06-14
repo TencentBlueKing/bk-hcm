@@ -8,7 +8,6 @@ import {
   defineComponent,
   h,
   ref,
-  computed,
 } from 'vue';
 import {
   useI18n,
@@ -20,7 +19,7 @@ import StepDialog from '@/components/step-dialog/step-dialog';
 import useQueryList  from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
 import {
-  useResourceStore
+  useResourceStore,
 } from '@/store/resource';
 
 // 主机选硬盘挂载
@@ -39,7 +38,7 @@ export default defineComponent({
     },
     detail: {
       type: Object,
-    }
+    },
   },
 
   emits: ['update:isShow', 'success'],
@@ -55,8 +54,8 @@ export default defineComponent({
     const cacheTypes = [
       'None',
       'ReadOnly',
-      'ReadWrite'
-    ]
+      'ReadWrite',
+    ];
 
     const rules = [
       {
@@ -78,8 +77,8 @@ export default defineComponent({
         field: 'region',
         op: 'eq',
         value: props.detail.region,
-      }
-    ]
+      },
+    ];
 
     // if (props.detail.vendor === 'azure') {
     //   rules.push({
@@ -105,7 +104,7 @@ export default defineComponent({
       },
       'disks',
       null,
-      'getUnbindCvmDisks'
+      'getUnbindCvmDisks',
     );
 
     const columns = useColumns('drive', true);
@@ -130,14 +129,14 @@ export default defineComponent({
               onChange() {
                 selection.value = data;
               },
-            }
+            },
           );
         },
       },
-      ...columns.filter((column: any) => ['资源 ID', '名称', '类型', '容量(GB)', '状态'].includes(column.label))
-    ]
+      ...columns.filter((column: any) => ['资源 ID', '名称', '类型', '容量(GB)', '状态'].includes(column.label)),
+    ];
 
-   // 方法
+    // 方法
     const handleClose = () => {
       emit('update:isShow', false);
     };
@@ -147,45 +146,47 @@ export default defineComponent({
       const postData: any = {
         disk_id: selection.value.id,
         cvm_id: props.detail.id,
-      }
+      };
       if (!selection.value.id) {
         Message({
           theme: 'error',
-          message: '请先选择云硬盘'
-        })
-        return
+          message: '请先选择云硬盘',
+        });
+        return;
       }
       if (props.detail.vendor === 'aws') {
         if (!deviceName.value) {
           Message({
             theme: 'error',
-            message: '请先输入设备名称'
-          })
-          return
+            message: '请先输入设备名称',
+          });
+          return;
         }
-        postData.device_name = deviceName.value
+        postData.device_name = deviceName.value;
       }
       if (props.detail.vendor === 'azure') {
         if (!cachingType.value) {
           Message({
             theme: 'error',
-            message: '请先选择缓存类型'
-          })
-          return
+            message: '请先选择缓存类型',
+          });
+          return;
         }
-        postData.caching_type = cachingType.value
+        postData.caching_type = cachingType.value;
       }
       resourceStore.attachDisk(postData).then(() => {
         emit('success');
         handleClose();
-      }).catch((err: any) => {
-        Message({
-          theme: 'error',
-          message: err.message || err
-        })
-      }).finally(() => {
-        isConfirmLoading.value = false;
       })
+        .catch((err: any) => {
+          Message({
+            theme: 'error',
+            message: err.message || err,
+          });
+        })
+        .finally(() => {
+          isConfirmLoading.value = false;
+        });
     };
 
     return {
@@ -208,16 +209,15 @@ export default defineComponent({
 
   render() {
     const tooltipSlot = {
-      content: () => <>Linux设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/device_naming.html<br />windows设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/WindowsGuide/device_naming.html</>
-    }
+      content: () => <>Linux设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/device_naming.html<br />windows设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/WindowsGuide/device_naming.html</>,
+    };
     const steps = [
       {
         isConfirmLoading: this.isConfirmLoading,
-        component: () =>
-          <Loading loading={this.isLoading}>
+        component: () => <Loading loading={this.isLoading}>
             {
               this.detail.vendor === 'aws'
-              ? <>
+                ? <>
                 <span class="mr10">设备名称:</span>
                 <bk-input v-model={this.deviceName} style="width: 200px;"></bk-input>
                 <bk-popover
@@ -227,15 +227,15 @@ export default defineComponent({
                   <InfoLine />
                 </bk-popover>
                 </>
-              : ''
+                : ''
             }
             {
               this.detail.vendor === 'azure'
-              ? <>
+                ? <>
                 <span class="mr10">缓存类型:</span>
                 <bk-select v-model={this.cachingType} style="width: 200px;display: inline-block;">
                   {
-                    this.cacheTypes.map((type) => <bk-option
+                    this.cacheTypes.map(type => <bk-option
                       key={type}
                       value={type}
                       label={type}
@@ -243,7 +243,7 @@ export default defineComponent({
                   }
                 </bk-select>
               </>
-              : ''
+                : ''
             }
             <Table
               class="mt20"
@@ -256,7 +256,7 @@ export default defineComponent({
               onPageValueChange={this.handlePageChange}
               onColumnSort={this.handleSort}
             />
-          </Loading>
+          </Loading>,
       },
     ];
 

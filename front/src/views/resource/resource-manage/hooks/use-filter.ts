@@ -1,8 +1,6 @@
 import {
-  computed,
   ref,
   watch,
-  watchEffect,
 } from 'vue';
 
 import type { FilterType } from '@/typings/resource';
@@ -13,7 +11,6 @@ import {
   useAccountStore,
 } from '@/store';
 import { QueryFilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
-import { useRoute } from 'vue-router';
 
 type PropsType = {
   filter?: FilterType,
@@ -68,7 +65,7 @@ const useFilter = (props: PropsType) => {
     (val) => {
       const map = new Map<string, number>();
       const answer = [] as unknown as Array<QueryFilterType | RulesItem>;
-      if(props.whereAmI === ResourceManageSenario.image) answer.push(imageInitialCondition);
+      if (props.whereAmI === ResourceManageSenario.image) answer.push(imageInitialCondition);
       for (const { id, values } of val) {
         const rule: QueryFilterType = {
           op: QueryRuleOPEnum.OR,
@@ -76,13 +73,13 @@ const useFilter = (props: PropsType) => {
         };
         const field = id;
 
-        if(props.whereAmI === ResourceManageSenario.image && ['account_id', 'bk_biz_id'].includes(field) ) continue;
+        if (props.whereAmI === ResourceManageSenario.image && ['account_id', 'bk_biz_id'].includes(field)) continue;
 
         const condition = {
           field,
           op: isAccurate.value ? QueryRuleOPEnum.EQ : QueryRuleOPEnum.CS,
           value:
-            field === "bk_cloud_id" ? Number(values[0].id) : values[0].id,
+            field === 'bk_cloud_id' ? Number(values[0].id) : values[0].id,
         };
 
         if (!map.has(field)) {
@@ -94,9 +91,9 @@ const useFilter = (props: PropsType) => {
         else {
           rule.rules.push(condition);
           answer.push(rule);
-        } 
+        }
       }
-      if(props.whereAmI === ResourceManageSenario.image) filter.value.rules = [];
+      if (props.whereAmI === ResourceManageSenario.image) filter.value.rules = [];
       else filter.value.rules = props.filter.rules;
       filter.value.rules = filter.value.rules.concat(answer);
     },
@@ -112,9 +109,9 @@ const useFilter = (props: PropsType) => {
     },
     {
       deep: true,
-      immediate: true
-    }
-  )
+      immediate: true,
+    },
+  );
 
   return {
     searchData,
