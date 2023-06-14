@@ -1,6 +1,6 @@
 // table 字段相关信息
 import i18n from '@/language/i18n';
-import { CloudType, HostCloudEnum, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
+import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import { useAccountStore } from '@/store';
 import {
   Button,
@@ -119,7 +119,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
       label: '管控区域 ID',
@@ -188,7 +188,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
       label: '可用区',
@@ -260,7 +260,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
       label: '描述',
@@ -471,7 +471,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
       label: '可用区域',
@@ -584,7 +584,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '地域',
       field: 'region',
       sort: true,
-      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
       label: '名称',
@@ -635,7 +635,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '地域',
       onlyShowOnList: true,
       field: 'region',
-      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
       label: '名称',
@@ -805,7 +805,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '地域',
       field: 'region',
-      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell)
+      render: ({ cell, row }: { cell: string, row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell),
     },
     {
       label: '名称',

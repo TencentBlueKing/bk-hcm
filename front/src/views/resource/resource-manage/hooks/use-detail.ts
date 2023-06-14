@@ -26,7 +26,7 @@ export default (type: string, id: string, cb?: Function, vendor?: string) => {
           ...data.extension,
           vendorName: CloudType[data.vendor],
           bk_biz_id_label: data.bk_biz_id === -1 ? '未分配' : data.bk_biz_id,
-          bk_biz_id_name: ''
+          bk_biz_id_name: '',
         };
         detail.value.bk_biz_id_name = await getNameFromBusinessMap(data.bk_biz_id);
         cb?.(detail.value);

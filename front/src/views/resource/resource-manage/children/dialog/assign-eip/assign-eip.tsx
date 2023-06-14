@@ -15,7 +15,7 @@ import StepDialog from '@/components/step-dialog/step-dialog';
 import useQueryList  from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
 import {
-  useResourceStore
+  useResourceStore,
 } from '@/store/resource';
 
 // 绑定eip
@@ -66,36 +66,36 @@ export default defineComponent({
         {
           field: 'public_ipv4',
           op: 'json_length',
-          value: 0
+          value: 0,
         },
         {
           field: 'public_ipv6',
           op: 'json_length',
-          value: 0
-        }
+          value: 0,
+        },
       ]);
     } else {
       rules.push(...[
         {
           field: 'public_ipv6_addresses',
           op: 'json_length',
-          value: 0
+          value: 0,
         },
         {
           field: 'public_ipv4_addresses',
           op: 'json_length',
-          value: 0
+          value: 0,
         },
         {
           field: 'recycle_status',
           op: 'neq',
-          value: 'recycling'
+          value: 'recycling',
         },
         {
           field: 'status',
           op: 'in',
-          value: ['RUNNING', 'STOPPED', 'STARTING', 'STOPPING', 'REBOOTING', 'REBOOT', 'HARD_REBOOT', 'ACTIVE', 'SHUTOFF', 'running', 'stopping', 'stopped', 'Succeeded', 'PowerState/running']
-        }
+          value: ['RUNNING', 'STOPPED', 'STARTING', 'STOPPING', 'REBOOTING', 'REBOOT', 'HARD_REBOOT', 'ACTIVE', 'SHUTOFF', 'running', 'stopping', 'stopped', 'Succeeded', 'PowerState/running'],
+        },
       ]);
     }
 
@@ -110,13 +110,13 @@ export default defineComponent({
       {
         filter: {
           op: 'and',
-          rules
+          rules,
         },
       },
       type,
       null,
       type === 'cvms' ? 'list' : 'getUnbindEipNetworkList',
-      type === 'cvms' ? {} : { is_associate: true }
+      type === 'cvms' ? {} : { is_associate: true },
     );
 
     const columns = useColumns(columnType, true);
@@ -137,11 +137,11 @@ export default defineComponent({
               onChange() {
                 selection.value = data;
               },
-            }
+            },
           );
         },
       },
-      ...columns
+      ...columns,
     ];
 
     // 方法
@@ -154,22 +154,22 @@ export default defineComponent({
       const postData = type === 'cvms'
         ? {
           eip_id: props.detail.id,
-          cvm_id: selection.value.id
+          cvm_id: selection.value.id,
         }
         : {
           eip_id: props.detail.id,
           network_interface_id: selection.value.id,
-          cvm_id: selection.value.cvm_id
-        }
+          cvm_id: selection.value.cvm_id,
+        };
       resourceStore
         .associateEip(postData)
         .then(() => {
           handleClose();
-          emit('success-assign')
+          emit('success-assign');
         })
         .finally(() => {
           isConfirmLoading.value = false;
-        })
+        });
     };
 
     return {
@@ -192,8 +192,7 @@ export default defineComponent({
     const steps = [
       {
         isConfirmLoading: this.isConfirmLoading,
-        component: () =>
-          <Loading loading={this.isLoading}>
+        component: () => <Loading loading={this.isLoading}>
             <Table
               class="mt20"
               row-hover="auto"
@@ -205,7 +204,7 @@ export default defineComponent({
               onPageValueChange={this.handlePageChange}
               onColumnSort={this.handleSort}
             />
-          </Loading>
+          </Loading>,
       },
     ];
 

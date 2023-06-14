@@ -1,6 +1,6 @@
-import { VendorEnum } from "@/common/constant";
-import { computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { VendorEnum } from '@/common/constant';
+import { computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
 export interface IDetail {
   vendor: VendorEnum;
@@ -15,10 +15,10 @@ export interface IMeta {
 }
 
 export enum TypeEnum {
-  VPC = "vpc",
-  SUBNET = "subnet",
-  ACCOUNT = "account",
-  IMAGE = "image",
+  VPC = 'vpc',
+  SUBNET = 'subnet',
+  ACCOUNT = 'account',
+  IMAGE = 'image',
 }
 
 export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
@@ -26,21 +26,21 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
   const route = useRoute();
   const { id, name, type, isExpand } = meta;
   const { vendor } = data;
-  const computedId = computed(() =>
-    Array.isArray(data[id])
-      ? isExpand
-        ? data[name][1]
-        : data[id][0]
-      : data[id]
-  );
+  // eslint-disable-next-line no-nested-ternary
+  const computedId = computed(() => (Array.isArray(data[id])
+    ? isExpand
+      ? data[name][1]
+      : data[id][0]
+    : data[id]));
   const computedName = computed(() => {
+    // eslint-disable-next-line no-nested-ternary
     let txt = Array.isArray(data[name])
       ? isExpand
         ? data[name][1]
         : data[name][0]
       : data[name];
-    if (vendor === VendorEnum.AZURE && type === TypeEnum.VPC)
-      txt = txt.split("/").reverse()[0];
+    // eslint-disable-next-line prefer-destructuring
+    if (vendor === VendorEnum.AZURE && type === TypeEnum.VPC) txt = txt.split('/').reverse()[0];
     return txt;
   });
 
@@ -48,14 +48,14 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
     const routeInfo = {
       query: { id: computedId.value, type: vendor },
     };
-    if (route.path.includes("business")) {
+    if (route.path.includes('business')) {
       Object.assign(routeInfo, {
         name:
-          type === TypeEnum.ACCOUNT ? "accountDetail" : `${type}BusinessDetail`,
+          type === TypeEnum.ACCOUNT ? 'accountDetail' : `${type}BusinessDetail`,
       });
     } else {
       Object.assign(routeInfo, {
-        name: type === TypeEnum.ACCOUNT ? "accountDetail" : "resourceDetail",
+        name: type === TypeEnum.ACCOUNT ? 'accountDetail' : 'resourceDetail',
         params: {
           type,
         },

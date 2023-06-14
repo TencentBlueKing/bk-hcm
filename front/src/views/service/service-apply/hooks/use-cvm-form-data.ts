@@ -155,7 +155,7 @@ export default (cond: Cond) => {
     formData[key] = defaultData[key];
   };
 
-  watch(cond, (cond) => {
+  watch(cond, () => {
     resetFormData();
 
     nextTick(() => {
@@ -164,7 +164,7 @@ export default (cond: Cond) => {
   });
 
   const getSaveData = () => {
-    const { purchase_duration, public_ip_assigned, ...saveFormData } = formData
+    const { purchase_duration, public_ip_assigned, ...saveFormData } = formData;
     const saveData: ICvmSaveData = {
       ...saveFormData,
       bk_biz_id: cond.bizId,
@@ -174,22 +174,22 @@ export default (cond: Cond) => {
     };
 
     if (cond.vendor === VendorEnum.TCLOUD) {
-      saveData.public_ip_assigned = public_ip_assigned
-      saveData.instance_charge_paid_period = purchase_duration.count * (purchase_duration.unit === 'y' ? 12 : 1)
+      saveData.public_ip_assigned = public_ip_assigned;
+      saveData.instance_charge_paid_period = purchase_duration.count * (purchase_duration.unit === 'y' ? 12 : 1);
     }
 
     if (cond.vendor === VendorEnum.HUAWEI) {
-      saveData.public_ip_assigned = public_ip_assigned
-      saveData.instance_charge_paid_period = purchase_duration.count * (purchase_duration.unit === 'y' ? 12 : 1)
+      saveData.public_ip_assigned = public_ip_assigned;
+      saveData.instance_charge_paid_period = purchase_duration.count * (purchase_duration.unit === 'y' ? 12 : 1);
     }
 
     if (cond.vendor === VendorEnum.AWS) {
-      saveData.public_ip_assigned = public_ip_assigned
+      saveData.public_ip_assigned = public_ip_assigned;
     }
 
     if (cond.vendor === VendorEnum.AZURE) {
       saveData.resource_group_name = cond.resourceGroup;
-      saveData.cloud_security_group_ids = [saveFormData.cloud_security_group_ids as string]
+      saveData.cloud_security_group_ids = [saveFormData.cloud_security_group_ids as string];
     }
     return saveData;
   };

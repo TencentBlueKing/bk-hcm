@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
 import ContentContainer from '../components/common/content-container.vue';
@@ -32,7 +33,7 @@ const { Group: RadioGroup, Button: RadioButton } = Radio;
 
 export default defineComponent({
   props: {},
-  setup(props, ctx) {
+  setup() {
     const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.CVM);
     const { formData, formRef, handleFormSubmit, submitting, resetFormItemData } = useCvmFormData(cond);
     const {
