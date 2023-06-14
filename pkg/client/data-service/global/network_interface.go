@@ -114,8 +114,8 @@ func (n *NetworkInterfaceClient) BatchDelete(ctx context.Context, h http.Header,
 	return nil
 }
 
-// BatchUpdateNetworkInterfaceCommonInfo batch update network interface common info.
-func (n *NetworkInterfaceClient) BatchUpdateNetworkInterfaceCommonInfo(ctx context.Context, h http.Header,
+// BatchUpdateNICommonInfo batch update network interface common info.
+func (n *NetworkInterfaceClient) BatchUpdateNICommonInfo(ctx context.Context, h http.Header,
 	request *datacloudniproto.NetworkInterfaceCommonInfoBatchUpdateReq) error {
 
 	resp := new(rest.BaseResp)
