@@ -121,7 +121,7 @@ func (req *GcpAccountExtensionUpdateReq) Validate(accountType enumor.AccountType
 	}
 
 	// 检查密钥是否符合要求
-	if err := validateGcpAccountCloudServiceSecretKey(req.CloudServiceSecretKey); err != nil {
+	if err := validateGcpAccountCloudServiceSK(req.CloudServiceSecretKey); err != nil {
 		return err
 	}
 

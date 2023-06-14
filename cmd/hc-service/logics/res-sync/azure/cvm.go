@@ -482,11 +482,11 @@ func (cli *client) getNIAssResMapFromNI(kt *kit.Kit, niIDs []string, resGroupNam
 			cloudMap[cvmID].PrivateIPv4Addresses = make([]string, 0)
 			cloudMap[cvmID].PrivateIPv4Addresses = append(cloudMap[cvmID].PrivateIPv4Addresses, niData.PrivateIPv4...)
 			cloudMap[cvmID].PrivateIPv6Addresses = make([]string, 0)
-			cloudMap[cvmID].PrivateIPv6Addresses = append(cloudMap[cvmID].PrivateIPv4Addresses, niData.PrivateIPv6...)
+			cloudMap[cvmID].PrivateIPv6Addresses = append(cloudMap[cvmID].PrivateIPv6Addresses, niData.PrivateIPv6...)
 			cloudMap[cvmID].PublicIPv4Addresses = make([]string, 0)
 			cloudMap[cvmID].PublicIPv4Addresses = append(cloudMap[cvmID].PublicIPv4Addresses, niData.PublicIPv4...)
 			cloudMap[cvmID].PublicIPv6Addresses = make([]string, 0)
-			cloudMap[cvmID].PublicIPv6Addresses = append(cloudMap[cvmID].PublicIPv4Addresses, niData.PublicIPv4...)
+			cloudMap[cvmID].PublicIPv6Addresses = append(cloudMap[cvmID].PublicIPv6Addresses, niData.PublicIPv6...)
 		}
 	}
 
