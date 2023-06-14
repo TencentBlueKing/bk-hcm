@@ -132,7 +132,7 @@ func (a *ApplicationOfCreateHuaWeiCvm) assignToBiz(cloudCvmIDs []string) ([]stri
 		return cvmIDs, err
 	}
 	if len(niIDs) > 0 {
-		err = a.Client.DataService().Global.NetworkInterface.BatchUpdateNetworkInterfaceCommonInfo(
+		err = a.Client.DataService().Global.NetworkInterface.BatchUpdateNICommonInfo(
 			a.Cts.Kit.Ctx,
 			a.Cts.Kit.Header(),
 			&protoni.NetworkInterfaceCommonInfoBatchUpdateReq{
