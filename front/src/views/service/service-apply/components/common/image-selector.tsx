@@ -62,7 +62,7 @@ export default defineComponent({
         ],
       };
 
-      switch(vendor) {
+      switch (vendor) {
         case VendorEnum.AWS:
           filter.rules.push({
             field: 'extension.region',
@@ -72,35 +72,35 @@ export default defineComponent({
             field: 'state',
             op: QueryRuleOPEnum.EQ,
             value: 'available',
-          })
+          });
           break;
         case VendorEnum.HUAWEI:
           filter.rules.push({
             field: 'extension.region',
             op: QueryRuleOPEnum.JSON_EQ,
             value: region,
-          })
+          });
           break;
         case VendorEnum.TCLOUD:
           filter.rules.push({
             field: 'state',
             op: QueryRuleOPEnum.EQ,
             value: 'NORMAL',
-          })
+          });
           break;
         case VendorEnum.AZURE:
           filter.rules.push({
             field: 'architecture',
             op: QueryRuleOPEnum.EQ,
             value: machineType.architecture,
-          })
+          });
           break;
         case VendorEnum.GCP:
           filter.rules.push({
             field: 'state',
             op: QueryRuleOPEnum.EQ,
             value: 'READY',
-          })
+          });
           break;
       }
 

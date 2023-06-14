@@ -3,15 +3,12 @@ import {
   ref,
 } from 'vue';
 import {
-  Message,
-} from 'bkui-vue';
-import {
   useI18n,
 } from 'vue-i18n';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import useColumns from '../../../hooks/use-columns';
 import {
-  useResourceStore
+  useResourceStore,
 } from '@/store/resource';
 
 export default defineComponent({
@@ -27,8 +24,8 @@ export default defineComponent({
       type: Boolean,
     },
     data: {
-      type: Object
-    }
+      type: Object,
+    },
   },
 
   emits: ['update:isShow', 'success'],
@@ -47,8 +44,8 @@ export default defineComponent({
         label: 'ID',
         field: 'id',
       },
-      ...columns
-    ]
+      ...columns,
+    ];
 
     // 方法
     const handleClose = () => {
@@ -56,20 +53,20 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      isLoading.value = true
-      resourceStore.detachDisk(
-        {
-          disk_id: props.data.id,
-          cvm_id: props.data.instance_id
-        }
-      ).then(() => {
-        emit('success')
+      isLoading.value = true;
+      resourceStore.detachDisk({
+        disk_id: props.data.id,
+        cvm_id: props.data.instance_id,
+      }).then(() => {
+        emit('success');
         handleClose();
-      }).catch((err: any) => {
-        console.error(err.message || err)
-      }).finally(() => {
-        isLoading.value = false
       })
+        .catch((err: any) => {
+          console.error(err.message || err);
+        })
+        .finally(() => {
+          isLoading.value = false;
+        });
     };
 
     return {

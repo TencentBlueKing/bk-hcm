@@ -30,7 +30,7 @@ export default defineComponent({
       },
     });
 
-    let localFormData = reactive<IDiskOption>(getGcpDataDiskDefaults());
+    const localFormData = reactive<IDiskOption>(getGcpDataDiskDefaults());
     watch(localIsShow, (isShow) => {
       if (isShow) {
         const defaultData = {
@@ -40,14 +40,14 @@ export default defineComponent({
 
         Object.keys(defaultData).forEach((key) => {
           localFormData[key] = defaultData[key];
-        })
+        });
       }
     });
 
     const handleConfirm = async () => {
       await formRef.value.validate();
-      emit(props.isEdit ? 'save' : 'add', { ...localFormData })
-    }
+      emit(props.isEdit ? 'save' : 'add', { ...localFormData });
+    };
 
     return () => <Dialog
       title="新增磁盘"

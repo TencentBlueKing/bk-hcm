@@ -28,7 +28,7 @@ export type RulesItem = {
   field: string;
   op: QueryRuleOPEnum;
   value: string | number | string[];
-}
+};
 
 export interface IOption {
   id: string;

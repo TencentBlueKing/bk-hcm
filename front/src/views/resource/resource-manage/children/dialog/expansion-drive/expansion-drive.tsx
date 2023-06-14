@@ -1,7 +1,6 @@
 import './expansion-drive.scss';
 import {
   defineComponent,
-  ref,
 } from 'vue';
 import {
   useI18n,
