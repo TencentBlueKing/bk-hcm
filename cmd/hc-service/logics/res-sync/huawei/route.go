@@ -264,11 +264,11 @@ func (cli *client) listRouteFromCloud(kt *kit.Kit, opt *syncRouteOption) ([]type
 		return nil, nil
 	}
 
-	routeOpt := &typesroutetable.HuaWeiRouteTableListOption{
+	routeOpt := &typesroutetable.HuaWeiRouteTableGetOption{
 		Region: opt.Region,
 		ID:     opt.RouteTableMap[opt.RouteTableID],
 	}
-	routeTables, err := cli.cloudCli.ListRouteTables(kt, routeOpt)
+	routeTable, err := cli.cloudCli.GetRouteTable(kt, routeOpt)
 	if err != nil {
 		logs.Errorf("[%s] list routeTable from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.HuaWei, err,
 			opt.AccountID, opt, kt.Rid)
@@ -276,7 +276,7 @@ func (cli *client) listRouteFromCloud(kt *kit.Kit, opt *syncRouteOption) ([]type
 	}
 
 	results := make([]typesroutetable.HuaWeiRoute, 0)
-	for _, routeTable := range routeTables {
+	if len(routeTable.Extension.Routes) > 0 {
 		results = append(results, routeTable.Extension.Routes...)
 	}
 

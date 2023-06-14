@@ -56,17 +56,17 @@ func (s *Sys) GetSystemToken(ctx context.Context) (string, error) {
 3. 因为资源的名称在系统中是唯一的，所以可能遇到循环依赖的情况（如两个资源分别更新成对方的名字），此时需要引入一个中间变量进行二次更新
 
 综上，具体操作顺序如下：
-  1. 注册hcm系统信息
-  2. 删除Action。该操作无依赖
-  3. 更新ResourceType，先更新名字冲突的(包括需要删除的)为中间值，再更新其它的。该操作无依赖
-  4. 新增ResourceType。该操作依赖于上一步中同名的ResourceType均已更新
-  5. 更新InstanceSelection，先更新名字冲突的(包括需要删除的)为中间值，再更新其它的。该操作依赖于上一步中的ResourceType均已新增
-  6. 新增InstanceSelection。该操作依赖于上一步中同名的InstanceSelection均已更新+第4步中的ResourceType均已新增
-  7. 更新ResourceAction，先更新名字冲突的为中间值，再更新其它的。该操作依赖于第2步中同名Action已删除+上一步中InstanceSelection已新增
-  8. 新增ResourceAction。该操作依赖于上一步中同名的ResourceAction均已更新+第6步中的InstanceSelection均已新增
-  9. 删除InstanceSelection。该操作依赖于第2步和第7步中的原本依赖了这些InstanceSelection的Action均已删除和更新
- 10. 删除ResourceType。该操作依赖于第5步和第9步中的原本依赖了这些ResourceType的InstanceSelection均已删除和更新
- 11. 注册ActionGroup、ResCreatorAction、CommonAction信息
+	1. 注册hcm系统信息
+	2. 删除Action。该操作无依赖
+	3. 更新ResourceType，先更新名字冲突的(包括需要删除的)为中间值，再更新其它的。该操作无依赖
+	4. 新增ResourceType。该操作依赖于上一步中同名的ResourceType均已更新
+	5. 更新InstanceSelection，先更新名字冲突的(包括需要删除的)为中间值，再更新其它的。该操作依赖于上一步中的ResourceType均已新增
+	6. 新增InstanceSelection。该操作依赖于上一步中同名的InstanceSelection均已更新+第4步中的ResourceType均已新增
+	7. 更新ResourceAction，先更新名字冲突的为中间值，再更新其它的。该操作依赖于第2步中同名Action已删除+上一步中InstanceSelection已新增
+	8. 新增ResourceAction。该操作依赖于上一步中同名的ResourceAction均已更新+第6步中的InstanceSelection均已新增
+	9. 删除InstanceSelection。该操作依赖于第2步和第7步中的原本依赖了这些InstanceSelection的Action均已删除和更新
+	10. 删除ResourceType。该操作依赖于第5步和第9步中的原本依赖了这些ResourceType的InstanceSelection均已删除和更新
+	11. 注册ActionGroup、ResCreatorAction、CommonAction信息
 */
 
 // Register register auth model to iam.
