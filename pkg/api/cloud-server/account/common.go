@@ -30,9 +30,9 @@ import (
 )
 
 var (
-	validAccountNameRegex   = regexp.MustCompile("^[a-z][a-z0-9-]{1,62}[a-z0-9]$")
+	validAccountNameRegex   = regexp.MustCompile("^[a-z][a-z0-9-_]{1,62}[a-z0-9]$")
 	accountNameInvalidError = errors.New("invalid account name: name should begin with a lowercase letter, " +
-		"contains lowercase letters(a-z), numbers(0-9) or hyphen(-), end with a lowercase letter or number, " +
+		"contains lowercase letters(a-z), numbers(0-9) or hyphen(-), underline(_),end with a lowercase letter or number, " +
 		"length should be 3 to 64 letters")
 	secretEmptyError = errors.New("SecretID/SecretKey can not be empty")
 	allBizError      = errors.New("can't choose specific biz when choose all biz")
@@ -87,7 +87,7 @@ type gcpAccountCloudServiceSecretKey struct {
 	ClientX509CertURL       string `json:"client_x509_cert_url" validate:"required"`
 }
 
-func validateGcpAccountCloudServiceSecretKey(cloudServiceSecretKey string) error {
+func validateGcpCloudServiceSK(cloudServiceSecretKey string) error {
 	if cloudServiceSecretKey != "" {
 		var secretKey gcpAccountCloudServiceSecretKey
 		if err := json.UnmarshalFromString(cloudServiceSecretKey, &secretKey); err != nil {
