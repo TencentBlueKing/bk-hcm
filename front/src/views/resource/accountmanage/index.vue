@@ -50,15 +50,7 @@
               @click="handleJump('accountDetail', props?.row.id, true)">{{props?.row.name}}</bk-button>
           </template>
         </bk-table-column>
-        <bk-table-column
-          :label="t('云厂商')"
-          prop="vendor"
-          sort
-        >
-          <template #default="props">
-            {{CloudType[props?.row?.vendor]}}
-          </template>
-        </bk-table-column>
+
         <bk-table-column
           label="账号类型"
           prop="type"
@@ -68,6 +60,17 @@
             {{AccountType[props?.row.type]}}
           </template>
         </bk-table-column>
+
+        <bk-table-column
+          :label="t('云厂商')"
+          prop="vendor"
+          sort
+        >
+          <template #default="props">
+            {{CloudType[props?.row?.vendor]}}
+          </template>
+        </bk-table-column>
+
         <bk-table-column
           label="站点类型"
           prop="site"
@@ -195,7 +198,7 @@ import { useAccountStore } from '@/store';
 import rightArrow from '@/assets/image/right-arrow.png';
 import { Message } from 'bkui-vue';
 import { CloudType, AccountType } from '@/typings';
-import { SITE_TYPE_MAP, VENDORS } from '@/common/constant';
+import { ACCOUNT_TYPES, SITE_TYPES, SITE_TYPE_MAP, VENDORS } from '@/common/constant';
 import { useVerify } from '@/hooks';
 import { useMemoPagination, DEFAULT_PAGE_INDEX, DEFAULT_PAGE_SIZE } from '@/hooks/useMemoPagination';
 
@@ -220,13 +223,33 @@ export default defineComponent({
         {
           name: '名称',
           id: 'name',
-        }, {
+        },
+        {
+          name: '账号类型',
+          id: 'type',
+          children: ACCOUNT_TYPES,
+        },
+        {
           name: '云厂商',
           id: 'vendor',
           children: VENDORS,
-        }, {
+        },
+        {
+          name: '站点类型',
+          id: 'site',
+          children: SITE_TYPES,
+        },
+        {
           name: '负责人',
           id: 'managers',
+        },
+        {
+          name: '创建人',
+          id: 'creator',
+        },
+        {
+          name: '修改人',
+          id: 'reviser',
         },
       ],
       tableData: [],
