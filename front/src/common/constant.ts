@@ -325,3 +325,8 @@ export const NET_CHARGE_MAP = {
   BANDWIDTH_POSTPAID_BY_HOUR: '按带宽使用时长计费',
   BANDWIDTH_PACKAGE: '按带宽包计费',
 };
+
+export const SITE_TYPE_MAP = {
+  china: '中国站',
+  international: '国际站',
+};
