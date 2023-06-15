@@ -45,11 +45,13 @@ export default defineComponent({
     const { t } = useI18n();
 
     const router = useRouter();
+    const { Option } = Select;
 
     const resourceStore = useResourceStore();
     const accountStore = useAccountStore();
     const distributionStore = useDistributionStore();
     const { getRegionName } = useRegionsStore();
+    const searchedAreas = ref([]);
 
     // 状态
     const validateMap = ref({});
@@ -150,24 +152,33 @@ export default defineComponent({
             validateMap.value[data.id] = validate;
           }
           // 未绑定需要先绑定云区域
-          return () => h(Select, {
-            class: {
-              'resource-is-error': errorList.value.includes(data.id),
-            },
-            displayKey: 'name',
-            idKey: 'id',
-            list: cloudAreas.value,
-            modelValue: data.temp_bk_cloud_id,
-            scrollLoading: isLoadingCloudAreas.value,
-            filterable: true,
-            onScrollEnd() {
-              getCloudAreas();
-            },
-            onChange(val: string) {
-              data.temp_bk_cloud_id = val;
-              validate();
-            },
-          });
+          return (
+            <Select
+              remoteMethod={(val) => {
+                fetchCloudAreasByName(val);
+              }}
+              class={errorList.value.includes(data.id) ? 'resource-is-error' : ''}
+              modelValue={data.temp_bk_cloud_id}
+              filterable={true}
+              placeholder='支持模糊搜索,区分大小写'
+              onChange={(val) => {
+                data.temp_bk_cloud_id = val;
+                validate();
+              }}
+              >
+                {
+                  searchedAreas.value.map(item => (
+                    <Option
+                      key={item.id}
+                      value={item.id}
+                      label={item.name}
+                    >
+                      {item.name}
+                    </Option>
+                  ))
+                }
+            </Select>
+          );
         },
       },
     ];
@@ -249,6 +260,17 @@ export default defineComponent({
         .finally(() => {
           isLoadingCloudAreas.value = false;
         });
+    };
+
+    const fetchCloudAreasByName = async (name: string) => {
+      const res = await resourceStore.getCloudAreas({
+        page: {
+          start: 0,
+          limit: 100,
+        },
+        name: name || ' ',
+      });
+      searchedAreas.value = res?.data?.info;
     };
 
     const getBusinessList = async () => {
