@@ -150,6 +150,9 @@ watch(
     }
     useDistributionStore().setCloudAccountId(val);
   },
+  {
+    immediate: true,
+  },
 );
 
 watch(
