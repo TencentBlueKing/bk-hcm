@@ -76,6 +76,34 @@ export const VENDORS = [
   },
 ];
 
+// 账号类型
+export const ACCOUNT_TYPES = [
+  {
+    id: 'resource',
+    name: '资源账号',
+  },
+  {
+    id: 'registration',
+    name: '登记账号',
+  },
+  {
+    id: 'security_audit',
+    name: '安全审计账号',
+  },
+];
+
+// 站点类型
+export const SITE_TYPES = [
+  {
+    id: 'china',
+    name: '中国站',
+  },
+  {
+    id: 'international',
+    name: '国际站',
+  },
+];
+
 // 审计资源类型（与资源类型暂时独立开）
 export const AUDIT_RESOURCE_TYPES = [
   {
@@ -324,4 +352,9 @@ export const NET_CHARGE_MAP = {
   TRAFFIC_POSTPAID_BY_HOUR: '按流量计费',
   BANDWIDTH_POSTPAID_BY_HOUR: '按带宽使用时长计费',
   BANDWIDTH_PACKAGE: '按带宽包计费',
+};
+
+export const SITE_TYPE_MAP = {
+  china: '中国站',
+  international: '国际站',
 };

@@ -12,7 +12,8 @@
         <bk-checkbox v-model="isAccurate" class="pr20">
           {{t('精确')}}
         </bk-checkbox>
-        <bk-search-select class="bg-white w280" :conditions="[]" v-model="searchValue" :data="searchData"></bk-search-select>
+        <bk-search-select class="bg-white w280" :conditions="[]" v-model="searchValue" :data="searchData">
+        </bk-search-select>
       </div>
     </div>
     <bk-loading
@@ -49,6 +50,17 @@
               @click="handleJump('accountDetail', props?.row.id, true)">{{props?.row.name}}</bk-button>
           </template>
         </bk-table-column>
+
+        <bk-table-column
+          label="账号类型"
+          prop="type"
+          sort
+        >
+          <template #default="props">
+            {{AccountType[props?.row.type]}}
+          </template>
+        </bk-table-column>
+
         <bk-table-column
           :label="t('云厂商')"
           prop="vendor"
@@ -58,13 +70,14 @@
             {{CloudType[props?.row?.vendor]}}
           </template>
         </bk-table-column>
+
         <bk-table-column
-          :label="t('类型')"
-          prop="type"
+          label="站点类型"
+          prop="site"
           sort
         >
           <template #default="props">
-            {{AccountType[props?.row.type]}}
+            {{SITE_TYPE_MAP[props?.row.site]}}
           </template>
         </bk-table-column>
         <bk-table-column
@@ -75,6 +88,18 @@
           <template #default="props">
             {{props?.row.managers?.join(',')}}
           </template>
+        </bk-table-column>
+        <bk-table-column
+          label="创建人"
+          prop="creator"
+          sort
+        >
+        </bk-table-column>
+        <bk-table-column
+          label="修改人"
+          prop="reviser"
+          sort
+        >
         </bk-table-column>
         <bk-table-column
           :label="t('余额')"
@@ -92,6 +117,12 @@
           <template #default="props">
             {{props?.row.created_at}}
           </template>
+        </bk-table-column>
+        <bk-table-column
+          label="修改时间"
+          prop="updated_at"
+          sort
+        >
         </bk-table-column>
         <bk-table-column
           :label="t('备注')"
@@ -167,10 +198,10 @@ import { useAccountStore } from '@/store';
 import rightArrow from '@/assets/image/right-arrow.png';
 import { Message } from 'bkui-vue';
 import { CloudType, AccountType } from '@/typings';
-import { VENDORS } from '@/common/constant';
+import { ACCOUNT_TYPES, SITE_TYPES, SITE_TYPE_MAP, VENDORS } from '@/common/constant';
 import { useVerify } from '@/hooks';
-import { useMemoPagination } from '@/hooks/useMemoPagination';
-import { DEFAULT_PAGE_INDEX, DEFAULT_PAGE_SIZE } from '@/hooks/useMemoPagination';
+import { useMemoPagination, DEFAULT_PAGE_INDEX, DEFAULT_PAGE_SIZE } from '@/hooks/useMemoPagination';
+
 
 export default defineComponent({
   name: 'AccountManageList',
@@ -183,7 +214,7 @@ export default defineComponent({
       setMemoPageIndex,
       memoPageIndex,
       memoPageSize,
-      memoPageStart
+      memoPageStart,
     } = useMemoPagination();
     const state = reactive({
       isAccurate: false,    // 是否精确
@@ -192,13 +223,33 @@ export default defineComponent({
         {
           name: '名称',
           id: 'name',
-        }, {
+        },
+        {
+          name: '账号类型',
+          id: 'type',
+          children: ACCOUNT_TYPES,
+        },
+        {
           name: '云厂商',
           id: 'vendor',
           children: VENDORS,
-        }, {
+        },
+        {
+          name: '站点类型',
+          id: 'site',
+          children: SITE_TYPES,
+        },
+        {
           name: '负责人',
           id: 'managers',
+        },
+        {
+          name: '创建人',
+          id: 'creator',
+        },
+        {
+          name: '修改人',
+          id: 'reviser',
         },
       ],
       tableData: [],
@@ -294,9 +345,9 @@ export default defineComponent({
           return p;
         }, []);
         pageCount.value = 0;
-        if(oldVal !== undefined) {
+        if (oldVal !== undefined) {
           setMemoPageIndex(DEFAULT_PAGE_INDEX);
-          setMemoPageSize(DEFAULT_PAGE_SIZE)
+          setMemoPageSize(DEFAULT_PAGE_SIZE);
         }
         /* 获取账号列表接口 */
         getListCount(); // 数量
@@ -415,7 +466,8 @@ export default defineComponent({
       t,
       pageCount,
       memoPageIndex,
-      memoPageSize
+      memoPageSize,
+      SITE_TYPE_MAP,
     };
   },
 });
