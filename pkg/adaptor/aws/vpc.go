@@ -134,10 +134,13 @@ func (a *Aws) ListVpc(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsVpcListRe
 
 	if len(opt.CloudIDs) != 0 {
 		req.VpcIds = aws.StringSlice(opt.CloudIDs)
-	} else {
+	}
+
+	if opt.Page != nil {
 		req.NextToken = opt.Page.NextToken
 		req.MaxResults = opt.Page.MaxResults
 	}
+
 	resp, err := client.DescribeVpcsWithContext(kt.Ctx, req)
 	if err != nil {
 		if !strings.Contains(err.Error(), ErrVpcNotFound) {
