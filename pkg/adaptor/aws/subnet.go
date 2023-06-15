@@ -156,7 +156,9 @@ func (a *Aws) ListSubnet(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsSubnet
 
 	if len(opt.CloudIDs) != 0 {
 		req.SubnetIds = aws.StringSlice(opt.CloudIDs)
-	} else {
+	}
+
+	if opt.Page != nil {
 		req.NextToken = opt.Page.NextToken
 		req.MaxResults = opt.Page.MaxResults
 	}

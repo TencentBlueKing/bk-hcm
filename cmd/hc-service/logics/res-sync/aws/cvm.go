@@ -659,6 +659,10 @@ func (cli *client) listRemoveCvmID(kt *kit.Kit, params *SyncBaseParams) ([]strin
 				cloudIDs, delCloudID = removeNotFoundCloudID(cloudIDs, err)
 				delCloudIDs = append(delCloudIDs, delCloudID)
 
+				if len(cloudIDs) <= 0 {
+					break
+				}
+
 				continue
 			}
 
