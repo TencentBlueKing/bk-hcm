@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/thirdparty/esb/cmdb"
@@ -46,6 +47,7 @@ func InitCmdbService(c *capability.Capability) {
 	h.Add("ListAuthorizedBiz", "POST", "/authorized/bizs/list", svr.ListAuthorizedBiz)
 	h.Add("ListAuthorizedBizAudit", "POST", "/authorized/audit/bizs/list", svr.ListAuthorizedBizAudit)
 	h.Add("ListCloudArea", "POST", "/cloud_areas/list", svr.ListCloudArea)
+	h.Add("ListAllCloudArea", "POST", "/all/cloud_areas/list", svr.ListAllCloudArea)
 
 	h.Load(c.WebService)
 }
@@ -178,6 +180,50 @@ func (c *cmdbSvc) ListCloudArea(cts *rest.Contexts) (interface{}, error) {
 			ID:   cloudArea.CloudID,
 			Name: cloudArea.CloudName,
 		})
+	}
+
+	return result, nil
+}
+
+// ListAllCloudArea list all cloud area.
+func (c *cmdbSvc) ListAllCloudArea(cts *rest.Contexts) (interface{}, error) {
+
+	limit := int64(webserver.ListCloudAreaLimit)
+	start := int64(0)
+	params := &cmdb.SearchCloudAreaParams{
+		Fields: []string{"bk_cloud_id", "bk_cloud_name"},
+		Page: cmdb.BasePage{
+			Limit: limit,
+			Start: int64(0),
+			Sort:  "bk_cloud_id",
+		},
+	}
+	result := &webserver.ListCloudAreaResult{
+		Count: 0,
+		Info:  make([]webserver.CloudArea, 0),
+	}
+	for {
+		params.Page.Start = start
+
+		res, err := c.esbClient.Cmdb().SearchCloudArea(cts.Kit.Ctx, params)
+		if err != nil {
+			logs.Errorf("call cmdb search cloud area api failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("call cmdb search cloud area api failed, err: %v", err)
+		}
+
+		result.Count = res.Count
+		for _, cloudArea := range res.Info {
+			result.Info = append(result.Info, webserver.CloudArea{
+				ID:   cloudArea.CloudID,
+				Name: cloudArea.CloudName,
+			})
+		}
+
+		if int64(len(res.Info)) < limit {
+			break
+		}
+
+		start += limit
 	}
 
 	return result, nil
