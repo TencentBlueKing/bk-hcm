@@ -91,7 +91,7 @@
           prop="region"
         >
           <template #default="{ data }">
-            {{ 
+            {{
               getRegionName(data?.vendor, data?.region)
             }}
           </template>
@@ -269,6 +269,7 @@ export default defineComponent({
     const {
       selections,
       handleSelectionChange,
+      resetSelections,
     } = useSelection();
 
     // 选择类型
@@ -279,6 +280,7 @@ export default defineComponent({
         value: v,
       }];
       state.selectedType = v;
+      resetSelections();
     };
 
     // 是否精确
@@ -400,7 +402,7 @@ export default defineComponent({
       permissionParams,
       authVerifyData,
       RECYCLE_BIN_ITEM_STATUS,
-      getRegionName
+      getRegionName,
     };
   },
 });
