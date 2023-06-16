@@ -5,11 +5,13 @@ import { useAccountStore } from './account';
 export const useBusinessMapStore = defineStore('businessMapStore', () => {
   const businessMap = ref<Map<number, string>>(new Map());
   const businessMapSize = computed(() => businessMap.value.size);
+  const businessList = ref([]);
 
   const accountStore = useAccountStore();
-  const updateBusinessMap = async () => {
+  const fetchBusinessMap = async () => {
     const { data } = await accountStore.getBizList();
     if (data && data.length > 0) {
+      businessList.value = data;
       businessMap.value = new Map();
       for (const { id, name } of data) {
         businessMap.value.set(id, name);
@@ -17,17 +19,15 @@ export const useBusinessMapStore = defineStore('businessMapStore', () => {
     }
   };
 
-  const getNameFromBusinessMap = async (id: number) => {
-    if (businessMapSize.value < 1 || !businessMap.value.get(id)) {
-      await updateBusinessMap();
-    }
+  const getNameFromBusinessMap = (id: number) => {
     return businessMap.value.get(id) || '';
   };
 
   return {
     businessMap,
+    businessList,
     businessMapSize,
-    updateBusinessMap,
+    fetchBusinessMap,
     getNameFromBusinessMap,
   };
 });

@@ -81,6 +81,17 @@
           </template>
         </bk-table-column>
         <bk-table-column
+          label="所属业务"
+          prop="bk_biz_ids"
+          sort
+        >
+          <template #default="props">
+            {{
+              props?.row?.bk_biz_ids?.join(',')?.split(',')?.map((v: string) => getNameFromBusinessMap(+v))?.join(',')
+            }}
+          </template>
+        </bk-table-column>
+        <bk-table-column
           :label="t('负责人')"
           prop="managers"
           sort
@@ -201,6 +212,7 @@ import { CloudType, AccountType } from '@/typings';
 import { ACCOUNT_TYPES, SITE_TYPES, SITE_TYPE_MAP, VENDORS } from '@/common/constant';
 import { useVerify } from '@/hooks';
 import { useMemoPagination, DEFAULT_PAGE_INDEX, DEFAULT_PAGE_SIZE } from '@/hooks/useMemoPagination';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 
 export default defineComponent({
@@ -209,6 +221,7 @@ export default defineComponent({
     const { t } = useI18n();
     const router = useRouter();
     const accountStore = useAccountStore();
+    const { getNameFromBusinessMap, businessMap } = useBusinessMapStore();
     const {
       setMemoPageSize,
       setMemoPageIndex,
@@ -468,6 +481,8 @@ export default defineComponent({
       memoPageIndex,
       memoPageSize,
       SITE_TYPE_MAP,
+      getNameFromBusinessMap,
+      businessMap,
     };
   },
 });

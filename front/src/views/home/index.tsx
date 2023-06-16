@@ -16,6 +16,7 @@ import { useVerify } from '@/hooks';
 import { useI18n } from 'vue-i18n';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { VendorEnum } from '@/common/constant';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -34,6 +35,7 @@ export default defineComponent({
     const router = useRouter();
     const userStore = useUserStore();
     const accountStore = useAccountStore();
+    const { fetchBusinessMap } = useBusinessMapStore();
     const { Option } = Select;
 
     let topMenuActiveItem = '';
@@ -195,11 +197,12 @@ export default defineComponent({
     const { fetchRegions } = useRegionsStore();
 
     /**
-     * 在这里获取项目公共数据
+     * 在这里获取项目公共数据并缓存
      */
     onMounted(() => {
       fetchRegions(VendorEnum.TCLOUD);
       fetchRegions(VendorEnum.HUAWEI);
+      fetchBusinessMap();
     });
 
     return () => (
