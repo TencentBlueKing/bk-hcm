@@ -21,6 +21,7 @@
       "git add ."
     ],
     "src/**/*.{js,ts,tsx,vue}": [
+      "prettier --write",
       "eslint --fix",
       "git add"
     ]
