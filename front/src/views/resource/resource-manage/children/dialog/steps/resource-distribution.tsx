@@ -13,6 +13,7 @@ import type { FilterType } from '@/typings/resource';
 import { useDistributionStore } from '@/store/distribution';
 import { useRouter } from 'vue-router';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 
 export default defineComponent({
   components: {
@@ -51,6 +52,7 @@ export default defineComponent({
     const accountStore = useAccountStore();
     const distributionStore = useDistributionStore();
     const { getRegionName } = useRegionsStore();
+    const { cloudAreaMap } = useCloudAreaStore();
     const searchedAreas = ref([]);
 
     // 状态
@@ -136,7 +138,7 @@ export default defineComponent({
         width: 260,
         render({ data }: any) {
           if (data.bk_cloud_id > -1) {
-            return computedCloudAreasMap.value.get(data.bk_cloud_id) || '--';
+            return cloudAreaMap.get(data.bk_cloud_id) || '--';
           }
           // 校验
           const validate = () => {
@@ -349,16 +351,6 @@ export default defineComponent({
         }
         return acc;
       }, []);
-    });
-
-    const computedCloudAreasMap = computed(() => {
-      const cloudAreasMap = new Map<number, string>();
-      for (const area of cloudAreas.value) {
-        const { id, name } = area;
-        if (id === undefined || name === undefined) continue;
-        cloudAreasMap.set(id, name);
-      }
-      return cloudAreasMap;
     });
 
     watch(

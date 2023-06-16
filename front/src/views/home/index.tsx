@@ -17,6 +17,7 @@ import { useI18n } from 'vue-i18n';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { VendorEnum } from '@/common/constant';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -36,6 +37,7 @@ export default defineComponent({
     const userStore = useUserStore();
     const accountStore = useAccountStore();
     const { fetchBusinessMap } = useBusinessMapStore();
+    const { fetchAllCloudAreas } = useCloudAreaStore();
     const { Option } = Select;
 
     let topMenuActiveItem = '';
@@ -203,6 +205,7 @@ export default defineComponent({
       fetchRegions(VendorEnum.TCLOUD);
       fetchRegions(VendorEnum.HUAWEI);
       fetchBusinessMap();
+      fetchAllCloudAreas();
     });
 
     return () => (
