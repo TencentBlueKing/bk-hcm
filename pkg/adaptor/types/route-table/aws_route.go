@@ -19,6 +19,11 @@
 
 package routetable
 
+import (
+	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/hash"
+)
+
 // AwsRoute defines aws route struct.
 type AwsRoute struct {
 	CloudRouteTableID                string  `json:"cloud_route_table_id"`
@@ -42,5 +47,6 @@ type AwsRoute struct {
 
 // GetCloudID ...
 func (route AwsRoute) GetCloudID() string {
-	return route.CloudRouteTableID
+	return hash.HashString(route.CloudRouteTableID + converter.PtrToVal(route.DestinationCidrBlock) +
+	converter.PtrToVal(route.DestinationIpv6CidrBlock) + converter.PtrToVal(route.CloudCarrierGatewayID))
 }

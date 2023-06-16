@@ -70,6 +70,7 @@ func (cli *client) Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOpti
 		if _, err := cli.route(kt, syncOpt); err != nil {
 			logs.ErrorDepthf(1, "[%s] account: %s route_table: %s sync route failed, err: %v, rid: %s",
 				enumor.Aws, params.AccountID, param, err, kt.Rid)
+			return err
 		}
 
 		return nil
