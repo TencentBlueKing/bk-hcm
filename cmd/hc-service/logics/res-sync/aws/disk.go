@@ -420,6 +420,10 @@ func (cli *client) listRemoveDiskID(kt *kit.Kit, params *SyncBaseParams) ([]stri
 				cloudIDs, delCloudID = removeNotFoundCloudID(cloudIDs, err)
 				delCloudIDs = append(delCloudIDs, delCloudID)
 
+				if len(cloudIDs) <= 0 {
+					break
+				}
+
 				continue
 			}
 
