@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { computed, ref, defineExpose, PropType, useAttrs, watch } from 'vue';
-import {
-  useAccountStore,
-} from '@/store';
+import { useAccountStore } from '@/store';
 
 import type {
   // PlainObject,
@@ -52,7 +50,7 @@ const getAccoutList = async () => {
   const data = {
     filter: props.filter,
     page: {
-      start: accountPage.value,
+      start: accountPage.value * 100,
       limit: 100,
     },
   };
@@ -73,12 +71,15 @@ const getAccoutList = async () => {
 
 getAccoutList();
 
-watch(() => props.bizId, (bizId) => {
-  if (bizId > 0) {
-    accountList.value = [];
-    getAccoutList();
-  }
-});
+watch(
+  () => props.bizId,
+  (bizId) => {
+    if (bizId > 0) {
+      accountList.value = [];
+      getAccoutList();
+    }
+  },
+);
 
 const handleChange = (val: string) => {
   const data = accountList.value.find(item => item.id === val);
@@ -99,11 +100,6 @@ defineExpose({
     @change="handleChange"
     v-bind="attrs"
   >
-    <bk-option
-      v-for="(item, index) in accountList"
-      :key="index"
-      :value="item.id"
-      :label="item.name"
-    />
+    <bk-option v-for="(item, index) in accountList" :key="index" :value="item.id" :label="item.name" />
   </bk-select>
 </template>

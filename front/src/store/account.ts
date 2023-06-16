@@ -74,12 +74,20 @@ export const useAccountStore = defineStore({
       return await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`, data);
     },
     /**
-     * @description: 获取业务列表
+     * @description: 获取全量业务列表
      * @param {any}
      * @return {*}
      */
     async getBizList() {
       return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bk_bizs/list`);
+    },
+    /**
+     * @description: 获取全量管控区域数据
+     * @param {any}
+     * @return {*}
+     */
+    async getAllCloudAreas() {
+      return await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/all/cloud_areas/list`);
     },
     /**
      * @description: 根据账号id获取业务id

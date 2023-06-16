@@ -28,13 +28,13 @@ import {
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
-import useFilter, { ResourceManageSenario }  from '@/views/resource/resource-manage/hooks/use-filter';
+import useFilter  from '@/views/resource/resource-manage/hooks/use-filter';
 import { HostCloudEnum, CloudType } from '@/typings';
 import {
   useResourceStore,
-  useAccountStore,
 } from '@/store';
-import HostOperations from '../../common/table/HostOperations'
+import HostOperations from '../../common/table/HostOperations';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 // use hook
 const {
@@ -49,12 +49,11 @@ const props = defineProps({
     type: Boolean,
   },
   whereAmI: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 const resourceStore = useResourceStore();
-const accountStore = useAccountStore();
 
 const isLoadingCloudAreas = ref(false);
 const cloudAreaPage = ref(0);
@@ -63,7 +62,7 @@ const cloudAreas = ref([]);
 const {
   searchData,
   searchValue,
-  filter
+  filter,
 } = useFilter(props);
 
 const {
@@ -127,10 +126,9 @@ const {
 //   },
 // ];
 
-
 const isShowDistribution = ref(false);
 const businessId = ref('');
-const businessList = ref([]);
+const businessList = ref(useBusinessMapStore().businessList);
 const columns = useColumns('cvms');
 
 const hostSearchData = computed(() => {
@@ -217,14 +215,6 @@ const distribColumns = [
   },
 ];
 
-const getBusinessList = async () => {
-  try {
-    const res = await accountStore.getBizList();
-    businessList.value = res?.data;
-  } catch (error) {
-    console.log(error);
-  }
-};
 
 const distributionCvm = async () => {
   const cvmIds = selections.value.map(e => e.id);
@@ -274,8 +264,6 @@ const getCloudAreas = () => {
       isLoadingCloudAreas.value = false;
     });
 };
-
-getBusinessList();
 getCloudAreas();
 
 </script>
