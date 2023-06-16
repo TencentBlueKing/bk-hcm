@@ -649,15 +649,19 @@ func (cli *client) listRemoveCvmID(kt *kit.Kit, params *SyncBaseParams) ([]strin
 	for {
 		opt := &typescvm.AwsListOption{
 			Region:   params.Region,
-			CloudIDs: params.CloudIDs,
+			CloudIDs: cloudIDs,
 		}
 
 		_, _, err := cli.cloudCli.ListCvm(kt, opt)
 		if err != nil {
-			if strings.Contains(err.Error(), aws.ErrVpcNotFound) {
+			if strings.Contains(err.Error(), aws.ErrCvmNotFound) {
 				var delCloudID string
 				cloudIDs, delCloudID = removeNotFoundCloudID(cloudIDs, err)
 				delCloudIDs = append(delCloudIDs, delCloudID)
+
+				if len(cloudIDs) <= 0 {
+					break
+				}
 
 				continue
 			}

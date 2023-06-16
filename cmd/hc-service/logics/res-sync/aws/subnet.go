@@ -378,6 +378,10 @@ func (cli *client) listRemoveSubnetID(kt *kit.Kit, params *SyncBaseParams) ([]st
 				cloudIDs, delCloudID = removeNotFoundCloudID(cloudIDs, err)
 				delCloudIDs = append(delCloudIDs, delCloudID)
 
+				if len(cloudIDs) <= 0 {
+					break
+				}
+
 				continue
 			}
 

@@ -76,6 +76,34 @@ export const VENDORS = [
   },
 ];
 
+// 账号类型
+export const ACCOUNT_TYPES = [
+  {
+    id: 'resource',
+    name: '资源账号',
+  },
+  {
+    id: 'registration',
+    name: '登记账号',
+  },
+  {
+    id: 'security_audit',
+    name: '安全审计账号',
+  },
+];
+
+// 站点类型
+export const SITE_TYPES = [
+  {
+    id: 'china',
+    name: '中国站',
+  },
+  {
+    id: 'international',
+    name: '国际站',
+  },
+];
+
 // 审计资源类型（与资源类型暂时独立开）
 export const AUDIT_RESOURCE_TYPES = [
   {
@@ -187,14 +215,14 @@ export const CIDRMASKRANGE  = {
 };
 
 export const GCP_CLOUD_HOST_STATUS = {
-  'PROVISIONING': '准备资源中',
-  'STAGING': '启动中',
-  'RUNNING': '运行中',
-  'STOPPING': '停止中',
-  'REPAIRING': '修复中',
-  'TERMINATED': '已关机',
-  'SUSPENDING': '暂停中',
-  'SUSPENDED': '已暂停'
+  PROVISIONING: '准备资源中',
+  STAGING: '启动中',
+  RUNNING: '运行中',
+  STOPPING: '停止中',
+  REPAIRING: '修复中',
+  TERMINATED: '已关机',
+  SUSPENDING: '暂停中',
+  SUSPENDED: '已暂停',
 };
 
 export const AZURE_CLOUD_HOST_STATUS = {
@@ -204,26 +232,26 @@ export const AZURE_CLOUD_HOST_STATUS = {
   'PowerState/stopping': '停止中',
   'PowerState/stopped': '已关机',
   'PowerState/deallocating': '已停止(从主机分离中)',
-  'PowerState/deallocated': '已停止(已从主机分离)'
+  'PowerState/deallocated': '已停止(已从主机分离)',
 };
 
 export const HUAWEI_CLOUD_HOST_STATUS = {
-  'BUILD': '创建中',
-  'REBOOT': '重启中',
-  'HARD_REBOOT': '强制重启中',
-  'REBUILD': '重建中',
-  'MIGRATING': '热迁移中',
-  'RESIZE': '变更中',
-  'ACTIVE': '运行中',
-  'SHUTOFF': '已停止',
-  'REVERT_RESIZE': '回退变更规格',
-  'VERIFY_RESIZE': '校验变更配置',
-  'ERROR': '异常',
-  'DELETED': '删除中',
-  'SHELVED': '启动镜像异常',
-  'SHELVED_OFFLOADED': '启动磁盘异常',
-  'UNKNOWN': '未知状态'
-}
+  BUILD: '创建中',
+  REBOOT: '重启中',
+  HARD_REBOOT: '强制重启中',
+  REBUILD: '重建中',
+  MIGRATING: '热迁移中',
+  RESIZE: '变更中',
+  ACTIVE: '运行中',
+  SHUTOFF: '已停止',
+  REVERT_RESIZE: '回退变更规格',
+  VERIFY_RESIZE: '校验变更配置',
+  ERROR: '异常',
+  DELETED: '删除中',
+  SHELVED: '启动镜像异常',
+  SHELVED_OFFLOADED: '启动磁盘异常',
+  UNKNOWN: '未知状态',
+};
 
 export const CLOUD_HOST_STATUS = {
   PENDING: '创建中',
@@ -279,7 +307,7 @@ export const CLOUD_AREA_REGION_GCP = {
   'asia-southeast1': '新加坡',
   'asia-southeast2': '雅加达',
   'australia-southeast1': '悉尼',
-  'australia-southeast2': '墨尔本'
+  'australia-southeast2': '墨尔本',
 };
 
 export const CLOUD_AREA_REGION_AWS = {
@@ -324,4 +352,9 @@ export const NET_CHARGE_MAP = {
   TRAFFIC_POSTPAID_BY_HOUR: '按流量计费',
   BANDWIDTH_POSTPAID_BY_HOUR: '按带宽使用时长计费',
   BANDWIDTH_PACKAGE: '按带宽包计费',
+};
+
+export const SITE_TYPE_MAP = {
+  china: '中国站',
+  international: '国际站',
 };

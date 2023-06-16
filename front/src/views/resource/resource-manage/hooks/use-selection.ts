@@ -35,8 +35,13 @@ export default () => {
     }
   };
 
+  const resetSelections = () => {
+    selections.value = [];
+  };
+
   return {
     selections,
     handleSelectionChange,
+    resetSelections,
   };
 };

@@ -104,7 +104,7 @@ func (a *Aws) ListDisk(kt *kit.Kit, opt *disk.AwsDiskListOption) ([]disk.AwsDisk
 
 	resp, err := client.DescribeVolumesWithContext(kt.Ctx, req)
 	if err != nil {
-		if !strings.Contains(err.Error(), ErrVpcNotFound) {
+		if !strings.Contains(err.Error(), ErrDiskNotFound) {
 			logs.Errorf("list aws disk failed, err: %v, rid: %s", err, kt.Rid)
 		}
 

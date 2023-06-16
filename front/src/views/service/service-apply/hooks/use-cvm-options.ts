@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import { ref, watch } from 'vue';
 import { VendorEnum } from '@/common/constant';
 import type { Cond } from './use-condtion';
@@ -434,19 +435,19 @@ export default (cond: Cond, formData: ICvmFormData) => {
         'Standard_NC12',
         'Standard_NC24',
         'Standard_NC24r',
-      ]
+      ];
 
       sysDiskTypes.value = (sysDiskTypeValues[cond.vendor] || []).slice();
       dataDiskTypes.value = (dataDiskTypeValues[cond.vendor] || []).slice();
 
       if (disablePremiumTypes.includes(type)) {
-        const sysIndex = sysDiskTypes.value.findIndex(item => item.id === 'Premium_LRS')
-        const dataIndex = dataDiskTypes.value.findIndex(item => item.id === 'Premium_LRS')
-        sysDiskTypes.value.splice(sysIndex, 1)
-        dataDiskTypes.value.splice(dataIndex, 1)
+        const sysIndex = sysDiskTypes.value.findIndex(item => item.id === 'Premium_LRS');
+        const dataIndex = dataDiskTypes.value.findIndex(item => item.id === 'Premium_LRS');
+        sysDiskTypes.value.splice(sysIndex, 1);
+        dataDiskTypes.value.splice(dataIndex, 1);
       }
     }
-  })
+  });
 
   return {
     sysDiskTypes,
