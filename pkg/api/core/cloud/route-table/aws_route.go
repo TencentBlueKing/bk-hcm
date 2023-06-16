@@ -21,6 +21,8 @@ package routetable
 
 import (
 	"hcm/pkg/api/core"
+	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/hash"
 )
 
 // AwsRoute defines aws route info.
@@ -54,5 +56,6 @@ func (route AwsRoute) GetID() string {
 
 // GetCloudID ...
 func (route AwsRoute) GetCloudID() string {
-	return route.CloudRouteTableID
+	return hash.HashString(route.CloudRouteTableID + converter.PtrToVal(route.DestinationCidrBlock) +
+	converter.PtrToVal(route.DestinationIpv6CidrBlock) + converter.PtrToVal(route.CloudCarrierGatewayID))
 }
