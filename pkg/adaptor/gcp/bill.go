@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/math"
 
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
@@ -41,6 +42,7 @@ const (
 		"resource.name as resource_name,resource.global_name as resource_global_name,cost,currency," +
 		"usage.amount as usage_amount,usage.unit as usage_unit,usage.amount_in_pricing_units as " +
 		"usage_amount_in_pricing_units,usage.pricing_unit as usage_pricing_unit,TO_JSON_STRING(credits) as credits," +
+		"cost+IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0) AS total_cost," +
 		"invoice.month as month,cost_type"
 	// QueryBillSQL 查询云账单的SQL
 	QueryBillSQL = "SELECT %s FROM %s.%s %s LIMIT %d OFFSET %d"
@@ -104,6 +106,14 @@ func (g *Gcp) GetBigQuery(kt *kit.Kit, query string) ([]map[string]bigquery.Valu
 		if err != nil {
 			logs.Errorf("gcp get big query next failed, query: %s, err: %+v", query, err)
 			return nil, 0, err
+		}
+		if totalCostStr, ok := row["total_cost"].(string); ok {
+			if strings.IndexAny(totalCostStr, "Ee") != -1 {
+				decimalNum, err := math.NewDecimalFromString(totalCostStr)
+				if err == nil {
+					row["total_cost"] = decimalNum.ToString()
+				}
+			}
 		}
 
 		list = append(list, row)
