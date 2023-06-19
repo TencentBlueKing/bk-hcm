@@ -147,7 +147,7 @@
             <span @click="handleAuth('recycle_bin_manage')">
               <bk-button
                 text theme="primary"
-                :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage"
+                :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage || data?.status!=='wait_recycle'"
                 class="mr10" @click="handleOperate('destroy', [data.id])">
                 {{t('立即销毁')}}
               </bk-button>
@@ -155,7 +155,7 @@
             <span @click="handleAuth('recycle_bin_manage')">
               <bk-button
                 text theme="primary" @click="handleOperate('recover', [data.id])"
-                :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage"
+                :disabled="!authVerifyData?.permissionAction?.recycle_bin_manage || data?.status!=='wait_recycle'"
               >
                 {{t('立即恢复')}}
               </bk-button>
@@ -200,7 +200,7 @@ import { useI18n } from 'vue-i18n';
 import { Message } from 'bkui-vue';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import { useResourceStore, useAccountStore } from '@/store';
-import { CloudType } from '@/typings';
+import { CloudType, FilterType } from '@/typings';
 import { VENDORS } from '@/common/constant';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import HostInfo from '@/views/resource/resource-manage/children/components/host/host-info/index.vue';
@@ -264,7 +264,7 @@ export default defineComponent({
       handlePageSizeChange,
       handlePageChange,
       getList,
-    } = useQueryCommonList({ filter: state.filter }, fetchUrl);
+    } = useQueryCommonList({ filter: state.filter as FilterType }, fetchUrl);
 
     const {
       selections,
