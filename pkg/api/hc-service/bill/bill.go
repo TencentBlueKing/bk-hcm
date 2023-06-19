@@ -20,10 +20,11 @@
 package bill
 
 import (
-	"strings"
+	"time"
 
 	typesBill "hcm/pkg/adaptor/types/bill"
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 )
@@ -56,14 +57,18 @@ func (opt AwsBillListReq) Validate() error {
 		return errf.New(errf.InvalidParameter, "begin_date and end_date can not be empty")
 	}
 
-	beginArr := strings.Split(opt.BeginDate, "-")
-	if len(beginArr) != 3 {
-		return errf.New(errf.InvalidParameter, "begin_date is invalid")
+	beginDate, err := time.Parse(constant.DateLayout, opt.BeginDate)
+	if err != nil {
+		return err
 	}
 
-	endArr := strings.Split(opt.EndDate, "-")
-	if len(endArr) != 3 {
-		return errf.New(errf.InvalidParameter, "end_date is invalid")
+	endDate, err := time.Parse(constant.DateLayout, opt.EndDate)
+	if err != nil {
+		return err
+	}
+
+	if beginDate.Year() != endDate.Year() || beginDate.Month() != endDate.Month() {
+		return errf.New(errf.InvalidParameter, "begin_date and end_date are not the same year and month.")
 	}
 
 	return nil
