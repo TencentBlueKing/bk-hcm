@@ -85,11 +85,12 @@ const renderColumns = [
               text: true,
               theme: 'primary',
               disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
-                  || data.instance_id,
+                  || data.instance_id || data?.status === 'ATTACHED',
               onClick() {
                 InfoBox({
                   title: '请确认是否删除',
                   subTitle: `将删除【${data.name}】`,
+                  // @ts-ignore
                   theme: 'danger',
                   headerAlign: 'center',
                   footerAlign: 'center',
