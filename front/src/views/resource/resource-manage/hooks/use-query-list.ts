@@ -127,7 +127,7 @@ export default (
     () => {
       isFilter.value = true;  // 如果是过滤则不需要再次请求
       pagination.value.current = 1;   // 页码重置
-      pagination.value.limit = 10;
+      pagination.value.limit = 20;
       triggerApi();
     },
     {
