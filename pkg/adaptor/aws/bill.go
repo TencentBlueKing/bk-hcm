@@ -27,6 +27,7 @@ import (
 
 	typesBill "hcm/pkg/adaptor/types/bill"
 	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -176,7 +177,7 @@ func (a *Aws) GetAwsAthenaQuery(kt *kit.Kit, query string,
 	qri.SetQueryExecutionId(*result.QueryExecutionId)
 
 	var qrop *athena.GetQueryExecutionOutput
-	duration := time.Duration(2) * time.Second // Pause for 2 seconds
+	duration := time.Duration(100) * time.Millisecond
 
 	for {
 		qrop, err = client.GetQueryExecution(&qri)
@@ -250,8 +251,13 @@ func (a *Aws) GetAwsAthenaQuery(kt *kit.Kit, query string,
 func parseCondition(opt *typesBill.AwsBillListOption) (string, error) {
 	var condition string
 	if opt.BeginDate != "" && opt.EndDate != "" {
-		condition = fmt.Sprintf("WHERE date(line_item_usage_start_date) >= date '%s' AND "+
-			"date(line_item_usage_start_date) <= date '%s'", opt.BeginDate, opt.EndDate)
+		searchDate, err := time.Parse(constant.DateLayout, opt.BeginDate)
+		if err != nil {
+			return "", fmt.Errorf("conv search date failed, err: %v", err)
+		}
+		condition = fmt.Sprintf("WHERE year = '%d' AND month = '%d' AND "+
+			"date(line_item_usage_start_date) >= date '%s' AND date(line_item_usage_start_date) <= date '%s'",
+			searchDate.Year(), searchDate.Month(), opt.BeginDate, opt.EndDate)
 	}
 	return condition, nil
 }
