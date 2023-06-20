@@ -21,8 +21,12 @@ package constant
 
 import "regexp"
 
-// TimeStdFormat is the system's standard time format to store or to query.
-const TimeStdFormat = "2006-01-02T15:04:05Z07:00"
+const (
+	// TimeStdFormat is the system's standard time format to store or to query.
+	TimeStdFormat = "2006-01-02T15:04:05Z07:00"
+	// DateLayout is the date layout with '%Y-%m-%d
+	DateLayout = "2006-01-02"
+)
 
 // TimeStdRegexp is a regular expression to match the TimeStdFormat
 var TimeStdRegexp = regexp.
