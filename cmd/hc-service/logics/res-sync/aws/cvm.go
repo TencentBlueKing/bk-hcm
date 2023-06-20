@@ -21,6 +21,7 @@ package aws
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	"hcm/pkg/adaptor/aws"
@@ -529,6 +530,10 @@ func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 	}
 	result, _, err := cli.cloudCli.ListCvm(kt, opt)
 	if err != nil {
+		if strings.Contains(err.Error(), aws.ErrCvmNotFound) {
+			return make([]typescvm.AwsCvm, 0), nil
+		}
+
 		logs.Errorf("[%s] list cvm from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Aws,
 			err, params.AccountID, opt, kt.Rid)
 		return nil, err
@@ -609,27 +614,20 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 			break
 		}
 
-		var resultFromCloud []typescvm.AwsCvm
+		var delCloudIDs []string
 		if len(cloudIDs) != 0 {
 			params := &SyncBaseParams{
 				AccountID: accountID,
 				Region:    region,
 				CloudIDs:  cloudIDs,
 			}
-			resultFromCloud, err = cli.listCvmFromCloud(kt, params)
+			delCloudIDs, err = cli.listRemoveCvmID(kt, params)
 			if err != nil {
 				return err
 			}
 		}
 
-		// 如果有资源没有查询出来，说明数据被从云上删除
-		if len(resultFromCloud) != len(cloudIDs) {
-			cloudIDMap := converter.StringSliceToMap(cloudIDs)
-			for _, one := range resultFromCloud {
-				delete(cloudIDMap, converter.PtrToVal(one.InstanceId))
-			}
-
-			delCloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
+		if len(delCloudIDs) != 0 {
 			if err = cli.deleteCvm(kt, accountID, region, delCloudIDs); err != nil {
 				return err
 			}
@@ -643,6 +641,28 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 	}
 
 	return nil
+}
+
+func (cli *client) listRemoveCvmID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
+	if err := params.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	delCloudIDs := make([]string, 0)
+	for _, one := range params.CloudIDs {
+		opt := &typescvm.AwsListOption{
+			Region:   params.Region,
+			CloudIDs: []string{one},
+		}
+		_, _, err := cli.cloudCli.ListCvm(kt, opt)
+		if err != nil {
+			if strings.Contains(err.Error(), aws.ErrCvmNotFound) {
+				delCloudIDs = append(delCloudIDs, one)
+			}
+		}
+	}
+
+	return delCloudIDs, nil
 }
 
 func isCvmChange(cloud typescvm.AwsCvm, db corecvm.Cvm[cvm.AwsCvmExtension]) bool {
