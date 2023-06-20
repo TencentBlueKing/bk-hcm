@@ -24,6 +24,7 @@ import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import { VendorEnum } from '@/common/constant';
 
 const props = defineProps({
   filter: {
@@ -66,6 +67,33 @@ const {
 
 const emit = defineEmits(['auth']);
 
+const isDisabledRecycle = (vendor: VendorEnum, status: string) => {
+  let res = true;
+  switch(vendor) {
+    case VendorEnum.TCLOUD: {
+      if(['UNATTACHED'].includes(status)) res = false;
+      break;
+    }
+    case VendorEnum.HUAWEI: {
+      if(['available'].includes(status)) res = false;
+      break;
+    }
+    case VendorEnum.AWS: {
+      if(!['attaching', 'attached', 'detaching'].includes(status)) res = false;
+      break;
+    }
+    case VendorEnum.GCP: {
+      if(!['CREATING', 'DELETING', 'RESTORING' ].includes(status)) res = false;
+      break;
+    }
+    case VendorEnum.AZURE: {
+      if(['Unattached'].includes(status)) res = false;
+      break;
+    }
+  }
+  return res;
+}
+
 const renderColumns = [
   ...columns,
   {
@@ -85,7 +113,7 @@ const renderColumns = [
               text: true,
               theme: 'primary',
               disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
-                  || data.instance_id || data?.status === 'ATTACHED',
+                  || data.instance_id || isDisabledRecycle(data?.vendor, data?.status),
               onClick() {
                 InfoBox({
                   title: '请确认是否删除',
