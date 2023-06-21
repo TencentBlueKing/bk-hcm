@@ -51,7 +51,6 @@ export default defineComponent({
 
     const protocolList = ref<any>(GCP_PROTOCOL_LIST);
 
-
     const securityGroupSource = ref([
       // 华为源
       {
@@ -226,6 +225,8 @@ export default defineComponent({
     //   );
     // };
 
+    const formRef = ref(null);
+    const formRefsArr = [formRef];
     const tableData = ref<any>([{}]);
     const steps = [
       {
@@ -250,6 +251,7 @@ export default defineComponent({
                 index: number,
               ) => (
                   <Form
+                    ref={formRefsArr[index]}
                     formType='vertical'
                     model={data}
                     style={{
@@ -257,13 +259,19 @@ export default defineComponent({
                       justifyContent: 'space-around',
                     }}
                     rules={{
-                      name: [
+                      port: [
                         {
                           trigger: 'blur',
-                          message:
-                            '必须以小写字母开头',
+                          required: true,
+                          message: '协议和端口均不能为空',
+                        },
+                      ],
+                      sourceAddress: [
+                        {
+                          trigger: 'blur',
+                          message: '源地址类型与内容均不能为空',
                           validator: (val: string) => {
-                            return /^[a-z][a-z0-9-_]{1,62}[a-z0-9]$/.test(val);
+                            return !!val && !!data[val];
                           },
                         },
                       ],
@@ -285,8 +293,8 @@ export default defineComponent({
                       ''
                     )}
                     {props.vendor === 'huawei' ? (
-                      <FormItem label={t('类型')}>
-                        <Select v-model={data.ethertype} class='mt15'>
+                      <FormItem label={t('类型')} property='ethertype' required>
+                        <Select v-model={data.ethertype}>
                           {HUAWEI_TYPE_LIST.map(ele => (
                             <Option value={ele.id} label={ele.name} key={ele.id} />
                           ))}
@@ -297,12 +305,16 @@ export default defineComponent({
                     )}
                     {props.vendor === 'azure' ? (
                       <>
-                        <FormItem label={t('源')}>{renderSourceAddressSlot(data, data.sourceAddress)}</FormItem>
-                        <FormItem label={t('源端口')}>
+                        <FormItem label={t('源')} property='sourceAddress' required>
+                          {renderSourceAddressSlot(data, data.sourceAddress)}
+                        </FormItem>
+                        <FormItem label={t('源端口')} property='source_port_range' required>
                           <Input placeholder='单个(80)、范围(1024-65535)' v-model={data.source_port_range}></Input>
                         </FormItem>
-                        <FormItem label={t('目标')}>{renderTargetAddressSlot(data, data.targetAddress)}</FormItem>
-                        <FormItem label={t('目标协议端口')}>
+                        <FormItem label={t('目标')} property='targetAddress' required>
+                          {renderTargetAddressSlot(data, data.targetAddress)}
+                        </FormItem>
+                        <FormItem label={t('目标协议端口')} property='destination_port_range' required>
                           <Input
                             disabled={data?.protocol === '*'}
                             class=' input-select-warp'
@@ -324,7 +336,7 @@ export default defineComponent({
                     )}
                     {props.vendor !== 'azure' ? (
                       <>
-                        <FormItem label={t('协议端口')}>
+                        <FormItem label={t('协议端口')} property='port' required>
                           {
                             <Input
                               disabled={
@@ -350,13 +362,15 @@ export default defineComponent({
                             </Input>
                           }
                         </FormItem>
-                        <FormItem label={t('源地址')}>{renderSourceAddressSlot(data, data.sourceAddress)}</FormItem>
+                        <FormItem label={t('源地址')} property='sourceAddress' required>
+                          {renderSourceAddressSlot(data, data.sourceAddress)}
+                        </FormItem>
                       </>
                     ) : (
                       ''
                     )}
                     {props.vendor !== 'aws' ? ( // aws没有策略
-                      <FormItem label={t('策略')}>
+                      <FormItem label={t('策略')} property={props.vendor === 'azure' ? 'access' : 'action'} required>
                         {props.vendor === 'azure' ? (
                           <Select v-model={data.access}>
                             {HUAWEI_ACTION_STATUS.map((ele: any) => (
@@ -374,7 +388,7 @@ export default defineComponent({
                     ) : (
                       ''
                     )}
-                    <FormItem label={t('描述')}>
+                    <FormItem label={t('描述')} property='memo'>
                       <Input placeholder='请输入描述' v-model={data.memo}></Input>
                     </FormItem>
                     {!securityRuleId.value ? (
@@ -510,7 +524,15 @@ export default defineComponent({
       emit('update:isShow', false);
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
+      try {
+        for (const item of formRefsArr) {
+          await item.value.validate();
+        }
+      } catch (err) {
+        console.log(err);
+        return;
+      }
       // isEmpty.value = false;
       // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let index = 0; index < tableData.value.length; index++) {
@@ -551,18 +573,21 @@ export default defineComponent({
 
     // 新增
     const handlerAdd = () => {
+      formRefsArr.push(ref(null));
       tableData.value.push({});
     };
 
     // 删除
     const handlerDelete = (data: any, index: any) => {
       Confirm('确定删除', '删除之后不可恢复', () => {
+        formRefsArr.splice(index, 1);
         tableData.value.splice(index, 1);
       });
     };
 
     // 复制
     const hanlerCopy = (data: any) => {
+      formRefsArr.push(ref(null));
       const copyData = JSON.parse(JSON.stringify(data));
       tableData.value.push(copyData);
     };
