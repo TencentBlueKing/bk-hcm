@@ -277,7 +277,7 @@ export default defineComponent({
                       ],
                     }}>
                     {props.vendor === 'azure' ? (
-                      <FormItem label={t('名称')} required property='name'>
+                      <FormItem label={index === 0 ? t('名称') : ''} required property='name'>
                         <Input v-model={data.name}></Input>
                       </FormItem>
                     ) : (
@@ -285,7 +285,7 @@ export default defineComponent({
                     )}
                     {props.vendor !== 'tcloud' && props.vendor !== 'aws' ? (
                       <>
-                        <FormItem label={t('优先级')} required property='priority'>
+                        <FormItem label={index === 0 ? t('优先级') : ''} required property='priority'>
                           <Input type='number' v-model={data.priority}></Input>
                         </FormItem>
                       </>
@@ -293,7 +293,7 @@ export default defineComponent({
                       ''
                     )}
                     {props.vendor === 'huawei' ? (
-                      <FormItem label={t('类型')} property='ethertype' required>
+                      <FormItem label={index === 0 ? t('类型') : ''} property='ethertype' required>
                         <Select v-model={data.ethertype}>
                           {HUAWEI_TYPE_LIST.map(ele => (
                             <Option value={ele.id} label={ele.name} key={ele.id} />
@@ -305,16 +305,19 @@ export default defineComponent({
                     )}
                     {props.vendor === 'azure' ? (
                       <>
-                        <FormItem label={t('源')} property='sourceAddress' required>
+                        <FormItem label={index === 0 ? t('源') : ''} property='sourceAddress' required>
                           {renderSourceAddressSlot(data, data.sourceAddress)}
                         </FormItem>
-                        <FormItem label={t('源端口')} property='source_port_range' required>
+                        <FormItem label={index === 0 ? t('源端口') : ''} property='source_port_range' required>
                           <Input placeholder='单个(80)、范围(1024-65535)' v-model={data.source_port_range}></Input>
                         </FormItem>
-                        <FormItem label={t('目标')} property='targetAddress' required>
+                        <FormItem label={index === 0 ? t('目标') : ''} property='targetAddress' required>
                           {renderTargetAddressSlot(data, data.targetAddress)}
                         </FormItem>
-                        <FormItem label={t('目标协议端口')} property='destination_port_range' required>
+                        <FormItem
+                          label={index === 0 ? t('目标协议端口') : ''}
+                          property='destination_port_range'
+                          required>
                           <Input
                             disabled={data?.protocol === '*'}
                             class=' input-select-warp'
@@ -336,7 +339,7 @@ export default defineComponent({
                     )}
                     {props.vendor !== 'azure' ? (
                       <>
-                        <FormItem label={t('协议端口')} property='port' required>
+                        <FormItem label={index === 0 ? t('协议端口') : ''} property='port' required>
                           {
                             <Input
                               disabled={
@@ -362,7 +365,7 @@ export default defineComponent({
                             </Input>
                           }
                         </FormItem>
-                        <FormItem label={t('源地址')} property='sourceAddress' required>
+                        <FormItem label={index === 0 ? t('源地址') : ''} property='sourceAddress' required>
                           {renderSourceAddressSlot(data, data.sourceAddress)}
                         </FormItem>
                       </>
@@ -370,7 +373,10 @@ export default defineComponent({
                       ''
                     )}
                     {props.vendor !== 'aws' ? ( // aws没有策略
-                      <FormItem label={t('策略')} property={props.vendor === 'azure' ? 'access' : 'action'} required>
+                      <FormItem
+                        label={index === 0 ? t('策略') : ''}
+                        property={props.vendor === 'azure' ? 'access' : 'action'}
+                        required>
                         {props.vendor === 'azure' ? (
                           <Select v-model={data.access}>
                             {HUAWEI_ACTION_STATUS.map((ele: any) => (
@@ -388,15 +394,12 @@ export default defineComponent({
                     ) : (
                       ''
                     )}
-                    <FormItem label={t('描述')} property='memo'>
+                    <FormItem label={index === 0 ? t('描述') : ''} property='memo'>
                       <Input placeholder='请输入描述' v-model={data.memo}></Input>
                     </FormItem>
                     {!securityRuleId.value ? (
                       <FormItem
-                        label={t('操作')}
-                        style={{
-                          marginLeft: -100,
-                        }}>
+                        label={index === 0 ? t('操作') : ''}>
                         <div>
                           <Button
                             text
