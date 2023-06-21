@@ -526,9 +526,12 @@ export default defineComponent({
 
     const handleConfirm = async () => {
       try {
+        const arr = [];
         for (const item of formRefsArr) {
-          await item.value.validate();
+          const tmp = item.value.validate();
+          arr.push(tmp);
         }
+        await Promise.all(arr);
       } catch (err) {
         console.log(err);
         return;
