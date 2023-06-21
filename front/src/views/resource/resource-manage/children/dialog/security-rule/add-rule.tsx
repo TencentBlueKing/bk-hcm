@@ -210,8 +210,7 @@ export default defineComponent({
         <Input
           class='mt20 mb10 input-select-warp'
           v-model={data.destination_address_prefix}
-          placeholder='10.0.0.1/24、 10.0.0.1'
-        >
+          placeholder='10.0.0.1/24、 10.0.0.1'>
           {{
             prefix: () => (
               <>
@@ -265,8 +264,7 @@ export default defineComponent({
                             ? '跟据优先级顺序处理规则；数字越小，优先级越高。我们建议在规则之间留出间隙 「 100、200、300 」 等 这样一来便可在无需编辑现有规则的情况下添加新规，同时注意不能和当前已有规则的优先级重复. 取值范围为100-4096'
                             : '必须是 1-100的整数'),
                         )}
-                        width={120}
-                      >
+                        width={120}>
                         {{
                           default: ({ data }: any) => data && <Input class='mt20' type='number' v-model={data.priority}></Input>,
                         }}
@@ -301,8 +299,7 @@ export default defineComponent({
                           t('源'),
                           t('源过滤器可为“任意”、一个 IP 地址范围、一个应用程序安全组或一个默认标记。它指定此规则将允许或拒绝的特定源 IP 地址范围的传入流量'),
                         )}
-                        width={260}
-                      >
+                        width={260}>
                         {{
                           default: ({ data }: any) => data && renderSourceAddressSlot(data, data.sourceAddress),
                         }}
@@ -314,15 +311,13 @@ export default defineComponent({
                           t('源端口'),
                           t('提供单个端口(如 80)、端口范围(如 1024-65535)，或单个端口和/或端口范围的以逗号分隔的列表(如 80,1024-65535)。这指定了根据此规则将允许或拒绝哪些端口的流量。提供星号(*)可允许任何端口的流量'),
                         )}
-                        width={100}
-                      >
+                        width={100}>
                         {{
                           default: ({ data }: any) => data && (
                               <Input
                                 class='mt20'
                                 placeholder='单个(80)、范围(1024-65535)'
-                                v-model={data.source_port_range}
-                              ></Input>
+                                v-model={data.source_port_range}></Input>
                           ),
                         }}
                       </bk-table-column>
@@ -333,8 +328,7 @@ export default defineComponent({
                           t('目标'),
                           t('提供采用 CIDR 表示法的地址范围(例如 192.168.99.0/24 或 2001:1234::/64)或提供 IP 地址(例如 192.168.99.0 或 2001:1234::)。还可提供一个由采用 IPv4 或 IPv6 的 IP 地址或地址范围构成的列表(以逗号分隔)'),
                         )}
-                        width={260}
-                      >
+                        width={260}>
                         {{
                           default: ({ data }: any) => data && renderTargetAddressSlot(data, data.targetAddress),
                         }}
@@ -347,8 +341,7 @@ export default defineComponent({
                               <Input
                                 disabled={data?.protocol === '*'}
                                 class='mt20 mb10 input-select-warp'
-                                v-model={data.destination_port_range}
-                              >
+                                v-model={data.destination_port_range}>
                                 {{
                                   prefix: () => (
                                     <Select class='input-prefix-select' v-model={data.protocol}>
@@ -376,8 +369,7 @@ export default defineComponent({
                           t(props.vendor === 'aws'
                             ? '对于 TCP、UDP 协议，允许的端口范围。您可以指定单个端口号（例如 22）或端口号范围（例如7000-8000）'
                             : '请输入0-65535之间数字或者ALL'),
-                        )}
-                      >
+                        )}>
                         {{
                           default: ({ data }: any) => (data ? (
                               <Input
@@ -387,16 +379,14 @@ export default defineComponent({
                                 placeholder='请输入0-65535之间数字、ALL'
                                 clearable
                                 class='mt20 mb10 input-select-warp'
-                                v-model={data.port}
-                              >
+                                v-model={data.port}>
                                 {{
                                   prefix: () => (
                                     <Select
                                       v-model={data.protocol}
                                       clearable={false}
                                       class='input-prefix-select'
-                                      onChange={handleChange}
-                                    >
+                                      onChange={handleChange}>
                                       {protocolList.value.map((ele: any) => (
                                         <Option value={ele.id} label={ele.name} key={ele.id} />
                                       ))}
@@ -412,8 +402,7 @@ export default defineComponent({
                     </FormItem>
                     <FormItem>
                       <bk-table-column
-                        label={renderLabelToolTips(t('源地址'), t('必须指定 CIDR 数据块 或者 安全组 ID'))}
-                      >
+                        label={renderLabelToolTips(t('源地址'), t('必须指定 CIDR 数据块 或者 安全组 ID'))}>
                         {{
                           default: ({ data }: any) => (data ? renderSourceAddressSlot(data, data.sourceAddress) : ''),
                         }}
@@ -466,8 +455,7 @@ export default defineComponent({
                               theme='primary'
                               onClick={() => {
                                 hanlerCopy(data);
-                              }}
-                            >
+                              }}>
                               {t('复制')}
                             </Button>
                             <Button
@@ -476,8 +464,7 @@ export default defineComponent({
                               class='ml20'
                               onClick={() => {
                                 handlerDelete(data, index);
-                              }}
-                            >
+                              }}>
                               {t('删除')}
                             </Button>
                           </div>
@@ -677,8 +664,7 @@ export default defineComponent({
           isShow={this.isShow}
           steps={this.steps}
           onConfirm={this.handleConfirm}
-          onCancel={this.handleClose}
-        ></step-dialog>
+          onCancel={this.handleClose}></step-dialog>
       </>
     );
   },
