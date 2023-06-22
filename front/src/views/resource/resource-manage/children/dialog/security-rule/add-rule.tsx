@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import { useResourceStore } from '@/store/resource';
 import './add-rule.scss';
+import { isValid, parse, parseCIDR } from 'ipaddr.js';
 const { Option } = Select;
 const { FormItem } = Form;
 
@@ -239,6 +240,25 @@ export default defineComponent({
                           message: '源地址类型与内容均不能为空',
                           validator: (val: string) => {
                             return !!val && !!data[val];
+                          },
+                        },
+                        {
+                          trigger: 'blur',
+                          message: '请填写对应合法的 IP, 注意区分 IPV4 与 IPV6',
+                          validator: (val: string) => {
+                            if (['ipv6_cidr', 'ipv4_cidr'].includes(val)) {
+                              const ip = data[val].trim();
+                              if (isValid(ip)) {
+                                const ipType = parse(ip).kind();
+                                return (ipType === 'ipv4' && val === 'ipv4_cidr') || (ipType === 'ipv6' && val === 'ipv6_cidr');
+                              }
+                              try {
+                                parseCIDR(ip);
+                              } catch (err) {
+                                return false;
+                              }
+                            }
+                            return true;
                           },
                         },
                       ],
