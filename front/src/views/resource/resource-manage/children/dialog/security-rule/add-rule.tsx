@@ -251,6 +251,15 @@ export default defineComponent({
                           },
                         },
                       ],
+                      destination_port_range: [
+                        {
+                          trigger: 'change',
+                          message: '目标协议端口不能为空',
+                          validator: (val: string) => {
+                            return data.protocol === '*' || (!!data.protocol && !!val);
+                          },
+                        },
+                      ],
                     }}>
                     {props.vendor === 'azure' ? (
                       <FormItem label={index === 0 ? t('名称') : ''} required property='name'>
@@ -315,15 +324,20 @@ export default defineComponent({
                         </FormItem>
                         <FormItem
                           label={index === 0 ? t('目标协议端口') : ''}
-                          property='destination_port_range'
-                          required>
+                          property='destination_port_range'>
                           <Input
                             disabled={data?.protocol === '*'}
                             class=' input-select-warp'
                             v-model={data.destination_port_range}>
                             {{
                               prefix: () => (
-                                <Select class='input-prefix-select' v-model={data.protocol}>
+                                <Select
+                                  class='input-prefix-select'
+                                  v-model={data.protocol}
+                                  onChange={ () => {
+                                    delete data.destination_port_range;
+                                  }}
+                                >
                                   {AZURE_PROTOCOL_LIST.map(ele => (
                                     <Option value={ele.id} label={ele.name} key={ele.id} />
                                   ))}
