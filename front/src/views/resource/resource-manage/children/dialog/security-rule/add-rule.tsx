@@ -233,6 +233,25 @@ export default defineComponent({
                             return !!data.port && !!data.protocol;
                           },
                         },
+                        {
+                          trigger: 'blur',
+                          message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+                          validator: () => {
+                            const port = data.port.trim();
+                            const isPortValid =  /^(ALL|0|[1-9]\d*|(\d+,\d+)+|(\d+-\d+)+)$/.test(port);
+                            if (!isPortValid) return false;
+                            if (/^ALL$/.test(port) || +port === 0) return true;
+                            if (/,/g.test(port)) {
+                              const nums = port.split(/,/);
+                              return !nums.some(num => +num < 0 || +num > 65535);
+                            }
+                            if (/-/g.test(port)) {
+                              const nums = port.split(/-/);
+                              return !nums.some(num => +num < 0 || +num > 65535);
+                            }
+                            return +port >= 0 && +port <= 65535;
+                          },
+                        },
                       ],
                       sourceAddress: [
                         {
@@ -386,7 +405,6 @@ export default defineComponent({
                                 data?.protocol === 'ALL' || data?.protocol === 'huaweiAll' || data?.protocol === '-1'
                               }
                               placeholder='请输入0-65535之间数字、ALL'
-                              clearable
                               class='input-select-warp'
                               v-model={data.port}>
                               {{
