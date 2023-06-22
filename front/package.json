@@ -62,6 +62,7 @@
     "express-art-template": "^1.0.1",
     "helpful-decorators": "^2.1.0",
     "interactjs": "^1.10.17",
+    "ipaddr.js": "^2.1.0",
     "js-cookie": "^3.0.1",
     "js-watermarker": "^2.0.2",
     "lodash": "^4.17.21",
