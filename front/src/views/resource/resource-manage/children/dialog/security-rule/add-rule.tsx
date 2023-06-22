@@ -117,33 +117,13 @@ export default defineComponent({
     }
 
     const renderSourceAddressSlot = (data: any, key: string) => {
-      if (data[key]) {
-        return (
-          <Input class=' input-select-warp' placeholder='请输入' v-model={data[key]}>
-            {{
-              prefix: () => (
-                <>
-                  {props.vendor === 'azure' ? (
-                    <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
-                      {azureSecurityGroupSource.value.map(ele => (
-                        <Option value={ele.id} label={ele.name} key={ele.id} />
-                      ))}
-                    </Select>
-                  ) : (
-                    <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
-                      {securityGroupSource.value.map(ele => (
-                        <Option value={ele.id} label={ele.name} key={ele.id} />
-                      ))}
-                    </Select>
-                  )}
-                </>
-              ),
-            }}
-          </Input>
-        );
-      }
+      [
+        'cloud_target_security_group_id',
+        'ipv6_cidr',
+        'ipv4_cidr',
+      ].forEach(dataKey => dataKey !== key && delete data[dataKey]);
       return (
-        <Input class=' input-select-warp' placeholder='10.0.0.1/24、 10.0.0.1' v-model={data.ipv4_cidr}>
+        <Input class=' input-select-warp' placeholder='请输入' v-model={data[key]}>
           {{
             prefix: () => (
               <>
@@ -216,17 +196,7 @@ export default defineComponent({
       );
     };
 
-    // const renderLabelToolTips = (lable: string, tipscontent: string) => {
-    //   return (
-    //     <>
-    //       <span>{t(lable)}</span>
-    //       <Info v-BkTooltips={{ content: tipscontent }}></Info>
-    //     </>
-    //   );
-    // };
-
-    const formRef = ref(null);
-    const formRefsArr = [formRef];
+    const formInstances = [ref(null)];
     const tableData = ref<any>([{}]);
     const steps = [
       {
@@ -251,7 +221,7 @@ export default defineComponent({
                 index: number,
               ) => (
                   <Form
-                    ref={formRefsArr[index]}
+                    ref={formInstances[index]}
                     formType='vertical'
                     model={data}
                     style={{
@@ -259,11 +229,13 @@ export default defineComponent({
                       justifyContent: 'space-around',
                     }}
                     rules={{
-                      port: [
+                      protocalAndPort: [
                         {
-                          trigger: 'blur',
-                          required: true,
+                          trigger: 'change',
                           message: '协议和端口均不能为空',
+                          validator: () => {
+                            return !!data.port && !!data.protocol;
+                          },
                         },
                       ],
                       sourceAddress: [
@@ -275,9 +247,18 @@ export default defineComponent({
                           },
                         },
                       ],
+                      targetAddress: [
+                        {
+                          trigger: 'blur',
+                          message: '目标类型与内容均不能为空',
+                          validator: (val: string) => {
+                            return !!val && !!data[val];
+                          },
+                        },
+                      ],
                     }}>
                     {props.vendor === 'azure' ? (
-                      <FormItem label={t('名称')} required property='name'>
+                      <FormItem label={index === 0 ? t('名称') : ''} required property='name'>
                         <Input v-model={data.name}></Input>
                       </FormItem>
                     ) : (
@@ -285,7 +266,15 @@ export default defineComponent({
                     )}
                     {props.vendor !== 'tcloud' && props.vendor !== 'aws' ? (
                       <>
-                        <FormItem label={t('优先级')} required property='priority'>
+                        <FormItem
+                          label={index === 0 ? t('优先级') : ''}
+                          required
+                          property='priority'
+                          description={
+                            props.vendor === 'azure'
+                              ? '跟据优先级顺序处理规则；数字越小，优先级越高。我们建议在规则之间留出间隙 「 100、200、300 」 等\n\r 这样一来便可在无需编辑现有规则的情况下添加新规，同时注意不能和当前已有规则的优先级重复. 取值范围为100-4096'
+                              : '必须是 1-100的整数'
+                          }>
                           <Input type='number' v-model={data.priority}></Input>
                         </FormItem>
                       </>
@@ -293,7 +282,7 @@ export default defineComponent({
                       ''
                     )}
                     {props.vendor === 'huawei' ? (
-                      <FormItem label={t('类型')} property='ethertype' required>
+                      <FormItem label={index === 0 ? t('类型') : ''} property='ethertype' required>
                         <Select v-model={data.ethertype}>
                           {HUAWEI_TYPE_LIST.map(ele => (
                             <Option value={ele.id} label={ele.name} key={ele.id} />
@@ -305,16 +294,31 @@ export default defineComponent({
                     )}
                     {props.vendor === 'azure' ? (
                       <>
-                        <FormItem label={t('源')} property='sourceAddress' required>
+                        <FormItem
+                          label={index === 0 ? t('源') : ''}
+                          property='sourceAddress'
+                          required
+                          description='源过滤器可为“任意”、一个 IP 地址范围、一个应用程序安全组或一个默认标记。它指定此规则将允许或拒绝的特定源 IP 地址范围的传入流量'>
                           {renderSourceAddressSlot(data, data.sourceAddress)}
                         </FormItem>
-                        <FormItem label={t('源端口')} property='source_port_range' required>
+                        <FormItem
+                          label={index === 0 ? t('源端口') : ''}
+                          property='source_port_range'
+                          required
+                          description='提供单个端口(如 80)、端口范围(如 1024-65535)，或单个端口和/或端口范围的以逗号分隔的列表(如 80,1024-65535)。这指定了根据此规则将允许或拒绝哪些端口的流量。提供星号(*)可允许任何端口的流量'>
                           <Input placeholder='单个(80)、范围(1024-65535)' v-model={data.source_port_range}></Input>
                         </FormItem>
-                        <FormItem label={t('目标')} property='targetAddress' required>
+                        <FormItem
+                          label={index === 0 ? t('目标') : ''}
+                          property='targetAddress'
+                          required
+                          description='提供采用 CIDR 表示法的地址范围(例如 192.168.99.0/24 或 2001:1234::/64)或提供 IP 地址(例如 192.168.99.0 或 2001:1234::)。还可提供一个由采用 IPv4 或 IPv6 的 IP 地址或地址范围构成的列表(以逗号分隔)'>
                           {renderTargetAddressSlot(data, data.targetAddress)}
                         </FormItem>
-                        <FormItem label={t('目标协议端口')} property='destination_port_range' required>
+                        <FormItem
+                          label={index === 0 ? t('目标协议端口') : ''}
+                          property='destination_port_range'
+                          required>
                           <Input
                             disabled={data?.protocol === '*'}
                             class=' input-select-warp'
@@ -336,7 +340,14 @@ export default defineComponent({
                     )}
                     {props.vendor !== 'azure' ? (
                       <>
-                        <FormItem label={t('协议端口')} property='port' required>
+                        <FormItem
+                          label={index === 0 ? t('协议端口') : ''}
+                          property='protocalAndPort'
+                          description={
+                            props.vendor === 'aws'
+                              ? '对于 TCP、UDP 协议，允许的端口范围。您可以指定单个端口号（例如 22）或端口号范围（例如7000-8000）'
+                              : '请输入0-65535之间数字或者ALL'
+                          }>
                           {
                             <Input
                               disabled={
@@ -362,7 +373,11 @@ export default defineComponent({
                             </Input>
                           }
                         </FormItem>
-                        <FormItem label={t('源地址')} property='sourceAddress' required>
+                        <FormItem
+                          label={index === 0 ? t('源地址') : ''}
+                          property='sourceAddress'
+                          required
+                          description='必须指定 CIDR 数据块 或者 安全组 ID'>
                           {renderSourceAddressSlot(data, data.sourceAddress)}
                         </FormItem>
                       </>
@@ -370,7 +385,10 @@ export default defineComponent({
                       ''
                     )}
                     {props.vendor !== 'aws' ? ( // aws没有策略
-                      <FormItem label={t('策略')} property={props.vendor === 'azure' ? 'access' : 'action'} required>
+                      <FormItem
+                        label={index === 0 ? t('策略') : ''}
+                        property={props.vendor === 'azure' ? 'access' : 'action'}
+                        required>
                         {props.vendor === 'azure' ? (
                           <Select v-model={data.access}>
                             {HUAWEI_ACTION_STATUS.map((ele: any) => (
@@ -388,15 +406,14 @@ export default defineComponent({
                     ) : (
                       ''
                     )}
-                    <FormItem label={t('描述')} property='memo'>
+                    <FormItem
+                      label={index === 0 ? t('描述') : ''}
+                      property='memo'
+                      description='请输入英文描述, 最大不超过256个字符'>
                       <Input placeholder='请输入描述' v-model={data.memo}></Input>
                     </FormItem>
                     {!securityRuleId.value ? (
-                      <FormItem
-                        label={t('操作')}
-                        style={{
-                          marginLeft: -100,
-                        }}>
+                      <FormItem label={index === 0 ? t('操作') : ''}>
                         <div>
                           <Button
                             text
@@ -497,62 +514,20 @@ export default defineComponent({
       },
     );
 
-    // // 每朵云的规则不同 必填项有区别
-    // watch(
-    //   () => props.vendor,
-    //   (vendor) => {
-    //     switch (vendor) {
-    //       case CLOUD_VENDOR.tcloud:
-    //         securityMessage.value = TCLOUD_SECURITY_MESSAGE;
-    //         break;
-    //       case CLOUD_VENDOR.huawei:
-    //         securityMessage.value = HUAWEI_SECURITY_MESSAGE;
-    //         break;
-    //       case CLOUD_VENDOR.aws:
-    //         securityMessage.value = AWS_SECURITY_MESSAGE;
-    //         break;
-    //       case CLOUD_VENDOR.azure:
-    //         securityMessage.value = AZURE_SECURITY_MESSAGE;
-    //         break;
-    //     }
-    //   },
-    //   { immediate: true },
-    // );
-
-    // 方法
     const handleClose = () => {
       emit('update:isShow', false);
     };
 
     const handleConfirm = async () => {
       try {
-        for (const item of formRefsArr) {
-          await item.value.validate();
-        }
+        await Promise.all(formInstances.map(formInstance => formInstance.value.validate()));
       } catch (err) {
         console.log(err);
         return;
       }
-      // isEmpty.value = false;
       // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let index = 0; index < tableData.value.length; index++) {
         const e = tableData.value[index];
-        // const securityMessageKeys = Object.keys(securityMessage.value);
-        // for (const key of securityMessageKeys) {
-        //   if (!e[key]) {
-        //     Message({
-        //       theme: 'error',
-        //       message: t(`${securityMessage.value[key]}必填`),
-        //     });
-        //     isEmpty.value = true;
-        //     break;
-        //   }
-        // }
-        // if (isEmpty.value) return;
-        e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id || e[e.sourceAddress];
-        if (e.sourceAddress !== 'ipv4_cidr') {
-          delete e.ipv4_cidr;
-        }
         if (e.source_port_range?.includes(',')) {
           e.source_port_ranges = e.source_port_range.split(',');
           delete e.source_port_range;
@@ -562,32 +537,27 @@ export default defineComponent({
           delete e.destination_port_range;
         }
       }
-      // @ts-ignore
-      if (securityRuleId.value) {
-        // 更新
-        emit('submit', tableData.value);
-      } else {
-        emit('submit', tableData.value); // 新增
-      }
+
+      emit('submit', tableData.value);
     };
 
     // 新增
     const handlerAdd = () => {
-      formRefsArr.push(ref(null));
+      formInstances.push(ref(null));
       tableData.value.push({});
     };
 
     // 删除
     const handlerDelete = (data: any, index: any) => {
       Confirm('确定删除', '删除之后不可恢复', () => {
-        formRefsArr.splice(index, 1);
+        formInstances.splice(index, 1);
         tableData.value.splice(index, 1);
       });
     };
 
     // 复制
     const hanlerCopy = (data: any) => {
-      formRefsArr.push(ref(null));
+      formInstances.push(ref(null));
       const copyData = JSON.parse(JSON.stringify(data));
       tableData.value.push(copyData);
     };

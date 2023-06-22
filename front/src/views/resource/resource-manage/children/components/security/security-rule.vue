@@ -593,7 +593,7 @@ if (props.vendor === 'huawei') {
     <security-rule
       v-model:isShow="isShowSecurityRule"
       :loading="securityRuleLoading"
-      dialog-width="1500"
+      dialog-width="1680"
       :active-type="activeType"
       :title="t(activeType === 'egress' ? `${dataId ? '编辑' : '添加'}出站规则` : `${dataId ? '编辑' : '添加'}入站规则`)"
       :vendor="vendor"
