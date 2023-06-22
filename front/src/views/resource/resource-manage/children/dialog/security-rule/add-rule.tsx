@@ -2,11 +2,11 @@ import { defineComponent, ref, watch } from 'vue';
 import { Input, Select, Button, Form, TagInput } from 'bkui-vue'; // TagInput
 import {
   ACTION_STATUS,
-  GCP_PROTOCOL_LIST,
   IP_TYPE_LIST,
   HUAWEI_ACTION_STATUS,
   HUAWEI_TYPE_LIST,
   AZURE_PROTOCOL_LIST,
+  SECURITY_RULES_MAP,
 } from '@/constants';
 import Confirm from '@/components/confirm';
 import { useI18n } from 'vue-i18n';
@@ -64,7 +64,7 @@ export default defineComponent({
 
     const resourceStore = useResourceStore();
 
-    const protocolList = ref<any>(GCP_PROTOCOL_LIST);
+    const protocolList = ref<any>(SECURITY_RULES_MAP[props.vendor]);
 
     const securityGroupSource = ref([
       // 华为源
