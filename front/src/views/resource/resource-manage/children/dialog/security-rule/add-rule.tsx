@@ -2,19 +2,35 @@ import { defineComponent, ref, watch } from 'vue';
 import { Input, Select, Button, Form, TagInput } from 'bkui-vue'; // TagInput
 import {
   ACTION_STATUS,
-  GCP_PROTOCOL_LIST,
   IP_TYPE_LIST,
   HUAWEI_ACTION_STATUS,
   HUAWEI_TYPE_LIST,
   AZURE_PROTOCOL_LIST,
+  SECURITY_RULES_MAP,
 } from '@/constants';
 import Confirm from '@/components/confirm';
 import { useI18n } from 'vue-i18n';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import { useResourceStore } from '@/store/resource';
 import './add-rule.scss';
+import { isValid, parse, parseCIDR } from 'ipaddr.js';
 const { Option } = Select;
 const { FormItem } = Form;
+
+export type SecurityRule = {
+  name: string;
+  priority: number;
+  ethertype: string;
+  sourceAddress: string;
+  source_port_range: string;
+  targetAddress: string;
+  protocol: string;
+  destination_port_range: string;
+  port: string;
+  access: string;
+  action: string;
+  memo: string;
+};
 
 export default defineComponent({
   components: {
@@ -49,7 +65,7 @@ export default defineComponent({
 
     const resourceStore = useResourceStore();
 
-    const protocolList = ref<any>(GCP_PROTOCOL_LIST);
+    const protocolList = ref<any>(SECURITY_RULES_MAP[props.vendor]);
 
     const securityGroupSource = ref([
       // 华为源
@@ -116,7 +132,13 @@ export default defineComponent({
       });
     }
 
-    const renderSourceAddressSlot = (data: any, key: string) => {
+    const renderSourceAddressSlot = (
+      data: SecurityRule,
+      key:
+      | 'cloud_target_security_group_id'
+      | 'ipv6_cidr'
+      | 'ipv4_cidr',
+    ) => {
       [
         'cloud_target_security_group_id',
         'ipv6_cidr',
@@ -147,14 +169,20 @@ export default defineComponent({
       );
     };
 
-    const renderTargetAddressSlot = (data: any, key: string) => {
-      if (data[key]) {
-        return data.targetAddress === 'destination_address_prefix' ? (
-          <Input class=' input-select-warp' v-model={data[key]}>
+    const renderTargetAddressSlot = (
+      data: SecurityRule,
+      key: 'destination_address_prefix' | 'cloud_destination_security_group_ids',
+    ) => {
+      [
+        'destination_address_prefix',
+        'cloud_destination_security_group_ids',
+      ].forEach(dataKey => dataKey !== key && delete data[dataKey]);
+      return key !== 'cloud_destination_security_group_ids' ? (
+          <Input class=' input-select-warp' v-model={data[key]} placeholder='10.0.0.1/24、 10.0.0.1'>
             {{
               prefix: () => (
                 <>
-                  <Select class='input-prefix-select' v-model={data.targetAddress}>
+                  <Select class='input-prefix-select' v-model={data.targetAddress} >
                     {azureSecurityGroupTarget.value.map(ele => (
                       <Option value={ele.id} label={ele.name} key={ele.id} />
                     ))}
@@ -163,9 +191,9 @@ export default defineComponent({
               ),
             }}
           </Input>
-        ) : (
+      ) : (
           <>
-            <div class='flex-row align-items-center mt15'>
+            <div class='flex-row align-items-center'>
               <Select class='tag-input-prefix-select' v-model={data.targetAddress}>
                 {azureSecurityGroupTarget.value.map(ele => (
                   <Option value={ele.id} label={ele.name} key={ele.id} />
@@ -174,25 +202,6 @@ export default defineComponent({
               <TagInput class='tag-input-select-warp' allow-create list={[]} v-model={data[key]}></TagInput>
             </div>
           </>
-        );
-      }
-      return (
-        <Input
-          class=' input-select-warp'
-          v-model={data.destination_address_prefix}
-          placeholder='10.0.0.1/24、 10.0.0.1'>
-          {{
-            prefix: () => (
-              <>
-                <Select class='input-prefix-select' v-model={data.targetAddress}>
-                  {azureSecurityGroupTarget.value.map(ele => (
-                    <Option value={ele.id} label={ele.name} key={ele.id} />
-                  ))}
-                </Select>
-              </>
-            ),
-          }}
-        </Input>
       );
     };
 
@@ -204,20 +213,7 @@ export default defineComponent({
           <>
             <div>
               {tableData.value.map((
-                data: {
-                  name: any;
-                  priority: any;
-                  ethertype: any;
-                  sourceAddress: string;
-                  source_port_range: any;
-                  targetAddress: string;
-                  protocol: string;
-                  destination_port_range: any;
-                  port: any;
-                  access: any;
-                  action: any;
-                  memo: any;
-                },
+                data: SecurityRule,
                 index: number,
               ) => (
                   <Form
@@ -237,6 +233,25 @@ export default defineComponent({
                             return !!data.port && !!data.protocol;
                           },
                         },
+                        {
+                          trigger: 'blur',
+                          message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+                          validator: () => {
+                            const port = data.port.trim();
+                            const isPortValid =  /^(ALL|0|[1-9]\d*|(\d+,\d+)+|(\d+-\d+)+)$/.test(port);
+                            if (!isPortValid) return false;
+                            if (/^ALL$/.test(port) || +port === 0) return true;
+                            if (/,/g.test(port)) {
+                              const nums = port.split(/,/);
+                              return !nums.some(num => +num < 0 || +num > 65535);
+                            }
+                            if (/-/g.test(port)) {
+                              const nums = port.split(/-/);
+                              return !nums.some(num => +num < 0 || +num > 65535);
+                            }
+                            return +port >= 0 && +port <= 65535;
+                          },
+                        },
                       ],
                       sourceAddress: [
                         {
@@ -246,6 +261,25 @@ export default defineComponent({
                             return !!val && !!data[val];
                           },
                         },
+                        {
+                          trigger: 'blur',
+                          message: '请填写对应合法的 IP, 注意区分 IPV4 与 IPV6',
+                          validator: (val: string) => {
+                            if (['ipv6_cidr', 'ipv4_cidr'].includes(val)) {
+                              const ip = data[val].trim();
+                              if (isValid(ip)) {
+                                const ipType = parse(ip).kind();
+                                return (ipType === 'ipv4' && val === 'ipv4_cidr') || (ipType === 'ipv6' && val === 'ipv6_cidr');
+                              }
+                              try {
+                                parseCIDR(ip);
+                              } catch (err) {
+                                return false;
+                              }
+                            }
+                            return true;
+                          },
+                        },
                       ],
                       targetAddress: [
                         {
@@ -253,6 +287,15 @@ export default defineComponent({
                           message: '目标类型与内容均不能为空',
                           validator: (val: string) => {
                             return !!val && !!data[val];
+                          },
+                        },
+                      ],
+                      destination_port_range: [
+                        {
+                          trigger: 'change',
+                          message: '目标协议端口不能为空',
+                          validator: (val: string) => {
+                            return data.protocol === '*' || (!!data.protocol && !!val);
                           },
                         },
                       ],
@@ -299,33 +342,41 @@ export default defineComponent({
                           property='sourceAddress'
                           required
                           description='源过滤器可为“任意”、一个 IP 地址范围、一个应用程序安全组或一个默认标记。它指定此规则将允许或拒绝的特定源 IP 地址范围的传入流量'>
-                          {renderSourceAddressSlot(data, data.sourceAddress)}
+                          {renderSourceAddressSlot(
+                            data,
+                            data.sourceAddress as 'cloud_target_security_group_id' | 'ipv6_cidr' | 'ipv4_cidr',
+                          )}
                         </FormItem>
                         <FormItem
                           label={index === 0 ? t('源端口') : ''}
                           property='source_port_range'
                           required
-                          description='提供单个端口(如 80)、端口范围(如 1024-65535)，或单个端口和/或端口范围的以逗号分隔的列表(如 80,1024-65535)。这指定了根据此规则将允许或拒绝哪些端口的流量。提供星号(*)可允许任何端口的流量'>
+                          description='提供单个端口(如 80)、端口范围(如 1024-65535)，或单个端口和/或端口范围的以逗号分隔的列表(如 80,1024-65535)。\n\r 这指定了根据此规则将允许或拒绝哪些端口的流量。提供星号(*)可允许任何端口的流量'>
                           <Input placeholder='单个(80)、范围(1024-65535)' v-model={data.source_port_range}></Input>
                         </FormItem>
                         <FormItem
                           label={index === 0 ? t('目标') : ''}
                           property='targetAddress'
                           required
-                          description='提供采用 CIDR 表示法的地址范围(例如 192.168.99.0/24 或 2001:1234::/64)或提供 IP 地址(例如 192.168.99.0 或 2001:1234::)。还可提供一个由采用 IPv4 或 IPv6 的 IP 地址或地址范围构成的列表(以逗号分隔)'>
-                          {renderTargetAddressSlot(data, data.targetAddress)}
+                          description='提供采用 CIDR 表示法的地址范围(例如 192.168.99.0/24 或 2001:1234::/64)或提供 IP 地址(例如 192.168.99.0 或 2001:1234::)。\n\r 还可提供一个由采用 IPv4 或 IPv6 的 IP 地址或地址范围构成的列表(以逗号分隔)'>
+                          {renderTargetAddressSlot(data, data.targetAddress as 'destination_address_prefix' | 'cloud_destination_security_group_ids')}
                         </FormItem>
                         <FormItem
                           label={index === 0 ? t('目标协议端口') : ''}
-                          property='destination_port_range'
-                          required>
+                          property='destination_port_range'>
                           <Input
                             disabled={data?.protocol === '*'}
                             class=' input-select-warp'
                             v-model={data.destination_port_range}>
                             {{
                               prefix: () => (
-                                <Select class='input-prefix-select' v-model={data.protocol}>
+                                <Select
+                                  class='input-prefix-select'
+                                  v-model={data.protocol}
+                                  onChange={ () => {
+                                    delete data.destination_port_range;
+                                  }}
+                                >
                                   {AZURE_PROTOCOL_LIST.map(ele => (
                                     <Option value={ele.id} label={ele.name} key={ele.id} />
                                   ))}
@@ -354,7 +405,6 @@ export default defineComponent({
                                 data?.protocol === 'ALL' || data?.protocol === 'huaweiAll' || data?.protocol === '-1'
                               }
                               placeholder='请输入0-65535之间数字、ALL'
-                              clearable
                               class='input-select-warp'
                               v-model={data.port}>
                               {{
@@ -378,7 +428,12 @@ export default defineComponent({
                           property='sourceAddress'
                           required
                           description='必须指定 CIDR 数据块 或者 安全组 ID'>
-                          {renderSourceAddressSlot(data, data.sourceAddress)}
+                          {
+                            renderSourceAddressSlot(
+                              data,
+                              data.sourceAddress as 'cloud_target_security_group_id' | 'ipv6_cidr' | 'ipv4_cidr',
+                            )
+                          }
                         </FormItem>
                       </>
                     ) : (
@@ -525,6 +580,7 @@ export default defineComponent({
         console.log(err);
         return;
       }
+
       // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let index = 0; index < tableData.value.length; index++) {
         const e = tableData.value[index];
