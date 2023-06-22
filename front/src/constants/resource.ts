@@ -1,3 +1,5 @@
+import { VendorEnum } from '@/common/constant';
+
 export const COMMON_STATUS = [
   {
     label: '关',
@@ -245,4 +247,95 @@ export const AZURE_SECURITY_MESSAGE = {
   destination_address_prefix: '目标地址',
   protocol: '目标协议',
   access: '策略',
+};
+
+export const TCLOUD_SECURITY_RULE_PROTOCALS = [
+  {
+    id: 'tcp',
+    name: 'TCP',
+  },
+  {
+    id: 'udp',
+    name: 'UDP',
+  },
+  {
+    id: 'icmp',
+    name: 'ICMP',
+  },
+  {
+    id: 'icmpv6',
+    name: 'ICMPv6',
+  },
+  {
+    id: 'gre',
+    name: 'GRE',
+  },
+];
+
+export const AWS_SECURITY_RULE_PEOTOCALS = [
+  {
+    id: 'tcp',
+    name: 'TCP',
+  },
+  {
+    id: 'udp',
+    name: 'UDP',
+  },
+  {
+    id: 'icmp',
+    name: 'ICMP',
+  },
+  {
+    id: 'icmpv6',
+    name: 'ICMPv6',
+  },
+  {
+    id: 'gre',
+    name: 'GRE',
+  },
+];
+
+export const HUAWEI_SECURITY_RULE_PEOTOCALS = [
+  {
+    id: 'tcp',
+    name: 'TCP',
+  },
+  {
+    id: 'udp',
+    name: 'UDP',
+  },
+  {
+    id: 'icmp',
+    name: 'ICMP',
+  },
+  {
+    id: 'gre',
+    name: 'GRE',
+  },
+];
+
+export const AZURE_SECURITY_RULE_PEOTOCALS = [
+  {
+    id: 'tcp',
+    name: 'TCP',
+  },
+  {
+    id: 'udp',
+    name: 'UDP',
+  },
+  {
+    id: 'icmp',
+    name: 'ICMP',
+  },
+  {
+    id: 'any',
+    name: 'ANY',
+  },
+];
+
+export const SECURITY_RULES_MAP = {
+  [VendorEnum.TCLOUD]: TCLOUD_SECURITY_RULE_PROTOCALS,
+  [VendorEnum.AWS]: AWS_SECURITY_RULE_PEOTOCALS,
+  [VendorEnum.HUAWEI]: HUAWEI_SECURITY_RULE_PEOTOCALS,
+  [VendorEnum.AZURE]: AZURE_SECURITY_RULE_PEOTOCALS,
 };
