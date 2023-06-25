@@ -358,3 +358,8 @@ export const SITE_TYPE_MAP = {
   china: '中国站',
   international: '国际站',
 };
+
+export const LANGUAGE_TYPE = {
+  zh_cn: 'zh_cn',
+  en: 'en',
+};
