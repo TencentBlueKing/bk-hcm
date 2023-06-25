@@ -15,7 +15,7 @@ import { useUserStore, useAccountStore, useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
 import { useI18n } from 'vue-i18n';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { VendorEnum } from '@/common/constant';
+import { LANGUAGE_TYPE, VendorEnum } from '@/common/constant';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 
@@ -51,6 +51,7 @@ export default defineComponent({
     const isRouterAlive = ref<Boolean>(true);
     const curYear = ref((new Date()).getFullYear());
     const isMenuOpen = ref<boolean>(true);
+    const language = ref(LANGUAGE_TYPE.zh_cn);
 
 
     // 获取业务列表
@@ -162,6 +163,13 @@ export default defineComponent({
       }
     };
 
+    watch(
+      () => language.value,
+      () => {
+        location.reload();
+      },
+    );
+
     const logout = () => {
       deleteCookie('bk_token');
       deleteCookie('bk_ticket');
@@ -245,7 +253,35 @@ export default defineComponent({
                             </a>
                           ))}
                         </section>
-                        <aside class="header-user">
+                        <aside class='header-lang'>
+                          <Dropdown
+                            trigger='click'
+                          >
+                            {{
+                              default: () => (
+                                <span class="cursor-pointer flex-row align-items-center ">
+                                  {language.value}
+                                  <i class={'icon hcm-icon bkhcm-icon-down-shape pl5'}/>
+                                </span>
+                              ),
+                              content: () => (
+                                <DropdownMenu>
+                                  <DropdownItem onClick={() => {
+                                    language.value = LANGUAGE_TYPE.zh_cn;
+                                  }}>
+                                  {'中文'}
+                                  </DropdownItem>
+                                  <DropdownItem onClick={() => {
+                                    language.value = LANGUAGE_TYPE.en;
+                                  }}>
+                                  {'英文'}
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              ),
+                            }}
+                          </Dropdown>
+                        </aside>
+                        <aside class='header-user'>
                           <Dropdown
                             trigger='click'
                           >

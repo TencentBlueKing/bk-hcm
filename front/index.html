@@ -16,13 +16,17 @@
             const BK_COMPONENT_API_URL = "{{ .BK_COMPONENT_API_URL}}"
             const BK_ITSM_URL = "{{ .BK_ITSM_URL }}"
             const VERSION = "{{ .VERSION }}"
+            const BK_HCM_DOMAIN = "{{ .BK_HCM_DOMAIN }}"
+            const BK_HCM_LANGUAGE_URL_PREFIX = "{{ .BK_HCM_LANGUAGE_URL_PREFIX }}"
 
             return {
                 BK_HCM_AJAX_URL_PREFIX: BK_HCM_AJAX_URL_PREFIX,
                 BK_LOGIN_URL: BK_LOGIN_URL,
                 BK_COMPONENT_API_URL: BK_COMPONENT_API_URL,
                 BK_ITSM_URL: BK_ITSM_URL,
-                VERSION: VERSION
+                VERSION: VERSION,
+                BK_HCM_DOMAIN: BK_HCM_DOMAIN,
+                BK_HCM_LANGUAGE_URL_PREFIX: BK_HCM_LANGUAGE_URL_PREFIX
             };
         })();
     </script>
