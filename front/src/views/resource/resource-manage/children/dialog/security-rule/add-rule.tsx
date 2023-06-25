@@ -26,7 +26,7 @@ export type SecurityRule = {
   targetAddress: string;
   protocol: string;
   destination_port_range: string;
-  port: string;
+  port: number | string;
   access: string;
   action: string;
   memo: string;
@@ -237,7 +237,8 @@ export default defineComponent({
                           trigger: 'blur',
                           message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
                           validator: () => {
-                            const port = data.port.trim();
+                            const port = String(data.port).trim();
+                            if (data.protocol === 'icmpv6' && +port === -1) return true;
                             const isPortValid =  /^(ALL|0|[1-9]\d*|(\d+,\d+)+|(\d+-\d+)+)$/.test(port);
                             if (!isPortValid) return false;
                             if (/^ALL$/.test(port) || +port === 0) return true;
@@ -373,8 +374,9 @@ export default defineComponent({
                                 <Select
                                   class='input-prefix-select'
                                   v-model={data.protocol}
-                                  onChange={ () => {
+                                  onChange={ (val) => {
                                     delete data.destination_port_range;
+                                    if (val === '*') data.destination_port_range = '*';
                                   }}
                                 >
                                   {AZURE_PROTOCOL_LIST.map(ele => (
@@ -402,7 +404,7 @@ export default defineComponent({
                           {
                             <Input
                               disabled={
-                                data?.protocol === 'ALL' || data?.protocol === 'huaweiAll' || data?.protocol === '-1'
+                                data?.protocol === 'ALL' || data?.protocol === 'huaweiAll' || data?.protocol === '-1' || data?.protocol === 'icmpv6'
                               }
                               placeholder='请输入0-65535之间数字、ALL'
                               class='input-select-warp'
@@ -624,7 +626,7 @@ export default defineComponent({
         if (e.protocol === 'ALL' || e.protocol === '-1' || e.protocol === '*' || e.protocol === 'huaweiAll') {
           // 依次为tcloud AWS AZURE HUAWEI
           e.port = 'ALL';
-        } else if (e.protocol === '-1') {
+        } else if (e.protocol === '-1' || e.protocol === 'icmpv6') {
           e.port = -1;
         }
       });
