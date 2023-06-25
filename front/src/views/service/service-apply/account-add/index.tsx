@@ -171,6 +171,10 @@ export default defineComponent({
       }
     };
 
+    onMounted(() => {
+      changeCloud(projectModel.vendor);
+    });
+
     const changeCloud = (val: string) => {
       isChangeVendor.value = true;
       nextTick(() => {
