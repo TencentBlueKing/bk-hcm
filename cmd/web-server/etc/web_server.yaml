@@ -73,6 +73,8 @@ web:
   bkItsmUrl: http://itsm.bk.com
   # 蓝鲸登录Cookie获取名称(bk_token/bk_ticket)，国内和海外不同。
   bkLoginCookieName: "bk_token"
+  # 中英文持久化设置cookie使用，一般设置为 .域名
+  bkDomain: ".com"
 
 # defines esb related settings.
 esb:
