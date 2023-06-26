@@ -34,7 +34,7 @@ export const useStaffStore = defineStore({
       window[params.callback] = ({ data, result }: { data: any, result: boolean }) => {
         if (result) {
           this.fetching = false;
-          this.list = data.results;
+          this.list = [...data.results, ...this.list];
         }
         headTag.removeChild(scriptTag);
         // @ts-ignore

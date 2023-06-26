@@ -72,11 +72,11 @@ export default defineComponent({
     const getUserList = _.debounce((userName: string) => {
       if (staffStore.fetching || !userName) return;
       staffStore.fetchStaffs(userName);
-    }, 500);
+    }, 1000);
 
-    function handleInput(userName: string) {
+    const handleInput = (userName: string) => {
       getUserList(userName);
-    }
+    };
 
     watch(
       () => staffStore.list,

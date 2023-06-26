@@ -186,7 +186,7 @@ type HuaWeiSecurityGroupRule struct {
 	Protocol           *string `json:"protocol" validate:"required"`
 	RemoteIPPrefix     *string `json:"remote_ip_prefix" validate:"omitempty"`
 	CloudRemoteGroupID *string `json:"cloud_remote_group_id" validate:"omitempty"`
-	Port               *string `json:"port" validate:"required"`
+	Port               *string `json:"port" validate:"omitempty"`
 	Action             *string `json:"action" validate:"required"`
 	Priority           int64   `json:"priority" validate:"required"`
 }
