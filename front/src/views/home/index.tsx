@@ -15,9 +15,10 @@ import { useUserStore, useAccountStore, useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
 import { useI18n } from 'vue-i18n';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { VendorEnum } from '@/common/constant';
+import { LANGUAGE_TYPE, VendorEnum } from '@/common/constant';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
+import cookie from 'cookie';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -51,6 +52,7 @@ export default defineComponent({
     const isRouterAlive = ref<Boolean>(true);
     const curYear = ref((new Date()).getFullYear());
     const isMenuOpen = ref<boolean>(true);
+    const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
 
 
     // 获取业务列表
@@ -162,6 +164,29 @@ export default defineComponent({
       }
     };
 
+    const saveLanguage = async (val: string) => {
+      return new Promise((resovle) => {
+        const { BK_COMPONENT_API_URL } = window.PROJECT_CONFIG;
+        const url = `${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_update_user_language/language=${val}`;
+
+        const scriptTag = document.createElement('script');
+        scriptTag.setAttribute('type', 'text/javascript');
+        scriptTag.setAttribute('src', url);
+        const headTag = document.getElementsByTagName('head')[0];
+        headTag.appendChild(scriptTag);
+        resovle(val);
+      });
+    };
+
+    watch(
+      () => language.value,
+      async (val) => {
+        document.cookie = `blueking_language=${val}; domain=${window.PROJECT_CONFIG.BK_DOMAIN}`;
+        await saveLanguage(val);
+        location.reload();
+      },
+    );
+
     const logout = () => {
       deleteCookie('bk_token');
       deleteCookie('bk_ticket');
@@ -245,7 +270,37 @@ export default defineComponent({
                             </a>
                           ))}
                         </section>
-                        <aside class="header-user">
+                        <aside class='header-lang'>
+                          <Dropdown
+                            trigger='click'
+                          >
+                            {{
+                              default: () => (
+                                <span class="cursor-pointer flex-row align-items-center ">
+                                  {
+                                    language.value === LANGUAGE_TYPE.zh_cn ? '中文' : 'English'
+                                  }
+                                  <i class={'icon hcm-icon bkhcm-icon-down-shape pl5'}/>
+                                </span>
+                              ),
+                              content: () => (
+                                <DropdownMenu>
+                                  <DropdownItem onClick={() => {
+                                    language.value = LANGUAGE_TYPE.zh_cn;
+                                  }}>
+                                  {'中文'}
+                                  </DropdownItem>
+                                  <DropdownItem onClick={() => {
+                                    language.value = LANGUAGE_TYPE.en;
+                                  }}>
+                                  {'English'}
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              ),
+                            }}
+                          </Dropdown>
+                        </aside>
+                        <aside class='header-user'>
                           <Dropdown
                             trigger='click'
                           >
