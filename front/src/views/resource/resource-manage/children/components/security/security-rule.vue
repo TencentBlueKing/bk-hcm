@@ -21,7 +21,7 @@ import {
   useResourceStore,
 } from '@/store';
 
-import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
+import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum, QueryRuleOPEnum } from '@/typings';
 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
@@ -36,6 +36,9 @@ const props = defineProps({
   },
   vendor: {
     type: String as PropType<any>,
+  },
+  detail: {
+    type: Object as PropType<any>,
   },
 });
 
@@ -103,6 +106,40 @@ watch(
   },
 );
 
+watch(
+  () => props.detail,
+  (newVal) => {
+    getRelatedSecurityGroups(newVal);
+  },
+);
+
+const getRelatedSecurityGroups = async (detail: { account_id: string; region: string; }) => {
+  const url = 'security_groups/list';
+  const filter = {
+    op: QueryRuleOPEnum.AND,
+    rules: [
+      {
+        field: 'account_id',
+        op: QueryRuleOPEnum.CS,
+        value: detail.account_id,
+      },
+      {
+        field: 'region',
+        op: QueryRuleOPEnum.CS,
+        value: detail.region,
+      },
+    ],
+  };
+  const res = await resourceStore.getCommonList({
+    page: {
+      count: false,
+      start: 0,
+      limit: 100,
+    },
+    filter,
+  }, url);
+  return res;
+};
 
 const getDefaultList = async (type: string) => {
   const list = await resourceStore.getAzureDefaultList(type);

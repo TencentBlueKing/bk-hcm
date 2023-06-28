@@ -17,6 +17,7 @@ import {
 import {
   useRoute,
 } from 'vue-router';
+import useDetail from '../../hooks/use-detail';
 
 const {
   t,
@@ -28,6 +29,15 @@ console.log('filter', filter);
 const activeTab = ref(route.query?.activeTab);
 const securityId = ref(route.query?.id);
 const vendor = ref(route.query?.vendor);
+
+const {
+  loading,
+  detail,
+  getDetail,
+} = useDetail(
+  'security_groups',
+  securityId.value as string,
+);
 
 const tabs = [
   {
@@ -56,9 +66,22 @@ const tabs = [
     :active="activeTab"
   >
     <template #default="type">
-      <security-info :id="securityId" :vendor="vendor" v-if="type === 'detail'" />
+      <security-info
+        :id="securityId"
+        :vendor="vendor"
+        v-if="type === 'detail'"
+        :loading="loading"
+        :detail="detail"
+        :get-detail="getDetail"
+      />
       <security-relate v-if="type === 'relate'" />
-      <security-rule :filter="filter" :id="securityId" :vendor="vendor" v-if="type === 'rule'" />
+      <security-rule
+        :filter="filter"
+        :id="securityId"
+        :vendor="vendor"
+        :detail="detail"
+        v-if="type === 'rule'"
+      />
     </template>
   </detail-tab>
 </template>
