@@ -94,6 +94,8 @@ const state = reactive<any>({
   columns: useColumns('group'),
 });
 
+const relatedSecurityGroups = ref([]);
+
 watch(
   () => activeType.value,
   (v) => {
@@ -108,8 +110,8 @@ watch(
 
 watch(
   () => props.detail,
-  (newVal) => {
-    getRelatedSecurityGroups(newVal);
+  async (newVal) => {
+    relatedSecurityGroups.value = await getRelatedSecurityGroups(newVal);
   },
 );
 
@@ -138,7 +140,7 @@ const getRelatedSecurityGroups = async (detail: { account_id: string; region: st
     },
     filter,
   }, url);
-  return res;
+  return res?.data?.details;
 };
 
 const getDefaultList = async (type: string) => {
@@ -635,6 +637,7 @@ if (props.vendor === 'huawei') {
       :title="t(activeType === 'egress' ? `${dataId ? '编辑' : '添加'}出站规则` : `${dataId ? '编辑' : '添加'}入站规则`)"
       :vendor="vendor"
       @submit="handleSubmitRule"
+      :related-security-groups="relatedSecurityGroups"
     />
 
 
