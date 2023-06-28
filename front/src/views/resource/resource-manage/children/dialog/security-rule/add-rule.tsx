@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { PropType, defineComponent, ref, watch } from 'vue';
 import { Input, Select, Button, Form, TagInput } from 'bkui-vue'; // TagInput
 import {
   ACTION_STATUS,
@@ -55,6 +55,9 @@ export default defineComponent({
     },
     activeType: {
       type: String,
+    },
+    relatedSecurityGroups: {
+      type: Array as PropType<any>,
     },
   },
 
@@ -144,26 +147,43 @@ export default defineComponent({
         'ipv6_cidr',
         'ipv4_cidr',
       ].forEach(dataKey => dataKey !== key && delete data[dataKey]);
-      return (
+
+      const prefix = () => (
+        <>
+          {props.vendor === 'azure' ? (
+            <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
+              {azureSecurityGroupSource.value.map(ele => (
+                <Option value={ele.id} label={ele.name} key={ele.id} />
+              ))}
+            </Select>
+          ) : (
+            <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
+              {securityGroupSource.value.map(ele => (
+                <Option value={ele.id} label={ele.name} key={ele.id} />
+              ))}
+            </Select>
+          )}
+        </>
+      );
+
+      return ['cloud_target_security_group_id'].includes(key) ? (
+        <div class={'security-group-select'}>
+          {prefix()}
+          <Select v-model={data[key]}>
+            {
+              props.relatedSecurityGroups.map((securityGroup: {
+                cloud_id: string | number | symbol;
+                name: string;
+              }) => (
+                <Option value={securityGroup.cloud_id} label={securityGroup.name} key={securityGroup.cloud_id}/>
+              ))
+            }
+          </Select>
+        </div>
+      ) : (
         <Input class=' input-select-warp' placeholder='请输入' v-model={data[key]}>
           {{
-            prefix: () => (
-              <>
-                {props.vendor === 'azure' ? (
-                  <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
-                    {azureSecurityGroupSource.value.map(ele => (
-                      <Option value={ele.id} label={ele.name} key={ele.id} />
-                    ))}
-                  </Select>
-                ) : (
-                  <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
-                    {securityGroupSource.value.map(ele => (
-                      <Option value={ele.id} label={ele.name} key={ele.id} />
-                    ))}
-                  </Select>
-                )}
-              </>
-            ),
+            prefix,
           }}
         </Input>
       );
