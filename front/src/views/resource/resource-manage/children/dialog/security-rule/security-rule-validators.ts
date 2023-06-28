@@ -31,9 +31,10 @@ export const securityRuleValidators = (data: SecurityRule) => {
         trigger: 'blur',
         message: '请填写对应合法的 IP, 注意区分 IPV4 与 IPV6',
         validator: (val: string) => {
-          if (['ipv6_cidr', 'ipv4_cidr'].includes(val)) {
+          if (['ipv6_cidr', 'ipv4_cidr', 'source_address_prefix'].includes(val)) {
             const ip = data[val].trim();
             if (isValid(ip)) {
+              if (['source_address_prefix'].includes(val)) return true;
               const ipType = parse(ip).kind();
               return (ipType === 'ipv4' && val === 'ipv4_cidr') || (ipType === 'ipv6' && val === 'ipv6_cidr');
             }
@@ -53,6 +54,22 @@ export const securityRuleValidators = (data: SecurityRule) => {
         message: '目标类型与内容均不能为空',
         validator: (val: string) => {
           return !!val && !!data[val];
+        },
+      },
+      {
+        trigger: 'blur',
+        message: '请填写对应合法的 IP, 注意区分 IPV4 与 IPV6',
+        validator: (val: string) => {
+          if (['destination_address_prefix'].includes(val)) {
+            const ip = data[val].trim();
+            if (isValid(ip)) return true;
+            try {
+              parseCIDR(ip);
+            } catch (err) {
+              return false;
+            }
+          }
+          return true;
         },
       },
     ],
