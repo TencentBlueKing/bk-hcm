@@ -24,8 +24,10 @@ import (
 	"fmt"
 
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
+	adaptor "hcm/pkg/ad"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	cssubnet "hcm/pkg/api/cloud-server/subnet"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
@@ -36,6 +38,36 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 )
+
+// SubnetCreateCopy create azure subnet.
+func (s subnet) SubnetCreateCopy(cts *rest.Contexts) (interface{}, error) {
+	req := new(cssubnet.SubnetCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	pvd, err := s.providermgr.Provider(req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	cloudID, err := pvd.CreateSubnet(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := pvd.SyncSubnet(cts.Kit, &adaptor.SyncSubnetOption{
+		CloudID: cloudID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return core.CreateResult{ID: id}, nil
+}
 
 // AzureSubnetCreate create azure subnet.
 func (s subnet) AzureSubnetCreate(cts *rest.Contexts) (interface{}, error) {

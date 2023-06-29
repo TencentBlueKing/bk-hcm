@@ -26,6 +26,7 @@ import (
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	cloudserver "hcm/pkg/api/cloud-server"
+	cssubnet "hcm/pkg/api/cloud-server/subnet"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/data-service/cloud"
@@ -112,6 +113,27 @@ func (svc *subnetSvc) CreateSubnet(cts *rest.Contexts) (interface{}, error) {
 		return svc.createHuaWeiSubnet(cts.Kit, bizID, req.Data)
 	}
 	return nil, nil
+}
+
+// CreateSubnetCopy create subnet.
+func (svc *subnetSvc) CreateSubnetCopy(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Create}, BizID: bizID}
+	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(cssubnet.SubnetCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	return svc.client.HCService().Subnet.Create(cts.Kit, req)
 }
 
 func (svc *subnetSvc) createTCloudSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (

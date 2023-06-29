@@ -22,12 +22,16 @@ package hcservice
 import (
 	"fmt"
 
+	cssubnet "hcm/pkg/api/cloud-server/subnet"
+	"hcm/pkg/api/core"
 	"hcm/pkg/client/hc-service/aws"
 	"hcm/pkg/client/hc-service/azure"
 	"hcm/pkg/client/hc-service/gcp"
 	"hcm/pkg/client/hc-service/huawei"
 	"hcm/pkg/client/hc-service/tcloud"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 )
@@ -39,6 +43,45 @@ type Client struct {
 	HuaWei *huawei.Client
 	Gcp    *gcp.Client
 	Azure  *azure.Client
+
+	client rest.ClientInterface
+
+	Subnet *SubnetClient
+}
+
+// SubnetClient is hc service aws subnet api client.
+type SubnetClient struct {
+	client rest.ClientInterface
+}
+
+// NewSubnetClient create a new subnet api client.
+func NewSubnetClient(client rest.ClientInterface) *SubnetClient {
+	return &SubnetClient{
+		client: client,
+	}
+}
+
+// Create subnet.
+func (s *SubnetClient) Create(kt *kit.Kit, req *cssubnet.SubnetCreateReq) (*core.CreateResult, error) {
+
+	resp := new(core.CreateResp)
+
+	err := s.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/subnets/create/copy").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }
 
 // NewClient create a new hc-service api client.

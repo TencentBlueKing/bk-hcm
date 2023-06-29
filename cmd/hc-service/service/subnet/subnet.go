@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 
+	ressync "hcm/cmd/hc-service/logics/res-sync"
 	syncaws "hcm/cmd/hc-service/logics/res-sync/aws"
 	syncazure "hcm/cmd/hc-service/logics/res-sync/azure"
 	synchuawei "hcm/cmd/hc-service/logics/res-sync/huawei"
@@ -32,6 +33,7 @@ import (
 	"hcm/cmd/hc-service/service/capability"
 	cloudadaptor "hcm/cmd/hc-service/service/cloud-adaptor"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
+	providermgr "hcm/cmd/hc-service/service/provider-manager"
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
@@ -61,6 +63,8 @@ func InitSubnetService(cap *capability.Capability) {
 	h.Add("GcpSubnetCreate", "POST", "/vendors/gcp/subnets/create", s.GcpSubnetCreate)
 	h.Add("AzureSubnetCreate", "POST", "/vendors/azure/subnets/create", s.AzureSubnetCreate)
 
+	h.Add("SubnetCreate", "POST", "/subnets/create/copy", s.SubnetCreateCopy)
+
 	h.Add("TCloudSubnetUpdate", "PATCH", "/vendors/tcloud/subnets/{id}", s.TCloudSubnetUpdate)
 	h.Add("AwsSubnetUpdate", "PATCH", "/vendors/aws/subnets/{id}", s.AwsSubnetUpdate)
 	h.Add("HuaWeiSubnetUpdate", "PATCH", "/vendors/huawei/subnets/{id}", s.HuaWeiSubnetUpdate)
@@ -83,9 +87,11 @@ func InitSubnetService(cap *capability.Capability) {
 }
 
 type subnet struct {
-	ad     *cloudadaptor.CloudAdaptorClient
-	cs     *client.ClientSet
-	subnet *subnetlogics.Subnet
+	ad          *cloudadaptor.CloudAdaptorClient
+	cs          *client.ClientSet
+	subnet      *subnetlogics.Subnet
+	providermgr providermgr.Interface
+	syncCli     ressync.Interface
 }
 
 // QueryVpcIDsAndSyncOption ...
