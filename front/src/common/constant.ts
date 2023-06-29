@@ -363,3 +363,7 @@ export const LANGUAGE_TYPE = {
   zh_cn: 'zh_cn',
   en: 'en',
 };
+
+export const SEARCH_VALUE_IDS = [
+  'cloud_id', // 云ID
+];

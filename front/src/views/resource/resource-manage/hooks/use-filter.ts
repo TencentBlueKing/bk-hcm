@@ -1,16 +1,18 @@
 import {
+  onMounted,
   ref,
   watch,
 } from 'vue';
 
 import type { FilterType } from '@/typings/resource';
-import { FILTER_DATA } from '@/common/constant';
+import { FILTER_DATA, SEARCH_VALUE_IDS } from '@/common/constant';
 import cloneDeep  from 'lodash/cloneDeep';
 
 import {
   useAccountStore,
 } from '@/store';
 import { QueryFilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
+import { useRoute } from 'vue-router';
 
 type PropsType = {
   filter?: FilterType,
@@ -41,6 +43,52 @@ const useFilter = (props: PropsType) => {
   const filter = ref<any>(cloneDeep(props.filter));
   const isAccurate = ref(false);
   const accountStore = useAccountStore();
+  const route = useRoute();
+
+  const saveQueryInSearch = () => {
+    let params = [] as typeof searchValue.value;
+    Object.entries(route.query).forEach(([queryName, queryValue]) => {
+      if (!!queryName && SEARCH_VALUE_IDS.includes(queryName)) {
+        if (Array.isArray(queryValue)) {
+          params = params.concat(queryValue.map(queryValueItem => ({
+            id: queryName,
+            values: [
+              {
+                id: queryValueItem,
+                name: queryValueItem,
+              },
+            ],
+          })));
+        } else {
+          params.push({
+            id: queryName,
+            values: [
+              {
+                id: queryValue,
+                name: queryValue,
+              },
+            ],
+          });
+        }
+      }
+    });
+    searchValue.value = params;
+  };
+
+  onMounted(() => {
+    saveQueryInSearch();
+  });
+
+  watch(
+    () => route.query,
+    () => {
+      saveQueryInSearch();
+    },
+    {
+      deep: true,
+      immediate: true,
+    },
+  );
 
   watch(
     () => accountStore.accountList,   // 设置云账号筛选所需数据
@@ -99,13 +147,14 @@ const useFilter = (props: PropsType) => {
     },
     {
       deep: true,
+      immediate: true,
     },
   );
 
   watch(
     () => props.filter,
     () => {
-      searchValue.value = [];
+      if (/^\/resource\/resource/.test(route.path)) searchValue.value = [];
     },
     {
       deep: true,

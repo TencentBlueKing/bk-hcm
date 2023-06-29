@@ -2,6 +2,15 @@
   font-size: 12px;
 }
 
-.security-group-cls ::placeholder{
+.security-group-cls ::placeholder {
   color: #63656e;
+}
+
+.component-with-detail-container {
+  display: flex;
+
+  .component-with-detail {
+    flex: 1;
+    margin-right: 10px;
+  }
 }
