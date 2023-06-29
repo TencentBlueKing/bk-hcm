@@ -1,5 +1,5 @@
-import { defineComponent, ref, watch } from 'vue';
-import { Input, Select, Button, Form, TagInput } from 'bkui-vue'; // TagInput
+import { PropType, defineComponent, ref, watch } from 'vue';
+import { Input, Select, Button, Form } from 'bkui-vue'; // TagInput
 import {
   ACTION_STATUS,
   IP_TYPE_LIST,
@@ -55,6 +55,9 @@ export default defineComponent({
     },
     activeType: {
       type: String,
+    },
+    relatedSecurityGroups: {
+      type: Array as PropType<any>,
     },
   },
 
@@ -137,33 +140,54 @@ export default defineComponent({
       key:
       | 'cloud_target_security_group_id'
       | 'ipv6_cidr'
-      | 'ipv4_cidr',
+      | 'ipv4_cidr'
+      | 'source_address_prefix'
+      | 'cloud_source_security_group_ids',
     ) => {
       [
         'cloud_target_security_group_id',
         'ipv6_cidr',
         'ipv4_cidr',
+        'source_address_prefix',
+        'cloud_source_security_group_ids',
       ].forEach(dataKey => dataKey !== key && delete data[dataKey]);
-      return (
+
+      const prefix = () => (
+        <>
+          {props.vendor === 'azure' ? (
+            <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
+              {azureSecurityGroupSource.value.map(ele => (
+                <Option value={ele.id} label={ele.name} key={ele.id} />
+              ))}
+            </Select>
+          ) : (
+            <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
+              {securityGroupSource.value.map(ele => (
+                <Option value={ele.id} label={ele.name} key={ele.id} />
+              ))}
+            </Select>
+          )}
+        </>
+      );
+
+      return ['cloud_target_security_group_id', 'cloud_source_security_group_ids'].includes(key) ? (
+        <div class={'security-group-select'}>
+          {prefix()}
+          <Select v-model={data[key]}>
+            {
+              props.relatedSecurityGroups.map((securityGroup: {
+                cloud_id: string | number | symbol;
+                name: string;
+              }) => (
+                <Option value={securityGroup.cloud_id} label={securityGroup.name} key={securityGroup.cloud_id}/>
+              ))
+            }
+          </Select>
+        </div>
+      ) : (
         <Input class=' input-select-warp' placeholder='请输入' v-model={data[key]}>
           {{
-            prefix: () => (
-              <>
-                {props.vendor === 'azure' ? (
-                  <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
-                    {azureSecurityGroupSource.value.map(ele => (
-                      <Option value={ele.id} label={ele.name} key={ele.id} />
-                    ))}
-                  </Select>
-                ) : (
-                  <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
-                    {securityGroupSource.value.map(ele => (
-                      <Option value={ele.id} label={ele.name} key={ele.id} />
-                    ))}
-                  </Select>
-                )}
-              </>
-            ),
+            prefix,
           }}
         </Input>
       );
@@ -177,6 +201,7 @@ export default defineComponent({
         'destination_address_prefix',
         'cloud_destination_security_group_ids',
       ].forEach(dataKey => dataKey !== key && delete data[dataKey]);
+
       return key !== 'cloud_destination_security_group_ids' ? (
           <Input class=' input-select-warp' v-model={data[key]} placeholder='10.0.0.1/24、 10.0.0.1'>
             {{
@@ -199,7 +224,16 @@ export default defineComponent({
                   <Option value={ele.id} label={ele.name} key={ele.id} />
                 ))}
               </Select>
-              <TagInput class='tag-input-select-warp' allow-create list={[]} v-model={data[key]}></TagInput>
+              <Select v-model={data[key]} class='tag-input-select-warp'>
+                {
+                  props.relatedSecurityGroups.map((securityGroup: {
+                    cloud_id: string | number | symbol;
+                    name: string;
+                  }) => (
+                    <Option value={securityGroup.cloud_id} label={securityGroup.name} key={securityGroup.cloud_id}/>
+                  ))
+                }
+              </Select>
             </div>
           </>
       );
@@ -271,7 +305,7 @@ export default defineComponent({
                           description='源过滤器可为“任意”、一个 IP 地址范围、一个应用程序安全组或一个默认标记。它指定此规则将允许或拒绝的特定源 IP 地址范围的传入流量'>
                           {renderSourceAddressSlot(
                             data,
-                            data.sourceAddress as 'cloud_target_security_group_id' | 'ipv6_cidr' | 'ipv4_cidr',
+                            data.sourceAddress as 'source_address_prefix' | 'cloud_source_security_group_ids',
                           )}
                         </FormItem>
                         <FormItem
