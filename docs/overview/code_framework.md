@@ -1,5 +1,6 @@
 # 蓝鲸云管理平台
 
+![image](../resource/img/code.png)
 ## 1. web-server & front
 cmd/web-server是基于开源go-restful 框架构建，前端项目front基于vue.js构建
 
@@ -20,10 +21,21 @@ cmd/api-server基于开源go-restful 框架构建
 * event-server(待构建)
 
 ## 4. pkg
+
+* api 服务协议的请求与响应结构体定义
 * dal 封装mysql相关操作
 * serviced 封装etcd相关操作
 * adaptor 封装多云相关操作
+* cc 配置中心相关操作
+* criteria 枚举常量定义和错误校验
+* handler http通用handler
+* logs 日志相关操作
+* rest http框架
+* runtime 微服务运行时所需的工具
+* version 版本信息
+* cryptography 加密相关操作
+* tools 封装通用工具
+* metrics prometheus监控相关配置
 * thirdparty/esb/cmdb 封装cmdb相关操作
 * thirdparty/esb/iam 封装权限中心相关操作
 * thirdparty/esb/itsm 封装审批单据相关操作
-* tools 封装通用工具
