@@ -15,6 +15,7 @@ export default defineComponent({
   props: {
     tabs: Array as PropType<Tab[]>,
     active: String as PropType<any>,
+    onChange: Function as PropType<(val: string) => void>,
   },
 
   setup(props) {
@@ -32,6 +33,7 @@ export default defineComponent({
         v-model:active={this.activeTab}
         type="card"
         class={`detail-tab-main ${this.$attrs?.class}`}
+        onChange={this.onChange}
       >
         {
           this.tabs.map((tab) => {

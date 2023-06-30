@@ -1,5 +1,6 @@
-import { isValid, parse, parseCIDR } from 'ipaddr.js';
+import { parse, parseCIDR, IPv4 } from 'ipaddr.js';
 import { SecurityRule } from './add-rule';
+const { isValidFourPartDecimal } = IPv4;
 
 export const securityRuleValidators = (data: SecurityRule) => {
   return {
@@ -33,7 +34,7 @@ export const securityRuleValidators = (data: SecurityRule) => {
         validator: (val: string) => {
           if (['ipv6_cidr', 'ipv4_cidr', 'source_address_prefix'].includes(val)) {
             const ip = data[val].trim();
-            if (isValid(ip)) {
+            if (isValidFourPartDecimal(ip)) {
               if (['source_address_prefix'].includes(val)) return true;
               const ipType = parse(ip).kind();
               return (ipType === 'ipv4' && val === 'ipv4_cidr') || (ipType === 'ipv6' && val === 'ipv6_cidr');
@@ -62,7 +63,7 @@ export const securityRuleValidators = (data: SecurityRule) => {
         validator: (val: string) => {
           if (['destination_address_prefix'].includes(val)) {
             const ip = data[val].trim();
-            if (isValid(ip)) return true;
+            if (isValidFourPartDecimal(ip)) return true;
             try {
               parseCIDR(ip);
             } catch (err) {
