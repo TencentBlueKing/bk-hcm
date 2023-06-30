@@ -300,32 +300,66 @@ export default defineComponent({
             required: true,
             property: 'cloud_vpc_id',
             description: '',
-            content: () => <VpcSelector
-              v-model={formData.cloud_vpc_id}
-              bizId={cond.bizId ? cond.bizId : accountStore.bizs}
-              accountId={cond.cloudAccountId}
-              vendor={cond.vendor}
-              region={cond.region}
-              zone={formData.zone}
-              onChange={handleVpcChange}
-              clearable={false} />,
+            content: () => (
+              <div class={'component-with-detail-container'}>
+                <VpcSelector
+                  class={'component-with-detail'}
+                  v-model={formData.cloud_vpc_id}
+                  bizId={cond.bizId ? cond.bizId : accountStore.bizs}
+                  accountId={cond.cloudAccountId}
+                  vendor={cond.vendor}
+                  region={cond.region}
+                  zone={formData.zone}
+                  onChange={handleVpcChange}
+                  clearable={false}
+                />
+                <Button
+                  text
+                  theme='primary'
+                  onClick={() => {
+                    if (!formData.cloud_vpc_id) return;
+                    const { BK_STATIC_URL } = window.PROJECT_CONFIG;
+                    const url = `${BK_STATIC_URL}business/vpc?cloud_id=${formData.cloud_vpc_id}`;
+                    window.open(url, '_blank');
+                  }}>
+                  详情
+                </Button>
+              </div>
+            ),
           },
           {
             label: '子网',
             required: true,
             description: '',
             property: 'cloud_subnet_id',
-            content: () => <SubnetSelector
-              v-model={formData.cloud_subnet_id}
-              bizId={cond.bizId ? cond.bizId : accountStore.bizs}
-              vpcId={vpcId.value}
-              vendor={cond.vendor}
-              region={cond.region}
-              accountId={cond.cloudAccountId}
-              zone={formData.zone}
-              resourceGroup={cond.resourceGroup}
-              ref={subnetSelectorRef}
-              clearable={false} />,
+            content: () => (
+              <div class={'component-with-detail-container'}>
+                <SubnetSelector
+                  class={'component-with-detail'}
+                  v-model={formData.cloud_subnet_id}
+                  bizId={cond.bizId ? cond.bizId : accountStore.bizs}
+                  vpcId={vpcId.value}
+                  vendor={cond.vendor}
+                  region={cond.region}
+                  accountId={cond.cloudAccountId}
+                  zone={formData.zone}
+                  resourceGroup={cond.resourceGroup}
+                  ref={subnetSelectorRef}
+                  clearable={false}
+                />
+                <Button
+                  text
+                  theme="primary"
+                  onClick={() => {
+                    if (!formData.cloud_subnet_id) return;
+                    const { BK_STATIC_URL } = window.PROJECT_CONFIG;
+                    const url = `${BK_STATIC_URL}business/subnet?cloud_id=${formData.cloud_subnet_id}`;
+                    window.open(url, '_blank');
+                  }}>
+                  详情
+                </Button>
+              </div>
+            ),
           },
           {
             label: '公网IP',
@@ -347,15 +381,37 @@ export default defineComponent({
             required: true,
             description: '',
             property: 'cloud_security_group_ids',
-            content: () => <SecurityGroupSelector
-              v-model={formData.cloud_security_group_ids}
-              bizId={cond.bizId ? cond.bizId : accountStore.bizs}
-              accountId={cond.cloudAccountId}
-              region={cond.region}
-              multiple={cond.vendor !== VendorEnum.AZURE}
-              vendor={cond.vendor}
-              vpcId={vpcId.value}
-              clearable={false} />,
+            content: () => (
+              <div class={'component-with-detail-container'}>
+                <SecurityGroupSelector
+                  class={'component-with-detail'}
+                  v-model={formData.cloud_security_group_ids}
+                  bizId={cond.bizId ? cond.bizId : accountStore.bizs}
+                  accountId={cond.cloudAccountId}
+                  region={cond.region}
+                  multiple={cond.vendor !== VendorEnum.AZURE}
+                  vendor={cond.vendor}
+                  vpcId={vpcId.value}
+                  clearable={false}
+                />
+                <Button
+                  text
+                  theme="primary"
+                  onClick={() => {
+                    if (!formData.cloud_security_group_ids) return;
+                    const { BK_STATIC_URL } = window.PROJECT_CONFIG;
+                    let url = `${BK_STATIC_URL}business/security?`;
+                    const params = [];
+                    for (const cloudId of formData.cloud_security_group_ids) {
+                      params.push(`cloud_id=${cloudId}`);
+                    }
+                    url += params.join('&');
+                    window.open(url, '_blank');
+                  }}>
+                  详情
+                </Button>
+              </div>
+            ),
           },
         ],
       },
