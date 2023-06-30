@@ -318,8 +318,7 @@ export default defineComponent({
                   theme='primary'
                   onClick={() => {
                     if (!formData.cloud_vpc_id) return;
-                    const { BK_STATIC_URL } = window.PROJECT_CONFIG;
-                    const url = `${BK_STATIC_URL}business/vpc?cloud_id=${formData.cloud_vpc_id}`;
+                    const url = `/#/business/vpc?cloud_id=${formData.cloud_vpc_id}&bizs=${cond.bizId}`;
                     window.open(url, '_blank');
                   }}>
                   详情
@@ -352,8 +351,7 @@ export default defineComponent({
                   theme="primary"
                   onClick={() => {
                     if (!formData.cloud_subnet_id) return;
-                    const { BK_STATIC_URL } = window.PROJECT_CONFIG;
-                    const url = `${BK_STATIC_URL}business/subnet?cloud_id=${formData.cloud_subnet_id}`;
+                    const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
                     window.open(url, '_blank');
                   }}>
                   详情
@@ -399,8 +397,7 @@ export default defineComponent({
                   theme="primary"
                   onClick={() => {
                     if (!formData.cloud_security_group_ids) return;
-                    const { BK_STATIC_URL } = window.PROJECT_CONFIG;
-                    let url = `${BK_STATIC_URL}business/security?`;
+                    let url = `/#/business/security?bizs=${cond.bizId}&`;
                     const params = [];
                     for (const cloudId of formData.cloud_security_group_ids) {
                       params.push(`cloud_id=${cloudId}`);
