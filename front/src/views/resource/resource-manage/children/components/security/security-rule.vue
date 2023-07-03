@@ -189,6 +189,7 @@ const handleSubmitRule = async (tableData: any) => {
         delete e[item];
       }
     });
+    e.priority = +e.priority;
   });
   const params = {
     [`${activeType.value}_rule_set`]: data,
@@ -401,6 +402,7 @@ const outColumns = [
   {
     label: t('备注'),
     field: 'memo',
+    render: ({ data }) => data.memo || '--',
   },
   {
     label: t('修改时间'),
