@@ -82,3 +82,16 @@ func (r *RawCreateReq) UnmarshalJSON(raw []byte) error {
 	r.Data = raw
 	return nil
 }
+
+// ResourceCreateReq raw create request, only account_id is decoded, others are raw json.
+type ResourceCreateReq struct {
+	AccountID string
+	Data      json.RawMessage
+}
+
+// UnmarshalJSON unmarshal raw json to RawCreateReq
+func (r *ResourceCreateReq) UnmarshalJSON(raw []byte) error {
+	r.AccountID = gjson.GetBytes(raw, "account_id").String()
+	r.Data = raw
+	return nil
+}

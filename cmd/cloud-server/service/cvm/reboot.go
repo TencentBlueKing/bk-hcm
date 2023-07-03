@@ -21,7 +21,7 @@ package cvm
 
 import (
 	typecvm "hcm/pkg/adaptor/types/cvm"
-	proto "hcm/pkg/api/cloud-server"
+	proto "hcm/pkg/api/cloud-server/cvm"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcprotocvm "hcm/pkg/api/hc-service/cvm"
