@@ -57,6 +57,7 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
         validator: (val: string) => {
           if (['ipv6_cidr', 'ipv4_cidr', 'source_address_prefix'].includes(val)) {
             const ip = data[val].trim();
+            if (['all', 'ALL'].includes(ip)) return true;
             if (isValidFourPartDecimal(ip)) {
               if (['source_address_prefix'].includes(val)) return true;
               const ipType = parse(ip).kind();
@@ -86,6 +87,7 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
         validator: (val: string) => {
           if (['destination_address_prefix'].includes(val)) {
             const ip = data[val].trim();
+            if (['all', 'ALL'].includes(ip)) return true;
             if (isValidFourPartDecimal(ip)) return true;
             try {
               parseCIDR(ip);
