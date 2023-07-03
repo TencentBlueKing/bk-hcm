@@ -14,6 +14,7 @@ import StepDialog from '@/components/step-dialog/step-dialog';
 import { useResourceStore } from '@/store/resource';
 import './add-rule.scss';
 import { securityRuleValidators } from './security-rule-validators';
+import { VendorEnum } from '@/common/constant';
 const { Option } = Select;
 const { FormItem } = Form;
 
@@ -259,7 +260,7 @@ export default defineComponent({
                       justifyContent: 'space-around',
                     }}
                     rules={
-                      securityRuleValidators(data)
+                      securityRuleValidators(data, props.vendor as VendorEnum)
                     }>
                     {props.vendor === 'azure' ? (
                       <FormItem label={index === 0 ? t('名称') : ''} required property='name'>

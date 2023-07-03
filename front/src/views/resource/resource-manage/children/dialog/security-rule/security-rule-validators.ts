@@ -1,8 +1,9 @@
 import { parse, parseCIDR, IPv4 } from 'ipaddr.js';
 import { SecurityRule } from './add-rule';
+import { VendorEnum } from '@/common/constant';
 const { isValidFourPartDecimal } = IPv4;
 
-export const securityRuleValidators = (data: SecurityRule) => {
+export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) => {
   return {
     protocalAndPort: [
       {
@@ -17,6 +18,28 @@ export const securityRuleValidators = (data: SecurityRule) => {
         message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: () => {
           return isPortAvailable(data.port);
+        },
+      },
+    ],
+    priority: [
+      {
+        trigger: 'change',
+        message: '必须是 1-100的整数',
+        validator: (val: string | number) => {
+          if ([VendorEnum.HUAWEI].includes(vendor)) {
+            return Number.isInteger(+val) && +val <= 100 && +val >= 0;
+          }
+          return true;
+        },
+      },
+      {
+        trigger: 'change',
+        message: '取值范围为100-4096',
+        validator: (val: string | number) => {
+          if ([VendorEnum.AZURE].includes(vendor)) {
+            return Number.isInteger(+val) && +val <= 4096 && +val >= 100;
+          }
+          return true;
         },
       },
     ],
