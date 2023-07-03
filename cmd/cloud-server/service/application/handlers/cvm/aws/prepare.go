@@ -22,7 +22,7 @@ package aws
 import (
 	"fmt"
 
-	proto "hcm/pkg/api/cloud-server/application"
+	proto "hcm/pkg/api/cloud-server/cvm"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/esb/itsm"
 )

@@ -17,12 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package application
+package cscvm
 
 import (
+	"errors"
 	"fmt"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -62,17 +64,21 @@ type GcpCvmCreateReq struct {
 }
 
 // Validate ...
-func (req *GcpCvmCreateReq) Validate() error {
+func (req *GcpCvmCreateReq) Validate(bizRequired bool) error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
+	}
+
+	if bizRequired && req.BkBizID == 0 {
+		return errors.New("bk_biz_id is required")
 	}
 
 	if err := validator.ValidateCvmName(enumor.Gcp, req.Name); err != nil {
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	if req.RequiredCount > requiredCountMaxLimit {
-		return fmt.Errorf("required count should <= %d", requiredCountMaxLimit)
+	if req.RequiredCount > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("required count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	// 校验系统硬盘

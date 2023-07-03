@@ -19,15 +19,11 @@
 
 package constant
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
 const (
-	// BatchOperationMaxLimit 批量操作最大上限，包括批量创建、批量更新、批量删除。
-	BatchOperationMaxLimit = 100
-
-	// CloudResourceSyncMaxLimit 单次云资源同步最大数量限制。
-	CloudResourceSyncMaxLimit = 100
-	// SyncConcurrencyDefaultMaxLimit 同步并发最大限制
-	SyncConcurrencyDefaultMaxLimit = 10
+	// ASCIILowercase 小写字符
+	ASCIILowercase = "abcdefghijklmnopqrstuvwxyz"
+	// ASCIIUppercase 大写字符
+	ASCIIUppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	// Digits 数字
+	Digits = "0123456789"
 )

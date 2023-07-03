@@ -21,11 +21,10 @@ package aws
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	typecvm "hcm/pkg/adaptor/types/cvm"
-	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/cmd/cloud-server/service/common"
+	proto "hcm/pkg/api/cloud-server/cvm"
 	hcproto "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/tools/converter"
 )
 
 // ApplicationOfCreateAwsCvm ...
@@ -46,48 +45,8 @@ func NewApplicationOfCreateAwsCvm(
 }
 
 func (a *ApplicationOfCreateAwsCvm) toHcProtoAwsBatchCreateReq(dryRun bool) *hcproto.AwsBatchCreateReq {
-	req := a.req
+	createReq := common.ConvAwsCvmCreateReq(a.req)
+	createReq.DryRun = dryRun
 
-	blockDeviceMapping := make([]typecvm.AwsBlockDeviceMapping, 0)
-	// 系统盘
-	deviceName := "/dev/sda1"
-	blockDeviceMapping = append(blockDeviceMapping, typecvm.AwsBlockDeviceMapping{
-		DeviceName: &deviceName,
-		Ebs: &typecvm.AwsEbs{
-			VolumeSizeGB: req.SystemDisk.DiskSizeGB,
-			VolumeType:   req.SystemDisk.DiskType,
-		},
-	})
-
-	diskStartIndex := 'a'
-	// 数据盘
-	for _, d := range req.DataDisk {
-		for i := int64(0); i < d.DiskCount; i++ {
-			blockDeviceMapping = append(blockDeviceMapping, typecvm.AwsBlockDeviceMapping{
-				DeviceName: converter.ValToPtr("/dev/sd" + string(diskStartIndex+1)),
-				Ebs: &typecvm.AwsEbs{
-					VolumeSizeGB: d.DiskSizeGB,
-					VolumeType:   d.DiskType,
-				},
-			})
-		}
-	}
-
-	return &hcproto.AwsBatchCreateReq{
-		DryRun:                dryRun,
-		AccountID:             req.AccountID,
-		Region:                req.Region,
-		Zone:                  req.Zone,
-		Name:                  req.Name,
-		InstanceType:          req.InstanceType,
-		CloudImageID:          req.CloudImageID,
-		CloudSubnetID:         req.CloudSubnetID,
-		PublicIPAssigned:      req.PublicIPAssigned,
-		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
-		BlockDeviceMapping:    blockDeviceMapping,
-		Password:              req.Password,
-		RequiredCount:         req.RequiredCount,
-		// TODO: 暂不支持
-		// ClientToken: nil,
-	}
+	return createReq
 }

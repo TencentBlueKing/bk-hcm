@@ -20,7 +20,7 @@
 package cvm
 
 import (
-	proto "hcm/pkg/api/cloud-server"
+	proto "hcm/pkg/api/cloud-server/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
