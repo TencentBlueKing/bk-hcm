@@ -8,9 +8,7 @@ import {
   useI18n,
 } from 'vue-i18n';
 
-import {
-  ref,
-} from 'vue';
+import { watch, ref } from 'vue';
 
 
 import {
@@ -59,6 +57,13 @@ const tabs = [
 const handleTabsChange = (val: string) => {
   if (val === 'rule') getRelatedSecurityGroups(detail.value);
 };
+
+watch(
+  () => detail.value,
+  (val: { account_id: string; region: string; }) => {
+    getRelatedSecurityGroups(val);
+  },
+);
 
 const getRelatedSecurityGroups = async (detail: { account_id: string; region: string; }) => {
   const url = 'security_groups/list';

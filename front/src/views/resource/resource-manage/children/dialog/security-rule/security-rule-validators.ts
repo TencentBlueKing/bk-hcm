@@ -1,8 +1,9 @@
 import { parse, parseCIDR, IPv4 } from 'ipaddr.js';
 import { SecurityRule } from './add-rule';
+import { VendorEnum } from '@/common/constant';
 const { isValidFourPartDecimal } = IPv4;
 
-export const securityRuleValidators = (data: SecurityRule) => {
+export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) => {
   return {
     protocalAndPort: [
       {
@@ -20,6 +21,28 @@ export const securityRuleValidators = (data: SecurityRule) => {
         },
       },
     ],
+    priority: [
+      {
+        trigger: 'change',
+        message: '必须是 1-100的整数',
+        validator: (val: string | number) => {
+          if ([VendorEnum.HUAWEI].includes(vendor)) {
+            return Number.isInteger(+val) && +val <= 100 && +val >= 0;
+          }
+          return true;
+        },
+      },
+      {
+        trigger: 'change',
+        message: '取值范围为100-4096',
+        validator: (val: string | number) => {
+          if ([VendorEnum.AZURE].includes(vendor)) {
+            return Number.isInteger(+val) && +val <= 4096 && +val >= 100;
+          }
+          return true;
+        },
+      },
+    ],
     sourceAddress: [
       {
         trigger: 'blur',
@@ -34,6 +57,7 @@ export const securityRuleValidators = (data: SecurityRule) => {
         validator: (val: string) => {
           if (['ipv6_cidr', 'ipv4_cidr', 'source_address_prefix'].includes(val)) {
             const ip = data[val].trim();
+            if (['all', 'ALL'].includes(ip)) return true;
             if (isValidFourPartDecimal(ip)) {
               if (['source_address_prefix'].includes(val)) return true;
               const ipType = parse(ip).kind();
@@ -63,6 +87,7 @@ export const securityRuleValidators = (data: SecurityRule) => {
         validator: (val: string) => {
           if (['destination_address_prefix'].includes(val)) {
             const ip = data[val].trim();
+            if (['all', 'ALL'].includes(ip)) return true;
             if (isValidFourPartDecimal(ip)) return true;
             try {
               parseCIDR(ip);
