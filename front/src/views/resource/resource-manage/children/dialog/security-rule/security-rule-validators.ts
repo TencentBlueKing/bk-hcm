@@ -1,4 +1,4 @@
-import { parse, parseCIDR, IPv4 } from 'ipaddr.js';
+import { parse, parseCIDR, IPv4, isValid } from 'ipaddr.js';
 import { SecurityRule } from './add-rule';
 import { VendorEnum } from '@/common/constant';
 const { isValidFourPartDecimal } = IPv4;
@@ -58,11 +58,26 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
           if (['ipv6_cidr', 'ipv4_cidr', 'source_address_prefix'].includes(val)) {
             const ip = data[val].trim();
             if (['all', 'ALL'].includes(ip)) return true;
-            if (isValidFourPartDecimal(ip)) {
+            if (isValid(ip)) {
               if (['source_address_prefix'].includes(val)) return true;
               const ipType = parse(ip).kind();
-              return (ipType === 'ipv4' && val === 'ipv4_cidr') || (ipType === 'ipv6' && val === 'ipv6_cidr');
+              return (ipType === 'ipv4' && val === 'ipv4_cidr' && isValidFourPartDecimal(ip)) || (ipType === 'ipv6' && val === 'ipv6_cidr');
             }
+            try {
+              parseCIDR(ip);
+            } catch (err) {
+              return false;
+            }
+          }
+          return true;
+        },
+      },
+      {
+        trigger: 'blur',
+        message: '仅支持 CIDR',
+        validator: (val: string) => {
+          if (vendor === VendorEnum.AWS) {
+            const ip = data[val].trim();
             try {
               parseCIDR(ip);
             } catch (err) {
@@ -83,12 +98,12 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
       },
       {
         trigger: 'blur',
-        message: '请填写对应合法的 IP, 注意区分 IPV4 与 IPV6',
+        message: '请填写对应合法的 IP',
         validator: (val: string) => {
           if (['destination_address_prefix'].includes(val)) {
             const ip = data[val].trim();
             if (['all', 'ALL'].includes(ip)) return true;
-            if (isValidFourPartDecimal(ip)) return true;
+            if (isValid(ip)) return true;
             try {
               parseCIDR(ip);
             } catch (err) {
@@ -132,7 +147,7 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
  */
 export const isPortAvailable = (val: string | number) => {
   const port = String(val).trim();
-  const isPortValid = /^(ALL|0|[1-9]\d*|(\d+,\d+)+|(\d+-\d+)+)$/.test(port);
+  const isPortValid = /^(ALL|0|-1|[1-9]\d*|(\d+,\d+)+|(\d+-\d+)+)$/.test(port);
   if (!isPortValid) return false;
   if (/^ALL$/.test(port) || +port === 0) return true;
   if (/,/g.test(port)) {
