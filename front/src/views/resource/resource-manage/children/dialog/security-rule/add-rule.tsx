@@ -186,7 +186,11 @@ export default defineComponent({
           </Select>
         </div>
       ) : (
-        <Input class=' input-select-warp' placeholder='请输入' v-model={data[key]}>
+        <Input class=' input-select-warp' placeholder='请输入' v-model={data[key]} onChange={(val: string) => {
+          if (['all', 'ALL'].includes(val.trim())) {
+            data[key] = ['ipv4_cidr'].includes(data.sourceAddress) ? '0.0.0.0/0' : '::/0';
+          }
+        }}>
           {{
             prefix,
           }}
@@ -365,7 +369,7 @@ export default defineComponent({
                           {
                             <Input
                               disabled={
-                                data?.protocol === 'ALL' || data?.protocol === 'huaweiAll' || data?.protocol === '-1' || data?.protocol === 'icmpv6'
+                                data?.protocol === 'ALL' || data?.protocol === 'huaweiAll' || data?.protocol === '-1' || ['icmpv6', 'gre', 'icmp'].includes(data?.protocol)
                               }
                               placeholder='请输入0-65535之间数字、ALL'
                               class='input-select-warp'
@@ -584,11 +588,11 @@ export default defineComponent({
     // 处理selectChange
     const handleChange = () => {
       tableData.value.forEach((e: any) => {
-        if (e.protocol === 'ALL' || e.protocol === '-1' || e.protocol === '*' || e.protocol === 'huaweiAll') {
+        if (e.protocol === 'ALL' || e.protocol === '-1' || e.protocol === '*' || e.protocol === 'huaweiAll' || ['icmpv6', 'gre', 'icmp'].includes(e.protocol)) {
           // 依次为tcloud AWS AZURE HUAWEI
           e.port = 'ALL';
-        } else if (e.protocol === '-1' || e.protocol === 'icmpv6') {
-          e.port = -1;
+        } else if (e.protocol === '-1') {
+          e.port = '-1';
         }
       });
     };
