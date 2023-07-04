@@ -21,7 +21,7 @@ package aws
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/disk/logics"
-	hcproto "hcm/pkg/api/hc-service/disk"
+	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -29,27 +29,12 @@ import (
 func (a *ApplicationOfCreateAwsDisk) Deliver() (status enumor.ApplicationStatus,
 	deliverDetail map[string]interface{}, err error) {
 
-	result, err := a.Client.HCService().Aws.Disk.CreateDisk(a.Cts.Kit.Ctx, a.Cts.Kit.Header(), a.toHcProtoCreateReq())
+	result, err := a.Client.HCService().Aws.Disk.CreateDisk(a.Cts.Kit.Ctx, a.Cts.Kit.Header(),
+		common.ConvAwsDiskCreateReq(a.req))
 	if err != nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, uint32(a.req.DiskCount),
 		a.req.BkBizID, a.Audit)
-}
-
-// toHcProtoCreateReq ...
-func (a *ApplicationOfCreateAwsDisk) toHcProtoCreateReq() *hcproto.AwsDiskCreateReq {
-	req := a.req
-	return &hcproto.AwsDiskCreateReq{
-		DiskBaseCreateReq: &hcproto.DiskBaseCreateReq{
-			AccountID: req.AccountID,
-			Region:    req.Region,
-			Zone:      req.Zone,
-			DiskSize:  uint64(req.DiskSize),
-			DiskType:  req.DiskType,
-			DiskCount: uint32(req.DiskCount),
-			Memo:      req.Memo,
-		},
-	}
 }

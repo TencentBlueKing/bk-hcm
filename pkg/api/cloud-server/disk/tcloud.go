@@ -17,9 +17,15 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package disk
+package csdisk
 
-import "hcm/pkg/criteria/validator"
+import (
+	"errors"
+
+	hcproto "hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/validator"
+)
 
 // TCloudDiskAttachReq ...
 type TCloudDiskAttachReq struct {
@@ -29,5 +35,33 @@ type TCloudDiskAttachReq struct {
 
 // Validate ...
 func (req *TCloudDiskAttachReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudDiskCreateReq ...
+type TCloudDiskCreateReq struct {
+	AccountID         string                           `json:"account_id" validate:"required"`
+	BkBizID           int64                            `json:"bk_biz_id" validate:"omitempty"`
+	DiskName          string                           `json:"disk_name" validate:"required"`
+	Region            string                           `json:"region" validate:"required"`
+	Zone              string                           `json:"zone" validate:"required"`
+	DiskSize          uint64                           `json:"disk_size" validate:"required"`
+	DiskType          string                           `json:"disk_type" validate:"required"`
+	DiskCount         uint32                           `json:"disk_count" validate:"required"`
+	DiskChargeType    string                           `json:"disk_charge_type" validate:"required"`
+	DiskChargePrepaid *hcproto.TCloudDiskChargePrepaid `json:"disk_charge_prepaid" validate:"required"`
+	Memo              *string                          `json:"memo" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *TCloudDiskCreateReq) Validate(bizRequired bool) error {
+	if req.DiskCount > constant.BatchOperationMaxLimit {
+		return errors.New("disk count should <= 100")
+	}
+
+	if bizRequired && req.BkBizID == 0 {
+		return errors.New("bk_biz_id is required")
+	}
+
 	return validator.Validate.Struct(req)
 }

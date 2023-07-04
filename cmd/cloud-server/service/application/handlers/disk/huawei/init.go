@@ -21,20 +21,20 @@ package huawei
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	csdisk "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/criteria/enumor"
 )
 
 // ApplicationOfCreateHuaWeiDisk ...
 type ApplicationOfCreateHuaWeiDisk struct {
 	handlers.BaseApplicationHandler
-	req *proto.HuaWeiDiskCreateReq
+	req *csdisk.HuaWeiDiskCreateReq
 }
 
 // NewApplicationOfCreateHuaWeiDisk ...
 func NewApplicationOfCreateHuaWeiDisk(
 	opt *handlers.HandlerOption,
-	req *proto.HuaWeiDiskCreateReq,
+	req *csdisk.HuaWeiDiskCreateReq,
 ) *ApplicationOfCreateHuaWeiDisk {
 	return &ApplicationOfCreateHuaWeiDisk{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.HuaWei),

@@ -20,7 +20,7 @@
 package tcloud
 
 import (
-	proto "hcm/pkg/api/cloud-server/application"
+	csdisk "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/esb/itsm"
 )
@@ -34,8 +34,8 @@ func (a *ApplicationOfCreateTCloudDisk) PrepareReq() error {
 func (a *ApplicationOfCreateTCloudDisk) GenerateApplicationContent() interface{} {
 	// 需要将Vendor也存储进去
 	return &struct {
-		*proto.TCloudDiskCreateReq `json:",inline"`
-		Vendor                     enumor.Vendor `json:"vendor"`
+		*csdisk.TCloudDiskCreateReq `json:",inline"`
+		Vendor                      enumor.Vendor `json:"vendor"`
 	}{
 		TCloudDiskCreateReq: a.req,
 		Vendor:              a.Vendor(),
