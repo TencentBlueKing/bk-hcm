@@ -280,6 +280,7 @@ const inColumns = [
   {
     label: t('备注'),
     field: 'memo',
+    render: ({ data }) => data.memo || '--',
   },
   {
     label: t('修改时间'),
