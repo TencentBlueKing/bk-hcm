@@ -5,6 +5,7 @@ import {
   Ref,
   ref,
   h,
+  watch,
 } from 'vue';
 
 import DeleteResource from '../children/dialog/delete-resource/delete-resource';
@@ -30,11 +31,11 @@ export default (
 
   const isShow = ref(false);
   const isDeleting = ref(false);
-  const deleteId = ref(0);
+  const deleteIds = ref(Array<number>);
 
   // 展示删除弹框
   const handleShowDelete = (value: any) => {
-    deleteId.value = value;
+    deleteIds.value = value;
     isShow.value = true;
   };
 
@@ -43,13 +44,20 @@ export default (
     isShow.value = false;
   };
 
+  watch(
+    () => isShow.value,
+    () => {
+      data.value = data.value.filter((selection: { id: number; }) => deleteIds.value.includes(selection.id));
+    },
+  );
+
   // 删除数据
   const handleDelete = () => {
     isDeleting.value = true;
     console.log('isBatch', isBatch);
     if (isBatch) {
       resourceStore
-        .deleteBatch(type, { ids: deleteId.value })
+        .deleteBatch(type, { ids: deleteIds.value })
         .then(() => {
           isShow.value = false;
           Message({
@@ -69,7 +77,7 @@ export default (
         });
     } else {
       resourceStore
-        .delete(type, deleteId.value)
+        .delete(type, deleteIds.value)
         .then(() => {
           isShow.value = false;
           Message({
