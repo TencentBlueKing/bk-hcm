@@ -21,8 +21,8 @@ package huawei
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	typecvm "hcm/pkg/adaptor/types/cvm"
-	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/cmd/cloud-server/service/common"
+	proto "hcm/pkg/api/cloud-server/cvm"
 	hcproto "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/enumor"
 )
@@ -45,52 +45,8 @@ func NewApplicationOfCreateHuaWeiCvm(
 }
 
 func (a *ApplicationOfCreateHuaWeiCvm) toHcProtoHuaWeiBatchCreateReq(dryRun bool) *hcproto.HuaWeiBatchCreateReq {
-	req := a.req
-	// 数据盘
-	dataVolumes := make([]typecvm.HuaWeiVolume, 0)
-	for _, d := range req.DataDisk {
-		for i := int64(0); i < d.DiskCount; i++ {
-			dataVolumes = append(dataVolumes, typecvm.HuaWeiVolume{
-				VolumeType: d.DiskType,
-				SizeGB:     int32(d.DiskSizeGB),
-			})
-		}
-	}
+	createReq := common.ConvHuaWeiCvmCreateReq(a.req)
+	createReq.DryRun = dryRun
 
-	// 计费
-	periodType := typecvm.Month
-	periodNum := int32(req.InstanceChargePaidPeriod)
-	if periodNum > 9 {
-		periodType = typecvm.Year
-		periodNum = int32(req.InstanceChargePaidPeriod / 12)
-	}
-
-	return &hcproto.HuaWeiBatchCreateReq{
-		DryRun:                dryRun,
-		AccountID:             req.AccountID,
-		Region:                req.Region,
-		Name:                  req.Name,
-		Zone:                  req.Zone,
-		InstanceType:          req.InstanceType,
-		CloudImageID:          req.CloudImageID,
-		Password:              req.Password,
-		RequiredCount:         int32(req.RequiredCount),
-		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
-		// TODO: 暂不支持
-		// ClientToken: nil,
-		CloudVpcID:    req.CloudVpcID,
-		CloudSubnetID: req.CloudSubnetID,
-		Description:   req.Memo,
-		RootVolume: &typecvm.HuaWeiVolume{
-			VolumeType: req.SystemDisk.DiskType,
-			SizeGB:     int32(req.SystemDisk.DiskSizeGB),
-		},
-		DataVolume: dataVolumes,
-		InstanceCharge: &typecvm.HuaWeiInstanceCharge{
-			ChargingMode: req.InstanceChargeType,
-			PeriodType:   &periodType,
-			PeriodNum:    &periodNum,
-			IsAutoRenew:  req.AutoRenew,
-		},
-	}
+	return createReq
 }

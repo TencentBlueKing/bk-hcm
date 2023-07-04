@@ -20,7 +20,7 @@ package cvm
 import (
 	"fmt"
 
-	proto "hcm/pkg/api/cloud-server"
+	proto "hcm/pkg/api/cloud-server/cvm"
 	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"

@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package application
+package cscvm
 
 import (
 	"errors"
@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -79,13 +80,17 @@ type HuaWeiCvmCreateReq struct {
 }
 
 // Validate ...
-func (req *HuaWeiCvmCreateReq) Validate() error {
+func (req *HuaWeiCvmCreateReq) Validate(bizRequired bool) error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
 
-	if req.RequiredCount > requiredCountMaxLimit {
-		return fmt.Errorf("required count should <= %d", requiredCountMaxLimit)
+	if bizRequired && req.BkBizID == 0 {
+		return errors.New("bk_biz_id is required")
+	}
+
+	if req.RequiredCount > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("required count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	if err := validator.ValidateCvmName(enumor.HuaWei, req.Name); err != nil {
@@ -139,13 +144,13 @@ func (req *HuaWeiCvmCreateReq) validatePassword() error {
 
 	// 满足的规定项数量
 	satisfiedCount := 0
-	if strings.ContainsAny(req.Password, asciiLowercase) {
+	if strings.ContainsAny(req.Password, constant.ASCIILowercase) {
 		satisfiedCount += 1
 	}
-	if strings.ContainsAny(req.Password, asciiUppercase) {
+	if strings.ContainsAny(req.Password, constant.ASCIIUppercase) {
 		satisfiedCount += 1
 	}
-	if strings.ContainsAny(req.Password, digits) {
+	if strings.ContainsAny(req.Password, constant.Digits) {
 		satisfiedCount += 1
 	}
 	if strings.ContainsAny(req.Password, huaweiPunctuation) {

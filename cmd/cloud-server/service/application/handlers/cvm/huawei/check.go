@@ -27,7 +27,7 @@ import (
 
 // CheckReq 检查申请单的数据是否正确
 func (a *ApplicationOfCreateHuaWeiCvm) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
+	if err := a.req.Validate(true); err != nil {
 		return err
 	}
 
