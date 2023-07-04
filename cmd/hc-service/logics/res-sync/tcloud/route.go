@@ -44,7 +44,6 @@ import (
 
 // SyncRouteOption ...
 type SyncRouteOption struct {
-	RouteTableMap map[string]string
 }
 
 // Validate ...
@@ -61,10 +60,9 @@ func (cli *client) Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOpti
 
 	err := concurrence.BaseExec(constant.SyncConcurrencyDefaultMaxLimit, params.CloudIDs, func(param string) error {
 		syncOpt := &syncRouteOption{
-			AccountID:     params.AccountID,
-			Region:        params.Region,
-			RouteTableID:  param,
-			RouteTableMap: opt.RouteTableMap,
+			AccountID:         params.AccountID,
+			Region:            params.Region,
+			CloudRouteTableID: param,
 		}
 		if _, err := cli.route(kt, syncOpt); err != nil {
 			logs.ErrorDepthf(1, "[%s] account: %s route_table: %s sync route failed, err: %v, rid: %s",
@@ -82,10 +80,9 @@ func (cli *client) Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOpti
 }
 
 type syncRouteOption struct {
-	AccountID     string            `json:"account_id" validate:"required"`
-	Region        string            `json:"region" validate:"required"`
-	RouteTableID  string            `json:"route_table_id" validate:"required"`
-	RouteTableMap map[string]string `json:"route_table_map" validate:"required"`
+	AccountID         string `json:"account_id" validate:"required"`
+	Region            string `json:"region" validate:"required"`
+	CloudRouteTableID string `json:"cloud_route_table_id" validate:"required"`
 }
 
 // Validate ...
@@ -98,7 +95,22 @@ func (cli *client) route(kt *kit.Kit, opt *syncRouteOption) (*SyncResult, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	routeFromDB, err := cli.listRouteFromDB(kt, opt)
+	params := &SyncBaseParams{
+		AccountID: opt.AccountID,
+		Region:    opt.Region,
+		CloudIDs:  []string{opt.CloudRouteTableID},
+	}
+	rts, err := cli.listRouteTableFromDB(kt, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rts) == 0 {
+		return nil, fmt.Errorf("route table: %s not found from db", opt.CloudRouteTableID)
+	}
+	routeTable := rts[0]
+
+	routeFromDB, err := cli.listRouteFromDB(kt, opt, routeTable.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -116,21 +128,23 @@ func (cli *client) route(kt *kit.Kit, opt *syncRouteOption) (*SyncResult, error)
 		routetable.TCloudRoute](routeFromCloud, routeFromDB, isRouteChange)
 
 	if len(addSlice) > 0 {
-		err := cli.createRoute(kt, opt.AccountID, opt.Region, opt.RouteTableID, addSlice)
+		err := cli.createRoute(kt, opt.AccountID, opt.Region, routeTable.ID, addSlice)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if len(updateMap) > 0 {
-		err := cli.updateRoute(kt, opt.AccountID, opt.Region, opt.RouteTableID, updateMap)
+		err := cli.updateRoute(kt, opt.AccountID, opt.Region, routeTable.ID, updateMap)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if len(delCloudIDs) > 0 {
-		if err = cli.deleteRoute(kt, opt.AccountID, opt.Region, opt.RouteTableID, delCloudIDs); err != nil {
+		if err = cli.deleteRoute(kt, opt.AccountID, opt.Region, opt.CloudRouteTableID, routeTable.ID,
+			delCloudIDs); err != nil {
+
 			return nil, err
 		}
 	}
@@ -217,7 +231,7 @@ func (cli *client) updateRoute(kt *kit.Kit, accountID, region, routeTableID stri
 	return nil
 }
 
-func (cli *client) deleteRoute(kt *kit.Kit, accountID, region, routeTableID string,
+func (cli *client) deleteRoute(kt *kit.Kit, accountID, region, cloudRTID, rtID string,
 	delCloudIDs []string) error {
 
 	if len(delCloudIDs) <= 0 {
@@ -225,25 +239,29 @@ func (cli *client) deleteRoute(kt *kit.Kit, accountID, region, routeTableID stri
 	}
 
 	checkParams := &syncRouteOption{
-		AccountID:    accountID,
-		Region:       region,
-		RouteTableID: routeTableID,
+		AccountID:         accountID,
+		Region:            region,
+		CloudRouteTableID: cloudRTID,
 	}
 	delRouteFromCloud, err := cli.listRouteFromCloud(kt, checkParams)
 	if err != nil {
 		return err
 	}
 
-	if len(delRouteFromCloud) > 0 {
-		logs.Errorf("[%s] validate route not exist failed, before delete, opt: %v, failed_count: %d, rid: %s",
-			enumor.TCloud, checkParams, len(delRouteFromCloud), kt.Rid)
-		return fmt.Errorf("validate route not exist failed, before delete")
+	cloudIDMap := converter.StringSliceToMap(delCloudIDs)
+	for _, route := range delRouteFromCloud {
+		if _, exist := cloudIDMap[route.CloudID]; exist {
+			logs.Errorf("[%s] validate route not exist failed, before delete, opt: %v, cloud_id: %s, rid: %s",
+				enumor.TCloud, checkParams, route.CloudID, kt.Rid)
+			return fmt.Errorf("validate route not exist failed, before delete")
+		}
 	}
 
 	deleteReq := &dataservice.BatchDeleteReq{
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
-	if err := cli.dbCli.TCloud.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), routeTableID, deleteReq); err != nil {
+	if err = cli.dbCli.TCloud.RouteTable.BatchDeleteRoute(kt.Ctx, kt.Header(), rtID, deleteReq); err != nil {
+
 		logs.Errorf("[%s] request dataservice to batch delete route failed, err: %v, rid: %s", enumor.TCloud, err, kt.Rid)
 		return err
 	}
@@ -260,13 +278,9 @@ func (cli *client) listRouteFromCloud(kt *kit.Kit, opt *syncRouteOption) ([]type
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	if _, exsit := opt.RouteTableMap[opt.RouteTableID]; !exsit {
-		return nil, nil
-	}
-
 	routeOpt := &adcore.TCloudListOption{
 		Region:   opt.Region,
-		CloudIDs: []string{opt.RouteTableMap[opt.RouteTableID]},
+		CloudIDs: []string{opt.CloudRouteTableID},
 		Page: &adcore.TCloudPage{
 			Offset: 0,
 			Limit:  adcore.TCloudQueryLimit,
@@ -291,21 +305,21 @@ func (cli *client) listRouteFromCloud(kt *kit.Kit, opt *syncRouteOption) ([]type
 	return results, nil
 }
 
-func (cli *client) listRouteFromDB(kt *kit.Kit, opt *syncRouteOption) ([]routetable.TCloudRoute, error) {
+func (cli *client) listRouteFromDB(kt *kit.Kit, opt *syncRouteOption, routeTableID string) (
+	[]routetable.TCloudRoute, error) {
+
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	req := &core.ListReq{
-		Filter: tools.EqualExpression("route_table_id", opt.RouteTableID),
-		Page: &core.BasePage{
-			Limit: core.DefaultMaxPageLimit,
-		},
+		Filter: tools.EqualExpression("cloud_route_table_id", opt.CloudRouteTableID),
+		Page:   core.NewDefaultBasePage(),
 	}
-	results, err := cli.dbCli.TCloud.RouteTable.ListRoute(kt.Ctx, kt.Header(), opt.RouteTableID, req)
+	results, err := cli.dbCli.TCloud.RouteTable.ListRoute(kt.Ctx, kt.Header(), routeTableID, req)
 	if err != nil {
 		logs.Errorf("[%s] batch list route failed. err: %v, accountID: %s, region: %s, "+
-			"routeTableID: %s, rid: %s", enumor.TCloud, err, opt.AccountID, opt.Region, opt.RouteTableID, kt.Rid)
+			"routeTableID: %s, rid: %s", enumor.TCloud, err, opt.AccountID, opt.Region, routeTableID, kt.Rid)
 		return nil, err
 	}
 

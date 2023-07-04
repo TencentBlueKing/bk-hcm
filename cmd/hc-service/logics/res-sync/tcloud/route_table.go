@@ -118,46 +118,35 @@ func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRout
 		}
 	}
 
-	// 同步路由规则
-	if err := cli.syncRoute(kt, params, routeTableFromCloud); err != nil {
+	if err = cli.syncRoute(kt, params); err != nil {
 		return nil, err
 	}
 
 	return new(SyncResult), nil
 }
 
-func (cli *client) syncRoute(kt *kit.Kit, params *SyncBaseParams,
-	routeTableFromCloud []typesroutetable.TCloudRouteTable) error {
-
-	routeTableFromDB, err := cli.listRouteTableFromDB(kt, params)
+func (cli *client) syncRoute(kt *kit.Kit, params *SyncBaseParams) error {
+	existRT, err := cli.listRouteTableFromDB(kt, params)
 	if err != nil {
 		return err
 	}
 
-	routeTableIDs := make([]string, 0)
-	routeTableMap := make(map[string]string)
-	for _, one := range routeTableFromDB {
-		for _, cloudOne := range routeTableFromCloud {
-			if one.CloudID == cloudOne.CloudID {
-				routeTableIDs = append(routeTableIDs, one.ID)
-				break
-			}
+	// 同步db中路由表的路由规则
+	if len(existRT) != 0 {
+		rtCloudIDs := make([]string, 0, len(existRT))
+		for _, table := range existRT {
+			rtCloudIDs = append(rtCloudIDs, table.CloudID)
 		}
-		routeTableMap[one.ID] = one.CloudID
-	}
 
-	routeParams := &SyncBaseParams{
-		AccountID: params.AccountID,
-		Region:    params.Region,
-		CloudIDs:  routeTableIDs,
+		ruleParams := &SyncBaseParams{
+			AccountID: params.AccountID,
+			Region:    params.Region,
+			CloudIDs:  rtCloudIDs,
+		}
+		if _, err = cli.Route(kt, ruleParams, new(SyncRouteOption)); err != nil {
+			return err
+		}
 	}
-	_, err = cli.Route(kt, routeParams, &SyncRouteOption{RouteTableMap: routeTableMap})
-	if err != nil {
-		logs.Errorf("[%s] routetable sync update route failed. accountID: %s, region: %s, err: %v",
-			enumor.TCloud, params.AccountID, params.Region, err)
-		return err
-	}
-
 	return nil
 }
 
