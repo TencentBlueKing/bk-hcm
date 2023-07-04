@@ -17,17 +17,48 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package disk
+package csdisk
 
-import "hcm/pkg/criteria/validator"
+import (
+	"errors"
 
-// HuaWeiDiskAttachReq ...
-type HuaWeiDiskAttachReq struct {
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/validator"
+)
+
+// GcpDiskAttachReq ...
+type GcpDiskAttachReq struct {
 	DiskID string `json:"disk_id" validate:"required"`
 	CvmID  string `json:"cvm_id" validate:"required"`
 }
 
 // Validate ...
-func (req *HuaWeiDiskAttachReq) Validate() error {
+func (req *GcpDiskAttachReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// GcpDiskCreateReq ...
+type GcpDiskCreateReq struct {
+	AccountID string  `json:"account_id" validate:"required"`
+	BkBizID   int64   `json:"bk_biz_id" validate:"omitempty"`
+	DiskName  string  `json:"disk_name" validate:"required"`
+	Region    string  `json:"region" validate:"required"`
+	Zone      string  `json:"zone" validate:"required"`
+	DiskType  string  `json:"disk_type" validate:"required"`
+	DiskSize  int32   `json:"disk_size" validate:"required"`
+	DiskCount int32   `json:"disk_count" validate:"required"`
+	Memo      *string `json:"memo" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *GcpDiskCreateReq) Validate(bizRequired bool) error {
+	if req.DiskCount > constant.BatchOperationMaxLimit {
+		return errors.New("disk count should <= 100")
+	}
+
+	if bizRequired && req.BkBizID == 0 {
+		return errors.New("bk_biz_id is required")
+	}
+
 	return validator.Validate.Struct(req)
 }

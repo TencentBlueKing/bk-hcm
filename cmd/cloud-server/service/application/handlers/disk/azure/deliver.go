@@ -21,7 +21,7 @@ package azure
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/disk/logics"
-	hcproto "hcm/pkg/api/hc-service/disk"
+	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -30,29 +30,11 @@ func (a *ApplicationOfCreateAzureDisk) Deliver() (status enumor.ApplicationStatu
 	deliverDetail map[string]interface{}, err error) {
 
 	result, err := a.Client.HCService().Azure.Disk.CreateDisk(a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(), a.toHcProtoCreateReq())
+		a.Cts.Kit.Header(), common.ConvAzureDiskCreateReq(a.req))
 	if err != nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, uint32(a.req.DiskCount),
 		a.req.BkBizID, a.Audit)
-}
-
-// toHcProtoCreateReq ...
-func (a *ApplicationOfCreateAzureDisk) toHcProtoCreateReq() *hcproto.AzureDiskCreateReq {
-	req := a.req
-	return &hcproto.AzureDiskCreateReq{
-		DiskBaseCreateReq: &hcproto.DiskBaseCreateReq{
-			AccountID: req.AccountID,
-			DiskName:  &req.DiskName,
-			Region:    req.Region,
-			Zone:      req.Zone,
-			DiskSize:  uint64(req.DiskSize),
-			DiskType:  req.DiskType,
-			DiskCount: uint32(req.DiskCount),
-			Memo:      req.Memo,
-		},
-		Extension: &hcproto.AzureDiskExtensionCreateReq{ResourceGroupName: req.ResourceGroupName},
-	}
 }

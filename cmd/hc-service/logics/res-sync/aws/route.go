@@ -45,7 +45,7 @@ import (
 
 // SyncRouteOption ...
 type SyncRouteOption struct {
-	RouteTableMap map[string]string
+	RouteTableMap map[string]string `json:"route_table_map" validate:"required"`
 }
 
 // Validate ...

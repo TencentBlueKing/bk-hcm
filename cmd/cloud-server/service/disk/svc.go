@@ -27,7 +27,7 @@ import (
 
 	"hcm/cmd/cloud-server/logics/audit"
 	disklgc "hcm/cmd/cloud-server/logics/disk"
-	cloudproto "hcm/pkg/api/cloud-server/disk"
+	cloudproto "hcm/pkg/api/cloud-server/csdisk"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	datarelproto "hcm/pkg/api/data-service/cloud"

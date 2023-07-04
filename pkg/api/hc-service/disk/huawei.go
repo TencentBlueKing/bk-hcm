@@ -42,9 +42,14 @@ type HuaWeiDiskExtensionCreateReq struct {
 
 // HuaWeiDiskChargePrepaid ...
 type HuaWeiDiskChargePrepaid struct {
-	PeriodNum   *int32  `json:"period_num"`
-	PeriodType  *string `json:"period_type"`
-	IsAutoRenew *string `json:"is_auto_renew"`
+	PeriodNum   *int32  `json:"period_num" validate:"omitempty"`
+	PeriodType  *string `json:"period_type" validate:"omitempty"`
+	IsAutoRenew *string `json:"is_auto_renew" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *HuaWeiDiskChargePrepaid) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // HuaWeiDiskAttachReq ...

@@ -40,6 +40,7 @@ import (
 	huaweivpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/huawei"
 	tcloudvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/pkg/api/cloud-server/csdisk"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -281,35 +282,35 @@ func (a *applicationSvc) CreateForCreateDisk(cts *rest.Contexts) (interface{}, e
 
 	switch vendor {
 	case enumor.TCloud:
-		req, err := parseReqFromRequestBody[proto.TCloudDiskCreateReq](cts)
+		req, err := parseReqFromRequestBody[csdisk.TCloudDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		handler := tclouddiskhandler.NewApplicationOfCreateTCloudDisk(opt, req)
 		return a.create(cts, handler)
 	case enumor.Gcp:
-		req, err := parseReqFromRequestBody[proto.GcpDiskCreateReq](cts)
+		req, err := parseReqFromRequestBody[csdisk.GcpDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		handler := gcpdiskhandler.NewApplicationOfCreateGcpDisk(opt, req)
 		return a.create(cts, handler)
 	case enumor.Aws:
-		req, err := parseReqFromRequestBody[proto.AwsDiskCreateReq](cts)
+		req, err := parseReqFromRequestBody[csdisk.AwsDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		handler := awsdiskhandler.NewApplicationOfCreateAwsDisk(opt, req)
 		return a.create(cts, handler)
 	case enumor.HuaWei:
-		req, err := parseReqFromRequestBody[proto.HuaWeiDiskCreateReq](cts)
+		req, err := parseReqFromRequestBody[csdisk.HuaWeiDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}
 		handler := huaweidiskhandler.NewApplicationOfCreateHuaWeiDisk(opt, req)
 		return a.create(cts, handler)
 	case enumor.Azure:
-		req, err := parseReqFromRequestBody[proto.AzureDiskCreateReq](cts)
+		req, err := parseReqFromRequestBody[csdisk.AzureDiskCreateReq](cts)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 		}

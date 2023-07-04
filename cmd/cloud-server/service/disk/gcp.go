@@ -20,7 +20,7 @@
 package disk
 
 import (
-	cloudproto "hcm/pkg/api/cloud-server/disk"
+	cloudproto "hcm/pkg/api/cloud-server/csdisk"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	hcproto "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/criteria/enumor"

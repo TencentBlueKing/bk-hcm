@@ -21,7 +21,7 @@ package tcloud
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/disk/logics"
-	hcproto "hcm/pkg/api/hc-service/disk"
+	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -29,32 +29,11 @@ import (
 func (a *ApplicationOfCreateTCloudDisk) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
 
 	result, err := a.Client.HCService().TCloud.Disk.CreateDisk(a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(), a.toHcProtoCreateReq())
+		a.Cts.Kit.Header(), common.ConvTCloudDiskCreateReq(a.req))
 	if err != nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, a.req.DiskCount,
 		a.req.BkBizID, a.Audit)
-}
-
-// toHcProtoCreateReq ...
-func (a *ApplicationOfCreateTCloudDisk) toHcProtoCreateReq() *hcproto.TCloudDiskCreateReq {
-	req := a.req
-	return &hcproto.TCloudDiskCreateReq{
-		DiskBaseCreateReq: &hcproto.DiskBaseCreateReq{
-			AccountID: req.AccountID,
-			DiskName:  &req.DiskName,
-			Region:    req.Region,
-			Zone:      req.Zone,
-			DiskSize:  req.DiskSize,
-			DiskType:  req.DiskType,
-			DiskCount: req.DiskCount,
-			Memo:      req.Memo,
-		},
-		Extension: &hcproto.TCloudDiskExtensionCreateReq{
-			DiskChargeType:    req.DiskChargeType,
-			DiskChargePrepaid: req.DiskChargePrepaid,
-		},
-	}
 }

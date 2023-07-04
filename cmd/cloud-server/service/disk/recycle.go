@@ -20,7 +20,7 @@ package disk
 import (
 	"fmt"
 
-	"hcm/pkg/api/cloud-server/disk"
+	"hcm/pkg/api/cloud-server/csdisk"
 	"hcm/pkg/api/cloud-server/recycle"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
@@ -49,7 +49,7 @@ func (svc *diskSvc) RecycleBizDisk(cts *rest.Contexts) (interface{}, error) {
 }
 
 func (svc *diskSvc) recycleDiskSvc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	req := new(disk.DiskRecycleReq)
+	req := new(csdisk.DiskRecycleReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func (svc *diskSvc) recycleDiskSvc(cts *rest.Contexts, validHandler handler.Vali
 	return svc.recycleDisk(cts.Kit, req, ids, basicInfoMap)
 }
 
-func (svc *diskSvc) recycleDisk(kt *kit.Kit, req *disk.DiskRecycleReq, ids []string,
+func (svc *diskSvc) recycleDisk(kt *kit.Kit, req *csdisk.DiskRecycleReq, ids []string,
 	infoMap map[string]types.CloudResourceBasicInfo) (interface{}, error) {
 
 	// detach disk from cvm
@@ -236,7 +236,7 @@ func (svc *diskSvc) validateRecycleRecord(records *recyclerecord.ListResult) err
 
 // RecoverDisk recover disk.
 func (svc *diskSvc) RecoverDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(disk.DiskRecoverReq)
+	req := new(csdisk.DiskRecoverReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -301,7 +301,7 @@ func (svc *diskSvc) RecoverDisk(cts *rest.Contexts) (interface{}, error) {
 
 // BatchDeleteRecycledDisk batch delete recycled disks.
 func (svc *diskSvc) BatchDeleteRecycledDisk(cts *rest.Contexts) (interface{}, error) {
-	req := new(disk.DiskDeleteRecycleReq)
+	req := new(csdisk.DiskDeleteRecycleReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
