@@ -17,9 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package disk
+package csdisk
 
-import "hcm/pkg/criteria/validator"
+import (
+	"errors"
+
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/assert"
+)
 
 // AzureDiskAttachReq ...
 type AzureDiskAttachReq struct {
@@ -31,4 +38,45 @@ type AzureDiskAttachReq struct {
 // Validate ...
 func (req *AzureDiskAttachReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// AzureDiskCreateReq ...
+type AzureDiskCreateReq struct {
+	AccountID         string  `json:"account_id" validate:"required"`
+	BkBizID           int64   `json:"bk_biz_id" validate:"omitempty"`
+	DiskName          string  `json:"disk_name" validate:"required,lowercase"`
+	ResourceGroupName string  `json:"resource_group_name" validate:"required,lowercase"`
+	Region            string  `json:"region" validate:"required,lowercase"`
+	Zone              string  `json:"zone" validate:"required,lowercase"`
+	DiskType          string  `json:"disk_type" validate:"required"`
+	DiskSize          int32   `json:"disk_size" validate:"required"`
+	DiskCount         int32   `json:"disk_count" validate:"required"`
+	Memo              *string `json:"memo" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *AzureDiskCreateReq) Validate(bizRequired bool) error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if bizRequired && req.BkBizID == 0 {
+		return errors.New("bk_biz_id is required")
+	}
+
+	if req.DiskCount > constant.BatchOperationMaxLimit {
+		return errors.New("disk count should <= 100")
+	}
+
+	// region can be no space lowercase
+	if !assert.IsSameCaseNoSpaceString(req.Region) {
+		return errf.New(errf.InvalidParameter, "region can only be lowercase")
+	}
+
+	// zone can be no space lowercase
+	if !assert.IsSameCaseNoSpaceString(req.Zone) {
+		return errf.New(errf.InvalidParameter, "zone can only be lowercase")
+	}
+
+	return nil
 }

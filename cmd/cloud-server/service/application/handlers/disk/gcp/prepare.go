@@ -20,7 +20,7 @@
 package gcp
 
 import (
-	proto "hcm/pkg/api/cloud-server/application"
+	csdisk "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/esb/itsm"
 )
@@ -34,8 +34,8 @@ func (a *ApplicationOfCreateGcpDisk) PrepareReq() error {
 func (a *ApplicationOfCreateGcpDisk) GenerateApplicationContent() interface{} {
 	// 需要将Vendor也存储进去
 	return &struct {
-		*proto.GcpDiskCreateReq `json:",inline"`
-		Vendor                  enumor.Vendor `json:"vendor"`
+		*csdisk.GcpDiskCreateReq `json:",inline"`
+		Vendor                   enumor.Vendor `json:"vendor"`
 	}{
 		GcpDiskCreateReq: a.req,
 		Vendor:           a.Vendor(),

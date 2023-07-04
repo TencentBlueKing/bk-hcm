@@ -42,8 +42,13 @@ type TCloudDiskExtensionCreateReq struct {
 
 // TCloudDiskChargePrepaid ...
 type TCloudDiskChargePrepaid struct {
-	Period    *uint64 `json:"period"`
-	RenewFlag *string `json:"renew_flag"`
+	Period    *uint64 `json:"period" validate:"omitempty"`
+	RenewFlag *string `json:"renew_flag" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *TCloudDiskChargePrepaid) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // TCloudDiskAttachReq ...

@@ -23,7 +23,7 @@ import logicsaccount "hcm/cmd/cloud-server/logics/account"
 
 // CheckReq ...
 func (a *ApplicationOfCreateHuaWeiDisk) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
+	if err := a.req.Validate(true); err != nil {
 		return err
 	}
 

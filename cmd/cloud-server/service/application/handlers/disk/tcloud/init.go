@@ -21,20 +21,20 @@ package tcloud
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	csdisk "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/criteria/enumor"
 )
 
 // ApplicationOfCreateTCloudDisk ...
 type ApplicationOfCreateTCloudDisk struct {
 	handlers.BaseApplicationHandler
-	req *proto.TCloudDiskCreateReq
+	req *csdisk.TCloudDiskCreateReq
 }
 
 // NewApplicationOfCreateTCloudDisk ...
 func NewApplicationOfCreateTCloudDisk(
 	opt *handlers.HandlerOption,
-	req *proto.TCloudDiskCreateReq,
+	req *csdisk.TCloudDiskCreateReq,
 ) *ApplicationOfCreateTCloudDisk {
 	return &ApplicationOfCreateTCloudDisk{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.TCloud),

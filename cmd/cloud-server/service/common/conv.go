@@ -23,8 +23,10 @@ import (
 	"fmt"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
-	"hcm/pkg/api/cloud-server/cvm"
+	cscvm "hcm/pkg/api/cloud-server/cvm"
+	cloudserver "hcm/pkg/api/cloud-server/disk"
 	hcproto "hcm/pkg/api/hc-service/cvm"
+	hcprotodisk "hcm/pkg/api/hc-service/disk"
 	"hcm/pkg/tools/converter"
 )
 
@@ -255,4 +257,94 @@ func ConvHuaWeiCvmCreateReq(req *cscvm.HuaWeiCvmCreateReq) *hcproto.HuaWeiBatchC
 	}
 
 	return createReq
+}
+
+// ConvTCloudDiskCreateReq conv disk create req.
+func ConvTCloudDiskCreateReq(req *cloudserver.TCloudDiskCreateReq) *hcprotodisk.TCloudDiskCreateReq {
+	return &hcprotodisk.TCloudDiskCreateReq{
+		DiskBaseCreateReq: &hcprotodisk.DiskBaseCreateReq{
+			AccountID: req.AccountID,
+			DiskName:  &req.DiskName,
+			Region:    req.Region,
+			Zone:      req.Zone,
+			DiskSize:  req.DiskSize,
+			DiskType:  req.DiskType,
+			DiskCount: req.DiskCount,
+			Memo:      req.Memo,
+		},
+		Extension: &hcprotodisk.TCloudDiskExtensionCreateReq{
+			DiskChargeType:    req.DiskChargeType,
+			DiskChargePrepaid: req.DiskChargePrepaid,
+		},
+	}
+}
+
+// ConvHuaWeiDiskCreateReq conv disk create req.
+func ConvHuaWeiDiskCreateReq(req *cloudserver.HuaWeiDiskCreateReq) *hcprotodisk.HuaWeiDiskCreateReq {
+	return &hcprotodisk.HuaWeiDiskCreateReq{
+		DiskBaseCreateReq: &hcprotodisk.DiskBaseCreateReq{
+			AccountID: req.AccountID,
+			DiskName:  req.DiskName,
+			Region:    req.Region,
+			Zone:      req.Zone,
+			DiskSize:  uint64(req.DiskSize),
+			DiskType:  req.DiskType,
+			DiskCount: uint32(req.DiskCount),
+			Memo:      req.Memo,
+		},
+		Extension: &hcprotodisk.HuaWeiDiskExtensionCreateReq{
+			DiskChargeType:    *req.DiskChargeType,
+			DiskChargePrepaid: req.DiskChargePrepaid,
+		},
+	}
+}
+
+// ConvAwsDiskCreateReq conv disk create req.
+func ConvAwsDiskCreateReq(req *cloudserver.AwsDiskCreateReq) *hcprotodisk.AwsDiskCreateReq {
+	return &hcprotodisk.AwsDiskCreateReq{
+		DiskBaseCreateReq: &hcprotodisk.DiskBaseCreateReq{
+			AccountID: req.AccountID,
+			Region:    req.Region,
+			Zone:      req.Zone,
+			DiskSize:  uint64(req.DiskSize),
+			DiskType:  req.DiskType,
+			DiskCount: uint32(req.DiskCount),
+			Memo:      req.Memo,
+		},
+	}
+}
+
+// ConvGcpDiskCreateReq conv disk create req.
+func ConvGcpDiskCreateReq(req *cloudserver.GcpDiskCreateReq) *hcprotodisk.GcpDiskCreateReq {
+	return &hcprotodisk.GcpDiskCreateReq{
+		DiskBaseCreateReq: &hcprotodisk.DiskBaseCreateReq{
+			AccountID: req.AccountID,
+			DiskName:  &req.DiskName,
+			Region:    req.Region,
+			Zone:      req.Zone,
+			DiskSize:  uint64(req.DiskSize),
+			DiskType:  req.DiskType,
+			DiskCount: uint32(req.DiskCount),
+			Memo:      req.Memo,
+		},
+	}
+}
+
+// ConvAzureDiskCreateReq conv disk create req.
+func ConvAzureDiskCreateReq(req *cloudserver.AzureDiskCreateReq) *hcprotodisk.AzureDiskCreateReq {
+	return &hcprotodisk.AzureDiskCreateReq{
+		DiskBaseCreateReq: &hcprotodisk.DiskBaseCreateReq{
+			AccountID: req.AccountID,
+			DiskName:  &req.DiskName,
+			Region:    req.Region,
+			Zone:      req.Zone,
+			DiskSize:  uint64(req.DiskSize),
+			DiskType:  req.DiskType,
+			DiskCount: uint32(req.DiskCount),
+			Memo:      req.Memo,
+		},
+		Extension: &hcprotodisk.AzureDiskExtensionCreateReq{
+			ResourceGroupName: req.ResourceGroupName,
+		},
+	}
 }
