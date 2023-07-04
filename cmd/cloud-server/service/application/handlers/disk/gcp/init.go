@@ -21,20 +21,20 @@ package gcp
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	csdisk "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/criteria/enumor"
 )
 
 // ApplicationOfCreateGcpDisk ...
 type ApplicationOfCreateGcpDisk struct {
 	handlers.BaseApplicationHandler
-	req *proto.GcpDiskCreateReq
+	req *csdisk.GcpDiskCreateReq
 }
 
 // NewApplicationOfCreateGcpDisk ...
 func NewApplicationOfCreateGcpDisk(
 	opt *handlers.HandlerOption,
-	req *proto.GcpDiskCreateReq,
+	req *csdisk.GcpDiskCreateReq,
 ) *ApplicationOfCreateGcpDisk {
 	return &ApplicationOfCreateGcpDisk{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.Gcp),

@@ -21,20 +21,20 @@ package azure
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	csdisk "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/criteria/enumor"
 )
 
 // ApplicationOfCreateAzureDisk ...
 type ApplicationOfCreateAzureDisk struct {
 	handlers.BaseApplicationHandler
-	req *proto.AzureDiskCreateReq
+	req *csdisk.AzureDiskCreateReq
 }
 
 // NewApplicationOfCreateAzureDisk ...
 func NewApplicationOfCreateAzureDisk(
 	opt *handlers.HandlerOption,
-	req *proto.AzureDiskCreateReq,
+	req *csdisk.AzureDiskCreateReq,
 ) *ApplicationOfCreateAzureDisk {
 	return &ApplicationOfCreateAzureDisk{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.Azure),

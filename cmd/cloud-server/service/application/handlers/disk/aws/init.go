@@ -21,20 +21,20 @@ package aws
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	csdisk "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/criteria/enumor"
 )
 
 // ApplicationOfCreateAwsDisk ...
 type ApplicationOfCreateAwsDisk struct {
 	handlers.BaseApplicationHandler
-	req *proto.AwsDiskCreateReq
+	req *csdisk.AwsDiskCreateReq
 }
 
 // NewApplicationOfCreateAwsDisk ...
 func NewApplicationOfCreateAwsDisk(
 	opt *handlers.HandlerOption,
-	req *proto.AwsDiskCreateReq,
+	req *csdisk.AwsDiskCreateReq,
 ) *ApplicationOfCreateAwsDisk {
 	return &ApplicationOfCreateAwsDisk{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.Aws),
