@@ -312,10 +312,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const driveColumns: any[] = [
-    // {
-    //   type: 'selection',
-    //   onlyShowOnList: true,
-    // },
+    {
+      type: 'selection',
+      width: '100',
+      onlyShowOnList: true,
+    },
     getLinkField('drive'),
     {
       label: '资源 ID',
