@@ -37,8 +37,8 @@ const props = defineProps({
     type: Object as PropType<any>,
   },
   whereAmI: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 const {
@@ -62,37 +62,37 @@ const selectSearchData = computed(() => {
 const {
   searchData,
   searchValue,
-  filter
+  filter,
 } = useFilter(props);
 
 const emit = defineEmits(['auth']);
 
 const isDisabledRecycle = (vendor: VendorEnum, status: string) => {
   let res = true;
-  switch(vendor) {
+  switch (vendor) {
     case VendorEnum.TCLOUD: {
-      if(['UNATTACHED'].includes(status)) res = false;
+      if (['UNATTACHED'].includes(status)) res = false;
       break;
     }
     case VendorEnum.HUAWEI: {
-      if(['available'].includes(status)) res = false;
+      if (['available'].includes(status)) res = false;
       break;
     }
     case VendorEnum.AWS: {
-      if(!['attaching', 'attached', 'detaching'].includes(status)) res = false;
+      if (!['attaching', 'attached', 'detaching'].includes(status)) res = false;
       break;
     }
     case VendorEnum.GCP: {
-      if(!['CREATING', 'DELETING', 'RESTORING' ].includes(status)) res = false;
+      if (!['CREATING', 'DELETING', 'RESTORING'].includes(status)) res = false;
       break;
     }
     case VendorEnum.AZURE: {
-      if(['Unattached'].includes(status)) res = false;
+      if (['Unattached'].includes(status)) res = false;
       break;
     }
   }
   return res;
-}
+};
 
 const renderColumns = [
   ...columns,
@@ -155,7 +155,7 @@ const {
 } = useSelection();
 
 const {
-  // handleShowDelete,
+  handleShowDelete,
   DeleteDialog,
 } = useDelete(
   simpleColumns,
@@ -184,15 +184,17 @@ const {
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot>
       </slot>
-      <!-- <bk-button
+      <bk-button
         class="w100 ml10"
         theme="primary"
         :disabled="selections.length <= 0"
-        @click="handleShowDelete(selections.map(selection => selection.id))"
+        @click="handleShowDelete(selections.filter(
+          selection => !isDisabledRecycle(selection?.vendor, selection?.status)).map(selection => selection.id)
+        )"
       >
         {{ t('删除') }}
-      </bk-button> -->
-      <div class="flex-row align-items-center justify-content-arround">
+      </bk-button>
+      <div class="flex-row align-items-center justify-content-arround mlauto">
         <bk-search-select
           class="w500 ml10 mr15"
           clearable
@@ -235,5 +237,8 @@ const {
 }
 .mr15 {
   margin-right: 15px;
+}
+.mlauto {
+  margin-left: auto;
 }
 </style>
