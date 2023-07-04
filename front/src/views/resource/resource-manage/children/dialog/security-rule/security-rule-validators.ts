@@ -52,6 +52,11 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
         },
       },
       {
+        trigger: 'change',
+        message: 'ICMPV6 仅支持 IPV6',
+        validator: (val: string) => !(data.protocol === 'icmpv6' && val !== 'ipv6_cidr'),
+      },
+      {
         trigger: 'blur',
         message: '请填写对应合法的 IP, 注意区分 IPV4 与 IPV6',
         validator: (val: string) => {
