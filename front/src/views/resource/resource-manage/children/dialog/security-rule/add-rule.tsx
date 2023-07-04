@@ -33,6 +33,11 @@ export type SecurityRule = {
   memo: string;
 };
 
+export enum IP_CIDR {
+  IPV4_ALL = '0.0.0.0/0',
+  IPV6_ALL = '::/0',
+}
+
 export default defineComponent({
   components: {
     StepDialog,
@@ -136,14 +141,20 @@ export default defineComponent({
       });
     }
 
+    const translateAll = (ipType: string) => {
+      return ['ipv4_cidr'].includes(ipType) ? IP_CIDR.IPV4_ALL : IP_CIDR.IPV6_ALL;
+    };
+
     const renderSourceAddressSlot = (
       data: SecurityRule,
       key:
       | 'cloud_target_security_group_id'
       | 'ipv6_cidr'
       | 'ipv4_cidr'
-      | 'source_address_prefix'
-      | 'cloud_source_security_group_ids',
+      | 'source_address_prefix'           // AZURE 源 IP地址
+      | 'cloud_source_security_group_ids' // AZURE 源 安全组
+      | 'remote_ip_prefix'                // HUAWEI IP地址
+      | 'cloud_remote_group_id',          // HUAWEI 安全组
     ) => {
       [
         'cloud_target_security_group_id',
@@ -151,6 +162,8 @@ export default defineComponent({
         'ipv4_cidr',
         'source_address_prefix',
         'cloud_source_security_group_ids',
+        'remote_ip_prefix',
+        'cloud_remote_group_id',
       ].forEach(dataKey => dataKey !== key && delete data[dataKey]);
 
       const prefix = () => (
@@ -188,7 +201,7 @@ export default defineComponent({
       ) : (
         <Input class=' input-select-warp' placeholder='请输入' v-model={data[key]} onChange={(val: string) => {
           if (['all', 'ALL'].includes(val.trim())) {
-            data[key] = ['ipv4_cidr'].includes(data.sourceAddress) ? '0.0.0.0/0' : '::/0';
+            data[key] = translateAll(data.sourceAddress);
           }
         }}>
           {{
@@ -203,12 +216,18 @@ export default defineComponent({
       key: 'destination_address_prefix' | 'cloud_destination_security_group_ids',
     ) => {
       [
-        'destination_address_prefix',
-        'cloud_destination_security_group_ids',
+        'destination_address_prefix', // AZURE 目标 IP地址
+        'cloud_destination_security_group_ids', // AZURE 目标 安全组
       ].forEach(dataKey => dataKey !== key && delete data[dataKey]);
-
+      console.log(key);
       return key !== 'cloud_destination_security_group_ids' ? (
-          <Input class=' input-select-warp' v-model={data[key]} placeholder='10.0.0.1/24、 10.0.0.1'>
+          <Input class=' input-select-warp' v-model={data[key]} placeholder='10.0.0.1/24、 10.0.0.1' onChange={
+            (val: string) => {
+              if (['all', 'ALL'].includes(val.trim())) {
+                data[key] = translateAll(data.targetAddress);
+              }
+            }
+          }>
             {{
               prefix: () => (
                 <>
@@ -542,6 +561,7 @@ export default defineComponent({
 
     const handleConfirm = async () => {
       try {
+        console.log(666666, formInstances.map(formInstance => formInstance.value.validate()));
         await Promise.all(formInstances.map(formInstance => formInstance.value.validate()));
       } catch (err) {
         console.log(err);
