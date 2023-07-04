@@ -52,22 +52,16 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
         },
       },
       {
+        trigger: 'change',
+        message: 'ICMPV6 不支持 IPV4',
+        validator: (val: string) => !(data.protocol === 'icmpv6' && val === 'ipv4_cidr'),
+      },
+      {
         trigger: 'blur',
         message: '请填写对应合法的 IP, 注意区分 IPV4 与 IPV6',
         validator: (val: string) => {
-          if (['ipv6_cidr', 'ipv4_cidr', 'source_address_prefix'].includes(val)) {
-            const ip = data[val].trim();
-            if (['all', 'ALL'].includes(ip)) return true;
-            if (isValid(ip)) {
-              if (['source_address_prefix'].includes(val)) return true;
-              const ipType = parse(ip).kind();
-              return (ipType === 'ipv4' && val === 'ipv4_cidr' && isValidFourPartDecimal(ip)) || (ipType === 'ipv6' && val === 'ipv6_cidr');
-            }
-            try {
-              parseCIDR(ip);
-            } catch (err) {
-              return false;
-            }
+          if (['ipv6_cidr', 'ipv4_cidr'].includes(val)) {
+            return isValidIpCidr(data[val], true);
           }
           return true;
         },
@@ -87,6 +81,16 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
           return true;
         },
       },
+      {
+        trigger: 'blur',
+        message: '请填写合法的 IP',
+        validator: (val: string) => {
+          if (['remote_ip_prefix', 'source_address_prefix'].includes(val)) {
+            return isValidIpCidr(data[val], false);
+          }
+          return true;
+        },
+      },
     ],
     targetAddress: [
       {
@@ -98,17 +102,10 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
       },
       {
         trigger: 'blur',
-        message: '请填写对应合法的 IP',
+        message: '请填写合法的 IP',
         validator: (val: string) => {
           if (['destination_address_prefix'].includes(val)) {
-            const ip = data[val].trim();
-            if (['all', 'ALL'].includes(ip)) return true;
-            if (isValid(ip)) return true;
-            try {
-              parseCIDR(ip);
-            } catch (err) {
-              return false;
-            }
+            return isValidIpCidr(data[val], false);
           }
           return true;
         },
@@ -159,4 +156,26 @@ export const isPortAvailable = (val: string | number) => {
     return !nums.some(num => +num < 0 || +num > 65535);
   }
   return +port >= 0 && +port <= 65535;
+};
+
+/**
+ * 检查是否合法的 IP CIDR
+ * @param val IP CIDR
+ * @param hasVersion 是否区分IPV4与IPV6
+ * @returns boolean
+ */
+export const isValidIpCidr = (val: string, hasVersion: boolean) => {
+  const ip = val.trim();
+  if (isValid(ip)) {
+    const ipType = parse(ip).kind();
+    if (hasVersion) {
+      return (ipType === 'ipv4' && val === 'ipv4_cidr' && isValidFourPartDecimal(ip)) || (ipType === 'ipv6' && val === 'ipv6_cidr');
+    }
+    return (ipType === 'ipv4' && isValidFourPartDecimal(ip)) || ipType === 'ipv6';
+  }
+  try {
+    parseCIDR(ip);
+  } catch (err) {
+    return false;
+  }
 };
