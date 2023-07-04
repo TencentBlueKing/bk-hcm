@@ -79,53 +79,6 @@ const {
   handleSelectionChange,
 } = useSelection();
 
-
-// const {
-//   isShowShutdown,
-//   handleShutdown,
-//   HostShutdown,
-// } = useShutdown();
-
-// const {
-//   isShowReboot,
-//   handleReboot,
-//   HostReboot,
-// } = useReboot();
-
-// const {
-//   isShowPassword,
-//   handlePassword,
-//   HostPassword,
-// } = usePassword();
-
-// const {
-//   isShowRefund,
-//   handleRefund,
-//   HostRefund,
-// } = useRefund();
-
-// const {
-//   isShowBootUp,
-//   handleBootUp,
-//   HostBootUp,
-// } = useBootUp();
-
-// 更多
-// const moreOperations = [
-//   {
-//     name: t('重启'),
-//     handler: handleReboot,
-//   },
-//   {
-//     name: t('重置密码'),
-//     handler: handlePassword,
-//   },
-//   {
-//     name: t('退回'),
-//     handler: handleRefund,
-//   },
-// ];
-
 const isShowDistribution = ref(false);
 const businessId = ref('');
 const businessList = ref(useBusinessMapStore().businessList);
@@ -235,11 +188,6 @@ const handleDistributionConfirm = () => {
   distributionCvm();
 };
 
-// const handleDistribution = () => {
-//   isShowDistribution.value = true;
-//   console.log(111);
-// };
-
 const isRowSelectEnable = ({ row }: DoublePlainObject) => {
   if (row.id) {
     return row.bk_biz_id === -1;
@@ -278,57 +226,8 @@ getCloudAreas();
 
       <HostOperations :selections="selections"></HostOperations>
 
-      <!-- <bk-button
-        class="w100"
-        theme="primary"
-        :disabled="selections.length <= 0"
-        @click="handleDistribution"
-      >
-        {{ t('分配') }}
-      </bk-button> -->
-      <!-- <bk-button
-        class="w100 ml10"
-        theme="primary"
-        @click="() => {
-          handleCvmOperate('bootUp')
-        }"
-      >
-        {{ t('开机') }}
-      </bk-button>
-      <bk-button
-        class="w100 ml10"
-        theme="primary"
-        @click="handleShutdown"
-      >
-        {{ t('关机') }}
-      </bk-button>
-      <bk-dropdown
-        class="ml10"
-        placement="right-start"
-      >
-        <bk-button>
-          <span class="w60">
-            {{ t('更多') }}
-          </span>
-          <angle-right
-            width="16"
-            height="16"
-          />
-        </bk-button>
-        <template #content>
-          <bk-dropdown-menu>
-            <bk-dropdown-item
-              v-for="operation in moreOperations"
-              :key="operation.name"
-              @click="operation.handler"
-            >
-              {{ operation.name }}
-            </bk-dropdown-item>
-          </bk-dropdown-menu>
-        </template>
-      </bk-dropdown> -->
       <slot></slot>
-      <div class="flex-row align-items-center justify-content-arround">
+      <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
           class="w500 ml10 mr15"
           clearable
@@ -387,30 +286,6 @@ getCloudAreas();
       />
     </bk-dialog>
 
-    <!-- <host-shutdown
-      v-model:isShow="isShowShutdown"
-      :title="t('关机')"
-    />
-
-    <host-reboot
-      v-model:isShow="isShowReboot"
-      :title="t('重启')"
-    />
-
-    <host-password
-      v-model:isShow="isShowPassword"
-      :title="t('修改密码')"
-    />
-
-    <host-refund
-      v-model:isShow="isShowRefund"
-      :title="t('主机回收')"
-    />
-
-    <host-boot-up
-      v-model:isShow="isShowBootUp"
-      :title="t('开机')"
-    /> -->
   </bk-loading>
 </template>
 
@@ -430,5 +305,8 @@ getCloudAreas();
 }
 .mr15 {
   margin-right: 15px;
+}
+.search-selector-container {
+  margin-left: auto;
 }
 </style>

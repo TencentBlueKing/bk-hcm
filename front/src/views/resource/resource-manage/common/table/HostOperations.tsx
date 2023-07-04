@@ -2,7 +2,6 @@ import { Button, Dialog, Message } from 'bkui-vue';
 import { PropType, computed, defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { usePreviousState } from '@/hooks/usePreviousState';
-import { useRoute } from 'vue-router';
 import { useResourceStore } from '@/store';
 
 export enum Operations {
@@ -53,7 +52,6 @@ export default defineComponent({
     const isLoading = ref(false);
 
     const previousOperationType = usePreviousState(operationType);
-    const route = useRoute();
     const resourceStore = useResourceStore();
 
     const isDialogShow = computed(() => {
@@ -216,61 +214,49 @@ export default defineComponent({
       }
     };
 
-    const isUnderBusiness = computed(() => /^\/business\//.test(route.path));
     const operationsDisabled = computed(() => !props.selections.length);
 
     return () => (
       <>
-        {!isUnderBusiness.value ? (
-          <>
-            <div class={'host_operations_container'}>
-              {Object.entries(OperationsMap).map(([opType, opName]) => (
-                <Button
-                  theme={opType === Operations.Open ? 'primary' : undefined}
-                  class="host_operations_w100 ml10"
-                  onClick={() => (operationType.value = opType as Operations)}
-                  disabled={operationsDisabled.value}
-                >
-                  {opName}
-                </Button>
-              ))}
-            </div>
+        <div class={'host_operations_container'}>
+          {Object.entries(OperationsMap).map(([opType, opName]) => (
+            <Button
+              theme={opType === Operations.Open ? 'primary' : undefined}
+              class='host_operations_w100 ml10'
+              onClick={() => (operationType.value = opType as Operations)}
+              disabled={operationsDisabled.value}>
+              {opName}
+            </Button>
+          ))}
+        </div>
 
-            <Dialog
-              isShow={isDialogShow.value}
-              quick-close={!isLoading.value}
-              onClosed={() => (operationType.value = Operations.None)}
-              onConfirm={handleConfirm}
-              title={computedTitle.value}
-              ref={dialogRef}
-              width={520}
-              closeIcon={!isLoading.value}
-            >
-              {{
-                default: <p>{computedContent.value}</p>,
-                footer: (
-                  <>
-                    <Button
-                      onClick={dialogRef?.value?.handleConfirm}
-                      theme="primary"
-                      disabled={isConfirmDisabled.value}
-                      loading={isLoading.value}
-                    >
-                      确定
-                    </Button>
-                    <Button
-                      onClick={dialogRef?.value?.handleClose}
-                      class="ml10"
-                      disabled={isLoading.value}
-                    >
-                      取消
-                    </Button>
-                  </>
-                ),
-              }}
-            </Dialog>
-          </>
-        ) : null}
+        <Dialog
+          isShow={isDialogShow.value}
+          quick-close={!isLoading.value}
+          onClosed={() => (operationType.value = Operations.None)}
+          onConfirm={handleConfirm}
+          title={computedTitle.value}
+          ref={dialogRef}
+          width={520}
+          closeIcon={!isLoading.value}>
+          {{
+            default: <p>{computedContent.value}</p>,
+            footer: (
+              <>
+                <Button
+                  onClick={dialogRef?.value?.handleConfirm}
+                  theme='primary'
+                  disabled={isConfirmDisabled.value}
+                  loading={isLoading.value}>
+                  确定
+                </Button>
+                <Button onClick={dialogRef?.value?.handleClose} class='ml10' disabled={isLoading.value}>
+                  取消
+                </Button>
+              </>
+            ),
+          }}
+        </Dialog>
       </>
     );
   },
