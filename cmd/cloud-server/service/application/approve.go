@@ -41,6 +41,8 @@ import (
 	huaweivpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/huawei"
 	tcloudvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/pkg/api/cloud-server/csdisk"
+	cscvm "hcm/pkg/api/cloud-server/cvm"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -142,31 +144,31 @@ func (a *applicationSvc) getHandlerOfCreateCvm(
 ) (handlers.ApplicationHandler, error) {
 	switch vendor {
 	case enumor.TCloud:
-		req, err := parseReqFromApplicationContent[proto.TCloudCvmCreateReq](application.Content)
+		req, err := parseReqFromApplicationContent[cscvm.TCloudCvmCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
 		return tcloudcvmhandler.NewApplicationOfCreateTCloudCvm(opt, req), nil
 	case enumor.Aws:
-		req, err := parseReqFromApplicationContent[proto.AwsCvmCreateReq](application.Content)
+		req, err := parseReqFromApplicationContent[cscvm.AwsCvmCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
 		return awscvmhandler.NewApplicationOfCreateAwsCvm(opt, req), nil
 	case enumor.HuaWei:
-		req, err := parseReqFromApplicationContent[proto.HuaWeiCvmCreateReq](application.Content)
+		req, err := parseReqFromApplicationContent[cscvm.HuaWeiCvmCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
 		return huaweicvmhandler.NewApplicationOfCreateHuaWeiCvm(opt, req), nil
 	case enumor.Gcp:
-		req, err := parseReqFromApplicationContent[proto.GcpCvmCreateReq](application.Content)
+		req, err := parseReqFromApplicationContent[cscvm.GcpCvmCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
 		return gcpcvmhandler.NewApplicationOfCreateGcpCvm(opt, req), nil
 	case enumor.Azure:
-		req, err := parseReqFromApplicationContent[proto.AzureCvmCreateReq](application.Content)
+		req, err := parseReqFromApplicationContent[cscvm.AzureCvmCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
@@ -220,31 +222,31 @@ func (a *applicationSvc) getHandlerOfCreateDisk(
 ) (handlers.ApplicationHandler, error) {
 	switch vendor {
 	case enumor.TCloud:
-		req, err := parseReqFromApplicationContent[proto.TCloudDiskCreateReq](application.Content)
+		req, err := parseReqFromApplicationContent[csdisk.TCloudDiskCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
 		return tclouddiskhandler.NewApplicationOfCreateTCloudDisk(opt, req), nil
 	case enumor.Gcp:
-		req, err := parseReqFromApplicationContent[proto.GcpDiskCreateReq](application.Content)
+		req, err := parseReqFromApplicationContent[csdisk.GcpDiskCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
 		return gcpdiskhandler.NewApplicationOfCreateGcpDisk(opt, req), nil
 	case enumor.Aws:
-		req, err := parseReqFromApplicationContent[proto.AwsDiskCreateReq](application.Content)
+		req, err := parseReqFromApplicationContent[csdisk.AwsDiskCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
 		return awsdiskhandler.NewApplicationOfCreateAwsDisk(opt, req), nil
 	case enumor.HuaWei:
-		req, err := parseReqFromApplicationContent[proto.HuaWeiDiskCreateReq](application.Content)
+		req, err := parseReqFromApplicationContent[csdisk.HuaWeiDiskCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}
 		return huaweidiskhandler.NewApplicationOfCreateHuaWeiDisk(opt, req), nil
 	case enumor.Azure:
-		req, err := parseReqFromApplicationContent[proto.AzureDiskCreateReq](application.Content)
+		req, err := parseReqFromApplicationContent[csdisk.AzureDiskCreateReq](application.Content)
 		if err != nil {
 			return nil, err
 		}

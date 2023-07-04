@@ -25,10 +25,6 @@ package constant
 const (
 	// BatchOperationMaxLimit 批量操作最大上限，包括批量创建、批量更新、批量删除。
 	BatchOperationMaxLimit = 100
-	// RelResourceOperationMaxLimit 批量操作最大上限，包括批量创建、批量更新、批量删除。
-	RelResourceOperationMaxLimit = 500
-	// SGBatchOperationMaxLimit 批量操作最大上限，包括批量创建、批量更新、批量删除。
-	SGBatchOperationMaxLimit = 1000
 
 	// CloudResourceSyncMaxLimit 单次云资源同步最大数量限制。
 	CloudResourceSyncMaxLimit = 100

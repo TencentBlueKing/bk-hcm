@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	proto "hcm/pkg/api/cloud-server"
-	diskproto "hcm/pkg/api/cloud-server/disk"
+	diskproto "hcm/pkg/api/cloud-server/csdisk"
 	"hcm/pkg/api/core"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"

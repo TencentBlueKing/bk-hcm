@@ -21,7 +21,7 @@ package huawei
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	proto "hcm/pkg/api/cloud-server/csdisk"
 	"hcm/pkg/criteria/enumor"
 )
 

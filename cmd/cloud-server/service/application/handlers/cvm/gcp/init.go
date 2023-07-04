@@ -21,8 +21,8 @@ package gcp
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	typecvm "hcm/pkg/adaptor/types/cvm"
-	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/cmd/cloud-server/service/common"
+	proto "hcm/pkg/api/cloud-server/cvm"
 	hcproto "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/enumor"
 )
@@ -45,43 +45,5 @@ func NewApplicationOfCreateGcpCvm(
 }
 
 func (a *ApplicationOfCreateGcpCvm) toHcProtoGcpBatchCreateReq() *hcproto.GcpBatchCreateReq {
-	req := a.req
-
-	dataDisk := make([]typecvm.GcpDataDisk, 0)
-	// 数据盘
-	for _, d := range req.DataDisk {
-		for i := int64(0); i < d.DiskCount; i++ {
-			dataDisk = append(dataDisk, typecvm.GcpDataDisk{
-				DiskType:   d.DiskType,
-				SizeGb:     d.DiskSizeGB,
-				Mode:       d.Mode,
-				AutoDelete: *d.AutoDelete,
-			})
-		}
-	}
-	description := ""
-	if req.Memo != nil {
-		description = *req.Memo
-	}
-
-	return &hcproto.GcpBatchCreateReq{
-		AccountID:     req.AccountID,
-		NamePrefix:    req.Name,
-		Region:        req.Region,
-		Zone:          req.Zone,
-		InstanceType:  req.InstanceType,
-		CloudImageID:  req.CloudImageID,
-		Password:      req.Password,
-		RequiredCount: req.RequiredCount,
-		// 暂不使用
-		RequestID:     "",
-		CloudVpcID:    req.CloudVpcID,
-		CloudSubnetID: req.CloudSubnetID,
-		Description:   description,
-		SystemDisk: &typecvm.GcpOsDisk{
-			DiskType: req.SystemDisk.DiskType,
-			SizeGb:   req.SystemDisk.DiskSizeGB,
-		},
-		DataDisk: dataDisk,
-	}
+	return common.ConvGcpCvmCreateReq(a.req)
 }

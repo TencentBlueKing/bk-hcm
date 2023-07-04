@@ -17,17 +17,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package disk
+package constant
 
-import "hcm/pkg/criteria/validator"
-
-// GcpDiskAttachReq ...
-type GcpDiskAttachReq struct {
-	DiskID string `json:"disk_id" validate:"required"`
-	CvmID  string `json:"cvm_id" validate:"required"`
-}
-
-// Validate ...
-func (req *GcpDiskAttachReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
+const (
+	// ASCIILowercase 小写字符
+	ASCIILowercase = "abcdefghijklmnopqrstuvwxyz"
+	// ASCIIUppercase 大写字符
+	ASCIIUppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	// Digits 数字
+	Digits = "0123456789"
+)

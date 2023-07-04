@@ -30,6 +30,9 @@ type ApplicationType string
 func (a ApplicationType) Validate() error {
 	switch a {
 	case AddAccount:
+	case CreateCvm:
+	case CreateVpc:
+	case CreateDisk:
 	default:
 		return fmt.Errorf("unsupported application type: %s", a)
 	}

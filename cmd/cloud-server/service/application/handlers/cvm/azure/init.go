@@ -20,11 +20,9 @@
 package azure
 
 import (
-	"fmt"
-
 	"hcm/cmd/cloud-server/service/application/handlers"
-	typecvm "hcm/pkg/adaptor/types/cvm"
-	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/cmd/cloud-server/service/common"
+	proto "hcm/pkg/api/cloud-server/cvm"
 	hcproto "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/enumor"
 )
@@ -47,44 +45,5 @@ func NewApplicationOfCreateAzureCvm(opt *handlers.HandlerOption, req *proto.Azur
 }
 
 func (a *ApplicationOfCreateAzureCvm) toHcProtoAzureBatchCreateReq() *hcproto.AzureBatchCreateReq {
-	req := a.req
-
-	dataDisk := make([]typecvm.AzureDataDisk, 0)
-	index := 1
-	for _, d := range req.DataDisk {
-		for i := int64(0); i < d.DiskCount; i++ {
-			dataDisk = append(dataDisk, typecvm.AzureDataDisk{
-				Name:   fmt.Sprintf("data%d", index),
-				SizeGB: int32(d.DiskSizeGB),
-				Type:   d.DiskType,
-			})
-			index += 1
-		}
-	}
-
-	zones := make([]string, 0)
-	if len(req.Zone) != 0 {
-		zones = append(zones, req.Zone)
-	}
-
-	return &hcproto.AzureBatchCreateReq{
-		AccountID:            req.AccountID,
-		ResourceGroupName:    req.ResourceGroupName,
-		Region:               req.Region,
-		Name:                 req.Name,
-		Zones:                zones,
-		InstanceType:         req.InstanceType,
-		CloudImageID:         req.CloudImageID,
-		Username:             req.Username,
-		Password:             req.Password,
-		CloudSubnetID:        req.CloudSubnetID,
-		CloudSecurityGroupID: req.CloudSecurityGroupIDs[0],
-		OSDisk: &typecvm.AzureOSDisk{
-			Name:   "disk-" + req.Name,
-			SizeGB: int32(req.SystemDisk.DiskSizeGB),
-			Type:   req.SystemDisk.DiskType,
-		},
-		DataDisk:      dataDisk,
-		RequiredCount: req.RequiredCount,
-	}
+	return common.ConvAzureCvmCreateReq(a.req)
 }

@@ -17,13 +17,15 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package application
+package cscvm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -80,9 +82,13 @@ type AzureCvmCreateReq struct {
 }
 
 // Validate ...
-func (req *AzureCvmCreateReq) Validate() error {
+func (req *AzureCvmCreateReq) Validate(bizRequired bool) error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
+	}
+
+	if bizRequired && req.BkBizID == 0 {
+		return errors.New("bk_biz_id is required")
 	}
 
 	if err := validator.ValidateCvmName(enumor.Azure, req.Name); err != nil {
@@ -94,8 +100,8 @@ func (req *AzureCvmCreateReq) Validate() error {
 		return err
 	}
 
-	if req.RequiredCount > requiredCountMaxLimit {
-		return fmt.Errorf("required count should <= %d", requiredCountMaxLimit)
+	if req.RequiredCount > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("required count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	// region can be no space lowercase

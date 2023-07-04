@@ -17,14 +17,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package disk
+package csdisk
 
 import (
+	"encoding/json"
+
 	"hcm/pkg/api/core"
 	rr "hcm/pkg/api/core/recycle-record"
 	datarelproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
+
+	"github.com/tidwall/gjson"
 )
 
 // DiskListReq ...
@@ -121,4 +125,17 @@ type DiskDeleteRecycleReq struct {
 // Validate DiskDeleteRecycleReq
 func (req DiskDeleteRecycleReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// ResourceCreateReq raw create request, only account_id is decoded, others are raw json.
+type ResourceCreateReq struct {
+	AccountID string
+	Data      json.RawMessage
+}
+
+// UnmarshalJSON unmarshal raw json to RawCreateReq
+func (r *ResourceCreateReq) UnmarshalJSON(raw []byte) error {
+	r.AccountID = gjson.GetBytes(raw, "account_id").String()
+	r.Data = raw
+	return nil
 }
