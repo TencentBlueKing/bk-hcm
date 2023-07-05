@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package hcservice
+package vpc
 
 import (
 	"hcm/pkg/api/hc-service/subnet"
@@ -40,7 +40,7 @@ type BaseVpcCreateReq struct {
 	Category  enumor.VpcCategory `json:"category" validate:"required"`
 	Memo      *string            `json:"memo,omitempty" validate:"omitempty"`
 	BkCloudID int64              `json:"bk_cloud_id" validate:"required"`
-	BkBizID   int64              `json:"bk_biz_id" validate:"required"`
+	BkBizID   int64              `json:"bk_biz_id" validate:"omitempty"`
 }
 
 // Validate VpcCreateReq.

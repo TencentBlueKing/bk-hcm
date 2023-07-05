@@ -21,7 +21,7 @@ package aws
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -29,12 +29,12 @@ import (
 type ApplicationOfCreateAwsVpc struct {
 	handlers.BaseApplicationHandler
 
-	req *proto.AwsVpcCreateReq
+	req *csvpc.AwsVpcCreateReq
 }
 
 // NewApplicationOfCreateAwsVpc ...
 func NewApplicationOfCreateAwsVpc(
-	opt *handlers.HandlerOption, req *proto.AwsVpcCreateReq,
+	opt *handlers.HandlerOption, req *csvpc.AwsVpcCreateReq,
 ) *ApplicationOfCreateAwsVpc {
 	return &ApplicationOfCreateAwsVpc{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.Aws),
