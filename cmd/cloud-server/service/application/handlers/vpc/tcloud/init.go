@@ -21,7 +21,7 @@ package tcloud
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -29,12 +29,12 @@ import (
 type ApplicationOfCreateTCloudVpc struct {
 	handlers.BaseApplicationHandler
 
-	req *proto.TCloudVpcCreateReq
+	req *csvpc.TCloudVpcCreateReq
 }
 
 // NewApplicationOfCreateTCloudVpc ...
 func NewApplicationOfCreateTCloudVpc(
-	opt *handlers.HandlerOption, req *proto.TCloudVpcCreateReq,
+	opt *handlers.HandlerOption, req *csvpc.TCloudVpcCreateReq,
 ) *ApplicationOfCreateTCloudVpc {
 	return &ApplicationOfCreateTCloudVpc{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.TCloud),

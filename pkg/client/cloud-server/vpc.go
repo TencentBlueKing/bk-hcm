@@ -23,7 +23,7 @@ import (
 	"context"
 	"net/http"
 
-	proto "hcm/pkg/api/cloud-server"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -46,9 +46,9 @@ func NewVpcClient(client rest.ClientInterface) *VpcClient {
 
 // ListInBiz vpcs.
 func (v *VpcClient) ListInBiz(ctx context.Context, h http.Header, bizID int64, req *core.ListReq) (
-	*proto.VpcListResult, error) {
+	*csvpc.VpcListResult, error) {
 
-	resp := new(proto.VpcListResp)
+	resp := new(csvpc.VpcListResp)
 
 	err := v.client.Post().
 		WithContext(ctx).

@@ -20,7 +20,7 @@
 package azure
 
 import (
-	proto "hcm/pkg/api/cloud-server/application"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/esb/itsm"
 )
@@ -35,7 +35,7 @@ func (a *ApplicationOfCreateAzureVpc) PrepareReq() error {
 func (a *ApplicationOfCreateAzureVpc) GenerateApplicationContent() interface{} {
 	// 需要将Vendor也存储进去
 	return &struct {
-		*proto.AzureVpcCreateReq `json:",inline"`
+		*csvpc.AzureVpcCreateReq `json:",inline"`
 		Vendor                   enumor.Vendor `json:"vendor"`
 	}{
 		AzureVpcCreateReq: a.req,

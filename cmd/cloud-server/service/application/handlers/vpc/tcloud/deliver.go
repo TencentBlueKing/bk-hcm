@@ -21,8 +21,7 @@ package tcloud
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
-	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/api/hc-service/subnet"
+	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -32,7 +31,7 @@ func (a *ApplicationOfCreateTCloudVpc) Deliver() (enumor.ApplicationStatus, map[
 	result, err := a.Client.HCService().TCloud.Vpc.Create(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		a.toHcProtoVpcCreateReq(),
+		common.ConvTCloudVpcCreateReq(a.req),
 	)
 	if err != nil || result == nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
@@ -90,29 +89,4 @@ func (a *ApplicationOfCreateTCloudVpc) Deliver() (enumor.ApplicationStatus, map[
 	}
 
 	return enumor.Completed, map[string]interface{}{"vpc_id": result.ID}, nil
-}
-
-func (a *ApplicationOfCreateTCloudVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreateReq[hcproto.TCloudVpcCreateExt] {
-	req := a.req
-	return &hcproto.VpcCreateReq[hcproto.TCloudVpcCreateExt]{
-		BaseVpcCreateReq: &hcproto.BaseVpcCreateReq{
-			AccountID: req.AccountID,
-			Name:      req.Name,
-			Category:  enumor.BizVpcCategory,
-			Memo:      req.Memo,
-			BkCloudID: req.BkCloudID,
-			BkBizID:   req.BkBizID,
-		},
-		Extension: &hcproto.TCloudVpcCreateExt{
-			Region:   req.Region,
-			IPv4Cidr: req.IPv4Cidr,
-			Subnets: []subnet.TCloudOneSubnetCreateReq{
-				{
-					IPv4Cidr: req.Subnet.IPv4Cidr,
-					Name:     req.Subnet.Name,
-					Zone:     req.Subnet.Zone,
-				},
-			},
-		},
-	}
 }

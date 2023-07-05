@@ -21,7 +21,7 @@ package gcp
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -29,12 +29,12 @@ import (
 type ApplicationOfCreateGcpVpc struct {
 	handlers.BaseApplicationHandler
 
-	req *proto.GcpVpcCreateReq
+	req *csvpc.GcpVpcCreateReq
 }
 
 // NewApplicationOfCreateGcpVpc ...
 func NewApplicationOfCreateGcpVpc(
-	opt *handlers.HandlerOption, req *proto.GcpVpcCreateReq,
+	opt *handlers.HandlerOption, req *csvpc.GcpVpcCreateReq,
 ) *ApplicationOfCreateGcpVpc {
 	return &ApplicationOfCreateGcpVpc{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.Gcp),

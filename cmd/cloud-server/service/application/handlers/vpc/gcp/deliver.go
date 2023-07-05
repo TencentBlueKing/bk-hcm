@@ -21,8 +21,7 @@ package gcp
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
-	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/api/hc-service/subnet"
+	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -32,7 +31,7 @@ func (a *ApplicationOfCreateGcpVpc) Deliver() (enumor.ApplicationStatus, map[str
 	result, err := a.Client.HCService().Gcp.Vpc.Create(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		a.toHcProtoVpcCreateReq(),
+		common.ConvGcpVpcCreateReq(a.req),
 	)
 	if err != nil || result == nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
@@ -90,38 +89,4 @@ func (a *ApplicationOfCreateGcpVpc) Deliver() (enumor.ApplicationStatus, map[str
 	}
 
 	return enumor.Completed, map[string]interface{}{"vpc_id": result.ID}, nil
-}
-
-func (a *ApplicationOfCreateGcpVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreateReq[hcproto.GcpVpcCreateExt] {
-	req := a.req
-
-	return &hcproto.VpcCreateReq[hcproto.GcpVpcCreateExt]{
-		BaseVpcCreateReq: &hcproto.BaseVpcCreateReq{
-			AccountID: req.AccountID,
-			Name:      req.Name,
-			Category:  enumor.BizVpcCategory,
-			Memo:      req.Memo,
-			BkCloudID: req.BkCloudID,
-			BkBizID:   req.BkBizID,
-		},
-		Extension: &hcproto.GcpVpcCreateExt{
-			RoutingMode: req.RoutingMode,
-			Subnets: []subnet.SubnetCreateReq[subnet.GcpSubnetCreateExt]{
-				{
-					BaseSubnetCreateReq: &subnet.BaseSubnetCreateReq{
-						AccountID: req.AccountID,
-						Name:      req.Subnet.Name,
-						Memo:      req.Memo,
-						BkBizID:   req.BkBizID,
-					},
-					Extension: &subnet.GcpSubnetCreateExt{
-						Region:                req.Region,
-						IPv4Cidr:              req.Subnet.IPv4Cidr,
-						PrivateIpGoogleAccess: *req.Subnet.PrivateIPGoogleAccess,
-						EnableFlowLogs:        *req.Subnet.EnableFlowLogs,
-					},
-				},
-			},
-		},
-	}
 }

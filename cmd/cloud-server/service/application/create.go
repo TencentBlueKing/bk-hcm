@@ -41,6 +41,7 @@ import (
 	tcloudvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/tcloud"
 	proto "hcm/pkg/api/cloud-server/application"
 	cscvm "hcm/pkg/api/cloud-server/cvm"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	csdisk "hcm/pkg/api/cloud-server/disk"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -229,35 +230,35 @@ func (a *applicationSvc) CreateForCreateVpc(cts *rest.Contexts) (interface{}, er
 
 	switch vendor {
 	case enumor.TCloud:
-		req, err := parseReqFromRequestBody[proto.TCloudVpcCreateReq](cts)
+		req, err := parseReqFromRequestBody[csvpc.TCloudVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := tcloudvpchandler.NewApplicationOfCreateTCloudVpc(opt, req)
 		return a.create(cts, handler)
 	case enumor.Aws:
-		req, err := parseReqFromRequestBody[proto.AwsVpcCreateReq](cts)
+		req, err := parseReqFromRequestBody[csvpc.AwsVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := awsvpchandler.NewApplicationOfCreateAwsVpc(opt, req)
 		return a.create(cts, handler)
 	case enumor.HuaWei:
-		req, err := parseReqFromRequestBody[proto.HuaWeiVpcCreateReq](cts)
+		req, err := parseReqFromRequestBody[csvpc.HuaWeiVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := huaweivpchandler.NewApplicationOfCreateHuaWeiVpc(opt, req)
 		return a.create(cts, handler)
 	case enumor.Gcp:
-		req, err := parseReqFromRequestBody[proto.GcpVpcCreateReq](cts)
+		req, err := parseReqFromRequestBody[csvpc.GcpVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}
 		handler := gcpvpchandler.NewApplicationOfCreateGcpVpc(opt, req)
 		return a.create(cts, handler)
 	case enumor.Azure:
-		req, err := parseReqFromRequestBody[proto.AzureVpcCreateReq](cts)
+		req, err := parseReqFromRequestBody[csvpc.AzureVpcCreateReq](cts)
 		if err != nil {
 			return nil, err
 		}

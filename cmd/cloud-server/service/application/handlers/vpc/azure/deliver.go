@@ -21,8 +21,7 @@ package azure
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
-	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/api/hc-service/subnet"
+	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -32,7 +31,7 @@ func (a *ApplicationOfCreateAzureVpc) Deliver() (enumor.ApplicationStatus, map[s
 	result, err := a.Client.HCService().Azure.Vpc.Create(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		a.toHcProtoVpcCreateReq(),
+		common.ConvAzureVpcCreateReq(a.req),
 	)
 	if err != nil || result == nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
@@ -92,36 +91,3 @@ func (a *ApplicationOfCreateAzureVpc) Deliver() (enumor.ApplicationStatus, map[s
 	return enumor.Completed, map[string]interface{}{"vpc_id": result.ID}, nil
 }
 
-func (a *ApplicationOfCreateAzureVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreateReq[hcproto.AzureVpcCreateExt] {
-	req := a.req
-
-	return &hcproto.VpcCreateReq[hcproto.AzureVpcCreateExt]{
-		BaseVpcCreateReq: &hcproto.BaseVpcCreateReq{
-			AccountID: req.AccountID,
-			Name:      req.Name,
-			Category:  enumor.BizVpcCategory,
-			Memo:      req.Memo,
-			BkCloudID: req.BkCloudID,
-			BkBizID:   req.BkBizID,
-		},
-		Extension: &hcproto.AzureVpcCreateExt{
-			Region:        req.Region,
-			ResourceGroup: req.ResourceGroupName,
-			IPv4Cidr:      []string{req.IPv4Cidr},
-			Subnets: []subnet.SubnetCreateReq[subnet.AzureSubnetCreateExt]{
-				{
-					BaseSubnetCreateReq: &subnet.BaseSubnetCreateReq{
-						AccountID: req.AccountID,
-						Name:      req.Subnet.Name,
-						Memo:      req.Memo,
-						BkBizID:   req.BkBizID,
-					},
-					Extension: &subnet.AzureSubnetCreateExt{
-						ResourceGroup: req.ResourceGroupName,
-						IPv4Cidr:      []string{req.Subnet.IPv4Cidr},
-					},
-				},
-			},
-		},
-	}
-}

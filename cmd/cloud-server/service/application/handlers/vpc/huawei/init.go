@@ -21,7 +21,7 @@ package huawei
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -29,12 +29,12 @@ import (
 type ApplicationOfCreateHuaWeiVpc struct {
 	handlers.BaseApplicationHandler
 
-	req *proto.HuaWeiVpcCreateReq
+	req *csvpc.HuaWeiVpcCreateReq
 }
 
 // NewApplicationOfCreateHuaWeiVpc ...
 func NewApplicationOfCreateHuaWeiVpc(
-	opt *handlers.HandlerOption, req *proto.HuaWeiVpcCreateReq,
+	opt *handlers.HandlerOption, req *csvpc.HuaWeiVpcCreateReq,
 ) *ApplicationOfCreateHuaWeiVpc {
 	return &ApplicationOfCreateHuaWeiVpc{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.HuaWei),
