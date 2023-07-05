@@ -601,6 +601,7 @@ if (props.vendor === 'huawei') {
       dialog-width="1680"
       :active-type="activeType"
       :title="t(activeType === 'egress' ? `${dataId ? '编辑' : '添加'}出站规则` : `${dataId ? '编辑' : '添加'}入站规则`)"
+      :is-edit="!!dataId"
       :vendor="vendor"
       @submit="handleSubmitRule"
       :related-security-groups="props.relatedSecurityGroups"

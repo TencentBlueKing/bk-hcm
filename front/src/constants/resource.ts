@@ -289,10 +289,6 @@ export const AWS_SECURITY_RULE_PEOTOCALS = [
     id: 'icmpv6',
     name: 'ICMPv6',
   },
-  {
-    id: 'gre',
-    name: 'GRE',
-  },
 ];
 
 export const HUAWEI_SECURITY_RULE_PEOTOCALS = [

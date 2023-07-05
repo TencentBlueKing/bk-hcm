@@ -65,6 +65,9 @@ export default defineComponent({
     relatedSecurityGroups: {
       type: Array as PropType<any>,
     },
+    isEdit: {
+      type: Boolean as PropType<boolean>,
+    },
   },
 
   emits: ['update:isShow', 'submit'],
@@ -75,6 +78,7 @@ export default defineComponent({
     const resourceStore = useResourceStore();
 
     const protocolList = ref<any>(SECURITY_RULES_MAP[props.vendor]);
+
 
     const securityGroupSource = ref([
       // 华为源
@@ -175,7 +179,9 @@ export default defineComponent({
               ))}
             </Select>
           ) : (
-            <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress}>
+            <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress} disabled={
+              props.isEdit
+            }>
               {securityGroupSource.value.map(ele => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
               ))}
