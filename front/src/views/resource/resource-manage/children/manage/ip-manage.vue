@@ -1,19 +1,9 @@
 <script setup lang="ts">
-import type {
-  FilterType,
-} from '@/typings/resource';
+import type { FilterType } from '@/typings/resource';
 
-import {
-  PropType,
-  h,
-} from 'vue';
-import {
-  Button,
-  InfoBox,
-} from 'bkui-vue';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { PropType, h } from 'vue';
+import { Button, InfoBox } from 'bkui-vue';
+import { useResourceStore } from '@/store/resource';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
@@ -33,49 +23,29 @@ const props = defineProps({
     type: Object as PropType<any>,
   },
   whereAmI: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 // use hooks
 const resourceStore = useResourceStore();
 
-const {
-  searchData,
-  searchValue,
-  filter
-} = useFilter(props);
+const { searchData, searchValue, filter } = useFilter(props);
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-  triggerApi,
-} = useQueryList({ filter: filter.value }, 'eips');
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
+  { filter: filter.value },
+  'eips',
+);
 
 const columns = useColumns('eips');
 const emit = defineEmits(['auth']);
 
-const {
-  selections,
-  handleSelectionChange,
-} = useSelection();
+const { selections, handleSelectionChange } = useSelection();
 
 const {
-  // handleShowDelete,
+  handleShowDelete,
   DeleteDialog,
-} = useDelete(
-  columns,
-  selections,
-  'eips',
-  '删除 EIP',
-  true,
-);
-
-
+} = useDelete(columns, selections, 'eips', '删除 EIP', true);
 
 // 抛出请求数据的方法，新增成功使用
 const fetchComponentsData = () => {
@@ -85,29 +55,32 @@ const fetchComponentsData = () => {
 const canDelete = (data: IEip): boolean => {
   let res = false;
   // 分配到业务下面后不可删除
-  const isInBusiness = !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete']
-    || data.cvm_id || (data.bk_biz_id !== -1 && !location.href.includes('business'));
-  const { status, vendor} = data;
+  const isInBusiness =    !props.authVerifyData?.permissionAction[
+    props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'
+  ]
+    || data.cvm_id
+    || (data.bk_biz_id !== -1 && !location.href.includes('business'));
+  const { status, vendor } = data;
 
-  switch(vendor) {
+  switch (vendor) {
     case CLOUD_VENDOR.tcloud:
-      if(status === EipStatus.UNBIND) res = true;
+      if (status === EipStatus.UNBIND) res = true;
       break;
     case CLOUD_VENDOR.huawei:
-      if([EipStatus.BIND_ERROR, EipStatus.DOWN, EipStatus.ERROR].includes(status)) res = true;
+      if ([EipStatus.BIND_ERROR, EipStatus.DOWN, EipStatus.ERROR].includes(status)) res = true;
       break;
     case CLOUD_VENDOR.aws:
-      if(status === EipStatus.UNBIND) res = true;
+      if (status === EipStatus.UNBIND) res = true;
       break;
     case CLOUD_VENDOR.gcp:
-      if(status === EipStatus.RESERVED) res = true;
+      if (status === EipStatus.RESERVED) res = true;
       break;
     case CLOUD_VENDOR.azure:
-      if(status === EipStatus.UNBIND) res = true;
+      if (status === EipStatus.UNBIND) res = true;
       break;
   }
   return res && !isInBusiness;
-}
+};
 
 const renderColumns = [
   ...columns,
@@ -138,12 +111,9 @@ const renderColumns = [
                   contentAlign: 'center',
                   onConfirm() {
                     resourceStore
-                      .deleteBatch(
-                        'eips',
-                        {
-                          ids: [data.id],
-                        },
-                      )
+                      .deleteBatch('eips', {
+                        ids: [data.id],
+                      })
                       .then(() => {
                         triggerApi();
                       });
@@ -151,10 +121,9 @@ const renderColumns = [
                 });
               },
             },
-            [
-              '删除',
-            ],
-          )],
+            ['删除'],
+          ),
+        ],
       ));
     },
   },
@@ -165,23 +134,35 @@ defineExpose({ fetchComponentsData });
 
 <template>
   <bk-loading :loading="isLoading">
-    <section class="flex-row align-items-center mb20"
-      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
+    <section
+      class="flex-row align-items-center mb20"
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
+    >
       <slot></slot>
-      <!-- <bk-button
-          class="w100 ml10"
-          theme="primary"
-          :disabled="selections.length <= 0"
-          @click="handleShowDelete(selections.map(selection => selection.id))"
-        >
-          删除
-        </bk-button> -->
-      <bk-search-select class="w500 ml10" clearable :conditions="[]" :data="searchData" v-model="searchValue" />
+      <bk-button
+        class="w100 ml10"
+        theme="primary"
+        :disabled="selections.length <= 0"
+        @click="handleShowDelete(selections.filter(selection => canDelete(selection)).map((selection) => selection.id))"
+      >
+        删除
+      </bk-button>
+      <bk-search-select class="w500 ml10 mlauto" clearable :conditions="[]" :data="searchData" v-model="searchValue" />
     </section>
 
-    <bk-table class="mt20" row-hover="auto" remote-pagination :pagination="pagination" :columns="renderColumns"
-      :data="datas" show-overflow-tooltip @page-limit-change="handlePageSizeChange" @page-value-change="handlePageChange"
-      @column-sort="handleSort" @selection-change="handleSelectionChange" />
+    <bk-table
+      class="mt20"
+      row-hover="auto"
+      remote-pagination
+      :pagination="pagination"
+      :columns="renderColumns"
+      :data="datas"
+      show-overflow-tooltip
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
+      @column-sort="handleSort"
+      @selection-change="handleSelectionChange"
+    />
   </bk-loading>
   <delete-dialog />
 </template>
@@ -195,5 +176,8 @@ defineExpose({ fetchComponentsData });
 }
 .mt20 {
   margin-top: 20px;
+}
+.mlauto {
+  margin-left: auto;
 }
 </style>
