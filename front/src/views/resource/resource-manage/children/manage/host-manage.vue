@@ -189,6 +189,7 @@ const handleDistributionConfirm = () => {
 };
 
 const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+  if (!props.isResourcePage) return true;
   if (row.id) {
     return row.bk_biz_id === -1;
   }
