@@ -178,4 +178,5 @@ export const isValidIpCidr = (val: string, hasVersion: boolean) => {
   } catch (err) {
     return false;
   }
+  return true;
 };
