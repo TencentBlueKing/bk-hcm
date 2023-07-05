@@ -25,8 +25,12 @@ import (
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	cscvm "hcm/pkg/api/cloud-server/cvm"
 	cloudserver "hcm/pkg/api/cloud-server/disk"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	hcproto "hcm/pkg/api/hc-service/cvm"
 	hcprotodisk "hcm/pkg/api/hc-service/disk"
+	"hcm/pkg/api/hc-service/subnet"
+	hcprotovpc "hcm/pkg/api/hc-service/vpc"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/tools/converter"
 )
 
@@ -345,6 +349,153 @@ func ConvAzureDiskCreateReq(req *cloudserver.AzureDiskCreateReq) *hcprotodisk.Az
 		},
 		Extension: &hcprotodisk.AzureDiskExtensionCreateReq{
 			ResourceGroupName: req.ResourceGroupName,
+		},
+	}
+}
+
+
+// ConvHuaWeiVpcCreateReq conv vpc create req. 
+func ConvHuaWeiVpcCreateReq(req *csvpc.HuaWeiVpcCreateReq) *hcprotovpc.VpcCreateReq[hcprotovpc.HuaWeiVpcCreateExt] {
+	return &hcprotovpc.VpcCreateReq[hcprotovpc.HuaWeiVpcCreateExt]{
+		BaseVpcCreateReq: &hcprotovpc.BaseVpcCreateReq{
+			AccountID: req.AccountID,
+			Name:      req.Name,
+			Category:  enumor.BizVpcCategory,
+			Memo:      req.Memo,
+			BkCloudID: req.BkCloudID,
+			BkBizID:   req.BkBizID,
+		},
+		Extension: &hcprotovpc.HuaWeiVpcCreateExt{
+			Region:   req.Region,
+			IPv4Cidr: req.IPv4Cidr,
+			Subnets: []subnet.SubnetCreateReq[subnet.HuaWeiSubnetCreateExt]{
+				{
+					BaseSubnetCreateReq: &subnet.BaseSubnetCreateReq{
+						AccountID: req.AccountID,
+						Name:      req.Subnet.Name,
+						Memo:      req.Memo,
+						BkBizID:   req.BkBizID,
+					},
+					Extension: &subnet.HuaWeiSubnetCreateExt{
+						Region:     req.Region,
+						IPv4Cidr:   req.Subnet.IPv4Cidr,
+						Ipv6Enable: *req.Subnet.IPv6Enable,
+						GatewayIp:  req.Subnet.GatewayIP,
+					},
+				},
+			},
+		},
+	}
+}
+
+// ConvGcpVpcCreateReq conv vpc create req. 
+func ConvGcpVpcCreateReq(req *csvpc.GcpVpcCreateReq) *hcprotovpc.VpcCreateReq[hcprotovpc.GcpVpcCreateExt] {
+	return &hcprotovpc.VpcCreateReq[hcprotovpc.GcpVpcCreateExt]{
+		BaseVpcCreateReq: &hcprotovpc.BaseVpcCreateReq{
+			AccountID: req.AccountID,
+			Name:      req.Name,
+			Category:  enumor.BizVpcCategory,
+			Memo:      req.Memo,
+			BkCloudID: req.BkCloudID,
+			BkBizID:   req.BkBizID,
+		},
+		Extension: &hcprotovpc.GcpVpcCreateExt{
+			RoutingMode: req.RoutingMode,
+			Subnets: []subnet.SubnetCreateReq[subnet.GcpSubnetCreateExt]{
+				{
+					BaseSubnetCreateReq: &subnet.BaseSubnetCreateReq{
+						AccountID: req.AccountID,
+						Name:      req.Subnet.Name,
+						Memo:      req.Memo,
+						BkBizID:   req.BkBizID,
+					},
+					Extension: &subnet.GcpSubnetCreateExt{
+						Region:                req.Region,
+						IPv4Cidr:              req.Subnet.IPv4Cidr,
+						PrivateIpGoogleAccess: *req.Subnet.PrivateIPGoogleAccess,
+						EnableFlowLogs:        *req.Subnet.EnableFlowLogs,
+					},
+				},
+			},
+		},
+	}
+}
+
+// ConvAzureVpcCreateReq conv vpc create req. 
+func ConvAzureVpcCreateReq(req *csvpc.AzureVpcCreateReq) *hcprotovpc.VpcCreateReq[hcprotovpc.AzureVpcCreateExt] {
+
+	return &hcprotovpc.VpcCreateReq[hcprotovpc.AzureVpcCreateExt]{
+		BaseVpcCreateReq: &hcprotovpc.BaseVpcCreateReq{
+			AccountID: req.AccountID,
+			Name:      req.Name,
+			Category:  enumor.BizVpcCategory,
+			Memo:      req.Memo,
+			BkCloudID: req.BkCloudID,
+			BkBizID:   req.BkBizID,
+		},
+		Extension: &hcprotovpc.AzureVpcCreateExt{
+			Region:        req.Region,
+			ResourceGroup: req.ResourceGroupName,
+			IPv4Cidr:      []string{req.IPv4Cidr},
+			Subnets: []subnet.SubnetCreateReq[subnet.AzureSubnetCreateExt]{
+				{
+					BaseSubnetCreateReq: &subnet.BaseSubnetCreateReq{
+						AccountID: req.AccountID,
+						Name:      req.Subnet.Name,
+						Memo:      req.Memo,
+						BkBizID:   req.BkBizID,
+					},
+					Extension: &subnet.AzureSubnetCreateExt{
+						ResourceGroup: req.ResourceGroupName,
+						IPv4Cidr:      []string{req.Subnet.IPv4Cidr},
+					},
+				},
+			},
+		},
+	}
+}
+
+// ConvAwsVpcCreateReq conv vpc create req. 
+func ConvAwsVpcCreateReq(req *csvpc.AwsVpcCreateReq) *hcprotovpc.VpcCreateReq[hcprotovpc.AwsVpcCreateExt] {
+	return &hcprotovpc.VpcCreateReq[hcprotovpc.AwsVpcCreateExt]{
+		BaseVpcCreateReq: &hcprotovpc.BaseVpcCreateReq{
+			AccountID: req.AccountID,
+			Name:      req.Name,
+			Category:  enumor.BizVpcCategory,
+			Memo:      req.Memo,
+			BkCloudID: req.BkCloudID,
+			BkBizID:   req.BkBizID,
+		},
+		Extension: &hcprotovpc.AwsVpcCreateExt{
+			Region:          req.Region,
+			IPv4Cidr:        req.IPv4Cidr,
+			InstanceTenancy: req.InstanceTenancy,
+			Subnets:         []subnet.SubnetCreateReq[subnet.AwsSubnetCreateExt]{},
+		},
+	}
+}
+
+// ConvTCloudVpcCreateReq conv vpc create req. 
+func ConvTCloudVpcCreateReq(req *csvpc.TCloudVpcCreateReq) *hcprotovpc.VpcCreateReq[hcprotovpc.TCloudVpcCreateExt] {
+	return &hcprotovpc.VpcCreateReq[hcprotovpc.TCloudVpcCreateExt]{
+		BaseVpcCreateReq: &hcprotovpc.BaseVpcCreateReq{
+			AccountID: req.AccountID,
+			Name:      req.Name,
+			Category:  enumor.BizVpcCategory,
+			Memo:      req.Memo,
+			BkCloudID: req.BkCloudID,
+			BkBizID:   req.BkBizID,
+		},
+		Extension: &hcprotovpc.TCloudVpcCreateExt{
+			Region:   req.Region,
+			IPv4Cidr: req.IPv4Cidr,
+			Subnets: []subnet.TCloudOneSubnetCreateReq{
+				{
+					IPv4Cidr: req.Subnet.IPv4Cidr,
+					Name:     req.Subnet.Name,
+					Zone:     req.Subnet.Zone,
+				},
+			},
 		},
 	}
 }

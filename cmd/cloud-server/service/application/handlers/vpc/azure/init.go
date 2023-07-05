@@ -21,7 +21,7 @@ package azure
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers"
-	proto "hcm/pkg/api/cloud-server/application"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -29,12 +29,12 @@ import (
 type ApplicationOfCreateAzureVpc struct {
 	handlers.BaseApplicationHandler
 
-	req *proto.AzureVpcCreateReq
+	req *csvpc.AzureVpcCreateReq
 }
 
 // NewApplicationOfCreateAzureVpc ...
 func NewApplicationOfCreateAzureVpc(
-	opt *handlers.HandlerOption, req *proto.AzureVpcCreateReq,
+	opt *handlers.HandlerOption, req *csvpc.AzureVpcCreateReq,
 ) *ApplicationOfCreateAzureVpc {
 	return &ApplicationOfCreateAzureVpc{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.Azure),

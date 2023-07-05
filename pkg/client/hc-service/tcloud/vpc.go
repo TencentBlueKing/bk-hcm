@@ -24,8 +24,8 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
-	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/api/hc-service/sync"
+	hcservice "hcm/pkg/api/hc-service/vpc"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )

@@ -21,8 +21,7 @@ package aws
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
-	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/api/hc-service/subnet"
+	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -32,7 +31,7 @@ func (a *ApplicationOfCreateAwsVpc) Deliver() (enumor.ApplicationStatus, map[str
 	result, err := a.Client.HCService().Aws.Vpc.Create(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		a.toHcProtoVpcCreateReq(),
+		common.ConvAwsVpcCreateReq(a.req),
 	)
 	if err != nil || result == nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
@@ -91,22 +90,3 @@ func (a *ApplicationOfCreateAwsVpc) Deliver() (enumor.ApplicationStatus, map[str
 	return enumor.Completed, map[string]interface{}{"vpc_id": result.ID}, nil
 }
 
-func (a *ApplicationOfCreateAwsVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreateReq[hcproto.AwsVpcCreateExt] {
-	req := a.req
-	return &hcproto.VpcCreateReq[hcproto.AwsVpcCreateExt]{
-		BaseVpcCreateReq: &hcproto.BaseVpcCreateReq{
-			AccountID: req.AccountID,
-			Name:      req.Name,
-			Category:  enumor.BizVpcCategory,
-			Memo:      req.Memo,
-			BkCloudID: req.BkCloudID,
-			BkBizID:   req.BkBizID,
-		},
-		Extension: &hcproto.AwsVpcCreateExt{
-			Region:          req.Region,
-			IPv4Cidr:        req.IPv4Cidr,
-			InstanceTenancy: req.InstanceTenancy,
-			Subnets:         []subnet.SubnetCreateReq[subnet.AwsSubnetCreateExt]{},
-		},
-	}
-}

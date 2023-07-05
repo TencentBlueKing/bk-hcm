@@ -21,8 +21,7 @@ package huawei
 
 import (
 	"hcm/cmd/cloud-server/service/application/handlers/vpc/logics"
-	hcproto "hcm/pkg/api/hc-service"
-	"hcm/pkg/api/hc-service/subnet"
+	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -32,7 +31,7 @@ func (a *ApplicationOfCreateHuaWeiVpc) Deliver() (enumor.ApplicationStatus, map[
 	result, err := a.Client.HCService().HuaWei.Vpc.Create(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
-		a.toHcProtoVpcCreateReq(),
+		common.ConvHuaWeiVpcCreateReq(a.req),
 	)
 	if err != nil || result == nil {
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
@@ -90,39 +89,4 @@ func (a *ApplicationOfCreateHuaWeiVpc) Deliver() (enumor.ApplicationStatus, map[
 	}
 
 	return enumor.Completed, map[string]interface{}{"vpc_id": result.ID}, nil
-}
-
-func (a *ApplicationOfCreateHuaWeiVpc) toHcProtoVpcCreateReq() *hcproto.VpcCreateReq[hcproto.HuaWeiVpcCreateExt] {
-	req := a.req
-
-	return &hcproto.VpcCreateReq[hcproto.HuaWeiVpcCreateExt]{
-		BaseVpcCreateReq: &hcproto.BaseVpcCreateReq{
-			AccountID: req.AccountID,
-			Name:      req.Name,
-			Category:  enumor.BizVpcCategory,
-			Memo:      req.Memo,
-			BkCloudID: req.BkCloudID,
-			BkBizID:   req.BkBizID,
-		},
-		Extension: &hcproto.HuaWeiVpcCreateExt{
-			Region:   req.Region,
-			IPv4Cidr: req.IPv4Cidr,
-			Subnets: []subnet.SubnetCreateReq[subnet.HuaWeiSubnetCreateExt]{
-				{
-					BaseSubnetCreateReq: &subnet.BaseSubnetCreateReq{
-						AccountID: req.AccountID,
-						Name:      req.Subnet.Name,
-						Memo:      req.Memo,
-						BkBizID:   req.BkBizID,
-					},
-					Extension: &subnet.HuaWeiSubnetCreateExt{
-						Region:     req.Region,
-						IPv4Cidr:   req.Subnet.IPv4Cidr,
-						Ipv6Enable: *req.Subnet.IPv6Enable,
-						GatewayIp:  req.Subnet.GatewayIP,
-					},
-				},
-			},
-		},
-	}
 }

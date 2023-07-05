@@ -20,7 +20,7 @@
 package tcloud
 
 import (
-	proto "hcm/pkg/api/cloud-server/application"
+	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/esb/itsm"
 )
@@ -35,7 +35,7 @@ func (a *ApplicationOfCreateTCloudVpc) PrepareReq() error {
 func (a *ApplicationOfCreateTCloudVpc) GenerateApplicationContent() interface{} {
 	// 需要将Vendor也存储进去
 	return &struct {
-		*proto.TCloudVpcCreateReq `json:",inline"`
+		*csvpc.TCloudVpcCreateReq `json:",inline"`
 		Vendor                    enumor.Vendor `json:"vendor"`
 	}{
 		TCloudVpcCreateReq: a.req,
