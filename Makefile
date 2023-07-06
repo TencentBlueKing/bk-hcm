@@ -24,18 +24,22 @@ include ./scripts/makefile/uname.mk
 
 default: all
 
+# 创建编译文件存储目录
 pre:
 	@echo -e "\e[34;1mBuilding...\n\033[0m"
 	mkdir -p ${OUTPUT_DIR}
 
+# 本地测试前后端编译
 all: pre ui server
 	@cd ${PRO_DIR}/cmd && make
 	@echo -e "\e[34;1mBuild All Success!\n\033[0m"
 
+# 后端本地测试编译
 server: pre
 	@cd ${PRO_DIR}/cmd && make
 	@echo -e "\e[34;1mBuild Server Success!\n\033[0m"
 
+# 二进制出包编译
 package: pre ui api ver
 	@echo -e "\e[34;1mPackaging...\n\033[0m"
 	@mkdir -p ${OUTPUT_DIR}/bin
@@ -46,6 +50,7 @@ package: pre ui api ver
 	@cd ${PRO_DIR}/cmd && make package
 	@echo -e "\e[34;1mPackage All Success!\n\033[0m"
 
+# 容器化编译
 docker: pre ui ver
 	@echo -e "\e[34;1mMake Dockering...\n\033[0m"
 	@cp -rf ${PRO_DIR}/docs/support-file/docker/* ${OUTPUT_DIR}/
@@ -54,12 +59,14 @@ docker: pre ui ver
 	@cd ${PRO_DIR}/cmd && make docker
 	@echo -e "\e[34;1mMake Docker All Success!\n\033[0m"
 
+# 编译前端
 ui: pre
 	@echo -e "\e[34;1mBuilding Front...\033[0m"
 	@cd ${PRO_DIR}/front && npm i && npm run build
 	@mv ${PRO_DIR}/front/dist ${OUTPUT_DIR}/front
 	@echo -e "\e[34;1mBuild Front Success!\n\033[0m"
 
+# 添加Api文档到编译文件中
 api: pre
 	@echo -e "\e[34;1mPackaging API Docs...\033[0m"
 	@mkdir -p ${OUTPUT_DIR}/api/
@@ -68,17 +75,17 @@ api: pre
 	@tar -czf ${OUTPUT_DIR}/api/api-server/zh.tgz -C docs/api-docs/api-server/docs zh
 	@echo -e "\e[34;1mPackaging API Docs Done\n\033[0m"
 
+# 添加版本信息到编译文件中
 ver: pre
 	@echo ${VERSION} > ${OUTPUT_DIR}/VERSION
 	@cp -rf ${PRO_DIR}/CHANGELOG.md ${OUTPUT_DIR}
 
+# 清理编译文件
 clean:
 	@cd ${PRO_DIR}/cmd && make clean
 	@rm -rf ${PRO_DIR}/build
 
+# 初始化下载项目开发依赖工具
 init-tools:
-	# for golangci-lint
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-lint:
-	golangci-lint run
+	# 前端代码检查依赖工具下载
+	curl -o- -L https://yarnpkg.com/install.sh | bash
