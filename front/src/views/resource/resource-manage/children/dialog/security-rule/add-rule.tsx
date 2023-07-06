@@ -179,9 +179,7 @@ export default defineComponent({
               ))}
             </Select>
           ) : (
-            <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress} disabled={
-              props.isEdit
-            }>
+            <Select clearable={false} class='input-prefix-select' v-model={data.sourceAddress} disabled={props.isEdit}>
               {securityGroupSource.value.map(ele => (
                 <Option value={ele.id} label={ele.name} key={ele.id} />
               ))}
@@ -194,22 +192,22 @@ export default defineComponent({
         <div class={'security-group-select'}>
           {prefix()}
           <Select v-model={data[key]}>
-            {
-              props.relatedSecurityGroups.map((securityGroup: {
-                cloud_id: string | number | symbol;
-                name: string;
-              }) => (
-                <Option value={securityGroup.cloud_id} label={securityGroup.name} key={securityGroup.cloud_id}/>
-              ))
-            }
+            {props.relatedSecurityGroups.map((securityGroup: { cloud_id: string | number | symbol; name: string }) => (
+              <Option value={securityGroup.cloud_id} label={securityGroup.name} key={securityGroup.cloud_id} />
+            ))}
           </Select>
         </div>
       ) : (
-        <Input class=' input-select-warp' placeholder='请输入' v-model={data[key]} onChange={(val: string) => {
-          if (['all', 'ALL'].includes(val.trim())) {
-            data[key] = translateAll(data.sourceAddress);
-          }
-        }}>
+        <Input
+          class=' input-select-warp'
+          placeholder='请输入'
+          v-model={data[key]}
+          onChange={(val: string) => {
+            if (['all', 'ALL'].includes(val.trim())) {
+              data[key] = translateAll(data.sourceAddress);
+            }
+          }}
+          disabled={data.protocol === 'icmpv6' && data.sourceAddress === 'ipv4_cidr'}>
           {{
             prefix,
           }}
