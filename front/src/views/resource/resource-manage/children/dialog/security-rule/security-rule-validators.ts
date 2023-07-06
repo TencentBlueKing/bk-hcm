@@ -1,7 +1,6 @@
 import { parse, parseCIDR, IPv4, isValid } from 'ipaddr.js';
 import { SecurityRule } from './add-rule';
 import { VendorEnum } from '@/common/constant';
-const { isValidFourPartDecimal } = IPv4;
 
 export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) => {
   return {
@@ -61,22 +60,20 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
         message: '请填写对应合法的 IP, 注意区分 IPV4 与 IPV6',
         validator: (val: string) => {
           if (['ipv6_cidr', 'ipv4_cidr'].includes(val)) {
-            return isValidIpCidr(data[val], true);
+            const ipType = validateIpCidr(data[val]);
+            if (ipType === IpType.invalid) return false;
+            if (ipType === IpType.ipv4 && val !== 'ipv4_cidr') return false;
+            if (ipType === IpType.ipv6 && val !== 'ipv6_cidr') return false;
           }
           return true;
         },
       },
       {
         trigger: 'blur',
-        message: '仅支持 CIDR',
+        message: '填写对应合法的 IP CIDR (必须带子网掩码), 注意区分 IPV4 与 IPV6',
         validator: (val: string) => {
           if (vendor === VendorEnum.AWS) {
-            const ip = data[val].trim();
-            try {
-              parseCIDR(ip);
-            } catch (err) {
-              return false;
-            }
+            return validateIpCidr(data[val]) === IpType.cidr;
           }
           return true;
         },
@@ -86,7 +83,7 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
         message: '请填写合法的 IP',
         validator: (val: string) => {
           if (['remote_ip_prefix', 'source_address_prefix'].includes(val)) {
-            return isValidIpCidr(data[val], false);
+            return validateIpCidr(data[val]) !== IpType.invalid;
           }
           return true;
         },
@@ -105,7 +102,7 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
         message: '请填写合法的 IP',
         validator: (val: string) => {
           if (['destination_address_prefix'].includes(val)) {
-            return isValidIpCidr(data[val], false);
+            return validateIpCidr(data[val]) !== IpType.invalid;
           }
           return true;
         },
@@ -160,23 +157,28 @@ export const isPortAvailable = (val: string | number) => {
 
 /**
  * 检查是否合法的 IP CIDR
- * @param val IP CIDR
- * @param hasVersion 是否区分IPV4与IPV6
- * @returns boolean
+ * @param ip IP CIDR
+ * @returns ip 类型，不合法则返回 'invalid'
  */
-export const isValidIpCidr = (val: string, hasVersion: boolean) => {
-  const ip = val.trim();
+export const validateIpCidr = (ip: string): IpType => {
+  ip = ip.trim();
   if (isValid(ip)) {
-    const ipType = parse(ip).kind();
-    if (hasVersion) {
-      return (ipType === 'ipv4' && val === 'ipv4_cidr' && isValidFourPartDecimal(ip)) || (ipType === 'ipv6' && val === 'ipv6_cidr');
-    }
-    return (ipType === 'ipv4' && isValidFourPartDecimal(ip)) || ipType === 'ipv6';
+    const type = parse(ip).kind();
+    if (type === IpType.ipv4 && IPv4.isValidFourPartDecimal(ip)) return IpType.ipv4;
+    if (type ===  IpType.ipv6) return IpType.ipv6;
+    return IpType.invalid;
   }
   try {
     parseCIDR(ip);
   } catch (err) {
-    return false;
+    return IpType.invalid;
   }
-  return true;
+  return IpType.cidr;
+};
+
+export enum IpType {
+  invalid = 'invalid',
+  ipv4 = 'ipv4',
+  ipv6 = 'ipv6',
+  cidr = 'cidr',
 };
