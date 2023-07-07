@@ -656,10 +656,16 @@ export default defineComponent({
             isEdit: false,
             component() {
               // eslint-disable-next-line max-len
-              return (<RenderDetailEdit v-model={projectModel.name}
-                fromPlaceholder={t('请输入名称')} fromKey={this.property}
-                hideEdit={!!isDetail.value}
-               isEdit={this.isEdit} onBlur={handleblur}/>);
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.name}
+                  fromPlaceholder={t('请输入名称')}
+                  fromKey={this.property}
+                  hideEdit={!!isDetail.value}
+                  isEdit={this.isEdit}
+                  onBlur={handleblur}
+                />
+              );
             },
           },
           {
@@ -668,15 +674,28 @@ export default defineComponent({
             property: 'managers',
             isEdit: false,
             component() {
-              return (<RenderDetailEdit v-model={projectModel.managers} fromKey={this.property} fromType="member"
-              hideEdit={!!isDetail.value} isEdit={this.isEdit} onBlur={handleblur}/>);
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.managers}
+                  fromKey={this.property}
+                  fromType='member'
+                  hideEdit={!!isDetail.value}
+                  isEdit={this.isEdit}
+                  onBlur={handleblur}
+                />
+              );
             },
           },
           {
             label: t('余额'),
             required: false,
             property: 'price',
-            component: () => <span>{projectModel?.price || '--'}{projectModel.price_unit}</span>,
+            component: () => (
+              <span>
+                {projectModel?.price || '--'}
+                {projectModel.price_unit}
+              </span>
+            ),
           },
           {
             label: t('站点类型'),
@@ -715,8 +734,16 @@ export default defineComponent({
             isEdit: false,
             component() {
               // eslint-disable-next-line max-len
-              return (<RenderDetailEdit v-model={projectModel.memo} fromKey={this.property} fromType="textarea"
-              hideEdit={!!isDetail.value} isEdit={this.isEdit} onBlur={handleblur}/>);
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.memo}
+                  fromKey={this.property}
+                  fromType='textarea'
+                  hideEdit={!!isDetail.value}
+                  isEdit={this.isEdit}
+                  onBlur={handleblur}
+                />
+              );
             },
           },
         ],
@@ -733,14 +760,22 @@ export default defineComponent({
               // eslint-disable-next-line max-len
               // onBlur={handleblur}
               // onChange={handleBizChange}
-              return (<RenderDetailEdit v-model={projectModel.bizIds} fromKey={this.property} hideEdit={true}
-                selectData={businessList.list} fromType="select" isEdit={this.isEdit} onChange={handleBizChange} />);
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.bizIds}
+                  fromKey={this.property}
+                  hideEdit={true}
+                  selectData={businessList.list}
+                  fromType='select'
+                  isEdit={this.isEdit}
+                  onChange={handleBizChange}
+                />
+              );
               // <span>{SiteType[projectModel.bizIds]}</span>
             },
           },
         ],
       },
-
     ]);
 
     // const dialogForm = reactive([
