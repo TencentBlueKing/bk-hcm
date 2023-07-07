@@ -224,10 +224,9 @@ getCloudAreas();
     <section
       class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
-
+      <slot></slot>
       <HostOperations :selections="selections"></HostOperations>
 
-      <slot></slot>
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
           class="w500 ml10 mr15"
