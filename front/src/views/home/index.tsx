@@ -86,7 +86,7 @@ export default defineComponent({
           topMenuActiveItem = 'business';
           menus = reactive(business);
           path = '/business/host';
-          accountStore.updateBizsId(useBusinessMapStore().businessList?.[0]?.id);
+          if (!accountStore.bizs) accountStore.updateBizsId(useBusinessMapStore().businessList?.[0]?.id);
           getBusinessList();    // 业务下需要获取业务列表
           break;
         case 'resource':
