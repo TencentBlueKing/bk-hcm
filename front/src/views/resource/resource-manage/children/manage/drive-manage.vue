@@ -155,6 +155,16 @@ const {
 } = useSelection();
 
 const {
+  datas,
+  pagination,
+  isLoading,
+  handlePageChange,
+  handlePageSizeChange,
+  handleSort,
+  triggerApi,
+} = useQueryList({ filter: filter.value }, 'disks');
+
+const {
   handleShowDelete,
   DeleteDialog,
 } = useDelete(
@@ -163,16 +173,10 @@ const {
   'disks',
   t('删除硬盘'),
   true,
+  triggerApi,
 );
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-} = useQueryList({ filter: filter.value }, 'disks');
+
 </script>
 
 <template>

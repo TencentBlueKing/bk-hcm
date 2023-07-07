@@ -72,6 +72,7 @@ const {
   handlePageChange,
   handlePageSizeChange,
   handleSort,
+  triggerApi,
 } = useQueryList({ filter: filter.value }, 'cvms');
 
 const {
@@ -225,7 +226,7 @@ getCloudAreas();
       class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot></slot>
-      <HostOperations :selections="selections"></HostOperations>
+      <HostOperations :selections="selections" :on-finished="triggerApi"></HostOperations>
 
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
