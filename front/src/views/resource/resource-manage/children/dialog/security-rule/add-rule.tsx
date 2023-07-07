@@ -188,7 +188,7 @@ export default defineComponent({
         </>
       );
 
-      return ['cloud_target_security_group_id', 'cloud_source_security_group_ids'].includes(key) ? (
+      return ['cloud_target_security_group_id', 'cloud_source_security_group_ids', 'cloud_remote_group_id'].includes(key) ? (
         <div class={'security-group-select'}>
           {prefix()}
           <Select v-model={data[key]}>
