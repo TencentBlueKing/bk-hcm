@@ -43,6 +43,9 @@ export default defineComponent({
     selections: {
       type: Array as PropType<Array<{ status: string }>>,
     },
+    onFinished: {
+      type: Function as PropType<() => void>,
+    },
   },
   setup(props) {
     const operationType = ref<Operations>(Operations.None);
@@ -207,6 +210,7 @@ export default defineComponent({
       } finally {
         isLoading.value = false;
         operationType.value = Operations.None;
+        props.onFinished();
       }
     };
 

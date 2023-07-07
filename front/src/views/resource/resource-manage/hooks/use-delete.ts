@@ -23,7 +23,7 @@ export default (
   type: string,
   title: string,
   isBatch?: boolean,
-  cb?: Function,
+  onFinishedCallback?: () => void,
 ) => {
   const resourceStore = useResourceStore();
 
@@ -47,7 +47,9 @@ export default (
   watch(
     () => isShow.value,
     () => {
-      data.value = data.value.filter((selection: { id: number; }) => deleteIds.value.includes(selection.id));
+      data.value = data.value.filter((selection: {
+        id: number
+      }) => (deleteIds.value as unknown as Array<number>).includes(selection.id));
     },
   );
 
@@ -64,7 +66,7 @@ export default (
             theme: 'success',
             message: t('删除成功'),
           });
-          cb?.(); // 删除数据回调列表接口
+          onFinishedCallback?.(); // 删除数据回调列表接口
         })
         .catch((err: any) => {
           Message({
