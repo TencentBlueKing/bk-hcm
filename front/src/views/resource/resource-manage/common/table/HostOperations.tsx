@@ -75,37 +75,36 @@ export default defineComponent({
       return OperationsMap[operationType.value];
     });
 
+    /**
+     * 仅开机状态的主机能：关机、重启、回收
+     * 仅关机状态的主机能：开机、回收
+     */
     watch(
       () => operationType.value,
       () => {
         if (operationType.value === Operations.None) return;
 
-        const canRunHosts = [];
-        const canRebootHosts = [];
-        const canShutDownHosts = [];
+        const runningHosts = [];
+        const shutdownHosts = [];
 
         for (const host of props.selections) {
           const { status } = host;
-          if (!HOST_RUNNING_STATUS.includes(status)) canRunHosts.push(host);
-          if (!HOST_REBOOT_STATUS.includes(status)) canRebootHosts.push(host);
-          if (!HOST_SHUTDOWN_STATUS.includes(status)) canShutDownHosts.push(host);
+          if (HOST_RUNNING_STATUS.includes(status)) runningHosts.push(host);
+          if (HOST_SHUTDOWN_STATUS.includes(status)) shutdownHosts.push(host);
         }
 
         switch (operationType.value) {
           case Operations.Open: {
-            targetHost.value = canRunHosts;
+            targetHost.value = shutdownHosts;
             break;
           }
-          case Operations.Close: {
-            targetHost.value = canShutDownHosts;
-            break;
-          }
+          case Operations.Close:
           case Operations.Reboot: {
-            targetHost.value = canShutDownHosts;
+            targetHost.value = runningHosts;
             break;
           }
           case Operations.Recycle: {
-            targetHost.value = canRebootHosts;
+            targetHost.value = [...runningHosts, ...shutdownHosts];
           }
         }
         isConfirmDisabled.value = targetHost.value.length === 0;
@@ -123,9 +122,12 @@ export default defineComponent({
           break;
         }
         case Operations.Close:
-        case Operations.Reboot:
-        case Operations.Recycle: {
+        case Operations.Reboot: {
           oppositeOperationName = OperationsMap[Operations.Open];
+          break;
+        }
+        case Operations.Recycle: {
+          oppositeOperationName = `${OperationsMap[Operations.Open]}、${OperationsMap[Operations.Close]}`;
           break;
         }
       }
@@ -143,14 +145,15 @@ export default defineComponent({
             </span>
           </p>
         );
-      } if (targetHostsNum === allHostsNum) {
+      }
+      if (targetHostsNum === allHostsNum) {
         return (
           <p>
             您已选择了 {allHostsNum} 台主机进行
             {targetOperationName}操作,本次操作将对
             <span class={'host_operations_blue_txt'}> {allHostsNum} </span>
             台处于{oppositeOperationName}
-            状态的进行{targetOperationName}操作。
+            状态的主机进行{targetOperationName}操作。
             <br />
             <span class={'host_operations_red_txt'}>
               请确认您所选择的目标是正确的，该操作将对主机进行
@@ -158,20 +161,15 @@ export default defineComponent({
             </span>
           </p>
         );
-      } if (allHostsNum > targetHostsNum) {
+      }
+      if (allHostsNum > targetHostsNum) {
         return (
           <p>
             您已选择了 {allHostsNum} 台主机进行
-            {targetOperationName}操作，其中
-            <span class={'host_operations_blue_txt'}>
-              {' '}
-              {allHostsNum - targetHostsNum}{' '}
-            </span>
-            台是已{computedPreviousOperationType.value}
-            的，不支持对其操作。本次操作，将对
+            {targetOperationName}。本次操作将对
             <span class={'host_operations_blue_txt'}> {targetHostsNum} </span>
-            台处于{oppositeOperationName}状态的进行
-            {targetOperationName}操作。
+            台处于{oppositeOperationName}状态的主机进行
+            {targetOperationName}，其余主机的状态不支持{targetOperationName}。
             <br />
             <span class={'host_operations_red_txt'}>
               请确认您所选择的目标是正确的,该操作将对主机进行
@@ -191,9 +189,7 @@ export default defineComponent({
           theme: 'warning',
         });
         if (operationType.value === Operations.Recycle) {
-          const hostIds = targetHost.value.map(v => ({ id: v.id })) as Array<
-          Record<string, string>
-          >;
+          const hostIds = targetHost.value.map(v => ({ id: v.id })) as Array<Record<string, string>>;
           await resourceStore.recycledCvmsData({ infos: hostIds });
         } else {
           const hostIds = targetHost.value.map(v => v.id);
