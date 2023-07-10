@@ -152,14 +152,14 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 		createRules = append(createRules, *rule)
 	}
 
-	if len(updateRules) != 0 {
-		if err = cli.updateSGRule(kt, sg.ID, updateRules); err != nil {
+	if len(deleteRuleIDs) != 0 {
+		if err = cli.deleteSGRule(kt, sg.ID, deleteRuleIDs); err != nil {
 			return nil, err
 		}
 	}
 
-	if len(deleteRuleIDs) != 0 {
-		if err = cli.deleteSGRule(kt, sg.ID, deleteRuleIDs); err != nil {
+	if len(updateRules) != 0 {
+		if err = cli.updateSGRule(kt, sg.ID, updateRules); err != nil {
 			return nil, err
 		}
 	}
@@ -262,8 +262,8 @@ func (cli *client) updateSGRule(kt *kit.Kit, sgID string, updateRules map[string
 		Rules: rules,
 	}
 	if err := cli.dbCli.TCloud.SecurityGroup.BatchUpdateSecurityGroupRule(kt.Ctx, kt.Header(), req, sgID); err != nil {
-		logs.Errorf("[%s] request dataservice to batch update tcloud security group rule failed, err: %v, rid: %s", enumor.TCloud,
-			err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch update tcloud security group rule failed, err: %v, rid: %s",
+			enumor.TCloud, err, kt.Rid)
 		return err
 	}
 

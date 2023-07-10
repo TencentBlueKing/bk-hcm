@@ -75,6 +75,12 @@ func (cli *client) NetworkInterface(kt *kit.Kit, params *SyncBaseParams, opt *Sy
 	addNetworkInterface, updateMap, delCloudIDs := common.Diff[typesni.AzureNI,
 		coreni.NetworkInterface[coreni.AzureNIExtension]](niFromCloud, niFromDB, isNIChange)
 
+	if len(delCloudIDs) > 0 {
+		if err = cli.deleteNetworkInterface(kt, params.AccountID, params.ResourceGroupName, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addNetworkInterface) > 0 {
 		if err = cli.createNetworkInterface(kt, params.AccountID, params.ResourceGroupName,
 			addNetworkInterface); err != nil {
@@ -84,12 +90,6 @@ func (cli *client) NetworkInterface(kt *kit.Kit, params *SyncBaseParams, opt *Sy
 
 	if len(updateMap) > 0 {
 		if err = cli.updateNetworkInterface(kt, params.AccountID, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err = cli.deleteNetworkInterface(kt, params.AccountID, params.ResourceGroupName, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

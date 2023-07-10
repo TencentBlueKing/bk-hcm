@@ -73,6 +73,12 @@ func (cli *client) Vpc(kt *kit.Kit, params *SyncBaseParams, opt *SyncVpcOption) 
 	addVpc, updateMap, delCloudIDs := common.Diff[types.AzureVpc, cloudcore.Vpc[cloudcore.AzureVpcExtension]](
 		vpcFromCloud, vpcFromDB, isVpcChange)
 
+	if len(delCloudIDs) > 0 {
+		if err = cli.deleteVpc(kt, params.AccountID, params.ResourceGroupName, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addVpc) > 0 {
 		if err = cli.createVpc(kt, params.AccountID, addVpc); err != nil {
 			return nil, err
@@ -81,12 +87,6 @@ func (cli *client) Vpc(kt *kit.Kit, params *SyncBaseParams, opt *SyncVpcOption) 
 
 	if len(updateMap) > 0 {
 		if err = cli.updateVpc(kt, params.AccountID, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err = cli.deleteVpc(kt, params.AccountID, params.ResourceGroupName, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

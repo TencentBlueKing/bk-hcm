@@ -118,6 +118,12 @@ func (cli *client) syncNetworkInterface(kt *kit.Kit, opt *syncNIOption) (*SyncRe
 	addSlice, updateMap, delCloudIDs := common.Diff[typesni.GcpNI, coreni.
 		NetworkInterface[coreni.GcpNIExtension]](networkInterfaceFromCloud, networkInterfaceFromDB, isNIChange)
 
+	if len(delCloudIDs) > 0 {
+		if err = cli.deleteNetworkInterface(kt, delCloudIDs, opt); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createNetworkInterface(kt, opt.AccountID, cvm, addSlice); err != nil {
 			return nil, err
@@ -126,12 +132,6 @@ func (cli *client) syncNetworkInterface(kt *kit.Kit, opt *syncNIOption) (*SyncRe
 
 	if len(updateMap) > 0 {
 		if err = cli.updateNetworkInterface(kt, opt.AccountID, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err = cli.deleteNetworkInterface(kt, delCloudIDs, opt); err != nil {
 			return nil, err
 		}
 	}

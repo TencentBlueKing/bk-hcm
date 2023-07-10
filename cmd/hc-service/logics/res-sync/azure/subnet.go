@@ -74,6 +74,13 @@ func (cli *client) Subnet(kt *kit.Kit, params *SyncBaseParams, opt *SyncSubnetOp
 	addSubnet, updateMap, delCloudIDs := common.Diff[types.AzureSubnet,
 		cloudcore.Subnet[cloudcore.AzureSubnetExtension]](subnetFromCloud, subnetFromDB, isSubnetChange)
 
+	if len(delCloudIDs) > 0 {
+		if err = cli.deleteSubnet(kt, params.AccountID, params.ResourceGroupName, opt.CloudVpcID,
+			delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSubnet) > 0 {
 		if err = cli.createSubnet(kt, params.AccountID, params.ResourceGroupName, opt.CloudVpcID,
 			addSubnet); err != nil {
@@ -83,13 +90,6 @@ func (cli *client) Subnet(kt *kit.Kit, params *SyncBaseParams, opt *SyncSubnetOp
 
 	if len(updateMap) > 0 {
 		if err = cli.updateSubnet(kt, params.AccountID, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err = cli.deleteSubnet(kt, params.AccountID, params.ResourceGroupName, opt.CloudVpcID,
-			delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

@@ -126,6 +126,13 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 	addSlice, updateMap, delCloudIDs := common.Diff[securitygrouprule.AwsSGRule,
 		corecloud.AwsSecurityGroupRule](sgRuleFromCloud, sgRuleFromDB, isSGRuleChange)
 
+	if len(delCloudIDs) > 0 {
+		err := cli.deleteSGRule(kt, opt, delCloudIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		err := cli.createSGRule(kt, opt, addSlice)
 		if err != nil {
@@ -135,13 +142,6 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 
 	if len(updateMap) > 0 {
 		err := cli.updateSGRule(kt, opt, updateMap)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		err := cli.deleteSGRule(kt, opt, delCloudIDs)
 		if err != nil {
 			return nil, err
 		}

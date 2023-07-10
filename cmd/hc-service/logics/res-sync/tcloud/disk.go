@@ -71,6 +71,12 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	addSlice, updateMap, delCloudIDs := common.Diff[typesdisk.TCloudDisk, *disk.DiskExtResult[disk.TCloudDiskExtensionResult]](
 		diskFromCloud, diskFromDB, isDiskChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteDisk(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createDisk(kt, params.AccountID, params.Region, addSlice); err != nil {
 			return nil, err
@@ -79,12 +85,6 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 
 	if len(updateMap) > 0 {
 		if err = cli.updateDisk(kt, params.AccountID, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteDisk(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

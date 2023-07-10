@@ -72,6 +72,12 @@ func (cli *client) ResourceGroup(kt *kit.Kit, opt *SyncRGOption) (*SyncResult, e
 	addSlice, updateMap, delCloudIDs := common.Diff[typesrg.AzureResourceGroup, corerg.AzureRG](
 		resourcegroupFromCloud, resourcegroupFromDB, isResourceGroupChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteResourceGroup(kt, opt, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createResourceGroup(kt, opt, addSlice); err != nil {
 			return nil, err
@@ -80,12 +86,6 @@ func (cli *client) ResourceGroup(kt *kit.Kit, opt *SyncRGOption) (*SyncResult, e
 
 	if len(updateMap) > 0 {
 		if err = cli.updateResourceGroup(kt, opt, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteResourceGroup(kt, opt, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

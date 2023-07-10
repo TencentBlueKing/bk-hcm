@@ -75,6 +75,12 @@ func (cli *client) Image(kt *kit.Kit, opt *SyncImageOption) (*SyncResult, error)
 	addSlice, updateMap, delCloudIDs := common.Diff[typesimage.AzureImage, dateimage.ImageExtResult[dateimage.AzureImageExtensionResult]](
 		imageFromCloud, imageFromDB, isImageChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteImage(kt, opt, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createImage(kt, opt, addSlice); err != nil {
 			return nil, err
@@ -83,12 +89,6 @@ func (cli *client) Image(kt *kit.Kit, opt *SyncImageOption) (*SyncResult, error)
 
 	if len(updateMap) > 0 {
 		if err = cli.updateImage(kt, opt, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteImage(kt, opt, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

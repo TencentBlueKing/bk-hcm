@@ -40,7 +40,7 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-// SyncSGOption ...
+// SyncFirewallOption ...
 type SyncFirewallOption struct {
 }
 
@@ -71,6 +71,12 @@ func (cli *client) Firewall(kt *kit.Kit, params *SyncBaseParams, opt *SyncFirewa
 	addSlice, updateMap, delCloudIDs := common.Diff[firewallrule.GcpFirewall, cloudcore.GcpFirewallRule](
 		firewallFromCloud, firewallFromDB, isFirewallChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteFirewall(kt, params.AccountID, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createFirewall(kt, params.AccountID, addSlice); err != nil {
 			return nil, err
@@ -79,12 +85,6 @@ func (cli *client) Firewall(kt *kit.Kit, params *SyncBaseParams, opt *SyncFirewa
 
 	if len(updateMap) > 0 {
 		if err = cli.updateFirewall(kt, params.AccountID, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteFirewall(kt, params.AccountID, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}
