@@ -71,6 +71,12 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 	addSlice, updateMap, delCloudIDs := common.Diff[securitygroup.HuaWeiSG,
 		cloudcore.SecurityGroup[cloudcore.HuaWeiSecurityGroupExtension]](sgFromCloud, sgFromDB, isSGChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteSG(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		_, err := cli.createSG(kt, params.AccountID, params.Region, addSlice)
 		if err != nil {
@@ -80,12 +86,6 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 
 	if len(updateMap) > 0 {
 		if err = cli.updateSG(kt, params.AccountID, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteSG(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

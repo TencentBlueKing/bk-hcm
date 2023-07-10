@@ -72,6 +72,12 @@ func (cli *client) Image(kt *kit.Kit, params *SyncBaseParams, opt *SyncImageOpti
 	addSlice, updateMap, delCloudIDs := common.Diff[typesimage.AwsImage, dateimage.ImageExtResult[dateimage.AwsImageExtensionResult]](
 		imageFromCloud, imageFromDB, isImageChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteImage(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createImage(kt, params.AccountID, params.Region, addSlice); err != nil {
 			return nil, err
@@ -80,12 +86,6 @@ func (cli *client) Image(kt *kit.Kit, params *SyncBaseParams, opt *SyncImageOpti
 
 	if len(updateMap) > 0 {
 		if err = cli.updateImage(kt, params.AccountID, params.Region, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteImage(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

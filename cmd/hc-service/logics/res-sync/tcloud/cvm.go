@@ -74,6 +74,12 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 	addSlice, updateMap, delCloudIDs := common.Diff[typescvm.TCloudCvm, corecvm.Cvm[cvm.TCloudCvmExtension]](
 		cvmFromCloud, cvmFromDB, isCvmChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteCvm(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createCvm(kt, params.AccountID, params.Region, addSlice); err != nil {
 			return nil, err
@@ -82,12 +88,6 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 
 	if len(updateMap) > 0 {
 		if err = cli.updateCvm(kt, params.AccountID, params.Region, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteCvm(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

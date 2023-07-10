@@ -76,6 +76,18 @@ func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRout
 
 	subnetMap := make(map[string]dataproto.RouteTableSubnetReq, 0)
 
+	if len(delCloudIDs) > 0 {
+		err = common.CancelRouteTableSubnetRel(kt, cli.dbCli, enumor.TCloud, delCloudIDs)
+		if err != nil {
+			logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
+				enumor.TCloud, delCloudIDs, err)
+			return nil, err
+		}
+		if err = cli.deleteRouteTable(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		addSubnetMap, err := cli.createRouteTable(kt, params.AccountID, params.Region, addSlice)
 		if err != nil {
@@ -93,18 +105,6 @@ func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRout
 		}
 		for k, v := range updateSubnetMap {
 			subnetMap[k] = v
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		err = common.CancelRouteTableSubnetRel(kt, cli.dbCli, enumor.TCloud, delCloudIDs)
-		if err != nil {
-			logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
-				enumor.TCloud, delCloudIDs, err)
-			return nil, err
-		}
-		if err = cli.deleteRouteTable(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
-			return nil, err
 		}
 	}
 

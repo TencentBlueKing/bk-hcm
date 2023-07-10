@@ -74,6 +74,12 @@ func (cli *client) Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error) {
 	addSlice, updateMap, delCloudIDs := common.Diff[typeszone.HuaWeiZone, corezone.BaseZone](
 		zoneFromCloud, zoneFromDB, isZoneChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteZone(kt, opt, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createZone(kt, opt, addSlice); err != nil {
 			return nil, err
@@ -82,12 +88,6 @@ func (cli *client) Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error) {
 
 	if len(updateMap) > 0 {
 		if err = cli.updateZone(kt, opt, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteZone(kt, opt, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

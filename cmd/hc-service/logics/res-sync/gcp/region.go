@@ -75,6 +75,12 @@ func (cli *client) Region(kt *kit.Kit, params *SyncBaseParams, opt *SyncRegionOp
 	addSlice, updateMap, delCloudIDs := common.Diff[typesregion.GcpRegion, cloudcore.GcpRegion](
 		regionFromCloud, regionFromDB, isRegionChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteRegion(kt, params.AccountID, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createRegion(kt, params.AccountID, addSlice); err != nil {
 			return nil, err
@@ -83,12 +89,6 @@ func (cli *client) Region(kt *kit.Kit, params *SyncBaseParams, opt *SyncRegionOp
 
 	if len(updateMap) > 0 {
 		if err = cli.updateRegion(kt, params.AccountID, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteRegion(kt, params.AccountID, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}
