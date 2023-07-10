@@ -32,8 +32,8 @@ const props = defineProps({
     type: Object as PropType<any>,
   },
   whereAmI: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 const resourceStore = useResourceStore();
@@ -42,7 +42,7 @@ const columns = useColumns('subnet');
 const {
   searchData,
   searchValue,
-  filter
+  filter,
 } = useFilter(props);
 
 const {
@@ -66,7 +66,6 @@ const hostSearchData = computed(() => {
     }],
   ];
 });
-
 
 
 const emit = defineEmits(['auth']);
@@ -206,7 +205,7 @@ defineExpose({ fetchComponentsData });
       <slot>
       </slot>
       <bk-search-select
-        class="w500 ml10"
+        class="w500 ml10 search-selector-container"
         clearable
         :conditions="[]"
         :data="hostSearchData"
@@ -238,5 +237,8 @@ defineExpose({ fetchComponentsData });
 }
 .mt20 {
   margin-top: 20px;
+}
+.search-selector-container {
+  margin-left: auto;
 }
 </style>

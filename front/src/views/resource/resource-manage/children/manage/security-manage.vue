@@ -47,8 +47,8 @@ const props = defineProps({
     type: Object as PropType<any>,
   },
   whereAmI: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 // use hooks
@@ -89,7 +89,7 @@ const state = reactive<any>({
 const {
   searchData,
   searchValue,
-  filter
+  filter,
 } = useFilter(props);
 
 const {
@@ -101,7 +101,7 @@ const {
   getList,
 } = useQueryCommonList({
   ...props,
-  filter: filter.value
+  filter: filter.value,
 }, fetchUrl);
 
 const selectSearchData = computed(() => {
@@ -250,8 +250,8 @@ const groupColumns = [
     label: t('地域'),
     field: 'region',
     render: ({ data }: { data: { vendor: VendorEnum; region: string; } }) => {
-      return getRegionName(data.vendor, data.region)
-    }
+      return getRegionName(data.vendor, data.region);
+    },
   },
   {
     label: t('描述'),
@@ -604,11 +604,9 @@ const securityHandleShowDelete = (data: any) => {
       :loading="state.isLoading"
     >
       <section>
-        <slot>
-        </slot>
-
         <section
-          class="flex-row align-items-center justify-content-between mt20">
+          class="flex-row align-items-center mt20">
+          <slot></slot>
           <bk-radio-group
             v-model="activeType"
             :disabled="state.isLoading"
@@ -617,12 +615,13 @@ const securityHandleShowDelete = (data: any) => {
               v-for="item in types"
               :key="item.name"
               :label="item.name"
+              class="ml10"
             >
               {{ item.label }}
             </bk-radio-button>
           </bk-radio-group>
           <bk-search-select
-            class="search-filter ml10"
+            class="search-filter search-selector-container"
             clearable
             :conditions="[]"
             :data="selectSearchData"
@@ -674,5 +673,11 @@ const securityHandleShowDelete = (data: any) => {
 }
 .search-filter {
   width: 500px;
+}
+.search-selector-container {
+  margin-left: auto;
+}
+.ml10 {
+  margin-left: 10px;
 }
 </style>
