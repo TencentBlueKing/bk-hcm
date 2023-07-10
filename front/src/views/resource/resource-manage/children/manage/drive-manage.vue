@@ -171,7 +171,7 @@ const {
   simpleColumns,
   selections,
   'disks',
-  t('删除硬盘'),
+  '回收硬盘',
   true,
   triggerApi,
 );
@@ -196,7 +196,7 @@ const {
           selection => !isDisabledRecycle(selection?.vendor, selection?.status)).map(selection => selection.id)
         )"
       >
-        {{ t('删除') }}
+        {{ t('回收') }}
       </bk-button>
       <div class="flex-row align-items-center justify-content-arround mlauto">
         <bk-search-select
