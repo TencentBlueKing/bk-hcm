@@ -271,7 +271,20 @@ getResourceAccountList();
           @auth="(val: string) => {
             handleAuth(val)
           }"
-        />
+        >
+          <span
+            @click="handleAuth('biz_iaas_resource_create')"
+            v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(activeTab)"
+          >
+            <bk-button
+              theme="primary"
+              class="new-button"
+              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create"
+              @click="handleAdd">
+              新建
+            </bk-button>
+          </span>
+        </component>
       </bk-tab-panel>
     </bk-tab>
 
@@ -315,5 +328,8 @@ getResourceAccountList();
 }
 .search-filter {
   width: 500px;
+}
+.new-button {
+  width: 100px;
 }
 </style>

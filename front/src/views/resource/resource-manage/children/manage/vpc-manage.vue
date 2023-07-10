@@ -35,8 +35,8 @@ const props = defineProps({
     type: Object as PropType<any>,
   },
   whereAmI: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 // use hooks
@@ -48,7 +48,7 @@ const columns = useColumns('vpc');
 const {
   searchData,
   searchValue,
-  filter
+  filter,
 } = useFilter(props);
 const {
   datas,
@@ -80,7 +80,6 @@ const hostSearchData = computed(() => {
     }],
   ];
 });
-
 
 
 const handleDeleteVpc = (data: any) => {
@@ -190,7 +189,7 @@ const renderColumns = [
       <slot>
       </slot>
       <bk-search-select
-        class="w500 ml10"
+        class="w500 ml10 search-selector-container"
         clearable
         :conditions="[]"
         :data="hostSearchData"
@@ -216,5 +215,8 @@ const renderColumns = [
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
+}
+.search-selector-container {
+  margin-left: auto;
 }
 </style>
