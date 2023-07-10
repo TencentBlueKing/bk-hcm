@@ -129,10 +129,14 @@ const renderColumns = [
   },
 ];
 
-const isRowSelectEnable = ({ row }: DoublePlainObject) => {
-  if (!props.isResourcePage) return true;
+/**
+ * 资源下，未绑定 且 未分配 可删除；
+ * 业务下，未绑定 可删除；
+ */
+const isRowSelectEnable = ({ row }: { row: IEip }) => {
+  if (!props.isResourcePage) return canDelete(row);
   if (row.id) {
-    return row.bk_biz_id === -1;
+    return row.bk_biz_id === -1 && canDelete(row);
   }
 };
 
