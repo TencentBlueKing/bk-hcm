@@ -60,9 +60,9 @@ export default (
     let promise;
     switch (operationType) {
       case 'recycle':
-        promise = isBatch
-          ? resourceStore.recyclBatch(type, { record_ids: deleteIds.value })
-          : resourceStore.recycled(type, deleteIds.value);
+        promise = resourceStore.recycled(type, {
+          infos: (deleteIds.value as unknown as Array<number>).map(id => ({ id })),
+        });
         break;
       case 'delete':
       default:

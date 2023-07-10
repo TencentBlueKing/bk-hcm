@@ -94,6 +94,11 @@ const isDisabledRecycle = (vendor: VendorEnum, status: string) => {
   return res;
 };
 
+const unableRecycled = (data: { instance_id: string; vendor: VendorEnum; status: string; }) => {
+  return !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
+    || data.instance_id || isDisabledRecycle(data?.vendor, data?.status);
+};
+
 const renderColumns = [
   ...columns,
   {
@@ -112,8 +117,7 @@ const renderColumns = [
             {
               text: true,
               theme: 'primary',
-              disabled: !props.authVerifyData?.permissionAction[props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate']
-                  || data.instance_id || isDisabledRecycle(data?.vendor, data?.status),
+              disabled: unableRecycled(data),
               onClick() {
                 InfoBox({
                   title: '请确认是否删除',
@@ -177,10 +181,14 @@ const {
   triggerApi,
 );
 
-const isRowSelectEnable = ({ row }: DoublePlainObject) => {
-  if (!props.isResourcePage) return true;
+/**
+ * 资源下，未绑定 且 未分配 可删除；
+ * 业务下，未绑定 可删除；
+ */
+const isRowSelectEnable = ({ row }) => {
+  if (!props.isResourcePage) return !unableRecycled(row);
   if (row.id) {
-    return row.bk_biz_id === -1;
+    return row.bk_biz_id === -1 && !unableRecycled(row);
   }
 };
 
