@@ -173,6 +173,7 @@ const {
   'disks',
   '回收硬盘',
   true,
+  'recycle',
   triggerApi,
 );
 

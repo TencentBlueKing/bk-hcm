@@ -45,7 +45,7 @@ const { selections, handleSelectionChange } = useSelection();
 const {
   handleShowDelete,
   DeleteDialog,
-} = useDelete(columns, selections, 'eips', '删除 EIP', true, triggerApi);
+} = useDelete(columns, selections, 'eips', '删除 EIP', true, 'delete', triggerApi);
 
 // 抛出请求数据的方法，新增成功使用
 const fetchComponentsData = () => {
