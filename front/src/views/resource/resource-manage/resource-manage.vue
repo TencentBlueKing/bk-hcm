@@ -124,6 +124,21 @@ const filterData = (key: string, val: string | number) => {
   }
 };
 
+const handleAdd = () => {
+  // ['host', 'vpc', 'drive', ||| 'security', 'subnet', 'ip']
+  switch (activeTab.value) {
+    case 'host':
+      router.push({ path: '/resource/service-apply/cvm' });
+      break;
+    case 'vpc':
+      router.push({ path: '/resource/service-apply/vpc' });
+      break;
+    case 'drive':
+      router.push({ path: '/resource/service-apply/disk' });
+      break;
+  }
+};
+
 // 搜索数据
 watch(
   () => accountId.value,
