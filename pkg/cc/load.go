@@ -75,6 +75,8 @@ func loadFromFile(filename string) (Setting, error) {
 		s = new(AuthServerSetting)
 	case WebServerName:
 		s = new(WebServerSetting)
+	case TaskServerName:
+		s = new(TaskServerSetting)
 	default:
 		return nil, fmt.Errorf("unknown %s service name", ServiceName())
 	}

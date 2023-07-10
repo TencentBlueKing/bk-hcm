@@ -99,6 +99,25 @@ func CloudServer() CloudServerSetting {
 	return *s
 }
 
+// TaskServer return task server Setting.
+func TaskServer() TaskServerSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty task server setting")
+		return TaskServerSetting{}
+	}
+
+	s, ok := rt.settings.(*TaskServerSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get task server setting", ServiceName())
+		return TaskServerSetting{}
+	}
+
+	return *s
+}
+
 // DataService return data service Setting.
 func DataService() DataServiceSetting {
 	rt.lock.Lock()

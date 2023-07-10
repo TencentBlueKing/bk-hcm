@@ -615,3 +615,18 @@ func (c BillConfig) validate() error {
 
 	return nil
 }
+
+// Async async config
+type Async struct {
+	Queue   string `yaml:"queue"`
+	Broker  string `yaml:"broker"`
+	Backend string `yaml:"backend"`
+}
+
+func (a Async) validate() error {
+	if a.Queue == "" || a.Broker == "" || a.Backend == "" {
+		return errors.New("queue broker backend must be set")
+	}
+
+	return nil
+}
