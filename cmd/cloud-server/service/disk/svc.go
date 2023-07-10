@@ -120,6 +120,7 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 		diskIDs[idx] = diskData.ID
 	}
 
+	// list disk cvm rel
 	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
@@ -152,6 +153,91 @@ func (svc *diskSvc) listDisk(cts *rest.Contexts, authHandler handler.ListAuthRes
 	}
 
 	return &cloudproto.DiskListResult{Details: details, Count: resp.Count}, nil
+}
+
+// BatchDeleteDisk 批量删除云盘.
+func (svc *diskSvc) BatchDeleteDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteEip(cts, handler.ResValidWithAuth)
+}
+
+// BatchDeleteBizDisk 批量删除业务下的云盘.
+func (svc *diskSvc) BatchDeleteBizDisk(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchDeleteEip(cts, handler.BizValidWithAuth)
+}
+
+func (svc *diskSvc) batchDeleteEip(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+	req := new(core.BatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfoReq := cloud.ListResourceBasicInfoReq{
+		ResourceType: enumor.DiskCloudResType,
+		IDs:          req.IDs,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResourceBasicInfo(cts.Kit.Ctx, cts.Kit.Header(),
+		basicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Disk,
+		Action: meta.Delete, BasicInfos: basicInfoMap})
+	if err != nil {
+		return nil, err
+	}
+
+	// create delete audit.
+	err = svc.audit.ResDeleteAudit(cts.Kit, enumor.DiskAuditResType, req.IDs)
+	if err != nil {
+		logs.Errorf("create delete disk audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	succeeded := make([]string, 0)
+	for _, diskID := range req.IDs {
+		basicInfo, exists := basicInfoMap[diskID]
+		if !exists {
+			return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("id %s has no corresponding vendor", diskID))
+		}
+
+		deleteReq := &hcproto.DiskDeleteReq{DiskID: diskID, AccountID: basicInfo.AccountID}
+
+		// check by vendor for delete
+		switch basicInfo.Vendor {
+		case enumor.TCloud:
+			err = svc.client.HCService().TCloud.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		case enumor.Aws:
+			err = svc.client.HCService().Aws.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		case enumor.HuaWei:
+			err = svc.client.HCService().HuaWei.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		case enumor.Gcp:
+			err = svc.client.HCService().Gcp.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		case enumor.Azure:
+			err = svc.client.HCService().Azure.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+		default:
+			err = errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", basicInfo.Vendor))
+		}
+
+		if err != nil {
+			return core.BatchOperateResult{
+				Succeeded: succeeded,
+				Failed: &core.FailedInfo{
+					ID:    diskID,
+					Error: err,
+				},
+			}, errf.NewFromErr(errf.PartialFailed, err)
+		}
+
+		succeeded = append(succeeded, diskID)
+	}
+
+	return core.BatchOperateResult{Succeeded: succeeded}, nil
 }
 
 // DeleteDisk 删除云盘.
@@ -194,6 +280,7 @@ func (svc *diskSvc) deleteDisk(cts *rest.Contexts, validHandler handler.ValidWit
 
 	deleteReq := &hcproto.DiskDeleteReq{DiskID: diskID, AccountID: basicInfo.AccountID}
 
+	// check by vendor for delete
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
 		return nil, svc.client.HCService().TCloud.Disk.DeleteDisk(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
@@ -248,6 +335,7 @@ func (svc *diskSvc) retrieveDisk(cts *rest.Contexts, validHandler handler.ValidW
 		return nil, err
 	}
 
+	// list cvm disk rel
 	rels, err := svc.client.DataService().Global.ListDiskCvmRel(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
@@ -279,6 +367,7 @@ func (svc *diskSvc) retrieveDiskByVendor(
 	instID string,
 	instName string,
 ) (interface{}, error) {
+	// check by vendor for retrieve
 	switch vendor {
 	case enumor.TCloud:
 		resp, err := svc.client.DataService().TCloud.RetrieveDisk(cts.Kit.Ctx, cts.Kit.Header(), diskID)
@@ -405,6 +494,7 @@ func (svc *diskSvc) attachDisk(cts *rest.Contexts, validHandler handler.ValidWit
 		return nil, err
 	}
 
+	// check by vendor for attach
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
 		return svc.tcloudAttachDisk(cts, basicInfo, validHandler)
@@ -562,6 +652,7 @@ func extractDiskID(cts *rest.Contexts) (string, error) {
 	return req.DiskID, nil
 }
 
+// getCvmName get cvm name
 func getCvmName(cts *rest.Contexts, cli *dataservice.Client, cvmID string) (string, error) {
 	cvms, err := cli.Global.Cvm.ListCvm(
 		cts.Kit.Ctx,
@@ -583,6 +674,7 @@ func getCvmName(cts *rest.Contexts, cli *dataservice.Client, cvmID string) (stri
 	return "", fmt.Errorf("cvm(%s) does not exist", cvmID)
 }
 
+// extractGcpDiskType extract gcp disk type
 func extractGcpDiskType(rawDiskType string) string {
 	lastIdx := strings.LastIndex(rawDiskType, "/")
 	return rawDiskType[lastIdx+1:]
