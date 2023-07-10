@@ -173,9 +173,16 @@ const {
   'disks',
   '回收硬盘',
   true,
+  'recycle',
   triggerApi,
 );
 
+const isRowSelectEnable = ({ row }: DoublePlainObject) => {
+  if (!props.isResourcePage) return true;
+  if (row.id) {
+    return row.bk_biz_id === -1;
+  }
+};
 
 </script>
 
@@ -216,6 +223,7 @@ const {
       row-hover="auto"
       remote-pagination
       show-overflow-tooltip
+      :is-row-select-enable="isRowSelectEnable"
       :pagination="pagination"
       :columns="renderColumns"
       :data="datas"
