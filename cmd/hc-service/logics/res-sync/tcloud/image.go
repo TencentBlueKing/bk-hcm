@@ -70,6 +70,12 @@ func (cli *client) Image(kt *kit.Kit, params *SyncBaseParams, opt *SyncImageOpti
 	addSlice, updateMap, delCloudIDs := common.Diff[typesimage.TCloudImage, dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult]](
 		imageFromCloud, imageFromDB, isImageChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteImage(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createImage(kt, params.AccountID, params.Region, addSlice); err != nil {
 			return nil, err
@@ -82,17 +88,11 @@ func (cli *client) Image(kt *kit.Kit, params *SyncBaseParams, opt *SyncImageOpti
 		}
 	}
 
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteImage(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
-			return nil, err
-		}
-	}
-
 	return new(SyncResult), nil
 }
 
 func (cli *client) updateImage(kt *kit.Kit, accountID string, region string,
-	updateMap map[string]typesimage.TCloudImage) error {
+		updateMap map[string]typesimage.TCloudImage) error {
 
 	if len(updateMap) <= 0 {
 		return fmt.Errorf("image updateMap is <= 0, not update")
@@ -119,7 +119,7 @@ func (cli *client) updateImage(kt *kit.Kit, accountID string, region string,
 }
 
 func (cli *client) createImage(kt *kit.Kit, accountID string, region string,
-	addSlice []typesimage.TCloudImage) error {
+		addSlice []typesimage.TCloudImage) error {
 
 	if len(addSlice) <= 0 {
 		return fmt.Errorf("cvm addSlice is <= 0, not create")
@@ -210,7 +210,7 @@ func (cli *client) listImageFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ty
 }
 
 func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams) (
-	[]dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult], error) {
+		[]dateimage.ImageExtResult[dateimage.TCloudImageExtensionResult], error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -255,7 +255,7 @@ func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams) (
 }
 
 func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
-	[]*dataproto.ImageResult, error) {
+		[]*dataproto.ImageResult, error) {
 
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

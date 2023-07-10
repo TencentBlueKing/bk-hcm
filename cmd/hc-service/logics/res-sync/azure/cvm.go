@@ -75,6 +75,12 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 	addSlice, updateMap, delCloudIDs := common.Diff[typescvm.AzureCvm, corecvm.Cvm[cvm.AzureCvmExtension]](
 		cvmFromCloud, cvmFromDB, isCvmChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteCvm(kt, params.AccountID, params.ResourceGroupName, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createCvm(kt, params.AccountID, params.ResourceGroupName, addSlice); err != nil {
 			return nil, err
@@ -83,12 +89,6 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 
 	if len(updateMap) > 0 {
 		if err = cli.updateCvm(kt, params.AccountID, params.ResourceGroupName, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteCvm(kt, params.AccountID, params.ResourceGroupName, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

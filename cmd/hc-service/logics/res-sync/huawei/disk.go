@@ -73,6 +73,12 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	addSlice, updateMap, delCloudIDs := common.Diff[adaptordisk.HuaWeiDisk, *disk.DiskExtResult[disk.HuaWeiDiskExtensionResult]](
 		diskFromCloud, diskFromDB, isDiskChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteDisk(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createDisk(kt, params.AccountID, params.Region, opt.BootMap, addSlice); err != nil {
 			return nil, err
@@ -81,12 +87,6 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 
 	if len(updateMap) > 0 {
 		if err = cli.updateDisk(kt, params.AccountID, opt.BootMap, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteDisk(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

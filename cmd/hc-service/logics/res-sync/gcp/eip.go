@@ -74,6 +74,12 @@ func (cli *client) Eip(kt *kit.Kit, params *SyncBaseParams, opt *SyncEipOption) 
 	addEip, updateMap, delCloudIDs := common.Diff[*typeseip.GcpEip,
 		*dataeip.EipExtResult[dataeip.GcpEipExtensionResult]](eipFromCloud, eipFromDB, isEipChange)
 
+	if len(delCloudIDs) > 0 {
+		if err = cli.deleteEip(kt, params.AccountID, opt.Region, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addEip) > 0 {
 		if err = cli.createEip(kt, params.AccountID, addEip, opt.BkBizID); err != nil {
 			return nil, err
@@ -82,12 +88,6 @@ func (cli *client) Eip(kt *kit.Kit, params *SyncBaseParams, opt *SyncEipOption) 
 
 	if len(updateMap) > 0 {
 		if err = cli.updateEip(kt, params.AccountID, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err = cli.deleteEip(kt, params.AccountID, opt.Region, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

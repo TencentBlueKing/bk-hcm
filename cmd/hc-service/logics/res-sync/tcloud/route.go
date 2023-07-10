@@ -127,6 +127,14 @@ func (cli *client) route(kt *kit.Kit, opt *syncRouteOption) (*SyncResult, error)
 	addSlice, updateMap, delCloudIDs := common.Diff[typesroutetable.TCloudRoute,
 		routetable.TCloudRoute](routeFromCloud, routeFromDB, isRouteChange)
 
+	if len(delCloudIDs) > 0 {
+		if err = cli.deleteRoute(kt, opt.AccountID, opt.Region, opt.CloudRouteTableID, routeTable.ID,
+			delCloudIDs); err != nil {
+
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		err := cli.createRoute(kt, opt.AccountID, opt.Region, routeTable.ID, addSlice)
 		if err != nil {
@@ -137,14 +145,6 @@ func (cli *client) route(kt *kit.Kit, opt *syncRouteOption) (*SyncResult, error)
 	if len(updateMap) > 0 {
 		err := cli.updateRoute(kt, opt.AccountID, opt.Region, routeTable.ID, updateMap)
 		if err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err = cli.deleteRoute(kt, opt.AccountID, opt.Region, opt.CloudRouteTableID, routeTable.ID,
-			delCloudIDs); err != nil {
-
 			return nil, err
 		}
 	}

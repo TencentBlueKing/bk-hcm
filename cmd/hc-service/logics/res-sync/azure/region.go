@@ -71,6 +71,12 @@ func (cli *client) Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, erro
 	addSlice, updateMap, delCloudIDs := common.Diff[typesregion.AzureRegion, coreregion.AzureRegion](
 		regionFromCloud, regionFromDB, isRegionChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteRegion(kt, opt, delCloudIDs); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createRegion(kt, opt, addSlice); err != nil {
 			return nil, err
@@ -79,12 +85,6 @@ func (cli *client) Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, erro
 
 	if len(updateMap) > 0 {
 		if err = cli.updateRegion(kt, opt, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteRegion(kt, opt, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}

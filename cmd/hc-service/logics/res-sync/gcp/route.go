@@ -21,6 +21,7 @@ package gcp
 
 import (
 	"fmt"
+
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	adcore "hcm/pkg/adaptor/types/core"
 	typecore "hcm/pkg/adaptor/types/core"
@@ -73,6 +74,12 @@ func (cli *client) Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOpti
 	addSlice, updateMap, delCloudIDs := common.Diff[typesroutetable.GcpRoute, cloudcoreroutetable.GcpRoute](
 		routeFromCloud, routeFromDB, isRouteChange)
 
+	if len(delCloudIDs) > 0 {
+		if err := cli.deleteRoute(kt, params.AccountID, opt.Zone, delCloudIDs, routeFromDB); err != nil {
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		if err = cli.createRoute(kt, params.AccountID, opt.Zone, addSlice); err != nil {
 			return nil, err
@@ -81,12 +88,6 @@ func (cli *client) Route(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteOpti
 
 	if len(updateMap) > 0 {
 		if err = cli.updateRoute(kt, params.AccountID, updateMap); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteRoute(kt, params.AccountID, opt.Zone, delCloudIDs, routeFromDB); err != nil {
 			return nil, err
 		}
 	}

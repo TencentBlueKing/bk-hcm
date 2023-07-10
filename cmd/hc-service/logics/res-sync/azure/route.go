@@ -125,6 +125,14 @@ func (cli *client) route(kt *kit.Kit, opt *syncRouteOption) (*SyncResult, error)
 	addSlice, updateMap, delCloudIDs := common.Diff[typesroutetable.AzureRoute,
 		routetable.AzureRoute](routeFromCloud, routeFromDB, isRouteChange)
 
+	if len(delCloudIDs) > 0 {
+		if err = cli.deleteRoute(kt, opt.AccountID, opt.ResourceGroupName, opt.CloudRouteTableID, routeTable.ID,
+			delCloudIDs); err != nil {
+
+			return nil, err
+		}
+	}
+
 	if len(addSlice) > 0 {
 		err := cli.createRoute(kt, opt.AccountID, opt.ResourceGroupName, routeTable.ID, addSlice)
 		if err != nil {
@@ -139,19 +147,11 @@ func (cli *client) route(kt *kit.Kit, opt *syncRouteOption) (*SyncResult, error)
 		}
 	}
 
-	if len(delCloudIDs) > 0 {
-		if err = cli.deleteRoute(kt, opt.AccountID, opt.ResourceGroupName, opt.CloudRouteTableID, routeTable.ID,
-			delCloudIDs); err != nil {
-
-			return nil, err
-		}
-	}
-
 	return new(SyncResult), nil
 }
 
 func (cli *client) createRoute(kt *kit.Kit, accountID string, resGroupName string, routeTableID string,
-	addSlice []typesroutetable.AzureRoute) error {
+		addSlice []typesroutetable.AzureRoute) error {
 
 	if len(addSlice) <= 0 {
 		return fmt.Errorf("route addSlice is <= 0, not create")
@@ -177,7 +177,7 @@ func (cli *client) createRoute(kt *kit.Kit, accountID string, resGroupName strin
 	if _, err := cli.dbCli.Azure.RouteTable.BatchCreateRoute(kt.Ctx, kt.Header(),
 		routeTableID, createReq); err != nil {
 		logs.Errorf("[%s] batch create route failed. err: %v, accountID: %s, resGroupName: %s, "+
-			"routeTableID: %s, rid: %s", enumor.Azure, err, accountID, resGroupName, routeTableID, kt.Rid)
+				"routeTableID: %s, rid: %s", enumor.Azure, err, accountID, resGroupName, routeTableID, kt.Rid)
 		return err
 	}
 
@@ -188,7 +188,7 @@ func (cli *client) createRoute(kt *kit.Kit, accountID string, resGroupName strin
 }
 
 func (cli *client) updateRoute(kt *kit.Kit, accountID, resGroupName, routeTableID string,
-	updateMap map[string]typesroutetable.AzureRoute) error {
+		updateMap map[string]typesroutetable.AzureRoute) error {
 
 	if len(updateMap) <= 0 {
 		return fmt.Errorf("route updateMap is <= 0, not update")
@@ -213,7 +213,7 @@ func (cli *client) updateRoute(kt *kit.Kit, accountID, resGroupName, routeTableI
 	if err := cli.dbCli.Azure.RouteTable.BatchUpdateRoute(kt.Ctx, kt.Header(), routeTableID,
 		updateReq); err != nil {
 		logs.Errorf("[%s] batch update route failed. err: %v, accountID: %s, resGroupName: %s, "+
-			"routeTableID: %s, rid: %s", enumor.Azure, err, accountID, resGroupName, routeTableID, kt.Rid)
+				"routeTableID: %s, rid: %s", enumor.Azure, err, accountID, resGroupName, routeTableID, kt.Rid)
 		return err
 	}
 	logs.Infof("[%s] sync route to update route success, accountID: %s, count: %d, rid: %s", enumor.Azure,
@@ -223,7 +223,7 @@ func (cli *client) updateRoute(kt *kit.Kit, accountID, resGroupName, routeTableI
 }
 
 func (cli *client) deleteRoute(kt *kit.Kit, accountID, resGroupName, cloudRTID, rtID string,
-	delCloudIDs []string) error {
+		delCloudIDs []string) error {
 
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("route delCloudIDs is <= 0, not delete")
@@ -302,7 +302,7 @@ func (cli *client) listRouteFromDB(kt *kit.Kit, opt *syncRouteOption, rtID strin
 	results, err := cli.dbCli.Azure.RouteTable.ListRoute(kt.Ctx, kt.Header(), rtID, req)
 	if err != nil {
 		logs.Errorf("[%s] batch list route failed. err: %v, accountID: %s, resGroupName: %s, "+
-			"routeTableID: %s, rid: %s", enumor.Azure, err, opt.AccountID, opt.ResourceGroupName, rtID, kt.Rid)
+				"routeTableID: %s, rid: %s", enumor.Azure, err, opt.AccountID, opt.ResourceGroupName, rtID, kt.Rid)
 		return nil, err
 	}
 
@@ -315,7 +315,7 @@ func (cli *client) listRouteFromDB(kt *kit.Kit, opt *syncRouteOption, rtID strin
 }
 
 func isRouteChange(cloud typesroutetable.AzureRoute,
-	db routetable.AzureRoute) bool {
+		db routetable.AzureRoute) bool {
 
 	if cloud.AddressPrefix == db.AddressPrefix {
 		return true
