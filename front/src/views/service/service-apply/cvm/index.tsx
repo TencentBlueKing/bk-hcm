@@ -14,6 +14,7 @@ import CloudAreaName from '../components/common/cloud-area-name';
 import { Plus as PlusIcon, CloseLine as CloseLineIcon, EditLine as EditIcon } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
 import './index.scss';
+import { useI18n } from 'vue-i18n';
 
 import type { IOption } from '@/typings/common';
 import type { IDiskOption } from '../hooks/use-cvm-form-data';
@@ -24,6 +25,7 @@ import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../
 // import { useHostStore } from '@/store/host';
 
 import { useAccountStore } from '@/store';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const accountStore = useAccountStore();
 
@@ -42,6 +44,8 @@ export default defineComponent({
       billingModes,
       purchaseDurationUnits,
     } = useCvmOptions(cond, formData);
+    const { t } = useI18n();
+    const { isResourcePage } = useWhereAmI();
 
     const dialogState = reactive({
       gcpDataDisk: {
@@ -778,8 +782,10 @@ export default defineComponent({
             ))
         }
         <div class="action-bar">
-          <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit}>提交审批</Button>
-          <Button>取消</Button>
+          <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit}>{
+            isResourcePage ? t('审批') : t('提交审批')
+          }</Button>
+          <Button>{ t('取消') }</Button>
         </div>
       </Form>
       <GcpDataDiskFormDialog
