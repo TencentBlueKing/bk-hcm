@@ -783,7 +783,7 @@ export default defineComponent({
         </Form>
         <div class='desc-container flex-1'>
           <div class='desc-item'>
-            <div class='title mb10'>vendor账号类型</div>
+            <div class='title mb10'>账号类型</div>
             <div class='desc'>
               <p>资源账号：用于从云上同步、更新、操作、购买资源的账号，需要API密钥。</p>
               <p>登记账号：云上的普通登录用户，用于被安全审计的账号对象。</p>
