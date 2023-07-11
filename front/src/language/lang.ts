@@ -565,6 +565,7 @@ const lang: ILANG = {
   '删除脚本': ['Delete script'],
   '删除作业成功': ['Delete job succeeded'],
   '提交': ['Submit'],
+  '提交审批': ['Submit for approval'],
   '作业': ['Operation'],
   '新建': ['New'],
   '通用脚本': ['Universal script'],

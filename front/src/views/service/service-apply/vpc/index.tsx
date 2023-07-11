@@ -6,11 +6,13 @@ import CloudAreaSelector from '../components/common/cloud-area-selector';
 import ZoneSelector from '../components/common/zone-selector';
 import { Form, Input, Checkbox, Button, Radio, Select  } from 'bkui-vue';
 import { Info } from 'bkui-vue/lib/icon';
+import { useI18n } from 'vue-i18n';
 
 import { ResourceTypeEnum, VendorEnum, CIDRLIST, CIDRDATARANGE, CIDRMASKRANGE, TCLOUDCIDRMASKRANGE } from '@/common/constant';
 import useVpcOptions from '../hooks/use-vpc-options';
 import useCondtion from '../hooks/use-condtion';
 import useVpcFormData from '../hooks/use-vpc-form-data';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { FormItem, ComposeFormItem } = Form;
 const { Group: RadioGroup } = Radio;
@@ -21,8 +23,10 @@ export default defineComponent({
   props: {},
   setup() {
     const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.VPC);
+    const { isResourcePage } = useWhereAmI();
     const { formData, formRef, handleFormSubmit, submitting } = useVpcFormData(cond);
     const __ = useVpcOptions(cond, formData);
+    const { t } = useI18n();
 
     const submitDisabled = computed(() => isEmptyCond.value);
 
@@ -359,8 +363,10 @@ export default defineComponent({
             ))
         }
         <div class="action-bar">
-          <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit}>提交审批</Button>
-          <Button>取消</Button>
+          <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit}>{
+            isResourcePage ? t('提交') : t('提交审批')
+          }</Button>
+          <Button>{ t('取消') }</Button>
         </div>
       </Form>
     </ContentContainer>;
