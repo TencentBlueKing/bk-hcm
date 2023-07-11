@@ -6,6 +6,7 @@ import type { Cond } from './use-condtion';
 import { Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -194,6 +195,7 @@ export default (cond: Cond) => {
     return saveData;
   };
 
+  const { isResourcePage } = useWhereAmI();
   const submitting = ref(false);
   const handleFormSubmit = async () => {
     await formRef.value.validate();
@@ -201,16 +203,21 @@ export default (cond: Cond) => {
     // console.log(saveData, '-----saveData');
     try {
       submitting.value = true;
-      await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${cond.vendor}/applications/types/create_cvm`, saveData);
+      const url = isResourcePage
+        ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/create`
+        : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${cond.vendor}/applications/types/create_cvm`;
+      await http.post(url, saveData);
 
       Message({
         theme: 'success',
         message: t('提交成功'),
       });
-
-      router.push({
-        path: '/service/my-apply',
-      });
+      if (isResourcePage) router.back();
+      else {
+        router.push({
+          path: '/service/my-apply',
+        });
+      }
     } catch (err) {
       console.error(err);
     } finally {

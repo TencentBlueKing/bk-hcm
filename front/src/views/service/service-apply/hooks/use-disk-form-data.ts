@@ -171,9 +171,12 @@ export default (cond: Cond) => {
         message: t('提交成功'),
       });
 
-      router.push({
-        path: '/service/my-apply',
-      });
+      if (isResourcePage) router.back();
+      else {
+        router.push({
+          path: '/service/my-apply',
+        });
+      }
     } catch (err) {
       console.error(err);
     } finally {
