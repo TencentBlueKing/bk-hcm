@@ -1,4 +1,5 @@
 import { VendorEnum } from '@/common/constant';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { computed, reactive } from 'vue';
 
 export type Cond = {
@@ -21,7 +22,8 @@ export default (type: string) => {
   });
 
   const isEmptyCond = computed(() => {
-    const isEmpty = !cond.bizId || !cond.cloudAccountId || !cond.vendor || !cond.region;
+    const { isResourcePage } = useWhereAmI();
+    const isEmpty = !cond.cloudAccountId || !cond.vendor || !cond.region || (!isResourcePage && !cond.bizId);
     if (cond.vendor === VendorEnum.AZURE) {
       return isEmpty || !cond.resourceGroup;
     }
