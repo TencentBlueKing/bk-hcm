@@ -124,6 +124,21 @@ const filterData = (key: string, val: string | number) => {
   }
 };
 
+const handleAdd = () => {
+  // ['host', 'vpc', 'drive', ||| 'security', 'subnet', 'ip']
+  switch (activeTab.value) {
+    case 'host':
+      router.push({ path: '/resource/service-apply/cvm' });
+      break;
+    case 'vpc':
+      router.push({ path: '/resource/service-apply/vpc' });
+      break;
+    case 'drive':
+      router.push({ path: '/resource/service-apply/disk' });
+      break;
+  }
+};
+
 // 搜索数据
 watch(
   () => accountId.value,
@@ -271,7 +286,20 @@ getResourceAccountList();
           @auth="(val: string) => {
             handleAuth(val)
           }"
-        />
+        >
+          <span
+            @click="handleAuth('biz_iaas_resource_create')"
+            v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip'].includes(activeTab)"
+          >
+            <bk-button
+              theme="primary"
+              class="new-button"
+              :disabled="!authVerifyData?.permissionAction?.biz_iaas_resource_create"
+              @click="handleAdd">
+              新建
+            </bk-button>
+          </span>
+        </component>
       </bk-tab-panel>
     </bk-tab>
 
@@ -315,5 +343,8 @@ getResourceAccountList();
 }
 .search-filter {
   width: 500px;
+}
+.new-button {
+  width: 100px;
 }
 </style>

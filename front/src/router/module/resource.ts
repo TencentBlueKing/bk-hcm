@@ -41,6 +41,33 @@ const resourceMenus: RouteRecordRaw[] = [
               breadcrumb: [t('云管'), t('资源'), '详情'],
             },
           },
+          {
+            path: '/resource/service-apply/cvm',
+            name: 'resourceApplyCvm',
+            component: () => import('@/views/service/service-apply/cvm'),
+            meta: {
+              activeKey: 'resourceResource',
+              breadcrumb: [t('云管'), t('资源'), '新建主机'],
+            },
+          },
+          {
+            path: '/resource/service-apply/vpc',
+            name: 'resourceApplyVPC',
+            component: () => import('@/views/service/service-apply/vpc'),
+            meta: {
+              activeKey: 'resourceResource',
+              breadcrumb: [t('云管'), t('资源'), '新建VPC'],
+            },
+          },
+          {
+            path: '/resource/service-apply/disk',
+            name: 'resourceApplyDisk',
+            component: () => import('@/views/service/service-apply/disk'),
+            meta: {
+              activeKey: 'resourceResource',
+              breadcrumb: [t('云管'), t('资源'), '新建云硬盘'],
+            },
+          },
         ],
         meta: {
           activeKey: 'resourceResource',
