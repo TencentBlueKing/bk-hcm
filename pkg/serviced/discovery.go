@@ -182,6 +182,7 @@ func (d *discovery) setAddress(service cc.Name, key, address string) {
 		})
 	}
 
+	logs.Infof("after set new address[%s:%s], service: %s has address: %+v", key, address, service, addresses)
 	d.addresses[service] = addresses
 }
 
@@ -196,5 +197,7 @@ func (d *discovery) delAddress(service cc.Name, key string) {
 			addresses = append(addresses[:i], addresses[i+1:]...)
 		}
 	}
+
+	logs.Infof("after delete address[%s], service: %s has address: %+v", key, service, addresses)
 	d.addresses[service] = addresses
 }
