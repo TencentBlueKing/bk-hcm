@@ -68,14 +68,14 @@ export const DESC_ACCOUNT = {
     apiSecret: '在“应用注册”里（链接：<a target="_blank" href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade">https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade</a> ）获取应用程序名称和应用程序（客户端）ID。' },
   gcp: { vendor: '谷歌云国际站(console.cloud.google.com)',
     accountInfo: '项目ID和项目名称进入GCP控制台->IAM和管理->设置，或直接点击链接：'
-      + '<a target="_blank" href="https://console.cloud.google.com/iam-admin/settings?orgonly=true&project=tencentgcpieg6&supportedpurview=organizationId">https://console.cloud.google.com/iam-admin/settings?orgonly=true&project=tencentgcpieg6&supportedpurview=organizationId</a>可找到项目名称和项目ID。',
+      + '<a target="_blank" href="https://console.cloud.google.com/iam-admin/settings?orgonly=true&supportedpurview=organizationId">https://console.cloud.google.com/iam-admin/settings?orgonly=true&supportedpurview=organizationId</a>可找到项目名称和项目ID。',
     apiSecret: '进入GCP控制台=>IAM和管理=>服务账号，或直接点击链接：'
-      + '<a target="_blank" href="https://console.cloud.google.com/iam-admin/serviceaccounts?orgonly=true&project=tencentgcpieg6&supportedpurview=organizationId">https://console.cloud.google.com/iam-admin/serviceaccounts?orgonly=true&project=tencentgcpieg6&supportedpurview=organizationId</a>'
+      + '<a target="_blank" href="https://console.cloud.google.com/iam-admin/serviceaccounts?orgonly=true&supportedpurview=organizationId">https://console.cloud.google.com/iam-admin/serviceaccounts?orgonly=true&supportedpurview=organizationId</a>'
       + '可找到服务账号名称和密钥ID' },
   huawei: { vendor: '华为支持中国站(<a target="_blank" href="http://huaweicloud.com">huaweicloud.com</a>)和国际站(<a target="_blank" href="http://huaweicloud.com/intl/">huaweicloud.com/intl/</a>)',
     accountInfo: '主账号ID进入华为云控制台，点击右上方账号浮窗下的基本信息，在账号中心点击我的主账号，可找到主账号名。'
-    + '<a target="_blank" href="https://account-intl.huaweicloud.com/usercenter/?agencyId=32f69a61e04141d0a0e1eb0807b5018d&region=ap-southeast-1&locale=zh-cn#/accountindex/associatedAccount">https://account-intl.huaweicloud.com/usercenter/?agencyId=32f69a61e04141d0a0e1eb0807b5018d&region=ap-southeast-1&locale=zh-cn#/accountindex/associatedAccount</a>'
+    + '<a target="_blank" href="https://account-intl.huaweicloud.com/usercenter/?region=ap-southeast-1&locale=zh-cn#/accountindex/associatedAccount">https://account-intl.huaweicloud.com/usercenter/?region=ap-southeast-1&locale=zh-cn#/accountindex/associatedAccount</a>'
   + '<p>IAM用户名、IAM用户ID、账号名和账号ID。进入华为云控制台，点击右上方账号浮窗下的“我的凭证”，在“API凭证”</p>'
-  + '<a target="_blank" href="https://console-intl.huaweicloud.com/iam/?agencyId=32f69a61e04141d0a0e1eb0807b5018d&region=ap-southeast-1&locale=zh-cn#/mine/apiCredential">https://console-intl.huaweicloud.com/iam/?agencyId=32f69a61e04141d0a0e1eb0807b5018d&region=ap-southeast-1&locale=zh-cn#/mine/apiCredential</a>',
+  + '<a target="_blank" href="https://console-intl.huaweicloud.com/iam/?region=ap-southeast-1&locale=zh-cn#/mine/apiCredential">https://console-intl.huaweicloud.com/iam/?region=ap-southeast-1&locale=zh-cn#/mine/apiCredential</a>',
     apiSecret: '在“我的凭证”里，点击“访问密钥”，点击“新增访问密钥”。下载后打开对应csv文件获取。' },
 };
