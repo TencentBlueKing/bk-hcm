@@ -32,49 +32,49 @@ const formData = ref<{
   region: string | number
 }>({
   account_id: '',
-  region: ''
+  region: '',
 });
 const componentMap = {
   aws,
   azure,
   gcp,
   huawei,
-  tcloud
-}
+  tcloud,
+};
 
 // define method
 const handleFormFilter = (value: BusinessFormFilter) => {
   formData.value.account_id = value.account_id;
   formData.value.region = value.region;
   type.value = value.vendor;
-}
+};
 
 const handleFormChange = (val: any) => {
   formData.value = val;
-}
+};
 
 const handleSubmit = () => {
-  isSubmiting.value = true
+  isSubmiting.value = true;
   formRef
     .value[0]()
     .then(() => {
       return businessStore.addEip(
-        accountStore.bizs,
-        formData.value
+        accountStore.bizs as number,
+        formData.value,
       )
-      .then(() => {
-        emits('success')
-        handleCancel();
-      });
+        .then(() => {
+          emits('success');
+          handleCancel();
+        });
     })
     .finally(() => {
       isSubmiting.value = false;
-    })
-}
+    });
+};
 
 const handleCancel = () => {
-  emits('cancel')
-}
+  emits('cancel');
+};
 </script>
 
 <template>
