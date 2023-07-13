@@ -63,6 +63,7 @@ func InitVpcService(c *capability.Capability) {
 	h.Add("DeleteVpc", "DELETE", "/vpcs/{id}", svc.DeleteVpc)
 	h.Add("AssignVpcToBiz", "POST", "/vpcs/assign/bizs", svc.AssignVpcToBiz)
 	h.Add("BindVpcWithCloudArea", "POST", "/vpcs/bind/cloud_areas", svc.BindVpcWithCloudArea)
+	h.Add("ListResVpcExt", "POST", "/vendors/{vendor}/vpcs/list", svc.ListResVpcExt)
 
 	// vpc apis in biz
 	h.Add("GetBizVpc", "GET", "/bizs/{bk_biz_id}/vpcs/{id}", svc.GetBizVpc)
@@ -397,6 +398,11 @@ func (svc *vpcSvc) listVpc(cts *rest.Contexts, authHandler handler.ListAuthResHa
 	}
 
 	return &csvpc.VpcListResult{Count: res.Count, Details: res.Details}, nil
+}
+
+// ListResVpcExt list resource vpc with extension.
+func (svc *vpcSvc) ListResVpcExt(cts *rest.Contexts) (interface{}, error) {
+	return svc.listVpcExt(cts, handler.ListResourceAuthRes)
 }
 
 // ListBizVpcExt list biz vpc with extension.
