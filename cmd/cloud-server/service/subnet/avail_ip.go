@@ -136,12 +136,19 @@ func getCountIPResultFromList(id string, m map[string]hcsubnet.AvailIPResult) (
 	}, nil
 }
 
+// ListCountResSubnetAvailIPs list count resource subnet avail ips.
+func (svc *subnetSvc) ListCountResSubnetAvailIPs(cts *rest.Contexts) (interface{}, error) {
+	return svc.listCountSubnetAvailIPs(cts, handler.ListResourceAuthRes)
+}
+
 // ListCountBizSubnetAvailIPs list count biz subnet avail ips.
 func (svc *subnetSvc) ListCountBizSubnetAvailIPs(cts *rest.Contexts) (interface{}, error) {
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
+	return svc.listCountSubnetAvailIPs(cts, handler.ListBizAuthRes)
+}
+
+// listCountSubnetAvailIPs list count subnet avail ips.
+func (svc *subnetSvc) listCountSubnetAvailIPs(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (
+	interface{}, error) {
 
 	req := new(cloudserver.ListSubnetCountIPReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -152,27 +159,31 @@ func (svc *subnetSvc) ListCountBizSubnetAvailIPs(cts *rest.Contexts) (interface{
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Find}, BizID: bizID}
-	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+	flt := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			&filter.AtomRule{
+				Field: "id",
+				Op:    filter.In.Factory(),
+				Value: req.IDs,
+			},
+		},
+	}
+
+	// list authorized instances
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Subnet, Action: meta.Find, Filter: flt})
+	if err != nil {
 		return nil, err
 	}
 
+	result := make(map[string]cloudserver.SubnetCountIPResult)
+	if noPermFlag {
+		return result, nil
+	}
+
 	listReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "bk_biz_id",
-					Op:    filter.Equal.Factory(),
-					Value: bizID,
-				},
-				&filter.AtomRule{
-					Field: "id",
-					Op:    filter.In.Factory(),
-					Value: req.IDs,
-				},
-			},
-		},
+		Filter: expr,
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"vendor", "region", "account_id", "id"},
 	}
@@ -190,7 +201,6 @@ func (svc *subnetSvc) ListCountBizSubnetAvailIPs(cts *rest.Contexts) (interface{
 		subnetMap[one.Vendor] = append(subnetMap[one.Vendor], one)
 	}
 
-	result := make(map[string]cloudserver.SubnetCountIPResult)
 	for vendor, subnets := range subnetMap {
 		tmp := make(map[string]cloudserver.SubnetCountIPResult)
 		switch vendor {

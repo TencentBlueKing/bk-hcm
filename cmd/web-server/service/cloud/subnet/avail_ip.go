@@ -28,8 +28,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ListSubnetWithIPCount 查询子网信息且带有可用IP数量。
-func (svc *service) ListSubnetWithIPCount(cts *rest.Contexts) (interface{}, error) {
+// ListSubnetWithIPCountInBiz 查询子网信息且带有可用IP数量。
+func (svc *service) ListSubnetWithIPCountInBiz(cts *rest.Contexts) (interface{}, error) {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -79,7 +79,78 @@ func (svc *service) ListSubnetWithIPCount(cts *rest.Contexts) (interface{}, erro
 	countReq := &cloudproto.ListSubnetCountIPReq{
 		IDs: ids,
 	}
-	idIPCountMap, err := svc.client.CloudServer().Subnet.ListCountIP(cts.Kit.Ctx, cts.Kit.Header(), bizID, countReq)
+	idIPCountMap, err := svc.client.CloudServer().Subnet.ListCountIPInBiz(cts.Kit.Ctx, cts.Kit.Header(), bizID, countReq)
+	if err != nil {
+		logs.Errorf("list subnet count avail ip failed, err: %v, ids: %v, rid: %s", err, ids, cts.Kit.Rid)
+		return nil, err
+	}
+
+	details := make([]proto.ListSubnetWithAvailIPCountResult, 0, len(listResult.Details))
+	for _, one := range listResult.Details {
+		subnet := proto.ListSubnetWithAvailIPCountResult{
+			BaseSubnet: one,
+		}
+
+		tmp, exist := idIPCountMap[one.ID]
+		if exist {
+			subnet.AvailableIPCount = tmp.AvailableIPCount
+			subnet.TotalIPCount = tmp.TotalIPCount
+			subnet.UsedIPCount = tmp.UsedIPCount
+		}
+
+		details = append(details, subnet)
+	}
+
+	return &proto.ListSubnetWithAvailIPCountResp{Details: details}, nil
+}
+
+// ListSubnetWithIPCountInRes 查询子网信息且带有可用IP数量。
+func (svc *service) ListSubnetWithIPCountInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListWithoutFieldReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	pageOpt := &core.PageOption{
+		EnableUnlimitedLimit: false,
+		MaxLimit:             core.AggregationQueryMaxPageLimit,
+		DisabledSort:         false,
+	}
+	if err := req.Page.Validate(pageOpt); err != nil {
+		return nil, err
+	}
+
+	listReq := &core.ListReq{
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	listResult, err := svc.client.CloudServer().Subnet.ListInRes(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list subnet failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if req.Page.Count {
+		return &core.ListResult{Count: listResult.Count}, nil
+	}
+
+	if len(listResult.Details) == 0 {
+		return &proto.ListSubnetWithAvailIPCountResp{Details: make([]proto.ListSubnetWithAvailIPCountResult, 0)}, nil
+	}
+
+	ids := make([]string, 0, len(listResult.Details))
+	for _, one := range listResult.Details {
+		ids = append(ids, one.ID)
+	}
+
+	countReq := &cloudproto.ListSubnetCountIPReq{
+		IDs: ids,
+	}
+	idIPCountMap, err := svc.client.CloudServer().Subnet.ListCountIPInRes(cts.Kit.Ctx, cts.Kit.Header(), countReq)
 	if err != nil {
 		logs.Errorf("list subnet count avail ip failed, err: %v, ids: %v, rid: %s", err, ids, cts.Kit.Rid)
 		return nil, err

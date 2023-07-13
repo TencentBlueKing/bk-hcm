@@ -43,7 +43,8 @@ func (svc *cvmSvc) CreateCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm, Action: meta.Create, ResourceID: req.AccountID}}
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm, Action: meta.Create,
+		ResourceID: req.AccountID}}
 	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		logs.Errorf("create cvm auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

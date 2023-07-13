@@ -41,7 +41,7 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 
 	// authorize one resource
 	if opt.BasicInfo != nil {
-		if opt.BasicInfo.BkBizID != bizID {
+		if !opt.DisableBizIDEqual && opt.BasicInfo.BkBizID != bizID {
 			return errf.New(errf.InvalidParameter, "resource biz not matches url biz")
 		}
 
@@ -70,7 +70,7 @@ func BizValidWithAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 			BizID: bizID})
 	}
 
-	if len(notMatchedIDs) > 0 {
+	if !opt.DisableBizIDEqual && len(notMatchedIDs) > 0 {
 		return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) not matches url biz", notMatchedIDs)
 	}
 
