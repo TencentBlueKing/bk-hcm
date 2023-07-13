@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 
 	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/cmd/cloud-server/service/common"
 	"hcm/cmd/cloud-server/service/eip/aws"
 	"hcm/cmd/cloud-server/service/eip/azure"
 	"hcm/cmd/cloud-server/service/eip/gcp"
@@ -427,11 +428,35 @@ func (svc *eipSvc) disassociateEip(
 	}
 }
 
-// CreateBizEip ...
+// CreateEip create eip.
+func (svc *eipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
+	bizID := int64(constant.UnassignedBiz)
+	return svc.createEip(cts, bizID, handler.ResValidWithAuth)
+}
+
+// CreateBizEip create biz eip.
 func (svc *eipSvc) CreateBizEip(cts *rest.Contexts) (interface{}, error) {
-	accountID, err := extractAccountID(cts)
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	return svc.createEip(cts, bkBizID, handler.BizValidWithAuth)
+}
+
+// CreateBizEip ...
+func (svc *eipSvc) createEip(cts *rest.Contexts, bizID int64,
+	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+
+	accountID, err := common.ExtractAccountID(cts)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// validate authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Eip,
+		Action: meta.Disassociate, BasicInfo: common.GetCloudResourceBasicInfo(accountID, bizID)})
+	if err != nil {
+		return nil, err
 	}
 
 	// 查询该账号对应的Vendor
@@ -447,15 +472,15 @@ func (svc *eipSvc) CreateBizEip(cts *rest.Contexts) (interface{}, error) {
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.tcloud.CreateEip(cts)
+		return svc.tcloud.CreateEip(cts, bizID)
 	case enumor.Aws:
-		return svc.aws.CreateEip(cts)
+		return svc.aws.CreateEip(cts, bizID)
 	case enumor.HuaWei:
-		return svc.huawei.CreateEip(cts)
+		return svc.huawei.CreateEip(cts, bizID)
 	case enumor.Gcp:
-		return svc.gcp.CreateEip(cts)
+		return svc.gcp.CreateEip(cts, bizID)
 	case enumor.Azure:
-		return svc.azure.CreateEip(cts)
+		return svc.azure.CreateEip(cts, bizID)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
 	}
@@ -532,26 +557,4 @@ func extractEipID(cts *rest.Contexts) (string, error) {
 	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
 
 	return req.EipID, nil
-}
-
-func extractAccountID(cts *rest.Contexts) (string, error) {
-	req := new(cloudproto.AccountReq)
-	reqData, err := ioutil.ReadAll(cts.Request.Request.Body)
-	if err != nil {
-		logs.Errorf("read request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return "", err
-	}
-
-	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
-	if err := cts.DecodeInto(req); err != nil {
-		return "", err
-	}
-
-	if err := req.Validate(); err != nil {
-		return "", errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	cts.Request.Request.Body = ioutil.NopCloser(bytes.NewReader(reqData))
-
-	return req.AccountID, nil
 }

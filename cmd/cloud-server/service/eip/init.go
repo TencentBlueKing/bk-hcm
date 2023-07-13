@@ -50,13 +50,12 @@ func InitEipService(c *capability.Capability) {
 	h.Add("RetrieveEip", http.MethodGet, "/eips/{id}", svc.RetrieveEip)
 	h.Add("AssignEip", http.MethodPost, "/eips/assign/bizs", svc.AssignEip)
 	h.Add("BatchDeleteEip", http.MethodDelete, "/eips/batch", svc.BatchDeleteEip)
-
 	h.Add("ListEipExtByCvmID", http.MethodGet, "/vendors/{vendor}/eips/cvms/{cvm_id}", svc.ListEipExtByCvmID)
 	h.Add("ListRelEipWithoutCvm", http.MethodPost, "/eip_cvm_rels/with/eips/without/cvm/list",
 		svc.ListRelEipWithoutCvm)
-
 	h.Add("AssociateEip", http.MethodPost, "/eips/associate", svc.AssociateEip)
 	h.Add("DisassociateEip", http.MethodPost, "/eips/disassociate", svc.DisassociateEip)
+	h.Add("CreateEip", http.MethodPost, "/eips/create", svc.CreateEip)
 
 	// eip apis in biz
 	h.Add("ListBizEip", http.MethodPost, "/bizs/{bk_biz_id}/eips/list", svc.ListBizEip)

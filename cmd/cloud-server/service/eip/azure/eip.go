@@ -192,7 +192,7 @@ func (a *Azure) DisassociateEip(
 }
 
 // CreateEip ...
-func (a *Azure) CreateEip(cts *rest.Contexts) (interface{}, error) {
+func (a *Azure) CreateEip(cts *rest.Contexts, bkBizID int64) (interface{}, error) {
 	req := new(cloudproto.AzureEipCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -202,19 +202,7 @@ func (a *Azure) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err = a.checkAzureEipParams(req); err != nil {
-		return nil, err
-	}
-
-	// validate biz and authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Eip, Action: meta.Create}, BizID: bkBizID}
-	err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
+	if err := a.checkAzureEipParams(req); err != nil {
 		return nil, err
 	}
 

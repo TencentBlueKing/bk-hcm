@@ -25,6 +25,7 @@ import (
 
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
+	"hcm/cmd/cloud-server/service/common"
 	cloudserver "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -55,6 +56,7 @@ func InitSubnetService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
+	h.Add("CreateSubnet", "POST", "/subnets/create", svc.CreateSubnet)
 	h.Add("GetSubnet", "GET", "/subnets/{id}", svc.GetSubnet)
 	h.Add("ListSubnet", "POST", "/subnets/list", svc.ListSubnet)
 	h.Add("UpdateSubnet", "PATCH", "/subnets/{id}", svc.UpdateSubnet)
@@ -63,7 +65,7 @@ func InitSubnetService(c *capability.Capability) {
 	h.Add("CountSubnetAvailableIPs", "POST", "/subnets/{id}/ips/count", svc.CountSubnetAvailableIPs)
 
 	// subnet apis in biz
-	h.Add("CreateSubnet", "POST", "/bizs/{bk_biz_id}/subnets/create", svc.CreateSubnet)
+	h.Add("CreateBizSubnet", "POST", "/bizs/{bk_biz_id}/subnets/create", svc.CreateBizSubnet)
 	h.Add("GetBizSubnet", "GET", "/bizs/{bk_biz_id}/subnets/{id}", svc.GetBizSubnet)
 	h.Add("ListBizSubnet", "POST", "/bizs/{bk_biz_id}/subnets/list", svc.ListBizSubnet)
 	h.Add("UpdateBizSubnet", "PATCH", "/bizs/{bk_biz_id}/subnets/{id}", svc.UpdateBizSubnet)
@@ -83,13 +85,30 @@ type subnetSvc struct {
 
 // CreateSubnet create subnet.
 func (svc *subnetSvc) CreateSubnet(cts *rest.Contexts) (interface{}, error) {
+	bizID := int64(constant.UnassignedBiz)
+	return svc.createSubnet(cts, bizID, handler.ResValidWithAuth)
+}
+
+// CreateBizSubnet create biz subnet.
+func (svc *subnetSvc) CreateBizSubnet(cts *rest.Contexts) (interface{}, error) {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
 	}
+	return svc.createSubnet(cts, bizID, handler.BizValidWithAuth)
+}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Subnet, Action: meta.Create}, BizID: bizID}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+func (svc *subnetSvc) createSubnet(cts *rest.Contexts, bizID int64,
+	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+
+	accountID, err := common.ExtractAccountID(cts)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// validate authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Subnet,
+		Action: meta.Create, BasicInfo: common.GetCloudResourceBasicInfo(accountID, bizID)})
 	if err != nil {
 		return nil, err
 	}

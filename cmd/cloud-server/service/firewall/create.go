@@ -20,20 +20,34 @@
 package firewall
 
 import (
+	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server"
 	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// CreateGcpFirewallRule ...
+// CreateGcpFirewallRule create gcp firewall rule.
 func (svc *firewallSvc) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
+	bizID := int64(constant.UnassignedBiz)
+	return svc.createGcpFirewallRule(cts, bizID, handler.ResValidWithAuth)
+}
+
+// CreateBizGcpFirewallRule create biz gcp firewall rule.
+func (svc *firewallSvc) CreateBizGcpFirewallRule(cts *rest.Contexts) (interface{}, error) {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
 	}
+	return svc.createGcpFirewallRule(cts, bizID, handler.BizValidWithAuth)
+}
+
+func (svc *firewallSvc) createGcpFirewallRule(cts *rest.Contexts, bizID int64,
+	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 
 	req := new(proto.GcpFirewallRuleCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -44,9 +58,9 @@ func (svc *firewallSvc) CreateGcpFirewallRule(cts *rest.Contexts) (interface{}, 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GcpFirewallRule, Action: meta.Create}, BizID: bizID}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate authorize
+	err := validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.GcpFirewallRule,
+		Action: meta.Create, BasicInfo: common.GetCloudResourceBasicInfo(req.AccountID, bizID)})
 	if err != nil {
 		return nil, err
 	}
