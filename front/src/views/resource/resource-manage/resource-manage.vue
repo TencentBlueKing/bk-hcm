@@ -17,6 +17,9 @@ import NetworkInterfaceManage from './children/manage/network-interface-manage.v
 import AccountSelector from '@/components/account-selector/index.vue';
 import { DISTRIBUTE_STATUS_LIST } from '@/constants';
 import { useDistributionStore } from '@/store/distribution';
+import EipForm from '@/views/business/forms/eip/index.vue';
+import subnetForm from '@/views/business/forms/subnet/index.vue';
+import securityForm from '@/views/business/forms/security/index.vue';
 
 import {
   RESOURCE_TYPES,
@@ -74,6 +77,21 @@ const accountId = ref('');
 const status = ref('');
 const op = ref('eq');
 const accountFilter = ref<FilterType>({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'resource' }] });
+const isShowSideSlider = ref(false);
+const componentRef = ref();
+
+const formMap = {
+  ip: EipForm,
+  subnet: subnetForm,
+  security: securityForm,
+};
+
+const renderForm = computed(() => {
+  return Object.keys(formMap).reduce((acc, cur) => {
+    if (route.query.type === cur) acc = formMap[cur];
+    return acc;
+  }, {});
+});
 
 // 组件map
 const componentMap = {
@@ -136,6 +154,8 @@ const handleAdd = () => {
     case 'drive':
       router.push({ path: '/resource/service-apply/disk' });
       break;
+    default:
+      isShowSideSlider.value = true;
   }
 };
 
@@ -207,6 +227,16 @@ const getResourceAccountList = async () => {
   } catch (error) {
 
   }
+};
+
+const handleCancel = () => {
+  isShowSideSlider.value = false;
+};
+
+// 新增成功 刷新列表
+const handleSuccess = () => {
+  handleCancel();
+  componentRef.value.fetchComponentsData();
 };
 
 getResourceAccountList();
@@ -286,6 +316,7 @@ getResourceAccountList();
           @auth="(val: string) => {
             handleAuth(val)
           }"
+          ref="componentRef"
         >
           <span
             @click="handleAuth('biz_iaas_resource_create')"
@@ -302,6 +333,19 @@ getResourceAccountList();
         </component>
       </bk-tab-panel>
     </bk-tab>
+
+    <bk-sideslider
+      v-model:isShow="isShowSideSlider"
+      width="800"
+      title="新增"
+      quick-close
+    >
+      <template #default>
+        <component
+          :is="renderForm" :filter="filter"
+          @cancel="handleCancel" @success="handleSuccess"></component>
+      </template>
+    </bk-sideslider>
 
     <resource-distribution
       v-model:is-show="isShowDistribution"
