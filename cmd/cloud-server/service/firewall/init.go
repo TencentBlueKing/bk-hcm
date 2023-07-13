@@ -39,6 +39,8 @@ func InitFirewallService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 	// 资源下相关接口
+	h.Add("CreateGcpFirewallRule", http.MethodPost, "/vendors/gcp/firewalls/rules/create",
+		svc.CreateGcpFirewallRule)
 	h.Add("BatchDeleteGcpFirewallRule", http.MethodDelete, "/vendors/gcp/firewalls/rules/batch",
 		svc.BatchDeleteGcpFirewallRule)
 	h.Add("UpdateGcpFirewallRule", http.MethodPut, "/vendors/gcp/firewalls/rules/{id}", svc.UpdateGcpFirewallRule)
@@ -48,8 +50,8 @@ func InitFirewallService(cap *capability.Capability) {
 		svc.AssignGcpFirewallRuleToBiz)
 
 	// 业务下相关接口
-	h.Add("CreateGcpFirewallRule", http.MethodPost, "/bizs/{bk_biz_id}/vendors/gcp/firewalls/rules/create",
-		svc.CreateGcpFirewallRule)
+	h.Add("CreateBizGcpFirewallRule", http.MethodPost, "/bizs/{bk_biz_id}/vendors/gcp/firewalls/rules/create",
+		svc.CreateBizGcpFirewallRule)
 	h.Add("BatchDeleteBizGcpFirewallRule", http.MethodDelete, "/bizs/{bk_biz_id}/vendors/gcp/firewalls/rules/batch",
 		svc.BatchDeleteBizGcpFirewallRule)
 	h.Add("UpdateBizGcpFirewallRule", http.MethodPut, "/bizs/{bk_biz_id}/vendors/gcp/firewalls/rules/{id}",

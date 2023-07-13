@@ -189,7 +189,7 @@ func (h *HuaWei) DisassociateEip(
 }
 
 // CreateEip ...
-func (h *HuaWei) CreateEip(cts *rest.Contexts) (interface{}, error) {
+func (h *HuaWei) CreateEip(cts *rest.Contexts, bkBizID int64) (interface{}, error) {
 	req := new(cloudproto.HuaWeiEipCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -197,18 +197,6 @@ func (h *HuaWei) CreateEip(cts *rest.Contexts) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	// validate biz and authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Eip, Action: meta.Create}, BizID: bkBizID}
-	err = h.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
 	}
 
 	resp, err := h.client.HCService().HuaWei.Eip.CreateEip(

@@ -23,20 +23,33 @@ import (
 	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server"
 	hcproto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // CreateSecurityGroup create security group.
 func (svc *securityGroupSvc) CreateSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+	bizID := int64(constant.UnassignedBiz)
+	return svc.createSecurityGroup(cts, bizID, handler.ResValidWithAuth)
+}
+
+// CreateBizSecurityGroup create biz security group.
+func (svc *securityGroupSvc) CreateBizSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
 	}
+	return svc.createSecurityGroup(cts, bizID, handler.BizValidWithAuth)
+}
+
+func (svc *securityGroupSvc) createSecurityGroup(cts *rest.Contexts, bizID int64,
+	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 
 	req := new(proto.SecurityGroupCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -47,9 +60,9 @@ func (svc *securityGroupSvc) CreateSecurityGroup(cts *rest.Contexts) (interface{
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup, Action: meta.Create}, BizID: bizID}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// validate  authorize
+	err := validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Create, BasicInfo: common.GetCloudResourceBasicInfo(req.AccountID, bizID)})
 	if err != nil {
 		return nil, err
 	}

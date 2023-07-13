@@ -40,6 +40,7 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	// 资源下安全组相关接口
+	h.Add("CreateSecurityGroup", http.MethodPost, "/security_groups/create", svc.CreateSecurityGroup)
 	h.Add("GetSecurityGroup", http.MethodGet, "/security_groups/{id}", svc.GetSecurityGroup)
 	h.Add("BatchUpdateSecurityGroup", http.MethodPatch, "/security_groups/{id}", svc.UpdateSecurityGroup)
 	h.Add("BatchDeleteSecurityGroup", http.MethodDelete, "/security_groups/batch", svc.BatchDeleteSecurityGroup)
@@ -67,7 +68,7 @@ func InitSecurityGroupService(c *capability.Capability) {
 		svc.GetAzureDefaultSGRule)
 
 	// 业务下安全组相关接口
-	h.Add("CreateSecurityGroup", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/create", svc.CreateSecurityGroup)
+	h.Add("CreateBizSecurityGroup", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/create", svc.CreateBizSecurityGroup)
 	h.Add("GetBizSecurityGroup", http.MethodGet, "/bizs/{bk_biz_id}/security_groups/{id}", svc.GetBizSecurityGroup)
 	h.Add("UpdateBizSecurityGroup", http.MethodPatch, "/bizs/{bk_biz_id}/security_groups/{id}",
 		svc.UpdateBizSecurityGroup)
