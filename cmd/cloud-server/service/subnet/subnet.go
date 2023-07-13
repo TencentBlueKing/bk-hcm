@@ -61,6 +61,8 @@ func InitSubnetService(c *capability.Capability) {
 	h.Add("BatchDeleteSubnet", "DELETE", "/subnets/batch", svc.BatchDeleteSubnet)
 	h.Add("AssignSubnetToBiz", "POST", "/subnets/assign/bizs", svc.AssignSubnetToBiz)
 	h.Add("CountSubnetAvailableIPs", "POST", "/subnets/{id}/ips/count", svc.CountSubnetAvailableIPs)
+	h.Add("ListCountResSubnetAvailIPs", "POST", "/subnets/ips/count/list",
+		svc.ListCountResSubnetAvailIPs)
 
 	// subnet apis in biz
 	h.Add("CreateSubnet", "POST", "/bizs/{bk_biz_id}/subnets/create", svc.CreateSubnet)

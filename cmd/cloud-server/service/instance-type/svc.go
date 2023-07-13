@@ -27,22 +27,24 @@ import (
 	hcproto "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// List ...
-func (svc *instanceTypeSvc) List(cts *rest.Contexts) (interface{}, error) {
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
+// ListInRes ...
+func (svc *instanceTypeSvc) ListInRes(cts *rest.Contexts) (interface{}, error) {
+	return svc.list(cts, handler.ResValidWithAuth)
+}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.InstanceType, Action: meta.Find}, BizID: bizID}
-	if err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
-		return nil, err
-	}
+// ListInBiz ...
+func (svc *instanceTypeSvc) ListInBiz(cts *rest.Contexts) (interface{}, error) {
+	return svc.list(cts, handler.BizValidWithAuth)
+}
 
+// list ...
+func (svc *instanceTypeSvc) list(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	req := new(proto.InstanceTypeListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -50,6 +52,15 @@ func (svc *instanceTypeSvc) List(cts *rest.Contexts) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// validate biz and authorize
+	err := validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.InstanceType,
+		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
+			AccountID: req.AccountID,
+		}})
+	if err != nil {
+		return nil, err
 	}
 
 	switch req.Vendor {

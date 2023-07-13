@@ -33,11 +33,12 @@ type ValidWithAuthHandler func(cts *rest.Contexts, opt *ValidWithAuthOption) err
 
 // ValidWithAuthOption authorize cloud resource options.
 type ValidWithAuthOption struct {
-	Authorizer auth.Authorizer
-	ResType    meta.ResourceType
-	Action     meta.Action
-	BasicInfo  *types.CloudResourceBasicInfo
-	BasicInfos map[string]types.CloudResourceBasicInfo
+	Authorizer        auth.Authorizer
+	ResType           meta.ResourceType
+	Action            meta.Action
+	BasicInfo         *types.CloudResourceBasicInfo
+	BasicInfos        map[string]types.CloudResourceBasicInfo
+	DisableBizIDEqual bool
 }
 
 // Validate ValidWithAuthOption
