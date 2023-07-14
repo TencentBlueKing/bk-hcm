@@ -75,7 +75,7 @@ export default (
         isShow.value = false;
         Message({
           theme: 'success',
-          message: t('删除成功'),
+          message: t('操作成功'),
         });
         onFinishedCallback?.(); // 删除数据回调列表接口
       })
