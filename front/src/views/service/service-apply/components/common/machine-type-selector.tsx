@@ -4,6 +4,7 @@ import { Select } from 'bkui-vue';
 
 import { formatStorageSize } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const { Option } = Select;
@@ -22,6 +23,7 @@ export default defineComponent({
   setup(props, { emit, attrs }) {
     const list = ref([]);
     const loading = ref(false);
+    const { isResourcePage } = useWhereAmI();
 
     const selected = computed({
       get() {
@@ -51,13 +53,18 @@ export default defineComponent({
       }
 
       loading.value = true;
-      const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${props.bizId}/instance_types/list`, {
-        account_id: accountId,
-        vendor,
-        region,
-        zone,
-        instance_charge_type: instanceChargeType,
-      });
+      const result = await http.post(
+        isResourcePage
+          ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/instance_types/list`
+          : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${props.bizId}/instance_types/list`
+        , {
+          account_id: accountId,
+          vendor,
+          region,
+          zone,
+          instance_charge_type: instanceChargeType,
+        },
+      );
       list.value = result?.data ?? [];
 
       loading.value = false;
