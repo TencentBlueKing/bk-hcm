@@ -60,7 +60,8 @@ export const useBusinessStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    createSubnet(bizs: number | string, data: any) {
+    createSubnet(bizs: number | string, data: any, isRes = false) {
+      if (isRes) return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/create`, data);
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizs}/subnets/create`, data);
     },
   },
