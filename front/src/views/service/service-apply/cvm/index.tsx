@@ -317,16 +317,18 @@ export default defineComponent({
                   onChange={handleVpcChange}
                   clearable={false}
                 />
-                <Button
-                  text
-                  theme='primary'
-                  onClick={() => {
-                    if (!formData.cloud_vpc_id) return;
-                    const url = `/#/business/vpc?cloud_id=${formData.cloud_vpc_id}&bizs=${cond.bizId}`;
-                    window.open(url, '_blank');
-                  }}>
-                  详情
-                </Button>
+                {isResourcePage ? null : (
+                  <Button
+                    text
+                    theme='primary'
+                    onClick={() => {
+                      if (!formData.cloud_vpc_id) return;
+                      const url = `/#/business/vpc?cloud_id=${formData.cloud_vpc_id}&bizs=${cond.bizId}`;
+                      window.open(url, '_blank');
+                    }}>
+                    详情
+                  </Button>
+                )}
               </div>
             ),
           },
@@ -350,16 +352,20 @@ export default defineComponent({
                   ref={subnetSelectorRef}
                   clearable={false}
                 />
-                <Button
-                  text
-                  theme="primary"
-                  onClick={() => {
-                    if (!formData.cloud_subnet_id) return;
-                    const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
-                    window.open(url, '_blank');
-                  }}>
-                  详情
-                </Button>
+                {
+                  isResourcePage
+                    ? null
+                    : <Button
+                        text
+                        theme="primary"
+                        onClick={() => {
+                          if (!formData.cloud_subnet_id) return;
+                          const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
+                          window.open(url, '_blank');
+                        }}>
+                        详情
+                      </Button>
+                }
               </div>
             ),
           },
@@ -396,21 +402,25 @@ export default defineComponent({
                   vpcId={vpcId.value}
                   clearable={false}
                 />
-                <Button
-                  text
-                  theme="primary"
-                  onClick={() => {
-                    if (!formData.cloud_security_group_ids) return;
-                    let url = `/#/business/security?bizs=${cond.bizId}&`;
-                    const params = [];
-                    for (const cloudId of formData.cloud_security_group_ids) {
-                      params.push(`cloud_id=${cloudId}`);
-                    }
-                    url += params.join('&');
-                    window.open(url, '_blank');
-                  }}>
-                  详情
-                </Button>
+                {
+                  isResourcePage
+                    ? null
+                    : <Button
+                        text
+                        theme="primary"
+                        onClick={() => {
+                          if (!formData.cloud_security_group_ids) return;
+                          let url = `/#/business/security?bizs=${cond.bizId}&`;
+                          const params = [];
+                          for (const cloudId of formData.cloud_security_group_ids) {
+                            params.push(`cloud_id=${cloudId}`);
+                          }
+                          url += params.join('&');
+                          window.open(url, '_blank');
+                        }}>
+                        详情
+                      </Button>
+                 }
               </div>
             ),
           },
@@ -783,7 +793,7 @@ export default defineComponent({
         }
         <div class="action-bar">
           <Button theme='primary' loading={submitting.value} disabled={submitDisabled.value} onClick={handleFormSubmit}>{
-            isResourcePage ? t('审批') : t('提交审批')
+            isResourcePage ? t('提交') : t('提交审批')
           }</Button>
           <Button>{ t('取消') }</Button>
         </div>
