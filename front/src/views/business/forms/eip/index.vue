@@ -15,6 +15,9 @@ import {
 import {
   useAccountStore,
 } from '@/store/account';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { useI18n } from 'vue-i18n';
+import { Message } from 'bkui-vue';
 
 // define emits
 const emits = defineEmits(['cancel', 'success']);
@@ -41,6 +44,8 @@ const componentMap = {
   huawei,
   tcloud,
 };
+const { isResourcePage } = useWhereAmI();
+const { t } = useI18n();
 
 // define method
 const handleFormFilter = (value: BusinessFormFilter) => {
@@ -61,8 +66,13 @@ const handleSubmit = () => {
       return businessStore.addEip(
         accountStore.bizs as number,
         formData.value,
+        isResourcePage,
       )
         .then(() => {
+          Message({
+            theme: 'success',
+            message: t('新增成功'),
+          });
           emits('success');
           handleCancel();
         });

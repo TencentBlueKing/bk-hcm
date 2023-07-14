@@ -15,6 +15,7 @@ import ResourceGroup from '@/components/resource-group/index.vue';
 import { BusinessFormFilter } from '@/typings';
 import { useBusinessStore } from '@/store';
 import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { t } = useI18n();
 const formRef = ref(null);
@@ -41,6 +42,7 @@ const rules = {
     },
   ],
 };
+const { isResourcePage } = useWhereAmI();
 
 // 方法
 const cancel = async () => {
@@ -64,7 +66,7 @@ const submit = async () => {
   delete params.resource_group_name;
   try {
     submitLoading.value = true;
-    await useBusiness.addSecurity(params);
+    await useBusiness.addSecurity(params, isResourcePage);
     Message({
       theme: 'success',
       message: t('新增成功'),
