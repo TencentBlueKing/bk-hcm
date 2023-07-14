@@ -23,10 +23,12 @@ export const useBusinessStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    addSecurity(data: any) {
+    addSecurity(data: any, isRes = false) {
+      if (isRes) return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/security_groups/create`, data);
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/create`, data);
     },
-    addEip(id: number, data: any) {
+    addEip(id: number, data: any, isRes = false) {
+      if (isRes) return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/eips/create`, data);
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${id}/eips/create`, data);
     },
     /**
@@ -58,7 +60,8 @@ export const useBusinessStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    createSubnet(bizs: number | string, data: any) {
+    createSubnet(bizs: number | string, data: any, isRes = false) {
+      if (isRes) return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/create`, data);
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizs}/subnets/create`, data);
     },
   },

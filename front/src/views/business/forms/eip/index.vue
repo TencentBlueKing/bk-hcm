@@ -15,6 +15,9 @@ import {
 import {
   useAccountStore,
 } from '@/store/account';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { useI18n } from 'vue-i18n';
+import { Message } from 'bkui-vue';
 
 // define emits
 const emits = defineEmits(['cancel', 'success']);
@@ -32,49 +35,56 @@ const formData = ref<{
   region: string | number
 }>({
   account_id: '',
-  region: ''
+  region: '',
 });
 const componentMap = {
   aws,
   azure,
   gcp,
   huawei,
-  tcloud
-}
+  tcloud,
+};
+const { isResourcePage } = useWhereAmI();
+const { t } = useI18n();
 
 // define method
 const handleFormFilter = (value: BusinessFormFilter) => {
   formData.value.account_id = value.account_id;
   formData.value.region = value.region;
   type.value = value.vendor;
-}
+};
 
 const handleFormChange = (val: any) => {
   formData.value = val;
-}
+};
 
 const handleSubmit = () => {
-  isSubmiting.value = true
+  isSubmiting.value = true;
   formRef
     .value[0]()
     .then(() => {
       return businessStore.addEip(
-        accountStore.bizs,
-        formData.value
+        accountStore.bizs as number,
+        formData.value,
+        isResourcePage,
       )
-      .then(() => {
-        emits('success')
-        handleCancel();
-      });
+        .then(() => {
+          Message({
+            theme: 'success',
+            message: t('新增成功'),
+          });
+          emits('success');
+          handleCancel();
+        });
     })
     .finally(() => {
       isSubmiting.value = false;
-    })
-}
+    });
+};
 
 const handleCancel = () => {
-  emits('cancel')
-}
+  emits('cancel');
+};
 </script>
 
 <template>

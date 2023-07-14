@@ -7,6 +7,7 @@ import { useAccountStore, useResourceStore } from '@/store';
 import { BusinessFormFilter, QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import { CLOUD_TYPE } from '@/constants';
 import { VendorEnum } from '@/common/constant';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
   hidden: {
@@ -32,6 +33,7 @@ const cloudRegionsList = ref([]);
 const accountLoading = ref(false);
 const cloudRegionsLoading = ref(false);
 const cloudAreaPage = ref(0);
+const { isResourcePage } = useWhereAmI();
 
 const securityType: any = inject('securityType');
 
@@ -117,18 +119,26 @@ watch(
 );
 
 const getAccountList = async () => {
-  const rulesData = [];
-  if (state.filter.vendor) {
-    rulesData.push({ field: 'vendor', op: 'eq', value: state.filter.vendor });
-  }
+  // const rulesData = [];
+  // if (state.filter.vendor) {
+  //   rulesData.push({ field: 'vendor', op: 'eq', value: state.filter.vendor });
+  // }
   try {
     accountLoading.value = true;
-    const res = await accountStore.getAccountList({
+    const payload = isResourcePage ? {
+      page: {
+        count: false,
+        limit: 100,
+        start: 0,
+      },
+      filter: { op: 'and', rules: [] },
+    } : {
       params: {
         account_type: 'resource',
       },
-    }, accountStore.bizs);
-    accountList.value = res?.data;
+    };
+    const res = await accountStore.getAccountList(payload, accountStore.bizs);
+    accountList.value = isResourcePage ? res?.data?.details : res?.data;
     if (props.type === 'security') {    // 安全组需要区分
       if (securityType.value && securityType.value === 'gcp') {
         accountList.value = accountList.value.filter(e => e.vendor === 'gcp');
