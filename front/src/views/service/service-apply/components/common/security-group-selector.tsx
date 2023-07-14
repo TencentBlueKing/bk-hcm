@@ -2,6 +2,7 @@ import http from '@/http';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { Select } from 'bkui-vue';
 import { VendorEnum } from '@/common/constant';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -21,6 +22,7 @@ export default defineComponent({
   setup(props, { emit, attrs }) {
     const list = ref([]);
     const loading = ref(false);
+    const { isServicePage } = useWhereAmI();
 
     const selected = computed({
       get() {
@@ -44,7 +46,7 @@ export default defineComponent({
       () => props.region,
       () => props.vpcId,
     ], async ([bizId, accountId, region, vpcId]) => {
-      if (!bizId || !accountId || !region) {
+      if ((!bizId && isServicePage) || !accountId || !region) {
         list.value = [];
         return;
       }

@@ -4,6 +4,7 @@ import { Select } from 'bkui-vue';
 
 import { QueryRuleOPEnum } from '@/typings/common';
 import { VendorEnum } from '@/common/constant';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -22,6 +23,7 @@ export default defineComponent({
   setup(props, { emit, attrs }) {
     const list = ref([]);
     const loading = ref(false);
+    const { isResourcePage, isServicePage } = useWhereAmI();
 
     const selected = computed({
       get() {
@@ -39,7 +41,7 @@ export default defineComponent({
       () => props.region,
       () => props.zone,
     ], async ([bizId, accountId, vendor, region, zone]) => {
-      if (!bizId || !accountId || !region || !zone.length) {
+      if (!accountId || !region || !zone.length || (isServicePage && !bizId)) {
         list.value = [];
         return;
       }
@@ -63,7 +65,10 @@ export default defineComponent({
             value: region,
           });
         }
-        const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/vendors/${props.vendor}/vpcs/with/subnet_count/list`, {
+        const url = isResourcePage
+          ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/vendors/${props.vendor}/vpcs/with/subnet_count/list`
+          : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/vendors/${props.vendor}/vpcs/with/subnet_count/list`;
+        const result = await http.post(url, {
         // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/list`, {
           zone: props.zone.join(','),
           filter,
