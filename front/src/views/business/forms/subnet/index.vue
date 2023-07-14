@@ -22,6 +22,7 @@ import VpcSelector from '@/components/vpc-selector/index.vue';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import RouteTableSelector from '@/components/route-table-selector/index.vue';
 import ResourceGroupSelector from '@/components/resource-group/index.vue';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const emit = defineEmits(['cancel', 'success']);
 const { t } = useI18n();
@@ -33,6 +34,7 @@ const submitLoading = ref(false);
 const ipv4Cidr = ref('');
 const isVPCSupportedIpv6 = ref(false);
 const isNeedIPV6 = ref(false);
+const { isResourcePage } = useWhereAmI();
 
 const handleFormFilter = (data: BusinessFormFilter) => {
   formData.vendor = data.vendor;
@@ -46,7 +48,7 @@ const submit = async () => {
   console.log('formData', formData);
   submitLoading.value = true;
   try {
-    await businessStore.createSubnet(accountStore.bizs, formData);
+    await businessStore.createSubnet(accountStore.bizs, formData, isResourcePage);
     Message({
       message: t('新增子网成功'),
       theme: 'success',
@@ -138,12 +140,12 @@ watch(() => formData.vendor, (val) => {
           :list="[]" :placeholder="t('请输入IPV4')" />
         <bk-input v-else class="item-warp-component" v-model="formData.ipv4_cidr" :placeholder="t('请输入IPV4 CIDR')" />
       </bk-form-item>
-      <bk-form-item 
+      <bk-form-item
         v-if="isVPCSupportedIpv6"
         label="是否开启 IPV6"
         class="item-wrap"
       >
-        <bk-switcher v-model="isNeedIPV6"/>
+        <bk-switcher v-model="isNeedIPV6" />
       </bk-form-item>
       <bk-form-item
         v-if="formData.vendor === 'aws' && isVPCSupportedIpv6 && isNeedIPV6"
