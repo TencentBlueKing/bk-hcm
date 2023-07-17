@@ -604,9 +604,9 @@ const securityHandleShowDelete = (data: any) => {
       :loading="state.isLoading"
     >
       <section>
+        <slot></slot>
         <section
           class="flex-row align-items-center mt20">
-          <slot></slot>
           <bk-radio-group
             v-model="activeType"
             :disabled="state.isLoading"
@@ -615,7 +615,6 @@ const securityHandleShowDelete = (data: any) => {
               v-for="item in types"
               :key="item.name"
               :label="item.name"
-              class="ml10"
             >
               {{ item.label }}
             </bk-radio-button>
