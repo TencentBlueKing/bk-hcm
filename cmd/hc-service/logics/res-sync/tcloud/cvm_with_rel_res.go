@@ -259,9 +259,10 @@ func (cli *client) buildCvmRelManger(kt *kit.Kit, region string, cvmFromCloud []
 		}
 
 		for _, disk := range cvm.DataDisks {
-			if disk.DiskId == nil {
+			if disk.DiskId == nil || !strings.HasPrefix(converter.PtrToVal(disk.DiskId), "disk-") {
 				continue
 			}
+
 			mgr.CvmAppendAssResCloudID(cvm.GetCloudID(), enumor.DiskCloudResType,
 				converter.PtrToVal(disk.DiskId))
 		}

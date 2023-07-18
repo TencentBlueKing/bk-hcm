@@ -229,7 +229,9 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		CloudIDs:  cloudIDs,
 	}
 
-	_, err = syncClient.Eip(cts.Kit, params, &syncaws.SyncEipOption{})
+	_, err = syncClient.Eip(cts.Kit, params, &syncaws.SyncEipOption{
+		BkBizID: req.BkBizID,
+	})
 	if err != nil {
 		logs.Errorf("sync aws eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
