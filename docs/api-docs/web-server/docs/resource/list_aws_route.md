@@ -108,7 +108,7 @@ POST /api/v1/cloud/vendors/aws/route_tables/{route_table_id}/routes/list
 | cloud_egress_only_internet_gateway_id | string  | 仅用于出站的Internet网关的云上ID                  |
 | cloud_gateway_id                      | string  | 网关的云上ID                                |
 | cloud_instance_id                     | string  | NAT实例的云上ID                             |
-| cloud_instance_owner_id               | string  | 实例所属帐户的云上ID                            |
+| cloud_instance_owner_id               | string  | 实例所属账户的云上ID                            |
 | cloud_local_gateway_id                | string  | 本地网关的云上ID                              |
 | cloud_nat_gateway_id                  | string  | NAT网关的云上ID                             |
 | cloud_network_interface_id            | string  | 网络接口的云上ID                              |
@@ -267,7 +267,7 @@ POST /api/v1/cloud/vendors/aws/route_tables/{route_table_id}/routes/list
 | cloud_egress_only_internet_gateway_id | string  | 仅用于出站的Internet网关的云上ID                  |
 | cloud_gateway_id                      | string  | 网关的云上ID                                |
 | cloud_instance_id                     | string  | NAT实例的云上ID                             |
-| cloud_instance_owner_id               | string  | 实例所属帐户的云上ID                            |
+| cloud_instance_owner_id               | string  | 实例所属账户的云上ID                            |
 | cloud_local_gateway_id                | string  | 本地网关的云上ID                              |
 | cloud_nat_gateway_id                  | string  | NAT网关的云上ID                             |
 | cloud_network_interface_id            | string  | 网络接口的云上ID                              |

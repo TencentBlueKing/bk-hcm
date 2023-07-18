@@ -162,7 +162,7 @@ func (req *HuaWeiCvmCreateReq) validatePassword() error {
 		return huaweiPasswordInvalidError
 	}
 
-	// TODO: 不能包含用户名或用户名的逆序, Linux管理员帐户为root，Windows管理员帐户为Administrator
+	// TODO: 不能包含用户名或用户名的逆序, Linux管理员账户为root，Windows管理员账户为Administrator
 	//  暂时无法判断系统类型，先跳过，后面通过DryRun方式直接请求云上API校验
 
 	return nil

@@ -256,7 +256,7 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		CloudIDs:  cloudIDs,
 	}
 
-	_, err = syncClient.Eip(cts.Kit, params, &syncgcp.SyncEipOption{Region: opt.Region})
+	_, err = syncClient.Eip(cts.Kit, params, &syncgcp.SyncEipOption{Region: opt.Region, BkBizID: req.BkBizID})
 	if err != nil {
 		logs.Errorf("sync gcp eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
