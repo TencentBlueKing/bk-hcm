@@ -634,19 +634,19 @@ POST /api/v1/cloud/vendors/{vendor}/bills/list
 | id | string | 事件的完整限定 ARM ID      |
 | kind | string | 指定使用详细信息的类型    |
 | name | int64 | 唯一标识事件的 ID         |
-| properties | Properties | 帐户名称      |
+| properties | Properties | 账户名称      |
 | type | string | 资源类型                |
 
 #### Properties
 | 参数名称        | 参数类型   | 描述                            |
 |-------------|--------|--------------------------------------|
-| accountName | string | 帐户名称 |
-| accountOwnerId | string | 帐户所有者 ID |
+| accountName | string | 账户名称 |
+| accountOwnerId | string | 账户所有者 ID |
 | additionalInfo | string | 此使用情况项的其他详细信息。 默认情况下，除非在 $expand 中指定，否则不会填充它。 使用此字段可获取特定于使用情况行项的详细信息，例如实际 VM 大小 (ServiceType) 或应用预留折扣的比率。 |
 | benefitId | string | 适用权益的唯一标识符 |
 | benefitName | string | 适用权益的名称 |
-| billingAccountId | string | 计费帐户标识符 |
-| billingAccountName | string | 计费帐户名称 |
+| billingAccountId | string | 计费账户标识符 |
+| billingAccountName | string | 计费账户名称 |
 | billingCurrency | string | 计费货币 |
 | billingPeriodEndDate | string | 计费周期结束日期 |
 | billingPeriodStartDate | string | 计费周期开始日期 |
@@ -759,7 +759,7 @@ POST /api/v1/cloud/vendors/{vendor}/bills/list
 
 | 参数名称        | 参数类型   | 描述                            |
 |-------------|--------|--------------------------------------|
-| billing_account_id | string | 与使用量相关的 Cloud Billing 帐号ID |
+| billing_account_id | string | 与使用量相关的 Cloud Billing 账号ID |
 | cost | float64 | 成本 |
 | cost_type | string | 费用类型 |
 | country | string | 国家 |

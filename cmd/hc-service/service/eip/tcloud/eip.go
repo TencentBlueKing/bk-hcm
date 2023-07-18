@@ -226,7 +226,9 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		CloudIDs:  cloudIDs,
 	}
 
-	_, err = syncClient.Eip(cts.Kit, params, &synctcloud.SyncEipOption{})
+	_, err = syncClient.Eip(cts.Kit, params, &synctcloud.SyncEipOption{
+		BkBizID: req.BkBizID,
+	})
 	if err != nil {
 		logs.Errorf("sync tcloud eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

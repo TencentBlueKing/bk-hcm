@@ -84,7 +84,7 @@ type AwsRouteTable struct {
 	CloudGatewayID *string `db:"cloud_gateway_id" validate:"omitempty,max=255" json:"cloud_gateway_id,omitempty"`
 	// CloudInstanceID NAT实例的云上ID
 	CloudInstanceID *string `db:"cloud_instance_id" validate:"omitempty,max=255" json:"cloud_instance_id,omitempty"`
-	// CloudInstanceOwnerID 实例所属帐户的云上ID
+	// CloudInstanceOwnerID 实例所属账户的云上ID
 	CloudInstanceOwnerID *string `db:"cloud_instance_owner_id" validate:"omitempty,max=255" json:"cloud_instance_owner_id,omitempty"`
 	// CloudLocalGatewayID 本地网关的云上ID
 	CloudLocalGatewayID *string `db:"cloud_local_gateway_id" validate:"omitempty,max=255" json:"cloud_local_gateway_id,omitempty"`

@@ -238,7 +238,9 @@ func (svc *EipSvc) CreateEip(cts *rest.Contexts) (interface{}, error) {
 		CloudIDs:  cloudIDs,
 	}
 
-	_, err = syncClient.Eip(cts.Kit, params, &synchuawei.SyncEipOption{})
+	_, err = syncClient.Eip(cts.Kit, params, &synchuawei.SyncEipOption{
+		BkBizID: req.BkBizID,
+	})
 	if err != nil {
 		logs.Errorf("sync huawei eip failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
