@@ -119,7 +119,6 @@ func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieNa
 				username = ret.UserName
 			}
 			if err != nil {
-				resp.WriteError(http.StatusUnauthorized, err)
 				errfError := errf.Error(err)
 				resp.WriteAsJson(checkLogionRet{
 					UserName: username,
