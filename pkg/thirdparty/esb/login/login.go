@@ -33,7 +33,7 @@ import (
 
 // Client esb login client
 type Client interface {
-	IsLogin(ctx context.Context, bkToken string) (string, error)
+	IsLogin(ctx context.Context, bkToken string) (*IsLoginResp, error)
 }
 
 // NewClient initialize a new login client
@@ -50,14 +50,18 @@ type login struct {
 	client rest.ClientInterface
 }
 
-func (l *login) IsLogin(ctx context.Context, bkToken string) (string, error) {
+// IsLogin oa login check
+func (l *login) IsLogin(ctx context.Context, bkToken string) (*IsLoginResp, error) {
 	resp := new(IsLoginResp)
+
 	req := &IsLoginReq{
 		CommParams: types.GetCommParams(l.config),
 		BkToken:    bkToken,
 	}
+
 	h := http.Header{}
 	h.Set(constant.RidKey, uuid.UUID())
+
 	err := l.client.Post().
 		SubResourcef("/bk_login/is_login/").
 		WithContext(ctx).
@@ -65,11 +69,12 @@ func (l *login) IsLogin(ctx context.Context, bkToken string) (string, error) {
 		Body(req).
 		Do().Into(resp)
 	if err != nil {
-		return "", err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return "", fmt.Errorf("is_login api call failed, code: %d, msg: %s, rid: %s", resp.Code, resp.Message, resp.Rid)
+		return nil, err
 	}
 
-	return resp.Data.Username, nil
+	if !resp.Result || resp.Code != 0 {
+		return nil, fmt.Errorf("%v", resp)
+	}
+
+	return resp, nil
 }

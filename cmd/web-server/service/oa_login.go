@@ -74,7 +74,7 @@ func newOALoginClient(bkLoginUrl string) (*oaLoginClient, error) {
 }
 
 // Verify ...
-func (s *oaLoginClient) Verify(ctx context.Context, bkTicket string) (string, error) {
+func (s *oaLoginClient) Verify(ctx context.Context, bkTicket string) (*checkLogionRet, error) {
 	resp := &struct {
 		Code    int    `json:"ret"`
 		Message string `json:"msg"`
@@ -92,14 +92,20 @@ func (s *oaLoginClient) Verify(ctx context.Context, bkTicket string) (string, er
 		WithContext(ctx).
 		WithHeaders(h).WithParam("bk_ticket", bkTicket).
 		Do().Into(resp)
+
 	if err != nil {
-		return "", err
-	}
-	if resp.Code != 0 {
-		return "", fmt.Errorf(
-			"oa user/get_info api call failed, ret: %d, msg: %s, rid: %s", resp.Code, resp.Message, requestID,
-		)
+		return nil, err
 	}
 
-	return resp.Data.Username, nil
+	ret := &checkLogionRet{
+		UserName: resp.Data.Username,
+		Code:     resp.Code,
+		Message:  resp.Message,
+	}
+
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("%v", ret)
+	}
+
+	return ret, nil
 }
