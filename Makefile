@@ -46,6 +46,7 @@ package: pre ui api ver
 	@mkdir -p ${OUTPUT_DIR}/etc
 	@mkdir -p ${OUTPUT_DIR}/install
 	@mkdir -p ${OUTPUT_DIR}/install/sql
+	@cp -f ${PRO_DIR}/scripts/install/migrate.sh ${OUTPUT_DIR}/install/
 	@cp -rf ${PRO_DIR}/scripts/sql/* ${OUTPUT_DIR}/install/sql/
 	@cd ${PRO_DIR}/cmd && make package
 	@echo -e "\e[34;1mPackage All Success!\n\033[0m"
