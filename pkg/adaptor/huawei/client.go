@@ -50,6 +50,7 @@ import (
 
 const (
 	ErrDataNotFound = "readObjectStart: expect { or n, but found"
+	CvmDeleteStatus = "DELETED"
 )
 
 type clientSet struct {
