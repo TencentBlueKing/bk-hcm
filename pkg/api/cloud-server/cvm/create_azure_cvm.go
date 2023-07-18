@@ -46,7 +46,7 @@ var (
 
 // AzureCvmCreateReq ...
 type AzureCvmCreateReq struct {
-	BkBizID               int64    `json:"bk_biz_id" validate:"required,min=1"`
+	BkBizID               int64    `json:"bk_biz_id" validate:"omitempty"`
 	AccountID             string   `json:"account_id" validate:"required"`
 	ResourceGroupName     string   `json:"resource_group_name" validate:"required,lowercase"`
 	Region                string   `json:"region" validate:"required,lowercase"`

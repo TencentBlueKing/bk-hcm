@@ -127,7 +127,8 @@ func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieNa
 		}
 		// request and response details landing log for monitoring and troubleshooting problem.
 		logs.Infof("uri: %s, method: %s, body: %s, appcode: %s, user: %s, remote addr: %s, "+
-			"rid: %s", req.Request.RequestURI, req.Request.Method, body, kt.AppCode, kt.User, req.Request.RemoteAddr, kt.Rid)
+			"rid: %s", req.Request.RequestURI, req.Request.Method, body, kt.AppCode, kt.User,
+			req.Request.RemoteAddr, kt.Rid)
 
 		chain.ProcessFilter(req, resp)
 	}
