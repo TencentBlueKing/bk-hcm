@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -148,17 +149,28 @@ func (h *HuaWei) StartCvm(kt *kit.Kit, opt *typecvm.HuaWeiStartOption) error {
 		},
 	}
 
-	_, err = client.BatchStartServers(req)
+	resp, err := client.BatchStartServers(req)
 	if err != nil {
 		logs.Errorf("batch start huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	handler := &startCvmPollingHandler{
+	// 判断批量操作任务是否失败
+	handler := &jobPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: handler}
-	_, err = respPoller.PollUntilDone(h, kt, converter.SliceToPtr(opt.CloudIDs),
+	respPoller := poller.Poller[*HuaWei, []model.SubJob, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(h, kt, []*string{resp.JobId}, types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		return err
+	}
+
+	// 等待主机状态改变
+	startHandler := &startCvmPollingHandler{
+		opt.Region,
+	}
+	startPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: startHandler}
+	_, err = startPoller.PollUntilDone(h, kt, converter.SliceToPtr(opt.CloudIDs),
 		types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		return err
@@ -206,18 +218,28 @@ func (h *HuaWei) StopCvm(kt *kit.Kit, opt *typecvm.HuaWeiStopOption) error {
 		},
 	}
 
-	_, err = client.BatchStopServers(req)
+	resp, err := client.BatchStopServers(req)
 	if err != nil {
 		logs.Errorf("batch stop huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	handler := &stopCvmPollingHandler{
+	// 判断批量操作任务是否失败
+	handler := &jobPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: handler}
-	_, err = respPoller.PollUntilDone(h, kt, converter.SliceToPtr(opt.CloudIDs),
-		types.NewBatchOperateCvmPollerOpt())
+	respPoller := poller.Poller[*HuaWei, []model.SubJob, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(h, kt, []*string{resp.JobId}, types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		return err
+	}
+
+	// 等待主机状态改变
+	stopHandler := &stopCvmPollingHandler{
+		opt.Region,
+	}
+	stopPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: stopHandler}
+	_, err = stopPoller.PollUntilDone(h, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		return err
 	}
@@ -264,18 +286,28 @@ func (h *HuaWei) RebootCvm(kt *kit.Kit, opt *typecvm.HuaWeiRebootOption) error {
 		},
 	}
 
-	_, err = client.BatchRebootServers(req)
+	resp, err := client.BatchRebootServers(req)
 	if err != nil {
 		logs.Errorf("batch reboot huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	handler := &rebootCvmPollingHandler{
+	// 判断批量操作任务是否失败
+	handler := &jobPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: handler}
-	_, err = respPoller.PollUntilDone(h, kt, converter.SliceToPtr(opt.CloudIDs),
-		types.NewBatchOperateCvmPollerOpt())
+	respPoller := poller.Poller[*HuaWei, []model.SubJob, poller.BaseDoneResult]{Handler: handler}
+	_, err = respPoller.PollUntilDone(h, kt, []*string{resp.JobId}, types.NewBatchOperateCvmPollerOpt())
+	if err != nil {
+		return err
+	}
+
+	// 等待主机状态改变
+	rebootHandler := &rebootCvmPollingHandler{
+		opt.Region,
+	}
+	rebootPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: rebootHandler}
+	_, err = rebootPoller.PollUntilDone(h, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		return err
 	}
@@ -451,6 +483,61 @@ func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) (*polle
 	}
 
 	return result, err
+}
+
+type jobPollingHandler struct {
+	region string
+}
+
+// Done ...
+func (h *jobPollingHandler) Done(jobs []model.SubJob) (bool, *poller.BaseDoneResult) {
+
+	result := &poller.BaseDoneResult{
+		SuccessCloudIDs: make([]string, 0),
+		FailedCloudIDs:  make([]string, 0),
+		UnknownCloudIDs: make([]string, 0),
+		FailedMessage:   "",
+	}
+	for _, job := range jobs {
+		if converter.PtrToVal(job.Status) == model.GetSubJobStatusEnum().RUNNING {
+			return false, result
+		}
+
+		if converter.PtrToVal(job.Status) == model.GetSubJobStatusEnum().FAIL {
+			result.FailedCloudIDs = append(result.FailedCloudIDs, converter.PtrToVal(job.Entities.ServerId))
+			result.FailedMessage = converter.PtrToVal(job.FailReason)
+		}
+
+		if converter.PtrToVal(job.Status) == model.GetSubJobStatusEnum().SUCCESS {
+			result.SuccessCloudIDs = append(result.SuccessCloudIDs, converter.PtrToVal(job.Entities.ServerId))
+		}
+	}
+
+	return true, result
+}
+
+// Poll ...
+func (h *jobPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.SubJob, error) {
+	if len(cloudIDs) == 0 {
+		return nil, errors.New("job id is required")
+	}
+
+	ecsCli, err := client.clientSet.ecsClient(h.region)
+	if err != nil {
+		logs.Errorf("new ecs client failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("new ecs client failed, err: %v", err)
+	}
+
+	req := &model.ShowJobRequest{
+		JobId: *cloudIDs[0],
+	}
+	resp, err := ecsCli.ShowJob(req)
+	if err != nil {
+		logs.Errorf("show job failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return converter.PtrToVal(resp.Entities.SubJobs), nil
 }
 
 type startCvmPollingHandler struct {

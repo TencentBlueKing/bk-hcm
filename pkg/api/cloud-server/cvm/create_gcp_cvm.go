@@ -32,7 +32,7 @@ import (
 
 // GcpCvmCreateReq ...
 type GcpCvmCreateReq struct {
-	BkBizID       int64  `json:"bk_biz_id" validate:"required,min=1"`
+	BkBizID       int64  `json:"bk_biz_id" validate:"omitempty"`
 	AccountID     string `json:"account_id" validate:"required"`
 	Region        string `json:"region" validate:"required"`
 	Zone          string `json:"zone" validate:"required"`

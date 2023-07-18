@@ -134,8 +134,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			return fmt.Errorf("cvm %s can not find vpc", one.Id)
 		}
 
-		cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kt, accountID, region, one.Id,
-			one.Metadata["vpc_id"])
+		cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kt, accountID, region, one.Id, one.Metadata["vpc_id"])
 		if err != nil {
 			return err
 		}
@@ -552,9 +551,16 @@ func (cli *client) deleteCvm(kt *kit.Kit, accountID string, region string, delCl
 		Region:    region,
 		CloudIDs:  delCloudIDs,
 	}
-	delCvmFromCloud, err := cli.listCvmFromCloud(kt, checkParams)
+	tmps, err := cli.listCvmFromCloud(kt, checkParams)
 	if err != nil {
 		return err
+	}
+
+	delCvmFromCloud := make([]typescvm.HuaWeiCvm, 0)
+	for _, tmp := range tmps {
+		if tmp.Status != huawei.CvmDeleteStatus {
+			delCvmFromCloud = append(delCvmFromCloud, tmp)
+		}
 	}
 
 	if len(delCvmFromCloud) > 0 {
@@ -677,20 +683,34 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 			break
 		}
 
-		var delCloudIDs []string
+		var resultFromCloud []typescvm.HuaWeiCvm
 		if len(cloudIDs) != 0 {
 			params := &SyncBaseParams{
 				AccountID: accountID,
 				Region:    region,
 				CloudIDs:  cloudIDs,
 			}
-			delCloudIDs, err = cli.listRemoveCvmID(kt, params)
+			tmps, err := cli.listCvmFromCloud(kt, params)
 			if err != nil {
 				return err
 			}
+
+			for _, tmp := range tmps {
+				// 过滤掉删除的主机。
+				if tmp.Status != huawei.CvmDeleteStatus {
+					resultFromCloud = append(resultFromCloud, tmp)
+				}
+			}
 		}
 
-		if len(delCloudIDs) != 0 {
+		// 如果有资源没有查询出来，说明数据被从云上删除
+		if len(resultFromCloud) != len(cloudIDs) {
+			cloudIDMap := converter.StringSliceToMap(cloudIDs)
+			for _, one := range resultFromCloud {
+				delete(cloudIDMap, one.Id)
+			}
+
+			delCloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
 			if err = cli.deleteCvm(kt, accountID, region, delCloudIDs); err != nil {
 				return err
 			}
@@ -704,29 +724,6 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 	}
 
 	return nil
-}
-
-func (cli *client) listRemoveCvmID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
-	if err := params.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	delCloudIDs := make([]string, 0)
-	for _, one := range params.CloudIDs {
-		opt := &typescvm.HuaWeiListOption{
-			Region:   params.Region,
-			CloudIDs: []string{one},
-		}
-
-		_, err := cli.cloudCli.ListCvm(kt, opt)
-		if err != nil {
-			if strings.Contains(err.Error(), huawei.ErrDataNotFound) {
-				delCloudIDs = append(delCloudIDs, one)
-			}
-		}
-	}
-
-	return delCloudIDs, nil
 }
 
 func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaWeiCvmExtension]) bool {
@@ -750,14 +747,17 @@ func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaW
 		return true
 	}
 
-	cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kit.New(), db.AccountID, db.Region, db.CloudID,
+	kt := kit.New()
+	kt.User = constant.SyncTimingUserKey
+	kt.AppCode = constant.SyncTimingAppCodeKey
+	cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kt, db.AccountID, db.Region, db.CloudID,
 		cloud.Metadata["vpc_id"])
 	if err != nil {
 		logs.Errorf("[%s] get subnets failed, err: %v", enumor.HuaWei, err)
 		return true
 	}
 
-	vpcMap, err := cli.getVpcMap(kit.New(), db.AccountID, db.Region, []string{cloud.Metadata["vpc_id"]})
+	vpcMap, err := cli.getVpcMap(kt, db.AccountID, db.Region, []string{cloud.Metadata["vpc_id"]})
 	if err != nil {
 		logs.Errorf("[%s] get vpc map failed, err: %v", enumor.HuaWei, err)
 		return true

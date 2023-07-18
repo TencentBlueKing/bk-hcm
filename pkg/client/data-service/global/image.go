@@ -10,10 +10,9 @@ import (
 )
 
 // ListImage 查询公共镜像列表
-func (rc *restClient) ListImage(ctx context.Context,
-	h http.Header,
-	request *dataproto.ImageListReq,
-) (*dataproto.ImageListResult, error) {
+func (rc *restClient) ListImage(ctx context.Context, h http.Header, request *dataproto.ImageListReq) (
+	*dataproto.ImageListResult, error) {
+
 	resp := new(dataproto.ImageListResp)
 	err := rc.client.Post().
 		WithContext(ctx).
