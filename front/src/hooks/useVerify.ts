@@ -1,4 +1,5 @@
 import { useCommonStore } from '@/store';
+import usePagePermissionStore from '@/store/usePagePermissionStore';
 // import { Verify } from '@/typings';
 import {
   ref,
@@ -13,9 +14,15 @@ const showPermissionDialog = ref(false);
 const authVerifyData = ref<any>({ permissionAction: {}, urlParams: {} });
 const permissionParams = ref({ system_id: '', actions: [] });
 
+export enum  IAM_CODE {
+  Success = 0,
+  NoPermission = 1302403,
+};
+
 // 权限hook
 export function useVerify() {
   const commonStore = useCommonStore();
+  const { setHasPagePermission, setPermissionMsg, logout } = usePagePermissionStore();
 
   // 根据参数获取权限
   const getAuthVerifyData = async (authData: any[]) => {
@@ -33,6 +40,19 @@ export function useVerify() {
       return p;
     }, { resources: [] });
     const res = await commonStore.authVerify(params);
+
+    switch (res.code) {
+      case IAM_CODE.Success:
+        setHasPagePermission(true);
+        break;
+      case IAM_CODE.NoPermission:
+        setHasPagePermission(false);
+        setPermissionMsg(res.message);
+        break;
+      default:
+        logout();
+    }
+
     if (res.data.permission) {    // 没有权限才需要获取跳转链接参数
       // 每个操作对应的参数
       const systemId = res.data.permission.system_id;
