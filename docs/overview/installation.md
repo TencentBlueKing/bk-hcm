@@ -71,6 +71,7 @@ bk-hcm/
 │   ├── hc_service.yaml
 │   └── web_server.yaml
 ├── install
+│   ├── migrate.sh
 │   └── sql
 │       ├── 0001_20230227_2045_init_db.sql
 │       ├── 0002_20230329_1510.sql
@@ -88,18 +89,35 @@ bk-hcm/
 
 ### 1. 初始化数据库
 
-通过登陆mysql，创建hcm数据库
+创建hcm需要的数据库，可以通过mysql命令行或者其他数据库管理工具完成。
 ```shell
 CREATE DATABASE hcm;
-use hcm;
+```
+进入install目录：
+```shell
+cd bk-hcm/install
 ```
 
-并按顺序导入install/sql下的sql文件，初始化表结构
-
-```mysql
-source path/to/0001_xxx.sql;
-...
+根据数据库信息修改脚本`migrate.sh`中的配置：
+```shell
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_USERNAME=root
+MYSQL_DATABASE=hcm
+MYSQL_PASSWORD='password'
 ```
+
+初次安装直接使用脚本初始化数据库结构：
+```shell
+# 将自动执行sql文件夹下的sql文件
+bash migrate.sh -i
+```
+#### 旧版本升级：
+
+- 对于`版本<=v1.1.18`，需要通过`-c 当前版本`来手动指定当前版本。
+- 对于`版本>v1.1.18`，在数据库中有保存当前数据库版本信息，无需参数，脚本可以自动判断当前版本。
+
+脚本可以通过当前版本自带的VERSION文件判断要安装的目标版本号，也可以通过`-t 目标版本`手动指定要升级的版本，或者通过`-a 目标版本文件路径`指定版本文件位置。
 ### 2. 启动服务
 
 在shell中使用下面命令启动服务
