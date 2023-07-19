@@ -8,7 +8,7 @@ import workbench from '@/router/module/workbench';
 import resource from '@/router/module/resource';
 import service from '@/router/module/service';
 import business from '@/router/module/business';
-import { classes, deleteCookie } from '@/common/util';
+import { classes } from '@/common/util';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
 import { useUserStore, useAccountStore, useCommonStore } from '@/store';
@@ -19,6 +19,8 @@ import { LANGUAGE_TYPE, VendorEnum } from '@/common/constant';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import cookie from 'cookie';
+import NoPermission from '@/views/resource/NoPermission';
+import usePagePermissionStore from '@/store/usePagePermissionStore';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -53,8 +55,7 @@ export default defineComponent({
     const curYear = ref((new Date()).getFullYear());
     const isMenuOpen = ref<boolean>(true);
     const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
-
-
+    const { hasPagePermission, permissionMsg, logout } = usePagePermissionStore();
     // 获取业务列表
     const getBusinessList = async () => {
       try {
@@ -188,12 +189,6 @@ export default defineComponent({
       },
     );
 
-    const logout = () => {
-      deleteCookie('bk_token');
-      deleteCookie('bk_ticket');
-      window.location.href = `${window.PROJECT_CONFIG.BK_LOGIN_URL}/?is_from_logout=1&c_url=${window.location.href}`;
-    };
-
     // 选择业务
     const handleChange = async () => {
       accountStore.updateBizsId(businessId.value);    // 设置全局业务id
@@ -233,6 +228,8 @@ export default defineComponent({
       fetchBusinessMap();
       fetchAllCloudAreas();
     });
+
+    if (!hasPagePermission) return () => <NoPermission message={permissionMsg}/>;
 
     return () => (
       <main class="flex-column full-page">
