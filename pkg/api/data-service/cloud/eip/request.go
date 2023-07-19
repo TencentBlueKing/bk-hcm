@@ -94,10 +94,11 @@ func (req *EipExtBatchUpdateReq[T]) Validate() error {
 
 // EipExtUpdateReq ...
 type EipExtUpdateReq[T EipExtensionUpdateReq] struct {
-	ID        string `json:"id" validate:"required"`
-	BkBizID   uint64 `json:"bk_biz_id"`
-	Status    string `json:"status"`
-	Extension *T     `json:"extension"`
+	ID        string  `json:"id" validate:"required"`
+	Name      *string `json:"name" validate:"omitempty"`
+	BkBizID   uint64  `json:"bk_biz_id"`
+	Status    string  `json:"status"`
+	Extension *T      `json:"extension"`
 }
 
 // Validate ...
