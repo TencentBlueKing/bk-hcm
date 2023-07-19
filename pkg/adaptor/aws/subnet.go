@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
+	adtysubnet "hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cidrtools "hcm/pkg/tools/cidr"
@@ -38,7 +39,7 @@ import (
 
 // CreateSubnet create subnet.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateSubnet.html
-func (a *Aws) CreateSubnet(kt *kit.Kit, opt *types.AwsSubnetCreateOption) (*types.AwsSubnet, error) {
+func (a *Aws) CreateSubnet(kt *kit.Kit, opt *adtysubnet.AwsSubnetCreateOption) (*adtysubnet.AwsSubnet, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func (a *Aws) CreateSubnet(kt *kit.Kit, opt *types.AwsSubnetCreateOption) (*type
 	handler := &createSubnetPollingHandler{
 		opt.Extension.Region,
 	}
-	respPoller := poller.Poller[*Aws, []*ec2.Subnet, []*types.AwsSubnet]{Handler: handler}
+	respPoller := poller.Poller[*Aws, []*ec2.Subnet, []*adtysubnet.AwsSubnet]{Handler: handler}
 	results, err := respPoller.PollUntilDone(a, kt, []*string{resp.Subnet.SubnetId},
 		types.NewBatchCreateSubnetPollerOption())
 	if err != nil {
@@ -85,7 +86,7 @@ func (a *Aws) CreateSubnet(kt *kit.Kit, opt *types.AwsSubnetCreateOption) (*type
 
 // CreateDefaultSubnet create default subnet.
 // reference: https://docs.amazonaws.cn/AWSEC2/latest/APIReference/API_CreateDefaultSubnet.html
-func (a *Aws) CreateDefaultSubnet(kt *kit.Kit, opt *types.AwsDefaultSubnetCreateOption) (*types.AwsSubnet, error) {
+func (a *Aws) CreateDefaultSubnet(kt *kit.Kit, opt *adtysubnet.AwsDefaultSubnetCreateOption) (*adtysubnet.AwsSubnet, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -112,7 +113,7 @@ func (a *Aws) CreateDefaultSubnet(kt *kit.Kit, opt *types.AwsDefaultSubnetCreate
 
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
-func (a *Aws) UpdateSubnet(_ *kit.Kit, _ *types.AwsSubnetUpdateOption) error {
+func (a *Aws) UpdateSubnet(_ *kit.Kit, _ *adtysubnet.AwsSubnetUpdateOption) error {
 	return nil
 }
 
@@ -142,7 +143,7 @@ func (a *Aws) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) erro
 
 // ListSubnet list subnet.
 // reference: https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/APIReference/API_DescribeSubnets.html
-func (a *Aws) ListSubnet(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsSubnetListResult, error) {
+func (a *Aws) ListSubnet(kt *kit.Kit, opt *core.AwsListOption) (*adtysubnet.AwsSubnetListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -172,23 +173,23 @@ func (a *Aws) ListSubnet(kt *kit.Kit, opt *core.AwsListOption) (*types.AwsSubnet
 		return nil, err
 	}
 
-	details := make([]types.AwsSubnet, 0, len(resp.Subnets))
+	details := make([]adtysubnet.AwsSubnet, 0, len(resp.Subnets))
 	for _, subnet := range resp.Subnets {
 		details = append(details, converter.PtrToVal(convertSubnet(subnet, opt.Region)))
 	}
 
-	return &types.AwsSubnetListResult{NextToken: resp.NextToken, Details: details}, nil
+	return &adtysubnet.AwsSubnetListResult{NextToken: resp.NextToken, Details: details}, nil
 }
 
-func convertSubnet(data *ec2.Subnet, region string) *types.AwsSubnet {
+func convertSubnet(data *ec2.Subnet, region string) *adtysubnet.AwsSubnet {
 	if data == nil {
 		return nil
 	}
 
-	s := &types.AwsSubnet{
+	s := &adtysubnet.AwsSubnet{
 		CloudVpcID: converter.PtrToVal(data.VpcId),
 		CloudID:    converter.PtrToVal(data.SubnetId),
-		Extension: &types.AwsSubnetExtension{
+		Extension: &adtysubnet.AwsSubnetExtension{
 			State:                       converter.PtrToVal(data.State),
 			Region:                      region,
 			Zone:                        converter.PtrToVal(data.AvailabilityZone),
@@ -229,8 +230,8 @@ type createSubnetPollingHandler struct {
 }
 
 // Done ...
-func (h *createSubnetPollingHandler) Done(subnets []*ec2.Subnet) (bool, *[]*types.AwsSubnet) {
-	results := make([]*types.AwsSubnet, 0)
+func (h *createSubnetPollingHandler) Done(subnets []*ec2.Subnet) (bool, *[]*adtysubnet.AwsSubnet) {
+	results := make([]*adtysubnet.AwsSubnet, 0)
 	flag := true
 	for _, subnet := range subnets {
 		if converter.PtrToVal(subnet.State) == "pending" {

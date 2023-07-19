@@ -23,8 +23,8 @@ import (
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/logics/res-sync/huawei"
 	"hcm/cmd/hc-service/service/sync/handler"
-	"hcm/pkg/adaptor/types"
 	typecore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -77,7 +77,7 @@ func (hd *subnetHandler) Prepare(cts *rest.Contexts) error {
 
 // Next ...
 func (hd *subnetHandler) Next(kt *kit.Kit) ([]string, error) {
-	listOpt := &types.HuaWeiSubnetListOption{
+	listOpt := &adtysubnet.HuaWeiSubnetListOption{
 		CloudVpcID: hd.request.CloudVpcID,
 		Region:     hd.request.Region,
 		Page: &typecore.HuaWeiPage{

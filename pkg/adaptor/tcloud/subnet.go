@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
+	adtysubnet "hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -37,7 +38,7 @@ import (
 
 // CreateSubnet create subnet.
 // reference: https://cloud.tencent.com/document/api/215/15782
-func (t *TCloud) CreateSubnet(kt *kit.Kit, opt *types.TCloudSubnetCreateOption) (*types.TCloudSubnet, error) {
+func (t *TCloud) CreateSubnet(kt *kit.Kit, opt *adtysubnet.TCloudSubnetCreateOption) (*adtysubnet.TCloudSubnet, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -64,7 +65,7 @@ func (t *TCloud) CreateSubnet(kt *kit.Kit, opt *types.TCloudSubnetCreateOption) 
 
 // CreateSubnets create subnets.
 // reference: https://cloud.tencent.com/document/api/215/31960
-func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *types.TCloudSubnetsCreateOption) ([]types.TCloudSubnet, error) {
+func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *adtysubnet.TCloudSubnetsCreateOption) ([]adtysubnet.TCloudSubnet, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -103,7 +104,7 @@ func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *types.TCloudSubnetsCreateOption
 	handler := &createSubnetPollingHandler{
 		opt.Region,
 	}
-	respPoller := poller.Poller[*TCloud, []*vpc.Subnet, []types.TCloudSubnet]{Handler: handler}
+	respPoller := poller.Poller[*TCloud, []*vpc.Subnet, []adtysubnet.TCloudSubnet]{Handler: handler}
 	results, err := respPoller.PollUntilDone(t, kt, subnetIds, types.NewBatchCreateSubnetPollerOption())
 	if err != nil {
 		return nil, err
@@ -114,7 +115,7 @@ func (t *TCloud) CreateSubnets(kt *kit.Kit, opt *types.TCloudSubnetsCreateOption
 
 // UpdateSubnet update subnet.
 // TODO right now only memo is supported to update, add other update operations later.
-func (t *TCloud) UpdateSubnet(_ *kit.Kit, _ *types.TCloudSubnetUpdateOption) error {
+func (t *TCloud) UpdateSubnet(_ *kit.Kit, _ *adtysubnet.TCloudSubnetUpdateOption) error {
 	return nil
 }
 
@@ -144,7 +145,7 @@ func (t *TCloud) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) e
 
 // ListSubnet list subnet.
 // reference: https://cloud.tencent.com/document/api/215/15784
-func (t *TCloud) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCloudSubnetListResult, error) {
+func (t *TCloud) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*adtysubnet.TCloudSubnetListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -171,25 +172,25 @@ func (t *TCloud) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*types.TCl
 		return nil, fmt.Errorf("list tencent cloud subnet failed, err: %v", err)
 	}
 
-	details := make([]types.TCloudSubnet, 0, len(resp.Response.SubnetSet))
+	details := make([]adtysubnet.TCloudSubnet, 0, len(resp.Response.SubnetSet))
 
 	for _, data := range resp.Response.SubnetSet {
 		details = append(details, converter.PtrToVal(convertSubnet(data, opt.Region)))
 	}
 
-	return &types.TCloudSubnetListResult{Count: resp.Response.TotalCount, Details: details}, nil
+	return &adtysubnet.TCloudSubnetListResult{Count: resp.Response.TotalCount, Details: details}, nil
 }
 
-func convertSubnet(data *vpc.Subnet, region string) *types.TCloudSubnet {
+func convertSubnet(data *vpc.Subnet, region string) *adtysubnet.TCloudSubnet {
 	if data == nil {
 		return nil
 	}
 
-	s := &types.TCloudSubnet{
+	s := &adtysubnet.TCloudSubnet{
 		CloudVpcID: converter.PtrToVal(data.VpcId),
 		CloudID:    converter.PtrToVal(data.SubnetId),
 		Name:       converter.PtrToVal(data.SubnetName),
-		Extension: &types.TCloudSubnetExtension{
+		Extension: &adtysubnet.TCloudSubnetExtension{
 			IsDefault:               converter.PtrToVal(data.IsDefault),
 			Region:                  region,
 			Zone:                    converter.PtrToVal(data.Zone),
@@ -221,8 +222,8 @@ type createSubnetPollingHandler struct {
 }
 
 // Done ...
-func (h *createSubnetPollingHandler) Done(subnets []*vpc.Subnet) (bool, *[]types.TCloudSubnet) {
-	results := make([]types.TCloudSubnet, 0)
+func (h *createSubnetPollingHandler) Done(subnets []*vpc.Subnet) (bool, *[]adtysubnet.TCloudSubnet) {
+	results := make([]adtysubnet.TCloudSubnet, 0)
 	flag := true
 	for _, subnet := range subnets {
 		if converter.PtrToVal(subnet.SubnetId) == "" {

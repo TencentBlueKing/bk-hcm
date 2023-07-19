@@ -26,7 +26,7 @@ import (
 
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	cloudclient "hcm/cmd/hc-service/service/cloud-adaptor"
-	"hcm/pkg/adaptor/types"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
@@ -78,9 +78,9 @@ func (s *Subnet) TCloudSubnetCreate(kt *kit.Kit, req *hcservice.TCloudSubnetBatc
 	}
 
 	// create tencent cloud subnets
-	subnetReqs := make([]types.TCloudOneSubnetCreateOpt, 0, len(req.Subnets))
+	subnetReqs := make([]adtysubnet.TCloudOneSubnetCreateOpt, 0, len(req.Subnets))
 	for _, subnetReq := range req.Subnets {
-		subnetReqs = append(subnetReqs, types.TCloudOneSubnetCreateOpt{
+		subnetReqs = append(subnetReqs, adtysubnet.TCloudOneSubnetCreateOpt{
 			IPv4Cidr:          subnetReq.IPv4Cidr,
 			Name:              subnetReq.Name,
 			Zone:              subnetReq.Zone,
@@ -88,7 +88,7 @@ func (s *Subnet) TCloudSubnetCreate(kt *kit.Kit, req *hcservice.TCloudSubnetBatc
 		})
 	}
 
-	tcloudCreateOpt := &types.TCloudSubnetsCreateOption{
+	tcloudCreateOpt := &adtysubnet.TCloudSubnetsCreateOption{
 		AccountID:  req.AccountID,
 		Region:     req.Region,
 		CloudVpcID: req.CloudVpcID,
@@ -135,7 +135,7 @@ func (s *Subnet) TCloudSubnetCreate(kt *kit.Kit, req *hcservice.TCloudSubnetBatc
 	return res, nil
 }
 
-func convertTCloudSubnetCreateReq(data *types.TCloudSubnet, accountID string,
+func convertTCloudSubnetCreateReq(data *adtysubnet.TCloudSubnet, accountID string,
 	bizID int64) cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt] {
 
 	subnetReq := cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt]{

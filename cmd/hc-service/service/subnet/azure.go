@@ -26,6 +26,7 @@ import (
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
 	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	adtysubnet "hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
@@ -64,7 +65,7 @@ func (s subnet) AzureSubnetCreate(cts *rest.Contexts) (interface{}, error) {
 		AccountID:     req.AccountID,
 		CloudVpcID:    azureCreateRes.CloudVpcID,
 		ResourceGroup: azureCreateRes.Extension.ResourceGroupName,
-		Subnets:       []types.AzureSubnet{*azureCreateRes},
+		Subnets:       []adtysubnet.AzureSubnet{*azureCreateRes},
 	}
 	res, err := s.subnet.AzureSubnetSync(cts.Kit, subnetSyncOpt)
 	if err != nil {
@@ -96,7 +97,7 @@ func (s subnet) AzureSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	updateOpt := new(types.AzureSubnetUpdateOption)
+	updateOpt := new(adtysubnet.AzureSubnetUpdateOption)
 	err = cli.UpdateSubnet(cts.Kit, updateOpt)
 	if err != nil {
 		return nil, err
@@ -132,7 +133,7 @@ func (s subnet) AzureSubnetDelete(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	delOpt := &types.AzureSubnetDeleteOption{
+	delOpt := &adtysubnet.AzureSubnetDeleteOption{
 		AzureDeleteOption: adcore.AzureDeleteOption{
 			BaseDeleteOption:  adcore.BaseDeleteOption{ResourceID: getRes.Name},
 			ResourceGroupName: getRes.Extension.ResourceGroupName,

@@ -27,8 +27,10 @@ import (
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
+	typessubnet "hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/cidr"
 	"hcm/pkg/tools/converter"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
@@ -37,7 +39,7 @@ import (
 
 // CreateSubnet create subnet.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/insert
-func (g *Gcp) CreateSubnet(kt *kit.Kit, opt *types.GcpSubnetCreateOption) (uint64, error) {
+func (g *Gcp) CreateSubnet(kt *kit.Kit, opt *typessubnet.GcpSubnetCreateOption) (uint64, error) {
 	if err := opt.Validate(); err != nil {
 		return 0, err
 	}
@@ -94,7 +96,7 @@ func (g *Gcp) CreateSubnet(kt *kit.Kit, opt *types.GcpSubnetCreateOption) (uint6
 // UpdateSubnet update subnet.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/patch
 // TODO right now only memo is supported to update, but gcp description can not be updated.
-func (g *Gcp) UpdateSubnet(_ *kit.Kit, _ *types.GcpSubnetUpdateOption) error {
+func (g *Gcp) UpdateSubnet(_ *kit.Kit, _ *typessubnet.GcpSubnetUpdateOption) error {
 	return nil
 }
 
@@ -123,7 +125,7 @@ func (g *Gcp) DeleteSubnet(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) erro
 
 // ListSubnet list subnet.
 // reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/list
-func (g *Gcp) ListSubnet(kt *kit.Kit, opt *types.GcpSubnetListOption) (*types.GcpSubnetListResult, error) {
+func (g *Gcp) ListSubnet(kt *kit.Kit, opt *typessubnet.GcpSubnetListOption) (*typessubnet.GcpSubnetListResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
@@ -155,15 +157,86 @@ func (g *Gcp) ListSubnet(kt *kit.Kit, opt *types.GcpSubnetListOption) (*types.Gc
 		return nil, err
 	}
 
-	details := make([]types.GcpSubnet, 0, len(resp.Items))
+	details := make([]typessubnet.GcpSubnet, 0, len(resp.Items))
 	for _, item := range resp.Items {
 		details = append(details, converter.PtrToVal(convertSubnet(item)))
 	}
 
-	return &types.GcpSubnetListResult{NextPageToken: resp.NextPageToken, Details: details}, nil
+	return &typessubnet.GcpSubnetListResult{NextPageToken: resp.NextPageToken, Details: details}, nil
 }
 
-func convertSubnet(data *compute.Subnetwork) *types.GcpSubnet {
+// ListSubnetWithIPNumber 查询子网列表和子网的IP计数.
+// reference: https://cloud.google.com/compute/docs/reference/rest/v1/subnetworks/list
+func (g *Gcp) ListSubnetWithIPNumber(kt *kit.Kit, opt *typessubnet.GcpSubnetListOption) (
+	*typessubnet.GcpSubnetListResult, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	subnetResp, err := g.ListSubnet(kt, opt)
+	if err != nil {
+		logs.Errorf("list subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	subnetIPMap := make(map[string]uint64)
+	client, err := g.clientSet.computeClient(kt)
+	if err != nil {
+		return nil, err
+	}
+
+	request := client.Addresses.List(g.CloudProjectID(), opt.Region).Context(kt.Ctx).MaxResults(core.GcpQueryLimit)
+	for {
+		resp, err := request.Do()
+		if err != nil {
+			logs.Errorf("list address failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		for _, item := range resp.Items {
+			subnetIPMap[item.Subnetwork] += 1
+		}
+
+		if len(resp.NextPageToken) == 0 {
+			break
+		}
+
+		request.PageToken(opt.Page.PageToken)
+	}
+
+	for index, one := range subnetResp.Details {
+		total := uint64(0)
+		usedIPCount := subnetIPMap[one.Extension.SelfLink]
+		for _, ipv4 := range one.Ipv4Cidr {
+			counts, err := cidr.CidrIPCounts(ipv4)
+			if err != nil {
+				logs.Errorf("get cidr ip count failed, err: %v, cidr: %s, rid: %s", err, ipv4, kt.Rid)
+				return nil, err
+			}
+
+			total += uint64(counts)
+		}
+
+		for _, ipv6 := range one.Ipv6Cidr {
+			counts, err := cidr.CidrIPCounts(ipv6)
+			if err != nil {
+				logs.Errorf("get cidr ip count failed, err: %v, cidr: %s, rid: %s", err, ipv6, kt.Rid)
+				return nil, err
+			}
+
+			total += uint64(counts)
+		}
+
+		subnetResp.Details[index].Extension.TotalIpAddressCount = total
+		subnetResp.Details[index].Extension.AvailableIPAddressCount = total - usedIPCount
+		subnetResp.Details[index].Extension.UsedIpAddressCount = usedIPCount
+	}
+
+	return &typessubnet.GcpSubnetListResult{NextPageToken: subnetResp.NextPageToken, Details: subnetResp.Details}, nil
+}
+
+func convertSubnet(data *compute.Subnetwork) *typessubnet.GcpSubnet {
 	if data == nil {
 		return nil
 	}
@@ -174,12 +247,12 @@ func convertSubnet(data *compute.Subnetwork) *types.GcpSubnet {
 		region = parseSelfLinkToName(data.Region)
 	}
 
-	subnet := &types.GcpSubnet{
+	subnet := &typessubnet.GcpSubnet{
 		CloudVpcID: data.Network,
 		CloudID:    strconv.FormatUint(data.Id, 10),
 		Name:       data.Name,
 		Memo:       &data.Description,
-		Extension: &types.GcpSubnetExtension{
+		Extension: &typessubnet.GcpSubnetExtension{
 			SelfLink:              data.SelfLink,
 			Region:                region,
 			StackType:             data.StackType,

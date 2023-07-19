@@ -24,8 +24,8 @@ import (
 	"fmt"
 
 	subnetlogics "hcm/cmd/hc-service/logics/subnet"
-	"hcm/pkg/adaptor/types"
 	adcore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/cloud"
@@ -83,7 +83,7 @@ func (s subnet) AwsSubnetUpdate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	updateOpt := new(types.AwsSubnetUpdateOption)
+	updateOpt := new(adtysubnet.AwsSubnetUpdateOption)
 	err = cli.UpdateSubnet(cts.Kit, updateOpt)
 	if err != nil {
 		return nil, err

@@ -23,8 +23,8 @@ import (
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/logics/res-sync/gcp"
 	"hcm/cmd/hc-service/service/sync/handler"
-	"hcm/pkg/adaptor/types"
 	typecore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -65,7 +65,7 @@ func (hd *subnetHandler) Prepare(cts *rest.Contexts) error {
 
 // Next ...
 func (hd *subnetHandler) Next(kt *kit.Kit) ([]string, error) {
-	listOpt := &types.GcpSubnetListOption{
+	listOpt := &adtysubnet.GcpSubnetListOption{
 		Region: hd.request.Region,
 		GcpListOption: typecore.GcpListOption{
 			Page: &typecore.GcpPage{

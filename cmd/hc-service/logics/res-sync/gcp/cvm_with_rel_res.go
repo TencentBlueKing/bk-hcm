@@ -28,6 +28,7 @@ import (
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	typesdisk "hcm/pkg/adaptor/types/disk"
 	typeseip "hcm/pkg/adaptor/types/eip"
+	adtysubnet "hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -321,7 +322,7 @@ func (cli *client) getSubnetMapFromCloud(kt *kit.Kit, region string, cvmFromClou
 	result := make(map[string]string, 0)
 	split := slice.Split(selfLinks, core.GcpSelfLinkMaxQueryLimit)
 	for _, part := range split {
-		opt := &types.GcpSubnetListOption{
+		opt := &adtysubnet.GcpSubnetListOption{
 			GcpListOption: core.GcpListOption{
 				Page: &core.GcpPage{
 					PageSize: core.GcpSelfLinkMaxQueryLimit,

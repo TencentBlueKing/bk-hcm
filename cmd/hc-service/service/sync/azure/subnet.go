@@ -26,8 +26,8 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/azure"
 	"hcm/cmd/hc-service/service/sync/handler"
 	adazure "hcm/pkg/adaptor/azure"
-	"hcm/pkg/adaptor/types"
 	typecore "hcm/pkg/adaptor/types/core"
+	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -52,7 +52,7 @@ type subnetHandler struct {
 	// Prepare 构建参数
 	request *sync.AzureSubnetSyncReq
 	syncCli azure.Interface
-	pager   *adazure.Pager[armnetwork.SubnetsClientListResponse, types.AzureSubnet]
+	pager   *adazure.Pager[armnetwork.SubnetsClientListResponse, adtysubnet.AzureSubnet]
 }
 
 var _ handler.Handler = new(subnetHandler)
@@ -76,7 +76,7 @@ func (hd *subnetHandler) Prepare(cts *rest.Contexts) error {
 	hd.request = request
 	hd.syncCli = syncCli
 
-	listOpt := &types.AzureSubnetListOption{
+	listOpt := &adtysubnet.AzureSubnetListOption{
 		AzureListOption: typecore.AzureListOption{
 			ResourceGroupName: hd.request.ResourceGroupName,
 		},
@@ -99,7 +99,7 @@ func (hd *subnetHandler) Next(kt *kit.Kit) ([]string, error) {
 		return nil, nil
 	}
 
-	total := make([]types.AzureSubnet, 0)
+	total := make([]adtysubnet.AzureSubnet, 0)
 	for hd.pager.More() && len(total) < constant.CloudResourceSyncMaxLimit {
 		result, err := hd.pager.NextPage(kt)
 		if err != nil {
